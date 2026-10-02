@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { Link } from "react-router";
 import { Badge, cn } from "@semoss/ui/next";
 import type { Topic } from "../state/collaboration.types";
+import { topicTone } from "../topic-tone";
 
 /** Consistent topic identity using shared semantic data colors; with onRemove, an x inside the pill removes it. */
 export function TopicChip({
@@ -15,23 +16,8 @@ export function TopicChip({
 	onRemove?: () => void;
 	removeLabel?: string;
 }) {
-	const tones = [
-		{ dot: "bg-chart-1", tint: "bg-chart-1/10" },
-		{ dot: "bg-chart-2", tint: "bg-chart-2/10" },
-		{ dot: "bg-chart-3", tint: "bg-chart-3/10" },
-		{ dot: "bg-chart-4", tint: "bg-chart-4/10" },
-		{ dot: "bg-chart-5", tint: "bg-chart-5/10" },
-	];
-	const tone =
-		tones[
-			[...topic.id].reduce(
-				(value, letter) => value + letter.charCodeAt(0),
-				0,
-			) % tones.length
-		];
 	const className = cn(
-		"gap-1.5 rounded-full border-transparent px-2.5 py-1 font-medium text-foreground text-xs",
-		tone?.tint,
+		"gap-1.5 rounded-md border-transparent bg-muted px-2 py-0.5 font-normal text-foreground text-sm",
 		suggested &&
 			"border-border border-dashed bg-transparent text-muted-foreground",
 	);
@@ -39,7 +25,10 @@ export function TopicChip({
 		<>
 			<span
 				aria-hidden="true"
-				className={cn("size-1.5 shrink-0 rounded-full", tone?.dot)}
+				className={cn(
+					"size-2 shrink-0 rounded-xs",
+					topicTone(topic.id),
+				)}
 			/>
 			{topic.short}
 			{suggested ? "?" : ""}

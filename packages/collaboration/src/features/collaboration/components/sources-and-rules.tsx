@@ -16,7 +16,7 @@ export function SourcesAndRules() {
 	return (
 		<CollaborationSurface
 			aside={
-				<Section title="Connected context">
+				<Section title="Connected context" variant="card">
 					<P className="text-muted-foreground">
 						Only selected source items are added to Work. Reading
 						and drafting are separate actions.

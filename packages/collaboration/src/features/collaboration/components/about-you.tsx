@@ -14,7 +14,7 @@ export function AboutYou() {
 		<CollaborationSurface
 			asideTitle="Profile context"
 			aside={
-				<Section title="Your context" variant="widget">
+				<Section title="Your context" variant="card">
 					<P className="text-muted-foreground text-xs leading-5">
 						Confirmed profile and writing preferences can guide the
 						assistant. Profile edits apply to this session.

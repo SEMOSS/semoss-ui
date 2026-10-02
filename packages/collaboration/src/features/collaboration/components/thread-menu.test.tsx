@@ -431,7 +431,7 @@ describe("thread menus", () => {
 	});
 });
 
-it("targets the hovered email and omits thread-level organization", async () => {
+it("targets its own email and omits thread-level organization", async () => {
 	const state = createInitialCollaborationState();
 	const thread = state.threads.find((item) => item.id === threadId);
 	if (!thread) throw new Error("Missing thread");
@@ -452,29 +452,23 @@ it("targets the hovered email and omits thread-level organization", async () => 
 	});
 });
 
-it("reveals the action popover on hover without moving keyboard focus", async () => {
+it("does not open the action popover on hover", async () => {
 	const { user } = setup();
 	const link = screen.getByRole("link");
 	link.focus();
 	await user.hover(screen.getByRole("article"));
-	const popover = await screen.findByRole("dialog", {
-		name: /Thread actions/,
-	});
-	expect(link).toHaveFocus();
-	await user.hover(popover);
-	expect(getMenuAction({ name: "Ask assistant" })).toBeVisible();
-	await user.keyboard("{Escape}");
-	await waitFor(() =>
-		expect(
-			screen.queryByRole("dialog", { name: /Thread actions/ }),
-		).toBeNull(),
+	await user.hover(
+		screen.getByRole("button", { name: /Thread actions for/ }),
 	);
+	// longer than the delay the removed hover-open used
+	await act(() => new Promise((resolve) => setTimeout(resolve, 400)));
+	expect(screen.queryByRole("dialog", { name: /Thread actions/ })).toBeNull();
 	expect(link).toHaveFocus();
 });
 
-it("returns focus after selecting an action from a hover-opened popover", async () => {
-	const { user } = setup();
-	await user.hover(screen.getByRole("article"));
+it("returns focus to the actions button after selecting an action", async () => {
+	const { user, open } = setup();
+	await open();
 	await screen.findByRole("dialog", { name: /Thread actions for/ });
 	await user.click(getMenuAction({ name: "Ignore thread" }));
 	await waitFor(() =>

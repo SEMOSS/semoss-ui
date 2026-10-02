@@ -2,6 +2,7 @@ import {
 	BellOff,
 	Check,
 	Clock,
+	Plus,
 	Reply,
 	RotateCcw,
 	Sparkles,
@@ -18,6 +19,14 @@ import { ignoreThread, noResponseNeeded } from "../work-item-actions";
 import { PersonAvatar } from "./person-avatar";
 import { ThreadMenu } from "./thread-menu";
 import { TopicChip } from "./topic-chip";
+
+// the classifier ends its reasons with "Urgency: <level>"; the level reads better as a marked label
+const URGENCY_PREFIX = "Urgency: ";
+const URGENCY_TONES: Record<string, string> = {
+	"Right now": "bg-destructive",
+	Today: "bg-warning",
+	"This week": "bg-warning",
+};
 
 /** A work item with independent navigation and reversible session actions. */
 export function WorkItemCard({ item }: { item: WorkItem }) {
@@ -40,29 +49,28 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 	return (
 		<ThreadMenu thread={thread} item={item}>
 			{(menu) => (
-				<article
-					className={cn(
-						"flex gap-3 border-border/60 border-b px-4 pt-4 pb-3 transition-colors hover:bg-muted/30 md:gap-4 md:px-6",
-						item.suggested && "bg-primary/5",
-					)}
-				>
-					<PersonAvatar name={author} initials={person?.initials} />
+				<article className="group/item flex gap-3 border-border border-b border-l-3 border-l-transparent py-4 pr-4 pl-3 transition-colors focus-within:border-l-primary focus-within:bg-accent hover:border-l-primary hover:bg-accent md:pr-6 md:pl-5">
+					<PersonAvatar
+						name={author}
+						initials={person?.initials}
+						className="size-9"
+					/>
 					<div className="min-w-0 flex-1">
 						<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-							<Small className="font-medium text-xs">
+							<span className="font-medium text-base">
 								{author}
-							</Small>
-							<Small className="inline-flex items-center gap-1 text-muted-foreground text-xs">
-								<Icon aria-hidden="true" className="size-3" />
-								{channelLabel}
-							</Small>
-							<Small className="text-muted-foreground text-xs">
-								{dateLabel(item.received)}
-							</Small>
+							</span>
+							<span
+								className="inline-flex text-muted-foreground"
+								title={channelLabel}
+							>
+								<Icon aria-hidden="true" className="size-4" />
+								<span className="sr-only">{channelLabel}</span>
+							</span>
 							{item.suggested ? (
 								<Badge
-									variant="secondary"
-									className="rounded-full bg-primary/10 px-2 py-0 text-primary text-xs"
+									variant="outline"
+									className="border-primary/30 bg-primary/10 px-2 text-primary text-sm"
 								>
 									<Sparkles aria-hidden="true" />
 									Suggestion
@@ -71,36 +79,39 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 								item.priority === "P0" && (
 									<Badge
 										variant="outline"
-										className="rounded-full border-transparent bg-destructive/10 px-2 py-0 text-destructive text-xs"
+										className="border-transparent bg-destructive/10 px-2 text-destructive text-sm"
 									>
 										Urgent
 									</Badge>
 								)
 							)}
-							{item.due && (
-								<Small
-									className={cn(
-										"ml-auto text-xs",
-										item.priority === "P0"
-											? "text-destructive"
-											: "text-muted-foreground",
-									)}
-								>
-									Due {dateLabel(item.due, undefined, "date")}
+							<div className="ml-auto flex items-center gap-3">
+								{item.due && (
+									<Small
+										className={cn(
+											"font-normal",
+											item.priority === "P0"
+												? "text-destructive"
+												: "text-muted-foreground",
+										)}
+									>
+										Due{" "}
+										{dateLabel(item.due, undefined, "date")}
+									</Small>
+								)}
+								<Small className="font-normal text-muted-foreground group-focus-within/item:text-primary group-hover/item:text-primary">
+									{dateLabel(item.received)}
 								</Small>
-							)}
-							<div className="ml-auto">{menu}</div>
+								{menu}
+							</div>
 						</div>
-						<Link
-							to={path}
-							className="mt-1 block break-words font-medium text-base leading-snug hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-						>
-							{item.title}
-						</Link>
-						<P className="mt-1 line-clamp-2 break-words text-foreground/80 text-sm leading-relaxed">
-							{thread.summary}
-						</P>
-						<div className="mt-2 flex flex-wrap items-center gap-2">
+						<div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+							<Link
+								to={path}
+								className="break-words font-medium text-base leading-snug hover:underline focus-visible:outline-2 focus-visible:outline-ring group-focus-within/item:text-primary group-hover/item:text-primary"
+							>
+								{item.title}
+							</Link>
 							{thread.topicLinks.map((link) => {
 								const topic = state.topics.find(
 									(candidate) =>
@@ -123,6 +134,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 													<Button
 														variant="ghost"
 														size="sm"
+														className="h-7 px-2"
 														aria-label={`Confirm ${topic.short} for ${thread.subject}`}
 														onClick={() =>
 															dispatch({
@@ -141,6 +153,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 													<Button
 														variant="ghost"
 														size="sm"
+														className="h-7 px-2"
 														aria-label={`Remove ${topic.short} from ${thread.subject}`}
 														onClick={() =>
 															dispatch({
@@ -163,17 +176,59 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 								);
 							})}
 						</div>
-						{item.reasons.length > 0 && (
-							<Small className="mt-2 text-muted-foreground text-xs leading-normal">
-								{item.reasons.join(" · ")}
-							</Small>
+						{thread.summary && (
+							<P className="mt-1 line-clamp-2 break-words text-muted-foreground text-sm leading-relaxed">
+								{thread.summary}
+							</P>
 						)}
-						<div className="-ml-2 mt-1 flex flex-wrap items-center gap-0.5 text-muted-foreground [&_a[data-slot=button]]:px-2 [&_a[data-slot=button]]:text-xs [&_button]:px-2 [&_button]:text-xs">
+						{item.reasons.length > 0 && (
+							<div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+								{item.reasons.map((reason, index) => {
+									const urgency = reason.startsWith(
+										URGENCY_PREFIX,
+									)
+										? reason.slice(URGENCY_PREFIX.length)
+										: null;
+									return (
+										<span
+											key={`${index}-${reason}`}
+											className={cn(
+												"inline-flex items-center gap-1.5",
+												index === 0
+													? "text-foreground"
+													: "text-muted-foreground",
+											)}
+										>
+											{urgency !== null && (
+												<>
+													<span
+														aria-hidden="true"
+														className={cn(
+															"size-2 shrink-0 rounded-full",
+															URGENCY_TONES[
+																urgency
+															] ??
+																"bg-muted-foreground/50",
+														)}
+													/>
+													<span className="sr-only">
+														{URGENCY_PREFIX}
+													</span>
+												</>
+											)}
+											{urgency ?? reason}
+										</span>
+									);
+								})}
+							</div>
+						)}
+						<div className="-ml-2 mt-2 flex flex-wrap items-center gap-0.5 [&_[data-slot=button]:hover]:bg-foreground/5 [&_[data-slot=button]]:px-2 [&_svg]:text-muted-foreground">
 							{item.suggested ? (
 								<>
 									<Button
 										variant="outline"
 										size="sm"
+										className="mr-1 ml-2"
 										onClick={() =>
 											dispatch({
 												type: "item.update",
@@ -182,15 +237,18 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 											})
 										}
 									>
+										<Plus aria-hidden="true" />
 										Add to my list
 									</Button>
 									<Button
 										variant="ghost"
 										size="sm"
+										className="font-normal"
 										onClick={() =>
 											noResponseNeeded(dispatch, item)
 										}
 									>
+										<X aria-hidden="true" />
 										No response needed
 									</Button>
 								</>
@@ -198,6 +256,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 								<Button
 									variant="ghost"
 									size="sm"
+									className="font-normal"
 									onClick={() =>
 										dispatch({
 											type: "item.update",
@@ -209,9 +268,48 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 									<RotateCcw aria-hidden="true" />
 									Move back
 								</Button>
+							) : item.status === "snoozed" ? (
+								<>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="font-normal"
+										onClick={() =>
+											dispatch({
+												type: "item.update",
+												itemId: item.id,
+												changes: {
+													status:
+														item.snoozedFrom ??
+														"open",
+												},
+											})
+										}
+									>
+										<RotateCcw aria-hidden="true" />
+										Bring back
+									</Button>
+									{item.snoozeUntil && (
+										<Small className="px-2 font-normal text-muted-foreground">
+											Until{" "}
+											{dateLabel(
+												item.snoozeUntil,
+												(item.isSample
+													? state.profile
+													: state.liveProfile
+												)?.timezone,
+											)}
+										</Small>
+									)}
+								</>
 							) : (
 								<>
-									<Button asChild variant="ghost" size="sm">
+									<Button
+										asChild
+										variant="ghost"
+										size="sm"
+										className="font-normal"
+									>
 										<Link to={path}>
 											<Reply aria-hidden="true" />
 											{item.status === "waiting"
@@ -222,6 +320,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 									<Button
 										variant="ghost"
 										size="sm"
+										className="font-normal"
 										onClick={() =>
 											dispatch({
 												type: "item.update",
@@ -236,6 +335,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 									<Button
 										variant="ghost"
 										size="sm"
+										className="font-normal"
 										onClick={() =>
 											dispatch({
 												type: "item.update",
@@ -250,6 +350,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 									<Button
 										variant="ghost"
 										size="sm"
+										className="font-normal"
 										title="Clears this item; a new request on the thread still shows up"
 										onClick={() =>
 											noResponseNeeded(dispatch, item)
@@ -261,6 +362,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 									<Button
 										variant="ghost"
 										size="sm"
+										className="font-normal"
 										title="No more Work from this thread; it stays in Brain"
 										onClick={() =>
 											ignoreThread(dispatch, thread)
@@ -271,7 +373,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 									</Button>
 								</>
 							)}
-							<Small className="ml-auto text-muted-foreground text-xs">
+							<Small className="ml-auto font-normal text-muted-foreground">
 								{thread.messageCount}{" "}
 								{thread.messageCount === 1
 									? "message"

@@ -15,6 +15,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import { Button, cn, Small } from "@semoss/ui/next";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { topicTone } from "../topic-tone";
 import { ThreadMenu } from "./thread-menu";
 import { TopicEditor } from "./topic-editor";
 
@@ -30,13 +31,6 @@ export function CollaborationNavigation({
 	const newTopicRef = useRef<HTMLButtonElement>(null);
 	const [isCreatingTopic, setIsCreatingTopic] = useState(false);
 	const isBrain = pathname.startsWith("/brain");
-	const topicTones = [
-		"bg-chart-1",
-		"bg-chart-2",
-		"bg-chart-3",
-		"bg-chart-4",
-		"bg-chart-5",
-	];
 	const links = isBrain
 		? [
 				{
@@ -96,8 +90,8 @@ export function CollaborationNavigation({
 				},
 			];
 	return (
-		<div className="flex min-h-full flex-col gap-6 px-3 py-4">
-			<Button asChild className="min-h-11">
+		<div className="flex min-h-full flex-col gap-4 px-3 pt-4">
+			<Button asChild className="min-h-9 pointer-coarse:min-h-11">
 				<Link to="/new" onClick={onNavigate}>
 					<Plus aria-hidden="true" />
 					New session
@@ -115,10 +109,9 @@ export function CollaborationNavigation({
 						onClick={onNavigate}
 						className={({ isActive }) =>
 							cn(
-								"flex min-h-11 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-3 py-2 font-medium text-sm hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring lg:min-h-9",
-								isActive
-									? "bg-primary/10 text-foreground [&>svg]:text-primary"
-									: "text-muted-foreground",
+								"group relative flex min-h-11 pointer-coarse:min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring lg:min-h-9 [&>svg]:text-muted-foreground",
+								isActive &&
+									"bg-foreground/5 font-medium before:absolute before:inset-y-2 before:left-0 before:w-0.75 before:rounded-full before:bg-primary [&>svg]:text-primary",
 							)
 						}
 					>
@@ -127,10 +120,10 @@ export function CollaborationNavigation({
 						{count !== undefined && (
 							<span
 								className={cn(
-									"ml-auto text-muted-foreground text-xs tabular-nums",
+									"ml-auto font-normal text-muted-foreground tabular-nums group-aria-[current=page]:font-medium group-aria-[current=page]:text-primary",
 									to === "/brain" &&
 										count > 0 &&
-										"rounded-full bg-primary px-1.5 py-0.5 text-primary-foreground",
+										"rounded-full bg-primary px-1.5 text-primary-foreground text-xs group-aria-[current=page]:text-primary-foreground",
 								)}
 							>
 								{count}
@@ -139,9 +132,9 @@ export function CollaborationNavigation({
 					</NavLink>
 				))}
 			</nav>
-			<div>
-				<div className="mb-2 flex items-center justify-between pl-3">
-					<Small className="font-medium text-muted-foreground text-xs">
+			<div className="border-border border-t pt-4">
+				<div className="mb-1 flex items-center justify-between pl-3">
+					<Small className="font-medium text-muted-foreground">
 						Topics
 					</Small>
 					<Button
@@ -155,7 +148,7 @@ export function CollaborationNavigation({
 						<Plus aria-hidden="true" />
 					</Button>
 				</div>
-				<nav aria-label="Topics" className="space-y-0.5">
+				<nav aria-label="Topics">
 					{state.topics
 						.filter((topic) => topic.status !== "archived")
 						.map((topic) => (
@@ -165,28 +158,22 @@ export function CollaborationNavigation({
 								onClick={onNavigate}
 								className={({ isActive }) =>
 									cn(
-										"flex min-h-11 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring lg:min-h-9",
-										isActive && "bg-primary/10 font-medium",
+										"flex min-h-11 pointer-coarse:min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring lg:min-h-9",
+										isActive &&
+											"bg-foreground/5 font-medium",
 									)
 								}
 							>
 								<span
 									className={cn(
-										"size-2 shrink-0 rounded-full",
-										topicTones[
-											[...topic.id].reduce(
-												(value, letter) =>
-													value +
-													letter.charCodeAt(0),
-												0,
-											) % topicTones.length
-										],
+										"size-2 shrink-0 rounded-xs",
+										topicTone(topic.id),
 									)}
 									aria-hidden="true"
 								/>
 								<span className="truncate">{topic.short}</span>
 								{!isBrain && (
-									<span className="ml-auto text-muted-foreground text-xs tabular-nums">
+									<span className="ml-auto text-muted-foreground tabular-nums">
 										{selectWorkItems(state, {
 											topicId: topic.id,
 										}).total || ""}
@@ -203,7 +190,7 @@ export function CollaborationNavigation({
 			</div>
 			{state.openThreadIds.length > 0 && (
 				<div>
-					<Small className="mb-2 px-3 font-medium text-muted-foreground text-xs">
+					<Small className="mb-1 px-3 font-medium text-muted-foreground">
 						Open rooms
 					</Small>
 					<nav aria-label="Open rooms">
@@ -225,9 +212,9 @@ export function CollaborationNavigation({
 													onClick={onNavigate}
 													className={({ isActive }) =>
 														cn(
-															"min-h-9 pointer-coarse:min-h-11 min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm before:mr-2 before:inline-block before:size-1.5 before:rounded-sm before:bg-muted-foreground hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring",
+															"min-h-9 pointer-coarse:min-h-11 min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm before:mr-3 before:inline-block before:size-1.5 before:rounded-xs before:bg-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring",
 															isActive &&
-																"bg-primary/10 font-medium before:bg-primary",
+																"bg-foreground/5 font-medium before:bg-primary",
 														)
 													}
 												>
@@ -264,7 +251,7 @@ export function CollaborationNavigation({
 					</nav>
 				</div>
 			)}
-			<Small className="mt-auto px-3 text-muted-foreground text-xs leading-relaxed">
+			<Small className="-mx-3 mt-auto border-border border-t px-6 py-4 font-normal text-muted-foreground leading-relaxed">
 				Work and Brain changes are saved to your account. Email drafts
 				are saved in Outlook.
 			</Small>

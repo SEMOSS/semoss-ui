@@ -49,7 +49,7 @@ function describeCheck(check: MailCheck | null): string {
 	return check.at ? `Checked ${time(check.at)}` : "Checked";
 }
 
-/** One quiet line beside the page title; what came in opens in a popover. */
+/** A Refresh action and one quiet status line; what came in opens in a popover. */
 export function WorkRefreshStatus({ className }: { className?: string }) {
 	const updates = useWorkUpdates();
 	if (!updates) return null;
@@ -66,10 +66,28 @@ export function WorkRefreshStatus({ className }: { className?: string }) {
 	return (
 		<div
 			className={cn(
-				"flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-xs",
+				"flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-sm",
 				className,
 			)}
 		>
+			<Button
+				type="button"
+				size="sm"
+				variant="ghost"
+				className="-ml-2 pointer-coarse:min-h-11 px-2 text-foreground"
+				disabled={updates.isSyncing}
+				onClick={updates.syncMail}
+			>
+				<RefreshCw
+					aria-hidden="true"
+					className={cn("text-primary", checking && "animate-spin")}
+				/>
+				{updates.isSyncing
+					? "Checking..."
+					: error
+						? "Try again"
+						: "Refresh"}
+			</Button>
 			<output>
 				{checking
 					? "Checking mail..."
@@ -101,24 +119,6 @@ export function WorkRefreshStatus({ className }: { className?: string }) {
 					{error}
 				</span>
 			)}
-			<Button
-				type="button"
-				size="sm"
-				variant="ghost"
-				className="h-7 px-2 text-xs"
-				disabled={updates.isSyncing}
-				onClick={updates.syncMail}
-			>
-				<RefreshCw
-					aria-hidden="true"
-					className={cn("size-3.5", checking && "animate-spin")}
-				/>
-				{updates.isSyncing
-					? "Checking..."
-					: error
-						? "Try again"
-						: "Refresh"}
-			</Button>
 		</div>
 	);
 }

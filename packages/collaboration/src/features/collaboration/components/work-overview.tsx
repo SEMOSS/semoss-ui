@@ -1,5 +1,6 @@
+import { CalendarDays, Clock, Sparkles } from "lucide-react";
 import { Link } from "react-router";
-import { Button, P, Small } from "@semoss/ui/next";
+import { P, Small } from "@semoss/ui/next";
 import { dateLabel } from "../date-label";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -15,13 +16,14 @@ export function WorkOverview() {
 	const reviews = state.reviews
 		.filter((review) => review.status === "open")
 		.slice(0, 3);
-	const waiting = selectWorkItems(state, { view: "waiting" }).items.slice(
-		0,
-		4,
+	const { items: waitingItems, total: waitingTotal } = selectWorkItems(
+		state,
+		{ view: "waiting" },
 	);
+	const waiting = waitingItems.slice(0, 4);
 	return (
 		<>
-			<Section title="Coming up" variant="widget">
+			<Section title="Coming up" variant="card">
 				{coming.length ? (
 					coming.map((thread) => (
 						<div
@@ -34,27 +36,38 @@ export function WorkOverview() {
 							>
 								{thread.subject}
 							</Link>
-							<Small className="text-muted-foreground">
+							<Small className="font-normal text-muted-foreground">
 								{thread.when || dateLabel(thread.lastAt)}
 							</Small>
 							{thread.conflict && (
-								<Small className="text-warning">
+								<Small className="font-normal text-warning">
 									{thread.conflict}
 								</Small>
 							)}
 						</div>
 					))
 				) : (
-					<P className="text-muted-foreground">No loaded events.</P>
+					<P className="flex items-center gap-3 text-muted-foreground text-sm">
+						<CalendarDays
+							aria-hidden="true"
+							className="size-5 shrink-0"
+						/>
+						No loaded events.
+					</P>
 				)}
 			</Section>
 			<Section
 				title="Brain wants to check"
-				variant="widget"
+				icon={Sparkles}
+				variant="card"
+				flush={reviews.length > 0}
 				action={
-					<Button asChild variant="ghost" size="sm">
-						<Link to="/brain">All</Link>
-					</Button>
+					<Link
+						className="rounded-sm font-medium text-primary text-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+						to="/brain"
+					>
+						See all
+					</Link>
 				}
 			>
 				{reviews.length ? (
@@ -68,39 +81,51 @@ export function WorkOverview() {
 						))}
 					</div>
 				) : (
-					<P className="text-muted-foreground">All caught up.</P>
+					<P className="text-muted-foreground text-sm">
+						All caught up.
+					</P>
 				)}
 			</Section>
 			{waiting.length > 0 && (
-				<Section title="Waiting on others" variant="widget">
-					{waiting.map((item) => (
-						<div
-							key={item.id}
-							className="border-b pb-3 last:border-0"
-						>
-							<Link
-								className="text-sm hover:underline"
-								to={`/work/thread/${encodeURIComponent(item.threadId)}`}
+				<Section
+					title="Waiting on others"
+					variant="card"
+					flush
+					action={
+						<span className="text-muted-foreground text-sm tabular-nums">
+							{waitingTotal}
+						</span>
+					}
+				>
+					<ul>
+						{waiting.map((item) => (
+							<li
+								key={item.id}
+								className="flex gap-3 border-border border-b px-4 py-3 last:border-0"
 							>
-								{item.title}
-							</Link>
-							<Small className="mt-1 text-muted-foreground">
-								{state.people.find(
-									(person) => person.id === item.actorId,
-								)?.name || "Someone else"}
-							</Small>
-						</div>
-					))}
+								<Clock
+									aria-hidden="true"
+									className="mt-1 size-4 shrink-0 text-muted-foreground"
+								/>
+								<div className="min-w-0">
+									<Link
+										className="break-words text-sm hover:underline"
+										to={`/work/thread/${encodeURIComponent(item.threadId)}`}
+									>
+										{item.title}
+									</Link>
+									<Small className="font-normal text-muted-foreground">
+										{state.people.find(
+											(person) =>
+												person.id === item.actorId,
+										)?.name || "Someone else"}
+									</Small>
+								</div>
+							</li>
+						))}
+					</ul>
 				</Section>
 			)}
-			<Section title="Your connected sources" variant="widget">
-				<P className="text-muted-foreground text-sm">
-					Bring selected emails, chats, and events into Work.
-				</P>
-				<Button asChild variant="outline" className="w-full">
-					<Link to="/brain/sources">Load your sources</Link>
-				</Button>
-			</Section>
 		</>
 	);
 }

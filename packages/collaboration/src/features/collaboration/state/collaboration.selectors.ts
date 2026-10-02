@@ -11,7 +11,7 @@ import type {
 export function selectWorkItems(
 	state: CollaborationState,
 	options: {
-		view?: "needs_me" | "waiting" | "done_today" | "suggested";
+		view?: "needs_me" | "waiting" | "done_today" | "snoozed" | "suggested";
 		topicId?: string;
 		channel?: string;
 		isSample?: boolean;
@@ -46,6 +46,7 @@ export function selectWorkItems(
 			if (thread?.automated && item.status !== "done") return false;
 			if (options.view === "waiting") return item.status === "waiting";
 			if (options.view === "done_today") return item.status === "done";
+			if (options.view === "snoozed") return item.status === "snoozed";
 			if (options.view === "suggested")
 				return item.status === "open" && item.suggested === true;
 			// For you: FYI updates stay on their topic pages, not in the queue

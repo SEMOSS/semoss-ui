@@ -1,11 +1,5 @@
 import { Ellipsis } from "lucide-react";
-import {
-	type ReactElement,
-	type ReactNode,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import {
 	Button,
 	ContextMenu,
@@ -47,22 +41,6 @@ export function ThreadMenu({
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const movesFocus = useRef(false);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-	const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-	const contentRef = useRef<HTMLDivElement>(null);
-	const openedByHover = useRef(false);
-	const cancelTimer = () => clearTimeout(timer.current);
-	useEffect(() => () => clearTimeout(timer.current), []);
-	const handlePointerLeave = () => {
-		cancelTimer();
-		timer.current = setTimeout(() => {
-			if (
-				openedByHover.current &&
-				!contentRef.current?.contains(document.activeElement) &&
-				document.activeElement !== triggerRef.current
-			)
-				setIsDropdownOpen(false);
-		}, 200);
-	};
 	const groups = useThreadMenuActions({
 		thread,
 		item,
@@ -72,22 +50,18 @@ export function ThreadMenu({
 		isSourceIncluded,
 	});
 	const handleSelect = (action: ThreadMenuAction) => {
-		cancelTimer();
-		openedByHover.current = false;
 		movesFocus.current = Boolean(action.movesFocus);
 		setIsDropdownOpen(false);
 		action.onSelect();
 	};
 	const handleCloseFocus = (event: Event) => {
 		event.preventDefault();
-		if (!movesFocus.current && !openedByHover.current)
-			restoreThreadFocus(triggerRef.current);
+		if (!movesFocus.current) restoreThreadFocus(triggerRef.current);
 	};
 	const menu = (
 		<Popover
 			open={isDropdownOpen}
 			onOpenChange={(open) => {
-				cancelTimer();
 				if (open) movesFocus.current = false;
 				setIsDropdownOpen(open);
 			}}
@@ -101,26 +75,14 @@ export function ThreadMenu({
 					size="icon-sm"
 					className="pointer-coarse:size-11 shrink-0"
 					aria-label={`${sourceMessageId ? "Email" : "Thread"} actions for ${thread.subject}`}
-					onPointerDown={() => {
-						openedByHover.current = false;
-					}}
-					onKeyDown={() => {
-						openedByHover.current = false;
-					}}
 				>
 					<Ellipsis aria-hidden="true" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
-				ref={contentRef}
 				align="end"
 				className="max-h-[min(24rem,var(--radix-popover-content-available-height))] w-64 max-w-[calc(100vw-1rem)] overflow-y-auto p-2"
 				aria-label={`${sourceMessageId ? "Email" : "Thread"} actions for ${thread.subject}`}
-				onPointerEnter={cancelTimer}
-				onPointerLeave={handlePointerLeave}
-				onOpenAutoFocus={(event) => {
-					if (openedByHover.current) event.preventDefault();
-				}}
 				onCloseAutoFocus={handleCloseFocus}
 			>
 				<ThreadMenuItems
@@ -136,32 +98,20 @@ export function ThreadMenu({
 		<ContextMenu
 			onOpenChange={(open) => {
 				if (open) {
-					openedByHover.current = false;
 					movesFocus.current = false;
 					setIsDropdownOpen(false);
 				}
 			}}
 		>
+			{/* the popover opens from its button, right-click, or the keyboard menu key; never on hover */}
 			<ContextMenuTrigger
 				asChild
-				onPointerEnter={(event) => {
-					if (event.pointerType !== "mouse") return;
-					cancelTimer();
-					if (isDropdownOpen) return;
-					timer.current = setTimeout(() => {
-						openedByHover.current = true;
-						movesFocus.current = false;
-						setIsDropdownOpen(true);
-					}, 300);
-				}}
-				onPointerLeave={handlePointerLeave}
 				onKeyDown={(event) => {
 					if (
 						event.key === "ContextMenu" ||
 						(event.shiftKey && event.key === "F10")
 					) {
 						event.preventDefault();
-						openedByHover.current = false;
 						movesFocus.current = false;
 						setIsDropdownOpen(true);
 					}

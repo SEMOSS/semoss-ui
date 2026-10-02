@@ -65,7 +65,7 @@ export function TopicDetail() {
 				<>
 					<Section
 						title="In Work now"
-						variant="widget"
+						variant="card"
 						action={
 							<Link
 								className="inline-flex min-h-6 items-center text-primary text-xs hover:underline"
@@ -102,7 +102,7 @@ export function TopicDetail() {
 							</Small>
 						)}
 					</Section>
-					<Section title="People in this topic" variant="widget">
+					<Section title="People in this topic" variant="card">
 						{members.slice(0, 4).map((member) => {
 							const person = state.people.find(
 								(candidate) => candidate.id === member.personId,
@@ -138,7 +138,7 @@ export function TopicDetail() {
 							</Small>
 						)}
 					</Section>
-					<Section title="Topic context" variant="widget">
+					<Section title="Topic context" variant="card">
 						<P className="text-muted-foreground text-xs leading-5">
 							Confirmed goals and notes are available to the
 							assistant when this topic is confirmed on a thread.

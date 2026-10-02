@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
 import type { ReviewEntry } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { topicTone } from "../topic-tone";
 
 /** Resolves review intentions by record identity, independently of button copy. */
 export function ReviewCard({
@@ -28,7 +29,7 @@ export function ReviewCard({
 			: review.kind === "add_person"
 				? "Person"
 				: "Topic choice";
-	const actionClassName = compact ? "h-7 px-2 text-xs" : undefined;
+	const actionClassName = compact ? "h-7 px-2.5" : undefined;
 	const resolve = (
 		decision: "accept" | "dismiss" | "both" | "merge",
 		targetTopicId?: string,
@@ -42,9 +43,9 @@ export function ReviewCard({
 	return (
 		<article
 			className={cn(
-				"border-b",
+				"border-border border-b",
 				compact
-					? "py-2 last:border-0"
+					? "px-4 py-3 last:border-0"
 					: "flex items-start gap-3 px-4 py-4 transition-colors hover:bg-muted/30 md:gap-4 md:px-6",
 			)}
 		>
@@ -77,19 +78,19 @@ export function ReviewCard({
 				)}
 				<P
 					className={cn(
-						"break-words text-sm",
-						compact
-							? "font-medium leading-5"
-							: "font-semibold leading-6",
+						"break-words text-sm leading-6",
+						!compact && "font-semibold",
 					)}
 				>
 					{review.text}
 				</P>
-				<Small className="font-normal text-muted-foreground text-xs leading-5">
-					{review.detail}
-				</Small>
+				{review.detail && (
+					<Small className="font-normal text-muted-foreground text-xs leading-5">
+						{review.detail}
+					</Small>
+				)}
 				{review.status === "open" && (
-					<div className="-ml-2 flex flex-wrap gap-1 pt-1">
+					<div className="flex flex-wrap gap-2 pt-1">
 						{review.kind === "topic_choice" && thread ? (
 							<>
 								{thread.topicLinks.map((link) => {
@@ -101,22 +102,32 @@ export function ReviewCard({
 										topic && (
 											<Button
 												key={link.topicId}
-												variant="ghost"
+												variant="outline"
 												size="sm"
 												className={actionClassName}
 												onClick={() =>
 													resolve("accept", topic.id)
 												}
 											>
+												<span
+													aria-hidden="true"
+													className={cn(
+														"size-2 shrink-0 rounded-xs",
+														topicTone(topic.id),
+													)}
+												/>
 												{topic.short}
 											</Button>
 										)
 									);
 								})}
 								<Button
-									variant="ghost"
+									variant="outline"
 									size="sm"
-									className={actionClassName}
+									className={cn(
+										actionClassName,
+										"font-normal",
+									)}
 									onClick={() => resolve("both")}
 								>
 									Both
@@ -125,7 +136,7 @@ export function ReviewCard({
 						) : review.kind === "unassigned" ? (
 							<Button
 								asChild
-								variant="ghost"
+								variant="outline"
 								size="sm"
 								className={actionClassName}
 							>
@@ -141,7 +152,7 @@ export function ReviewCard({
 							</Button>
 						) : (
 							<Button
-								variant="ghost"
+								variant="outline"
 								size="sm"
 								className={actionClassName}
 								onClick={() => resolve("accept")}
@@ -153,9 +164,9 @@ export function ReviewCard({
 						)}
 						{review.candidate?.mergeCandidate && (
 							<Button
-								variant="ghost"
+								variant="outline"
 								size="sm"
-								className={actionClassName}
+								className={cn(actionClassName, "font-normal")}
 								aria-label="Merge into existing topic"
 								onClick={() =>
 									resolve(
@@ -173,7 +184,10 @@ export function ReviewCard({
 						<Button
 							variant="ghost"
 							size="sm"
-							className={actionClassName}
+							className={cn(
+								actionClassName,
+								"font-normal text-muted-foreground",
+							)}
 							onClick={() => resolve("dismiss")}
 						>
 							Dismiss

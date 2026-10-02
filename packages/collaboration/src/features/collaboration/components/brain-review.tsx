@@ -44,7 +44,7 @@ export function BrainReview() {
 			aside={
 				<>
 					<BrainOverview />
-					<Section title="Session history" variant="widget">
+					<Section title="Session history" variant="card">
 						<P className="text-muted-foreground text-xs leading-5">
 							Undo reverses the latest local change. It never
 							deletes saved conversations or Outlook drafts.

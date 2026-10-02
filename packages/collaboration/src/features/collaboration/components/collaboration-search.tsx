@@ -17,6 +17,11 @@ import {
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 
+// the shortcut listens for both keys; the hint names the one this keyboard has
+const isMac =
+	typeof navigator !== "undefined" &&
+	/Mac|iPhone|iPad/.test(navigator.userAgent);
+
 /** Searches loaded records without issuing mailbox queries on each keystroke. */
 export function CollaborationSearch() {
 	const { state } = useCollaborationSession();
@@ -61,16 +66,15 @@ export function CollaborationSearch() {
 			<DialogTrigger asChild>
 				<Button
 					variant="outline"
-					size="sm"
-					className="min-w-8 justify-start rounded-lg bg-sidebar text-muted-foreground sm:min-w-0 sm:max-w-120 sm:flex-1"
+					className="ml-auto min-w-8 justify-start rounded-lg bg-muted/50 font-normal text-muted-foreground sm:min-w-0 sm:max-w-150 sm:flex-1"
 					aria-label="Search threads, people and topics"
 				>
 					<Search aria-hidden="true" />
 					<span className="hidden truncate sm:inline">
-						Search threads, people, topics…
+						Search threads, people, topics
 					</span>
-					<Kbd className="ml-auto hidden border border-border bg-transparent text-muted-foreground md:inline-flex">
-						⌘ K
+					<Kbd className="ml-auto hidden border border-border bg-background text-muted-foreground md:inline-flex">
+						{isMac ? "⌘ K" : "Ctrl K"}
 					</Kbd>
 				</Button>
 			</DialogTrigger>

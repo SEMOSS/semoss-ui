@@ -59,7 +59,7 @@ export function PersonDetail() {
 			asideTitle="Person context"
 			aside={
 				<>
-					<Section title="How you work together" variant="widget">
+					<Section title="How you work together" variant="card">
 						<div className="grid grid-cols-2 gap-2">
 							{[
 								["Threads", threads.length],
@@ -84,7 +84,7 @@ export function PersonDetail() {
 					</Section>
 					<Section
 						title={`Open with ${person.name.split(" ")[0]}`}
-						variant="widget"
+						variant="card"
 					>
 						{openItems.map((item) => (
 							<div

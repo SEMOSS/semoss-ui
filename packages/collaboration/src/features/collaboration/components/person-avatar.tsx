@@ -5,19 +5,21 @@ export function PersonAvatar({
 	name,
 	initials,
 	className,
+	tone,
 }: {
 	name: string;
 	initials?: string;
 	className?: string;
+	/** Replaces the color picked from the name. */
+	tone?: string;
 }) {
 	const tones = [
-		"bg-chart-1/10",
-		"bg-chart-2/10",
-		"bg-chart-3/10",
-		"bg-chart-4/10",
-		"bg-chart-5/10",
+		"bg-chart-1/10 text-chart-1",
+		"bg-chart-2/10 text-chart-2",
+		"bg-chart-3/10 text-chart-3",
+		"bg-primary/10 text-primary",
 	];
-	const tone =
+	const nameTone =
 		tones[
 			[...name].reduce(
 				(value, letter) => value + letter.charCodeAt(0),
@@ -30,7 +32,11 @@ export function PersonAvatar({
 			aria-hidden="true"
 		>
 			<AvatarFallback
-				className={cn("font-medium text-foreground text-xs", tone)}
+				// some chart colors are too deep to read as text on the dark theme
+				className={cn(
+					"font-medium text-xs dark:text-foreground",
+					tone ?? nameTone,
+				)}
 			>
 				{initials ||
 					name
