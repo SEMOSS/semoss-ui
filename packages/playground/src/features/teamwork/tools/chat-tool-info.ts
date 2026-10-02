@@ -1,3 +1,4 @@
+import { isRecord } from "@semoss/utility/object";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
 
 /** One argument a tool takes, as its input schema describes it. */
@@ -21,9 +22,6 @@ export interface ChatToolInfo {
 	execution: "auto" | "ask";
 	parameters: ChatToolParameter[];
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
  * The arguments an input schema lists, required ones first.

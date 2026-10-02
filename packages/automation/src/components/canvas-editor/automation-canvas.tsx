@@ -10,6 +10,7 @@ import {
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
+import { encodeBase64Text as encodeBase64 } from "@semoss/utility/encoding";
 import "@xyflow/react/dist/style.css";
 import {
 	CheckCircle,
@@ -358,13 +359,6 @@ function ensureTriggerNode(nodes: AutomationNode[]): AutomationNode[] {
 	return withTrigger.map((node) =>
 		node.position ? node : { ...node, position: { x: 0, y: 0 } },
 	);
-}
-
-function encodeBase64(value: string): string {
-	const bytes = new TextEncoder().encode(value);
-	let binary = "";
-	for (const byte of bytes) binary += String.fromCharCode(byte);
-	return btoa(binary);
 }
 
 function createsCycle(

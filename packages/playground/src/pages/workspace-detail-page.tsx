@@ -31,6 +31,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { WorkspaceChatList } from "@/components/workspace/workspace-chat-list";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
@@ -86,7 +87,7 @@ export const WorkspaceDetailPage = observer(() => {
 		onError: (_d, e) => {
 			toast.error(
 				t("workspace:detail.failedToLoad", {
-					error: e instanceof Error ? e.message : "Unknown error",
+					error: getErrorMessage(e, "Unknown error"),
 				}),
 			);
 		},

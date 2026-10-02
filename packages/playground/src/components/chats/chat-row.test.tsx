@@ -26,7 +26,7 @@ vi.mock("@/hooks", () => ({
 	}),
 }));
 
-vi.mock("@/utility", () => ({
+vi.mock("@semoss/utility/date", () => ({
 	normalizeTimestamp: () => ({
 		isValid: () => true,
 		fromNow: () => "2 hours ago",

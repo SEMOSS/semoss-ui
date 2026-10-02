@@ -1,17 +1,16 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn, ScrollArea } from "@semoss/ui/next";
-import { layoutCalendarEvents } from "../core/calendar-event-layout";
 import {
 	addLocalDays,
-	formatDayHeading,
-	formatTimeOfDay,
-	isSameLocalDay,
-} from "../core/connector.format";
-import {
-	type CalendarEventSchedule,
-	type ConnectorCalendarDay,
 	calendarDayKey,
+	isSameLocalDay,
+} from "@semoss/utility/date";
+import { layoutCalendarEvents } from "../core/calendar-event-layout";
+import { formatDayHeading, formatTimeOfDay } from "../core/connector.format";
+import type {
+	CalendarEventSchedule,
+	ConnectorCalendarDay,
 } from "../core/connector-calendar";
 import type { CalendarWindow } from "../core/use-calendar-window";
 

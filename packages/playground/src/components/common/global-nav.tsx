@@ -59,12 +59,12 @@ import {
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
+import { normalizeTimestamp } from "@semoss/utility/date";
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
 import { NavigationRail } from "@/features/navigation/navigation-rail";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
-import { normalizeTimestamp } from "@/utility";
 import { getDateBucket } from "@/utility/date";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";

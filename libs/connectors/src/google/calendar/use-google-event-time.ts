@@ -1,11 +1,7 @@
 import { useCallback } from "react";
 import { useTranslation } from "@semoss/i18n";
-import {
-	formatShortDay,
-	formatTimeOfDay,
-	isSameLocalDay,
-	parseWallClock,
-} from "../../core/connector.format";
+import { isSameLocalDay, parseWallClock } from "@semoss/utility/date";
+import { formatShortDay, formatTimeOfDay } from "../../core/connector.format";
 import type { GoogleCalendarEvent } from "../google.types";
 
 /** An event's start and end, as `GoogleCalendarReadEvent` reports them. */

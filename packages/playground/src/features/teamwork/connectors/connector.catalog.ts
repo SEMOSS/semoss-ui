@@ -1,3 +1,4 @@
+import { isRecord } from "@semoss/utility/object";
 /** An account system the connectors sign in to. */
 export type ConnectorProviderId = "MICROSOFT" | "GOOGLE";
 
@@ -321,9 +322,6 @@ export const sanitizeConnectorServices = (
 
 /** One tool in an MCP definition file. */
 export type McpTool = Record<string, unknown>;
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
 
 const getToolMeta = (tool: McpTool): Record<string, unknown> | null =>
 	isRecord(tool._meta) ? tool._meta : null;

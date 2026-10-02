@@ -1,3 +1,4 @@
+import { isSameLocalDay } from "@semoss/utility/date";
 import { getLinkText } from "./connector-rich-text";
 
 const SIZE_UNITS = ["B", "KB", "MB", "GB", "TB"] as const;
@@ -73,18 +74,6 @@ export const parseGraphDay = (value: string | undefined): Date | null => {
 	}
 	return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 };
-
-/**
- * Whether two dates fall on the same local day.
- *
- * @param a - A date.
- * @param b - Another date.
- * @return True when the year, month, and day match.
- */
-export const isSameLocalDay = (a: Date, b: Date): boolean =>
-	a.getFullYear() === b.getFullYear() &&
-	a.getMonth() === b.getMonth() &&
-	a.getDate() === b.getDate();
 
 /**
  * A short date for a list: the time for today, the day and month for this
@@ -172,63 +161,6 @@ export const formatDayHeading = (date: Date, locale?: string): string =>
 export const formatShortDay = (date: Date, locale?: string): string =>
 	date.toLocaleDateString(locale, { month: "short", day: "numeric" });
 
-/**
- * Local midnight of a date's day.
- *
- * @param date - Any time on the day.
- * @return A new date at the start of that day.
- */
-export const startOfLocalDay = (date: Date): Date =>
-	new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-/**
- * A date some whole days away, keeping local midnight across clock changes.
- *
- * @param date - The starting day.
- * @param days - How many days to move; negative moves back.
- * @return A new date.
- */
-export const addLocalDays = (date: Date, days: number): Date =>
-	new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
-
-/**
- * A local wall clock time as `YYYY-MM-DDTHH:mm:ss`, the form the Google
- * Calendar reactors read in the user's zone.
- *
- * @param date - The time.
- * @return The formatted time, without a zone.
- */
-export const toWallClockString = (date: Date): string => {
-	const pad = (value: number) => String(value).padStart(2, "0");
-	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-};
-
-/**
- * Read a wall clock time without a zone, `YYYY-MM-DDTHH:mm[:ss]`, or a day,
- * `YYYY-MM-DD`, as local time.
- *
- * @param value - The time or day.
- * @return The local time, or null when the value is neither.
- */
-export const parseWallClock = (value: string | undefined): Date | null => {
-	const match = value
-		? /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(
-				value,
-			)
-		: null;
-	if (!match) {
-		return null;
-	}
-	return new Date(
-		Number(match[1]),
-		Number(match[2]) - 1,
-		Number(match[3]),
-		Number(match[4] ?? 0),
-		Number(match[5] ?? 0),
-		Number(match[6] ?? 0),
-	);
-};
-
 /** Tags that end a line of text, so the lines survive reading the text out. */
 const LINE_ENDING_TAGS = /<(?:br|\/p|\/div|\/li|\/tr|\/h[1-6])\b[^>]*>/gi;
 
@@ -285,3 +217,11 @@ export const toPlainText = (content: string): string => {
 		.replace(/\n{3,}/g, "\n\n")
 		.trim();
 };
+
+export {
+	addLocalDays,
+	isSameLocalDay,
+	parseWallClock,
+	startOfLocalDay,
+	toWallClockString,
+} from "@semoss/utility/date";

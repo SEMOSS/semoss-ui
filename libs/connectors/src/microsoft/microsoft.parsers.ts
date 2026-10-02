@@ -1,3 +1,5 @@
+import { isRecord } from "@semoss/utility/object";
+import { readNonEmptyString as readString } from "@semoss/utility/text";
 import { parseGraphDate } from "../core/connector.format";
 import type {
 	CalendarAttendee,
@@ -21,12 +23,6 @@ import type {
  */
 
 type RawRecord = Record<string, unknown>;
-
-const isRecord = (value: unknown): value is RawRecord =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
-
-const readString = (value: unknown): string | undefined =>
-	typeof value === "string" && value.trim() !== "" ? value : undefined;
 
 const readNumber = (value: unknown): number | undefined =>
 	typeof value === "number" && Number.isFinite(value) ? value : undefined;

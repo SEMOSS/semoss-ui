@@ -93,6 +93,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../utility
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.8)
@@ -158,6 +161,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../utility
       '@semoss/workbench':
         specifier: workspace:*
         version: link:../workbench
@@ -628,6 +634,9 @@ importers:
       '@types/node':
         specifier: ^24.3.1
         version: 24.12.2
+      jsdom:
+        specifier: ~22.1.0
+        version: 22.1.0
       typescript:
         specifier: ~6.0.0
         version: 6.0.3
@@ -817,6 +826,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../../libs/utility
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.8)
@@ -875,6 +887,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../../libs/utility
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -5477,7 +5492,7 @@ packages:
   git-raw-commits@4.0.0:
     resolution: {integrity: sha512-ICsMM1Wk8xSGMowkOmPrzo2Fgmfo4bMHLNX6ytHjajRJUqvHOw/TFapQ+QG75c3X/tTDDhOSRPGC52dDbNM8FQ==}
     engines: {node: '>=16'}
-    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
+    deprecated: Deprecated and no longer maintained. Use @conventional-changelog/git-client instead.
     hasBin: true
 
   glob-parent@5.1.2:
@@ -11658,7 +11673,7 @@ snapshots:
       obug: 2.1.2
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -11712,7 +11727,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
 
   '@vitest/utils@4.1.11':
     dependencies:

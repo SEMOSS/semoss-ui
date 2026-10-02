@@ -22,13 +22,15 @@ import {
 import { countInlineImages, hasInlineImage } from "@semoss/utility/image";
 import { isTabularArray, parseStructuredOutput } from "@semoss/utility/json";
 import {
-	countLines,
-	formatBytes,
 	looksLikeHtmlDocument,
 	looksLikeMarkdown,
 	normalizeForMarkdown,
-	splitMessageLines,
 } from "@semoss/utility/markdown";
+import {
+	countLines,
+	formatBytes,
+	splitMessageLines,
+} from "@semoss/utility/text";
 import { SandpackHtmlPreview } from "../html";
 import { InlineImageSegments } from "./inline-image";
 import { JsonViewer } from "./json-viewer";

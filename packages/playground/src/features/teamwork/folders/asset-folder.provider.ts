@@ -1,8 +1,5 @@
-import {
-	decodeBase64Asset,
-	encodeBase64Asset,
-	type FileExplorerAdapter,
-} from "@semoss/shared";
+import { decodeBase64Asset, type FileExplorerAdapter } from "@semoss/shared";
+import { encodeBase64 as encodeBase64Asset } from "@semoss/utility/encoding";
 import type { FolderEntry, WorkFolderProvider } from "../teamwork.types";
 import {
 	getFolderPathName,

@@ -33,12 +33,9 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
+import { normalizeTimestamp } from "@semoss/utility/date";
 import { useChat } from "@/hooks";
-import {
-	DATE_BUCKET_ORDER,
-	getDateBucket,
-	normalizeTimestamp,
-} from "@/utility";
+import { DATE_BUCKET_ORDER, getDateBucket } from "@/utility";
 
 interface WorkspaceChatListProps {
 	/**

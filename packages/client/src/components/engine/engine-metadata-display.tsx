@@ -14,6 +14,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
+import { readNonEmptyString } from "@semoss/utility/text";
 import type { BuiltinToolSelection } from "@/api/engines";
 import {
 	getOptionLabels,
@@ -436,7 +438,7 @@ export interface ReasoningConfig {
 
 /** The stored config, or null when the column is empty. */
 export const toReasoningConfig = (value: unknown): ReasoningConfig | null => {
-	if (!value || typeof value !== "object" || Array.isArray(value)) {
+	if (!isRecord(value)) {
 		return null;
 	}
 
@@ -598,18 +600,13 @@ const normalizeBenchmarks = (value: unknown): ModelBenchmark[] => {
 		return [];
 	}
 
-	const optionalText = (raw: unknown) => {
-		const text = typeof raw === "string" ? raw.trim() : "";
-		return text !== "" ? text : undefined;
-	};
-
 	return value.flatMap((entry) => {
 		if (!entry || typeof entry !== "object") {
 			return [];
 		}
 
 		const record = entry as Record<string, unknown>;
-		const name = optionalText(record.name);
+		const name = readNonEmptyString(record.name)?.trim();
 		const score = Number(record.score);
 
 		if (!name || !Number.isFinite(score)) {
@@ -620,11 +617,11 @@ const normalizeBenchmarks = (value: unknown): ModelBenchmark[] => {
 			{
 				name,
 				score,
-				metric: optionalText(record.metric),
-				harness: optionalText(record.harness),
-				variant: optionalText(record.variant),
-				version: optionalText(record.version),
-				dataset: optionalText(record.dataset),
+				metric: readNonEmptyString(record.metric)?.trim(),
+				harness: readNonEmptyString(record.harness)?.trim(),
+				variant: readNonEmptyString(record.variant)?.trim(),
+				version: readNonEmptyString(record.version)?.trim(),
+				dataset: readNonEmptyString(record.dataset)?.trim(),
 			},
 		];
 	});
@@ -656,18 +653,15 @@ export const normalizePricing = (value: unknown): ModelPricing[] => {
 		return undefined;
 	};
 
-	const optionalText = (raw: unknown) => {
-		const text = typeof raw === "string" ? raw.trim() : "";
-		return text !== "" ? text : undefined;
-	};
-
 	return value.flatMap((entry) => {
-		if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+		if (!isRecord(entry)) {
 			return [];
 		}
 
 		const record = entry as Record<string, unknown>;
-		const servingProvider = optionalText(record.servingProvider);
+		const servingProvider = readNonEmptyString(
+			record.servingProvider,
+		)?.trim();
 		const input = optionalRate(record.input);
 		const output = optionalRate(record.output);
 		const cacheRead = optionalRate(record.cache_read);
@@ -686,7 +680,7 @@ export const normalizePricing = (value: unknown): ModelPricing[] => {
 		return [
 			{
 				servingProvider,
-				modelId: optionalText(record.modelId),
+				modelId: readNonEmptyString(record.modelId)?.trim(),
 				input,
 				output,
 				cache_read: cacheRead,

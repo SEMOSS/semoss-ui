@@ -1,7 +1,7 @@
 import { action, computed, makeObservable, observable } from "mobx";
+import { normalizeTimestamp } from "@semoss/utility/date";
 import type { RoomStore } from "@/stores";
 import type { AbstractPixelMessage, PixelMessage } from "@/types";
-import { normalizeTimestamp } from "@/utility";
 
 /**
  * Abstract Message Store

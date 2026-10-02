@@ -13,9 +13,11 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { formatDateToLocal } from "@semoss/utility";
+import { formatDateToLocal } from "@semoss/utility/date";
+import { getErrorMessage } from "@semoss/utility/error";
+import { metakeyToLabel } from "@semoss/utility/text";
 import { MarkdownEditor, NoDetailsEmptyState } from "@/components/common";
-import { metakeyToLabel, normalizeTagArray } from "@/utility";
+import { normalizeTagArray } from "@/utility";
 import { CatalogTagInput } from "./catalog-tag-input";
 import { CatalogTags } from "./catalog-tags";
 
@@ -319,11 +321,7 @@ export const CatalogOverview = ({
 			setIsEditMode(false);
 			toast.success("Successfully updated details");
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Error updating details",
-			);
+			toast.error(getErrorMessage(error, "Error updating details"));
 		} finally {
 			setIsLoading(false);
 		}

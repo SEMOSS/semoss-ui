@@ -18,8 +18,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { normalizeTimestamp } from "@semoss/utility/date";
 import { useChat } from "@/hooks";
-import { normalizeTimestamp } from "@/utility";
 
 export interface RoomItem {
 	ROOM_ID: string;

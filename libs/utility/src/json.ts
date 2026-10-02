@@ -1,3 +1,4 @@
+import { isRecord } from "./object";
 /** Parse object-like output, accepting the single-quote form from legacy output. */
 export const isOutputJSON = (output: unknown): unknown | null => {
 	if (typeof output === "object" && output !== null) {
@@ -46,41 +47,6 @@ export const parseStructuredOutput = (raw: string): unknown | null => {
 	}
 };
 
-/** Deep-copy plain values while preserving Date instances. */
-export const copy = <T>(
-	instance: T,
-	intercept: (value: unknown) => unknown = (value) => value,
-): T => {
-	const intercepted = intercept(instance) as T;
-
-	if (!intercepted) {
-		return intercepted;
-	}
-
-	if (intercepted instanceof Date) {
-		return new Date(intercepted.getTime()) as unknown as T;
-	}
-
-	if (Array.isArray(intercepted)) {
-		return intercepted.map((value) =>
-			copy(value, intercept),
-		) as unknown as T;
-	}
-
-	if (intercepted instanceof Object) {
-		const copied: Record<string, unknown> = {};
-		for (const key in intercepted) {
-			copied[key] = copy(
-				(intercepted as Record<string, unknown>)[key],
-				intercept,
-			);
-		}
-		return copied as T;
-	}
-
-	return intercepted;
-};
-
 /** True for a non-empty array of flat objects suitable for table rendering. */
 export const isTabularArray = (
 	value: unknown,
@@ -88,15 +54,42 @@ export const isTabularArray = (
 	if (!Array.isArray(value) || value.length === 0) return false;
 	const first = value[0];
 	return (
-		typeof first === "object" &&
-		first !== null &&
-		!Array.isArray(first) &&
+		isRecord(first) &&
 		Object.keys(first).length > 0 &&
-		value.every(
-			(item) =>
-				typeof item === "object" &&
-				item !== null &&
-				!Array.isArray(item),
-		)
+		value.every(isRecord)
 	);
+};
+
+export { copy } from "./object";
+
+/**
+ * JSON.parse error messages vary by engine. Try to extract line/col so the user
+ * can find the bad character without counting bytes by hand.
+ */
+export const locateJsonError = (
+	message: string,
+	text: string,
+): { line: number; col: number } | null => {
+	const lineColMatch = message.match(/line (\d+) column (\d+)/i);
+	if (lineColMatch) {
+		return { line: Number(lineColMatch[1]), col: Number(lineColMatch[2]) };
+	}
+
+	const posMatch = message.match(/position (\d+)/i);
+	if (posMatch) {
+		const pos = Math.min(Number(posMatch[1]), text.length);
+		let line = 1;
+		let col = 1;
+		for (let i = 0; i < pos; i++) {
+			if (text[i] === "\n") {
+				line++;
+				col = 1;
+			} else {
+				col++;
+			}
+		}
+		return { line, col };
+	}
+
+	return null;
 };

@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 
-export { normalizeTimestamp } from "@semoss/utility";
+export { normalizeTimestamp } from "@semoss/utility/date";
 
 /**
  * Parse a Semoss timestamp into a dayjs instance, normalizing to UTC.

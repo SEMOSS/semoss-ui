@@ -19,16 +19,15 @@ import {
 } from "@semoss/ui/next";
 import {
 	addLocalDays,
-	formatDayHeading,
-	formatShortDay,
-	isSameLocalDay,
-} from "../core/connector.format";
-import type { ConnectorAccount } from "../core/connector.types";
-import {
-	type ConnectorCalendarDay as CalendarDay,
-	type CalendarEventSchedule,
-	type CalendarView,
 	calendarDayKey,
+	isSameLocalDay,
+} from "@semoss/utility/date";
+import { formatDayHeading, formatShortDay } from "../core/connector.format";
+import type { ConnectorAccount } from "../core/connector.types";
+import type {
+	ConnectorCalendarDay as CalendarDay,
+	CalendarEventSchedule,
+	CalendarView,
 } from "../core/connector-calendar";
 import type { CalendarWindow } from "../core/use-calendar-window";
 import type { ConnectorQuery } from "../core/use-connector-query";

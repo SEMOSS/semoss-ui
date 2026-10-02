@@ -39,6 +39,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
 
 type DocumentLibraryEngine = {
@@ -180,7 +181,7 @@ export const DocumentLibrary = () => {
 				if (cancelled) {
 					return;
 				}
-				setAssetsError(e instanceof Error ? e.message : String(e));
+				setAssetsError(getErrorMessage(e));
 			})
 			.finally(() => {
 				if (cancelled) {

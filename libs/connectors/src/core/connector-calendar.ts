@@ -1,14 +1,14 @@
-import { addLocalDays, startOfLocalDay } from "./connector.format";
+import {
+	addLocalDays,
+	calendarDayKey,
+	startOfLocalDay,
+} from "@semoss/utility/date";
 
 /** One calendar day and the events shown under it. */
 export interface ConnectorCalendarDay<T> {
 	day: Date;
 	events: T[];
 }
-
-/** A stable local date key; UTC conversion would move all-day events. */
-export const calendarDayKey = (date: Date): string =>
-	`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 /** Six complete Sunday-first weeks, including the visible adjacent-month days. */
 export const calendarMonthRange = (month: Date): { start: Date; end: Date } => {
@@ -93,3 +93,5 @@ export interface CalendarEventSchedule {
 	end: Date | null;
 	isAllDay: boolean;
 }
+
+export { calendarDayKey } from "@semoss/utility/date";

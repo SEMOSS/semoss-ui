@@ -20,8 +20,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { normalizeTimestamp } from "@semoss/utility/date";
 import type { Workspace } from "@/types";
-import { normalizeTimestamp } from "@/utility";
 
 interface WorkspaceCardProps {
 	workspace: Pick<Workspace, "workspace_id" | "name" | "description">;

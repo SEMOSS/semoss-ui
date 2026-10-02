@@ -19,6 +19,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
@@ -56,7 +57,7 @@ export const EditWorkspacePage = observer(() => {
 			onError: (_d, e) => {
 				toast.error(
 					t("workspace:edit.failedToLoad", {
-						error: e instanceof Error ? e.message : "Unknown error",
+						error: getErrorMessage(e, "Unknown error"),
 					}),
 				);
 			},

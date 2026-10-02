@@ -1,7 +1,8 @@
 import { ChevronDown, ChevronRight, ClipboardCopy } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
-import { looksLikeMarkdown, splitMessageLines } from "@semoss/utility/markdown";
+import { looksLikeMarkdown } from "@semoss/utility/markdown";
+import { splitMessageLines } from "@semoss/utility/text";
 import { extractDataset } from "../../domain/automation-utils";
 
 export interface OutputPreviewProps {

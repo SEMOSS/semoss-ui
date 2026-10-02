@@ -10,12 +10,12 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { IMAGE_MIME_TYPES } from "@semoss/utility/image";
+import { stripAnsi } from "@semoss/utility/text";
 import type { JupyterOutput } from "./notebook.types";
 import {
 	getMimeString,
 	getOutputCopyText,
 	normalizeSource,
-	stripAnsi,
 } from "./notebook.utility";
 
 interface NotebookCellOutputProps {

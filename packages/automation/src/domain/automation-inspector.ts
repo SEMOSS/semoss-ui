@@ -1,3 +1,4 @@
+import { isRecord } from "@semoss/utility/object";
 import type {
 	AutomationNode,
 	AutomationNodeTrace,
@@ -41,10 +42,6 @@ export function getAutomationScopeExpression(
 
 const MAX_DISCOVERED_SCOPE_FIELDS = 60;
 const MAX_DISCOVERED_SCOPE_DEPTH = 4;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function scopeValueType(value: unknown): string {
 	if (value === null) return "null";

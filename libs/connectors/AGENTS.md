@@ -17,7 +17,9 @@ provides: `OneDriveViewer`, `OutlookMailViewer`, `OutlookCalendarViewer`, `Teams
 dialog.
 
 It sits above `@semoss/shared`: it depends on `@semoss/i18n`, `@semoss/sdk`, `@semoss/shared`,
-and `@semoss/ui`, and nothing in those libraries depends on it.
+`@semoss/ui`, and `@semoss/utility`, and nothing in those libraries depends on it.
+Generic date, text, and object helpers come from utility category subpaths;
+provider parsing, calendar view rules, and presentation remain here.
 
 ## Structure
 

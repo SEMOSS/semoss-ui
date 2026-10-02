@@ -11,6 +11,7 @@ import { observer } from "mobx-react-lite";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Badge, Button, Small, toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { ToolInspector } from "@/features/tool-inspector/tool-inspector";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { ToolStore } from "@/stores/tool/tool.store";
@@ -130,7 +131,7 @@ export const TeamworkToolCard = observer(
 			} catch (error) {
 				toast.error(
 					t("card.decisionError", {
-						message: error instanceof Error ? error.message : "",
+						message: getErrorMessage(error, ""),
 					}),
 				);
 			} finally {

@@ -11,6 +11,7 @@ import {
 } from "@xyflow/react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { getErrorMessage } from "@semoss/utility/error";
 import "@xyflow/react/dist/style.css";
 import {
 	Bot,
@@ -1072,10 +1073,7 @@ export const AgentRunGraph = ({
 					[runId]: {
 						status: "error",
 						judgeModelId,
-						message:
-							error instanceof Error
-								? error.message
-								: String(error),
+						message: getErrorMessage(error),
 					},
 				}));
 			}

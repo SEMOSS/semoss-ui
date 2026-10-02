@@ -12,6 +12,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { formatToDataTestId } from "@semoss/utility/text";
 import {
 	setEngineGlobal,
 	setEngineVisiblity,
@@ -22,7 +23,6 @@ import {
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useSession, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
-import { formatToDataTestId } from "@/utility";
 
 interface SettingsTilesProps {
 	/**

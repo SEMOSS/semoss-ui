@@ -50,7 +50,9 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { getFileExtension, getImageMimeType } from "@semoss/utility";
+import { decodeBase64 } from "@semoss/utility/encoding";
+import { getFileExtension } from "@semoss/utility/file";
+import { getImageMimeType } from "@semoss/utility/image";
 import { EmbedDocumentsOverlay } from "@/components/knowledge/embed-documents-overlay";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
 
@@ -240,10 +242,7 @@ export const KnowledgeDetailPage = observer(() => {
 									getFileExtension(previewDoc.fileName),
 								)
 							: "application/pdf";
-						const raw = atob(b64);
-						const arr = new Uint8Array(raw.length);
-						for (let i = 0; i < raw.length; i++)
-							arr[i] = raw.charCodeAt(i);
+						const arr = decodeBase64(b64);
 						const blob = new Blob([arr], { type: mimeType });
 						const blobUrl = URL.createObjectURL(blob);
 						createdBlobUrl = blobUrl;

@@ -5,7 +5,10 @@
  * into `@semoss/shared`.
  */
 
+import { getErrorMessage } from "@semoss/utility/error";
 import { IMAGE_MIME_TYPES, splitInlineImages } from "@semoss/utility/image";
+import { isRecord } from "@semoss/utility/object";
+import { stripAnsi } from "@semoss/utility/text";
 import type {
 	JupyterCell,
 	JupyterCellType,
@@ -13,9 +16,6 @@ import type {
 	JupyterNotebook,
 	JupyterOutput,
 } from "./notebook.types";
-
-// Built from a char code to avoid a control character in a regex literal.
-const ANSI_ESCAPE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
 
 /** Read a MIME entry from an output data bundle as a single string. */
 export const getMimeString = (
@@ -29,10 +29,6 @@ export const getMimeString = (
 	}
 	return null;
 };
-
-/** Strip ANSI SGR escape sequences so colored logs/tracebacks render as plain text. */
-export const stripAnsi = (value: string): string =>
-	value.replace(ANSI_ESCAPE, "");
 
 /**
  * The plain-text representation of an output for the clipboard, or null when
@@ -76,9 +72,7 @@ export const normalizeSource = (source: string | string[]): string =>
 
 /** Narrow an unknown parsed value to a plain object, or `{}` when it is not one. */
 const asRecord = (value: unknown): Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value)
-		? (value as Record<string, unknown>)
-		: {};
+	isRecord(value) ? (value as Record<string, unknown>) : {};
 
 /** Narrow an unknown parsed value to an nbformat `source` (string or lines), else `""`. */
 const asSource = (value: unknown): string | string[] =>
@@ -147,9 +141,7 @@ export const validateNotebook = (raw: string): JupyterNotebook => {
 	try {
 		parsed = JSON.parse(raw);
 	} catch (e) {
-		throw new Error(
-			e instanceof Error ? e.message : "Unable to parse .ipynb",
-		);
+		throw new Error(getErrorMessage(e, "Unable to parse .ipynb"));
 	}
 
 	const record = asRecord(parsed);
@@ -376,3 +368,5 @@ export const exportAsPythonScript = (notebook: JupyterNotebook): string => {
 	}
 	return parts.join("\n");
 };
+
+export { stripAnsi } from "@semoss/utility/text";

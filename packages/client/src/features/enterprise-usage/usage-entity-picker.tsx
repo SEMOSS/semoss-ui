@@ -19,6 +19,7 @@ import {
 	useDebouncedValue,
 	useFormContext,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { parseUsageFilterOptions } from "@/api/enterprise-usage";
 import { usageFilterOptionsPixel } from "@/api/enterprise-usage-requests";
 import type {
@@ -52,8 +53,7 @@ export function UsageEntityPicker({ dimension }: UsageEntityPickerProps) {
 		usageFilterOptionsPixel(dimension, search, page);
 		if (isOpen) pixel = usageFilterOptionsPixel(dimension, debounced, page);
 	} catch (error) {
-		validationError =
-			error instanceof Error ? error.message : "Invalid Search";
+		validationError = getErrorMessage(error, "Invalid Search");
 	}
 	const choices = usePixel<unknown>(pixel);
 	let selectedPixel = "";
@@ -72,10 +72,7 @@ export function UsageEntityPicker({ dimension }: UsageEntityPickerProps) {
 		if (choices.status === "SUCCESS")
 			options = parseUsageFilterOptions(choices.data);
 	} catch (failure) {
-		error =
-			failure instanceof Error
-				? failure.message
-				: "Unable To Load Options";
+		error = getErrorMessage(failure, "Unable To Load Options");
 	}
 	try {
 		if (selected.status === "SUCCESS") {
@@ -86,10 +83,7 @@ export function UsageEntityPicker({ dimension }: UsageEntityPickerProps) {
 			}
 		}
 	} catch (failure) {
-		selectedError =
-			failure instanceof Error
-				? failure.message
-				: "Unable To Resolve Selection";
+		selectedError = getErrorMessage(failure, "Unable To Resolve Selection");
 	}
 	const isLoading =
 		Boolean(pixel) &&

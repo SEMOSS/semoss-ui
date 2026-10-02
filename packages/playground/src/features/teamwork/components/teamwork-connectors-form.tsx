@@ -15,6 +15,7 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
 import {
 	type ConnectorServiceId,
@@ -72,7 +73,7 @@ export const TeamworkConnectorsForm = observer(
 			} catch (error) {
 				toast.error(
 					t("connectors.saveError", {
-						message: error instanceof Error ? error.message : "",
+						message: getErrorMessage(error, ""),
 					}),
 				);
 			} finally {

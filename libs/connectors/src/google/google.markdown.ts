@@ -1,4 +1,5 @@
-import { parseWallClock, toPlainText } from "../core/connector.format";
+import { parseWallClock } from "@semoss/utility/date";
+import { toPlainText } from "../core/connector.format";
 import {
 	escapeInline,
 	toDocument,

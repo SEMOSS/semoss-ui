@@ -16,6 +16,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	defaultUsageFilters,
 	validateUsageFilters,
@@ -39,10 +40,7 @@ const schema = z
 			context.addIssue({
 				code: "custom",
 				path: ["to"],
-				message:
-					error instanceof Error
-						? error.message
-						: "Check Your Filters.",
+				message: getErrorMessage(error, "Check Your Filters."),
 			});
 		}
 	});

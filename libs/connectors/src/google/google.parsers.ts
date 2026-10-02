@@ -1,3 +1,5 @@
+import { isRecord } from "@semoss/utility/object";
+import { readNonEmptyString as readString } from "@semoss/utility/text";
 import type {
 	GmailMessage,
 	GmailMessageSummary,
@@ -15,14 +17,6 @@ import type {
  * out. As with Microsoft, entries missing what the viewers need are dropped
  * and a response of the wrong shape is an error.
  */
-
-type RawRecord = Record<string, unknown>;
-
-const isRecord = (value: unknown): value is RawRecord =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
-
-const readString = (value: unknown): string | undefined =>
-	typeof value === "string" && value.trim() !== "" ? value : undefined;
 
 /**
  * Parse each entry of a list the reactor returned bare, keeping those that

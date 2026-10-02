@@ -1,4 +1,5 @@
 import { isRequestUserInputAction } from "@semoss/sdk";
+import { readNonEmptyString } from "@semoss/utility/text";
 import type { BuildPendingAction, BuildTool } from "@/stores/assistant";
 
 /** Family a tool belongs to for phase titles and rollup rows. */
@@ -24,7 +25,7 @@ const metadataString = (
 	key: string,
 ): string | null => {
 	const value = metadata?.[key];
-	return typeof value === "string" && value.trim() ? value.trim() : null;
+	return readNonEmptyString(value)?.trim() ?? null;
 };
 
 /**

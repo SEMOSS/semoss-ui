@@ -20,6 +20,8 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
+import { formatDate } from "@semoss/utility/date";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	createMsGraphSubscription,
 	deleteMsGraphSubscription,
@@ -29,7 +31,6 @@ import {
 	type MsGraphResource,
 	type MsGraphSubscription,
 } from "@/api/ms-graph";
-import { formatDate } from "@/utility";
 
 /** Props for {@link MicrosoftSubscriptions}. */
 export interface MicrosoftSubscriptionsProps {
@@ -112,9 +113,10 @@ export const MicrosoftSubscriptions = ({
 			);
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Could not read your Microsoft subscriptions.",
+				getErrorMessage(
+					error,
+					"Could not read your Microsoft subscriptions.",
+				),
 			);
 		} finally {
 			setIsLoading(false);
@@ -147,9 +149,7 @@ export const MicrosoftSubscriptions = ({
 			// Microsoft's own refusal is the useful message here: it is the only
 			// thing that knows what the tenant actually consented to
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Could not create the subscription.",
+				getErrorMessage(error, "Could not create the subscription."),
 			);
 		} finally {
 			setIsWorking(false);
@@ -164,9 +164,7 @@ export const MicrosoftSubscriptions = ({
 			await refresh();
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Could not remove the subscription.",
+				getErrorMessage(error, "Could not remove the subscription."),
 			);
 		} finally {
 			setIsWorking(false);

@@ -36,6 +36,9 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { getErrorMessage } from "@semoss/utility/error";
+import { slugifyFileName } from "@semoss/utility/file";
 import { createAPIUser, deleteMember } from "@/api";
 import { SdkBlock } from "@/components/shared/sdk-block";
 import { useAPI, useServerPagination, useSettings } from "@/hooks";
@@ -248,9 +251,7 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 			getUsers.refresh();
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to create service account",
+				getErrorMessage(error, "Unable to create service account"),
 			);
 		} finally {
 			setIsCreating(false);
@@ -260,22 +261,12 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 	const downloadCredentialsJson = () => {
 		if (!createdServiceAccount) return;
 		const slug =
-			newServiceAccountName
-				.trim()
-				.replace(/[^A-Za-z0-9._-]+/g, "-")
-				.replace(/^-+|-+$/g, "") || "service-account";
+			slugifyFileName(newServiceAccountName) || "service-account";
 		const blob = new Blob(
 			[JSON.stringify(createdServiceAccount, null, 2)],
 			{ type: "application/json" },
 		);
-		const url = URL.createObjectURL(blob);
-		const anchor = document.createElement("a");
-		anchor.href = url;
-		anchor.download = `${slug}-credentials.json`;
-		document.body.appendChild(anchor);
-		anchor.click();
-		anchor.remove();
-		URL.revokeObjectURL(url);
+		downloadBlob(blob, `${slug}-credentials.json`);
 	};
 
 	const deleteServiceAccounts = async (accounts: ServiceAccountUser[]) => {

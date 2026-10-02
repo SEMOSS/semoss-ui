@@ -1,3 +1,4 @@
+import { isRecord } from "@semoss/utility/object";
 import type {
 	AutomationEdge,
 	AutomationNode,
@@ -77,7 +78,7 @@ function stringValue(value: unknown): string {
 
 function jsonObjectValue(value: unknown): string {
 	if (typeof value === "string") return value;
-	if (value && typeof value === "object" && !Array.isArray(value)) {
+	if (isRecord(value)) {
 		return JSON.stringify(value);
 	}
 	return "";
@@ -462,9 +463,7 @@ function withPythonSource(
 function normalizeWorkflowConfig(
 	config: unknown,
 ): AutomationWorkflowNodeConfig {
-	return config && typeof config === "object" && !Array.isArray(config)
-		? (config as AutomationWorkflowNodeConfig)
-		: {};
+	return isRecord(config) ? (config as AutomationWorkflowNodeConfig) : {};
 }
 
 function canvasTypeToWorkflow(

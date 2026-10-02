@@ -34,7 +34,9 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { copyTextToClipboard } from "@semoss/utility";
+import { downloadBlob } from "@semoss/utility/browser";
+import { copyTextToClipboard } from "@semoss/utility/clipboard";
+import { escapeCsvValue } from "@semoss/utility/csv";
 
 interface LLMFeedback {
 	AGENT_ID: string;
@@ -213,12 +215,6 @@ export const LLMFeedbackPage = () => {
 		}
 	}, [getCount.status, getCount.data, getCount.error]);
 
-	const escapeCsvValue = (value: unknown): string => {
-		if (value === null || value === undefined) return "";
-		const str = String(value);
-		return `"${str.replace(/"/g, '""')}"`;
-	};
-
 	const handleExportToCsv = async () => {
 		if (!startDate || !endDate || count === 0) return;
 
@@ -266,14 +262,10 @@ export const LLMFeedbackPage = () => {
 			const blob = new Blob([csvContent], {
 				type: "text/csv;charset=utf-8;",
 			});
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = `llm-feedback-${new Date().toISOString().split("T")[0]}.csv`;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(url);
+			downloadBlob(
+				blob,
+				`llm-feedback-${new Date().toISOString().split("T")[0]}.csv`,
+			);
 
 			toast.success("Exported to CSV");
 		} catch (error) {

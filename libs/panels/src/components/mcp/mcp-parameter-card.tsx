@@ -15,6 +15,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { validateIdentifier } from "@semoss/utility/identifier";
 import type { MCPToolProperty } from "../../types/mcp.types";
 import {
 	ENUM_TYPE_VALUE,
@@ -23,7 +25,6 @@ import {
 	NO_DEFAULT_VALUE,
 	slugifyIdentifier,
 	TYPE_OPTIONS,
-	validateIdentifier,
 } from "../../utility/mcp-json-utils";
 import { MCPJsonField } from "./mcp-json-field";
 
@@ -146,7 +147,7 @@ export const MCPParameterCard = ({
 				setJsonError(undefined);
 				onUpdate(propKey, { default: parsed });
 			} catch (e) {
-				setJsonError(e instanceof Error ? e.message : "Invalid JSON");
+				setJsonError(getErrorMessage(e, "Invalid JSON"));
 			}
 		},
 		[propKey, onUpdate],

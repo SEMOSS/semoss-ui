@@ -15,13 +15,13 @@ import {
 	CollapsibleTrigger,
 	Input,
 } from "@semoss/ui/next";
-import { useConfig } from "@/hooks";
 import {
 	formatToDataTestId,
-	getTagColorPalette,
 	removeUnderscores,
 	toTitleCase,
-} from "@/utility";
+} from "@semoss/utility/text";
+import { useConfig } from "@/hooks";
+import { getTagColorPalette } from "@/utility";
 import {
 	CATALOG_ACCESS_FILTERS,
 	type CatalogAccessFilter,

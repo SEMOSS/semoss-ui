@@ -1,8 +1,9 @@
 import { DownloadIcon } from "lucide-react";
 import type { PowerPointViewerHandle } from "pptx-react-viewer";
 import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react";
-import { decodeBase64Asset, encodeBase64Asset } from "@semoss/shared";
+import { decodeBase64Asset } from "@semoss/shared";
 import { Button, Muted, Spinner } from "@semoss/ui/next";
+import { encodeBase64 as encodeBase64Asset } from "@semoss/utility/encoding";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
 import type { FileViewProps } from "../../types/file-view.types";

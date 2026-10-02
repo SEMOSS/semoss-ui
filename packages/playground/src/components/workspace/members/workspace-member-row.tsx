@@ -1,7 +1,7 @@
 import { useTranslation } from "@semoss/i18n";
 import type { User } from "@semoss/sdk";
 import { Avatar, AvatarFallback } from "@semoss/ui/next";
-import { buildInitials } from "@semoss/utility";
+import { buildInitials } from "@semoss/utility/text";
 import {
 	type PermissionChange,
 	PermissionDropdown,

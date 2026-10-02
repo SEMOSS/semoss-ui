@@ -21,12 +21,10 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import {
-	copyTextToClipboard,
-	formatDateToLocal,
-	formatDateToRelative,
-} from "@semoss/utility";
-import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
+import { copyTextToClipboard } from "@semoss/utility/clipboard";
+import { formatDateToLocal, formatDateToRelative } from "@semoss/utility/date";
+import { formatToDataTestId, hashString } from "@semoss/utility/text";
+import { getTagBadgeStyle } from "@/utility";
 
 export interface CatalogGridItemProps
 	extends React.ComponentProps<typeof Card> {
@@ -65,15 +63,6 @@ export interface CatalogGridItemProps
 		className?: string;
 	}[];
 }
-
-const hashString = (str: string): number => {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
-	}
-	return Math.abs(h);
-};
 
 const generateGradient = (name: string): string => {
 	const base = hashString(name) % 360;

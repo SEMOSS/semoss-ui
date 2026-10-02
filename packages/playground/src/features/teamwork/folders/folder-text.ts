@@ -1,4 +1,5 @@
-import { getFileExtension } from "@semoss/utility";
+import { getFileExtension } from "@semoss/utility/file";
+import { countOccurrences } from "@semoss/utility/text";
 
 /**
  * Extensions that are binary however their first bytes look. Office files and
@@ -177,23 +178,6 @@ export const sliceTextLines = (
 };
 
 /**
- * Count how many times `needle` appears in `text`, without overlaps.
- *
- * @param text - Where to look.
- * @param needle - What to count. Must not be empty.
- * @return The number of occurrences.
- */
-export const countOccurrences = (text: string, needle: string): number => {
-	let count = 0;
-	let index = text.indexOf(needle);
-	while (index !== -1) {
-		count++;
-		index = text.indexOf(needle, index + needle.length);
-	}
-	return count;
-};
-
-/**
  * Replace exact text in a file's contents.
  *
  * The match is literal, whitespace included. Without `replaceAll` the text has
@@ -239,3 +223,5 @@ export const replaceFileText = (
 		replacements: occurrences,
 	};
 };
+
+export { countOccurrences } from "@semoss/utility/text";

@@ -1,7 +1,7 @@
 import { type ComponentProps, useContext } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { CalendarDayButton } from "@semoss/ui/next";
-import { calendarDayKey } from "../core/connector-calendar";
+import { calendarDayKey } from "@semoss/utility/date";
 import { ConnectorCalendarContext } from "./connector-calendar.context";
 
 /** A keyboard-accessible day with two event previews and an overflow count. */
