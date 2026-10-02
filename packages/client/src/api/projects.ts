@@ -1,4 +1,85 @@
+import { runPixel } from "@semoss/sdk";
 import { Env, get, post } from "@semoss/sdk/react";
+
+export interface SearchAppLogsResult {
+	lines: string[];
+	hasMore: boolean;
+}
+
+interface SearchAppLogsParams {
+	projectId: string;
+	query?: string;
+	levels?: string[];
+	offset: number;
+	limit: number;
+	insightId?: string;
+}
+
+const isSearchAppLogsResult = (
+	value: unknown,
+): value is SearchAppLogsResult => {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+
+	const candidate = value as Record<string, unknown>;
+	return (
+		Array.isArray(candidate.lines) &&
+		candidate.lines.every((line) => typeof line === "string") &&
+		typeof candidate.hasMore === "boolean"
+	);
+};
+
+/** Searches a project's bounded on-disk application log history. */
+export const searchAppLogs = async ({
+	projectId,
+	query,
+	levels,
+	offset,
+	limit,
+	insightId,
+}: SearchAppLogsParams): Promise<SearchAppLogsResult> => {
+	const params: Record<string, string> = {
+		projectId,
+		offset: String(offset),
+		limit: String(limit),
+	};
+	if (query) {
+		params.query = query;
+	}
+	if (levels?.length) {
+		params.levels = levels.join(",");
+	}
+
+	const { errors, pixelReturn } = await runPixel<[unknown]>(
+		`SearchAppLogs(paramValues=[${JSON.stringify(params)}]);`,
+		insightId,
+	);
+	if (errors.length) {
+		throw new Error(errors.join("\n"));
+	}
+
+	const result = pixelReturn[0];
+	if (!result) {
+		throw new Error("No response when searching app logs");
+	}
+
+	let output: unknown = result.output;
+	if (typeof output === "string") {
+		try {
+			output = JSON.parse(output);
+		} catch (error) {
+			throw new Error("Invalid app log search response", {
+				cause: error,
+			});
+		}
+	}
+	if (!isSearchAppLogsResult(output)) {
+		throw new Error("Invalid app log search response");
+	}
+
+	return output;
+};
 
 export const setProjectFavorite = async (
 	projectId: string,
