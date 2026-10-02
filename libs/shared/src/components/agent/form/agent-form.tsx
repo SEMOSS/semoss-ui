@@ -11,7 +11,11 @@ import {
 	Switch,
 	Textarea,
 } from "@semoss/ui/next";
-import type { AgentDefaultTool, AgentLinks } from "../agent.types";
+import type {
+	AgentDefaultTool,
+	AgentHookCapabilities,
+	AgentLinks,
+} from "../agent.types";
 import { AgentSection } from "../agent-section";
 import { AgentDefaultToolsField } from "./agent-default-tools-field";
 import { AgentExecutionLimitsFields } from "./agent-execution-limits-fields";
@@ -28,12 +32,16 @@ export interface AgentFormProps {
 	data: AgentFormValues;
 	/** Called with the full form values on every field change. */
 	onChange: (data: AgentFormValues) => void;
+	/** Reports whether hosts may persist the current externally-managed values. */
+	onValidityChange?: (isValid: boolean) => void;
 	/** Disables every field while keeping the editing layout (e.g. mid-save). */
 	disabled?: boolean;
 	/** Titles for the prompts attached on load, keyed by prompt id. */
 	promptTitles?: Record<string, string>;
 	/** Backend-authoritative hook kinds (`GetWorkspace`'s `known_hook_kinds`). */
 	knownHookKinds: string[];
+	/** Runtime-owned event and binding metadata keyed by hook kind. */
+	hookCapabilities: AgentHookCapabilities;
 	/** Backend-authoritative built-in tool catalog. */
 	defaultTools: AgentDefaultTool[];
 	/**
@@ -64,9 +72,11 @@ export interface AgentFormProps {
 export const AgentForm = ({
 	data,
 	onChange,
+	onValidityChange,
 	disabled,
 	promptTitles,
 	knownHookKinds,
+	hookCapabilities,
 	defaultTools,
 	workspaceId,
 	links,
@@ -82,7 +92,13 @@ export const AgentForm = ({
 	const instructionsId = useId();
 	const greetingId = useId();
 
-	const { control, watch } = useForm<AgentFormValues>({
+	const {
+		control,
+		watch,
+		setError,
+		clearErrors,
+		formState: { errors },
+	} = useForm<AgentFormValues>({
 		defaultValues: data,
 	});
 
@@ -94,6 +110,10 @@ export const AgentForm = ({
 		);
 		return () => subscription.unsubscribe();
 	}, [watch, onChange]);
+
+	useEffect(() => {
+		onValidityChange?.(Object.keys(errors).length === 0);
+	}, [errors, onValidityChange]);
 
 	return (
 		<div
@@ -309,7 +329,10 @@ export const AgentForm = ({
 				>
 					<AgentHooksField
 						control={control}
+						setError={setError}
+						clearErrors={clearErrors}
 						knownKinds={knownHookKinds}
+						capabilities={hookCapabilities}
 						disabled={disabled}
 					/>
 				</AgentSection>
