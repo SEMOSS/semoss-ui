@@ -13,6 +13,7 @@ import { RoomInputMenuUpload } from "./room-input-menu-upload";
 // Fake editor state shared between mocks
 // ---------------------------------------------------------------------------
 const openFilePicker = vi.hoisted(() => vi.fn());
+const openSettings = vi.hoisted(() => vi.fn());
 // stable, as the SDK's are, so views keep the same logins between renders
 const sessionLogins = vi.hoisted(() => ({
 	logins: {},
@@ -54,6 +55,11 @@ vi.mock("@semoss/i18n", async (importOriginal) => {
 		}),
 	};
 });
+
+// the settings dialog belongs to the main layout, which these tests leave out
+vi.mock("@/features/settings/settings-dialog.context", () => ({
+	useSettingsDialog: () => ({ openSettings }),
+}));
 
 vi.mock("@/contexts/file-drag-context", async (importOriginal) => {
 	const actual =
@@ -543,6 +549,21 @@ test("keeps Workspace accessible during a turn while locking mutating menu actio
 		screen.getByRole("menuitem", { name: "studio.openWorkArea" }),
 	);
 	expect(openWorkspace).toHaveBeenCalledTimes(1);
+});
+
+test("Connectors opens the settings dialog on its Connectors page", async () => {
+	openSettings.mockClear();
+	const user = userEvent.setup();
+	render(<RoomInput {...defaultProps} MenuComponent={undefined} />);
+	await user.click(
+		screen.getByRole("button", { name: "input.openSettings" }),
+	);
+	await user.click(
+		screen.getByRole("menuitem", {
+			name: "sidebar:settings.sections.connectors",
+		}),
+	);
+	expect(openSettings).toHaveBeenCalledWith("connectors");
 });
 
 test("new-chat Agent opens the picker without changing mode on cancel", async () => {

@@ -1,17 +1,20 @@
 {
 	"providers": {
 		"MICROSOFT": {
-			"name": "Microsoft 365"
+			"name": "Microsoft 365",
+			"brand": "Microsoft"
 		},
 		"GOOGLE": {
 			"name": "Google Workspace",
-			"scopesNote": "Voor Gmail, Calendar, Drive en Docs moet je beheerder die Google-machtigingen voor deze server toestaan."
+			"scopesNote": "Voor Gmail, Calendar, Drive en Docs moet je beheerder die Google-machtigingen voor deze server toestaan.",
+			"brand": "Google"
 		},
 		"connected": "Verbonden",
 		"connectedAs": "Verbonden als {{name}}",
 		"notConnected": "Niet verbonden",
 		"unavailable": "Niet beschikbaar op deze server",
-		"connect": "Verbinden",
+		"signIn": "Aanmelden met {{brand}}",
+		"signInPrompt": "Meld je aan om deze apps te gebruiken",
 		"reconnect": "Opnieuw verbinden",
 		"connecting": "Wachten op aanmelding...",
 		"connectSuccess": "{{name}} is verbonden",

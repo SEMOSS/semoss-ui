@@ -1,17 +1,20 @@
 {
 	"providers": {
 		"MICROSOFT": {
-			"name": "Microsoft 365"
+			"name": "Microsoft 365",
+			"brand": "Microsoft"
 		},
 		"GOOGLE": {
 			"name": "Google Workspace",
-			"scopesNote": "تتطلب Gmail وCalendar وDrive وDocs أن يسمح المسؤول لديك بأذونات Google هذه على هذا الخادم."
+			"scopesNote": "تتطلب Gmail وCalendar وDrive وDocs أن يسمح المسؤول لديك بأذونات Google هذه على هذا الخادم.",
+			"brand": "Google"
 		},
 		"connected": "متصل",
 		"connectedAs": "متصل باسم {{name}}",
 		"notConnected": "غير متصل",
 		"unavailable": "غير متاح على هذا الخادم",
-		"connect": "ربط",
+		"signIn": "تسجيل الدخول باستخدام {{brand}}",
+		"signInPrompt": "سجّل الدخول لاستخدام هذه التطبيقات",
 		"reconnect": "إعادة الاتصال",
 		"connecting": "في انتظار تسجيل الدخول...",
 		"connectSuccess": "تم ربط {{name}}",

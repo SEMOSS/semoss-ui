@@ -14,18 +14,19 @@ import type { UseConnectionsResult } from "./use-connections";
  * or `connect` from {@link useConnections}.
  * @param onConnected - Called once a provider is connected, after the toast.
  * @return The handler. It starts the popup synchronously, so call it from the
- * click itself.
+ * click itself, and resolves to whether the provider is connected afterwards.
+ * It never rejects; a failure is told to the user and resolves to false.
  */
 export const useConnectProvider = (
 	connect: UseConnectionsResult["connect"],
 	onConnected?: (providerId: ConnectorProviderId) => void,
-): ((providerId: ConnectorProviderId) => void) => {
+): ((providerId: ConnectorProviderId) => Promise<boolean>) => {
 	const { t } = useTranslation("chatConnectors");
 
 	return useCallback(
 		(providerId: ConnectorProviderId) => {
 			const name = t(`providers.${providerId}.name`);
-			connect(providerId).then(
+			return connect(providerId).then(
 				(isConnected) => {
 					if (isConnected) {
 						toast.success(
@@ -37,6 +38,7 @@ export const useConnectProvider = (
 							t("providers.connectIncomplete", { name: name }),
 						);
 					}
+					return isConnected;
 				},
 				(error: unknown) => {
 					toast.error(
@@ -47,6 +49,7 @@ export const useConnectProvider = (
 									message: getErrorMessage(error, ""),
 								}),
 					);
+					return false;
 				},
 			);
 		},

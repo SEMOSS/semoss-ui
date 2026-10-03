@@ -1,17 +1,20 @@
 {
 	"providers": {
 		"MICROSOFT": {
-			"name": "Microsoft 365"
+			"name": "Microsoft 365",
+			"brand": "Microsoft"
 		},
 		"GOOGLE": {
 			"name": "Google Workspace",
-			"scopesNote": "Gmail、Calendar、Drive、Docs を使用するには、管理者がこのサーバーに対してそれらの Google 権限を許可する必要があります。"
+			"scopesNote": "Gmail、Calendar、Drive、Docs を使用するには、管理者がこのサーバーに対してそれらの Google 権限を許可する必要があります。",
+			"brand": "Google"
 		},
 		"connected": "接続済み",
 		"connectedAs": "{{name}} として接続済み",
 		"notConnected": "未接続",
 		"unavailable": "このサーバーでは提供されていません",
-		"connect": "接続",
+		"signIn": "{{brand}} でサインイン",
+		"signInPrompt": "これらのアプリを使うにはサインインしてください",
 		"reconnect": "再接続",
 		"connecting": "サインインを待っています...",
 		"connectSuccess": "{{name}} に接続しました",
