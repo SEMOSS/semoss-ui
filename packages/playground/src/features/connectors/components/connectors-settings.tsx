@@ -1,5 +1,5 @@
 import { TriangleAlertIcon } from "lucide-react";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { SessionLoginDisconnectError } from "@semoss/sdk";
 import {
@@ -36,10 +36,13 @@ const SKELETON_SECTIONS = ["microsoft", "google"];
  * Signing in links the provider to the user's existing session; the
  * connector tools act with that account and only see what it can see. The
  * first sign in to a provider switches on every app its sign in covers;
- * reconnecting leaves the user's choices as they are. Disconnecting signs the
- * session out of the provider and switches its apps off; the login the session
- * itself signed in with cannot be disconnected. A provider this server does
- * not offer shows grayed out, its Connect disabled.
+ * reconnecting leaves the user's choices as they are. An app's switch works
+ * before its account is connected: switching it on signs in from the click and
+ * then switches on that app alone, and the switch goes back off when the sign
+ * in does not finish. Disconnecting signs the session out of the provider and
+ * switches its apps off; the login the session itself signed in with cannot be
+ * disconnected. A provider this server does not offer shows grayed out, its
+ * Sign In and its switches disabled.
  */
 export const ConnectorsSettings = () => {
 	const { t } = useTranslation(["chatConnectors", "common"]);
@@ -77,6 +80,14 @@ export const ConnectorsSettings = () => {
 		connections.connect,
 		handleConnected,
 	);
+
+	// a sign in started from an app's switch turns on that app alone, so it
+	// skips the first sign in's switching on of every app
+	const signInForService = useConnectProvider(connections.connect);
+
+	// the app whose switch started a sign in, shown on until it settles
+	const [pendingServiceId, setPendingServiceId] =
+		useState<ConnectorServiceId | null>(null);
 
 	const handleDisconnect = async (providerId: ConnectorProviderId) => {
 		const name = t(`providers.${providerId}.name`);
@@ -121,6 +132,26 @@ export const ConnectorsSettings = () => {
 				}),
 			);
 		}
+	};
+
+	/**
+	 * Switch on an app whose account is not connected: sign in to the account,
+	 * then switch on the app.
+	 *
+	 * @param serviceId - The app switched on.
+	 * @param providerId - The account it acts with. The sign in starts from the
+	 * click, so this is called from the switch's change itself.
+	 */
+	const handleServiceSignIn = (
+		serviceId: ConnectorServiceId,
+		providerId: ConnectorProviderId,
+	) => {
+		setPendingServiceId(serviceId);
+		void signInForService(providerId)
+			.then((isConnected) =>
+				isConnected ? handleServiceChange(serviceId, true) : undefined,
+			)
+			.finally(() => setPendingServiceId(null));
 	};
 
 	return (
@@ -226,6 +257,8 @@ export const ConnectorsSettings = () => {
 											);
 										const isCovered =
 											isServiceCovered(serviceId);
+										const isPending =
+											pendingServiceId === serviceId;
 										return (
 											<ConnectorServiceRow
 												key={serviceId}
@@ -238,7 +271,7 @@ export const ConnectorsSettings = () => {
 															)
 												}
 												service={service}
-												checked={isOn}
+												checked={isOn || isPending}
 												// on, but not in effect until the account is connected
 												warning={
 													!isOn
@@ -257,16 +290,32 @@ export const ConnectorsSettings = () => {
 													userConnectors.status !==
 														"ready" ||
 													userConnectors.isSaving ||
+													pendingServiceId !== null ||
+													connections.connectingProviderId !==
+														null ||
+													// a server that does not offer the
+													// account keeps its apps off
 													(!isOn &&
-														(!connection.isConnected ||
+														(!connection.isAvailable ||
 															!isCovered))
 												}
-												onCheckedChange={(checked) =>
+												onCheckedChange={(checked) => {
+													if (
+														checked &&
+														!connection.isConnected
+													) {
+														handleServiceSignIn(
+															serviceId,
+															connection.provider
+																.id,
+														);
+														return;
+													}
 													void handleServiceChange(
 														serviceId,
 														checked,
-													)
-												}
+													);
+												}}
 											/>
 										);
 									},

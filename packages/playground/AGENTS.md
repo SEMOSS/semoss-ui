@@ -236,9 +236,9 @@ queue with `ContextItemsStore.adopt` before its first message.
 `src/features/connectors/` connects Microsoft 365 and Google Workspace.
 `RoomStore.connectors` (`ConnectorsStore`) owns the services switched on and the accounts they
 sign in with, per room. The Connectors page of the settings dialog
-(`features/settings/`, opened from the user menu, or anywhere with
-`useSettingsDialog().openSettings("connectors")`) connects accounts and switches the user's apps on
-or off for all their chats; it is the only place connectors are switched. An app switched on whose
+(`features/settings/`, opened from the user menu, from Connectors in the composer's plus menu, or
+anywhere with `useSettingsDialog().openSettings("connectors")`) connects accounts and switches the
+user's apps on or off for all their chats; it is the only place connectors are switched. An app switched on whose
 account is not connected shows its switch in gray with a warning mark. These details are easy to break:
 
 - **Connectors are the user's, copied into each room.** The user's connector tools live in their
@@ -256,8 +256,11 @@ account is not connected shows its switch in gray with a warning mark. These det
   missing counts as empty, never a read that failed. The first sign in to a provider on the
   settings page switches on every app its sign in covers (`enableServices`, only once the file
   has been read, so it never overwrites choices it has not seen); reconnecting leaves the user's
-  choices alone. The catalog and each tool's approval policy live in `connector.catalog.ts`;
-  sending, deleting, sharing, and invites always ask.
+  choices alone. An app's switch works before its account is connected: switching it on signs
+  in from the click and then switches on that app alone, and the switch goes back off when the
+  sign in does not finish. A provider the server does not offer stays grayed out, its Sign In
+  and its switches disabled. The catalog and each tool's approval policy live in
+  `connector.catalog.ts`; sending, deleting, sharing, and invites always ask.
 - **The connector viewers come from `@semoss/connectors`.** OneDrive, Outlook Mail and Calendar,
   Teams channels, files, and chats, and Google Drive, Gmail, Calendar, and Docs are its viewers
   (`libs/connectors/`). The room mounts each as a sidebar panel

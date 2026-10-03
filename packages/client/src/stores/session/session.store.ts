@@ -1,14 +1,13 @@
 import { createStore, type StoreApi } from "zustand";
 import type { PermissionCache } from "@semoss/panels";
 import { createPermissionCache } from "@semoss/panels";
-import { download, logout, runPixel, upload } from "@semoss/sdk/react";
+import { download, logout, oauth, runPixel, upload } from "@semoss/sdk/react";
 import {
 	login as authenticate,
 	confirmOTP,
 	isAdminUser,
 	loginLDAP,
 	loginOTP,
-	oauth,
 	registerUser,
 } from "@/api";
 import type { ConfigStore } from "@/stores/config";

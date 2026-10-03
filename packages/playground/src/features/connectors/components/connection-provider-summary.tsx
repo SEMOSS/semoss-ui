@@ -22,9 +22,10 @@ export interface ConnectionProviderSummaryProps {
 
 /**
  * A provider's logo, name, and connection state, with the actions that fit:
- * connect when signed out; reconnect when signed in (to renew consent or pick
- * up newly granted scopes), and disconnect when the host allows it. When the
- * deployment does not offer the provider, Connect shows disabled.
+ * sign in when signed out, saying that its apps need it; reconnect when signed
+ * in (to renew consent or pick up newly granted scopes), and disconnect when
+ * the host allows it. When the deployment does not offer the provider, it says
+ * so and its Sign In shows disabled.
  */
 export const ConnectionProviderSummary = ({
 	connection,
@@ -43,7 +44,7 @@ export const ConnectionProviderSummary = ({
 			? t("providers.connectedAs", { name: accountName })
 			: t("providers.connected")
 		: isAvailable
-			? t("providers.notConnected")
+			? t("providers.signInPrompt")
 			: t("providers.unavailable");
 
 	return (
@@ -87,7 +88,9 @@ export const ConnectionProviderSummary = ({
 					? t("providers.connecting")
 					: isConnected
 						? t("providers.reconnect")
-						: t("providers.connect")}
+						: t("providers.signIn", {
+								brand: t(`providers.${provider.id}.brand`),
+							})}
 			</Button>
 		</div>
 	);

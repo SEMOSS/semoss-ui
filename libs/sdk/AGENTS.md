@@ -131,3 +131,9 @@ The SDK owns what the session is signed in to, so an app never tracks or caches 
   [`api/auth.ts`](./src/api/auth.ts)): a listed provider is signed out first, since the backend
   keeps listing an expired token. Neither it nor `disconnect` ever signs out the session's own
   login (`primaryLogin`), which would end the session or change whose it is.
+- Every sign in popup, `connectLogin` and the first login's `oauth`, waits through
+  `waitForSignInPopup`: the backend sends a finished popup to its configured `redirect`, which can
+  be another app or origin (a dev server's popup lands on the deployed client), where the popup
+  cannot be read. So besides watching the popup close or come back, it reads the login every two
+  seconds and closes the popup once it is there. `oauth` rejects when the popup ends without the
+  login rather than leaving the sign in waiting. Apps call the SDK's `oauth`; none keeps a copy.

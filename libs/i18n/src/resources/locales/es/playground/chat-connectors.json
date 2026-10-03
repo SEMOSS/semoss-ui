@@ -1,17 +1,20 @@
 {
 	"providers": {
 		"MICROSOFT": {
-			"name": "Microsoft 365"
+			"name": "Microsoft 365",
+			"brand": "Microsoft"
 		},
 		"GOOGLE": {
 			"name": "Google Workspace",
-			"scopesNote": "Gmail, Calendar, Drive y Docs requieren que tu administrador habilite esos permisos de Google para este servidor."
+			"scopesNote": "Gmail, Calendar, Drive y Docs requieren que tu administrador habilite esos permisos de Google para este servidor.",
+			"brand": "Google"
 		},
 		"connected": "Conectado",
 		"connectedAs": "Conectado como {{name}}",
 		"notConnected": "No conectado",
 		"unavailable": "No disponible en este servidor",
-		"connect": "Conectar",
+		"signIn": "Iniciar sesión con {{brand}}",
+		"signInPrompt": "Inicia sesión para usar estas aplicaciones",
 		"reconnect": "Reconectar",
 		"connecting": "Esperando el inicio de sesión...",
 		"connectSuccess": "{{name}} está conectado",
