@@ -246,6 +246,26 @@ export const resolveMovedPath = (
 export const isExplorerDrag = (dataTransfer: DataTransfer) =>
 	Array.from(dataTransfer.types).includes(FILE_EXPLORER_DRAG_DATA_TYPE);
 
+/**
+ * Where the explorer's menu opens for an event: at the pointer, or, for a key
+ * or for a click made with one (which reports no pointer), under the element
+ * that has focus, on its start edge.
+ *
+ * @param e - The right-click, click, or key press that opens the menu.
+ * @return The viewport point the menu hangs from.
+ */
+export const getContextMenuAnchor = (
+	e: React.MouseEvent | React.KeyboardEvent,
+): { x: number; y: number } => {
+	if ("clientX" in e && (e.clientX !== 0 || e.clientY !== 0)) {
+		return { x: e.clientX, y: e.clientY };
+	}
+	const element = e.target instanceof Element ? e.target : e.currentTarget;
+	const rect = element.getBoundingClientRect();
+	const isRtl = getComputedStyle(element).direction === "rtl";
+	return { x: isRtl ? rect.right : rect.left, y: rect.bottom };
+};
+
 export const isPointerOutsideElement = (
 	element: HTMLElement,
 	clientX: number,
