@@ -23,8 +23,8 @@ import { FileDragProvider } from "@/contexts/file-drag-context";
 import { clearAgentOptions } from "@/features/conversation/clear-agent-options";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
 import { DropHighlight } from "@/features/conversation/drop-highlight";
+import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
 import { usePreparedRoom } from "@/features/conversation/use-prepared-room";
-import { NextMessageRoomProvider } from "@/features/teamwork/sources/next-message-room";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
@@ -43,7 +43,7 @@ export const NewRoomPage = observer(() => {
 		"workspace",
 		"common",
 		"chat",
-		"teamwork",
+		"chatConnectors",
 	]);
 	const { root } = useRoot();
 	const { theme: colorMode } = useTheme();
@@ -205,7 +205,7 @@ export const NewRoomPage = observer(() => {
 		},
 	);
 	useEffect(() => {
-		void tempRoomStore.teamwork.loadUserConnectors();
+		void tempRoomStore.connectors.loadUserConnectors();
 	}, [tempRoomStore]);
 
 	// On initial load, set the default options from the theme using the temporary RoomStore
@@ -238,11 +238,12 @@ export const NewRoomPage = observer(() => {
 
 	/** Transfer queued context and copy connectors before the first message. */
 	const prepareRoom = async (room: RoomStore): Promise<void> => {
+		room.contextItems.adopt(tempRoomStore.contextItems);
 		try {
-			await room.teamwork.adopt(tempRoomStore.teamwork);
+			await room.connectors.adopt(tempRoomStore.connectors);
 		} catch (error) {
 			toast.error(
-				t("teamwork:connectors.adoptError", {
+				t("chatConnectors:connectors.adoptError", {
 					message: getErrorMessage(error, ""),
 				}),
 			);
@@ -647,7 +648,7 @@ export const NewRoomPage = observer(() => {
 		pendingSourceRef.current = service;
 		// Sources and Files share preparation, layout transfer, and abandoned-draft cleanup.
 		const room = await prepare();
-		if (room) room.teamwork.openSourcePanel(service);
+		if (room) room.connectors.openSourcePanel(service);
 		else handleOpenWorkArea();
 	};
 	const handleOpenActivity = preCreatedRoom

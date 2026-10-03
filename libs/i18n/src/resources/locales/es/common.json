@@ -7,7 +7,9 @@
 		"close": "Cerrar",
 		"confirm": "Confirmar",
 		"upload": "Subir",
-		"search": "Buscar"
+		"search": "Buscar",
+		"retry": "Reintentar",
+		"refresh": "Actualizar"
 	},
 	"labels": {
 		"name": "Nombre",

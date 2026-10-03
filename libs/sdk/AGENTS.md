@@ -105,6 +105,7 @@ When changing an API, inspect its owning implementation and adjacent tests:
 
 - [Chat wrappers](./src/api/chat.ts) and [pixel transport](./src/api/base.ts).
 - [Agent wrappers](./src/api/agent.ts) and [AgentStore](./src/stores/agent/agent.store.ts).
+- [MCP wrappers](./src/api/mcp.ts): `runMcpTool` and `makeUserPixelMcp`.
 - [RoomStore](./src/stores/room/room.store.ts) and [shared types](./src/types.ts).
 - [Core exports](./src/index.ts) and [React exports](./src/js-frameworks/react/index.ts).
 

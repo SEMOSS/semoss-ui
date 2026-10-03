@@ -1,0 +1,92 @@
+{
+	"providers": {
+		"MICROSOFT": {
+			"name": "Microsoft 365"
+		},
+		"GOOGLE": {
+			"name": "Google Workspace",
+			"scopesNote": "Voor Gmail, Calendar, Drive en Docs moet je beheerder die Google-machtigingen voor deze server toestaan."
+		},
+		"connected": "Verbonden",
+		"connectedAs": "Verbonden als {{name}}",
+		"notConnected": "Niet verbonden",
+		"unavailable": "Niet beschikbaar op deze server",
+		"connect": "Verbinden",
+		"reconnect": "Opnieuw verbinden",
+		"connecting": "Wachten op aanmelding...",
+		"connectSuccess": "{{name}} is verbonden",
+		"connectIncomplete": "{{name}} is niet verbonden. Het aanmeldvenster is gesloten voordat het aanmelden klaar was.",
+		"connectError": "Kan {{name}} niet verbinden. {{message}}",
+		"popupBlocked": "Je browser heeft het aanmeldvenster geblokkeerd. Sta pop-ups toe voor deze site en probeer het opnieuw.",
+		"loadErrorTitle": "Kan je verbonden accounts niet controleren",
+		"disconnect": "Verbinding verbreken",
+		"disconnecting": "Verbinding verbreken...",
+		"disconnectSuccess": "{{name}} is losgekoppeld",
+		"disconnectError": "Kan {{name}} niet loskoppelen. {{message}}",
+		"sessionLoginNote": "Je bent met dit account aangemeld, dus het blijft verbonden totdat je je afmeldt."
+	},
+	"services": {
+		"toolCounts_one": "{{count}} tool, waarvan {{ask}} met goedkeuring vooraf",
+		"toolCounts_other": "{{count}} tools, waarvan {{ask}} met goedkeuring vooraf",
+		"outlook": {
+			"name": "Outlook-mail",
+			"description": "Leest en doorzoekt e-mail en maakt concepten. Vraagt eerst om goedkeuring bij verzenden, beantwoorden en verwijderen."
+		},
+		"outlook-calendar": {
+			"name": "Outlook-agenda",
+			"description": "Bekijkt je agenda en zoekt vrije tijd. Vraagt eerst om goedkeuring bij nieuwe uitnodigingen en wijzigingen."
+		},
+		"onedrive": {
+			"name": "OneDrive",
+			"description": "Zoekt, leest en downloadt je bestanden. Vraagt eerst om goedkeuring bij uploaden, delen en verwijderen."
+		},
+		"teams": {
+			"name": "Microsoft Teams",
+			"description": "Leest chats, kanalen en gedeelde bestanden. Vraagt eerst om goedkeuring voordat berichten worden verzonden."
+		},
+		"gmail": {
+			"name": "Gmail",
+			"description": "Leest en doorzoekt e-mail. Vraagt eerst om goedkeuring bij verzenden en verwijderen."
+		},
+		"google-calendar": {
+			"name": "Google Calendar",
+			"description": "Bekijkt je afspraken. Vraagt eerst om goedkeuring bij nieuwe afspraken en wijzigingen."
+		},
+		"google-drive": {
+			"name": "Google Drive",
+			"description": "Geeft je Drive-bestanden weer en zoekt ze op. Vraagt eerst om goedkeuring bij verwijderen."
+		},
+		"google-docs": {
+			"name": "Google Docs",
+			"description": "Leest je documenten. Vraagt eerst om goedkeuring bij maken, bewerken en verwijderen."
+		}
+	},
+	"connectors": {
+		"saveError": "Kan de connectors niet bijwerken. {{message}}",
+		"adoptError": "De chat is gestart, maar de connectors konden niet worden ingeschakeld. {{message}}"
+	},
+	"connections": {
+		"appsDescription": "Door je aan te melden wordt het account gekoppeld aan je sessie. De assistent ziet alleen wat dat account kan zien.",
+		"appsHint": "Een app hier in- of uitschakelen wijzigt hem in al je chats, nieuwe en bestaande. Het plusmenu van een chat opent dezelfde instellingen.",
+		"settingsError": "Je connectorinstellingen konden niet worden gelezen."
+	},
+	"sources": {
+		"saved": "{{name}} is opgeslagen in {{target}}",
+		"show": "Tonen",
+		"added": "{{name}} gaat mee met je volgende bericht",
+		"notAccepted": "{{name}} is opgeslagen in {{target}}, maar deze chat accepteert dat soort bestand niet in een bericht."
+	},
+	"signIn": {
+		"notice": "{{account}} is niet aangemeld, dus {{services}} kunnen niet werken in deze chat.",
+		"action": "Aanmelden",
+		"dismiss": "De aanmeldmelding voor {{account}} verbergen",
+		"toolFailed": "Deze aanroep kon niet worden uitgevoerd omdat {{account}} niet is aangemeld. Meld je aan en vraag het daarna opnieuw.",
+		"toolAction": "Aanmelden bij {{account}}",
+		"notOffered": "Deze server biedt geen aanmelding met {{account}}, dus {{services}} kunnen niet werken in deze chat."
+	},
+	"scopes": {
+		"notice": "De {{account}}-aanmelding van deze server staat {{services}} niet toe, dus die kunnen niet werken in deze chat. Vraag je beheerder om de benodigde toestemming toe te voegen.",
+		"dismiss": "De toestemmingsmelding voor {{account}} verbergen",
+		"serviceBlocked": "Niet beschikbaar: de aanmelding van deze server bevat de benodigde toestemming niet. Vraag je beheerder om die toe te voegen."
+	}
+}

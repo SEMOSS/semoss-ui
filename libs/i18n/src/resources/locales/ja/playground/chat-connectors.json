@@ -1,0 +1,92 @@
+{
+	"providers": {
+		"MICROSOFT": {
+			"name": "Microsoft 365"
+		},
+		"GOOGLE": {
+			"name": "Google Workspace",
+			"scopesNote": "Gmail、Calendar、Drive、Docs を使用するには、管理者がこのサーバーに対してそれらの Google 権限を許可する必要があります。"
+		},
+		"connected": "接続済み",
+		"connectedAs": "{{name}} として接続済み",
+		"notConnected": "未接続",
+		"unavailable": "このサーバーでは提供されていません",
+		"connect": "接続",
+		"reconnect": "再接続",
+		"connecting": "サインインを待っています...",
+		"connectSuccess": "{{name}} に接続しました",
+		"connectIncomplete": "{{name}} は接続されませんでした。サインインが完了する前にサインインウィンドウが閉じられました。",
+		"connectError": "{{name}} に接続できませんでした。{{message}}",
+		"popupBlocked": "ブラウザーがサインインウィンドウをブロックしました。このサイトのポップアップを許可してから、もう一度お試しください。",
+		"loadErrorTitle": "接続済みのアカウントを確認できませんでした",
+		"disconnect": "接続を解除",
+		"disconnecting": "接続を解除しています...",
+		"disconnectSuccess": "{{name}} の接続を解除しました",
+		"disconnectError": "{{name}} の接続を解除できませんでした。{{message}}",
+		"sessionLoginNote": "このアカウントでサインインしているため、ログアウトするまで接続されたままです。"
+	},
+	"services": {
+		"toolCounts_one": "{{count}} 個のツール、うち {{ask}} 個は事前に確認",
+		"toolCounts_other": "{{count}} 個のツール、うち {{ask}} 個は事前に確認",
+		"outlook": {
+			"name": "Outlook メール",
+			"description": "メールの読み取り、検索、下書きを行います。送信、返信、削除の前には確認します。"
+		},
+		"outlook-calendar": {
+			"name": "Outlook 予定表",
+			"description": "予定表を確認し、空き時間を見つけます。新しい招待の送信や変更の前には確認します。"
+		},
+		"onedrive": {
+			"name": "OneDrive",
+			"description": "ファイルの検索、読み取り、ダウンロードを行います。アップロード、共有、削除の前には確認します。"
+		},
+		"teams": {
+			"name": "Microsoft Teams",
+			"description": "チャット、チャネル、共有ファイルを読み取ります。メッセージを送信する前には確認します。"
+		},
+		"gmail": {
+			"name": "Gmail",
+			"description": "メールの読み取りと検索を行います。送信と削除の前には確認します。"
+		},
+		"google-calendar": {
+			"name": "Google Calendar",
+			"description": "予定を確認します。新しい予定の作成や変更の前には確認します。"
+		},
+		"google-drive": {
+			"name": "Google Drive",
+			"description": "Drive のファイルの一覧表示と検索を行います。削除の前には確認します。"
+		},
+		"google-docs": {
+			"name": "Google Docs",
+			"description": "ドキュメントを読み取ります。作成、編集、削除の前には確認します。"
+		}
+	},
+	"connectors": {
+		"saveError": "コネクターを更新できませんでした。{{message}}",
+		"adoptError": "チャットは開始されましたが、コネクターをオンにできませんでした。{{message}}"
+	},
+	"connections": {
+		"appsDescription": "サインインすると、そのアカウントがあなたのセッションにリンクされます。アシスタントが参照できるのは、そのアカウントで参照できる内容だけです。",
+		"appsHint": "ここでアプリをオンまたはオフにすると、新しいチャットと既存のチャットのすべてに反映されます。チャットの「+」メニューからも同じ設定を開けます。",
+		"settingsError": "コネクターの設定を読み取れませんでした。"
+	},
+	"sources": {
+		"saved": "{{name}} を {{target}} に保存しました",
+		"show": "表示",
+		"added": "{{name}} は次のメッセージと一緒に送信されます",
+		"notAccepted": "{{name}} を {{target}} に保存しましたが、このチャットではその種類のファイルをメッセージで送信できません。"
+	},
+	"signIn": {
+		"notice": "{{account}} にサインインしていないため、このチャットでは {{services}} を使用できません。",
+		"action": "サインイン",
+		"dismiss": "{{account}} のサインインのお知らせを非表示",
+		"toolFailed": "{{account}} にサインインしていないため、この呼び出しを実行できませんでした。サインインしてから、もう一度依頼してください。",
+		"toolAction": "{{account}} にサインイン",
+		"notOffered": "このサーバーでは {{account}} でのサインインが提供されていないため、このチャットでは {{services}} を使用できません。"
+	},
+	"scopes": {
+		"notice": "このサーバーの {{account}} サインインでは {{services}} が許可されていないため、このチャットでは使用できません。必要な権限を追加するよう管理者に依頼してください。",
+		"dismiss": "{{account}} の権限のお知らせを非表示",
+		"serviceBlocked": "利用できません: このサーバーのサインインには必要な権限が含まれていません。追加するよう管理者に依頼してください。"
+	}
+}

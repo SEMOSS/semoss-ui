@@ -10,7 +10,7 @@ import {
 	DialogTitle,
 	Small,
 } from "@semoss/ui/next";
-import { ConnectorsSettings } from "@/features/teamwork/components/connectors-settings";
+import { ConnectorsSettings } from "@/features/connectors/components/connectors-settings";
 import { GeneralSettings } from "./general-settings";
 import type { SettingsSectionId } from "./settings-dialog.context";
 

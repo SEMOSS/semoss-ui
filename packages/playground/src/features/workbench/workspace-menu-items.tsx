@@ -38,7 +38,7 @@ export function WorkspaceMenuItems({
 	onNavigate,
 }: WorkspaceMenuItemsProps) {
 	const { t } = useTranslation("room");
-	const { t: tTeamwork } = useTranslation("teamwork");
+	const { t: tChatTools } = useTranslation("chatTools");
 	const select = (action: () => void) => {
 		action();
 		onNavigate?.();
@@ -63,7 +63,7 @@ export function WorkspaceMenuItems({
 					onSelect={() => select(onOpenTools)}
 				>
 					<WrenchIcon aria-hidden="true" />
-					{tTeamwork("menu.showTools")}
+					{tChatTools("menu.showTools")}
 				</DropdownMenuItem>
 			)}
 			{showActivityLog && (

@@ -220,7 +220,10 @@ test("inline folder tools retain their approval card inside the compact activity
 			_meta: { SMSS_CLIENT_TOOL: true, SMSS_MCP_EXECUTION: "ask" },
 		},
 		parameters: { path: "draft.md", content: "Draft content" },
-		room: { ...base.room, teamwork: { signIn: vi.fn(), approveChatTool } },
+		room: {
+			...base.room,
+			chatTools: { approveChatTool },
+		},
 	} as unknown as ToolStore;
 	render(<ResponseMessageTool tool={tool} />);
 	expect(screen.getByRole("button", { name: "card.deny" })).toBeVisible();

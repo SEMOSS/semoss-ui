@@ -12,9 +12,9 @@ import { observable, runInAction } from "mobx";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { CodeEditorProps } from "@semoss/ui/next";
 import { ToolsDefaultView } from "@/components/mcp/tools-default-view/tools-default-view";
+import { ChatToolCard } from "@/features/chat-tools/components/chat-tool-card";
 import type { RoomStore } from "@/stores/room/room.store";
 import type { ToolStore } from "@/stores/tool/tool.store";
-import { TeamworkToolCard } from "../teamwork/components/teamwork-tool-card";
 import { ToolDataView } from "./tool-data-view";
 import { ToolInspector } from "./tool-inspector";
 import { formatToolPayload } from "./tool-payload";
@@ -54,7 +54,7 @@ vi.mock("@semoss/sdk/react", () => ({
 		},
 	}),
 }));
-vi.mock("../teamwork/connectors/use-connect-provider", () => ({
+vi.mock("@/features/connectors/use-connect-provider", () => ({
 	useConnectProvider: () => vi.fn(),
 }));
 vi.mock("@semoss/ui/next", async (importOriginal) => {
@@ -291,7 +291,7 @@ const createApprovalTool = (mode: "chat" | "agent" = "chat") => {
 		},
 		room: {
 			mode,
-			teamwork: {
+			chatTools: {
 				approveChatTool,
 				declineChatTool,
 				approveConnectorChatTool,
@@ -305,7 +305,7 @@ const createApprovalTool = (mode: "chat" | "agent" = "chat") => {
 test("folder approvals remain available on Info and still use the room's approval path", async () => {
 	const user = userEvent.setup();
 	const { tool, approveChatTool } = createApprovalTool();
-	render(<TeamworkToolCard tool={tool} variant="panel" />);
+	render(<ChatToolCard tool={tool} variant="panel" />);
 	await user.click(screen.getByRole("tab", { name: "inspector.info" }));
 	await user.click(screen.getByRole("button", { name: "card.allow" }));
 	expect(approveChatTool).toHaveBeenCalledWith(tool);
@@ -316,7 +316,7 @@ test("folder approvals remain available on Info and still use the room's approva
 test("agent denials retain the harness decision path", async () => {
 	const user = userEvent.setup();
 	const { tool, declineChatTool } = createApprovalTool("agent");
-	render(<TeamworkToolCard tool={tool} variant="panel" />);
+	render(<ChatToolCard tool={tool} variant="panel" />);
 	await user.click(screen.getByRole("tab", { name: "tabs.output" }));
 	await user.click(screen.getByRole("button", { name: "card.deny" }));
 	expect(mocks.decideAgent).toHaveBeenCalledWith(tool, "reject");
@@ -326,7 +326,7 @@ test("agent denials retain the harness decision path", async () => {
 test("failed approvals report the error and allow retry", async () => {
 	const { tool, approveChatTool } = createApprovalTool();
 	approveChatTool.mockRejectedValueOnce(new Error("Unavailable"));
-	render(<TeamworkToolCard tool={tool} variant="panel" />);
+	render(<ChatToolCard tool={tool} variant="panel" />);
 	fireEvent.click(screen.getByRole("button", { name: "card.allow" }));
 	await waitFor(() =>
 		expect(mocks.toastError).toHaveBeenCalledWith("card.decisionError"),

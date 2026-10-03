@@ -570,7 +570,7 @@ ${this.message.id ? `parentMessageId=["${this.message.id}"],` : ""}
 toolId=["${entry.tool.id}"],
 toolName=["${entry.tool.json.name}"],
 toolExecutionResponse=["<encode>${entry.toolResponse}</encode>"],
-paramValues=[${JSON.stringify(this.message.room.teamwork.chatParamValues)}],
+paramValues=[${JSON.stringify(this.message.room.chatTools.chatParamValues)}],
 mcpToolStatus=${JSON.stringify(entry.toolStatus)},
 toolParameterValues=[${JSON.stringify(entry.executedParameters ?? {})}]`;
 }
