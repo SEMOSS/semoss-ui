@@ -1,0 +1,92 @@
+{
+	"providers": {
+		"MICROSOFT": {
+			"name": "Microsoft 365"
+		},
+		"GOOGLE": {
+			"name": "Google Workspace",
+			"scopesNote": "Gmail, Calendar, Drive et Docs nécessitent que votre administrateur accorde ces autorisations Google pour ce serveur."
+		},
+		"connected": "Connecté",
+		"connectedAs": "Connecté en tant que {{name}}",
+		"notConnected": "Non connecté",
+		"unavailable": "Non proposé sur ce serveur",
+		"connect": "Connecter",
+		"reconnect": "Reconnecter",
+		"connecting": "En attente de la connexion...",
+		"connectSuccess": "{{name}} est connecté",
+		"connectIncomplete": "{{name}} n'a pas été connecté. La fenêtre de connexion s'est fermée avant la fin.",
+		"connectError": "Impossible de connecter {{name}}. {{message}}",
+		"popupBlocked": "Votre navigateur a bloqué la fenêtre de connexion. Autorisez les fenêtres pop-up pour ce site et réessayez.",
+		"loadErrorTitle": "Impossible de vérifier vos comptes connectés",
+		"disconnect": "Déconnecter",
+		"disconnecting": "Déconnexion...",
+		"disconnectSuccess": "{{name}} est déconnecté",
+		"disconnectError": "Impossible de déconnecter {{name}}. {{message}}",
+		"sessionLoginNote": "Vous vous êtes connecté avec ce compte : il reste connecté jusqu'à votre déconnexion."
+	},
+	"services": {
+		"toolCounts_one": "{{count}} outil, dont {{ask}} soumis à approbation",
+		"toolCounts_other": "{{count}} outils, dont {{ask}} soumis à approbation",
+		"outlook": {
+			"name": "Courrier Outlook",
+			"description": "Lit, recherche et rédige des e-mails. Demande votre approbation avant d'envoyer, de répondre ou de supprimer."
+		},
+		"outlook-calendar": {
+			"name": "Calendrier Outlook",
+			"description": "Consulte votre agenda et trouve des créneaux libres. Demande votre approbation avant d'envoyer des invitations ou d'apporter des modifications."
+		},
+		"onedrive": {
+			"name": "OneDrive",
+			"description": "Trouve, lit et télécharge vos fichiers. Demande votre approbation avant de téléverser, de partager ou de supprimer."
+		},
+		"teams": {
+			"name": "Microsoft Teams",
+			"description": "Lit les chats, les canaux et les fichiers partagés. Demande votre approbation avant d'envoyer des messages."
+		},
+		"gmail": {
+			"name": "Gmail",
+			"description": "Lit et recherche des e-mails. Demande votre approbation avant d'envoyer ou de supprimer."
+		},
+		"google-calendar": {
+			"name": "Google Calendar",
+			"description": "Consulte vos événements. Demande votre approbation avant de créer des événements ou d'apporter des modifications."
+		},
+		"google-drive": {
+			"name": "Google Drive",
+			"description": "Liste et consulte vos fichiers Drive. Demande votre approbation avant de supprimer."
+		},
+		"google-docs": {
+			"name": "Google Docs",
+			"description": "Lit vos documents. Demande votre approbation avant de créer, de modifier ou de supprimer."
+		}
+	},
+	"connectors": {
+		"saveError": "Impossible de mettre à jour les connecteurs. {{message}}",
+		"adoptError": "Le chat a démarré, mais ses connecteurs n'ont pas pu être activés. {{message}}"
+	},
+	"connections": {
+		"appsDescription": "La connexion associe le compte à votre session. L'assistant ne voit que ce que ce compte peut voir.",
+		"appsHint": "Activer ou désactiver une application ici la modifie dans tous vos chats, nouveaux et existants. Le menu + d'un chat ouvre les mêmes réglages.",
+		"settingsError": "Impossible de lire vos réglages de connecteurs."
+	},
+	"sources": {
+		"saved": "{{name}} enregistré dans {{target}}",
+		"show": "Afficher",
+		"added": "{{name}} sera joint à votre prochain message",
+		"notAccepted": "{{name}} a été enregistré dans {{target}}, mais ce chat n'accepte pas ce type de fichier dans un message."
+	},
+	"signIn": {
+		"notice": "{{account}} n'est pas connecté, donc {{services}} ne peuvent pas fonctionner dans ce chat.",
+		"action": "Se connecter",
+		"dismiss": "Masquer l'avis de connexion à {{account}}",
+		"toolFailed": "Cet appel n'a pas pu s'exécuter, car {{account}} n'est pas connecté. Connectez-vous, puis redemandez.",
+		"toolAction": "Se connecter à {{account}}",
+		"notOffered": "Ce serveur ne propose pas la connexion avec {{account}}, donc {{services}} ne peuvent pas fonctionner dans ce chat."
+	},
+	"scopes": {
+		"notice": "La connexion {{account}} de ce serveur n'autorise pas {{services}}, qui ne peuvent donc pas fonctionner dans ce chat. Demandez à votre administrateur d'ajouter l'autorisation nécessaire.",
+		"dismiss": "Masquer l'avis d'autorisations {{account}}",
+		"serviceBlocked": "Indisponible : la connexion de ce serveur n'inclut pas l'autorisation nécessaire. Demandez à votre administrateur de l'ajouter."
+	}
+}

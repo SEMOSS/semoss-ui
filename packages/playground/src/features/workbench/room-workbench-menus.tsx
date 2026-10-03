@@ -45,7 +45,7 @@ export const RoomWorkbenchMenus = observer(function RoomWorkbenchMenus({
 					onOpenTools={
 						workspaceActions
 							? undefined
-							: room.teamwork.openToolsPanel
+							: room.chatTools.openToolsPanel
 					}
 					onOpenSettings={
 						onOpenSettings ??

@@ -7,7 +7,9 @@
 		"close": "閉じる",
 		"confirm": "確認",
 		"upload": "アップロード",
-		"search": "検索"
+		"search": "検索",
+		"retry": "再試行",
+		"refresh": "更新"
 	},
 	"labels": {
 		"name": "名前",

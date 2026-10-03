@@ -25,6 +25,7 @@ exports the public helpers. See the [README](./README.md) for import examples.
 | `text` | Text transforms, initials, hashing, and counting |
 | `identifier` | Identifier labels, slugs, validation, and unique names |
 | `date` | Date/time formatting, durations, local dates, and date buckets |
+| `array` | Array comparison |
 | `object` | Object checks and copying |
 | `json` | JSON parsing and formatting, key-sorted serialization, tabular detection, and error locations |
 | `file` | File extensions and filename sanitization |

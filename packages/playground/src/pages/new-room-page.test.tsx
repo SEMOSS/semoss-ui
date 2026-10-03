@@ -74,9 +74,9 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 	getI18n: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@/features/teamwork/connectors/connector-tools", async (original) => ({
+vi.mock("@/features/connectors/connector-tools", async (original) => ({
 	...(await original<
-		typeof import("@/features/teamwork/connectors/connector-tools")
+		typeof import("@/features/connectors/connector-tools")
 	>()),
 	readUserConnectorTools: vi.fn().mockResolvedValue(null),
 	syncRoomConnectorTools: vi.fn().mockResolvedValue(undefined),
@@ -107,7 +107,7 @@ vi.mock("@/components/room/panels/room-panel.components", async () => {
 	);
 	const { FILE_PANEL_TYPES } = await import("@semoss/panels");
 	const { useNextMessageRoom } = await import(
-		"@/features/teamwork/sources/next-message-room"
+		"@/features/conversation/next-message-room.context"
 	);
 	const Source = () => {
 		const draft = useNextMessageRoom();
@@ -115,7 +115,7 @@ vi.mock("@/components/room/panels/room-panel.components", async () => {
 			<button
 				type="button"
 				onClick={() =>
-					draft?.teamwork.addContextItem({
+					draft?.contextItems.add({
 						name: "email.md",
 						path: "email.md",
 						service: "gmail",
@@ -221,9 +221,7 @@ vi.mock("@/components/room/room-input", () => ({
 				/>
 				<output aria-label="Mode">{room.mode}</output>
 				<output aria-label="Queued context">
-					{room.teamwork.contextItems
-						.map((item) => item.name)
-						.join(",")}
+					{room.contextItems.items.map((item) => item.name).join(",")}
 				</output>
 				<button type="button" onClick={() => onOpenSource?.("gmail")}>
 					Open Gmail
@@ -554,7 +552,7 @@ test("connector viewers share the prepared room and transfer draft context befor
 	expect(screen.getByLabelText("Queued context")).toHaveTextContent(
 		"email.md",
 	);
-	expect(room.teamwork.contextItems).toHaveLength(0);
+	expect(room.contextItems.items).toHaveLength(0);
 	selectWorkspaceItem("menuFileExplorer.open");
 	await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
@@ -564,7 +562,7 @@ test("connector viewers share the prepared room and transfer draft context befor
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Send" }));
 	await waitFor(() => expect(askMessage).toHaveBeenCalledTimes(1));
-	expect(room.teamwork.contextItems.map((item) => item.name)).toEqual([
+	expect(room.contextItems.items.map((item) => item.name)).toEqual([
 		"email.md",
 	]);
 	expect(screen.getByLabelText("Queued context")).toBeEmptyDOMElement();

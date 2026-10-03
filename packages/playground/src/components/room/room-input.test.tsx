@@ -245,18 +245,20 @@ const defaultProps = {
 	},
 	// Only these room fields are consumed by the composer in this test.
 	room: {
-		teamwork: {
+		chatTools: {
 			isAgentMode: false,
-			connectors: [],
+			openToolsPanel: vi.fn(),
+		},
+		connectors: {
+			services: [],
 			availableSources: [],
 			openSourcePanel: vi.fn(),
-			openToolsPanel: vi.fn(),
-			contextItems: [],
 			missingSignIns: [],
 			uncoveredConnectors: [],
 			unofferedProviders: [],
 			setSessionLogins: vi.fn(),
 		},
+		contextItems: { items: [], remove: vi.fn() },
 		roomId: "room",
 		history: [],
 		options: {},
@@ -571,12 +573,11 @@ test("new-chat Agent opens the picker without changing mode on cancel", async ()
 });
 
 test("connector attachments stay visible and removable without an uploaded file", () => {
-	const removeContextItem = vi.fn();
+	const remove = vi.fn();
 	const room = {
 		...defaultProps.room,
-		teamwork: {
-			...defaultProps.room.teamwork,
-			contextItems: [
+		contextItems: {
+			items: [
 				{
 					id: "email",
 					name: "Email summary.md",
@@ -584,11 +585,13 @@ test("connector attachments stay visible and removable without an uploaded file"
 					service: "gmail",
 				},
 			],
-			removeContextItem,
+			remove,
 		},
 	} as unknown as RoomStore;
 	render(<RoomInput {...defaultProps} room={room} />);
 	expect(screen.getByText("Email summary.md")).toBeVisible();
-	fireEvent.click(screen.getByRole("button", { name: "context.remove" }));
-	expect(removeContextItem).toHaveBeenCalledWith("email");
+	fireEvent.click(
+		screen.getByRole("button", { name: "contextItems.remove" }),
+	);
+	expect(remove).toHaveBeenCalledWith("email");
 });

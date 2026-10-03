@@ -9,7 +9,7 @@ import {
 } from "@semoss/ui/next";
 import { RoomInputMenuMCP } from "@/components/room/room-input-menu-mcp";
 import { RoomInputMenuUpload } from "@/components/room/room-input-menu-upload";
-import { TeamworkSourcesMenuItem } from "@/features/teamwork/components/teamwork-sources-menu-item";
+import { ConnectorSourcesMenuItem } from "@/features/connectors/components/connector-sources-menu-item";
 import type { RoomStore } from "@/stores/room/room.store";
 
 export interface RoomComposerMenuProps {
@@ -76,8 +76,8 @@ export function RoomComposerMenu({
 				disabled={disabled}
 				onSelect={() => openPicker("TOOLBOX")}
 			/>
-			<TeamworkSourcesMenuItem
-				teamwork={room.teamwork}
+			<ConnectorSourcesMenuItem
+				connectors={room.connectors}
 				onOpenSource={onOpenSource}
 				onSelect={close}
 			/>

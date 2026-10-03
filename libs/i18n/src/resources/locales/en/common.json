@@ -7,7 +7,9 @@
 		"close": "Close",
 		"confirm": "Confirm",
 		"upload": "Upload",
-		"search": "Search"
+		"search": "Search",
+		"retry": "Try Again",
+		"refresh": "Refresh"
 	},
 	"labels": {
 		"name": "Name",

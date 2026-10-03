@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import * as utility from "@semoss/utility";
+import * as array from "@semoss/utility/array";
 import * as date from "@semoss/utility/date";
 import * as encoding from "@semoss/utility/encoding";
 import * as file from "@semoss/utility/file";
@@ -13,6 +14,7 @@ import { validateIdentifier } from "./identifier";
 
 it("exports the canonical helper names through their categories and root", () => {
 	expect(utility).toMatchObject({
+		isSameArray: array.isSameArray,
 		deepCopy: object.deepCopy,
 		formatTextByteSize: text.formatTextByteSize,
 		readNonBlankString: text.readNonBlankString,

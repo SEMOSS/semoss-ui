@@ -7,7 +7,9 @@
 		"close": "إغلاق",
 		"confirm": "تأكيد",
 		"upload": "رفع",
-		"search": "بحث"
+		"search": "بحث",
+		"retry": "إعادة المحاولة",
+		"refresh": "تحديث"
 	},
 	"labels": {
 		"name": "الاسم",
