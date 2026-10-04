@@ -57,6 +57,7 @@ import {
 	StepActions,
 	StepHeader,
 } from "./onboarding-ui";
+import { TeamsImportNotice } from "./teams-import-notice";
 import { useJob } from "./use-job";
 
 interface StepProps {
@@ -746,13 +747,7 @@ export function ImportStep({
 					/>
 				</div>
 			)}
-			{active && typeof counts.teamsError === "string" && (
-				<p className="rounded-xl bg-warning/10 px-4 py-3 text-sm">
-					Teams chats could not be read, so only mail came in. Sign
-					out of SEMOSS and back in, then import again. (
-					{counts.teamsError})
-				</p>
-			)}
+			{active && <TeamsImportNotice counts={counts} />}
 			{job?.status === "failed" && (
 				<Failure
 					error={job.error || "The import stopped."}
