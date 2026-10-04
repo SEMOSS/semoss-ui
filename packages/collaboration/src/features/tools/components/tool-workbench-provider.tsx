@@ -106,7 +106,7 @@ export function ToolWorkbenchProvider({
 		() => new Set(),
 	);
 	const automaticallyOpened = useRef(new Set<string>());
-	const runTriggerId = useRef<string | null>(null);
+	const workbenchTriggerId = useRef<string | null>(null);
 	const activeToolId = useSyncExternalStore(
 		store.subscribe,
 		() => {
@@ -223,7 +223,7 @@ export function ToolWorkbenchProvider({
 
 	const openRun = useCallback(
 		(runId: string) => {
-			if (!isOpen) runTriggerId.current = `run-${runId}`;
+			if (!isOpen) workbenchTriggerId.current = `run-${runId}`;
 			store.getState().layout.actions.selectPanel(
 				RUN_PANEL_TYPE,
 				{ runId },
@@ -239,6 +239,11 @@ export function ToolWorkbenchProvider({
 
 	const openFile = useCallback(
 		(path: string, name: string, fileInsightId?: string) => {
+			if (!isOpen) {
+				const trigger = document.activeElement;
+				workbenchTriggerId.current =
+					trigger instanceof HTMLElement ? trigger.id || null : null;
+			}
 			const otherInsightId =
 				fileInsightId && fileInsightId !== insightId
 					? fileInsightId
@@ -259,7 +264,7 @@ export function ToolWorkbenchProvider({
 			);
 			setIsOpen(true);
 		},
-		[insightId, store, panelTarget],
+		[insightId, isOpen, store, panelTarget],
 	);
 
 	const openInline = useCallback(
@@ -301,13 +306,15 @@ export function ToolWorkbenchProvider({
 
 	const closeWorkbench = useCallback(() => {
 		setIsOpen(false);
-		if (runTriggerId.current) {
-			const triggerId = runTriggerId.current;
+		if (workbenchTriggerId.current) {
+			const triggerId = workbenchTriggerId.current;
 			window.requestAnimationFrame(() =>
 				document.getElementById(triggerId)?.focus(),
 			);
-			runTriggerId.current = null;
+			workbenchTriggerId.current = null;
+			return true;
 		} else if (activeToolId) focusToolTrigger(activeToolId);
+		return false;
 	}, [activeToolId, focusToolTrigger]);
 
 	useEffect(() => {

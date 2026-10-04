@@ -402,13 +402,14 @@ export function UnifiedThread({
 	const submitted = lastSubmittedContext(snapshot.turn.messages, thread.id);
 	const closePane = () => {
 		setIsChatCollapsed(false);
-		workbench.closeWorkbench();
+		const workbenchRestoresFocus = workbench.closeWorkbench();
 		const targetId = openedFromMenu.current
 			? threadMenuTriggerId(thread.id)
 			: actionsTriggerId;
 		openedFromMenu.current = false;
 		const returnTarget = emailTrigger.current;
 		emailTrigger.current = null;
+		if (workbenchRestoresFocus && !returnTarget) return;
 		requestAnimationFrame(() =>
 			restoreThreadFocus(
 				returnTarget?.isConnected

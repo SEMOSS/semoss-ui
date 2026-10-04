@@ -33,7 +33,8 @@ export interface ToolWorkbenchContextValue {
 	 */
 	openFile: (path: string, name: string, insightId?: string) => void;
 	closeTool: (toolId: string) => void;
-	closeWorkbench: () => void;
+	/** Close the dock; true means it owns returning focus to the opening control. */
+	closeWorkbench: () => boolean;
 	onApproveTool: (
 		approval: PendingToolApproval,
 		argumentsValue: Record<string, unknown>,
