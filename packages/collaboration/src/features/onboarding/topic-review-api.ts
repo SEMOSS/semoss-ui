@@ -2,6 +2,9 @@ import { z } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
 import { callPixel, pixel } from "@/lib/pixel";
 import { mapJob } from "./onboarding-api";
+import { topicClues, topicCluesSchema } from "./topic-clues";
+
+export { topicClues } from "./topic-clues";
 
 export const topicDraftSchema = z.object({
 	key: z.string().min(1).max(100),
@@ -11,12 +14,15 @@ export const topicDraftSchema = z.object({
 		.string()
 		.max(12000, "Use a description of at most 12,000 characters"),
 	short: z.string().max(255, "Use a short label of at most 255 characters"),
+	terms: topicCluesSchema,
 	keep: z.boolean(),
 	removedPeople: z.array(z.string()),
 });
 
 export const topicReviewDraftSchema = z.object({
 	topics: z.array(topicDraftSchema).max(100),
+	guidance: z.string().max(6000),
+	granularity: z.enum(["broad", "projects", "detailed"]),
 });
 
 export const topicReviewApplySchema = topicReviewDraftSchema.superRefine(
@@ -35,11 +41,17 @@ export const topicReviewApplySchema = topicReviewDraftSchema.superRefine(
 );
 
 const reviewTopicSchema = topicDraftSchema.extend({
+	terms: topicCluesSchema.default(""),
 	id: z
 		.string()
 		.nullish()
 		.transform((value) => value ?? null),
 	accepted: z.boolean().default(false),
+	mergedIntoKey: z
+		.string()
+		.nullish()
+		.transform((value) => value ?? null),
+	mergeApplied: z.boolean().default(false),
 	reason: z
 		.string()
 		.nullish()
@@ -56,6 +68,7 @@ const receiptTopicSchema = z.object({
 	name: z.string(),
 	short: z.string(),
 	description: z.string(),
+	keywords: z.array(z.string()).optional(),
 });
 
 export const topicLinkSchema = z.object({
@@ -82,6 +95,26 @@ const correctionReceiptSchema = z.object({
 	rejectedTopicIds: z.array(z.string()),
 });
 
+const topicProfileConflictSchema = z.object({
+	topicKey: z.string().min(1),
+	profileVersion: z.string().regex(/^[a-f0-9]{64}$/),
+	exists: z.boolean(),
+	canReconcile: z.boolean(),
+	reason: z.string(),
+	savedProfile: z.object({
+		name: z.string(),
+		short: z.string(),
+		description: z.string(),
+		terms: z.string(),
+		kind: z.string(),
+		status: z.string(),
+		people: z.array(
+			z.object({ id: z.string(), name: z.string(), state: z.string() }),
+		),
+	}),
+});
+export type TopicProfileConflict = z.infer<typeof topicProfileConflictSchema>;
+
 /** Validate background-job wire data before mapping it to the existing client contract. */
 const filingJobSchema = z
 	.object({
@@ -100,8 +133,13 @@ export const topicReviewSchema = z
 	.object({
 		id: z.string().min(1),
 		revision: z.number().int().positive(),
+		profileConflicts: z.array(topicProfileConflictSchema).default([]),
 		draft: z.object({
 			topics: z.array(reviewTopicSchema),
+			guidance: z.string().default(""),
+			granularity: z
+				.enum(["broad", "projects", "detailed"])
+				.default("broad"),
 			modelError: z.string().default(""),
 			corrections: z.array(topicCorrectionSchema).optional(),
 			history: z
@@ -127,6 +165,20 @@ export const topicReviewSchema = z
 				topics: z.array(receiptTopicSchema),
 				skipped: z.array(z.string()),
 				corrections: z.array(correctionReceiptSchema).optional(),
+				merges: z
+					.array(
+						z.object({
+							sourceKey: z.string(),
+							targetKey: z.string(),
+							sourceId: z
+								.string()
+								.nullish()
+								.transform((value) => value ?? null),
+							targetId: z.string(),
+							mergedInto: z.string().optional(),
+						}),
+					)
+					.optional(),
 			})
 			.nullish(),
 		filingJobId: z
@@ -275,12 +327,51 @@ export async function applyTopicReview(
 				!receipt ||
 				receipt.name !== topic.name.trim() ||
 				receipt.short !== (topic.short.trim() || topic.name.trim()) ||
-				receipt.description !== topic.description.trim()
+				receipt.description !== topic.description.trim() ||
+				(receipt.keywords !== undefined
+					? JSON.stringify(receipt.keywords) !==
+						JSON.stringify(topicClues(topic.terms))
+					: topicClues(topic.terms).length > 0)
 			);
 		})
 	) {
 		throw new Error(
 			"The saved topic names or descriptions do not match your review. Reload the saved review before continuing.",
+		);
+	}
+	const expectedMerges = review.draft.topics.filter(
+		(topic) => topic.mergedIntoKey && !topic.mergeApplied,
+	);
+	const merges = saved.result.merges ?? [];
+	if (
+		expectedMerges.length > 0 &&
+		(merges.length !== expectedMerges.length ||
+			new Set(merges.map((merge) => merge.sourceKey)).size !==
+				expectedMerges.length ||
+			expectedMerges.some((source) => {
+				const merge = merges.find(
+					(item) => item.sourceKey === source.key,
+				);
+				const target = saved.result.topics.find(
+					(item) => item.key === source.mergedIntoKey,
+				);
+				const applied = saved.draft.topics.find(
+					(item) => item.key === source.key,
+				);
+				return (
+					!merge ||
+					!target ||
+					merge.targetKey !== source.mergedIntoKey ||
+					merge.targetId !== target.id ||
+					merge.sourceId !== source.id ||
+					(source.id !== null && merge.mergedInto !== target.id) ||
+					!applied?.mergeApplied ||
+					applied.id !== null
+				);
+			}))
+	) {
+		throw new Error(
+			"The saved topic combinations could not be verified. Reload the saved review before continuing.",
 		);
 	}
 	if (

@@ -86,7 +86,7 @@ describe("onboarding topic review", () => {
 		).toBeEnabled();
 		await user.click(screen.getByRole("button", { name: "Add a topic" }));
 		await user.type(
-			screen.getAllByRole("textbox", { name: "Topic name" })[1],
+			screen.getByRole("textbox", { name: "Topic name" }),
 			"Backend Hiring",
 		);
 		await user.click(screen.getByRole("button", { name: "Back" }));
@@ -96,10 +96,13 @@ describe("onboarding topic review", () => {
 		expect(
 			await screen.findByDisplayValue("Northwind Delivery"),
 		).toBeEnabled();
-		expect(screen.getByDisplayValue("Backend Hiring")).toBeEnabled();
 		expect(
 			screen.getByRole("button", { name: "Restore Bo Chen" }),
 		).toBeEnabled();
+		await user.click(
+			screen.getByRole("button", { name: "Edit Backend Hiring" }),
+		);
+		expect(screen.getByDisplayValue("Backend Hiring")).toBeEnabled();
 	});
 
 	it("blocks a kept blank name and associates the field error without dropping the topic", async () => {
@@ -126,7 +129,11 @@ describe("onboarding topic review", () => {
 
 	it("allows manual setup and explicit zero-topic completion after suggestion failure", async () => {
 		const initial = makeReview();
-		initial.draft = { topics: [], modelError: "Topic model unavailable" };
+		initial.draft = {
+			...initial.draft,
+			topics: [],
+			modelError: "Topic model unavailable",
+		};
 		const session = reviewSession(async () => initial);
 		const onNext = vi.fn();
 		const user = userEvent.setup();
@@ -182,7 +189,7 @@ describe("onboarding topic review", () => {
 		await screen.findByDisplayValue("Northwind Migration");
 		await user.click(screen.getByRole("button", { name: "Add a topic" }));
 		await user.type(
-			screen.getAllByRole("textbox", { name: "Topic name" })[1],
+			screen.getByRole("textbox", { name: "Topic name" }),
 			"Backend Hiring",
 		);
 		await user.click(screen.getByRole("button", { name: "Keep 2 topics" }));

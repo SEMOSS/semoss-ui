@@ -1,5 +1,6 @@
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
+import { topicOrganizationGroupsSchema } from "./topic-organization-schema";
 import {
 	type TopicReview,
 	topicLinkSchema,
@@ -77,6 +78,17 @@ const correctionInputSchema = z
 export const topicReviewChangeSchema = z.union([
 	correctionInputSchema,
 	z.object({ type: z.literal("undo"), changeId: z.string().min(1) }),
+	z.object({
+		type: z.literal("organize"),
+		groups: topicOrganizationGroupsSchema,
+		scopeVersion: z.string().regex(/^[a-f0-9]{64}$/),
+	}),
+	z.object({
+		type: z.literal("reconcile_profile"),
+		topicKey: z.string().min(1),
+		profileVersion: z.string().regex(/^[a-f0-9]{64}$/),
+		choice: z.enum(["saved", "draft"]),
+	}),
 ]);
 
 export type TopicEvidence = z.infer<typeof topicEvidenceSchema>;

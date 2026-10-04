@@ -11,7 +11,12 @@ import {
 } from "@semoss/ui/next";
 import type { OnboardingStepProps } from "./onboarding-step-props";
 import { Failure, message, StepActions, StepHeader } from "./onboarding-ui";
+import { TopicCombineDialog } from "./topic-combine-dialog";
 import { TopicEvidenceDialog } from "./topic-evidence-dialog";
+import { TopicOrganizationContext } from "./topic-organization-context";
+import { TopicOrganizationPreviewDialog } from "./topic-organization-preview-dialog";
+import { TopicOrganizationProposalDialog } from "./topic-organization-proposal-dialog";
+import { TopicProfileConflicts } from "./topic-profile-conflicts";
 import {
 	applyTopicReview,
 	reviewDraft,
@@ -20,6 +25,7 @@ import {
 	topicReviewApplySchema,
 } from "./topic-review-api";
 import { TopicReviewCard } from "./topic-review-card";
+import { useTopicOrganization } from "./use-topic-organization";
 import { useTopicReviewChanges } from "./use-topic-review-changes";
 import { useTopicReviewDraft } from "./use-topic-review-draft";
 
@@ -44,9 +50,26 @@ export function TopicReviewForm({
 		control: form.control,
 		name: "topics",
 	});
+	const [expandedKey, setExpandedKey] = useState<string | null>(
+		initialReview.draft.topics.find((topic) => topic.keep)?.key ??
+			initialReview.draft.topics[0]?.key ??
+			null,
+	);
+	const [focusRequest, setFocusRequest] = useState<{
+		key: string;
+		field: "name" | "description" | "short" | "terms";
+	} | null>(null);
 	const controller = useTopicReviewDraft(actions, initialReview);
 	const changes = useTopicReviewChanges(actions, controller, form);
+	const organization = useTopicOrganization(
+		actions,
+		controller,
+		form,
+		changes,
+	);
 	const inspectPrefix = useId();
+	const organizationTriggerId = `${inspectPrefix}-organize`;
+	const [combineKey, setCombineKey] = useState<string | null>(null);
 	const [inspection, setInspection] = useState<{
 		key: string;
 		trigger: HTMLButtonElement;
@@ -62,12 +85,25 @@ export function TopicReviewForm({
 		isGoingBack ||
 		isReloading ||
 		changes.isChanging ||
-		isOpeningEvidence;
+		isOpeningEvidence ||
+		organization.isAsking ||
+		organization.isOpening;
 	const inspectedTopic = values.topics.find(
 		(topic) => topic.key === inspection?.key,
 	);
 	const latestChange = controller.review.draft.history?.at(-1);
 	const kept = values.topics.filter((topic) => topic.keep).length;
+	const combinedKeys = new Set(
+		controller.review.draft.topics
+			.filter((topic) => topic.mergedIntoKey)
+			.map((topic) => topic.key),
+	);
+	const availableTopics = values.topics.filter(
+		(topic) => topic.keep && !combinedKeys.has(topic.key),
+	);
+	const combineTopic = availableTopics.find(
+		(topic) => topic.key === combineKey,
+	);
 	const error = errors.root?.server?.message || controller.error;
 
 	useEffect(() => {
@@ -76,6 +112,16 @@ export function TopicReviewForm({
 		});
 		return () => subscription.unsubscribe();
 	}, [form, queueDraft, isReloading]);
+
+	useEffect(() => {
+		if (!focusRequest) return;
+		const index = fields.findIndex(
+			(topic) => topic.key === focusRequest.key,
+		);
+		if (index < 0) return;
+		form.setFocus(`topics.${index}.${focusRequest.field}`);
+		setFocusRequest(null);
+	}, [fields, focusRequest, form]);
 
 	const handleSubmit = async (draft: TopicReviewDraft): Promise<void> => {
 		try {
@@ -156,17 +202,56 @@ export function TopicReviewForm({
 			<Form
 				form={form}
 				onSubmit={handleSubmit}
+				onError={(validation) => {
+					const index = values.topics.findIndex(
+						(_, item) => validation.topics?.[item],
+					);
+					const topic = values.topics[index];
+					if (!topic) return;
+					const issue = validation.topics?.[index];
+					const field = issue?.name
+						? "name"
+						: issue?.description
+							? "description"
+							: issue?.terms
+								? "terms"
+								: "short";
+					setExpandedKey(topic.key);
+					setFocusRequest({ key: topic.key, field });
+				}}
 				noValidate
 				aria-busy={isBusy}
 				className="flex min-w-0 flex-col gap-6"
 			>
 				<StepHeader eyebrow={eyebrow} title="What your work is about">
-					Choose the topics you want to track. Edit the suggestions or
-					add your own.
+					Start with the projects, clients or areas you want to track.
+					Keep broad topics that fit how you work, and combine
+					overlapping suggestions.
 				</StepHeader>
+				<TopicOrganizationContext
+					isBusy={
+						isBusy ||
+						!!changes.error ||
+						availableTopics.length === 0 ||
+						controller.review.profileConflicts.length > 0
+					}
+					isAsking={organization.isAsking}
+					hasProposal={!!organization.proposal}
+					error={organization.error}
+					onAsk={() => void organization.ask()}
+					onShowProposal={organization.showProposal}
+					triggerId={organizationTriggerId}
+				/>
 				<div className="flex flex-wrap items-center justify-between gap-2 text-sm">
 					<P>
 						{kept} {kept === 1 ? "topic" : "topics"} kept
+						<span className="text-muted-foreground">
+							{" "}
+							· {fields.length - combinedKeys.size} to review
+							{combinedKeys.size > 0
+								? ` · ${combinedKeys.size} combined`
+								: ""}
+						</span>
 					</P>
 					<output className="text-muted-foreground">
 						{controller.status === "saved"
@@ -176,12 +261,27 @@ export function TopicReviewForm({
 								: "Saving draft…"}
 					</output>
 				</div>
-				{(controller.review.draft.corrections?.length ?? 0) > 0 && (
+				{controller.review.profileConflicts.length > 0 && (
+					<TopicProfileConflicts
+						conflicts={controller.review.profileConflicts}
+						topics={values.topics}
+						isBusy={isBusy || !!changes.error}
+						onChoose={(conflict, choice) =>
+							void changes.change({
+								type: "reconcile_profile",
+								topicKey: conflict.topicKey,
+								profileVersion: conflict.profileVersion,
+								choice,
+							})
+						}
+					/>
+				)}
+				{latestChange && (
 					<div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
 						<output className="break-words text-sm">
 							{changes.isChanging
-								? "Saving conversation correction…"
-								: `${controller.review.draft.lastChange || "Conversation corrections saved"}. These take effect when you save this setup.`}
+								? "Saving review change…"
+								: `${controller.review.draft.lastChange || "Review changes saved"}. These take effect when you save this setup.`}
 						</output>
 						{latestChange && (
 							<Button
@@ -197,7 +297,7 @@ export function TopicReviewForm({
 								}
 							>
 								<RotateCcw aria-hidden="true" /> Undo last
-								correction
+								change
 							</Button>
 						)}
 					</div>
@@ -225,10 +325,10 @@ export function TopicReviewForm({
 					Examples explain the suggestions. Conversations are filed
 					after you save your topics.
 				</P>
-				<div className="grid min-w-0 gap-4 sm:grid-cols-2">
+				<div className="flex min-w-0 flex-col gap-3">
 					{fields.map((field, index) => {
 						const topic = values.topics[index];
-						if (!topic) return null;
+						if (!topic || combinedKeys.has(topic.key)) return null;
 						return (
 							<TopicReviewCard
 								key={field.id}
@@ -237,6 +337,15 @@ export function TopicReviewForm({
 								)}
 								value={topic}
 								index={index}
+								isExpanded={topic.key === expandedKey}
+								onToggle={() =>
+									setExpandedKey(
+										topic.key === expandedKey
+											? null
+											: topic.key,
+									)
+								}
+								onCombine={() => setCombineKey(topic.key)}
 								isSubmitting={isBusy}
 								inspectId={`${inspectPrefix}-inspect-${topic.key}`}
 								onInspect={(trigger) =>
@@ -271,20 +380,24 @@ export function TopicReviewForm({
 					type="button"
 					variant="outline"
 					disabled={isBusy || fields.length >= 100}
-					onClick={() =>
+					onClick={() => {
+						const key = `added-${crypto.randomUUID()}`;
+						setExpandedKey(key);
+						setFocusRequest({ key, field: "name" });
 						append(
 							{
-								key: `added-${crypto.randomUUID()}`,
+								key,
 								id: null,
 								name: "",
 								description: "",
 								short: "",
+								terms: "",
 								keep: true,
 								removedPeople: [],
 							},
-							{ focusName: `topics.${fields.length}.name` },
-						)
-					}
+							{ shouldFocus: false },
+						);
+					}}
 					className="self-start"
 				>
 					<Plus aria-hidden="true" /> Add a topic
@@ -339,7 +452,11 @@ export function TopicReviewForm({
 					<Button
 						type="submit"
 						size="lg"
-						disabled={isBusy || !!changes.error}
+						disabled={
+							isBusy ||
+							!!changes.error ||
+							controller.review.profileConflicts.length > 0
+						}
 					>
 						{isSubmitting && <Spinner className="size-4" />}
 						{isSubmitting
@@ -349,6 +466,43 @@ export function TopicReviewForm({
 					</Button>
 				</StepActions>
 			</Form>
+			{combineTopic && !organization.preview && (
+				<TopicCombineDialog
+					key={combineTopic.key}
+					topics={availableTopics}
+					topic={combineTopic}
+					isBusy={isBusy}
+					error={organization.error}
+					triggerId={organizationTriggerId}
+					onPreview={organization.openPreview}
+					onClose={() => setCombineKey(null)}
+				/>
+			)}
+			{organization.proposal &&
+				organization.isProposalOpen &&
+				!organization.preview && (
+					<TopicOrganizationProposalDialog
+						key={organization.proposal.revision}
+						proposal={organization.proposal}
+						topics={availableTopics}
+						isBusy={isBusy}
+						isStale={organization.isProposalStale}
+						error={organization.error}
+						triggerId={organizationTriggerId}
+						onPreview={organization.openPreview}
+						onClose={organization.closeProposal}
+					/>
+				)}
+			{organization.preview && (
+				<TopicOrganizationPreviewDialog
+					preview={organization.preview}
+					isBusy={changes.isChanging}
+					error={changes.error || organization.error}
+					triggerId={organizationTriggerId}
+					onAccept={() => void organization.acceptPreview()}
+					onClose={organization.closePreview}
+				/>
+			)}
 			{inspection && inspectedTopic && (
 				<TopicEvidenceDialog
 					key={inspection.key}

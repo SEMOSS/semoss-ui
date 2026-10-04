@@ -18,11 +18,15 @@ export function previewTopicLinks(
 		const draftTopic = review.draft.topics.find(
 			(topic) => topic.id === link.topicId,
 		);
-		const key = draftTopic?.key ?? `saved-${link.topicId}`;
+		const key =
+			draftTopic?.mergedIntoKey ??
+			draftTopic?.key ??
+			`saved-${link.topicId}`;
+		const previous = links.get(key);
 		links.set(key, {
 			key,
 			name: topics.find((topic) => topic.key === key)?.name || link.name,
-			primary: link.primary,
+			primary: link.primary || previous?.primary === true,
 		});
 	}
 	const corrections = (review.draft.corrections ?? []).filter(

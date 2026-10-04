@@ -7,6 +7,7 @@ import {
 	type TopicReviewChange,
 } from "./topic-evidence-api";
 import {
+	getTopicReview,
 	reviewDraft,
 	type TopicReview,
 	type TopicReviewDraft,
@@ -61,6 +62,28 @@ export function useTopicReviewChanges(
 		setError(null);
 		const request = (async (): Promise<TopicReview | null> => {
 			try {
+				// A structural operation may have committed while its response was lost.
+				// Recover it before autosave can resubmit the older, uncombined form.
+				if (
+					failed.current?.id === pending.id &&
+					["organize", "reconcile_profile", "undo"].includes(
+						pending.change.type,
+					)
+				) {
+					const recovered = await getTopicReview(actions);
+					if (!isCurrent()) return null;
+					if (
+						recovered?.id === reviewId &&
+						(recovered.draft.operationIds ?? []).includes(
+							pending.id,
+						)
+					) {
+						controller.acceptReview(recovered);
+						form.reset(reviewDraft(recovered));
+						failed.current = null;
+						return recovered;
+					}
+				}
 				const saved = await controller.flushDraft(form.getValues());
 				if (!isCurrent()) return null;
 				const changed = await changeTopicReview(

@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
+import { topicClues } from "./topic-clues";
 import type { TopicReview, TopicReviewDraft } from "./topic-review-api";
 
 export interface JobWire {
@@ -19,6 +20,7 @@ export function makeReview(name = "Northwind Migration"): ReviewWire {
 	return {
 		id: "review-1",
 		revision: 1,
+		profileConflicts: [],
 		appliedRevision: null,
 		result: { topics: [], skipped: [] },
 		filingJobId: null,
@@ -26,6 +28,8 @@ export function makeReview(name = "Northwind Migration"): ReviewWire {
 		updatedAt: null,
 		draft: {
 			modelError: "",
+			guidance: "",
+			granularity: "broad",
 			topics: [
 				{
 					key: "topic-1",
@@ -33,9 +37,12 @@ export function makeReview(name = "Northwind Migration"): ReviewWire {
 					name,
 					description: "Moving Northwind to the new platform.",
 					short: "",
+					terms: "",
 					keep: true,
 					removedPeople: [],
 					accepted: false,
+					mergedIntoKey: null,
+					mergeApplied: false,
 					reason: "Related project conversations",
 					threadIds: ["thread-1", "thread-2"],
 					sampleSubjects: ["Northwind launch readiness"],
@@ -89,6 +96,7 @@ export function applyReceipt(input: ReviewWire): ReviewWire {
 				name: topic.name,
 				short: topic.short.trim() || topic.name,
 				description: topic.description,
+				keywords: topicClues(topic.terms),
 			};
 		});
 	if (review.result.topics.length) {
@@ -147,8 +155,14 @@ export function reviewSession(
 					id: original?.id ?? topic.id,
 				};
 			});
-			if (JSON.stringify(topics) !== JSON.stringify(saved.draft.topics)) {
+			if (
+				JSON.stringify(topics) !== JSON.stringify(saved.draft.topics) ||
+				draft.guidance !== saved.draft.guidance ||
+				draft.granularity !== saved.draft.granularity
+			) {
 				saved.draft.topics = topics;
+				saved.draft.guidance = draft.guidance;
+				saved.draft.granularity = draft.granularity;
 				saved.revision += 1;
 			}
 			await afterSave(saved);
