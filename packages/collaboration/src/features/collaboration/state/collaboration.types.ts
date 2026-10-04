@@ -281,8 +281,13 @@ export interface WorkspaceMessage {
 export interface ContextMessage {
 	id: string;
 	fromId: string;
+	subject?: string;
+	fromName?: string;
+	fromAddress?: string;
 	at: string;
 	text: string;
+	/** No readable body remains after source cleanup; metadata may still be useful. */
+	bodyStatus?: "no_readable_text";
 	isTruncated?: boolean;
 	/** Names only; a file reaches the assistant only when the owner attaches it. */
 	attachments?: string[];
@@ -495,6 +500,8 @@ export type CollaborationCommand =
 
 export interface ThreadContext {
 	threadId: string;
+	subject?: string;
+	channel?: Channel;
 	isSample: boolean;
 	goal: string;
 	profile: Profile | null;

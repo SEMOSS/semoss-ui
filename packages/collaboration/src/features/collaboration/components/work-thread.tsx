@@ -118,7 +118,7 @@ export function WorkThread() {
 				}}
 				threadId={thread.id}
 				threadTitle={thread.subject}
-				contextText={JSON.stringify(context, null, 2)}
+				context={context}
 				contextRevision={context.revision}
 				isConnected={!thread.isSample}
 				sourceUid={sourceUid}

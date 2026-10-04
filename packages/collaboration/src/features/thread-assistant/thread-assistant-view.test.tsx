@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ThreadContext } from "../collaboration/state/collaboration.types";
 import { AssistantComposer } from "../work-thread/assistant-composer";
 import { ThreadAssistantView } from "./thread-assistant-view";
 import type { ThreadSession } from "./thread-session";
@@ -148,6 +149,46 @@ it("sends the thread context without asking first and only the supplied snapshot
 			[],
 		),
 	);
+});
+
+it("uses structured Work sources for review and send while retaining the legacy host prop", async () => {
+	const input = props();
+	const context: ThreadContext = {
+		threadId: input.threadId,
+		revision: input.contextRevision,
+		subject: "Project status",
+		channel: "email",
+		isSample: false,
+		goal: "",
+		profile: null,
+		topics: [],
+		participants: [],
+		messages: [
+			{
+				id: "email-1",
+				fromId: "person-1",
+				at: "2026-10-04T12:00:00Z",
+				subject: "Project status",
+				text: "",
+				bodyStatus: "no_readable_text",
+			},
+		],
+		facts: [],
+		hiddenCount: 0,
+		emptyIds: ["email-1"],
+	};
+	render(<ThreadAssistantView {...input} context={context} />);
+	expect(screen.getByText(/"subject": "Project status"/)).toBeInTheDocument();
+	expect(screen.queryByText("Selected message only")).toBeNull();
+	fireEvent.click(screen.getByRole("button", { name: "Ask Assistant" }));
+	await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
+	const submitted = mocks.send.mock.calls[0]?.[1];
+	expect(submitted).toMatchObject({
+		threadId: input.threadId,
+		contextRevision: input.contextRevision,
+		context: { messages: context.messages, emptyIds: context.emptyIds },
+	});
+	expect(submitted).not.toHaveProperty("contextText");
 });
 
 it("allows live model queries on samples and queues native attachment IDs without staging on selection", async () => {

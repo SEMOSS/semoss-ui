@@ -358,9 +358,17 @@ it.each([360, 1440])(
 		await waitFor(() => expect(transport.send).toHaveBeenCalledOnce());
 		expect(transport.send.mock.calls[0][1]).toMatchObject({
 			threadId: input.thread.id,
+			context: {
+				threadId: input.thread.id,
+				revision: input.context.revision,
+				messages: input.context.messages,
+			},
 			selectedSourceMessageId: source.id,
 			emailDraft: { draftId: `reply:${source.id}`, body: "" },
 		});
+		expect(transport.send.mock.calls[0][1]).not.toHaveProperty(
+			"contextText",
+		);
 		expect(transport.send.mock.calls[0][2].text).toContain(
 			"Draft a reply to this email",
 		);

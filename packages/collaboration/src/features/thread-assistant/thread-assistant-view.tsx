@@ -29,19 +29,20 @@ import {
 	lastSubmittedContext,
 	presentThreadApprovals,
 	presentThreadMessages,
-	THREAD_ASSISTANT_INSTRUCTIONS,
-	threadInstructions,
+	submittedThreadContext,
+	threadContextText,
 } from "./thread-context";
 import { canStartNewConversation, type ThreadSession } from "./thread-session";
 import { ThreadSourceAttachments } from "./thread-source-attachments";
 
-function assistantFor(agentName?: string): AgentConfiguration {
+function assistantFor(
+	instructions: string,
+	agentName?: string,
+): AgentConfiguration {
 	return {
 		name: agentName ?? "Assistant",
 		description: "",
-		system_prompt: agentName
-			? `${agentName} answers with its own instructions, tools, and skills. It can look things up and save drafts; it cannot send or change anything.`
-			: THREAD_ASSISTANT_INSTRUCTIONS,
+		system_prompt: instructions,
 		mcp: [],
 		skills: [],
 		prompts: [],
@@ -56,6 +57,7 @@ interface ThreadAssistantViewProps extends ThreadAssistantProps {
 export function ThreadAssistantView({
 	threadId,
 	threadTitle,
+	context,
 	contextText,
 	contextRevision,
 	onDraft,
@@ -105,7 +107,10 @@ export function ThreadAssistantView({
 		turn.isSubmitting ||
 		turn.isRestoring;
 	const agent = getThreadAgent();
-	const assistant = assistantFor(agent?.name);
+	const assistant = assistantFor(snapshot.settings.instructions, agent?.name);
+	const nextContext = context
+		? submittedThreadContext(context)
+		: { threadId, contextRevision, contextText: contextText ?? "" };
 	const shouldStartFresh = Boolean(
 		association &&
 			(!canContinueThreadRoom(association) ||
@@ -169,7 +174,8 @@ export function ThreadAssistantView({
 						Context for your next message
 					</P>
 					<pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-md bg-muted/40 p-3 font-sans text-sm">
-						{contextText || "No source context is included."}
+						{threadContextText(nextContext) ||
+							"No source context is included."}
 					</pre>
 					{submitted && (
 						<>
@@ -177,7 +183,7 @@ export function ThreadAssistantView({
 								Exact context included with the last message
 							</P>
 							<pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-md bg-muted/40 p-3 font-sans text-sm">
-								{submitted.contextText}
+								{threadContextText(submitted)}
 							</pre>
 						</>
 					)}
@@ -347,9 +353,9 @@ export function ThreadAssistantView({
 						snapshot.isCreationUncertain ||
 						turn.isRestoring
 					}
-					roomInstructions={threadInstructions(agent?.id)}
+					roomInstructions={snapshot.settings.instructions}
 					roomSettings={{
-						instructions: threadInstructions(agent?.id),
+						instructions: snapshot.settings.instructions,
 						mcp: [],
 					}}
 					inheritedMcp={[]}
@@ -373,7 +379,7 @@ export function ThreadAssistantView({
 					onSend={async (submission) => {
 						await session.send(
 							threadTitle,
-							{ threadId, contextRevision, contextText },
+							nextContext,
 							submission,
 							sourceUid,
 							sourceAttachments.filter(

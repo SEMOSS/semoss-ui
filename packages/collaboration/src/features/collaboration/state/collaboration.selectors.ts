@@ -1,5 +1,6 @@
 import type {
 	CollaborationState,
+	ContextMessage,
 	Person,
 	Rule,
 	Thread,
@@ -182,35 +183,41 @@ export function selectThreadContext(
 				!rules.some(
 					(rule) =>
 						rule.kind === "never_keyword" &&
-						message.text
+						`${message.subject ?? thread.subject}\n${message.text}`
 							.toLocaleLowerCase()
 							.includes(rule.value.toLocaleLowerCase()),
 				),
 		)
-		.map((message) => ({
-			id: message.id,
-			fromId: message.fromId,
-			at: message.at,
-			text:
+		.map((message): ContextMessage => {
+			const text =
 				thread.channel !== "email" || message.history
 					? message.text
-					: removeQuotedReplies(message.text),
-			...(message.isTruncated ? { isTruncated: true } : {}),
-			// Lets Assistant say what came with an email before anything is attached.
-			...(message.attachments?.length
-				? {
-						attachments: message.attachments.map(
-							(attachment) => attachment.name,
-						),
-					}
-				: {}),
-		}));
+					: removeQuotedReplies(message.text);
+			return {
+				id: message.id,
+				fromId: message.fromId,
+				subject: message.subject ?? thread.subject,
+				...(message.fromName ? { fromName: message.fromName } : {}),
+				...(message.fromAddress
+					? { fromAddress: message.fromAddress }
+					: {}),
+				at: message.at,
+				text,
+				...(!text.trim() ? { bodyStatus: "no_readable_text" } : {}),
+				...(message.isTruncated ? { isTruncated: true } : {}),
+				// Lets Assistant say what came with an email before anything is attached.
+				...(message.attachments?.length
+					? {
+							attachments: message.attachments.map(
+								(attachment) => attachment.name,
+							),
+						}
+					: {}),
+			};
+		});
 	const emptyIds = allowedMessages
-		.filter((message) => message.text.length === 0)
+		.filter((message) => message.bodyStatus === "no_readable_text")
 		.map((message) => message.id);
-	const messages = allowedMessages.filter(
-		(message) => message.text.length > 0,
-	);
 	const topics = thread.topicLinks
 		.filter((link) => link.source !== "suggested")
 		.sort((a, b) => Number(b.primary) - Number(a.primary))
@@ -260,12 +267,18 @@ export function selectThreadContext(
 		: null;
 	const snapshot = {
 		threadId,
+		...(allowedMessages.length
+			? {
+					subject: allowedMessages.at(-1)?.subject,
+					channel: thread.channel,
+				}
+			: {}),
 		isSample: thread.isSample,
 		goal: workspace?.goal ?? "",
 		profile: confirmedProfile,
 		topics,
 		participants,
-		messages,
+		messages: allowedMessages,
 		facts,
 		hiddenCount: Math.max(
 			0,

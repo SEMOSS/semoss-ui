@@ -38,6 +38,7 @@ import {
 	lastSubmittedContext,
 	presentThreadApprovals,
 	type SubmittedThreadContext,
+	submittedThreadContext,
 } from "@/features/thread-assistant/thread-context";
 import {
 	canStartNewConversation,
@@ -363,9 +364,7 @@ export function UnifiedThread({
 					session,
 					title: thread.subject,
 					context: {
-						threadId: thread.id,
-						contextRevision: context.revision,
-						contextText: JSON.stringify(context, null, 2),
+						...submittedThreadContext(context),
 						...(composer.getSnapshot().referenceResults.length
 							? {
 									referenceResults:
@@ -419,9 +418,7 @@ export function UnifiedThread({
 		);
 	};
 	const nextContext: SubmittedThreadContext = {
-		threadId: thread.id,
-		contextRevision: context.revision,
-		contextText: JSON.stringify(context, null, 2),
+		...submittedThreadContext(context),
 		...(composer.getSnapshot().referenceResults.length
 			? { referenceResults: composer.getSnapshot().referenceResults }
 			: {}),

@@ -65,13 +65,13 @@ import {
 import {
 	getThreadAgent,
 	type SubmittedThreadContext,
-	THREAD_ASSISTANT_INSTRUCTIONS,
 	threadCommand,
 } from "./thread-context";
 import {
 	settingsFromRoom,
 	type ThreadChatSettings,
 	threadSettingsSchema,
+	workInstructions,
 } from "./thread-settings";
 import { type ThreadUsage, threadUsage } from "./thread-usage";
 
@@ -672,9 +672,9 @@ export class ThreadSession {
 			if (
 				!current ||
 				!canContinueThreadRoom(current) ||
-				!current.options.instructions.startsWith(
-					THREAD_ASSISTANT_INSTRUCTIONS,
-				) ||
+				current.options.overrideSystemPrompt !== false ||
+				current.options.instructions !==
+					workInstructions(this.snapshot.settings.instructions) ||
 				current.metadata.contextRevision !== metadata.contextRevision ||
 				current.metadata.modelId !== metadata.modelId ||
 				current.metadata.agentId !== metadata.agentId

@@ -1,4 +1,5 @@
 import { H3, P } from "@semoss/ui/next";
+import { threadContextText } from "@/features/thread-assistant/thread-context";
 import { workContextSummary } from "./work-context-summary";
 import { WorkContextUsage } from "./work-context-usage";
 import { useWorkThread } from "./work-thread-context";
@@ -26,10 +27,10 @@ export function WorkContextDetails() {
 						{label}
 					</summary>
 					<P className="text-muted-foreground">
-						{workContextSummary(value.contextText)}
+						{workContextSummary(threadContextText(value))}
 					</P>
 					<pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-3 text-sm">
-						{value.contextText}
+						{threadContextText(value)}
 					</pre>
 				</details>
 			))}

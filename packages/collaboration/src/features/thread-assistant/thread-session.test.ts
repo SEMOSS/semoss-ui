@@ -13,8 +13,8 @@ import {
 	prepareThreadRoom,
 } from "./api/thread-room";
 import {
+	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS,
 	readThreadCommand,
-	THREAD_ASSISTANT_INSTRUCTIONS,
 } from "./thread-context";
 import { canStartNewConversation, ThreadSession } from "./thread-session";
 
@@ -84,7 +84,8 @@ const association = {
 	options: {
 		modelId: "model-1",
 		mcp: [],
-		instructions: THREAD_ASSISTANT_INSTRUCTIONS,
+		instructions: "",
+		overrideSystemPrompt: false,
 		predefinedPrompts: [],
 	},
 };
@@ -403,6 +404,35 @@ it("reuses the recovered room and model when source context changes", async () =
 		{ ...metadata, contextRevision: "r2" },
 		expect.objectContaining({ roomId: "room-1" }),
 		instance.getSnapshot().settings,
+	);
+});
+
+it("migrates legacy instructions in a recovered room before starting the next run", async () => {
+	vi.mocked(findThreadRoom).mockResolvedValue({
+		...association,
+		options: {
+			...association.options,
+			instructions: `${LEGACY_THREAD_ASSISTANT_INSTRUCTIONS}\n\nKeep replies concise.`,
+			overrideSystemPrompt: true,
+		},
+	});
+	const instance = await session();
+	expect(instance.getSnapshot().settings.instructions).toBe(
+		"Keep replies concise.",
+	);
+	await instance.send("Thread", context, { text: "Continue", files: [] });
+	expect(prepareThreadRoom).toHaveBeenCalledWith(
+		instance.insight.actions,
+		instance.insight.insightId,
+		"Thread",
+		metadata,
+		expect.objectContaining({ roomId: "room-1" }),
+		expect.objectContaining({ instructions: "Keep replies concise." }),
+	);
+	expect(
+		vi.mocked(prepareThreadRoom).mock.invocationCallOrder[0],
+	).toBeLessThan(
+		vi.mocked(runApi.startAgentRun).mock.invocationCallOrder[0] ?? 0,
 	);
 });
 

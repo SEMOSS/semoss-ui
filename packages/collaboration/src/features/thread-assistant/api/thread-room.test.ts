@@ -1,5 +1,8 @@
 import { roomOptionsEnvelopeSchema } from "@/features/rooms/api/room-schemas";
-import { THREAD_ASSISTANT_INSTRUCTIONS } from "../thread-context";
+import {
+	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS,
+	PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS,
+} from "../thread-context";
 import {
 	canContinueThreadRoom,
 	findThreadRoom,
@@ -85,7 +88,7 @@ it("creates ad-hoc collaboration rooms and merges association metadata without c
 		expect(options).toMatchObject({
 			preserveMe: { source: "server configuration" },
 			temperature: 0.4,
-			instructions: THREAD_ASSISTANT_INSTRUCTIONS,
+			instructions: "",
 			modelId: "model-1",
 			mcp: [],
 			harnessType: "semoss",
@@ -93,9 +96,70 @@ it("creates ad-hoc collaboration rooms and merges association metadata without c
 		expect(options).not.toHaveProperty("workspace");
 	}
 	expect(run.mock.calls.at(-1)?.[0]).not.toContain("contextText");
+	expect(room.options.overrideSystemPrompt).toBe(false);
 	expect(run.mock.calls.map(([statement]) => statement)).not.toContain(
 		expect.stringContaining("Microsoft"),
 	);
+});
+
+it.each([
+	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS,
+	PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS,
+])(
+	"removes a saved built-in prefix while retaining custom settings before rebinding",
+	async (prefix) => {
+		const backend = replacementBackend({
+			instructions: `${prefix}\n\nKeep replies concise.`,
+			overrideSystemPrompt: true,
+			temperature: 0.3,
+			preserveMe: { keep: true },
+			mcp: [{ id: "custom-tool", name: "Custom tool", type: "FUNCTION" }],
+		});
+		await prepareThreadRoom(
+			{ run: backend.run } as never,
+			"insight-1",
+			"Review",
+			metadata,
+			{ roomId: "room-1", onCreated: vi.fn() },
+		);
+		expect(backend.read()).toMatchObject({
+			instructions: "Keep replies concise.",
+			overrideSystemPrompt: false,
+			temperature: 0.3,
+			preserveMe: { keep: true },
+			mcp: [{ id: "custom-tool" }],
+		});
+		expect(backend.writes).toHaveLength(1);
+		expect(backend.run.mock.calls.at(-1)?.[0]).toContain(
+			"SetRoomForInsight",
+		);
+	},
+);
+
+it("appends user-authored instructions to the selected agent instead of replacing its prompt", async () => {
+	const backend = replacementBackend({
+		instructions: "Older custom instructions",
+		overrideSystemPrompt: true,
+	});
+	await prepareThreadRoom(
+		{ run: backend.run } as never,
+		"insight-1",
+		"Review",
+		{ ...metadata, agentId: "agent-1" },
+		{ roomId: "room-1", onCreated: vi.fn() },
+		{
+			modelId: "model-1",
+			agentId: "agent-1",
+			instructions: "  Keep my chosen wording.  ",
+			temperature: null,
+			mcp: [],
+		},
+	);
+	expect(backend.read()).toMatchObject({
+		instructions: "  Keep my chosen wording.  ",
+		overrideSystemPrompt: false,
+		workspace: { workspace_id: "agent-1" },
+	});
 });
 
 it("re-reads a partially saved room before retrying without losing its association or other options", async () => {

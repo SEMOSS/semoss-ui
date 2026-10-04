@@ -113,9 +113,11 @@ export async function prepareThreadRoom(
 	const options: PlaygroundRoomOptions = {
 		...envelope.OPTIONS,
 		modelId: metadata.modelId,
+		overrideSystemPrompt: false,
+		instructions: workInstructions(
+			settings?.instructions ?? envelope.OPTIONS.instructions,
+		),
 		...(settings && {
-			overrideSystemPrompt: false,
-			instructions: workInstructions(settings.instructions),
 			temperature: settings.temperature,
 			mcp: settings.mcp,
 		}),

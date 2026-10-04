@@ -626,6 +626,133 @@ describe("shared collaboration session", () => {
 });
 
 describe("assistant context selection", () => {
+	it("retains subject-only mail and cleaned-body status without exposing quoted history", () => {
+		const command = importCommand();
+		command.thread.subject = "Project status request";
+		command.workspace = {
+			messages: [
+				{
+					id: "empty-email",
+					fromId: command.people[0].id,
+					fromName: "Alex",
+					fromAddress: "alex@example.org",
+					subject: "Project status request",
+					at: NOW,
+					text: "\nFrom: Earlier sender\nPrivate quoted history",
+					displayBody: {
+						contentType: "html",
+						content: "<p>Private display body</p>",
+					},
+					attachments: [
+						{
+							id: "attachment-id",
+							name: "plan.docx",
+							isFile: true,
+						},
+					],
+				},
+			],
+		};
+		const state = apply(createInitialCollaborationState(), command);
+		const context = selectThreadContext(state, command.thread.id);
+		expect(context).toMatchObject({
+			subject: "Project status request",
+			channel: "email",
+			hiddenCount: 0,
+			emptyIds: ["empty-email"],
+		});
+		expect(context?.messages).toEqual([
+			{
+				id: "empty-email",
+				fromId: command.people[0].id,
+				fromName: "Alex",
+				fromAddress: "alex@example.org",
+				subject: "Project status request",
+				at: NOW,
+				text: "",
+				bodyStatus: "no_readable_text",
+				attachments: ["plan.docx"],
+			},
+		]);
+		expect(JSON.stringify(context)).not.toContain("Private quoted history");
+		expect(JSON.stringify(context)).not.toContain("Private display body");
+		expect(JSON.stringify(context)).not.toContain("attachment-id");
+		expect(state.workspaces[command.thread.id].messages[0].text).toContain(
+			"Private quoted history",
+		);
+	});
+
+	it.each(["never_sender", "never_keyword", "never_folder"] as const)(
+		"keeps empty-email metadata behind the %s exclusion rule",
+		(kind) => {
+			const command = importCommand();
+			command.thread.subject = "Private project status";
+			command.workspace = {
+				messages: [
+					{
+						id: "empty-email",
+						fromId: command.people[0].id,
+						fromAddress: "alex@example.org",
+						subject: command.thread.subject,
+						at: NOW,
+						text: "",
+					},
+				],
+			};
+			let state = apply(createInitialCollaborationState(), command);
+			state = apply(state, {
+				type: "rule.add",
+				rule: {
+					kind,
+					value:
+						kind === "never_sender"
+							? "alex@example.org"
+							: kind === "never_folder"
+								? "Inbox"
+								: "Private project",
+				},
+			});
+			const context = selectThreadContext(state, command.thread.id);
+			expect(context?.messages).toEqual([]);
+			expect(context?.emptyIds).toEqual([]);
+			expect(context?.hiddenCount).toBe(1);
+			expect(context).not.toHaveProperty("subject");
+			expect(JSON.stringify(context)).not.toContain(
+				"Private project status",
+			);
+			expect(state.workspaces[command.thread.id].messages).toHaveLength(
+				1,
+			);
+		},
+	);
+
+	it("revises a subject-only snapshot when its source metadata changes", () => {
+		const command = importCommand();
+		command.workspace = {
+			messages: [
+				{
+					id: "empty-email",
+					fromId: command.people[0].id,
+					subject: "Status",
+					at: NOW,
+					text: "",
+				},
+			],
+		};
+		const before = selectThreadContext(
+			apply(createInitialCollaborationState(), command),
+			command.thread.id,
+		);
+		command.workspace.messages = [
+			{ ...command.workspace.messages[0], subject: "Revised status" },
+		];
+		const after = selectThreadContext(
+			apply(createInitialCollaborationState(), command),
+			command.thread.id,
+		);
+		expect(after?.revision).not.toBe(before?.revision);
+	});
+
 	it("excludes messages, unconfirmed topics and draft facts from the submitted snapshot", () => {
 		const state = createInitialCollaborationState();
 		const context = selectThreadContext(state, "th-geng-review");

@@ -1,72 +1,90 @@
 import { z } from "@semoss/ui/next";
+import type { ThreadContext } from "@/features/collaboration/state/collaboration.types";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS } from "./thread-draft-proposal";
 
 const HEADER = "[SEMOSS_WORK_CONTEXT_V1]\n";
 const FOOTER = "\n[/SEMOSS_WORK_CONTEXT_V1]\n\n";
-const contextSchema = z.object({
-	threadId: z.string().min(1),
-	contextRevision: z.string(),
-	contextText: z.string(),
-	referenceResults: z
-		.array(
-			z.object({
-				toolId: z.string(),
-				title: z.string(),
-				output: z.string(),
-			}),
-		)
-		.optional(),
-	insightsRequestId: z.string().optional(),
-	selectedSourceMessageId: z.string().min(1).optional(),
-	/** Email files sent with this request, and which message each came from. */
-	attachments: z
-		.array(
-			z.object({
-				messageId: z.string().min(1),
-				attachmentId: z.string().min(1),
-				name: z.string(),
-				/** Name of the copy in the room folder. */
-				file: z.string().min(1),
-				/** Office and mail files reach the model as their text. */
-				sentAs: z.enum(["file", "text"]),
-			}),
-		)
-		.optional(),
-	/** The email open in the owner's editor when they sent this, with their edits; ComposeEmail changes it by id. */
-	openEmail: z
-		.object({
-			id: z.string().min(1),
-			/** waiting: a SendEmail call is waiting for the owner to press Send */
-			status: z.enum(["editing", "saved", "waiting", "sent"]).optional(),
-			replyTo: z.string().min(1).optional(),
-			forward: z.string().min(1).optional(),
-			to: z.string(),
-			cc: z.string(),
-			subject: z.string(),
-			body: z.string(),
-			bodyRevision: z.number().int().nonnegative(),
-			attachments: z
-				.array(
-					z.object({
-						name: z.string(),
-						size: z.number().nonnegative(),
-					}),
-				)
-				.optional(),
-		})
-		.optional(),
-	/** Local editor target, persisted with the request for response correlation. */
-	emailDraft: z
-		.object({
-			draftId: z.string().min(1),
-			requestId: z.string().min(1),
-			body: z.string(),
-			bodyRevision: z.number().int().nonnegative(),
-		})
-		.optional(),
-});
+const sourceContextSchema = z
+	.object({
+		threadId: z.string().min(1),
+		revision: z.string(),
+	})
+	.passthrough();
+const contextSchema = z
+	.object({
+		threadId: z.string().min(1),
+		contextRevision: z.string(),
+		context: sourceContextSchema.optional(),
+		/** Historical requests stored the snapshot as a JSON string. */
+		contextText: z.string().optional(),
+		referenceResults: z
+			.array(
+				z.object({
+					toolId: z.string(),
+					title: z.string(),
+					output: z.string(),
+				}),
+			)
+			.optional(),
+		insightsRequestId: z.string().optional(),
+		selectedSourceMessageId: z.string().min(1).optional(),
+		/** Email files sent with this request, and which message each came from. */
+		attachments: z
+			.array(
+				z.object({
+					messageId: z.string().min(1),
+					attachmentId: z.string().min(1),
+					name: z.string(),
+					/** Name of the copy in the room folder. */
+					file: z.string().min(1),
+					/** Office and mail files reach the model as their text. */
+					sentAs: z.enum(["file", "text"]),
+				}),
+			)
+			.optional(),
+		/** The email open in the owner's editor when they sent this, with their edits; ComposeEmail changes it by id. */
+		openEmail: z
+			.object({
+				id: z.string().min(1),
+				/** waiting: a SendEmail call is waiting for the owner to press Send */
+				status: z
+					.enum(["editing", "saved", "waiting", "sent"])
+					.optional(),
+				replyTo: z.string().min(1).optional(),
+				forward: z.string().min(1).optional(),
+				to: z.string(),
+				cc: z.string(),
+				subject: z.string(),
+				body: z.string(),
+				bodyRevision: z.number().int().nonnegative(),
+				attachments: z
+					.array(
+						z.object({
+							name: z.string(),
+							size: z.number().nonnegative(),
+						}),
+					)
+					.optional(),
+			})
+			.optional(),
+		/** Local editor target, persisted with the request for response correlation. */
+		emailDraft: z
+			.object({
+				draftId: z.string().min(1),
+				requestId: z.string().min(1),
+				body: z.string(),
+				bodyRevision: z.number().int().nonnegative(),
+			})
+			.optional(),
+	})
+	.refine((value) =>
+		value.context
+			? value.context.threadId === value.threadId &&
+				value.context.revision === value.contextRevision
+			: value.contextText !== undefined,
+	);
 
 export type SubmittedThreadContext = z.infer<typeof contextSchema>;
 
@@ -82,10 +100,8 @@ export const PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS = [
 	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS,
 	LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS,
 ].join("\n");
-// The draft rules live in the collaboration system prompt, so every room, with or
-// without an agent, gets them. A prefix of the older text, so those rooms continue.
-export const THREAD_ASSISTANT_INSTRUCTIONS =
-	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS;
+/** Built-in Work rules live in the backend collaboration system prompt. */
+export const THREAD_ASSISTANT_INSTRUCTIONS = "";
 
 /** The platform agent behind every thread's assistant; Work reads it with the Brain settings. */
 export interface ThreadAgent {
@@ -104,9 +120,55 @@ export function getThreadAgent(): ThreadAgent | null {
 	return threadAgent;
 }
 
-/** A room with instructions of its own would replace the agent's prompt. */
-export function threadInstructions(agentId?: string): string {
-	return agentId ? "" : THREAD_ASSISTANT_INSTRUCTIONS;
+/** Retained for callers that used to request the frontend's built-in rules. */
+export function threadInstructions(_agentId?: string): string {
+	return THREAD_ASSISTANT_INSTRUCTIONS;
+}
+
+/** Send the filtered source object once, omitting empty owner profile settings. */
+export function submittedThreadContext(
+	source: ThreadContext,
+): SubmittedThreadContext {
+	const { goal, profile, ...context } = source;
+	const owner = profile
+		? (() => {
+				const {
+					role,
+					style,
+					vips,
+					initials: _initials,
+					...fields
+				} = profile;
+				return {
+					...Object.fromEntries(
+						Object.entries(fields).filter(
+							([, value]) =>
+								typeof value !== "string" ||
+								value.trim().length > 0,
+						),
+					),
+					...(role.value.trim() ? { role } : {}),
+					...(style.confirmed ? { style } : {}),
+					...(vips.length ? { vips } : {}),
+				};
+			})()
+		: null;
+	return {
+		threadId: source.threadId,
+		contextRevision: source.revision,
+		context: {
+			...context,
+			...(goal.trim() ? { goal } : {}),
+			...(owner ? { profile: owner } : {}),
+		},
+	};
+}
+
+/** Diagnostics display both current structured sources and historical text snapshots. */
+export function threadContextText(context: SubmittedThreadContext): string {
+	return context.context
+		? JSON.stringify(context.context, null, 2)
+		: (context.contextText ?? "");
 }
 
 /** The exact source snapshot is persisted alongside the user's request. */

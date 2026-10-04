@@ -4,7 +4,6 @@ import type { PlaygroundRoomOptions } from "@/features/rooms/api/room-schemas";
 import {
 	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS,
 	PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS,
-	THREAD_ASSISTANT_INSTRUCTIONS,
 } from "./thread-context";
 
 /** User-authored settings, kept separate from the agent's inherited resources. */
@@ -23,18 +22,10 @@ export function settingsFromRoom(
 	options: PlaygroundRoomOptions,
 	agentId = "",
 ): ThreadChatSettings {
-	const instructions = options.instructions;
-	const prefix = instructions.startsWith(
-		PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS,
-	)
-		? PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS
-		: LEGACY_THREAD_ASSISTANT_INSTRUCTIONS;
 	return {
 		modelId: options.modelId,
 		agentId,
-		instructions: instructions.startsWith(prefix)
-			? instructions.slice(prefix.length).trimStart()
-			: instructions,
+		instructions: workInstructions(options.instructions),
 		temperature: options.temperature ?? null,
 		mcp: options.mcp.filter(
 			(resource) => !resource.fromWorkspace && !resource.fromRoom,
@@ -42,9 +33,15 @@ export function settingsFromRoom(
 	};
 }
 
-/** Always keep Work's context guidance, appending to any selected agent prompt. */
+/** Remove only a recognized legacy built-in prefix; preserve owner-authored text. */
 export function workInstructions(instructions: string): string {
-	return [THREAD_ASSISTANT_INSTRUCTIONS, instructions.trim()]
-		.filter(Boolean)
-		.join("\n\n");
+	for (const prefix of [
+		PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS,
+		LEGACY_THREAD_ASSISTANT_INSTRUCTIONS,
+	]) {
+		if (instructions === prefix) return "";
+		if (instructions.startsWith(`${prefix}\n`))
+			return instructions.slice(prefix.length).trimStart();
+	}
+	return instructions;
 }

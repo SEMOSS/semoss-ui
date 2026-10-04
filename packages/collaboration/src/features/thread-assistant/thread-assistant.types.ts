@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ThreadContext } from "@/features/collaboration/state/collaboration.types";
 import type { SourceAttachment } from "@/features/connectors/types";
 import type { ToolWorkbenchProviderProps } from "@/features/tools/components/tool-workbench-provider";
 import type { InsightActions } from "@/lib/pixel";
@@ -20,7 +21,9 @@ export interface ThreadAssistantProps {
 	/** Display name saved on a newly created conversation. */
 	threadTitle: string;
 	/** Exact, already filtered source snapshot for the next request. */
-	contextText: string;
+	context?: ThreadContext;
+	/** Compatibility for hosts that still supply a serialized source snapshot. */
+	contextText?: string;
 	/** Changes whenever model-visible context changes. */
 	contextRevision: string;
 	/** Connected source content needs a retention notice before the first send. */
