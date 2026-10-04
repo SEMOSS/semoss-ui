@@ -7,6 +7,8 @@ import {
 	FormCheckbox,
 	FormInput,
 	FormTextarea,
+	H3,
+	P,
 } from "@semoss/ui/next";
 import type { ReviewTopic, TopicDraft } from "./topic-review-api";
 
@@ -19,6 +21,9 @@ interface TopicReviewCardProps {
 	isSubmitting: boolean;
 	onRemovePerson: (personId: string) => void;
 	onRestorePerson: (personId: string) => void;
+	/** Open real conversation evidence without leaving setup. */
+	onInspect: (trigger: HTMLButtonElement) => void;
+	inspectId: string;
 }
 
 /** Readable profile fields with independent keep selection and reversible people corrections. */
@@ -29,6 +34,8 @@ export function TopicReviewCard({
 	isSubmitting,
 	onRemovePerson,
 	onRestorePerson,
+	onInspect,
+	inspectId,
 }: TopicReviewCardProps) {
 	const id = useId();
 	const prefix = `topics.${index}`;
@@ -42,12 +49,12 @@ export function TopicReviewCard({
 			)}
 		>
 			<div className="flex flex-wrap items-center justify-between gap-3">
-				<h2
+				<H3
 					id={`${id}-heading`}
-					className="min-w-0 break-words font-semibold text-sm"
+					className="min-w-0 break-words text-base"
 				>
 					{value.name || "New topic"}
-				</h2>
+				</H3>
 				<FormCheckbox
 					name={`${prefix}.keep`}
 					label={`Keep ${value.name || "new topic"}`}
@@ -55,10 +62,10 @@ export function TopicReviewCard({
 				/>
 			</div>
 			{evidence?.accepted && (
-				<p className="text-muted-foreground text-xs">
+				<P className="text-muted-foreground text-sm">
 					Already saved. You can edit its profile here and manage
 					removal from Topics.
-				</p>
+				</P>
 			)}
 			<FormInput
 				name={`${prefix}.name`}
@@ -89,15 +96,15 @@ export function TopicReviewCard({
 				/>
 			</details>
 			{evidence?.reason && (
-				<p className="text-muted-foreground text-sm">
+				<P className="text-muted-foreground text-sm">
 					{evidence.reason}
-				</p>
+				</P>
 			)}
 			{(evidence?.sampleSubjects.length ?? 0) > 0 && (
 				<div className="space-y-2">
-					<p className="font-medium text-xs">
+					<P className="font-medium text-sm">
 						Examples behind this suggestion
-					</p>
+					</P>
 					<ul className="space-y-1 text-muted-foreground text-sm">
 						{evidence?.sampleSubjects.map((subject, i) => (
 							<li key={`${i}-${subject}`} className="break-words">
@@ -156,12 +163,25 @@ export function TopicReviewCard({
 				</div>
 			)}
 			<div className="flex flex-wrap gap-2">
+				<Button
+					id={inspectId}
+					type="button"
+					variant="outline"
+					size="sm"
+					disabled={isSubmitting}
+					onClick={(event) => onInspect(event.currentTarget)}
+					aria-label={`Inspect conversations for ${value.name || "new topic"}`}
+				>
+					Inspect conversations
+				</Button>
 				<Badge variant="secondary">
 					{evidence?.threadIds.length
 						? `${evidence.threadIds.length} example threads`
-						: value.key.startsWith("added-")
-							? "Added by you"
-							: "Suggested topic"}
+						: evidence?.accepted
+							? "Saved topic"
+							: value.key.startsWith("added-")
+								? "Added by you"
+								: "Suggested topic"}
 				</Badge>
 				{evidence?.domains.map((domain) => (
 					<Badge

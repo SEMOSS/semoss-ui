@@ -58,6 +58,30 @@ const receiptTopicSchema = z.object({
 	description: z.string(),
 });
 
+export const topicLinkSchema = z.object({
+	topicId: z.string().min(1),
+	source: z
+		.string()
+		.nullish()
+		.transform((value) => value ?? "unknown"),
+	confidence: z.number().int().min(0).max(100),
+	primary: z.boolean(),
+});
+
+export const topicCorrectionSchema = z.object({
+	threadId: z.string().min(1),
+	topicKey: z.string().min(1),
+	state: z.enum(["include", "exclude"]),
+	primary: z.boolean(),
+});
+
+const correctionReceiptSchema = z.object({
+	threadId: z.string().min(1),
+	changes: z.array(topicCorrectionSchema),
+	links: z.array(topicLinkSchema),
+	rejectedTopicIds: z.array(z.string()),
+});
+
 /** Validate background-job wire data before mapping it to the existing client contract. */
 const filingJobSchema = z
 	.object({
@@ -79,6 +103,18 @@ export const topicReviewSchema = z
 		draft: z.object({
 			topics: z.array(reviewTopicSchema),
 			modelError: z.string().default(""),
+			corrections: z.array(topicCorrectionSchema).optional(),
+			history: z
+				.array(
+					z.object({
+						id: z.string(),
+						type: z.string(),
+						summary: z.string(),
+					}),
+				)
+				.optional(),
+			operationIds: z.array(z.string()).optional(),
+			lastChange: z.string().nullish(),
 		}),
 		appliedRevision: z
 			.number()
@@ -90,6 +126,7 @@ export const topicReviewSchema = z
 			.object({
 				topics: z.array(receiptTopicSchema),
 				skipped: z.array(z.string()),
+				corrections: z.array(correctionReceiptSchema).optional(),
 			})
 			.nullish(),
 		filingJobId: z
@@ -256,6 +293,50 @@ export async function applyTopicReview(
 	) {
 		throw new Error(
 			"Your topics are saved, but their filing job is not confirmed. Retry to recover it.",
+		);
+	}
+	const corrections = review.draft.corrections ?? [];
+	const correctedThreads = [
+		...new Set(corrections.map((item) => item.threadId)),
+	];
+	const receipts = saved.result.corrections ?? [];
+	if (
+		correctedThreads.length > 0 &&
+		(receipts.length !== correctedThreads.length ||
+			new Set(receipts.map((item) => item.threadId)).size !==
+				correctedThreads.length ||
+			corrections.some((correction) => {
+				const receipt = receipts.find(
+					(item) => item.threadId === correction.threadId,
+				);
+				const topic = saved.result.topics.find(
+					(item) => item.key === correction.topicKey,
+				);
+				const link = receipt?.links.find(
+					(item) => item.topicId === topic?.id,
+				);
+				return (
+					!receipt ||
+					!topic ||
+					!receipt.changes.some(
+						(item) =>
+							item.threadId === correction.threadId &&
+							item.topicKey === correction.topicKey &&
+							item.state === correction.state &&
+							item.primary === correction.primary,
+					) ||
+					(correction.state === "include"
+						? !link ||
+							link.source !== "you" ||
+							(correction.primary && !link.primary) ||
+							receipt.rejectedTopicIds.includes(topic.id)
+						: !!link ||
+							!receipt.rejectedTopicIds.includes(topic.id))
+				);
+			}))
+	) {
+		throw new Error(
+			"Your topic profiles are saved, but the reviewed conversation links could not be verified. Reload the saved review before continuing.",
 		);
 	}
 	return saved;
