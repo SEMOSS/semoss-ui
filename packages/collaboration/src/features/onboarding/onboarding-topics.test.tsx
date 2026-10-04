@@ -3,67 +3,21 @@ import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
-import { TopicsStep } from "./onboarding-steps";
+import {
+	deferred,
+	makeReview,
+	type ReviewWire,
+	reviewSession,
+} from "./topic-review.test-fixtures";
+import { TopicsStep } from "./topics-step";
 
-type Output = Record<string, unknown>;
-
-function deferred<T>() {
-	let resolve: (value: T) => void = () => undefined;
-	let reject: (reason: Error) => void = () => undefined;
-	const promise = new Promise<T>((done, fail) => {
-		resolve = done;
-		reject = fail;
-	});
-	return { promise, resolve, reject };
-}
-
-function suggestions(name = "Northwind Migration"): Output {
-	return {
-		topics: [
-			{
-				id: "topic-1",
-				name,
-				suggested: true,
-				threadIds: ["thread-1", "thread-2"],
-				memberIds: [],
-				sampleSubjects: [],
-			},
-		],
-	};
-}
-
-function session(generate: () => Promise<Output>) {
-	const run = vi.fn(async (statement: string) => {
-		let output: Output;
-		if (statement === "BrainSuggestTopics();") {
-			output = await generate();
-		} else if (statement.startsWith("BrainListAccounts(")) {
-			output = { items: [] };
-		} else if (statement.startsWith("BrainSaveTopic(")) {
-			output = { id: "topic-new" };
-		} else if (statement.startsWith("BrainSetTopicPerson(")) {
-			output = {};
-		} else if (statement.startsWith("BrainClassifyThreads(")) {
-			output = {
-				id: "job-1",
-				status: "running",
-				params: { mode: "topics" },
-			};
-		} else {
-			throw new Error(`Unexpected request: ${statement}`);
-		}
-		return { pixelReturn: [{ output, operationType: ["MAP"] }] };
-	});
-	return { actions: { run } as unknown as InsightActions, run };
-}
-
-function step(actions: InsightActions, onNext = vi.fn()) {
+function step(actions: InsightActions, onNext = vi.fn(), onBack = vi.fn()) {
 	return (
 		<StrictMode>
 			<TopicsStep
 				actions={actions}
 				onNext={onNext}
-				onBack={vi.fn()}
+				onBack={onBack}
 				eyebrow="Step 7 of 8"
 			/>
 		</StrictMode>
@@ -72,204 +26,214 @@ function step(actions: InsightActions, onNext = vi.fn()) {
 
 afterEach(cleanup);
 
-describe("onboarding topics", () => {
-	it("generates once in Strict Mode and lets the owner rename and keep the result", async () => {
-		const request = deferred<Output>();
-		const generate = vi
-			.fn<() => Promise<Output>>()
-			.mockReturnValueOnce(request.promise)
-			.mockResolvedValue({ topics: [] });
-		const { actions, run } = session(generate);
+describe("onboarding topic review", () => {
+	it("shares initialization in Strict Mode and applies the canonical profile in one request", async () => {
+		const pending = deferred<ReviewWire>();
+		const generate = vi.fn(() => pending.promise);
+		const session = reviewSession(generate);
 		const onNext = vi.fn();
 		const user = userEvent.setup();
-		render(step(actions, onNext));
-
-		expect(generate).toHaveBeenCalledTimes(1);
+		render(step(session.actions, onNext));
+		expect(generate).toHaveBeenCalledOnce();
 		expect(
 			screen.getByRole("button", { name: "Keep 0 topics" }),
 		).toBeDisabled();
-		await act(async () => request.resolve(suggestions()));
+		await act(async () => pending.resolve(makeReview()));
 		const name = await screen.findByRole("textbox", { name: "Topic name" });
-		expect(
-			screen.getByText(
-				"Choose the topics you want to track. Edit the suggestions or add your own.",
-			),
-		).toBeVisible();
-		expect(screen.queryByText(/headers only/i)).not.toBeInTheDocument();
-		expect(name).toHaveValue("Northwind Migration");
-		expect(screen.queryByText(/No topics found/)).not.toBeInTheDocument();
 		await user.clear(name);
 		await user.type(name, "Northwind Rollout");
+		const description = screen.getByRole("textbox", {
+			name: "What this topic covers",
+		});
+		expect(description.tagName).toBe("TEXTAREA");
+		await user.clear(description);
+		await user.type(
+			description,
+			"Launch readiness and delivery milestones.",
+		);
 		await user.click(screen.getByRole("button", { name: "Keep 1 topics" }));
 		await waitFor(() => expect(onNext).toHaveBeenCalledOnce());
-		expect(run).toHaveBeenCalledWith(
-			'BrainSaveTopic(topic=[{"id":"topic-1","name":"Northwind Rollout","status":"active"}]);',
-		);
-		expect(run).toHaveBeenCalledWith(
-			"BrainClassifyThreads(topics=[true], async=[true]);",
-		);
-		expect(generate).toHaveBeenCalledTimes(1);
+		expect(session.saved?.result.topics[0]).toMatchObject({
+			name: "Northwind Rollout",
+			short: "Northwind Rollout",
+			description: "Launch readiness and delivery milestones.",
+		});
+		expect(
+			session.run.mock.calls.filter(([statement]) =>
+				statement.startsWith("BrainApplyTopicReview("),
+			),
+		).toHaveLength(1);
+		expect(
+			session.run.mock.calls.some(([statement]) =>
+				statement.startsWith("BrainSaveTopic("),
+			),
+		).toBe(false);
 	});
 
-	it("saves a description, removed people and a topic the owner added", async () => {
-		const generate = vi.fn(async () => ({
-			topics: [
-				{
-					id: "topic-1",
-					name: "Northwind Migration",
-					about: "Moving Northwind to the new platform.",
-					suggested: true,
-					threadIds: ["thread-1"],
-					memberIds: ["p-1", "p-2"],
-					people: [
-						{ id: "p-1", name: "Ana Lima" },
-						{ id: "p-2", name: "Bo Chen" },
-					],
-					domains: ["northwind.example"],
-					sampleSubjects: [],
-				},
-			],
-		}));
-		const { actions, run } = session(generate);
-		const onNext = vi.fn();
+	it("preserves edits, added topics and people corrections across Back and remount", async () => {
+		const session = reviewSession();
+		const onBack = vi.fn();
 		const user = userEvent.setup();
-		render(step(actions, onNext));
-
-		expect(
-			await screen.findByDisplayValue(
-				"Moving Northwind to the new platform.",
-			),
-		).toBeEnabled();
-		expect(screen.getByText("northwind.example")).toBeInTheDocument();
+		const first = render(step(session.actions, vi.fn(), onBack));
+		const name = await screen.findByDisplayValue("Northwind Migration");
+		await user.clear(name);
+		await user.type(name, "Northwind Delivery");
 		await user.click(
 			screen.getByRole("button", { name: "Remove Bo Chen" }),
 		);
-		expect(screen.queryByText("Bo Chen")).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Restore Bo Chen" }),
+		).toBeEnabled();
 		await user.click(screen.getByRole("button", { name: "Add a topic" }));
-		const added = screen.getAllByRole("textbox", { name: "Topic name" })[1];
-		await user.type(added, "Backend Hiring");
 		await user.type(
-			screen.getAllByRole("textbox", {
-				name: "What this topic covers",
-			})[1],
-			"Interviews for the backend team.",
+			screen.getAllByRole("textbox", { name: "Topic name" })[1],
+			"Backend Hiring",
+		);
+		await user.click(screen.getByRole("button", { name: "Back" }));
+		await waitFor(() => expect(onBack).toHaveBeenCalledOnce());
+		first.unmount();
+		render(step(session.actions));
+		expect(
+			await screen.findByDisplayValue("Northwind Delivery"),
+		).toBeEnabled();
+		expect(screen.getByDisplayValue("Backend Hiring")).toBeEnabled();
+		expect(
+			screen.getByRole("button", { name: "Restore Bo Chen" }),
+		).toBeEnabled();
+	});
+
+	it("blocks a kept blank name and associates the field error without dropping the topic", async () => {
+		const session = reviewSession();
+		const onNext = vi.fn();
+		const user = userEvent.setup();
+		render(step(session.actions, onNext));
+		const name = await screen.findByRole("textbox", { name: "Topic name" });
+		await user.clear(name);
+		await user.click(screen.getByRole("button", { name: "Keep 1 topics" }));
+		expect(
+			await screen.findByText(
+				"Name this topic or turn off Keep before continuing",
+			),
+		).toBeVisible();
+		expect(name).toHaveAttribute("aria-invalid", "true");
+		const errorId = name.getAttribute("aria-describedby");
+		expect(
+			errorId && document.getElementById(errorId)?.textContent,
+		).toContain("Name this topic");
+		expect(onNext).not.toHaveBeenCalled();
+		expect(session.afterApply).not.toHaveBeenCalled();
+	});
+
+	it("allows manual setup and explicit zero-topic completion after suggestion failure", async () => {
+		const initial = makeReview();
+		initial.draft = { topics: [], modelError: "Topic model unavailable" };
+		const session = reviewSession(async () => initial);
+		const onNext = vi.fn();
+		const user = userEvent.setup();
+		render(step(session.actions, onNext));
+		expect(
+			await screen.findByText(/You can still add your own topics/),
+		).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "Add a topic" }),
+		).toBeEnabled();
+		await user.click(screen.getByRole("button", { name: "Keep 0 topics" }));
+		await waitFor(() => expect(onNext).toHaveBeenCalledOnce());
+		expect(session.saved?.appliedRevision).toBe(session.saved?.revision);
+		expect(session.saved?.filingJobId).toBeNull();
+	});
+
+	it("retains entered fields when autosave fails and supports explicit recovery", async () => {
+		const session = reviewSession();
+		session.afterSave.mockRejectedValueOnce(
+			new Error("Review changed elsewhere"),
+		);
+		const onNext = vi.fn();
+		const user = userEvent.setup();
+		render(step(session.actions, onNext));
+		const name = await screen.findByRole("textbox", { name: "Topic name" });
+		await user.clear(name);
+		await user.type(name, "Northwind Rollout");
+		await user.click(screen.getByRole("button", { name: "Keep 1 topics" }));
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"Review changed elsewhere",
+		);
+		expect(name).toHaveValue("Northwind Rollout");
+		expect(onNext).not.toHaveBeenCalled();
+		await user.click(
+			screen.getByRole("button", { name: "Reload saved review" }),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("alert")).not.toBeInTheDocument(),
+		);
+		expect(screen.getByRole("textbox", { name: "Topic name" })).toHaveValue(
+			"Northwind Rollout",
+		);
+	});
+
+	it("reuses added-topic IDs after the apply response is lost", async () => {
+		const session = reviewSession();
+		session.afterApply.mockRejectedValueOnce(
+			new Error("Connection lost after save"),
+		);
+		const onNext = vi.fn();
+		const user = userEvent.setup();
+		render(step(session.actions, onNext));
+		await screen.findByDisplayValue("Northwind Migration");
+		await user.click(screen.getByRole("button", { name: "Add a topic" }));
+		await user.type(
+			screen.getAllByRole("textbox", { name: "Topic name" })[1],
+			"Backend Hiring",
 		);
 		await user.click(screen.getByRole("button", { name: "Keep 2 topics" }));
-		await waitFor(() => expect(onNext).toHaveBeenCalledOnce());
-		expect(run).toHaveBeenCalledWith(
-			'BrainSaveTopic(topic=[{"id":"topic-1","name":"Northwind Migration","status":"active"}]);',
-		);
-		expect(run).toHaveBeenCalledWith(
-			'BrainSetTopicPerson(topicId=["topic-1"], personId=["p-2"], state=["removed"]);',
-		);
-		expect(run).toHaveBeenCalledWith(
-			'BrainSaveTopic(topic=[{"name":"Backend Hiring","description":"Interviews for the backend team.","status":"active"}]);',
-		);
-	});
-
-	it("shares the pending generation when the owner leaves and returns before it finishes", async () => {
-		const request = deferred<Output>();
-		const generate = vi.fn(() => request.promise);
-		const { actions } = session(generate);
-		const first = render(step(actions));
-		first.unmount();
-		render(step(actions));
-
-		expect(generate).toHaveBeenCalledTimes(1);
-		await act(async () => request.resolve(suggestions()));
-		expect(
-			await screen.findByDisplayValue("Northwind Migration"),
-		).toBeEnabled();
-		expect(
-			screen.getByRole("button", { name: "Keep 1 topics" }),
-		).toBeEnabled();
-	});
-
-	it("generates fresh suggestions on a later visit after the previous request finishes", async () => {
-		const generate = vi
-			.fn<() => Promise<Output>>()
-			.mockResolvedValueOnce(suggestions())
-			.mockResolvedValue(suggestions("Backend Hiring"));
-		const { actions } = session(generate);
-		const first = render(step(actions));
-		await screen.findByDisplayValue("Northwind Migration");
-		first.unmount();
-		render(step(actions));
-
-		expect(await screen.findByDisplayValue("Backend Hiring")).toBeEnabled();
-		expect(
-			screen.queryByDisplayValue("Northwind Migration"),
-		).not.toBeInTheDocument();
-		expect(generate).toHaveBeenCalledTimes(2);
-	});
-
-	it("allows a fresh request after a failed generation", async () => {
-		const generate = vi
-			.fn<() => Promise<Output>>()
-			.mockRejectedValueOnce(new Error("Topic generation failed"))
-			.mockResolvedValue(suggestions());
-		const { actions } = session(generate);
-		const first = render(step(actions));
 		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Topic generation failed",
+			"Connection lost after save",
 		);
-		expect(
-			screen.getByRole("button", { name: "Keep 0 topics" }),
-		).toBeDisabled();
-		first.unmount();
-		render(step(actions));
+		const addedId = session.saved?.result.topics[1].id;
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+		await waitFor(() => expect(onNext).toHaveBeenCalledOnce());
+		expect(session.saved?.result.topics[1].id).toBe(addedId);
+		expect(session.saved?.result.topics).toHaveLength(2);
+	});
 
-		expect(
-			await screen.findByDisplayValue("Northwind Migration"),
-		).toBeEnabled();
-		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-		expect(generate).toHaveBeenCalledTimes(2);
+	it("does not continue when saved profile readback differs from the entered values", async () => {
+		const session = reviewSession();
+		session.afterApply.mockImplementationOnce(async (review) => {
+			review.result.topics[0].short = "Old navigation name";
+		});
+		const onNext = vi.fn();
+		const user = userEvent.setup();
+		render(step(session.actions, onNext));
+		await screen.findByDisplayValue("Northwind Migration");
+		await user.click(screen.getByRole("button", { name: "Keep 1 topics" }));
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"do not match your review",
+		);
+		expect(onNext).not.toHaveBeenCalled();
 	});
 
 	it.each(["success", "failure"])(
-		"ignores a late %s from a previous insight",
+		"ignores a late %s from the previous insight",
 		async (outcome) => {
-			const request = deferred<Output>();
-			const oldGeneration = vi.fn(() => request.promise);
-			const currentGeneration = vi.fn(async () => suggestions());
-			const old = session(oldGeneration);
-			const current = session(currentGeneration);
+			const pending = deferred<ReviewWire>();
+			const old = reviewSession(() => pending.promise);
+			const current = reviewSession(async () =>
+				makeReview("Backend Hiring"),
+			);
 			const view = render(step(old.actions));
 			view.rerender(step(current.actions));
-			await screen.findByDisplayValue("Northwind Migration");
-
-			await act(async () => {
-				if (outcome === "success") request.resolve({ topics: [] });
-				else request.reject(new Error("Old request failed"));
-			});
-
 			expect(
-				screen.getByDisplayValue("Northwind Migration"),
+				await screen.findByDisplayValue("Backend Hiring"),
 			).toBeEnabled();
+			await act(async () => {
+				if (outcome === "success")
+					pending.resolve(makeReview("Old topic"));
+				else pending.reject(new Error("Old request failed"));
+			});
 			expect(
-				screen.queryByText(/No topics found/),
+				screen.queryByDisplayValue("Old topic"),
 			).not.toBeInTheDocument();
 			expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-			expect(oldGeneration).toHaveBeenCalledTimes(1);
-			expect(currentGeneration).toHaveBeenCalledTimes(1);
 		},
 	);
-
-	it("clears the previous insight's selections while loading the next one", async () => {
-		const old = session(async () => suggestions());
-		const request = deferred<Output>();
-		const current = session(() => request.promise);
-		const view = render(step(old.actions));
-		await screen.findByDisplayValue("Northwind Migration");
-		view.rerender(step(current.actions));
-
-		expect(
-			screen.queryByDisplayValue("Northwind Migration"),
-		).not.toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: "Keep 0 topics" }),
-		).toBeDisabled();
-		await act(async () => request.resolve(suggestions("Backend Hiring")));
-		expect(await screen.findByDisplayValue("Backend Hiring")).toBeEnabled();
-	});
 });

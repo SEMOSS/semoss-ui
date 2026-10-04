@@ -24,6 +24,8 @@ import {
 	WelcomeStep,
 	WorkStep,
 } from "./onboarding-steps";
+import { Failure, LoadingCards } from "./onboarding-ui";
+import { useOnboardingProgress } from "./use-onboarding-progress";
 
 const STEPS = [
 	{ label: "Your mailbox", caption: "A first look", icon: Mail },
@@ -49,14 +51,11 @@ export function Onboarding({
 	/** Start on a later step (previews). */
 	initialStep?: number;
 }) {
-	const [step, setStep] = useState(initialStep);
-	// nothing is read until the owner starts; previews of later steps start at once
-	const [started, setStarted] = useState(initialStep > 0);
+	const { step, started, isResuming, error, start, next, back } =
+		useOnboardingProgress(actions, initialStep, STEPS.length - 1);
 	const [days, setDays] = useState(30);
 	const [overview, setOverview] = useState<MailboxOverview | null>(null);
 	const [managerId, setManagerId] = useState("");
-	const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
-	const back = () => setStep((s) => Math.max(s - 1, 0));
 	const common = {
 		actions,
 		onNext: next,
@@ -66,7 +65,13 @@ export function Onboarding({
 	// each step starts at the top
 	// biome-ignore lint/correctness/useExhaustiveDependencies: runs on each step change
 	useEffect(() => {
-		window.scrollTo({ top: 0, behavior: "smooth" });
+		window.scrollTo({
+			top: 0,
+			behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+				.matches
+				? "instant"
+				: "smooth",
+		});
 	}, [step]);
 
 	return (
@@ -176,10 +181,25 @@ export function Onboarding({
 				</aside>
 				<main
 					key={step}
-					className="fade-in-0 slide-in-from-bottom-2 flex min-w-0 animate-in flex-col gap-8 self-start rounded-3xl bg-card p-6 shadow-black/5 shadow-xl ring-1 ring-border/60 duration-300 md:p-10"
+					className="fade-in-0 slide-in-from-bottom-2 flex min-w-0 animate-in flex-col gap-8 self-start rounded-3xl bg-card p-6 shadow-black/5 shadow-xl ring-1 ring-border/60 duration-300 motion-reduce:animate-none md:p-10"
 				>
-					{!started && (
-						<WelcomeStep onStart={() => setStarted(true)} />
+					{!started && !isResuming && !error && (
+						<WelcomeStep
+							onStart={() => {
+								void start();
+							}}
+						/>
+					)}
+					{isResuming && (
+						<LoadingCards label="Checking for a saved setup..." />
+					)}
+					{error && (
+						<Failure
+							error={error}
+							onRetry={() => {
+								void start();
+							}}
+						/>
 					)}
 					{started && step === 0 && (
 						<MailboxStep
@@ -189,30 +209,30 @@ export function Onboarding({
 							onLoaded={setOverview}
 						/>
 					)}
-					{step === 1 && (
+					{started && step === 1 && (
 						<KeepOutStep
 							{...common}
 							suggestions={overview?.keepOut ?? []}
 						/>
 					)}
-					{step === 2 && (
+					{started && step === 2 && (
 						<ImportStep
 							{...common}
 							days={days}
 							onManager={setManagerId}
 						/>
 					)}
-					{step === 3 && (
+					{started && step === 3 && (
 						<PeopleStep
 							{...common}
 							selfEmail={overview?.address ?? ""}
 							managerId={managerId}
 						/>
 					)}
-					{step === 4 && <OutsideStep {...common} />}
-					{step === 5 && <WorkStep {...common} />}
-					{step === 6 && <TopicsStep {...common} />}
-					{step === 7 && <FilingStep {...common} />}
+					{started && step === 4 && <OutsideStep {...common} />}
+					{started && step === 5 && <WorkStep {...common} />}
+					{started && step === 6 && <TopicsStep {...common} />}
+					{started && step === 7 && <FilingStep {...common} />}
 				</main>
 			</div>
 		</div>
