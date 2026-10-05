@@ -43,7 +43,8 @@ import type {
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
 import { useWorkbenchControl } from "@semoss/workbench";
-import { useDatabaseWorkbench, useEngine } from "@/hooks";
+import { useDatabaseWorkbench } from "@/hooks/use-database-workbench";
+import { useEngine } from "@/hooks/useEngine";
 import { DatabaseColumnsRefreshControl } from "./database-columns-refresh-control";
 import {
 	type DatabaseColumnAction,
@@ -236,7 +237,7 @@ const DatabaseColumnsPanel: WorkbenchComponent = ({ id }) => {
 						)}
 					</InputGroup>
 					<div className="flex flex-row items-center gap-1">
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<Button
 									variant="ghost"
@@ -299,46 +300,70 @@ const DatabaseColumnsPanel: WorkbenchComponent = ({ id }) => {
 												data-testid={`database-columns--table-${table.table}`}
 											>
 												<ContextMenu>
-													<ContextMenuTrigger asChild>
-														<CollapsibleTrigger
+													{/* Keep the tooltip root outside the asChild chain so handlers reach the button. */}
+													<Tooltip
+														disableHoverableContent={
+															false
+														}
+													>
+														<ContextMenuTrigger
 															asChild
 														>
-															<Button
-																variant="secondary"
-																className="w-full justify-between rounded-none has-[>svg]:px-3"
-																title="Right-click for table actions"
-																data-testid={`database-columns--table-header-${table.table}`}
+															<CollapsibleTrigger
+																asChild
 															>
-																<span className="flex min-w-0 items-center gap-2">
-																	<Table className="size-4 text-muted-foreground" />
-																	<span className="truncate font-medium text-sm">
-																		{
-																			table.table
-																		}
-																	</span>
-																</span>
-																<span className="flex items-center gap-2">
-																	<Small className="text-muted-foreground text-xs">
-																		{
-																			table
-																				.columns
-																				.length
-																		}
-																	</Small>
-																	<ChevronDown
-																		className={cn(
-																			"size-4 text-muted-foreground transition-transform",
-																			expandedTables[
-																				table
-																					.table
-																			] &&
-																				"rotate-180",
-																		)}
-																	/>
-																</span>
-															</Button>
-														</CollapsibleTrigger>
-													</ContextMenuTrigger>
+																<TooltipTrigger
+																	asChild
+																>
+																	<Button
+																		variant="secondary"
+																		className="w-full justify-between rounded-none has-[>svg]:px-3"
+																		data-testid={`database-columns--table-header-${table.table}`}
+																	>
+																		<span className="flex min-w-0 items-center gap-2">
+																			<Table
+																				aria-hidden="true"
+																				className="size-4 text-muted-foreground"
+																			/>
+																			<span className="truncate font-medium text-sm">
+																				{
+																					table.table
+																				}
+																			</span>
+																		</span>
+																		<span className="flex items-center gap-2">
+																			<Small className="text-muted-foreground text-xs">
+																				{
+																					table
+																						.columns
+																						.length
+																				}
+																			</Small>
+																			<ChevronDown
+																				aria-hidden="true"
+																				className={cn(
+																					"size-4 text-muted-foreground transition-transform",
+																					expandedTables[
+																						table
+																							.table
+																					] &&
+																						"rotate-180",
+																				)}
+																			/>
+																		</span>
+																	</Button>
+																</TooltipTrigger>
+															</CollapsibleTrigger>
+														</ContextMenuTrigger>
+														<TooltipContent
+															sideOffset={4}
+															className="max-w-xs break-words"
+														>
+															{
+																"Right-click for table actions"
+															}
+														</TooltipContent>
+													</Tooltip>
 													<ContextMenuContent
 														data-testid={`database-columns--table-menu-${table.table}`}
 													>

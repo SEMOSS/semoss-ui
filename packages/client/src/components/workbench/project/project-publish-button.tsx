@@ -110,36 +110,43 @@ export const ProjectPublishButton: React.FC = () => {
 	}
 
 	return (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					aria-label="Compile and publish the app"
-					data-testid="workbench-project-publish-button"
-					className={cn(
-						"border border-transparent text-muted-foreground",
-						WORKBENCH_STYLES.chromeButton,
-					)}
-					disabled={isLoading}
-					onClick={async () => {
-						const compiled = await compile();
-						if (compiled) {
-							await publish();
-						}
-					}}
+				<span
+					className="inline-flex"
+					tabIndex={isLoading ? 0 : undefined}
 				>
-					{isLoading ? (
-						<Spinner className={WORKBENCH_STYLES.chromeIcon} />
-					) : (
-						<CloudUploadIcon
-							className={WORKBENCH_STYLES.chromeIcon}
-						/>
-					)}
-				</Button>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						aria-label="Compile and publish the app"
+						data-testid="workbench-project-publish-button"
+						className={cn(
+							"border border-transparent text-muted-foreground",
+							WORKBENCH_STYLES.chromeButton,
+						)}
+						disabled={isLoading}
+						onClick={async () => {
+							const compiled = await compile();
+							if (compiled) {
+								await publish();
+							}
+						}}
+					>
+						{isLoading ? (
+							<Spinner className={WORKBENCH_STYLES.chromeIcon} />
+						) : (
+							<CloudUploadIcon
+								className={WORKBENCH_STYLES.chromeIcon}
+							/>
+						)}
+					</Button>
+				</span>
 			</TooltipTrigger>
 			<TooltipContent side="right">
-				Compile and publish the app
+				{isLoading
+					? "Compiling and publishing the app…"
+					: "Compile and publish the app"}
 			</TooltipContent>
 		</Tooltip>
 	);

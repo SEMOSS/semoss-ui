@@ -12,6 +12,8 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
 import {
 	DISPLAY_LOCATION_OPTIONS,
 	EXECUTION_OPTIONS,
@@ -32,9 +34,7 @@ const readString = (source: MetaRecord | undefined, key: string): string => {
 
 const readUi = (meta: MetaRecord | undefined): MetaRecord => {
 	const ui = meta?.[META_UI_KEY];
-	return ui && typeof ui === "object" && !Array.isArray(ui)
-		? (ui as MetaRecord)
-		: {};
+	return isRecord(ui) ? (ui as MetaRecord) : {};
 };
 
 /** Keys the structured controls render. Everything else is JSON-only. */
@@ -165,11 +165,7 @@ export const MCPMetadataEditor = ({
 
 			try {
 				const parsed = JSON.parse(text) as unknown;
-				if (
-					!parsed ||
-					typeof parsed !== "object" ||
-					Array.isArray(parsed)
-				) {
+				if (!isRecord(parsed)) {
 					setJsonError("Metadata must be a JSON object");
 					return;
 				}
@@ -178,7 +174,7 @@ export const MCPMetadataEditor = ({
 				const record = parsed as MetaRecord;
 				onChange(Object.keys(record).length > 0 ? record : undefined);
 			} catch (e) {
-				setJsonError(e instanceof Error ? e.message : "Invalid JSON");
+				setJsonError(getErrorMessage(e, "Invalid JSON"));
 			}
 		},
 		[onChange],

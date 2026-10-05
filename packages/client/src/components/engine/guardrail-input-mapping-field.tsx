@@ -14,6 +14,9 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	useFormContext,
 } from "@semoss/ui/next";
 import {
@@ -83,28 +86,54 @@ export const GuardrailInputMappingField = ({
 				<div key={row.id} className="space-y-3 rounded-md border p-3">
 					<div className="flex items-center justify-between gap-2">
 						<p className="font-medium text-sm">Input {index + 1}</p>
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							onClick={() =>
-								onChange(
-									value.filter(
-										(other) => other.id !== row.id,
-									),
-								)
-							}
-							disabled={disabled || value.length === 1}
-							aria-label={`Delete mapping ${index + 1}`}
-							title={
-								value.length === 1
-									? "At least one mapping is required"
-									: `Delete mapping ${index + 1}`
-							}
-						>
-							<Trash2 className="size-4" aria-hidden />
-							Delete mapping
-						</Button>
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<span
+									className="inline-flex"
+									tabIndex={
+										disabled || value.length === 1
+											? 0
+											: undefined
+									}
+								>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() =>
+											onChange(
+												value.filter(
+													(other) =>
+														other.id !== row.id,
+												),
+											)
+										}
+										disabled={
+											disabled || value.length === 1
+										}
+										aria-label={`Delete mapping ${index + 1}`}
+									>
+										<Trash2
+											className="size-4"
+											aria-hidden
+										/>
+										Delete mapping
+									</Button>
+								</span>
+							</TooltipTrigger>
+							<TooltipContent
+								sideOffset={4}
+								className="max-w-xs break-words"
+							>
+								{disabled || value.length === 1
+									? value.length === 1
+										? "At least one mapping is required"
+										: "Mappings cannot be edited while this form is disabled"
+									: value.length === 1
+										? "At least one mapping is required"
+										: `Delete mapping ${index + 1}`}
+							</TooltipContent>
+						</Tooltip>
 					</div>
 					<div className="grid items-start gap-3 sm:grid-cols-2">
 						<GuardrailParameterNameField

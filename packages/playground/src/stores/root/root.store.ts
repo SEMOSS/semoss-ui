@@ -1,5 +1,4 @@
 import { configure, makeAutoObservable } from "mobx";
-import type React from "react";
 import type { ThemeMap } from "@semoss/shared";
 
 configure({
@@ -21,19 +20,6 @@ interface RootStoreInterface {
 	theme: ThemeMap["playground"];
 
 	/**
-	 * Custom breadcrumbs for the main layout
-	 */
-	breadcrumbs: {
-		name: string;
-		path: string;
-	}[];
-
-	/**
-	 * Optional right-side actions to render in the main layout header
-	 */
-	navbarActions?: React.ReactNode | null;
-
-	/**
 	 * Set once a guardrail block also force-logged the user out (see
 	 * registerSessionRevokedHandler in @semoss/sdk). Never cleared — the
 	 * session is gone, so the only way out is the dialog's reload.
@@ -50,8 +36,6 @@ interface RootStoreInterface {
 export class RootStore {
 	private _store: RootStoreInterface = {
 		isInitialized: false,
-		breadcrumbs: [],
-		navbarActions: null,
 		sessionRevoked: {
 			revoked: false,
 			message: "",
@@ -165,53 +149,11 @@ export class RootStore {
 	}
 
 	/**
-	 * Get the current breadcrumbs
-	 */
-	get breadcrumbs() {
-		return this._store.breadcrumbs;
-	}
-
-	/**
-	 * Get the current navbar actions
-	 */
-	get navbarActions() {
-		return this._store.navbarActions;
-	}
-
-	/**
 	 * Get whether a guardrail block has force-logged the user out
 	 */
 	get sessionRevoked() {
 		return this._store.sessionRevoked;
 	}
-
-	/**
-	 * Set custom breadcrumbs
-	 */
-	setBreadcrumbs = (breadcrumbs: RootStore["breadcrumbs"]) => {
-		this._store.breadcrumbs = breadcrumbs;
-	};
-
-	/**
-	 * Clear breadcrumbs (use default route-based breadcrumbs)
-	 */
-	clearBreadcrumbs = () => {
-		this._store.breadcrumbs = [];
-	};
-
-	/**
-	 * Set right-side navbar actions
-	 */
-	setNavbarActions = (actions: React.ReactNode | null) => {
-		this._store.navbarActions = actions;
-	};
-
-	/**
-	 * Clear right-side navbar actions
-	 */
-	clearNavbarActions = () => {
-		this._store.navbarActions = null;
-	};
 
 	/**
 	 * Record that a guardrail block force-logged the user out. Called from the

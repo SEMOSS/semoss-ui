@@ -445,7 +445,7 @@ export async function setBlocksAndOpenUIBuilder(
 				data: {
 					route: "",
 					style: {
-						fontFamily: "roboto",
+						fontFamily: "var(--font-sans)",
 					},
 					loading: `{{${PROMPT_QUERY_DEFINITION_ID}.isLoading}}`,
 				},

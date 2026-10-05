@@ -12,6 +12,7 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 
 interface ShareOverlayProps {
 	appId: string;
@@ -35,7 +36,7 @@ const CopyButton = ({
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "Failed to copy");
+			toast.error(getErrorMessage(e, "Failed to copy"));
 		}
 	};
 
@@ -73,7 +74,7 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
 		<div className="flex w-full min-w-0 flex-col">
 			{/* Header */}
 			<div className="border-b px-6 py-4">
-				<DialogTitle className="font-semibold text-lg leading-none">
+				<DialogTitle className="font-medium text-base leading-6">
 					Share
 				</DialogTitle>
 				<DialogDescription className="sr-only">
@@ -85,7 +86,7 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
 			{/* Body */}
 			<div className="flex min-w-0 flex-col gap-4 px-6 py-5">
 				{diffs && (
-					<div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
+					<div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
 						<TriangleAlert className="mt-0.5 size-4 shrink-0" />
 						<span>
 							Save the app before sharing to reflect the latest

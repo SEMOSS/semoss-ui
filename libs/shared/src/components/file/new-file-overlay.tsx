@@ -31,6 +31,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { getFileExplorerAdapter } from "./file-explorer.adapters";
 import type {
 	FileExplorerNewFileOverlayProps,
@@ -260,7 +261,7 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 				extractedCount++;
 			} catch (error) {
 				extractionErrors.push(
-					`${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
+					`${file.name}: ${getErrorMessage(error, "Unknown error")}`,
 				);
 			}
 		}
@@ -358,7 +359,9 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 				className="sm:max-w-2xl"
 			>
 				<DialogHeader>
-					<DialogTitle>{t("fileExplorer.overlay.title")}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						{t("fileExplorer.overlay.title")}
+					</DialogTitle>
 					<DialogDescription>
 						{t("fileExplorer.overlay.description", {
 							path: destination,

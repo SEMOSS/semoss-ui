@@ -1,4 +1,5 @@
 import { isRequestUserInputAction } from "@semoss/sdk";
+import { readNonBlankString } from "@semoss/utility/text";
 import type { BuildPendingAction, BuildTool } from "@/stores/assistant";
 
 /** Family a tool belongs to for phase titles and rollup rows. */
@@ -24,7 +25,7 @@ const metadataString = (
 	key: string,
 ): string | null => {
 	const value = metadata?.[key];
-	return typeof value === "string" && value.trim() ? value.trim() : null;
+	return readNonBlankString(value)?.trim() ?? null;
 };
 
 /**
@@ -38,7 +39,7 @@ const metadataString = (
  * @param metadata - Tool metadata that may record the original name.
  * @return The original tool name, or the input when no alias is detected.
  */
-const stripMcpToolAlias = (
+export const stripMcpToolAlias = (
 	name: string,
 	metadata?: Record<string, unknown>,
 ): string => {

@@ -166,7 +166,7 @@ export const FileExplorerHeader: React.FC<FileExplorerHeaderProps> = ({
 				</div>
 
 				<div className="flex shrink-0 flex-row items-center gap-1">
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<Button
 								ref={searchToggleRef}
@@ -239,42 +239,44 @@ export const FileExplorerHeader: React.FC<FileExplorerHeaderProps> = ({
 				</InputGroup>
 			)}
 
-			{showSearch && explorer.capabilities.search && (
-				<ToggleGroup
-					type="single"
-					variant="outline"
-					size="sm"
-					className="w-full"
-					value={explorer.header.searchType}
-					// radix clears a single group to "" when the active item is
-					// clicked again, and anything that is not "all" scopes the
-					// search to the current directory
-					onValueChange={(value) =>
-						value && explorer.header.setSearchType(value)
-					}
-				>
-					<ToggleGroupItem
-						data-testid="file-explorer-search-all-toggle"
-						className="flex-1"
-						value="all"
-						aria-label={t("fileExplorer.searchAllAria")}
-						title={t("fileExplorer.searchAllAria")}
+			{showSearch &&
+				explorer.capabilities.search &&
+				explorer.capabilities.searchScope !== false && (
+					<ToggleGroup
+						type="single"
+						variant="outline"
+						size="sm"
+						className="w-full"
+						value={explorer.header.searchType}
+						// radix clears a single group to "" when the active item is
+						// clicked again, and anything that is not "all" scopes the
+						// search to the current directory
+						onValueChange={(value) =>
+							value && explorer.header.setSearchType(value)
+						}
 					>
-						{t("fileExplorer.searchAll")}
-					</ToggleGroupItem>
-					<ToggleGroupItem
-						data-testid="file-explorer-search-current-toggle"
-						className="flex-1"
-						value="current"
-						aria-label={t("fileExplorer.searchCurrentAria")}
-						title={t("fileExplorer.searchCurrentTitle", {
-							path,
-						})}
-					>
-						{t("fileExplorer.searchOnly", { name: crumbs[0] })}
-					</ToggleGroupItem>
-				</ToggleGroup>
-			)}
+						<ToggleGroupItem
+							data-testid="file-explorer-search-all-toggle"
+							className="flex-1"
+							value="all"
+							aria-label={t("fileExplorer.searchAllAria")}
+							title={t("fileExplorer.searchAllAria")}
+						>
+							{t("fileExplorer.searchAll")}
+						</ToggleGroupItem>
+						<ToggleGroupItem
+							data-testid="file-explorer-search-current-toggle"
+							className="flex-1"
+							value="current"
+							aria-label={t("fileExplorer.searchCurrentAria")}
+							title={t("fileExplorer.searchCurrentTitle", {
+								path,
+							})}
+						>
+							{t("fileExplorer.searchOnly", { name: crumbs[0] })}
+						</ToggleGroupItem>
+					</ToggleGroup>
+				)}
 		</div>
 	);
 };

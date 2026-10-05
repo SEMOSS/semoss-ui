@@ -27,7 +27,10 @@
 		"labelOpen": "Uitgevoerde tools ({{count}})",
 		"labelStreaming_one": "{{count}} tool laden…",
 		"labelStreaming_other": "{{count}} tools laden…",
+		"labelPartial_one": "{{count}} tool voltooid, {{loadingCount}} aan het laden…",
+		"labelPartial_other": "{{count}} tools voltooid, {{loadingCount}} aan het laden…",
 		"summaryCompleted": "{{count}} voltooid",
+		"summaryLoading": "{{count}} aan het laden",
 		"summaryError": "{{count}} mislukt",
 		"summaryCancelled": "{{count}} geannuleerd"
 	},
@@ -67,5 +70,42 @@
 		"cancel": "Annuleren",
 		"retry": "Opnieuw proberen",
 		"checking": "Controleren..."
+	},
+	"activity": {
+		"steps": "Toolactiviteit ({{count}})",
+		"needsInput": "Je invoer is nodig",
+		"cancelError": "Deze tool kon niet worden geannuleerd.",
+		"actions": "Toolacties"
+	},
+	"inspector": {
+		"input": "Invoer",
+		"info": "Info",
+		"tabsLabel": "Tooldetails",
+		"find": "Zoeken",
+		"copy": "Kopiëren",
+		"copied": "Gekopieerd naar klembord",
+		"copyFailed": "Kopiëren naar klembord mislukt",
+		"wrap": "Regels afbreken",
+		"foldAll": "Alles inklappen",
+		"unfoldAll": "Alles uitklappen",
+		"text": "Tekst",
+		"expandedDescription": "Gegevens zijn alleen-lezen. Zoek, kopieer of klap secties in om de gegevens te bekijken.",
+		"toolName": "Toolnaam",
+		"callId": "Aanroep-ID",
+		"source": "Bron",
+		"execution": "Uitvoeringsmodus",
+		"inputSchema": "Invoerschema",
+		"metadata": "Metadata",
+		"emptyOutput": "Deze tool heeft geen uitvoer teruggegeven.",
+		"runningOutput": "De tool wordt uitgevoerd. De uitvoer verschijnt hier.",
+		"inputView": "Invoerweergave",
+		"pretty": "Leesbaar",
+		"raw": "Ruw",
+		"emptyString": "Lege tekenreeks",
+		"itemCount": "Items: {{total}}",
+		"fieldCount": "Velden: {{total}}",
+		"showMore": "Meer tonen ({{remaining}} resterend)",
+		"showLess": "Minder tonen",
+		"showFullValue": "Volledige waarde tonen"
 	}
 }

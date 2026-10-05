@@ -1,12 +1,47 @@
 import "@testing-library/jest-dom";
-import { render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { Button, ThemeProvider, useTheme } from "@semoss/ui/next";
 import { Blocks } from "../../components/blocks";
 import {
 	CodeCell,
 	type CodeCellDef,
 } from "../../components/cell-defaults/code-cell/code-cell";
 import { type CellState, type Registry, StateStore } from "../../store";
+
+// Observe the editor boundary without loading Monaco's browser workers.
+vi.mock("@semoss/shared", () => ({
+	MonacoEditor: ({ theme, value }: { theme?: string; value?: string }) => (
+		<div data-testid="code-editor" data-theme={theme}>
+			{value}
+		</div>
+	),
+	MonacoDiffEditor: () => null,
+}));
+
+afterEach(() => {
+	cleanup();
+	vi.unstubAllGlobals();
+	document.documentElement.classList.remove("light", "dark");
+	localStorage.removeItem("code-cell-theme-test");
+});
+
+function ThemeControls() {
+	const { setTheme } = useTheme();
+	return (
+		<>
+			<Button onClick={() => setTheme("light")}>Light</Button>
+			<Button onClick={() => setTheme("dark")}>Dark</Button>
+			<Button onClick={() => setTheme("system")}>System</Button>
+		</>
+	);
+}
 
 // Mock useBlocksPixel to avoid SDK interactions
 vi.mock("../../hooks/useBlocksPixel", () => ({
@@ -112,7 +147,7 @@ const createCodeCellStore = () => {
 };
 
 describe("CodeCell", () => {
-	it("should render the CodeCell component", () => {
+	it("should render the CodeCell component", async () => {
 		const { store, codeCell } = createCodeCellStore();
 
 		const { container } = render(
@@ -123,7 +158,65 @@ describe("CodeCell", () => {
 
 		expect(container).toBeDefined();
 		expect(codeCell.widget).toBe("code");
+		expect(await screen.findByTestId("code-editor")).toHaveTextContent(
+			"print('test')",
+		);
 	});
+
+	it.each([true, false])(
+		"follows light, dark, and system changes without replacing code (expanded: %s)",
+		async (isExpanded) => {
+			const listeners = new Set<() => void>();
+			const media = {
+				matches: false,
+				addEventListener: (_event: string, listener: () => void) => {
+					listeners.add(listener);
+				},
+				removeEventListener: (_event: string, listener: () => void) => {
+					listeners.delete(listener);
+				},
+			};
+			vi.stubGlobal(
+				"matchMedia",
+				vi.fn(() => media),
+			);
+			const { store, codeCell } = createCodeCellStore();
+			const savedState = store.toJSON();
+			render(
+				<ThemeProvider
+					defaultTheme="dark"
+					storageKey="code-cell-theme-test"
+				>
+					<ThemeControls />
+					<Blocks state={store} registry={{} as Registry}>
+						<CodeCell cell={codeCell} isExpanded={isExpanded} />
+					</Blocks>
+				</ThemeProvider>,
+			);
+
+			const editor = await screen.findByTestId("code-editor");
+			expect(editor).toHaveAttribute("data-theme", "vs-dark");
+			fireEvent.click(screen.getByRole("button", { name: "Light" }));
+			expect(editor).toHaveAttribute("data-theme", "vs");
+			fireEvent.click(screen.getByRole("button", { name: "Dark" }));
+			expect(editor).toHaveAttribute("data-theme", "vs-dark");
+			fireEvent.click(screen.getByRole("button", { name: "System" }));
+			expect(editor).toHaveAttribute("data-theme", "vs");
+			act(() => {
+				media.matches = true;
+				for (const listener of listeners) listener();
+			});
+			expect(editor).toHaveAttribute("data-theme", "vs-dark");
+			act(() => {
+				media.matches = false;
+				for (const listener of listeners) listener();
+			});
+			expect(editor).toHaveAttribute("data-theme", "vs");
+			expect(screen.getByTestId("code-editor")).toBe(editor);
+			expect(editor).toHaveTextContent("print('test')");
+			expect(store.toJSON()).toEqual(savedState);
+		},
+	);
 
 	it("should have code parameter set correctly", () => {
 		const { codeCell } = createCodeCellStore();

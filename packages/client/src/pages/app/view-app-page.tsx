@@ -130,9 +130,10 @@ export const ViewAppPage = observer(() => {
 				</Breadcrumb>
 			</NavbarLeft>
 			<NavbarRight>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={"Details"}
 							variant="ghost"
 							size="icon"
 							data-testid={"settings"}
@@ -145,9 +146,10 @@ export const ViewAppPage = observer(() => {
 					</TooltipTrigger>
 					<TooltipContent>Details</TooltipContent>
 				</Tooltip>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={"Bookmark App"}
 							variant="ghost"
 							size="icon"
 							onClick={() => handleBookmark(!bookmarked)}
@@ -160,9 +162,10 @@ export const ViewAppPage = observer(() => {
 					</TooltipTrigger>
 					<TooltipContent>Bookmark App</TooltipContent>
 				</Tooltip>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={"Share App"}
 							variant="ghost"
 							size="icon"
 							onClick={() => setIsShareOpen(true)}

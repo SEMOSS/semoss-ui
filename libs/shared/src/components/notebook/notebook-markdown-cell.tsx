@@ -34,7 +34,7 @@ export const NotebookMarkdownCell: React.FC<NotebookMarkdownCellProps> = ({
 	const source = normalizeSource(cell.source);
 
 	const primaryAction = readOnly ? undefined : (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<Button
 					variant="ghost"
@@ -80,7 +80,7 @@ export const NotebookMarkdownCell: React.FC<NotebookMarkdownCellProps> = ({
 					}}
 				>
 					{source.trim() ? (
-						<Markdown>{source}</Markdown>
+						<Markdown math>{source}</Markdown>
 					) : (
 						<span className="text-muted-foreground text-xs italic">
 							Empty markdown cell — double-click to edit.

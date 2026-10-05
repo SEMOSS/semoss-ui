@@ -3,7 +3,13 @@ import type React from "react";
 import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { Button, Input, Label } from "@semoss/ui/next";
+import {
+	Button,
+	DialogDescription,
+	DialogTitle,
+	Input,
+	Label,
+} from "@semoss/ui/next";
 import { useConfig } from "@/hooks";
 
 type NewQueryForm = {
@@ -106,15 +112,15 @@ export const NewNotebookDialog = (
 
 	return (
 		<>
-			<div className="flex items-start gap-3 px-6 pt-6 pb-2">
+			<div className="flex items-start gap-3 px-6 pt-6 pr-12 pb-2">
 				<Notebook className="mt-1 size-5 shrink-0 text-foreground/70" />
 				<div className="flex flex-col">
-					<h2 className="font-semibold text-lg leading-tight">
+					<DialogTitle className="font-medium text-base leading-6">
 						New Notebook
-					</h2>
-					<p className="text-muted-foreground text-sm">
+					</DialogTitle>
+					<DialogDescription>
 						Give your notebook a name to get started.
-					</p>
+					</DialogDescription>
 				</div>
 			</div>
 			<div className="px-6 py-2">

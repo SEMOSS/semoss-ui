@@ -32,8 +32,7 @@ export interface RoomToolParams {
  *
  * The one piece of the old sidebar's tab-bar chrome that is genuinely
  * per-panel: it acts on the tool the front tab is showing, so it registers as
- * that panel's control rather than sitting in the sidebar header beside close
- * and maximize.
+ * that panel's control rather than sitting beside the container-level actions.
  */
 const RoomToolInlineControl: FC<WorkbenchPanelProps> = observer(({ id }) => {
 	const { config } = useWorkbenchPanel<RoomToolParams>(id);
@@ -56,7 +55,6 @@ const RoomToolInlineControl: FC<WorkbenchPanelProps> = observer(({ id }) => {
 					aria-label={t("actions.openInline")}
 					onClick={(e) => {
 						e.stopPropagation();
-						room.setSidebarMaximized(false);
 						tool.openTool("inline");
 					}}
 				>

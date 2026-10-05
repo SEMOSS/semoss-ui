@@ -439,24 +439,47 @@ export const AssistantComposer = () => {
 						className="hidden"
 						aria-label="Attach files"
 					/>
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								disabled={
+							<span
+								className="inline-flex"
+								tabIndex={
 									isComposerDisabled ||
 									isSending ||
 									files.length >= MAX_ATTACHMENTS
+										? 0
+										: undefined
 								}
-								onClick={() => fileInputRef.current?.click()}
-								aria-label="Attach files"
 							>
-								<PaperclipIcon />
-							</Button>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									disabled={
+										isComposerDisabled ||
+										isSending ||
+										files.length >= MAX_ATTACHMENTS
+									}
+									onClick={() =>
+										fileInputRef.current?.click()
+									}
+									aria-label="Attach files"
+								>
+									<PaperclipIcon />
+								</Button>
+							</span>
 						</TooltipTrigger>
-						<TooltipContent>Attach files</TooltipContent>
+						<TooltipContent>
+							{isComposerDisabled ||
+							isSending ||
+							files.length >= MAX_ATTACHMENTS
+								? isComposerDisabled
+									? "Wait for the conversation to finish initializing"
+									: isSending
+										? "Wait for the message to finish sending"
+										: `You can attach up to ${MAX_ATTACHMENTS} files`
+								: "Attach files"}
+						</TooltipContent>
 					</Tooltip>
 
 					<AssistantUsage />
@@ -464,24 +487,33 @@ export const AssistantComposer = () => {
 					<div className="min-w-0 flex-1" />
 
 					{activeRunId ? (
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
-								<Button
-									type="button"
-									size="icon-sm"
-									variant="outline"
-									disabled={isStopping}
-									onClick={() => void handleStop()}
-									aria-label="Stop run"
+								<span
+									className="inline-flex"
+									tabIndex={isStopping ? 0 : undefined}
 								>
-									{isStopping ? (
-										<Spinner className="size-4" />
-									) : (
-										<SquareIcon className="fill-current" />
-									)}
-								</Button>
+									<Button
+										type="button"
+										size="icon-sm"
+										variant="outline"
+										disabled={isStopping}
+										onClick={() => void handleStop()}
+										aria-label="Stop run"
+									>
+										{isStopping ? (
+											<Spinner className="size-4" />
+										) : (
+											<SquareIcon className="fill-current" />
+										)}
+									</Button>
+								</span>
 							</TooltipTrigger>
-							<TooltipContent>Stop the assistant</TooltipContent>
+							<TooltipContent>
+								{isStopping
+									? "Stopping the run…"
+									: "Stop the assistant"}
+							</TooltipContent>
 						</Tooltip>
 					) : (
 						<Button

@@ -302,9 +302,12 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 			open={open}
 			onOpenChange={(isOpen) => !isOpen && onClose(false)}
 		>
-			<DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+			<DialogContent
+				aria-describedby={undefined}
+				className="max-h-[85vh] max-w-3xl overflow-y-auto"
+			>
 				<DialogHeader>
-					<DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
 						{isNewUser ? "Add Member" : "Edit Member"}
 					</DialogTitle>
 				</DialogHeader>

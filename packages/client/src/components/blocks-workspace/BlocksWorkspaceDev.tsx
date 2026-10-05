@@ -140,9 +140,11 @@ export const BlocksWorkspaceDev = observer(() => {
 				if (!open) setIsOpen(false);
 			}}
 		>
-			<DialogContent className="max-w-sm">
+			<DialogContent aria-describedby={undefined} className="max-w-sm">
 				<DialogHeader>
-					<DialogTitle>Dev</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Dev
+					</DialogTitle>
 				</DialogHeader>
 				<div className="flex flex-col gap-2 py-1">
 					<textarea

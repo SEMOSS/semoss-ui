@@ -2,6 +2,7 @@ import { shallow } from "zustand/shallow";
 import type {
 	WorkbenchBorders,
 	WorkbenchLayoutNode,
+	WorkbenchLayoutPreset,
 	WorkbenchMoveTarget,
 	WorkbenchPanelConfigAny,
 	WorkbenchPanelId,
@@ -19,6 +20,10 @@ import type {
 	WorkbenchTabset,
 } from "../../types";
 import { WORKBENCH_SIDES } from "../../types";
+import {
+	arrangeWorkbenchTree,
+	balanceWorkbenchTree,
+} from "./workbench-layout.presets";
 import {
 	createNodeId,
 	emptyTabset,
@@ -98,7 +103,7 @@ interface WorkbenchLayoutSliceFields {
 	/** The panel whose name is being edited inline, if any. Ephemeral. */
 	editingPanelId: WorkbenchPanelId | undefined;
 
-	/** Measured slot geometry, relative to the workbench root. Ephemeral. */
+	/** Measured slot geometry and its coordinate mode. Ephemeral. */
 	slotRects: Record<string, WorkbenchSlotRect>;
 
 	/** Derived: flatten(tree), in visual order. */
@@ -242,6 +247,21 @@ export interface WorkbenchLayoutActions {
 		stack: Pick<WorkbenchStack, "kind" | "id">,
 		pid: WorkbenchPanelId,
 	) => void;
+
+	/** Reveal an open panel, restoring a maximized group if it hides the target. */
+	navigatePanel: (pid: WorkbenchPanelId) => void;
+
+	/** Cycle through open panels in visual order, including collapsed borders. */
+	navigateRelativePanel: (direction: -1 | 1) => void;
+
+	/** Whether the main area can use a preset without moving a locked panel. */
+	canArrangePanels: (preset: WorkbenchLayoutPreset) => boolean;
+
+	/** Apply a whole-area preset in one commit, retaining every panel and its state. */
+	arrangePanels: (preset: WorkbenchLayoutPreset) => void;
+
+	/** Equalize main-area groups and split viewports; leave border sizes alone. */
+	balanceLayout: () => void;
 
 	/** Move a panel to a dock or border target, resolving pin boundaries. */
 	movePanel: (pid: WorkbenchPanelId, target: WorkbenchMoveTarget) => void;
@@ -488,6 +508,7 @@ const slotRectsEqual = (a: WorkbenchSlotRect, b: WorkbenchSlotRect): boolean =>
 	a.top === b.top &&
 	a.width === b.width &&
 	a.height === b.height &&
+	a.coordinateMode === b.coordinateMode &&
 	a.radius === b.radius;
 
 /**
@@ -796,7 +817,9 @@ export const createWorkbenchLayoutSlice = (
 						return;
 					}
 					const base = rootElement.getBoundingClientRect();
-					const prev = get().layout.slotRects;
+					const state = get().layout;
+					const maximizedTabsetId = state.maximizedTabsetId;
+					const prev = state.slotRects;
 					const next: Record<string, WorkbenchSlotRect> = {};
 					let changed = false;
 					for (const [key, el] of slotElements) {
@@ -808,18 +831,29 @@ export const createWorkbenchLayoutSlice = (
 							continue;
 						}
 						const bounds = el.getBoundingClientRect();
+						const coordinateMode =
+							maximizedTabsetId &&
+							(key === maximizedTabsetId ||
+								key === `${maximizedTabsetId}::b`)
+								? "viewport"
+								: "root";
+						const originLeft =
+							coordinateMode === "viewport" ? 0 : base.left;
+						const originTop =
+							coordinateMode === "viewport" ? 0 : base.top;
 						// Snap to whole pixels. Flex weights land slots on
 						// fractional offsets, and a body drawn at one renders
 						// every 1px rule inside it on a half pixel. Both edges
 						// are rounded from the same origin, so slots that abut
 						// still meet exactly.
-						const left = Math.round(bounds.left - base.left);
-						const top = Math.round(bounds.top - base.top);
+						const left = Math.round(bounds.left - originLeft);
+						const top = Math.round(bounds.top - originTop);
 						const rect: WorkbenchSlotRect = {
 							left,
 							top,
-							width: Math.round(bounds.right - base.left) - left,
-							height: Math.round(bounds.bottom - base.top) - top,
+							width: Math.round(bounds.right - originLeft) - left,
+							height: Math.round(bounds.bottom - originTop) - top,
+							coordinateMode,
 							// declared by the slot, read here so the body's
 							// corners follow it without a second channel
 							radius: el.dataset.radius ?? "0",
@@ -1220,6 +1254,68 @@ export const createWorkbenchLayoutSlice = (
 							mobileActivePanelId: pid,
 						};
 					});
+				},
+				navigatePanel: (pid) => {
+					const state = get().layout;
+					const stack = state.stacks.find((candidate) =>
+						candidate.panelIds.includes(pid),
+					);
+					if (!stack) return;
+					if (
+						state.maximizedTabsetId &&
+						stack.id !== state.maximizedTabsetId
+					) {
+						state.actions.toggleMaximize();
+					}
+					state.actions.activatePanel(stack, pid);
+				},
+				navigateRelativePanel: (direction) => {
+					const state = get().layout;
+					const ids = state.openPanelIds;
+					if (!ids.length) return;
+					const active = state.isMobileLayout
+						? state.mobileActivePanelId
+						: state.selection.panel;
+					const index = active ? ids.indexOf(active) : -1;
+					const nextIndex =
+						index < 0
+							? direction === 1
+								? 0
+								: ids.length - 1
+							: (index + direction + ids.length) % ids.length;
+					state.actions.navigatePanel(ids[nextIndex]);
+				},
+				canArrangePanels: (preset) => {
+					const state = get().layout;
+					const ids = state.tabsets.flatMap(
+						(tabset) => tabset.panelIds,
+					);
+					return (
+						!state.isMobileLayout &&
+						ids.length >= (preset === "single" ? 1 : 2) &&
+						state.tabsets.every(
+							(tabset) => tabset.enableDrop !== false,
+						) &&
+						ids.every((pid) => flagOf(pid, "canDrag"))
+					);
+				},
+				arrangePanels: (preset) => {
+					if (!get().layout.actions.canArrangePanels(preset)) return;
+					commit((state) => ({
+						tree: arrangeWorkbenchTree(
+							state.tree,
+							state.panels,
+							state.selection.panel,
+							preset,
+						),
+						maximizedTabsetId: undefined,
+					}));
+				},
+				balanceLayout: () => {
+					if (get().layout.isMobileLayout) return;
+					commit((state) => ({
+						tree: balanceWorkbenchTree(state.tree),
+					}));
 				},
 				movePanel: (pid, target) => {
 					if (!flagOf(pid, "canDrag")) {

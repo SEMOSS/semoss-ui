@@ -51,16 +51,16 @@ export const VisualMap = observer(
 		return (
 			<div className="mt-px h-full w-full">
 				<div className="relative top-[1%] left-[8%] max-h-[530px] w-[95%] overflow-y-auto">
-					<span className="block text-[#0471F0]">Select Visual</span>
+					<span className="block text-primary">Select Visual</span>
 					<CloseOutlinedIcon
-						className="absolute top-0 z-10 ml-[84%] cursor-pointer text-[#808080]"
+						className="absolute top-0 z-10 ml-[84%] cursor-pointer text-muted-foreground"
 						onClick={handleClose}
 					/>
-					<span className="relative mt-1 block whitespace-normal break-words text-[#808080] text-sm">
+					<span className="relative mt-1 block whitespace-normal break-words text-muted-foreground text-sm">
 						Select a chart type for your data visualization
 					</span>
 				</div>
-				<hr className="mt-5 border border-[#E0E0E0]" />
+				<hr className="mt-5 border border-border" />
 				<div className="relative top-[1%] left-[8%] max-h-[530px] w-[95%] overflow-y-auto">
 					<div className="w-[85%] pt-2">
 						<div className="relative">
@@ -76,7 +76,7 @@ export const VisualMap = observer(
 					</div>
 					{Object.entries(filteredData).map(([key, value]) => (
 						<div key={key} className="w-[85%] pt-2">
-							<span className="relative mt-1 block whitespace-normal break-words text-[#808080] text-sm">
+							<span className="relative mt-1 block whitespace-normal break-words text-muted-foreground text-sm">
 								{key}
 							</span>
 							{value?.map((item) => (

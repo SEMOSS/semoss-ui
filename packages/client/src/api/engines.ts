@@ -72,7 +72,7 @@ export const setEngineVisiblity = async (
 
 	const response = await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
+	}>(url, { ...postData }, {});
 	return response;
 };
 
@@ -108,7 +108,7 @@ export const approveEngineUserAccessRequest = async (
 	};
 	const response = await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
+	}>(url, { ...postData }, {});
 	return response;
 };
 
@@ -128,7 +128,7 @@ export const denyEngineUserAccessRequest = async (
 	};
 	const response = await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
+	}>(url, { ...postData }, {});
 	return response;
 };
 
@@ -155,7 +155,7 @@ export const addEnginePermission = async (
 
 	const response = await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
+	}>(url, { ...postData }, {});
 	return response;
 };
 
@@ -184,7 +184,7 @@ export const editEnginePermission = async (
 
 	const response = await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
+	}>(url, { ...postData }, {});
 	return response;
 };
 
@@ -211,7 +211,7 @@ export const deleteEnginePermission = async (
 
 	const response = await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
+	}>(url, { ...postData }, {});
 	return response;
 };
 
@@ -226,6 +226,27 @@ const assertPixelSuccess = (errors: string[]): void => {
 	if (errors.length > 0) {
 		throw new Error(errors.join(""));
 	}
+};
+
+/**
+ * Set the name an engine is displayed under. Only the engine's owner can.
+ *
+ * @name setEngineDisplayName
+ * @param insightId - Insight the pixel executes against.
+ * @param engineId - Engine to rename.
+ * @param name - New display name.
+ * @return Resolves when the display name is persisted.
+ */
+export const setEngineDisplayName = async (
+	insightId: string,
+	engineId: string,
+	name: string,
+): Promise<void> => {
+	const response = await runPixel<[boolean]>(
+		`SetEngineDisplayName(engine=[${JSON.stringify(engineId)}], name=[${JSON.stringify(`<encode>${name}</encode>`)}]);`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
 };
 
 /**
@@ -333,12 +354,4 @@ export const getModelInputSupport = async (
 	assertPixelSuccess(response.errors);
 
 	return response.pixelReturn[0]?.output ?? {};
-};
-
-const processPostData = (data: Record<string, unknown>) => {
-	const postRecordData: Record<string, unknown> = {};
-	Object.keys(data).forEach((item) => {
-		postRecordData[item] = data[item];
-	});
-	return postRecordData;
 };

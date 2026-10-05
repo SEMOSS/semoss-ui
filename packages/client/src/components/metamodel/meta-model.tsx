@@ -23,7 +23,7 @@ import {
 	updateColumnProperties,
 } from "../import/database/metamodel-utils";
 import { Editmetamodel } from "./edit-meta-model";
-import EditTable from "./edit-table";
+import { EditTable } from "./edit-table";
 import { FloatingEdge } from "./floating-edge";
 import { MetamodelNode } from "./meta-model-node";
 

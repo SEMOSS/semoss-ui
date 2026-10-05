@@ -36,21 +36,14 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { buildInitials, hashString } from "@semoss/utility/text";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { Prompt } from "../../components/prompt/prompt.types";
 import { PromptDeleteModal } from "../../components/prompt/prompt-delete-modal";
 import { PromptModal } from "./PromptModal";
-
-const hashString = (str: string): number => {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
-	}
-	return Math.abs(h);
-};
 
 const generateGradient = (name: string): string => {
 	const base = hashString(name) % 360;
@@ -60,12 +53,6 @@ const generateGradient = (name: string): string => {
 const generateInitialsColor = (name: string): string => {
 	const base = hashString(name) % 360;
 	return `hsl(${base}, 28%, 28%)`;
-};
-
-const buildInitials = (label: string): string => {
-	const tokens = label.split(/[^A-Za-z0-9]+/).filter((t) => t.length > 0);
-	const chars = tokens.map((t) => t[0].toUpperCase());
-	return chars.slice(0, 3).join("");
 };
 
 /**
@@ -287,9 +274,7 @@ export const PromptDetailPage = () => {
 			setTesterOutput(result || "No response received.");
 		} catch (error) {
 			setTesterError(
-				error instanceof Error
-					? error.message
-					: "Failed to run prompt test.",
+				getErrorMessage(error, "Failed to run prompt test."),
 			);
 		} finally {
 			setIsTesterRunning(false);
@@ -331,10 +316,10 @@ export const PromptDetailPage = () => {
 			toast.success("Prompt context saved as a new version");
 			loadPrompt();
 		} catch (error) {
-			const message =
-				error instanceof Error
-					? error.message
-					: "Failed to save prompt context.";
+			const message = getErrorMessage(
+				error,
+				"Failed to save prompt context.",
+			);
 			setTesterError(message);
 			toast.error(message);
 		} finally {
@@ -396,7 +381,7 @@ export const PromptDetailPage = () => {
 						className="font-semibold text-2xl"
 						style={{ color: initialsColor }}
 					>
-						{buildInitials(promptTitle)}
+						{buildInitials(promptTitle, 3)}
 					</span>
 				</div>
 
@@ -411,7 +396,7 @@ export const PromptDetailPage = () => {
 					{promptId && (
 						<div className="flex items-center gap-1 text-muted-foreground text-sm">
 							<span>{promptId}</span>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"
@@ -799,7 +784,11 @@ export const PromptDetailPage = () => {
 															"Save Context"
 														)}
 													</Button>
-													<Tooltip>
+													<Tooltip
+														disableHoverableContent={
+															false
+														}
+													>
 														<TooltipTrigger asChild>
 															<Info className="size-4 text-muted-foreground" />
 														</TooltipTrigger>
@@ -897,7 +886,7 @@ export const PromptDetailPage = () => {
 									? "Setting..."
 									: "Set as Active"}
 							</Button>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Info className="size-4 text-muted-foreground" />
 								</TooltipTrigger>

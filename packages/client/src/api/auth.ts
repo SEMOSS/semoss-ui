@@ -243,54 +243,6 @@ export const logout = async (): Promise<boolean> => {
 	return true;
 };
 
-export const oauth = async (provider: string): Promise<boolean> => {
-	// check if the user is logged in
-	const response = await get<{
-		name: string;
-	}>(`${Env.MODULE}/api/auth/userinfo/${provider}`).catch((error) => {
-		throw Error(error);
-	});
-	//check if they are already logged in
-	if (response.data?.name) {
-		return true;
-	}
-	return new Promise((resolve) => {
-		const url = `${Env.MODULE}/api/auth/login/${provider}`;
-		const popUpWindow = window.top.open(
-			url,
-			"_blank",
-			`height=${600},width=${400},top=${300},left=${600}`,
-		);
-		// setup an interval to see if the popup window is closed or successful
-		const interval = setInterval(async () => {
-			try {
-				if (
-					!popUpWindow ||
-					popUpWindow.closed ||
-					popUpWindow.closed === undefined
-				) {
-					clearInterval(interval);
-				} else if (
-					popUpWindow.document.location.href.indexOf(
-						`${window.location.host}`,
-					) > -1
-				) {
-					clearInterval(interval);
-					// close it
-					popUpWindow.close();
-					// try to get the info again
-					const response = await oauth(provider);
-					// close it
-					resolve(response);
-				}
-			} catch (_err: unknown) {
-				// do nothing
-				// this is to work around the blocked frame error that comes up
-			}
-		}, 1000);
-	});
-};
-
 export const getLoginProperties = async () => {
 	const url = `${Env.MODULE}/api/auth/loginProperties`;
 	const response = await get(url).catch((error) => {
@@ -777,9 +729,9 @@ export const createAPIUser = async (name: string) => {
 
 	const response = await post<Record<string, string>>(
 		url,
-		processPostData({
+		{
 			name: name,
-		}),
+		},
 		{},
 	).catch((error) => {
 		throw Error(error);
@@ -838,13 +790,11 @@ export const editMemberInfo = async (admin: boolean, user: unknown) => {
 		url += "admin/";
 	}
 	url += "user/editUser";
-	const response = await post<boolean>(
-		url,
-		processPostData(postData),
-		{},
-	).catch((e) => {
-		throw Error(e);
-	});
+	const response = await post<boolean>(url, { ...postData }, {}).catch(
+		(e) => {
+			throw Error(e);
+		},
+	);
 	return response;
 };
 
@@ -958,7 +908,7 @@ export const createUser = async (
 			modelMaxResponseTime: user.model_max_response_time,
 		};
 	}
-	const response = await post<boolean>(url, processPostData(newUserInfo), {});
+	const response = await post<boolean>(url, { ...newUserInfo }, {});
 	return response;
 };
 
@@ -1032,12 +982,4 @@ export const setUserDefaultModel = async (
 		throw Error(e);
 	});
 	return response;
-};
-
-const processPostData = (data: unknown) => {
-	const postRecordData: Record<string, unknown> = {};
-	Object.keys(data).forEach((item) => {
-		postRecordData[item] = data[item];
-	});
-	return postRecordData;
 };

@@ -1,5 +1,6 @@
 {
 	"messages": {
+		"actions": "Message actions",
 		"placeholder": "Type a message...",
 		"sending": "Sending...",
 		"error": "Failed to send message"
@@ -29,8 +30,6 @@
 		"fastForwardToEnd": "Fast Forward to End",
 		"completeToolsAsk_one": "Please complete the tool to proceed.",
 		"completeToolsAsk_other": "Please complete the tools to proceed.",
-		"completeToolsAuto_one": "Please wait for the tool to complete.",
-		"completeToolsAuto_other": "Please wait for the tools to complete.",
 		"emptyResponse": "Empty response."
 	},
 	"input": {

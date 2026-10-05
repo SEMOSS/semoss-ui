@@ -1,4 +1,5 @@
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react";
+import type { ComponentProps } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	cn,
@@ -13,6 +14,17 @@ import {
 } from "@semoss/ui/next";
 
 interface NewEngineInputProps {
+	/** Native field attributes for label, hint, error and focus associations. */
+	inputProps?: Pick<
+		ComponentProps<typeof InputGroupInput>,
+		| "id"
+		| "aria-label"
+		| "aria-describedby"
+		| "aria-invalid"
+		| "ref"
+		| "onBlur"
+		| "name"
+	>;
 	/** css classes */
 	className?: string;
 
@@ -33,6 +45,7 @@ interface NewEngineInputProps {
 }
 
 export const NewEngineInput = ({
+	inputProps,
 	className,
 	disabled,
 	required,
@@ -48,6 +61,7 @@ export const NewEngineInput = ({
 	return (
 		<InputGroup className={cn("w-full", className)}>
 			<InputGroupInput
+				{...inputProps}
 				placeholder={placeholder}
 				disabled={disabled}
 				value={value}
@@ -63,7 +77,7 @@ export const NewEngineInput = ({
 				{checkEngineName.status === "SUCCESS" &&
 					debouncedEngineName.length > 0 &&
 					checkEngineName.data.exists && (
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<CircleAlertIcon className="text-destructive" />
 							</TooltipTrigger>
@@ -71,7 +85,7 @@ export const NewEngineInput = ({
 						</Tooltip>
 					)}
 				{checkEngineName.status === "ERROR" && (
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<CircleAlertIcon className="text-destructive" />
 						</TooltipTrigger>

@@ -400,9 +400,14 @@ export const DeleteDuplicateMask = observer(
 					>
 						{isIterationOrContainer && (
 							<>
-								<Tooltip>
+								<Tooltip disableHoverableContent={false}>
 									<TooltipTrigger asChild>
 										<button
+											aria-label={
+												isChangeable
+													? "Swap Child Block"
+													: "Add Block to Content"
+											}
 											type="button"
 											className={iconButtonClass}
 											onClick={(e) => {
@@ -450,9 +455,10 @@ export const DeleteDuplicateMask = observer(
 							</>
 						)}
 						{isAdmin && (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<button
+										aria-label={"Add to client"}
 										type="button"
 										className={iconButtonClass}
 										onClick={() => setOpenModal(true)}
@@ -463,9 +469,10 @@ export const DeleteDuplicateMask = observer(
 								<TooltipContent>Add to client</TooltipContent>
 							</Tooltip>
 						)}
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<button
+									aria-label={"Duplicate"}
 									type="button"
 									className={iconButtonClass}
 									onClick={onDuplicate}
@@ -478,9 +485,10 @@ export const DeleteDuplicateMask = observer(
 							</TooltipTrigger>
 							<TooltipContent>Duplicate</TooltipContent>
 						</Tooltip>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<button
+									aria-label={"Delete"}
 									type="button"
 									className={iconButtonClass}
 									onClick={

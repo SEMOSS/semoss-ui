@@ -1,4 +1,4 @@
-import { RefreshCw, X } from "lucide-react";
+import { RefreshCw, TriangleAlertIcon, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useMemo, useState } from "react";
 import type { BlockJSON, ListenerActions } from "@semoss/renderer";
@@ -8,7 +8,18 @@ import {
 	useBlocksPixel,
 	useFrameHeaders,
 } from "@semoss/renderer";
-import { Badge, Button, Input, Switch, toast } from "@semoss/ui/next";
+import {
+	Alert,
+	AlertDescription,
+	Badge,
+	Button,
+	Input,
+	Switch,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { Panel } from "@/components/workspace";
 import { useDesigner } from "@/hooks";
 
@@ -74,7 +85,12 @@ export const ExportButtonPanel = observer(() => {
 			setHasInitializedFrame(true);
 		}
 		if (!selectedFrame) {
-			setSelectedColumns([]);
+			// Bail when it is already empty. Setting a fresh [] unconditionally
+			// changed the state identity on every run, and this effect runs
+			// whenever `frameColumns` changes.
+			setSelectedColumns((previous) =>
+				previous.length === 0 ? previous : [],
+			);
 		}
 	}, [frameColumns, selectedFrame, hasInitializedFrame]);
 
@@ -304,14 +320,10 @@ export const ExportButtonPanel = observer(() => {
 
 	return (
 		<Panel>
-			<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
+			<div className="flex h-full flex-col gap-3 overflow-y-auto px-2 py-2">
 				<div>
-					<h6 className="mb-4 font-semibold text-base">
-						Export Data
-					</h6>
-
 					{/* Frame Selection */}
-					<p className="mt-2 font-semibold text-muted-foreground text-xs uppercase tracking-[0.5px]">
+					<p className="font-medium text-muted-foreground text-xs">
 						Frame
 					</p>
 					<div className="flex flex-col justify-center gap-2 py-1">
@@ -323,7 +335,7 @@ export const ExportButtonPanel = observer(() => {
 								onChange={(e) =>
 									setSelectedFrame(e.target.value)
 								}
-								className="w-full flex-1 rounded border border-gray-300 bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+								className="h-9 w-full flex-1 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
 							>
 								<option value="">Select frame</option>
 								{availableFrameNames.map((name) => (
@@ -332,21 +344,26 @@ export const ExportButtonPanel = observer(() => {
 									</option>
 								))}
 							</select>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={handleRefreshFrames}
-								title="Refresh frames"
-							>
-								<RefreshCw className="size-4" />
-							</Button>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label="Refresh frames"
+										onClick={handleRefreshFrames}
+									>
+										<RefreshCw className="size-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>Refresh frames</TooltipContent>
+							</Tooltip>
 						</div>
 					</div>
 
 					{/* Column Selection */}
 					{selectedFrame && (
 						<>
-							<p className="mt-2 font-semibold text-muted-foreground text-xs uppercase tracking-[0.5px]">
+							<p className="font-medium text-muted-foreground text-xs">
 								Columns ({selectedColumns?.length || 0})
 							</p>
 							<div className="flex flex-col justify-center gap-2 py-1">
@@ -406,7 +423,7 @@ export const ExportButtonPanel = observer(() => {
 											| "excel",
 									)
 								}
-								className="w-full rounded border border-gray-300 bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+								className="h-9 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
 							>
 								<option value="csv">CSV</option>
 								<option value="tsv">TSV</option>
@@ -436,7 +453,7 @@ export const ExportButtonPanel = observer(() => {
 					{selectedFrame && (
 						<div className="flex flex-col justify-center gap-2 py-1">
 							<div className="flex flex-row items-center gap-2">
-								<p className="mt-2 font-semibold text-muted-foreground text-xs uppercase tracking-[0.5px]">
+								<p className="font-medium text-muted-foreground text-xs">
 									Direct Export
 								</p>
 								<Switch
@@ -486,12 +503,13 @@ export const ExportButtonPanel = observer(() => {
 					)}
 
 					{availableFrameNames.length === 0 && (
-						<div className="mt-4 rounded bg-yellow-50 p-4">
-							<p className="text-sm text-yellow-700">
+						<Alert className="mt-3 border-warning/40 bg-warning/10 text-warning">
+							<TriangleAlertIcon className="size-4" />
+							<AlertDescription className="text-warning/90">
 								No frames found. Create a frame or refresh
 								frames to get started.
-							</p>
-						</div>
+							</AlertDescription>
+						</Alert>
 					)}
 				</div>
 			</div>

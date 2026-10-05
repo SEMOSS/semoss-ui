@@ -85,13 +85,14 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 
 	type LogicalNameItem = { id: string; name: string };
 
-	const resolveType = (raw: string) =>
-		typesList.includes(raw) ? raw : typesList[0];
+	const resolvedInitialType = typesList.includes(initialType)
+		? initialType
+		: typesList[0];
 
 	const [singleNameVal, setSingleNameVal] = useState<string>(
 		initialName ?? "",
 	);
-	const [typeVal, setTypeVal] = useState<string>(resolveType(initialType));
+	const [typeVal, setTypeVal] = useState<string>(resolvedInitialType);
 	const [activeTab, setActiveTab] = useState<string>("edit");
 	const [logicalNames, setLogicalNames] = useState<LogicalNameItem[]>([]);
 	const [newLogicalName, setNewLogicalName] = useState<string>("");
@@ -105,7 +106,7 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 
 	useEffect(() => {
 		if (open && !openPrevRef.current) {
-			setTypeVal(resolveType(initialType));
+			setTypeVal(resolvedInitialType);
 			setSingleNameVal(initialName ?? "");
 
 			const initialItems = (initialLogicalNames || [])
@@ -127,11 +128,10 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 		openPrevRef.current = open;
 	}, [
 		open,
-		initialType,
+		resolvedInitialType,
 		initialName,
 		initialLogicalNames,
 		initialDescription,
-		typesList,
 		baseId,
 	]);
 
@@ -276,11 +276,12 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 	return (
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
 			<DialogContent
+				aria-describedby={undefined}
 				className="max-w-[600px]"
 				data-testid="edit-metamodel-modal"
 			>
 				<DialogHeader>
-					<DialogTitle className="font-semibold text-lg">
+					<DialogTitle className="font-medium text-base leading-6">
 						{isEdit
 							? readOnly
 								? `View ${initialName}`

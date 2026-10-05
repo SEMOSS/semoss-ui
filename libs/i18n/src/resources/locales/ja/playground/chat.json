@@ -1,5 +1,6 @@
 {
 	"messages": {
+		"actions": "メッセージの操作",
 		"placeholder": "メッセージを入力...",
 		"sending": "送信中...",
 		"error": "メッセージの送信に失敗しました"
@@ -29,8 +30,6 @@
 		"fastForwardToEnd": "最後まで早送り",
 		"completeToolsAsk_one": "続行するにはツールを完了してください。",
 		"completeToolsAsk_other": "続行するにはすべてのツールを完了してください。",
-		"completeToolsAuto_one": "ツールが完了するまでお待ちください。",
-		"completeToolsAuto_other": "すべてのツールが完了するまでお待ちください。",
 		"emptyResponse": "空のレスポンス。"
 	},
 	"input": {

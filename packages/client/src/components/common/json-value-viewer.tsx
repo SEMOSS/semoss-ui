@@ -5,6 +5,12 @@ import {
 	ChevronsUpDown,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 
 interface JsonValueViewerProps {
 	value: unknown;
@@ -209,23 +215,34 @@ export const JsonValueViewer = ({
 	return (
 		<div className="relative">
 			{renderToggle && (
-				<button
-					type="button"
-					aria-label={
-						expandAll
-							? "Collapse all JSON nodes"
-							: "Expand all JSON nodes"
-					}
-					title={expandAll ? "Collapse all" : "Expand all"}
-					className="absolute top-0 right-0 z-10 inline-flex items-center rounded-sm bg-background/80 p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-					onClick={() => setExpandAll((v) => !v)}
-				>
-					{expandAll ? (
-						<ChevronsDownUp className="size-3" />
-					) : (
-						<ChevronsUpDown className="size-3" />
-					)}
-				</button>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							type="button"
+							aria-label={
+								expandAll
+									? "Collapse all JSON nodes"
+									: "Expand all JSON nodes"
+							}
+							className="absolute top-0 right-0 z-10 inline-flex items-center rounded-sm bg-background/80 p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+							onClick={() => setExpandAll((v) => !v)}
+						>
+							{expandAll ? (
+								<ChevronsDownUp className="size-3" />
+							) : (
+								<ChevronsUpDown className="size-3" />
+							)}
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent
+						sideOffset={4}
+						className="max-w-xs break-words"
+					>
+						{expandAll ? "Collapse all" : "Expand all"}
+					</TooltipContent>
+				</Tooltip>
 			)}
 			<div
 				className="overflow-auto font-mono text-[13px] text-foreground leading-[1.4]"

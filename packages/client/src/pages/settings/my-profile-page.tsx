@@ -28,17 +28,24 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { formatDateTimeWithRelativeDay } from "@semoss/utility/date";
+import { sanitizeFileNameStem } from "@semoss/utility/file";
 import {
 	createUserAccessKey,
 	deleteUserAccessKeys,
 	editMemberInfo,
 	setUserDefaultModel,
 } from "@/api/auth";
+import { MicrosoftSubscriptions } from "@/components/settings";
 import { SdkBlock } from "@/components/shared/sdk-block";
 import { useAPI, useConfig, useSession, useSettings } from "@/hooks";
-import { formatDate, getSDKSnippet } from "@/utility";
+import { getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
 
 interface CreateAccessKeyForm {
@@ -104,6 +111,10 @@ export const MyProfilePage = () => {
 	] = useState<string>("");
 
 	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
+	// the config keys logins by auth provider, so a Microsoft entry is the only
+	// sign that somebody has a Microsoft login to subscribe with
+	const microsoftLogin = (logins as unknown as { MICROSOFT?: string })
+		?.MICROSOFT;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({
@@ -136,22 +147,12 @@ export const MyProfilePage = () => {
 
 	const downloadAccessKeyJson = () => {
 		if (!ACCESSKEY || !SECRETKEY) return;
-		const slug =
-			TOKENNAME.trim()
-				.replace(/[^A-Za-z0-9._-]+/g, "-")
-				.replace(/^-+|-+$/g, "") || "access-key";
+		const slug = sanitizeFileNameStem(TOKENNAME) || "access-key";
 		const blob = new Blob(
 			[JSON.stringify({ ACCESSKEY, SECRETKEY }, null, 2)],
 			{ type: "application/json" },
 		);
-		const url = URL.createObjectURL(blob);
-		const anchor = document.createElement("a");
-		anchor.href = url;
-		anchor.download = `${slug}-credentials.json`;
-		document.body.appendChild(anchor);
-		anchor.click();
-		anchor.remove();
-		URL.revokeObjectURL(url);
+		downloadBlob(blob, `${slug}-credentials.json`);
 	};
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
@@ -342,7 +343,9 @@ export const MyProfilePage = () => {
 								</Label>
 								<span className="text-sm">
 									{lastLogin
-										? formatDate(lastLogin) || lastLogin
+										? formatDateTimeWithRelativeDay(
+												lastLogin,
+											) || lastLogin
 										: "—"}
 								</span>
 							</div>
@@ -640,6 +643,10 @@ export const MyProfilePage = () => {
 				)}
 			</div>
 
+			<MicrosoftSubscriptions
+				signedIntoMicrosoft={microsoftLogin !== undefined}
+			/>
+
 			{/* JS SDK */}
 			<div className="rounded-lg border bg-card px-6 py-5">
 				<h3 className="mb-3 font-semibold text-base">Javascript SDK</h3>
@@ -733,40 +740,76 @@ export const MyProfilePage = () => {
 											</td>
 											<td className="px-3 py-2">
 												<div className="flex items-center gap-1">
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-6 shrink-0"
-														title="Copy"
-														onClick={() =>
-															copy(k.ACCESSKEY)
+													<Tooltip
+														disableHoverableContent={
+															false
 														}
-														data-testid="myProfilePage-access-key-copy-btn"
 													>
-														<Copy className="size-3.5" />
-													</Button>
+														<TooltipTrigger asChild>
+															<Button
+																aria-label={
+																	"Copy"
+																}
+																variant="ghost"
+																size="icon"
+																className="size-6 shrink-0"
+																onClick={() =>
+																	copy(
+																		k.ACCESSKEY,
+																	)
+																}
+																data-testid="myProfilePage-access-key-copy-btn"
+															>
+																<Copy className="size-3.5" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent
+															sideOffset={4}
+															className="max-w-xs break-words"
+														>
+															{"Copy"}
+														</TooltipContent>
+													</Tooltip>
 													<span className="font-mono text-xs">
 														{k.ACCESSKEY}
 													</span>
 												</div>
 											</td>
 											<td className="px-3 py-2 text-right">
-												<Button
-													variant="ghost"
-													size="icon"
-													title="Delete"
-													onClick={() =>
-														setAccessKeyToDelete({
-															ACCESSKEY:
-																k.ACCESSKEY,
-															TOKENNAME:
-																k.TOKENNAME,
-														})
+												<Tooltip
+													disableHoverableContent={
+														false
 													}
-													data-testid="myProfilePage-access-key-delete-btn"
 												>
-													<Trash2 className="size-4" />
-												</Button>
+													<TooltipTrigger asChild>
+														<Button
+															aria-label={
+																"Delete"
+															}
+															variant="ghost"
+															size="icon"
+															onClick={() =>
+																setAccessKeyToDelete(
+																	{
+																		ACCESSKEY:
+																			k.ACCESSKEY,
+																		TOKENNAME:
+																			k.TOKENNAME,
+																	},
+																)
+															}
+															data-testid="myProfilePage-access-key-delete-btn"
+														>
+															<Trash2 className="size-4" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent
+														sideOffset={4}
+														className="max-w-xs break-words"
+													>
+														{"Delete"}
+													</TooltipContent>
+												</Tooltip>
 											</td>
 										</tr>
 									))
@@ -791,7 +834,9 @@ export const MyProfilePage = () => {
 			>
 				<DialogContent className="flex max-h-[90vh] max-w-3xl flex-col">
 					<DialogHeader className="shrink-0">
-						<DialogTitle>Generate Key</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Generate Key
+						</DialogTitle>
 						<DialogDescription>
 							Create a user key for API access. Do not share
 							tokens with other users.
@@ -848,7 +893,7 @@ export const MyProfilePage = () => {
 										</div>
 									)}
 								/>
-								<div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+								<div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
 									One-time credentials are shown only once
 									after creation. Copy and store them now.
 								</div>
@@ -979,7 +1024,9 @@ export const MyProfilePage = () => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Delete personal access token</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete personal access token
+						</DialogTitle>
 						<DialogDescription>
 							{accessKeyToDelete?.TOKENNAME ? (
 								<>

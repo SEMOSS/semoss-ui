@@ -6,7 +6,12 @@
 		"noToolboxesFound": "No toolboxes found",
 		"noKnowledgeFound": "No knowledge found",
 		"noAgentsFound": "No agents found",
-		"noSkillsFound": "कोई कौशल नहीं मिला"
+		"noSkillsFound": "कोई कौशल नहीं मिला",
+		"fromRoom": "इस चैट से",
+		"loadError": "कैटलॉग लोड नहीं हो सका।",
+		"retry": "फिर प्रयास करें",
+		"added": "जोड़े गए",
+		"available": "उपलब्ध"
 	},
 	"permission": {
 		"owner": "Owner",

@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
 	ActionMessages,
 	type Block,
@@ -11,6 +11,7 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
+	Input,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -78,6 +79,7 @@ export const SelectInputSettings = observer(
 	}: SelectInputSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings(id);
 		const { state } = useBlocks();
+		const inputId = useId();
 
 		// track the value
 		const [value, setValue] = useState("");
@@ -148,17 +150,21 @@ export const SelectInputSettings = observer(
 		};
 
 		return (
-			<BaseSettingSection label={label} description={tooltip}>
+			<BaseSettingSection
+				label={label}
+				description={tooltip}
+				htmlFor={inputId}
+			>
 				{allowCustomInput ? (
-					<input
+					<Input
+						id={inputId}
 						list={`${id}-${label}-datalist`}
-						className="w-full rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
 						value={value}
 						onChange={(e) => onChange(e.target.value)}
 						data-testid={formatToDataTestId(
 							`selectInputSettings-${label}-${id}-txt`,
 						)}
-					></input>
+					/>
 				) : (
 					<Select
 						value={value || (allowUnset ? "__none__" : value)}
@@ -167,6 +173,7 @@ export const SelectInputSettings = observer(
 						}}
 					>
 						<SelectTrigger
+							id={inputId}
 							className="w-full"
 							data-testid={formatToDataTestId(
 								`selectInputSettings-${label}-${id}-select`,

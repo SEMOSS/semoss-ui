@@ -1,8 +1,9 @@
-import { ChevronDownIcon, PlusIcon } from "lucide-react";
+import { ChevronDownIcon, TriangleAlertIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { Link } from "react-router";
 import { EngineSelect, ProjectSelect } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Collapsible,
 	CollapsibleContent,
@@ -40,7 +41,7 @@ const PERMISSION_MODE_OPTIONS: {
 	{ value: "default", label: "Ask before edits" },
 	{ value: "acceptEdits", label: "Accept edits" },
 	{ value: "plan", label: "Plan first" },
-	{ value: "bypassPermissions", label: "Bypass permissions" },
+	{ value: "bypassPermissions", label: "Do not ask for approval" },
 ];
 
 /** Reasoning-effort levels, with display labels. */
@@ -61,6 +62,7 @@ const EFFORT_OPTIONS: { value: AssistantEffort; label: string }[] = [
 export const AssistantSettings = () => {
 	const model = useAssistant((state) => state.model);
 	const agent = useAssistant((state) => state.agent);
+	const defaultAgent = useAssistant((state) => state.defaultAgent);
 	const roomId = useAssistant((state) => state.roomId);
 	const activeRunId = useAssistant((state) => state.activeRunId);
 	const compact = useAssistant((state) => state.compact);
@@ -76,6 +78,8 @@ export const AssistantSettings = () => {
 	const setThinking = useAssistant((state) => state.setThinking);
 
 	const fieldId = useId();
+	const agentId = `${fieldId}-agent`;
+	const agentDescriptionId = `${fieldId}-agent-description`;
 	const maxTurnsId = `${fieldId}-max-turns`;
 	const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 	const [isCompacting, setIsCompacting] = useState(false);
@@ -100,14 +104,58 @@ export const AssistantSettings = () => {
 
 	const modelName =
 		model?.engine_display_name || model?.engine_name || "Select model";
-	const agentName = agent?.name || "App Builder (default)";
+	const selectedAgent = agent ?? defaultAgent;
+	const agentName = selectedAgent.name || selectedAgent.workspace_id;
 
 	return (
 		<ScrollArea className="min-h-0 flex-1">
 			<div className="flex flex-col gap-4 p-3">
 				<Field>
-					<FieldLabel>Assistant Model</FieldLabel>
+					<div className="flex min-h-7 items-center justify-between gap-2">
+						<FieldLabel htmlFor={agentId}>Agent</FieldLabel>
+						{agent && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="h-7 px-2 text-xs"
+								onClick={() => setAgent(null)}
+							>
+								Use default
+							</Button>
+						)}
+					</div>
+					<ProjectSelect
+						id={agentId}
+						aria-describedby={agentDescriptionId}
+						className="h-9 shadow-xs"
+						name={agentName}
+						value={selectedAgent.workspace_id}
+						projectTypes={["WORKSPACE"]}
+						onChange={(nextAgent) =>
+							setAgent({
+								workspace_id: nextAgent.project_id,
+								name:
+									nextAgent.project_display_name ||
+									nextAgent.project_name,
+							})
+						}
+						popoverContentProps={{ align: "start" }}
+					/>
+					<FieldDescription
+						id={agentDescriptionId}
+						className="text-xs"
+					>
+						Default:{" "}
+						{defaultAgent.name || defaultAgent.workspace_id}.
+						Changes apply to your next message.
+					</FieldDescription>
+				</Field>
+
+				<Field>
+					<FieldLabel>Model</FieldLabel>
 					<EngineSelect
+						className="h-9 w-full max-w-none justify-start border border-input px-3 shadow-xs"
 						name={modelName}
 						value={model?.engine_id || ""}
 						engineTypes={["MODEL"]}
@@ -118,44 +166,9 @@ export const AssistantSettings = () => {
 							className: "w-72 max-w-72",
 						}}
 					/>
-				</Field>
-
-				<Field>
-					<div className="flex justify-between">
-						<FieldLabel>Assistant Agent</FieldLabel>
-						<Link to="/agent/new">
-							<PlusIcon className="size-4" />
-						</Link>
-					</div>
-					<div className="flex items-center gap-2">
-						<ProjectSelect
-							name={agentName}
-							value={agent?.workspace_id || ""}
-							projectTypes={["WORKSPACE"]}
-							onChange={(nextAgent) =>
-								setAgent({
-									workspace_id: nextAgent.project_id,
-									name:
-										nextAgent.project_display_name ||
-										nextAgent.project_name,
-								})
-							}
-							popoverContentProps={{
-								align: "start",
-								className: "w-72 max-w-72",
-							}}
-						/>
-						{agent ? (
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => setAgent(null)}
-							>
-								Use default
-							</Button>
-						) : null}
-					</div>
+					<FieldDescription className="text-xs">
+						Model used for every assistant run in this room.
+					</FieldDescription>
 				</Field>
 
 				<Field orientation="horizontal">
@@ -181,7 +194,7 @@ export const AssistantSettings = () => {
 						}}
 					>
 						{isCompacting ? <Spinner className="size-3.5" /> : null}
-						Compact
+						Summarize conversation
 					</Button>
 				</Field>
 
@@ -209,7 +222,7 @@ export const AssistantSettings = () => {
 						<div className="flex flex-col gap-4 pt-4">
 							<Field>
 								<FieldLabel htmlFor={maxTurnsId}>
-									Max turns
+									Maximum steps per request
 								</FieldLabel>
 								<Input
 									id={maxTurnsId}
@@ -245,7 +258,7 @@ export const AssistantSettings = () => {
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value={INHERIT}>
-											Harness default
+											Use workspace default
 										</SelectItem>
 										{PERMISSION_MODE_OPTIONS.map(
 											(option) => (
@@ -264,6 +277,17 @@ export const AssistantSettings = () => {
 									pause for approval, auto-accept edits, plan
 									before acting, or skip the gates entirely.
 								</FieldDescription>
+								{permissionMode === "bypassPermissions" && (
+									<Alert className="border-warning/40 bg-warning/10 text-warning">
+										<TriangleAlertIcon className="size-4" />
+										<AlertDescription className="text-warning/90">
+											The assistant can make changes
+											without asking first. Only use this
+											if you trust every action it might
+											take.
+										</AlertDescription>
+									</Alert>
+								)}
 							</Field>
 
 							<Field>

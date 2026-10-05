@@ -564,7 +564,9 @@ export const GitHubAppPage = () => {
 			>
 				<DialogContent className="sm:max-w-lg">
 					<DialogHeader>
-						<DialogTitle>{t("dialog.title")}</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							{t("dialog.title")}
+						</DialogTitle>
 						<DialogDescription>
 							{t("dialog.description")}
 						</DialogDescription>
@@ -763,7 +765,9 @@ export const GitHubAppPage = () => {
 			>
 				<DialogContent className="sm:max-w-lg">
 					<DialogHeader>
-						<DialogTitle>{t("deleteDialog.title")}</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							{t("deleteDialog.title")}
+						</DialogTitle>
 						<DialogDescription>
 							{t("deleteDialog.description", {
 								appName:

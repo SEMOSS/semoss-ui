@@ -10,6 +10,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import type { GitCommit } from "./git.types";
 
 /** Props for confirming a Git snapshot restore. */
@@ -51,9 +52,7 @@ export const GitRestoreDialog = ({
 		} catch (error) {
 			console.error(error);
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to revert to this commit",
+				getErrorMessage(error, "Failed to revert to this commit"),
 			);
 		} finally {
 			setIsRestoring(false);
@@ -65,9 +64,11 @@ export const GitRestoreDialog = ({
 			open={open}
 			onOpenChange={(next) => !isRestoring && onOpenChange(next)}
 		>
-			<DialogContent>
+			<DialogContent aria-describedby={undefined}>
 				<DialogHeader>
-					<DialogTitle>Restore to this commit?</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Restore to this commit?
+					</DialogTitle>
 				</DialogHeader>
 				<div className="flex flex-col gap-3 text-sm">
 					<p>

@@ -23,10 +23,24 @@ import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useConfig, useSession } from "@/hooks";
-import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
+import {
+	buildAccessFilterParams,
+	type CatalogAccessFilter,
+	getProjectLabel,
+	isOwnerPermission,
+} from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { CloneProjectDialog } from "./clone-project-dialog";
 import { ProjectGridItem } from "./project-grid-item";
+
+/** Catalog item link; an empty `itemSubPath` lands on the item's overview. */
+const getItemPath = (
+	config: { basePath: string; itemSubPath: string },
+	projectId: string,
+) =>
+	config.itemSubPath
+		? `${config.basePath}/${projectId}/${config.itemSubPath}`
+		: `${config.basePath}/${projectId}`;
 
 const CATALOG_CONFIG = {
 	CODE: {
@@ -38,6 +52,16 @@ const CATALOG_CONFIG = {
 		itemSubPath: "view",
 		projectTypes: ["CODE", "BLOCKS"],
 		showSystemTab: true,
+	},
+	AUTOMATION: {
+		name: "Automation",
+		description:
+			"Design, run, and govern repeatable workflows that connect your data, tools, models, and applications.",
+		createPath: "/automation/new",
+		basePath: "/automation",
+		itemSubPath: "edit",
+		projectTypes: ["AUTOMATION"],
+		showSystemTab: false,
 	},
 	SKILL: {
 		name: "Skill",
@@ -55,7 +79,8 @@ const CATALOG_CONFIG = {
 			"Agents are autonomous AI assistants configured with specific skills, knowledge bases, and behavioral guidelines to accomplish complex tasks. Create agents tailored to your workflows, from customer support and data analysis to content generation and research. Manage and deploy intelligent agents that can reason, plan, and execute multi-step processes.",
 		createPath: "/agent/new",
 		basePath: "/agent",
-		itemSubPath: "edit",
+		// Agents open on their overview; view/edit are reachable from there
+		itemSubPath: "",
 		projectTypes: ["WORKSPACE"],
 		showSystemTab: false,
 	},
@@ -77,6 +102,7 @@ const CATALOG_CONFIG = {
 // Skill/Agent now have their own independent admin-only flags.
 const CATALOG_PERMISSION_TYPE = {
 	CODE: "PROJECT",
+	AUTOMATION: "PROJECT",
 	SKILL: "SKILL",
 	WORKSPACE: "WORKSPACE",
 	NOTEBOOK: "PROJECT",
@@ -157,8 +183,11 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 	const [gridStyle, setGridStyle] = useState<"LIST" | "CARD">("LIST");
 
 	const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
+	const [access, setAccess] = useState<CatalogAccessFilter[]>([]);
 	const [filterKey, setFilterKey] = useState<number>(0);
 	const [tab, setTab] = useState<string>("Mine");
+	// the access filters apply to what the user can already use
+	const accessParams = tab === "Mine" ? buildAccessFilterParams(access) : "";
 
 	const [isDeletingProject, setIsDeletingProject] = useState(false);
 	const [projectToDelete, setProjectToDelete] = useState<Project | null>(
@@ -185,7 +214,7 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 					metaKeysDescription,
 				)}, metaFilters=[${JSON.stringify(
 					metaFilters,
-				)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, onlyFavorites=[true]);`
+				)}], filterWord=["${debouncedSearch}"], ${accessParams}sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, onlyFavorites=[true]);`
 			: "",
 		{
 			data: [],
@@ -208,7 +237,7 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 				metaKeysDescription,
 			)}, metaFilters=[${JSON.stringify(
 				metaFilters,
-			)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, limit=[${limit}], offset=[${offset}]);`;
+			)}], filterWord=["${debouncedSearch}"], ${accessParams}sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, limit=[${limit}], offset=[${offset}]);`;
 		},
 		(response) => {
 			// if its less than the limit, we know its the end
@@ -230,6 +259,7 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 			sortValue,
 			sortOrder,
 			JSON.stringify(metaFilters),
+			accessParams,
 		],
 	);
 
@@ -266,6 +296,7 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 
 		setSearch("");
 		setMetaFilters({});
+		setAccess([]);
 		setSortValue("PROJECTNAME");
 		setSortOrder("ASC");
 		setGridStyle("LIST");
@@ -384,7 +415,18 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 				<NavbarHeader />
 			</NavbarLeft>
 			<CatalogLayout
-				title={`${config.name} Catalog`}
+				title={
+					type === "AUTOMATION" ? (
+						<span className="flex items-center gap-2">
+							{config.name} Catalog
+							<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+								BETA
+							</span>
+						</span>
+					) : (
+						`${config.name} Catalog`
+					)
+				}
 				description={config.description}
 				headerActions={
 					isEngineOperationAvailable(
@@ -480,6 +522,8 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 							onChange={(filters) => {
 								setMetaFilters(filters);
 							}}
+							access={tab === "Mine" ? access : undefined}
+							onAccessChange={setAccess}
 						/>
 					) : null
 				}
@@ -505,7 +549,10 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 										<ProjectGridItem
 											key={project.project_id}
 											variant={gridStyle}
-											path={`${config.basePath}/${project.project_id}/${config.itemSubPath}`}
+											path={getItemPath(
+												config,
+												project.project_id,
+											)}
 											project={project}
 											isFavorited={true}
 											showFavorite={true}
@@ -545,7 +592,10 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 									<ProjectGridItem
 										key={project.project_id}
 										variant={gridStyle}
-										path={`${config.basePath}/${project.project_id}/${config.itemSubPath}`}
+										path={getItemPath(
+											config,
+											project.project_id,
+										)}
 										project={project}
 										isFavorited={
 											project.project_favorite === 1

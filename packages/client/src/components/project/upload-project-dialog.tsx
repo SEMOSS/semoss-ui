@@ -213,9 +213,12 @@ export const UploadProjectDialog = ({
 
 	return (
 		<Dialog open={open} onOpenChange={handleDialogClose}>
-			<DialogContent className="sm:max-w-2xl">
+			<DialogContent
+				aria-describedby={undefined}
+				className="sm:max-w-2xl"
+			>
 				<DialogHeader>
-					<DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
 						Upload {config.name.toLowerCase()}
 					</DialogTitle>
 				</DialogHeader>

@@ -8,7 +8,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Button, cn } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { formatToDataTestId } from "@/utility";
 import { BaseSettingSection } from "../BaseSettingSection";
@@ -110,25 +116,38 @@ export const ButtonGroupSettings = observer(
 		return (
 			<BaseSettingSection label={label}>
 				<div className="flex">
-					{Array.from(options, (option, i) => {
+					{Array.from(options, (option) => {
 						const isActive =
 							value === option.value ||
 							(option.isDefault ? !value : false);
 						return (
-							<Button
-								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-								key={i}
-								variant="ghost"
-								size="icon-sm"
-								className={cn(isActive && "text-primary")}
-								onClick={() => onChange(option.value)}
-								title={option.title}
-								data-testid={formatToDataTestId(
-									`buttonGroupSettings-${label}-${option.value}-btn`,
-								)}
+							<Tooltip
+								key={option.value}
+								disableHoverableContent={false}
 							>
-								<option.icon />
-							</Button>
+								<TooltipTrigger asChild>
+									<Button
+										aria-label={option.title}
+										variant="ghost"
+										size="icon-sm"
+										className={cn(
+											isActive && "text-primary",
+										)}
+										onClick={() => onChange(option.value)}
+										data-testid={formatToDataTestId(
+											`buttonGroupSettings-${label}-${option.value}-btn`,
+										)}
+									>
+										<option.icon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent
+									sideOffset={4}
+									className="max-w-xs break-words"
+								>
+									{option.title}
+								</TooltipContent>
+							</Tooltip>
 						);
 					})}
 				</div>

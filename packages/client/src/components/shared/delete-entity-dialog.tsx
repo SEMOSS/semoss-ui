@@ -47,7 +47,9 @@ export const DeleteEntityDialog = (props: DeleteEntityDialogProps) => {
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Delete {entityLabel}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Delete {entityLabel}
+					</DialogTitle>
 					<DialogDescription>
 						Are you sure you want to delete this{" "}
 						{entityLabel.toLowerCase()}? This action cannot be

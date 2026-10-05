@@ -13,6 +13,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { capitalize } from "@semoss/utility/text";
 import { useEngine } from "@/hooks";
 
 /** One usage channel returned by `GetEngineUsage`. */
@@ -92,7 +93,7 @@ const getTabTitle = ({ type }: UsageSection) => {
 		return known;
 	}
 
-	return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+	return capitalize(type);
 };
 
 /**

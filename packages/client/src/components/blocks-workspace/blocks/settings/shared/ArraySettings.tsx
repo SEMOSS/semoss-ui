@@ -1,7 +1,15 @@
 import { Plus, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Button, Input, Muted, Small } from "@semoss/ui/next";
+import {
+	Button,
+	Input,
+	Muted,
+	Small,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface ArraySettingsProps {
@@ -157,15 +165,38 @@ export const ArraySettings = observer(
 								}
 								placeholder={placeholder}
 							/>
-							<button
-								type="button"
-								onClick={() => removeItem(index)}
-								disabled={items.length <= minItems}
-								title="Remove item"
-								className="rounded p-1 text-destructive hover:bg-destructive/10 disabled:opacity-40"
-							>
-								<Trash2 className="size-4" />
-							</button>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<span
+										className="inline-flex"
+										tabIndex={
+											items.length <= minItems
+												? 0
+												: undefined
+										}
+									>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											aria-label={"Remove item"}
+											type="button"
+											onClick={() => removeItem(index)}
+											disabled={items.length <= minItems}
+											className="rounded p-1 text-destructive hover:bg-destructive/10 disabled:opacity-40"
+										>
+											<Trash2 className="size-4" />
+										</Button>
+									</span>
+								</TooltipTrigger>
+								<TooltipContent
+									sideOffset={4}
+									className="max-w-xs break-words"
+								>
+									{items.length <= minItems
+										? `Keep at least ${minItems} item${minItems === 1 ? "" : "s"}`
+										: "Remove item"}
+								</TooltipContent>
+							</Tooltip>
 						</div>
 					))}
 					<Button
@@ -179,7 +210,7 @@ export const ArraySettings = observer(
 						Add Item
 					</Button>
 					{items.length >= maxItems && (
-						<Small className="text-yellow-600">
+						<Small className="text-warning">
 							Maximum {maxItems} items reached
 						</Small>
 					)}

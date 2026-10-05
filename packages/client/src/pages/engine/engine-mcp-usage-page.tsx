@@ -13,6 +13,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { useEngine, useSession } from "@/hooks";
 
@@ -96,10 +97,10 @@ export const EngineMcpUsagePage = () => {
 						: undefined;
 				setMcpTools(Array.isArray(tools) ? tools : []);
 			} catch (error) {
-				const message =
-					error instanceof Error
-						? error.message
-						: "Unable to load MCP tools for this engine.";
+				const message = getErrorMessage(
+					error,
+					"Unable to load MCP tools for this engine.",
+				);
 				setMcpTools([]);
 				setMcpToolsError(message);
 			} finally {
@@ -173,7 +174,9 @@ export const EngineMcpUsagePage = () => {
 				>
 					<DialogContent>
 						<DialogHeader>
-							<DialogTitle>Generate MCP</DialogTitle>
+							<DialogTitle className="font-medium text-base leading-6">
+								Generate MCP
+							</DialogTitle>
 							<DialogDescription>
 								This will generate a default MCP for this
 								engine. Current MCP Tools will be replaced. Do

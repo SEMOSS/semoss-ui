@@ -3,15 +3,18 @@
 This document provides context for AI coding assistants working with the SEMOSS shared
 utilities and components library.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md); the [React standard](../../skills/react-standard.skill.md)
+> owns general implementation, naming, imports, and validation rules.
 
 ## Overview
 
 `@semoss/shared` holds the cross-application components, utilities, and types that more than
-one app needs. **Check here first** before writing new shared components, utilities, or types.
+one app needs. **Check here first** for domain components, adapters, and types.
+Generic functions belong in [@semoss/utility](../utility/AGENTS.md); consume their
+category subpaths instead of duplicating them inside components.
 
-It is the home of large shared building blocks such as the file explorer/editor, the Monaco
+It is the home of large shared building blocks such as the file explorer, the Monaco
 editor wrappers, the FlexLayout wrapper, the shared login page, engine/MCP/prompt/skill UI,
 forms, and the workbench primitives.
 
@@ -30,6 +33,26 @@ Three props are required with no fallback, so every consumer states its intent: 
 mode-specific — capabilities and one Pixel per operation — lives in
 `file-explorer.adapters.ts`; nothing else branches on `mode.type`.
 
+**A host can bring its own source.** Pass `adapter` to `useFileExplorer` to browse something
+other than an asset tree, such as a connector's drive: the adapter builds each listing's Pixel,
+maps the output to `FileItem`s (`mapEntries(raw, path)` is handed the folder it listed, for a
+source whose entries carry no path), and says what the source can do. A source keeps anything
+its rows need in `FileItem.data`; `itemActions` adds the host's row button and context-menu
+entries, `renderError` draws a failed listing the host's way, and `searchScope: false` hides the
+scope choice for a search that always covers everything. `@semoss/connectors`' drive views are
+built this way.
+
+**Every row's menu has three ways in.** Right-click, the row's More actions button, and
+Shift+F10 or the menu key on a focused row open the same menu, so the context-menu entries a
+host adds through `itemActions` are reachable without a right-click: from the keyboard, and on
+touch screens, where the button always shows. `tree.openContextMenu` takes the mouse or key
+event and places the menu at the pointer, or under the focused element when there is none. The
+keys act on the focused row, as in VS Code: `TreeViewItem` leaves focus on a row when it is
+clicked and on a folder's chevron while its children load, so they act on the row last clicked.
+The header's shortcuts tooltip points mouse users at right-click and the button, not the keys. A
+row's state (selected, its menu open, a drop target) highlights the whole row, its icon or
+chevron included, through `TreeViewItem`'s `rowClassName`.
+
 `FileExplorer` is **not** deprecated — it is the shell `@semoss/panels`'
 `FileExplorerPane` renders, and `libs/panels` is its main consumer.
 
@@ -45,7 +68,7 @@ hooks the way `packages/terminal` does. Do not reintroduce a bespoke editor
 here.
 
 `components/notebook/` was never part of that island and stays:
-`FILE_NOTEBOOK_EDITOR_PANEL` renders `Notebook` directly.
+`FileNotebookView` renders `Notebook` directly.
 
 ## Build System
 
@@ -58,37 +81,34 @@ Key `exports`:
 | Import | Resolves to |
 |--------|-------------|
 | `@semoss/shared` | `src/index.ts` (main barrel) |
-| `@semoss/shared/api` | `src/api/index.ts` |
 | `@semoss/shared/globals.css` | `src/styles/globals.css` |
 | `@semoss/shared/flexlayout.css` | `src/components/flex-layout/flexlayout.css` |
 | `@semoss/shared/assets/img/*` | `src/assets/img/*` |
 
-`sideEffects` is limited to `**/*.css`, so unused code is tree-shaken by consumers.
+`sideEffects` is limited to `**/*.css`; consuming bundlers can tree-shake unused code.
 
 ## Structure
 
-Follows the standard `src/` layout from the root AGENTS.md (a library, so no `pages/` or
-router):
+This library retains its package layout (no `pages/` or router):
 
 | Folder / file | Purpose |
 |---------------|---------|
-| `api/` | Shared API / pixel calls (exported via `@semoss/shared/api`) |
-| `assets/` | Images and static files |
+| `assets/` | Images and static files. `assets/img/connectors/` holds each Microsoft 365 and Google Workspace app's logo as an SVG named by app (`outlook.svg`, `gmail.svg`, ...), except Teams, which is `assets/img/MS_TEAMS.svg`; `ConnectorBrandIcon` shows them, and any package can import them as `@semoss/shared/assets/img/connectors/*` |
 | `components/` | Shared components, one folder per feature (file, monaco, flex-layout, mcp, prompts, skills, settings, engine, form, members, …) |
 | `constants/` | Shared constant values |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
-| `styles/` | `globals.css` (theme variables) and other global CSS |
+| `styles/` | `globals.css` (Tailwind source discovery) and other global CSS |
 | `types.ts` | Shared TypeScript types |
 | `workbench/` | Workbench primitives shared across apps |
-| `index.ts` | Main barrel (`export * from "./api" \| "./components" \| "./constants" \| "./hooks" \| "./types"`) |
+| `index.ts` | Public package entry point |
 
 ## Key Dependencies
 
-- `@semoss/sdk`, `@semoss/ui`, `@semoss/i18n` — workspace libs
+- `@semoss/sdk`, `@semoss/ui`, `@semoss/i18n`, `@semoss/utility` — workspace libs
 - `monaco-editor` / `@monaco-editor/react` — code editor
 - `flexlayout-react` — dockable layout
-- `echarts` / `echarts-for-react` — charts
+- `echarts` — charts
 - `@iconify/react`, `lucide-react` — icons
 
 ## Design-System Notes
@@ -109,21 +129,23 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
 
 ### Do Not Modify
 
-- **`exports` paths in `package.json`** — the `globals.css` / `flexlayout.css` / `api` subpaths
+- **`exports` paths in `package.json`** — the `globals.css` / `flexlayout.css` subpaths
   are imported by name across the monorepo; renaming a file requires updating the export.
 
 ### Be Cautious With
 
-- **`src/index.ts` and sub-barrels** — this is the public surface; every app imports from it.
-- **`src/styles/globals.css`** — the shared theme variables; changing tokens affects all apps.
+- **Public entry points and legacy barrels** — preserve the manifest's supported exports
+   and compatibility with untouched consumers; follow the React skill's
+   [export policy](../../skills/react-standard.skill.md#architecture-and-exports).
+- **`src/styles/globals.css`** — source discovery affects styles generated by consuming apps;
+   design tokens belong to `@semoss/ui`.
 
 ### When Adding Shared Code
 
-1. Put the component/util/type in the matching folder and follow root naming rules
-   (`<name>.context.tsx`, `<name>.store.ts`, `<name>.types.ts`, `use-<name>.ts`, …).
-2. **Re-export it from the barrel.** A type used internally is not automatically public — add
-   it to the folder `index.ts` (e.g. `export * from "./file.types";`) or consumers cannot
-   import it from `@semoss/shared`.
+1. Put shared code in the matching library folder using the
+   [React standard](../../skills/react-standard.skill.md).
+2. Expose intentionally public symbols through `src/index.ts`. There is no supported
+   `@semoss/shared/api` subpath; use the SDK's public API for backend transport.
 3. Because this package is source-only, verify it compiles from a consumer:
    ```bash
    pnpm --filter @semoss/client type-check

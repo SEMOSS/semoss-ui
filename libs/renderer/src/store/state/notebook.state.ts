@@ -75,7 +75,7 @@ export class NotebookState {
 		);
 
 		// Set counter to highest number in cells
-		let highest = 1;
+		let highest = 0;
 		Object.keys(cells).forEach((cId) => {
 			const parsedId = parseInt(cId, 10);
 
@@ -325,7 +325,7 @@ export class NotebookState {
 	_addCell = (
 		config: Omit<CellStateConfig, "id">,
 		previousCellId: string,
-	) => {
+	): string => {
 		const id = `${this._store.counter}`;
 
 		// create the new cell
@@ -350,11 +350,7 @@ export class NotebookState {
 		// add to end if there is no previous cell
 		if (previousCellIdx === -1) {
 			this._store.list.push(id);
-			return;
-		}
-
-		// add it
-		if (!this._store.list.includes(id)) {
+		} else if (!this._store.list.includes(id)) {
 			this._store.list.splice(previousCellIdx + 1, 0, id);
 		}
 

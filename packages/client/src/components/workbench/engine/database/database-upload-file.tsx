@@ -30,6 +30,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { useEngine, useSession } from "@/hooks";
 
 const NEW_DATABASE = "TABLE";
@@ -165,9 +166,10 @@ export const DatabaseUploadCsv = ({
 			setStep("preview");
 		} catch (err) {
 			toast.error(
-				err instanceof Error
-					? err.message
-					: "An error occurred while previewing the file.",
+				getErrorMessage(
+					err,
+					"An error occurred while previewing the file.",
+				),
 			);
 		} finally {
 			setIsLoading(false);
@@ -226,9 +228,7 @@ export const DatabaseUploadCsv = ({
 			onClose(true);
 		} catch (err) {
 			toast.error(
-				err instanceof Error
-					? err.message
-					: "An error occurred while uploading.",
+				getErrorMessage(err, "An error occurred while uploading."),
 			);
 		} finally {
 			setIsLoading(false);
@@ -248,7 +248,7 @@ export const DatabaseUploadCsv = ({
 		>
 			<DialogContent className="sm:max-w-3xl">
 				<DialogHeader>
-					<DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
 						{step === "upload"
 							? "Upload File"
 							: "Preview & Configure"}

@@ -1,3 +1,5 @@
+import { sleep as wait } from "@semoss/utility/async";
+import { getErrorMessage } from "@semoss/utility/error";
 // Background service worker for the extension
 import { enhancedClick, enhancedSetValue } from "./enhancedActions";
 
@@ -360,9 +362,6 @@ async function sendDebuggerCommand(
 }
 
 // Wait helper function
-function wait(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 // Highlight an element on the page
 async function highlightElement(
@@ -416,8 +415,7 @@ async function highlightElement(
 
 			lastError = result?.result?.value?.error || "Unknown error";
 		} catch (error) {
-			lastError =
-				error instanceof Error ? error.message : "Unknown error";
+			lastError = getErrorMessage(error, "Unknown error");
 		}
 
 		// Wait before retry (longer delay for first few attempts)
@@ -575,8 +573,7 @@ async function clickBySelector(tabId: number, selector: string): Promise<void> {
 
 			lastError = result?.result?.value?.error || "Unknown error";
 		} catch (error) {
-			lastError =
-				error instanceof Error ? error.message : "Unknown error";
+			lastError = getErrorMessage(error, "Unknown error");
 		}
 
 		// Wait before retry (but not after last attempt)
@@ -677,8 +674,7 @@ async function typeBySelector(
 
 			lastError = result?.result?.value?.error || "Unknown error";
 		} catch (error) {
-			lastError =
-				error instanceof Error ? error.message : "Unknown error";
+			lastError = getErrorMessage(error, "Unknown error");
 		}
 
 		// Wait before retry (but not after last attempt)

@@ -117,6 +117,11 @@ export class ToolStore {
 	 */
 	isStreamingPlaceholder: boolean = false;
 
+	/** The message whose `parts` actually contains this tool's TOOL_CALL. */
+	get message() {
+		return this.toolCall.message;
+	}
+
 	/**
 	 * Json for the tool
 	 */
@@ -132,8 +137,10 @@ export class ToolStore {
 		// the pill renders the wire name until the final sync swaps it. Never key
 		// this off a display field such as `title`: MCP tools are not required to
 		// declare one, and a real part without a title would lose its `_meta`.
+		// Work folder and connector calls get their metadata filled in by the
+		// room's chat tools; every other part comes back as it is.
 		if (part && !this.isStreamingPlaceholder) {
-			return part;
+			return this.room.chatTools.decorateToolCall(part);
 		}
 		const name = this.streamingName;
 		return {
@@ -251,11 +258,6 @@ export class ToolStore {
 		) {
 			this.isStreamingPlaceholder = options?.placeholder === true;
 
-			// set the display — server tools default to sidebar since they have
-			// no SMSS_MCP_UI block
-			this.display =
-				part.toolCall._meta?.SMSS_MCP_UI?.displayLocation || "sidebar";
-
 			//set the parameters based on the json
 			this.parameters = part.toolCall.arguments || {};
 
@@ -264,6 +266,12 @@ export class ToolStore {
 				message: message,
 				part,
 			};
+
+			// set the display from the resolved json, which is where a work
+			// folder call gets its metadata. Server tools default to sidebar
+			// since they have no SMSS_MCP_UI block
+			this.display =
+				this.json._meta?.SMSS_MCP_UI?.displayLocation || "sidebar";
 
 			// once the final part has arrived, clear streaming bookkeeping
 			if (!this.isStreamingPlaceholder) {

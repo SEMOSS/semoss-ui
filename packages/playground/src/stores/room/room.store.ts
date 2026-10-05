@@ -1,5 +1,6 @@
-import { makeAutoObservable, runInAction } from "mobx";
+import { makeAutoObservable, observable, runInAction } from "mobx";
 import type { StoreApi } from "zustand";
+import { getI18n } from "@semoss/i18n";
 import {
 	FILE_PANEL_TYPES,
 	type FilePanelMode,
@@ -15,26 +16,29 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
+import { stringifyJsonWithSortedKeys } from "@semoss/utility/json";
 import {
 	createWorkbenchStore,
 	type WorkbenchPanelConfigAny,
 	type WorkbenchPanelId,
 	type WorkbenchPanelParams,
 	type WorkbenchPanelType,
+	type WorkbenchSnapshot,
 	type WorkbenchState,
 } from "@semoss/workbench";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
-import {
-	type AbstractMessageStore,
-	createMessageStore,
-	InputMessageStore,
-	ResponseMessageStore,
-	ToolStore,
-} from "@/stores";
+import { ChatToolsStore } from "@/features/chat-tools/chat-tools.store";
+import { ConnectorsStore } from "@/features/connectors/connectors.store";
+import { ContextItemsStore } from "@/features/conversation/context-items.store";
+import type { AbstractMessageStore } from "@/stores/message/abstract-message.store";
 import {
 	reconnectAgentRun,
 	reconstructAllSubagents,
 } from "@/stores/message/agent-harness";
+import { InputMessageStore } from "@/stores/message/input-message.store";
+import { ResponseMessageStore } from "@/stores/message/response-message.store";
+import { createMessageStore } from "@/stores/message/utility";
+import { ToolStore } from "@/stores/tool/tool.store";
 import type {
 	Engine,
 	InputPixelMessage,
@@ -57,6 +61,19 @@ import {
 	StreamJobController,
 	type StreamOptions,
 } from "./stream-job-controller";
+
+/**
+ * The MCPs the backend stores for a room. Workspace MCPs and the room's own
+ * toolbox, which is read from the room folder, are reported but not stored.
+ */
+const getStoredMcp = (mcp: MCPConfig[] = []): MCPConfig[] =>
+	mcp.filter((item) => !item?.fromWorkspace && !item?.fromRoom);
+
+/**
+ * A comparable key for room options as the backend stores them.
+ */
+const getStoredOptionsKey = (options: { mcp?: MCPConfig[] }): string =>
+	stringifyJsonWithSortedKeys({ ...options, mcp: getStoredMcp(options.mcp) });
 
 interface RoomStoreInterface {
 	/**
@@ -162,6 +179,14 @@ interface RoomStoreInterface {
 		 * Temperature of the model (0–1). Only used when enableTemperature is true.
 		 */
 		temperature?: number;
+
+		/**
+		 * How this chat runs each default tool: `auto`, `ask`, or `disabled`,
+		 * by tool name, for the tools set apart from their usual way. The
+		 * browser sends the tools that are not disabled with every chat
+		 * message; the backend only stores the setting.
+		 */
+		defaultTools?: Record<string, "auto" | "ask" | "disabled">;
 	};
 
 	/**
@@ -175,15 +200,6 @@ interface RoomStoreInterface {
 		 * room's workbench store, which outlives every open/close.
 		 */
 		isOpen: boolean;
-
-		/**
-		 * Track if the sidebar is blown up over the page.
-		 *
-		 * Here rather than in the sidebar's own React state because a panel's
-		 * chrome has to put it back — opening a tool inline while the sidebar
-		 * covers the page would otherwise reveal nothing.
-		 */
-		isMaximized: boolean;
 	};
 }
 
@@ -221,9 +237,14 @@ export class RoomStore {
 		},
 		sidebar: {
 			isOpen: false,
-			isMaximized: false,
 		},
 	};
+
+	/**
+	 * Key of the options the backend holds, as of the last read or save. A
+	 * save that would not change them is skipped.
+	 */
+	private _storedOptionsKey: string | null = null;
 
 	/**
 	 * The dock backing the sidebar.
@@ -237,6 +258,21 @@ export class RoomStore {
 	 * the `openSidebarPanel` family covers everything the room itself needs.
 	 */
 	readonly workbench: StoreApi<WorkbenchState>;
+
+	/** Stable initialization reference shared by the store and every sidebar mount. */
+	sidebarSnapshot: WorkbenchSnapshot = ROOM_SIDEBAR_LAYOUT;
+	/**
+	 * The default tools the room's chat sends and the user's decisions on the
+	 * calls that wait for them. Its own store with its own observability, like
+	 * the dock, and so are the two below.
+	 */
+	readonly chatTools: ChatToolsStore;
+
+	/** The connectors switched on for the room and the accounts they sign in with. */
+	readonly connectors: ConnectorsStore;
+
+	/** The files queued for the room's next message. */
+	readonly contextItems: ContextItemsStore;
 
 	constructor(options: {
 		theme: ThemeMap["playground"];
@@ -259,12 +295,22 @@ export class RoomStore {
 		this.workbench = createWorkbenchStore({ components: panelComponents });
 		this.workbench
 			.getState()
-			.layout.actions.loadSnapshot(ROOM_SIDEBAR_LAYOUT);
+			.layout.actions.loadSnapshot(this.sidebarSnapshot);
 		this._syncSidebarFileMode();
+
+		this.chatTools = new ChatToolsStore(this);
+		this.connectors = new ConnectorsStore(this);
+		this.contextItems = new ContextItemsStore();
 
 		// make it observable -- the dock is a zustand store with its own
 		// subscription model, and deep-observing it would be nonsense
-		makeAutoObservable(this, { workbench: false });
+		makeAutoObservable(this, {
+			workbench: false,
+			chatTools: false,
+			connectors: false,
+			contextItems: false,
+			sidebarSnapshot: observable.ref,
+		});
 
 		this._watchSidebar();
 	}
@@ -371,12 +417,13 @@ export class RoomStore {
 	}
 
 	/**
-	 * Surface an error on the room. Public so callers outside this store — e.g.
-	 * ToolSaveController, when a tool-phase stop fails to persist — can report a
-	 * failure that isn't already caught by runRoomPixel/streamJob's own
-	 * setErrorOnFail handling.
+	 * Surface an error on the room, or clear it with null. Public so callers
+	 * outside this store — e.g. ToolSaveController, when a tool-phase stop fails
+	 * to persist — can report a failure that isn't already caught by
+	 * runRoomPixel/streamJob's own setErrorOnFail handling, and so a rewrite
+	 * starts its turn without the last one's error.
 	 */
-	setError = (error: Error): void => {
+	setError = (error: Error | null): void => {
 		runInAction(() => {
 			this._store.error = error;
 		});
@@ -538,13 +585,10 @@ export class RoomStore {
 	 * (not context window - this is the actual sum of all input + output tokens)
 	 */
 	get totalTokensConsumed(): number {
-		let total = 0;
-		for (const message of this.history) {
-			if (message.tokens) {
-				total += message.tokens;
-			}
-		}
-		return total;
+		return this.history.reduce(
+			(total, message) => total + (message.tokens || 0),
+			0,
+		);
 	}
 
 	/**
@@ -603,8 +647,11 @@ export class RoomStore {
 	/** Actions */
 	/**
 	 * Initialize the room and load messages and options if they are there
+	 *
+	 * @param options - `isNew`: the room was just created, so it has no tool
+	 * file for its connectors to be read from.
 	 */
-	initialize = async () => {
+	initialize = async ({ isNew = false }: { isNew?: boolean } = {}) => {
 		try {
 			// get all of the messages, get all the options
 			const response = await this.runRoomPixel<
@@ -623,12 +670,20 @@ export class RoomStore {
 				OPTIONS?: RoomStoreInterface["options"];
 				ROOM_NAME?: string;
 			};
+			// read before the workspace merge below edits the nested objects
+			const storedOptionsKey = optionsOutput.OPTIONS
+				? getStoredOptionsKey(optionsOutput.OPTIONS)
+				: null;
 
 			// sync the insight ID
 			runInAction(() => {
 				this._store.insightId = response.insightId;
 			});
 			this._syncSidebarFileMode();
+
+			// the insight is bound to the room now, so the room's tool file can
+			// be read, unless the room was only just created
+			void this.connectors.restore({ isNew: isNew });
 
 			// create the root
 			const root = new ResponseMessageStore(this, {
@@ -663,7 +718,7 @@ export class RoomStore {
 			let activeModelId = this._store.model?.engine_id;
 
 			// This is done as seperate loops because of linking
-			for (const pixelMessage of messageOutput) {
+			messageOutput.forEach((pixelMessage) => {
 				if (pixelMessage.io === "INPUT") {
 					activeModelId = pixelMessage.modelId;
 				}
@@ -678,12 +733,10 @@ export class RoomStore {
 						pixelMessage.summaryLeafMessageId || "",
 					message: message,
 				};
-			}
+			});
 
 			// link the messages
-			for (const mId in messages) {
-				const m = messages[mId];
-
+			Object.values(messages).forEach((m) => {
 				const parent = messages[m.parentMessageId];
 				if (parent) {
 					parent.message.addChild(m.message);
@@ -692,14 +745,18 @@ export class RoomStore {
 					const pseudoParent = messages[m.summaryLeafMessageId];
 					if (pseudoParent) {
 						pseudoParent.message.addChild(m.message);
-						(
-							pseudoParent.message as ResponseMessageStore
-						).setConversationCompactedAbove?.(true);
+						if (
+							pseudoParent.message instanceof ResponseMessageStore
+						) {
+							pseudoParent.message.setConversationCompactedAbove(
+								true,
+							);
+						}
 					} else {
 						root.addChild(m.message);
 					}
 				}
-			}
+			});
 
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
@@ -753,7 +810,10 @@ export class RoomStore {
 						PixelMessage[],
 						{ OPTIONS?: Workspace }, // partial because this doesn't work for old rooms
 					]
-				>(`GetWorkspace('${newOptions.workspace?.workspace_id}')`);
+				>(
+					`GetWorkspace('${newOptions.workspace?.workspace_id}')`,
+					false,
+				);
 
 				const workspaceOutput = workspaceResponse.pixelReturn[0]
 					.output as Workspace;
@@ -776,10 +836,10 @@ export class RoomStore {
 				) {
 					// Create a map of existing MCPs by composite key
 					const existingMCPs = new Map<string, MCPConfig>();
-					for (const mcp of newOptions.mcp || []) {
+					(newOptions.mcp || []).forEach((mcp) => {
 						const key = `${mcp.id}-${mcp.type}`;
 						existingMCPs.set(key, mcp);
-					}
+					});
 
 					// Add workspace MCPs with fromWorkspace flag
 					const workspaceMCPs = workspaceOutput.mcp.map((mcp) => ({
@@ -806,11 +866,16 @@ export class RoomStore {
 			}
 
 			// set the model based on the history, or on the agent's default when
-			// the room has never named one
+			// the room has never named one. A room that already holds that model,
+			// as a new room does, has nothing to look up.
 			const modelIdToLoad = activeModelId || agentDefaultModelId;
-			if (modelIdToLoad) {
+			if (
+				modelIdToLoad &&
+				modelIdToLoad !== this._store.model?.engine_id
+			) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
 					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(modelIdToLoad)})`,
+					false,
 				);
 
 				const model = pixelReturn[0].output[0];
@@ -824,6 +889,7 @@ export class RoomStore {
 			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
+				this._storedOptionsKey = storedOptionsKey;
 
 				this._store.agentGreeting = agentGreeting;
 
@@ -885,6 +951,7 @@ export class RoomStore {
 					...fetched.OPTIONS,
 					mcp: merged,
 				});
+				this._storedOptionsKey = getStoredOptionsKey(fetched.OPTIONS);
 			});
 		} catch (e) {
 			// non-critical — swallow errors so the chat isn't disrupted
@@ -893,26 +960,31 @@ export class RoomStore {
 	};
 
 	/**
-	 * UpdateRoomOptions
+	 * UpdateRoomOptions. Skips the save when the backend already holds these
+	 * options, and leaves the room's loading state alone, since it runs ahead
+	 * of the turn that uses them.
 	 * @param options - full set of new options
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
-			// Filter out MCPs the backend reports but does not store: workspace MCPs
-			// and the room's own toolbox, which is read from the room folder.
 			const optionsToSave = {
 				...options,
 				modelId: this._store.model.engine_id,
-				mcp: options.mcp.filter(
-					(mcp) => !mcp?.fromWorkspace && !mcp?.fromRoom,
-				),
+				mcp: getStoredMcp(options.mcp),
 			};
 
-			await this.runRoomPixel(
-				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
-					optionsToSave,
-				)}]);`,
-			);
+			const optionsKey = getStoredOptionsKey(optionsToSave);
+			if (optionsKey !== this._storedOptionsKey) {
+				await this.runRoomPixel(
+					`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
+						optionsToSave,
+					)}]);`,
+					false,
+				);
+				runInAction(() => {
+					this._storedOptionsKey = optionsKey;
+				});
+			}
 
 			this.setOptions(options);
 		} catch (e) {
@@ -1014,6 +1086,22 @@ export class RoomStore {
 			.layout.actions.selectPanel(type, config, name ? { name } : {});
 	};
 
+	/** Adopt a draft's arrangement before mounting this room's first sidebar. */
+	restoreSidebarLayout = (snapshot: WorkbenchSnapshot): void => {
+		this.sidebarSnapshot = snapshot;
+		this.workbench.getState().layout.actions.loadSnapshot(snapshot);
+	};
+
+	/** Restore the existing work area, or open Room settings when it is empty. */
+	openSidebar = (): void => {
+		if (this.workbench.getState().layout.openPanelIds.length === 0) {
+			this.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+			return;
+		}
+
+		this._store.sidebar.isOpen = true;
+	};
+
 	/**
 	 * Reveal the sidebar's editor for a file, opening it if it is not there.
 	 *
@@ -1085,7 +1173,9 @@ export class RoomStore {
 	 * convention did.
 	 *
 	 * @param initialPath - Directory to show. Defaults to wherever it was.
-	 * @param name - Tab label for a newly created instance.
+	 * @param name - Tab label for a newly created instance. Defaults to the
+	 * chat files label, which keeps the room's own files apart from a
+	 * connector work folder.
 	 * @return The revealed or created panel id.
 	 */
 	openSidebarFileExplorer = (
@@ -1095,7 +1185,8 @@ export class RoomStore {
 		const pid = this.openSidebarPanel(
 			FILE_PANEL_TYPES.FILE_EXPLORER,
 			{ mode: this.fileMode },
-			name,
+			// no translations outside the app, as in tests; the blueprint names it
+			name ?? getI18n()?.t("room:menuFileExplorer.name"),
 		);
 
 		if (initialPath) {
@@ -1111,6 +1202,22 @@ export class RoomStore {
 		}
 
 		return pid;
+	};
+
+	/**
+	 * Reload the chat files explorer, if it is open, after a file was saved
+	 * into the room's folder from outside it.
+	 */
+	refreshSidebarFileExplorer = (): void => {
+		const { actions, values } = this.workbench.getState().layout;
+		for (const record of actions.matchPanels(
+			FILE_PANEL_TYPES.FILE_EXPLORER,
+			{ mode: this.fileMode },
+		)) {
+			(
+				values[record.id] as FileExplorerApi | undefined
+			)?.commands.refresh();
+		}
 	};
 
 	/**
@@ -1130,18 +1237,10 @@ export class RoomStore {
 	};
 
 	/**
-	 * Blow the sidebar up over the page, or put it back.
-	 */
-	setSidebarMaximized = (isMaximized: boolean): void => {
-		this._store.sidebar.isMaximized = isMaximized;
-	};
-
-	/**
 	 * Close the sidebar
 	 */
 	closeSidebar = async (): Promise<void> => {
 		this._store.sidebar.isOpen = false;
-		this._store.sidebar.isMaximized = false;
 	};
 
 	/**
@@ -1155,6 +1254,28 @@ export class RoomStore {
 	 */
 	setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
+	};
+
+	/**
+	 * Whether the room takes a file of this name as an attachment. The theme
+	 * may limit attachments to some extensions; without a limit, every file
+	 * is taken, and with one, a file needs an allowed extension.
+	 *
+	 * @param fileName - The file's name.
+	 * @return True when the file may be attached.
+	 */
+	acceptsAttachment = (fileName: string): boolean => {
+		const allowed = this._theme.allowedFileTypes;
+		if (!allowed || allowed.length === 0) {
+			return true;
+		}
+		const normalize = (value: string) =>
+			value.trim().toLowerCase().replace(/^\./, "");
+		const extension = normalize(fileName.split(".").pop() ?? "");
+		return (
+			extension !== "" &&
+			allowed.some((type) => normalize(type) === extension)
+		);
 	};
 
 	/**
@@ -1180,9 +1301,12 @@ export class RoomStore {
 		}
 
 		this.setIsLoading(true);
+		// a new turn starts without the last one's error
+		this._store.error = null;
 
 		// Create the input message immediately so the user's bubble and the
-		// thinking placeholder are visible during the file upload wait
+		// thinking placeholder are visible while the options save and the
+		// files upload
 		const inputMessage = new InputMessageStore(this, {
 			io: "INPUT",
 			type: "INPUT_TEXT",
@@ -1216,7 +1340,7 @@ export class RoomStore {
 			platform_generated: true,
 			modelId: this.model.engine_id,
 			dateCreated: new Date().toISOString(),
-			parts: [{ type: "THINKING", thinking: "" }],
+			parts: [],
 			tokens: 0,
 			ornaments: {
 				modelName:
@@ -1232,6 +1356,10 @@ export class RoomStore {
 			uploadPlaceholder.isThinking = true;
 		});
 
+		// files queued from the sidebar are already in the room's folder, so
+		// they go with the message as they are; a silent turn leaves them queued
+		const queuedFiles = visible ? this.contextItems.take() : [];
+
 		// upload the files
 		let mediaInputs: {
 			fileName: string;
@@ -1239,6 +1367,9 @@ export class RoomStore {
 		}[] = [];
 
 		try {
+			// save the settings this turn runs with, when they changed
+			await this.updateRoomOptions(this.options);
+
 			// upload the files if there are any
 			if (files.length > 0) {
 				const response = await uploadInsight(
@@ -1260,60 +1391,68 @@ export class RoomStore {
 					throw uploadError;
 				}
 
-				const normalizeExt = (value: string) =>
-					value.trim().toLowerCase().replace(/^\./, "");
-
-				mediaInputs = uploaded.filter((f) => {
-					const allowed = this._theme.allowedFileTypes;
-
-					// If not configured (or empty), allow all
-					if (!allowed || allowed.length === 0) return true;
-
-					const allowedSet = new Set(allowed.map(normalizeExt));
-
-					const rawExt = f.fileName.split(".").pop() ?? "";
-					const ext = normalizeExt(rawExt);
-
-					// If there's no extension, it's not allowed (when allow-list is configured)
-					if (!ext) return false;
-
-					return allowedSet.has(ext);
-				});
-
-				// Append media parts to the already-visible input message
-				runInAction(() => {
-					for (const file of mediaInputs) {
-						inputMessage.parts.push({
-							type: "MEDIA",
-							mediaInfo: {
-								base64Data: "",
-								fileFormat: "",
-								fileName: file.fileName,
-								fileLocation: file.fileLocation,
-								mediaInputType: "FILE",
-								mimeType: "",
-							},
-						});
-					}
-				});
+				mediaInputs = uploaded.filter((f) =>
+					this.acceptsAttachment(f.fileName),
+				);
 			}
+
+			mediaInputs = [
+				...mediaInputs,
+				...queuedFiles.map((item) => ({
+					fileName: item.name,
+					fileLocation: item.path,
+				})),
+			];
+
+			// Append media parts to the already-visible input message
+			runInAction(() => {
+				mediaInputs.forEach((file) => {
+					inputMessage.parts.push({
+						type: "MEDIA",
+						mediaInfo: {
+							base64Data: "",
+							fileFormat: "",
+							fileName: file.fileName,
+							fileLocation: file.fileLocation,
+							mediaInputType: "FILE",
+							mimeType: "",
+						},
+					});
+				});
+			});
 		} catch (e) {
-			// remove the placeholder messages if the upload fails
+			// the queued files were not sent, so they wait for the next try
+			this.contextItems.restore(queuedFiles);
+
+			// remove the placeholder messages and stop the room spinner
 			runInAction(() => {
 				uploadPlaceholder.isThinking = false;
 			});
 			parentMessage.removeChild(inputMessage);
+			this.setIsLoading(false);
 
-			// Re-throw UploadErrors as-is (e.g. the uploaded.length === 0 case above)
-			if ((e as Error)?.name === "UploadError") {
-				throw e;
+			// Network-level failures (ERR_FAILED / Failed to fetch) mean the
+			// browser couldn't complete the request — most likely the file is
+			// locked at the OS level. Convert to UploadError so callers show
+			// the "file in use" toast instead of a silent failure.
+			if (e instanceof TypeError) {
+				const uploadError = new Error("File is in use");
+				uploadError.name = "UploadError";
+				throw uploadError;
 			}
 
 			throw e;
 		}
 
 		// run the message, reusing the upload placeholder as the streaming response
-		await parentMessage.runMessage(inputMessage, uploadPlaceholder);
+		try {
+			await parentMessage.runMessage(inputMessage, uploadPlaceholder);
+		} catch (e) {
+			// the message is withdrawn and its text restored, so its queued files
+			// wait with it
+			this.contextItems.restore(queuedFiles);
+			throw e;
+		}
 	};
 
 	/**

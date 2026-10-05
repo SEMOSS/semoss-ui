@@ -65,6 +65,7 @@ const envStore: {
 	BEARER_TOKEN: string;
 	BEARER_PROVIDER: string;
 	CSRF: boolean;
+	HEADLESS: boolean;
 	REDIRECT_URL: string;
 	TOOL: MCPToolRequest | null;
 } = {
@@ -75,6 +76,7 @@ const envStore: {
 	BEARER_TOKEN: "",
 	BEARER_PROVIDER: "",
 	CSRF: false,
+	HEADLESS: false,
 	REDIRECT_URL: "",
 	TOOL: null,
 };
@@ -127,6 +129,15 @@ export const Env = {
 	 */
 	get CSRF() {
 		return envStore.CSRF;
+	},
+
+	/**
+	 * Opt in for non-browser (Node/script) consumers so the SDK tracks and
+	 * resends the CSRF session cookie itself, since there's no browser
+	 * cookie jar to do it automatically.
+	 */
+	get HEADLESS() {
+		return envStore.HEADLESS;
 	},
 
 	/**

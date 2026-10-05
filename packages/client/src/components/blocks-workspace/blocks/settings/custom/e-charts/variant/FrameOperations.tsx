@@ -1695,9 +1695,6 @@ export const FrameOperations = observer(
 							key={section.title}
 							className="mb-1 w-full rounded border"
 						>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							{/* biome-ignore lint/a11y/useButtonType: handled by */}
-							caller
 							{/* biome-ignore lint/a11y/useButtonType: handled by caller */}
 							<button
 								className="flex w-full items-center justify-between px-4 py-2 font-medium text-sm hover:bg-muted"
@@ -1771,8 +1768,8 @@ export const FrameOperations = observer(
 				{/* Main two-column layout */}
 				<div className="flex h-full w-full items-stretch justify-between p-2">
 					{/* Left: Dimension panel */}
-					<div className="flex min-h-[639px] w-[40%] flex-col items-center border-[#ccc] border-r p-2">
-						<span className="relative self-start p-2 text-[#808080] text-sm">
+					<div className="flex min-h-[639px] w-[40%] flex-col items-center border-border border-r p-2">
+						<span className="relative self-start p-2 text-muted-foreground text-sm">
 							Dimension
 						</span>
 						<div className="w-[95%] pt-2">
@@ -1807,7 +1804,7 @@ export const FrameOperations = observer(
 														ref={provided.innerRef}
 														{...provided.draggableProps}
 														{...provided.dragHandleProps}
-														className={`mb-1 flex w-full items-center gap-2 rounded-md border px-2 py-1.5 ${snapshot.isDragging ? "border-[#9ec5fe] bg-[#f0f0f0]" : "border-[#e5e7eb] bg-white hover:bg-[#fafafa]"}`}
+														className={`mb-1 flex w-full items-center gap-2 rounded-md border px-2 py-1.5 ${snapshot.isDragging ? "border-ring bg-muted" : "border-border bg-background hover:bg-muted"}`}
 														style={{
 															...provided
 																.draggableProps

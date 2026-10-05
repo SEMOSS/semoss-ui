@@ -27,6 +27,8 @@ export type RoomMcpEntry = {
 export type RoomOptionsMap = {
 	/** System prompt applied to the room's agent runs. */
 	instructions?: string;
+	/** False appends instructions to the agent prompt; true or omitted replaces it. */
+	overrideSystemPrompt?: boolean;
 	/** MCP servers exposed to the room's agent runs. */
 	mcp?: RoomMcpEntry[];
 	/** Suggested prompts surfaced in the room's UI. */
@@ -116,10 +118,21 @@ export type PlaygroundMessage = {
 	thinkingTokens?: number;
 	/** When the message was persisted. */
 	dateCreated?: string;
+	/** Durable agent-run attribution for this message. */
+	agentRun?: {
+		runId: string;
+		role?: string;
+		originatingRunId?: string;
+		childRunId?: string;
+		completionMode?: "WAIT" | "POST" | "POST_AND_CONTINUE" | string;
+		childStatus?: string;
+	};
 	/** Auxiliary metadata attached to the message. */
 	ornaments?: {
 		modelName?: string;
+		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
+		agentRunRole?: string;
 	};
 	/** Ordered content parts of the message. */
 	parts?: PlaygroundMessagePart[];
@@ -735,10 +748,8 @@ const buildAskRoomParams = (request: AskRoomRequest): string => {
 		`command=[${JSON.stringify(`<encode>${request.command}</encode>`)}]`,
 	];
 
-	// Always emitted, and ahead of parentMessageId, so the call is positionally
-	// identical to the playground's AskPlayground/AskRoom — the only caller
-	// known to attach files successfully. `image=[]` is how it says "none".
-	params.push(`image=${JSON.stringify(request.media ?? [])}`);
+	// AskRoom and AskPlayground read uploaded file paths from `media`.
+	params.push(`media=${JSON.stringify(request.media ?? [])}`);
 
 	if (request.parentMessageId) {
 		params.push(

@@ -1,30 +1,32 @@
-import {
-	AlertTriangle,
-	ArrowLeftFromLine,
-	ArrowRightFromLine,
-	CalendarDays,
-	ChevronDown,
-	ChevronRight,
-	Filter,
-	Merge,
-} from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { type JSX, useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import {
+	type JSX,
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
 	Checkbox,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Controller,
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
+	Form,
+	H3,
 	Input,
+	Label,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -36,10 +38,16 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useFieldArray,
+	useForm,
 } from "@semoss/ui/next";
 import { useBlocks } from "../../hooks";
 import {
@@ -51,15 +59,14 @@ import {
 import { DefaultCells } from "../cell-defaults";
 import { CodeCellConfig } from "../cell-defaults/code-cell";
 import { DataImportCellConfig } from "../cell-defaults/data-import-cell";
+import { getDataImportDatabases } from "./data-import-databases";
 
-const JOIN_ICONS = {
-	inner: <Merge className="size-4" />,
-	"right.outer": <ArrowRightFromLine className="size-4" />,
-	"left.outer": <ArrowLeftFromLine className="size-4" />,
-	outer: <Merge className="size-4" />,
-};
-
-const SQL_COLUMN_TYPES = ["DATE", "NUMBER", "STRING", "TIMESTAMP"];
+const JOIN_TYPES = [
+	{ value: "inner", label: "Inner join" },
+	{ value: "left.outer", label: "Left join" },
+	{ value: "right.outer", label: "Right join" },
+	{ value: "outer", label: "Outer join" },
+];
 
 type JoinElement = {
 	leftTable: string;
@@ -112,6 +119,56 @@ type FormValues = {
 	tables: TableInterface[];
 };
 
+/** Build query strings from the latest form values; the strings remain stable across unrelated renders. */
+const buildPreviewQuery = (
+	databaseId: string | null,
+	tables: TableInterface[] | undefined,
+	joins: JoinElement[] | undefined,
+	dataLimit: number,
+): { previewPixel: string; previewSelectQuery: string } => {
+	const pixelColumnNames: string[] = [];
+	const pixelColumnAliases: string[] = [];
+	const pixelJoins: string[] = [];
+
+	tables?.forEach((tableObject) => {
+		const currTableColumns = tableObject.columns;
+		currTableColumns?.forEach((columnObject) => {
+			if (columnObject.checked) {
+				pixelColumnNames.push(getColumnRef(columnObject));
+				pixelColumnAliases.push(columnObject.userAlias);
+			}
+		});
+	});
+
+	joins?.forEach((joinEle) => {
+		pixelJoins.push(
+			`( ${joinEle.leftTable} , ${joinEle.joinType}.join , ${joinEle.rightTable} )`,
+		);
+	});
+
+	let pixelStringPart1 = `Database ( database = [ "${databaseId}" ] )`;
+	pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(" , ")} )`;
+	pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(" , ")} ] )`;
+	if (pixelJoins.length > 0) {
+		pixelStringPart1 += ` | Join ( ${pixelJoins.join(" , ")} ) `;
+	}
+	pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${dataLimit} )`;
+
+	const combinedJoinString =
+		pixelJoins.length > 0 ? `| Join ( ${pixelJoins.join(" , ")} ) ` : "";
+
+	const reactorPixel = `Database ( database = [ "${databaseId}" ] ) | Select ( ${pixelColumnNames.join(
+		" , ",
+	)} ) .as ( [ ${pixelColumnAliases.join(
+		" , ",
+	)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
+
+	return {
+		previewPixel: reactorPixel,
+		previewSelectQuery: `${pixelStringPart1};`,
+	};
+};
+
 export const DataImportFormModal = observer(
 	(props: {
 		query?: NotebookState;
@@ -128,30 +185,38 @@ export const DataImportFormModal = observer(
 			cell,
 		} = props;
 
-		const [joinTypeSelectIndex, setJoinTypeSelectIndex] = useState(-1);
 		const { state, notebook } = useBlocks();
 
+		const form = useForm<FormValues>({
+			defaultValues: {
+				databaseSelect: cell?.parameters.databaseId ?? "",
+				tables: [],
+				joins: [],
+			},
+		});
 		const {
 			control: formControl,
 			setValue: formSetValue,
 			reset: formReset,
-			handleSubmit: formHandleSubmit,
+			getValues: formGetValues,
 			watch: dataImportwatch,
-		} = useForm<FormValues>();
+		} = form;
 
 		const watchedTables = dataImportwatch("tables");
 		const watchedJoins = dataImportwatch("joins");
-		const [userDatabases, setUserDatabases] = useState<Array<{
-			database_id: string;
-			app_name: string;
-			database_type?: string;
-			database_subtype?: string;
-		}> | null>(null);
+		const databaseSelectId = useId();
 		const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
 		const [selectedDatabaseId, setSelectedDatabaseId] = useState(
 			cell ? cell.parameters.databaseId : null,
 		);
-		const getDatabases = usePixel("META | GetDatabaseList ( ) ;");
+		const getDatabases = usePixel<unknown>("META | GetDatabaseList ( ) ;");
+		const userDatabases = useMemo(
+			() =>
+				getDatabases.status === "SUCCESS"
+					? getDataImportDatabases(getDatabases.data)
+					: [],
+			[getDatabases.status, getDatabases.data],
+		);
 		const [databaseTableRows, setDatabaseTableRows] = useState([]);
 		const [tableNames, setTableNames] = useState<string[]>([]);
 		const [isDatabaseLoading, setIsDatabaseLoading] =
@@ -170,13 +235,11 @@ export const DataImportFormModal = observer(
 		);
 
 		const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
-		const [selectedTableNames, setSelectedTableNames] = useState(new Set());
 		const [shownTables, setShownTables] = useState(new Set());
 		const [joinsSet, setJoinsSet] = useState(new Set());
 		const pixelStringRef = useRef<string>("");
 		const pixelPartialRef = useRef<string>("");
 		const [isInitLoadComplete, setIsInitLoadComplete] = useState(false);
-		const [isJoinSelectOpen, setIsJoinSelectOpen] = useState(false);
 		const [initEditPrepopulateComplete, setInitEditPrepopulateComplete] =
 			useState(!editMode);
 
@@ -228,67 +291,13 @@ export const DataImportFormModal = observer(
 				setCollapsedTables(new Set(visibleTableNames()));
 			}
 		};
-		useEffect(() => {
-			if (editMode)
-				retrieveDatabaseTablesAndEdges(cell.parameters.databaseId);
-		}, []);
-
-		useEffect(() => {
-			setShowTablePreview(false);
-			setShowEditColumns(true);
-		}, [selectedDatabaseId]);
-
-		useEffect(() => {
-			if (
-				editMode &&
-				checkedColumnsCount === 0 &&
-				cell.parameters.databaseId === selectedDatabaseId &&
-				newTableFields.length &&
-				!initEditPrepopulateComplete
-			) {
-				prepoulateFormForEdit(cell);
-			}
-		}, [newTableFields]);
-
-		useEffect(() => {
-			if (getDatabases.status !== "SUCCESS") {
-				return;
-			}
-			setUserDatabases(
-				getDatabases.data as Array<{
-					database_id: string;
-					app_name: string;
-					database_type?: string;
-					database_subtype?: string;
-				}>,
-			);
-		}, [getDatabases.status, getDatabases.data]);
-
 		const selectedDatabase = useMemo(
 			() =>
 				userDatabases?.find(
-					(db) => db.database_id === selectedDatabaseId,
+					(db) => db.engine_id === selectedDatabaseId,
 				) ?? null,
 			[userDatabases, selectedDatabaseId],
 		);
-
-		useEffect(() => {
-			if (!editMode || initEditPrepopulateComplete) {
-				setJoinsStackHandler();
-				updateSelectedTables();
-			}
-		}, [checkedColumnsCount]);
-
-		useEffect(() => {
-			if (showPreview) {
-				retrievePreviewData();
-			}
-		}, [
-			aliasesCountObj,
-			checkedColumnsCount,
-			showPreview,
-			selectedDatabaseId,
-		]);
 
 		const getSelectedColumnNames = () => {
 			const pixelTables = new Set();
@@ -343,7 +352,7 @@ export const DataImportFormModal = observer(
 						databaseId: selectedDatabaseId,
 						joins: watchedJoins,
 						selectQuery: pixelPartialRef.current,
-						tableNames: Array.from(selectedTableNames),
+						tableNames: Array.from(retrieveSelectedTableNames()),
 						selectedColumns: getSelectedColumnNames(),
 						columnAliases: getColumnAliases(),
 						rootTable: rootTable,
@@ -395,7 +404,6 @@ export const DataImportFormModal = observer(
 		 */
 		const addAllTableColumnsHandler = (tableIndex: number) => {
 			setShownTables(new Set(tableNames));
-			setRootTable(watchedTables[tableIndex].name);
 			const allChecked = !isTableAllSelected(tableIndex);
 			const updatedColumns = watchedTables[tableIndex].columns.map(
 				(column) => ({
@@ -404,28 +412,30 @@ export const DataImportFormModal = observer(
 				}),
 			);
 
-			const freshAliasCountObj = {};
-			updatedColumns.forEach((column) => {
-				if (allChecked) {
-					const alias = column.userAlias;
-					if (alias in freshAliasCountObj) {
-						freshAliasCountObj[alias] += 1;
-					} else {
-						freshAliasCountObj[alias] = 1;
-					}
-				}
-			});
-
-			setAliasesCountObj(freshAliasCountObj);
-			aliasesCountObjRef.current = { ...freshAliasCountObj };
-
 			formSetValue(`tables.${tableIndex}.columns`, updatedColumns, {
 				shouldDirty: true,
 				shouldValidate: true,
 			});
 
-			setCheckedColumnsCount(allChecked ? updatedColumns.length : 0);
-			setJoinsStackHandler();
+			const selectedColumns = formGetValues("tables").flatMap((table) =>
+				table.columns.filter((column) => column.checked),
+			);
+			const freshAliasCountObj: Record<string, number> = {};
+			for (const column of selectedColumns) {
+				const alias = column.userAlias;
+				freshAliasCountObj[alias] =
+					(freshAliasCountObj[alias] ?? 0) + 1;
+			}
+			setAliasesCountObj(freshAliasCountObj);
+			aliasesCountObjRef.current = freshAliasCountObj;
+
+			const nextCount = selectedColumns.length;
+			const nextRoot = nextCount
+				? (rootTable ?? watchedTables[tableIndex].name)
+				: null;
+			setRootTable(nextRoot);
+			setCheckedColumnsCount(nextCount);
+			setJoinsStackHandler(nextCount, nextRoot);
 		};
 
 		const updateSubmitDispatches = () => {
@@ -536,215 +546,238 @@ export const DataImportFormModal = observer(
 		};
 
 		/** Get Database Information for Data Import Modal */
-		const retrieveDatabaseTablesAndEdges = async (databaseId) => {
-			if (!databaseId) {
-				// No database picked yet (fresh cell or edit before cell hydrates) —
-				// skip the pixel call to avoid a "Database does not exist" error.
-				return;
-			}
-			setIsDatabaseLoading(true);
-			const pixelString = `META|GetDatabaseTableStructure(database=[ "${databaseId}" ]);META|GetDatabaseMetamodel( database=[ "${databaseId}" ], options=["dataTypes","positions"]);`;
-
-			runPixel(pixelString).then((pixelResponse) => {
-				const responseTableStructure = pixelResponse.pixelReturn[0]
-					.output as string[][];
-				const isResponseTableStructureGood =
-					pixelResponse.pixelReturn[0].operationType.indexOf(
-						"ERROR",
-					) === -1;
-
-				const responseTableEdgesStructure = pixelResponse.pixelReturn[1]
-					.output as {
-					edges: {
-						relation: string;
-						source: string;
-						sourceColumn: string;
-						target: string;
-						targetColumn: string;
-					}[];
-				};
-				const isResponseTableEdgesStructureGood =
-					pixelResponse.pixelReturn[1].operationType.indexOf(
-						"ERROR",
-					) === -1;
-
-				let newTableNames = [];
-
-				if (isResponseTableStructureGood) {
-					newTableNames = responseTableStructure.reduce(
-						(acc, ele) => {
-							if (!acc.includes(ele[0])) {
-								acc.push(ele[0]);
-							}
-							return acc;
-						},
-						[],
-					);
-
-					const tableColumnsObject = responseTableStructure.reduce(
-						(acc, ele) => {
-							const tableName = ele[0];
-							const columnName = ele[1];
-							const columnType = ele[2];
-							const columnBoolean = ele[3];
-							const columnName2 = ele[4];
-							const tableName2 = ele[4];
-
-							if (!acc[tableName]) acc[tableName] = [];
-							acc[tableName].push({
-								tableName,
-								columnName,
-								columnType,
-								columnBoolean,
-								columnName2,
-								tableName2,
-								userAlias: columnName,
-								checked: true,
-							});
-
-							return acc;
-						},
-						{},
-					);
-
-					const newTableColumnsObject: TableInterface[] =
-						tableColumnsObject
-							? Object.keys(tableColumnsObject).map(
-									(tableName, tableIdx) => ({
-										id: tableIdx,
-										name: tableName,
-										columns: tableColumnsObject[
-											tableName
-										].map((colObj, colIdx) => ({
-											id: colIdx,
-											tableName: tableName,
-											columnName: colObj.columnName,
-											columnType: colObj.columnType,
-											userAlias: colObj.userAlias,
-											checked: false,
-											isConcept: Boolean(
-												colObj.columnBoolean,
-											),
-										})),
-									}),
-								)
-							: [];
-
-					formReset({
-						databaseSelect: databaseId,
-						tables: newTableColumnsObject,
-					});
-				} else {
-					console.error("Error retrieving database tables");
-					toast.error("Error retrieving database tables");
+		const retrieveDatabaseTablesAndEdges = useCallback(
+			async (databaseId: string) => {
+				if (!databaseId) {
+					// No database picked yet (fresh cell or edit before cell hydrates) —
+					// skip the pixel call to avoid a "Database does not exist" error.
+					return;
 				}
+				setIsDatabaseLoading(true);
+				const pixelString = `META|GetDatabaseTableStructure(database=[ "${databaseId}" ]);META|GetDatabaseMetamodel( database=[ "${databaseId}" ], options=["dataTypes","positions"]);`;
 
-				if (isResponseTableEdgesStructureGood) {
-					const newEdgesDict =
-						responseTableEdgesStructure.edges.reduce((acc, ele) => {
-							const source = ele.source;
-							const target = ele.target;
-							const sourceColumn = ele.sourceColumn;
-							const targetColumn = ele.targetColumn;
+				runPixel(pixelString).then((pixelResponse) => {
+					const responseTableStructure = pixelResponse.pixelReturn[0]
+						.output as string[][];
+					const isResponseTableStructureGood =
+						pixelResponse.pixelReturn[0].operationType.indexOf(
+							"ERROR",
+						) === -1;
 
-							if (!acc[source]) {
-								acc[source] = {
-									[target]: {
-										sourceColumn,
-										targetColumn,
-									},
-								};
-							} else {
-								acc[source][target] = {
-									sourceColumn,
-									targetColumn,
-								};
-							}
+					const responseTableEdgesStructure = pixelResponse
+						.pixelReturn[1].output as {
+						edges: {
+							relation: string;
+							source: string;
+							sourceColumn: string;
+							target: string;
+							targetColumn: string;
+						}[];
+					};
+					const isResponseTableEdgesStructureGood =
+						pixelResponse.pixelReturn[1].operationType.indexOf(
+							"ERROR",
+						) === -1;
 
-							if (!acc[target]) {
-								acc[target] = {
-									[source]: {
-										sourceColumn: targetColumn,
-										targetColumn: sourceColumn,
-									},
-								};
-							} else {
-								acc[target][source] = {
-									sourceColumn: targetColumn,
-									targetColumn: sourceColumn,
-								};
-							}
-							return acc;
-						}, {});
+					let newTableNames = [];
 
-					setTableEdgesObject(newEdgesDict);
-				} else {
-					console.error("Error retrieving database edges");
-					toast.error("Error retrieving database tables");
-				}
+					if (isResponseTableStructureGood) {
+						newTableNames = responseTableStructure.reduce(
+							(acc, ele) => {
+								if (!acc.includes(ele[0])) {
+									acc.push(ele[0]);
+								}
+								return acc;
+							},
+							[],
+						);
 
-				const o = pixelResponse.pixelReturn[1].output as {
-					edges: {
-						relation: string;
-						source: string;
-						sourceColumn: string;
-						target: string;
-						targetColumn: string;
-					}[];
-				};
-				const edges = o.edges;
+						const tableColumnsObject =
+							responseTableStructure.reduce((acc, ele) => {
+								const tableName = ele[0];
+								const columnName = ele[1];
+								const columnType = ele[2];
+								const columnBoolean = ele[3];
+								const columnName2 = ele[4];
+								const tableName2 = ele[4];
 
-				const newTableEdges = {};
-				edges.forEach((edge) => {
-					if (newTableEdges[edge.source]) {
-						newTableEdges[edge.source][edge.target] = edge.relation;
+								if (!acc[tableName]) acc[tableName] = [];
+								acc[tableName].push({
+									tableName,
+									columnName,
+									columnType,
+									columnBoolean,
+									columnName2,
+									tableName2,
+									userAlias: columnName,
+									checked: true,
+								});
+
+								return acc;
+							}, {});
+
+						const newTableColumnsObject: TableInterface[] =
+							tableColumnsObject
+								? Object.keys(tableColumnsObject).map(
+										(tableName, tableIdx) => ({
+											id: tableIdx,
+											name: tableName,
+											columns: tableColumnsObject[
+												tableName
+											].map((colObj, colIdx) => ({
+												id: colIdx,
+												tableName: tableName,
+												columnName: colObj.columnName,
+												columnType: colObj.columnType,
+												userAlias: colObj.userAlias,
+												checked: false,
+												isConcept: Boolean(
+													colObj.columnBoolean,
+												),
+											})),
+										}),
+									)
+								: [];
+
+						formReset({
+							databaseSelect: databaseId,
+							tables: newTableColumnsObject,
+						});
 					} else {
-						newTableEdges[edge.source] = {
-							[edge.target]: edge.relation,
-						};
+						console.error("Error retrieving database tables");
+						toast.error("Error retrieving database tables");
 					}
-					if (newTableEdges[edge.target]) {
-						newTableEdges[edge.target][edge.source] = edge.relation;
+
+					if (isResponseTableEdgesStructureGood) {
+						const newEdgesDict =
+							responseTableEdgesStructure.edges.reduce(
+								(acc, ele) => {
+									const source = ele.source;
+									const target = ele.target;
+									const sourceColumn = ele.sourceColumn;
+									const targetColumn = ele.targetColumn;
+
+									if (!acc[source]) {
+										acc[source] = {
+											[target]: {
+												sourceColumn,
+												targetColumn,
+											},
+										};
+									} else {
+										acc[source][target] = {
+											sourceColumn,
+											targetColumn,
+										};
+									}
+
+									if (!acc[target]) {
+										acc[target] = {
+											[source]: {
+												sourceColumn: targetColumn,
+												targetColumn: sourceColumn,
+											},
+										};
+									} else {
+										acc[target][source] = {
+											sourceColumn: targetColumn,
+											targetColumn: sourceColumn,
+										};
+									}
+									return acc;
+								},
+								{},
+							);
+
+						setTableEdgesObject(newEdgesDict);
 					} else {
-						newTableEdges[edge.target] = {
-							[edge.source]: edge.relation,
-						};
+						console.error("Error retrieving database edges");
+						toast.error("Error retrieving database tables");
+					}
+
+					const o = pixelResponse.pixelReturn[1].output as {
+						edges: {
+							relation: string;
+							source: string;
+							sourceColumn: string;
+							target: string;
+							targetColumn: string;
+						}[];
+					};
+					const edges = o.edges;
+
+					const newTableEdges = {};
+					edges.forEach((edge) => {
+						if (newTableEdges[edge.source]) {
+							newTableEdges[edge.source][edge.target] =
+								edge.relation;
+						} else {
+							newTableEdges[edge.source] = {
+								[edge.target]: edge.relation,
+							};
+						}
+						if (newTableEdges[edge.target]) {
+							newTableEdges[edge.target][edge.source] =
+								edge.relation;
+						} else {
+							newTableEdges[edge.target] = {
+								[edge.source]: edge.relation,
+							};
+						}
+					});
+					setTableEdges(newTableEdges);
+					setIsDatabaseLoading(false);
+
+					setTableNames(newTableNames);
+					if (editMode && !isInitLoadComplete && rootTable) {
+						// Restrict to root + its joinable neighbours only when we
+						// actually have a stored rootTable to anchor on.
+						// Without that guard, graph/RDF cells (or older cells
+						// missing rootTable) end up with `Set([""])` and nothing
+						// renders.
+						const newEdges = [
+							rootTable,
+							...(newTableEdges[rootTable]
+								? Object.keys(newTableEdges[rootTable])
+								: []),
+						];
+						setShownTables(new Set(newEdges));
+					} else {
+						setShownTables(new Set(newTableNames));
+					}
+
+					if (!editMode || isInitLoadComplete) {
+						setAliasesCountObj({});
+						aliasesCountObjRef.current = {};
+						removeJoinElement();
+						setJoinsSet(new Set());
 					}
 				});
-				setTableEdges(newTableEdges);
-				setIsDatabaseLoading(false);
 
-				setTableNames(newTableNames);
-				if (editMode && !isInitLoadComplete && rootTable) {
-					// Restrict to root + its joinable neighbours only when we
-					// actually have a stored rootTable to anchor on.
-					// Without that guard, graph/RDF cells (or older cells
-					// missing rootTable) end up with `Set([""])` and nothing
-					// renders.
-					const newEdges = [
-						rootTable,
-						...(newTableEdges[rootTable]
-							? Object.keys(newTableEdges[rootTable])
-							: []),
-					];
-					setShownTables(new Set(newEdges));
-				} else {
-					setShownTables(new Set(newTableNames));
-				}
+				setAliasesCountObj({});
+				aliasesCountObjRef.current = {};
+				removeJoinElement();
+				setIsInitLoadComplete(true);
+			},
+			[
+				editMode,
+				isInitLoadComplete,
+				rootTable,
+				formReset,
+				removeJoinElement,
+			],
+		);
 
-				if (!editMode || isInitLoadComplete) {
-					setAliasesCountObj({});
-					aliasesCountObjRef.current = {};
-					removeJoinElement();
-					setJoinsSet(new Set());
-				}
-			});
-
-			setAliasesCountObj({});
-			aliasesCountObjRef.current = {};
-			removeJoinElement();
-			setIsInitLoadComplete(true);
-		};
+		useEffect(() => {
+			if (editMode && !isInitLoadComplete) {
+				retrieveDatabaseTablesAndEdges(cell?.parameters.databaseId);
+			}
+		}, [
+			editMode,
+			isInitLoadComplete,
+			cell?.parameters.databaseId,
+			retrieveDatabaseTablesAndEdges,
+		]);
 
 		/**
 		 * Updates pixel without building preview.
@@ -847,80 +880,20 @@ export const DataImportFormModal = observer(
 			return pixelTables;
 		};
 
-		const updateSelectedTables = () => {
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
+		const { previewPixel, previewSelectQuery } = buildPreviewQuery(
+			selectedDatabaseId,
+			watchedTables,
+			watchedJoins,
+			dataLimit,
+		);
 
-			watchedTables?.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnNames.push(getColumnRef(columnObject));
-						pixelColumnAliases.push(columnObject.userAlias);
-					}
-				});
-			});
-
-			setSelectedTableNames(pixelTables);
-		};
-
-		const retrievePreviewData = async () => {
+		const retrievePreviewData = useCallback(async () => {
 			setIsDatabaseLoading(true);
-			const databaseId = selectedDatabaseId;
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
-			const pixelJoins = [];
-
 			try {
-				watchedTables?.forEach((tableObject) => {
-					const currTableColumns = tableObject.columns;
-					currTableColumns?.forEach((columnObject) => {
-						if (columnObject.checked) {
-							pixelTables.add(columnObject.tableName);
-							pixelColumnNames.push(getColumnRef(columnObject));
-							pixelColumnAliases.push(columnObject.userAlias);
-						}
-					});
-				});
+				pixelStringRef.current = previewPixel;
+				pixelPartialRef.current = previewSelectQuery;
 
-				watchedJoins?.forEach((joinEle) => {
-					pixelJoins.push(
-						`( ${joinEle.leftTable} , ${joinEle.joinType}.join , ${joinEle.rightTable} )`,
-					);
-				});
-
-				let pixelStringPart1 = `Database ( database = [ "${databaseId}" ] )`;
-				pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(
-					" , ",
-				)} )`;
-				pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(
-					" , ",
-				)} ] )`;
-				if (pixelJoins.length > 0) {
-					pixelStringPart1 += ` | Join ( ${pixelJoins.join(
-						" , ",
-					)} ) `;
-				}
-				pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${dataLimit} )`;
-
-				const combinedJoinString =
-					pixelJoins.length > 0
-						? `| Join ( ${pixelJoins.join(" , ")} ) `
-						: "";
-
-				const reactorPixel = `Database ( database = [ "${databaseId}" ] ) | Select ( ${pixelColumnNames.join(
-					" , ",
-				)} ) .as ( [ ${pixelColumnAliases.join(
-					" , ",
-				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
-
-				pixelStringRef.current = reactorPixel;
-				pixelPartialRef.current = `${pixelStringPart1};`;
-
-				runPixel(reactorPixel).then((response) => {
+				runPixel(previewPixel).then((response) => {
 					const type = response.pixelReturn[0]?.operationType;
 
 					const o = response.pixelReturn[1]?.output as {
@@ -952,7 +925,13 @@ export const DataImportFormModal = observer(
 
 				toast.error("Error retrieving database tables");
 			}
-		};
+		}, [previewPixel, previewSelectQuery]);
+
+		useEffect(() => {
+			if (showPreview) {
+				retrievePreviewData();
+			}
+		}, [showPreview, retrievePreviewData]);
 
 		/** Helper Function Update Alias Tracker Object */
 		const updateAliasCountObj = (
@@ -1045,94 +1024,123 @@ export const DataImportFormModal = observer(
 		};
 
 		/** Pre-Populate form For Edit */
-		const prepoulateFormForEdit = (cell) => {
-			const tablesWithCheckedBoxes = new Set();
-			const checkedColumns = new Set();
-			const columnAliasMap = {};
-			const newAliasesCountObj = {};
+		const prepopulateFormForEdit = useCallback(
+			(cell) => {
+				const tablesWithCheckedBoxes = new Set();
+				const checkedColumns = new Set();
+				const columnAliasMap = {};
+				const newAliasesCountObj = {};
 
-			setCheckedColumnsCount(cell.parameters.selectedColumns.length);
-			cell.parameters.selectedColumns?.forEach(
-				(selectedColumnTableCombinedString, idx) => {
-					// Concept columns (graph nodes / standalone tables) are
-					// stored as just "columnName"; properties are stored as
-					// "tableName__columnName".
-					const hasTablePrefix =
-						selectedColumnTableCombinedString.includes("__");
-					const [currTableName, currColumnName] = hasTablePrefix
-						? selectedColumnTableCombinedString.split("__")
-						: [
-								selectedColumnTableCombinedString,
-								selectedColumnTableCombinedString,
-							];
-					const currColumnAlias = cell.parameters.columnAliases[idx];
-					tablesWithCheckedBoxes.add(currTableName);
-					checkedColumns.add(selectedColumnTableCombinedString);
-					columnAliasMap[selectedColumnTableCombinedString] =
-						currColumnAlias;
-					newAliasesCountObj[currColumnAlias || currColumnName] = 1;
-				},
-			);
+				setCheckedColumnsCount(cell.parameters.selectedColumns.length);
+				cell.parameters.selectedColumns?.forEach(
+					(selectedColumnTableCombinedString, idx) => {
+						// Concept columns (graph nodes / standalone tables) are
+						// stored as just "columnName"; properties are stored as
+						// "tableName__columnName".
+						const hasTablePrefix =
+							selectedColumnTableCombinedString.includes("__");
+						const [currTableName, currColumnName] = hasTablePrefix
+							? selectedColumnTableCombinedString.split("__")
+							: [
+									selectedColumnTableCombinedString,
+									selectedColumnTableCombinedString,
+								];
+						const currColumnAlias =
+							cell.parameters.columnAliases[idx];
+						tablesWithCheckedBoxes.add(currTableName);
+						checkedColumns.add(selectedColumnTableCombinedString);
+						columnAliasMap[selectedColumnTableCombinedString] =
+							currColumnAlias;
+						newAliasesCountObj[currColumnAlias || currColumnName] =
+							1;
+					},
+				);
 
-			setAliasesCountObj({ ...newAliasesCountObj });
-			aliasesCountObjRef.current = { ...newAliasesCountObj };
+				setAliasesCountObj({ ...newAliasesCountObj });
+				aliasesCountObjRef.current = { ...newAliasesCountObj };
 
-			if (newTableFields) {
-				newTableFields?.forEach((newTableObj, tableIdx) => {
-					if (tablesWithCheckedBoxes.has(newTableObj.name)) {
-						const watchedTableColumns =
-							watchedTables[tableIdx].columns;
+				const tables = formGetValues("tables");
+				if (tables) {
+					tables.forEach((newTableObj, tableIdx) => {
+						if (tablesWithCheckedBoxes.has(newTableObj.name)) {
+							const watchedTableColumns =
+								tables[tableIdx].columns;
 
-						watchedTableColumns?.forEach(
-							(tableColumnObj, columnIdx) => {
-								const columnName = getColumnRef(tableColumnObj);
-								if (checkedColumns.has(columnName)) {
-									const columnAlias =
-										columnAliasMap[columnName];
-									formSetValue(
-										`tables.${tableIdx}.columns.${columnIdx}.checked`,
-										true,
-									);
-									formSetValue(
-										`tables.${tableIdx}.columns.${columnIdx}.userAlias`,
-										columnAlias,
-									);
-								}
-							},
-						);
-					}
+							watchedTableColumns?.forEach(
+								(tableColumnObj, columnIdx) => {
+									const columnName =
+										getColumnRef(tableColumnObj);
+									if (checkedColumns.has(columnName)) {
+										const columnAlias =
+											columnAliasMap[columnName];
+										formSetValue(
+											`tables.${tableIdx}.columns.${columnIdx}.checked`,
+											true,
+										);
+										formSetValue(
+											`tables.${tableIdx}.columns.${columnIdx}.userAlias`,
+											columnAlias,
+										);
+									}
+								},
+							);
+						}
+					});
+				}
+
+				// Edit mode: anchor rootTable from the loaded selections if the
+				// cell didn't persist one (e.g. graph/RDF cells). Without this
+				// the join auto-detection can't iterate `tableEdgesObject[root]`.
+				if (!rootTable && tablesWithCheckedBoxes.size > 0) {
+					const firstChecked = Array.from(
+						tablesWithCheckedBoxes,
+					)[0] as string;
+					setRootTable(firstChecked);
+				}
+
+				const newJoinsSet = new Set();
+				cell.parameters.joins?.forEach((joinObject) => {
+					appendJoinElement(joinObject);
+					const joinsSetString1 = `${joinObject.leftTable}:${joinObject.rightTable}`;
+					const joinsSetString2 = `${joinObject.rightTable}:${joinObject.leftTable}`;
+					newJoinsSet.add(joinsSetString1);
+					newJoinsSet.add(joinsSetString2);
 				});
+
+				setJoinsSet(newJoinsSet);
+				setCheckedColumnsCount(checkedColumns.size);
+
+				const loadedQueryString = cell.parameters.selectQuery;
+				pixelPartialRef.current = loadedQueryString;
+				setInitEditPrepopulateComplete(true);
+			},
+			[formGetValues, formSetValue, rootTable, appendJoinElement],
+		);
+
+		useEffect(() => {
+			if (
+				editMode &&
+				checkedColumnsCount === 0 &&
+				cell.parameters.databaseId === selectedDatabaseId &&
+				newTableFields.length &&
+				!initEditPrepopulateComplete
+			) {
+				prepopulateFormForEdit(cell);
 			}
-
-			// Edit mode: anchor rootTable from the loaded selections if the
-			// cell didn't persist one (e.g. graph/RDF cells). Without this
-			// the join auto-detection can't iterate `tableEdgesObject[root]`.
-			if (!rootTable && tablesWithCheckedBoxes.size > 0) {
-				const firstChecked = Array.from(
-					tablesWithCheckedBoxes,
-				)[0] as string;
-				setRootTable(firstChecked);
-			}
-
-			const newJoinsSet = new Set();
-			cell.parameters.joins?.forEach((joinObject) => {
-				appendJoinElement(joinObject);
-				const joinsSetString1 = `${joinObject.leftTable}:${joinObject.rightTable}`;
-				const joinsSetString2 = `${joinObject.rightTable}:${joinObject.leftTable}`;
-				newJoinsSet.add(joinsSetString1);
-				newJoinsSet.add(joinsSetString2);
-			});
-
-			setJoinsSet(newJoinsSet);
-			setCheckedColumnsCount(checkedColumns.size);
-
-			const loadedQueryString = cell.parameters.selectQuery;
-			pixelPartialRef.current = loadedQueryString;
-		};
+		}, [
+			editMode,
+			cell,
+			checkedColumnsCount,
+			selectedDatabaseId,
+			newTableFields,
+			initEditPrepopulateComplete,
+			prepopulateFormForEdit,
+		]);
 
 		const checkTableForSelectedColumns = (tableName) => {
-			for (let i = 0; i < watchedTables.length; i++) {
-				const currTable = watchedTables[i];
+			const tables = formGetValues("tables");
+			for (let i = 0; i < tables.length; i++) {
+				const currTable = tables[i];
 				if (currTable.name === tableName) {
 					const currTableColumns = currTable.columns;
 					for (let j = 0; j < currTableColumns.length; j++) {
@@ -1226,163 +1234,268 @@ export const DataImportFormModal = observer(
 			setJoinsSet(joinsSetCopy);
 		};
 
+		const hasDuplicateAliases = Object.values(aliasesCountObj).some(
+			(count: number) => count > 1,
+		);
+		const selectionHint = !selectedDatabaseId
+			? "Select a database to continue."
+			: !checkedColumnsCount
+				? "Select at least one column."
+				: hasDuplicateAliases
+					? "Give each selected column a unique alias."
+					: aliasesCountObj[""] > 0
+						? "Enter an alias for every selected column."
+						: null;
+		const disabledReason = isDatabaseLoading
+			? "Wait for the database to finish loading."
+			: selectionHint;
+
 		return (
 			<Dialog
-				open={true}
-				onOpenChange={(open) => {
-					if (!open) closeImportModalHandler();
-				}}
+				open
+				onOpenChange={(open) => !open && closeImportModalHandler()}
 			>
 				<DialogContent
-					style={{ maxWidth: "70vw", width: "70vw" }}
-					className="flex max-h-[90vh] flex-col gap-4 overflow-y-auto"
+					aria-describedby={undefined}
+					className="flex max-h-[min(90dvh,48rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
 				>
-					<DialogHeader>
-						<DialogTitle>Query Builder</DialogTitle>
+					<DialogHeader className="shrink-0 border-border border-b px-4 py-3 pr-12 text-left">
+						<DialogTitle className="font-medium text-base leading-6">
+							Query Builder
+						</DialogTitle>
 					</DialogHeader>
-					<form
-						onSubmit={formHandleSubmit(onImportDataSubmit)}
-						className="flex flex-col gap-4"
+					<Form
+						form={form}
+						onSubmit={onImportDataSubmit}
+						className="flex min-h-0 flex-1 flex-col"
 					>
-						{/* Database selector */}
-						<div className="flex flex-col gap-1">
-							<span className="text-muted-foreground text-xs">
-								Database
-							</span>
-							<Controller
-								name={"databaseSelect"}
-								control={formControl}
-								render={({ field }) => (
-									<Select
-										value={field.value || ""}
-										onValueChange={(value) => {
-											if (value === selectedDatabaseId) {
-												return;
+						<div className="shrink-0 border-border border-b px-4 py-3">
+							<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+								<Label
+									htmlFor={databaseSelectId}
+									className="shrink-0 text-sm sm:w-20"
+								>
+									Database
+								</Label>
+								<Controller
+									name="databaseSelect"
+									control={formControl}
+									render={({ field }) => (
+										<Select
+											value={field.value || ""}
+											disabled={
+												getDatabases.status !==
+													"SUCCESS" ||
+												userDatabases.length === 0
 											}
-											field.onChange(value);
-											setSelectedDatabaseId(value);
-											// Wipe any selection state tied to
-											// the previous database so the new
-											// one starts clean (otherwise
-											// rootTable / checkedColumnsCount /
-											// joins still point at concepts
-											// that don't exist in the new DB).
-											setRootTable(null);
-											setCheckedColumnsCount(0);
-											setSelectedTableNames(new Set());
-											setAliasesCountObj({});
-											aliasesCountObjRef.current = {};
-											setJoinsSet(new Set());
-											removeJoinElement();
-											setInitEditPrepopulateComplete(
-												true,
-											);
-											retrieveDatabaseTablesAndEdges(
-												value,
-											);
-											setShowEditColumns(true);
-											setShowTablePreview(false);
-										}}
-									>
-										<SelectTrigger className="h-auto min-h-10 w-[320px] py-1.5">
-											<SelectValue placeholder="Select a database">
-												{selectedDatabase ? (
-													<div className="flex items-center gap-2">
-														<EngineSubtypeIcon
-															engineType={
-																selectedDatabase.database_type ??
-																"DATABASE"
-															}
-															engineSubtype={
-																selectedDatabase.database_subtype
-															}
-															alt={`${selectedDatabase.app_name} icon`}
-															className="size-5 shrink-0 object-contain"
-														/>
-														<div className="flex min-w-0 flex-col items-start text-left">
-															<span className="truncate text-sm">
-																{
-																	selectedDatabase.app_name
-																}
-															</span>
-															<span className="truncate text-muted-foreground text-xs">
-																{
-																	selectedDatabase.database_id
-																}
-															</span>
-														</div>
-													</div>
-												) : null}
-											</SelectValue>
-										</SelectTrigger>
-										<SelectContent>
-											{userDatabases?.map(
-												(ele, dbIndex) => (
-													<SelectItem
-														value={ele.database_id}
-														// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-														key={dbIndex}
-													>
-														<div className="flex items-center gap-2">
+											onValueChange={(value) => {
+												if (
+													value === selectedDatabaseId
+												)
+													return;
+												field.onChange(value);
+												setSelectedDatabaseId(value);
+												// A new database starts with its own columns and joins.
+												setRootTable(null);
+												setCheckedColumnsCount(0);
+												setAliasesCountObj({});
+												aliasesCountObjRef.current = {};
+												setJoinsSet(new Set());
+												removeJoinElement();
+												setInitEditPrepopulateComplete(
+													true,
+												);
+												retrieveDatabaseTablesAndEdges(
+													value,
+												);
+												setShowEditColumns(true);
+												setShowTablePreview(false);
+											}}
+										>
+											<SelectTrigger
+												id={databaseSelectId}
+												size="sm"
+												aria-describedby={`${databaseSelectId}-status`}
+												className="w-full min-w-0 shadow-none sm:max-w-sm"
+											>
+												<SelectValue placeholder="Select a database">
+													{selectedDatabase && (
+														<span className="flex min-w-0 items-center gap-2">
 															<EngineSubtypeIcon
 																engineType={
-																	ele.database_type ??
+																	selectedDatabase.engine_type ??
 																	"DATABASE"
 																}
 																engineSubtype={
-																	ele.database_subtype
+																	selectedDatabase.engine_subtype
 																}
-																alt={`${ele.app_name} icon`}
-																className="size-5 shrink-0 object-contain"
+																alt=""
+																className="size-4 shrink-0 object-contain"
 															/>
-															<div className="flex min-w-0 flex-col items-start">
-																<span className="truncate text-sm">
-																	{
-																		ele.app_name
+															<span className="truncate">
+																{
+																	selectedDatabase.engine_name
+																}
+															</span>
+														</span>
+													)}
+												</SelectValue>
+											</SelectTrigger>
+											<SelectContent
+												align="start"
+												collisionPadding={8}
+												className="[&_[data-radix-select-viewport]::-webkit-scrollbar]:block! max-h-[min(20rem,var(--radix-select-content-available-height))] overflow-hidden [&_[data-radix-select-viewport]]:max-h-72 [&_[data-radix-select-viewport]]:min-h-0 [&_[data-radix-select-viewport]]:overflow-y-auto [&_[data-radix-select-viewport]]:overscroll-contain [&_[data-radix-select-viewport]]:[scrollbar-width:thin]!"
+											>
+												{userDatabases.map(
+													(database) => (
+														<SelectItem
+															value={
+																database.engine_id
+															}
+															textValue={
+																database.engine_name
+															}
+															key={
+																database.engine_id
+															}
+														>
+															<span className="flex min-w-0 items-center gap-2">
+																<EngineSubtypeIcon
+																	engineType={
+																		database.engine_type ??
+																		"DATABASE"
 																	}
-																</span>
-																<span className="truncate text-muted-foreground text-xs">
-																	{
-																		ele.database_id
+																	engineSubtype={
+																		database.engine_subtype
 																	}
+																	alt=""
+																	className="size-4 shrink-0 object-contain"
+																/>
+																<span className="flex min-w-0 flex-col text-left">
+																	<span className="break-all text-sm">
+																		{
+																			database.engine_name
+																		}
+																	</span>
+																	<span className="break-all text-[11px] text-muted-foreground">
+																		{
+																			database.engine_id
+																		}
+																	</span>
 																</span>
-															</div>
-														</div>
-													</SelectItem>
-												),
-											)}
-										</SelectContent>
-									</Select>
-								)}
-							/>
+															</span>
+														</SelectItem>
+													),
+												)}
+											</SelectContent>
+										</Select>
+									)}
+								/>
+							</div>
+							<div
+								id={`${databaseSelectId}-status`}
+								className="text-muted-foreground text-xs empty:hidden sm:pl-22"
+								aria-live="polite"
+							>
+								{getDatabases.status === "ERROR" ? (
+									<span className="text-destructive">
+										Unable to load databases.{" "}
+										<Button
+											type="button"
+											variant="link"
+											size="sm"
+											onClick={getDatabases.refresh}
+										>
+											Retry
+										</Button>
+									</span>
+								) : getDatabases.status !== "SUCCESS" ? (
+									"Loading databases…"
+								) : userDatabases.length === 0 ? (
+									"No databases are available for your account."
+								) : null}
+							</div>
 						</div>
-
-						{isDatabaseLoading && (
-							<div className="rounded-md border bg-muted/30 px-3 py-4 text-muted-foreground text-sm">
-								Loading database…
-							</div>
-						)}
-
-						{!selectedDatabaseId && (
-							<div className="rounded-md border bg-muted/30 px-3 py-4 text-muted-foreground text-sm">
-								Select a database to get started.
-							</div>
-						)}
-
-						{selectedDatabaseId && !isDatabaseLoading && (
-							<div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-4">
-								<div className="flex items-center justify-between gap-3">
-									<h6 className="font-semibold text-sm">
-										Data
-									</h6>
-									<div className="flex items-center gap-2">
+						<section
+							aria-label="Query configuration"
+							// biome-ignore lint/a11y/noNoninteractiveTabindex: This region receives focus for keyboard scrolling through large metamodels.
+							tabIndex={0}
+							className="focus-visible:-outline-offset-2 min-h-0 overflow-y-auto overscroll-contain px-4 py-3 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-ring"
+						>
+							{!selectedDatabaseId && (
+								<p className="py-6 text-center text-muted-foreground text-sm">
+									Select a database to choose its columns.
+								</p>
+							)}
+							{selectedDatabaseId && (
+								<Tabs
+									value={showPreview ? "preview" : "columns"}
+									onValueChange={(value) => {
+										setShowTablePreview(
+											value === "preview",
+										);
+										setShowEditColumns(value === "columns");
+									}}
+									className="gap-2"
+								>
+									<div className="flex flex-wrap items-center justify-between gap-2">
+										<div className="flex flex-wrap items-center gap-3">
+											<TabsList
+												aria-label="Query data"
+												className="h-8"
+											>
+												<TabsTrigger
+													value="columns"
+													className="px-3"
+												>
+													Columns
+												</TabsTrigger>
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
+													<TooltipTrigger asChild>
+														<span
+															className="inline-flex h-full"
+															tabIndex={
+																disabledReason
+																	? 0
+																	: undefined
+															}
+														>
+															<TabsTrigger
+																value="preview"
+																disabled={Boolean(
+																	disabledReason,
+																)}
+																className="px-3"
+															>
+																Preview
+															</TabsTrigger>
+														</span>
+													</TooltipTrigger>
+													<TooltipContent>
+														{disabledReason ??
+															"Preview selected columns"}
+													</TooltipContent>
+												</Tooltip>
+											</TabsList>
+											<span className="text-muted-foreground text-xs tabular-nums">
+												{checkedColumnsCount}{" "}
+												{checkedColumnsCount === 1
+													? "column"
+													: "columns"}{" "}
+												selected
+											</span>
+										</div>
 										{showEditColumns &&
 											visibleTableNames().length > 1 && (
 												<Button
 													variant="ghost"
 													size="sm"
 													type="button"
-													className="h-7 px-2 text-xs"
+													className="h-8 px-2 text-xs"
 													onClick={
 														toggleAllTablesCollapse
 													}
@@ -1392,157 +1505,151 @@ export const DataImportFormModal = observer(
 														: "Collapse all"}
 												</Button>
 											)}
-										<div className="inline-flex rounded-md border bg-background p-0.5">
-											<Button
-												variant={
-													showEditColumns
-														? "secondary"
-														: "ghost"
-												}
-												size="sm"
-												type="button"
-												className="h-7 px-3 text-xs"
-												onClick={() => {
-													if (!showEditColumns) {
-														setShowEditColumns(
-															true,
-														);
-														setShowTablePreview(
-															false,
-														);
-													}
-												}}
-											>
-												Columns
-											</Button>
-											<Button
-												variant={
-													showPreview
-														? "secondary"
-														: "ghost"
-												}
-												size="sm"
-												type="button"
-												className="h-7 px-3 text-xs"
-												disabled={
-													!checkedColumnsCount ||
-													Object.values(
-														aliasesCountObj,
-													).some(
-														(key: number) =>
-															key > 1,
-													)
-												}
-												onClick={() => {
-													if (!showPreview) {
-														setShowTablePreview(
-															true,
-														);
-														setShowEditColumns(
-															false,
-														);
-													}
-												}}
-											>
-												Preview
-											</Button>
-										</div>
 									</div>
-								</div>
-
-								{showEditColumns && (
-									<div className="rounded-md border bg-background">
-										<div className="max-h-[350px] overflow-y-auto">
-											{newTableFields.map(
+									<TabsContent
+										value="columns"
+										className="space-y-2"
+									>
+										{isDatabaseLoading ? (
+											<output className="block py-8 text-center text-muted-foreground text-sm">
+												Loading database…
+											</output>
+										) : newTableFields.length === 0 ? (
+											<p className="block py-8 text-center text-muted-foreground text-sm">
+												No tables are available in this
+												database.
+											</p>
+										) : (
+											newTableFields.map(
 												(table, tableIndex) => {
 													if (
 														!shownTables.has(
 															table.name,
 														)
-													) {
+													)
 														return null;
-													}
+													const tableId = `${databaseSelectId}-table-${tableIndex}`;
+													const selectedCount =
+														watchedTables?.[
+															tableIndex
+														]?.columns.filter(
+															(column) =>
+																column.checked,
+														).length ?? 0;
 													return (
-														<div
-															key={`${table.name}-${tableIndex}`}
-															className="border-muted-foreground/30 border-b last:border-b-0"
-														>
-															<div className="flex items-center justify-between gap-2 px-3 py-2">
-																<button
-																	type="button"
-																	className="flex flex-1 items-center gap-1.5 rounded-md text-left hover:bg-muted/40"
-																	onClick={() =>
-																		toggleTableCollapse(
-																			table.name,
-																		)
-																	}
-																>
-																	{collapsedTables.has(
-																		table.name,
-																	) ? (
-																		<ChevronRight className="size-4 text-muted-foreground" />
-																	) : (
-																		<ChevronDown className="size-4 text-muted-foreground" />
-																	)}
-																	<Tooltip>
-																		<TooltipTrigger
-																			asChild
-																		>
-																			<span className="inline-flex cursor-default items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 font-medium text-sm">
-																				<CalendarDays className="size-3.5 text-primary/60" />
-																				{
-																					table.name
-																				}
-																			</span>
-																		</TooltipTrigger>
-																		<TooltipContent>
-																			Table
-																		</TooltipContent>
-																	</Tooltip>
-																</button>
-																{collapsedTables.has(
+														<Collapsible
+															key={table.id}
+															open={
+																!collapsedTables.has(
 																	table.name,
-																) ? (
-																	<span className="text-muted-foreground text-xs">
-																		{
-																			table
-																				.columns
-																				.length
-																		}{" "}
-																		columns
-																	</span>
-																) : (
-																	/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */
-																	<label className="flex cursor-pointer items-center gap-1.5 text-muted-foreground text-xs">
-																		<Checkbox
-																			checked={isTableAllSelected(
-																				tableIndex,
-																			)}
-																			onCheckedChange={() =>
-																				addAllTableColumnsHandler(
-																					tableIndex,
-																				)
+																)
+															}
+															onOpenChange={() =>
+																toggleTableCollapse(
+																	table.name,
+																)
+															}
+															className="min-w-0 rounded-md border border-border"
+														>
+															<div className="flex items-center gap-2 rounded-t-md bg-muted/40 px-2 py-1">
+																<CollapsibleTrigger
+																	asChild
+																>
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		type="button"
+																		className="h-8 min-w-0 flex-1 justify-start gap-2 px-1 text-left"
+																	>
+																		{collapsedTables.has(
+																			table.name,
+																		) ? (
+																			<ChevronRight
+																				className="size-3.5 shrink-0 text-muted-foreground"
+																				aria-hidden="true"
+																			/>
+																		) : (
+																			<ChevronDown
+																				className="size-3.5 shrink-0 text-muted-foreground"
+																				aria-hidden="true"
+																			/>
+																		)}
+																		<span className="truncate">
+																			{
+																				table.name
 																			}
-																		/>
+																		</span>
+																	</Button>
+																</CollapsibleTrigger>
+																<span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+																	{
+																		selectedCount
+																	}
+																	/
+																	{
+																		table
+																			.columns
+																			.length
+																	}
+																</span>
+																<div className="flex shrink-0 items-center gap-1.5 pl-1">
+																	<Checkbox
+																		id={`${tableId}-all`}
+																		checked={
+																			selectedCount >
+																				0 &&
+																			selectedCount <
+																				table
+																					.columns
+																					.length
+																				? "indeterminate"
+																				: isTableAllSelected(
+																						tableIndex,
+																					)
+																		}
+																		onCheckedChange={() =>
+																			addAllTableColumnsHandler(
+																				tableIndex,
+																			)
+																		}
+																	/>
+																	<Label
+																		htmlFor={`${tableId}-all`}
+																		className="py-2 font-normal text-xs"
+																	>
 																		Select
-																		All
-																	</label>
-																)}
+																		all
+																		<span className="sr-only">
+																			{" "}
+																			columns
+																			in{" "}
+																			{
+																				table.name
+																			}
+																		</span>
+																	</Label>
+																</div>
 															</div>
-															{!collapsedTables.has(
-																table.name,
-															) && (
-																<div className="mr-3 mb-3 ml-8 max-h-[280px] overflow-y-auto rounded-md border border-muted-foreground/20 bg-background">
-																	<Table className="table-fixed text-sm">
-																		<TableHeader className="sticky top-0 z-10 bg-background">
-																			<TableRow>
-																				<TableHead className="w-[40%]">
-																					Field
+															<CollapsibleContent>
+																<section
+																	aria-label={`${table.name} columns`}
+																	// biome-ignore lint/a11y/noNoninteractiveTabindex: This table region receives focus for keyboard scrolling.
+																	tabIndex={0}
+																	className="overflow-x-auto rounded-b-md focus-visible:outline-2 focus-visible:outline-ring"
+																>
+																	<Table
+																		wrapperClassName="overflow-visible"
+																		className="min-w-xl table-fixed"
+																	>
+																		<TableHeader>
+																			<TableRow className="hover:bg-transparent">
+																				<TableHead className="h-8 w-2/5 px-3 text-muted-foreground text-xs">
+																					Column
 																				</TableHead>
-																				<TableHead>
+																				<TableHead className="h-8 w-2/5 px-3 text-muted-foreground text-xs">
 																					Alias
 																				</TableHead>
-																				<TableHead className="w-[180px]">
+																				<TableHead className="h-8 w-1/5 px-3 text-muted-foreground text-xs">
 																					Type
 																				</TableHead>
 																			</TableRow>
@@ -1552,48 +1659,79 @@ export const DataImportFormModal = observer(
 																				(
 																					column,
 																					columnIndex,
-																				) => (
-																					<TableRow
-																						key={`${column.columnName}-${columnIndex}`}
-																					>
-																						<TableCell>
-																							<div className="flex items-center gap-2">
-																								<Controller
-																									name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
-																									control={
-																										formControl
-																									}
-																									render={({
-																										field,
-																									}) => (
-																										<Checkbox
-																											checked={
-																												field.value
-																											}
-																											id={`checkbox-${column.columnName}-${columnIndex}`}
-																											onCheckedChange={(
-																												checked,
-																											) => {
-																												field.onChange(
+																				) => {
+																					const columnId = `${tableId}-column-${columnIndex}`;
+																					const currentColumn =
+																						watchedTables?.[
+																							tableIndex
+																						]
+																							?.columns[
+																							columnIndex
+																						] ??
+																						column;
+																					const aliasError =
+																						currentColumn.checked
+																							? aliasesCountObj[
+																									currentColumn
+																										.userAlias
+																								] >
+																								1
+																								? "Use a unique alias."
+																								: currentColumn.userAlias ===
+																										""
+																									? "Enter an alias."
+																									: null
+																							: null;
+																					return (
+																						<TableRow
+																							key={
+																								column.id
+																							}
+																						>
+																							<TableCell className="px-3 py-1">
+																								<div className="flex min-w-0 items-center gap-2">
+																									<Controller
+																										name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
+																										control={
+																											formControl
+																										}
+																										render={({
+																											field,
+																										}) => (
+																											<Checkbox
+																												id={
+																													columnId
+																												}
+																												checked={
+																													field.value
+																												}
+																												onCheckedChange={(
 																													checked,
-																												);
-																												checkBoxHandler(
-																													tableIndex,
-																													columnIndex,
-																												);
-																											}}
-																										/>
-																									)}
-																								/>
-																								<span>
-																									{
-																										column.columnName
-																									}
-																								</span>
-																							</div>
-																						</TableCell>
-																						<TableCell>
-																							<div className="flex items-center">
+																												) => {
+																													field.onChange(
+																														checked,
+																													);
+																													checkBoxHandler(
+																														tableIndex,
+																														columnIndex,
+																													);
+																												}}
+																											/>
+																										)}
+																									/>
+																									<Label
+																										htmlFor={
+																											columnId
+																										}
+																										className="min-w-0 flex-1 whitespace-normal break-all py-1.5 font-normal text-sm leading-5"
+																									>
+																										{
+																											column.columnName
+																										}
+																									</Label>
+																								</div>
+																							</TableCell>
+																							<TableCell className="px-3 py-1">
 																								<Controller
 																									name={`tables.${tableIndex}.columns.${columnIndex}.userAlias`}
 																									control={
@@ -1603,33 +1741,33 @@ export const DataImportFormModal = observer(
 																										field,
 																									}) => (
 																										<Input
+																											{...field}
 																											type="text"
-																											className="h-8"
-																											value={
-																												field.value
+																											aria-label={`Alias for ${table.name}.${column.columnName}`}
+																											aria-invalid={Boolean(
+																												aliasError,
+																											)}
+																											aria-describedby={
+																												aliasError
+																													? `${columnId}-error`
+																													: undefined
 																											}
+																											className="h-8 px-2 shadow-none"
 																											onChange={(
-																												e,
+																												event,
 																											) => {
 																												if (
-																													watchedTables[
-																														tableIndex
-																													]
-																														.columns[
-																														columnIndex
-																													]
-																														.checked
-																												) {
+																													currentColumn.checked
+																												)
 																													updateAliasCountObj(
 																														true,
-																														e
+																														event
 																															.target
 																															.value,
 																														field.value,
 																													);
-																												}
 																												field.onChange(
-																													e
+																													event
 																														.target
 																														.value,
 																												);
@@ -1637,343 +1775,230 @@ export const DataImportFormModal = observer(
 																										/>
 																									)}
 																								/>
-																								{watchedTables[
-																									tableIndex
-																								]
-																									.columns[
-																									columnIndex
-																								]
-																									.checked &&
-																									aliasesCountObj[
-																										watchedTables[
-																											tableIndex
-																										]
-																											.columns[
-																											columnIndex
-																										]
-																											.userAlias
-																									] >
-																										1 && (
-																										<Tooltip>
-																											<TooltipTrigger
-																												asChild
-																											>
-																												<AlertTriangle className="ml-2.5 size-4 text-yellow-600" />
-																											</TooltipTrigger>
-																											<TooltipContent>
-																												Duplicate
-																												Alias
-																												Name
-																											</TooltipContent>
-																										</Tooltip>
-																									)}
-																							</div>
-																						</TableCell>
-
-																						<TableCell>
-																							<Controller
-																								name={`tables.${tableIndex}.columns.${columnIndex}.columnType`}
-																								control={
-																									formControl
-																								}
-																								render={({
-																									field,
-																								}) => (
-																									<Select
-																										disabled
-																										value={
-																											field.value ||
-																											""
-																										}
-																										onValueChange={(
-																											value,
-																										) => {
-																											field.onChange(
-																												value,
-																											);
-																										}}
+																								{aliasError && (
+																									<p
+																										id={`${columnId}-error`}
+																										className="mt-1 whitespace-normal text-destructive text-xs"
 																									>
-																										<SelectTrigger className="h-8 w-full">
-																											<SelectValue />
-																										</SelectTrigger>
-																										<SelectContent>
-																											{SQL_COLUMN_TYPES.map(
-																												(
-																													ele,
-																													eleIdx,
-																												) => (
-																													<SelectItem
-																														value={
-																															ele
-																														}
-																														key={
-																															// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																															eleIdx
-																														}
-																													>
-																														{
-																															ele
-																														}
-																													</SelectItem>
-																												),
-																											)}
-																										</SelectContent>
-																									</Select>
+																										{
+																											aliasError
+																										}
+																									</p>
 																								)}
-																							/>
-																						</TableCell>
-																					</TableRow>
-																				),
+																							</TableCell>
+																							<TableCell className="whitespace-normal break-all px-3 py-1 text-muted-foreground text-xs">
+																								{
+																									column.columnType
+																								}
+																							</TableCell>
+																						</TableRow>
+																					);
+																				},
 																			)}
 																		</TableBody>
 																	</Table>
-																</div>
-															)}
-														</div>
+																</section>
+															</CollapsibleContent>
+														</Collapsible>
 													);
 												},
-											)}
-										</div>
-									</div>
-								)}
-
-								{showPreview && (
-									<div className="rounded-md border bg-background">
-										<div className="max-h-[350px] overflow-y-auto">
-											<Table>
-												<TableHeader>
-													<TableRow>
-														{databaseTableHeaders.map(
-															(h, hIdx) => (
-																<TableHead
-																	// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																	key={hIdx}
+											)
+										)}
+									</TabsContent>
+									<TabsContent value="preview">
+										{isDatabaseLoading ? (
+											<output className="block py-8 text-center text-muted-foreground text-sm">
+												Loading preview…
+											</output>
+										) : databaseTableRows.length === 0 ? (
+											<p className="block py-8 text-center text-muted-foreground text-sm">
+												No rows returned for this
+												selection.
+											</p>
+										) : (
+											<section
+												aria-label="Query preview results"
+												// biome-ignore lint/a11y/noNoninteractiveTabindex: This table region receives focus for keyboard scrolling.
+												tabIndex={0}
+												className="overflow-x-auto rounded-md border border-border focus-visible:outline-2 focus-visible:outline-ring"
+											>
+												<Table wrapperClassName="overflow-visible">
+													<TableHeader className="bg-muted/40">
+														<TableRow>
+															{databaseTableHeaders.map(
+																(header) => (
+																	<TableHead
+																		key={
+																			header
+																		}
+																		className="h-8 px-3 text-xs"
+																	>
+																		{header}
+																	</TableHead>
+																),
+															)}
+														</TableRow>
+													</TableHeader>
+													<TableBody>
+														{databaseTableRows.map(
+															(row, rowIndex) => (
+																<TableRow
+																	key={
+																		// biome-ignore lint/suspicious/noArrayIndexKey: Preview rows have no unique record identifier.
+																		rowIndex
+																	}
 																>
-																	{h}
-																</TableHead>
+																	{row.map(
+																		(
+																			value,
+																			columnIndex,
+																		) => (
+																			<TableCell
+																				key={`${databaseTableHeaders[columnIndex]}-${columnIndex}`}
+																				className="px-3 py-1.5"
+																			>
+																				{
+																					value
+																				}
+																			</TableCell>
+																		),
+																	)}
+																</TableRow>
 															),
 														)}
-													</TableRow>
-												</TableHeader>
-												<TableBody>
-													{databaseTableRows.map(
-														(r, rIdx) => (
-															<TableRow
-																// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																key={rIdx}
-															>
-																{r.map(
-																	(
-																		v,
-																		vIdx,
-																	) => (
-																		<TableCell
-																			// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																			key={`${rIdx}-${vIdx}`}
-																		>
-																			{v}
-																		</TableCell>
-																	),
-																)}
-															</TableRow>
-														),
-													)}
-												</TableBody>
-											</Table>
-										</div>
-									</div>
-								)}
-							</div>
-						)}
+													</TableBody>
+												</Table>
+											</section>
+										)}
+									</TabsContent>
+								</Tabs>
+							)}
 
-						{joinElements.map((join, joinIndex) => (
-							<div
-								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-								key={joinIndex}
-								className="flex flex-col gap-3 rounded-md border bg-muted/30 p-4"
-							>
-								<div className="flex flex-wrap items-center gap-2">
-									<h6 className="font-semibold text-sm">
-										Join
-									</h6>
-
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<div className="cursor-default rounded-md bg-primary/10 px-2.5 py-1 text-sm">
-												{join.leftTable}
-											</div>
-										</TooltipTrigger>
-										<TooltipContent>
-											Left Table
-										</TooltipContent>
-									</Tooltip>
-
-									<DropdownMenu
-										open={
-											isJoinSelectOpen &&
-											joinTypeSelectIndex === joinIndex
-										}
-										onOpenChange={(open) => {
-											if (!open) {
-												setIsJoinSelectOpen(false);
-												setJoinTypeSelectIndex(-1);
-											}
-										}}
+							{joinElements.length > 0 && (
+								<section
+									aria-labelledby={`${databaseSelectId}-joins`}
+									className="mt-4 space-y-2"
+								>
+									<H3
+										id={`${databaseSelectId}-joins`}
+										className="font-medium text-sm"
 									>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon-sm"
-												type="button"
-												onClick={() => {
-													setJoinTypeSelectIndex(
-														joinIndex,
-													);
-													setIsJoinSelectOpen(true);
-												}}
+										Joins
+									</H3>
+									<div className="divide-y divide-border rounded-md border border-border">
+										{joinElements.map((join, index) => (
+											<div
+												key={join.id}
+												className="grid gap-2 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center"
 											>
-												{
-													JOIN_ICONS[
-														watchedJoins?.[
-															joinIndex
-														]?.joinType
-													]
-												}
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"inner",
-													);
-												}}
-											>
-												Inner Join
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"left.outer",
-													);
-												}}
-											>
-												Left Join
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"right.outer",
-													);
-												}}
-											>
-												Right Join
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"outer",
-													);
-												}}
-											>
-												Outer Join
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<div className="cursor-default rounded-md bg-teal-100 px-2.5 py-1 text-sm">
-												{join.rightTable}
+												<div className="min-w-0">
+													<p className="break-all text-sm">
+														{join.leftTable}
+													</p>
+													{join.leftKey && (
+														<p className="break-all text-muted-foreground text-xs">
+															{join.leftKey}
+														</p>
+													)}
+												</div>
+												<Select
+													value={
+														watchedJoins?.[index]
+															?.joinType ??
+														join.joinType
+													}
+													onValueChange={(value) =>
+														formSetValue(
+															`joins.${index}.joinType`,
+															value,
+														)
+													}
+												>
+													<SelectTrigger
+														size="sm"
+														aria-label={`Join type for ${join.leftTable} and ${join.rightTable}`}
+														className="w-full gap-2 shadow-none sm:w-36"
+													>
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														{JOIN_TYPES.map(
+															({
+																value,
+																label,
+															}) => (
+																<SelectItem
+																	key={value}
+																	value={
+																		value
+																	}
+																>
+																	{label}
+																</SelectItem>
+															),
+														)}
+													</SelectContent>
+												</Select>
+												<div className="min-w-0">
+													<p className="break-all text-sm">
+														{join.rightTable}
+													</p>
+													{join.rightKey && (
+														<p className="break-all text-muted-foreground text-xs">
+															{join.rightKey}
+														</p>
+													)}
+												</div>
 											</div>
-										</TooltipTrigger>
-										<TooltipContent>
-											Right Table
-										</TooltipContent>
-									</Tooltip>
-
-									{join.leftKey && join.rightKey ? (
-										<>
-											<span className="cursor-default text-muted-foreground text-sm">
-												where
-											</span>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<div className="cursor-default rounded-md bg-primary/10 px-2.5 py-1 text-sm">
-														{join.leftKey}
-													</div>
-												</TooltipTrigger>
-												<TooltipContent>
-													Left Key
-												</TooltipContent>
-											</Tooltip>
-											<span className="cursor-default text-muted-foreground text-sm">
-												=
-											</span>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<div className="cursor-default rounded-md bg-teal-100 px-2.5 py-1 text-sm">
-														{join.rightKey}
-													</div>
-												</TooltipTrigger>
-												<TooltipContent>
-													Right Key
-												</TooltipContent>
-											</Tooltip>
-										</>
-									) : null}
-								</div>
+										))}
+									</div>
+								</section>
+							)}
+						</section>
+						<DialogFooter className="shrink-0 flex-col gap-2 border-border border-t px-4 py-3 sm:items-center sm:justify-between">
+							<p className="text-muted-foreground text-xs">
+								{selectionHint}
+							</p>
+							<div className="flex justify-end gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									type="button"
+									onClick={closeImportModalHandler}
+								>
+									Cancel
+								</Button>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<span
+											className="inline-flex"
+											tabIndex={
+												disabledReason ? 0 : undefined
+											}
+										>
+											<Button
+												size="sm"
+												type="submit"
+												disabled={Boolean(
+													disabledReason,
+												)}
+											>
+												{editMode
+													? "Update Cell"
+													: "Import"}
+											</Button>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										{disabledReason ??
+											(editMode
+												? "Update this cell"
+												: "Import selected columns")}
+									</TooltipContent>
+								</Tooltip>
 							</div>
-						))}
-
-						{/* Action buttons row */}
-						<div className="flex justify-start gap-2">
-							<Button
-								variant="outline"
-								size="sm"
-								type="button"
-								className="h-8"
-								disabled
-							>
-								<Filter className="mr-1 size-3.5" />
-								Add Filter
-							</Button>
-						</div>
-
-						{/* Footer actions */}
-						<div className="flex justify-end gap-2 border-t pt-3">
-							<Button
-								variant="ghost"
-								type="button"
-								onClick={() => {
-									closeImportModalHandler();
-								}}
-							>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								disabled={
-									!selectedDatabaseId ||
-									!checkedColumnsCount ||
-									Object.values(aliasesCountObj).some(
-										(key: number) => key > 1,
-									) ||
-									aliasesCountObj[""] > 0
-								}
-							>
-								{editMode ? "Update Cell" : "Import"}
-							</Button>
-						</div>
-					</form>
+						</DialogFooter>
+					</Form>
 				</DialogContent>
 			</Dialog>
 		);

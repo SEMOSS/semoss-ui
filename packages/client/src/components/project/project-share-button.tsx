@@ -18,9 +18,10 @@ export const ProjectShareButton = observer(() => {
 
 	return (
 		<div className="flex items-center gap-1">
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<Button
+						aria-label={"Share App"}
 						variant="ghost"
 						size="icon"
 						onClick={() => setShareOpen(true)}

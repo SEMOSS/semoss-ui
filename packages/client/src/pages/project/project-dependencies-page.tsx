@@ -19,6 +19,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { capitalize as toCapitalized } from "@semoss/utility/text";
 import { CatalogGrid, CatalogGridItem } from "@/components/catalog";
 import { EditProjectDependenciesDialog } from "@/components/project";
 import { TYPE_TO_ROUTE } from "@/constants";
@@ -54,11 +55,6 @@ const DEPENDENCY_TYPE_CONFIG = {
 	GUARDRAIL: { kind: "engine", route: TYPE_TO_ROUTE.GUARDRAIL },
 } satisfies Record<string, DependencyTypeConfig>;
 
-const toCapitalized = (word: string): string => {
-	if (!word) return "";
-	return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-};
-
 export const ProjectDependenciesPage = () => {
 	const { project, dependencies, permission, refresh } = useProject();
 	const [isOpen, setIsOpen] = useState(false);
@@ -72,7 +68,7 @@ export const ProjectDependenciesPage = () => {
 					<div className="flex items-center gap-2">
 						<H4 className="text-base">Dependencies</H4>
 						{canEdit && (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<span>
 										<Info className="size-4 text-muted-foreground" />
@@ -129,6 +125,7 @@ export const ProjectDependenciesPage = () => {
 										id={d.engine_id}
 										icon={
 											<AppCatalogAvatar
+												projectId={d.engine_id}
 												name={
 													d.engine_name || d.engine_id
 												}
@@ -177,7 +174,11 @@ export const ProjectDependenciesPage = () => {
 													)}
 												{d.can_view_dependencies ===
 													false && (
-													<Tooltip>
+													<Tooltip
+														disableHoverableContent={
+															false
+														}
+													>
 														<TooltipTrigger asChild>
 															<TriangleAlert className="size-4 shrink-0 text-warning" />
 														</TooltipTrigger>
@@ -249,7 +250,11 @@ export const ProjectDependenciesPage = () => {
 												)}
 											{d.can_view_dependencies ===
 												false && (
-												<Tooltip>
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
 													<TooltipTrigger asChild>
 														<TriangleAlert className="size-4 shrink-0 text-warning" />
 													</TooltipTrigger>

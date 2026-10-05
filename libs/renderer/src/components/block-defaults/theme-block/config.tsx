@@ -8,7 +8,7 @@ export const DefaultStyles: CSSProperties = {
 	flexDirection: "column",
 	padding: "24px",
 	gap: "8px",
-	fontFamily: "roboto",
+	fontFamily: "var(--font-sans)",
 };
 
 // export the config for the block

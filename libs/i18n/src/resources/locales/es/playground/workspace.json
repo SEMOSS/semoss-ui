@@ -16,7 +16,8 @@
 		"createAgent": "Crear un Agente",
 		"edit": "Editar",
 		"delete": "Eliminar",
-		"newChat": "Nuevo Chat"
+		"newChat": "Nuevo Chat",
+		"moreActions": "Más acciones para {{name}}"
 	},
 	"card": {
 		"deleteConfirmTitle": "¿Está seguro?",
@@ -166,5 +167,22 @@
 	},
 	"skills": {
 		"noSkills": "No se han añadido habilidades"
+	},
+	"catalog": {
+		"title": "Mis agentes",
+		"description": "Chatea con los agentes que puedes usar o crea el tuyo.",
+		"filters": {
+			"label": "Filtrar agentes",
+			"createdByMe": "Creados por mí",
+			"owner": "Propietario",
+			"edit": "Puede editar",
+			"view": "Solo lectura"
+		},
+		"sort": {
+			"label": "Ordenar agentes",
+			"name": "Nombre",
+			"newest": "Más recientes",
+			"edited": "Editados recientemente"
+		}
 	}
 }

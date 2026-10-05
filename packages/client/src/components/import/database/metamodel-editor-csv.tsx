@@ -32,9 +32,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Separator,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { Metamodel } from "@/components/metamodel";
-import CreateConnection from "@/components/metamodel/create-connection";
+import { CreateConnection } from "@/components/metamodel/create-connection";
 import { Section } from "@/components/ui";
 import type {
 	Edge,
@@ -627,34 +630,66 @@ export const MetaModelType = observer(
 									</div>
 									<div className="flex items-center gap-2">
 										{!showFullScreenModal && (
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() =>
-													setShowFullScreenModal(true)
-												}
-												data-testid="engineMetadata-fullscreen-btn"
-												title="Full Screen"
-												className="p-0"
+											<Tooltip
+												disableHoverableContent={false}
 											>
-												<Maximize2 className="size-4" />
-											</Button>
+												<TooltipTrigger asChild>
+													<Button
+														aria-label={
+															"Full Screen"
+														}
+														variant="ghost"
+														size="icon"
+														onClick={() =>
+															setShowFullScreenModal(
+																true,
+															)
+														}
+														data-testid="engineMetadata-fullscreen-btn"
+														className="p-0"
+													>
+														<Maximize2 className="size-4" />
+													</Button>
+												</TooltipTrigger>
+												<TooltipContent
+													sideOffset={4}
+													className="max-w-xs break-words"
+												>
+													{"Full Screen"}
+												</TooltipContent>
+											</Tooltip>
 										)}
 										<DropdownMenu
 											open={anchorNodesMenu}
 											onOpenChange={setAnchorNodesMenu}
 										>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon"
-													title="Select tables"
-													data-testid="engineMetadata-tablelist-btn"
-													className="p-0"
+											<Tooltip
+												disableHoverableContent={false}
+											>
+												<TooltipTrigger asChild>
+													<DropdownMenuTrigger
+														asChild
+													>
+														<Button
+															aria-label={
+																"Select tables"
+															}
+															variant="ghost"
+															size="icon"
+															data-testid="engineMetadata-tablelist-btn"
+															className="p-0"
+														>
+															<TableIcon className="size-4" />
+														</Button>
+													</DropdownMenuTrigger>
+												</TooltipTrigger>
+												<TooltipContent
+													sideOffset={4}
+													className="max-w-xs break-words"
 												>
-													<TableIcon className="size-4" />
-												</Button>
-											</DropdownMenuTrigger>
+													{"Select tables"}
+												</TooltipContent>
+											</Tooltip>
 											<DropdownMenuContent
 												align="end"
 												className="w-[360px]"
@@ -733,16 +768,30 @@ export const MetaModelType = observer(
 												</div>
 											</DropdownMenuContent>
 										</DropdownMenu>
-										<Button
-											variant="ghost"
-											size="icon"
-											data-testid="engineMetadata-refresh-btn"
-											title="Reset"
-											onClick={handleRefreshMetamodel}
-											className="p-0"
+										<Tooltip
+											disableHoverableContent={false}
 										>
-											<RefreshCw className="size-4" />
-										</Button>
+											<TooltipTrigger asChild>
+												<Button
+													aria-label={"Reset"}
+													variant="ghost"
+													size="icon"
+													data-testid="engineMetadata-refresh-btn"
+													onClick={
+														handleRefreshMetamodel
+													}
+													className="p-0"
+												>
+													<RefreshCw className="size-4" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent
+												sideOffset={4}
+												className="max-w-xs break-words"
+											>
+												{"Reset"}
+											</TooltipContent>
+										</Tooltip>
 										<Button
 											variant="outline"
 											data-testid="engineMetadata-createrelationship-btn"

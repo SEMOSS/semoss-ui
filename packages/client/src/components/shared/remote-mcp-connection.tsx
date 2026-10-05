@@ -1,6 +1,7 @@
 import { Link2, Link2Off, Pencil } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { Button, H4, Input, Label, Spinner, toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { useSession } from "@/hooks";
 
 /**
@@ -141,9 +142,10 @@ export const RemoteMcpConnection = ({
 				onChange?.();
 			} catch (error) {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: "Unable to update the external MCP connection.",
+					getErrorMessage(
+						error,
+						"Unable to update the external MCP connection.",
+					),
 				);
 			} finally {
 				setSaving(false);

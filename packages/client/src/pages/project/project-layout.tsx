@@ -14,6 +14,7 @@ const CATALOG: Record<Project["project_type"], ProjectContextType["catalog"]> =
 		SKILL: { name: "Skill", path: "/skill" },
 		WORKSPACE: { name: "Agent", path: "/agent" },
 		NOTEBOOK: { name: "Notebook", path: "/notebook" },
+		AUTOMATION: { name: "Automation", path: "/automation" },
 		INSIGHT: { name: "App", path: "/app" },
 	} as const;
 
@@ -74,6 +75,16 @@ export const ProjectLayout = () => {
 	]);
 
 	/**
+	 * Merge fields into the loaded project without reloading it
+	 */
+	const update = useCallback(
+		(values: Partial<Project>) => {
+			getMetadata.update({ ...getMetadata.data, ...values });
+		},
+		[getMetadata.update, getMetadata.data],
+	);
+
+	/**
 	 * Get the catalog data
 	 */
 	const catalog = useMemo(() => {
@@ -113,6 +124,7 @@ export const ProjectLayout = () => {
 				permission: getUserProjectPermission.data,
 				dependencies: getDependencies.data?.engines || [],
 				refresh,
+				update,
 			}}
 		>
 			<Outlet />

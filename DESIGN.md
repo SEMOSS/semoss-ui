@@ -41,9 +41,10 @@ For every user-facing UI task:
    operation, announcements, overflow, and long content before polishing visual details.
 7. **Run the design audit.** A UI change is not complete when it merely compiles.
 
-If a mockup conflicts with an existing feature shell, preserve the shell and implement the
-requested content inside it. If a new pattern is truly required, establish one reusable
-pattern rather than introducing a one-off visual dialect.
+If a mockup conflicts with an existing feature shell, preserve the shell unless the user
+explicitly requests a shell redesign. An authorized redesign may change composition while
+preserving navigation destinations, permissions, and existing capabilities. Establish one
+reusable pattern rather than introducing a one-off visual dialect.
 
 ## SEMOSS Product UI Grammar
 
@@ -59,6 +60,7 @@ only on explicitly branded or promotional surfaces.
 | List, catalog, or dashboard | Page header → compact filters/actions → results summary → table or repeated collection → pagination |
 | Detail or settings | Breadcrumb when needed → title/description/actions → grouped sections or tabs → sticky actions only for long forms |
 | Editor or workbench | Stable application chrome → toolbar → resizable work area → contextual inspector; maximize usable canvas |
+| Conversational workbench | Readable conversation → anchored composer → contextual work area; switch panes with tabs when space is limited |
 | Focused task or form | Narrow readable column → grouped fields → inline validation → explicit cancel/submit actions |
 | Overlay | `Dialog` for focused decisions, `Sheet` for contextual detail, `Drawer` for mobile-first tasks, `Popover` for brief anchored controls |
 
@@ -102,7 +104,9 @@ settings page is not a dashboard and should not wrap every field group in a card
 - Use `bg-background` for the page, `bg-card` for genuinely framed objects, `bg-muted` for
   subdued regions, and borders or `Separator` before introducing shadows.
 - Cards are for repeated entities, summaries, or tools that need a visual boundary. Page
-  sections are normally unframed. Never nest cards merely to create spacing. All cards should follow rounded-x and padding using spacing-6. For primary actions/cards use shadow/sm.
+  sections are normally unframed. Never nest cards merely to create spacing. Content cards
+  use `rounded-xl` and `p-6`; compact tool rows and composer toolbars use `rounded-md` or
+  `rounded-lg` with `p-2` or `p-3`. Reserve `shadow-sm` for surfaces needing slight elevation.
 - Keep control density consistent within a region. Use default component sizes for primary
   workflows, `sm` for dense toolbars and tables, and `lg` only for prominent standalone
   actions.
@@ -110,6 +114,29 @@ settings page is not a dashboard and should not wrap every field group in a card
   gradients, color blobs, or accent panels to operational screens.
 - Preserve stable dimensions for toolbars, tables, grids, editors, and icon controls so
   loading, hover, labels, and long content do not shift surrounding layout.
+
+### Conversational Workbenches
+
+- Center standalone chat in a readable column. Anchor the composer below the transcript;
+  place attachments above its editor and compact controls below. Keep secondary actions
+  discoverable in a menu instead of clipping controls when the column narrows.
+- Group consecutive tool steps without crossing intervening assistant text. Use readable
+  names, text statuses, and expandable inputs/results. Active groups and failures expand
+  by default; successfully completed groups collapse unless the user chose otherwise.
+  Reasoning starts collapsed. Pending approvals and questions remain visible even when
+  the surrounding activity is collapsed. Expansion never executes or approves a tool.
+- Keep chat and editors mounted when switching views, resizing, or maximizing a pane.
+  Preserve drafts, scroll positions, and unsaved edits. On narrow layouts, use shared
+  `Tabs` with only the visible pane reachable by keyboard and assistive technology.
+- Use the blue `primary` token for actions; `accent` and `sidebar-accent` provide subtle
+  blue hover/selection surfaces in both themes. A status still uses the appropriate
+  `success`, `warning`, or `destructive` role with a textual label.
+- **Playground defaults:** an expanded 16rem navigation sidebar; a resizable 35/65
+  conversation/Workspace split; Chat/Workspace tabs below 64rem of available content
+  width. Opening the Workspace temporarily collapses navigation without changing its
+  stored preference, and closing it restores that preference. Manual navigation toggles
+  override the temporary state. These dimensions are playground defaults, not mandates
+  for every host.
 
 ### States and Feedback
 
@@ -125,9 +152,10 @@ settings page is not a dashboard and should not wrap every field group in a card
   page or form error.
 - **Success and warning:** pair color and iconography with text. Status must never be conveyed
   by color alone.
-- **Forms:** use `Field`, `FieldLabel`, `FieldDescription`, and `FieldError` with the matching
-  `Input`, `Textarea`, `Select`, `Checkbox`, `RadioGroup`, `Switch`, or other primitive. Show
-  validation next to its field and preserve entered values after a recoverable submit error.
+- **Forms:** follow the [form skill](./skills/react-form-builder.skill.md).
+  Use `Form` and its `Form*` wrappers, which compose the matching controls and Field
+  labels, descriptions, and errors. Show validation next to its field and preserve
+  entered values after a recoverable submit error.
 - **Destructive actions:** explain the consequence, require deliberate confirmation for
   difficult-to-reverse changes, and return focus to a logical control after completion.
 
@@ -185,8 +213,10 @@ Before handing off a UI change, review the affected surface at:
 | Input | Keyboard-only operation and visible focus |
 | Magnification | 200% browser zoom without lost content or controls |
 
-Also run the relevant behavior tests, `pnpm lint:design` for touched frontend files, and the
-package's type-check/build commands. Record anything that could not be exercised manually.
+Also run the relevant behavior tests and package type-check/build commands, and manually
+audit full touched frontend files against this rulebook. `pnpm lint:design` is currently
+missing from root scripts; do not report an automated design audit as passing. Record
+anything that could not be exercised manually.
 
 ## Decision Trees
 
@@ -229,8 +259,9 @@ with four different backdrop opacities and five different z-indexes — do not a
 → Tailwind scale on an 8px rhythm: `gap-2`, `p-4`, `px-6`; icons via `size-4`/`size-5`
 (not `h-[18px] w-[18px]`).
 → Arbitrary values (`w-[347px]`, `min-h-[639px]`, `ml-[84%]`) are allowed **only** to match an
-external constraint (a third-party widget, a fixed asset). Add a design-lint suppression on
-the preceding line with the rule ID and a concrete reason; never use an unexplained disable.
+external constraint (a third-party widget, a fixed asset). Add a reason-bearing exception
+annotation on the preceding line using the format below; it is reviewed manually, not
+currently processed by a design linter. Never use an unexplained disable.
 
 ## MUST / NEVER
 
@@ -241,7 +272,7 @@ the preceding line with the rule ID and a concrete reason; never use an unexplai
 - Tint with the **token + slash-opacity idiom**: `bg-primary/10`, `ring-ring/50`,
   `bg-destructive/20`, `hover:bg-accent`. `disabled:opacity-50` on a whole element is fine.
 - Use Typography components (or `.heading-*`) for headings and body text.
-- **Boy-scout rule**: the staged-file design lint checks each touched frontend file in full.
+- **Boy-scout rule**: manually review each touched/staged frontend file in full.
   Migrate its violations to tokens/components or apply an enumerated, reason-bearing carve-out.
   Do not expand cleanup into unrelated files. (Extends the root
   [Incremental Migration](./AGENTS.md#incremental-migration) policy.)
@@ -284,14 +315,15 @@ the preceding line with the rule ID and a concrete reason; never use an unexplai
   package directly; new literals must match a current `globals.css` token and carry a
   line-level suppression naming that token.
 
-Suppression format:
+Exception annotation format (manual review; no current automated suppression processor):
 
 ```typescript
 // design-lint-disable-next-line arbitrary-size -- fixed dimensions of vendor canvas
 ```
 
 Markdown fences that intentionally demonstrate invalid code must include
-`design-lint-ignore` in the fence info string. Do not suppress positive examples.
+`design-lint-ignore` in the fence info string. This documents intent for reviewers,
+not a currently enforced directive. Do not suppress positive examples.
 
 ## Deprecated Styling Systems
 
@@ -314,12 +346,19 @@ Markdown fences that intentionally demonstrate invalid code must include
 
 ## Self-Audit
 
-Run `pnpm lint:design -- <touched-files>` before marking work complete. The pre-commit hook
-runs the same audit on every staged frontend file. Every diagnostic must be migrated in scope
-or covered by an enumerated, reason-bearing carve-out above.
+Manually audit complete touched/staged frontend files before marking work complete.
+Every violation must be migrated in scope or covered by an enumerated, reason-bearing
+carve-out above. Include responsive, accessibility, state, and theme checks from the
+definition of done, and report unavailable verification.
+
+`pnpm lint:design` is currently missing from root scripts. The explicit Biome checks
+described in [the React standard](./skills/react-standard.skill.md) do not enforce this
+design rulebook; neither a successful lint check nor a build replaces manual design review.
 
 ## Future Work (tracked, not yet done)
 
+- Implement a scoped design checker and its command/hook integration; do not claim
+  automated design enforcement or working suppression directives until verified.
 - `--info` token, if a real need appears (propose before styling).
 - A z-index scale token set; today, rely on lib overlay components.
 - Delete `libs/ui/src/next/theme.ts`.

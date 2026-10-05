@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import type { JSX } from "react";
+import { isOutputJSON } from "@semoss/utility/json";
 import { JsonValueViewer } from "@/components/common/json-value-viewer";
-import { isOutputJSON } from "@/utility";
 
 interface SuccessOperationProps {
 	/** Message returned when there is an error */
@@ -19,7 +19,7 @@ export const SuccessOperation = observer(
 		if (value != null) {
 			return <JsonValueViewer value={value} />;
 		} else {
-			return <span className="text-green-600 text-xs">{output}</span>;
+			return <span className="text-success text-xs">{output}</span>;
 		}
 	},
 );

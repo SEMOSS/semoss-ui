@@ -20,6 +20,9 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	useTheme,
 } from "@semoss/ui/next";
 import { useConfig, useSession } from "@/hooks";
@@ -77,22 +80,28 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 			)}
 
 			<Popover open={open} onOpenChange={handleOpenChange}>
-				<PopoverTrigger asChild>
-					{children ? (
-						<span className="flex w-full cursor-pointer items-center">
-							{children}
-						</span>
-					) : (
-						<Button variant="ghost" size="icon-sm">
-							<CircleUserRound className="size-4" />
-						</Button>
-					)}
-				</PopoverTrigger>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<PopoverTrigger asChild>
+							{children || (
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Account options"
+								>
+									<CircleUserRound className="size-4" />
+								</Button>
+							)}
+						</PopoverTrigger>
+					</TooltipTrigger>
+					<TooltipContent>Account options</TooltipContent>
+				</Tooltip>
 
 				<PopoverContent
 					side="right"
 					align="end"
 					sideOffset={8}
+					aria-label="Account options"
 					className="w-60 p-0"
 				>
 					{/* User info row */}
@@ -117,7 +126,8 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 						<div className="border-border border-b px-4 py-2">
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<button
+									<Button
+										variant="ghost"
 										type="button"
 										className="flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-accent"
 									>
@@ -137,12 +147,12 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 										</span>
 										{(theme === "dark" ||
 											theme === "system") && (
-											<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+											<span className="ms-1 self-center rounded border px-1 py-0.5 font-medium text-xs leading-none">
 												BETA
 											</span>
 										)}
 										<ChevronRight className="ml-auto size-4 opacity-70" />
-									</button>
+									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
 									side="right"
@@ -164,7 +174,7 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 									>
 										<Moon className="size-4" />
 										Dark
-										<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										<span className="ms-auto self-center rounded border px-1 py-0.5 font-medium text-xs leading-none">
 											BETA
 										</span>
 									</DropdownMenuCheckboxItem>
@@ -176,7 +186,7 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 									>
 										<Monitor className="size-4" />
 										System
-										<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										<span className="ms-auto self-center rounded border px-1 py-0.5 font-medium text-xs leading-none">
 											BETA
 										</span>
 									</DropdownMenuCheckboxItem>

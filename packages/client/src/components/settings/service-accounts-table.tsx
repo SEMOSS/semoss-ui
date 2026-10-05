@@ -36,6 +36,9 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { getErrorMessage } from "@semoss/utility/error";
+import { sanitizeFileNameStem } from "@semoss/utility/file";
 import { createAPIUser, deleteMember } from "@/api";
 import { SdkBlock } from "@/components/shared/sdk-block";
 import { useAPI, useServerPagination, useSettings } from "@/hooks";
@@ -248,9 +251,7 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 			getUsers.refresh();
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to create service account",
+				getErrorMessage(error, "Unable to create service account"),
 			);
 		} finally {
 			setIsCreating(false);
@@ -260,22 +261,12 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 	const downloadCredentialsJson = () => {
 		if (!createdServiceAccount) return;
 		const slug =
-			newServiceAccountName
-				.trim()
-				.replace(/[^A-Za-z0-9._-]+/g, "-")
-				.replace(/^-+|-+$/g, "") || "service-account";
+			sanitizeFileNameStem(newServiceAccountName) || "service-account";
 		const blob = new Blob(
 			[JSON.stringify(createdServiceAccount, null, 2)],
 			{ type: "application/json" },
 		);
-		const url = URL.createObjectURL(blob);
-		const anchor = document.createElement("a");
-		anchor.href = url;
-		anchor.download = `${slug}-credentials.json`;
-		document.body.appendChild(anchor);
-		anchor.click();
-		anchor.remove();
-		URL.revokeObjectURL(url);
+		downloadBlob(blob, `${slug}-credentials.json`);
 	};
 
 	const deleteServiceAccounts = async (accounts: ServiceAccountUser[]) => {
@@ -716,7 +707,9 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 			>
 				<DialogContent className="max-w-2xl">
 					<DialogHeader>
-						<DialogTitle>Create Service Account</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Create Service Account
+						</DialogTitle>
 						<DialogDescription>
 							Create a service account for machine-based access.
 						</DialogDescription>
@@ -736,7 +729,7 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 								maxLength={255}
 							/>
 						</div>
-						<div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+						<div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
 							One-time credentials are shown only once after
 							creation. Copy and store them now.
 						</div>
@@ -790,7 +783,7 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
 							{deleteMode === "bulk"
 								? "Delete service accounts"
 								: "Delete service account"}

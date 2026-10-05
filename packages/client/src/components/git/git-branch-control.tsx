@@ -217,33 +217,40 @@ export const GitBranchControl = ({
 					</Command>
 				</PopoverContent>
 			</Popover>
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={onRefresh}
-						disabled={isRefreshing}
-						aria-label={refreshLabel}
-						className={cn(
-							"flex-none text-muted-foreground",
-							refreshClassName,
-						)}
+					<span
+						className="inline-flex"
+						tabIndex={isRefreshing ? 0 : undefined}
 					>
-						{isRefreshing ? (
-							<Spinner
-								aria-hidden
-								className={refreshIconClassName}
-							/>
-						) : (
-							<RefreshCwIcon
-								aria-hidden
-								className={refreshIconClassName}
-							/>
-						)}
-					</Button>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							onClick={onRefresh}
+							disabled={isRefreshing}
+							aria-label={refreshLabel}
+							className={cn(
+								"flex-none text-muted-foreground",
+								refreshClassName,
+							)}
+						>
+							{isRefreshing ? (
+								<Spinner
+									aria-hidden
+									className={refreshIconClassName}
+								/>
+							) : (
+								<RefreshCwIcon
+									aria-hidden
+									className={refreshIconClassName}
+								/>
+							)}
+						</Button>
+					</span>
 				</TooltipTrigger>
-				<TooltipContent>{refreshLabel}</TooltipContent>
+				<TooltipContent>
+					{isRefreshing ? "Refreshing branches…" : refreshLabel}
+				</TooltipContent>
 			</Tooltip>
 			{readOnly ? null : (
 				<GitCreateBranchDialog

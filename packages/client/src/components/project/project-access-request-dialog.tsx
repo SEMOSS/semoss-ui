@@ -27,6 +27,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import OPEN_AI from "@/assets/img/OPEN_AI.svg";
 import { PERMISSION_DESCRIPTION_MAP, TYPE_TO_ROUTE } from "@/constants";
 
@@ -164,9 +165,7 @@ export const ProjectAccessRequestDialog = ({
 			}
 		} catch (e) {
 			toast.error(
-				e instanceof Error
-					? e.message
-					: "Request failed for the dependency.",
+				getErrorMessage(e, "Request failed for the dependency."),
 			);
 		} finally {
 			setIsLoading(false);
@@ -230,9 +229,7 @@ export const ProjectAccessRequestDialog = ({
 			}
 		} catch (e) {
 			toast.error(
-				e instanceof Error
-					? e.message
-					: "Request failed for the dependency.",
+				getErrorMessage(e, "Request failed for the dependency."),
 			);
 		} finally {
 			setIsLoading(false);
@@ -302,9 +299,12 @@ export const ProjectAccessRequestDialog = ({
 				}
 			}}
 		>
-			<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
+			<DialogContent
+				aria-describedby={undefined}
+				className="max-h-[90vh] overflow-auto sm:max-w-2xl"
+			>
 				<DialogHeader>
-					<DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
 						{permission === "DISCOVERABLE"
 							? "Request Access"
 							: "Change Access"}

@@ -32,13 +32,14 @@ import {
 	Separator,
 	toast,
 } from "@semoss/ui/next";
+import { capitalize } from "@semoss/utility/text";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeOptions, computeVisibility } from "../shared/import-form.utils";
-import DataSelection from "./flat-table-column-editor";
-import ExcelDataSelection from "./flat-table-column-editor-excel";
-import TableViewSelector from "./jdbc-table-selector";
+import { DataSelection } from "./flat-table-column-editor";
+import { ExcelDataSelection } from "./flat-table-column-editor-excel";
+import { TableViewSelector } from "./jdbc-table-selector";
 import { MetaModelType } from "./metamodel-editor-csv";
 import { MetaModelConnections } from "./metamodel-editor-jdbc";
 
@@ -1695,9 +1696,7 @@ export const DatabaseForm = ({
 		}
 
 		result.headers = [...new Set(result.headers)];
-		result.cleanHeaders = result.headers.map(
-			(h) => h.charAt(0).toUpperCase() + h.slice(1).toLowerCase(),
-		);
+		result.cleanHeaders = result.headers.map(capitalize);
 
 		result.positions = dbObject.positions;
 		return result;
@@ -1945,6 +1944,7 @@ export const DatabaseForm = ({
 				onOpenChange={setConnectionViewModel}
 			>
 				<DialogContent
+					aria-describedby={undefined}
 					className={connectionDialogClassName}
 					showCloseButton={false}
 					data-testid="model-zip-upload-modal"

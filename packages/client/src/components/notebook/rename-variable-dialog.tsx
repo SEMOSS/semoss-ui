@@ -116,9 +116,14 @@ export const RenameVariableDialog = observer(
 
 		return (
 			<Dialog open={open} onOpenChange={(o) => !o && onOpenChange(false)}>
-				<DialogContent className="w-[calc(100vw-2rem)] max-w-[42rem] overflow-hidden sm:max-w-[42rem]">
+				<DialogContent
+					aria-describedby={undefined}
+					className="w-[calc(100vw-2rem)] max-w-[42rem] overflow-hidden sm:max-w-[42rem]"
+				>
 					<DialogHeader>
-						<DialogTitle>Rename variable</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Rename variable
+						</DialogTitle>
 					</DialogHeader>
 					<div className="flex min-w-0 flex-col gap-3">
 						<div className="flex flex-col gap-1.5">
@@ -176,7 +181,7 @@ export const RenameVariableDialog = observer(
 												className="flex min-w-0 flex-col gap-0.5 rounded border border-border/60 bg-background px-2 py-1.5"
 											>
 												<div className="flex min-w-0 items-center gap-1.5">
-													<span className="inline-flex items-center rounded bg-primary/10 px-1 py-0.5 font-medium text-[9px] text-primary uppercase tracking-wider">
+													<span className="inline-flex items-center rounded bg-primary/10 px-1 py-0.5 font-medium text-[11px] text-primary uppercase tracking-wider">
 														{hit.kind}
 													</span>
 													<span
@@ -185,11 +190,11 @@ export const RenameVariableDialog = observer(
 													>
 														{hit.sourceLabel}
 													</span>
-													<span className="inline-flex items-center rounded bg-muted px-1 py-0.5 font-medium text-[9px] text-muted-foreground uppercase tracking-wider">
+													<span className="inline-flex items-center rounded bg-muted px-1 py-0.5 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
 														{hit.widget}
 													</span>
 													<span
-														className="truncate font-mono text-[10px] text-muted-foreground"
+														className="truncate font-mono text-[11px] text-muted-foreground"
 														style={noLigatureStyle}
 													>
 														{hit.pathLabel}

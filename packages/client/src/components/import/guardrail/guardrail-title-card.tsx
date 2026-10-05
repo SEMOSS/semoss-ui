@@ -7,8 +7,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { formatToDataTestId } from "@semoss/utility/text";
 import BRAIN from "@/assets/img/BRAIN.png";
-import { formatToDataTestId } from "@/utility";
 
 interface Guardrail {
 	name: string;
@@ -141,7 +141,7 @@ export const GuardrailTitleCard: React.FC<GuardrailTileCardProps> = ({
 	);
 
 	return isTruncated ? (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<span className="block w-full sm:w-[215px]">{cardContent}</span>
 			</TooltipTrigger>

@@ -73,9 +73,10 @@ export const EditNotebookPage = () => {
 				</NavbarLeft>
 				<NavbarRight>
 					<ProjectShareButton />
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<Button
+								aria-label={"View"}
 								variant="ghost"
 								size="icon"
 								data-testid="editNotebookPage-view-btn"

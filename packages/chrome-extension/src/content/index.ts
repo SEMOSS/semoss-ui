@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@semoss/utility/error";
 import { initializeRPC } from "./rpc";
 import { getDOMStats, getSimplifiedDOM } from "./simplifyDOM";
 
@@ -146,8 +147,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			} catch (error) {
 				sendResponse({
 					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
+					error: getErrorMessage(error),
 				});
 			}
 			break;
@@ -166,8 +166,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			} catch (error) {
 				sendResponse({
 					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
+					error: getErrorMessage(error),
 				});
 			}
 			break;
@@ -179,8 +178,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			} catch (error) {
 				sendResponse({
 					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
+					error: getErrorMessage(error),
 				});
 			}
 			break;
@@ -192,8 +190,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			} catch (error) {
 				sendResponse({
 					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
+					error: getErrorMessage(error),
 				});
 			}
 			break;
@@ -205,8 +202,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			} catch (error) {
 				sendResponse({
 					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
+					error: getErrorMessage(error),
 				});
 			}
 			break;
@@ -356,10 +352,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 					);
 					sendResponse({
 						success: false,
-						error:
-							error instanceof Error
-								? error.message
-								: String(error),
+						error: getErrorMessage(error),
 					});
 				}
 			})();
@@ -372,8 +365,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			} catch (error) {
 				sendResponse({
 					success: false,
-					error:
-						error instanceof Error ? error.message : String(error),
+					error: getErrorMessage(error),
 				});
 			}
 			break;
@@ -426,10 +418,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 					);
 					sendResponse({
 						success: false,
-						error:
-							error instanceof Error
-								? error.message
-								: String(error),
+						error: getErrorMessage(error),
 					});
 				}
 			})();

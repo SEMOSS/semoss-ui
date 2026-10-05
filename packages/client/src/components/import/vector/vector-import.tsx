@@ -13,6 +13,7 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogTitle,
 	H4,
 	Input,
 	P,
@@ -225,16 +226,17 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 				onOpenChange={(isOpen) => setIsFileUploadModalOpen(isOpen)}
 			>
 				<DialogContent
-					className="w-[calc(100vw-2rem)] max-w-[600px] sm:w-[600px]"
+					aria-describedby={undefined}
+					className="sm:max-w-xl"
 					data-testid="vector-zip-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
-						<P
+						<DialogTitle
 							className="text-base"
 							data-testid="vector-zip-upload-title"
 						>
 							Zip File
-						</P>
+						</DialogTitle>
 						{/* biome-ignore lint/a11y/useKeyWithClickEvents: drag-and-drop area */}
 						{/* biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop area */}
 						<div

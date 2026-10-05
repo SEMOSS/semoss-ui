@@ -26,6 +26,7 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { setupResetPassword } from "@/api/auth";
 import loginDarkHero from "@/assets/img/login-dark-hero.gif";
 import loginHero from "@/assets/img/login-gif.gif";
@@ -437,10 +438,10 @@ export const LoginPage = () => {
 			setResetPasswordSuccess(message);
 			toast.success(message);
 		} catch (submissionError) {
-			const message =
-				submissionError instanceof Error
-					? submissionError.message
-					: "Unable to submit password reset request.";
+			const message = getErrorMessage(
+				submissionError,
+				"Unable to submit password reset request.",
+			);
 
 			setResetPasswordError(message);
 			toast.error(message);
@@ -1067,7 +1068,11 @@ export const LoginPage = () => {
 																>
 																	Password *
 																</Label>
-																<Tooltip>
+																<Tooltip
+																	disableHoverableContent={
+																		false
+																	}
+																>
 																	<TooltipTrigger
 																		asChild
 																	>
@@ -1498,9 +1503,11 @@ export const LoginPage = () => {
 					setForgotPassword(true);
 				}}
 			>
-				<DialogContent>
+				<DialogContent aria-describedby={undefined}>
 					<DialogHeader>
-						<DialogTitle>Forgot your password?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Forgot your password?
+						</DialogTitle>
 					</DialogHeader>
 					<div className="flex flex-col gap-3">
 						<p className="text-muted-foreground text-sm">
@@ -1530,7 +1537,7 @@ export const LoginPage = () => {
 							</Alert>
 						) : null}
 						{resetPasswordSuccess ? (
-							<div className="rounded-md border border-green-500 bg-green-50 px-3 py-2 text-green-700 text-sm dark:bg-green-950/30 dark:text-green-400">
+							<div className="rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
 								{resetPasswordSuccess}
 							</div>
 						) : null}

@@ -3,8 +3,8 @@
 This document provides context for AI coding assistants working with the SEMOSS embedded
 terminal application.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md).
 
 ## Overview
 
@@ -18,7 +18,7 @@ the playground's room sidebar use, and its file panes on `@semoss/panels`.
 
 ## Build System
 
-- **Bundler**: Vite 7 (standalone dev/build); source is consumed directly by the client.
+- **Bundler**: Vite 8 (standalone dev/build); source is consumed directly by the client.
 
 ### Commands
 
@@ -30,14 +30,17 @@ the playground's room sidebar use, and its file panes on `@semoss/panels`.
 | `pnpm type-check` | `tsc --noEmit` type check |
 | `pnpm test` | Run tests (`vitest run --passWithNoTests`) |
 
+Run these from `packages/terminal`, or use `pnpm --filter @semoss/terminal <command>`.
+
 ### Path Alias
 
 - `@/` → `./src/`
 
 ## Structure
 
-A component app (no `pages/` / router). Follows the standard `src/` layout from the root
-AGENTS.md:
+A component app with no `pages/` router. The existing layout is below; new application
+features follow the [React architecture policy](../../skills/react-standard.skill.md#architecture-and-exports)
+without requiring a migration of these embedded components.
 
 | Folder / file | Purpose |
 |---------------|---------|
@@ -87,15 +90,12 @@ APP.
 ## Design-System Notes
 
 Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
-[DESIGN.md](../../DESIGN.md). This package has the lowest `@semoss/ui` adoption in the repo —
-all new UI must come from `@semoss/ui/next` (including its Typography components).
+[DESIGN.md](../../DESIGN.md). Package-specific migration targets:
 
 - **`src/components/tooltip.tsx` is a deprecated local fork** of the lib `Tooltip` — never
   extend it; replace usages with `Tooltip` from `@semoss/ui/next` when touched.
 - **`save-modal.tsx` / `upload-modal.tsx`** hand-roll `fixed inset-0` overlays and hand-copy
   `Button` class strings — migrate to `Dialog` + `Button` when touched.
-- No `text-[Npx]` font sizes (this package has 14) — use the Tailwind scale or Typography
-  components.
 
 ## Agent Guardrails
 
@@ -106,9 +106,10 @@ all new UI must come from `@semoss/ui/next` (including its Typography components
 
 ### When Making Changes
 
-Verify both the standalone build and the client that consumes it:
+Verify the standalone build, package types, and the client that consumes its source:
 
 ```bash
 pnpm --filter @semoss/terminal type-check
+pnpm --filter @semoss/terminal build
 pnpm --filter @semoss/client type-check
 ```

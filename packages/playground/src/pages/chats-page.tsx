@@ -23,14 +23,19 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { CHECKBOX_CLASS, ChatRow, type RoomItem } from "@/components";
-import { SYSTEM__PLAYGROUND } from "@/constants";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import {
 	DATE_BUCKET_ORDER,
 	getDateBucket,
-	normalizeTimestamp,
-} from "@/utility";
+	parseTimestampWithUtcDefault,
+} from "@semoss/utility/date";
+import {
+	CHECKBOX_CLASS,
+	ChatRow,
+	type RoomItem,
+} from "@/components/chats/chat-row";
+import { SYSTEM__PLAYGROUND } from "@/constants";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
 
 /**
  * All-chats page.
@@ -50,16 +55,6 @@ export const ChatsPage = observer(() => {
 	const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
-
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("workspace:breadcrumbs.home"), path: "/" },
-			{
-				name: t("workspace:chats.title"),
-				path: "/chats",
-			},
-		],
-	});
 
 	const getRooms = useIteratorPixel<RoomItem[], RoomItem>(
 		(limit, offset) =>
@@ -179,8 +174,8 @@ export const ChatsPage = observer(() => {
 			...extra,
 		].sort(
 			(a, b) =>
-				normalizeTimestamp(b.DATE_CREATED).valueOf() -
-				normalizeTimestamp(a.DATE_CREATED).valueOf(),
+				parseTimestampWithUtcDefault(b.DATE_CREATED).valueOf() -
+				parseTimestampWithUtcDefault(a.DATE_CREATED).valueOf(),
 		);
 	}, [getRooms.data, getContentMatches.data, deletedSet]);
 
@@ -196,8 +191,8 @@ export const ChatsPage = observer(() => {
 			.filter((r): r is RoomItem => Boolean(r))
 			.sort(
 				(a, b) =>
-					normalizeTimestamp(b.DATE_CREATED).valueOf() -
-					normalizeTimestamp(a.DATE_CREATED).valueOf(),
+					parseTimestampWithUtcDefault(b.DATE_CREATED).valueOf() -
+					parseTimestampWithUtcDefault(a.DATE_CREATED).valueOf(),
 			);
 	}, [pinnedIds, deletedSet, roomById, isSearching]);
 
@@ -206,7 +201,7 @@ export const ChatsPage = observer(() => {
 		const byBucket = new Map<string, RoomItem[]>();
 		for (const room of visibleRooms) {
 			if (!isSearching && pinnedIds.has(room.ROOM_ID)) continue;
-			const d = normalizeTimestamp(room.DATE_CREATED);
+			const d = parseTimestampWithUtcDefault(room.DATE_CREATED);
 			if (!d.isValid()) continue;
 			const bucket = getDateBucket(d);
 			const rooms = byBucket.get(bucket);
@@ -393,11 +388,11 @@ export const ChatsPage = observer(() => {
 			}}
 			className="@container h-full w-full overflow-y-auto"
 		>
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:px-6">
 				{/* Sticky header */}
-				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-backdrop-filter:bg-background/80">
+				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
 					<div className="min-w-0 flex-1">
-						<div className="truncate font-semibold @md:text-2xl text-foreground text-xl leading-tight">
+						<div className="break-words font-semibold @md:text-2xl text-foreground text-xl leading-tight">
 							{t("workspace:chats.title")}
 						</div>
 						<div className="@md:block hidden text-muted-foreground text-sm">
@@ -409,6 +404,7 @@ export const ChatsPage = observer(() => {
 				{/* Search */}
 				<InputGroup className="bg-background">
 					<InputGroupInput
+						aria-label={t("common:buttons.search")}
 						placeholder={t("common:buttons.search")}
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
@@ -421,7 +417,7 @@ export const ChatsPage = observer(() => {
 				{/* Select-all toolbar — always visible so the user can select
 				    every chat without first selecting one. */}
 				{hasRooms && (
-					<div className="flex h-8 items-center gap-3 px-1">
+					<div className="flex min-h-10 flex-wrap items-center gap-3 px-1">
 						<Checkbox
 							checked={allSelected}
 							onCheckedChange={toggleSelectAll}
@@ -492,7 +488,7 @@ export const ChatsPage = observer(() => {
 							{pinnedRooms.length > 0 && (
 								<div className="flex flex-col gap-2">
 									<div className="flex items-center gap-1.5 px-1 font-medium text-muted-foreground text-xs">
-										<StarIcon className="size-3.5 fill-yellow-500 text-yellow-500" />
+										<StarIcon className="size-3.5 fill-primary text-primary" />
 										{t("workspace:chats.favorites")}
 									</div>
 									<div className="flex flex-col gap-2">

@@ -1,6 +1,16 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import { getI18n } from "@semoss/i18n";
 import { download, type Insight, runPixel } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
+import {
+	type AgentFormValues,
+	agentNeedsFollowUpEdit,
+	buildAddWorkspacePixel,
+	buildEditWorkspacePixel,
+	getWorkspaceSaveWarning,
+	type ThemeMap,
+} from "@semoss/shared";
+import { toast } from "@semoss/ui/next";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import type {
 	AbstractPixelMessage,
@@ -10,8 +20,7 @@ import type {
 	PixelMessageToolCallPart,
 	Workspace,
 } from "@/types";
-import { normalizeTimestamp } from "@/utility";
-import { RoomStore } from "../room";
+import { RoomStore } from "../room/room.store";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
@@ -289,6 +298,14 @@ export class ChatStore {
 	};
 
 	/**
+	 * A room already held in the local cache, without loading it — so a page
+	 * can show a room it was just handed without waiting a render.
+	 * @param roomId - Room to look up
+	 */
+	getCachedRoom = (roomId: string): RoomStore | null =>
+		this._store.rooms[roomId] ?? null;
+
+	/**
 	 * Optimistically surface a room in the nav before its first message has
 	 * persisted. Shown until the real room is returned by GetPlaygroundRooms
 	 * (see {@link removeOptimisticRoom}).
@@ -357,6 +374,10 @@ export class ChatStore {
 
 	/**
 	 * Create a new room
+	 *
+	 * @param prepareRoom - Runs once the room exists and before its first
+	 * message, for setup the message depends on, such as the connectors the
+	 * new-chat page drafted.
 	 */
 	createRoom = async (
 		mode: "agent" | "chat",
@@ -365,6 +386,7 @@ export class ChatStore {
 		options: RoomStore["options"],
 		workspaceId?: string,
 		askOptions?: { visible?: boolean },
+		prepareRoom?: (room: RoomStore) => Promise<void>,
 	): Promise<RoomStore> => {
 		const room = await this.createRoomShell(
 			mode,
@@ -372,8 +394,9 @@ export class ChatStore {
 			workspaceId,
 		);
 		// Order matters: see the harnessType comment in RoomStore.initialize().
-		await room.initialize();
+		await room.initialize({ isNew: true });
 		await room.updateRoomOptions(options);
+		await prepareRoom?.(room);
 		const roomId = room.roomId;
 
 		runInAction(() => {
@@ -403,10 +426,11 @@ export class ChatStore {
 					this._store.keys.roomCounter++;
 				});
 			} catch (e) {
-				// UploadError: the message was never sent but the room still
-				// exists — leave the optimistic entry so the user can retry.
-				// Any other error means the room has no data; drop it.
-				if ((e as Error)?.name !== "UploadError") {
+				if ((e as Error)?.name === "UploadError") {
+					// Leave the optimistic room so the user can retry with a new message.
+					toast.error(getI18n().t("room:errors.fileInUse"));
+				} else {
+					// Any other error means the room has no data; drop it.
 					this.removeOptimisticRoom(roomId);
 				}
 			}
@@ -427,12 +451,14 @@ export class ChatStore {
 		name: string,
 		options: RoomStore["options"],
 		workspaceId?: string,
+		prepareRoom?: (room: RoomStore) => Promise<void>,
 	): Promise<RoomStore> => {
 		const room = await this.createRoomShell(mode, name, workspaceId);
 		// Reversed vs createRoom: the workspace must be persisted before
 		// initialize() reads it back to derive agentGreeting.
 		await room.updateRoomOptions(options);
-		await room.initialize();
+		await room.initialize({ isNew: true });
+		await prepareRoom?.(room);
 		this.registerRoom(room);
 		return room;
 	};
@@ -512,7 +538,7 @@ export class ChatStore {
 		roomId: string,
 		format: "word" | "pdf",
 	): Promise<void> => {
-		const messagesResponse = await runPixel<AbstractPixelMessage[]>(
+		const messagesResponse = await runPixel<[AbstractPixelMessage[]]>(
 			`GetPlaygroundMessages(roomId=["${roomId}"]);`,
 			"new",
 		);
@@ -527,7 +553,7 @@ export class ChatStore {
 		const formattedMessages = messageOutput
 			.map((message: AbstractPixelMessage) => {
 				const timestamp = message.dateCreated
-					? normalizeTimestamp(message.dateCreated).format(
+					? parseTimestampWithUtcDefault(message.dateCreated).format(
 							"MMM D, YYYY h:mm A",
 						)
 					: null;
@@ -582,7 +608,7 @@ export class ChatStore {
 				? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`
 				: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`;
 
-		const downloadResponse = await runPixel<string>(
+		const downloadResponse = await runPixel<[string]>(
 			pixelCommand,
 			messagesResponse.insightId,
 		);
@@ -780,38 +806,56 @@ export class ChatStore {
 	};
 
 	/**
-	 * Edit a workspace
+	 * Creates an agent from the shared agent form. AddWorkspace only takes the
+	 * basics, so everything else is saved with a follow-up EditWorkspace when
+	 * the form sets any of it.
+	 *
+	 * Resolves with the new agent's id, EditWorkspace's partial-save warning
+	 * (when there is one), and whether the follow-up save failed - the agent
+	 * exists either way.
+	 */
+	createAgent = async (
+		values: AgentFormValues,
+	): Promise<{
+		workspaceId: string;
+		warning?: string;
+		settingsFailed?: boolean;
+	}> => {
+		const { pixelReturn } = await this._actions.run<[string]>(
+			buildAddWorkspacePixel(values),
+		);
+		const workspaceId = pixelReturn[0]?.output;
+		if (!workspaceId) {
+			throw new Error();
+		}
+		if (!agentNeedsFollowUpEdit(values)) {
+			return { workspaceId };
+		}
+		try {
+			const warning = await this.editWorkspace(workspaceId, values);
+			return { workspaceId, warning };
+		} catch (e) {
+			console.error(e);
+			return { workspaceId, settingsFailed: true };
+		}
+	};
+
+	/**
+	 * Saves an agent's full configuration from the shared agent form.
+	 * Resolves with EditWorkspace's partial-save warning, when there is one.
 	 */
 	editWorkspace = async (
 		workspaceId: string,
-		data: Pick<
-			Workspace,
-			| "name"
-			| "system_prompt"
-			| "description"
-			| "mcp"
-			| "skills"
-			| "prompts"
-		>,
-	): Promise<string> => {
-		try {
-			const mcp = data.mcp.map(
-				({ name, id, type }): MCPConfig => ({ name, id, type }),
-			);
-			const skills = data.skills.map((s) => s.id);
-
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
-			const { pixelReturn } = await this._actions.run<[string]>(pixel);
-
-			// throw errors
-			if (!pixelReturn[0].output) {
-				throw new Error();
-			}
-
-			return workspaceId;
-		} catch (e) {
-			throw e instanceof Error ? e : new Error(String(e));
+		values: AgentFormValues,
+	): Promise<string | undefined> => {
+		const { pixelReturn } = await this._actions.run<[unknown]>(
+			buildEditWorkspacePixel(workspaceId, values),
+		);
+		const output = pixelReturn[0]?.output;
+		if (!output) {
+			throw new Error();
 		}
+		return getWorkspaceSaveWarning(output);
 	};
 
 	deleteWorkspace = async (workspaceId: string) => {

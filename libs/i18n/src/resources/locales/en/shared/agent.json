@@ -1,0 +1,232 @@
+{
+	"sections": {
+		"about": {
+			"title": "About",
+			"description": "How this agent is described, how it behaves, and which model it uses."
+		},
+		"builtInTools": {
+			"title": "Built-in tools",
+			"description": "Deployment default tools available to this agent."
+		},
+		"knowledge": {
+			"title": "Knowledge",
+			"description": "Knowledge sources this agent can search."
+		},
+		"toolboxes": {
+			"title": "Toolboxes",
+			"description": "Tools and capabilities this agent can call."
+		},
+		"skills": {
+			"title": "Skills",
+			"description": "Reusable skills this agent can load."
+		},
+		"prompts": {
+			"title": "Prompts",
+			"description": "Pre-configured prompts this agent offers."
+		},
+		"subagents": {
+			"title": "Subagents",
+			"description": "Other agents this agent can delegate work to. Tool names and descriptions are generated automatically."
+		},
+		"executionLimits": {
+			"title": "Execution limits",
+			"description": "Runtime caps for the agent's tool loop and subagent delegation."
+		},
+		"hooks": {
+			"title": "Hooks",
+			"description": "Custom behavior that runs at agent lifecycle points."
+		}
+	},
+	"about": {
+		"description": "Description",
+		"noDescription": "No description",
+		"instructions": "Instructions",
+		"noInstructions": "No instructions",
+		"greeting": "Greeting",
+		"greetingOff": "Off",
+		"greetingHelp": "Shown as the agent's opening message when a room starts.",
+		"defaultModel": "Default model",
+		"roomModel": "Room model",
+		"loading": "Loading..."
+	},
+	"builtInTools": {
+		"label": "Built-in agent tools",
+		"help": "Include the deployment's default tools in addition to selected toolboxes.",
+		"on": "On",
+		"off": "Off",
+		"individual": "Individual tools",
+		"enabledCount": "{{enabled}} of {{total}} enabled",
+		"allOff": "All off",
+		"searchLabel": "Search built-in tools",
+		"searchPlaceholder": "Search tools...",
+		"noneAvailable": "No built-in tools are available in this deployment.",
+		"noMatch": "No tools match \"{{query}}\"."
+	},
+	"empty": {
+		"knowledge": "No knowledge sources.",
+		"toolboxes": "No toolboxes.",
+		"skills": "No skills.",
+		"prompts": "No prompts.",
+		"subagents": "No subagents.",
+		"hooks": "No hooks."
+	},
+	"resource": {
+		"open": "Open {{name}}",
+		"openTooltip": "Open in catalog",
+		"remove": "Remove {{name}}",
+		"removeTooltip": "Remove",
+		"unavailableAgent": "Unavailable agent"
+	},
+	"mcpType": {
+		"PROJECT": "Project",
+		"STORAGE": "Storage",
+		"DATABASE": "Database",
+		"FUNCTION": "Function",
+		"MODEL": "Model",
+		"VECTOR": "Knowledge",
+		"GUARDRAIL": "Guardrail",
+		"ROOM": "Room"
+	},
+	"limits": {
+		"runBudget": {
+			"title": "Run budget",
+			"description": "Ceilings for a single run. A run can ask for less, never more."
+		},
+		"delegation": {
+			"title": "Subagent delegation",
+			"description": "How much work this agent can hand off to subagents."
+		},
+		"isDefault": "{{value}} (default)",
+		"noLimit": "No limit",
+		"defaultPlaceholder": "Default {{value}}",
+		"currently": "Currently {{duration}}.",
+		"errors": {
+			"wholeNumber": "Enter a whole number.",
+			"min": "Enter {{min}} or more."
+		},
+		"units": {
+			"turns": "turns",
+			"rounds": "rounds",
+			"seconds": "seconds",
+			"levels": "levels",
+			"subagents": "subagents"
+		},
+		"count": {
+			"turns_one": "{{count}} turn",
+			"turns_other": "{{count}} turns",
+			"rounds_one": "{{count}} round",
+			"rounds_other": "{{count}} rounds",
+			"seconds_one": "{{count}} second",
+			"seconds_other": "{{count}} seconds",
+			"levels_one": "{{count}} level",
+			"levels_other": "{{count}} levels",
+			"subagents_one": "{{count}} subagent",
+			"subagents_other": "{{count}} subagents"
+		},
+		"duration": {
+			"hours": "{{count}} hr",
+			"minutes": "{{count}} min",
+			"seconds": "{{count}} sec"
+		},
+		"maxTurns": {
+			"label": "Max turns",
+			"description": "Model calls one run can make in its tool loop. A run still calling tools at the limit stops with an error. Runs request 30 by default, so a higher value only applies when a run asks for more."
+		},
+		"maxReflections": {
+			"label": "Max reflections",
+			"description": "Review rounds after the agent answers, where it checks its work and may call more tools. Runs request none by default, so this only limits runs that ask for reflections."
+		},
+		"maxSeconds": {
+			"label": "Max run time",
+			"description": "Wall-clock limit for one run. Blank or 0 means no limit."
+		},
+		"maxSubagentDepth": {
+			"label": "Max delegation depth",
+			"description": "How many levels deep delegation can go. 1 lets this agent delegate but not its subagents. 0 turns delegation off."
+		},
+		"maxSubagentsPerRun": {
+			"label": "Max subagents per run",
+			"description": "Total subagents one run can start."
+		},
+		"maxSpawnsPerTurn": {
+			"label": "Max subagents per turn",
+			"description": "Subagents the agent can start from a single model turn, for example to work in parallel."
+		}
+	},
+	"hooks": {
+		"kinds": {
+			"pixel": {
+				"label": "Pixel",
+				"description": "Runs a pixel expression at the lifecycle events you choose."
+			},
+			"git_commit": {
+				"label": "Git Commit",
+				"description": "Runs git add . && git commit after each agent run."
+			},
+			"log_tools": {
+				"label": "Log Tool Calls",
+				"description": "Logs each tool call's name, params, and duration."
+			},
+			"ppt_to_pdf": {
+				"label": "PowerPoint to PDF",
+				"description": "Converts the run's output file to PDF afterward."
+			}
+		},
+		"runsOn": "Runs on",
+		"everyEvent": "Every event",
+		"noPixel": "No pixel expression",
+		"remove": "Remove {{label}} hook",
+		"removeTooltip": "Remove"
+	},
+	"form": {
+		"name": "Name",
+		"namePlaceholder": "Enter a name",
+		"descriptionPlaceholder": "Enter description",
+		"instructionsPlaceholder": "Define the agent's behavior, role, and instructions",
+		"greetingToggle": "Enable greeting",
+		"greetingPlaceholder": "Hi, I'm your IT support assistant. I can help you reset a password, check the status of an open ticket, or troubleshoot a common issue. What do you need help with?",
+		"greetingOffNote": "Greeting is off. Turn it on to use this message.",
+		"greetingHelp": "Shown as the agent's opening message when a room starts. Costs no tokens, but the model cannot see it, so repeat anything it needs to act on (the options you offer here) in Instructions.",
+		"useRoomModel": "Use room model",
+		"modelHelp": "Leave unset to use the room's model.",
+		"picker": {
+			"cancel": "Cancel",
+			"done": "Done"
+		},
+		"knowledge": {
+			"add": "Add knowledge",
+			"description": "Select the knowledge sources this agent can search. Click a source to add or remove it."
+		},
+		"toolboxes": {
+			"add": "Add toolboxes",
+			"description": "Select the toolboxes this agent can call. Click a toolbox to add or remove it."
+		},
+		"skills": {
+			"add": "Add skills",
+			"description": "Select the reusable skills this agent can load. Click a skill to add or remove it."
+		},
+		"prompts": {
+			"add": "Add prompts",
+			"description": "Select the pre-configured prompts this agent offers. Check a prompt to add it."
+		},
+		"subagents": {
+			"add": "Add subagent",
+			"searchPlaceholder": "Search agents...",
+			"noneToAdd": "No other agents to add.",
+			"noMatch": "No agents match your search."
+		},
+		"builtInTools": {
+			"enable": "Enable built-in agent tools",
+			"enableAll": "Enable all",
+			"disableAll": "Disable all",
+			"offNote": "Built-in tools are off for this agent. Individual selections are kept for when they are turned back on."
+		},
+		"hooks": {
+			"pixelLabel": "Pixel expression",
+			"eventsLabel": "Lifecycle events",
+			"eventsHelp": "With none selected, it runs on every event.",
+			"add": "Add hook"
+		},
+		"createSettingsFailed": "Agent created, but some of its settings could not be saved. Open the agent's edit page to try again."
+	}
+}
