@@ -89,6 +89,8 @@ export const extractPixelVariables = (pixel: string): string[] => {
 			continue;
 		}
 		if (character !== "[") continue;
+		const prefix = pixel.slice(0, index);
+		if (/\.as\s*\(\s*$/i.test(prefix)) continue;
 
 		const close = pixel.indexOf("]", index + 1);
 		if (close === -1) continue;
@@ -101,9 +103,6 @@ export const extractPixelVariables = (pixel: string): string[] => {
 	}
 	return variables;
 };
-
-const formatBindings = (value?: Record<string, string>) =>
-	JSON.stringify(value ?? {});
 
 const isSourceAvailable = (
 	source: string,
@@ -133,15 +132,15 @@ export const AgentHookBindingsField = ({
 	onValidityChange,
 }: AgentHookBindingsFieldProps) => {
 	const idPrefix = useId();
-	const onChangeRef = useRef(onChange);
 	const onValidityChangeRef = useRef(onValidityChange);
-	const variables = extractPixelVariables(pixel);
-	const variableSet = new Set(variables);
-	const bindings = Object.fromEntries(
-		Object.entries(value ?? {}).filter(([variable]) =>
-			variableSet.has(variable),
+	const referencedVariables = extractPixelVariables(pixel);
+	const bindings = value ?? {};
+	const variables = [
+		...referencedVariables,
+		...Object.keys(bindings).filter(
+			(variable) => !referencedVariables.includes(variable),
 		),
-	);
+	];
 	const sourceNames = sources.map((source) => source.source);
 	const sourceGroups = BINDING_SOURCE_GROUPS.map((group) => ({
 		...group,
@@ -166,23 +165,12 @@ export const AgentHookBindingsField = ({
 	);
 	const validationMessage = validation?.message;
 	const errorId = `${idPrefix}-error`;
-	const serializedBindings = formatBindings(bindings);
-	const serializedValue = formatBindings(value);
 
-	onChangeRef.current = onChange;
 	onValidityChangeRef.current = onValidityChange;
 
 	useEffect(() => {
 		onValidityChangeRef.current(validationMessage);
 	}, [validationMessage]);
-
-	useEffect(() => {
-		if (serializedBindings !== serializedValue) {
-			onChangeRef.current(
-				JSON.parse(serializedBindings) as Record<string, string>,
-			);
-		}
-	}, [serializedBindings, serializedValue]);
 
 	const setBinding = (variable: string, source: string) => {
 		const next = { ...bindings };
@@ -216,14 +204,23 @@ export const AgentHookBindingsField = ({
 					</div>
 					{variables.map((variable) => {
 						const invalid = validation?.variable === variable;
+						const isReferenced =
+							referencedVariables.includes(variable);
 						return (
 							<div
 								key={variable}
 								className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] items-center gap-2"
 							>
-								<code className="rounded-md border bg-muted px-3 py-2 text-sm">
-									[{variable}]
-								</code>
+								<div className="flex min-w-0 flex-col gap-0.5">
+									<code className="truncate rounded-md border bg-muted px-3 py-2 text-sm">
+										[{variable}]
+									</code>
+									{!isReferenced && (
+										<span className="px-1 text-muted-foreground text-xs">
+											Not currently referenced
+										</span>
+									)}
+								</div>
 								<Select
 									value={bindings[variable] ?? UNBOUND_VALUE}
 									onValueChange={(source) =>

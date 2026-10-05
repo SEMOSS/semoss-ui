@@ -53,9 +53,10 @@ describe("extractPixelVariables", () => {
 	it("finds unique variable references and ignores strings, comments, and literals", () => {
 		expect(
 			extractPixelVariables(`
-				LogMessage(message=[val], other=[second]);
-				Echo(value=[val], text='[quoted]', list=[1, 2]);
-				// [commented]
+					LogMessage(message=[val], other=[second]);
+					Echo(value=[val], text='[quoted]', list=[1, 2]);
+					Select(TEST__cone).as([alias]);
+					// [commented]
 				/* [alsoCommented] */
 			`),
 		).toEqual(["val", "second"]);
@@ -99,7 +100,7 @@ describe("AgentHookBindingsField", () => {
 		expect(source.getAttribute("aria-describedby")).toBe(error.id);
 	});
 
-	it("removes bindings when their variables leave the expression", async () => {
+	it("preserves bindings while their variables are temporarily absent", async () => {
 		const view = render(
 			<BindingFieldHarness
 				pixel="LogMessage(message=[val]);"
@@ -120,7 +121,8 @@ describe("AgentHookBindingsField", () => {
 			expect(
 				screen.getByRole("status", { name: "Committed bindings" })
 					.textContent,
-			).toBe("{}"),
+			).toBe('{"val":"context.runId"}'),
 		);
+		expect(screen.getByText("Not currently referenced")).toBeTruthy();
 	});
 });
