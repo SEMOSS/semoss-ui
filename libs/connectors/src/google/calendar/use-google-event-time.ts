@@ -1,11 +1,7 @@
 import { useCallback } from "react";
 import { useTranslation } from "@semoss/i18n";
-import {
-	formatShortDay,
-	formatTimeOfDay,
-	isSameLocalDay,
-	parseWallClock,
-} from "../../core/connector.format";
+import { isSameLocalDay, parseLocalWallClock } from "@semoss/utility/date";
+import { formatShortDay, formatTimeOfDay } from "../../core/connector.format";
 import type { GoogleCalendarEvent } from "../google.types";
 
 /** An event's start and end, as `GoogleCalendarReadEvent` reports them. */
@@ -27,11 +23,11 @@ export const useGoogleEventTime = (): ((event: EventTimes) => string) => {
 
 	return useCallback(
 		(event: EventTimes): string => {
-			const start = parseWallClock(event.startTime);
+			const start = parseLocalWallClock(event.startTime);
 			if (!start) {
 				return event.startTime ?? "";
 			}
-			const end = parseWallClock(event.endTime);
+			const end = parseLocalWallClock(event.endTime);
 			const isAllDay = (event.startTime ?? "").length <= 10;
 
 			if (isAllDay) {

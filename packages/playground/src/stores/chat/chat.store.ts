@@ -10,6 +10,7 @@ import {
 	type ThemeMap,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import type {
 	AbstractPixelMessage,
@@ -19,8 +20,7 @@ import type {
 	PixelMessageToolCallPart,
 	Workspace,
 } from "@/types";
-import { normalizeTimestamp } from "@/utility";
-import { RoomStore } from "../room";
+import { RoomStore } from "../room/room.store";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
@@ -298,6 +298,14 @@ export class ChatStore {
 	};
 
 	/**
+	 * A room already held in the local cache, without loading it — so a page
+	 * can show a room it was just handed without waiting a render.
+	 * @param roomId - Room to look up
+	 */
+	getCachedRoom = (roomId: string): RoomStore | null =>
+		this._store.rooms[roomId] ?? null;
+
+	/**
 	 * Optimistically surface a room in the nav before its first message has
 	 * persisted. Shown until the real room is returned by GetPlaygroundRooms
 	 * (see {@link removeOptimisticRoom}).
@@ -530,7 +538,7 @@ export class ChatStore {
 		roomId: string,
 		format: "word" | "pdf",
 	): Promise<void> => {
-		const messagesResponse = await runPixel<AbstractPixelMessage[]>(
+		const messagesResponse = await runPixel<[AbstractPixelMessage[]]>(
 			`GetPlaygroundMessages(roomId=["${roomId}"]);`,
 			"new",
 		);
@@ -545,7 +553,7 @@ export class ChatStore {
 		const formattedMessages = messageOutput
 			.map((message: AbstractPixelMessage) => {
 				const timestamp = message.dateCreated
-					? normalizeTimestamp(message.dateCreated).format(
+					? parseTimestampWithUtcDefault(message.dateCreated).format(
 							"MMM D, YYYY h:mm A",
 						)
 					: null;
@@ -600,7 +608,7 @@ export class ChatStore {
 				? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`
 				: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`;
 
-		const downloadResponse = await runPixel<string>(
+		const downloadResponse = await runPixel<[string]>(
 			pixelCommand,
 			messagesResponse.insightId,
 		);

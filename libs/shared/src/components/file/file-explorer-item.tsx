@@ -1,3 +1,4 @@
+import { MoreHorizontalIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -12,6 +13,7 @@ import {
 	TreeViewItem,
 	useTreeView,
 } from "@semoss/ui/next";
+import { startOfLocalDay } from "@semoss/utility/date";
 import type { FileItem } from "./file.types";
 import type {
 	FileExplorerApi,
@@ -58,12 +60,8 @@ const formatMacDate = (
 	if (Number.isNaN(date.getTime())) return null;
 
 	const now = new Date();
-	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-	const fileDay = new Date(
-		date.getFullYear(),
-		date.getMonth(),
-		date.getDate(),
-	);
+	const today = startOfLocalDay(now);
+	const fileDay = startOfLocalDay(date);
 	const diffDays = Math.round(
 		(today.getTime() - fileDay.getTime()) / 86400000,
 	);
@@ -150,6 +148,11 @@ export interface FileExplorerItemProps
  * Everything shared with the rest of the explorer (selection, context menu,
  * rename mode, drag state, the date column width) comes off `explorer`, so this
  * component takes no plumbing props and a consumer only supplies `itemActions`.
+ *
+ * The row's menu opens on right-click, from its "More actions" button, and
+ * with Shift+F10 or the menu key. The button shows on hover, on keyboard focus,
+ * and on the row the menu or the selection is on, and always on touch screens,
+ * where there is no right-click.
  */
 export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	explorer,
@@ -277,6 +280,20 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			leadingIcon={
 				FileIcon ? <FileIcon className="size-4 shrink-0" /> : undefined
 			}
+			// the whole row, its icon or chevron included, shows its state, and
+			// keeps it under the pointer
+			rowClassName={cn(
+				"group rounded-md",
+				isContextActive &&
+					"bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset hover:bg-accent",
+				isBulkSelected &&
+					"bg-primary/10 text-accent-foreground ring-1 ring-primary/40 ring-inset hover:bg-primary/10",
+				isActiveDropTarget &&
+					"bg-primary/15 ring-1 ring-primary ring-inset hover:bg-primary/15",
+				// matches a dragged workbench tab; no ring, so the drop
+				// target stays the only ringed row on screen
+				isDraggingSource && "opacity-40",
+			)}
 			draggable={dnd.canDrag}
 			onDragStart={(e) => {
 				e.stopPropagation();
@@ -349,6 +366,27 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					secondaryActions,
 				)
 			}
+			onKeyDown={(e) => {
+				if (
+					!(
+						e.key === "ContextMenu" ||
+						(e.shiftKey && e.key === "F10")
+					)
+				) {
+					return;
+				}
+				// a nested row's key press reaches every row around it
+				if (!(e.target instanceof Element)) return;
+				if (e.target.closest('[role="treeitem"]') !== e.currentTarget) {
+					return;
+				}
+				tree.openContextMenu(
+					e,
+					item,
+					getItemTargetDirectory(item),
+					secondaryActions,
+				);
+			}}
 			label={
 				<div
 					data-testid={`${itemTestId}-row`}
@@ -360,16 +398,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 						// likely because nested Radix wrappers swallow the
 						// direction context. Explicit reverse keeps Name and
 						// Date aligned with the header in both directions.
-						"group flex min-h-7 min-w-full flex-row items-center rounded-md pe-2 transition-colors rtl:flex-row-reverse",
-						isContextActive &&
-							"bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset",
-						isBulkSelected &&
-							"bg-primary/10 text-accent-foreground ring-1 ring-primary/40 ring-inset",
-						isActiveDropTarget &&
-							"bg-primary/15 ring-1 ring-primary ring-inset",
-						// matches a dragged workbench tab; no ring, so the drop
-						// target stays the only ringed row on screen
-						isDraggingSource && "opacity-40",
+						"flex min-h-7 min-w-full flex-row items-center pe-2 rtl:flex-row-reverse",
 					)}
 					title={
 						item.lastModified
@@ -467,6 +496,44 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							))}
 						</div>
 					)}
+
+					{/* Column 4: the row's menu */}
+					<div className="flex w-7 shrink-0 items-center justify-end">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									aria-label={t(
+										"fileExplorer.moreActionsFor",
+										{
+											name: item.name,
+										},
+									)}
+									aria-haspopup="menu"
+									data-testid={`${itemTestId}-more-actions`}
+									variant="ghost"
+									size="icon-sm"
+									className={cn(
+										"opacity-0 pointer-coarse:opacity-100 focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100",
+										(isContextActive || isBulkSelected) &&
+											"opacity-100",
+									)}
+									onClick={(e) =>
+										tree.openContextMenu(
+											e,
+											item,
+											getItemTargetDirectory(item),
+											secondaryActions,
+										)
+									}
+								>
+									<MoreHorizontalIcon aria-hidden />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{t("fileExplorer.moreActions")}
+							</TooltipContent>
+						</Tooltip>
+					</div>
 				</div>
 			}
 			{...otherProps}

@@ -37,7 +37,7 @@ export type TeamsChatViewerProps = ConnectorViewerProps;
  * and bring it or its files into the insight.
  */
 export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, showHeader = true } = props;
 	const { t, i18n } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("teams-chats", props);
@@ -75,6 +75,17 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 		},
 	});
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={query.reload}
+		/>
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div
@@ -83,17 +94,19 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 					openChat !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader
-					icon={MessageCircleIcon}
-					title={serviceName}
-				>
-					<ConnectorIconButton
-						icon={RefreshCwIcon}
-						label={t("common.refresh")}
-						isSpinning={query.isRefreshing}
-						onClick={query.reload}
-					/>
-				</ConnectorViewerHeader>
+				{showHeader ? (
+					<ConnectorViewerHeader
+						brand="teams"
+						icon={MessageCircleIcon}
+						title={serviceName}
+					>
+						{refreshButton}
+					</ConnectorViewerHeader>
+				) : (
+					<div className="flex shrink-0 justify-end border-border border-b bg-muted/10 px-3 py-1">
+						{refreshButton}
+					</div>
+				)}
 
 				<ConnectorList
 					query={query}
@@ -110,15 +123,18 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 							const isBusy = saver.isBusy(request.key);
 							const title = chat.displayName || t("teams.chat");
 							const last = chat.lastMessage;
-							const preview = last
-								? t("teams.lastMessage", {
-										author:
-											last.fromName ?? t("teams.someone"),
-										text:
-											teamsMessageTitle(last, 80) ||
-											t("teams.noText"),
-									})
-								: undefined;
+							const previewText = last
+								? teamsMessageTitle(last, 80)
+								: "";
+							const preview =
+								last && previewText
+									? t("teams.lastMessage", {
+											author:
+												last.fromName ??
+												t("teams.someone"),
+											text: previewText,
+										})
+									: undefined;
 							return (
 								<ConnectorItemRow
 									key={chat.id}

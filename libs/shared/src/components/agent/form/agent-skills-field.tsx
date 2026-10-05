@@ -42,6 +42,7 @@ export const AgentSkillsField = ({
 							emptyLabel={t("empty.skills")}
 							items={values.map((s) => ({
 								id: s.id,
+								projectId: s.id,
 								title: s.name,
 								description: s.description,
 								href: getSkillUrl?.(s.id),

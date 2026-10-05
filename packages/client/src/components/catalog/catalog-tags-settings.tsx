@@ -15,6 +15,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { normalizeTagArray } from "@/utility";
 import { BadgeList, SettingsEntry } from "../engine/engine-metadata-display";
 import { CatalogTagInput } from "./catalog-tag-input";
@@ -146,9 +147,7 @@ export const CatalogTagsSettings = ({
 			toast.success("Successfully updated tags");
 			onUpdated?.();
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Error updating tags",
-			);
+			toast.error(getErrorMessage(error, "Error updating tags"));
 		} finally {
 			setIsSaving(false);
 		}

@@ -17,7 +17,9 @@ provides: `OneDriveViewer`, `OutlookMailViewer`, `OutlookCalendarViewer`, `Teams
 dialog.
 
 It sits above `@semoss/shared`: it depends on `@semoss/i18n`, `@semoss/sdk`, `@semoss/shared`,
-and `@semoss/ui`, and nothing in those libraries depends on it.
+`@semoss/ui`, and `@semoss/utility`, and nothing in those libraries depends on it.
+Generic date, text, and object helpers come from utility category subpaths;
+provider parsing, calendar view rules, and presentation remain here.
 
 ## Structure
 
@@ -28,7 +30,7 @@ and `@semoss/ui`, and nothing in those libraries depends on it.
 | `microsoft/` | Microsoft 365: its reactor output types, parsers, pixels, and saved files, with a folder per app (`onedrive/`, `outlook/`, `teams/`) |
 | `google/` | Google Workspace: the same, with a folder per app (`gmail/`, `calendar/`, `docs/`, `drive/`) |
 | `styles/globals.css` | Tailwind source discovery for the host's stylesheet |
-| `index.ts` | The public entry point: the viewers, their props, the host contract, and `ConnectorBrandIcon`, the apps' logos |
+| `index.ts` | The public entry point: the viewers, their props, the host contract, and `ConnectorBrandIcon`, the apps' logos, re-exported from `@semoss/shared`, which keeps the logo files so every package can show them |
 
 A new provider gets its own folder beside `microsoft/` and `google/`, built on `core/` and
 `components/`. Provider code may import from `core/` and `components/`; those two never import
@@ -91,6 +93,25 @@ from a provider.
 - **The Google reactors are thin.** Drive lists names only and reads no file contents, so only
   Google Docs, through `GoogleDocsRead`, can be brought in; `GoogleDriveDownload` writes to any
   server path and is never used. Opening a Gmail email marks it read.
+
+## Viewer Presentation
+
+Use the compact shared header, tabs, rows, and action bar across providers. Tabs stay content
+width, detail actions remain above the scrolling body, and all surfaces use semantic theme
+colors. A host that already names the viewer, such as in a tab, passes `showHeader={false}`;
+the refresh then sits at the end of the viewer's toolbar row (the calendars' `actions`), and
+Teams Chats, which has no toolbar, keeps a slim row for it. Keep the existing shared file explorer for OneDrive and Teams Files.
+
+Both calendars use `ConnectorCalendar` and `useCalendarWindow`: Sunday-first weeks (the default),
+day, three-day, and month views. The List View button shows the current range as an agenda;
+Calendar View restores the grid, retaining the view and selected date. Read the visible range,
+including adjacent-month days in the six-week month grid. Outlook uses an hourly canvas with
+overlapping events side by side; Google uses dated columns because its list response does not
+include times. `groupCalendarEvents`
+repeats overlapping Outlook events on each local day, treating all-day ends as exclusive. Google
+event times load only when opening the event. Outlook still caps each read at 100 events, so
+the calendar explicitly identifies incomplete results and does not claim an unloaded day is
+empty. Keep the grid mounted during loading to preserve keyboard focus.
 
 ## Build System
 

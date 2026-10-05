@@ -87,7 +87,7 @@ export type OutlookMailViewerProps = ConnectorViewerProps;
  * user's own replies included.
  */
 export const OutlookMailViewer = (props: OutlookMailViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, showHeader = true } = props;
 	const { t, i18n } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("outlook-mail", props);
@@ -205,6 +205,17 @@ export const OutlookMailViewer = (props: OutlookMailViewerProps) => {
 		};
 	};
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={reload}
+		/>
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div
@@ -213,26 +224,24 @@ export const OutlookMailViewer = (props: OutlookMailViewerProps) => {
 					openConversation !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader
-					icon={MailIcon}
-					title={serviceName}
-					description={folderName}
-				>
-					<ConnectorIconButton
-						icon={RefreshCwIcon}
-						label={t("common.refresh")}
-						isSpinning={query.isRefreshing}
-						onClick={reload}
-					/>
-				</ConnectorViewerHeader>
+				{showHeader ? (
+					<ConnectorViewerHeader
+						brand="outlook"
+						icon={MailIcon}
+						title={serviceName}
+						description={folderName}
+					>
+						{refreshButton}
+					</ConnectorViewerHeader>
+				) : null}
 
-				<div className="flex flex-col gap-2 px-3 py-2">
+				<div className="flex flex-col gap-1.5 border-border border-b bg-muted/10 px-3 py-2">
 					{/* the toggles move under the folder when the panel is narrow */}
 					<div className="flex flex-wrap items-center gap-2">
 						<Select value={folder} onValueChange={setFolder}>
 							<SelectTrigger
 								size="sm"
-								className="min-w-40 flex-1"
+								className="h-8 min-w-24 max-w-full flex-1 bg-background shadow-none"
 								aria-label={t("mail.folder")}
 							>
 								<SelectValue />
@@ -246,7 +255,8 @@ export const OutlookMailViewer = (props: OutlookMailViewerProps) => {
 							</SelectContent>
 						</Select>
 						<Toggle
-							variant="outline"
+							variant="default"
+							className="h-8 px-2 text-xs"
 							size="sm"
 							pressed={isUnreadOnly}
 							onPressedChange={setIsUnreadOnly}
@@ -254,13 +264,15 @@ export const OutlookMailViewer = (props: OutlookMailViewerProps) => {
 							{t("mail.unreadOnly")}
 						</Toggle>
 						<Toggle
-							variant="outline"
+							variant="default"
+							className="h-8 px-2 text-xs"
 							size="sm"
 							pressed={isGrouped}
 							onPressedChange={setIsGrouped}
 						>
 							{t("mail.conversations")}
 						</Toggle>
+						{showHeader ? null : refreshButton}
 					</div>
 					<ConnectorSearchField
 						value={search}

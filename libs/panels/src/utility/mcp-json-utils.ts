@@ -1,3 +1,6 @@
+import { getErrorMessage } from "@semoss/utility/error";
+import { isValidIdentifier } from "@semoss/utility/identifier";
+import { isRecord } from "@semoss/utility/object";
 import type {
 	EditorTool,
 	MCPJsonData,
@@ -99,60 +102,12 @@ export const formatMetaKey = (key: string): string =>
 		.trim()
 		.toLowerCase();
 
-/**
- * JSON.parse error messages vary by engine. Try to extract line/col so the user
- * can find the bad character without counting bytes by hand.
- */
-export const locateJsonError = (
-	message: string,
-	text: string,
-): { line: number; col: number } | null => {
-	const lineColMatch = message.match(/line (\d+) column (\d+)/i);
-	if (lineColMatch) {
-		return { line: Number(lineColMatch[1]), col: Number(lineColMatch[2]) };
-	}
-
-	const posMatch = message.match(/position (\d+)/i);
-	if (posMatch) {
-		const pos = Math.min(Number(posMatch[1]), text.length);
-		let line = 1;
-		let col = 1;
-		for (let i = 0; i < pos; i++) {
-			if (text[i] === "\n") {
-				line++;
-				col = 1;
-			} else {
-				col++;
-			}
-		}
-		return { line, col };
-	}
-
-	return null;
-};
-
 /** Array and object defaults are edited as raw JSON rather than a single input. */
 export const isJsonType = (type: string): boolean =>
 	type === "array" || type === "object";
 
 /** Sentinel select option meaning "omit `default` from the schema entirely". */
 export const NO_DEFAULT_VALUE = "__no_default__";
-
-/** Appends `_2`, `_3`, ... until the candidate no longer collides. */
-export const uniqueName = (base: string, taken: Set<string>): string => {
-	if (!taken.has(base)) return base;
-	let suffix = 2;
-	while (taken.has(`${base}_${suffix}`)) suffix += 1;
-	return `${base}_${suffix}`;
-};
-
-/**
- * Tool names are handed to the model provider as function names, and both
- * Anthropic and OpenAI restrict those to letters, digits, underscores, and
- * hyphens. A space anywhere in the name is rejected before the tool ever runs,
- * so the editor never lets one through.
- */
-const IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_-]*$/;
 
 /**
  * Coerces free text into a valid identifier rather than rejecting it. Spaces
@@ -182,20 +137,6 @@ const humanizeIdentifier = (value: string): string =>
 			(_match, lead: string, char: string) =>
 				`${lead}${char.toUpperCase()}`,
 		);
-
-export const validateIdentifier = (
-	value: string,
-	taken: Set<string>,
-	label: string,
-): string | undefined => {
-	const trimmed = value.trim();
-	if (!trimmed) return `${label} is required`;
-	if (!IDENTIFIER_PATTERN.test(trimmed)) {
-		return `${label} must start with a letter or underscore and contain only letters, numbers, underscores, or hyphens`;
-	}
-	if (taken.has(trimmed)) return `${label} "${trimmed}" is already in use`;
-	return undefined;
-};
 
 /**
  * Anthropic caps a tool name at 128 characters, and the backend prepends
@@ -229,7 +170,7 @@ export const findToolNameIssues = (tools: MCPTool[]): ToolNameIssue[] => {
 			issues.push({ name: "(unnamed)", reason: "has no name" });
 			continue;
 		}
-		if (!IDENTIFIER_PATTERN.test(name)) {
+		if (!isValidIdentifier(name)) {
 			issues.push({
 				name,
 				reason: /\s/.test(name)
@@ -384,7 +325,7 @@ export const parseMCPFile = (content: string): ParsedMCPFile => {
 
 	try {
 		const parsed = JSON.parse(content) as unknown;
-		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+		if (!isRecord(parsed)) {
 			return {
 				data: empty,
 				extras: {},
@@ -411,7 +352,7 @@ export const parseMCPFile = (content: string): ParsedMCPFile => {
 		return {
 			data: empty,
 			extras: {},
-			error: e instanceof Error ? e.message : "Invalid JSON",
+			error: getErrorMessage(e, "Invalid JSON"),
 		};
 	}
 };
@@ -462,3 +403,6 @@ export const titleForPath = (path: string): string => {
 		? `${label} - MCP Tool Editor`
 		: `${fileName.toUpperCase()} Tool Editor`;
 };
+
+export { uniqueName, validateIdentifier } from "@semoss/utility/identifier";
+export { locateJsonError } from "@semoss/utility/json";

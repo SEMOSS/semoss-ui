@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-	parseWallClock,
-	toPlainText,
-	toWallClockString,
-} from "../core/connector.format";
+	formatLocalWallClock,
+	parseLocalWallClock,
+} from "@semoss/utility/date";
+import { toPlainText } from "../core/connector.format";
 import {
 	gmailMessageToMarkdown,
 	googleDocToMarkdown,
@@ -154,12 +154,12 @@ describe("Google text", () => {
 
 	it("writes wall clock times and reads them back as local time", () => {
 		const date = new Date(2026, 8, 27, 9, 5, 0);
-		expect(toWallClockString(date)).toBe("2026-09-27T09:05:00");
-		expect(parseWallClock("2026-09-27T09:05:00")?.getTime()).toBe(
+		expect(formatLocalWallClock(date)).toBe("2026-09-27T09:05:00");
+		expect(parseLocalWallClock("2026-09-27T09:05:00")?.getTime()).toBe(
 			date.getTime(),
 		);
-		expect(parseWallClock("2026-09-27")?.getHours()).toBe(0);
-		expect(parseWallClock("soon")).toBeNull();
+		expect(parseLocalWallClock("2026-09-27")?.getHours()).toBe(0);
+		expect(parseLocalWallClock("soon")).toBeNull();
 	});
 
 	it("writes Gmail, events, and docs as Markdown", () => {

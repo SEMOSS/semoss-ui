@@ -21,12 +21,13 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import {
-	copyTextToClipboard,
-	formatDateToLocal,
 	formatDateToRelative,
-} from "@semoss/utility";
-import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
+	formatLocalDateTime,
+} from "@semoss/utility/date";
+import { formatToDataTestId, hashString } from "@semoss/utility/text";
+import { getTagBadgeStyle } from "@/utility";
 
 export interface CatalogGridItemProps
 	extends React.ComponentProps<typeof Card> {
@@ -66,15 +67,6 @@ export interface CatalogGridItemProps
 	}[];
 }
 
-const hashString = (str: string): number => {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
-	}
-	return Math.abs(h);
-};
-
 const generateGradient = (name: string): string => {
 	const base = hashString(name) % 360;
 	return `hsl(${base}, 22%, 72%)`;
@@ -103,8 +95,8 @@ export const CatalogGridItem = ({
 	const cardClassName = `${className ?? ""}`.trim();
 
 	if (variant === "LIST") {
-		const formattedDateCreated = formatDateToLocal(dateCreated);
-		const formattedDateLastEdited = formatDateToLocal(dateLastEdited);
+		const formattedDateCreated = formatLocalDateTime(dateCreated);
+		const formattedDateLastEdited = formatLocalDateTime(dateLastEdited);
 		const showHoverCard = Boolean(
 			description || formattedDateCreated || formattedDateLastEdited,
 		);

@@ -105,8 +105,35 @@ When changing an API, inspect its owning implementation and adjacent tests:
 
 - [Chat wrappers](./src/api/chat.ts) and [pixel transport](./src/api/base.ts).
 - [Agent wrappers](./src/api/agent.ts) and [AgentStore](./src/stores/agent/agent.store.ts).
+- [MCP wrappers](./src/api/mcp.ts): `runMcpTool` and `makeUserPixelMcp`.
 - [RoomStore](./src/stores/room/room.store.ts) and [shared types](./src/types.ts).
 - [Core exports](./src/index.ts) and [React exports](./src/js-frameworks/react/index.ts).
 
 Update the packaged guide with signature/behavior changes. Comments and mocked
 tests are not backend authority; retain its compatibility caveats until verified.
+
+## Session Logins
+
+The SDK owns what the session is signed in to, so an app never tracks or caches it:
+
+- [`Logins`](./src/stores/logins/logins.store.ts) holds the session's logins for the whole
+  page, shared by every `InsightStore` and view. `InsightStore` fills it from the system config
+  when it loads. After a login it reads `/api/config` again, since the copy read while signed
+  out names no logins, and refills it from that, or from a fresh logins read when the config
+  cannot be read. On logout it only resets it, so views still on screen show the logins as
+  unknown rather than signed out.
+- A reset drops any read still in flight, so an answer for the old session never lands in the
+  new one. Provider keys are compared and sent in upper case, the way the backend lists and
+  signs them out.
+- `refresh` joins a read in flight and reuses one younger than 30 seconds; `useLogins()` reads
+  again when a view mounts and whenever the window regains focus.
+- `connect` signs in to one more provider with a fresh popup (see `connectLogin` in
+  [`api/auth.ts`](./src/api/auth.ts)): a listed provider is signed out first, since the backend
+  keeps listing an expired token. Neither it nor `disconnect` ever signs out the session's own
+  login (`primaryLogin`), which would end the session or change whose it is.
+- Every sign in popup, `connectLogin` and the first login's `oauth`, waits through
+  `waitForSignInPopup`: the backend sends a finished popup to its configured `redirect`, which can
+  be another app or origin (a dev server's popup lands on the deployed client), where the popup
+  cannot be read. So besides watching the popup close or come back, it reads the login every two
+  seconds and closes the popup once it is there. `oauth` rejects when the popup ends without the
+  login rather than leaving the sign in waiting. Apps call the SDK's `oauth`; none keeps a copy.

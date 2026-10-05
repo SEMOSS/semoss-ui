@@ -214,6 +214,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 					<span className="w-[var(--date-col-width,100px)] overflow-hidden truncate px-2 text-end font-medium">
 						{t("fileExplorer.dateModified")}
 					</span>
+					{/* the width of each row's More actions button */}
+					<span aria-hidden className="w-7 shrink-0" />
 				</div>
 
 				<ScrollArea className="[&>div>div]:block! h-full min-h-0 w-full flex-1">

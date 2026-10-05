@@ -19,9 +19,10 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { setProjectDisplayName } from "@/api/projects";
 import { ProjectAccessRequestButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useProject } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 interface ProjectTabsLayoutProps {
@@ -37,7 +38,9 @@ interface ProjectTabsLayoutProps {
  * Wrap the project routes and render the catalog header + tab navigation
  */
 export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
-	const { catalog, project, permission, refresh, type } = useProject();
+	const { catalog, project, permission, refresh, type, update } =
+		useProject();
+	const insightID = useSession((state) => state.insightID);
 
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
@@ -79,6 +82,14 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 			? `${catalog.path}/${project.project_id}/edit`
 			: `${catalog.path}/${project.project_id}/view`;
 
+	/**
+	 * Save the project's new display name and show it in place
+	 */
+	const handleRename = async (name: string) => {
+		await setProjectDisplayName(insightID, project.project_id, name);
+		update({ project_display_name: name });
+	};
+
 	return (
 		<div className="w-full">
 			<NavbarLeft>
@@ -114,6 +125,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 					<EntityHeader
 						icon={
 							<AppCatalogAvatar
+								projectId={project.project_id}
 								name={
 									project.project_display_name ||
 									project.project_name ||
@@ -130,6 +142,10 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 						id={project.project_id}
 						copyLabel="Copy ID"
 						idTestId="appDetail-id"
+						onRename={
+							permission === "OWNER" ? handleRename : undefined
+						}
+						renameLabel={`Rename ${catalog.name}`}
 						actions={
 							<>
 								{permission !== "OWNER" && (

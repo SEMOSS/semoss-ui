@@ -145,9 +145,9 @@ export class ToolStore {
 		// this off a display field such as `title`: MCP tools are not required to
 		// declare one, and a real part without a title would lose its `_meta`.
 		// Work folder and connector calls get their metadata filled in by the
-		// room's teamwork state; every other part comes back as it is.
+		// room's chat tools; every other part comes back as it is.
 		if (part && !this.isStreamingPlaceholder) {
-			return this.room.teamwork.decorateToolCall(part);
+			return this.room.chatTools.decorateToolCall(part);
 		}
 		const name = this.streamingName;
 		return {

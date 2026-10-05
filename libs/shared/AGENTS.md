@@ -10,7 +10,9 @@ utilities and components library.
 ## Overview
 
 `@semoss/shared` holds the cross-application components, utilities, and types that more than
-one app needs. **Check here first** before writing new shared components, utilities, or types.
+one app needs. **Check here first** for domain components, adapters, and types.
+Generic functions belong in [@semoss/utility](../utility/AGENTS.md); consume their
+category subpaths instead of duplicating them inside components.
 
 It is the home of large shared building blocks such as the file explorer, the Monaco
 editor wrappers, the FlexLayout wrapper, the shared login page, engine/MCP/prompt/skill UI,
@@ -39,6 +41,17 @@ its rows need in `FileItem.data`; `itemActions` adds the host's row button and c
 entries, `renderError` draws a failed listing the host's way, and `searchScope: false` hides the
 scope choice for a search that always covers everything. `@semoss/connectors`' drive views are
 built this way.
+
+**Every row's menu has three ways in.** Right-click, the row's More actions button, and
+Shift+F10 or the menu key on a focused row open the same menu, so the context-menu entries a
+host adds through `itemActions` are reachable without a right-click: from the keyboard, and on
+touch screens, where the button always shows. `tree.openContextMenu` takes the mouse or key
+event and places the menu at the pointer, or under the focused element when there is none. The
+keys act on the focused row, as in VS Code: `TreeViewItem` leaves focus on a row when it is
+clicked and on a folder's chevron while its children load, so they act on the row last clicked.
+The header's shortcuts tooltip points mouse users at right-click and the button, not the keys. A
+row's state (selected, its menu open, a drop target) highlights the whole row, its icon or
+chevron included, through `TreeViewItem`'s `rowClassName`.
 
 `FileExplorer` is **not** deprecated — it is the shell `@semoss/panels`'
 `FileExplorerPane` renders, and `libs/panels` is its main consumer.
@@ -80,7 +93,7 @@ This library retains its package layout (no `pages/` or router):
 
 | Folder / file | Purpose |
 |---------------|---------|
-| `assets/` | Images and static files |
+| `assets/` | Images and static files. `assets/img/connectors/` holds each Microsoft 365 and Google Workspace app's logo as an SVG named by app (`outlook.svg`, `gmail.svg`, ...), except Teams, which is `assets/img/MS_TEAMS.svg`; `ConnectorBrandIcon` shows them, and any package can import them as `@semoss/shared/assets/img/connectors/*` |
 | `components/` | Shared components, one folder per feature (file, monaco, flex-layout, mcp, prompts, skills, settings, engine, form, members, …) |
 | `constants/` | Shared constant values |
 | `contexts/` | React contexts (`<name>.context.tsx`) |

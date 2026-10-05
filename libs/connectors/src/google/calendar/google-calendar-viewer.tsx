@@ -1,29 +1,22 @@
 import {
 	CalendarDaysIcon,
 	CalendarIcon,
-	ChevronLeftIcon,
-	ChevronRightIcon,
 	RefreshCwIcon,
 	RepeatIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
-import { Button, cn, H4 } from "@semoss/ui/next";
+import { cn } from "@semoss/ui/next";
+import { formatLocalDateKey, formatLocalWallClock } from "@semoss/utility/date";
+import { ConnectorCalendar } from "../../components/connector-calendar";
 import { ConnectorIconButton } from "../../components/connector-icon-button";
 import { ConnectorItemRow } from "../../components/connector-item-row";
-import { ConnectorList } from "../../components/connector-list";
 import { ConnectorViewerHeader } from "../../components/connector-viewer-header";
-import {
-	addLocalDays,
-	formatDayHeading,
-	formatShortDay,
-	parseGraphDay,
-	startOfLocalDay,
-	toWallClockString,
-} from "../../core/connector.format";
+import { parseGraphDay } from "../../core/connector.format";
 import type { ConnectorViewerProps } from "../../core/connector.types";
 import { runConnectorPixel } from "../../core/connector-pixel";
+import { useCalendarWindow } from "../../core/use-calendar-window";
 import { useConnectorQuery } from "../../core/use-connector-query";
 import {
 	type ConnectorSaveRequest,
@@ -39,41 +32,37 @@ import { GOOGLE_PIXELS } from "../google.pixels";
 import type { GoogleCalendarEventSummary } from "../google.types";
 import { GoogleEventDetail } from "./google-event-detail";
 
-/** How many days the viewer shows at once. */
-const WINDOW_DAYS = 7;
-
-/** Props for {@link GoogleCalendarViewer}. */
+/** Props for the Google calendar. */
 export type GoogleCalendarViewerProps = ConnectorViewerProps;
 
-/**
- * The user's primary Google Calendar a week at a time: see what is coming,
- * open an event for its times and guests, and bring it into the insight.
- */
+/** Browse the dates supplied by Google; opening an event loads its full times. */
 export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
-	const { onSignIn } = props;
-	const { t, i18n } = useTranslation("connectors");
+	const { onSignIn, showHeader = true } = props;
+	const { t } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("google-calendar", props);
-	const [windowStart, setWindowStart] = useState(() =>
-		startOfLocalDay(new Date()),
-	);
+	const calendar = useCalendarWindow();
 	const [openEvent, setOpenEvent] =
 		useState<GoogleCalendarEventSummary | null>(null);
-	const { listRef, rememberItem } = useReturnFocus(openEvent !== null);
+	const { listRef, rememberItem } = useReturnFocus<HTMLDivElement>(
+		openEvent !== null,
+	);
 	const serviceName = t("services.googleCalendar");
-
-	const windowEnd = addLocalDays(windowStart, WINDOW_DAYS);
-	const isThisWeek =
-		windowStart.getTime() === startOfLocalDay(new Date()).getTime();
 	const query = useConnectorQuery(
 		GOOGLE_PIXELS.calendarList({
-			startDate: toWallClockString(windowStart),
-			// the last second of the window, which the backend includes
-			endDate: toWallClockString(new Date(windowEnd.getTime() - 1000)),
+			startDate: formatLocalWallClock(calendar.range.start),
+			endDate: formatLocalWallClock(
+				new Date(calendar.range.end.getTime() - 1000),
+			),
 		}),
 		parseGoogleCalendarDays,
 	);
-
+	const days = (query.data ?? []).flatMap((group) => {
+		const day = parseGraphDay(group.date);
+		return day ? [{ day, events: group.events }] : [];
+	});
+	const eventTitle = (event: GoogleCalendarEventSummary): string =>
+		event.summary || t("calendar.noTitle");
 	const eventRequest = (
 		event: GoogleCalendarEventSummary,
 	): ConnectorSaveRequest => ({
@@ -99,6 +88,17 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 		},
 	});
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={query.reload}
+		/>
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div
@@ -107,150 +107,70 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 					openEvent !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader
-					icon={CalendarDaysIcon}
-					title={serviceName}
-					description={t("calendar.range", {
-						start: formatShortDay(windowStart, i18n.language),
-						end: formatShortDay(
-							addLocalDays(windowEnd, -1),
-							i18n.language,
-						),
-					})}
-				>
-					<ConnectorIconButton
-						icon={ChevronLeftIcon}
-						label={t("calendar.previous")}
-						onClick={() =>
-							setWindowStart((previous) =>
-								addLocalDays(previous, -WINDOW_DAYS),
-							)
-						}
-					/>
-					<Button
-						variant="ghost"
-						size="sm"
-						disabled={isThisWeek}
-						onClick={() =>
-							setWindowStart(startOfLocalDay(new Date()))
-						}
+				{showHeader ? (
+					<ConnectorViewerHeader
+						icon={CalendarDaysIcon}
+						brand="google-calendar"
+						title={serviceName}
 					>
-						{t("calendar.today")}
-					</Button>
-					<ConnectorIconButton
-						icon={ChevronRightIcon}
-						label={t("calendar.next")}
-						onClick={() =>
-							setWindowStart((previous) =>
-								addLocalDays(previous, WINDOW_DAYS),
-							)
-						}
-					/>
-					<ConnectorIconButton
-						icon={RefreshCwIcon}
-						label={t("common.refresh")}
-						isSpinning={query.isRefreshing}
-						onClick={query.reload}
-					/>
-				</ConnectorViewerHeader>
-
-				<ConnectorList
-					query={query}
+						{refreshButton}
+					</ConnectorViewerHeader>
+				) : null}
+				<ConnectorCalendar
+					calendar={calendar}
+					actions={showHeader ? undefined : refreshButton}
+					query={{ ...query, data: days }}
 					serviceName={serviceName}
-					emptyIcon={CalendarDaysIcon}
 					account="google"
 					onSignIn={onSignIn}
-					listRef={listRef}
-					emptyText={t("calendar.empty")}
-				>
-					{(days) =>
-						days.map((day) => {
-							const date = parseGraphDay(day.date);
-							return (
-								<li key={day.date} className="flex flex-col">
-									<H4 className="sticky top-0 z-10 bg-card px-2 pt-3 pb-1 font-medium text-muted-foreground text-xs">
-										{date
-											? formatDayHeading(
-													date,
-													i18n.language,
-												)
-											: day.date}
-									</H4>
-									<ul className="flex flex-col">
-										{day.events.map((event) => {
-											const request = eventRequest(event);
-											const isBusy = saver.isBusy(
-												request.key,
-											);
-											const title =
-												event.summary ||
-												t("calendar.noTitle");
-											const isRepeating =
-												!!event.recurringEventId;
-											return (
-												<ConnectorItemRow
-													key={`${day.date}:${event.id}`}
-													itemKey={`${day.date}:${event.id}`}
-													icon={
-														isRepeating ? (
-															<RepeatIcon
-																aria-hidden
-																className="size-4"
-															/>
-														) : (
-															<CalendarIcon
-																aria-hidden
-																className="size-4"
-															/>
-														)
-													}
-													title={title}
-													description={
-														isRepeating
-															? t(
-																	"googleCalendar.repeating",
-																)
-															: undefined
-													}
-													openLabel={t(
-														"googleCalendar.openEvent",
-														{ title: title },
-													)}
-													isBusy={isBusy}
-													onOpen={() => {
-														rememberItem(
-															`${day.date}:${event.id}`,
-														);
-														setOpenEvent(event);
-													}}
-													actions={{
-														itemName: title,
-														serviceName:
-															serviceName,
-														saveLabel:
-															saver.saveLabel,
-														isBusy: isBusy,
-														onAddToContext:
-															saver.addToContext
-																? () =>
-																		saver.addToContext?.(
-																			request,
-																		)
-																: undefined,
-														onSave: () =>
-															saver.save(request),
-													}}
-												/>
-											);
-										})}
-									</ul>
-								</li>
-							);
-						})
-					}
-				</ConnectorList>
+					focusRef={listRef}
+					getTitle={eventTitle}
+					getEventKey={(event) => event.id}
+					onOpenEvent={(event, itemKey) => {
+						rememberItem(itemKey);
+						setOpenEvent(event);
+					}}
+					renderEvent={(event, day) => {
+						const request = eventRequest(event);
+						const title = eventTitle(event);
+						const itemKey = `${formatLocalDateKey(day)}:${event.id}`;
+						const Icon = event.recurringEventId
+							? RepeatIcon
+							: CalendarIcon;
+						return (
+							<ConnectorItemRow
+								key={itemKey}
+								itemKey={itemKey}
+								icon={<Icon aria-hidden className="size-4" />}
+								title={title}
+								description={
+									event.recurringEventId
+										? t("googleCalendar.repeating")
+										: undefined
+								}
+								openLabel={t("googleCalendar.openEvent", {
+									title,
+								})}
+								isBusy={saver.isBusy(request.key)}
+								onOpen={() => {
+									rememberItem(itemKey);
+									setOpenEvent(event);
+								}}
+								actions={{
+									itemName: title,
+									serviceName,
+									saveLabel: saver.saveLabel,
+									isBusy: saver.isBusy(request.key),
+									onAddToContext: saver.addToContext
+										? () => saver.addToContext?.(request)
+										: undefined,
+									onSave: () => saver.save(request),
+								}}
+							/>
+						);
+					}}
+				/>
 			</div>
-
 			{openEvent ? (
 				<GoogleEventDetail
 					key={openEvent.id}

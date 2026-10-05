@@ -262,3 +262,20 @@ describe("Teams", () => {
 		expect(chats[0].hasUnread).toBe(true);
 	});
 });
+
+it("omits unset and invalid Teams chat timestamps", () => {
+	const chats = parseChats({
+		chats: [
+			{ id: "missing", lastUpdatedDateTime: "0001-01-01T00:00:00Z" },
+			{ id: "invalid", lastUpdatedDateTime: "not a date" },
+			{ id: "valid", lastUpdatedDateTime: "2026-06-15T12:00:00Z" },
+		],
+	});
+	expect(
+		chats.find((chat) => chat.id === "missing")?.lastUpdatedDateTime,
+	).toBeUndefined();
+	expect(
+		chats.find((chat) => chat.id === "invalid")?.lastUpdatedDateTime,
+	).toBeUndefined();
+	expect(chats[0].id).toBe("valid");
+});

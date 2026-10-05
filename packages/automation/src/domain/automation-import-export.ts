@@ -1,3 +1,4 @@
+import { downloadBlob } from "@semoss/utility/browser";
 /**
  * Format-agnostic import/export for the canvas toolbar: detects whether an uploaded
  * file is our own round-trip export or an n8n workflow, and builds the downloadable
@@ -121,10 +122,5 @@ export function downloadAutomationExport(
 	const blob = new Blob([JSON.stringify(payload, null, 2)], {
 		type: "application/json",
 	});
-	const url = URL.createObjectURL(blob);
-	const anchor = document.createElement("a");
-	anchor.href = url;
-	anchor.download = `${fileNameBase || "automation"}.json`;
-	anchor.click();
-	URL.revokeObjectURL(url);
+	downloadBlob(blob, `${fileNameBase || "automation"}.json`);
 }

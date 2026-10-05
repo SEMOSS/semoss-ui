@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,
+	AutomationRunSummary,
 } from "../domain/automation.types";
 import type { AutomationInspectorSnapshot } from "../domain/automation-inspector";
 import type { N8nImportConversionModel } from "../domain/n8n-import-adapter";
@@ -25,7 +26,10 @@ export interface AutomationWorkbenchContextValue {
 	onHistoryChanged: () => void;
 	inspectorSnapshot: AutomationInspectorSnapshot | null;
 	traceSnapshot: AutomationTraceSnapshot | null;
+	activeRuns: AutomationRunSummary[];
+	followedRunId: string | null;
 	selectedRun: AutomationRunDetail | null;
+	onRunsChange: (runs: AutomationRunSummary[]) => void;
 	onViewRun: (run: AutomationRunDetail) => void;
 	onExitHistoricalView: () => void;
 	historyRefreshToken: number;
@@ -138,10 +142,16 @@ export const AutomationTracePanel = () => {
 			steps={snapshot?.steps ?? []}
 			results={snapshot?.results ?? []}
 			executedDefinition={snapshot?.executedDefinition ?? null}
+			activeRun={snapshot?.activeRun ?? null}
+			activeRuns={context.activeRuns}
+			followedRunId={context.followedRunId}
+			selectedRun={context.selectedRun}
+			onRunsChange={context.onRunsChange}
 			onDismiss={() => undefined}
 			onOpenOutput={context.onOpenOutput}
 			onAskAssistant={context.onAskAssistant}
 			onViewRun={context.onViewRun}
+			onViewAgentRun={context.onAgentRunTrace}
 			onExitHistoricalView={context.onExitHistoricalView}
 			focusNodeId={context.runDetailsFocusNodeId}
 			focusToken={context.runDetailsFocusToken}

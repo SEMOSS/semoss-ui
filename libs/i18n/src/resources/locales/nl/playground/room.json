@@ -25,7 +25,14 @@
 			"SUMMARY": "Vervangt oudere berichten door een door AI gegenereerde samenvatting. Behoudt de algemene context van het gesprek en maakt tokenruimte vrij.",
 			"TOOL_PRUNE": "Verwijdert uitgebreide toolresultaten uit de gespreksgeschiedenis. Het beste wanneer tooloutputs groot zijn en de details niet meer nodig zijn.",
 			"AUTO": "Kiest samenvatten of tools opschonen op basis van het huidige gesprek."
-		}
+		},
+		"panelTitle": "Instellingen",
+		"noKnowledge": "Geen kennis geselecteerd.",
+		"noTools": "Geen tools geselecteerd.",
+		"fromRoom": "Van de chatruimte",
+		"inheritedSelection": "Overgenomen selecties kunnen niet uit deze chat worden verwijderd.",
+		"removeSelection": "{{name}} verwijderen",
+		"agentLoadError": "De agent kon niet worden geladen. Probeer opnieuw of kies een andere agent."
 	},
 	"form": {
 		"modelLabel": "Model",
@@ -36,9 +43,12 @@
 		"temperatureLabel": "Temperatuur"
 	},
 	"modes": {
-		"ask": "Chatmodus",
-		"agent": "Agent Harness-modus",
-		"exitAgent": "Agent Harness-modus verlaten"
+		"ask": "Chat",
+		"agent": "Agent",
+		"exitAgent": "Overschakelen naar chat",
+		"selectedAgent": "Agent: {{name}}",
+		"defaultAgent": "Standaardagent",
+		"noAgent": "Geen agent"
 	},
 	"workspace": {
 		"publishTooltip": "Publiceren als agent",
@@ -59,7 +69,7 @@
 		"ariaPlaceholder": "Voer tekst in",
 		"thinking": "Bezig met denken...",
 		"menuPrompt": "Hoe kan ik je vandaag helpen?",
-		"openSettings": "Bestanden, agents en meer toevoegen",
+		"openSettings": "Voeg toe aan je chat",
 		"recordLabel": "Het model opnemen",
 		"stopRecording": "Opname stoppen",
 		"record": "Opnemen",
@@ -72,6 +82,9 @@
 		"stopLabel": "Het antwoord stoppen",
 		"stopTooltip": "Stoppen",
 		"stoppingTooltip": "Bezig met stoppen",
+		"recordUnavailable": "Dicteren is niet beschikbaar in deze browser",
+		"historyHint": "Eerdere prompt {{index}} van {{total}} · ↑/↓ bladeren · Esc om concept te herstellen",
+		"draftRestored": "Concept hersteld",
 		"removeFile": "{{name}} verwijderen"
 	},
 	"content": {
@@ -79,7 +92,7 @@
 		"scrollToBottom": "Scroll naar beneden"
 	},
 	"inlineTool": {
-		"openInSidebar": "Openen in zijbalk",
+		"openInSidebar": "Openen in werkruimte",
 		"minimize": "Minimaliseren",
 		"maximize": "Maximaliseren",
 		"close": "Sluiten"
@@ -91,7 +104,7 @@
 		"copyFailed": "Kopiëren naar klembord mislukt"
 	},
 	"menuToolbox": {
-		"addToolbox": "Toolboxes toevoegen"
+		"addToolbox": "Tools toevoegen"
 	},
 	"menuKnowledge": {
 		"addKnowledge": "Kennis toevoegen"
@@ -102,7 +115,7 @@
 		"notFound": "Niet gevonden"
 	},
 	"menuUpload": {
-		"attachDocument": "Documenten toevoegen"
+		"attachDocument": "Bestanden bijvoegen"
 	},
 	"menuFileExplorer": {
 		"name": "Chatbestanden",
@@ -127,5 +140,49 @@
 		"searchPlaceholder": "Kennis en toolboxes zoeken",
 		"noResults": "Geen overeenkomende items gevonden",
 		"noItemsAvailable": "Geen kennis of toolboxes beschikbaar"
+	},
+	"studio": {
+		"views": "Gespreksweergaven",
+		"chat": "Chat",
+		"openWorkArea": "Werkruimte openen",
+		"workArea": "Werkruimte",
+		"toolsCount": "Tools, {{count}} geselecteerd",
+		"tools": "Tools",
+		"toolsLocked": "Tools kunnen niet worden gewijzigd terwijl een antwoord wordt gemaakt.",
+		"toolsHint": "Selecties gelden voor je volgende bericht.",
+		"toolsTitle": "Tools en kennis",
+		"toolsDescription": "Kies de tools en kennis die beschikbaar zijn voor dit gesprek.",
+		"moreActions": "Meer acties",
+		"prompts": "Prompts",
+		"removeFile": "{{name}} verwijderen",
+		"thinking": "Redenering",
+		"errorTitle": "Er is iets misgegaan",
+		"errorDescription": "Vernieuw de pagina of ga terug naar de startpagina en probeer het opnieuw.",
+		"backHome": "Terug naar start",
+		"export": "Exporteren",
+		"refresh": "Vernieuwen",
+		"exportCsv": "Exporteren als CSV",
+		"exportPdf": "Exporteren als PDF",
+		"closeWorkspace": "Werkruimte sluiten",
+		"preparingWorkspace": "Werkruimte voorbereiden…",
+		"activityLog": "Activiteitenlogboek",
+		"prepareError": "De werkruimte kon niet worden voorbereid. Je concept is bewaard.",
+		"retry": "Opnieuw proberen",
+		"viewActivityLog": "Activiteitenlog bekijken"
+	},
+	"optimizer": {
+		"optimize": "Prompt optimaliseren",
+		"revert": "Vorige prompt herstellen",
+		"optimizing": "Optimaliseren…",
+		"success": "Prompt geoptimaliseerd!",
+		"noModel": "Selecteer een model om je prompt te optimaliseren",
+		"invalidResponse": "Geen geoptimaliseerde prompt ontvangen",
+		"failed": "Prompt optimaliseren mislukt",
+		"tooLarge": "De prompt is te lang om te optimaliseren. Maak deze eerst korter.",
+		"noPermission": "Je hebt geen toestemming om dit model te gebruiken"
+	},
+	"contextItems": {
+		"label": "Toegevoegd aan je volgende bericht",
+		"remove": "{{name}} uit je volgende bericht verwijderen"
 	}
 }

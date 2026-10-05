@@ -56,6 +56,8 @@ export const AgentMcpField = ({
 							emptyLabel={t(`empty.${key}`)}
 							items={values.map((m) => ({
 								id: m.id,
+								projectId:
+									m.type === "PROJECT" ? m.id : undefined,
 								title: m.name,
 								description:
 									m.description ||

@@ -29,6 +29,11 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
+import {
+	formatToDataTestId,
+	buildInitials as getInitials,
+} from "@semoss/utility/text";
 import {
 	CATALOG_MODALITIES,
 	toReasoningConfig,
@@ -68,7 +73,6 @@ import {
 	MODEL_PROVIDER_OPTIONS,
 	SERVING_PROVIDER_OPTIONS,
 } from "@/model-metadata.constants";
-import { formatToDataTestId } from "@/utility";
 import { ModelImportDetailsPage } from "./model-import-details-page";
 
 // Provider labels shown in UI tabs/section headers are display names (e.g. "Google Gemini"),
@@ -94,15 +98,6 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
 	const subtype = MODEL_PROVIDER_SUBTYPE_BY_NAME[provider];
 
-	const getInitials = (name: string) => {
-		return name
-			.split(/[\W_]+/)
-			.map((t) => t[0])
-			.join("")
-			.slice(0, 2)
-			.toUpperCase();
-	};
-
 	if (subtype) {
 		return (
 			<EngineSubtypeIcon
@@ -119,7 +114,7 @@ const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
 			aria-hidden="true"
 			className="flex size-5 shrink-0 items-center justify-center rounded-sm bg-muted font-medium text-muted-foreground text-xs"
 		>
-			{getInitials(provider)}
+			{getInitials(provider, 2)}
 		</div>
 	);
 };
@@ -1013,11 +1008,7 @@ export const ModelImportPage: React.FC = () => {
 				}
 
 				const output = result.output;
-				if (
-					typeof output !== "object" ||
-					output === null ||
-					Array.isArray(output)
-				) {
+				if (!isRecord(output)) {
 					throw new Error("Static model metadata must be an object.");
 				}
 

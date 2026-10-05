@@ -34,21 +34,4 @@ export const normalizeForMarkdown = (text: string): string => {
 		: normalized;
 };
 
-/** Split log messages into lines, removing one trailing newline per message. */
-export const splitMessageLines = (messages: string[]): string[] =>
-	messages.flatMap((message) => message.replace(/\n$/, "").split("\n"));
-
-/** Count non-empty logical lines while ignoring one trailing newline. */
-export const countLines = (text: string): number => {
-	if (!text) return 0;
-	const trimmed = text.endsWith("\n") ? text.slice(0, -1) : text;
-	return trimmed ? trimmed.split("\n").length : 0;
-};
-
-/** Format UTF-8 text size for compact output metadata. */
-export const formatBytes = (text: string): string => {
-	const bytes = new Blob([text || ""]).size;
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-};
+export { countLines, splitMessageLines } from "./text";

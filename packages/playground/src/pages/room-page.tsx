@@ -1,20 +1,16 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
-import {
-	ResizableHandle,
-	ResizablePanel,
-	ResizablePanelGroup,
-	Spinner,
-	toast,
-	useIsMobile,
-} from "@semoss/ui/next";
-import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
-import { FileDragProvider } from "@/contexts";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
-import type { RoomStore } from "@/stores";
+import { Spinner, toast } from "@semoss/ui/next";
+import { RoomContent } from "@/components/room/room-content";
+import { RoomSidebar } from "@/components/room/room-sidebar";
+import { FileDragProvider } from "@/contexts/file-drag-context";
+import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
+import { useChat } from "@/hooks/use-chat";
+import type { RoomStore } from "@/stores/room/room.store";
+import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type { Engine } from "@/types";
 /**
  * The page for a room
@@ -22,53 +18,20 @@ import type { Engine } from "@/types";
  * @component
  */
 export const RoomPage = observer(() => {
-	const { t } = useTranslation("workspace");
-	const { setNavbarActions } = useGlobalBreadcrumbs({});
 	const { roomId } = useParams();
+	const { t } = useTranslation("room");
 	const { chat } = useChat();
-	const { root } = useRoot();
 	const navigate = useNavigate();
-	const isMobile = useIsMobile();
-
-	const platformLinksDisabled = !root.theme.featureFlags?.showPlatformLinks;
 
 	/**
 	 * State
 	 */
-	const [room, setRoom] = useState<RoomStore | null>(null);
+	// A room the new-chat page just created is already cached, so it shows
+	// straight away instead of after a spinner.
+	const [room, setRoom] = useState<RoomStore | null>(() =>
+		roomId ? chat.getCachedRoom(roomId) : null,
+	);
 	const selectedModelRef = useRef<Engine>(chat.models.selected);
-
-	/**
-	 * Library hooks
-	 */
-	// set the breadcrumbs (reactive to room state so we don't race with loadRoom)
-	const workspace = room?.options?.workspace;
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{
-				name: t("breadcrumbs.home"),
-				path: "/",
-			},
-			...(workspace?.workspace_id
-				? [
-						{
-							name: t("breadcrumbs.agent"),
-							path: platformLinksDisabled ? "" : "/agent",
-						},
-						{
-							name: workspace.name || workspace.workspace_id,
-							path: platformLinksDisabled
-								? ""
-								: `/agent/${workspace.workspace_id}`,
-						},
-					]
-				: []),
-			{
-				name: room?.metadata?.name || t("breadcrumbs.room"),
-				path: `/room/${roomId}`,
-			},
-		],
-	});
 
 	/**
 	 * Effects
@@ -80,14 +43,16 @@ export const RoomPage = observer(() => {
 
 	// load the room
 	useEffect(() => {
+		let isCurrent = true;
 		const loadRoom = async () => {
 			// if chat isn't initialized yet, wait for it to initialize
 			if (!chat.isInitialized) {
 				return;
 			}
 
-			// Reset room state when roomId changes to prevent stale content flash
-			setRoom(null);
+			// Reset room state when roomId changes to prevent stale content
+			// flash; a cached room shows at once rather than after a spinner
+			setRoom(roomId ? chat.getCachedRoom(roomId) : null);
 			try {
 				if (!roomId) {
 					navigate("/");
@@ -95,6 +60,7 @@ export const RoomPage = observer(() => {
 				}
 
 				const room = await chat.loadRoom(roomId);
+				if (!isCurrent) return;
 
 				// update the model based on the room
 				if (!room.model) {
@@ -103,42 +69,28 @@ export const RoomPage = observer(() => {
 					chat.setSelectedModel(room.model);
 				}
 
-				// set the room (breadcrumbs are driven reactively via useGlobalBreadcrumbs above)
+				// Set the loaded room.
 				setRoom(room);
 			} catch (e) {
+				if (!isCurrent) return;
 				// if it doesn't load successfully, go back to home
 				toast.error((e as Error).message);
 				navigate("/");
 			}
 		};
 
-		loadRoom();
+		void loadRoom();
+		return () => {
+			isCurrent = false;
+		};
 	}, [
 		roomId,
 		navigate,
+		chat.getCachedRoom,
 		chat.loadRoom,
 		chat.setSelectedModel,
 		chat.isInitialized,
 	]);
-
-	const navbarActions = useMemo<React.ReactNode>(() => {
-		if (room?.options) {
-			return (
-				<SaveWorkspaceDialog
-					systemPrompt={room?.options?.instructions}
-					mcps={room?.options?.mcp}
-				/>
-			);
-		}
-	}, [room?.options]);
-
-	useEffect(() => {
-		setNavbarActions(navbarActions);
-
-		return () => {
-			setNavbarActions(null);
-		};
-	}, [navbarActions, setNavbarActions]);
 
 	// if there is no room, return null
 	if (!room) {
@@ -155,35 +107,26 @@ export const RoomPage = observer(() => {
 			options={{ insightId: room.insightId }}
 			destroyOnUnmount={false}
 		>
-			<div className="flex h-full w-full flex-col overflow-hidden">
-				<ResizablePanelGroup
-					direction="horizontal"
-					className="w-full flex-1 overflow-hidden"
-				>
-					<ResizablePanel className="h-full w-full flex-1 overflow-hidden">
-						<FileDragProvider>
-							<RoomContent room={room} />
-						</FileDragProvider>
-					</ResizablePanel>
-					{room.sidebar.isOpen && !isMobile && (
-						<>
-							<ResizableHandle />
-							<ResizablePanel
-								className={"relative"}
-								defaultSize={50}
-								minSize={20}
-							>
-								<RoomSidebar room={room} />
-							</ResizablePanel>
-						</>
-					)}
-				</ResizablePanelGroup>
-				{room.sidebar.isOpen && isMobile && (
-					<div className="fixed inset-0 z-50 bg-background p-2">
-						<RoomSidebar room={room} />
-					</div>
-				)}
-			</div>
+			<ConversationWorkspace
+				isOpen={room.sidebar.isOpen}
+				onOpenWorkArea={() => {
+					if (
+						room.workbench.getState().layout.openPanelIds.length ===
+						0
+					) {
+						room.openSidebarPanel(
+							ROOM_PANEL_TYPES.CONFIGURATION,
+							{},
+							t("settings.panelTitle"),
+						);
+					} else room.openSidebar();
+				}}
+				panel={<RoomSidebar room={room} />}
+			>
+				<FileDragProvider>
+					<RoomContent room={room} />
+				</FileDragProvider>
+			</ConversationWorkspace>
 		</InsightProvider>
 	);
 });

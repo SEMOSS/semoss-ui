@@ -12,6 +12,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { capitalize, formatToDataTestId } from "@semoss/utility/text";
 import {
 	setEngineGlobal,
 	setEngineVisiblity,
@@ -22,7 +23,6 @@ import {
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useSession, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
-import { formatToDataTestId } from "@/utility";
 
 interface SettingsTilesProps {
 	/**
@@ -554,7 +554,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 					<AlertTile
 						setBounds={direction === "column"}
 						icon={<Trash2 className="mt-0.5 h-[22px] w-[22px]" />}
-						title={`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
+						title={`Delete ${capitalize(type)}`}
 						description={`Delete ${name} from catalog.`}
 						action={
 							<Button
@@ -706,7 +706,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								icon={
 									<Trash2 className="mt-0.5 h-[18px] w-[18px]" />
 								}
-								title={`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
+								title={`Delete ${capitalize(type)}`}
 								description={`Delete ${name} from catalog.`}
 								action={
 									<Button

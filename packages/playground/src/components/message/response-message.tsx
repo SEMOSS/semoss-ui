@@ -22,10 +22,11 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
+	ButtonGroup,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -37,20 +38,21 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { getFileExtension, getImageMimeType } from "@semoss/utility";
+import { decodeBase64ToBytes } from "@semoss/utility/encoding";
+import { getErrorMessage } from "@semoss/utility/error";
+import { getFileExtension } from "@semoss/utility/file";
+import { getImageMimeType } from "@semoss/utility/image";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
-import { useActiveIndex, useRoot } from "@/hooks";
-import {
-	InputMessageStore,
-	type ResponseMessageStore,
-	type RoomStore,
-	type ToolStore,
-} from "@/stores";
-import { isAskExecutionMode, isYesNoExecutionMode } from "@/utility/mcp-utils";
+import { MessageActions } from "@/features/conversation/message-actions";
+import { groupToolActivity } from "@/features/conversation/tool-activity";
+import { useActiveIndex } from "@/hooks/use-active-index";
+import { useRoot } from "@/hooks/use-root";
+import { InputMessageStore } from "@/stores/message/input-message.store";
+import type { ResponseMessageStore } from "@/stores/message/response-message.store";
+import type { RoomStore } from "@/stores/room/room.store";
 import { ResponseMessageSubagent } from "./response-message-subagent";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
-import { ResponseMessageTool } from "./response-message-tool";
 import { ResponseMessageToolGroup } from "./response-message-tool-group";
 
 const getExtIcon = (fileName: string) => {
@@ -90,9 +92,6 @@ const getExtIcon = (fileName: string) => {
 	return { Icon: FileIcon, ext };
 };
 
-const getErrorMessage = (e: unknown): string =>
-	e instanceof Error ? e.message : String(e);
-
 /**
  * Whether the message has streamed any real content yet. A freshly-created
  * streaming message starts with zero parts, so an empty array means nothing
@@ -107,29 +106,6 @@ const hasStreamedContent = (parts: ResponseMessageStore["parts"]) =>
 			part.type === "TOOL_CALL" ||
 			part.type === "MEDIA",
 	);
-
-/**
- * One contiguous run of tool calls — may span multiple folded-in messages
- * (see room-content.tsx). Per-tool grouping is decided by chunk (the
- * originating message within the run), not the run as a whole — see
- * chunkHasUnfinishedTools.
- */
-interface ToolRun {
-	/** Part index the run's group renders at — its first TOOL_CALL part. */
-	partIdx: number;
-
-	/** Every tool in the run, in part order. */
-	tools: ToolStore[];
-
-	/** The subset of `tools` that renders inside the group. */
-	grouped: ToolStore[];
-
-	/** Whether any tool in the run is still running or awaiting a decision. */
-	hasUnfinishedTools: boolean;
-
-	/** Whether any tool in the run needs a human decision. */
-	hasAskTools: boolean;
-}
 
 export interface ResponseMessageProps {
 	/** Room */
@@ -147,16 +123,10 @@ export const ResponseMessage = observer(
 		const { t } = useTranslation("chat");
 		const { root } = useRoot();
 
-		// Tracks which original message each part came from, so tool
-		// grouping can tell folded-in messages apart without breaking the
-		// visual run they render in — see chunkHasUnfinishedTools below.
-		const partsWithOwners = [
-			...message.parts.map((part) => ({ part, owner: message })),
-			...subsequentTools.flatMap((sub) =>
-				sub.parts.map((part) => ({ part, owner: sub })),
-			),
+		const allParts = [
+			...message.parts,
+			...subsequentTools.flatMap((sub) => sub.parts),
 		];
-		const allParts = partsWithOwners.map(({ part }) => part);
 
 		const isThinking =
 			message.isThinking || subsequentTools.some((m) => m.isThinking);
@@ -182,6 +152,7 @@ export const ResponseMessage = observer(
 			null,
 		);
 		const feedbackTextRef = useRef<HTMLTextAreaElement>(null);
+		const actionTriggerRef = useRef<HTMLButtonElement | null>(null);
 
 		// Captured once at mount: was this the first time we saw this message
 		// stream (it had no content yet), or are we returning to one already in
@@ -322,10 +293,7 @@ export const ResponseMessage = observer(
 					toast.error("Invalid image format");
 					return;
 				}
-				const bytes = atob(mediaPart.mediaInfo.base64Data);
-				const arr = new Uint8Array(bytes.length).map((_, i) =>
-					bytes.charCodeAt(i),
-				);
+				const arr = decodeBase64ToBytes(mediaPart.mediaInfo.base64Data);
 				const blob = new Blob([arr], { type: mimeType });
 				await navigator.clipboard.write([
 					new ClipboardItem({ [mimeType]: blob }),
@@ -341,127 +309,9 @@ export const ResponseMessage = observer(
 			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
 		] as const;
 
-		// Pre-compute completed tools for grouping. Tools cluster per contiguous
-		// run of TOOL_CALL parts: a run ends at the first part that renders
-		// something between them, so a second round of tools in an agent turn
-		// opens its own group in place rather than folding back into the first
-		// one above the text and thinking that preceded it.
-		const isToolRunBreak = (part: ResponseMessageStore["parts"][number]) =>
-			(part.type === "TEXT" && part.text.length > 0) ||
-			(part.type === "THINKING" && part.thinking.length > 0) ||
-			part.type === "MEDIA" ||
-			part.type === "SUBAGENT";
-
-		const getShouldGroupTool = (
-			tool: ToolStore,
-			chunkHasUnfinishedTools: Map<string, boolean>,
-		) => {
-			// tools whose call hasn't resolved yet (still streaming in, or in the
-			// gap before the final sync) fold into the group so they show as one
-			// loading cluster rather than separate raw-named pills
-			if (!tool.isResolved) return true;
-			// non-interactive tools (auto-execute, or backend-executed e.g.
-			// agent-run tools) should always be grouped
-			const execution = tool.json._meta?.SMSS_MCP_EXECUTION;
-			if (
-				!isAskExecutionMode(execution) &&
-				!isYesNoExecutionMode(execution)
-			)
-				return true;
-			// ask tools only enter the group once their own chunk has nothing
-			// left running — a later round waiting on a decision must not pull
-			// a settled round's ask tools back out of their group. Scoped to the
-			// chunk (its own originating message) rather than the whole run, so
-			// a folded-in message's unfinished tool doesn't reach back and
-			// un-group an earlier message's already-settled ones.
-			return !chunkHasUnfinishedTools.get(tool.id);
-		};
-
-		// First pass: split the tool parts into runs, and runs into
-		// per-originating-message chunks. Grouping is decided in a second
-		// pass because it depends on the chunk as a whole, which isn't known
-		// until the chunk has been walked.
-		const { toolRuns, chunkHasUnfinishedTools } = (() => {
-			const toolRuns: ToolRun[] = [];
-			const chunkHasUnfinishedTools = new Map<string, boolean>();
-			let run: ToolRun | null = null;
-
-			let chunkOwner: ResponseMessageStore | null = null;
-			let chunkTools: ToolStore[] = [];
-			let chunkUnfinished = false;
-			const flushChunk = () => {
-				chunkTools.forEach((chunkTool) => {
-					chunkHasUnfinishedTools.set(chunkTool.id, chunkUnfinished);
-				});
-				chunkOwner = null;
-				chunkTools = [];
-				chunkUnfinished = false;
-			};
-
-			partsWithOwners.forEach(({ part: p, owner }, idx) => {
-				if (p.type !== "TOOL_CALL") {
-					if (isToolRunBreak(p)) {
-						run = null;
-						flushChunk();
-					}
-					return;
-				}
-				// Opened on the run's first TOOL_CALL part regardless of
-				// completion, so the group always sits at the top of that run's
-				// tool list even when an auto-execute tool completes first.
-				if (!run) {
-					run = {
-						partIdx: idx,
-						tools: [],
-						grouped: [],
-						hasUnfinishedTools: false,
-						hasAskTools: false,
-					};
-					toolRuns.push(run);
-				}
-				const tool = room.getTool(p.toolCall.id);
-				if (!tool) return;
-				run.tools.push(tool);
-				// Mirrors ResponseMessageStore.hasUnfinishedTools, narrowed to
-				// this run.
-				if (tool.status === "LOADING" || tool.status === "INITIAL") {
-					run.hasUnfinishedTools = true;
-				}
-				const toolExecution = tool.json._meta?.SMSS_MCP_EXECUTION;
-				if (
-					isAskExecutionMode(toolExecution) ||
-					isYesNoExecutionMode(toolExecution)
-				) {
-					run.hasAskTools = true;
-				}
-
-				if (owner !== chunkOwner) {
-					flushChunk();
-					chunkOwner = owner;
-				}
-				chunkTools.push(tool);
-				if (tool.status === "LOADING" || tool.status === "INITIAL") {
-					chunkUnfinished = true;
-				}
-			});
-			flushChunk();
-
-			return { toolRuns, chunkHasUnfinishedTools };
-		})();
-
-		// Second pass: the group renders at the run's first part index, and
-		// every tool in it is skipped where its own part comes up.
-		const groupedToolIds = new Set<string>();
-		const runsByPartIdx = new Map<number, ToolRun>();
-		toolRuns.forEach((run) => {
-			run.grouped = run.tools.filter((tool) =>
-				getShouldGroupTool(tool, chunkHasUnfinishedTools),
-			);
-			run.grouped.forEach((tool) => {
-				groupedToolIds.add(tool.id);
-			});
-			runsByPartIdx.set(run.partIdx, run);
-		});
+		const runsByPartIdx = groupToolActivity(allParts, (id) =>
+			room.getTool(id),
+		);
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
 
@@ -476,8 +326,8 @@ export const ResponseMessage = observer(
 		);
 
 		return (
-			<div className="group">
-				<div className="mb-0 flex w-full flex-col gap-2 pe-3 sm:pe-10">
+			<div className="group/message relative min-w-0">
+				<div className="flex w-full min-w-0 flex-col gap-4">
 					{allParts.map((p, pIdx) => {
 						const key = `message-part-${pIdx}`;
 						const status = getChunkStatus(pIdx);
@@ -594,7 +444,7 @@ export const ResponseMessage = observer(
 													className="size-8 shrink-0 text-muted-foreground"
 													strokeWidth={1.25}
 												/>
-												<span className="max-w-16 truncate font-medium text-[10px] text-muted-foreground uppercase">
+												<span className="max-w-16 truncate font-medium text-muted-foreground text-xs uppercase">
 													{ext}
 												</span>
 											</button>
@@ -625,50 +475,13 @@ export const ResponseMessage = observer(
 								/>
 							);
 						} else if (p.type === "TOOL_CALL") {
-							const tool = room.getTool(p.toolCall.id);
-							// Only set on the part the run's group renders at.
-							const run = runsByPartIdx.get(pIdx);
-							const groupedTools = run?.grouped ?? [];
-							// Keyed by tool id rather than part index: a run's
-							// position in allParts can shift as messages fold
-							// in around it, and a positional key would remount
-							// the group (losing its open/closed state) even
-							// though it's still logically the same run.
-							return (
-								<Fragment key={p.toolCall.id}>
-									{run &&
-										groupedTools.length > 0 &&
-										// A single tool renders as a group only while it's
-										// still resolving (so it shows as one loading
-										// cluster); once resolved it collapses back to its
-										// own pill.
-										(groupedTools.length > 1 ||
-										!groupedTools[0].isResolved ? (
-											<ResponseMessageToolGroup
-												key={`${p.toolCall.id}-group`}
-												tools={groupedTools}
-											/>
-										) : (
-											<ResponseMessageTool
-												tool={groupedTools[0]}
-												// getShouldGroupTool dictates that tools are grouped if auto, or all finished
-												// if the group size is 1, then this could be an auto tool and the run has an unfinished ask tool
-												// we should be large in this case for consistency
-												isLarge={
-													run.hasUnfinishedTools &&
-													run.hasAskTools
-												}
-											/>
-										))}
-									{tool && !groupedToolIds.has(tool.id) && (
-										<ResponseMessageTool
-											tool={tool}
-											// See logic above, but ungrouped tools are always unfinished ask tools - large
-											isLarge
-										/>
-									)}
-								</Fragment>
-							);
+							const tools = runsByPartIdx.get(pIdx);
+							return tools ? (
+								<ResponseMessageToolGroup
+									key={p.toolCall.id}
+									tools={tools}
+								/>
+							) : null;
 						} else if (p.type === "SUBAGENT") {
 							return (
 								<ResponseMessageSubagent
@@ -689,68 +502,75 @@ export const ResponseMessage = observer(
 						)}
 				</div>
 
-				<div className="flex flex-row items-center gap-0.5 pt-2">
-					{inputMessage?.siblings.length &&
-						inputMessage?.siblings.length > 1 && (
-							<div className="flex flex-row items-center gap-0.5">
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											disabled={
-												message.isThinking ||
-												!inputMessage.previousSibling
-											}
-											onClick={() => {
-												if (
-													!inputMessage.previousSibling
-												) {
-													return;
-												}
+				{inputMessage && inputMessage.siblings.length > 1 && (
+					<ButtonGroup className="items-center gap-0.5 pt-2">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label={t("response.previousMessage")}
+									disabled={
+										message.isThinking ||
+										!inputMessage.previousSibling
+									}
+									onClick={() => {
+										if (!inputMessage.previousSibling) {
+											return;
+										}
 
-												inputMessage.previousSibling.activateMessage();
-											}}
-										>
-											<ArrowLeftIcon className="rtl:-scale-x-100" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent side="bottom">
-										{t("response.previousMessage")}
-									</TooltipContent>
-								</Tooltip>
-								<span className="text-muted-foreground text-xs">
-									{inputMessage.position + 1}/
-									{inputMessage.siblings.length}
-								</span>
+										inputMessage.previousSibling.activateMessage();
+									}}
+								>
+									<ArrowLeftIcon
+										aria-hidden="true"
+										className="rtl:-scale-x-100"
+									/>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								{t("response.previousMessage")}
+							</TooltipContent>
+						</Tooltip>
+						<span className="text-muted-foreground text-xs">
+							{inputMessage.position + 1}/
+							{inputMessage.siblings.length}
+						</span>
 
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											disabled={
-												message.isThinking ||
-												!inputMessage.nextSibling
-											}
-											onClick={() => {
-												if (!inputMessage.nextSibling) {
-													return;
-												}
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label={t("response.nextMessage")}
+									disabled={
+										message.isThinking ||
+										!inputMessage.nextSibling
+									}
+									onClick={() => {
+										if (!inputMessage.nextSibling) {
+											return;
+										}
 
-												inputMessage.nextSibling.activateMessage();
-											}}
-										>
-											<ArrowRightIcon className="rtl:-scale-x-100" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent side="bottom">
-										{t("response.nextMessage")}
-									</TooltipContent>
-								</Tooltip>
-							</div>
-						)}
+										inputMessage.nextSibling.activateMessage();
+									}}
+								>
+									<ArrowRightIcon
+										aria-hidden="true"
+										className="rtl:-scale-x-100"
+									/>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								{t("response.nextMessage")}
+							</TooltipContent>
+						</Tooltip>
+					</ButtonGroup>
+				)}
 
+				<MessageActions
+					isDialogOpen={isDownloadDialogOpen || isFeedbackTextOpen}
+				>
 					{root.theme.featureFlags?.enableRewrite &&
 						parentHasContent && (
 							<Tooltip>
@@ -761,12 +581,15 @@ export const ResponseMessage = observer(
 											!inputMessage?.parent?.parent
 										}
 										variant="ghost"
-										size="icon"
+										size="icon-sm"
+										aria-label={t(
+											"response.rewriteMessage",
+										)}
 										onClick={() => {
 											rewriteMessage();
 										}}
 									>
-										<RefreshCwIcon />
+										<RefreshCwIcon aria-hidden="true" />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
@@ -779,13 +602,18 @@ export const ResponseMessage = observer(
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
-								size="icon"
+								size="icon-sm"
+								aria-label={t("response.goodResponse")}
+								aria-pressed={message.feedback?.rating === true}
 								disabled={message.isThinking}
-								onClick={() => {
+								onClick={(event) => {
+									actionTriggerRef.current =
+										event.currentTarget;
 									recordFeedback(true);
 								}}
 							>
 								<ThumbsUpIcon
+									aria-hidden="true"
 									fill={
 										message.feedback?.rating === true
 											? "currentColor"
@@ -803,13 +631,20 @@ export const ResponseMessage = observer(
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
-								size="icon"
+								size="icon-sm"
+								aria-label={t("response.poorResponse")}
+								aria-pressed={
+									message.feedback?.rating === false
+								}
 								disabled={message.isThinking}
-								onClick={() => {
+								onClick={(event) => {
+									actionTriggerRef.current =
+										event.currentTarget;
 									recordFeedback(false);
 								}}
 							>
 								<ThumbsDownIcon
+									aria-hidden="true"
 									fill={
 										message.feedback?.rating === false
 											? "currentColor"
@@ -834,7 +669,13 @@ export const ResponseMessage = observer(
 								}
 							}}
 						>
-							<DialogContent className="sm:max-w-md">
+							<DialogContent
+								className="sm:max-w-md"
+								onCloseAutoFocus={(event) => {
+									event.preventDefault();
+									actionTriggerRef.current?.focus();
+								}}
+							>
 								<DialogHeader>
 									<DialogTitle className="flex items-center gap-2">
 										{pendingRating === true ? (
@@ -855,6 +696,9 @@ export const ResponseMessage = observer(
 								</DialogHeader>
 								<Textarea
 									ref={feedbackTextRef}
+									aria-label={t(
+										"response.feedbackPlaceholder",
+									)}
 									placeholder={t(
 										"response.feedbackPlaceholder",
 									)}
@@ -889,11 +733,12 @@ export const ResponseMessage = observer(
 							<TooltipTrigger asChild>
 								<Button
 									variant="ghost"
-									size="icon"
+									size="icon-sm"
+									aria-label={t("response.copyResponse")}
 									disabled={message.isThinking}
 									onClick={copyImage}
 								>
-									<CopyIcon />
+									<CopyIcon aria-hidden="true" />
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
@@ -908,7 +753,8 @@ export const ResponseMessage = observer(
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"
-										size="icon"
+										size="icon-sm"
+										aria-label={t("response.copyResponse")}
 										disabled={
 											message.isThinking ||
 											message.parts.length === 0
@@ -957,7 +803,7 @@ export const ResponseMessage = observer(
 											}
 										}}
 									>
-										<CopyIcon />
+										<CopyIcon aria-hidden="true" />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
@@ -968,16 +814,19 @@ export const ResponseMessage = observer(
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"
-										size="icon"
+										size="icon-sm"
+										aria-label={t("Download Response")}
 										disabled={
 											message.isThinking ||
 											message.parts.length === 0
 										}
-										onClick={() =>
-											setIsDownloadDialogOpen(true)
-										}
+										onClick={(event) => {
+											actionTriggerRef.current =
+												event.currentTarget;
+											setIsDownloadDialogOpen(true);
+										}}
 									>
-										<DownloadIcon />
+										<DownloadIcon aria-hidden="true" />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
@@ -986,13 +835,19 @@ export const ResponseMessage = observer(
 							</Tooltip>
 						</>
 					)}
-				</div>
+				</MessageActions>
 
 				<Dialog
 					open={isDownloadDialogOpen}
 					onOpenChange={setIsDownloadDialogOpen}
 				>
-					<DialogContent className="sm:max-w-md">
+					<DialogContent
+						className="sm:max-w-md"
+						onCloseAutoFocus={(event) => {
+							event.preventDefault();
+							actionTriggerRef.current?.focus();
+						}}
+					>
 						<DialogHeader>
 							<DialogTitle>Download Response</DialogTitle>
 							<DialogDescription>

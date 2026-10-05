@@ -1,3 +1,6 @@
+import { isRecord } from "@semoss/utility/object";
+import { readNonBlankString } from "@semoss/utility/text";
+import { parseGraphDate } from "../core/connector.format";
 import type {
 	CalendarAttendee,
 	CalendarEvent,
@@ -20,12 +23,6 @@ import type {
  */
 
 type RawRecord = Record<string, unknown>;
-
-const isRecord = (value: unknown): value is RawRecord =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
-
-const readString = (value: unknown): string | undefined =>
-	typeof value === "string" && value.trim() !== "" ? value : undefined;
 
 const readNumber = (value: unknown): number | undefined =>
 	typeof value === "number" && Number.isFinite(value) ? value : undefined;
@@ -110,23 +107,23 @@ const parseDriveItem = (entry: unknown): MicrosoftDriveItem | null => {
 	if (!isRecord(entry)) {
 		return null;
 	}
-	const id = readString(entry.id);
+	const id = readNonBlankString(entry.id);
 	if (!id) {
 		return null;
 	}
 	return {
 		id: id,
-		name: readString(entry.name) ?? id,
-		driveId: readString(entry.driveId),
+		name: readNonBlankString(entry.name) ?? id,
+		driveId: readNonBlankString(entry.driveId),
 		isFolder: entry.isFolder === true,
 		size: readNumber(entry.size),
-		mimeType: readString(entry.mimeType),
+		mimeType: readNonBlankString(entry.mimeType),
 		childCount: readNumber(entry.childCount),
-		webUrl: readString(entry.webUrl),
-		path: readString(entry.path),
-		lastModifiedDateTime: readString(entry.lastModifiedDateTime),
-		lastModifiedBy: readString(entry.lastModifiedBy),
-		sharedBy: readString(entry.sharedBy),
+		webUrl: readNonBlankString(entry.webUrl),
+		path: readNonBlankString(entry.path),
+		lastModifiedDateTime: readNonBlankString(entry.lastModifiedDateTime),
+		lastModifiedBy: readNonBlankString(entry.lastModifiedBy),
+		sharedBy: readNonBlankString(entry.sharedBy),
 	};
 };
 
@@ -189,11 +186,11 @@ export const parseTeamsFolder = (raw: unknown): MicrosoftDriveItem[] =>
  */
 export const parseMicrosoftDownload = (raw: unknown): MicrosoftDownload => {
 	const record = requireRecord(raw, "the saved file");
-	const filePath = readString(record.filePath);
+	const filePath = readNonBlankString(record.filePath);
 	if (!filePath) {
 		throw new Error("The response did not include the saved file.");
 	}
-	return { filePath: filePath, name: readString(record.name) };
+	return { filePath: filePath, name: readNonBlankString(record.name) };
 };
 
 /**
@@ -210,13 +207,13 @@ const parseMailFolder = (entry: unknown): OutlookMailFolder | null => {
 	if (!isRecord(entry)) {
 		return null;
 	}
-	const id = readString(entry.id);
+	const id = readNonBlankString(entry.id);
 	if (!id) {
 		return null;
 	}
 	return {
 		id: id,
-		name: readString(entry.name) ?? id,
+		name: readNonBlankString(entry.name) ?? id,
 		totalItemCount: readNumber(entry.totalItemCount),
 	};
 };
@@ -234,14 +231,14 @@ const parseMailAttachment = (entry: unknown): OutlookAttachment | null => {
 	if (!isRecord(entry)) {
 		return null;
 	}
-	const id = readString(entry.id);
+	const id = readNonBlankString(entry.id);
 	if (!id) {
 		return null;
 	}
 	return {
 		id: id,
-		name: readString(entry.name) ?? id,
-		contentType: readString(entry.contentType),
+		name: readNonBlankString(entry.name) ?? id,
+		contentType: readNonBlankString(entry.contentType),
 		size: readNumber(entry.size),
 		isInline: entry.isInline === true,
 		isFile: entry.isFile === true,
@@ -252,20 +249,20 @@ const parseMailMessage = (entry: unknown): OutlookMessage | null => {
 	if (!isRecord(entry)) {
 		return null;
 	}
-	const uid = readString(entry.uid);
+	const uid = readNonBlankString(entry.uid);
 	if (!uid) {
 		return null;
 	}
 	return {
 		uid: uid,
-		conversationId: readString(entry.conversationId),
-		from: readString(entry.from),
-		fromName: readString(entry.fromName),
-		to: readString(entry.to),
-		cc: readString(entry.cc),
-		subject: readString(entry.subject),
-		receivedDate: readString(entry.receivedDate),
-		sentDate: readString(entry.sentDate),
+		conversationId: readNonBlankString(entry.conversationId),
+		from: readNonBlankString(entry.from),
+		fromName: readNonBlankString(entry.fromName),
+		to: readNonBlankString(entry.to),
+		cc: readNonBlankString(entry.cc),
+		subject: readNonBlankString(entry.subject),
+		receivedDate: readNonBlankString(entry.receivedDate),
+		sentDate: readNonBlankString(entry.sentDate),
 		isUnread: entry.unread === true,
 		hasAttachments: entry.hasAttachments === true,
 		body: readBody(entry.body, entry.bodyTruncated === true),
@@ -308,10 +305,10 @@ const parseAttendee = (entry: unknown): CalendarAttendee | null => {
 		return null;
 	}
 	const attendee = {
-		address: readString(entry.address),
-		name: readString(entry.name),
-		type: readString(entry.type),
-		response: readString(entry.response),
+		address: readNonBlankString(entry.address),
+		name: readNonBlankString(entry.name),
+		type: readNonBlankString(entry.type),
+		response: readNonBlankString(entry.response),
 	};
 	return attendee.address || attendee.name ? attendee : null;
 };
@@ -320,27 +317,27 @@ const parseCalendarEvent = (entry: unknown): CalendarEvent | null => {
 	if (!isRecord(entry)) {
 		return null;
 	}
-	const id = readString(entry.id);
+	const id = readNonBlankString(entry.id);
 	if (!id) {
 		return null;
 	}
 	return {
 		id: id,
-		subject: readString(entry.subject),
-		start: readString(entry.start),
-		startTimeZone: readString(entry.startTimeZone),
-		end: readString(entry.end),
-		endTimeZone: readString(entry.endTimeZone),
+		subject: readNonBlankString(entry.subject),
+		start: readNonBlankString(entry.start),
+		startTimeZone: readNonBlankString(entry.startTimeZone),
+		end: readNonBlankString(entry.end),
+		endTimeZone: readNonBlankString(entry.endTimeZone),
 		isAllDay: entry.isAllDay === true,
-		location: readString(entry.location),
-		organizer: readString(entry.organizer),
-		organizerName: readString(entry.organizerName),
+		location: readNonBlankString(entry.location),
+		organizer: readNonBlankString(entry.organizer),
+		organizerName: readNonBlankString(entry.organizerName),
 		attendees: parseEach(entry.attendees, parseAttendee),
-		webLink: readString(entry.webLink),
-		joinUrl: readString(entry.joinUrl),
+		webLink: readNonBlankString(entry.webLink),
+		joinUrl: readNonBlankString(entry.joinUrl),
 		isOnlineMeeting: entry.isOnlineMeeting === true,
 		isCancelled: entry.isCancelled === true,
-		responseStatus: readString(entry.responseStatus),
+		responseStatus: readNonBlankString(entry.responseStatus),
 		body: readBody(entry.body, entry.bodyTruncated === true),
 		isBodyTruncated: entry.bodyTruncated === true,
 	};
@@ -374,14 +371,14 @@ const parseTeam = (entry: unknown): TeamsTeam | null => {
 	if (!isRecord(entry)) {
 		return null;
 	}
-	const id = readString(entry.id);
+	const id = readNonBlankString(entry.id);
 	if (!id) {
 		return null;
 	}
 	return {
 		id: id,
-		displayName: readString(entry.displayName) ?? id,
-		description: readString(entry.description),
+		displayName: readNonBlankString(entry.displayName) ?? id,
+		description: readNonBlankString(entry.description),
 	};
 };
 
@@ -402,16 +399,16 @@ const parseChannel = (entry: unknown): TeamsChannel | null => {
 	if (!isRecord(entry)) {
 		return null;
 	}
-	const id = readString(entry.id);
+	const id = readNonBlankString(entry.id);
 	if (!id) {
 		return null;
 	}
 	return {
 		id: id,
-		displayName: readString(entry.displayName) ?? id,
-		description: readString(entry.description),
-		membershipType: readString(entry.membershipType),
-		webUrl: readString(entry.webUrl),
+		displayName: readNonBlankString(entry.displayName) ?? id,
+		description: readNonBlankString(entry.description),
+		membershipType: readNonBlankString(entry.membershipType),
+		webUrl: readNonBlankString(entry.webUrl),
 	};
 };
 
@@ -429,9 +426,9 @@ const parseTeamsAttachment = (entry: unknown): TeamsAttachment | null => {
 		return null;
 	}
 	const attachment = {
-		id: readString(entry.id),
-		name: readString(entry.name),
-		contentType: readString(entry.contentType),
+		id: readNonBlankString(entry.id),
+		name: readNonBlankString(entry.name),
+		contentType: readNonBlankString(entry.contentType),
 		isFile: entry.isFile === true,
 	};
 	return attachment.id || attachment.name ? attachment : null;
@@ -452,19 +449,19 @@ const parseTeamsMessage = (entry: unknown): TeamsMessage | null => {
 	if (!isRecord(entry)) {
 		return null;
 	}
-	const id = readString(entry.id);
+	const id = readNonBlankString(entry.id);
 	if (!id) {
 		return null;
 	}
 	return {
 		id: id,
-		replyToId: readString(entry.replyToId),
-		messageType: readString(entry.messageType),
-		subject: readString(entry.subject),
-		createdDateTime: readString(entry.createdDateTime),
+		replyToId: readNonBlankString(entry.replyToId),
+		messageType: readNonBlankString(entry.messageType),
+		subject: readNonBlankString(entry.subject),
+		createdDateTime: readNonBlankString(entry.createdDateTime),
 		isDeleted: entry.isDeleted === true,
-		fromName: readString(entry.fromName),
-		webUrl: readString(entry.webUrl),
+		fromName: readNonBlankString(entry.fromName),
+		webUrl: readNonBlankString(entry.webUrl),
 		body: readBody(entry.body, entry.bodyTruncated === true) ?? "",
 		isBodyTruncated: entry.bodyTruncated === true,
 		attachments: parseEach(entry.attachments, parseTeamsAttachment),
@@ -527,16 +524,24 @@ const parseChat = (entry: unknown): TeamsChat | null => {
 	if (!isRecord(entry)) {
 		return null;
 	}
-	const id = readString(entry.id);
+	const id = readNonBlankString(entry.id);
 	if (!id) {
 		return null;
 	}
 	return {
 		id: id,
-		chatType: readString(entry.chatType),
-		displayName: readString(entry.displayName) ?? readString(entry.topic),
-		lastUpdatedDateTime: readString(entry.lastUpdatedDateTime),
-		webUrl: readString(entry.webUrl),
+		chatType: readNonBlankString(entry.chatType),
+		displayName:
+			readNonBlankString(entry.displayName) ??
+			readNonBlankString(entry.topic),
+		// Graph can return year 0001 as an unset last-updated timestamp.
+		lastUpdatedDateTime:
+			(parseGraphDate(
+				readNonBlankString(entry.lastUpdatedDateTime),
+			)?.getUTCFullYear() ?? 0) > 1
+				? readNonBlankString(entry.lastUpdatedDateTime)
+				: undefined,
+		webUrl: readNonBlankString(entry.webUrl),
 		hasUnread: entry.hasUnread === true,
 		lastMessage: parseTeamsMessage(entry.lastMessage) ?? undefined,
 	};

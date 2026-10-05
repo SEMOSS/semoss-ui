@@ -199,7 +199,7 @@ the larger shared component package:
 ```ts
 import {
   formatDateToRelative,
-  normalizeTimestamp,
+  parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
 import {
   getImageMimeType,
@@ -207,7 +207,7 @@ import {
 } from "@semoss/utility/image";
 
 const label = formatDateToRelative("2026-09-15T12:00:00Z");
-const timestamp = normalizeTimestamp("2026-09-15 12:00:00");
+const timestamp = parseTimestampWithUtcDefault("2026-09-15 12:00:00");
 const mime = getImageMimeType("png");
 const containsImage = hasInlineImage('<img src="data:image/png;base64,abc">');
 ```

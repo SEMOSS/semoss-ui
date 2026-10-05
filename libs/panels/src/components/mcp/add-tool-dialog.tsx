@@ -12,10 +12,10 @@ import {
 	Label,
 	Textarea,
 } from "@semoss/ui/next";
+import { validateIdentifier } from "@semoss/utility/identifier";
 import {
 	type NewToolInput,
 	slugifyIdentifier,
-	validateIdentifier,
 } from "../../utility/mcp-json-utils";
 
 export interface AddToolDialogProps {

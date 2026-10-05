@@ -1,4 +1,5 @@
 import type React from "react";
+import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import type { FileItem } from "./file.types";
 import {
 	BRAND_ICON_EXTENSIONS,
@@ -245,6 +246,26 @@ export const resolveMovedPath = (
 export const isExplorerDrag = (dataTransfer: DataTransfer) =>
 	Array.from(dataTransfer.types).includes(FILE_EXPLORER_DRAG_DATA_TYPE);
 
+/**
+ * Where the explorer's menu opens for an event: at the pointer, or, for a key
+ * or for a click made with one (which reports no pointer), under the element
+ * that has focus, on its start edge.
+ *
+ * @param e - The right-click, click, or key press that opens the menu.
+ * @return The viewport point the menu hangs from.
+ */
+export const getContextMenuAnchor = (
+	e: React.MouseEvent | React.KeyboardEvent,
+): { x: number; y: number } => {
+	if ("clientX" in e && (e.clientX !== 0 || e.clientY !== 0)) {
+		return { x: e.clientX, y: e.clientY };
+	}
+	const element = e.target instanceof Element ? e.target : e.currentTarget;
+	const rect = element.getBoundingClientRect();
+	const isRtl = getComputedStyle(element).direction === "rtl";
+	return { x: isRtl ? rect.right : rect.left, y: rect.bottom };
+};
+
 export const isPointerOutsideElement = (
 	element: HTMLElement,
 	clientX: number,
@@ -353,27 +374,9 @@ export const getFileOperationErrorMessage = (
 export const decodeBase64Asset = (data: string): Uint8Array | null => {
 	if (!data) return null;
 	try {
-		const binary = atob(data.replace(/\s/g, ""));
-		const bytes = new Uint8Array(binary.length);
-		for (let i = 0; i < binary.length; i++) {
-			bytes[i] = binary.charCodeAt(i);
-		}
-		return bytes;
+		return decodeBase64ToBytes(data.replace(/\s/g, ""));
 	} catch (error) {
 		console.error("Failed to decode asset bytes", error);
 		return null;
 	}
-};
-
-/**
- * Encode raw bytes as base64 (e.g. for a `Save*AssetsBase64` Pixel), chunked
- * so a large file does not overflow `String.fromCharCode`'s argument limit.
- */
-export const encodeBase64Asset = (bytes: Uint8Array): string => {
-	const CHUNK = 0x8000;
-	let binary = "";
-	for (let i = 0; i < bytes.length; i += CHUNK) {
-		binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-	}
-	return btoa(binary);
 };

@@ -121,7 +121,38 @@
 		"organizer": "開催者",
 		"attendees": "招待者",
 		"join": "会議に参加",
-		"noDescription": "この予定には説明がありません。"
+		"noDescription": "この予定には説明がありません。",
+		"view": "カレンダー表示",
+		"month": "月",
+		"agenda": "予定リスト",
+		"previousMonth": "前の月",
+		"nextMonth": "次の月",
+		"emptyDay": "この日の予定はありません",
+		"emptyMonth": "今月の予定はありません",
+		"eventCount_one": "{{count}} 件の予定",
+		"eventCount_other": "{{count}} 件の予定",
+		"moreEvents": "他 {{count}} 件",
+		"limitReached": "最初の {{count}} 件のみ表示しています。一部の日には他の予定がある場合があります。すべての予定は Outlook で確認してください。",
+		"noLoadedEvents": "この日の予定は読み込まれていません",
+		"week": "週",
+		"day": "日",
+		"threeDays": "3日間",
+		"listView": "リスト表示",
+		"calendarView": "カレンダー表示",
+		"openForTime": "予定を開くと時刻を確認できます。",
+		"emptyRange": "この期間の予定はありません",
+		"previousView": {
+			"week": "前の週",
+			"day": "前の日",
+			"threeDays": "前の3日間",
+			"month": "前の月"
+		},
+		"nextView": {
+			"week": "次の週",
+			"day": "次の日",
+			"threeDays": "次の3日間",
+			"month": "次の月"
+		}
 	},
 	"teams": {
 		"team": "チーム",

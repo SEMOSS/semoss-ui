@@ -2,10 +2,12 @@ import { MailIcon, RefreshCwIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
-import { cn, Muted, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
+import { cn, Muted, Tabs, TabsContent } from "@semoss/ui/next";
 import { ConnectorIconButton } from "../../components/connector-icon-button";
 import { ConnectorItemRow } from "../../components/connector-item-row";
 import { ConnectorList } from "../../components/connector-list";
+import { ConnectorTabsList } from "../../components/connector-tabs-list";
+import { ConnectorTabsTrigger } from "../../components/connector-tabs-trigger";
 import { ConnectorViewerHeader } from "../../components/connector-viewer-header";
 import type { ConnectorViewerProps } from "../../core/connector.types";
 import { runConnectorPixel } from "../../core/connector-pixel";
@@ -57,8 +59,8 @@ export type GmailViewerProps = ConnectorViewerProps;
  * bring it into the insight. Gmail marks an email read when it is opened.
  */
 export const GmailViewer = (props: GmailViewerProps) => {
-	const { onSignIn } = props;
-	const { t } = useTranslation("connectors");
+	const { onSignIn, showHeader = true } = props;
+	const { t, i18n } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("gmail", props);
 	const [view, setView] = useState<GmailView>("recent");
@@ -103,6 +105,17 @@ export const GmailViewer = (props: GmailViewerProps) => {
 		},
 	});
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={query.reload}
+		/>
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div
@@ -111,123 +124,136 @@ export const GmailViewer = (props: GmailViewerProps) => {
 					openMessage !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader
-					icon={MailIcon}
-					title={serviceName}
-					description={listName}
-				>
-					<ConnectorIconButton
-						icon={RefreshCwIcon}
-						label={t("common.refresh")}
-						isSpinning={query.isRefreshing}
-						onClick={query.reload}
-					/>
-				</ConnectorViewerHeader>
-
-				<div className="flex flex-col gap-2 px-3 py-2">
-					<ToggleGroup
-						type="single"
-						variant="outline"
-						size="sm"
-						value={view}
-						aria-label={t("gmail.viewLabel")}
-						onValueChange={(value) => {
-							if (isGmailView(value)) {
-								setView(value);
-								setLimit(PAGE_SIZE);
-							}
-						}}
+				{showHeader ? (
+					<ConnectorViewerHeader
+						brand="gmail"
+						icon={MailIcon}
+						title={serviceName}
+						description={listName}
 					>
-						<ToggleGroupItem value="recent">
-							{t("gmail.recent")}
-						</ToggleGroupItem>
-						<ToggleGroupItem value="unread">
-							{t("gmail.unread")}
-						</ToggleGroupItem>
-					</ToggleGroup>
-					<Muted>{t("gmail.marksRead")}</Muted>
-				</div>
+						{refreshButton}
+					</ConnectorViewerHeader>
+				) : null}
 
-				<ConnectorList
-					query={query}
-					serviceName={serviceName}
-					account="google"
-					onSignIn={onSignIn}
-					listRef={listRef}
-					limit={limit}
-					emptyText={
-						view === "unread"
-							? t("gmail.noUnread")
-							: t("gmail.empty")
-					}
-					onShowMore={
-						limit < MAX_EMAILS
-							? () =>
-									setLimit((previous) =>
-										Math.min(
-											previous + PAGE_SIZE,
-											MAX_EMAILS,
-										),
-									)
-							: undefined
-					}
+				<Tabs
+					dir={i18n.dir()}
+					value={view}
+					onValueChange={(value) => {
+						if (isGmailView(value)) {
+							setView(value);
+							setLimit(PAGE_SIZE);
+						}
+					}}
+					className="min-h-0 flex-1 gap-0"
 				>
-					{(messages) =>
-						messages.map((message) => {
-							const request = messageRequest(message);
-							const isBusy = saver.isBusy(request.key);
-							const title =
-								message.subject || t("common.noSubject");
-							const from = message.from
-								? toSenderName(message.from)
-								: t("mail.unknownSender");
-							return (
-								<ConnectorItemRow
-									key={message.id}
-									itemKey={message.id}
-									icon={
-										<MailIcon
-											aria-hidden
-											className="size-4"
+					<div className="shrink-0 border-border border-b bg-muted/10 px-3 pb-1.5">
+						<div className="flex items-center justify-between gap-2">
+							<ConnectorTabsList
+								aria-label={t("gmail.viewLabel")}
+							>
+								<ConnectorTabsTrigger value="recent">
+									{t("gmail.recent")}
+								</ConnectorTabsTrigger>
+								<ConnectorTabsTrigger value="unread">
+									{t("gmail.unread")}
+								</ConnectorTabsTrigger>
+							</ConnectorTabsList>
+							{showHeader ? null : refreshButton}
+						</div>
+						<Muted className="text-xs">
+							{t("gmail.marksRead")}
+						</Muted>
+					</div>
+					<TabsContent value={view} className="flex min-h-0 flex-col">
+						<ConnectorList
+							query={query}
+							serviceName={serviceName}
+							account="google"
+							onSignIn={onSignIn}
+							listRef={listRef}
+							limit={limit}
+							emptyText={
+								view === "unread"
+									? t("gmail.noUnread")
+									: t("gmail.empty")
+							}
+							onShowMore={
+								limit < MAX_EMAILS
+									? () =>
+											setLimit((previous) =>
+												Math.min(
+													previous + PAGE_SIZE,
+													MAX_EMAILS,
+												),
+											)
+									: undefined
+							}
+						>
+							{(messages) =>
+								messages.map((message) => {
+									const request = messageRequest(message);
+									const isBusy = saver.isBusy(request.key);
+									const title =
+										message.subject ||
+										t("common.noSubject");
+									const from = message.from
+										? toSenderName(message.from)
+										: t("mail.unknownSender");
+									return (
+										<ConnectorItemRow
+											key={message.id}
+											itemKey={message.id}
+											icon={
+												<MailIcon
+													aria-hidden
+													className="size-4"
+												/>
+											}
+											title={title}
+											description={
+												message.snippet
+													? t(
+															"gmail.fromWithPreview",
+															{
+																from: from,
+																preview:
+																	message.snippet,
+															},
+														)
+													: from
+											}
+											isEmphasized={view === "unread"}
+											openLabel={t("mail.openMessage", {
+												subject: title,
+												from: from,
+											})}
+											isBusy={isBusy}
+											onOpen={() => {
+												rememberItem(message.id);
+												setOpenMessage(message);
+											}}
+											actions={{
+												itemName: title,
+												serviceName: serviceName,
+												saveLabel: saver.saveLabel,
+												isBusy: isBusy,
+												onAddToContext:
+													saver.addToContext
+														? () =>
+																saver.addToContext?.(
+																	request,
+																)
+														: undefined,
+												onSave: () =>
+													saver.save(request),
+											}}
 										/>
-									}
-									title={title}
-									description={
-										message.snippet
-											? t("gmail.fromWithPreview", {
-													from: from,
-													preview: message.snippet,
-												})
-											: from
-									}
-									isEmphasized={view === "unread"}
-									openLabel={t("mail.openMessage", {
-										subject: title,
-										from: from,
-									})}
-									isBusy={isBusy}
-									onOpen={() => {
-										rememberItem(message.id);
-										setOpenMessage(message);
-									}}
-									actions={{
-										itemName: title,
-										serviceName: serviceName,
-										saveLabel: saver.saveLabel,
-										isBusy: isBusy,
-										onAddToContext: saver.addToContext
-											? () =>
-													saver.addToContext?.(
-														request,
-													)
-											: undefined,
-										onSave: () => saver.save(request),
-									}}
-								/>
-							);
-						})
-					}
-				</ConnectorList>
+									);
+								})
+							}
+						</ConnectorList>
+					</TabsContent>
+				</Tabs>
 			</div>
 
 			{openMessage ? (

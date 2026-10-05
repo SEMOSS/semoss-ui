@@ -1,6 +1,7 @@
 import { Download, RefreshCw, ScrollTextIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { download } from "@semoss/sdk";
 import {
 	AuditLogFilter,
@@ -34,6 +35,7 @@ import { useRoom } from "@/contexts";
  * (no engine/project pickers), so it can't be changed from this view.
  */
 const RoomAuditLogPanel = observer(() => {
+	const { t } = useTranslation("room");
 	const room = useRoom();
 	const roomId = room.roomId;
 	const insightId = room.insightId;
@@ -134,23 +136,27 @@ const RoomAuditLogPanel = observer(() => {
 		<>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button variant="outline" size="icon-sm" title="Export">
+					<Button
+						variant="outline"
+						size="icon-sm"
+						aria-label={t("studio.export")}
+					>
 						<Download className="size-4" />
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent>
 					<DropdownMenuItem onClick={() => handleExport(false)}>
-						Export as CSV
+						{t("studio.exportCsv")}
 					</DropdownMenuItem>
 					<DropdownMenuItem onClick={() => handleExport(true)}>
-						Export as PDF
+						{t("studio.exportPdf")}
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
 			<Button
 				variant="outline"
 				size="icon-sm"
-				title="Refresh"
+				aria-label={t("studio.refresh")}
 				onClick={() => fetchLogs(rowsPerPage, page * rowsPerPage)}
 			>
 				<RefreshCw className="size-4" />
@@ -159,7 +165,7 @@ const RoomAuditLogPanel = observer(() => {
 	);
 
 	return (
-		<div className="flex h-full w-full flex-col gap-4 overflow-auto p-4">
+		<div className="flex h-full min-w-0 flex-col gap-4 overflow-auto bg-background p-4">
 			<div className="flex w-full flex-wrap items-center gap-2">
 				<AuditLogFilter
 					updateLogs={updateLogs}
@@ -176,8 +182,8 @@ const RoomAuditLogPanel = observer(() => {
 			</div>
 			{loading ? (
 				<div className="flex flex-col gap-4">
-					<Skeleton className="h-[300px] w-full" />
-					<Skeleton className="h-[300px] w-full" />
+					<Skeleton className="h-72 w-full" />
+					<Skeleton className="h-72 w-full" />
 				</div>
 			) : (
 				<>

@@ -1,6 +1,6 @@
 import { UsersRound } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
@@ -12,16 +12,29 @@ import {
 	toAgentFormValues,
 	toAgentPromptTitles,
 } from "@semoss/shared";
-import { Button, Spinner, toast } from "@semoss/ui/next";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import {
+	Alert,
+	AlertDescription,
+	Button,
+	Spinner,
+	toast,
+} from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
 import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
+
+/** The values the form was seeded with, and the agent they belong to. */
+interface AgentFormSeed {
+	workspaceId: string;
+	values: AgentFormValues;
+}
 
 /**
  * Renders the EditWorkspacePage for editing existing agents.
  *
- * The shared agent form (the same one the platform's agent editor uses)
- * followed by the members table, which saves per action rather than with
- * the form.
+ * The shared agent form, the same one the client's agent pages use, followed
+ * by the members table, which saves per action rather than with the form.
  */
 export const EditWorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
@@ -31,62 +44,51 @@ export const EditWorkspacePage = observer(() => {
 	const { root } = useRoot();
 	const featureFlags = root.theme.featureFlags;
 
+	const [seed, setSeed] = useState<AgentFormSeed | null>(null);
 	const [formValues, setFormValues] = useState<AgentFormValues | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
+	const seededWorkspace = useRef<string | null>(null);
 
-	const getWorkspace = usePixel<AgentWorkspace>(
+	const getWorkspace = usePixel<AgentWorkspace & { workspace_id: string }>(
 		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
 		{
 			data: null,
 			onError: (_d, e) => {
 				toast.error(
 					t("workspace:edit.failedToLoad", {
-						error: e instanceof Error ? e.message : "Unknown error",
+						error: getErrorMessage(e, "Unknown error"),
 					}),
 				);
 			},
 		},
 	);
 
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("workspace:breadcrumbs.home"), path: "/" },
-			{ name: t("workspace:breadcrumbs.agent"), path: "/agent" },
-			{
-				name:
-					getWorkspace.status === "SUCCESS"
-						? getWorkspace.data.name
-						: t("workspace:breadcrumbs.loading"),
-				path: `/agent/${workspaceId}`,
-			},
-			{
-				name: t("workspace:breadcrumbs.edit"),
-				path: `/agent/${workspaceId}/edit`,
-			},
-		],
-	});
-
-	// The values the form was seeded with; the form owns edits after that
-	const initialValues = useMemo(
-		() =>
-			getWorkspace.status === "SUCCESS" && getWorkspace.data
-				? toAgentFormValues(getWorkspace.data)
-				: null,
-		[getWorkspace.status, getWorkspace.data],
-	);
-
+	// AgentForm reads its values once on mount, so it is seeded once per
+	// agent: a refetch never overwrites unsaved edits, and a different agent
+	// remounts the form with its own values
 	useEffect(() => {
-		setFormValues(initialValues);
-	}, [initialValues]);
-
-	const isDirty =
-		!!formValues &&
-		!!initialValues &&
-		JSON.stringify(formValues) !== JSON.stringify(initialValues);
+		if (
+			getWorkspace.status !== "SUCCESS" ||
+			!getWorkspace.data ||
+			getWorkspace.data.workspace_id !== workspaceId ||
+			seededWorkspace.current === workspaceId
+		)
+			return;
+		const w = getWorkspace.data;
+		const values = {
+			...toAgentFormValues(w),
+			instructions: (w.system_prompt || "").replace(/\\n/g, "\n"),
+		};
+		seededWorkspace.current = workspaceId;
+		setSeed({ workspaceId, values });
+		setFormValues(values);
+		setSaveError(null);
+	}, [workspaceId, getWorkspace.status, getWorkspace.data]);
 
 	if (
-		workspaceId &&
-		(getWorkspace.status === "INITIAL" || getWorkspace.status === "LOADING")
+		getWorkspace.status === "INITIAL" ||
+		getWorkspace.status === "LOADING"
 	) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
@@ -95,7 +97,12 @@ export const EditWorkspacePage = observer(() => {
 		);
 	}
 
-	if (getWorkspace.status === "ERROR" || !workspaceId || !initialValues) {
+	if (
+		getWorkspace.status === "ERROR" ||
+		!workspaceId ||
+		!getWorkspace.data ||
+		getWorkspace.data.workspace_id !== workspaceId
+	) {
 		return (
 			<div className="@container relative h-full w-full overflow-hidden">
 				<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
@@ -110,22 +117,35 @@ export const EditWorkspacePage = observer(() => {
 		);
 	}
 
+	if (!seed || seed.workspaceId !== workspaceId || !formValues) {
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
+	}
+
+	const isDirty = JSON.stringify(formValues) !== JSON.stringify(seed.values);
+
 	const handleCancel = () => {
 		navigate(`/agent/${workspaceId}`);
 	};
 
 	const handleSave = async () => {
-		if (isSaving || !formValues) return;
-
+		const name = formValues.name.trim();
+		if (isSaving || !name) return;
 		setIsSaving(true);
+		setSaveError(null);
 		try {
-			const warning = await chat.editWorkspace(workspaceId, formValues);
-			if (warning) {
-				toast.warning(warning);
-			}
+			const warning = await chat.editWorkspace(workspaceId, {
+				...formValues,
+				name,
+			});
+			if (warning) toast.warning(warning);
 			navigate(`/agent/${workspaceId}`);
 		} catch (err) {
-			toast.error(
+			// The form keeps its values, so a retry sends the same edits
+			setSaveError(
 				err instanceof Error && err.message
 					? err.message
 					: t("notifications:workspace.saveError"),
@@ -137,11 +157,11 @@ export const EditWorkspacePage = observer(() => {
 
 	return (
 		<div className="@container h-full w-full overflow-y-auto">
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
 				{/* Sticky header so Save/Cancel stay reachable while scrolling */}
-				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
 					<div className="min-w-0 flex-1">
-						<div className="truncate font-semibold text-2xl text-foreground leading-tight">
+						<div className="font-semibold text-2xl text-foreground leading-tight">
 							{t("workspace:edit.title")}
 						</div>
 						<div className="text-muted-foreground text-sm">
@@ -162,21 +182,24 @@ export const EditWorkspacePage = observer(() => {
 							type="button"
 							onClick={handleSave}
 							disabled={
-								isSaving || !formValues?.name.trim() || !isDirty
+								isSaving || !formValues.name.trim() || !isDirty
 							}
 							data-testid="workspace-edit-page--save-btn"
 						>
-							{isSaving ? (
-								<Spinner className="size-4" />
-							) : (
-								t("workspace:actions.save")
-							)}
+							{t("workspace:actions.save")}
 						</Button>
 					</div>
 				</div>
 
+				{saveError && (
+					<Alert variant="destructive">
+						<AlertDescription>{saveError}</AlertDescription>
+					</Alert>
+				)}
+
 				<AgentForm
-					data={initialValues}
+					key={seed.workspaceId}
+					data={seed.values}
 					onChange={setFormValues}
 					disabled={isSaving}
 					promptTitles={toAgentPromptTitles(getWorkspace.data)}
@@ -193,7 +216,7 @@ export const EditWorkspacePage = observer(() => {
 					className="p-0"
 				/>
 
-				{/* Members (saved per-action, not with the form) */}
+				{/* Members (saved per action, not with the form) */}
 				<section className="flex flex-col gap-3">
 					<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 						<UsersRound className="size-5" />

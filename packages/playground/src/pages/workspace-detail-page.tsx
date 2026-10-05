@@ -31,9 +31,10 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { WorkspaceChatList } from "@/components";
-import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { getErrorMessage } from "@semoss/utility/error";
+import { WorkspaceChatList } from "@/components/workspace/workspace-chat-list";
 import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
 import type { Workspace } from "@/types";
 import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
 
@@ -43,7 +44,7 @@ import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
  * Read-only configuration view:
  *   - Header: agent name + Edit / Delete actions (top right)
  *   - Continue recent chats: scrollable list with a max height
- *   - The agent's full definition (shared read-only view)
+ *   - The shared agent definition, the same view the client uses
  *   - Members
  */
 export const WorkspaceDetailPage = observer(() => {
@@ -59,6 +60,7 @@ export const WorkspaceDetailPage = observer(() => {
 	const [userPermission, setUserPermission] = useState<Role | null>(null);
 
 	useEffect(() => {
+		setUserPermission(null);
 		if (!workspaceId) return;
 		let cancelled = false;
 		(async () => {
@@ -79,31 +81,16 @@ export const WorkspaceDetailPage = observer(() => {
 	const canEdit = userPermission === "EDIT" || userPermission === "OWNER";
 	const canDelete = userPermission === "OWNER";
 
-	const getWorkspace = usePixel<Workspace>(
-		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
-		{
-			onError: (_d, e) => {
-				toast.error(
-					t("workspace:detail.failedToLoad", {
-						error: e instanceof Error ? e.message : "Unknown error",
-					}),
-				);
-			},
+	const getWorkspace = usePixel<
+		AgentWorkspace & Pick<Workspace, "workspace_id">
+	>(workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "", {
+		onError: (_d, e) => {
+			toast.error(
+				t("workspace:detail.failedToLoad", {
+					error: getErrorMessage(e, "Unknown error"),
+				}),
+			);
 		},
-	);
-
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("workspace:breadcrumbs.home"), path: "/" },
-			{ name: t("workspace:breadcrumbs.agent"), path: "/agent" },
-			{
-				name:
-					getWorkspace.status === "SUCCESS"
-						? getWorkspace.data.name
-						: t("workspace:breadcrumbs.loading"),
-				path: `/agent/${workspaceId}`,
-			},
-		],
 	});
 
 	if (
@@ -130,21 +117,24 @@ export const WorkspaceDetailPage = observer(() => {
 		);
 	}
 
-	// `Workspace` is the playground's narrower view of the same GetWorkspace
-	// response; the shared definition reads the full shape
-	const definition = workspace as unknown as AgentWorkspace;
+	// GetWorkspace returns the instructions with escaped line breaks
+	const definition = {
+		...workspace,
+		system_prompt: (workspace.system_prompt || "").replace(/\\n/g, "\n"),
+	};
 
 	return (
 		<div className="@container h-full w-full overflow-y-auto">
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
 				{/* Sticky header so New Chat / Edit / Delete stay reachable while scrolling */}
-				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
 					<AppCatalogAvatar
+						projectId={workspaceId}
 						name={workspace.name}
 						className="size-10 shrink-0 rounded-md text-base"
 					/>
 					<div className="min-w-0 flex-1">
-						<div className="truncate font-semibold text-2xl text-foreground leading-tight">
+						<div className="break-words font-semibold text-2xl text-foreground leading-tight">
 							{workspace.name}
 						</div>
 					</div>
@@ -206,7 +196,7 @@ export const WorkspaceDetailPage = observer(() => {
 				{/* Body — flows naturally; outer container scrolls */}
 				<div className="flex flex-col gap-8">
 					{/* Recent chats — timeline grouped by day */}
-					<section className="flex flex-col gap-4">
+					<section className="flex min-w-0 flex-col gap-4">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<MessagesSquareIcon className="size-5" />
 							{t("workspace:detail.recentChats.title")}
@@ -225,7 +215,7 @@ export const WorkspaceDetailPage = observer(() => {
 					</section>
 
 					{/* Members */}
-					<section className="flex flex-col gap-3">
+					<section className="flex min-w-0 flex-col gap-3">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<UsersRound className="size-5" />
 							{t("workspace:detail.tabs.members")}

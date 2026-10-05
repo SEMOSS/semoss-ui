@@ -22,13 +22,15 @@ import {
 import { countInlineImages, hasInlineImage } from "@semoss/utility/image";
 import { isTabularArray, parseStructuredOutput } from "@semoss/utility/json";
 import {
-	countLines,
-	formatBytes,
 	looksLikeHtmlDocument,
 	looksLikeMarkdown,
 	normalizeForMarkdown,
-	splitMessageLines,
 } from "@semoss/utility/markdown";
+import {
+	countLines,
+	formatTextByteSize,
+	splitMessageLines,
+} from "@semoss/utility/text";
 import { SandpackHtmlPreview } from "../html";
 import { InlineImageSegments } from "./inline-image";
 import { JsonViewer } from "./json-viewer";
@@ -184,7 +186,7 @@ export const CellOutputBlock = ({
 					// channel is invisible until the user expands it.
 					meta={`${t("cellOutput.lines", {
 						count: messageLines.length,
-					})} · ${formatBytes(rawLogsText)}${
+					})} · ${formatTextByteSize(rawLogsText)}${
 						logsImageCount > 0
 							? ` · ${t("cellOutput.images", { count: logsImageCount })}`
 							: ""
@@ -262,7 +264,7 @@ export const CellOutputBlock = ({
 					}
 					meta={`${t("cellOutput.lines", {
 						count: countLines(output),
-					})} · ${formatBytes(output)}${
+					})} · ${formatTextByteSize(output)}${
 						outputImageCount > 0
 							? ` · ${t("cellOutput.images", { count: outputImageCount })}`
 							: ""
@@ -352,7 +354,7 @@ export const CellOutputBlock = ({
 					title={t("cellOutput.panels.logs")}
 					meta={`${t("cellOutput.lines", {
 						count: messageLines.length,
-					})} · ${formatBytes(rawLogsText)}`}
+					})} · ${formatTextByteSize(rawLogsText)}`}
 					actions={
 						<>
 							<RawToggle
@@ -416,7 +418,7 @@ export const CellOutputBlock = ({
 					}
 					meta={`${t("cellOutput.lines", {
 						count: countLines(output),
-					})} · ${formatBytes(output)}`}
+					})} · ${formatTextByteSize(output)}`}
 					actions={
 						<>
 							{!error &&

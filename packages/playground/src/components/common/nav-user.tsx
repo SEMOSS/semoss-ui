@@ -20,7 +20,7 @@ import {
 	DropdownMenuTrigger,
 	useSidebar,
 } from "@semoss/ui/next";
-import { buildInitials } from "@semoss/utility";
+import { buildInitials } from "@semoss/utility/text";
 import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
 import { useChat, useRoot, useTour } from "@/hooks";
 
