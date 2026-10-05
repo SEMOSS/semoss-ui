@@ -7,11 +7,37 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
+import { useWorkbench, WORKBENCH_STYLES } from "@semoss/workbench";
 import { ProjectDetailTabs } from "@/components/project";
-import { useWorkbench } from "@/hooks";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
+
+/** The tabs every project workbench shows. Notebook and skill use it as-is. */
+export const PROJECT_SETTINGS_TABS: ComponentProps<
+	typeof ProjectDetailTabs
+>["tabs"] = [
+	{ name: "Overview", component: "project-overview" },
+	{
+		name: "MCP",
+		component: "mcp-usage",
+		restrict: ["OWNER", "EDIT", "READ_ONLY"],
+	},
+	{
+		name: "GitHub",
+		component: "github",
+		restrict: ["OWNER"],
+	},
+	{
+		name: "Access Control",
+		component: "access-control",
+		restrict: ["OWNER", "EDIT"],
+	},
+	{
+		name: "SMSS",
+		component: "smss",
+		restrict: ["OWNER"],
+	},
+];
 
 /**
  * Builds the settings blueprint for one project domain. Each domain calls

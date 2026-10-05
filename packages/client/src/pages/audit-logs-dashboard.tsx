@@ -1,7 +1,7 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { Download, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { download } from "@semoss/sdk";
 import {
 	AppCatalogAvatar,
@@ -29,7 +29,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 interface AuditLogsDashboardProps {
 	catalogName: string;
@@ -77,7 +77,8 @@ export const AuditLogsDashboard = ({
 	catalogName,
 	embedded = false,
 }: AuditLogsDashboardProps) => {
-	const { configStore, monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
 	const { appId, engineId } = useParams();
 	const [logs, setLogs] = useState<EventData[]>([]);
 	const [page, setPage] = useState(0);
@@ -133,7 +134,7 @@ export const AuditLogsDashboard = ({
 		const fetchContextEntity = async () => {
 			if (appId) {
 				try {
-					const appResponse = await monolithStore.runQuery(
+					const appResponse = await runPixel(
 						`GetProjectMetadata(project="${appId}", metaKeys=${JSON.stringify([["project_display_name", "project_name"]])})`,
 					);
 					const { operationType, output } =
@@ -163,7 +164,7 @@ export const AuditLogsDashboard = ({
 
 			if (engineId) {
 				try {
-					const engineResponse = await monolithStore.runQuery(
+					const engineResponse = await runPixel(
 						`GetEngineMetadata(engine=["${engineId}"], metaKeys=${JSON.stringify([["engine_display_name", "engine_name", "engine_type", "engine_subtype"]])});`,
 					);
 					const { operationType, output } =
@@ -203,7 +204,7 @@ export const AuditLogsDashboard = ({
 		return () => {
 			cancelled = true;
 		};
-	}, [appId, engineId, monolithStore, catalogName]);
+	}, [appId, engineId, runPixel, catalogName]);
 
 	/**
 	 * Fetches the audit logs from the API using the current filter state.
@@ -219,7 +220,7 @@ export const AuditLogsDashboard = ({
 		setLoading(true);
 		try {
 			const params = filterValueToReportParams(filterValue);
-			const response = await monolithStore.runQuery(
+			const response = await runPixel(
 				buildAuditLogReportPixel(params, limit, offset),
 			);
 			const { operationType, output } = response.pixelReturn[0];
@@ -260,16 +261,13 @@ export const AuditLogsDashboard = ({
 		try {
 			const params = filterValueToReportParams(filterValue);
 			const exportLimit = totalCount > 0 ? totalCount : rowsPerPage;
-			const response = await monolithStore.runQuery(
+			const response = await runPixel(
 				buildExportAuditLogReportPixel(params, exportLimit, 0, pdf),
 			);
 			const { operationType, output } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1)
 				throw new Error(`API Error: ${output}`);
-			await download(
-				configStore.store.insightID,
-				output as unknown as string,
-			);
+			await download(insightID, output as unknown as string);
 		} catch (error) {
 			toast.error(`Error exporting logs: ${error}`);
 			console.error("Error exporting logs:", error);
@@ -353,7 +351,7 @@ export const AuditLogsDashboard = ({
 		<div className="flex w-full flex-wrap items-center gap-2">
 			<AuditLogFilter
 				updateLogs={updateLogs}
-				insightId={configStore.store.insightID}
+				insightId={insightID}
 				parent={isContextualDashboard ? "client" : null}
 				scope={routeScope}
 				actions={headerActions}

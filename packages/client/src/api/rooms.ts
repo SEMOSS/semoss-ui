@@ -299,14 +299,14 @@ export const createWorkbenchRoom = async (
 	insightId: string,
 ): Promise<string> => {
 	const response = await runPixel<[{ roomId: string }]>(
-		"CreatePlaygroundRoom();",
+		"CreateRoom();",
 		insightId,
 	);
 	assertPixelSuccess(response.errors);
 
 	const roomId = response.pixelReturn[0]?.output.roomId;
 	if (!roomId) {
-		throw new Error("CreatePlaygroundRoom did not return a room ID");
+		throw new Error("CreateRoom did not return a room ID");
 	}
 
 	await setRoomForInsight(insightId, roomId);

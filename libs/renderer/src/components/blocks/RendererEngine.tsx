@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { createElement } from "react";
+import { createElement, type JSX } from "react";
 import { useBlocks } from "../../hooks";
 
 export interface RendererEngineProps {
@@ -63,15 +63,13 @@ export function showBlock(block, state): boolean {
 					// render the generic view of a block if data.show is undefined or false
 					trimmedBlockDataObject[item] = false;
 				}
-			} catch (e) {
+			} catch {
 				trimmedBlockDataObject[item] = true;
 			}
 		});
-		const resultValues = Object.values(trimmedBlockDataObject).includes(
+		const resultValues = !Object.values(trimmedBlockDataObject).includes(
 			false,
-		)
-			? false
-			: true;
+		);
 		return resultValues;
 	}
 	//render the block directly if there is no show property for a block

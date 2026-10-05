@@ -1,1 +1,4 @@
-export { FunctionWorkbench } from "./function-workbench";
+export {
+	FUNCTION_WORKBENCH_COMPONENTS,
+	FunctionWorkbench,
+} from "./function-workbench";

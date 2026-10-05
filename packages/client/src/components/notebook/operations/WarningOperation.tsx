@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import type { JSX } from "react";
 
 interface WarningOperationProps {
 	/** Message returned when there is an error */

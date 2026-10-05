@@ -19,7 +19,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 const schema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -40,7 +40,7 @@ export interface CloneProjectDialogProps {
 
 export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 	const { open, project, onClose } = props;
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const label =
 		project.project_type === "SKILL"
@@ -81,7 +81,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 			let clonedProjectId: string | undefined;
 
 			if (project.project_type === "SKILL") {
-				const { errors, pixelReturn } = await configStore.runPixel(
+				const { errors, pixelReturn } = await runPixel(
 					`CloneSkill(skillId=["${project.project_id}"], name=["${escapePixelString(values.name.trim())}"]);`,
 				);
 
@@ -94,7 +94,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 						?.project_id || "",
 				);
 			} else {
-				const { errors, pixelReturn } = await configStore.runPixel(
+				const { errors, pixelReturn } = await runPixel(
 					`CreateAppFromTemplate(project=["${escapePixelString(values.name.trim())}"], projectTemplate=["${project.project_id}"], global=["${values.isGlobal}"]);`,
 				);
 
@@ -109,7 +109,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 
 				const trimmedDescription = values.description.trim();
 				if (trimmedDescription && clonedProjectId) {
-					const metaResponse = await configStore.runPixel(
+					const metaResponse = await runPixel(
 						`SetProjectMetadata(project=["${escapePixelString(clonedProjectId)}"], meta=[${JSON.stringify({ description: trimmedDescription })}]);`,
 					);
 

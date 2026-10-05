@@ -4,7 +4,7 @@ import { Badge, H4, Spinner, toast } from "@semoss/ui/next";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { RemoteMcpConnection } from "@/components/shared/remote-mcp-connection";
 import { SettingsContext } from "@/contexts";
-import { useProject, useRootStore } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 
 interface MCPToolInputProperty {
 	title?: string;
@@ -56,7 +56,7 @@ export const AppMcpUsagePage = ({
 	showRemoteConnection = true,
 }: AppMcpUsagePageProps = {}) => {
 	const { project, type } = useProject();
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 
 	// the same page serves the app and skill catalogs, so name what the reader
 	// is actually looking at
@@ -72,7 +72,7 @@ export const AppMcpUsagePage = ({
 			setMcpToolsError("");
 
 			try {
-				const response = (await monolithStore.runQuery(
+				const response = (await runPixel(
 					`GetMCPTools(project="${projectId}")`,
 				)) as MCPToolsPixelResponse;
 
@@ -105,7 +105,7 @@ export const AppMcpUsagePage = ({
 				setMcpToolsLoading(false);
 			}
 		},
-		[monolithStore],
+		[runPixel],
 	);
 
 	useEffect(() => {

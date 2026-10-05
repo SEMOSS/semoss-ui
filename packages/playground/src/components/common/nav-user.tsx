@@ -7,7 +7,7 @@ import {
 	MoonIcon,
 	SunIcon,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import {

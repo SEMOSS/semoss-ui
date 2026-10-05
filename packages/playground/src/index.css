@@ -1,5 +1,6 @@
 @import "@semoss/ui/globals.css";
 @import "@semoss/shared/globals.css";
-@import "../../../libs/shared/src/components/flex-layout/flexlayout.css";
+@import "@semoss/workbench/globals.css";
+@import "@semoss/panels/globals.css";
 
 @source "./**/*.{ts,tsx}";

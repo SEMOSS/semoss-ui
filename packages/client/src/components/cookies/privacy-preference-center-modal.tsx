@@ -10,7 +10,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 
 interface PrivacyPreferenceCenterProps {
 	/** determines if the modal is displayed or not */
@@ -24,7 +24,7 @@ export const PrivacyPreferenceCenterModal = (
 	props: PrivacyPreferenceCenterProps,
 ) => {
 	const { isOpen, onClose } = props;
-	const { configStore } = useRootStore();
+	const theme = useConfig((state) => state.theme);
 	const [cookiePolicyOrder, setCookiePolicyOrder] = useState<string[]>([]);
 	const [cookiePolicies, setCookiePolicies] = useState({});
 	const [cookiePolicyModalHeader, setCookiePolicyModalHeader] = useState("");
@@ -32,8 +32,6 @@ export const PrivacyPreferenceCenterModal = (
 	const [selectedTab, setTab] = useState<string>("0");
 
 	useEffect(() => {
-		const theme = configStore.theme;
-
 		try {
 			const order = theme.cookiePolicyOrderReact
 				? theme.cookiePolicyOrderReact
@@ -56,7 +54,7 @@ export const PrivacyPreferenceCenterModal = (
 				"Unable to parse theme for Privacy Preference Center",
 			);
 		}
-	}, [configStore.theme]);
+	}, [theme]);
 
 	const renderPoliciesContent = () => {
 		if (

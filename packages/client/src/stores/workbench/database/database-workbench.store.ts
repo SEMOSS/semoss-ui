@@ -1,9 +1,8 @@
 import { createStore, type StoreApi } from "zustand";
 import type { ColumnInterface } from "@semoss/sdk";
 import { runPixel } from "@semoss/sdk/react";
+import type { WorkbenchPanelRecord, WorkbenchState } from "@semoss/workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.constants";
-import type { WorkbenchState } from "../workbench.store";
-import type { WorkbenchPanelRecord } from "../workbench.types";
 
 /**
  * Query mode handled by the database workbench. SQL/SPARQL are derived from
@@ -312,22 +311,6 @@ export const parseStatementResults = (
 	return results;
 };
 
-/**
- * The database store a `DatabaseWorkbench` attached, for paths that can't use
- * `useDatabaseWorkbench` — a blueprint's `commands` / `menuItems` factory runs
- * outside React. This cast and the hook's are the only two points where the
- * untyped `domainStore` attachment is narrowed back to its concrete shape; the
- * attachment is only ever made by `DatabaseWorkbench`.
- *
- * @name getDatabaseWorkbenchStore
- * @param state - The scoped workbench store's state.
- * @return The attached store, or undefined outside a `DatabaseWorkbench`.
- */
-export const getDatabaseWorkbenchStore = (
-	state: WorkbenchState,
-): StoreApi<DatabaseWorkbenchState> | undefined =>
-	state.layout.domainStore as StoreApi<DatabaseWorkbenchState> | undefined;
-
 /** The next query number, derived from the records so it survives a reload. */
 const nextQueryNumber = (workbench: StoreApi<WorkbenchState>): number => {
 	const numbers = Object.values(workbench.getState().layout.panels)
@@ -344,7 +327,7 @@ const nextQueryNumber = (workbench: StoreApi<WorkbenchState>): number => {
  *
  * @name createDatabaseWorkbenchStore
  * @param deps - The scoped workbench store to drive panels through.
- * @return A vanilla zustand store attached via `actions.attachDomainStore`.
+ * @return A vanilla zustand store provided by the database workbench.
  */
 export const createDatabaseWorkbenchStore = (
 	deps: DatabaseWorkbenchStoreDeps,

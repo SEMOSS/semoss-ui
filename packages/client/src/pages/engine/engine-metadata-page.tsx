@@ -13,8 +13,8 @@ import {
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-	download,
 	console as getPixelConsole,
+	runPixel,
 	usePixel,
 } from "@semoss/sdk/react";
 import { ColumnMetadataModal, type LogicalDataType } from "@semoss/shared";
@@ -52,7 +52,7 @@ import {
 import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
-import { useEngine, useRootStore } from "@/hooks";
+import { useEngine, useSession } from "@/hooks";
 
 const normalizeSearchValue = (value: string) =>
 	value.toLowerCase().replace(/[\s_]+/g, "");
@@ -165,7 +165,9 @@ export const EngineMetadataPage = observer(() => {
 	};
 
 	const { engine } = useEngine();
-	const { configStore } = useRootStore();
+	const sessionRunPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
+	const download = useSession((state) => state.download);
 
 	const [isModified, setIsModified] = useState(false);
 	const [nodes, setNodes] = useState<
@@ -291,7 +293,7 @@ export const EngineMetadataPage = observer(() => {
 				setEdges(e);
 			},
 		},
-		configStore.store.insightID,
+		insightID,
 	);
 
 	// get the data if a table is selected
@@ -327,7 +329,7 @@ export const EngineMetadataPage = observer(() => {
 				numCollected: 0,
 			},
 		},
-		configStore.store.insightID,
+		insightID,
 	);
 
 	const getDatabaseCategory = usePixel<string>(
@@ -366,7 +368,7 @@ export const EngineMetadataPage = observer(() => {
 	const runPixelWithConsole = async <O extends unknown[] | []>(
 		pixel: string,
 	) => {
-		const insightId = configStore.store.insightID;
+		const insightId = insightID;
 		if (!insightId) {
 			throw new Error("Missing insight ID for metadata save request.");
 		}
@@ -413,7 +415,7 @@ export const EngineMetadataPage = observer(() => {
 
 		const pollPromise = pollConsole();
 		try {
-			return await configStore.runPixel<O>(pixel);
+			return await runPixel<O>(pixel, insightID);
 		} finally {
 			stopPolling = true;
 			await pollPromise;
@@ -580,7 +582,7 @@ export const EngineMetadataPage = observer(() => {
 			const filters = JSON.stringify([...tables, ...views]);
 
 			// run it
-			const { errors, pixelReturn } = await configStore.runPixel<
+			const { errors, pixelReturn } = await runPixel<
 				[
 					{
 						positions: Record<
@@ -873,10 +875,9 @@ Error ${e.message || "Unknown error"}
 	const downloadDatabaseMetadata = async () => {
 		try {
 			// run it
-			const { errors, pixelReturn, insightId } =
-				await configStore.runPixel<[string]>(
-					`DatabaseMetadataToPdf(database=["${engine.engine_id}"]);`,
-				);
+			const { errors, pixelReturn } = await sessionRunPixel<[string]>(
+				`DatabaseMetadataToPdf(database=["${engine.engine_id}"]);`,
+			);
 
 			if (errors.length > 0) {
 				throw new Error(errors.join(""));
@@ -885,7 +886,7 @@ Error ${e.message || "Unknown error"}
 			const output = pixelReturn[0]?.output;
 
 			// download the file
-			download(insightId, output);
+			download(output);
 		} catch (e) {
 			toast.error(
 				`
@@ -955,7 +956,7 @@ Error ${e.message || "Unknown error"}
 					throw new Error(errors.join(""));
 				}
 			} else {
-				const { errors } = await configStore.runPixel(
+				const { errors } = await runPixel(
 					`META|SaveOwlPositions(database=["${engine.engine_id}"], positionMap=[${JSON.stringify(positions)}]);`,
 				);
 
@@ -1282,7 +1283,7 @@ Error ${e.message || "Unknown error"}
 															(entry, index) => (
 																<P
 																	key={`${index}-${entry}`}
-																	className="break-words text-muted-foreground text-sm leading-6"
+																	className="wrap-break-word text-muted-foreground text-sm leading-6"
 																>
 																	{entry}
 																</P>
@@ -1380,7 +1381,7 @@ Error ${e.message || "Unknown error"}
 									className={`min-h-[120px] overflow-auto rounded-lg border border-border/60 bg-background ${columnTableViewportClass}`}
 								>
 									<Table className="text-sm">
-										<TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur supports-[backdrop-filter]:bg-muted/60">
+										<TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur supports-backdrop-filter:bg-muted/60">
 											<TableRow>
 												<TableHead className="h-10 w-12 px-2" />
 												<TableHead className="h-10 min-w-[220px] px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
@@ -1558,7 +1559,7 @@ Error ${e.message || "Unknown error"}
 															</div>
 														</TableCell>
 														<TableCell className="min-w-[260px] px-3 py-2.5 align-top">
-															<P className="max-w-[420px] break-words text-muted-foreground text-xs leading-5">
+															<P className="wrap-break-word max-w-[420px] text-muted-foreground text-xs leading-5">
 																{desc || "-"}
 															</P>
 														</TableCell>

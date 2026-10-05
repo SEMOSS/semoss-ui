@@ -17,7 +17,7 @@ export const isAskExecutionMode = (execution: string | undefined): boolean =>
  * no catalog entry behind it: it tells the backend to read the tools from the
  * room's own asset folder, so it must never be used as a project or engine id.
  */
-export const ROOM_MCP_ID = "__room__";
+const ROOM_MCP_ID = "__room__";
 
 /** The subset of a tool's `_meta` that carries its owning app. */
 type ToolOwnerMeta = {

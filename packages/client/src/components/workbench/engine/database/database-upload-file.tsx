@@ -1,6 +1,5 @@
 import { useEffect, useId, useState } from "react";
 import type { ColumnInterface } from "@semoss/sdk/react";
-import { upload } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -31,7 +30,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { useEngine, useRootStore } from "@/hooks";
+import { useEngine, useSession } from "@/hooks";
 
 const NEW_DATABASE = "TABLE";
 
@@ -59,7 +58,8 @@ export const DatabaseUploadCsv = ({
 	onClose,
 }: DatabaseUploadFileProps) => {
 	const { engine } = useEngine();
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
 
 	const targetTableId = useId();
 	const appendModeId = useId();
@@ -121,12 +121,7 @@ export const DatabaseUploadCsv = ({
 			setIsLoading(true);
 
 			// Upload file first
-			const uploaded = await upload(
-				file,
-				configStore.store.insightID,
-				"",
-				"",
-			);
+			const uploaded = await upload(file);
 
 			if (!uploaded?.length || !uploaded[0]?.fileLocation) {
 				toast.error("File upload failed.");
@@ -139,7 +134,7 @@ export const DatabaseUploadCsv = ({
 			const pixel = `FileRead(filePath=[${JSON.stringify(filePath)}], delimiter=[${JSON.stringify(delimiter)}]) | Iterate() | Collect(500);`;
 
 			const response =
-				await configStore.runPixel<
+				await runPixel<
 					[
 						{
 							data: {
@@ -215,7 +210,7 @@ export const DatabaseUploadCsv = ({
 			// Build the upload pixel using RdbmsUploadTableData pattern
 			const pixel = `FileRead(filePath=[${JSON.stringify(filePath)}], delimiter=[${JSON.stringify(delimiter)}]) | ToDatabase(targetDatabase=[${JSON.stringify(engine.engine_id)}], targetTable=[${JSON.stringify(resolvedTarget)}], override=[${method === "replace"}]);`;
 
-			const response = await configStore.runPixel(pixel);
+			const response = await runPixel(pixel);
 			if (response.errors?.length > 0) {
 				throw new Error(response.errors?.join("\n"));
 			}
@@ -470,7 +465,7 @@ export const DatabaseUploadCsv = ({
 							</Button>
 							<Button
 								onClick={handlePreviewData}
-								disabled={isLoading || !upload}
+								disabled={isLoading || !file}
 							>
 								{isLoading ? <Spinner /> : "Next"}
 							</Button>

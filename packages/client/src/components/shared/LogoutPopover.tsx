@@ -22,7 +22,7 @@ import {
 	Spinner,
 	useTheme,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useConfig, useSession } from "@/hooks";
 
 interface LogoutPopoverProps {
 	/** Content to popover */
@@ -34,13 +34,16 @@ interface LogoutPopoverProps {
 export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	const { children, onOpenChange } = props;
 
-	const { configStore } = useRootStore();
+	const appTheme = useConfig((state) => state.theme);
+	const version = useConfig((state) => state.config.version);
+	const user = useSession((state) => state.user);
+	const logout = useSession((state) => state.logout);
 	const { theme, setTheme } = useTheme();
 	const [loggingOut, setLoggingOut] = useState(false);
 	const [open, setOpen] = useState(false);
 	const darkModeEnabled =
 		(
-			configStore.theme as {
+			appTheme as {
 				featureFlags?: { enableDarkMode?: boolean };
 			}
 		).featureFlags?.enableDarkMode ?? true;
@@ -55,7 +58,7 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 		handleOpenChange(false);
 		try {
 			setLoggingOut(true);
-			await configStore.logout();
+			await logout();
 		} catch (error) {
 			console.error(error);
 			throw error;
@@ -94,26 +97,22 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 				>
 					{/* User info row */}
 					<div className="flex items-center gap-3 border-border border-b px-4 py-3">
-						{configStore.store.user.name ? (
+						{user.name ? (
 							<Avatar>
-								<AvatarFallback>
-									{configStore.store.user.name[0]}
-								</AvatarFallback>
+								<AvatarFallback>{user.name[0]}</AvatarFallback>
 							</Avatar>
 						) : null}
 						<span className="max-w-[9rem] truncate font-medium text-foreground text-sm">
-							{configStore.store.user.name}
+							{user.name}
 						</span>
 					</div>
-					{configStore.store.user.lastLogin &&
-						configStore.store.user.lastLogin !== "null" && (
-							<div className="flex items-center justify-center border-border border-b px-4 py-2">
-								<span className="text-muted-foreground text-xs">
-									Last login:{" "}
-									{configStore.store.user.lastLogin} UTC
-								</span>
-							</div>
-						)}
+					{user.lastLogin && user.lastLogin !== "null" && (
+						<div className="flex items-center justify-center border-border border-b px-4 py-2">
+							<span className="text-muted-foreground text-xs">
+								Last login: {user.lastLogin} UTC
+							</span>
+						</div>
+					)}
 					{darkModeEnabled && (
 						<div className="border-border border-b px-4 py-2">
 							<DropdownMenu>
@@ -205,10 +204,10 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 					{/* Version info row */}
 					<div className="flex flex-col items-center gap-0.5 px-4 py-3">
 						<span className="truncate text-muted-foreground text-xs">
-							{configStore.store.config.version.version}
+							{version.version}
 						</span>
 						<span className="truncate text-muted-foreground text-xs">
-							{configStore.store.config.version.datetime}
+							{version.datetime}
 						</span>
 					</div>
 				</PopoverContent>

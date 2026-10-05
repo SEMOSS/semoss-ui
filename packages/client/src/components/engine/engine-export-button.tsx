@@ -1,6 +1,6 @@
 import { DownloadIcon } from "lucide-react";
 import { useState } from "react";
-import { download } from "@semoss/sdk/react";
+import { download, runPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -15,7 +15,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useEngine, useRootStore } from "@/hooks";
+import { useEngine, useSession } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 
 /**
@@ -23,7 +23,7 @@ import { formatToDataTestId } from "@/utility";
  */
 export const EngineExportButton: React.FC = () => {
 	const { catalog, engine, permission } = useEngine();
-	const { configStore } = useRootStore();
+	const insightID = useSession((state) => state.insightID);
 
 	const [openExportModal, setOpenExportModal] = useState(false);
 
@@ -39,16 +39,14 @@ export const EngineExportButton: React.FC = () => {
 		try {
 			setIsExporting(true);
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`META | ExportEngine(engine=["${
 					engine.engine_id
 				}"], includeData="${includeData ? "true" : "false"}" );`,
+				insightID,
 			);
 
-			await download(
-				response.insightId,
-				response.pixelReturn[0].output as string,
-			);
+			await download(insightID, response.pixelReturn[0].output as string);
 		} catch (error) {
 			toast.error(
 				error instanceof Error

@@ -17,13 +17,24 @@ Libraries (`libs/*`, publishable):
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
 - `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui)
 - `@semoss/renderer` → Visualization components (depends on sdk, shared, ui)
+- `@semoss/workbench` → Multi-panel dock shell (depends on ui only — deliberately
+  domain-agnostic, so it can never import sdk, shared or i18n)
+- `@semoss/panels` → File panels for the dock (depends on i18n, sdk, shared, ui, workbench)
+
+The dock and the panels are two layers, in one direction:
+`@semoss/ui ← @semoss/workbench ← @semoss/panels → @semoss/shared → @semoss/sdk`.
 
 Applications (`packages/*`, not published):
-- `@semoss/client` → Main web application (depends on i18n, renderer, sdk, shared, terminal, ui)
-- `@semoss/playground` → Chat (depends on i18n, sdk, shared, ui)
-- `@semoss/terminal` → Embedded terminal (depends on i18n, sdk, shared, ui)
+- `@semoss/client` → Main web application (depends on i18n, panels, renderer, sdk, shared, terminal, ui, workbench)
+- `@semoss/playground` → Chat (depends on i18n, panels, sdk, shared, ui, workbench)
+- `@semoss/terminal` → Embedded terminal (depends on i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/auditlog-package` → Audit log dashboard (depends on i18n, sdk, shared, ui)
 - `@semoss/cli` → CLI tooling (depends on sdk)
+
+**Every host that mounts a dock or a file panel** imports
+`@semoss/workbench/globals.css` and `@semoss/panels/globals.css`, and takes
+`aiSdkStubAlias` + `scopePptxViewerCssPlugin` from `@semoss/panels/vite`. See
+[libs/panels/AGENTS.md](./libs/panels/AGENTS.md#what-a-host-has-to-wire-up).
 
 ## Workspace Structure
 
@@ -34,7 +45,9 @@ semoss/
 │   ├── ui/         # @semoss/ui - Component library
 │   ├── i18n/       # @semoss/i18n - Internationalization library
 │   ├── shared/     # @semoss/shared - Shared utilities
-│   └── renderer/   # @semoss/renderer - Visualization components
+│   ├── renderer/   # @semoss/renderer - Visualization components
+│   ├── workbench/  # @semoss/workbench - Multi-panel dock shell
+│   └── panels/     # @semoss/panels - File panels for the dock
 ├── packages/       # Applications (not published)
 │   ├── client/                     # @semoss/client - Main web application
 │   ├── playground/                 # @semoss/playground - Chat
@@ -320,6 +333,8 @@ pnpm test           # Verify tests pass
 - [libs/shared/AGENTS.md](./libs/shared/AGENTS.md) - Shared utilities/components specifics
 - [libs/renderer/AGENTS.md](./libs/renderer/AGENTS.md) - Visualization components specifics
 - [libs/i18n/AGENTS.md](./libs/i18n/AGENTS.md) - Internationalization library specifics
+- [libs/workbench/AGENTS.md](./libs/workbench/AGENTS.md) - Workbench dock shell specifics
+- [libs/panels/AGENTS.md](./libs/panels/AGENTS.md) - File panels for the dock
 
 **Applications** (`packages/*`):
 - [packages/client/AGENTS.md](./packages/client/AGENTS.md) - Main web application specifics

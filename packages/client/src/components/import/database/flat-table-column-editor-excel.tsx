@@ -35,7 +35,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import ColumnEditModal from "./column-edit-modal";
 
 interface ParsedResult {
@@ -93,7 +93,7 @@ const ExcelDataSelection = ({
 		{},
 	);
 
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const handlePreviewRange = async (
 		filePath: string,
@@ -112,7 +112,7 @@ const ExcelDataSelection = ({
 
 		try {
 			const pixelExpression = `META|PredictExcelRangeMetadata(filePath=["${filePath}"], sheetName=["${sheetName}"], sheetRange=["${customRangeValues}"]);`;
-			const response = await monolithStore.runQuery(pixelExpression);
+			const response = await runPixel(pixelExpression);
 
 			const result: ParsedResult = response.pixelReturn[0]
 				.output as ParsedResult;

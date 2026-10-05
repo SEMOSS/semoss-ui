@@ -7,23 +7,31 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	useCacheData,
 } from "@semoss/ui/next";
-import { useEngine, useWorkbenchCommands, useWorkbenchStoreApi } from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
+	WorkbenchSnapshot,
+} from "@semoss/workbench";
+import {
+	useWorkbenchCommands,
+	useWorkbenchStoreApi,
+	WORKBENCH_STYLES,
+	Workbench,
+	WorkbenchCommandMenuButton,
+	WorkbenchResetButton,
+} from "@semoss/workbench";
+import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
+import { useEngine } from "@/hooks";
+import {
+	WORKBENCH_COMPONENTS,
+	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import {
 	createDatabaseWorkbenchStore,
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
-import { Workbench } from "../../core";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
-import {
-	WORKBENCH_COMPONENTS,
-	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
 import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";
 import { DATABASE_QUERY_PANEL } from "./database-query-panel";
 import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";
@@ -38,7 +46,6 @@ const INITIAL_QUERY_PANEL_ID = "database-query-1";
  * privileged-SQL assistant is a separate decision.
  */
 const ADMIN_QUERY_LAYOUT: WorkbenchLayout = {
-	version: 1,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -68,7 +75,7 @@ const ADMIN_QUERY_LAYOUT: WorkbenchLayout = {
 };
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
-const ADMIN_QUERY_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
+export const ADMIN_QUERY_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.DATABASE_COLUMNS]: DATABASE_COLUMNS_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_QUERY]: DATABASE_QUERY_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: DATABASE_RESULTS_PANEL,
@@ -85,13 +92,18 @@ const ADMIN_QUERY_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 export const AdminQueryWorkbench: React.FC = () => {
 	const storeApi = useWorkbenchStoreApi();
 	const { engine } = useEngine();
+
+	// One arrangement per system database. `engine.engine_id` is the selected
+	// database — the page builds this context from it.
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
+		`workbench-layout--admin-query--${engine.engine_id}--1`,
+		ADMIN_QUERY_LAYOUT,
+	);
 	const [isMaximized, setIsMaximized] = useState(false);
 
-	// created once per mount and attached before the panels first render
+	// Created once per workbench instance before its panels render.
 	const [databaseStore] = useState<StoreApi<DatabaseWorkbenchState>>(() => {
-		const store = createDatabaseWorkbenchStore({ workbench: storeApi });
-		storeApi.getState().layout.actions.attachDomainStore(store);
-		return store;
+		return createDatabaseWorkbenchStore({ workbench: storeApi });
 	});
 
 	// initialize the workbench in admin mode
@@ -100,6 +112,15 @@ export const AdminQueryWorkbench: React.FC = () => {
 	}, [engine.engine_id, databaseStore]);
 
 	useWorkbenchCommands([
+		{
+			id: "workbench.database-columns.refresh",
+			category: "Database",
+			label: "Refresh Database Structure",
+			description: "Columns",
+			handler: () => {
+				databaseStore.getState().structure.refresh();
+			},
+		},
 		{
 			id: "workbench.database-columns.open",
 			category: "View",
@@ -134,66 +155,73 @@ export const AdminQueryWorkbench: React.FC = () => {
 					isMaximized ? "fixed inset-4 z-50" : "h-full w-full"
 				}`}
 			>
-				<Workbench
-					layout={ADMIN_QUERY_LAYOUT}
-					components={ADMIN_QUERY_COMPONENTS}
-					onPanelClose={(pid, record) =>
-						databaseStore.getState().handlePanelClosed(pid, record)
-					}
-					borderSlots={{
-						left: {
-							after: (
-								<>
-									<WorkbenchCommandMenuButton />
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon-sm"
-												aria-label={
-													isMaximized
-														? "Minimize"
-														: "Maximize"
-												}
-												data-testid="adminQueryWorkbench-maximize-toggle"
-												onClick={() => {
-													setIsMaximized(
-														!isMaximized,
-													);
-												}}
-												className={cn(
-													WORKBENCH_STYLES.chromeButton,
-													isMaximized
-														? WORKBENCH_STYLES.chromeButtonActive
-														: WORKBENCH_STYLES.chromeButtonInactive,
-												)}
-											>
-												{isMaximized ? (
-													<MonitorXIcon
-														className={
-															WORKBENCH_STYLES.chromeIcon
-														}
-													/>
-												) : (
-													<TvMinimalIcon
-														className={
-															WORKBENCH_STYLES.chromeIcon
-														}
-													/>
-												)}
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent side="right">
-											{isMaximized
-												? "Minimize"
-												: "Maximize"}
-										</TooltipContent>
-									</Tooltip>
-								</>
-							),
-						},
-					}}
-				/>
+				<DatabaseWorkbenchStoreProvider store={databaseStore}>
+					<Workbench
+						snapshot={snapshot}
+						onChange={onSnapshotChange}
+						onPanelClose={(pid, record) =>
+							databaseStore
+								.getState()
+								.handlePanelClosed(pid, record)
+						}
+						borderSlots={{
+							left: {
+								after: (
+									<>
+										<WorkbenchCommandMenuButton />
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													aria-label={
+														isMaximized
+															? "Minimize"
+															: "Maximize"
+													}
+													data-testid="adminQueryWorkbench-maximize-toggle"
+													onClick={() => {
+														setIsMaximized(
+															!isMaximized,
+														);
+													}}
+													className={cn(
+														WORKBENCH_STYLES.chromeButton,
+														isMaximized
+															? WORKBENCH_STYLES.chromeButtonActive
+															: WORKBENCH_STYLES.chromeButtonInactive,
+													)}
+												>
+													{isMaximized ? (
+														<MonitorXIcon
+															className={
+																WORKBENCH_STYLES.chromeIcon
+															}
+														/>
+													) : (
+														<TvMinimalIcon
+															className={
+																WORKBENCH_STYLES.chromeIcon
+															}
+														/>
+													)}
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent side="right">
+												{isMaximized
+													? "Minimize"
+													: "Maximize"}
+											</TooltipContent>
+										</Tooltip>
+										<WorkbenchResetButton
+											snapshot={ADMIN_QUERY_LAYOUT}
+										/>
+									</>
+								),
+							},
+						}}
+					/>
+				</DatabaseWorkbenchStoreProvider>
 			</div>
 		</div>
 	);

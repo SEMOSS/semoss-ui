@@ -7,7 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 export const PromptBuilderContextTestDialog = (props: {
 	llm: string;
@@ -15,13 +15,13 @@ export const PromptBuilderContextTestDialog = (props: {
 	open: boolean;
 	close: () => void;
 }) => {
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const [loading, setLoading] = useState(false);
 	const [response, setResponse] = useState("");
 
 	const ask = async () => {
 		setLoading(true);
-		const LLMresponse = await monolithStore.runQuery(
+		const LLMresponse = await runPixel(
 			`LLM(engine="${props.llm}", command=["<encode>${props.context}</encode>"])`,
 		);
 		const { output: LLMOutput } = LLMresponse.pixelReturn[0];

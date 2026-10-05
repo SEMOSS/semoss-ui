@@ -107,13 +107,47 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
 
 ```json
 {
+  "@semoss/panels": "workspace:*",
   "@semoss/sdk": "workspace:*",
   "@semoss/shared": "workspace:*",
-  "@semoss/ui": "workspace:*"
+  "@semoss/ui": "workspace:*",
+  "@semoss/workbench": "workspace:*"
 }
 ```
 
 Changes to these libraries are immediately reflected in the playground during development.
+
+## The room sidebar
+
+The right-hand panel is a `@semoss/workbench` dock. Five things about it are not obvious from the
+code and are easy to undo by accident:
+
+- **The dock store belongs to `RoomStore`, not to `<Workbench>`.** Tools open panels from outside
+  React and while the sidebar is closed, and the arrangement has to survive closing it — which
+  unmounts the shell. `RoomStore` builds the store and restores its arrangement in its
+  constructor; `<WorkbenchProvider store={room.workbench}>` only hands it down.
+- **Blueprints are handed to `RoomStore`, not registered later.** They reach into `@/components`,
+  which imports `@/stores`, so the store cannot import them without closing a module cycle. The
+  composition root passes them instead: `MainLayout` → `ChatStore` → `RoomStore`, plus the two
+  places that build a room directly (`new-room-page`, the new-file-explorer menu item). They have
+  to be in place before the first `openSidebarPanel`, which for a streaming tool is long before
+  anything mounts — without them the dock falls back to a shallow compare of config, and since a
+  file panel's `mode` is a fresh object per call, every open would spawn another tab.
+- **`RoomSidebar` always starts from `ROOM_SIDEBAR_LAYOUT`.** The sidebar arrangement is owned by
+  the room instance and is not persisted between room sessions. Panels opened while the sidebar
+  is closed remain in that room's workbench store until the sidebar mounts.
+- **A restored file panel is re-pointed at the room's live insight.** A room binds to a fresh
+  insight on every load, and a file panel's `mode.insightId` is what its reads and saves run
+  against. `_syncSidebarFileMode` rewrites them once, before anything mounts.
+- **Close and maximize live in the sidebar's own header**, because they act on the container. The
+  only genuinely per-panel control — "open inline" — is registered by the tool panel with
+  `useWorkbenchControl`.
+- **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
+  so switching rooms cannot bleed panel state between room instances.
+
+Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the blueprints
+live in `components/room/panels/`. Changing a panel type string affects only the current room
+instance.
 
 ## Design-System Notes
 

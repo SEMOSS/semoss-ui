@@ -8,7 +8,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Play } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useState } from "react";
+import React, { type JSX, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
 import { Button, Spinner } from "@semoss/ui/next";
 import { NotebookCell } from "./notebook-cell";

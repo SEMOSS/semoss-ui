@@ -53,10 +53,17 @@ vi.mock("@/hooks", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@/hooks")>();
 	return {
 		...actual,
-		useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
+		useRoot: () => ({
+			root: {
+				theme: { featureFlags: {}, defaultCompactionStrategy: "AUTO" },
+			},
+		}),
 		useGracefulErrors: () => ({
 			getGracefulErrorMessage: vi.fn((msg: string) => msg),
 		}),
+		// RoomContextUsageIndicator reads chat.models.contextWindow; a zero
+		// context window keeps its usage indicator from rendering.
+		useChat: () => ({ chat: { models: { contextWindow: 0 } } }),
 	};
 });
 

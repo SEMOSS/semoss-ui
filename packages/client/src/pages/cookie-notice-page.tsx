@@ -1,10 +1,12 @@
-import { observer } from "mobx-react-lite";
-import { useRootStore } from "@/hooks";
+import { Navigate } from "react-router";
+import { useConfig } from "@/hooks";
 
-export const CookieNoticePage = observer(() => {
-	const { configStore } = useRootStore();
+export const CookieNoticePage = () => {
+	const html = useConfig((state) => state.theme.cookiePolicyNoticePage);
 
-	const html = configStore.theme.cookiePolicyNoticePage;
+	if (!html) {
+		return <Navigate to="/" replace />;
+	}
 
 	return (
 		<div className="flex w-full justify-center px-10 py-14">
@@ -17,4 +19,4 @@ export const CookieNoticePage = observer(() => {
 			</div>
 		</div>
 	);
-});
+};

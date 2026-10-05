@@ -1,6 +1,6 @@
+import { getCodeEditorLanguage } from "@semoss/panels";
 import { usePixel } from "@semoss/sdk/react";
-import { FileCodeEditor } from "@semoss/shared";
-import { Markdown, Muted, Spinner } from "@semoss/ui/next";
+import { CodeEditor, Markdown, Muted, Spinner } from "@semoss/ui/next";
 
 interface SkillFileViewerProps {
 	projectId: string;
@@ -11,21 +11,24 @@ interface SkillFileViewerProps {
 /**
  * Read-only preview of the selected file. Markdown files render through the
  * `Markdown` component; everything else is shown in a read-only Monaco view.
+ *
+ * Reads the file itself and renders `CodeEditor` directly rather than opening a
+ * workbench file panel: this is a read-only preview with no tabs, no chrome and
+ * no save, so a panel would add only the pixel this component already runs for
+ * its Markdown branch.
  */
 export const SkillFileViewer: React.FC<SkillFileViewerProps> = ({
 	projectId,
 	insightId,
 	path,
 }) => {
-	const ext = path?.split(".").pop()?.toLowerCase() ?? "";
-	const isMarkdown = ext === "md" || ext === "markdown";
-
-	const getFilePixel =
-		isMarkdown && path
+	const fileContent = usePixel<string>(
+		path
 			? `GetAppAssets(filePath=["${path}"], project=["${projectId}"]);`
-			: "";
-
-	const fileContent = usePixel<string>(getFilePixel, {}, insightId);
+			: "",
+		{ data: "" },
+		insightId,
+	);
 
 	if (!path) {
 		return (
@@ -35,28 +38,26 @@ export const SkillFileViewer: React.FC<SkillFileViewerProps> = ({
 		);
 	}
 
-	if (isMarkdown) {
-		if (
-			fileContent.status === "LOADING" ||
-			fileContent.status === "INITIAL"
-		) {
-			return (
-				<div className="flex h-full w-full items-center justify-center">
-					<Spinner className="size-4" />
-				</div>
-			);
-		}
+	if (fileContent.status === "LOADING" || fileContent.status === "INITIAL") {
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner className="size-4" />
+			</div>
+		);
+	}
 
-		if (fileContent.status === "ERROR") {
-			return (
-				<div className="flex h-full w-full items-center justify-center">
-					<Muted className="text-destructive">
-						{fileContent.error?.message || "Failed to load file"}
-					</Muted>
-				</div>
-			);
-		}
+	if (fileContent.status === "ERROR") {
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Muted className="text-destructive">
+					{fileContent.error?.message || "Failed to load file"}
+				</Muted>
+			</div>
+		);
+	}
 
+	const extension = path.split(".").pop()?.toLowerCase() ?? "";
+	if (extension === "md" || extension === "markdown") {
 		return (
 			<div className="h-full w-full overflow-y-auto px-1">
 				<Markdown
@@ -71,15 +72,12 @@ export const SkillFileViewer: React.FC<SkillFileViewerProps> = ({
 
 	return (
 		<div className="h-[80vh] overflow-hidden rounded-md border border-border">
-			<FileCodeEditor
+			<CodeEditor
 				key={path}
-				mode={{
-					type: "APP",
-					app: projectId,
-				}}
-				path={path}
-				readOnly
-				hideToolbar
+				className="size-full"
+				code={fileContent.data}
+				disabled
+				language={getCodeEditorLanguage(path)}
 			/>
 		</div>
 	);

@@ -21,6 +21,7 @@ import {
 	type GuardrailPipelineFormValue,
 	type GuardrailReactorFormValue,
 	guardrailArgumentOptions,
+	guardrailToolResultArgument,
 	type InterceptableMethod,
 } from "./engine-guardrail-settings.constants";
 import { GuardrailMethodField } from "./guardrail-method-field";
@@ -289,6 +290,10 @@ export const GuardrailPipelineField = ({
 							methods,
 							resultArgumentName,
 						});
+						const toolResultArgument = guardrailToolResultArgument({
+							method: value.method,
+							methods,
+						});
 
 						return (
 							<TabsContent
@@ -382,6 +387,9 @@ export const GuardrailPipelineField = ({
 												engineNames={engineNames}
 												onEngineResolved={
 													onEngineResolved
+												}
+												toolResultArgument={
+													toolResultArgument
 												}
 												argumentOptions={
 													argumentOptions

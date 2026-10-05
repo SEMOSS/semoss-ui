@@ -1,0 +1,126 @@
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Form,
+	FormInput,
+	Spinner,
+	toast,
+	useForm,
+	z,
+	zodResolver,
+} from "@semoss/ui/next";
+
+const branchSchema = z.object({
+	name: z
+		.string()
+		.trim()
+		.min(1, "Branch name is required")
+		.refine(
+			(name) =>
+				name !== "@" &&
+				!name.startsWith("/") &&
+				!name.endsWith("/") &&
+				!name.endsWith(".") &&
+				!name.endsWith(".lock") &&
+				!name.includes("..") &&
+				!name.includes("@{") &&
+				!/[\s~^:?*[\\\]]/.test(name),
+			"Enter a valid Git branch name",
+		),
+});
+
+type BranchFormValues = z.infer<typeof branchSchema>;
+
+/** Props for the standalone create-branch dialog. */
+interface GitCreateBranchDialogProps {
+	/** Whether the dialog is open. */
+	open: boolean;
+	/** Create and check out a branch from the current HEAD. */
+	onCreate: (branch: string) => Promise<void>;
+	/** Complete with the branch name on success, or no value on cancel. */
+	onSubmit: (branch?: string) => void;
+}
+
+/** Create and check out a Git branch from HEAD. */
+export const GitCreateBranchDialog = ({
+	open,
+	onCreate,
+	onSubmit,
+}: GitCreateBranchDialogProps) => {
+	const form = useForm<BranchFormValues>({
+		resolver: zodResolver(branchSchema),
+		defaultValues: { name: "" },
+	});
+
+	/** Run the injected branch mutation with validated form values. */
+	const handleSubmit = async (values: BranchFormValues) => {
+		try {
+			await onCreate(values.name);
+			toast.success(`Created branch ${values.name}`);
+			form.reset();
+			onSubmit(values.name);
+		} catch (error) {
+			console.error(error);
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to create branch",
+			);
+		}
+	};
+
+	/** Reset transient form state before reporting cancellation. */
+	const cancel = () => {
+		form.reset();
+		onSubmit();
+	};
+
+	return (
+		<Dialog open={open} onOpenChange={(next) => !next && cancel()}>
+			<DialogContent className="sm:max-w-lg">
+				<DialogHeader>
+					<DialogTitle>Create branch</DialogTitle>
+				</DialogHeader>
+				<Form
+					form={form}
+					onSubmit={handleSubmit}
+					className="flex flex-col gap-6"
+				>
+					<FormInput
+						name="name"
+						label="Branch name"
+						placeholder="feature/my-branch"
+						description="The branch will be created from the current HEAD and checked out."
+						autoComplete="off"
+						autoFocus
+						disabled={form.formState.isSubmitting}
+						data-testid="gitCreateBranchDialog-name-input"
+					/>
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							disabled={form.formState.isSubmitting}
+							onClick={cancel}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="submit"
+							disabled={form.formState.isSubmitting}
+						>
+							{form.formState.isSubmitting ? (
+								<Spinner className="size-4" />
+							) : null}
+							Create
+						</Button>
+					</DialogFooter>
+				</Form>
+			</DialogContent>
+		</Dialog>
+	);
+};

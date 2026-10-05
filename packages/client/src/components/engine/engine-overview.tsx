@@ -4,7 +4,7 @@ import { usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Badge, Markdown, Separator, Spinner } from "@semoss/ui/next";
 import { CatalogOverview } from "@/components/catalog";
-import { useRootStore } from "@/hooks";
+import { useConfig, useSession } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
 import { formatDateToLocal } from "@/utility/date";
 import {
@@ -38,7 +38,10 @@ export const EngineOverview = ({
 	permission,
 	refresh,
 }: EngineOverviewProps) => {
-	const { configStore } = useRootStore();
+	const databaseMetaKeys = useConfig(
+		(state) => state.config.databaseMetaKeys,
+	);
+	const runPixel = useSession((state) => state.runPixel);
 	const isModel = engine.engine_type === "MODEL";
 
 	// Only the editable (non-model) overview offers tag suggestions.
@@ -85,7 +88,7 @@ export const EngineOverview = ({
 	 * @returns Promise that resolves after save flow completes.
 	 */
 	const onSave = async (id: string, metadata: Record<string, unknown>) => {
-		await configStore.runPixel(
+		await runPixel(
 			`SetEngineMetadata(engine=["${id}"], meta=[${JSON.stringify(
 				metadata,
 			)}])`,
@@ -196,7 +199,7 @@ export const EngineOverview = ({
 		<CatalogOverview
 			id={engine.engine_id}
 			permission={permission}
-			metaKeys={configStore.store.config.databaseMetaKeys}
+			metaKeys={databaseMetaKeys}
 			metaValues={
 				getEngineMetaValues.status === "SUCCESS"
 					? getEngineMetaValues.data

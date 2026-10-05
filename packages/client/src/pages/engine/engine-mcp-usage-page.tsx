@@ -14,7 +14,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { McpUsage } from "@/components/shared/mcp-usage";
-import { useEngine, useRootStore } from "@/hooks";
+import { useEngine, useSession } from "@/hooks";
 
 interface MCPToolInputProperty {
 	title?: string;
@@ -60,7 +60,7 @@ const hasPixelError = (operationType?: string[] | string): boolean => {
  */
 export const EngineMcpUsagePage = () => {
 	const { engine, permission } = useEngine();
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");
@@ -74,7 +74,7 @@ export const EngineMcpUsagePage = () => {
 			setMcpToolsError("");
 
 			try {
-				const response = (await monolithStore.runQuery(
+				const response = (await runPixel(
 					`GetMCPTools(engine=["${engineId}"]);`,
 				)) as MCPToolsPixelResponse;
 
@@ -106,7 +106,7 @@ export const EngineMcpUsagePage = () => {
 				setMcpToolsLoading(false);
 			}
 		},
-		[monolithStore],
+		[runPixel],
 	);
 
 	useEffect(() => {
@@ -121,7 +121,7 @@ export const EngineMcpUsagePage = () => {
 		setGeneratingMCP(true);
 		try {
 			const pixel = `MakeEngineMCP(engine="${engine.engine_id}");`;
-			const { pixelReturn } = await monolithStore.runQuery(pixel);
+			const { pixelReturn } = await runPixel(pixel);
 
 			if (pixelReturn[0].operationType.includes("ERROR")) {
 				throw pixelReturn[0].output as string;

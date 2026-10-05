@@ -496,7 +496,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 
 														// Seperate calls so we reload successfully compiled classes before publishing
 														await insight.actions.run(
-															`ReloadInsightClasses(project='${app}', release=false);`,
+															`CompileAppReactors(project='${app}', release=false);`,
 														);
 
 														await insight.actions.run(

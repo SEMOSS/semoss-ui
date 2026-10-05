@@ -84,102 +84,102 @@ function vsIcon(data: any): React.FC<IconProps> {
 }
 
 // ─── Language / framework icons ────────────────────────────────────────────
-export const TypeScriptIcon = vsIcon(tsData);
-export const TSXIcon = vsIcon(tsxData);
-export const JavaScriptIcon = vsIcon(jsData);
-export const JSXIcon = vsIcon(jsxData);
-export const PythonIcon = vsIcon(pythonData);
-export const JavaIcon = vsIcon(javaData);
-export const KotlinIcon = vsIcon(kotlinData);
-export const GoIcon = vsIcon(goData);
-export const RustIcon = vsIcon(rustData);
-export const CIcon = vsIcon(cData);
-export const CppIcon = vsIcon(cppData);
-export const CSharpIcon = vsIcon(csharpData);
-export const SwiftIcon = vsIcon(swiftData);
-export const RubyIcon = vsIcon(rubyData);
-export const PHPIcon = vsIcon(phpData);
-export const DartIcon = vsIcon(dartData);
-export const ScalaIcon = vsIcon(scalaData);
-export const GroovyIcon = vsIcon(groovyData);
-export const ClojureIcon = vsIcon(clojureData);
-export const ClojureScriptIcon = vsIcon(clojureSData);
-export const HaskellIcon = vsIcon(haskellData);
-export const ElmIcon = vsIcon(elmData);
-export const OCamlIcon = vsIcon(ocamlData);
-export const FSharpIcon = vsIcon(fsharpData);
-export const ElixirIcon = vsIcon(elixirData);
-export const ErlangIcon = vsIcon(erlangData);
-export const LuaIcon = vsIcon(luaData);
-export const RIcon = vsIcon(rData);
-export const JuliaIcon = vsIcon(juliaData);
-export const ZigIcon = vsIcon(zigData);
-export const NimIcon = vsIcon(nimData);
-export const SolidityIcon = vsIcon(solidityData);
-export const VBIcon = vsIcon(vbData);
-export const PerlIcon = vsIcon(perlData);
+const TypeScriptIcon = vsIcon(tsData);
+const TSXIcon = vsIcon(tsxData);
+const JavaScriptIcon = vsIcon(jsData);
+const JSXIcon = vsIcon(jsxData);
+const PythonIcon = vsIcon(pythonData);
+const JavaIcon = vsIcon(javaData);
+const KotlinIcon = vsIcon(kotlinData);
+const GoIcon = vsIcon(goData);
+const RustIcon = vsIcon(rustData);
+const CIcon = vsIcon(cData);
+const CppIcon = vsIcon(cppData);
+const CSharpIcon = vsIcon(csharpData);
+const SwiftIcon = vsIcon(swiftData);
+const RubyIcon = vsIcon(rubyData);
+const PHPIcon = vsIcon(phpData);
+const DartIcon = vsIcon(dartData);
+const ScalaIcon = vsIcon(scalaData);
+const GroovyIcon = vsIcon(groovyData);
+const ClojureIcon = vsIcon(clojureData);
+const ClojureScriptIcon = vsIcon(clojureSData);
+const HaskellIcon = vsIcon(haskellData);
+const ElmIcon = vsIcon(elmData);
+const OCamlIcon = vsIcon(ocamlData);
+const FSharpIcon = vsIcon(fsharpData);
+const ElixirIcon = vsIcon(elixirData);
+const ErlangIcon = vsIcon(erlangData);
+const LuaIcon = vsIcon(luaData);
+const RIcon = vsIcon(rData);
+const JuliaIcon = vsIcon(juliaData);
+const ZigIcon = vsIcon(zigData);
+const NimIcon = vsIcon(nimData);
+const SolidityIcon = vsIcon(solidityData);
+const VBIcon = vsIcon(vbData);
+const PerlIcon = vsIcon(perlData);
 
 // ─── Web / markup / styling ────────────────────────────────────────────────
-export const HTMLIcon = vsIcon(htmlData);
-export const CSSIcon = vsIcon(cssData);
-export const SCSSIcon = vsIcon(scssData);
-export const SASSIcon = vsIcon(sassData);
-export const LessIcon = vsIcon(lessData);
-export const StylusIcon = vsIcon(stylusData);
-export const GraphQLIcon = vsIcon(graphqlData);
+const HTMLIcon = vsIcon(htmlData);
+const CSSIcon = vsIcon(cssData);
+const SCSSIcon = vsIcon(scssData);
+const SASSIcon = vsIcon(sassData);
+const LessIcon = vsIcon(lessData);
+const StylusIcon = vsIcon(stylusData);
+const GraphQLIcon = vsIcon(graphqlData);
 
 // ─── Shell ─────────────────────────────────────────────────────────────────
-export const ShellIcon = vsIcon(shellData);
+const ShellIcon = vsIcon(shellData);
 
 // ─── Data / query ──────────────────────────────────────────────────────────
-export const SQLIcon = vsIcon(sqlData);
-export const SQLiteIcon = vsIcon(sqliteData);
-export const JupyterIcon = vsIcon(jupyterData);
+const SQLIcon = vsIcon(sqlData);
+const SQLiteIcon = vsIcon(sqliteData);
+const JupyterIcon = vsIcon(jupyterData);
 
 // ─── Config / settings ─────────────────────────────────────────────────────
-export const YAMLIcon = vsIcon(yamlData);
-export const TOMLIcon = vsIcon(tomlData);
-export const JSONIcon = vsIcon(jsonData);
-export const XMLIcon = vsIcon(xmlData);
-export const EnvIcon = vsIcon(dotenvData);
-export const GitIcon = vsIcon(gitData);
-export const ConfigIcon = vsIcon(configData);
+const YAMLIcon = vsIcon(yamlData);
+const TOMLIcon = vsIcon(tomlData);
+const JSONIcon = vsIcon(jsonData);
+const XMLIcon = vsIcon(xmlData);
+const EnvIcon = vsIcon(dotenvData);
+const GitIcon = vsIcon(gitData);
+const ConfigIcon = vsIcon(configData);
 
 // ─── Prose / documents ─────────────────────────────────────────────────────
-export const MarkdownIcon = vsIcon(markdownData);
-export const TextIcon = vsIcon(textData);
-export const DocIcon = vsIcon(wordData);
-export const PDFIcon = vsIcon(pdfData);
+const MarkdownIcon = vsIcon(markdownData);
+const TextIcon = vsIcon(textData);
+const DocIcon = vsIcon(wordData);
+const PDFIcon = vsIcon(pdfData);
 
 // ─── Spreadsheets / presentations ──────────────────────────────────────────
-export const SpreadsheetIcon = vsIcon(excelData);
-export const PresentationIcon = vsIcon(powerpointData);
+const SpreadsheetIcon = vsIcon(excelData);
+const PresentationIcon = vsIcon(powerpointData);
 
 // ─── Media ─────────────────────────────────────────────────────────────────
-export const ImageIcon = vsIcon(imageData);
-export const AudioIcon = vsIcon(audioData);
-export const VideoIcon = vsIcon(videoData);
+const ImageIcon = vsIcon(imageData);
+const AudioIcon = vsIcon(audioData);
+const VideoIcon = vsIcon(videoData);
 
 // ─── Archives ──────────────────────────────────────────────────────────────
-export const ArchiveIcon = vsIcon(zipData);
+const ArchiveIcon = vsIcon(zipData);
 
 // ─── Security ──────────────────────────────────────────────────────────────
-export const CertIcon = vsIcon(certData);
-export const KeyIcon = vsIcon(keyData);
+const CertIcon = vsIcon(certData);
+const KeyIcon = vsIcon(keyData);
 
 // ─── Misc ──────────────────────────────────────────────────────────────────
-export const DiffIcon = vsIcon(diffData);
-export const LogIcon = vsIcon(logData);
-export const FontIcon = vsIcon(fontData);
+const DiffIcon = vsIcon(diffData);
+const LogIcon = vsIcon(logData);
+const FontIcon = vsIcon(fontData);
 
 // ─── Special file icons ────────────────────────────────────────────────────
-export const DockerIcon = vsIcon(dockerData);
-export const MavenIcon = vsIcon(mavenData);
-export const GradleIcon = vsIcon(gradleData);
-export const NPMIcon = vsIcon(npmData);
-export const LicenseIcon = vsIcon(licenseData);
-export const MakefileIcon = vsIcon(makefileData);
-export const CargoIcon = vsIcon(cargoData);
+const DockerIcon = vsIcon(dockerData);
+const MavenIcon = vsIcon(mavenData);
+const GradleIcon = vsIcon(gradleData);
+const NPMIcon = vsIcon(npmData);
+const LicenseIcon = vsIcon(licenseData);
+const MakefileIcon = vsIcon(makefileData);
+const CargoIcon = vsIcon(cargoData);
 
 // ─── Generic fallback (VS Code default-file icon) ─────────────────────────
 export const GenericFileIcon = vsIcon(defaultFileData);

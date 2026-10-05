@@ -1,7 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
-import type { Role } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -38,7 +38,7 @@ import type {
 	CatalogMatchSuggestion,
 } from "@/components/import/model/model-catalog-match";
 import { ModelCatalogMatch } from "@/components/import/model/model-catalog-match";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import {
 	MODEL_PROVIDER_OPTIONS,
 	SERVING_PROVIDER_OPTIONS,
@@ -233,7 +233,7 @@ export const EngineModelSettings = ({
 	permission,
 	onUpdated,
 }: EngineModelSettingsProps) => {
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const fieldId = useId();
 	const modelIdFieldId = `${fieldId}-model-id`;
@@ -543,7 +543,7 @@ export const EngineModelSettings = ({
 					: {}),
 			};
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`UpdateModelMetadata(engine=["${engineId}"], map=[${JSON.stringify(payload)}]);`,
 			);
 			const result = response.pixelReturn?.[0];
@@ -590,7 +590,7 @@ export const EngineModelSettings = ({
 	 * as thrown Errors so every caller handles them in one place.
 	 */
 	const runCatalogPixel = async (pixel: string, fallbackMessage: string) => {
-		const response = await configStore.runPixel(pixel);
+		const response = await runPixel(pixel);
 		const result = response.pixelReturn?.[0];
 
 		if (

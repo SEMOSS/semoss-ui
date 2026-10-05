@@ -1,13 +1,6 @@
 import { ChevronRightIcon, SquareArrowOutUpRightIcon } from "lucide-react";
 import { useMemo } from "react";
-import {
-	Link,
-	matchPath,
-	Navigate,
-	Outlet,
-	useLocation,
-	useResolvedPath,
-} from "react-router-dom";
+import { Link, matchPath, Navigate, Outlet, useLocation } from "react-router";
 import type { Role } from "@semoss/sdk";
 import { EngineSubtypeIcon, EntityHeader } from "@semoss/shared";
 import {
@@ -44,10 +37,10 @@ interface EngineTabsLayoutProps {
  * Wrap the engine routes and add additional funcitonality
  */
 export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
-	const resolvedPath = useResolvedPath("");
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const { catalog, engine, permission, type } = useEngine();
+	const enginePath = `${catalog.path}/${engine.engine_id}`;
 
 	// get the visible tabs based on permission
 	const visibleTabs = useMemo(() => {
@@ -73,30 +66,27 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 			tabIdx < tabLen;
 			tabIdx++
 		) {
-			const tabPath = `${resolvedPath.pathname}/${visibleTabs[tabIdx].path}`;
+			const tab = visibleTabs[tabIdx];
+			const tabPath = tab.path ? `${enginePath}/${tab.path}` : enginePath;
 
 			if (
-				matchPath(tabPath, pathname) ||
+				matchPath({ path: tabPath, end: true }, pathname) ||
 				// Keep tabs with nested routes (e.g. settings/*) highlighted;
 				// skip the Overview tab ("") or it would match every path.
-				(visibleTabs[tabIdx].path !== "" &&
-					matchPath(`${tabPath}/*`, pathname))
+				(tab.path !== "" && matchPath(`${tabPath}/*`, pathname))
 			) {
 				return tabIdx;
 			}
 		}
 
 		return -1;
-	}, [visibleTabs, resolvedPath, pathname]);
+	}, [visibleTabs, enginePath, pathname]);
 
 	if (activeTabIdx === -1 && visibleTabs.length > 0) {
-		navigate(`${resolvedPath.pathname}/${visibleTabs[0].path}`);
-	}
-
-	if (activeTabIdx === -1) {
+		const firstTabPath = visibleTabs[0].path;
 		return (
 			<Navigate
-				to={`${resolvedPath.pathname}/${visibleTabs[0].path}`}
+				to={firstTabPath ? `${enginePath}/${firstTabPath}` : enginePath}
 				replace
 			/>
 		);
@@ -162,7 +152,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 										data-testid="engine-tabs-layout--open-btn"
 										asChild
 									>
-										<Link to="./workbench">
+										<Link to={`${enginePath}/workbench`}>
 											<SquareArrowOutUpRightIcon className="size-4" />
 											Workbench
 										</Link>
@@ -190,7 +180,11 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 												key={t.path}
 												value={t.path}
 												onClick={() =>
-													navigate(`${t.path}`)
+													navigate(
+														t.path
+															? `${enginePath}/${t.path}`
+															: enginePath,
+													)
 												}
 												data-testid={`engineLayout-${t.name}-tab`}
 											>

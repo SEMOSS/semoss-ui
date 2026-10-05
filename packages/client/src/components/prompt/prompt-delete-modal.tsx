@@ -9,7 +9,7 @@ import {
 	DialogTitle,
 	toast,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 interface PromptDeleteModalProps {
 	isOpen: boolean;
@@ -21,7 +21,7 @@ interface PromptDeleteModalProps {
 export const PromptDeleteModal = (props: PromptDeleteModalProps) => {
 	const { isOpen, onClose, promptId, onDelete } = props;
 
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const [loading, setLoading] = useState(false);
 
@@ -29,7 +29,7 @@ export const PromptDeleteModal = (props: PromptDeleteModalProps) => {
 		try {
 			setLoading(true);
 
-			const response = await monolithStore.runQuery(
+			const response = await runPixel(
 				`DeletePrompt(promptId='${promptId}');`,
 			);
 

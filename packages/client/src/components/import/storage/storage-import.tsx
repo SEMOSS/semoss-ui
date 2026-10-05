@@ -23,9 +23,8 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { STORAGE_CONNECTIONS, type Storage } from "./storage-import.constants";
 import { StorageForm } from "./storage-import-form";
@@ -33,7 +32,8 @@ import { StorageTitleCard } from "./storage-title-card";
 
 export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("0");
@@ -75,10 +75,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 	const onSubmit = async (data) => {
 		setLoading(true);
 		try {
-			const uploadedFiles = await uploadFile(
-				[data],
-				configStore.store.insightID,
-			);
+			const uploadedFiles = await upload([data]);
 
 			if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
 				toast.error("Upload failed or returned invalid response.");
@@ -92,7 +89,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 			);
 
 			for (const pixelString of pixelExpressions) {
-				const response = await monolithStore.runQuery(pixelString);
+				const response = await runPixel(pixelString);
 				const { output, operationType } = response.pixelReturn[0];
 				if (operationType.includes("ERROR")) {
 					toast.error(output as string);

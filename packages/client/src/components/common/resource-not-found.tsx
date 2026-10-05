@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Button, Muted } from "@semoss/ui/next";
 import ErrorSvg from "@/assets/img/Error.svg";
 

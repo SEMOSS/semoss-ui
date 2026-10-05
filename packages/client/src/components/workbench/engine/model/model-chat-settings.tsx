@@ -8,9 +8,9 @@ import {
 	Separator,
 	Textarea,
 } from "@semoss/ui/next";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { EngineBuiltinToolsField } from "@/components/engine";
 import { useModelChat } from "@/hooks";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
 
 /**
  * Per-conversation model configuration: the system prompt and the
