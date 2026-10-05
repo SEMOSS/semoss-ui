@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Outlet, useParams } from "react-router";
 import { usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
@@ -50,6 +51,16 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ catalog }) => {
 			: "",
 	);
 
+	/**
+	 * Merge fields into the loaded engine without reloading it
+	 */
+	const update = useCallback(
+		(values: Partial<Engine>) => {
+			getEngineMetadata.update({ ...getEngineMetadata.data, ...values });
+		},
+		[getEngineMetadata.update, getEngineMetadata.data],
+	);
+
 	// get the user's role
 	const getUserEnginePermission = useAPI(
 		engineId ? ["getUserEnginePermission", engineId] : null,
@@ -86,6 +97,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ catalog }) => {
 				engine: getEngineMetadata.data,
 				permission: getUserEnginePermission.data,
 				refresh: getEngineMetadata.refresh,
+				update,
 			}}
 		>
 			<Outlet />

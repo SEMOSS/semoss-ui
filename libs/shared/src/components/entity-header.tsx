@@ -1,12 +1,34 @@
-import { Copy } from "lucide-react";
-import type { ReactNode } from "react";
+import { Copy, PencilIcon } from "lucide-react";
+import { type ReactNode, useRef, useState } from "react";
 import {
 	Button,
+	cn,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { EntityNameInput } from "./entity-name-input";
+
+/** Rename input text per size, matched to the name it replaces. */
+const NAME_INPUT_CLASSES = {
+	default:
+		"h-auto px-2 py-0.5 font-semibold text-2xl leading-tight md:text-[30px]",
+	compact:
+		"h-auto px-2 py-0.5 font-semibold text-xl leading-tight md:text-2xl",
+	sm: "h-6 px-1 py-0 font-medium text-base leading-tight md:text-base",
+} as const;
+
+/** A renamable name highlights on hover without moving its text. */
+const RENAMABLE_NAME_CLASS =
+	"-mx-1 min-w-0 cursor-text rounded-md px-1 hover:bg-muted";
+
+/**
+ * The rename button shows on hover or keyboard focus, and always on touch
+ * screens, which have no hover.
+ */
+const RENAME_BUTTON_CLASS =
+	"shrink-0 text-muted-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover/name:opacity-100 pointer-coarse:opacity-100";
 
 interface EntityHeaderProps {
 	/** Rendered icon — placed inside a sized wrapper. Omit for no-icon headers. */
@@ -34,6 +56,15 @@ interface EntityHeaderProps {
 	idTestId?: string;
 	/** Optional data-testid for the copy button. */
 	copyTestId?: string;
+	/**
+	 * Saves a new name; reject to report a failure. When set, a rename button
+	 * sits beside the name, and double-clicking the name also starts a rename.
+	 * Enter or leaving the input saves, Escape cancels, and a toast reports
+	 * the result.
+	 */
+	onRename?: (name: string) => Promise<void>;
+	/** Tooltip and accessible name for the rename button and input. Default: "Rename". */
+	renameLabel?: string;
 }
 
 export const EntityHeader = ({
@@ -47,7 +78,13 @@ export const EntityHeader = ({
 	nameTestId,
 	idTestId,
 	copyTestId,
+	onRename,
+	renameLabel = "Rename",
 }: EntityHeaderProps) => {
+	const [isRenaming, setIsRenaming] = useState(false);
+	// set when a rename ends from the keyboard, so focus returns to the button
+	const shouldFocusRenameRef = useRef(false);
+
 	const handleCopy = () => {
 		if (!id) return;
 		try {
@@ -85,6 +122,25 @@ export const EntityHeader = ({
 			? "break-words font-semibold text-foreground text-xl leading-tight md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-2xl"
 			: "break-words font-semibold text-2xl text-foreground leading-tight md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]";
 
+	/**
+	 * Close the rename input, returning focus to the rename button when asked
+	 */
+	const handleRenameDone = (restoreFocus: boolean) => {
+		shouldFocusRenameRef.current = restoreFocus;
+		setIsRenaming(false);
+	};
+
+	const nameElementProps = {
+		className: cn(nameClass, onRename && RENAMABLE_NAME_CLASS),
+		"data-testid": nameTestId,
+		onDoubleClick: onRename ? () => setIsRenaming(true) : undefined,
+	};
+	const nameElement = isSm ? (
+		<span {...nameElementProps}>{name}</span>
+	) : (
+		<h1 {...nameElementProps}>{name}</h1>
+	);
+
 	const idClass = isSm
 		? "min-w-0 truncate text-muted-foreground text-xs"
 		: isCompact
@@ -102,14 +158,48 @@ export const EntityHeader = ({
 			)}
 
 			<div className="flex min-w-0 flex-1 flex-col">
-				{isSm ? (
-					<span className={nameClass} data-testid={nameTestId}>
-						{name}
-					</span>
+				{isRenaming && onRename ? (
+					<EntityNameInput
+						name={name}
+						label={renameLabel}
+						className={NAME_INPUT_CLASSES[size]}
+						onRename={onRename}
+						onDone={handleRenameDone}
+					/>
+				) : onRename ? (
+					<div className="group/name flex min-w-0 items-center gap-1">
+						{nameElement}
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<Button
+									ref={(element) => {
+										if (
+											element &&
+											shouldFocusRenameRef.current
+										) {
+											shouldFocusRenameRef.current = false;
+											element.focus();
+										}
+									}}
+									variant="ghost"
+									size="icon-sm"
+									aria-label={renameLabel}
+									onClick={() => setIsRenaming(true)}
+									className={cn(
+										RENAME_BUTTON_CLASS,
+										isSm && "size-6",
+									)}
+								>
+									<PencilIcon
+										className={isSm ? "size-3" : "size-4"}
+									/>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>{renameLabel}</TooltipContent>
+						</Tooltip>
+					</div>
 				) : (
-					<h1 className={nameClass} data-testid={nameTestId}>
-						{name}
-					</h1>
+					nameElement
 				)}
 				{id && (
 					<div
