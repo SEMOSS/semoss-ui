@@ -84,7 +84,10 @@ vi.mock("@/contexts", async (importOriginal) => ({
 const featureFlags: Record<string, boolean> = {};
 vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({
-		root: { theme: { featureFlags, defaultCompactionStrategy: "AUTO" } },
+		root: {
+			theme: { featureFlags, defaultCompactionStrategy: "AUTO" },
+			sessionRevoked: { revoked: false, message: "" },
+		},
 	}),
 }));
 vi.mock("@/hooks/use-graceful-errors", () => ({
@@ -102,7 +105,10 @@ vi.mock("@/hooks/use-sidebar-panel-active", () => ({
 vi.mock("@/hooks", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/hooks")>()),
 	useRoot: () => ({
-		root: { theme: { featureFlags, defaultCompactionStrategy: "AUTO" } },
+		root: {
+			theme: { featureFlags, defaultCompactionStrategy: "AUTO" },
+			sessionRevoked: { revoked: false, message: "" },
+		},
 	}),
 	useChat: () => ({ chat: { models: { contextWindow: 0 } } }),
 }));
