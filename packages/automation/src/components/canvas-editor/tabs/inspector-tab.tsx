@@ -3,6 +3,7 @@ import type {
 	StepRunStatus,
 } from "../../../domain/automation.types";
 import type { AutomationScopeEntry } from "../../../domain/automation-inspector";
+import { AutomationVariableContext } from "../automation-variable-context";
 import { NodeEditDrawer } from "../node-edit-drawer";
 import { TriggerEditPanel } from "./trigger-edit-panel";
 
@@ -71,28 +72,32 @@ export function InspectorTab({
 
 	if (editingStep) {
 		return (
-			<NodeEditDrawer
-				step={editingStep}
-				appId={appId}
-				upstreamVars={upstreamVars}
-				scopeEntries={scopeEntries}
-				runStatus={stepRunStatus}
-				runError={stepRunError}
-				devMode={devMode}
-				onUpdate={onUpdate}
-				onDelete={() => onDelete(editingStep.id)}
-				onOpenPythonEditor={onOpenPythonEditor}
-				onViewRunDetails={onViewRunDetails}
-				pythonFileOpen={pythonFileOpen}
-				readOnly={readOnly}
-			/>
+			<AutomationVariableContext.Provider
+				value={{ entries: scopeEntries, devMode }}
+			>
+				<NodeEditDrawer
+					step={editingStep}
+					appId={appId}
+					upstreamVars={upstreamVars}
+					scopeEntries={scopeEntries}
+					runStatus={stepRunStatus}
+					runError={stepRunError}
+					devMode={devMode}
+					onUpdate={onUpdate}
+					onDelete={() => onDelete(editingStep.id)}
+					onOpenPythonEditor={onOpenPythonEditor}
+					onViewRunDetails={onViewRunDetails}
+					pythonFileOpen={pythonFileOpen}
+					readOnly={readOnly}
+				/>
+			</AutomationVariableContext.Provider>
 		);
 	}
 
 	return (
 		<div className="flex h-full flex-col items-center justify-center px-6 text-center">
 			<p className="font-semibold text-sm">Select a step</p>
-			<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+			<p className="mt-1 text-muted-foreground text-xs leading-relaxed">
 				Choose the trigger or an action on the canvas to inspect and
 				edit its configuration.
 			</p>

@@ -1,5 +1,10 @@
+import { ChevronDown } from "lucide-react";
 import { useId } from "react";
 import {
+	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
 	Field,
 	FieldDescription,
 	FieldLabel,
@@ -66,10 +71,16 @@ export function LoopForm({
 
 	return (
 		<div className="flex flex-col gap-5">
+			<div className="rounded-lg border bg-muted/20 p-3">
+				<p className="font-medium text-sm">Loop setup</p>
+				<p className="mt-1 text-muted-foreground text-xs">
+					Choose what repeats, the data it processes, and the steps
+					that run for each pass.
+				</p>
+			</div>
+
 			<Field>
-				<FieldLabel htmlFor={modeSelectId}>
-					How should these steps repeat?
-				</FieldLabel>
+				<FieldLabel htmlFor={modeSelectId}>Repeat mode</FieldLabel>
 				<Select
 					value={config.mode}
 					onValueChange={(mode) =>
@@ -101,19 +112,19 @@ export function LoopForm({
 			{config.mode === "forEach" && (
 				<>
 					<PillInput
-						label="Items to process"
+						label="List to repeat over"
 						required
 						value={config.items}
 						onChange={(items) => onChange({ ...config, items })}
 						upstreamVars={upstreamVars}
-						placeholder='${previous_output.items} or ["a", "b", "c"]'
-						description="Choose a list from an earlier step or enter a JSON array."
+						placeholder="Choose data from an earlier step"
+						description="Use Insert data to choose a list, such as files or database rows."
 						mono
 						minRows={2}
 						readOnly={readOnly}
 					/>
 					<Field>
-						<FieldLabel>Items per pass</FieldLabel>
+						<FieldLabel>Group size</FieldLabel>
 						<Input
 							type="number"
 							min={1}
@@ -127,8 +138,8 @@ export function LoopForm({
 							readOnly={readOnly}
 						/>
 						<FieldDescription>
-							Use 1 for one item at a time, or increase it to
-							process groups.
+							Use 1 to process each item separately. Increase it
+							when a repeated step should receive a group.
 						</FieldDescription>
 					</Field>
 				</>
@@ -163,28 +174,8 @@ export function LoopForm({
 				/>
 			)}
 
-			<Field>
-				<FieldLabel>Safety limit</FieldLabel>
-				<Input
-					type="number"
-					min={1}
-					max={10_000}
-					value={config.maxIterations}
-					onChange={(event) =>
-						onChange({
-							...config,
-							maxIterations: Number(event.target.value),
-						})
-					}
-					readOnly={readOnly}
-				/>
-				<FieldDescription>
-					Stops the loop before it can run unexpectedly long.
-				</FieldDescription>
-			</Field>
-
 			<div className="space-y-2 rounded-lg border bg-muted/20 p-3">
-				<p className="font-medium text-sm">Repeated steps</p>
+				<p className="font-medium text-sm">Steps to repeat</p>
 				<p className="text-muted-foreground text-xs">
 					{bodyNodes.length} step{bodyNodes.length === 1 ? "" : "s"}{" "}
 					run on every pass. Select an inner step on the canvas to
@@ -194,30 +185,75 @@ export function LoopForm({
 			</div>
 
 			<div className="space-y-2 rounded-lg border bg-muted/20 p-3">
-				<p className="font-medium text-sm">Available inside the loop</p>
+				<p className="font-medium text-sm">
+					Data available to repeated steps
+				</p>
 				<div className="flex flex-wrap gap-2">
 					{contextVariables.map((variable) => (
 						<span
 							key={variable.name}
 							className="rounded-md border bg-background px-2 py-1 text-xs"
 						>
-							<span className="text-muted-foreground">
-								{variable.label}:{" "}
-							</span>
-							<code>{`\${${variable.name}}`}</code>
+							{variable.label}
+							{devMode && (
+								<code className="ml-1 text-muted-foreground">
+									{`\${${variable.name}}`}
+								</code>
+							)}
 						</span>
 					))}
 				</div>
 			</div>
 
 			<div className="space-y-1 rounded-lg border bg-muted/20 p-3">
-				<p className="font-medium text-sm">After the loop</p>
+				<p className="font-medium text-sm">Collected results</p>
 				<p className="text-muted-foreground text-xs">
-					Every pass is collected in order. Later steps can use{" "}
-					<code>{`\${${step.outputVar}.results}`}</code> to read the
-					collected outputs.
+					Every pass is collected in order. Later steps can choose{" "}
+					<strong>Collected results</strong> from Insert data
+					{devMode ? (
+						<>
+							{" "}
+							(<code>{`\${${step.outputVar}.results}`}</code>)
+						</>
+					) : null}
+					.
 				</p>
 			</div>
+
+			<Collapsible>
+				<CollapsibleTrigger asChild>
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="w-full justify-between"
+					>
+						Advanced settings
+						<ChevronDown className="size-4" aria-hidden />
+					</Button>
+				</CollapsibleTrigger>
+				<CollapsibleContent className="pt-3">
+					<Field>
+						<FieldLabel>Maximum passes</FieldLabel>
+						<Input
+							type="number"
+							min={1}
+							max={10_000}
+							value={config.maxIterations}
+							onChange={(event) =>
+								onChange({
+									...config,
+									maxIterations: Number(event.target.value),
+								})
+							}
+							readOnly={readOnly}
+						/>
+						<FieldDescription>
+							Stops the loop before it can run unexpectedly long.
+						</FieldDescription>
+					</Field>
+				</CollapsibleContent>
+			</Collapsible>
 		</div>
 	);
 }

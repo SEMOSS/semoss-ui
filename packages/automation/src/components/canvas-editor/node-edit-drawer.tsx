@@ -308,7 +308,7 @@ export function NodeEditDrawer({
 						/>
 					</Field>
 
-					{hasOutputVariable && (
+					{hasOutputVariable && devMode && (
 						<Field>
 							<FieldLabel className="text-xs">
 								Output variable
@@ -328,7 +328,7 @@ export function NodeEditDrawer({
 								aria-invalid={Boolean(outputVariableError)}
 							/>
 							<p
-								className={`text-[11px] ${outputVariableError ? "text-destructive" : "text-muted-foreground"}`}
+								className={`text-xs ${outputVariableError ? "text-destructive" : "text-muted-foreground"}`}
 							>
 								{outputVariableError ??
 									`Later steps can use \${${step.outputVar}}.`}
