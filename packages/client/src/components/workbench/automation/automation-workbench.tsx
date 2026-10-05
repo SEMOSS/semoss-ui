@@ -63,6 +63,7 @@ import {
 	TooltipTrigger,
 	useCacheData,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
 import {
 	useWorkbench,
 	useWorkbenchCommands,
@@ -300,11 +301,7 @@ function parseConversionModelOutput(
 			candidate = JSON.parse(normalized);
 			continue;
 		}
-		if (
-			candidate &&
-			typeof candidate === "object" &&
-			!Array.isArray(candidate)
-		) {
+		if (isRecord(candidate)) {
 			const object = candidate as Record<string, unknown>;
 			if (Array.isArray(object.conversions)) break;
 			const nested = object.response ?? object.output;

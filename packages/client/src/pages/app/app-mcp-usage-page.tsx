@@ -1,6 +1,7 @@
 import { Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, H4, Spinner, toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { RemoteMcpConnection } from "@/components/shared/remote-mcp-connection";
 import { SettingsContext } from "@/contexts";
@@ -94,10 +95,10 @@ export const AppMcpUsagePage = ({
 						: undefined;
 				setMcpTools(Array.isArray(tools) ? tools : []);
 			} catch (error) {
-				const message =
-					error instanceof Error
-						? error.message
-						: "Unable to load MCP tools.";
+				const message = getErrorMessage(
+					error,
+					"Unable to load MCP tools.",
+				);
 				setMcpTools([]);
 				setMcpToolsError(message);
 				toast.error(message);

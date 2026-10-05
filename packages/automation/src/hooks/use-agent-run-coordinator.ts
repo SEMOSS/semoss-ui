@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AgentRunItemsState, PendingAgentAction } from "@semoss/sdk";
+import { getErrorMessage as errorMessage } from "@semoss/utility/error";
 import {
 	type AutomationAgentRunContext,
 	type AutomationAgentRunSnapshot,
@@ -38,9 +39,6 @@ const createEmptyState = (): AgentRunCoordinatorState => ({
 	loadError: null,
 	liveError: null,
 });
-
-const errorMessage = (error: unknown, fallback: string): string =>
-	error instanceof Error ? error.message : fallback;
 
 /**
  * Polls the Automation-only durable agent-run endpoint. Generic agent streaming

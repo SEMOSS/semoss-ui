@@ -1,12 +1,10 @@
+import { formatDurationMs } from "@semoss/utility/date";
 import type {
 	AutomationNode,
 	AutomationNodeResult,
 	RunStatus,
 } from "./automation.types";
-import {
-	formatDurationMs,
-	normalizeAutomationErrorMessage,
-} from "./automation-utils";
+import { normalizeAutomationErrorMessage } from "./automation-utils";
 
 const MAX_STEPS_IN_SUMMARY = 20;
 const MAX_ERROR_LENGTH = 400;

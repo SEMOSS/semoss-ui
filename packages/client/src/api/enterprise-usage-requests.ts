@@ -1,3 +1,4 @@
+import { formatLocalDateKey } from "@semoss/utility/date";
 import type {
 	UsageBenchmark,
 	UsageDimension,
@@ -68,7 +69,7 @@ export function shiftDate(value: string, days: number): string {
 /** Defaults to the most recent 30 calendar dates, including today. */
 export function defaultUsageFilters(days = 30): UsageFilters {
 	const now = new Date();
-	const to = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+	const to = formatLocalDateKey(now);
 	return { from: shiftDate(to, 1 - days), to, user: "", app: "", engine: "" };
 }
 

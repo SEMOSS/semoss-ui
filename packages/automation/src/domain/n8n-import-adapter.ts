@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@semoss/utility/error";
 /**
  * Best-effort converter from an exported n8n workflow JSON into our
  * `AutomationWorkflowDocument` + node-source format (see `automation-workflow-adapter.ts`).
@@ -562,7 +563,7 @@ export async function n8nWorkflowToAutomationDocumentWithModel(
 		});
 	} catch (error) {
 		result.warnings.push(
-			`Model conversion failed (${error instanceof Error ? error.message : "unknown error"}); kept placeholder Python steps for unsupported nodes.`,
+			`Model conversion failed (${getErrorMessage(error, "unknown error")}); kept placeholder Python steps for unsupported nodes.`,
 		);
 		return result;
 	}

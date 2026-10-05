@@ -80,6 +80,12 @@ interface TreeViewItemProps<T = unknown>
 	item: T;
 	loading?: boolean;
 	leadingIcon?: ReactNode;
+	/**
+	 * Classes for the item's own row: its chevron or leading icon and its
+	 * label, without its children. Use it for a state the whole row shows, such
+	 * as being selected; `className` styles the item and its children together.
+	 */
+	rowClassName?: string;
 }
 
 const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
@@ -91,6 +97,7 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 		item,
 		loading,
 		leadingIcon,
+		rowClassName,
 		...otherProps
 	}: TreeViewItemProps<T>,
 	ref: React.ForwardedRef<HTMLLIElement>,
@@ -102,8 +109,16 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 	const isExpanded = treeView.expanded.includes(id);
 	const hasChildren = React.Children.count(children) > 0;
 
-	const handleItemToggle = (event: React.SyntheticEvent) => {
+	const handleItemToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
 		event.stopPropagation();
+		// keyboard focus stays on the chevron, even in browsers that do not
+		// focus a clicked button, so the next key acts on this item
+		if (document.activeElement !== event.currentTarget) {
+			event.currentTarget.focus({ preventScroll: true });
+		}
+		if (loading) {
+			return;
+		}
 		if (isExpanded) {
 			treeView.onExpandChange?.(
 				treeView.expanded.filter((e) => e !== id),
@@ -113,8 +128,13 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 		}
 	};
 
-	const handleItemClick = (event: React.MouseEvent) => {
+	const handleItemClick = (event: React.MouseEvent<HTMLDivElement>) => {
 		event.stopPropagation();
+		// a click leaves keyboard focus on the row, as in a native tree, so the
+		// next key acts on the row that was clicked
+		if (!event.currentTarget.contains(document.activeElement)) {
+			event.currentTarget.focus({ preventScroll: true });
+		}
 		const now = Date.now();
 		const isDoubleClick = now - lastClickRef.current < DOUBLE_CLICK_MS;
 		lastClickRef.current = isDoubleClick ? 0 : now;
@@ -140,6 +160,7 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 			<div
 				className={cn(
 					"flex w-full cursor-pointer items-center gap-1 rounded py-1 pe-2 transition-colors hover:bg-muted",
+					rowClassName,
 				)}
 				// `paddingInlineStart` flips with writing direction so the
 				// nested-item indent ends up on the leading edge in both LTR
@@ -150,14 +171,12 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 					<button
 						type="button"
 						className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-accent"
+						// a native button already turns Enter and Space into a click
 						onClick={handleItemToggle}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" || e.key === " ") {
-								handleItemToggle(e);
-							}
-						}}
 						aria-label={isExpanded ? "Collapse" : "Expand"}
-						disabled={loading}
+						// not `disabled`: a disabled button drops keyboard focus
+						// while the item's children load
+						aria-disabled={loading || undefined}
 					>
 						{loading ? (
 							<Spinner className="size-4" />

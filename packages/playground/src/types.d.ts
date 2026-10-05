@@ -250,7 +250,7 @@ export interface PixelMessageToolCallPart {
 			// MakeRoomPixelMCP. Identifies the connector tools in a room.
 			SMSS_FUNCTION_NAME?: string;
 			// Set on the work folder tools, which the browser runs itself
-			// rather than the backend. See features/teamwork.
+			// rather than the backend. See features/chat-tools.
 			SMSS_CLIENT_TOOL?: boolean;
 			SMSS_MCP_UI?: {
 				loadingMessage?: string;

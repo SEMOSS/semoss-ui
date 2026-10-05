@@ -16,21 +16,11 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage as toErrorMessage } from "@semoss/utility/error";
 import { useAssistant } from "@/hooks/use-assistant";
 import type { BuildPendingAction, BuildRun } from "@/stores/assistant";
 import { isRequestUserInputAction } from "@/stores/assistant";
 import { actionDetails, friendlyToolName } from "./assistant-tools";
-
-/**
- * Extract a user-facing message from a thrown value.
- *
- * @name toErrorMessage
- * @param error - The thrown value, which may or may not be an Error.
- * @param fallback - Message used when the value carries no message.
- * @return The error's message, or the fallback.
- */
-const toErrorMessage = (error: unknown, fallback: string): string =>
-	error instanceof Error ? error.message : fallback;
 
 interface ActionRequestDetailsProps {
 	/** Pretty-printed request payload text */

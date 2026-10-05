@@ -16,6 +16,7 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
+import { stringifyJsonWithSortedKeys } from "@semoss/utility/json";
 import {
 	createWorkbenchStore,
 	type WorkbenchPanelConfigAny,
@@ -26,7 +27,9 @@ import {
 	type WorkbenchState,
 } from "@semoss/workbench";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
-import { TeamworkStore } from "@/features/teamwork/teamwork.store";
+import { ChatToolsStore } from "@/features/chat-tools/chat-tools.store";
+import { ConnectorsStore } from "@/features/connectors/connectors.store";
+import { ContextItemsStore } from "@/features/conversation/context-items.store";
 import type { AbstractMessageStore } from "@/stores/message/abstract-message.store";
 import {
 	reconnectAgentRun,
@@ -67,25 +70,10 @@ const getStoredMcp = (mcp: MCPConfig[] = []): MCPConfig[] =>
 	mcp.filter((item) => !item?.fromWorkspace && !item?.fromRoom);
 
 /**
- * Serialize with object keys sorted, so the same settings compare equal
- * whatever order their keys were set in.
- */
-const toStableJson = (value: unknown): string =>
-	JSON.stringify(value, (_key, item: unknown) =>
-		item && typeof item === "object" && !Array.isArray(item)
-			? Object.fromEntries(
-					Object.entries(item).sort(([a], [b]) =>
-						a < b ? -1 : a > b ? 1 : 0,
-					),
-				)
-			: item,
-	);
-
-/**
  * A comparable key for room options as the backend stores them.
  */
 const getStoredOptionsKey = (options: { mcp?: MCPConfig[] }): string =>
-	toStableJson({ ...options, mcp: getStoredMcp(options.mcp) });
+	stringifyJsonWithSortedKeys({ ...options, mcp: getStoredMcp(options.mcp) });
 
 interface RoomStoreInterface {
 	/**
@@ -274,10 +262,17 @@ export class RoomStore {
 	/** Stable initialization reference shared by the store and every sidebar mount. */
 	sidebarSnapshot: WorkbenchSnapshot = ROOM_SIDEBAR_LAYOUT;
 	/**
-	 * The folder the assistant works in and the connectors switched on for
-	 * the room. Its own store with its own observability, like the dock.
+	 * The default tools the room's chat sends and the user's decisions on the
+	 * calls that wait for them. Its own store with its own observability, like
+	 * the dock, and so are the two below.
 	 */
-	readonly teamwork: TeamworkStore;
+	readonly chatTools: ChatToolsStore;
+
+	/** The connectors switched on for the room and the accounts they sign in with. */
+	readonly connectors: ConnectorsStore;
+
+	/** The files queued for the room's next message. */
+	readonly contextItems: ContextItemsStore;
 
 	constructor(options: {
 		theme: ThemeMap["playground"];
@@ -303,13 +298,17 @@ export class RoomStore {
 			.layout.actions.loadSnapshot(this.sidebarSnapshot);
 		this._syncSidebarFileMode();
 
-		this.teamwork = new TeamworkStore(this);
+		this.chatTools = new ChatToolsStore(this);
+		this.connectors = new ConnectorsStore(this);
+		this.contextItems = new ContextItemsStore();
 
 		// make it observable -- the dock is a zustand store with its own
 		// subscription model, and deep-observing it would be nonsense
 		makeAutoObservable(this, {
 			workbench: false,
-			teamwork: false,
+			chatTools: false,
+			connectors: false,
+			contextItems: false,
 			sidebarSnapshot: observable.ref,
 		});
 
@@ -684,7 +683,7 @@ export class RoomStore {
 
 			// the insight is bound to the room now, so the room's tool file can
 			// be read, unless the room was only just created
-			void this.teamwork.restore({ isNew: isNew });
+			void this.connectors.restore({ isNew: isNew });
 
 			// create the root
 			const root = new ResponseMessageStore(this, {
@@ -1176,7 +1175,7 @@ export class RoomStore {
 	 * @param initialPath - Directory to show. Defaults to wherever it was.
 	 * @param name - Tab label for a newly created instance. Defaults to the
 	 * chat files label, which keeps the room's own files apart from a
-	 * teamwork work folder.
+	 * connector work folder.
 	 * @return The revealed or created panel id.
 	 */
 	openSidebarFileExplorer = (
@@ -1359,7 +1358,7 @@ export class RoomStore {
 
 		// files queued from the sidebar are already in the room's folder, so
 		// they go with the message as they are; a silent turn leaves them queued
-		const contextItems = visible ? this.teamwork.takeContextItems() : [];
+		const queuedFiles = visible ? this.contextItems.take() : [];
 
 		// upload the files
 		let mediaInputs: {
@@ -1399,7 +1398,7 @@ export class RoomStore {
 
 			mediaInputs = [
 				...mediaInputs,
-				...contextItems.map((item) => ({
+				...queuedFiles.map((item) => ({
 					fileName: item.name,
 					fileLocation: item.path,
 				})),
@@ -1423,7 +1422,7 @@ export class RoomStore {
 			});
 		} catch (e) {
 			// the queued files were not sent, so they wait for the next try
-			this.teamwork.restoreContextItems(contextItems);
+			this.contextItems.restore(queuedFiles);
 
 			// remove the placeholder messages and stop the room spinner
 			runInAction(() => {
@@ -1451,7 +1450,7 @@ export class RoomStore {
 		} catch (e) {
 			// the message is withdrawn and its text restored, so its queued files
 			// wait with it
-			this.teamwork.restoreContextItems(contextItems);
+			this.contextItems.restore(queuedFiles);
 			throw e;
 		}
 	};

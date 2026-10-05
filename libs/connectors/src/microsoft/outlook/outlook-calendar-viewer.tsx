@@ -8,16 +8,14 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { cn } from "@semoss/ui/next";
+import { formatLocalDateKey } from "@semoss/utility/date";
 import { ConnectorCalendar } from "../../components/connector-calendar";
 import { ConnectorIconButton } from "../../components/connector-icon-button";
 import { ConnectorItemRow } from "../../components/connector-item-row";
 import { ConnectorViewerHeader } from "../../components/connector-viewer-header";
 import { parseGraphDate, parseGraphDay } from "../../core/connector.format";
 import type { ConnectorViewerProps } from "../../core/connector.types";
-import {
-	calendarDayKey,
-	groupCalendarEvents,
-} from "../../core/connector-calendar";
+import { groupCalendarEvents } from "../../core/connector-calendar";
 import { runConnectorPixel } from "../../core/connector-pixel";
 import { useCalendarWindow } from "../../core/use-calendar-window";
 import { useConnectorQuery } from "../../core/use-connector-query";
@@ -166,7 +164,7 @@ export const OutlookCalendarViewer = (props: OutlookCalendarViewerProps) => {
 					renderEvent={(event, day) => {
 						const request = eventRequest(event);
 						const title = eventTitle(event);
-						const itemKey = `${calendarDayKey(day)}:${event.id}`;
+						const itemKey = `${formatLocalDateKey(day)}:${event.id}`;
 						const Icon = event.isOnlineMeeting
 							? VideoIcon
 							: CalendarIcon;

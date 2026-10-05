@@ -8,13 +8,13 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { cn } from "@semoss/ui/next";
+import { formatLocalDateKey, formatLocalWallClock } from "@semoss/utility/date";
 import { ConnectorCalendar } from "../../components/connector-calendar";
 import { ConnectorIconButton } from "../../components/connector-icon-button";
 import { ConnectorItemRow } from "../../components/connector-item-row";
 import { ConnectorViewerHeader } from "../../components/connector-viewer-header";
-import { parseGraphDay, toWallClockString } from "../../core/connector.format";
+import { parseGraphDay } from "../../core/connector.format";
 import type { ConnectorViewerProps } from "../../core/connector.types";
-import { calendarDayKey } from "../../core/connector-calendar";
 import { runConnectorPixel } from "../../core/connector-pixel";
 import { useCalendarWindow } from "../../core/use-calendar-window";
 import { useConnectorQuery } from "../../core/use-connector-query";
@@ -50,8 +50,8 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 	const serviceName = t("services.googleCalendar");
 	const query = useConnectorQuery(
 		GOOGLE_PIXELS.calendarList({
-			startDate: toWallClockString(calendar.range.start),
-			endDate: toWallClockString(
+			startDate: formatLocalWallClock(calendar.range.start),
+			endDate: formatLocalWallClock(
 				new Date(calendar.range.end.getTime() - 1000),
 			),
 		}),
@@ -133,7 +133,7 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 					renderEvent={(event, day) => {
 						const request = eventRequest(event);
 						const title = eventTitle(event);
-						const itemKey = `${calendarDayKey(day)}:${event.id}`;
+						const itemKey = `${formatLocalDateKey(day)}:${event.id}`;
 						const Icon = event.recurringEventId
 							? RepeatIcon
 							: CalendarIcon;

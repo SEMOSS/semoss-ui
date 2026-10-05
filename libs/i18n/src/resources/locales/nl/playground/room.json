@@ -180,5 +180,9 @@
 		"failed": "Prompt optimaliseren mislukt",
 		"tooLarge": "De prompt is te lang om te optimaliseren. Maak deze eerst korter.",
 		"noPermission": "Je hebt geen toestemming om dit model te gebruiken"
+	},
+	"contextItems": {
+		"label": "Toegevoegd aan je volgende bericht",
+		"remove": "{{name}} uit je volgende bericht verwijderen"
 	}
 }

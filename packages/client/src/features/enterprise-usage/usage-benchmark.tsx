@@ -9,6 +9,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	comparisonUsageFilters,
 	previousUsageFilters,
@@ -44,10 +45,7 @@ export function UsageBenchmark({
 				context.addIssue({
 					code: "custom",
 					path: ["to"],
-					message:
-						error instanceof Error
-							? error.message
-							: "Check Comparison Dates",
+					message: getErrorMessage(error, "Check Comparison Dates"),
 				});
 			}
 		});

@@ -10,6 +10,7 @@ import {
 	type ThemeMap,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import type {
 	AbstractPixelMessage,
@@ -19,7 +20,6 @@ import type {
 	PixelMessageToolCallPart,
 	Workspace,
 } from "@/types";
-import { normalizeTimestamp } from "@/utility/date";
 import { RoomStore } from "../room/room.store";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
@@ -553,7 +553,7 @@ export class ChatStore {
 		const formattedMessages = messageOutput
 			.map((message: AbstractPixelMessage) => {
 				const timestamp = message.dateCreated
-					? normalizeTimestamp(message.dateCreated).format(
+					? parseTimestampWithUtcDefault(message.dateCreated).format(
 							"MMM D, YYYY h:mm A",
 						)
 					: null;

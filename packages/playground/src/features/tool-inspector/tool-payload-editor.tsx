@@ -1,7 +1,7 @@
 import { type ComponentRef, type ReactNode, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { CodeEditor, toast } from "@semoss/ui/next";
-import { copyTextToClipboard } from "@semoss/utility";
+import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import { ToolPayloadToolbar } from "./tool-payload-toolbar";
 
 interface ToolPayloadEditorProps {

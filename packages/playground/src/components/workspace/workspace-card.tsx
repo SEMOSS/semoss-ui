@@ -20,8 +20,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { Workspace } from "@/types";
-import { normalizeTimestamp } from "@/utility";
 
 interface WorkspaceCardProps {
 	workspace: Pick<Workspace, "workspace_id" | "name" | "description">;
@@ -77,7 +77,7 @@ export const WorkspaceCard = observer(
 
 		const createdLabel = (() => {
 			if (!dateCreated) return null;
-			const d = normalizeTimestamp(dateCreated);
+			const d = parseTimestampWithUtcDefault(dateCreated);
 			if (!d.isValid()) return null;
 			return t("workspace:card.createdAgo", { when: d.fromNow() });
 		})();

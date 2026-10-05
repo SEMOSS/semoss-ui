@@ -15,8 +15,9 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { formatToDataTestId } from "@semoss/utility/text";
 import { useEngine, useSession } from "@/hooks";
-import { formatToDataTestId } from "@/utility";
 
 /**
  * Wrap the engine routes and add additional funcitonality
@@ -49,9 +50,7 @@ export const EngineExportButton: React.FC = () => {
 			await download(insightID, response.pixelReturn[0].output as string);
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to export. Please try again.",
+				getErrorMessage(error, "Failed to export. Please try again."),
 			);
 		} finally {
 			setIsExporting(false);

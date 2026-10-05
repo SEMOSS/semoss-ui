@@ -1,3 +1,4 @@
+import { isRecord } from "@semoss/utility/object";
 /**
  * Types and pure helpers for the model engine Guardrails settings editor.
  * The editor reads/writes the pipeline.json contract used by the backend
@@ -444,15 +445,11 @@ export const guardrailConfigFromResponse = (
 			parsed = null;
 		}
 	}
-	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+	if (!isRecord(parsed)) {
 		return createDefaultGuardrailConfigValue();
 	}
 	const pipelinesObj = (parsed as Record<string, unknown>).pipelines;
-	if (
-		!pipelinesObj ||
-		typeof pipelinesObj !== "object" ||
-		Array.isArray(pipelinesObj)
-	) {
+	if (!isRecord(pipelinesObj)) {
 		return createDefaultGuardrailConfigValue();
 	}
 	const pipelines = Object.entries(

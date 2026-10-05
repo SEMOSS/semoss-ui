@@ -14,17 +14,13 @@ import {
 	Separator,
 	Textarea,
 } from "@semoss/ui/next";
+import { uniqueName, validateIdentifier } from "@semoss/utility/identifier";
 import type {
 	EditorTool,
 	MCPTool,
 	MCPToolProperty,
 } from "../../types/mcp.types";
-import {
-	slugifyIdentifier,
-	TYPE_OPTIONS,
-	uniqueName,
-	validateIdentifier,
-} from "../../utility/mcp-json-utils";
+import { slugifyIdentifier, TYPE_OPTIONS } from "../../utility/mcp-json-utils";
 import { MCPMetadataEditor } from "./mcp-metadata-editor";
 import { MCPParameterCard } from "./mcp-parameter-card";
 

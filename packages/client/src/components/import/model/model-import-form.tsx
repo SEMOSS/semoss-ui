@@ -28,6 +28,8 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
+import { formatToDataTestId } from "@semoss/utility/text";
 import {
 	EngineBuiltinToolsField,
 	type ModelBuiltinTools,
@@ -38,7 +40,6 @@ import type {
 } from "@/components/engine/engine-metadata-display";
 import { useSession, useStepper } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { formatToDataTestId } from "@/utility";
 import type { CatalogMatchState } from "./model-catalog-match";
 import { ModelCatalogMatch } from "./model-catalog-match";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
@@ -1058,11 +1059,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							);
 						case "reasoning-config": {
 							const asConfig = (raw: unknown) =>
-								raw &&
-								typeof raw === "object" &&
-								!Array.isArray(raw)
-									? (raw as ReasoningConfig)
-									: null;
+								isRecord(raw) ? (raw as ReasoningConfig) : null;
 							return (
 								<div data-testid={fieldWrapperTestId}>
 									<ModelReasoningConfigField

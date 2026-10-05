@@ -42,6 +42,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -236,9 +237,7 @@ export const GuardrailForm = ({
 		} catch (error) {
 			console.error(error);
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to create the guardrail",
+				getErrorMessage(error, "Unable to create the guardrail"),
 			);
 		} finally {
 			setLoading(false);

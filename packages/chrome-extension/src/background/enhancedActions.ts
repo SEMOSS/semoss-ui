@@ -1,3 +1,5 @@
+import { sleep } from "@semoss/utility/async";
+import { getErrorMessage } from "@semoss/utility/error";
 /**
  * Enhanced DOM actions using Chrome Debugger API
  */
@@ -130,12 +132,12 @@ async function getCenterCoordinates(
 			if (attempt < retries - 1) {
 				console.warn(
 					`Failed to get box model (attempt ${attempt + 1}/${retries}), retrying in 500ms...`,
-					error instanceof Error ? error.message : String(error),
+					getErrorMessage(error),
 				);
 				await sleep(500);
 			} else {
 				throw new Error(
-					`Could not compute box model after ${retries} attempts. Element may be hidden, removed, or still loading. Original error: ${error instanceof Error ? error.message : String(error)}`,
+					`Could not compute box model after ${retries} attempts. Element may be hidden, removed, or still loading. Original error: ${getErrorMessage(error)}`,
 				);
 			}
 		}
@@ -228,13 +230,6 @@ async function blurFocusedElement(tabId: number): Promise<void> {
 	await sendCommand(tabId, "Runtime.evaluate", {
 		expression: blurScript,
 	});
-}
-
-/**
- * Helper function for delays
- */
-function sleep(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**

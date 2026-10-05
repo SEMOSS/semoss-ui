@@ -31,6 +31,7 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	type PermissionChange,
 	PermissionDropdown,
@@ -117,7 +118,7 @@ export const WorkspaceSharingModal = ({
 		} catch (error) {
 			toast.error(
 				t("workspace:messages.fetchUsersFailed") +
-					`: ${error instanceof Error ? error.message : "Unknown error"}`,
+					`: ${getErrorMessage(error, "Unknown error")}`,
 			);
 		} finally {
 			setIsLoadingDropdownUsers(false);
@@ -213,7 +214,7 @@ export const WorkspaceSharingModal = ({
 		} catch (error) {
 			toast.error(
 				t("workspace:messages.addMembersFailed") +
-					`: ${error instanceof Error ? error.message : "Unknown error"}`,
+					`: ${getErrorMessage(error, "Unknown error")}`,
 			);
 		} finally {
 			setIsSubmitting(false);

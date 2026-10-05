@@ -1,3 +1,5 @@
+import { tryParseJson } from "@semoss/utility/json";
+import { isRecord } from "@semoss/utility/object";
 import type {
 	AutomationNode,
 	AutomationNodeTrace,
@@ -41,10 +43,6 @@ export function getAutomationScopeExpression(
 
 const MAX_DISCOVERED_SCOPE_FIELDS = 60;
 const MAX_DISCOVERED_SCOPE_DEPTH = 4;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function scopeValueType(value: unknown): string {
 	if (value === null) return "null";
@@ -119,12 +117,7 @@ export function inferNestedAutomationScopeEntries(
 ): AutomationScopeEntry[] {
 	if (!serializedOutput) return [];
 
-	let output: unknown;
-	try {
-		output = JSON.parse(serializedOutput);
-	} catch {
-		return [];
-	}
+	const output = tryParseJson(serializedOutput);
 	if (!isRecord(output)) return [];
 
 	const entries: AutomationScopeEntry[] = [];
