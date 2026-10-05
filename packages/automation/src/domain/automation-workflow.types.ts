@@ -185,6 +185,7 @@ export type AutomationOutputFieldType =
 	| "boolean"
 	| "number"
 	| "object"
+	| "object[]"
 	| "string"
 	| "string[]";
 

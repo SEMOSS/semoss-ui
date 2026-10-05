@@ -52,6 +52,8 @@ export interface StorageEngineConfig {
 	engineName?: string;
 	operation: "list" | "download" | "upload" | "delete" | "read-base64";
 	storagePath: string;
+	/** Comma-separated extensions used by List files, for example pdf, png, jpg. */
+	fileTypes: string;
 	filePath: string;
 	metadata: string;
 	convertToPdf: boolean;
@@ -123,14 +125,31 @@ export interface WaitConfig {
 	seconds: string;
 }
 
-/** Authoring configuration for a bounded for-each loop. */
-export interface LoopConfig {
-	mode: "forEach";
-	/** A JSON array or an exact ${scope_variable} reference. */
-	items: string;
-	batchSize: number;
+interface BoundedLoopConfig {
 	maxIterations: number;
 }
+
+/** Repeats the nested graph for every item or bounded group in a collection. */
+export interface ForEachLoopConfig extends BoundedLoopConfig {
+	mode: "forEach";
+	/** A JSON array or an exact scope reference such as ${records} or ${download.files}. */
+	items: string;
+	batchSize: number;
+}
+
+/** Repeats the nested graph a fixed number of times. */
+export interface RepeatLoopConfig extends BoundedLoopConfig {
+	mode: "repeat";
+	count: number;
+}
+
+/** Repeats the nested graph while a bounded condition remains true. */
+export interface WhileLoopConfig extends BoundedLoopConfig {
+	mode: "while";
+	condition: string;
+}
+
+export type LoopConfig = ForEachLoopConfig | RepeatLoopConfig | WhileLoopConfig;
 
 export interface BranchConfig {
 	clauses: AutomationBranchClause[];

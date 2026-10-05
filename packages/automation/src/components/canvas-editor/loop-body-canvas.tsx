@@ -27,6 +27,7 @@ import type { LoopBodyCanvasNodeData } from "./loop-body-canvas.types";
 import {
 	insertLoopBodyNode,
 	type LoopBodyInsertionPoint,
+	layoutLoopBodyNodes,
 } from "./loop-body-graph";
 import { LoopBodyBranchNode } from "./nodes/loop-body-branch-node";
 import { LoopBodyStepNode } from "./nodes/loop-body-step-node";
@@ -75,9 +76,10 @@ export function LoopBodyCanvas({
 				.map((edge) => edge.sourceHandle ?? `out-${edge.source}`),
 		[body.edges],
 	);
+	const displayNodes = useMemo(() => layoutLoopBodyNodes(body), [body]);
 	const graphNodes = useMemo<Node<LoopBodyCanvasNodeData>[]>(
 		() =>
-			body.nodes.map((node) => ({
+			displayNodes.map((node) => ({
 				id: node.id,
 				type: node.type === "branch" ? "branch" : "step",
 				position: node.position,
@@ -94,8 +96,8 @@ export function LoopBodyCanvas({
 				},
 			})),
 		[
-			body.nodes,
 			connectedSourceHandles,
+			displayNodes,
 			onNodeSelect,
 			readOnly,
 			selectedNodeId,
@@ -184,28 +186,16 @@ export function LoopBodyCanvas({
 							}))}
 							nodeTypes={loopBodyNodeTypes}
 							onNodesChange={onNodesChange}
-							onNodeDragStop={(_event, draggedNode) => {
-								if (readOnly) return;
-								onBodyChange({
-									...body,
-									nodes: body.nodes.map((node) =>
-										node.id === draggedNode.id
-											? {
-													...node,
-													position:
-														draggedNode.position,
-												}
-											: node,
-									),
-								});
-							}}
+							onNodeClick={(_event, node) =>
+								onNodeSelect?.(node.id)
+							}
 							onInit={(instance) => {
 								instanceRef.current = instance;
 								instance.fitView({ padding: 0.2 });
 							}}
-							nodesDraggable={!readOnly}
-							nodesDeletable={false}
+							nodesDraggable={false}
 							nodesConnectable={false}
+							deleteKeyCode={null}
 							elementsSelectable
 							panOnDrag
 							panOnScroll={false}

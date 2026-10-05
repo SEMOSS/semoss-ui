@@ -33,7 +33,7 @@ export function TriggerNode({ data, id }: NodeProps) {
 				type="button"
 				aria-label="Edit trigger"
 				disabled={automationNode.readOnly}
-				onClick={automationNode.open}
+				onClick={() => automationNode.open()}
 				className={`relative flex h-18 w-18 rotate-45 appearance-none items-center justify-center rounded-lg border-2 ${statusBorderClass} ${runningClass} bg-card p-0 shadow-sm disabled:cursor-default`}
 			>
 				<span className="absolute inset-0.5 rounded-md bg-card" />

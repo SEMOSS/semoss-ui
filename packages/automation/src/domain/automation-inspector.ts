@@ -174,6 +174,8 @@ export interface AutomationInspectorSnapshot {
 	 * `readOnly` prop were ever out of sync with the canvas. */
 	readOnly: boolean;
 	editingStep: AutomationNode | null;
+	/** Nested loop step selected from the expanded canvas, when present. */
+	selectedBodyNodeId?: string;
 	upstreamVars: string[];
 	scopeEntries: AutomationScopeEntry[];
 	stepRunStatus?: StepRunStatus;

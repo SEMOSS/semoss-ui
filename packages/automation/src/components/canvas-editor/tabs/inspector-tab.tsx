@@ -12,6 +12,7 @@ interface InspectorTabProps {
 	description: string;
 	devMode: boolean;
 	editingStep: AutomationNode | null;
+	selectedBodyNodeId?: string;
 	onPrepareSchedule: () => Promise<boolean>;
 	upstreamVars: string[];
 	scopeEntries: AutomationScopeEntry[];
@@ -39,6 +40,7 @@ export function InspectorTab({
 	description,
 	devMode,
 	editingStep,
+	selectedBodyNodeId,
 	onPrepareSchedule,
 	upstreamVars,
 	scopeEntries,
@@ -73,6 +75,7 @@ export function InspectorTab({
 		return (
 			<NodeEditDrawer
 				step={editingStep}
+				selectedBodyNodeId={selectedBodyNodeId}
 				appId={appId}
 				upstreamVars={upstreamVars}
 				scopeEntries={scopeEntries}

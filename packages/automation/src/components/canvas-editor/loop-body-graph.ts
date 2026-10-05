@@ -9,6 +9,61 @@ export interface LoopBodyInsertionPoint {
 	sourceHandle: string;
 }
 
+const LOOP_BODY_COLUMN_GAP = 260;
+const LOOP_BODY_LANE_GAP = 180;
+
+/**
+ * Produces a stable left-to-right view of the nested graph. The inspector is a
+ * route editor, not a second free-form canvas, so persisted drag coordinates
+ * must not be allowed to make steps overlap or become impossible to select.
+ */
+export function layoutLoopBodyNodes(
+	body: AutomationNodeBody,
+): AutomationNode[] {
+	const nodeIds = new Set(body.nodes.map((node) => node.id));
+	const depths = new Map(body.nodes.map((node) => [node.id, 0]));
+	const controlEdges = body.edges.filter(
+		(edge) =>
+			edge.kind !== "data" &&
+			nodeIds.has(edge.source) &&
+			nodeIds.has(edge.target),
+	);
+
+	// Loop bodies are acyclic. Repeated relaxation keeps this independent of
+	// storage order while remaining bounded by the number of nodes.
+	for (let pass = 0; pass < body.nodes.length; pass += 1) {
+		let changed = false;
+		for (const edge of controlEdges) {
+			const nextDepth = (depths.get(edge.source) ?? 0) + 1;
+			if (nextDepth > (depths.get(edge.target) ?? 0)) {
+				depths.set(edge.target, nextDepth);
+				changed = true;
+			}
+		}
+		if (!changed) break;
+	}
+
+	const columns = new Map<number, AutomationNode[]>();
+	for (const node of body.nodes) {
+		const depth = depths.get(node.id) ?? 0;
+		columns.set(depth, [...(columns.get(depth) ?? []), node]);
+	}
+	const positions = new Map<string, { x: number; y: number }>();
+	for (const [depth, nodes] of columns) {
+		nodes.forEach((node, lane) => {
+			positions.set(node.id, {
+				x: depth * LOOP_BODY_COLUMN_GAP,
+				y: lane * LOOP_BODY_LANE_GAP,
+			});
+		});
+	}
+
+	return body.nodes.map((node) => ({
+		...node,
+		position: positions.get(node.id) ?? node.position,
+	}));
+}
+
 /** Inserts a node on one loop-body route without rebuilding unrelated edges. */
 export function insertLoopBodyNode(
 	body: AutomationNodeBody,

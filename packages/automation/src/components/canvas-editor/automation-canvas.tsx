@@ -616,6 +616,9 @@ export const AutomationCanvasContent = forwardRef<
 
 	// Drawer state — which step is being edited
 	const [editingStepId, setEditingStepId] = useState<string | null>(null);
+	const [selectedBodyNodeId, setSelectedBodyNodeId] = useState<
+		string | undefined
+	>();
 	const [latestRunStatus, setLatestRunStatus] = useState<RunStatus | null>(
 		null,
 	);
@@ -1622,6 +1625,7 @@ export const AutomationCanvasContent = forwardRef<
 			devMode,
 			readOnly: readOnly || viewingHistory,
 			editingStep,
+			selectedBodyNodeId,
 			upstreamVars: editingStep
 				? templateVariablesFor(editingStep.id)
 				: [],
@@ -1648,6 +1652,7 @@ export const AutomationCanvasContent = forwardRef<
 		readOnly,
 		viewingHistory,
 		editingStep,
+		selectedBodyNodeId,
 		onInspectorChange,
 		displayErrors,
 		stepOutputPreviews,
@@ -1675,6 +1680,7 @@ export const AutomationCanvasContent = forwardRef<
 					break;
 				case "close":
 					setEditingStepId(null);
+					setSelectedBodyNodeId(undefined);
 					break;
 			}
 		},
@@ -2662,9 +2668,10 @@ export const AutomationCanvasContent = forwardRef<
 		setSteps((previous) => layoutNodes(previous, graphEdges));
 		setIsDirty(true);
 	}, [graphEdges, layoutNodes, readOnly, viewingHistory]);
-	const openNode = useCallback((nodeId: string) => {
+	const openNode = useCallback((nodeId: string, bodyNodeId?: string) => {
 		setShowAddMenu(false);
 		setEditingStepId(nodeId);
+		setSelectedBodyNodeId(bodyNodeId);
 	}, []);
 	const addNodeAfter = useCallback(
 		(nodeId: string, sourceHandle?: string) => {

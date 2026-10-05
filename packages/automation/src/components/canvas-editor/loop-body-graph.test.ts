@@ -6,6 +6,7 @@ import type {
 import {
 	getLoopBodyUpstreamVariables,
 	insertLoopBodyNode,
+	layoutLoopBodyNodes,
 	removeLoopBodyNode,
 } from "./loop-body-graph";
 
@@ -24,6 +25,42 @@ function bodyNode(id: string, x: number, y = 0): AutomationNode {
 }
 
 describe("loop body graph editing", () => {
+	it("lays out nested routes without overlapping persisted positions", () => {
+		const first = bodyNode("first", 0);
+		const branch = bodyNode("branch", 0);
+		const yes = bodyNode("yes", 0);
+		const no = bodyNode("no", 0);
+		const body: AutomationNodeBody = {
+			nodes: [first, branch, yes, no],
+			edges: [
+				{
+					id: "first-branch",
+					source: first.id,
+					target: branch.id,
+				},
+				{
+					id: "branch-yes",
+					kind: "control",
+					source: branch.id,
+					target: yes.id,
+				},
+				{
+					id: "branch-no",
+					kind: "control",
+					source: branch.id,
+					target: no.id,
+				},
+			],
+		};
+
+		expect(layoutLoopBodyNodes(body).map((item) => item.position)).toEqual([
+			{ x: 0, y: 0 },
+			{ x: 260, y: 0 },
+			{ x: 520, y: 0 },
+			{ x: 520, y: 180 },
+		]);
+	});
+
 	it("inserts on one branch route without rebuilding the other route", () => {
 		const decision = bodyNode("decision", 0);
 		decision.type = "branch";

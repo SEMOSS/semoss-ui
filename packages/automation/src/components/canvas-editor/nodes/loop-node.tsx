@@ -32,7 +32,10 @@ import type { AutomationNodeData } from "./automation-node";
 /** Summarizes the collection a loop will consume without exposing raw JSON on the canvas. */
 function getItemsLabel(items: string): string {
 	const trimmed = items.trim();
-	const reference = /^\$\{([A-Za-z_][A-Za-z0-9_]*)}$/.exec(trimmed);
+	const reference =
+		/^\$\{([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*|\.[0-9]+)*)}$/.exec(
+			trimmed,
+		);
 	if (reference) return reference[1];
 	try {
 		const parsed: unknown = JSON.parse(trimmed);
@@ -43,6 +46,28 @@ function getItemsLabel(items: string): string {
 		// An incomplete value is expected while the user is authoring the form.
 	}
 	return "Choose a list";
+}
+
+function getLoopSummary(config: LoopConfig): string {
+	if (config.mode === "repeat") {
+		return `${config.count} time${config.count === 1 ? "" : "s"}`;
+	}
+	if (config.mode === "while") {
+		return `While condition is true · Max ${config.maxIterations}`;
+	}
+	const groupLabel =
+		config.batchSize > 1
+			? `Groups of ${config.batchSize}`
+			: "One item at a time";
+	return `${getItemsLabel(config.items)} · ${groupLabel}`;
+}
+
+function getLoopBodyLabel(config: LoopConfig): string {
+	if (config.mode === "repeat") return "Repeat this sequence";
+	if (config.mode === "while") return "Repeat while condition is true";
+	return config.batchSize > 1
+		? "Repeat for each group"
+		: "Repeat for each item";
 }
 
 /** Canvas card for a loop container and the sequence it repeats. */
@@ -58,10 +83,6 @@ export function LoopNode({ data }: NodeProps) {
 		Boolean(d.pathHighlighted),
 		d.isIncomplete ? "border-warning" : "border-primary/40",
 	);
-	const batchLabel =
-		config.batchSize > 1
-			? `Batches of ${config.batchSize}`
-			: "One item at a time";
 
 	return (
 		<ContextMenu>
@@ -82,7 +103,7 @@ export function LoopNode({ data }: NodeProps) {
 								{d.step.label || "Loop over items"}
 							</p>
 							<p className="truncate text-muted-foreground text-xs">
-								{getItemsLabel(config.items)} · {batchLabel}
+								{getLoopSummary(config)}
 							</p>
 						</div>
 						{d.runStatus && d.runStatus !== "idle" && (
@@ -123,7 +144,7 @@ export function LoopNode({ data }: NodeProps) {
 									className="size-3.5 text-primary"
 									aria-hidden
 								/>
-								Repeat for every batch
+								{getLoopBodyLabel(config)}
 							</span>
 							<span className="text-muted-foreground text-xs">
 								{bodyNodes.length} step
@@ -139,7 +160,9 @@ export function LoopNode({ data }: NodeProps) {
 								onBodyChange={(body) =>
 									automationNode.update({ ...d.step, body })
 								}
-								onNodeSelect={() => automationNode.open()}
+								onNodeSelect={(bodyNodeId) =>
+									automationNode.open(bodyNodeId)
+								}
 							/>
 						) : (
 							<div className="rounded-xl border border-primary/30 border-dashed bg-muted/30 p-2">

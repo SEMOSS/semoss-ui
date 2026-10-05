@@ -115,11 +115,13 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 	definition(
 		"control.loop",
 		"control",
-		"Loop over items",
+		"Repeat steps",
 		{
 			mode: "forEach",
 			items: [],
 			batchSize: 1,
+			count: 1,
+			condition: "",
 			maxIterations: 100,
 		},
 		false,
@@ -341,6 +343,56 @@ describe("loop container mapping", () => {
 		});
 	});
 
+	it.each([
+		{
+			mode: "repeat" as const,
+			count: 4,
+			maxIterations: 10,
+		},
+		{
+			mode: "while" as const,
+			condition: "$" + '{loop_context.previous.status} != "complete"',
+			maxIterations: 10,
+		},
+	])("round trips $mode configuration", (config) => {
+		const bodyNode = node("developer.python", { id: "body-step" });
+		const loop = node("control.loop", {
+			id: "loop",
+			outputVar: "loop_context",
+			config,
+			body: { nodes: [bodyNode], edges: [] },
+		});
+
+		const saved = documentOf([loop]);
+		expect(saved.graph.nodes[0].config).toMatchObject(config);
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedLoop = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "control.loop",
+		);
+		expect(reloadedLoop?.config).toMatchObject(config);
+	});
+
+	it("validates repeat and while settings", () => {
+		const bodyNode = node("developer.python", { id: "body-step" });
+		const invalidRepeat = node("control.loop", {
+			config: { mode: "repeat", count: 11, maxIterations: 10 },
+			body: { nodes: [bodyNode], edges: [] },
+		});
+		const invalidWhile = node("control.loop", {
+			config: { mode: "while", condition: "", maxIterations: 10 },
+			body: { nodes: [bodyNode], edges: [] },
+		});
+
+		expect(
+			validateCanvasWorkflowNode(invalidRepeat, [invalidRepeat]),
+		).toContain(
+			"Number of times must be a whole number no greater than the safety limit",
+		);
+		expect(
+			validateCanvasWorkflowNode(invalidWhile, [invalidWhile]),
+		).toContain("Continue while condition is required");
+	});
+
 	it("requires an array source and at least one nested step", () => {
 		const loop = node("control.loop", {
 			config: {
@@ -354,9 +406,43 @@ describe("loop container mapping", () => {
 
 		expect(validateCanvasWorkflowNode(loop, [loop])).toEqual(
 			expect.arrayContaining([
-				"Items must be a JSON array or an exact $" +
-					"{variable} reference",
+				"Items must be a JSON array or an exact variable reference",
 				"Add at least one step inside the loop",
+			]),
+		);
+	});
+
+	it("identifies the invalid nested step and its missing routes", () => {
+		const decision = node("control.if", {
+			id: "decision",
+			label: "Choose path",
+			config: { clauses: [{ id: "case-1", condition: "" }] },
+		});
+		const target = node("developer.python", { id: "target" });
+		const loop = node("control.loop", {
+			config: {
+				mode: "forEach",
+				items: "[1]",
+				batchSize: 1,
+				maxIterations: 10,
+			},
+			body: {
+				nodes: [decision, target],
+				edges: [
+					{
+						id: "case-edge",
+						source: decision.id,
+						target: target.id,
+						sourceHandle: `case-${decision.id}-case-1`,
+					},
+				],
+			},
+		});
+
+		expect(validateCanvasWorkflowNode(loop, [loop])).toEqual(
+			expect.arrayContaining([
+				'Inside "Choose path": Each condition is required',
+				'Inside "Choose path": Every condition and the Else path must be connected',
 			]),
 		);
 	});
@@ -667,6 +753,25 @@ describe("optional engine parameters", () => {
 		expect(saved.graph.nodes[2]?.config.paramValues).toEqual({
 			temperature: 0.2,
 		});
+	});
+
+	it("persists storage list file types as a typed array", () => {
+		const listFiles = node("storage.list");
+		const saved = documentOf([
+			{
+				...listFiles,
+				config: {
+					...(listFiles.config as StorageEngineConfig),
+					fileTypes: "pdf, png, .jpg",
+				},
+			},
+		]);
+
+		expect(saved.graph.nodes[0]?.config.extensions).toEqual([
+			"pdf",
+			"png",
+			".jpg",
+		]);
 	});
 });
 

@@ -372,6 +372,13 @@ function defaultCanvasConfig(
 		};
 	}
 	if (category === "storage") {
+		const fileTypes = Array.isArray(config.extensions)
+			? config.extensions
+					.filter(
+						(value): value is string => typeof value === "string",
+					)
+					.join(", ")
+			: stringValue(config.extensions);
 		const operation =
 			type === "storage.read"
 				? "read-base64"
@@ -386,6 +393,7 @@ function defaultCanvasConfig(
 			engineId,
 			operation,
 			storagePath: stringValue(config.path),
+			fileTypes,
 			filePath: stringValue(config.destination),
 			metadata: jsonObjectValue(config.metadata),
 			convertToPdf: config.convertToPdf === true,
@@ -437,9 +445,28 @@ function defaultCanvasConfig(
 		return { seconds: String(numberValue(config.durationSeconds, 5)) };
 	}
 	if (type === "control.loop") {
+		const mode =
+			config.mode === "repeat" || config.mode === "while"
+				? config.mode
+				: "forEach";
+		const maxIterations = numberValue(config.maxIterations, 100);
+		if (mode === "repeat") {
+			return {
+				mode,
+				count: numberValue(config.count, 1),
+				maxIterations,
+			};
+		}
+		if (mode === "while") {
+			return {
+				mode,
+				condition: stringValue(config.condition),
+				maxIterations,
+			};
+		}
 		const items = config.items;
 		return {
-			mode: "forEach",
+			mode,
 			items:
 				typeof items === "string"
 					? items
@@ -449,7 +476,7 @@ function defaultCanvasConfig(
 							2,
 						),
 			batchSize: numberValue(config.batchSize, 1),
-			maxIterations: numberValue(config.maxIterations, 100),
+			maxIterations,
 		};
 	}
 	if (type === "control.if") {
@@ -585,6 +612,7 @@ function mergeCanvasConfig(
 	}
 	if (category === "storage") {
 		const storagePath = getConfigValue(config, "storagePath");
+		const fileTypes = getConfigValue(config, "fileTypes");
 		const filePath = getConfigValue(config, "filePath");
 		const metadata = getConfigValue(config, "metadata");
 		const convertToPdf = getConfigValue(config, "convertToPdf");
@@ -594,6 +622,15 @@ function mergeCanvasConfig(
 			"leaveFolderStructure",
 		);
 		if (typeof storagePath === "string") next.path = storagePath;
+		if (typeof fileTypes === "string") {
+			const trimmedFileTypes = fileTypes.trim();
+			next.extensions = trimmedFileTypes.startsWith("${")
+				? trimmedFileTypes
+				: trimmedFileTypes
+						.split(",")
+						.map((value) => value.trim())
+						.filter(Boolean);
+		}
 		if (typeof filePath === "string") next.destination = filePath;
 		if (typeof metadata === "string") {
 			next.metadata = metadata.trim()
@@ -670,19 +707,32 @@ function mergeCanvasConfig(
 		}
 	}
 	if (type === "control.loop") {
-		const items = getConfigValue(config, "items");
-		const batchSize = getConfigValue(config, "batchSize");
+		delete next.items;
+		delete next.batchSize;
+		delete next.count;
+		delete next.condition;
+		const mode = getConfigValue(config, "mode");
 		const maxIterations = getConfigValue(config, "maxIterations");
-		next.mode = "forEach";
-		if (typeof items === "string") {
-			const trimmedItems = items.trim();
-			next.items = trimmedItems.startsWith("${")
-				? trimmedItems
-				: (parsedJsonValue(trimmedItems) ?? trimmedItems);
-		}
-		if (typeof batchSize === "number") next.batchSize = batchSize;
+		next.mode = mode === "repeat" || mode === "while" ? mode : "forEach";
 		if (typeof maxIterations === "number") {
 			next.maxIterations = maxIterations;
+		}
+		if (next.mode === "forEach") {
+			const items = getConfigValue(config, "items");
+			const batchSize = getConfigValue(config, "batchSize");
+			if (typeof items === "string") {
+				const trimmedItems = items.trim();
+				next.items = trimmedItems.startsWith("${")
+					? trimmedItems
+					: (parsedJsonValue(trimmedItems) ?? trimmedItems);
+			}
+			if (typeof batchSize === "number") next.batchSize = batchSize;
+		} else if (next.mode === "repeat") {
+			const count = getConfigValue(config, "count");
+			if (typeof count === "number") next.count = count;
+		} else {
+			const condition = getConfigValue(config, "condition");
+			if (typeof condition === "string") next.condition = condition;
 		}
 	}
 	if (type === "control.if") {
@@ -1097,22 +1147,57 @@ export function validateCanvasWorkflowNode(
 		}
 	}
 	if (type === "control.loop") {
-		const items = config.items;
-		const validReference =
-			typeof items === "string" &&
-			/^\$\{[A-Za-z_][A-Za-z0-9_]*}$/.test(items.trim());
-		let validArray = Array.isArray(items);
-		if (!validArray && typeof items === "string" && !validReference) {
-			try {
-				validArray = Array.isArray(JSON.parse(items));
-			} catch {
-				validArray = false;
+		const maxIterations = config.maxIterations;
+		if (config.mode === "forEach") {
+			const items = config.items;
+			const validReference =
+				typeof items === "string" &&
+				/^\$\{[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*|\.[0-9]+)*}$/.test(
+					items.trim(),
+				);
+			let validArray = Array.isArray(items);
+			if (!validArray && typeof items === "string" && !validReference) {
+				try {
+					validArray = Array.isArray(JSON.parse(items));
+				} catch {
+					validArray = false;
+				}
 			}
+			if (!validReference && !validArray) {
+				errors.push(
+					"Items must be a JSON array or an exact variable reference",
+				);
+			}
+		} else if (config.mode === "repeat") {
+			if (
+				typeof config.count !== "number" ||
+				!Number.isInteger(config.count) ||
+				config.count < 1 ||
+				typeof maxIterations !== "number" ||
+				config.count > maxIterations
+			) {
+				errors.push(
+					"Number of times must be a whole number no greater than the safety limit",
+				);
+			}
+		} else if (config.mode === "while") {
+			if (
+				typeof config.condition !== "string" ||
+				!config.condition.trim()
+			) {
+				errors.push("Continue while condition is required");
+			}
+		} else {
+			errors.push("Choose how the loop should repeat");
 		}
-		if (!validReference && !validArray) {
+		if (
+			typeof maxIterations !== "number" ||
+			!Number.isInteger(maxIterations) ||
+			maxIterations < 1 ||
+			maxIterations > 10_000
+		) {
 			errors.push(
-				"Items must be a JSON array or an exact $" +
-					"{variable} reference",
+				"Safety limit must be a whole number from 1 through 10000",
 			);
 		}
 		if (!node.body || node.body.nodes.length === 0) {
@@ -1120,10 +1205,19 @@ export function validateCanvasWorkflowNode(
 		} else {
 			const bodyValidationNodes = [...allNodes, ...node.body.nodes];
 			for (const bodyNode of node.body.nodes) {
-				errors.push(
+				const bodyErrors = [
 					...validateCanvasWorkflowNode(
 						bodyNode,
 						bodyValidationNodes,
+					),
+					...validateCanvasWorkflowConnections(
+						bodyNode,
+						node.body.edges,
+					),
+				];
+				errors.push(
+					...bodyErrors.map(
+						(error) => `Inside "${bodyNode.label}": ${error}`,
 					),
 				);
 			}

@@ -85,6 +85,7 @@ export const AutomationInspectorPanel = () => {
 			description={snapshot?.description ?? ""}
 			devMode={snapshot?.devMode ?? false}
 			editingStep={snapshot?.editingStep ?? null}
+			selectedBodyNodeId={snapshot?.selectedBodyNodeId}
 			onPrepareSchedule={() =>
 				context.canvasRef.current?.prepareSchedule() ??
 				Promise.resolve(false)
