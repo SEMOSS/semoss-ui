@@ -1,7 +1,8 @@
 import type { HTMLAttributes } from "react";
 import { Avatar, AvatarFallback, AvatarImage, cn } from "@semoss/ui/next";
+import { buildInitials } from "@semoss/utility/text";
 import { useCatalogImageUrl } from "../hooks/use-catalog-image";
-import { buildInitials, getAppCatalogAvatarStyle } from "./icon-utils";
+import { getAppCatalogAvatarStyle } from "./icon-utils";
 
 interface AppCatalogAvatarProps
 	extends Omit<HTMLAttributes<HTMLDivElement>, "style" | "children"> {

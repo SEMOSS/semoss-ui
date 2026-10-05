@@ -1,8 +1,8 @@
-import { Bot } from "lucide-react";
+import { Bot, ChevronDown } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { EngineSelect } from "@semoss/shared";
+import { EngineSelect, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
 	Field,
@@ -18,8 +18,8 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components/mcp/mcp-overlay";
+import { DefaultToolsField } from "@/features/chat-tools/components/default-tools-field";
 import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
-import { TeamworkDefaultToolsField } from "@/features/teamwork/components/teamwork-default-tools-field";
 import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
 import { splitMcpByType } from "@/utility/mcp-utils";
@@ -60,6 +60,16 @@ export const RoomOptionsForm = observer(
 			isOpen: boolean;
 		}>({ type: "KNOWLEDGE", isOpen: false });
 		const { knowledge, toolbox } = splitMcpByType(options.mcp);
+		// the agent the room runs; an agent run with none picked uses the
+		// default agent
+		const agentName =
+			options.workspace?.name ||
+			options.workspace?.workspace_id ||
+			t(
+				isAgentMode
+					? "room:modes.defaultAgent"
+					: "room:menuWorkspace.selectAgent",
+			);
 		return (
 			<Form
 				form={form}
@@ -78,6 +88,41 @@ export const RoomOptionsForm = observer(
 					disabled={disabled}
 					className="flex min-w-0 flex-col gap-6"
 				>
+					{(agentEditable || options.workspace || isAgentMode) && (
+						<Field>
+							<FieldLabel htmlFor={`${id}-agent`}>
+								{t("room:form.agentLabel")}
+							</FieldLabel>
+							{/* styled as the model picker's trigger below */}
+							<Button
+								id={`${id}-agent`}
+								type="button"
+								variant="outline"
+								disabled={disabled || !agentEditable}
+								title={agentName}
+								className="w-full min-w-0 justify-start overflow-hidden border-input bg-transparent px-3 py-2"
+								onClick={() =>
+									setOverlay({ type: "AGENT", isOpen: true })
+								}
+							>
+								<div className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
+									<Bot
+										aria-hidden="true"
+										className="size-5 shrink-0"
+									/>
+									<span className="min-w-0 truncate">
+										{agentName}
+									</span>
+									{agentEditable && (
+										<ChevronDown
+											aria-hidden="true"
+											className="inline-block! ms-auto size-4 shrink-0 opacity-70"
+										/>
+									)}
+								</div>
+							</Button>
+						</Field>
+					)}
 					{root.theme.featureFlags?.enableModelSelect && (
 						<Field>
 							<FieldLabel htmlFor={`${id}-model`}>
@@ -96,6 +141,16 @@ export const RoomOptionsForm = observer(
 								popoverContentProps={{ align: "start" }}
 								id={`${id}-model`}
 								disabled={disabled}
+								triggerIcon={
+									model ? (
+										<EngineSubtypeIcon
+											engineType={model.engine_type}
+											engineSubtype={model.engine_subtype}
+											alt=""
+											className="size-5 shrink-0 object-contain"
+										/>
+									) : undefined
+								}
 							/>
 						</Field>
 					)}
@@ -127,29 +182,6 @@ export const RoomOptionsForm = observer(
 							</Field>
 						)}
 					/>
-					{(agentEditable || options.workspace) && (
-						<Field>
-							<FieldLabel htmlFor={`${id}-agent`}>
-								{t("room:form.agentLabel")}
-							</FieldLabel>
-							<Button
-								id={`${id}-agent`}
-								type="button"
-								variant="outline"
-								disabled={disabled || !agentEditable}
-								className="h-auto min-h-10 justify-start whitespace-normal text-start"
-								onClick={() =>
-									setOverlay({ type: "AGENT", isOpen: true })
-								}
-							>
-								<Bot aria-hidden="true" />
-								{options.workspace?.name ||
-									options.workspace?.workspace_id ||
-									t("room:menuWorkspace.selectAgent")}
-							</Button>
-						</Field>
-					)}
-
 					<FieldDescription>
 						{t(
 							disabled
@@ -182,7 +214,7 @@ export const RoomOptionsForm = observer(
 						/>
 					))}
 					{!isAgentMode && (
-						<TeamworkDefaultToolsField
+						<DefaultToolsField
 							defaultTools={options.defaultTools}
 							disabled={disabled}
 							onChange={(defaultTools) => {

@@ -15,13 +15,13 @@ import {
 	CollapsibleTrigger,
 	Input,
 } from "@semoss/ui/next";
-import { useConfig } from "@/hooks";
 import {
 	formatToDataTestId,
-	getTagColorPalette,
-	removeUnderscores,
+	formatUnderscoreLabel,
 	toTitleCase,
-} from "@/utility";
+} from "@semoss/utility/text";
+import { useConfig } from "@/hooks";
+import { getTagColorPalette } from "@/utility";
 import {
 	CATALOG_ACCESS_FILTERS,
 	type CatalogAccessFilter,
@@ -478,7 +478,7 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 									<span className="flex items-center gap-2">
 										<span className="font-medium text-[13px] text-foreground">
 											{toTitleCase(
-												removeUnderscores(key),
+												formatUnderscoreLabel(key),
 											)}
 										</span>
 										{activeCount > 0 && (

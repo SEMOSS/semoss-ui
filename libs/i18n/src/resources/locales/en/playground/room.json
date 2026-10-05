@@ -47,7 +47,7 @@
 		"agent": "Agent",
 		"exitAgent": "Switch to chat",
 		"selectedAgent": "Agent: {{name}}",
-		"defaultAgent": "Default agent",
+		"defaultAgent": "Default Agent",
 		"noAgent": "No agent"
 	},
 	"workspace": {
@@ -180,5 +180,9 @@
 		"failed": "Failed to optimize prompt",
 		"tooLarge": "Prompt is too large for optimization. Please shorten it first.",
 		"noPermission": "You do not have permission to use this model"
+	},
+	"contextItems": {
+		"label": "Added to Your Next Message",
+		"remove": "Remove {{name}} from your next message"
 	}
 }

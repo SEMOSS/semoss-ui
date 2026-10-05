@@ -1,5 +1,5 @@
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
-import { formatToDataTestId } from "@/utility";
+import { formatToDataTestId } from "@semoss/utility/text";
 
 interface CatalogTabsProps {
 	/** Current active tab value */

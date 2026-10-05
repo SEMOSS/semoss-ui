@@ -1,4 +1,5 @@
 import { download, runPixel } from "@semoss/sdk";
+import { isRecord } from "@semoss/utility/object";
 import type {
 	UsageExportRequest,
 	UsageFilterOptions,
@@ -55,8 +56,7 @@ export function parseUsageRows(
 	)
 		throw new Error("The Usage Reactor Returned An Invalid Dataset.");
 	const rows = output.rows.map((row: unknown): UsageRow => {
-		if (!row || typeof row !== "object" || Array.isArray(row))
-			throw new Error("Invalid Usage Row.");
+		if (!isRecord(row)) throw new Error("Invalid Usage Row.");
 		const result: UsageRow = {};
 		for (const [key, value] of Object.entries(row)) {
 			if (value === null) result[key] = null;

@@ -46,7 +46,7 @@ export type TeamsChannelViewerProps = ConnectorViewerProps;
  * one with its replies, and bring it or its files into the insight.
  */
 export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, showHeader = true } = props;
 	const { t, i18n } = useTranslation("connectors");
 	const saver = useConnectorSaver("teams-channels", props);
 	const choice = useTeamsChannelChoice();
@@ -209,6 +209,18 @@ export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
 		);
 	};
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={query.reload}
+			disabled={!channel}
+		/>
+	);
+
 	return (
 		<div className="@container flex h-full min-h-0 flex-col">
 			<div
@@ -217,42 +229,41 @@ export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
 					openThread !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader
-					brand="teams"
-					icon={MessagesSquareIcon}
-					title={serviceName}
-					description={
-						team && channel
-							? t("teams.teamAndChannel", {
-									team: team.displayName,
-									channel: channel.displayName,
-								})
-							: undefined
-					}
-				>
-					<ConnectorIconButton
-						icon={RefreshCwIcon}
-						label={t("common.refresh")}
-						isSpinning={query.isRefreshing}
-						onClick={query.reload}
-						disabled={!channel}
-					/>
-				</ConnectorViewerHeader>
+				{showHeader ? (
+					<ConnectorViewerHeader
+						brand="teams"
+						icon={MessagesSquareIcon}
+						title={serviceName}
+						description={
+							team && channel
+								? t("teams.teamAndChannel", {
+										team: team.displayName,
+										channel: channel.displayName,
+									})
+								: undefined
+						}
+					>
+						{refreshButton}
+					</ConnectorViewerHeader>
+				) : null}
 				{choice.teamsQuery.status === "ready" && team ? (
-					<div className="border-border border-b bg-muted/10 px-3 py-2">
-						<TeamsChannelPicker
-							choice={{
-								...choice,
-								chooseTeam: (teamId) => {
-									choice.chooseTeam(teamId);
-									setLimit(PAGE_SIZE);
-								},
-								chooseChannel: (channelId) => {
-									choice.chooseChannel(channelId);
-									setLimit(PAGE_SIZE);
-								},
-							}}
-						/>
+					<div className="flex items-center gap-2 border-border border-b bg-muted/10 px-3 py-2">
+						<div className="min-w-0 flex-1">
+							<TeamsChannelPicker
+								choice={{
+									...choice,
+									chooseTeam: (teamId) => {
+										choice.chooseTeam(teamId);
+										setLimit(PAGE_SIZE);
+									},
+									chooseChannel: (channelId) => {
+										choice.chooseChannel(channelId);
+										setLimit(PAGE_SIZE);
+									},
+								}}
+							/>
+						</div>
+						{showHeader ? null : refreshButton}
 					</div>
 				) : null}
 				{renderBody()}

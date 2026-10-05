@@ -8,13 +8,13 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { cn } from "@semoss/ui/next";
+import { formatLocalDateKey, formatLocalWallClock } from "@semoss/utility/date";
 import { ConnectorCalendar } from "../../components/connector-calendar";
 import { ConnectorIconButton } from "../../components/connector-icon-button";
 import { ConnectorItemRow } from "../../components/connector-item-row";
 import { ConnectorViewerHeader } from "../../components/connector-viewer-header";
-import { parseGraphDay, toWallClockString } from "../../core/connector.format";
+import { parseGraphDay } from "../../core/connector.format";
 import type { ConnectorViewerProps } from "../../core/connector.types";
-import { calendarDayKey } from "../../core/connector-calendar";
 import { runConnectorPixel } from "../../core/connector-pixel";
 import { useCalendarWindow } from "../../core/use-calendar-window";
 import { useConnectorQuery } from "../../core/use-connector-query";
@@ -37,7 +37,7 @@ export type GoogleCalendarViewerProps = ConnectorViewerProps;
 
 /** Browse the dates supplied by Google; opening an event loads its full times. */
 export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, showHeader = true } = props;
 	const { t } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("google-calendar", props);
@@ -50,8 +50,8 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 	const serviceName = t("services.googleCalendar");
 	const query = useConnectorQuery(
 		GOOGLE_PIXELS.calendarList({
-			startDate: toWallClockString(calendar.range.start),
-			endDate: toWallClockString(
+			startDate: formatLocalWallClock(calendar.range.start),
+			endDate: formatLocalWallClock(
 				new Date(calendar.range.end.getTime() - 1000),
 			),
 		}),
@@ -88,6 +88,17 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 		},
 	});
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={query.reload}
+		/>
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div
@@ -96,20 +107,18 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 					openEvent !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader
-					icon={CalendarDaysIcon}
-					brand="google-calendar"
-					title={serviceName}
-				>
-					<ConnectorIconButton
-						icon={RefreshCwIcon}
-						label={t("common.refresh")}
-						isSpinning={query.isRefreshing}
-						onClick={query.reload}
-					/>
-				</ConnectorViewerHeader>
+				{showHeader ? (
+					<ConnectorViewerHeader
+						icon={CalendarDaysIcon}
+						brand="google-calendar"
+						title={serviceName}
+					>
+						{refreshButton}
+					</ConnectorViewerHeader>
+				) : null}
 				<ConnectorCalendar
 					calendar={calendar}
+					actions={showHeader ? undefined : refreshButton}
 					query={{ ...query, data: days }}
 					serviceName={serviceName}
 					account="google"
@@ -124,7 +133,7 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 					renderEvent={(event, day) => {
 						const request = eventRequest(event);
 						const title = eventTitle(event);
-						const itemKey = `${calendarDayKey(day)}:${event.id}`;
+						const itemKey = `${formatLocalDateKey(day)}:${event.id}`;
 						const Icon = event.recurringEventId
 							? RepeatIcon
 							: CalendarIcon;

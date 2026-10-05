@@ -13,6 +13,7 @@
 		"check-types": "tsc --pretty --noEmit"
 	},
 	"dependencies": {
+		"@semoss/utility": "workspace:*",
 		"@semoss/i18n": "workspace:*",
 		"@semoss/sdk": "workspace:*",
 		"@semoss/shared": "workspace:*",

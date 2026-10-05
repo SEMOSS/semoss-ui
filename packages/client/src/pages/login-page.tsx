@@ -26,6 +26,7 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { setupResetPassword } from "@/api/auth";
 import loginDarkHero from "@/assets/img/login-dark-hero.gif";
 import loginHero from "@/assets/img/login-gif.gif";
@@ -437,10 +438,10 @@ export const LoginPage = () => {
 			setResetPasswordSuccess(message);
 			toast.success(message);
 		} catch (submissionError) {
-			const message =
-				submissionError instanceof Error
-					? submissionError.message
-					: "Unable to submit password reset request.";
+			const message = getErrorMessage(
+				submissionError,
+				"Unable to submit password reset request.",
+			);
 
 			setResetPasswordError(message);
 			toast.error(message);

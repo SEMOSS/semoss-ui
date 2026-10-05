@@ -33,6 +33,7 @@ import {
 	ToggleGroupItem,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import type {
 	CatalogMatchState,
 	CatalogMatchSuggestion,
@@ -571,9 +572,7 @@ export const EngineModelSettings = ({
 			onUpdated?.();
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Error updating model settings",
+				getErrorMessage(error, "Error updating model settings"),
 			);
 		} finally {
 			setIsSaving(false);
@@ -631,10 +630,10 @@ export const EngineModelSettings = ({
 		} catch (error) {
 			dryRun = {
 				status: "ERROR",
-				message:
-					error instanceof Error
-						? error.message
-						: "Unable to check the catalog entry.",
+				message: getErrorMessage(
+					error,
+					"Unable to check the catalog entry.",
+				),
 			};
 		}
 
@@ -698,9 +697,7 @@ export const EngineModelSettings = ({
 			onUpdated?.();
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Error updating the catalog entry",
+				getErrorMessage(error, "Error updating the catalog entry"),
 			);
 		} finally {
 			setIsApplyingCatalog(false);

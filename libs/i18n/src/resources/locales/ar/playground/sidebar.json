@@ -104,7 +104,8 @@
 				"dark": "داكن"
 			},
 			"language": "اللغة",
-			"languageDescription": "اللغة التي يُعرض بها التطبيق."
+			"languageDescription": "اللغة التي يُعرض بها التطبيق.",
+			"version": "الإصدار {{version}}"
 		}
 	}
 }

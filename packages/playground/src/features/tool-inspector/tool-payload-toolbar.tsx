@@ -7,7 +7,7 @@ import {
 import type { ReactNode } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, toast } from "@semoss/ui/next";
-import { copyTextToClipboard } from "@semoss/utility";
+import { copyTextToClipboard } from "@semoss/utility/clipboard";
 
 interface ToolPayloadToolbarProps {
 	/** Format label or the Pretty / Raw selector. */

@@ -17,6 +17,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { MarkdownEditor } from "@/components/common";
 import { EmptyValue, SettingsEntry } from "../engine/engine-metadata-display";
 
@@ -114,11 +115,7 @@ export const CatalogDescriptionSettings = ({
 			toast.success("Successfully updated description");
 			onUpdated?.();
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Error updating description",
-			);
+			toast.error(getErrorMessage(error, "Error updating description"));
 		} finally {
 			setIsSaving(false);
 		}

@@ -7,7 +7,7 @@ import {
 	cn,
 	toast,
 } from "@semoss/ui/next";
-import { copyTextToClipboard } from "@semoss/utility";
+import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import type { GuardrailFileStatus } from "./engine-guardrail-settings.constants";
 
 export interface GuardrailConfigStatusProps {

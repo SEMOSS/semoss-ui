@@ -1,4 +1,4 @@
-import { Env, get, post } from "@semoss/sdk/react";
+import { Env, get, post, runPixel } from "@semoss/sdk/react";
 
 export const setProjectFavorite = async (
 	projectId: string,
@@ -14,7 +14,7 @@ export const setProjectFavorite = async (
 
 	const response = await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
+	}>(url, { ...postData }, {});
 	return response;
 };
 
@@ -109,7 +109,7 @@ export const deleteProjectPermission = async (
 	}
 	const response = await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
+	}>(url, { ...postData }, {});
 	return response;
 };
 
@@ -236,14 +236,6 @@ export const uploadImage = async (
 	return response.data;
 };
 
-const processPostData = (data: Record<string, unknown>) => {
-	const postRecordData: Record<string, unknown> = {};
-	Object.keys(data).forEach((item) => {
-		postRecordData[item] = data[item];
-	});
-	return postRecordData;
-};
-
 export const updateProjectSmssProperties = async (
 	projectId: string,
 	smssProps: string,
@@ -258,4 +250,27 @@ export const updateProjectSmssProperties = async (
 		},
 		{},
 	);
+};
+
+/**
+ * Set the name a project is displayed under. Only the project's owner can.
+ *
+ * @name setProjectDisplayName
+ * @param insightId - Insight the pixel executes against.
+ * @param projectId - Project to rename.
+ * @param name - New display name.
+ * @return Resolves when the display name is persisted.
+ */
+export const setProjectDisplayName = async (
+	insightId: string,
+	projectId: string,
+	name: string,
+): Promise<void> => {
+	const response = await runPixel<[boolean]>(
+		`SetProjectDisplayName(project=[${JSON.stringify(projectId)}], name=[${JSON.stringify(`<encode>${name}</encode>`)}]);`,
+		insightId,
+	);
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
 };

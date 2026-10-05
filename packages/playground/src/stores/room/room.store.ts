@@ -16,6 +16,7 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
+import { stringifyJsonWithSortedKeys } from "@semoss/utility/json";
 import {
 	createWorkbenchStore,
 	type WorkbenchPanelConfigAny,
@@ -26,7 +27,9 @@ import {
 	type WorkbenchState,
 } from "@semoss/workbench";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
-import { TeamworkStore } from "@/features/teamwork/teamwork.store";
+import { ChatToolsStore } from "@/features/chat-tools/chat-tools.store";
+import { ConnectorsStore } from "@/features/connectors/connectors.store";
+import { ContextItemsStore } from "@/features/conversation/context-items.store";
 import type { AbstractMessageStore } from "@/stores/message/abstract-message.store";
 import {
 	reconnectAgentRun,
@@ -58,6 +61,19 @@ import {
 	StreamJobController,
 	type StreamOptions,
 } from "./stream-job-controller";
+
+/**
+ * The MCPs the backend stores for a room. Workspace MCPs and the room's own
+ * toolbox, which is read from the room folder, are reported but not stored.
+ */
+const getStoredMcp = (mcp: MCPConfig[] = []): MCPConfig[] =>
+	mcp.filter((item) => !item?.fromWorkspace && !item?.fromRoom);
+
+/**
+ * A comparable key for room options as the backend stores them.
+ */
+const getStoredOptionsKey = (options: { mcp?: MCPConfig[] }): string =>
+	stringifyJsonWithSortedKeys({ ...options, mcp: getStoredMcp(options.mcp) });
 
 interface RoomStoreInterface {
 	/**
@@ -225,6 +241,12 @@ export class RoomStore {
 	};
 
 	/**
+	 * Key of the options the backend holds, as of the last read or save. A
+	 * save that would not change them is skipped.
+	 */
+	private _storedOptionsKey: string | null = null;
+
+	/**
 	 * The dock backing the sidebar.
 	 *
 	 * Owned by the room rather than by `<Workbench>` for two reasons: panels are
@@ -240,10 +262,17 @@ export class RoomStore {
 	/** Stable initialization reference shared by the store and every sidebar mount. */
 	sidebarSnapshot: WorkbenchSnapshot = ROOM_SIDEBAR_LAYOUT;
 	/**
-	 * The folder the assistant works in and the connectors switched on for
-	 * the room. Its own store with its own observability, like the dock.
+	 * The default tools the room's chat sends and the user's decisions on the
+	 * calls that wait for them. Its own store with its own observability, like
+	 * the dock, and so are the two below.
 	 */
-	readonly teamwork: TeamworkStore;
+	readonly chatTools: ChatToolsStore;
+
+	/** The connectors switched on for the room and the accounts they sign in with. */
+	readonly connectors: ConnectorsStore;
+
+	/** The files queued for the room's next message. */
+	readonly contextItems: ContextItemsStore;
 
 	constructor(options: {
 		theme: ThemeMap["playground"];
@@ -269,13 +298,17 @@ export class RoomStore {
 			.layout.actions.loadSnapshot(this.sidebarSnapshot);
 		this._syncSidebarFileMode();
 
-		this.teamwork = new TeamworkStore(this);
+		this.chatTools = new ChatToolsStore(this);
+		this.connectors = new ConnectorsStore(this);
+		this.contextItems = new ContextItemsStore();
 
 		// make it observable -- the dock is a zustand store with its own
 		// subscription model, and deep-observing it would be nonsense
 		makeAutoObservable(this, {
 			workbench: false,
-			teamwork: false,
+			chatTools: false,
+			connectors: false,
+			contextItems: false,
 			sidebarSnapshot: observable.ref,
 		});
 
@@ -384,12 +417,13 @@ export class RoomStore {
 	}
 
 	/**
-	 * Surface an error on the room. Public so callers outside this store — e.g.
-	 * ToolSaveController, when a tool-phase stop fails to persist — can report a
-	 * failure that isn't already caught by runRoomPixel/streamJob's own
-	 * setErrorOnFail handling.
+	 * Surface an error on the room, or clear it with null. Public so callers
+	 * outside this store — e.g. ToolSaveController, when a tool-phase stop fails
+	 * to persist — can report a failure that isn't already caught by
+	 * runRoomPixel/streamJob's own setErrorOnFail handling, and so a rewrite
+	 * starts its turn without the last one's error.
 	 */
-	setError = (error: Error): void => {
+	setError = (error: Error | null): void => {
 		runInAction(() => {
 			this._store.error = error;
 		});
@@ -636,6 +670,10 @@ export class RoomStore {
 				OPTIONS?: RoomStoreInterface["options"];
 				ROOM_NAME?: string;
 			};
+			// read before the workspace merge below edits the nested objects
+			const storedOptionsKey = optionsOutput.OPTIONS
+				? getStoredOptionsKey(optionsOutput.OPTIONS)
+				: null;
 
 			// sync the insight ID
 			runInAction(() => {
@@ -645,7 +683,7 @@ export class RoomStore {
 
 			// the insight is bound to the room now, so the room's tool file can
 			// be read, unless the room was only just created
-			void this.teamwork.restore({ isNew: isNew });
+			void this.connectors.restore({ isNew: isNew });
 
 			// create the root
 			const root = new ResponseMessageStore(this, {
@@ -772,7 +810,10 @@ export class RoomStore {
 						PixelMessage[],
 						{ OPTIONS?: Workspace }, // partial because this doesn't work for old rooms
 					]
-				>(`GetWorkspace('${newOptions.workspace?.workspace_id}')`);
+				>(
+					`GetWorkspace('${newOptions.workspace?.workspace_id}')`,
+					false,
+				);
 
 				const workspaceOutput = workspaceResponse.pixelReturn[0]
 					.output as Workspace;
@@ -825,11 +866,16 @@ export class RoomStore {
 			}
 
 			// set the model based on the history, or on the agent's default when
-			// the room has never named one
+			// the room has never named one. A room that already holds that model,
+			// as a new room does, has nothing to look up.
 			const modelIdToLoad = activeModelId || agentDefaultModelId;
-			if (modelIdToLoad) {
+			if (
+				modelIdToLoad &&
+				modelIdToLoad !== this._store.model?.engine_id
+			) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
 					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(modelIdToLoad)})`,
+					false,
 				);
 
 				const model = pixelReturn[0].output[0];
@@ -843,6 +889,7 @@ export class RoomStore {
 			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
+				this._storedOptionsKey = storedOptionsKey;
 
 				this._store.agentGreeting = agentGreeting;
 
@@ -904,6 +951,7 @@ export class RoomStore {
 					...fetched.OPTIONS,
 					mcp: merged,
 				});
+				this._storedOptionsKey = getStoredOptionsKey(fetched.OPTIONS);
 			});
 		} catch (e) {
 			// non-critical — swallow errors so the chat isn't disrupted
@@ -912,26 +960,31 @@ export class RoomStore {
 	};
 
 	/**
-	 * UpdateRoomOptions
+	 * UpdateRoomOptions. Skips the save when the backend already holds these
+	 * options, and leaves the room's loading state alone, since it runs ahead
+	 * of the turn that uses them.
 	 * @param options - full set of new options
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
-			// Filter out MCPs the backend reports but does not store: workspace MCPs
-			// and the room's own toolbox, which is read from the room folder.
 			const optionsToSave = {
 				...options,
 				modelId: this._store.model.engine_id,
-				mcp: options.mcp.filter(
-					(mcp) => !mcp?.fromWorkspace && !mcp?.fromRoom,
-				),
+				mcp: getStoredMcp(options.mcp),
 			};
 
-			await this.runRoomPixel(
-				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
-					optionsToSave,
-				)}]);`,
-			);
+			const optionsKey = getStoredOptionsKey(optionsToSave);
+			if (optionsKey !== this._storedOptionsKey) {
+				await this.runRoomPixel(
+					`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
+						optionsToSave,
+					)}]);`,
+					false,
+				);
+				runInAction(() => {
+					this._storedOptionsKey = optionsKey;
+				});
+			}
 
 			this.setOptions(options);
 		} catch (e) {
@@ -1122,7 +1175,7 @@ export class RoomStore {
 	 * @param initialPath - Directory to show. Defaults to wherever it was.
 	 * @param name - Tab label for a newly created instance. Defaults to the
 	 * chat files label, which keeps the room's own files apart from a
-	 * teamwork work folder.
+	 * connector work folder.
 	 * @return The revealed or created panel id.
 	 */
 	openSidebarFileExplorer = (
@@ -1248,9 +1301,12 @@ export class RoomStore {
 		}
 
 		this.setIsLoading(true);
+		// a new turn starts without the last one's error
+		this._store.error = null;
 
 		// Create the input message immediately so the user's bubble and the
-		// thinking placeholder are visible during the file upload wait
+		// thinking placeholder are visible while the options save and the
+		// files upload
 		const inputMessage = new InputMessageStore(this, {
 			io: "INPUT",
 			type: "INPUT_TEXT",
@@ -1302,7 +1358,7 @@ export class RoomStore {
 
 		// files queued from the sidebar are already in the room's folder, so
 		// they go with the message as they are; a silent turn leaves them queued
-		const contextItems = visible ? this.teamwork.takeContextItems() : [];
+		const queuedFiles = visible ? this.contextItems.take() : [];
 
 		// upload the files
 		let mediaInputs: {
@@ -1311,6 +1367,9 @@ export class RoomStore {
 		}[] = [];
 
 		try {
+			// save the settings this turn runs with, when they changed
+			await this.updateRoomOptions(this.options);
+
 			// upload the files if there are any
 			if (files.length > 0) {
 				const response = await uploadInsight(
@@ -1339,7 +1398,7 @@ export class RoomStore {
 
 			mediaInputs = [
 				...mediaInputs,
-				...contextItems.map((item) => ({
+				...queuedFiles.map((item) => ({
 					fileName: item.name,
 					fileLocation: item.path,
 				})),
@@ -1363,7 +1422,7 @@ export class RoomStore {
 			});
 		} catch (e) {
 			// the queued files were not sent, so they wait for the next try
-			this.teamwork.restoreContextItems(contextItems);
+			this.contextItems.restore(queuedFiles);
 
 			// remove the placeholder messages and stop the room spinner
 			runInAction(() => {
@@ -1391,7 +1450,7 @@ export class RoomStore {
 		} catch (e) {
 			// the message is withdrawn and its text restored, so its queued files
 			// wait with it
-			this.teamwork.restoreContextItems(contextItems);
+			this.contextItems.restore(queuedFiles);
 			throw e;
 		}
 	};

@@ -8,6 +8,7 @@
     "start": "vite"
   },
   "dependencies": {
+    "@semoss/utility": "workspace:*",
     "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
     "react": "^19.0.0",

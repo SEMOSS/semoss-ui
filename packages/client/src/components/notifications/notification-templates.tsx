@@ -1,4 +1,5 @@
 import type * as React from "react";
+import { capitalize as capitalizeFirst } from "@semoss/utility/text";
 import { determineUserPermission } from "../app";
 import type { NotificationRecord, NotificationType } from "./types";
 
@@ -28,10 +29,6 @@ export const getNotificationMessage = (
 		!!loggedInUser && loggedInUser === n.notification_createdby;
 	const user = <Bold>{isSafe(n.recipient_user_name)}</Bold>;
 	const member = <Bold>{isSafe(n.recipient_user_name)}'s</Bold>;
-	const capitalizeFirst = (str) => {
-		if (!str) return "";
-		return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-	};
 
 	const existingPermission = determineUserPermission(n.user_existingrole) ? (
 		<Bold>

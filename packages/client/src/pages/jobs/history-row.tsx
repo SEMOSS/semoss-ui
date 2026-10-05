@@ -19,6 +19,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { formatJson } from "@semoss/utility/json";
 import { copyTextToClipboard } from "@/utility";
 
 const formatOutput = (raw: string | undefined) => {
@@ -30,11 +31,7 @@ const formatOutput = (raw: string | undefined) => {
 		(trimmed.startsWith("{") && trimmed.endsWith("}")) ||
 		(trimmed.startsWith("[") && trimmed.endsWith("]"))
 	) {
-		try {
-			return JSON.stringify(JSON.parse(trimmed), null, 2);
-		} catch {
-			return raw;
-		}
+		return formatJson(trimmed, raw);
 	}
 	return raw;
 };

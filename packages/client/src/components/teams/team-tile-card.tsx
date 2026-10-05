@@ -11,6 +11,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { deleteTeam } from "@/api/teams";
 import AMAZON_S3 from "@/assets/img/AMAZON_S3.png";
 import Dropbox from "@/assets/img/DROPBOX.png";
@@ -104,7 +105,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 			toast.success("Successfully deleted team");
 		} catch (e) {
 			console.error(e);
-			toast.error(e instanceof Error ? e.message : String(e));
+			toast.error(getErrorMessage(e));
 		} finally {
 			setDeleteModal(false);
 		}

@@ -4,10 +4,10 @@ import { Navigate, useLocation } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
 import { useTheme } from "@semoss/ui/next";
+import { setFavicon } from "@semoss/utility/browser";
 import { AppLogo } from "@/components";
 import { useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
-import { setFavicon } from "@/utility";
 
 /**
  * LoginPage

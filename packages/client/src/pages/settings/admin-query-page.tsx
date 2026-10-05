@@ -95,6 +95,7 @@ export const AdminQueryPage = () => {
 							},
 							permission: "OWNER",
 							refresh: () => null,
+							update: () => null,
 						}}
 					>
 						{/* keyed per database so each system DB gets its own

@@ -10,8 +10,8 @@ import {
 	Play,
 	Sigma,
 } from "lucide-react";
+import { formatDurationMs } from "@semoss/utility/date";
 import type { AutomationNode, AutomationNodeType } from "./automation.types";
-import { formatDurationMs } from "./automation-utils";
 
 export const STEP_TYPES: {
 	type: AutomationNodeType;

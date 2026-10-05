@@ -1,4 +1,9 @@
-import { BotIcon, MessageCircleIcon, PanelRightOpenIcon } from "lucide-react";
+import {
+	BlocksIcon,
+	BotIcon,
+	MessageCircleIcon,
+	PanelRightOpenIcon,
+} from "lucide-react";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -9,20 +14,15 @@ import {
 } from "@semoss/ui/next";
 import { RoomInputMenuMCP } from "@/components/room/room-input-menu-mcp";
 import { RoomInputMenuUpload } from "@/components/room/room-input-menu-upload";
-import { TeamworkConnectorsMenuItem } from "@/features/teamwork/components/teamwork-connectors-menu-item";
-import { TeamworkSourcesMenuItem } from "@/features/teamwork/components/teamwork-sources-menu-item";
-import { TeamworkToolsMenuItem } from "@/features/teamwork/components/teamwork-tools-menu-item";
+import { ConnectorSourcesMenuItem } from "@/features/connectors/components/connector-sources-menu-item";
+import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
 import type { RoomStore } from "@/stores/room/room.store";
 
 export interface RoomComposerMenuProps {
 	/** Owns the connector configuration and context queue. */
 	room: RoomStore;
-	/** Opens the connector dialog after the menu has closed. */
-	onOpenConnectors?: () => void;
 	/** Drafts prepare a room before opening a connector viewer. */
 	onOpenSource?: (service: ConnectorViewerService) => void;
-	/** Chat Tools is available after the first message commits the draft settings. */
-	showChatTools?: boolean;
 	/** Retained for custom composer menus. */
 	isOpen: boolean;
 	onOpenChange: (isOpen: boolean) => void;
@@ -41,9 +41,7 @@ export interface RoomComposerMenuProps {
 /** Stable composer actions shared by draft and existing conversations. */
 export function RoomComposerMenu({
 	room,
-	onOpenConnectors,
 	onOpenSource,
-	showChatTools = true,
 	onOpenChange,
 	onOpenMcpOverlay,
 	options,
@@ -54,7 +52,8 @@ export function RoomComposerMenu({
 	agentEditable,
 	enableAgentHarness,
 }: RoomComposerMenuProps) {
-	const { t } = useTranslation("room");
+	const { t } = useTranslation(["room", "sidebar"]);
+	const { openSettings } = useSettingsDialog();
 	const close = () => onOpenChange(false);
 	const openPicker = (tab: "AGENT" | "KNOWLEDGE" | "TOOLBOX") => {
 		onOpenMcpOverlay(tab);
@@ -84,20 +83,20 @@ export function RoomComposerMenu({
 				disabled={disabled}
 				onSelect={() => openPicker("TOOLBOX")}
 			/>
-			<TeamworkConnectorsMenuItem
-				teamwork={room.teamwork}
-				disabled={disabled}
-				onOpen={onOpenConnectors}
-				onSelect={close}
-			/>
-			<TeamworkSourcesMenuItem
-				teamwork={room.teamwork}
+			<DropdownMenuItem
+				onSelect={() => {
+					openSettings("connectors");
+					close();
+				}}
+			>
+				<BlocksIcon aria-hidden="true" />
+				{t("sidebar:settings.sections.connectors")}
+			</DropdownMenuItem>
+			<ConnectorSourcesMenuItem
+				connectors={room.connectors}
 				onOpenSource={onOpenSource}
 				onSelect={close}
 			/>
-			{showChatTools && (
-				<TeamworkToolsMenuItem room={room} onSelect={close} />
-			)}
 			{agentEditable && (
 				<>
 					<DropdownMenuSeparator />

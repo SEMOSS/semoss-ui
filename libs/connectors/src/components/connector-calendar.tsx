@@ -19,16 +19,15 @@ import {
 } from "@semoss/ui/next";
 import {
 	addLocalDays,
-	formatDayHeading,
-	formatShortDay,
+	formatLocalDateKey,
 	isSameLocalDay,
-} from "../core/connector.format";
+} from "@semoss/utility/date";
+import { formatDayHeading, formatShortDay } from "../core/connector.format";
 import type { ConnectorAccount } from "../core/connector.types";
-import {
-	type ConnectorCalendarDay as CalendarDay,
-	type CalendarEventSchedule,
-	type CalendarView,
-	calendarDayKey,
+import type {
+	ConnectorCalendarDay as CalendarDay,
+	CalendarEventSchedule,
+	CalendarView,
 } from "../core/connector-calendar";
 import type { CalendarWindow } from "../core/use-calendar-window";
 import type { ConnectorQuery } from "../core/use-connector-query";
@@ -56,6 +55,8 @@ export interface ConnectorCalendarProps<T> {
 	getSchedule?: (event: T) => CalendarEventSchedule;
 	onOpenEvent: (event: T, itemKey: string) => void;
 	renderEvent: (event: T, day: Date) => ReactNode;
+	/** Buttons at the end of the toolbar, such as refresh. */
+	actions?: ReactNode;
 }
 
 /** Switch date spans and toggle between the calendar canvas and list view. */
@@ -73,6 +74,7 @@ export const ConnectorCalendar = <T,>({
 	getSchedule,
 	onOpenEvent,
 	renderEvent,
+	actions,
 }: ConnectorCalendarProps<T>) => {
 	const { t, i18n } = useTranslation("connectors");
 	const [isGridOpen, setIsGridOpen] = useState(true);
@@ -80,7 +82,7 @@ export const ConnectorCalendar = <T,>({
 	const days = query.data ?? [];
 	const titles = new Map(
 		days.map(({ day, events }) => [
-			calendarDayKey(day),
+			formatLocalDateKey(day),
 			events.map(getTitle),
 		]),
 	);
@@ -200,6 +202,7 @@ export const ConnectorCalendar = <T,>({
 								: "calendar.calendarView",
 						)}
 					</Button>
+					{actions}
 				</div>
 			</div>
 			{limitNote && query.status === "ready" ? (
@@ -262,7 +265,7 @@ export const ConnectorCalendar = <T,>({
 							) : null}
 							<ul>
 								{shownDays.map(({ day, events }) => (
-									<li key={calendarDayKey(day)}>
+									<li key={formatLocalDateKey(day)}>
 										<H4 className="sticky top-0 z-10 border-border border-b bg-muted px-3 py-2 font-medium text-xs">
 											{formatDayHeading(
 												day,

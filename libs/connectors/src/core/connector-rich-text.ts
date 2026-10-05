@@ -1,3 +1,4 @@
+import { countOccurrences as count } from "@semoss/utility/text";
 /** One piece of a line: text, or a link. */
 export type RichTextPiece =
 	| { kind: "text"; text: string }
@@ -46,9 +47,6 @@ const OPENING = /[\s([{"'<]/;
 
 /** What an address can hold, so text ending in one runs into the address. */
 const ADDRESS_CHARACTER = /[\w.@/-]/;
-
-const count = (text: string, character: string): number =>
-	text.split(character).length - 1;
 
 /**
  * How a link's address reads as text: an email without `mailto:` or a

@@ -21,7 +21,6 @@
         "@semoss/ui": "workspace:*",
         "@semoss/utility": "workspace:*",
         "@semoss/workbench": "workspace:*",
-        "dayjs": "1.11.8",
         "lexical": "^0.39.0",
         "lucide-react": "^0.545.0",
         "mermaid": "^11.15.0",

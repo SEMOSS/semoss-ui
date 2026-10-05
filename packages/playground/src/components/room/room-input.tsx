@@ -67,6 +67,9 @@ import {
 	type PromptLibraryItem,
 } from "@/components/prompts/prompt-library-dialog";
 import { useFileDrag } from "@/contexts/file-drag-context";
+import { ConnectorSignInNotice } from "@/features/connectors/components/connector-sign-in-notice";
+import { useUserConnectorsSync } from "@/features/connectors/use-user-connectors-sync";
+import { ContextItems } from "@/features/conversation/context-items";
 import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
 import {
 	getPromptHistory,
@@ -77,9 +80,6 @@ import {
 	RoomComposerMenu,
 	type RoomComposerMenuProps,
 } from "@/features/conversation/room-composer-menu";
-import { TeamworkContextItems } from "@/features/teamwork/components/teamwork-context-items";
-import { TeamworkDialogs } from "@/features/teamwork/components/teamwork-dialogs";
-import { TeamworkSignInNotice } from "@/features/teamwork/components/teamwork-sign-in-notice";
 import { useGracefulErrors } from "@/hooks/use-graceful-errors";
 import { useRoot } from "@/hooks/use-root";
 import { AGENT_HARNESS_TYPE } from "@/stores/message/agent-harness";
@@ -123,8 +123,6 @@ export type SendButtonState = "send" | "stop" | "loading";
 interface RoomInputProps {
 	/** Drafts prepare a file-capable room before opening a connector viewer. */
 	onOpenSource?: (service: ConnectorViewerService) => void;
-	/** Hide Chat Tools until draft settings are committed to the room. */
-	showChatTools?: boolean;
 	/** Classes to override */
 	className?: string;
 
@@ -247,7 +245,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onSwitchToAgentHarness,
 		onExitAgentHarness,
 		onOpenSource,
-		showChatTools = true,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -263,6 +260,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [isScrollable, setIsScrollable] = useState(false);
 		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
+		// connectors switched on or off in settings reach this chat at once
+		useUserConnectorsSync(room.connectors);
 		const openWorkspace =
 			useContext(ConversationWorkspaceActionsContext) ??
 			(() => room.openSidebar());
@@ -271,17 +270,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			afterMenuClose.current = openWorkspace;
 			setMenuOpen(false);
 		};
-		const handleOpenConnectors = () => {
-			if (isLoading || hasOutstandingTools || sendState !== "send")
-				return;
-			afterMenuClose.current = room.teamwork.openConnectorsDialog;
-			setMenuOpen(false);
-		};
-		const menuTriggerRef = useRef<HTMLButtonElement>(null);
 		const handleOpenSource = (service: ConnectorViewerService) => {
 			afterMenuClose.current = () => {
 				if (onOpenSource) onOpenSource(service);
-				else room.teamwork.openSourcePanel(service);
+				else room.connectors.openSourcePanel(service);
 			};
 			setMenuOpen(false);
 		};
@@ -372,7 +364,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const { files, addFiles, removeFile, clearFiles, openFilePicker } =
 			useFileDrag();
 		const hasAttachments =
-			files.length > 0 || room.teamwork.contextItems.length > 0;
+			files.length > 0 || room.contextItems.items.length > 0;
 
 		// Speech-to-text
 		const [canListen, setCanListen] = useState(false);
@@ -656,8 +648,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							)}
 						>
 							<div className="max-h-24 shrink-0 overflow-y-auto">
-								<TeamworkSignInNotice
-									teamwork={room.teamwork}
+								<ConnectorSignInNotice
+									connectors={room.connectors}
 								/>
 							</div>
 							{hasAttachments && (
@@ -673,14 +665,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										files={files}
 										onRemoveFile={removeFile}
 										leading={
-											<TeamworkContextItems
-												teamwork={room.teamwork}
+											<ContextItems
+												contextItems={room.contextItems}
 											/>
 										}
 									/>
 								</div>
 							)}
-							<div className="flex min-h-0 flex-1 items-start">
+							<div className="flex min-h-0 min-w-0 flex-1 items-stretch overflow-hidden">
 								{root.theme.featureFlags
 									?.enablePromptOptimizer && (
 									<div
@@ -707,7 +699,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										<ScrollArea
 											type="always"
 											className={cn(
-												"min-h-0 min-w-0 flex-1 bg-card",
+												"flex min-h-0 min-w-0 flex-1 flex-col bg-card *:data-[slot=scroll-area-viewport]:min-h-0 *:data-[slot=scroll-area-viewport]:flex-1",
 												isScrollable && "me-1",
 											)}
 											onClick={() =>
@@ -880,7 +872,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 																"input.openSettings",
 															)}
 															data-tour="tour-input-menu"
-															ref={menuTriggerRef}
 														>
 															<PlusIcon aria-hidden="true" />
 														</Button>
@@ -905,14 +896,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											>
 												<MenuComponent
 													room={room}
-													onOpenConnectors={
-														handleOpenConnectors
-													}
 													onOpenSource={
 														handleOpenSource
-													}
-													showChatTools={
-														showChatTools
 													}
 													isOpen={menuOpen}
 													options={options}
@@ -1224,10 +1209,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						/>
 					</LexicalComposer>
 				</SlashCommandProvider>
-				<TeamworkDialogs
-					teamwork={room.teamwork}
-					onReturnFocus={() => menuTriggerRef.current?.focus()}
-				/>
 				{onMcpChange && (
 					<MCPOverlay
 						open={mcpOverlay.open}

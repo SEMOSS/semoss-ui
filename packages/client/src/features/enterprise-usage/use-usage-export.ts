@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
+import { getErrorMessage } from "@semoss/utility/error";
 import { exportUsageReport } from "@/api/enterprise-usage";
 import type { UsageExportRequest } from "./usage.types";
 
@@ -37,9 +38,7 @@ export function useUsageExport(): {
 		} catch (error) {
 			if (isMounted.current)
 				setExportError(
-					error instanceof Error
-						? error.message
-						: "Unable To Export Report",
+					getErrorMessage(error, "Unable To Export Report"),
 				);
 		} finally {
 			isPending.current = false;

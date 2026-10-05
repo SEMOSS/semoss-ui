@@ -7,7 +7,9 @@
 		"close": "閉じる",
 		"confirm": "確認",
 		"upload": "アップロード",
-		"search": "検索"
+		"search": "検索",
+		"retry": "再試行",
+		"refresh": "更新"
 	},
 	"labels": {
 		"name": "名前",
@@ -71,7 +73,9 @@
 		"pathLabel": "パス: {{path}}",
 		"lastModifiedLabel": "最終更新: {{date}}",
 		"bulkShortcutsAria": "一括選択のショートカット",
-		"bulkShortcutsTooltip": "Ctrl/Cmd+クリックで複数の項目を選択します。Ctrl/Cmd+A で表示中のすべての項目を選択します。",
+		"bulkShortcutsTooltip": "Ctrl/Cmd+クリックで複数の項目を選択します。Ctrl/Cmd+A で表示中のすべての項目を選択します。行を右クリックするか、行の末尾にある ... ボタンを使うと、その他の操作を表示します。",
+		"moreActions": "その他の操作",
+		"moreActionsFor": "{{name}} のその他の操作",
 		"toggleMenu": "メニューを切り替え",
 		"resizeDateColumn": "日付列のサイズを変更",
 		"failedToLoadFiles": "ファイルの読み込みに失敗しました",

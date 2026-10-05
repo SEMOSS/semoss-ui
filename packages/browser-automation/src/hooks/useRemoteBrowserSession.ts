@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	assertPixelSuccess,
 	fetchWithCsrf,
@@ -127,8 +128,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 				sessionRef.current = info;
 				return info;
 			} catch (e: unknown) {
-				const msg =
-					e instanceof Error ? e.message : "Failed to create session";
+				const msg = getErrorMessage(e, "Failed to create session");
 				setError(msg);
 				return null;
 			} finally {
@@ -183,8 +183,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 
 				return (await res.json()) as SaveRecordingResponse;
 			} catch (e: unknown) {
-				const msg =
-					e instanceof Error ? e.message : "Failed to save recording";
+				const msg = getErrorMessage(e, "Failed to save recording");
 				setError(msg);
 				return null;
 			} finally {
@@ -233,10 +232,10 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 					"Unexpected response while loading recording envelope",
 				);
 			} catch (e: unknown) {
-				const msg =
-					e instanceof Error
-						? e.message
-						: "Failed to load recording envelope";
+				const msg = getErrorMessage(
+					e,
+					"Failed to load recording envelope",
+				);
 				setError(msg);
 				return null;
 			}
@@ -283,10 +282,10 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 					roomPath: `/${relativePath}`,
 				};
 			} catch (e: unknown) {
-				const msg =
-					e instanceof Error
-						? e.message
-						: "Failed to save recording to room";
+				const msg = getErrorMessage(
+					e,
+					"Failed to save recording to room",
+				);
 				setError(msg);
 				return null;
 			} finally {
@@ -350,10 +349,10 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 							project !== null,
 					);
 			} catch (e: unknown) {
-				const msg =
-					e instanceof Error
-						? e.message
-						: "Failed to list recording projects";
+				const msg = getErrorMessage(
+					e,
+					"Failed to list recording projects",
+				);
 				setError(msg);
 				return [];
 			} finally {
@@ -380,10 +379,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 						)
 					: [];
 			} catch (e: unknown) {
-				const msg =
-					e instanceof Error
-						? e.message
-						: "Failed to list recordings";
+				const msg = getErrorMessage(e, "Failed to list recordings");
 				setError(msg);
 				return [];
 			}
@@ -458,8 +454,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 				}
 				throw new Error("Unexpected response while loading recording");
 			} catch (e: unknown) {
-				const msg =
-					e instanceof Error ? e.message : "Failed to load recording";
+				const msg = getErrorMessage(e, "Failed to load recording");
 				setError(msg);
 				return null;
 			}
@@ -524,10 +519,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			} catch (e: unknown) {
 				return {
 					success: false,
-					error:
-						e instanceof Error
-							? e.message
-							: "Failed to replay step",
+					error: getErrorMessage(e, "Failed to replay step"),
 				};
 			}
 		},

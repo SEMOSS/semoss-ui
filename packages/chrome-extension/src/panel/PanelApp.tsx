@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { getErrorMessage } from "@semoss/utility/error";
 import "./panel.css";
 import { Button, Card, cn, Input } from "@semoss/ui/next";
 import {
@@ -659,8 +660,7 @@ const PanelApp: React.FC = () => {
 				);
 			}
 		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : String(error);
+			const errorMessage = getErrorMessage(error);
 			addToHistory(`❌ Error: ${errorMessage}`);
 			// Notify playground of failed execution
 			try {

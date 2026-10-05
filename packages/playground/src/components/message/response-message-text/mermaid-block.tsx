@@ -13,7 +13,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { copyTextToClipboard } from "@semoss/utility";
+import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import type { RoomStore } from "@/stores";
 import { BlockHeader } from "./block-header";
 
