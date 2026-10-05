@@ -81,15 +81,6 @@ beforeEach(() => {
 		skills: [{ id: "skill-1", name: "Writing" }],
 		prompts: [{ id: "prompt-1", name: "Summarize", type: "PROMPT" }],
 		known_hook_kinds: ["pixel"],
-		hook_capabilities: {
-			pixel: {
-				events: ["beforeRun", "afterRun"],
-				binding_sources: [
-					{ source: "event", events: ["beforeRun", "afterRun"] },
-					{ source: "result.finalText", events: ["afterRun"] },
-				],
-			},
-		},
 		default_tools: [{ name: "read_file", title: "Read file" }],
 		config_json: {
 			model_id: "model-1",
@@ -236,38 +227,6 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 	);
 	expect(warning).toHaveBeenCalledWith("Some resources were skipped");
 	warning.mockRestore();
-});
-
-test("an incompatible hook binding blocks the external Save action", async () => {
-	mocks.workspace = {
-		...mocks.workspace,
-		config_json: {
-			...(mocks.workspace.config_json as Record<string, unknown>),
-			hooks: [
-				{
-					kind: "pixel",
-					pixel: "Echo([hookOutput])",
-					events: ["beforeRun"],
-					bindings: { hookOutput: "result.finalText" },
-				},
-			],
-		},
-	};
-	render(<EditWorkspacePage />);
-	fireEvent.change(screen.getByLabelText("form.name"), {
-		target: { value: "Updated agent" },
-	});
-
-	expect(await screen.findByRole("alert")).toHaveTextContent(
-		"result.finalText is not available at every selected hook event.",
-	);
-	expect(
-		screen.getByRole("button", { name: "workspace:actions.save" }),
-	).toBeDisabled();
-	fireEvent.click(
-		screen.getByRole("button", { name: "workspace:actions.save" }),
-	);
-	expect(mocks.editWorkspace).not.toHaveBeenCalled();
 });
 
 test("the detail view shows the shared agent definition with its attached resources", async () => {

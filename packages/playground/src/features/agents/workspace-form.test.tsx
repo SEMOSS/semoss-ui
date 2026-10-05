@@ -47,13 +47,7 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 		status: "SUCCESS",
 		data:
 			pixel === "GetAgentFormOptions();"
-				? {
-						default_tools: [],
-						known_hook_kinds: ["pixel"],
-						hook_capabilities: {
-							pixel: { events: [], binding_sources: [] },
-						},
-					}
+				? { default_tools: [], known_hook_kinds: ["pixel"] }
 				: pixel.startsWith("Check")
 					? { exists: false }
 					: [],

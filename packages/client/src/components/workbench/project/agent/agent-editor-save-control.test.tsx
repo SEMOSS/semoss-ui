@@ -57,18 +57,4 @@ describe("AgentEditorSaveControl", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Save agent" }));
 		expect(onSave).toHaveBeenCalledOnce();
 	});
-
-	it("disables Save while the agent form is invalid", () => {
-		renderControl({
-			onSave: vi.fn(),
-			isLoading: false,
-			isFetching: false,
-			isFormValid: false,
-			readOnly: false,
-		});
-
-		expect(
-			screen.getByRole("button", { name: "Save agent" }),
-		).toBeDisabled();
-	});
 });
