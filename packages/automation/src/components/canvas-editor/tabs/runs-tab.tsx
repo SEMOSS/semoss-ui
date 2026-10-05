@@ -2,6 +2,7 @@ import {
 	CalendarClock,
 	ChevronRight,
 	Clock3,
+	ExternalLink,
 	Loader2,
 	Play,
 	RefreshCw,
@@ -779,6 +780,16 @@ function ResultsPanel({
 		? (stepMap.get(displayResult.NODE_ID) ??
 			bodyStepMap.get(displayResult.NODE_ID))
 		: undefined;
+	const hasRunningBrowserStep = useMemo(
+		() =>
+			results.some(
+				(result) =>
+					result.STATUS === "RUNNING" &&
+					stepMap.get(result.NODE_ID)?.workflowType ===
+						"browser.playwright",
+			),
+		[results, stepMap],
+	);
 	const selectedAgentTrace = displayResult?.trace;
 	const reviewAgentTrace =
 		selectedAgentTrace?.agentRunId &&
@@ -801,6 +812,24 @@ function ResultsPanel({
 				className="w-56 shrink-0 overflow-y-auto border-border border-r bg-muted/20 p-2"
 				aria-label="Run actions"
 			>
+				{hasRunningBrowserStep && (
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						className="mb-2 w-full"
+						onClick={() =>
+							window.open(
+								"../../browser-automation/dist/",
+								"_blank",
+								"noopener,noreferrer",
+							)
+						}
+					>
+						<ExternalLink className="size-4" aria-hidden />
+						Watch browser
+					</Button>
+				)}
 				{results.length === 0 ? (
 					<p className="px-2 py-3 text-muted-foreground text-xs">
 						No actions have reported results yet.
@@ -1014,7 +1043,7 @@ function ResultsPanel({
 				{displayResult ? (
 					displayResult.STATUS === "RUNNING" &&
 					!displayResult.OUTPUT_PREVIEW?.trim() ? (
-						<div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground text-xs">
+						<div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground text-xs">
 							<Loader2 className="size-5 animate-spin text-primary" />
 							<span>
 								Executing step{" "}

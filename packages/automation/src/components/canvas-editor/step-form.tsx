@@ -3,7 +3,10 @@ import type {
 	AppConfig,
 	AutomationNode,
 	BranchConfig,
+	BrowserPlaywrightConfig,
 	DatabaseEngineConfig,
+	DataExtractConfig,
+	DataTransformConfig,
 	FunctionEngineConfig,
 	JevDecisionConfig,
 	LoopConfig,
@@ -15,6 +18,9 @@ import type {
 import { AgentRunForm } from "./forms/agent-run-form";
 import { AppEngineForm } from "./forms/app-engine-form";
 import { BranchConditionBuilder } from "./forms/branch-condition-builder";
+import { BrowserPlaywrightForm } from "./forms/browser-playwright-form";
+import { DataExtractForm } from "./forms/data-extract-form";
+import { DataTransformForm } from "./forms/data-transform-form";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
 import { JevDecisionForm } from "./forms/jev-decision-form";
@@ -67,6 +73,26 @@ export function StepForm({
 			/>
 		);
 	}
+	if (step.workflowType === "data.transform") {
+		return (
+			<DataTransformForm
+				config={step.config as DataTransformConfig}
+				upstreamVars={upstreamVars}
+				onChange={update}
+				readOnly={readOnly}
+			/>
+		);
+	}
+	if (step.workflowType === "browser.playwright") {
+		return (
+			<BrowserPlaywrightForm
+				config={step.config as BrowserPlaywrightConfig}
+				upstreamVars={upstreamVars}
+				onChange={update}
+				readOnly={readOnly}
+			/>
+		);
+	}
 
 	switch (step.type) {
 		case "trigger":
@@ -75,6 +101,15 @@ export function StepForm({
 			return (
 				<DatabaseEngineForm
 					config={step.config as DatabaseEngineConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					readOnly={readOnly}
+				/>
+			);
+		case "data":
+			return (
+				<DataExtractForm
+					config={step.config as DataExtractConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					readOnly={readOnly}

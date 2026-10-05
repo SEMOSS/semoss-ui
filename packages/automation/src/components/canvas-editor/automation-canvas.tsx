@@ -639,9 +639,9 @@ export const AutomationCanvasContent = forwardRef<
 	const [aiRunSummary, setAiRunSummary] = useState<string | null>(null);
 	const [generatingAiSummary, setGeneratingAiSummary] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
-	const [definitionRevision, setDefinitionRevision] = useState<string | null>(
-		null,
-	);
+	// A save can be followed by Run before React commits another render. Keep the
+	// concurrency token synchronous so that follow-up saves use the new revision.
+	const definitionRevisionRef = useRef<string | null>(null);
 	const [mcpDone, setMcpDone] = useState(false);
 	const [undoSnapshot, setUndoSnapshot] = useState<AutomationNode[] | null>(
 		null,
@@ -1076,7 +1076,7 @@ export const AutomationCanvasContent = forwardRef<
 		let cancelled = false;
 		loadedRef.current = false;
 		setWorkflowLoaded(false);
-		setDefinitionRevision(null);
+		definitionRevisionRef.current = null;
 		initialLayoutAppliedRef.current = false;
 		skipDraftPersistenceRef.current = true;
 		initialViewFittedRef.current = false;
@@ -1093,7 +1093,7 @@ export const AutomationCanvasContent = forwardRef<
 							>;
 					  })
 					| undefined;
-				setDefinitionRevision(output?.revision ?? null);
+				definitionRevisionRef.current = output?.revision ?? null;
 				setScopeVariablesByNode(output?.scopeVariables ?? {});
 				const saved = isWorkflowDocument(output)
 					? canvasDocumentFromWorkflow(output, output.nodeSources)
@@ -1121,11 +1121,10 @@ export const AutomationCanvasContent = forwardRef<
 						const draft = JSON.parse(
 							rawDraft,
 						) as CanvasWorkflowDraft;
-						setDefinitionRevision(
+						definitionRevisionRef.current =
 							typeof draft.baseRevision === "string"
 								? draft.baseRevision
-								: (output?.revision ?? null),
-						);
+								: (output?.revision ?? null);
 						setSteps(ensureTriggerNode(draft.steps));
 						setGraphEdges(draft.edges);
 						setDescription(draft.description);
@@ -1224,7 +1223,7 @@ export const AutomationCanvasContent = forwardRef<
 			edges: graphEdges,
 			description,
 			triggerBindings,
-			baseRevision: definitionRevision,
+			baseRevision: definitionRevisionRef.current,
 			savedAt: Date.now(),
 		};
 		localStorage.setItem(
@@ -1232,15 +1231,7 @@ export const AutomationCanvasContent = forwardRef<
 			JSON.stringify(draft),
 		);
 		setIsDirty(true);
-	}, [
-		steps,
-		graphEdges,
-		description,
-		triggerBindings,
-		definitionRevision,
-		appId,
-		readOnly,
-	]);
+	}, [steps, graphEdges, description, triggerBindings, appId, readOnly]);
 
 	// ---- Derived values ----
 	const stepOutputPreviews = useMemo(
@@ -1824,8 +1815,8 @@ export const AutomationCanvasContent = forwardRef<
 			const nodeSourcesPayload = encodeTextToBase64(
 				JSON.stringify(nodeSources),
 			);
-			const expectedRevisionArgument = definitionRevision
-				? `, expectedRevision=${JSON.stringify([definitionRevision])}`
+			const expectedRevisionArgument = definitionRevisionRef.current
+				? `, expectedRevision=${JSON.stringify([definitionRevisionRef.current])}`
 				: "";
 			const response = await runPixel(
 				`SaveAutomation(project=${JSON.stringify([appId])}, json=${JSON.stringify([definitionPayload])}, nodeSources=${JSON.stringify([nodeSourcesPayload])}${expectedRevisionArgument});`,
@@ -1841,7 +1832,7 @@ export const AutomationCanvasContent = forwardRef<
 				  }
 				| undefined;
 			if (typeof output?.revision === "string") {
-				setDefinitionRevision(output.revision);
+				definitionRevisionRef.current = output.revision;
 			}
 			setScopeVariablesByNode(output?.scopeVariables ?? {});
 			if (output?.nodeSources) {
@@ -1881,7 +1872,6 @@ export const AutomationCanvasContent = forwardRef<
 		}
 	}, [
 		appId,
-		definitionRevision,
 		description,
 		graphEdges,
 		readOnly,

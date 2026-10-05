@@ -4,6 +4,8 @@ import {
 	Database,
 	FolderOpen,
 	FunctionSquare,
+	ListTree,
+	MousePointerClick,
 	Network,
 	Search,
 	SlidersHorizontal,
@@ -33,6 +35,8 @@ const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
 	"model",
 	"agent",
 	"storage",
+	"data",
+	"browser",
 	"vector",
 	"function",
 	"app",
@@ -50,6 +54,8 @@ const SEARCH_ALIASES: Partial<Record<AutomationWorkflowNodeType, string>> = {
 	"control.if": "if elif else condition conditional branch",
 	"control.jev": "jev typesafe ai decision route branch classify",
 	"control.loop": "loop for each batch repeat iterate iterator",
+	"browser.playwright":
+		"browser playwright recording replay website web automation",
 };
 
 const CATEGORY_META: Record<
@@ -61,6 +67,8 @@ const CATEGORY_META: Record<
 	model: { label: "AI Models", icon: Sparkles },
 	agent: { label: "Agents", icon: Bot },
 	storage: { label: "Storage", icon: FolderOpen },
+	data: { label: "Data", icon: ListTree },
+	browser: { label: "Browser", icon: MousePointerClick },
 	vector: { label: "Vector", icon: Network },
 	function: { label: "Functions", icon: FunctionSquare },
 	app: { label: "Apps", icon: Variable },

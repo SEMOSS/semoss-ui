@@ -360,6 +360,7 @@ const AUTOMATION_NODE_TYPES: readonly AutomationWorkflowNodeType[] = [
 	"storage.upload",
 	"storage.download",
 	"storage.delete",
+	"data.extract",
 	"vector.search",
 	"vector.add",
 	"vector.delete",

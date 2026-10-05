@@ -1,6 +1,7 @@
 import {
 	Background,
 	BackgroundVariant,
+	Controls,
 	type Node,
 	ReactFlow,
 	type ReactFlowInstance,
@@ -48,7 +49,13 @@ interface LoopBodyCanvasProps {
 }
 
 function canAddToLoop(type: AutomationWorkflowNodeType): boolean {
-	if (type === "trigger.start" || type === "control.loop") return false;
+	if (
+		type === "trigger.start" ||
+		type === "control.loop" ||
+		type === "browser.playwright"
+	) {
+		return false;
+	}
 	return getAutomationNodeDefinition(type)?.category !== "agent";
 }
 
@@ -147,7 +154,7 @@ export function LoopBodyCanvas({
 		<>
 			<section
 				className={cn(
-					"nowheel nodrag nopan relative h-80 overflow-hidden rounded-xl border bg-muted/20",
+					"nowheel nodrag relative h-80 overflow-hidden rounded-xl border bg-muted/20",
 					className,
 				)}
 				aria-label="Steps repeated by this loop"
@@ -201,15 +208,20 @@ export function LoopBodyCanvas({
 							panOnScroll={false}
 							zoomOnScroll={false}
 							zoomOnPinch
-							minZoom={0.7}
+							minZoom={0.3}
 							maxZoom={1.4}
 							proOptions={{ hideAttribution: true }}
 							fitView
+							fitViewOptions={{ maxZoom: 1, padding: 0.2 }}
 						>
 							<Background
 								variant={BackgroundVariant.Dots}
 								gap={20}
 								size={1}
+							/>
+							<Controls
+								showInteractive={false}
+								className="border-border bg-card text-foreground shadow-sm"
 							/>
 						</ReactFlow>
 					</ReactFlowProvider>

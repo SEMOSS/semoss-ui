@@ -13,6 +13,8 @@ export type AutomationNodeType =
 	| "trigger"
 	| "database-engine"
 	| "storage-engine"
+	| "data"
+	| "browser"
 	| "vector-engine"
 	| "model-engine"
 	| "function-engine"
@@ -59,6 +61,52 @@ export interface StorageEngineConfig {
 	convertToPdf: boolean;
 	version: string;
 	leaveFolderStructure: boolean;
+}
+
+export interface DataExtractConfig {
+	source: string;
+	path: string;
+	format: "auto" | "json" | "xml";
+	missingValue: string;
+	nullValue: string;
+}
+
+export type DataTransformOperation =
+	| "select"
+	| "remove"
+	| "rename"
+	| "filter"
+	| "fillMissing"
+	| "sort"
+	| "deduplicate";
+
+export interface DataTransformConfig {
+	source: string;
+	operation: DataTransformOperation;
+	columns: string;
+	mapping: string;
+	column: string;
+	operator:
+		| "equals"
+		| "notEquals"
+		| "contains"
+		| "greaterThan"
+		| "greaterThanOrEqual"
+		| "lessThan"
+		| "lessThanOrEqual"
+		| "isEmpty"
+		| "isNotEmpty";
+	value: string;
+	descending: boolean;
+}
+
+export interface BrowserPlaywrightConfig {
+	projectId: string;
+	projectName?: string;
+	recordingFile: string;
+	inputs: string;
+	successUrlPrefix: string;
+	timeoutSeconds: number;
 }
 
 export interface VectorEngineConfig {
@@ -172,6 +220,9 @@ export type NodeConfig =
 	| TriggerConfig
 	| DatabaseEngineConfig
 	| StorageEngineConfig
+	| DataExtractConfig
+	| DataTransformConfig
+	| BrowserPlaywrightConfig
 	| VectorEngineConfig
 	| ModelEngineConfig
 	| FunctionEngineConfig
