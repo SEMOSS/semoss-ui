@@ -98,6 +98,9 @@ import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
 import { DeletableEdge } from "./deletable-edge";
 import { getFlowStrokeColor } from "./flow-colors";
+import { removeLoopBodyNode } from "./loop-body-graph";
+import { LoopFocusedEditor } from "./loop-focused-editor";
+import { getLoopBodyScope } from "./loop-scope";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { BranchNode } from "./nodes/branch-node";
 import { LoopNode } from "./nodes/loop-node";
@@ -582,6 +585,7 @@ export const AutomationCanvasContent = forwardRef<
 	const [expandedLoopIds, setExpandedLoopIds] = useState<Set<string>>(
 		() => new Set(),
 	);
+	const [focusedLoopId, setFocusedLoopId] = useState<string | null>(null);
 	const [scopeVariablesByNode, setScopeVariablesByNode] = useState<
 		Record<string, AutomationScopeEntry[]>
 	>({});
@@ -655,6 +659,16 @@ export const AutomationCanvasContent = forwardRef<
 		[historicalDoc, steps],
 	);
 	const displayEdges = historicalDoc ? historicalDoc.edges : graphEdges;
+	const focusedLoop = useMemo(
+		() =>
+			displaySteps.find(
+				(step) => step.id === focusedLoopId && step.type === "loop",
+			) ?? null,
+		[displaySteps, focusedLoopId],
+	);
+	useEffect(() => {
+		if (focusedLoopId && !focusedLoop) setFocusedLoopId(null);
+	}, [focusedLoop, focusedLoopId]);
 	const expandedNodeOffsets = useMemo(() => {
 		const offsets = new Map<string, number>();
 		for (const loopId of expandedLoopIds) {
@@ -765,6 +779,15 @@ export const AutomationCanvasContent = forwardRef<
 	const editingStep = useMemo(
 		() => displaySteps.find((s) => s.id === editingStepId) ?? null,
 		[displaySteps, editingStepId],
+	);
+	const selectedLoopBodyStep = useMemo(
+		() =>
+			editingStep?.type === "loop" && selectedBodyNodeId
+				? (editingStep.body?.nodes.find(
+						(node) => node.id === selectedBodyNodeId,
+					) ?? null)
+				: null,
+		[editingStep, selectedBodyNodeId],
 	);
 	/** Edges on the path from the trigger to the selected node, highlighted blue. */
 	const highlightedPathEdgeIds = useMemo(
@@ -1501,6 +1524,9 @@ export const AutomationCanvasContent = forwardRef<
 			setEditingStepId((prev) =>
 				prev && removedIds.has(prev) ? null : prev,
 			);
+			setFocusedLoopId((previous) =>
+				previous && removedIds.has(previous) ? null : previous,
+			);
 			setStepStatuses((prev) => {
 				const next = { ...prev };
 				for (const removedId of removedIds) delete next[removedId];
@@ -1613,30 +1639,58 @@ export const AutomationCanvasContent = forwardRef<
 			scopeEntriesFor(stepId).map((entry) => entry.name),
 		[scopeEntriesFor],
 	);
+	const inspectorContext = useMemo(() => {
+		if (!editingStep) {
+			return {
+				step: null,
+				upstreamVars: [] as string[],
+				scopeEntries: [] as AutomationScopeEntry[],
+			};
+		}
+		const upstreamVars = templateVariablesFor(editingStep.id);
+		const scopeEntries = scopeEntriesFor(editingStep.id);
+		if (!selectedLoopBodyStep) {
+			return { step: editingStep, upstreamVars, scopeEntries };
+		}
+		const bodyScope = getLoopBodyScope({
+			loop: editingStep,
+			selectedNodeId: selectedLoopBodyStep.id,
+			upstreamVars,
+			scopeEntries,
+		});
+		return {
+			step: selectedLoopBodyStep,
+			upstreamVars: bodyScope.upstreamVars,
+			scopeEntries: bodyScope.scopeEntries,
+		};
+	}, [
+		editingStep,
+		scopeEntriesFor,
+		selectedLoopBodyStep,
+		templateVariablesFor,
+	]);
 
 	useEffect(() => {
 		const snapshot: AutomationInspectorSnapshot = {
 			description,
 			devMode,
 			readOnly: readOnly || viewingHistory,
-			editingStep,
-			selectedBodyNodeId,
-			upstreamVars: editingStep
-				? templateVariablesFor(editingStep.id)
-				: [],
-			scopeEntries: editingStep ? scopeEntriesFor(editingStep.id) : [],
-			stepRunStatus: editingStep
-				? displayStatuses[editingStep.id]
+			editingStep: inspectorContext.step,
+			upstreamVars: inspectorContext.upstreamVars,
+			scopeEntries: inspectorContext.scopeEntries,
+			stepRunStatus: inspectorContext.step
+				? displayStatuses[inspectorContext.step.id]
 				: undefined,
-			stepRunError: editingStep
-				? displayErrors[editingStep.id]
+			stepRunError: inspectorContext.step
+				? displayErrors[inspectorContext.step.id]
 				: undefined,
-			stepRunOutput: editingStep
-				? (stepOutputPreviews[editingStep.id] ?? null)
+			stepRunOutput: inspectorContext.step
+				? (stepOutputPreviews[inspectorContext.step.id] ?? null)
 				: null,
-			stepRunTrace: editingStep
+			stepRunTrace: inspectorContext.step
 				? displayResults.find(
-						(result) => result.NODE_ID === editingStep.id,
+						(result) =>
+							result.NODE_ID === inspectorContext.step?.id,
 					)?.trace
 				: undefined,
 		};
@@ -1646,27 +1700,63 @@ export const AutomationCanvasContent = forwardRef<
 		devMode,
 		readOnly,
 		viewingHistory,
-		editingStep,
-		selectedBodyNodeId,
+		inspectorContext,
 		onInspectorChange,
 		displayErrors,
 		stepOutputPreviews,
 		displayStatuses,
 		displayResults,
-		templateVariablesFor,
-		scopeEntriesFor,
 	]);
 
 	const applyInspectorAction = useCallback(
 		(action: AutomationInspectorAction) => {
 			if ((readOnly || viewingHistory) && action.type !== "close") return;
 			switch (action.type) {
-				case "update-step":
-					updateStep(action.step);
+				case "update-step": {
+					const isBodyStep = Boolean(
+						editingStep?.type === "loop" &&
+							action.step.id !== editingStep.id &&
+							editingStep.body?.nodes.some(
+								(node) => node.id === action.step.id,
+							),
+					);
+					if (!isBodyStep || !editingStep) {
+						updateStep(action.step);
+						break;
+					}
+					updateStep({
+						...editingStep,
+						body: {
+							...(editingStep.body ?? { nodes: [], edges: [] }),
+							nodes: (editingStep.body?.nodes ?? []).map(
+								(node) =>
+									node.id === action.step.id
+										? action.step
+										: node,
+							),
+						},
+					});
 					break;
-				case "delete-step":
-					deleteStep(action.stepId);
+				}
+				case "delete-step": {
+					const isBodyStep = Boolean(
+						editingStep?.type === "loop" &&
+							editingStep.body?.nodes.some(
+								(node) => node.id === action.stepId,
+							),
+					);
+					if (!isBodyStep || !editingStep) {
+						deleteStep(action.stepId);
+						break;
+					}
+					const body = removeLoopBodyNode(
+						editingStep.body ?? { nodes: [], edges: [] },
+						action.stepId,
+					);
+					updateStep({ ...editingStep, body });
+					setSelectedBodyNodeId(body.nodes[0]?.id);
 					break;
+				}
 				case "update-description":
 					setDescription(action.description);
 					break;
@@ -1674,12 +1764,23 @@ export const AutomationCanvasContent = forwardRef<
 					handleDevModeChange(action.devMode);
 					break;
 				case "close":
-					setEditingStepId(null);
-					setSelectedBodyNodeId(undefined);
+					if (selectedBodyNodeId) {
+						setSelectedBodyNodeId(undefined);
+					} else {
+						setEditingStepId(null);
+					}
 					break;
 			}
 		},
-		[deleteStep, handleDevModeChange, readOnly, updateStep, viewingHistory],
+		[
+			deleteStep,
+			editingStep,
+			handleDevModeChange,
+			readOnly,
+			selectedBodyNodeId,
+			updateStep,
+			viewingHistory,
+		],
 	);
 
 	const save = useCallback(async (): Promise<boolean> => {
@@ -1798,13 +1899,37 @@ export const AutomationCanvasContent = forwardRef<
 		(stepId: string, source: string) => {
 			if (readOnly || viewingHistory) return;
 			const step = steps.find((candidate) => candidate.id === stepId);
-			if (!step) return;
+			if (step) {
+				updateStep({
+					...step,
+					workflowCodeMode: "custom",
+					workflowConfig: {
+						...step.workflowConfig,
+						pythonSource: source,
+					},
+				});
+				return;
+			}
+			const parentLoop = steps.find((candidate) =>
+				candidate.body?.nodes.some((node) => node.id === stepId),
+			);
+			if (!parentLoop?.body) return;
 			updateStep({
-				...step,
-				workflowCodeMode: "custom",
-				workflowConfig: {
-					...step.workflowConfig,
-					pythonSource: source,
+				...parentLoop,
+				body: {
+					...parentLoop.body,
+					nodes: parentLoop.body.nodes.map((node) =>
+						node.id === stepId
+							? {
+									...node,
+									workflowCodeMode: "custom",
+									workflowConfig: {
+										...node.workflowConfig,
+										pythonSource: source,
+									},
+								}
+							: node,
+					),
 				},
 			});
 		},
@@ -2500,6 +2625,10 @@ export const AutomationCanvasContent = forwardRef<
 						),
 						pathHighlighted: highlightedPathNodeIds.has(step.id),
 						expanded: expandedLoopIds.has(step.id),
+						selectedBodyNodeId:
+							editingStepId === step.id
+								? selectedBodyNodeId
+								: undefined,
 						onExpandedChange: (expanded: boolean) =>
 							setLoopExpanded(step.id, expanded),
 					},
@@ -2568,6 +2697,8 @@ export const AutomationCanvasContent = forwardRef<
 		steps,
 		displaySteps,
 		displayEdges,
+		editingStepId,
+		selectedBodyNodeId,
 		expandedLoopIds,
 		expandedNodeOffsets,
 		displayStatuses,
@@ -2670,6 +2801,12 @@ export const AutomationCanvasContent = forwardRef<
 		setEditingStepId(nodeId);
 		setSelectedBodyNodeId(bodyNodeId);
 	}, []);
+	const openLoopEditor = useCallback((nodeId: string) => {
+		setShowAddMenu(false);
+		setFocusedLoopId(nodeId);
+		setEditingStepId(nodeId);
+		setSelectedBodyNodeId(undefined);
+	}, []);
 	const addNodeAfter = useCallback(
 		(nodeId: string, sourceHandle?: string) => {
 			if (viewingHistory) return;
@@ -2687,6 +2824,7 @@ export const AutomationCanvasContent = forwardRef<
 			viewingHistory,
 			running,
 			openNode,
+			openLoopEditor,
 			deleteNode: deleteStep,
 			deleteNodeAndDownstream: (nodeId: string) =>
 				setDeleteDownstreamStepId(nodeId),
@@ -2699,6 +2837,7 @@ export const AutomationCanvasContent = forwardRef<
 			deleteStep,
 			displaySteps,
 			onViewAgentRun,
+			openLoopEditor,
 			openNode,
 			readOnly,
 			running,
@@ -2720,6 +2859,44 @@ export const AutomationCanvasContent = forwardRef<
 					</p>
 				</div>
 			</div>
+		);
+	}
+
+	if (focusedLoop) {
+		const loopReadOnly = readOnly || viewingHistory || running;
+		return (
+			<AutomationContext.Provider value={automationContextValue}>
+				<LoopFocusedEditor
+					loop={focusedLoop}
+					selectedNodeId={selectedBodyNodeId}
+					readOnly={loopReadOnly}
+					saving={saving}
+					running={running}
+					onBack={() => {
+						setFocusedLoopId(null);
+						setSelectedBodyNodeId(undefined);
+						setEditingStepId(focusedLoop.id);
+					}}
+					onSave={() => {
+						void save();
+					}}
+					onRun={() => {
+						void run();
+					}}
+					onConfigureLoop={() => {
+						setEditingStepId(focusedLoop.id);
+						setSelectedBodyNodeId(undefined);
+					}}
+					onBodyChange={(body) => {
+						if (loopReadOnly) return;
+						updateStep({ ...focusedLoop, body });
+					}}
+					onNodeSelect={(nodeId) => {
+						setEditingStepId(focusedLoop.id);
+						setSelectedBodyNodeId(nodeId);
+					}}
+				/>
+			</AutomationContext.Provider>
 		);
 	}
 

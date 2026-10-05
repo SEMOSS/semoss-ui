@@ -37,6 +37,7 @@ const OUTPUT_FIELD_TYPES = new Set([
 	"boolean",
 	"number",
 	"object",
+	"object[]",
 	"string",
 	"string[]",
 ]);

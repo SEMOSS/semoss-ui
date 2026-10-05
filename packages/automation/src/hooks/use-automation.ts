@@ -19,6 +19,7 @@ export function useAutomationNode(nodeId: string) {
 		node: automation.nodes.find((node) => node.id === nodeId),
 		readOnly: automation.readOnly,
 		open: (bodyNodeId?: string) => automation.openNode(nodeId, bodyNodeId),
+		openLoopEditor: () => automation.openLoopEditor(nodeId),
 		delete: () => automation.deleteNode(nodeId),
 		deleteDownstream: () => automation.deleteNodeAndDownstream(nodeId),
 		addAfter: (sourceHandle?: string) =>

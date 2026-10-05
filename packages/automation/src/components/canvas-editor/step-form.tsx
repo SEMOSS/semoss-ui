@@ -12,7 +12,6 @@ import type {
 	VectorEngineConfig,
 	WaitConfig,
 } from "../../domain/automation.types";
-import type { AutomationScopeEntry } from "../../domain/automation-inspector";
 import { AgentRunForm } from "./forms/agent-run-form";
 import { AppEngineForm } from "./forms/app-engine-form";
 import { BranchConditionBuilder } from "./forms/branch-condition-builder";
@@ -27,9 +26,7 @@ import { VectorEngineForm } from "./forms/vector-engine-form";
 
 interface StepFormProps {
 	step: AutomationNode;
-	selectedBodyNodeId?: string;
 	upstreamVars: string[];
-	scopeEntries?: AutomationScopeEntry[];
 	onUpdate: (step: AutomationNode) => void;
 	devMode?: boolean;
 	appId?: string;
@@ -39,9 +36,7 @@ interface StepFormProps {
 
 export function StepForm({
 	step,
-	selectedBodyNodeId,
 	upstreamVars,
-	scopeEntries = [],
 	onUpdate,
 	devMode = false,
 	appId = "",
@@ -161,31 +156,9 @@ export function StepForm({
 			return (
 				<LoopForm
 					step={step}
-					selectedBodyNodeId={selectedBodyNodeId}
 					config={c}
 					upstreamVars={upstreamVars}
-					scopeEntries={scopeEntries}
 					onChange={update}
-					onBodyChange={(body) => {
-						if (readOnly) return;
-						onUpdate({ ...step, body });
-					}}
-					renderBodyNode={(
-						bodyNode,
-						bodyUpstreamVars,
-						onBodyUpdate,
-					) => (
-						<StepForm
-							key={bodyNode.id}
-							step={bodyNode}
-							upstreamVars={bodyUpstreamVars}
-							scopeEntries={scopeEntries}
-							onUpdate={onBodyUpdate}
-							devMode={devMode}
-							appId={appId}
-							readOnly={readOnly}
-						/>
-					)}
 					devMode={devMode}
 					readOnly={readOnly}
 				/>

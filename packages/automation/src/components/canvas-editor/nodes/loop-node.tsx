@@ -8,6 +8,7 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Layers3,
+	Maximize2,
 	Pencil,
 	Plus,
 	Repeat2,
@@ -156,6 +157,7 @@ export function LoopNode({ data }: NodeProps) {
 							<LoopBodyCanvas
 								body={d.step.body ?? { nodes: [], edges: [] }}
 								loopOutputVar={d.step.outputVar}
+								selectedNodeId={d.selectedBodyNodeId}
 								readOnly={Boolean(d.locked)}
 								onBodyChange={(body) =>
 									automationNode.update({ ...d.step, body })
@@ -213,21 +215,36 @@ export function LoopNode({ data }: NodeProps) {
 							</div>
 						)}
 
-						{!d.locked && (
+						<div className="flex gap-2">
+							{!d.locked && (
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									className="flex-1"
+									onClick={(event) => {
+										event.stopPropagation();
+										automationNode.open();
+									}}
+								>
+									<Pencil className="size-3.5" aria-hidden />
+									Settings
+								</Button>
+							)}
 							<Button
 								type="button"
-								variant="ghost"
+								variant={isExpanded ? "default" : "outline"}
 								size="sm"
-								className="w-full"
+								className="flex-1"
 								onClick={(event) => {
 									event.stopPropagation();
-									automationNode.open();
+									automationNode.openLoopEditor();
 								}}
 							>
-								<Pencil className="size-3.5" aria-hidden />
-								Configure loop
+								<Maximize2 className="size-3.5" aria-hidden />
+								Open steps
 							</Button>
-						)}
+						</div>
 					</div>
 
 					<Handle
@@ -259,8 +276,13 @@ export function LoopNode({ data }: NodeProps) {
 			</ContextMenuTrigger>
 			{!d.locked && (
 				<ContextMenuContent>
+					<ContextMenuItem
+						onSelect={() => automationNode.openLoopEditor()}
+					>
+						Open repeated steps
+					</ContextMenuItem>
 					<ContextMenuItem onSelect={() => automationNode.open()}>
-						Edit loop
+						Loop settings
 					</ContextMenuItem>
 					<ContextMenuSeparator />
 					<ContextMenuItem

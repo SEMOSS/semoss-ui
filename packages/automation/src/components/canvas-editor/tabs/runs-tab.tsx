@@ -618,7 +618,10 @@ function HistoryRunView({
 	);
 	const results = run.nodeResults ?? [];
 	const selectedResult =
-		results.find((r) => r.NODE_ID === selectedNodeId) ?? results[0] ?? null;
+		results.find((result) => result.NODE_ID === selectedNodeId) ??
+		results.find((result) => result.NODE_ID === run.FAILED_NODE_ID) ??
+		results[results.length - 1] ??
+		null;
 
 	return (
 		<div className="flex h-full min-h-0 flex-col p-3">
@@ -692,26 +695,74 @@ function ResultsPanel({
 	);
 
 	const [selectedBodyKey, setSelectedBodyKey] = useState<{
+		loopNodeId: string;
 		nodeId: string;
 		iterationIndex: number;
 	} | null>(null);
 
 	const selectedBodyResult = useMemo(() => {
 		if (!selectedBodyKey) return null;
-		for (const result of results) {
-			const iter = result.iterations?.find(
-				(i) => i.index === selectedBodyKey.iterationIndex,
-			);
-			if (iter) {
-				return (
-					iter.nodeResults.find(
-						(r) => r.NODE_ID === selectedBodyKey.nodeId,
-					) ?? null
-				);
-			}
-		}
-		return null;
+		const loopResult = results.find(
+			(result) => result.NODE_ID === selectedBodyKey.loopNodeId,
+		);
+		const iteration = loopResult?.iterations?.find(
+			(candidate) => candidate.index === selectedBodyKey.iterationIndex,
+		);
+		return (
+			iteration?.nodeResults.find(
+				(result) => result.NODE_ID === selectedBodyKey.nodeId,
+			) ?? null
+		);
 	}, [results, selectedBodyKey]);
+
+	useEffect(() => {
+		const iterations = selectedResult?.iterations;
+		if (!selectedResult || !iterations?.length) {
+			setSelectedBodyKey(null);
+			return;
+		}
+		const loopNodeId = selectedResult.NODE_ID;
+		setExpandedLoopIds((current) => {
+			if (current.has(loopNodeId)) return current;
+			const next = new Set(current);
+			next.add(loopNodeId);
+			return next;
+		});
+		setSelectedBodyKey((current) => {
+			if (current?.loopNodeId === loopNodeId) {
+				const iteration = iterations.find(
+					(candidate) => candidate.index === current.iterationIndex,
+				);
+				if (
+					iteration?.nodeResults.some(
+						(result) => result.NODE_ID === current.nodeId,
+					)
+				) {
+					return current;
+				}
+			}
+			const bodyResults = iterations.flatMap((iteration) =>
+				iteration.nodeResults.map((result) => ({
+					iterationIndex: iteration.index,
+					result,
+				})),
+			);
+			const preferred =
+				bodyResults.find(({ result }) => result.STATUS === "FAILED") ??
+				bodyResults.find(
+					({ result }) => result.STATUS === "WAITING_FOR_INPUT",
+				) ??
+				bodyResults.find(({ result }) => result.STATUS === "RUNNING") ??
+				bodyResults[0];
+			return preferred
+				? {
+						loopNodeId,
+						nodeId: preferred.result.NODE_ID,
+						iterationIndex: preferred.iterationIndex,
+					}
+				: null;
+		});
+	}, [selectedResult]);
 
 	const bodyStepMap = useMemo(() => {
 		const map = new Map<string, AutomationNode>();
@@ -811,6 +862,17 @@ function ResultsPanel({
 													{formatDurationMs(
 														result.DURATION_MS,
 													)}
+													{hasIterations && (
+														<>
+															{" · "}
+															{
+																result
+																	.iterations
+																	?.length
+															}{" "}
+															iterations
+														</>
+													)}
 												</span>
 											</span>
 										</button>
@@ -886,6 +948,8 @@ function ResultsPanel({
 																bodyDisplay?.color ??
 																bodyMeta.color;
 															const bodyActive =
+																selectedBodyKey?.loopNodeId ===
+																	result.NODE_ID &&
 																selectedBodyKey?.nodeId ===
 																	bodyResult.NODE_ID &&
 																selectedBodyKey?.iterationIndex ===
@@ -897,6 +961,8 @@ function ResultsPanel({
 																	onClick={() =>
 																		setSelectedBodyKey(
 																			{
+																				loopNodeId:
+																					result.NODE_ID,
 																				nodeId: bodyResult.NODE_ID,
 																				iterationIndex:
 																					iter.index,
@@ -977,6 +1043,16 @@ function ResultsPanel({
 						</div>
 					) : (
 						<div className="space-y-3">
+							{selectedBodyKey && (
+								<p className="text-muted-foreground text-xs">
+									Iteration{" "}
+									{selectedBodyKey.iterationIndex + 1}
+									{" · "}
+									{displayResult.NODE_LABEL ||
+										displayStep?.label ||
+										"Loop step"}
+								</p>
+							)}
 							{displayResult.STATUS === "WAITING_FOR_INPUT" &&
 								reviewAgentTrace &&
 								onViewAgentRun && (

@@ -52,7 +52,6 @@ const RUN_STATUS_CLASSES: Record<StepRunStatus, string> = {
 };
 export interface NodeEditDrawerProps {
 	step: AutomationNode;
-	selectedBodyNodeId?: string;
 	appId: string;
 	upstreamVars: string[];
 	scopeEntries: AutomationScopeEntry[];
@@ -91,7 +90,6 @@ function supportsBusinessForm(step: AutomationNode): boolean {
 
 export function NodeEditDrawer({
 	step,
-	selectedBodyNodeId,
 	appId,
 	upstreamVars,
 	scopeEntries,
@@ -452,9 +450,7 @@ export function NodeEditDrawer({
 								<StepForm
 									key={step.id}
 									step={step}
-									selectedBodyNodeId={selectedBodyNodeId}
 									upstreamVars={upstreamVars}
-									scopeEntries={scopeEntries}
 									onUpdate={onUpdate}
 									devMode={devMode}
 									appId={appId}

@@ -45,6 +45,8 @@ export type AutomationNodeData = {
 	expanded?: boolean;
 	/** Updates transient compound-node expansion without changing the saved graph. */
 	onExpandedChange?: (expanded: boolean) => void;
+	/** Inner node selected while this compound node is expanded. */
+	selectedBodyNodeId?: string;
 };
 
 const STATUS_BORDER: Record<string, string> = {
