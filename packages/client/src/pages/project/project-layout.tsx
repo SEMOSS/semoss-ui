@@ -75,6 +75,16 @@ export const ProjectLayout = () => {
 	]);
 
 	/**
+	 * Merge fields into the loaded project without reloading it
+	 */
+	const update = useCallback(
+		(values: Partial<Project>) => {
+			getMetadata.update({ ...getMetadata.data, ...values });
+		},
+		[getMetadata.update, getMetadata.data],
+	);
+
+	/**
 	 * Get the catalog data
 	 */
 	const catalog = useMemo(() => {
@@ -114,6 +124,7 @@ export const ProjectLayout = () => {
 				permission: getUserProjectPermission.data,
 				dependencies: getDependencies.data?.engines || [],
 				refresh,
+				update,
 			}}
 		>
 			<Outlet />
