@@ -1,10 +1,16 @@
-import { AlignLeftIcon, TagsIcon } from "lucide-react";
+import { AlignLeftIcon, ImageIcon, TagsIcon } from "lucide-react";
 import {
 	CatalogSettingsLayout,
 	type CatalogSettingsSection,
 } from "@/components/catalog";
 
 const SETTINGS_SECTIONS: CatalogSettingsSection[] = [
+	{
+		name: "Image",
+		path: "image",
+		icon: ImageIcon,
+		description: "Catalog image",
+	},
 	{
 		name: "Tags",
 		path: "tags",

@@ -10,6 +10,8 @@ import * as markdown from "@semoss/utility/markdown";
 import * as object from "@semoss/utility/object";
 import * as string from "@semoss/utility/string";
 import * as text from "@semoss/utility/text";
+import { toError } from "./error";
+import { formatByteSize } from "./file-size";
 import { validateIdentifier } from "./identifier";
 
 it("exports the canonical helper names through their categories and root", () => {
@@ -72,6 +74,10 @@ it("exports the canonical helper names through their categories and root", () =>
 });
 
 it("retains unaffected exports, including the helpers Renderer imports", () => {
+	expect(utility.asString).toBe(string.asString);
+	expect(utility.toError).toBe(toError);
+	expect(utility.parseTimestamp).toBe(date.parseTimestamp);
+	expect(utility.formatByteSize).toBe(formatByteSize);
 	expect(legacyExtension).toBe(file.getFileExtension);
 	expect(markdown.countLines).toBe(text.countLines);
 	expect(string.buildInitials).toBe(text.buildInitials);

@@ -36,6 +36,10 @@ import { formatTextByteSize, hashString } from "@semoss/utility/text";
 The root also exports these helpers. Existing `/string` and `/file-extension`
 category paths remain available; prefer the defining categories above for new code.
 
+Add a helper here only when it has multiple consumers and a stable, generic
+contract. Keep feature-specific adapters and UI composition in the owning
+package.
+
 The package has no React, SDK, shared, or UI dependencies. Browser globals are
 accessed only when browser helpers run; callers own notifications and feature policy.
 Day.js remains the date dependency; existing native Date/Intl output is preserved.
