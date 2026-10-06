@@ -104,7 +104,7 @@ export function WorkConversation({
 					{actions}
 					{hasAssistant && !hasConversation && (
 						<P className="text-muted-foreground">
-							Ask a question or work on a reply.
+							Ask a question or start a task.
 						</P>
 					)}
 				</div>

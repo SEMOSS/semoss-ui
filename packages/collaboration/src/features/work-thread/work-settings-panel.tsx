@@ -14,7 +14,12 @@ export function WorkSettingsPanel() {
 	const [localSection, setLocalSection] = useState<
 		"chat" | "thread" | "advanced"
 	>("chat");
-	const settingsSection = context.settingsSection ?? localSection;
+	const hasThreadSettings = context.conversationKind !== "chat";
+	const requestedSection = context.settingsSection ?? localSection;
+	const settingsSection =
+		!hasThreadSettings && requestedSection === "thread"
+			? "chat"
+			: requestedSection;
 	const setSettingsSection = context.setSettingsSection ?? setLocalSection;
 	const email = useContext(WorkEmailContext);
 	return (
@@ -23,7 +28,7 @@ export function WorkSettingsPanel() {
 			onValueChange={(value) => {
 				if (
 					value === "chat" ||
-					value === "thread" ||
+					(value === "thread" && hasThreadSettings) ||
 					value === "advanced"
 				)
 					setSettingsSection?.(value);
@@ -32,7 +37,9 @@ export function WorkSettingsPanel() {
 		>
 			<TabsList className="m-2 shrink-0" aria-label="Settings sections">
 				<TabsTrigger value="chat">Chat</TabsTrigger>
-				<TabsTrigger value="thread">Thread</TabsTrigger>
+				{hasThreadSettings && (
+					<TabsTrigger value="thread">Thread</TabsTrigger>
+				)}
 				<TabsTrigger value="advanced">Advanced</TabsTrigger>
 			</TabsList>
 			<TabsContent
@@ -42,18 +49,20 @@ export function WorkSettingsPanel() {
 			>
 				<WorkChatSettings />
 			</TabsContent>
-			<TabsContent
-				value="thread"
-				forceMount
-				className="min-h-0 flex-1 overflow-y-auto p-4 data-[state=inactive]:hidden"
-			>
-				{email && (
-					<ThreadSettings
-						thread={email.thread}
-						sections={["topics", "visibility"]}
-					/>
-				)}
-			</TabsContent>
+			{hasThreadSettings && (
+				<TabsContent
+					value="thread"
+					forceMount
+					className="min-h-0 flex-1 overflow-y-auto p-4 data-[state=inactive]:hidden"
+				>
+					{email && (
+						<ThreadSettings
+							thread={email.thread}
+							sections={["topics", "visibility"]}
+						/>
+					)}
+				</TabsContent>
+			)}
 			<TabsContent
 				value="advanced"
 				className="min-h-0 flex-1 overflow-y-auto p-4 data-[state=inactive]:hidden"

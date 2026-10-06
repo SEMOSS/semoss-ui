@@ -199,18 +199,22 @@ export function useThreadMenuActions({
 					},
 				]
 			: []),
-		{
-			id: "compose",
-			actions: [
-				{
-					id: "new-email",
-					label: "New email",
-					icon: Mail,
-					movesFocus: true,
-					onSelect: () => requestAction("new-email"),
-				},
-			],
-		},
+		...(!/^session:[a-f0-9-]{36}$/.test(thread.id)
+			? [
+					{
+						id: "compose",
+						actions: [
+							{
+								id: "new-email",
+								label: "New email",
+								icon: Mail,
+								movesFocus: true,
+								onSelect: () => requestAction("new-email"),
+							},
+						],
+					},
+				]
+			: []),
 		{
 			id: "navigate",
 			actions: [

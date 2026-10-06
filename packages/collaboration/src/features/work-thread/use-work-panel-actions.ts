@@ -6,16 +6,25 @@ import {
 	Settings2,
 	Wrench,
 } from "lucide-react";
+import type { RefObject } from "react";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ComposerPanelAction } from "@/features/rooms/components/room-composer.types";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
-import { restoreWorkPane, workPanelTarget } from "./work-pane-layout";
+import {
+	chatPanelTarget,
+	restoreWorkPane,
+	workPanelTarget,
+} from "./work-pane-layout";
 import { WORK_PANEL_TYPES } from "./work-panel.constants";
 import { useWorkThread } from "./work-thread-context";
 /** All entry points select an existing panel before revealing the dock. */
-export function useWorkPanelActions(): ComposerPanelAction[] {
+export function useWorkPanelActions(
+	returnFocusTarget?: RefObject<HTMLElement | null>,
+): ComposerPanelAction[] {
 	const workbench = useToolWorkbench();
-	const { snapshot, setSettingsSection } = useWorkThread();
+	const { snapshot, setSettingsSection, conversationKind, onOpenPanel } =
+		useWorkThread();
+	const isChat = conversationKind === "chat";
 	const open = (
 		type: string,
 		name: string,
@@ -23,18 +32,22 @@ export function useWorkPanelActions(): ComposerPanelAction[] {
 	) => {
 		const layout = workbench.store.getState().layout;
 		if (
-			type === WORK_PANEL_TYPES.CONTEXT ||
-			type === WORK_PANEL_TYPES.EMAILS
+			!isChat &&
+			(type === WORK_PANEL_TYPES.CONTEXT ||
+				type === WORK_PANEL_TYPES.EMAILS)
 		)
 			restoreWorkPane(layout, type);
 		else
 			layout.actions.selectPanel(type, config, {
 				name,
-				target: workPanelTarget(layout),
+				target: isChat
+					? chatPanelTarget(layout)
+					: workPanelTarget(layout),
 			});
-		workbench.openWorkbench();
+		if (onOpenPanel) onOpenPanel(returnFocusTarget?.current);
+		else workbench.openWorkbench();
 	};
-	return [
+	const actions: ComposerPanelAction[] = [
 		{
 			id: "compact",
 			label: "Conversation usage",
@@ -54,7 +67,10 @@ export function useWorkPanelActions(): ComposerPanelAction[] {
 			id: "settings",
 			label: "Open Settings",
 			icon: Settings2,
-			onSelect: () => open(WORK_PANEL_TYPES.SETTINGS, "Settings"),
+			onSelect: () => {
+				setSettingsSection?.("chat");
+				open(WORK_PANEL_TYPES.SETTINGS, "Settings");
+			},
 		},
 		{
 			id: "context",
@@ -85,4 +101,7 @@ export function useWorkPanelActions(): ComposerPanelAction[] {
 			onSelect: () => open(WORK_PANEL_TYPES.ACTIVITY, "Activity"),
 		},
 	];
+	return isChat
+		? actions.filter((action) => action.id !== "emails")
+		: actions;
 }

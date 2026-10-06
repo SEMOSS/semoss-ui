@@ -4,7 +4,6 @@ import { Link } from "react-router";
 import {
 	Badge,
 	Button,
-	H1,
 	P,
 	Small,
 	Tabs,
@@ -14,6 +13,7 @@ import {
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { BrainOverview } from "./brain-overview";
+import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
 import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { ReviewCard } from "./review-card";
@@ -41,6 +41,12 @@ export function BrainReview() {
 	);
 	return (
 		<CollaborationSurface
+			header={
+				<CollaborationPageHeader
+					title="Review"
+					description="Suggestions to check before using them as confirmed context."
+				/>
+			}
 			aside={
 				<>
 					<BrainOverview />
@@ -59,20 +65,14 @@ export function BrainReview() {
 						</Button>
 					</Section>
 					<Button asChild variant="outline">
-						<Link to="/brain/sources">Sources and rules</Link>
+						<Link to="/brain/sources">Sources</Link>
 					</Button>
 				</>
 			}
 			asideTitle="Brain overview"
 		>
-			<header className="space-y-1.5 px-4 pt-5 pb-3 md:px-6">
-				<H1 className="font-semibold text-xl">Review</H1>
-				<P className="text-muted-foreground text-sm">
-					Suggestions to check before using them as confirmed context.
-				</P>
-			</header>
 			<Tabs value={tab} onValueChange={setTab} className="gap-0">
-				<div className="border-b px-4 md:px-6">
+				<div className="border-b p-4 md:px-6">
 					<TabsList className={collaborationTabsStyles.list}>
 						<TabsTrigger
 							value="needs"
@@ -105,7 +105,7 @@ export function BrainReview() {
 							</div>
 							<div className="min-w-0 flex-1 space-y-2">
 								<div className="flex flex-wrap items-center gap-2 text-xs">
-									<span className="font-semibold">Brain</span>
+									<span className="font-medium">Brain</span>
 									<Badge
 										variant="secondary"
 										className="font-normal text-xs"
@@ -113,10 +113,10 @@ export function BrainReview() {
 										Note
 									</Badge>
 								</div>
-								<Small className="font-semibold text-sm">
+								<Small className="font-medium text-sm">
 									Note for {topic.short}
 								</Small>
-								<P className="rounded-r-lg border-primary/40 border-l-2 bg-muted/50 px-3 py-2 text-sm leading-6">
+								<P className="rounded-lg bg-muted/50 px-3 py-2 text-sm leading-6">
 									{note.text}
 								</P>
 								<Small className="font-normal text-muted-foreground text-xs leading-5">

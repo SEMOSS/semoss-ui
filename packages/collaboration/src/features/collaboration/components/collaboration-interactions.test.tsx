@@ -376,7 +376,11 @@ describe("collaboration Work and Brain integration", () => {
 		const value = screen.getByText("benefits@contoso.example", {});
 		const row = value.parentElement;
 		if (!row) throw new Error("Missing rule row");
-		await user.click(within(row).getByRole("button", { name: "Remove" }));
+		await user.click(
+			within(row).getByRole("button", {
+				name: "Remove sender rule benefits@contoso.example",
+			}),
+		);
 		expect(
 			screen.queryByText("benefits@contoso.example", {}),
 		).not.toBeInTheDocument();
@@ -438,22 +442,21 @@ describe("collaboration Work and Brain integration", () => {
 		renderSession("/search");
 		await user.click(
 			screen.getByRole("button", {
-				name: "Search threads, people and topics",
+				name: "Search your workspace",
 			}),
 		);
 		const dialog = screen.getByRole("dialog", {
 			name: "Search your workspace",
 		});
 		await user.type(
-			within(dialog).getByRole("textbox", {
+			within(dialog).getByRole("combobox", {
 				name: "Search",
 			}),
 			"Ava",
 		);
-		const result = within(dialog).getByRole("link", {
-			name: "Ava Reed Person",
+		const result = within(dialog).getByRole("option", {
+			name: /Ava Reed/,
 		});
-		expect(result).toHaveAttribute("href", "/brain/people/p-ava");
 		await user.click(result);
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 		expect(
@@ -465,7 +468,7 @@ describe("collaboration Work and Brain integration", () => {
 		const user = userEvent.setup();
 		renderSession("/search");
 		const trigger = screen.getByRole("button", {
-			name: "Search threads, people and topics",
+			name: "Search your workspace",
 		});
 		await user.click(trigger);
 		await user.keyboard("{Escape}");

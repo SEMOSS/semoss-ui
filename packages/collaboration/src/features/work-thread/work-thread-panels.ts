@@ -3,12 +3,13 @@ import type {
 	WorkbenchPanelConfigAny,
 } from "@semoss/workbench";
 import { TOOL_WORKBENCH_COMPONENTS } from "@/features/tools/tool-workbench.components";
+import { createToolWorkbenchLayout } from "@/features/tools/tool-workbench.constants";
 import { WORK_ACTIVITY_PANEL } from "./work-activity-panel";
 import { WORK_CONTEXT_PANEL } from "./work-context-dock-panel";
 import { WORK_DRAFT_PANEL } from "./work-draft-panel";
 import { WORK_EMAIL_PANEL } from "./work-email-panel";
 import { WORK_EMAILS_PANEL } from "./work-emails-panel";
-import { workPanelTarget } from "./work-pane-layout";
+import { chatPanelTarget, workPanelTarget } from "./work-pane-layout";
 import { WORK_PANEL_TYPES } from "./work-panel.constants";
 import { WORK_SETTINGS_PANEL } from "./work-settings-panel";
 import { WORK_TOOLS_PANEL } from "./work-tools-panel";
@@ -71,4 +72,12 @@ export const WORK_THREAD_WORKBENCH = {
 	panelTarget: workPanelTarget,
 	components: WORK_THREAD_COMPONENTS,
 	createLayout: createWorkThreadLayout,
+};
+
+/** Standalone chat reveals only the files, settings, or tool results the user opens. */
+export const CHAT_WORKBENCH = {
+	defaultOpen: false,
+	panelTarget: chatPanelTarget,
+	components: WORK_THREAD_COMPONENTS,
+	createLayout: createToolWorkbenchLayout,
 };

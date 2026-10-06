@@ -5,12 +5,14 @@ import { getMail } from "@/features/connectors/api/microsoft";
 import { importOutlookMail } from "@/features/connectors/api/source-mapping";
 import type { SourceAttachment } from "@/features/connectors/types";
 import { ThreadAssistant } from "@/features/thread-assistant/thread-assistant";
-import { EmailConversationButton } from "@/features/work-thread/email-conversation-button";
 import { UnifiedThread } from "@/features/work-thread/unified-thread";
 import { useEnsureThreadInsights } from "@/features/work-thread/use-thread-insights";
 import { useWorkComposerSession } from "@/features/work-thread/work-composer-state.context";
 import { WorkThreadHeading } from "@/features/work-thread/work-thread-heading";
-import { WORK_THREAD_WORKBENCH } from "@/features/work-thread/work-thread-panels";
+import {
+	CHAT_WORKBENCH,
+	WORK_THREAD_WORKBENCH,
+} from "@/features/work-thread/work-thread-panels";
 import { dateLabel } from "../date-label";
 import { importSourceCommand } from "../import-source";
 import { useThreadHistory } from "../live/thread-history.context";
@@ -21,8 +23,20 @@ import { ThreadMenu } from "./thread-menu";
 import { threadMenuTriggerId } from "./thread-menu.utils";
 
 /** Work keeps assistant chat beside the full source thread and its context. */
-export function WorkThread() {
-	const { threadId = "" } = useParams();
+export function WorkThread({
+	threadId: suppliedThreadId,
+	isNewChat = false,
+	onSent,
+}: {
+	/** A local /new chat can own its identity before it has a saved route. */
+	threadId?: string;
+	/** Keep the centered start screen until /new accepts its first message. */
+	isNewChat?: boolean;
+	/** The route may switch to the saved thread after an accepted first send. */
+	onSent?: () => void;
+} = {}) {
+	const { threadId: routeThreadId = "" } = useParams();
+	const threadId = suppliedThreadId ?? routeThreadId;
 	const { state, dispatch } = useCollaborationSession();
 	const latestState = useRef(state);
 	latestState.current = state;
@@ -46,15 +60,21 @@ export function WorkThread() {
 	if (!thread || !workspace || !context)
 		return (
 			<P className="p-6">
-				This thread is not loaded.{" "}
-				<Link to="/brain/sources" className="underline">
-					Load your sources
-				</Link>{" "}
-				or{" "}
-				<Link to="/work" className="underline">
-					return to Work
-				</Link>
-				.
+				{isSession ? (
+					<output>Opening new chat…</output>
+				) : (
+					<>
+						This thread is not loaded.{" "}
+						<Link to="/brain/sources" className="underline">
+							Load your sources
+						</Link>{" "}
+						or{" "}
+						<Link to="/work" className="underline">
+							return to Work
+						</Link>
+						.
+					</>
+				)}
 			</P>
 		);
 	const sourceUid =
@@ -112,10 +132,7 @@ export function WorkThread() {
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 			<ThreadAssistant
-				workbench={{
-					...WORK_THREAD_WORKBENCH,
-					defaultOpen: !isSession,
-				}}
+				workbench={isSession ? CHAT_WORKBENCH : WORK_THREAD_WORKBENCH}
 				threadId={thread.id}
 				threadTitle={thread.subject}
 				context={context}
@@ -126,6 +143,8 @@ export function WorkThread() {
 				onDraft={(body) => openDraft(body)}
 				renderWorkspace={(session, snapshot) => (
 					<UnifiedThread
+						isNewChat={isNewChat}
+						onSent={onSent}
 						onEmailSent={() => {
 							const refresh = async () => {
 								if (thread.isSample || isSession) return;
@@ -173,6 +192,8 @@ export function WorkThread() {
 							);
 						}}
 						thread={thread}
+						isSourceFreeSession={isSession}
+						userName={state.liveProfile?.name || state.profile.name}
 						workspace={workspace}
 						context={context}
 						session={session}
@@ -186,9 +207,6 @@ export function WorkThread() {
 							>
 								{(menu) => (
 									<WorkThreadHeading thread={thread}>
-										{isSession && (
-											<EmailConversationButton />
-										)}
 										{menu}
 									</WorkThreadHeading>
 								)}

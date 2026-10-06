@@ -13,6 +13,7 @@ import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
 import {
+	$createLineBreakNode,
 	$createParagraphNode,
 	$createTextNode,
 	$getRoot,
@@ -127,6 +128,8 @@ interface RoomComposerProps {
 	children?: ReactNode;
 	/** Classes applied to the composer root. */
 	className?: string;
+	/** Classes applied to the bordered composer surface. */
+	surfaceClassName?: string;
 	/** Classes applied to the editable message surface. */
 	inputClassName?: string;
 	/** Name used to label the message input and send action. */
@@ -215,6 +218,16 @@ function writeEditorText(editor: LexicalEditor | null, text: string) {
 	});
 }
 
+/** Seed a reviewed prompt without inventing paragraph breaks or moving focus. */
+function $initializePlainTextDraft(text: string): void {
+	const paragraph = $createParagraphNode();
+	for (const [index, line] of text.split("\n").entries()) {
+		if (index > 0) paragraph.append($createLineBreakNode());
+		paragraph.append($createTextNode(line));
+	}
+	$getRoot().append(paragraph);
+}
+
 function tooltipButton(
 	label: string,
 	button: React.ReactElement,
@@ -245,6 +258,7 @@ export function RoomComposer({
 	actionsTriggerId,
 	children,
 	className,
+	surfaceClassName,
 	inputClassName,
 	agentName,
 	submitLabel,
@@ -593,6 +607,7 @@ export function RoomComposer({
 				disabled={retainUntilSent && isSubmitting}
 				className={cn(
 					"relative m-0 min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-0 shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 motion-reduce:transition-none",
+					surfaceClassName,
 					isDragging && "border-primary ring-2 ring-primary/20",
 				)}
 				onDragEnter={(event) => {
@@ -645,7 +660,12 @@ export function RoomComposer({
 						...initialConfig,
 						editorState: initial.current?.document
 							? JSON.stringify(initial.current.document)
-							: undefined,
+							: initial.current?.text
+								? () =>
+										$initializePlainTextDraft(
+											initial.current?.text ?? "",
+										)
+								: undefined,
 						theme: emailMode ? EMAIL_THEME : initialConfig.theme,
 					}}
 				>
@@ -670,7 +690,7 @@ export function RoomComposer({
 						</>
 					)}
 					<div
-						className="relative max-h-64 min-h-20 overflow-auto"
+						className="relative max-h-64 overflow-auto"
 						ref={(element) => {
 							scrollViewportRef.current = element;
 						}}

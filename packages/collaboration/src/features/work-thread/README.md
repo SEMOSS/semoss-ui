@@ -1,6 +1,21 @@
 # Unified Work threads
 
-Work threads host one `ThreadSession`, an assistant-only chat on the left, and an initially open workbench. Desktop starts at 30% chat / 70% workbench; the workbench starts with Emails (75%) beside Context (25%). Sources never interleave with assistant turns. Full formatted emails appear oldest-to-newest with a single compact subject/sender header. Reply, Forward, Outlook, More, and Collapse share one action group. Bodies and recipient details hide without unmounting, and Expand all / Collapse all also controls read-only draft previews. Thread gutters and gaps are 8px, with 16px message padding. Other source channels keep their native rendering in the source panel.
+New task opens a source-free chat at `/new`, with the Brief's greeting, suggested
+questions, and a centered Playground composer. Suggestions populate an editable
+draft without submitting. New and saved chats offer an agent dropdown and a
+Settings menu for Chat settings and Advanced. Chat settings configure the agent,
+model, additional instructions, temperature, knowledge, and tools; Advanced keeps
+the existing context, usage, and compaction controls.
+The first accepted send opens its saved thread route. Brief/Chat switching retains
+the local session identity, draft and attachments. The daily context rail sits
+beside chat on wide screens and opens through Your day on smaller screens; opening
+the workbench replaces the rail. Source-free chats start with a closed, generic
+workspace for settings, files, and tool results. Email readers and editors remain
+available when explicitly opened through prompts or tool results. Topic scope,
+model selection and send remain in the bottom toolbar. Loading, failed restoration,
+and uncertain requests keep their existing recovery controls.
+
+Source-backed Work threads host one `ThreadSession`, an assistant-only chat on the left, and an initially open workbench. Desktop starts at 30% chat / 70% workbench; the workbench starts with Emails (75%) beside Context (25%). Sources never interleave with assistant turns. Full formatted emails appear oldest-to-newest with a single compact subject/sender header. Reply, Forward, Outlook, More, and Collapse share one action group. Bodies and recipient details hide without unmounting, and Expand all / Collapse all also controls read-only draft previews. Thread gutters and gaps are 8px, with 16px message padding. Other source channels keep their native rendering in the source panel.
 
 Emails and Context have independent find controls. The email pane combines search, oldest/newest ordering, and bulk disclosure in one compact toolbar. Counts live in the sort menu; read-only drafts stay after source messages in arrival order. Search preserves all items, navigates matching messages or context sections, and expands matched content. Email search includes formatted body text and is labeled Search loaded emails while older pages remain. Brain thread history uses 100-message pages and Load older emails; older pages preserve reading position, deduplicate by source ID, and retain access/ingestion rules. Older servers without continuation show an explicit limitation. This does not discover unlinked Outlook messages.
 
@@ -27,8 +42,9 @@ space permits, starting at 30% chat / 70% workbench. The resizable split persist
 panels and closing/reopening the dock within a thread. Below 1024px of available content
 width, the panel uses the full width. One File dropdown stays at the left of the workbench’s top border, with Close workbench at the right. The bar is 32px high on desktop with 28px controls, and 48px on mobile with 44px touch targets. These controls belong to the thread’s workbench and stay in the same positions when switching panels. The conversation keeps its own title and navigation. The full-width layout keeps the menu visible and provides a labeled Back to chat action in that same workbench border. Closing returns focus to the invoking card or control.
 The composer’s + menu opens Settings, Context, Files, Tools, and Activity directly.
-The File menu always lists Browse files, New file, New folder, Upload files;
-Emails, Context, Tools, Activity, Settings; then Commands. It opens or selects existing panels
+The File menu lists Browse files, New file, New folder, Upload files;
+Context, Tools, Activity, Settings; then Commands. Source-backed threads also list
+Emails. It opens or selects existing panels
 and opens the existing command palette. Creation and upload always start at the
 thread’s root directory. File actions stay visible but disabled while thread files
 are connecting. The menu does not list open items or offer selected-file actions.
@@ -38,7 +54,13 @@ Close workbench conceals the dock without discarding open panels or drafts.
 
 Sources, participant exclusions, goals, steps, and facts use the existing Brain and
 Work reactors. Assistant conversations use collaboration rooms, persisted room options,
-`RunAgent`, approvals, cancellation, and reconnect.
+`RunAgent` as their only execution path, approvals, cancellation, and reconnect.
+
+Before the first send, saving chat settings or selecting an agent updates the local
+`ThreadSession` without creating a room or history entry. The first send persists
+the selected configuration while preparing its room. Later settings changes update
+that room's existing options and apply to future turns. Agent changes preserve
+manual model, instruction, temperature, knowledge, and tool overrides.
 
 Work uses the standard SEMOSS agent-run parameters and existing tool approval settings. Assistant instructions request local draft proposals for editor review; there is no Work-specific backend restriction on email tools or capability check before submission. Explicit editor saves remain normal connector requests outside assistant execution.
 

@@ -218,6 +218,19 @@ export class WorkComposerSession {
 		if (revision === this.snapshot.revision && !this.snapshot.isSubmitting)
 			this.update({ draft });
 	};
+	/** Meeting preparation seeds an empty composer for review without sending or replacing a draft. */
+	seedPrompt = (text: string): void => {
+		if (
+			this.snapshot.isSubmitting ||
+			this.snapshot.draft.text.trim() ||
+			this.snapshot.draft.files.length
+		)
+			return;
+		this.update({
+			draft: { document: null, text, files: [] },
+			revision: this.snapshot.revision + 1,
+		});
+	};
 	getReply = (sourceUid?: string): OutlookReplySession => {
 		let reply = this.replies.get(sourceUid);
 		if (!reply) {

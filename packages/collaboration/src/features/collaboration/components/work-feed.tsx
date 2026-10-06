@@ -12,7 +12,6 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-	H1,
 	P,
 	Separator,
 	Small,
@@ -32,6 +31,7 @@ import { useWorkUpdates } from "../live/work-updates.context";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import type { Channel } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
 import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { PersonAvatar } from "./person-avatar";
@@ -86,7 +86,7 @@ export function WorkFeed() {
 		(view === "waiting"
 			? "Waiting on others"
 			: view === "done"
-				? "Done"
+				? "Handled"
 				: "For you");
 	const hasConnectedItems = items.some((item) => !item.isSample);
 	// live data has no sample items, so the sample section only shows when it has something to add
@@ -103,93 +103,96 @@ export function WorkFeed() {
 	};
 	const activeMeta = active ? channelMeta(active) : null;
 	return (
-		<CollaborationSurface aside={<WorkOverview />} asideTitle="Overview">
-			<header className="space-y-1 px-4 pt-5 pb-3 md:px-6">
-				{topic && (
-					<div
-						className="mb-3 h-1 w-12 rounded-full bg-primary"
-						aria-hidden="true"
-					/>
-				)}
-				<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-					<H1 className="font-semibold text-2xl">{title}</H1>
-					<P className="text-muted-foreground text-sm">
-						{topic?.description ||
-							(view === "waiting"
-								? "Things you asked for that have not come back."
-								: view === "done"
-									? "Completed in this session."
-									: "What needs your attention, across your topics.")}
-					</P>
-				</div>
-				{topic && (
-					<>
-						<div className="flex flex-wrap items-center gap-3 pt-3 text-muted-foreground text-xs">
-							<div className="-space-x-2 flex" aria-hidden="true">
-								{topic.people
-									.filter(
-										(member) => member.state !== "removed",
-									)
-									.slice(0, 4)
-									.map((member) => {
-										const person = state.people.find(
-											(candidate) =>
-												candidate.id ===
-												member.personId,
-										);
-										return person ? (
-											<PersonAvatar
-												key={person.id}
-												name={person.name}
-												initials={person.initials}
-												className="size-6 ring-2 ring-card"
-											/>
-										) : null;
-									})}
-							</div>
-							<span>
-								{
-									topic.people.filter(
-										(member) => member.state !== "removed",
-									).length
-								}{" "}
-								people
-							</span>
-							<span>{topic.stats.threads} threads</span>
-							<Link
-								className="text-primary hover:underline"
-								to={`/brain/topics/${encodeURIComponent(topic.id)}`}
-							>
-								Edit in Brain
-							</Link>
-						</div>
-						<ul className="space-y-1 pt-3">
-							{topic.goals.map((goal) => (
-								<li
-									key={goal.noteId}
-									className={cn(
-										"flex items-center gap-2 text-muted-foreground text-sm",
-										goal.status === "done" &&
-											"line-through",
-									)}
+		<CollaborationSurface
+			aside={<WorkOverview />}
+			asideTitle="Overview"
+			header={
+				<CollaborationPageHeader
+					title={title}
+					description={
+						topic?.description ||
+						(view === "waiting"
+							? "Things you asked for that have not come back."
+							: view === "done"
+								? "Completed in this session."
+								: "What needs your attention, across your topics.")
+					}
+				>
+					{topic && (
+						<>
+							<div className="flex flex-wrap items-center gap-3 pt-3 text-muted-foreground text-xs">
+								<div
+									className="-space-x-2 flex"
+									aria-hidden="true"
 								>
-									<span
-										aria-hidden="true"
+									{topic.people
+										.filter(
+											(member) =>
+												member.state !== "removed",
+										)
+										.slice(0, 4)
+										.map((member) => {
+											const person = state.people.find(
+												(candidate) =>
+													candidate.id ===
+													member.personId,
+											);
+											return person ? (
+												<PersonAvatar
+													key={person.id}
+													name={person.name}
+													initials={person.initials}
+													className="size-6 ring-2 ring-card"
+												/>
+											) : null;
+										})}
+								</div>
+								<span>
+									{
+										topic.people.filter(
+											(member) =>
+												member.state !== "removed",
+										).length
+									}{" "}
+									people
+								</span>
+								<span>{topic.stats.threads} threads</span>
+								<Link
+									className="text-primary hover:underline"
+									to={`/brain/topics/${encodeURIComponent(topic.id)}`}
+								>
+									Edit in Brain
+								</Link>
+							</div>
+							<ul className="space-y-1 pt-3">
+								{topic.goals.map((goal) => (
+									<li
+										key={goal.noteId}
 										className={cn(
-											"size-3 shrink-0 rounded-full border border-border",
+											"flex items-center gap-2 text-muted-foreground text-sm",
 											goal.status === "done" &&
-												"border-success bg-success",
+												"line-through",
 										)}
-									/>
-									{goal.text}
-								</li>
-							))}
-						</ul>
-					</>
-				)}
-			</header>
+									>
+										<span
+											aria-hidden="true"
+											className={cn(
+												"size-3 shrink-0 rounded-full border border-border",
+												goal.status === "done" &&
+													"border-success bg-success",
+											)}
+										/>
+										{goal.text}
+									</li>
+								))}
+							</ul>
+						</>
+					)}
+				</CollaborationPageHeader>
+			}
+		>
 			<Tabs value={sort} onValueChange={setSort} className="gap-0">
-				<div className="border-border border-b px-4 md:px-6">
+				<div className="border-border border-b p-4 md:px-5">
 					<TabsList
 						aria-label="Sort work"
 						className={collaborationTabsStyles.list}
@@ -208,7 +211,7 @@ export function WorkFeed() {
 						</TabsTrigger>
 					</TabsList>
 				</div>
-				<div className="flex min-h-12 flex-wrap items-center gap-2 border-border border-b bg-muted/40 px-4 py-2 md:px-6">
+				<div className="flex min-h-12 flex-wrap items-center gap-2 border-border border-b px-4 py-3 md:px-5">
 					<WorkRefreshStatus />
 					{view === "open" && (
 						<>
@@ -256,7 +259,7 @@ export function WorkFeed() {
 						</>
 					)}
 					<div className="ml-auto flex items-center gap-1">
-						<span className="rounded-full bg-primary/10 px-2.5 py-0.5 font-medium text-primary text-sm tabular-nums">
+						<span className="rounded-md bg-muted px-2.5 py-0.5 font-mono text-muted-foreground text-sm tabular-nums">
 							{items.length}
 							<span className="sr-only">
 								{items.length === 1 ? " item" : " items"}

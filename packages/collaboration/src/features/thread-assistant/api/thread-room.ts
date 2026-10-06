@@ -1,8 +1,9 @@
 import { z } from "@semoss/ui/next";
 import { createRoom } from "@/features/rooms/api/create-room";
-import { listRooms } from "@/features/rooms/api/list-rooms";
+import { ROOM_HISTORY_CHANGED } from "@/features/rooms/api/list-rooms";
 import {
 	type PlaygroundRoomOptions,
+	playgroundRoomsSchema,
 	roomOptionsEnvelopeSchema,
 	roomWriteSchema,
 } from "@/features/rooms/api/room-schemas";
@@ -10,7 +11,7 @@ import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 import { threadInstructions } from "../thread-context";
 import { type ThreadChatSettings, workInstructions } from "../thread-settings";
 
-const associationSchema = z.object({
+export const associationSchema = z.object({
 	version: z.literal(1),
 	threadId: z.string().min(1),
 	contextRevision: z.string(),
@@ -36,7 +37,17 @@ export async function findThreadRoom(
 	actions: InsightActions,
 	threadId: string,
 ): Promise<ThreadRoomAssociation | null> {
-	const rooms = await listRooms(actions);
+	const rows = await callPixel(
+		actions,
+		pixel("GetPlaygroundRooms", {
+			mode: "collaboration",
+			roomOptionsSearch: threadId,
+			includeUnnamedRooms: true,
+			sort: ["DESC"],
+		}),
+		playgroundRoomsSchema,
+	);
+	const rooms = rows.map((row) => ({ roomId: row.ROOM_ID }));
 	for (let index = 0; index < rooms.length; index += 4) {
 		const candidates = await Promise.all(
 			rooms.slice(index, index + 4).map(async (room) => {
@@ -79,7 +90,10 @@ export async function bindThreadRoom(
 	if (!bound) throw new Error("Could not open this conversation.");
 }
 
-/** Preserve unrelated options while saving the non-content Work association. */
+/**
+ * Preserve unrelated options while saving the non-content Work association.
+ * Keep the selected agent's display name without copying its authored settings.
+ */
 export async function prepareThreadRoom(
 	actions: InsightActions,
 	insightId: string,
@@ -87,6 +101,7 @@ export async function prepareThreadRoom(
 	metadata: ThreadRoomMetadata,
 	attempt: { roomId?: string; onCreated: (roomId: string) => void },
 	settings?: ThreadChatSettings,
+	agentName?: string,
 ): Promise<ThreadRoomAssociation> {
 	const roomId =
 		attempt.roomId ??
@@ -96,6 +111,7 @@ export async function prepareThreadRoom(
 			{
 				name: title,
 				workspaceId: metadata.agentId || null,
+				workspaceName: agentName,
 				instructions: settings
 					? workInstructions(settings.instructions)
 					: threadInstructions(metadata.agentId),
@@ -126,7 +142,11 @@ export async function prepareThreadRoom(
 	if (metadata.agentId)
 		options.workspace = {
 			workspace_id: metadata.agentId,
-			name: "Assistant",
+			name:
+				agentName ??
+				(envelope.OPTIONS.workspace?.workspace_id === metadata.agentId
+					? envelope.OPTIONS.workspace.name
+					: "Assistant"),
 		};
 	else delete options.workspace;
 	const saved = await callPixel(
@@ -137,5 +157,15 @@ export async function prepareThreadRoom(
 	if (!saved)
 		throw new Error("Could not link this conversation to your work.");
 	await bindThreadRoom(actions, roomId);
+	window.dispatchEvent(
+		new CustomEvent(ROOM_HISTORY_CHANGED, {
+			detail: {
+				roomId,
+				roomName: title,
+				modelId: metadata.modelId,
+				dateCreated: new Date().toISOString(),
+			},
+		}),
+	);
 	return { roomId, metadata, options };
 }

@@ -102,8 +102,6 @@ it("source refreshes do not replace assistant rows or expanded reasoning", () =>
 
 it("shows the chat empty state without an email empty state", () => {
 	render(view([]));
-	expect(
-		screen.getByText("Ask a question or work on a reply."),
-	).toBeVisible();
+	expect(screen.getByText("Ask a question or start a task.")).toBeVisible();
 	expect(screen.queryByText("No source messages are available.")).toBeNull();
 });

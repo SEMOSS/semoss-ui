@@ -32,14 +32,18 @@ function MenuFixture({
 	sidebarTitle,
 	itemId,
 	sourceMessageId,
+	selectedThreadId = threadId,
 }: {
 	hideMuted?: boolean;
 	sidebarTitle?: string;
 	itemId?: string;
 	sourceMessageId?: string;
+	selectedThreadId?: string;
 }) {
 	const { state, undo } = useCollaborationSession();
-	const thread = state.threads.find((candidate) => candidate.id === threadId);
+	const thread = state.threads.find(
+		(candidate) => candidate.id === selectedThreadId,
+	);
 	if (!thread) throw new Error("Missing fixture thread");
 	const isVisible = !hideMuted || !thread.muted;
 	const content = (
@@ -85,6 +89,7 @@ function setup(
 		path?: string;
 		state?: CollaborationState;
 		navigation?: boolean;
+		selectedThreadId?: string;
 	} = {},
 ) {
 	const state = options.state ?? createInitialCollaborationState();
@@ -154,6 +159,21 @@ afterEach(() => {
 });
 
 describe("thread menus", () => {
+	it("keeps email creation out of source-free chat actions", async () => {
+		const state = createInitialCollaborationState();
+		const selectedThreadId = `session:${crypto.randomUUID()}`;
+		state.threads.push({
+			...state.threads[0],
+			id: selectedThreadId,
+			channel: "room",
+			source: undefined,
+		});
+		const { open } = setup({ state, selectedThreadId });
+		await open();
+		expect(queryMenuAction({ name: "New email" })).toBeNull();
+		expect(queryMenuAction({ name: "Draft reply" })).toBeNull();
+		expect(getMenuAction({ name: "Ask assistant" })).toBeVisible();
+	});
 	it.each(["/work", "/brain/threads"])(
 		"offers matching right-click and overflow actions on %s",
 		async (path) => {
@@ -343,14 +363,13 @@ describe("thread menus", () => {
 		);
 	});
 
-	it("uses the Brain menu in shared navigation and opens the registered page sidebar", async () => {
+	it("opens the registered Brain sidebar through its contextual thread menu", async () => {
 		const state = createInitialCollaborationState();
 		state.openThreadIds = [threadId];
 		const { user, router } = setup({
 			state,
 			path: "/brain/threads",
 			sidebarTitle: "Brain overview",
-			navigation: true,
 		});
 		const trigger = screen.getAllByRole("button", {
 			name: /^(Thread|Email) actions for/,

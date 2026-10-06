@@ -1,5 +1,5 @@
 import { Insight } from "@semoss/sdk";
-import { toError } from "@semoss/utility";
+import { toError } from "@semoss/utility/error";
 import type { WorkspaceAgent } from "@/features/agents/api/agent-schemas";
 import { getAgent } from "@/features/agents/api/get-agent";
 import {
@@ -334,24 +334,49 @@ export class ThreadSession {
 
 	selectModel(modelId: string, modelName: string): void {
 		if (
+			this.isDisposed ||
+			!this.snapshot.isReady ||
 			this.snapshot.isCompacting ||
+			this.snapshot.isSavingSettings ||
 			this.snapshot.isPreparing ||
 			this.snapshot.turn.isRunning ||
-			this.snapshot.hasUnconfirmedSubmission
+			this.snapshot.turn.isRestoring ||
+			this.snapshot.turn.isSubmitting ||
+			this.snapshot.hasUnconfirmedSubmission ||
+			this.snapshot.isCreationUncertain
 		)
 			return;
 		rememberLastModel(modelId, modelName);
 		this.configurationRevision++;
+		const isAgentUnresolved = Boolean(
+			this.snapshot.settings.agentId &&
+				this.snapshot.agent?.workspace_id !==
+					this.snapshot.settings.agentId,
+		);
 		this.update({
 			modelId,
 			modelName,
 			settings: { ...this.snapshot.settings, modelId },
+			isLoadingModel: isAgentUnresolved,
 			modelError: null,
 		});
+		// A model choice supersedes defaults, but the selected agent must still resolve.
+		if (isAgentUnresolved) void this.resolveDefaults();
 	}
 
 	/** Catalog reads cannot overwrite a newer explicit selection or save. */
 	resolveDefaults = async (): Promise<void> => {
+		if (
+			this.isDisposed ||
+			!this.snapshot.isReady ||
+			this.snapshot.isSavingSettings ||
+			this.snapshot.isPreparing ||
+			this.snapshot.isCompacting ||
+			this.snapshot.turn.isRunning ||
+			this.snapshot.turn.isSubmitting ||
+			this.snapshot.turn.isRestoring
+		)
+			return;
 		const revision = ++this.configurationRevision;
 		this.update({ isLoadingModel: true, modelError: null });
 		try {
@@ -359,6 +384,8 @@ export class ThreadSession {
 			const agent = agentId
 				? await getAgent(this.insight.actions, agentId)
 				: null;
+			if (revision !== this.configurationRevision || this.isDisposed)
+				return;
 			const model = await resolveThreadModel(this.insight.actions, [
 				this.snapshot.modelId,
 				readLastModel()?.modelId ?? "",
@@ -376,6 +403,10 @@ export class ThreadSession {
 				modelError: model
 					? null
 					: "No text-generation model is available. Choose a model in Settings or ask your administrator for access.",
+				// Catalog recovery confirms local settings, never a failed room write.
+				...(model && !this.snapshot.association && !this.pending
+					? { settingsError: null }
+					: {}),
 			});
 		} catch (cause) {
 			if (revision === this.configurationRevision)
@@ -386,13 +417,14 @@ export class ThreadSession {
 		}
 	};
 
-	/** Persist configuration without replacing the room or discarding its history. */
+	/** Keep draft settings local; update an existing room without replacing its history. */
 	saveSettings = async (
 		title: string,
 		values: ThreadChatSettings,
 	): Promise<void> => {
 		const settings = threadSettingsSchema.parse(values);
 		if (
+			this.isDisposed ||
 			!this.snapshot.isReady ||
 			this.snapshot.isCompacting ||
 			this.snapshot.isSavingSettings ||
@@ -423,34 +455,38 @@ export class ThreadSession {
 				throw new Error(
 					"This model is no longer available. Choose another model.",
 				);
-			const metadata: ThreadRoomMetadata = {
-				version: 1,
-				threadId: this.threadId,
-				contextRevision:
-					this.snapshot.association?.metadata.contextRevision ?? "",
-				modelId: settings.modelId,
-				...(settings.agentId && { agentId: settings.agentId }),
-			};
-			const attempt = {
-				metadata,
-				roomId:
-					this.snapshot.association?.roomId ?? this.pending?.roomId,
-			};
-			this.pending = attempt;
-			const association = await prepareThreadRoom(
-				this.insight.actions,
-				this.insight.insightId,
-				title,
-				metadata,
-				{
-					roomId: attempt.roomId,
-					onCreated: (roomId) => {
-						attempt.roomId = roomId;
+			if (this.isDisposed) return;
+			let association = this.snapshot.association;
+			const roomId = association?.roomId ?? this.pending?.roomId;
+			// Configuration alone must not create an empty conversation in history.
+			// A room allocated by an earlier send is still reused after partial setup.
+			if (roomId) {
+				const metadata: ThreadRoomMetadata = {
+					version: 1,
+					threadId: this.threadId,
+					contextRevision:
+						association?.metadata.contextRevision ?? "",
+					modelId: settings.modelId,
+					...(settings.agentId && { agentId: settings.agentId }),
+				};
+				const attempt = { metadata, roomId };
+				this.pending = attempt;
+				association = await prepareThreadRoom(
+					this.insight.actions,
+					this.insight.insightId,
+					title,
+					metadata,
+					{
+						roomId: attempt.roomId,
+						onCreated: (createdRoomId) => {
+							attempt.roomId = createdRoomId;
+						},
 					},
-				},
-				settings,
-			);
-			this.pending = null;
+					settings,
+					agent?.name,
+				);
+				this.pending = null;
+			}
 			this.update({
 				settings,
 				agent,
@@ -463,8 +499,10 @@ export class ThreadSession {
 				settings.modelId,
 				model.engine_display_name || model.engine_name,
 			);
-			this.attach(association);
-			await this.readHistory();
+			if (association) {
+				this.attach(association);
+				await this.readHistory();
+			}
 		} catch (cause) {
 			this.update({
 				settingsError: toError(cause).message,
@@ -620,6 +658,13 @@ export class ThreadSession {
 			);
 		if (!this.snapshot.modelId)
 			throw new Error("Choose a model before sending.");
+		if (
+			this.snapshot.settings.agentId &&
+			this.snapshot.agent?.workspace_id !== this.snapshot.settings.agentId
+		)
+			throw new Error(
+				"Wait for the selected agent to finish loading before sending.",
+			);
 		if (context.threadId !== this.threadId)
 			throw new Error("This context belongs to a different thread.");
 		if (
@@ -703,6 +748,7 @@ export class ThreadSession {
 							},
 						},
 						this.snapshot.settings,
+						this.snapshot.agent?.name,
 					);
 				} catch (cause) {
 					if (!attempt.roomId)

@@ -16,6 +16,7 @@ import {
 	Alert,
 	AlertDescription,
 	Button,
+	Card,
 	cn,
 	ResizableHandle,
 	ResizablePanel,
@@ -33,6 +34,11 @@ import type {
 } from "@/features/collaboration/state/collaboration.types";
 import { DeleteEmailDialog } from "@/features/connectors/components/delete-email-dialog";
 import type { SourceAttachment } from "@/features/connectors/types";
+import { DailyChatControls } from "@/features/daily-chat/daily-chat-controls";
+import { DailyChatHeader } from "@/features/daily-chat/daily-chat-header";
+import { DailyChatTopicControl } from "@/features/daily-chat/daily-chat-topic-control";
+import { BriefContextRail } from "@/features/dashboard/brief-context-rail";
+import { BriefSuggestions } from "@/features/dashboard/brief-suggestions";
 import { RoomRunStatus } from "@/features/rooms/components/room-run-status";
 import {
 	lastSubmittedContext,
@@ -63,7 +69,7 @@ import { useWorkComposerSession } from "./work-composer-state.context";
 import { WORK_ASSISTANT, WorkConversation } from "./work-conversation";
 import { WorkEmailContext } from "./work-email.context";
 import { WorkPaneControls } from "./work-pane-controls";
-import { workPanelTarget } from "./work-pane-layout";
+import { chatPanelTarget, workPanelTarget } from "./work-pane-layout";
 import { WORK_PANEL_TYPES } from "./work-panel.constants";
 import { WorkPanelMenu } from "./work-panel-menu";
 import { WorkThreadContext } from "./work-thread-context";
@@ -75,6 +81,9 @@ const DEFAULT_WORKBENCH_SIZE = 70;
 /** One conversation scrollbar, one session owner, and a dock that stays mounted while concealed. */
 export function UnifiedThread({
 	thread,
+	isSourceFreeSession = false,
+	isNewChat = false,
+	userName,
 	workspace,
 	context,
 	session,
@@ -84,8 +93,15 @@ export function UnifiedThread({
 	attachments,
 	sourceUid,
 	onEmailSent,
+	onSent,
 }: {
 	thread: Thread;
+	/** Source-free tasks share Brief's page canvas and daily context. */
+	isSourceFreeSession?: boolean;
+	/** /new owns the Ask panel until the first send is accepted. */
+	isNewChat?: boolean;
+	/** Existing profile display name, used only in the fresh-task greeting. */
+	userName?: string;
 	workspace: ThreadWorkspace;
 	context: ThreadContext;
 	session: ThreadSession;
@@ -95,6 +111,8 @@ export function UnifiedThread({
 	attachments: SourceAttachment[];
 	sourceUid?: string;
 	onEmailSent?: () => void;
+	/** Notify the fresh /new route only after the existing composer accepts a turn. */
+	onSent?: () => void;
 }) {
 	const composer = useWorkComposerSession(thread.id);
 	const memory = useSyncExternalStore(
@@ -108,9 +126,13 @@ export function UnifiedThread({
 	const [deleteEmailId, setDeleteEmailId] = useState<string | null>(null);
 	const [focusRequest, setFocusRequest] = useState(0);
 	const hasActivity =
+		memory.isSubmitting ||
+		snapshot.isPreparing ||
 		snapshot.turn.messages.length > 0 ||
 		snapshot.turn.isRunning ||
+		snapshot.turn.isCancelling ||
 		snapshot.turn.isSubmitting ||
+		Boolean(snapshot.turn.turnError) ||
 		snapshot.turn.pendingApprovals.length > 0 ||
 		snapshot.hasUnconfirmedSubmission ||
 		snapshot.isCreationUncertain;
@@ -119,6 +141,33 @@ export function UnifiedThread({
 		!snapshot.turn.isRestoring &&
 		!snapshot.error &&
 		!snapshot.turn.transportError;
+	const isLanding = isSourceFreeSession && isNewChat;
+	const recoveredSubmission = useRef(false);
+	useEffect(() => {
+		// Reconciliation confirms a lost submit response without replaying onSent.
+		if (
+			!isLanding ||
+			!onSent ||
+			recoveredSubmission.current ||
+			snapshot.composerResetKey === 0 ||
+			snapshot.hasUnconfirmedSubmission ||
+			!snapshot.association?.roomId ||
+			snapshot.association.metadata.threadId !== thread.id
+		)
+			return;
+		recoveredSubmission.current = true;
+		onSent();
+	}, [
+		isLanding,
+		onSent,
+		snapshot.association,
+		snapshot.composerResetKey,
+		snapshot.hasUnconfirmedSubmission,
+		thread.id,
+	]);
+	const topicId = thread.topicLinks.find(
+		(link) => link.primary && link.source !== "suggested",
+	)?.topicId;
 	const isComposerOpen = true;
 	useEffect(() => {
 		if (isHistoryReady && memory.mode === null)
@@ -162,13 +211,15 @@ export function UnifiedThread({
 				.getState()
 				.layout.actions.selectPanel(type, config, {
 					name,
-					target: workPanelTarget(workbench.store.getState().layout),
+					target: isSourceFreeSession
+						? chatPanelTarget(workbench.store.getState().layout)
+						: workPanelTarget(workbench.store.getState().layout),
 				});
 
 			openWorkbench();
 			setWorkbenchFocusRequest((value) => value + 1);
 		},
-		[openWorkbench, workbench.store],
+		[isSourceFreeSession, openWorkbench, workbench.store],
 	);
 	const openEmail = useCallback(
 		(
@@ -209,6 +260,15 @@ export function UnifiedThread({
 		openWorkbench();
 		setWorkbenchFocusRequest((value) => value + 1);
 	}, [openWorkbench]);
+	const handleOpenPanel = useCallback(
+		(trigger?: HTMLElement | null) => {
+			openedFromMenu.current = false;
+			emailTrigger.current = trigger ?? null;
+			openWorkbench();
+			setWorkbenchFocusRequest((value) => value + 1);
+		},
+		[openWorkbench],
+	);
 	useThreadWorkbenchRequest(thread.id, handleOpenWorkbench);
 	useEffect(() => {
 		if (!activePane || workbenchFocusRequest === 0) return;
@@ -315,6 +375,7 @@ export function UnifiedThread({
 				if (isNarrow) workbench.closeWorkbench();
 				composer.setSourceMessage(request.sourceMessageId);
 				composer.setMode("assistant");
+				if (request.prompt) composer.seedPrompt(request.prompt);
 				setFocusRequest((value) => value + 1);
 				return;
 			}
@@ -402,9 +463,10 @@ export function UnifiedThread({
 	const closePane = () => {
 		setIsChatCollapsed(false);
 		const workbenchRestoresFocus = workbench.closeWorkbench();
-		const targetId = openedFromMenu.current
-			? threadMenuTriggerId(thread.id)
-			: actionsTriggerId;
+		const targetId =
+			openedFromMenu.current && !isLanding && !isSourceFreeSession
+				? threadMenuTriggerId(thread.id)
+				: actionsTriggerId;
 		openedFromMenu.current = false;
 		const returnTarget = emailTrigger.current;
 		emailTrigger.current = null;
@@ -444,6 +506,10 @@ export function UnifiedThread({
 					session,
 					snapshot,
 					title: thread.subject,
+					conversationKind: isSourceFreeSession
+						? "chat"
+						: "source-thread",
+					onOpenPanel: handleOpenPanel,
 					settingsSection,
 					setSettingsSection,
 					onEmailSent,
@@ -468,270 +534,443 @@ export function UnifiedThread({
 					)}
 					<div
 						ref={root}
-						className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+						className={cn(
+							"flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+							isSourceFreeSession &&
+								"bg-muted/15 px-4 py-6 sm:px-6 lg:p-8",
+						)}
 					>
-						<ResizablePanelGroup
-							direction="horizontal"
-							keyboardResizeBy={5}
-							className="min-h-0 min-w-0 flex-1"
-							onLayout={(sizes) => {
-								if (
-									!isAdjusting.current &&
-									activePane &&
-									!fullPane &&
-									sizes[1] > 0
-								)
-									split.current = sizes[1];
-							}}
+						<div
+							className={cn(
+								"flex min-h-0 min-w-0 flex-1 flex-col",
+								isSourceFreeSession &&
+									"mx-auto w-full max-w-screen-2xl",
+							)}
 						>
-							<ResizablePanel
-								ref={conversationPanel}
-								id={`${fieldId}-conversation`}
-								order={1}
-								defaultSize={30}
-								minSize={fullPane ? 0 : 20}
-								collapsible
-								collapsedSize={0}
+							{isSourceFreeSession && (
+								<DailyChatHeader
+									threadId={thread.id}
+									title={thread.subject}
+									userName={userName}
+									topicId={topicId}
+									isWorkbenchOpen={activePane}
+									isNewChat={isLanding}
+								/>
+							)}
+							<div
+								className={cn(
+									"flex min-h-0 min-w-0 flex-1",
+									isSourceFreeSession && "gap-4",
+								)}
 							>
-								<div
-									hidden={Boolean(activePane && fullPane)}
-									className={cn(
-										"@container/conversation size-full min-h-0 flex-col bg-muted/30 outline-none",
-										activePane && fullPane
-											? "hidden"
-											: "flex",
-									)}
+								<ResizablePanelGroup
+									direction="horizontal"
+									keyboardResizeBy={5}
+									className="min-h-0 min-w-0 flex-1"
+									onLayout={(sizes) => {
+										if (
+											!isAdjusting.current &&
+											activePane &&
+											!fullPane &&
+											sizes[1] > 0
+										)
+											split.current = sizes[1];
+									}}
 								>
-									<header className="shrink-0 border-border border-b bg-background py-1">
-										<div className="flex w-full min-w-0 items-center gap-1 px-2">
-											{backToFeed}
-											<div className="min-w-0 flex-1">
-												{header}
-											</div>
-											<NewConversationButton
-												session={session}
-												snapshot={snapshot}
-											/>
-											<WorkPaneControls
-												isWorkbenchOpen={activePane}
-												isChatVisible={
-													!activePane || !fullPane
+									<ResizablePanel
+										ref={conversationPanel}
+										id={`${fieldId}-conversation`}
+										order={1}
+										defaultSize={30}
+										minSize={fullPane ? 0 : 20}
+										collapsible
+										collapsedSize={0}
+									>
+										<Card
+											hidden={Boolean(
+												activePane && fullPane,
+											)}
+											className={cn(
+												"@container/conversation size-full min-h-0 gap-0 py-0 shadow-none outline-none",
+												isSourceFreeSession
+													? "overflow-hidden"
+													: "rounded-none border-0 bg-muted/30 text-foreground",
+												isLanding && "overflow-y-auto",
+												activePane && fullPane
+													? "hidden"
+													: "flex",
+											)}
+										>
+											{isSourceFreeSession && (
+												<div className="@md/conversation:mx-6 mx-4 shrink-0 border-b py-4">
+													<DailyChatControls />
+												</div>
+											)}
+											<header
+												hidden={isSourceFreeSession}
+												className="shrink-0 border-border border-b bg-background py-1"
+											>
+												<div className="flex w-full min-w-0 items-center gap-1 px-2">
+													{backToFeed}
+													<div className="min-w-0 flex-1">
+														{header}
+													</div>
+													<NewConversationButton
+														session={session}
+														snapshot={snapshot}
+													/>
+													<WorkPaneControls
+														isWorkbenchOpen={
+															activePane
+														}
+														isChatVisible={
+															!activePane ||
+															!fullPane
+														}
+														isCompact={isNarrow}
+														onToggleChat={() => {
+															if (isNarrow) {
+																if (activePane)
+																	closePane();
+																else
+																	workbench.openWorkbench();
+															} else if (
+																!activePane
+															) {
+																setIsChatCollapsed(
+																	false,
+																);
+																workbench.openWorkbench();
+															} else
+																setIsChatCollapsed(
+																	(value) =>
+																		!value,
+																);
+														}}
+													/>
+												</div>
+											</header>
+											<div
+												hidden={isLanding}
+												className={
+													isLanding
+														? "hidden"
+														: "flex min-h-0 flex-1 flex-col"
 												}
-												isCompact={isNarrow}
-												onToggleChat={() => {
-													if (isNarrow) {
-														if (activePane)
-															closePane();
-														else
-															workbench.openWorkbench();
-													} else if (!activePane) {
-														setIsChatCollapsed(
-															false,
-														);
-														workbench.openWorkbench();
-													} else
-														setIsChatCollapsed(
-															(value) => !value,
-														);
-												}}
-											/>
-										</div>
-									</header>
-									<WorkConversation
-										thread={thread}
-										entries={entries}
-										resumeSignal={resumeSignal}
-										showAssistant={isComposerOpen}
-										actions={
-											isHistoryReady ? (
-												<ThreadQuickActions
-													isDraftDisabled={!sourceUid}
-													showWelcome={
-														isHistoryReady &&
-														!hasActivity &&
-														!isComposerOpen
-													}
-													hasSourceEmail={Boolean(
-														sourceUid,
-													)}
-													isAssistantOpen={
+											>
+												<WorkConversation
+													thread={thread}
+													entries={entries}
+													resumeSignal={resumeSignal}
+													showAssistant={
 														isComposerOpen
 													}
-													onSelect={(mode) => {
-														handleThreadAction({
-															id: crypto.randomUUID(),
-															threadId: thread.id,
-															action:
-																mode === "draft"
-																	? "draft"
-																	: "ask",
-															sourceMessageId:
-																sourceUid,
-														});
+													actions={
+														isHistoryReady ? (
+															<ThreadQuickActions
+																isDraftDisabled={
+																	!sourceUid
+																}
+																showWelcome={
+																	isHistoryReady &&
+																	!hasActivity &&
+																	!isComposerOpen
+																}
+																hasSourceEmail={Boolean(
+																	sourceUid,
+																)}
+																isAssistantOpen={
+																	isComposerOpen
+																}
+																onSelect={(
+																	mode,
+																) => {
+																	handleThreadAction(
+																		{
+																			id: crypto.randomUUID(),
+																			threadId:
+																				thread.id,
+																			action:
+																				mode ===
+																				"draft"
+																					? "draft"
+																					: "ask",
+																			sourceMessageId:
+																				sourceUid,
+																		},
+																	);
+																}}
+															/>
+														) : null
+													}
+													turn={snapshot.turn}
+												/>
+											</div>
+											<RoomRunStatus
+												agent={
+													snapshot.agent ??
+													WORK_ASSISTANT
+												}
+												turnError={
+													snapshot.turn.turnError
+												}
+												transportError={
+													snapshot.turn.transportError
+												}
+												pendingApprovals={
+													statusApprovals
+												}
+												onReconnect={session.reconnect}
+												onNewConversation={
+													canStartNewConversation(
+														snapshot,
+													)
+														? () =>
+																startNewConversation(
+																	session,
+																)
+														: undefined
+												}
+												reviewInWorkbench
+											/>
+											{proposalError && (
+												<Alert variant="destructive">
+													<AlertDescription>
+														{proposalError}
+													</AlertDescription>
+												</Alert>
+											)}
+
+											<div
+												className={cn(
+													"shrink-0",
+													isLanding
+														? "my-auto w-full @md/conversation:px-6 px-4 py-6"
+														: (isComposerOpen ||
+																snapshot.isLoading ||
+																snapshot.error ||
+																snapshot.modelError) &&
+																"py-4",
+												)}
+											>
+												<div
+													className={cn(
+														"mx-auto w-full max-w-3xl",
+														isLanding
+															? "flex max-w-2xl flex-col gap-4"
+															: "space-y-3 @md/conversation:px-6 px-4",
+													)}
+												>
+													<AssistantComposer
+														toolbar={
+															isSourceFreeSession ? (
+																<DailyChatTopicControl
+																	thread={
+																		thread
+																	}
+																	disabled={
+																		memory.isSubmitting ||
+																		snapshot.isPreparing ||
+																		!isHistoryReady ||
+																		snapshot
+																			.turn
+																			.isRunning ||
+																		snapshot
+																			.turn
+																			.isSubmitting ||
+																		snapshot.hasUnconfirmedSubmission
+																	}
+																/>
+															) : undefined
+														}
+														presentation={
+															isLanding
+																? "new-chat"
+																: isSourceFreeSession
+																	? "standalone"
+																	: "thread"
+														}
+														onEmailSent={
+															onEmailSent
+														}
+														composerSession={
+															composer
+														}
+														isOpen={isComposerOpen}
+														focusRequest={
+															focusRequest
+														}
+														actionsTriggerId={
+															actionsTriggerId
+														}
+														session={session}
+														snapshot={snapshot}
+														title={thread.subject}
+														sourceUid={sourceUid}
+														sourceUrl={
+															thread.source
+																?.webLink ??
+															workspace.messages.find(
+																(message) =>
+																	message.id ===
+																	sourceUid,
+															)?.webLink
+														}
+														attachments={
+															attachments
+														}
+														context={nextContext}
+														onSent={() => {
+															setResumeSignal(
+																(n) => n + 1,
+															);
+															onSent?.();
+														}}
+													/>
+													{isLanding && (
+														<BriefSuggestions
+															presentation="chat"
+															hidden={Boolean(
+																memory.draft.text.trim() ||
+																	memory.draft
+																		.files
+																		.length,
+															)}
+															topicId={topicId}
+															disabled={
+																memory.isSubmitting ||
+																snapshot.isPreparing ||
+																snapshot.turn
+																	.isSubmitting ||
+																snapshot.turn
+																	.isRunning ||
+																snapshot.hasUnconfirmedSubmission ||
+																snapshot.isCreationUncertain
+															}
+															onSelect={(
+																prompt,
+															) => {
+																composer.seedPrompt(
+																	prompt,
+																);
+																setFocusRequest(
+																	(value) =>
+																		value +
+																		1,
+																);
+															}}
+														/>
+													)}
+												</div>
+											</div>
+										</Card>
+									</ResizablePanel>
+									<ResizableHandle
+										aria-label="Resize conversation and workbench"
+										disabled={!activePane || fullPane}
+										className={cn(
+											(!activePane || fullPane) &&
+												"hidden",
+										)}
+										withHandle
+									/>
+									<ResizablePanel
+										ref={sidePanel}
+										id={`${fieldId}-panel`}
+										order={2}
+										defaultSize={70}
+										minSize={fullPane ? 0 : 25}
+										maxSize={fullPane ? 100 : 80}
+										collapsible
+										collapsedSize={0}
+									>
+										<aside
+											ref={paneRef}
+											tabIndex={-1}
+											id={`${fieldId}-workbench`}
+											aria-label="Thread workbench"
+											hidden={!activePane}
+											className={cn(
+												"@container/workspace size-full min-h-0 flex-col bg-background focus-visible:outline-2 focus-visible:outline-ring",
+												activePane ? "flex" : "hidden",
+											)}
+										>
+											<div
+												className={cn(
+													"relative min-h-0 flex-1",
+													"[&_[data-rail=top]]:h-8 [&_[data-rail=top]]:py-px",
+													"[&_[data-slot=workbench-mobile-toolbar]]:h-12 [&_[data-slot=workbench-mobile-toolbar]]:py-px",
+													"[&_[data-rail=top]:has(>[role=tablist]:empty)>[data-slot=separator]]:hidden",
+												)}
+											>
+												<Workbench
+													snapshot={
+														workbench.snapshot
+													}
+													layoutMode={
+														isNarrow
+															? "compact"
+															: "auto"
+													}
+													mobileTopBorder="toolbar"
+													borderSlots={{
+														top: {
+															before: (
+																<>
+																	{fullPane &&
+																		backToFeed}
+																	{isChatCollapsed &&
+																		!isNarrow && (
+																			<WorkPaneControls
+																				isWorkbenchOpen={
+																					activePane
+																				}
+																				isChatVisible={
+																					false
+																				}
+																				isCompact={
+																					false
+																				}
+																				onToggleChat={() =>
+																					setIsChatCollapsed(
+																						false,
+																					)
+																				}
+																			/>
+																		)}
+																	<WorkPanelMenu />
+																</>
+															),
+															after: (
+																<WorkWorkbenchClose
+																	isFullWidth={
+																		isNarrow
+																	}
+																	buttonRef={
+																		handleCloseRef
+																	}
+																	onClose={
+																		closePane
+																	}
+																/>
+															),
+														},
 													}}
 												/>
-											) : null
-										}
-										turn={snapshot.turn}
-									/>
-									<RoomRunStatus
-										agent={WORK_ASSISTANT}
-										turnError={snapshot.turn.turnError}
-										transportError={
-											snapshot.turn.transportError
-										}
-										pendingApprovals={statusApprovals}
-										onReconnect={session.reconnect}
-										onNewConversation={
-											canStartNewConversation(snapshot)
-												? () =>
-														startNewConversation(
-															session,
-														)
-												: undefined
-										}
-										reviewInWorkbench
-									/>
-									{proposalError && (
-										<Alert variant="destructive">
-											<AlertDescription>
-												{proposalError}
-											</AlertDescription>
-										</Alert>
-									)}
-
-									<div
-										className={cn(
-											"shrink-0",
-											(isComposerOpen ||
-												snapshot.isLoading ||
-												snapshot.error ||
-												snapshot.modelError) &&
-												"py-4",
-										)}
-									>
-										<div className="mx-auto w-full max-w-3xl space-y-3 @md/conversation:px-6 px-4">
-											<AssistantComposer
-												onEmailSent={onEmailSent}
-												composerSession={composer}
-												isOpen={isComposerOpen}
-												focusRequest={focusRequest}
-												actionsTriggerId={
-													actionsTriggerId
-												}
-												session={session}
-												snapshot={snapshot}
-												title={thread.subject}
-												sourceUid={sourceUid}
-												sourceUrl={
-													thread.source?.webLink ??
-													workspace.messages.find(
-														(message) =>
-															message.id ===
-															sourceUid,
-													)?.webLink
-												}
-												attachments={attachments}
-												context={nextContext}
-												onSent={() =>
-													setResumeSignal(
-														(n) => n + 1,
-													)
-												}
-											/>
-										</div>
-									</div>
-								</div>
-							</ResizablePanel>
-							<ResizableHandle
-								aria-label="Resize conversation and workbench"
-								disabled={!activePane || fullPane}
-								className={cn(
-									(!activePane || fullPane) && "hidden",
-								)}
-								withHandle
-							/>
-							<ResizablePanel
-								ref={sidePanel}
-								id={`${fieldId}-panel`}
-								order={2}
-								defaultSize={70}
-								minSize={fullPane ? 0 : 25}
-								maxSize={fullPane ? 100 : 80}
-								collapsible
-								collapsedSize={0}
-							>
-								<aside
-									ref={paneRef}
-									tabIndex={-1}
-									id={`${fieldId}-workbench`}
-									aria-label="Thread workbench"
-									hidden={!activePane}
-									className={cn(
-										"@container/workspace size-full min-h-0 flex-col bg-background focus-visible:outline-2 focus-visible:outline-ring",
-										activePane ? "flex" : "hidden",
-									)}
-								>
-									<div
-										className={cn(
-											"relative min-h-0 flex-1",
-											"[&_[data-rail=top]]:h-8 [&_[data-rail=top]]:py-px",
-											"[&_[data-slot=workbench-mobile-toolbar]]:h-12 [&_[data-slot=workbench-mobile-toolbar]]:py-px",
-											"[&_[data-rail=top]:has(>[role=tablist]:empty)>[data-slot=separator]]:hidden",
-										)}
-									>
-										<Workbench
-											snapshot={workbench.snapshot}
-											layoutMode={
-												isNarrow ? "compact" : "auto"
-											}
-											mobileTopBorder="toolbar"
-											borderSlots={{
-												top: {
-													before: (
-														<>
-															{fullPane &&
-																backToFeed}
-															{isChatCollapsed &&
-																!isNarrow && (
-																	<WorkPaneControls
-																		isWorkbenchOpen={
-																			activePane
-																		}
-																		isChatVisible={
-																			false
-																		}
-																		isCompact={
-																			false
-																		}
-																		onToggleChat={() =>
-																			setIsChatCollapsed(
-																				false,
-																			)
-																		}
-																	/>
-																)}
-															<WorkPanelMenu />
-														</>
-													),
-													after: (
-														<WorkWorkbenchClose
-															isFullWidth={
-																isNarrow
-															}
-															buttonRef={
-																handleCloseRef
-															}
-															onClose={closePane}
-														/>
-													),
-												},
-											}}
+											</div>
+										</aside>
+									</ResizablePanel>
+								</ResizablePanelGroup>
+								{isSourceFreeSession && !activePane && (
+									<div className="hidden w-80 shrink-0 overflow-y-auto xl:block 2xl:w-96">
+										<BriefContextRail
+											topicId={topicId}
+											className="space-y-4 bg-transparent p-0"
 										/>
 									</div>
-								</aside>
-							</ResizablePanel>
-						</ResizablePanelGroup>
+								)}
+							</div>
+						</div>
 					</div>
 				</WorkbenchProvider>
 			</WorkThreadContext.Provider>

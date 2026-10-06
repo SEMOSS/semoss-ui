@@ -7,6 +7,10 @@ export interface WorkThreadContextValue {
 	session: ThreadSession;
 	snapshot: ReturnType<ThreadSession["getSnapshot"]>;
 	title: string;
+	/** Source-free chat omits the source-thread navigation and email panes. */
+	conversationKind?: "chat" | "source-thread";
+	/** Reveal the selected panel and return to its trigger when the workspace closes. */
+	onOpenPanel?: (trigger?: HTMLElement | null) => void;
 	settingsSection?: "chat" | "thread" | "advanced";
 	setSettingsSection?: (section: "chat" | "thread" | "advanced") => void;
 	onEmailSent?: () => void;

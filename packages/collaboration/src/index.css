@@ -1,24 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap");
 @import "@semoss/ui/globals.css";
 @import "@semoss/shared/globals.css";
 @import "@semoss/workbench/globals.css";
 @import "@semoss/panels/globals.css";
 
 @source "./**/*.{ts,tsx}";
-
-/*
- * Collaboration deliberately follows Windows' Fluent 2 look instead of the shared Geist type.
- * Segoe UI is used where it is installed; elsewhere Open Sans, by the same designer, stands in
- * (it only downloads when Segoe UI is missing). Segoe UI has no 500 weight, and static Segoe UI
- * renders 500 as Regular, so medium maps to Fluent's single emphasis weight, semibold.
- */
-:root {
-	--font-sans:
-		"Segoe UI Variable Text", "Segoe UI", "Open Sans", system-ui, sans-serif;
-	--font-weight-medium: 600;
-}
-
-/* Fluent's brand blue in the light theme; the dark theme keeps the shared blue, which reads better on dark surfaces */
-:root:not(.dark) {
-	--primary: rgba(15, 108, 189, 1);
-}

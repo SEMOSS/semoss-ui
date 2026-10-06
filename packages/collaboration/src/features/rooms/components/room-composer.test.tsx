@@ -134,6 +134,37 @@ describe("RoomComposer", () => {
 		);
 	});
 
+	it("initializes a suggested plain-text draft without a saved document and sends it only on request", async () => {
+		const onSend = vi.fn(async () => undefined);
+		const prompt = "Who am I waiting on?\nInclude upcoming meetings.";
+		renderComposer({
+			initialDraft: {
+				document: null,
+				text: prompt,
+				files: [],
+			},
+			onSend,
+		});
+		const editor = screen.getByRole("textbox", {
+			name: "Message Research agent",
+		});
+		await waitFor(() =>
+			expect(editor).toHaveTextContent("Who am I waiting on?"),
+		);
+		expect(onSend).not.toHaveBeenCalled();
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Send message to Research agent",
+			}),
+		);
+		await waitFor(() =>
+			expect(onSend).toHaveBeenCalledExactlyOnceWith({
+				text: prompt,
+				files: [],
+			}),
+		);
+	});
+
 	it("accepts caller-owned layout classes and toolbar controls", () => {
 		const { container } = renderComposer({
 			className: "w-full",

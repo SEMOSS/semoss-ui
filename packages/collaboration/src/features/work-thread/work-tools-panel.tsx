@@ -91,8 +91,8 @@ function WorkToolsPanel() {
 											(reference) =>
 												reference.toolId === tool.id,
 										)
-											? "Included in reply context"
-											: "Use in reply"}
+											? "Included in conversation context"
+											: "Use in conversation"}
 									</Button>
 								</>
 							)}

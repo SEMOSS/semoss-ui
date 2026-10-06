@@ -13,12 +13,14 @@ import {
 	type WorkbenchPanelConfig,
 	WorkbenchProvider,
 } from "@semoss/workbench";
+import { createToolWorkbenchLayout } from "@/features/tools/tool-workbench.constants";
 import { WORK_PANEL_TYPES } from "./work-panel.constants";
 import { WorkPanelMenu } from "./work-panel-menu";
 
 let store: ReturnType<typeof createWorkbenchStore>;
 let isReady = true;
 let insightId = "thread-insight";
+let conversationKind: "chat" | "source-thread" = "source-thread";
 const openWorkbench = vi.fn();
 vi.mock("@/features/tools/tool-workbench.context", () => ({
 	useToolWorkbench: () => ({
@@ -29,7 +31,7 @@ vi.mock("@/features/tools/tool-workbench.context", () => ({
 	}),
 }));
 vi.mock("./work-thread-context", () => ({
-	useWorkThread: () => ({ snapshot: { isReady } }),
+	useWorkThread: () => ({ snapshot: { isReady }, conversationKind }),
 }));
 vi.mock("@semoss/shared", () => ({
 	getFileEditorPathScope: (_mode: unknown, insightId: string) =>
@@ -123,6 +125,10 @@ function setup() {
 			{ kind: "tabset", id: "main" },
 			"context",
 		);
+	if (conversationKind === "chat")
+		store
+			.getState()
+			.layout.actions.loadSnapshot(createToolWorkbenchLayout(insightId));
 	return render(
 		<TooltipProvider>
 			<WorkbenchProvider store={store}>
@@ -145,6 +151,7 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	isReady = true;
 	insightId = "thread-insight";
+	conversationKind = "source-thread";
 });
 
 const MENU_LABELS = [
@@ -159,6 +166,34 @@ const MENU_LABELS = [
 	"Settings",
 	"Commands…",
 ];
+
+it.each([
+	["Settings", WORK_PANEL_TYPES.SETTINGS],
+	["Context", WORK_PANEL_TYPES.CONTEXT],
+	["Tools", WORK_PANEL_TYPES.TOOLS],
+	["Activity", WORK_PANEL_TYPES.ACTIVITY],
+	["Browse files…", FILE_PANEL_TYPES.FILE_EXPLORER],
+])(
+	"opens %s in chat without offering or creating an Emails pane",
+	async (label, type) => {
+		conversationKind = "chat";
+		setup();
+		await openMenu();
+		expect(screen.queryByRole("menuitem", { name: "Emails" })).toBeNull();
+		await userEvent.click(screen.getByRole("menuitem", { name: label }));
+		const layout = store.getState().layout;
+		expect(
+			Object.values(layout.panels).some(
+				(panel) => panel.type === WORK_PANEL_TYPES.EMAILS,
+			),
+		).toBe(false);
+		expect(
+			layout.selection.panel &&
+				layout.panels[layout.selection.panel]?.type,
+		).toBe(type);
+		expect(openWorkbench).toHaveBeenCalledOnce();
+	},
+);
 
 it("keeps one fixed menu across selected panels, dirty files, emails, drafts, and results", async () => {
 	setup();

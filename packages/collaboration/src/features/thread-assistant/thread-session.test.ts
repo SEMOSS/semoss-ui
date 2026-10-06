@@ -1,3 +1,5 @@
+import type { WorkspaceAgent } from "@/features/agents/api/agent-schemas";
+import { getAgent } from "@/features/agents/api/get-agent";
 import {
 	downloadStagedAttachment,
 	stageMailAttachment,
@@ -7,6 +9,7 @@ import * as runApi from "@/features/rooms/api/agent-run-api";
 import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
 import { stageThreadAttachment } from "./api/thread-attachments";
 import { compactThreadMessages } from "./api/thread-compaction";
+import { resolveThreadModel, type ThreadModel } from "./api/thread-model";
 import {
 	bindThreadRoom,
 	findThreadRoom,
@@ -15,9 +18,13 @@ import {
 import {
 	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS,
 	readThreadCommand,
+	setThreadAgent,
 } from "./thread-context";
 import { canStartNewConversation, ThreadSession } from "./thread-session";
+import type { ThreadChatSettings } from "./thread-settings";
 
+vi.mock("@/features/agents/api/get-agent", () => ({ getAgent: vi.fn() }));
+vi.mock("./api/thread-model", () => ({ resolveThreadModel: vi.fn() }));
 vi.mock("./api/thread-compaction", () => ({ compactThreadMessages: vi.fn() }));
 vi.mock("./api/thread-attachments", async (original) => ({
 	...(await original<typeof import("./api/thread-attachments")>()),
@@ -89,6 +96,26 @@ const association = {
 		predefinedPrompts: [],
 	},
 };
+const selectedAgent: WorkspaceAgent = {
+	workspace_id: "research-agent",
+	name: "Research assistant",
+	description: "Researches a topic",
+	system_prompt: "Use the agent's research instructions.",
+	mcp: [{ id: "knowledge", name: "Knowledge", type: "VECTOR" }],
+	skills: [],
+	prompts: [],
+	config_json: { model_id: "agent-default-model" },
+};
+const customSettings: ThreadChatSettings = {
+	modelId: "model-2",
+	agentId: selectedAgent.workspace_id,
+	instructions: "  Keep my instructions and spacing.  ",
+	temperature: 0.4,
+	mcp: [
+		{ id: "knowledge", name: "Knowledge", type: "VECTOR" },
+		{ id: "toolbox", name: "Tools", type: "PROJECT" },
+	],
+};
 
 async function session(): Promise<ThreadSession> {
 	const instance = new ThreadSession("t1");
@@ -100,6 +127,15 @@ async function session(): Promise<ThreadSession> {
 
 beforeEach(() => {
 	vi.resetAllMocks();
+	setThreadAgent(null);
+	vi.mocked(getAgent).mockImplementation(async (_actions, workspaceId) => ({
+		...selectedAgent,
+		workspace_id: workspaceId,
+	}));
+	vi.mocked(resolveThreadModel).mockImplementation(async (_actions, ids) => ({
+		engine_id: ids.find(Boolean) ?? "model-1",
+		engine_name: "Test model",
+	}));
 	vi.mocked(findThreadRoom).mockResolvedValue(null);
 	vi.mocked(bindThreadRoom).mockResolvedValue(undefined);
 	vi.mocked(prepareThreadRoom).mockImplementation(
@@ -124,6 +160,359 @@ beforeEach(() => {
 });
 afterEach(() => {
 	for (const instance of instances.splice(0)) instance.dispose();
+	setThreadAgent(null);
+});
+
+it("keeps agent and chat settings local until the first run uses the committed configuration", async () => {
+	const instance = await session();
+	await instance.saveSettings("New chat", customSettings);
+	expect(instance.getSnapshot()).toMatchObject({
+		settings: customSettings,
+		agent: selectedAgent,
+		modelId: "model-2",
+		association: null,
+		isSavingSettings: false,
+		settingsError: null,
+	});
+	expect(prepareThreadRoom).not.toHaveBeenCalled();
+	expect(bindThreadRoom).not.toHaveBeenCalled();
+	expect(getRoomMessages).not.toHaveBeenCalled();
+
+	await instance.send("New chat", context, { text: "Research", files: [] });
+	expect(prepareThreadRoom).toHaveBeenCalledExactlyOnceWith(
+		instance.insight.actions,
+		instance.insight.insightId,
+		"New chat",
+		{ ...metadata, modelId: "model-2", agentId: "research-agent" },
+		expect.objectContaining({ roomId: undefined }),
+		customSettings,
+		"Research assistant",
+	);
+	expect(runApi.startAgentRun).toHaveBeenCalledWith(
+		instance.insight.insightId,
+		expect.objectContaining({
+			agentId: "research-agent",
+			engine: "model-2",
+		}),
+	);
+});
+
+it("switches and clears draft agents without replacing manual instructions, model, or resources", async () => {
+	const instance = await session();
+	await instance.saveSettings("New chat", customSettings);
+	await instance.saveSettings("New chat", {
+		...instance.getSnapshot().settings,
+		agentId: "another-agent",
+	});
+	expect(instance.getSnapshot().agent?.workspace_id).toBe("another-agent");
+	await instance.saveSettings("New chat", {
+		...instance.getSnapshot().settings,
+		agentId: "",
+	});
+	expect(instance.getSnapshot()).toMatchObject({
+		settings: { ...customSettings, agentId: "" },
+		agent: null,
+		association: null,
+		modelId: "model-2",
+	});
+	expect(prepareThreadRoom).not.toHaveBeenCalled();
+});
+
+it("retains the committed draft after a failed agent lookup and allows a retry", async () => {
+	const instance = await session();
+	const before = instance.getSnapshot().settings;
+	vi.mocked(getAgent).mockRejectedValueOnce(new Error("Agent unavailable"));
+	await expect(
+		instance.saveSettings("New chat", customSettings),
+	).rejects.toThrow("Agent unavailable");
+	expect(instance.getSnapshot()).toMatchObject({
+		settings: before,
+		agent: null,
+		association: null,
+		isSavingSettings: false,
+		isCreationUncertain: false,
+		settingsError: "Agent unavailable",
+	});
+	expect(prepareThreadRoom).not.toHaveBeenCalled();
+	await instance.saveSettings("New chat", customSettings);
+	expect(instance.getSnapshot().settings).toEqual(customSettings);
+	expect(instance.getSnapshot().settingsError).toBeNull();
+});
+
+it("serializes settings saves against model selection, default refreshes, and sends", async () => {
+	const instance = await session();
+	let finishAgent: ((agent: WorkspaceAgent) => void) | undefined;
+	vi.mocked(getAgent).mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				finishAgent = resolve;
+			}),
+	);
+	const saving = instance.saveSettings("New chat", customSettings);
+	expect(instance.getSnapshot().isSavingSettings).toBe(true);
+	instance.selectModel("competing-model", "Competing model");
+	const reads = vi.mocked(resolveThreadModel).mock.calls.length;
+	await instance.resolveDefaults();
+	expect(resolveThreadModel).toHaveBeenCalledTimes(reads);
+	expect(instance.getSnapshot().modelId).toBe("model-1");
+	await expect(
+		instance.saveSettings("New chat", { ...customSettings, agentId: "" }),
+	).rejects.toThrow("Wait for the current connection");
+	await expect(
+		instance.send("New chat", context, { text: "Too early", files: [] }),
+	).rejects.toThrow("Chat settings are still loading or saving");
+	finishAgent?.(selectedAgent);
+	await saving;
+	expect(instance.getSnapshot().settings).toEqual(customSettings);
+	expect(instance.getSnapshot().isLoadingModel).toBe(false);
+});
+
+it("does not let an older defaults response overwrite saved settings", async () => {
+	const instance = await session();
+	let finishModel: ((model: ThreadModel) => void) | undefined;
+	vi.mocked(resolveThreadModel).mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				finishModel = resolve;
+			}),
+	);
+	const resolving = instance.resolveDefaults();
+	await instance.saveSettings("New chat", customSettings);
+	finishModel?.({ engine_id: "old-model", engine_name: "Old model" });
+	await resolving;
+	expect(instance.getSnapshot()).toMatchObject({
+		settings: customSettings,
+		agent: selectedAgent,
+		modelId: "model-2",
+		isLoadingModel: false,
+	});
+});
+
+it("keeps a newer explicit model and clears loading when an old defaults request settles", async () => {
+	const instance = await session();
+	let finishModel: ((model: ThreadModel) => void) | undefined;
+	vi.mocked(resolveThreadModel).mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				finishModel = resolve;
+			}),
+	);
+	const resolving = instance.resolveDefaults();
+	instance.selectModel("model-2", "Chosen model");
+	finishModel?.({ engine_id: "old-model", engine_name: "Old model" });
+	await resolving;
+	expect(instance.getSnapshot()).toMatchObject({
+		settings: { modelId: "model-2" },
+		modelId: "model-2",
+		modelName: "Chosen model",
+		isLoadingModel: false,
+		modelError: null,
+	});
+});
+
+it("resolves a pending selected agent before sending after an explicit model change", async () => {
+	setThreadAgent({
+		id: selectedAgent.workspace_id,
+		name: selectedAgent.name,
+		modelId: "agent-default-model",
+	});
+	let finishOriginalAgent: ((agent: WorkspaceAgent) => void) | undefined;
+	let finishCurrentAgent: ((agent: WorkspaceAgent) => void) | undefined;
+	const originalAgent = new Promise<WorkspaceAgent>((resolve) => {
+		finishOriginalAgent = resolve;
+	});
+	const currentAgent = new Promise<WorkspaceAgent>((resolve) => {
+		finishCurrentAgent = resolve;
+	});
+	vi.mocked(getAgent)
+		.mockReturnValueOnce(originalAgent)
+		.mockReturnValueOnce(currentAgent);
+	const instance = new ThreadSession("t1");
+	instances.push(instance);
+	const initializing = instance.initialize();
+	await vi.waitFor(() => expect(getAgent).toHaveBeenCalledOnce());
+	instance.selectModel("model-2", "Chosen model");
+	expect(instance.getSnapshot()).toMatchObject({
+		modelId: "model-2",
+		agent: null,
+		isLoadingModel: true,
+	});
+	await expect(
+		instance.send("New chat", context, { text: "Too early", files: [] }),
+	).rejects.toThrow("Chat settings are still loading or saving");
+	expect(prepareThreadRoom).not.toHaveBeenCalled();
+
+	finishOriginalAgent?.({ ...selectedAgent, name: "Stale agent" });
+	await initializing;
+	expect(instance.getSnapshot().isLoadingModel).toBe(true);
+	expect(instance.getSnapshot().agent).toBeNull();
+	finishCurrentAgent?.(selectedAgent);
+	await vi.waitFor(() =>
+		expect(instance.getSnapshot().isLoadingModel).toBe(false),
+	);
+	expect(instance.getSnapshot()).toMatchObject({
+		modelId: "model-2",
+		settings: {
+			modelId: "model-2",
+			agentId: selectedAgent.workspace_id,
+		},
+		agent: selectedAgent,
+	});
+	await instance.send("New chat", context, { text: "Research", files: [] });
+	expect(runApi.startAgentRun).toHaveBeenCalledWith(
+		instance.insight.insightId,
+		expect.objectContaining({
+			agentId: selectedAgent.workspace_id,
+			engine: "model-2",
+		}),
+	);
+});
+
+it("rejects sending when the resolved agent does not match the selection", async () => {
+	setThreadAgent({
+		id: selectedAgent.workspace_id,
+		name: selectedAgent.name,
+		modelId: "model-1",
+	});
+	vi.mocked(getAgent).mockResolvedValue({
+		...selectedAgent,
+		workspace_id: "different-agent",
+	});
+	const instance = new ThreadSession("t1");
+	instances.push(instance);
+	await instance.initialize();
+	await expect(
+		instance.send("New chat", context, { text: "Research", files: [] }),
+	).rejects.toThrow("selected agent to finish loading");
+	expect(prepareThreadRoom).not.toHaveBeenCalled();
+	expect(runApi.startAgentRun).not.toHaveBeenCalled();
+});
+
+it("clears a failed draft settings error only after successful catalog recovery", async () => {
+	const instance = await session();
+	const committed = instance.getSnapshot().settings;
+	vi.mocked(getAgent).mockRejectedValueOnce(new Error("Agent unavailable"));
+	await expect(
+		instance.saveSettings("New chat", customSettings),
+	).rejects.toThrow("Agent unavailable");
+	vi.mocked(resolveThreadModel).mockRejectedValueOnce(
+		new Error("Catalog unavailable"),
+	);
+	await instance.resolveDefaults();
+	expect(instance.getSnapshot().settingsError).toBe("Agent unavailable");
+	await instance.resolveDefaults();
+	expect(instance.getSnapshot()).toMatchObject({
+		settings: committed,
+		settingsError: null,
+		modelError: null,
+	});
+	expect(prepareThreadRoom).not.toHaveBeenCalled();
+	await instance.send("New chat", context, { text: "Continue", files: [] });
+	expect(runApi.startAgentRun).toHaveBeenCalledOnce();
+});
+
+it("keeps a failed room settings write blocked until saving succeeds", async () => {
+	vi.mocked(findThreadRoom).mockResolvedValue(association);
+	const instance = await session();
+	vi.mocked(prepareThreadRoom).mockRejectedValueOnce(
+		new Error("Settings write failed"),
+	);
+	await expect(
+		instance.saveSettings("Existing chat", customSettings),
+	).rejects.toThrow("Settings write failed");
+	await instance.resolveDefaults();
+	expect(instance.getSnapshot().settingsError).toBe("Settings write failed");
+	await expect(
+		instance.send("Existing chat", context, { text: "Wait", files: [] }),
+	).rejects.toThrow("Settings write failed");
+	expect(runApi.startAgentRun).not.toHaveBeenCalled();
+	await instance.saveSettings("Existing chat", customSettings);
+	expect(instance.getSnapshot().settingsError).toBeNull();
+});
+
+it("updates an existing room and restores its selected agent, settings, and history", async () => {
+	vi.mocked(findThreadRoom).mockResolvedValue(association);
+	const savedAssociation = {
+		...association,
+		metadata: {
+			...metadata,
+			modelId: "model-2",
+			agentId: selectedAgent.workspace_id,
+		},
+		options: {
+			...association.options,
+			...customSettings,
+			workspace: {
+				workspace_id: selectedAgent.workspace_id,
+				name: selectedAgent.name,
+			},
+		},
+	};
+	vi.mocked(prepareThreadRoom).mockResolvedValueOnce(savedAssociation);
+	vi.mocked(getRoomMessages).mockResolvedValue([
+		{
+			messageId: "prior",
+			type: "INPUT_TEXT",
+			parts: [{ type: "TEXT", text: "Previous question" }],
+		},
+	]);
+	const instance = await session();
+	await instance.saveSettings("Existing chat", customSettings);
+	expect(prepareThreadRoom).toHaveBeenCalledExactlyOnceWith(
+		instance.insight.actions,
+		instance.insight.insightId,
+		"Existing chat",
+		{ ...metadata, modelId: "model-2", agentId: "research-agent" },
+		expect.objectContaining({ roomId: "room-1" }),
+		customSettings,
+		"Research assistant",
+	);
+	expect(instance.getSnapshot().association?.roomId).toBe("room-1");
+	expect(instance.getSnapshot().turn.messages).toContainEqual(
+		expect.objectContaining({ id: "prior" }),
+	);
+	vi.mocked(findThreadRoom).mockResolvedValueOnce(savedAssociation);
+	const restored = new ThreadSession("t1");
+	instances.push(restored);
+	await restored.initialize();
+	expect(restored.getSnapshot()).toMatchObject({
+		settings: customSettings,
+		agent: selectedAgent,
+		modelId: "model-2",
+		association: { roomId: "room-1" },
+	});
+	expect(restored.getSnapshot().turn.messages).toContainEqual(
+		expect.objectContaining({ id: "prior" }),
+	);
+});
+
+it("saves settings into a room allocated by a partially failed first send", async () => {
+	const instance = await session();
+	vi.mocked(prepareThreadRoom).mockImplementationOnce(
+		async (_actions, _insightId, _title, _metadata, attempt) => {
+			attempt.onCreated("partially-created");
+			throw new Error("Association save failed");
+		},
+	);
+	await expect(
+		instance.send("New chat", context, { text: "Hello", files: [] }),
+	).rejects.toThrow("Association save failed");
+	await instance.saveSettings("New chat", customSettings);
+	expect(prepareThreadRoom).toHaveBeenLastCalledWith(
+		instance.insight.actions,
+		instance.insight.insightId,
+		"New chat",
+		{
+			...metadata,
+			contextRevision: "",
+			modelId: "model-2",
+			agentId: selectedAgent.workspace_id,
+		},
+		expect.objectContaining({ roomId: "partially-created" }),
+		customSettings,
+		selectedAgent.name,
+	);
+	expect(runApi.startAgentRun).not.toHaveBeenCalled();
 });
 
 it("does not create a room until an explicit send and stages native files after room setup", async () => {
@@ -404,6 +793,7 @@ it("reuses the recovered room and model when source context changes", async () =
 		{ ...metadata, contextRevision: "r2" },
 		expect.objectContaining({ roomId: "room-1" }),
 		instance.getSnapshot().settings,
+		undefined,
 	);
 });
 
@@ -428,6 +818,7 @@ it("migrates legacy instructions in a recovered room before starting the next ru
 		metadata,
 		expect.objectContaining({ roomId: "room-1" }),
 		expect.objectContaining({ instructions: "Keep replies concise." }),
+		undefined,
 	);
 	expect(
 		vi.mocked(prepareThreadRoom).mock.invocationCallOrder[0],
@@ -455,6 +846,7 @@ it("uses the selected model for the next turn while retaining the thread room", 
 		{ ...metadata, modelId: "model-2" },
 		expect.objectContaining({ roomId: "room-1" }),
 		expect.objectContaining({ modelId: "model-2" }),
+		undefined,
 	);
 	expect(runApi.startAgentRun).toHaveBeenCalledWith(
 		instance.insight.insightId,
@@ -481,6 +873,7 @@ it("retries partial setup with the known room id instead of allocating a duplica
 		metadata,
 		expect.objectContaining({ roomId: "partially-created" }),
 		instance.getSnapshot().settings,
+		undefined,
 	);
 	expect(runApi.startAgentRun).toHaveBeenCalledTimes(1);
 });
@@ -624,6 +1017,7 @@ it("keeps the owned room and updates its metadata when source context changes", 
 		expect.objectContaining({ contextRevision: "r2" }),
 		expect.objectContaining({ roomId: "room-1" }),
 		expect.anything(),
+		undefined,
 	);
 	expect(instance.getSnapshot().association?.roomId).toBe("room-1");
 	const command =
@@ -767,6 +1161,7 @@ it("a new conversation leaves the old room and creates another on the next send"
 		metadata,
 		expect.objectContaining({ roomId: undefined }),
 		instance.getSnapshot().settings,
+		undefined,
 	);
 	expect(instance.getSnapshot().association?.roomId).toBe("room-2");
 	expect(instance.getSnapshot().turn.messages).not.toContainEqual(

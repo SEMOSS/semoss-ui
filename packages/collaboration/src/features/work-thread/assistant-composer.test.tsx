@@ -125,22 +125,111 @@ beforeEach(() => {
 	});
 });
 
-it("keeps text and attachments while selecting a model and keeps email actions out of chat", async () => {
-	const { selectModel, send } = setup();
-	await enterText("Keep this text");
-	fireEvent.change(screen.getByLabelText("Choose attachments"), {
-		target: {
-			files: [new File(["hello"], "brief.txt", { type: "text/plain" })],
-		},
+it.each(["thread", "standalone"] as const)(
+	"keeps text and attachments while selecting a model in the %s composer",
+	async (presentation) => {
+		const { selectModel, send } = setup({ presentation });
+		await enterText("Keep this text");
+		fireEvent.change(screen.getByLabelText("Choose attachments"), {
+			target: {
+				files: [
+					new File(["hello"], "brief.txt", { type: "text/plain" }),
+				],
+			},
+		});
+		expect(screen.getByRole("textbox")).toHaveTextContent("Keep this text");
+		expect(screen.getByText("brief.txt")).toBeVisible();
+		fireEvent.click(screen.getByRole("button", { name: "Choose model" }));
+		expect(selectModel).toHaveBeenCalledWith("new-model", "New model");
+		expect(screen.getByRole("textbox")).toHaveTextContent("Keep this text");
+		expect(screen.getByText("brief.txt")).toBeVisible();
+		expect(send).not.toHaveBeenCalled();
+		expect(saveEmailDraft).not.toHaveBeenCalled();
+	},
+);
+
+it("uses an icon send action and retains a failed standalone request for retry", async () => {
+	const user = userEvent.setup();
+	const { send, onSent } = setup({
+		presentation: "standalone",
+		composerSession: new WorkComposerSession(),
+		sourceUid: undefined,
 	});
-	expect(screen.getByRole("textbox")).toHaveTextContent("Keep this text");
-	expect(screen.getByText("brief.txt")).toBeVisible();
-	fireEvent.click(screen.getByRole("button", { name: "Choose model" }));
-	expect(selectModel).toHaveBeenCalledWith("new-model", "New model");
-	expect(screen.getByRole("textbox")).toHaveTextContent("Keep this text");
-	expect(screen.getByText("brief.txt")).toBeVisible();
-	expect(send).not.toHaveBeenCalled();
-	expect(saveEmailDraft).not.toHaveBeenCalled();
+	send.mockRejectedValueOnce(new Error("Please try again"));
+	const sendButton = screen.getByRole("button", {
+		name: "Send message to Assistant",
+	});
+	expect(sendButton).toHaveTextContent("");
+	expect(sendButton).toBeDisabled();
+	expect(
+		screen.getAllByRole("button", { name: "Choose model" }),
+	).toHaveLength(1);
+	expect(
+		screen.queryByRole("button", { name: "Ask Assistant" }),
+	).not.toBeInTheDocument();
+	await enterText("Plan my week");
+	const file = new File(["notes"], "notes.txt");
+	fireEvent.change(screen.getByLabelText("Choose attachments"), {
+		target: { files: [file] },
+	});
+	await user.click(sendButton);
+	await waitFor(() =>
+		expect(screen.getByRole("alert")).toHaveTextContent("Please try again"),
+	);
+	expect(screen.getByRole("textbox")).toHaveTextContent("Plan my week");
+	expect(screen.getByText("notes.txt")).toBeVisible();
+	expect(onSent).not.toHaveBeenCalled();
+	await user.click(sendButton);
+	await waitFor(() => expect(onSent).toHaveBeenCalledOnce());
+	await waitFor(() => expect(screen.getByRole("textbox")).toHaveFocus());
+	expect(send).toHaveBeenCalledTimes(2);
+	expect(send.mock.calls[1][2]).toMatchObject({
+		text: "Plan my week",
+		files: [file],
+	});
+});
+
+it("does not take focus back when a standalone submission completes in the background", async () => {
+	const { send } = setup({
+		presentation: "standalone",
+		composerSession: new WorkComposerSession(),
+	});
+	let finish: (() => void) | undefined;
+	send.mockImplementationOnce(
+		() =>
+			new Promise<void>((resolve) => {
+				finish = resolve;
+			}),
+	);
+	await enterText("Plan my week");
+	fireEvent.click(
+		screen.getByRole("button", { name: "Send message to Assistant" }),
+	);
+	await waitFor(() => expect(send).toHaveBeenCalledOnce());
+	const outside = document.createElement("button");
+	document.body.append(outside);
+	try {
+		outside.focus();
+		await act(async () => {
+			finish?.();
+		});
+		expect(outside).toHaveFocus();
+	} finally {
+		outside.remove();
+	}
+});
+
+it.each([
+	"isSavingSettings",
+	"isLoadingModel",
+	"hasUnconfirmedSubmission",
+] as const)("locks the standalone model selector while %s", async (lock) => {
+	const snapshot = workSnapshot();
+	snapshot[lock] = true;
+	await act(async () => {
+		setup({ presentation: "standalone", snapshot });
+	});
+	expect(screen.getByRole("button", { name: "Choose model" })).toBeDisabled();
 });
 
 it("locks model changes during an active assistant run", async () => {

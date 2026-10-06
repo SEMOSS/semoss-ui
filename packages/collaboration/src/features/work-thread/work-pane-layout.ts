@@ -145,3 +145,13 @@ export function workPanelTarget(layout: Layout): WorkbenchMoveTarget {
 		tabsetId: restoreWorkPane(layout, WORK_PANEL_TYPES.EMAILS),
 	};
 }
+
+/** Route chat tools and editors to the generic dock without restoring source panes. */
+export function chatPanelTarget(layout: Layout): WorkbenchMoveTarget {
+	const dock =
+		layout.tabsets.find((tabset) => tabset.id === "tools") ??
+		layout.tabsets[0];
+	return dock
+		? { kind: "join", tabsetId: dock.id }
+		: { kind: "root", dir: "right" };
+}

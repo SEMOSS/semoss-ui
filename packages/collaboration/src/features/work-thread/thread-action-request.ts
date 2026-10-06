@@ -13,6 +13,7 @@ const threadActionSchema = z.object({
 		"new-email",
 	]),
 	sourceMessageId: z.string().min(1).optional(),
+	prompt: z.string().max(4000).optional(),
 });
 
 export type ThreadActionRequest = z.infer<typeof threadActionSchema>;

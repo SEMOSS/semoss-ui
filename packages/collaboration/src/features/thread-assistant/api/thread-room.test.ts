@@ -292,3 +292,34 @@ it("leaves room instructions blank for the thread agent so its own prompt applie
 		}),
 	).toBe(false);
 });
+
+it("persists the selected agent name and retains it when later saves omit a name", async () => {
+	const backend = replacementBackend({});
+	const withAgent = { ...metadata, agentId: "agent-1" };
+	await prepareThreadRoom(
+		{ run: backend.run } as never,
+		"insight-1",
+		"New chat",
+		withAgent,
+		{ onCreated: vi.fn() },
+		undefined,
+		"Research assistant",
+	);
+	for (const options of backend.writes) {
+		expect(options.workspace).toEqual({
+			workspace_id: "agent-1",
+			name: "Research assistant",
+		});
+	}
+	await prepareThreadRoom(
+		{ run: backend.run } as never,
+		"insight-1",
+		"New chat",
+		withAgent,
+		{ roomId: "room-1", onCreated: vi.fn() },
+	);
+	expect(backend.read().workspace).toEqual({
+		workspace_id: "agent-1",
+		name: "Research assistant",
+	});
+});

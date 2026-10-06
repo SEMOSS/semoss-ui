@@ -1,7 +1,9 @@
-import { BookOpen, ChevronsDownUp, Wrench, X } from "lucide-react";
+import { ArrowUp, BookOpen, ChevronsDownUp, Wrench, X } from "lucide-react";
 import {
+	type ReactNode,
 	useCallback,
 	useLayoutEffect,
+	useRef,
 	useState,
 	useSyncExternalStore,
 } from "react";
@@ -23,6 +25,7 @@ import { WorkComposerSession } from "./work-composer-session";
 /** Reuses the Playground composer and the single retained Work agent session. */
 export function AssistantComposer({
 	composerSession: retainedComposer,
+	presentation = "thread",
 	isOpen = true,
 	focusRequest = 0,
 	actionsTriggerId,
@@ -33,9 +36,12 @@ export function AssistantComposer({
 	attachments,
 	context,
 	onSent,
+	toolbar,
 }: {
 	/** App-owned composer state, retained across route changes. */
 	composerSession?: WorkComposerSession;
+	/** New chats have a larger editor; standalone chats share the bottom toolbar. */
+	presentation?: "thread" | "standalone" | "new-chat";
 	/** Keep status/recovery visible while the editor is concealed. */
 	isOpen?: boolean;
 	/** Explicit focus requested by a quick action. */
@@ -49,10 +55,14 @@ export function AssistantComposer({
 	attachments: SourceAttachment[];
 	context: SubmittedThreadContext;
 	onSent: () => void;
+	/** Optional conversation scope shown alongside the existing composer tools. */
+	toolbar?: ReactNode;
 	/** Refresh source history after a confirmed send, independently of agent messages. */
 	onEmailSent?: () => void;
 }) {
 	const [localComposer] = useState(() => new WorkComposerSession());
+	const composerRoot = useRef<HTMLDivElement>(null);
+	const [sendFocusRequest, setSendFocusRequest] = useState(0);
 	const composer = retainedComposer ?? localComposer;
 	const memory = useSyncExternalStore(
 		composer.subscribe,
@@ -78,6 +88,12 @@ export function AssistantComposer({
 		turn.isSubmitting ||
 		turn.isRestoring;
 	const agent = snapshot.agent;
+	const isStandalone = presentation !== "thread";
+	const isModelLocked =
+		busy ||
+		snapshot.isSavingSettings ||
+		snapshot.isLoadingModel ||
+		snapshot.hasUnconfirmedSubmission;
 	const panelActions = useWorkPanelActions();
 	const openSettings = () =>
 		panelActions.find((action) => action.id === "settings")?.onSelect();
@@ -126,7 +142,7 @@ export function AssistantComposer({
 		);
 	};
 	return (
-		<div className="space-y-2">
+		<div ref={composerRoot} className="space-y-2">
 			{snapshot.isLoading && (
 				<output className="text-muted-foreground text-sm">
 					Opening conversation{"\u2026"}
@@ -197,7 +213,7 @@ export function AssistantComposer({
 				{memory.referenceResults.length > 0 && (
 					<fieldset
 						className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
-						aria-label="Information for your reply"
+						aria-label="Conversation references"
 					>
 						{memory.referenceResults.map((reference) => (
 							<Button
@@ -238,27 +254,34 @@ export function AssistantComposer({
 					initialDraft={memory.draft}
 					onDraftChange={handleDraftChange}
 					autoFocus={!retainedComposer}
-					focusRequest={focusRequest}
+					focusRequest={focusRequest + sendFocusRequest}
 					retainUntilSent
 					submissionError={memory.error}
 					className="bg-transparent"
+					surfaceClassName={
+						isStandalone ? "rounded-xl shadow-none" : undefined
+					}
+					inputClassName={
+						presentation === "new-chat"
+							? "min-h-24"
+							: presentation === "standalone"
+								? "[@media(max-height:40rem)]:min-h-12"
+								: undefined
+					}
 					header={
-						<ThreadComposerControls
-							mode="assistant"
-							onModeChange={composer.setMode}
-							hasSourceEmail={false}
-							isModeLocked={busy}
-							assistantOnly
-							modelId={snapshot.modelId}
-							modelName={modelName}
-							isModelLocked={
-								busy ||
-								snapshot.isSavingSettings ||
-								snapshot.isLoadingModel ||
-								snapshot.hasUnconfirmedSubmission
-							}
-							onModelChange={selectModel}
-						/>
+						!isStandalone && (
+							<ThreadComposerControls
+								mode="assistant"
+								onModeChange={composer.setMode}
+								hasSourceEmail={false}
+								isModeLocked={busy}
+								assistantOnly
+								modelId={snapshot.modelId}
+								modelName={modelName}
+								isModelLocked={isModelLocked}
+								onModelChange={selectModel}
+							/>
+						)
 					}
 					actionsTriggerId={actionsTriggerId}
 					panelActions={panelActions}
@@ -332,10 +355,17 @@ export function AssistantComposer({
 						) : null
 					}
 					agentName={agent?.name || "Assistant"}
-					placeholder={"Ask Assistant\u2026"}
-					showModelSelector={false}
+					placeholder={
+						isStandalone ? "Ask anything…" : "Ask Assistant…"
+					}
+					showModelSelector={isStandalone}
 					hideSettingsAction
-					submitLabel="Ask Assistant"
+					submitLabel={isStandalone ? undefined : "Ask Assistant"}
+					submitIcon={
+						isStandalone ? (
+							<ArrowUp aria-hidden="true" />
+						) : undefined
+					}
 					requiresModel
 					submitOnEnter
 					isSubmitting={
@@ -346,7 +376,7 @@ export function AssistantComposer({
 					modelId={snapshot.modelId}
 					modelName={modelName}
 					isModelSaving={false}
-					isModelLocked={busy || snapshot.hasUnconfirmedSubmission}
+					isModelLocked={isModelLocked}
 					modelError={error}
 					isSendDisabled={
 						snapshot.isCompacting ||
@@ -435,8 +465,23 @@ export function AssistantComposer({
 						});
 					}}
 					onStop={session.cancel}
-					onSent={onSent}
-				/>
+					onSent={() => {
+						onSent();
+						const root = composerRoot.current;
+						// A successful send resets the editor. Restore typing focus
+						// only if the user has not moved to another panel or route.
+						if (
+							isStandalone &&
+							root &&
+							!root.closest("[hidden], [inert]") &&
+							(document.activeElement === document.body ||
+								root.contains(document.activeElement))
+						)
+							setSendFocusRequest((value) => value + 1);
+					}}
+				>
+					{toolbar}
+				</RoomComposer>
 			</div>
 		</div>
 	);

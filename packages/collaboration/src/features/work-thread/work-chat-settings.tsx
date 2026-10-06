@@ -1,10 +1,12 @@
 import { BookOpen, Wrench } from "lucide-react";
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { EngineSelect, splitMcpByType } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
+	Badge,
 	Button,
+	FieldLabel,
 	FieldLegend,
 	FieldSet,
 	Form,
@@ -60,6 +62,8 @@ export function WorkChatSettings() {
 		defaultValues: formValues(snapshot.settings),
 	});
 	const { errors, isSubmitting, dirtyFields } = form.formState;
+	const committedAgentId = useRef(snapshot.settings.agentId);
+	const isChangingSettings = isSubmitting || snapshot.isSavingSettings;
 	const agentId = form.watch("agentId");
 	const modelId = form.watch("modelId");
 	const resources = form.watch("mcp");
@@ -87,6 +91,13 @@ export function WorkChatSettings() {
 		snapshot.isCreationUncertain;
 	useEffect(() => {
 		form.reset(formValues(snapshot.settings), { keepDirtyValues: true });
+		// A toolbar selection commits only the agent; preserve every other form draft.
+		if (committedAgentId.current !== snapshot.settings.agentId) {
+			form.resetField("agentId", {
+				defaultValue: snapshot.settings.agentId,
+			});
+			committedAgentId.current = snapshot.settings.agentId;
+		}
 	}, [form, snapshot.settings]);
 	const handleSubmit = async (values: SettingsValues): Promise<void> => {
 		if (isLocked) return;
@@ -125,7 +136,7 @@ export function WorkChatSettings() {
 						<H3 className="text-lg">Chat settings</H3>
 						<P className="text-muted-foreground">
 							These settings apply to future messages in this
-							thread.
+							conversation.
 						</P>
 					</div>
 					<FormField
@@ -143,7 +154,9 @@ export function WorkChatSettings() {
 											: "") ||
 										field.value
 									}
-									disabled={isSubmitting}
+									disabled={isChangingSettings}
+									triggerRef={field.ref}
+									onBlur={field.onBlur}
 									onChange={field.onChange}
 								/>
 							</FieldSet>
@@ -174,8 +187,11 @@ export function WorkChatSettings() {
 						name="modelId"
 						render={({ field }) => (
 							<FieldSet className="min-w-0 gap-2">
-								<FieldLegend variant="label">Model</FieldLegend>
+								<FieldLabel htmlFor={`${id}-model`}>
+									Model
+								</FieldLabel>
 								<EngineSelect
+									id={`${id}-model`}
 									value={field.value}
 									name={
 										model.engine?.engine_display_name ||
@@ -185,7 +201,7 @@ export function WorkChatSettings() {
 											: "") ||
 										"Choose model"
 									}
-									disabled={isSubmitting}
+									disabled={isChangingSettings}
 									engineTypes={["MODEL"]}
 									metaFilters={[{ tag: "text-generation" }]}
 									onChange={(engine) =>
@@ -220,7 +236,7 @@ export function WorkChatSettings() {
 					)}
 					<FormTextarea
 						name="instructions"
-						label="Additional thread instructions"
+						label="Additional conversation instructions"
 						description={
 							<span id={`${id}-instructions-help`}>
 								Added to the agent’s instructions for this
@@ -229,7 +245,7 @@ export function WorkChatSettings() {
 						}
 						aria-describedby={`${id}-instructions-help`}
 						rows={4}
-						disabled={isSubmitting}
+						disabled={isChangingSettings}
 					/>
 					<FormInput
 						name="temperature"
@@ -244,7 +260,7 @@ export function WorkChatSettings() {
 						step="0.1"
 						min="0"
 						max="1"
-						disabled={isSubmitting}
+						disabled={isChangingSettings}
 					/>
 					{(["KNOWLEDGE", "TOOLBOX"] as const).map((kind) => {
 						const isKnowledge = kind === "KNOWLEDGE";
@@ -274,7 +290,7 @@ export function WorkChatSettings() {
 								}
 								icon={isKnowledge ? BookOpen : Wrench}
 								disabled={
-									isSubmitting ||
+									isChangingSettings ||
 									agent.isLoading ||
 									Boolean(agent.error)
 								}
@@ -299,7 +315,7 @@ export function WorkChatSettings() {
 									kind={kind}
 									values={current}
 									lockedValues={inherited}
-									disabled={isSubmitting}
+									disabled={isChangingSettings}
 									onChange={(values) =>
 										form.setValue(
 											"mcp",
@@ -311,6 +327,42 @@ export function WorkChatSettings() {
 							</CapabilitySection>
 						);
 					})}
+					<section aria-labelledby={`${id}-skills`}>
+						<H3
+							id={`${id}-skills`}
+							className="font-medium text-base"
+						>
+							Skills
+						</H3>
+						<P className="mt-1 text-muted-foreground text-sm">
+							Skills are inherited from the selected agent.
+						</P>
+						{agentId && agent.agent?.skills.length ? (
+							<ul className="mt-3 divide-y">
+								{agent.agent.skills.map((skill) => (
+									<li
+										key={skill.id}
+										className="flex min-w-0 items-center gap-3 py-2"
+									>
+										<Small className="wrap-anywhere min-w-0 flex-1">
+											{skill.name}
+										</Small>
+										<Badge variant="outline">
+											From agent
+										</Badge>
+									</li>
+								))}
+							</ul>
+						) : (
+							<P className="mt-3 text-muted-foreground text-sm">
+								{agent.isLoading
+									? "Loading inherited skills…"
+									: agent.error
+										? "Skills are unavailable until the agent loads."
+										: "No inherited skills."}
+							</P>
+						)}
+					</section>
 					{(errors.root?.server || snapshot.settingsError) && (
 						<Alert variant="destructive">
 							<AlertDescription>
@@ -335,7 +387,7 @@ export function WorkChatSettings() {
 					<Button
 						type="button"
 						variant="outline"
-						disabled={isSubmitting}
+						disabled={isChangingSettings}
 						onClick={() =>
 							form.reset(formValues(snapshot.settings))
 						}

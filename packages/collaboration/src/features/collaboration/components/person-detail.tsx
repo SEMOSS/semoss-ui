@@ -2,7 +2,6 @@ import { useId, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
 	Button,
-	H1,
 	Label,
 	P,
 	Select,
@@ -16,6 +15,7 @@ import {
 import { dateLabel } from "../date-label";
 import { isFollowed } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
@@ -31,7 +31,15 @@ export function PersonDetail() {
 	const [topicToAdd, setTopicToAdd] = useState("");
 	const person = state.people.find((candidate) => candidate.id === personId);
 	if (!person)
-		return <P className="p-6">Person not found in this session.</P>;
+		return (
+			<CollaborationSurface
+				header={<CollaborationPageHeader title="Person" />}
+			>
+				<P className="p-6 text-muted-foreground">
+					Person not found in this session.
+				</P>
+			</CollaborationSurface>
+		);
 	const topics = state.topics.filter((topic) =>
 		topic.people.some(
 			(member) =>
@@ -56,6 +64,39 @@ export function PersonDetail() {
 	);
 	return (
 		<CollaborationSurface
+			header={
+				<CollaborationPageHeader
+					title={
+						<span className="flex min-w-0 items-center gap-3">
+							<PersonAvatar
+								name={person.name}
+								initials={person.initials}
+							/>
+							<span className="min-w-0 break-words">
+								{person.name}
+							</span>
+						</span>
+					}
+					description={
+						<>
+							{person.title}
+							{person.title ? " · " : ""}
+							{state.accounts.find(
+								(account) => account.id === person.accountId,
+							)?.name || "No account"}
+						</>
+					}
+				>
+					<div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-muted-foreground text-sm">
+						<span className="min-w-0 break-words">
+							{person.email || "Email unavailable"}
+						</span>
+						<span>
+							Last contact {dateLabel(person.lastContact)}
+						</span>
+					</div>
+				</CollaborationPageHeader>
+			}
 			asideTitle="Person context"
 			aside={
 				<>
@@ -69,7 +110,7 @@ export function PersonDetail() {
 									key={label}
 									className="rounded-lg bg-muted/60 px-3 py-2"
 								>
-									<P className="font-semibold text-lg tabular-nums">
+									<P className="font-medium text-lg tabular-nums">
 										{count}
 									</P>
 									<Small className="font-normal text-muted-foreground text-xs">
@@ -114,35 +155,6 @@ export function PersonDetail() {
 			}
 		>
 			<div>
-				<header className="space-y-3 border-b px-4 py-5 md:px-6">
-					<div className="flex items-start gap-3">
-						<PersonAvatar
-							name={person.name}
-							initials={person.initials}
-						/>
-						<div className="min-w-0 flex-1 space-y-1">
-							<div className="flex flex-wrap items-center gap-2">
-								<H1 className="break-words font-semibold text-xl">
-									{person.name}
-								</H1>
-							</div>
-							<P className="break-words text-muted-foreground text-xs leading-5">
-								{person.title}
-								{person.title ? " · " : ""}
-								{state.accounts.find(
-									(account) =>
-										account.id === person.accountId,
-								)?.name || "No account"}
-							</P>
-							<P className="break-words text-muted-foreground text-xs leading-5">
-								{person.email || "Email unavailable"}
-							</P>
-							<Small className="font-normal text-muted-foreground text-xs">
-								Last contact {dateLabel(person.lastContact)}
-							</Small>
-						</div>
-					</div>
-				</header>
 				<Section
 					title="Relationship"
 					className="space-y-3 border-b px-4 py-4 md:px-6"
