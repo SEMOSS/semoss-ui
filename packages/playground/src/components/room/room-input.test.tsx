@@ -13,6 +13,18 @@ import { RoomInputMenuUpload } from "./room-input-menu-upload";
 // Fake editor state shared between mocks
 // ---------------------------------------------------------------------------
 const openFilePicker = vi.hoisted(() => vi.fn());
+const openSettings = vi.hoisted(() => vi.fn());
+// stable, as the SDK's are, so views keep the same logins between renders
+const sessionLogins = vi.hoisted(() => ({
+	logins: {},
+	primaryLogin: null,
+	connectorAccess: null,
+	availableProviders: [],
+	status: "ready" as const,
+	refresh: vi.fn(),
+	connect: vi.fn(),
+	disconnect: vi.fn(),
+}));
 let fakeEditorText = "";
 let triggerOnChange: (() => void) | null = null;
 
@@ -20,6 +32,11 @@ let triggerOnChange: (() => void) | null = null;
 // Mocks
 // ---------------------------------------------------------------------------
 
+// the session's logins, without reading them from a server
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useLogins: () => sessionLogins,
+}));
 vi.mock("@semoss/i18n", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@semoss/i18n")>();
 	return {
@@ -38,6 +55,11 @@ vi.mock("@semoss/i18n", async (importOriginal) => {
 		}),
 	};
 });
+
+// the settings dialog belongs to the main layout, which these tests leave out
+vi.mock("@/features/settings/settings-dialog.context", () => ({
+	useSettingsDialog: () => ({ openSettings }),
+}));
 
 vi.mock("@/contexts/file-drag-context", async (importOriginal) => {
 	const actual =
@@ -229,19 +251,20 @@ const defaultProps = {
 	},
 	// Only these room fields are consumed by the composer in this test.
 	room: {
-		teamwork: {
+		chatTools: {
 			isAgentMode: false,
-			connectors: [],
+			openToolsPanel: vi.fn(),
+		},
+		connectors: {
+			services: [],
 			availableSources: [],
 			openSourcePanel: vi.fn(),
-			openToolsPanel: vi.fn(),
-			contextItems: [],
 			missingSignIns: [],
 			uncoveredConnectors: [],
 			unofferedProviders: [],
-			refreshConnectedProviders: async () => undefined,
-			refreshLoginConfig: async () => undefined,
+			setSessionLogins: vi.fn(),
 		},
+		contextItems: { items: [], remove: vi.fn() },
 		roomId: "room",
 		history: [],
 		options: {},
@@ -528,6 +551,21 @@ test("keeps Workspace accessible during a turn while locking mutating menu actio
 	expect(openWorkspace).toHaveBeenCalledTimes(1);
 });
 
+test("Connectors opens the settings dialog on its Connectors page", async () => {
+	openSettings.mockClear();
+	const user = userEvent.setup();
+	render(<RoomInput {...defaultProps} MenuComponent={undefined} />);
+	await user.click(
+		screen.getByRole("button", { name: "input.openSettings" }),
+	);
+	await user.click(
+		screen.getByRole("menuitem", {
+			name: "sidebar:settings.sections.connectors",
+		}),
+	);
+	expect(openSettings).toHaveBeenCalledWith("connectors");
+});
+
 test("new-chat Agent opens the picker without changing mode on cancel", async () => {
 	featureFlags.enableAgentHarness = true;
 	const user = userEvent.setup();
@@ -556,12 +594,11 @@ test("new-chat Agent opens the picker without changing mode on cancel", async ()
 });
 
 test("connector attachments stay visible and removable without an uploaded file", () => {
-	const removeContextItem = vi.fn();
+	const remove = vi.fn();
 	const room = {
 		...defaultProps.room,
-		teamwork: {
-			...defaultProps.room.teamwork,
-			contextItems: [
+		contextItems: {
+			items: [
 				{
 					id: "email",
 					name: "Email summary.md",
@@ -569,11 +606,13 @@ test("connector attachments stay visible and removable without an uploaded file"
 					service: "gmail",
 				},
 			],
-			removeContextItem,
+			remove,
 		},
 	} as unknown as RoomStore;
 	render(<RoomInput {...defaultProps} room={room} />);
 	expect(screen.getByText("Email summary.md")).toBeVisible();
-	fireEvent.click(screen.getByRole("button", { name: "context.remove" }));
-	expect(removeContextItem).toHaveBeenCalledWith("email");
+	fireEvent.click(
+		screen.getByRole("button", { name: "contextItems.remove" }),
+	);
+	expect(remove).toHaveBeenCalledWith("email");
 });

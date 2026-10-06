@@ -104,7 +104,8 @@
 				"dark": "Sombre"
 			},
 			"language": "Langue",
-			"languageDescription": "La langue dans laquelle l'application s'affiche."
+			"languageDescription": "La langue dans laquelle l'application s'affiche.",
+			"version": "Version {{version}}"
 		}
 	}
 }

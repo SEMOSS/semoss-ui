@@ -1,0 +1,95 @@
+{
+	"providers": {
+		"MICROSOFT": {
+			"name": "Microsoft 365",
+			"brand": "Microsoft"
+		},
+		"GOOGLE": {
+			"name": "Google Workspace",
+			"scopesNote": "Gmail, Calendar, Drive, and Docs need your administrator to allow those Google permissions for this server.",
+			"brand": "Google"
+		},
+		"connected": "Connected",
+		"connectedAs": "Connected as {{name}}",
+		"notConnected": "Not Connected",
+		"unavailable": "Not Offered on This Server",
+		"signIn": "Sign In with {{brand}}",
+		"signInPrompt": "Sign In to Use These Apps",
+		"reconnect": "Reconnect",
+		"connecting": "Waiting for Sign In...",
+		"connectSuccess": "{{name}} is connected",
+		"connectIncomplete": "{{name}} was not connected. The sign in window closed before it finished.",
+		"connectError": "Could not connect {{name}}. {{message}}",
+		"popupBlocked": "Your browser blocked the sign in window. Allow pop-ups for this site and try again.",
+		"loadErrorTitle": "Could not check your connected accounts",
+		"disconnect": "Disconnect",
+		"disconnecting": "Disconnecting...",
+		"disconnectSuccess": "{{name}} is disconnected",
+		"disconnectError": "Could not disconnect {{name}}. {{message}}",
+		"sessionLoginNote": "You signed in with this account, so it stays connected until you log out."
+	},
+	"services": {
+		"toolCounts_one": "{{count}} tool, {{ask}} ask first",
+		"toolCounts_other": "{{count}} tools, {{ask}} ask first",
+		"outlook": {
+			"name": "Outlook Mail",
+			"description": "Read, search, and draft email. Sending, replying, and deleting ask first."
+		},
+		"outlook-calendar": {
+			"name": "Outlook Calendar",
+			"description": "See your schedule and find free time. New invites and changes ask first."
+		},
+		"onedrive": {
+			"name": "OneDrive",
+			"description": "Find, read, and download your files. Uploads, sharing, and deleting ask first."
+		},
+		"teams": {
+			"name": "Microsoft Teams",
+			"description": "Read chats, channels, and shared files. Messages you send ask first."
+		},
+		"gmail": {
+			"name": "Gmail",
+			"description": "Read and search email. Sending and deleting ask first."
+		},
+		"google-calendar": {
+			"name": "Google Calendar",
+			"description": "See your events. New events and changes ask first."
+		},
+		"google-drive": {
+			"name": "Google Drive",
+			"description": "List and look up your Drive files. Deleting asks first."
+		},
+		"google-docs": {
+			"name": "Google Docs",
+			"description": "Read your documents. Creating, editing, and deleting ask first."
+		}
+	},
+	"connectors": {
+		"saveError": "Could not update the connectors. {{message}}",
+		"adoptError": "The chat started, but its connectors could not be switched on. {{message}}"
+	},
+	"connections": {
+		"appsDescription": "Signing in links the account to your session. The assistant only sees what that account can see.",
+		"appsHint": "Switching an app on or off here changes it in all your chats, new and existing. A chat's plus menu opens the same settings.",
+		"settingsError": "Could not read your connector settings."
+	},
+	"sources": {
+		"saved": "Saved {{name}} to {{target}}",
+		"show": "Show",
+		"added": "{{name}} will go with your next message",
+		"notAccepted": "{{name}} was saved to {{target}}, but this chat does not accept that kind of file in a message."
+	},
+	"signIn": {
+		"notice": "{{account}} is not signed in, so {{services}} cannot run in this chat.",
+		"action": "Sign In",
+		"dismiss": "Hide the {{account}} sign in notice",
+		"toolFailed": "This call could not run because {{account}} is not signed in. Sign in, then ask again.",
+		"toolAction": "Sign In to {{account}}",
+		"notOffered": "This server does not offer signing in with {{account}}, so {{services}} cannot run in this chat."
+	},
+	"scopes": {
+		"notice": "This server's {{account}} sign in does not allow {{services}}, so they cannot run in this chat. Ask your administrator to add the permission they need.",
+		"dismiss": "Hide the {{account}} permissions notice",
+		"serviceBlocked": "Not available: this server's sign in does not include the permission it needs. Ask your administrator to add it."
+	}
+}

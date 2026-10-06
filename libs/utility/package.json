@@ -5,6 +5,7 @@
 	"type": "module",
 	"exports": {
 		".": "./src/index.ts",
+		"./array": "./src/array.ts",
 		"./clipboard": "./src/clipboard.ts",
 		"./date": "./src/date.ts",
 		"./file-extension": "./src/file-extension.ts",

@@ -1,3 +1,4 @@
+export * from "./array";
 export * from "./async";
 export * from "./browser";
 export * from "./clipboard";

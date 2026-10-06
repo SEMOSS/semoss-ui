@@ -2,7 +2,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { usePixel } from "@semoss/sdk/react";
+import { runMcpTool, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -283,18 +283,15 @@ export const ToolsDefaultView = observer(
 					success = true;
 				} else {
 					// Normal MCP tool execution for non-Playwright tools
-					const response = await room.runRoomPixel<[unknown]>(
-						`RunMCPTool(project = [ "${getToolEngineId(tool.json._meta) || app}" ], roomId=${JSON.stringify(room.roomId)}, function=[ "${
-							tool?.json.name
-						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-						false,
-						false,
+					output = await runMcpTool(
+						{
+							project: getToolEngineId(tool.json._meta) || app,
+							roomId: room.roomId,
+							name: tool.json.name,
+							paramValues: data,
+						},
+						room.insightId,
 					);
-					const rawOutput = response.pixelReturn[0].output;
-					output =
-						typeof rawOutput === "string"
-							? rawOutput
-							: JSON.stringify(rawOutput);
 					success = true;
 				}
 			} catch (error) {

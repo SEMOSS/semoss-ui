@@ -11,8 +11,8 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn, Spinner, toast, useIsMobile } from "@semoss/ui/next";
-import { TeamworkToolCard } from "@/features/teamwork/components/teamwork-tool-card";
-import { isTeamworkToolCall } from "@/features/teamwork/tools/teamwork-tool-kind";
+import { ChatToolCard } from "@/features/chat-tools/components/chat-tool-card";
+import { isChatToolCall } from "@/features/chat-tools/tools/chat-tool-kind";
 import { useLoadingMessage } from "@/hooks/use-loading-message";
 import { useSidebarPanelActive } from "@/hooks/use-sidebar-panel-active";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
@@ -232,11 +232,8 @@ export const ResponseMessageTool = observer(
 					tool.isOpen &&
 					tool.display === "inline" && (
 						<div className="p-2 pt-0">
-							{isTeamworkToolCall(tool.json) ? (
-								<TeamworkToolCard
-									tool={tool}
-									variant="inline"
-								/>
+							{isChatToolCall(tool.json) ? (
+								<ChatToolCard tool={tool} variant="inline" />
 							) : (
 								<RoomInlineTool
 									room={room}

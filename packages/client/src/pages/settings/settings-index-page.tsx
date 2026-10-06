@@ -46,6 +46,14 @@ const ICON_CLASS = "size-4";
 type CardConfig = { icon: ReactNode; color: string; label?: string };
 
 const CardMapper: Record<string, CardConfig> = {
+	"My Profile": {
+		icon: <CircleUserRound className={ICON_CLASS} />,
+		color: "#471F96",
+	},
+	"My Files": {
+		icon: <FolderOpen className={ICON_CLASS} />,
+		color: "#F59E0B",
+	},
 	"Database Settings": {
 		icon: <Database className={ICON_CLASS} />,
 		color: "#00A593",
@@ -118,14 +126,6 @@ const CardMapper: Record<string, CardConfig> = {
 	"Service Accounts": {
 		icon: <KeyRound className={ICON_CLASS} />,
 		color: "#6B7280",
-	},
-	"My Profile": {
-		icon: <CircleUserRound className={ICON_CLASS} />,
-		color: "#471F96",
-	},
-	"My Files": {
-		icon: <FolderOpen className={ICON_CLASS} />,
-		color: "#F59E0B",
 	},
 	Jobs: {
 		icon: <Briefcase className={ICON_CLASS} />,

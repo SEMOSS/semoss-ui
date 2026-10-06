@@ -180,5 +180,9 @@
 		"failed": "Impossible d’optimiser le message",
 		"tooLarge": "Le message est trop long pour être optimisé. Veuillez le raccourcir.",
 		"noPermission": "Vous n’avez pas l’autorisation d’utiliser ce modèle"
+	},
+	"contextItems": {
+		"label": "Ajouté à votre prochain message",
+		"remove": "Retirer {{name}} de votre prochain message"
 	}
 }
