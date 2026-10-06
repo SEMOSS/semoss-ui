@@ -534,32 +534,46 @@ export const VectorForm = ({
 
 					case "file-upload":
 						return (
-							<div className="flex flex-col gap-2">
-								<H4 data-testid="vector-zip-upload-title">
+							<Field>
+								<FieldLabel
+									htmlFor={val.key}
+									data-testid="vector-zip-upload-title"
+								>
 									{val.label}
-								</H4>
-								{/* Custom file upload - will need to replace FileDropzone */}
-								<div
-									className="flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-4 transition-colors hover:border-primary hover:bg-accent"
-									onClick={() => {
-										const input =
-											document.createElement("input");
-										input.type = "file";
-										input.accept =
+									{val.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<div className="relative flex min-h-24 flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-4 transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring hover:border-primary hover:bg-accent">
+									<Input
+										id={val.key}
+										name={field.name}
+										ref={field.ref}
+										type="file"
+										accept={
 											val.options?.extensions?.join(
 												",",
-											) || "*";
-										input.onchange = (e) => {
-											const file = (
-												e.target as HTMLInputElement
-											).files?.[0];
-											if (file) {
-												field.onChange(file);
-											}
-										};
-										input.click();
-									}}
-								>
+											) || "*"
+										}
+										disabled={val.disabled}
+										required={val.required}
+										aria-invalid={Boolean(error)}
+										aria-describedby={
+											error
+												? `${val.key}-error`
+												: undefined
+										}
+										className="absolute inset-0 h-full cursor-pointer opacity-0"
+										onBlur={field.onBlur}
+										onChange={(event) => {
+											const file =
+												event.currentTarget.files?.[0];
+											if (file) field.onChange(file);
+										}}
+										data-testid={`vector-form-input-${val.key}`}
+									/>
 									{field.value ? (
 										<P className="text-center text-foreground">
 											{(field.value as File).name ||
@@ -567,22 +581,22 @@ export const VectorForm = ({
 										</P>
 									) : (
 										<P className="text-center text-muted-foreground">
-											Drop your file here or click to
-											browse
+											Click to browse
 										</P>
 									)}
 								</div>
 								{error && (
-									<P
+									<FieldDescription
+										id={`${val.key}-error`}
 										className="text-destructive text-sm"
 										data-testid={`vector-form-error-${val.key}`}
 									>
 										{error.message ||
 											(val.rules?.pattern?.message ??
 												val.helperText)}
-									</P>
+									</FieldDescription>
 								)}
-							</div>
+							</Field>
 						);
 					case "checkbox":
 						return (
