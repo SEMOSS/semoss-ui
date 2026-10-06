@@ -4,6 +4,7 @@ import { BrainReview } from "@/features/collaboration/components/brain-review";
 import { BrainThread } from "@/features/collaboration/components/brain-thread";
 import { PeopleDirectory } from "@/features/collaboration/components/people-directory";
 import { PersonDetail } from "@/features/collaboration/components/person-detail";
+import { SavedRecordBoundary } from "@/features/collaboration/components/saved-record-boundary";
 import { SourcesAndRules } from "@/features/collaboration/components/sources-and-rules";
 import { ThreadsDirectory } from "@/features/collaboration/components/threads-directory";
 import { TopicDetail } from "@/features/collaboration/components/topic-detail";
@@ -12,9 +13,24 @@ import { TopicDetail } from "@/features/collaboration/components/topic-detail";
 export function BrainPage() {
 	const { pathname } = useLocation();
 	const { topicId, personId, threadId } = useParams();
-	if (topicId) return <TopicDetail key={topicId} />;
-	if (personId) return <PersonDetail key={personId} />;
-	if (threadId) return <BrainThread key={threadId} />;
+	if (topicId)
+		return (
+			<SavedRecordBoundary kind="topic" id={topicId}>
+				<TopicDetail key={topicId} />
+			</SavedRecordBoundary>
+		);
+	if (personId)
+		return (
+			<SavedRecordBoundary kind="person" id={personId}>
+				<PersonDetail key={personId} />
+			</SavedRecordBoundary>
+		);
+	if (threadId)
+		return (
+			<SavedRecordBoundary kind="thread" id={threadId}>
+				<BrainThread key={threadId} />
+			</SavedRecordBoundary>
+		);
 	if (pathname.endsWith("/profile")) return <AboutYou />;
 	if (pathname.endsWith("/sources")) return <SourcesAndRules />;
 	if (pathname.endsWith("/people")) return <PeopleDirectory />;

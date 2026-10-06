@@ -10,7 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { useRef } from "react";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import type { ThreadContext } from "../state/collaboration.types";
@@ -29,6 +29,21 @@ import { TopicEditor } from "./topic-editor";
 import { WorkFeed } from "./work-feed";
 
 /** Observe only the context submitted to the assistant, alongside real route controls. */
+vi.mock("../api/use-collaboration-search", () => ({
+	useCollaborationSearch: (query: string) => ({
+		term: query.trim().toLowerCase(),
+		entries: query.trim().toLowerCase().includes("ava")
+			? [{ kind: "person", id: "p-ava", name: "Ava Reed" }]
+			: [],
+		total: query ? 1 : 0,
+		status: "ready",
+		error: null,
+		hasMore: false,
+		loadMore: () => {},
+		retry: () => {},
+	}),
+}));
+
 function ContextObserver() {
 	const { state } = useCollaborationSession();
 	return (

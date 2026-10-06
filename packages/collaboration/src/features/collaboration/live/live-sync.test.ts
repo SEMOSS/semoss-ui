@@ -209,3 +209,37 @@ it("no response needed saves the dismissal with its reason; reopening drops the 
 		state.items.find((candidate) => candidate.id === item.id)?.closedReason,
 	).toBeUndefined();
 });
+
+it("does not save hydrated records, even when a user edit settles in the same change", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = createInitialCollaborationState();
+	const loaded: CollaborationCommand = {
+		type: "records.loaded",
+		items: [],
+		topics: [
+			{
+				...previous.topics[0],
+				id: "saved-topic",
+				name: "Saved on server",
+			},
+		],
+		people: [],
+		threads: [],
+		workspaces: {},
+	};
+	const hydrated = collaborationReducer(previous, loaded, NOW);
+	sync({ previous, next: hydrated, commands: [loaded], undo: false });
+	await Promise.resolve();
+	expect(sent).toHaveLength(0);
+	const edit: CollaborationCommand = {
+		type: "topic.save",
+		topic: { id: "saved-topic", name: "User rename" },
+	};
+	const next = collaborationReducer(hydrated, edit, NOW);
+	sync({ previous, next, commands: [loaded, edit], undo: false });
+	await vi.waitFor(() => expect(sent).toHaveLength(1));
+	expect(sent[0]).toContain('"id":"saved-topic"');
+	expect(sent[0]).toContain('"name":"User rename"');
+	expect(sent[0]).not.toContain("Saved on server");
+});

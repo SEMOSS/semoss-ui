@@ -970,3 +970,49 @@ it("applies server changes to items already shown, except ones edited locally du
 	);
 	expect(next.items).toHaveLength(state.items.length);
 });
+
+it("hydration preserves edits, does not duplicate records, and survives local undo", () => {
+	const initial = createInitialCollaborationState();
+	const edited = collaborationHistoryReducer(
+		{ state: initial, past: [] },
+		{
+			command: {
+				type: "topic.save",
+				topic: { id: initial.topics[0].id, name: "Local edit" },
+			},
+			now: NOW,
+		},
+	);
+	const command: CollaborationCommand = {
+		type: "records.loaded",
+		items: [],
+		topics: [
+			{ ...initial.topics[0], name: "Stale server value" },
+			{ ...initial.topics[0], id: "saved-topic", name: "Saved topic" },
+		],
+		people: [],
+		threads: [],
+		workspaces: {},
+	};
+	const hydrated = collaborationHistoryReducer(edited, { command, now: NOW });
+	expect(
+		hydrated.state.topics.find((row) => row.id === initial.topics[0].id)
+			?.name,
+	).toBe("Local edit");
+	expect(hydrated.past).toHaveLength(1);
+	const repeated = collaborationHistoryReducer(hydrated, {
+		command,
+		now: NOW,
+	});
+	expect(
+		repeated.state.topics.filter((row) => row.id === "saved-topic"),
+	).toHaveLength(1);
+	const undone = collaborationHistoryReducer(repeated, { type: "undo" });
+	expect(
+		undone.state.topics.find((row) => row.id === "saved-topic")?.name,
+	).toBe("Saved topic");
+	expect(
+		undone.state.topics.find((row) => row.id === initial.topics[0].id)
+			?.name,
+	).toBe(initial.topics[0].name);
+});

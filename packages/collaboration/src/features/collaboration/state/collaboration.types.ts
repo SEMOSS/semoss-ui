@@ -406,6 +406,14 @@ export type CollaborationCommand =
 	  }
 	| { type: "source.deleted"; sourceId: string }
 	| { type: "session.create"; sessionId: string }
+	| {
+			type: "records.loaded";
+			items: WorkItem[];
+			topics: Topic[];
+			people: Person[];
+			threads: Thread[];
+			workspaces: Record<string, ThreadWorkspace>;
+	  }
 	| { type: "topic.save"; topic: Partial<Topic> & { name?: string } }
 	| { type: "topic.merge"; sourceId: string; targetId: string }
 	| { type: "topic.delete"; topicId: string }

@@ -1,5 +1,6 @@
 import type { InsightActions } from "@/lib/pixel";
 import { pixel } from "@/lib/pixel";
+import { collaborationReducer } from "../state/collaboration.reducer";
 import type {
 	CollaborationCommand,
 	CollaborationState,
@@ -21,6 +22,7 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"source.deleted",
 	"session.create",
 	"live.refresh",
+	"records.loaded",
 	"source.import",
 	"source.status",
 	"live-profile.set",
@@ -75,7 +77,22 @@ export function createLiveSync(
 
 	const sync = (settled: CollaborationChange): void => {
 		// an undo can carry commands that changed nothing (the 30 s snooze check); it is saved by diff alone
-		const change = settled.undo ? { ...settled, commands: [] } : settled;
+		const loadedPrevious = settled.commands.reduce(
+			(previous, command) =>
+				command.type === "records.loaded"
+					? collaborationReducer(
+							previous,
+							command,
+							new Date().toISOString(),
+						)
+					: previous,
+			settled.previous,
+		);
+		const change = {
+			...settled,
+			previous: loadedPrevious,
+			commands: settled.undo ? [] : settled.commands,
+		};
 		const unsaved = change.commands.filter((command) =>
 			SESSION_ONLY.has(command.type),
 		);

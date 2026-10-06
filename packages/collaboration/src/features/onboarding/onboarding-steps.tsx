@@ -757,14 +757,25 @@ export function ImportStep({
 			{(startError || error) && (
 				<Failure error={startError || error || ""} />
 			)}
-			<StepActions onBack={running ? undefined : onBack}>
+			<StepActions onBack={running || starting ? undefined : onBack}>
 				{done && (
-					<Next
-						onClick={onNext}
-						variant={startedHere ? "default" : "outline"}
-					>
-						Continue
-					</Next>
+					<>
+						<Button
+							variant="outline"
+							size="lg"
+							onClick={start}
+							disabled={starting}
+						>
+							{starting ? "Starting import…" : "Import again"}
+						</Button>
+						<Next
+							onClick={onNext}
+							variant={startedHere ? "default" : "outline"}
+							disabled={starting}
+						>
+							Continue
+						</Next>
+					</>
 				)}
 			</StepActions>
 		</>

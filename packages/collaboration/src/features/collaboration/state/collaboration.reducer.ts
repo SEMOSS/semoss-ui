@@ -342,6 +342,24 @@ export function collaborationReducer(
 ): CollaborationState {
 	const state = structuredClone(previous);
 	switch (command.type) {
+		case "records.loaded": {
+			for (const item of command.items)
+				if (!state.items.some((row) => row.id === item.id))
+					state.items.push(item);
+			// Append only missing records: a delayed read must not overwrite local edits.
+			for (const topic of command.topics)
+				if (!state.topics.some((row) => row.id === topic.id))
+					state.topics.push(topic);
+			for (const person of command.people)
+				if (!state.people.some((row) => row.id === person.id))
+					state.people.push(person);
+			for (const thread of command.threads)
+				if (!state.threads.some((row) => row.id === thread.id))
+					state.threads.push(thread);
+			for (const [id, workspace] of Object.entries(command.workspaces))
+				if (!state.workspaces[id]) state.workspaces[id] = workspace;
+			break;
+		}
 		case "topic.save": {
 			const topic = state.topics.find(
 				(candidate) => candidate.id === command.topic.id,
@@ -1112,6 +1130,7 @@ const UNRECORDED_COMMANDS = new Set<CollaborationCommand["type"]>([
 	"source.deleted",
 	"session.create",
 	"live.refresh",
+	"records.loaded",
 	"source.import",
 	"source.status",
 	"live-profile.set",
