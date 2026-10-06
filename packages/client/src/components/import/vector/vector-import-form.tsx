@@ -623,6 +623,77 @@ export const VectorForm = ({
 								)}
 							</div>
 						);
+					case "checkbox-group":
+						return (
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+								data-testid={`vector-form-field-${val.key}`}
+							>
+								<FieldLabel>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<div className="grid gap-2 sm:grid-cols-2">
+									{val.options.map((option) => {
+										const optionId = `${val.key}-${option.value}`;
+										const selectedValues =
+											field.value || [];
+
+										return (
+											<div
+												key={option.value}
+												className="flex items-center gap-2"
+											>
+												<Checkbox
+													id={optionId}
+													checked={selectedValues.includes(
+														option.value,
+													)}
+													disabled={option.disabled}
+													onCheckedChange={(
+														checked,
+													) => {
+														field.onChange(
+															checked
+																? [
+																		...selectedValues,
+																		option.value,
+																	]
+																: selectedValues.filter(
+																		(
+																			value,
+																		) =>
+																			value !==
+																			option.value,
+																	),
+														);
+													}}
+													data-testid={`vector-form-checkbox-${val.key}-${option.value}`}
+												/>
+												<Label htmlFor={optionId}>
+													{option.display}
+													{option.disabled && (
+														<Muted> Required</Muted>
+													)}
+												</Label>
+											</div>
+										);
+									})}
+								</div>
+								{val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
+						);
 					case "tags":
 						return (
 							<Field

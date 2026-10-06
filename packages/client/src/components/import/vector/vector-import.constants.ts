@@ -16,6 +16,8 @@ export const VECTOR_CONNECTIONS = {
 			"Configure your vector store provider, index structure, dimensionality, and similarity metric to optimize retrieval accuracy and performance.",
 		Credentials:
 			"Provide your vector database API key or connection details to securely enable indexing and search operations.",
+		"Searchable Fields":
+			"Searchable fields can be used by Azure AI Search queries. Limiting searchability to fields users actually query reduces index size and can improve indexing and query performance. Content and Embeddings are always searchable.",
 	},
 	Connections: [
 		{
@@ -100,6 +102,57 @@ export const VECTOR_CONNECTIONS = {
 					disabled: false,
 					required: true,
 					category: "Credentials",
+				},
+				{
+					key: "SEARCHABLE_FIELDS",
+					label: "Fields",
+					value: [
+						"id",
+						"Source",
+						"Modality",
+						"Divider",
+						"Part",
+						"Content",
+						"embeddings",
+					],
+					type: "checkbox-group",
+					options: [
+						{
+							display: "ID",
+							value: "id",
+						},
+						{
+							display: "Source",
+							value: "Source",
+						},
+						{
+							display: "Modality",
+							value: "Modality",
+						},
+						{
+							display: "Divider",
+							value: "Divider",
+						},
+						{
+							display: "Part",
+							value: "Part",
+						},
+						{
+							display: "Content",
+							value: "Content",
+							disabled: true,
+						},
+						{
+							display: "Embeddings",
+							value: "embeddings",
+							disabled: true,
+						},
+					],
+					disabled: false,
+					required: true,
+					helperText:
+						"Choose the fields available to search. Content and Embeddings are required.",
+					category: "Searchable Fields",
 				},
 				{
 					key: "INDEX_CLASSES",
