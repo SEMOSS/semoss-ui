@@ -15,7 +15,7 @@ interface DraftPanelConfig {
 }
 
 /** Resolve the retained draft from its identity, even after closing and reopening its tab. */
-export function WorkDraftPanel({ id }: WorkbenchPanelProps) {
+function WorkDraftPanel({ id }: WorkbenchPanelProps) {
 	const { config } = useWorkbenchPanel<DraftPanelConfig>(id);
 	const { composer, workspace, thread } = useWorkEmail();
 	const { state } = useCollaborationSession();

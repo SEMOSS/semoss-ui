@@ -3,11 +3,11 @@ import type { DisplayBody } from "@/features/email/message-body";
 
 /** Session-only collaboration records; imported identities retain nullable fields. */
 export type Channel = "email" | "teams" | "calendar" | "room" | "task";
-export type TopicKind = "client" | "internal" | "event" | "personal";
-export type TopicStatus = "suggested" | "active" | "dormant" | "archived";
-export type PersonState = "member" | "suggested" | "removed";
-export type ItemStatus = "open" | "waiting" | "done" | "dismissed" | "snoozed";
-export type AskType =
+type TopicKind = "client" | "internal" | "event" | "personal";
+type TopicStatus = "suggested" | "active" | "dormant" | "archived";
+type PersonState = "member" | "suggested" | "removed";
+type ItemStatus = "open" | "waiting" | "done" | "dismissed" | "snoozed";
+type AskType =
 	| "reply"
 	| "approve"
 	| "attend"
@@ -15,7 +15,7 @@ export type AskType =
 	| "waiting_on"
 	| "errand"
 	| "fyi";
-export type Priority = "P0" | "P1" | "P2" | "P3";
+type Priority = "P0" | "P1" | "P2" | "P3";
 
 export interface Account {
 	id: string;
@@ -41,7 +41,7 @@ export interface TopicNote {
 	source?: string;
 }
 
-export interface TopicPerson {
+interface TopicPerson {
 	personId: string;
 	role: string;
 	engagement: number | null;
@@ -107,7 +107,7 @@ export interface ThreadTopicLink {
 	primary: boolean;
 }
 
-export interface Participant {
+interface Participant {
 	personId: string;
 	/** From the thread itself, for when the person is not loaded. */
 	name?: string;
@@ -119,7 +119,7 @@ export interface Participant {
 	hiddenCount?: number;
 }
 
-export interface SourceReference {
+interface SourceReference {
 	kind: "outlook" | "teams" | "calendar";
 	nativeId: string;
 	webLink?: string;
@@ -316,7 +316,7 @@ export interface WorkspaceFact {
 	sourcePersonId?: string;
 }
 
-export interface WorkspaceAsset {
+interface WorkspaceAsset {
 	id: string;
 	name: string;
 	kind: string;
@@ -330,7 +330,7 @@ export interface WorkspaceAsset {
 	nativeId?: string;
 }
 
-export interface WorkspaceDraft {
+interface WorkspaceDraft {
 	id: string;
 	to: string;
 	cc: string;

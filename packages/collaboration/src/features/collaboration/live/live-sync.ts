@@ -163,7 +163,7 @@ function restoredTopics(change: CollaborationChange): string[] {
 		.map((topic) => topic.id);
 }
 
-export function planChange(
+function planChange(
 	change: CollaborationChange,
 	id: (value: string) => string,
 ): Plan {

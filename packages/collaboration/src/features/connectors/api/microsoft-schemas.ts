@@ -14,7 +14,7 @@ const optionalText = z
 	.transform((value) => value ?? undefined);
 const optionalDate = date.nullish().transform((value) => value ?? undefined);
 
-export const sourceAttachmentSchema = z.object({
+const sourceAttachmentSchema = z.object({
 	id: z.string().min(1),
 	name: z.string().default("Attachment"),
 	contentType: optionalText,
@@ -58,7 +58,7 @@ export const foldersSchema = z.object({
 });
 export type OutlookFolder = z.infer<typeof foldersSchema>["folders"][number];
 
-export const chatSchema = z.object({
+const chatSchema = z.object({
 	id: z.string().min(1),
 	displayName: optionalText,
 	topic: optionalText,

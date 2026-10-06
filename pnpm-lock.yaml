@@ -1136,9 +1136,6 @@ importers:
       '@lexical/table':
         specifier: 0.39.0
         version: 0.39.0
-      '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
       '@semoss/i18n':
         specifier: workspace:*
         version: link:../../libs/i18n

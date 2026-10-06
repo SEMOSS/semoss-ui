@@ -288,31 +288,3 @@ export function selectThreadContext(
 	};
 	return { ...snapshot, revision: revisionOf(JSON.stringify(snapshot)) };
 }
-
-/** Search the loaded session only; no source search is triggered by this selector. */
-export function selectSearchResults(
-	state: CollaborationState,
-	query: string,
-): {
-	topics: CollaborationState["topics"];
-	people: CollaborationState["people"];
-	threads: CollaborationState["threads"];
-} {
-	const value = query.trim().toLocaleLowerCase();
-	if (!value) return { topics: [], people: [], threads: [] };
-	return {
-		topics: state.topics.filter((topic) =>
-			`${topic.name} ${topic.description}`
-				.toLocaleLowerCase()
-				.includes(value),
-		),
-		people: state.people.filter((person) =>
-			`${person.name} ${person.email ?? ""}`
-				.toLocaleLowerCase()
-				.includes(value),
-		),
-		threads: state.threads.filter((thread) =>
-			thread.subject.toLocaleLowerCase().includes(value),
-		),
-	};
-}

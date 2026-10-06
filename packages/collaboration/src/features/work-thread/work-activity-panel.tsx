@@ -5,8 +5,9 @@ import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { WorkAuditLog } from "./work-audit-log";
 import { useWorkThread } from "./work-thread-context";
+
 /** Run inspection and the existing room audit report share one entry point. */
-export function WorkActivityPanel() {
+function WorkActivityPanel() {
 	const { snapshot } = useWorkThread();
 	const workbench = useToolWorkbench();
 	const runs = [

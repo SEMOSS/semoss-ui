@@ -13,8 +13,7 @@ import { WORK_PANEL_TYPES } from "./work-panel.constants";
 import { WORK_SETTINGS_PANEL } from "./work-settings-panel";
 import { WORK_TOOLS_PANEL } from "./work-tools-panel";
 
-export { WORK_PANEL_TYPES } from "./work-panel.constants";
-export const WORK_THREAD_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
+const WORK_THREAD_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	...TOOL_WORKBENCH_COMPONENTS,
 	[WORK_PANEL_TYPES.EMAIL]: WORK_EMAIL_PANEL,
 	[WORK_PANEL_TYPES.EMAILS]: WORK_EMAILS_PANEL,

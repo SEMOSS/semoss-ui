@@ -1,4 +1,4 @@
-export function agentPath(agentId?: string) {
+function agentPath(agentId?: string) {
 	return agentId ? `/agents/${encodeURIComponent(agentId)}` : "/agents";
 }
 
@@ -15,10 +15,6 @@ export function newRoomPath(agentId?: string, modelId?: string) {
 
 	const query = search.toString();
 	return query ? `/new?${query}` : "/new";
-}
-
-export function agentNewPath() {
-	return "/agents/new";
 }
 
 export function agentSettingsPath(agentId: string) {

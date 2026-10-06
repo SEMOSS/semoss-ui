@@ -10,7 +10,7 @@ import { WorkPaneCloseControl } from "./work-pane-close-control";
 import { useWorkThread } from "./work-thread-context";
 
 /** The same thread context remains live when its tab moves or hides. */
-export function WorkContextDockPanel({ id }: WorkbenchPanelProps) {
+function WorkContextDockPanel({ id }: WorkbenchPanelProps) {
 	useWorkbenchControl(id, WorkPaneCloseControl);
 	const { contextPanel } = useWorkThread();
 	return <ThreadContextPanel {...contextPanel} />;

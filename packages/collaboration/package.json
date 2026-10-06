@@ -20,7 +20,6 @@
 		"@lexical/rich-text": "0.39.0",
 		"@lexical/selection": "0.39.0",
 		"@lexical/table": "0.39.0",
-		"@lexical/utils": "0.39.0",
 		"@semoss/i18n": "workspace:*",
 		"@semoss/panels": "workspace:*",
 		"@semoss/sdk": "workspace:*",

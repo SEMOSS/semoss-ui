@@ -2,8 +2,7 @@ import type { DisplayBody } from "@/features/email/message-body";
 
 /** Supported lookback windows for a bounded Outlook header search. */
 export const MAIL_DATE_RANGES = { "1": 1, "7": 7, "30": 30, "90": 90 } as const;
-export type MailDateRange =
-	(typeof MAIL_DATE_RANGES)[keyof typeof MAIL_DATE_RANGES];
+type MailDateRange = (typeof MAIL_DATE_RANGES)[keyof typeof MAIL_DATE_RANGES];
 
 /** One explicit email search shared by the form, source loader, and adapter. */
 export interface MailSearchFilters {
@@ -23,7 +22,7 @@ export interface SourceParticipant {
 }
 
 /** One selected source message, retained only in the current application session. */
-export interface SourceMessage {
+interface SourceMessage {
 	displayBody?: DisplayBody;
 	webLink?: string;
 	id: string;

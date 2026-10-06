@@ -5,8 +5,9 @@ import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { getToolDisplayLocation } from "@/features/tools/utils/tool-metadata";
 import { useWorkEmail } from "./work-email.context";
+
 /** Discover results and approvals without automatically replacing the active panel. */
-export function WorkToolsPanel() {
+function WorkToolsPanel() {
 	const workbench = useToolWorkbench();
 	const { composer } = useWorkEmail();
 	const memory = useSyncExternalStore(

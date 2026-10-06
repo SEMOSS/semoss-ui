@@ -26,9 +26,7 @@ export function createEmptyWorkspace(): ThreadWorkspace {
 }
 
 /** Keep one primary, retaining an existing primary before comparing confidence. */
-export function normalizeTopicLinks(
-	links: ThreadTopicLink[],
-): ThreadTopicLink[] {
+function normalizeTopicLinks(links: ThreadTopicLink[]): ThreadTopicLink[] {
 	const unique = links.filter(
 		(link, index) =>
 			links.findIndex(
