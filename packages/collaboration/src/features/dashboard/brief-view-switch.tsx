@@ -110,11 +110,6 @@ export function BriefViewSwitch({
 						>
 							<Icon aria-hidden="true" className="size-4" />
 							{mode === "brief" ? "Brief" : "Chat"}
-							{mode === "chat" && (
-								<kbd className="hidden rounded border bg-background px-1 font-mono text-muted-foreground text-xs sm:inline">
-									⌘J
-								</kbd>
-							)}
 						</Link>
 					</Button>
 				);

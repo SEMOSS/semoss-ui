@@ -1,102 +1,123 @@
-import { Moon, Sun } from "lucide-react";
-import { NavLink } from "react-router";
+import { LogOut, Settings } from "lucide-react";
+import { useRef, useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
-	cn,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	toast,
-	useTheme,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+	P,
+	Small,
+	Spinner,
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { PersonAvatar } from "./person-avatar";
 
-interface CollaborationProfileMenuProps {
-	/** Shows an avatar and compact controls when navigation is collapsed. */
-	isCollapsed: boolean;
-	/** Closes mobile navigation after choosing a destination. */
-	onNavigate?: () => void;
-}
-
-/** The profile opens Settings directly, with appearance available beside it. */
-export function CollaborationProfileMenu({
-	isCollapsed,
-	onNavigate,
-}: CollaborationProfileMenuProps) {
+/** Account actions use the current session and leave failed logout attempts retryable. */
+export function CollaborationProfileMenu() {
 	const { state } = useCollaborationSession();
-	const { resolvedTheme, setTheme } = useTheme();
-	const name = state.liveProfile?.name || state.profile.name || "You";
-	const themeLabel =
-		resolvedTheme === "dark"
-			? "Switch to light theme"
-			: "Switch to dark theme";
+	const { actions } = useInsight();
+	const navigate = useNavigate();
+	const [isOpen, setIsOpen] = useState(false);
+	const [isLoggingOut, setIsLoggingOut] = useState(false);
+	const [error, setError] = useState("");
+	const isLogoutPending = useRef(false);
+	const name =
+		state.liveProfile?.name?.trim() || state.profile.name.trim() || "You";
+	const email = state.liveProfile?.email || state.profile.email;
+
+	/** End the SDK session before replacing the current location. */
+	async function handleLogout(): Promise<void> {
+		if (isLogoutPending.current) return;
+		isLogoutPending.current = true;
+		setIsLoggingOut(true);
+		setError("");
+		try {
+			if (!(await actions.logout())) throw new Error("Logout failed");
+			await navigate("/login", { replace: true });
+		} catch {
+			setError("Could not log out. Please try again.");
+			setIsOpen(true);
+		} finally {
+			isLogoutPending.current = false;
+			setIsLoggingOut(false);
+		}
+	}
+
 	return (
-		<footer
-			className={cn(
-				"mx-2 flex shrink-0 items-center gap-1 border-border border-t py-2",
-				isCollapsed && "flex-col",
-			)}
-		>
-			<Tooltip disableHoverableContent={false}>
-				<TooltipTrigger asChild>
-					<Button
-						asChild
-						variant="ghost"
-						size="sm"
-						className={cn(
-							"h-auto min-h-8 pointer-coarse:min-h-11 min-w-0 flex-1 justify-start gap-2 px-2 py-1 font-medium text-xs hover:bg-sidebar-accent",
-							isCollapsed && "w-full justify-center px-0",
-						)}
-					>
-						<NavLink
-							to="/settings"
-							onClick={onNavigate}
-							aria-label={`Settings for ${name}`}
-						>
-							<PersonAvatar
-								name={name}
-								className="size-6"
-								tone="bg-primary/10 text-primary"
-							/>
-							{!isCollapsed && (
-								<span className="truncate">{name}</span>
-							)}
-						</NavLink>
-					</Button>
-				</TooltipTrigger>
-				<TooltipContent side={isCollapsed ? "right" : "top"}>
-					Settings for {name}
-				</TooltipContent>
-			</Tooltip>
-			<Tooltip disableHoverableContent={false}>
-				<TooltipTrigger asChild>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						aria-label={themeLabel}
-						className="pointer-coarse:min-h-11 pointer-coarse:min-w-11 shrink-0 text-muted-foreground"
-						onClick={() => {
-							try {
-								setTheme(
-									resolvedTheme === "dark" ? "light" : "dark",
-								);
-							} catch {
-								toast.error(
-									"Your theme could not be saved. Allow browser storage and try again.",
-								);
-							}
+		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+			<DropdownMenuTrigger asChild>
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					className="size-11 rounded-full"
+					aria-label={`Account menu for ${name}`}
+				>
+					<PersonAvatar
+						name={name}
+						className="size-8"
+						tone="bg-primary/10 text-primary"
+					/>
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent
+				align="end"
+				side="bottom"
+				className="w-64 motion-reduce:animate-none"
+			>
+				<DropdownMenuLabel className="space-y-1 px-2 py-2">
+					<P className="break-words font-medium text-sm">{name}</P>
+					{email && (
+						<Small className="block break-words font-normal text-muted-foreground text-xs">
+							{email}
+						</Small>
+					)}
+				</DropdownMenuLabel>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem
+					asChild
+					disabled={isLoggingOut}
+					className="pointer-coarse:min-h-11"
+				>
+					<Link
+						to="/settings"
+						onClick={(event) => {
+							if (isLogoutPending.current) event.preventDefault();
 						}}
 					>
-						{resolvedTheme === "dark" ? (
-							<Sun aria-hidden="true" />
-						) : (
-							<Moon aria-hidden="true" />
-						)}
-					</Button>
-				</TooltipTrigger>
-				<TooltipContent side="top">{themeLabel}</TooltipContent>
-			</Tooltip>
-		</footer>
+						<Settings aria-hidden="true" />
+						Settings
+					</Link>
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					disabled={isLoggingOut}
+					className="pointer-coarse:min-h-11"
+					onSelect={(event) => {
+						event.preventDefault();
+						void handleLogout();
+					}}
+				>
+					{isLoggingOut ? (
+						<Spinner aria-hidden="true" />
+					) : (
+						<LogOut aria-hidden="true" />
+					)}
+					{isLoggingOut ? "Logging out…" : "Log out"}
+				</DropdownMenuItem>
+				{error && (
+					<P
+						role="alert"
+						className="px-2 py-2 text-destructive text-sm"
+					>
+						{error}
+					</P>
+				)}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }

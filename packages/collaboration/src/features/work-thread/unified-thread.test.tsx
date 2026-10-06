@@ -647,7 +647,7 @@ it.each(["Riley Warren", "", undefined])(
 		).toBeInTheDocument();
 		expect(screen.getByRole("link", { name: "Brief" })).toBeVisible();
 		expect(screen.getByRole("link", { name: /Chat/ })).toBeVisible();
-		expect(screen.getByText("Thread title")).not.toBeVisible();
+		expect(screen.queryByText("Thread title")).not.toBeInTheDocument();
 		expect(
 			screen.queryByRole("region", { name: "Conversation messages" }),
 		).not.toBeInTheDocument();

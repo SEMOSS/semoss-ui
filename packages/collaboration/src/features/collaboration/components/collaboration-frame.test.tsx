@@ -18,7 +18,7 @@ import { CollaborationSessionProvider } from "../state/collaboration-session.con
 import { CollaborationFrame } from "./collaboration-frame";
 
 const remote = vi.hoisted(() => ({
-	actions: { run: vi.fn() },
+	actions: { run: vi.fn(), logout: vi.fn() },
 	history: {
 		rooms: [{ roomId: "room-one", roomName: "Pricing conversation" }],
 		isLoading: false,
@@ -160,6 +160,69 @@ afterEach(() => {
 });
 
 describe("CollaborationFrame", () => {
+	it("keeps one header and search palette mounted across page and room navigation", async () => {
+		const { router, user } = renderFrame();
+		const header = screen
+			.getByRole("button", { name: "Search your workspace" })
+			.closest("header");
+		const search = screen.getByRole("button", {
+			name: "Search your workspace",
+		});
+		const account = screen.getByRole("button", {
+			name: /Account menu for/,
+		});
+		for (const path of [
+			"/brain",
+			"/settings/about-you",
+			"/new",
+			"/thread/room%3Aone",
+			"/",
+		]) {
+			await act(() => router.navigate(path));
+			expect(document.querySelectorAll("header")).toHaveLength(1);
+			if (path.startsWith("/thread/")) {
+				expect(header).toContainElement(
+					screen.getByRole("heading", {
+						name: "Pricing conversation",
+					}),
+				);
+			} else {
+				expect(
+					screen.queryByRole("button", {
+						name: /Conversation details/,
+					}),
+				).not.toBeInTheDocument();
+			}
+			expect(
+				screen
+					.getByRole("button", { name: "Search your workspace" })
+					.closest("header"),
+			).toBe(header);
+			expect(
+				screen.getByRole("button", { name: "Search your workspace" }),
+			).toBe(search);
+			expect(
+				screen.getByRole("button", { name: /Account menu for/ }),
+			).toBe(account);
+		}
+		expect(
+			screen.queryByRole("button", { name: /Switch to .* theme/ }),
+		).not.toBeInTheDocument();
+		act(() => search.focus());
+		await user.keyboard("{Control>}k{/Control}");
+		expect(
+			screen.getAllByRole("dialog", { name: "Search your workspace" }),
+		).toHaveLength(1);
+		await user.keyboard("{Escape}");
+		await waitFor(() => expect(search).toHaveFocus());
+		await user.click(search);
+		await user.click(screen.getByRole("option", { name: /Brain/ }));
+		await waitFor(() =>
+			expect(router.state.location.pathname).toBe("/brain"),
+		);
+		expect(screen.getByRole("main")).toHaveFocus();
+	});
+
 	it("opens a room with a collapsed sidebar and allows toggling without remounting its draft", async () => {
 		const { user } = renderFrame("/thread/room%3Aroom-one");
 		const navigation = screen.getByRole("complementary", {
@@ -174,7 +237,7 @@ describe("CollaborationFrame", () => {
 			within(navigation).getByRole("navigation", { name: "Main" }),
 		).toBeVisible();
 		expect(
-			within(navigation).getByRole("button", {
+			screen.getByRole("button", {
 				name: "Search your workspace",
 			}),
 		).toBeVisible();
@@ -189,7 +252,7 @@ describe("CollaborationFrame", () => {
 		await user.click(expand);
 		expect(navigation).toHaveClass("w-64");
 		expect(
-			within(navigation).getByRole("button", {
+			screen.getByRole("button", {
 				name: "Collapse navigation",
 			}),
 		).toHaveAttribute("aria-expanded", "true");
@@ -197,11 +260,10 @@ describe("CollaborationFrame", () => {
 			screen.getByRole("textbox", { name: "Conversation draft" }),
 		).toBe(draft);
 		expect(draft).toHaveValue("Keep this unsent message");
-		const rail = within(navigation).getByRole("button", {
+		const rail = screen.getByRole("button", {
 			name: "Collapse navigation",
 		});
-		expect(rail).toHaveAttribute("data-sidebar", "rail");
-		expect(rail.querySelector("svg")).toBeNull();
+		expect(rail.closest("header")).not.toBeNull();
 		expect(rail).toHaveFocus();
 		await user.keyboard("{Enter}");
 		expect(
@@ -372,19 +434,13 @@ describe("CollaborationFrame", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	it("hands mobile focus to Search, then returns to the visible navigation trigger", async () => {
+	it("opens Search directly from the mobile header and returns focus there", async () => {
 		isWide = false;
 		const { user } = renderFrame();
-		const trigger = screen.getByRole("button", { name: "Open navigation" });
-		await user.click(trigger);
-		const navigation = screen.getByRole("dialog", {
-			name: "Workspace navigation",
+		const trigger = screen.getByRole("button", {
+			name: "Search your workspace",
 		});
-		await user.click(
-			within(navigation).getByRole("button", {
-				name: "Search your workspace",
-			}),
-		);
+		await user.click(trigger);
 		const search = screen.getByRole("dialog", {
 			name: "Search your workspace",
 		});
@@ -400,7 +456,28 @@ describe("CollaborationFrame", () => {
 		await waitFor(() => expect(trigger).toHaveFocus());
 	});
 
-	it("returns Search focus to its compact sidebar trigger when dismissed on desktop", async () => {
+	it("hands focus from an open mobile drawer to keyboard search", async () => {
+		isWide = false;
+		const { user } = renderFrame();
+		const trigger = screen.getByRole("button", { name: "Open navigation" });
+		await user.click(trigger);
+		await user.keyboard("{Control>}k{/Control}");
+		const search = screen.getByRole("dialog", {
+			name: "Search your workspace",
+		});
+		await waitFor(() =>
+			expect(
+				within(search).getByRole("combobox", { name: "Search" }),
+			).toHaveFocus(),
+		);
+		expect(
+			screen.queryByRole("dialog", { name: "Workspace navigation" }),
+		).not.toBeInTheDocument();
+		await user.keyboard("{Escape}");
+		await waitFor(() => expect(trigger).toHaveFocus());
+	});
+
+	it("returns Search focus to its persistent header trigger when dismissed on desktop", async () => {
 		const { user } = renderFrame();
 		await user.click(
 			screen.getByRole("button", { name: "Collapse navigation" }),

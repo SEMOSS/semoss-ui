@@ -55,7 +55,7 @@ function NavigationFixture({ onNavigate }: { onNavigate?: () => void }) {
 	);
 }
 
-/** Render the real header, topics, history, and profile on a persistent route. */
+/** Render the real header, topics, and history on a persistent route. */
 function renderNavigation(
 	path = "/",
 	state = createInitialCollaborationState(),
@@ -87,7 +87,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("uses a plain header, four quiet primary controls, and folded Topics", () => {
+	it("uses a plain header, three quiet primary controls, and folded Topics", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -106,7 +106,7 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["New Session", "Search your workspace", "For you", "Brain"]);
+		).toEqual(["New Session", "For you", "Brain"]);
 		expect(
 			within(main).getByRole("link", { name: "For you" }),
 		).toHaveTextContent(/^For you$/);
@@ -258,11 +258,8 @@ describe("CollaborationNavigation", () => {
 		const controls = [
 			screen.getByRole("button", { name: "Expand navigation" }),
 			screen.getByRole("link", { name: "New Session" }),
-			screen.getByRole("button", { name: "Search your workspace" }),
 			screen.getByRole("link", { name: "For you" }),
 			screen.getByRole("link", { name: "Brain" }),
-			screen.getByRole("link", { name: /^Settings for / }),
-			screen.getByRole("button", { name: "Switch to dark theme" }),
 		];
 		for (const control of controls) {
 			expect(control).toBeVisible();
@@ -273,17 +270,15 @@ describe("CollaborationNavigation", () => {
 		}
 	});
 
-	it("opens Search from the rail while recording its return-focus trigger", async () => {
-		const { user, onNavigate } = renderNavigation();
-		await user.click(
-			screen.getByRole("button", { name: "Collapse navigation" }),
-		);
-		const search = screen.getByRole("button", {
-			name: "Search your workspace",
-		});
-		await user.click(search);
-		expect(dashboard.searchReturnFocus.current).toBe(search);
-		expect(dashboard.setIsSearchOpen).toHaveBeenCalledWith(true);
-		expect(onNavigate).toHaveBeenCalledOnce();
+	it("leaves global search and account actions to the workspace header", () => {
+		renderNavigation();
+		expect(
+			screen.queryByRole("button", { name: "Search your workspace" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", {
+				name: /Account menu|Switch to .* theme/,
+			}),
+		).not.toBeInTheDocument();
 	});
 });

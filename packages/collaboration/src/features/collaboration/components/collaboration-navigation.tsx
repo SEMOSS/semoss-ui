@@ -1,4 +1,4 @@
-import { Brain, Inbox, Plus, Search } from "lucide-react";
+import { Brain, Inbox, Plus } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router";
 import {
@@ -9,11 +9,9 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
-import { useDashboard } from "@/features/dashboard/dashboard.context";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
-import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationTopicsNavigation } from "./collaboration-topics-navigation";
 
 interface CollaborationNavigationProps {
@@ -49,7 +47,6 @@ export function CollaborationNavigation({
 	const { state } = useCollaborationSession();
 	const { pathname } = useLocation();
 	const [isLocalTopicsOpen, setIsLocalTopicsOpen] = useState(false);
-	const { setIsSearchOpen, searchReturnFocus } = useDashboard();
 	const reviews =
 		state.reviews.filter((review) => review.status === "open").length +
 		state.topics.reduce(
@@ -121,38 +118,6 @@ export function CollaborationNavigation({
 						</TooltipContent>
 					)}
 				</Tooltip>
-				<Tooltip disableHoverableContent={false}>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							size="sm"
-							className={cn(
-								"mb-1.5 h-auto min-h-8 pointer-coarse:min-h-11 w-full justify-start gap-2 rounded-lg px-2 py-1 font-normal text-muted-foreground text-xs hover:bg-sidebar-accent hover:text-foreground has-[>svg]:px-2",
-								isCollapsed &&
-									"justify-center px-0 has-[>svg]:px-0",
-							)}
-							aria-label="Search your workspace"
-							onClick={(event) => {
-								searchReturnFocus.current = event.currentTarget;
-								onNavigate?.();
-								setIsSearchOpen(true);
-							}}
-						>
-							<Search aria-hidden="true" />
-							{!isCollapsed && (
-								<>
-									<span>Search</span>
-									<kbd className="ml-auto font-sans text-xs">
-										⌘K
-									</kbd>
-								</>
-							)}
-						</Button>
-					</TooltipTrigger>
-					{isCollapsed && (
-						<TooltipContent side="right">Search</TooltipContent>
-					)}
-				</Tooltip>
 				{links.map(({ to, label, icon: Icon, count, isActive }) => (
 					<Tooltip key={to} disableHoverableContent={false}>
 						<TooltipTrigger asChild>
@@ -215,10 +180,6 @@ export function CollaborationNavigation({
 					/>
 				</div>
 			</div>
-			<CollaborationProfileMenu
-				isCollapsed={isCollapsed}
-				onNavigate={onNavigate}
-			/>
 		</div>
 	);
 }

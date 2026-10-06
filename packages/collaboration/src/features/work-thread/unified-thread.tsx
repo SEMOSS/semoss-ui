@@ -23,7 +23,7 @@ import {
 	ResizablePanelGroup,
 } from "@semoss/ui/next";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
-import { CollaborationNavigationControlContext } from "@/features/collaboration/components/collaboration-navigation-control.context";
+import { CollaborationHeaderContext } from "@/features/collaboration/components/collaboration-header.context";
 import { restoreThreadFocus } from "@/features/collaboration/components/thread-menu.utils";
 import type {
 	Thread,
@@ -111,7 +111,7 @@ export function UnifiedThread({
 	/** Open the thread after validation, before asynchronous preparation. */
 	onSubmitStart?: () => void;
 }) {
-	const navigationControl = useContext(CollaborationNavigationControlContext);
+	const headerControls = useContext(CollaborationHeaderContext);
 	const composer = useWorkComposerSession(thread.id);
 	const memory = useSyncExternalStore(
 		composer.subscribe,
@@ -495,7 +495,6 @@ export function UnifiedThread({
 						className={cn(
 							"flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
 							isLanding && "px-4 py-6 sm:px-6 lg:p-8",
-							"bg-muted/15",
 						)}
 					>
 						<div
@@ -762,12 +761,12 @@ export function UnifiedThread({
 														top: {
 															before: (
 																<>
-																	{activePane &&
-																		fullPane &&
-																		navigationControl}
 																	{fullPane &&
 																		backToFeed}
 																	{isChatCollapsed &&
+																		(isLanding ||
+																			headerControls ===
+																				undefined) &&
 																		!isNarrow && (
 																			<WorkPaneControls
 																				isWorkbenchOpen={

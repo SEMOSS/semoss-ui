@@ -18,6 +18,10 @@ const state = createInitialCollaborationState();
 state.profile.name = "Riley Warren";
 state.profile.id = "visual-fixture-only";
 state.profile.email = "fixture@example.invalid";
+if (new URLSearchParams(window.location.search).get("chatState") === "long") {
+	state.profile.name = "Riley Alexandra Warren Montgomery";
+	state.profile.email = "riley.alexandra.warren.montgomery@example.invalid";
+}
 // A representative sample day exercises open, waiting and handled presentation.
 const previewNow = new Date();
 const openItems = state.items.filter(
@@ -61,6 +65,8 @@ const events = [
 const instance = new Insight();
 const actions = {
 	...instance.actions,
+	// Preview account actions must never end a live backend session.
+	logout: async () => true,
 	run: (async (statement: string) => {
 		let output: unknown = [];
 		if (statement.includes("MicrosoftCalendarListEvents"))

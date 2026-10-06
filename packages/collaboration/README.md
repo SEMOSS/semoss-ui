@@ -11,15 +11,29 @@ appearance, context rules, and data reset.
 
 The fixed Brief view uses the existing SEMOSS components, semantic color tokens,
 Geist typography, and spacing scale. It does not define another theme or palette.
-A shared sidebar provides quiet New Session and search actions, For you, Brain,
+A shared sidebar provides New Session, For you, Brain,
 foldable Topics and Sessions, with sessions grouped by date. Compact 12px labels
-and 32px rows retain 44px minimum touch targets. Its visible toggle switches between
+and 32px rows retain 44px minimum touch targets. The persistent header’s navigation toggle switches between
 256px navigation and a 64px icon rail; desktop collapse and both disclosure
 preferences are stored per account and deployment. Sessions start expanded and
 retain their selection and scroll position when folded. Mobile navigation remains a
 drawer below 1024px. Waiting on others and Handled are always linked from the
 For you summary. Brain contains Review, People, Threads, and Sources navigation;
-clicking the profile name opens Settings directly.
+the top-right account avatar opens a menu with Settings and Log out. Logout failures
+remain visible and retryable. Appearance controls remain in Settings only.
+
+A persistent 56px header blends into the page canvas alongside the full-height sidebar.
+Search stays on the left and the signed-in account avatar on the right across all
+workspace routes, including full-width workbenches. Mobile uses the same header
+with a drawer trigger. Search still uses one palette and ⌘/Ctrl K.
+Saved conversations compose their title, small agent avatar, and contextual/workbench
+actions into that same header, without a second toolbar or horizontal divider.
+Search becomes an icon on small screens to leave room for the conversation title.
+Selecting the title reveals its full text and agent identity in a keyboard- and
+touch-accessible popover. The room controls render into a stable shell target while
+retaining their room context, including when a full-width workbench hides the chat.
+The navigation control belongs to the global header, so changing panes does not
+move it or duplicate it. Conversation editors and drafts remain mounted.
 
 Work, Brain, and Settings share the Brief's page canvas, reading width, heading
 scale, responsive spacing, and quiet card treatment. Directories retain their
@@ -289,6 +303,19 @@ calendar/email operations, pending approvals/delegations, and published app
 embedding/permission changes still need an end-to-end integration pass. The
 in-app browser could not open the HTTPS deployment because its certificate was
 untrusted; no certificate settings were changed.
+
+The coordinated header update passed 123 focused tests across navigation, account
+menus, search, settings, room controls, and conversation/workbench state. Package
+type-check, production build, and touched-file Biome checks passed using Node
+24.4.0; the build retains the existing large-chunk warnings. The preview was checked
+at 320, 360, and 1440 CSS pixels in light/dark themes, including long names/titles,
+loading/error states, keyboard focus, account navigation, and retained chat drafts
+across pane changes. The unified room header remains 56px tall without horizontal page
+overflow; route transitions clear the room controls without remounting global controls.
+Logout success/failure/pending cases were mocked; no live session was ended. Native
+200% browser zoom and real-device touch/screen-reader behavior were not exercised.
+The preview's Files panel lacks an AccessStoreProvider, so file operations were not
+validated by this shell pass. `chatState=long` also supplies a long account identity.
 
 `/dashboard-preview.html` is a development-only design fixture with sample data,
 using the real dashboard and Brain components. It is not a live integration

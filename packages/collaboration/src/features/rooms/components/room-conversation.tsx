@@ -57,17 +57,16 @@ export function RoomConversation({
 				isLanding && "overflow-y-auto",
 			)}
 		>
-			<div hidden={isLanding}>
+			{!isLanding && (
 				<RoomHeader
 					agent={agent}
 					title={title}
 					isToolWorkbenchOpen={isToolWorkbenchOpen}
 					showToolWorkbench={showToolWorkbench}
-					showNavigationControl={!isLanding && !isHidden}
 					onToggleToolWorkbench={onToggleToolWorkbench}
 					actions={headerActions}
 				/>
-			</div>
+			)}
 			<div
 				hidden={isLanding}
 				className={
