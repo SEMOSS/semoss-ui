@@ -34,8 +34,8 @@ export function CollaborationProfileMenu({
 	return (
 		<footer
 			className={cn(
-				"mx-3 flex shrink-0 items-center gap-1 border-border border-t py-3",
-				isCollapsed && "mx-2 flex-col",
+				"mx-2 flex shrink-0 items-center gap-1 border-border border-t py-2",
+				isCollapsed && "flex-col",
 			)}
 		>
 			<Tooltip disableHoverableContent={false}>
@@ -43,8 +43,9 @@ export function CollaborationProfileMenu({
 					<Button
 						asChild
 						variant="ghost"
+						size="sm"
 						className={cn(
-							"h-11 min-w-0 flex-1 justify-start gap-3 px-1 font-medium hover:bg-sidebar-accent",
+							"h-auto min-h-8 pointer-coarse:min-h-11 min-w-0 flex-1 justify-start gap-2 px-2 py-1 font-medium text-xs hover:bg-sidebar-accent",
 							isCollapsed && "w-full justify-center px-0",
 						)}
 					>
@@ -55,7 +56,7 @@ export function CollaborationProfileMenu({
 						>
 							<PersonAvatar
 								name={name}
-								className="size-8"
+								className="size-6"
 								tone="bg-primary/10 text-primary"
 							/>
 							{!isCollapsed && (
@@ -72,7 +73,7 @@ export function CollaborationProfileMenu({
 				<TooltipTrigger asChild>
 					<Button
 						variant="ghost"
-						size="icon"
+						size="icon-sm"
 						aria-label={themeLabel}
 						className="pointer-coarse:min-h-11 pointer-coarse:min-w-11 shrink-0 text-muted-foreground"
 						onClick={() => {

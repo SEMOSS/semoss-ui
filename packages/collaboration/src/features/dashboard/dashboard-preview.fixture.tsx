@@ -93,7 +93,7 @@ const router = createMemoryRouter(
 			children: [
 				{ index: true, Component: DashboardPage },
 				{ path: "new", Component: DailyChatPreview },
-				{ path: "work/thread/:threadId", Component: DailyChatPreview },
+				{ path: "thread/:threadId", Component: DailyChatPreview },
 				...[
 					"work",
 					"work/waiting",

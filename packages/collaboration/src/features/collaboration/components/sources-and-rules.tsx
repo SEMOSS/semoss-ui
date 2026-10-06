@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router";
 import { Button, P, toast } from "@semoss/ui/next";
 import { SourcesView } from "@/features/connectors/components/sources-view";
+import { threadPath } from "@/lib/workspace-paths";
 import { importSourceCommand } from "../import-source";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -57,19 +58,16 @@ export function SourcesAndRules() {
 						);
 						const threadId = existing?.id ?? command.thread.id;
 						dispatch(command);
-						void navigate(
-							`/work/thread/${encodeURIComponent(threadId)}`,
-							{
-								state: {
-									threadAction: {
-										id: crypto.randomUUID(),
-										threadId,
-										action: "draft",
-										sourceMessageId: source.nativeId,
-									},
+						void navigate(threadPath(threadId), {
+							state: {
+								threadAction: {
+									id: crypto.randomUUID(),
+									threadId,
+									action: "draft",
+									sourceMessageId: source.nativeId,
 								},
 							},
-						);
+						});
 					}}
 					onImport={(source) => {
 						dispatch(importSourceCommand(source));

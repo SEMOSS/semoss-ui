@@ -41,14 +41,12 @@ function renderHeader(
 			{...props}
 		/>
 	);
-	const path = props.isNewChat
-		? "/new"
-		: "/work/thread/session:retained-chat";
+	const path = props.isNewChat ? "/new" : "/thread/session:retained-chat";
 	const router = createMemoryRouter(
 		[
 			{ path: "/", element: <BriefViewSwitch view="brief" /> },
 			{ path: "/new", element: header },
-			{ path: "/work/thread/:threadId", element: header },
+			{ path: "/thread/:threadId", element: header },
 		],
 		{ initialEntries: [{ pathname: path, state }] },
 	);
@@ -76,7 +74,7 @@ it.each([
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
 		expected,
 	);
-	expect(screen.getByRole("link", { name: "New chat" })).toBeVisible();
+	expect(screen.getByRole("link", { name: "New Session" })).toBeVisible();
 });
 
 it.each([
@@ -90,7 +88,10 @@ it.each([
 		expected,
 	);
 	expect(screen.getByText("What would you like to work on?")).toBeVisible();
-	expect(screen.queryByRole("link", { name: "New chat" })).toBeNull();
+	expect(screen.queryByRole("link", { name: "New Session" })).toBeNull();
+	expect(screen.getByRole("button", { name: "Your day" })).toBeVisible();
+	expect(screen.getByRole("link", { name: "Brief" })).toBeVisible();
+	expect(screen.getByRole("link", { name: /Chat/ })).toBeVisible();
 });
 
 it("uses the live profile timezone for the new-chat greeting", () => {
@@ -101,21 +102,27 @@ it("uses the live profile timezone for the new-chat greeting", () => {
 	);
 });
 
-it("opens the daily context by keyboard and restores focus on Escape", async () => {
-	const user = userEvent.setup();
-	renderHeader({ isNewChat: true, topicId: "release" });
-	const trigger = screen.getByRole("button", { name: "Your day" });
-	await user.tab();
-	expect(trigger).toHaveFocus();
-	await user.keyboard("{Enter}");
-	const dialog = screen.getByRole("dialog", { name: "Your day" });
-	expect(
-		within(dialog).getByRole("button", { name: "Review release" }),
-	).toHaveFocus();
-	await user.keyboard("{Escape}");
-	expect(screen.queryByRole("dialog")).toBeNull();
-	expect(trigger).toHaveFocus();
-});
+it.each([
+	{ isNewChat: true, presentation: "new session" },
+	{ isNewChat: false, presentation: "saved chat" },
+])(
+	"opens $presentation daily context by keyboard and restores focus on Escape",
+	async ({ isNewChat }) => {
+		const user = userEvent.setup();
+		renderHeader({ topicId: "release", isNewChat });
+		const trigger = screen.getByRole("button", { name: "Your day" });
+		await user.tab();
+		expect(trigger).toHaveFocus();
+		await user.keyboard("{Enter}");
+		const dialog = screen.getByRole("dialog", { name: "Your day" });
+		expect(
+			within(dialog).getByRole("button", { name: "Review release" }),
+		).toHaveFocus();
+		await user.keyboard("{Escape}");
+		expect(screen.queryByRole("dialog")).toBeNull();
+		expect(trigger).toHaveFocus();
+	},
+);
 
 it("retains the chat identity, topic and opened room through Brief", async () => {
 	const user = userEvent.setup();
@@ -127,7 +134,7 @@ it("retains the chat identity, topic and opened room through Brief", async () =>
 	expect(router.state.location.pathname).toBe("/");
 	await user.click(screen.getByRole("link", { name: /Chat/ }));
 	expect(router.state.location.pathname).toBe(
-		"/work/thread/session:retained-chat",
+		"/thread/session:retained-chat",
 	);
 	expect(router.state.location.state).toEqual({
 		sessionId: "session:retained-chat",
@@ -139,7 +146,7 @@ it("retains the chat identity, topic and opened room through Brief", async () =>
 it("starts a separate new chat without carrying saved room state", async () => {
 	const user = userEvent.setup();
 	const router = renderHeader({}, { openedRoomId: "saved-room" });
-	await user.click(screen.getByRole("link", { name: "New chat" }));
+	await user.click(screen.getByRole("link", { name: "New Session" }));
 	expect(router.state.location.pathname).toBe("/new");
 	expect(router.state.location.state).toBeNull();
 });

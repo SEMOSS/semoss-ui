@@ -12,6 +12,7 @@ import {
 	Small,
 	Switch,
 } from "@semoss/ui/next";
+import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
 import { isFollowed } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -134,7 +135,7 @@ export function PersonDetail() {
 							>
 								<Link
 									className="break-words text-sm hover:underline"
-									to={`/work/thread/${encodeURIComponent(item.threadId)}`}
+									to={threadPath(item.threadId)}
 								>
 									{item.title}
 								</Link>

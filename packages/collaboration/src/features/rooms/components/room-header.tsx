@@ -1,70 +1,64 @@
-import { PanelRightClose, PanelRightOpen, Settings2 } from "lucide-react";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import { type ReactNode, useContext } from "react";
 import {
 	Button,
+	H2,
+	P,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
-import type { Session } from "@/types/session";
+import { CollaborationNavigationControlContext } from "@/features/collaboration/components/collaboration-navigation-control.context";
 
 /** The active session's title bar, actions, and source/status row. */
 export function RoomHeader({
 	agent,
-	agentId,
-	session,
+	title,
 	isToolWorkbenchOpen,
 	showToolWorkbench = true,
 	onToggleToolWorkbench,
-	onConfigure,
+	actions,
+	showNavigationControl = true,
 }: {
 	agent: AgentConfiguration;
-	agentId: string;
-	session: Session;
+	title: string;
 	isToolWorkbenchOpen: boolean;
 	showToolWorkbench?: boolean;
 	onToggleToolWorkbench: () => void;
-	onConfigure: (id: string) => void;
+	/** Contextual thread actions; agent editing belongs in agent settings. */
+	actions?: ReactNode;
+	/** Only the visible conversation header hosts the workspace navigation action. */
+	showNavigationControl?: boolean;
 }) {
+	const navigationControl = useContext(CollaborationNavigationControlContext);
 	const toolWorkbenchLabel = isToolWorkbenchOpen
 		? "Close workbench"
 		: "Open workbench";
 
 	return (
 		<header className="flex min-h-17 shrink-0 items-center gap-3 border-b px-4 py-3 lg:px-5">
+			{showNavigationControl && navigationControl}
 			<AgentAvatar agent={agent} size="sm" />
 			<div className="min-w-0 flex-1">
-				<h2 className="truncate font-semibold text-sm">
+				<H2 className="truncate font-medium text-sm">
 					{agent.name}
 					<span className="ml-2 font-normal text-muted-foreground text-xs">
 						AI agent
 					</span>
-				</h2>
-				<p className="mt-0.5 truncate text-muted-foreground text-xs">
-					{session.title}
-				</p>
+				</H2>
+				<P
+					className="mt-0.5 truncate text-muted-foreground text-xs"
+					title={title}
+				>
+					{title}
+				</P>
 			</div>
-
-			{agentId.length > 0 && (
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							aria-label={`Configure ${agent.name}`}
-							onClick={() => onConfigure(agentId)}
-						>
-							<Settings2 aria-hidden="true" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>{`Configure ${agent.name}`}</TooltipContent>
-				</Tooltip>
-			)}
+			{actions}
 
 			{showToolWorkbench && (
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
 							type="button"

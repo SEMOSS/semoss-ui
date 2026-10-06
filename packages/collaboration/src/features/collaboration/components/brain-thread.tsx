@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router";
 import { Button, P } from "@semoss/ui/next";
 import { useEnsureThreadInsights } from "@/features/work-thread/use-thread-insights";
+import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { BrainOverview } from "./brain-overview";
@@ -42,9 +43,7 @@ export function BrainThread() {
 										messages · {dateLabel(thread.lastAt)}
 									</span>
 									<Button asChild variant="outline" size="sm">
-										<Link
-											to={`/work/thread/${encodeURIComponent(thread.id)}`}
-										>
+										<Link to={threadPath(thread.id)}>
 											Open in Work
 										</Link>
 									</Button>

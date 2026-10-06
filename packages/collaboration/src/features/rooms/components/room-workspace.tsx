@@ -10,9 +10,8 @@ import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { Session } from "@/types/session";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { RoomComposer } from "./room-composer";
-import { RoomHeader } from "./room-header";
+import { RoomConversation } from "./room-conversation";
 import { RoomRunStatus } from "./room-run-status";
-import { RoomThread } from "./room-thread";
 
 const ROOM_WORKSPACE_LAYOUT_ID = "collaboration-room-workspace-v1";
 const CONVERSATION_PANEL_ID = "collaboration-room-conversation";
@@ -20,7 +19,6 @@ const TOOL_WORKBENCH_PANEL_ID = "collaboration-room-tool-workbench";
 
 interface RoomWorkspaceProps {
 	agent: RoomViewProps["agent"];
-	agentId: string;
 	session: Session;
 	thread: RoomViewProps["thread"];
 	isSending: boolean;
@@ -45,13 +43,11 @@ interface RoomWorkspaceProps {
 	onOptimizePrompt: RoomViewProps["onOptimizePrompt"];
 	onCancelTurn: RoomViewProps["onCancelTurn"];
 	onReconnect: RoomViewProps["onReconnect"];
-	onConfigure: RoomViewProps["onConfigure"];
 }
 
 /** Conversation and its contextual tool dock. */
 export function RoomWorkspace({
 	agent,
-	agentId,
 	session,
 	thread,
 	isSending,
@@ -75,7 +71,6 @@ export function RoomWorkspace({
 	onSaveRoomSettings,
 	onOptimizePrompt,
 	onCancelTurn,
-	onConfigure,
 	onReconnect,
 }: RoomWorkspaceProps) {
 	const {
@@ -119,42 +114,33 @@ export function RoomWorkspace({
 						"hidden md:block",
 				)}
 			>
-				<section
-					className="flex size-full min-h-0 min-w-0 flex-col"
-					aria-label="Communication thread"
-				>
-					<RoomHeader
-						agent={agent}
-						agentId={agentId}
-						session={session}
-						isToolWorkbenchOpen={isToolWorkbenchOpen}
-						showToolWorkbench={showToolWorkbench}
-						onToggleToolWorkbench={toggleToolWorkbench}
-						onConfigure={onConfigure}
-					/>
-					<RoomThread
-						agent={agent}
-						thread={thread}
-						isLoadingHistory={isLoadingHistory}
-						roomId={session.id}
-						resumeSignal={resumeSignal}
-						phase={phase}
-						hasObservationIssue={!!transportError}
-					/>
-					<RoomRunStatus
-						agent={agent}
-						turnError={turnError}
-						transportError={transportError}
-						pendingApprovals={pendingApprovals}
-						onReconnect={onReconnect}
-					/>
-					<div className="shrink-0 bg-background px-4 pt-2 pb-4 sm:px-5 lg:px-7">
+				<RoomConversation
+					agent={agent}
+					title={session.title}
+					conversationId={session.id}
+					thread={thread}
+					isLoadingHistory={isLoadingHistory}
+					resumeSignal={resumeSignal}
+					phase={phase}
+					hasObservationIssue={Boolean(transportError)}
+					isToolWorkbenchOpen={isToolWorkbenchOpen}
+					showToolWorkbench={showToolWorkbench}
+					onToggleToolWorkbench={toggleToolWorkbench}
+					status={
+						<RoomRunStatus
+							agent={agent}
+							turnError={turnError}
+							transportError={transportError}
+							pendingApprovals={pendingApprovals}
+							onReconnect={onReconnect}
+						/>
+					}
+					composer={
 						<RoomComposer
 							key={session.id}
-							className="mx-auto w-full max-w-3xl"
+							className="bg-transparent"
 							agentName={agent.name}
 							agent={agent}
-							onConfigureAgent={() => onConfigure(agentId)}
 							isSubmitting={isSending}
 							isRunning={isRunning}
 							isCancelling={isCancelling}
@@ -173,8 +159,8 @@ export function RoomWorkspace({
 							onSend={handleSend}
 							onStop={onCancelTurn}
 						/>
-					</div>
-				</section>
+					}
+				/>
 			</ResizablePanel>
 			{showToolWorkbench && isToolWorkbenchOpen && (
 				<>

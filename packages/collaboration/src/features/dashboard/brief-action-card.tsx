@@ -5,6 +5,7 @@ import { ThreadMenu } from "@/features/collaboration/components/thread-menu";
 import type { WorkItem } from "@/features/collaboration/state/collaboration.types";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { topicTone } from "@/features/collaboration/topic-tone";
+import { threadPath } from "@/lib/workspace-paths";
 import { BriefDeadline } from "./brief-deadline";
 
 /** Prioritized work opens the existing thread review and approval flow. */
@@ -29,7 +30,7 @@ export function BriefActionCard({
 		item.topicIds.includes(candidate.id),
 	);
 	const draft = state.workspaces[thread.id]?.drafts[0];
-	const path = `/work/thread/${encodeURIComponent(thread.id)}`;
+	const path = threadPath(thread.id);
 	return (
 		<ThreadMenu thread={thread} item={item}>
 			{(menu) => (

@@ -604,6 +604,75 @@ it("changes only the recipients of an open reply, and keeps them over the native
 	);
 });
 
+it.each(["new", "reply"] as const)(
+	"applies explicit empty envelope fields to an open %s while preserving omitted fields",
+	(mode) => {
+		const { completed, composer } = setup();
+		composer.requestEmailDraft({
+			id: "open-email",
+			mode,
+			sourceUid: mode === "reply" ? "email" : undefined,
+			to: "recipient@example.com",
+			cc: "copy@example.com",
+			bcc: "private@example.com",
+			subject: "Original subject",
+			body: "My message",
+		});
+		const [draft] = composer.getSnapshot().emailDrafts;
+		draft.initializeReplyRecipients({ to: ["sender@example.com"], cc: [] });
+		const props = (fields: Record<string, unknown>, toolId: string) => ({
+			...completed,
+			snapshot: {
+				...completed.snapshot,
+				turn: {
+					...completed.snapshot.turn,
+					messages: [
+						{
+							id: "change",
+							role: "assistant" as const,
+							parts: [
+								composeEmailPart(
+									{
+										openEmailId: "open-email",
+										...(mode === "reply"
+											? { replyTo: "email" }
+											: {}),
+										...fields,
+									},
+									toolId,
+								),
+							],
+						},
+					],
+				},
+			},
+		});
+		const view = renderHook(useThreadDraftProposals, {
+			initialProps: props({ message: "Revised message" }, "body-change"),
+		});
+		expect(draft.getSnapshot().values).toMatchObject({
+			to: "recipient@example.com",
+			cc: "copy@example.com",
+			bcc: "private@example.com",
+			subject: "Original subject",
+		});
+		view.rerender(
+			props(
+				{ to: "", cc: "", bcc: "", subject: "", message: "  \n" },
+				"clear-envelope",
+			),
+		);
+		expect(draft.getSnapshot().values).toMatchObject({
+			to: "",
+			cc: "",
+			bcc: mode === "reply" ? "private@example.com" : "",
+			subject: mode === "reply" ? "Original subject" : "",
+			body: "<p>Revised message</p>",
+		});
+		view.unmount();
+	},
+);
+
 it("opens a forward of the thread's email, with no note needed", () => {
 	const { completed, composer } = setup();
 	const forward = {

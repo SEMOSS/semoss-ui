@@ -6,9 +6,15 @@ import { draftText } from "@/features/email/email-html";
 import type { ComposerDraft } from "@/features/rooms/components/room-composer.types";
 import type { SubmittedThreadContext } from "@/features/thread-assistant/thread-context";
 import type { ThreadSession } from "@/features/thread-assistant/thread-session";
+import type { ThreadChatSettings } from "@/features/thread-assistant/thread-settings";
 import { OutlookReplySession } from "./outlook-reply-session";
 import { ReplyDraftAssistant } from "./reply-draft-assistant";
 import type { ThreadComposerMode } from "./thread-composer-controls";
+
+/** Raw, edited fields survive composer remounts, including invalid numeric input. */
+export type ChatSettingsDraft = Partial<
+	Omit<ThreadChatSettings, "temperature"> & { temperature: string }
+>;
 
 interface WorkComposerSnapshot {
 	emailDrafts: EmailDraftEditor[];
@@ -20,6 +26,9 @@ interface WorkComposerSnapshot {
 	sourceMessageId?: string;
 	revision: number;
 	isSubmitting: boolean;
+	/** A valid first submission has moved this draft onto its conversation route. */
+	hasStartedChat: boolean;
+	shouldFocusChat: boolean;
 	error: string;
 }
 
@@ -34,6 +43,8 @@ export class WorkComposerSession {
 		selected: [],
 		revision: 0,
 		isSubmitting: false,
+		hasStartedChat: false,
+		shouldFocusChat: false,
 		error: "",
 	};
 	private actionIds = new Set<string>();
@@ -46,6 +57,14 @@ export class WorkComposerSession {
 	private openDraftId: string | null = null;
 	private includedSources = new Set<string>();
 	private reconciled = new WeakMap<ThreadSession, number>();
+	private chatSettingsDraft: ChatSettingsDraft | null = null;
+
+	getChatSettingsDraft = (): ChatSettingsDraft | null =>
+		this.chatSettingsDraft;
+	/** RHF owns the visible form; retaining its edits does not rerender the chat. */
+	setChatSettingsDraft = (draft: ChatSettingsDraft | null): void => {
+		this.chatSettingsDraft = draft;
+	};
 
 	getSnapshot = (): WorkComposerSnapshot => this.snapshot;
 	subscribe = (listener: () => void): (() => void) => {
@@ -82,6 +101,16 @@ export class WorkComposerSession {
 
 	setError = (error: string): void => {
 		this.update({ error, mode: "assistant" });
+	};
+	/** Keep Brief/Chat returns on the conversation after the first admitted send. */
+	startChat = (): void => {
+		if (!this.snapshot.hasStartedChat)
+			this.update({ hasStartedChat: true, shouldFocusChat: true });
+	};
+	/** The destination consumes focus once; later rerenders must not steal it. */
+	consumeChatFocus = (): void => {
+		if (this.snapshot.shouldFocusChat)
+			this.update({ shouldFocusChat: false });
 	};
 	setMode = (mode: ThreadComposerMode): void => {
 		if (!this.snapshot.isSubmitting && this.snapshot.mode !== mode)

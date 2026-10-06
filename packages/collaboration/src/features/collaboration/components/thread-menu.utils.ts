@@ -1,3 +1,5 @@
+import { threadPath } from "@/lib/workspace-paths";
+
 export type ThreadMenuArea = "work" | "brain";
 
 /** Build a thread link without losing the deployment path or query string. */
@@ -10,7 +12,7 @@ export function threadUrl(
 	url.hash =
 		area === "brain"
 			? `/brain/threads/${encodeURIComponent(threadId)}`
-			: `/work/thread/${encodeURIComponent(threadId)}`;
+			: threadPath(threadId);
 	return url.href;
 }
 

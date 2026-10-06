@@ -7,11 +7,12 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createMemoryRouter } from "react-router";
+import { createMemoryRouter, useLocation } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Textarea } from "@semoss/ui/next";
 import { DashboardProvider } from "@/features/dashboard/dashboard-provider";
+import { RoomHeader } from "@/features/rooms/components/room-header";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "../state/collaboration-session.context";
 import { CollaborationFrame } from "./collaboration-frame";
@@ -64,7 +65,27 @@ function FrameFixture() {
 
 /** A persistent route outlet exposes accidental remounts through an unsaved draft. */
 function DraftFixture() {
-	return <Textarea aria-label="Conversation draft" defaultValue="" />;
+	const { pathname } = useLocation();
+	return (
+		<>
+			{pathname.startsWith("/thread/") && (
+				<RoomHeader
+					agent={{
+						name: "Research agent",
+						description: "",
+						system_prompt: "",
+						mcp: [],
+						skills: [],
+						prompts: [],
+					}}
+					title="Pricing conversation"
+					isToolWorkbenchOpen={false}
+					onToggleToolWorkbench={() => undefined}
+				/>
+			)}
+			<Textarea aria-label="Conversation draft" defaultValue="" />
+		</>
+	);
 }
 
 function renderFrame(path = "/") {
@@ -121,6 +142,7 @@ beforeEach(() => {
 				this.getAttribute("aria-label") === "Open navigation";
 			const isVisible =
 				this.isConnected &&
+				!this.closest("[hidden]") &&
 				(isDesktopControl ? isWide : isMobileControl ? !isWide : true);
 			const rectangles = isVisible ? [new DOMRect(0, 0, 40, 40)] : [];
 			return Object.assign(rectangles, {
@@ -138,8 +160,8 @@ afterEach(() => {
 });
 
 describe("CollaborationFrame", () => {
-	it("switches the desktop sidebar to a rail without remounting the conversation draft", async () => {
-		const { user } = renderFrame("/room/room-one");
+	it("opens a room with a collapsed sidebar and allows toggling without remounting its draft", async () => {
+		const { user } = renderFrame("/thread/room%3Aroom-one");
 		const navigation = screen.getByRole("complementary", {
 			name: "Workspace navigation",
 		});
@@ -147,34 +169,91 @@ describe("CollaborationFrame", () => {
 			name: "Conversation draft",
 		});
 		await user.type(draft, "Keep this unsent message");
+		expect(navigation).toHaveClass("w-16");
+		expect(
+			within(navigation).getByRole("navigation", { name: "Main" }),
+		).toBeVisible();
+		expect(
+			within(navigation).getByRole("button", {
+				name: "Search your workspace",
+			}),
+		).toBeVisible();
+		expect(
+			within(navigation).getByRole("link", { name: "New Session" }),
+		).toBeVisible();
+		const expand = screen.getByRole("button", {
+			name: "Expand navigation",
+		});
+		expect(expand.closest("header")).not.toBeNull();
+		expect(screen.getByRole("main")).not.toHaveClass("lg:pl-14");
+		await user.click(expand);
 		expect(navigation).toHaveClass("w-64");
-		await user.click(
+		expect(
 			within(navigation).getByRole("button", {
 				name: "Collapse navigation",
 			}),
-		);
-		expect(navigation).toHaveClass("w-16");
-		expect(
-			within(navigation).getByRole("button", {
-				name: "Expand navigation",
-			}),
-		).toHaveAttribute("aria-expanded", "false");
+		).toHaveAttribute("aria-expanded", "true");
 		expect(
 			screen.getByRole("textbox", { name: "Conversation draft" }),
 		).toBe(draft);
 		expect(draft).toHaveValue("Keep this unsent message");
-		await user.click(
-			within(navigation).getByRole("button", {
-				name: "Expand navigation",
-			}),
-		);
-		expect(navigation).toHaveClass("w-64");
+		const rail = within(navigation).getByRole("button", {
+			name: "Collapse navigation",
+		});
+		expect(rail).toHaveAttribute("data-sidebar", "rail");
+		expect(rail.querySelector("svg")).toBeNull();
+		expect(rail).toHaveFocus();
+		await user.keyboard("{Enter}");
+		expect(
+			screen.getByRole("button", { name: "Expand navigation" }),
+		).toHaveFocus();
+		expect(navigation).toHaveClass("w-16");
 		expect(draft).toHaveValue("Keep this unsent message");
 	});
 
-	it("restores the chosen rail and Topics disclosure together after a fresh mount", async () => {
+	it("collapses each opened room and restores the sidebar preference on other pages", async () => {
+		const { router, user } = renderFrame();
+		const navigation = screen.getByRole("complementary", {
+			name: "Workspace navigation",
+		});
+		const writes = vi.spyOn(Storage.prototype, "setItem");
+		expect(navigation).toHaveClass("w-64");
+		await act(() => router.navigate("/thread/session%3Aone"));
+		expect(navigation).toHaveClass("w-16");
+		await user.click(
+			screen.getByRole("button", { name: "Expand navigation" }),
+		);
+		expect(navigation).toHaveClass("w-64");
+		await act(() => router.navigate("/thread/room%3Atwo"));
+		expect(navigation).toHaveClass("w-16");
+		await act(() => router.navigate("/thread/session%3Aone"));
+		expect(navigation).toHaveClass("w-16");
+		await act(() => router.navigate("/brain"));
+		expect(navigation).toHaveClass("w-64");
+		expect(
+			writes.mock.calls.some(([key]) =>
+				String(key).endsWith(":isCollapsed"),
+			),
+		).toBe(false);
+	});
+
+	it("moves focus out of the sidebar when a room opens and its session links collapse", async () => {
+		const { router } = renderFrame();
+		const session = screen.getByRole("button", {
+			name: "Pricing conversation",
+		});
+		act(() => session.focus());
+		await act(() => router.navigate("/thread/room%3Aroom-one"));
+		expect(screen.getByRole("main")).toHaveFocus();
+		expect(
+			screen.getByRole("button", { name: "Expand navigation" }),
+		).toHaveAttribute("aria-expanded", "false");
+	});
+
+	it("restores the collapsed sidebar and both disclosures together after a fresh mount", async () => {
 		const { user } = renderFrame();
 		await user.click(screen.getByRole("button", { name: "Topics" }));
+		await user.click(screen.getByRole("button", { name: "Sessions" }));
 		await user.click(
 			screen.getByRole("button", { name: "Collapse navigation" }),
 		);
@@ -189,6 +268,46 @@ describe("CollaborationFrame", () => {
 		);
 		expect(
 			screen.getByRole("navigation", { name: "Topics" }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "Sessions" }),
+		).toHaveAttribute("aria-expanded", "false");
+		expect(
+			screen.queryByRole("navigation", { name: "Sessions" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("shares Sessions disclosure between the mobile drawer and desktop navigation", async () => {
+		isWide = false;
+		const { user } = renderFrame();
+		await user.click(
+			screen.getByRole("button", { name: "Open navigation" }),
+		);
+		const dialog = screen.getByRole("dialog", {
+			name: "Workspace navigation",
+		});
+		await user.click(
+			within(dialog).getByRole("button", { name: "Sessions" }),
+		);
+		await user.keyboard("{Escape}");
+		await user.click(
+			screen.getByRole("button", { name: "Open navigation" }),
+		);
+		expect(
+			within(screen.getByRole("dialog")).getByRole("button", {
+				name: "Sessions",
+			}),
+		).toHaveAttribute("aria-expanded", "false");
+		setDesktop(true);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+		expect(
+			screen.getByRole("button", { name: "Sessions" }),
+		).toHaveAttribute("aria-expanded", "false");
+		await user.click(screen.getByRole("button", { name: "Sessions" }));
+		expect(
+			screen.getByRole("button", { name: "Pricing conversation" }),
 		).toBeVisible();
 	});
 
@@ -281,7 +400,7 @@ describe("CollaborationFrame", () => {
 		await waitFor(() => expect(trigger).toHaveFocus());
 	});
 
-	it("returns Search focus to the rail trigger when dismissed on desktop", async () => {
+	it("returns Search focus to its compact sidebar trigger when dismissed on desktop", async () => {
 		const { user } = renderFrame();
 		await user.click(
 			screen.getByRole("button", { name: "Collapse navigation" }),

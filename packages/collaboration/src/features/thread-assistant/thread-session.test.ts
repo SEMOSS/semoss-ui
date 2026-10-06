@@ -125,6 +125,15 @@ async function session(): Promise<ThreadSession> {
 	return instance;
 }
 
+/** Hold a transport stage open while checking the retained session. */
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+	let resolve: (value: T) => void = () => undefined;
+	const promise = new Promise<T>((done) => {
+		resolve = done;
+	});
+	return { promise, resolve };
+}
+
 beforeEach(() => {
 	vi.resetAllMocks();
 	setThreadAgent(null);
@@ -241,6 +250,7 @@ it("retains the committed draft after a failed agent lookup and allows a retry",
 
 it("serializes settings saves against model selection, default refreshes, and sends", async () => {
 	const instance = await session();
+	const onSubmitStart = vi.fn();
 	let finishAgent: ((agent: WorkspaceAgent) => void) | undefined;
 	vi.mocked(getAgent).mockImplementationOnce(
 		() =>
@@ -259,8 +269,16 @@ it("serializes settings saves against model selection, default refreshes, and se
 		instance.saveSettings("New chat", { ...customSettings, agentId: "" }),
 	).rejects.toThrow("Wait for the current connection");
 	await expect(
-		instance.send("New chat", context, { text: "Too early", files: [] }),
+		instance.send(
+			"New chat",
+			context,
+			{ text: "Too early", files: [] },
+			undefined,
+			[],
+			onSubmitStart,
+		),
 	).rejects.toThrow("Chat settings are still loading or saving");
+	expect(onSubmitStart).not.toHaveBeenCalled();
 	finishAgent?.(selectedAgent);
 	await saving;
 	expect(instance.getSnapshot().settings).toEqual(customSettings);
@@ -570,6 +588,143 @@ it("does not create a room until an explicit send and stages native files after 
 	});
 });
 
+it("starts submission before delayed setup and keeps one send and observer across view reattachment", async () => {
+	const instance = await session();
+	const preparing = deferred<Awaited<ReturnType<typeof prepareThreadRoom>>>();
+	const uploading = deferred<Awaited<ReturnType<typeof uploadRoomFiles>>>();
+	const accepting =
+		deferred<Awaited<ReturnType<typeof runApi.startAgentRun>>>();
+	vi.mocked(prepareThreadRoom).mockReturnValueOnce(preparing.promise);
+	vi.mocked(uploadRoomFiles).mockReturnValueOnce(uploading.promise);
+	vi.mocked(runApi.startAgentRun).mockReturnValueOnce(accepting.promise);
+	const releaseWelcome = instance.retain();
+	const unsubscribeWelcome = instance.subscribe(vi.fn());
+	const submission = {
+		text: "Review this draft",
+		files: [
+			new File(["Draft content"], "draft.txt", { type: "text/plain" }),
+		],
+	};
+	const onSubmitStart = vi.fn(() => {
+		expect(instance.getSnapshot().isPreparing).toBe(true);
+		expect(prepareThreadRoom).not.toHaveBeenCalled();
+		expect(uploadRoomFiles).not.toHaveBeenCalled();
+		expect(runApi.startAgentRun).not.toHaveBeenCalled();
+	});
+	const sending = instance.send(
+		"New chat",
+		context,
+		submission,
+		undefined,
+		[],
+		onSubmitStart,
+	);
+	expect(onSubmitStart).toHaveBeenCalledOnce();
+	expect(prepareThreadRoom).toHaveBeenCalledOnce();
+	unsubscribeWelcome();
+	releaseWelcome();
+	expect(instance.canEvict()).toBe(false);
+	await expect(
+		instance.send(
+			"New chat",
+			context,
+			submission,
+			undefined,
+			[],
+			onSubmitStart,
+		),
+	).rejects.toThrow("already being prepared");
+	expect(onSubmitStart).toHaveBeenCalledOnce();
+
+	const releaseThread = instance.retain();
+	const threadUpdates = vi.fn();
+	const unsubscribeThread = instance.subscribe(threadUpdates);
+	await instance.initialize();
+	expect(findThreadRoom).toHaveBeenCalledOnce();
+	preparing.resolve(association);
+	await vi.waitFor(() => expect(uploadRoomFiles).toHaveBeenCalledOnce());
+	expect(uploadRoomFiles).toHaveBeenCalledWith(
+		instance.insight.insightId,
+		submission.files,
+	);
+	expect(runApi.startAgentRun).not.toHaveBeenCalled();
+	expect(instance.getSnapshot().isPreparing).toBe(true);
+	uploading.resolve([{ fileName: "draft.txt", fileLocation: "draft.txt" }]);
+	await vi.waitFor(() => expect(runApi.startAgentRun).toHaveBeenCalledOnce());
+	expect(runApi.startAgentRun).toHaveBeenCalledWith(
+		instance.insight.insightId,
+		expect.objectContaining({ roomId: "room-1", media: ["draft.txt"] }),
+	);
+	expect(runApi.pollRun).not.toHaveBeenCalled();
+	expect(instance.getSnapshot().isPreparing).toBe(true);
+	accepting.resolve({
+		runId: "run-1",
+		roomId: "room-1",
+		status: "RUNNING",
+		pendingActions: [],
+	});
+	await sending;
+	await instance.initialize();
+	await instance.reconnect();
+	expect(onSubmitStart).toHaveBeenCalledOnce();
+	expect(prepareThreadRoom).toHaveBeenCalledOnce();
+	expect(uploadRoomFiles).toHaveBeenCalledOnce();
+	expect(runApi.startAgentRun).toHaveBeenCalledOnce();
+	expect(runApi.pollRun).toHaveBeenCalledExactlyOnceWith("run-1");
+	expect(threadUpdates).toHaveBeenCalled();
+	expect(instance.getSnapshot()).toMatchObject({
+		isPreparing: false,
+		turn: { isRunning: true },
+	});
+	unsubscribeThread();
+	releaseThread();
+	expect(instance.canEvict()).toBe(false);
+});
+
+it("does not announce submission for invalid context, source, or attachment count", async () => {
+	const instance = await session();
+	const onSubmitStart = vi.fn();
+	await expect(
+		instance.send(
+			"New chat",
+			{ ...context, threadId: "other-thread" },
+			{ text: "Hello", files: [] },
+			undefined,
+			[],
+			onSubmitStart,
+		),
+	).rejects.toThrow("different thread");
+	await expect(
+		instance.send(
+			"New chat",
+			context,
+			{ text: "Hello", files: [] },
+			undefined,
+			[{ id: "file-1", name: "brief.pdf", isFile: true }],
+			onSubmitStart,
+		),
+	).rejects.toThrow("source for this attachment is unavailable");
+	await expect(
+		instance.send(
+			"New chat",
+			context,
+			{
+				text: "Hello",
+				files: Array.from(
+					{ length: 6 },
+					(_, index) => new File(["Draft"], `draft-${index}.txt`),
+				),
+			},
+			undefined,
+			[],
+			onSubmitStart,
+		),
+	).rejects.toThrow("Attach up to 5 files");
+	expect(onSubmitStart).not.toHaveBeenCalled();
+	expect(prepareThreadRoom).not.toHaveBeenCalled();
+	expect(instance.getSnapshot().isPreparing).toBe(false);
+});
+
 it("stages each Brain attachment from its own email and sends Office files as their text", async () => {
 	const instance = await session();
 	vi.mocked(stageThreadAttachment).mockImplementation(
@@ -644,6 +799,7 @@ it("stages each Brain attachment from its own email and sends Office files as th
 
 it("checks attachment sizes before preparing a room or downloading anything", async () => {
 	const instance = await session();
+	const onSubmitStart = vi.fn();
 	const MB = 1024 * 1024;
 	const file = (id: string, name: string, size: number) => ({
 		id,
@@ -659,6 +815,7 @@ it("checks attachment sizes before preparing a room or downloading anything", as
 			{ text: "Read", files: [] },
 			undefined,
 			[file("a1", "huge.pdf", 11 * MB)],
+			onSubmitStart,
 		),
 	).rejects.toThrow("huge.pdf is larger than the 10 MB attachment limit.");
 	await expect(
@@ -672,8 +829,10 @@ it("checks attachment sizes before preparing a room or downloading anything", as
 				file("a2", "two.pdf", 9 * MB),
 				file("a3", "three.png", 3 * MB),
 			],
+			onSubmitStart,
 		),
 	).rejects.toThrow("Files sent with one message can total 20 MB.");
+	expect(onSubmitStart).not.toHaveBeenCalled();
 	expect(prepareThreadRoom).not.toHaveBeenCalled();
 	expect(stageThreadAttachment).not.toHaveBeenCalled();
 	// Office files reach the model as their text, so they do not count.

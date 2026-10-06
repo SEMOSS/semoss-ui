@@ -131,7 +131,7 @@ function view(hasMore = false, nextCursor?: string, hasWorkspaceDraft = false) {
 		</TooltipProvider>
 	);
 	const router = createMemoryRouter([{ path: "*", element }], {
-		initialEntries: [`/work/thread/${thread.id}`],
+		initialEntries: [`/thread/${thread.id}`],
 	});
 	const result = render(<RouterProvider router={router} />);
 	return { ...result, load, thread, composer, router };

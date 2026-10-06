@@ -106,7 +106,7 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["New Task", "Search your workspace", "For you", "Brain"]);
+		).toEqual(["New Session", "Search your workspace", "For you", "Brain"]);
 		expect(
 			within(main).getByRole("link", { name: "For you" }),
 		).toHaveTextContent(/^For you$/);
@@ -216,7 +216,7 @@ describe("CollaborationNavigation", () => {
 	});
 
 	it("preserves the mounted session scroller, its position, and selection through keyboard collapse", async () => {
-		const { user } = renderNavigation("/room/room-one");
+		const { user } = renderNavigation("/thread/room%3Aroom-one");
 		const session = screen.getByRole("button", {
 			name: "Pricing conversation",
 		});
@@ -257,7 +257,7 @@ describe("CollaborationNavigation", () => {
 		);
 		const controls = [
 			screen.getByRole("button", { name: "Expand navigation" }),
-			screen.getByRole("link", { name: "New Task" }),
+			screen.getByRole("link", { name: "New Session" }),
 			screen.getByRole("button", { name: "Search your workspace" }),
 			screen.getByRole("link", { name: "For you" }),
 			screen.getByRole("link", { name: "Brain" }),

@@ -1,6 +1,6 @@
 import { LayoutGrid, Sparkles } from "lucide-react";
 import { useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, type To, useLocation, useNavigate } from "react-router";
 import { Button, cn } from "@semoss/ui/next";
 
 /** Switches brief/chat while carrying the current chat identity back to the brief. */
@@ -22,21 +22,40 @@ export function BriefViewSwitch({
 		"pathname" in returnTo &&
 		typeof returnTo.pathname === "string" &&
 		(returnTo.pathname === "/new" ||
-			returnTo.pathname.startsWith("/work/thread/"))
-			? returnTo
+			returnTo.pathname.startsWith("/thread/"))
+			? {
+					pathname: returnTo.pathname,
+					search:
+						"search" in returnTo &&
+						typeof returnTo.search === "string"
+							? returnTo.search
+							: "",
+					hash:
+						"hash" in returnTo && typeof returnTo.hash === "string"
+							? returnTo.hash
+							: "",
+					state: "state" in returnTo ? returnTo.state : undefined,
+				}
 			: null;
-	const destination = view === "chat" ? "/" : (saved?.pathname ?? "/new");
+	const destination: To =
+		view === "chat"
+			? "/"
+			: {
+					pathname: saved?.pathname ?? "/new",
+					search: saved?.search ?? "",
+					hash: saved?.hash ?? "",
+				};
 	const navigationState =
 		view === "chat"
 			? {
 					chatReturnTo: {
 						pathname: chatPath ?? location.pathname,
+						search: location.search,
+						hash: location.hash,
 						state: chatState ?? location.state,
 					},
 				}
-			: saved && "state" in saved
-				? saved.state
-				: undefined;
+			: saved?.state;
 	useEffect(() => {
 		const handleKey = (event: KeyboardEvent) => {
 			if (
@@ -75,7 +94,15 @@ export function BriefViewSwitch({
 							onClick={(event) => {
 								if (view === mode) event.preventDefault();
 							}}
-							to={view === mode ? location.pathname : destination}
+							to={
+								view === mode
+									? {
+											pathname: location.pathname,
+											search: location.search,
+											hash: location.hash,
+										}
+									: destination
+							}
 							state={
 								view === mode ? location.state : navigationState
 							}

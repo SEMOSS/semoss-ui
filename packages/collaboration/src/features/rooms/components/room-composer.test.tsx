@@ -221,6 +221,59 @@ describe("RoomComposer", () => {
 		).toBeInTheDocument();
 	});
 
+	it("connects host-owned actions to the retained attachment picker", async () => {
+		renderComposer({
+			actionsTriggerId: "chat-actions",
+			renderActions: ({
+				onAttachFiles,
+				triggerRef,
+				triggerId,
+				disabled,
+			}) => (
+				<button
+					ref={triggerRef}
+					id={triggerId}
+					type="button"
+					disabled={disabled}
+					onClick={onAttachFiles}
+				>
+					Add to chat
+				</button>
+			),
+		});
+		expect(
+			screen.queryByRole("button", { name: "Open composer actions" }),
+		).toBeNull();
+		const trigger = screen.getByRole("button", { name: "Add to chat" });
+		expect(trigger).toHaveAttribute("id", "chat-actions");
+		const picker = screen.getByLabelText("Choose attachments");
+		const openPicker = vi.spyOn(picker, "click");
+		await userEvent.click(trigger);
+		await waitFor(() => expect(openPicker).toHaveBeenCalledOnce());
+		await userEvent.upload(picker, new File(["notes"], "notes.txt"));
+		expect(
+			screen.getByRole("button", { name: "Remove notes.txt" }),
+		).toBeVisible();
+	});
+
+	it("can hide prompt optimization while keeping model, dictation, and send controls", () => {
+		renderComposer({ showPromptOptimization: false });
+		expect(
+			screen.queryByRole("button", { name: "Optimize prompt" }),
+		).toBeNull();
+		expect(
+			screen.getByRole("button", { name: "Choose model" }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "Start dictation" }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("button", {
+				name: "Send message to Research agent",
+			}),
+		).toBeVisible();
+	});
+
 	it("opens attachment and room settings actions from the plus popover", async () => {
 		const user = userEvent.setup();
 		renderComposer();
@@ -232,19 +285,23 @@ describe("RoomComposer", () => {
 
 		await user.click(actions);
 		expect(
-			screen.getByRole("button", { name: "Attach files" }),
+			screen.getByRole("menuitem", { name: "Attach files" }),
 		).toBeVisible();
 		expect(
-			screen.getByRole("button", { name: "Open settings" }),
+			screen.getByRole("menuitem", { name: "Open settings" }),
 		).toBeVisible();
-		await user.click(screen.getByRole("button", { name: "Attach files" }));
+		await user.click(
+			screen.getByRole("menuitem", { name: "Attach files" }),
+		);
 		await waitFor(() => expect(inputClick).toHaveBeenCalledOnce());
 		expect(
-			screen.queryByRole("button", { name: "Open settings" }),
+			screen.queryByRole("menuitem", { name: "Open settings" }),
 		).not.toBeInTheDocument();
 
 		await user.click(actions);
-		await user.click(screen.getByRole("button", { name: "Open settings" }));
+		await user.click(
+			screen.getByRole("menuitem", { name: "Open settings" }),
+		);
 		expect(
 			screen.getByRole("dialog", { name: "Room settings" }),
 		).toBeVisible();
@@ -270,12 +327,12 @@ describe("RoomComposer", () => {
 		expect(actions).toHaveFocus();
 		await user.keyboard("{Enter}");
 		expect(
-			screen.getByRole("button", { name: "Attach files" }),
+			screen.getByRole("menuitem", { name: "Attach files" }),
 		).toBeVisible();
 		await user.keyboard("{Escape}");
 
 		expect(
-			screen.queryByRole("button", { name: "Attach files" }),
+			screen.queryByRole("menuitem", { name: "Attach files" }),
 		).not.toBeInTheDocument();
 		expect(actions).toHaveFocus();
 	});
@@ -291,7 +348,7 @@ describe("RoomComposer", () => {
 
 			await user.click(actions);
 			await user.click(
-				screen.getByRole("button", { name: "Open settings" }),
+				screen.getByRole("menuitem", { name: "Open settings" }),
 			);
 			await user.type(
 				screen.getByRole("textbox", { name: "Instructions" }),
@@ -301,7 +358,7 @@ describe("RoomComposer", () => {
 
 			await user.click(actions);
 			await user.click(
-				screen.getByRole("button", { name: "Open settings" }),
+				screen.getByRole("menuitem", { name: "Open settings" }),
 			);
 			expect(
 				screen.getByRole("textbox", { name: "Instructions" }),
@@ -320,7 +377,7 @@ describe("RoomComposer", () => {
 
 			await user.click(actions);
 			await user.click(
-				screen.getByRole("button", { name: "Open settings" }),
+				screen.getByRole("menuitem", { name: "Open settings" }),
 			);
 			await user.type(
 				screen.getByRole("textbox", { name: "Instructions" }),
@@ -344,7 +401,7 @@ describe("RoomComposer", () => {
 
 			await user.click(actions);
 			await user.click(
-				screen.getByRole("button", { name: "Open settings" }),
+				screen.getByRole("menuitem", { name: "Open settings" }),
 			);
 			expect(
 				screen.getByRole("textbox", { name: "Instructions" }),
@@ -373,7 +430,7 @@ describe("RoomComposer", () => {
 
 			await user.click(actions);
 			await user.click(
-				screen.getByRole("button", { name: "Open settings" }),
+				screen.getByRole("menuitem", { name: "Open settings" }),
 			);
 			await user.click(
 				screen.getByRole("button", { name: "Save settings" }),
@@ -416,7 +473,9 @@ describe("RoomComposer", () => {
 		await user.click(
 			screen.getByRole("button", { name: "Open composer actions" }),
 		);
-		await user.click(screen.getByRole("button", { name: "Open settings" }));
+		await user.click(
+			screen.getByRole("menuitem", { name: "Open settings" }),
+		);
 		const instructions = screen.getByRole("textbox", {
 			name: "Instructions",
 		});
@@ -456,7 +515,7 @@ describe("RoomComposer", () => {
 				screen.getByRole("button", { name: "Open composer actions" }),
 			);
 			await user.click(
-				screen.getByRole("button", { name: "Open settings" }),
+				screen.getByRole("menuitem", { name: "Open settings" }),
 			);
 			expect(screen.getAllByRole("dialog")).toHaveLength(1);
 			expect(screen.getByText("Agent handbook")).toBeVisible();
@@ -576,7 +635,9 @@ describe("RoomComposer", () => {
 		await user.click(
 			screen.getByRole("button", { name: "Open composer actions" }),
 		);
-		await user.click(screen.getByRole("button", { name: "Open settings" }));
+		await user.click(
+			screen.getByRole("menuitem", { name: "Open settings" }),
+		);
 		expect(screen.getByText("Agent resource")).toBeVisible();
 		expect(screen.queryByText("Old room copy")).not.toBeInTheDocument();
 		await user.click(
@@ -608,7 +669,7 @@ describe("RoomComposer", () => {
 				screen.getByRole("button", { name: "Open composer actions" }),
 			);
 			await user.click(
-				screen.getByRole("button", { name: "Open settings" }),
+				screen.getByRole("menuitem", { name: "Open settings" }),
 			);
 			const prompt = screen.getByRole("textbox", {
 				name: "Instructions",
@@ -1074,7 +1135,7 @@ it("opens a direct panel action without changing the draft or attachments", asyn
 		screen.getByRole("button", { name: "Open composer actions" }),
 	);
 	expect(screen.queryByText("Open panel")).not.toBeInTheDocument();
-	await user.click(screen.getByRole("button", { name: "Open Settings" }));
+	await user.click(screen.getByRole("menuitem", { name: "Open Settings" }));
 	expect(openSettings).toHaveBeenCalledOnce();
 	expect(editor).toHaveTextContent("Keep my work");
 	expect(
@@ -1098,7 +1159,14 @@ it("inserts a saved prompt without submitting it", async () => {
 	await user.click(
 		screen.getByRole("button", { name: "Open composer actions" }),
 	);
-	await user.click(screen.getByRole("button", { name: "Prompt library" }));
+	await user.click(screen.getByRole("menuitem", { name: "Prompt library" }));
+	await user.keyboard("{Escape}");
+	const actions = screen.getByRole("button", {
+		name: "Open composer actions",
+	});
+	await waitFor(() => expect(actions).toHaveFocus());
+	await user.keyboard("{Enter}");
+	await user.click(screen.getByRole("menuitem", { name: "Prompt library" }));
 	await user.click(screen.getByRole("button", { name: /Summarize/ }));
 	await waitFor(() =>
 		expect(
@@ -1106,4 +1174,33 @@ it("inserts a saved prompt without submitting it", async () => {
 		).toHaveTextContent("Summarize the next steps"),
 	);
 	expect(onSend).not.toHaveBeenCalled();
+});
+
+it("opens source attachment controls from the menu and restores focus on dismissal", async () => {
+	const user = userEvent.setup();
+	const onAttach = vi.fn();
+	renderComposer({
+		attachmentContent: (
+			<button type="button" onClick={onAttach}>
+				Attach source file
+			</button>
+		),
+	});
+	const actions = screen.getByRole("button", {
+		name: "Open composer actions",
+	});
+	await user.click(actions);
+	await user.click(
+		screen.getByRole("menuitem", { name: "Source attachments" }),
+	);
+	expect(screen.queryByRole("menu", { name: "Composer actions" })).toBeNull();
+	expect(
+		screen.getByRole("dialog", { name: "Source attachments" }),
+	).toBeVisible();
+	await user.click(
+		screen.getByRole("button", { name: "Attach source file" }),
+	);
+	expect(onAttach).toHaveBeenCalledOnce();
+	await user.keyboard("{Escape}");
+	await waitFor(() => expect(actions).toHaveFocus());
 });

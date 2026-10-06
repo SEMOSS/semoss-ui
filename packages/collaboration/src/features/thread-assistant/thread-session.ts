@@ -631,6 +631,7 @@ export class ThreadSession {
 		submission: ComposerSubmission,
 		sourceUid?: string,
 		attachments: SourceAttachment[] = [],
+		onSubmitStart?: () => void,
 	): Promise<void> => {
 		if (
 			this.snapshot.isCompacting ||
@@ -705,6 +706,8 @@ export class ThreadSession {
 			);
 		this.update({ isPreparing: true, error: null, submissionNotice: null });
 		try {
+			// Admission happens before room creation or uploads, while the caller retains this session.
+			onSubmitStart?.();
 			const agentId = this.snapshot.settings.agentId;
 			const metadata: ThreadRoomMetadata = {
 				version: 1,

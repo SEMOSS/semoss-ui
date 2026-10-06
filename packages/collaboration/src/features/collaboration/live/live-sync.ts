@@ -108,8 +108,6 @@ export function createLiveSync(
 				);
 			return;
 		}
-		const plan = planChange(change, id);
-		if (!plan.creates.length && !plan.statements.length) return;
 		for (const topicId of restoredTopics({
 			...change,
 			previous: change.next,
@@ -118,13 +116,19 @@ export function createLiveSync(
 			removedTopics.add(topicId);
 		queue = queue
 			.then(async () => {
+				// Earlier queued creates or undo operations may have replaced these ids.
+				const plan = planChange(change, id);
 				for (const create of plan.creates) {
 					// a step can point at an item created earlier in this change
 					const [out] = await runBatch(actions, [
 						withServerIds(create.statement),
 					]);
 					const serverId = create.idOf(out);
-					if (serverId) ids.set(create.localId, serverId);
+					if (!serverId)
+						throw new Error(
+							"The saved record did not return an id.",
+						);
+					ids.set(create.localId, serverId);
 				}
 				// statements built before the creates ran still hold local ids
 				const outputs = await runBatch(
@@ -200,10 +204,10 @@ function planChange(
 			);
 		return plan;
 	}
-	planTopics(plan, prev, next, id);
+	planTopics(plan, prev, next, id, change.undo);
 	planThreads(plan, prev, next, id);
 	planItems(plan, prev, next, id);
-	planWorkspaces(plan, prev, next, id);
+	planWorkspaces(plan, prev, next, id, change.undo);
 	planPeople(plan, prev, next, id);
 	planRules(plan, prev, next, id);
 	planReviews(plan, prev, next, change.commands, id);
@@ -220,6 +224,7 @@ const TOPIC_FIELDS = [
 	"color",
 	"description",
 	"keywords",
+	"calendarSeries",
 ] as const;
 
 function planTopics(
@@ -227,6 +232,7 @@ function planTopics(
 	prev: CollaborationState,
 	next: CollaborationState,
 	id: (v: string) => string,
+	isUndo: boolean,
 ) {
 	const before = byId(prev.topics);
 	const after = byId(next.topics);
@@ -256,6 +262,7 @@ function planTopics(
 				{ ...topic, goals: [], notes: [], people: [] },
 				topic,
 				id,
+				isUndo,
 			);
 			continue;
 		}
@@ -275,7 +282,7 @@ function planTopics(
 					status: topic.status,
 				}),
 			);
-		planTopicParts(plan, old, topic, id);
+		planTopicParts(plan, old, topic, id, isUndo);
 	}
 	for (const topic of prev.topics)
 		if (!after.has(topic.id))
@@ -289,6 +296,7 @@ function planTopicParts(
 	old: Topic,
 	topic: Topic,
 	id: (v: string) => string,
+	isUndo: boolean,
 ) {
 	const topicId = id(topic.id);
 	const notes = (goals: TopicGoal[], rows: TopicNote[]) =>
@@ -317,7 +325,7 @@ function planTopicParts(
 	for (const [noteId, note] of after) {
 		const was = before.get(noteId);
 		if (was && same(was, note)) continue;
-		if (!was && LOCAL.test(noteId))
+		if (!was && (LOCAL.test(noteId) || isUndo))
 			plan.creates.push({
 				localId: noteId,
 				statement: pixel("BrainSaveTopicNote", { topicId, ...note }),
@@ -483,7 +491,11 @@ function planItems(
 			if (field === "closedReason" && !item.closedReason) continue;
 			// leaving snoozed clears snoozeUntil on the server by itself
 			if (field === "snoozeUntil" && !item.snoozeUntil) continue;
-			if (field === "priority" && !item.priority) continue;
+			// A present empty noun clears the optional priority on existing servers.
+			if (field === "priority" && !item.priority) {
+				args.priority = [];
+				continue;
+			}
 			if (field === "suggested") args.suggested = item.suggested === true;
 			else args[field] = item[field];
 		}
@@ -672,6 +684,7 @@ function planWorkspaces(
 	prev: CollaborationState,
 	next: CollaborationState,
 	id: (v: string) => string,
+	isUndo: boolean,
 ) {
 	const threadIds = new Set([
 		...Object.keys(prev.workspaces),
@@ -689,6 +702,8 @@ function planWorkspaces(
 			key: "step",
 			idKey: "stepId",
 			id,
+			isUndo,
+			restoreExisting: (step) => step.isGenerated === true,
 		});
 		planRows(plan, threadId, before?.facts ?? [], after?.facts ?? [], {
 			fields: FACT_FIELDS,
@@ -697,6 +712,7 @@ function planWorkspaces(
 			key: "fact",
 			idKey: "factId",
 			id,
+			isUndo,
 		});
 	}
 }
@@ -713,6 +729,8 @@ function planRows<T extends { id: string }>(
 		key: string;
 		idKey: string;
 		id: (v: string) => string;
+		isUndo: boolean;
+		restoreExisting?: (row: T) => boolean;
 	},
 ) {
 	const before = byId(oldRows);
@@ -720,12 +738,21 @@ function planRows<T extends { id: string }>(
 	for (const row of newRows) {
 		const old = before.get(row.id);
 		if (!old) {
+			if (!LOCAL.test(row.id) && !how.isUndo) continue;
 			const fields = Object.fromEntries(
 				how.fields
 					.filter((field) => row[field] != null && row[field] !== "")
 					.map((field) => [field, row[field]]),
 			);
-			if (LOCAL.test(row.id))
+			// Generated steps are soft-deleted; ordinary steps and facts need a new row on undo.
+			if (how.restoreExisting?.(row))
+				plan.statements.push(
+					pixel(how.save, {
+						threadId,
+						[how.key]: { id: how.id(row.id), ...fields },
+					}),
+				);
+			else
 				plan.creates.push({
 					localId: row.id,
 					statement: pixel(how.save, { threadId, [how.key]: fields }),

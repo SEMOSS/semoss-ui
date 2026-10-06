@@ -17,6 +17,7 @@ import {
 import { roomOptionsEnvelopeSchema } from "@/features/rooms/api/room-schemas";
 import { associationSchema } from "@/features/thread-assistant/api/thread-room";
 import { callPixel, pixel } from "@/lib/pixel";
+import { roomPath, threadPath } from "@/lib/workspace-paths";
 import { DashboardContext, type SourceSelection } from "./dashboard.context";
 import { dashboardStorageKey } from "./dashboard-layout";
 import { restoreSourceThread } from "./restore-source-thread";
@@ -65,7 +66,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 	const isActive =
 		location.pathname === "/" ||
 		location.pathname === "/new" ||
-		location.pathname.startsWith("/work/thread/session") ||
+		location.pathname.startsWith("/thread/session") ||
 		isSearchOpen;
 	const loadCalendar = useCallback(
 		async () => (await listCalendarEvents(actions)).events,
@@ -120,20 +121,19 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 						if (token !== opening.current) return;
 						if (imported) dispatch(importSourceCommand(imported));
 						else {
-							await navigate(
-								`/room/${encodeURIComponent(roomId)}`,
-								{ state: { openedRoomId: roomId } },
-							);
+							await navigate(roomPath(roomId), {
+								state: { openedRoomId: roomId },
+							});
 							return;
 						}
 					}
 				}
 				dispatch({ type: "workspace.open", threadId });
-				await navigate(`/work/thread/${encodeURIComponent(threadId)}`, {
+				await navigate(threadPath(threadId), {
 					state: { openedRoomId: roomId },
 				});
 			} else
-				await navigate(`/room/${encodeURIComponent(roomId)}`, {
+				await navigate(roomPath(roomId), {
 					state: { openedRoomId: roomId },
 				});
 		} catch (cause) {

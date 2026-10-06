@@ -2,8 +2,14 @@ function agentPath(agentId?: string) {
 	return agentId ? `/agents/${encodeURIComponent(agentId)}` : "/agents";
 }
 
-export function roomPath(roomId: string, itemId?: string) {
-	const path = `/room/${encodeURIComponent(roomId)}`;
+/** Canonical conversation route; identity stays independent of its backend room. */
+export function threadPath(threadId: string): string {
+	return `/thread/${encodeURIComponent(threadId)}`;
+}
+
+/** Namespace direct rooms so they cannot be mistaken for Work thread identities. */
+export function roomPath(roomId: string, itemId?: string): string {
+	const path = threadPath(`room:${roomId}`);
 	return itemId ? `${path}?${new URLSearchParams({ item: itemId })}` : path;
 }
 

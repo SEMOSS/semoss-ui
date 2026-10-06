@@ -28,7 +28,7 @@ interface DailyChatHeaderProps {
 	topicId?: string;
 	/** Keep the context drawer available when a workbench replaces the rail. */
 	isWorkbenchOpen: boolean;
-	/** The new-chat page already offers New Task in the sidebar. */
+	/** The new-chat page already offers New Session in the sidebar. */
 	isNewChat?: boolean;
 }
 
@@ -119,7 +119,7 @@ export function DailyChatHeader({
 						>
 							<Link to="/new" state={null}>
 								<Plus aria-hidden="true" />
-								New chat
+								New Session
 							</Link>
 						</Button>
 					)}

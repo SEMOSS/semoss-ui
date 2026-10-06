@@ -8,7 +8,6 @@ import { ThreadAssistant } from "@/features/thread-assistant/thread-assistant";
 import { UnifiedThread } from "@/features/work-thread/unified-thread";
 import { useEnsureThreadInsights } from "@/features/work-thread/use-thread-insights";
 import { useWorkComposerSession } from "@/features/work-thread/work-composer-state.context";
-import { WorkThreadHeading } from "@/features/work-thread/work-thread-heading";
 import {
 	CHAT_WORKBENCH,
 	WORK_THREAD_WORKBENCH,
@@ -19,21 +18,22 @@ import { useThreadHistory } from "../live/thread-history.context";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { ThreadInspector } from "./thread-inspector";
-import { ThreadMenu } from "./thread-menu";
-import { threadMenuTriggerId } from "./thread-menu.utils";
 
 /** Work keeps assistant chat beside the full source thread and its context. */
 export function WorkThread({
 	threadId: suppliedThreadId,
 	isNewChat = false,
 	onSent,
+	onSubmitStart,
 }: {
 	/** A local /new chat can own its identity before it has a saved route. */
 	threadId?: string;
-	/** Keep the centered start screen until /new accepts its first message. */
+	/** Keep the centered start screen until /new starts its first valid message. */
 	isNewChat?: boolean;
-	/** The route may switch to the saved thread after an accepted first send. */
+	/** Notify a caller after an accepted send. */
 	onSent?: () => void;
+	/** Open the conversation after validation, before room preparation starts. */
+	onSubmitStart?: () => void;
 } = {}) {
 	const { threadId: routeThreadId = "" } = useParams();
 	const threadId = suppliedThreadId ?? routeThreadId;
@@ -61,7 +61,7 @@ export function WorkThread({
 		return (
 			<P className="p-6">
 				{isSession ? (
-					<output>Opening new chat…</output>
+					<output>Opening session…</output>
 				) : (
 					<>
 						This thread is not loaded.{" "}
@@ -145,6 +145,7 @@ export function WorkThread({
 					<UnifiedThread
 						isNewChat={isNewChat}
 						onSent={onSent}
+						onSubmitStart={onSubmitStart}
 						onEmailSent={() => {
 							const refresh = async () => {
 								if (thread.isSample || isSession) return;
@@ -200,18 +201,6 @@ export function WorkThread({
 						snapshot={snapshot}
 						sourceUid={sourceUid}
 						attachments={attachments}
-						header={
-							<ThreadMenu
-								thread={thread}
-								triggerId={threadMenuTriggerId(thread.id)}
-							>
-								{(menu) => (
-									<WorkThreadHeading thread={thread}>
-										{menu}
-									</WorkThreadHeading>
-								)}
-							</ThreadMenu>
-						}
 						inspector={
 							<ThreadInspector
 								thread={thread}

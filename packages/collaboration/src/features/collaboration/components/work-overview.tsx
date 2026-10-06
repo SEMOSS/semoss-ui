@@ -1,6 +1,7 @@
 import { CalendarDays, Clock, Sparkles } from "lucide-react";
 import { Link } from "react-router";
 import { P, Small } from "@semoss/ui/next";
+import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -32,7 +33,7 @@ export function WorkOverview() {
 						>
 							<Link
 								className="font-medium text-sm hover:underline"
-								to={`/work/thread/${encodeURIComponent(thread.id)}`}
+								to={threadPath(thread.id)}
 							>
 								{thread.subject}
 							</Link>
@@ -110,7 +111,7 @@ export function WorkOverview() {
 								<div className="min-w-0">
 									<Link
 										className="break-words text-sm hover:underline"
-										to={`/work/thread/${encodeURIComponent(item.threadId)}`}
+										to={threadPath(item.threadId)}
 									>
 										{item.title}
 									</Link>

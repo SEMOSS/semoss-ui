@@ -150,14 +150,14 @@ export function useThreadDraftProposals({
 						// a reply or forward keeps its thread's subject and has no bcc
 						const isReply = isSourcedProposal(proposal);
 						target.replaceEnvelope({
-							to: proposal.to || state.values.to,
+							to: proposal.to ?? state.values.to,
 							cc: proposal.cc ?? state.values.cc,
 							bcc: isReply
 								? state.values.bcc
 								: (proposal.bcc ?? state.values.bcc),
 							subject: isReply
 								? state.values.subject
-								: proposal.subject || state.values.subject,
+								: (proposal.subject ?? state.values.subject),
 						});
 						if (proposal.body)
 							target.replaceBody(plainTextEmail(proposal.body));

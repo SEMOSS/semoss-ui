@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { Navigate, useLocation } from "react-router";
 import { WorkThread } from "@/features/collaboration/components/work-thread";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { useWorkComposerSession } from "@/features/work-thread/work-composer-state.context";
+import { threadPath } from "@/lib/workspace-paths";
 
 interface NewChatSessionProps {
 	/** Optional draft identity and prompt supplied by the Brief view. */
@@ -37,8 +38,14 @@ export function NewChatSession({ navigationState }: NewChatSessionProps) {
 		(topic) => topic.id === requestedTopicId && !topic.isSample,
 	)?.id;
 	const composer = useWorkComposerSession(sessionId);
-	const navigate = useNavigate();
+	const { hasStartedChat } = useSyncExternalStore(
+		composer.subscribe,
+		composer.getSnapshot,
+		composer.getSnapshot,
+	);
+	const location = useLocation();
 	useEffect(() => {
+		if (hasStartedChat) return;
 		dispatch({ type: "session.create", sessionId });
 		if (topicId)
 			dispatch({
@@ -48,16 +55,24 @@ export function NewChatSession({ navigationState }: NewChatSessionProps) {
 				operation: "add",
 			});
 		if (prompt) composer.seedPrompt(prompt);
-	}, [composer, dispatch, prompt, sessionId, topicId]);
+	}, [composer, dispatch, hasStartedChat, prompt, sessionId, topicId]);
+	if (hasStartedChat)
+		return (
+			<Navigate
+				to={{
+					pathname: threadPath(sessionId),
+					search: location.search,
+					hash: location.hash,
+				}}
+				state={navigationState}
+				replace
+			/>
+		);
 	return (
 		<WorkThread
 			threadId={sessionId}
 			isNewChat
-			onSent={() => {
-				void navigate(`/work/thread/${encodeURIComponent(sessionId)}`, {
-					replace: true,
-				});
-			}}
+			onSubmitStart={composer.startChat}
 		/>
 	);
 }

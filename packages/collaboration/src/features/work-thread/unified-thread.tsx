@@ -3,6 +3,7 @@ import {
 	type ComponentRef,
 	type ReactNode,
 	useCallback,
+	useContext,
 	useEffect,
 	useId,
 	useLayoutEffect,
@@ -16,17 +17,14 @@ import {
 	Alert,
 	AlertDescription,
 	Button,
-	Card,
 	cn,
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@semoss/ui/next";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
-import {
-	restoreThreadFocus,
-	threadMenuTriggerId,
-} from "@/features/collaboration/components/thread-menu.utils";
+import { CollaborationNavigationControlContext } from "@/features/collaboration/components/collaboration-navigation-control.context";
+import { restoreThreadFocus } from "@/features/collaboration/components/thread-menu.utils";
 import type {
 	Thread,
 	ThreadContext,
@@ -34,15 +32,14 @@ import type {
 } from "@/features/collaboration/state/collaboration.types";
 import { DeleteEmailDialog } from "@/features/connectors/components/delete-email-dialog";
 import type { SourceAttachment } from "@/features/connectors/types";
-import { DailyChatControls } from "@/features/daily-chat/daily-chat-controls";
 import { DailyChatHeader } from "@/features/daily-chat/daily-chat-header";
-import { DailyChatTopicControl } from "@/features/daily-chat/daily-chat-topic-control";
 import { BriefContextRail } from "@/features/dashboard/brief-context-rail";
-import { BriefSuggestions } from "@/features/dashboard/brief-suggestions";
+import { RoomConversation } from "@/features/rooms/components/room-conversation";
 import { RoomRunStatus } from "@/features/rooms/components/room-run-status";
 import {
 	lastSubmittedContext,
 	presentThreadApprovals,
+	presentThreadMessages,
 	type SubmittedThreadContext,
 	submittedThreadContext,
 } from "@/features/thread-assistant/thread-context";
@@ -52,11 +49,9 @@ import {
 } from "@/features/thread-assistant/thread-session";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { AssistantComposer } from "./assistant-composer";
-import {
-	NewConversationButton,
-	startNewConversation,
-} from "./new-conversation-button";
+import { startNewConversation } from "./new-conversation-button";
 import type { ThreadActionRequest } from "./thread-action-request";
+import { presentThreadInsights } from "./thread-insights";
 import { ThreadQuickActions } from "./thread-quick-actions";
 import {
 	isEditorSend,
@@ -66,17 +61,16 @@ import { useThreadActionRequest } from "./use-thread-action-request";
 import { useThreadDraftProposals } from "./use-thread-draft-proposals";
 import { useThreadWorkbenchRequest } from "./use-thread-workbench-request";
 import { useWorkComposerSession } from "./work-composer-state.context";
-import { WORK_ASSISTANT, WorkConversation } from "./work-conversation";
+import { WORK_ASSISTANT } from "./work-conversation";
 import { WorkEmailContext } from "./work-email.context";
 import { WorkPaneControls } from "./work-pane-controls";
 import { chatPanelTarget, workPanelTarget } from "./work-pane-layout";
 import { WORK_PANEL_TYPES } from "./work-panel.constants";
 import { WorkPanelMenu } from "./work-panel-menu";
 import { WorkThreadContext } from "./work-thread-context";
-import { workTimeline } from "./work-timeline";
 import { WorkWorkbenchClose } from "./work-workbench-close";
 
-const DEFAULT_WORKBENCH_SIZE = 70;
+const DEFAULT_WORKBENCH_SIZE = 65;
 
 /** One conversation scrollbar, one session owner, and a dock that stays mounted while concealed. */
 export function UnifiedThread({
@@ -94,11 +88,12 @@ export function UnifiedThread({
 	sourceUid,
 	onEmailSent,
 	onSent,
+	onSubmitStart,
 }: {
 	thread: Thread;
 	/** Source-free tasks share Brief's page canvas and daily context. */
 	isSourceFreeSession?: boolean;
-	/** /new owns the Ask panel until the first send is accepted. */
+	/** /new owns the Ask panel until the first valid submission starts. */
 	isNewChat?: boolean;
 	/** Existing profile display name, used only in the fresh-task greeting. */
 	userName?: string;
@@ -106,14 +101,17 @@ export function UnifiedThread({
 	context: ThreadContext;
 	session: ThreadSession;
 	snapshot: ReturnType<ThreadSession["getSnapshot"]>;
-	header: ReactNode;
+	header?: ReactNode;
 	inspector: ReactNode;
 	attachments: SourceAttachment[];
 	sourceUid?: string;
 	onEmailSent?: () => void;
-	/** Notify the fresh /new route only after the existing composer accepts a turn. */
+	/** Notify callers after the existing composer accepts a turn. */
 	onSent?: () => void;
+	/** Open the thread after validation, before asynchronous preparation. */
+	onSubmitStart?: () => void;
 }) {
+	const navigationControl = useContext(CollaborationNavigationControlContext);
 	const composer = useWorkComposerSession(thread.id);
 	const memory = useSyncExternalStore(
 		composer.subscribe,
@@ -125,46 +123,12 @@ export function UnifiedThread({
 	>("chat");
 	const [deleteEmailId, setDeleteEmailId] = useState<string | null>(null);
 	const [focusRequest, setFocusRequest] = useState(0);
-	const hasActivity =
-		memory.isSubmitting ||
-		snapshot.isPreparing ||
-		snapshot.turn.messages.length > 0 ||
-		snapshot.turn.isRunning ||
-		snapshot.turn.isCancelling ||
-		snapshot.turn.isSubmitting ||
-		Boolean(snapshot.turn.turnError) ||
-		snapshot.turn.pendingApprovals.length > 0 ||
-		snapshot.hasUnconfirmedSubmission ||
-		snapshot.isCreationUncertain;
 	const isHistoryReady =
 		!snapshot.isLoading &&
 		!snapshot.turn.isRestoring &&
 		!snapshot.error &&
 		!snapshot.turn.transportError;
 	const isLanding = isSourceFreeSession && isNewChat;
-	const recoveredSubmission = useRef(false);
-	useEffect(() => {
-		// Reconciliation confirms a lost submit response without replaying onSent.
-		if (
-			!isLanding ||
-			!onSent ||
-			recoveredSubmission.current ||
-			snapshot.composerResetKey === 0 ||
-			snapshot.hasUnconfirmedSubmission ||
-			!snapshot.association?.roomId ||
-			snapshot.association.metadata.threadId !== thread.id
-		)
-			return;
-		recoveredSubmission.current = true;
-		onSent();
-	}, [
-		isLanding,
-		onSent,
-		snapshot.association,
-		snapshot.composerResetKey,
-		snapshot.hasUnconfirmedSubmission,
-		thread.id,
-	]);
 	const topicId = thread.topicLinks.find(
 		(link) => link.primary && link.source !== "suggested",
 	)?.topicId;
@@ -187,9 +151,7 @@ export function UnifiedThread({
 	const actionsTriggerId = `${fieldId}-actions`;
 	const isAdjusting = useRef(false);
 	const split = useRef(DEFAULT_WORKBENCH_SIZE);
-	const roomId = snapshot.association?.roomId ?? "";
 	const fullPane = isNarrow || isChatCollapsed;
-	const openedFromMenu = useRef(false);
 	const emailTrigger = useRef<HTMLElement | null>(null);
 	const [workbenchFocusRequest, setWorkbenchFocusRequest] = useState(0);
 	const { openWorkbench } = workbench;
@@ -255,14 +217,12 @@ export function UnifiedThread({
 		composer.consumeEmailRequest(request);
 	}, [composer, memory.emailRequest, memory.emailDrafts, revealEmailPanel]);
 	const handleOpenWorkbench = useCallback(() => {
-		openedFromMenu.current = true;
 		emailTrigger.current = null;
 		openWorkbench();
 		setWorkbenchFocusRequest((value) => value + 1);
 	}, [openWorkbench]);
 	const handleOpenPanel = useCallback(
 		(trigger?: HTMLElement | null) => {
-			openedFromMenu.current = false;
 			emailTrigger.current = trigger ?? null;
 			openWorkbench();
 			setWorkbenchFocusRequest((value) => value + 1);
@@ -318,9 +278,12 @@ export function UnifiedThread({
 		});
 		return () => cancelAnimationFrame(frame);
 	}, [activePane, fullPane]);
-	const entries = useMemo(
-		() => workTimeline([], snapshot.turn.messages, roomId, workbench.tools),
-		[snapshot.turn.messages, roomId, workbench.tools],
+	const messages = useMemo(
+		() =>
+			presentThreadMessages(snapshot.turn.messages)
+				.map(presentThreadInsights)
+				.filter((message) => message.visible !== false),
+		[snapshot.turn.messages],
 	);
 	const allowedSources = useMemo(
 		() =>
@@ -463,11 +426,6 @@ export function UnifiedThread({
 	const closePane = () => {
 		setIsChatCollapsed(false);
 		const workbenchRestoresFocus = workbench.closeWorkbench();
-		const targetId =
-			openedFromMenu.current && !isLanding && !isSourceFreeSession
-				? threadMenuTriggerId(thread.id)
-				: actionsTriggerId;
-		openedFromMenu.current = false;
 		const returnTarget = emailTrigger.current;
 		emailTrigger.current = null;
 		if (workbenchRestoresFocus && !returnTarget) return;
@@ -475,7 +433,7 @@ export function UnifiedThread({
 			restoreThreadFocus(
 				returnTarget?.isConnected
 					? returnTarget
-					: document.getElementById(targetId),
+					: document.getElementById(actionsTriggerId),
 			),
 		);
 	};
@@ -536,18 +494,17 @@ export function UnifiedThread({
 						ref={root}
 						className={cn(
 							"flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-							isSourceFreeSession &&
-								"bg-muted/15 px-4 py-6 sm:px-6 lg:p-8",
+							isLanding && "px-4 py-6 sm:px-6 lg:p-8",
+							"bg-muted/15",
 						)}
 					>
 						<div
 							className={cn(
 								"flex min-h-0 min-w-0 flex-1 flex-col",
-								isSourceFreeSession &&
-									"mx-auto w-full max-w-screen-2xl",
+								isLanding && "mx-auto w-full max-w-screen-2xl",
 							)}
 						>
-							{isSourceFreeSession && (
+							{isLanding && (
 								<DailyChatHeader
 									threadId={thread.id}
 									title={thread.subject}
@@ -560,7 +517,7 @@ export function UnifiedThread({
 							<div
 								className={cn(
 									"flex min-h-0 min-w-0 flex-1",
-									isSourceFreeSession && "gap-4",
+									isLanding && "gap-4",
 								)}
 							>
 								<ResizablePanelGroup
@@ -581,289 +538,177 @@ export function UnifiedThread({
 										ref={conversationPanel}
 										id={`${fieldId}-conversation`}
 										order={1}
-										defaultSize={30}
+										defaultSize={35}
 										minSize={fullPane ? 0 : 20}
 										collapsible
 										collapsedSize={0}
 									>
-										<Card
-											hidden={Boolean(
+										<RoomConversation
+											agent={
+												snapshot.agent ?? WORK_ASSISTANT
+											}
+											title={thread.subject}
+											conversationId={thread.id}
+											thread={messages}
+											isLoadingHistory={
+												snapshot.isLoading ||
+												snapshot.turn.isRestoring
+											}
+											resumeSignal={resumeSignal}
+											phase={snapshot.turn.phase}
+											hasObservationIssue={Boolean(
+												snapshot.error ||
+													snapshot.turn
+														.transportError,
+											)}
+											isLanding={isLanding}
+											isHidden={Boolean(
 												activePane && fullPane,
 											)}
-											className={cn(
-												"@container/conversation size-full min-h-0 gap-0 py-0 shadow-none outline-none",
-												isSourceFreeSession
-													? "overflow-hidden"
-													: "rounded-none border-0 bg-muted/30 text-foreground",
-												isLanding && "overflow-y-auto",
-												activePane && fullPane
-													? "hidden"
-													: "flex",
-											)}
-										>
-											{isSourceFreeSession && (
-												<div className="@md/conversation:mx-6 mx-4 shrink-0 border-b py-4">
-													<DailyChatControls />
-												</div>
-											)}
-											<header
-												hidden={isSourceFreeSession}
-												className="shrink-0 border-border border-b bg-background py-1"
-											>
-												<div className="flex w-full min-w-0 items-center gap-1 px-2">
-													{backToFeed}
-													<div className="min-w-0 flex-1">
-														{header}
-													</div>
-													<NewConversationButton
-														session={session}
-														snapshot={snapshot}
-													/>
-													<WorkPaneControls
-														isWorkbenchOpen={
-															activePane
-														}
-														isChatVisible={
-															!activePane ||
-															!fullPane
-														}
-														isCompact={isNarrow}
-														onToggleChat={() => {
-															if (isNarrow) {
-																if (activePane)
-																	closePane();
-																else
-																	workbench.openWorkbench();
-															} else if (
-																!activePane
-															) {
-																setIsChatCollapsed(
-																	false,
-																);
-																workbench.openWorkbench();
-															} else
-																setIsChatCollapsed(
-																	(value) =>
-																		!value,
-																);
-														}}
-													/>
-												</div>
-											</header>
-											<div
-												hidden={isLanding}
-												className={
-													isLanding
-														? "hidden"
-														: "flex min-h-0 flex-1 flex-col"
-												}
-											>
-												<WorkConversation
-													thread={thread}
-													entries={entries}
-													resumeSignal={resumeSignal}
-													showAssistant={
-														isComposerOpen
-													}
-													actions={
-														isHistoryReady ? (
-															<ThreadQuickActions
-																isDraftDisabled={
-																	!sourceUid
+											isToolWorkbenchOpen={activePane}
+											onToggleToolWorkbench={() => {
+												if (activePane) closePane();
+												else handleOpenPanel();
+											}}
+											headerActions={
+												<>
+													{header}
+													{activePane &&
+														!isNarrow && (
+															<WorkPaneControls
+																isWorkbenchOpen={
+																	activePane
 																}
-																showWelcome={
-																	isHistoryReady &&
-																	!hasActivity &&
-																	!isComposerOpen
+																isChatVisible={
+																	!isChatCollapsed
 																}
-																hasSourceEmail={Boolean(
-																	sourceUid,
-																)}
-																isAssistantOpen={
-																	isComposerOpen
+																isCompact={
+																	false
 																}
-																onSelect={(
-																	mode,
-																) => {
-																	handleThreadAction(
-																		{
-																			id: crypto.randomUUID(),
-																			threadId:
-																				thread.id,
-																			action:
-																				mode ===
-																				"draft"
-																					? "draft"
-																					: "ask",
-																			sourceMessageId:
-																				sourceUid,
-																		},
-																	);
-																}}
+																onToggleChat={() =>
+																	setIsChatCollapsed(
+																		(
+																			value,
+																		) =>
+																			!value,
+																	)
+																}
 															/>
-														) : null
-													}
-													turn={snapshot.turn}
-												/>
-											</div>
-											<RoomRunStatus
-												agent={
-													snapshot.agent ??
-													WORK_ASSISTANT
-												}
-												turnError={
-													snapshot.turn.turnError
-												}
-												transportError={
-													snapshot.turn.transportError
-												}
-												pendingApprovals={
-													statusApprovals
-												}
-												onReconnect={session.reconnect}
-												onNewConversation={
-													canStartNewConversation(
-														snapshot,
-													)
-														? () =>
-																startNewConversation(
-																	session,
-																)
-														: undefined
-												}
-												reviewInWorkbench
-											/>
-											{proposalError && (
-												<Alert variant="destructive">
-													<AlertDescription>
-														{proposalError}
-													</AlertDescription>
-												</Alert>
-											)}
-
-											<div
-												className={cn(
-													"shrink-0",
-													isLanding
-														? "my-auto w-full @md/conversation:px-6 px-4 py-6"
-														: (isComposerOpen ||
-																snapshot.isLoading ||
-																snapshot.error ||
-																snapshot.modelError) &&
-																"py-4",
-												)}
-											>
-												<div
-													className={cn(
-														"mx-auto w-full max-w-3xl",
-														isLanding
-															? "flex max-w-2xl flex-col gap-4"
-															: "space-y-3 @md/conversation:px-6 px-4",
-													)}
-												>
-													<AssistantComposer
-														toolbar={
-															isSourceFreeSession ? (
-																<DailyChatTopicControl
-																	thread={
-																		thread
-																	}
-																	disabled={
-																		memory.isSubmitting ||
-																		snapshot.isPreparing ||
-																		!isHistoryReady ||
-																		snapshot
-																			.turn
-																			.isRunning ||
-																		snapshot
-																			.turn
-																			.isSubmitting ||
-																		snapshot.hasUnconfirmedSubmission
-																	}
-																/>
-															) : undefined
+														)}
+												</>
+											}
+											transcriptActions={
+												isHistoryReady ? (
+													<ThreadQuickActions
+														isDraftDisabled={
+															!sourceUid
 														}
-														presentation={
-															isLanding
-																? "new-chat"
-																: isSourceFreeSession
-																	? "standalone"
-																	: "thread"
+														hasSourceEmail={Boolean(
+															sourceUid,
+														)}
+														isAssistantOpen={
+															isComposerOpen
 														}
-														onEmailSent={
-															onEmailSent
-														}
-														composerSession={
-															composer
-														}
-														isOpen={isComposerOpen}
-														focusRequest={
-															focusRequest
-														}
-														actionsTriggerId={
-															actionsTriggerId
-														}
-														session={session}
-														snapshot={snapshot}
-														title={thread.subject}
-														sourceUid={sourceUid}
-														sourceUrl={
-															thread.source
-																?.webLink ??
-															workspace.messages.find(
-																(message) =>
-																	message.id ===
+														onSelect={(mode) =>
+															handleThreadAction({
+																id: crypto.randomUUID(),
+																threadId:
+																	thread.id,
+																action:
+																	mode ===
+																	"draft"
+																		? "draft"
+																		: "ask",
+																sourceMessageId:
 																	sourceUid,
-															)?.webLink
+															})
 														}
-														attachments={
-															attachments
-														}
-														context={nextContext}
-														onSent={() => {
-															setResumeSignal(
-																(n) => n + 1,
-															);
-															onSent?.();
-														}}
 													/>
-													{isLanding && (
-														<BriefSuggestions
-															presentation="chat"
-															hidden={Boolean(
-																memory.draft.text.trim() ||
-																	memory.draft
-																		.files
-																		.length,
-															)}
-															topicId={topicId}
-															disabled={
-																memory.isSubmitting ||
-																snapshot.isPreparing ||
-																snapshot.turn
-																	.isSubmitting ||
-																snapshot.turn
-																	.isRunning ||
-																snapshot.hasUnconfirmedSubmission ||
-																snapshot.isCreationUncertain
-															}
-															onSelect={(
-																prompt,
-															) => {
-																composer.seedPrompt(
-																	prompt,
-																);
-																setFocusRequest(
-																	(value) =>
-																		value +
-																		1,
-																);
-															}}
-														/>
+												) : null
+											}
+											status={
+												<>
+													<RoomRunStatus
+														agent={
+															snapshot.agent ??
+															WORK_ASSISTANT
+														}
+														turnError={
+															snapshot.turn
+																.turnError
+														}
+														transportError={
+															snapshot.turn
+																.transportError
+														}
+														pendingApprovals={
+															statusApprovals
+														}
+														onReconnect={
+															session.reconnect
+														}
+														onNewConversation={
+															canStartNewConversation(
+																snapshot,
+															)
+																? () =>
+																		startNewConversation(
+																			session,
+																		)
+																: undefined
+														}
+														reviewInWorkbench
+													/>
+													{proposalError && (
+														<Alert variant="destructive">
+															<AlertDescription>
+																{proposalError}
+															</AlertDescription>
+														</Alert>
 													)}
-												</div>
-											</div>
-										</Card>
+												</>
+											}
+											composer={
+												<AssistantComposer
+													presentation={
+														isLanding
+															? "new-chat"
+															: "room"
+													}
+													onEmailSent={onEmailSent}
+													composerSession={composer}
+													isOpen={isComposerOpen}
+													focusRequest={focusRequest}
+													actionsTriggerId={
+														actionsTriggerId
+													}
+													session={session}
+													snapshot={snapshot}
+													title={thread.subject}
+													sourceUid={sourceUid}
+													sourceUrl={
+														thread.source
+															?.webLink ??
+														workspace.messages.find(
+															(message) =>
+																message.id ===
+																sourceUid,
+														)?.webLink
+													}
+													attachments={attachments}
+													context={nextContext}
+													onSent={() => {
+														setResumeSignal(
+															(n) => n + 1,
+														);
+														onSent?.();
+													}}
+													onSubmitStart={
+														onSubmitStart
+													}
+												/>
+											}
+										/>
 									</ResizablePanel>
 									<ResizableHandle
 										aria-label="Resize conversation and workbench"
@@ -878,7 +723,7 @@ export function UnifiedThread({
 										ref={sidePanel}
 										id={`${fieldId}-panel`}
 										order={2}
-										defaultSize={70}
+										defaultSize={65}
 										minSize={fullPane ? 0 : 25}
 										maxSize={fullPane ? 100 : 80}
 										collapsible
@@ -917,6 +762,9 @@ export function UnifiedThread({
 														top: {
 															before: (
 																<>
+																	{activePane &&
+																		fullPane &&
+																		navigationControl}
 																	{fullPane &&
 																		backToFeed}
 																	{isChatCollapsed &&
@@ -961,7 +809,7 @@ export function UnifiedThread({
 										</aside>
 									</ResizablePanel>
 								</ResizablePanelGroup>
-								{isSourceFreeSession && !activePane && (
+								{isLanding && !activePane && (
 									<div className="hidden w-80 shrink-0 overflow-y-auto xl:block 2xl:w-96">
 										<BriefContextRail
 											topicId={topicId}

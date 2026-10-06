@@ -10,6 +10,7 @@ import {
 import type { Engine } from "@semoss/shared";
 import { Alert, AlertDescription, Button, Small } from "@semoss/ui/next";
 import type { SourceAttachment } from "@/features/connectors/types";
+import { ChatAddToChat } from "@/features/daily-chat/chat-add-to-chat";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { useRoomModel } from "@/features/rooms/api/use-room-model";
 import { RoomComposer } from "@/features/rooms/components/room-composer";
@@ -36,12 +37,13 @@ export function AssistantComposer({
 	attachments,
 	context,
 	onSent,
+	onSubmitStart,
 	toolbar,
 }: {
 	/** App-owned composer state, retained across route changes. */
 	composerSession?: WorkComposerSession;
 	/** New chats have a larger editor; standalone chats share the bottom toolbar. */
-	presentation?: "thread" | "standalone" | "new-chat";
+	presentation?: "thread" | "standalone" | "new-chat" | "room";
 	/** Keep status/recovery visible while the editor is concealed. */
 	isOpen?: boolean;
 	/** Explicit focus requested by a quick action. */
@@ -55,6 +57,8 @@ export function AssistantComposer({
 	attachments: SourceAttachment[];
 	context: SubmittedThreadContext;
 	onSent: () => void;
+	/** Called only after the retained session admits this submission. */
+	onSubmitStart?: () => void;
 	/** Optional conversation scope shown alongside the existing composer tools. */
 	toolbar?: ReactNode;
 	/** Refresh source history after a confirmed send, independently of agent messages. */
@@ -64,11 +68,46 @@ export function AssistantComposer({
 	const composerRoot = useRef<HTMLDivElement>(null);
 	const [sendFocusRequest, setSendFocusRequest] = useState(0);
 	const composer = retainedComposer ?? localComposer;
+	const [resetFocusRevision, setResetFocusRevision] = useState<number | null>(
+		null,
+	);
+	const subscribe = useCallback(
+		(listener: () => void) => {
+			let revision = composer.getSnapshot().revision;
+			return composer.subscribe(() => {
+				const nextRevision = composer.getSnapshot().revision;
+				if (nextRevision !== revision) {
+					revision = nextRevision;
+					// Capture focus before a successful send replaces the editor.
+					const root = composerRoot.current;
+					if (
+						root &&
+						!root.closest("[hidden], [inert]") &&
+						root.contains(document.activeElement) &&
+						document.activeElement?.getAttribute("role") ===
+							"textbox"
+					)
+						setResetFocusRevision(nextRevision);
+				}
+				listener();
+			});
+		},
+		[composer],
+	);
 	const memory = useSyncExternalStore(
-		composer.subscribe,
+		subscribe,
 		composer.getSnapshot,
 		composer.getSnapshot,
 	);
+	// Consume route-arrival focus once, independently of later editor resets.
+	const [arrivalRevision] = useState(() =>
+		presentation !== "new-chat" && memory.shouldFocusChat
+			? memory.revision
+			: null,
+	);
+	useLayoutEffect(() => {
+		if (arrivalRevision !== null) composer.consumeChatFocus();
+	}, [arrivalRevision, composer]);
 	const selected = memory.selected;
 	const [downloading, setDownloading] = useState(false);
 	const preparing = memory.isSubmitting;
@@ -88,7 +127,9 @@ export function AssistantComposer({
 		turn.isSubmitting ||
 		turn.isRestoring;
 	const agent = snapshot.agent;
-	const isStandalone = presentation !== "thread";
+	const isStandalone =
+		presentation === "standalone" || presentation === "new-chat";
+	const isRoom = presentation === "room";
 	const isModelLocked =
 		busy ||
 		snapshot.isSavingSettings ||
@@ -253,13 +294,17 @@ export function AssistantComposer({
 					key={memory.revision}
 					initialDraft={memory.draft}
 					onDraftChange={handleDraftChange}
-					autoFocus={!retainedComposer}
+					autoFocus={
+						!retainedComposer ||
+						arrivalRevision === memory.revision ||
+						resetFocusRevision === memory.revision
+					}
 					focusRequest={focusRequest + sendFocusRequest}
 					retainUntilSent
 					submissionError={memory.error}
 					className="bg-transparent"
 					surfaceClassName={
-						isStandalone ? "rounded-xl shadow-none" : undefined
+						isStandalone ? "rounded-2xl shadow-sm" : undefined
 					}
 					inputClassName={
 						presentation === "new-chat"
@@ -269,7 +314,8 @@ export function AssistantComposer({
 								: undefined
 					}
 					header={
-						!isStandalone && (
+						!isStandalone &&
+						!isRoom && (
 							<ThreadComposerControls
 								mode="assistant"
 								onModeChange={composer.setMode}
@@ -284,6 +330,12 @@ export function AssistantComposer({
 						)
 					}
 					actionsTriggerId={actionsTriggerId}
+					renderActions={
+						isStandalone
+							? (controls) => <ChatAddToChat {...controls} />
+							: undefined
+					}
+					showPromptOptimization={!isStandalone}
 					panelActions={panelActions}
 					extraCommands={extraCommands}
 					prompts={
@@ -356,11 +408,17 @@ export function AssistantComposer({
 					}
 					agentName={agent?.name || "Assistant"}
 					placeholder={
-						isStandalone ? "Ask anything…" : "Ask Assistant…"
+						isStandalone
+							? "How can I help you today?"
+							: isRoom
+								? `Message ${agent?.name || "Assistant"}…`
+								: "Ask Assistant…"
 					}
-					showModelSelector={isStandalone}
+					showModelSelector={isStandalone || isRoom}
 					hideSettingsAction
-					submitLabel={isStandalone ? undefined : "Ask Assistant"}
+					submitLabel={
+						isStandalone || isRoom ? undefined : "Ask Assistant"
+					}
 					submitIcon={
 						isStandalone ? (
 							<ArrowUp aria-hidden="true" />
@@ -458,6 +516,7 @@ export function AssistantComposer({
 											attachment.isFile &&
 											selected.includes(attachment.id),
 									),
+									onSubmitStart,
 								);
 							} finally {
 								release();

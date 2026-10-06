@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Button, P } from "@semoss/ui/next";
 import { selectWorkItems } from "@/features/collaboration/state/collaboration.selectors";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { threadPath } from "@/lib/workspace-paths";
 import { BriefPanel } from "./brief-panel";
 
 /** A compact history with explicit reopen, rather than a global undo of unrelated work. */
@@ -31,7 +32,7 @@ export function BriefHandled({ topicId }: { topicId?: string }) {
 							/>
 							<div className="min-w-0 flex-1">
 								<Link
-									to={`/work/thread/${encodeURIComponent(item.threadId)}`}
+									to={threadPath(item.threadId)}
 									className="block truncate text-sm hover:underline"
 									title={item.title}
 								>

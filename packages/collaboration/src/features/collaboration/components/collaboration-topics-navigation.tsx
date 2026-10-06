@@ -44,14 +44,15 @@ export function CollaborationTopicsNavigation({
 		<Collapsible open={isOpen} onOpenChange={onOpenChange} asChild>
 			<section
 				aria-label="Topics"
-				className="flex max-h-72 min-h-0 shrink-0 flex-col px-3"
+				className="flex max-h-72 min-h-0 shrink-0 flex-col px-2"
 			>
 				<div className="flex shrink-0 items-center gap-1">
 					<CollapsibleTrigger asChild>
 						<Button
 							type="button"
 							variant="ghost"
-							className="pointer-coarse:min-h-11 min-w-0 flex-1 justify-start gap-2 px-3 font-normal text-muted-foreground"
+							size="sm"
+							className="pointer-coarse:min-h-11 min-w-0 flex-1 justify-start gap-2 px-2 font-normal text-muted-foreground text-xs has-[>svg]:px-2"
 						>
 							<ChevronRight
 								aria-hidden="true"
@@ -81,7 +82,7 @@ export function CollaborationTopicsNavigation({
 					</Tooltip>
 				</div>
 				<CollapsibleContent className="min-h-0 overflow-y-auto">
-					<nav aria-label="Topics">
+					<nav aria-label="Topics" className="space-y-0.5">
 						{topics.map((topic) => {
 							const count = selectWorkItems(state, {
 								view: "needs_me",
@@ -95,7 +96,7 @@ export function CollaborationTopicsNavigation({
 									onClick={onNavigate}
 									className={({ isActive }) =>
 										cn(
-											"flex min-h-9 pointer-coarse:min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring",
+											"flex min-h-8 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring",
 											isActive &&
 												"bg-sidebar-accent font-medium",
 										)
@@ -115,7 +116,7 @@ export function CollaborationTopicsNavigation({
 										{topic.short}
 									</span>
 									{count > 0 && (
-										<span className="ml-auto text-muted-foreground text-xs tabular-nums">
+										<span className="ml-auto shrink-0 text-muted-foreground text-xs tabular-nums">
 											{count}
 										</span>
 									)}
@@ -123,7 +124,7 @@ export function CollaborationTopicsNavigation({
 							);
 						})}
 						{topics.length === 0 && (
-							<Small className="px-3 py-2 text-muted-foreground">
+							<Small className="p-2 text-muted-foreground text-xs leading-4">
 								Add a topic to organize your work.
 							</Small>
 						)}

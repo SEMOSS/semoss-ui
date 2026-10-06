@@ -82,7 +82,6 @@ interface RoomSettingsDialogProps {
 	modelName?: string;
 	isReadOnly?: boolean;
 	isModelLocked?: boolean;
-	onConfigure?: () => void;
 	settings: RoomSettings;
 	inheritedMcp: MCPConfig[];
 	returnFocusRef: RefObject<HTMLButtonElement | null>;
@@ -130,7 +129,6 @@ export function RoomSettingsDialog({
 	modelName = "",
 	isReadOnly = false,
 	isModelLocked = false,
-	onConfigure,
 	settings,
 	inheritedMcp,
 	returnFocusRef,
@@ -319,16 +317,6 @@ export function RoomSettingsDialog({
 										<span className="font-medium text-sm">
 											Agent: {agentName}
 										</span>
-										{onConfigure && (
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												onClick={onConfigure}
-											>
-												Agent settings
-											</Button>
-										)}
 									</div>
 									{agent && (
 										<>

@@ -40,7 +40,6 @@ export function RoomView({
 	onReconnect,
 	onApproveTool,
 	onRejectTool,
-	onConfigure,
 	onNewRoom,
 	onOpenRooms,
 }: RoomViewProps) {
@@ -69,7 +68,6 @@ export function RoomView({
 					>
 						<RoomWorkspace
 							agent={agent}
-							agentId={agentId}
 							session={session}
 							thread={thread}
 							isSending={isSending}
@@ -94,7 +92,6 @@ export function RoomView({
 							onOptimizePrompt={onOptimizePrompt}
 							onCancelTurn={onCancelTurn}
 							onReconnect={onReconnect}
-							onConfigure={onConfigure}
 						/>
 					</ToolWorkbenchProvider>
 				</div>

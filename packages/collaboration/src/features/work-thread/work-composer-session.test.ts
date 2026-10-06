@@ -1,5 +1,36 @@
 import { WorkComposerSession } from "./work-composer-session";
 
+it("retains the thread destination and failed draft after the first send starts", async () => {
+	const composer = new WorkComposerSession();
+	const file = new File(["notes"], "notes.txt");
+	composer.setDraft(0, {
+		document: null,
+		text: "Keep this request",
+		files: [file],
+	});
+	await expect(
+		composer.submit(async () => {
+			composer.startChat();
+			throw new Error("Upload failed");
+		}),
+	).rejects.toThrow("Upload failed");
+	expect(composer.getSnapshot()).toMatchObject({
+		hasStartedChat: true,
+		shouldFocusChat: true,
+		isSubmitting: false,
+		error: "Upload failed",
+		draft: { text: "Keep this request", files: [file] },
+	});
+	composer.consumeChatFocus();
+	composer.startChat();
+	expect(composer.getSnapshot().shouldFocusChat).toBe(false);
+	await composer.submit(async () => undefined);
+	expect(composer.getSnapshot()).toMatchObject({
+		hasStartedChat: true,
+		draft: { text: "", files: [] },
+	});
+});
+
 it("sends the shown email as it stands, edits included", () => {
 	const composer = new WorkComposerSession();
 	expect(composer.openEmailContext()).toBeUndefined();

@@ -17,6 +17,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationPageHeader } from "./collaboration-page-header";
@@ -166,7 +167,7 @@ export function TopicDetail() {
 							>
 								<Link
 									className="break-words text-sm hover:underline"
-									to={`/work/thread/${encodeURIComponent(item.threadId)}`}
+									to={threadPath(item.threadId)}
 								>
 									{item.title}
 								</Link>

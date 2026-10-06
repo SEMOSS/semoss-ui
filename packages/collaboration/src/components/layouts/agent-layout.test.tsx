@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { createMemoryRouter, type RouteObject } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { useAgent } from "@/app/agent.context";
@@ -34,8 +35,17 @@ vi.mock("@/app/main.context", () => ({
 }));
 
 vi.mock("@/components/layouts/selected-agent", () => ({
-	SelectedAgent: ({ source }: { source: { id: string } }) => (
-		<div>Selected agent: {source.id}</div>
+	SelectedAgent: ({
+		source,
+		children,
+	}: {
+		source: { id: string };
+		children?: ReactNode;
+	}) => (
+		<>
+			<div>Selected agent: {source.id}</div>
+			{children}
+		</>
 	),
 }));
 
@@ -116,6 +126,56 @@ describe("AgentLayout", () => {
 		expect(harness.statement).toBe(
 			'GetRoomOptions(roomId=["unassigned-room"]);',
 		);
+	});
+
+	it("uses the direct room identity supplied by a thread page", () => {
+		harness.status = "SUCCESS";
+		harness.data = {
+			OPTIONS: {},
+			ROOM_NAME: "Unassigned room",
+		};
+		const router = createMemoryRouter(
+			[
+				{
+					path: "/thread/:threadId",
+					element: (
+						<AgentLayout roomId="direct/room">
+							<RoomAgentProbe />
+						</AgentLayout>
+					),
+				},
+			],
+			{ initialEntries: ["/thread/room%3Adirect%2Froom"] },
+		);
+		render(<RouterProvider router={router} />);
+		expect(
+			screen.getByText("Room agent: Assistant; id: none"),
+		).toBeVisible();
+		expect(harness.statement).toBe(
+			'GetRoomOptions(roomId=["direct/room"]);',
+		);
+	});
+
+	it("passes direct conversation content to an assigned agent", () => {
+		harness.agents = [{ id: "workspace-one", name: "Research" }];
+		harness.sessions = [{ id: "room-one", agentId: "workspace-one" }];
+		const router = createMemoryRouter(
+			[
+				{
+					path: "/thread/:threadId",
+					element: (
+						<AgentLayout roomId="room-one">
+							<p>Direct conversation content</p>
+						</AgentLayout>
+					),
+				},
+			],
+			{ initialEntries: ["/thread/room%3Aroom-one"] },
+		);
+		render(<RouterProvider router={router} />);
+		expect(screen.getByText("Selected agent: workspace-one")).toBeVisible();
+		expect(screen.getByText("Direct conversation content")).toBeVisible();
+		expect(harness.statement).toBe("");
 	});
 
 	it("keeps existing agent routes working without a room lookup", () => {

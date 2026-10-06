@@ -9,7 +9,11 @@ function leafRoute(path: string) {
 
 describe("collaboration routes", () => {
 	it.each([
-		["/room/room-one/unsupported", "room-not-found"],
+		["/thread/thread-one/unsupported", "not-found"],
+		["/thread/room%3Aroom-one/unsupported", "not-found"],
+		["/room/room-one", "not-found"],
+		["/room/room-one/unsupported", "not-found"],
+		["/work/thread/thread-one", "not-found"],
 		["/unknown", "not-found"],
 		["/settings/unknown", "not-found"],
 	])("shows not found for unsupported nested path %s", (path, id) => {
@@ -20,13 +24,15 @@ describe("collaboration routes", () => {
 	});
 
 	it.each([
-		["/room/room-one", "room"],
+		["/thread/room%3Aroom-one", "thread"],
 		["/login", "login"],
 		["/work", "work"],
 		["/work/waiting", "work/waiting"],
 		["/work/done", "work/done"],
 		["/work/topic/client", "work/topic/:topicId"],
-		["/work/thread/thread-one", "work-thread"],
+		["/thread/thread-one", "thread"],
+		["/thread/session%3Achat-one", "thread"],
+		["/thread/connected%3Aoutlook%3Amail-one", "thread"],
 		["/brain", "brain"],
 		["/brain/people/person-one", "brain/people/:personId"],
 		["/brain/threads/thread-one", "brain/threads/:threadId"],
@@ -62,10 +68,10 @@ describe("collaboration routes", () => {
 	it.each([
 		"/",
 		"/new",
-		"/room/room-one",
+		"/thread/room%3Aroom-one",
 		"/work",
 		"/brain",
-		"/work/thread/thread-one",
+		"/thread/thread-one",
 		"/settings/appearance",
 	])("lazy loads page modules for %s", async (path) => {
 		const route = matchRoutes(routes, path)

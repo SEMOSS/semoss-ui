@@ -151,7 +151,7 @@ export function CollaborationSearch({
 				},
 				{
 					id: "new",
-					label: "New Task",
+					label: "New Session",
 					detail: "Start a conversation",
 					group: "Go to",
 					path: "/new",

@@ -75,9 +75,9 @@ function setup() {
 	return store;
 }
 
-it("seeds two visible panels at 75/25 and opens the Work host by default", () => {
+it("seeds source panels at 75/25 while opening the conversation first", () => {
 	const store = setup();
-	expect(WORK_THREAD_WORKBENCH.defaultOpen).toBe(true);
+	expect(WORK_THREAD_WORKBENCH.defaultOpen).toBe(false);
 	expect(store.getState().layout.visiblePanelIds).toEqual(
 		expect.arrayContaining([
 			WORK_PANEL_TYPES.EMAILS,

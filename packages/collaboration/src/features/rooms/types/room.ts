@@ -84,7 +84,6 @@ export interface RoomViewProps {
 		argumentsValue: Record<string, unknown>,
 	) => Promise<void>;
 	onRejectTool: (approval: PendingToolApproval) => Promise<void>;
-	onConfigure: (id: string) => void;
 	onNewRoom: (agentId?: string) => void;
 	onOpenRooms: () => void;
 }

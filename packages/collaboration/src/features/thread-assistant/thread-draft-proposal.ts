@@ -29,12 +29,12 @@ const replySchema = z.object({
 	attachments,
 	attachmentError,
 });
-// a new email; "to" may be empty when the assistant could not find the address
+// An omitted envelope field keeps the open email's value; an empty string clears it.
 const newEmailSchema = z.object({
-	to: addresses,
+	to: addresses.optional(),
 	cc: addresses.optional(),
 	bcc: addresses.optional(),
-	subject: z.string().trim().max(1000),
+	subject: z.string().trim().max(1000).optional(),
 	body,
 	openEmailId,
 	attachments,
@@ -86,6 +86,8 @@ function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 	const replyTo = text(args.replyTo)?.trim();
 	const forward = text(args.forward)?.trim();
 	const source = replyTo || forward;
+	const authoredBody = text(args.message);
+	const editorId = text(args.openEmailId)?.trim() || undefined;
 	let prepared: unknown;
 	try {
 		prepared = JSON.parse(tool.output || "null");
@@ -117,21 +119,21 @@ function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 					...fileFields,
 					mode: replyTo ? "reply" : "forward",
 					sourceMessageId: source,
-					to: text(args.to) || undefined,
-					cc: text(args.cc) || undefined,
-					bcc: text(args.bcc) || undefined,
-					subject: text(args.subject) || undefined,
-					body: text(args.message) || undefined,
-					openEmailId: text(args.openEmailId) || undefined,
+					to: text(args.to),
+					cc: text(args.cc),
+					bcc: text(args.bcc),
+					subject: text(args.subject),
+					body: authoredBody?.trim() ? authoredBody : undefined,
+					openEmailId: editorId,
 				}
 			: {
 					...fileFields,
-					to: text(args.to) ?? "",
-					cc: text(args.cc) || undefined,
-					bcc: text(args.bcc) || undefined,
-					subject: text(args.subject) ?? "",
-					body: text(args.message) || undefined,
-					openEmailId: text(args.openEmailId) || undefined,
+					to: text(args.to),
+					cc: text(args.cc),
+					bcc: text(args.bcc),
+					subject: text(args.subject),
+					body: authoredBody?.trim() ? authoredBody : undefined,
+					openEmailId: editorId,
 				},
 	);
 	return result.success ? result.data : null;
