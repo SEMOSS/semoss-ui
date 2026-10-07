@@ -25,7 +25,7 @@ import {
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 
-/** Merge this topic into another one, or delete it; both can be undone. */
+/** Confirm merging this topic into another one or deleting it. */
 export function TopicActions({
 	topic,
 	threadCount,
@@ -33,7 +33,7 @@ export function TopicActions({
 	topic: Topic;
 	threadCount: number;
 }) {
-	const { state, dispatch, undo } = useCollaborationSession();
+	const { state, dispatch } = useCollaborationSession();
 	const navigate = useNavigate();
 	const fieldId = useId();
 	const [dialog, setDialog] = useState<"merge" | "delete" | null>(null);
@@ -43,7 +43,6 @@ export function TopicActions({
 		(other) => other.id !== topic.id && other.isSample === topic.isSample,
 	);
 	const target = targets.find((other) => other.id === targetId);
-	const undoAction = { label: "Undo", onClick: undo };
 	const close = () => {
 		setDialog(null);
 		setTargetId("");
@@ -107,7 +106,7 @@ export function TopicActions({
 						</Select>
 					</div>
 					<P className="text-muted-foreground text-sm">
-						You can undo this with Undo.
+						This merge cannot be undone.
 					</P>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={close}>
@@ -126,7 +125,6 @@ export function TopicActions({
 								close();
 								toast.success(
 									`Merged ${topic.name} into ${target.name}.`,
-									{ action: undoAction },
 								);
 								navigate(
 									`/brain/topics/${encodeURIComponent(target.id)}`,
@@ -154,7 +152,7 @@ export function TopicActions({
 						</DialogDescription>
 					</DialogHeader>
 					<P className="text-muted-foreground text-sm">
-						You can undo this with Undo.
+						This deletion cannot be undone.
 					</P>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={close}>
@@ -169,9 +167,7 @@ export function TopicActions({
 									topicId: topic.id,
 								});
 								close();
-								toast.success(`Deleted ${topic.name}.`, {
-									action: undoAction,
-								});
+								toast.success(`Deleted ${topic.name}.`);
 								navigate("/brain");
 							}}
 						>

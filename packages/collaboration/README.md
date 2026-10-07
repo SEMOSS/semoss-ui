@@ -275,7 +275,7 @@ pnpm --filter @semoss/collaboration build
 The October 6, 2026 backend-compatibility pass used Node 24.4.0: all 1,055 tests
 across 138 files passed, along with package type-check, production build, and
 Biome checks on changed source/configuration files. Regression coverage includes
-queued server IDs, undo persistence, priority clearing, topic calendar series,
+queued server IDs, priority clearing, topic calendar series,
 native source identities, empty versus omitted email fields, and HTTPS development
 configuration. Existing React test warnings and large-bundle build warnings remain.
 The isolated browser reached sign-in; authenticated Microsoft operations and

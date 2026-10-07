@@ -40,7 +40,7 @@ function MenuFixture({
 	sourceMessageId?: string;
 	selectedThreadId?: string;
 }) {
-	const { state, undo } = useCollaborationSession();
+	const { state } = useCollaborationSession();
 	const thread = state.threads.find(
 		(candidate) => candidate.id === selectedThreadId,
 	);
@@ -48,9 +48,6 @@ function MenuFixture({
 	const isVisible = !hideMuted || !thread.muted;
 	const content = (
 		<main tabIndex={-1}>
-			<button type="button" onClick={undo}>
-				Undo
-			</button>
 			<output aria-label="Session state">{JSON.stringify(state)}</output>
 			{isVisible && (
 				<ThreadMenu
@@ -272,7 +269,7 @@ describe("thread menus", () => {
 		},
 	);
 
-	it("ignores a thread, restores a surviving focus target, and supports Undo", async () => {
+	it("ignores a thread and restores a surviving focus target", async () => {
 		const { user, open } = setup({ hideMuted: true });
 		await open();
 		await user.click(getMenuAction({ name: "Ignore thread" }));
@@ -282,8 +279,6 @@ describe("thread menus", () => {
 				?.muted,
 		).toBe(true);
 		await waitFor(() => expect(screen.getByRole("main")).toHaveFocus());
-		await user.click(screen.getByRole("button", { name: "Undo" }));
-		expect(screen.getByRole("article")).toBeVisible();
 	});
 
 	it("offers Resume for an ignored thread", async () => {

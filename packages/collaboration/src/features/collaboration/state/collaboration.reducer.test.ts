@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialCollaborationState } from "./collaboration.fixtures";
 import {
-	type CollaborationHistory,
-	collaborationHistoryReducer,
 	collaborationReducer,
 	createEmptyWorkspace,
 	tomorrowAtEight,
@@ -495,57 +493,26 @@ describe("shared collaboration session", () => {
 		).toBeUndefined();
 	});
 
-	it("caps the local undo journal at 50 changes", () => {
-		let history: CollaborationHistory = {
-			state: createInitialCollaborationState(),
-			past: [],
+	it("retains the current state for unchanged commands and snooze checks", () => {
+		const command: CollaborationCommand = {
+			type: "thread.goal",
+			threadId: "th-geng-review",
+			goal: "Review together",
 		};
-		for (let index = 0; index < 60; index += 1)
-			history = collaborationHistoryReducer(history, {
-				command: {
-					type: "thread.goal",
-					threadId: "th-geng-review",
-					goal: `Goal ${index}`,
-				},
-				now: NOW,
-			});
-		expect(history.past).toHaveLength(50);
-		for (let index = 0; index < 50; index += 1)
-			history = collaborationHistoryReducer(history, { type: "undo" });
-		expect(history.state.workspaces["th-geng-review"].goal).toBe("Goal 9");
-		expect(history.past).toHaveLength(0);
-	});
-
-	it("retains imports and latest body when undoing a prior local edit", () => {
-		let history: CollaborationHistory = {
-			state: createInitialCollaborationState(),
-			past: [],
-		};
-		history = collaborationHistoryReducer(history, {
-			command: {
+		const initial = createInitialCollaborationState();
+		const originalGoal = initial.workspaces[command.threadId].goal;
+		const state = apply(initial, command);
+		expect(initial.workspaces[command.threadId].goal).toBe(originalGoal);
+		expect(state.workspaces[command.threadId].goal).toBe(command.goal);
+		expect(apply(state, command)).toBe(state);
+		expect(apply(state, { type: "snooze.expire" })).toBe(state);
+		expect(
+			apply(state, {
 				type: "item.update",
-				itemId: "i1",
+				itemId: "missing-item",
 				changes: { status: "done" },
-			},
-			now: NOW,
-		});
-		history = collaborationHistoryReducer(history, {
-			command: importCommand(),
-			now: NOW,
-		});
-		expect(history.past).toHaveLength(1);
-		history = collaborationHistoryReducer(history, { type: "undo" });
-		expect(
-			history.state.threads.find(
-				(thread) => thread.id === "local-outlook-1",
-			)?.source?.nativeId,
-		).toBe("AAMk-opaque-id+/=");
-		expect(
-			history.state.workspaces["local-outlook-1"].messages[0].text,
-		).toBe("Please review the attached plan.");
-		expect(
-			history.state.items.find((item) => item.id === "i1")?.status,
-		).toBe("open");
+			}),
+		).toBe(state);
 	});
 
 	it("refreshes a native source idempotently and preserves local decisions", () => {

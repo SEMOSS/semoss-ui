@@ -1093,54 +1093,6 @@ export function collaborationReducer(
 			break;
 		}
 	}
-	return reconcileCollaborationState(state);
-}
-
-export interface CollaborationHistory {
-	state: CollaborationState;
-	past: CollaborationState[];
-}
-
-export type HistoryAction =
-	| { command: CollaborationCommand; now: string }
-	| { type: "undo" };
-
-const UNRECORDED_COMMANDS = new Set<CollaborationCommand["type"]>([
-	"thread.insights",
-	"source.deleted",
-	"session.create",
-	"live.refresh",
-	"source.import",
-	"source.status",
-	"live-profile.set",
-	"workspace.open",
-	"workspace.close",
-	"snooze.expire",
-]);
-
-/** External imports survive local undo by also updating historical session snapshots. */
-export function collaborationHistoryReducer(
-	history: CollaborationHistory,
-	action: HistoryAction,
-): CollaborationHistory {
-	if ("type" in action) {
-		const previous = history.past.at(-1);
-		return previous
-			? { state: previous, past: history.past.slice(0, -1) }
-			: history;
-	}
-	const state = collaborationReducer(
-		history.state,
-		action.command,
-		action.now,
-	);
-	if (JSON.stringify(state) === JSON.stringify(history.state)) return history;
-	if (UNRECORDED_COMMANDS.has(action.command.type))
-		return {
-			state,
-			past: history.past.map((previous) =>
-				collaborationReducer(previous, action.command, action.now),
-			),
-		};
-	return { state, past: [...history.past.slice(-49), history.state] };
+	const next = reconcileCollaborationState(state);
+	return JSON.stringify(next) === JSON.stringify(previous) ? previous : next;
 }

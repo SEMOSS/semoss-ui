@@ -12,7 +12,7 @@ import type { CollaborationChange } from "../state/collaboration-session.context
 import { runBatch } from "./live-state";
 
 // Saves live-mode changes by diffing the state before and after each settled change, so any UI built on
-// the existing commands is saved without knowing which button caused it. Undo is a change like any other.
+// the existing commands is saved without knowing which button caused it.
 
 // commands with no backend yet, or that carry what the server already holds; their effects stay in this
 // browser session
@@ -40,7 +40,6 @@ interface Plan {
 }
 
 const LOCAL = /^local-/;
-const TOPIC_REMOVAL = /^(BrainDeleteTopic|BrainMergeTopics)\(/;
 // records imported in the browser from "Load your sources" have no server row yet
 const imported = (value: string) =>
 	value.startsWith("connected") || value.startsWith("session:");
@@ -63,60 +62,20 @@ export function createLiveSync(
 ): LiveSync {
 	const ids = new Map<string, string>();
 	const id = (value: string) => ids.get(value) ?? value;
-	// server topic id -> changeId from its delete or merge, for undo
-	const topicChanges = new Map<string, string>();
-	// topics this session deleted or merged away, so an undo that brings one back is known up front
-	const removedTopics = new Set<string>();
 	let queue = Promise.resolve();
 	const withServerIds = (statement: string) =>
 		statement.replace(/"(local-[^"]+)"/g, (match, local) =>
 			ids.has(local) ? JSON.stringify(ids.get(local)) : match,
 		);
 
-	const sync = (settled: CollaborationChange): void => {
-		// an undo can carry commands that changed nothing (the 30 s snooze check); it is saved by diff alone
-		const change = settled.undo ? { ...settled, commands: [] } : settled;
+	const sync = (change: CollaborationChange): void => {
 		const unsaved = change.commands.filter((command) =>
 			SESSION_ONLY.has(command.type),
 		);
 		if (unsaved.length && unsaved.length === change.commands.length) return;
-		// undoing a delete or merge brings a topic back; the server puts back its rows in one call
-		const restored = change.undo
-			? restoredTopics(change).filter((topicId) =>
-					removedTopics.delete(topicId),
-				)
-			: [];
-		if (restored.length) {
-			queue = queue
-				.then(async () => {
-					const changeIds = restored.flatMap((topicId) => {
-						const changeId = topicChanges.get(id(topicId));
-						topicChanges.delete(id(topicId));
-						return changeId ? [changeId] : [];
-					});
-					await runBatch(
-						actions,
-						changeIds.map((changeId) =>
-							pixel("BrainUndoTopicChange", { changeId }),
-						),
-					);
-				})
-				.catch((cause: unknown) =>
-					onError(
-						cause instanceof Error ? cause.message : String(cause),
-					),
-				);
-			return;
-		}
-		for (const topicId of restoredTopics({
-			...change,
-			previous: change.next,
-			next: change.previous,
-		}))
-			removedTopics.add(topicId);
 		queue = queue
 			.then(async () => {
-				// Earlier queued creates or undo operations may have replaced these ids.
+				// Earlier queued creates may have replaced these ids.
 				const plan = planChange(change, id);
 				for (const create of plan.creates) {
 					// a step can point at an item created earlier in this change
@@ -131,22 +90,7 @@ export function createLiveSync(
 					ids.set(create.localId, serverId);
 				}
 				// statements built before the creates ran still hold local ids
-				const outputs = await runBatch(
-					actions,
-					plan.statements.map(withServerIds),
-				);
-				outputs.forEach((out, index) => {
-					const { topicId, changeId } = (out ?? {}) as {
-						topicId?: string;
-						changeId?: string;
-					};
-					if (
-						TOPIC_REMOVAL.test(plan.statements[index]) &&
-						topicId &&
-						changeId
-					)
-						topicChanges.set(topicId, changeId);
-				});
+				await runBatch(actions, plan.statements.map(withServerIds));
 			})
 			.catch((cause: unknown) =>
 				onError(cause instanceof Error ? cause.message : String(cause)),
@@ -157,14 +101,6 @@ export function createLiveSync(
 		localId: (serverId: string): string =>
 			[...ids].find(([, value]) => value === serverId)?.[0] ?? serverId,
 	});
-}
-
-// topics in the new state that the previous one did not have
-function restoredTopics(change: CollaborationChange): string[] {
-	const before = byId(change.previous.topics);
-	return change.next.topics
-		.filter((topic) => !before.has(topic.id))
-		.map((topic) => topic.id);
 }
 
 function planChange(
@@ -204,10 +140,10 @@ function planChange(
 			);
 		return plan;
 	}
-	planTopics(plan, prev, next, id, change.undo);
+	planTopics(plan, prev, next, id);
 	planThreads(plan, prev, next, id);
 	planItems(plan, prev, next, id);
-	planWorkspaces(plan, prev, next, id, change.undo);
+	planWorkspaces(plan, prev, next, id);
 	planPeople(plan, prev, next, id);
 	planRules(plan, prev, next, id);
 	planReviews(plan, prev, next, change.commands, id);
@@ -232,7 +168,6 @@ function planTopics(
 	prev: CollaborationState,
 	next: CollaborationState,
 	id: (v: string) => string,
-	isUndo: boolean,
 ) {
 	const before = byId(prev.topics);
 	const after = byId(next.topics);
@@ -262,7 +197,6 @@ function planTopics(
 				{ ...topic, goals: [], notes: [], people: [] },
 				topic,
 				id,
-				isUndo,
 			);
 			continue;
 		}
@@ -282,7 +216,7 @@ function planTopics(
 					status: topic.status,
 				}),
 			);
-		planTopicParts(plan, old, topic, id, isUndo);
+		planTopicParts(plan, old, topic, id);
 	}
 	for (const topic of prev.topics)
 		if (!after.has(topic.id))
@@ -296,7 +230,6 @@ function planTopicParts(
 	old: Topic,
 	topic: Topic,
 	id: (v: string) => string,
-	isUndo: boolean,
 ) {
 	const topicId = id(topic.id);
 	const notes = (goals: TopicGoal[], rows: TopicNote[]) =>
@@ -325,7 +258,7 @@ function planTopicParts(
 	for (const [noteId, note] of after) {
 		const was = before.get(noteId);
 		if (was && same(was, note)) continue;
-		if (!was && (LOCAL.test(noteId) || isUndo))
+		if (!was && LOCAL.test(noteId))
 			plan.creates.push({
 				localId: noteId,
 				statement: pixel("BrainSaveTopicNote", { topicId, ...note }),
@@ -418,8 +351,7 @@ function planThreads(
 						remove: true,
 					}),
 				);
-		// the new primary goes last and demotes the old one itself; the server cannot set a link back to
-		// suggested, so an undo to suggested is left alone
+		// The new primary goes last and demotes the old one itself. Suggested links stay server-owned.
 		const changed = thread.topicLinks
 			.filter((link) => {
 				const was = oldLinks.get(link.topicId);
@@ -487,7 +419,7 @@ function planItems(
 		if (!changed.length) continue;
 		const args: Record<string, unknown> = { itemId: id(item.id) };
 		for (const field of changed) {
-			// reopening clears the reason on the server; the history keeps it
+			// reopening clears the reason on the server
 			if (field === "closedReason" && !item.closedReason) continue;
 			// leaving snoozed clears snoozeUntil on the server by itself
 			if (field === "snoozeUntil" && !item.snoozeUntil) continue;
@@ -557,8 +489,7 @@ function planRules(
 	for (const rule of next.rules) {
 		const old = before.get(rule.id);
 		const active = !rule.disabledAt;
-		// a new rule, or a removed one brought back by undo, is saved as a new server rule
-		if (active && (!old || old.disabledAt))
+		if (active && !old)
 			plan.creates.push({
 				localId: rule.id,
 				statement: pixel("BrainSaveRule", { rule: ruleFields(rule) }),
@@ -586,13 +517,8 @@ function planReviews(
 	const before = byId(prev.reviews);
 	for (const review of next.reviews) {
 		const old = before.get(review.id);
-		if (!old || old.status === review.status) continue;
-		if (review.status === "open") {
-			plan.statements.push(
-				pixel("BrainReopenReview", { reviewId: review.id }),
-			);
+		if (!old || old.status === review.status || review.status === "open")
 			continue;
-		}
 		const command = commands.find(
 			(
 				candidate,
@@ -684,7 +610,6 @@ function planWorkspaces(
 	prev: CollaborationState,
 	next: CollaborationState,
 	id: (v: string) => string,
-	isUndo: boolean,
 ) {
 	const threadIds = new Set([
 		...Object.keys(prev.workspaces),
@@ -702,8 +627,6 @@ function planWorkspaces(
 			key: "step",
 			idKey: "stepId",
 			id,
-			isUndo,
-			restoreExisting: (step) => step.isGenerated === true,
 		});
 		planRows(plan, threadId, before?.facts ?? [], after?.facts ?? [], {
 			fields: FACT_FIELDS,
@@ -712,7 +635,6 @@ function planWorkspaces(
 			key: "fact",
 			idKey: "factId",
 			id,
-			isUndo,
 		});
 	}
 }
@@ -729,8 +651,6 @@ function planRows<T extends { id: string }>(
 		key: string;
 		idKey: string;
 		id: (v: string) => string;
-		isUndo: boolean;
-		restoreExisting?: (row: T) => boolean;
 	},
 ) {
 	const before = byId(oldRows);
@@ -738,26 +658,17 @@ function planRows<T extends { id: string }>(
 	for (const row of newRows) {
 		const old = before.get(row.id);
 		if (!old) {
-			if (!LOCAL.test(row.id) && !how.isUndo) continue;
+			if (!LOCAL.test(row.id)) continue;
 			const fields = Object.fromEntries(
 				how.fields
 					.filter((field) => row[field] != null && row[field] !== "")
 					.map((field) => [field, row[field]]),
 			);
-			// Generated steps are soft-deleted; ordinary steps and facts need a new row on undo.
-			if (how.restoreExisting?.(row))
-				plan.statements.push(
-					pixel(how.save, {
-						threadId,
-						[how.key]: { id: how.id(row.id), ...fields },
-					}),
-				);
-			else
-				plan.creates.push({
-					localId: row.id,
-					statement: pixel(how.save, { threadId, [how.key]: fields }),
-					idOf: (out) => (out as { id?: string })?.id,
-				});
+			plan.creates.push({
+				localId: row.id,
+				statement: pixel(how.save, { threadId, [how.key]: fields }),
+				idOf: (out) => (out as { id?: string })?.id,
+			});
 			continue;
 		}
 		const changed = how.fields.filter(
