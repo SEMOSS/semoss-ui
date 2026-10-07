@@ -124,7 +124,9 @@
 	},
 	"errors": {
 		"createRoom": "An error occurred while creating the room. Error: {{message}}",
-		"fileInUse": "At least one uploaded file is currently in use by another program. Close the program and re-upload."
+		"fileInUse": "At least one uploaded file is currently in use by another program. Close the program and re-upload.",
+		"unsupportedFileType": "{{name}} is not a supported file type for this chat.",
+		"unsupportedFileTypeMultiple": "{{count}} files are not supported file types for this chat: {{names}}."
 	},
 	"contextWindow": {
 		"descriptionLow": "All conversations have a limit. Very long conversations will eventually cause the model to forget earlier messages.",

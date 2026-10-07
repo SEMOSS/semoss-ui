@@ -782,7 +782,24 @@ export const NewRoomPage = observer(() => {
 						</DraftSettingsContext.Provider>
 					}
 				>
-					<FileDragProvider>
+					<FileDragProvider
+						isFileAccepted={tempRoomStore.acceptsAttachment}
+						onFilesRejected={(fileNames) => {
+							toast.error(
+								fileNames.length === 1
+									? t("room:errors.unsupportedFileType", {
+											name: fileNames[0],
+										})
+									: t(
+											"room:errors.unsupportedFileTypeMultiple",
+											{
+												count: fileNames.length,
+												names: fileNames.join(", "),
+											},
+										),
+							);
+						}}
+					>
 						{landingSrc && (
 							<img
 								src={landingSrc}

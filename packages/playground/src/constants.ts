@@ -20,6 +20,48 @@ export const MCP_DISPLAY_HIDDEN = "hidden";
 
 export const STREAMING_PLACEHOLDER_ID = "STREAMING_PLACEHOLDER_ID";
 
+/**
+ * Baseline file extensions accepted as a chat attachment when the active
+ * theme has not configured its own `allowedFileTypes`. A theme that sets
+ * `allowedFileTypes` fully overrides this list rather than extending it (see
+ * `RoomStore.acceptsAttachment`).
+ *
+ * Deliberately excludes executables, scripts, and archives — not meaningful
+ * chat context, and the most likely source of unsafe or unintended uploads.
+ *
+ * This is a starting point, not a fixed contract. Adjust freely as real-world
+ * usage surfaces file types that should be added or removed.
+ */
+export const DEFAULT_ALLOWED_FILE_EXTENSIONS = [
+	// documents
+	"pdf",
+	"doc",
+	"docx",
+	"ppt",
+	"pptx",
+	"xls",
+	"xlsx",
+	"txt",
+	"md",
+	"rtf",
+	"csv",
+	"tsv",
+	// data / code
+	"json",
+	"yaml",
+	"yml",
+	"xml",
+	"ipynb",
+	// images
+	"png",
+	"jpg",
+	"jpeg",
+	"gif",
+	"webp",
+	"bmp",
+	"svg",
+] as const;
+
 export const LOADING_MESSAGES = [
 	"Thinking through it...",
 	"Working on that...",

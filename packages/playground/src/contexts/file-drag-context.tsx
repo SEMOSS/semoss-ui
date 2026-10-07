@@ -19,19 +19,56 @@ interface FileDragContextType {
 	openFilePicker: () => void;
 }
 
+interface FileDragProviderProps {
+	children: ReactNode;
+	/**
+	 * Whether a file may be attached, keyed by its name. Omit to accept every
+	 * file — used where no file policy applies (e.g. tests, or a surface with
+	 * no room yet). Checked for every file added via drop, the file picker,
+	 * or paste, since all three funnel through this provider's `addFiles`.
+	 */
+	isFileAccepted?: (fileName: string) => boolean;
+	/** Called with the names of any files `addFiles` just rejected. */
+	onFilesRejected?: (fileNames: string[]) => void;
+}
+
 const FileDragContext = createContext<FileDragContextType | undefined>(
 	undefined,
 );
 
-export const FileDragProvider = ({ children }: { children: ReactNode }) => {
+export const FileDragProvider = ({
+	children,
+	isFileAccepted,
+	onFilesRejected,
+}: FileDragProviderProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [files, setFiles] = useState<File[]>([]);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const abandonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const addFiles = useCallback(
-		(newFiles: File[]) => setFiles((prev) => [...prev, ...newFiles]),
-		[],
+		(newFiles: File[]) => {
+			if (!isFileAccepted) {
+				setFiles((prev) => [...prev, ...newFiles]);
+				return;
+			}
+			const accepted: File[] = [];
+			const rejected: string[] = [];
+			for (const file of newFiles) {
+				if (isFileAccepted(file.name)) {
+					accepted.push(file);
+				} else {
+					rejected.push(file.name);
+				}
+			}
+			if (accepted.length > 0) {
+				setFiles((prev) => [...prev, ...accepted]);
+			}
+			if (rejected.length > 0) {
+				onFilesRejected?.(rejected);
+			}
+		},
+		[isFileAccepted, onFilesRejected],
 	);
 	const removeFile = useCallback(
 		(index: number) =>

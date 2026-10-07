@@ -26,7 +26,10 @@ import {
 	type WorkbenchSnapshot,
 	type WorkbenchState,
 } from "@semoss/workbench";
-import { STREAMING_PLACEHOLDER_ID } from "@/constants";
+import {
+	DEFAULT_ALLOWED_FILE_EXTENSIONS,
+	STREAMING_PLACEHOLDER_ID,
+} from "@/constants";
 import { ChatToolsStore } from "@/features/chat-tools/chat-tools.store";
 import { ConnectorsStore } from "@/features/connectors/connectors.store";
 import { ContextItemsStore } from "@/features/conversation/context-items.store";
@@ -1257,18 +1260,22 @@ export class RoomStore {
 	};
 
 	/**
-	 * Whether the room takes a file of this name as an attachment. The theme
-	 * may limit attachments to some extensions; without a limit, every file
-	 * is taken, and with one, a file needs an allowed extension.
+	 * Whether the room takes a file of this name as an attachment. A theme
+	 * may set its own `allowedFileTypes`, which fully replaces the baseline
+	 * list below (it is not merged with it). Without a theme override, only
+	 * `DEFAULT_ALLOWED_FILE_EXTENSIONS` is accepted — unknown or unnecessary
+	 * extensions (executables, scripts, archives, etc.) are rejected by
+	 * default rather than silently allowed.
 	 *
 	 * @param fileName - The file's name.
 	 * @return True when the file may be attached.
 	 */
 	acceptsAttachment = (fileName: string): boolean => {
-		const allowed = this._theme.allowedFileTypes;
-		if (!allowed || allowed.length === 0) {
-			return true;
-		}
+		const configured = this._theme.allowedFileTypes;
+		const allowed =
+			configured && configured.length > 0
+				? configured
+				: DEFAULT_ALLOWED_FILE_EXTENSIONS;
 		const normalize = (value: string) =>
 			value.trim().toLowerCase().replace(/^\./, "");
 		const extension = normalize(fileName.split(".").pop() ?? "");

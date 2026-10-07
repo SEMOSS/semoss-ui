@@ -120,7 +120,9 @@
 	},
 	"errors": {
 		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}",
-		"fileInUse": "El/los archivo(s) cargado(s) está(n) siendo usados por otro programa. Cierre el programa y vuelva a cargarlos en un nuevo chat."
+		"fileInUse": "El/los archivo(s) cargado(s) está(n) siendo usados por otro programa. Cierre el programa y vuelva a cargarlos en un nuevo chat.",
+		"unsupportedFileType": "{{name}} no es un tipo de archivo compatible con este chat.",
+		"unsupportedFileTypeMultiple": "{{count}} archivos no son tipos de archivo compatibles con este chat: {{names}}."
 	},
 	"contextWindow": {
 		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",

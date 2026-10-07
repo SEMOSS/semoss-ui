@@ -123,7 +123,21 @@ export const RoomPage = observer(() => {
 				}}
 				panel={<RoomSidebar room={room} />}
 			>
-				<FileDragProvider>
+				<FileDragProvider
+					isFileAccepted={room.acceptsAttachment}
+					onFilesRejected={(fileNames) => {
+						toast.error(
+							fileNames.length === 1
+								? t("errors.unsupportedFileType", {
+										name: fileNames[0],
+									})
+								: t("errors.unsupportedFileTypeMultiple", {
+										count: fileNames.length,
+										names: fileNames.join(", "),
+									}),
+						);
+					}}
+				>
 					<RoomContent room={room} />
 				</FileDragProvider>
 			</ConversationWorkspace>

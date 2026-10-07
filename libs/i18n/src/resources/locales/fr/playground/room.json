@@ -124,7 +124,9 @@
 	},
 	"errors": {
 		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}",
-		"fileInUse": "Le(s) fichier(s) téléversé(s) est/sont actuellement utilisé(s) par un autre programme. Fermez le programme et retéléversez le(s) fichier(s) dans un nouveau chat."
+		"fileInUse": "Le(s) fichier(s) téléversé(s) est/sont actuellement utilisé(s) par un autre programme. Fermez le programme et retéléversez le(s) fichier(s) dans un nouveau chat.",
+		"unsupportedFileType": "{{name}} n'est pas un type de fichier pris en charge pour ce chat.",
+		"unsupportedFileTypeMultiple": "{{count}} fichiers ne sont pas des types de fichiers pris en charge pour ce chat : {{names}}."
 	},
 	"contextWindow": {
 		"descriptionLow": "Toutes les conversations ont une limite. Les conversations très longues finiront par faire oublier les messages précédents au modèle.",
