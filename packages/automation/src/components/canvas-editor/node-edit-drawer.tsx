@@ -113,6 +113,8 @@ export function NodeEditDrawer({
 	const isDecisionBranch =
 		step.workflowType === "control.if" ||
 		step.workflowType === "control.jev";
+	const isLoop = step.workflowType === "control.loop";
+	const isJavaOwnedControl = isDecisionBranch || isLoop;
 	const hasOutputVariable =
 		step.workflowType !== "trigger.start" && !isDecisionBranch;
 	const outputVariableError = hasOutputVariable
@@ -120,7 +122,7 @@ export function NodeEditDrawer({
 		: null;
 	const showPythonEditor =
 		isDeveloperPython ||
-		(!isDecisionBranch && devMode && editorMode === "python");
+		(!isJavaOwnedControl && devMode && editorMode === "python");
 	const canRevertToGenerated =
 		isCustomSource && workflowDefinition?.defaultCodeMode === "generated";
 	const persistedPythonSource =
@@ -306,7 +308,7 @@ export function NodeEditDrawer({
 						/>
 					</Field>
 
-					{hasOutputVariable && (
+					{hasOutputVariable && devMode && (
 						<Field>
 							<FieldLabel className="text-xs">
 								Output variable
@@ -326,7 +328,7 @@ export function NodeEditDrawer({
 								aria-invalid={Boolean(outputVariableError)}
 							/>
 							<p
-								className={`text-[11px] ${outputVariableError ? "text-destructive" : "text-muted-foreground"}`}
+								className={`text-xs ${outputVariableError ? "text-destructive" : "text-muted-foreground"}`}
 							>
 								{outputVariableError ??
 									`Later steps can use \${${step.outputVar}}.`}
@@ -349,15 +351,17 @@ export function NodeEditDrawer({
 											? "Jev chooses a configured route, or the low-confidence path when no answer is confident enough."
 											: step.workflowType === "control.if"
 												? "This decision evaluates its conditions in order and uses the first matching path."
-												: isDeveloperPython
-													? "This node runs its custom Python source."
-													: isCustomSource
-														? "This node uses custom Python."
-														: "Use the form or inspect the generated Python."}
+												: isLoop
+													? "The loop repeats its nested steps for every item or batch."
+													: isDeveloperPython
+														? "This node runs its custom Python source."
+														: isCustomSource
+															? "This node uses custom Python."
+															: "Use the form or inspect the generated Python."}
 								</p>
 							</div>
 							{!isDeveloperPython &&
-								!isDecisionBranch &&
+								!isJavaOwnedControl &&
 								devMode && (
 									<div className="flex rounded-md border bg-muted/40 p-0.5">
 										<button
@@ -388,7 +392,7 @@ export function NodeEditDrawer({
 
 						{!isDeveloperPython &&
 							editorMode === "form" &&
-							(isCustomSource && !isDecisionBranch ? (
+							(isCustomSource && !isJavaOwnedControl ? (
 								<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
 									<p className="font-medium text-xs">
 										Custom Python is active

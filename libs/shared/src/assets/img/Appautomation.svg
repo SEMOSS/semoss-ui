@@ -24,21 +24,21 @@
 <rect x="187" y="61" width="44" height="3" rx="1.5" fill="#6D28D9" opacity="0.6"/>
 <rect x="187" y="69" width="32" height="3" rx="1.5" fill="#6D28D9" opacity="0.4"/>
 <!-- Fan-out lines from node 2 -->
-<path d="M262 66 L282 56" stroke="#6D28D9" stroke-width="1.2" stroke-dasharray="3 2"/>
-<path d="M262 73 L282 73" stroke="#6D28D9" stroke-width="1.2" stroke-dasharray="3 2"/>
-<path d="M262 80 L282 90" stroke="#6D28D9" stroke-width="1.2" stroke-dasharray="3 2"/>
+<path d="M262 66 L282 52" stroke="#6D28D9" stroke-width="1.2" stroke-dasharray="3 2"/>
+<path d="M262 73 L282 78" stroke="#6D28D9" stroke-width="1.2" stroke-dasharray="3 2"/>
+<path d="M262 80 L282 104" stroke="#6D28D9" stroke-width="1.2" stroke-dasharray="3 2"/>
 <!-- Node 3a -->
-<rect x="282" y="44" width="80" height="24" rx="5" fill="#4C1D95" opacity="0.1"/>
-<rect x="282" y="44" width="80" height="24" rx="5" stroke="#4C1D95" stroke-width="1.2"/>
-<rect x="287" y="52" width="40" height="2.5" rx="1.25" fill="#4C1D95" opacity="0.5"/>
+<rect x="282" y="42" width="80" height="20" rx="5" fill="#4C1D95" opacity="0.1"/>
+<rect x="282" y="42" width="80" height="20" rx="5" stroke="#4C1D95" stroke-width="1.2"/>
+<rect x="287" y="50" width="40" height="2.5" rx="1.25" fill="#4C1D95" opacity="0.5"/>
 <!-- Node 3b -->
-<rect x="282" y="62" width="80" height="24" rx="5" fill="#4C1D95" opacity="0.1"/>
-<rect x="282" y="62" width="80" height="24" rx="5" stroke="#4C1D95" stroke-width="1.2"/>
-<rect x="287" y="70" width="40" height="2.5" rx="1.25" fill="#4C1D95" opacity="0.5"/>
+<rect x="282" y="68" width="80" height="20" rx="5" fill="#4C1D95" opacity="0.1"/>
+<rect x="282" y="68" width="80" height="20" rx="5" stroke="#4C1D95" stroke-width="1.2"/>
+<rect x="287" y="76" width="40" height="2.5" rx="1.25" fill="#4C1D95" opacity="0.5"/>
 <!-- Node 3c -->
-<rect x="282" y="80" width="80" height="24" rx="5" fill="#4C1D95" opacity="0.1"/>
-<rect x="282" y="80" width="80" height="24" rx="5" stroke="#4C1D95" stroke-width="1.2"/>
-<rect x="287" y="88" width="40" height="2.5" rx="1.25" fill="#4C1D95" opacity="0.5"/>
+<rect x="282" y="94" width="80" height="20" rx="5" fill="#4C1D95" opacity="0.1"/>
+<rect x="282" y="94" width="80" height="20" rx="5" stroke="#4C1D95" stroke-width="1.2"/>
+<rect x="287" y="102" width="40" height="2.5" rx="1.25" fill="#4C1D95" opacity="0.5"/>
 <!-- Label row -->
 <rect x="52" y="110" width="50" height="3" rx="1.5" fill="#D9D9D9"/>
 <rect x="52" y="118" width="35" height="3" rx="1.5" fill="#D9D9D9"/>

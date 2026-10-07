@@ -39,6 +39,17 @@ describe("getAutomationScopeExpression", () => {
 			'scope.get("server_name", {})',
 		);
 	});
+
+	it("preserves a nested Python expression supplied by the scope entry", () => {
+		const nested = {
+			...entry,
+			name: "loop.item",
+			pythonExpression: 'scope["loop"]["item"]',
+		};
+		expect(getAutomationScopeExpression(nested, "required")).toBe(
+			'scope["loop"]["item"]',
+		);
+	});
 });
 
 describe("declaredAutomationScopeEntries", () => {
