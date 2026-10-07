@@ -40,7 +40,7 @@ export function OutputPreview({
 			return "vector-results";
 		if (dbDataset) return "table";
 		return "text";
-	}, [nodeType, parsed, dbDataset]);
+	}, [nodeType, parsed, dbDataset, value]);
 
 	const renderExpanded = () => {
 		if (renderMode === "markdown") {

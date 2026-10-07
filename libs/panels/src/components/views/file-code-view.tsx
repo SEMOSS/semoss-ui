@@ -14,9 +14,12 @@ export const FileCodeView = ({ config, rename, onControls }: FileViewProps) => {
 	const buffer = useFileBuffer({ panel, name: config.name, rename });
 
 	useFileViewControls(onControls, {
-		canSave: !panel.readOnly,
-		isBusy: panel.isBusy,
+		canDownload: panel.access.status === "ready",
+		download: panel.download,
+		canSave: !panel.readOnly && panel.read.status === "SUCCESS",
+		isBusy: panel.isBusy || panel.access.status === "loading",
 		isDirty: buffer.isDirty,
+		canRefresh: panel.access.status === "ready",
 		refresh: panel.read.refresh,
 		save: buffer.save,
 	});
@@ -32,8 +35,8 @@ export const FileCodeView = ({ config, rename, onControls }: FileViewProps) => {
 				disabled={panel.readOnly}
 				language={getCodeEditorLanguage(config.path)}
 				menuItems={getFileCodeEditorMenuItems({
-					canSave: !panel.readOnly,
-					isBusy: panel.isBusy,
+					canSave: !panel.readOnly && panel.read.status === "SUCCESS",
+					isBusy: panel.isBusy || panel.access.status === "loading",
 					onDownload: () => void panel.download(),
 					onRefresh: panel.read.refresh,
 					onSave: buffer.save,

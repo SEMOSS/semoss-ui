@@ -1,3 +1,5 @@
+import { formatByteSize } from "./file-size";
+
 /** Stable, non-cryptographic hash of UTF-16 code units for deterministic styling. */
 export const hashString = (value: string): number => {
 	let hash = 0;
@@ -108,9 +110,7 @@ export const countLines = (text: string): number => {
 /** Format UTF-8 text size for compact output metadata. */
 export const formatTextByteSize = (text: string): string => {
 	const bytes = new Blob([text || ""]).size;
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+	return formatByteSize(bytes);
 };
 /** Convert a label to the client test-id spelling without changing its case. */
 export const formatToDataTestId = (text: string): string => {

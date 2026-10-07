@@ -63,6 +63,8 @@ export const useFileBuffer = ({
 	onLoaded,
 }: UseFileBufferOptions): FileBuffer => {
 	const [content, setContentState] = useState("");
+	const [isDirty, setIsDirty] = useState(false);
+	const editedContentRef = useRef("");
 	const baselineRef = useRef("");
 	const contentRef = useRef("");
 	const appliedRevisionRef = useRef(0);
@@ -77,6 +79,8 @@ export const useFileBuffer = ({
 		appliedRevisionRef.current = revision;
 		baselineRef.current = data;
 		contentRef.current = data;
+		editedContentRef.current = data;
+		setIsDirty(false);
 		setContentState(data);
 		rename(name);
 		onLoaded?.(data);
@@ -91,7 +95,10 @@ export const useFileBuffer = ({
 	 */
 	const markDirty = useCallback(
 		(next: string) => {
-			rename(next === baselineRef.current ? name : `${name}*`);
+			editedContentRef.current = next;
+			const dirty = next !== baselineRef.current;
+			setIsDirty(dirty);
+			rename(dirty ? `${name}*` : name);
 		},
 		[name, rename],
 	);
@@ -128,9 +135,14 @@ export const useFileBuffer = ({
 			? getContent(contentRef.current)
 			: contentRef.current;
 		if (skipEmptySave && !next) return;
+		const editedAtStart = editedContentRef.current;
 		if (await panel.save(next)) {
+			if (editedContentRef.current === editedAtStart)
+				editedContentRef.current = next;
 			baselineRef.current = next;
-			rename(name);
+			const dirty = editedContentRef.current !== next;
+			setIsDirty(dirty);
+			rename(dirty ? `${name}*` : name);
 		}
 	}, []);
 
@@ -138,7 +150,7 @@ export const useFileBuffer = ({
 		content,
 		setContent,
 		contentRef,
-		isDirty: content !== baselineRef.current,
+		isDirty,
 		markDirty,
 		save,
 	};

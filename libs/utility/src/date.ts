@@ -85,6 +85,13 @@ export const formatRoundedDurationMs = (milliseconds: number): string => {
 	return `${minutes}m ${remainingSeconds}s`;
 };
 
+/** Parse a timestamp into epoch milliseconds, returning null when invalid. */
+export const parseTimestamp = (value?: string): number | null => {
+	if (!value) return null;
+	const timestamp = Date.parse(value);
+	return Number.isNaN(timestamp) ? null : timestamp;
+};
+
 function parseAsUTC(input: string): Date | null {
 	const m = input.match(
 		/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/,

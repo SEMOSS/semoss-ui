@@ -15,6 +15,22 @@ React hooks/providers such as `useInsight` and `InsightProvider` live under
 `@semoss/sdk/react`. There is no core export named `Room`. Framework-independent
 state does not imply that all SDK entry points are safe in Node or SSR environments.
 
+## Agent Profile Images
+
+Agent workspaces and skills use project catalog images. After creation returns a
+project ID, call `uploadProjectImage(projectId, file)` from `@semoss/sdk`.
+`uploadEngineImage(engineId, file)` handles engine catalog images. Both return
+`Promise<CatalogImageUploadResult>` with `id`, `name`, `message`, `imageUrl`, and
+`contentType`. `imageUrl` is a path on the backend origin, not necessarily the
+frontend origin. These calls require edit access and the resource-scoped image
+upload routes on Monolith.
+
+Use `CATALOG_IMAGE_ACCEPT`, `CATALOG_IMAGE_MAX_BYTES`, and
+`getCatalogImageValidationError(file)` for file-picker validation. Supported files
+are PNG, JPEG, and GIF up to 10 MiB. The server validates the bytes and enforces a
+25-million-pixel limit. A failure rejects; preserve the new project ID so a retry
+uploads to the same agent. Do not pass a temporary form ID or an agent run ID.
+
 ## Choose the Transport Explicitly
 
 | Operation | Submission | Progress | Settled result |

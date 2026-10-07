@@ -8,8 +8,11 @@ export const FileImageView = ({ config, onControls }: FileViewProps) => {
 	const panel = useFilePanel(config, { base64: true });
 
 	useFileViewControls(onControls, {
+		canDownload: panel.access.status === "ready",
+		download: panel.download,
 		canSave: false,
-		isBusy: panel.isBusy,
+		isBusy: panel.isBusy || panel.access.status === "loading",
+		canRefresh: panel.access.status === "ready",
 		refresh: panel.read.refresh,
 	});
 
