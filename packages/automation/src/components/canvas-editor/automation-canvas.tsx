@@ -139,11 +139,7 @@ function isStepHighlighted(
 }
 
 function canAddToLoop(type: AutomationWorkflowNodeType): boolean {
-	if (
-		type === "trigger.start" ||
-		type === "control.loop" ||
-		type === "browser.playwright"
-	) {
+	if (type === "trigger.start" || type === "control.loop") {
 		return false;
 	}
 	return getAutomationNodeDefinition(type)?.category !== "agent";
@@ -1013,28 +1009,14 @@ export const AutomationCanvasContent = forwardRef<
 	const handleRfNodesChange = useCallback(
 		(changes: Parameters<typeof onRfNodesChange>[0]) => {
 			onRfNodesChange(changes);
-			const selectableIds = new Set<string>();
 			for (const change of changes) {
 				if (change.type !== "select") continue;
 				if (change.id.startsWith("node-group-")) continue;
 				if (change.selected) {
 					selectedNodeIdsRef.current.add(change.id);
-					selectableIds.add(change.id);
 				} else {
 					selectedNodeIdsRef.current.delete(change.id);
-					selectableIds.add(change.id);
 				}
-			}
-			if (selectableIds.size > 0) {
-				setGroupSelectionIds((previous) => {
-					const next = new Set(previous);
-					for (const change of changes) {
-						if (change.type !== "select") continue;
-						if (change.selected) next.add(change.id);
-						else next.delete(change.id);
-					}
-					return next;
-				});
 			}
 		},
 		[onRfNodesChange],
@@ -2070,18 +2052,18 @@ export const AutomationCanvasContent = forwardRef<
 				step.body?.nodes.some((node) => node.id === updated.id),
 			);
 			if (parentLoop?.body) {
+				const parentLoopId = parentLoop.id;
 				setSteps((previous) =>
 					previous.map((step) =>
-						step.id === parentLoop.id
+						step.id === parentLoopId && step.body
 							? {
 									...step,
 									body: {
-										...parentLoop.body,
-										nodes: parentLoop.body.nodes.map(
-											(node) =>
-												node.id === updated.id
-													? updated
-													: node,
+										...step.body,
+										nodes: step.body.nodes.map((node) =>
+											node.id === updated.id
+												? updated
+												: node,
 										),
 									},
 								}
@@ -3297,7 +3279,7 @@ export const AutomationCanvasContent = forwardRef<
 				.map((step) => step.id),
 		);
 		const isGroupSelection = (nodeId: string): boolean =>
-			selectedRootNodeIds.size > 1 && selectedRootNodeIds.has(nodeId);
+			selectedRootNodeIds.has(nodeId);
 		const visibleNodeGroups = displayNodeGroups;
 		const collapsedNodeIds = new Set(
 			visibleNodeGroups
@@ -4176,10 +4158,9 @@ export const AutomationCanvasContent = forwardRef<
 		setSteps((previous) => layoutNodes(previous, graphEdges));
 		setIsDirty(true);
 	}, [graphEdges, layoutNodes, readOnly, viewingHistory]);
-	const rootNodeIds = new Set(displaySteps.map((step) => step.id));
-	const selectedCanvasNodeIds = rfNodes
-		.filter((node) => node.selected && rootNodeIds.has(node.id))
-		.map((node) => node.id);
+	const selectedCanvasNodeIds = displaySteps
+		.filter((step) => groupSelectionIds.has(step.id))
+		.map((step) => step.id);
 	const openNodeGroupDialog = useCallback(
 		(group?: AutomationNodeGroup) => {
 			setEditingNodeGroupId(group?.id ?? null);
@@ -4414,7 +4395,7 @@ export const AutomationCanvasContent = forwardRef<
 										panOnDrag
 										panOnScroll
 										selectionOnDrag
-										selectionKeyCode="Shift"
+										selectionKeyCode={null}
 										selectionMode={SelectionMode.Partial}
 										multiSelectionKeyCode="Shift"
 										zoomOnPinch
@@ -4446,6 +4427,10 @@ export const AutomationCanvasContent = forwardRef<
 													}
 												).group;
 												if (group) {
+													selectedNodeIdsRef.current.clear();
+													setGroupSelectionIds(
+														new Set(),
+													);
 													setSelectedNodeGroupId(
 														group.id,
 													);
@@ -4465,6 +4450,39 @@ export const AutomationCanvasContent = forwardRef<
 															node.id,
 													),
 											);
+											if (!parentLoop) {
+												const additive =
+													_event.shiftKey ||
+													_event.metaKey ||
+													_event.ctrlKey;
+												setGroupSelectionIds(
+													(previous) => {
+														const next = additive
+															? new Set(previous)
+															: new Set<string>();
+														if (
+															additive &&
+															next.has(node.id)
+														) {
+															next.delete(
+																node.id,
+															);
+														} else {
+															next.add(node.id);
+														}
+														selectedNodeIdsRef.current =
+															new Set(next);
+														return next;
+													},
+												);
+											} else if (
+												!_event.shiftKey &&
+												!_event.metaKey &&
+												!_event.ctrlKey
+											) {
+												selectedNodeIdsRef.current.clear();
+												setGroupSelectionIds(new Set());
+											}
 											setEditingStepId(
 												parentLoop?.id ?? node.id,
 											);
@@ -4475,12 +4493,25 @@ export const AutomationCanvasContent = forwardRef<
 											);
 										}}
 										onNodesChange={handleRfNodesChange}
+										onSelectionEnd={() => {
+											const rootIds = new Set(
+												displaySteps
+													.filter((step) =>
+														selectedNodeIdsRef.current.has(
+															step.id,
+														),
+													)
+													.map((step) => step.id),
+											);
+											setGroupSelectionIds(rootIds);
+										}}
 										onNodeDragStop={onNodeDragStop}
 										onPaneClick={() => {
 											setShowAddMenu(false);
 											setSelectedNodeGroupId(null);
 											setEditingStepId(null);
 											setSelectedBodyNodeId(undefined);
+											selectedNodeIdsRef.current.clear();
 											setGroupSelectionIds(new Set());
 										}}
 										onConnect={onConnect}

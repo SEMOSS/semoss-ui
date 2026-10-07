@@ -2,11 +2,13 @@ import { tryParseJson } from "@semoss/utility/json";
 import { isRecord } from "@semoss/utility/object";
 import type {
 	AutomationNode,
-	AutomationNodeGroup,
 	AutomationNodeTrace,
 	StepRunStatus,
 } from "./automation.types";
-import type { AutomationOutputFieldSchema } from "./automation-workflow.types";
+import type {
+	AutomationNodeGroup,
+	AutomationOutputFieldSchema,
+} from "./automation-workflow.types";
 
 /** Server-derived description of one value visible to a node at runtime. */
 export interface AutomationScopeEntry {

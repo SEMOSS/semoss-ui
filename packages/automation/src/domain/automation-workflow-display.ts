@@ -8,7 +8,6 @@ import {
 	GitBranch,
 	ListTree,
 	type LucideIcon,
-	MousePointerClick,
 	Network,
 	Repeat2,
 	SlidersHorizontal,
@@ -45,9 +44,6 @@ export function getWorkflowNodeDisplay(
 	}
 	if (category === "data") {
 		return { icon: ListTree, color: "text-teal-600" };
-	}
-	if (category === "browser") {
-		return { icon: MousePointerClick, color: "text-fuchsia-600" };
 	}
 	if (category === "vector") {
 		return { icon: Network, color: "text-amber-600" };

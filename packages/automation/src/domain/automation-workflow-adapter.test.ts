@@ -1,10 +1,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type {
 	AutomationNode,
-	BrowserPlaywrightConfig,
 	DatabaseEngineConfig,
 	DataExtractConfig,
-	DataTransformConfig,
 	ModelEngineConfig,
 	StorageEngineConfig,
 	VectorEngineConfig,
@@ -111,35 +109,6 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 			format: "auto",
 			missingValue: null,
 			nullValue: null,
-		},
-		false,
-	),
-	definition(
-		"data.transform",
-		"data",
-		"Transform data",
-		{
-			source: [],
-			operation: "select",
-			columns: [],
-			mapping: {},
-			path: "",
-			operator: "equals",
-			value: null,
-			descending: false,
-		},
-		false,
-	),
-	definition(
-		"browser.playwright",
-		"browser",
-		"Run browser recording",
-		{
-			projectId: "",
-			recordingFile: "",
-			inputs: {},
-			successUrlPrefix: "",
-			timeoutSeconds: 30,
 		},
 		false,
 	),
@@ -275,81 +244,6 @@ describe("data extraction", () => {
 			format: "json",
 			missingValue: "Unknown customer",
 			nullValue: "Not provided",
-		});
-	});
-});
-
-describe("data transformation and browser recording", () => {
-	it("shows an empty transform source before data is selected", () => {
-		const step = node("data.transform");
-
-		expect(step.config).toMatchObject({ source: "" });
-	});
-
-	it("preserves a guided row transformation", () => {
-		const step = node("data.transform");
-		const saved = documentOf([
-			{
-				...step,
-				config: {
-					...(step.config as DataTransformConfig),
-					source: "$" + "{query_rows}",
-					operation: "filter",
-					column: "status",
-					operator: "equals",
-					value: '"active"',
-				},
-			},
-		]);
-
-		expect(saved.graph.nodes[0]?.config).toMatchObject({
-			source: "$" + "{query_rows}",
-			operation: "filter",
-			path: "status",
-			operator: "equals",
-			value: "active",
-		});
-		const reloaded = canvasDocumentFromWorkflow(saved, {}).steps.find(
-			(candidate) => candidate.workflowType === "data.transform",
-		);
-		expect(reloaded?.config).toMatchObject({
-			operation: "filter",
-			column: "status",
-			value: "active",
-		});
-	});
-
-	it("preserves the recording app, file, and bound inputs", () => {
-		const step = node("browser.playwright");
-		const saved = documentOf([
-			{
-				...step,
-				config: {
-					...(step.config as BrowserPlaywrightConfig),
-					projectId: "project-1",
-					recordingFile: "intake.json",
-					inputs: '{"Order number":"$' + '{order_number}"}',
-					successUrlPrefix: "https://example.com/complete",
-					timeoutSeconds: 45,
-				},
-			},
-		]);
-
-		expect(saved.graph.nodes[0]?.config).toMatchObject({
-			projectId: "project-1",
-			recordingFile: "intake.json",
-			inputs: { "Order number": "$" + "{order_number}" },
-			successUrlPrefix: "https://example.com/complete",
-			timeoutSeconds: 45,
-		});
-		const reloaded = canvasDocumentFromWorkflow(saved, {}).steps.find(
-			(candidate) => candidate.workflowType === "browser.playwright",
-		);
-		expect(reloaded?.config).toMatchObject({
-			projectId: "project-1",
-			recordingFile: "intake.json",
-			successUrlPrefix: "https://example.com/complete",
-			timeoutSeconds: 45,
 		});
 	});
 });

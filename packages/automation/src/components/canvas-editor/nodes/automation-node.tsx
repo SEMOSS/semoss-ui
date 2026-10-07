@@ -3,7 +3,6 @@ import {
 	ArrowUpRight,
 	Bot,
 	Clock3,
-	ExternalLink,
 	Loader2,
 	Pencil,
 	Plus,
@@ -98,8 +97,6 @@ export function AutomationNode({ data }: NodeProps) {
 		hasActiveAgentRun &&
 		(runStatus === "waiting" ||
 			d.runTrace?.agentStatus === "INPUT_REQUIRED");
-	const isPlaywrightNode = step.workflowType === "browser.playwright";
-
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
 		? getWorkflowNodeDefinition(step.workflowType)
@@ -239,8 +236,7 @@ export function AutomationNode({ data }: NodeProps) {
 							    header so the floating canvas toolbar cannot cover it at fit zoom. */}
 							{((runDuration != null &&
 								runStatus !== "running") ||
-								hasActiveAgentRun ||
-								isPlaywrightNode) && (
+								hasActiveAgentRun) && (
 								<div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-12">
 									{runDuration != null &&
 										runStatus !== "running" && (
@@ -290,37 +286,6 @@ export function AutomationNode({ data }: NodeProps) {
 												{isWaitingForInput
 													? "Waiting for your input"
 													: "View active agent run"}
-											</TooltipContent>
-										</Tooltip>
-									)}
-									{isPlaywrightNode && (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="nodrag nopan size-7 shrink-0 text-primary"
-													onClick={(event) => {
-														event.stopPropagation();
-														window.open(
-															"../../browser-automation/dist/",
-															"_blank",
-															"noopener,noreferrer",
-														);
-													}}
-													aria-label="Open browser viewer"
-												>
-													<ExternalLink
-														className="size-4"
-														aria-hidden
-													/>
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent side="top">
-												{runStatus === "running"
-													? "Watch browser"
-													: "Open Playwright workspace"}
 											</TooltipContent>
 										</Tooltip>
 									)}

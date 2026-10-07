@@ -8,7 +8,6 @@ import {
 	LayoutGrid,
 	ListTree,
 	type LucideIcon,
-	MousePointerClick,
 	Play,
 	Repeat2,
 	Sigma,
@@ -124,12 +123,6 @@ export const TYPE_DISPLAY_META: Record<
 	"storage-engine": STEP_TYPES[3],
 	"function-engine": STEP_TYPES[4],
 	data: STEP_TYPES[5],
-	browser: {
-		label: "Browser automation",
-		description: "Replay a saved Playwright browser recording",
-		icon: MousePointerClick,
-		color: "text-fuchsia-600",
-	},
 	app: STEP_TYPES[6],
 	wait: STEP_TYPES[7],
 	loop: {

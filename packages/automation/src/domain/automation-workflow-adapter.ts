@@ -247,29 +247,11 @@ def run(scope):
 `;
 	}
 	if (category === "data") {
-		if (type === "data.transform") {
-			return `from semoss_automation_runtime import transform_records
-
-SOURCE = ${pythonLiteral(config.source)}
-OPERATION = ${pythonLiteral(config.operation)}
-
-def run(scope):
-    return transform_records(scope.resolve(SOURCE), OPERATION)
-`;
-		}
-		return `from semoss_automation_runtime import extract_data_element
-
-SOURCE = ${pythonLiteral(config.source)}
+		return `SOURCE = ${pythonLiteral(config.source)}
 PATH = ${pythonLiteral(config.path)}
 
 def run(scope):
     return extract_data_element(scope.resolve(SOURCE), scope.resolve(PATH))
-`;
-	}
-	if (type === "browser.playwright") {
-		return `# Replays a saved SEMOSS Playwright recording through ReplayStep.
-def run(scope):
-    return {"status": "configured"}
 `;
 	}
 	if (category === "vector") {
@@ -368,7 +350,6 @@ function canvasTypeForWorkflow(
 	if (category === "model") return "model-engine";
 	if (category === "storage") return "storage-engine";
 	if (category === "data") return "data";
-	if (category === "browser") return "browser";
 	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
@@ -447,43 +428,6 @@ function defaultCanvasConfig(
 		};
 	}
 	if (category === "data") {
-		if (type === "data.transform") {
-			return {
-				source:
-					Array.isArray(config.source) && config.source.length === 0
-						? ""
-						: jsonValueText(config.source),
-				operation:
-					config.operation === "remove" ||
-					config.operation === "rename" ||
-					config.operation === "filter" ||
-					config.operation === "fillMissing" ||
-					config.operation === "sort" ||
-					config.operation === "deduplicate"
-						? config.operation
-						: "select",
-				columns: Array.isArray(config.columns)
-					? config.columns
-							.filter((value) => typeof value === "string")
-							.join(", ")
-					: stringValue(config.columns),
-				mapping: jsonObjectValue(config.mapping),
-				column: stringValue(config.path),
-				operator:
-					config.operator === "notEquals" ||
-					config.operator === "contains" ||
-					config.operator === "greaterThan" ||
-					config.operator === "greaterThanOrEqual" ||
-					config.operator === "lessThan" ||
-					config.operator === "lessThanOrEqual" ||
-					config.operator === "isEmpty" ||
-					config.operator === "isNotEmpty"
-						? config.operator
-						: "equals",
-				value: jsonValueText(config.value),
-				descending: config.descending === true,
-			};
-		}
 		return {
 			source: jsonValueText(config.source),
 			path: stringValue(config.path),
@@ -493,15 +437,6 @@ function defaultCanvasConfig(
 					: "auto",
 			missingValue: jsonValueText(config.missingValue),
 			nullValue: jsonValueText(config.nullValue),
-		};
-	}
-	if (type === "browser.playwright") {
-		return {
-			projectId: stringValue(config.projectId),
-			recordingFile: stringValue(config.recordingFile),
-			inputs: jsonObjectValue(config.inputs),
-			successUrlPrefix: stringValue(config.successUrlPrefix),
-			timeoutSeconds: numberValue(config.timeoutSeconds, 30),
 		};
 	}
 	if (category === "vector") {
@@ -629,8 +564,6 @@ function canvasTypeToWorkflow(
 			return "storage.list";
 		case "data":
 			return "data.extract";
-		case "browser":
-			return "browser.playwright";
 		case "vector-engine":
 			return "vector.search";
 		case "model-engine":
@@ -751,35 +684,6 @@ function mergeCanvasConfig(
 		}
 	}
 	if (category === "data") {
-		if (type === "data.transform") {
-			const source = getConfigValue(config, "source");
-			const operation = getConfigValue(config, "operation");
-			const columns = getConfigValue(config, "columns");
-			const mapping = getConfigValue(config, "mapping");
-			const column = getConfigValue(config, "column");
-			const operator = getConfigValue(config, "operator");
-			const value = getConfigValue(config, "value");
-			const descending = getConfigValue(config, "descending");
-			if (typeof source === "string")
-				next.source = jsonValueOrString(source);
-			if (typeof operation === "string") next.operation = operation;
-			if (typeof columns === "string") {
-				next.columns = columns
-					.split(",")
-					.map((item) => item.trim())
-					.filter(Boolean);
-			}
-			if (typeof mapping === "string") {
-				next.mapping = mapping.trim()
-					? (parsedJsonValue(mapping) ?? mapping)
-					: {};
-			}
-			if (typeof column === "string") next.path = column;
-			if (typeof operator === "string") next.operator = operator;
-			if (typeof value === "string") next.value = fallbackValue(value);
-			if (typeof descending === "boolean") next.descending = descending;
-			return next;
-		}
 		const source = getConfigValue(config, "source");
 		const path = getConfigValue(config, "path");
 		const format = getConfigValue(config, "format");
@@ -795,27 +699,6 @@ function mergeCanvasConfig(
 		}
 		if (typeof nullValue === "string") {
 			next.nullValue = fallbackValue(nullValue);
-		}
-	}
-	if (type === "browser.playwright") {
-		const projectId = getConfigValue(config, "projectId");
-		const recordingFile = getConfigValue(config, "recordingFile");
-		const inputs = getConfigValue(config, "inputs");
-		const successUrlPrefix = getConfigValue(config, "successUrlPrefix");
-		const timeoutSeconds = getConfigValue(config, "timeoutSeconds");
-		if (typeof projectId === "string") next.projectId = projectId;
-		if (typeof recordingFile === "string")
-			next.recordingFile = recordingFile;
-		if (typeof inputs === "string") {
-			next.inputs = inputs.trim()
-				? (parsedJsonValue(inputs) ?? inputs)
-				: {};
-		}
-		if (typeof successUrlPrefix === "string") {
-			next.successUrlPrefix = successUrlPrefix;
-		}
-		if (typeof timeoutSeconds === "number") {
-			next.timeoutSeconds = timeoutSeconds;
 		}
 	}
 	if (category === "vector") {
