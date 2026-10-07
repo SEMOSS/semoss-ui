@@ -1,5 +1,5 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import { RoomSessionView } from "@/features/rooms/components/room-session-view";
@@ -12,6 +12,7 @@ import {
 	previewEmailRoomSource,
 	readPreviewSourceEmail,
 } from "./daily-chat-preview-email.fixture";
+import { LandingChatComposerView } from "./landing-chat-composer-view";
 import { NewChatWorkbenchProvider } from "./new-chat-workbench-provider";
 import { NewChatWorkspace } from "./new-chat-workspace";
 
@@ -38,6 +39,8 @@ const previewMessages: ConversationMessage[] = [
 /** Render the room UI without initializing an insight or contacting the backend. */
 export function DailyChatPreview() {
 	const location = useLocation();
+	const navigate = useNavigate();
+	const isLanding = location.pathname === "/";
 	const isNewChat = location.pathname === "/new";
 	const visualState = new URLSearchParams(window.location.search).get(
 		"chatState",
@@ -124,6 +127,22 @@ export function DailyChatPreview() {
 	const saveSettings = async (values: RoomSettings): Promise<void> => {
 		setSettings(values);
 	};
+	if (isLanding)
+		return (
+			<LandingChatComposerView
+				draftId="preview-draft"
+				session={session}
+				snapshot={snapshot}
+				agentError=""
+				onInitialize={session.reconnect}
+				onSend={session.send}
+				onSaveSettings={saveSettings}
+				onSelectAgent={async () => undefined}
+				onOpenPanel={(panel) => {
+					void navigate("/new", { state: { panel } });
+				}}
+			/>
+		);
 	if (isNewChat)
 		return (
 			<NewChatWorkbenchProvider
@@ -133,6 +152,12 @@ export function DailyChatPreview() {
 			>
 				<NewChatWorkspace
 					draftId="preview-draft"
+					requestedPanel={
+						location.state?.panel === "settings" ||
+						location.state?.panel === "files"
+							? location.state.panel
+							: undefined
+					}
 					session={session}
 					snapshot={snapshot}
 					userName={state.profile.name}
@@ -146,3 +171,5 @@ export function DailyChatPreview() {
 		);
 	return <RoomSessionView session={session} snapshot={snapshot} />;
 }
+
+export { DailyChatPreview as LandingChatPreview };

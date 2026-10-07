@@ -27,6 +27,7 @@ describe("collaboration routes", () => {
 		["/thread/room%3Aroom-one", "thread"],
 		["/login", "login"],
 		["/work", "work"],
+		["/work/all", "work/all"],
 		["/work/waiting", "work/waiting"],
 		["/work/done", "work/done"],
 		["/work/topic/client", "work/topic/:topicId"],

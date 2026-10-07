@@ -11,6 +11,7 @@ import { useRef } from "react";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, describe, expect, it } from "vitest";
+import { WorkPage } from "@/pages/work.page";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import type {
@@ -29,7 +30,6 @@ import { ProfileForm } from "./profile-form";
 import { RulesEditor } from "./rules-editor";
 import { TopicDetail } from "./topic-detail";
 import { TopicEditor } from "./topic-editor";
-import { WorkFeed } from "./work-feed";
 
 /** Observe only the context submitted to the assistant, alongside real route controls. */
 function ContextObserver() {
@@ -63,9 +63,9 @@ function renderSession(
 ) {
 	const router = createMemoryRouter(
 		[
-			{ path: "/work", Component: WorkFeed },
-			{ path: "/work/done", Component: WorkFeed },
-			{ path: "/work/topic/:topicId", Component: WorkFeed },
+			{ path: "/work/all", Component: WorkPage },
+			{ path: "/work/done", Component: WorkPage },
+			{ path: "/work/topic/:topicId", Component: WorkPage },
 			{ path: "/brain", Component: BrainReview },
 			{ path: "/brain/topics/:topicId", Component: TopicDetail },
 			{ path: "/brain/threads/:threadId", Component: BrainThread },
@@ -112,7 +112,7 @@ afterEach(cleanup);
 describe("collaboration Work and Brain integration", () => {
 	it("carries Work topic confirmation into Brain's learned links and the assistant snapshot", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work");
+		const router = renderSession("/work/all");
 		expect(
 			submittedContext().topics.map((topic) => topic.id),
 		).not.toContain("t-trip");
@@ -143,7 +143,7 @@ describe("collaboration Work and Brain integration", () => {
 
 	it("shows completed Work items in Done and reopens the selected item", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work");
+		const router = renderSession("/work/all");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
@@ -160,13 +160,13 @@ describe("collaboration Work and Brain integration", () => {
 				name: "Move back",
 			}),
 		);
-		await act(() => router.navigate("/work"));
+		await act(() => router.navigate("/work/all"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 
 	it("clears an item with No response needed and keeps it out of Done", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work");
+		const router = renderSession("/work/all");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
@@ -190,7 +190,7 @@ describe("collaboration Work and Brain integration", () => {
 			(item) => item.title === title,
 		)?.threadId;
 		if (!threadId) throw new Error("Missing thread");
-		const router = renderSession("/work", state);
+		const router = renderSession("/work/all", state);
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
 				name: "Ignore thread",
@@ -207,7 +207,7 @@ describe("collaboration Work and Brain integration", () => {
 		});
 		expect(ignored).toBeChecked();
 		await user.click(ignored);
-		await act(() => router.navigate("/work"));
+		await act(() => router.navigate("/work/all"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 

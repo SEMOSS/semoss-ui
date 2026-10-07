@@ -16,13 +16,14 @@ import {
 import { roomPath } from "@/lib/workspace-paths";
 import { DashboardContext, type SourceSelection } from "./dashboard.context";
 import { dashboardStorageKey } from "./dashboard-layout";
+import { RoomSourceAssociationsProvider } from "./room-source-associations-provider";
 import { useChatHistory } from "./use-chat-history";
 import { useDashboardLayout } from "./use-dashboard-layout";
 import { useVisibleResource } from "./use-visible-resource";
 
 /** Account-keyed shell data; opening the palette reuses the dashboard's source snapshots. */
 export function DashboardProvider({ children }: { children: ReactNode }) {
-	const { actions } = useInsight();
+	const { actions, insightId } = useInsight();
 	const { state } = useCollaborationSession();
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -120,7 +121,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 				openingRoom,
 			}}
 		>
-			{children}
+			<RoomSourceAssociationsProvider
+				key={JSON.stringify([account, insightId])}
+				actions={actions}
+			>
+				{children}
+			</RoomSourceAssociationsProvider>
 		</DashboardContext.Provider>
 	);
 }

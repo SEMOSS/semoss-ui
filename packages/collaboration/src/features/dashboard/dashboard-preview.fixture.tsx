@@ -10,7 +10,10 @@ import { ThemeProvider, TooltipProvider } from "@semoss/ui/next";
 import { CollaborationShell } from "@/features/collaboration/components/collaboration-shell";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
-import { DailyChatPreview } from "@/features/daily-chat/daily-chat-preview.fixture";
+import {
+	DailyChatPreview,
+	LandingChatPreview,
+} from "@/features/daily-chat/daily-chat-preview.fixture";
 import { settingsSections } from "@/features/settings/settings-sections";
 import { BrainPage } from "@/pages/brain.page";
 import { DashboardPage } from "@/pages/dashboard.page";
@@ -80,7 +83,29 @@ const actions = {
 			output = events[0];
 		else if (statement.includes("MicrosoftOutlookListMail("))
 			output = { folder: "inbox", count: 0, messages: [] };
-		else if (statement.includes("GetPlaygroundRooms"))
+		else if (statement.includes("GetRoomOptions")) {
+			const roomId = statement.match(/roomId\s*=\s*\[\s*"([^"]+)"/)?.[1];
+			const index = Number(roomId?.replace("room-", ""));
+			const thread = state.threads[Math.floor(index / 2)];
+			output = {
+				OPTIONS: thread
+					? {
+							source: {
+								version: 1,
+								threadId: thread.id,
+								title: thread.subject,
+								channel: thread.channel,
+								kind: "sample",
+								file: {
+									fileLocation: "source.md",
+									fileName: "source.md",
+								},
+								messages: [],
+							},
+						}
+					: {},
+			};
+		} else if (statement.includes("GetPlaygroundRooms"))
 			output = Array.from({ length: 12 }, (_, index) => ({
 				ROOM_ID: `room-${index}`,
 				DATE_UPDATED: new Date(
@@ -102,11 +127,17 @@ const router = createMemoryRouter(
 		{
 			Component: CollaborationShell,
 			children: [
-				{ index: true, Component: DashboardPage },
+				{
+					index: true,
+					element: (
+						<DashboardPage chatComposer={<LandingChatPreview />} />
+					),
+				},
 				{ path: "new", Component: DailyChatPreview },
 				{ path: "thread/:threadId", Component: DailyChatPreview },
 				...[
 					"work",
+					"work/all",
 					"work/waiting",
 					"work/done",
 					"work/topic/:topicId",

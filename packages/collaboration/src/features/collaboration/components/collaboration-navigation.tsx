@@ -1,4 +1,4 @@
-import { Brain, Inbox, Plus } from "lucide-react";
+import { Brain, BriefcaseBusiness, Inbox, Plus } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router";
 import {
@@ -59,10 +59,14 @@ export function CollaborationNavigation({
 			label: "For you",
 			icon: Inbox,
 			count: selectWorkItems(state, { view: "needs_me" }).total,
-			isActive:
-				["/", "/work", "/work/waiting", "/work/done"].includes(
-					pathname,
-				) || pathname.startsWith("/work/topic/"),
+			isActive: pathname === "/",
+		},
+		{
+			to: "/work",
+			label: "Work",
+			icon: BriefcaseBusiness,
+			count: 0,
+			isActive: pathname === "/work" || pathname.startsWith("/work/"),
 		},
 		{
 			to: "/brain",

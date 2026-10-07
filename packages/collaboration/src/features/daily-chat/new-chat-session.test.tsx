@@ -24,6 +24,7 @@ import type { ThreadChatSettings } from "@/features/thread-assistant/thread-sett
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { roomPath } from "@/lib/workspace-paths";
 import { NewSessionPage } from "@/pages/new-session.page";
+import { LandingChatComposer } from "./landing-chat-composer";
 
 const mocks = vi.hoisted(() => ({
 	scope: "",
@@ -42,14 +43,7 @@ vi.mock("@semoss/shared", async (original) => ({
 vi.mock("@/features/rooms/room-session", () => ({
 	createRoomSession: () => mocks.createSession(),
 }));
-vi.mock("./daily-chat-header", () => ({
-	DailyChatHeader: ({ threadId }: { threadId: string }) => (
-		<output aria-label="Draft identity">{threadId}</output>
-	),
-}));
-vi.mock("@/features/dashboard/brief-context-rail", () => ({
-	BriefContextRail: () => null,
-}));
+
 vi.mock("@/features/work-thread/thread-agent-select", () => ({
 	ThreadAgentSelect: ({ onChange }: { onChange: (id: string) => void }) => (
 		<button type="button" onClick={() => onChange("chosen-agent")}>
@@ -226,11 +220,18 @@ function RoomDestination() {
 	const { threadId } = useParams();
 	return <output aria-label="Room identity">{threadId}</output>;
 }
-function setup(navigationState?: unknown, search = "") {
+function setup(navigationState?: unknown, search = "", isLanding = false) {
 	const router = createMemoryRouter(
 		[
 			{ path: "/new", Component: NewSessionPage },
-			{ path: "/", element: <div>Brief</div> },
+			{
+				path: "/",
+				element: isLanding ? (
+					<LandingChatComposer />
+				) : (
+					<div>Overview</div>
+				),
+			},
 			{ path: "/thread/:threadId", Component: RoomDestination },
 		],
 		{
@@ -238,7 +239,7 @@ function setup(navigationState?: unknown, search = "") {
 				"/",
 				{ pathname: "/new", search, state: navigationState },
 			],
-			initialIndex: 1,
+			initialIndex: isLanding ? 0 : 1,
 		},
 	);
 	render(
@@ -251,6 +252,12 @@ function setup(navigationState?: unknown, search = "") {
 		</CollaborationSessionProvider>,
 	);
 	return router;
+}
+function draftIdentity(): string {
+	return screen
+		.getByRole("button", { name: "Open composer actions" })
+		.id.replace(/^new-chat-/, "")
+		.replace(/-composer-actions$/, "");
 }
 async function enterText(text: string): Promise<void> {
 	const editor = screen.getByRole("textbox");
@@ -333,9 +340,9 @@ it("keeps a suggested prompt, files, and agent choice local before the first sen
 	expect(router.state.location.pathname).toBe("/new");
 });
 
-it("reuses an unsent draft through Brief navigation and creates an independent New chat", async () => {
+it("reuses an unsent draft through overview navigation and creates an independent New chat", async () => {
 	const router = setup();
-	const sessionId = screen.getByLabelText("Draft identity").textContent;
+	const sessionId = draftIdentity();
 	await enterText("Keep this question");
 	await act(() => router.navigate("/"));
 	await act(() =>
@@ -343,9 +350,7 @@ it("reuses an unsent draft through Brief navigation and creates an independent N
 			state: { sessionId, prompt: "Do not reseed" },
 		}),
 	);
-	expect(screen.getByLabelText("Draft identity")).toHaveTextContent(
-		sessionId ?? "",
-	);
+	expect(draftIdentity()).toBe(sessionId);
 	expect(screen.getByRole("textbox")).toHaveTextContent("Keep this question");
 	expect(mocks.createSession).toHaveBeenCalledOnce();
 	await act(() => router.navigate("/new", { state: null }));
@@ -424,7 +429,7 @@ it("does not navigate when a first send completes after leaving /new", async () 
 			}),
 	);
 	const router = setup({ prompt: "Plan my week" });
-	const sessionId = screen.getByLabelText("Draft identity").textContent;
+	const sessionId = draftIdentity();
 	submit();
 	await act(() => router.navigate("/"));
 	await act(async () => allocate("actual-room"));
@@ -443,9 +448,7 @@ it("ignores invalid suggested state and does not allocate on empty submission", 
 		prompt: { value: "Wrong" },
 		topicId: "missing",
 	});
-	expect(screen.getByLabelText("Draft identity").textContent).toMatch(
-		/^[a-f0-9-]{36}$/,
-	);
+	expect(draftIdentity()).toMatch(/^[a-f0-9-]{36}$/);
 	expect(screen.getByRole("textbox").textContent).toBe("");
 	await act(async () => submit());
 	expect(mocks.create).not.toHaveBeenCalled();
@@ -456,7 +459,7 @@ it("applies requested agent and model once while preserving later local edits", 
 		undefined,
 		"?agentId=requested-agent&model=requested-model",
 	);
-	const sessionId = screen.getByLabelText("Draft identity").textContent;
+	const sessionId = draftIdentity();
 	await waitFor(() =>
 		expect(sessions[0].getSnapshot().settings).toMatchObject({
 			agentId: "requested-agent",
@@ -588,4 +591,238 @@ it("keeps the workbench hidden when a pending file request finishes", async () =
 	expect(sessions[0].getSnapshot().roomId).toBe("actual-room");
 	expect(router.state.location.pathname).toBe("/new");
 	expect(mocks.send).not.toHaveBeenCalled();
+});
+
+it("restores a new-session draft through Back and Forward without navigation state", async () => {
+	const router = setup();
+	const id = draftIdentity();
+	await enterText("Keep this history draft");
+	const file = new File(["Notes"], "retained.txt", { type: "text/plain" });
+	fireEvent.change(screen.getByLabelText("Choose attachments"), {
+		target: { files: [file] },
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
+	await act(() => router.navigate(-1));
+	await act(() => router.navigate(1));
+	expect(draftIdentity()).toBe(id);
+	expect(screen.getByRole("textbox")).toHaveTextContent(
+		"Keep this history draft",
+	);
+	expect(sessions[0].getSnapshot()).toMatchObject({
+		composerDraft: { files: [file] },
+		settings: { agentId: "chosen-agent" },
+	});
+	expect(mocks.createSession).toHaveBeenCalledOnce();
+	expect(mocks.create).not.toHaveBeenCalled();
+});
+
+it("starts one conversation from the landing composer and returns to a fresh overview on Back", async () => {
+	const router = setup(undefined, "", true);
+	expect(screen.getByRole("textbox")).not.toHaveFocus();
+	expect(mocks.create).not.toHaveBeenCalled();
+	const firstDraftId = draftIdentity();
+	await enterText("Summarize my day");
+	submit();
+	submit();
+	await waitFor(() =>
+		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
+	);
+	expect(mocks.create).toHaveBeenCalledOnce();
+	expect(mocks.send).toHaveBeenCalledExactlyOnceWith({
+		text: "Summarize my day",
+		files: [],
+	});
+	await act(() => router.navigate(-1));
+	expect(router.state.location.pathname).toBe("/");
+	expect(screen.getByRole("textbox").textContent).toBe("");
+	expect(draftIdentity()).not.toBe(firstDraftId);
+	await act(() => router.navigate(1));
+	expect(router.state.location.pathname).toBe(roomPath("actual-room"));
+	expect(mocks.send).toHaveBeenCalledOnce();
+});
+
+it("retains landing text, files, and settings when continuing in Settings and returning", async () => {
+	const router = setup(undefined, "", true);
+	const user = userEvent.setup();
+	const id = draftIdentity();
+	await enterText("Discuss this document");
+	const file = new File(["Document"], "document.txt", { type: "text/plain" });
+	fireEvent.change(screen.getByLabelText("Choose attachments"), {
+		target: { files: [file] },
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
+	await user.click(
+		screen.getByRole("button", { name: "Open composer actions" }),
+	);
+	await user.click(screen.getByRole("menuitem", { name: "Settings" }));
+	await waitFor(() => expect(router.state.location.pathname).toBe("/new"));
+	expect(draftIdentity()).toBe(id);
+	expect(screen.getByRole("textbox", { name: "Instructions" })).toBeVisible();
+	expect(mocks.createSession).toHaveBeenCalledOnce();
+	expect(mocks.create).not.toHaveBeenCalled();
+	expect(mocks.send).not.toHaveBeenCalled();
+	await act(() => router.navigate(-1));
+	expect(draftIdentity()).toBe(id);
+	expect(screen.getByRole("textbox")).toHaveTextContent(
+		"Discuss this document",
+	);
+	expect(sessions[0].getSnapshot()).toMatchObject({
+		composerDraft: { files: [file] },
+		settings: { agentId: "chosen-agent" },
+	});
+});
+
+it("continues landing Files in /new, reuses its allocated room, and consumes the shared landing draft", async () => {
+	const router = setup(undefined, "", true);
+	const user = userEvent.setup();
+	await enterText("Review chat files");
+	await user.click(
+		screen.getByRole("button", { name: "Open composer actions" }),
+	);
+	await user.click(screen.getByRole("menuitem", { name: "Show chat files" }));
+	await waitFor(() => expect(router.state.location.pathname).toBe("/new"));
+	await waitFor(() => expect(mocks.create).toHaveBeenCalledOnce());
+	expect(screen.getByLabelText("Workbench panels")).toHaveTextContent(
+		"draft-insight",
+	);
+	expect(mocks.send).not.toHaveBeenCalled();
+	await user.click(
+		screen.getByRole("button", { name: "Back to conversation" }),
+	);
+	submit();
+	await waitFor(() =>
+		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
+	);
+	expect(mocks.create).toHaveBeenCalledOnce();
+	expect(mocks.send).toHaveBeenCalledOnce();
+	await act(() => router.navigate(-1));
+	expect(router.state.location.pathname).toBe("/");
+	expect(screen.getByRole("textbox").textContent).toBe("");
+});
+
+it("keeps a failed landing draft editable and recovers on the same first-send flow", async () => {
+	mocks.create.mockRejectedValueOnce(new Error("Could not create the room."));
+	const router = setup(undefined, "", true);
+	await enterText("Retain my question");
+	submit();
+	await waitFor(() =>
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"Could not create the room.",
+		),
+	);
+	expect(router.state.location.pathname).toBe("/");
+	expect(screen.getByRole("textbox")).toHaveTextContent("Retain my question");
+	expect(mocks.send).not.toHaveBeenCalled();
+	submit();
+	await waitFor(() =>
+		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
+	);
+	expect(mocks.send).toHaveBeenCalledOnce();
+});
+
+it("does not navigate over a new session when landing allocation completes after leaving", async () => {
+	let allocate: (roomId: string) => void = () => undefined;
+	mocks.create.mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				allocate = resolve;
+			}),
+	);
+	const router = setup(undefined, "", true);
+	await enterText("Send from the overview");
+	submit();
+	await act(() => router.navigate("/new", { state: null }));
+	const independentId = draftIdentity();
+	await act(async () => allocate("actual-room"));
+	expect(router.state.location.pathname).toBe("/new");
+	expect(draftIdentity()).toBe(independentId);
+	expect(mocks.send).toHaveBeenCalledOnce();
+	await act(() => router.navigate(-1));
+	expect(router.state.location.pathname).toBe("/");
+	expect(screen.getByRole("textbox").textContent).toBe("");
+});
+
+it("keeps new sessions chat-only and does not bind the removed brief/chat shortcut", async () => {
+	const router = setup();
+	expect(screen.queryByRole("button", { name: "Your day" })).toBeNull();
+	expect(
+		screen.queryByRole("navigation", { name: "Brief and chat" }),
+	).toBeNull();
+	await act(async () => {
+		fireEvent.keyDown(window, { key: "j", ctrlKey: true });
+	});
+	expect(router.state.location.pathname).toBe("/new");
+});
+
+it("rotates a landing draft when returning before its pending allocation completes", async () => {
+	let allocate: (roomId: string) => void = () => undefined;
+	mocks.create.mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				allocate = resolve;
+			}),
+	);
+	const router = setup(undefined, "", true);
+	const firstDraftId = draftIdentity();
+	await enterText("Send the original question");
+	submit();
+	await act(() => router.navigate("/new", { state: null }));
+	await act(() => router.navigate(-1));
+	expect(draftIdentity()).toBe(firstDraftId);
+	await act(async () => allocate("actual-room"));
+	expect(router.state.location.pathname).toBe("/");
+	expect(draftIdentity()).not.toBe(firstDraftId);
+	expect(screen.getByRole("textbox").textContent).toBe("");
+	mocks.create.mockResolvedValueOnce("second-room");
+	await enterText("Start another conversation");
+	submit();
+	await waitFor(() =>
+		expect(router.state.location.pathname).toBe(roomPath("second-room")),
+	);
+	expect(mocks.create).toHaveBeenCalledTimes(2);
+	expect(mocks.send).toHaveBeenCalledTimes(2);
+});
+
+it("opens the submitted room when returning to /new before allocation completes", async () => {
+	let allocate: (roomId: string) => void = () => undefined;
+	mocks.create.mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				allocate = resolve;
+			}),
+	);
+	const router = setup({ prompt: "Continue this conversation" });
+	submit();
+	await act(() => router.navigate("/"));
+	await act(() => router.navigate(-1));
+	expect(router.state.location.pathname).toBe("/new");
+	await act(async () => allocate("actual-room"));
+	await waitFor(() =>
+		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
+	);
+	expect(mocks.create).toHaveBeenCalledOnce();
+	expect(mocks.send).toHaveBeenCalledOnce();
+});
+
+it("shows requested Files errors outside the hidden composer and supports retry", async () => {
+	mocks.create.mockRejectedValueOnce(new Error("Files are unavailable."));
+	const router = setup({ panel: "files", prompt: "Use my chat files" });
+	const alert = await screen.findByRole("alert");
+	expect(alert).toHaveTextContent("Files are unavailable.");
+	expect(
+		screen.getByRole("region", { name: "New chat" }).contains(alert),
+	).toBe(false);
+	expect(
+		screen.getByRole("complementary", { name: "Workbench" }),
+	).toBeVisible();
+	await userEvent
+		.setup()
+		.click(screen.getByRole("button", { name: "Retry opening files" }));
+	await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+	expect(screen.getByLabelText("Workbench panels")).toHaveTextContent(
+		"draft-insight",
+	);
+	expect(mocks.create).toHaveBeenCalledTimes(2);
+	expect(mocks.send).not.toHaveBeenCalled();
+	expect(router.state.location.pathname).toBe("/new");
 });

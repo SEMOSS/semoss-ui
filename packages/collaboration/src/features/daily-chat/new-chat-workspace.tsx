@@ -1,5 +1,5 @@
 import { PanelRightClose, PanelRightOpen, Settings2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Alert,
 	AlertDescription,
@@ -8,11 +8,7 @@ import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
-	Spinner,
 } from "@semoss/ui/next";
-import { BriefContextRail } from "@/features/dashboard/brief-context-rail";
-import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
-import { RoomComposer } from "@/features/rooms/components/room-composer";
 import { ROOM_SETTINGS_PANEL_TYPE } from "@/features/rooms/components/room-settings-panel";
 import type {
 	RoomSession,
@@ -25,17 +21,19 @@ import type {
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { openToolWorkbenchFiles } from "@/features/tools/open-tool-workbench-files";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
-import { ThreadAgentSelect } from "@/features/work-thread/thread-agent-select";
 import { DailyChatHeader } from "./daily-chat-header";
+import { DraftChatComposer } from "./draft-chat-composer";
+import type { NewChatPanel } from "./use-new-chat-controller";
 
 interface NewChatWorkspaceProps {
-	/** Local draft identity retained while switching to Brief. */
+	/** Local draft identity retained across browser history entries. */
 	draftId: string;
 	/** The unified session remains unallocated until sending or opening room files. */
 	session: RoomSession;
 	snapshot: RoomSessionSnapshot;
 	userName: string;
-	topicId?: string;
+	/** A panel explicitly requested from the overview composer. */
+	requestedPanel?: NewChatPanel;
 	agentError: string;
 	onInitialize: () => Promise<void>;
 	onSend: (submission: ComposerSubmission) => Promise<void>;
@@ -49,7 +47,7 @@ export function NewChatWorkspace({
 	session,
 	snapshot,
 	userName,
-	topicId,
+	requestedPanel,
 	agentError,
 	onInitialize,
 	onSend,
@@ -60,6 +58,8 @@ export function NewChatWorkspace({
 	const { isOpen, openWorkbench, closeWorkbench, store } = workbench;
 	const [hasOpenedWorkbench, setHasOpenedWorkbench] = useState(false);
 	const active = useRef(true);
+	const hasOpenedRequestedPanel = useRef(false);
+	const [filesError, setFilesError] = useState("");
 	const actionsTriggerId = `new-chat-${draftId}-composer-actions`;
 	useEffect(() => {
 		active.current = true;
@@ -70,7 +70,7 @@ export function NewChatWorkspace({
 	useEffect(() => {
 		if (isOpen) setHasOpenedWorkbench(true);
 	}, [isOpen]);
-	const openSettings = () => {
+	const openSettings = useCallback(() => {
 		store
 			.getState()
 			.layout.actions.selectPanel(
@@ -79,8 +79,9 @@ export function NewChatWorkspace({
 				{ name: "Settings" },
 			);
 		openWorkbench(undefined, actionsTriggerId);
-	};
-	const openFiles = async (): Promise<void> => {
+	}, [store, openWorkbench, actionsTriggerId]);
+	const openFiles = useCallback(async (): Promise<void> => {
+		setFilesError("");
 		const release = session.retain();
 		try {
 			await session.create("New chat");
@@ -89,19 +90,62 @@ export function NewChatWorkspace({
 		} finally {
 			release();
 		}
-	};
-	const isBusy = snapshot.isPreparing || snapshot.turn.isSubmitting;
+	}, [session, workbench]);
+	const openRequestedFiles = useCallback(async (): Promise<void> => {
+		try {
+			await openFiles();
+		} catch (cause) {
+			if (active.current)
+				setFilesError(
+					cause instanceof Error
+						? cause.message
+						: "Could not open chat files.",
+				);
+		}
+	}, [openFiles]);
+	useEffect(() => {
+		if (
+			!requestedPanel ||
+			!snapshot.isReady ||
+			hasOpenedRequestedPanel.current
+		)
+			return;
+		hasOpenedRequestedPanel.current = true;
+		if (requestedPanel === "settings") openSettings();
+		else {
+			openWorkbench(undefined, actionsTriggerId);
+			void openRequestedFiles();
+		}
+	}, [
+		requestedPanel,
+		snapshot.isReady,
+		openSettings,
+		openRequestedFiles,
+		openWorkbench,
+		actionsTriggerId,
+	]);
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6 lg:p-8">
 			<div className="mx-auto flex w-full max-w-screen-2xl flex-1 flex-col">
-				<DailyChatHeader
-					threadId={draftId}
-					title="New chat"
-					userName={userName}
-					topicId={topicId}
-					isWorkbenchOpen={isOpen}
-					isNewChat
-				/>
+				{filesError && (
+					<Alert variant="destructive" className="mb-4">
+						<AlertDescription>
+							{snapshot.isCreationUncertain
+								? "Room creation could not be confirmed. Check your chat history before starting another room."
+								: filesError}
+						</AlertDescription>
+						{!snapshot.isCreationUncertain && (
+							<Button
+								type="button"
+								variant="outline"
+								disabled={snapshot.isPreparing}
+								onClick={() => void openRequestedFiles()}
+							>
+								Retry opening files
+							</Button>
+						)}
+					</Alert>
+				)}
 				<div className="flex min-h-0 min-w-0 flex-1 gap-6">
 					<ResizablePanelGroup
 						direction="horizontal"
@@ -122,153 +166,43 @@ export function NewChatWorkspace({
 								aria-label="New chat"
 								className="flex h-full min-h-0 min-w-0 flex-1 flex-col justify-center gap-4 overflow-y-auto p-1"
 							>
-								{snapshot.isLoading && (
-									<output className="flex items-center gap-2 text-muted-foreground">
-										<Spinner aria-hidden="true" /> Opening
-										Assistant…
-									</output>
-								)}
-								{snapshot.error && !snapshot.isReady && (
-									<Alert variant="destructive">
-										<AlertDescription>
-											{snapshot.error.message}
-										</AlertDescription>
-										<Button
-											type="button"
-											variant="outline"
-											onClick={() => void onInitialize()}
-										>
-											Retry connection
-										</Button>
-									</Alert>
-								)}
-								{snapshot.isCreationUncertain && (
-									<Alert variant="destructive">
-										<AlertDescription>
-											Room creation could not be
-											confirmed. Check your chat history
-											before starting another room.
-										</AlertDescription>
-									</Alert>
-								)}
-								{agentError && (
-									<Alert variant="destructive">
-										<AlertDescription>
-											{agentError}
-										</AlertDescription>
-									</Alert>
-								)}
-								<RoomComposer
-									key={snapshot.composerResetKey}
-									initialDraft={snapshot.composerDraft}
-									onDraftChange={session.setComposerDraft}
-									retainUntilSent
-									submissionError={
-										snapshot.submissionError ||
-										snapshot.settingsError ||
-										snapshot.error?.message
-									}
-									agentName={
-										snapshot.agent?.name ?? "Assistant"
-									}
-									agent={snapshot.agent ?? undefined}
-									isSubmitting={isBusy}
-									isRunning={snapshot.turn.isRunning}
-									isCancelling={snapshot.turn.isCancelling}
-									modelId={snapshot.modelId}
-									modelName={snapshot.modelName}
-									isModelSaving={
-										snapshot.isSavingSettings ||
-										snapshot.isLoadingModel
-									}
-									isSendDisabled={
-										!snapshot.isReady ||
-										Boolean(
-											snapshot.modelError ||
-												snapshot.settingsError,
-										) ||
-										snapshot.hasUnconfirmedSubmission ||
-										snapshot.isCreationUncertain
-									}
-									modelError={
-										snapshot.modelError
-											? new Error(snapshot.modelError)
-											: null
-									}
-									roomInstructions={
-										snapshot.settings.instructions
-									}
-									roomSettings={snapshot.settings}
-									hideSettingsAction
-									actionsTriggerId={actionsTriggerId}
-									panelActions={[
-										{
-											id: "settings",
-											label: "Settings",
-											icon: Settings2,
-											onSelect: openSettings,
-										},
-										{
-											id: "workbench",
-											label: isOpen
-												? "Hide workbench"
-												: "Open workbench",
-											icon: isOpen
-												? PanelRightClose
-												: PanelRightOpen,
-											onSelect: () =>
-												isOpen
-													? closeWorkbench()
-													: openWorkbench(
-															undefined,
-															actionsTriggerId,
-														),
-										},
-									]}
-									inheritedMcp={snapshot.agent?.mcp ?? []}
-									isSettingsDisabled={
-										!snapshot.isReady || isBusy
-									}
-									onModelChange={(engine) =>
-										session.selectModel(
-											engine.engine_id,
-											engine.engine_display_name ||
-												engine.engine_name,
-										)
-									}
-									onSaveRoomSettings={onSaveSettings}
-									onOptimizePrompt={(text, instructions) =>
-										optimizePrompt(
-											session.insight.actions,
+								<div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+									<DailyChatHeader userName={userName} />
+									<DraftChatComposer
+										draftId={draftId}
+										session={session}
+										snapshot={snapshot}
+										agentError={agentError}
+										onInitialize={onInitialize}
+										onSend={onSend}
+										onSaveSettings={onSaveSettings}
+										onSelectAgent={onSelectAgent}
+										panelActions={[
 											{
-												modelId: snapshot.modelId,
-												draft: text,
-												instructions,
+												id: "settings",
+												label: "Settings",
+												icon: Settings2,
+												onSelect: openSettings,
 											},
-										)
-									}
-									onSend={onSend}
-									onStop={session.cancel}
-								>
-									<div className="@md/composer:w-36 w-28 min-w-0 shrink-0">
-										<ThreadAgentSelect
-											compact
-											value={snapshot.settings.agentId}
-											name={
-												snapshot.agent?.name ??
-												"Assistant"
-											}
-											disabled={
-												!snapshot.isReady ||
-												isBusy ||
-												snapshot.isSavingSettings
-											}
-											onChange={(agentId) =>
-												void onSelectAgent(agentId)
-											}
-										/>
-									</div>
-								</RoomComposer>
+											{
+												id: "workbench",
+												label: isOpen
+													? "Hide workbench"
+													: "Open workbench",
+												icon: isOpen
+													? PanelRightClose
+													: PanelRightOpen,
+												onSelect: () =>
+													isOpen
+														? closeWorkbench()
+														: openWorkbench(
+																undefined,
+																actionsTriggerId,
+															),
+											},
+										]}
+									/>
+								</div>
 							</section>
 						</ResizablePanel>
 						{(isOpen || hasOpenedWorkbench) && (
@@ -312,12 +246,6 @@ export function NewChatWorkspace({
 							</>
 						)}
 					</ResizablePanelGroup>
-					{!isOpen && (
-						<BriefContextRail
-							topicId={topicId}
-							className="hidden w-80 shrink-0 overflow-y-auto xl:block"
-						/>
-					)}
 				</div>
 			</div>
 		</div>

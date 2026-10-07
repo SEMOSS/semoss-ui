@@ -95,7 +95,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("uses a plain header, three quiet primary controls, and folded Topics", () => {
+	it("keeps the overview, Work, and Brain distinct with folded Topics", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -116,7 +116,7 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["New Session", "For you", "Brain"]);
+		).toEqual(["New Session", "For you", "Work", "Brain"]);
 		expect(
 			within(main).getByRole("link", { name: "For you" }),
 		).toHaveTextContent(/^For you$/);
@@ -155,18 +155,32 @@ describe("CollaborationNavigation", () => {
 		expect(screen.queryByText(/^0(?: to check)?$/)).not.toBeInTheDocument();
 	});
 
-	it.each([
-		"/",
-		"/work",
-		"/work/waiting",
-		"/work/done",
-		"/work/topic/t-geng",
-	])("keeps For you selected on %s", (path) => {
-		renderNavigation(path);
+	it("selects For you only on the landing page", () => {
+		renderNavigation("/");
 		expect(screen.getByRole("link", { name: "For you" })).toHaveAttribute(
 			"aria-current",
 			"page",
 		);
+		expect(screen.getByRole("link", { name: "Work" })).not.toHaveAttribute(
+			"aria-current",
+		);
+	});
+
+	it.each([
+		"/work",
+		"/work/all",
+		"/work/waiting",
+		"/work/done",
+		"/work/topic/t-geng",
+	])("selects Work on %s", (path) => {
+		renderNavigation(path);
+		expect(screen.getByRole("link", { name: "Work" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+		expect(
+			screen.getByRole("link", { name: "For you" }),
+		).not.toHaveAttribute("aria-current");
 		expect(screen.getByRole("link", { name: "Brain" })).not.toHaveAttribute(
 			"aria-current",
 		);
@@ -187,6 +201,9 @@ describe("CollaborationNavigation", () => {
 		expect(
 			screen.getByRole("link", { name: "For you" }),
 		).not.toHaveAttribute("aria-current");
+		expect(screen.getByRole("link", { name: "Work" })).not.toHaveAttribute(
+			"aria-current",
+		);
 	});
 
 	it("opens Topics by keyboard and preserves the active topic destination", async () => {
@@ -263,6 +280,7 @@ describe("CollaborationNavigation", () => {
 		const controls = [
 			screen.getByRole("link", { name: "New Session" }),
 			screen.getByRole("link", { name: "For you" }),
+			screen.getByRole("link", { name: "Work" }),
 			screen.getByRole("link", { name: "Brain" }),
 			screen.getByRole("link", { name: "Settings" }),
 		];

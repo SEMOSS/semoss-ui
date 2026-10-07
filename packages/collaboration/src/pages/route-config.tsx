@@ -32,6 +32,7 @@ export const routes: RouteObject[] = [
 							},
 							...[
 								"work",
+								"work/all",
 								"work/waiting",
 								"work/done",
 								"work/topic/:topicId",

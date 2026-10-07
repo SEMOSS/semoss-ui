@@ -1,9 +1,9 @@
 # Collaboration
 
 Personal SEMOSS assistant based on the [collaboration mockups](../../mockups).
-The daily brief brings together your calendar, actions needing you, completed
-work, assistant questions, and Brain's review queue. Work organizes threads,
-next steps, waiting items, and completed work. Brain holds people, topics,
+The landing overview brings together chat, your calendar, actions needing you,
+completed work, Brain reviews, and recent sessions. Work starts with topics and
+organizes each topic’s actions, source threads, and saved sessions. Brain holds people, topics,
 thread context, and source readers. Settings brings together your profile,
 appearance, context rules, and data reset.
 
@@ -11,7 +11,7 @@ appearance, context rules, and data reset.
 
 The fixed Brief view uses the existing SEMOSS components, semantic color tokens,
 Geist typography, and spacing scale. It does not define another theme or palette.
-A shared sidebar provides New Session, For you, Brain,
+A shared sidebar provides New Session, For you, Work, Brain,
 foldable Topics and Sessions, with sessions grouped by date. Compact 12px labels
 and 32px rows retain 44px minimum touch targets. A keyboard-accessible rail along
 the sidebar edge switches between 256px navigation and a 64px icon rail. Desktop
@@ -43,26 +43,46 @@ Work, Brain, and Settings share the Brief's page canvas, reading width, heading
 scale, responsive spacing, and quiet card treatment. Directories retain their
 grouped rows and filters; contextual panels become drawers on narrower screens.
 
-New Session opens `/new` with the Brief's greeting and one centered, floating composer.
-Its + menu attaches files and opens Settings; agent selection sits beside the composer.
-Settings uses a side drawer with model and instructions; temperature, knowledge,
-tools, and inherited skills are grouped under a collapsed Advanced section.
-The welcome screen omits the surrounding card, separate controls, and suggestions.
-The right-hand daily context panel stays available beside the composer.
-The first valid submission creates an ordinary room, then replaces `/new` with
-its room route while the retained request continues. Failures preserve the draft
-and attachments. New and saved chats use the same room session owner.
-Saved chats, source threads, and direct rooms all use the same room header,
-transcript, and anchored composer. Each keeps its own conversation, retained drafts,
-attachments, source context, approvals, and workbench. Agent configuration is no
-longer accessible from the thread header or room settings. The New Session welcome
-screen keeps daily context and the Your day drawer; saved conversations use the
-full room canvas. Brief/Chat and ⌘/Ctrl J retain the active chat identity and draft.
-Suggested questions and the Brief Ask field populate an editable draft; they never
-auto-send.
+The global landing page places one compact composer beneath its greeting and
+status links. At desktop widths, Your day and Handled sit on the left, Needs you
+in the center, and Brain and Recent sessions on the right. The mobile reading
+and keyboard order is composer, Needs you, Brain, Recent sessions, Your day,
+Handled. Recent sessions initially shows five dated conversations and progressively
+loads more with retry. Brain includes pending decisions, draft notes, and directory
+links. The overview has no topic filter or separate chat mode.
 
-The brief orders pending actions by deadline, supports topic filtering, and
-uses existing Work commands for marking items handled and reopening them.
+New Session opens `/new` as a separate conversation page with its own composer,
+chat tools, and explicitly opened Settings/Files workbench. It contains no daily
+context panels. Landing Settings and Files continue the same unsent draft on
+`/new` and open the requested panel. Opening chat files may allocate a room;
+first send reuses that room. Attachments, agent selection, and settings otherwise
+stay local until send. New and saved chats share the same `RoomSession` owner.
+
+Landing first send submits once and pushes the canonical saved-room route,
+consuming the landing draft so Back returns to a fresh overview composer.
+New Session first send replaces `/new` with its room route. A bounded in-memory
+cache associates unsent drafts with stable history entries, so Back/Forward
+restores content while an explicit New Session starts independently. Failures
+retain drafts, attachments, and upload receipts; uncertain submissions require
+reconciliation before another send. Preparation that finishes after navigation
+cannot redirect over the current page. Editable-prompt navigation remains
+supported. Brief/Chat switching and its shortcut have been removed.
+
+The overview orders pending actions by deadline and uses existing Work commands
+for marking items handled and reopening them. `/work` lists topics with their
+status, description, and selector-derived open/waiting counts. `/work/all` starts
+with Needs you and provides Open, Waiting, Handled, and Snoozed filters; legacy
+waiting/handled links remain valid. Each topic workspace leads with its goals
+and Edit in Brain, then Actions, Threads, and Sessions tabs, with topic-specific
+people, confirmed notes, and linked calendar threads.
+
+Topic Sessions reads validated `RoomOptions.source.threadId` metadata only when
+its tab opens, in batches of 25. Associations are cached within the current
+account and insight, rechecked when reopening the tab, and show partial failures,
+retry, and further loading. Multiple rooms from one source are retained; older
+explicit thread-to-room links remain supported. Selecting any saved session
+opens that exact room. No persistence migration is needed.
+
 Source links import the selected thread into a new room; approvals remain in the
 owning room's existing tool workflow.
 Brain review uses existing topic/person decisions. Calendar rows open their
@@ -200,8 +220,10 @@ chosen for a room's composer use the room's ordinary upload and submission flow.
 
 | Routes | Feature |
 | --- | --- |
-| `/` | Daily brief |
-| `/work`, `/work/waiting`, `/work/done`, `/work/topic/:topicId` | Work lists and topic views |
+| `/` | Global landing overview and compact chat composer |
+| `/work` | Topic overview |
+| `/work/all`, `/work/waiting`, `/work/done` | Global work lists |
+| `/work/topic/:topicId` | Topic actions, threads, sessions, and context |
 | `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |
 | `/settings/about-you`, `/settings/appearance`, `/settings/rules`, `/settings/data` | Profile/VIPs, theme, context rules, and data reset |
@@ -273,6 +295,17 @@ pnpm --filter @semoss/collaboration type-check
 pnpm --filter @semoss/collaboration test
 pnpm --filter @semoss/collaboration build
 ```
+
+The October 7, 2026 landing/topic Work implementation passed all 921 tests across
+125 files, package type checking, the production build, and Biome checks on all
+42 touched TypeScript files using Node 24.4.0. Existing React test warnings and
+large-bundle build warnings remain. The real-layout preview was inspected at
+320, 360, 720, and 1440 CSS pixels in light/dark themes, including long content,
+keyboard composer and tab navigation, topic sessions, and the mobile Settings
+workbench. No horizontal page overflow was observed. Native 200% zoom is not
+available in the preview browser; the equivalent 720-pixel reflow was checked.
+Live backend sends/uploads and real-device screen-reader behavior were not
+exercised by this preview pass; lifecycle and recovery checks use test fixtures.
 
 The October 6, 2026 backend-compatibility pass used Node 24.4.0: all 1,055 tests
 across 138 files passed, along with package type-check, production build, and

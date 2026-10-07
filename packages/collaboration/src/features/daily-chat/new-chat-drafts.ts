@@ -3,17 +3,78 @@ import {
 	type RoomSession,
 } from "@/features/rooms/room-session";
 
-interface NewChatDraft {
+export interface NewChatDraft {
 	id: string;
 	session: RoomSession;
 	startedRoomId: string;
+	pendingSubmission: Promise<void> | null;
 	initialize: () => Promise<void>;
 }
 
 const MAX_RETAINED_DRAFTS = 20;
 const drafts = new Map<string, NewChatDraft>();
+const historyDrafts = new Map<
+	string,
+	{ scope: string; id: string; isLanding: boolean }
+>();
+const listeners = new Set<() => void>();
+let lifecycleVersion = 0;
 
-/** Retain local welcome-page drafts across Brief navigation within one app session. */
+/** Observe first-send handoffs even when allocation finishes under another route. */
+export function subscribeNewChatDrafts(listener: () => void): () => void {
+	listeners.add(listener);
+	return () => {
+		listeners.delete(listener);
+	};
+}
+
+/** Stable external-store revision for a draft's navigation handoff. */
+export function getNewChatDraftVersion(): number {
+	return lifecycleVersion;
+}
+
+/** Keep each browser history entry attached to its own bounded in-memory draft. */
+export function getHistoryChatDraft(
+	scope: string,
+	entryKey: string,
+	isLanding: boolean,
+	requestedId: string,
+	prompt: string,
+	search: string,
+): NewChatDraft {
+	const historyKey = `${scope}:${isLanding ? "landing" : "new"}:${entryKey}`;
+	let id =
+		historyDrafts.get(historyKey)?.id ??
+		(/^[a-f0-9-]{36}$/.test(requestedId)
+			? requestedId
+			: crypto.randomUUID());
+	if (isLanding && drafts.get(`${scope}:${id}`)?.startedRoomId)
+		id = crypto.randomUUID();
+	historyDrafts.delete(historyKey);
+	historyDrafts.set(historyKey, { scope, id, isLanding });
+	for (const key of historyDrafts.keys()) {
+		if (historyDrafts.size <= MAX_RETAINED_DRAFTS * 2) break;
+		historyDrafts.delete(key);
+	}
+	return getNewChatDraft(scope, id, prompt, search);
+}
+
+/** A started draft belongs to its conversation; every landing alias becomes fresh. */
+export function markNewChatDraftStarted(
+	scope: string,
+	draft: NewChatDraft,
+	roomId: string,
+): void {
+	draft.startedRoomId = roomId;
+	for (const [key, entry] of historyDrafts) {
+		if (entry.scope === scope && entry.id === draft.id && entry.isLanding)
+			historyDrafts.delete(key);
+	}
+	lifecycleVersion++;
+	for (const listener of listeners) listener();
+}
+
+/** Retain local drafts across navigation within one account's app session. */
 export function getNewChatDraft(
 	scope: string,
 	id: string,
@@ -36,6 +97,7 @@ export function getNewChatDraft(
 		id,
 		session,
 		startedRoomId: "",
+		pendingSubmission: null,
 		initialize: () => {
 			if (initializing) return initializing;
 			initializing = (async () => {

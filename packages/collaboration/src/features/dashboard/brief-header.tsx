@@ -11,20 +11,12 @@ import {
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { selectWorkItems } from "@/features/collaboration/state/collaboration.selectors";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import { BriefTopicFilter } from "./brief-topic-filter";
-import { BriefViewSwitch } from "./brief-view-switch";
 import { useDashboard } from "./dashboard.context";
 import { dashboardTimeZone, eventStart } from "./dashboard-calendar";
 import { dayKey } from "./dashboard-selectors";
 
 /** A factual, live headline for the available work and next meeting. */
-export function BriefHeader({
-	topicId,
-	onTopicChange,
-}: {
-	topicId: string;
-	onTopicChange: (value: string) => void;
-}) {
+export function BriefHeader() {
 	const { state } = useCollaborationSession();
 	const { calendar, mail, refreshSources } = useDashboard();
 	const updates = useWorkUpdates();
@@ -48,12 +40,11 @@ export function BriefHeader({
 			: hour < 18
 				? "Good afternoon"
 				: "Good evening";
-	const pending = selectWorkItems(state, { view: "needs_me", topicId }).items;
+	const pending = selectWorkItems(state, { view: "needs_me" }).items;
 	const handled = selectWorkItems(state, {
 		view: "done_today",
-		topicId,
 	}).total;
-	const waiting = selectWorkItems(state, { view: "waiting", topicId }).total;
+	const waiting = selectWorkItems(state, { view: "waiting" }).total;
 	const next = (calendar.data ?? [])
 		.flatMap((event) => {
 			const start = eventStart(event);
@@ -79,7 +70,7 @@ export function BriefHeader({
 		updates?.isRefreshing || calendar.isLoading || mail.isLoading,
 	);
 	return (
-		<header className="mb-8 space-y-4">
+		<header className="mb-4 space-y-4">
 			<div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
 				<H1 className="min-w-0 max-w-3xl flex-1 font-medium text-2xl leading-snug tracking-tight 2xl:text-3xl">
 					{greeting}
@@ -94,23 +85,19 @@ export function BriefHeader({
 						.
 					</span>
 				</H1>
-				<div className="flex flex-wrap items-center gap-2">
-					<BriefTopicFilter
-						value={topicId}
-						onChange={onTopicChange}
-					/>
-					<BriefViewSwitch view="brief" />
-				</div>
 			</div>
 			<div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-muted-foreground text-xs leading-5">
-				<span className="flex items-center gap-2">
+				<Link
+					to="/work/all"
+					className="inline-flex min-h-6 pointer-coarse:min-h-11 items-center gap-2 rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+				>
 					<span
 						aria-hidden="true"
 						className="size-1.5 rounded-full bg-foreground"
 					/>
 					<span className="text-foreground">{pending.length}</span>{" "}
 					open
-				</span>
+				</Link>
 				<span aria-hidden="true">·</span>
 				<Link
 					to="/work/done"
@@ -141,7 +128,7 @@ export function BriefHeader({
 							size="icon-sm"
 							aria-label="Refresh your brief"
 							disabled={isRefreshing}
-							className="-ml-2 size-7 text-muted-foreground"
+							className="-ml-2 pointer-coarse:size-11 size-7 text-muted-foreground"
 							onClick={() => {
 								updates?.refresh();
 								refreshSources();
