@@ -68,7 +68,6 @@ const session: Session = {
 
 const defaultProps: ComponentProps<typeof RoomWorkspace> = {
 	agent,
-	agentId: session.agentId,
 	session,
 	thread: [],
 	isSending: false,
@@ -91,7 +90,6 @@ const defaultProps: ComponentProps<typeof RoomWorkspace> = {
 	onOptimizePrompt: vi.fn(async (draft) => draft),
 	onCancelTurn: vi.fn(async () => undefined),
 	onReconnect: vi.fn(),
-	onConfigure: vi.fn(),
 };
 
 const panelSizes = (container: HTMLElement): number[] =>
@@ -124,8 +122,15 @@ describe("RoomWorkspace", () => {
 		render(<RoomWorkspace {...defaultProps} />);
 
 		const composer = screen.getByText("Composer");
-		expect(composer).toHaveClass("mx-auto", "w-full", "max-w-3xl");
-		expect(composer.parentElement).toHaveClass("px-4", "lg:px-7");
+		expect(composer.parentElement).toHaveClass(
+			"mx-auto",
+			"w-full",
+			"max-w-3xl",
+		);
+		expect(composer.parentElement?.parentElement).toHaveClass(
+			"px-4",
+			"lg:px-7",
+		);
 	});
 
 	it("defaults to 65 percent and restores a resized width after reopening", async () => {

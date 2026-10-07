@@ -53,6 +53,9 @@ vi.mock("@/features/rooms/api/use-room-model", () => ({
 	useRoomModel: () => ({ engine: null, error: null }),
 }));
 vi.mock("./use-work-panel-actions", () => ({ useWorkPanelActions: () => [] }));
+vi.mock("@/features/daily-chat/chat-add-to-chat", () => ({
+	ChatAddToChat: () => <button type="button">Add to chat</button>,
+}));
 vi.mock("@/features/connectors/api/microsoft", async (original) => ({
 	...(await original<typeof import("@/features/connectors/api/microsoft")>()),
 	saveEmailDraft: vi.fn(),
@@ -223,6 +226,43 @@ it("does not take focus back when a standalone submission completes in the backg
 		outside.remove();
 	}
 });
+
+it.each([false, true])(
+	"preserves arrival focus after its first send (focus moved elsewhere: %s)",
+	async (moveFocus) => {
+		const composer = new WorkComposerSession();
+		composer.setDraft(0, {
+			document: null,
+			text: "First request",
+			files: [],
+		});
+		let finish = () => {};
+		const pending = composer.submit(
+			() =>
+				new Promise<void>((resolve) => {
+					finish = resolve;
+					composer.startChat();
+				}),
+		);
+		setup({ presentation: "standalone", composerSession: composer });
+		await waitFor(() => expect(screen.getByRole("textbox")).toHaveFocus());
+		expect(composer.getSnapshot().shouldFocusChat).toBe(false);
+		const outside = document.createElement("button");
+		document.body.append(outside);
+		try {
+			if (moveFocus) outside.focus();
+			await act(async () => {
+				finish();
+				await pending;
+			});
+			expect(screen.getByRole("textbox")).toHaveTextContent("");
+			if (moveFocus) expect(outside).toHaveFocus();
+			else expect(screen.getByRole("textbox")).toHaveFocus();
+		} finally {
+			outside.remove();
+		}
+	},
+);
 
 it.each([
 	"isSavingSettings",

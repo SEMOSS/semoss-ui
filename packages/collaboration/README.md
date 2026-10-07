@@ -11,33 +11,51 @@ appearance, context rules, and data reset.
 
 The fixed Brief view uses the existing SEMOSS components, semantic color tokens,
 Geist typography, and spacing scale. It does not define another theme or palette.
-A shared sidebar provides quiet New Task and search actions, For you, Brain,
-foldable topics, and sessions grouped by date. Its visible toggle switches between
-256px navigation and a 64px icon rail; desktop collapse and Topics disclosure
-preferences are stored per account and deployment. Mobile navigation remains a
+A shared sidebar provides New Session, For you, Brain,
+foldable Topics and Sessions, with sessions grouped by date. Compact 12px labels
+and 32px rows retain 44px minimum touch targets. The persistent header’s navigation toggle switches between
+256px navigation and a 64px icon rail; desktop collapse and both disclosure
+preferences are stored per account and deployment. Sessions start expanded and
+retain their selection and scroll position when folded. Mobile navigation remains a
 drawer below 1024px. Waiting on others and Handled are always linked from the
 For you summary. Brain contains Review, People, Threads, and Sources navigation;
-clicking the profile name opens Settings directly.
+the top-right account avatar opens a menu with Settings and Log out. Logout failures
+remain visible and retryable. Appearance controls remain in Settings only.
+
+A persistent 56px header blends into the page canvas alongside the full-height sidebar.
+Search stays on the left and the signed-in account avatar on the right across all
+workspace routes, including full-width workbenches. Mobile uses the same header
+with a drawer trigger. Search still uses one palette and ⌘/Ctrl K.
+Saved conversations compose their title, small agent avatar, and contextual/workbench
+actions into that same header, without a second toolbar or horizontal divider.
+Search becomes an icon on small screens to leave room for the conversation title.
+Selecting the title reveals its full text and agent identity in a keyboard- and
+touch-accessible popover. The room controls render into a stable shell target while
+retaining their room context, including when a full-width workbench hides the chat.
+The navigation control belongs to the global header, so changing panes does not
+move it or duplicate it. Conversation editors and drafts remain mounted.
 
 Work, Brain, and Settings share the Brief's page canvas, reading width, heading
 scale, responsive spacing, and quiet card treatment. Directories retain their
 grouped rows and filters; contextual panels become drawers on narrower screens.
 
-New Task opens `/new` with the Brief's page canvas and greeting, a centered input,
-and suggested prompts in a responsive two-column layout. The suggestions keep
-their space while hidden during editing so the input stays in place.
-New and saved chats include an agent dropdown and a Settings menu for chat
-configuration and Advanced context, usage, and compaction controls.
-New and saved chats show a daily context rail on
-wide screens. The first accepted message moves to the saved room conversation
-with an anchored composer, keeping the same page framing and daily context.
-The rail reuses Needs you, Your day, and Handled from the Brief, in that order,
-including the same drafts and actions. Asking stays in the conversation; Brain
-review stays on the Brief and Brain pages.
-Brief/Chat and ⌘/Ctrl J switch
-views while retaining the active chat identity and draft. Suggested questions
-and the Brief Ask field populate an editable chat draft; they never auto-send.
-On narrow screens the daily context is available through Your day.
+New Session opens `/new` with the Brief's greeting and one centered, floating composer.
+Its + button opens Add to chat: attach files, select an agent, or open Settings.
+Settings uses a side drawer with model and instructions; temperature, knowledge,
+tools, and inherited skills are grouped under a collapsed Advanced section.
+The welcome screen omits the surrounding card, separate controls, and suggestions.
+The right-hand daily context panel stays available beside the composer.
+The first valid submission immediately replaces `/new` with `/thread/:id`, before
+room preparation or uploads finish. The retained request continues once, and
+failures preserve the draft and attachments on the thread page.
+Saved chats, source threads, and direct rooms all use the same room header,
+transcript, and anchored composer. Each keeps its own conversation, retained drafts,
+attachments, source context, approvals, and workbench. Agent configuration is no
+longer accessible from the thread header or room settings. The New Session welcome
+screen keeps daily context and the Your day drawer; saved conversations use the
+full room canvas. Brief/Chat and ⌘/Ctrl J retain the active chat identity and draft.
+Suggested questions and the Brief Ask field populate an editable draft; they never
+auto-send.
 
 The brief orders pending actions by deadline, supports topic filtering, and
 uses existing Work commands for marking items handled and reopening them.
@@ -78,8 +96,8 @@ backend transcript. Earlier requests remain in that conversation's history.
 Chat settings use existing room options and the selected agent configuration.
 Changes in saved chats persist to that room and apply to future turns; changing
 agents preserves manual configuration overrides.
-Existing direct room links
-retain their original room configuration and chat behavior.
+Direct room conversations use `/thread/:id` and retain their original room
+configuration and chat behavior.
 
 ## Microsoft sources and drafts
 
@@ -153,18 +171,21 @@ remote images require per-message consent. Teams uses sanitized app typography,
 quotes/code/mentions, and media placeholders. Display bodies cap at 128 Ki
 characters, falling back to plain text with a notice rather than cutting markup.
 
-**Rollout:** deploy the backend opt-in HTML readers and formatted reply/forward
-draft support before releasing these formatted frontend actions. Editable reply
-recipients additionally require `MicrosoftOutlookGetMail(includeReplyRecipients=true)`
-and `MicrosoftOutlookReplyMail(overrideRecipients=true, to=[...], cc=[...])`.
-Deploy that backend support first; existing callers retain native reply behavior. No database
-migration, sending-backend changes, or authentication-configuration changes are
-required. Existing Microsoft permission errors flow through the current UI.
+**Backend compatibility:** the current SEMOSS backend already supports the
+opt-in HTML readers, formatted reply/forward drafts,
+`MicrosoftOutlookGetMail(includeReplyRecipients=true)`, and
+`MicrosoftOutlookReplyMail(overrideRecipients=true, to=[...], cc=[...])` used here.
+These contracts were checked against both the backend source and the deployed
+Tomcat classes on October 6, 2026 (Semoss `c92b5cd2c553`, Monolith
+`5aa478598af7`). This frontend requires no backend code changes,
+database migration, or authentication-configuration changes on that baseline.
+Existing Microsoft permission errors flow through the current UI. Live Microsoft
+permissions and delivery still depend on the connected account.
 
 Native file attachments can be opened, downloaded, or explicitly attached to an
 assistant request. Brain threads list them with
 `BrainGetThreadMessages(includeAttachments=true)` and read them with
-`BrainStageAttachment`, which applies the thread's rules first. Imported Sources
+`WorkDownloadAttachment`, which applies the thread's rules first. Imported Sources
 mail uses `MicrosoftOutlookDownloadAttachment`. Open and Download stage one copy,
 under a unique filename, in an isolated insight that is never bound to an
 assistant room; Open shows it in the dock from there. Assistant attachments are
@@ -179,12 +200,11 @@ because most providers reject those formats. A message's other files may total
 | --- | --- |
 | `/` | Daily brief |
 | `/work`, `/work/waiting`, `/work/done`, `/work/topic/:topicId` | Work lists and topic views |
-| `/work/thread/:threadId` | Thread workspace and assistant |
+| `/thread/:id` | Thread workspace, assistant, and direct room conversations |
 | `/brain`, `/brain/sources` | Review and source readers/imports |
 | `/settings/about-you`, `/settings/appearance`, `/settings/rules`, `/settings/data` | Profile/VIPs, theme, context rules, and data reset |
 | `/brain/people`, `/brain/people/:personId` | People directory and detail |
 | `/brain/threads`, `/brain/threads/:threadId`, `/brain/topics/:topicId` | Context directories and detail |
-| `/room/:roomId` | Existing direct conversation links |
 | `/new` | New source-free chat session |
 
 `/room` redirects to Work; `/agents/*` redirects to Brain;
@@ -252,6 +272,15 @@ pnpm --filter @semoss/collaboration test
 pnpm --filter @semoss/collaboration build
 ```
 
+The October 6, 2026 backend-compatibility pass used Node 24.4.0: all 1,055 tests
+across 138 files passed, along with package type-check, production build, and
+Biome checks on changed source/configuration files. Regression coverage includes
+queued server IDs, undo persistence, priority clearing, topic calendar series,
+native source identities, empty versus omitted email fields, and HTTPS development
+configuration. Existing React test warnings and large-bundle build warnings remain.
+The isolated browser reached sign-in; authenticated Microsoft operations and
+delivery were not exercised. No backend files were changed.
+
 The Settings consolidation passed 62 focused tests across settings, routes,
 dashboard layout/interactions, and Collaboration interactions, plus package
 type-check, production build, and Biome checks on touched source files. The build
@@ -274,6 +303,19 @@ calendar/email operations, pending approvals/delegations, and published app
 embedding/permission changes still need an end-to-end integration pass. The
 in-app browser could not open the HTTPS deployment because its certificate was
 untrusted; no certificate settings were changed.
+
+The coordinated header update passed 123 focused tests across navigation, account
+menus, search, settings, room controls, and conversation/workbench state. Package
+type-check, production build, and touched-file Biome checks passed using Node
+24.4.0; the build retains the existing large-chunk warnings. The preview was checked
+at 320, 360, and 1440 CSS pixels in light/dark themes, including long names/titles,
+loading/error states, keyboard focus, account navigation, and retained chat drafts
+across pane changes. The unified room header remains 56px tall without horizontal page
+overflow; route transitions clear the room controls without remounting global controls.
+Logout success/failure/pending cases were mocked; no live session was ended. Native
+200% browser zoom and real-device touch/screen-reader behavior were not exercised.
+The preview's Files panel lacks an AccessStoreProvider, so file operations were not
+validated by this shell pass. `chatState=long` also supplies a long account identity.
 
 `/dashboard-preview.html` is a development-only design fixture with sample data,
 using the real dashboard and Brain components. It is not a live integration

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
@@ -38,16 +38,20 @@ import {
 	pendingSession,
 	sessionStatusFromPhase,
 } from "@/features/rooms/utils/session-from-room";
-import { agentSettingsPath } from "@/lib/workspace-paths";
+
+interface RoomPageProps {
+	/** Backend room identity supplied by the shared thread route. */
+	roomId?: string;
+}
 
 /** One collaboration room's durable transcript and agent harness observer. */
-export function RoomPage() {
+export function RoomPage({ roomId: suppliedRoomId }: RoomPageProps = {}) {
 	const { agent, agentId } = useAgent();
 	const { openRoomsList } = useRoom();
 	const workspace = useMain();
 	const { actions, insightId } = useInsight();
-	const navigate = useNavigate();
-	const { roomId } = useParams();
+	const { roomId: routeRoomId } = useParams();
+	const roomId = suppliedRoomId ?? routeRoomId;
 	const { setSessions, updateRoom, refresh } = workspace;
 	const [history, setHistory] = useState<ConversationMessage[]>([]);
 	const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -327,7 +331,6 @@ export function RoomPage() {
 			onReconnect={turn.reconnect}
 			onApproveTool={handleApprove}
 			onRejectTool={handleReject}
-			onConfigure={(id) => navigate(agentSettingsPath(id))}
 			onNewRoom={workspace.newRoom}
 			onOpenRooms={openRoomsList}
 		/>

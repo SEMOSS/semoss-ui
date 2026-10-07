@@ -21,9 +21,11 @@ function fakeActions() {
 						? { id: "wi-new" }
 						: /^WorkSaveStep\(/.test(statement)
 							? { id: "server-step" }
-							: /^BrainSaveMemory\(/.test(statement)
-								? { id: "server-memory" }
-								: true,
+							: /^BrainSaveTopicNote\(/.test(statement)
+								? { noteId: "server-note" }
+								: /^BrainSaveMemory\(/.test(statement)
+									? { id: "server-memory" }
+									: true,
 			})),
 		};
 	});
@@ -326,4 +328,236 @@ it("no response needed saves the dismissal with its reason; reopening drops the 
 	expect(
 		state.items.find((candidate) => candidate.id === item.id)?.closedReason,
 	).toBeUndefined();
+});
+
+it("removes a new step even when its creation is still queued", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const created = step({
+		type: "workspace.step",
+		threadId: "th-geng-review",
+		operation: "save",
+		step: { text: "Temporary reminder" },
+	});
+	const stepId = created.next.workspaces["th-geng-review"].steps.at(-1)?.id;
+	if (!stepId) throw new Error("Missing created step");
+	const command: CollaborationCommand = {
+		type: "workspace.step",
+		threadId: "th-geng-review",
+		operation: "remove",
+		step: { id: stepId },
+	};
+	sync({ ...created, undo: false });
+	sync({
+		previous: created.next,
+		next: collaborationReducer(created.next, command, NOW),
+		commands: [command],
+		undo: false,
+	});
+	await sync.settled();
+	expect(sent).toHaveLength(2);
+	expect(sent[1]).toBe(
+		'WorkDeleteStep(threadId=["th-geng-review"], stepId=["server-step"]);',
+	);
+});
+
+it("undo recreates a deleted step and subsequent edits use its new server id", async () => {
+	const { actions, sent } = fakeActions();
+	const onError = vi.fn();
+	const sync = createLiveSync(actions, onError);
+	const previous = createInitialCollaborationState();
+	const threadId = "th-geng-review";
+	const rowId = "saved-step";
+	previous.workspaces[threadId].steps = [
+		{
+			id: rowId,
+			text: "Saved step",
+			kind: "task",
+			status: "open",
+			ownerId: "me",
+			due: null,
+		},
+	];
+	const command: CollaborationCommand = {
+		type: "workspace.step",
+		threadId,
+		operation: "remove",
+		step: { id: rowId },
+	};
+	const next = collaborationReducer(previous, command, NOW);
+	sync({ previous, next, commands: [command], undo: false });
+	sync({ previous: next, next: previous, commands: [], undo: true });
+	const edit: CollaborationCommand = {
+		type: "workspace.step",
+		threadId,
+		operation: "save",
+		step: { id: rowId, text: "Edited" },
+	};
+	sync({
+		previous,
+		next: collaborationReducer(previous, edit, NOW),
+		commands: [edit],
+		undo: false,
+	});
+	await sync.settled();
+	expect(sent).toHaveLength(3);
+	expect(sent[1]).not.toContain('"id":');
+	expect(sent[2]).toContain('"id":"server-step"');
+	expect(sent[2]).toContain('"text":"Edited"');
+	expect(sync.localId("server-step")).toBe(rowId);
+	expect(onError).not.toHaveBeenCalled();
+});
+
+it("undo restores a generated step through its existing soft-deleted server row", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = createInitialCollaborationState();
+	const threadId = "th-geng-review";
+	previous.workspaces[threadId].steps = [
+		{
+			id: "generated-step",
+			text: "Reply to Kira",
+			kind: "task",
+			status: "open",
+			ownerId: "me",
+			due: null,
+			isGenerated: true,
+		},
+	];
+	const command: CollaborationCommand = {
+		type: "workspace.step",
+		threadId,
+		operation: "remove",
+		step: { id: "generated-step" },
+	};
+	const next = collaborationReducer(previous, command, NOW);
+	sync({ previous, next, commands: [command], undo: false });
+	sync({ previous: next, next: previous, commands: [], undo: true });
+	await sync.settled();
+	expect(sent).toHaveLength(2);
+	expect(sent[1]).toContain('"id":"generated-step"');
+	expect(sent[1]).toContain('"status":"open"');
+});
+
+it("undo recreates a deleted topic goal without sending its removed id", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = createInitialCollaborationState();
+	const topic = previous.topics[0];
+	const note = topic.goals[0];
+	if (!note) throw new Error("Missing saved goal");
+	const command: CollaborationCommand = {
+		type: "topic.note",
+		topicId: topic.id,
+		kind: "goal",
+		operation: "remove",
+		noteId: note.noteId,
+	};
+	const next = collaborationReducer(previous, command, NOW);
+	sync({ previous, next, commands: [command], undo: false });
+	sync({ previous: next, next: previous, commands: [], undo: true });
+	await sync.settled();
+	expect(sent).toHaveLength(2);
+	expect(sent[1]).toMatch(/^BrainSaveTopicNote\(/);
+	expect(sent[1]).not.toContain("noteId=");
+	expect(sync.localId("server-note")).toBe(note.noteId);
+});
+
+it("clears a manual priority with the backend's empty-noun contract", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = createInitialCollaborationState();
+	const item = previous.items.find(
+		(candidate) => candidate.priority !== null,
+	);
+	if (!item) throw new Error("Missing prioritized item");
+	const command: CollaborationCommand = {
+		type: "item.update",
+		itemId: item.id,
+		changes: { priority: null },
+	};
+	sync({
+		previous,
+		next: collaborationReducer(previous, command, NOW),
+		commands: [command],
+		undo: false,
+	});
+	await sync.settled();
+	expect(sent).toContain(
+		`WorkUpdateItem(itemId=["${item.id}"], priority=[]);`,
+	);
+});
+
+it("persists topic calendar series supported by BrainSaveTopic", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync({
+		...step({
+			type: "topic.save",
+			topic: { id: "t-geng", calendarSeries: ["series-1"] },
+		}),
+		undo: false,
+	});
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainSaveTopic(topic=[{"id":"t-geng","calendarSeries":["series-1"]}]);',
+	]);
+});
+
+it("does not recreate server steps delivered alongside a local edit", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = createInitialCollaborationState();
+	const rename: CollaborationCommand = {
+		type: "topic.save",
+		topic: { id: "t-geng", name: "Renamed" },
+	};
+	const insights: CollaborationCommand = {
+		type: "thread.insights",
+		threadId: "th-geng-review",
+		summary: "New summary",
+		summaryCurrent: true,
+		steps: [
+			{
+				id: "generated-new",
+				text: "Follow up",
+				kind: "task",
+				status: "open",
+				ownerId: "me",
+				due: null,
+				isGenerated: true,
+			},
+		],
+	};
+	const next = collaborationReducer(
+		collaborationReducer(previous, insights, NOW),
+		rename,
+		NOW,
+	);
+	sync({ previous, next, commands: [insights, rename], undo: false });
+	await sync.settled();
+	expect(
+		sent.filter((statement) => statement.startsWith("WorkSaveStep")),
+	).toEqual([]);
+});
+
+it("reports a missing created id before writing dependent rows", async () => {
+	const run = vi.fn().mockResolvedValue({
+		pixelReturn: [{ output: {}, operationType: [] }],
+	});
+	const onError = vi.fn();
+	const sync = createLiveSync({ run } as unknown as InsightActions, onError);
+	sync({
+		...step({
+			type: "item.create",
+			threadId: "th-geng-review",
+			text: "Call the vendor",
+		}),
+		undo: false,
+	});
+	await sync.settled();
+	expect(run).toHaveBeenCalledTimes(1);
+	expect(onError).toHaveBeenCalledWith(
+		"The saved record did not return an id.",
+	);
 });

@@ -275,6 +275,7 @@ it("submits the latest Work source context without requiring message preference 
 			{ text: "Plan next steps", files: [] },
 			undefined,
 			[],
+			undefined,
 		),
 	);
 });

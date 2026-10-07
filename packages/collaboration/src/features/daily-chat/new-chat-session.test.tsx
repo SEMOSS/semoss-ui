@@ -27,11 +27,11 @@ vi.mock("@/features/collaboration/components/work-thread", () => ({
 	WorkThread: ({
 		threadId: suppliedThreadId,
 		isNewChat = false,
-		onSent,
+		onSubmitStart,
 	}: {
 		threadId?: string;
 		isNewChat?: boolean;
-		onSent?: () => void;
+		onSubmitStart?: () => void;
 	}) => {
 		const { threadId: routeThreadId = "" } = useParams();
 		const threadId = suppliedThreadId ?? routeThreadId;
@@ -64,8 +64,8 @@ vi.mock("@/features/collaboration/components/work-thread", () => ({
 						})
 					}
 				/>
-				<button type="button" onClick={onSent}>
-					Accept first message
+				<button type="button" onClick={onSubmitStart}>
+					Start first message
 				</button>
 			</div>
 		);
@@ -84,7 +84,7 @@ function setup(navigationState?: unknown) {
 			{ path: "/new", Component: NewSessionPage },
 			{ path: "/", element: <div>Brief</div> },
 			{
-				path: "/work/thread/:threadId",
+				path: "/thread/:threadId",
 				Component: WorkThreadPage,
 			},
 		],
@@ -103,7 +103,7 @@ function setup(navigationState?: unknown) {
 	return router;
 }
 
-it("opens /new with a reviewable suggested draft and only navigates after an accepted send", async () => {
+it("opens /new with a reviewable suggested draft and navigates when the first valid send starts", async () => {
 	const router = setup({
 		prompt: "Brief me for my next meeting",
 		topicId: "live-topic",
@@ -123,11 +123,11 @@ it("opens /new with a reviewable suggested draft and only navigates after an acc
 	const sessionId = screen.getByLabelText("Session identity").textContent;
 	expect(sessionId).toMatch(/^session:[a-f0-9-]{36}$/);
 	fireEvent.click(
-		screen.getByRole("button", { name: "Accept first message" }),
+		screen.getByRole("button", { name: "Start first message" }),
 	);
 	await waitFor(() =>
 		expect(router.state.location.pathname).toBe(
-			`/work/thread/${encodeURIComponent(sessionId ?? "")}`,
+			`/thread/${encodeURIComponent(sessionId ?? "")}`,
 		),
 	);
 	expect(screen.getByLabelText("Chat presentation")).toHaveTextContent(
@@ -185,4 +185,39 @@ it("ignores invalid route state and unavailable topics", () => {
 	);
 	expect(screen.getByLabelText("Topic links")).toHaveTextContent("");
 	expect(screen.getByRole("textbox", { name: "Chat draft" })).toHaveValue("");
+});
+
+it("reopens a started chat from a retained Brief return without reseeding the original prompt", async () => {
+	const router = setup({ prompt: "Original suggestion" });
+	const sessionId = screen.getByLabelText("Session identity").textContent;
+	fireEvent.change(screen.getByRole("textbox", { name: "Chat draft" }), {
+		target: { value: "My edited request" },
+	});
+	fireEvent.click(
+		screen.getByRole("button", { name: "Start first message" }),
+	);
+	const pathname = `/thread/${encodeURIComponent(sessionId ?? "")}`;
+	await waitFor(() => expect(router.state.location.pathname).toBe(pathname));
+	await act(() => router.navigate("/"));
+	await act(() =>
+		router.navigate("/new?model=chosen#context", {
+			state: {
+				sessionId,
+				prompt: "Original suggestion",
+				openedRoomId: "saved-room",
+			},
+		}),
+	);
+	await waitFor(() => expect(router.state.location.pathname).toBe(pathname));
+	expect(router.state.location.search).toBe("?model=chosen");
+	expect(router.state.location.hash).toBe("#context");
+	expect(router.state.location.state.openedRoomId).toBe("saved-room");
+	expect(screen.getByRole("textbox", { name: "Chat draft" })).toHaveValue(
+		"My edited request",
+	);
+	expect(screen.getByLabelText("Chat presentation")).toHaveTextContent(
+		"Room",
+	);
+	await act(() => router.navigate(-1));
+	expect(router.state.location.pathname).toBe("/");
 });

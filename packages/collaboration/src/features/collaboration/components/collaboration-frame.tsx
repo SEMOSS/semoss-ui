@@ -1,6 +1,6 @@
-import { Menu, X } from "lucide-react";
+import { Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { Env } from "@semoss/sdk/react";
 import {
 	Button,
@@ -11,10 +11,16 @@ import {
 	SheetHeader,
 	SheetTitle,
 	SheetTrigger,
+	SidebarProvider,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useDashboard } from "@/features/dashboard/dashboard.context";
 import { DashboardSourceDialog } from "@/features/dashboard/dashboard-source-dialog";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { CollaborationHeader } from "./collaboration-header";
+import { CollaborationHeaderContext } from "./collaboration-header.context";
 import { CollaborationNavigation } from "./collaboration-navigation";
 import { CollaborationSearch } from "./collaboration-search";
 import { TopicEditor } from "./topic-editor";
@@ -27,24 +33,57 @@ const DESKTOP_NAVIGATION_QUERY = "(min-width: 64rem)";
 export function CollaborationFrame() {
 	const { isSearchOpen } = useDashboard();
 	const { state } = useCollaborationSession();
-	const { isCollapsed, setIsCollapsed, isTopicsOpen, setIsTopicsOpen } =
-		useNavigationPreferences(
-			state.profile.email || state.profile.id,
-			`${window.location.origin}${Env.MODULE}${window.location.pathname}`,
-		);
+	const {
+		isCollapsed: isNavigationCollapsed,
+		setIsCollapsed: setIsNavigationCollapsed,
+		isTopicsOpen,
+		setIsTopicsOpen,
+		isSessionsOpen,
+		setIsSessionsOpen,
+	} = useNavigationPreferences(
+		state.profile.email || state.profile.id,
+		`${window.location.origin}${Env.MODULE}${window.location.pathname}`,
+	);
 	const [isNavOpen, setIsNavOpen] = useState(false);
+	const [headerControls, setHeaderControls] = useState<HTMLDivElement | null>(
+		null,
+	);
 	const [isCreatingTopic, setIsCreatingTopic] = useState(false);
 	const { pathname } = useLocation();
+	const [navigationOverride, setNavigationOverride] = useState<{
+		pathname: string;
+		isCollapsed: boolean;
+	} | null>(null);
+	if (navigationOverride && navigationOverride.pathname !== pathname) {
+		// An explicit expansion applies only until the user opens another page.
+		setNavigationOverride(null);
+	}
+	const isRoom = pathname.startsWith("/thread/");
+	const isCollapsed =
+		navigationOverride?.pathname === pathname
+			? navigationOverride.isCollapsed
+			: isRoom || isNavigationCollapsed;
 	const mainId = useId();
+	const navigationId = useId();
 	const mainRef = useRef<HTMLElement>(null);
 	const desktopNavigationRef = useRef<HTMLElement>(null);
+	const headerNavigationRef = useRef<HTMLButtonElement>(null);
 	const mobileTriggerRef = useRef<HTMLButtonElement>(null);
 	const newTopicReturnFocusRef = useRef<HTMLButtonElement>(null);
 	const isNavigating = useRef(false);
 	useEffect(() => {
-		void pathname;
+		if (
+			pathname.startsWith("/thread/") &&
+			desktopNavigationRef.current?.contains(document.activeElement)
+		) {
+			// Opening a room hides session links; move keyboard focus into the room.
+			mainRef.current?.focus();
+		}
 		setIsNavOpen(false);
 	}, [pathname]);
+	useEffect(() => {
+		if (isSearchOpen) setIsNavOpen(false);
+	}, [isSearchOpen]);
 	useEffect(() => {
 		const media = window.matchMedia?.(DESKTOP_NAVIGATION_QUERY);
 		if (!media) return;
@@ -52,11 +91,15 @@ export function CollaborationFrame() {
 			if (media.matches) {
 				setIsNavOpen(false);
 				if (document.activeElement === mobileTriggerRef.current)
-					desktopNavigationRef.current
-						?.querySelector("button")
-						?.focus();
+					(
+						headerNavigationRef.current ??
+						desktopNavigationRef.current?.querySelector("button")
+					)?.focus();
 			} else if (
-				desktopNavigationRef.current?.contains(document.activeElement)
+				desktopNavigationRef.current?.contains(
+					document.activeElement,
+				) ||
+				document.activeElement === headerNavigationRef.current
 			) {
 				mobileTriggerRef.current?.focus();
 			}
@@ -68,25 +111,44 @@ export function CollaborationFrame() {
 		newTopicReturnFocusRef.current = trigger;
 		setIsCreatingTopic(true);
 	}
+	function handleNavigationOpenChange(isOpen: boolean): void {
+		if (
+			desktopNavigationRef.current?.contains(document.activeElement) ||
+			document.activeElement === headerNavigationRef.current
+		)
+			headerNavigationRef.current?.focus();
+		if (isRoom) {
+			setNavigationOverride({ pathname, isCollapsed: !isOpen });
+			return;
+		}
+		setIsNavigationCollapsed(!isOpen);
+	}
 	function handleCloseTopic(): void {
 		if (!newTopicReturnFocusRef.current?.getClientRects().length) {
 			newTopicReturnFocusRef.current = window.matchMedia?.(
 				DESKTOP_NAVIGATION_QUERY,
 			).matches
-				? (desktopNavigationRef.current?.querySelector<HTMLButtonElement>(
-						isCollapsed
-							? "button"
-							: 'button[aria-label="New topic"]',
-					) ?? null)
+				? isCollapsed
+					? headerNavigationRef.current
+					: (desktopNavigationRef.current?.querySelector<HTMLButtonElement>(
+							'button[aria-label="New topic"]',
+						) ?? headerNavigationRef.current)
 				: mobileTriggerRef.current;
 		}
 		setIsCreatingTopic(false);
 	}
+	const navigationLabel = isCollapsed
+		? "Expand navigation"
+		: "Collapse navigation";
 	return (
-		<div className="-m-4 collaboration-frame relative flex h-dvh overflow-hidden bg-muted/20 text-foreground">
+		<SidebarProvider
+			open={!isCollapsed}
+			onOpenChange={handleNavigationOpenChange}
+			className="-m-4 collaboration-frame relative h-dvh min-h-0 w-auto overflow-hidden bg-muted/20 text-foreground"
+		>
 			<a
 				href={`#${mainId}`}
-				className="sr-only focus:not-sr-only focus:absolute focus:z-10 focus:bg-background focus:p-3"
+				className="sr-only focus:not-sr-only focus:absolute focus:z-30 focus:bg-background focus:p-3"
 				onClick={(event) => {
 					event.preventDefault();
 					mainRef.current?.focus();
@@ -97,99 +159,136 @@ export function CollaborationFrame() {
 			<aside
 				ref={desktopNavigationRef}
 				aria-label="Workspace navigation"
+				data-side="left"
 				className={cn(
-					"hidden shrink-0 flex-col border-border border-r bg-background lg:flex",
+					"relative hidden shrink-0 flex-col border-sidebar-border border-r bg-background lg:flex",
 					isCollapsed ? "w-16" : "w-64",
 				)}
 			>
-				<CollaborationNavigation
-					isCollapsed={isCollapsed}
-					onCollapse={() => setIsCollapsed(!isCollapsed)}
-					isTopicsOpen={isTopicsOpen}
-					onTopicsOpenChange={setIsTopicsOpen}
-					onNewTopic={handleNewTopic}
-				/>
+				<div id={navigationId} className="h-full min-h-0">
+					<CollaborationNavigation
+						isCollapsed={isCollapsed}
+						isTopicsOpen={isTopicsOpen}
+						onTopicsOpenChange={setIsTopicsOpen}
+						isSessionsOpen={isSessionsOpen}
+						onSessionsOpenChange={setIsSessionsOpen}
+						onNewTopic={handleNewTopic}
+					/>
+				</div>
 			</aside>
-			<main
-				ref={mainRef}
-				id={mainId}
-				tabIndex={-1}
-				className="flex min-h-0 min-w-0 flex-1 flex-col outline-none"
-			>
-				<div className="flex shrink-0 items-center gap-2 border-border border-b bg-background px-3 py-2 lg:hidden">
-					<Sheet
-						open={isNavOpen}
-						onOpenChange={(open) => {
-							setIsNavOpen(open);
-							if (open) isNavigating.current = false;
-						}}
-					>
-						<SheetTrigger asChild>
-							<Button
-								ref={mobileTriggerRef}
-								variant="ghost"
-								size="icon"
-								className="size-11"
-								aria-label="Open navigation"
-							>
-								<Menu aria-hidden="true" />
-							</Button>
-						</SheetTrigger>
-						<SheetContent
-							side="left"
-							showCloseButton={false}
-							className="flex w-72 flex-col gap-0 bg-background p-0 pt-12 motion-reduce:animate-none"
-							aria-describedby={undefined}
-							onCloseAutoFocus={(event) => {
-								if (isCreatingTopic) {
-									event.preventDefault();
-								} else if (
-									window.matchMedia?.(
-										DESKTOP_NAVIGATION_QUERY,
-									).matches
-								) {
-									event.preventDefault();
-									if (!isSearchOpen)
-										desktopNavigationRef.current
-											?.querySelector("button")
-											?.focus();
-								} else if (isNavigating.current) {
-									event.preventDefault();
-									if (!isSearchOpen) mainRef.current?.focus();
-								}
-							}}
-						>
-							<SheetHeader className="sr-only">
-								<SheetTitle>Workspace navigation</SheetTitle>
-							</SheetHeader>
-							<SheetClose asChild>
+			<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+				<CollaborationHeaderContext.Provider value={headerControls}>
+					<CollaborationHeader roomControlsRef={setHeaderControls}>
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
 								<Button
+									ref={headerNavigationRef}
 									type="button"
 									variant="ghost"
 									size="icon"
-									className="absolute top-1 right-2 size-11"
-									aria-label="Close navigation"
+									aria-label={navigationLabel}
+									aria-expanded={!isCollapsed}
+									aria-controls={navigationId}
+									className="hidden pointer-coarse:size-11 size-9 shrink-0 text-muted-foreground lg:inline-flex"
+									onClick={() =>
+										handleNavigationOpenChange(isCollapsed)
+									}
 								>
-									<X aria-hidden="true" />
+									{isCollapsed ? (
+										<PanelLeftOpen aria-hidden="true" />
+									) : (
+										<PanelLeftClose aria-hidden="true" />
+									)}
 								</Button>
-							</SheetClose>
-							<CollaborationNavigation
-								isTopicsOpen={isTopicsOpen}
-								onTopicsOpenChange={setIsTopicsOpen}
-								onNewTopic={handleNewTopic}
-								onNavigate={() => {
-									isNavigating.current = true;
-									setIsNavOpen(false);
+							</TooltipTrigger>
+							<TooltipContent>{navigationLabel}</TooltipContent>
+						</Tooltip>
+						<Sheet
+							open={isNavOpen}
+							onOpenChange={(open) => {
+								setIsNavOpen(open);
+								if (open) isNavigating.current = false;
+							}}
+						>
+							<SheetTrigger asChild>
+								<Button
+									ref={mobileTriggerRef}
+									variant="ghost"
+									size="icon"
+									className="size-11 shrink-0 lg:hidden"
+									aria-label="Open navigation"
+								>
+									<Menu aria-hidden="true" />
+								</Button>
+							</SheetTrigger>
+							<SheetContent
+								side="left"
+								showCloseButton={false}
+								className="flex w-72 flex-col gap-0 bg-background p-0 pt-12 motion-reduce:animate-none"
+								aria-describedby={undefined}
+								onCloseAutoFocus={(event) => {
+									if (isCreatingTopic) {
+										event.preventDefault();
+									} else if (
+										window.matchMedia?.(
+											DESKTOP_NAVIGATION_QUERY,
+										).matches
+									) {
+										event.preventDefault();
+										if (!isSearchOpen)
+											(
+												headerNavigationRef.current ??
+												desktopNavigationRef.current?.querySelector(
+													"button",
+												)
+											)?.focus();
+									} else if (isNavigating.current) {
+										event.preventDefault();
+										if (!isSearchOpen)
+											mainRef.current?.focus();
+									}
 								}}
-							/>
-						</SheetContent>
-					</Sheet>
-					<NavLink to="/" className="font-medium">
-						Collaboration
-					</NavLink>
-				</div>
-				<Outlet />
-			</main>
+							>
+								<SheetHeader className="sr-only">
+									<SheetTitle>
+										Workspace navigation
+									</SheetTitle>
+								</SheetHeader>
+								<SheetClose asChild>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										className="absolute top-1 right-2 size-11"
+										aria-label="Close navigation"
+									>
+										<X aria-hidden="true" />
+									</Button>
+								</SheetClose>
+								<CollaborationNavigation
+									isTopicsOpen={isTopicsOpen}
+									onTopicsOpenChange={setIsTopicsOpen}
+									isSessionsOpen={isSessionsOpen}
+									onSessionsOpenChange={setIsSessionsOpen}
+									onNewTopic={handleNewTopic}
+									onNavigate={() => {
+										isNavigating.current = true;
+										setIsNavOpen(false);
+									}}
+								/>
+							</SheetContent>
+						</Sheet>
+					</CollaborationHeader>
+					<main
+						ref={mainRef}
+						id={mainId}
+						tabIndex={-1}
+						className="flex min-h-0 min-w-0 flex-1 flex-col outline-none"
+					>
+						<Outlet />
+					</main>
+				</CollaborationHeaderContext.Provider>
+			</div>
 			<CollaborationSearch paletteOnly />
 			<DashboardSourceDialog />
 			{isCreatingTopic && (
@@ -198,6 +297,6 @@ export function CollaborationFrame() {
 					onClose={handleCloseTopic}
 				/>
 			)}
-		</div>
+		</SidebarProvider>
 	);
 }

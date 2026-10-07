@@ -7,17 +7,18 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createMemoryRouter } from "react-router";
+import { createMemoryRouter, useLocation } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Textarea } from "@semoss/ui/next";
 import { DashboardProvider } from "@/features/dashboard/dashboard-provider";
+import { RoomHeader } from "@/features/rooms/components/room-header";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "../state/collaboration-session.context";
 import { CollaborationFrame } from "./collaboration-frame";
 
 const remote = vi.hoisted(() => ({
-	actions: { run: vi.fn() },
+	actions: { run: vi.fn(), logout: vi.fn() },
 	history: {
 		rooms: [{ roomId: "room-one", roomName: "Pricing conversation" }],
 		isLoading: false,
@@ -64,7 +65,27 @@ function FrameFixture() {
 
 /** A persistent route outlet exposes accidental remounts through an unsaved draft. */
 function DraftFixture() {
-	return <Textarea aria-label="Conversation draft" defaultValue="" />;
+	const { pathname } = useLocation();
+	return (
+		<>
+			{pathname.startsWith("/thread/") && (
+				<RoomHeader
+					agent={{
+						name: "Research agent",
+						description: "",
+						system_prompt: "",
+						mcp: [],
+						skills: [],
+						prompts: [],
+					}}
+					title="Pricing conversation"
+					isToolWorkbenchOpen={false}
+					onToggleToolWorkbench={() => undefined}
+				/>
+			)}
+			<Textarea aria-label="Conversation draft" defaultValue="" />
+		</>
+	);
 }
 
 function renderFrame(path = "/") {
@@ -121,6 +142,7 @@ beforeEach(() => {
 				this.getAttribute("aria-label") === "Open navigation";
 			const isVisible =
 				this.isConnected &&
+				!this.closest("[hidden]") &&
 				(isDesktopControl ? isWide : isMobileControl ? !isWide : true);
 			const rectangles = isVisible ? [new DOMRect(0, 0, 40, 40)] : [];
 			return Object.assign(rectangles, {
@@ -138,8 +160,71 @@ afterEach(() => {
 });
 
 describe("CollaborationFrame", () => {
-	it("switches the desktop sidebar to a rail without remounting the conversation draft", async () => {
-		const { user } = renderFrame("/room/room-one");
+	it("keeps one header and search palette mounted across page and room navigation", async () => {
+		const { router, user } = renderFrame();
+		const header = screen
+			.getByRole("button", { name: "Search your workspace" })
+			.closest("header");
+		const search = screen.getByRole("button", {
+			name: "Search your workspace",
+		});
+		const account = screen.getByRole("button", {
+			name: /Account menu for/,
+		});
+		for (const path of [
+			"/brain",
+			"/settings/about-you",
+			"/new",
+			"/thread/room%3Aone",
+			"/",
+		]) {
+			await act(() => router.navigate(path));
+			expect(document.querySelectorAll("header")).toHaveLength(1);
+			if (path.startsWith("/thread/")) {
+				expect(header).toContainElement(
+					screen.getByRole("heading", {
+						name: "Pricing conversation",
+					}),
+				);
+			} else {
+				expect(
+					screen.queryByRole("button", {
+						name: /Conversation details/,
+					}),
+				).not.toBeInTheDocument();
+			}
+			expect(
+				screen
+					.getByRole("button", { name: "Search your workspace" })
+					.closest("header"),
+			).toBe(header);
+			expect(
+				screen.getByRole("button", { name: "Search your workspace" }),
+			).toBe(search);
+			expect(
+				screen.getByRole("button", { name: /Account menu for/ }),
+			).toBe(account);
+		}
+		expect(
+			screen.queryByRole("button", { name: /Switch to .* theme/ }),
+		).not.toBeInTheDocument();
+		act(() => search.focus());
+		await user.keyboard("{Control>}k{/Control}");
+		expect(
+			screen.getAllByRole("dialog", { name: "Search your workspace" }),
+		).toHaveLength(1);
+		await user.keyboard("{Escape}");
+		await waitFor(() => expect(search).toHaveFocus());
+		await user.click(search);
+		await user.click(screen.getByRole("option", { name: /Brain/ }));
+		await waitFor(() =>
+			expect(router.state.location.pathname).toBe("/brain"),
+		);
+		expect(screen.getByRole("main")).toHaveFocus();
+	});
+
+	it("opens a room with a collapsed sidebar and allows toggling without remounting its draft", async () => {
+		const { user } = renderFrame("/thread/room%3Aroom-one");
 		const navigation = screen.getByRole("complementary", {
 			name: "Workspace navigation",
 		});
@@ -147,34 +232,90 @@ describe("CollaborationFrame", () => {
 			name: "Conversation draft",
 		});
 		await user.type(draft, "Keep this unsent message");
-		expect(navigation).toHaveClass("w-64");
-		await user.click(
-			within(navigation).getByRole("button", {
-				name: "Collapse navigation",
-			}),
-		);
 		expect(navigation).toHaveClass("w-16");
 		expect(
-			within(navigation).getByRole("button", {
-				name: "Expand navigation",
+			within(navigation).getByRole("navigation", { name: "Main" }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("button", {
+				name: "Search your workspace",
 			}),
-		).toHaveAttribute("aria-expanded", "false");
+		).toBeVisible();
+		expect(
+			within(navigation).getByRole("link", { name: "New Session" }),
+		).toBeVisible();
+		const expand = screen.getByRole("button", {
+			name: "Expand navigation",
+		});
+		expect(expand.closest("header")).not.toBeNull();
+		expect(screen.getByRole("main")).not.toHaveClass("lg:pl-14");
+		await user.click(expand);
+		expect(navigation).toHaveClass("w-64");
+		expect(
+			screen.getByRole("button", {
+				name: "Collapse navigation",
+			}),
+		).toHaveAttribute("aria-expanded", "true");
 		expect(
 			screen.getByRole("textbox", { name: "Conversation draft" }),
 		).toBe(draft);
 		expect(draft).toHaveValue("Keep this unsent message");
-		await user.click(
-			within(navigation).getByRole("button", {
-				name: "Expand navigation",
-			}),
-		);
-		expect(navigation).toHaveClass("w-64");
+		const rail = screen.getByRole("button", {
+			name: "Collapse navigation",
+		});
+		expect(rail.closest("header")).not.toBeNull();
+		expect(rail).toHaveFocus();
+		await user.keyboard("{Enter}");
+		expect(
+			screen.getByRole("button", { name: "Expand navigation" }),
+		).toHaveFocus();
+		expect(navigation).toHaveClass("w-16");
 		expect(draft).toHaveValue("Keep this unsent message");
 	});
 
-	it("restores the chosen rail and Topics disclosure together after a fresh mount", async () => {
+	it("collapses each opened room and restores the sidebar preference on other pages", async () => {
+		const { router, user } = renderFrame();
+		const navigation = screen.getByRole("complementary", {
+			name: "Workspace navigation",
+		});
+		const writes = vi.spyOn(Storage.prototype, "setItem");
+		expect(navigation).toHaveClass("w-64");
+		await act(() => router.navigate("/thread/session%3Aone"));
+		expect(navigation).toHaveClass("w-16");
+		await user.click(
+			screen.getByRole("button", { name: "Expand navigation" }),
+		);
+		expect(navigation).toHaveClass("w-64");
+		await act(() => router.navigate("/thread/room%3Atwo"));
+		expect(navigation).toHaveClass("w-16");
+		await act(() => router.navigate("/thread/session%3Aone"));
+		expect(navigation).toHaveClass("w-16");
+		await act(() => router.navigate("/brain"));
+		expect(navigation).toHaveClass("w-64");
+		expect(
+			writes.mock.calls.some(([key]) =>
+				String(key).endsWith(":isCollapsed"),
+			),
+		).toBe(false);
+	});
+
+	it("moves focus out of the sidebar when a room opens and its session links collapse", async () => {
+		const { router } = renderFrame();
+		const session = screen.getByRole("button", {
+			name: "Pricing conversation",
+		});
+		act(() => session.focus());
+		await act(() => router.navigate("/thread/room%3Aroom-one"));
+		expect(screen.getByRole("main")).toHaveFocus();
+		expect(
+			screen.getByRole("button", { name: "Expand navigation" }),
+		).toHaveAttribute("aria-expanded", "false");
+	});
+
+	it("restores the collapsed sidebar and both disclosures together after a fresh mount", async () => {
 		const { user } = renderFrame();
 		await user.click(screen.getByRole("button", { name: "Topics" }));
+		await user.click(screen.getByRole("button", { name: "Sessions" }));
 		await user.click(
 			screen.getByRole("button", { name: "Collapse navigation" }),
 		);
@@ -189,6 +330,46 @@ describe("CollaborationFrame", () => {
 		);
 		expect(
 			screen.getByRole("navigation", { name: "Topics" }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "Sessions" }),
+		).toHaveAttribute("aria-expanded", "false");
+		expect(
+			screen.queryByRole("navigation", { name: "Sessions" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("shares Sessions disclosure between the mobile drawer and desktop navigation", async () => {
+		isWide = false;
+		const { user } = renderFrame();
+		await user.click(
+			screen.getByRole("button", { name: "Open navigation" }),
+		);
+		const dialog = screen.getByRole("dialog", {
+			name: "Workspace navigation",
+		});
+		await user.click(
+			within(dialog).getByRole("button", { name: "Sessions" }),
+		);
+		await user.keyboard("{Escape}");
+		await user.click(
+			screen.getByRole("button", { name: "Open navigation" }),
+		);
+		expect(
+			within(screen.getByRole("dialog")).getByRole("button", {
+				name: "Sessions",
+			}),
+		).toHaveAttribute("aria-expanded", "false");
+		setDesktop(true);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+		expect(
+			screen.getByRole("button", { name: "Sessions" }),
+		).toHaveAttribute("aria-expanded", "false");
+		await user.click(screen.getByRole("button", { name: "Sessions" }));
+		expect(
+			screen.getByRole("button", { name: "Pricing conversation" }),
 		).toBeVisible();
 	});
 
@@ -253,19 +434,13 @@ describe("CollaborationFrame", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	it("hands mobile focus to Search, then returns to the visible navigation trigger", async () => {
+	it("opens Search directly from the mobile header and returns focus there", async () => {
 		isWide = false;
 		const { user } = renderFrame();
-		const trigger = screen.getByRole("button", { name: "Open navigation" });
-		await user.click(trigger);
-		const navigation = screen.getByRole("dialog", {
-			name: "Workspace navigation",
+		const trigger = screen.getByRole("button", {
+			name: "Search your workspace",
 		});
-		await user.click(
-			within(navigation).getByRole("button", {
-				name: "Search your workspace",
-			}),
-		);
+		await user.click(trigger);
 		const search = screen.getByRole("dialog", {
 			name: "Search your workspace",
 		});
@@ -281,7 +456,28 @@ describe("CollaborationFrame", () => {
 		await waitFor(() => expect(trigger).toHaveFocus());
 	});
 
-	it("returns Search focus to the rail trigger when dismissed on desktop", async () => {
+	it("hands focus from an open mobile drawer to keyboard search", async () => {
+		isWide = false;
+		const { user } = renderFrame();
+		const trigger = screen.getByRole("button", { name: "Open navigation" });
+		await user.click(trigger);
+		await user.keyboard("{Control>}k{/Control}");
+		const search = screen.getByRole("dialog", {
+			name: "Search your workspace",
+		});
+		await waitFor(() =>
+			expect(
+				within(search).getByRole("combobox", { name: "Search" }),
+			).toHaveFocus(),
+		);
+		expect(
+			screen.queryByRole("dialog", { name: "Workspace navigation" }),
+		).not.toBeInTheDocument();
+		await user.keyboard("{Escape}");
+		await waitFor(() => expect(trigger).toHaveFocus());
+	});
+
+	it("returns Search focus to its persistent header trigger when dismissed on desktop", async () => {
 		const { user } = renderFrame();
 		await user.click(
 			screen.getByRole("button", { name: "Collapse navigation" }),

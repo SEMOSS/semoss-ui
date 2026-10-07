@@ -1,4 +1,4 @@
-import { Brain, Inbox, Plus, Search } from "lucide-react";
+import { Brain, Inbox, Plus } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router";
 import {
@@ -9,12 +9,10 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
-import { useDashboard } from "@/features/dashboard/dashboard.context";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { suggestedMemories } from "../state/memory";
 import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
-import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationTopicsNavigation } from "./collaboration-topics-navigation";
 
 interface CollaborationNavigationProps {
@@ -26,6 +24,10 @@ interface CollaborationNavigationProps {
 	isTopicsOpen?: boolean;
 	/** Saves the user's topic disclosure preference. */
 	onTopicsOpenChange?: (isOpen: boolean) => void;
+	/** Controls the saved session disclosure when rendered by the shell. */
+	isSessionsOpen?: boolean;
+	/** Saves the user's session disclosure preference. */
+	onSessionsOpenChange?: (isOpen: boolean) => void;
 	/** Opens the shell-owned topic editor independently of mobile navigation. */
 	onNewTopic?: (trigger: HTMLButtonElement) => void;
 	/** Closes mobile navigation after choosing a destination. */
@@ -38,13 +40,14 @@ export function CollaborationNavigation({
 	onCollapse,
 	isTopicsOpen,
 	onTopicsOpenChange,
+	isSessionsOpen,
+	onSessionsOpenChange,
 	onNewTopic,
 	onNavigate,
 }: CollaborationNavigationProps) {
 	const { state } = useCollaborationSession();
 	const { pathname } = useLocation();
 	const [isLocalTopicsOpen, setIsLocalTopicsOpen] = useState(false);
-	const { setIsSearchOpen, searchReturnFocus } = useDashboard();
 	const reviews =
 		state.reviews.filter((review) => review.status === "open").length +
 		suggestedMemories(state.memories).length;
@@ -69,74 +72,46 @@ export function CollaborationNavigation({
 	];
 	return (
 		<div className="flex h-full min-h-0 flex-col">
-			<div className={cn("shrink-0 p-3 pb-0", isCollapsed && "px-2")}>
+			<div className="shrink-0 p-2 pb-0">
 				<CollaborationNavigationHeader
 					isCollapsed={isCollapsed}
 					onCollapse={onCollapse}
+					onNavigate={onNavigate}
 				/>
 			</div>
 			<nav
 				aria-label="Main"
-				className={cn(
-					"shrink-0 space-y-1 px-3 pt-2 pb-4",
-					isCollapsed && "px-2",
-				)}
+				className="flex shrink-0 flex-col gap-0.5 px-2 py-2"
 			>
 				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
 							asChild
 							variant="secondary"
+							size="sm"
 							className={cn(
-								"h-10 pointer-coarse:min-h-11 w-full justify-start gap-3 rounded-lg border border-primary/20 bg-primary/10 px-3 font-medium text-foreground hover:bg-primary/15 dark:border-primary/40 dark:bg-primary/25 dark:hover:bg-primary/35",
-								isCollapsed && "justify-center px-0",
+								"h-auto min-h-8 pointer-coarse:min-h-11 w-full justify-start gap-2 rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 font-medium text-foreground text-xs hover:bg-primary/15 has-[>svg]:px-2 dark:border-primary/40 dark:bg-primary/25 dark:hover:bg-primary/35",
+								isCollapsed &&
+									"justify-center px-0 has-[>svg]:px-0",
 							)}
 						>
 							<NavLink
 								to="/new"
 								onClick={onNavigate}
-								aria-label="New Task"
+								aria-label="New Session"
 							>
 								<Plus
 									aria-hidden="true"
 									className="text-primary dark:text-foreground"
 								/>
-								{!isCollapsed && "New Task"}
+								{!isCollapsed && "New Session"}
 							</NavLink>
 						</Button>
 					</TooltipTrigger>
 					{isCollapsed && (
-						<TooltipContent side="right">New Task</TooltipContent>
-					)}
-				</Tooltip>
-				<Tooltip disableHoverableContent={false}>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							className={cn(
-								"mb-3 h-10 pointer-coarse:min-h-11 w-full justify-start gap-3 rounded-lg px-3 font-normal text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
-								isCollapsed && "justify-center px-0",
-							)}
-							aria-label="Search your workspace"
-							onClick={(event) => {
-								searchReturnFocus.current = event.currentTarget;
-								onNavigate?.();
-								setIsSearchOpen(true);
-							}}
-						>
-							<Search aria-hidden="true" />
-							{!isCollapsed && (
-								<>
-									<span>Search</span>
-									<kbd className="ml-auto font-sans text-xs">
-										⌘K
-									</kbd>
-								</>
-							)}
-						</Button>
-					</TooltipTrigger>
-					{isCollapsed && (
-						<TooltipContent side="right">Search</TooltipContent>
+						<TooltipContent side="right">
+							New Session
+						</TooltipContent>
 					)}
 				</Tooltip>
 				{links.map(({ to, label, icon: Icon, count, isActive }) => (
@@ -148,7 +123,7 @@ export function CollaborationNavigation({
 								onClick={onNavigate}
 								aria-label={label}
 								className={cn(
-									"flex min-h-10 pointer-coarse:min-h-11 items-center gap-3 rounded-lg px-3 font-normal text-sm hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium",
+									"flex min-h-8 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-2 py-1 font-normal text-xs hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium",
 									isCollapsed && "justify-center px-0",
 								)}
 							>
@@ -182,7 +157,7 @@ export function CollaborationNavigation({
 			<div className="flex min-h-0 flex-1 flex-col">
 				<div
 					className={cn(
-						"flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto",
+						"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
 						isCollapsed && "hidden",
 					)}
 				>
@@ -194,13 +169,13 @@ export function CollaborationNavigation({
 						onNavigate={onNavigate}
 						onNewTopic={onNewTopic}
 					/>
-					<ChatHistoryList onNavigate={onNavigate} />
+					<ChatHistoryList
+						isOpen={isSessionsOpen}
+						onOpenChange={onSessionsOpenChange}
+						onNavigate={onNavigate}
+					/>
 				</div>
 			</div>
-			<CollaborationProfileMenu
-				isCollapsed={isCollapsed}
-				onNavigate={onNavigate}
-			/>
 		</div>
 	);
 }

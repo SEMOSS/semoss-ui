@@ -6,6 +6,7 @@ import type { MailSearchFilters } from "@/features/connectors/types";
 import { listRoomsPage } from "@/features/rooms/api/list-rooms";
 import { searchRoomMessages } from "@/features/rooms/api/search-room-messages";
 import type { InsightActions } from "@/lib/pixel";
+import { threadPath } from "@/lib/workspace-paths";
 
 export interface WorkspaceSearchResult {
 	id: string;
@@ -44,7 +45,7 @@ export function searchWorkspaceRecords(
 					label: item.title,
 					detail: item.priority || "Action",
 					group: "Actions",
-					path: `/work/thread/${encodeURIComponent(item.threadId)}`,
+					path: threadPath(item.threadId),
 				}),
 			),
 		...state.people.map(
@@ -71,7 +72,7 @@ export function searchWorkspaceRecords(
 				label: thread.subject,
 				detail: thread.summary || "Connected conversation",
 				group: thread.channel === "email" ? "Email" : "Chats",
-				path: `/work/thread/${encodeURIComponent(thread.id)}`,
+				path: threadPath(thread.id),
 			}),
 		),
 	].filter((entry) =>

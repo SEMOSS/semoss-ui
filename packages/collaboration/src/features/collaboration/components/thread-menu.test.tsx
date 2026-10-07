@@ -267,7 +267,7 @@ describe("thread menus", () => {
 					area,
 				),
 			).toBe(
-				`https://example.test/apps/collaboration/?tenant=one#/${area}/${area === "work" ? "thread" : "threads"}/a%2Fb%20%3F`,
+				`https://example.test/apps/collaboration/?tenant=one#/${area === "work" ? "thread" : "brain/threads"}/a%2Fb%20%3F`,
 			);
 		},
 	);
@@ -300,15 +300,13 @@ describe("thread menus", () => {
 		).toBe(false);
 	});
 
-	it.each(["/work", `/work/thread/${threadId}`])(
+	it.each(["/work", `/thread/${threadId}`])(
 		"requests the selected workbench from %s",
 		async (path) => {
 			const { user, router, open } = setup({ path });
 			await open();
 			await user.click(getMenuAction({ name: "Open workbench" }));
-			expect(router.state.location.pathname).toBe(
-				`/work/thread/${threadId}`,
-			);
+			expect(router.state.location.pathname).toBe(`/thread/${threadId}`);
 			expect(
 				readThreadWorkbenchRequest(
 					router.state.location.state,
@@ -388,7 +386,7 @@ describe("thread menus", () => {
 		async (active) => {
 			const state = createInitialCollaborationState();
 			state.openThreadIds = [threadId];
-			const path = active ? `/work/thread/${threadId}` : "/work";
+			const path = active ? `/thread/${threadId}` : "/work";
 			const { user, router, open } = setup({ state, path });
 			await open();
 			await user.click(getMenuAction({ name: "Close room" }));
@@ -434,7 +432,7 @@ describe("thread menus", () => {
 
 	it("navigates to Brain without changing thread data", async () => {
 		const { user, open, router } = setup({
-			path: `/work/thread/${threadId}`,
+			path: `/thread/${threadId}`,
 		});
 		const before = sessionState().threads;
 		await open();

@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { createMemoryRouter, parsePath, RouterProvider } from "react-router";
 import { BriefViewSwitch } from "./brief-view-switch";
 
 function renderSwitch(path: string, state?: unknown) {
@@ -9,11 +9,11 @@ function renderSwitch(path: string, state?: unknown) {
 			{ path: "/", element: <BriefViewSwitch view="brief" /> },
 			{ path: "/new", element: <BriefViewSwitch view="chat" /> },
 			{
-				path: "/work/thread/:threadId",
+				path: "/thread/:threadId",
 				element: <BriefViewSwitch view="chat" />,
 			},
 		],
-		{ initialEntries: [{ pathname: path, state }] },
+		{ initialEntries: [{ ...parsePath(path), state }] },
 	);
 	render(<RouterProvider router={router} />);
 	return router;
@@ -44,7 +44,11 @@ it.each([
 	},
 );
 
-it.each(["/new", "/work/thread/session%3Aretained-chat"])(
+it.each([
+	"/new",
+	"/thread/session%3Aretained-chat",
+	"/thread/room%3Asaved-room",
+])(
 	"returns from Brief to the same chat and navigation state at %s",
 	async (path) => {
 		const user = userEvent.setup();
@@ -81,6 +85,66 @@ it("switches Brief and Chat with both supported shortcuts and ignores modified c
 	fireEvent.keyDown(window, { key: "J", metaKey: true });
 	expect(router.state.location.pathname).toBe("/new");
 	expect(router.state.location.state).toEqual({ sessionId: "retained-chat" });
+});
+
+it.each(["click", "metaKey", "ctrlKey"] as const)(
+	"retains an encoded room URL, selected item, hash, and navigation state through %s switching",
+	async (interaction) => {
+		const pathname = "/thread/room%3Asaved-room";
+		const search = "?item=approval%3A42";
+		const hash = "#message-42";
+		const state = { openedRoomId: "saved-room", prompt: "Keep this draft" };
+		const router = renderSwitch(`${pathname}${search}${hash}`, state);
+		expect(screen.getByRole("link", { name: /Chat/ })).toHaveAttribute(
+			"href",
+			`${pathname}${search}${hash}`,
+		);
+		if (interaction === "click") {
+			await userEvent.click(screen.getByRole("link", { name: "Brief" }));
+		} else {
+			fireEvent.keyDown(window, { key: "j", [interaction]: true });
+		}
+		expect(router.state.location.pathname).toBe("/");
+		expect(router.state.location.state).toEqual({
+			chatReturnTo: { pathname, search, hash, state },
+		});
+		expect(screen.getByRole("link", { name: /Chat/ })).toHaveAttribute(
+			"href",
+			`${pathname}${search}${hash}`,
+		);
+		if (interaction === "click") {
+			await userEvent.click(screen.getByRole("link", { name: /Chat/ }));
+		} else {
+			fireEvent.keyDown(window, { key: "j", [interaction]: true });
+		}
+		expect(router.state.location).toMatchObject({
+			pathname,
+			search,
+			hash,
+			state,
+		});
+	},
+);
+
+it("accepts a saved chat destination from before query and hash retention", async () => {
+	const state = { openedRoomId: "saved-room" };
+	const router = renderSwitch("/?filter=unread#today", {
+		chatReturnTo: {
+			pathname: "/thread/room%3Asaved-room",
+			state,
+		},
+	});
+	expect(screen.getByRole("link", { name: "Brief" })).toHaveAttribute(
+		"href",
+		"/?filter=unread#today",
+	);
+	await userEvent.click(screen.getByRole("link", { name: /Chat/ }));
+	expect(router.state.location).toMatchObject({
+		pathname: "/thread/room%3Asaved-room",
+		search: "",
+		hash: "",
+		state,
+	});
 });
 
 it("opens a new chat from a fresh brief and ignores unrelated saved destinations", async () => {

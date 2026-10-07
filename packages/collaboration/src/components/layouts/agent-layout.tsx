@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Outlet, useParams } from "react-router";
 import { Button, Spinner } from "@semoss/ui/next";
 import { AgentProvider } from "@/app/agent.context";
@@ -18,13 +19,24 @@ const unassignedRoomAgent: AgentConfiguration = {
 	prompts: [],
 };
 
+interface AgentLayoutProps {
+	/** A direct room identity supplied by the shared thread route. */
+	roomId?: string;
+	/** Conversation content, or the nested route when omitted. */
+	children?: ReactNode;
+}
+
 /**
  * Resolves the agent from either an agent route or a room's persisted workspace
  * and provides it to the nested route.
  */
-export function AgentLayout() {
+export function AgentLayout({
+	roomId: suppliedRoomId,
+	children,
+}: AgentLayoutProps = {}) {
 	const workspace = useMain();
-	const { agentId: routeAgentId, roomId } = useParams();
+	const { agentId: routeAgentId, roomId: routeRoomId } = useParams();
+	const roomId = suppliedRoomId ?? routeRoomId;
 	const listedAgentId = roomId
 		? workspace.sessions.find((session) => session.id === roomId)
 				?.agentId || undefined
@@ -68,7 +80,7 @@ export function AgentLayout() {
 						refresh: roomWorkspace.refresh,
 					}}
 				>
-					<Outlet />
+					{children ?? <Outlet />}
 				</AgentProvider>
 			);
 		}
@@ -83,5 +95,9 @@ export function AgentLayout() {
 		workspace.agents.find((candidate) => candidate.id === agentId) ??
 		agentFromProjectRow({ project_id: agentId, project_name: "Agent" });
 
-	return <SelectedAgent key={agentId} source={source} />;
+	return (
+		<SelectedAgent key={agentId} source={source}>
+			{children}
+		</SelectedAgent>
+	);
 }

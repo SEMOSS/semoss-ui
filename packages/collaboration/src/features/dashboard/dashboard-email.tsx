@@ -1,6 +1,7 @@
 import { Mail } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { threadPath } from "@/lib/workspace-paths";
 import { useDashboard } from "./dashboard.context";
 import type { DashboardWidget } from "./dashboard-layout";
 import { DashboardResourceStatus } from "./dashboard-resource-status";
@@ -55,9 +56,7 @@ export function DashboardEmail({ widget }: { widget: DashboardWidget }) {
 								row.mail?.uid || row.thread?.source?.nativeId;
 							if (id) setSource({ kind: "email", id });
 							else if (row.thread)
-								void navigate(
-									`/work/thread/${encodeURIComponent(row.thread.id)}`,
-								);
+								void navigate(threadPath(row.thread.id));
 						}}
 					>
 						{row.title}

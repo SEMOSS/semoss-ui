@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { MainProvider } from "@/app/main.context";
@@ -6,9 +6,15 @@ import { RoomProvider } from "@/app/room.context";
 import { useSaveAgent } from "@/features/agents/api/use-save-agent";
 import { pinRoom } from "@/features/rooms/api/pin-room";
 import { useRooms } from "@/features/rooms/api/use-rooms";
+import { roomPath } from "@/lib/workspace-paths";
 
-/** Preserves direct conversation URLs without restoring the obsolete agent shell. */
-export function LegacyRoomLayout() {
+interface LegacyRoomLayoutProps {
+	/** Direct room content, or the nested route when omitted. */
+	children?: ReactNode;
+}
+
+/** Supplies existing room behavior inside the shared conversation route. */
+export function LegacyRoomLayout({ children }: LegacyRoomLayoutProps = {}) {
 	const { actions } = useInsight();
 	const navigate = useNavigate();
 	const [keys, setKeys] = useState<Record<string, number>>({});
@@ -45,13 +51,13 @@ export function LegacyRoomLayout() {
 					rooms.updateRoom(id, { pinned });
 				},
 				saveAgent,
-				openRoom: (id) => navigate(`/room/${encodeURIComponent(id)}`),
+				openRoom: (id) => navigate(roomPath(id)),
 				newRoom: () => navigate("/work"),
 			}}
 		>
 			<RoomProvider value={{ openRoomsList }}>
-				<div className="flex min-h-0 min-w-0 flex-1 flex-col">
-					<Outlet />
+				<div className="flex min-h-0 min-w-0 flex-1 flex-col bg-muted/15">
+					{children ?? <Outlet />}
 				</div>
 			</RoomProvider>
 		</MainProvider>

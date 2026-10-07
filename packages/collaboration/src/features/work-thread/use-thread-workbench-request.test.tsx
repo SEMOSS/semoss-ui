@@ -20,7 +20,7 @@ describe("thread workbench requests", () => {
 		const router = createMemoryRouter(
 			[
 				{
-					path: "/work/thread/:threadId",
+					path: "/thread/:threadId",
 					element: <WorkbenchRequestFixture onOpen={onOpen} />,
 				},
 				{ path: "/work", element: <p>Work</p> },
@@ -28,7 +28,7 @@ describe("thread workbench requests", () => {
 			{
 				initialEntries: [
 					{
-						pathname: "/work/thread/one",
+						pathname: "/thread/one",
 						search: "?view=all",
 						hash: "#message",
 						state: {
@@ -54,7 +54,7 @@ describe("thread workbench requests", () => {
 		await act(() => router.navigate(-1));
 		expect(onOpen).toHaveBeenCalledTimes(1);
 		await act(() =>
-			router.navigate("/work/thread/one", {
+			router.navigate("/thread/one", {
 				replace: true,
 				state: {
 					threadWorkbench: { id: "second", threadId: "one" },
@@ -76,11 +76,11 @@ describe("thread workbench requests", () => {
 		const router = createMemoryRouter(
 			[
 				{
-					path: "/work/thread/:threadId",
+					path: "/thread/:threadId",
 					element: <WorkbenchRequestFixture onOpen={onOpen} />,
 				},
 			],
-			{ initialEntries: [{ pathname: "/work/thread/one", state }] },
+			{ initialEntries: [{ pathname: "/thread/one", state }] },
 		);
 		render(<RouterProvider router={router} />);
 		expect(readThreadWorkbenchRequest(state, "one")).toBeUndefined();

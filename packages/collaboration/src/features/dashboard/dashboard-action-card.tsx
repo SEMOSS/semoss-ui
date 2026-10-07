@@ -5,6 +5,7 @@ import { PersonAvatar } from "@/features/collaboration/components/person-avatar"
 import { ThreadMenu } from "@/features/collaboration/components/thread-menu";
 import type { WorkItem } from "@/features/collaboration/state/collaboration.types";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { threadPath } from "@/lib/workspace-paths";
 
 /** Action cards keep the classifier's actual reasons and existing Work mutations. */
 export function DashboardActionCard({
@@ -76,7 +77,7 @@ export function DashboardActionCard({
 					<h3 className="break-words font-semibold text-base leading-snug">
 						<Link
 							className="hover:underline"
-							to={`/work/thread/${encodeURIComponent(thread.id)}`}
+							to={threadPath(thread.id)}
 						>
 							{item.title}
 						</Link>
@@ -97,9 +98,7 @@ export function DashboardActionCard({
 							variant={featured ? "default" : "secondary"}
 							asChild
 						>
-							<Link
-								to={`/work/thread/${encodeURIComponent(thread.id)}`}
-							>
+							<Link to={threadPath(thread.id)}>
 								{item.askType === "reply"
 									? "Review reply"
 									: item.askType === "approve"

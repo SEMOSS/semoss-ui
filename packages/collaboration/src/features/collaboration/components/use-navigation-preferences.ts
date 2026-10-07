@@ -5,6 +5,8 @@ interface NavigationPreferences {
 	isCollapsed: boolean;
 	/** Whether the Topics disclosure is expanded. */
 	isTopicsOpen: boolean;
+	/** Whether the Sessions disclosure is expanded. */
+	isSessionsOpen: boolean;
 }
 
 interface NavigationPreferenceState extends NavigationPreferences {
@@ -19,12 +21,17 @@ export function navigationStorageKey(
 	return `semoss:collaboration:navigation:v1:${encodeURIComponent(deployment)}:${encodeURIComponent(account)}`;
 }
 
-/** Only a stored JSON boolean can enable a preference; all other data defaults off. */
-function readPreference(key: string): boolean {
+/** Accept stored JSON booleans and otherwise retain each preference's default. */
+function readPreference(key: string, defaultValue = false): boolean {
 	try {
-		return window.localStorage.getItem(key) === "true";
+		const stored = window.localStorage.getItem(key);
+		return stored === "true"
+			? true
+			: stored === "false"
+				? false
+				: defaultValue;
 	} catch {
-		return false;
+		return defaultValue;
 	}
 }
 
@@ -34,6 +41,7 @@ function readPreferences(storageKey: string): NavigationPreferenceState {
 		storageKey,
 		isCollapsed: readPreference(`${storageKey}:isCollapsed`),
 		isTopicsOpen: readPreference(`${storageKey}:isTopicsOpen`),
+		isSessionsOpen: readPreference(`${storageKey}:isSessionsOpen`, true),
 	};
 }
 
@@ -44,6 +52,7 @@ export function useNavigationPreferences(
 ): NavigationPreferences & {
 	setIsCollapsed: (value: boolean) => void;
 	setIsTopicsOpen: (value: boolean) => void;
+	setIsSessionsOpen: (value: boolean) => void;
 } {
 	const storageKey = navigationStorageKey(account, deployment);
 	const [state, setState] = useState(() => readPreferences(storageKey));
@@ -77,7 +86,9 @@ export function useNavigationPreferences(
 	return {
 		isCollapsed: preferences.isCollapsed,
 		isTopicsOpen: preferences.isTopicsOpen,
+		isSessionsOpen: preferences.isSessionsOpen,
 		setIsCollapsed: (value) => updatePreference("isCollapsed", value),
 		setIsTopicsOpen: (value) => updatePreference("isTopicsOpen", value),
+		setIsSessionsOpen: (value) => updatePreference("isSessionsOpen", value),
 	};
 }

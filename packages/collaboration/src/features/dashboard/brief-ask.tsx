@@ -49,7 +49,7 @@ export function BriefAsk({
 						void navigate("/new");
 					}}
 				>
-					open chat <kbd className="rounded border px-1">⌘J</kbd>
+					open chat
 				</Button>
 			}
 		>

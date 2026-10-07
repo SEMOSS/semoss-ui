@@ -57,7 +57,7 @@ it("waits for context, consumes once under StrictMode, and never replays history
 		{
 			initialEntries: [
 				{
-					pathname: "/work/thread/one",
+					pathname: "/thread/one",
 					state: { threadAction: request, retained: "value" },
 				},
 			],
@@ -74,7 +74,7 @@ it("waits for context, consumes once under StrictMode, and never replays history
 	expect(onAction).toHaveBeenCalledWith(request);
 	expect(router.state.location.state).toEqual({ retained: "value" });
 	await act(() =>
-		router.navigate("/work/thread/one", {
+		router.navigate("/thread/one", {
 			state: { threadAction: request },
 		}),
 	);
@@ -116,7 +116,7 @@ it("allows manual message actions when the source is ready and the assistant is 
 		{
 			initialEntries: [
 				{
-					pathname: "/work/thread/one",
+					pathname: "/thread/one",
 					state: { threadAction: request },
 				},
 			],
@@ -125,7 +125,7 @@ it("allows manual message actions when the source is ready and the assistant is 
 	render(<RouterProvider router={router} />);
 	await waitFor(() => expect(onAction).toHaveBeenCalledWith(request));
 	await act(() =>
-		router.navigate("/work/thread/one", {
+		router.navigate("/thread/one", {
 			state: {
 				threadAction: { ...request, id: "draft", action: "draft" },
 			},

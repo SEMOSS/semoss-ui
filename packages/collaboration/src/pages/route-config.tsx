@@ -1,14 +1,12 @@
 import { Navigate, type RouteObject } from "react-router";
-import { AgentLayout } from "@/components/layouts/agent-layout";
 import { AuthorizedLayout } from "@/components/layouts/authorized-layout";
 import { RootLayout } from "@/components/layouts/root-layout";
 import { CollaborationLayout } from "@/features/collaboration/components/collaboration-layout";
-import { LegacyRoomLayout } from "@/features/collaboration/components/legacy-room-layout";
 import { settingsSections } from "@/features/settings/settings-sections";
 import { ErrorPage } from "@/pages/error.page";
 import { NotFoundPage } from "@/pages/not-found.page";
 
-/** Work and Brain own the product routes; existing room links remain valid. */
+/** Work and Brain share a canonical conversation route. */
 export const routes: RouteObject[] = [
 	{
 		Component: RootLayout,
@@ -47,12 +45,12 @@ export const routes: RouteObject[] = [
 								}),
 							})),
 							{
-								path: "work/thread/:threadId",
-								id: "work-thread",
+								path: "thread/:threadId",
+								id: "thread",
 								lazy: async () => ({
 									Component: (
-										await import("@/pages/work-thread.page")
-									).WorkThreadPage,
+										await import("@/pages/thread.page")
+									).ThreadPage,
 								}),
 							},
 							...[
@@ -73,33 +71,6 @@ export const routes: RouteObject[] = [
 									).BrainPage,
 								}),
 							})),
-							{
-								Component: LegacyRoomLayout,
-								children: [
-									{
-										path: "room/:roomId",
-										Component: AgentLayout,
-										children: [
-											{
-												index: true,
-												id: "room",
-												lazy: async () => ({
-													Component: (
-														await import(
-															"@/pages/room.page"
-														)
-													).RoomPage,
-												}),
-											},
-											{
-												path: "*",
-												id: "room-not-found",
-												Component: NotFoundPage,
-											},
-										],
-									},
-								],
-							},
 							{
 								path: "new",
 								id: "new-session",

@@ -286,18 +286,22 @@ const SOURCE_KINDS: Record<string, NonNullable<Thread["source"]>["kind"]> = {
 
 function mapThread(row: Row): Thread {
 	const channel = (row.channel as Thread["channel"]) ?? "email";
+	// Brain ids are internal ids. Only expose a source target when the server supplies its native id.
+	const nativeId =
+		channel === "teams"
+			? str(row.conversationId)
+			: str(row.latestMessageId);
 	return {
 		id: str(row.id),
 		channel,
 		// Teams chat identity is distinct from the latest message identity.
-		source: {
-			kind: SOURCE_KINDS[channel] ?? "outlook",
-			nativeId:
-				channel === "teams"
-					? str(row.conversationId)
-					: str(row.latestMessageId, str(row.id)),
-			conversationId: opt(row.conversationId),
-		},
+		source: nativeId
+			? {
+					kind: SOURCE_KINDS[channel] ?? "outlook",
+					nativeId,
+					conversationId: opt(row.conversationId),
+				}
+			: undefined,
 		subject: str(row.subject, "(no subject)"),
 		topicLinks: list<Row>(row.topicLinks).map((link) => ({
 			topicId: str(link.topicId),

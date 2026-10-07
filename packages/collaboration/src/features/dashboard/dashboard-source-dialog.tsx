@@ -20,6 +20,7 @@ import {
 } from "@/features/connectors/api/source-mapping";
 import { SourcePreview } from "@/features/connectors/components/source-preview";
 import type { ImportedSource } from "@/features/connectors/types";
+import { threadPath } from "@/lib/workspace-paths";
 import { useDashboard } from "./dashboard.context";
 import { useVisibleResource } from "./use-visible-resource";
 
@@ -57,7 +58,7 @@ export function DashboardSourceDialog() {
 		const threadId = existing?.id ?? command.thread.id;
 		if (!existing) dispatch(command);
 		setSource(null);
-		void navigate(`/work/thread/${encodeURIComponent(threadId)}`, {
+		void navigate(threadPath(threadId), {
 			state: {
 				threadAction: {
 					id: crypto.randomUUID(),

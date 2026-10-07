@@ -68,7 +68,7 @@ export function createWorkThreadLayout(): WorkbenchLayout {
 	};
 }
 export const WORK_THREAD_WORKBENCH = {
-	defaultOpen: true,
+	defaultOpen: false,
 	panelTarget: workPanelTarget,
 	components: WORK_THREAD_COMPONENTS,
 	createLayout: createWorkThreadLayout,

@@ -26,6 +26,7 @@ import { copyTextToClipboard } from "@semoss/utility";
 import { safeSourceUrl } from "@/features/connectors/api/microsoft";
 import type { ThreadActionRequest } from "@/features/work-thread/thread-action-request";
 import type { ThreadWorkbenchRequest } from "@/features/work-thread/thread-workbench-request";
+import { threadPath } from "@/lib/workspace-paths";
 import type { Thread, WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import {
@@ -74,7 +75,7 @@ export function useThreadMenuActions({
 	const isBrain = pathname === "/brain" || pathname.startsWith("/brain/");
 	const navigate = useNavigate();
 	const sidebar = useContext(CollaborationSidebarContext)?.sidebar;
-	const workPath = `/work/thread/${encodeURIComponent(thread.id)}`;
+	const workPath = threadPath(thread.id);
 	const brainPath = `/brain/threads/${encodeURIComponent(thread.id)}`;
 	const go = (path: string) => {
 		void navigate(path);

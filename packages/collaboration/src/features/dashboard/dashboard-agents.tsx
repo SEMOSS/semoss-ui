@@ -1,6 +1,7 @@
 import { Bot, UserRound } from "lucide-react";
 import { Link } from "react-router";
 import { Button } from "@semoss/ui/next";
+import { roomPath } from "@/lib/workspace-paths";
 import { useDashboard } from "./dashboard.context";
 import { DashboardResourceStatus } from "./dashboard-resource-status";
 import { useAgentAttention } from "./use-agent-attention";
@@ -39,9 +40,7 @@ export function DashboardAgents({ visible }: { visible: boolean }) {
 					)}
 					{delegation.roomId ? (
 						<Button size="sm" variant="secondary" asChild>
-							<Link
-								to={`/room/${encodeURIComponent(delegation.roomId)}`}
-							>
+							<Link to={roomPath(delegation.roomId)}>
 								Respond
 							</Link>
 						</Button>
@@ -83,7 +82,10 @@ export function DashboardAgents({ visible }: { visible: boolean }) {
 											asChild
 										>
 											<Link
-												to={`/room/${encodeURIComponent(run.roomId)}${action.toolCallId ? `?item=${encodeURIComponent(action.toolCallId)}` : ""}`}
+												to={roomPath(
+													run.roomId,
+													action.toolCallId,
+												)}
 											>
 												Review action
 											</Link>
@@ -98,9 +100,7 @@ export function DashboardAgents({ visible }: { visible: boolean }) {
 							))
 						: run.roomId && (
 								<Button size="sm" variant="secondary" asChild>
-									<Link
-										to={`/room/${encodeURIComponent(run.roomId)}`}
-									>
+									<Link to={roomPath(run.roomId)}>
 										Open conversation
 									</Link>
 								</Button>
