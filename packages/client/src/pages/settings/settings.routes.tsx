@@ -4,6 +4,7 @@ import { AddNewJob } from "../jobs/add-new-job";
 import { JobsPage } from "../jobs/jobs-page";
 import { AdminQueryPage } from "./admin-query-page";
 import { AdminThemePage } from "./admin-theme-page";
+import { AuditTrailsPage } from "./audit-trails.page";
 import { ConfigurationsPage } from "./configurations-page";
 import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
 import { EngineSettingsIndexPage } from "./engine-settings-index-page";
@@ -33,6 +34,7 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"social-properties": ConfigurationsPage,
 	"github-app": GitHubAppPage,
 	"admin-query": AdminQueryPage,
+	"audit-trails": AuditTrailsPage,
 	"enterprise-usage": EnterpriseUsagePage,
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,

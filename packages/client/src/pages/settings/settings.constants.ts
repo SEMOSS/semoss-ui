@@ -242,6 +242,15 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
+		title: "Audit Trails",
+		path: "audit-trails",
+		description:
+			"Review sign-ins, permissions, and resource changes across the platform.",
+		icon: mdiClipboardTextOutline,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
 		title: "Admin Theme",
 		path: "admin-theme",
 		description: "Update theming for the instance",
