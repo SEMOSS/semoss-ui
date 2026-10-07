@@ -19,11 +19,11 @@ function fakeActions() {
 					? { topicId: "t-geng", changeId: "change-1" }
 					: /^WorkCreateItem\(/.test(statement)
 						? { id: "wi-new" }
-						: /^WorkSave(Step|Fact)\(/.test(statement)
-							? {
-									id: `server-${statement.slice(8, 12).toLowerCase()}`,
-								}
-							: true,
+						: /^WorkSaveStep\(/.test(statement)
+							? { id: "server-step" }
+							: /^BrainSaveMemory\(/.test(statement)
+								? { id: "server-memory" }
+								: true,
 			})),
 		};
 	});
@@ -131,7 +131,7 @@ it("a new item's step is saved after the item, with the item's server id", async
 	expect(sent[1]).toContain('"text":"Call the vendor"');
 });
 
-it("step and fact edits and removals go out as saves and deletes", async () => {
+it("step and memory edits and removals go out as saves and deletes", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());
 	let state = createInitialCollaborationState();
@@ -147,14 +147,18 @@ it("step and fact edits and removals go out as saves and deletes", async () => {
 		step: { text: "Draft the reply", kind: "reply" },
 	});
 	apply({
-		type: "workspace.fact",
-		threadId: "th-geng-review",
-		operation: "save",
-		fact: { text: "Budget is approved" },
+		type: "memory.save",
+		memory: {
+			text: "Budget is approved",
+			about: [{ type: "thread", id: "th-geng-review" }],
+		},
 	});
 	await vi.waitFor(() => expect(sent).toHaveLength(2));
+	expect(sent[1]).toBe(
+		'BrainSaveMemory(memory=[{"kind":"fact","text":"Budget is approved","about":[{"type":"thread","id":"th-geng-review"}],"pinned":false,"expiresAt":""}]);',
+	);
 	const stepId = state.workspaces["th-geng-review"].steps.at(-1)?.id ?? "";
-	const factId = state.workspaces["th-geng-review"].facts.at(-1)?.id ?? "";
+	const memoryId = state.memories.at(-1)?.id ?? "";
 	apply({
 		type: "workspace.step",
 		threadId: "th-geng-review",
@@ -162,18 +166,132 @@ it("step and fact edits and removals go out as saves and deletes", async () => {
 		step: { id: stepId, status: "done", due: null },
 	});
 	apply({
-		type: "workspace.fact",
-		threadId: "th-geng-review",
-		operation: "remove",
-		fact: { id: factId },
+		type: "memory.save",
+		memory: { id: memoryId, text: "Budget is approved by Kira" },
 	});
-	await vi.waitFor(() => expect(sent).toHaveLength(4));
+	apply({ type: "memory.delete", memoryId });
+	await vi.waitFor(() => expect(sent).toHaveLength(5));
 	expect(sent[2]).toMatch(/^WorkSaveStep\(/);
 	expect(sent[2]).toContain('"id":"server-step"');
 	expect(sent[2]).toContain('"status":"done"');
 	expect(sent[3]).toBe(
-		'WorkDeleteFact(threadId=["th-geng-review"], factId=["server-fact"]);',
+		'BrainSaveMemory(memory=[{"id":"server-memory","text":"Budget is approved by Kira"}]);',
 	);
+	expect(sent[4]).toBe('BrainDeleteMemory(memoryId=["server-memory"]);');
+});
+
+it("memory state changes go through BrainResolveMemory, and Delete all is one call", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	let state = createInitialCollaborationState();
+	const apply = (command: CollaborationCommand) => {
+		const next = collaborationReducer(state, command, NOW);
+		sync({ previous: state, next, commands: [command], undo: false });
+		state = next;
+	};
+	const live = (id: string, changes: object) => ({
+		...state.memories[0],
+		id,
+		isSample: false,
+		...changes,
+	});
+	// a server echo is never saved again
+	apply({
+		type: "memory.server",
+		memories: [
+			live("m-suggested", {
+				state: "suggested",
+				origin: "brain",
+				confirmed: false,
+			}),
+			live("m-learned", { origin: "assistant", confirmed: false }),
+		],
+	});
+	apply({
+		type: "memory.resolve",
+		memoryId: "m-suggested",
+		action: "accept",
+	});
+	apply({ type: "memory.resolve", memoryId: "m-learned", action: "confirm" });
+	apply({ type: "memory.clear" });
+	await vi.waitFor(() => expect(sent).toHaveLength(3));
+	expect(sent).toEqual([
+		'BrainResolveMemory(memoryId=["m-suggested"], action=["accept"]);',
+		'BrainResolveMemory(memoryId=["m-learned"], action=["confirm"]);',
+		"BrainDeleteMemory(all=[true]);",
+	]);
+});
+
+it("undoing Keep or Confirm takes the memory back on the server", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const base = createInitialCollaborationState().memories[0];
+	const previous = collaborationReducer(
+		createInitialCollaborationState(),
+		{
+			type: "memory.server",
+			memories: [
+				{
+					...base,
+					id: "m-sugg",
+					isSample: false,
+					state: "suggested",
+					origin: "brain",
+					confirmed: false,
+				},
+				{
+					...base,
+					id: "m-learn",
+					isSample: false,
+					origin: "assistant",
+					confirmed: false,
+				},
+			],
+		},
+		NOW,
+	);
+	let next = collaborationReducer(
+		previous,
+		{ type: "memory.resolve", memoryId: "m-sugg", action: "accept" },
+		NOW,
+	);
+	next = collaborationReducer(
+		next,
+		{ type: "memory.resolve", memoryId: "m-learn", action: "confirm" },
+		NOW,
+	);
+	sync({ previous: next, next: previous, commands: [], undo: true });
+	await vi.waitFor(() => expect(sent).toHaveLength(2));
+	expect(sent).toEqual([
+		'BrainResolveMemory(memoryId=["m-sugg"], action=["reopen"]);',
+		'BrainResolveMemory(memoryId=["m-learn"], action=["unconfirm"]);',
+	]);
+});
+
+it("undoing a memory delete puts it back under its id", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const memory = {
+		...createInitialCollaborationState().memories[0],
+		id: "m-saved",
+		isSample: false,
+	};
+	const previous = collaborationReducer(
+		createInitialCollaborationState(),
+		{ type: "memory.server", memories: [memory] },
+		NOW,
+	);
+	const next = collaborationReducer(
+		previous,
+		{ type: "memory.delete", memoryId: "m-saved" },
+		NOW,
+	);
+	sync({ previous, next, commands: [], undo: false });
+	sync({ previous: next, next: previous, commands: [], undo: true });
+	await vi.waitFor(() => expect(sent).toHaveLength(2));
+	expect(sent[0]).toBe('BrainDeleteMemory(memoryId=["m-saved"]);');
+	expect(sent[1]).toMatch(/^BrainSaveMemory\(memory=\[\{"id":"m-saved",/);
+	expect(sent[1]).toContain('"origin":"you","confirmed":true');
 });
 
 it("no response needed saves the dismissal with its reason; reopening drops the reason", async () => {

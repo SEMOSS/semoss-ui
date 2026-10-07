@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useLocation, useParams } from "react-router";
+import { BrainMemory } from "@/features/collaboration/components/brain-memory";
 import { BrainReview } from "@/features/collaboration/components/brain-review";
 import { BrainThread } from "@/features/collaboration/components/brain-thread";
 import { CollaborationBrainNavigation } from "@/features/collaboration/components/collaboration-brain-navigation";
@@ -17,6 +18,7 @@ export function BrainPage() {
 	if (topicId) content = <TopicDetail key={topicId} />;
 	else if (personId) content = <PersonDetail key={personId} />;
 	else if (threadId) content = <BrainThread key={threadId} />;
+	else if (pathname.endsWith("/memory")) content = <BrainMemory />;
 	else if (pathname.endsWith("/sources")) content = <SourcesAndRules />;
 	else if (pathname.endsWith("/people")) content = <PeopleDirectory />;
 	else if (pathname.endsWith("/threads")) content = <ThreadsDirectory />;

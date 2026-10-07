@@ -18,6 +18,7 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
+import { BrainMemory } from "./brain-memory";
 import { BrainReview } from "./brain-review";
 import { BrainThread } from "./brain-thread";
 import { CollaborationSearch } from "./collaboration-search";
@@ -62,6 +63,7 @@ function renderSession(
 			{ path: "/work/done", Component: WorkFeed },
 			{ path: "/work/topic/:topicId", Component: WorkFeed },
 			{ path: "/brain", Component: BrainReview },
+			{ path: "/brain/memory", Component: BrainMemory },
 			{ path: "/brain/topics/:topicId", Component: TopicDetail },
 			{ path: "/brain/threads/:threadId", Component: BrainThread },
 			{ path: "/brain/people/:personId", Component: PersonDetail },
@@ -205,27 +207,92 @@ describe("collaboration Work and Brain integration", () => {
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 
-	it("confirms draft notes before including them in assistant context", async () => {
+	it("keeps a suggested memory from review, which puts it in use", async () => {
 		const user = userEvent.setup();
-		renderSession("/brain");
+		const router = renderSession("/brain");
 		const text =
 			"Pilot scope is limited to 2 use cases (claims triage, contract Q&A).";
+		const row = screen.getByRole("article", { name: `Memory: ${text}` });
 		expect(
-			submittedContext()
-				.topics.flatMap((topic) => topic.notes)
-				.some((note) => note.text === text),
-		).toBe(false);
+			within(row).getByText("Not used until you keep it"),
+		).toBeInTheDocument();
 		await user.click(
-			within(articleFor(text)).getByRole("button", {
-				name: "Confirm note",
+			within(row).getByRole("button", { name: `Keep memory: ${text}` }),
+		);
+		expect(
+			screen.queryByRole("article", { name: `Memory: ${text}` }),
+		).not.toBeInTheDocument();
+		await act(() => router.navigate("/brain/memory"));
+		const kept = screen.getByRole("article", { name: `Memory: ${text}` });
+		expect(
+			within(kept).queryByText("Not used until you keep it"),
+		).not.toBeInTheDocument();
+		expect(
+			within(kept).getByText(/Suggested by Brain/),
+		).toBeInTheDocument();
+	});
+
+	it("adds, edits, and removes a memory on the Memory page", async () => {
+		const user = userEvent.setup();
+		renderSession("/brain/memory");
+		await user.type(
+			screen.getByLabelText("New memory"),
+			"Keep status emails to three bullets.",
+		);
+		await user.click(screen.getByRole("button", { name: "Add" }));
+		const row = screen.getByRole("article", {
+			name: "Memory: Keep status emails to three bullets.",
+		});
+		expect(within(row).getByText("Preference")).toBeInTheDocument();
+		await user.click(
+			within(row).getByRole("button", {
+				name: "Edit memory: Keep status emails to three bullets.",
+			}),
+		);
+		const field = within(row).getByLabelText("Memory");
+		await user.clear(field);
+		await user.type(field, "Keep status emails to two bullets.");
+		await user.click(
+			within(row).getByRole("button", { name: "Save memory" }),
+		);
+		const edited = screen.getByRole("article", {
+			name: "Memory: Keep status emails to two bullets.",
+		});
+		await user.click(
+			within(edited).getByRole("button", {
+				name: "Remove memory: Keep status emails to two bullets.",
 			}),
 		);
 		expect(
-			submittedContext()
-				.topics.flatMap((topic) => topic.notes)
-				.some((note) => note.text === text),
-		).toBe(true);
-		expect(screen.queryByText(text, {})).not.toBeInTheDocument();
+			screen.queryByText("Keep status emails to two bullets."),
+		).not.toBeInTheDocument();
+		await user.click(
+			screen.getByRole("button", { name: "Undo local edit" }),
+		);
+		expect(
+			screen.getByText("Keep status emails to two bullets."),
+		).toBeInTheDocument();
+	});
+
+	it("shows a topic's notes as memories and adds one about the topic", async () => {
+		const user = userEvent.setup();
+		renderSession("/brain/topics/t-geng");
+		await user.click(screen.getByRole("tab", { name: /Goals and notes/ }));
+		expect(
+			screen.getByText(
+				"Ava prefers a written pre-read 48h before any review.",
+			),
+		).toBeInTheDocument();
+		const note = screen.getByLabelText("New note");
+		await user.type(note, "Hugo owns the demo environment.");
+		const form = note.closest("form");
+		if (!form) throw new Error("Missing note form");
+		await user.click(within(form).getByRole("button", { name: "Add" }));
+		expect(
+			screen.getByRole("article", {
+				name: "Memory: Hugo owns the demo environment.",
+			}),
+		).toBeInTheDocument();
 	});
 
 	it("accepts a person in review and keeps topic and person membership screens consistent", async () => {

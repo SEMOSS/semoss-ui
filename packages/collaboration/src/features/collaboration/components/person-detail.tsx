@@ -15,8 +15,10 @@ import {
 import { dateLabel } from "../date-label";
 import { isFollowed } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { memoriesAbout } from "../state/memory";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
+import { MemoryList } from "./memory-list";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
@@ -62,6 +64,10 @@ export function PersonDetail() {
 			(item.status === "open" || item.status === "waiting") &&
 			!state.threads.find((thread) => thread.id === item.threadId)?.muted,
 	);
+	const memories = memoriesAbout(state.memories, {
+		type: "person",
+		id: person.id,
+	});
 	return (
 		<CollaborationSurface
 			header={
@@ -224,9 +230,45 @@ export function PersonDetail() {
 						/>
 					</div>
 					<Small className="font-normal text-muted-foreground text-xs leading-5">
-						This session preference does not delete provider
-						messages or existing conversations.
+						This preference does not delete provider messages or
+						existing conversations.
 					</Small>
+					{person.neverIngest && memories.length > 0 && (
+						<div className="space-y-2 rounded-lg border border-border p-3">
+							<Small className="block font-normal text-sm leading-6">
+								The assistant no longer sees the{" "}
+								{memories.length === 1
+									? "memory"
+									: `${memories.length} memories`}{" "}
+								about {person.name}.
+							</Small>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => {
+									for (const memory of memories)
+										dispatch({
+											type: "memory.delete",
+											memoryId: memory.id,
+										});
+								}}
+							>
+								Delete {memories.length === 1 ? "it" : "them"}
+							</Button>
+						</div>
+					)}
+				</Section>
+				<Section
+					title="What the assistant remembers"
+					className="space-y-3 border-b px-4 py-4 md:px-6"
+				>
+					<MemoryList
+						memories={memories}
+						emptyText={`Facts about ${person.name} that the assistant keeps across threads.`}
+						addLabel={`New memory about ${person.name}`}
+						about={{ type: "person", id: person.id }}
+						isSample={person.isSample}
+					/>
 				</Section>
 				<Section
 					title="Topics"

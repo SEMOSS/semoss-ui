@@ -19,9 +19,11 @@ import {
 } from "@semoss/ui/next";
 import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { memoriesAbout } from "../state/memory";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
 import { collaborationTabsStyles } from "./collaboration-tabs.styles";
+import { MemoryList } from "./memory-list";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
@@ -517,66 +519,15 @@ export function TopicDetail() {
 						title="Notes for the assistant"
 						className="space-y-3 border-b px-4 py-4 md:px-6"
 					>
-						{topic.notes.map((note) => (
-							<div
-								key={note.noteId}
-								className="space-y-2 border-b pb-3"
-							>
-								<P className="text-sm leading-6">{note.text}</P>
-								<Small className="font-normal text-muted-foreground text-xs">
-									{note.by} · {note.status}
-									{note.source ? ` · ${note.source}` : ""}
-								</Small>
-								<div className="flex gap-2">
-									{note.status === "draft" && (
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() =>
-												dispatch({
-													type: "topic.note",
-													topicId: topic.id,
-													kind: "note",
-													operation: "save",
-													noteId: note.noteId,
-													status: "confirmed",
-												})
-											}
-										>
-											Confirm
-										</Button>
-									)}
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() =>
-											dispatch({
-												type: "topic.note",
-												topicId: topic.id,
-												kind: "note",
-												operation: "remove",
-												noteId: note.noteId,
-											})
-										}
-									>
-										Remove
-									</Button>
-								</div>
-							</div>
-						))}
-						<TextEntryForm
-							label="New note"
-							multiline
-							onSave={(text) =>
-								dispatch({
-									type: "topic.note",
-									topicId: topic.id,
-									kind: "note",
-									operation: "save",
-									text,
-									status: "confirmed",
-								})
-							}
+						<MemoryList
+							memories={memoriesAbout(state.memories, {
+								type: "topic",
+								id: topic.id,
+							})}
+							emptyText="Notes here are memories. The assistant uses them on this topic's threads."
+							addLabel="New note"
+							about={{ type: "topic", id: topic.id }}
+							isSample={topic.isSample}
 						/>
 					</Section>
 				</TabsContent>

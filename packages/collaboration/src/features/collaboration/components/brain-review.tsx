@@ -1,8 +1,7 @@
-import { Folder, StickyNote } from "lucide-react";
+import { Brain, Folder } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import {
-	Badge,
 	Button,
 	P,
 	Small,
@@ -12,24 +11,23 @@ import {
 	TabsTrigger,
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { learnedMemories, suggestedMemories } from "../state/memory";
 import { BrainOverview } from "./brain-overview";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
 import { collaborationTabsStyles } from "./collaboration-tabs.styles";
+import { MemoryRow } from "./memory-list";
 import { ReviewCard } from "./review-card";
 import { Section } from "./section";
 
-/** Human review of local topic suggestions, memberships, and unconfirmed notes. */
+/** Human review of topic suggestions, memberships, and memories Brain suggests or the assistant learned. */
 export function BrainReview() {
 	const { state, dispatch, undo, canUndo } = useCollaborationSession();
 	const [tab, setTab] = useState("needs");
 	const open = state.reviews.filter((review) => review.status === "open");
 	const resolved = state.reviews.filter((review) => review.status !== "open");
-	const notes = state.topics.flatMap((topic) =>
-		topic.notes
-			.filter((note) => note.status === "draft")
-			.map((note) => ({ topic, note })),
-	);
+	const suggestions = suggestedMemories(state.memories);
+	const learnedInChat = learnedMemories(state.memories);
 	const learned = state.threads.flatMap((thread) =>
 		thread.topicLinks
 			.filter((link) => link.source === "confirmed")
@@ -78,7 +76,7 @@ export function BrainReview() {
 							value="needs"
 							className={collaborationTabsStyles.trigger}
 						>
-							Needs you ({open.length + notes.length})
+							Needs you ({open.length + suggestions.length})
 						</TabsTrigger>
 						<TabsTrigger
 							value="learned"
@@ -92,74 +90,32 @@ export function BrainReview() {
 					{open.map((review) => (
 						<ReviewCard key={review.id} review={review} />
 					))}
-					{notes.map(({ topic, note }) => (
-						<article
-							key={note.noteId}
-							className="flex items-start gap-3 border-b px-4 py-4 hover:bg-muted/30 md:gap-4 md:px-6"
+					{suggestions.length > 0 && (
+						<section
+							aria-label="Memories to check"
+							className="flex items-start gap-3 border-b px-4 py-4 md:gap-4 md:px-6"
 						>
 							<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-								<StickyNote
-									className="size-4"
-									aria-hidden="true"
-								/>
+								<Brain className="size-4" aria-hidden="true" />
 							</div>
-							<div className="min-w-0 flex-1 space-y-2">
-								<div className="flex flex-wrap items-center gap-2 text-xs">
-									<span className="font-medium">Brain</span>
-									<Badge
-										variant="secondary"
-										className="font-normal text-xs"
-									>
-										Note
-									</Badge>
-								</div>
+							<div className="min-w-0 flex-1">
 								<Small className="font-medium text-sm">
-									Note for {topic.short}
+									Memories Brain suggests
 								</Small>
-								<P className="rounded-lg bg-muted/50 px-3 py-2 text-sm leading-6">
-									{note.text}
+								<P className="text-muted-foreground text-xs leading-5">
+									From your finished chats. The assistant does
+									not use them until you keep them.
 								</P>
-								<Small className="font-normal text-muted-foreground text-xs leading-5">
-									{note.source || "Assistant suggestion"} ·
-									not yet used as fact
-								</Small>
-								<div className="-ml-2 flex flex-wrap gap-1">
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() =>
-											dispatch({
-												type: "topic.note",
-												topicId: topic.id,
-												kind: "note",
-												operation: "save",
-												noteId: note.noteId,
-												status: "confirmed",
-											})
-										}
-									>
-										Confirm note
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() =>
-											dispatch({
-												type: "topic.note",
-												topicId: topic.id,
-												kind: "note",
-												operation: "remove",
-												noteId: note.noteId,
-											})
-										}
-									>
-										Remove
-									</Button>
-								</div>
+								{suggestions.map((memory) => (
+									<MemoryRow
+										key={memory.id}
+										memory={memory}
+									/>
+								))}
 							</div>
-						</article>
-					))}
-					{!open.length && !notes.length && (
+						</section>
+					)}
+					{!open.length && !suggestions.length && (
 						<P className="p-6 text-muted-foreground">
 							All caught up. No pending review in this session.
 						</P>
@@ -167,8 +123,26 @@ export function BrainReview() {
 				</TabsContent>
 				<TabsContent value="learned" className="mt-0">
 					<P className="border-b px-4 py-3 text-muted-foreground text-xs leading-5 md:px-6">
-						Confirmed topics and your recent review decisions.
+						Confirmed topics, your recent review decisions, and what
+						the assistant learned in chats.
 					</P>
+					{learnedInChat.length > 0 && (
+						<section
+							aria-label="Learned in chats"
+							className="border-b px-4 py-3 md:px-6"
+						>
+							<Small className="font-medium text-sm">
+								Learned in chats
+							</Small>
+							<P className="text-muted-foreground text-xs leading-5">
+								In use now. Confirm the ones the assistant
+								should act on.
+							</P>
+							{learnedInChat.map((memory) => (
+								<MemoryRow key={memory.id} memory={memory} />
+							))}
+						</section>
+					)}
 					{resolved.map((review) => (
 						<ReviewCard key={review.id} review={review} />
 					))}

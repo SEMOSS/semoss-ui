@@ -12,6 +12,7 @@ export const TOOL_COMPONENTS = {
 	emailDraft: "email-draft",
 	emailSend: "email-send",
 	calendarEvent: "calendar-event",
+	memory: "memory",
 } as const;
 
 export type ToolComponent =
@@ -37,6 +38,8 @@ export function getToolComponent(
 	if (endsWith("SaveDraft")) return TOOL_COMPONENTS.emailDraft;
 	if (endsWith("ComposeEmail")) return TOOL_COMPONENTS.emailCompose;
 	if (endsWith("SendEmail")) return TOOL_COMPONENTS.emailSend;
+	if (endsWith("Remember") || endsWith("Forget"))
+		return TOOL_COMPONENTS.memory;
 	return undefined;
 }
 

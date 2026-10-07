@@ -12,6 +12,7 @@ import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
 import { useDashboard } from "@/features/dashboard/dashboard.context";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { suggestedMemories } from "../state/memory";
 import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
 import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationTopicsNavigation } from "./collaboration-topics-navigation";
@@ -46,12 +47,7 @@ export function CollaborationNavigation({
 	const { setIsSearchOpen, searchReturnFocus } = useDashboard();
 	const reviews =
 		state.reviews.filter((review) => review.status === "open").length +
-		state.topics.reduce(
-			(count, topic) =>
-				count +
-				topic.notes.filter((note) => note.status === "draft").length,
-			0,
-		);
+		suggestedMemories(state.memories).length;
 	const links = [
 		{
 			to: "/",

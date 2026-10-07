@@ -9,6 +9,11 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import type { Engine } from "@semoss/shared";
 import { TooltipProvider } from "@semoss/ui/next";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import {
+	CollaborationSessionProvider,
+	useCollaborationSession,
+} from "@/features/collaboration/state/collaboration-session.context";
 import {
 	saveEmailDraft,
 	sendEmailDraft,
@@ -314,4 +319,63 @@ it("submits a typed draft request for the selected email without Outlook writes"
 	});
 	expect(saveEmailDraft).not.toHaveBeenCalled();
 	expect(sendEmailDraft).not.toHaveBeenCalled();
+});
+
+function OwnMemories() {
+	const { state } = useCollaborationSession();
+	return (
+		<output aria-label="Own memories">
+			{state.memories
+				.filter((memory) => memory.id.startsWith("local-"))
+				.map((memory) => `${memory.kind}:${memory.text}`)
+				.join("|")}
+		</output>
+	);
+}
+
+it("saves /remember as the owner's memory without asking the assistant", async () => {
+	const user = userEvent.setup();
+	const send = vi.fn<ThreadSession["send"]>(async () => undefined);
+	const session = {
+		insight: { actions: {} },
+		retain: vi.fn(() => vi.fn()),
+		send,
+		selectModel: vi.fn(),
+	} as unknown as ThreadSession;
+	render(
+		<TooltipProvider>
+			<CollaborationSessionProvider
+				initialState={createInitialCollaborationState()}
+			>
+				<AssistantComposer
+					session={session}
+					snapshot={workSnapshot()}
+					title="Thread"
+					attachments={[]}
+					context={{
+						threadId: "thread-1",
+						contextRevision: "r1",
+						contextText: "Context",
+					}}
+					onSent={vi.fn()}
+				/>
+				<OwnMemories />
+			</CollaborationSessionProvider>
+		</TooltipProvider>,
+	);
+	// the slash menu offers it, and choosing it types it out for the sentence that follows
+	await enterText("/rem");
+	await screen.findByText("/remember");
+	await user.keyboard("{Enter}");
+	await waitFor(() =>
+		expect(screen.getByRole("textbox").textContent).toBe("/remember "),
+	);
+	await enterText("Always cc Dana on Acme emails");
+	await user.click(screen.getByRole("button", { name: "Ask Assistant" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Own memories")).toHaveTextContent(
+			"preference:Always cc Dana on Acme emails",
+		),
+	);
+	expect(send).not.toHaveBeenCalled();
 });

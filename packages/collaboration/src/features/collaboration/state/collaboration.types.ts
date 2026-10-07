@@ -31,16 +31,6 @@ export interface TopicGoal {
 	status: "open" | "done";
 }
 
-export interface TopicNote {
-	noteId: string;
-	kind: "goal" | "note";
-	text: string;
-	status: "draft" | "confirmed";
-	by: "you" | "assistant";
-	date: string;
-	source?: string;
-}
-
 interface TopicPerson {
 	personId: string;
 	role: string;
@@ -61,7 +51,6 @@ export interface Topic {
 	description: string;
 	keywords: string[];
 	goals: TopicGoal[];
-	notes: TopicNote[];
 	people: TopicPerson[];
 	calendarSeries: string[];
 	stats: { threads: number; openItems: number; lastActivity: string };
@@ -238,7 +227,47 @@ export interface Settings {
 	fileAt: number;
 	askAt: number;
 	sourcesJson: Record<string, boolean>;
+	/** Memory in the thread assistant, and suggestions from finished chats. */
+	memory: { use: boolean; learn: boolean };
 	version: number;
+}
+
+export type MemoryRefType = "person" | "topic" | "account" | "thread";
+
+/** Who or what a memory is about. */
+export interface MemoryRef {
+	type: MemoryRefType;
+	id: string;
+}
+
+/** One statement the thread assistant keeps across threads (Brain memory). */
+export interface Memory {
+	id: string;
+	/** preference: how the owner wants things done; fact: something true about a person, topic, account, or thread. */
+	kind: "preference" | "fact";
+	text: string;
+	/** active is used; suggested waits for the owner; dismissed was undone or turned down. */
+	state: "active" | "suggested" | "dismissed";
+	/** you typed it; the assistant saved it in a chat; Brain proposed it from a finished chat. */
+	origin: "you" | "assistant" | "brain";
+	/** Typed, accepted, edited, or confirmed by the owner; only then a preference is an instruction. */
+	confirmed: boolean;
+	pinned: boolean;
+	/** No links: it applies everywhere. */
+	about: MemoryRef[];
+	expiresAt: string | null;
+	/** The memory this one replaces once it is accepted. */
+	replacesId: string | null;
+	source: {
+		kind?: string;
+		threadId?: string;
+		roomId?: string;
+		personId?: string;
+		label?: string;
+	};
+	createdAt: string;
+	updatedAt: string;
+	isSample: boolean;
 }
 
 export interface SourceStatus {
@@ -308,14 +337,6 @@ export interface WorkspaceStep {
 	linkTopicId?: string;
 }
 
-export interface WorkspaceFact {
-	id: string;
-	text: string;
-	from: string;
-	status: "draft" | "confirmed";
-	sourcePersonId?: string;
-}
-
 interface WorkspaceAsset {
 	id: string;
 	name: string;
@@ -342,7 +363,6 @@ interface WorkspaceDraft {
 
 export interface ThreadWorkspace {
 	goal: string;
-	facts: WorkspaceFact[];
 	messages: WorkspaceMessage[];
 	steps: WorkspaceStep[];
 	assets: WorkspaceAsset[];
@@ -374,6 +394,8 @@ export interface CollaborationState {
 	rules: Rule[];
 	sources: SourceStatus[];
 	workspaces: Record<string, ThreadWorkspace>;
+	/** Active and suggested memories; dismissed ones stay until the next read. */
+	memories: Memory[];
 	openThreadIds: string[];
 	sequence: number;
 }
@@ -386,9 +408,12 @@ export type CollaborationCommand =
 				CollaborationState,
 				"threads" | "workspaces" | "items"
 			> & {
+				/** Every active and suggested memory on the server, when the read included them. */
+				memories?: Memory[];
 				/** Changed locally while the read was in flight: the local copy wins this round. */
 				keepItemIds?: string[];
 				keepThreadIds?: string[];
+				keepMemoryIds?: string[];
 				/** Steps added or changed locally after the read was sent: the local copy wins this round. */
 				keepStepIds?: string[];
 			};
@@ -417,13 +442,14 @@ export type CollaborationCommand =
 			role?: string;
 	  }
 	| {
+			/** A topic goal; topic notes are memories about the topic. */
 			type: "topic.note";
 			topicId: string;
-			kind: "goal" | "note";
+			kind: "goal";
 			operation: "save" | "remove";
 			noteId?: string;
 			text?: string;
-			status?: "draft" | "confirmed" | "open" | "done";
+			status?: "open" | "done";
 	  }
 	| {
 			type: "thread.link";
@@ -481,10 +507,24 @@ export type CollaborationCommand =
 			step: Partial<WorkspaceStep> & { id?: string };
 	  }
 	| {
-			type: "workspace.fact";
-			threadId: string;
-			operation: "save" | "remove";
-			fact: Partial<WorkspaceFact> & { id?: string };
+			/** Adds a memory (no id or an unknown one) or changes the fields passed; the owner's save confirms it. */
+			type: "memory.save";
+			memory: Partial<Omit<Memory, "origin" | "confirmed" | "state">> & {
+				id?: string;
+			};
+	  }
+	| { type: "memory.delete"; memoryId: string }
+	| { type: "memory.clear" }
+	| {
+			type: "memory.resolve";
+			memoryId: string;
+			action: "accept" | "confirm" | "dismiss" | "restore" | "reopen";
+	  }
+	| {
+			/** What the server returned for a memory action made outside the saver (the chat card). */
+			type: "memory.server";
+			memories?: Memory[];
+			removedIds?: string[];
 	  }
 	| { type: "workspace.open" | "workspace.close"; threadId: string }
 	| {
@@ -510,11 +550,11 @@ export interface ThreadContext {
 		name: string;
 		description: string;
 		goals: TopicGoal[];
-		notes: TopicNote[];
+		/** The topic's account, for memories about the account. */
+		account?: { id: string; name: string };
 	}[];
 	participants: { personId: string; name: string; included: boolean }[];
 	messages: ContextMessage[];
-	facts: WorkspaceFact[];
 	/** Left out by an exclusion or a rule. */
 	hiddenCount: number;
 	/** Allowed, but no text once quoted replies are removed (an invite or an image, say). */

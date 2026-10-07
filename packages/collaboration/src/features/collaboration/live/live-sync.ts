@@ -3,10 +3,10 @@ import { pixel } from "@/lib/pixel";
 import type {
 	CollaborationCommand,
 	CollaborationState,
+	Memory,
 	Rule,
 	Topic,
 	TopicGoal,
-	TopicNote,
 } from "../state/collaboration.types";
 import type { CollaborationChange } from "../state/collaboration-session.context";
 import { runBatch } from "./live-state";
@@ -25,6 +25,7 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"source.status",
 	"live-profile.set",
 	"snooze.expire",
+	"memory.server",
 ]);
 
 // a create returns the server id for the local one
@@ -207,6 +208,7 @@ function planChange(
 	planPeople(plan, prev, next, id);
 	planRules(plan, prev, next, id);
 	planReviews(plan, prev, next, change.commands, id);
+	planMemories(plan, prev, next, change.commands, id);
 	planProfile(plan, prev, next);
 	planRooms(plan, prev, next, id);
 	return plan;
@@ -253,7 +255,7 @@ function planTopics(
 				);
 			planTopicParts(
 				plan,
-				{ ...topic, goals: [], notes: [], people: [] },
+				{ ...topic, goals: [], people: [] },
 				topic,
 				id,
 			);
@@ -291,29 +293,18 @@ function planTopicParts(
 	id: (v: string) => string,
 ) {
 	const topicId = id(topic.id);
-	const notes = (goals: TopicGoal[], rows: TopicNote[]) =>
-		new Map<string, { kind: string; text: string; state: string }>([
-			...goals.map(
+	const notes = (goals: TopicGoal[]) =>
+		new Map<string, { kind: string; text: string; state: string }>(
+			goals.map(
 				(goal) =>
 					[
 						goal.noteId,
 						{ kind: "goal", text: goal.text, state: goal.status },
 					] as const,
 			),
-			...rows.map(
-				(note) =>
-					[
-						note.noteId,
-						{
-							kind: note.kind,
-							text: note.text,
-							state: note.status,
-						},
-					] as const,
-			),
-		]);
-	const before = notes(old.goals, old.notes);
-	const after = notes(topic.goals, topic.notes);
+		);
+	const before = notes(old.goals);
+	const after = notes(topic.goals);
 	for (const [noteId, note] of after) {
 		const was = before.get(noteId);
 		if (was && same(was, note)) continue;
@@ -612,6 +603,106 @@ function planReviews(
 	}
 }
 
+const MEMORY_FIELDS = ["kind", "text", "about", "pinned", "expiresAt"] as const;
+
+/** BrainSaveMemory's memory map: the owner's fields, with nothing pixel would drop as null. */
+function memoryFields(
+	memory: Memory,
+	fields: readonly (typeof MEMORY_FIELDS)[number][],
+) {
+	return Object.fromEntries(
+		fields.map((field) => [field, memory[field] ?? ""]),
+	);
+}
+
+/** The BrainResolveMemory action that takes a memory from old to memory, for edits and their Undo. */
+function memoryAction(old: Memory, memory: Memory): string | null {
+	if (old.state === memory.state)
+		return !old.confirmed && memory.confirmed
+			? "confirm"
+			: old.confirmed && !memory.confirmed && memory.state === "active"
+				? "unconfirm"
+				: null;
+	if (memory.state === "dismissed") return "dismiss";
+	if (memory.state === "suggested") return "reopen";
+	return old.state === "suggested" ? "accept" : "restore";
+}
+
+// one memory at a time; a state change goes through BrainResolveMemory, so its side effects (a suggestion
+// replacing an older memory, an Undo bringing one back) happen on the server
+function planMemories(
+	plan: Plan,
+	prev: CollaborationState,
+	next: CollaborationState,
+	commands: CollaborationCommand[],
+	id: (v: string) => string,
+) {
+	const before = byId(prev.memories.filter((memory) => !memory.isSample));
+	const after = byId(next.memories.filter((memory) => !memory.isSample));
+	const cleared = commands.some((command) => command.type === "memory.clear");
+	if (cleared)
+		plan.statements.push(pixel("BrainDeleteMemory", { all: true }));
+	for (const memory of after.values()) {
+		const old = before.get(memory.id);
+		if (!old) {
+			if (LOCAL.test(memory.id))
+				plan.creates.push({
+					localId: memory.id,
+					statement: pixel("BrainSaveMemory", {
+						memory: memoryFields(memory, MEMORY_FIELDS),
+					}),
+					idOf: (out) => (out as { id?: string })?.id,
+				});
+			// back after an Undo of its delete: the server puts it back under the same id
+			else
+				plan.statements.push(
+					pixel("BrainSaveMemory", {
+						memory: {
+							id: memory.id,
+							...memoryFields(memory, MEMORY_FIELDS),
+							state:
+								memory.state === "suggested"
+									? "suggested"
+									: "active",
+							origin: memory.origin,
+							confirmed: memory.confirmed,
+						},
+					}),
+				);
+			continue;
+		}
+		const changed = MEMORY_FIELDS.filter(
+			(field) => !same(old[field], memory[field]),
+		);
+		if (changed.length) {
+			// the owner's edit confirms it, and accepts a suggestion
+			plan.statements.push(
+				pixel("BrainSaveMemory", {
+					memory: {
+						id: id(memory.id),
+						...memoryFields(memory, changed),
+					},
+				}),
+			);
+			continue;
+		}
+		const action = memoryAction(old, memory);
+		if (action)
+			plan.statements.push(
+				pixel("BrainResolveMemory", {
+					memoryId: id(memory.id),
+					action,
+				}),
+			);
+	}
+	if (cleared) return;
+	for (const memory of before.values())
+		if (!after.has(memory.id) && !LOCAL.test(id(memory.id)))
+			plan.statements.push(
+				pixel("BrainDeleteMemory", { memoryId: id(memory.id) }),
+			);
+}
+
 const PROFILE_FIELDS = [
 	"name",
 	"email",
@@ -626,6 +717,7 @@ const SETTINGS_FIELDS = [
 	"fileAt",
 	"askAt",
 	"sourcesJson",
+	"memory",
 ] as const;
 
 function planProfile(
@@ -664,9 +756,7 @@ const STEP_FIELDS = [
 	"itemId",
 	"linkTopicId",
 ] as const;
-const FACT_FIELDS = ["text", "from", "status", "sourcePersonId"] as const;
-
-// steps and facts are saved one row at a time; a cleared field goes out as "" since pixel drops nulls
+// steps are saved one row at a time; a cleared field goes out as "" since pixel drops nulls
 function planWorkspaces(
 	plan: Plan,
 	prev: CollaborationState,
@@ -688,14 +778,6 @@ function planWorkspaces(
 			remove: "WorkDeleteStep",
 			key: "step",
 			idKey: "stepId",
-			id,
-		});
-		planRows(plan, threadId, before?.facts ?? [], after?.facts ?? [], {
-			fields: FACT_FIELDS,
-			save: "WorkSaveFact",
-			remove: "WorkDeleteFact",
-			key: "fact",
-			idKey: "factId",
 			id,
 		});
 	}

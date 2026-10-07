@@ -28,6 +28,7 @@ describe("collaboration routes", () => {
 		["/work/topic/client", "work/topic/:topicId"],
 		["/work/thread/thread-one", "work-thread"],
 		["/brain", "brain"],
+		["/brain/memory", "brain/memory"],
 		["/brain/people/person-one", "brain/people/:personId"],
 		["/brain/threads/thread-one", "brain/threads/:threadId"],
 		["/brain/topics/client", "brain/topics/:topicId"],

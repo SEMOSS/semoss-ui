@@ -1,4 +1,11 @@
-import { ArrowUp, BookOpen, ChevronsDownUp, Wrench, X } from "lucide-react";
+import {
+	ArrowUp,
+	BookOpen,
+	Brain,
+	ChevronsDownUp,
+	Wrench,
+	X,
+} from "lucide-react";
 import {
 	type ReactNode,
 	useCallback,
@@ -8,7 +15,12 @@ import {
 	useSyncExternalStore,
 } from "react";
 import type { Engine } from "@semoss/shared";
-import { Alert, AlertDescription, Button, Small } from "@semoss/ui/next";
+import { Alert, AlertDescription, Button, Small, toast } from "@semoss/ui/next";
+import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import {
+	guessMemoryKind,
+	rememberCommand,
+} from "@/features/collaboration/state/memory";
 import type { SourceAttachment } from "@/features/connectors/types";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { useRoomModel } from "@/features/rooms/api/use-room-model";
@@ -95,6 +107,8 @@ export function AssistantComposer({
 		snapshot.isLoadingModel ||
 		snapshot.hasUnconfirmedSubmission;
 	const panelActions = useWorkPanelActions();
+	// /remember saves a memory as the owner's own, with no model call
+	const memorySession = useOptionalCollaborationSession();
 	const openSettings = () =>
 		panelActions.find((action) => action.id === "settings")?.onSelect();
 	const extraCommands = [
@@ -119,6 +133,19 @@ export function AssistantComposer({
 			icon: Wrench,
 			onSelect: openSettings,
 		},
+		// typed out rather than run: the sentence after it is saved on send
+		...(memorySession
+			? [
+					{
+						id: "remember",
+						label: "/remember",
+						description: "Save the sentence you type to memory",
+						icon: Brain,
+						insertText: "/remember ",
+						onSelect: () => undefined,
+					},
+				]
+			: []),
 		{
 			id: "compact",
 			label: "/compact",
@@ -415,6 +442,24 @@ export function AssistantComposer({
 						})
 					}
 					onSend={async (submission) => {
+						const remembered = memorySession
+							? rememberCommand(submission.text)
+							: null;
+						if (remembered && !submission.files.length) {
+							memorySession?.dispatch({
+								type: "memory.save",
+								memory: {
+									kind: guessMemoryKind(remembered),
+									text: remembered,
+									isSample:
+										context.context?.isSample === true,
+								},
+							});
+							toast.success("Saved to memory", {
+								description: remembered,
+							});
+							return;
+						}
 						await composer.submit(async () => {
 							const release = session.retain();
 							// read at send time, so edits made since the last render count

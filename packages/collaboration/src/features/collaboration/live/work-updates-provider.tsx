@@ -111,9 +111,17 @@ export function WorkUpdatesProvider({
 							...item,
 							id: localId(item.id),
 						})),
+						memories: updates.memories.map((memory) => ({
+							...memory,
+							id: localId(memory.id),
+						})),
 						keepItemIds: changedSince(
 							requestedState.items,
 							latest.current.items,
+						),
+						keepMemoryIds: changedSince(
+							requestedState.memories,
+							latest.current.memories,
 						),
 						keepThreadIds: changedSince(
 							requestedState.threads,

@@ -924,6 +924,36 @@ describe("RoomComposer", () => {
 		expect(editor.textContent).toBe("");
 	});
 
+	it("types out a command that inserts text instead of running it", async () => {
+		const user = userEvent.setup();
+		const onSelect = vi.fn();
+		renderComposer({
+			extraCommands: [
+				{
+					id: "remember",
+					label: "/remember",
+					description: "Save the sentence you type to memory",
+					icon: () => null,
+					insertText: "/remember ",
+					onSelect,
+				},
+			],
+		});
+		const editor = screen.getByRole("textbox", {
+			name: "Message Research agent",
+		});
+		await user.click(editor);
+		pasteText(editor, "/rem");
+		await screen.findByText("/remember");
+		await user.keyboard("{Enter}");
+
+		await waitFor(() => expect(editor.textContent).toBe("/remember "));
+		expect(
+			screen.queryByText("Save the sentence you type to memory"),
+		).toBeNull();
+		expect(onSelect).not.toHaveBeenCalled();
+	});
+
 	it("removes the slash token before optimizing", async () => {
 		const user = userEvent.setup();
 		const onOptimizePrompt = vi.fn(async () => "Improved prompt");

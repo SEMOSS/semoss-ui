@@ -7,7 +7,7 @@ import type {
 } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { ThreadActionItems } from "./thread-action-items";
-import { ThreadKeyFacts } from "./thread-key-facts";
+import { ThreadMemory } from "./thread-memory";
 import { ThreadSettings } from "./thread-settings";
 import { ThreadSummary } from "./thread-summary";
 import { TopicChip } from "./topic-chip";
@@ -28,7 +28,7 @@ export function ThreadInspector({
 			<ThreadSummary thread={thread} workspace={workspace} />
 			<ThreadActionItems thread={thread} workspace={workspace} />
 			<ThreadPresentation />
-			<ThreadKeyFacts threadId={thread.id} facts={workspace.facts} />
+			<ThreadMemory thread={thread} />
 			<details className="space-y-3">
 				<summary className="min-h-9 cursor-pointer font-medium focus-visible:outline-2 focus-visible:outline-ring">
 					Sources

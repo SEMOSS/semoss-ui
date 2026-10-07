@@ -2,18 +2,14 @@ import { Link } from "react-router";
 import { P } from "@semoss/ui/next";
 import { ReviewCard } from "@/features/collaboration/components/review-card";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { suggestedMemories } from "@/features/collaboration/state/memory";
 import { BriefPanel } from "./brief-panel";
 
 /** Human topic decisions stay connected to the same Brain review commands. */
 export function BriefBrain() {
 	const { state } = useCollaborationSession();
 	const reviews = state.reviews.filter((review) => review.status === "open");
-	const draftNotes = state.topics.reduce(
-		(count, topic) =>
-			count +
-			topic.notes.filter((note) => note.status === "draft").length,
-		0,
-	);
+	const draftNotes = suggestedMemories(state.memories).length;
 	return (
 		<BriefPanel
 			title="Brain wants to check"
@@ -26,8 +22,9 @@ export function BriefBrain() {
 			</div>
 			{!reviews.length && draftNotes > 0 && (
 				<P className="py-3 text-muted-foreground text-sm">
-					{draftNotes} {draftNotes === 1 ? "note is" : "notes are"}{" "}
-					ready for you to confirm in Brain.
+					{draftNotes}{" "}
+					{draftNotes === 1 ? "memory is" : "memories are"} waiting
+					for you to keep or dismiss in Brain.
 				</P>
 			)}
 			{!reviews.length && !draftNotes && (

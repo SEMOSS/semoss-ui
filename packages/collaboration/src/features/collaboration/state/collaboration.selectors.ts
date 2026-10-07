@@ -132,7 +132,7 @@ function revisionOf(value: string): string {
 	return `${value.length}-${(first >>> 0).toString(36)}-${(second >>> 0).toString(36)}`;
 }
 
-/** Exact assistant context uses allowed messages and owner-confirmed facts only. */
+/** Exact assistant context uses allowed messages and the owner's confirmed profile only; memories come from the server. */
 export function selectThreadContext(
 	state: CollaborationState,
 	threadId: string,
@@ -227,6 +227,10 @@ export function selectThreadContext(
 					candidate.id === link.topicId &&
 					candidate.isSample === thread.isSample,
 			);
+			const account = topic
+				? state.accounts.find((item) => item.id === topic.accountId)
+				: undefined;
+			// notes about a topic are memories now; the server puts them in the assistant's prompt
 			return topic
 				? [
 						{
@@ -234,19 +238,18 @@ export function selectThreadContext(
 							name: topic.name,
 							description: topic.description,
 							goals: topic.goals,
-							notes: topic.notes.filter(
-								(note) => note.status === "confirmed",
-							),
+							...(account
+								? {
+										account: {
+											id: account.id,
+											name: account.name,
+										},
+									}
+								: {}),
 						},
 					]
 				: [];
 		});
-	const facts = (workspace?.facts ?? []).filter(
-		(fact) =>
-			!isThreadExcluded &&
-			fact.status === "confirmed" &&
-			(!fact.sourcePersonId || allowed.has(fact.sourcePersonId)),
-	);
 	const confirmedProfile = profile
 		? {
 				...profile,
@@ -279,7 +282,6 @@ export function selectThreadContext(
 		topics,
 		participants,
 		messages: allowedMessages,
-		facts,
 		hiddenCount: Math.max(
 			0,
 			(workspace?.messages.length ?? 0) - allowedMessages.length,

@@ -21,9 +21,9 @@ export function DataSettings() {
 						Reset your workspace
 					</H3>
 					<P className="text-base text-muted-foreground">
-						Delete your profile, people, topics, threads, rules, and
-						work items, then start onboarding again. Your Microsoft
-						sign-in stays. This cannot be undone.
+						Delete your profile, people, topics, threads, rules,
+						memories, and work items, then start onboarding again.
+						Your Microsoft sign-in stays. This cannot be undone.
 					</P>
 					<ResetMyData />
 				</div>

@@ -6,7 +6,7 @@ import {
 	Hourglass,
 	Mail,
 } from "lucide-react";
-import { useContext, useId, useState } from "react";
+import { useContext, useId, useMemo, useRef, useState } from "react";
 import {
 	Button,
 	Collapsible,
@@ -44,6 +44,7 @@ import {
 } from "../utils/tool-metadata";
 import { EmailDraftCard } from "./email-draft-card";
 import { EmailSendActions } from "./email-send-actions";
+import { MemoryToolCard, parseMemoryResult } from "./memory-tool-card";
 import { ToolCallMenu } from "./tool-call-menu";
 import { ToolFailureTooltip } from "./tool-failure-tooltip";
 import { ToolInline } from "./tool-inline";
@@ -124,18 +125,44 @@ function resultField(
 	}
 }
 
-/** Playground-style tool card with one movable inline/workbench detail view. */
-export function ToolCallCard({
-	tool,
-	createdAt,
-	onMenuOpenChange,
-}: {
+interface ToolCallCardProps {
 	tool: ConversationTool;
 	/** Timestamp of the source message, including folded continuations. */
 	createdAt?: string;
 	/** Keep contextual controls mounted and visible while their portal is open. */
 	onMenuOpenChange?: (isOpen: boolean) => void;
-}) {
+}
+
+/** Playground-style tool card; a finished Remember or Forget shows what changed in memory instead. */
+export function ToolCallCard(props: ToolCallCardProps) {
+	const { tool } = props;
+	// a call first seen before it finished ran while this page was open
+	const sawRunning = useRef(tool.status !== "COMPLETED");
+	const memoryResult = useMemo(
+		() =>
+			tool.status === "COMPLETED" &&
+			getToolComponent(tool) === TOOL_COMPONENTS.memory
+				? parseMemoryResult(tool.output)
+				: null,
+		[tool],
+	);
+	if (memoryResult)
+		return (
+			<MemoryToolCard
+				tool={tool}
+				result={memoryResult}
+				isLive={sawRunning.current}
+			/>
+		);
+	return <GenericToolCallCard {...props} />;
+}
+
+/** Playground-style tool card with one movable inline/workbench detail view. */
+function GenericToolCallCard({
+	tool,
+	createdAt,
+	onMenuOpenChange,
+}: ToolCallCardProps) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const detailId = useId();
 	const statusId = useId();

@@ -4,6 +4,9 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
 import { BrainPage } from "./brain.page";
 
+vi.mock("@/features/collaboration/components/brain-memory", () => ({
+	BrainMemory: () => <h1>Memory content</h1>,
+}));
 vi.mock("@/features/collaboration/components/brain-review", () => ({
 	BrainReview: () => <h1>Review content</h1>,
 }));
@@ -33,6 +36,7 @@ function renderBrain(path: string) {
 	const router = createMemoryRouter(
 		[
 			"/brain",
+			"/brain/memory",
 			"/brain/people",
 			"/brain/people/:personId",
 			"/brain/threads",
@@ -48,6 +52,7 @@ function renderBrain(path: string) {
 
 it.each([
 	["/brain", "Review content", "Review"],
+	["/brain/memory", "Memory content", "Memory"],
 	["/brain/people", "People content", "People"],
 	["/brain/people/person-one", "Person detail", "People"],
 	["/brain/threads", "Threads content", "Threads"],
@@ -62,8 +67,14 @@ it.each([
 		const navigation = within(
 			screen.getByRole("navigation", { name: "Brain" }),
 		);
-		expect(navigation.getAllByRole("link")).toHaveLength(4);
-		for (const label of ["Review", "People", "Threads", "Sources"]) {
+		expect(navigation.getAllByRole("link")).toHaveLength(5);
+		for (const label of [
+			"Review",
+			"Memory",
+			"People",
+			"Threads",
+			"Sources",
+		]) {
 			const link = navigation.getByRole("link", { name: label });
 			if (label === active)
 				expect(link).toHaveAttribute("aria-current", "page");

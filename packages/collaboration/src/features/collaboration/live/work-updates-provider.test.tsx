@@ -71,6 +71,7 @@ it("deduplicates server echoes, ignores removed actions during a refresh, and re
 	const updates = {
 		threads: [state.threads[0]],
 		items: [],
+		memories: [],
 		lastMailCheck: null,
 		workspaces: {
 			[threadId]: {
@@ -124,6 +125,7 @@ it("pulls new mail before reloading when Refresh is pressed, and shows sync fail
 		threads: state.threads,
 		items: [],
 		workspaces: {},
+		memories: [],
 		lastMailCheck: null,
 	});
 	vi.mocked(syncMail)
@@ -192,6 +194,7 @@ it("syncs once shortly after a reply is sent from the app", async () => {
 			threads: state.threads,
 			items: [],
 			workspaces: {},
+			memories: [],
 			lastMailCheck: null,
 		});
 		vi.mocked(syncMail).mockClear();

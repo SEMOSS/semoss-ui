@@ -173,7 +173,6 @@ it("uses structured Work sources for review and send while retaining the legacy 
 				bodyStatus: "no_readable_text",
 			},
 		],
-		facts: [],
 		hiddenCount: 0,
 		emptyIds: ["email-1"],
 	};

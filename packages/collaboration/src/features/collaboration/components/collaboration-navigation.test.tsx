@@ -92,6 +92,7 @@ describe("CollaborationNavigation", () => {
 		state.items = [];
 		state.reviews = [];
 		state.topics = [];
+		state.memories = [];
 		renderNavigation("/", state);
 
 		expect(screen.getByText("Collaboration")).toBeVisible();
@@ -130,6 +131,7 @@ describe("CollaborationNavigation", () => {
 			.slice(0, 2);
 		state.reviews = state.reviews.slice(0, 1);
 		state.topics = [];
+		state.memories = [];
 		renderNavigation("/", state);
 
 		expect(

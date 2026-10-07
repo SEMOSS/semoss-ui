@@ -62,9 +62,9 @@ export function ResetMyData() {
 				<DialogHeader>
 					<DialogTitle>Reset all of your data?</DialogTitle>
 					<DialogDescription>
-						Your profile, people, topics, threads, rules, and work
-						items are deleted, and onboarding starts again. Your
-						Microsoft sign-in stays. This cannot be undone.
+						Your profile, people, topics, threads, rules, memories,
+						and work items are deleted, and onboarding starts again.
+						Your Microsoft sign-in stays. This cannot be undone.
 					</DialogDescription>
 				</DialogHeader>
 				{error && (

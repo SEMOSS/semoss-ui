@@ -3,6 +3,7 @@ import { Button } from "@semoss/ui/next";
 
 const BRAIN_DESTINATIONS = [
 	{ to: "/brain", label: "Review" },
+	{ to: "/brain/memory", label: "Memory" },
 	{ to: "/brain/people", label: "People" },
 	{ to: "/brain/threads", label: "Threads" },
 	{ to: "/brain/sources", label: "Sources" },
