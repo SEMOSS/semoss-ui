@@ -35,13 +35,13 @@ function renderHeader(
 ) {
 	const header = (
 		<DailyChatHeader
-			threadId="session:retained-chat"
+			threadId="retained-draft"
 			title="Conversation title"
 			isWorkbenchOpen={false}
 			{...props}
 		/>
 	);
-	const path = props.isNewChat ? "/new" : "/thread/session:retained-chat";
+	const path = props.isNewChat ? "/new" : "/thread/room:retained-room";
 	const router = createMemoryRouter(
 		[
 			{ path: "/", element: <BriefViewSwitch view="brief" /> },
@@ -124,28 +124,22 @@ it.each([
 	},
 );
 
-it("retains the chat identity, topic and opened room through Brief", async () => {
+it("retains the local draft identity and topic through Brief", async () => {
 	const user = userEvent.setup();
-	const router = renderHeader(
-		{ topicId: "release" },
-		{ openedRoomId: "saved-room" },
-	);
+	const router = renderHeader({ topicId: "release", isNewChat: true });
 	await user.click(screen.getByRole("link", { name: "Brief" }));
 	expect(router.state.location.pathname).toBe("/");
 	await user.click(screen.getByRole("link", { name: /Chat/ }));
-	expect(router.state.location.pathname).toBe(
-		"/thread/session:retained-chat",
-	);
+	expect(router.state.location.pathname).toBe("/new");
 	expect(router.state.location.state).toEqual({
-		sessionId: "session:retained-chat",
+		sessionId: "retained-draft",
 		topicId: "release",
-		openedRoomId: "saved-room",
 	});
 });
 
 it("starts a separate new chat without carrying saved room state", async () => {
 	const user = userEvent.setup();
-	const router = renderHeader({}, { openedRoomId: "saved-room" });
+	const router = renderHeader({}, { sessionId: "retained-draft" });
 	await user.click(screen.getByRole("link", { name: "New Session" }));
 	expect(router.state.location.pathname).toBe("/new");
 	expect(router.state.location.state).toBeNull();

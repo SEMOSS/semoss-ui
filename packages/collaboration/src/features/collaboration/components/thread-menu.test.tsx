@@ -12,7 +12,6 @@ import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { TooltipProvider, toast } from "@semoss/ui/next";
-import { readThreadWorkbenchRequest } from "@/features/work-thread/thread-workbench-request";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import type { CollaborationState } from "../state/collaboration.types";
 import {
@@ -156,20 +155,19 @@ afterEach(() => {
 });
 
 describe("thread menus", () => {
-	it("keeps email creation out of source-free chat actions", async () => {
-		const state = createInitialCollaborationState();
-		const selectedThreadId = `session:${crypto.randomUUID()}`;
-		state.threads.push({
-			...state.threads[0],
-			id: selectedThreadId,
-			channel: "room",
-			source: undefined,
-		});
-		const { open } = setup({ state, selectedThreadId });
+	it("offers the room import without promising implicit email actions", async () => {
+		const { open } = setup();
 		await open();
-		expect(queryMenuAction({ name: "New email" })).toBeNull();
-		expect(queryMenuAction({ name: "Draft reply" })).toBeNull();
-		expect(getMenuAction({ name: "Ask assistant" })).toBeVisible();
+		for (const name of [
+			"New email",
+			"Draft reply",
+			"Reply",
+			"Forward",
+			"Delete email",
+			"Open workbench",
+		])
+			expect(queryMenuAction({ name })).toBeNull();
+		expect(getMenuAction({ name: "Open in room" })).toBeVisible();
 	});
 	it.each(["/work", "/brain/threads"])(
 		"offers matching right-click and overflow actions on %s",
@@ -186,16 +184,16 @@ describe("thread menus", () => {
 				(item) => item.textContent,
 			);
 			expect(contextActions).toContain(
-				path === "/work" ? "Open workbench" : "Open Brain overview",
+				path === "/work" ? "Open in room" : "Open Brain overview",
 			);
 			for (const removed of [
+				"Open in Work",
 				"Manage topics…",
 				"Summarize",
 				"Draft reply",
 				"Extract next steps",
 			])
 				expect(contextActions).not.toContain(removed);
-			expect(screen.getByText("Assistant")).toBeVisible();
 			expect(contextActions).not.toContain("Done");
 			expect(router.state.location.pathname).toBe(path);
 			await user.keyboard("{Escape}");
@@ -296,21 +294,14 @@ describe("thread menus", () => {
 	});
 
 	it.each(["/work", `/thread/${threadId}`])(
-		"requests the selected workbench from %s",
+		"opens the source in a room from %s without legacy route commands",
 		async (path) => {
 			const { user, router, open } = setup({ path });
 			await open();
-			await user.click(getMenuAction({ name: "Open workbench" }));
+			await user.click(getMenuAction({ name: "Open in room" }));
 			expect(router.state.location.pathname).toBe(`/thread/${threadId}`);
-			expect(
-				readThreadWorkbenchRequest(
-					router.state.location.state,
-					threadId,
-				)?.threadId,
-			).toBe(threadId);
-			expect(router.state.historyAction).toBe(
-				path === "/work" ? "PUSH" : "REPLACE",
-			);
+			expect(router.state.location.state).toBeNull();
+			expect(router.state.historyAction).toBe("PUSH");
 		},
 	);
 
@@ -326,9 +317,7 @@ describe("thread menus", () => {
 		});
 		await open();
 		expect(getMenuActions().map((item) => item.textContent)).toEqual([
-			"Ask assistant",
-			"New email",
-			"Open in Work",
+			"Open in room",
 			"View in Brain",
 			"Copy link",
 			"Ignore thread",
@@ -375,25 +364,6 @@ describe("thread menus", () => {
 		).toBeVisible();
 		expect(router.state.location.pathname).toBe("/brain/threads");
 	});
-
-	it.each([true, false])(
-		"closes a room and only leaves the page when it is active (%s)",
-		async (active) => {
-			const state = createInitialCollaborationState();
-			state.openThreadIds = [threadId];
-			const path = active ? `/thread/${threadId}` : "/work";
-			const { user, router, open } = setup({ state, path });
-			await open();
-			await user.click(getMenuAction({ name: "Close room" }));
-			expect(sessionState().openThreadIds).not.toContain(threadId);
-			expect(
-				sessionState().threads.some((thread) => thread.id === threadId),
-			).toBe(true);
-			expect(router.state.location.pathname).toBe(
-				active ? "/work" : path,
-			);
-		},
-	);
 
 	it("marks only the selected Work item done and exposes Move back afterward", async () => {
 		const state = createInitialCollaborationState();
@@ -443,7 +413,7 @@ describe("thread menus", () => {
 	});
 });
 
-it("targets its own email and omits thread-level organization", async () => {
+it("offers the email source in a room and omits thread organization", async () => {
 	const state = createInitialCollaborationState();
 	const thread = state.threads.find((item) => item.id === threadId);
 	if (!thread) throw new Error("Missing thread");
@@ -453,15 +423,16 @@ it("targets its own email and omits thread-level organization", async () => {
 		sourceMessageId: "later-email",
 	});
 	await open();
-	expect(queryMenuAction({ name: "Ignore thread" })).toBeNull();
-	expect(queryMenuAction({ name: "Open workbench" })).toBeNull();
-	expect(getMenuAction({ name: "Reply" })).toBeVisible();
-	await user.click(getMenuAction({ name: "Draft reply" }));
-	expect(router.state.location.state.threadAction).toMatchObject({
-		threadId,
-		action: "draft",
-		sourceMessageId: "later-email",
-	});
+	for (const name of [
+		"Ignore thread",
+		"Open workbench",
+		"Reply",
+		"Draft reply",
+	])
+		expect(queryMenuAction({ name })).toBeNull();
+	await user.click(getMenuAction({ name: "Open in room" }));
+	expect(router.state.location.pathname).toBe(`/thread/${threadId}`);
+	expect(router.state.location.state).toBeNull();
 });
 
 it("does not open the action popover on hover", async () => {

@@ -1,6 +1,4 @@
 import { useParams } from "react-router";
-import { AgentLayout } from "@/components/layouts/agent-layout";
-import { LegacyRoomLayout } from "@/features/collaboration/components/legacy-room-layout";
 import { NotFoundPage } from "@/pages/not-found.page";
 import { RoomPage } from "@/pages/room.page";
 import { WorkThreadPage } from "@/pages/work-thread.page";
@@ -12,11 +10,5 @@ export function ThreadPage() {
 	if (!threadId.startsWith("room:")) return <WorkThreadPage />;
 	const roomId = threadId.slice("room:".length);
 	if (!roomId) return <NotFoundPage />;
-	return (
-		<LegacyRoomLayout key={roomId}>
-			<AgentLayout roomId={roomId}>
-				<RoomPage roomId={roomId} />
-			</AgentLayout>
-		</LegacyRoomLayout>
-	);
+	return <RoomPage key={roomId} roomId={roomId} />;
 }

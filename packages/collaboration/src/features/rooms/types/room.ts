@@ -6,6 +6,7 @@ import type {
 	PlaygroundTurnPhase,
 } from "@/features/messages/types/message";
 import type { Session } from "@/types/session";
+import type { RoomSession, RoomSessionSnapshot } from "../room-session";
 
 /** One draft submitted by the room composer. */
 export interface ComposerSubmission {
@@ -50,6 +51,9 @@ export interface PendingToolApproval {
 
 /** Everything the room screen renders and every action it can raise. */
 export interface RoomViewProps {
+	/** Retained room state shared with creation and source import. */
+	roomSession?: RoomSession;
+	roomSnapshot?: RoomSessionSnapshot;
 	agent: AgentConfiguration;
 	insightId: string;
 	sessions: Session[];

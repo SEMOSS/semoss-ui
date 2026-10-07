@@ -4,11 +4,12 @@ import type {
 	ConversationTool,
 } from "@/features/messages/types/message";
 import { toolMessageTimestamps } from "@/features/messages/utils/message-metadata";
+import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { ToolContent } from "./tool-content";
 
 const workbench = vi.hoisted(() => ({
 	tools: {} as Record<string, ConversationTool>,
-	pendingApprovals: [],
+	pendingApprovals: [] as PendingToolApproval[],
 	toolCreatedAt: {} as Record<string, string>,
 }));
 vi.mock("../tool-workbench.context", () => ({
@@ -59,4 +60,33 @@ it("shows the original tool timestamp in its inspector, independent of response 
 	workbench.toolCreatedAt = { tool: "invalid" };
 	rerender(<ToolContent toolId="tool" />);
 	expect(container.querySelector("time")).toBeNull();
+});
+
+it("blocks generic approval for an editor send even when its editor has not restored", () => {
+	const tool: ConversationTool = {
+		id: "send",
+		parentMessageId: "answer",
+		name: "SendEmail",
+		title: "Send Email",
+		arguments: { openEmailId: "missing" },
+		status: "INPUT_REQUIRED",
+		metadata: { SMSS_MCP_UI: { component: "email-send" } },
+	};
+	workbench.tools = { send: tool };
+	workbench.pendingApprovals = [
+		{
+			toolId: "send",
+			parentMessageId: "answer",
+			toolName: "SendEmail",
+			arguments: tool.arguments,
+		},
+	];
+	render(<ToolContent toolId="send" />);
+	expect(screen.getByRole("alert")).toHaveTextContent(
+		"email editor is unavailable",
+	);
+	expect(
+		screen.queryByRole("button", { name: /Approve/ }),
+	).not.toBeInTheDocument();
+	workbench.pendingApprovals = [];
 });

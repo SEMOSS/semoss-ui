@@ -1,5 +1,10 @@
 import { createRoot } from "react-dom/client";
 import { createMemoryRouter, Navigate, RouterProvider } from "react-router";
+import {
+	I18nBuilder,
+	I18nextProvider,
+	playgroundResources,
+} from "@semoss/i18n";
 import { Insight, InsightContext } from "@semoss/sdk/react";
 import { ThemeProvider, TooltipProvider } from "@semoss/ui/next";
 import { CollaborationShell } from "@/features/collaboration/components/collaboration-shell";
@@ -7,7 +12,6 @@ import { createInitialCollaborationState } from "@/features/collaboration/state/
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
 import { DailyChatPreview } from "@/features/daily-chat/daily-chat-preview.fixture";
 import { settingsSections } from "@/features/settings/settings-sections";
-import { WorkComposerStateProvider } from "@/features/work-thread/work-composer-state.context";
 import { BrainPage } from "@/pages/brain.page";
 import { DashboardPage } from "@/pages/dashboard.page";
 import { SettingsPage } from "@/pages/settings.page";
@@ -15,6 +19,7 @@ import { WorkPage } from "@/pages/work.page";
 import "@/index.css";
 
 const state = createInitialCollaborationState();
+const i18nBuilder = new I18nBuilder(playgroundResources);
 state.profile.name = "Riley Warren";
 state.profile.id = "visual-fixture-only";
 state.profile.email = "fixture@example.invalid";
@@ -147,33 +152,33 @@ const router = createMemoryRouter(
 const root = document.getElementById("root");
 if (root && import.meta.env.DEV)
 	createRoot(root).render(
-		<ThemeProvider
-			defaultTheme="light"
-			storageKey="dashboard-visual-fixture-theme"
-		>
-			<TooltipProvider>
-				<InsightContext.Provider
-					value={{
-						actions,
-						insightId: "fixture",
-						isInitialized: true,
-						isAuthorized: true,
-						isReady: true,
-						error: null,
-						system: null,
-					}}
-				>
-					<CollaborationSessionProvider initialState={state}>
-						<div className="p-4">
-							<WorkComposerStateProvider>
+		<I18nextProvider i18n={i18nBuilder.i18n}>
+			<ThemeProvider
+				defaultTheme="light"
+				storageKey="dashboard-visual-fixture-theme"
+			>
+				<TooltipProvider>
+					<InsightContext.Provider
+						value={{
+							actions,
+							insightId: "fixture",
+							isInitialized: true,
+							isAuthorized: true,
+							isReady: true,
+							error: null,
+							system: null,
+						}}
+					>
+						<CollaborationSessionProvider initialState={state}>
+							<div className="p-4">
 								<RouterProvider router={router} />
-							</WorkComposerStateProvider>
-							<p className="pointer-events-none fixed right-3 bottom-1 rounded bg-background/90 px-2 py-0.5 text-muted-foreground text-xs">
-								Design preview · Sample data
-							</p>
-						</div>
-					</CollaborationSessionProvider>
-				</InsightContext.Provider>
-			</TooltipProvider>
-		</ThemeProvider>,
+								<p className="pointer-events-none fixed right-3 bottom-1 rounded bg-background/90 px-2 py-0.5 text-muted-foreground text-xs">
+									Design preview · Sample data
+								</p>
+							</div>
+						</CollaborationSessionProvider>
+					</InsightContext.Provider>
+				</TooltipProvider>
+			</ThemeProvider>
+		</I18nextProvider>,
 	);

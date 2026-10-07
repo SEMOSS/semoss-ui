@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
+import { roomWorkbenchTriggerId } from "../room-workbench-trigger-id";
 import { RoomHeader } from "./room-header";
 
 const agent = {
@@ -19,6 +20,24 @@ const agent = {
 	prompts: [],
 };
 afterEach(cleanup);
+
+it("keeps a room-specific focus destination when the workbench closes", () => {
+	const id = roomWorkbenchTriggerId("room:one/two");
+	const props = {
+		agent,
+		title: "Room",
+		workbenchTriggerId: id,
+		onToggleToolWorkbench: vi.fn(),
+	};
+	const view = render(<RoomHeader {...props} isToolWorkbenchOpen />);
+	const toggle = screen.getByRole("button", { name: "Close workbench" });
+	expect(toggle).toHaveAttribute("id", id);
+	view.rerender(<RoomHeader {...props} isToolWorkbenchOpen={false} />);
+	expect(screen.getByRole("button", { name: "Open workbench" })).toBe(toggle);
+	act(() => document.getElementById(id)?.focus());
+	expect(toggle).toHaveFocus();
+	expect(roomWorkbenchTriggerId("another-room")).not.toBe(id);
+});
 
 it("exposes a long conversation title to keyboard users and returns focus", async () => {
 	const title =

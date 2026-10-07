@@ -194,7 +194,15 @@ export function ToolWorkbenchProvider({
 	}, []);
 
 	const openWorkbench = useCallback(
-		(toolId?: string) => {
+		(toolId?: string, returnFocusId?: string) => {
+			if (!isOpen) {
+				const trigger = document.activeElement;
+				workbenchTriggerId.current =
+					returnFocusId ??
+					(trigger instanceof HTMLElement
+						? trigger.id || null
+						: null);
+			}
 			if (toolId) {
 				setInlineToolIds((current) => {
 					if (!current.has(toolId)) return current;
@@ -218,7 +226,7 @@ export function ToolWorkbenchProvider({
 			}
 			setIsOpen(true);
 		},
-		[store, tools, panelTarget],
+		[isOpen, store, tools, panelTarget],
 	);
 
 	const openRun = useCallback(

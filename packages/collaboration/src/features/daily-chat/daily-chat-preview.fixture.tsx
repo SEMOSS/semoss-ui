@@ -1,14 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { useLocation } from "react-router";
-import { P } from "@semoss/ui/next";
-import { selectThreadContext } from "@/features/collaboration/state/collaboration.selectors";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import type { ConversationMessage } from "@/features/messages/types/message";
-import { ThreadSession } from "@/features/thread-assistant/thread-session";
-import { ToolWorkbenchProvider } from "@/features/tools/components/tool-workbench-provider";
-import { UnifiedThread } from "@/features/work-thread/unified-thread";
-import { useWorkComposerSession } from "@/features/work-thread/work-composer-state.context";
-import { CHAT_WORKBENCH } from "@/features/work-thread/work-thread-panels";
+import { RoomSessionView } from "@/features/rooms/components/room-session-view";
+import {
+	RoomSession,
+	type RoomSessionSnapshot,
+} from "@/features/rooms/room-session";
+import type { RoomSettings } from "@/features/rooms/types/room";
+import {
+	previewEmailRoomSource,
+	readPreviewSourceEmail,
+} from "./daily-chat-preview-email.fixture";
+import { NewChatWorkbenchProvider } from "./new-chat-workbench-provider";
+import { NewChatWorkspace } from "./new-chat-workspace";
 
 const previewMessages: ConversationMessage[] = [
 	{
@@ -30,42 +35,48 @@ const previewMessages: ConversationMessage[] = [
 	},
 ];
 
-/** Isolated visual fixture: renders the actual chat UI without initializing a backend room. */
+/** Render the room UI without initializing an insight or contacting the backend. */
 export function DailyChatPreview() {
 	const location = useLocation();
 	const isNewChat = location.pathname === "/new";
 	const visualState = new URLSearchParams(window.location.search).get(
 		"chatState",
 	);
-	const navigationState: unknown = location.state;
-	const requested =
-		navigationState && typeof navigationState === "object"
-			? navigationState
-			: {};
-	const sessionId =
-		"sessionId" in requested &&
-		typeof requested.sessionId === "string" &&
-		requested.sessionId.startsWith("preview:")
-			? requested.sessionId
-			: `preview:${location.key}`;
-	const prompt =
-		"prompt" in requested && typeof requested.prompt === "string"
-			? requested.prompt
-			: "";
-	const { state, dispatch } = useCollaborationSession();
-	const composer = useWorkComposerSession(sessionId);
 	const [hasRecovered, setHasRecovered] = useState(false);
+	const { state } = useCollaborationSession();
+	const [settings, setSettings] = useState<RoomSettings>({
+		instructions: "",
+		modelId: "",
+		mcp: [],
+	});
 	const session = useMemo(() => {
-		const previewSession = new ThreadSession(sessionId);
-		// Recovery in the fixture must not initialize an Insight or contact the backend.
-		previewSession.reconnect = async () => {
-			setHasRecovered(true);
+		const preview = new RoomSession("preview", "preview-room");
+		preview.insight.actions.run = (async (statement: string) => ({
+			pixelReturn: [
+				{
+					output: readPreviewSourceEmail(statement),
+					operationType: [],
+				},
+			],
+		})) as typeof preview.insight.actions.run;
+		preview.reconnect = async () => setHasRecovered(true);
+		preview.send = async () => {
+			throw new Error("Preview does not send messages.");
 		};
-		return previewSession;
-	}, [sessionId]);
-	const snapshot = useMemo<ReturnType<ThreadSession["getSnapshot"]>>(() => {
-		const initial = session.getSnapshot();
-		const messages =
+		preview.create = async () => {
+			throw new Error("Preview does not store files.");
+		};
+		preview.selectModel = async () => undefined;
+		preview.saveSettings = async () => undefined;
+		return preview;
+	}, []);
+	const live = useSyncExternalStore(
+		session.subscribe,
+		session.getSnapshot,
+		session.getSnapshot,
+	);
+	const messages = useMemo(
+		() =>
 			visualState === "long"
 				? Array.from({ length: 6 }, (_, index) =>
 						previewMessages.map((message) => ({
@@ -73,72 +84,65 @@ export function DailyChatPreview() {
 							id: `${message.id}-${index}`,
 						})),
 					).flat()
-				: previewMessages;
-		return {
-			...initial,
-			isReady: true,
-			isLoading: visualState === "loading",
-			error:
-				visualState === "error" && !hasRecovered
-					? new Error(
-							"Unable to restore this conversation. Your draft is still available.",
-						)
-					: null,
-			isLoadingModel: false,
-			modelId: "",
-			modelName: "Preview",
-			turn: {
-				...initial.turn,
-				messages:
-					isNewChat || visualState === "loading" ? [] : messages,
-			},
-		};
-	}, [hasRecovered, isNewChat, session, visualState]);
-	useEffect(() => {
-		dispatch({ type: "session.create", sessionId });
-		if (prompt) composer.seedPrompt(prompt);
-	}, [composer, dispatch, prompt, sessionId]);
-	const thread = state.threads.find(
-		(candidate) => candidate.id === sessionId,
+				: previewMessages,
+		[visualState],
 	);
-	const context = selectThreadContext(state, sessionId);
-	const workspace = state.workspaces[sessionId];
-	if (!thread || !context || !workspace) return <P>Opening chat preview…</P>;
-	return (
-		<ToolWorkbenchProvider
-			{...CHAT_WORKBENCH}
-			defaultOpen={false}
-			autoReveal={false}
-			roomId=""
-			insightId="fixture"
-			tools={{}}
-			pendingApprovals={[]}
-			onApproveTool={async () => {
-				throw new Error("Preview does not execute tools.");
-			}}
-			onRejectTool={async () => {
-				throw new Error("Preview does not execute tools.");
-			}}
-		>
-			<UnifiedThread
-				isNewChat={isNewChat}
-				thread={{
-					...thread,
-					subject:
-						visualState === "long"
-							? "Prepare for the Northwind renewal call and confirm architecture review ownership, pricing questions and next steps"
-							: "Prepare for the renewal call",
-				}}
-				context={context}
-				workspace={workspace}
+	const snapshot: RoomSessionSnapshot = {
+		...live,
+		source:
+			visualState === "email" && !isNewChat
+				? previewEmailRoomSource
+				: null,
+		title:
+			visualState === "email"
+				? previewEmailRoomSource.title
+				: visualState === "long"
+					? "Prepare for the Northwind renewal call and confirm architecture review ownership, pricing questions and next steps"
+					: "Prepare for the renewal call",
+		isReady: true,
+		isLoading: visualState === "loading",
+		error:
+			visualState === "error" && !hasRecovered
+				? new Error(
+						"Unable to restore this conversation. Your draft is still available.",
+					)
+				: null,
+		isLoadingModel: false,
+		modelId: "",
+		modelName: "Preview",
+		turn: {
+			...live.turn,
+			messages: isNewChat || visualState === "loading" ? [] : messages,
+		},
+		settings: {
+			...live.settings,
+			...settings,
+			modelId: settings.modelId ?? "",
+			temperature: settings.temperature ?? null,
+		},
+	};
+	const saveSettings = async (values: RoomSettings): Promise<void> => {
+		setSettings(values);
+	};
+	if (isNewChat)
+		return (
+			<NewChatWorkbenchProvider
 				session={session}
 				snapshot={snapshot}
-				isSourceFreeSession
-				userName={state.profile.name}
-				header={null}
-				inspector={null}
-				attachments={[]}
-			/>
-		</ToolWorkbenchProvider>
-	);
+				onSaveSettings={saveSettings}
+			>
+				<NewChatWorkspace
+					draftId="preview-draft"
+					session={session}
+					snapshot={snapshot}
+					userName={state.profile.name}
+					agentError=""
+					onInitialize={session.reconnect}
+					onSend={session.send}
+					onSaveSettings={saveSettings}
+					onSelectAgent={async () => undefined}
+				/>
+			</NewChatWorkbenchProvider>
+		);
+	return <RoomSessionView session={session} snapshot={snapshot} />;
 }

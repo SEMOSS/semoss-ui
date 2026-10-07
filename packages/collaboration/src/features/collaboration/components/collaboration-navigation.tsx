@@ -12,13 +12,12 @@ import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
+import { CollaborationSettingsLink } from "./collaboration-settings-link";
 import { CollaborationTopicsNavigation } from "./collaboration-topics-navigation";
 
 interface CollaborationNavigationProps {
 	/** Renders a compact icon rail on desktop. */
 	isCollapsed?: boolean;
-	/** Toggles the desktop navigation width. */
-	onCollapse?: () => void;
 	/** Controls the saved topic disclosure when rendered by the shell. */
 	isTopicsOpen?: boolean;
 	/** Saves the user's topic disclosure preference. */
@@ -36,7 +35,6 @@ interface CollaborationNavigationProps {
 /** One quiet navigation follows the daily brief, topics, and conversations. */
 export function CollaborationNavigation({
 	isCollapsed = false,
-	onCollapse,
 	isTopicsOpen,
 	onTopicsOpenChange,
 	isSessionsOpen,
@@ -76,16 +74,15 @@ export function CollaborationNavigation({
 	];
 	return (
 		<div className="flex h-full min-h-0 flex-col">
-			<div className="shrink-0 p-2 pb-0">
+			<div className="shrink-0 p-2 pr-3 pb-0">
 				<CollaborationNavigationHeader
 					isCollapsed={isCollapsed}
-					onCollapse={onCollapse}
 					onNavigate={onNavigate}
 				/>
 			</div>
 			<nav
 				aria-label="Main"
-				className="flex shrink-0 flex-col gap-0.5 px-2 py-2"
+				className="flex shrink-0 flex-col gap-0.5 px-2 py-2 pr-3"
 			>
 				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
@@ -158,7 +155,7 @@ export function CollaborationNavigation({
 					</Tooltip>
 				))}
 			</nav>
-			<div className="flex min-h-0 flex-1 flex-col">
+			<div className="flex min-h-0 flex-1 flex-col pr-1">
 				<div
 					className={cn(
 						"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
@@ -179,6 +176,12 @@ export function CollaborationNavigation({
 						onNavigate={onNavigate}
 					/>
 				</div>
+			</div>
+			<div className="shrink-0 border-sidebar-border border-t p-2 pr-3">
+				<CollaborationSettingsLink
+					isCollapsed={isCollapsed}
+					onNavigate={onNavigate}
+				/>
 			</div>
 		</div>
 	);

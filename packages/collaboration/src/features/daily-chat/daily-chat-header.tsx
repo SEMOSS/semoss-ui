@@ -59,14 +59,6 @@ export function DailyChatHeader({
 			: hour < 18
 				? "Good afternoon"
 				: "Good evening";
-	const navigationState: unknown = location.state;
-	const openedRoomId =
-		navigationState &&
-		typeof navigationState === "object" &&
-		"openedRoomId" in navigationState &&
-		typeof navigationState.openedRoomId === "string"
-			? navigationState.openedRoomId
-			: undefined;
 	const [isContextOpen, setIsContextOpen] = useState(false);
 	return (
 		<CollaborationPageHeader
@@ -129,7 +121,6 @@ export function DailyChatHeader({
 						chatState={{
 							sessionId: threadId,
 							topicId,
-							...(openedRoomId ? { openedRoomId } : {}),
 						}}
 					/>
 				</>

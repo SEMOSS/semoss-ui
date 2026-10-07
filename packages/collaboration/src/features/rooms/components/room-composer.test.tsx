@@ -337,6 +337,97 @@ describe("RoomComposer", () => {
 		expect(actions).toHaveFocus();
 	});
 
+	it.each([false, true])(
+		"returns keyboard focus after opening a panel only when the trigger stays visible (hidden: %s)",
+		async (hideTrigger) => {
+			const user = userEvent.setup();
+			const openPanel = vi.fn(() => {
+				if (hideTrigger) actions.style.display = "none";
+			});
+			renderComposer({
+				autoFocus: false,
+				hideSettingsAction: true,
+				panelActions: [
+					{
+						id: "settings",
+						label: "Settings panel",
+						icon: Settings2,
+						onSelect: openPanel,
+					},
+				],
+			});
+			const actions = screen.getByRole("button", {
+				name: "Open composer actions",
+			});
+			// jsdom has no layout; model whether this trigger has a rendered box.
+			vi.spyOn(actions, "getClientRects").mockImplementation(() => {
+				const rectangles =
+					actions.style.display === "none"
+						? []
+						: [new DOMRect(0, 0, 40, 40)];
+				return Object.assign(rectangles, {
+					item: (index: number) => rectangles[index] ?? null,
+				});
+			});
+			act(() => actions.focus());
+			await user.keyboard("{Enter}{End}{Enter}");
+			expect(openPanel).toHaveBeenCalledOnce();
+			await waitFor(() =>
+				expect(
+					screen.queryByRole("menu", { name: "Composer actions" }),
+				).not.toBeInTheDocument(),
+			);
+			await act(
+				() =>
+					new Promise<void>((resolve) =>
+						requestAnimationFrame(() => resolve()),
+					),
+			);
+			if (hideTrigger) expect(actions).not.toHaveFocus();
+			else await waitFor(() => expect(actions).toHaveFocus());
+		},
+	);
+
+	it("preserves focus claimed by the panel opened from the composer menu", async () => {
+		const user = userEvent.setup();
+		renderComposer({
+			autoFocus: false,
+			hideSettingsAction: true,
+			children: <button type="button">Panel destination</button>,
+			panelActions: [
+				{
+					id: "settings",
+					label: "Settings panel",
+					icon: Settings2,
+					onSelect: () =>
+						requestAnimationFrame(() =>
+							screen
+								.getByRole("button", {
+									name: "Panel destination",
+								})
+								.focus(),
+						),
+				},
+			],
+		});
+		const actions = screen.getByRole("button", {
+			name: "Open composer actions",
+		});
+		vi.spyOn(actions, "getClientRects").mockReturnValue(
+			Object.assign([new DOMRect(0, 0, 40, 40)], {
+				item: () => new DOMRect(0, 0, 40, 40),
+			}),
+		);
+		act(() => actions.focus());
+		await user.keyboard("{Enter}{End}{Enter}");
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Panel destination" }),
+			).toHaveFocus(),
+		);
+		expect(actions).not.toHaveFocus();
+	});
+
 	it.each(["dialog", "drawer"] as const)(
 		"discards an unsaved settings draft when the %s is reopened",
 		async (settingsPresentation) => {

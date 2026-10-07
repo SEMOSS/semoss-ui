@@ -195,11 +195,11 @@ export class AgentTurnController {
 		}
 	}
 
-	/** Submit once; subsequent progress uses run polling rather than pixel jobs. */
+	/** Submit once; return whether a run was accepted, including later cancellation. */
 	send = async (
 		submission: ComposerSubmission,
 		transportConfig?: AgentTurnConfig,
-	): Promise<void> => {
+	): Promise<boolean> => {
 		// Navigation can reconfigure the shared observer while restoration awaits.
 		// Keep this submitted request's files and run bound to its originating insight.
 		const config = { ...(transportConfig ?? this.config) };
@@ -234,7 +234,7 @@ export class AgentTurnController {
 			(submission.files.length || existingMedia.length
 				? "Please review the attached files."
 				: "");
-		if (!command) return;
+		if (!command) return false;
 		this.previous = this.snapshot.messages;
 		this.durable = [];
 		this.items.clear();
@@ -276,7 +276,7 @@ export class AgentTurnController {
 				config.insightId,
 				submission.files,
 			);
-			if (this.disposed) return;
+			if (this.disposed) return false;
 			if (this.cancelRequested) {
 				this.optimistic = null;
 				this.update({
@@ -284,7 +284,7 @@ export class AgentTurnController {
 					phase: "cancelled",
 					isRunning: false,
 				});
-				return;
+				return false;
 			}
 			this.run = await startAgentRun(config.insightId, {
 				roomId: config.roomId,
@@ -298,7 +298,7 @@ export class AgentTurnController {
 				maxTurns: config.maxTurns,
 				maxReflections: config.maxReflections,
 			});
-			if (this.disposed) return;
+			if (this.disposed) return true;
 			this.run = { ...this.run, input: command };
 			this.observe();
 			if (this.cancelRequested) {
@@ -308,6 +308,7 @@ export class AgentTurnController {
 					/* Cancellation errors are surfaced separately from successful submission. */
 				}
 			}
+			return true;
 		} catch (cause) {
 			// A transport failure may follow a successful submission. Require a
 			// durable lookup before retrying so the same message is not run twice.

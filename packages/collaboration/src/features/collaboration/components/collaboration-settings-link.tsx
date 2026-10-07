@@ -2,6 +2,7 @@ import { Settings2 } from "lucide-react";
 import { NavLink } from "react-router";
 import {
 	Button,
+	cn,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -26,7 +27,10 @@ export function CollaborationSettingsLink({
 					asChild
 					variant="ghost"
 					size={isCollapsed ? "icon-sm" : "sm"}
-					className="ml-auto pointer-coarse:min-h-11 pointer-coarse:min-w-11"
+					className={cn(
+						"min-h-8 pointer-coarse:min-h-11 w-full justify-start gap-2 px-2 font-normal text-xs has-[>svg]:px-2",
+						isCollapsed && "justify-center px-0 has-[>svg]:px-0",
+					)}
 				>
 					<NavLink
 						to="/settings"
@@ -39,7 +43,9 @@ export function CollaborationSettingsLink({
 					</NavLink>
 				</Button>
 			</TooltipTrigger>
-			{isCollapsed && <TooltipContent>Settings</TooltipContent>}
+			{isCollapsed && (
+				<TooltipContent side="right">Settings</TooltipContent>
+			)}
 		</Tooltip>
 	);
 }

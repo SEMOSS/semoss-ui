@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@semoss/ui/next";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
+import { roomWorkbenchTriggerId } from "../room-workbench-trigger-id";
 import type { RoomViewProps } from "../types/room";
 import { RoomHeader } from "./room-header";
 import { RoomThread } from "./room-thread";
@@ -63,6 +64,7 @@ export function RoomConversation({
 					title={title}
 					isToolWorkbenchOpen={isToolWorkbenchOpen}
 					showToolWorkbench={showToolWorkbench}
+					workbenchTriggerId={roomWorkbenchTriggerId(conversationId)}
 					onToggleToolWorkbench={onToggleToolWorkbench}
 					actions={headerActions}
 				/>

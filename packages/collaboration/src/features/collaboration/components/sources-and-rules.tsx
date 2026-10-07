@@ -1,7 +1,6 @@
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { Button, P, toast } from "@semoss/ui/next";
 import { SourcesView } from "@/features/connectors/components/sources-view";
-import { threadPath } from "@/lib/workspace-paths";
 import { importSourceCommand } from "../import-source";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -11,8 +10,7 @@ import { Section } from "./section";
 
 /** Source data enters the session only through an explicit provider selection. */
 export function SourcesAndRules() {
-	const navigate = useNavigate();
-	const { state, dispatch } = useCollaborationSession();
+	const { dispatch } = useCollaborationSession();
 	return (
 		<CollaborationSurface
 			header={
@@ -48,27 +46,6 @@ export function SourcesAndRules() {
 			<div className="space-y-6 p-4 md:p-6">
 				<WorkRefreshStatus />
 				<SourcesView
-					onDraftReply={(source) => {
-						const command = importSourceCommand(source);
-						if (command.type !== "source.import") return;
-						const existing = state.threads.find(
-							(thread) =>
-								thread.source?.kind === source.sourceKind &&
-								thread.source?.nativeId === source.nativeId,
-						);
-						const threadId = existing?.id ?? command.thread.id;
-						dispatch(command);
-						void navigate(threadPath(threadId), {
-							state: {
-								threadAction: {
-									id: crypto.randomUUID(),
-									threadId,
-									action: "draft",
-									sourceMessageId: source.nativeId,
-								},
-							},
-						});
-					}}
 					onImport={(source) => {
 						dispatch(importSourceCommand(source));
 						toast.success("Added to connected items in Work.");

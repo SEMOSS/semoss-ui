@@ -1,7 +1,6 @@
-import { Link, useParams } from "react-router";
-import { Button, P } from "@semoss/ui/next";
+import { useParams } from "react-router";
+import { P } from "@semoss/ui/next";
 import { useEnsureThreadInsights } from "@/features/work-thread/use-thread-insights";
-import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { BrainOverview } from "./brain-overview";
@@ -10,7 +9,7 @@ import { CollaborationSurface } from "./collaboration-surface";
 import { ThreadMenu } from "./thread-menu";
 import { ThreadSettings } from "./thread-settings";
 
-/** Thread detail connects Brain's context controls back to the Work room. */
+/** Thread detail presents Brain's context controls and thread settings. */
 export function BrainThread() {
 	const { threadId } = useParams();
 	const { state } = useCollaborationSession();
@@ -42,11 +41,6 @@ export function BrainThread() {
 										{thread.channel} · {thread.messageCount}{" "}
 										messages · {dateLabel(thread.lastAt)}
 									</span>
-									<Button asChild variant="outline" size="sm">
-										<Link to={threadPath(thread.id)}>
-											Open in Work
-										</Link>
-									</Button>
 								</div>
 							</CollaborationPageHeader>
 						</div>

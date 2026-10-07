@@ -5,7 +5,7 @@ import { useDashboard } from "@/features/dashboard/dashboard.context";
 import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 
 interface CollaborationHeaderProps {
-	/** The shell owns desktop navigation and the mobile drawer lifecycle. */
+	/** The shell owns the mobile navigation drawer lifecycle. */
 	children: ReactNode;
 	/** Room controls render here while retaining their conversation context. */
 	roomControlsRef: Ref<HTMLDivElement>;
@@ -37,7 +37,7 @@ export function CollaborationHeader({
 				ref={roomControlsRef}
 				className="flex min-w-0 flex-1 items-center gap-1 empty:hidden sm:gap-2"
 			/>
-			<div className="ml-auto shrink-0 pl-1">
+			<div className="ml-auto min-w-0 shrink-0 pl-1">
 				<CollaborationProfileMenu />
 			</div>
 		</header>

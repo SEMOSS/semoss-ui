@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import type { Session } from "@/types/session";
+import { RoomSession } from "../room-session";
 import { RoomWorkspace } from "./room-workspace";
 
 const workbenchState = vi.hoisted(() => ({
@@ -9,14 +10,29 @@ const workbenchState = vi.hoisted(() => ({
 	activeToolId: null as string | null,
 	openWorkbench: vi.fn(),
 	closeWorkbench: vi.fn(),
+	selectPanel: vi.fn(),
 }));
 
 vi.mock("@/features/tools/tool-workbench.context", () => ({
-	useToolWorkbench: () => workbenchState,
+	useToolWorkbench: () => ({
+		...workbenchState,
+		store: {
+			getState: () => ({
+				layout: {
+					actions: { selectPanel: workbenchState.selectPanel },
+				},
+			}),
+		},
+	}),
 }));
 
 vi.mock("@/features/tools/components/tool-workbench", () => ({
-	ToolWorkbench: () => <div>Tool workbench</div>,
+	ToolWorkbench: () => (
+		<div>
+			Tool workbench
+			<input aria-label="Panel draft" defaultValue="" />
+		</div>
+	),
 }));
 
 vi.mock("./room-header", () => ({
@@ -40,8 +56,19 @@ vi.mock("./room-run-status", () => ({
 }));
 
 vi.mock("./room-composer", () => ({
-	RoomComposer: ({ className }: { className?: string }) => (
-		<div className={className}>Composer</div>
+	RoomComposer: ({
+		className,
+		attachmentSummary,
+		panelActions,
+	}: ComponentProps<typeof import("./room-composer")["RoomComposer"]>) => (
+		<div className={className}>
+			Composer{attachmentSummary}
+			{panelActions?.map((action) => (
+				<button key={action.id} type="button" onClick={action.onSelect}>
+					{action.label}
+				</button>
+			))}
+		</div>
 	),
 }));
 
@@ -106,6 +133,7 @@ describe("RoomWorkspace", () => {
 		workbenchState.activeToolId = null;
 		workbenchState.openWorkbench.mockClear();
 		workbenchState.closeWorkbench.mockClear();
+		workbenchState.selectPanel.mockClear();
 	});
 
 	it("opens without an active tool", () => {
@@ -115,7 +143,41 @@ describe("RoomWorkspace", () => {
 		fireEvent.click(
 			screen.getByRole("button", { name: "Toggle workbench" }),
 		);
-		expect(workbenchState.openWorkbench).toHaveBeenCalledWith(undefined);
+		expect(workbenchState.openWorkbench).toHaveBeenCalledWith();
+	});
+
+	it("opens Settings as a selected panel and allows opening an empty workbench from the composer", () => {
+		workbenchState.isOpen = false;
+		render(<RoomWorkspace {...defaultProps} />);
+		fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+		expect(workbenchState.selectPanel).toHaveBeenCalledWith(
+			"collaboration-room-settings",
+			{},
+		);
+		expect(workbenchState.openWorkbench).toHaveBeenCalledWith(
+			undefined,
+			expect.any(String),
+		);
+		workbenchState.selectPanel.mockClear();
+		fireEvent.click(screen.getByRole("button", { name: "Open workbench" }));
+		expect(workbenchState.selectPanel).not.toHaveBeenCalled();
+	});
+
+	it("retains unsaved panel state while the workbench is hidden", () => {
+		const { rerender } = render(<RoomWorkspace {...defaultProps} />);
+		fireEvent.change(screen.getByRole("textbox", { name: "Panel draft" }), {
+			target: { value: "Keep these settings" },
+		});
+		workbenchState.isOpen = false;
+		rerender(<RoomWorkspace {...defaultProps} />);
+		expect(
+			screen.queryByRole("complementary", { name: "Tool workbench" }),
+		).not.toBeInTheDocument();
+		workbenchState.isOpen = true;
+		rerender(<RoomWorkspace {...defaultProps} />);
+		expect(
+			screen.getByRole("textbox", { name: "Panel draft" }),
+		).toHaveValue("Keep these settings");
 	});
 
 	it("aligns the composer with the message column", () => {
@@ -159,4 +221,51 @@ describe("RoomWorkspace", () => {
 
 		expect(panelSizes(container)).toEqual([30, 70]);
 	});
+});
+
+it("visibly queues the imported source file and allows removal before the first message", () => {
+	const owner = new RoomSession("test-owner", "room-1");
+	const remove = vi.spyOn(owner, "removeContextFile");
+	const file = {
+		fileName: "Project-email.md",
+		fileLocation: "Project-email.md",
+	};
+	workbenchState.isOpen = false;
+	render(
+		<RoomWorkspace
+			{...defaultProps}
+			roomSession={owner}
+			roomSnapshot={{ ...owner.getSnapshot(), contextFiles: [file] }}
+		/>,
+	);
+	expect(screen.getByText(file.fileName)).toBeVisible();
+	expect(
+		screen.queryByRole("complementary", { name: "Tool workbench" }),
+	).not.toBeInTheDocument();
+	fireEvent.click(
+		screen.getByRole("button", {
+			name: "Remove Project-email.md from context",
+		}),
+	);
+	expect(remove).toHaveBeenCalledWith(file.fileLocation);
+	owner.dispose();
+});
+
+it("keeps reconnect available for an unconfirmed send even when the run has failed", () => {
+	const owner = new RoomSession("test-owner", "room-1");
+	const reconnect = vi.fn();
+	render(
+		<RoomWorkspace
+			{...defaultProps}
+			onReconnect={reconnect}
+			turnError="Connection lost"
+			roomSnapshot={{
+				...owner.getSnapshot(),
+				hasUnconfirmedSubmission: true,
+			}}
+		/>,
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Reconnect" }));
+	expect(reconnect).toHaveBeenCalledOnce();
+	owner.dispose();
 });

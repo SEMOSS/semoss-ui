@@ -327,6 +327,7 @@ export function RoomComposer({
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [isPromptPickerOpen, setIsPromptPickerOpen] = useState(false);
 	const isOpeningPanel = useRef(false);
+	const pendingPanelAction = useRef<(() => void) | null>(null);
 
 	draftRef.current = draft;
 	useEffect(() => {
@@ -782,6 +783,33 @@ export function RoomComposer({
 										if (isOpeningPanel.current) {
 											event.preventDefault();
 											isOpeningPanel.current = false;
+											// Open after the menu releases its focus trap, including retained mobile panels.
+											const openPanel =
+												pendingPanelAction.current;
+											pendingPanelAction.current = null;
+											openPanel?.();
+											requestAnimationFrame(() => {
+												const trigger =
+													actionsTriggerRef.current;
+												// Dialogs and mobile docks claim focus themselves.
+												if (
+													document.activeElement ===
+														document.body &&
+													trigger?.isConnected &&
+													!trigger.matches(
+														":disabled",
+													) &&
+													!trigger.closest(
+														"[inert]",
+													) &&
+													trigger.getClientRects()
+														.length > 0 &&
+													getComputedStyle(trigger)
+														.visibility ===
+														"visible"
+												)
+													trigger.focus();
+											});
 										}
 									}}
 								>
@@ -827,8 +855,9 @@ export function RoomComposer({
 													className="pointer-coarse:min-h-11"
 													onSelect={() => {
 														isOpeningPanel.current = true;
+														pendingPanelAction.current =
+															action.onSelect;
 														setIsActionsOpen(false);
-														action.onSelect();
 													}}
 												>
 													<action.icon aria-hidden="true" />
