@@ -326,6 +326,162 @@ export const FUNCTION_CONNECTIONS = {
 			],
 		},
 		{
+			name: "Avatar",
+			disable: false,
+			icon: RESTAPI,
+			description:
+				"Start a real-time AI avatar, make it speak, and close the session. The browser connects to the avatar stream directly.",
+			link: "https://docs.heygen.com/",
+			fields: [
+				{
+					key: "FUNCTION_TYPE",
+					label: "Function Type",
+					value: "AVATAR",
+					type: "text",
+					disabled: true,
+					hidden: true,
+					required: true,
+					category: "General",
+				},
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+					category: "General",
+				},
+				{
+					key: "AVATAR_PROVIDER",
+					label: "Avatar Provider",
+					value: "HEYGEN",
+					type: "select",
+					options: [{ display: "HeyGen", value: "HEYGEN" }],
+					disabled: false,
+					required: true,
+					helperText:
+						"The service that renders the avatar. HeyGen is the only provider supported today.",
+					category: "General",
+				},
+				{
+					key: "API_KEY",
+					label: "API Key",
+					value: "",
+					type: "password",
+					disabled: false,
+					required: true,
+					helperText:
+						"The provider API key. It stays on the server and is never returned to callers.",
+					category: "Credentials",
+				},
+				{
+					key: "API_BASE",
+					label: "API Base URL",
+					value: "https://api.heygen.com",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Change this only when routing through a proxy that mirrors the provider API.",
+					category: "Credentials",
+				},
+				{
+					key: "DEFAULT_AVATAR_ID",
+					label: "Default Avatar ID",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Avatar used when a caller does not pick one. Leave blank to use the provider default.",
+					category: "Settings",
+				},
+				{
+					key: "DEFAULT_VOICE_ID",
+					label: "Default Voice ID",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Voice used when a caller does not pick one. Leave blank to use the avatar default.",
+					category: "Settings",
+				},
+				{
+					key: "DEFAULT_QUALITY",
+					label: "Default Stream Quality",
+					value: "medium",
+					type: "select",
+					options: [
+						{ display: "low", value: "low" },
+						{ display: "medium", value: "medium" },
+						{ display: "high", value: "high" },
+					],
+					disabled: false,
+					required: false,
+					helperText: "Higher quality uses more bandwidth.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_NAME",
+					label: "Function Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Becomes the MCP tool name, so name it for what it does, ie avatar.",
+					category: "Function Metadata",
+				},
+				{
+					key: "FUNCTION_DESCRIPTION",
+					label: "Function Description",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Leave blank to use the built in description of the avatar actions.",
+					category: "Function Metadata",
+				},
+				{
+					key: "FUNCTION_PARAMETERS",
+					label: "Function Parameters",
+					value: [],
+					type: "parameter-list",
+					disabled: false,
+					required: false,
+					helperText:
+						"Leave empty to use the built in parameters: action, sessionId, text, avatarId, voiceId, quality, and taskType.",
+					category: "Function Metadata",
+				},
+				{
+					key: "FUNCTION_REQUIRED_PARAMETERS",
+					label: "Function Required Parameters",
+					value: [],
+					type: "string-list",
+					disabled: false,
+					required: false,
+					helperText:
+						"List the names of parameters above that must be provided when calling this function.",
+					category: "Function Metadata",
+				},
+			],
+		},
+		{
 			name: "Azure Document Intelligence",
 			disable: false,
 			icon: RESTAPI,
