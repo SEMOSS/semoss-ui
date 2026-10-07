@@ -1,17 +1,23 @@
 import {
 	ArrowRightIcon,
-	CheckIcon,
+	DownloadIcon,
+	MoreVerticalIcon,
 	PencilIcon,
 	StarIcon,
-	XIcon,
+	TrashIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import {
+	Badge,
 	Button,
 	Checkbox,
 	cn,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
 	Input,
 	Tooltip,
 	TooltipContent,
@@ -25,8 +31,12 @@ export interface RoomItem {
 	ROOM_ID: string;
 	ROOM_NAME: string;
 	DATE_CREATED: string;
+	UPDATED_AT?: string;
 	WORKSPACE_ID?: string;
 	PINNED?: boolean;
+	/** Number of this room's messages matching the current search — only set
+	 *  for rooms found via message-content search, not name matches. */
+	MATCH_COUNT?: number;
 }
 
 // Default-size checkbox with a slightly stronger border than the faint
@@ -41,11 +51,23 @@ interface ChatRowProps {
 	isPinned: boolean;
 	onToggleSelect: () => void;
 	onTogglePin: () => void;
+	onDownloadClick: () => void;
+	onDeleteClick: () => void;
 }
 
+/** Formats a timestamp for the date columns as a compact date + time,
+ *  falling back to the raw string when it can't be parsed. */
+const formatDateCell = (raw: string) => {
+	const d = normalizeTimestamp(raw);
+	return d.isValid() ? d.format("MM/DD/YY h:mm A") : raw;
+};
+
 /**
- * A single chat row on the all-chats page: select checkbox, name + date,
- * favorite (pin) toggle, inline rename, and navigation to the room.
+ * A single chat row on the all-chats page — styled to match the
+ * Agents/Workspaces table (raw `<table>`, `hover:bg-muted/40` rows, tabular
+ * date columns): select checkbox, name, date created, date last modified,
+ * and a "⋮" menu (favorite, download, rename, delete) matching the sidebar's
+ * chat-history menu, plus a continue-chat link.
  *
  * Inline rename is owned here — it's per-row, ephemeral state. Saving runs
  * `chat.renameRoom`, which bumps the room counter so any list watching it
@@ -57,13 +79,19 @@ export const ChatRow = ({
 	isPinned,
 	onToggleSelect,
 	onTogglePin,
+	onDownloadClick,
+	onDeleteClick,
 }: ChatRowProps) => {
-	const { t } = useTranslation("workspace");
+	const { t } = useTranslation(["workspace", "sidebar"]);
 	const { chat } = useChat();
 
 	const [isEditing, setIsEditing] = useState(false);
 	const [editingName, setEditingName] = useState("");
 	const [isRenaming, setIsRenaming] = useState(false);
+	// Escape cancels synchronously, but the input still loses focus right
+	// after (as it unmounts) — this skips the blur-triggered save that would
+	// otherwise immediately follow a cancel.
+	const skipBlurSaveRef = useRef(false);
 
 	const handleStartRename = () => {
 		setEditingName(room.ROOM_NAME);
@@ -71,6 +99,7 @@ export const ChatRow = ({
 	};
 
 	const handleCancelRename = () => {
+		skipBlurSaveRef.current = true;
 		setIsEditing(false);
 		setEditingName("");
 	};
@@ -93,202 +122,162 @@ export const ChatRow = ({
 		}
 	};
 
-	const d = normalizeTimestamp(room.DATE_CREATED);
-	const relative = d.isValid() ? d.fromNow() : room.DATE_CREATED;
-	const absolute = d.isValid()
-		? d.format("MMM D, YYYY h:mm A")
-		: room.DATE_CREATED;
-
-	if (isEditing) {
-		return (
-			<div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5">
-				<Input
-					autoFocus
-					value={editingName}
-					disabled={isRenaming}
-					onChange={(e) => setEditingName(e.target.value)}
-					onKeyDown={(e) => {
-						if (e.key === "Enter") {
-							e.preventDefault();
-							handleSaveRename();
-						} else if (e.key === "Escape") {
-							handleCancelRename();
-						}
-					}}
-					className="h-8 flex-1"
-				/>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							disabled={isRenaming}
-							onClick={handleSaveRename}
-							aria-label={t("workspace:chat.renameSave")}
-						>
-							<CheckIcon className="size-4" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>
-						{t("workspace:chat.renameSave")}
-					</TooltipContent>
-				</Tooltip>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							disabled={isRenaming}
-							onClick={handleCancelRename}
-							aria-label={t("workspace:chat.cancel")}
-						>
-							<XIcon className="size-4" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>
-						{t("workspace:chat.cancel")}
-					</TooltipContent>
-				</Tooltip>
-			</div>
-		);
-	}
+	const created = formatDateCell(room.DATE_CREATED);
+	const modified = formatDateCell(room.UPDATED_AT || room.DATE_CREATED);
 
 	return (
-		<div
+		<tr
 			className={cn(
-				"group/row relative flex min-w-0 items-center rounded-lg border border-border bg-card transition-colors hover:border-border/80 hover:bg-accent/40",
-				isSelected && "border-primary bg-accent/30",
+				"transition-colors hover:bg-muted/40",
+				isSelected && "bg-muted/30",
 			)}
+			data-testid={`chats-page--row-${room.ROOM_ID}`}
 		>
-			{/* Stretched link covers the WHOLE row but z-0, so anything with
-			    z-[1] above it intercepts clicks before the link does. */}
-			<Link
-				to={`/room/${room.ROOM_ID}`}
-				aria-label={t("workspace:chat.selectRoom")}
-				className="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-			/>
-
-			{/* Left select zone — wider hit area for the checkbox. Clicking
-			    anywhere here toggles selection instead of opening the room. */}
-			{/* biome-ignore lint/a11y/useSemanticElements: cannot use a real <button> here — it would wrap the interactive Checkbox component, which is itself a button (Radix renders <button role="checkbox">). Nested buttons are invalid HTML. The role + tabIndex + aria-label + onKeyDown gives equivalent a11y semantics. */}
-			<div
-				role="button"
-				tabIndex={-1}
-				aria-label={t("workspace:chats.selectChat", {
-					name: room.ROOM_NAME,
-				})}
-				onClick={(e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					onToggleSelect();
-				}}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						e.preventDefault();
-						e.stopPropagation();
-						onToggleSelect();
-					}
-				}}
-				className="relative z-1 flex shrink-0 cursor-pointer items-center py-2.5 @md:ps-4 ps-3 @md:pe-3 pe-2.5"
-			>
+			<td className="whitespace-nowrap px-2 py-3 text-center">
 				<Checkbox
 					checked={isSelected}
 					onCheckedChange={onToggleSelect}
-					onClick={(e) => e.stopPropagation()}
 					aria-label={t("workspace:chats.selectChat", {
 						name: room.ROOM_NAME,
 					})}
 					className={CHECKBOX_CLASS}
 				/>
-			</div>
+			</td>
 
-			{/* Name + date — link covers this area for navigation */}
-			<div className="pointer-events-none relative z-1 flex min-w-0 flex-1 flex-col py-2.5">
-				<div
-					dir="auto"
-					className="truncate font-semibold text-foreground text-sm leading-tight"
-					title={room.ROOM_NAME}
-				>
-					{room.ROOM_NAME}
-				</div>
-				<div
-					className="text-muted-foreground text-xs leading-tight"
-					title={absolute}
-				>
-					{relative}
-				</div>
-			</div>
-
-			{/* Right actions: pin (always visible) + rename (always visible)
-			    + arrow. Wrapper is `pointer-events-none` so clicks on the
-			    arrow (purely visual) fall through to the stretched Link and
-			    navigate to the room. Each Button re-enables events on itself
-			    via `pointer-events-auto`. */}
-			<div className="pointer-events-none relative z-1 flex shrink-0 items-center gap-0.5 @md:pe-3 pe-2">
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							aria-label={
-								isPinned
-									? t("workspace:chat.unpin")
-									: t("workspace:chat.pin")
+			<td className="min-w-[180px] max-w-0 px-4 py-3">
+				{isEditing ? (
+					<Input
+						autoFocus
+						value={editingName}
+						disabled={isRenaming}
+						onChange={(e) => setEditingName(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								handleSaveRename();
+							} else if (e.key === "Escape") {
+								handleCancelRename();
 							}
-							className={cn(
-								"pointer-events-auto hover:text-yellow-500",
-								isPinned
-									? "text-yellow-500"
-									: "text-muted-foreground",
-							)}
-							onClick={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								onTogglePin();
-							}}
-							data-testid={`chats-page--pin-${room.ROOM_ID}`}
-						>
-							<StarIcon
-								className={cn(
-									"size-4",
-									isPinned && "fill-yellow-500",
-								)}
-							/>
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>
-						{isPinned
-							? t("workspace:chat.unpin")
-							: t("workspace:chat.pin")}
-					</TooltipContent>
-				</Tooltip>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							aria-label={t("workspace:chat.rename")}
-							className="pointer-events-auto text-muted-foreground hover:text-foreground"
-							onClick={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								handleStartRename();
-							}}
-							data-testid={`chats-page--rename-${room.ROOM_ID}`}
-						>
-							<PencilIcon className="size-4" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>
-						{t("workspace:chat.rename")}
-					</TooltipContent>
-				</Tooltip>
-				<ArrowRightIcon className="rtl:-scale-x-100 ms-1 size-4 shrink-0 text-muted-foreground transition-colors group-hover/row:text-foreground" />
-			</div>
-		</div>
+						}}
+						onBlur={() => {
+							if (skipBlurSaveRef.current) {
+								skipBlurSaveRef.current = false;
+								return;
+							}
+							handleSaveRename();
+						}}
+						className="h-8 w-full"
+					/>
+				) : (
+					<div className="flex min-w-0 items-center gap-2">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<p
+									dir="auto"
+									className="w-fit max-w-full cursor-text truncate font-medium text-sm hover:underline"
+									onDoubleClick={handleStartRename}
+								>
+									{room.ROOM_NAME}
+								</p>
+							</TooltipTrigger>
+							<TooltipContent>{room.ROOM_NAME}</TooltipContent>
+						</Tooltip>
+						{room.MATCH_COUNT !== undefined && (
+							<Badge
+								variant="secondary"
+								className="shrink-0 text-xs"
+							>
+								{t("workspace:chats.matchCount", {
+									count: room.MATCH_COUNT,
+								})}
+							</Badge>
+						)}
+					</div>
+				)}
+			</td>
+
+			<td className="hidden whitespace-nowrap px-4 py-3 text-muted-foreground text-xs tabular-nums sm:table-cell">
+				{created}
+			</td>
+
+			<td className="hidden whitespace-nowrap px-4 py-3 text-muted-foreground text-xs tabular-nums sm:table-cell">
+				{modified}
+			</td>
+
+			<td className="whitespace-nowrap px-4 py-3">
+				<div className="flex items-center justify-end gap-1">
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								asChild
+								type="button"
+								variant="outline"
+								size="sm"
+								disabled={isEditing}
+								data-testid={`chats-page--continue-${room.ROOM_ID}`}
+							>
+								<Link to={`/room/${room.ROOM_ID}`}>
+									<ArrowRightIcon className="rtl:-scale-x-100 size-4" />
+								</Link>
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							{t("workspace:chat.selectRoom")}
+						</TooltipContent>
+					</Tooltip>
+					<DropdownMenu modal={false}>
+						<DropdownMenuTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								disabled={isEditing}
+								aria-label={t("workspace:chat.rename")}
+								className="text-muted-foreground hover:text-foreground"
+								data-testid={`chats-page--menu-${room.ROOM_ID}`}
+							>
+								<MoreVerticalIcon className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-40">
+							<DropdownMenuItem
+								onClick={onTogglePin}
+								data-testid={`chats-page--pin-${room.ROOM_ID}`}
+							>
+								<StarIcon
+									className={cn(
+										"me-2 size-4",
+										isPinned &&
+											"fill-yellow-500 text-yellow-500",
+									)}
+								/>
+								{isPinned
+									? t("workspace:chat.unpin")
+									: t("workspace:chat.pin")}
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={onDownloadClick}>
+								<DownloadIcon className="me-2 size-4" />
+								{t("sidebar:actions.download")}
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={handleStartRename}
+								data-testid={`chats-page--rename-${room.ROOM_ID}`}
+							>
+								<PencilIcon className="me-2 size-4" />
+								{t("workspace:chat.rename")}
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={onDeleteClick}
+								className="text-destructive focus:text-destructive"
+								data-testid={`chats-page--delete-${room.ROOM_ID}`}
+							>
+								<TrashIcon className="me-2 size-4" />
+								{t("workspace:chat.delete")}
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			</td>
+		</tr>
 	);
 };
