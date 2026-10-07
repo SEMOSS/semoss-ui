@@ -31,29 +31,39 @@ afterEach(() => {
 	vi.resetAllMocks();
 });
 
-test("shows initialization failures before RootContext is mounted and allows returning home", async () => {
-	vi.mocked(useInsight).mockReturnValue({
-		isInitialized: false,
-		error: new Error("Initialization failed"),
-	} as ReturnType<typeof useInsight>);
-	const router = createMemoryRouter(
-		[
-			{ path: "/", element: <h1>Home</h1> },
-			{ path: "/initializing", element: <InitializedLayout /> },
-		],
-		{ initialEntries: ["/initializing"] },
-	);
-	render(
-		<ThemeProvider defaultTheme="light">
-			<RouterProvider router={router} />
-		</ThemeProvider>,
-	);
-	expect(
-		screen.getByRole("heading", { name: "studio.errorTitle" }),
-	).toBeVisible();
-	fireEvent.click(screen.getByRole("button", { name: "studio.backHome" }));
-	expect(await screen.findByRole("heading", { name: "Home" })).toBeVisible();
-});
+test.each(["light", "dark"] as const)(
+	"shows %s initialization failures before RootContext is mounted and allows returning home",
+	async (theme) => {
+		vi.mocked(useInsight).mockReturnValue({
+			isInitialized: false,
+			error: new Error("Initialization failed"),
+		} as ReturnType<typeof useInsight>);
+		const router = createMemoryRouter(
+			[
+				{ path: "/", element: <h1>Home</h1> },
+				{ path: "/initializing", element: <InitializedLayout /> },
+			],
+			{ initialEntries: ["/initializing"] },
+		);
+		render(
+			<ThemeProvider defaultTheme={theme}>
+				<RouterProvider router={router} />
+			</ThemeProvider>,
+		);
+		expect(
+			screen.getByRole("heading", { name: "studio.errorTitle" }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "studio.refresh" }),
+		).toBeEnabled();
+		fireEvent.click(
+			screen.getByRole("button", { name: "studio.backHome" }),
+		);
+		expect(
+			await screen.findByRole("heading", { name: "Home" }),
+		).toBeVisible();
+	},
+);
 
 test("renders the root route error boundary outside the failed layout's provider", async () => {
 	const root = new RootStore();

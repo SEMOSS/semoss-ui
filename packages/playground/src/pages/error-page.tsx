@@ -2,7 +2,7 @@ import { Home, OctagonAlert } from "lucide-react";
 import { useContext } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { Button, cn, SidebarTrigger, useTheme } from "@semoss/ui/next";
+import { Button, cn, H1, P, SidebarTrigger, useTheme } from "@semoss/ui/next";
 import { RootContext } from "@/contexts/root-context";
 
 export interface ErrorPageProps {
@@ -43,16 +43,28 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 					className="size-10 text-destructive"
 					aria-hidden="true"
 				/>
-				<h1 className="font-semibold text-2xl">
+				<H1 className="font-medium text-2xl">
 					{t("studio.errorTitle")}
-				</h1>
-				<p className="text-muted-foreground text-sm leading-relaxed">
+				</H1>
+				<P className="text-base text-muted-foreground">
 					{t("studio.errorDescription")}
-				</p>
-				<Button onClick={() => navigate("/")} variant="outline">
-					<Home />
-					{t("studio.backHome")}
-				</Button>
+				</P>
+				<div className="flex flex-wrap justify-center gap-2">
+					<Button
+						type="button"
+						onClick={() => navigate("/")}
+						variant="outline"
+					>
+						<Home aria-hidden="true" />
+						{t("studio.backHome")}
+					</Button>
+					<Button
+						type="button"
+						onClick={() => window.location.reload()}
+					>
+						{t("studio.refresh")}
+					</Button>
+				</div>
 			</div>
 		</div>
 	);

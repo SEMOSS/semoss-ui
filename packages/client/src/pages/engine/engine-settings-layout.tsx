@@ -1,5 +1,6 @@
 import {
 	AlignLeftIcon,
+	ImageIcon,
 	ShieldCheckIcon,
 	SlidersHorizontalIcon,
 	TagsIcon,
@@ -10,6 +11,12 @@ import {
 } from "@/components/catalog";
 
 const SETTINGS_SECTIONS: CatalogSettingsSection[] = [
+	{
+		name: "Image",
+		path: "image",
+		icon: ImageIcon,
+		description: "Catalog image",
+	},
 	{
 		name: "Model Settings",
 		path: "model",
