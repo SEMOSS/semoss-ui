@@ -16,7 +16,7 @@ export function ThreadMemory({ thread }: { thread: Thread }) {
 	// a /new session is never saved, so it cannot hold memories of its own
 	const canHold = !thread.id.startsWith("session:");
 	return (
-		<Section title="Key facts" variant="widget">
+		<Section title="Key facts">
 			{canHold && (
 				<MemoryList
 					memories={memoriesAbout(state.memories, about)}

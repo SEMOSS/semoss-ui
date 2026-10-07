@@ -164,6 +164,7 @@ const router = createMemoryRouter(
 				},
 				...[
 					"brain",
+					"brain/memory",
 					"brain/people",
 					"brain/people/:personId",
 					"brain/threads",

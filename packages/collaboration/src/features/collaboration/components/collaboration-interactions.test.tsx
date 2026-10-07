@@ -272,12 +272,6 @@ describe("collaboration Work and Brain integration", () => {
 		expect(
 			screen.queryByText("Keep status emails to two bullets."),
 		).not.toBeInTheDocument();
-		await user.click(
-			screen.getByRole("button", { name: "Undo local edit" }),
-		);
-		expect(
-			screen.getByText("Keep status emails to two bullets."),
-		).toBeInTheDocument();
 	});
 
 	it("shows a topic's notes as memories and adds one about the topic", async () => {

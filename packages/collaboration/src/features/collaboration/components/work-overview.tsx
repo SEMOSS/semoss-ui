@@ -4,6 +4,7 @@ import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { memoriesAbout } from "../state/memory";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 
@@ -24,7 +25,11 @@ export function WorkOverview({ topic }: WorkOverviewProps) {
 		);
 		return person ? [{ person, role: member.role }] : [];
 	});
-	const notes = topic.notes.filter((note) => note.status === "confirmed");
+	// a topic's notes are memories about it
+	const notes = memoriesAbout(state.memories, {
+		type: "topic",
+		id: topic.id,
+	}).filter((memory) => memory.state === "active" && memory.confirmed);
 	const calendar = state.threads.filter(
 		(thread) =>
 			thread.channel === "calendar" &&
@@ -70,7 +75,7 @@ export function WorkOverview({ topic }: WorkOverviewProps) {
 				{notes.length ? (
 					notes.map((note) => (
 						<P
-							key={note.noteId}
+							key={note.id}
 							className="break-words border-border border-b pb-3 text-sm leading-relaxed last:border-0 last:pb-0"
 						>
 							{note.text}

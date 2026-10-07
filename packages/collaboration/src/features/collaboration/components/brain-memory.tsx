@@ -155,8 +155,8 @@ export function BrainMemory() {
 							anything because of an unconfirmed memory.
 						</P>
 						<P className="text-muted-foreground text-xs leading-5">
-							Type /remember and a sentence in a thread's chat to
-							save it yourself.
+							Type /remember and a sentence in any chat to save it
+							yourself.
 						</P>
 					</Section>
 					<DeleteAllMemories count={listed.length} />

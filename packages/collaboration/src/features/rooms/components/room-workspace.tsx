@@ -1,4 +1,4 @@
-import { Mail, PanelRightOpen, Settings2, X } from "lucide-react";
+import { Brain, Mail, PanelRightOpen, Settings2, X } from "lucide-react";
 import { useContext, useEffect, useId, useState } from "react";
 import {
 	Button,
@@ -6,13 +6,20 @@ import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
+	toast,
 } from "@semoss/ui/next";
+import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import {
+	guessMemoryKind,
+	rememberCommand,
+} from "@/features/collaboration/state/memory";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { Session } from "@/types/session";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { RoomComposer } from "./room-composer";
+import type { RoomSlashCommand } from "./room-composer-slash-plugin";
 import { RoomConversation } from "./room-conversation";
 import { RoomRunStatus } from "./room-run-status";
 import { ROOM_SETTINGS_PANEL_TYPE } from "./room-settings-panel";
@@ -20,6 +27,18 @@ import { ROOM_SETTINGS_PANEL_TYPE } from "./room-settings-panel";
 const ROOM_WORKSPACE_LAYOUT_ID = "collaboration-room-workspace-v1";
 const CONVERSATION_PANEL_ID = "collaboration-room-conversation";
 const TOOL_WORKBENCH_PANEL_ID = "collaboration-room-tool-workbench";
+
+// typed out rather than run: the sentence after it is saved on send
+const REMEMBER_COMMANDS: readonly RoomSlashCommand[] = [
+	{
+		id: "remember",
+		label: "/remember",
+		description: "Save the sentence you type to memory",
+		icon: Brain,
+		insertText: "/remember ",
+		onSelect: () => undefined,
+	},
+];
 
 interface RoomWorkspaceProps {
 	roomSession?: RoomViewProps["roomSession"];
@@ -82,6 +101,8 @@ export function RoomWorkspace({
 	onReconnect,
 }: RoomWorkspaceProps) {
 	const roomEmail = useContext(RoomEmailContext);
+	// /remember saves a memory as the owner's own, with no model call
+	const memorySession = useOptionalCollaborationSession();
 	const {
 		isOpen: isToolWorkbenchOpen,
 		store,
@@ -112,6 +133,21 @@ export function RoomWorkspace({
 	}
 
 	function handleSend(submission: ComposerSubmission): Promise<void> {
+		const remembered = memorySession
+			? rememberCommand(submission.text)
+			: null;
+		if (memorySession && remembered && !submission.files.length) {
+			memorySession.dispatch({
+				type: "memory.save",
+				memory: {
+					kind: guessMemoryKind(remembered),
+					text: remembered,
+					isSample: roomSnapshot?.source?.kind === "sample",
+				},
+			});
+			toast.success("Saved to memory", { description: remembered });
+			return Promise.resolve();
+		}
 		setResumeSignal((value) => value + 1);
 		return onSendMessage(submission);
 	}
@@ -187,6 +223,9 @@ export function RoomWorkspace({
 							initialDraft={roomSnapshot?.composerDraft}
 							onDraftChange={roomSession?.setComposerDraft}
 							retainUntilSent
+							extraCommands={
+								memorySession ? REMEMBER_COMMANDS : undefined
+							}
 							actionsTriggerId={actionsTriggerId}
 							hideSettingsAction={showToolWorkbench}
 							panelActions={

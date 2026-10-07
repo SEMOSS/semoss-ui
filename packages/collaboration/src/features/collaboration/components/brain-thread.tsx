@@ -6,10 +6,11 @@ import { useCollaborationSession } from "../state/collaboration-session.context"
 import { BrainOverview } from "./brain-overview";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
+import { ThreadMemory } from "./thread-memory";
 import { ThreadMenu } from "./thread-menu";
 import { ThreadSettings } from "./thread-settings";
 
-/** Thread detail presents Brain's context controls and thread settings. */
+/** Thread detail presents Brain's context controls, thread settings, and the thread's memories. */
 export function BrainThread() {
 	const { threadId } = useParams();
 	const { state } = useCollaborationSession();
@@ -50,8 +51,9 @@ export function BrainThread() {
 			aside={<BrainOverview />}
 			asideTitle="Brain overview"
 		>
-			<div className="p-4 md:p-6">
+			<div className="space-y-6 p-4 md:p-6">
 				<ThreadSettings thread={thread} />
+				<ThreadMemory thread={thread} />
 			</div>
 		</CollaborationSurface>
 	);

@@ -45,6 +45,8 @@ it("uses only native source ids provided by BrainListThreads", async () => {
 			{ output: { items: [] } },
 			{ output: { items: [] } },
 			{ output: { status: "none" } },
+			// BrainListMemories
+			{ output: { items: [] } },
 		],
 	});
 	const { threads } = await readWorkUpdates({

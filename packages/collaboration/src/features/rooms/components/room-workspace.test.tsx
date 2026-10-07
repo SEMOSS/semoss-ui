@@ -1,9 +1,17 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import {
+	CollaborationSessionProvider,
+	useCollaborationSession,
+} from "@/features/collaboration/state/collaboration-session.context";
 import type { Session } from "@/types/session";
 import { RoomSession } from "../room-session";
 import { RoomWorkspace } from "./room-workspace";
+
+// what the mocked composer sends
+const composerText = vi.hoisted(() => ({ value: "" }));
 
 const workbenchState = vi.hoisted(() => ({
 	isOpen: true,
@@ -60,6 +68,8 @@ vi.mock("./room-composer", () => ({
 		className,
 		attachmentSummary,
 		panelActions,
+		extraCommands,
+		onSend,
 	}: ComponentProps<typeof import("./room-composer")["RoomComposer"]>) => (
 		<div className={className}>
 			Composer{attachmentSummary}
@@ -68,6 +78,17 @@ vi.mock("./room-composer", () => ({
 					{action.label}
 				</button>
 			))}
+			{extraCommands?.map((command) => (
+				<span key={command.id}>{command.label}</span>
+			))}
+			<button
+				type="button"
+				onClick={() =>
+					void onSend({ text: composerText.value, files: [] })
+				}
+			>
+				Send
+			</button>
 		</div>
 	),
 }));
@@ -249,6 +270,58 @@ it("visibly queues the imported source file and allows removal before the first 
 	);
 	expect(remove).toHaveBeenCalledWith(file.fileLocation);
 	owner.dispose();
+});
+
+function OwnMemories() {
+	const { state } = useCollaborationSession();
+	return (
+		<output aria-label="Own memories">
+			{state.memories
+				.filter((memory) => memory.id.startsWith("local-"))
+				.map((memory) => `${memory.kind}:${memory.text}`)
+				.join("|")}
+		</output>
+	);
+}
+
+it("saves /remember as the owner's memory without asking the assistant", async () => {
+	const onSendMessage = vi.fn(async () => undefined);
+	render(
+		<CollaborationSessionProvider
+			initialState={createInitialCollaborationState()}
+		>
+			<RoomWorkspace {...defaultProps} onSendMessage={onSendMessage} />
+			<OwnMemories />
+		</CollaborationSessionProvider>,
+	);
+	expect(screen.getByText("/remember")).toBeInTheDocument();
+	composerText.value = "/remember Always cc Dana on Acme emails";
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Own memories")).toHaveTextContent(
+			"preference:Always cc Dana on Acme emails",
+		),
+	);
+	expect(onSendMessage).not.toHaveBeenCalled();
+
+	composerText.value = "What did Dana ask for?";
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	expect(onSendMessage).toHaveBeenCalledWith({
+		text: "What did Dana ask for?",
+		files: [],
+	});
+});
+
+it("offers /remember only inside a collaboration session", () => {
+	const onSendMessage = vi.fn(async () => undefined);
+	render(<RoomWorkspace {...defaultProps} onSendMessage={onSendMessage} />);
+	expect(screen.queryByText("/remember")).not.toBeInTheDocument();
+	composerText.value = "/remember Always cc Dana on Acme emails";
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	expect(onSendMessage).toHaveBeenCalledWith({
+		text: "/remember Always cc Dana on Acme emails",
+		files: [],
+	});
 });
 
 it("keeps reconnect available for an unconfirmed send even when the run has failed", () => {

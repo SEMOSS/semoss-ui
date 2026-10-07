@@ -5,6 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import type {
 	CollaborationState,
+	Memory,
 	Thread,
 	WorkItem,
 } from "@/features/collaboration/state/collaboration.types";
@@ -45,24 +46,6 @@ function workState(): CollaborationState {
 			goals: [
 				{ noteId: "goal", text: "Launch by Friday", status: "open" },
 			],
-			notes: [
-				{
-					noteId: "confirmed",
-					kind: "note",
-					text: "Confirmed Alpha context",
-					status: "confirmed",
-					by: "you",
-					date: "2026-10-07",
-				},
-				{
-					noteId: "draft",
-					kind: "note",
-					text: "Unconfirmed Alpha guess",
-					status: "draft",
-					by: "assistant",
-					date: "2026-10-07",
-				},
-			],
 			people: [
 				{
 					personId: person.id,
@@ -87,7 +70,6 @@ function workState(): CollaborationState {
 			short: "Beta",
 			description: "Build the hiring team.",
 			goals: [],
-			notes: [],
 			people: [],
 		},
 		{
@@ -96,6 +78,33 @@ function workState(): CollaborationState {
 			name: "Archived topic",
 			status: "archived",
 		},
+	];
+	// a topic's notes are memories about it
+	const note = (changes: Partial<Memory>): Memory => ({
+		id: "note",
+		kind: "fact",
+		text: "",
+		state: "active",
+		origin: "you",
+		confirmed: true,
+		pinned: false,
+		about: [{ type: "topic", id: "alpha" }],
+		expiresAt: null,
+		replacesId: null,
+		source: {},
+		createdAt: "2026-10-07T00:00:00Z",
+		updatedAt: "2026-10-07T00:00:00Z",
+		isSample: topic.isSample,
+		...changes,
+	});
+	state.memories = [
+		note({ id: "confirmed", text: "Confirmed Alpha context" }),
+		note({
+			id: "learned",
+			text: "Unconfirmed Alpha guess",
+			origin: "assistant",
+			confirmed: false,
+		}),
 	];
 	const specifications: Array<
 		Partial<WorkItem> &
