@@ -16,11 +16,6 @@ export function threadUrl(
 	return url.href;
 }
 
-/** A stable destination for returning from a thread's workbench. */
-export function threadMenuTriggerId(threadId: string): string {
-	return `work-thread-menu-${encodeURIComponent(threadId)}`;
-}
-
 /** Return to a visible trigger, falling back to the surviving page landmark. */
 export function restoreThreadFocus(trigger: HTMLElement | null): void {
 	if (

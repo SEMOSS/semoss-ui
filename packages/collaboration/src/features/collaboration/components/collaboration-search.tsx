@@ -150,13 +150,6 @@ export function CollaborationSearch({
 					path: "/",
 				},
 				{
-					id: "new",
-					label: "New Session",
-					detail: "Start a conversation",
-					group: "Go to",
-					path: "/new",
-				},
-				{
 					id: "brain",
 					label: "Brain",
 					detail: "People, topics, and your context",

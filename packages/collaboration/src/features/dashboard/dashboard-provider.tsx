@@ -61,7 +61,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 	}, [location.key]);
 	const isActive =
 		location.pathname === "/" ||
-		location.pathname === "/new" ||
 		location.pathname.startsWith("/thread/") ||
 		isSearchOpen;
 	const loadCalendar = useCallback(

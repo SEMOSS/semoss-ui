@@ -1,6 +1,6 @@
 import { z } from "@semoss/ui/next";
 
-export const WIDGET_NAMES = {
+const WIDGET_NAMES = {
 	day: "Your day",
 	needs: "Needs you",
 	agents: "Agents needing you",

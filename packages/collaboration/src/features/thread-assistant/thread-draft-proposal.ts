@@ -60,12 +60,6 @@ export function isSourcedProposal(
 	return "sourceMessageId" in proposal;
 }
 
-export function isReplyProposal(
-	proposal: ThreadDraftProposal,
-): proposal is SourcedDraftProposal {
-	return isSourcedProposal(proposal) && proposal.mode === "reply";
-}
-
 /**
  * Draft rules sent with rooms created before the backend prompt owned them (Semoss
  * CollaborationPrompts DRAFTS); kept verbatim so those rooms are still recognized.

@@ -1,24 +1,6 @@
 import { safeSourceUrl } from "@/features/connectors/api/microsoft";
 import type { ConversationTool } from "@/features/messages/types/message";
 
-/** Recognize draft writes from tool metadata, never from generated assistant prose. */
-export function isEmailDraftTool(tool: ConversationTool): boolean {
-	const names = [
-		tool.name,
-		tool.metadata?.SMSS_ORIGINAL_TOOL_NAME,
-		tool.metadata?.SMSS_FUNCTION_NAME,
-	];
-	return names.some(
-		(name) =>
-			typeof name === "string" &&
-			(name.endsWith("SaveDraft") ||
-				((tool.arguments.asDraft === true ||
-					tool.arguments.asDraft === "true") &&
-					(name.endsWith("ReplyMail") ||
-						name.endsWith("ForwardMail")))),
-	);
-}
-
 /** Normalize the existing draft tool arguments for display without changing the tool payload. */
 export function emailDraftToolPreview(tool: ConversationTool): {
 	to: string;

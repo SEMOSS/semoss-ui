@@ -13,7 +13,7 @@ import { Section } from "./section";
 export function ThreadMemory({ thread }: { thread: Thread }) {
 	const { state } = useCollaborationSession();
 	const about = { type: "thread" as const, id: thread.id };
-	// a /new session is never saved, so it cannot hold memories of its own
+	// An unsaved session cannot hold memories of its own.
 	const canHold = !thread.id.startsWith("session:");
 	return (
 		<Section title="Key facts">

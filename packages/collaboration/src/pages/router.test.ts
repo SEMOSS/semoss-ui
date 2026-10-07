@@ -15,6 +15,7 @@ describe("collaboration routes", () => {
 		["/room/room-one/unsupported", "not-found"],
 		["/work/thread/thread-one", "not-found"],
 		["/unknown", "not-found"],
+		["/new", "not-found"],
 		["/settings/unknown", "not-found"],
 	])("shows not found for unsupported nested path %s", (path, id) => {
 		expect(leafRoute(path)).toMatchObject({
@@ -69,7 +70,6 @@ describe("collaboration routes", () => {
 
 	it.each([
 		"/",
-		"/new",
 		"/thread/room%3Aroom-one",
 		"/work",
 		"/brain",

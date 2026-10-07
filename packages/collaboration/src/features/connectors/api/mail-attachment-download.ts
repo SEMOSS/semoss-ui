@@ -17,7 +17,7 @@ interface DownloadScope {
 }
 
 /** One attachment staged in the download area, with the actions that can read it. */
-export interface IsolatedAttachment {
+interface IsolatedAttachment {
 	file: StagedSourceAttachment;
 	actions: InsightActions;
 }
@@ -78,7 +78,7 @@ async function readyScope(owner: DownloadOwner): Promise<DownloadScope> {
  * @param stage - Writes the file into the given insight.
  * @returns The staged file and the actions of the insight holding it.
  */
-export async function stageAttachmentIsolated(
+async function stageAttachmentIsolated(
 	owner: DownloadOwner,
 	key: string,
 	stage: (
@@ -114,7 +114,7 @@ export async function stageAttachmentIsolated(
  * @param attachment - One of its file attachments.
  * @returns The staged file and the actions of the insight holding it.
  */
-export async function stageMailAttachmentIsolated(
+async function stageMailAttachmentIsolated(
 	owner: DownloadOwner,
 	sourceUid: string,
 	attachment: SourceAttachment,

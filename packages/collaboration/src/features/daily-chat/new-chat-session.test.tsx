@@ -23,7 +23,6 @@ import type { ComposerSubmission } from "@/features/rooms/types/room";
 import type { ThreadChatSettings } from "@/features/thread-assistant/thread-settings";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { roomPath } from "@/lib/workspace-paths";
-import { NewSessionPage } from "@/pages/new-session.page";
 import { LandingChatComposer } from "./landing-chat-composer";
 
 const mocks = vi.hoisted(() => ({
@@ -220,26 +219,19 @@ function RoomDestination() {
 	const { threadId } = useParams();
 	return <output aria-label="Room identity">{threadId}</output>;
 }
-function setup(navigationState?: unknown, search = "", isLanding = false) {
+function setup(navigationState?: unknown, search = "") {
 	const router = createMemoryRouter(
 		[
-			{ path: "/new", Component: NewSessionPage },
-			{
-				path: "/",
-				element: isLanding ? (
-					<LandingChatComposer />
-				) : (
-					<div>Overview</div>
-				),
-			},
+			{ path: "/", Component: LandingChatComposer },
+			{ path: "/work", element: <div>Work</div> },
 			{ path: "/thread/:threadId", Component: RoomDestination },
 		],
 		{
 			initialEntries: [
-				"/",
-				{ pathname: "/new", search, state: navigationState },
+				"/work",
+				{ pathname: "/", search, state: navigationState },
 			],
-			initialIndex: isLanding ? 0 : 1,
+			initialIndex: 1,
 		},
 	);
 	render(
@@ -278,14 +270,6 @@ function submit(): void {
 		key: "Enter",
 		code: "Enter",
 	});
-}
-function placeWorkbenchDivider(): void {
-	// JSDOM has no layout. Keep the divider's global pointer hit area away
-	// from user-event's default coordinates so field clicks remain ordinary clicks.
-	vi.spyOn(
-		screen.getByRole("separator", { name: "Resize workbench" }),
-		"getBoundingClientRect",
-	).mockReturnValue(new DOMRect(500, 0, 1, 500));
 }
 async function settleFocus(): Promise<void> {
 	await act(
@@ -337,23 +321,23 @@ it("keeps a suggested prompt, files, and agent choice local before the first sen
 	expect(sessions[0].getSnapshot().composerDraft.files).toEqual([file]);
 	expect(mocks.create).not.toHaveBeenCalled();
 	expect(mocks.send).not.toHaveBeenCalled();
-	expect(router.state.location.pathname).toBe("/new");
+	expect(router.state.location.pathname).toBe("/");
 });
 
-it("reuses an unsent draft through overview navigation and creates an independent New chat", async () => {
+it("reuses an unsent draft through Work navigation and creates an independent draft", async () => {
 	const router = setup();
 	const sessionId = draftIdentity();
 	await enterText("Keep this question");
-	await act(() => router.navigate("/"));
+	await act(() => router.navigate("/work"));
 	await act(() =>
-		router.navigate("/new", {
+		router.navigate("/", {
 			state: { sessionId, prompt: "Do not reseed" },
 		}),
 	);
 	expect(draftIdentity()).toBe(sessionId);
 	expect(screen.getByRole("textbox")).toHaveTextContent("Keep this question");
 	expect(mocks.createSession).toHaveBeenCalledOnce();
-	await act(() => router.navigate("/new", { state: null }));
+	await act(() => router.navigate("/", { state: null }));
 	expect(screen.getByRole("textbox").textContent).toBe("");
 	expect(mocks.createSession).toHaveBeenCalledTimes(2);
 	expect(mocks.create).not.toHaveBeenCalled();
@@ -381,7 +365,7 @@ it("awaits room creation, then opens the actual room while its first message is 
 		target: { files: [file] },
 	});
 	submit();
-	expect(router.state.location.pathname).toBe("/new");
+	expect(router.state.location.pathname).toBe("/");
 	expect(mocks.send).not.toHaveBeenCalled();
 	submit();
 	expect(mocks.create).toHaveBeenCalledOnce();
@@ -410,32 +394,10 @@ it("retains the editable draft after failed creation and retries without submitt
 			"Could not create the room.",
 		),
 	);
-	expect(router.state.location.pathname).toBe("/new");
+	expect(router.state.location.pathname).toBe("/");
 	expect(screen.getByRole("textbox")).toHaveTextContent("Keep my request");
 	expect(mocks.send).not.toHaveBeenCalled();
 	submit();
-	await waitFor(() =>
-		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
-	);
-	expect(mocks.send).toHaveBeenCalledOnce();
-});
-
-it("does not navigate when a first send completes after leaving /new", async () => {
-	let allocate: (roomId: string) => void = () => undefined;
-	mocks.create.mockImplementation(
-		() =>
-			new Promise((resolve) => {
-				allocate = resolve;
-			}),
-	);
-	const router = setup({ prompt: "Plan my week" });
-	const sessionId = draftIdentity();
-	submit();
-	await act(() => router.navigate("/"));
-	await act(async () => allocate("actual-room"));
-	expect(router.state.location.pathname).toBe("/");
-	expect(mocks.send).toHaveBeenCalledOnce();
-	await act(() => router.navigate("/new", { state: { sessionId } }));
 	await waitFor(() =>
 		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
 	);
@@ -469,9 +431,9 @@ it("applies requested agent and model once while preserving later local edits", 
 	await userEvent
 		.setup()
 		.click(screen.getByRole("button", { name: "Choose agent" }));
-	await act(() => router.navigate("/"));
+	await act(() => router.navigate("/work"));
 	await act(() =>
-		router.navigate("/new?agentId=requested-agent&model=requested-model", {
+		router.navigate("/?agentId=requested-agent&model=requested-model", {
 			state: { sessionId },
 		}),
 	);
@@ -480,7 +442,7 @@ it("applies requested agent and model once while preserving later local edits", 
 	expect(mocks.create).not.toHaveBeenCalled();
 });
 
-it("opens welcome Settings in one workbench panel and keeps draft and unsaved settings when hidden", async () => {
+it("opens landing Settings in one workbench panel and keeps draft and unsaved settings when hidden", async () => {
 	const user = userEvent.setup();
 	const router = setup({ prompt: "Keep this request" });
 	const file = new File(["Notes"], "notes.txt", { type: "text/plain" });
@@ -493,7 +455,6 @@ it("opens welcome Settings in one workbench panel and keeps draft and unsaved se
 	await user.click(actions);
 	await user.click(screen.getByRole("menuitem", { name: "Settings" }));
 	await settleFocus();
-	placeWorkbenchDivider();
 	expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	const instructions = screen.getByRole("textbox", { name: "Instructions" });
 	expect(instructions).not.toBeDisabled();
@@ -506,7 +467,6 @@ it("opens welcome Settings in one workbench panel and keeps draft and unsaved se
 	await user.keyboard("{Enter}");
 	await user.click(screen.getByRole("menuitem", { name: "Open workbench" }));
 	await settleFocus();
-	placeWorkbenchDivider();
 	expect(screen.getByRole("textbox", { name: "Instructions" })).toBe(
 		instructions,
 	);
@@ -528,7 +488,7 @@ it("opens welcome Settings in one workbench panel and keeps draft and unsaved se
 	});
 	expect(mocks.create).not.toHaveBeenCalled();
 	expect(mocks.send).not.toHaveBeenCalled();
-	expect(router.state.location.pathname).toBe("/new");
+	expect(router.state.location.pathname).toBe("/");
 });
 
 it("allocates only for explicit chat files and reuses that room on the first send", async () => {
@@ -538,7 +498,6 @@ it("allocates only for explicit chat files and reuses that room on the first sen
 		screen.getByRole("button", { name: "Open composer actions" }),
 	);
 	await user.click(screen.getByRole("menuitem", { name: "Open workbench" }));
-	placeWorkbenchDivider();
 	expect(mocks.create).not.toHaveBeenCalled();
 	expect(screen.getByLabelText("Workbench panels")).toHaveTextContent("{}");
 	await user.click(screen.getByRole("button", { name: "Show chat files" }));
@@ -548,7 +507,7 @@ it("allocates only for explicit chat files and reuses that room on the first sen
 			"draft-insight",
 		),
 	);
-	expect(router.state.location.pathname).toBe("/new");
+	expect(router.state.location.pathname).toBe("/");
 	expect(mocks.send).not.toHaveBeenCalled();
 	await user.click(
 		screen.getByRole("button", { name: "Open composer actions" }),
@@ -575,7 +534,6 @@ it("keeps the workbench hidden when a pending file request finishes", async () =
 		screen.getByRole("button", { name: "Open composer actions" }),
 	);
 	await user.click(screen.getByRole("menuitem", { name: "Open workbench" }));
-	placeWorkbenchDivider();
 	await user.click(screen.getByRole("button", { name: "Show chat files" }));
 	await waitFor(() => expect(mocks.create).toHaveBeenCalledOnce());
 	await user.click(
@@ -589,11 +547,11 @@ it("keeps the workbench hidden when a pending file request finishes", async () =
 		screen.queryByRole("complementary", { name: "Workbench" }),
 	).not.toBeInTheDocument();
 	expect(sessions[0].getSnapshot().roomId).toBe("actual-room");
-	expect(router.state.location.pathname).toBe("/new");
+	expect(router.state.location.pathname).toBe("/");
 	expect(mocks.send).not.toHaveBeenCalled();
 });
 
-it("restores a new-session draft through Back and Forward without navigation state", async () => {
+it("restores a landing draft through Back and Forward without navigation state", async () => {
 	const router = setup();
 	const id = draftIdentity();
 	await enterText("Keep this history draft");
@@ -617,7 +575,7 @@ it("restores a new-session draft through Back and Forward without navigation sta
 });
 
 it("starts one conversation from the landing composer and returns to a fresh overview on Back", async () => {
-	const router = setup(undefined, "", true);
+	const router = setup();
 	expect(screen.getByRole("textbox")).not.toHaveFocus();
 	expect(mocks.create).not.toHaveBeenCalled();
 	const firstDraftId = draftIdentity();
@@ -641,8 +599,8 @@ it("starts one conversation from the landing composer and returns to a fresh ove
 	expect(mocks.send).toHaveBeenCalledOnce();
 });
 
-it("retains landing text, files, and settings when continuing in Settings and returning", async () => {
-	const router = setup(undefined, "", true);
+it("retains landing text, files, and settings when opening and closing Settings", async () => {
+	const router = setup();
 	const user = userEvent.setup();
 	const id = draftIdentity();
 	await enterText("Discuss this document");
@@ -655,13 +613,15 @@ it("retains landing text, files, and settings when continuing in Settings and re
 		screen.getByRole("button", { name: "Open composer actions" }),
 	);
 	await user.click(screen.getByRole("menuitem", { name: "Settings" }));
-	await waitFor(() => expect(router.state.location.pathname).toBe("/new"));
+	await waitFor(() => expect(router.state.location.pathname).toBe("/"));
 	expect(draftIdentity()).toBe(id);
 	expect(screen.getByRole("textbox", { name: "Instructions" })).toBeVisible();
 	expect(mocks.createSession).toHaveBeenCalledOnce();
 	expect(mocks.create).not.toHaveBeenCalled();
 	expect(mocks.send).not.toHaveBeenCalled();
-	await act(() => router.navigate(-1));
+	await user.click(
+		screen.getByRole("button", { name: "Back to conversation" }),
+	);
 	expect(draftIdentity()).toBe(id);
 	expect(screen.getByRole("textbox")).toHaveTextContent(
 		"Discuss this document",
@@ -672,15 +632,15 @@ it("retains landing text, files, and settings when continuing in Settings and re
 	});
 });
 
-it("continues landing Files in /new, reuses its allocated room, and consumes the shared landing draft", async () => {
-	const router = setup(undefined, "", true);
+it("opens landing Files in place, reuses its allocated room, and consumes the shared landing draft", async () => {
+	const router = setup();
 	const user = userEvent.setup();
 	await enterText("Review chat files");
 	await user.click(
 		screen.getByRole("button", { name: "Open composer actions" }),
 	);
 	await user.click(screen.getByRole("menuitem", { name: "Show chat files" }));
-	await waitFor(() => expect(router.state.location.pathname).toBe("/new"));
+	await waitFor(() => expect(router.state.location.pathname).toBe("/"));
 	await waitFor(() => expect(mocks.create).toHaveBeenCalledOnce());
 	expect(screen.getByLabelText("Workbench panels")).toHaveTextContent(
 		"draft-insight",
@@ -702,7 +662,7 @@ it("continues landing Files in /new, reuses its allocated room, and consumes the
 
 it("keeps a failed landing draft editable and recovers on the same first-send flow", async () => {
 	mocks.create.mockRejectedValueOnce(new Error("Could not create the room."));
-	const router = setup(undefined, "", true);
+	const router = setup();
 	await enterText("Retain my question");
 	submit();
 	await waitFor(() =>
@@ -720,7 +680,7 @@ it("keeps a failed landing draft editable and recovers on the same first-send fl
 	expect(mocks.send).toHaveBeenCalledOnce();
 });
 
-it("does not navigate over a new session when landing allocation completes after leaving", async () => {
+it("does not navigate over Work when landing allocation completes after leaving", async () => {
 	let allocate: (roomId: string) => void = () => undefined;
 	mocks.create.mockImplementation(
 		() =>
@@ -728,30 +688,16 @@ it("does not navigate over a new session when landing allocation completes after
 				allocate = resolve;
 			}),
 	);
-	const router = setup(undefined, "", true);
+	const router = setup();
 	await enterText("Send from the overview");
 	submit();
-	await act(() => router.navigate("/new", { state: null }));
-	const independentId = draftIdentity();
+	await act(() => router.navigate("/work"));
 	await act(async () => allocate("actual-room"));
-	expect(router.state.location.pathname).toBe("/new");
-	expect(draftIdentity()).toBe(independentId);
+	expect(router.state.location.pathname).toBe("/work");
 	expect(mocks.send).toHaveBeenCalledOnce();
 	await act(() => router.navigate(-1));
 	expect(router.state.location.pathname).toBe("/");
 	expect(screen.getByRole("textbox").textContent).toBe("");
-});
-
-it("keeps new sessions chat-only and does not bind the removed brief/chat shortcut", async () => {
-	const router = setup();
-	expect(screen.queryByRole("button", { name: "Your day" })).toBeNull();
-	expect(
-		screen.queryByRole("navigation", { name: "Brief and chat" }),
-	).toBeNull();
-	await act(async () => {
-		fireEvent.keyDown(window, { key: "j", ctrlKey: true });
-	});
-	expect(router.state.location.pathname).toBe("/new");
 });
 
 it("rotates a landing draft when returning before its pending allocation completes", async () => {
@@ -762,11 +708,11 @@ it("rotates a landing draft when returning before its pending allocation complet
 				allocate = resolve;
 			}),
 	);
-	const router = setup(undefined, "", true);
+	const router = setup();
 	const firstDraftId = draftIdentity();
 	await enterText("Send the original question");
 	submit();
-	await act(() => router.navigate("/new", { state: null }));
+	await act(() => router.navigate("/work"));
 	await act(() => router.navigate(-1));
 	expect(draftIdentity()).toBe(firstDraftId);
 	await act(async () => allocate("actual-room"));
@@ -783,35 +729,16 @@ it("rotates a landing draft when returning before its pending allocation complet
 	expect(mocks.send).toHaveBeenCalledTimes(2);
 });
 
-it("opens the submitted room when returning to /new before allocation completes", async () => {
-	let allocate: (roomId: string) => void = () => undefined;
-	mocks.create.mockImplementationOnce(
-		() =>
-			new Promise((resolve) => {
-				allocate = resolve;
-			}),
-	);
-	const router = setup({ prompt: "Continue this conversation" });
-	submit();
-	await act(() => router.navigate("/"));
-	await act(() => router.navigate(-1));
-	expect(router.state.location.pathname).toBe("/new");
-	await act(async () => allocate("actual-room"));
-	await waitFor(() =>
-		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
-	);
-	expect(mocks.create).toHaveBeenCalledOnce();
-	expect(mocks.send).toHaveBeenCalledOnce();
-});
-
-it("shows requested Files errors outside the hidden composer and supports retry", async () => {
+it("shows Files errors next to the composer and supports retry", async () => {
 	mocks.create.mockRejectedValueOnce(new Error("Files are unavailable."));
-	const router = setup({ panel: "files", prompt: "Use my chat files" });
+	const router = setup({ prompt: "Use my chat files" });
+	const user = userEvent.setup();
+	await user.click(
+		screen.getByRole("button", { name: "Open composer actions" }),
+	);
+	await user.click(screen.getByRole("menuitem", { name: "Show chat files" }));
 	const alert = await screen.findByRole("alert");
 	expect(alert).toHaveTextContent("Files are unavailable.");
-	expect(
-		screen.getByRole("region", { name: "New chat" }).contains(alert),
-	).toBe(false);
 	expect(
 		screen.getByRole("complementary", { name: "Workbench" }),
 	).toBeVisible();
@@ -824,5 +751,5 @@ it("shows requested Files errors outside the hidden composer and supports retry"
 	);
 	expect(mocks.create).toHaveBeenCalledTimes(2);
 	expect(mocks.send).not.toHaveBeenCalled();
-	expect(router.state.location.pathname).toBe("/new");
+	expect(router.state.location.pathname).toBe("/");
 });

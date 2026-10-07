@@ -192,7 +192,6 @@ function renderBrief() {
 	const onChange = vi.fn<(change: CollaborationChange) => void>();
 	const router = createMemoryRouter([
 		{ path: "/", Component: DashboardPage },
-		{ path: "/new", element: <p>New chat</p> },
 	]);
 	const result = render(
 		<BriefHarness state={state} onChange={onChange}>
@@ -238,7 +237,6 @@ it("shows the complete daily brief without applying or replacing saved widget cu
 		"Handled",
 		"Needs you",
 		"Start a conversation",
-		"Recent sessions",
 		"Brain wants to check",
 	]) {
 		expect(screen.getByRole("region", { name })).toBeVisible();
@@ -293,7 +291,6 @@ it("keeps all topics visible with the composer before the mobile reading order",
 		"Start a conversation",
 		"Needs you",
 		"Brain wants to check",
-		"Recent sessions",
 		"Your day",
 		"Handled",
 	]);

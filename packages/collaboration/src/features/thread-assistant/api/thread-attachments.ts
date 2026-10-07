@@ -5,11 +5,6 @@ import type {
 } from "@/features/connectors/types";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 
-/** Largest attachment the assistant or a preview reads; matches the backend default. */
-export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
-/** Files sent as files in one message; about 27 MB once encoded, under Claude's 32 MB request cap. */
-export const MAX_MESSAGE_FILE_BYTES = 20 * 1024 * 1024;
-
 /** Mirrors the backend's `BrainAttachmentText.supports`: these reach the model as text. */
 const TEXT_COPY_EXTENSIONS = new Set([
 	"doc",

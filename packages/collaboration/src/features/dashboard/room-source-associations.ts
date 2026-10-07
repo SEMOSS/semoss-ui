@@ -2,7 +2,7 @@ import { readRoomSourceAssociation } from "@/features/rooms/api/read-room-source
 import type { InsightActions } from "@/lib/pixel";
 
 /** Only source identities are retained; room settings and source envelopes are not. */
-export type RoomSourceAssociation =
+type RoomSourceAssociation =
 	| { status: "loading"; threadId?: string | null }
 	| { status: "ready"; threadId: string | null }
 	| { status: "error"; error: string; threadId?: string | null };
@@ -13,7 +13,7 @@ interface AssociationRead {
 }
 
 /** One visible topic Sessions panel owns its bounded metadata reads. */
-export interface RoomSourceActivation {
+interface RoomSourceActivation {
 	retain: () => () => void;
 	inspect: (roomIds: string[], retry?: boolean) => void;
 	get: (roomId: string) => RoomSourceAssociation | undefined;

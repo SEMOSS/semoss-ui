@@ -178,7 +178,6 @@ describe("CollaborationFrame", () => {
 		for (const path of [
 			"/brain",
 			"/settings/about-you",
-			"/new",
 			"/thread/room%3Aone",
 			"/",
 		]) {
@@ -248,7 +247,7 @@ describe("CollaborationFrame", () => {
 				}),
 			).toBeVisible();
 			expect(
-				within(navigation).getByRole("link", { name: "New Session" }),
+				within(navigation).getByRole("link", { name: "For you" }),
 			).toBeVisible();
 			const expand = screen.getByRole("button", {
 				name: "Expand navigation",

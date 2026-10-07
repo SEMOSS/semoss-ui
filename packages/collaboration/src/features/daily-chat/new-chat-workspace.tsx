@@ -1,14 +1,11 @@
-import { PanelRightClose, PanelRightOpen, Settings2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 import {
-	Alert,
-	AlertDescription,
-	Button,
-	cn,
-	ResizableHandle,
-	ResizablePanel,
-	ResizablePanelGroup,
-} from "@semoss/ui/next";
+	FolderOpen,
+	PanelRightClose,
+	PanelRightOpen,
+	Settings2,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, AlertDescription, Button } from "@semoss/ui/next";
 import { ROOM_SETTINGS_PANEL_TYPE } from "@/features/rooms/components/room-settings-panel";
 import type {
 	RoomSession,
@@ -21,9 +18,7 @@ import type {
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { openToolWorkbenchFiles } from "@/features/tools/open-tool-workbench-files";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
-import { DailyChatHeader } from "./daily-chat-header";
 import { DraftChatComposer } from "./draft-chat-composer";
-import type { NewChatPanel } from "./use-new-chat-controller";
 
 interface NewChatWorkspaceProps {
 	/** Local draft identity retained across browser history entries. */
@@ -31,9 +26,6 @@ interface NewChatWorkspaceProps {
 	/** The unified session remains unallocated until sending or opening room files. */
 	session: RoomSession;
 	snapshot: RoomSessionSnapshot;
-	userName: string;
-	/** A panel explicitly requested from the overview composer. */
-	requestedPanel?: NewChatPanel;
 	agentError: string;
 	onInitialize: () => Promise<void>;
 	onSend: (submission: ComposerSubmission) => Promise<void>;
@@ -41,13 +33,11 @@ interface NewChatWorkspaceProps {
 	onSelectAgent: (agentId: string) => Promise<void>;
 }
 
-/** Welcome composer and an explicitly opened, persistent workbench. */
+/** Compact overview composer with its tools available without leaving the page. */
 export function NewChatWorkspace({
 	draftId,
 	session,
 	snapshot,
-	userName,
-	requestedPanel,
 	agentError,
 	onInitialize,
 	onSend,
@@ -58,7 +48,6 @@ export function NewChatWorkspace({
 	const { isOpen, openWorkbench, closeWorkbench, store } = workbench;
 	const [hasOpenedWorkbench, setHasOpenedWorkbench] = useState(false);
 	const active = useRef(true);
-	const hasOpenedRequestedPanel = useRef(false);
 	const [filesError, setFilesError] = useState("");
 	const actionsTriggerId = `new-chat-${draftId}-composer-actions`;
 	useEffect(() => {
@@ -103,151 +92,83 @@ export function NewChatWorkspace({
 				);
 		}
 	}, [openFiles]);
-	useEffect(() => {
-		if (
-			!requestedPanel ||
-			!snapshot.isReady ||
-			hasOpenedRequestedPanel.current
-		)
-			return;
-		hasOpenedRequestedPanel.current = true;
-		if (requestedPanel === "settings") openSettings();
-		else {
-			openWorkbench(undefined, actionsTriggerId);
-			void openRequestedFiles();
-		}
-	}, [
-		requestedPanel,
-		snapshot.isReady,
-		openSettings,
-		openRequestedFiles,
-		openWorkbench,
-		actionsTriggerId,
-	]);
 	return (
-		<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6 lg:p-8">
-			<div className="mx-auto flex w-full max-w-screen-2xl flex-1 flex-col">
-				{filesError && (
-					<Alert variant="destructive" className="mb-4">
-						<AlertDescription>
-							{snapshot.isCreationUncertain
-								? "Room creation could not be confirmed. Check your chat history before starting another room."
-								: filesError}
-						</AlertDescription>
-						{!snapshot.isCreationUncertain && (
-							<Button
-								type="button"
-								variant="outline"
-								disabled={snapshot.isPreparing}
-								onClick={() => void openRequestedFiles()}
-							>
-								Retry opening files
-							</Button>
-						)}
-					</Alert>
-				)}
-				<div className="flex min-h-0 min-w-0 flex-1 gap-6">
-					<ResizablePanelGroup
-						direction="horizontal"
-						keyboardResizeBy={5}
-						className="min-h-0 min-w-0 flex-1"
-					>
-						<ResizablePanel
-							id={`${draftId}-composer`}
-							order={1}
-							defaultSize={40}
-							minSize={20}
-							className={cn(
-								"min-h-0 min-w-0",
-								isOpen && "hidden md:block",
-							)}
+		<section
+			aria-label="Start a chat"
+			className="flex min-w-0 flex-col gap-3"
+		>
+			<DraftChatComposer
+				draftId={draftId}
+				session={session}
+				snapshot={snapshot}
+				agentError={agentError}
+				onInitialize={onInitialize}
+				onSend={onSend}
+				onSaveSettings={onSaveSettings}
+				onSelectAgent={onSelectAgent}
+				isCompact
+				panelActions={[
+					{
+						id: "settings",
+						label: "Settings",
+						icon: Settings2,
+						onSelect: openSettings,
+					},
+					{
+						id: "files",
+						label: "Show chat files",
+						icon: FolderOpen,
+						onSelect: () => {
+							openWorkbench(undefined, actionsTriggerId);
+							void openRequestedFiles();
+						},
+					},
+					{
+						id: "workbench",
+						label: isOpen ? "Hide workbench" : "Open workbench",
+						icon: isOpen ? PanelRightClose : PanelRightOpen,
+						onSelect: () =>
+							isOpen
+								? closeWorkbench()
+								: openWorkbench(undefined, actionsTriggerId),
+					},
+				]}
+			/>
+			{filesError && (
+				<Alert variant="destructive">
+					<AlertDescription>
+						{snapshot.isCreationUncertain
+							? "Room creation could not be confirmed. Check your chat history before starting another room."
+							: filesError}
+					</AlertDescription>
+					{!snapshot.isCreationUncertain && (
+						<Button
+							type="button"
+							variant="outline"
+							disabled={snapshot.isPreparing}
+							onClick={() => void openRequestedFiles()}
 						>
-							<section
-								aria-label="New chat"
-								className="flex h-full min-h-0 min-w-0 flex-1 flex-col justify-center gap-4 overflow-y-auto p-1"
-							>
-								<div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-									<DailyChatHeader userName={userName} />
-									<DraftChatComposer
-										draftId={draftId}
-										session={session}
-										snapshot={snapshot}
-										agentError={agentError}
-										onInitialize={onInitialize}
-										onSend={onSend}
-										onSaveSettings={onSaveSettings}
-										onSelectAgent={onSelectAgent}
-										panelActions={[
-											{
-												id: "settings",
-												label: "Settings",
-												icon: Settings2,
-												onSelect: openSettings,
-											},
-											{
-												id: "workbench",
-												label: isOpen
-													? "Hide workbench"
-													: "Open workbench",
-												icon: isOpen
-													? PanelRightClose
-													: PanelRightOpen,
-												onSelect: () =>
-													isOpen
-														? closeWorkbench()
-														: openWorkbench(
-																undefined,
-																actionsTriggerId,
-															),
-											},
-										]}
-									/>
-								</div>
-							</section>
-						</ResizablePanel>
-						{(isOpen || hasOpenedWorkbench) && (
-							<>
-								<ResizableHandle
-									aria-label="Resize workbench"
-									className={cn(
-										"hidden md:flex",
-										!isOpen && "md:hidden",
-									)}
-								/>
-								<ResizablePanel
-									id={`${draftId}-workbench`}
-									order={2}
-									defaultSize={60}
-									minSize={20}
-									maxSize={80}
-									className={cn(
-										"min-h-0 min-w-0",
-										!isOpen && "hidden",
-									)}
-								>
-									<aside
-										hidden={!isOpen}
-										aria-label="Workbench"
-										className="relative size-full min-h-0 bg-background"
-									>
-										<ToolWorkbench
-											onOpenSettings={openSettings}
-											onOpenFiles={openFiles}
-											isOpeningFiles={
-												snapshot.isPreparing
-											}
-											filesDisabled={
-												!snapshot.isReady ||
-												snapshot.isCreationUncertain
-											}
-										/>
-									</aside>
-								</ResizablePanel>
-							</>
-						)}
-					</ResizablePanelGroup>
-				</div>
-			</div>
-		</div>
+							Retry opening files
+						</Button>
+					)}
+				</Alert>
+			)}
+			{(isOpen || hasOpenedWorkbench) && (
+				<aside
+					hidden={!isOpen}
+					aria-label="Workbench"
+					className="relative h-128 min-h-0 min-w-0 bg-background"
+				>
+					<ToolWorkbench
+						onOpenSettings={openSettings}
+						onOpenFiles={openFiles}
+						isOpeningFiles={snapshot.isPreparing}
+						filesDisabled={
+							!snapshot.isReady || snapshot.isCreationUncertain
+						}
+					/>
+				</aside>
+			)}
+		</section>
 	);
 }

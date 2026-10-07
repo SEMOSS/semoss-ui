@@ -23,24 +23,19 @@ import {
 	subscribeNewChatDrafts,
 } from "./new-chat-drafts";
 
-export type NewChatPanel = "settings" | "files";
-
 export interface NewChatController {
 	draftId: string;
 	session: RoomSession;
 	snapshot: RoomSessionSnapshot;
 	agentError: string;
-	requestedPanel?: NewChatPanel;
 	onInitialize: () => Promise<void>;
 	onSend: (submission: ComposerSubmission) => Promise<void>;
 	onSaveSettings: (settings: RoomSettings) => Promise<void>;
 	onSelectAgent: (agentId: string) => Promise<void>;
-	onOpenPanel: (panel: NewChatPanel) => void;
 }
 
-/** Share local draft ownership and the first-send transaction across both entry points. */
+/** Own the overview draft and its first-send transaction. */
 export function useNewChatController(
-	entryPoint: "landing" | "new",
 	navigationState: unknown,
 ): NewChatController {
 	const request =
@@ -55,11 +50,6 @@ export function useNewChatController(
 		"prompt" in request && typeof request.prompt === "string"
 			? request.prompt
 			: "";
-	const requestedPanel =
-		"panel" in request &&
-		(request.panel === "settings" || request.panel === "files")
-			? request.panel
-			: undefined;
 	const { insightId: scope } = useInsight();
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -73,12 +63,11 @@ export function useNewChatController(
 	const draft = getHistoryChatDraft(
 		scope,
 		location.key,
-		entryPoint === "landing",
+		true,
 		requestedId,
 		prompt,
 		location.search,
 	);
-	const startedRoomId = draft.startedRoomId;
 	const { session } = draft;
 	const snapshot = useSyncExternalStore(
 		session.subscribe,
@@ -111,27 +100,13 @@ export function useNewChatController(
 			release();
 		};
 	}, [entryToken, initialize, session]);
-	useEffect(() => {
-		if (entryPoint === "new" && startedRoomId)
-			void navigate(
-				{
-					pathname: roomPath(startedRoomId),
-					search: location.search,
-					hash: location.hash,
-				},
-				{ replace: true },
-			);
-	}, [startedRoomId, entryPoint, location.hash, location.search, navigate]);
 	const handleSend = (submission: ComposerSubmission): Promise<void> => {
 		if (draft.pendingSubmission) return draft.pendingSubmission;
 		const release = session.retain();
 		const sending = (async () => {
 			const roomId = await session.create("New chat");
 			const submitted = session.send(submission);
-			if (active.current === entryToken)
-				void navigate(roomPath(roomId), {
-					replace: entryPoint === "new",
-				});
+			if (active.current === entryToken) void navigate(roomPath(roomId));
 			markNewChatDraftStarted(scope, draft, roomId);
 			await submitted;
 		})().finally(() => {
@@ -169,13 +144,9 @@ export function useNewChatController(
 		session,
 		snapshot,
 		agentError,
-		requestedPanel,
 		onInitialize: initialize,
 		onSend: handleSend,
 		onSaveSettings: handleSaveSettings,
 		onSelectAgent: handleAgentChange,
-		onOpenPanel: (panel) => {
-			void navigate("/new", { state: { sessionId: draft.id, panel } });
-		},
 	};
 }

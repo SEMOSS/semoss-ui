@@ -541,22 +541,3 @@ export class EmailDraftEditor {
 		this.uploads = null;
 	}
 }
-
-/** Human-readable status for retained draft summaries. */
-export function emailDraftStatus(snapshot: EmailDraftSnapshot): string {
-	if (snapshot.isSending) return "Sending";
-	if (snapshot.isSent) return "Sent";
-	if (snapshot.isSaving) return "Saving";
-	if (
-		snapshot.error ||
-		snapshot.isUncertain ||
-		Object.keys(snapshot.fieldErrors).length
-	)
-		return "Needs attention";
-	if (snapshot.sendApprovalToolId) return "Ready to send";
-	if (snapshot.saved)
-		return snapshot.isDirty
-			? "Local changes · saved copy in Outlook"
-			: "Saved to Outlook";
-	return "Not saved to Outlook";
-}

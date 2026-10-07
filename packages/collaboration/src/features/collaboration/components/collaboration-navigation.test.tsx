@@ -117,7 +117,7 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["New Session", "For you", "Work", "Brain"]);
+		).toEqual(["For you", "Work", "Brain"]);
 		expect(
 			within(main).getByRole("link", { name: "For you" }),
 		).toHaveTextContent(/^For you$/);
@@ -280,7 +280,6 @@ describe("CollaborationNavigation", () => {
 			screen.getByRole("button", { name: "Toggle navigation fixture" }),
 		);
 		const controls = [
-			screen.getByRole("link", { name: "New Session" }),
 			screen.getByRole("link", { name: "For you" }),
 			screen.getByRole("link", { name: "Work" }),
 			screen.getByRole("link", { name: "Brain" }),

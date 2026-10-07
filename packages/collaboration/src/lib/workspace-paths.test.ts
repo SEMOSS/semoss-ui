@@ -22,9 +22,9 @@ describe("roomPath", () => {
 
 describe("newRoomPath", () => {
 	it("builds bare and agent-scoped new-room URLs", () => {
-		expect(newRoomPath()).toBe("/new");
+		expect(newRoomPath()).toBe("/");
 		expect(newRoomPath("agent/one", "model&two")).toBe(
-			"/new?agentId=agent%2Fone&model=model%26two",
+			"/?agentId=agent%2Fone&model=model%26two",
 		);
 	});
 });

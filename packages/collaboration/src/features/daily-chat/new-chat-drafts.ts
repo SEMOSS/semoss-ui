@@ -75,7 +75,7 @@ export function markNewChatDraftStarted(
 }
 
 /** Retain local drafts across navigation within one account's app session. */
-export function getNewChatDraft(
+function getNewChatDraft(
 	scope: string,
 	id: string,
 	prompt: string,

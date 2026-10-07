@@ -1,13 +1,7 @@
-import { Brain, BriefcaseBusiness, Inbox, Plus } from "lucide-react";
+import { Brain, BriefcaseBusiness, Inbox } from "lucide-react";
 import { useState } from "react";
-import { Link, NavLink, useLocation } from "react-router";
-import {
-	Button,
-	cn,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
+import { Link, useLocation } from "react-router";
+import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -84,37 +78,6 @@ export function CollaborationNavigation({
 				aria-label="Main"
 				className="flex shrink-0 flex-col gap-0.5 px-2 py-2 pr-3"
 			>
-				<Tooltip disableHoverableContent={false}>
-					<TooltipTrigger asChild>
-						<Button
-							asChild
-							variant="secondary"
-							size="sm"
-							className={cn(
-								"h-auto min-h-8 pointer-coarse:min-h-11 w-full justify-start gap-2 rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 font-medium text-foreground text-xs hover:bg-primary/15 has-[>svg]:px-2 dark:border-primary/40 dark:bg-primary/25 dark:hover:bg-primary/35",
-								isCollapsed &&
-									"justify-center px-0 has-[>svg]:px-0",
-							)}
-						>
-							<NavLink
-								to="/new"
-								onClick={onNavigate}
-								aria-label="New Session"
-							>
-								<Plus
-									aria-hidden="true"
-									className="text-primary dark:text-foreground"
-								/>
-								{!isCollapsed && "New Session"}
-							</NavLink>
-						</Button>
-					</TooltipTrigger>
-					{isCollapsed && (
-						<TooltipContent side="right">
-							New Session
-						</TooltipContent>
-					)}
-				</Tooltip>
 				{links.map(({ to, label, icon: Icon, count, isActive }) => (
 					<Tooltip key={to} disableHoverableContent={false}>
 						<TooltipTrigger asChild>

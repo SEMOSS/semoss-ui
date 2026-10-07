@@ -2,7 +2,7 @@
 
 Personal SEMOSS assistant based on the [collaboration mockups](../../mockups).
 The landing overview brings together chat, your calendar, actions needing you,
-completed work, Brain reviews, and recent sessions. Work starts with topics and
+completed work, and Brain reviews. Work starts with topics and
 organizes each topic’s actions, source threads, and saved sessions. Brain holds people, topics,
 thread context, and source readers. Settings brings together your profile,
 appearance, context rules, and data reset.
@@ -11,7 +11,7 @@ appearance, context rules, and data reset.
 
 The fixed Brief view uses the existing SEMOSS components, semantic color tokens,
 Geist typography, and spacing scale. It does not define another theme or palette.
-A shared sidebar provides New Session, For you, Work, Brain,
+A shared sidebar provides For you, Work, Brain,
 foldable Topics and Sessions, with sessions grouped by date. Compact 12px labels
 and 32px rows retain 44px minimum touch targets. A keyboard-accessible rail along
 the sidebar edge switches between 256px navigation and a 64px icon rail. Desktop
@@ -45,28 +45,24 @@ grouped rows and filters; contextual panels become drawers on narrower screens.
 
 The global landing page places one compact composer beneath its greeting and
 status links. At desktop widths, Your day and Handled sit on the left, Needs you
-in the center, and Brain and Recent sessions on the right. The mobile reading
-and keyboard order is composer, Needs you, Brain, Recent sessions, Your day,
-Handled. Recent sessions initially shows five dated conversations and progressively
-loads more with retry. Brain includes pending decisions, draft notes, and directory
+in the center, and Brain on the right. The mobile reading and keyboard order is
+composer, Needs you, Brain, Your day, and Handled. Saved sessions remain available
+from the sidebar. Brain includes pending decisions, draft notes, and directory
 links. The overview has no topic filter or separate chat mode.
 
-New Session opens `/new` as a separate conversation page with its own composer,
-chat tools, and explicitly opened Settings/Files workbench. It contains no daily
-context panels. Landing Settings and Files continue the same unsent draft on
-`/new` and open the requested panel. Opening chat files may allocate a room;
-first send reuses that room. Attachments, agent selection, and settings otherwise
-stay local until send. New and saved chats share the same `RoomSession` owner.
+New conversations start from the landing composer. Settings and Files open an
+inline workbench beneath that composer without navigating away or replacing the
+draft. Opening chat files may allocate a room; first send reuses that room.
+Attachments, agent selection, and settings otherwise stay local until send.
+New and saved chats share the same `RoomSession` owner.
 
 Landing first send submits once and pushes the canonical saved-room route,
 consuming the landing draft so Back returns to a fresh overview composer.
-New Session first send replaces `/new` with its room route. A bounded in-memory
-cache associates unsent drafts with stable history entries, so Back/Forward
-restores content while an explicit New Session starts independently. Failures
-retain drafts, attachments, and upload receipts; uncertain submissions require
-reconciliation before another send. Preparation that finishes after navigation
-cannot redirect over the current page. Editable-prompt navigation remains
-supported. Brief/Chat switching and its shortcut have been removed.
+A bounded in-memory cache associates unsent drafts with stable history entries,
+so Back/Forward restores content. Failures retain drafts, attachments, and
+upload receipts; uncertain submissions require reconciliation before another
+send. Preparation that finishes after navigation cannot redirect over the
+current page. Editable-prompt navigation remains supported.
 
 The overview orders pending actions by deadline and uses existing Work commands
 for marking items handled and reopening them. `/work` lists topics with their
@@ -88,9 +84,8 @@ owning room's existing tool workflow.
 Brain review uses existing topic/person decisions. Calendar rows open their
 source details; failed reads show their error and retry action.
 
-Dashboard customization is deferred and is no longer exposed in Settings or the
-home view. The layout editor, presets, stored preferences, and published-app tile
-implementation remain available in source for a future release.
+Dashboard customization is no longer exposed in Settings or the home view.
+Stored preferences remain available for existing pinned-app search results.
 
 Daily data uses existing Work refreshes and visible/return-to-app calendar and
 email reads. Rendering the brief or chat does not start agent work. Chats load
@@ -189,7 +184,7 @@ action items independently of assistant rooms. A source import captures the
 permitted messages at that moment. Its file identifies missing or bounded
 history and does not silently replace unavailable messages with sample content.
 
-`/new` starts a source-free draft with an initially closed standard workbench.
+The landing composer starts a source-free draft with an initially closed workbench.
 Files and tool results use the same panels as saved and imported rooms. Email
 actions remain available through explicit prompts and tool results; restored
 draft proposals never open editor panels automatically.
@@ -229,7 +224,6 @@ chosen for a room's composer use the room's ordinary upload and submission flow.
 | `/settings/about-you`, `/settings/appearance`, `/settings/rules`, `/settings/data` | Profile/VIPs, theme, context rules, and data reset |
 | `/brain/people`, `/brain/people/:personId` | People directory and detail |
 | `/brain/threads`, `/brain/threads/:threadId`, `/brain/topics/:topicId` | Context directories and detail |
-| `/new` | New source-free chat session |
 
 `/room` redirects to Work; `/agents/*` redirects to Brain;
 `/settings` and the legacy `/brain/profile` and `/settings/dashboard` links open Settings → About you.
@@ -291,6 +285,7 @@ when `SEMOSS_DEV_ORIGIN` is unset.
 Run package checks from the repository root:
 
 ```bash
+pnpm dlx knip --workspace @semoss/collaboration
 pnpm --filter @semoss/collaboration type-check
 pnpm --filter @semoss/collaboration test
 pnpm --filter @semoss/collaboration build
@@ -349,9 +344,5 @@ across pane changes. The unified room header remains 56px tall without horizonta
 overflow; route transitions clear the room controls without remounting global controls.
 Logout success/failure/pending cases were mocked; no live session was ended. Native
 200% browser zoom and real-device touch/screen-reader behavior were not exercised.
-The preview's Files panel lacks an AccessStoreProvider, so file operations were not
-validated by this shell pass. `chatState=long` also supplies a long account identity.
-
-`/dashboard-preview.html` is a development-only design fixture with sample data,
-using the real dashboard and Brain components. It is not a live integration
-harness or a production build entry.
+The preview's Files panel lacked an AccessStoreProvider, so file operations were not
+validated by this shell pass.

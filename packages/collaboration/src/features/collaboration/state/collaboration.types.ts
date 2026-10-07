@@ -232,7 +232,7 @@ export interface Settings {
 	version: number;
 }
 
-export type MemoryRefType = "person" | "topic" | "account" | "thread";
+type MemoryRefType = "person" | "topic" | "account" | "thread";
 
 /** Who or what a memory is about. */
 export interface MemoryRef {
