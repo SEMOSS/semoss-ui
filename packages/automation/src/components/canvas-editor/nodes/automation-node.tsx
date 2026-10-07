@@ -1,5 +1,6 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import {
+	ArrowUpRight,
 	Bot,
 	Clock3,
 	ExternalLink,
@@ -33,7 +34,10 @@ import { getWorkflowNodeDefinition } from "../../../domain/automation-workflow-a
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
 import { useAutomationNode } from "../../../hooks/use-automation";
 import { StatusIcon } from "../../status-icon";
-import { getFlowBorderClass } from "../flow-colors";
+import {
+	getFlowBorderClass,
+	LOOP_PATH_HIGHLIGHT_BORDER_CLASS,
+} from "../flow-colors";
 
 export type AutomationNodeData = {
 	step: AutomationGraphNode;
@@ -49,12 +53,17 @@ export type AutomationNodeData = {
 	highlighted?: boolean;
 	/** True when this step sits on the path leading to the selected node. */
 	pathHighlighted?: boolean;
+	loopPathHighlighted?: boolean;
+	groupSelectionActive?: boolean;
+	hasOutgoingControlEdge?: boolean;
 	/** Transient canvas-only expansion state for compound nodes such as loops. */
 	expanded?: boolean;
 	/** Updates transient compound-node expansion without changing the saved graph. */
 	onExpandedChange?: (expanded: boolean) => void;
-	/** Inner node selected while this compound node is expanded. */
-	selectedBodyNodeId?: string;
+	onFocusExpanded?: () => void;
+	onFocusCollapsed?: () => void;
+	onAddBodyStep?: () => void;
+	onMoveOut?: () => void;
 };
 
 const STATUS_BORDER: Record<string, string> = {
@@ -109,11 +118,17 @@ export function AutomationNode({ data }: NodeProps) {
 				runStatus,
 				Boolean(pathHighlighted),
 				STATUS_BORDER[isIncomplete ? "incomplete" : "idle"],
+				d.loopPathHighlighted
+					? LOOP_PATH_HIGHLIGHT_BORDER_CLASS
+					: undefined,
 			);
 	const runningClass =
 		runStatus === "running" ? "automation-node-running" : "";
 	const highlightClass = highlighted
 		? "animate-pulse ring-2 ring-primary ring-offset-2 ring-offset-background"
+		: "";
+	const groupSelectionClass = d.groupSelectionActive
+		? "ring-2 ring-chart-2 ring-offset-2 ring-offset-background"
 		: "";
 	const subtitle = (() => {
 		const c = step.config as unknown as Record<string, unknown>;
@@ -127,7 +142,7 @@ export function AutomationNode({ data }: NodeProps) {
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
 				<div
-					className={`group relative w-70 rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
+					className={`group relative w-70 rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${groupSelectionClass} ${locked ? "opacity-75" : ""}`}
 				>
 					<div className="relative z-1 m-0.5 rounded-[14px] bg-card">
 						{/* Hover actions */}
@@ -155,6 +170,22 @@ export function AutomationNode({ data }: NodeProps) {
 								>
 									<Trash2 className="h-3 w-3" />
 								</button>
+								{d.onMoveOut && (
+									<button
+										type="button"
+										aria-label={`Move ${label} out of loop`}
+										onClick={(event) => {
+											event.stopPropagation();
+											d.onMoveOut?.();
+										}}
+										className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+									>
+										<ArrowUpRight
+											className="h-3 w-3"
+											aria-hidden
+										/>
+									</button>
+								)}
 							</div>
 						)}
 
@@ -320,20 +351,27 @@ export function AutomationNode({ data }: NodeProps) {
 								id={`out-${step.id}`}
 								type="source"
 								position={Position.Right}
-								isConnectable
+								isConnectable={!d.hasOutgoingControlEdge}
 								onClick={(event) => {
+									if (d.hasOutgoingControlEdge) return;
 									event.stopPropagation();
 									automationNode.addAfter();
 								}}
-								aria-label="Add node or drag to connect"
-								className="border! h-7! w-7! border-border! bg-background! shadow-sm transition-colors hover:border-primary!"
+								aria-label={
+									d.hasOutgoingControlEdge
+										? "Output connected"
+										: "Add node or drag to connect"
+								}
+								className={`${d.hasOutgoingControlEdge ? "h-2! w-2! bg-muted-foreground/50!" : "border! h-7! w-7! border-border! bg-background! shadow-sm transition-colors hover:border-primary!"} border-2! border-background!`}
 							/>
-							<span
-								data-tour="add-step"
-								className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-0 z-10 flex h-7 w-7 translate-x-1/2 items-center justify-center text-muted-foreground"
-							>
-								<Plus className="h-4 w-4" />
-							</span>
+							{!d.hasOutgoingControlEdge && (
+								<span
+									data-tour="add-step"
+									className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-0 z-10 flex h-7 w-7 translate-x-1/2 items-center justify-center text-muted-foreground"
+								>
+									<Plus className="h-4 w-4" />
+								</span>
+							)}
 						</>
 					) : (
 						<Handle
@@ -351,6 +389,11 @@ export function AutomationNode({ data }: NodeProps) {
 					<ContextMenuItem onSelect={() => automationNode.open()}>
 						Edit
 					</ContextMenuItem>
+					{d.onMoveOut && (
+						<ContextMenuItem onSelect={d.onMoveOut}>
+							Move out of loop
+						</ContextMenuItem>
+					)}
 					<ContextMenuSeparator />
 					<ContextMenuItem
 						className="text-destructive focus:text-destructive"

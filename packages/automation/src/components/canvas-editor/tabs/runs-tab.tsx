@@ -694,6 +694,9 @@ function ResultsPanel({
 	const [expandedLoopIds, setExpandedLoopIds] = useState<Set<string>>(
 		new Set(),
 	);
+	const [expandedIterationKeys, setExpandedIterationKeys] = useState<
+		Set<string>
+	>(() => new Set());
 
 	const [selectedBodyKey, setSelectedBodyKey] = useState<{
 		loopNodeId: string;
@@ -723,44 +726,15 @@ function ResultsPanel({
 			return;
 		}
 		const loopNodeId = selectedResult.NODE_ID;
-		setExpandedLoopIds((current) => {
-			if (current.has(loopNodeId)) return current;
-			const next = new Set(current);
-			next.add(loopNodeId);
-			return next;
-		});
 		setSelectedBodyKey((current) => {
-			if (current?.loopNodeId === loopNodeId) {
-				const iteration = iterations.find(
-					(candidate) => candidate.index === current.iterationIndex,
-				);
-				if (
-					iteration?.nodeResults.some(
-						(result) => result.NODE_ID === current.nodeId,
-					)
-				) {
-					return current;
-				}
-			}
-			const bodyResults = iterations.flatMap((iteration) =>
-				iteration.nodeResults.map((result) => ({
-					iterationIndex: iteration.index,
-					result,
-				})),
+			if (current?.loopNodeId !== loopNodeId) return null;
+			const iteration = iterations.find(
+				(candidate) => candidate.index === current.iterationIndex,
 			);
-			const preferred =
-				bodyResults.find(({ result }) => result.STATUS === "FAILED") ??
-				bodyResults.find(
-					({ result }) => result.STATUS === "WAITING_FOR_INPUT",
-				) ??
-				bodyResults.find(({ result }) => result.STATUS === "RUNNING") ??
-				bodyResults[0];
-			return preferred
-				? {
-						loopNodeId,
-						nodeId: preferred.result.NODE_ID,
-						iterationIndex: preferred.iterationIndex,
-					}
+			return iteration?.nodeResults.some(
+				(result) => result.NODE_ID === current.nodeId,
+			)
+				? current
 				: null;
 		});
 	}, [selectedResult]);
@@ -947,87 +921,155 @@ function ResultsPanel({
 									</div>
 									{hasIterations && isExpanded && (
 										<div className="mt-0.5 ml-2 space-y-0.5 border-border/50 border-l pl-2">
-											{result.iterations?.map((iter) => (
-												<div key={iter.index}>
-													<p className="px-2 py-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-														Iteration{" "}
-														{iter.index + 1}
-													</p>
-													{iter.nodeResults.map(
-														(bodyResult) => {
-															const bodyStep =
-																bodyStepMap.get(
-																	bodyResult.NODE_ID,
+											{result.iterations?.map((iter) => {
+												const iterationKey = `${executionInsightId ?? "run"}:${result.NODE_ID}:${iter.index}`;
+												const isIterationExpanded =
+													expandedIterationKeys.has(
+														iterationKey,
+													);
+												return (
+													<div key={iter.index}>
+														<button
+															type="button"
+															className="flex w-full items-center gap-1 rounded px-2 py-1 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide hover:bg-muted"
+															aria-expanded={
+																isIterationExpanded
+															}
+															onClick={() => {
+																setExpandedIterationKeys(
+																	(
+																		previous,
+																	) => {
+																		const next =
+																			new Set(
+																				previous,
+																			);
+																		if (
+																			next.has(
+																				iterationKey,
+																			)
+																		) {
+																			next.delete(
+																				iterationKey,
+																			);
+																		} else {
+																			next.add(
+																				iterationKey,
+																			);
+																		}
+																		return next;
+																	},
 																);
-															const bodyMeta =
-																getDisplayMeta(
-																	bodyStep?.type ??
-																		"app",
-																);
-															const bodyDisplay =
-																bodyStep?.workflowType
-																	? getWorkflowNodeDisplay(
-																			bodyStep.workflowType,
-																		)
-																	: null;
-															const BodyIcon =
-																bodyDisplay?.icon ??
-																bodyMeta.icon;
-															const bodyIconColor =
-																bodyDisplay?.color ??
-																bodyMeta.color;
-															const bodyActive =
-																selectedBodyKey?.loopNodeId ===
-																	result.NODE_ID &&
-																selectedBodyKey?.nodeId ===
-																	bodyResult.NODE_ID &&
-																selectedBodyKey?.iterationIndex ===
-																	iter.index;
-															return (
-																<button
-																	key={`${iter.index}-${bodyResult.NODE_ID}`}
-																	type="button"
-																	onClick={() =>
-																		setSelectedBodyKey(
-																			{
-																				loopNodeId:
-																					result.NODE_ID,
-																				nodeId: bodyResult.NODE_ID,
-																				iterationIndex:
-																					iter.index,
-																			},
-																		)
-																	}
-																	className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ${bodyActive ? "bg-accent text-accent-foreground" : "hover:bg-muted"}`}
-																>
-																	<span
-																		className={`flex size-5 shrink-0 items-center justify-center rounded bg-muted ${bodyIconColor}`}
-																	>
-																		<BodyIcon className="size-3" />
-																	</span>
-																	<span className="min-w-0 flex-1">
-																		<span className="block truncate text-xs">
-																			{bodyResult.NODE_LABEL ||
-																				bodyStep?.label ||
-																				bodyMeta.label}
-																		</span>
-																		<span className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-xs">
-																			<StatusBadge
-																				status={
-																					bodyResult.STATUS
+																if (
+																	isIterationExpanded &&
+																	selectedBodyKey?.loopNodeId ===
+																		result.NODE_ID &&
+																	selectedBodyKey.iterationIndex ===
+																		iter.index
+																) {
+																	setSelectedBodyKey(
+																		null,
+																	);
+																}
+															}}
+														>
+															<ChevronRight
+																className={`size-3.5 transition-transform ${isIterationExpanded ? "rotate-90" : ""}`}
+																aria-hidden="true"
+															/>
+															Iteration{" "}
+															{iter.index + 1}
+															<span className="ml-auto font-normal normal-case">
+																{
+																	iter
+																		.nodeResults
+																		.length
+																}{" "}
+																steps
+															</span>
+														</button>
+														{isIterationExpanded && (
+															<div className="space-y-0.5 pl-2">
+																{iter.nodeResults.map(
+																	(
+																		bodyResult,
+																	) => {
+																		const bodyStep =
+																			bodyStepMap.get(
+																				bodyResult.NODE_ID,
+																			);
+																		const bodyMeta =
+																			getDisplayMeta(
+																				bodyStep?.type ??
+																					"app",
+																			);
+																		const bodyDisplay =
+																			bodyStep?.workflowType
+																				? getWorkflowNodeDisplay(
+																						bodyStep.workflowType,
+																					)
+																				: null;
+																		const BodyIcon =
+																			bodyDisplay?.icon ??
+																			bodyMeta.icon;
+																		const bodyIconColor =
+																			bodyDisplay?.color ??
+																			bodyMeta.color;
+																		const bodyActive =
+																			selectedBodyKey?.loopNodeId ===
+																				result.NODE_ID &&
+																			selectedBodyKey?.nodeId ===
+																				bodyResult.NODE_ID &&
+																			selectedBodyKey?.iterationIndex ===
+																				iter.index;
+																		return (
+																			<button
+																				key={`${iter.index}-${bodyResult.NODE_ID}`}
+																				type="button"
+																				onClick={() =>
+																					setSelectedBodyKey(
+																						{
+																							loopNodeId:
+																								result.NODE_ID,
+																							nodeId: bodyResult.NODE_ID,
+																							iterationIndex:
+																								iter.index,
+																						},
+																					)
 																				}
-																			/>{" "}
-																			{formatDurationMs(
-																				bodyResult.DURATION_MS,
-																			)}
-																		</span>
-																	</span>
-																</button>
-															);
-														},
-													)}
-												</div>
-											))}
+																				className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ${bodyActive ? "bg-accent text-accent-foreground" : "hover:bg-muted"}`}
+																			>
+																				<span
+																					className={`flex size-5 shrink-0 items-center justify-center rounded bg-muted ${bodyIconColor}`}
+																				>
+																					<BodyIcon className="size-3" />
+																				</span>
+																				<span className="min-w-0 flex-1">
+																					<span className="block truncate text-xs">
+																						{bodyResult.NODE_LABEL ||
+																							bodyStep?.label ||
+																							bodyMeta.label}
+																					</span>
+																					<span className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-xs">
+																						<StatusBadge
+																							status={
+																								bodyResult.STATUS
+																							}
+																						/>{" "}
+																						{formatDurationMs(
+																							bodyResult.DURATION_MS,
+																						)}
+																					</span>
+																				</span>
+																			</button>
+																		);
+																	},
+																)}
+															</div>
+														)}
+													</div>
+												);
+											})}
 										</div>
 									)}
 								</div>

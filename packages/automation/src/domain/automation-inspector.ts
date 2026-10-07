@@ -2,6 +2,7 @@ import { tryParseJson } from "@semoss/utility/json";
 import { isRecord } from "@semoss/utility/object";
 import type {
 	AutomationNode,
+	AutomationNodeGroup,
 	AutomationNodeTrace,
 	StepRunStatus,
 } from "./automation.types";
@@ -165,6 +166,7 @@ export interface AutomationInspectorSnapshot {
 	 * `readOnly` prop were ever out of sync with the canvas. */
 	readOnly: boolean;
 	editingStep: AutomationNode | null;
+	editingNodeGroup?: AutomationNodeGroup | null;
 	upstreamVars: string[];
 	scopeEntries: AutomationScopeEntry[];
 	stepRunStatus?: StepRunStatus;
@@ -176,6 +178,8 @@ export interface AutomationInspectorSnapshot {
 export type AutomationInspectorAction =
 	| { type: "update-step"; step: AutomationNode }
 	| { type: "delete-step"; stepId: string }
+	| { type: "update-node-group"; group: AutomationNodeGroup }
+	| { type: "delete-node-group"; groupId: string }
 	| { type: "update-description"; description: string }
 	| { type: "update-dev-mode"; devMode: boolean }
 	| { type: "close" };

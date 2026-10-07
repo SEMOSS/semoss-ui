@@ -155,11 +155,20 @@ export interface AutomationWorkflowGraph {
 	edges: AutomationWorkflowEdge[];
 }
 
+/** Visual-only canvas grouping, compatible with the n8n nodeGroups convention. */
+export interface AutomationNodeGroup {
+	id: string;
+	name: string;
+	nodeIds: string[];
+	description?: string;
+}
+
 export interface AutomationWorkflowDocument {
 	formatVersion: 2;
 	description?: string;
 	triggerBindings: TriggerBinding[];
 	graph: AutomationWorkflowGraph;
+	nodeGroups?: AutomationNodeGroup[];
 }
 
 export type ConfigFieldType =

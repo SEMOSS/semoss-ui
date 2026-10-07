@@ -11,6 +11,7 @@ import type {
 	AutomationJevRoute,
 	AutomationJsonValue,
 	AutomationNodeDefinition,
+	AutomationNodeGroup,
 	AutomationWorkflowDocument,
 	AutomationWorkflowEdge,
 	AutomationWorkflowNode,
@@ -24,6 +25,7 @@ export interface CanvasWorkflowDocument {
 	triggerBindings: TriggerBinding[];
 	steps: AutomationNode[];
 	edges: AutomationEdge[];
+	nodeGroups?: AutomationNodeGroup[];
 }
 
 export type AutomationNodeSources = Record<string, string>;
@@ -1037,7 +1039,51 @@ export function createInitialCanvasWorkflowDocument(): CanvasWorkflowDocument {
 		triggerBindings: [MANUAL_TRIGGER],
 		steps: [trigger],
 		edges: [],
+		nodeGroups: [],
 	};
+}
+
+function normalizeNodeGroups(
+	value: unknown,
+	availableNodeIds: Set<string>,
+): AutomationNodeGroup[] {
+	if (!Array.isArray(value)) return [];
+	const assignedNodeIds = new Set<string>();
+	return value.flatMap((candidate) => {
+		if (
+			!isRecord(candidate) ||
+			typeof candidate.id !== "string" ||
+			typeof candidate.name !== "string" ||
+			!Array.isArray(candidate.nodeIds)
+		) {
+			return [];
+		}
+		const groupNodeIds = new Set<string>();
+		const nodeIds = candidate.nodeIds.filter((nodeId): nodeId is string => {
+			if (
+				typeof nodeId !== "string" ||
+				!availableNodeIds.has(nodeId) ||
+				assignedNodeIds.has(nodeId) ||
+				groupNodeIds.has(nodeId)
+			) {
+				return false;
+			}
+			groupNodeIds.add(nodeId);
+			return true;
+		});
+		if (nodeIds.length === 0) return [];
+		for (const nodeId of nodeIds) assignedNodeIds.add(nodeId);
+		return [
+			{
+				id: candidate.id,
+				name: candidate.name,
+				nodeIds,
+				...(typeof candidate.description === "string"
+					? { description: candidate.description }
+					: {}),
+			},
+		];
+	});
 }
 
 export function canvasDocumentFromWorkflow(
@@ -1058,6 +1104,10 @@ export function canvasDocumentFromWorkflow(
 				: [MANUAL_TRIGGER],
 		steps,
 		edges: document.graph.edges.map(workflowEdgeToCanvasEdge),
+		nodeGroups: normalizeNodeGroups(
+			document.nodeGroups,
+			new Set(steps.map((step) => step.id)),
+		),
 	};
 }
 
@@ -1183,6 +1233,7 @@ export function canvasDocumentToWorkflow({
 	triggerBindings,
 	steps,
 	edges,
+	nodeGroups,
 }: CanvasWorkflowDocument): AutomationWorkflowDocument {
 	return {
 		formatVersion: 2,
@@ -1190,6 +1241,7 @@ export function canvasDocumentToWorkflow({
 		triggerBindings:
 			triggerBindings.length > 0 ? triggerBindings : [MANUAL_TRIGGER],
 		graph: canvasGraphToWorkflow(steps, edges),
+		...(nodeGroups?.length ? { nodeGroups } : {}),
 	};
 }
 

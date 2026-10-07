@@ -8,7 +8,6 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Layers3,
-	Maximize2,
 	Pencil,
 	Plus,
 	Repeat2,
@@ -27,7 +26,6 @@ import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-disp
 import { useAutomationNode } from "../../../hooks/use-automation";
 import { StatusIcon } from "../../status-icon";
 import { getFlowBorderClass } from "../flow-colors";
-import { LoopBodyCanvas } from "../loop-body-canvas";
 import type { AutomationNodeData } from "./automation-node";
 
 /** Summarizes the collection a loop will consume without exposing raw JSON on the canvas. */
@@ -79,6 +77,7 @@ export function LoopNode({ data }: NodeProps) {
 	const isExpanded = Boolean(d.expanded);
 	const config = d.step.config as LoopConfig;
 	const bodyNodes = d.step.body?.nodes ?? [];
+	const hasOutgoingControlEdge = Boolean(d.hasOutgoingControlEdge);
 	const borderClass = getFlowBorderClass(
 		d.runStatus,
 		Boolean(d.pathHighlighted),
@@ -90,9 +89,9 @@ export function LoopNode({ data }: NodeProps) {
 			<ContextMenuTrigger asChild>
 				<section
 					aria-label={`${d.step.label} loop`}
-					className={`group relative ${isExpanded ? "w-160" : "w-70"} rounded-2xl border-2 bg-card shadow-sm transition-[width] ${borderClass} ${d.highlighted ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""} ${d.locked ? "opacity-75" : ""}`}
+					className={`group relative h-full ${isExpanded ? "pointer-events-none w-full bg-transparent" : "w-70 bg-card shadow-sm"} rounded-2xl border-2 ${borderClass} ${d.highlighted ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""} ${d.groupSelectionActive ? "ring-2 ring-chart-2 ring-offset-2 ring-offset-background" : ""} ${d.locked ? "opacity-75" : ""}`}
 				>
-					<header className="flex items-start gap-3 border-b bg-primary/5 px-4 py-3">
+					<header className="pointer-events-auto flex items-start gap-3 border-b bg-primary/5 px-4 py-3">
 						<span className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
 							<Repeat2 className="size-4" aria-hidden />
 							<span className="-top-1.5 -left-1.5 absolute flex size-4 items-center justify-center rounded-full border bg-background font-medium text-muted-foreground text-xs">
@@ -121,6 +120,8 @@ export function LoopNode({ data }: NodeProps) {
 							onClick={(event) => {
 								event.stopPropagation();
 								d.onExpandedChange?.(!isExpanded);
+								if (!isExpanded) d.onFocusExpanded?.();
+								else d.onFocusCollapsed?.();
 								window.requestAnimationFrame(() => {
 									window.requestAnimationFrame(() =>
 										updateNodeInternals(d.step.id),
@@ -138,7 +139,9 @@ export function LoopNode({ data }: NodeProps) {
 						</Button>
 					</header>
 
-					<div className="space-y-2 px-3 py-3">
+					<div
+						className={`space-y-2 px-3 py-3 ${isExpanded ? "pointer-events-none" : ""}`}
+					>
 						<div className="flex items-center justify-between gap-2 px-1">
 							<span className="flex items-center gap-1.5 font-medium text-xs">
 								<Layers3
@@ -154,18 +157,18 @@ export function LoopNode({ data }: NodeProps) {
 						</div>
 
 						{isExpanded ? (
-							<LoopBodyCanvas
-								body={d.step.body ?? { nodes: [], edges: [] }}
-								loopOutputVar={d.step.outputVar}
-								selectedNodeId={d.selectedBodyNodeId}
-								readOnly={Boolean(d.locked)}
-								onBodyChange={(body) =>
-									automationNode.update({ ...d.step, body })
-								}
-								onNodeSelect={(bodyNodeId) =>
-									automationNode.open(bodyNodeId)
-								}
-							/>
+							<section
+								data-loop-id={d.step.id}
+								className="pointer-events-none h-full min-h-44"
+								aria-label="Loop workflow group"
+							>
+								{bodyNodes.length === 0 && (
+									<p className="pt-8 text-center text-muted-foreground text-xs">
+										Drop steps into this group or add one
+										below.
+									</p>
+								)}
+							</section>
 						) : (
 							<div className="rounded-xl border border-primary/30 border-dashed bg-muted/30 p-2">
 								{bodyNodes.length === 0 ? (
@@ -216,7 +219,7 @@ export function LoopNode({ data }: NodeProps) {
 						)}
 
 						<div className="flex gap-2">
-							{!d.locked && (
+							{!d.locked && !isExpanded && (
 								<Button
 									type="button"
 									variant="ghost"
@@ -231,19 +234,21 @@ export function LoopNode({ data }: NodeProps) {
 									Settings
 								</Button>
 							)}
-							<Button
-								type="button"
-								variant={isExpanded ? "default" : "outline"}
-								size="sm"
-								className="flex-1"
-								onClick={(event) => {
-									event.stopPropagation();
-									automationNode.openLoopEditor();
-								}}
-							>
-								<Maximize2 className="size-3.5" aria-hidden />
-								Open steps
-							</Button>
+							{!d.locked && !isExpanded && (
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									className="flex-1"
+									onClick={(event) => {
+										event.stopPropagation();
+										d.onAddBodyStep?.();
+									}}
+								>
+									<Plus className="size-3.5" aria-hidden />
+									Add step
+								</Button>
+							)}
 						</div>
 					</div>
 
@@ -252,22 +257,26 @@ export function LoopNode({ data }: NodeProps) {
 						type="target"
 						position={Position.Left}
 						isConnectable={!d.locked}
-						className="size-2! border-2! border-background! bg-muted-foreground/50!"
+						className="pointer-events-auto size-2! border-2! border-background! bg-muted-foreground/50!"
 					/>
 					<Handle
 						id={`out-${d.step.id}`}
 						type="source"
 						position={Position.Right}
-						isConnectable={!d.locked}
+						isConnectable={!d.locked && !hasOutgoingControlEdge}
 						onClick={(event) => {
-							if (d.locked) return;
+							if (d.locked || hasOutgoingControlEdge) return;
 							event.stopPropagation();
 							automationNode.addAfter();
 						}}
-						aria-label="Add a step after the loop or drag to connect"
-						className="border! size-7! border-border! bg-background! shadow-sm transition-colors hover:border-primary!"
+						aria-label={
+							hasOutgoingControlEdge
+								? "Loop output connected"
+								: "Add a step after the loop or drag to connect"
+						}
+						className={`${hasOutgoingControlEdge ? "size-2! bg-muted-foreground/50!" : "border! size-7! border-border! bg-background! shadow-sm transition-colors hover:border-primary!"} pointer-events-auto border-2! border-background!`}
 					/>
-					{!d.locked && (
+					{!d.locked && !hasOutgoingControlEdge && (
 						<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-0 flex size-7 translate-x-1/2 items-center justify-center text-muted-foreground">
 							<Plus className="size-4" aria-hidden />
 						</span>
@@ -277,9 +286,9 @@ export function LoopNode({ data }: NodeProps) {
 			{!d.locked && (
 				<ContextMenuContent>
 					<ContextMenuItem
-						onSelect={() => automationNode.openLoopEditor()}
+						onSelect={() => d.onExpandedChange?.(true)}
 					>
-						Open repeated steps
+						Expand loop group
 					</ContextMenuItem>
 					<ContextMenuItem onSelect={() => automationNode.open()}>
 						Loop settings

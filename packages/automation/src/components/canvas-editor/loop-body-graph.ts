@@ -2,6 +2,7 @@ import type {
 	AutomationEdge,
 	AutomationNode,
 	AutomationNodeBody,
+	RoutingConfig,
 } from "../../domain/automation.types";
 
 export interface LoopBodyInsertionPoint {
@@ -9,8 +10,14 @@ export interface LoopBodyInsertionPoint {
 	sourceHandle: string;
 }
 
-const LOOP_BODY_COLUMN_GAP = 260;
-const LOOP_BODY_LANE_GAP = 180;
+const LOOP_BODY_COLUMN_GAP = 360;
+const LOOP_BODY_LANE_GAP = 40;
+const LOOP_BODY_DEFAULT_NODE_HEIGHT = 120;
+
+function loopBodyNodeHeight(node: AutomationNode): number {
+	if (node.type !== "branch") return LOOP_BODY_DEFAULT_NODE_HEIGHT;
+	return 88 + ((node.config as RoutingConfig).clauses.length - 1) * 48;
+}
 
 /**
  * Produces a stable left-to-right view of the nested graph. The inspector is a
@@ -50,12 +57,14 @@ export function layoutLoopBodyNodes(
 	}
 	const positions = new Map<string, { x: number; y: number }>();
 	for (const [depth, nodes] of columns) {
-		nodes.forEach((node, lane) => {
+		let y = 0;
+		for (const node of nodes) {
 			positions.set(node.id, {
 				x: depth * LOOP_BODY_COLUMN_GAP,
-				y: lane * LOOP_BODY_LANE_GAP,
+				y,
 			});
-		});
+			y += loopBodyNodeHeight(node) + LOOP_BODY_LANE_GAP;
+		}
 	}
 
 	return body.nodes.map((node) => ({

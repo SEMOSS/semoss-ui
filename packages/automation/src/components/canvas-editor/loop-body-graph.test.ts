@@ -55,9 +55,9 @@ describe("loop body graph editing", () => {
 
 		expect(layoutLoopBodyNodes(body).map((item) => item.position)).toEqual([
 			{ x: 0, y: 0 },
-			{ x: 260, y: 0 },
-			{ x: 520, y: 0 },
-			{ x: 520, y: 180 },
+			{ x: 360, y: 0 },
+			{ x: 720, y: 0 },
+			{ x: 720, y: 160 },
 		]);
 	});
 

@@ -1,5 +1,6 @@
 import { Handle, type NodeProps, Position, useEdges } from "@xyflow/react";
 import {
+	ArrowUpRight,
 	BrainCircuit,
 	GitBranch,
 	Loader2,
@@ -27,7 +28,10 @@ import type {
 } from "../../../domain/automation.types";
 import { useAutomationNode } from "../../../hooks/use-automation";
 import { StatusIcon } from "../../status-icon";
-import { getFlowBorderClass } from "../flow-colors";
+import {
+	getFlowBorderClass,
+	LOOP_PATH_HIGHLIGHT_BORDER_CLASS,
+} from "../flow-colors";
 
 export type BranchNodeData = {
 	step: AutomationGraphNode;
@@ -41,8 +45,11 @@ export type BranchNodeData = {
 	highlighted?: boolean;
 	/** True when this step sits on the path leading to the selected node. */
 	pathHighlighted?: boolean;
+	loopPathHighlighted?: boolean;
+	groupSelectionActive?: boolean;
 	/** Color for each output handle (keyed by handle id), matching its edge's current render color. */
 	handleColors?: Record<string, string>;
+	onMoveOut?: () => void;
 };
 
 const STATUS_BORDER: Record<string, string> = {
@@ -84,11 +91,15 @@ export function BranchNode({ data }: NodeProps) {
 		runStatus,
 		Boolean(pathHighlighted),
 		STATUS_BORDER[isIncomplete ? "incomplete" : "idle"],
+		d.loopPathHighlighted ? LOOP_PATH_HIGHLIGHT_BORDER_CLASS : undefined,
 	);
 	const runningClass =
 		runStatus === "running" ? "automation-node-running" : "";
 	const highlightClass = highlighted
 		? "animate-pulse ring-2 ring-primary ring-offset-2 ring-offset-background"
+		: "";
+	const groupSelectionClass = d.groupSelectionActive
+		? "ring-2 ring-chart-2 ring-offset-2 ring-offset-background"
 		: "";
 
 	return (
@@ -96,7 +107,7 @@ export function BranchNode({ data }: NodeProps) {
 			<ContextMenuTrigger asChild>
 				{/* Route count controls canvas geometry, so this height is data-driven. */}
 				<div
-					className={`group relative w-70 rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
+					className={`group relative w-70 rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${groupSelectionClass} ${locked ? "opacity-75" : ""}`}
 					style={{ minHeight: `${88 + additionalConditions * 48}px` }}
 				>
 					<div className="relative z-1 m-0.5 rounded-[14px] bg-card">
@@ -125,6 +136,22 @@ export function BranchNode({ data }: NodeProps) {
 								>
 									<Trash2 className="size-3" />
 								</button>
+								{d.onMoveOut && (
+									<button
+										type="button"
+										aria-label={`Move ${step.label} out of loop`}
+										onClick={(event) => {
+											event.stopPropagation();
+											d.onMoveOut?.();
+										}}
+										className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+									>
+										<ArrowUpRight
+											className="size-3"
+											aria-hidden
+										/>
+									</button>
+								)}
 							</div>
 						)}
 
@@ -303,7 +330,7 @@ function BranchOutputHandle({
 				id={id}
 				type="source"
 				position={Position.Right}
-				isConnectable={!locked}
+				isConnectable={!locked && !connected}
 				onClick={(event) => {
 					event.stopPropagation();
 					if (!locked && !connected) onAdd();

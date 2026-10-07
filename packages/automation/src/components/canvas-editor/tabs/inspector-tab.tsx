@@ -1,8 +1,11 @@
+import { useId } from "react";
+import { Button, Input, P } from "@semoss/ui/next";
 import type {
 	AutomationNode,
 	StepRunStatus,
 } from "../../../domain/automation.types";
 import type { AutomationScopeEntry } from "../../../domain/automation-inspector";
+import type { AutomationNodeGroup } from "../../../domain/automation-workflow.types";
 import { AutomationVariableContext } from "../automation-variable-context";
 import { NodeEditDrawer } from "../node-edit-drawer";
 import { TriggerEditPanel } from "./trigger-edit-panel";
@@ -13,6 +16,7 @@ interface InspectorTabProps {
 	description: string;
 	devMode: boolean;
 	editingStep: AutomationNode | null;
+	editingNodeGroup?: AutomationNodeGroup | null;
 	onPrepareSchedule: () => Promise<boolean>;
 	upstreamVars: string[];
 	scopeEntries: AutomationScopeEntry[];
@@ -22,6 +26,8 @@ interface InspectorTabProps {
 	onClose: () => void;
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: (stepId: string) => void;
+	onUpdateNodeGroup?: (group: AutomationNodeGroup) => void;
+	onUngroupNodeGroup?: (groupId: string) => void;
 	/** Pops the raw Python source out into a larger editor, for a host rendering this tab
 	 * alongside the canvas instead of in a separate iframe. */
 	onOpenPythonEditor?: (nodeId: string, source: string) => void;
@@ -40,6 +46,7 @@ export function InspectorTab({
 	description,
 	devMode,
 	editingStep,
+	editingNodeGroup,
 	onPrepareSchedule,
 	upstreamVars,
 	scopeEntries,
@@ -49,11 +56,56 @@ export function InspectorTab({
 	onClose,
 	onUpdate,
 	onDelete,
+	onUpdateNodeGroup,
+	onUngroupNodeGroup,
 	onOpenPythonEditor,
 	onViewRunDetails,
 	pythonFileOpen = false,
 	readOnly = false,
 }: InspectorTabProps) {
+	const groupLabelId = useId();
+	if (editingNodeGroup) {
+		return (
+			<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
+				<div>
+					<p className="font-semibold text-sm">Node group</p>
+					<P className="mt-1 text-muted-foreground text-xs">
+						{editingNodeGroup.nodeIds.length} grouped nodes
+					</P>
+				</div>
+				<div className="flex flex-col gap-2">
+					<label
+						htmlFor={groupLabelId}
+						className="font-medium text-sm"
+					>
+						Label
+					</label>
+					<Input
+						id={groupLabelId}
+						value={editingNodeGroup.name}
+						disabled={readOnly}
+						onChange={(event) =>
+							onUpdateNodeGroup?.({
+								...editingNodeGroup,
+								name: event.target.value,
+							})
+						}
+					/>
+				</div>
+				{!readOnly && (
+					<Button
+						variant="outline"
+						onClick={() =>
+							onUngroupNodeGroup?.(editingNodeGroup.id)
+						}
+					>
+						Ungroup nodes
+					</Button>
+				)}
+			</div>
+		);
+	}
+
 	if (editingStep?.type === "trigger") {
 		return (
 			<TriggerEditPanel
