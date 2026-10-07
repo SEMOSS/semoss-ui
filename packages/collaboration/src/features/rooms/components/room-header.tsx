@@ -23,6 +23,8 @@ interface RoomHeaderProps {
 	title: string;
 	isToolWorkbenchOpen: boolean;
 	showToolWorkbench?: boolean;
+	/** Stable focus destination for an automatically opened room workbench. */
+	workbenchTriggerId?: string;
 	onToggleToolWorkbench: () => void;
 	/** Contextual thread actions retain their owning workflows. */
 	actions?: ReactNode;
@@ -34,6 +36,7 @@ export function RoomHeader({
 	title,
 	isToolWorkbenchOpen,
 	showToolWorkbench = true,
+	workbenchTriggerId,
 	onToggleToolWorkbench,
 	actions,
 }: RoomHeaderProps) {
@@ -79,6 +82,7 @@ export function RoomHeader({
 					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<Button
+								id={workbenchTriggerId}
 								type="button"
 								variant="ghost"
 								size="icon-sm"

@@ -171,6 +171,10 @@ describe("CollaborationFrame", () => {
 		const account = screen.getByRole("button", {
 			name: /Account menu for/,
 		});
+		expect(header).toContainElement(account);
+		expect(
+			screen.getByRole("complementary", { name: "Workspace navigation" }),
+		).not.toContainElement(account);
 		for (const path of [
 			"/brain",
 			"/settings/about-you",
@@ -223,54 +227,79 @@ describe("CollaborationFrame", () => {
 		expect(screen.getByRole("main")).toHaveFocus();
 	});
 
-	it("opens a room with a collapsed sidebar and allows toggling without remounting its draft", async () => {
-		const { user } = renderFrame("/thread/room%3Aroom-one");
-		const navigation = screen.getByRole("complementary", {
-			name: "Workspace navigation",
-		});
-		const draft = screen.getByRole("textbox", {
-			name: "Conversation draft",
-		});
-		await user.type(draft, "Keep this unsent message");
-		expect(navigation).toHaveClass("w-16");
-		expect(
-			within(navigation).getByRole("navigation", { name: "Main" }),
-		).toBeVisible();
-		expect(
-			screen.getByRole("button", {
-				name: "Search your workspace",
-			}),
-		).toBeVisible();
-		expect(
-			within(navigation).getByRole("link", { name: "New Session" }),
-		).toBeVisible();
-		const expand = screen.getByRole("button", {
-			name: "Expand navigation",
-		});
-		expect(expand.closest("header")).not.toBeNull();
-		expect(screen.getByRole("main")).not.toHaveClass("lg:pl-14");
-		await user.click(expand);
-		expect(navigation).toHaveClass("w-64");
-		expect(
-			screen.getByRole("button", {
+	it.each(["{Enter}", " "])(
+		"toggles the room sidebar with its rail using %s without remounting the draft",
+		async (key) => {
+			const { user } = renderFrame("/thread/room%3Aroom-one");
+			const navigation = screen.getByRole("complementary", {
+				name: "Workspace navigation",
+			});
+			const draft = screen.getByRole("textbox", {
+				name: "Conversation draft",
+			});
+			await user.type(draft, "Keep this unsent message");
+			expect(navigation).toHaveClass("w-16");
+			expect(
+				within(navigation).getByRole("navigation", { name: "Main" }),
+			).toBeVisible();
+			expect(
+				screen.getByRole("button", {
+					name: "Search your workspace",
+				}),
+			).toBeVisible();
+			expect(
+				within(navigation).getByRole("link", { name: "New Session" }),
+			).toBeVisible();
+			const expand = screen.getByRole("button", {
+				name: "Expand navigation",
+			});
+			expect(navigation).toContainElement(expand);
+			expect(expand.closest("header")).toBeNull();
+			expect(expand).toHaveAttribute("data-sidebar", "rail");
+			expect(expand).toHaveAttribute("tabindex", "0");
+			expect(expand.querySelector("svg")).toBeNull();
+			const controlsId = expand.getAttribute("aria-controls");
+			expect(controlsId).toBeTruthy();
+			expect(navigation).toContainElement(
+				document.getElementById(controlsId ?? ""),
+			);
+			expect(screen.getByRole("main")).not.toHaveClass("lg:pl-14");
+			await user.click(expand);
+			expect(navigation).toHaveClass("w-64");
+			expect(
+				screen.getByRole("button", {
+					name: "Collapse navigation",
+				}),
+			).toHaveAttribute("aria-expanded", "true");
+			expect(
+				screen.getByRole("textbox", { name: "Conversation draft" }),
+			).toBe(draft);
+			expect(draft).toHaveValue("Keep this unsent message");
+			const rail = screen.getByRole("button", {
 				name: "Collapse navigation",
-			}),
-		).toHaveAttribute("aria-expanded", "true");
-		expect(
-			screen.getByRole("textbox", { name: "Conversation draft" }),
-		).toBe(draft);
-		expect(draft).toHaveValue("Keep this unsent message");
-		const rail = screen.getByRole("button", {
-			name: "Collapse navigation",
-		});
-		expect(rail.closest("header")).not.toBeNull();
-		expect(rail).toHaveFocus();
-		await user.keyboard("{Enter}");
+			});
+			expect(rail).toBe(expand);
+			expect(rail).toHaveFocus();
+			await user.keyboard(key);
+			expect(
+				screen.getByRole("button", { name: "Expand navigation" }),
+			).toHaveFocus();
+			expect(navigation).toHaveClass("w-16");
+			expect(draft).toHaveValue("Keep this unsent message");
+		},
+	);
+
+	it("returns focus to the rail when the navigation shortcut hides a focused session", async () => {
+		const { user } = renderFrame();
+		act(() =>
+			screen
+				.getByRole("button", { name: "Pricing conversation" })
+				.focus(),
+		);
+		await user.keyboard("{Control>}b{/Control}");
 		expect(
 			screen.getByRole("button", { name: "Expand navigation" }),
 		).toHaveFocus();
-		expect(navigation).toHaveClass("w-16");
-		expect(draft).toHaveValue("Keep this unsent message");
 	});
 
 	it("collapses each opened room and restores the sidebar preference on other pages", async () => {
@@ -421,6 +450,26 @@ describe("CollaborationFrame", () => {
 		expect(router.state.location.pathname).toBe("/brain");
 	});
 
+	it.each(["/", "/settings"])(
+		"closes the mobile sidebar when Settings is selected from %s and focuses the destination",
+		async (path) => {
+			isWide = false;
+			const { user, router } = renderFrame(path);
+			await user.click(
+				screen.getByRole("button", { name: "Open navigation" }),
+			);
+			const drawer = screen.getByRole("dialog", {
+				name: "Workspace navigation",
+			});
+			await user.click(
+				within(drawer).getByRole("link", { name: "Settings" }),
+			);
+			await waitFor(() => expect(screen.getByRole("main")).toHaveFocus());
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+			expect(router.state.location.pathname).toBe("/settings");
+		},
+	);
+
 	it("closes an open drawer when the route changes elsewhere", async () => {
 		isWide = false;
 		const { user, router } = renderFrame();
@@ -504,9 +553,10 @@ describe("CollaborationFrame", () => {
 		await user.click(
 			screen.getByRole("button", { name: "Open navigation" }),
 		);
-		expect(
-			screen.getByRole("dialog", { name: "Workspace navigation" }),
-		).toBeVisible();
+		const drawer = screen.getByRole("dialog", {
+			name: "Workspace navigation",
+		});
+		expect(drawer).toBeVisible();
 		setDesktop(true);
 		await waitFor(() =>
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
@@ -521,7 +571,7 @@ describe("CollaborationFrame", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	it("moves a focused mobile trigger to the desktop toggle when the viewport widens", () => {
+	it("moves a focused mobile trigger to the desktop rail when the viewport widens", () => {
 		isWide = false;
 		renderFrame();
 		act(() =>

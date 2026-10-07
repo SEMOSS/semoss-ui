@@ -44,6 +44,7 @@ it("shows the current account and supports keyboard dismissal and Settings navig
 	const trigger = screen.getByRole("button", {
 		name: "Account menu for Taylor Morgan",
 	});
+	expect(trigger).not.toHaveTextContent("Taylor Morgan");
 	act(() => trigger.focus());
 	await user.keyboard("{Enter}");
 	expect(screen.getByText("taylor@example.invalid")).toBeVisible();
@@ -75,6 +76,7 @@ it("waits for logout success and prevents repeated submissions", async () => {
 	expect(item).toHaveAttribute("aria-disabled", "true");
 	await user.keyboard("{Enter}{Enter}");
 	expect(logout).toHaveBeenCalledOnce();
+	await user.click(screen.getByRole("menuitem", { name: "Settings" }));
 	expect(router.state.location.pathname).toBe("/");
 	await act(async () => finishLogout(true));
 	await waitFor(() => expect(router.state.location.pathname).toBe("/login"));

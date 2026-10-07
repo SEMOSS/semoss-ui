@@ -1,9 +1,9 @@
 # Collaboration
 
 Personal SEMOSS assistant based on the [collaboration mockups](../../mockups).
-The daily brief brings together your calendar, actions needing you, completed
-work, assistant questions, and Brain's review queue. Work organizes threads,
-next steps, waiting items, and completed work. Brain holds people, topics,
+The landing overview brings together chat, your calendar, actions needing you,
+completed work, Brain reviews, and recent sessions. Work starts with topics and
+organizes each topic’s actions, source threads, and saved sessions. Brain holds people, topics,
 thread context, and source readers. Settings brings together your profile,
 appearance, context rules, and data reset.
 
@@ -11,55 +11,80 @@ appearance, context rules, and data reset.
 
 The fixed Brief view uses the existing SEMOSS components, semantic color tokens,
 Geist typography, and spacing scale. It does not define another theme or palette.
-A shared sidebar provides New Session, For you, Brain,
+A shared sidebar provides New Session, For you, Work, Brain,
 foldable Topics and Sessions, with sessions grouped by date. Compact 12px labels
-and 32px rows retain 44px minimum touch targets. The persistent header’s navigation toggle switches between
-256px navigation and a 64px icon rail; desktop collapse and both disclosure
-preferences are stored per account and deployment. Sessions start expanded and
-retain their selection and scroll position when folded. Mobile navigation remains a
+and 32px rows retain 44px minimum touch targets. A keyboard-accessible rail along
+the sidebar edge switches between 256px navigation and a 64px icon rail. Desktop
+collapse and both disclosure preferences are stored per account and deployment.
+Sessions start expanded and retain their selection and scroll position when folded.
+Mobile navigation remains a
 drawer below 1024px. Waiting on others and Handled are always linked from the
 For you summary. Brain contains Review, People, Threads, and Sources navigation;
-the top-right account avatar opens a menu with Settings and Log out. Logout failures
-remain visible and retryable. Appearance controls remain in Settings only.
+Settings has a direct link in the sidebar footer, with an icon-only link when
+collapsed. The avatar in the top-right header opens a menu with the account name,
+Settings, and Log out. Logout failures remain visible and retryable. Appearance
+controls remain in Settings only.
 
 A persistent 56px header blends into the page canvas alongside the full-height sidebar.
-Search stays on the left and the signed-in account avatar on the right across all
-workspace routes, including full-width workbenches. Mobile uses the same header
-with a drawer trigger. Search still uses one palette and ⌘/Ctrl K.
+Search stays on the left and the account avatar on the right across all workspace
+routes, including full-width workbenches. Mobile uses the same header with a drawer trigger.
+Search still uses one palette and ⌘/Ctrl K.
 Saved conversations compose their title, small agent avatar, and contextual/workbench
 actions into that same header, without a second toolbar or horizontal divider.
 Search becomes an icon on small screens to leave room for the conversation title.
 Selecting the title reveals its full text and agent identity in a keyboard- and
 touch-accessible popover. The room controls render into a stable shell target while
 retaining their room context, including when a full-width workbench hides the chat.
-The navigation control belongs to the global header, so changing panes does not
-move it or duplicate it. Conversation editors and drafts remain mounted.
+The desktop navigation control belongs to the sidebar edge, so changing panes does
+not move it or duplicate it. Mobile retains its header drawer trigger. Conversation
+editors and drafts remain mounted.
 
 Work, Brain, and Settings share the Brief's page canvas, reading width, heading
 scale, responsive spacing, and quiet card treatment. Directories retain their
 grouped rows and filters; contextual panels become drawers on narrower screens.
 
-New Session opens `/new` with the Brief's greeting and one centered, floating composer.
-Its + button opens Add to chat: attach files, select an agent, or open Settings.
-Settings uses a side drawer with model and instructions; temperature, knowledge,
-tools, and inherited skills are grouped under a collapsed Advanced section.
-The welcome screen omits the surrounding card, separate controls, and suggestions.
-The right-hand daily context panel stays available beside the composer.
-The first valid submission immediately replaces `/new` with `/thread/:id`, before
-room preparation or uploads finish. The retained request continues once, and
-failures preserve the draft and attachments on the thread page.
-Saved chats, source threads, and direct rooms all use the same room header,
-transcript, and anchored composer. Each keeps its own conversation, retained drafts,
-attachments, source context, approvals, and workbench. Agent configuration is no
-longer accessible from the thread header or room settings. The New Session welcome
-screen keeps daily context and the Your day drawer; saved conversations use the
-full room canvas. Brief/Chat and ⌘/Ctrl J retain the active chat identity and draft.
-Suggested questions and the Brief Ask field populate an editable draft; they never
-auto-send.
+The global landing page places one compact composer beneath its greeting and
+status links. At desktop widths, Your day and Handled sit on the left, Needs you
+in the center, and Brain and Recent sessions on the right. The mobile reading
+and keyboard order is composer, Needs you, Brain, Recent sessions, Your day,
+Handled. Recent sessions initially shows five dated conversations and progressively
+loads more with retry. Brain includes pending decisions, draft notes, and directory
+links. The overview has no topic filter or separate chat mode.
 
-The brief orders pending actions by deadline, supports topic filtering, and
-uses existing Work commands for marking items handled and reopening them.
-Reply and decision links open the existing thread review/approval workflow.
+New Session opens `/new` as a separate conversation page with its own composer,
+chat tools, and explicitly opened Settings/Files workbench. It contains no daily
+context panels. Landing Settings and Files continue the same unsent draft on
+`/new` and open the requested panel. Opening chat files may allocate a room;
+first send reuses that room. Attachments, agent selection, and settings otherwise
+stay local until send. New and saved chats share the same `RoomSession` owner.
+
+Landing first send submits once and pushes the canonical saved-room route,
+consuming the landing draft so Back returns to a fresh overview composer.
+New Session first send replaces `/new` with its room route. A bounded in-memory
+cache associates unsent drafts with stable history entries, so Back/Forward
+restores content while an explicit New Session starts independently. Failures
+retain drafts, attachments, and upload receipts; uncertain submissions require
+reconciliation before another send. Preparation that finishes after navigation
+cannot redirect over the current page. Editable-prompt navigation remains
+supported. Brief/Chat switching and its shortcut have been removed.
+
+The overview orders pending actions by deadline and uses existing Work commands
+for marking items handled and reopening them. `/work` lists topics with their
+status, description, and selector-derived open/waiting counts. `/work/all` starts
+with Needs you and provides Open, Waiting, Handled, and Snoozed filters; legacy
+waiting/handled links remain valid. Each topic workspace leads with its goals
+and Edit in Brain, then Actions, Threads, and Sessions tabs, with topic-specific
+people, confirmed notes, and linked calendar threads.
+
+Topic Sessions reads validated `RoomOptions.source.threadId` metadata only when
+its tab opens, in batches of 25. Associations are cached within the current
+account and insight, rechecked when reopening the tab, and show partial failures,
+retry, and further loading. Multiple rooms from one source are retained; older
+explicit thread-to-room links remain supported. Selecting any saved session
+opens that exact room. No persistence migration is needed.
+
+Source links import the selected thread into a new room; approvals remain in the
+owning room's existing tool workflow.
 Brain review uses existing topic/person decisions. Calendar rows open their
 source details; failed reads show their error and retry action.
 
@@ -70,7 +95,7 @@ implementation remain available in source for a future release.
 Daily data uses existing Work refreshes and visible/return-to-app calendar and
 email reads. Rendering the brief or chat does not start agent work. Chats load
 in server pages of 25, with retry and retained scroll position; opening a saved
-chat resolves its source/thread association before navigation.
+chat navigates directly to its saved room, without resolving a source association.
 
 Search (⌘/Ctrl K) combines server-side Collaboration chat-name/message searches
 with loaded Work/Brain records, the upcoming calendar week, independent Outlook
@@ -85,19 +110,29 @@ Work and Brain share a session backed by the existing `Brain*` and `Work*`
 reactors. Connected profile edits, topics, review decisions, notes, thread exclusions,
 and Work status changes are synchronized to the backend. Sample records remain local.
 
-The thread assistant uses the existing Playground agent harness: collaboration
-rooms, `RunAgent` as the only execution path, streamed events, approvals,
-cancellation, and reconnect. Each thread owns a separate insight for file staging.
-Before the first send, agent selection and saved chat settings remain local and
-do not create a room or history entry. The first submitted request persists those
-settings while preparing a room; subsequent requests reuse its saved association.
-Work assembles current source context for each request and saves it with the
-backend transcript. Earlier requests remain in that conversation's history.
-Chat settings use existing room options and the selected agent configuration.
-Changes in saved chats persist to that room and apply to future turns; changing
-agents preserves manual configuration overrides.
-Direct room conversations use `/thread/:id` and retain their original room
-configuration and chat behavior.
+Every conversation uses one `RoomSession` and the existing Playground agent
+harness: collaboration rooms, `RunAgent`, streamed events, approvals,
+cancellation, and reconnect. Each room owns an isolated insight for files and
+retains its composer state. Before a new chat's first send, agent selection and
+saved settings remain local; first send creates its room. Saved chats restore
+their room directly.
+
+Opening a source thread reads its permitted history, creates a fresh room, and
+uploads one Markdown snapshot into that room's files. Concurrent openings of the
+same source share the pending import; subsequent openings create new rooms.
+Brain history follows all existing 100-message continuation pages. Connected
+Outlook, Teams, and calendar snapshots retain the bounds of their current APIs.
+Exclusions and ingestion rules apply before export; display-only HTML is never
+assistant context. Attachment names are included without downloading file bytes.
+The saved source file is queued for the first user request. Importing never starts
+an assistant request. Room options store only the source identity, saved file
+reference, and included message envelope metadata. No backend changes are needed.
+
+The room's standard transcript, composer, settings, and workbench replace the
+separate thread session and rich Emails/Context workspace. Chat settings use
+existing room options and apply to future turns. Failed imports retain allocated
+rooms and confirmed upload receipts for retry; abandoned imports cannot navigate
+over another page.
 
 ## Microsoft sources and drafts
 
@@ -134,35 +169,30 @@ block saving, and the saved draft's envelope must match the reviewed addresses.
 Save draft never sends; uncertain saves require an Outlook check before another
 attempt.
 
-Email readers and thread controls offer Draft reply, manual Reply, Forward, and
-Delete. AI drafting produces editable text; manual Reply makes no agent request.
+Email-source rooms open the existing email reader in their workbench. Reply opens
+the existing editable draft form; choosing Reply again resumes that room's edits.
+The composer’s + menu includes View email to reopen the reader. Source selection
+is included in the next assistant message. Opening a room only reads permitted
+source messages and does not create a draft, send email, or request an assistant
+response. Brain reads preserve current exclusions; Outlook reads verify the saved
+message identities. Assistant email tools also produce room-owned editable drafts.
 Every shared draft editor separates Save draft from explicit Send, including new
 emails. Sending first saves the reviewed envelope, then sends that exact draft
 identity. Uncertain delivery requires an Outlook check before retrying the same
 draft. Delete confirms moving the selected message to Outlook Deleted Items.
 Teams sending is unavailable.
 
-## Context and new sessions
+## Source context and new sessions
 
-Context contains one summary and editable goal, editable action items, relevant
-PowerPoint progress/results, source-labelled facts, and collapsed inclusion
-controls. It contains no mailbox feed or refresh control. Summarize generates a
-summary and action items through the existing agent session; Regenerate replaces
-untouched generated actions while preserving manual edits and completed items.
-The empty action row accepts Enter and remains focused for the next item.
-Generated summaries are session state; their underlying requests/results remain
-in the saved conversation. Connected action edits use the existing Work APIs.
+Work and Brain retain their source summaries, participant rules, topics, and
+action items independently of assistant rooms. A source import captures the
+permitted messages at that moment. Its file identifies missing or bounded
+history and does not silently replace unavailable messages with sample content.
 
-Topic editing and mute controls live in Settings → Thread. Current/last-request
-snapshots, usage, and compaction live in Settings → Advanced; `/compact` opens
-that section. Existing Files and Tools panels provide artifacts and sourced
-results. Use in reply selects tool results for the next request, with removable
-reference chips. Presentation generation remains agent/tool owned and only
-appears in Context when relevant activity or saved results exist.
-
-`/new` starts a source-free session with an initially closed, generic workspace
-for settings, files, and tool results. Opening these panels does not add an Emails
-pane. Email actions remain available through explicit prompts and tool results.
+`/new` starts a source-free draft with an initially closed standard workbench.
+Files and tool results use the same panels as saved and imported rooms. Email
+actions remain available through explicit prompts and tool results; restored
+draft proposals never open editor panels automatically.
 
 Thread readers opt in to `includeDisplayBody`; older callers default to plain
 text. Display bodies are session-only and excluded from assistant context. HTML
@@ -182,25 +212,19 @@ database migration, or authentication-configuration changes on that baseline.
 Existing Microsoft permission errors flow through the current UI. Live Microsoft
 permissions and delivery still depend on the connected account.
 
-Native file attachments can be opened, downloaded, or explicitly attached to an
-assistant request. Brain threads list them with
-`BrainGetThreadMessages(includeAttachments=true)` and read them with
-`WorkDownloadAttachment`, which applies the thread's rules first. Imported Sources
-mail uses `MicrosoftOutlookDownloadAttachment`. Open and Download stage one copy,
-under a unique filename, in an isolated insight that is never bound to an
-assistant room; Open shows it in the dock from there. Assistant attachments are
-staged in that thread's insight and submitted only with the user's next message.
-Word, Excel, PowerPoint, .msg, and .eml files are sent as a plain-text copy,
-because most providers reject those formats. A message's other files may total
-20 MB, since every later turn re-sends them.
+Source readers retain explicit attachment downloads through the existing
+Microsoft APIs. Source snapshot imports include attachment names only. Files
+chosen for a room's composer use the room's ordinary upload and submission flow.
 
 ## Routes and ownership
 
 | Routes | Feature |
 | --- | --- |
-| `/` | Daily brief |
-| `/work`, `/work/waiting`, `/work/done`, `/work/topic/:topicId` | Work lists and topic views |
-| `/thread/:id` | Thread workspace, assistant, and direct room conversations |
+| `/` | Global landing overview and compact chat composer |
+| `/work` | Topic overview |
+| `/work/all`, `/work/waiting`, `/work/done` | Global work lists |
+| `/work/topic/:topicId` | Topic actions, threads, sessions, and context |
+| `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |
 | `/settings/about-you`, `/settings/appearance`, `/settings/rules`, `/settings/data` | Profile/VIPs, theme, context rules, and data reset |
 | `/brain/people`, `/brain/people/:personId` | People directory and detail |
@@ -220,9 +244,9 @@ Thin route pages live in `src/pages`. Shared session state and Work/Brain UI liv
 in `src/features/collaboration`; Microsoft adapters and forms live in
 `src/features/connectors`; dashboard, customization, and search contracts live in
 `src/features/dashboard`; settings composition lives in `src/features/settings`;
-the thread assistant lives in
-`src/features/thread-assistant`. Existing room, message, tool, delegation, and
-agent-run infrastructure remains available to direct rooms and the assistant.
+conversation ownership and source imports live in `src/features/rooms`;
+room-local email editing lives in `src/features/room-email`. Existing message,
+tool, delegation, and agent-run infrastructure is shared by every room.
 
 ## Development
 
@@ -272,10 +296,21 @@ pnpm --filter @semoss/collaboration test
 pnpm --filter @semoss/collaboration build
 ```
 
+The October 7, 2026 landing/topic Work implementation passed all 921 tests across
+125 files, package type checking, the production build, and Biome checks on all
+42 touched TypeScript files using Node 24.4.0. Existing React test warnings and
+large-bundle build warnings remain. The real-layout preview was inspected at
+320, 360, 720, and 1440 CSS pixels in light/dark themes, including long content,
+keyboard composer and tab navigation, topic sessions, and the mobile Settings
+workbench. No horizontal page overflow was observed. Native 200% zoom is not
+available in the preview browser; the equivalent 720-pixel reflow was checked.
+Live backend sends/uploads and real-device screen-reader behavior were not
+exercised by this preview pass; lifecycle and recovery checks use test fixtures.
+
 The October 6, 2026 backend-compatibility pass used Node 24.4.0: all 1,055 tests
 across 138 files passed, along with package type-check, production build, and
 Biome checks on changed source/configuration files. Regression coverage includes
-queued server IDs, undo persistence, priority clearing, topic calendar series,
+queued server IDs, priority clearing, topic calendar series,
 native source identities, empty versus omitted email fields, and HTTPS development
 configuration. Existing React test warnings and large-bundle build warnings remain.
 The isolated browser reached sign-in; authenticated Microsoft operations and

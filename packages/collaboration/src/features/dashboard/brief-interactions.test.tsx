@@ -20,6 +20,12 @@ import { DashboardContext } from "./dashboard.context";
 import { presetWidgets, saveDashboardPreferences } from "./dashboard-layout";
 import { useDashboardLayout } from "./use-dashboard-layout";
 
+vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
+	LandingChatComposer: () => (
+		<section aria-label="Start a conversation">Chat composer</section>
+	),
+}));
+
 const storageKey = "brief-interaction-layout";
 const request = vi.fn((): never => {
 	throw new Error("The brief must not submit an SDK request.");
@@ -231,7 +237,8 @@ it("shows the complete daily brief without applying or replacing saved widget cu
 		"Your day",
 		"Handled",
 		"Needs you",
-		"Ask",
+		"Start a conversation",
+		"Recent sessions",
 		"Brain wants to check",
 	]) {
 		expect(screen.getByRole("region", { name })).toBeVisible();
@@ -248,47 +255,49 @@ it("shows the complete daily brief without applying or replacing saved widget cu
 	expect(localStorage.getItem(storageKey)).toBe(saved);
 });
 
-it("narrows the work queue, handled list, and headline to the selected topic", async () => {
-	const user = userEvent.setup();
-	renderBrief();
+it("keeps all topics visible with the composer before the mobile reading order", () => {
+	const { container } = renderBrief();
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
 		"3 things need you",
 	);
-	await user.click(
-		screen.getAllByRole("combobox", { name: "Topic scope" })[0],
-	);
-	await user.click(screen.getByRole("option", { name: "Product Build" }));
 	const needs = within(screen.getByRole("region", { name: "Needs you" }));
+	for (const name of [
+		"Review the sprint backlog",
+		"Confirm revised pricing",
+		"Choose support tier",
+	]) {
+		expect(needs.getByRole("link", { name })).toBeVisible();
+	}
 	expect(
-		needs.getByRole("link", { name: "Review the sprint backlog" }),
-	).toBeVisible();
-	expect(
-		needs.queryByRole("link", { name: "Confirm revised pricing" }),
+		screen.queryByRole("combobox", { name: "Topic scope" }),
 	).not.toBeInTheDocument();
 	expect(
-		needs.queryByRole("link", { name: "Choose support tier" }),
+		screen.queryByRole("region", { name: "Ask" }),
 	).not.toBeInTheDocument();
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"1 thing needs you",
-	);
 	expect(
-		within(screen.getByRole("region", { name: "Handled" })).getByRole(
-			"link",
-			{ name: "Send the sprint notes" },
-		),
-	).toBeVisible();
-	await user.click(
-		screen.getAllByRole("combobox", { name: "Topic scope" })[0],
-	);
-	await user.click(screen.getByRole("option", { name: "Tailspin Renewal" }));
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"2 things need you",
-	);
+		screen.queryByRole("link", { name: "Chat" }),
+	).not.toBeInTheDocument();
 	expect(
-		within(screen.getByRole("region", { name: "Handled" })).getByText(
-			"Completed work will appear here.",
+		[
+			...container.querySelectorAll(
+				"section[aria-label], section[aria-labelledby]",
+			),
+		].map(
+			(region) =>
+				region.getAttribute("aria-label") ||
+				document.getElementById(
+					region.getAttribute("aria-labelledby") || "",
+				)?.textContent,
 		),
-	).toBeVisible();
+	).toEqual([
+		"Start a conversation",
+		"Needs you",
+		"Brain wants to check",
+		"Recent sessions",
+		"Your day",
+		"Handled",
+	]);
+	expect(request).not.toHaveBeenCalled();
 });
 
 it("moves completed work into Handled and reopens only the chosen item after later changes", async () => {
@@ -339,45 +348,26 @@ it("moves completed work into Handled and reopens only the chosen item after lat
 	]);
 });
 
-it("carries a suggested question and selected topic to a new chat without submitting a request", async () => {
-	const user = userEvent.setup();
-	const { router, onChange } = renderBrief();
-	await user.click(
-		screen.getAllByRole("combobox", { name: "Topic scope" })[0],
+it("links the global overview to Work and Brain directories", () => {
+	renderBrief();
+	expect(screen.getByRole("link", { name: "3 open" })).toHaveAttribute(
+		"href",
+		"/work/all",
 	);
-	await user.click(screen.getByRole("option", { name: "Product Build" }));
-	await user.click(
-		screen.getByRole("button", {
-			name: "What changed on Product Build this week?",
-		}),
+	const directories = within(
+		screen.getByRole("navigation", { name: "Brain directories" }),
 	);
-	expect(router.state.location.pathname).toBe("/new");
-	expect(router.state.location.state).toEqual({
-		prompt: "What changed on Product Build this week?",
-		topicId: "product",
-	});
-	expect(request).not.toHaveBeenCalled();
-	expect(onChange).not.toHaveBeenCalled();
-});
-
-it("opens an authored question as a draft and keeps blank questions disabled", async () => {
-	const user = userEvent.setup();
-	const { router } = renderBrief();
-	const openQuestion = screen.getByRole("button", {
-		name: "Open question in chat",
-	});
-	expect(openQuestion).toBeDisabled();
-	await user.type(
-		screen.getByRole("textbox", { name: "Ask anything" }),
-		"  Help me prepare for today  ",
-	);
-	await user.click(openQuestion);
-	expect(router.state.location.pathname).toBe("/new");
-	expect(router.state.location.state).toEqual({
-		prompt: "Help me prepare for today",
-		topicId: "",
-	});
-	expect(request).not.toHaveBeenCalled();
+	for (const [name, path] of [
+		["Topics", "/work"],
+		["People", "/brain/people"],
+		["Threads", "/brain/threads"],
+		["Sources", "/brain/sources"],
+	]) {
+		expect(directories.getByRole("link", { name })).toHaveAttribute(
+			"href",
+			path,
+		);
+	}
 });
 
 it("keeps a failed empty work refresh distinct from being caught up and offers retry", async () => {

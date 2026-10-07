@@ -11,9 +11,13 @@ import { useRef } from "react";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, describe, expect, it } from "vitest";
+import { WorkPage } from "@/pages/work.page";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { selectThreadContext } from "../state/collaboration.selectors";
-import type { ThreadContext } from "../state/collaboration.types";
+import type {
+	CollaborationCommand,
+	ThreadContext,
+} from "../state/collaboration.types";
 import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
@@ -27,7 +31,6 @@ import { ProfileForm } from "./profile-form";
 import { RulesEditor } from "./rules-editor";
 import { TopicDetail } from "./topic-detail";
 import { TopicEditor } from "./topic-editor";
-import { WorkFeed } from "./work-feed";
 
 /** Observe only the context submitted to the assistant, alongside real route controls. */
 function ContextObserver() {
@@ -39,11 +42,12 @@ function ContextObserver() {
 	);
 }
 
-function HistoryControl() {
-	const { undo, canUndo } = useCollaborationSession();
+/** Apply a separate state update while a form has unsaved fields. */
+function SessionUpdateControl({ command }: { command: CollaborationCommand }) {
+	const { dispatch } = useCollaborationSession();
 	return (
-		<button type="button" disabled={!canUndo} onClick={undo}>
-			Undo local edit
+		<button type="button" onClick={() => dispatch(command)}>
+			Apply session update
 		</button>
 	);
 }
@@ -56,12 +60,13 @@ function ProfileFixture() {
 function renderSession(
 	path: string,
 	initialState = createInitialCollaborationState(),
+	update?: CollaborationCommand,
 ) {
 	const router = createMemoryRouter(
 		[
-			{ path: "/work", Component: WorkFeed },
-			{ path: "/work/done", Component: WorkFeed },
-			{ path: "/work/topic/:topicId", Component: WorkFeed },
+			{ path: "/work/all", Component: WorkPage },
+			{ path: "/work/done", Component: WorkPage },
+			{ path: "/work/topic/:topicId", Component: WorkPage },
 			{ path: "/brain", Component: BrainReview },
 			{ path: "/brain/memory", Component: BrainMemory },
 			{ path: "/brain/topics/:topicId", Component: TopicDetail },
@@ -77,7 +82,7 @@ function renderSession(
 		<CollaborationSessionProvider initialState={initialState}>
 			<RouterProvider router={router} />
 			<ContextObserver />
-			<HistoryControl />
+			{update && <SessionUpdateControl command={update} />}
 		</CollaborationSessionProvider>,
 	);
 	return router;
@@ -109,7 +114,7 @@ afterEach(cleanup);
 describe("collaboration Work and Brain integration", () => {
 	it("carries Work topic confirmation into Brain's learned links and the assistant snapshot", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work");
+		const router = renderSession("/work/all");
 		expect(
 			submittedContext().topics.map((topic) => topic.id),
 		).not.toContain("t-trip");
@@ -138,9 +143,9 @@ describe("collaboration Work and Brain integration", () => {
 		).toBe(true);
 	});
 
-	it("shows completed Work items in Done and restores them with shared undo", async () => {
+	it("shows completed Work items in Done and reopens the selected item", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work");
+		const router = renderSession("/work/all");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
@@ -152,17 +157,18 @@ describe("collaboration Work and Brain integration", () => {
 		).not.toBeInTheDocument();
 		await act(() => router.navigate("/work/done"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
-		await act(() => router.navigate("/brain"));
 		await user.click(
-			screen.getByRole("button", { name: "Undo latest change" }),
+			within(articleFor(title)).getByRole("button", {
+				name: "Move back",
+			}),
 		);
-		await act(() => router.navigate("/work"));
+		await act(() => router.navigate("/work/all"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 
 	it("clears an item with No response needed and keeps it out of Done", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work");
+		const router = renderSession("/work/all");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
@@ -186,7 +192,7 @@ describe("collaboration Work and Brain integration", () => {
 			(item) => item.title === title,
 		)?.threadId;
 		if (!threadId) throw new Error("Missing thread");
-		const router = renderSession("/work", state);
+		const router = renderSession("/work/all", state);
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
 				name: "Ignore thread",
@@ -203,7 +209,7 @@ describe("collaboration Work and Brain integration", () => {
 		});
 		expect(ignored).toBeChecked();
 		await user.click(ignored);
-		await act(() => router.navigate("/work"));
+		await act(() => router.navigate("/work/all"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 
@@ -453,9 +459,12 @@ describe("collaboration Work and Brain integration", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("refreshes pristine preferences after undo while preserving unsaved fields", async () => {
+	it("refreshes pristine preferences after a session update while preserving unsaved fields", async () => {
 		const user = userEvent.setup();
-		renderSession("/rules");
+		renderSession("/rules", createInitialCollaborationState(), {
+			type: "settings.save",
+			changes: { fileAt: 85, askAt: 40 },
+		});
 		const fileAt = screen.getByRole("spinbutton", {
 			name: "File automatically at (%)",
 		});
@@ -470,15 +479,22 @@ describe("collaboration Work and Brain integration", () => {
 		await user.clear(fileAt);
 		await user.type(fileAt, "91");
 		await user.click(
-			screen.getByRole("button", { name: "Undo local edit" }),
+			screen.getByRole("button", { name: "Apply session update" }),
 		);
 		expect(fileAt).toHaveValue(91);
 		expect(askAt).toHaveValue(40);
 	});
 
-	it("keeps an unsaved profile draft while undo restores the other confirmed fields", async () => {
+	it("keeps an unsaved profile draft while a session update refreshes other fields", async () => {
 		const user = userEvent.setup();
-		renderSession("/profile");
+		renderSession("/profile", createInitialCollaborationState(), {
+			type: "profile.save",
+			target: "sample",
+			changes: {
+				role: { value: "Team lead", source: "you" },
+				workingHours: "8:00 - 18:30 ET",
+			},
+		});
 		const role = screen.getByRole("textbox", { name: "Role" });
 		const workingHours = screen.getByRole("textbox", {
 			name: "Working hours",
@@ -495,7 +511,7 @@ describe("collaboration Work and Brain integration", () => {
 		await user.clear(role);
 		await user.type(role, "Chief architect");
 		await user.click(
-			screen.getByRole("button", { name: "Undo local edit" }),
+			screen.getByRole("button", { name: "Apply session update" }),
 		);
 		expect(role).toHaveValue("Chief architect");
 		expect(workingHours).toHaveValue("8:00 - 18:30 ET");

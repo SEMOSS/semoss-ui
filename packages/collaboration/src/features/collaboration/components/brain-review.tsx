@@ -18,11 +18,10 @@ import { CollaborationSurface } from "./collaboration-surface";
 import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { MemoryRow } from "./memory-list";
 import { ReviewCard } from "./review-card";
-import { Section } from "./section";
 
 /** Human review of topic suggestions, memberships, and memories Brain suggests or the assistant learned. */
 export function BrainReview() {
-	const { state, dispatch, undo, canUndo } = useCollaborationSession();
+	const { state, dispatch } = useCollaborationSession();
 	const [tab, setTab] = useState("needs");
 	const open = state.reviews.filter((review) => review.status === "open");
 	const resolved = state.reviews.filter((review) => review.status !== "open");
@@ -48,20 +47,6 @@ export function BrainReview() {
 			aside={
 				<>
 					<BrainOverview />
-					<Section title="Session history" variant="card">
-						<P className="text-muted-foreground text-xs leading-5">
-							Undo reverses the latest local change. It never
-							deletes saved conversations or Outlook drafts.
-						</P>
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={!canUndo}
-							onClick={undo}
-						>
-							Undo latest change
-						</Button>
-					</Section>
 					<Button asChild variant="outline">
 						<Link to="/brain/sources">Sources</Link>
 					</Button>

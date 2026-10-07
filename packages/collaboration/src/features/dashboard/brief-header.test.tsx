@@ -17,7 +17,7 @@ vi.mock("./dashboard.context", () => ({
 afterEach(cleanup);
 
 /** Header counts use real selectors; external source snapshots remain empty. */
-function renderHeader(withItems = false, topicId = "") {
+function renderHeader(withItems = false) {
 	const state = createInitialCollaborationState();
 	const item = state.items[0];
 	if (!item) throw new Error("Missing sample item");
@@ -36,8 +36,9 @@ function renderHeader(withItems = false, topicId = "") {
 	const router = createMemoryRouter([
 		{
 			path: "/",
-			element: <BriefHeader topicId={topicId} onTopicChange={vi.fn()} />,
+			element: <BriefHeader />,
 		},
+		{ path: "/work/all", element: <h1>All work</h1> },
 		{ path: "/work/done", element: <h1>Handled work</h1> },
 		{ path: "/work/waiting", element: <h1>Waiting work</h1> },
 	]);
@@ -50,6 +51,7 @@ function renderHeader(withItems = false, topicId = "") {
 }
 
 it.each([
+	["0 open", "/work/all", "All work"],
 	["0 handled", "/work/done", "Handled work"],
 	["0 waiting on others", "/work/waiting", "Waiting work"],
 ])(
@@ -66,21 +68,16 @@ it.each([
 	},
 );
 
-it.each([
-	["", "1 handled", "1 waiting on others"],
-	["one", "1 handled", "0 waiting on others"],
-	["two", "0 handled", "1 waiting on others"],
-])(
-	"retains topic-scoped counts for %s while linking to the work lists",
-	(topic, handled, waiting) => {
-		renderHeader(true, topic);
-		expect(screen.getByRole("link", { name: handled })).toHaveAttribute(
-			"href",
-			"/work/done",
-		);
-		expect(screen.getByRole("link", { name: waiting })).toHaveAttribute(
-			"href",
-			"/work/waiting",
-		);
-	},
-);
+it("counts all topics and links to the corresponding global work lists", () => {
+	renderHeader(true);
+	expect(screen.getByRole("link", { name: "1 handled" })).toHaveAttribute(
+		"href",
+		"/work/done",
+	);
+	expect(
+		screen.getByRole("link", { name: "1 waiting on others" }),
+	).toHaveAttribute("href", "/work/waiting");
+	expect(
+		screen.queryByRole("combobox", { name: "Topic scope" }),
+	).not.toBeInTheDocument();
+});

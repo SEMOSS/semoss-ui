@@ -8,27 +8,23 @@ import {
 import { useLocation, useNavigate } from "react-router";
 import { Env, useInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
-import { importSourceCommand } from "@/features/collaboration/import-source";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
 	listCalendarEvents,
 	listMail,
 } from "@/features/connectors/api/microsoft";
-import { roomOptionsEnvelopeSchema } from "@/features/rooms/api/room-schemas";
-import { associationSchema } from "@/features/thread-assistant/api/thread-room";
-import { callPixel, pixel } from "@/lib/pixel";
-import { roomPath, threadPath } from "@/lib/workspace-paths";
+import { roomPath } from "@/lib/workspace-paths";
 import { DashboardContext, type SourceSelection } from "./dashboard.context";
 import { dashboardStorageKey } from "./dashboard-layout";
-import { restoreSourceThread } from "./restore-source-thread";
+import { RoomSourceAssociationsProvider } from "./room-source-associations-provider";
 import { useChatHistory } from "./use-chat-history";
 import { useDashboardLayout } from "./use-dashboard-layout";
 import { useVisibleResource } from "./use-visible-resource";
 
 /** Account-keyed shell data; opening the palette reuses the dashboard's source snapshots. */
 export function DashboardProvider({ children }: { children: ReactNode }) {
-	const { actions } = useInsight();
-	const { state, dispatch } = useCollaborationSession();
+	const { actions, insightId } = useInsight();
+	const { state } = useCollaborationSession();
 	const location = useLocation();
 	const navigate = useNavigate();
 	const account = state.profile.email || state.profile.id;
@@ -66,7 +62,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 	const isActive =
 		location.pathname === "/" ||
 		location.pathname === "/new" ||
-		location.pathname.startsWith("/thread/session") ||
+		location.pathname.startsWith("/thread/") ||
 		isSearchOpen;
 	const loadCalendar = useCallback(
 		async () => (await listCalendarEvents(actions)).events,
@@ -93,49 +89,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 		const token = ++opening.current;
 		setOpeningRoom(roomId);
 		try {
-			const envelope = await callPixel(
-				actions,
-				pixel("GetRoomOptions", { roomId }),
-				roomOptionsEnvelopeSchema,
-			);
-			if (token !== opening.current) return;
-			const association = associationSchema.safeParse(
-				envelope.OPTIONS.workThread,
-			);
-			if (
-				association.success &&
-				association.data.modelId === envelope.OPTIONS.modelId
-			) {
-				const { threadId } = association.data;
-				if (!state.threads.some((thread) => thread.id === threadId)) {
-					if (threadId.startsWith("session:"))
-						dispatch({
-							type: "session.create",
-							sessionId: threadId,
-						});
-					else {
-						const imported = await restoreSourceThread(
-							actions,
-							threadId,
-						);
-						if (token !== opening.current) return;
-						if (imported) dispatch(importSourceCommand(imported));
-						else {
-							await navigate(roomPath(roomId), {
-								state: { openedRoomId: roomId },
-							});
-							return;
-						}
-					}
-				}
-				dispatch({ type: "workspace.open", threadId });
-				await navigate(threadPath(threadId), {
-					state: { openedRoomId: roomId },
-				});
-			} else
-				await navigate(roomPath(roomId), {
-					state: { openedRoomId: roomId },
-				});
+			await navigate(roomPath(roomId));
 		} catch (cause) {
 			if (token === opening.current)
 				toast.error(
@@ -167,7 +121,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 				openingRoom,
 			}}
 		>
-			{children}
+			<RoomSourceAssociationsProvider
+				key={JSON.stringify([account, insightId])}
+				actions={actions}
+			>
+				{children}
+			</RoomSourceAssociationsProvider>
 		</DashboardContext.Provider>
 	);
 }

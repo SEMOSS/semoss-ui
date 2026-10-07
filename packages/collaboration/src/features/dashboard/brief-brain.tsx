@@ -20,7 +20,7 @@ export function BriefBrain() {
 					<ReviewCard key={review.id} review={review} compact />
 				))}
 			</div>
-			{!reviews.length && draftNotes > 0 && (
+			{draftNotes > 0 && (
 				<P className="py-3 text-muted-foreground text-sm">
 					{draftNotes}{" "}
 					{draftNotes === 1 ? "memory is" : "memories are"} waiting
@@ -34,10 +34,29 @@ export function BriefBrain() {
 			)}
 			<Link
 				to="/brain"
-				className="mt-4 inline-flex border-b pb-1 font-mono text-sm hover:text-muted-foreground"
+				className="mt-4 inline-flex min-h-8 pointer-coarse:min-h-11 items-center rounded-sm border-b pb-1 font-mono text-sm hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring"
 			>
 				Open Brain →
 			</Link>
+			<nav
+				aria-label="Brain directories"
+				className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t pt-3"
+			>
+				{[
+					["Topics", "/work"],
+					["People", "/brain/people"],
+					["Threads", "/brain/threads"],
+					["Sources", "/brain/sources"],
+				].map(([label, to]) => (
+					<Link
+						key={to}
+						to={to}
+						className="inline-flex min-h-8 pointer-coarse:min-h-11 items-center rounded-sm text-muted-foreground text-xs hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+					>
+						{label}
+					</Link>
+				))}
+			</nav>
 		</BriefPanel>
 	);
 }

@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore } from "react";
-import { Button, Muted } from "@semoss/ui/next";
+import { Alert, AlertDescription, Button, Muted } from "@semoss/ui/next";
 import type { EmailDraftEditor } from "@/features/connectors/api/email-draft-editor";
 
 /** Send or turn down a paused SendEmail call from the chat; Send runs the editor's own Send. */
@@ -18,6 +18,7 @@ export function EmailSendActions({
 		draft.getSnapshot,
 	);
 	const [isRejecting, setIsRejecting] = useState(false);
+	const [error, setError] = useState("");
 	const isBusy = snapshot.isSending || snapshot.isSaving || isRejecting;
 	return (
 		<div className="flex flex-wrap items-center gap-2 border-border/60 border-t px-3 py-2">
@@ -36,8 +37,15 @@ export function EmailSendActions({
 				disabled={isBusy}
 				onClick={async () => {
 					setIsRejecting(true);
+					setError("");
 					try {
 						await onReject();
+					} catch (cause) {
+						setError(
+							cause instanceof Error
+								? cause.message
+								: "Could not reject this send. Try again.",
+						);
 					} finally {
 						setIsRejecting(false);
 					}
@@ -45,6 +53,11 @@ export function EmailSendActions({
 			>
 				Don't send
 			</Button>
+			{error && (
+				<Alert variant="destructive" className="basis-full">
+					<AlertDescription>{error}</AlertDescription>
+				</Alert>
+			)}
 			<Button
 				type="button"
 				className="min-h-9 pointer-coarse:min-h-11"

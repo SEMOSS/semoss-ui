@@ -1,60 +1,89 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useSyncExternalStore,
+} from "react";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
-import { Button } from "@semoss/ui/next";
-import { WorkThread } from "@/features/collaboration/components/work-thread";
-import { importSourceCommand } from "@/features/collaboration/import-source";
+import { Alert, AlertDescription, Button, P, Spinner } from "@semoss/ui/next";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import { restoreSourceThread } from "@/features/dashboard/restore-source-thread";
+import { createSourceImportAttempt } from "@/features/rooms/source-import/source-import-attempt";
+import { roomPath } from "@/lib/workspace-paths";
 
-/** Record identity isolates source-view drafts when navigating between threads. */
+/** A source route imports its snapshot and hands the conversation to the room. */
 export function WorkThreadPage() {
-	const { threadId } = useParams();
-	const { actions } = useInsight();
-	const { state, dispatch } = useCollaborationSession();
-	const isMissingSource = Boolean(
-		threadId?.startsWith("connected:") &&
-			!state.threads.some((thread) => thread.id === threadId),
-	);
-	const [error, setError] = useState("");
-	const [revision, setRevision] = useState(0);
-	useEffect(() => {
-		void revision;
-		if (!threadId || !isMissingSource) return;
-		let cancelled = false;
-		setError("");
-		void restoreSourceThread(actions, threadId)
-			.then((source) => {
-				if (!cancelled) {
-					if (source) dispatch(importSourceCommand(source));
-					else setError("This source cannot be restored.");
-				}
-			})
-			.catch((cause: unknown) => {
-				if (!cancelled)
-					setError(
-						cause instanceof Error
-							? cause.message
-							: "Could not restore the source.",
-					);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [actions, threadId, isMissingSource, dispatch, revision]);
-	if (isMissingSource)
-		return (
-			<div className="space-y-3 p-6 text-sm">
-				<p>{error || "Restoring this conversation’s source…"}</p>
-				{error && (
-					<Button
-						variant="outline"
-						onClick={() => setRevision((value) => value + 1)}
-					>
-						Retry
-					</Button>
-				)}
-			</div>
+	const { threadId = "" } = useParams();
+	const { actions, insightId } = useInsight();
+	const { state } = useCollaborationSession();
+	const location = useLocation();
+	const navigate = useNavigate();
+	const currentState = useRef(state);
+	currentState.current = state;
+	const visitId = location.key;
+	const attempt = useMemo(() => {
+		// A new history entry is a new click, even when its source id is unchanged.
+		void visitId;
+		return createSourceImportAttempt(
+			insightId,
+			threadId,
+			actions,
+			() => currentState.current,
 		);
-	return <WorkThread key={threadId} />;
+	}, [insightId, threadId, actions, visitId]);
+	const snapshot = useSyncExternalStore(
+		attempt.subscribe,
+		attempt.getSnapshot,
+		attempt.getSnapshot,
+	);
+	const activeAttempt = useRef<typeof attempt | null>(null);
+	const open = useCallback(async () => {
+		const result = await attempt.start();
+		if (result && activeAttempt.current === attempt) {
+			activeAttempt.current = null;
+			await navigate(roomPath(result.roomId), { replace: true });
+		}
+	}, [attempt, navigate]);
+	useEffect(() => {
+		activeAttempt.current = attempt;
+		const release = attempt.retain();
+		void open();
+		return () => {
+			if (activeAttempt.current === attempt) activeAttempt.current = null;
+			release();
+		};
+	}, [attempt, open]);
+	const progress =
+		snapshot.phase === "loading-source"
+			? "Loading thread…"
+			: snapshot.phase === "creating-room"
+				? "Opening room…"
+				: "Saving thread to room files…";
+	return (
+		<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-auto p-6">
+			{snapshot.error ? (
+				<>
+					<Alert variant="destructive">
+						<AlertDescription>{snapshot.error}</AlertDescription>
+					</Alert>
+					<Button
+						type="button"
+						variant="outline"
+						className="min-h-11 self-start"
+						onClick={() => void open()}
+					>
+						Retry opening thread
+					</Button>
+				</>
+			) : (
+				<P>
+					<output className="flex items-center gap-2">
+						<Spinner aria-hidden="true" />
+						{progress}
+					</output>
+				</P>
+			)}
+		</div>
+	);
 }

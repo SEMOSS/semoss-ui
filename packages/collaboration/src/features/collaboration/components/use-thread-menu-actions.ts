@@ -5,18 +5,12 @@ import {
 	Check,
 	Clock,
 	ExternalLink,
-	FilePenLine,
-	Forward,
 	Link2,
 	type LucideIcon,
-	Mail,
-	MessageSquare,
 	PanelRightOpen,
 	Plus,
-	Reply,
 	RotateCcw,
 	Sparkles,
-	Trash2,
 	X,
 } from "lucide-react";
 import { type RefObject, useContext } from "react";
@@ -24,8 +18,6 @@ import { useLocation, useNavigate } from "react-router";
 import { toast } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility";
 import { safeSourceUrl } from "@/features/connectors/api/microsoft";
-import type { ThreadActionRequest } from "@/features/work-thread/thread-action-request";
-import type { ThreadWorkbenchRequest } from "@/features/work-thread/thread-workbench-request";
 import { threadPath } from "@/lib/workspace-paths";
 import type { Thread, WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -60,7 +52,6 @@ export function useThreadMenuActions({
 	triggerRef,
 	onNavigate,
 	sourceMessageId,
-	isSourceIncluded = true,
 }: {
 	thread: Thread;
 	item?: WorkItem;
@@ -81,155 +72,22 @@ export function useThreadMenuActions({
 		void navigate(path);
 		onNavigate?.();
 	};
-	const openWorkbench = () => {
-		const current: unknown = location.state;
-		const isCurrentThread = pathname === workPath;
-		const request: ThreadWorkbenchRequest = {
-			id: crypto.randomUUID(),
-			threadId: thread.id,
-		};
-		void navigate(
-			isCurrentThread
-				? { pathname, search: location.search, hash: location.hash }
-				: workPath,
-			{
-				replace: isCurrentThread,
-				state: {
-					...(isCurrentThread &&
-					current &&
-					typeof current === "object"
-						? current
-						: {}),
-					threadWorkbench: request,
-				},
-			},
-		);
-		onNavigate?.();
-	};
-	const sourceUid =
-		thread.source?.kind === "outlook"
-			? (sourceMessageId ?? thread.source.nativeId)
-			: undefined;
-	const requestAction = (action: ThreadActionRequest["action"]) => {
-		const current: unknown = location.state;
-		const isCurrentThread = pathname === workPath;
-		const request: ThreadActionRequest = {
-			id: crypto.randomUUID(),
-			threadId: thread.id,
-			action,
-			...((action === "ask" ? sourceMessageId : sourceUid)
-				? {
-						sourceMessageId:
-							action === "ask" ? sourceMessageId : sourceUid,
-					}
-				: {}),
-		};
-		void navigate(
-			isCurrentThread
-				? { pathname, search: location.search, hash: location.hash }
-				: workPath,
-			{
-				replace: isCurrentThread,
-				state: {
-					...(isCurrentThread &&
-					current &&
-					typeof current === "object"
-						? current
-						: {}),
-					threadAction: request,
-				},
-			},
-		);
-		onNavigate?.();
-	};
 	const groups: ThreadMenuGroup[] = [
 		{
-			id: "assistant",
-			label: "Assistant",
+			id: "open",
 			actions: [
 				{
-					id: "ask",
-					label: "Ask assistant",
+					id: "room",
+					label: "Open in room",
 					icon: Sparkles,
 					movesFocus: true,
-					disabled: Boolean(sourceMessageId) && !isSourceIncluded,
-					onSelect: () => requestAction("ask"),
+					onSelect: () => go(workPath),
 				},
-				...(sourceUid
-					? [
-							{
-								id: "draft",
-								label: "Draft reply",
-								icon: FilePenLine,
-								movesFocus: true,
-								onSelect: () => requestAction("draft"),
-							},
-						]
-					: []),
 			],
 		},
-		...(sourceUid
-			? [
-					{
-						id: "email",
-						label: "Email",
-						actions: [
-							{
-								id: "reply",
-								label: "Reply",
-								icon: Reply,
-								movesFocus: true,
-								onSelect: () => requestAction("reply"),
-							},
-							{
-								id: "delete",
-								label: "Delete email",
-								icon: Trash2,
-								movesFocus: true,
-								disabled: thread.isSample,
-								onSelect: () => requestAction("delete"),
-							},
-							{
-								id: "forward",
-								label: "Forward",
-								icon: Forward,
-								movesFocus: true,
-								onSelect: () => requestAction("forward"),
-							},
-						],
-					},
-				]
-			: []),
-		...(!/^session:[a-f0-9-]{36}$/.test(thread.id)
-			? [
-					{
-						id: "compose",
-						actions: [
-							{
-								id: "new-email",
-								label: "New email",
-								icon: Mail,
-								movesFocus: true,
-								onSelect: () => requestAction("new-email"),
-							},
-						],
-					},
-				]
-			: []),
 		{
 			id: "navigate",
 			actions: [
-				...(pathname !== workPath
-					? [
-							{
-								id: "work",
-								label: "Open in Work",
-								icon: MessageSquare,
-								onSelect: () => go(workPath),
-								movesFocus: true,
-							},
-						]
-					: []),
 				...(pathname !== brainPath
 					? [
 							{
@@ -241,30 +99,20 @@ export function useThreadMenuActions({
 							},
 						]
 					: []),
-				...(!isBrain
+				...(isBrain && sidebar
 					? [
 							{
-								id: "workbench",
-								label: "Open workbench",
+								id: "sidebar",
+								label: `Open ${sidebar.title}`,
 								icon: PanelRightOpen,
 								movesFocus: true,
-								onSelect: openWorkbench,
+								onSelect: () => {
+									sidebar.open(triggerRef.current);
+									onNavigate?.();
+								},
 							},
 						]
-					: sidebar
-						? [
-								{
-									id: "sidebar",
-									label: `Open ${sidebar.title}`,
-									icon: PanelRightOpen,
-									movesFocus: true,
-									onSelect: () => {
-										sidebar.open(triggerRef.current);
-										onNavigate?.();
-									},
-								},
-							]
-						: []),
+					: []),
 				{
 					id: "copy",
 					label: "Copy link",
@@ -313,20 +161,11 @@ export function useThreadMenuActions({
 					: undefined),
 		);
 		return [
-			...groups.filter(
-				(group) => group.id === "assistant" || group.id === "email",
-			),
+			...groups.filter((group) => group.id === "open"),
 			{
 				id: "message",
 				label: "This email",
 				actions: [
-					{
-						id: "read",
-						label: "Open email",
-						icon: Mail,
-						movesFocus: true,
-						onSelect: () => requestAction("read"),
-					},
 					...(webLink
 						? [
 								{
@@ -360,7 +199,7 @@ export function useThreadMenuActions({
 						: []),
 				],
 			},
-		];
+		].filter((group) => group.actions.length > 0);
 	}
 	if (!isBrain && item?.threadId === thread.id) {
 		const update = (
@@ -419,24 +258,5 @@ export function useThreadMenuActions({
 						: [],
 		});
 	}
-	if (!isBrain && state.openThreadIds.includes(thread.id))
-		groups.push({
-			id: "workspace",
-			actions: [
-				{
-					id: "close",
-					label: "Close room",
-					icon: X,
-					movesFocus: pathname === workPath,
-					onSelect: () => {
-						dispatch({
-							type: "workspace.close",
-							threadId: thread.id,
-						});
-						if (pathname === workPath) go("/work");
-					},
-				},
-			],
-		});
 	return groups.filter((group) => group.actions.length > 0);
 }

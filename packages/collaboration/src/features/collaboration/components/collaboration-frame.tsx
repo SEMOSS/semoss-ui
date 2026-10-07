@@ -1,4 +1,4 @@
-import { Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { Env } from "@semoss/sdk/react";
@@ -12,6 +12,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 	SidebarProvider,
+	SidebarRail,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -67,7 +68,7 @@ export function CollaborationFrame() {
 	const navigationId = useId();
 	const mainRef = useRef<HTMLElement>(null);
 	const desktopNavigationRef = useRef<HTMLElement>(null);
-	const headerNavigationRef = useRef<HTMLButtonElement>(null);
+	const navigationRailRef = useRef<HTMLButtonElement>(null);
 	const mobileTriggerRef = useRef<HTMLButtonElement>(null);
 	const newTopicReturnFocusRef = useRef<HTMLButtonElement>(null);
 	const isNavigating = useRef(false);
@@ -92,14 +93,14 @@ export function CollaborationFrame() {
 				setIsNavOpen(false);
 				if (document.activeElement === mobileTriggerRef.current)
 					(
-						headerNavigationRef.current ??
+						navigationRailRef.current ??
 						desktopNavigationRef.current?.querySelector("button")
 					)?.focus();
 			} else if (
 				desktopNavigationRef.current?.contains(
 					document.activeElement,
 				) ||
-				document.activeElement === headerNavigationRef.current
+				document.activeElement === navigationRailRef.current
 			) {
 				mobileTriggerRef.current?.focus();
 			}
@@ -114,9 +115,9 @@ export function CollaborationFrame() {
 	function handleNavigationOpenChange(isOpen: boolean): void {
 		if (
 			desktopNavigationRef.current?.contains(document.activeElement) ||
-			document.activeElement === headerNavigationRef.current
+			document.activeElement === navigationRailRef.current
 		)
-			headerNavigationRef.current?.focus();
+			navigationRailRef.current?.focus();
 		if (isRoom) {
 			setNavigationOverride({ pathname, isCollapsed: !isOpen });
 			return;
@@ -129,10 +130,10 @@ export function CollaborationFrame() {
 				DESKTOP_NAVIGATION_QUERY,
 			).matches
 				? isCollapsed
-					? headerNavigationRef.current
+					? navigationRailRef.current
 					: (desktopNavigationRef.current?.querySelector<HTMLButtonElement>(
 							'button[aria-label="New topic"]',
-						) ?? headerNavigationRef.current)
+						) ?? navigationRailRef.current)
 				: mobileTriggerRef.current;
 		}
 		setIsCreatingTopic(false);
@@ -160,6 +161,7 @@ export function CollaborationFrame() {
 				ref={desktopNavigationRef}
 				aria-label="Workspace navigation"
 				data-side="left"
+				data-state={isCollapsed ? "collapsed" : "expanded"}
 				className={cn(
 					"relative hidden shrink-0 flex-col border-sidebar-border border-r bg-background lg:flex",
 					isCollapsed ? "w-16" : "w-64",
@@ -175,34 +177,30 @@ export function CollaborationFrame() {
 						onNewTopic={handleNewTopic}
 					/>
 				</div>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<SidebarRail
+							ref={navigationRailRef}
+							type="button"
+							tabIndex={0}
+							aria-label={navigationLabel}
+							aria-expanded={!isCollapsed}
+							aria-controls={navigationId}
+							title={undefined}
+							onClick={() =>
+								handleNavigationOpenChange(isCollapsed)
+							}
+							className="-right-3 w-6 translate-x-0 after:rounded-full hover:after:bg-muted-foreground focus-visible:outline-none focus-visible:after:bg-ring motion-reduce:transition-none"
+						/>
+					</TooltipTrigger>
+					<TooltipContent side="right">
+						{navigationLabel}
+					</TooltipContent>
+				</Tooltip>
 			</aside>
 			<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 				<CollaborationHeaderContext.Provider value={headerControls}>
 					<CollaborationHeader roomControlsRef={setHeaderControls}>
-						<Tooltip disableHoverableContent={false}>
-							<TooltipTrigger asChild>
-								<Button
-									ref={headerNavigationRef}
-									type="button"
-									variant="ghost"
-									size="icon"
-									aria-label={navigationLabel}
-									aria-expanded={!isCollapsed}
-									aria-controls={navigationId}
-									className="hidden pointer-coarse:size-11 size-9 shrink-0 text-muted-foreground lg:inline-flex"
-									onClick={() =>
-										handleNavigationOpenChange(isCollapsed)
-									}
-								>
-									{isCollapsed ? (
-										<PanelLeftOpen aria-hidden="true" />
-									) : (
-										<PanelLeftClose aria-hidden="true" />
-									)}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>{navigationLabel}</TooltipContent>
-						</Tooltip>
 						<Sheet
 							open={isNavOpen}
 							onOpenChange={(open) => {
@@ -237,7 +235,7 @@ export function CollaborationFrame() {
 										event.preventDefault();
 										if (!isSearchOpen)
 											(
-												headerNavigationRef.current ??
+												navigationRailRef.current ??
 												desktopNavigationRef.current?.querySelector(
 													"button",
 												)

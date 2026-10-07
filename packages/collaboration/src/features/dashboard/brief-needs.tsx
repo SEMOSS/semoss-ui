@@ -75,7 +75,12 @@ export function BriefNeeds({
 							? "Nothing needs you in this topic."
 							: "You're all caught up. Nothing needs you right now."}
 					</P>
-					<Button asChild size="sm" variant="outline">
+					<Button
+						asChild
+						size="sm"
+						variant="outline"
+						className="pointer-coarse:min-h-11"
+					>
 						<Link to="/work/waiting">
 							See who you're waiting on
 						</Link>
@@ -86,13 +91,13 @@ export function BriefNeeds({
 				<Button
 					asChild
 					variant="link"
-					className="mt-3 h-auto p-0 font-mono font-normal text-foreground text-sm"
+					className="mt-3 h-auto min-h-8 pointer-coarse:min-h-11 p-0 font-mono font-normal text-foreground text-sm"
 				>
 					<Link
 						to={
 							topicId
 								? `/work/topic/${encodeURIComponent(topicId)}`
-								: "/work"
+								: "/work/all"
 						}
 					>
 						See all {items.length} →

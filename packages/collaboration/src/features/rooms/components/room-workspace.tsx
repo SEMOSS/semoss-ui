@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { Mail, PanelRightOpen, Settings2, X } from "lucide-react";
+import { useContext, useEffect, useId, useState } from "react";
 import {
+	Button,
 	cn,
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@semoss/ui/next";
+import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { Session } from "@/types/session";
@@ -12,12 +15,15 @@ import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { RoomComposer } from "./room-composer";
 import { RoomConversation } from "./room-conversation";
 import { RoomRunStatus } from "./room-run-status";
+import { ROOM_SETTINGS_PANEL_TYPE } from "./room-settings-panel";
 
 const ROOM_WORKSPACE_LAYOUT_ID = "collaboration-room-workspace-v1";
 const CONVERSATION_PANEL_ID = "collaboration-room-conversation";
 const TOOL_WORKBENCH_PANEL_ID = "collaboration-room-tool-workbench";
 
 interface RoomWorkspaceProps {
+	roomSession?: RoomViewProps["roomSession"];
+	roomSnapshot?: RoomViewProps["roomSnapshot"];
 	agent: RoomViewProps["agent"];
 	session: Session;
 	thread: RoomViewProps["thread"];
@@ -47,6 +53,8 @@ interface RoomWorkspaceProps {
 
 /** Conversation and its contextual tool dock. */
 export function RoomWorkspace({
+	roomSession,
+	roomSnapshot,
 	agent,
 	session,
 	thread,
@@ -73,20 +81,34 @@ export function RoomWorkspace({
 	onCancelTurn,
 	onReconnect,
 }: RoomWorkspaceProps) {
+	const roomEmail = useContext(RoomEmailContext);
 	const {
 		isOpen: isToolWorkbenchOpen,
-		activeToolId,
+		store,
 		openWorkbench,
 		closeWorkbench,
 	} = useToolWorkbench();
 	const [resumeSignal, setResumeSignal] = useState(0);
+	const actionsTriggerId = useId();
+	const [hasOpenedWorkbench, setHasOpenedWorkbench] =
+		useState(isToolWorkbenchOpen);
+	useEffect(() => {
+		if (isToolWorkbenchOpen) setHasOpenedWorkbench(true);
+	}, [isToolWorkbenchOpen]);
+
+	function openSettings() {
+		store
+			.getState()
+			.layout.actions.selectPanel(ROOM_SETTINGS_PANEL_TYPE, {});
+		openWorkbench(undefined, actionsTriggerId);
+	}
 
 	function toggleToolWorkbench() {
 		if (isToolWorkbenchOpen) {
 			closeWorkbench();
 			return;
 		}
-		openWorkbench(activeToolId ?? undefined);
+		openWorkbench();
 	}
 
 	function handleSend(submission: ComposerSubmission): Promise<void> {
@@ -127,17 +149,117 @@ export function RoomWorkspace({
 					showToolWorkbench={showToolWorkbench}
 					onToggleToolWorkbench={toggleToolWorkbench}
 					status={
-						<RoomRunStatus
-							agent={agent}
-							turnError={turnError}
-							transportError={transportError}
-							pendingApprovals={pendingApprovals}
-							onReconnect={onReconnect}
-						/>
+						<>
+							{roomSnapshot?.hasUnconfirmedSubmission && (
+								<output className="flex items-center gap-3 border-t px-5 py-3 text-sm">
+									<span>
+										Reconnect to check whether your last
+										message was received before sending
+										again.
+									</span>
+									<Button
+										type="button"
+										variant="outline"
+										disabled={isSending}
+										onClick={() => void onReconnect()}
+									>
+										Reconnect
+									</Button>
+								</output>
+							)}
+							{roomSnapshot?.submissionNotice && (
+								<output className="block px-5 py-2 text-sm">
+									{roomSnapshot.submissionNotice}
+								</output>
+							)}
+							<RoomRunStatus
+								agent={agent}
+								turnError={turnError}
+								transportError={transportError}
+								pendingApprovals={pendingApprovals}
+								onReconnect={onReconnect}
+							/>
+						</>
 					}
 					composer={
 						<RoomComposer
-							key={session.id}
+							key={`${session.id}:${roomSnapshot?.composerResetKey ?? 0}`}
+							initialDraft={roomSnapshot?.composerDraft}
+							onDraftChange={roomSession?.setComposerDraft}
+							retainUntilSent
+							actionsTriggerId={actionsTriggerId}
+							hideSettingsAction={showToolWorkbench}
+							panelActions={
+								showToolWorkbench
+									? [
+											...(roomEmail?.hasSourceEmail
+												? [
+														{
+															id: "source-email",
+															label: "View email",
+															icon: Mail,
+															onSelect: () =>
+																roomEmail.openSource(
+																	actionsTriggerId,
+																),
+														},
+													]
+												: []),
+											{
+												id: "settings",
+												label: "Settings",
+												icon: Settings2,
+												onSelect: openSettings,
+											},
+											{
+												id: "workbench",
+												label: "Open workbench",
+												icon: PanelRightOpen,
+												onSelect: () =>
+													openWorkbench(
+														undefined,
+														actionsTriggerId,
+													),
+											},
+										]
+									: undefined
+							}
+							submissionError={
+								roomSnapshot?.submissionError ||
+								roomSnapshot?.settingsError ||
+								undefined
+							}
+							isSendDisabled={Boolean(
+								roomSnapshot?.hasUnconfirmedSubmission ||
+									roomSnapshot?.settingsError ||
+									roomSnapshot?.modelError,
+							)}
+							attachmentSummary={roomSnapshot?.contextFiles.map(
+								(file) => (
+									<div
+										key={file.fileLocation}
+										className="flex items-center gap-2 rounded-md border px-3 py-1 text-sm"
+									>
+										<span className="min-w-0 flex-1 truncate">
+											{file.fileName}
+										</span>
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											aria-label={`Remove ${file.fileName} from context`}
+											disabled={isSending || isRunning}
+											onClick={() =>
+												roomSession?.removeContextFile(
+													file.fileLocation,
+												)
+											}
+										>
+											<X aria-hidden="true" />
+										</Button>
+									</div>
+								),
+							)}
 							className="bg-transparent"
 							agentName={agent.name}
 							agent={agent}
@@ -162,29 +284,37 @@ export function RoomWorkspace({
 					}
 				/>
 			</ResizablePanel>
-			{showToolWorkbench && isToolWorkbenchOpen && (
-				<>
-					<ResizableHandle
-						aria-label="Resize tool workbench"
-						className="hidden bg-transparent transition-colors focus-visible:bg-border data-[resize-handle-state=drag]:bg-border data-[resize-handle-state=hover]:bg-border md:flex"
-					/>
-					<ResizablePanel
-						id={TOOL_WORKBENCH_PANEL_ID}
-						order={2}
-						defaultSize={65}
-						minSize={20}
-						maxSize={80}
-						className="min-h-0 min-w-0"
-					>
-						<aside
-							aria-label="Tool workbench"
-							className="relative size-full min-h-0 bg-background"
+			{showToolWorkbench &&
+				(isToolWorkbenchOpen || hasOpenedWorkbench) && (
+					<>
+						<ResizableHandle
+							aria-label="Resize tool workbench"
+							className={cn(
+								"hidden bg-transparent transition-colors focus-visible:bg-border data-[resize-handle-state=drag]:bg-border data-[resize-handle-state=hover]:bg-border",
+								isToolWorkbenchOpen && "md:flex",
+							)}
+						/>
+						<ResizablePanel
+							id={TOOL_WORKBENCH_PANEL_ID}
+							order={2}
+							defaultSize={65}
+							minSize={20}
+							maxSize={80}
+							className={cn(
+								"min-h-0 min-w-0",
+								!isToolWorkbenchOpen && "hidden",
+							)}
 						>
-							<ToolWorkbench />
-						</aside>
-					</ResizablePanel>
-				</>
-			)}
+							<aside
+								hidden={!isToolWorkbenchOpen}
+								aria-label="Tool workbench"
+								className="relative size-full min-h-0 bg-background"
+							>
+								<ToolWorkbench onOpenSettings={openSettings} />
+							</aside>
+						</ResizablePanel>
+					</>
+				)}
 		</ResizablePanelGroup>
 	);
 }

@@ -12,6 +12,7 @@ import { useState } from "react";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Button } from "@semoss/ui/next";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "../state/collaboration-session.context";
 import { CollaborationNavigation } from "./collaboration-navigation";
@@ -45,13 +46,20 @@ function NavigationFixture({ onNavigate }: { onNavigate?: () => void }) {
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [isTopicsOpen, setIsTopicsOpen] = useState(false);
 	return (
-		<CollaborationNavigation
-			isCollapsed={isCollapsed}
-			onCollapse={() => setIsCollapsed((current) => !current)}
-			isTopicsOpen={isTopicsOpen}
-			onTopicsOpenChange={setIsTopicsOpen}
-			onNavigate={onNavigate}
-		/>
+		<>
+			<Button
+				type="button"
+				onClick={() => setIsCollapsed((current) => !current)}
+			>
+				Toggle navigation fixture
+			</Button>
+			<CollaborationNavigation
+				isCollapsed={isCollapsed}
+				isTopicsOpen={isTopicsOpen}
+				onTopicsOpenChange={setIsTopicsOpen}
+				onNavigate={onNavigate}
+			/>
+		</>
 	);
 }
 
@@ -87,7 +95,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("uses a plain header, three quiet primary controls, and folded Topics", () => {
+	it("keeps the overview, Work, and Brain distinct with folded Topics", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -100,14 +108,16 @@ describe("CollaborationNavigation", () => {
 			screen.queryByRole("button", { name: "Collaboration workspace" }),
 		).not.toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: "Collapse navigation" }),
-		).toHaveAttribute("aria-expanded", "true");
+			screen.queryByRole("button", {
+				name: /(?:Collapse|Expand) navigation/,
+			}),
+		).not.toBeInTheDocument();
 		const main = screen.getByRole("navigation", { name: "Main" });
 		expect(
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["New Session", "For you", "Brain"]);
+		).toEqual(["New Session", "For you", "Work", "Brain"]);
 		expect(
 			within(main).getByRole("link", { name: "For you" }),
 		).toHaveTextContent(/^For you$/);
@@ -147,18 +157,32 @@ describe("CollaborationNavigation", () => {
 		expect(screen.queryByText(/^0(?: to check)?$/)).not.toBeInTheDocument();
 	});
 
-	it.each([
-		"/",
-		"/work",
-		"/work/waiting",
-		"/work/done",
-		"/work/topic/t-geng",
-	])("keeps For you selected on %s", (path) => {
-		renderNavigation(path);
+	it("selects For you only on the landing page", () => {
+		renderNavigation("/");
 		expect(screen.getByRole("link", { name: "For you" })).toHaveAttribute(
 			"aria-current",
 			"page",
 		);
+		expect(screen.getByRole("link", { name: "Work" })).not.toHaveAttribute(
+			"aria-current",
+		);
+	});
+
+	it.each([
+		"/work",
+		"/work/all",
+		"/work/waiting",
+		"/work/done",
+		"/work/topic/t-geng",
+	])("selects Work on %s", (path) => {
+		renderNavigation(path);
+		expect(screen.getByRole("link", { name: "Work" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+		expect(
+			screen.getByRole("link", { name: "For you" }),
+		).not.toHaveAttribute("aria-current");
 		expect(screen.getByRole("link", { name: "Brain" })).not.toHaveAttribute(
 			"aria-current",
 		);
@@ -179,6 +203,9 @@ describe("CollaborationNavigation", () => {
 		expect(
 			screen.getByRole("link", { name: "For you" }),
 		).not.toHaveAttribute("aria-current");
+		expect(screen.getByRole("link", { name: "Work" })).not.toHaveAttribute(
+			"aria-current",
+		);
 	});
 
 	it("opens Topics by keyboard and preserves the active topic destination", async () => {
@@ -217,7 +244,7 @@ describe("CollaborationNavigation", () => {
 		expect(disclosure).toHaveAttribute("aria-expanded", "false");
 	});
 
-	it("preserves the mounted session scroller, its position, and selection through keyboard collapse", async () => {
+	it("preserves the mounted session scroller, its position, and selection when collapsed", async () => {
 		const { user } = renderNavigation("/thread/room%3Aroom-one");
 		const session = screen.getByRole("button", {
 			name: "Pricing conversation",
@@ -229,15 +256,13 @@ describe("CollaborationNavigation", () => {
 		fireEvent.scroll(scroller);
 		expect(session).toHaveAttribute("aria-current", "page");
 		const collapse = screen.getByRole("button", {
-			name: "Collapse navigation",
+			name: "Toggle navigation fixture",
 		});
 		act(() => collapse.focus());
 		await user.keyboard("{Enter}");
-		const expand = screen.getByRole("button", {
-			name: "Expand navigation",
-		});
-		expect(expand).toHaveAttribute("aria-expanded", "false");
-		expect(expand).toHaveFocus();
+		expect(
+			screen.getByRole("link", { name: "Settings" }),
+		).not.toHaveTextContent("Settings");
 		expect(session).toBeInTheDocument();
 		expect(scroller.scrollTop).toBe(180);
 		await user.keyboard("{Enter}");
@@ -252,16 +277,14 @@ describe("CollaborationNavigation", () => {
 	it("keeps every rail action named and supplies discoverable tooltips", async () => {
 		const { user } = renderNavigation();
 		await user.click(
-			screen.getByRole("button", { name: "Collapse navigation" }),
-		);
-		await user.unhover(
-			screen.getByRole("button", { name: "Expand navigation" }),
+			screen.getByRole("button", { name: "Toggle navigation fixture" }),
 		);
 		const controls = [
-			screen.getByRole("button", { name: "Expand navigation" }),
 			screen.getByRole("link", { name: "New Session" }),
 			screen.getByRole("link", { name: "For you" }),
+			screen.getByRole("link", { name: "Work" }),
 			screen.getByRole("link", { name: "Brain" }),
+			screen.getByRole("link", { name: "Settings" }),
 		];
 		for (const control of controls) {
 			expect(control).toBeVisible();
@@ -272,15 +295,20 @@ describe("CollaborationNavigation", () => {
 		}
 	});
 
-	it("leaves global search and account actions to the workspace header", () => {
-		renderNavigation();
+	it("keeps a direct Settings link in the sidebar while leaving Search and account to the header", async () => {
+		const { user, onNavigate, router } = renderNavigation();
 		expect(
 			screen.queryByRole("button", { name: "Search your workspace" }),
 		).not.toBeInTheDocument();
+		const settings = screen.getByRole("link", { name: "Settings" });
+		expect(settings).toHaveTextContent("Settings");
 		expect(
 			screen.queryByRole("button", {
 				name: /Account menu|Switch to .* theme/,
 			}),
 		).not.toBeInTheDocument();
+		await user.click(settings);
+		expect(onNavigate).toHaveBeenCalledOnce();
+		expect(router.state.location.pathname).toBe("/settings");
 	});
 });

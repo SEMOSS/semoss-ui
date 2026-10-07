@@ -62,6 +62,7 @@ export async function createRoom(
 			temperature: options.temperature,
 		}),
 		harnessType: "semoss",
+		overrideSystemPrompt: false,
 	};
 	if (workspaceId) {
 		const previousWorkspace =

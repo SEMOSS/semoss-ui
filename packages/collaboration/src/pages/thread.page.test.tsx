@@ -1,31 +1,12 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createMemoryRouter, useParams } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { ThreadPage } from "./thread.page";
 
 const harness = vi.hoisted(() => ({
 	closedRooms: [] as string[],
-}));
-
-vi.mock("@/features/collaboration/components/legacy-room-layout", () => ({
-	LegacyRoomLayout: ({ children }: { children: ReactNode }) => children,
-}));
-
-vi.mock("@/components/layouts/agent-layout", () => ({
-	AgentLayout: ({
-		roomId,
-		children,
-	}: {
-		roomId: string;
-		children: ReactNode;
-	}) => (
-		<>
-			<output aria-label="Agent room">{roomId}</output>
-			{children}
-		</>
-	),
 }));
 
 vi.mock("@/pages/work-thread.page", () => ({
@@ -75,22 +56,22 @@ beforeEach(() => {
 	harness.closedRooms = [];
 });
 
-it.each([
-	"th-work-one",
-	"session:41d8d770-b756-44cd-b6cf-306c2396f153",
-	"connected:outlook:mail/one",
-])("opens the existing Work conversation for %s", (threadId) => {
-	renderThread(`/thread/${encodeURIComponent(threadId)}`);
-	expect(screen.getByLabelText("Work thread")).toHaveTextContent(threadId);
-	expect(screen.queryByLabelText("Direct room")).not.toBeInTheDocument();
-});
+it.each(["th-work-one", "connected:outlook:mail/one"])(
+	"initializes a source import for %s",
+	(threadId) => {
+		renderThread(`/thread/${encodeURIComponent(threadId)}`);
+		expect(screen.getByLabelText("Work thread")).toHaveTextContent(
+			threadId,
+		);
+		expect(screen.queryByLabelText("Direct room")).not.toBeInTheDocument();
+	},
+);
 
 it("opens a direct room with its raw identity and preserves navigation context", () => {
 	const roomId = "room/one:two";
 	const path = `/thread/${encodeURIComponent(`room:${roomId}`)}`;
 	const state = { openedRoomId: roomId };
 	const router = renderThread(`${path}?item=approval%26one`, state);
-	expect(screen.getByLabelText("Agent room")).toHaveTextContent(roomId);
 	expect(screen.getByLabelText("Direct room")).toHaveTextContent(roomId);
 	expect(screen.queryByLabelText("Work thread")).not.toBeInTheDocument();
 	expect(router.state.location).toMatchObject({

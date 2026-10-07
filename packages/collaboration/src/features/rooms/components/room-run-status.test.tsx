@@ -6,6 +6,7 @@ import type { PendingToolApproval } from "../types/room";
 import { RoomRunStatus } from "./room-run-status";
 
 const workbench = vi.hoisted(() => ({
+	isMobile: false,
 	tools: {} as Record<string, ConversationTool>,
 	openWorkbench: vi.fn(),
 	openInline: vi.fn(),
@@ -14,7 +15,7 @@ const workbench = vi.hoisted(() => ({
 }));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
-	useIsMobile: () => false,
+	useIsMobile: () => workbench.isMobile,
 }));
 vi.mock("@/features/tools/tool-workbench.context", () => ({
 	useToolWorkbench: () => workbench,
@@ -64,4 +65,46 @@ it("shows each ask on one line and decides plain calls in place", async () => {
 	expect(workbench.onRejectTool).toHaveBeenCalledWith(plain);
 	await userEvent.click(screen.getAllByRole("button", { name: "Review" })[1]);
 	expect(workbench.openWorkbench).toHaveBeenCalledWith("custom");
+});
+
+it("routes editor email sends to review without a generic approval shortcut", async () => {
+	const approval = ask("send", { arguments: { openEmailId: "draft" } });
+	workbench.tools.send.metadata = {
+		SMSS_MCP_UI: { component: "email-send" },
+	};
+	render(
+		<RoomRunStatus
+			agent={agent}
+			turnError={null}
+			transportError={null}
+			pendingApprovals={[approval]}
+			reviewInWorkbench
+		/>,
+	);
+	expect(
+		screen.queryByRole("button", { name: "Approve" }),
+	).not.toBeInTheDocument();
+	await userEvent.click(screen.getByRole("button", { name: "Review" }));
+	expect(workbench.openWorkbench).toHaveBeenCalledWith("send");
+});
+
+it("keeps editor send review reachable on mobile", async () => {
+	workbench.isMobile = true;
+	const approval = ask("send-mobile", {
+		arguments: { openEmailId: "draft" },
+	});
+	workbench.tools["send-mobile"].metadata = {
+		SMSS_MCP_UI: { component: "email-send" },
+	};
+	render(
+		<RoomRunStatus
+			agent={agent}
+			turnError={null}
+			transportError={null}
+			pendingApprovals={[approval]}
+		/>,
+	);
+	await userEvent.click(screen.getByRole("button", { name: "Review" }));
+	expect(workbench.openWorkbench).toHaveBeenCalledWith("send-mobile");
+	workbench.isMobile = false;
 });

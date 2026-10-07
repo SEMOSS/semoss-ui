@@ -400,7 +400,7 @@ export interface CollaborationState {
 	sequence: number;
 }
 
-/** Commands contain UI intent; backend receipts are never written through undo. */
+/** Commands contain UI intent and updates received from the backend. */
 export type CollaborationCommand =
 	| {
 			type: "live.refresh";
