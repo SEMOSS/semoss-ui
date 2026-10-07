@@ -21,6 +21,8 @@ export const useFileViewControls = (
 	const {
 		canRefresh,
 		canSave,
+		canDownload,
+		download,
 		isBusy,
 		isDirty,
 		refresh,
@@ -34,6 +36,8 @@ export const useFileViewControls = (
 		onControls?.({
 			canRefresh,
 			canSave,
+			canDownload,
+			download,
 			isBusy,
 			isDirty,
 			refresh,
@@ -46,6 +50,8 @@ export const useFileViewControls = (
 		onControls,
 		canRefresh,
 		canSave,
+		canDownload,
+		download,
 		isBusy,
 		isDirty,
 		refresh,

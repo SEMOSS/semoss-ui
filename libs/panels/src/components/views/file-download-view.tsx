@@ -29,10 +29,12 @@ export const FileDownloadView = ({ config, onControls }: FileViewProps) => {
 	);
 
 	useFileViewControls(onControls, {
+		canDownload: panel.access.status === "ready",
+		download: panel.download,
 		canSave: false,
 		// the read is off in download mode, so there is nothing to re-run
-		canRefresh: viewMode === "raw",
-		isBusy: panel.isBusy,
+		canRefresh: viewMode === "raw" && panel.access.status === "ready",
+		isBusy: panel.isBusy || panel.access.status === "loading",
 		refresh: panel.read.refresh,
 		viewModes: DOWNLOAD_VIEW_MODES,
 		viewMode: viewMode,
