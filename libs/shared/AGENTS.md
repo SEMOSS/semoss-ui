@@ -56,6 +56,29 @@ chevron included, through `TreeViewItem`'s `rowClassName`.
 `FileExplorer` is **not** deprecated — it is the shell `@semoss/panels`'
 `FileExplorerPane` renders, and `libs/panels` is its main consumer.
 
+### Tool views (`components/tool-view/`)
+
+A tool names the view a call is drawn with in `_meta.SMSS_MCP_UI.resourceURI`. A
+`component://<library>/<view>?<params>` URI names a React component the host draws in the page,
+never in a frame; `system://` and portal paths stay pages. This folder is the contract between
+the libraries that provide views and the hosts that draw them, and knows nothing about any one
+library:
+
+- `ToolViewProps` is what every view receives: the `call` (its reactor, arguments, result, and
+  status), the URI's `params` (such as `intent` and `provider`, which configure the view and never
+  carry data), the `mode` (`approval` while the call waits for the user, `result` otherwise), the
+  decisions (`onApprove` with edited arguments, `onDecline`, and `onRespond`, which resolves the
+  call with what the user did instead, without running it), and the `host`'s offers (sign in,
+  save, add to context).
+- A library exports a `ToolViewLibrary`, a plain map of views by name, usually lazy. A host passes
+  the libraries it draws to `ToolViewProvider`, at module scope, and finds a call's view with
+  `useToolView(uri)`, which returns null for a URI it does not draw.
+- `ToolViewRenderer` draws a found view with a placeholder while its code loads and the host's
+  fallback if it fails (`ToolViewBoundary`). A host shows its generic view for a `component://`
+  URI it cannot draw (`isToolViewUri`).
+
+`@semoss/connectors` provides the `mail` and `calendar` libraries; the playground draws them.
+
 ### The file editors are gone (`components/file/file-*.tsx`)
 
 `FileEditor` and the six viewers it dispatched to — `file-code-editor`,

@@ -4,11 +4,69 @@ import { createInitialCollaborationState } from "../state/collaboration.fixtures
 import {
 	loadLiveState,
 	loadThreadMessages,
+	mapMemory,
 	readThreadInsights,
 	readThreadMessagesPage,
+	readWorkUpdates,
 	summarizeThread,
 	syncMail,
 } from "./live-state";
+
+it("uses only native source ids provided by BrainListThreads", async () => {
+	const run = vi.fn().mockResolvedValue({
+		pixelReturn: [
+			{
+				output: {
+					items: [
+						{
+							id: "brain-teams",
+							channel: "teams",
+							latestMessageId: "message-1",
+						},
+						{
+							id: "brain-email",
+							channel: "email",
+							latestMessageId: "mail-1",
+						},
+						{
+							id: "brain-without-mail",
+							channel: "email",
+							latestMessageId: null,
+						},
+						{
+							id: "teams-with-native-id",
+							channel: "teams",
+							conversationId: "chat-1",
+							latestMessageId: "message-2",
+						},
+					],
+				},
+			},
+			{ output: { items: [] } },
+			{ output: { items: [] } },
+			{ output: { status: "none" } },
+			// BrainListMemories
+			{ output: { items: [] } },
+		],
+	});
+	const { threads } = await readWorkUpdates({
+		run,
+	} as unknown as InsightActions);
+	expect(threads[0]).toMatchObject({
+		id: "brain-teams",
+		channel: "teams",
+		source: undefined,
+	});
+	expect(threads[1].source).toMatchObject({
+		kind: "outlook",
+		nativeId: "mail-1",
+	});
+	expect(threads[2].source).toBeUndefined();
+	expect(threads[3].source).toMatchObject({
+		kind: "teams",
+		nativeId: "chat-1",
+	});
+});
 
 it("loads each topic once when the list contains duplicate records", async () => {
 	const topics = [
@@ -25,7 +83,7 @@ it("loads each topic once when the list contains duplicate records", async () =>
 			{},
 			{ items: [] },
 			{ items: [topics[0], topics[0], topics[1], topics[1]] },
-			...Array.from({ length: 9 }, () => ({ items: [] })),
+			...Array.from({ length: 10 }, () => ({ items: [] })),
 		]);
 	});
 	const state = await loadLiveState({ run } as unknown as InsightActions);
@@ -232,4 +290,48 @@ it("reads Brain's summary runs with generated steps and plain due days", async (
 	await expect(readThreadInsights(actions, "other-thread")).rejects.toThrow(
 		"different thread",
 	);
+});
+
+it("maps a server memory and drops links it does not know", () => {
+	expect(
+		mapMemory({
+			id: "m1",
+			kind: "preference",
+			text: "Sign as Rob",
+			state: "active",
+			origin: "assistant",
+			confirmed: false,
+			pinned: true,
+			about: [
+				{ type: "person", id: "p1", name: "Priya" },
+				{ type: "team", id: "x" },
+				{ type: "topic" },
+			],
+			expiresAt: "2026-11-01T00:00:00Z",
+			source: { kind: "chat", roomId: "room-1", ignored: 3 },
+			createdAt: "2026-10-01T00:00:00Z",
+		}),
+	).toEqual({
+		id: "m1",
+		kind: "preference",
+		text: "Sign as Rob",
+		state: "active",
+		origin: "assistant",
+		confirmed: false,
+		pinned: true,
+		about: [{ type: "person", id: "p1" }],
+		expiresAt: "2026-11-01T00:00:00Z",
+		replacesId: null,
+		source: { kind: "chat", roomId: "room-1" },
+		createdAt: "2026-10-01T00:00:00Z",
+		updatedAt: "2026-10-01T00:00:00Z",
+		isSample: false,
+	});
+	expect(
+		mapMemory({ id: "m2", state: "superseded", origin: "x" }),
+	).toMatchObject({
+		kind: "fact",
+		state: "dismissed",
+		origin: "you",
+	});
 });

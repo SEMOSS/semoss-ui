@@ -46,7 +46,8 @@ describe("catalog", () => {
 			"MicrosoftOneDriveShareFile",
 			"MicrosoftCalendarCreateEvent",
 			"MicrosoftTeamsSendChatMessage",
-			"GoogleGmailSendEmail",
+			"GoogleGmailSendMail",
+			"GoogleCalendarRespondToEvent",
 			"GoogleDriveDelete",
 		]) {
 			expect(findConnectorTool(reactor)?.tool.execution).toBe("ask");
@@ -71,7 +72,7 @@ describe("the user's connector tools", () => {
 			tools: [
 				tool("MicrosoftOutlookListMail", CONNECTORS_GENERATOR),
 				tool("MicrosoftOutlookSendMail", CONNECTORS_GENERATOR, "ask"),
-				tool("GoogleGmailList", CONNECTORS_GENERATOR, "disabled"),
+				tool("GoogleGmailListMail", CONNECTORS_GENERATOR, "disabled"),
 				tool("MyCustomReactor", "MakeRoomPixelMCP"),
 			],
 		});
@@ -79,7 +80,7 @@ describe("the user's connector tools", () => {
 		expect(tools.map((entry) => entry.name)).toEqual([
 			"MicrosoftOutlookListMail",
 			"MicrosoftOutlookSendMail",
-			"GoogleGmailList",
+			"GoogleGmailListMail",
 		]);
 		expect(getConnectorServices(tools)).toEqual(["outlook"]);
 		expect(readConnectorTools(undefined)).toEqual([]);
@@ -94,9 +95,34 @@ describe("the user's connector tools", () => {
 		expect(tools.map((entry) => entry.reactor)).toEqual(
 			gmail?.tools.map((entry) => entry.reactor),
 		);
+		// a mail reactor names its own view, so only how it runs is written
 		expect(
-			tools.find((entry) => entry.reactor === "GoogleGmailSendEmail")
+			tools.find((entry) => entry.reactor === "GoogleGmailSendMail")
 				?.metadata,
+		).toEqual({ SMSS_MCP_EXECUTION: "ask" });
+	});
+
+	test("give every mailbox and calendar the same operations", () => {
+		const operations = (serviceId: string, prefix: string) =>
+			CONNECTOR_SERVICES.find((service) => service.id === serviceId)
+				?.tools.filter((entry) => entry.declaresView)
+				.map((entry) => [
+					entry.reactor.slice(prefix.length),
+					entry.execution,
+				]);
+		expect(operations("gmail", "GoogleGmail")).toEqual(
+			operations("outlook", "MicrosoftOutlook"),
+		);
+		expect(operations("google-calendar", "GoogleCalendar")).toEqual(
+			operations("outlook-calendar", "MicrosoftCalendar"),
+		);
+	});
+
+	test("show a call that asks inline for a reactor with no view of its own", () => {
+		expect(
+			buildUserConnectorTools(["google-drive"]).find(
+				(entry) => entry.reactor === "GoogleDriveDelete",
+			)?.metadata,
 		).toEqual({
 			SMSS_MCP_EXECUTION: "ask",
 			SMSS_MCP_UI: { displayLocation: "inline" },
@@ -118,7 +144,7 @@ describe("a room's copy of the user's connector tools", () => {
 			{
 				tools: [
 					// written before the connectors were kept for the user
-					tool("GoogleGmailSendEmail", "MakeRoomPixelMCP", "ask"),
+					tool("GoogleGmailSendMail", "MakeRoomPixelMCP", "ask"),
 					custom,
 					playwright,
 				],

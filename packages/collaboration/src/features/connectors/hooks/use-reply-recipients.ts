@@ -41,7 +41,7 @@ export function useReplyRecipients({
 	useEffect(() => {
 		if (!isEnabled || isInitialized || result.status !== "SUCCESS") return;
 		const parsed = replyRecipientsResponseSchema.safeParse(result.data);
-		if (!parsed.success || parsed.data.uid !== sourceUid) return;
+		if (!parsed.success || parsed.data.id !== sourceUid) return;
 		const recipients = parsed.data.replyRecipients;
 		// A dialog's portal can mount its fields after the read resolves. Reset the
 		// complete current value so initialization also works before registration.
@@ -73,7 +73,7 @@ export function useReplyRecipients({
 			error = result.error?.message || "Could not load reply recipients.";
 		else if (result.status === "SUCCESS") {
 			const parsed = replyRecipientsResponseSchema.safeParse(result.data);
-			if (!parsed.success || parsed.data.uid !== sourceUid)
+			if (!parsed.success || parsed.data.id !== sourceUid)
 				error =
 					"Reply recipients could not be verified. Try loading them again.";
 		}

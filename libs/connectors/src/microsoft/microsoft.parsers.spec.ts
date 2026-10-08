@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-	parseCalendarEvents,
 	parseChannelMessages,
 	parseChatMessages,
 	parseChats,
-	parseMailList,
-	parseMailMessageDetail,
 	parseMicrosoftDownload,
 	parseOneDriveFolder,
 	parseOneDriveResults,
@@ -66,120 +63,6 @@ describe("downloads", () => {
 
 	it("refuses a response without a path", () => {
 		expect(() => parseMicrosoftDownload({ success: true })).toThrow();
-	});
-});
-
-describe("mail", () => {
-	it("reads the list shape the backend returns", () => {
-		const [message] = parseMailList({
-			folder: "inbox",
-			count: 1,
-			messages: [
-				{
-					uid: "AAMk=",
-					from: "ada@example.com",
-					subject: "Budget",
-					receivedDate: "2026-09-27T12:00:00Z",
-					unread: true,
-					hasAttachments: false,
-				},
-			],
-		});
-
-		expect(message).toMatchObject({
-			uid: "AAMk=",
-			from: "ada@example.com",
-			isUnread: true,
-			hasAttachments: false,
-			attachments: [],
-			isBodyTruncated: false,
-		});
-	});
-
-	it("says which text was cut, without the mark the backend leaves", () => {
-		const [message] = parseMailList({
-			messages: [
-				{
-					uid: "AAMk=",
-					body: "Short reply. From: Ada ... [truncated]",
-					bodyTruncated: true,
-					uniqueBody: "Short reply.",
-				},
-			],
-		});
-
-		expect(message).toMatchObject({
-			body: "Short reply. From: Ada",
-			isBodyTruncated: true,
-			uniqueBody: "Short reply.",
-			isUniqueBodyTruncated: false,
-		});
-	});
-
-	it("reads an opened message with its attachments", () => {
-		const message = parseMailMessageDetail({
-			uid: "u1",
-			body: "Hello",
-			bodyTruncated: true,
-			hasAttachments: true,
-			attachments: [
-				{
-					id: "a1",
-					name: "q3.pdf",
-					size: 1024.0,
-					isInline: false,
-					isFile: true,
-				},
-				{ name: "missing id" },
-			],
-		});
-
-		expect(message.body).toBe("Hello");
-		expect(message.isBodyTruncated).toBe(true);
-		expect(message.attachments).toEqual([
-			{
-				id: "a1",
-				name: "q3.pdf",
-				contentType: undefined,
-				size: 1024,
-				isInline: false,
-				isFile: true,
-			},
-		]);
-	});
-
-	it("refuses an opened message without a uid", () => {
-		expect(() => parseMailMessageDetail({ subject: "x" })).toThrow();
-	});
-});
-
-describe("calendar", () => {
-	it("reads the flat start and end the backend returns", () => {
-		const [event] = parseCalendarEvents({
-			start: "s",
-			end: "e",
-			count: 1,
-			events: [
-				{
-					id: "e1",
-					subject: "Sync",
-					start: "2026-09-27T13:00:00.0000000",
-					startTimeZone: "UTC",
-					isAllDay: false,
-					attendees: [{ name: "Ada" }, {}],
-					isOnlineMeeting: true,
-					joinUrl: "https://teams.example/join",
-				},
-			],
-		});
-
-		expect(event).toMatchObject({
-			id: "e1",
-			startTimeZone: "UTC",
-			isOnlineMeeting: true,
-			isCancelled: false,
-		});
-		expect(event.attendees).toHaveLength(1);
 	});
 });
 

@@ -14,6 +14,8 @@ import {
 } from "@semoss/ui/next";
 import { formatMessageTime } from "@/features/messages/utils/message-metadata";
 import { pendingActionToolId } from "@/features/messages/utils/thread-items";
+import { RoomEmailApproval } from "@/features/room-email/room-email-approval";
+import { getEditorSendId } from "@/features/room-email/room-email-tools";
 import { useToolUiUrl } from "../api/use-tool-ui-url";
 import { useToolWorkbench } from "../tool-workbench.context";
 import { getToolLoadingMessage } from "../utils/tool-metadata";
@@ -54,6 +56,9 @@ export function ToolContent({ toolId }: { toolId: string }) {
 	const pendingAction = pendingApprovals.find(
 		(action) => pendingActionToolId(action) === toolId,
 	);
+	const editorSendId = pendingAction
+		? getEditorSendId(tool, pendingAction)
+		: undefined;
 	const inputs = useMemo(
 		() => formatValue(tool?.arguments ?? pendingAction?.arguments ?? {}),
 		[tool?.arguments, pendingAction?.arguments],
@@ -106,7 +111,12 @@ export function ToolContent({ toolId }: { toolId: string }) {
 				</Badge>
 			</header>
 
-			{pendingAction?.requiresResponse ? (
+			{pendingAction && editorSendId ? (
+				<RoomEmailApproval
+					action={pendingAction}
+					draftId={editorSendId}
+				/>
+			) : pendingAction?.requiresResponse ? (
 				<ToolUserInput
 					key={pendingAction.actionId ?? pendingAction.toolId}
 					action={pendingAction}

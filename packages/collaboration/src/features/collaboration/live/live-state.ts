@@ -12,6 +12,8 @@ import type {
 	Account,
 	CollaborationCommand,
 	CollaborationState,
+	Memory,
+	MemoryRef,
 	Person,
 	Profile,
 	ReviewEntry,
@@ -22,7 +24,6 @@ import type {
 	ThreadWorkspace,
 	Topic,
 	WorkItem,
-	WorkspaceFact,
 	WorkspaceMessage,
 	WorkspaceStep,
 } from "../state/collaboration.types";
@@ -114,9 +115,67 @@ function mapSettings(row: Row): Settings {
 		fileAt: Number(row.fileAt ?? 85),
 		askAt: Number(row.askAt ?? 40),
 		sourcesJson: (row.sourcesJson ?? {}) as Record<string, boolean>,
+		memory: {
+			use: (row.memory as Row | undefined)?.use !== false,
+			learn: (row.memory as Row | undefined)?.learn !== false,
+		},
 		version: Number(row.version ?? 0),
 	};
 }
+
+const MEMORY_REF_TYPES = new Set<string>([
+	"person",
+	"topic",
+	"account",
+	"thread",
+]);
+
+/** One BrainListMemories row; dismissed and superseded never reach the lists. */
+export function mapMemory(row: Row): Memory {
+	const source = (row.source ?? {}) as Row;
+	return {
+		id: str(row.id),
+		kind: row.kind === "preference" ? "preference" : "fact",
+		text: str(row.text),
+		state:
+			row.state === "suggested"
+				? "suggested"
+				: row.state === "active"
+					? "active"
+					: "dismissed",
+		origin:
+			row.origin === "assistant" || row.origin === "brain"
+				? row.origin
+				: "you",
+		confirmed: row.confirmed === true,
+		pinned: row.pinned === true,
+		about: list<Row>(row.about).flatMap((ref): MemoryRef[] =>
+			MEMORY_REF_TYPES.has(str(ref.type)) && str(ref.id)
+				? [
+						{
+							type: str(ref.type) as MemoryRef["type"],
+							id: str(ref.id),
+						},
+					]
+				: [],
+		),
+		expiresAt: opt(row.expiresAt) ?? null,
+		replacesId: opt(row.replacesId) ?? null,
+		source: Object.fromEntries(
+			["kind", "threadId", "roomId", "personId", "label"].flatMap(
+				(key) => (opt(source[key]) ? [[key, opt(source[key])]] : []),
+			),
+		),
+		createdAt: str(row.createdAt),
+		updatedAt: str(row.updatedAt, str(row.createdAt)),
+		isSample: false,
+	};
+}
+
+const LISTED_MEMORIES = pixel("BrainListMemories", {
+	state: ["active", "suggested"],
+	limit: 500,
+});
 
 // the platform agent behind each thread's assistant; absent when unset or not shared with this user
 function mapThreadAgent(value: unknown): ThreadAgent | null {
@@ -160,7 +219,6 @@ function mapTopic(row: Row): Topic {
 		description: str(row.description),
 		keywords: list<string>(row.keywords),
 		goals: list(row.goals),
-		notes: list(row.notes),
 		people: list<Row>(row.people).map((person) => ({
 			personId: str(person.personId),
 			role: str(person.role),
@@ -228,18 +286,22 @@ const SOURCE_KINDS: Record<string, NonNullable<Thread["source"]>["kind"]> = {
 
 function mapThread(row: Row): Thread {
 	const channel = (row.channel as Thread["channel"]) ?? "email";
+	// Brain ids are internal ids. Only expose a source target when the server supplies its native id.
+	const nativeId =
+		channel === "teams"
+			? str(row.conversationId)
+			: str(row.latestMessageId);
 	return {
 		id: str(row.id),
 		channel,
 		// Teams chat identity is distinct from the latest message identity.
-		source: {
-			kind: SOURCE_KINDS[channel] ?? "outlook",
-			nativeId:
-				channel === "teams"
-					? str(row.conversationId)
-					: str(row.latestMessageId, str(row.id)),
-			conversationId: opt(row.conversationId),
-		},
+		source: nativeId
+			? {
+					kind: SOURCE_KINDS[channel] ?? "outlook",
+					nativeId,
+					conversationId: opt(row.conversationId),
+				}
+			: undefined,
 		subject: str(row.subject, "(no subject)"),
 		topicLinks: list<Row>(row.topicLinks).map((link) => ({
 			topicId: str(link.topicId),
@@ -352,6 +414,7 @@ export async function loadLiveState(
 		rulesPage,
 		roomsPage,
 		workspacesPage,
+		memoriesPage,
 	] = (await runBatch(actions, [
 		pixel("BrainGetProfile"),
 		pixel("BrainGetSettings"),
@@ -366,9 +429,11 @@ export async function loadLiveState(
 		pixel("BrainListRules"),
 		pixel("WorkListOpenRooms"),
 		pixel("WorkListWorkspaces"),
+		LISTED_MEMORIES,
 	])) as [
 		Row,
 		Row,
+		Page,
 		Page,
 		Page,
 		Page,
@@ -386,7 +451,7 @@ export async function loadLiveState(
 	const topicIds = [
 		...new Set(topicsPage.items.map((topic) => str(topic.id))),
 	];
-	// topic notes, goals, and people come from the detail call
+	// topic goals and people come from the detail call; topic notes are memories
 	const topicRows = (await runBatch(
 		actions,
 		topicIds.map((topicId) => pixel("BrainGetTopic", { topicId })),
@@ -418,6 +483,7 @@ export async function loadLiveState(
 		),
 		sources: mapSources(settings),
 		workspaces: mapWorkspaces(workspacesPage),
+		memories: memoriesPage.items.map(mapMemory),
 		openThreadIds: roomsPage.items.map((room) => str(room.threadId)),
 		sequence: 1,
 	};
@@ -443,7 +509,7 @@ function mapStep(step: Row): WorkspaceStep {
 	};
 }
 
-// saved goal, steps, and facts; messages load when the thread opens
+// saved goal and steps; messages load when the thread opens, and a thread's facts are memories
 function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 	return Object.fromEntries(
 		page.items.map((row) => [
@@ -452,18 +518,6 @@ function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 				...createEmptyWorkspace(),
 				goal: str(row.goal),
 				steps: list<Row>(row.steps).map(mapStep),
-				facts: list<Row>(row.facts).map(
-					(fact): WorkspaceFact => ({
-						id: str(fact.id),
-						text: str(fact.text),
-						from: str(fact.from),
-						status: str(
-							fact.status,
-							"confirmed",
-						) as WorkspaceFact["status"],
-						sourcePersonId: opt(fact.sourcePersonId),
-					}),
-				),
 			},
 		]),
 	);
@@ -658,7 +712,10 @@ export function readThreadInsights(
 
 /** Refresh work metadata through existing bounded reads without reloading the application. */
 export async function readWorkUpdates(actions: InsightActions): Promise<
-	Pick<CollaborationState, "threads" | "workspaces" | "items"> & {
+	Pick<
+		CollaborationState,
+		"threads" | "workspaces" | "items" | "memories"
+	> & {
 		lastMailCheck: MailCheck | null;
 	}
 > {
@@ -667,6 +724,7 @@ export async function readWorkUpdates(actions: InsightActions): Promise<
 		pixel("WorkListWorkspaces"),
 		pixel("WorkListItems", { view: "all", limit: 5000 }),
 		pixel("BrainGetJob", { kind: "sync" }),
+		LISTED_MEMORIES,
 	]);
 	const schema = z.object({
 		items: z.array(z.record(z.string(), z.unknown())),
@@ -679,7 +737,34 @@ export async function readWorkUpdates(actions: InsightActions): Promise<
 		threads: threads.items.map(mapThread),
 		workspaces: mapWorkspaces(workspaces),
 		items: items.items.map(mapItem),
+		memories: schema.parse(outputs[4]).items.map(mapMemory),
 		lastMailCheck: mapMailCheck(outputs[3]),
+	};
+}
+
+/** What the thread's assistant gets from memory: BrainRecallMemories. */
+export interface ThreadRecall {
+	enabled: boolean;
+	items: (Memory & { bucket: string })[];
+	hidden: number;
+	prompt: string | null;
+}
+
+export async function readThreadRecall(
+	actions: InsightActions,
+	threadId: string,
+): Promise<ThreadRecall> {
+	const [output] = (await runBatch(actions, [
+		pixel("BrainRecallMemories", { threadId }),
+	])) as Row[];
+	return {
+		enabled: output?.enabled !== false,
+		items: list<Row>(output?.items).map((row) => ({
+			...mapMemory(row),
+			bucket: str(row.bucket),
+		})),
+		hidden: Number(output?.hidden ?? 0),
+		prompt: opt(output?.prompt) ?? null,
 	};
 }
 

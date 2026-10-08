@@ -8,7 +8,7 @@ import type {
 type Dispatch = (command: CollaborationCommand) => void;
 
 // "this never needed me": closes like Done, but stays a correction for the classifier
-export const NO_RESPONSE_NEEDED = "no_response_needed";
+const NO_RESPONSE_NEEDED = "no_response_needed";
 
 export function noResponseNeeded(dispatch: Dispatch, item: WorkItem) {
 	dispatch({

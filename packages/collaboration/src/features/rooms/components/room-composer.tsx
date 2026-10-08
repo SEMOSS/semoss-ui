@@ -13,6 +13,7 @@ import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
 import {
+	$createLineBreakNode,
 	$createParagraphNode,
 	$createTextNode,
 	$getRoot,
@@ -44,11 +45,16 @@ import { type Engine, EngineSelect, type MCPConfig } from "@semoss/shared";
 import {
 	Button,
 	cn,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
 	P,
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-	Separator,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -67,6 +73,7 @@ import { emailLink } from "@/features/email/email-html";
 import type { ComposerSubmission, RoomSettings } from "../types/room";
 import {
 	COMPOSER_MAX_CHARACTERS,
+	type ComposerActionControls,
 	type ComposerDraft,
 	type ComposerPanelAction,
 	type ComposerPrompt,
@@ -109,6 +116,8 @@ interface RoomComposerProps {
 	prompts?: readonly ComposerPrompt[];
 	/** Stable focus return target when closing a host panel. */
 	actionsTriggerId?: string;
+	/** Replaces the default + menu while retaining the composer's upload picker. */
+	renderActions?: (controls: ComposerActionControls) => ReactNode;
 	/** Work owns settings in its dock instead of this menu. */
 	hideSettingsAction?: boolean;
 	/** Optional visible destination-specific send label. */
@@ -127,12 +136,13 @@ interface RoomComposerProps {
 	children?: ReactNode;
 	/** Classes applied to the composer root. */
 	className?: string;
+	/** Classes applied to the bordered composer surface. */
+	surfaceClassName?: string;
 	/** Classes applied to the editable message surface. */
 	inputClassName?: string;
 	/** Name used to label the message input and send action. */
 	agentName: string;
 	agent?: AgentConfiguration;
-	onConfigureAgent?: () => void;
 	/** Whether a message submission is in progress. */
 	isSubmitting: boolean;
 	/** Whether the agent is currently producing a response. */
@@ -149,6 +159,8 @@ interface RoomComposerProps {
 	isModelLocked?: boolean;
 	/** Whether the model selector is rendered in the toolbar. */
 	showModelSelector?: boolean;
+	/** Whether the prompt optimization control appears in the toolbar. */
+	showPromptOptimization?: boolean;
 	/** Additional caller-owned reason that sending is unavailable. */
 	isSendDisabled?: boolean;
 	/** Model selection error displayed with the composer. */
@@ -215,6 +227,16 @@ function writeEditorText(editor: LexicalEditor | null, text: string) {
 	});
 }
 
+/** Seed a reviewed prompt without inventing paragraph breaks or moving focus. */
+function $initializePlainTextDraft(text: string): void {
+	const paragraph = $createParagraphNode();
+	for (const [index, line] of text.split("\n").entries()) {
+		if (index > 0) paragraph.append($createLineBreakNode());
+		paragraph.append($createTextNode(line));
+	}
+	$getRoot().append(paragraph);
+}
+
 function tooltipButton(
 	label: string,
 	button: React.ReactElement,
@@ -243,8 +265,10 @@ export function RoomComposer({
 	extraCommands = EMPTY_COMMANDS,
 	prompts = EMPTY_PROMPTS,
 	actionsTriggerId,
+	renderActions,
 	children,
 	className,
+	surfaceClassName,
 	inputClassName,
 	agentName,
 	submitLabel,
@@ -254,7 +278,6 @@ export function RoomComposer({
 	requiresModel = true,
 	submitOnEnter = true,
 	agent,
-	onConfigureAgent,
 	isSubmitting,
 	isRunning,
 	isCancelling,
@@ -263,6 +286,7 @@ export function RoomComposer({
 	isModelSaving,
 	isModelLocked = false,
 	showModelSelector = true,
+	showPromptOptimization = true,
 	hideSettingsAction = false,
 	isSendDisabled = false,
 	modelError,
@@ -299,9 +323,11 @@ export function RoomComposer({
 	const [isOptimizing, setIsOptimizing] = useState(false);
 	const [originalDraft, setOriginalDraft] = useState<string | null>(null);
 	const [isActionsOpen, setIsActionsOpen] = useState(false);
+	const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [isPromptPickerOpen, setIsPromptPickerOpen] = useState(false);
 	const isOpeningPanel = useRef(false);
+	const pendingPanelAction = useRef<(() => void) | null>(null);
 
 	draftRef.current = draft;
 	useEffect(() => {
@@ -544,6 +570,7 @@ export function RoomComposer({
 	}, []);
 
 	const openSettings = useCallback(() => {
+		isOpeningPanel.current = true;
 		setIsActionsOpen(false);
 		setIsSettingsOpen(true);
 	}, []);
@@ -593,6 +620,7 @@ export function RoomComposer({
 				disabled={retainUntilSent && isSubmitting}
 				className={cn(
 					"relative m-0 min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-0 shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 motion-reduce:transition-none",
+					surfaceClassName,
 					isDragging && "border-primary ring-2 ring-primary/20",
 				)}
 				onDragEnter={(event) => {
@@ -645,7 +673,12 @@ export function RoomComposer({
 						...initialConfig,
 						editorState: initial.current?.document
 							? JSON.stringify(initial.current.document)
-							: undefined,
+							: initial.current?.text
+								? () =>
+										$initializePlainTextDraft(
+											initial.current?.text ?? "",
+										)
+								: undefined,
 						theme: emailMode ? EMAIL_THEME : initialConfig.theme,
 					}}
 				>
@@ -670,7 +703,7 @@ export function RoomComposer({
 						</>
 					)}
 					<div
-						className="relative max-h-64 min-h-20 overflow-auto"
+						className="relative max-h-64 overflow-auto"
 						ref={(element) => {
 							scrollViewportRef.current = element;
 						}}
@@ -709,101 +742,143 @@ export function RoomComposer({
 						/>
 					</div>
 					<div className="flex min-w-0 flex-wrap items-center gap-2 bg-card p-2">
-						<Popover
-							open={isActionsOpen}
-							onOpenChange={setIsActionsOpen}
-						>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<PopoverTrigger asChild>
-										<Button
-											ref={actionsTriggerRef}
-											id={actionsTriggerId}
-											type="button"
-											variant="ghost"
-											size="icon"
-											className="pointer-coarse:size-11 rounded-full text-muted-foreground"
-											aria-label="Open composer actions"
-										>
-											<Plus aria-hidden="true" />
-										</Button>
-									</PopoverTrigger>
-								</TooltipTrigger>
-								<TooltipContent>
-									Add files or open a panel
-								</TooltipContent>
-							</Tooltip>
-							<PopoverContent
-								align="start"
-								side="top"
-								className="max-h-96 w-72 overflow-y-auto p-2"
-								onCloseAutoFocus={(event) => {
-									if (isOpeningPanel.current) {
-										event.preventDefault();
-										isOpeningPanel.current = false;
-									}
-								}}
+						{renderActions ? (
+							renderActions({
+								onAttachFiles: openFilePicker,
+								triggerRef: actionsTriggerRef,
+								triggerId: actionsTriggerId,
+								disabled: isSubmitting,
+							})
+						) : (
+							<DropdownMenu
+								open={isActionsOpen}
+								onOpenChange={setIsActionsOpen}
 							>
-								<Button
-									type="button"
-									variant="ghost"
-									className="min-h-10 w-full justify-start"
-									onClick={openFilePicker}
-								>
-									<Paperclip aria-hidden="true" />
-									Attach files
-								</Button>
-								{attachmentContent}
-								{!isEmail && prompts.length > 0 && (
-									<Button
-										type="button"
-										variant="ghost"
-										className="min-h-10 w-full justify-start"
-										onClick={() => {
-											setIsActionsOpen(false);
-											setIsPromptPickerOpen(true);
-										}}
-									>
-										<BookOpen aria-hidden="true" />
-										Prompt library
-									</Button>
-								)}
-								{panelActions.length > 0 && (
-									<>
-										<Separator className="my-2" />
-										{panelActions.map((action) => (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<DropdownMenuTrigger asChild>
 											<Button
-												key={action.id}
+												ref={actionsTriggerRef}
+												id={actionsTriggerId}
 												type="button"
 												variant="ghost"
-												disabled={action.disabled}
-												className="min-h-10 w-full justify-start"
-												onClick={() => {
-													isOpeningPanel.current = true;
-													setIsActionsOpen(false);
-													action.onSelect();
-												}}
+												size="icon"
+												className="pointer-coarse:size-11 rounded-full text-muted-foreground"
+												aria-label="Open composer actions"
 											>
-												<action.icon aria-hidden="true" />
-												{action.label}
+												<Plus aria-hidden="true" />
 											</Button>
-										))}
-									</>
-								)}
-								{!hideSettingsAction && (
-									<Button
-										type="button"
-										variant="ghost"
-										className="min-h-10 w-full justify-start"
-										disabled={isSettingsDisabled}
-										onClick={openSettings}
+										</DropdownMenuTrigger>
+									</TooltipTrigger>
+									<TooltipContent>
+										Add files or open a panel
+									</TooltipContent>
+								</Tooltip>
+								<DropdownMenuContent
+									align="start"
+									side="top"
+									aria-label="Composer actions"
+									className="w-72 max-w-(--radix-dropdown-menu-content-available-width)"
+									onCloseAutoFocus={(event) => {
+										if (isOpeningPanel.current) {
+											event.preventDefault();
+											isOpeningPanel.current = false;
+											// Open after the menu releases its focus trap, including retained mobile panels.
+											const openPanel =
+												pendingPanelAction.current;
+											pendingPanelAction.current = null;
+											openPanel?.();
+											requestAnimationFrame(() => {
+												const trigger =
+													actionsTriggerRef.current;
+												// Dialogs and mobile docks claim focus themselves.
+												if (
+													document.activeElement ===
+														document.body &&
+													trigger?.isConnected &&
+													!trigger.matches(
+														":disabled",
+													) &&
+													!trigger.closest(
+														"[inert]",
+													) &&
+													trigger.getClientRects()
+														.length > 0 &&
+													getComputedStyle(trigger)
+														.visibility ===
+														"visible"
+												)
+													trigger.focus();
+											});
+										}
+									}}
+								>
+									<DropdownMenuItem
+										className="pointer-coarse:min-h-11"
+										onSelect={openFilePicker}
 									>
-										<Settings2 aria-hidden="true" />
-										Open settings
-									</Button>
-								)}
-							</PopoverContent>
-						</Popover>
+										<Paperclip aria-hidden="true" />
+										Attach files
+									</DropdownMenuItem>
+									{attachmentContent && (
+										<DropdownMenuItem
+											className="pointer-coarse:min-h-11"
+											onSelect={() => {
+												isOpeningPanel.current = true;
+												setIsAttachmentsOpen(true);
+											}}
+										>
+											<Paperclip aria-hidden="true" />
+											Source attachments
+										</DropdownMenuItem>
+									)}
+									{!isEmail && prompts.length > 0 && (
+										<DropdownMenuItem
+											className="pointer-coarse:min-h-11"
+											onSelect={() => {
+												setIsActionsOpen(false);
+												isOpeningPanel.current = true;
+												setIsPromptPickerOpen(true);
+											}}
+										>
+											<BookOpen aria-hidden="true" />
+											Prompt library
+										</DropdownMenuItem>
+									)}
+									{panelActions.length > 0 && (
+										<>
+											<DropdownMenuSeparator />
+											{panelActions.map((action) => (
+												<DropdownMenuItem
+													key={action.id}
+													disabled={action.disabled}
+													className="pointer-coarse:min-h-11"
+													onSelect={() => {
+														isOpeningPanel.current = true;
+														pendingPanelAction.current =
+															action.onSelect;
+														setIsActionsOpen(false);
+													}}
+												>
+													<action.icon aria-hidden="true" />
+													{action.label}
+												</DropdownMenuItem>
+											))}
+										</>
+									)}
+									{!hideSettingsAction && (
+										<DropdownMenuItem
+											className="pointer-coarse:min-h-11"
+											disabled={isSettingsDisabled}
+											onSelect={openSettings}
+										>
+											<Settings2 aria-hidden="true" />
+											Open settings
+										</DropdownMenuItem>
+									)}
+								</DropdownMenuContent>
+							</DropdownMenu>
+						)}
 						<div className="flex min-w-0 flex-1 items-center gap-2">
 							{children}
 							<div className="ms-auto flex min-w-0 flex-1 flex-wrap @md/composer:flex-nowrap items-center justify-end gap-2">
@@ -862,48 +937,51 @@ export function RoomComposer({
 										? undefined
 										: "Dictation is unavailable in this browser",
 								)}
-								{originalDraft !== null
-									? tooltipButton(
-											"Revert optimized prompt",
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon-sm"
-												className="pointer-coarse:size-11 rounded-full text-muted-foreground"
-												aria-label="Revert optimized prompt"
-												disabled={
-													isEmail || isSubmitting
-												}
-												onClick={revertOptimization}
-											>
-												<Undo aria-hidden="true" />
-											</Button>,
-										)
-									: tooltipButton(
-											"Optimize prompt",
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon-sm"
-												className="pointer-coarse:size-11 rounded-full text-muted-foreground"
-												aria-label="Optimize prompt"
-												disabled={
-													isEmail ||
-													isSubmitting ||
-													!draft.trim() ||
-													!modelId ||
-													isOptimizing ||
-													isRunning
-												}
-												onClick={() => void optimize()}
-											>
-												{isOptimizing ? (
-													<Spinner />
-												) : (
-													<Sparkles aria-hidden="true" />
-												)}
-											</Button>,
-										)}
+								{showPromptOptimization &&
+									(originalDraft !== null
+										? tooltipButton(
+												"Revert optimized prompt",
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon-sm"
+													className="pointer-coarse:size-11 rounded-full text-muted-foreground"
+													aria-label="Revert optimized prompt"
+													disabled={
+														isEmail || isSubmitting
+													}
+													onClick={revertOptimization}
+												>
+													<Undo aria-hidden="true" />
+												</Button>,
+											)
+										: tooltipButton(
+												"Optimize prompt",
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon-sm"
+													className="pointer-coarse:size-11 rounded-full text-muted-foreground"
+													aria-label="Optimize prompt"
+													disabled={
+														isEmail ||
+														isSubmitting ||
+														!draft.trim() ||
+														!modelId ||
+														isOptimizing ||
+														isRunning
+													}
+													onClick={() =>
+														void optimize()
+													}
+												>
+													{isOptimizing ? (
+														<Spinner />
+													) : (
+														<Sparkles aria-hidden="true" />
+													)}
+												</Button>,
+											))}
 							</div>
 						</div>
 						{tooltipButton(
@@ -1021,10 +1099,30 @@ export function RoomComposer({
 					)}
 				</LexicalComposer>
 			</fieldset>
+			{attachmentContent && (
+				<Dialog
+					open={isAttachmentsOpen}
+					onOpenChange={setIsAttachmentsOpen}
+				>
+					<DialogContent
+						aria-describedby={undefined}
+						onCloseAutoFocus={(event) => {
+							event.preventDefault();
+							actionsTriggerRef.current?.focus();
+						}}
+					>
+						<DialogHeader>
+							<DialogTitle>Source attachments</DialogTitle>
+						</DialogHeader>
+						{attachmentContent}
+					</DialogContent>
+				</Dialog>
+			)}
 			<RoomPromptPicker
 				open={isPromptPickerOpen}
 				onOpenChange={setIsPromptPickerOpen}
 				prompts={prompts}
+				returnFocusRef={actionsTriggerRef}
 				onSelect={(text) => {
 					setEditorText(text);
 					focusEditor();
@@ -1039,7 +1137,6 @@ export function RoomComposer({
 				modelName={modelName}
 				isModelLocked={isModelLocked}
 				isReadOnly={isRunning || isSubmitting || isSettingsDisabled}
-				onConfigure={onConfigureAgent}
 				settings={roomSettings}
 				inheritedMcp={inheritedMcp}
 				returnFocusRef={actionsTriggerRef}

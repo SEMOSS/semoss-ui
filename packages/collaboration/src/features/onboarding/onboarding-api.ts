@@ -266,13 +266,6 @@ export async function suggestAccounts(
 	}));
 }
 
-export async function listAccounts(
-	actions: InsightActions,
-): Promise<{ id: string; name: string }[]> {
-	const out = await run(actions, pixel("BrainListAccounts", { limit: 1000 }));
-	return rows(out.items).map((a) => ({ id: str(a.id), name: str(a.name) }));
-}
-
 export async function saveAccounts(
 	actions: InsightActions,
 	accounts: AccountSuggestion[],

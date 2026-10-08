@@ -2,7 +2,6 @@ import { useId, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
 	Button,
-	H1,
 	Input,
 	Label,
 	P,
@@ -18,6 +17,7 @@ import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { resumeThread } from "../work-item-actions";
 import { BrainOverview } from "./brain-overview";
+import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
 import { ThreadMenu } from "./thread-menu";
 import { TopicChip } from "./topic-chip";
@@ -48,17 +48,16 @@ export function ThreadsDirectory() {
 	});
 	return (
 		<CollaborationSurface
+			header={
+				<CollaborationPageHeader
+					title="Threads"
+					description="Conversations you have filed. A thread can belong to several topics."
+				/>
+			}
 			aside={<BrainOverview />}
 			asideTitle="Brain overview"
 		>
-			<header className="space-y-1.5 px-4 pt-5 pb-4 md:px-6">
-				<H1 className="font-semibold text-xl">Threads</H1>
-				<P className="text-muted-foreground text-sm">
-					Conversations you have filed. A thread can belong to several
-					topics.
-				</P>
-			</header>
-			<div className="flex flex-wrap items-center gap-2 border-b px-4 pb-3 md:px-6">
+			<div className="flex flex-wrap items-center gap-2 border-b p-4 md:px-6">
 				<div className="min-w-40 flex-1">
 					<Label
 						htmlFor={`${fieldId}-thread-search`}
@@ -112,71 +111,80 @@ export function ThreadsDirectory() {
 				{threads.length} threads
 			</output>
 			<ul>
-				{threads.map((thread) => (
-					<ThreadMenu key={thread.id} thread={thread}>
-						{(menu) => (
-							<li className="flex flex-wrap items-center gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/30 md:px-6">
-								<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-									<ChannelIcon channel={thread.channel} />
-									<span className="sr-only">
-										{channelMeta(thread.channel).label}
+				{threads.map((thread) => {
+					const Icon = channelMeta(thread.channel).icon;
+					return (
+						<ThreadMenu key={thread.id} thread={thread}>
+							{(menu) => (
+								<li className="flex flex-wrap items-center gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/30 md:px-6">
+									<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+										<Icon
+											className="size-4"
+											aria-hidden="true"
+										/>
+										<span className="sr-only">
+											{channelMeta(thread.channel).label}
+										</span>
 									</span>
-								</span>
-								<div className="min-w-0 flex-1">
-									<Link
-										className="break-words font-medium text-sm hover:underline"
-										to={`/brain/threads/${encodeURIComponent(thread.id)}`}
-									>
-										{thread.subject}
-									</Link>
-									<Small className="mt-0.5 font-normal text-muted-foreground text-xs leading-5">
-										{dateLabel(thread.lastAt)}
-										{thread.muted ? " \u00b7 Ignored" : ""}
-										{thread.automated
-											? " \u00b7 Automated"
-											: ""}
-									</Small>
-								</div>
-								<div className="flex flex-wrap gap-1.5">
-									{thread.topicLinks.map((link) => {
-										const topic = state.topics.find(
-											(item) => item.id === link.topicId,
-										);
-										return (
-											topic && (
-												<TopicChip
-													key={topic.id}
-													topic={topic}
-													suggested={
-														link.source ===
-														"suggested"
-													}
-												/>
-											)
-										);
-									})}
-									{!thread.topicLinks.length && (
-										<Small className="font-normal text-muted-foreground text-xs">
-											No topic
+									<div className="min-w-0 flex-1">
+										<Link
+											className="break-words font-medium text-sm hover:underline"
+											to={`/brain/threads/${encodeURIComponent(thread.id)}`}
+										>
+											{thread.subject}
+										</Link>
+										<Small className="mt-0.5 font-normal text-muted-foreground text-xs leading-5">
+											{dateLabel(thread.lastAt)}
+											{thread.muted
+												? " \u00b7 Ignored"
+												: ""}
+											{thread.automated
+												? " \u00b7 Automated"
+												: ""}
 										</Small>
+									</div>
+									<div className="flex flex-wrap gap-1.5">
+										{thread.topicLinks.map((link) => {
+											const topic = state.topics.find(
+												(item) =>
+													item.id === link.topicId,
+											);
+											return (
+												topic && (
+													<TopicChip
+														key={topic.id}
+														topic={topic}
+														suggested={
+															link.source ===
+															"suggested"
+														}
+													/>
+												)
+											);
+										})}
+										{!thread.topicLinks.length && (
+											<Small className="font-normal text-muted-foreground text-xs">
+												No topic
+											</Small>
+										)}
+									</div>
+									{thread.muted && (
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() =>
+												resumeThread(dispatch, thread)
+											}
+										>
+											Resume thread
+										</Button>
 									)}
-								</div>
-								{thread.muted && (
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() =>
-											resumeThread(dispatch, thread)
-										}
-									>
-										Resume thread
-									</Button>
-								)}
-								{menu}
-							</li>
-						)}
-					</ThreadMenu>
-				))}
+									{menu}
+								</li>
+							)}
+						</ThreadMenu>
+					);
+				})}
 			</ul>
 			{!threads.length && (
 				<P className="p-6 text-muted-foreground">
@@ -185,9 +193,4 @@ export function ThreadsDirectory() {
 			)}
 		</CollaborationSurface>
 	);
-}
-
-function ChannelIcon({ channel }: { channel: string }) {
-	const Icon = channelMeta(channel).icon;
-	return <Icon className="size-4" aria-hidden="true" />;
 }

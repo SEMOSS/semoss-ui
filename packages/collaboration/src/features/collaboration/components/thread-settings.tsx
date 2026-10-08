@@ -241,7 +241,7 @@ export function ThreadSettings({
 						})}
 					<Small className="text-muted-foreground text-xs leading-relaxed">
 						Inclusion controls the source text selected for future
-						questions and remains subject to Sources and rules.
+						questions and remains subject to the rules in Settings.
 						Stored conversations and quoted text in other messages
 						are not deleted.
 					</Small>

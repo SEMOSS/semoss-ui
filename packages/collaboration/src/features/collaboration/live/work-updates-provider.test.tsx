@@ -71,6 +71,7 @@ it("deduplicates server echoes, ignores removed actions during a refresh, and re
 	const updates = {
 		threads: [state.threads[0]],
 		items: [],
+		memories: [],
 		lastMailCheck: null,
 		workspaces: {
 			[threadId]: {
@@ -124,6 +125,7 @@ it("pulls new mail before reloading when Refresh is pressed, and shows sync fail
 		threads: state.threads,
 		items: [],
 		workspaces: {},
+		memories: [],
 		lastMailCheck: null,
 	});
 	vi.mocked(syncMail)
@@ -163,7 +165,7 @@ it("pulls new mail before reloading when Refresh is pressed, and shows sync fail
 		screen.getByRole("link", { name: state.threads[0].subject }),
 	).toHaveAttribute(
 		"href",
-		`/work/thread/${encodeURIComponent(state.threads[0].id)}`,
+		`/thread/${encodeURIComponent(state.threads[0].id)}`,
 	);
 	// automated mail has no Work item, so it stays on the Brain thread page
 	expect(
@@ -192,6 +194,7 @@ it("syncs once shortly after a reply is sent from the app", async () => {
 			threads: state.threads,
 			items: [],
 			workspaces: {},
+			memories: [],
 			lastMailCheck: null,
 		});
 		vi.mocked(syncMail).mockClear();

@@ -1,6 +1,7 @@
 import type {
 	CollaborationCommand,
 	CollaborationState,
+	Memory,
 	Thread,
 	ThreadTopicLink,
 	ThreadWorkspace,
@@ -8,12 +9,12 @@ import type {
 	WorkItem,
 	WorkspaceStep,
 } from "./collaboration.types";
+import { dropTopicMemories, moveTopicMemories } from "./memory";
 
 /** New workspaces contain no inferred source bodies or assistant history. */
 export function createEmptyWorkspace(): ThreadWorkspace {
 	return {
 		goal: "",
-		facts: [],
 		messages: [],
 		steps: [],
 		assets: [],
@@ -26,9 +27,7 @@ export function createEmptyWorkspace(): ThreadWorkspace {
 }
 
 /** Keep one primary, retaining an existing primary before comparing confidence. */
-export function normalizeTopicLinks(
-	links: ThreadTopicLink[],
-): ThreadTopicLink[] {
+function normalizeTopicLinks(links: ThreadTopicLink[]): ThreadTopicLink[] {
 	const unique = links.filter(
 		(link, index) =>
 			links.findIndex(
@@ -166,7 +165,6 @@ function newTopic(
 		description: "",
 		keywords: [],
 		goals: [],
-		notes: [],
 		people: [],
 		calendarSeries: [],
 		stats: { threads: 0, openItems: 0, lastActivity: now },
@@ -190,12 +188,6 @@ function mergeTopics(
 		...source.goals.filter(
 			(goal) =>
 				!target.goals.some((other) => other.noteId === goal.noteId),
-		),
-	);
-	target.notes.push(
-		...source.notes.filter(
-			(note) =>
-				!target.notes.some((other) => other.noteId === note.noteId),
 		),
 	);
 	target.people.push(
@@ -242,6 +234,7 @@ function mergeTopics(
 		for (const step of workspace.steps)
 			if (step.linkTopicId === sourceId) step.linkTopicId = targetId;
 	}
+	state.memories = moveTopicMemories(state.memories, sourceId, targetId);
 	state.topics = state.topics.filter((topic) => topic.id !== sourceId);
 }
 
@@ -271,6 +264,7 @@ function deleteTopic(
 	for (const workspace of Object.values(state.workspaces))
 		for (const step of workspace.steps)
 			if (step.linkTopicId === topicId) step.linkTopicId = undefined;
+	state.memories = dropTopicMemories(state.memories, topicId);
 	state.topics = state.topics.filter((topic) => topic.id !== topicId);
 }
 
@@ -334,6 +328,29 @@ function mergeServerSteps(
 	return [...merged, ...[...incoming.values()].map((step) => ({ ...step }))];
 }
 
+/**
+ * The server's memories over the local list. One changed here after the read went out (keep), a sample, or one
+ * not saved yet stays as it is here; one the server no longer lists was deleted, dismissed, or replaced.
+ */
+function mergeServerMemories(
+	local: Memory[],
+	server: Memory[],
+	keep: ReadonlySet<string>,
+): Memory[] {
+	const incoming = new Map(server.map((memory) => [memory.id, memory]));
+	const merged = local.flatMap((memory) => {
+		const next = incoming.get(memory.id);
+		incoming.delete(memory.id);
+		if (memory.isSample || keep.has(memory.id)) return [memory];
+		if (!next) return memory.id.startsWith("local-") ? [memory] : [];
+		return [{ ...next }];
+	});
+	return [
+		...merged,
+		...[...incoming.values()].map((memory) => ({ ...memory })),
+	];
+}
+
 /** Apply a single local intent atomically. The caller supplies time for deterministic tests. */
 export function collaborationReducer(
 	previous: CollaborationState,
@@ -349,7 +366,6 @@ export function collaborationReducer(
 			if (topic) {
 				const {
 					goals: _goals,
-					notes: _notes,
 					people: _people,
 					...patch
 				} = command.topic;
@@ -405,62 +421,30 @@ export function collaborationReducer(
 			);
 			if (!topic) break;
 			if (command.operation === "remove") {
-				topic.notes = topic.notes.filter(
-					(note) => note.noteId !== command.noteId,
-				);
 				topic.goals = topic.goals.filter(
 					(goal) => goal.noteId !== command.noteId,
 				);
 				break;
 			}
-			const existing =
-				command.kind === "goal"
-					? topic.goals.find((goal) => goal.noteId === command.noteId)
-					: topic.notes.find(
-							(note) => note.noteId === command.noteId,
-						);
+			const existing = topic.goals.find(
+				(goal) => goal.noteId === command.noteId,
+			);
 			const text = (command.text ?? existing?.text)?.trim();
 			if (!text) break;
 			const noteId = command.noteId ?? `local-note-${state.sequence++}`;
-			if (command.kind === "goal") {
-				const goal = {
-					noteId,
-					text,
-					status:
-						(command.status ?? existing?.status) === "done"
-							? ("done" as const)
-							: ("open" as const),
-				};
-				topic.goals = existing
-					? topic.goals.map((item) =>
-							item.noteId === noteId ? goal : item,
-						)
-					: [...topic.goals, goal];
-			} else {
-				const existingNote = topic.notes.find(
-					(note) => note.noteId === noteId,
-				);
-				const note = {
-					...existingNote,
-					noteId,
-					kind: "note" as const,
-					text,
-					status:
-						(command.status ?? existing?.status) === "draft"
-							? ("draft" as const)
-							: ("confirmed" as const),
-					by:
-						command.text === undefined && existingNote
-							? existingNote.by
-							: ("you" as const),
-					date: now,
-				};
-				topic.notes = existing
-					? topic.notes.map((item) =>
-							item.noteId === noteId ? note : item,
-						)
-					: [...topic.notes, note];
-			}
+			const goal = {
+				noteId,
+				text,
+				status:
+					(command.status ?? existing?.status) === "done"
+						? ("done" as const)
+						: ("open" as const),
+			};
+			topic.goals = existing
+				? topic.goals.map((item) =>
+						item.noteId === noteId ? goal : item,
+					)
+				: [...topic.goals, goal];
 			break;
 		}
 		case "thread.link": {
@@ -833,27 +817,113 @@ export function collaborationReducer(
 			}
 			break;
 		}
-		case "workspace.fact": {
-			if (!state.threads.some((thread) => thread.id === command.threadId))
-				break;
-			state.workspaces[command.threadId] ??= createEmptyWorkspace();
-			const workspace = state.workspaces[command.threadId];
-			const existing = workspace.facts.find(
-				(fact) => fact.id === command.fact.id,
-			);
-			if (command.operation === "remove")
-				workspace.facts = workspace.facts.filter(
-					(fact) => fact.id !== command.fact.id,
-				);
-			else if (existing) Object.assign(existing, command.fact);
-			else if (command.fact.text?.trim())
-				workspace.facts.push({
-					...command.fact,
-					id: command.fact.id ?? `local-fact-${state.sequence++}`,
-					text: command.fact.text.trim(),
-					from: command.fact.from ?? "Added by you",
-					status: command.fact.status ?? "confirmed",
+		case "memory.save": {
+			const patch = command.memory;
+			const existing = patch.id
+				? state.memories.find((memory) => memory.id === patch.id)
+				: undefined;
+			if (existing) {
+				const text = (patch.text ?? existing.text).trim();
+				if (!text || existing.state === "dismissed") break;
+				// editing a suggestion accepts it, and it takes the place of the memory it replaces
+				if (existing.state === "suggested" && existing.replacesId)
+					state.memories = state.memories.filter(
+						(memory) => memory.id !== existing.replacesId,
+					);
+				Object.assign(existing, {
+					...(patch.kind ? { kind: patch.kind } : {}),
+					...(patch.about ? { about: patch.about } : {}),
+					...(patch.pinned !== undefined
+						? { pinned: patch.pinned }
+						: {}),
+					...(patch.expiresAt !== undefined
+						? { expiresAt: patch.expiresAt }
+						: {}),
+					text,
+					state: "active",
+					confirmed: true,
+					updatedAt: now,
 				});
+				break;
+			}
+			const text = patch.text?.trim();
+			if (!text) break;
+			state.memories.push({
+				id: patch.id ?? `local-memory-${state.sequence++}`,
+				kind: patch.kind ?? "fact",
+				text,
+				state: "active",
+				origin: "you",
+				confirmed: true,
+				pinned: patch.pinned ?? false,
+				about: patch.about ?? [],
+				expiresAt: patch.expiresAt ?? null,
+				replacesId: null,
+				source: { kind: "ui" },
+				createdAt: now,
+				updatedAt: now,
+				isSample: patch.isSample ?? false,
+			});
+			break;
+		}
+		case "memory.delete":
+			state.memories = state.memories.filter(
+				(memory) => memory.id !== command.memoryId,
+			);
+			break;
+		case "memory.clear":
+			state.memories = state.memories.filter((memory) => memory.isSample);
+			break;
+		case "memory.resolve": {
+			const memory = state.memories.find(
+				(candidate) => candidate.id === command.memoryId,
+			);
+			if (!memory) break;
+			const before = memory.state;
+			if (command.action === "accept" && before === "suggested") {
+				memory.state = "active";
+				memory.confirmed = true;
+				if (memory.replacesId)
+					state.memories = state.memories.filter(
+						(candidate) => candidate.id !== memory.replacesId,
+					);
+			} else if (command.action === "confirm" && before === "active")
+				memory.confirmed = true;
+			else if (
+				command.action === "dismiss" &&
+				(before === "suggested" ||
+					(before === "active" &&
+						!memory.confirmed &&
+						memory.origin !== "you"))
+			)
+				memory.state = "dismissed";
+			else if (command.action === "restore" && before === "dismissed")
+				memory.state = "active";
+			else if (command.action === "reopen" && before === "dismissed")
+				memory.state = "suggested";
+			else break;
+			memory.updatedAt = now;
+			break;
+		}
+		case "memory.server": {
+			// a dismissed copy has left the lists on the server
+			const removed = new Set([
+				...(command.removedIds ?? []),
+				...(command.memories ?? [])
+					.filter((memory) => memory.state === "dismissed")
+					.map((memory) => memory.id),
+			]);
+			state.memories = state.memories.filter(
+				(memory) => !removed.has(memory.id),
+			);
+			for (const incoming of command.memories ?? []) {
+				if (incoming.state === "dismissed") continue;
+				const index = state.memories.findIndex(
+					(memory) => memory.id === incoming.id,
+				);
+				if (index >= 0) state.memories[index] = { ...incoming };
+				else state.memories.push({ ...incoming });
+			}
 			break;
 		}
 		case "workspace.open": {
@@ -992,7 +1062,6 @@ export function collaborationReducer(
 					(message) => !state.deletedSourceIds?.includes(message.id),
 				),
 				goal: workspace.goal || command.workspace?.goal || "",
-				facts: workspace.facts,
 				steps: workspace.steps,
 				drafts: workspace.drafts,
 			};
@@ -1058,6 +1127,12 @@ export function collaborationReducer(
 			state.items.push(
 				...command.updates.items.filter((item) => !ids.has(item.id)),
 			);
+			if (command.updates.memories)
+				state.memories = mergeServerMemories(
+					state.memories,
+					command.updates.memories,
+					new Set(command.updates.keepMemoryIds),
+				);
 			break;
 		}
 		case "source.status":
@@ -1095,54 +1170,6 @@ export function collaborationReducer(
 			break;
 		}
 	}
-	return reconcileCollaborationState(state);
-}
-
-export interface CollaborationHistory {
-	state: CollaborationState;
-	past: CollaborationState[];
-}
-
-export type HistoryAction =
-	| { command: CollaborationCommand; now: string }
-	| { type: "undo" };
-
-const UNRECORDED_COMMANDS = new Set<CollaborationCommand["type"]>([
-	"thread.insights",
-	"source.deleted",
-	"session.create",
-	"live.refresh",
-	"source.import",
-	"source.status",
-	"live-profile.set",
-	"workspace.open",
-	"workspace.close",
-	"snooze.expire",
-]);
-
-/** External imports survive local undo by also updating historical session snapshots. */
-export function collaborationHistoryReducer(
-	history: CollaborationHistory,
-	action: HistoryAction,
-): CollaborationHistory {
-	if ("type" in action) {
-		const previous = history.past.at(-1);
-		return previous
-			? { state: previous, past: history.past.slice(0, -1) }
-			: history;
-	}
-	const state = collaborationReducer(
-		history.state,
-		action.command,
-		action.now,
-	);
-	if (JSON.stringify(state) === JSON.stringify(history.state)) return history;
-	if (UNRECORDED_COMMANDS.has(action.command.type))
-		return {
-			state,
-			past: history.past.map((previous) =>
-				collaborationReducer(previous, action.command, action.now),
-			),
-		};
-	return { state, past: [...history.past.slice(-49), history.state] };
+	const next = reconcileCollaborationState(state);
+	return JSON.stringify(next) === JSON.stringify(previous) ? previous : next;
 }

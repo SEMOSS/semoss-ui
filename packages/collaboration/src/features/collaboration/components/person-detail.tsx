@@ -2,7 +2,6 @@ import { useId, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
 	Button,
-	H1,
 	Label,
 	P,
 	Select,
@@ -13,10 +12,14 @@ import {
 	Small,
 	Switch,
 } from "@semoss/ui/next";
+import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
 import { isFollowed } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { memoriesAbout } from "../state/memory";
+import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
+import { MemoryList } from "./memory-list";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
@@ -31,7 +34,15 @@ export function PersonDetail() {
 	const [topicToAdd, setTopicToAdd] = useState("");
 	const person = state.people.find((candidate) => candidate.id === personId);
 	if (!person)
-		return <P className="p-6">Person not found in this session.</P>;
+		return (
+			<CollaborationSurface
+				header={<CollaborationPageHeader title="Person" />}
+			>
+				<P className="p-6 text-muted-foreground">
+					Person not found in this session.
+				</P>
+			</CollaborationSurface>
+		);
 	const topics = state.topics.filter((topic) =>
 		topic.people.some(
 			(member) =>
@@ -54,8 +65,45 @@ export function PersonDetail() {
 			(item.status === "open" || item.status === "waiting") &&
 			!state.threads.find((thread) => thread.id === item.threadId)?.muted,
 	);
+	const memories = memoriesAbout(state.memories, {
+		type: "person",
+		id: person.id,
+	});
 	return (
 		<CollaborationSurface
+			header={
+				<CollaborationPageHeader
+					title={
+						<span className="flex min-w-0 items-center gap-3">
+							<PersonAvatar
+								name={person.name}
+								initials={person.initials}
+							/>
+							<span className="min-w-0 break-words">
+								{person.name}
+							</span>
+						</span>
+					}
+					description={
+						<>
+							{person.title}
+							{person.title ? " · " : ""}
+							{state.accounts.find(
+								(account) => account.id === person.accountId,
+							)?.name || "No account"}
+						</>
+					}
+				>
+					<div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-muted-foreground text-sm">
+						<span className="min-w-0 break-words">
+							{person.email || "Email unavailable"}
+						</span>
+						<span>
+							Last contact {dateLabel(person.lastContact)}
+						</span>
+					</div>
+				</CollaborationPageHeader>
+			}
 			asideTitle="Person context"
 			aside={
 				<>
@@ -69,7 +117,7 @@ export function PersonDetail() {
 									key={label}
 									className="rounded-lg bg-muted/60 px-3 py-2"
 								>
-									<P className="font-semibold text-lg tabular-nums">
+									<P className="font-medium text-lg tabular-nums">
 										{count}
 									</P>
 									<Small className="font-normal text-muted-foreground text-xs">
@@ -93,7 +141,7 @@ export function PersonDetail() {
 							>
 								<Link
 									className="break-words text-sm hover:underline"
-									to={`/work/thread/${encodeURIComponent(item.threadId)}`}
+									to={threadPath(item.threadId)}
 								>
 									{item.title}
 								</Link>
@@ -114,35 +162,6 @@ export function PersonDetail() {
 			}
 		>
 			<div>
-				<header className="space-y-3 border-b px-4 py-5 md:px-6">
-					<div className="flex items-start gap-3">
-						<PersonAvatar
-							name={person.name}
-							initials={person.initials}
-						/>
-						<div className="min-w-0 flex-1 space-y-1">
-							<div className="flex flex-wrap items-center gap-2">
-								<H1 className="break-words font-semibold text-xl">
-									{person.name}
-								</H1>
-							</div>
-							<P className="break-words text-muted-foreground text-xs leading-5">
-								{person.title}
-								{person.title ? " · " : ""}
-								{state.accounts.find(
-									(account) =>
-										account.id === person.accountId,
-								)?.name || "No account"}
-							</P>
-							<P className="break-words text-muted-foreground text-xs leading-5">
-								{person.email || "Email unavailable"}
-							</P>
-							<Small className="font-normal text-muted-foreground text-xs">
-								Last contact {dateLabel(person.lastContact)}
-							</Small>
-						</div>
-					</div>
-				</header>
 				<Section
 					title="Relationship"
 					className="space-y-3 border-b px-4 py-4 md:px-6"
@@ -212,9 +231,45 @@ export function PersonDetail() {
 						/>
 					</div>
 					<Small className="font-normal text-muted-foreground text-xs leading-5">
-						This session preference does not delete provider
-						messages or existing conversations.
+						This preference does not delete provider messages or
+						existing conversations.
 					</Small>
+					{person.neverIngest && memories.length > 0 && (
+						<div className="space-y-2 rounded-lg border border-border p-3">
+							<Small className="block font-normal text-sm leading-6">
+								The assistant no longer sees the{" "}
+								{memories.length === 1
+									? "memory"
+									: `${memories.length} memories`}{" "}
+								about {person.name}.
+							</Small>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => {
+									for (const memory of memories)
+										dispatch({
+											type: "memory.delete",
+											memoryId: memory.id,
+										});
+								}}
+							>
+								Delete {memories.length === 1 ? "it" : "them"}
+							</Button>
+						</div>
+					)}
+				</Section>
+				<Section
+					title="What the assistant remembers"
+					className="space-y-3 border-b px-4 py-4 md:px-6"
+				>
+					<MemoryList
+						memories={memories}
+						emptyText={`Facts about ${person.name} that the assistant keeps across threads.`}
+						addLabel={`New memory about ${person.name}`}
+						about={{ type: "person", id: person.id }}
+						isSample={person.isSample}
+					/>
 				</Section>
 				<Section
 					title="Topics"

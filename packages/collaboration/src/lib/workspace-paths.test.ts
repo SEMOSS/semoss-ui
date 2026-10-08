@@ -1,19 +1,30 @@
-import { newRoomPath, roomPath, sessionsPath } from "./workspace-paths";
+import {
+	newRoomPath,
+	roomPath,
+	sessionsPath,
+	threadPath,
+} from "./workspace-paths";
+
+it("encodes a conversation identity as one canonical route segment", () => {
+	expect(threadPath("connected:email/one?#")).toBe(
+		"/thread/connected%3Aemail%2Fone%3F%23",
+	);
+});
 
 describe("roomPath", () => {
 	it("builds direct room URLs with optional focused items", () => {
-		expect(roomPath("room/one")).toBe("/room/room%2Fone");
+		expect(roomPath("room/one")).toBe("/thread/room%3Aroom%2Fone");
 		expect(roomPath("room/one", "item&two")).toBe(
-			"/room/room%2Fone?item=item%26two",
+			"/thread/room%3Aroom%2Fone?item=item%26two",
 		);
 	});
 });
 
 describe("newRoomPath", () => {
 	it("builds bare and agent-scoped new-room URLs", () => {
-		expect(newRoomPath()).toBe("/new");
+		expect(newRoomPath()).toBe("/");
 		expect(newRoomPath("agent/one", "model&two")).toBe(
-			"/new?agentId=agent%2Fone&model=model%26two",
+			"/?agentId=agent%2Fone&model=model%26two",
 		);
 	});
 });

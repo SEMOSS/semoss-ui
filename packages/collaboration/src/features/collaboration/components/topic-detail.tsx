@@ -4,7 +4,6 @@ import {
 	Badge,
 	Button,
 	Checkbox,
-	H1,
 	Label,
 	P,
 	Select,
@@ -18,10 +17,14 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { memoriesAbout } from "../state/memory";
+import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
 import { collaborationTabsStyles } from "./collaboration-tabs.styles";
+import { MemoryList } from "./memory-list";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
@@ -39,7 +42,16 @@ export function TopicDetail() {
 	const editButtonRef = useRef<HTMLButtonElement>(null);
 	const [personToAdd, setPersonToAdd] = useState("");
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
-	if (!topic) return <P className="p-6">Topic not found in this session.</P>;
+	if (!topic)
+		return (
+			<CollaborationSurface
+				header={<CollaborationPageHeader title="Topic" />}
+			>
+				<P className="p-6 text-muted-foreground">
+					Topic not found in this session.
+				</P>
+			</CollaborationSurface>
+		);
 	const threads = state.threads.filter((thread) =>
 		thread.topicLinks.some((link) => link.topicId === topic.id),
 	);
@@ -61,6 +73,81 @@ export function TopicDetail() {
 	);
 	return (
 		<CollaborationSurface
+			header={
+				<CollaborationPageHeader
+					title={topic.name}
+					description={
+						topic.description ||
+						"Add a description to explain this topic."
+					}
+					actions={
+						<>
+							<Button
+								ref={editButtonRef}
+								variant="outline"
+								size="sm"
+								onClick={() => setIsEditing(true)}
+							>
+								Edit topic
+							</Button>
+							<TopicActions
+								topic={topic}
+								threadCount={threads.length}
+							/>
+						</>
+					}
+				>
+					<div className="flex flex-wrap items-center gap-3">
+						<Small className="font-normal text-muted-foreground text-sm">
+							{state.accounts.find(
+								(account) => account.id === topic.accountId,
+							)?.name || "No account"}{" "}
+							· {topic.kind} · {threads.length} threads ·{" "}
+							{members.length} people
+						</Small>
+						<TopicChip topic={topic} />
+						<Label
+							htmlFor={`${fieldId}-topic-status`}
+							className="sr-only"
+						>
+							Topic status
+						</Label>
+						<Select
+							value={topic.status}
+							onValueChange={(status) => {
+								if (
+									status === "active" ||
+									status === "dormant" ||
+									status === "archived"
+								)
+									dispatch({
+										type: "topic.save",
+										topic: { id: topic.id, status },
+									});
+							}}
+						>
+							<SelectTrigger
+								id={`${fieldId}-topic-status`}
+								className="h-8 w-auto text-xs"
+							>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="active">Active</SelectItem>
+								<SelectItem value="dormant">Dormant</SelectItem>
+								<SelectItem value="archived">
+									Archived
+								</SelectItem>
+								{topic.status === "suggested" && (
+									<SelectItem value="suggested">
+										Suggested
+									</SelectItem>
+								)}
+							</SelectContent>
+						</Select>
+					</div>
+				</CollaborationPageHeader>
+			}
 			aside={
 				<>
 					<Section
@@ -82,7 +169,7 @@ export function TopicDetail() {
 							>
 								<Link
 									className="break-words text-sm hover:underline"
-									to={`/work/thread/${encodeURIComponent(item.threadId)}`}
+									to={threadPath(item.threadId)}
 								>
 									{item.title}
 								</Link>
@@ -148,82 +235,8 @@ export function TopicDetail() {
 			}
 			asideTitle="Topic context"
 		>
-			<header className="space-y-3 px-4 pt-5 pb-4 md:px-6">
-				<div
-					className="h-1 w-11 rounded-full bg-primary"
-					aria-hidden="true"
-				/>
-				<div className="flex flex-wrap items-start justify-between gap-3">
-					<H1 className="font-semibold text-xl">{topic.name}</H1>
-					<div className="flex items-center gap-2">
-						<Button
-							ref={editButtonRef}
-							variant="outline"
-							size="sm"
-							onClick={() => setIsEditing(true)}
-						>
-							Edit topic
-						</Button>
-						<TopicActions
-							topic={topic}
-							threadCount={threads.length}
-						/>
-					</div>
-				</div>
-				<div className="flex flex-wrap items-center gap-3">
-					<Small className="font-normal text-muted-foreground text-xs">
-						{state.accounts.find(
-							(account) => account.id === topic.accountId,
-						)?.name || "No account"}{" "}
-						· {topic.kind} · {threads.length} threads ·{" "}
-						{members.length} people
-					</Small>
-					<TopicChip topic={topic} />
-					<Label
-						htmlFor={`${fieldId}-topic-status`}
-						className="sr-only"
-					>
-						Topic status
-					</Label>
-					<Select
-						value={topic.status}
-						onValueChange={(status) => {
-							if (
-								status === "active" ||
-								status === "dormant" ||
-								status === "archived"
-							)
-								dispatch({
-									type: "topic.save",
-									topic: { id: topic.id, status },
-								});
-						}}
-					>
-						<SelectTrigger
-							id={`${fieldId}-topic-status`}
-							className="h-8 w-auto text-xs"
-						>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="active">Active</SelectItem>
-							<SelectItem value="dormant">Dormant</SelectItem>
-							<SelectItem value="archived">Archived</SelectItem>
-							{topic.status === "suggested" && (
-								<SelectItem value="suggested">
-									Suggested
-								</SelectItem>
-							)}
-						</SelectContent>
-					</Select>
-				</div>
-				<P className="text-muted-foreground text-sm leading-6">
-					{topic.description ||
-						"Add a description to explain this topic."}
-				</P>
-			</header>
 			<Tabs defaultValue="threads" key={topic.id} className="gap-0">
-				<div className="overflow-x-auto border-b px-4 md:px-6">
+				<div className="border-b p-4 md:px-6">
 					<TabsList className={collaborationTabsStyles.list}>
 						<TabsTrigger
 							value="threads"
@@ -507,66 +520,15 @@ export function TopicDetail() {
 						title="Notes for the assistant"
 						className="space-y-3 border-b px-4 py-4 md:px-6"
 					>
-						{topic.notes.map((note) => (
-							<div
-								key={note.noteId}
-								className="space-y-2 border-b pb-3"
-							>
-								<P className="text-sm leading-6">{note.text}</P>
-								<Small className="font-normal text-muted-foreground text-xs">
-									{note.by} · {note.status}
-									{note.source ? ` · ${note.source}` : ""}
-								</Small>
-								<div className="flex gap-2">
-									{note.status === "draft" && (
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() =>
-												dispatch({
-													type: "topic.note",
-													topicId: topic.id,
-													kind: "note",
-													operation: "save",
-													noteId: note.noteId,
-													status: "confirmed",
-												})
-											}
-										>
-											Confirm
-										</Button>
-									)}
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() =>
-											dispatch({
-												type: "topic.note",
-												topicId: topic.id,
-												kind: "note",
-												operation: "remove",
-												noteId: note.noteId,
-											})
-										}
-									>
-										Remove
-									</Button>
-								</div>
-							</div>
-						))}
-						<TextEntryForm
-							label="New note"
-							multiline
-							onSave={(text) =>
-								dispatch({
-									type: "topic.note",
-									topicId: topic.id,
-									kind: "note",
-									operation: "save",
-									text,
-									status: "confirmed",
-								})
-							}
+						<MemoryList
+							memories={memoriesAbout(state.memories, {
+								type: "topic",
+								id: topic.id,
+							})}
+							emptyText="Notes here are memories. The assistant uses them on this topic's threads."
+							addLabel="New note"
+							about={{ type: "topic", id: topic.id }}
+							isSample={topic.isSample}
 						/>
 					</Section>
 				</TabsContent>

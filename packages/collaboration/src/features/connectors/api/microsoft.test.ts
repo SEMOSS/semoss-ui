@@ -23,7 +23,7 @@ function response(output: unknown) {
 	return { pixelReturn: [{ output, operationType: [] }] };
 }
 const mail = {
-	uid: "mail-1",
+	id: "mail-1",
 	subject: "A subject",
 	unread: true,
 	hasAttachments: false,
@@ -75,15 +75,17 @@ describe("Microsoft source adapters", () => {
 			expect(run).not.toHaveBeenCalled();
 		},
 	);
-	it("reads one UID with a body cap and attachment metadata", async () => {
+	it("reads one message id with a body cap and attachment metadata", async () => {
 		const run = vi
 			.fn()
 			.mockResolvedValue(
-				response({ ...mail, uid: "opaque/+id", body: "Actual email" }),
+				response({ ...mail, id: "opaque/+id", body: "Actual email" }),
 			);
-		await getMail({ run } as never, "opaque/+id");
+		await expect(
+			getMail({ run } as never, "opaque/+id"),
+		).resolves.toMatchObject({ uid: "opaque/+id" });
 		expect(run).toHaveBeenCalledWith(
-			'MicrosoftOutlookGetMail(uid=["opaque/+id"], maxBodyChars=[12000], includeAttachments=[true], includeDisplayBody=[true]);',
+			'MicrosoftOutlookGetMail(id=["opaque/+id"], maxBodyChars=[12000], includeAttachments=[true], includeDisplayBody=[true]);',
 		);
 	});
 	it("rejects invalid payloads and Pixel errors instead of loading fixtures", async () => {
@@ -111,7 +113,8 @@ describe("Microsoft source adapters", () => {
 					{
 						id: "native-folder",
 						name: "Client",
-						totalItemCount: 43,
+						kind: "folder",
+						totalCount: 43,
 					},
 				],
 			}),
@@ -136,7 +139,7 @@ describe("Microsoft source adapters", () => {
 		expect(run.mock.calls.map(([expression]) => expression)).toEqual([
 			"MicrosoftTeamsListChats(limit=[20], includeLastMessage=[false]);",
 			'MicrosoftTeamsListChatMessages(chatId=["chat"], includeDisplayBody=[true], limit=[30], maxBodyChars=[12000]);',
-			'MicrosoftCalendarListEvents(days=[7], limit=[30], timeZone=["UTC"], includeBody=[false]);',
+			"MicrosoftCalendarListEvents(days=[7], limit=[30], includeBody=[false]);",
 		]);
 	});
 	it("rejects malformed timestamps at the source boundary", async () => {
@@ -152,8 +155,8 @@ describe("Microsoft source adapters", () => {
 	it("allows incomplete new drafts, validating only supplied addresses", async () => {
 		const run = vi.fn().mockResolvedValue(
 			response({
-				saved: true,
-				draftId: "draft",
+				draft: true,
+				id: "draft",
 				to: ["server-variant@example.com"],
 				webLink: "https://outlook.office.com/mail/drafts/id",
 			}),
@@ -188,21 +191,23 @@ describe("Microsoft source adapters", () => {
 		).rejects.toThrow("email addresses");
 		expect(run).not.toHaveBeenCalled();
 	});
-	it("hardcodes native reply/forward draft mode and normalizes their uid receipts", async () => {
+	it("hardcodes native reply/forward draft mode and reads their draft receipts", async () => {
 		const run = vi
 			.fn()
 			.mockResolvedValueOnce(
 				response({
-					sent: false,
+					draft: true,
 					repliedTo: "original",
-					uid: "reply-draft",
+					id: "reply-draft",
+					to: ["original@example.com"],
+					cc: [],
 				}),
 			)
 			.mockResolvedValueOnce(
 				response({
-					sent: false,
+					draft: true,
 					forwarded: "original",
-					uid: "forward-draft",
+					id: "forward-draft",
 				}),
 			);
 		await expect(
@@ -230,11 +235,15 @@ describe("Microsoft source adapters", () => {
 		expect(run.mock.calls[0]?.[0]).toContain("replyAll=[false]");
 	});
 	it("treats missing or wrong draft receipts as uncertain without retrying", async () => {
-		const run = vi
-			.fn()
-			.mockResolvedValue(
-				response({ sent: false, repliedTo: "different", uid: "draft" }),
-			);
+		const run = vi.fn().mockResolvedValue(
+			response({
+				draft: true,
+				repliedTo: "different",
+				id: "draft",
+				to: [],
+				cc: [],
+			}),
+		);
 		await expect(
 			saveEmailDraft({ run } as never, {
 				mode: "reply",
@@ -249,7 +258,7 @@ describe("Microsoft source adapters", () => {
 		const run = vi
 			.fn()
 			.mockResolvedValue(
-				response({ sent: true, forwarded: "original", uid: "id" }),
+				response({ sent: true, forwarded: "original", id: "id" }),
 			);
 		await expect(
 			saveEmailDraft({ run } as never, {
@@ -270,7 +279,7 @@ describe("Microsoft source adapters", () => {
 			.mockResolvedValueOnce(
 				response({
 					success: true,
-					uid: "mail",
+					id: "mail",
 					attachmentId: "attachment",
 					name: "report.pdf",
 					filePath: name,
@@ -296,7 +305,7 @@ describe("Microsoft source adapters", () => {
 		const run = vi.fn().mockResolvedValue(
 			response({
 				success: true,
-				uid: "other",
+				id: "other",
 				attachmentId: "id",
 				name: "a",
 				filePath: "a",
@@ -330,12 +339,14 @@ it.each(["new", "reply", "forward"] as const)(
 		const run = vi.fn().mockResolvedValue(
 			response(
 				mode === "new"
-					? { saved: true, draftId: "draft" }
+					? { draft: true, id: "draft" }
 					: {
-							sent: false,
-							uid: "draft",
+							draft: true,
+							id: "draft",
 							repliedTo: "original",
 							forwarded: "original",
+							to: ["person@example.com"],
+							cc: [],
 						},
 			),
 		);
@@ -381,7 +392,7 @@ it("requires an exact successful draft ID receipt from the existing sending endp
 		sendEmailDraft({ run } as never, "exact/+id"),
 	).resolves.toEqual({ sent: true, draftId: "exact/+id" });
 	expect(run).toHaveBeenCalledExactlyOnceWith(
-		'MicrosoftOutlookSendDraft(draftId=["exact/+id"]);',
+		'MicrosoftOutlookSendDraft(id=["exact/+id"]);',
 	);
 });
 
@@ -451,10 +462,11 @@ it("preserves explicitly typed source HTML through both Microsoft readers", asyn
 it("serializes explicit reply recipients, including empty lists, and verifies the receipt", async () => {
 	const run = vi.fn().mockResolvedValue(
 		response({
-			sent: false,
-			uid: "draft",
+			draft: true,
+			id: "draft",
 			repliedTo: "source",
-			recipients: { to: ["CHANGED@example.com"], cc: [] },
+			to: ["CHANGED@example.com"],
+			cc: [],
 		}),
 	);
 	await expect(
@@ -482,10 +494,10 @@ it.each([
 ])("requires confirmation of the edited recipients: %s", async (recipients) => {
 	const run = vi.fn().mockResolvedValue(
 		response({
-			sent: false,
-			uid: "draft",
+			draft: true,
+			id: "draft",
 			repliedTo: "source",
-			recipients,
+			...recipients,
 		}),
 	);
 	await expect(

@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialCollaborationState } from "./collaboration.fixtures";
 import {
-	type CollaborationHistory,
-	collaborationHistoryReducer,
 	collaborationReducer,
 	createEmptyWorkspace,
 	tomorrowAtEight,
@@ -129,24 +127,8 @@ describe("shared collaboration session", () => {
 		});
 	});
 
-	it("updates note and goal status without requiring unchanged text again", () => {
-		let state = apply(createInitialCollaborationState(), {
-			type: "topic.note",
-			topicId: "t-geng",
-			kind: "note",
-			operation: "save",
-			noteId: "t-geng-note-2",
-			status: "confirmed",
-		});
-		const topic = state.topics.find(
-			(candidate) => candidate.id === "t-geng",
-		);
-		expect(topic?.notes[1]).toMatchObject({
-			status: "confirmed",
-			text: "Pilot scope is limited to 2 use cases (claims triage, contract Q&A).",
-			source: "Email from Hugo Lane, Sep 20",
-		});
-		state = apply(state, {
+	it("updates goal status without requiring unchanged text again", () => {
+		const state = apply(createInitialCollaborationState(), {
 			type: "topic.note",
 			topicId: "t-geng",
 			kind: "goal",
@@ -158,16 +140,129 @@ describe("shared collaboration session", () => {
 			state.topics.find((candidate) => candidate.id === "t-geng")
 				?.goals[0],
 		).toMatchObject({ noteId: "t-geng-goal-1", status: "done" });
+	});
+
+	it("keeps a suggested memory out of use until it is kept, and an edit confirms it", () => {
+		let state = createInitialCollaborationState();
+		const suggestion = state.memories.find(
+			(memory) => memory.id === "t-geng-note-2",
+		);
+		expect(suggestion).toMatchObject({
+			state: "suggested",
+			confirmed: false,
+			about: [{ type: "topic", id: "t-geng" }],
+		});
 		state = apply(state, {
-			type: "topic.note",
-			topicId: "t-geng",
-			kind: "note",
-			operation: "save",
-			status: "confirmed",
+			type: "memory.resolve",
+			memoryId: "t-geng-note-2",
+			action: "accept",
 		});
 		expect(
-			state.topics.find((candidate) => candidate.id === "t-geng")?.notes,
-		).toHaveLength(2);
+			state.memories.find((memory) => memory.id === "t-geng-note-2"),
+		).toMatchObject({ state: "active", confirmed: true });
+
+		state = apply(state, {
+			type: "memory.save",
+			memory: {
+				text: "  Sign emails as Rob  ",
+				kind: "preference",
+				isSample: true,
+			},
+		});
+		const added = state.memories.at(-1);
+		expect(added).toMatchObject({
+			id: "local-memory-1",
+			text: "Sign emails as Rob",
+			kind: "preference",
+			origin: "you",
+			confirmed: true,
+			state: "active",
+			about: [],
+		});
+		state = apply(state, {
+			type: "memory.save",
+			memory: { id: "local-memory-1", text: "" },
+		});
+		expect(state.memories.at(-1)?.text).toBe("Sign emails as Rob");
+		state = apply(state, {
+			type: "memory.delete",
+			memoryId: "local-memory-1",
+		});
+		expect(
+			state.memories.some((memory) => memory.id === "local-memory-1"),
+		).toBe(false);
+	});
+
+	it("dismisses only what the owner did not write, and takes server copies as they are", () => {
+		let state = createInitialCollaborationState();
+		const learned = {
+			...state.memories[0],
+			id: "m-learned",
+			origin: "assistant" as const,
+			confirmed: false,
+		};
+		state = apply(state, { type: "memory.server", memories: [learned] });
+		state = apply(state, {
+			type: "memory.resolve",
+			memoryId: "m-sample-pref-1",
+			action: "dismiss",
+		});
+		expect(state.memories[0].state).toBe("active");
+		state = apply(state, {
+			type: "memory.resolve",
+			memoryId: "m-learned",
+			action: "dismiss",
+		});
+		expect(
+			state.memories.find((memory) => memory.id === "m-learned")?.state,
+		).toBe("dismissed");
+		state = apply(state, {
+			type: "memory.resolve",
+			memoryId: "m-learned",
+			action: "restore",
+		});
+		expect(
+			state.memories.find((memory) => memory.id === "m-learned")?.state,
+		).toBe("active");
+		// a dismissed copy from the server leaves the lists
+		state = apply(state, {
+			type: "memory.server",
+			memories: [{ ...learned, state: "dismissed" }],
+		});
+		expect(state.memories.some((memory) => memory.id === "m-learned")).toBe(
+			false,
+		);
+	});
+
+	it("moves memory links with a topic merge and drops topic-only memories with a delete", () => {
+		let state = createInitialCollaborationState();
+		state = apply(state, {
+			type: "memory.save",
+			memory: {
+				text: "Engineering reviews need a pre-read",
+				about: [
+					{ type: "topic", id: "t-geng" },
+					{ type: "person", id: "p-ava" },
+				],
+				isSample: true,
+			},
+		});
+		state = apply(state, {
+			type: "topic.merge",
+			sourceId: "t-geng",
+			targetId: "t-gsales",
+		});
+		expect(
+			state.memories.find((memory) => memory.id === "t-geng-note-1")
+				?.about,
+		).toEqual([{ type: "topic", id: "t-gsales" }]);
+		state = apply(state, { type: "topic.delete", topicId: "t-gsales" });
+		expect(
+			state.memories.some((memory) => memory.id === "t-geng-note-1"),
+		).toBe(false);
+		expect(state.memories.at(-1)?.about).toEqual([
+			{ type: "person", id: "p-ava" },
+		]);
 	});
 
 	it("normalizes sample timestamps and IDs without treating fake rooms as backend rooms", () => {
@@ -185,9 +280,10 @@ describe("shared collaboration session", () => {
 		).toBe("2026-09-24T13:02:00.000Z");
 		expect(
 			state.topics
-				.flatMap((topic) => [...topic.goals, ...topic.notes])
-				.every((note) => Boolean(note.noteId)),
+				.flatMap((topic) => topic.goals)
+				.every((goal) => Boolean(goal.noteId)),
 		).toBe(true);
+		expect(state.memories.every((memory) => memory.isSample)).toBe(true);
 		expect(state.reviews.every((review) => review.status === "open")).toBe(
 			true,
 		);
@@ -328,7 +424,7 @@ describe("shared collaboration session", () => {
 		}
 	});
 
-	it("merges topic links, notes, members, rules and Work associations atomically", () => {
+	it("merges topic links, memories, members, rules and Work associations atomically", () => {
 		let state = createInitialCollaborationState();
 		state = apply(state, {
 			type: "rule.add",
@@ -346,10 +442,9 @@ describe("shared collaboration session", () => {
 		});
 		expect(state.topics.some((topic) => topic.id === "t-geng")).toBe(false);
 		expect(
-			state.topics
-				.find((topic) => topic.id === "t-gsales")
-				?.notes.some((note) => note.noteId === "t-geng-note-1"),
-		).toBe(true);
+			state.memories.find((memory) => memory.id === "t-geng-note-1")
+				?.about,
+		).toEqual([{ type: "topic", id: "t-gsales" }]);
 		expect(
 			state.items.find((item) => item.id === "i1")?.topicIds,
 		).toContain("t-gsales");
@@ -495,57 +590,26 @@ describe("shared collaboration session", () => {
 		).toBeUndefined();
 	});
 
-	it("caps the local undo journal at 50 changes", () => {
-		let history: CollaborationHistory = {
-			state: createInitialCollaborationState(),
-			past: [],
+	it("retains the current state for unchanged commands and snooze checks", () => {
+		const command: CollaborationCommand = {
+			type: "thread.goal",
+			threadId: "th-geng-review",
+			goal: "Review together",
 		};
-		for (let index = 0; index < 60; index += 1)
-			history = collaborationHistoryReducer(history, {
-				command: {
-					type: "thread.goal",
-					threadId: "th-geng-review",
-					goal: `Goal ${index}`,
-				},
-				now: NOW,
-			});
-		expect(history.past).toHaveLength(50);
-		for (let index = 0; index < 50; index += 1)
-			history = collaborationHistoryReducer(history, { type: "undo" });
-		expect(history.state.workspaces["th-geng-review"].goal).toBe("Goal 9");
-		expect(history.past).toHaveLength(0);
-	});
-
-	it("retains imports and latest body when undoing a prior local edit", () => {
-		let history: CollaborationHistory = {
-			state: createInitialCollaborationState(),
-			past: [],
-		};
-		history = collaborationHistoryReducer(history, {
-			command: {
+		const initial = createInitialCollaborationState();
+		const originalGoal = initial.workspaces[command.threadId].goal;
+		const state = apply(initial, command);
+		expect(initial.workspaces[command.threadId].goal).toBe(originalGoal);
+		expect(state.workspaces[command.threadId].goal).toBe(command.goal);
+		expect(apply(state, command)).toBe(state);
+		expect(apply(state, { type: "snooze.expire" })).toBe(state);
+		expect(
+			apply(state, {
 				type: "item.update",
-				itemId: "i1",
+				itemId: "missing-item",
 				changes: { status: "done" },
-			},
-			now: NOW,
-		});
-		history = collaborationHistoryReducer(history, {
-			command: importCommand(),
-			now: NOW,
-		});
-		expect(history.past).toHaveLength(1);
-		history = collaborationHistoryReducer(history, { type: "undo" });
-		expect(
-			history.state.threads.find(
-				(thread) => thread.id === "local-outlook-1",
-			)?.source?.nativeId,
-		).toBe("AAMk-opaque-id+/=");
-		expect(
-			history.state.workspaces["local-outlook-1"].messages[0].text,
-		).toBe("Please review the attached plan.");
-		expect(
-			history.state.items.find((item) => item.id === "i1")?.status,
-		).toBe("open");
+			}),
+		).toBe(state);
 	});
 
 	it("refreshes a native source idempotently and preserves local decisions", () => {
@@ -753,7 +817,7 @@ describe("assistant context selection", () => {
 		expect(after?.revision).not.toBe(before?.revision);
 	});
 
-	it("excludes messages, unconfirmed topics and draft facts from the submitted snapshot", () => {
+	it("excludes messages and unconfirmed topics, and leaves memories to the server", () => {
 		const state = createInitialCollaborationState();
 		const context = selectThreadContext(state, "th-geng-review");
 		expect(context?.messages.map((message) => message.fromId)).toEqual([
@@ -762,14 +826,11 @@ describe("assistant context selection", () => {
 			"p-ben",
 		]);
 		expect(context?.topics.map((topic) => topic.id)).toEqual(["t-geng"]);
-		expect(
-			context?.topics
-				.flatMap((topic) => topic.notes)
-				.every((note) => note.status === "confirmed"),
-		).toBe(true);
-		expect(
-			context?.facts.every((fact) => fact.status === "confirmed"),
-		).toBe(true);
+		// notes and facts are memories now; BrainMemoryRecall puts them in the prompt
+		expect(JSON.stringify(context)).not.toContain(
+			"Ava prefers a written pre-read",
+		);
+		expect(context).not.toHaveProperty("facts");
 		expect(context?.hiddenCount).toBe(2);
 		expect(JSON.stringify(context)).not.toContain(
 			"registration for the Northwind Cloud Partner Summit",

@@ -1,20 +1,24 @@
-import { Link, useNavigate } from "react-router";
-import { Button, H1, P, toast } from "@semoss/ui/next";
+import { Link } from "react-router";
+import { Button, P, toast } from "@semoss/ui/next";
 import { SourcesView } from "@/features/connectors/components/sources-view";
 import { importSourceCommand } from "../import-source";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
-import { ResetMyData } from "./reset-my-data";
-import { RulesEditor } from "./rules-editor";
 import { Section } from "./section";
 
 /** Source data enters the session only through an explicit provider selection. */
 export function SourcesAndRules() {
-	const navigate = useNavigate();
-	const { state, dispatch } = useCollaborationSession();
+	const { dispatch } = useCollaborationSession();
 	return (
 		<CollaborationSurface
+			header={
+				<CollaborationPageHeader
+					title="Sources"
+					description="Load selected email, Teams conversations, and calendar events from your connected account."
+				/>
+			}
 			aside={
 				<Section title="Connected context" variant="card">
 					<P className="text-muted-foreground">
@@ -32,51 +36,21 @@ export function SourcesAndRules() {
 					<Button asChild variant="outline">
 						<Link to="/onboarding">Import mail again</Link>
 					</Button>
-					<ResetMyData />
+					<Button asChild variant="outline">
+						<Link to="/settings/rules">Manage rules</Link>
+					</Button>
 				</Section>
 			}
 			asideTitle="Source information"
 		>
 			<div className="space-y-6 p-4 md:p-6">
-				<header className="space-y-2">
-					<H1 className="font-semibold text-xl">Sources and rules</H1>
-					<P className="text-muted-foreground">
-						Load selected email, Teams conversations, and calendar
-						events from your connected account.
-					</P>
-				</header>
 				<WorkRefreshStatus />
 				<SourcesView
-					onDraftReply={(source) => {
-						const command = importSourceCommand(source);
-						if (command.type !== "source.import") return;
-						const existing = state.threads.find(
-							(thread) =>
-								thread.source?.kind === source.sourceKind &&
-								thread.source?.nativeId === source.nativeId,
-						);
-						const threadId = existing?.id ?? command.thread.id;
-						dispatch(command);
-						void navigate(
-							`/work/thread/${encodeURIComponent(threadId)}`,
-							{
-								state: {
-									threadAction: {
-										id: crypto.randomUUID(),
-										threadId,
-										action: "draft",
-										sourceMessageId: source.nativeId,
-									},
-								},
-							},
-						);
-					}}
 					onImport={(source) => {
 						dispatch(importSourceCommand(source));
 						toast.success("Added to connected items in Work.");
 					}}
 				/>
-				<RulesEditor />
 			</div>
 		</CollaborationSurface>
 	);
