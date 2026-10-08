@@ -40,6 +40,12 @@ import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
 const NOTEBOOK_PATH = "/public/main.ipynb";
 const NOTEBOOK_NAME = "main.ipynb";
 
+/**
+ * The same notebook as the agent's file tools address it: relative to the
+ * project asset folder the run is bound to, which reject a leading slash.
+ */
+const NOTEBOOK_AGENT_PATH = "public/main.ipynb";
+
 /** The seeded main.ipynb editor tab. Dedupe happens on `config.path`. */
 const NOTEBOOK_EDITOR_ID = "notebook-main";
 
@@ -172,7 +178,7 @@ export const NotebookWorkbench: React.FC = () => {
 		assistantStore.getState().configure({
 			defaultAgent: NOTEBOOK_ANALYST_AGENT,
 			onRunCompleted: filesChanged,
-			systemPrompt: `Active notebook workbench: ${name}. Project ID: ${project.project_id}. User permission: ${permission}. This project's default notebook is ${NOTEBOOK_PATH}, a project-relative path. Notebook files live under public. This default path does not identify the currently selected editor tab; use supplied context, the conversation, and the existing files to determine the destination.`,
+			systemPrompt: `Active notebook workbench: ${name}. Project ID: ${project.project_id}. User permission: ${permission}. Your working directory is this project's asset folder. Its notebooks are the .ipynb files under public, and you can create, edit, and add notebooks there with your file tools. ${NOTEBOOK_AGENT_PATH} is the default notebook; the workbench shows it as ${NOTEBOOK_PATH}. Pass file tools workbench paths without the leading slash. The default notebook does not identify the currently selected editor tab; use the conversation and the existing files to determine the destination.`,
 			mcp: [
 				{
 					type: "PROJECT",
