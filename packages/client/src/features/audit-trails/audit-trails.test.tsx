@@ -13,10 +13,18 @@ import { SettingsIndexPage } from "@/pages/settings/settings-index-page";
 
 const mocks = vi.hoisted(() => ({
 	usePixel: vi.fn(),
+	runPixel: vi.fn(),
+	downloadBlob: vi.fn(),
 	refresh: vi.fn(),
 	adminMode: true,
 }));
-vi.mock("@semoss/sdk/react", () => ({ usePixel: mocks.usePixel }));
+vi.mock("@semoss/sdk/react", () => ({
+	usePixel: mocks.usePixel,
+	runPixel: mocks.runPixel,
+}));
+vi.mock("@semoss/utility/browser", () => ({
+	downloadBlob: mocks.downloadBlob,
+}));
 vi.mock("@/hooks/useSettings", () => ({
 	useSettings: () => ({ adminMode: mocks.adminMode }),
 }));
@@ -32,7 +40,10 @@ function result(count: number) {
 					if (column === "ACTION" || column === "EVENT_TYPE")
 						return "LOGIN";
 					if (column === "STATUS") return "SUCCESS";
+					if (column === "SEVERITY") return "LOW";
 					if (column === "ACTOR_USER_NAME") return "Example user";
+					if (column === "ACTOR_IS_ADMIN") return false;
+					if (column === "SUBJECT_USER_NAME") return "Affected user";
 					if (column === "DETAILS")
 						return '{"reason":"USER_LOGOUT","text":"<script>unsafe()</script>"}';
 					return null;
@@ -60,6 +71,8 @@ function renderPage() {
 beforeEach(() => {
 	mocks.adminMode = true;
 	mocks.usePixel.mockReset();
+	mocks.runPixel.mockReset();
+	mocks.downloadBlob.mockReset();
 	mocks.refresh.mockReset();
 	mocks.usePixel.mockReturnValue({
 		status: "SUCCESS",
@@ -134,7 +147,10 @@ describe("Audit Trails settings", () => {
 		const dialog = screen.getByRole("dialog", {
 			name: "Audit event details",
 		});
-		expect(dialog).toHaveTextContent("Session ID");
+		expect(dialog).toHaveTextContent("Session ID hash");
+		expect(dialog).toHaveTextContent("Affected user name");
+		expect(dialog).toHaveTextContent("Error code");
+		expect(dialog).toHaveTextContent("Event hash");
 		expect(dialog).toHaveTextContent("Previous value");
 		expect(dialog).toHaveTextContent("<script>unsafe()</script>");
 		expect(dialog.querySelector("script")).toBeNull();
@@ -142,6 +158,40 @@ describe("Audit Trails settings", () => {
 		await waitFor(() =>
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
 		);
+	});
+
+	it("exports the filtered events as CSV through the export-marked read", async () => {
+		mocks.runPixel.mockResolvedValue({
+			pixelReturn: [{ operationType: ["TASK_DATA"], output: result(2) }],
+		});
+		renderPage();
+		expect(
+			screen.getByRole("columnheader", { name: "Affected user" }),
+		).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
+		await waitFor(() => expect(mocks.downloadBlob).toHaveBeenCalledOnce());
+		expect(mocks.runPixel.mock.lastCall?.[0]).toContain(
+			"AdminUserAuditEvents(export=[true])",
+		);
+		const [blob, fileName] = mocks.downloadBlob.mock.lastCall ?? [];
+		expect(fileName).toMatch(/^audit-trails-\d{4}-\d{2}-\d{2}\.csv$/);
+		expect((blob as Blob).type).toContain("text/csv");
+		expect((blob as Blob).size).toBeGreaterThan(0);
+	});
+
+	it("does not download when the export read is denied", async () => {
+		mocks.runPixel.mockResolvedValue({
+			pixelReturn: [
+				{
+					operationType: ["ERROR"],
+					output: "Functionality is only exposed for admins",
+				},
+			],
+		});
+		renderPage();
+		fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
+		await waitFor(() => expect(mocks.runPixel).toHaveBeenCalledOnce());
+		expect(mocks.downloadBlob).not.toHaveBeenCalled();
 	});
 
 	it("distinguishes loading, empty results, and a backend error with retry", () => {

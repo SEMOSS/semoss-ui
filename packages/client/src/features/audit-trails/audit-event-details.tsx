@@ -20,26 +20,54 @@ import {
 	formatAuditValue,
 } from "@/api/audit-trails";
 
-const GROUPS: { title: string; fields: [AuditEventColumn, string][] }[] = [
+const TIME_COLUMNS: AuditEventColumn[] = ["EVENT_TIME", "EVENT_OCCURRED_TIME"];
+
+const GROUPS: {
+	title: string;
+	/** Render values as preformatted JSON/text blocks. */
+	code?: boolean;
+	fields: [AuditEventColumn, string][];
+}[] = [
 	{
 		title: "Event",
 		fields: [
 			["EVENT_ID", "Event ID"],
-			["EVENT_TIME", "Time (UTC)"],
+			["EVENT_TIME", "Recorded (UTC)"],
+			["EVENT_OCCURRED_TIME", "Occurred (UTC)"],
 			["EVENT_TYPE", "Event type"],
 			["ACTION", "Action"],
 			["STATUS", "Status"],
+			["CATEGORY", "Category"],
+			["SEVERITY", "Severity"],
 		],
 	},
 	{
-		title: "Actor and request",
+		title: "Actor",
 		fields: [
 			["ACTOR_USER_NAME", "Actor name"],
 			["ACTOR_USER_ID", "Actor user ID"],
-			["ACTOR_USER_TYPE", "Actor provider"],
-			["SESSION_ID", "Session ID"],
+			["ACTOR_USER_TYPE", "Actor type"],
+			["ACTOR_IS_ADMIN", "Actor is admin"],
+		],
+	},
+	{
+		title: "Affected user",
+		fields: [
+			["SUBJECT_USER_NAME", "Affected user name"],
+			["SUBJECT_USER_ID", "Affected user ID"],
+			["SUBJECT_USER_TYPE", "Affected user type"],
+		],
+	},
+	{
+		title: "Request",
+		fields: [
+			["SESSION_ID_HASH", "Session ID hash"],
 			["REQUEST_ID", "Request ID"],
 			["IP_ADDR", "IP address"],
+			["USER_AGENT", "User agent"],
+			["HTTP_METHOD", "HTTP method"],
+			["REQUEST_PATH", "Request path"],
+			["HTTP_STATUS", "HTTP status"],
 		],
 	},
 	{
@@ -56,11 +84,28 @@ const GROUPS: { title: string; fields: [AuditEventColumn, string][] }[] = [
 	},
 	{
 		title: "Changes and details",
+		code: true,
 		fields: [
 			["OLD_VALUE", "Previous value"],
 			["NEW_VALUE", "New value"],
 			["DETAILS", "Details"],
+		],
+	},
+	{
+		title: "Failure",
+		fields: [
+			["ERROR_CODE", "Error code"],
 			["ERROR_MESSAGE", "Error message"],
+		],
+	},
+	{
+		title: "Source and integrity",
+		fields: [
+			["SOURCE_APP", "Source application"],
+			["SOURCE_MODULE", "Source module"],
+			["SOURCE_CLASS", "Source class"],
+			["HASH_PREVIOUS", "Previous event hash"],
+			["HASH_CURRENT", "Event hash"],
 		],
 	},
 ];
@@ -93,7 +138,8 @@ export const AuditEventDetails = ({ event }: AuditEventDetailsProps) => {
 					<SheetTitle>Audit event details</SheetTitle>
 					<SheetDescription>
 						<span id={descriptionId}>
-							Recorded action, actor, resource, and changes.
+							Recorded action, actor, affected user, request,
+							resource, changes, and failure details.
 						</span>
 					</SheetDescription>
 				</SheetHeader>
@@ -114,8 +160,7 @@ export const AuditEventDetails = ({ event }: AuditEventDetailsProps) => {
 												{label}
 											</dt>
 											<dd className="mt-1 min-w-0">
-												{group.title ===
-													"Changes and details" &&
+												{group.code &&
 												event[column] !== null &&
 												event[column] !== "" ? (
 													<MultilineCode className="block whitespace-pre-wrap break-words bg-muted text-foreground text-sm">
@@ -125,7 +170,9 @@ export const AuditEventDetails = ({ event }: AuditEventDetailsProps) => {
 													</MultilineCode>
 												) : (
 													<P className="break-words text-sm">
-														{column === "EVENT_TIME"
+														{TIME_COLUMNS.includes(
+															column,
+														)
 															? formatAuditTime(
 																	event[
 																		column

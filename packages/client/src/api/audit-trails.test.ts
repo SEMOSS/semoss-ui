@@ -1,13 +1,90 @@
 import { describe, expect, it } from "vitest";
 import {
 	AUDIT_EVENT_COLUMNS,
+	AUDIT_FILTER_ALL,
+	type AuditEvent,
+	buildAuditTrailsExportPixel,
 	buildAuditTrailsPixel,
 	EMPTY_AUDIT_FILTERS,
 	formatAuditTime,
+	normalizeAuditFilters,
 	parseAuditEvents,
+	toAuditCsv,
 } from "./audit-trails";
 
 describe("existing audit trails query contract", () => {
+	it("selects every column of the audit schema without the raw session id", () => {
+		expect(AUDIT_EVENT_COLUMNS).toHaveLength(39);
+		expect(AUDIT_EVENT_COLUMNS).toContain("SESSION_ID_HASH");
+		expect(AUDIT_EVENT_COLUMNS).not.toContain("SESSION_ID");
+	});
+
+	it("filters on every supported field and an inclusive UTC date range", () => {
+		const pixel = buildAuditTrailsPixel(
+			{
+				...EMPTY_AUDIT_FILTERS,
+				category: "AUTHZ",
+				severity: "HIGH",
+				subjectId: "user-2",
+				projectId: "project-1",
+				from: "2026-10-01",
+				to: "2026-10-08",
+			},
+			0,
+		);
+		expect(pixel).toContain('USER_AUDIT_EVENTS__CATEGORY == "AUTHZ"');
+		expect(pixel).toContain('USER_AUDIT_EVENTS__SEVERITY == "HIGH"');
+		expect(pixel).toContain(
+			'USER_AUDIT_EVENTS__SUBJECT_USER_ID == "user-2"',
+		);
+		expect(pixel).toContain('USER_AUDIT_EVENTS__PROJECT_ID == "project-1"');
+		expect(pixel).toContain(
+			'USER_AUDIT_EVENTS__EVENT_TIME >= "2026-10-01 00:00:00"',
+		);
+		expect(pixel).toContain(
+			'USER_AUDIT_EVENTS__EVENT_TIME <= "2026-10-08 23:59:59"',
+		);
+		expect(() =>
+			buildAuditTrailsPixel(
+				{ ...EMPTY_AUDIT_FILTERS, from: '2026" | DeleteEngine();' },
+				0,
+			),
+		).toThrow("Invalid start date");
+	});
+
+	it("marks exports so the backend records AUDIT_EXPORT", () => {
+		const pixel = buildAuditTrailsExportPixel({
+			...EMPTY_AUDIT_FILTERS,
+			status: "DENIED",
+		});
+		expect(pixel).toContain("AdminUserAuditEvents(export=[true])");
+		expect(pixel).toContain('USER_AUDIT_EVENTS__STATUS == "DENIED"');
+		expect(pixel).not.toContain("Offset(");
+	});
+
+	it("turns the select sentinel back into an empty filter", () => {
+		expect(
+			normalizeAuditFilters({
+				...EMPTY_AUDIT_FILTERS,
+				status: AUDIT_FILTER_ALL,
+				actorId: "  actor-1 ",
+			}),
+		).toEqual({ ...EMPTY_AUDIT_FILTERS, actorId: "actor-1" });
+	});
+
+	it("neutralises spreadsheet formulas in exported CSV cells", () => {
+		const event = Object.fromEntries(
+			AUDIT_EVENT_COLUMNS.map((column) => [column, null]),
+		) as AuditEvent;
+		event.EVENT_ID = "event-1";
+		event.TARGET_NAME = '=HYPERLINK("x")';
+		event.ACTOR_IS_ADMIN = true;
+		const [header, row] = toAuditCsv([event]).split("\n");
+		expect(header.split(",")).toHaveLength(AUDIT_EVENT_COLUMNS.length);
+		expect(row).toContain(`"'=HYPERLINK(""x"")"`);
+		expect(row).toContain('"true"');
+	});
+
 	it("uses the authorized reactor and bounds page reads with a lookahead row", () => {
 		const pixel = buildAuditTrailsPixel(EMPTY_AUDIT_FILTERS, 2);
 		expect(pixel).toContain("AdminUserAuditEvents()");

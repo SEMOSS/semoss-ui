@@ -1,5 +1,6 @@
-import { RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -16,36 +17,92 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	toast,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
 import {
+	AUDIT_EXPORT_LIMIT,
 	AUDIT_PAGE_SIZE,
+	type AuditEvent,
 	type AuditTrailFilters,
+	buildAuditTrailsExportPixel,
 	EMPTY_AUDIT_FILTERS,
 	formatAuditTime,
+	parseAuditEvents,
+	toAuditCsv,
 } from "@/api/audit-trails";
 import { AuditEventDetails } from "./audit-event-details";
 import { AuditTrailsFilters } from "./audit-trails-filters";
 import { useAuditTrails } from "./use-audit-trails";
 
-/** Browse the existing security and administrative audit trail. */
+function statusVariant(status: AuditEvent["STATUS"]) {
+	return status === "FAILURE" || status === "ERROR" || status === "DENIED"
+		? "destructive"
+		: "outline";
+}
+
+function severityVariant(severity: AuditEvent["SEVERITY"]) {
+	return severity === "HIGH" || severity === "CRITICAL"
+		? "destructive"
+		: severity === "MEDIUM"
+			? "secondary"
+			: "outline";
+}
+
+/** Browse, filter, and export the security and administrative audit trail. */
 export const AuditTrails = () => {
 	const [query, setQuery] = useState({
 		filters: EMPTY_AUDIT_FILTERS,
 		page: 0,
 	});
+	const [isExporting, setIsExporting] = useState(false);
 	const { events, hasNextPage, isLoading, error, refresh } = useAuditTrails(
 		query.filters,
 		query.page,
 	);
 	const hasFilters = Object.values(query.filters).some(Boolean);
 	const handleApply = (filters: AuditTrailFilters) => {
-		setQuery({
-			filters: {
-				...filters,
-				status: filters.status === "all" ? "" : filters.status,
-			},
-			page: 0,
-		});
+		setQuery({ filters, page: 0 });
+	};
+	const handleExport = async () => {
+		setIsExporting(true);
+		try {
+			const response = await runPixel(
+				buildAuditTrailsExportPixel(query.filters),
+			);
+			const result = response?.pixelReturn?.[0];
+			if (!result || result.operationType?.includes("ERROR")) {
+				throw new Error(
+					typeof result?.output === "string"
+						? result.output
+						: "The audit events could not be exported.",
+				);
+			}
+			const exported = parseAuditEvents(result.output);
+			if (exported.length === 0) {
+				toast.error("There are no audit events to export.");
+				return;
+			}
+			downloadBlob(
+				new Blob([toAuditCsv(exported)], {
+					type: "text/csv;charset=utf-8;",
+				}),
+				`audit-trails-${new Date().toISOString().slice(0, 10)}.csv`,
+			);
+			toast.success(
+				exported.length >= AUDIT_EXPORT_LIMIT
+					? `Exported the newest ${AUDIT_EXPORT_LIMIT} matching events. Narrow the filters to export older events.`
+					: `Exported ${exported.length} audit ${exported.length === 1 ? "event" : "events"}.`,
+			);
+		} catch (cause: unknown) {
+			toast.error(
+				cause instanceof Error
+					? cause.message
+					: "The audit events could not be exported.",
+			);
+		} finally {
+			setIsExporting(false);
+		}
 	};
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-6 pb-8">
@@ -60,15 +117,26 @@ export const AuditTrails = () => {
 								: `${events.length} ${events.length === 1 ? "event" : "events"} on page ${query.page + 1} · Newest first · Times in UTC`}
 					</P>
 				</output>
-				<Button
-					type="button"
-					variant="outline"
-					disabled={isLoading}
-					onClick={refresh}
-				>
-					<RefreshCw className="size-4" aria-hidden="true" />
-					Refresh
-				</Button>
+				<div className="flex gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						disabled={isLoading || isExporting || Boolean(error)}
+						onClick={handleExport}
+					>
+						<Download className="size-4" aria-hidden="true" />
+						{isExporting ? "Exporting…" : "Export CSV"}
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						disabled={isLoading}
+						onClick={refresh}
+					>
+						<RefreshCw className="size-4" aria-hidden="true" />
+						Refresh
+					</Button>
+				</div>
 			</div>
 			{error ? (
 				<Alert variant="destructive">
@@ -131,7 +199,9 @@ export const AuditTrails = () => {
 									"Action",
 									"Event type",
 									"Resource",
+									"Affected user",
 									"Status",
+									"Severity",
 									"Details",
 								].map((label) => (
 									<TableHead key={label} scope="col">
@@ -142,7 +212,7 @@ export const AuditTrails = () => {
 						</TableHeader>
 						<TableBody>
 							{events.map((event) => (
-								<TableRow key={event.EVENT_ID}>
+								<TableRow key={String(event.EVENT_ID)}>
 									<TableCell>
 										{formatAuditTime(event.EVENT_TIME)}
 									</TableCell>
@@ -175,16 +245,27 @@ export const AuditTrails = () => {
 											{event.TARGET_TYPE || "—"}
 										</P>
 									</TableCell>
+									<TableCell className="max-w-64 whitespace-normal break-words">
+										{event.SUBJECT_USER_NAME ||
+											event.SUBJECT_USER_ID ||
+											"—"}
+									</TableCell>
 									<TableCell>
 										<Badge
-											variant={
-												event.STATUS === "FAILURE" ||
-												event.STATUS === "ERROR"
-													? "destructive"
-													: "outline"
-											}
+											variant={statusVariant(
+												event.STATUS,
+											)}
 										>
 											{event.STATUS || "Unknown"}
+										</Badge>
+									</TableCell>
+									<TableCell>
+										<Badge
+											variant={severityVariant(
+												event.SEVERITY,
+											)}
+										>
+											{event.SEVERITY || "—"}
 										</Badge>
 									</TableCell>
 									<TableCell>
