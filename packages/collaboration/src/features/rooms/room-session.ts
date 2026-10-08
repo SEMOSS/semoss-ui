@@ -140,7 +140,7 @@ export class RoomSession {
 			},
 			agent: null,
 			modelId,
-			modelName: last?.modelName ?? modelId,
+			modelName: roomId ? "" : (last?.modelName ?? modelId),
 			isReady: false,
 			isLoading: true,
 			isPreparing: false,
@@ -278,7 +278,11 @@ export class RoomSession {
 			source,
 			title: envelope.ROOM_NAME || this.snapshot.title,
 			modelId: options.modelId,
-			modelName: options.modelId,
+			// A just-created room reloads its own model; keep the name resolved for it.
+			modelName:
+				options.modelId === this.snapshot.modelId
+					? this.snapshot.modelName
+					: options.modelId,
 			settings: {
 				modelId: options.modelId,
 				agentId: options.workspace?.workspace_id ?? "",
