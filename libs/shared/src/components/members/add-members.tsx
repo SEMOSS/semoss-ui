@@ -1,4 +1,4 @@
-import { ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import {
 	type ChangeEvent,
 	type KeyboardEvent,
@@ -43,13 +43,14 @@ import {
 } from "@semoss/ui/next";
 import { returnAccessType } from "./common";
 import { ModelRestrictionFields } from "./model-restriction-fields";
+import { type UserSource, UserSourceToggle } from "./user-source-toggle";
 
 interface AddPopupSearchResult {
-	email: string;
+	email: string | null;
 	id: string;
-	name: string;
+	name: string | null;
 	type: string;
-	username: string;
+	username: string | null;
 }
 
 interface UserSelected extends AddPopupSearchResult {
@@ -57,7 +58,9 @@ interface UserSelected extends AddPopupSearchResult {
 }
 
 interface AddMembersOverlayProps {
+	/** Id of the project or engine members are added to */
 	id: string;
+	/** Kind of resource; projects and workspaces use the project endpoints */
 	type:
 		| "PROJECT"
 		| "ENGINE"
@@ -68,11 +71,25 @@ interface AddMembersOverlayProps {
 		| "FUNCTION"
 		| "WORKSPACE"
 		| "GUARDRAIL";
+	/** Whether the dialog is open */
 	open: boolean;
+	/** Called when the dialog closes, with true after members were added */
 	onClose: (success?: boolean) => void;
+	/** Classes for the dialog */
 	className?: string;
+	/** Whether to use the admin endpoints */
 	adminMode?: boolean;
+	/**
+	 * Whether the server can search the organization's Microsoft directory.
+	 * When true, the dialog offers a choice between existing users and the
+	 * whole organization, starting on the organization.
+	 */
+	isDirectoryAvailable?: boolean;
 }
+
+/** The text a person is shown and matched by: name, then email, then id */
+const getDisplayName = (user: AddPopupSearchResult): string =>
+	user.name || user.email || user.id;
 
 // Shared row style so the search-results list and the selected-users list read as one system
 const MEMBER_ROW_CLASS =
@@ -84,6 +101,7 @@ export const AddMembersOverlay = ({
 	open,
 	onClose,
 	adminMode = false,
+	isDirectoryAvailable = false,
 }: AddMembersOverlayProps) => {
 	const { t } = useTranslation("members");
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +113,11 @@ export const AddMembersOverlay = ({
 	const [maxTime, setMaxTime] = useState<string>("");
 	const [frequency, setFrequency] = useState<string>("DAY");
 	const [userPermission, setUserPermission] = useState<string>("");
+	const [source, setSource] = useState<UserSource>("directory");
+	// Without the directory, leave the choice to the backend
+	const msGraphLookup = isDirectoryAvailable
+		? source === "directory"
+		: undefined;
 	const isProject = type === "PROJECT" || type === "WORKSPACE";
 	const isOwner = adminMode || userPermission === "OWNER";
 	// Debounce hasn't caught up to the latest keystroke yet
@@ -110,6 +133,7 @@ export const AddMembersOverlay = ({
 							debouncedSearchKey,
 							limit,
 							offset,
+							msGraphLookup,
 						)
 					: await getEngineUsersNoCredentials(
 							id,
@@ -117,6 +141,7 @@ export const AddMembersOverlay = ({
 							debouncedSearchKey,
 							limit,
 							offset,
+							msGraphLookup,
 						);
 				return users as unknown as AddPopupSearchResult[];
 			} catch (error) {
@@ -130,7 +155,7 @@ export const AddMembersOverlay = ({
 		},
 		{ enabled: open, limit: PAGE_SIZE },
 		// adminMode intentionally excluded to avoid refetch on prop change
-		[debouncedSearchKey, id, isProject],
+		[debouncedSearchKey, id, isProject, msGraphLookup],
 	);
 	const isLoadingResults = isDebouncePending || usersIterator.isLoading;
 	// Latches true the first time a fetch completes and never resets, so the
@@ -238,6 +263,7 @@ export const AddMembersOverlay = ({
 		setMaxTime("");
 		setFrequency("DAY");
 		setUserPermission("");
+		setSource("directory");
 	};
 
 	const permissionLabel = (permission: string): string => {
@@ -269,8 +295,8 @@ export const AddMembersOverlay = ({
 				? usersIterator.data[0]
 				: usersIterator.data.find(
 						(r) =>
-							r.email.toLowerCase() === trimmed ||
-							r.name.toLowerCase() === trimmed,
+							r.email?.toLowerCase() === trimmed ||
+							r.name?.toLowerCase() === trimmed,
 					);
 		if (match) toggleUserSelected(match);
 	};
@@ -306,10 +332,19 @@ export const AddMembersOverlay = ({
 					</DialogDescription>
 				</DialogHeader>
 
+				{isDirectoryAvailable && (
+					<UserSourceToggle
+						className="shrink-0"
+						value={source}
+						onValueChange={setSource}
+					/>
+				)}
+
 				{/* Search input */}
 				<Input
 					ref={inputRef}
 					className="shrink-0"
+					aria-label={t("search.placeholder")}
 					placeholder={t("search.placeholder")}
 					value={searchKey}
 					autoComplete="off"
@@ -356,26 +391,37 @@ export const AddMembersOverlay = ({
 												<span className="flex items-center gap-2">
 													<Avatar className="h-8 w-8">
 														<AvatarFallback className="text-muted-foreground text-sm">
-															{item.name
+															{getDisplayName(
+																item,
+															)
 																.charAt(0)
 																.toUpperCase()}
 														</AvatarFallback>
 													</Avatar>
-													<span className="flex flex-col">
-														<span className="font-medium text-sm">
-															{item.name}
+													<span className="flex min-w-0 flex-col">
+														<span className="truncate font-medium text-sm">
+															{getDisplayName(
+																item,
+															)}
 														</span>
-														<span className="text-muted-foreground text-xs">
+														<span className="truncate text-muted-foreground text-xs">
 															id: {item.id}
 														</span>
-														<span className="text-muted-foreground text-xs">
-															email: {item.email}
-														</span>
+														{item.email && (
+															<span className="truncate text-muted-foreground text-xs">
+																email:{" "}
+																{item.email}
+															</span>
+														)}
 													</span>
 												</span>
 												{isAdded && (
-													<span className="font-medium text-primary text-xs">
-														{t("search.added")} ✓
+													<span className="flex shrink-0 items-center gap-1 font-medium text-primary text-xs">
+														{t("search.added")}
+														<Check
+															className="size-3"
+															aria-hidden
+														/>
 													</span>
 												)}
 											</button>
@@ -385,7 +431,9 @@ export const AddMembersOverlay = ({
 									<div className="px-3 py-4 text-center text-muted-foreground text-sm">
 										{!hasLoadedOnce && isLoadingResults
 											? t("search.searching")
-											: t("search.empty")}
+											: msGraphLookup
+												? t("search.emptyDirectory")
+												: t("search.empty")}
 									</div>
 								)}
 							</div>
@@ -410,26 +458,36 @@ export const AddMembersOverlay = ({
 												<span className="flex items-center gap-2">
 													<Avatar className="h-8 w-8">
 														<AvatarFallback className="text-muted-foreground text-sm">
-															{u.name
+															{getDisplayName(u)
 																.charAt(0)
 																.toUpperCase()}
 														</AvatarFallback>
 													</Avatar>
-													<span className="flex flex-col">
-														<span className="font-medium text-sm">
-															{u.name}
+													<span className="flex min-w-0 flex-col">
+														<span className="truncate font-medium text-sm">
+															{getDisplayName(u)}
 														</span>
-														<span className="text-muted-foreground text-xs">
+														<span className="truncate text-muted-foreground text-xs">
 															id: {u.id}
 														</span>
-														<span className="text-muted-foreground text-xs">
-															email: {u.email}
-														</span>
+														{u.email && (
+															<span className="truncate text-muted-foreground text-xs">
+																email: {u.email}
+															</span>
+														)}
 													</span>
 												</span>
 												<div className="flex flex-col items-end gap-1.5">
 													<button
 														type="button"
+														aria-label={t(
+															"selected.remove",
+															{
+																name: getDisplayName(
+																	u,
+																),
+															},
+														)}
 														className="text-muted-foreground hover:text-destructive"
 														onClick={() =>
 															toggleUserSelected(
@@ -437,7 +495,10 @@ export const AddMembersOverlay = ({
 															)
 														}
 													>
-														<X className="h-4 w-4" />
+														<X
+															className="size-4"
+															aria-hidden
+														/>
 													</button>
 													<DropdownMenu>
 														<DropdownMenuTrigger

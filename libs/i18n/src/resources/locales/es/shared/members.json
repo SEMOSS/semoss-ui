@@ -3,17 +3,26 @@
 		"title": "Agregar miembros",
 		"description": "Busca usuarios e invítalos a este recurso."
 	},
+	"source": {
+		"label": "Buscar en",
+		"existing": "Usuarios existentes",
+		"directory": "Tu organización",
+		"existingHint": "Personas que ya tienen una cuenta aquí.",
+		"directoryHint": "Cualquier persona de tu organización, aunque nunca haya iniciado sesión. Recibe una cuenta cuando la agregas."
+	},
 	"search": {
 		"placeholder": "Buscar por nombre o correo electrónico...",
 		"searching": "Buscando usuarios...",
 		"empty": "No se encontraron usuarios",
+		"emptyDirectory": "Nadie de tu organización coincide con esa búsqueda",
 		"added": "Agregado"
 	},
 	"selected": {
 		"count_one": "{{count}} usuario seleccionado",
 		"count_many": "{{count}} usuarios seleccionados",
 		"count_other": "{{count}} usuarios seleccionados",
-		"empty": "No hay usuarios seleccionados"
+		"empty": "No hay usuarios seleccionados",
+		"remove": "Quitar a {{name}}"
 	},
 	"permission": {
 		"viewer": "Lector",

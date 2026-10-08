@@ -9,13 +9,16 @@ import {
 	SettingsTiles,
 	UpdateSMSS,
 } from "@/components/settings";
-import { useAPI, useSettings } from "@/hooks";
+import { useAPI, useConfig, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 type VIEW = "CURRENT" | "PENDING" | "APP";
 
 const AppSettingsUserDetailPage = () => {
 	const { id } = useParams();
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
 	const navigate = useNavigate();
 	const { search } = useLocation();
 
@@ -82,7 +85,11 @@ const AppSettingsUserDetailPage = () => {
 					</TabsList>
 				</Tabs>
 				{view === "CURRENT" && (
-					<MembersTable id={id} type={"PROJECT"} />
+					<MembersTable
+						id={id}
+						type={"PROJECT"}
+						isDirectoryAvailable={isDirectoryAvailable}
+					/>
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"PROJECT"} />
@@ -98,6 +105,9 @@ const AppSettingsUserDetailPage = () => {
 
 const AppSettingsAdminDetailPage = () => {
 	const { id } = useParams();
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
 	const navigate = useNavigate();
 	const { search } = useLocation();
 
@@ -128,7 +138,12 @@ const AppSettingsAdminDetailPage = () => {
 					</TabsList>
 				</Tabs>
 				{view === "CURRENT" && id && (
-					<MembersTable id={id} type={"PROJECT"} adminMode />
+					<MembersTable
+						id={id}
+						type={"PROJECT"}
+						adminMode
+						isDirectoryAvailable={isDirectoryAvailable}
+					/>
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"PROJECT"} />

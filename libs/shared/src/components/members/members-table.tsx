@@ -56,6 +56,12 @@ interface MembersProps {
 	 *   - renders the Permission column as static text (no dropdown)
 	 */
 	readOnly?: boolean;
+	/**
+	 * Whether the server can search the organization's Microsoft directory
+	 * (`msGraphLookup` in the system config). When true, adding members offers
+	 * a choice between existing users and the whole organization.
+	 */
+	isDirectoryAvailable?: boolean;
 }
 
 export const MembersTable = ({
@@ -66,6 +72,7 @@ export const MembersTable = ({
 	adminMode = false,
 	currentUserId,
 	readOnly = false,
+	isDirectoryAvailable = false,
 }: MembersProps) => {
 	const [openAddMembers, setOpenAddMembers] = useState<boolean>(false);
 	const [listRefreshKey, setListRefreshKey] = useState<number>(0);
@@ -237,6 +244,7 @@ export const MembersTable = ({
 					}
 				}}
 				adminMode={adminMode}
+				isDirectoryAvailable={isDirectoryAvailable}
 			/>
 
 			{/* Edit member dialog — rendered here, outside the table */}

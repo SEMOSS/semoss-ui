@@ -1,5 +1,6 @@
 import { Search, Trash2, UserPlus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type UserSource, UserSourceToggle } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -33,6 +34,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	addTeamUser,
 	deleteTeamUser,
@@ -40,7 +42,7 @@ import {
 	getTeamUsers,
 	getTeamUsersCount,
 } from "@/api/teams";
-import { useServerPagination } from "@/hooks";
+import { useConfig, useServerPagination } from "@/hooks";
 import type { ApiResponse } from "@/types";
 
 interface MembersTableProps {
@@ -107,6 +109,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const [canCollect, setCanCollect] = useState<boolean>(true);
 	const [_isLoading, setIsLoading] = useState<boolean>(false);
 	const [searchLoading, setSearchLoading] = useState(false);
+	const [userSource, setUserSource] = useState<UserSource>("directory");
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
+	// Without the directory, leave the choice to the backend
+	const msGraphLookup = isDirectoryAvailable
+		? userSource === "directory"
+		: undefined;
+	// Lets a newer search drop the results of one still in flight
+	const requestVersionRef = useRef(0);
 
 	const {
 		page: membersPage,
@@ -153,9 +165,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 	const getUsersNonGroup = useCallback(
 		async (reset: boolean, nextOffset: number, nextSearch: string) => {
-			if (isLoadingRef.current) {
+			// a new search replaces one in flight; only loading more waits for it
+			if (isLoadingRef.current && !reset) {
 				return;
 			}
+			const version = ++requestVersionRef.current;
 			isLoadingRef.current = true;
 			setIsLoading(true);
 			try {
@@ -164,7 +178,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 					AUTOCOMPLETE_LIMIT,
 					nextOffset,
 					nextSearch,
+					msGraphLookup,
 				);
+				if (version !== requestVersionRef.current) {
+					return;
+				}
 
 				if (response) {
 					const users = (response as unknown as TeamMember[]).map(
@@ -181,15 +199,28 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 					setSearchLoading(false);
 				}
 			} catch (e) {
-				toast.error(String(e));
+				if (version !== requestVersionRef.current) {
+					return;
+				}
+				toast.error(getErrorMessage(e, "Could not load users"));
 				setSearchLoading(false);
 			} finally {
-				isLoadingRef.current = false;
-				setIsLoading(false);
+				if (version === requestVersionRef.current) {
+					isLoadingRef.current = false;
+					setIsLoading(false);
+				}
 			}
 		},
-		[groupId],
+		[groupId, msGraphLookup],
 	);
+
+	/** Switches where the search looks and starts it over */
+	const handleUserSourceChange = (next: UserSource) => {
+		setUserSource(next);
+		setOffset(0);
+		setNonCredentialedUsers([]);
+		setCanCollect(true);
+	};
 
 	useEffect(() => {
 		const refreshToken = count;
@@ -298,7 +329,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		if (!addMembersModal) {
 			return;
 		}
-		const queryKey = `${groupId}|${offset}|${searchMemberInput}`;
+		const queryKey = `${groupId}|${offset}|${searchMemberInput}|${msGraphLookup}`;
 		if (lastNonGroupQueryRef.current === queryKey) {
 			return;
 		}
@@ -323,6 +354,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		canCollect,
 		getUsersNonGroup,
 		groupId,
+		msGraphLookup,
 	]);
 
 	const submitNonGroupUsers = async () => {
@@ -332,6 +364,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				return {
 					userid: m.id,
 					type: m.type,
+					// lets the backend give a directory person an account first
+					details: {
+						name: m.name,
+						email: m.email,
+						username: m.username,
+					},
 				};
 			});
 
@@ -355,6 +393,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 					requests[i].type,
 					requests[i].userid,
 					true,
+					undefined,
+					requests[i].details,
 				);
 
 				if (!response) {
@@ -543,6 +583,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										setOffset(0);
 										setNonCredentialedUsers([]);
 										setSearchMemberInput("");
+										setUserSource("directory");
+										// a reopened dialog searches again even when the query is unchanged
+										lastNonGroupQueryRef.current = "";
 										setAddMembersModal(true);
 									}}
 								>
@@ -799,6 +842,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									setOffset(0);
 									setNonCredentialedUsers([]);
 									setSearchMemberInput("");
+									setUserSource("directory");
+									// a reopened dialog searches again even when the query is unchanged
+									lastNonGroupQueryRef.current = "";
 									setAddMembersModal(true);
 								}}
 							>
@@ -835,11 +881,18 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						</DialogDescription>
 					</DialogHeader>
 					<div className="flex flex-col gap-4">
+						{isDirectoryAvailable && (
+							<UserSourceToggle
+								value={userSource}
+								onValueChange={handleUserSourceChange}
+							/>
+						)}
 						<InputGroup>
 							<InputGroupAddon>
-								<Search className="size-4" />
+								<Search className="size-4" aria-hidden />
 							</InputGroupAddon>
 							<InputGroupInput
+								aria-label="Search people by name or email"
 								placeholder="Search"
 								value={searchMemberInput}
 								onChange={(e) => {
@@ -858,7 +911,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								<p className="p-4 text-center text-muted-foreground text-sm">
 									{searchLoading
 										? "Loading users..."
-										: "No users found"}
+										: msGraphLookup
+											? "No one in your organization matches that search"
+											: "No users found"}
 								</p>
 							) : (
 								filteredNonCredentialedUsers.map((user) => {
@@ -891,14 +946,18 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											</Avatar>
 											<div className="flex flex-1 flex-col gap-1">
 												<div className="font-medium text-sm">
-													{user.name}
+													{user.name ||
+														user.email ||
+														user.id}
 												</div>
 												<div className="text-muted-foreground text-xs">
 													User ID: {user.id}
 												</div>
-												<div className="text-muted-foreground text-xs">
-													Email: {user.email}
-												</div>
+												{user.email ? (
+													<div className="text-muted-foreground text-xs">
+														Email: {user.email}
+													</div>
+												) : null}
 												<div className="text-muted-foreground text-xs">
 													Type: {user.type}
 												</div>
@@ -916,15 +975,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										variant="secondary"
 										className="flex items-center gap-1"
 									>
-										{user.name}
+										{user.name || user.email || user.id}
 										<button
 											type="button"
+											aria-label={`Remove ${user.name || user.email || user.id}`}
 											className="rounded-full p-0.5 hover:bg-muted"
 											onClick={() =>
 												handleToggleCandidate(user)
 											}
 										>
-											<X className="size-3" />
+											<X className="size-3" aria-hidden />
 										</button>
 									</Badge>
 								))}

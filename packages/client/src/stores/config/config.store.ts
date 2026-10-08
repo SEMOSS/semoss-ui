@@ -27,6 +27,8 @@ interface RootConfig {
 	csrf: boolean;
 	adminOnlyViewMenuBarFlag: boolean;
 	notificationEnabled: boolean;
+	/** Whether people searches can look in the organization's Microsoft directory */
+	msGraphLookup?: boolean;
 	[key: string]: unknown;
 }
 
