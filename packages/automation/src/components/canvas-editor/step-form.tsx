@@ -6,13 +6,14 @@ import type {
 	DatabaseEngineConfig,
 	DataExtractConfig,
 	FunctionEngineConfig,
-	JevDecisionConfig,
 	LoopConfig,
 	ModelEngineConfig,
 	StorageEngineConfig,
 	VectorEngineConfig,
 	WaitConfig,
 } from "../../domain/automation.types";
+import type { AutomationWorkflowNodeConfig } from "../../domain/automation-workflow.types";
+import { normalizeJevDecisionConfig } from "../../domain/automation-workflow-adapter";
 import { AgentRunForm } from "./forms/agent-run-form";
 import { AppEngineForm } from "./forms/app-engine-form";
 import { BranchConditionBuilder } from "./forms/branch-condition-builder";
@@ -59,9 +60,12 @@ export function StepForm({
 		);
 	}
 	if (step.workflowType === "control.jev") {
+		const config = normalizeJevDecisionConfig(
+			step.config as unknown as AutomationWorkflowNodeConfig,
+		);
 		return (
 			<JevDecisionForm
-				config={step.config as JevDecisionConfig}
+				config={config}
 				upstreamVars={upstreamVars}
 				onChange={update}
 				devMode={devMode}
