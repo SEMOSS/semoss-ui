@@ -25,6 +25,7 @@ import type { RoomSlashCommand } from "./room-composer-slash-plugin";
 import { RoomConversation } from "./room-conversation";
 import { RoomRunStatus } from "./room-run-status";
 import { ROOM_SETTINGS_PANEL_TYPE } from "./room-settings-panel";
+import { RoomTopics } from "./room-topics";
 
 const ROOM_WORKSPACE_LAYOUT_ID = "collaboration-room-workspace-v1";
 const CONVERSATION_PANEL_ID = "collaboration-room-conversation";
@@ -211,6 +212,9 @@ export function RoomWorkspace({
 					agent={agent}
 					title={session.title}
 					conversationId={session.id}
+					headerTopics={
+						<RoomTopics roomId={session.id} isRunning={isRunning} />
+					}
 					thread={thread}
 					isLoadingHistory={isLoadingHistory}
 					resumeSignal={resumeSignal}
