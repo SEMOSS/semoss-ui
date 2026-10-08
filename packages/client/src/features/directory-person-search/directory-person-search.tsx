@@ -1,4 +1,3 @@
-import { Search } from "lucide-react";
 import { type ChangeEvent, useState } from "react";
 import { searchForUser, type UserSearchResult } from "@semoss/sdk";
 import { useIteratorApi } from "@semoss/sdk/react";
@@ -7,18 +6,8 @@ import {
 	AlertDescription,
 	Avatar,
 	AvatarFallback,
-	Badge,
-	Button,
 	cn,
-	InputGroup,
-	InputGroupAddon,
-	InputGroupInput,
-	Item,
-	ItemActions,
-	ItemContent,
-	ItemDescription,
-	ItemMedia,
-	ItemTitle,
+	Input,
 	ScrollArea,
 	Spinner,
 	useDebouncedValue,
@@ -29,12 +18,16 @@ import { getErrorMessage } from "@semoss/utility/error";
 /** People fetched per page */
 const PAGE_SIZE = 20;
 
-/** Shortest search sent to the directory */
+/** Shortest search sent to the directory, which lists everyone for an empty one */
 const MIN_SEARCH_LENGTH = 2;
 
 /** Centered status line inside the results pane */
 const STATUS_CLASS =
-	"flex items-center justify-center gap-2 px-3 py-6 text-center text-muted-foreground text-sm";
+	"flex items-center justify-center gap-2 px-3 py-4 text-center text-muted-foreground text-sm";
+
+/** The row style the shared add-members dialog uses, so the people pickers match */
+const PERSON_ROW_CLASS =
+	"flex w-full items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2 text-start hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-muted/40";
 
 /**
  * The text a person is shown by: their name, then their email, then their id
@@ -54,8 +47,8 @@ export interface DirectoryPersonSearchProps {
 
 /**
  * Searches the organization's Microsoft directory by name or email so an admin
- * can pick someone to add. People who already have an account are listed but
- * cannot be picked.
+ * can pick one person to add. People who already have an account are listed
+ * but cannot be picked.
  */
 export const DirectoryPersonSearch = ({
 	onSelect,
@@ -102,23 +95,16 @@ export const DirectoryPersonSearch = ({
 		setError(null);
 	};
 
-	const isFirstPageLoading = people.isLoading && people.data.length === 0;
-
 	return (
 		<div className={cn("flex flex-col gap-3", className)}>
-			<InputGroup>
-				<InputGroupAddon>
-					<Search className="size-4" aria-hidden />
-				</InputGroupAddon>
-				<InputGroupInput
-					aria-label="Search your organization by name or email"
-					placeholder="Search by name or email"
-					value={searchTerm}
-					autoComplete="off"
-					spellCheck={false}
-					onChange={handleSearchChange}
-				/>
-			</InputGroup>
+			<Input
+				aria-label="Search your organization by name or email"
+				placeholder="Search by name or email..."
+				value={searchTerm}
+				autoComplete="off"
+				spellCheck={false}
+				onChange={handleSearchChange}
+			/>
 
 			{error ? (
 				<Alert variant="destructive">
@@ -134,15 +120,14 @@ export const DirectoryPersonSearch = ({
 				)}
 			>
 				<div
-					className="flex flex-col gap-2 p-2"
+					className="flex flex-col gap-1.5 p-2"
 					aria-busy={people.isLoading}
 				>
 					{!isSearchReady ? (
 						<p className={STATUS_CLASS}>
-							Type a name or email to find someone in your
-							organization.
+							Type a name or email to search your organization.
 						</p>
-					) : isFirstPageLoading ? (
+					) : people.isLoading && people.data.length === 0 ? (
 						<p className={STATUS_CLASS}>
 							<Spinner />
 							Searching your organization...
@@ -154,61 +139,54 @@ export const DirectoryPersonSearch = ({
 							</output>
 						)
 					) : (
-						<ul className="flex flex-col gap-2">
+						<>
 							{people.data.map((person) => {
 								const label = getPersonLabel(person);
 								return (
-									<li key={person.id}>
-										<Item variant="outline" size="sm">
-											<ItemMedia>
-												<Avatar className="size-8">
-													<AvatarFallback className="text-muted-foreground text-sm">
-														{label
-															.charAt(0)
-															.toUpperCase()}
-													</AvatarFallback>
-												</Avatar>
-											</ItemMedia>
-											<ItemContent className="min-w-0">
-												<ItemTitle className="block w-full truncate">
+									<button
+										key={person.id}
+										type="button"
+										disabled={person.hasAccount === true}
+										className={PERSON_ROW_CLASS}
+										onClick={() => onSelect(person)}
+									>
+										<span className="flex min-w-0 items-center gap-2">
+											<Avatar className="size-8">
+												<AvatarFallback className="text-muted-foreground text-sm">
+													{label
+														.charAt(0)
+														.toUpperCase()}
+												</AvatarFallback>
+											</Avatar>
+											<span className="flex min-w-0 flex-col">
+												<span className="truncate font-medium text-sm">
 													{label}
-												</ItemTitle>
+												</span>
+												<span className="truncate text-muted-foreground text-xs">
+													id: {person.id}
+												</span>
 												{person.email ? (
-													<ItemDescription className="truncate">
-														{person.email}
-													</ItemDescription>
+													<span className="truncate text-muted-foreground text-xs">
+														email: {person.email}
+													</span>
 												) : null}
-											</ItemContent>
-											<ItemActions>
-												{person.hasAccount ? (
-													<Badge variant="secondary">
-														Already a member
-													</Badge>
-												) : (
-													<Button
-														type="button"
-														size="sm"
-														variant="outline"
-														aria-label={`Select ${label}`}
-														onClick={() =>
-															onSelect(person)
-														}
-													>
-														Select
-													</Button>
-												)}
-											</ItemActions>
-										</Item>
-									</li>
+											</span>
+										</span>
+										{person.hasAccount ? (
+											<span className="shrink-0 text-muted-foreground text-xs">
+												Already a Member
+											</span>
+										) : null}
+									</button>
 								);
 							})}
 							{people.isLoading ? (
-								<li className={STATUS_CLASS}>
+								<p className={STATUS_CLASS}>
 									<Spinner />
 									Loading more people...
-								</li>
+								</p>
 							) : null}
-						</ul>
+						</>
 					)}
 				</div>
 			</ScrollArea>

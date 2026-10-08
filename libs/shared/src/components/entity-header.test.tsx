@@ -183,3 +183,33 @@ describe("EntityHeader rename", () => {
 		).toBeTruthy();
 	});
 });
+
+describe("EntityHeader slots", () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it("shows what follows the name and the description below it", () => {
+		render(
+			<EntityHeader
+				name="Sales Team"
+				nameAddon={<span>Custom</span>}
+				description={<p>Everyone in sales</p>}
+			/>,
+		);
+
+		const heading = screen.getByRole("heading", { name: "Sales Team" });
+		const addon = screen.getByText("Custom");
+		// the addon sits in the same row as the name
+		expect(heading.parentElement).toBe(addon.parentElement);
+		expect(screen.getByText("Everyone in sales")).toBeTruthy();
+	});
+
+	it("shows only the name without the slots", () => {
+		const { container } = render(<EntityHeader name="Sales Team" />);
+
+		const heading = screen.getByRole("heading", { name: "Sales Team" });
+		expect(heading.parentElement?.childElementCount).toBe(1);
+		expect(container.querySelectorAll("p")).toHaveLength(0);
+	});
+});

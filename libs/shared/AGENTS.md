@@ -91,6 +91,22 @@ from the directory gets an account when their permission is saved. The table rea
 itself: the client keeps `/api/config` in its own store, and the other apps read it through
 `useInsight`.
 
+`AddMembersOverlay` is the one dialog for adding people anywhere in the apps. For a project or
+engine, pass `id` and `type`. To add people to something else, such as a team's members or
+managers, pass a `people` source instead: it loads the candidates, adds the people picked, and
+can retitle the dialog and mark people who cannot be picked, by click or by Enter. With
+`people`, the dialog picks people without access levels. When its `add` rejects, the dialog keeps
+the people picked and stays open, and the host's list reloads when it closes, since some may have
+been added. Add and Delete are disabled while their request runs. Reuse it rather than building
+another people picker.
+
+`MembersTable` is likewise the one members table. Teams use it for their members and managers by
+passing a `source` that loads, removes and adds people (its `people` goes to the add dialog) and
+can rename a member, for example to "Manager". With a `source` the table has no permission column
+or edit dialog, and `readOnly` alone decides whether the viewer can change the list. A new
+`source` reloads the list from the start with nothing selected, and a failed load shows its error
+with Try Again. It marks the signed in user with a star either way.
+
 ### The file editors are gone (`components/file/file-*.tsx`)
 
 `FileEditor` and the six viewers it dispatched to — `file-code-editor`,

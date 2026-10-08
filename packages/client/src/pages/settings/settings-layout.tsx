@@ -1,10 +1,4 @@
-import {
-	ExternalLink,
-	MoreVertical,
-	Pencil,
-	ShieldCheck,
-	Trash2,
-} from "lucide-react";
+import { ExternalLink, ShieldCheck } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import {
 	matchPath,
@@ -21,7 +15,6 @@ import {
 	type Project,
 } from "@semoss/shared";
 import {
-	Badge,
 	Breadcrumb,
 	BreadcrumbItem,
 	BreadcrumbLink,
@@ -29,27 +22,18 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
 	P,
 	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	toast,
 } from "@semoss/ui/next";
-import { deleteTeam, getGroupDetails } from "@/api";
 import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-preference-center-modal";
-import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
+import { TeamHeader } from "@/features/team-details/team-header";
+import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 import { useAPI, useConfig, useSession } from "@/hooks";
 import {
 	ADMIN_MODE_STORAGE_KEY,
 	getStoredAdminMode,
 } from "@/hooks/useAdminMode";
-import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
@@ -70,7 +54,6 @@ export const SettingsLayout = () => {
 	const isAdmin = useSession((state) => state.user.admin);
 	const { id, type } = useParams();
 	const { pathname, search } = useLocation();
-	const navigate = useNavigate();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
 
 	// track the active breadcrumbs
@@ -128,8 +111,11 @@ export const SettingsLayout = () => {
 	const showPrivacyCenter =
 		isSettingsIndexRoute && hasPrivacyCenterThemeContent;
 
-	const isTeamPermissionsDetail =
+	// a team's page has its own header: the team's name, type, description and actions
+	const isAdminTeamDetail =
 		matchedRoute?.path === "team-permissions/:type/:id";
+	const isTeamDetail =
+		isAdminTeamDetail || matchedRoute?.path === "managed-teams/:id";
 
 	const isAppDetail = matchedRoute?.path === "app/:id";
 
@@ -268,14 +254,10 @@ export const SettingsLayout = () => {
 				(projectInfoPixel.data?.project_name as string | undefined)
 			: undefined;
 
-	const teamId = id ? decodeURIComponent(id) : undefined;
-	const teamType = type ? decodeURIComponent(type) : undefined;
-	const [teamDescription, setTeamDescription] = useState<
-		string | undefined
-	>();
-	const [editTeam, setEditTeam] = useState(false);
-	const [deleteModal, setDeleteModal] = useState(false);
-	const [isDeleting, setIsDeleting] = useState(false);
+	// the router decodes the params
+	const teamId = id || undefined;
+	// managed teams are always custom teams, so their path has no type
+	const teamType = type || CUSTOM_TEAM_TYPE;
 
 	// force admin mode on admin-only routes for admins (prevents redirect on refresh)
 	useEffect(() => {
@@ -303,60 +285,6 @@ export const SettingsLayout = () => {
 		}
 	}, [adminMode, isAdmin]);
 
-	useEffect(() => {
-		let isMounted = true;
-
-		const loadTeamDetails = async () => {
-			if (!isTeamPermissionsDetail || !teamId || !teamType) {
-				setTeamDescription(undefined);
-				return;
-			}
-
-			try {
-				const response = await getGroupDetails(
-					adminMode,
-					teamId,
-					teamType,
-				);
-				if (!isMounted) {
-					return;
-				}
-				const details =
-					response && typeof response === "object" ? response : null;
-				setTeamDescription(
-					(details as { description?: string })?.description,
-				);
-			} catch (error) {
-				console.error(error);
-			}
-		};
-
-		loadTeamDetails();
-
-		return () => {
-			isMounted = false;
-		};
-	}, [adminMode, isTeamPermissionsDetail, teamId, teamType]);
-
-	const handleDelete = async () => {
-		if (!teamId || !teamType) {
-			return;
-		}
-
-		setIsDeleting(true);
-		try {
-			await deleteTeam(teamId, teamType);
-			toast.success("Successfully deleted team");
-			navigate("/settings/team-permissions");
-		} catch (error) {
-			console.error(error);
-			toast.error("Failed to delete team");
-		} finally {
-			setIsDeleting(false);
-			setDeleteModal(false);
-		}
-	};
-
 	if (!matchedRoute) {
 		return null;
 	}
@@ -367,9 +295,6 @@ export const SettingsLayout = () => {
 		!adminMode || matchedRoute.path !== ""
 			? matchedRoute.description
 			: matchedRoute.adminDescription;
-	const teamDescriptionText = teamDescription
-		? teamDescription.replace(/['"]+/g, "")
-		: "No description available";
 
 	return (
 		<>
@@ -392,7 +317,7 @@ export const SettingsLayout = () => {
 									<BreadcrumbList>
 										<BreadcrumbItem>
 											<BreadcrumbLink asChild>
-												<RouterLink to={`..`}>
+												<RouterLink to="/settings">
 													Settings
 												</RouterLink>
 											</BreadcrumbLink>
@@ -516,28 +441,21 @@ export const SettingsLayout = () => {
 									</>
 								);
 
-								if (isTeamPermissionsDetail && id) {
+								if (isTeamDetail && teamId) {
+									// the admin's view reads the team through the admin
+									// endpoints, so others get no header before the page
+									// sends them to their own teams
+									if (isAdminTeamDetail && !isAdmin) {
+										return null;
+									}
 									return (
-										<div className="flex flex-row items-center justify-between">
-											<div className="flex flex-row items-center gap-2">
-												<h1 className="font-semibold text-2xl leading-normal">
-													{id}
-												</h1>
-												{type ? (
-													<Badge
-														variant="outline"
-														className="uppercase"
-													>
-														{String(
-															type,
-														).toUpperCase()}
-													</Badge>
-												) : null}
-											</div>
-											<div className="flex items-center gap-2">
-												{headerActions}
-											</div>
-										</div>
+										<TeamHeader
+											key={`${teamType}:${teamId}`}
+											id={teamId}
+											type={teamType}
+											admin={isAdminTeamDetail}
+											actions={headerActions}
+										/>
 									);
 								}
 
@@ -622,67 +540,7 @@ export const SettingsLayout = () => {
 								);
 							})()}
 						</div>
-						{isTeamPermissionsDetail ? (
-							<>
-								<div className="flex w-full items-start justify-between gap-3">
-									<P>{descriptionText}</P>
-									{teamId && teamType ? (
-										<DropdownMenu>
-											<Tooltip
-												disableHoverableContent={false}
-											>
-												<TooltipTrigger asChild>
-													<DropdownMenuTrigger
-														asChild
-													>
-														<Button
-															variant="ghost"
-															size="icon-sm"
-															aria-label={
-																"Team actions"
-															}
-														>
-															<MoreVertical className="size-4" />
-														</Button>
-													</DropdownMenuTrigger>
-												</TooltipTrigger>
-												<TooltipContent
-													sideOffset={4}
-													className="max-w-xs break-words"
-												>
-													{"Team actions"}
-												</TooltipContent>
-											</Tooltip>
-											<DropdownMenuContent align="end">
-												<DropdownMenuItem
-													onClick={() =>
-														setEditTeam(true)
-													}
-												>
-													<span className="flex items-center gap-2">
-														<Pencil className="size-4" />
-														Edit Team
-													</span>
-												</DropdownMenuItem>
-												<DropdownMenuItem
-													onClick={() =>
-														setDeleteModal(true)
-													}
-												>
-													<span className="flex items-center gap-2 text-destructive">
-														<Trash2 className="size-4" />
-														Delete Team
-													</span>
-												</DropdownMenuItem>
-											</DropdownMenuContent>
-										</DropdownMenu>
-									) : null}
-								</div>
-								<P className="text-muted-foreground text-sm">
-									{teamDescriptionText}
-								</P>
-							</>
-						) : (
+						{isTeamDetail ? null : (
 							<P className="mt-2">{descriptionText}</P>
 						)}
 					</div>
@@ -691,31 +549,6 @@ export const SettingsLayout = () => {
 					<PrivacyPreferenceCenterModal
 						isOpen={showPrivacyCenter && privacyCenterOpen}
 						onClose={() => setPrivacyCenterOpen(false)}
-					/>
-					<AddTeamModal
-						open={editTeam}
-						isEdit={true}
-						type={teamType}
-						id={teamId}
-						description={teamDescription}
-						onClose={(team) => {
-							if (team?.id && team?.type) {
-								setTeamDescription(team.description);
-								navigate(
-									`/settings/team-permissions/${encodeURIComponent(
-										team.type,
-									)}/${encodeURIComponent(team.id)}`,
-								);
-							}
-							setEditTeam(false);
-						}}
-					/>
-					<TeamDeleteDialog
-						open={deleteModal}
-						onOpenChange={setDeleteModal}
-						teamId={teamId}
-						onConfirm={handleDelete}
-						isLoading={isDeleting}
 					/>
 				</div>
 			</SettingsContext.Provider>
