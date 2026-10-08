@@ -3,12 +3,15 @@ import { H2 } from "@semoss/ui/next";
 import { PendingMembersTable, SettingsTiles } from "@/components/settings";
 import { TeamsTable } from "@/components/settings/teams-table";
 import { SettingsContext } from "@/contexts";
-import { useEngine } from "@/hooks";
+import { useConfig, useEngine } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 export const EngineSettingsPage = () => {
 	const { catalog, type, engine } = useEngine();
 	const navigate = useNavigate();
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
 
 	return (
 		<SettingsContext.Provider
@@ -40,7 +43,11 @@ export const EngineSettingsPage = () => {
 							type={type}
 							id={engine.engine_id}
 						/>
-						<MembersTable type={type} id={engine.engine_id} />
+						<MembersTable
+							type={type}
+							id={engine.engine_id}
+							isDirectoryAvailable={isDirectoryAvailable}
+						/>
 						<div className="mt-6">
 							<TeamsTable type="ENGINE" id={engine.engine_id} />
 						</div>

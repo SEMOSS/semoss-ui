@@ -3,16 +3,25 @@
 		"title": "Add Members",
 		"description": "Search for users and invite them to this resource."
 	},
+	"source": {
+		"label": "Search in",
+		"existing": "Existing users",
+		"directory": "Your organization",
+		"existingHint": "People who already have an account here.",
+		"directoryHint": "Anyone in your organization, even if they have never signed in. They get an account when you add them."
+	},
 	"search": {
 		"placeholder": "Search by name or email...",
 		"searching": "Searching for users...",
 		"empty": "No users found",
+		"emptyDirectory": "No one in your organization matches that search",
 		"added": "Added"
 	},
 	"selected": {
 		"count_one": "{{count}} user selected",
 		"count_other": "{{count}} users selected",
-		"empty": "No users selected"
+		"empty": "No users selected",
+		"remove": "Remove {{name}}"
 	},
 	"permission": {
 		"viewer": "Viewer",

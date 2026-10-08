@@ -3,16 +3,25 @@
 		"title": "Leden toevoegen",
 		"description": "Zoek gebruikers en nodig ze uit voor deze resource."
 	},
+	"source": {
+		"label": "Zoeken in",
+		"existing": "Bestaande gebruikers",
+		"directory": "Je organisatie",
+		"existingHint": "Mensen die hier al een account hebben.",
+		"directoryHint": "Iedereen in je organisatie, ook als ze nog nooit zijn aangemeld. Ze krijgen een account wanneer je ze toevoegt."
+	},
 	"search": {
 		"placeholder": "Zoeken op naam of e-mail...",
 		"searching": "Gebruikers zoeken...",
 		"empty": "Geen gebruikers gevonden",
+		"emptyDirectory": "Niemand in je organisatie komt overeen met die zoekopdracht",
 		"added": "Toegevoegd"
 	},
 	"selected": {
 		"count_one": "{{count}} gebruiker geselecteerd",
 		"count_other": "{{count}} gebruikers geselecteerd",
-		"empty": "Geen gebruikers geselecteerd"
+		"empty": "Geen gebruikers geselecteerd",
+		"remove": "{{name}} verwijderen"
 	},
 	"permission": {
 		"viewer": "Kijker",

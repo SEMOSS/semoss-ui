@@ -3,13 +3,16 @@ import { H2 } from "@semoss/ui/next";
 import { PendingMembersTable, SettingsTiles } from "@/components/settings";
 import { TeamsTable } from "@/components/settings/teams-table";
 import { SettingsContext } from "@/contexts";
-import { useProject } from "@/hooks";
+import { useConfig, useProject } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 export const ProjectAccessControl = () => {
 	const { project, permission, refresh } = useProject();
 
 	const navigate = useNavigate();
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
 
 	return (
 		<SettingsContext.Provider
@@ -52,6 +55,7 @@ export const ProjectAccessControl = () => {
 							type="PROJECT"
 							id={project.project_id}
 							onChange={() => refresh()}
+							isDirectoryAvailable={isDirectoryAvailable}
 						/>
 						<div className="mt-6">
 							<TeamsTable

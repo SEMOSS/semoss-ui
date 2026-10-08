@@ -277,11 +277,22 @@ export const getTeamUsersCount = async (
 	return parseCount(response.data);
 };
 
+/**
+ * Get people who are not members of a custom group
+ * @param groupId - The group
+ * @param limit - Page size
+ * @param offset - Number of people already loaded
+ * @param searchTerm - Text to search for
+ * @param msGraphLookup - Optional choice of where to search: `true` for the
+ * Microsoft directory, `false` for existing users. Without it the backend
+ * searches the directory whenever the directory is available.
+ */
 export const getNonTeamUsers = async (
 	groupId: string,
 	limit: number,
 	offset: number,
 	searchTerm: string,
+	msGraphLookup?: boolean,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/getNonGroupMembers";
@@ -290,6 +301,9 @@ export const getNonTeamUsers = async (
 	if (limit) params.set("limit", String(limit));
 	if (offset) params.set("offset", String(offset));
 	if (searchTerm) params.set("searchTerm", searchTerm);
+	if (msGraphLookup !== undefined) {
+		params.set("msGraphLookup", String(msGraphLookup));
+	}
 	const query = params.toString();
 	if (query) {
 		url += `?${query}`;
@@ -305,12 +319,27 @@ export const getNonTeamUsers = async (
 	return response.data;
 };
 
+/**
+ * Add a person to a custom group
+ * @param groupId - The group
+ * @param type - The person's login type
+ * @param userId - The person's user id
+ * @param admin - Whether to use the admin endpoint
+ * @param endDate - Optional date their membership ends
+ * @param details - Name, email and username of a person picked from the
+ * Microsoft directory, so the backend can give them an account first
+ */
 export const addTeamUser = async (
 	groupId: string,
 	type: string,
 	userId: string,
 	admin: boolean,
 	endDate?: string,
+	details?: {
+		name?: string | null;
+		email?: string | null;
+		username?: string | null;
+	},
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
@@ -327,6 +356,15 @@ export const addTeamUser = async (
 			...postData,
 			endDate: endDate,
 		};
+	}
+	if (details?.name) {
+		postData = { ...postData, name: details.name };
+	}
+	if (details?.email) {
+		postData = { ...postData, email: details.email };
+	}
+	if (details?.username) {
+		postData = { ...postData, username: details.username };
 	}
 	const response = await post<{
 		success: boolean;

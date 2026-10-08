@@ -28,6 +28,25 @@ export interface PostUser {
 	permission: Role;
 }
 
+/**
+ * A person found by a user search, either among existing users or in the
+ * Microsoft directory
+ */
+export interface UserSearchResult {
+	/** User id. A directory person's id is their Microsoft id. */
+	id: string;
+	/** Display name */
+	name: string | null;
+	/** Email address */
+	email: string | null;
+	/** Login name, such as a Microsoft user principal name */
+	username: string | null;
+	/** Login provider, such as NATIVE or MICROSOFT */
+	type: string | null;
+	/** Whether the person already has an account. Only directory results carry it. */
+	hasAccount?: boolean;
+}
+
 export interface UserAccessRequest {
 	requestid: string;
 	userid: string;

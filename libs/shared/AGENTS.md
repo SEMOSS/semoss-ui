@@ -79,6 +79,18 @@ library:
 
 `@semoss/connectors` provides the `mail` and `calendar` libraries; the playground draws them.
 
+### Members (`components/members/`)
+
+`MembersTable` lists a project's or engine's members and opens `AddMembersOverlay` to add more.
+When the server can search the organization's Microsoft directory (`msGraphLookup` in
+`/api/config`), the host passes `isDirectoryAvailable` and the dialog shows `UserSourceToggle`,
+a choice between existing users and the whole organization. The dialog starts on the
+organization and sends the choice as `msGraphLookup`. Without the prop it sends nothing and the
+backend decides, which means the directory whenever the directory is available. A person picked
+from the directory gets an account when their permission is saved. The table reads no config
+itself: the client keeps `/api/config` in its own store, and the other apps read it through
+`useInsight`.
+
 ### The file editors are gone (`components/file/file-*.tsx`)
 
 `FileEditor` and the six viewers it dispatched to — `file-code-editor`,
