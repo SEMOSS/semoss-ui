@@ -34,6 +34,14 @@ export function parseRoomFileLink(url: string): RoomFileLink | null {
 	return name ? { path: `/${segments.join("/")}`, name } : null;
 }
 
+/** Room files linked as Markdown anchors in a message's text, in order. */
+export function roomFileLinks(text: string): RoomFileLink[] {
+	// the closing ")" or title space keeps a half-streamed name from matching
+	return [...text.matchAll(/\]\((room:\/\/[^)\s]+)[)\s]/g)].flatMap(
+		(match) => parseRoomFileLink(match[1]) ?? [],
+	);
+}
+
 /** Preserve normal Markdown URLs and allow verified syntax for room file anchors. */
 export function messageMarkdownUrlTransform(
 	url: string,

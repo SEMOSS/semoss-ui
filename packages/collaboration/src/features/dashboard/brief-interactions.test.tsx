@@ -187,8 +187,7 @@ function BriefHarness({
 	);
 }
 
-function renderBrief() {
-	const state = createBriefState();
+function renderBrief(state = createBriefState()) {
 	const onChange = vi.fn<(change: CollaborationChange) => void>();
 	const router = createMemoryRouter([
 		{ path: "/", Component: DashboardPage },
@@ -251,6 +250,20 @@ it("shows the complete daily brief without applying or replacing saved widget cu
 		screen.queryByRole("button", { name: /^Resize / }),
 	).not.toBeInTheDocument();
 	expect(localStorage.getItem(storageKey)).toBe(saved);
+});
+
+it("greets by the given name for first-last and last-first profile names", () => {
+	renderBrief();
+	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+		/^Good (morning|afternoon|evening), Riley\. 3 things need you\.$/,
+	);
+	cleanup();
+	const state = createBriefState();
+	state.profile.name = "Wong, Riley";
+	renderBrief(state);
+	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+		/^Good (morning|afternoon|evening), Riley\. 3 things need you\.$/,
+	);
 });
 
 it("keeps all topics visible with the composer before the mobile reading order", () => {

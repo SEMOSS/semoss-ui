@@ -33,7 +33,9 @@ export function BriefHeader() {
 			hourCycle: "h23",
 		}).format(now),
 	);
-	const name = state.profile.name.trim().split(/\s+/)[0];
+	// Directory names are often "Last, First"; greet by the given name.
+	const [family, given] = state.profile.name.split(",", 2);
+	const name = (given?.trim() || family).trim().split(/\s+/)[0];
 	const greeting =
 		hour < 12
 			? "Good morning"

@@ -6,6 +6,7 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "@/features/collaboration/state/collaboration-session.context";
+import type { ConversationMessage } from "@/features/messages/types/message";
 import type { Session } from "@/types/session";
 import { RoomSession } from "../room-session";
 import { RoomWorkspace } from "./room-workspace";
@@ -19,6 +20,7 @@ const workbenchState = vi.hoisted(() => ({
 	openWorkbench: vi.fn(),
 	closeWorkbench: vi.fn(),
 	selectPanel: vi.fn(),
+	openFile: vi.fn(),
 }));
 
 vi.mock("@/features/tools/tool-workbench.context", () => ({
@@ -140,6 +142,15 @@ const defaultProps: ComponentProps<typeof RoomWorkspace> = {
 	onReconnect: vi.fn(),
 };
 
+// jsdom has no matchMedia; useIsMobile reads it to keep auto-opened decks off phones
+beforeEach(() => {
+	vi.stubGlobal("matchMedia", () => ({
+		matches: false,
+		addEventListener: () => undefined,
+		removeEventListener: () => undefined,
+	}));
+});
+
 const panelSizes = (container: HTMLElement): number[] =>
 	Array.from(
 		container.querySelectorAll<HTMLElement>(
@@ -155,6 +166,55 @@ describe("RoomWorkspace", () => {
 		workbenchState.openWorkbench.mockClear();
 		workbenchState.closeWorkbench.mockClear();
 		workbenchState.selectPanel.mockClear();
+		workbenchState.openFile.mockClear();
+	});
+
+	it("opens a PowerPoint linked by a reply it watched live, but not one from history", () => {
+		const history: ConversationMessage = {
+			id: "old",
+			role: "assistant",
+			runId: "run-old",
+			parts: [
+				{ type: "text", text: "Saved [old.pptx](room://old.pptx)." },
+			],
+		};
+		const live: ConversationMessage = {
+			id: "agent-run:run-1",
+			role: "assistant",
+			runId: "run-1",
+			parts: [
+				{ type: "text", text: "Building [the deck](room://Q3%20%28dr" },
+			],
+			live: { phase: "executing_tools", hasObservationIssue: false },
+		};
+		const final: ConversationMessage = {
+			id: "final",
+			role: "assistant",
+			runId: "run-1",
+			parts: [
+				{
+					type: "text",
+					text: "Saved [Q3 (draft).pptx](room://Q3%20%28draft%29.pptx) (3 slides). See [notes.md](room://notes.md).",
+				},
+			],
+		};
+		const { rerender } = render(
+			<RoomWorkspace {...defaultProps} thread={[history]} />,
+		);
+		rerender(<RoomWorkspace {...defaultProps} thread={[history, live]} />);
+		expect(workbenchState.openFile).not.toHaveBeenCalled();
+		rerender(<RoomWorkspace {...defaultProps} thread={[history, final]} />);
+		rerender(
+			<RoomWorkspace
+				{...defaultProps}
+				thread={[history, { ...final }]}
+			/>,
+		);
+		expect(workbenchState.openFile).toHaveBeenCalledTimes(1);
+		expect(workbenchState.openFile).toHaveBeenCalledWith(
+			"/Q3 (draft).pptx",
+			"Q3 (draft).pptx",
+		);
 	});
 
 	it("opens without an active tool", () => {
