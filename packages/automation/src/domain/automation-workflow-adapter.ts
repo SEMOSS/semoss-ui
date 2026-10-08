@@ -11,6 +11,7 @@ import type {
 	AutomationJevRoute,
 	AutomationJsonValue,
 	AutomationNodeDefinition,
+	AutomationNodeGroup,
 	AutomationWorkflowDocument,
 	AutomationWorkflowEdge,
 	AutomationWorkflowNode,
@@ -24,6 +25,7 @@ export interface CanvasWorkflowDocument {
 	triggerBindings: TriggerBinding[];
 	steps: AutomationNode[];
 	edges: AutomationEdge[];
+	nodeGroups?: AutomationNodeGroup[];
 }
 
 export type AutomationNodeSources = Record<string, string>;
@@ -87,6 +89,20 @@ function jsonObjectValue(value: unknown): string {
 function jsonArrayValue(value: unknown): string {
 	if (typeof value === "string") return value;
 	return Array.isArray(value) ? JSON.stringify(value) : "";
+}
+
+function jsonValueText(value: unknown): string {
+	if (typeof value === "string") return value;
+	return value === undefined || value === null ? "" : JSON.stringify(value);
+}
+
+function jsonValueOrString(value: string): AutomationJsonValue {
+	const parsed = parsedJsonValue(value);
+	return parsed === undefined ? value : parsed;
+}
+
+function fallbackValue(value: string): AutomationJsonValue {
+	return value.trim() ? jsonValueOrString(value) : null;
 }
 
 function isAutomationJsonValue(value: unknown): value is AutomationJsonValue {
@@ -230,6 +246,14 @@ def run(scope):
     return storage.list(scope.resolve(STORAGE_PATH))
 `;
 	}
+	if (category === "data") {
+		return `SOURCE = ${pythonLiteral(config.source)}
+PATH = ${pythonLiteral(config.path)}
+
+def run(scope):
+    return extract_data_element(scope.resolve(SOURCE), scope.resolve(PATH))
+`;
+	}
 	if (category === "vector") {
 		return `from ai_server import VectorEngine
 
@@ -325,9 +349,11 @@ function canvasTypeForWorkflow(
 	if (category === "database") return "database-engine";
 	if (category === "model") return "model-engine";
 	if (category === "storage") return "storage-engine";
+	if (category === "data") return "data";
 	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
+	if (type === "control.loop") return "loop";
 	if (isRoutingWorkflowType(type)) return "branch";
 	return "app";
 }
@@ -372,6 +398,13 @@ function defaultCanvasConfig(
 		};
 	}
 	if (category === "storage") {
+		const fileTypes = Array.isArray(config.extensions)
+			? config.extensions
+					.filter(
+						(value): value is string => typeof value === "string",
+					)
+					.join(", ")
+			: stringValue(config.extensions);
 		const operation =
 			type === "storage.read"
 				? "read-base64"
@@ -386,11 +419,24 @@ function defaultCanvasConfig(
 			engineId,
 			operation,
 			storagePath: stringValue(config.path),
+			fileTypes,
 			filePath: stringValue(config.destination),
 			metadata: jsonObjectValue(config.metadata),
 			convertToPdf: config.convertToPdf === true,
 			version: stringValue(config.version),
 			leaveFolderStructure: config.leaveFolderStructure === true,
+		};
+	}
+	if (category === "data") {
+		return {
+			source: jsonValueText(config.source),
+			path: stringValue(config.path),
+			format:
+				config.format === "json" || config.format === "xml"
+					? config.format
+					: "auto",
+			missingValue: jsonValueText(config.missingValue),
+			nullValue: jsonValueText(config.nullValue),
 		};
 	}
 	if (category === "vector") {
@@ -435,6 +481,41 @@ function defaultCanvasConfig(
 	}
 	if (type === "control.wait") {
 		return { seconds: String(numberValue(config.durationSeconds, 5)) };
+	}
+	if (type === "control.loop") {
+		const mode =
+			config.mode === "repeat" || config.mode === "while"
+				? config.mode
+				: "forEach";
+		const maxIterations = numberValue(config.maxIterations, 100);
+		if (mode === "repeat") {
+			return {
+				mode,
+				count: numberValue(config.count, 1),
+				maxIterations,
+			};
+		}
+		if (mode === "while") {
+			return {
+				mode,
+				condition: stringValue(config.condition),
+				maxIterations,
+			};
+		}
+		const items = config.items;
+		return {
+			mode,
+			items:
+				typeof items === "string"
+					? items
+					: JSON.stringify(
+							Array.isArray(items) ? items : [],
+							null,
+							2,
+						),
+			batchSize: numberValue(config.batchSize, 1),
+			maxIterations,
+		};
 	}
 	if (type === "control.if") {
 		return { clauses: branchClauses(config.clauses) };
@@ -481,6 +562,8 @@ function canvasTypeToWorkflow(
 			return "database.query";
 		case "storage-engine":
 			return "storage.list";
+		case "data":
+			return "data.extract";
 		case "vector-engine":
 			return "vector.search";
 		case "model-engine":
@@ -489,6 +572,8 @@ function canvasTypeToWorkflow(
 			return "function.execute";
 		case "wait":
 			return "control.wait";
+		case "loop":
+			return "control.loop";
 		case "branch":
 			return "control.if";
 		case "app":
@@ -565,6 +650,7 @@ function mergeCanvasConfig(
 	}
 	if (category === "storage") {
 		const storagePath = getConfigValue(config, "storagePath");
+		const fileTypes = getConfigValue(config, "fileTypes");
 		const filePath = getConfigValue(config, "filePath");
 		const metadata = getConfigValue(config, "metadata");
 		const convertToPdf = getConfigValue(config, "convertToPdf");
@@ -574,6 +660,15 @@ function mergeCanvasConfig(
 			"leaveFolderStructure",
 		);
 		if (typeof storagePath === "string") next.path = storagePath;
+		if (typeof fileTypes === "string") {
+			const trimmedFileTypes = fileTypes.trim();
+			next.extensions = trimmedFileTypes.startsWith("${")
+				? trimmedFileTypes
+				: trimmedFileTypes
+						.split(",")
+						.map((value) => value.trim())
+						.filter(Boolean);
+		}
 		if (typeof filePath === "string") next.destination = filePath;
 		if (typeof metadata === "string") {
 			next.metadata = metadata.trim()
@@ -586,6 +681,24 @@ function mergeCanvasConfig(
 		if (typeof version === "string") next.version = version;
 		if (typeof leaveFolderStructure === "boolean") {
 			next.leaveFolderStructure = leaveFolderStructure;
+		}
+	}
+	if (category === "data") {
+		const source = getConfigValue(config, "source");
+		const path = getConfigValue(config, "path");
+		const format = getConfigValue(config, "format");
+		const missingValue = getConfigValue(config, "missingValue");
+		const nullValue = getConfigValue(config, "nullValue");
+		if (typeof source === "string") next.source = jsonValueOrString(source);
+		if (typeof path === "string") next.path = path;
+		if (format === "auto" || format === "json" || format === "xml") {
+			next.format = format;
+		}
+		if (typeof missingValue === "string") {
+			next.missingValue = fallbackValue(missingValue);
+		}
+		if (typeof nullValue === "string") {
+			next.nullValue = fallbackValue(nullValue);
 		}
 	}
 	if (category === "vector") {
@@ -649,6 +762,35 @@ function mergeCanvasConfig(
 			if (Number.isFinite(duration)) next.durationSeconds = duration;
 		}
 	}
+	if (type === "control.loop") {
+		delete next.items;
+		delete next.batchSize;
+		delete next.count;
+		delete next.condition;
+		const mode = getConfigValue(config, "mode");
+		const maxIterations = getConfigValue(config, "maxIterations");
+		next.mode = mode === "repeat" || mode === "while" ? mode : "forEach";
+		if (typeof maxIterations === "number") {
+			next.maxIterations = maxIterations;
+		}
+		if (next.mode === "forEach") {
+			const items = getConfigValue(config, "items");
+			const batchSize = getConfigValue(config, "batchSize");
+			if (typeof items === "string") {
+				const trimmedItems = items.trim();
+				next.items = trimmedItems.startsWith("${")
+					? trimmedItems
+					: (parsedJsonValue(trimmedItems) ?? trimmedItems);
+			}
+			if (typeof batchSize === "number") next.batchSize = batchSize;
+		} else if (next.mode === "repeat") {
+			const count = getConfigValue(config, "count");
+			if (typeof count === "number") next.count = count;
+		} else {
+			const condition = getConfigValue(config, "condition");
+			if (typeof condition === "string") next.condition = condition;
+		}
+	}
 	if (type === "control.if") {
 		next.clauses = (
 			config as Extract<NodeConfig, { clauses: unknown }>
@@ -709,6 +851,7 @@ export function createCanvasWorkflowNode(
 		workflowType: type,
 		workflowConfig,
 		workflowCodeMode: definition.defaultCodeMode,
+		...(type === "control.loop" ? { body: { nodes: [], edges: [] } } : {}),
 	};
 }
 
@@ -737,6 +880,38 @@ function canvasNodeFromWorkflow(
 		workflowType: node.type,
 		workflowConfig,
 		workflowCodeMode: node.codeMode,
+		...(node.body
+			? {
+					body: {
+						nodes: node.body.nodes.map((bodyNode) =>
+							canvasNodeFromWorkflow(bodyNode, nodeSources),
+						),
+						edges: node.body.edges.map(workflowEdgeToCanvasEdge),
+					},
+				}
+			: {}),
+	};
+}
+
+function workflowEdgeToCanvasEdge(
+	edge: AutomationWorkflowEdge,
+): AutomationEdge {
+	return {
+		id: edge.id,
+		source: edge.source,
+		target: edge.target,
+		sourceHandle:
+			edge.sourcePort === "out"
+				? `out-${edge.source}`
+				: edge.sourcePort.startsWith("case:")
+					? `case-${edge.source}-${edge.sourcePort.slice(5)}`
+					: edge.sourcePort === "else"
+						? `else-${edge.source}`
+						: edge.sourcePort,
+		targetHandle:
+			edge.targetPort === "in" ? `in-${edge.target}` : edge.targetPort,
+		kind: edge.kind,
+		...(edge.kind === "data" ? { dataType: edge.dataType } : {}),
 	};
 }
 
@@ -747,7 +922,51 @@ export function createInitialCanvasWorkflowDocument(): CanvasWorkflowDocument {
 		triggerBindings: [MANUAL_TRIGGER],
 		steps: [trigger],
 		edges: [],
+		nodeGroups: [],
 	};
+}
+
+function normalizeNodeGroups(
+	value: unknown,
+	availableNodeIds: Set<string>,
+): AutomationNodeGroup[] {
+	if (!Array.isArray(value)) return [];
+	const assignedNodeIds = new Set<string>();
+	return value.flatMap((candidate) => {
+		if (
+			!isRecord(candidate) ||
+			typeof candidate.id !== "string" ||
+			typeof candidate.name !== "string" ||
+			!Array.isArray(candidate.nodeIds)
+		) {
+			return [];
+		}
+		const groupNodeIds = new Set<string>();
+		const nodeIds = candidate.nodeIds.filter((nodeId): nodeId is string => {
+			if (
+				typeof nodeId !== "string" ||
+				!availableNodeIds.has(nodeId) ||
+				assignedNodeIds.has(nodeId) ||
+				groupNodeIds.has(nodeId)
+			) {
+				return false;
+			}
+			groupNodeIds.add(nodeId);
+			return true;
+		});
+		if (nodeIds.length === 0) return [];
+		for (const nodeId of nodeIds) assignedNodeIds.add(nodeId);
+		return [
+			{
+				id: candidate.id,
+				name: candidate.name,
+				nodeIds,
+				...(typeof candidate.description === "string"
+					? { description: candidate.description }
+					: {}),
+			},
+		];
+	});
 }
 
 export function canvasDocumentFromWorkflow(
@@ -767,25 +986,11 @@ export function canvasDocumentFromWorkflow(
 				? document.triggerBindings
 				: [MANUAL_TRIGGER],
 		steps,
-		edges: document.graph.edges.map((edge) => ({
-			id: edge.id,
-			source: edge.source,
-			target: edge.target,
-			sourceHandle:
-				edge.sourcePort === "out"
-					? `out-${edge.source}`
-					: edge.sourcePort.startsWith("case:")
-						? `case-${edge.source}-${edge.sourcePort.slice(5)}`
-						: edge.sourcePort === "else"
-							? `else-${edge.source}`
-							: edge.sourcePort,
-			targetHandle:
-				edge.targetPort === "in"
-					? `in-${edge.target}`
-					: edge.targetPort,
-			kind: edge.kind,
-			...(edge.kind === "data" ? { dataType: edge.dataType } : {}),
-		})),
+		edges: document.graph.edges.map(workflowEdgeToCanvasEdge),
+		nodeGroups: normalizeNodeGroups(
+			document.nodeGroups,
+			new Set(steps.map((step) => step.id)),
+		),
 	};
 }
 
@@ -794,21 +999,116 @@ export function getCanvasNodeSources(
 ): AutomationNodeSources {
 	return Object.fromEntries(
 		steps.flatMap((step) => {
+			const bodySources = step.body
+				? Object.entries(getCanvasNodeSources(step.body.nodes))
+				: [];
 			const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
 			if (
 				type === "trigger.start" ||
 				isRoutingWorkflowType(type) ||
 				step.workflowCodeMode !== "custom"
 			) {
-				return [];
+				return bodySources;
 			}
 			const source = step.workflowConfig?.pythonSource;
 			if (typeof source !== "string" || source.trim() === "") {
-				return [];
+				return bodySources;
 			}
-			return [[step.id, source]];
+			return [[step.id, source], ...bodySources];
 		}),
 	);
+}
+
+function canvasNodeToWorkflow(step: AutomationNode): AutomationWorkflowNode {
+	const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) throw new Error(`Unknown automation node type: ${type}`);
+	const config = mergeCanvasConfig(
+		type,
+		step.config,
+		step.workflowConfig ?? structuredClone(definition.defaultConfig),
+	);
+	// Every other node's Python is persisted as its own file under automation-nodes/,
+	// so carrying a copy in the config would duplicate it. The trigger has no such
+	// file: AutomationRuntime.triggerSource reads its optional setup source straight
+	// out of this config, making this the only place it can live.
+	const { pythonSource, ...persistedConfig } = config;
+	if (type === "trigger.start") {
+		persistedConfig.globals = sanitizeTriggerGlobals(
+			persistedConfig.globals,
+		);
+		if (typeof pythonSource === "string" && pythonSource.trim() !== "") {
+			persistedConfig.pythonSource = pythonSource;
+		}
+	}
+	return {
+		id: step.id,
+		type,
+		label: step.label || definition.label,
+		...(type === "trigger.start" || isRoutingWorkflowType(type)
+			? {}
+			: { outputVar: step.outputVar }),
+		position: step.position,
+		config: persistedConfig,
+		codeMode: isRoutingWorkflowType(type)
+			? "generated"
+			: (step.workflowCodeMode ?? definition.defaultCodeMode),
+		...(step.body
+			? {
+					body: canvasGraphToWorkflow(
+						step.body.nodes,
+						step.body.edges,
+					),
+				}
+			: {}),
+	};
+}
+
+function canvasEdgeToWorkflow(edge: AutomationEdge): AutomationWorkflowEdge {
+	return edge.kind === "data"
+		? {
+				id: edge.id,
+				kind: "data",
+				dataType: edge.dataType ?? "unknown",
+				source: edge.source,
+				sourcePort: edge.sourceHandle?.startsWith("out-")
+					? "out"
+					: (edge.sourceHandle ?? "result"),
+				target: edge.target,
+				targetPort: edge.targetHandle?.startsWith("in-")
+					? "in"
+					: (edge.targetHandle ?? "in"),
+			}
+		: {
+				id: edge.id,
+				kind: "control",
+				source: edge.source,
+				sourcePort: edge.sourceHandle?.startsWith("out-")
+					? "out"
+					: edge.sourceHandle?.startsWith("case-")
+						? `case:${edge.sourceHandle.slice(
+								`case-${edge.source}-`.length,
+							)}`
+						: edge.sourceHandle?.startsWith("else-")
+							? "else"
+							: (edge.sourceHandle ?? "out"),
+				target: edge.target,
+				targetPort: edge.targetHandle?.startsWith("in-")
+					? "in"
+					: (edge.targetHandle ?? "in"),
+			};
+}
+
+function canvasGraphToWorkflow(
+	steps: AutomationNode[],
+	edges: AutomationEdge[],
+): AutomationWorkflowDocument["graph"] {
+	const nodes = steps.map(canvasNodeToWorkflow);
+	const nodeIds = new Set(nodes.map((node) => node.id));
+	const graphEdges: AutomationWorkflowEdge[] = edges
+		.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+		.map(canvasEdgeToWorkflow);
+	return { nodes, edges: graphEdges };
 }
 
 export function canvasDocumentToWorkflow({
@@ -816,90 +1116,15 @@ export function canvasDocumentToWorkflow({
 	triggerBindings,
 	steps,
 	edges,
+	nodeGroups,
 }: CanvasWorkflowDocument): AutomationWorkflowDocument {
-	const nodes = steps.map((step): AutomationWorkflowNode => {
-		const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
-		const definition = getWorkflowNodeDefinition(type);
-		if (!definition)
-			throw new Error(`Unknown automation node type: ${type}`);
-		const config = mergeCanvasConfig(
-			type,
-			step.config,
-			step.workflowConfig ?? structuredClone(definition.defaultConfig),
-		);
-		// Every other node's Python is persisted as its own file under automation-nodes/,
-		// so carrying a copy in the config would duplicate it. The trigger has no such
-		// file: AutomationRuntime.triggerSource reads its optional setup source straight
-		// out of this config, making this the only place it can live.
-		const { pythonSource, ...persistedConfig } = config;
-		if (type === "trigger.start") {
-			persistedConfig.globals = sanitizeTriggerGlobals(
-				persistedConfig.globals,
-			);
-			if (
-				typeof pythonSource === "string" &&
-				pythonSource.trim() !== ""
-			) {
-				persistedConfig.pythonSource = pythonSource;
-			}
-		}
-		return {
-			id: step.id,
-			type,
-			label: step.label || definition.label,
-			...(type === "trigger.start" || isRoutingWorkflowType(type)
-				? {}
-				: { outputVar: step.outputVar }),
-			position: step.position,
-			config: persistedConfig,
-			codeMode: isRoutingWorkflowType(type)
-				? "generated"
-				: (step.workflowCodeMode ?? definition.defaultCodeMode),
-		};
-	});
-	const nodeIds = new Set(nodes.map((node) => node.id));
-	const graphEdges: AutomationWorkflowEdge[] = edges
-		.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
-		.map((edge) =>
-			edge.kind === "data"
-				? {
-						id: edge.id,
-						kind: "data",
-						dataType: edge.dataType ?? "unknown",
-						source: edge.source,
-						sourcePort: edge.sourceHandle?.startsWith("out-")
-							? "out"
-							: (edge.sourceHandle ?? "result"),
-						target: edge.target,
-						targetPort: edge.targetHandle?.startsWith("in-")
-							? "in"
-							: (edge.targetHandle ?? "in"),
-					}
-				: {
-						id: edge.id,
-						kind: "control",
-						source: edge.source,
-						sourcePort: edge.sourceHandle?.startsWith("out-")
-							? "out"
-							: edge.sourceHandle?.startsWith("case-")
-								? `case:${edge.sourceHandle.slice(
-										`case-${edge.source}-`.length,
-									)}`
-								: edge.sourceHandle?.startsWith("else-")
-									? "else"
-									: (edge.sourceHandle ?? "out"),
-						target: edge.target,
-						targetPort: edge.targetHandle?.startsWith("in-")
-							? "in"
-							: (edge.targetHandle ?? "in"),
-					},
-		);
 	return {
 		formatVersion: 2,
 		...(description.trim() ? { description: description.trim() } : {}),
 		triggerBindings:
 			triggerBindings.length > 0 ? triggerBindings : [MANUAL_TRIGGER],
-		graph: { nodes, edges: graphEdges },
+		graph: canvasGraphToWorkflow(steps, edges),
+		...(nodeGroups?.length ? { nodeGroups } : {}),
 	};
 }
 
@@ -1025,6 +1250,83 @@ export function validateCanvasWorkflowNode(
 			errors.push(
 				`Minimum confidence must be from ${minimumConfidence} through 1`,
 			);
+		}
+	}
+	if (type === "control.loop") {
+		const maxIterations = config.maxIterations;
+		if (config.mode === "forEach") {
+			const items = config.items;
+			const validReference =
+				typeof items === "string" &&
+				/^\$\{[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*|\.[0-9]+)*}$/.test(
+					items.trim(),
+				);
+			let validArray = Array.isArray(items);
+			if (!validArray && typeof items === "string" && !validReference) {
+				try {
+					validArray = Array.isArray(JSON.parse(items));
+				} catch {
+					validArray = false;
+				}
+			}
+			if (!validReference && !validArray) {
+				errors.push(
+					"Items must be a JSON array or an exact variable reference",
+				);
+			}
+		} else if (config.mode === "repeat") {
+			if (
+				typeof config.count !== "number" ||
+				!Number.isInteger(config.count) ||
+				config.count < 1 ||
+				typeof maxIterations !== "number" ||
+				config.count > maxIterations
+			) {
+				errors.push(
+					"Number of times must be a whole number no greater than the safety limit",
+				);
+			}
+		} else if (config.mode === "while") {
+			if (
+				typeof config.condition !== "string" ||
+				!config.condition.trim()
+			) {
+				errors.push("Continue while condition is required");
+			}
+		} else {
+			errors.push("Choose how the loop should repeat");
+		}
+		if (
+			typeof maxIterations !== "number" ||
+			!Number.isInteger(maxIterations) ||
+			maxIterations < 1 ||
+			maxIterations > 10_000
+		) {
+			errors.push(
+				"Safety limit must be a whole number from 1 through 10000",
+			);
+		}
+		if (!node.body || node.body.nodes.length === 0) {
+			errors.push("Add at least one step inside the loop");
+		} else {
+			const bodyValidationNodes = [...allNodes, ...node.body.nodes];
+			for (const bodyNode of node.body.nodes) {
+				const bodyErrors = [
+					...validateCanvasWorkflowNode(
+						bodyNode,
+						bodyValidationNodes,
+					),
+					...validateCanvasWorkflowConnections(
+						bodyNode,
+						node.body.edges,
+					),
+				];
+				errors.push(
+					...bodyErrors.map(
+						(error) => `Inside "${bodyNode.label}": ${error}`,
+					),
+				);
+			}
 		}
 	}
 	return errors;
