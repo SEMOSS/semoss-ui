@@ -41,17 +41,17 @@ const page = (messages: unknown[], more: Record<string, unknown> = {}) =>
 	});
 const mail = (uid: string) =>
 	response({
-		uid,
+		id: uid,
 		from: "sender@example.com",
-		to: "recipient@example.com, other@example.com",
-		cc: "copy@example.com",
+		to: ["recipient@example.com", "other@example.com"],
+		cc: ["copy@example.com"],
 		subject: `Subject ${uid}`,
 		receivedDate: "2026-10-07T12:00:00Z",
 		unread: false,
 		hasAttachments: true,
 		body: `Body ${uid}`,
 		displayBody: { contentType: "html", content: `<p>Original ${uid}</p>` },
-		attachments: [{ id: "attachment", name: "Notes.txt", isFile: true }],
+		attachments: [{ id: "attachment", name: "Notes.txt", kind: "file" }],
 		webLink: "https://outlook.office.com/mail/inbox/id/source",
 	});
 
@@ -150,10 +150,10 @@ it("reads only persisted Outlook UIDs and preserves the existing importer displa
 	});
 	expect(run).toHaveBeenCalledTimes(2);
 	expect(run.mock.calls[0]?.[0]).toContain(
-		'MicrosoftOutlookGetMail(uid=["older"]',
+		'MicrosoftOutlookGetMail(id=["older"]',
 	);
 	expect(run.mock.calls[1]?.[0]).toContain(
-		'MicrosoftOutlookGetMail(uid=["newer"]',
+		'MicrosoftOutlookGetMail(id=["newer"]',
 	);
 	expect(
 		run.mock.calls.every(

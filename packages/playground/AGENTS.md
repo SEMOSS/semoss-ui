@@ -221,6 +221,35 @@ affects only the current room instance.
   tool. In an agent room a connector call's Allow and every Deny go to `decideAgentToolAction`
   instead, since the paused run resumes on the decision.
 
+## Tool views
+
+`src/features/tool-views/` draws tool calls whose `SMSS_MCP_UI.resourceURI` is
+`component://<library>/<view>`, with the views `@semoss/connectors` provides
+(`TOOL_VIEW_LIBRARIES`: `mail` and `calendar`), in the page and never in a frame. The room page
+mounts `ToolViewProvider` around the conversation workspace, so the conversation and the sidebar
+both find them.
+
+- **Routing.** `ToolsView` and `ResponseMessageTool` give a call, in order: work folder calls
+  their `ChatToolCard`; a `component://` view the playground draws, `ComponentToolView`; then
+  `system://` apps, portal pages, and the default form. A `component://` URI is never turned into
+  a portal URL, and its project or engine is not looked up. A call whose view the playground does
+  not draw, or whose view fails, shows the card it would have without one.
+- **Where.** In the conversation an approval sizes to its form and a result is kept to a bounded
+  height; in the sidebar the view fills its tab. Once a decision is made the view shows the result,
+  even before an agent run's next update, so a call is not decided twice. The room page provides
+  the room (`RoomProvider`) to the conversation as well as the sidebar, since a view saves into
+  the room's files. Connector calls that ask open inline, as their cards do.
+- **Decisions** (`tool-view-decisions.ts`). In an agent run they decide the run's pending
+  action: approve (`submit`, an edit when the arguments changed), reject, or `respond` with what
+  the user did instead. In chat, approving sets the call's parameters to the edited arguments and
+  runs it through the room's toolbox, declining goes through `ChatToolsStore.declineChatTool`, and
+  responding saves the outcome as the call's result, which hands it to the model.
+- **The call** (`tool-view-call.ts`). The view gets the reactor (`SMSS_FUNCTION_NAME`), the
+  arguments, the result (a failed call's details, without the model's guidance,
+  `readToolResponseDetail`), and whether the call waits for the user.
+- **The host** (`use-room-tool-view-host.ts`). Saves land in Chat Files and add to the next
+  message through `useRoomConnectorHost`, signing in to the account the URI's `provider` names.
+
 ## Files queued for the next message
 
 `RoomStore.contextItems` (`ContextItemsStore`, `features/conversation/context-items.store.ts`)
@@ -260,12 +289,18 @@ account is not connected shows its switch in gray with a warning mark. These det
   in from the click and then switches on that app alone, and the switch goes back off when the
   sign in does not finish. A provider the server does not offer stays grayed out, its Sign In
   and its switches disabled. The catalog and each tool's approval policy live in
-  `connector.catalog.ts`; sending, deleting, sharing, and invites always ask.
-- **The connector viewers come from `@semoss/connectors`.** OneDrive, Outlook Mail and Calendar,
-  Teams channels, files, and chats, and Google Drive, Gmail, Calendar, and Docs are its viewers
-  (`libs/connectors/`). The room mounts each as a sidebar panel
+  `connector.catalog.ts`; sending, deleting, sharing, and invites always ask. Outlook and Gmail
+  offer the same mail operations, and the two calendars the same calendar operations
+  (`MAIL_OPERATIONS`, `CALENDAR_OPERATIONS`, each named by its reactor prefix). Those reactors
+  declare their own view (`declaresView`), so their tools are written with only
+  `SMSS_MCP_EXECUTION` and keep the `SMSS_MCP_UI` the backend gives them; every other tool is
+  written with an inline view when it asks and a sidebar view when it does not.
+- **The connector viewers come from `@semoss/connectors`.** OneDrive, Teams channels, files, and
+  chats, Google Drive and Docs, and one mailbox and one calendar view for both accounts are its
+  viewers (`libs/connectors/`). The room mounts each as a sidebar panel
   (`components/connector-viewer-panels.tsx`) with `showHeader={false}`, since its tab already names
-  it. The tab, the plus menu, and context chips show the app's logo from the source's `brand`
+  it; the Outlook and Gmail panels both render `MailboxView`, and the two calendar panels
+  `CalendarAgendaView`, each with its `provider`. The tab, the plus menu, and context chips show the app's logo from the source's `brand`
   (`sources/connector-sources.ts`); a panel opened with `{ brand }` in its config shows that logo
   instead and gets a tab of its own (`components/connector-panel-icon.tsx`), so one viewer can
   stand for more than one app. The room wires each viewer with

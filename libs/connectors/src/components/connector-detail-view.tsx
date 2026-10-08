@@ -13,10 +13,13 @@ export interface ConnectorDetailField {
 export interface ConnectorDetailViewProps {
 	/** The item's subject or name. */
 	title: string;
-	/** Goes back to the list. */
-	onBack: () => void;
+	/**
+	 * Goes back to the list. Without it there is no back button, as when the
+	 * item is shown on its own, such as in a tool call.
+	 */
+	onBack?: () => void;
 	/** The back button's label, such as `Back to Inbox`. */
-	backLabel: string;
+	backLabel?: string;
 	/** Labelled values under the heading. Empty values are left out. */
 	fields?: ConnectorDetailField[];
 	/** The item's actions, drawn above its content. */
@@ -28,8 +31,9 @@ export interface ConnectorDetailViewProps {
 /**
  * An opened email, thread, chat, or event, in place of the viewer's list.
  *
- * Opening moves focus to the heading, so keyboard and screen reader users
- * land in what they opened.
+ * Opening it from a list moves focus to the heading, so keyboard and screen
+ * reader users land in what they opened. Shown on its own, without `onBack`,
+ * it leaves focus where it is.
  */
 export const ConnectorDetailView = ({
 	title,
@@ -41,20 +45,25 @@ export const ConnectorDetailView = ({
 }: ConnectorDetailViewProps) => {
 	const headingRef = useRef<HTMLHeadingElement>(null);
 	const shownFields = fields.filter((field) => field.value.trim() !== "");
+	const isOpenedFromList = onBack !== undefined;
 
 	useEffect(() => {
-		headingRef.current?.focus();
-	}, []);
+		if (isOpenedFromList) {
+			headingRef.current?.focus();
+		}
+	}, [isOpenedFromList]);
 
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div className="flex min-h-10 min-w-0 shrink-0 items-center gap-2 border-border border-b bg-muted/30 px-2 py-1">
-				<ConnectorIconButton
-					icon={ArrowLeftIcon}
-					isDirectional
-					label={backLabel}
-					onClick={onBack}
-				/>
+				{onBack ? (
+					<ConnectorIconButton
+						icon={ArrowLeftIcon}
+						isDirectional
+						label={backLabel ?? ""}
+						onClick={onBack}
+					/>
+				) : null}
 				<H4
 					ref={headingRef}
 					tabIndex={-1}

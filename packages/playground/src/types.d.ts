@@ -255,6 +255,10 @@ export interface PixelMessageToolCallPart {
 			SMSS_MCP_UI?: {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";
+				// The call's view: `component://<library>/<view>?<params>` for one
+				// the playground draws itself (features/tool-views),
+				// `system://<package>/<path>` for an app that ships with the web
+				// app, or a path in the project's portal.
 				resourceURI?: string;
 				autoOpen?: boolean;
 			};
@@ -320,6 +324,7 @@ export interface MCPTool {
 		generated_on: string;
 		SMSS_MCP_UI?: {
 			loadingMessage?: string;
+			// `component://`, `system://`, or a portal path, as on a tool call.
 			resourceURI?: string;
 			displayLocation?: "inline" | "sidebar" | "hidden";
 			autoOpen?: boolean;

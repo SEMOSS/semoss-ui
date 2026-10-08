@@ -12,8 +12,7 @@ it("groups meetings by local day around midnight and daylight saving boundaries"
 	expect(
 		eventStart({
 			id: "one",
-			start: "2026-10-07T02:30:00",
-			startTimeZone: "UTC",
+			start: "2026-10-07T02:30:00Z",
 			attendees: [],
 		})?.toISOString(),
 	).toBe("2026-10-07T02:30:00.000Z");

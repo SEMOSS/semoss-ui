@@ -14,32 +14,53 @@ const optionalText = z
 	.transform((value) => value ?? undefined);
 const optionalDate = date.nullish().transform((value) => value ?? undefined);
 
-const sourceAttachmentSchema = z.object({
-	id: z.string().min(1),
-	name: z.string().default("Attachment"),
-	contentType: optionalText,
-	size: z.number().nonnegative().optional(),
-	isFile: z.boolean(),
-	isInline: z.boolean().optional(),
-});
+// only a file has bytes that can be staged; Outlook can also attach another
+// message or a link to a file in a drive
+const sourceAttachmentSchema = z
+	.object({
+		id: z.string().min(1),
+		name: z.string().default("Attachment"),
+		contentType: optionalText,
+		size: z.number().nonnegative().optional(),
+		kind: z.enum(["file", "item", "link"]),
+		isInline: z.boolean().optional(),
+	})
+	.transform(({ kind, ...attachment }) => ({
+		...attachment,
+		isFile: kind === "file",
+	}));
 
-export const mailSchema = z.object({
-	displayBody: z.unknown().transform(readDisplayBody).optional(),
-	webLink: optionalText,
-	uid: z.string().min(1),
-	messageId: optionalText,
-	from: optionalText,
-	to: optionalText,
-	cc: optionalText,
-	subject: optionalText,
-	sentDate: optionalDate,
-	receivedDate: optionalDate,
-	unread: z.boolean(),
-	hasAttachments: z.boolean(),
-	body: optionalText,
-	bodyTruncated: z.boolean().optional(),
-	attachments: z.array(sourceAttachmentSchema).optional(),
-});
+// Work shows and searches recipients as one comma separated line
+const recipientLine = z
+	.array(z.string())
+	.default([])
+	.transform((addresses) =>
+		addresses.length > 0 ? addresses.join(", ") : undefined,
+	);
+
+export const mailSchema = z
+	.object({
+		displayBody: z.unknown().transform(readDisplayBody).optional(),
+		webLink: optionalText,
+		id: z.string().min(1),
+		internetMessageId: optionalText,
+		from: optionalText,
+		to: recipientLine,
+		cc: recipientLine,
+		subject: optionalText,
+		sentDate: optionalDate,
+		receivedDate: optionalDate,
+		unread: z.boolean(),
+		hasAttachments: z.boolean(),
+		body: optionalText,
+		bodyTruncated: z.boolean().optional(),
+		attachments: z.array(sourceAttachmentSchema).optional(),
+	})
+	.transform(({ id, internetMessageId, ...mail }) => ({
+		...mail,
+		uid: id,
+		messageId: internetMessageId,
+	}));
 export type OutlookMail = z.infer<typeof mailSchema>;
 export const mailListSchema = z.object({
 	folder: z.string(),
@@ -52,7 +73,7 @@ export const foldersSchema = z.object({
 		z.object({
 			id: z.string().min(1),
 			name: optionalText,
-			totalItemCount: z.number().optional(),
+			totalCount: z.number().optional(),
 		}),
 	),
 });
@@ -100,10 +121,10 @@ export const chatMessagesSchema = z.object({
 export const eventSchema = z.object({
 	id: z.string().min(1),
 	subject: optionalText,
+	// UTC, or the date of a whole day event
 	start: optionalDate,
 	end: optionalDate,
-	startTimeZone: optionalText,
-	endTimeZone: optionalText,
+	timeZone: optionalText,
 	organizer: optionalText,
 	organizerName: optionalText,
 	body: optionalText,
@@ -126,29 +147,29 @@ export const eventsSchema = z.object({
 	events: z.array(eventSchema),
 });
 
-// Receipt recipient fields vary across backend revisions; identity/status are the
-// required contract, and unused receipt recipients are deliberately not inferred.
+// A saved draft answers with `draft: true` and the draft's own id, which is what
+// sends it; a sent message answers with `sent: true` instead.
 export const newDraftReceiptSchema = z.object({
-	saved: z.literal(true),
-	draftId: z.string().min(1),
+	draft: z.literal(true),
+	id: z.string().min(1),
 	webLink: optionalText,
 });
 export const replyDraftReceiptSchema = z.object({
-	sent: z.literal(false),
-	uid: z.string().min(1),
+	draft: z.literal(true),
+	id: z.string().min(1),
 	repliedTo: z.string().min(1),
-	recipients: replyRecipientsSchema.optional(),
+	...replyRecipientsSchema.shape,
 	webLink: optionalText,
 });
 export const forwardDraftReceiptSchema = z.object({
-	sent: z.literal(false),
-	uid: z.string().min(1),
+	draft: z.literal(true),
+	id: z.string().min(1),
 	forwarded: z.string().min(1),
 	webLink: optionalText,
 });
 export const stagedAttachmentSchema = z.object({
 	success: z.literal(true),
-	uid: z.string().min(1),
+	id: z.string().min(1),
 	attachmentId: z.string().min(1),
 	name: z.string(),
 	filePath: z.string().min(1),

@@ -4,16 +4,17 @@ export {
 	ConnectorBrandIcon,
 	type ConnectorBrandIconProps,
 } from "@semoss/shared";
+export {
+	CalendarAgendaView,
+	type CalendarAgendaViewProps,
+} from "./calendar/calendar-agenda-view";
+export { CALENDAR_TOOL_VIEWS } from "./calendar/calendar-tool-views";
 export type {
 	ConnectorAccount,
 	ConnectorSavedFile,
 	ConnectorViewerProps,
 	ConnectorViewerService,
 } from "./core/connector.types";
-export {
-	GoogleCalendarViewer,
-	type GoogleCalendarViewerProps,
-} from "./google/calendar/google-calendar-viewer";
 export {
 	GoogleDocsViewer,
 	type GoogleDocsViewerProps,
@@ -22,22 +23,15 @@ export {
 	GoogleDriveViewer,
 	type GoogleDriveViewerProps,
 } from "./google/drive/google-drive-viewer";
+export { MAIL_TOOL_VIEWS } from "./mail/mail-tool-views";
 export {
-	GmailViewer,
-	type GmailViewerProps,
-} from "./google/gmail/gmail-viewer";
+	MailboxView,
+	type MailboxViewProps,
+} from "./mail/mailbox-view";
 export {
 	OneDriveViewer,
 	type OneDriveViewerProps,
 } from "./microsoft/onedrive/onedrive-viewer";
-export {
-	OutlookCalendarViewer,
-	type OutlookCalendarViewerProps,
-} from "./microsoft/outlook/outlook-calendar-viewer";
-export {
-	OutlookMailViewer,
-	type OutlookMailViewerProps,
-} from "./microsoft/outlook/outlook-mail-viewer";
 export {
 	TeamsChannelViewer,
 	type TeamsChannelViewerProps,

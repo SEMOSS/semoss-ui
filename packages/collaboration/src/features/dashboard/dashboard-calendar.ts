@@ -15,7 +15,7 @@ export function agendaDays(now: Date, timeZone: string): Date[] {
 /** Invalid provider dates stay visible as unscheduled rather than crashing the dashboard. */
 export function eventStart(event: CalendarEvent): Date | null {
 	try {
-		const value = calendarUtc(event.start, event.startTimeZone);
+		const value = calendarUtc(event.start);
 		return value ? new Date(value) : null;
 	} catch {
 		return null;

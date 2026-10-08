@@ -1,14 +1,16 @@
 import { isRecord } from "@semoss/utility/object";
 import { readNonBlankString } from "@semoss/utility/text";
 import { parseGraphDate } from "../core/connector.format";
+import {
+	parseEach,
+	readBody,
+	readNumber,
+	requireList,
+	requireRecord,
+} from "../core/connector-parse";
 import type {
-	CalendarAttendee,
-	CalendarEvent,
 	MicrosoftDownload,
 	MicrosoftDriveItem,
-	OutlookAttachment,
-	OutlookMailFolder,
-	OutlookMessage,
 	TeamsAttachment,
 	TeamsChannel,
 	TeamsChat,
@@ -17,91 +19,9 @@ import type {
 } from "./microsoft.types";
 
 /*
- * The Microsoft reactors return Graph data reshaped by the backend, with null
- * fields left out. Everything here is read defensively: an entry missing what
- * the viewers need is dropped, and a response of the wrong shape is an error.
+ * The Microsoft reactors return Graph data reshaped by the backend, read with
+ * the shared connector parsers.
  */
-
-type RawRecord = Record<string, unknown>;
-
-const readNumber = (value: unknown): number | undefined =>
-	typeof value === "number" && Number.isFinite(value) ? value : undefined;
-
-/** What the backend writes where it cut a text short. */
-const TRUNCATION_MARK = " ... [truncated]";
-
-/**
- * A text the backend may have cut short, without the mark it leaves where it
- * cut: the viewers and saved files say so in their own words.
- *
- * @param value - The text as the backend returned it.
- * @param isTruncated - Whether the backend says it cut the text.
- * @return The text, or undefined when there is none.
- */
-const readBody = (value: unknown, isTruncated: boolean): string | undefined => {
-	if (typeof value !== "string") {
-		return undefined;
-	}
-	return isTruncated && value.endsWith(TRUNCATION_MARK)
-		? value.slice(0, -TRUNCATION_MARK.length)
-		: value;
-};
-
-const readList = (value: unknown): unknown[] =>
-	Array.isArray(value) ? value : [];
-
-/**
- * Parse each entry of a list, keeping those that parse.
- *
- * @param value - The raw list.
- * @param parse - Reads one entry, or returns null to drop it.
- * @return The parsed entries.
- */
-const parseEach = <T>(
-	value: unknown,
-	parse: (entry: unknown) => T | null,
-): T[] => {
-	const parsed: T[] = [];
-	for (const entry of readList(value)) {
-		const item = parse(entry);
-		if (item) {
-			parsed.push(item);
-		}
-	}
-	return parsed;
-};
-
-/**
- * The record a reactor returned, or an error naming what was expected.
- *
- * @param raw - The reactor's output.
- * @param what - What the response should hold, for the error.
- * @return The record.
- * @throws Error when the output is not an object.
- */
-const requireRecord = (raw: unknown, what: string): RawRecord => {
-	if (!isRecord(raw)) {
-		throw new Error(`The response did not include ${what}.`);
-	}
-	return raw;
-};
-
-/**
- * A list a reactor returned, bare or under a key, or an error.
- *
- * @param raw - The reactor's output.
- * @param key - The key the list sits under, when it is wrapped.
- * @param what - What the response should hold, for the error.
- * @return The raw list.
- * @throws Error when there is no list.
- */
-const requireList = (raw: unknown, key: string, what: string): unknown[] => {
-	const list = Array.isArray(raw) ? raw : isRecord(raw) ? raw[key] : null;
-	if (!Array.isArray(list)) {
-		throw new Error(`The response did not include ${what}.`);
-	}
-	return list;
-};
 
 const parseDriveItem = (entry: unknown): MicrosoftDriveItem | null => {
 	if (!isRecord(entry)) {
@@ -202,170 +122,6 @@ export const parseMicrosoftDownload = (raw: unknown): MicrosoftDownload => {
  */
 export const readMicrosoftSavedPath = (raw: unknown): string =>
 	parseMicrosoftDownload(raw).filePath;
-
-const parseMailFolder = (entry: unknown): OutlookMailFolder | null => {
-	if (!isRecord(entry)) {
-		return null;
-	}
-	const id = readNonBlankString(entry.id);
-	if (!id) {
-		return null;
-	}
-	return {
-		id: id,
-		name: readNonBlankString(entry.name) ?? id,
-		totalItemCount: readNumber(entry.totalItemCount),
-	};
-};
-
-/**
- * The mail folders, from `MicrosoftOutlookListMailFolders`.
- *
- * @param raw - The reactor's output, `{ count, folders }`.
- * @return The folders.
- */
-export const parseMailFolders = (raw: unknown): OutlookMailFolder[] =>
-	parseEach(requireList(raw, "folders", "any folders"), parseMailFolder);
-
-const parseMailAttachment = (entry: unknown): OutlookAttachment | null => {
-	if (!isRecord(entry)) {
-		return null;
-	}
-	const id = readNonBlankString(entry.id);
-	if (!id) {
-		return null;
-	}
-	return {
-		id: id,
-		name: readNonBlankString(entry.name) ?? id,
-		contentType: readNonBlankString(entry.contentType),
-		size: readNumber(entry.size),
-		isInline: entry.isInline === true,
-		isFile: entry.isFile === true,
-	};
-};
-
-const parseMailMessage = (entry: unknown): OutlookMessage | null => {
-	if (!isRecord(entry)) {
-		return null;
-	}
-	const uid = readNonBlankString(entry.uid);
-	if (!uid) {
-		return null;
-	}
-	return {
-		uid: uid,
-		conversationId: readNonBlankString(entry.conversationId),
-		from: readNonBlankString(entry.from),
-		fromName: readNonBlankString(entry.fromName),
-		to: readNonBlankString(entry.to),
-		cc: readNonBlankString(entry.cc),
-		subject: readNonBlankString(entry.subject),
-		receivedDate: readNonBlankString(entry.receivedDate),
-		sentDate: readNonBlankString(entry.sentDate),
-		isUnread: entry.unread === true,
-		hasAttachments: entry.hasAttachments === true,
-		body: readBody(entry.body, entry.bodyTruncated === true),
-		uniqueBody: readBody(
-			entry.uniqueBody,
-			entry.uniqueBodyTruncated === true,
-		),
-		isBodyTruncated: entry.bodyTruncated === true,
-		isUniqueBodyTruncated: entry.uniqueBodyTruncated === true,
-		attachments: parseEach(entry.attachments, parseMailAttachment),
-	};
-};
-
-/**
- * The emails in a folder, from `MicrosoftOutlookListMail`.
- *
- * @param raw - The reactor's output, `{ folder, count, messages }`.
- * @return The emails, newest first.
- */
-export const parseMailList = (raw: unknown): OutlookMessage[] =>
-	parseEach(requireList(raw, "messages", "any messages"), parseMailMessage);
-
-/**
- * One email, from `MicrosoftOutlookGetMail`.
- *
- * @param raw - The reactor's output.
- * @return The email with its body and attachments.
- * @throws Error when the response is not an email.
- */
-export const parseMailMessageDetail = (raw: unknown): OutlookMessage => {
-	const message = parseMailMessage(raw);
-	if (!message) {
-		throw new Error("The response did not include the message.");
-	}
-	return message;
-};
-
-const parseAttendee = (entry: unknown): CalendarAttendee | null => {
-	if (!isRecord(entry)) {
-		return null;
-	}
-	const attendee = {
-		address: readNonBlankString(entry.address),
-		name: readNonBlankString(entry.name),
-		type: readNonBlankString(entry.type),
-		response: readNonBlankString(entry.response),
-	};
-	return attendee.address || attendee.name ? attendee : null;
-};
-
-const parseCalendarEvent = (entry: unknown): CalendarEvent | null => {
-	if (!isRecord(entry)) {
-		return null;
-	}
-	const id = readNonBlankString(entry.id);
-	if (!id) {
-		return null;
-	}
-	return {
-		id: id,
-		subject: readNonBlankString(entry.subject),
-		start: readNonBlankString(entry.start),
-		startTimeZone: readNonBlankString(entry.startTimeZone),
-		end: readNonBlankString(entry.end),
-		endTimeZone: readNonBlankString(entry.endTimeZone),
-		isAllDay: entry.isAllDay === true,
-		location: readNonBlankString(entry.location),
-		organizer: readNonBlankString(entry.organizer),
-		organizerName: readNonBlankString(entry.organizerName),
-		attendees: parseEach(entry.attendees, parseAttendee),
-		webLink: readNonBlankString(entry.webLink),
-		joinUrl: readNonBlankString(entry.joinUrl),
-		isOnlineMeeting: entry.isOnlineMeeting === true,
-		isCancelled: entry.isCancelled === true,
-		responseStatus: readNonBlankString(entry.responseStatus),
-		body: readBody(entry.body, entry.bodyTruncated === true),
-		isBodyTruncated: entry.bodyTruncated === true,
-	};
-};
-
-/**
- * The events in a window, from `MicrosoftCalendarListEvents`.
- *
- * @param raw - The reactor's output, `{ start, end, count, events }`.
- * @return The events, earliest first.
- */
-export const parseCalendarEvents = (raw: unknown): CalendarEvent[] =>
-	parseEach(requireList(raw, "events", "any events"), parseCalendarEvent);
-
-/**
- * One event, from `MicrosoftCalendarGetEvent`.
- *
- * @param raw - The reactor's output.
- * @return The event with its body.
- * @throws Error when the response is not an event.
- */
-export const parseCalendarEventDetail = (raw: unknown): CalendarEvent => {
-	const event = parseCalendarEvent(raw);
-	if (!event) {
-		throw new Error("The response did not include the event.");
-	}
-	return event;
-};
 
 const parseTeam = (entry: unknown): TeamsTeam | null => {
 	if (!isRecord(entry)) {

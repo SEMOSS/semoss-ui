@@ -1,7 +1,7 @@
 import { createContext, type ReactNode, useContext } from "react";
 import type { RoomStore } from "@/stores";
 
-/** The room a sidebar panel belongs to. */
+/** The room a sidebar panel, or a tool view in its conversation, belongs to. */
 const RoomContext = createContext<RoomStore | undefined>(undefined);
 
 interface RoomProviderProps {
@@ -10,7 +10,8 @@ interface RoomProviderProps {
 }
 
 /**
- * Provide the room to its sidebar panels.
+ * Provide the room to its sidebar panels, and to the tool views in its
+ * conversation, which save into its files.
  *
  * Panel blueprints receive only their own `config` from the dock, so the room
  * arrives through context rather than a prop — the same way the client's
