@@ -20,6 +20,8 @@ interface RoomConversationProps {
 	onToggleToolWorkbench: () => void;
 	/** Thread-specific actions retain their existing owners and permissions. */
 	headerActions?: ReactNode;
+	/** The chat's topic chips, beside its title. */
+	headerTopics?: ReactNode;
 	transcriptActions?: ReactNode;
 	status: ReactNode;
 	composer: ReactNode;
@@ -42,6 +44,7 @@ export function RoomConversation({
 	showToolWorkbench = true,
 	onToggleToolWorkbench,
 	headerActions,
+	headerTopics,
 	transcriptActions,
 	status,
 	composer,
@@ -67,6 +70,7 @@ export function RoomConversation({
 					workbenchTriggerId={roomWorkbenchTriggerId(conversationId)}
 					onToggleToolWorkbench={onToggleToolWorkbench}
 					actions={headerActions}
+					topics={headerTopics}
 				/>
 			)}
 			<div

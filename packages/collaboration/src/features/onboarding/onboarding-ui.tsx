@@ -55,7 +55,7 @@ export function StepActions({
 	return (
 		<div className="-mx-6 md:-mx-10 -mb-6 md:-mb-10 mt-2 flex flex-wrap items-center gap-3 rounded-b-3xl border-t bg-muted/30 px-6 py-4 md:px-10">
 			{onBack && (
-				<Button variant="ghost" onClick={onBack}>
+				<Button type="button" variant="ghost" onClick={onBack}>
 					Back
 				</Button>
 			)}
@@ -259,7 +259,12 @@ export function Failure({
 			<AlertDescription className="flex items-center justify-between gap-2">
 				<span>{error}</span>
 				{onRetry && (
-					<Button size="sm" variant="outline" onClick={onRetry}>
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						onClick={onRetry}
+					>
 						Retry
 					</Button>
 				)}
