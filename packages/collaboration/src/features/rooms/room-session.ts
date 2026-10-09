@@ -42,6 +42,7 @@ import { readLastModel, rememberLastModel } from "./api/last-model";
 import { ROOM_HISTORY_CHANGED } from "./api/list-rooms";
 import {
 	type PlaygroundRoomOptions,
+	readableRoomName,
 	roomOptionsEnvelopeSchema,
 	roomWriteSchema,
 } from "./api/room-schemas";
@@ -49,6 +50,8 @@ import type { UploadedRoomFile } from "./api/upload-room-files";
 import type { ComposerDraft } from "./components/room-composer.types";
 import { type RoomSource, roomSourceSchema } from "./source-import/room-source";
 import type { ComposerSubmission, PendingToolApproval } from "./types/room";
+
+export const NEW_CHAT_TITLE = "New chat";
 
 const emptyDraft = (): ComposerDraft => ({
 	document: null,
@@ -127,7 +130,7 @@ export class RoomSession {
 			: (last?.modelId ?? getThreadAgent()?.modelId ?? "");
 		this.snapshot = {
 			roomId,
-			title: "New chat",
+			title: NEW_CHAT_TITLE,
 			options: null,
 			source: null,
 			contextFiles: [],
@@ -276,7 +279,7 @@ export class RoomSession {
 		this.update({
 			options,
 			source,
-			title: envelope.ROOM_NAME || this.snapshot.title,
+			title: readableRoomName(envelope.ROOM_NAME) || this.snapshot.title,
 			modelId: options.modelId,
 			// A just-created room reloads its own model; keep the name resolved for it.
 			modelName:
@@ -398,7 +401,8 @@ export class RoomSession {
 				this.insight.actions,
 				this.insight.insightId,
 				{
-					name: title,
+					// the placeholder is not a name; RunAgent names the room from its first request
+					name: title === NEW_CHAT_TITLE ? undefined : title,
 					workspaceId: settings.agentId || null,
 					workspaceName: this.snapshot.agent?.name,
 					modelId: settings.modelId,
