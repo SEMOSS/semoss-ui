@@ -34,6 +34,12 @@ interface JevRouteEditorProps {
 	readOnly: boolean;
 }
 
+const SELECT_TRIGGER_CLASS_NAME =
+	"w-full min-w-0 [&>[data-slot=select-value]]:block [&>[data-slot=select-value]]:min-w-0 [&>[data-slot=select-value]]:truncate";
+
+const SELECT_CONTENT_CLASS_NAME =
+	"w-(--radix-select-trigger-width) min-w-0 max-w-(--radix-select-trigger-width) [&_[data-slot=select-item]>span:last-child]:block [&_[data-slot=select-item]>span:last-child]:min-w-0 [&_[data-slot=select-item]>span:last-child]:truncate";
+
 const NUMERIC_OPERATORS: Array<{
 	value: AutomationJevRouteOperator;
 	label: string;
@@ -193,7 +199,7 @@ export function JevRouteEditor({
 		<Collapsible
 			open={open}
 			onOpenChange={setOpen}
-			className="rounded-lg border bg-card p-3"
+			className="min-w-0 rounded-lg border bg-card p-3"
 		>
 			<div className="flex items-center justify-between gap-2">
 				<CollapsibleTrigger asChild>
@@ -291,11 +297,13 @@ export function JevRouteEditor({
 						>
 							<SelectTrigger
 								id={`${prefix}-match`}
-								className="w-full"
+								className={SELECT_TRIGGER_CLASS_NAME}
 							>
 								<SelectValue />
 							</SelectTrigger>
-							<SelectContent>
+							<SelectContent
+								className={SELECT_CONTENT_CLASS_NAME}
+							>
 								<SelectItem value="all">
 									Every rule matches
 								</SelectItem>
@@ -328,7 +336,7 @@ export function JevRouteEditor({
 						return (
 							<div
 								key={`${route.id}-condition-${conditionIndex}`}
-								className="flex flex-col gap-2 rounded-md border bg-muted/20 p-2"
+								className="flex min-w-0 flex-col gap-2 rounded-md border bg-muted/20 p-2"
 							>
 								<div className="flex items-center justify-between gap-2">
 									<p className="font-medium text-xs">
@@ -364,8 +372,8 @@ export function JevRouteEditor({
 										</Button>
 									)}
 								</div>
-								<div className="grid gap-2">
-									<Field>
+								<div className="grid min-w-0 grid-cols-1 gap-2">
+									<Field className="min-w-0">
 										<FieldLabel>Question</FieldLabel>
 										<Select
 											value={question.key}
@@ -388,15 +396,25 @@ export function JevRouteEditor({
 											disabled={readOnly}
 										>
 											<SelectTrigger
+												className={
+													SELECT_TRIGGER_CLASS_NAME
+												}
 												aria-label={`Rule ${conditionIndex + 1} question`}
 											>
 												<SelectValue />
 											</SelectTrigger>
-											<SelectContent>
+											<SelectContent
+												className={
+													SELECT_CONTENT_CLASS_NAME
+												}
+											>
 												{selectableQuestions.map(
 													(candidate) => (
 														<SelectItem
 															key={candidate.key}
+															title={
+																candidate.key
+															}
 															value={
 																candidate.key
 															}
@@ -409,7 +427,7 @@ export function JevRouteEditor({
 											</SelectContent>
 										</Select>
 									</Field>
-									<Field>
+									<Field className="min-w-0">
 										<FieldLabel>Answer</FieldLabel>
 										<Select
 											value={field}
@@ -426,11 +444,18 @@ export function JevRouteEditor({
 											disabled={readOnly}
 										>
 											<SelectTrigger
+												className={
+													SELECT_TRIGGER_CLASS_NAME
+												}
 												aria-label={`Rule ${conditionIndex + 1} answer`}
 											>
 												<SelectValue />
 											</SelectTrigger>
-											<SelectContent>
+											<SelectContent
+												className={
+													SELECT_CONTENT_CLASS_NAME
+												}
+											>
 												{fields.map((candidate) => (
 													<SelectItem
 														key={candidate.value}
@@ -444,7 +469,7 @@ export function JevRouteEditor({
 									</Field>
 								</div>
 								{field === "probability" && (
-									<Field>
+									<Field className="min-w-0">
 										<FieldLabel>Answer option</FieldLabel>
 										<Select
 											value={
@@ -465,15 +490,23 @@ export function JevRouteEditor({
 											disabled={readOnly}
 										>
 											<SelectTrigger
+												className={
+													SELECT_TRIGGER_CLASS_NAME
+												}
 												aria-label={`Rule ${conditionIndex + 1} option`}
 											>
 												<SelectValue placeholder="Choose an answer" />
 											</SelectTrigger>
-											<SelectContent>
+											<SelectContent
+												className={
+													SELECT_CONTENT_CLASS_NAME
+												}
+											>
 												{options.map((option) => (
 													<SelectItem
 														key={option.value}
 														value={option.value}
+														title={option.label}
 													>
 														{option.label}
 													</SelectItem>
@@ -482,8 +515,8 @@ export function JevRouteEditor({
 										</Select>
 									</Field>
 								)}
-								<div className="grid gap-2">
-									<Field>
+								<div className="grid min-w-0 grid-cols-1 gap-2">
+									<Field className="min-w-0">
 										<FieldLabel>Comparison</FieldLabel>
 										<Select
 											value={condition.operator}
@@ -501,11 +534,18 @@ export function JevRouteEditor({
 											disabled={readOnly}
 										>
 											<SelectTrigger
+												className={
+													SELECT_TRIGGER_CLASS_NAME
+												}
 												aria-label={`Rule ${conditionIndex + 1} comparison`}
 											>
 												<SelectValue />
 											</SelectTrigger>
-											<SelectContent>
+											<SelectContent
+												className={
+													SELECT_CONTENT_CLASS_NAME
+												}
+											>
 												{operators.map((operator) => (
 													<SelectItem
 														key={operator.value}
@@ -517,7 +557,7 @@ export function JevRouteEditor({
 											</SelectContent>
 										</Select>
 									</Field>
-									<Field>
+									<Field className="min-w-0">
 										<FieldLabel>Value</FieldLabel>
 										{field === "choice" ? (
 											<Select
@@ -535,15 +575,23 @@ export function JevRouteEditor({
 												disabled={readOnly}
 											>
 												<SelectTrigger
+													className={
+														SELECT_TRIGGER_CLASS_NAME
+													}
 													aria-label={`Rule ${conditionIndex + 1} value`}
 												>
 													<SelectValue placeholder="Choose an answer" />
 												</SelectTrigger>
-												<SelectContent>
+												<SelectContent
+													className={
+														SELECT_CONTENT_CLASS_NAME
+													}
+												>
 													{options.map((option) => (
 														<SelectItem
 															key={option.value}
 															value={option.value}
+															title={option.label}
 														>
 															{option.label}
 														</SelectItem>

@@ -203,7 +203,13 @@ export function JevQuestionEditor({
 									className="flex items-start gap-2 rounded-md border bg-muted/20 p-2"
 								>
 									<div className="flex min-w-0 flex-1 flex-col gap-2">
+										<FieldLabel
+											htmlFor={`${prefix}-choice-${choiceIndex}-key`}
+										>
+											Key
+										</FieldLabel>
 										<Input
+											id={`${prefix}-choice-${choiceIndex}-key`}
 											value={key}
 											onChange={(event) => {
 												const next = Object.fromEntries(
@@ -238,7 +244,13 @@ export function JevQuestionEditor({
 											aria-label={`Choice ${choiceIndex + 1} key`}
 											readOnly={readOnly}
 										/>
+										<FieldLabel
+											htmlFor={`${prefix}-choice-${choiceIndex}-description`}
+										>
+											Description
+										</FieldLabel>
 										<Input
+											id={`${prefix}-choice-${choiceIndex}-description`}
 											value={description}
 											onChange={(event) =>
 												onChange({
