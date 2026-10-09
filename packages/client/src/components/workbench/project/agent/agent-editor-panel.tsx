@@ -26,6 +26,7 @@ export interface AgentEditorSaveValue {
 	onSave: () => void;
 	isLoading: boolean;
 	isFetching: boolean;
+	isFormValid: boolean;
 	readOnly: boolean;
 }
 
@@ -50,6 +51,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 	const isFetching = status !== "SUCCESS";
 
 	const [isLoading, setIsLoading] = useState(false);
+	const [isFormValid, setIsFormValid] = useState(true);
 	const [formValues, setFormValues] = useState<AgentFormValues | null>(null);
 
 	// Seeds the editable copy once the fetch resolves; AgentForm owns edits
@@ -61,7 +63,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 	}, [status, response]);
 
 	const onSave = useCallback(async () => {
-		if (readOnly || !formValues) return;
+		if (readOnly || !isFormValid || !formValues) return;
 		try {
 			setIsLoading(true);
 			const { pixelReturn } = await insight.actions.run<[unknown]>(
@@ -79,7 +81,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [readOnly, formValues, insight, project.project_id]);
+	}, [readOnly, isFormValid, formValues, insight, project.project_id]);
 
 	useWorkbenchControl(id, AgentEditorSaveControl);
 
@@ -87,8 +89,8 @@ const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 	// value changes) - depending on it here would loop forever.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
 	useEffect(() => {
-		setValue({ onSave, isLoading, isFetching, readOnly });
-	}, [onSave, isLoading, isFetching, readOnly]);
+		setValue({ onSave, isLoading, isFetching, isFormValid, readOnly });
+	}, [onSave, isLoading, isFetching, isFormValid, readOnly]);
 
 	return (
 		<div className="h-full w-full overflow-auto">
@@ -107,9 +109,11 @@ const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 				<AgentForm
 					data={formValues}
 					onChange={setFormValues}
+					onValidityChange={setIsFormValid}
 					disabled={isLoading}
 					promptTitles={toAgentPromptTitles(response)}
 					knownHookKinds={response.known_hook_kinds ?? []}
+					hookCapabilities={response.hook_capabilities ?? {}}
 					defaultTools={response.default_tools ?? []}
 					workspaceId={project.project_id}
 					links={CLIENT_AGENT_LINKS}

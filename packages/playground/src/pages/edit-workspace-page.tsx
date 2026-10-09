@@ -49,6 +49,7 @@ export const EditWorkspacePage = observer(() => {
 	const [seed, setSeed] = useState<AgentFormSeed | null>(null);
 	const [formValues, setFormValues] = useState<AgentFormValues | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
+	const [isFormValid, setIsFormValid] = useState(true);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const seededWorkspace = useRef<string | null>(null);
 
@@ -135,7 +136,7 @@ export const EditWorkspacePage = observer(() => {
 
 	const handleSave = async () => {
 		const name = formValues.name.trim();
-		if (isSaving || !name) return;
+		if (isSaving || !isFormValid || !name) return;
 		setIsSaving(true);
 		setSaveError(null);
 		try {
@@ -184,7 +185,10 @@ export const EditWorkspacePage = observer(() => {
 							type="button"
 							onClick={handleSave}
 							disabled={
-								isSaving || !formValues.name.trim() || !isDirty
+								isSaving ||
+								!isFormValid ||
+								!formValues.name.trim() ||
+								!isDirty
 							}
 							data-testid="workspace-edit-page--save-btn"
 						>
@@ -203,9 +207,11 @@ export const EditWorkspacePage = observer(() => {
 					key={seed.workspaceId}
 					data={seed.values}
 					onChange={setFormValues}
+					onValidityChange={setIsFormValid}
 					disabled={isSaving}
 					promptTitles={toAgentPromptTitles(getWorkspace.data)}
 					knownHookKinds={getWorkspace.data.known_hook_kinds ?? []}
+					hookCapabilities={getWorkspace.data.hook_capabilities ?? {}}
 					defaultTools={getWorkspace.data.default_tools ?? []}
 					workspaceId={workspaceId}
 					links={getPlaygroundAgentLinks(
