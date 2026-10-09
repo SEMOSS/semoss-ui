@@ -19,6 +19,7 @@ import {
 	makeAreaReview,
 	nextStage,
 	press,
+	type ReviewWire,
 	reviewSession,
 } from "./topic-review.test-fixtures";
 import type { SetupChange } from "./topic-setup-api";
@@ -45,11 +46,15 @@ const change = (extra: Partial<SetupChange>): SetupChange => ({
 	type: "edit_topic",
 	topicKey: "",
 	topicKeys: [],
+	areaKey: "",
 	name: "",
 	description: "",
+	note: "",
 	addTerms: [],
 	addPeople: [],
 	removePeople: [],
+	choices: [],
+	unknownNames: [],
 	reason: "",
 	...extra,
 });
@@ -111,6 +116,8 @@ const combine = change({
 
 beforeEach(() => {
 	vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+	// the assistant keeps its conversation per review in session storage
+	sessionStorage.clear();
 });
 afterEach(() => {
 	cleanup();
@@ -384,6 +391,304 @@ describe("setup assistant", () => {
 		expect(await screen.findByRole("alert")).toHaveTextContent(
 			"no longer fits your topics",
 		);
+	});
+});
+
+describe("setup assistant: people choices and areas", () => {
+	const arjun = {
+		name: "arjun",
+		options: [
+			{ id: "p-7", name: "Arjun Rao", title: "Engineer" },
+			{ id: "p-8", name: "Arjun Mehta", title: "Designer" },
+		],
+	};
+	const addPeopleChange = (extra: Partial<SetupChange> = {}) =>
+		change({
+			type: "edit_topic",
+			topicKey: "topic-1",
+			addPeople: [{ id: "p-5", name: "Dana Ruiz" }],
+			choices: [arjun],
+			...extra,
+		});
+	const topicOne = (session: { saved: ReviewWire | null }) =>
+		session.saved?.draft.topics.find((topic) => topic.key === "topic-1");
+
+	it("adds the person you picked for a name that fits several, along with the resolved one", async () => {
+		const { session, actions } = assistantSession([addPeopleChange()]);
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await askAssistant(user);
+		expect(await screen.findByText("Which arjun?")).toBeVisible();
+		expect(screen.getByText("Add Dana Ruiz")).toBeVisible();
+		const first = screen.getByRole("button", { name: "Arjun Rao" });
+		const second = screen.getByRole("button", { name: "Arjun Mehta" });
+		expect(first).toHaveAttribute("aria-pressed", "false");
+		expect(second).toHaveAttribute("aria-pressed", "false");
+		await user.click(second);
+		expect(second).toHaveAttribute("aria-pressed", "true");
+		expect(first).toHaveAttribute("aria-pressed", "false");
+		await user.click(screen.getByRole("button", { name: "Apply" }));
+		await waitFor(
+			() =>
+				expect(topicOne(session)?.addedPeople).toEqual(["p-5", "p-8"]),
+			SAVED,
+		);
+		expect(topicOne(session)?.removedPeople).toEqual([]);
+		// the card is done, so its choices are gone
+		expect(screen.queryByText("Which arjun?")).not.toBeInTheDocument();
+		expect(session.saved?.appliedRevision).toBeNull();
+	});
+
+	it("adds nobody for a choice that was not picked", async () => {
+		const { session, actions } = assistantSession([addPeopleChange()]);
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await askAssistant(user);
+		await user.click(await screen.findByRole("button", { name: "Apply" }));
+		await waitFor(
+			() => expect(topicOne(session)?.addedPeople).toEqual(["p-5"]),
+			SAVED,
+		);
+		expect(JSON.stringify(topicOne(session))).not.toMatch(/p-7|p-8/);
+	});
+
+	it("applies the picked person with Apply all too", async () => {
+		const { session, actions } = assistantSession([
+			addPeopleChange(),
+			change({ type: "skip", topicKey: "topic-3" }),
+		]);
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await askAssistant(user);
+		await user.click(
+			await screen.findByRole("button", { name: "Arjun Rao" }),
+		);
+		await user.click(screen.getByRole("button", { name: "Apply all" }));
+		await waitFor(
+			() =>
+				expect(topicOne(session)?.addedPeople).toEqual(["p-5", "p-7"]),
+			SAVED,
+		);
+	});
+
+	it("lists the names nobody in your contacts fits", async () => {
+		const { actions } = assistantSession([
+			change({
+				type: "edit_topic",
+				topicKey: "topic-1",
+				unknownNames: ["Zed Quill", "Quinn"],
+			}),
+		]);
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await askAssistant(user);
+		expect(
+			await screen.findByText("Not found: Zed Quill, Quinn"),
+		).toBeVisible();
+	});
+
+	it("keeps an area's topics separate when the assistant proposes it", async () => {
+		const { session, actions, run } = assistantSession(
+			[
+				change({
+					type: "split_area",
+					areaKey: "area-1",
+					name: "Recruiting",
+				}),
+			],
+			makeAreaReview(),
+		);
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await askAssistant(user);
+		expect(
+			await screen.findByText("Keep Recruiting as separate topics"),
+		).toBeVisible();
+		await user.click(screen.getByRole("button", { name: "Apply" }));
+		await waitFor(() =>
+			expect(
+				within(
+					screen.getByRole("dialog", { name: "Setup assistant" }),
+				).getByText("Done"),
+			).toBeVisible(),
+		);
+		// the typed message is saved as guidance first, so this is revision 2
+		expect(statements(run, "BrainSetTopicArea")).toEqual([
+			'BrainSetTopicArea(reviewId=["review-1"], revision=[2], area=["area-1"], split=[true]);',
+		]);
+		expect(session.saved?.draft.areas[0].split).toBe(true);
+		await user.keyboard("{Escape}");
+		expect(
+			await screen.findByRole("button", {
+				name: "Combine into one topic",
+			}),
+		).toBeVisible();
+		expect(
+			screen.getByRole("checkbox", { name: "UNC Recruiting" }),
+		).toBeChecked();
+		expect(
+			screen.getByRole("checkbox", { name: "VCU Hiring" }),
+		).toBeChecked();
+	});
+
+	it("combines a split area into one topic when the assistant proposes it", async () => {
+		const review = makeAreaReview();
+		review.draft.areas[0].split = true;
+		review.draft.topics[0].name = "UNC Recruiting";
+		review.draft.topics[1].mergedIntoKey = null;
+		const { session, actions, run } = assistantSession(
+			[
+				change({
+					type: "join_area",
+					areaKey: "area-1",
+					name: "Recruiting",
+				}),
+			],
+			review,
+		);
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await askAssistant(user);
+		expect(
+			await screen.findByText("Combine Recruiting into one topic"),
+		).toBeVisible();
+		await user.click(screen.getByRole("button", { name: "Apply" }));
+		await waitFor(() =>
+			expect(statements(run, "BrainSetTopicArea")).toEqual([
+				'BrainSetTopicArea(reviewId=["review-1"], revision=[2], area=["area-1"], split=[false]);',
+			]),
+		);
+		await waitFor(() =>
+			expect(session.saved?.draft.areas[0].split).toBe(false),
+		);
+		await user.keyboard("{Escape}");
+		expect(
+			await screen.findByRole("button", { name: "Keep these separate" }),
+		).toBeVisible();
+	});
+
+	it.each([
+		["an area that is already split", "split_area", "area-1", true],
+		["an area that is already combined", "join_area", "area-1", false],
+		["an area that does not exist", "split_area", "area-99", false],
+	] as const)(
+		"says the proposal no longer fits for %s",
+		async (_name, type, areaKey, isSplit) => {
+			const review = makeAreaReview();
+			review.draft.areas[0].split = isSplit;
+			const { actions, run } = assistantSession(
+				[change({ type, areaKey, name: "Recruiting" })],
+				review,
+			);
+			const user = userEvent.setup();
+			render(step(actions));
+			await screen.findByRole("heading", {
+				name: "Your main areas of work",
+			});
+			await askAssistant(user);
+			await user.click(
+				await screen.findByRole("button", { name: "Apply" }),
+			);
+			expect(await screen.findByRole("alert")).toHaveTextContent(
+				"no longer fits your topics",
+			);
+			expect(statements(run, "BrainSetTopicArea")).toEqual([]);
+			expect(screen.getByRole("button", { name: "Apply" })).toBeEnabled();
+		},
+	);
+
+	it("regroups areas first on Apply all, so the edit is saved on top of the regrouped draft", async () => {
+		const { session, actions, run } = assistantSession(
+			[
+				change({
+					type: "edit_topic",
+					topicKey: "topic-3",
+					name: "Platform Delivery",
+				}),
+				change({
+					type: "split_area",
+					areaKey: "area-1",
+					name: "Recruiting",
+				}),
+			],
+			makeAreaReview(),
+		);
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await askAssistant(user);
+		await user.click(
+			await screen.findByRole("button", { name: "Apply all" }),
+		);
+		await waitFor(
+			() =>
+				expect(
+					session.saved?.draft.topics.find(
+						(topic) => topic.key === "topic-3",
+					)?.name,
+				).toBe("Platform Delivery"),
+			SAVED,
+		);
+		const calls = run.mock.calls.map(([statement]) => String(statement));
+		const regroup = calls.findIndex((statement) =>
+			statement.startsWith("BrainSetTopicArea("),
+		);
+		const save = calls.findIndex(
+			(statement) =>
+				statement.startsWith("BrainSaveTopicReview(") &&
+				statement.includes("Platform Delivery"),
+		);
+		expect(regroup).toBeGreaterThan(-1);
+		expect(save).toBeGreaterThan(regroup);
+		expect(session.saved?.draft.areas[0].split).toBe(true);
+		expect(
+			within(
+				screen.getByRole("dialog", { name: "Setup assistant" }),
+			).getAllByText("Done"),
+		).toHaveLength(2);
+	});
+
+	it("can edit a topic of an area it regrouped in the same batch", async () => {
+		const { session, actions } = assistantSession(
+			[
+				change({
+					type: "edit_topic",
+					topicKey: "topic-2",
+					name: "VCU Recruiting",
+				}),
+				change({
+					type: "split_area",
+					areaKey: "area-1",
+					name: "Recruiting",
+				}),
+			],
+			makeAreaReview(),
+		);
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", {
+			name: "Your main areas of work",
+		});
+		await askAssistant(user);
+		await user.click(
+			await screen.findByRole("button", { name: "Apply all" }),
+		);
+		await waitFor(
+			() =>
+				expect(
+					session.saved?.draft.topics.find(
+						(topic) => topic.key === "topic-2",
+					)?.name,
+				).toBe("VCU Recruiting"),
+			SAVED,
+		);
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 });
 

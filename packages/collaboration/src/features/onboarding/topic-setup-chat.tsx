@@ -54,6 +54,8 @@ export function TopicSetupChat({
 	});
 	const [draft, setDraft] = useState("");
 	const [isSending, setIsSending] = useState(false);
+	// "message:change:choice" to the person picked for a name that fits several
+	const [picks, setPicks] = useState<Record<string, string>>({});
 	const [error, setError] = useState<string | null>(null);
 	const listRef = useRef<HTMLDivElement>(null);
 
@@ -107,7 +109,10 @@ export function TopicSetupChat({
 	): Promise<void> => {
 		const change = messages[messageIndex]?.changes?.[changeIndex];
 		if (!change) return;
-		if (apply && !(await onApply(change))) {
+		if (
+			apply &&
+			!(await onApply(withPicks(change, messageIndex, changeIndex)))
+		) {
 			setError(
 				"That change no longer fits your topics. Ask the assistant again.",
 			);
@@ -131,13 +136,24 @@ export function TopicSetupChat({
 		if (!item?.changes) return;
 		const done: number[] = [];
 		let failed = 0;
-		for (const [changeIndex, change] of item.changes.entries()) {
+		// areas are regrouped first, so edits to their topics land on the result
+		const order = [...item.changes.entries()].sort(
+			([, left], [, right]) =>
+				Number(!left.type.endsWith("_area")) -
+				Number(!right.type.endsWith("_area")),
+		);
+		for (const [changeIndex, change] of order) {
 			if (
 				item.handled?.includes(changeIndex) ||
 				change.type === "combine"
 			)
 				continue;
-			if (await onApply(change, { stay: true })) done.push(changeIndex);
+			if (
+				await onApply(withPicks(change, messageIndex, changeIndex), {
+					stay: true,
+				})
+			)
+				done.push(changeIndex);
 			else failed++;
 		}
 		setError(
@@ -152,6 +168,22 @@ export function TopicSetupChat({
 					: entry,
 			),
 		);
+	};
+
+	// the people the owner picked for names that fit several join the change's people
+	const withPicks = (
+		change: SetupChange,
+		messageIndex: number,
+		changeIndex: number,
+	): SetupChange => {
+		const picked = (change.choices ?? []).flatMap((choice, choiceIndex) => {
+			const id = picks[`${messageIndex}:${changeIndex}:${choiceIndex}`];
+			const person = choice.options.find((option) => option.id === id);
+			return person ? [{ id: person.id, name: person.name }] : [];
+		});
+		return picked.length
+			? { ...change, addPeople: [...change.addPeople, ...picked] }
+			: change;
 	};
 
 	const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -229,6 +261,68 @@ export function TopicSetupChat({
 											{line}
 										</P>
 									))}
+									{!isHandled &&
+										(change.choices ?? []).map(
+											(choice, choiceIndex) => {
+												const pickKey = `${messageIndex}:${changeIndex}:${choiceIndex}`;
+												return (
+													<div
+														key={pickKey}
+														className="space-y-1"
+													>
+														<P className="text-xs">
+															Which {choice.name}?
+														</P>
+														<div className="flex flex-wrap gap-1">
+															{choice.options.map(
+																(option) => (
+																	<Button
+																		key={
+																			option.id
+																		}
+																		type="button"
+																		size="sm"
+																		variant={
+																			picks[
+																				pickKey
+																			] ===
+																			option.id
+																				? "default"
+																				: "outline"
+																		}
+																		className="h-7"
+																		aria-pressed={
+																			picks[
+																				pickKey
+																			] ===
+																			option.id
+																		}
+																		title={
+																			option.title
+																		}
+																		onClick={() =>
+																			setPicks(
+																				(
+																					current,
+																				) => ({
+																					...current,
+																					[pickKey]:
+																						option.id,
+																				}),
+																			)
+																		}
+																	>
+																		{
+																			option.name
+																		}
+																	</Button>
+																),
+															)}
+														</div>
+													</div>
+												);
+											},
+										)}
 									{isHandled ? (
 										<P className="text-muted-foreground text-xs">
 											Done
@@ -318,6 +412,10 @@ function title(change: SetupChange, topics: { key: string; name: string }[]) {
 			return `Skip ${nameOf(change.topicKey)}`;
 		case "combine":
 			return `Combine ${change.topicKeys.map(nameOf).join(", ")}${change.name ? ` into ${change.name}` : ""}`;
+		case "split_area":
+			return `Keep ${change.name} as separate topics`;
+		case "join_area":
+			return `Combine ${change.name} into one topic`;
 	}
 }
 
@@ -333,9 +431,16 @@ function details(change: SetupChange): string[] {
 		lines.push(
 			`Remove ${change.removePeople.map((person) => person.name).join(", ")}`,
 		);
+	if (change.note) lines.push(`Note: ${change.note}`);
+	if (change.unknownNames?.length)
+		lines.push(`Not found: ${change.unknownNames.join(", ")}`);
 	if (change.addTerms.length)
 		lines.push(`Clues: ${change.addTerms.join(", ")}`);
-	if (change.description && change.type !== "combine")
+	if (
+		change.description &&
+		change.type !== "combine" &&
+		!change.type.endsWith("_area")
+	)
 		lines.push(change.description);
 	if (change.reason) lines.push(change.reason);
 	return lines;

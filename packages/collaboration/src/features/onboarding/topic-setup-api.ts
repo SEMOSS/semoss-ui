@@ -5,14 +5,38 @@ import type { TopicReview } from "./topic-review-api";
 const personRefSchema = z.object({ id: z.string(), name: z.string() });
 
 export const setupChangeSchema = z.object({
-	type: z.enum(["add_topic", "edit_topic", "keep", "skip", "combine"]),
+	type: z.enum([
+		"add_topic",
+		"edit_topic",
+		"keep",
+		"skip",
+		"combine",
+		"split_area",
+		"join_area",
+	]),
 	topicKey: z.string(),
 	topicKeys: z.array(z.string()),
+	areaKey: z.string().default(""),
 	name: z.string(),
 	description: z.string(),
+	/** Something about the topic that is not a person; added to its description. */
+	note: z.string().default(""),
 	addTerms: z.array(z.string()),
 	addPeople: z.array(personRefSchema),
 	removePeople: z.array(personRefSchema),
+	/** A typed name that fits several people; the owner picks one. */
+	choices: z
+		.array(
+			z.object({
+				name: z.string(),
+				options: z.array(
+					personRefSchema.extend({ title: z.string().default("") }),
+				),
+			}),
+		)
+		.default([]),
+	/** Typed names nobody in the owner's contacts fits. */
+	unknownNames: z.array(z.string()).default([]),
 	reason: z.string(),
 });
 export type SetupChange = z.infer<typeof setupChangeSchema>;

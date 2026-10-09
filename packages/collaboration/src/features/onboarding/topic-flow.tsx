@@ -1,5 +1,5 @@
 import { ArrowRight, MessageSquare, RotateCcw } from "lucide-react";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
 	Button,
 	cn,
@@ -106,6 +106,9 @@ export function TopicFlow({
 	const values = form.watch();
 	const { errors, isSubmitting } = form.formState;
 	const review = controller.review;
+	// the newest draft, also mid-handler after a regroup the next render has not shown yet
+	const reviewRef = useRef(review);
+	reviewRef.current = review;
 	const isBusy =
 		isSubmitting ||
 		isGoingBack ||
@@ -198,7 +201,7 @@ export function TopicFlow({
 		if (index < 0) return;
 		const topic = form.getValues(`topics.${index}`);
 		const known = new Set(
-			review.draft.topics
+			reviewRef.current.draft.topics
 				.find((item) => item.key === key)
 				?.people.map((person) => person.id) ?? [],
 		);
@@ -228,7 +231,7 @@ export function TopicFlow({
 		if (index < 0) return;
 		const topic = form.getValues(`topics.${index}`);
 		const known = new Set(
-			review.draft.topics
+			reviewRef.current.draft.topics
 				.find((item) => item.key === key)
 				?.people.map((person) => person.id) ?? [],
 		);
@@ -273,12 +276,22 @@ export function TopicFlow({
 
 	// a chat proposal becomes an ordinary draft edit the owner can still change
 	const applyChange = async (change: SetupChange): Promise<boolean> => {
+		if (change.type === "split_area" || change.type === "join_area") {
+			const area = reviewRef.current.draft.areas.find(
+				(item) => item.key === change.areaKey,
+			);
+			if (!area || area.split === (change.type === "split_area"))
+				return false;
+			return regroup(change.areaKey, change.type === "split_area");
+		}
 		if (change.type === "add_topic") {
 			if (form.getValues("topics").length >= 100) return false;
 			rememberNames(change.addPeople);
 			addTopic({
 				name: change.name,
-				description: change.description,
+				description: [change.description, change.note]
+					.filter(Boolean)
+					.join(" "),
 				terms: change.addTerms.join("\n"),
 				addedPeople: change.addPeople.map((person) => person.id),
 			});
@@ -292,8 +305,9 @@ export function TopicFlow({
 			const targetKey =
 				keys.find(
 					(key) =>
-						review.draft.topics.find((t) => t.key === key)
-							?.accepted,
+						reviewRef.current.draft.topics.find(
+							(t) => t.key === key,
+						)?.accepted,
 				) ?? keys[0];
 			const target = form.getValues(`topics.${indexOf(targetKey)}`);
 			return organization.openPreview([
@@ -307,9 +321,15 @@ export function TopicFlow({
 			]);
 		}
 		const index = indexOf(change.topicKey);
-		if (index < 0 || combined.has(change.topicKey)) return false;
+		if (
+			index < 0 ||
+			reviewRef.current.draft.topics.some(
+				(topic) => topic.key === change.topicKey && topic.mergedIntoKey,
+			)
+		)
+			return false;
 		if (change.type === "keep" || change.type === "skip") {
-			const isAccepted = review.draft.topics.find(
+			const isAccepted = reviewRef.current.draft.topics.find(
 				(t) => t.key === change.topicKey,
 			)?.accepted;
 			if (change.type === "skip" && isAccepted) return false;
@@ -326,6 +346,14 @@ export function TopicFlow({
 			form.setValue(`topics.${index}.description`, change.description, {
 				shouldDirty: true,
 			});
+		// a note adds to what the description already says
+		const described = form.getValues(`topics.${index}.description`);
+		if (change.note && !described.includes(change.note))
+			form.setValue(
+				`topics.${index}.description`,
+				[described.trim(), change.note].filter(Boolean).join(" "),
+				{ shouldDirty: true },
+			);
 		if (change.addTerms.length) {
 			const current = form.getValues(`topics.${index}.terms`);
 			const have = new Set(
@@ -351,18 +379,24 @@ export function TopicFlow({
 		return true;
 	};
 
-	const regroup = async (areaKey: string, split: boolean): Promise<void> => {
+	const regroup = async (
+		areaKey: string,
+		split: boolean,
+	): Promise<boolean> => {
 		setIsRegrouping(true);
 		try {
 			const saved = await controller.flushDraft(form.getValues());
 			const next = await setTopicArea(actions, saved, areaKey, split);
 			controller.acceptReview(next);
+			reviewRef.current = next;
 			form.reset(reviewDraft(next));
+			return true;
 		} catch (cause: unknown) {
 			form.setError("root.server", {
 				type: "server",
 				message: message(cause),
 			});
+			return false;
 		} finally {
 			setIsRegrouping(false);
 		}
