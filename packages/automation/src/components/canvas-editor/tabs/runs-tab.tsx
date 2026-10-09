@@ -758,6 +758,8 @@ function ResultsPanel({
 	}, [stepMap]);
 
 	const displayResult = selectedBodyResult ?? selectedResult;
+	const displayOutput =
+		displayResult?.OUTPUT_VALUE ?? displayResult?.OUTPUT_PREVIEW;
 	const outputSelectionKey = JSON.stringify([
 		displayResult?.NODE_ID,
 		selectedBodyKey?.loopNodeId,
@@ -1078,7 +1080,7 @@ function ResultsPanel({
 			>
 				{displayResult ? (
 					displayResult.STATUS === "RUNNING" &&
-					!displayResult.OUTPUT_PREVIEW?.trim() ? (
+					!displayOutput?.trim() ? (
 						<div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground text-xs">
 							<Loader2 className="size-5 animate-spin text-primary" />
 							<span>
@@ -1087,7 +1089,7 @@ function ResultsPanel({
 							</span>
 						</div>
 					) : displayResult.STATUS === "WAITING_FOR_INPUT" &&
-						!displayResult.OUTPUT_PREVIEW?.trim() ? (
+						!displayOutput?.trim() ? (
 						<div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground text-xs">
 							<Clock3 className="size-5 text-warning" />
 							<span>
@@ -1147,20 +1149,18 @@ function ResultsPanel({
 									key={`${executionInsightId}:${displayResult.NODE_ID}:${selectedBodyKey?.iterationIndex ?? "root"}`}
 									insightId={executionInsightId}
 									frame={displayResult.OUTPUT_FRAME}
-									outputPreview={
-										displayResult.OUTPUT_PREVIEW ?? ""
-									}
+									outputPreview={displayOutput ?? ""}
 									onOutputPopout={onOutputPopout}
 								/>
 							) : (
 								<CellOutputBlock
 									output={
-										displayResult.OUTPUT_PREVIEW ??
+										displayOutput ??
 										"No output was produced."
 									}
 									onOutputPopout={() =>
 										onOutputPopout(
-											displayResult.OUTPUT_PREVIEW ??
+											displayOutput ??
 												"No output was produced.",
 										)
 									}
