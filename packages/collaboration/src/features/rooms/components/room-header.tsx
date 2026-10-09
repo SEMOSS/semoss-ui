@@ -28,6 +28,8 @@ interface RoomHeaderProps {
 	onToggleToolWorkbench: () => void;
 	/** Contextual thread actions retain their owning workflows. */
 	actions?: ReactNode;
+	/** The chat's topic chips. */
+	topics?: ReactNode;
 }
 
 /** Compose room identity and actions into the shell without moving their state. */
@@ -39,6 +41,7 @@ export function RoomHeader({
 	workbenchTriggerId,
 	onToggleToolWorkbench,
 	actions,
+	topics,
 }: RoomHeaderProps) {
 	const headerControls = useContext(CollaborationHeaderContext);
 	const conversationTitle = title.trim() || "Untitled conversation";
@@ -76,6 +79,7 @@ export function RoomHeader({
 					</P>
 				</PopoverContent>
 			</Popover>
+			{topics}
 			<div className="flex shrink-0 items-center gap-1">
 				{actions}
 				{showToolWorkbench && (
