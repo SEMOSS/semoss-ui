@@ -31,7 +31,7 @@ const RENAME_BUTTON_CLASS =
 	"shrink-0 text-muted-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover/name:opacity-100 pointer-coarse:opacity-100";
 
 interface EntityHeaderProps {
-	/** Rendered icon — placed inside a sized wrapper. Omit for no-icon headers. */
+	/** Rendered icon, placed inside a sized wrapper. Omit for no-icon headers. */
 	icon?: ReactNode;
 	/** Entity display name shown as the title. */
 	name: string;
@@ -65,6 +65,10 @@ interface EntityHeaderProps {
 	onRename?: (name: string) => Promise<void>;
 	/** Tooltip and accessible name for the rename button and input. Default: "Rename". */
 	renameLabel?: string;
+	/** Shown right after the name, such as a type badge or icon buttons that act on the entity. */
+	nameAddon?: ReactNode;
+	/** Shown below the name and id, such as the entity's description. */
+	description?: ReactNode;
 }
 
 export const EntityHeader = ({
@@ -80,6 +84,8 @@ export const EntityHeader = ({
 	copyTestId,
 	onRename,
 	renameLabel = "Rename",
+	nameAddon,
+	description,
 }: EntityHeaderProps) => {
 	const [isRenaming, setIsRenaming] = useState(false);
 	// set when a rename ends from the keyboard, so focus returns to the button
@@ -131,7 +137,12 @@ export const EntityHeader = ({
 	};
 
 	const nameElementProps = {
-		className: cn(nameClass, onRename && RENAMABLE_NAME_CLASS),
+		// a name with something after it shrinks so the row can truncate it
+		className: cn(
+			nameClass,
+			onRename && RENAMABLE_NAME_CLASS,
+			nameAddon && "min-w-0",
+		),
 		"data-testid": nameTestId,
 		onDoubleClick: onRename ? () => setIsRenaming(true) : undefined,
 	};
@@ -147,6 +158,49 @@ export const EntityHeader = ({
 			? "text-muted-foreground text-xs"
 			: "text-muted-foreground text-sm";
 
+	/** The name, the rename input, or the name with its rename button */
+	const renderName = (): ReactNode =>
+		isRenaming && onRename ? (
+			<EntityNameInput
+				name={name}
+				label={renameLabel}
+				className={NAME_INPUT_CLASSES[size]}
+				onRename={onRename}
+				onDone={handleRenameDone}
+			/>
+		) : onRename ? (
+			<div className="group/name flex min-w-0 items-center gap-1">
+				{nameElement}
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<Button
+							ref={(element) => {
+								if (element && shouldFocusRenameRef.current) {
+									shouldFocusRenameRef.current = false;
+									element.focus();
+								}
+							}}
+							variant="ghost"
+							size="icon-sm"
+							aria-label={renameLabel}
+							onClick={() => setIsRenaming(true)}
+							className={cn(
+								RENAME_BUTTON_CLASS,
+								isSm && "size-6",
+							)}
+						>
+							<PencilIcon
+								className={isSm ? "size-3" : "size-4"}
+							/>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{renameLabel}</TooltipContent>
+				</Tooltip>
+			</div>
+		) : (
+			nameElement
+		);
+
 	return (
 		<div className={wrapperClass}>
 			{icon && (
@@ -158,48 +212,13 @@ export const EntityHeader = ({
 			)}
 
 			<div className="flex min-w-0 flex-1 flex-col">
-				{isRenaming && onRename ? (
-					<EntityNameInput
-						name={name}
-						label={renameLabel}
-						className={NAME_INPUT_CLASSES[size]}
-						onRename={onRename}
-						onDone={handleRenameDone}
-					/>
-				) : onRename ? (
-					<div className="group/name flex min-w-0 items-center gap-1">
-						{nameElement}
-						<Tooltip disableHoverableContent={false}>
-							<TooltipTrigger asChild>
-								<Button
-									ref={(element) => {
-										if (
-											element &&
-											shouldFocusRenameRef.current
-										) {
-											shouldFocusRenameRef.current = false;
-											element.focus();
-										}
-									}}
-									variant="ghost"
-									size="icon-sm"
-									aria-label={renameLabel}
-									onClick={() => setIsRenaming(true)}
-									className={cn(
-										RENAME_BUTTON_CLASS,
-										isSm && "size-6",
-									)}
-								>
-									<PencilIcon
-										className={isSm ? "size-3" : "size-4"}
-									/>
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>{renameLabel}</TooltipContent>
-						</Tooltip>
+				{nameAddon ? (
+					<div className="flex min-w-0 flex-wrap items-center gap-2">
+						{renderName()}
+						{nameAddon}
 					</div>
 				) : (
-					nameElement
+					renderName()
 				)}
 				{id && (
 					<div
@@ -235,6 +254,7 @@ export const EntityHeader = ({
 						)}
 					</div>
 				)}
+				{description ? <div className="mt-1">{description}</div> : null}
 			</div>
 
 			{actions && (

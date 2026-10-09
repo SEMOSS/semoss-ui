@@ -29,13 +29,31 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
-import { AddMembersOverlay } from "./add-members";
+import { AddMembersOverlay, type AddMembersPeopleSource } from "./add-members";
 import { formatNum, parseNum } from "./common";
-import { MembersList, type MemberUser } from "./members-list";
+import {
+	MembersList,
+	type MembersListSource,
+	type MemberUser,
+} from "./members-list";
+
+/**
+ * Where the table reads, removes and adds members, for a host whose members are
+ * not a project's or engine's, such as a team's members or managers. Make it
+ * with useMemo so the table does not reload on every render.
+ */
+export interface MembersSource extends MembersListSource {
+	/** Lists and adds people in the add dialog */
+	people: AddMembersPeopleSource;
+	/** The add button's label, in place of "Add Members" */
+	addLabel?: string;
+}
 
 interface MembersProps {
-	id: string;
-	type:
+	/** Id of the project or engine; unused with `source` */
+	id?: string;
+	/** Kind of resource; unused with `source` */
+	type?:
 		| "PROJECT"
 		| "ENGINE"
 		| "DATABASE"
@@ -62,6 +80,12 @@ interface MembersProps {
 	 * a choice between existing users and the whole organization.
 	 */
 	isDirectoryAvailable?: boolean;
+	/**
+	 * Reads, removes and adds members through the host instead of a project's
+	 * or engine's endpoints. The table then has no permissions, and readOnly
+	 * decides whether the viewer can change the members.
+	 */
+	source?: MembersSource;
 }
 
 export const MembersTable = ({
@@ -73,6 +97,7 @@ export const MembersTable = ({
 	currentUserId,
 	readOnly = false,
 	isDirectoryAvailable = false,
+	source,
 }: MembersProps) => {
 	const [openAddMembers, setOpenAddMembers] = useState<boolean>(false);
 	const [listRefreshKey, setListRefreshKey] = useState<number>(0);
@@ -99,6 +124,8 @@ export const MembersTable = ({
 	}, []);
 
 	useEffect(() => {
+		// a host's members have no project or engine permission to read
+		if (source || !id) return;
 		const isProject = type === "PROJECT" || type === "WORKSPACE";
 		const fetchPermission = isProject
 			? getUserProjectPermission(id)
@@ -108,7 +135,7 @@ export const MembersTable = ({
 				if (perm) setMyPermission(perm);
 			})
 			.catch(() => undefined);
-	}, [id, type]);
+	}, [id, type, source]);
 
 	// Edit dialog state
 	const [editUser, setEditUser] = useState<MemberUser | null>(null);
@@ -128,7 +155,7 @@ export const MembersTable = ({
 	};
 
 	const saveUserEdit = async () => {
-		if (!editUser) return;
+		if (!editUser || !id) return;
 		const isProject = type === "PROJECT" || type === "WORKSPACE";
 
 		const payload: Record<string, unknown> = {
@@ -170,7 +197,7 @@ export const MembersTable = ({
 		if (success) {
 			toast.success("User updated successfully.");
 			// Editing your own permission can change what you're allowed to see/do
-			// here (and in ancestors gating on it), so let them resync — unlike
+			// here (and in ancestors gating on it), so let them resync, unlike
 			// adding a member, which never changes your own permission.
 			if (editUser.id === myUserId) {
 				setMyPermission(editPermission);
@@ -184,8 +211,8 @@ export const MembersTable = ({
 	return (
 		<div className="w-full">
 			{/* Header Section */}
-			<div className="flex flex-column gap-[10px] rounded-xl rounded-ee-none rounded-es-none border-gray-200 border-b bg-muted p-4 align-start">
-				<div className="flex h-[36px] w-full flex-column gap-2">
+			<div className="flex flex-column gap-2.5 rounded-xl rounded-ee-none rounded-es-none border-border border-b bg-muted p-4 align-start">
+				<div className="flex h-9 w-full flex-column gap-2">
 					<InputGroup className="flex h-auto gap-1 self-stretch bg-background px-2 py-1 align-center">
 						<InputGroupInput
 							placeholder="Search"
@@ -197,7 +224,8 @@ export const MembersTable = ({
 						</InputGroupAddon>
 					</InputGroup>
 					{!readOnly &&
-						(adminMode ||
+						(source ||
+							adminMode ||
 							myPermission === "OWNER" ||
 							myPermission === "EDIT") && (
 							<Button
@@ -208,7 +236,9 @@ export const MembersTable = ({
 							>
 								<div className="flex flex-column items-center gap-2">
 									<Plus />
-									<span>Add Members</span>
+									<span>
+										{source?.addLabel ?? "Add Members"}
+									</span>
 								</div>
 							</Button>
 						)}
@@ -227,6 +257,7 @@ export const MembersTable = ({
 				currentUserId={effectiveCurrentUserId}
 				myPermission={myPermission}
 				readOnly={readOnly}
+				source={source}
 			/>
 
 			{/** Add members overlay */}
@@ -245,9 +276,10 @@ export const MembersTable = ({
 				}}
 				adminMode={adminMode}
 				isDirectoryAvailable={isDirectoryAvailable}
+				people={source?.people}
 			/>
 
-			{/* Edit member dialog — rendered here, outside the table */}
+			{/* Edit member dialog: rendered here, outside the table */}
 			{editUser && (
 				<Dialog open onOpenChange={() => setEditUser(null)}>
 					<DialogContent>

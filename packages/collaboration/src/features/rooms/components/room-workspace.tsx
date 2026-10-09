@@ -1,5 +1,5 @@
 import { Brain, Mail, PanelRightOpen, Settings2, X } from "lucide-react";
-import { useContext, useEffect, useId, useState } from "react";
+import { useContext, useEffect, useId, useRef, useState } from "react";
 import {
 	Button,
 	cn,
@@ -7,12 +7,14 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 	toast,
+	useIsMobile,
 } from "@semoss/ui/next";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
 	guessMemoryKind,
 	rememberCommand,
 } from "@/features/collaboration/state/memory";
+import { roomFileLinks } from "@/features/messages/utils/room-file-link";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
@@ -23,6 +25,7 @@ import type { RoomSlashCommand } from "./room-composer-slash-plugin";
 import { RoomConversation } from "./room-conversation";
 import { RoomRunStatus } from "./room-run-status";
 import { ROOM_SETTINGS_PANEL_TYPE } from "./room-settings-panel";
+import { RoomTopics } from "./room-topics";
 
 const ROOM_WORKSPACE_LAYOUT_ID = "collaboration-room-workspace-v1";
 const CONVERSATION_PANEL_ID = "collaboration-room-conversation";
@@ -108,7 +111,40 @@ export function RoomWorkspace({
 		store,
 		openWorkbench,
 		closeWorkbench,
+		openFile,
 	} = useToolWorkbench();
+	const isMobile = useIsMobile();
+	// Only runs this tab watched live open their decks; history and older pages never do.
+	const liveRunIds = useRef(new Set<string>());
+	const openedDecks = useRef(new Set<string>());
+	useEffect(() => {
+		if (!showToolWorkbench || isMobile) return;
+		for (const message of thread) {
+			if (message.live && message.runId)
+				liveRunIds.current.add(message.runId);
+		}
+		for (const message of thread) {
+			if (
+				message.role !== "assistant" ||
+				!message.runId ||
+				!liveRunIds.current.has(message.runId)
+			)
+				continue;
+			for (const part of message.parts) {
+				if (part.type !== "text") continue;
+				for (const file of roomFileLinks(part.text)) {
+					const key = `${message.runId}:${file.path}`;
+					if (
+						!/\.pptx$/i.test(file.name) ||
+						openedDecks.current.has(key)
+					)
+						continue;
+					openedDecks.current.add(key);
+					openFile(file.path, file.name);
+				}
+			}
+		}
+	}, [thread, showToolWorkbench, isMobile, openFile]);
 	const [resumeSignal, setResumeSignal] = useState(0);
 	const actionsTriggerId = useId();
 	const [hasOpenedWorkbench, setHasOpenedWorkbench] =
@@ -176,6 +212,9 @@ export function RoomWorkspace({
 					agent={agent}
 					title={session.title}
 					conversationId={session.id}
+					headerTopics={
+						<RoomTopics roomId={session.id} isRunning={isRunning} />
+					}
 					thread={thread}
 					isLoadingHistory={isLoadingHistory}
 					resumeSignal={resumeSignal}

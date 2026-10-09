@@ -252,6 +252,33 @@ it("allocates once and preserves settings, draft, and files across partial creat
 	});
 });
 
+it("keeps the model's display name through allocation and on saved rooms", async () => {
+	localStorage.setItem(
+		"collaboration.lastModel",
+		JSON.stringify({ modelId: "model-two", modelName: "Last model" }),
+	);
+	const session = draft();
+	await session.initialize();
+	expect(session.getSnapshot()).toMatchObject({
+		modelId: "model-two",
+		modelName: "Test model",
+	});
+	await session.create("Research");
+	expect(session.getSnapshot()).toMatchObject({
+		modelId: "model-two",
+		modelName: "Test model",
+	});
+
+	transport.options.set("saved-one", { modelId: "model-one" });
+	const saved = own(getRoomSession(crypto.randomUUID(), "saved-one"));
+	expect(saved.getSnapshot().modelName).toBe("");
+	await saved.initialize();
+	expect(saved.getSnapshot()).toMatchObject({
+		modelId: "model-one",
+		modelName: "Test model",
+	});
+});
+
 it("keeps a pending upload and agent run bound to its room while another room initializes", async () => {
 	const first = draft();
 	await first.create("First");
