@@ -1,21 +1,27 @@
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
+import { useId } from "react";
 import type { Engine } from "@semoss/shared";
 import {
 	Button,
-	cn,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
 	Field,
 	FieldDescription,
 	FieldLabel,
-	FieldLegend,
-	FieldSet,
 	Input,
-	Label,
-	RadioGroup,
-	RadioGroupItem,
-	Slider,
+	Textarea,
 } from "@semoss/ui/next";
 import type { JevDecisionConfig } from "../../../domain/automation.types";
+import type {
+	AutomationJevQuestion,
+	AutomationJevRoute,
+	AutomationJevRouteCondition,
+} from "../../../domain/automation-workflow.types";
 import { EnginePickerField } from "./engine-picker-field";
+import { JevQuestionEditor } from "./jev-question-editor";
+import { JevRouteEditor } from "./jev-route-editor";
+import { JevStepHeading } from "./jev-step-heading";
 import { PillInput } from "./pill-input";
 
 interface JevDecisionFormProps {
@@ -26,7 +32,120 @@ interface JevDecisionFormProps {
 	readOnly?: boolean;
 }
 
-/** Configures one TypeSafe/Jev question and its stable graph routes. */
+function nextKey(prefix: string, used: Set<string>): string {
+	let index = used.size + 1;
+	while (used.has(`${prefix}_${index}`)) index += 1;
+	return `${prefix}_${index}`;
+}
+
+function defaultQuestion(
+	questions: AutomationJevQuestion[],
+): AutomationJevQuestion {
+	return {
+		key: nextKey(
+			"question",
+			new Set(questions.map((question) => question.key)),
+		),
+		type: "choice",
+		instructions: "",
+		criteria: { option_1: "" },
+	};
+}
+
+function choiceKeys(question: AutomationJevQuestion): string[] {
+	return question.type === "choice" &&
+		question.criteria &&
+		!Array.isArray(question.criteria)
+		? Object.keys(question.criteria)
+		: [];
+}
+
+function defaultCondition(
+	question: AutomationJevQuestion,
+): AutomationJevRouteCondition {
+	if (question.type === "choice") {
+		return {
+			questionKey: question.key,
+			field: "choice",
+			operator: "equals",
+			value: choiceKeys(question)[0] ?? "",
+		};
+	}
+	return {
+		questionKey: question.key,
+		field: question.type === "score" ? "score" : "noul",
+		operator: "greaterThanOrEqual",
+		value: 0.5,
+	};
+}
+
+function normalizeCondition(
+	condition: AutomationJevRouteCondition,
+	previous: AutomationJevQuestion,
+	next: AutomationJevQuestion,
+): AutomationJevRouteCondition {
+	if (previous.key !== condition.questionKey) return condition;
+	if (previous.type !== next.type) return defaultCondition(next);
+	if (next.type === "choice") {
+		const choices = choiceKeys(next);
+		if (
+			condition.field === "choice" &&
+			!choices.includes(String(condition.value))
+		) {
+			return {
+				...condition,
+				questionKey: next.key,
+				value: choices[0] ?? "",
+			};
+		}
+		if (
+			condition.field === "probability" &&
+			!choices.includes(condition.option ?? "")
+		) {
+			return {
+				...condition,
+				questionKey: next.key,
+				option: choices[0] ?? "",
+			};
+		}
+	}
+	if (next.type === "score" && condition.field === "probability") {
+		const levelCount = Array.isArray(next.criteria)
+			? next.criteria.length
+			: 0;
+		const option = Number(condition.option);
+		if (!Number.isInteger(option) || option < 0 || option >= levelCount) {
+			return { ...condition, questionKey: next.key, option: "0" };
+		}
+	}
+	return { ...condition, questionKey: next.key };
+}
+
+function parseParameters(value: string): Record<string, unknown> {
+	try {
+		const parsed: unknown = JSON.parse(value);
+		return parsed !== null &&
+			typeof parsed === "object" &&
+			!Array.isArray(parsed)
+			? (parsed as Record<string, unknown>)
+			: {};
+	} catch {
+		return {};
+	}
+}
+
+function numberParameter(
+	parameters: Record<string, unknown>,
+	key: string,
+	fallback: number,
+): number {
+	const value = parameters[key];
+	return typeof value === "number" && Number.isFinite(value)
+		? value
+		: fallback;
+}
+
+/** Configures a multi-question TypeSafe/JEV decision and its ordered routes. */
 export function JevDecisionForm({
 	config,
 	upstreamVars,
@@ -34,153 +153,166 @@ export function JevDecisionForm({
 	devMode = false,
 	readOnly = false,
 }: JevDecisionFormProps) {
-	const questionType = config.questionType === "noul" ? "noul" : "choice";
-	const canUseNoul = config.clauses.length <= 2;
+	const fieldId = useId();
+	const parameters = parseParameters(config.paramValues);
+	const firstRoutableQuestion = config.questions.find(
+		(question) => question.key.trim() !== "",
+	);
+	const updateParameters = (next: Record<string, unknown>): void => {
+		onChange({ ...config, paramValues: JSON.stringify(next) });
+	};
 
-	const updateRoute = (index: number, description: string) => {
-		const clauses = config.clauses.map((route, routeIndex) =>
-			routeIndex === index ? { ...route, description } : route,
+	const updateQuestion = (
+		index: number,
+		question: AutomationJevQuestion,
+	): void => {
+		const previous = config.questions[index];
+		const questions = config.questions.map((candidate, candidateIndex) =>
+			candidateIndex === index ? question : candidate,
 		);
+		const clauses = config.clauses.map((route) => ({
+			...route,
+			conditions: (route.conditions ?? []).map((condition) =>
+				normalizeCondition(condition, previous, question),
+			),
+		}));
+		onChange({ ...config, questions, clauses });
+	};
+
+	const removeQuestion = (index: number): void => {
+		const removed = config.questions[index];
+		const questions = config.questions.filter(
+			(_, candidateIndex) => candidateIndex !== index,
+		);
+		const fallbackQuestion = questions[0];
+		if (!fallbackQuestion) return;
+		const clauses = config.clauses.map((route) => {
+			const conditions = (route.conditions ?? []).filter(
+				(condition) => condition.questionKey !== removed.key,
+			);
+			return {
+				...route,
+				conditions:
+					conditions.length > 0
+						? conditions
+						: [defaultCondition(fallbackQuestion)],
+			};
+		});
+		onChange({ ...config, questions, clauses });
+	};
+
+	const updateRoute = (index: number, route: AutomationJevRoute): void => {
+		onChange({
+			...config,
+			clauses: config.clauses.map((candidate, candidateIndex) =>
+				candidateIndex === index ? route : candidate,
+			),
+		});
+	};
+
+	const moveRoute = (index: number, direction: -1 | 1): void => {
+		const destination = index + direction;
+		if (destination < 0 || destination >= config.clauses.length) return;
+		const clauses = [...config.clauses];
+		[clauses[index], clauses[destination]] = [
+			clauses[destination],
+			clauses[index],
+		];
 		onChange({ ...config, clauses });
 	};
 
-	const updateQuestionType = (nextType: string) => {
-		if (nextType === "noul") {
-			if (!canUseNoul) return;
-			const [first, second] = config.clauses;
-			onChange({
-				...config,
-				questionType: "noul",
-				confidenceThreshold: Math.max(config.confidenceThreshold, 0.5),
-				clauses: [
-					{
-						id: first?.id ?? crypto.randomUUID(),
-						description: first?.description ?? "",
-						answer: true,
-					},
-					{
-						id: second?.id ?? crypto.randomUUID(),
-						description: second?.description ?? "",
-						answer: false,
-					},
-				],
-			});
-			return;
-		}
-		if (nextType === "choice") {
-			onChange({
-				...config,
-				questionType: "choice",
-				clauses: config.clauses.map(({ id, description }) => ({
-					id,
-					description,
-				})),
-			});
-		}
-	};
-
 	return (
-		<div className="flex flex-col gap-4">
-			<EnginePickerField
-				label="Jev model"
-				name={config.engineName ?? ""}
-				value={config.engineId}
-				engineTypes={["MODEL"]}
-				allowedEngineSubtypes={["TYPESAFE"]}
-				required
-				disabled={readOnly}
-				onChange={(engine: Engine) =>
-					onChange({
-						...config,
-						engineId: engine.engine_id,
-						engineName:
-							engine.engine_display_name || engine.engine_name,
-					})
-				}
-			/>
-			<PillInput
-				label="State to evaluate"
-				required
-				value={config.state}
-				onChange={(state) => onChange({ ...config, state })}
-				upstreamVars={upstreamVars}
-				placeholder="${prior_output}"
-				description="Use an exact variable reference to preserve maps, lists, and other native values."
-				readOnly={readOnly}
-			/>
-			<PillInput
-				label="Routing question"
-				required
-				value={config.question}
-				onChange={(question) => onChange({ ...config, question })}
-				upstreamVars={upstreamVars}
-				placeholder="Which route best matches this input?"
-				readOnly={readOnly}
-			/>
-			<FieldSet>
-				<FieldLegend>Decision type</FieldLegend>
-				<FieldDescription>
-					Choose multiple routes or a direct Yes / No decision.
-				</FieldDescription>
-				<RadioGroup
-					value={questionType}
-					onValueChange={updateQuestionType}
-					className="grid gap-2 sm:grid-cols-2"
+		<div className="flex flex-col gap-6">
+			<section className="flex flex-col gap-3">
+				<JevStepHeading
+					number={1}
+					title="Choose what Jev reviews"
+					description="Select a Jev model, then provide the text, record, or list it should evaluate."
+				/>
+				<EnginePickerField
+					label="JEV model"
+					name={config.engineName ?? ""}
+					value={config.engineId}
+					engineTypes={["MODEL"]}
+					allowedEngineSubtypes={["TYPESAFE"]}
+					required
 					disabled={readOnly}
-				>
-					<Label className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3">
-						<RadioGroupItem value="choice" className="mt-0.5" />
-						<span>
-							<span className="block font-medium">
-								Multiple choice
-							</span>
-							<span className="block text-muted-foreground text-xs">
-								Jev selects one described route.
-							</span>
-						</span>
-					</Label>
-					<Label
-						className={cn(
-							"flex items-start gap-3 rounded-md border border-border p-3",
-							canUseNoul
-								? "cursor-pointer"
-								: "cursor-not-allowed opacity-60",
-						)}
-					>
-						<RadioGroupItem
-							value="noul"
-							className="mt-0.5"
-							disabled={!canUseNoul}
-						/>
-						<span>
-							<span className="block font-medium">Yes / No</span>
-							<span className="block text-muted-foreground text-xs">
-								Jev returns the probability of Yes.
-							</span>
-						</span>
-					</Label>
-				</RadioGroup>
-				{!canUseNoul && questionType === "choice" && (
-					<p className="text-muted-foreground text-xs">
-						Remove routes until two remain before switching to Yes /
-						No.
-					</p>
-				)}
-			</FieldSet>
-			<div className="flex flex-col gap-3">
-				<div className="flex items-center justify-between gap-2">
-					<div>
-						<p className="font-medium text-sm">Decision paths</p>
-						<p className="text-muted-foreground text-xs">
-							Jev selects the path that best answers the routing
-							question.
-						</p>
-					</div>
-					{!readOnly && questionType === "choice" && (
+					onChange={(engine: Engine) =>
+						onChange({
+							...config,
+							engineId: engine.engine_id,
+							engineName:
+								engine.engine_display_name ||
+								engine.engine_name,
+						})
+					}
+				/>
+				<PillInput
+					label="State to evaluate"
+					required
+					value={config.state}
+					onChange={(state) => onChange({ ...config, state })}
+					upstreamVars={upstreamVars}
+					placeholder="Paste text or insert data from an earlier step"
+					description="Related evidence belongs together in one state. Insert an exact variable to preserve its original data type."
+					readOnly={readOnly}
+				/>
+			</section>
+
+			<section className="flex flex-col gap-3">
+				<div className="flex flex-col items-start gap-3">
+					<JevStepHeading
+						number={2}
+						title="Ask questions"
+						description="Add the named Choice, Score, or Yes / No answers Jev should return."
+					/>
+					{!readOnly && (
 						<Button
 							type="button"
+							variant="outline"
 							size="sm"
-							variant="ghost"
+							onClick={() =>
+								onChange({
+									...config,
+									questions: [
+										...config.questions,
+										defaultQuestion(config.questions),
+									],
+								})
+							}
+						>
+							<Plus className="size-4" aria-hidden="true" />
+							Add question
+						</Button>
+					)}
+				</div>
+				{config.questions.map((question, index) => (
+					<JevQuestionEditor
+						// Questions cannot be reordered; the index keeps focus while its editable key changes.
+						// biome-ignore lint/suspicious/noArrayIndexKey: stable authoring identity
+						key={index}
+						question={question}
+						index={index}
+						questionCount={config.questions.length}
+						onChange={(next) => updateQuestion(index, next)}
+						onRemove={() => removeQuestion(index)}
+						readOnly={readOnly}
+					/>
+				))}
+			</section>
+
+			<section className="flex flex-col gap-3">
+				<div className="flex flex-col items-start gap-3">
+					<JevStepHeading
+						number={3}
+						title="Use the answers"
+						description="Send the automation down the first route whose rules match."
+					/>
+					{!readOnly && firstRoutableQuestion && (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
 							onClick={() =>
 								onChange({
 									...config,
@@ -189,153 +321,138 @@ export function JevDecisionForm({
 										{
 											id: crypto.randomUUID(),
 											description: "",
+											match: "all",
+											conditions: [
+												defaultCondition(
+													firstRoutableQuestion,
+												),
+											],
 										},
 									],
 								})
 							}
 						>
-							<Plus className="size-3.5" aria-hidden="true" />
+							<Plus className="size-4" aria-hidden="true" />
 							Add route
 						</Button>
 					)}
 				</div>
-				{config.clauses.map((route, index) => {
-					const inputId = `${route.id}-description`;
-					const routeLabel =
-						questionType === "noul"
-							? route.answer
-								? "Yes path"
-								: "No path"
-							: `Route ${index + 1}`;
-					return (
-						<div
-							key={route.id}
-							className="rounded-lg border bg-card p-3"
-						>
-							<div className="flex items-start gap-2">
-								<span
-									className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary text-xs"
-									aria-hidden="true"
-								>
-									{questionType === "noul"
-										? route.answer
-											? "Y"
-											: "N"
-										: index + 1}
-								</span>
-								<Field className="min-w-0 flex-1 gap-1.5">
-									<FieldLabel htmlFor={inputId}>
-										{routeLabel}
-									</FieldLabel>
-									<Input
-										id={inputId}
-										value={route.description}
-										onChange={(event) =>
-											updateRoute(
-												index,
-												event.target.value,
-											)
-										}
-										placeholder={`Describe ${routeLabel.toLowerCase()}`}
-										readOnly={readOnly}
-									/>
-									<FieldDescription>
-										When selected, continue from{" "}
-										{routeLabel} on the canvas.
-									</FieldDescription>
-								</Field>
-								{!readOnly &&
-									questionType === "choice" &&
-									config.clauses.length > 1 && (
-										<Button
-											type="button"
-											size="icon"
-											variant="ghost"
-											className="size-8 text-muted-foreground hover:text-destructive"
-											aria-label={`Remove route ${index + 1}`}
-											onClick={() =>
-												onChange({
-													...config,
-													clauses:
-														config.clauses.filter(
-															(candidate) =>
-																candidate.id !==
-																route.id,
-														),
-												})
-											}
-										>
-											<Trash2
-												className="size-3.5"
-												aria-hidden="true"
-											/>
-										</Button>
-									)}
-							</div>
-						</div>
-					);
-				})}
+				{config.clauses.map((route, index) => (
+					<JevRouteEditor
+						key={route.id}
+						route={route}
+						questions={config.questions}
+						index={index}
+						routeCount={config.clauses.length}
+						onChange={(next) => updateRoute(index, next)}
+						onMove={(direction) => moveRoute(index, direction)}
+						onRemove={() =>
+							onChange({
+								...config,
+								clauses: config.clauses.filter(
+									(candidate) => candidate.id !== route.id,
+								),
+							})
+						}
+						readOnly={readOnly}
+					/>
+				))}
 				<div className="rounded-lg border border-dashed bg-muted/20 p-3">
-					<div className="flex items-start gap-2">
-						<span
-							className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground text-xs"
-							aria-hidden="true"
-						>
-							?
-						</span>
-						<div className="min-w-0 flex-1">
-							<div className="flex items-center justify-between gap-2">
-								<p className="font-medium text-sm">
-									Low-confidence path
-								</p>
-								<span className="font-medium text-primary text-sm">
-									{Math.round(
-										config.confidenceThreshold * 100,
-									)}
-									%
-								</span>
-							</div>
-							<p className="mt-0.5 text-muted-foreground text-xs">
-								Runs when Jev is less confident than this
-								threshold.
-							</p>
-							<Slider
-								className="mt-3"
-								min={questionType === "noul" ? 50 : 0}
-								max={100}
-								step={5}
-								value={[
-									Math.round(
-										config.confidenceThreshold * 100,
-									),
-								]}
-								disabled={readOnly}
-								onValueChange={([percentage]) =>
-									onChange({
-										...config,
-										confidenceThreshold: percentage / 100,
+					<p className="font-medium text-sm">Fallback path</p>
+					<p className="mt-1 text-muted-foreground text-xs">
+						Runs when no route rules match. Connect it on the canvas
+						to handle uncertain or unexpected answers safely.
+					</p>
+				</div>
+			</section>
+
+			<Collapsible>
+				<CollapsibleTrigger asChild>
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="w-full justify-between"
+					>
+						Advanced run settings
+						<ChevronDown className="size-4" aria-hidden="true" />
+					</Button>
+				</CollapsibleTrigger>
+				<CollapsibleContent className="flex flex-col gap-3 pt-3">
+					<div className="grid gap-3">
+						<Field>
+							<FieldLabel htmlFor={`${fieldId}-timeout`}>
+								Timeout (seconds)
+							</FieldLabel>
+							<Input
+								id={`${fieldId}-timeout`}
+								type="number"
+								min={1}
+								step={1}
+								value={numberParameter(
+									parameters,
+									"timeout",
+									30,
+								)}
+								onChange={(event) =>
+									updateParameters({
+										...parameters,
+										timeout: Number(event.target.value),
 									})
 								}
-								aria-label="Minimum confidence"
+								readOnly={readOnly}
 							/>
-						</div>
+						</Field>
+						<Field>
+							<FieldLabel htmlFor={`${fieldId}-retries`}>
+								Retries
+							</FieldLabel>
+							<Input
+								id={`${fieldId}-retries`}
+								type="number"
+								min={0}
+								step={1}
+								value={numberParameter(
+									parameters,
+									"max_retries",
+									2,
+								)}
+								onChange={(event) =>
+									updateParameters({
+										...parameters,
+										max_retries: Number(event.target.value),
+									})
+								}
+								readOnly={readOnly}
+							/>
+						</Field>
 					</div>
-				</div>
-			</div>
-			{devMode && (
-				<PillInput
-					label="Jev parameters"
-					value={config.paramValues}
-					onChange={(paramValues) =>
-						onChange({ ...config, paramValues })
-					}
-					upstreamVars={upstreamVars}
-					placeholder='{"timeout": 30, "max_retries": 1}'
-					mono
-					minRows={2}
-					readOnly={readOnly}
-				/>
-			)}
+					{devMode && (
+						<Field>
+							<FieldLabel htmlFor={`${fieldId}-parameters`}>
+								Parameters (JSON)
+							</FieldLabel>
+							<Textarea
+								id={`${fieldId}-parameters`}
+								value={config.paramValues}
+								onChange={(event) =>
+									onChange({
+										...config,
+										paramValues: event.target.value,
+									})
+								}
+								readOnly={readOnly}
+								rows={3}
+								className="font-mono text-xs"
+							/>
+							<FieldDescription>
+								Advanced transport options sent to the TypeSafe
+								engine.
+							</FieldDescription>
+						</Field>
+					)}
+				</CollapsibleContent>
+			</Collapsible>
 		</div>
 	);
 }

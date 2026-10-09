@@ -73,17 +73,20 @@ export function BranchNode({ data }: NodeProps) {
 	} = d;
 	const config = step.config as RoutingConfig;
 	const isJevDecision = step.workflowType === "control.jev";
+	const clauses = Array.isArray(config.clauses) ? config.clauses : [];
+	const jevQuestions = isJevDecision
+		? (config as Partial<JevDecisionConfig>).questions
+		: undefined;
 	const firstDescription = isJevDecision
-		? (config as JevDecisionConfig).clauses[0]?.description
-		: (config as BranchConfig).clauses[0]?.condition;
-	const isNoulDecision =
-		isJevDecision &&
-		"questionType" in config &&
-		config.questionType === "noul";
+		? (clauses[0] as JevDecisionConfig["clauses"][number] | undefined)
+				?.description
+		: (clauses[0] as BranchConfig["clauses"][number] | undefined)
+				?.condition;
+	const jevQuestionCount = isJevDecision ? (jevQuestions?.length ?? 0) : 0;
 	const DecisionIcon = isJevDecision ? BrainCircuit : GitBranch;
-	const additionalConditions = config.clauses.length - 1;
+	const additionalConditions = Math.max(clauses.length - 1, 0);
 	const edges = useEdges();
-	const outputCount = config.clauses.length + 1;
+	const outputCount = clauses.length + 1;
 	const elseConnected = edges.some(
 		(e) => e.source === step.id && e.sourceHandle === `else-${step.id}`,
 	);
@@ -175,13 +178,13 @@ export function BranchNode({ data }: NodeProps) {
 										</TooltipContent>
 									</Tooltip>
 									<p className="mt-0.5 truncate text-muted-foreground text-xs">
-										{firstDescription
-											? additionalConditions > 0
-												? `${additionalConditions + 1} ${isJevDecision ? "routes" : "conditions"}`
-												: isJevDecision
-													? firstDescription
+										{isJevDecision
+											? `${jevQuestionCount} ${jevQuestionCount === 1 ? "question" : "questions"} • ${clauses.length} ${clauses.length === 1 ? "route" : "routes"}`
+											: firstDescription
+												? additionalConditions > 0
+													? `${additionalConditions + 1} conditions`
 													: `if ${firstDescription}`
-											: "No route configured"}
+												: "No route configured"}
 									</p>
 								</div>
 								{runStatus && runStatus !== "idle" && (
@@ -216,14 +219,10 @@ export function BranchNode({ data }: NodeProps) {
 						className="h-2! w-2! border-2! border-background! bg-muted-foreground/40!"
 					/>
 
-					{config.clauses.map((clause, index) => {
-						const routeLabel = isNoulDecision
-							? "answer" in clause && clause.answer
-								? "Yes"
-								: "No"
-							: isJevDecision
-								? `R${index + 1}`
-								: String(index + 1);
+					{clauses.map((clause, index) => {
+						const routeLabel = isJevDecision
+							? `R${index + 1}`
+							: String(index + 1);
 						const routeDescription =
 							"description" in clause
 								? clause.description
@@ -235,7 +234,7 @@ export function BranchNode({ data }: NodeProps) {
 								label={routeLabel}
 								ariaLabel={
 									isJevDecision
-										? `${isNoulDecision ? routeLabel : `Route ${index + 1}`}: ${routeDescription}`
+										? `Route ${index + 1}: ${routeDescription}`
 										: `Condition ${index + 1}: ${routeDescription}`
 								}
 								connected={edges.some(
@@ -261,8 +260,8 @@ export function BranchNode({ data }: NodeProps) {
 					})}
 					<BranchOutputHandle
 						id={`else-${step.id}`}
-						label={isJevDecision ? "Low confidence" : "Else"}
-						ariaLabel={isJevDecision ? "Low confidence" : "Else"}
+						label={isJevDecision ? "Fallback" : "Else"}
+						ariaLabel={isJevDecision ? "Fallback" : "Else"}
 						connected={elseConnected}
 						locked={locked}
 						top={`${(outputCount / (outputCount + 1)) * 100}%`}
