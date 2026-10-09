@@ -5,8 +5,8 @@
 	},
 	"source": {
 		"label": "Search in",
-		"existing": "Existing users",
-		"directory": "Your organization",
+		"existing": "Existing Users",
+		"directory": "Your Organization",
 		"existingHint": "People who already have an account here.",
 		"directoryHint": "Anyone in your organization, even if they have never signed in. They get an account when you add them."
 	},

@@ -422,13 +422,13 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 									value="directory"
 									className={ENTRY_MODE_ITEM_CLASS}
 								>
-									Find in your organization
+									Find in Your Organization
 								</ToggleGroupItem>
 								<ToggleGroupItem
 									value="manual"
 									className={ENTRY_MODE_ITEM_CLASS}
 								>
-									Enter details myself
+									Enter Details Myself
 								</ToggleGroupItem>
 							</ToggleGroup>
 							<p
@@ -472,7 +472,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 											size="sm"
 											onClick={handleClearPerson}
 										>
-											Choose someone else
+											Choose Someone Else
 										</Button>
 									</ItemActions>
 								</Item>

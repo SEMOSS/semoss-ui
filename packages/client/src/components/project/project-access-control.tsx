@@ -3,13 +3,14 @@ import { H2 } from "@semoss/ui/next";
 import { PendingMembersTable, SettingsTiles } from "@/components/settings";
 import { TeamsTable } from "@/components/settings/teams-table";
 import { SettingsContext } from "@/contexts";
-import { useConfig, useProject } from "@/hooks";
+import { useConfig, useProject, useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 export const ProjectAccessControl = () => {
 	const { project, permission, refresh } = useProject();
 
 	const navigate = useNavigate();
+	const isAdmin = useSession((state) => state.user.admin);
 	const isDirectoryAvailable = useConfig(
 		(state) => state.config.msGraphLookup === true,
 	);
@@ -61,6 +62,7 @@ export const ProjectAccessControl = () => {
 							<TeamsTable
 								type="PROJECT"
 								id={project.project_id}
+								canManage={permission === "OWNER" || isAdmin}
 							/>
 						</div>
 					</div>

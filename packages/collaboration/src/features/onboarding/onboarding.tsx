@@ -10,20 +10,22 @@ import {
 	Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { cn } from "@semoss/ui/next";
+import { cn, P } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
+import { FilingStep } from "./filing-step";
 import type { MailboxOverview } from "./onboarding-api";
 import {
-	FilingStep,
 	ImportStep,
 	KeepOutStep,
 	MailboxStep,
 	OutsideStep,
 	PeopleStep,
-	TopicsStep,
 	WelcomeStep,
 	WorkStep,
 } from "./onboarding-steps";
+import { Failure, LoadingCards } from "./onboarding-ui";
+import { TopicsStep } from "./topics-step";
+import { useOnboardingProgress } from "./use-onboarding-progress";
 
 const STEPS = [
 	{ label: "Your mailbox", caption: "A first look", icon: Mail },
@@ -40,7 +42,7 @@ const STEPS = [
 	{ label: "For you", caption: "Filed for you", icon: Check },
 ];
 
-/** First run with real mail: look, keep out, import headers, people, sort, topics from what is left, then file into Work. */
+/** First run with real mail: look, keep out, import headers, people, sort, topics from what is left, then open For you. */
 export function Onboarding({
 	actions,
 	initialStep = 0,
@@ -49,14 +51,11 @@ export function Onboarding({
 	/** Start on a later step (previews). */
 	initialStep?: number;
 }) {
-	const [step, setStep] = useState(initialStep);
-	// nothing is read until the owner starts; previews of later steps start at once
-	const [started, setStarted] = useState(initialStep > 0);
+	const { step, started, isResuming, error, start, next, back } =
+		useOnboardingProgress(actions, initialStep, STEPS.length - 1);
 	const [days, setDays] = useState(30);
 	const [overview, setOverview] = useState<MailboxOverview | null>(null);
 	const [managerId, setManagerId] = useState("");
-	const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
-	const back = () => setStep((s) => Math.max(s - 1, 0));
 	const common = {
 		actions,
 		onNext: next,
@@ -66,69 +65,57 @@ export function Onboarding({
 	// each step starts at the top
 	// biome-ignore lint/correctness/useExhaustiveDependencies: runs on each step change
 	useEffect(() => {
-		window.scrollTo({ top: 0, behavior: "smooth" });
+		window.scrollTo({
+			top: 0,
+			behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+				.matches
+				? "instant"
+				: "smooth",
+		});
 	}, [step]);
 
 	return (
-		<div className="relative min-h-dvh overflow-hidden bg-muted/40 text-foreground dark:bg-background">
-			<div
-				aria-hidden="true"
-				className="-top-40 -left-32 pointer-events-none absolute size-[34rem] rounded-full bg-primary/15 blur-3xl"
-			/>
-			<div
-				aria-hidden="true"
-				className="-right-40 pointer-events-none absolute top-1/3 size-[30rem] rounded-full bg-chart-2/10 blur-3xl"
-			/>
-			<div className="relative mx-auto grid max-w-6xl gap-6 p-4 md:gap-10 md:p-10 lg:grid-cols-[260px_minmax(0,1fr)]">
-				<aside className="space-y-8 lg:sticky lg:top-10 lg:self-start">
+		<div className="min-h-dvh bg-background text-foreground">
+			<div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
+				<header className="space-y-6">
 					<div className="space-y-1">
-						<span className="font-bold text-xl tracking-tight">
+						<P className="font-bold text-xl tracking-tight">
 							collaboration<span className="text-primary">.</span>
-						</span>
-						<p className="text-muted-foreground text-sm">
+						</P>
+						<P className="text-muted-foreground text-sm">
 							Set up your people, topics, and tasks.
-						</p>
+						</P>
 					</div>
 					<ol
 						aria-label="Setup steps"
-						className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-0 lg:overflow-visible"
+						className="grid grid-cols-4 gap-2 sm:grid-cols-8"
 					>
-						{STEPS.map(({ label, caption, icon: Icon }, index) => {
-							const done = index < step;
-							const active = index === step;
+						{STEPS.map(({ label, icon: Icon }, index) => {
+							const isDone = index < step;
+							const isActive = index === step;
 							return (
 								<li
 									key={label}
-									aria-current={active ? "step" : undefined}
-									className="relative flex shrink-0 items-center gap-3 lg:pb-6 lg:last:pb-0"
-								>
-									{index < STEPS.length - 1 && (
-										<span
-											aria-hidden="true"
-											className={cn(
-												"absolute top-9 left-[17px] hidden h-[calc(100%-2.25rem)] w-px lg:block",
-												done
-													? "bg-primary"
-													: "bg-border",
-											)}
-										/>
+									aria-current={isActive ? "step" : undefined}
+									className={cn(
+										"flex min-w-0 flex-col items-center gap-2 rounded-lg p-2 text-center",
+										isActive && "bg-primary/10",
 									)}
+								>
 									<span
 										className={cn(
-											"relative flex size-9 shrink-0 items-center justify-center rounded-full ring-1 transition-all",
-											done &&
-												"bg-primary text-primary-foreground ring-primary",
-											active &&
-												"bg-card text-primary shadow-md shadow-primary/20 ring-2 ring-primary",
-											!done &&
-												!active &&
-												"bg-card text-muted-foreground ring-border",
+											"flex size-8 items-center justify-center rounded-full ring-1 transition-colors motion-reduce:transition-none",
+											isDone
+												? "bg-primary text-primary-foreground ring-primary"
+												: isActive
+													? "bg-card text-primary ring-2 ring-primary"
+													: "bg-card text-muted-foreground ring-border",
 										)}
 									>
-										{done ? (
+										{isDone ? (
 											<Check
 												className="size-4"
-												strokeWidth={3}
+												aria-hidden="true"
 											/>
 										) : (
 											<Icon
@@ -137,49 +124,42 @@ export function Onboarding({
 											/>
 										)}
 									</span>
-									<span className="hidden lg:block">
-										<span
-											className={cn(
-												"block font-medium text-sm",
-												!active &&
-													!done &&
-													"text-muted-foreground",
-											)}
-										>
-											{label}
-										</span>
-										<span className="block text-muted-foreground text-xs">
-											{caption}
-										</span>
-									</span>
-									<span className="sr-only lg:hidden">
+									<span
+										className={cn(
+											"break-words font-medium text-xs",
+											!isActive &&
+												!isDone &&
+												"text-muted-foreground",
+										)}
+									>
 										{label}
 									</span>
 								</li>
 							);
 						})}
 					</ol>
-					<div className="hidden rounded-2xl bg-card/70 p-4 text-sm ring-1 ring-border/60 backdrop-blur lg:block">
-						<div className="flex items-center gap-2 font-medium">
-							<Lock
-								className="size-4 text-primary"
-								aria-hidden="true"
-							/>
-							Private by default
-						</div>
-						<p className="mt-1.5 text-muted-foreground text-xs leading-relaxed">
-							Only who, when, and subject are read until your
-							keep-out rules are saved. Kept-out mail is never
-							stored or sent to a model.
-						</p>
-					</div>
-				</aside>
+				</header>
 				<main
 					key={step}
-					className="fade-in-0 slide-in-from-bottom-2 flex min-w-0 animate-in flex-col gap-8 self-start rounded-3xl bg-card p-6 shadow-black/5 shadow-xl ring-1 ring-border/60 duration-300 md:p-10"
+					className="fade-in-0 flex min-w-0 animate-in flex-col gap-8 rounded-xl border bg-card p-4 duration-200 motion-reduce:animate-none sm:p-8"
 				>
-					{!started && (
-						<WelcomeStep onStart={() => setStarted(true)} />
+					{!started && !isResuming && !error && (
+						<WelcomeStep
+							onStart={() => {
+								void start();
+							}}
+						/>
+					)}
+					{isResuming && (
+						<LoadingCards label="Checking for a saved setup..." />
+					)}
+					{error && (
+						<Failure
+							error={error}
+							onRetry={() => {
+								void start();
+							}}
+						/>
 					)}
 					{started && step === 0 && (
 						<MailboxStep
@@ -189,31 +169,35 @@ export function Onboarding({
 							onLoaded={setOverview}
 						/>
 					)}
-					{step === 1 && (
+					{started && step === 1 && (
 						<KeepOutStep
 							{...common}
 							suggestions={overview?.keepOut ?? []}
 						/>
 					)}
-					{step === 2 && (
+					{started && step === 2 && (
 						<ImportStep
 							{...common}
 							days={days}
 							onManager={setManagerId}
 						/>
 					)}
-					{step === 3 && (
+					{started && step === 3 && (
 						<PeopleStep
 							{...common}
 							selfEmail={overview?.address ?? ""}
 							managerId={managerId}
 						/>
 					)}
-					{step === 4 && <OutsideStep {...common} />}
-					{step === 5 && <WorkStep {...common} />}
-					{step === 6 && <TopicsStep {...common} />}
-					{step === 7 && <FilingStep {...common} />}
+					{started && step === 4 && <OutsideStep {...common} />}
+					{started && step === 5 && <WorkStep {...common} />}
+					{started && step === 6 && <TopicsStep {...common} />}
+					{started && step === 7 && <FilingStep {...common} />}
 				</main>
+				<P className="flex items-center gap-2 text-muted-foreground text-sm">
+					<Lock className="size-4 shrink-0" aria-hidden="true" /> Your
+					keep-out preferences apply throughout setup.
+				</P>
 			</div>
 		</div>
 	);
