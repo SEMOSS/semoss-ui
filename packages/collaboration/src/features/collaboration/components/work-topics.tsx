@@ -1,28 +1,34 @@
 import { ArrowRight, Plus } from "lucide-react";
 import { useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import { CreateTopicDialog } from "@/features/topics/create-topic-dialog";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
-import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { topicTone } from "../topic-tone";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
-import { TopicEditor } from "./topic-editor";
 
 /** Work starts with the topics that give each action its purpose. */
 export function WorkTopics() {
 	const { state } = useCollaborationSession();
+	const navigate = useNavigate();
 	const [isCreating, setIsCreating] = useState(false);
 	const createButtonRef = useRef<HTMLButtonElement>(null);
-	const topics = state.topics.filter((topic) => topic.status !== "archived");
+	const topics = state.topics
+		.filter(
+			(topic) => topic.status === "active" || topic.status === "dormant",
+		)
+		.sort(
+			(a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+		);
 	return (
 		<CollaborationSurface
 			header={
 				<CollaborationPageHeader
 					layoutClassName="flex-col sm:flex-row"
-					title="Topics"
-					description="Explore the topics behind your tasks, threads, and sessions."
+					title="My topics"
+					description="Keep related tasks and context together."
 					actions={
 						<>
 							<Button
@@ -31,7 +37,7 @@ export function WorkTopics() {
 								size="sm"
 								className="pointer-coarse:min-h-11"
 							>
-								<Link to="/for-you">For you</Link>
+								<Link to="/">Home</Link>
 							</Button>
 							<Button
 								ref={createButtonRef}
@@ -51,13 +57,6 @@ export function WorkTopics() {
 			{topics.length ? (
 				<ul aria-label="Task topics" className="divide-y divide-border">
 					{topics.map((topic) => {
-						const open = selectWorkItems(state, {
-							topicId: topic.id,
-						}).total;
-						const waiting = selectWorkItems(state, {
-							topicId: topic.id,
-							view: "waiting",
-						}).total;
 						return (
 							<li key={topic.id}>
 								<Link
@@ -94,8 +93,6 @@ export function WorkTopics() {
 										</P>
 									</div>
 									<div className="flex shrink-0 items-center gap-4 text-muted-foreground text-sm tabular-nums">
-										<span>{open} open</span>
-										<span>{waiting} waiting</span>
 										<ArrowRight
 											aria-hidden="true"
 											className="ml-auto size-4"
@@ -110,15 +107,18 @@ export function WorkTopics() {
 				<div className="space-y-2 p-6">
 					<P>No topics yet.</P>
 					<P className="text-muted-foreground text-sm">
-						Create a topic to organize your tasks, or open For you
-						to see unfiled actions.
+						Create a topic to organize your tasks and context.
 					</P>
 				</div>
 			)}
 			{isCreating && (
-				<TopicEditor
+				<CreateTopicDialog
 					returnFocusRef={createButtonRef}
-					onClose={() => setIsCreating(false)}
+					onSubmit={(id) => {
+						setIsCreating(false);
+						if (id)
+							navigate(`/tasks/topic/${encodeURIComponent(id)}`);
+					}}
 				/>
 			)}
 		</CollaborationSurface>

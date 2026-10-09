@@ -1,9 +1,13 @@
 import { act, renderHook } from "@testing-library/react";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import { listMail } from "@/features/connectors/api/microsoft";
 import { listRoomsPage } from "@/features/rooms/api/list-rooms";
 import { searchRoomMessages } from "@/features/rooms/api/search-room-messages";
 import type { InsightActions } from "@/lib/pixel";
-import { useWorkspaceSearch } from "./use-workspace-search";
+import {
+	searchWorkspaceRecords,
+	useWorkspaceSearch,
+} from "./use-workspace-search";
 
 vi.mock("@/features/connectors/api/microsoft", () => ({ listMail: vi.fn() }));
 vi.mock("@/features/rooms/api/list-rooms", () => ({ listRoomsPage: vi.fn() }));
@@ -13,6 +17,7 @@ vi.mock("@/features/rooms/api/search-room-messages", () => ({
 const actions = {} as InsightActions;
 const message = {
 	uid: "mail-1",
+	messageId: null,
 	subject: "Renewal",
 	from: "vip@example.com",
 	unread: true,
@@ -123,4 +128,54 @@ it("searches additional server pages beyond the sidebar and applies all supporte
 			from: "review",
 		});
 	}
+});
+
+it("opens task rooms before source threads and retains source-less task details", () => {
+	const state = createInitialCollaborationState();
+	const template = state.items[0];
+	if (!template) throw new Error("Missing task fixture");
+	state.items = [
+		{
+			...template,
+			id: "room",
+			title: "Find task room",
+			status: "open",
+			roomId: "saved",
+			threadId: "source",
+		},
+		{
+			...template,
+			id: "source",
+			title: "Find task source",
+			status: "open",
+			roomId: undefined,
+			threadId: "source",
+		},
+		{
+			...template,
+			id: "details",
+			title: "Find task details",
+			status: "open",
+			roomId: undefined,
+			threadId: "",
+		},
+	];
+	const entries = searchWorkspaceRecords(state, "Find task");
+	expect(entries).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				id: "action:room",
+				path: "/thread/room%3Asaved",
+			}),
+			expect.objectContaining({
+				id: "action:source",
+				path: "/thread/source",
+			}),
+			expect.objectContaining({
+				id: "action:details",
+				path: undefined,
+				taskId: "details",
+			}),
+		]),
+	);
 });

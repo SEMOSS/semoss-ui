@@ -33,6 +33,7 @@ import { RoomComposer } from "./room-composer";
 import type { RoomSlashCommand } from "./room-composer-slash-plugin";
 import { RoomContextFiles } from "./room-context-files";
 import { RoomConversation } from "./room-conversation";
+import { RoomPinButton } from "./room-pin-button";
 import { RoomRunStatus } from "./room-run-status";
 import { ROOM_SETTINGS_PANEL_TYPE } from "./room-settings-panel";
 import { RoomTopics } from "./room-topics";
@@ -251,6 +252,14 @@ export function RoomWorkspace({
 						agent={agent}
 						title={session.title}
 						conversationId={session.id}
+						headerActions={
+							roomSnapshot?.isReady ? (
+								<RoomPinButton
+									roomId={session.id}
+									roomName={session.title}
+								/>
+							) : undefined
+						}
 						headerTopics={
 							<RoomTopics
 								roomId={session.id}

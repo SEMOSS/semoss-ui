@@ -155,12 +155,23 @@ export function WorkUpdatesProvider({
 					type: "live.refresh",
 					updates: {
 						...updates,
+						baseline: {
+							topics: requestedState.topics,
+							threads: requestedState.threads,
+							items: requestedState.items,
+						},
 						threads,
 						workspaces,
 						items: updates.items.map((item) => ({
 							...item,
 							id: localId(item.id),
 							topicIds: item.topicIds.map(localId),
+							linkTopicId: item.linkTopicId
+								? localId(item.linkTopicId)
+								: null,
+							assignee: item.assignee
+								? localId(item.assignee)
+								: null,
 						})),
 						memories: updates.memories
 							.map((memory) => ({
@@ -344,7 +355,15 @@ export function WorkUpdatesProvider({
 	}, [refresh]);
 	return (
 		<WorkUpdatesContext.Provider
-			value={{ ...status, ...mail, refresh, syncMail: syncNow }}
+			value={{
+				...status,
+				...mail,
+				refresh,
+				syncMail: syncNow,
+				settled: sync?.settled,
+				localId: sync?.localId,
+				serverId: sync?.serverId,
+			}}
 		>
 			{children}
 		</WorkUpdatesContext.Provider>

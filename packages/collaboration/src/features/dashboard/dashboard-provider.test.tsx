@@ -16,8 +16,8 @@ const mocks = vi.hoisted(() => ({ run: vi.fn() }));
 vi.mock("@/features/room-tree/api/list-room-tree", () => ({
 	listRoomTree: vi.fn(),
 }));
-vi.mock("@/features/for-you/for-you-provider", () => ({
-	ForYouProvider: ({ children }: { children: ReactNode }) => children,
+vi.mock("@/features/attention/attention-provider", () => ({
+	AttentionProvider: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),

@@ -156,6 +156,10 @@ export interface WorkItem {
 	received: string;
 	status: ItemStatus;
 	topicIds: string[];
+	/** A direct topic association is independent of the source thread's topics. */
+	linkTopicId?: string | null;
+	roomId?: string | null;
+	assignee?: string | null;
 	suggested?: boolean;
 	completedAt?: string;
 	/** Why it closed; "no_response_needed" is the owner's correction for the classifier. */
@@ -405,12 +409,41 @@ export interface CollaborationState {
 
 /** Commands contain UI intent and updates received from the backend. */
 export type CollaborationCommand =
+	| { type: "topic.received"; topic: Topic }
+	| { type: "topic.goal.received"; topicId: string; goal: TopicGoal }
+	| { type: "item.received"; item: WorkItem }
+	| {
+			type: "topic.context.received";
+			topic?: Topic;
+			threads: Thread[];
+			/** The scoped topic and complete source list allow stale memberships to be removed. */
+			topicId?: string;
+			completeThreads?: boolean;
+			baseline?: { topic: Topic | null; threads: Thread[] };
+			keepTopic?: boolean;
+			keepThreadIds?: string[];
+	  }
+	| {
+			type: "topic.work.received";
+			topicId: string;
+			items: WorkItem[];
+			/** Only a fully paginated read can remove stale associations. */
+			complete: boolean;
+			/** Compare in the reducer so a save batched with this response still wins. */
+			baseline?: { topicExists: boolean; items: WorkItem[] };
+			keepItemIds?: string[];
+	  }
 	| {
 			type: "live.refresh";
 			updates: Pick<
 				CollaborationState,
 				"threads" | "workspaces" | "items"
 			> & {
+				/** Snapshot when the read began; reducer checks also cover batched saves and deletions. */
+				baseline?: Pick<
+					CollaborationState,
+					"topics" | "threads" | "items"
+				>;
 				/** Every active and suggested memory on the server, when the read included them. */
 				memories?: Memory[];
 				/** Complete open-review snapshot; omitted when the read did not include it. */

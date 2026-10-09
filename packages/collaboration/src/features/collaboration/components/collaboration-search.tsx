@@ -22,6 +22,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
+import { AttentionReviewSheet } from "@/features/attention/attention-review-sheet";
 import type { MailSearchFilters } from "@/features/connectors/types";
 import { DashboardContext } from "@/features/dashboard/dashboard.context";
 import { appPortalPath } from "@/features/dashboard/dashboard-app-api";
@@ -57,12 +58,15 @@ export function CollaborationSearch({
 	const isOpen = dashboard?.isSearchOpen ?? localOpen;
 	const setIsOpen = dashboard?.setIsSearchOpen ?? setLocalOpen;
 	const [query, setQuery] = useState("");
+	const [reviewTaskId, setReviewTaskId] = useState<string | null>(null);
+	const reviewTask = state.items.find((item) => item.id === reviewTaskId);
 	const [days, setDays] = useState<MailSearchFilters["sinceDays"]>(7);
 	const didNavigate = useRef(false);
 	useEffect(() => {
 		if (isOpen) didNavigate.current = false;
 	}, [isOpen]);
 	const windowId = useId();
+	const searchId = useId();
 	const remote = useWorkspaceSearch(
 		dashboard?.actions ?? null,
 		query,
@@ -144,7 +148,7 @@ export function CollaborationSearch({
 		: [
 				{
 					id: "home",
-					label: "For you",
+					label: "Home",
 					detail: "Your personal dashboard",
 					group: "Go to",
 					path: "/",
@@ -170,6 +174,7 @@ export function CollaborationSearch({
 		didNavigate.current = true;
 		setIsOpen(false);
 		if (entry.path) void navigate(entry.path);
+		else if (entry.taskId) setReviewTaskId(entry.taskId);
 		else if (entry.roomId) void dashboard?.openRoom(entry.roomId);
 		else if (entry.source) dashboard?.setSource(entry.source);
 		else if (entry.appId)
@@ -180,169 +185,209 @@ export function CollaborationSearch({
 			);
 	}
 	return (
-		<Dialog
-			open={isOpen}
-			onOpenChange={(open) => {
-				didNavigate.current = false;
-				setIsOpen(open);
-			}}
-		>
-			{!paletteOnly && (
-				<DialogTrigger asChild>
-					<Button variant="ghost" aria-label="Search your workspace">
-						<Search aria-hidden="true" />
-						Search
-					</Button>
-				</DialogTrigger>
-			)}
-			<DialogContent
-				className="gap-0 overflow-hidden p-0 sm:max-w-2xl"
-				onCloseAutoFocus={(event) => {
-					if (didNavigate.current || paletteOnly) {
-						event.preventDefault();
-						const trigger = [
-							...document.querySelectorAll<HTMLButtonElement>(
-								'button[aria-label="Search your workspace"], button[aria-label="Open navigation"]',
-							),
-						].find((button) => button.getClientRects().length > 0);
-						(didNavigate.current
-							? document.querySelector<HTMLElement>("main")
-							: (dashboard?.searchReturnFocus.current?.isConnected
-									? dashboard.searchReturnFocus.current
-									: trigger) ||
-								document.querySelector<HTMLElement>("main")
-						)?.focus();
-					}
+		<>
+			<Dialog
+				open={isOpen}
+				onOpenChange={(open) => {
+					didNavigate.current = false;
+					setIsOpen(open);
 				}}
 			>
-				<DialogHeader className="sr-only">
-					<DialogTitle>Search your workspace</DialogTitle>
-					<DialogDescription>
-						Find chats, actions, people, topics, calendar entries,
-						email, and pinned apps.
-					</DialogDescription>
-				</DialogHeader>
-				<Command shouldFilter={false} label="Search">
-					<CommandInput
-						aria-label="Search"
-						placeholder="Search your workspace…"
-						value={query}
-						onValueChange={setQuery}
-						className="pr-10"
-					/>
-					<CommandList className="max-h-96 p-2">
-						<CommandEmpty>
-							{remote.isLoading
-								? "Searching…"
-								: "No matching items. Try another name or keyword."}
-						</CommandEmpty>
-						{groups.map((group) => {
-							const matches = entries.filter(
-								(entry) => entry.group === group,
-							);
-							return matches.length > 0 ? (
-								<CommandGroup key={group} heading={group}>
-									{matches.map((entry) => (
-										<CommandItem
-											key={entry.id}
-											value={entry.id}
-											onSelect={() => select(entry)}
-											className="min-h-11 items-start gap-3 py-3"
-										>
-											<div className="min-w-0 flex-1">
-												<p className="break-words font-medium">
-													{entry.label}
-												</p>
-												<p className="line-clamp-1 text-muted-foreground text-xs">
-													{entry.detail}
-												</p>
-											</div>
-											<ArrowUpRight
-												aria-hidden="true"
-												className="mt-1 size-4"
-											/>
-										</CommandItem>
-									))}
-								</CommandGroup>
-							) : null;
-						})}
-						{remote.hasMore && (
-							<CommandItem
-								value="more-chats"
-								disabled={remote.isLoading}
-								onSelect={remote.more}
-							>
-								Load more matching chats
-							</CommandItem>
-						)}
-					</CommandList>
-				</Command>
-				{remote.isLoading && (
-					<output className="px-4 py-2 text-muted-foreground text-xs">
-						Searching connected records…
-					</output>
-				)}
-				{errors.length > 0 && (
-					<div
-						role="alert"
-						className="space-y-1 border-t p-3 text-sm"
-					>
-						{errors.map((error) => (
-							<p key={error}>{error}</p>
-						))}
+				{!paletteOnly && (
+					<DialogTrigger asChild>
 						<Button
-							size="sm"
-							variant="outline"
-							onClick={() => {
-								remote.retry();
-								dashboard?.calendar.refresh();
+							id={searchId}
+							variant="ghost"
+							aria-label="Search your workspace"
+						>
+							<Search aria-hidden="true" />
+							Search
+						</Button>
+					</DialogTrigger>
+				)}
+				<DialogContent
+					className="gap-0 overflow-hidden p-0 sm:max-w-2xl"
+					onCloseAutoFocus={(event) => {
+						if (reviewTaskId) {
+							event.preventDefault();
+							return;
+						}
+						if (didNavigate.current || paletteOnly) {
+							event.preventDefault();
+							const trigger = [
+								...document.querySelectorAll<HTMLButtonElement>(
+									'button[aria-label="Search your workspace"], button[aria-label="Open navigation"]',
+								),
+							].find(
+								(button) => button.getClientRects().length > 0,
+							);
+							(didNavigate.current
+								? document.querySelector<HTMLElement>("main")
+								: (dashboard?.searchReturnFocus.current
+										?.isConnected
+										? dashboard.searchReturnFocus.current
+										: trigger) ||
+									document.querySelector<HTMLElement>("main")
+							)?.focus();
+						}
+					}}
+				>
+					<DialogHeader className="sr-only">
+						<DialogTitle>Search your workspace</DialogTitle>
+						<DialogDescription>
+							Find chats, actions, people, topics, calendar
+							entries, email, and pinned apps.
+						</DialogDescription>
+					</DialogHeader>
+					<Command shouldFilter={false} label="Search">
+						<CommandInput
+							aria-label="Search"
+							placeholder="Search your workspace…"
+							value={query}
+							onValueChange={setQuery}
+							className="pr-10"
+						/>
+						<CommandList className="max-h-96 p-2">
+							<CommandEmpty>
+								{remote.isLoading
+									? "Searching…"
+									: "No matching items. Try another name or keyword."}
+							</CommandEmpty>
+							{groups.map((group) => {
+								const matches = entries.filter(
+									(entry) => entry.group === group,
+								);
+								return matches.length > 0 ? (
+									<CommandGroup key={group} heading={group}>
+										{matches.map((entry) => (
+											<CommandItem
+												key={entry.id}
+												value={entry.id}
+												onSelect={() => select(entry)}
+												className="min-h-11 items-start gap-3 py-3"
+											>
+												<div className="min-w-0 flex-1">
+													<p className="break-words font-medium">
+														{entry.label}
+													</p>
+													<p className="line-clamp-1 text-muted-foreground text-xs">
+														{entry.detail}
+													</p>
+												</div>
+												<ArrowUpRight
+													aria-hidden="true"
+													className="mt-1 size-4"
+												/>
+											</CommandItem>
+										))}
+									</CommandGroup>
+								) : null;
+							})}
+							{remote.hasMore && (
+								<CommandItem
+									value="more-chats"
+									disabled={remote.isLoading}
+									onSelect={remote.more}
+								>
+									Load more matching chats
+								</CommandItem>
+							)}
+						</CommandList>
+					</Command>
+					{remote.isLoading && (
+						<output className="px-4 py-2 text-muted-foreground text-xs">
+							Searching connected records…
+						</output>
+					)}
+					{errors.length > 0 && (
+						<div
+							role="alert"
+							className="space-y-1 border-t p-3 text-sm"
+						>
+							{errors.map((error) => (
+								<p key={error}>{error}</p>
+							))}
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => {
+									remote.retry();
+									dashboard?.calendar.refresh();
+								}}
+							>
+								Retry search
+							</Button>
+						</div>
+					)}
+					<div className="flex flex-wrap items-center gap-2 border-t bg-muted/30 p-3 text-muted-foreground text-xs">
+						<span className="min-w-0 flex-1">
+							{limitedRecords
+								? "Partial imported records (list limits apply)"
+								: "Available conversations, people, and topics"}
+							{state.settings.sourcesJson.calendar
+								? " · Up to 30 events this week"
+								: " · Calendar disconnected"}
+							{state.settings.sourcesJson.email
+								? " · Outlook sender/subject, up to 20 per query"
+								: " · Outlook disconnected"}
+						</span>
+						<Label htmlFor={windowId} className="text-xs">
+							Email window
+						</Label>
+						<Select
+							value={String(days)}
+							onValueChange={(value) => {
+								const next = Number(value);
+								if (
+									next === 1 ||
+									next === 7 ||
+									next === 30 ||
+									next === 90
+								)
+									setDays(next);
 							}}
 						>
-							Retry search
-						</Button>
+							<SelectTrigger id={windowId} className="w-28">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{[1, 7, 30, 90].map((value) => (
+									<SelectItem
+										key={value}
+										value={String(value)}
+									>
+										{value} days
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
-				)}
-				<div className="flex flex-wrap items-center gap-2 border-t bg-muted/30 p-3 text-muted-foreground text-xs">
-					<span className="min-w-0 flex-1">
-						{limitedRecords
-							? "Partial imported records (list limits apply)"
-							: "Available conversations, people, and topics"}
-						{state.settings.sourcesJson.calendar
-							? " · Up to 30 events this week"
-							: " · Calendar disconnected"}
-						{state.settings.sourcesJson.email
-							? " · Outlook sender/subject, up to 20 per query"
-							: " · Outlook disconnected"}
-					</span>
-					<Label htmlFor={windowId} className="text-xs">
-						Email window
-					</Label>
-					<Select
-						value={String(days)}
-						onValueChange={(value) => {
-							const next = Number(value);
-							if (
-								next === 1 ||
-								next === 7 ||
-								next === 30 ||
-								next === 90
-							)
-								setDays(next);
-						}}
-					>
-						<SelectTrigger id={windowId} className="w-28">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{[1, 7, 30, 90].map((value) => (
-								<SelectItem key={value} value={String(value)}>
-									{value} days
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-			</DialogContent>
-		</Dialog>
+				</DialogContent>
+			</Dialog>
+			{reviewTask && (
+				<AttentionReviewSheet
+					item={{
+						kind: "work",
+						item: reviewTask,
+						id: `work:${reviewTask.id}`,
+						title: reviewTask.title,
+						detail: reviewTask.reasons.join(" · "),
+						sourceLabel: "Task details",
+						topicIds: reviewTask.topicIds,
+						topicStatus: "ready",
+						priority: reviewTask.priority,
+						due: reviewTask.due,
+						received: reviewTask.received,
+						score: reviewTask.score,
+						isSample: reviewTask.isSample,
+					}}
+					isOpen={Boolean(reviewTaskId)}
+					onOpenChange={(open) => {
+						if (!open) setReviewTaskId(null);
+					}}
+					triggerId={searchId}
+				/>
+			)}
+		</>
 	);
 }

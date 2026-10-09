@@ -230,6 +230,8 @@ const memoryStatement = (state: "active" | "suggested", offset: number) =>
 		limit: REFRESH_PAGE_SIZE,
 		offset,
 	});
+const topicStatement = (offset: number) =>
+	pixel("BrainListTopics", { limit: 1000, offset });
 const peopleStatement = (offset: number) =>
 	pixel("BrainListPeople", { limit: REFRESH_PAGE_SIZE, offset });
 
@@ -279,7 +281,8 @@ function mapSources(settings: Settings): SourceStatus[] {
 	}));
 }
 
-function mapTopic(row: Row): Topic {
+/** Map a validated topic detail row into the shared session representation. */
+export function mapTopic(row: Row): Topic {
 	const stats = (row.stats ?? {}) as Row;
 	return {
 		id: str(row.id),
@@ -357,7 +360,8 @@ const SOURCE_KINDS: Record<string, NonNullable<Thread["source"]>["kind"]> = {
 	calendar: "calendar",
 };
 
-function mapThread(row: Row): Thread {
+/** Map a validated source-thread row without inventing native source identities. */
+export function mapThread(row: Row): Thread {
 	const channel = (row.channel as Thread["channel"]) ?? "email";
 	// Brain ids are internal ids. Only expose a source target when the server supplies its native id.
 	const nativeId =
@@ -417,7 +421,8 @@ function mapThread(row: Row): Thread {
 	};
 }
 
-function mapItem(row: Row): WorkItem {
+/** Preserve source, direct topic, room, and assignment identities from a validated Work row. */
+export function mapItem(row: Row): WorkItem {
 	return {
 		id: str(row.id),
 		threadId: str(row.threadId),
@@ -432,6 +437,9 @@ function mapItem(row: Row): WorkItem {
 		received: str(row.received),
 		status: (row.status as WorkItem["status"]) ?? "open",
 		topicIds: list<string>(row.topicIds),
+		linkTopicId: opt(row.linkTopicId) ?? null,
+		roomId: opt(row.roomId) ?? null,
+		assignee: opt(row.assignee) ?? null,
 		suggested: row.suggested === true ? true : undefined,
 		completedAt: row.status === "done" ? opt(row.closedAt) : undefined,
 		closedReason: opt(row.closedReason),
@@ -495,7 +503,7 @@ export async function loadLiveState(
 		pixel("BrainGetProfile"),
 		pixel("BrainGetSettings"),
 		pixel("BrainListAccounts", { limit: 1000 }),
-		pixel("BrainListTopics", { limit: 1000 }),
+		topicStatement(0),
 		pixel("BrainListPeople", { limit: 5000 }),
 		pixel("BrainListThreads", { limit: 5000, detail: true }),
 		pixel("WorkListItems", { view: "all", limit: 5000 }),
@@ -525,17 +533,38 @@ export async function loadLiveState(
 		Page,
 	];
 
-	// Repeated list rows must not duplicate navigation entries or detail requests.
-	const topicIds = [
-		...new Set(topicsPage.items.map((topic) => str(topic.id))),
-	];
-	// topic goals and people come from the detail call; topic notes are memories
+	// The directory can exceed one page; topic goals and people require bounded detail batches.
 	const [topicRows, openReviewRows, activeMemoryRows, suggestedMemoryRows] =
 		await Promise.all([
-			runBatch(
+			readCompleteRows(
 				actions,
-				topicIds.map((topicId) => pixel("BrainGetTopic", { topicId })),
-			) as Promise<Row[]>,
+				topicsPage,
+				topicStatement,
+				"Topics",
+			).then(async (topics) => {
+				const details: Row[] = [];
+				const schema = z
+					.object({ id: z.string().min(1) })
+					.passthrough();
+				for (let offset = 0; offset < topics.length; offset += 50) {
+					const batch = topics.slice(offset, offset + 50);
+					const rows = await runBatch(
+						actions,
+						batch.map((topic) =>
+							pixel("BrainGetTopic", { topicId: topic.id }),
+						),
+					);
+					rows.forEach((raw, index) => {
+						const row = schema.parse(raw);
+						if (row.id !== batch[index].id)
+							throw new Error(
+								"Received context for a different topic.",
+							);
+						details.push(row);
+					});
+				}
+				return details;
+			}),
 			readCompleteRows(
 				actions,
 				openReviews,
@@ -888,9 +917,11 @@ export async function readWorkUpdates(
 	for (const memory of memories)
 		for (const ref of memory.about)
 			if (ref.type === "topic") topicIds.add(ref.id);
-	for (const item of items.items)
+	for (const item of items.items) {
+		if (str(item.linkTopicId)) topicIds.add(str(item.linkTopicId));
 		for (const topicId of list(item.topicIds))
 			if (typeof topicId === "string" && topicId) topicIds.add(topicId);
+	}
 	const topics: Topic[] = [];
 	const ids = [...topicIds];
 	const topicSchema = z.object({ id: z.string().min(1) }).passthrough();

@@ -57,6 +57,13 @@ export function RoomTreeProvider({
 				if (
 					isRecord(detail) &&
 					detail.scope === activityScope &&
+					typeof detail.roomId === "string" &&
+					typeof detail.pinned === "boolean"
+				)
+					store.recordPin(detail.roomId, detail.pinned);
+				if (
+					isRecord(detail) &&
+					detail.scope === activityScope &&
 					recordRoomTreeActivity(activityStorageKey, activity, detail)
 				) {
 					const roomId = detail.roomId;

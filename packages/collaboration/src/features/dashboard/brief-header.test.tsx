@@ -13,8 +13,12 @@ const refresh = vi.hoisted(() => ({
 	all: vi.fn(),
 }));
 
-vi.mock("@/features/for-you/for-you.context", () => ({
-	useForYou: () => ({ items: [], isLoading: false, refresh: refresh.queue }),
+vi.mock("@/features/attention/attention.context", () => ({
+	useAttention: () => ({
+		items: [],
+		isLoading: false,
+		refresh: refresh.queue,
+	}),
 }));
 
 vi.mock("./dashboard.context", () => ({
@@ -57,7 +61,6 @@ function renderHeader(withItems = false) {
 			path: "/",
 			element: <BriefHeader />,
 		},
-		{ path: "/for-you", element: <h1>For you</h1> },
 		{ path: "/tasks/done", element: <h1>Handled tasks</h1> },
 		{ path: "/tasks/waiting", element: <h1>Waiting tasks</h1> },
 	]);
@@ -70,7 +73,6 @@ function renderHeader(withItems = false) {
 }
 
 it.each([
-	["0 for you", "/for-you", "For you"],
 	["0 handled", "/tasks/done", "Handled tasks"],
 	["0 waiting on others", "/tasks/waiting", "Waiting tasks"],
 ])(

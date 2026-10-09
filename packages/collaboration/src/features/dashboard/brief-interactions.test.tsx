@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router";
+import { createMemoryRouter, RouterProvider } from "react-router";
+import { buildAttentionItems } from "@/features/attention/attention.model";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import type {
 	CollaborationState,
@@ -13,15 +13,9 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "@/features/collaboration/state/collaboration-session.context";
-import {
-	buildForYouItems,
-	type ForYouItem,
-} from "@/features/for-you/for-you.model";
 import type { InsightActions } from "@/lib/pixel";
 import { DashboardPage } from "@/pages/dashboard.page";
-import { BriefNeeds } from "./brief-needs";
 import { DashboardContext } from "./dashboard.context";
-import { presetWidgets, saveDashboardPreferences } from "./dashboard-layout";
 import { useDashboardLayout } from "./use-dashboard-layout";
 
 const queue = vi.hoisted(() => ({
@@ -30,12 +24,12 @@ const queue = vi.hoisted(() => ({
 	isComplete: true,
 	refresh: vi.fn(),
 }));
-vi.mock("@/features/for-you/for-you.context", () => ({
-	useForYou: () => {
+vi.mock("@/features/attention/attention.context", () => ({
+	useAttention: () => {
 		const { state } = useCollaborationSession();
 		return {
 			...queue,
-			items: buildForYouItems(state, {
+			items: buildAttentionItems(state, {
 				runs: [],
 				delegations: [],
 				roomSource: () => undefined,
@@ -43,19 +37,6 @@ vi.mock("@/features/for-you/for-you.context", () => ({
 			setPriority: vi.fn(),
 		};
 	},
-}));
-vi.mock("@/features/for-you/for-you-card", () => ({
-	ForYouCard: ({
-		item,
-		view,
-	}: {
-		item: ForYouItem;
-		view: "board" | "list";
-	}) => (
-		<article data-view={view}>
-			<button type="button">{item.title}</button>
-		</article>
-	),
 }));
 
 vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
@@ -254,74 +235,10 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 
-it("shows the complete daily brief without applying or replacing saved widget customization", () => {
-	saveDashboardPreferences(storageKey, {
-		version: 1,
-		widgets: presetWidgets().map((widget) => ({
-			...widget,
-			visible: false,
-		})),
-		presets: [],
-	});
-	const saved = localStorage.getItem(storageKey);
-	renderBrief();
-	for (const name of [
-		"Your day",
-		"Handled",
-		"For you",
-		"Start a conversation",
-		"Brain",
-	]) {
-		expect(screen.getByRole("region", { name })).toBeVisible();
-	}
-	expect(
-		screen.getByRole("button", { name: "Confirm revised pricing" }),
-	).toBeVisible();
-	expect(
-		screen.queryByRole("button", { name: /Customize dashboard/i }),
-	).not.toBeInTheDocument();
-	expect(
-		screen.queryByRole("button", { name: /^Resize / }),
-	).not.toBeInTheDocument();
-	expect(localStorage.getItem(storageKey)).toBe(saved);
-});
-
-it("greets by the given name for first-last and last-first profile names", () => {
-	renderBrief();
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		/^Good (morning|afternoon|evening), Riley\. 3 things need you\.$/,
-	);
-	cleanup();
-	const state = createBriefState();
-	state.profile.name = "Wong, Riley";
-	renderBrief(state);
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		/^Good (morning|afternoon|evening), Riley\. 3 things need you\.$/,
-	);
-});
-
-it("keeps all topics visible with the composer before the mobile reading order", () => {
+it("keeps Home's composer, calendar, Brain and handled work without For you", () => {
+	const saved = JSON.stringify({ version: 1, widgets: [], presets: [] });
+	localStorage.setItem(storageKey, saved);
 	const { container } = renderBrief();
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"3 things need you",
-	);
-	const needs = within(screen.getByRole("region", { name: "For you" }));
-	for (const name of [
-		"Review the sprint backlog",
-		"Confirm revised pricing",
-		"Choose support tier",
-	]) {
-		expect(needs.getByRole("button", { name })).toBeVisible();
-	}
-	expect(
-		screen.queryByRole("combobox", { name: "Topic scope" }),
-	).not.toBeInTheDocument();
-	expect(
-		screen.queryByRole("region", { name: "Ask" }),
-	).not.toBeInTheDocument();
-	expect(
-		screen.queryByRole("link", { name: "Chat" }),
-	).not.toBeInTheDocument();
 	expect(
 		[
 			...container.querySelectorAll(
@@ -334,50 +251,33 @@ it("keeps all topics visible with the composer before the mobile reading order",
 					region.getAttribute("aria-labelledby") || "",
 				)?.textContent,
 		),
-	).toEqual([
-		"Start a conversation",
-		"For you",
-		"Brain",
-		"Your day",
-		"Handled",
-	]);
+	).toEqual(["Start a conversation", "Your day", "Brain", "Handled"]);
+	expect(
+		screen.queryByRole("region", { name: "For you" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.queryByRole("button", { name: /Customize dashboard/i }),
+	).not.toBeInTheDocument();
+	expect(localStorage.getItem(storageKey)).toBe(saved);
 	expect(request).not.toHaveBeenCalled();
 });
 
-it("uses the queue priority order and keeps Brain review items out of the context panel", () => {
-	const state = createBriefState();
-	state.items = state.items.map((item) => ({
-		...item,
-		priority: item.id === "sprint" ? "P0" : "P2",
-	}));
-	const initial = createInitialCollaborationState();
-	state.reviews = initial.reviews
-		.filter((review) => review.status === "open")
-		.slice(0, 1);
-	renderBrief(state);
-	const preview = within(screen.getByRole("region", { name: "For you" }));
-	expect(preview.getAllByRole("article")[0]).toHaveTextContent(
-		"Review the sprint backlog",
-	);
-	for (const article of preview.getAllByRole("article"))
-		expect(article).toHaveAttribute("data-view", "list");
-	expect(preview.getAllByRole("article")).toHaveLength(4);
-	expect(
-		within(screen.getByRole("region", { name: "Brain" })).queryByRole(
-			"article",
-		),
-	).not.toBeInTheDocument();
+it("greets by the given name for first-last and last-first profile names", () => {
+	renderBrief();
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"4 things need you",
+		/^Good (morning|afternoon|evening), Riley\.$/,
+	);
+	cleanup();
+	const state = createBriefState();
+	state.profile.name = "Wong, Riley";
+	renderBrief(state);
+	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+		/^Good (morning|afternoon|evening), Riley\.$/,
 	);
 });
 
-it("links the global overview to For you and Brain directories", () => {
+it("keeps topic and Brain directories reachable from Home", () => {
 	renderBrief();
-	expect(screen.getByRole("link", { name: "3 for you" })).toHaveAttribute(
-		"href",
-		"/for-you",
-	);
 	const directories = within(
 		screen.getByRole("navigation", { name: "Brain directories" }),
 	);
@@ -392,59 +292,4 @@ it("links the global overview to For you and Brain directories", () => {
 			path,
 		);
 	}
-});
-
-it("keeps failed, loading, partial, and complete empty queues distinct", async () => {
-	const user = userEvent.setup();
-	const state = createBriefState();
-	state.items = [];
-	const content = () => (
-		<MemoryRouter>
-			<CollaborationSessionProvider initialState={state}>
-				<BriefNeeds />
-			</CollaborationSessionProvider>
-		</MemoryRouter>
-	);
-	queue.errors = ["Could not check agent activity."];
-	const { rerender } = render(content());
-	expect(screen.getByRole("alert")).toHaveTextContent(
-		"Could not check agent activity.",
-	);
-	expect(screen.queryByText(/You're all caught up/)).not.toBeInTheDocument();
-	await user.click(screen.getByRole("button", { name: "Retry" }));
-	expect(queue.refresh).toHaveBeenCalledOnce();
-	queue.errors = [];
-	queue.isLoading = true;
-	rerender(content());
-	expect(screen.getByText("Loading this section")).toBeInTheDocument();
-	expect(screen.queryByText(/You're all caught up/)).not.toBeInTheDocument();
-	queue.isLoading = false;
-	queue.isComplete = false;
-	rerender(content());
-	expect(
-		screen.getByText(
-			"Nothing found yet. Some sources are still being checked.",
-		),
-	).toBeVisible();
-	queue.isComplete = true;
-	rerender(content());
-	expect(
-		screen.getByText("You're all caught up. Nothing to review right now."),
-	).toBeVisible();
-});
-
-it("keeps the topic-filtered preview linked to the queue instead of replacing the topic workspace", () => {
-	render(
-		<MemoryRouter>
-			<CollaborationSessionProvider initialState={createBriefState()}>
-				<BriefNeeds topicId="tailspin" compact />
-			</CollaborationSessionProvider>
-		</MemoryRouter>,
-	);
-	expect(
-		screen.getByRole("link", { name: "See all 2 For you items" }),
-	).toHaveAttribute("href", "/for-you?topic=tailspin");
-	expect(
-		screen.queryByRole("button", { name: "Review the sprint backlog" }),
-	).not.toBeInTheDocument();
 });

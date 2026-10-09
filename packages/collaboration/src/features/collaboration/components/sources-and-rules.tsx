@@ -31,7 +31,7 @@ export function SourcesAndRules() {
 						their own storage.
 					</P>
 					<Button asChild variant="outline">
-						<Link to="/for-you">Go to For you</Link>
+						<Link to="/tasks/topics">My topics</Link>
 					</Button>
 					<Button asChild variant="outline">
 						<Link to="/onboarding">Import mail again</Link>

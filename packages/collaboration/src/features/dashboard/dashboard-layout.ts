@@ -1,13 +1,5 @@
 import { z } from "@semoss/ui/next";
 
-const WIDGET_NAMES = {
-	day: "Your day",
-	needs: "Pending actions",
-	agents: "Agents needing you",
-	email: "Relevant email",
-	app: "App",
-} as const;
-
 const widgetSchema = z
 	.object({
 		id: z.string().min(1),
@@ -21,7 +13,6 @@ const widgetSchema = z
 		appId: z.string().min(1).optional(),
 	})
 	.refine((widget) => widget.kind !== "app" || Boolean(widget.appId));
-export type DashboardWidget = z.infer<typeof widgetSchema>;
 
 const widgetsSchema = z
 	.array(widgetSchema)
@@ -44,39 +35,6 @@ const preferencesSchema = z.object({
 		.max(20),
 });
 export type DashboardPreferences = z.infer<typeof preferencesSchema>;
-export type DashboardPreset = "Balanced" | "Focus" | "Meetings";
-
-/** Built-in presets keep all four sections available and change their emphasis. */
-export function presetWidgets(
-	preset: DashboardPreset = "Balanced",
-): DashboardWidget[] {
-	const order: DashboardWidget["kind"][] =
-		preset === "Focus"
-			? ["needs", "agents", "day", "email"]
-			: preset === "Meetings"
-				? ["day", "email", "needs", "agents"]
-				: ["day", "needs", "agents", "email"];
-	return order.map((kind) => ({
-		id: kind,
-		kind,
-		title: WIDGET_NAMES[kind],
-		visible: true,
-		width: preset === "Balanced" ? (kind === "needs" ? 6 : 3) : 6,
-		height:
-			preset === "Balanced"
-				? kind === "needs"
-					? 104
-					: kind === "day"
-						? 80
-						: kind === "agents"
-							? 32
-							: 64
-				: 64,
-		density: "comfortable",
-		filter: "all",
-	}));
-}
-
 /** Store layout metadata only, isolated by account and deployment. */
 export function dashboardStorageKey(
 	account: string,
@@ -92,7 +50,7 @@ export function readDashboardPreferences(key: string): {
 } {
 	const fallback: DashboardPreferences = {
 		version: 1,
-		widgets: presetWidgets(),
+		widgets: [],
 		presets: [],
 	};
 	try {
@@ -102,39 +60,13 @@ export function readDashboardPreferences(key: string): {
 		if (!parsed.success)
 			return {
 				preferences: fallback,
-				error: "Your saved layout could not be read. The Balanced layout is shown.",
+				error: "Your saved pinned apps could not be read.",
 			};
 		return { preferences: parsed.data, error: "" };
 	} catch {
 		return {
 			preferences: fallback,
-			error: "Layout storage is unavailable. You can still customize this session.",
+			error: "Saved pinned apps are unavailable in this browser.",
 		};
 	}
-}
-
-/** Validate before writing; callers keep edits open when storage fails. */
-export function saveDashboardPreferences(
-	key: string,
-	preferences: DashboardPreferences,
-): void {
-	localStorage.setItem(
-		key,
-		JSON.stringify(preferencesSchema.parse(preferences)),
-	);
-}
-
-/** Reordering is shared by drag gestures and explicit move buttons. */
-export function moveWidget(
-	widgets: DashboardWidget[],
-	id: string,
-	targetId: string,
-): DashboardWidget[] {
-	const from = widgets.findIndex((widget) => widget.id === id);
-	const to = widgets.findIndex((widget) => widget.id === targetId);
-	if (from < 0 || to < 0 || from === to) return widgets;
-	const next = [...widgets];
-	const [widget] = next.splice(from, 1);
-	if (widget) next.splice(to, 0, widget);
-	return next;
 }

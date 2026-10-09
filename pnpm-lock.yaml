@@ -1112,15 +1112,6 @@ importers:
 
   packages/collaboration:
     dependencies:
-      '@dnd-kit/core':
-        specifier: ^6.3.1
-        version: 6.3.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      '@dnd-kit/sortable':
-        specifier: ^10.0.0
-        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@19.2.8)
       '@lexical/html':
         specifier: 0.39.0
         version: 0.39.0
@@ -11774,7 +11765,7 @@ snapshots:
       obug: 2.1.2
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -11828,7 +11819,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   '@vitest/utils@4.1.11':
     dependencies:

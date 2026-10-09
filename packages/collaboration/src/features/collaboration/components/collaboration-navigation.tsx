@@ -1,7 +1,6 @@
-import { Brain, Inbox } from "lucide-react";
+import { Brain, Folder } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
-import { useForYou } from "@/features/for-you/for-you.context";
 import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
 import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationTopicsNavigation } from "./collaboration-topics-navigation";
@@ -13,26 +12,25 @@ interface CollaborationNavigationProps {
 	onNavigate?: () => void;
 }
 
-/** One quiet navigation follows pending work, Brain, and saved conversations. */
+/** Topics organize work above the owner's pinned conversations. */
 export function CollaborationNavigation({
 	isCollapsed = false,
 	onNavigate,
 }: CollaborationNavigationProps) {
-	const { items } = useForYou();
 	const { pathname } = useLocation();
 	const links = [
 		{
-			to: "/for-you",
-			label: "For you",
-			icon: Inbox,
-			count: items.length,
-			isActive: pathname === "/for-you" || pathname === "/for-you/",
+			to: "/tasks/topics",
+			label: "My topics",
+			icon: Folder,
+			isActive: ["/tasks/topics", "/work/topics"].includes(
+				pathname.replace(/\/$/, ""),
+			),
 		},
 		{
 			to: "/brain",
 			label: "Brain",
 			icon: Brain,
-			count: 0,
 			isActive: pathname === "/brain" || pathname.startsWith("/brain/"),
 		},
 	];
@@ -48,7 +46,7 @@ export function CollaborationNavigation({
 				aria-label="Main"
 				className="flex shrink-0 flex-col gap-0.5 px-2 py-2 pr-3"
 			>
-				{links.map(({ to, label, icon: Icon, count, isActive }) => (
+				{links.map(({ to, label, icon: Icon, isActive }) => (
 					<Tooltip key={to} disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<Link
@@ -66,23 +64,13 @@ export function CollaborationNavigation({
 									aria-hidden="true"
 								/>
 								{!isCollapsed && (
-									<>
-										<span className="truncate">
-											{label}
-										</span>
-										{count > 0 && (
-											<span className="ml-auto shrink-0 font-normal text-muted-foreground text-xs tabular-nums">
-												{count}
-											</span>
-										)}
-									</>
+									<span className="truncate">{label}</span>
 								)}
 							</Link>
 						</TooltipTrigger>
 						{isCollapsed && (
 							<TooltipContent side="right">
 								{label}
-								{count > 0 ? ` · ${count}` : ""}
 							</TooltipContent>
 						)}
 					</Tooltip>

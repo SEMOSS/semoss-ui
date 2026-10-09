@@ -56,12 +56,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("onboarding completion", () => {
-	it("keeps Open For you disabled while the saved review is loading", () => {
+	it("keeps Open Home disabled while the saved review is loading", () => {
 		const source = session(applyReceipt(makeReview()));
 		read.status = "LOADING";
 		render(view(source.actions));
 		expect(
-			screen.getByRole("button", { name: "Open For you" }),
+			screen.getByRole("button", { name: "Open Home" }),
 		).toBeDisabled();
 		expect(
 			screen.queryByRole("heading", { name: "Your tasks are ready" }),
@@ -75,7 +75,7 @@ describe("onboarding completion", () => {
 		render(view(source.actions));
 		await waitFor(() =>
 			expect(
-				screen.getByRole("button", { name: "Open For you" }),
+				screen.getByRole("button", { name: "Open Home" }),
 			).toBeEnabled(),
 		);
 		expect(source.run).toHaveBeenCalledExactlyOnceWith(
@@ -109,7 +109,7 @@ describe("onboarding completion", () => {
 		render(view(source.actions));
 		expect(await screen.findByRole("alert")).toBeVisible();
 		expect(
-			screen.getByRole("button", { name: "Open For you" }),
+			screen.getByRole("button", { name: "Open Home" }),
 		).toBeDisabled();
 		expect(
 			screen.queryByRole("heading", { name: "Your tasks are ready" }),
@@ -126,9 +126,7 @@ describe("onboarding completion", () => {
 				name: "Setup saved without topics",
 			}),
 		).toBeVisible();
-		expect(
-			screen.getByRole("button", { name: "Open For you" }),
-		).toBeEnabled();
+		expect(screen.getByRole("button", { name: "Open Home" })).toBeEnabled();
 		expect(source.run).not.toHaveBeenCalled();
 	});
 
@@ -152,7 +150,7 @@ describe("onboarding completion", () => {
 			),
 		);
 		expect(
-			screen.getByRole("button", { name: "Open For you" }),
+			screen.getByRole("button", { name: "Open Home" }),
 		).toBeDisabled();
 		expect(
 			source.run.mock.calls.some(([statement]) =>
@@ -172,7 +170,7 @@ describe("onboarding completion", () => {
 				screen.getByRole("heading", { name: "Check your topic setup" }),
 			).toBeVisible();
 			expect(
-				screen.getByRole("button", { name: "Open For you" }),
+				screen.getByRole("button", { name: "Open Home" }),
 			).toBeDisabled();
 			expect(source.run).not.toHaveBeenCalled();
 		},
@@ -200,7 +198,7 @@ describe("onboarding completion", () => {
 			rerender(view(next.actions));
 			await waitFor(() =>
 				expect(
-					screen.getByRole("button", { name: "Open For you" }),
+					screen.getByRole("button", { name: "Open Home" }),
 				).toBeEnabled(),
 			);
 			await act(async () => {
@@ -223,7 +221,7 @@ describe("onboarding completion", () => {
 				}
 			});
 			expect(
-				screen.getByRole("button", { name: "Open For you" }),
+				screen.getByRole("button", { name: "Open Home" }),
 			).toBeEnabled();
 			expect(screen.getByText("Current owner's topics")).toBeVisible();
 			expect(screen.queryByRole("alert")).not.toBeInTheDocument();

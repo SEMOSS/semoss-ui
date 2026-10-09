@@ -58,12 +58,12 @@ const remote = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock("@/features/for-you/for-you-provider", () => ({
-	ForYouProvider: ({ children }: { children: ReactNode }) => children,
+vi.mock("@/features/attention/attention-provider", () => ({
+	AttentionProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
-vi.mock("@/features/for-you/for-you.context", () => ({
-	useForYou: () => ({ items: [] }),
+vi.mock("@/features/attention/attention.context", () => ({
+	useAttention: () => ({ items: [] }),
 }));
 
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
@@ -237,16 +237,26 @@ describe("CollaborationFrame", () => {
 
 	it("reserves the measured conversation header without remounting drafts and restores page layout", async () => {
 		const observers = new Set<ResizeObserverCallback>();
+		const observedElements = new Set<Element>();
 		vi.stubGlobal(
 			"ResizeObserver",
 			class {
+				private elements = new Set<Element>();
 				constructor(private callback: ResizeObserverCallback) {
 					observers.add(callback);
 				}
-				observe() {}
-				unobserve() {}
+				observe(element: Element) {
+					this.elements.add(element);
+					observedElements.add(element);
+				}
+				unobserve(element: Element) {
+					this.elements.delete(element);
+					observedElements.delete(element);
+				}
 				disconnect() {
 					observers.delete(this.callback);
+					for (const element of this.elements)
+						observedElements.delete(element);
 				}
 			},
 		);
@@ -278,6 +288,7 @@ describe("CollaborationFrame", () => {
 			screen.getByRole("button", { name: "Open workbench" }),
 		);
 		expect(headerContainer).toHaveClass("md:absolute");
+		expect([...observedElements]).toContain(header);
 		expect(
 			content?.style.getPropertyValue(
 				"--collaboration-conversation-width",
@@ -317,7 +328,7 @@ describe("CollaborationFrame", () => {
 				"--collaboration-conversation-width",
 			),
 		).toBe("");
-		expect(observers.size).toBe(0);
+		expect([...observedElements]).not.toContain(header);
 	});
 
 	it("dismisses the mobile account menu before the navigation drawer and returns focus", async () => {
@@ -370,7 +381,7 @@ describe("CollaborationFrame", () => {
 		},
 	);
 
-	it.each(["/", "/for-you"])(
+	it.each(["/", "/tasks/topics"])(
 		"returns home from the mobile brand on %s and closes navigation",
 		async (path) => {
 			isWide = false;
@@ -485,7 +496,7 @@ describe("CollaborationFrame", () => {
 				}),
 			).toBeVisible();
 			expect(
-				within(navigation).getByRole("link", { name: "For you" }),
+				within(navigation).getByRole("link", { name: "My topics" }),
 			).toBeVisible();
 			const expand = screen.getByRole("button", {
 				name: "Expand navigation",
@@ -616,7 +627,7 @@ describe("CollaborationFrame", () => {
 		).toBeVisible();
 		expect(
 			within(
-				screen.getByRole("navigation", { name: "Rooms" }),
+				screen.getByRole("navigation", { name: "Pinned rooms" }),
 			).getAllByRole("list"),
 		).toHaveLength(1);
 	});
@@ -631,7 +642,7 @@ describe("CollaborationFrame", () => {
 			name: "Workspace navigation",
 		});
 		const scroller = within(dialog).getByRole("navigation", {
-			name: "Rooms",
+			name: "Pinned rooms",
 		}).parentElement;
 		if (!scroller) throw new Error("Rooms must have a scroll container");
 		scroller.scrollTop = 160;
@@ -645,7 +656,7 @@ describe("CollaborationFrame", () => {
 			name: "Workspace navigation",
 		});
 		expect(
-			within(reopened).getByRole("navigation", { name: "Rooms" })
+			within(reopened).getByRole("navigation", { name: "Pinned rooms" })
 				.parentElement?.scrollTop,
 		).toBe(160);
 		expect(

@@ -771,7 +771,7 @@ it("ignores stale recipient reads after switching to a different source email", 
 	recipientRead.result = {
 		status: "SUCCESS",
 		data: {
-			uid: "first",
+			id: "first",
 			replyRecipients: { to: ["stale@example.com"], cc: [] },
 		},
 	};
@@ -783,7 +783,7 @@ it("ignores stale recipient reads after switching to a different source email", 
 	recipientRead.result = {
 		status: "SUCCESS",
 		data: {
-			uid: "second",
+			id: "second",
 			replyRecipients: { to: ["second@example.com"], cc: [] },
 		},
 	};

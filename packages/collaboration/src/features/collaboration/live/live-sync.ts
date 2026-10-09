@@ -1,6 +1,7 @@
 import { ROOM_TREE_CHANGED } from "@/features/room-tree/room-tree-events";
 import type { InsightActions } from "@/lib/pixel";
 import { pixel } from "@/lib/pixel";
+import { collaborationReducer } from "../state/collaboration.reducer";
 import type {
 	CollaborationCommand,
 	CollaborationState,
@@ -27,6 +28,11 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"live-profile.set",
 	"snooze.expire",
 	"memory.server",
+	"topic.received",
+	"topic.goal.received",
+	"item.received",
+	"topic.work.received",
+	"topic.context.received",
 ]);
 
 // a create returns the server id for the local one
@@ -56,6 +62,8 @@ export type LiveSync = ((change: CollaborationChange) => void) & {
 	settled: () => Promise<void>;
 	/** Keep session identities stable when a created row returns in a refresh. */
 	localId: (serverId: string) => string;
+	/** Resolve identities from the older optimistic creation flow before a scoped read. */
+	serverId?: (localId: string) => string;
 };
 
 /** Queue-backed saver: changes go out one at a time and in order. */
@@ -105,6 +113,7 @@ export function createLiveSync(
 		settled: () => queue,
 		localId: (serverId: string): string =>
 			[...ids].find(([, value]) => value === serverId)?.[0] ?? serverId,
+		serverId: id,
 	});
 }
 
@@ -113,7 +122,21 @@ function planChange(
 	id: (value: string) => string,
 ): Plan {
 	const plan: Plan = { creates: [], statements: [], affectsRoomTree: false };
-	const { previous: prev, next } = change;
+	const { next } = change;
+	// Received rows already exist on the server. Rebase even a mixed batch so a
+	// simultaneous owner edit is the only difference that is written back.
+	const prev = change.commands.reduce(
+		(previous, command) =>
+			command.type === "topic.received" ||
+			command.type === "topic.goal.received" ||
+			command.type === "item.received" ||
+			command.type === "topic.work.received" ||
+			command.type === "topic.context.received" ||
+			command.type === "live.refresh"
+				? collaborationReducer(previous, command, next.today)
+				: previous,
+		change.previous,
+	);
 	const merges = change.commands.filter(
 		(
 			command,

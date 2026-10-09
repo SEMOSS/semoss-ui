@@ -6,7 +6,7 @@ import type { MailSearchFilters } from "@/features/connectors/types";
 import { listRoomsPage } from "@/features/rooms/api/list-rooms";
 import { searchRoomMessages } from "@/features/rooms/api/search-room-messages";
 import type { InsightActions } from "@/lib/pixel";
-import { threadPath } from "@/lib/workspace-paths";
+import { roomPath, threadPath } from "@/lib/workspace-paths";
 
 export interface WorkspaceSearchResult {
 	id: string;
@@ -25,6 +25,8 @@ export interface WorkspaceSearchResult {
 	roomId?: string;
 	source?: { kind: "email" | "calendar"; id: string };
 	appId?: string;
+	/** Source-less tasks retain a detail action without a fabricated route. */
+	taskId?: string;
 }
 
 /** Local records are searchable immediately, without loading message bodies. */
@@ -45,7 +47,12 @@ export function searchWorkspaceRecords(
 					label: item.title,
 					detail: item.priority || "Action",
 					group: "Actions",
-					path: threadPath(item.threadId),
+					path: item.roomId
+						? roomPath(item.roomId)
+						: item.threadId
+							? threadPath(item.threadId)
+							: undefined,
+					taskId: item.id,
 				}),
 			),
 		...state.people.map(
@@ -63,7 +70,7 @@ export function searchWorkspaceRecords(
 				label: topic.name,
 				detail: topic.description || "Topic",
 				group: "Topics",
-				path: `/brain/topics/${encodeURIComponent(topic.id)}`,
+				path: `/tasks/topic/${encodeURIComponent(topic.id)}`,
 			}),
 		),
 		...state.threads.map(

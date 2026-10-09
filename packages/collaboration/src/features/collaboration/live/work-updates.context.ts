@@ -21,6 +21,10 @@ export interface WorkUpdatesStatus {
 	syncError: string;
 	/** Pull new mail from Microsoft 365, then reload. */
 	syncMail: () => void;
+	/** Coordinate scoped reads with the existing queue-backed saver. */
+	settled?: () => Promise<void>;
+	localId?: (serverId: string) => string;
+	serverId?: (localId: string) => string;
 }
 export const WorkUpdatesContext = createContext<WorkUpdatesStatus | null>(null);
 

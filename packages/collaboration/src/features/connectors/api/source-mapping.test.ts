@@ -7,6 +7,7 @@ import {
 
 it("preserves separate Outlook UIDs even when subjects match", () => {
 	const base = {
+		messageId: null,
 		subject: "Same subject",
 		body: "Text",
 		unread: false,
@@ -22,7 +23,12 @@ it("preserves separate Outlook UIDs even when subjects match", () => {
 it("refuses to import an email that has only been listed", () => {
 	expect(() =>
 		importOutlookMail(
-			{ uid: "one", unread: false, hasAttachments: false },
+			{
+				uid: "one",
+				messageId: null,
+				unread: false,
+				hasAttachments: false,
+			},
 			"inbox",
 		),
 	).toThrow("Read this email");

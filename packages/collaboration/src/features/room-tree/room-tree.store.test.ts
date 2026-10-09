@@ -152,6 +152,35 @@ describe("browser-only room unread activity", () => {
 		expect(list).toHaveBeenCalledTimes(1);
 		release();
 	});
+
+	it("pinning historical rooms does not invent unread activity or consume known unread activity", async () => {
+		list.mockResolvedValueOnce({ rooms: [] });
+		const store = createRoomTreeStore(
+			() => actions,
+			new Map(),
+			createRoomReadState("unread-pins"),
+		);
+		const release = store.retain();
+		await waitFor(() => expect(store.getSnapshot().isLoading).toBe(false));
+		store.recordActivity("active", newActivity);
+		store.recordPin("historical", true);
+		store.recordPin("active", true);
+		list.mockResolvedValueOnce({
+			rooms: [
+				{
+					roomId: "historical",
+					activityAt: initialActivity,
+					topics: [],
+				},
+				{ roomId: "active", activityAt: initialActivity, topics: [] },
+			],
+		});
+		store.refresh();
+		await waitFor(() => expect(store.getSnapshot().isLoading).toBe(false));
+		expect(store.getSnapshot().rooms[0]?.isUnread).toBe(false);
+		expect(store.getSnapshot().rooms[1]?.isUnread).toBe(true);
+		release();
+	});
 });
 
 describe("frontend room tree owner", () => {
@@ -273,4 +302,34 @@ describe("frontend room tree owner", () => {
 		await abandoned.promise;
 		expect(store.getSnapshot().rooms).toHaveLength(25);
 	});
+});
+
+it("keeps full pin identities past pagination and removes a confirmed unpin immediately", async () => {
+	const store = createRoomTreeStore(() => actions);
+	const release = store.retain();
+	await waitFor(() => expect(store.getSnapshot().isLoading).toBe(false));
+	expect(store.getSnapshot().rooms).toHaveLength(25);
+	expect(store.getSnapshot().pinnedRoomIds).toContain("room-62");
+	store.recordPin("room-1", false);
+	expect(store.getSnapshot().pinnedRoomIds).not.toContain("room-1");
+	expect(store.getSnapshot().rooms[0]?.roomId).toBe("room-2");
+	expect(store.getSnapshot().rooms).toHaveLength(25);
+	release();
+});
+
+it("does not let a refresh started before a pin write restore the old pin state", async () => {
+	const store = createRoomTreeStore(() => actions);
+	const release = store.retain();
+	await waitFor(() => expect(store.getSnapshot().isLoading).toBe(false));
+	const prior = deferred<RoomTreeResponse>();
+	list.mockReturnValueOnce(prior.promise);
+	store.refresh();
+	store.recordPin("room-1", false);
+	prior.resolve(tree());
+	await waitFor(() => expect(store.getSnapshot().isLoading).toBe(false));
+	expect(store.getSnapshot().pinnedRoomIds).not.toContain("room-1");
+	expect(
+		store.getSnapshot().rooms.some((room) => room.roomId === "room-1"),
+	).toBe(false);
+	release();
 });

@@ -8,20 +8,19 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { useAttention } from "@/features/attention/attention.context";
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { selectWorkItems } from "@/features/collaboration/state/collaboration.selectors";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import { useForYou } from "@/features/for-you/for-you.context";
 import { useDashboard } from "./dashboard.context";
-import { dashboardTimeZone, eventStart } from "./dashboard-calendar";
-import { dayKey } from "./dashboard-selectors";
+import { dashboardTimeZone } from "./dashboard-calendar";
 
-/** A factual, live headline for the available work and next meeting. */
+/** Greet the owner and retain navigation to handled and waiting work. */
 export function BriefHeader() {
 	const { state } = useCollaborationSession();
 	const { calendar, mail } = useDashboard();
 	const updates = useWorkUpdates();
-	const queue = useForYou();
+	const queue = useAttention();
 	const [now, setNow] = useState(() => new Date());
 	useEffect(() => {
 		const timer = window.setInterval(() => setNow(new Date()), 60_000);
@@ -44,29 +43,10 @@ export function BriefHeader() {
 			: hour < 18
 				? "Good afternoon"
 				: "Good evening";
-	const pending = queue.items;
 	const handled = selectWorkItems(state, {
 		view: "done_today",
 	}).total;
 	const waiting = selectWorkItems(state, { view: "waiting" }).total;
-	const next = (calendar.data ?? [])
-		.flatMap((event) => {
-			const start = eventStart(event);
-			return start &&
-				start >= now &&
-				dayKey(start, zone) === dayKey(now, zone)
-				? [start]
-				: [];
-		})
-		.sort((a, b) => a.getTime() - b.getTime())[0];
-	const beforeMeeting = next
-		? pending.filter(
-				(item) =>
-					item.due &&
-					new Date(item.due) >= now &&
-					new Date(item.due) <= next,
-			).length
-		: 0;
 	const checkedAt =
 		updates?.lastUpdated ?? calendar.checkedAt ?? mail.checkedAt;
 	const checked = checkedAt ? new Date(checkedAt) : null;
@@ -78,31 +58,10 @@ export function BriefHeader() {
 			<div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
 				<H1 className="min-w-0 max-w-3xl flex-1 font-medium text-2xl leading-snug tracking-tight 2xl:text-3xl">
 					{greeting}
-					{name ? `, ${name}` : ""}.{" "}
-					<span className="text-muted-foreground">
-						{pending.length}{" "}
-						{pending.length === 1 ? "thing needs" : "things need"}{" "}
-						you
-						{beforeMeeting > 0 && next
-							? `, ${beforeMeeting} before your ${next.toLocaleTimeString(undefined, { timeZone: zone, hour: "2-digit", minute: "2-digit", hour12: false })} meeting`
-							: ""}
-						.
-					</span>
+					{name ? `, ${name}` : ""}.
 				</H1>
 			</div>
 			<div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-muted-foreground text-xs leading-5">
-				<Link
-					to="/for-you"
-					className="inline-flex min-h-6 pointer-coarse:min-h-11 items-center gap-2 rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-				>
-					<span
-						aria-hidden="true"
-						className="size-1.5 rounded-full bg-foreground"
-					/>
-					<span className="text-foreground">{pending.length}</span>{" "}
-					for you
-				</Link>
-				<span aria-hidden="true">·</span>
 				<Link
 					to="/tasks/done"
 					className="inline-flex min-h-6 pointer-coarse:min-h-11 items-center gap-1 rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"

@@ -59,7 +59,7 @@ describe("collaboration routes", () => {
 	});
 
 	it.each([
-		["/room", "/for-you"],
+		["/room", "/"],
 
 		["/agents", "/brain"],
 		["/agents/agent-one", "/brain"],

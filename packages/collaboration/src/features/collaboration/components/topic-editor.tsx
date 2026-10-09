@@ -1,4 +1,4 @@
-import { type RefObject, useId } from "react";
+import type { RefObject } from "react";
 import {
 	Button,
 	Dialog,
@@ -27,13 +27,13 @@ const schema = z.object({
 	accountId: z.string(),
 });
 
-/** Creates or edits a topic in the current session. */
+/** Edits an existing topic in the current session. */
 export function TopicEditor({
 	topic,
 	onClose,
 	returnFocusRef,
 }: {
-	topic?: Topic;
+	topic: Topic;
 	onClose: () => void;
 	returnFocusRef: RefObject<HTMLButtonElement | null>;
 }) {
@@ -41,14 +41,13 @@ export function TopicEditor({
 	const form = useForm<z.infer<typeof schema>>({
 		resolver: zodResolver(schema),
 		defaultValues: {
-			name: topic?.name ?? "",
-			short: topic?.short ?? "",
-			description: topic?.description ?? "",
-			kind: topic?.kind ?? "internal",
-			accountId: topic?.accountId ?? "none",
+			name: topic.name,
+			short: topic.short,
+			description: topic.description,
+			kind: topic.kind,
+			accountId: topic.accountId ?? "none",
 		},
 	});
-	const errorId = useId();
 	return (
 		<Dialog
 			open
@@ -64,9 +63,7 @@ export function TopicEditor({
 				}}
 			>
 				<DialogHeader>
-					<DialogTitle>
-						{topic ? "Edit topic" : "New topic"}
-					</DialogTitle>
+					<DialogTitle>Edit topic</DialogTitle>
 					<DialogDescription>
 						Topics and edits are saved for this session.
 					</DialogDescription>
@@ -79,35 +76,23 @@ export function TopicEditor({
 							type: "topic.save",
 							topic: {
 								...values,
-								id: topic?.id,
+								id: topic.id,
 								accountId:
 									values.accountId === "none"
 										? null
 										: values.accountId,
-								isSample: topic?.isSample ?? false,
+								isSample: topic.isSample,
 							},
 						});
 						onClose();
 					}}
 				>
-					<FormInput
-						name="name"
-						label="Name (required)"
-						required
-						aria-describedby={`${errorId}-name`}
-					/>
-					<span className="sr-only" id={`${errorId}-name`}>
-						{form.formState.errors.name?.message}
-					</span>
+					<FormInput name="name" label="Name (required)" required />
 					<FormInput
 						name="short"
 						label="Short name (required)"
 						required
-						aria-describedby={`${errorId}-short`}
 					/>
-					<span className="sr-only" id={`${errorId}-short`}>
-						{form.formState.errors.short?.message}
-					</span>
 					<FormTextarea name="description" label="Description" />
 					<FormSelect name="kind" label="Kind">
 						<SelectItem value="internal">Internal</SelectItem>
@@ -131,9 +116,7 @@ export function TopicEditor({
 						>
 							Cancel
 						</Button>
-						<Button type="submit">
-							{topic ? "Save topic" : "Create topic"}
-						</Button>
+						<Button type="submit">Save topic</Button>
 					</DialogFooter>
 				</Form>
 			</DialogContent>

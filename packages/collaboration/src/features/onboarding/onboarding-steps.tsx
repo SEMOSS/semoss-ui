@@ -633,7 +633,8 @@ export function ImportStep({
 				title={`Bring in the last ${days} days`}
 			>
 				Add recent email conversations to Collaboration. Include Teams
-				chats if you want them in For you. Your exclusions still apply.
+				chats if you want them in your topics. Your exclusions still
+				apply.
 			</StepHeader>
 			{active ? (
 				<div className="grid items-center gap-8 md:grid-cols-[auto_minmax(0,1fr)]">
@@ -1060,8 +1061,8 @@ export function PeopleStep({
 				}
 			>
 				Choose who to follow and mark your VIPs. Requests from people
-				you follow rank higher in For you; VIP requests go to the top.
-				Other mail can still appear in For you.
+				you follow rank higher in your topics; VIP requests go to the
+				top. Other mail can still appear in your topics.
 			</StepHeader>
 			<P className="text-muted-foreground text-sm">
 				<strong className="font-medium text-foreground">
@@ -1069,7 +1070,7 @@ export function PeopleStep({
 				</strong>{" "}
 				They are not followed or suggested as VIPs. Conversations
 				classified as automated are left out of topic suggestions and
-				For you. Nothing is deleted from your mailbox.
+				your topics. Nothing is deleted from your mailbox.
 			</P>
 			{!people && !error && (
 				<LoadingCards label="Finding your people..." count={6} />
@@ -1375,7 +1376,7 @@ export { TopicsStep } from "./topics-step";
 const LANES = [
 	{
 		key: "needs_me",
-		label: "For you",
+		label: "Ready",
 		hint: "Asks waiting on your reply",
 		icon: Zap,
 		tone: "primary",
@@ -1448,7 +1449,7 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	};
 
 	const finish = () => {
-		window.location.hash = "#/for-you";
+		window.location.hash = "#/";
 		window.location.reload();
 	};
 

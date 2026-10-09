@@ -22,6 +22,8 @@ export interface RoomTreeStore
 	viewRoom: (roomId: string) => () => void;
 	/** Update the dot immediately, even if the following history refresh fails. */
 	recordActivity: (roomId: string, activityAt: string) => void;
+	/** Apply a confirmed pin write while its metadata refresh is pending. */
+	recordPin: (roomId: string, pinned: boolean) => void;
 	/** Merge browser read markers from another tab without reloading history. */
 	syncReadState: () => void;
 }
@@ -46,6 +48,9 @@ export function createRoomTreeStore(
 	let generation = 0;
 	let refreshing = false;
 	let refreshQueued = false;
+	let pinRevision = 0;
+	const pinChanges = new Map<string, { pinned: boolean; revision: number }>();
+	const newlyPinnedRooms = new Set<string>();
 	const scrollTop = { current: 0 };
 	const publish = (next: RoomTreeSnapshot): void => {
 		snapshot = next;
@@ -81,17 +86,36 @@ export function createRoomTreeStore(
 		}
 		refreshing = true;
 		const token = ++generation;
+		const requestedPinRevision = pinRevision;
 		publish({ ...snapshot, isLoading: true, error: "" });
 		void listRoomTree(getActions(), activity, () => isCurrent(token))
 			.then((data) => {
 				if (!isCurrent(token)) return;
-				tree = data;
-				readState?.observeRooms(data.rooms);
+				for (const [roomId, change] of pinChanges)
+					if (change.revision <= requestedPinRevision)
+						pinChanges.delete(roomId);
+				const pinnedIds = new Set(
+					data.rooms.map((room) => room.roomId),
+				);
+				for (const [roomId, change] of pinChanges) {
+					if (change.pinned) pinnedIds.add(roomId);
+					else pinnedIds.delete(roomId);
+				}
+				tree = {
+					...data,
+					rooms: data.rooms.filter((room) =>
+						pinnedIds.has(room.roomId),
+					),
+				};
+				readState?.observeRooms(data.rooms, newlyPinnedRooms);
+				for (const room of data.rooms)
+					newlyPinnedRooms.delete(room.roomId);
 				for (const roomId of visibleRooms.keys())
 					readState?.markRead(roomId);
 				publish({
-					rooms: roomsFrom(data),
-					hasMore: data.rooms.length > depth,
+					rooms: roomsFrom(tree),
+					pinnedRoomIds: [...pinnedIds],
+					hasMore: tree.rooms.length > depth,
 					isLoading: false,
 					error: data.warning ?? "",
 				});
@@ -118,6 +142,27 @@ export function createRoomTreeStore(
 	};
 	return {
 		scrollTop,
+		recordPin: (roomId, pinned) => {
+			pinChanges.set(roomId, { pinned, revision: ++pinRevision });
+			if (pinned) newlyPinnedRooms.add(roomId);
+			else newlyPinnedRooms.delete(roomId);
+			const pinnedIds = new Set(snapshot.pinnedRoomIds ?? []);
+			if (pinned) pinnedIds.add(roomId);
+			else pinnedIds.delete(roomId);
+			if (tree && !pinned)
+				tree = {
+					...tree,
+					rooms: tree.rooms.filter((room) => room.roomId !== roomId),
+				};
+			publish({
+				...snapshot,
+				pinnedRoomIds: snapshot.pinnedRoomIds
+					? [...pinnedIds]
+					: undefined,
+				rooms: tree ? roomsFrom(tree) : snapshot.rooms,
+				hasMore: tree ? tree.rooms.length > depth : snapshot.hasMore,
+			});
+		},
 		viewRoom: (roomId) => {
 			visibleRooms.set(roomId, (visibleRooms.get(roomId) ?? 0) + 1);
 			if (readState?.markRead(roomId)) publishReadState();

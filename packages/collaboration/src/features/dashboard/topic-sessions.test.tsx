@@ -17,6 +17,10 @@ const mocks = vi.hoisted(() => ({
 	actions: { run: vi.fn() },
 }));
 
+vi.mock("@semoss/sdk/react", () => ({
+	useInsight: () => ({ actions: mocks.actions, insightId: "owner" }),
+}));
+
 vi.mock("@/features/rooms/api/read-room-source-association", () => ({
 	readRoomSourceAssociation: vi.fn(),
 }));

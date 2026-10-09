@@ -8,12 +8,12 @@ import {
 import { useLocation, useNavigate } from "react-router";
 import { Env, useInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
+import { AttentionProvider } from "@/features/attention/attention-provider";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
 	listCalendarEvents,
 	listMail,
 } from "@/features/connectors/api/microsoft";
-import { ForYouProvider } from "@/features/for-you/for-you-provider";
 import { roomTreeActivityStorageKey } from "@/features/room-tree/room-tree-activity";
 import { RoomTreeProvider } from "@/features/room-tree/room-tree-provider";
 import { roomPath } from "@/lib/workspace-paths";
@@ -132,13 +132,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 						deployment,
 					)}
 				>
-					<ForYouProvider
+					<AttentionProvider
 						account={account}
 						deployment={deployment}
 						refreshRevision={refreshRevision}
 					>
 						{children}
-					</ForYouProvider>
+					</AttentionProvider>
 				</RoomTreeProvider>
 			</RoomSourceAssociationsProvider>
 		</DashboardContext.Provider>

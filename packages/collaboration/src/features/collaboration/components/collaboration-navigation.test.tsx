@@ -12,30 +12,13 @@ import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Button } from "@semoss/ui/next";
-import { buildForYouItems } from "@/features/for-you/for-you.model";
 import { useRoomTree } from "@/features/room-tree/room-tree.context";
 import type { RoomTreeRoom } from "@/features/room-tree/room-tree.types";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
-import {
-	CollaborationSessionProvider,
-	useCollaborationSession,
-} from "../state/collaboration-session.context";
+import { CollaborationSessionProvider } from "../state/collaboration-session.context";
 import { CollaborationAccountContext } from "./collaboration-account.context";
 import { CollaborationNavigation } from "./collaboration-navigation";
 import { useCollaborationAccount } from "./use-collaboration-account";
-
-vi.mock("@/features/for-you/for-you.context", () => ({
-	useForYou: () => {
-		const { state } = useCollaborationSession();
-		return {
-			items: buildForYouItems(state, {
-				runs: [],
-				delegations: [],
-				roomSource: () => undefined,
-			}),
-		};
-	},
-}));
 
 vi.mock("@semoss/sdk/react", () => ({
 	useInsight: () => ({ actions: { logout: vi.fn() } }),
@@ -124,74 +107,81 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("keeps main navigation and one flat room list without a visible heading", () => {
-		const state = createInitialCollaborationState();
-		state.items = [];
-		state.reviews = [];
-		state.memories = [];
-		renderNavigation("/", state);
-		expect(screen.getByText("Collaboration")).toBeVisible();
+	it("shows topic navigation, creation, and one pinned room list", () => {
+		renderNavigation();
 		const main = screen.getByRole("navigation", { name: "Main" });
 		expect(
-			Array.from(main.querySelectorAll("a")).map((link) =>
-				link.getAttribute("aria-label"),
-			),
-		).toEqual(["For you", "Brain"]);
-		expect(
-			within(main).getByRole("link", { name: "For you" }),
-		).toHaveAttribute("href", "/for-you");
-		expect(
-			within(main).getByRole("link", { name: "For you" }),
-		).toHaveTextContent(/^For you$/);
+			within(main).getByRole("link", { name: "My topics" }),
+		).toHaveAttribute("href", "/tasks/topics");
 		expect(
 			within(main).getByRole("link", { name: "Brain" }),
-		).toHaveTextContent(/^Brain$/);
+		).toHaveAttribute("href", "/brain");
 		expect(
-			screen.queryByRole("button", { name: "Topics" }),
+			screen.queryByRole("link", { name: "For you" }),
 		).not.toBeInTheDocument();
-		expect(
-			screen.queryByRole("button", { name: "Sessions" }),
-		).not.toBeInTheDocument();
-		const rooms = screen.getByRole("navigation", { name: "Rooms" });
-		expect(rooms).toBeVisible();
-		expect(within(rooms).getAllByRole("list")).toHaveLength(1);
+		expect(screen.getByRole("button", { name: "New topic" })).toBeVisible();
+		const rooms = screen.getByRole("navigation", { name: "Pinned rooms" });
 		expect(within(rooms).getAllByRole("listitem")).toHaveLength(2);
-		expect(screen.queryByText("Rooms")).not.toBeInTheDocument();
-		expect(screen.queryByText("Other rooms")).not.toBeInTheDocument();
-		expect(screen.queryByText("No rooms yet.")).not.toBeInTheDocument();
-		expect(
-			screen.queryByRole("button", { name: "New topic" }),
-		).not.toBeInTheDocument();
-		expect(
-			within(rooms).queryByRole("button", { name: /Collapse|Expand/ }),
-		).not.toBeInTheDocument();
 	});
 
-	it("shows the shared pending count once without a duplicate Brain badge", () => {
+	it("shows active and dormant topics alphabetically, including topics without work", () => {
 		const state = createInitialCollaborationState();
-		state.items = state.items
-			.filter((item) => item.status === "open" && item.askType !== "fyi")
-			.slice(0, 2);
-		state.reviews = state.reviews.slice(0, 1);
-		state.memories = [];
-		renderNavigation("/", state);
+		const base = state.topics[0];
+		if (!base) throw new Error("Missing topic fixture");
+		state.topics = [
+			{ ...base, id: "z", name: "Zulu", status: "active" },
+			{
+				...base,
+				id: "empty",
+				name: "Alpha",
+				status: "dormant",
+				goals: [],
+				people: [],
+			},
+			{ ...base, id: "archive", name: "Archived", status: "archived" },
+			{
+				...base,
+				id: "suggested",
+				name: "Suggested",
+				status: "suggested",
+			},
+		];
+		state.items = [];
+		state.threads = [];
+		renderNavigation("/tasks/topic/empty", state);
+		const topics = screen.getByRole("navigation", { name: "Topics" });
 		expect(
-			within(screen.getByRole("link", { name: "For you" })).getByText(
-				"3",
-			),
-		).toBeVisible();
-		expect(screen.getByRole("link", { name: "Brain" })).toHaveTextContent(
-			/^Brain$/,
+			within(topics)
+				.getAllByRole("link")
+				.map((link) => link.textContent),
+		).toEqual(["Alpha", "Zulu"]);
+		expect(
+			within(topics).getByRole("link", { name: "Alpha" }),
+		).toHaveAttribute("aria-current", "page");
+	});
+
+	it("opens creation from an empty topic list", async () => {
+		const state = createInitialCollaborationState();
+		state.topics = [];
+		const { user } = renderNavigation("/", state);
+		await user.click(
+			screen.getByRole("button", { name: "Create your first topic" }),
 		);
-		expect(screen.queryByText(/^0(?: to check)?$/)).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("dialog", { name: "Create topic" }),
+		).toBeVisible();
+		await user.click(screen.getByRole("button", { name: "Cancel" }));
+		expect(
+			screen.getByRole("button", { name: "Create your first topic" }),
+		).toHaveFocus();
 	});
 
 	it.each([
 		["/", null],
-		["/for-you", "For you"],
-		["/for-you/", "For you"],
+		["/for-you", null],
+		["/for-you/", null],
 		["/tasks", null],
-		["/tasks/topics", null],
+		["/tasks/topics", "My topics"],
 		["/tasks/waiting", null],
 		["/tasks/done", null],
 		["/work", null],
@@ -205,7 +195,7 @@ describe("CollaborationNavigation", () => {
 		["/brain/topics/t-geng", "Brain"],
 	])("selects the correct main destination on %s", (path, expected) => {
 		renderNavigation(path);
-		for (const label of ["For you", "Brain"]) {
+		for (const label of ["My topics", "Brain"]) {
 			const link = screen.getByRole("link", { name: label });
 			if (label === expected)
 				expect(link).toHaveAttribute("aria-current", "page");
@@ -222,7 +212,7 @@ describe("CollaborationNavigation", () => {
 		roomTree.hasMore = true;
 		const { user } = renderNavigation();
 		const list = within(
-			screen.getByRole("navigation", { name: "Rooms" }),
+			screen.getByRole("navigation", { name: "Pinned rooms" }),
 		).getByRole("list");
 		expect(
 			within(list)
@@ -316,7 +306,7 @@ describe("CollaborationNavigation", () => {
 	it("keeps rooms with unavailable topics in the same list", () => {
 		roomTree.rooms[1].topicUnavailable = true;
 		renderNavigation();
-		const rooms = screen.getByRole("navigation", { name: "Rooms" });
+		const rooms = screen.getByRole("navigation", { name: "Pinned rooms" });
 		const room = within(rooms).getByRole("link", {
 			name: "Sprint conversation",
 		});
@@ -358,7 +348,7 @@ describe("CollaborationNavigation", () => {
 		renderNavigation();
 		expect(
 			screen.getByText(
-				"Your conversations will appear here after your first message.",
+				"Pin a room from its chat header or the Rooms tab to keep it here.",
 			),
 		).toBeVisible();
 		expect(
@@ -379,7 +369,7 @@ describe("CollaborationNavigation", () => {
 	it("opens an unassigned room directly from the shared list", async () => {
 		const { user, router, onNavigate } = renderNavigation("/brain");
 		const room = within(
-			screen.getByRole("navigation", { name: "Rooms" }),
+			screen.getByRole("navigation", { name: "Pinned rooms" }),
 		).getByRole("link", { name: "Sprint conversation" });
 		expect(room).toBeVisible();
 		expect(room).toHaveAttribute("href", "/thread/room%3Aroom-two");
@@ -392,7 +382,7 @@ describe("CollaborationNavigation", () => {
 	it("preserves one scroller, its position, and room selection through rail and Brain navigation", async () => {
 		const { user, router } = renderNavigation("/thread/room%3Aroom-one");
 		const room = screen.getByRole("link", { name: "Pricing conversation" });
-		const tree = screen.getByRole("navigation", { name: "Rooms" });
+		const tree = screen.getByRole("navigation", { name: "Pinned rooms" });
 		const scroller = tree.parentElement;
 		if (!scroller)
 			throw new Error("The room list must have a scroll container");
@@ -407,7 +397,9 @@ describe("CollaborationNavigation", () => {
 		expect(room).toBeInTheDocument();
 		expect(room).not.toBeVisible();
 		await user.click(collapse);
-		expect(screen.getByRole("navigation", { name: "Rooms" })).toBe(tree);
+		expect(screen.getByRole("navigation", { name: "Pinned rooms" })).toBe(
+			tree,
+		);
 		expect(scroller.scrollTop).toBe(180);
 		await act(() => router.navigate("/brain"));
 		expect(scroller.scrollTop).toBe(180);
@@ -419,7 +411,7 @@ describe("CollaborationNavigation", () => {
 		await user.click(
 			screen.getByRole("button", { name: "Toggle navigation fixture" }),
 		);
-		for (const label of ["For you", "Brain"]) {
+		for (const label of ["My topics", "Brain"]) {
 			const control = screen.getByRole("link", { name: label });
 			expect(control).toBeVisible();
 			await user.hover(control);

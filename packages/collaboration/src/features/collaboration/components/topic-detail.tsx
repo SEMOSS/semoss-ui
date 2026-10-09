@@ -176,7 +176,7 @@ export function TopicDetail() {
 								<Small className="font-normal text-muted-foreground text-xs">
 									{item.status === "waiting"
 										? "Waiting on others"
-										: "For you"}
+										: "Open task"}
 									{item.due
 										? ` · due ${dateLabel(item.due)}`
 										: ""}

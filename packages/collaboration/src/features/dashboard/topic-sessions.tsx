@@ -9,6 +9,7 @@ import {
 } from "@semoss/ui/next";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import { dateLabel } from "@/features/collaboration/date-label";
+import { RoomPinButton } from "@/features/rooms/components/room-pin-button";
 import { roomPath } from "@/lib/workspace-paths";
 import { useDashboard } from "./dashboard.context";
 import { useTopicSessions } from "./use-topic-sessions";
@@ -39,13 +40,16 @@ export function TopicSessions({ topicId }: TopicSessionsProps) {
 							? parsedDate.toISOString()
 							: undefined;
 						return (
-							<li key={room.roomId}>
+							<li
+								key={room.roomId}
+								className="flex min-w-0 items-center gap-2"
+							>
 								<Link
 									to={roomPath(room.roomId)}
 									aria-disabled={
 										openingRoom === room.roomId || undefined
 									}
-									className="flex min-h-11 min-w-0 flex-wrap items-center justify-between gap-2 rounded-md px-2 py-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+									className="flex min-h-11 min-w-0 flex-1 flex-wrap items-center justify-between gap-2 rounded-md px-2 py-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
 									onClick={(event) => {
 										if (
 											event.button !== 0 ||
@@ -75,6 +79,11 @@ export function TopicSessions({ topicId }: TopicSessionsProps) {
 										)}
 									</Small>
 								</Link>
+								<RoomPinButton
+									roomId={room.roomId}
+									roomName={title}
+									pinned={room.pinned === true}
+								/>
 							</li>
 						);
 					})}

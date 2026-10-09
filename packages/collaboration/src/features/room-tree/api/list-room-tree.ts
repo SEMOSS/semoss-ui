@@ -82,7 +82,7 @@ async function readRooms(
 	let offset = 0;
 	while (true) {
 		assertActive(isActive);
-		const page = await listRoomsPage(actions, offset);
+		const page = await listRoomsPage(actions, offset, undefined, true);
 		const previousSize = rooms.size;
 		for (const room of page.rooms) rooms.set(room.roomId, room);
 		if (page.rooms.length > 0 && rooms.size === previousSize)
@@ -117,7 +117,7 @@ async function readAssociation(
 // with incremental metadata loading/cache invalidation. Retire browser recency
 // when existing APIs expose saved activity. Preserve source precedence, account
 // isolation, global pagination, and navigation state; keep this frontend-only.
-/** Resolve canonical room summaries using existing APIs, before local pagination. */
+/** Resolve pinned room summaries using existing APIs, before local pagination. */
 export async function listRoomTree(
 	actions: InsightActions,
 	activity: ReadonlyMap<string, string> = new Map(),

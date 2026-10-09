@@ -139,11 +139,12 @@ describe("frontend room list loading", () => {
 						],
 						total: 1,
 					});
-				case 'META | GetPlaygroundRooms(mode=["collaboration"], sort=["DESC"], limit=[25], offset=[0], includeUnnamedRooms=[true]);':
+				case 'META | GetPlaygroundRooms(mode=["collaboration"], sort=["DESC"], limit=[25], offset=[0], includeUnnamedRooms=[true], pinned=[true]);':
 					return response([
 						{
 							ROOM_ID: roomId,
 							ROOM_NAME: null,
+							PINNED: true,
 							DATE_CREATED: "2026-10-01T10:00:00Z",
 						},
 					]);

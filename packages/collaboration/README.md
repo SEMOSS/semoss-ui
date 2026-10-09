@@ -1,65 +1,72 @@
 # Collaboration
 
 Personal SEMOSS assistant based on the [collaboration mockups](../../mockups).
-The landing overview brings together chat, your calendar, actions needing you,
-completed work, and pending reviews. For you opens the same pending queue as a priority
-board or compact list, with shared topic and search filters. Topic workspaces retain
-source threads and saved sessions. Brain holds people, topics,
-thread context, and source readers. Settings brings together your profile,
+Home brings together a chat composer, calendar, Brain directories, and handled work.
+Topics organize related tasks, reviews, context, and saved rooms. Brain holds people,
+thread context, review decisions, and source readers. Settings contains profile,
 appearance, context rules, and data reset.
 
-## Daily brief and chat
+## Navigation and Home
 
-The fixed Brief view uses the existing SEMOSS components, semantic color tokens,
-Geist typography, and spacing scale. It does not define another theme or palette.
-The Collaboration logo and name open the landing page. The shared sidebar provides
-For you, Brain, and one flat list of saved rooms. For you shows the shared pending
-count; Brain has no duplicate review badge. Compact 12px labels
-and 32px rows retain 44px minimum touch targets. A keyboard-accessible rail along
-the sidebar edge switches between 256px navigation and a 64px icon rail. Desktop
-collapse is stored per account and deployment. Rooms appear once, newest activity
-first, with no topic groups or section headings. The first 25 rooms appear initially;
-**Show 25 more** reveals the next page. Up to three tiny colored topic dots sit
-after each room name, matching the topic's other markers, with a `+N` count for
-additional topics. Topic dots are ordered alphabetically. Hovering or focusing a
-row shows its full title, all linked topic names, and latest known activity time.
-Topic dots are informational; the whole row opens that exact room.
-Unassigned rooms appear in the same list without topic dots. Opening a room still
-collapses desktop navigation. The shell retains loaded pages, selection, and scroll
-position across routes. Mobile navigation remains a drawer below 1024px.
-Waiting on others and Handled are always linked from the
-For you summary. Brain contains Review, People, Threads, and Sources navigation;
-The sidebar footer has one account row with a 32px avatar, name, and upward
-chevron; the collapsed rail shows only the avatar with an account tooltip.
-Its menu shows the full account name and email, Settings, and Log out. The row
-retains a 44px minimum target in desktop and mobile navigation. Logout failures
-remain visible and retryable. Appearance controls remain in Settings only.
+The sidebar shows **My topics**, including active and dormant topics with no tasks
+or rooms, followed by **Pinned rooms**. Topics sort alphabetically. **New topic**
+opens the name-and-description form from either the sidebar or the topic directory;
+successful creation opens the saved topic. Suggested topics remain in Brain review.
+Pinned rooms use the existing saved pin state and can be pinned or unpinned from
+the conversation header and topic Rooms tab. Unpinned rooms remain accessible
+through search and topic Rooms.
 
-A persistent 56px header blends into the page canvas alongside the full-height sidebar.
-Search stays on the left across all workspace routes, including full-width
-workbenches. Mobile uses the same header with a drawer trigger.
-Search still uses one palette and ⌘/Ctrl K.
-Saved conversations compose their title, small agent avatar, and contextual/workbench
-actions into that same header, without a second toolbar or horizontal divider.
-Search becomes an icon on small screens to leave room for the conversation title.
-Selecting the title reveals its full text and agent identity in a keyboard- and
-touch-accessible popover. The room controls render into a stable shell target while
-retaining their room context, including when a full-width workbench hides the chat.
-The desktop navigation control belongs to the sidebar edge, so changing panes does
-not move it or duplicate it. Mobile retains its header drawer trigger. Conversation
-editors and drafts remain mounted.
+The sidebar keeps its saved collapse preference, loaded room depth, unread markers,
+and scroll position across routes. The mobile sidebar remains a navigation drawer.
+Room topic dots and hover/focus details use verified source associations. The
+account footer retains Settings and Log out, including visible retryable errors.
+The logo returns to Home; the shared header retains search and room controls.
+Conversation editors and drafts remain mounted while changing workbench panes.
 
-For you, Brain, and Settings share the Brief's page canvas, reading width, heading
-scale, responsive spacing, and quiet card treatment. Directories retain their
-grouped rows and filters; contextual panels become drawers on narrower screens.
+Home places the composer beneath its greeting and links to Handled and Waiting on
+others. Your day, Brain, and Handled follow in that order, as three desktop columns
+and stacked sections on narrow screens. The For you section, pending-count headline,
+priority board, and dashboard customization widgets have been removed. Existing
+pinned-app preferences are still read by search.
 
-The global landing page places one compact composer beneath its greeting and
-status links. At desktop widths, Your day and Handled sit on the left, For you
-in the center, and Brain on the right. The mobile reading and keyboard order is
-composer, For you, Brain, Your day, and Handled. Saved sessions remain available
-from the sidebar. The Brain overview panel contains context directory links; its
-pending decisions and suggested memories appear once in For you. The overview has
-no topic filter or separate chat mode.
+## Topics and review
+
+`/tasks/topics` is the topic directory; `/tasks/topic/:topicId` is the landing page.
+Each topic opens with its title and saved goal, then Overview, Context, Rooms, and
+Chat tabs. The first open goal is prominent; additional goals can be expanded.
+Existing topic notes support adding and editing goals.
+
+Overview separates **Needs your input** from **Next up**. Reviews, approvals, and
+questions use the existing attention workflows. Other open related tasks include
+FYI and suggested items. Task order follows assigned priority, score, recency, and
+stable identity, with unprioritized items last. Waiting and completed work remain
+accessible separately. Topic-scoped paginated reads avoid silently limiting tasks
+to the globally loaded queue.
+
+Task links open a saved room first, then a source thread. Tasks with neither keep
+their details and available actions. Work reviews open a contextual sheet without
+creating a room or starting an assistant. Failed saves remain visible and retryable;
+agent approvals open their owning conversation's approval workflow. Brain decisions
+and suggested memories retain their existing review actions. Non-work review
+priorities remain browser preferences scoped to the account and deployment.
+
+Context combines the description, saved goals, confirmed memories, people, and
+linked source threads. Rooms lists saved source-linked conversations, including
+unpinned rooms, with loading, partial-result, retry, and pagination states.
+
+Topic Chat/New chat, standalone action creation, manual ordering, and the activity
+timeline show unavailable explanations where existing backend capabilities are
+missing. No invented activity, counts, or goal-based ranking is displayed. The
+verified contracts and remaining requirements are documented in
+[topic-workspace-gaps.md](docs/topic-workspace-gaps.md). This change adds no reactors
+or database migrations.
+
+Legacy For you and Tasks/Work root links redirect to the selected topic or topic
+directory. Waiting/done query bookmarks retain their status view and applicable
+filters. Work topic aliases remain supported. `/room` and onboarding completion
+return to Home.
+
+## Chat and connected sources
 
 New conversations start from the landing composer. Settings and Files open an
 inline workbench beneath that composer without navigating away or replacing the
@@ -105,61 +112,16 @@ upload receipts; uncertain submissions require reconciliation before another
 send. Preparation that finishes after navigation cannot redirect over the
 current page. Editable-prompt navigation remains supported.
 
-The overview and `/for-you` use one pending collection: actionable Work items,
-agent approvals and questions, assigned delegations, open Brain decisions, and
-suggested memories. Resolved items leave the queue. The full view switches between
-Urgent, High, Normal, and Low priority columns and a list. Topic and text filters
-and the selected view live in the URL. Topic choices use the sidebar's topic
-colors. Missing or unreadable topic associations are shown explicitly.
-
-Drag a card between priority columns or use its priority menu; this never resolves
-or approves a request. Work priorities use the existing saved command. Review
-records without a native priority use a browser preference scoped to the account
-and deployment. Both views and the homepage share priority, due-date, score,
-recency, and stable identity ordering. For you has no creation controls.
-
-Work cards open a contextual review sheet that reads source history without
-creating a room or starting an assistant. Users can mark the action reviewed or
-dismiss it there. Agent actions open their existing conversation and approval
-workflow. Brain decisions and suggested memories retain their existing decisions.
-Refresh, loading, partial coverage, and errors stay distinct from a complete empty
-queue; the homepage uses that same state and collection.
-
-`/tasks/topics` retains the topic directory. Each topic workspace leads with its
-goals and Edit in Brain, then Actions, Threads, and Sessions tabs, with topic-specific
-people, confirmed notes, and linked calendar threads. `/tasks/waiting` and
-`/tasks/done` remain separate status views. Legacy Work and Tasks root/all links
-redirect to For you while retaining topic, view, and search; old waiting/done query
-filters instead open the corresponding status view. Topic links retain their full
-workspace rather than becoming queue filters.
-
-Topic Sessions reads validated `RoomOptions.source.threadId` metadata only when
-its tab opens, in batches of 25. Associations are cached within the current
-account and insight, rechecked when reopening the tab, and show partial failures,
-retry, and further loading. Multiple rooms from one source are retained; older
-explicit thread-to-room links remain supported. Selecting any saved session
-opens that exact room. No persistence migration is needed.
-
 Source-thread links in topic workspaces and Brain import the selected thread into
-a new room. For you reads source context without an import; approvals remain in
-the owning room's existing tool workflow.
-Brain review uses existing topic/person decisions. Calendar rows open their
-source details; failed reads show their error and retry action.
-
-Dashboard customization is no longer exposed in Settings or the home view.
-Stored preferences remain available for existing pinned-app search results.
-
-Daily data uses existing Work refreshes and visible/return-to-app calendar and
-email reads. Rendering the brief or chat does not start agent work. The sidebar
-loads five rooms per group with explicit paging and retry; opening a saved
-chat navigates directly to its saved room, without resolving a source association.
+a new room. Saved-room links open the exact existing room. Calendar rows open source
+details; failed reads retain their error and retry action.
 
 Search (⌘/Ctrl K) combines server-side Collaboration chat-name/message searches
 with loaded Work/Brain records, the upcoming calendar week, independent Outlook
-sender and subject queries, and pinned apps. Results are deduplicated; stale
-responses are ignored and category failures are isolated. Work/Brain list limits
-(5,000 actions, threads, and people; 1,000 topics) are surfaced when reached.
-Calendar and Outlook bounds are shown alongside their results.
+sender and subject queries, and stored pinned apps. Results are deduplicated; stale
+responses are ignored and category failures are isolated. Source-less tasks open
+their detail sheet. Global Work/Brain read limits and calendar/Outlook bounds remain
+visible when applicable; topic task reads are independently scoped.
 
 ## State and backend boundaries
 
@@ -167,13 +129,12 @@ Work and Brain share a session backed by the existing `Brain*` and `Work*`
 reactors. Connected profile edits, topics, review decisions, notes, thread exclusions,
 and Work status changes are synchronized to the backend. Sample records remain local.
 
-The account-scoped sidebar builds its room list entirely in the frontend using existing
-`GetPlaygroundRooms`, `GetRoomOptions`, `BrainListTopics`, and `BrainListThreads`
-reads. It follows all history and directory pages, then checks room metadata four
-at a time to resolve explicit source links and legacy Brain associations without
-opening transcripts. Nonarchived topic associations are attached to each unique
-room before pagination; **Show 25 more** reveals the next 25 rooms locally. Empty
-topics do not create navigation rows. Hover details never load conversation messages.
+The account-scoped sidebar reads saved topics independently of room history. Room
+reads use `GetPlaygroundRooms(pinned=true)` before pagination; `PinRoom` persists
+changes. Metadata checks resolve explicit source links and legacy Brain associations
+without opening transcripts. Each pinned room appears once; **Show 25 more** reveals
+the next page. Empty active/dormant topics remain navigable. Hover details never load
+conversation messages.
 
 The existing room API provides creation dates but no saved-activity timestamp.
 The browser therefore remembers saved activity per account and deployment and
@@ -315,11 +276,11 @@ chosen for a room's composer use the room's ordinary upload and submission flow.
 | Routes | Feature |
 | --- | --- |
 | `/` | Global landing overview and compact chat composer |
-| `/for-you` | Pending review priority board and list with shared topic/search filters |
-| `/tasks`, `/tasks/all`, `/work`, `/work/all` | Redirect to For you; waiting/done query bookmarks retain their status view |
+| `/for-you` | Compatible redirect to the selected topic or topic directory |
+| `/tasks`, `/tasks/all`, `/work`, `/work/all` | Redirect to the selected topic or topic directory; waiting/done query bookmarks retain their status view |
 | `/tasks/waiting`, `/tasks/done` | Waiting and handled action views |
 | `/tasks/topics` | Topic directory |
-| `/tasks/topic/:topicId` | Topic actions, threads, sessions, and context |
+| `/tasks/topic/:topicId` | Topic overview, context, source-linked rooms, and capability states |
 | `/work/waiting`, `/work/done`, `/work/topics`, `/work/topic/:topicId` | Compatible status and topic workspace aliases |
 | `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |
@@ -327,7 +288,7 @@ chosen for a room's composer use the room's ordinary upload and submission flow.
 | `/brain/people`, `/brain/people/:personId` | People directory and detail |
 | `/brain/threads`, `/brain/threads/:threadId`, `/brain/topics/:topicId` | Context directories and detail |
 
-`/room` redirects to For you; `/agents/*` redirects to Brain;
+`/room` redirects to Home; `/agents/*` redirects to Brain;
 `/settings` and the legacy `/brain/profile` and `/settings/dashboard` links open Settings → About you.
 Settings categories support direct links and browser history. Unsaved profile and
 rule form entries survive category changes and are discarded when leaving Settings.
@@ -338,9 +299,9 @@ remain under Brain → Sources, with a link to Settings → Rules.
 
 Thin route pages live in `src/pages`. Shared session state and Work/Brain UI live
 in `src/features/collaboration`; Microsoft adapters and forms live in
-`src/features/connectors`; dashboard, customization, and search contracts live in
+`src/features/connectors`; Home, saved preferences, and search contracts live in
 `src/features/dashboard`; the shared pending collection and review UI live in
-`src/features/for-you`; settings composition lives in `src/features/settings`;
+`src/features/attention`; topic landing composition lives in `src/features/topics`; settings composition lives in `src/features/settings`;
 conversation ownership and source imports live in `src/features/rooms`;
 room-local email editing lives in `src/features/room-email`. Existing message,
 tool, delegation, and agent-run infrastructure is shared by every room.

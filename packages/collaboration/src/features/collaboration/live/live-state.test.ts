@@ -70,7 +70,7 @@ it("uses only native source ids provided by BrainListThreads", async () => {
 	});
 });
 
-it("loads each topic once when the list contains duplicate records", async () => {
+it("rejects an overlapping topic directory instead of showing it as complete", async () => {
 	const topics = [
 		{ id: "one", name: "First" },
 		{ id: "two", name: "Second" },
@@ -84,15 +84,52 @@ it("loads each topic once when the list contains duplicate records", async () =>
 			{},
 			{},
 			{ items: [] },
-			{ items: [topics[0], topics[0], topics[1], topics[1]] },
+			{ items: [topics[0], topics[0], topics[1], topics[1]], total: 4 },
 			...Array.from({ length: 11 }, () => ({ items: [], total: 0 })),
 		]);
 	});
+	await expect(
+		loadLiveState({ run } as unknown as InsightActions),
+	).rejects.toThrow("Topics returned overlapping pages");
+	expect(run).toHaveBeenCalledTimes(1);
+});
+
+it("loads topics beyond the initial thousand with bounded detail batches", async () => {
+	const topics = Array.from({ length: 1001 }, (_, index) => ({
+		id: `topic-${index}`,
+		name: `Topic ${index}`,
+	}));
+	const response = (outputs: unknown[]) => ({
+		pixelReturn: outputs.map((output) => ({ output, operationType: [] })),
+	});
+	const empty = { items: [], total: 0 };
+	const run = vi.fn(async (statement: string) => {
+		if (statement.startsWith("BrainGetProfile"))
+			return response([
+				{},
+				{},
+				empty,
+				{ items: topics.slice(0, 1000), total: topics.length },
+				...Array.from({ length: 11 }, () => empty),
+			]);
+		if (statement.startsWith("BrainListTopics")) {
+			expect(statement).toContain("offset=[1000]");
+			return response([
+				{ items: topics.slice(1000), total: topics.length },
+			]);
+		}
+		const ids = [...statement.matchAll(/topicId=\["(topic-\d+)"\]/g)].map(
+			(match) => match[1],
+		);
+		expect(ids.length).toBeLessThanOrEqual(50);
+		return response(
+			ids.map((id) => topics.find((topic) => topic.id === id)),
+		);
+	});
 	const state = await loadLiveState({ run } as unknown as InsightActions);
-	expect(run.mock.calls[1]?.[0]).toBe(
-		'BrainGetTopic(topicId=["one"]); BrainGetTopic(topicId=["two"]);',
-	);
-	expect(state.topics.map(({ id, name }) => ({ id, name }))).toEqual(topics);
+	expect(state.topics).toHaveLength(1001);
+	expect(state.topics.at(-1)?.id).toBe("topic-1000");
+	expect(run).toHaveBeenCalledTimes(23);
 });
 
 it("requests optional display bodies while preserving exclusions, links and legacy text", async () => {

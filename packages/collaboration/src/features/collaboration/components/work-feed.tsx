@@ -39,7 +39,7 @@ export function WorkFeed({
 							size="sm"
 							className="pointer-coarse:min-h-11"
 						>
-							<Link to="/for-you">Back to For you</Link>
+							<Link to="/tasks/topics">My topics</Link>
 						</Button>
 					}
 				/>

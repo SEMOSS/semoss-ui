@@ -32,7 +32,11 @@ export function selectWorkItems(
 				item.isSample !== options.isSample
 			)
 				return false;
-			if (options.topicId && !item.topicIds.includes(options.topicId))
+			if (
+				options.topicId &&
+				!item.topicIds.includes(options.topicId) &&
+				item.linkTopicId !== options.topicId
+			)
 				return false;
 			if (options.channel && item.channel !== options.channel)
 				return false;
@@ -50,7 +54,7 @@ export function selectWorkItems(
 			if (options.view === "snoozed") return item.status === "snoozed";
 			if (options.view === "suggested")
 				return item.status === "open" && item.suggested === true;
-			// For you: FYI updates stay on their topic pages, not in the queue
+			// FYI updates remain ordinary topic tasks rather than review requests.
 			if (options.view === "needs_me")
 				return item.status === "open" && item.askType !== "fyi";
 			return item.status === "open";

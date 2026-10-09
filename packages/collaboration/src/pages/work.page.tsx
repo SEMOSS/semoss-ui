@@ -3,7 +3,7 @@ import { TopicWork } from "@/features/collaboration/components/topic-work";
 import { WorkFeed } from "@/features/collaboration/components/work-feed";
 import { WorkTopics } from "@/features/collaboration/components/work-topics";
 
-/** Preserve topic workspaces and status bookmarks while moving the queue to For you. */
+/** Preserve legacy bookmarks while routing task entry points into their topics. */
 export function WorkPage() {
 	const { topicId } = useParams();
 	const { pathname, search, hash } = useLocation();
@@ -23,7 +23,13 @@ export function WorkPage() {
 			? queryStatus
 			: null);
 	params.delete("status");
-	const destination = status ? `/tasks/${status}` : "/for-you";
+	const selectedTopic = params.get("topic");
+	const destination = status
+		? `/tasks/${status}`
+		: selectedTopic && selectedTopic !== "__none__"
+			? `/tasks/topic/${encodeURIComponent(selectedTopic)}`
+			: "/tasks/topics";
+	if (!status) params.delete("topic");
 	if (path !== destination) {
 		return (
 			<Navigate

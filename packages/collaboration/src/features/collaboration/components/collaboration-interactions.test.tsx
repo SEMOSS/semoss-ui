@@ -7,10 +7,10 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useRef } from "react";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { buildAttentionItems } from "@/features/attention/attention.model";
 import { WorkPage } from "@/pages/work.page";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { selectThreadContext } from "../state/collaboration.selectors";
@@ -30,7 +30,33 @@ import { PersonDetail } from "./person-detail";
 import { ProfileForm } from "./profile-form";
 import { RulesEditor } from "./rules-editor";
 import { TopicDetail } from "./topic-detail";
-import { TopicEditor } from "./topic-editor";
+
+const insightActions = vi.hoisted(() => ({
+	run: vi.fn(() => {
+		throw new Error("Sample integration must not read backend records");
+	}),
+}));
+vi.mock("@semoss/sdk/react", async (original) => ({
+	...(await original<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => ({ actions: insightActions }),
+}));
+vi.mock("@/features/attention/attention.context", () => ({
+	useAttention: () => {
+		const { state } = useCollaborationSession();
+		return {
+			items: buildAttentionItems(state, {
+				runs: [],
+				delegations: [],
+				roomSource: () => undefined,
+			}),
+			isLoading: false,
+			isComplete: true,
+			errors: [],
+			refresh: vi.fn(),
+			setPriority: vi.fn(),
+		};
+	},
+}));
 
 /** Observe only the context submitted to the assistant, alongside real route controls. */
 function ContextObserver() {
@@ -109,19 +135,29 @@ function sectionFor(heading: string): HTMLElement {
 	return section;
 }
 
-afterEach(cleanup);
+afterEach(() => {
+	expect(insightActions.run).not.toHaveBeenCalled();
+	cleanup();
+	vi.clearAllMocks();
+});
 
 describe("collaboration Work and Brain integration", () => {
-	it("carries Work topic confirmation into Brain's learned links and the assistant snapshot", async () => {
+	it("carries topic source confirmation from Context into Brain learned links and the assistant snapshot", async () => {
 		const user = userEvent.setup();
 		const router = renderSession("/tasks/topic/t-geng");
 		expect(
 			submittedContext().topics.map((topic) => topic.id),
 		).not.toContain("t-trip");
+		await user.click(screen.getByRole("tab", { name: "Context" }));
 		await user.click(
 			screen.getByRole("button", {
-				name: "Confirm Northwind onsite for Agent architecture at our Oct 15 eng review?",
+				name: "Thread actions for Agent architecture at our Oct 15 eng review?",
 			}),
+		);
+		await user.click(screen.getByRole("button", { name: "View in Brain" }));
+		const topics = sectionFor("Topics");
+		await user.click(
+			within(topics).getByRole("button", { name: "Confirm" }),
 		);
 		expect(submittedContext().topics.map((topic) => topic.id)).toContain(
 			"t-trip",
@@ -147,14 +183,22 @@ describe("collaboration Work and Brain integration", () => {
 		const user = userEvent.setup();
 		const router = renderSession("/tasks/topic/t-geng");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
+		const next = screen.getByRole("list", { name: "Next up" });
 		await user.click(
-			within(articleFor(title)).getByRole("button", {
-				name: "Done",
-			}),
+			within(next).getByRole("checkbox", { name: `Complete ${title}` }),
 		);
 		expect(
 			screen.queryByRole("link", { name: title }),
 		).not.toBeInTheDocument();
+		await user.click(
+			screen.getByRole("button", { name: "Show completed tasks" }),
+		);
+		expect(
+			within(screen.getByRole("list", { name: "Completed" })).getByRole(
+				"checkbox",
+				{ name: `Reopen ${title}` },
+			),
+		).toBeChecked();
 		await act(() => router.navigate("/tasks/done"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 		await user.click(
@@ -171,9 +215,10 @@ describe("collaboration Work and Brain integration", () => {
 		const router = renderSession("/tasks/topic/t-geng");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
-			within(articleFor(title)).getByRole("button", {
-				name: "No response needed",
-			}),
+			screen.getByRole("button", { name: `Task actions for ${title}` }),
+		);
+		await user.click(
+			screen.getByRole("menuitem", { name: "Dismiss task" }),
 		);
 		expect(
 			screen.queryByRole("link", { name: title }),
@@ -184,7 +229,7 @@ describe("collaboration Work and Brain integration", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("ignores a thread from its card and resumes it from the thread page", async () => {
+	it("ignores a topic source thread from Context and resumes it from the thread page", async () => {
 		const user = userEvent.setup();
 		const state = createInitialCollaborationState();
 		const title = "Confirm Oct 15 architecture review slot with Ava";
@@ -193,11 +238,18 @@ describe("collaboration Work and Brain integration", () => {
 		)?.threadId;
 		if (!threadId) throw new Error("Missing thread");
 		const router = renderSession("/tasks/topic/t-geng", state);
+		const thread = state.threads.find(
+			(candidate) => candidate.id === threadId,
+		);
+		if (!thread) throw new Error("Missing source thread");
+		await user.click(screen.getByRole("tab", { name: "Context" }));
 		await user.click(
-			within(articleFor(title)).getByRole("button", {
-				name: "Ignore thread",
+			screen.getByRole("button", {
+				name: `Thread actions for ${thread.subject}`,
 			}),
 		);
+		await user.click(screen.getByRole("button", { name: "Ignore thread" }));
+		await user.click(screen.getByRole("tab", { name: "Overview" }));
 		expect(
 			screen.queryByRole("link", { name: title }),
 		).not.toBeInTheDocument();
@@ -340,7 +392,13 @@ describe("collaboration Work and Brain integration", () => {
 			)?.status,
 		).toBe("done");
 		await act(() => router.navigate("/work/topic/t-geng"));
-		expect(screen.getByText(title, {})).toHaveClass("line-through");
+		expect(
+			screen.getByText("Sandbox access for the pilot team"),
+		).toBeVisible();
+		await user.click(screen.getByRole("button", { name: "2 more goals" }));
+		expect(
+			screen.getByText(title, { exact: false, selector: "p" }),
+		).toHaveClass("line-through");
 	});
 
 	it("allows more than three topic links and retains one selected primary", async () => {
@@ -565,69 +623,51 @@ describe("collaboration Work and Brain integration", () => {
 	});
 });
 
-/** Captures created IDs through actual topic navigation links. */
-function TopicCreationFixture() {
-	const { state } = useCollaborationSession();
-	const returnFocusRef = useRef<HTMLButtonElement>(null);
-	return (
-		<>
-			<button type="button" ref={returnFocusRef}>
-				Create another topic
-			</button>
-			<TopicEditor
-				onClose={() => undefined}
-				returnFocusRef={returnFocusRef}
-			/>
-			<nav aria-label="Created topics">
-				{state.topics
-					.filter((topic) => !topic.isSample)
-					.map((topic) => (
-						<a
-							key={topic.id}
-							href={`/brain/topics/${encodeURIComponent(topic.id)}`}
-						>
-							{topic.name}
-						</a>
-					))}
-			</nav>
-		</>
-	);
-}
-
-describe("new topic form", () => {
-	it("creates a navigable session topic when the optional existing ID is absent", async () => {
+describe("edit topic form", () => {
+	it("requires both names and saves edits under the existing topic identity", async () => {
 		const user = userEvent.setup();
-		render(
-			<CollaborationSessionProvider
-				initialState={createInitialCollaborationState()}
-			>
-				<TopicCreationFixture />
-			</CollaborationSessionProvider>,
-		);
-		const dialog = screen.getByRole("dialog", { name: "New topic" });
-		await user.type(
-			within(dialog).getByRole("textbox", {
-				name: "Name (required)",
-			}),
-			"New initiative",
-		);
-		await user.type(
-			within(dialog).getByRole("textbox", {
-				name: "Short name (required)",
-			}),
-			"Initiative",
-		);
+		const router = renderSession("/brain/topics/t-geng");
+		const trigger = screen.getByRole("button", { name: "Edit topic" });
+		await user.click(trigger);
+		const dialog = screen.getByRole("dialog", { name: "Edit topic" });
+		const name = within(dialog).getByRole("textbox", {
+			name: "Name (required)",
+		});
+		const short = within(dialog).getByRole("textbox", {
+			name: "Short name (required)",
+		});
+		expect(name).toHaveValue("Northwind - Engineering partnership");
+		expect(short).toHaveValue("Northwind Eng");
+		await user.clear(name);
+		await user.type(name, " ");
+		await user.clear(short);
+		await user.type(short, " ");
 		await user.click(
-			within(dialog).getByRole("button", { name: "Create topic" }),
+			within(dialog).getByRole("button", { name: "Save topic" }),
 		);
-		const link = within(
-			screen.getByRole("navigation", {
-				name: "Created topics",
-				hidden: true,
-			}),
-		).getByText("New initiative");
-		expect(link.getAttribute("href")).toMatch(
-			/^\/brain\/topics\/local-topic-/,
+		await waitFor(() => expect(name).toHaveFocus());
+		expect(name).toHaveAccessibleDescription("Name is required.");
+		expect(short).toHaveAccessibleDescription("Short name is required.");
+		await user.clear(name);
+		await user.type(name, "Engineering initiative");
+		await user.clear(short);
+		await user.type(short, "Initiative");
+		await user.click(
+			within(dialog).getByRole("button", { name: "Save topic" }),
 		);
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Engineering initiative" }),
+		).toBeVisible();
+		expect(router.state.location.pathname).toBe("/brain/topics/t-geng");
+		expect(submittedContext().topics).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: "t-geng",
+					name: "Engineering initiative",
+				}),
+			]),
+		);
+		await waitFor(() => expect(trigger).toHaveFocus());
 	});
 });

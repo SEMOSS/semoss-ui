@@ -110,6 +110,7 @@ export function groupRoomTree(
 			activityById.set(room.roomId, latest);
 			return {
 				roomId: room.roomId,
+				pinned: room.pinned,
 				topics: roomTopics,
 				topicUnavailable:
 					!association || association.unavailable ? true : undefined,

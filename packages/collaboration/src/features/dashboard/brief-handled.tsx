@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Button, P } from "@semoss/ui/next";
 import { selectWorkItems } from "@/features/collaboration/state/collaboration.selectors";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import { threadPath } from "@/lib/workspace-paths";
+import { roomPath, threadPath } from "@/lib/workspace-paths";
 import { BriefPanel } from "./brief-panel";
 
 /** A compact history with explicit reopen, rather than a global undo of unrelated work. */
@@ -31,13 +31,23 @@ export function BriefHandled({ topicId }: { topicId?: string }) {
 								className="mt-1 size-4 shrink-0 text-muted-foreground"
 							/>
 							<div className="min-w-0 flex-1">
-								<Link
-									to={threadPath(item.threadId)}
-									className="block truncate text-sm hover:underline"
-									title={item.title}
-								>
-									{item.title}
-								</Link>
+								{item.roomId || item.threadId ? (
+									<Link
+										to={
+											item.roomId
+												? roomPath(item.roomId)
+												: threadPath(item.threadId)
+										}
+										className="block truncate text-sm hover:underline"
+										title={item.title}
+									>
+										{item.title}
+									</Link>
+								) : (
+									<P className="break-words text-sm">
+										{item.title}
+									</P>
+								)}
 								<P className="mt-1 truncate font-mono text-muted-foreground text-xs">
 									{item.closedReason === "no_response_needed"
 										? "no response needed"

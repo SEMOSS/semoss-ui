@@ -11,7 +11,7 @@ import {
 } from "./onboarding-ui";
 import { useTopicFiling } from "./use-topic-filing";
 
-/** Show the saved topic profiles and the confirmed filing result before opening For you. */
+/** Show the saved topic profiles and the confirmed filing result before opening Home. */
 export function FilingStep({ actions, onBack, eyebrow }: OnboardingStepProps) {
 	const {
 		review,
@@ -49,14 +49,14 @@ export function FilingStep({ actions, onBack, eyebrow }: OnboardingStepProps) {
 						: "Check your topic setup";
 	const finish = (): void => {
 		if (!ready) return;
-		window.location.hash = "#/for-you";
+		window.location.hash = "#/";
 		window.location.reload();
 	};
 	return (
 		<>
 			<StepHeader eyebrow={eyebrow} title={title}>
 				{ready && noTopics
-					? "Your mail stays available in For you. You can add topics later."
+					? "Your mail stays available in Brain. You can add topics later."
 					: ready
 						? "Your saved topics are ready, and the filing result is confirmed."
 						: "We are checking the filing job for the topic review you saved."}
@@ -140,7 +140,7 @@ export function FilingStep({ actions, onBack, eyebrow }: OnboardingStepProps) {
 					</Button>
 				)}
 				<Button onClick={finish} disabled={!ready}>
-					Open For you
+					Open Home
 					<ArrowRight className="size-4" aria-hidden="true" />
 				</Button>
 			</StepActions>

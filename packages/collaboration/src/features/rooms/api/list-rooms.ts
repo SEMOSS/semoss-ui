@@ -24,6 +24,7 @@ export async function listRoomsPage(
 	actions: InsightActions,
 	offset = 0,
 	search?: string,
+	pinned?: boolean,
 ): Promise<{ rooms: RoomRow[]; hasMore: boolean; nextOffset: number }> {
 	const rows = await callPixel(
 		actions,
@@ -34,6 +35,7 @@ export async function listRoomsPage(
 			offset,
 			search: search?.trim() || undefined,
 			includeUnnamedRooms: true,
+			pinned,
 		})}`,
 		playgroundRoomsSchema,
 	);

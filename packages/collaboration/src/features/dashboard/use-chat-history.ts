@@ -105,22 +105,33 @@ export function useChatHistory(): ChatHistory {
 						modelId: z.string().optional(),
 						dateCreated: z.string().optional(),
 						dateUpdated: z.string().optional(),
+						pinned: z.boolean().optional(),
 					})
 					.safeParse(event.detail);
 				if (row.success) {
 					const { scope, ...patch } = row.data;
 					if (scope !== undefined && scope !== insightId) return;
-					setRooms((current) => [
-						{
-							...current.find(
-								(room) => room.roomId === patch.roomId,
-							),
-							...patch,
-						},
-						...current.filter(
-							(room) => room.roomId !== patch.roomId,
-						),
-					]);
+					setRooms((current) =>
+						patch.pinned !== undefined &&
+						current.some((room) => room.roomId === patch.roomId)
+							? current.map((room) =>
+									room.roomId === patch.roomId
+										? { ...room, ...patch }
+										: room,
+								)
+							: [
+									{
+										...current.find(
+											(room) =>
+												room.roomId === patch.roomId,
+										),
+										...patch,
+									},
+									...current.filter(
+										(room) => room.roomId !== patch.roomId,
+									),
+								],
+					);
 				}
 			}
 			refresh();

@@ -9,8 +9,11 @@ interface RoomReadEntry {
 
 /** Browser read markers belong to the account and deployment supplied by the owner. */
 export interface RoomReadState {
-	/** Observe complete history before the visible room list is paginated. */
-	observeRooms(rooms: readonly RoomTreeRoom[]): boolean;
+	/** Observe complete history; newly pinned historical rooms may join as a baseline. */
+	observeRooms(
+		rooms: readonly RoomTreeRoom[],
+		baselineRoomIds?: ReadonlySet<string>,
+	): boolean;
 	/** Record live activity, including activity arriving before the first snapshot. */
 	observeActivity(roomId: string, activityAt: string): boolean;
 	/** Consume only the latest activity already known to this instance. */
@@ -119,10 +122,10 @@ export function createRoomReadState(storageKey: string): RoomReadState {
 
 	sync();
 	return {
-		observeRooms(rooms) {
+		observeRooms(rooms, baselineRoomIds) {
 			const isSynced = sync();
 			const isBaseline = !isInitialized;
-			const knownRooms = isBaseline ? new Set(entries.keys()) : undefined;
+			const knownRooms = new Set(entries.keys());
 			let isChanged = isBaseline;
 			for (const room of rooms) {
 				if (!room.roomId.trim()) continue;
@@ -135,7 +138,8 @@ export function createRoomReadState(storageKey: string): RoomReadState {
 					merge(room.roomId, {
 						latestActivityAt,
 						readActivityAt:
-							isBaseline && !knownRooms?.has(room.roomId)
+							(isBaseline || baselineRoomIds?.has(room.roomId)) &&
+							!knownRooms.has(room.roomId)
 								? latestActivityAt
 								: undefined,
 					}) || isChanged;

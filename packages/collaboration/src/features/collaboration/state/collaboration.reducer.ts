@@ -110,7 +110,8 @@ export function reconcileCollaborationState(
 					threads: threads.length,
 					openItems: state.items.filter(
 						(item) =>
-							item.topicIds.includes(topic.id) &&
+							(item.topicIds.includes(topic.id) ||
+								item.linkTopicId === topic.id) &&
 							(item.status === "open" ||
 								item.status === "waiting"),
 					).length,
@@ -219,12 +220,14 @@ function mergeTopics(
 		else thread.topicLinks.push({ ...sourceLink, topicId: targetId });
 		thread.topicLinks = normalizeTopicLinks(thread.topicLinks);
 	}
-	for (const item of state.items)
+	for (const item of state.items) {
 		item.topicIds = [
 			...new Set(
 				item.topicIds.map((id) => (id === sourceId ? targetId : id)),
 			),
 		];
+		if (item.linkTopicId === sourceId) item.linkTopicId = targetId;
+	}
 	for (const rule of state.rules)
 		if (rule.topicId === sourceId) rule.topicId = targetId;
 	for (const review of state.reviews) {
@@ -254,8 +257,10 @@ function deleteTopic(
 			thread.topicLinks.filter((link) => link.topicId !== topicId),
 		);
 	}
-	for (const item of state.items)
+	for (const item of state.items) {
 		item.topicIds = item.topicIds.filter((id) => id !== topicId);
+		if (item.linkTopicId === topicId) item.linkTopicId = null;
+	}
 	state.rules = state.rules.filter((rule) => rule.topicId !== topicId);
 	for (const review of state.reviews)
 		if (review.refId === topicId && review.status === "open") {
@@ -385,6 +390,152 @@ export function collaborationReducer(
 ): CollaborationState {
 	const state = structuredClone(previous);
 	switch (command.type) {
+		case "topic.context.received": {
+			const currentTopic = state.topics.find(
+				(topic) => topic.id === command.topicId,
+			);
+			if (command.baseline?.topic && !currentTopic) break;
+			const topic = command.topic;
+			if (topic) {
+				const index = state.topics.findIndex(
+					(candidate) => candidate.id === topic.id,
+				);
+				if (index < 0) state.topics.push(topic);
+				else if (
+					!command.keepTopic &&
+					(!command.baseline ||
+						JSON.stringify({
+							...command.baseline.topic,
+							stats: undefined,
+						}) ===
+							JSON.stringify({
+								...currentTopic,
+								stats: undefined,
+							}))
+				)
+					state.topics[index] = topic;
+			}
+			const keep = new Set(command.keepThreadIds);
+			if (command.baseline) {
+				const previous = new Map(
+					command.baseline.threads.map((thread) => [
+						thread.id,
+						JSON.stringify(thread),
+					]),
+				);
+				for (const thread of state.threads)
+					if (previous.get(thread.id) !== JSON.stringify(thread))
+						keep.add(thread.id);
+			}
+			if (command.completeThreads && command.topicId) {
+				const incoming = new Set(
+					command.threads.map((thread) => thread.id),
+				);
+				for (const thread of state.threads) {
+					if (
+						thread.isSample ||
+						incoming.has(thread.id) ||
+						keep.has(thread.id)
+					)
+						continue;
+					thread.topicLinks = thread.topicLinks.filter(
+						(link) => link.topicId !== command.topicId,
+					);
+				}
+			}
+			for (const incoming of command.threads) {
+				const threadIndex = state.threads.findIndex(
+					(thread) => thread.id === incoming.id,
+				);
+				if (threadIndex < 0) {
+					state.threads.push(incoming);
+					state.workspaces[incoming.id] ??= createEmptyWorkspace();
+				} else if (!keep.has(incoming.id)) {
+					const previous = state.threads[threadIndex];
+					state.threads[threadIndex] = {
+						...incoming,
+						...(isOlderSummary(incoming, previous)
+							? summaryOf(previous)
+							: {}),
+					};
+				}
+			}
+			break;
+		}
+		case "topic.goal.received": {
+			const topic = state.topics.find(
+				(candidate) => candidate.id === command.topicId,
+			);
+			if (!topic) break;
+			const index = topic.goals.findIndex(
+				(goal) => goal.noteId === command.goal.noteId,
+			);
+			if (index < 0) topic.goals.push(command.goal);
+			else topic.goals[index] = command.goal;
+			break;
+		}
+		case "topic.received": {
+			const index = state.topics.findIndex(
+				(topic) => topic.id === command.topic.id,
+			);
+			if (index < 0) state.topics.push(command.topic);
+			else state.topics[index] = command.topic;
+			break;
+		}
+		case "item.received": {
+			const index = state.items.findIndex(
+				(item) => item.id === command.item.id,
+			);
+			if (index < 0) state.items.push(command.item);
+			else state.items[index] = command.item;
+			syncItemSteps(state, command.item);
+			break;
+		}
+		case "topic.work.received": {
+			if (
+				command.baseline?.topicExists &&
+				!state.topics.some((topic) => topic.id === command.topicId)
+			)
+				break;
+			const keep = new Set(command.keepItemIds);
+			if (command.baseline) {
+				const previous = new Map(
+					command.baseline.items.map((item) => [
+						item.id,
+						JSON.stringify(item),
+					]),
+				);
+				for (const item of state.items)
+					if (previous.get(item.id) !== JSON.stringify(item))
+						keep.add(item.id);
+			}
+			const incoming = new Map(
+				command.items.map((item) => [item.id, item]),
+			);
+			state.items = state.items.map((item) => {
+				const next = incoming.get(item.id);
+				incoming.delete(item.id);
+				if (item.isSample || keep.has(item.id)) return item;
+				if (next) {
+					syncItemSteps(state, next);
+					return next;
+				}
+				if (!command.complete || item.id.startsWith("local-"))
+					return item;
+				return {
+					...item,
+					topicIds: item.topicIds.filter(
+						(id) => id !== command.topicId,
+					),
+					linkTopicId:
+						item.linkTopicId === command.topicId
+							? null
+							: item.linkTopicId,
+				};
+			});
+			state.items.push(...incoming.values());
+			break;
+		}
 		case "topic.save": {
 			const topic = state.topics.find(
 				(candidate) => candidate.id === command.topic.id,
@@ -1111,7 +1262,35 @@ export function collaborationReducer(
 			const keepThreads = new Set(command.updates.keepThreadIds);
 			const keepSteps = new Set(command.updates.keepStepIds);
 			const keepTopics = new Set(command.updates.keepTopicIds);
+			const keepItems = new Set(command.updates.keepItemIds);
+			const baseline = command.updates.baseline;
+			const keepByKind = {
+				topics: keepTopics,
+				threads: keepThreads,
+				items: keepItems,
+			};
+			if (baseline)
+				for (const key of ["topics", "threads", "items"] as const) {
+					const before = new Map(
+						baseline[key].map((record): [string, string] => [
+							record.id,
+							JSON.stringify(record),
+						]),
+					);
+					for (const record of state[key])
+						if (before.get(record.id) !== JSON.stringify(record))
+							keepByKind[key].add(record.id);
+				}
+			const currentTopicIds = new Set(
+				state.topics.map((topic) => topic.id),
+			);
+			const deletedTopicIds = new Set(
+				baseline?.topics
+					.filter((topic) => !currentTopicIds.has(topic.id))
+					.map((topic) => topic.id),
+			);
 			for (const incoming of command.updates.topics ?? []) {
+				if (deletedTopicIds.has(incoming.id)) continue;
 				const index = state.topics.findIndex(
 					(topic) => topic.id === incoming.id,
 				);
@@ -1135,11 +1314,14 @@ export function collaborationReducer(
 					state.people[index] = { ...incoming };
 			}
 			for (const incoming of command.updates.threads) {
+				const topicLinks = incoming.topicLinks.filter(
+					(link) => !deletedTopicIds.has(link.topicId),
+				);
 				const thread = state.threads.find(
 					(item) => item.id === incoming.id,
 				);
 				if (!thread) {
-					state.threads.push(incoming);
+					state.threads.push({ ...incoming, topicLinks });
 					state.workspaces[incoming.id] =
 						command.updates.workspaces[incoming.id] ??
 						createEmptyWorkspace();
@@ -1149,7 +1331,8 @@ export function collaborationReducer(
 				thread.lastAt = incoming.lastAt;
 				// what Brain decided on the server (filing, Ignore, automated) shows without a reload
 				if (!keepThreads.has(thread.id)) {
-					thread.topicLinks = incoming.topicLinks;
+					thread.topicLinks = topicLinks;
+					thread.roomId = incoming.roomId;
 					thread.muted = incoming.muted;
 					thread.automated = incoming.automated;
 					thread.needsTopicChoice = incoming.needsTopicChoice;
@@ -1168,10 +1351,17 @@ export function collaborationReducer(
 			}
 			// server state wins for items already shown (closed by a reply, updated by a new message), except
 			// the ones edited locally while the read was in flight
-			const keepItems = new Set(command.updates.keepItemIds);
-			const incomingItems = new Map(
-				command.updates.items.map((item) => [item.id, item]),
-			);
+			const items = command.updates.items.map((item) => ({
+				...item,
+				topicIds: item.topicIds.filter(
+					(topicId) => !deletedTopicIds.has(topicId),
+				),
+				linkTopicId:
+					item.linkTopicId && deletedTopicIds.has(item.linkTopicId)
+						? null
+						: item.linkTopicId,
+			}));
+			const incomingItems = new Map(items.map((item) => [item.id, item]));
 			state.items = state.items.map((item) => {
 				const next = incomingItems.get(item.id);
 				if (!next || keepItems.has(item.id)) return item;
@@ -1180,9 +1370,7 @@ export function collaborationReducer(
 				return updated;
 			});
 			const ids = new Set(state.items.map((item) => item.id));
-			state.items.push(
-				...command.updates.items.filter((item) => !ids.has(item.id)),
-			);
+			state.items.push(...items.filter((item) => !ids.has(item.id)));
 			if (command.updates.memories)
 				state.memories = mergeServerMemories(
 					state.memories,

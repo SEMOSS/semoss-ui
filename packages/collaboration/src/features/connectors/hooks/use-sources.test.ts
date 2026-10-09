@@ -21,6 +21,7 @@ const filters: MailSearchFilters = {
 	sinceDays: 7,
 };
 const mail = {
+	messageId: null,
 	uid: "mail",
 	body: "Actual body",
 	unread: false,

@@ -5,6 +5,8 @@ export interface RoomTreeRoom {
 	dateCreated?: string;
 	dateUpdated?: string;
 	activityAt?: string;
+	/** Server-owned pin state, retained independently of sidebar pagination. */
+	pinned?: boolean;
 	/** Every surviving source topic, sorted by name then identity. */
 	topics: RoomTreeTopic[];
 	/** Browser-only activity that has not been viewed in this account. */
@@ -26,6 +28,8 @@ export interface RoomTreeResponse {
 
 export interface RoomTreeSnapshot {
 	rooms: RoomTreeRoom[];
+	/** Undefined until the first successful pin read; includes later sidebar pages. */
+	pinnedRoomIds?: readonly string[];
 	hasMore: boolean;
 	isLoading: boolean;
 	error: string;

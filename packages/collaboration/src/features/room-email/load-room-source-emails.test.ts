@@ -177,8 +177,8 @@ it("keeps a formatted Outlook sender separate from its canonical saved address",
 	const output = {
 		...mail("older").pixelReturn[0].output,
 		from: "Carla Jimenez <carla@example.com>",
-		to: "Riley Warren <owner@example.com>",
-		cc: "Dana Osei <dana@example.com>",
+		to: ["Riley Warren <owner@example.com>"],
+		cc: ["Dana Osei <dana@example.com>"],
 	};
 	const run = vi.fn().mockResolvedValue(response(output));
 	const messages = await loadRoomSourceEmails(actionsFor(run), {
