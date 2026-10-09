@@ -41,7 +41,7 @@ export function TopicWork({ topicId }: TopicWorkProps) {
 						This topic is not available in the current workspace.
 					</P>
 					<Button asChild variant="outline">
-						<Link to="/work">Back to Work</Link>
+						<Link to="/for-you">Back to For you</Link>
 					</Button>
 				</div>
 			</CollaborationSurface>
@@ -65,7 +65,7 @@ export function TopicWork({ topicId }: TopicWorkProps) {
 								size="sm"
 								className="pointer-coarse:min-h-11"
 							>
-								<Link to="/work">All topics</Link>
+								<Link to="/tasks/topics">All topics</Link>
 							</Button>
 							<Button
 								asChild

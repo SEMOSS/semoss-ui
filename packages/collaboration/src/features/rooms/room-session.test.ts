@@ -1,11 +1,13 @@
 import { getAgent } from "@/features/agents/api/get-agent";
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
+import { ROOM_TREE_CHANGED } from "@/features/room-tree/room-tree-events";
 import { resolveThreadModel } from "@/features/thread-assistant/api/thread-model";
 import {
 	readThreadCommand,
 	setThreadAgent,
 } from "@/features/thread-assistant/thread-context";
 import * as runApi from "./api/agent-run-api";
+import { ROOM_HISTORY_CHANGED } from "./api/list-rooms";
 import { uploadRoomFiles } from "./api/upload-room-files";
 import {
 	createRoomSession,
@@ -61,6 +63,8 @@ vi.mock("./api/agent-run-api", async (original) => ({
 }));
 
 const instances: RoomSession[] = [];
+const historyChanged = vi.fn();
+const roomTreeChanged = vi.fn();
 const source: RoomSource = {
 	version: 1,
 	threadId: "source-one",
@@ -96,6 +100,8 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
 
 beforeEach(() => {
 	vi.resetAllMocks();
+	window.addEventListener(ROOM_HISTORY_CHANGED, historyChanged);
+	window.addEventListener(ROOM_TREE_CHANGED, roomTreeChanged);
 	localStorage.clear();
 	setThreadAgent(null);
 	transport.options.clear();
@@ -161,8 +167,148 @@ beforeEach(() => {
 	vi.mocked(uploadRoomFiles).mockResolvedValue([]);
 });
 afterEach(() => {
+	window.removeEventListener(ROOM_HISTORY_CHANGED, historyChanged);
+	window.removeEventListener(ROOM_TREE_CHANGED, roomTreeChanged);
 	for (const session of instances.splice(0)) session.dispose();
 	setThreadAgent(null);
+});
+
+it("announces a created room without inventing creation or transcript activity dates", async () => {
+	const session = draft();
+	await session.create("New conversation");
+	expect(historyChanged).toHaveBeenCalledOnce();
+	const event = historyChanged.mock.calls[0][0] as CustomEvent;
+	expect(event.detail).toMatchObject({
+		scope: session.scope,
+		roomId: session.getSnapshot().roomId,
+	});
+	expect(event.detail).not.toHaveProperty("dateCreated");
+	expect(event.detail).not.toHaveProperty("dateUpdated");
+});
+
+it("does not announce new activity when opening or reconnecting a completed historical run", async () => {
+	transport.options.set("old-room", { modelId: "model-one" });
+	const terminal = {
+		runId: "old-run",
+		roomId: "old-room",
+		status: "COMPLETED" as const,
+		pendingActions: [],
+		completedAt: "2025-01-01T00:00:00Z",
+	};
+	vi.mocked(runApi.listRoomRuns).mockResolvedValue([terminal]);
+	vi.mocked(runApi.readRun).mockResolvedValue({ ...terminal, messages: [] });
+	const session = own(getRoomSession(crypto.randomUUID(), "old-room"));
+	await session.initialize();
+	expect(session.getSnapshot().turn).toMatchObject({
+		phase: "completed",
+		settlementVersion: 1,
+	});
+	expect(historyChanged).not.toHaveBeenCalled();
+	await session.reconnect();
+	expect(historyChanged).not.toHaveBeenCalled();
+	expect(roomTreeChanged).not.toHaveBeenCalled();
+});
+
+it("announces saved activity when a restored active run subsequently finishes", async () => {
+	vi.useFakeTimers();
+	try {
+		transport.options.set("active-room", { modelId: "model-one" });
+		const active = {
+			runId: "active-run",
+			roomId: "active-room",
+			status: "RUNNING" as const,
+			pendingActions: [],
+		};
+		const terminal = { ...active, status: "COMPLETED" as const };
+		vi.mocked(runApi.listRoomRuns).mockResolvedValue([active]);
+		vi.mocked(runApi.readRun)
+			.mockResolvedValueOnce(active)
+			.mockResolvedValue({ ...terminal, messages: [] });
+		const pending = deferred<Awaited<ReturnType<typeof runApi.pollRun>>>();
+		vi.mocked(runApi.pollRun).mockReturnValue(pending.promise);
+		const session = own(getRoomSession(crypto.randomUUID(), "active-room"));
+		await session.initialize();
+		expect(session.getSnapshot().turn.isRunning).toBe(true);
+		expect(historyChanged).not.toHaveBeenCalled();
+		pending.resolve({ run: terminal, events: [], droppedEvents: 0 });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(session.getSnapshot().turn.phase).toBe("completed");
+		expect(historyChanged).toHaveBeenCalledOnce();
+		const event = historyChanged.mock.calls[0][0] as CustomEvent;
+		expect(event.detail).toMatchObject({
+			roomId: "active-room",
+			dateUpdated: expect.any(String),
+		});
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+it("publishes the saved run's activity without rewriting room creation metadata", async () => {
+	vi.useFakeTimers();
+	try {
+		const session = draft();
+		await session.create("Conversation");
+		historyChanged.mockClear();
+		const roomId = session.getSnapshot().roomId;
+		const terminal = {
+			runId: `run-${roomId}`,
+			roomId,
+			status: "COMPLETED" as const,
+			pendingActions: [],
+		};
+		vi.mocked(runApi.pollRun).mockResolvedValue({
+			run: terminal,
+			events: [],
+			droppedEvents: 0,
+		});
+		vi.mocked(runApi.readRun).mockResolvedValue({
+			...terminal,
+			messages: [],
+		});
+		await session.send({ text: "Continue", files: [] });
+		await vi.advanceTimersByTimeAsync(100);
+		expect(session.getSnapshot().turn.phase).toBe("completed");
+		expect(historyChanged).toHaveBeenCalledOnce();
+		const event = historyChanged.mock.calls[0][0] as CustomEvent;
+		expect(event.detail).toMatchObject({
+			roomId,
+			dateUpdated: expect.any(String),
+		});
+		expect(event.detail).not.toHaveProperty("dateCreated");
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+it("refreshes topic associations only after source metadata is saved", async () => {
+	const session = draft();
+	await session.create("Imported");
+	expect(roomTreeChanged).not.toHaveBeenCalled();
+	transport.failOptions = true;
+	await expect(session.setSource(source)).rejects.toThrow(
+		"Settings unavailable",
+	);
+	expect(roomTreeChanged).not.toHaveBeenCalled();
+	await session.setSource(source);
+	expect(roomTreeChanged).toHaveBeenCalledOnce();
+});
+
+it("queues saved context once and keeps it from idle eviction until removed", async () => {
+	const session = draft();
+	await session.initialize();
+	const file = {
+		fileName: "Meeting.markdown",
+		fileLocation: "Meeting.markdown",
+	};
+	expect(session.canEvict()).toBe(true);
+	session.addContextFile(file);
+	session.addContextFile({ ...file });
+	expect(session.getSnapshot().contextFiles).toEqual([file]);
+	expect(session.canEvict()).toBe(false);
+	session.removeContextFile(file.fileLocation);
+	expect(session.getSnapshot().contextFiles).toEqual([]);
+	expect(session.canEvict()).toBe(true);
 });
 
 it("loads the actual room and its queued source without allocating or sending", async () => {
@@ -190,6 +336,34 @@ it("loads the actual room and its queued source without allocating or sending", 
 		session.insight.actions,
 		"saved-one",
 	);
+});
+
+it("preserves queued source and connector files when a failed room reload is retried", async () => {
+	transport.options.set("retry-source", { modelId: "model-one", source });
+	const session = own(getRoomSession(crypto.randomUUID(), "retry-source"));
+	await session.initialize();
+	const connectorFile = {
+		fileName: "Follow-up.md",
+		fileLocation: "room-files/Follow-up.md",
+	};
+	session.addContextFile(connectorFile);
+	vi.mocked(getRoomMessages).mockRejectedValueOnce(
+		new Error("History unavailable"),
+	);
+	await session.reconnect();
+	expect(session.getSnapshot().error?.message).toBe("History unavailable");
+
+	await session.initialize();
+	expect(session.getSnapshot()).toMatchObject({
+		isReady: true,
+		error: null,
+		contextFiles: [source.file, connectorFile],
+	});
+	await session.setSource(source);
+	expect(session.getSnapshot().contextFiles).toEqual([
+		source.file,
+		connectorFile,
+	]);
 });
 
 it("allocates once and preserves settings, draft, and files across partial creation failure", async () => {
@@ -307,6 +481,27 @@ it("keeps a pending upload and agent run bound to its room while another room in
 	expect(second.getSnapshot().turn.messages).toEqual([]);
 });
 
+it("keeps files added or re-added while an earlier message is being submitted", async () => {
+	const session = draft();
+	await session.create("Connected sources");
+	const first = { fileName: "Email.md", fileLocation: "Email.md" };
+	const next = { fileName: "Event.md", fileLocation: "Event.md" };
+	session.addContextFile(first);
+	const pending = deferred<Awaited<ReturnType<typeof uploadRoomFiles>>>();
+	vi.mocked(uploadRoomFiles).mockReturnValueOnce(pending.promise);
+	const send = session.send({ text: "Summarize this email", files: [] });
+	session.addContextFile(next);
+	session.removeContextFile(first.fileLocation);
+	session.addContextFile(first);
+	pending.resolve([]);
+	await send;
+	expect(runApi.startAgentRun).toHaveBeenCalledExactlyOnceWith(
+		session.insight.insightId,
+		expect.objectContaining({ media: [first.fileLocation] }),
+	);
+	expect(session.getSnapshot().contextFiles).toEqual([next, first]);
+});
+
 it("retains the draft and source receipt until a failed submission is reconciled", async () => {
 	const session = draft();
 	await session.create("Imported");
@@ -351,6 +546,13 @@ it("does not queue source context again when the room already has a user message
 	const session = own(getRoomSession(crypto.randomUUID(), "used-room"));
 	await session.initialize();
 	expect(session.getSnapshot().contextFiles).toEqual([]);
+	const connectorFile = {
+		fileName: "Follow-up.md",
+		fileLocation: "room-files/Follow-up.md",
+	};
+	session.addContextFile(connectorFile);
+	await session.setSource(source);
+	expect(session.getSnapshot().contextFiles).toEqual([connectorFile]);
 });
 
 it("serializes settings and source metadata writes without losing either", async () => {
@@ -391,7 +593,7 @@ it("preserves the draft and source file when cancelled before the run is submitt
 	});
 });
 
-it("keeps later draft edits when reconnect confirms an earlier uncertain request", async () => {
+it("keeps later draft edits and context when reconnect confirms an earlier uncertain request", async () => {
 	const session = draft();
 	await session.create("Imported");
 	await session.setSource(source);
@@ -412,6 +614,8 @@ it("keeps later draft edits when reconnect confirms an earlier uncertain request
 		text: "My next request",
 		files: [],
 	});
+	const nextFile = { fileName: "Next.md", fileLocation: "Next.md" };
+	session.addContextFile(nextFile);
 	vi.mocked(getRoomMessages).mockResolvedValue([
 		{
 			messageId: "accepted-one",
@@ -422,7 +626,7 @@ it("keeps later draft edits when reconnect confirms an earlier uncertain request
 	await session.reconnect();
 	expect(session.getSnapshot()).toMatchObject({
 		hasUnconfirmedSubmission: false,
-		contextFiles: [],
+		contextFiles: [nextFile],
 		composerDraft: { text: "My next request" },
 		submissionNotice: "Your last message was received.",
 	});

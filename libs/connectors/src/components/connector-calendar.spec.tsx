@@ -34,6 +34,47 @@ vi.mock("@semoss/i18n", () => ({
 
 let container: HTMLDivElement;
 let root: Root;
+const observers = new Set<CalendarResizeObserver>();
+
+/** Deliver actual container widths without depending on jsdom layout. */
+class CalendarResizeObserver implements ResizeObserver {
+	readonly elements = new Set<Element>();
+	constructor(readonly callback: ResizeObserverCallback) {
+		observers.add(this);
+	}
+	observe(element: Element): void {
+		this.elements.add(element);
+	}
+	unobserve(element: Element): void {
+		this.elements.delete(element);
+	}
+	disconnect(): void {
+		this.elements.clear();
+		observers.delete(this);
+	}
+}
+
+async function resizeCalendar(width: number): Promise<void> {
+	const element = container.firstElementChild;
+	if (!element) throw new Error("Calendar is missing");
+	await act(async () => {
+		for (const observer of observers) {
+			if (!observer.elements.has(element)) continue;
+			observer.callback(
+				[
+					{
+						target: element,
+						contentRect: new DOMRectReadOnly(0, 0, width, 600),
+						borderBoxSize: [],
+						contentBoxSize: [],
+						devicePixelContentBoxSize: [],
+					},
+				],
+				observer,
+			);
+		}
+	});
+}
 const changeMonth = vi.fn();
 const selectDay = vi.fn();
 const today = vi.fn();
@@ -95,14 +136,7 @@ const click = async (label: string) => {
 };
 beforeEach(() => {
 	vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-	vi.stubGlobal(
-		"ResizeObserver",
-		class {
-			observe() {}
-			unobserve() {}
-			disconnect() {}
-		},
-	);
+	vi.stubGlobal("ResizeObserver", CalendarResizeObserver);
 	vi.clearAllMocks();
 	container = document.createElement("div");
 	document.body.append(container);
@@ -111,6 +145,7 @@ beforeEach(() => {
 afterEach(async () => {
 	await act(async () => root.unmount());
 	container.remove();
+	observers.clear();
 	vi.unstubAllGlobals();
 });
 
@@ -221,3 +256,40 @@ it.each(["week", "day", "threeDays"] as const)(
 		expect(container.textContent).toContain("Open Planning");
 	},
 );
+
+it("shows only an agenda and a host open action in compact presentation", async () => {
+	const onOpenCalendar = vi.fn();
+	await render({ presentation: "compact", onOpenCalendar });
+	expect(container.querySelectorAll("button[data-day]")).toHaveLength(0);
+	expect(container.querySelector('[role="combobox"]')).toBeNull();
+	expect(container.textContent).toContain("Open Planning");
+	expect(container.textContent).not.toContain("List View");
+	await click("Open calendar");
+	expect(onOpenCalendar).toHaveBeenCalledOnce();
+	await click("Today");
+	expect(today).toHaveBeenCalledOnce();
+});
+
+it("falls back below 640px and restores the remembered calendar choice", async () => {
+	await render({ responsive: true });
+	await resizeCalendar(639);
+	expect(container.querySelectorAll("button[data-day]")).toHaveLength(0);
+	expect(container.textContent).toContain("Open Planning");
+	expect(container.textContent).not.toContain("Calendar View");
+	await resizeCalendar(640);
+	expect(container.querySelectorAll("button[data-day]")).toHaveLength(42);
+	await click("List View");
+	await resizeCalendar(400);
+	await resizeCalendar(800);
+	expect(container.querySelectorAll("button[data-day]")).toHaveLength(0);
+	await click("Calendar View");
+	await resizeCalendar(320);
+	await resizeCalendar(800);
+	expect(container.querySelectorAll("button[data-day]")).toHaveLength(42);
+});
+
+it("preserves the default grid behavior without responsive opt-in", async () => {
+	await render();
+	await resizeCalendar(300);
+	expect(container.querySelectorAll("button[data-day]")).toHaveLength(42);
+});

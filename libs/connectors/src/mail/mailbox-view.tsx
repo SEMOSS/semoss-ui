@@ -1,15 +1,22 @@
 import {
+	ChevronDownIcon,
 	MailIcon,
 	MailsIcon,
 	PaperclipIcon,
 	RefreshCwIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useCallback, useEffect, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import type { ConnectorBrand } from "@semoss/shared";
 import {
+	Button,
 	cn,
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+	Muted,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -36,11 +43,7 @@ import {
 } from "../core/use-connector-saver";
 import { useReturnFocus } from "../core/use-return-focus";
 import { mailMessageFileName, mailMessageToMarkdown } from "./mail.markdown";
-import {
-	parseMailFolders,
-	parseMailMessageDetail,
-	parseMailPage,
-} from "./mail.parsers";
+import { parseMailFolders, parseMailMessageDetail } from "./mail.parsers";
 import {
 	groupMailByConversation,
 	type MailConversation,
@@ -48,18 +51,14 @@ import {
 } from "./mail.threads";
 import type { MailMessage } from "./mail.types";
 import { MAIL_APPS } from "./mail-apps";
+import type { MailItemSelection } from "./mail-item-selection";
 import { MailMessageView } from "./mail-message-view";
 import {
 	MailThreadView,
 	readConversation,
 	threadSaveRequest,
 } from "./mail-thread-view";
-
-/** How many emails a list reads at first, and how many more each time. */
-const PAGE_SIZE = 25;
-
-/** The most emails the backend reads at once. */
-const MAX_EMAILS = 100;
+import { useMailboxQuery } from "./use-mailbox-query";
 
 /** The inbox's well known name, which every mailbox takes in place of its id. */
 const INBOX = "inbox";
@@ -76,12 +75,36 @@ const isWholeThread = (
 ): conversation is MailConversation & { conversationId: string } =>
 	!!conversation.conversationId;
 
+/** The current mailbox's actions and live state for host-owned controls. */
+export interface MailboxViewControls {
+	/** The account these controls belong to, including when providers are retained. */
+	provider: ConnectorAccount;
+	/** Reload the current filters from the first page. */
+	refresh: () => void;
+	/** Whether the current mailbox is loading, refreshing, or reading another page. */
+	isRefreshing: boolean;
+	/** The provider's mailbox home, rather than a link to an individual message. */
+	mailboxUrl: string;
+	/** The localized provider app name, such as Outlook or Gmail. */
+	appName: string;
+}
+
 /** Props for {@link MailboxView}. */
 export interface MailboxViewProps extends ConnectorViewerProps {
 	/** The account whose mailbox is read: Outlook for `microsoft`, Gmail for `google`. */
 	provider: ConnectorAccount;
 	/** The logo the header shows. Defaults to the mailbox's own. */
 	brand?: ConnectorBrand;
+	/** The full viewer, or a compact browser for a narrow workspace rail. */
+	presentation?: "full" | "compact";
+	/** The host's account picker, shown beside Refresh in compact mode. */
+	providerControl?: ReactNode;
+	/** Opens an item in the host while leaving this browser visible. */
+	onOpenItem?: (selection: MailItemSelection) => void;
+	/** Receives host-control state when it changes. Keep the receiver identity stable. */
+	onControls?: (controls: MailboxViewControls) => void;
+	/** Show the viewer's own Refresh action. Defaults to true. */
+	showRefresh?: boolean;
 }
 
 /**
@@ -95,7 +118,17 @@ export interface MailboxViewProps extends ConnectorViewerProps {
  * user's own replies included.
  */
 export const MailboxView = (props: MailboxViewProps) => {
-	const { provider, onSignIn, showHeader = true } = props;
+	const {
+		provider,
+		onSignIn,
+		showHeader = true,
+		presentation = "full",
+		providerControl,
+		onOpenItem,
+		onControls,
+		showRefresh = true,
+	} = props;
+	const isCompact = presentation === "compact";
 	const app = MAIL_APPS[provider];
 	const { t, i18n } = useTranslation("connectors");
 	const { insightId } = useInsight();
@@ -109,10 +142,8 @@ export const MailboxView = (props: MailboxViewProps) => {
 	const debouncedSubject = useDebouncedValue(search.trim());
 	// clearing the search takes effect at once rather than after the delay
 	const subject = search.trim() === "" ? "" : debouncedSubject;
-	const listKey = `${folder}|${subject}|${isUnreadOnly}`;
-	// more emails are read for one list; a different list starts over
-	const [paging, setPaging] = useState({ key: listKey, limit: PAGE_SIZE });
-	const limit = paging.key === listKey ? paging.limit : PAGE_SIZE;
+	const searchLimitId = useId();
+	const isSearchLimited = provider === "microsoft" && subject !== "";
 	const { listRef, rememberItem } = useReturnFocus(openConversation !== null);
 	const serviceName = t(app.nameKey);
 
@@ -131,18 +162,13 @@ export const MailboxView = (props: MailboxViewProps) => {
 	const folderName =
 		folders.find((entry) => entry.id === folder)?.name ?? t("mail.inbox");
 
-	const query = useConnectorQuery(
-		app.pixels.listMail({
-			folder: folder,
-			limit: limit,
-			subject: subject,
-			unreadOnly: isUnreadOnly,
-		}),
-		parseMailPage,
-		{ listKey: listKey },
-	);
+	const query = useMailboxQuery({
+		provider,
+		folder,
+		subject,
+		unreadOnly: isUnreadOnly,
+	});
 	const emails = query.data?.messages ?? [];
-	const emailCount = emails.length;
 	const conversations = groupMailByConversation(emails, isGrouped);
 	const conversationsQuery = {
 		...query,
@@ -151,12 +177,26 @@ export const MailboxView = (props: MailboxViewProps) => {
 
 	// the folders fail with the mail when the account is signed out, so both
 	// are read again after a sign in or a refresh
-	const reload = () => {
+	const reload = useCallback(() => {
 		query.reload();
 		if (foldersQuery.status !== "ready") {
 			foldersQuery.reload();
 		}
-	};
+	}, [query.reload, foldersQuery.reload, foldersQuery.status]);
+	const appName = t(app.appNameKey);
+	const isRefreshing = query.status === "loading" || query.isRefreshing;
+	const mailboxUrl = app.mailboxUrl;
+	// Hosts may publish these controls to their own store. Depend on fields,
+	// not a fresh object, so that host rerenders do not publish back forever.
+	useEffect(() => {
+		onControls?.({
+			provider,
+			refresh: reload,
+			isRefreshing,
+			mailboxUrl,
+			appName,
+		});
+	}, [onControls, provider, reload, isRefreshing, mailboxUrl, appName]);
 
 	/**
 	 * Run a read in the current insight.
@@ -217,14 +257,14 @@ export const MailboxView = (props: MailboxViewProps) => {
 
 	// in the header, or at the end of the toolbar when the host leaves
 	// the header out
-	const refreshButton = (
+	const refreshButton = showRefresh ? (
 		<ConnectorIconButton
 			icon={RefreshCwIcon}
 			label={t("common.refresh")}
 			isSpinning={query.isRefreshing}
 			onClick={reload}
 		/>
-	);
+	) : null;
 
 	return (
 		<div className="flex h-full min-h-0 flex-col">
@@ -234,7 +274,12 @@ export const MailboxView = (props: MailboxViewProps) => {
 					openConversation !== null && "hidden",
 				)}
 			>
-				{showHeader ? (
+				{isCompact ? (
+					<div className="flex min-w-0 items-center gap-2 border-border border-b px-3 py-2">
+						<div className="min-w-0 flex-1">{providerControl}</div>
+						{refreshButton}
+					</div>
+				) : showHeader ? (
 					<ConnectorViewerHeader
 						brand={props.brand ?? app.brand}
 						icon={MailIcon}
@@ -264,31 +309,79 @@ export const MailboxView = (props: MailboxViewProps) => {
 								))}
 							</SelectContent>
 						</Select>
-						<Toggle
-							variant="default"
-							className="h-8 px-2 text-xs"
-							size="sm"
-							pressed={isUnreadOnly}
-							onPressedChange={setIsUnreadOnly}
-						>
-							{t("mail.unreadOnly")}
-						</Toggle>
-						<Toggle
-							variant="default"
-							className="h-8 px-2 text-xs"
-							size="sm"
-							pressed={isGrouped}
-							onPressedChange={setIsGrouped}
-						>
-							{t("mail.conversations")}
-						</Toggle>
-						{showHeader ? null : refreshButton}
+						{isCompact ? (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										className="h-8 shrink-0 gap-1 px-2 shadow-none"
+									>
+										{t("mail.filters")}
+										<ChevronDownIcon
+											aria-hidden
+											className="size-3.5"
+										/>
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuCheckboxItem
+										checked={isUnreadOnly}
+										onCheckedChange={setIsUnreadOnly}
+										onSelect={(event) =>
+											event.preventDefault()
+										}
+									>
+										{t("mail.unreadOnly")}
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem
+										checked={isGrouped}
+										onCheckedChange={setIsGrouped}
+										onSelect={(event) =>
+											event.preventDefault()
+										}
+									>
+										{t("mail.conversations")}
+									</DropdownMenuCheckboxItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						) : (
+							<>
+								<Toggle
+									variant="default"
+									className="h-8 px-2 text-xs"
+									size="sm"
+									pressed={isUnreadOnly}
+									onPressedChange={setIsUnreadOnly}
+								>
+									{t("mail.unreadOnly")}
+								</Toggle>
+								<Toggle
+									variant="default"
+									className="h-8 px-2 text-xs"
+									size="sm"
+									pressed={isGrouped}
+									onPressedChange={setIsGrouped}
+								>
+									{t("mail.conversations")}
+								</Toggle>
+							</>
+						)}
+						{!isCompact && !showHeader ? refreshButton : null}
 					</div>
 					<ConnectorSearchField
 						value={search}
 						placeholder={t("mail.searchPlaceholder")}
+						descriptionId={
+							isSearchLimited ? searchLimitId : undefined
+						}
 						onChange={setSearch}
 					/>
+					{isSearchLimited && (
+						<Muted id={searchLimitId} className="text-xs">
+							{t("mail.outlookSearchLimit")}
+						</Muted>
+					)}
 				</div>
 
 				<ConnectorList
@@ -299,7 +392,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 					onSignIn={onSignIn}
 					listRef={listRef}
 					isFull={query.data?.hasMore === true}
-					limitNote={t("mail.limitReached", { count: emailCount })}
+					loadMoreError={query.loadMoreError}
 					emptyText={
 						subject
 							? t("common.noResults", { query: subject })
@@ -307,18 +400,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 								? t("mail.noUnread")
 								: t("mail.empty")
 					}
-					onShowMore={
-						limit < MAX_EMAILS
-							? () =>
-									setPaging({
-										key: listKey,
-										limit: Math.min(
-											limit + PAGE_SIZE,
-											MAX_EMAILS,
-										),
-									})
-							: undefined
-					}
+					onShowMore={query.loadMore}
 				>
 					{(threads) =>
 						threads.map((conversation) => {
@@ -345,6 +427,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 								<ConnectorItemRow
 									key={conversation.key}
 									itemKey={conversation.key}
+									presentation={presentation}
 									icon={
 										<Icon aria-hidden className="size-4" />
 									}
@@ -385,12 +468,30 @@ export const MailboxView = (props: MailboxViewProps) => {
 									}
 									isBusy={isBusy}
 									onOpen={() => {
+										if (onOpenItem) {
+											onOpenItem({
+												kind: isWholeThread(
+													conversation,
+												)
+													? "thread"
+													: "message",
+												id:
+													conversation.conversationId ??
+													latest.id,
+												title: title,
+												itemKey: conversation.key,
+												folderName: folderName,
+												summary: conversation,
+											});
+											return;
+										}
 										rememberItem(conversation.key);
 										setOpenConversation(conversation);
 									}}
 									actions={{
 										itemName: title,
 										serviceName: serviceName,
+										webUrl: latest.webLink,
 										saveLabel: saver.saveLabel,
 										isBusy: isBusy,
 										onAddToContext: saver.addToContext

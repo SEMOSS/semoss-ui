@@ -15,6 +15,8 @@ export interface ConnectorSearchFieldProps {
 	onChange: (value: string) => void;
 	/** The hint, also read as the field's name. */
 	placeholder: string;
+	/** Optional explanatory text associated with the search input. */
+	descriptionId?: string;
 }
 
 /** A viewer's search box, with a button to clear it. */
@@ -22,6 +24,7 @@ export const ConnectorSearchField = ({
 	value,
 	onChange,
 	placeholder,
+	descriptionId,
 }: ConnectorSearchFieldProps) => {
 	const { t } = useTranslation("connectors");
 
@@ -32,6 +35,7 @@ export const ConnectorSearchField = ({
 				value={value}
 				placeholder={placeholder}
 				aria-label={placeholder}
+				aria-describedby={descriptionId}
 				onChange={(event) => onChange(event.target.value)}
 			/>
 			<InputGroupAddon>

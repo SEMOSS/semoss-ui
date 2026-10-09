@@ -1,19 +1,47 @@
-import { useLocation, useParams } from "react-router";
+import { Navigate, useLocation, useParams } from "react-router";
 import { TopicWork } from "@/features/collaboration/components/topic-work";
 import { WorkFeed } from "@/features/collaboration/components/work-feed";
 import { WorkTopics } from "@/features/collaboration/components/work-topics";
 
-/** Separate topic discovery, focused topic work, and the complete action list. */
+/** Preserve topic workspaces and status bookmarks while moving the queue to For you. */
 export function WorkPage() {
 	const { topicId } = useParams();
-	const { pathname } = useLocation();
+	const { pathname, search, hash } = useLocation();
 	const path = pathname.replace(/\/$/, "");
+	const params = new URLSearchParams(search);
 	if (topicId) return <TopicWork key={topicId} topicId={topicId} />;
-	if (path === "/work") return <WorkTopics />;
-	const initialFilter = path.endsWith("/waiting")
+	if (path.endsWith("/topics")) return <WorkTopics />;
+	const routeStatus = path.endsWith("/waiting")
 		? "waiting"
 		: path.endsWith("/done")
 			? "done"
-			: "needs_me";
-	return <WorkFeed initialFilter={initialFilter} />;
+			: null;
+	const queryStatus = params.get("status");
+	const status =
+		routeStatus ??
+		(queryStatus === "waiting" || queryStatus === "done"
+			? queryStatus
+			: null);
+	params.delete("status");
+	const destination = status ? `/tasks/${status}` : "/for-you";
+	if (path !== destination) {
+		return (
+			<Navigate
+				replace
+				to={{
+					pathname: destination,
+					search: params.toString() ? `?${params}` : "",
+					hash,
+				}}
+			/>
+		);
+	}
+	return (
+		<WorkFeed
+			key={`${status}:${params.get("topic") ?? ""}`}
+			initialFilter={status ?? "needs_me"}
+			topicId={params.get("topic") || undefined}
+			search={params.get("q") || undefined}
+		/>
+	);
 }

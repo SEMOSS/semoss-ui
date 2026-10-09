@@ -44,6 +44,22 @@ describe("mail pixels", () => {
 		);
 	});
 
+	it.each(["microsoft", "google"] as const)(
+		"pages %s mail without changing conversation reads",
+		(provider) => {
+			const pixels = MAIL_APPS[provider].pixels;
+			expect(
+				pixels.listMail({ folder: "inbox", limit: 25, offset: 125 }),
+			).toContain("limit=[25], offset=[125]");
+			expect(
+				pixels.listConversation({
+					conversationId: "thread",
+					limit: 50,
+				}),
+			).not.toContain("offset");
+		},
+	);
+
 	it("writes every recipient, and leaves empty lists out", () => {
 		expect(
 			MAIL_APPS.google.pixels.saveDraft({

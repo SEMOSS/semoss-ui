@@ -82,7 +82,18 @@
 		"openPanels": "Open Panels",
 		"noPanels": "No open panels",
 		"maximize": "Maximize Workspace",
-		"restore": "Restore Workspace"
+		"restore": "Restore Workspace",
+		"emails": "Emails",
+		"calendar": "Calendar",
+		"provider": "Provider",
+		"panels": "Workbench panels",
+		"backToConversation": "Back to conversation",
+		"showFiles": "Show chat files",
+		"openingFiles": "Opening chat files…",
+		"openSettings": "Open settings",
+		"filesError": "Unable to open room files. Try again.",
+		"itemUnavailable": "Open this item from Emails or Calendar to load its details.",
+		"backToBrowser": "Back to browser"
 	},
 	"userMenu": {
 		"settings": "Settings",

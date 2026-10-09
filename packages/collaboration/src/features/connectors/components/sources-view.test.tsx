@@ -64,7 +64,7 @@ it("loads headers, then selected text, and imports only after an explicit action
 	await user.click(screen.getByRole("button", { name: "Read Today note" }));
 	await screen.findByText("Actual selected content");
 	expect(onImport).not.toHaveBeenCalled();
-	await user.click(screen.getByRole("button", { name: "Add to Work" }));
+	await user.click(screen.getByRole("button", { name: "Add to workspace" }));
 	expect(onImport).toHaveBeenCalledWith(
 		expect.objectContaining({
 			sourceKind: "outlook",
@@ -88,7 +88,7 @@ it("shows permission failures without presenting fictional source results", asyn
 		),
 	);
 	expect(
-		screen.queryByRole("button", { name: "Add to Work" }),
+		screen.queryByRole("button", { name: "Add to workspace" }),
 	).not.toBeInTheDocument();
 });
 

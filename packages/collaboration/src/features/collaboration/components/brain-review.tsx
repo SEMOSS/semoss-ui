@@ -61,7 +61,7 @@ export function BrainReview() {
 							value="needs"
 							className={collaborationTabsStyles.trigger}
 						>
-							Needs you ({open.length + suggestions.length})
+							Pending ({open.length + suggestions.length})
 						</TabsTrigger>
 						<TabsTrigger
 							value="learned"

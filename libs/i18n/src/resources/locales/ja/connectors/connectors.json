@@ -66,6 +66,7 @@
 		"inbox": "受信トレイ",
 		"unreadOnly": "未読",
 		"searchPlaceholder": "件名を検索",
+		"outlookSearchLimit": "Outlook の検索では、一致するメールを最大 1,000 件表示します。このフォルダーのすべてのメールを表示するには、検索をクリアしてください。",
 		"empty": "このフォルダーにメールはありません",
 		"noUnread": "このフォルダーに未読のメールはありません",
 		"unknownSender": "不明な差出人",
@@ -98,7 +99,8 @@
 		"loadingAttachments": "添付ファイルを読み込んでいます...",
 		"conversations": "スレッド表示",
 		"showQuoted": "引用されたメールを表示",
-		"hideQuoted": "引用されたメールを非表示"
+		"hideQuoted": "引用されたメールを非表示",
+		"filters": "フィルター"
 	},
 	"calendar": {
 		"range": "{{start}} から {{end}}",
@@ -153,7 +155,8 @@
 			"day": "次の日",
 			"threeDays": "次の3日間",
 			"month": "次の月"
-		}
+		},
+		"openCalendar": "カレンダーを開く"
 	},
 	"teams": {
 		"team": "チーム",

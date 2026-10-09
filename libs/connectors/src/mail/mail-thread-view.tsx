@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Muted } from "@semoss/ui/next";
 import { ConnectorActionBar } from "../components/connector-action-bar";
@@ -85,10 +86,14 @@ export interface MailThreadViewProps {
 	folderName: string;
 	/** Saves the thread and its attachments into the insight. */
 	saver: ConnectorSaver;
-	/** Goes back to the list. */
-	onBack: () => void;
+	/** Goes back to the list. Without it the thread is shown on its own. */
+	onBack?: () => void;
 	/** Starts the sign in, when the host offers one. */
 	onSignIn?: () => Promise<boolean>;
+	/** Publishes the newest loaded message's link, never the list summary's. */
+	onWebUrlChange?: (webUrl: string | undefined) => void;
+	/** Shows a thread-level Open action when requested by the host. */
+	showOpenIn?: boolean;
 }
 
 /**
@@ -105,6 +110,8 @@ export const MailThreadView = ({
 	saver,
 	onBack,
 	onSignIn,
+	onWebUrlChange,
+	showOpenIn = false,
 }: MailThreadViewProps) => {
 	const { t } = useTranslation("connectors");
 	const query = useConnectorQuery(
@@ -129,6 +136,11 @@ export const MailThreadView = ({
 		),
 	].join(", ");
 	const newestFirst = thread ? [...thread].reverse() : [];
+	const loadedWebUrl =
+		query.status === "ready" ? newestFirst[0]?.webLink : undefined;
+	useEffect(() => {
+		onWebUrlChange?.(loadedWebUrl);
+	}, [loadedWebUrl, onWebUrlChange]);
 
 	const request = (emails: MailMessage[]) =>
 		threadSaveRequest(
@@ -156,7 +168,8 @@ export const MailThreadView = ({
 			actions={
 				thread ? (
 					<ConnectorActionBar
-						serviceName={serviceName}
+						serviceName={t(app.appNameKey)}
+						webUrl={showOpenIn ? loadedWebUrl : undefined}
 						saveLabel={saver.saveLabel}
 						isBusy={saver.isBusy(conversation.key)}
 						onAddToContext={

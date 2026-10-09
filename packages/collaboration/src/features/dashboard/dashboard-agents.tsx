@@ -1,15 +1,14 @@
 import { Bot, UserRound } from "lucide-react";
 import { Link } from "react-router";
 import { Button } from "@semoss/ui/next";
+import { useForYou } from "@/features/for-you/for-you.context";
 import { roomPath } from "@/lib/workspace-paths";
-import { useDashboard } from "./dashboard.context";
 import { DashboardResourceStatus } from "./dashboard-resource-status";
-import { useAgentAttention } from "./use-agent-attention";
 
 /** Open the original room/action so the existing approval UI owns all decisions. */
 export function DashboardAgents({ visible }: { visible: boolean }) {
-	const { refreshRevision } = useDashboard();
-	const attention = useAgentAttention(visible, refreshRevision);
+	const { agentAttention: attention } = useForYou();
+	if (!visible) return null;
 	const delegations = attention.delegations.data ?? [];
 	return (
 		<div className="space-y-3">

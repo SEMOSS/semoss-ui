@@ -52,7 +52,7 @@ export const useConnectorSaver = (
 	service: ConnectorViewerService,
 	host: ConnectorViewerProps,
 ): ConnectorSaver => {
-	const { saveTargetName, onSaved, onAddToContext } = host;
+	const { saveTargetName, prepareSave, onSaved, onAddToContext } = host;
 	const { insightId } = useInsight();
 	const { t } = useTranslation("connectors");
 	const [busyKeys, setBusyKeys] = useState<ReadonlySet<string>>(
@@ -64,6 +64,9 @@ export const useConnectorSaver = (
 	const isMountedRef = useRef(true);
 	useEffect(() => {
 		isMountedRef.current = true;
+		// Activity retains state while suspending effects. A save can finish
+		// while hidden, so reconcile the visible flags with the live work.
+		setBusyKeys(new Set(runningKeysRef.current));
 		return () => {
 			isMountedRef.current = false;
 		};
@@ -74,33 +77,31 @@ export const useConnectorSaver = (
 			request: ConnectorSaveRequest,
 			intent: "save" | "context",
 		): Promise<void> => {
-			if (!insightId) {
-				toast.error(
-					t("actions.saveError", {
-						name: request.name,
-						message: t("errors.noInsight"),
-					}),
-				);
-				return;
-			}
-
 			if (runningKeysRef.current.has(request.key)) {
 				return;
 			}
 			runningKeysRef.current.add(request.key);
 			setBusyKeys((previous) => new Set(previous).add(request.key));
 			try {
-				const file = await saveToInsight(
-					insightId,
-					service,
-					request.source,
-				);
-				if (intent === "context" && onAddToContext) {
-					onAddToContext(file);
-				} else if (onSaved) {
-					onSaved(file);
-				} else {
-					toast.success(t("actions.saved", { name: file.name }));
+				const release = await prepareSave?.();
+				try {
+					if (!insightId) {
+						throw new Error(t("errors.noInsight"));
+					}
+					const file = await saveToInsight(
+						insightId,
+						service,
+						request.source,
+					);
+					if (intent === "context" && onAddToContext) {
+						await onAddToContext(file);
+					} else if (onSaved) {
+						await onSaved(file);
+					} else {
+						toast.success(t("actions.saved", { name: file.name }));
+					}
+				} finally {
+					if (typeof release === "function") release();
 				}
 			} catch (error) {
 				const info = classifyConnectorError(error);
@@ -128,7 +129,7 @@ export const useConnectorSaver = (
 				}
 			}
 		},
-		[insightId, onAddToContext, onSaved, service, t],
+		[insightId, onAddToContext, onSaved, prepareSave, service, t],
 	);
 
 	const save = useCallback(

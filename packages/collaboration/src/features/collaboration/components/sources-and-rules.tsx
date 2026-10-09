@@ -22,8 +22,8 @@ export function SourcesAndRules() {
 			aside={
 				<Section title="Connected context" variant="card">
 					<P className="text-muted-foreground">
-						Only selected source items are added to Work. Reading
-						and drafting are separate actions.
+						Only selected source items are added to your workspace.
+						Reading and drafting are separate actions.
 					</P>
 					<P className="text-muted-foreground">
 						Brain edits and loaded source content stay in this
@@ -31,7 +31,7 @@ export function SourcesAndRules() {
 						their own storage.
 					</P>
 					<Button asChild variant="outline">
-						<Link to="/work">Go to Work</Link>
+						<Link to="/for-you">Go to For you</Link>
 					</Button>
 					<Button asChild variant="outline">
 						<Link to="/onboarding">Import mail again</Link>
@@ -48,7 +48,9 @@ export function SourcesAndRules() {
 				<SourcesView
 					onImport={(source) => {
 						dispatch(importSourceCommand(source));
-						toast.success("Added to connected items in Work.");
+						toast.success(
+							"Added to connected items in your workspace.",
+						);
 					}}
 				/>
 			</div>

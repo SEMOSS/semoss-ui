@@ -1,7 +1,7 @@
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import { createRoom } from "./create-room";
 import { deleteRoom } from "./delete-room";
-import { listRooms } from "./list-rooms";
+import { listRooms, ROOM_HISTORY_CHANGED } from "./list-rooms";
 import { renameRoom } from "./rename-room";
 
 function pixelResponse(output: unknown) {
@@ -11,6 +11,14 @@ function pixelResponse(output: unknown) {
 }
 
 describe("playground room APIs", () => {
+	const historyChanged = vi.fn();
+	beforeEach(() => {
+		historyChanged.mockClear();
+		window.addEventListener(ROOM_HISTORY_CHANGED, historyChanged);
+	});
+	afterEach(() => {
+		window.removeEventListener(ROOM_HISTORY_CHANGED, historyChanged);
+	});
 	it.each([undefined, null, "", "  "])(
 		"omits an absent workspace when creating a standalone assistant (%s)",
 		async (workspaceId) => {
@@ -209,6 +217,7 @@ describe("playground room APIs", () => {
 			'SetRoomName(roomId=["room-1"], roomName=["Quarterly \\"review\\""]);',
 			'RemoveUserRoom(roomId=["room-1"]);',
 		]);
+		expect(historyChanged).toHaveBeenCalledTimes(2);
 	});
 
 	it("rejects unconfirmed and malformed room writes", async () => {
@@ -227,6 +236,7 @@ describe("playground room APIs", () => {
 		await expect(
 			deleteRoom({ run: malformedRun } as never, "room-1"),
 		).rejects.toThrow("SEMOSS returned an unexpected shape");
+		expect(historyChanged).not.toHaveBeenCalled();
 	});
 
 	it("preserves room write transport failures", async () => {
@@ -238,6 +248,7 @@ describe("playground room APIs", () => {
 		await expect(deleteRoom({ run } as never, "room-1")).rejects.toThrow(
 			"Network unavailable",
 		);
+		expect(historyChanged).not.toHaveBeenCalled();
 	});
 
 	it("loads playground message visibility", async () => {

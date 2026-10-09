@@ -1,3 +1,4 @@
+import { ROOM_TREE_CHANGED } from "@/features/room-tree/room-tree-events";
 import type { InsightActions } from "@/lib/pixel";
 import { pixel } from "@/lib/pixel";
 import type {
@@ -38,6 +39,7 @@ type Create = {
 interface Plan {
 	creates: Create[];
 	statements: string[];
+	affectsRoomTree: boolean;
 }
 
 const LOCAL = /^local-/;
@@ -92,6 +94,8 @@ export function createLiveSync(
 				}
 				// statements built before the creates ran still hold local ids
 				await runBatch(actions, plan.statements.map(withServerIds));
+				if (plan.affectsRoomTree)
+					window.dispatchEvent(new Event(ROOM_TREE_CHANGED));
 			})
 			.catch((cause: unknown) =>
 				onError(cause instanceof Error ? cause.message : String(cause)),
@@ -108,7 +112,7 @@ function planChange(
 	change: CollaborationChange,
 	id: (value: string) => string,
 ): Plan {
-	const plan: Plan = { creates: [], statements: [] };
+	const plan: Plan = { creates: [], statements: [], affectsRoomTree: false };
 	const { previous: prev, next } = change;
 	const merges = change.commands.filter(
 		(
@@ -118,6 +122,7 @@ function planChange(
 	);
 	// a merge moves links, people, and notes on the server in one call
 	if (merges.length) {
+		plan.affectsRoomTree = true;
 		for (const merge of merges)
 			plan.statements.push(
 				pixel("BrainMergeTopics", {
@@ -135,6 +140,7 @@ function planChange(
 			command.type === "topic.delete",
 	);
 	if (deletes.length) {
+		plan.affectsRoomTree = true;
 		for (const deleted of deletes)
 			plan.statements.push(
 				pixel("BrainDeleteTopic", { topicId: id(deleted.topicId) }),
@@ -176,6 +182,7 @@ function planTopics(
 	for (const topic of next.topics) {
 		const old = before.get(topic.id);
 		if (!old) {
+			plan.affectsRoomTree = true;
 			const fields = Object.fromEntries(
 				Object.entries(pick(topic, TOPIC_FIELDS)).filter(
 					([, value]) => value !== null && value !== "",
@@ -205,26 +212,32 @@ function planTopics(
 		const changed = TOPIC_FIELDS.filter(
 			(field) => !same(old[field], topic[field]),
 		);
-		if (changed.length)
+		if (changed.length) {
+			plan.affectsRoomTree = true;
 			plan.statements.push(
 				pixel("BrainSaveTopic", {
 					topic: { id: id(topic.id), ...pick(topic, changed) },
 				}),
 			);
-		if (old.status !== topic.status)
+		}
+		if (old.status !== topic.status) {
+			plan.affectsRoomTree = true;
 			plan.statements.push(
 				pixel("BrainSetTopicStatus", {
 					topicId: id(topic.id),
 					status: topic.status,
 				}),
 			);
+		}
 		planTopicParts(plan, old, topic, id);
 	}
 	for (const topic of prev.topics)
-		if (!after.has(topic.id))
+		if (!after.has(topic.id)) {
+			plan.affectsRoomTree = true;
 			plan.statements.push(
 				pixel("BrainDeleteTopic", { topicId: id(topic.id) }),
 			);
+		}
 }
 
 function planTopicParts(
@@ -334,7 +347,8 @@ function planThreads(
 			thread.topicLinks.map((link) => [link.topicId, link]),
 		);
 		for (const [topicId] of oldLinks)
-			if (!newLinks.has(topicId))
+			if (!newLinks.has(topicId)) {
+				plan.affectsRoomTree = true;
 				plan.statements.push(
 					pixel("BrainLinkThreadTopic", {
 						threadId: thread.id,
@@ -342,6 +356,7 @@ function planThreads(
 						remove: true,
 					}),
 				);
+			}
 		// The new primary goes last and demotes the old one itself. Suggested links stay server-owned.
 		const changed = thread.topicLinks
 			.filter((link) => {
@@ -355,6 +370,7 @@ function planThreads(
 				);
 			})
 			.sort((a, b) => Number(a.primary) - Number(b.primary));
+		if (changed.length) plan.affectsRoomTree = true;
 		for (const link of changed)
 			plan.statements.push(
 				pixel("BrainLinkThreadTopic", {
@@ -529,6 +545,8 @@ function planReviews(
 			command?.targetTopicId
 				? "choose"
 				: decision;
+		if (review.kind !== "add_person" && decision !== "dismiss")
+			plan.affectsRoomTree = true;
 		plan.statements.push(
 			pixel("BrainResolveReview", {
 				reviewId: review.id,

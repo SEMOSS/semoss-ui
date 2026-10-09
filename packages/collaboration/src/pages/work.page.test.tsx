@@ -1,7 +1,8 @@
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
+import { toast } from "@semoss/ui/next";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import type {
 	CollaborationState,
@@ -9,10 +10,21 @@ import type {
 	Thread,
 	WorkItem,
 } from "@/features/collaboration/state/collaboration.types";
-import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
+import {
+	type CollaborationChange,
+	CollaborationSessionProvider,
+} from "@/features/collaboration/state/collaboration-session.context";
 import { WorkPage } from "./work.page";
 
 const sessions = vi.hoisted(() => ({ mounted: vi.fn() }));
+const pointerCaptureDescriptors = [
+	"hasPointerCapture",
+	"setPointerCapture",
+	"releasePointerCapture",
+].map((key) => ({
+	key,
+	descriptor: Object.getOwnPropertyDescriptor(HTMLElement.prototype, key),
+}));
 vi.mock("@/features/dashboard/topic-sessions", () => ({
 	TopicSessions: ({ topicId }: { topicId: string }) => {
 		sessions.mounted(topicId);
@@ -20,7 +32,23 @@ vi.mock("@/features/dashboard/topic-sessions", () => ({
 	},
 }));
 
+beforeAll(() => {
+	// JSDOM lacks pointer capture used by the shared Select and toast primitives.
+	HTMLElement.prototype.hasPointerCapture = () => false;
+	HTMLElement.prototype.setPointerCapture = () => undefined;
+	HTMLElement.prototype.releasePointerCapture = () => undefined;
+});
+
+afterAll(() => {
+	for (const { key, descriptor } of pointerCaptureDescriptors) {
+		if (descriptor)
+			Object.defineProperty(HTMLElement.prototype, key, descriptor);
+		else Reflect.deleteProperty(HTMLElement.prototype, key);
+	}
+});
+
 afterEach(() => {
+	act(() => toast.dismiss());
 	cleanup();
 	vi.clearAllMocks();
 });
@@ -174,6 +202,7 @@ function workState(): CollaborationState {
 	state.items = specifications.map((specification) => ({
 		...item,
 		actorId: person.id,
+		priority: "P2",
 		title: `Action ${specification.id}`,
 		threadId: specification.id,
 		askType: "reply",
@@ -209,44 +238,56 @@ function workState(): CollaborationState {
 	return state;
 }
 
-/** Mounts real Work composition and shared commands without room/network reads. */
+/** Mounts real task composition and shared commands without room/network reads. */
 function renderWork(path: string, initialState = workState()) {
+	const onChange = vi.fn<(change: CollaborationChange) => void>();
 	const router = createMemoryRouter(
 		[
 			...[
+				"/tasks",
+				"/tasks/topics",
 				"/work",
 				"/work/all",
 				"/work/waiting",
 				"/work/done",
+				"/work/topics",
 				"/work/topic/:topicId",
+				"/tasks/all",
+				"/tasks/waiting",
+				"/tasks/done",
+				"/tasks/topic/:topicId",
 			].map((route) => ({ path: route, Component: WorkPage })),
+			{ path: "/for-you", element: <h1>For you queue</h1> },
 			{ path: "/thread/:threadId", element: <p>Source import</p> },
 		],
 		{ initialEntries: [path] },
 	);
 	render(
-		<CollaborationSessionProvider initialState={initialState}>
+		<CollaborationSessionProvider
+			initialState={initialState}
+			onChange={onChange}
+		>
 			<RouterProvider router={router} />
 		</CollaborationSessionProvider>,
 	);
-	return { router, user: userEvent.setup() };
+	return { router, user: userEvent.setup(), onChange };
 }
 
-it("opens Work as a topic index with selector-based counts and the existing new-topic dialog", async () => {
-	const { user } = renderWork("/work");
-	expect(screen.getByRole("heading", { name: "Work" })).toBeVisible();
-	const index = screen.getByRole("list", { name: "Work topics" });
+it("keeps the topic directory and existing new-topic dialog reachable from Tasks", async () => {
+	const { user } = renderWork("/tasks/topics");
+	expect(screen.getByRole("heading", { name: "Topics" })).toBeVisible();
+	const index = screen.getByRole("list", { name: "Task topics" });
 	const alpha = within(index).getByRole("link", { name: /Alpha launch/ });
-	expect(alpha).toHaveAttribute("href", "/work/topic/alpha");
+	expect(alpha).toHaveAttribute("href", "/tasks/topic/alpha");
 	expect(alpha).toHaveTextContent("Ship the launch with the customer.");
 	expect(alpha).toHaveTextContent("3 open");
 	expect(alpha).toHaveTextContent("1 waiting");
 	expect(alpha).not.toHaveTextContent("999");
 	expect(screen.queryByText("Archived topic")).not.toBeInTheDocument();
 	expect(screen.queryByRole("article")).not.toBeInTheDocument();
-	expect(screen.getByRole("link", { name: "All work" })).toHaveAttribute(
+	expect(screen.getByRole("link", { name: "For you" })).toHaveAttribute(
 		"href",
-		"/work/all",
+		"/for-you",
 	);
 	const create = screen.getByRole("button", { name: "New topic" });
 	await user.click(create);
@@ -255,40 +296,44 @@ it("opens Work as a topic index with selector-based counts and the existing new-
 	expect(create).toHaveFocus();
 });
 
-it("keeps topic goals visible and supporting context confirmed and scoped", () => {
-	const state = workState();
-	renderWork("/work/topic/alpha", state);
-	expect(screen.getByRole("heading", { name: "Alpha launch" })).toBeVisible();
-	expect(
-		screen.getByRole("region", { name: "Topic goals" }),
-	).toHaveTextContent("Launch by Friday");
-	expect(screen.getByRole("link", { name: "Edit in Brain" })).toHaveAttribute(
-		"href",
-		"/brain/topics/alpha",
-	);
-	const context = screen.getByRole("complementary", {
-		name: "Topic context",
-	});
-	expect(context).toHaveTextContent("Confirmed Alpha context");
-	expect(context).not.toHaveTextContent("Unconfirmed Alpha guess");
-	expect(context).toHaveTextContent("Launch owner");
-	expect(context).not.toHaveTextContent("Suggested");
-	expect(context).toHaveTextContent("Source alpha-done");
-	expect(
-		screen.queryByRole("heading", { name: "Brain wants to check" }),
-	).not.toBeInTheDocument();
-	expect(screen.getByRole("tab", { name: "Open 3" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
-	expect(
-		screen.queryByRole("link", { name: "Action beta-open" }),
-	).not.toBeInTheDocument();
-	expect(sessions.mounted).not.toHaveBeenCalled();
-});
+it.each(["/tasks/topic/alpha", "/work/topic/alpha"])(
+	"keeps topic goals and confirmed context scoped on %s",
+	(path) => {
+		const state = workState();
+		renderWork(path, state);
+		expect(
+			screen.getByRole("heading", { name: "Alpha launch" }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("region", { name: "Topic goals" }),
+		).toHaveTextContent("Launch by Friday");
+		expect(
+			screen.getByRole("link", { name: "Edit in Brain" }),
+		).toHaveAttribute("href", "/brain/topics/alpha");
+		const context = screen.getByRole("complementary", {
+			name: "Topic context",
+		});
+		expect(context).toHaveTextContent("Confirmed Alpha context");
+		expect(context).not.toHaveTextContent("Unconfirmed Alpha guess");
+		expect(context).toHaveTextContent("Launch owner");
+		expect(context).not.toHaveTextContent("Suggested");
+		expect(context).toHaveTextContent("Source alpha-done");
+		expect(
+			screen.queryByRole("heading", { name: "Brain wants to check" }),
+		).not.toBeInTheDocument();
+		expect(screen.getByRole("tab", { name: "Open 3" })).toHaveAttribute(
+			"aria-selected",
+			"true",
+		);
+		expect(
+			screen.queryByRole("link", { name: "Action beta-open" }),
+		).not.toBeInTheDocument();
+		expect(sessions.mounted).not.toHaveBeenCalled();
+	},
+);
 
 it("combines topic status and source filters, keeps multi-topic work, and sorts scoped rows", async () => {
-	const { user } = renderWork("/work/topic/alpha");
+	const { user } = renderWork("/tasks/topic/alpha");
 	await user.click(
 		screen.getByRole("button", { name: "Filter by source: All sources" }),
 	);
@@ -338,39 +383,8 @@ it("combines topic status and source filters, keeps multi-topic work, and sorts 
 	).toBeVisible();
 });
 
-it("defaults All work to Needs you while preserving Open and direct legacy statuses", async () => {
-	const { router, user } = renderWork("/work/all");
-	expect(screen.getByRole("tab", { name: "Needs you 3" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
-	expect(
-		screen.queryByRole("link", { name: "Action alpha-fyi" }),
-	).not.toBeInTheDocument();
-	await user.click(screen.getByRole("tab", { name: "Open 4" }));
-	expect(
-		screen.getByRole("link", { name: "Action alpha-fyi" }),
-	).toBeVisible();
-	expect(
-		screen.queryByRole("link", { name: "Action alpha-muted" }),
-	).not.toBeInTheDocument();
-	expect(
-		screen.queryByRole("link", { name: "Action alpha-auto" }),
-	).not.toBeInTheDocument();
-	await act(() => router.navigate("/work/waiting"));
-	expect(screen.getByRole("tab", { name: "Waiting 1" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
-	await act(() => router.navigate("/work/done"));
-	expect(screen.getByRole("tab", { name: "Handled 1" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
-});
-
 it("opens source threads by their canonical import route and reads sessions only on selection", async () => {
-	const { router, user } = renderWork("/work/topic/alpha");
+	const { router, user } = renderWork("/tasks/topic/alpha");
 	await user.click(screen.getByRole("tab", { name: "Threads" }));
 	expect(sessions.mounted).not.toHaveBeenCalled();
 	expect(
@@ -388,7 +402,7 @@ it("opens source threads by their canonical import route and reads sessions only
 	expect(sessions.mounted).toHaveBeenCalledWith("alpha");
 	await user.click(screen.getByRole("tab", { name: "Actions" }));
 	expect(screen.queryByText("Sessions for alpha")).not.toBeInTheDocument();
-	await act(() => router.navigate("/work/topic/beta"));
+	await act(() => router.navigate("/tasks/topic/beta"));
 	expect(screen.getByRole("tab", { name: "Actions" })).toHaveAttribute(
 		"aria-selected",
 		"true",
@@ -403,14 +417,75 @@ it("opens source threads by their canonical import route and reads sessions only
 });
 
 it("never falls back to global work for an unknown topic", () => {
-	renderWork("/work/topic/missing");
+	renderWork("/tasks/topic/missing");
 	expect(
 		screen.getByRole("heading", { name: "Topic unavailable" }),
 	).toBeVisible();
-	expect(screen.getByRole("link", { name: "Back to Work" })).toHaveAttribute(
-		"href",
-		"/work",
-	);
+	expect(
+		screen.getByRole("link", { name: "Back to For you" }),
+	).toHaveAttribute("href", "/for-you");
 	expect(screen.queryByRole("article")).not.toBeInTheDocument();
 	expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+});
+
+it.each(["/tasks", "/tasks/all", "/work", "/work/all"])(
+	"redirects the saved queue %s to For you while preserving filters",
+	async (path) => {
+		const { router } = renderWork(
+			`${path}?view=list&topic=alpha&q=pricing&status=open#review`,
+		);
+		await screen.findByRole("heading", { name: "For you queue" });
+		expect(router.state.location.pathname).toBe("/for-you");
+		expect(
+			Object.fromEntries(
+				new URLSearchParams(router.state.location.search),
+			),
+		).toEqual({ view: "list", topic: "alpha", q: "pricing" });
+		expect(router.state.location.hash).toBe("#review");
+		expect(router.state.historyAction).toBe("REPLACE");
+	},
+);
+
+it.each([
+	["/tasks/waiting", "Waiting on others", "Waiting 1", "alpha-wait"],
+	["/work/waiting", "Waiting on others", "Waiting 1", "alpha-wait"],
+	["/tasks/done", "Handled", "Handled 1", "alpha-done"],
+	["/work/done", "Handled", "Handled 1", "alpha-done"],
+	["/tasks?status=waiting", "Waiting on others", "Waiting 1", "alpha-wait"],
+	["/work/all?status=done", "Handled", "Handled 1", "alpha-done"],
+])(
+	"preserves the status bookmark %s outside the pending queue",
+	async (path, title, tab, id) => {
+		const { router } = renderWork(path);
+		await screen.findByRole("heading", { name: title });
+		expect(screen.getByRole("tab", { name: tab })).toHaveAttribute(
+			"aria-selected",
+			"true",
+		);
+		expect(
+			screen.getByRole("link", { name: `Action ${id}` }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("link", { name: "Back to For you" }),
+		).toHaveAttribute("href", "/for-you");
+		expect(
+			screen.queryByRole("button", { name: "New task" }),
+		).not.toBeInTheDocument();
+		expect(router.state.location.pathname).toBe(
+			title === "Handled" ? "/tasks/done" : "/tasks/waiting",
+		);
+	},
+);
+
+it("preserves topic and search scope through a saved handled link", async () => {
+	const { router } = renderWork("/work/all?status=done&topic=beta&q=alpha");
+	await screen.findByRole("heading", { name: "Handled" });
+	expect(screen.getByRole("tab", { name: "Handled 0" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	expect(screen.queryByRole("article")).not.toBeInTheDocument();
+	expect(
+		Object.fromEntries(new URLSearchParams(router.state.location.search)),
+	).toEqual({ topic: "beta", q: "alpha" });
 });

@@ -1,14 +1,26 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
+import { CollaborationWorkbenchLayoutContext } from "@/features/collaboration/components/collaboration-workbench-layout.context";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "@/features/collaboration/state/collaboration-session.context";
+import { RoomReadContext } from "@/features/room-tree/room-read.context";
 import type { Session } from "@/types/session";
 import { RoomSession } from "../room-session";
 import { RoomWorkspace } from "./room-workspace";
+
+vi.mock("@semoss/i18n", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/i18n")>()),
+	useTranslation: () => ({
+		t: (key: string, options?: { name?: string }) =>
+			key === "contextItems.remove"
+				? `Remove ${options?.name} from your next message`
+				: key,
+	}),
+}));
 
 // what the mocked composer sends
 const composerText = vi.hoisted(() => ({ value: "" }));
@@ -167,6 +179,41 @@ describe("RoomWorkspace", () => {
 		expect(workbenchState.openWorkbench).toHaveBeenCalledWith();
 	});
 
+	it("registers only an actual loaded room while its history is available", () => {
+		workbenchState.isOpen = false;
+		const owner = new RoomSession("test-owner", "room-1");
+		const releaseRoom = vi.fn();
+		const viewRoom = vi.fn(() => releaseRoom);
+		const readContext = { viewRoom };
+		const workspace = (isReady?: boolean, isLoadingHistory = false) => (
+			<RoomReadContext.Provider value={readContext}>
+				<RoomWorkspace
+					{...defaultProps}
+					roomSnapshot={
+						isReady === undefined
+							? undefined
+							: { ...owner.getSnapshot(), isReady }
+					}
+					isLoadingHistory={isLoadingHistory}
+				/>
+			</RoomReadContext.Provider>
+		);
+		const view = render(workspace());
+		expect(viewRoom).not.toHaveBeenCalled();
+		view.rerender(workspace(false));
+		expect(viewRoom).not.toHaveBeenCalled();
+		view.rerender(workspace(true, true));
+		expect(viewRoom).not.toHaveBeenCalled();
+		view.rerender(workspace(true));
+		expect(viewRoom).toHaveBeenCalledExactlyOnceWith("room-1");
+		view.rerender(workspace(true));
+		expect(viewRoom).toHaveBeenCalledOnce();
+		view.rerender(workspace(true, true));
+		expect(releaseRoom).toHaveBeenCalledOnce();
+		view.unmount();
+		owner.dispose();
+	});
+
 	it("opens Settings as a selected panel and allows opening an empty workbench from the composer", () => {
 		workbenchState.isOpen = false;
 		render(<RoomWorkspace {...defaultProps} />);
@@ -199,6 +246,69 @@ describe("RoomWorkspace", () => {
 		expect(
 			screen.getByRole("textbox", { name: "Panel draft" }),
 		).toHaveValue("Keep these settings");
+	});
+
+	it("registers only an open shell workbench and keeps its conversation mounted", () => {
+		workbenchState.isOpen = false;
+		const releaseConversation = vi.fn();
+		const registerConversation = vi.fn(() => releaseConversation);
+		const shellLayout = { registerConversation };
+		const workspace = (showToolWorkbench = true) => (
+			<CollaborationWorkbenchLayoutContext.Provider value={shellLayout}>
+				<RoomWorkspace
+					{...defaultProps}
+					showToolWorkbench={showToolWorkbench}
+				/>
+			</CollaborationWorkbenchLayoutContext.Provider>
+		);
+		const view = render(workspace());
+		const conversation = screen.getByRole("region", {
+			name: "Communication thread",
+		});
+		const wrapper = conversation.parentElement;
+		expect(registerConversation).not.toHaveBeenCalled();
+		expect(wrapper).not.toHaveClass(
+			"md:pt-(--collaboration-header-height)",
+		);
+
+		workbenchState.isOpen = true;
+		view.rerender(workspace());
+		expect(registerConversation).toHaveBeenCalledExactlyOnceWith(wrapper);
+		expect(wrapper).toHaveClass("md:pt-(--collaboration-header-height)");
+		fireEvent.change(screen.getByRole("textbox", { name: "Panel draft" }), {
+			target: { value: "Keep the panel draft" },
+		});
+		view.rerender(workspace());
+		expect(registerConversation).toHaveBeenCalledTimes(1);
+		expect(
+			screen.getByRole("region", { name: "Communication thread" }),
+		).toBe(conversation);
+
+		workbenchState.isOpen = false;
+		view.rerender(workspace());
+		expect(releaseConversation).toHaveBeenCalledOnce();
+		expect(wrapper).not.toHaveClass(
+			"md:pt-(--collaboration-header-height)",
+		);
+		workbenchState.isOpen = true;
+		view.rerender(workspace());
+		expect(registerConversation).toHaveBeenCalledTimes(2);
+		expect(
+			screen.getByRole("textbox", { name: "Panel draft" }),
+		).toHaveValue("Keep the panel draft");
+		expect(
+			screen.getByRole("region", { name: "Communication thread" }),
+		).toBe(conversation);
+
+		view.rerender(workspace(false));
+		expect(releaseConversation).toHaveBeenCalledTimes(2);
+		expect(wrapper).not.toHaveClass(
+			"md:pt-(--collaboration-header-height)",
+		);
+		view.rerender(workspace());
+		expect(registerConversation).toHaveBeenCalledTimes(3);
+		view.unmount();
+		expect(releaseConversation).toHaveBeenCalledTimes(3);
 	});
 
 	it("aligns the composer with the message column", () => {
@@ -265,7 +375,7 @@ it("visibly queues the imported source file and allows removal before the first 
 	).not.toBeInTheDocument();
 	fireEvent.click(
 		screen.getByRole("button", {
-			name: "Remove Project-email.md from context",
+			name: "Remove Project-email.md from your next message",
 		}),
 	);
 	expect(remove).toHaveBeenCalledWith(file.fileLocation);

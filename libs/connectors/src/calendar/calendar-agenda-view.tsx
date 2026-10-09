@@ -1,10 +1,11 @@
 import {
+	ArrowLeftIcon,
 	CalendarDaysIcon,
 	CalendarIcon,
 	RefreshCwIcon,
 	VideoIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import type { ConnectorBrand } from "@semoss/shared";
@@ -21,7 +22,10 @@ import type {
 } from "../core/connector.types";
 import { groupCalendarEvents } from "../core/connector-calendar";
 import { runConnectorPixel } from "../core/connector-pixel";
-import { useCalendarWindow } from "../core/use-calendar-window";
+import {
+	type CalendarWindow,
+	useCalendarWindow,
+} from "../core/use-calendar-window";
 import { useConnectorQuery } from "../core/use-connector-query";
 import {
 	type ConnectorSaveRequest,
@@ -36,12 +40,26 @@ import {
 	parseCalendarEventDetail,
 	parseCalendarEvents,
 } from "./calendar.parsers";
-import type { CalendarEvent } from "./calendar.types";
+import type { CalendarEvent, CalendarEventSelection } from "./calendar.types";
 import { CALENDAR_APPS } from "./calendar-apps";
 import { CalendarEventView } from "./calendar-event-view";
 import { useEventTime } from "./use-event-time";
 
 const MAX_EVENTS = 100;
+
+/** The current calendar's actions and live state for host-owned controls. */
+export interface CalendarAgendaViewControls {
+	/** The account these controls belong to, including when providers are retained. */
+	provider: ConnectorAccount;
+	/** Reload the current date range without changing its selected view or date. */
+	refresh: () => void;
+	/** Whether the current calendar range is loading or refreshing. */
+	isRefreshing: boolean;
+	/** The provider's calendar home, independent of an individual event. */
+	calendarUrl: string;
+	/** The localized provider app name, such as Outlook or Google Calendar. */
+	appName: string;
+}
 
 /** Props for {@link CalendarAgendaView}. */
 export interface CalendarAgendaViewProps extends ConnectorViewerProps {
@@ -49,6 +67,24 @@ export interface CalendarAgendaViewProps extends ConnectorViewerProps {
 	provider: ConnectorAccount;
 	/** The logo the header shows. Defaults to the calendar's own. */
 	brand?: ConnectorBrand;
+	/** Compact browsers show an agenda and open the calendar in the host. */
+	presentation?: "full" | "compact";
+	/** The host's provider selector, beside refresh in a compact browser. */
+	providerControl?: ReactNode;
+	/** Shared navigation for an agenda and its host-owned full calendar. */
+	calendar?: CalendarWindow;
+	/** Open the event in the host while retaining this browser's list. */
+	onOpenEvent?: (selection: CalendarEventSelection) => void;
+	/** Open the full calendar from a compact browser. */
+	onOpenCalendar?: () => void;
+	/** Fall back to an agenda below 640px of available width. Defaults to false. */
+	responsive?: boolean;
+	/** Return from a host-owned full calendar to its browser. */
+	onBack?: () => void;
+	/** Receives host-control state when it changes. Keep the receiver identity stable. */
+	onControls?: (controls: CalendarAgendaViewControls) => void;
+	/** Show the viewer's own Refresh action. Defaults to true. */
+	showRefresh?: boolean;
 }
 
 /**
@@ -57,18 +93,40 @@ export interface CalendarAgendaViewProps extends ConnectorViewerProps {
  * the same way; only the reactors it calls and the names it shows differ.
  */
 export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
-	const { provider, onSignIn, showHeader = true } = props;
+	const {
+		provider,
+		onSignIn,
+		showHeader = true,
+		presentation = "full",
+		providerControl,
+		onOpenEvent,
+		onOpenCalendar,
+		responsive = false,
+		onBack,
+		onControls,
+		showRefresh = true,
+	} = props;
 	const app = CALENDAR_APPS[provider];
 	const { t } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver(app.service, props);
 	const describeTime = useEventTime();
-	const calendar = useCalendarWindow();
+	const ownCalendar = useCalendarWindow();
+	const calendar = props.calendar ?? ownCalendar;
 	const [openEvent, setOpenEvent] = useState<CalendarEvent | null>(null);
 	const { listRef, rememberItem } = useReturnFocus<HTMLDivElement>(
 		openEvent !== null,
 	);
 	const serviceName = t(app.nameKey);
+	const isCompact = presentation === "compact";
+	function handleOpenEvent(event: CalendarEvent, itemKey: string): void {
+		if (onOpenEvent) {
+			onOpenEvent({ event, itemKey });
+			return;
+		}
+		rememberItem(itemKey);
+		setOpenEvent(event);
+	}
 	const query = useConnectorQuery(
 		app.pixels.listEvents({
 			start: calendar.range.start.toISOString(),
@@ -77,6 +135,21 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 		}),
 		parseCalendarEvents,
 	);
+	const refresh = query.reload;
+	const isRefreshing = query.status === "loading" || query.isRefreshing;
+	const calendarUrl = app.calendarUrl;
+	const appName = t(app.appNameKey);
+	// Hosts may publish controls into their own store. Primitive fields and the
+	// query's stable reload callback prevent a host-render publication loop.
+	useEffect(() => {
+		onControls?.({
+			provider,
+			refresh,
+			isRefreshing,
+			calendarUrl,
+			appName,
+		});
+	}, [onControls, provider, refresh, isRefreshing, calendarUrl, appName]);
 	const events = query.data?.events ?? [];
 	const days = groupCalendarEvents(events, calendar.range, (event) => ({
 		start: event.isAllDay
@@ -116,24 +189,29 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 
 	// in the header, or at the end of the toolbar when the host leaves
 	// the header out
-	const refreshButton = (
+	const refreshButton = showRefresh ? (
 		<ConnectorIconButton
 			icon={RefreshCwIcon}
 			label={t("common.refresh")}
 			isSpinning={query.isRefreshing}
 			onClick={query.reload}
 		/>
-	);
+	) : null;
 
 	return (
-		<div className="flex h-full min-h-0 flex-col">
+		<div className="flex h-full min-h-0 min-w-0 flex-col">
 			<div
 				className={cn(
-					"flex h-full min-h-0 flex-col",
+					"flex h-full min-h-0 min-w-0 flex-col",
 					openEvent !== null && "hidden",
 				)}
 			>
-				{showHeader ? (
+				{isCompact ? (
+					<div className="flex min-w-0 shrink-0 items-center gap-2 border-border border-b px-3 py-2">
+						<div className="min-w-0 flex-1">{providerControl}</div>
+						{refreshButton}
+					</div>
+				) : showHeader ? (
 					<ConnectorViewerHeader
 						icon={CalendarDaysIcon}
 						brand={props.brand ?? app.brand}
@@ -142,9 +220,24 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 						{refreshButton}
 					</ConnectorViewerHeader>
 				) : null}
+				{onBack ? (
+					<div className="shrink-0 border-border border-b px-2 py-1">
+						<ConnectorIconButton
+							icon={ArrowLeftIcon}
+							isDirectional
+							label={t("calendar.back")}
+							onClick={onBack}
+						/>
+					</div>
+				) : null}
 				<ConnectorCalendar
 					calendar={calendar}
-					actions={showHeader ? undefined : refreshButton}
+					presentation={presentation}
+					responsive={responsive}
+					onOpenCalendar={onOpenCalendar}
+					actions={
+						showHeader || isCompact ? undefined : refreshButton
+					}
 					query={{ ...query, data: days }}
 					serviceName={serviceName}
 					account={app.account}
@@ -172,10 +265,7 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 					}
 					getTitle={eventTitle}
 					getEventKey={(event) => event.id}
-					onOpenEvent={(event, itemKey) => {
-						rememberItem(itemKey);
-						setOpenEvent(event);
-					}}
+					onOpenEvent={handleOpenEvent}
 					renderEvent={(event, day) => {
 						const request = eventRequest(event);
 						const title = eventTitle(event);
@@ -203,10 +293,7 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 									time: describeTime(event, true),
 								})}
 								isBusy={saver.isBusy(request.key)}
-								onOpen={() => {
-									rememberItem(itemKey);
-									setOpenEvent(event);
-								}}
+								onOpen={() => handleOpenEvent(event, itemKey)}
 								actions={{
 									itemName: title,
 									serviceName: t(app.appNameKey),

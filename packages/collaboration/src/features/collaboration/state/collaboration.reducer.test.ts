@@ -505,6 +505,66 @@ describe("shared collaboration session", () => {
 		);
 	});
 
+	it.each([true, false])(
+		"activates a loaded topic suggestion without changing its source marker (sample: %s)",
+		(isSample) => {
+			const initial = createInitialCollaborationState();
+			const candidate = {
+				...initial.topics[0],
+				id: "candidate-topic",
+				status: "suggested" as const,
+				isSample,
+			};
+			const review = {
+				...initial.reviews[0],
+				id: "candidate-review",
+				kind: "new_topic" as const,
+				refId: candidate.id,
+				status: "open" as const,
+				isSample,
+				candidate: {
+					name: candidate.name,
+					accountId: candidate.accountId,
+				},
+			};
+			initial.topics = [candidate];
+			initial.reviews = [review];
+			const accepted = apply(initial, {
+				type: "review.resolve",
+				reviewId: review.id,
+				decision: "accept",
+			});
+			expect(accepted.topics).toHaveLength(1);
+			expect(accepted.topics[0]).toMatchObject({
+				id: candidate.id,
+				name: candidate.name,
+				description: candidate.description,
+				status: "active",
+				isSample,
+			});
+			expect(accepted.reviews[0]).toMatchObject({
+				status: "accepted",
+				resolvedAt: NOW,
+				isSample,
+			});
+			expect(initial.topics[0].status).toBe("suggested");
+			const refreshed = apply(accepted, {
+				type: "live.refresh",
+				updates: {
+					threads: [],
+					workspaces: {},
+					items: [],
+					topics: [candidate],
+					reviews: [review],
+					keepTopicIds: [candidate.id],
+					keepReviewIds: [review.id],
+				},
+			});
+			expect(refreshed.topics[0].status).toBe("active");
+			expect(refreshed.reviews[0].status).toBe("accepted");
+		},
+	);
+
 	it("syncs explicit next-step associations without guessing from titles", () => {
 		let state = createInitialCollaborationState();
 		state = apply(state, {
@@ -540,6 +600,50 @@ describe("shared collaboration session", () => {
 		expect(
 			state.items.find((item) => item.id === "i1")?.completedAt,
 		).toBeUndefined();
+	});
+
+	it("preserves completion time when changing priority and dates only a new completion", () => {
+		const completed = apply(createInitialCollaborationState(), {
+			type: "item.update",
+			itemId: "i1",
+			changes: { status: "done" },
+		});
+		const later = "2026-09-25T18:00:00.000Z";
+		const reprioritized = collaborationReducer(
+			completed,
+			{
+				type: "item.update",
+				itemId: "i1",
+				changes: { priority: "P1" },
+			},
+			later,
+		);
+		expect(
+			reprioritized.items.find((item) => item.id === "i1"),
+		).toMatchObject({
+			status: "done",
+			priority: "P1",
+			completedAt: NOW,
+		});
+		expect(
+			completed.items.find((item) => item.id === "i1")?.completedAt,
+		).toBe(NOW);
+		const reopened = collaborationReducer(
+			reprioritized,
+			{ type: "item.update", itemId: "i1", changes: { status: "open" } },
+			later,
+		);
+		expect(
+			reopened.items.find((item) => item.id === "i1")?.completedAt,
+		).toBeUndefined();
+		const recompleted = collaborationReducer(
+			reopened,
+			{ type: "item.update", itemId: "i1", changes: { status: "done" } },
+			later,
+		);
+		expect(
+			recompleted.items.find((item) => item.id === "i1")?.completedAt,
+		).toBe(later);
 	});
 
 	it("bounds filing thresholds to the mockup ranges", () => {

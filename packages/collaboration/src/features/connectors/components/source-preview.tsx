@@ -98,7 +98,9 @@ export function SourcePreview({
 					disabled={isLoading}
 					onClick={handleImport}
 				>
-					{importedId === identity ? "Update in Work" : "Add to Work"}
+					{importedId === identity
+						? "Update in workspace"
+						: "Add to workspace"}
 				</Button>
 				{source.sourceKind === "outlook" && (
 					<>
@@ -165,7 +167,7 @@ export function SourcePreview({
 			</div>
 			<output className="block text-muted-foreground text-sm">
 				{importedId === identity
-					? "Added to Work for this session."
+					? "Added to your workspace for this session."
 					: ""}
 			</output>
 			{source.isTruncated && (

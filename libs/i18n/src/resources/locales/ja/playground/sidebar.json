@@ -81,7 +81,18 @@
 		"openPanels": "開いているパネル",
 		"noPanels": "開いているパネルはありません",
 		"maximize": "ワークスペースを最大化",
-		"restore": "ワークスペースを元に戻す"
+		"restore": "ワークスペースを元に戻す",
+		"emails": "メール",
+		"calendar": "カレンダー",
+		"provider": "プロバイダー",
+		"panels": "ワークベンチのパネル",
+		"backToConversation": "会話に戻る",
+		"showFiles": "チャットのファイルを表示",
+		"openingFiles": "チャットのファイルを開いています…",
+		"openSettings": "設定を開く",
+		"filesError": "チャットのファイルを開けませんでした。もう一度お試しください。",
+		"itemUnavailable": "詳細を読み込むには、メールまたはカレンダーからこの項目を開いてください。",
+		"backToBrowser": "一覧に戻る"
 	},
 	"userMenu": {
 		"settings": "設定",

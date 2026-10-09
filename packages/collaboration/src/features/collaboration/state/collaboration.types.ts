@@ -173,6 +173,9 @@ export interface ReviewEntry {
 	refId: string | null;
 	status: "open" | "accepted" | "dismissed";
 	actions: string[];
+	createdAt?: string;
+	/** Live reads mark this false; older fixture entries omit it. */
+	isSample?: boolean;
 	resolvedAt?: string;
 	topicId?: string;
 	candidate?: {
@@ -410,10 +413,18 @@ export type CollaborationCommand =
 			> & {
 				/** Every active and suggested memory on the server, when the read included them. */
 				memories?: Memory[];
+				/** Complete open-review snapshot; omitted when the read did not include it. */
+				reviews?: ReviewEntry[];
+				/** Fresh context records referenced by pending reviews and memories. */
+				topics?: Topic[];
+				people?: Person[];
 				/** Changed locally while the read was in flight: the local copy wins this round. */
 				keepItemIds?: string[];
 				keepThreadIds?: string[];
 				keepMemoryIds?: string[];
+				keepReviewIds?: string[];
+				keepTopicIds?: string[];
+				keepPersonIds?: string[];
 				/** Steps added or changed locally after the read was sent: the local copy wins this round. */
 				keepStepIds?: string[];
 			};

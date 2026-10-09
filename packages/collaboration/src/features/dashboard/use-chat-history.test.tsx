@@ -6,7 +6,9 @@ import {
 import { useChatHistory } from "./use-chat-history";
 
 const { actions } = vi.hoisted(() => ({ actions: {} }));
-vi.mock("@semoss/sdk/react", () => ({ useInsight: () => ({ actions }) }));
+vi.mock("@semoss/sdk/react", () => ({
+	useInsight: () => ({ actions, insightId: "current-scope" }),
+}));
 vi.mock("@/features/rooms/api/list-rooms", () => ({
 	listRoomsPage: vi.fn(),
 	ROOM_HISTORY_CHANGED: "test-room-change",
@@ -83,4 +85,83 @@ it("retains newly created chats before the server list catches up and refreshes 
 	expect(result.current.rooms.some((row) => row.roomId === "room-1")).toBe(
 		true,
 	);
+});
+
+it("preserves creation dates and room metadata when saved activity updates history", async () => {
+	read.mockResolvedValueOnce({
+		rooms: [
+			{
+				roomId: "room-1",
+				roomName: "Existing chat",
+				workspaceId: "assistant-1",
+				dateCreated: "2025-01-01T10:00:00Z",
+				dateUpdated: "2025-02-01T10:00:00Z",
+				pinned: true,
+			},
+		],
+		hasMore: false,
+		nextOffset: 1,
+	});
+	const { result } = renderHook(useChatHistory);
+	await waitFor(() => expect(result.current.rooms).toHaveLength(1));
+	read.mockRejectedValueOnce(new Error("offline"));
+	act(() =>
+		window.dispatchEvent(
+			new CustomEvent(ROOM_HISTORY_CHANGED, {
+				detail: {
+					roomId: "room-1",
+					dateUpdated: "2026-10-08T10:00:00Z",
+				},
+			}),
+		),
+	);
+	await waitFor(() => expect(result.current.error).toBe("offline"));
+	expect(result.current.rooms[0]).toMatchObject({
+		roomId: "room-1",
+		roomName: "Existing chat",
+		workspaceId: "assistant-1",
+		dateCreated: "2025-01-01T10:00:00Z",
+		dateUpdated: "2026-10-08T10:00:00Z",
+		pinned: true,
+	});
+});
+
+it("ignores history notifications from a retained room in a previous account scope", async () => {
+	read.mockResolvedValue({
+		rooms: rows(0, 1),
+		hasMore: false,
+		nextOffset: 1,
+	});
+	const { result } = renderHook(useChatHistory);
+	await waitFor(() => expect(result.current.rooms).toHaveLength(1));
+	act(() =>
+		window.dispatchEvent(
+			new CustomEvent(ROOM_HISTORY_CHANGED, {
+				detail: {
+					scope: "previous-scope",
+					roomId: "private-room",
+					roomName: "Previous account's room",
+					dateUpdated: "2026-10-08T10:00:00Z",
+				},
+			}),
+		),
+	);
+	expect(result.current.rooms.map((room) => room.roomId)).toEqual(["room-0"]);
+	expect(read).toHaveBeenCalledOnce();
+	act(() =>
+		window.dispatchEvent(
+			new CustomEvent(ROOM_HISTORY_CHANGED, {
+				detail: {
+					scope: "current-scope",
+					roomId: "current-room",
+					roomName: "Current room",
+					dateUpdated: "2026-10-08T10:00:00Z",
+				},
+			}),
+		),
+	);
+	await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+	expect(
+		result.current.rooms.some((room) => room.roomId === "current-room"),
+	).toBe(true);
 });

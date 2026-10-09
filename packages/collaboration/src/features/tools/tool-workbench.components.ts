@@ -3,8 +3,23 @@ import { createElement } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import { RunInspector } from "@/features/runs/components/run-inspector";
+import { WORKBENCH_CALENDAR_PANEL } from "@/features/workbench-connectors/workbench-calendar-panel";
+import {
+	WORKBENCH_CALENDAR_EVENT_PANEL,
+	WORKBENCH_CALENDAR_FULL_PANEL,
+	WORKBENCH_EMAIL_DETAIL_PANEL,
+} from "@/features/workbench-connectors/workbench-connector-detail-panel";
+import { WORKBENCH_EMAILS_PANEL } from "@/features/workbench-connectors/workbench-emails-panel";
 import { ToolPanel } from "./components/tool-panel";
-import { RUN_PANEL_TYPE, TOOL_PANEL_TYPE } from "./tool-workbench.constants";
+import {
+	CALENDAR_EVENT_PANEL_TYPE,
+	CALENDAR_FULL_PANEL_TYPE,
+	CALENDAR_PANEL_TYPE,
+	EMAIL_DETAIL_PANEL_TYPE,
+	EMAILS_PANEL_TYPE,
+	RUN_PANEL_TYPE,
+	TOOL_PANEL_TYPE,
+} from "./tool-workbench.constants";
 import type { ToolPanelConfig } from "./types/tool-workbench";
 
 const TOOL_PANEL = {
@@ -31,6 +46,11 @@ export const TOOL_WORKBENCH_COMPONENTS: Record<
 	WorkbenchPanelConfigAny
 > = {
 	...FILE_PANEL_COMPONENTS,
+	[EMAILS_PANEL_TYPE]: WORKBENCH_EMAILS_PANEL,
+	[CALENDAR_PANEL_TYPE]: WORKBENCH_CALENDAR_PANEL,
+	[EMAIL_DETAIL_PANEL_TYPE]: WORKBENCH_EMAIL_DETAIL_PANEL,
+	[CALENDAR_EVENT_PANEL_TYPE]: WORKBENCH_CALENDAR_EVENT_PANEL,
+	[CALENDAR_FULL_PANEL_TYPE]: WORKBENCH_CALENDAR_FULL_PANEL,
 	[RUN_PANEL_TYPE]: RUN_PANEL,
 	[TOOL_PANEL_TYPE]: TOOL_PANEL,
 };

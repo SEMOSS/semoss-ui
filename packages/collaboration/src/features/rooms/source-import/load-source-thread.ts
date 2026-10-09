@@ -196,7 +196,7 @@ export async function loadSourceThread(
 	}
 	if (!thread || threadId.startsWith("session:")) {
 		throw new Error(
-			"This source thread is not loaded. Return to Work and open it again.",
+			"This source thread is not loaded. Return to its topic or Sources and open it again.",
 		);
 	}
 	if (

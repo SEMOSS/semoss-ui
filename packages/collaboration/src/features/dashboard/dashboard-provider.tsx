@@ -13,6 +13,9 @@ import {
 	listCalendarEvents,
 	listMail,
 } from "@/features/connectors/api/microsoft";
+import { ForYouProvider } from "@/features/for-you/for-you-provider";
+import { roomTreeActivityStorageKey } from "@/features/room-tree/room-tree-activity";
+import { RoomTreeProvider } from "@/features/room-tree/room-tree-provider";
 import { roomPath } from "@/lib/workspace-paths";
 import { DashboardContext, type SourceSelection } from "./dashboard.context";
 import { dashboardStorageKey } from "./dashboard-layout";
@@ -28,12 +31,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const account = state.profile.email || state.profile.id;
-	const layout = useDashboardLayout(
-		dashboardStorageKey(
-			account,
-			`${window.location.origin}${Env.MODULE}${window.location.pathname}`,
-		),
-	);
+	const deployment = `${window.location.origin}${Env.MODULE}${window.location.pathname}`;
+	const layout = useDashboardLayout(dashboardStorageKey(account, deployment));
 	const history = useChatHistory();
 	const [isSearchOpen, setSearchOpen] = useState(false);
 	const [source, selectSource] = useState<SourceSelection | null>(null);
@@ -124,7 +123,23 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 				key={JSON.stringify([account, insightId])}
 				actions={actions}
 			>
-				{children}
+				<RoomTreeProvider
+					key={JSON.stringify([account, insightId])}
+					actions={actions}
+					activityScope={insightId}
+					activityStorageKey={roomTreeActivityStorageKey(
+						account,
+						deployment,
+					)}
+				>
+					<ForYouProvider
+						account={account}
+						deployment={deployment}
+						refreshRevision={refreshRevision}
+					>
+						{children}
+					</ForYouProvider>
+				</RoomTreeProvider>
 			</RoomSourceAssociationsProvider>
 		</DashboardContext.Provider>
 	);

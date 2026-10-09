@@ -11,6 +11,7 @@ import {
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { selectWorkItems } from "@/features/collaboration/state/collaboration.selectors";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { useForYou } from "@/features/for-you/for-you.context";
 import { useDashboard } from "./dashboard.context";
 import { dashboardTimeZone, eventStart } from "./dashboard-calendar";
 import { dayKey } from "./dashboard-selectors";
@@ -18,8 +19,9 @@ import { dayKey } from "./dashboard-selectors";
 /** A factual, live headline for the available work and next meeting. */
 export function BriefHeader() {
 	const { state } = useCollaborationSession();
-	const { calendar, mail, refreshSources } = useDashboard();
+	const { calendar, mail } = useDashboard();
 	const updates = useWorkUpdates();
+	const queue = useForYou();
 	const [now, setNow] = useState(() => new Date());
 	useEffect(() => {
 		const timer = window.setInterval(() => setNow(new Date()), 60_000);
@@ -42,7 +44,7 @@ export function BriefHeader() {
 			: hour < 18
 				? "Good afternoon"
 				: "Good evening";
-	const pending = selectWorkItems(state, { view: "needs_me" }).items;
+	const pending = queue.items;
 	const handled = selectWorkItems(state, {
 		view: "done_today",
 	}).total;
@@ -69,7 +71,7 @@ export function BriefHeader() {
 		updates?.lastUpdated ?? calendar.checkedAt ?? mail.checkedAt;
 	const checked = checkedAt ? new Date(checkedAt) : null;
 	const isRefreshing = Boolean(
-		updates?.isRefreshing || calendar.isLoading || mail.isLoading,
+		queue.isLoading || calendar.isLoading || mail.isLoading,
 	);
 	return (
 		<header className="mb-4 space-y-4">
@@ -90,7 +92,7 @@ export function BriefHeader() {
 			</div>
 			<div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-muted-foreground text-xs leading-5">
 				<Link
-					to="/work/all"
+					to="/for-you"
 					className="inline-flex min-h-6 pointer-coarse:min-h-11 items-center gap-2 rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
 				>
 					<span
@@ -98,18 +100,18 @@ export function BriefHeader() {
 						className="size-1.5 rounded-full bg-foreground"
 					/>
 					<span className="text-foreground">{pending.length}</span>{" "}
-					open
+					for you
 				</Link>
 				<span aria-hidden="true">·</span>
 				<Link
-					to="/work/done"
+					to="/tasks/done"
 					className="inline-flex min-h-6 pointer-coarse:min-h-11 items-center gap-1 rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
 				>
 					<span className="text-foreground">{handled}</span> handled
 				</Link>
 				<span aria-hidden="true">·</span>
 				<Link
-					to="/work/waiting"
+					to="/tasks/waiting"
 					className="inline-flex min-h-6 pointer-coarse:min-h-11 items-center gap-1 rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
 				>
 					<span className="text-foreground">{waiting}</span> waiting
@@ -132,8 +134,9 @@ export function BriefHeader() {
 							disabled={isRefreshing}
 							className="-ml-2 pointer-coarse:size-11 size-7 text-muted-foreground"
 							onClick={() => {
-								updates?.refresh();
-								refreshSources();
+								queue.refresh();
+								calendar.refresh();
+								mail.refresh();
 							}}
 						>
 							<RefreshCw

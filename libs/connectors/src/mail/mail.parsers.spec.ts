@@ -27,6 +27,7 @@ describe("mail", () => {
 		});
 
 		expect(page.hasMore).toBe(true);
+		expect(page.count).toBe(1);
 		expect(page.messages[0]).toMatchObject({
 			id: "AAMk=",
 			from: "ada@example.com",
@@ -37,6 +38,38 @@ describe("mail", () => {
 			attachments: [],
 			isBodyTruncated: false,
 		});
+	});
+
+	it("counts every raw entry so paging does not repeat malformed messages", () => {
+		const page = parseMailPage({
+			messages: [{ id: "valid" }, { subject: "no id" }, null],
+			hasMore: true,
+		});
+		expect(page.count).toBe(3);
+		expect(page.messages).toHaveLength(1);
+	});
+
+	it("retains a valid server page count independently of raw and parsed rows", () => {
+		const page = parseMailPage({
+			count: 25,
+			messages: [{ id: "valid" }, { subject: "no id" }, null],
+			hasMore: true,
+		});
+		expect(page.count).toBe(25);
+		expect(page.messages).toHaveLength(1);
+	});
+
+	it.each([
+		-1,
+		1.5,
+		Number.NaN,
+		Number.POSITIVE_INFINITY,
+		Number.MAX_SAFE_INTEGER + 1,
+		"25",
+	])("falls back to the raw length for invalid server count %s", (count) => {
+		expect(
+			parseMailPage({ count, messages: [{ id: "one" }, {}] }).count,
+		).toBe(2);
 	});
 
 	it("says which text was cut, without the mark the backend leaves", () => {

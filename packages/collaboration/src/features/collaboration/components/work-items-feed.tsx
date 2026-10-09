@@ -29,7 +29,7 @@ import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { WorkItemCard } from "./work-item-card";
 
 const STATUS_FILTERS = [
-	{ value: "needs_me", label: "Needs you", view: "needs_me" },
+	{ value: "needs_me", label: "Needs review", view: "needs_me" },
 	{ value: "open", label: "Open", view: undefined },
 	{ value: "waiting", label: "Waiting", view: "waiting" },
 	{ value: "done", label: "Handled", view: "done_today" },
@@ -43,10 +43,16 @@ interface WorkItemsFeedProps {
 	topicId?: string;
 	/** Selected status when this feed is first mounted. */
 	initialFilter: WorkStatusFilter;
+	/** Search scope supplied by a bookmarked status route. */
+	search?: string;
 }
 
 /** Shared, explicitly scoped work filters and rows with existing item commands. */
-export function WorkItemsFeed({ topicId, initialFilter }: WorkItemsFeedProps) {
+export function WorkItemsFeed({
+	topicId,
+	initialFilter,
+	search,
+}: WorkItemsFeedProps) {
 	const { state } = useCollaborationSession();
 	const [sort, setSort] = useState<"top" | "latest">("top");
 	const [channel, setChannel] = useState<Channel>();
@@ -57,6 +63,7 @@ export function WorkItemsFeed({ topicId, initialFilter }: WorkItemsFeedProps) {
 	const selected = STATUS_FILTERS.find((filter) => filter.value === status);
 	const { items: all } = selectWorkItems(state, {
 		topicId,
+		search,
 		view: selected?.view,
 		sort,
 	});
@@ -84,7 +91,7 @@ export function WorkItemsFeed({ topicId, initialFilter }: WorkItemsFeedProps) {
 		>
 			<div className="border-border border-b p-4 md:px-5">
 				<TabsList
-					aria-label="Work status"
+					aria-label="Task status"
 					className={collaborationTabsStyles.list}
 				>
 					{filters.map((filter) => (
@@ -98,6 +105,7 @@ export function WorkItemsFeed({ topicId, initialFilter }: WorkItemsFeedProps) {
 								{
 									selectWorkItems(state, {
 										topicId,
+										search,
 										view: filter.view,
 									}).total
 								}
@@ -111,7 +119,7 @@ export function WorkItemsFeed({ topicId, initialFilter }: WorkItemsFeedProps) {
 					type="single"
 					size="sm"
 					value={sort}
-					aria-label="Sort work"
+					aria-label="Sort tasks"
 					onValueChange={(value) => {
 						if (value === "top" || value === "latest")
 							setSort(value);
@@ -230,7 +238,7 @@ export function WorkItemsFeed({ topicId, initialFilter }: WorkItemsFeedProps) {
 					<div className="space-y-3 p-6">
 						<P className="text-muted-foreground text-sm">
 							{status === "needs_me"
-								? "No work needs you right now."
+								? "No tasks need you right now."
 								: `No ${selected?.label.toLocaleLowerCase() ?? "open"} items ${topicId ? "in this topic" : "in this view"}.`}
 						</P>
 						{status !== "open" ? (
@@ -239,7 +247,7 @@ export function WorkItemsFeed({ topicId, initialFilter }: WorkItemsFeedProps) {
 								size="sm"
 								onClick={() => setStatus("open")}
 							>
-								Show all open work
+								Show all open tasks
 							</Button>
 						) : (
 							<Button asChild variant="outline" size="sm">

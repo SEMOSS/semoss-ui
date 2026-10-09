@@ -60,6 +60,8 @@ export interface MailPixels {
 	listMail: (options: {
 		folder: string;
 		limit: number;
+		/** How many messages to skip before this page. */
+		offset?: number;
 		subject?: string;
 		unreadOnly?: boolean;
 	}) => string;
@@ -152,6 +154,7 @@ export const mailPixels = (prefix: string): MailPixels => ({
 		call(`${prefix}ListMail`, {
 			folder: id(options.folder),
 			limit: options.limit,
+			offset: options.offset,
 			subject: text(options.subject),
 			unreadOnly: options.unreadOnly || undefined,
 			includeBody: false,

@@ -172,10 +172,83 @@ export function mapMemory(row: Row): Memory {
 	};
 }
 
-const LISTED_MEMORIES = pixel("BrainListMemories", {
-	state: ["active", "suggested"],
-	limit: 500,
+const REFRESH_PAGE_SIZE = 500;
+const MAX_REFRESH_PAGES = 100;
+
+const completePageSchema = z.object({
+	items: z.array(z.object({ id: z.string().min(1) }).passthrough()),
+	total: z.number().int().nonnegative(),
 });
+
+/**
+ * Read a complete, stable offset-paginated collection before replacing local records.
+ * A changing total, repeated row, or interrupted page must never look like a deletion.
+ */
+async function readCompleteRows(
+	actions: InsightActions,
+	firstPage: unknown,
+	statementAt: (offset: number) => string,
+	label: string,
+): Promise<Row[]> {
+	const first = completePageSchema.parse(firstPage);
+	const total = first.total;
+	const rows = new Map<string, Row>();
+	let page = first;
+	let offset = 0;
+	for (let pageNumber = 0; pageNumber < MAX_REFRESH_PAGES; pageNumber += 1) {
+		if (page.total !== total || (!page.items.length && offset < total))
+			throw new Error(`${label} changed while refreshing. Try again.`);
+		for (const row of page.items) {
+			if (rows.has(row.id))
+				throw new Error(
+					`${label} returned overlapping pages. Try again.`,
+				);
+			rows.set(row.id, row);
+		}
+		offset += page.items.length;
+		if (offset === total) return [...rows.values()];
+		if (offset > total)
+			throw new Error(
+				`${label} returned an incomplete count. Try again.`,
+			);
+		if (pageNumber + 1 === MAX_REFRESH_PAGES) break;
+		const [raw] = await runBatch(actions, [statementAt(offset)]);
+		page = completePageSchema.parse(raw);
+	}
+	throw new Error(`${label} could not be fully refreshed. Try again.`);
+}
+
+const reviewStatement = (offset: number) =>
+	pixel("BrainListReview", {
+		status: "open",
+		limit: REFRESH_PAGE_SIZE,
+		offset,
+	});
+const memoryStatement = (state: "active" | "suggested", offset: number) =>
+	pixel("BrainListMemories", {
+		state: [state],
+		limit: REFRESH_PAGE_SIZE,
+		offset,
+	});
+const peopleStatement = (offset: number) =>
+	pixel("BrainListPeople", { limit: REFRESH_PAGE_SIZE, offset });
+
+/** Keep one memory identity when its state changes between the two independent lists. */
+function mapListedMemories(active: Row[], suggested: Row[]): Memory[] {
+	if (
+		active.some((row) => row.state !== "active") ||
+		suggested.some((row) => row.state !== "suggested")
+	)
+		throw new Error("Memories returned an unexpected state. Try again.");
+	return [
+		...new Map(
+			[...active, ...suggested].map((row) => [
+				str(row.id),
+				mapMemory(row),
+			]),
+		).values(),
+	];
+}
 
 // the platform agent behind each thread's assistant; absent when unset or not shared with this user
 function mapThreadAgent(value: unknown): ThreadAgent | null {
@@ -384,6 +457,8 @@ function mapReview(row: Row, topics: Topic[]): ReviewEntry {
 				: (opt(row.refId) ?? null),
 		status: (row.status as ReviewEntry["status"]) ?? "open",
 		actions: list<string>(row.actions),
+		createdAt: opt(row.createdAt),
+		isSample: false,
 		resolvedAt: opt(row.resolvedAt),
 		topicId: kind === "add_person" ? opt(data.suggestedTopic) : undefined,
 		candidate:
@@ -396,7 +471,7 @@ function mapReview(row: Row, topics: Topic[]): ReviewEntry {
 	};
 }
 
-/** Loads everything the Work and Brain screens read, in two requests. */
+/** Load initial task/context data, all pending pages, and complete topic details. */
 export async function loadLiveState(
 	actions: InsightActions,
 ): Promise<CollaborationState> {
@@ -414,7 +489,8 @@ export async function loadLiveState(
 		rulesPage,
 		roomsPage,
 		workspacesPage,
-		memoriesPage,
+		activeMemoriesPage,
+		suggestedMemoriesPage,
 	] = (await runBatch(actions, [
 		pixel("BrainGetProfile"),
 		pixel("BrainGetSettings"),
@@ -423,16 +499,18 @@ export async function loadLiveState(
 		pixel("BrainListPeople", { limit: 5000 }),
 		pixel("BrainListThreads", { limit: 5000, detail: true }),
 		pixel("WorkListItems", { view: "all", limit: 5000 }),
-		pixel("BrainListReview", { status: "open", limit: 1000 }),
+		reviewStatement(0),
 		pixel("BrainListReview", { status: "accepted", limit: 1000 }),
 		pixel("BrainListReview", { status: "dismissed", limit: 1000 }),
 		pixel("BrainListRules"),
 		pixel("WorkListOpenRooms"),
 		pixel("WorkListWorkspaces"),
-		LISTED_MEMORIES,
+		memoryStatement("active", 0),
+		memoryStatement("suggested", 0),
 	])) as [
 		Row,
 		Row,
+		Page,
 		Page,
 		Page,
 		Page,
@@ -452,10 +530,31 @@ export async function loadLiveState(
 		...new Set(topicsPage.items.map((topic) => str(topic.id))),
 	];
 	// topic goals and people come from the detail call; topic notes are memories
-	const topicRows = (await runBatch(
-		actions,
-		topicIds.map((topicId) => pixel("BrainGetTopic", { topicId })),
-	)) as Row[];
+	const [topicRows, openReviewRows, activeMemoryRows, suggestedMemoryRows] =
+		await Promise.all([
+			runBatch(
+				actions,
+				topicIds.map((topicId) => pixel("BrainGetTopic", { topicId })),
+			) as Promise<Row[]>,
+			readCompleteRows(
+				actions,
+				openReviews,
+				reviewStatement,
+				"Review suggestions",
+			),
+			readCompleteRows(
+				actions,
+				activeMemoriesPage,
+				(offset) => memoryStatement("active", offset),
+				"Active memories",
+			),
+			readCompleteRows(
+				actions,
+				suggestedMemoriesPage,
+				(offset) => memoryStatement("suggested", offset),
+				"Suggested memories",
+			),
+		]);
 	const topics = topicRows.map(mapTopic);
 	const people = peoplePage.items.map(mapPerson);
 	const self = people.find((person) => person.relationship === "self");
@@ -470,7 +569,7 @@ export async function loadLiveState(
 		threads: threadsPage.items.map(mapThread),
 		items: itemsPage.items.map(mapItem),
 		reviews: [
-			...openReviews.items,
+			...openReviewRows,
 			...acceptedReviews.items,
 			...dismissedReviews.items,
 		].map((row) => mapReview(row, topics)),
@@ -483,7 +582,7 @@ export async function loadLiveState(
 		),
 		sources: mapSources(settings),
 		workspaces: mapWorkspaces(workspacesPage),
-		memories: memoriesPage.items.map(mapMemory),
+		memories: mapListedMemories(activeMemoryRows, suggestedMemoryRows),
 		openThreadIds: roomsPage.items.map((room) => str(room.threadId)),
 		sequence: 1,
 	};
@@ -710,21 +809,38 @@ export function readThreadInsights(
 	);
 }
 
-/** Refresh work metadata through existing bounded reads without reloading the application. */
-export async function readWorkUpdates(actions: InsightActions): Promise<
-	Pick<
+/** Counts from the last completely loaded pending-review snapshot. */
+export interface PendingReviewCoverage {
+	reviews: number;
+	suggestedMemories: number;
+}
+
+/** One atomic refresh; optional context fields preserve compatibility with isolated callers. */
+export interface WorkUpdates
+	extends Pick<
 		CollaborationState,
 		"threads" | "workspaces" | "items" | "memories"
-	> & {
-		lastMailCheck: MailCheck | null;
-	}
-> {
+	> {
+	reviews?: ReviewEntry[];
+	topics?: Topic[];
+	people?: Person[];
+	pendingCoverage?: PendingReviewCoverage;
+	lastMailCheck: MailCheck | null;
+}
+
+/** Refresh task metadata and complete pending collections without replacing mounted editors. */
+export async function readWorkUpdates(
+	actions: InsightActions,
+): Promise<WorkUpdates> {
 	const outputs = await runBatch(actions, [
 		pixel("BrainListThreads", { limit: 5000, detail: true }),
 		pixel("WorkListWorkspaces"),
 		pixel("WorkListItems", { view: "all", limit: 5000 }),
 		pixel("BrainGetJob", { kind: "sync" }),
-		LISTED_MEMORIES,
+		memoryStatement("active", 0),
+		memoryStatement("suggested", 0),
+		reviewStatement(0),
+		peopleStatement(0),
 	]);
 	const schema = z.object({
 		items: z.array(z.record(z.string(), z.unknown())),
@@ -733,11 +849,77 @@ export async function readWorkUpdates(actions: InsightActions): Promise<
 	const [threads, workspaces, items] = outputs
 		.slice(0, 3)
 		.map((output) => schema.parse(output));
+	const [activeRows, suggestedRows, reviewRows, peopleRows] =
+		await Promise.all([
+			readCompleteRows(
+				actions,
+				outputs[4],
+				(offset) => memoryStatement("active", offset),
+				"Active memories",
+			),
+			readCompleteRows(
+				actions,
+				outputs[5],
+				(offset) => memoryStatement("suggested", offset),
+				"Suggested memories",
+			),
+			readCompleteRows(
+				actions,
+				outputs[6],
+				reviewStatement,
+				"Review suggestions",
+			),
+			readCompleteRows(actions, outputs[7], peopleStatement, "People"),
+		]);
+	const memories = mapListedMemories(activeRows, suggestedRows);
+	const topicIds = new Set<string>();
+	for (const row of reviewRows) {
+		const data = (row.data ?? {}) as Row;
+		for (const id of [
+			data.candidate,
+			data.suggestedTopic,
+			...list(data.candidates),
+		])
+			if (typeof id === "string" && id) topicIds.add(id);
+	}
+	for (const thread of threads.items)
+		for (const link of list<Row>(thread.topicLinks))
+			if (str(link.topicId)) topicIds.add(str(link.topicId));
+	for (const memory of memories)
+		for (const ref of memory.about)
+			if (ref.type === "topic") topicIds.add(ref.id);
+	for (const item of items.items)
+		for (const topicId of list(item.topicIds))
+			if (typeof topicId === "string" && topicId) topicIds.add(topicId);
+	const topics: Topic[] = [];
+	const ids = [...topicIds];
+	const topicSchema = z.object({ id: z.string().min(1) }).passthrough();
+	// Keep detail batches bounded when many threads refer to different topics.
+	for (let offset = 0; offset < ids.length; offset += 50) {
+		const batch = ids.slice(offset, offset + 50);
+		const rows = await runBatch(
+			actions,
+			batch.map((topicId) => pixel("BrainGetTopic", { topicId })),
+		);
+		rows.forEach((raw, index) => {
+			const row = topicSchema.parse(raw);
+			if (row.id !== batch[index])
+				throw new Error("Received context for a different topic.");
+			topics.push(mapTopic(row));
+		});
+	}
 	return {
 		threads: threads.items.map(mapThread),
 		workspaces: mapWorkspaces(workspaces),
 		items: items.items.map(mapItem),
-		memories: schema.parse(outputs[4]).items.map(mapMemory),
+		memories,
+		reviews: reviewRows.map((row) => mapReview(row, topics)),
+		topics,
+		people: peopleRows.map(mapPerson),
+		pendingCoverage: {
+			reviews: reviewRows.length,
+			suggestedMemories: suggestedRows.length,
+		},
 		lastMailCheck: mapMailCheck(outputs[3]),
 	};
 }

@@ -5,8 +5,12 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { FILE_PANEL_COMPONENTS, FILE_PANEL_TYPES } from "@semoss/panels";
+import {
+	CALENDAR_PANEL_TYPE,
+	EMAILS_PANEL_TYPE,
+} from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
 import type { ToolWorkbenchContextValue } from "../types/tool-workbench";
 import { ToolWorkbench } from "./tool-workbench";
@@ -15,14 +19,46 @@ import { ToolWorkbenchProvider } from "./tool-workbench-provider";
 vi.mock("@semoss/i18n", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/i18n")>()),
 	useTranslation: () => ({
-		t: (key: string) => (key === "workbench.file" ? "File" : key),
+		t: (key: string) =>
+			({
+				"workbench.file": "File",
+				"workbench.emails": "Emails",
+				"workbench.calendar": "Calendar",
+				"workbench.panels": "Workbench panels",
+				"workbench.backToConversation": "Back to conversation",
+				"workbench.showFiles": "Show chat files",
+				"workbench.openingFiles": "Opening chat files…",
+				"workbench.openSettings": "Open settings",
+				"workbench.commandPalette": "Open command palette",
+			})[key] ?? key,
 	}),
 }));
+
+function EmailDraft() {
+	const [search, setSearch] = useState("");
+	return (
+		<input
+			aria-label="Email search"
+			value={search}
+			onChange={(event) => setSearch(event.target.value)}
+		/>
+	);
+}
 
 const components = {
 	[FILE_PANEL_TYPES.FILE_EXPLORER]: {
 		...FILE_PANEL_COMPONENTS[FILE_PANEL_TYPES.FILE_EXPLORER],
 		content: () => <p>Room files</p>,
+	},
+	[EMAILS_PANEL_TYPE]: {
+		name: "Emails",
+		mount: "keepAlive" as const,
+		content: EmailDraft,
+	},
+	[CALENDAR_PANEL_TYPE]: {
+		name: "Calendar",
+		mount: "keepAlive" as const,
+		content: () => <p>Calendar events</p>,
 	},
 };
 let workbench: ToolWorkbenchContextValue;
@@ -106,6 +142,9 @@ beforeEach(() => {
 it("reveals the room's existing Files rail from File without duplicating it", async () => {
 	setup();
 	expect(workbench.store.getState().layout.borders.left.activeId).toBeNull();
+	expect(
+		screen.getByRole("button", { name: "File" }).querySelector("svg"),
+	).toHaveAttribute("aria-hidden", "true");
 	fireEvent.click(await openFileMenu());
 	await waitFor(() =>
 		expect(workbench.store.getState().layout.borders.left.activeId).toBe(
@@ -130,9 +169,43 @@ it("reveals the room's existing Files rail from File without duplicating it", as
 	expect(workbench.store.getState().layout.borders.left.activeId).toBe(
 		FILE_PANEL_TYPES.FILE_EXPLORER,
 	);
+	expect(workbench.store.getState().layout.borders.left.panelIds).toEqual([
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+		EMAILS_PANEL_TYPE,
+		CALENDAR_PANEL_TYPE,
+	]);
+});
+
+it("retains email state through rail switches and hiding the workbench", async () => {
+	setup();
+	const actions = workbench.store.getState().layout.actions;
+	expect(workbench.store.getState().layout.borders.left.panelIds).toEqual([
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+		EMAILS_PANEL_TYPE,
+		CALENDAR_PANEL_TYPE,
+	]);
+	expect(screen.queryByRole("textbox", { name: "Email search" })).toBeNull();
+	act(() => actions.navigatePanel(EMAILS_PANEL_TYPE));
+	const search = await screen.findByRole("textbox", { name: "Email search" });
+	fireEvent.change(search, { target: { value: "Keep this search" } });
+	act(() => actions.navigatePanel(CALENDAR_PANEL_TYPE));
+	expect(await screen.findByText("Calendar events")).toBeVisible();
+	expect(screen.queryByRole("textbox", { name: "Email search" })).toBeNull();
+	act(() => actions.navigatePanel(EMAILS_PANEL_TYPE));
+	expect(await screen.findByRole("textbox", { name: "Email search" })).toBe(
+		search,
+	);
+	expect(search).toHaveValue("Keep this search");
+	fireEvent.click(screen.getByRole("button", { name: "Close dock" }));
+	expect(screen.queryByRole("textbox", { name: "Email search" })).toBeNull();
+	fireEvent.click(screen.getByRole("button", { name: "Open dock" }));
+	expect(await screen.findByRole("textbox", { name: "Email search" })).toBe(
+		search,
+	);
+	expect(search).toHaveValue("Keep this search");
 	expect(
 		workbench.store.getState().layout.borders.left.panelIds,
-	).toHaveLength(1);
+	).toHaveLength(3);
 });
 
 it("offers room Settings in File and returns focus to the composer after hiding the dock", async () => {
@@ -221,5 +294,111 @@ it("focuses the mobile back control after revealing a retained dock", async () =
 			configurable: true,
 			value: width,
 		});
+	}
+});
+
+it("opens Emails and Calendar through the existing mobile panel picker", async () => {
+	const width = window.innerWidth;
+	Object.defineProperty(window, "innerWidth", {
+		configurable: true,
+		value: 360,
+	});
+	try {
+		setup();
+		act(() =>
+			workbench.store.getState().layout.actions.setMobileLayout(true),
+		);
+		for (const panelId of [EMAILS_PANEL_TYPE, CALENDAR_PANEL_TYPE]) {
+			fireEvent.click(screen.getByTestId("workbench-mobile-menu"));
+			const drawer = await screen.findByTestId("workbench-mobile-drawer");
+			expect(drawer).toHaveAttribute("data-state", "open");
+			fireEvent.click(
+				await screen.findByTestId(
+					`workbench-mobile-drawer-panel-${panelId}`,
+				),
+			);
+			await waitFor(() =>
+				expect(drawer).toHaveAttribute("data-state", "closed"),
+			);
+			expect(workbench.store.getState().layout.mobileActivePanelId).toBe(
+				panelId,
+			);
+		}
+		expect(
+			workbench.store.getState().layout.borders.left.panelIds,
+		).toHaveLength(3);
+	} finally {
+		Object.defineProperty(window, "innerWidth", {
+			configurable: true,
+			value: width,
+		});
+	}
+});
+
+it("uses the panel picker for a narrow desktop dock and preserves the browser across resizing", async () => {
+	const observations = new Map<Element, (width: number) => void>();
+	class ResizeProbe implements ResizeObserver {
+		constructor(private callback: ResizeObserverCallback) {}
+		observe(target: Element) {
+			observations.set(target, (width) =>
+				this.callback(
+					[
+						{
+							target,
+							contentRect: new DOMRect(0, 0, width, 700),
+						} as ResizeObserverEntry,
+					],
+					this,
+				),
+			);
+		}
+		unobserve(target: Element) {
+			observations.delete(target);
+		}
+		disconnect() {}
+	}
+	vi.stubGlobal("ResizeObserver", ResizeProbe);
+	try {
+		setup();
+		act(() =>
+			workbench.store
+				.getState()
+				.layout.actions.navigatePanel(EMAILS_PANEL_TYPE),
+		);
+		const search = await screen.findByRole("textbox", {
+			name: "Email search",
+		});
+		fireEvent.change(search, {
+			target: { value: "Retained at every width" },
+		});
+		const resize = observations.get(
+			screen.getByRole("region", { name: "Workbench panels" }),
+		);
+		if (!resize)
+			throw new Error("The workbench container was not observed");
+		act(() => resize(640));
+		await waitFor(() =>
+			expect(workbench.store.getState().layout.isMobileLayout).toBe(true),
+		);
+		expect(screen.getByTestId("workbench-mobile-menu")).toBeVisible();
+		expect(screen.getByRole("button", { name: "File" })).toBeVisible();
+		expect(
+			await screen.findByRole("textbox", { name: "Email search" }),
+		).toBe(search);
+		act(() => resize(0));
+		expect(workbench.store.getState().layout.isMobileLayout).toBe(true);
+		act(() => resize(900));
+		await waitFor(() =>
+			expect(workbench.store.getState().layout.isMobileLayout).toBe(
+				false,
+			),
+		);
+		expect(screen.queryByTestId("workbench-mobile-menu")).toBeNull();
+		expect(
+			await screen.findByRole("textbox", { name: "Email search" }),
+		).toBe(search);
+		expect(search).toHaveValue("Retained at every width");
+	} finally {
+		vi.unstubAllGlobals();
 	}
 });

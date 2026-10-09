@@ -39,6 +39,14 @@ export interface CalendarEvent {
 	isBodyTruncated: boolean;
 }
 
+/** An event opened from a calendar, with the row to return focus to. */
+export interface CalendarEventSelection {
+	/** The listed event; its full description is read when the detail opens. */
+	event: CalendarEvent;
+	/** Identifies the agenda row or grid event that opened the detail. */
+	itemKey: string;
+}
+
 /** A time someone is not free. */
 export interface CalendarBusyTime {
 	/** An instant in UTC. */

@@ -17,6 +17,7 @@ import {
 	canEvictRoomEmailStore,
 	disposeRoomEmailStore,
 } from "@/features/room-email/room-email-store";
+import { ROOM_TREE_CHANGED } from "@/features/room-tree/room-tree-events";
 import { resolveThreadModel } from "@/features/thread-assistant/api/thread-model";
 import {
 	getThreadAgent,
@@ -114,6 +115,7 @@ export class RoomSession {
 	private configurationRevision = 0;
 	private uncertainCommand: string | null = null;
 	private uncertainDraft: ComposerDraft | null = null;
+	private uncertainContextFiles: readonly UploadedRoomFile[] = [];
 	private optionQueue: Promise<void> = Promise.resolve();
 
 	constructor(
@@ -192,7 +194,9 @@ export class RoomSession {
 			!s.hasUnconfirmedSubmission &&
 			!s.isCreationUncertain &&
 			(discardDraft ||
-				(!s.composerDraft.text && !s.composerDraft.files.length)) &&
+				(!s.composerDraft.text &&
+					!s.composerDraft.files.length &&
+					!s.contextFiles.length)) &&
 			canEvictRoomEmailStore(this)
 		);
 	}
@@ -213,6 +217,18 @@ export class RoomSession {
 	}
 	setComposerDraft = (composerDraft: ComposerDraft): void => {
 		this.update({ composerDraft });
+	};
+	/** Queue a saved room file once for the next message. */
+	addContextFile = (file: UploadedRoomFile): void => {
+		if (
+			this.snapshot.contextFiles.some(
+				(current) => current.fileLocation === file.fileLocation,
+			)
+		)
+			return;
+		this.update({
+			contextFiles: [...this.snapshot.contextFiles, { ...file }],
+		});
 	};
 	removeContextFile = (path: string): void => {
 		this.update({
@@ -296,8 +312,7 @@ export class RoomSession {
 		this.attach();
 		await this.refreshHistory();
 		await this.controller?.reconnect();
-		if (source && !this.hasUserMessage())
-			this.update({ contextFiles: [source.file] });
+		if (source && !this.hasUserMessage()) this.addContextFile(source.file);
 	}
 	private config(): AgentTurnConfig {
 		return {
@@ -329,7 +344,8 @@ export class RoomSession {
 				void this.refreshHistory().catch((cause: unknown) =>
 					this.update({ error: toError(cause) }),
 				);
-				this.notifyHistory();
+				// Replaying a completed run while opening an old room is not new activity.
+				if (!turn.isRestoring) this.notifyHistory(true);
 			}
 		});
 		this.publishTurn(this.controller.getSnapshot());
@@ -360,14 +376,17 @@ export class RoomSession {
 		this.controller.reconcileHistory(messages);
 		this.publishTurn(this.controller.getSnapshot());
 	};
-	private notifyHistory(): void {
+	private notifyHistory(hasSavedActivity = false): void {
 		window.dispatchEvent(
 			new CustomEvent(ROOM_HISTORY_CHANGED, {
 				detail: {
+					scope: this.scope,
 					roomId: this.snapshot.roomId,
 					roomName: this.snapshot.title,
 					modelId: this.snapshot.modelId,
-					dateCreated: new Date().toISOString(),
+					...(hasSavedActivity
+						? { dateUpdated: new Date().toISOString() }
+						: {}),
 				},
 			}),
 		);
@@ -460,10 +479,9 @@ export class RoomSession {
 	setSource = async (value: RoomSource): Promise<void> => {
 		const source = roomSourceSchema.parse(value);
 		await this.updateOptions({ source });
-		this.update({
-			source,
-			contextFiles: this.hasUserMessage() ? [] : [source.file],
-		});
+		this.update({ source });
+		if (!this.hasUserMessage()) this.addContextFile(source.file);
+		window.dispatchEvent(new Event(ROOM_TREE_CHANGED));
 	};
 	resolveDefaults = async (): Promise<void> => {
 		const revision = ++this.configurationRevision;
@@ -623,8 +641,9 @@ export class RoomSession {
 			submission.text.trim() || "Please review the attached files.",
 			context,
 		);
+		const submittedContextFiles = this.snapshot.contextFiles;
 		const existingMedia = [...(submission.existingMedia ?? [])];
-		for (const file of this.snapshot.contextFiles) {
+		for (const file of submittedContextFiles) {
 			if (
 				!existingMedia.some(
 					(entry) => entry.fileLocation === file.fileLocation,
@@ -650,10 +669,12 @@ export class RoomSession {
 				{ ...submission, text: command, existingMedia },
 				this.config(),
 			);
-			if (accepted) this.clearSubmittedDraft(submittedDraft);
+			if (accepted)
+				this.clearSubmittedDraft(submittedDraft, submittedContextFiles);
 		} catch (cause) {
 			this.uncertainCommand = requested ? command : null;
 			this.uncertainDraft = requested ? submittedDraft : null;
+			this.uncertainContextFiles = requested ? submittedContextFiles : [];
 			this.update({
 				hasUnconfirmedSubmission: requested,
 				submissionError: toError(cause).message,
@@ -663,7 +684,10 @@ export class RoomSession {
 			this.update({ isPreparing: false });
 		}
 	};
-	private clearSubmittedDraft(submittedDraft: ComposerDraft | null): void {
+	private clearSubmittedDraft(
+		submittedDraft: ComposerDraft | null,
+		submittedContextFiles: readonly UploadedRoomFile[],
+	): void {
 		const current = this.snapshot.composerDraft;
 		const unchanged =
 			submittedDraft !== null &&
@@ -676,7 +700,11 @@ export class RoomSession {
 			);
 		this.update({
 			composerDraft: unchanged ? emptyDraft() : current,
-			contextFiles: [],
+			// A connector save may finish after submission began. Only consume
+			// the exact receipts sent, preserving newly queued or re-added files.
+			contextFiles: this.snapshot.contextFiles.filter(
+				(file) => !submittedContextFiles.includes(file),
+			),
 			composerResetKey:
 				this.snapshot.composerResetKey + (unchanged ? 1 : 0),
 			hasUnconfirmedSubmission: false,
@@ -704,7 +732,11 @@ export class RoomSession {
 								part.text === this.uncertainCommand,
 						),
 				);
-				if (found) this.clearSubmittedDraft(this.uncertainDraft);
+				if (found)
+					this.clearSubmittedDraft(
+						this.uncertainDraft,
+						this.uncertainContextFiles,
+					);
 				this.update({
 					hasUnconfirmedSubmission: false,
 					submissionNotice: found
@@ -713,6 +745,7 @@ export class RoomSession {
 				});
 				this.uncertainCommand = null;
 				this.uncertainDraft = null;
+				this.uncertainContextFiles = [];
 			}
 		} catch (cause) {
 			this.update({ error: toError(cause) });

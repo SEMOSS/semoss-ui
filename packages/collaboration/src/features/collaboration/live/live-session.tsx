@@ -72,7 +72,7 @@ function LiveSessionProvider({ children }: { children: ReactNode }) {
 	if (!state)
 		return (
 			<div className="p-8 text-muted-foreground text-sm">
-				Loading your Brain and Work data...
+				Loading your workspace…
 			</div>
 		);
 	return (

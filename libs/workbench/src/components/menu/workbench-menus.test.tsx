@@ -89,6 +89,37 @@ async function openNavigate(viewName = "View") {
 }
 
 describe("Workbench menus", () => {
+	it("opts into a decorative chevron without changing the trigger's keyboard behavior or accessible name", async () => {
+		const store = createWorkbenchStore({ components: {} });
+		const { rerender } = render(
+			<WorkbenchProvider store={store}>
+				<WorkbenchMenus />
+			</WorkbenchProvider>,
+		);
+		expect(
+			screen.getByRole("button", { name: "View" }).querySelector("svg"),
+		).toBeNull();
+		rerender(
+			<WorkbenchProvider store={store}>
+				<WorkbenchMenus
+					showChevron
+					translate={(key) =>
+						key === "view" ? "File" : getWorkbenchMenuLabel(key)
+					}
+				/>
+			</WorkbenchProvider>,
+		);
+		const trigger = openMenu("File");
+		expect(trigger.querySelector("svg")).toHaveAttribute(
+			"aria-hidden",
+			"true",
+		);
+		expect(trigger).toHaveAttribute("aria-expanded", "true");
+		fireEvent.keyDown(await screen.findByRole("menu"), { key: "Escape" });
+		await waitFor(() => expect(trigger).toHaveFocus());
+		expect(trigger).toHaveAttribute("aria-expanded", "false");
+	});
+
 	it("offers only whole-workbench actions and preserves editor DOM and drafts through presets", async () => {
 		const { store } = setup();
 		const editors = screen.getAllByLabelText("Draft");

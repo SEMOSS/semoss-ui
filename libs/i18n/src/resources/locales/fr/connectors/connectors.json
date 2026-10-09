@@ -66,6 +66,7 @@
 		"inbox": "Boîte de réception",
 		"unreadOnly": "Non lus",
 		"searchPlaceholder": "Rechercher dans les objets",
+		"outlookSearchLimit": "La recherche Outlook affiche jusqu’à 1 000 e-mails correspondants. Effacez la recherche pour parcourir tous les e-mails de ce dossier.",
 		"empty": "Aucun e-mail dans ce dossier",
 		"noUnread": "Aucun e-mail non lu dans ce dossier",
 		"unknownSender": "Expéditeur inconnu",
@@ -98,7 +99,8 @@
 		"loadingAttachments": "Chargement des pièces jointes...",
 		"conversations": "Conversations",
 		"showQuoted": "Afficher les e-mails cités",
-		"hideQuoted": "Masquer les e-mails cités"
+		"hideQuoted": "Masquer les e-mails cités",
+		"filters": "Filtres"
 	},
 	"calendar": {
 		"range": "Du {{start}} au {{end}}",
@@ -153,7 +155,8 @@
 			"day": "Jour suivant",
 			"threeDays": "3 jours suivants",
 			"month": "Mois suivant"
-		}
+		},
+		"openCalendar": "Ouvrir le calendrier"
 	},
 	"teams": {
 		"team": "Équipe",

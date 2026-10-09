@@ -14,6 +14,7 @@ describe("collaboration routes", () => {
 		["/room/room-one", "not-found"],
 		["/room/room-one/unsupported", "not-found"],
 		["/work/thread/thread-one", "not-found"],
+		["/tasks/thread/thread-one", "not-found"],
 		["/unknown", "not-found"],
 		["/new", "not-found"],
 		["/settings/unknown", "not-found"],
@@ -27,10 +28,18 @@ describe("collaboration routes", () => {
 	it.each([
 		["/thread/room%3Aroom-one", "thread"],
 		["/login", "login"],
+		["/for-you", "for-you"],
+		["/tasks", "tasks"],
+		["/tasks/all", "tasks/all"],
+		["/tasks/waiting", "tasks/waiting"],
+		["/tasks/done", "tasks/done"],
+		["/tasks/topics", "tasks/topics"],
+		["/tasks/topic/client", "tasks/topic/:topicId"],
 		["/work", "work"],
 		["/work/all", "work/all"],
 		["/work/waiting", "work/waiting"],
 		["/work/done", "work/done"],
+		["/work/topics", "work/topics"],
 		["/work/topic/client", "work/topic/:topicId"],
 		["/thread/thread-one", "thread"],
 		["/thread/session%3Achat-one", "thread"],
@@ -50,7 +59,7 @@ describe("collaboration routes", () => {
 	});
 
 	it.each([
-		["/room", "/work"],
+		["/room", "/for-you"],
 
 		["/agents", "/brain"],
 		["/agents/agent-one", "/brain"],
@@ -71,6 +80,9 @@ describe("collaboration routes", () => {
 	it.each([
 		"/",
 		"/thread/room%3Aroom-one",
+		"/for-you",
+		"/tasks",
+		"/tasks/topics",
 		"/work",
 		"/brain",
 		"/thread/thread-one",

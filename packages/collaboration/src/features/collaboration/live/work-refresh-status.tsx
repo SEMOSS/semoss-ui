@@ -17,13 +17,13 @@ const time = (at: string) =>
 
 // what each outcome means to the owner, in summary order
 const OUTCOMES: { key: SyncOutcome; summary: string; label: string }[] = [
-	{ key: "new", summary: "new for you", label: "New in Work" },
-	{ key: "updated", summary: "updated", label: "Work item updated" },
+	{ key: "new", summary: "new for you", label: "New for you" },
+	{ key: "updated", summary: "updated", label: "Action updated" },
 	{ key: "cleared", summary: "cleared", label: "Cleared, you answered" },
 	{
 		key: "automated",
 		summary: "automated",
-		label: "Automated, kept out of Work",
+		label: "Automated, no review needed",
 	},
 	{ key: "quiet", summary: "no action needed", label: "In Brain, no action" },
 ];

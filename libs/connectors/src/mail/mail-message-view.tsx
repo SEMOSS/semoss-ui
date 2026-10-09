@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { ConnectorActionBar } from "../components/connector-action-bar";
@@ -38,6 +39,10 @@ export interface MailMessageViewProps {
 	 * that fails, such as for an email since moved, keeps it.
 	 */
 	isSummaryComplete?: boolean;
+	/** Publishes only the link from the loaded message, never its list summary. */
+	onWebUrlChange?: (webUrl: string | undefined) => void;
+	/** Shows the inline Open action unless the host provides it. */
+	showOpenIn?: boolean;
 }
 
 /**
@@ -52,6 +57,8 @@ export const MailMessageView = ({
 	onBack,
 	onSignIn,
 	isSummaryComplete = false,
+	onWebUrlChange,
+	showOpenIn = true,
 }: MailMessageViewProps) => {
 	const { t, i18n } = useTranslation("connectors");
 	const { insightId } = useInsight();
@@ -62,6 +69,13 @@ export const MailMessageView = ({
 	const message = query.data ?? (isSummaryComplete ? summary : null);
 	const serviceName = t(app.nameKey);
 	const title = (message ?? summary).subject || t("common.noSubject");
+	const loadedWebUrl =
+		query.status === "ready" && query.data?.id === summary.id
+			? query.data.webLink
+			: undefined;
+	useEffect(() => {
+		onWebUrlChange?.(loadedWebUrl);
+	}, [loadedWebUrl, onWebUrlChange]);
 
 	/**
 	 * How to save the email: its whole thread, read from every folder, when it
@@ -135,7 +149,7 @@ export const MailMessageView = ({
 				message ? (
 					<ConnectorActionBar
 						serviceName={t(app.appNameKey)}
-						webUrl={message.webLink}
+						webUrl={showOpenIn ? message.webLink : undefined}
 						saveLabel={saver.saveLabel}
 						isBusy={isMessageBusy}
 						onAddToContext={

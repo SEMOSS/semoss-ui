@@ -26,7 +26,7 @@ export function importOutlookMail(
 	folder: string,
 ): ImportedSource {
 	if (mail.body === undefined)
-		throw new Error("Read this email before adding it to Work.");
+		throw new Error("Read this email before adding it to your workspace.");
 	return {
 		sourceKind: "outlook",
 		nativeId: mail.uid,
@@ -121,7 +121,7 @@ export function calendarUtc(value: string | undefined): string | undefined {
 /** Map the selected event, retaining provider participants and its native event ID. */
 export function importCalendarEvent(event: CalendarEvent): ImportedSource {
 	if (event.body === undefined)
-		throw new Error("Read this event before adding it to Work.");
+		throw new Error("Read this event before adding it to your workspace.");
 	const start = calendarUtc(event.start);
 	const body = [
 		event.body,

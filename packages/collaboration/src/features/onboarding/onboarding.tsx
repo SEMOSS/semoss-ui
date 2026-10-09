@@ -37,7 +37,7 @@ const STEPS = [
 	{ label: "Outside", caption: "Clients and partners", icon: Building2 },
 	{ label: "Sort", caption: "Automated mail set aside", icon: Sparkles },
 	{ label: "Topics", caption: "What your work is about", icon: Tags },
-	{ label: "Work", caption: "Filed for you", icon: Check },
+	{ label: "For you", caption: "Filed for you", icon: Check },
 ];
 
 /** First run with real mail: look, keep out, import headers, people, sort, topics from what is left, then file into Work. */
@@ -86,7 +86,7 @@ export function Onboarding({
 							collaboration<span className="text-primary">.</span>
 						</span>
 						<p className="text-muted-foreground text-sm">
-							Set up your people, topics, and Work.
+							Set up your people, topics, and tasks.
 						</p>
 					</div>
 					<ol

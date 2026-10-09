@@ -66,6 +66,7 @@
 		"inbox": "इनबॉक्स",
 		"unreadOnly": "अपठित",
 		"searchPlaceholder": "विषयों में खोजें",
+		"outlookSearchLimit": "Outlook खोज में अधिकतम 1,000 मेल खाने वाले ईमेल दिखाई देते हैं। इस फ़ोल्डर के सभी ईमेल देखने के लिए खोज साफ़ करें।",
 		"empty": "इस फ़ोल्डर में कोई ईमेल नहीं है",
 		"noUnread": "इस फ़ोल्डर में कोई अपठित ईमेल नहीं है",
 		"unknownSender": "अज्ञात प्रेषक",
@@ -98,7 +99,8 @@
 		"loadingAttachments": "अटैचमेंट लोड हो रहे हैं...",
 		"conversations": "बातचीत",
 		"showQuoted": "उद्धृत ईमेल दिखाएं",
-		"hideQuoted": "उद्धृत ईमेल छिपाएं"
+		"hideQuoted": "उद्धृत ईमेल छिपाएं",
+		"filters": "फ़िल्टर"
 	},
 	"calendar": {
 		"range": "{{start}} से {{end}}",
@@ -153,7 +155,8 @@
 			"day": "अगला दिन",
 			"threeDays": "अगले 3 दिन",
 			"month": "अगला महीना"
-		}
+		},
+		"openCalendar": "कैलेंडर खोलें"
 	},
 	"teams": {
 		"team": "टीम",

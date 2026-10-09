@@ -1,10 +1,16 @@
 import { createContext, useContext } from "react";
-import type { MailCheck, MailSyncResult } from "./live-state";
+import type {
+	MailCheck,
+	MailSyncResult,
+	PendingReviewCoverage,
+} from "./live-state";
 
 export interface WorkUpdatesStatus {
 	isRefreshing: boolean;
 	lastUpdated: string | null;
 	error: string;
+	/** Complete pending counts from the latest successful refresh; absent before coverage is known. */
+	pendingCoverage?: PendingReviewCoverage | null;
 	/** The newest mail sync on the server, read with each reload. */
 	lastMailCheck: MailCheck | null;
 	/** Re-read Brain and Work from the database (automatic, every 30 seconds and on focus). */

@@ -151,14 +151,14 @@ export function TopicDetail() {
 			aside={
 				<>
 					<Section
-						title="In Work now"
+						title="Current tasks"
 						variant="card"
 						action={
 							<Link
 								className="inline-flex min-h-6 items-center text-primary text-xs hover:underline"
-								to={`/work/topic/${encodeURIComponent(topic.id)}`}
+								to={`/tasks/topic/${encodeURIComponent(topic.id)}`}
 							>
-								Open feed
+								Open tasks
 							</Link>
 						}
 					>

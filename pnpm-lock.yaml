@@ -1145,6 +1145,9 @@ importers:
       '@lexical/table':
         specifier: 0.39.0
         version: 0.39.0
+      '@semoss/connectors':
+        specifier: workspace:*
+        version: link:../../libs/connectors
       '@semoss/i18n':
         specifier: workspace:*
         version: link:../../libs/i18n

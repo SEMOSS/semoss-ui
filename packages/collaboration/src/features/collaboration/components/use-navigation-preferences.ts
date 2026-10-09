@@ -3,10 +3,6 @@ import { useState } from "react";
 interface NavigationPreferences {
 	/** Whether desktop navigation is displayed as an icon rail. */
 	isCollapsed: boolean;
-	/** Whether the Topics disclosure is expanded. */
-	isTopicsOpen: boolean;
-	/** Whether the Sessions disclosure is expanded. */
-	isSessionsOpen: boolean;
 }
 
 interface NavigationPreferenceState extends NavigationPreferences {
@@ -21,38 +17,37 @@ export function navigationStorageKey(
 	return `semoss:collaboration:navigation:v1:${encodeURIComponent(deployment)}:${encodeURIComponent(account)}`;
 }
 
-/** Accept stored JSON booleans and otherwise retain each preference's default. */
-function readPreference(key: string, defaultValue = false): boolean {
+/** Restore the rail preference without reading obsolete topic disclosures. */
+function readPreferences(storageKey: string): NavigationPreferenceState {
+	const preferences: NavigationPreferenceState = {
+		storageKey,
+		isCollapsed: false,
+	};
 	try {
-		const stored = window.localStorage.getItem(key);
-		return stored === "true"
-			? true
-			: stored === "false"
-				? false
-				: defaultValue;
+		const storage = window.localStorage;
+		preferences.isCollapsed =
+			storage.getItem(`${storageKey}:isCollapsed`) === "true";
 	} catch {
-		return defaultValue;
+		// Optional preferences use their defaults when storage is unavailable.
+	}
+	return preferences;
+}
+
+/** Apply optional preferences even when browser persistence is blocked. */
+function writePreference(key: string, value: boolean): void {
+	try {
+		window.localStorage.setItem(key, JSON.stringify(value));
+	} catch {
+		// The user's choice still applies for the current session.
 	}
 }
 
-/** Each preference is independent so one malformed value cannot reset the other. */
-function readPreferences(storageKey: string): NavigationPreferenceState {
-	return {
-		storageKey,
-		isCollapsed: readPreference(`${storageKey}:isCollapsed`),
-		isTopicsOpen: readPreference(`${storageKey}:isTopicsOpen`),
-		isSessionsOpen: readPreference(`${storageKey}:isSessionsOpen`, true),
-	};
-}
-
-/** Persist optional shell preferences while retaining usable state if storage fails. */
+/** Persist the account-scoped rail choice without storing room records. */
 export function useNavigationPreferences(
 	account: string,
 	deployment: string,
 ): NavigationPreferences & {
 	setIsCollapsed: (value: boolean) => void;
-	setIsTopicsOpen: (value: boolean) => void;
-	setIsSessionsOpen: (value: boolean) => void;
 } {
 	const storageKey = navigationStorageKey(account, deployment);
 	const [state, setState] = useState(() => readPreferences(storageKey));
@@ -63,32 +58,15 @@ export function useNavigationPreferences(
 		setState(preferences);
 	}
 
-	/** Write individual fields to preserve other preferences during batched events. */
-	function updatePreference(
-		preference: keyof NavigationPreferences,
-		value: boolean,
-	): void {
-		setState((current) =>
-			current.storageKey === storageKey
-				? { ...current, [preference]: value }
-				: current,
-		);
-		try {
-			window.localStorage.setItem(
-				`${storageKey}:${preference}`,
-				JSON.stringify(value),
-			);
-		} catch {
-			// These preferences remain usable for this session when storage is blocked.
-		}
-	}
-
 	return {
 		isCollapsed: preferences.isCollapsed,
-		isTopicsOpen: preferences.isTopicsOpen,
-		isSessionsOpen: preferences.isSessionsOpen,
-		setIsCollapsed: (value) => updatePreference("isCollapsed", value),
-		setIsTopicsOpen: (value) => updatePreference("isTopicsOpen", value),
-		setIsSessionsOpen: (value) => updatePreference("isSessionsOpen", value),
+		setIsCollapsed: (value) => {
+			setState((current) =>
+				current.storageKey === storageKey
+					? { ...current, isCollapsed: value }
+					: current,
+			);
+			writePreference(`${storageKey}:isCollapsed`, value);
+		},
 	};
 }

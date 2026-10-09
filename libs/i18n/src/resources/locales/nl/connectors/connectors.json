@@ -66,6 +66,7 @@
 		"inbox": "Postvak IN",
 		"unreadOnly": "Ongelezen",
 		"searchPlaceholder": "Zoeken in onderwerpen",
+		"outlookSearchLimit": "Outlook toont maximaal 1.000 overeenkomende e-mails bij het zoeken. Wis de zoekopdracht om alle e-mails in deze map te bekijken.",
 		"empty": "Geen e-mails in deze map",
 		"noUnread": "Geen ongelezen e-mails in deze map",
 		"unknownSender": "Onbekende afzender",
@@ -98,7 +99,8 @@
 		"loadingAttachments": "Bijlagen laden...",
 		"conversations": "Gesprekken",
 		"showQuoted": "Geciteerde e-mails tonen",
-		"hideQuoted": "Geciteerde e-mails verbergen"
+		"hideQuoted": "Geciteerde e-mails verbergen",
+		"filters": "Filters"
 	},
 	"calendar": {
 		"range": "{{start}} tot {{end}}",
@@ -153,7 +155,8 @@
 			"day": "Volgende dag",
 			"threeDays": "Volgende 3 dagen",
 			"month": "Volgende maand"
-		}
+		},
+		"openCalendar": "Agenda openen"
 	},
 	"teams": {
 		"team": "Team",

@@ -207,7 +207,7 @@ export function useThreadMenuActions({
 		) => dispatch({ type: "item.update", itemId: item.id, changes });
 		groups.push({
 			id: "item",
-			label: "Work item",
+			label: "Task",
 			actions: item.suggested
 				? [
 						{

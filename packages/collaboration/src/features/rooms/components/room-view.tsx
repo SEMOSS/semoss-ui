@@ -10,6 +10,7 @@ import { ROOM_EMAIL_SOURCE_PANEL_COMPONENTS } from "@/features/room-email/room-e
 import type { RoomViewProps } from "@/features/rooms/types/room";
 import { ToolWorkbenchProvider } from "@/features/tools/components/tool-workbench-provider";
 import { TOOL_WORKBENCH_COMPONENTS } from "@/features/tools/tool-workbench.components";
+import { WorkbenchConnectorProvider } from "@/features/workbench-connectors/workbench-connector-provider";
 import { ROOM_SETTINGS_PANEL_COMPONENTS } from "./room-settings-panel";
 import { RoomSettingsPanelContext } from "./room-settings-panel.context";
 import { RoomWorkspace } from "./room-workspace";
@@ -130,15 +131,20 @@ export function RoomView({
 							}}
 						>
 							{roomSession && roomSnapshot ? (
-								<RoomEmailProvider
+								<WorkbenchConnectorProvider
 									session={roomSession}
-									roomId={sessionId}
-									source={roomSnapshot.source}
-									turn={roomSnapshot.turn}
-									isReady={roomSnapshot.isReady}
+									snapshot={roomSnapshot}
 								>
-									{workspace}
-								</RoomEmailProvider>
+									<RoomEmailProvider
+										session={roomSession}
+										roomId={sessionId}
+										source={roomSnapshot.source}
+										turn={roomSnapshot.turn}
+										isReady={roomSnapshot.isReady}
+									>
+										{workspace}
+									</RoomEmailProvider>
+								</WorkbenchConnectorProvider>
 							) : (
 								workspace
 							)}

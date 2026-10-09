@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+import { ROOM_TREE_CHANGED } from "@/features/room-tree/room-tree-events";
 import type { InsightActions } from "@/lib/pixel";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { collaborationReducer } from "../state/collaboration.reducer";
@@ -6,6 +7,15 @@ import type { CollaborationCommand } from "../state/collaboration.types";
 import { createLiveSync } from "./live-sync";
 
 const NOW = "2026-09-26T12:00:00.000Z";
+const roomTreeChanged = vi.fn();
+
+beforeEach(() => {
+	roomTreeChanged.mockClear();
+	window.addEventListener(ROOM_TREE_CHANGED, roomTreeChanged);
+});
+afterEach(() => {
+	window.removeEventListener(ROOM_TREE_CHANGED, roomTreeChanged);
+});
 
 function fakeActions() {
 	const sent: string[] = [];
@@ -23,7 +33,9 @@ function fakeActions() {
 							? { noteId: "server-note" }
 							: /^BrainSaveMemory\(/.test(statement)
 								? { id: "server-memory" }
-								: true,
+								: /^BrainSaveTopic\(/.test(statement)
+									? { id: "server-topic" }
+									: true,
 			})),
 		};
 	});
@@ -54,6 +66,7 @@ it("a merge sends one BrainMergeTopics operation", async () => {
 		'BrainMergeTopics(sourceTopicId=["t-geng"], targetTopicId=["t-gsales"]);',
 	]);
 	expect(onError).not.toHaveBeenCalled();
+	expect(roomTreeChanged).toHaveBeenCalledOnce();
 });
 
 it("a rename saves the changed topic name", async () => {
@@ -68,6 +81,7 @@ it("a rename saves the changed topic name", async () => {
 	expect(sent).toEqual([
 		'BrainSaveTopic(topic=[{"id":"t-geng","name":"Renamed"}]);',
 	]);
+	expect(roomTreeChanged).toHaveBeenCalledOnce();
 });
 
 it("a delete sends one BrainDeleteTopic operation", async () => {
@@ -77,6 +91,7 @@ it("a delete sends one BrainDeleteTopic operation", async () => {
 	sync(deleted);
 	await sync.settled();
 	expect(sent).toEqual(['BrainDeleteTopic(topicId=["t-geng"]);']);
+	expect(roomTreeChanged).toHaveBeenCalledOnce();
 });
 
 it("a session-only snooze check does not write to the backend", async () => {
@@ -85,6 +100,123 @@ it("a session-only snooze check does not write to the backend", async () => {
 	sync(step({ type: "snooze.expire" }));
 	await sync.settled();
 	expect(sent).toEqual([]);
+	expect(roomTreeChanged).not.toHaveBeenCalled();
+});
+
+it.each(["add", "remove"] as const)(
+	"refreshes the room tree after a saved topic link %s",
+	async (operation) => {
+		const { actions } = fakeActions();
+		const sync = createLiveSync(actions, vi.fn());
+		const previous = createInitialCollaborationState();
+		const thread = previous.threads.find((row) => row.topicLinks.length);
+		if (!thread) throw new Error("Missing linked thread");
+		const command: CollaborationCommand = {
+			type: "thread.link",
+			threadId: thread.id,
+			topicId:
+				operation === "remove"
+					? thread.topicLinks[0].topicId
+					: "t-gsales",
+			operation,
+		};
+		sync({
+			previous,
+			next: collaborationReducer(previous, command, NOW),
+			commands: [command],
+		});
+		expect(roomTreeChanged).not.toHaveBeenCalled();
+		await sync.settled();
+		expect(roomTreeChanged).toHaveBeenCalledOnce();
+	},
+);
+
+it("refreshes the room tree when a topic is archived", async () => {
+	const { actions } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync(
+		step({
+			type: "topic.save",
+			topic: { id: "t-geng", status: "archived" },
+		}),
+	);
+	await sync.settled();
+	expect(roomTreeChanged).toHaveBeenCalledOnce();
+});
+
+it("refreshes the room tree after a new topic returns its saved identity", async () => {
+	const { actions } = fakeActions();
+	const onError = vi.fn();
+	const sync = createLiveSync(actions, onError);
+	sync(step({ type: "topic.save", topic: { name: "New topic" } }));
+	await sync.settled();
+	expect(onError).not.toHaveBeenCalled();
+	expect(roomTreeChanged).toHaveBeenCalledOnce();
+});
+
+it("refreshes after accepting a topic review, and ignores dismissed reviews", async () => {
+	const { actions } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = createInitialCollaborationState();
+	const review = previous.reviews.find(
+		(entry) => entry.kind === "topic_choice",
+	);
+	if (!review) throw new Error("Missing topic review");
+	const next = {
+		...previous,
+		reviews: previous.reviews.map((entry) =>
+			entry.id === review.id
+				? { ...entry, status: "accepted" as const }
+				: entry,
+		),
+	};
+	sync({
+		previous,
+		next,
+		commands: [
+			{ type: "review.resolve", reviewId: review.id, decision: "both" },
+		],
+	});
+	await sync.settled();
+	expect(roomTreeChanged).toHaveBeenCalledOnce();
+	roomTreeChanged.mockClear();
+	const dismissed: CollaborationCommand = {
+		type: "review.resolve",
+		reviewId: review.id,
+		decision: "dismiss",
+	};
+	sync({
+		previous,
+		next: collaborationReducer(previous, dismissed, NOW),
+		commands: [dismissed],
+	});
+	await sync.settled();
+	expect(roomTreeChanged).not.toHaveBeenCalled();
+});
+
+it("does not refresh the room tree for failed topic writes or unrelated changes", async () => {
+	const run = vi.fn().mockResolvedValue({
+		pixelReturn: [{ output: "Save failed", operationType: ["ERROR"] }],
+	});
+	const onError = vi.fn();
+	const sync = createLiveSync({ run } as unknown as InsightActions, onError);
+	sync(
+		step({ type: "topic.save", topic: { id: "t-geng", name: "Changed" } }),
+	);
+	await sync.settled();
+	expect(onError).toHaveBeenCalledWith("Save failed");
+	expect(roomTreeChanged).not.toHaveBeenCalled();
+	const { actions } = fakeActions();
+	const otherSync = createLiveSync(actions, vi.fn());
+	otherSync(
+		step({
+			type: "thread.goal",
+			threadId: "th-geng-review",
+			goal: "Make a plan",
+		}),
+	);
+	await otherSync.settled();
+	expect(roomTreeChanged).not.toHaveBeenCalled();
 });
 
 it("a new item's step is saved after the item, with the item's server id", async () => {

@@ -72,7 +72,7 @@ export function BriefHandled({ topicId }: { topicId?: string }) {
 			)}
 			{items.length > 0 && (
 				<Link
-					to="/work/done"
+					to="/tasks/done"
 					className="mt-3 inline-flex border-b pb-1 font-mono text-sm hover:text-muted-foreground"
 				>
 					See all {items.length} →

@@ -84,6 +84,8 @@ export interface MailReceipt {
 
 /** One page of a mailbox listing. */
 export interface MailPage {
+	/** Server page count, falling back to raw entries before parsing. */
+	count: number;
 	/** The emails, newest first. */
 	messages: MailMessage[];
 	/** Whether the mailbox holds more after them. */

@@ -81,7 +81,18 @@
 		"openPanels": "Geopende panelen",
 		"noPanels": "Geen geopende panelen",
 		"maximize": "Werkruimte maximaliseren",
-		"restore": "Werkruimte herstellen"
+		"restore": "Werkruimte herstellen",
+		"emails": "E-mails",
+		"calendar": "Agenda",
+		"provider": "Provider",
+		"panels": "Werkruimtepanelen",
+		"backToConversation": "Terug naar gesprek",
+		"showFiles": "Chatbestanden tonen",
+		"openingFiles": "Chatbestanden openen…",
+		"openSettings": "Instellingen openen",
+		"filesError": "Kan de chatbestanden niet openen. Probeer het opnieuw.",
+		"itemUnavailable": "Open dit item vanuit E-mails of Agenda om de details te laden.",
+		"backToBrowser": "Terug naar de lijst"
 	},
 	"userMenu": {
 		"settings": "Instellingen",

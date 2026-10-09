@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { WorkbenchLayout } from "@semoss/workbench";
 import { ROOM_SETTINGS_PANEL_COMPONENTS } from "@/features/rooms/components/room-settings-panel";
 import { RoomSettingsPanelContext } from "@/features/rooms/components/room-settings-panel.context";
@@ -10,6 +11,7 @@ import type { RoomSettings } from "@/features/rooms/types/room";
 import { ToolWorkbenchProvider } from "@/features/tools/components/tool-workbench-provider";
 import { TOOL_WORKBENCH_COMPONENTS } from "@/features/tools/tool-workbench.components";
 import { createToolWorkbenchLayout } from "@/features/tools/tool-workbench.constants";
+import { WorkbenchConnectorProvider } from "@/features/workbench-connectors/workbench-connector-provider";
 
 const NEW_CHAT_WORKBENCH_COMPONENTS = {
 	...TOOL_WORKBENCH_COMPONENTS,
@@ -17,7 +19,24 @@ const NEW_CHAT_WORKBENCH_COMPONENTS = {
 };
 /** Defer the file rail until its explicit action binds the draft to a room. */
 function createNewChatWorkbenchLayout(insightId: string): WorkbenchLayout {
-	return { ...createToolWorkbenchLayout(insightId), panels: {}, borders: {} };
+	const layout = createToolWorkbenchLayout(insightId);
+	const files = FILE_PANEL_TYPES.FILE_EXPLORER;
+	return {
+		...layout,
+		panels: Object.fromEntries(
+			Object.entries(layout.panels).filter(([id]) => id !== files),
+		),
+		borders: {
+			...layout.borders,
+			left: {
+				...layout.borders?.left,
+				panelIds: (layout.borders?.left?.panelIds ?? []).filter(
+					(id) => id !== files,
+				),
+				activeId: null,
+			},
+		},
+	};
 }
 
 interface NewChatWorkbenchProviderProps {
@@ -67,7 +86,12 @@ export function NewChatWorkbenchProvider({
 				onRejectTool={session.reject}
 				autoReveal={false}
 			>
-				{children}
+				<WorkbenchConnectorProvider
+					session={session}
+					snapshot={snapshot}
+				>
+					{children}
+				</WorkbenchConnectorProvider>
 			</ToolWorkbenchProvider>
 		</RoomSettingsPanelContext.Provider>
 	);

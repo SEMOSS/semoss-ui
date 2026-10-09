@@ -3,6 +3,7 @@ import { type ReactNode, type Ref, useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, Muted, ScrollArea } from "@semoss/ui/next";
 import type { ConnectorAccount } from "../core/connector.types";
+import type { ConnectorErrorInfo } from "../core/connector-pixel";
 import type { ConnectorQuery } from "../core/use-connector-query";
 import { ConnectorViewerStatus } from "./connector-viewer-status";
 
@@ -41,6 +42,8 @@ export interface ConnectorListProps<T> {
 	limitNote?: string;
 	/** Reads more of a list that reached its limit. */
 	onShowMore?: () => void;
+	/** An append failure shown below retained rows, with retry or sign in. */
+	loadMoreError?: ConnectorErrorInfo | null;
 	/** The list element, so focus can return to a row. */
 	listRef?: Ref<HTMLUListElement>;
 	/**
@@ -71,6 +74,7 @@ export const ConnectorList = <T,>({
 	isFull: isFullOverride,
 	limitNote,
 	onShowMore,
+	loadMoreError,
 	listRef,
 	focusKey,
 	children,
@@ -109,7 +113,7 @@ export const ConnectorList = <T,>({
 			<ScrollArea className="[&>div>div]:block! min-h-0 flex-1">
 				<div ref={bodyRef} tabIndex={-1} className="outline-none">
 					{query.status === "ready" ? (
-						items.length === 0 ? (
+						items.length === 0 && !isFull ? (
 							<div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
 								<EmptyIcon
 									aria-hidden
@@ -138,7 +142,21 @@ export const ConnectorList = <T,>({
 								<ul ref={listRef} className="flex flex-col">
 									{children(items)}
 								</ul>
-								{isFull && onShowMore ? (
+								{loadMoreError && onShowMore ? (
+									<ConnectorViewerStatus
+										query={{
+											status:
+												loadMoreError.kind === "signIn"
+													? "signedOut"
+													: "error",
+											error: loadMoreError,
+											reload: onShowMore,
+										}}
+										serviceName={serviceName}
+										account={account}
+										onSignIn={onSignIn}
+									/>
+								) : isFull && onShowMore ? (
 									<Button
 										variant="outline"
 										size="sm"
@@ -173,9 +191,11 @@ export const ConnectorList = <T,>({
 			<output className="sr-only">
 				{query.status === "loading"
 					? t("common.loading")
-					: query.status === "ready"
-						? t("common.itemCount", { count: items.length })
-						: ""}
+					: query.isRefreshing && onShowMore
+						? t("common.loadingMore")
+						: query.status === "ready"
+							? t("common.itemCount", { count: items.length })
+							: ""}
 			</output>
 		</>
 	);

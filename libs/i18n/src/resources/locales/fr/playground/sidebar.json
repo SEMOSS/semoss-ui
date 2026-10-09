@@ -81,7 +81,18 @@
 		"openPanels": "Panneaux ouverts",
 		"noPanels": "Aucun panneau ouvert",
 		"maximize": "Agrandir l’espace de travail",
-		"restore": "Restaurer l’espace de travail"
+		"restore": "Restaurer l’espace de travail",
+		"emails": "E-mails",
+		"calendar": "Calendrier",
+		"provider": "Fournisseur",
+		"panels": "Panneaux de l’espace de travail",
+		"backToConversation": "Retour à la conversation",
+		"showFiles": "Afficher les fichiers du chat",
+		"openingFiles": "Ouverture des fichiers du chat…",
+		"openSettings": "Ouvrir les paramètres",
+		"filesError": "Impossible d’ouvrir les fichiers du chat. Réessayez.",
+		"itemUnavailable": "Ouvrez cet élément depuis E-mails ou Calendrier pour charger ses détails.",
+		"backToBrowser": "Retour à la liste"
 	},
 	"userMenu": {
 		"settings": "Paramètres",

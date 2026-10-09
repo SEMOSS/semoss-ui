@@ -645,7 +645,7 @@ export function ImportStep({
 				title={`Bring in the last ${days} days`}
 			>
 				Add recent email conversations to Collaboration. Include Teams
-				chats if you want them in Work. Your exclusions still apply.
+				chats if you want them in For you. Your exclusions still apply.
 			</StepHeader>
 			{active ? (
 				<div className="grid items-center gap-8 md:grid-cols-[auto_minmax(0,1fr)]">
@@ -1072,8 +1072,8 @@ export function PeopleStep({
 				}
 			>
 				Choose who to follow and mark your VIPs. Requests from people
-				you follow rank higher in Work; VIP requests go to the top.
-				Other mail can still appear in Work.
+				you follow rank higher in For you; VIP requests go to the top.
+				Other mail can still appear in For you.
 			</StepHeader>
 			<P className="text-muted-foreground text-sm">
 				<strong className="font-medium text-foreground">
@@ -1081,7 +1081,7 @@ export function PeopleStep({
 				</strong>{" "}
 				They are not followed or suggested as VIPs. Conversations
 				classified as automated are left out of topic suggestions and
-				Work. Nothing is deleted from your mailbox.
+				For you. Nothing is deleted from your mailbox.
 			</P>
 			{!people && !error && (
 				<LoadingCards label="Finding your people..." count={6} />
@@ -1759,7 +1759,7 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 const LANES = [
 	{
 		key: "needs_me",
-		label: "Needs you",
+		label: "For you",
 		hint: "Asks waiting on your reply",
 		icon: Zap,
 		tone: "primary",
@@ -1827,7 +1827,7 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	};
 
 	const finish = () => {
-		window.location.hash = "#/work";
+		window.location.hash = "#/for-you";
 		window.location.reload();
 	};
 
@@ -1925,7 +1925,7 @@ export function FilingStep({ actions, onBack, eyebrow }: StepProps) {
 		number
 	>;
 	const finish = () => {
-		window.location.hash = "#/work";
+		window.location.hash = "#/for-you";
 		window.location.reload();
 	};
 	return (
@@ -1953,7 +1953,7 @@ export function FilingStep({ actions, onBack, eyebrow }: StepProps) {
 						All set
 					</p>
 					<h1 className="font-semibold text-2xl tracking-tight md:text-3xl">
-						Your Work is ready
+						Your tasks are ready
 					</h1>
 					{filing && job?.status === "done" && (
 						<p className="max-w-md text-muted-foreground text-sm">
@@ -1972,7 +1972,7 @@ export function FilingStep({ actions, onBack, eyebrow }: StepProps) {
 			{error && <Failure error={error} />}
 			<StepActions onBack={running ? undefined : onBack}>
 				<Next onClick={finish} disabled={running}>
-					Open Work
+					Open For you
 				</Next>
 			</StepActions>
 		</>

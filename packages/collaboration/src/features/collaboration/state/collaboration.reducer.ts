@@ -2,6 +2,7 @@ import type {
 	CollaborationCommand,
 	CollaborationState,
 	Memory,
+	ReviewEntry,
 	Thread,
 	ThreadTopicLink,
 	ThreadWorkspace,
@@ -351,6 +352,31 @@ function mergeServerMemories(
 	];
 }
 
+/** Replace only live pending reviews; local decisions and sample/history entries remain available. */
+function mergeOpenReviews(
+	local: ReviewEntry[],
+	server: ReviewEntry[],
+	keep: ReadonlySet<string>,
+): ReviewEntry[] {
+	const incoming = new Map(server.map((review) => [review.id, review]));
+	const merged = local.flatMap((review) => {
+		const next = incoming.get(review.id);
+		incoming.delete(review.id);
+		if (
+			review.isSample !== false ||
+			review.id.startsWith("local-") ||
+			review.status !== "open" ||
+			keep.has(review.id)
+		)
+			return [review];
+		return next ? [{ ...next }] : [];
+	});
+	return [
+		...merged,
+		...[...incoming.values()].map((review) => ({ ...review })),
+	];
+}
+
 /** Apply a single local intent atomically. The caller supplies time for deterministic tests. */
 export function collaborationReducer(
 	previous: CollaborationState,
@@ -548,9 +574,10 @@ export function collaborationReducer(
 			// a new status without a reason drops the old one; the server sets its own
 			if (command.changes.status && !command.changes.closedReason)
 				delete item.closedReason;
+			if (command.changes.status === "done" && item.status !== "done")
+				item.completedAt = now;
 			Object.assign(item, command.changes);
-			if (item.status === "done") item.completedAt = now;
-			else delete item.completedAt;
+			if (item.status !== "done") delete item.completedAt;
 			if (item.status !== "snoozed") {
 				delete item.snoozeUntil;
 				delete item.snoozedFrom;
@@ -615,7 +642,11 @@ export function collaborationReducer(
 					)
 				)
 					break;
-				if (!state.topics.some((topic) => topic.id === review.refId))
+				const candidate = state.topics.find(
+					(topic) => topic.id === review.refId,
+				);
+				if (candidate) candidate.status = "active";
+				else
 					state.topics.push(
 						newTopic(
 							state,
@@ -1079,6 +1110,30 @@ export function collaborationReducer(
 		case "live.refresh": {
 			const keepThreads = new Set(command.updates.keepThreadIds);
 			const keepSteps = new Set(command.updates.keepStepIds);
+			const keepTopics = new Set(command.updates.keepTopicIds);
+			for (const incoming of command.updates.topics ?? []) {
+				const index = state.topics.findIndex(
+					(topic) => topic.id === incoming.id,
+				);
+				if (index < 0) state.topics.push({ ...incoming });
+				else if (
+					!state.topics[index].isSample &&
+					!keepTopics.has(incoming.id)
+				)
+					state.topics[index] = { ...incoming };
+			}
+			const keepPeople = new Set(command.updates.keepPersonIds);
+			for (const incoming of command.updates.people ?? []) {
+				const index = state.people.findIndex(
+					(person) => person.id === incoming.id,
+				);
+				if (index < 0) state.people.push({ ...incoming });
+				else if (
+					!state.people[index].isSample &&
+					!keepPeople.has(incoming.id)
+				)
+					state.people[index] = { ...incoming };
+			}
 			for (const incoming of command.updates.threads) {
 				const thread = state.threads.find(
 					(item) => item.id === incoming.id,
@@ -1097,6 +1152,7 @@ export function collaborationReducer(
 					thread.topicLinks = incoming.topicLinks;
 					thread.muted = incoming.muted;
 					thread.automated = incoming.automated;
+					thread.needsTopicChoice = incoming.needsTopicChoice;
 				}
 				// Brain writes summaries in the background, so a new one shows without opening the thread
 				if (!isOlderSummary(incoming, thread))
@@ -1132,6 +1188,12 @@ export function collaborationReducer(
 					state.memories,
 					command.updates.memories,
 					new Set(command.updates.keepMemoryIds),
+				);
+			if (command.updates.reviews)
+				state.reviews = mergeOpenReviews(
+					state.reviews,
+					command.updates.reviews,
+					new Set(command.updates.keepReviewIds),
 				);
 			break;
 		}

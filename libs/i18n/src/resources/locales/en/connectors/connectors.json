@@ -66,6 +66,7 @@
 		"inbox": "Inbox",
 		"unreadOnly": "Unread",
 		"searchPlaceholder": "Search subjects",
+		"outlookSearchLimit": "Outlook search shows up to 1,000 matching emails. Clear search to browse all mail in this folder.",
 		"empty": "No emails in this folder",
 		"noUnread": "No unread emails in this folder",
 		"unknownSender": "Unknown Sender",
@@ -98,7 +99,8 @@
 		"loadingAttachments": "Loading attachments...",
 		"conversations": "Conversations",
 		"showQuoted": "Show Quoted Emails",
-		"hideQuoted": "Hide Quoted Emails"
+		"hideQuoted": "Hide Quoted Emails",
+		"filters": "Filters"
 	},
 	"calendar": {
 		"range": "{{start}} to {{end}}",
@@ -153,7 +155,8 @@
 			"day": "Next day",
 			"threeDays": "Next 3 days",
 			"month": "Next month"
-		}
+		},
+		"openCalendar": "Open calendar"
 	},
 	"teams": {
 		"team": "Team",

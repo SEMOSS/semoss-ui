@@ -1,12 +1,15 @@
 import {
 	act,
 	cleanup,
+	fireEvent,
 	render,
 	screen,
 	waitFor,
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
+import { useContext, useLayoutEffect, useRef, useState } from "react";
 import { createMemoryRouter, useLocation } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,9 +19,33 @@ import { RoomHeader } from "@/features/rooms/components/room-header";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "../state/collaboration-session.context";
 import { CollaborationFrame } from "./collaboration-frame";
+import { CollaborationWorkbenchLayoutContext } from "./collaboration-workbench-layout.context";
 
 const remote = vi.hoisted(() => ({
 	actions: { run: vi.fn(), logout: vi.fn() },
+	tree: {
+		rooms: [
+			{
+				roomId: "room-one",
+				roomName: "Pricing conversation",
+				topics: [
+					{
+						topicId: "t-geng",
+						name: "Northwind Engineering",
+						short: "Northwind Eng",
+					},
+				],
+			},
+			{ roomId: "room-two", roomName: "Sprint conversation", topics: [] },
+		],
+		hasMore: false,
+		isLoading: false,
+		error: "",
+		loadMore: vi.fn(),
+		refresh: vi.fn(),
+		retry: vi.fn(),
+		scrollTop: { current: 0 },
+	},
 	history: {
 		rooms: [{ roomId: "room-one", roomName: "Pricing conversation" }],
 		isLoading: false,
@@ -31,9 +58,23 @@ const remote = vi.hoisted(() => ({
 	},
 }));
 
+vi.mock("@/features/for-you/for-you-provider", () => ({
+	ForYouProvider: ({ children }: { children: ReactNode }) => children,
+}));
+
+vi.mock("@/features/for-you/for-you.context", () => ({
+	useForYou: () => ({ items: [] }),
+}));
+
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
 	useInsight: () => ({ actions: remote.actions }),
+}));
+vi.mock("@/features/room-tree/room-tree.context", () => ({
+	useRoomTree: () => remote.tree,
+}));
+vi.mock("@/features/room-tree/room-tree-provider", () => ({
+	RoomTreeProvider: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("@/features/dashboard/use-chat-history", () => ({
 	useChatHistory: () => remote.history,
@@ -66,9 +107,18 @@ function FrameFixture() {
 /** A persistent route outlet exposes accidental remounts through an unsaved draft. */
 function DraftFixture() {
 	const { pathname } = useLocation();
+	const layout = useContext(CollaborationWorkbenchLayoutContext);
+	const registerConversation = layout?.registerConversation;
+	const conversationRef = useRef<HTMLDivElement>(null);
+	const [isWorkbenchOpen, setIsWorkbenchOpen] = useState(false);
+	const isRoom = pathname.startsWith("/thread/");
+	useLayoutEffect(() => {
+		if (isRoom && isWorkbenchOpen && conversationRef.current)
+			return registerConversation?.(conversationRef.current);
+	}, [isRoom, isWorkbenchOpen, registerConversation]);
 	return (
-		<>
-			{pathname.startsWith("/thread/") && (
+		<div ref={conversationRef}>
+			{isRoom && (
 				<RoomHeader
 					agent={{
 						name: "Research agent",
@@ -79,12 +129,14 @@ function DraftFixture() {
 						prompts: [],
 					}}
 					title="Pricing conversation"
-					isToolWorkbenchOpen={false}
-					onToggleToolWorkbench={() => undefined}
+					isToolWorkbenchOpen={isWorkbenchOpen}
+					onToggleToolWorkbench={() =>
+						setIsWorkbenchOpen((open) => !open)
+					}
 				/>
 			)}
 			<Textarea aria-label="Conversation draft" defaultValue="" />
-		</>
+		</div>
 	);
 }
 
@@ -122,6 +174,7 @@ beforeEach(() => {
 	isWide = true;
 	mediaListeners.clear();
 	remote.history.scrollTop.current = 0;
+	remote.tree.scrollTop.current = 0;
 	vi.stubGlobal("matchMedia", (query: string) => ({
 		get matches() {
 			return query === "(min-width: 64rem)" && isWide;
@@ -160,6 +213,191 @@ afterEach(() => {
 });
 
 describe("CollaborationFrame", () => {
+	it("closes the desktop account menu and focuses mobile navigation when its avatar becomes hidden", async () => {
+		const { user } = renderFrame();
+		act(() =>
+			screen.getByRole("button", { name: /Account menu for/ }).focus(),
+		);
+		await user.keyboard("{Enter}");
+		await waitFor(() =>
+			expect(
+				screen.getByRole("menuitem", { name: "Settings" }),
+			).toHaveFocus(),
+		);
+		setDesktop(false);
+		await waitFor(() =>
+			expect(screen.queryByRole("menu")).not.toBeInTheDocument(),
+		);
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Open navigation" }),
+			).toHaveFocus(),
+		);
+	});
+
+	it("reserves the measured conversation header without remounting drafts and restores page layout", async () => {
+		const observers = new Set<ResizeObserverCallback>();
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				constructor(private callback: ResizeObserverCallback) {
+					observers.add(callback);
+				}
+				observe() {}
+				unobserve() {}
+				disconnect() {
+					observers.delete(this.callback);
+				}
+			},
+		);
+		let conversationWidth = 420;
+		let headerHeight = 56;
+		vi.spyOn(
+			HTMLElement.prototype,
+			"getBoundingClientRect",
+		).mockImplementation(function (this: HTMLElement) {
+			return new DOMRect(
+				0,
+				0,
+				conversationWidth,
+				this.tagName === "HEADER" ? headerHeight : 700,
+			);
+		});
+		const { router, user } = renderFrame("/thread/room%3Aone");
+		const search = screen.getByRole("button", {
+			name: "Search your workspace",
+		});
+		const header = search.closest("header");
+		const headerContainer = header?.parentElement;
+		const content = headerContainer?.parentElement;
+		const draft = screen.getByRole("textbox", {
+			name: "Conversation draft",
+		});
+		await user.type(draft, "Keep this draft");
+		await user.click(
+			screen.getByRole("button", { name: "Open workbench" }),
+		);
+		expect(headerContainer).toHaveClass("md:absolute");
+		expect(
+			content?.style.getPropertyValue(
+				"--collaboration-conversation-width",
+			),
+		).toBe("420px");
+		expect(
+			content?.style.getPropertyValue("--collaboration-header-height"),
+		).toBe("56px");
+		conversationWidth = 240;
+		headerHeight = 104;
+		act(() => {
+			for (const notify of observers) notify([], {} as ResizeObserver);
+		});
+		expect(
+			content?.style.getPropertyValue(
+				"--collaboration-conversation-width",
+			),
+		).toBe("240px");
+		expect(
+			content?.style.getPropertyValue("--collaboration-header-height"),
+		).toBe("104px");
+		await user.click(
+			screen.getByRole("button", { name: "Close workbench" }),
+		);
+		expect(headerContainer).not.toHaveClass("md:absolute");
+		expect(draft).toHaveValue("Keep this draft");
+		expect(
+			screen.getByRole("button", { name: "Search your workspace" }),
+		).toBe(search);
+		await user.click(
+			screen.getByRole("button", { name: "Open workbench" }),
+		);
+		await act(() => router.navigate("/brain"));
+		expect(headerContainer).not.toHaveClass("md:absolute");
+		expect(
+			content?.style.getPropertyValue(
+				"--collaboration-conversation-width",
+			),
+		).toBe("");
+		expect(observers.size).toBe(0);
+	});
+
+	it("dismisses the mobile account menu before the navigation drawer and returns focus", async () => {
+		isWide = false;
+		const { user } = renderFrame();
+		const navigationTrigger = screen.getByRole("button", {
+			name: "Open navigation",
+		});
+		await user.click(navigationTrigger);
+		const drawer = screen.getByRole("dialog", {
+			name: "Workspace navigation",
+		});
+		const avatar = within(drawer).getByRole("button", {
+			name: /Account menu for/,
+		});
+		await user.click(avatar);
+		expect(
+			screen.getByRole("menuitem", { name: "Settings" }),
+		).toBeVisible();
+		await user.keyboard("{Escape}");
+		await waitFor(() => expect(avatar).toHaveFocus());
+		expect(drawer).toBeVisible();
+		await user.keyboard("{Escape}");
+		await waitFor(() => expect(navigationTrigger).toHaveFocus());
+	});
+
+	it.each(["/", "/settings"])(
+		"closes mobile account navigation from %s and focuses Settings",
+		async (path) => {
+			isWide = false;
+			const { user, router } = renderFrame(path);
+			await user.click(
+				screen.getByRole("button", { name: "Open navigation" }),
+			);
+			const drawer = screen.getByRole("dialog", {
+				name: "Workspace navigation",
+			});
+			await user.click(
+				within(drawer).getByRole("button", {
+					name: /Account menu for/,
+				}),
+			);
+			await user.click(
+				screen.getByRole("menuitem", { name: "Settings" }),
+			);
+			await waitFor(() => expect(screen.getByRole("main")).toHaveFocus());
+			expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+			expect(router.state.location.pathname).toBe("/settings");
+		},
+	);
+
+	it.each(["/", "/for-you"])(
+		"returns home from the mobile brand on %s and closes navigation",
+		async (path) => {
+			isWide = false;
+			const { user, router } = renderFrame(path);
+			await user.click(
+				screen.getByRole("button", { name: "Open navigation" }),
+			);
+			const drawer = screen.getByRole("dialog", {
+				name: "Workspace navigation",
+			});
+			await user.click(
+				within(drawer).getByRole("link", {
+					name: "Collaboration home",
+				}),
+			);
+			expect(router.state.location.pathname).toBe("/");
+			await waitFor(() =>
+				expect(
+					screen.queryByRole("dialog", {
+						name: "Workspace navigation",
+					}),
+				).not.toBeInTheDocument(),
+			);
+			expect(screen.getByRole("main")).toHaveFocus();
+		},
+	);
+
 	it("keeps one header and search palette mounted across page and room navigation", async () => {
 		const { router, user } = renderFrame();
 		const header = screen
@@ -171,10 +409,10 @@ describe("CollaborationFrame", () => {
 		const account = screen.getByRole("button", {
 			name: /Account menu for/,
 		});
-		expect(header).toContainElement(account);
+		expect(header).not.toContainElement(account);
 		expect(
 			screen.getByRole("complementary", { name: "Workspace navigation" }),
-		).not.toContainElement(account);
+		).toContainElement(account);
 		for (const path of [
 			"/brain",
 			"/settings/about-you",
@@ -291,9 +529,7 @@ describe("CollaborationFrame", () => {
 	it("returns focus to the rail when the navigation shortcut hides a focused session", async () => {
 		const { user } = renderFrame();
 		act(() =>
-			screen
-				.getByRole("button", { name: "Pricing conversation" })
-				.focus(),
+			screen.getByRole("link", { name: "Pricing conversation" }).focus(),
 		);
 		await user.keyboard("{Control>}b{/Control}");
 		expect(
@@ -327,47 +563,65 @@ describe("CollaborationFrame", () => {
 		).toBe(false);
 	});
 
-	it("moves focus out of the sidebar when a room opens and its session links collapse", async () => {
-		const { router } = renderFrame();
-		const session = screen.getByRole("button", {
+	it("opens the exact room link, collapses the sidebar, and moves focus into the conversation", async () => {
+		const { router, user } = renderFrame();
+		const session = screen.getByRole("link", {
 			name: "Pricing conversation",
 		});
-		act(() => session.focus());
-		await act(() => router.navigate("/thread/room%3Aroom-one"));
+		await user.click(session);
+		expect(router.state.location.pathname).toBe("/thread/room%3Aroom-one");
 		expect(screen.getByRole("main")).toHaveFocus();
 		expect(
 			screen.getByRole("button", { name: "Expand navigation" }),
 		).toHaveAttribute("aria-expanded", "false");
 	});
 
-	it("restores the collapsed sidebar and both disclosures together after a fresh mount", async () => {
+	it("closes the mobile drawer after selecting a room and focuses the conversation", async () => {
+		isWide = false;
+		const { user, router } = renderFrame();
+		await user.click(
+			screen.getByRole("button", { name: "Open navigation" }),
+		);
+		const drawer = screen.getByRole("dialog", {
+			name: "Workspace navigation",
+		});
+		await user.click(
+			within(drawer).getByRole("link", { name: "Pricing conversation" }),
+		);
+		await waitFor(() => expect(screen.getByRole("main")).toHaveFocus());
+		expect(router.state.location.pathname).toBe("/thread/room%3Aroom-one");
+		expect(drawer).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Expand navigation" }),
+		).toHaveAttribute("aria-expanded", "false");
+	});
+
+	it("restores the collapsed sidebar after a fresh mount and keeps every room accessible", async () => {
 		const { user } = renderFrame();
-		await user.click(screen.getByRole("button", { name: "Topics" }));
-		await user.click(screen.getByRole("button", { name: "Sessions" }));
 		await user.click(
 			screen.getByRole("button", { name: "Collapse navigation" }),
 		);
 		cleanup();
 		renderFrame();
-		await user.click(
-			screen.getByRole("button", { name: "Expand navigation" }),
-		);
-		expect(screen.getByRole("button", { name: "Topics" })).toHaveAttribute(
-			"aria-expanded",
-			"true",
-		);
+		const expand = screen.getByRole("button", {
+			name: "Expand navigation",
+		});
+		expect(expand).toHaveAttribute("aria-expanded", "false");
+		await user.click(expand);
 		expect(
-			screen.getByRole("navigation", { name: "Topics" }),
+			screen.getByRole("link", { name: "Pricing conversation" }),
 		).toBeVisible();
 		expect(
-			screen.getByRole("button", { name: "Sessions" }),
-		).toHaveAttribute("aria-expanded", "false");
+			screen.getByRole("link", { name: "Sprint conversation" }),
+		).toBeVisible();
 		expect(
-			screen.queryByRole("navigation", { name: "Sessions" }),
-		).not.toBeInTheDocument();
+			within(
+				screen.getByRole("navigation", { name: "Rooms" }),
+			).getAllByRole("list"),
+		).toHaveLength(1);
 	});
 
-	it("shares Sessions disclosure between the mobile drawer and desktop navigation", async () => {
+	it("restores the room list scroll position when mobile navigation reopens", async () => {
 		isWide = false;
 		const { user } = renderFrame();
 		await user.click(
@@ -376,29 +630,40 @@ describe("CollaborationFrame", () => {
 		const dialog = screen.getByRole("dialog", {
 			name: "Workspace navigation",
 		});
-		await user.click(
-			within(dialog).getByRole("button", { name: "Sessions" }),
-		);
+		const scroller = within(dialog).getByRole("navigation", {
+			name: "Rooms",
+		}).parentElement;
+		if (!scroller) throw new Error("Rooms must have a scroll container");
+		scroller.scrollTop = 160;
+		fireEvent.scroll(scroller);
+		expect(remote.tree.scrollTop.current).toBe(160);
 		await user.keyboard("{Escape}");
 		await user.click(
 			screen.getByRole("button", { name: "Open navigation" }),
 		);
+		const reopened = screen.getByRole("dialog", {
+			name: "Workspace navigation",
+		});
 		expect(
-			within(screen.getByRole("dialog")).getByRole("button", {
-				name: "Sessions",
+			within(reopened).getByRole("navigation", { name: "Rooms" })
+				.parentElement?.scrollTop,
+		).toBe(160);
+		expect(
+			within(reopened).getByRole("link", {
+				name: "Pricing conversation",
 			}),
-		).toHaveAttribute("aria-expanded", "false");
+		).toBeVisible();
+		expect(
+			within(reopened).getByRole("link", { name: "Sprint conversation" }),
+		).toBeVisible();
 		setDesktop(true);
 		await waitFor(() =>
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
 		);
 		expect(
-			screen.getByRole("button", { name: "Sessions" }),
-		).toHaveAttribute("aria-expanded", "false");
-		await user.click(screen.getByRole("button", { name: "Sessions" }));
-		expect(
-			screen.getByRole("button", { name: "Pricing conversation" }),
+			screen.getByRole("link", { name: "Pricing conversation" }),
 		).toBeVisible();
+		expect(remote.tree.refresh).not.toHaveBeenCalled();
 	});
 
 	it.each(["Escape", "Close navigation"])(
@@ -449,25 +714,37 @@ describe("CollaborationFrame", () => {
 		expect(router.state.location.pathname).toBe("/brain");
 	});
 
-	it.each(["/", "/settings"])(
-		"closes the mobile sidebar when Settings is selected from %s and focuses the destination",
-		async (path) => {
-			isWide = false;
-			const { user, router } = renderFrame(path);
-			await user.click(
-				screen.getByRole("button", { name: "Open navigation" }),
-			);
-			const drawer = screen.getByRole("dialog", {
-				name: "Workspace navigation",
-			});
-			await user.click(
-				within(drawer).getByRole("link", { name: "Settings" }),
-			);
-			await waitFor(() => expect(screen.getByRole("main")).toHaveFocus());
-			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-			expect(router.state.location.pathname).toBe("/settings");
-		},
-	);
+	it("shows the full account row in mobile navigation even when the desktop sidebar is collapsed", async () => {
+		const { user } = renderFrame();
+		await user.click(
+			screen.getByRole("button", { name: "Collapse navigation" }),
+		);
+		const desktopAccount = screen.getByRole("button", {
+			name: "Account menu for Robin Hale",
+		});
+		expect(desktopAccount).not.toHaveTextContent("Robin Hale");
+		setDesktop(false);
+		await user.click(
+			screen.getByRole("button", { name: "Open navigation" }),
+		);
+		const drawer = screen.getByRole("dialog", {
+			name: "Workspace navigation",
+		});
+		const mobileAccount = within(drawer).getByRole("button", {
+			name: "Account menu for Robin Hale",
+		});
+		expect(within(mobileAccount).getByText("Robin Hale")).toBeVisible();
+		expect(
+			within(drawer).queryByRole("link", { name: "Settings" }),
+		).not.toBeInTheDocument();
+		await user.click(mobileAccount);
+		expect(
+			screen.getByRole("menuitem", { name: "Settings" }),
+		).toBeVisible();
+		expect(screen.getByRole("menuitem", { name: "Log out" })).toBeVisible();
+		await user.keyboard("{Escape}");
+		await waitFor(() => expect(mobileAccount).toHaveFocus());
+	});
 
 	it("closes an open drawer when the route changes elsewhere", async () => {
 		isWide = false;
@@ -581,47 +858,4 @@ describe("CollaborationFrame", () => {
 			screen.getByRole("button", { name: "Collapse navigation" }),
 		).toHaveFocus();
 	});
-
-	it.each([false, true])(
-		"preserves a new topic draft when resizing its drawer to desktop (rail: %s)",
-		async (isCollapsed) => {
-			const { user } = renderFrame();
-			if (isCollapsed)
-				await user.click(
-					screen.getByRole("button", { name: "Collapse navigation" }),
-				);
-			setDesktop(false);
-			await user.click(
-				screen.getByRole("button", { name: "Open navigation" }),
-			);
-			const navigation = screen.getByRole("dialog", {
-				name: "Workspace navigation",
-			});
-			await user.click(
-				within(navigation).getByRole("button", { name: "New topic" }),
-			);
-			const dialog = screen.getByRole("dialog", { name: "New topic" });
-			const name = within(dialog).getByRole("textbox", {
-				name: "Name (required)",
-			});
-			await user.type(name, "Northwind strategy");
-			setDesktop(true);
-			await waitFor(() => expect(navigation).not.toBeInTheDocument());
-			expect(screen.getByRole("dialog", { name: "New topic" })).toBe(
-				dialog,
-			);
-			expect(name).toHaveValue("Northwind strategy");
-			expect(name).toHaveFocus();
-			await user.click(
-				within(dialog).getByRole("button", { name: "Cancel" }),
-			);
-			await waitFor(() =>
-				expect(
-					screen.getByRole("button", {
-						name: isCollapsed ? "Expand navigation" : "New topic",
-					}),
-				).toHaveFocus(),
-			);
-		},
-	);
 });

@@ -17,6 +17,8 @@ export interface MailApp {
 	nameKey: string;
 	/** The string key of the app an email opens in, such as `Outlook`. */
 	appNameKey: string;
+	/** Opens the provider's mailbox home, independently of any listed message. */
+	mailboxUrl: string;
 	/** The app's name in saved files, which are written in English. */
 	sourceName: string;
 	/** The mailbox's reactor calls. */
@@ -31,6 +33,7 @@ export const MAIL_APPS: Record<ConnectorAccount, MailApp> = {
 		brand: "outlook",
 		nameKey: "services.outlookMail",
 		appNameKey: "services.outlook",
+		mailboxUrl: "https://outlook.office.com/mail/",
 		sourceName: "Outlook",
 		pixels: mailPixels("MicrosoftOutlook"),
 	},
@@ -40,6 +43,7 @@ export const MAIL_APPS: Record<ConnectorAccount, MailApp> = {
 		brand: "gmail",
 		nameKey: "services.gmail",
 		appNameKey: "services.gmail",
+		mailboxUrl: "https://mail.google.com/mail/",
 		sourceName: "Gmail",
 		pixels: mailPixels("GoogleGmail"),
 	},

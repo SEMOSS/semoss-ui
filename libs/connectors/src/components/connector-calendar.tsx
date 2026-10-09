@@ -4,7 +4,14 @@ import {
 	ChevronRightIcon,
 	ListIcon,
 } from "lucide-react";
-import { type ReactNode, type Ref, useId, useState } from "react";
+import {
+	type ReactNode,
+	type Ref,
+	useEffect,
+	useId,
+	useRef,
+	useState,
+} from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -57,6 +64,12 @@ export interface ConnectorCalendarProps<T> {
 	renderEvent: (event: T, day: Date) => ReactNode;
 	/** Buttons at the end of the toolbar, such as refresh. */
 	actions?: ReactNode;
+	/** Compact calendars are agenda browsers, without grid controls. */
+	presentation?: "full" | "compact";
+	/** Offer the grid in the host's work area from a compact browser. */
+	onOpenCalendar?: () => void;
+	/** Use an agenda below 640px while remembering the user's display choice. */
+	responsive?: boolean;
 }
 
 /** Switch date spans and toggle between the calendar canvas and list view. */
@@ -75,9 +88,32 @@ export const ConnectorCalendar = <T,>({
 	onOpenEvent,
 	renderEvent,
 	actions,
+	presentation = "full",
+	onOpenCalendar,
+	responsive = false,
 }: ConnectorCalendarProps<T>) => {
 	const { t, i18n } = useTranslation("connectors");
-	const [isGridOpen, setIsGridOpen] = useState(true);
+	const [prefersGrid, setPrefersGrid] = useState(true);
+	const [isNarrow, setIsNarrow] = useState(false);
+	const widthRef = useRef<HTMLDivElement>(null);
+	const isCompact = presentation === "compact";
+	const canShowGrid = !isCompact && (!responsive || !isNarrow);
+	const isGridOpen = canShowGrid && prefersGrid;
+	useEffect(() => {
+		const element = widthRef.current;
+		if (!responsive || !element) return;
+		const updateWidth = (width: number): void => {
+			// A retained hidden panel reports zero; keep its last visible layout.
+			if (width > 0) setIsNarrow(width < 640);
+		};
+		updateWidth(element.getBoundingClientRect().width);
+		const observer = new ResizeObserver((entries) => {
+			const entry = entries.find((item) => item.target === element);
+			if (entry) updateWidth(entry.contentRect.width);
+		});
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [responsive]);
 	const gridId = useId();
 	const days = query.data ?? [];
 	const titles = new Map(
@@ -122,187 +158,213 @@ export const ConnectorCalendar = <T,>({
 	const isTimeline =
 		isGridOpen && calendar.view !== "month" && isCanvasAvailable;
 	return (
-		<div
-			ref={focusRef}
-			dir={i18n.dir()}
-			className="@container/calendar flex min-h-0 flex-1 flex-col"
-		>
-			<div className="flex shrink-0 flex-wrap items-center gap-x-2 border-border border-b bg-muted/10 px-2">
-				<div className="flex min-w-0 flex-1 @lg/calendar:basis-0 basis-full items-center gap-1 py-1">
-					<ConnectorIconButton
-						icon={ChevronLeftIcon}
-						isDirectional
-						label={t(`calendar.previousView.${calendar.view}`)}
-						onClick={() => calendar.move(-1)}
-					/>
-					<span
-						title={label}
-						aria-live="polite"
-						className="min-w-0 flex-1 truncate text-center font-medium text-sm"
-					>
-						{label}
-					</span>
-					<ConnectorIconButton
-						icon={ChevronRightIcon}
-						isDirectional
-						label={t(`calendar.nextView.${calendar.view}`)}
-						onClick={() => calendar.move(1)}
-					/>
-					<Button
-						size="sm"
-						variant="ghost"
-						className="h-8 px-2 text-xs"
-						onClick={calendar.today}
-					>
-						{t("calendar.today")}
-					</Button>
-				</div>
-				<div className="ms-auto flex flex-wrap items-center justify-end gap-1 py-1">
-					<Select
-						value={calendar.view}
-						onValueChange={(value) => {
-							if (isCalendarView(value)) calendar.setView(value);
-						}}
-						dir={i18n.dir()}
-					>
-						<SelectTrigger
-							size="sm"
-							aria-label={t("calendar.view")}
-							className="h-8 w-auto min-w-24 gap-2 bg-background text-xs shadow-none"
-						>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{VIEWS.map((view) => (
-								<SelectItem key={view} value={view}>
-									{t(`calendar.${view}`)}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						className="min-w-32 text-xs shadow-none"
-						aria-expanded={isGridOpen}
-						aria-controls={
-							isGridOpen && isCanvasAvailable ? gridId : undefined
-						}
-						onClick={() => setIsGridOpen((open) => !open)}
-					>
-						{isGridOpen ? (
-							<ListIcon aria-hidden />
-						) : (
-							<CalendarDaysIcon aria-hidden />
-						)}
-						{t(
-							isGridOpen
-								? "calendar.listView"
-								: "calendar.calendarView",
-						)}
-					</Button>
-					{actions}
-				</div>
-			</div>
-			{limitNote && query.status === "ready" ? (
-				<Muted
-					aria-live="polite"
-					className="shrink-0 border-border border-b bg-muted/30 px-3 py-2 text-xs"
-				>
-					{limitNote}
-				</Muted>
-			) : null}
-			{isTimeline ? (
-				<div
-					id={gridId}
-					className="flex min-h-0 flex-1 flex-col"
-					aria-busy={query.status === "loading" || undefined}
-				>
-					{!getSchedule ? (
-						<Muted className="px-3 py-1 text-xs">
-							{t("calendar.openForTime")}
-						</Muted>
-					) : null}
-					{query.status === "loading" ? (
-						<output className="px-3 py-1 text-muted-foreground text-xs">
-							{t("common.loading")}
-						</output>
-					) : null}
-					<ConnectorCalendarTimeline
-						calendar={calendar}
-						days={days}
-						getTitle={getTitle}
-						getEventKey={getEventKey}
-						getEventLabel={getEventLabel}
-						getSchedule={getSchedule}
-						onOpenEvent={onOpenEvent}
-					/>
-				</div>
-			) : (
-				<ScrollArea className="[&>div>div]:block! min-h-0 flex-1">
-					{isGridOpen && isCanvasAvailable ? (
-						<div id={gridId}>
-							<ConnectorCalendarMonth
-								calendar={calendar}
-								titles={titles}
-							/>
-						</div>
-					) : null}
-					{query.status !== "ready" ? (
-						<ConnectorViewerStatus
-							query={query}
-							serviceName={serviceName}
-							account={account}
-							onSignIn={onSignIn}
+		<div ref={widthRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
+			<div
+				ref={focusRef}
+				dir={i18n.dir()}
+				className="@container/calendar flex min-h-0 min-w-0 flex-1 flex-col"
+			>
+				<div className="flex shrink-0 flex-wrap items-center gap-x-2 border-border border-b bg-muted/10 px-2">
+					<div className="flex min-w-0 flex-1 @lg/calendar:basis-0 basis-full items-center gap-1 py-1">
+						<ConnectorIconButton
+							icon={ChevronLeftIcon}
+							isDirectional
+							label={t(`calendar.previousView.${calendar.view}`)}
+							onClick={() => calendar.move(-1)}
 						/>
-					) : (
-						<>
-							{!isGridOpen ? (
-								<H4 className="border-border border-b bg-muted px-3 py-2 font-medium text-xs">
-									{t("calendar.agenda")}
-								</H4>
-							) : null}
-							<ul>
-								{shownDays.map(({ day, events }) => (
-									<li key={formatLocalDateKey(day)}>
-										<H4 className="sticky top-0 z-10 border-border border-b bg-muted px-3 py-2 font-medium text-xs">
-											{formatDayHeading(
-												day,
-												i18n.language,
-											)}
-										</H4>
-										{events.length ? (
-											<ul>
-												{events.map((event) =>
-													renderEvent(event, day),
-												)}
-											</ul>
+						<span
+							title={label}
+							aria-live="polite"
+							className="min-w-0 flex-1 truncate text-center font-medium text-sm"
+						>
+							{label}
+						</span>
+						<ConnectorIconButton
+							icon={ChevronRightIcon}
+							isDirectional
+							label={t(`calendar.nextView.${calendar.view}`)}
+							onClick={() => calendar.move(1)}
+						/>
+						<Button
+							size="sm"
+							variant="ghost"
+							className="h-8 px-2 text-xs"
+							onClick={calendar.today}
+						>
+							{t("calendar.today")}
+						</Button>
+					</div>
+					<div className="ms-auto flex flex-wrap items-center justify-end gap-1 py-1">
+						{isCompact ? (
+							onOpenCalendar ? (
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									className="pointer-coarse:min-h-11"
+									onClick={onOpenCalendar}
+								>
+									<CalendarDaysIcon aria-hidden />
+									{t("calendar.openCalendar")}
+								</Button>
+							) : null
+						) : (
+							<>
+								<Select
+									value={calendar.view}
+									onValueChange={(value) => {
+										if (isCalendarView(value))
+											calendar.setView(value);
+									}}
+									dir={i18n.dir()}
+								>
+									<SelectTrigger
+										size="sm"
+										aria-label={t("calendar.view")}
+										className="h-8 w-auto min-w-24 gap-2 bg-background text-xs shadow-none"
+									>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{VIEWS.map((view) => (
+											<SelectItem key={view} value={view}>
+												{t(`calendar.${view}`)}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								{canShowGrid ? (
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										className="min-w-32 text-xs shadow-none"
+										aria-expanded={isGridOpen}
+										aria-controls={
+											isGridOpen && isCanvasAvailable
+												? gridId
+												: undefined
+										}
+										onClick={() =>
+											setPrefersGrid((open) => !open)
+										}
+									>
+										{isGridOpen ? (
+											<ListIcon aria-hidden />
 										) : (
-											<Muted className="px-3 py-6 text-center text-sm">
-												{t(
-													limitNote
-														? "calendar.noLoadedEvents"
-														: "calendar.emptyDay",
-												)}
-											</Muted>
+											<CalendarDaysIcon aria-hidden />
 										)}
-									</li>
-								))}
-							</ul>
-							{shownDays.length === 0 ? (
-								<Muted className="px-3 py-8 text-center">
-									{t(
-										limitNote
-											? "calendar.noLoadedEvents"
-											: "calendar.emptyRange",
-									)}
-								</Muted>
-							) : null}
-						</>
-					)}
-				</ScrollArea>
-			)}
+										{t(
+											isGridOpen
+												? "calendar.listView"
+												: "calendar.calendarView",
+										)}
+									</Button>
+								) : null}
+							</>
+						)}
+						{actions}
+					</div>
+				</div>
+				{limitNote && query.status === "ready" ? (
+					<Muted
+						aria-live="polite"
+						className="shrink-0 border-border border-b bg-muted/30 px-3 py-2 text-xs"
+					>
+						{limitNote}
+					</Muted>
+				) : null}
+				{isTimeline ? (
+					<div
+						id={gridId}
+						className="flex min-h-0 flex-1 flex-col"
+						aria-busy={query.status === "loading" || undefined}
+					>
+						{!getSchedule ? (
+							<Muted className="px-3 py-1 text-xs">
+								{t("calendar.openForTime")}
+							</Muted>
+						) : null}
+						{query.status === "loading" ? (
+							<output className="px-3 py-1 text-muted-foreground text-xs">
+								{t("common.loading")}
+							</output>
+						) : null}
+						<ConnectorCalendarTimeline
+							calendar={calendar}
+							days={days}
+							getTitle={getTitle}
+							getEventKey={getEventKey}
+							getEventLabel={getEventLabel}
+							getSchedule={getSchedule}
+							onOpenEvent={onOpenEvent}
+						/>
+					</div>
+				) : (
+					<ScrollArea className="[&>div>div]:block! min-h-0 flex-1">
+						{isGridOpen && isCanvasAvailable ? (
+							<div id={gridId}>
+								<ConnectorCalendarMonth
+									calendar={calendar}
+									titles={titles}
+								/>
+							</div>
+						) : null}
+						{query.status !== "ready" ? (
+							<ConnectorViewerStatus
+								query={query}
+								serviceName={serviceName}
+								account={account}
+								onSignIn={onSignIn}
+							/>
+						) : (
+							<>
+								{!isGridOpen ? (
+									<H4 className="border-border border-b bg-muted px-3 py-2 font-medium text-xs">
+										{t("calendar.agenda")}
+									</H4>
+								) : null}
+								<ul>
+									{shownDays.map(({ day, events }) => (
+										<li key={formatLocalDateKey(day)}>
+											<H4 className="sticky top-0 z-10 border-border border-b bg-muted px-3 py-2 font-medium text-xs">
+												{formatDayHeading(
+													day,
+													i18n.language,
+												)}
+											</H4>
+											{events.length ? (
+												<ul>
+													{events.map((event) =>
+														renderEvent(event, day),
+													)}
+												</ul>
+											) : (
+												<Muted className="px-3 py-6 text-center text-sm">
+													{t(
+														limitNote
+															? "calendar.noLoadedEvents"
+															: "calendar.emptyDay",
+													)}
+												</Muted>
+											)}
+										</li>
+									))}
+								</ul>
+								{shownDays.length === 0 ? (
+									<Muted className="px-3 py-8 text-center">
+										{t(
+											limitNote
+												? "calendar.noLoadedEvents"
+												: "calendar.emptyRange",
+										)}
+									</Muted>
+								) : null}
+							</>
+						)}
+					</ScrollArea>
+				)}
+			</div>
 		</div>
 	);
 };

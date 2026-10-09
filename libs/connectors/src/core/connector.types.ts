@@ -33,6 +33,13 @@ export interface ConnectorSavedFile {
 /** What a host gives every connector viewer. */
 export interface ConnectorViewerProps {
 	/**
+	 * Prepare the host before a save, such as binding a draft to its room.
+	 * An optional release function keeps that host alive through the save and
+	 * its completion callback, and is called on success or failure.
+	 */
+	// biome-ignore lint/suspicious/noConfusingVoidType: an async host may prepare without returning a release callback.
+	prepareSave?: () => Promise<void | (() => void)>;
+	/**
 	 * What the host calls the insight's files, such as `Chat files`. It names
 	 * the save action, which always saves into the current insight.
 	 */

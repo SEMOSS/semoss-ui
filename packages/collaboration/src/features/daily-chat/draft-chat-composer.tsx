@@ -2,6 +2,7 @@ import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { RoomComposer } from "@/features/rooms/components/room-composer";
 import type { ComposerPanelAction } from "@/features/rooms/components/room-composer.types";
+import { RoomContextFiles } from "@/features/rooms/components/room-context-files";
 import type {
 	RoomSession,
 	RoomSessionSnapshot,
@@ -113,6 +114,13 @@ export function DraftChatComposer({
 				hideSettingsAction
 				actionsTriggerId={actionsTriggerId}
 				panelActions={panelActions}
+				attachmentSummary={
+					<RoomContextFiles
+						files={snapshot.contextFiles}
+						onRemove={session.removeContextFile}
+						disabled={isBusy || snapshot.turn.isRunning}
+					/>
+				}
 				inheritedMcp={snapshot.agent?.mcp ?? []}
 				isSettingsDisabled={!snapshot.isReady || isBusy}
 				onModelChange={(engine) =>

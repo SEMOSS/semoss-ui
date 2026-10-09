@@ -71,6 +71,8 @@ code may import from `core/` and `components/`; those two never import from them
 - **`onAddToContext` is the host's.** The viewer saves the item, then hands the saved file over;
   the action only shows when the host passes the callback. `onSaved` replaces the viewer's own
   confirmation, and `onSignIn` opens the account's sign in, which must happen inside the click.
+  Optional `prepareSave` runs before the save; a returned release function runs after the save
+  and completion callback on success or failure, keeping a draft's room alive during the work.
 - **Signed out is a state, not an error.** `runConnectorPixel` turns the backend's
   `LOGGIN_REQUIRED_ERROR` (its spelling) into `ConnectorSignInError`, and HTTP 401 counts the
   same, since the backend treats a token without an expiry as valid. Google's 403 for a missing
@@ -82,6 +84,14 @@ code may import from `core/` and `components/`; those two never import from them
   `limit` and `offset` and answer `hasMore`; a view that stops at its limit says so. The other
   reactors return no pagination tokens, so their lists that reach their `limit` say so or read
   more by raising it.
+- **Mail folders page on demand.** `useMailboxQuery` reads 25 messages at each offset and keeps
+  Show More available while `hasMore` is true, without a total mailbox cap. Offsets advance by
+  the server's page count, falling back to the raw length before parsing or deduplication.
+  Outlook subject search explains its separate 1,000-match provider ceiling; clearing the
+  search restores ordinary folder browsing. A filter, account, insight, or refresh
+  starts again at zero and discards late responses; a failed append retains earlier rows and
+  offers retry or sign in. Activity hiding a viewer cancels pending reads but retains loaded
+  pages and their next offset. Thread and calendar limits are independent of folder pagination.
 - **Mail reads threads whole.** Emails of one conversation share a row. Opening one reads the
   thread from every folder with `<prefix>ListMail(conversationId=...)`. Outlook reports each
   email's `uniqueBody`, its text without the history it quotes; `mail/mail.threads.ts` cuts
@@ -172,6 +182,52 @@ all-day ends as exclusive. Each read is capped at 100 events, and when the react
 `hasMore` the calendar identifies incomplete results, naming the app to open for the rest, and
 does not claim an unloaded day is empty. Keep the grid mounted during loading to preserve
 keyboard focus.
+
+Hosts with narrow browsers can opt into `presentation="compact"` on `MailboxView`
+and `CalendarAgendaView`, providing a `providerControl` slot and item-open
+callbacks. Compact mail keeps folder, filters, search, and two-line subject rows;
+compact calendar always uses a date-grouped agenda. Omitting these options
+preserves the existing self-contained viewer behavior. `MailDetailView` accepts a
+`MailItemSelection`; `CalendarEventDetailView` accepts a `CalendarEventSelection`.
+Both use the existing host save/sign-in contract and accept `onBack`. Navigation,
+tab ownership, deduplication, and focus return belong to the host.
+
+`MailDetailView` can publish `MailDetailViewControls` through an identity-stable
+`onControls` callback. Controls identify the provider, item kind and item ID,
+localized `appName`, and the loaded message's `webUrl`; threads use the newest
+loaded message in that conversation. Loading, failed reads, and missing links
+publish an absent URL. Never substitute the list summary or mailbox home for an
+unavailable detail link, and do not fetch separately to provide controls.
+`showOpenIn={false}` removes only the detail's inline Open action when a host
+provides it; `true` enables it in both message and thread viewers. Omitting it
+preserves the existing message action and absence of a thread-level action.
+Hosts replacing the action in their own chrome should explicitly enable the
+inline action when that chrome is absent, including compact layouts.
+
+`MailboxView` can publish `MailboxViewControls` through an identity-stable
+`onControls` callback for host-owned chrome. Controls identify their provider and
+include a stable `refresh` callback for the current filters, `isRefreshing` while
+any mailbox page is loading, the localized `appName`, and a trusted `mailboxUrl`
+for Outlook or Gmail's home. The mailbox home is independent of an item's
+`webLink` and uses the external app's browser session. A host can set
+`showRefresh={false}` when it renders Refresh itself; it defaults to true in both
+presentations. Hosts retaining multiple provider viewers must choose controls by
+provider and keep essential actions available when compact chrome is absent.
+
+`CalendarAgendaView` publishes the analogous `CalendarAgendaViewControls` through
+an identity-stable `onControls` callback: provider, stable `refresh` for the current
+date range, `isRefreshing` while loading or refreshing, localized `appName`, and
+the provider's trusted `calendarUrl`. `showRefresh={false}` removes only the
+viewer's inline Refresh action; its default remains true for every presentation.
+Calendar home links are independent of event links and use the external app's
+browser session. Keep provider selection, date navigation, Open calendar, and
+event actions available when the host replaces Refresh.
+
+`useCalendarWindow` and its `CalendarWindow` type are public so a host can share
+one provider's navigation between its agenda and full calendar. A full calendar
+can opt into `responsive` to show an agenda below 640px of actual container width
+without losing its preferred grid presentation. `onOpenCalendar` names the
+compact agenda's full-calendar action.
 
 ## Build System
 

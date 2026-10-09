@@ -21,6 +21,8 @@ export interface ConnectorItemRowProps {
 	description?: string;
 	/** A short detail at the end, such as a date. */
 	meta?: string;
+	/** Compact mail rows put sender and date above a two-line subject. */
+	presentation?: "full" | "compact";
 	/** Marks the item as new, as for unread mail. */
 	isEmphasized?: boolean;
 	/**
@@ -51,6 +53,7 @@ export const ConnectorItemRow = ({
 	title,
 	description,
 	meta,
+	presentation = "full",
 	isEmphasized = false,
 	onOpen,
 	openLabel,
@@ -60,47 +63,79 @@ export const ConnectorItemRow = ({
 	// spans only: the text sits inside a button, which cannot hold paragraphs.
 	// Center the icon and metadata against the whole text stack so dates and
 	// the trailing action share a centerline in both one- and two-line rows.
-	const content = (
-		<>
-			<span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
-				{icon}
-			</span>
-			<span className="flex min-w-0 flex-1 flex-col gap-0.5">
-				<span className="flex min-w-0 items-center gap-2">
+	const content =
+		presentation === "compact" ? (
+			<span className="flex min-w-0 flex-1 flex-col gap-1">
+				<span className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs">
 					{isEmphasized ? (
-						// the open label says the item is unread; the dot and the
-						// weight say it on screen
 						<span
 							aria-hidden
 							className="size-2 shrink-0 rounded-full bg-primary"
 						/>
 					) : null}
 					<span
-						className={cn(
-							"min-w-0 flex-1 truncate text-foreground text-sm",
-							isEmphasized && "font-medium",
-						)}
-						title={title}
-					>
-						{title}
-					</span>
-				</span>
-				{description ? (
-					<span
-						className="truncate text-muted-foreground text-xs"
+						className="min-w-0 flex-1 truncate"
 						title={description}
 					>
 						{description}
 					</span>
-				) : null}
-			</span>
-			{meta ? (
-				<span className="shrink-0 text-end text-muted-foreground text-xs tabular-nums">
-					{meta}
+					{meta ? (
+						<span className="shrink-0 text-end tabular-nums">
+							{meta}
+						</span>
+					) : null}
 				</span>
-			) : null}
-		</>
-	);
+				<span
+					className={cn(
+						"wrap-anywhere line-clamp-2 whitespace-normal text-foreground text-sm",
+						isEmphasized && "font-medium",
+					)}
+					title={title}
+				>
+					{title}
+				</span>
+			</span>
+		) : (
+			<>
+				<span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
+					{icon}
+				</span>
+				<span className="flex min-w-0 flex-1 flex-col gap-0.5">
+					<span className="flex min-w-0 items-center gap-2">
+						{isEmphasized ? (
+							// the open label says the item is unread; the dot and the
+							// weight say it on screen
+							<span
+								aria-hidden
+								className="size-2 shrink-0 rounded-full bg-primary"
+							/>
+						) : null}
+						<span
+							className={cn(
+								"min-w-0 flex-1 truncate text-foreground text-sm",
+								isEmphasized && "font-medium",
+							)}
+							title={title}
+						>
+							{title}
+						</span>
+					</span>
+					{description ? (
+						<span
+							className="truncate text-muted-foreground text-xs"
+							title={description}
+						>
+							{description}
+						</span>
+					) : null}
+				</span>
+				{meta ? (
+					<span className="shrink-0 text-end text-muted-foreground text-xs tabular-nums">
+						{meta}
+					</span>
+				) : null}
+			</>
+		);
 
 	return (
 		<ConnectorItemMenu actions={actions}>

@@ -1,7 +1,13 @@
 import { Command, FolderTree, Settings2 } from "lucide-react";
 import { Activity, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Button, DropdownMenuItem, useIsMobile } from "@semoss/ui/next";
+import {
+	Alert,
+	AlertDescription,
+	Button,
+	DropdownMenuItem,
+	useIsMobile,
+} from "@semoss/ui/next";
 import {
 	Workbench,
 	WorkbenchChromeButton,
@@ -9,8 +15,13 @@ import {
 	WorkbenchProvider,
 } from "@semoss/workbench";
 import { openToolWorkbenchFiles } from "../open-tool-workbench-files";
+import {
+	CALENDAR_PANEL_TYPE,
+	EMAILS_PANEL_TYPE,
+} from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
 import { ToolWorkbenchFocusContext } from "../tool-workbench-focus.context";
+import { useWorkbenchCompactLayout } from "../use-workbench-compact-layout";
 
 interface ToolWorkbenchProps {
 	onOpenSettings?: () => void;
@@ -34,8 +45,23 @@ export function ToolWorkbench({
 	const [fileError, setFileError] = useState<string | null>(null);
 	const backButton = useRef<HTMLButtonElement>(null);
 	const dock = useRef<HTMLElement>(null);
+	const isCompact = useWorkbenchCompactLayout(dock, isOpen);
 	const focusWorkbench = useCallback(() => dock.current?.focus(), []);
 	const isMobile = useIsMobile();
+	useEffect(() => {
+		const actions = store.getState().layout.actions;
+		for (const [type, key] of [
+			[EMAILS_PANEL_TYPE, "emails"],
+			[CALENDAR_PANEL_TYPE, "calendar"],
+		] as const) {
+			for (const panel of actions.findPanels(
+				(candidate) => candidate.type === type,
+			)) {
+				actions.updatePanel(panel.id, { name: t(`workbench.${key}`) });
+			}
+		}
+	}, [store, t]);
+
 	useEffect(() => {
 		if (!isMobile || !isOpen) return;
 		// Activity must reveal retained panels before the mobile control can focus.
@@ -56,7 +82,7 @@ export function ToolWorkbench({
 			setFileError(
 				error instanceof Error
 					? error.message
-					: "Unable to open room files. Try again.",
+					: t("workbench.filesError"),
 			);
 		} finally {
 			setIsPreparingFiles(false);
@@ -69,7 +95,7 @@ export function ToolWorkbench({
 				<WorkbenchProvider store={store}>
 					<section
 						ref={dock}
-						aria-label="Workbench panels"
+						aria-label={t("workbench.panels")}
 						tabIndex={-1}
 						className="focus-visible:-outline-offset-2 flex size-full min-h-0 flex-col focus-visible:outline-2 focus-visible:outline-ring"
 					>
@@ -80,25 +106,29 @@ export function ToolWorkbench({
 							className="shrink-0 md:hidden"
 							onClick={closeWorkbench}
 						>
-							Back to conversation
+							{t("workbench.backToConversation")}
 						</Button>
 						{fileError && (
-							<p
-								role="alert"
-								className="shrink-0 px-3 py-2 text-destructive text-sm"
+							<Alert
+								variant="destructive"
+								className="shrink-0 rounded-none"
 							>
-								{fileError}
-							</p>
+								<AlertDescription>{fileError}</AlertDescription>
+							</Alert>
 						)}
 						<div className="relative min-h-0 flex-1">
 							<Workbench
 								snapshot={snapshot}
+								layoutMode={isCompact ? "compact" : "auto"}
+								mobileTopBorder="toolbar"
 								borderSlots={{
 									left: {
 										after: ({ onNavigate }) => (
 											<WorkbenchChromeButton
 												icon={Command}
-												label="Open command palette"
+												label={t(
+													"workbench.commandPalette",
+												)}
 												onClick={() => {
 													onNavigate?.();
 													requestAnimationFrame(() =>
@@ -121,6 +151,7 @@ export function ToolWorkbench({
 													)
 												}
 												textSize="xs"
+												showChevron
 												showNavigation={false}
 												showLayoutActions={false}
 												showCommandPalette={false}
@@ -142,8 +173,12 @@ export function ToolWorkbench({
 															<FolderTree aria-hidden="true" />
 															{isPreparingFiles ||
 															isOpeningFiles
-																? "Opening chat files…"
-																: "Show chat files"}
+																? t(
+																		"workbench.openingFiles",
+																	)
+																: t(
+																		"workbench.showFiles",
+																	)}
 														</DropdownMenuItem>
 														{onOpenSettings && (
 															<DropdownMenuItem
@@ -154,7 +189,9 @@ export function ToolWorkbench({
 																}}
 															>
 																<Settings2 aria-hidden="true" />
-																Open settings
+																{t(
+																	"workbench.openSettings",
+																)}
 															</DropdownMenuItem>
 														)}
 													</>

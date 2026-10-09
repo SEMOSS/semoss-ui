@@ -6,7 +6,7 @@ import { settingsSections } from "@/features/settings/settings-sections";
 import { ErrorPage } from "@/pages/error.page";
 import { NotFoundPage } from "@/pages/not-found.page";
 
-/** Work and Brain share a canonical conversation route. */
+/** For you, topic workspaces, and Brain share a canonical conversation route. */
 export const routes: RouteObject[] = [
 	{
 		Component: RootLayout,
@@ -30,11 +30,27 @@ export const routes: RouteObject[] = [
 									).DashboardPage,
 								}),
 							},
+							{
+								path: "for-you",
+								id: "for-you",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/for-you.page")
+									).ForYouPage,
+								}),
+							},
 							...[
+								"tasks",
+								"tasks/all",
+								"tasks/waiting",
+								"tasks/done",
+								"tasks/topics",
+								"tasks/topic/:topicId",
 								"work",
 								"work/all",
 								"work/waiting",
 								"work/done",
+								"work/topics",
 								"work/topic/:topicId",
 							].map((path) => ({
 								path,
@@ -74,7 +90,7 @@ export const routes: RouteObject[] = [
 							})),
 							...["room"].map((path) => ({
 								path,
-								element: <Navigate to="/work" replace />,
+								element: <Navigate to="/for-you" replace />,
 							})),
 							{
 								path: "agents/*",

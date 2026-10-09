@@ -1,5 +1,12 @@
-import { Brain, Mail, PanelRightOpen, Settings2, X } from "lucide-react";
-import { useContext, useEffect, useId, useState } from "react";
+import { Brain, Mail, PanelRightOpen, Settings2 } from "lucide-react";
+import {
+	useContext,
+	useEffect,
+	useId,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import {
 	Button,
 	cn,
@@ -8,18 +15,21 @@ import {
 	ResizablePanelGroup,
 	toast,
 } from "@semoss/ui/next";
+import { CollaborationWorkbenchLayoutContext } from "@/features/collaboration/components/collaboration-workbench-layout.context";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
 	guessMemoryKind,
 	rememberCommand,
 } from "@/features/collaboration/state/memory";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
+import { useRoomRead } from "@/features/room-tree/use-room-read";
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { Session } from "@/types/session";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { RoomComposer } from "./room-composer";
 import type { RoomSlashCommand } from "./room-composer-slash-plugin";
+import { RoomContextFiles } from "./room-context-files";
 import { RoomConversation } from "./room-conversation";
 import { RoomRunStatus } from "./room-run-status";
 import { ROOM_SETTINGS_PANEL_TYPE } from "./room-settings-panel";
@@ -101,6 +111,8 @@ export function RoomWorkspace({
 	onReconnect,
 }: RoomWorkspaceProps) {
 	const roomEmail = useContext(RoomEmailContext);
+	const shellLayout = useContext(CollaborationWorkbenchLayoutContext);
+	const conversationRef = useRef<HTMLDivElement>(null);
 	// /remember saves a memory as the owner's own, with no model call
 	const memorySession = useOptionalCollaborationSession();
 	const {
@@ -109,6 +121,25 @@ export function RoomWorkspace({
 		openWorkbench,
 		closeWorkbench,
 	} = useToolWorkbench();
+	useRoomRead(
+		session.id,
+		Boolean(roomSnapshot?.isReady && !isLoadingHistory),
+		showToolWorkbench && isToolWorkbenchOpen,
+	);
+	const registerConversation = shellLayout?.registerConversation;
+	const isShellWorkbenchLayoutActive = Boolean(
+		registerConversation && showToolWorkbench && isToolWorkbenchOpen,
+	);
+	useLayoutEffect(() => {
+		const conversation = conversationRef.current;
+		if (
+			!registerConversation ||
+			!isShellWorkbenchLayoutActive ||
+			!conversation
+		)
+			return;
+		return registerConversation(conversation);
+	}, [isShellWorkbenchLayoutActive, registerConversation]);
 	const [resumeSignal, setResumeSignal] = useState(0);
 	const actionsTriggerId = useId();
 	const [hasOpenedWorkbench, setHasOpenedWorkbench] =
@@ -172,156 +203,152 @@ export function RoomWorkspace({
 						"hidden md:block",
 				)}
 			>
-				<RoomConversation
-					agent={agent}
-					title={session.title}
-					conversationId={session.id}
-					thread={thread}
-					isLoadingHistory={isLoadingHistory}
-					resumeSignal={resumeSignal}
-					phase={phase}
-					hasObservationIssue={Boolean(transportError)}
-					isToolWorkbenchOpen={isToolWorkbenchOpen}
-					showToolWorkbench={showToolWorkbench}
-					onToggleToolWorkbench={toggleToolWorkbench}
-					status={
-						<>
-							{roomSnapshot?.hasUnconfirmedSubmission && (
-								<output className="flex items-center gap-3 border-t px-5 py-3 text-sm">
-									<span>
-										Reconnect to check whether your last
-										message was received before sending
-										again.
-									</span>
-									<Button
-										type="button"
-										variant="outline"
-										disabled={isSending}
-										onClick={() => void onReconnect()}
-									>
-										Reconnect
-									</Button>
-								</output>
-							)}
-							{roomSnapshot?.submissionNotice && (
-								<output className="block px-5 py-2 text-sm">
-									{roomSnapshot.submissionNotice}
-								</output>
-							)}
-							<RoomRunStatus
-								agent={agent}
-								turnError={turnError}
-								transportError={transportError}
-								pendingApprovals={pendingApprovals}
-								onReconnect={onReconnect}
-							/>
-						</>
-					}
-					composer={
-						<RoomComposer
-							key={`${session.id}:${roomSnapshot?.composerResetKey ?? 0}`}
-							initialDraft={roomSnapshot?.composerDraft}
-							onDraftChange={roomSession?.setComposerDraft}
-							retainUntilSent
-							extraCommands={
-								memorySession ? REMEMBER_COMMANDS : undefined
-							}
-							actionsTriggerId={actionsTriggerId}
-							hideSettingsAction={showToolWorkbench}
-							panelActions={
-								showToolWorkbench
-									? [
-											...(roomEmail?.hasSourceEmail
-												? [
-														{
-															id: "source-email",
-															label: "View email",
-															icon: Mail,
-															onSelect: () =>
-																roomEmail.openSource(
-																	actionsTriggerId,
-																),
-														},
-													]
-												: []),
-											{
-												id: "settings",
-												label: "Settings",
-												icon: Settings2,
-												onSelect: openSettings,
-											},
-											{
-												id: "workbench",
-												label: "Open workbench",
-												icon: PanelRightOpen,
-												onSelect: () =>
-													openWorkbench(
-														undefined,
-														actionsTriggerId,
-													),
-											},
-										]
-									: undefined
-							}
-							submissionError={
-								roomSnapshot?.submissionError ||
-								roomSnapshot?.settingsError ||
-								undefined
-							}
-							isSendDisabled={Boolean(
-								roomSnapshot?.hasUnconfirmedSubmission ||
-									roomSnapshot?.settingsError ||
-									roomSnapshot?.modelError,
-							)}
-							attachmentSummary={roomSnapshot?.contextFiles.map(
-								(file) => (
-									<div
-										key={file.fileLocation}
-										className="flex items-center gap-2 rounded-md border px-3 py-1 text-sm"
-									>
-										<span className="min-w-0 flex-1 truncate">
-											{file.fileName}
+				<div
+					ref={conversationRef}
+					className={cn(
+						"size-full min-h-0 min-w-0",
+						isShellWorkbenchLayoutActive &&
+							"md:pt-(--collaboration-header-height)",
+					)}
+				>
+					<RoomConversation
+						agent={agent}
+						title={session.title}
+						conversationId={session.id}
+						thread={thread}
+						isLoadingHistory={isLoadingHistory}
+						resumeSignal={resumeSignal}
+						phase={phase}
+						hasObservationIssue={Boolean(transportError)}
+						isToolWorkbenchOpen={isToolWorkbenchOpen}
+						showToolWorkbench={showToolWorkbench}
+						onToggleToolWorkbench={toggleToolWorkbench}
+						status={
+							<>
+								{roomSnapshot?.hasUnconfirmedSubmission && (
+									<output className="flex items-center gap-3 border-t px-5 py-3 text-sm">
+										<span>
+											Reconnect to check whether your last
+											message was received before sending
+											again.
 										</span>
 										<Button
 											type="button"
-											variant="ghost"
-											size="icon-sm"
-											aria-label={`Remove ${file.fileName} from context`}
-											disabled={isSending || isRunning}
-											onClick={() =>
-												roomSession?.removeContextFile(
-													file.fileLocation,
-												)
-											}
+											variant="outline"
+											disabled={isSending}
+											onClick={() => void onReconnect()}
 										>
-											<X aria-hidden="true" />
+											Reconnect
 										</Button>
-									</div>
-								),
-							)}
-							className="bg-transparent"
-							agentName={agent.name}
-							agent={agent}
-							isSubmitting={isSending}
-							isRunning={isRunning}
-							isCancelling={isCancelling}
-							modelId={modelId}
-							modelName={modelName}
-							isModelSaving={isModelSaving}
-							isModelLocked={isModelLocked}
-							modelError={modelError}
-							roomInstructions={roomInstructions}
-							roomSettings={roomSettings}
-							inheritedMcp={agent.mcp}
-							isSettingsDisabled={isModelSaving}
-							onModelChange={onModelChange}
-							onSaveRoomSettings={onSaveRoomSettings}
-							onOptimizePrompt={onOptimizePrompt}
-							onSend={handleSend}
-							onStop={onCancelTurn}
-						/>
-					}
-				/>
+									</output>
+								)}
+								{roomSnapshot?.submissionNotice && (
+									<output className="block px-5 py-2 text-sm">
+										{roomSnapshot.submissionNotice}
+									</output>
+								)}
+								<RoomRunStatus
+									agent={agent}
+									turnError={turnError}
+									transportError={transportError}
+									pendingApprovals={pendingApprovals}
+									onReconnect={onReconnect}
+								/>
+							</>
+						}
+						composer={
+							<RoomComposer
+								key={`${session.id}:${roomSnapshot?.composerResetKey ?? 0}`}
+								initialDraft={roomSnapshot?.composerDraft}
+								onDraftChange={roomSession?.setComposerDraft}
+								retainUntilSent
+								extraCommands={
+									memorySession
+										? REMEMBER_COMMANDS
+										: undefined
+								}
+								actionsTriggerId={actionsTriggerId}
+								hideSettingsAction={showToolWorkbench}
+								panelActions={
+									showToolWorkbench
+										? [
+												...(roomEmail?.hasSourceEmail
+													? [
+															{
+																id: "source-email",
+																label: "View email",
+																icon: Mail,
+																onSelect: () =>
+																	roomEmail.openSource(
+																		actionsTriggerId,
+																	),
+															},
+														]
+													: []),
+												{
+													id: "settings",
+													label: "Settings",
+													icon: Settings2,
+													onSelect: openSettings,
+												},
+												{
+													id: "workbench",
+													label: "Open workbench",
+													icon: PanelRightOpen,
+													onSelect: () =>
+														openWorkbench(
+															undefined,
+															actionsTriggerId,
+														),
+												},
+											]
+										: undefined
+								}
+								submissionError={
+									roomSnapshot?.submissionError ||
+									roomSnapshot?.settingsError ||
+									undefined
+								}
+								isSendDisabled={Boolean(
+									roomSnapshot?.hasUnconfirmedSubmission ||
+										roomSnapshot?.settingsError ||
+										roomSnapshot?.modelError,
+								)}
+								attachmentSummary={
+									roomSession && roomSnapshot ? (
+										<RoomContextFiles
+											files={roomSnapshot.contextFiles}
+											onRemove={
+												roomSession.removeContextFile
+											}
+											disabled={isSending || isRunning}
+										/>
+									) : undefined
+								}
+								className="bg-transparent"
+								agentName={agent.name}
+								agent={agent}
+								isSubmitting={isSending}
+								isRunning={isRunning}
+								isCancelling={isCancelling}
+								modelId={modelId}
+								modelName={modelName}
+								isModelSaving={isModelSaving}
+								isModelLocked={isModelLocked}
+								modelError={modelError}
+								roomInstructions={roomInstructions}
+								roomSettings={roomSettings}
+								inheritedMcp={agent.mcp}
+								isSettingsDisabled={isModelSaving}
+								onModelChange={onModelChange}
+								onSaveRoomSettings={onSaveRoomSettings}
+								onOptimizePrompt={onOptimizePrompt}
+								onSend={handleSend}
+								onStop={onCancelTurn}
+							/>
+						}
+					/>
+				</div>
 			</ResizablePanel>
 			{showToolWorkbench &&
 				(isToolWorkbenchOpen || hasOpenedWorkbench) && (

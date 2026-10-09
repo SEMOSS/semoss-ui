@@ -21,7 +21,7 @@ export function noResponseNeeded(dispatch: Dispatch, item: WorkItem) {
 // no more Work from this conversation; it stays in Brain
 export function ignoreThread(dispatch: Dispatch, thread: Thread) {
 	dispatch({ type: "thread.mute", threadId: thread.id, muted: true });
-	toast("Thread ignored. It stays in Brain; no new Work comes from it.", {
+	toast("Thread ignored. It stays in Brain; no new tasks come from it.", {
 		action: {
 			label: "Undo",
 			onClick: () => resumeThread(dispatch, thread),

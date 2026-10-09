@@ -2,44 +2,48 @@ import { Search } from "lucide-react";
 import type { ReactNode, Ref } from "react";
 import { Button } from "@semoss/ui/next";
 import { useDashboard } from "@/features/dashboard/dashboard.context";
-import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 
 interface CollaborationHeaderProps {
 	/** The shell owns the mobile navigation drawer lifecycle. */
 	children: ReactNode;
 	/** Room controls render here while retaining their conversation context. */
 	roomControlsRef: Ref<HTMLDivElement>;
+	/** Measures the space reserved above chat as compact controls wrap. */
+	headerRef: Ref<HTMLElement>;
 }
 
 /** Persistent workspace controls remain available above every page and pane. */
 export function CollaborationHeader({
 	children,
 	roomControlsRef,
+	headerRef,
 }: CollaborationHeaderProps) {
 	const { setIsSearchOpen, searchReturnFocus } = useDashboard();
 	return (
-		<header className="flex h-14 shrink-0 items-center gap-1 px-2 sm:gap-2 sm:px-4">
+		<header
+			ref={headerRef}
+			className="flex min-h-14 shrink-0 flex-wrap items-center @lg/collaboration-header:gap-2 gap-1 @lg/collaboration-header:px-4 px-2 py-1.5"
+		>
 			{children}
 			<Button
 				type="button"
 				variant="outline"
 				aria-label="Search your workspace"
-				className="size-11 shrink-0 gap-2 px-0 font-normal text-muted-foreground shadow-none sm:h-9 pointer-coarse:sm:min-h-11 sm:w-48 sm:justify-start sm:px-4 lg:w-64"
+				className="size-11 @lg/collaboration-header:h-9 pointer-coarse:min-h-11 @3xl/collaboration-header:w-64 @lg/collaboration-header:w-48 shrink-0 @lg/collaboration-header:justify-start gap-2 @lg/collaboration-header:px-4 px-0 font-normal text-muted-foreground shadow-none"
 				onClick={(event) => {
 					searchReturnFocus.current = event.currentTarget;
 					setIsSearchOpen(true);
 				}}
 			>
 				<Search aria-hidden="true" className="shrink-0" />
-				<span className="hidden sm:inline">Search</span>
+				<span className="@lg/collaboration-header:inline hidden">
+					Search
+				</span>
 			</Button>
 			<div
 				ref={roomControlsRef}
-				className="flex min-w-0 flex-1 items-center gap-1 empty:hidden sm:gap-2"
+				className="flex min-w-0 flex-1 @xs/collaboration-header:basis-0 basis-full items-center @lg/collaboration-header:gap-2 gap-1 empty:hidden"
 			/>
-			<div className="ml-auto min-w-0 shrink-0 pl-1">
-				<CollaborationProfileMenu />
-			</div>
 		</header>
 	);
 }

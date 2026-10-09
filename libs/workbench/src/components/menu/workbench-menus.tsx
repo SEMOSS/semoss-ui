@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { type ReactNode, useRef } from "react";
 import {
 	Button,
@@ -24,6 +25,8 @@ import { WORKBENCH_SIDES } from "../../types";
 interface WorkbenchMenusProps {
 	/** Optional smaller menu typography; control hit targets retain their size. */
 	textSize?: "sm" | "xs";
+	/** Show a decorative dropdown indicator beside the trigger label. */
+	showChevron?: boolean;
 	/** Host-owned items rendered as the first section in View. */
 	viewItems?: ReactNode;
 	/** Hosts can replace the navigation submenu with their own destinations. */
@@ -50,6 +53,7 @@ export function WorkbenchMenus({
 	showLayoutActions = true,
 	showCommandPalette = true,
 	textSize = "sm",
+	showChevron = false,
 }: WorkbenchMenusProps) {
 	const actions = useWorkbench((s) => s.layout.actions);
 	const setCommandOpen = useWorkbench(
@@ -155,6 +159,9 @@ export function WorkbenchMenus({
 					className={triggerClass}
 				>
 					{t("view")}
+					{showChevron && (
+						<ChevronDown aria-hidden="true" className="size-4" />
+					)}
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent

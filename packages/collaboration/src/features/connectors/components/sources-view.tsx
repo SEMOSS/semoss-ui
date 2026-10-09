@@ -13,7 +13,7 @@ export interface SourcesViewProps {
 	onDraftReply?: (source: ImportedSource) => void;
 }
 
-/** Load Microsoft sources on demand and preview them before importing into Work. */
+/** Load Microsoft sources on demand and preview them before adding to the workspace. */
 export function SourcesView({ onImport, onDraftReply }: SourcesViewProps) {
 	const sources = useSources();
 	const collaboration = useOptionalCollaborationSession();
@@ -22,12 +22,12 @@ export function SourcesView({ onImport, onDraftReply }: SourcesViewProps) {
 		<div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
 			<header className="flex flex-wrap items-start justify-between gap-4">
 				<div className="min-w-0">
-					<H2 className="font-semibold text-lg">
+					<H2 className="font-medium text-lg">
 						Connect your sources
 					</H2>
 					<P className="text-muted-foreground">
 						Choose what to read, then add the useful conversations
-						to Work.
+						to your workspace.
 					</P>
 				</div>
 				<Button

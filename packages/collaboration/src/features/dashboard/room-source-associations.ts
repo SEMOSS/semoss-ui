@@ -48,11 +48,9 @@ export function createRoomSourceAssociations(
 			let owners = 0;
 			let generation = 0;
 			const get = (roomId: string): RoomSourceAssociation | undefined => {
-				const entry = snapshot.get(roomId);
-				if (!entry) return undefined;
-				return entry.activation === activation
-					? entry.value
-					: { status: "loading", threadId: entry.value.threadId };
+				// Readers share the latest result. Each activation still rechecks on
+				// first inspect, but another mounted reader cannot strand this one loading.
+				return snapshot.get(roomId)?.value;
 			};
 			return {
 				get,

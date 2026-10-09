@@ -18,6 +18,7 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
+import { CollaborationAccountContext } from "./collaboration-account.context";
 import { CollaborationNavigation } from "./collaboration-navigation";
 import { CollaborationSidebarProvider } from "./collaboration-sidebar-provider";
 import { CollaborationSurface } from "./collaboration-surface";
@@ -96,7 +97,18 @@ function setup(
 				element: (
 					<CollaborationSessionProvider initialState={state}>
 						<CollaborationSidebarProvider>
-							{options.navigation && <CollaborationNavigation />}
+							{options.navigation && (
+								<CollaborationAccountContext.Provider
+									value={{
+										isLoggingOut: false,
+										error: "",
+										isLogoutPending: { current: false },
+										logout: async () => undefined,
+									}}
+								>
+									<CollaborationNavigation />
+								</CollaborationAccountContext.Provider>
+							)}
 							<MenuFixture {...options} />
 						</CollaborationSidebarProvider>
 					</CollaborationSessionProvider>

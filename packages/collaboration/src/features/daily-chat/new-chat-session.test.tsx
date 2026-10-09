@@ -21,9 +21,23 @@ import type {
 } from "@/features/rooms/room-session";
 import type { ComposerSubmission } from "@/features/rooms/types/room";
 import type { ThreadChatSettings } from "@/features/thread-assistant/thread-settings";
+import {
+	CALENDAR_PANEL_TYPE,
+	EMAILS_PANEL_TYPE,
+} from "@/features/tools/tool-workbench.constants";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { roomPath } from "@/lib/workspace-paths";
 import { LandingChatComposer } from "./landing-chat-composer";
+
+vi.mock("@semoss/i18n", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/i18n")>()),
+	useTranslation: () => ({
+		t: (key: string, options?: { name?: string }) =>
+			key === "contextItems.remove"
+				? `Remove ${options?.name} from your next message`
+				: key,
+	}),
+}));
 
 const mocks = vi.hoisted(() => ({
 	scope: "",
@@ -175,6 +189,15 @@ function roomSessionFixture() {
 			(composerDraft: RoomSessionSnapshot["composerDraft"]) =>
 				update({ composerDraft }),
 		),
+		addContextFile: (file: RoomSessionSnapshot["contextFiles"][number]) =>
+			update({ contextFiles: [...snapshot.contextFiles, file] }),
+		removeContextFile: vi.fn((path: string) =>
+			update({
+				contextFiles: snapshot.contextFiles.filter(
+					(file) => file.fileLocation !== path,
+				),
+			}),
+		),
 		create: vi.fn(async () => {
 			if (snapshot.roomId) return snapshot.roomId;
 			update({ isPreparing: true });
@@ -305,6 +328,24 @@ beforeEach(() => {
 		sessions.push(session);
 		return session as unknown as RoomSession;
 	});
+});
+
+it("shows saved connector context in a draft and removes it without creating or sending", () => {
+	setup();
+	const file = { fileName: "Meeting.md", fileLocation: "Meeting.md" };
+	act(() => sessions[0].addContextFile(file));
+	expect(screen.getByText(file.fileName)).toBeVisible();
+	fireEvent.click(
+		screen.getByRole("button", {
+			name: "Remove Meeting.md from your next message",
+		}),
+	);
+	expect(sessions[0].removeContextFile).toHaveBeenCalledWith(
+		file.fileLocation,
+	);
+	expect(screen.queryByText(file.fileName)).not.toBeInTheDocument();
+	expect(mocks.create).not.toHaveBeenCalled();
+	expect(mocks.send).not.toHaveBeenCalled();
 });
 
 it("keeps a suggested prompt, files, and agent choice local before the first send", async () => {
@@ -472,10 +513,14 @@ it("opens landing Settings in one workbench panel and keeps draft and unsaved se
 	);
 	expect(instructions).toHaveValue("Keep responses concise");
 	await user.click(screen.getByRole("button", { name: "File settings" }));
-	const panels = JSON.parse(
+	const panels: Record<string, { type: string }> = JSON.parse(
 		screen.getByLabelText("Workbench panels").textContent ?? "{}",
 	);
-	expect(Object.values(panels)).toHaveLength(1);
+	expect(
+		Object.values(panels).filter(
+			(panel) => panel.type === ROOM_SETTINGS_PANEL_TYPE,
+		),
+	).toHaveLength(1);
 	await user.click(screen.getByRole("button", { name: "Save settings" }));
 	await waitFor(() =>
 		expect(sessions[0].getSnapshot().settings.instructions).toBe(
@@ -499,7 +544,13 @@ it("allocates only for explicit chat files and reuses that room on the first sen
 	);
 	await user.click(screen.getByRole("menuitem", { name: "Open workbench" }));
 	expect(mocks.create).not.toHaveBeenCalled();
-	expect(screen.getByLabelText("Workbench panels")).toHaveTextContent("{}");
+	const panels: Record<string, { type: string }> = JSON.parse(
+		screen.getByLabelText("Workbench panels").textContent ?? "{}",
+	);
+	expect(Object.values(panels).map((panel) => panel.type)).toEqual([
+		EMAILS_PANEL_TYPE,
+		CALENDAR_PANEL_TYPE,
+	]);
 	await user.click(screen.getByRole("button", { name: "Show chat files" }));
 	await waitFor(() => expect(mocks.create).toHaveBeenCalledOnce());
 	await waitFor(() =>

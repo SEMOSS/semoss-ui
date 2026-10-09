@@ -125,7 +125,7 @@ export function RoomSessionView({
 				onApproveTool={session.approve}
 				onRejectTool={session.reject}
 				onNewRoom={(agentId) => void navigate(newRoomPath(agentId))}
-				onOpenRooms={() => void navigate("/work")}
+				onOpenRooms={() => void navigate("/tasks")}
 			/>
 		</div>
 	);

@@ -64,8 +64,8 @@ function renderSession(
 ) {
 	const router = createMemoryRouter(
 		[
-			{ path: "/work/all", Component: WorkPage },
-			{ path: "/work/done", Component: WorkPage },
+			{ path: "/tasks/topic/:topicId", Component: WorkPage },
+			{ path: "/tasks/done", Component: WorkPage },
 			{ path: "/work/topic/:topicId", Component: WorkPage },
 			{ path: "/brain", Component: BrainReview },
 			{ path: "/brain/memory", Component: BrainMemory },
@@ -114,7 +114,7 @@ afterEach(cleanup);
 describe("collaboration Work and Brain integration", () => {
 	it("carries Work topic confirmation into Brain's learned links and the assistant snapshot", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work/all");
+		const router = renderSession("/tasks/topic/t-geng");
 		expect(
 			submittedContext().topics.map((topic) => topic.id),
 		).not.toContain("t-trip");
@@ -145,7 +145,7 @@ describe("collaboration Work and Brain integration", () => {
 
 	it("shows completed Work items in Done and reopens the selected item", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work/all");
+		const router = renderSession("/tasks/topic/t-geng");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
@@ -155,20 +155,20 @@ describe("collaboration Work and Brain integration", () => {
 		expect(
 			screen.queryByRole("link", { name: title }),
 		).not.toBeInTheDocument();
-		await act(() => router.navigate("/work/done"));
+		await act(() => router.navigate("/tasks/done"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
 				name: "Move back",
 			}),
 		);
-		await act(() => router.navigate("/work/all"));
+		await act(() => router.navigate("/tasks/topic/t-geng"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 
 	it("clears an item with No response needed and keeps it out of Done", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work/all");
+		const router = renderSession("/tasks/topic/t-geng");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
@@ -178,7 +178,7 @@ describe("collaboration Work and Brain integration", () => {
 		expect(
 			screen.queryByRole("link", { name: title }),
 		).not.toBeInTheDocument();
-		await act(() => router.navigate("/work/done"));
+		await act(() => router.navigate("/tasks/done"));
 		expect(
 			screen.queryByRole("link", { name: title }),
 		).not.toBeInTheDocument();
@@ -192,7 +192,7 @@ describe("collaboration Work and Brain integration", () => {
 			(item) => item.title === title,
 		)?.threadId;
 		if (!threadId) throw new Error("Missing thread");
-		const router = renderSession("/work/all", state);
+		const router = renderSession("/tasks/topic/t-geng", state);
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
 				name: "Ignore thread",
@@ -209,7 +209,7 @@ describe("collaboration Work and Brain integration", () => {
 		});
 		expect(ignored).toBeChecked();
 		await user.click(ignored);
-		await act(() => router.navigate("/work/all"));
+		await act(() => router.navigate("/tasks/topic/t-geng"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 

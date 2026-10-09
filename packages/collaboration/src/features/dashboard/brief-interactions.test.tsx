@@ -2,7 +2,6 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router";
-import { WorkUpdatesContext } from "@/features/collaboration/live/work-updates.context";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import type {
 	CollaborationState,
@@ -12,13 +11,52 @@ import type {
 import {
 	type CollaborationChange,
 	CollaborationSessionProvider,
+	useCollaborationSession,
 } from "@/features/collaboration/state/collaboration-session.context";
+import {
+	buildForYouItems,
+	type ForYouItem,
+} from "@/features/for-you/for-you.model";
 import type { InsightActions } from "@/lib/pixel";
 import { DashboardPage } from "@/pages/dashboard.page";
 import { BriefNeeds } from "./brief-needs";
 import { DashboardContext } from "./dashboard.context";
 import { presetWidgets, saveDashboardPreferences } from "./dashboard-layout";
 import { useDashboardLayout } from "./use-dashboard-layout";
+
+const queue = vi.hoisted(() => ({
+	errors: [] as string[],
+	isLoading: false,
+	isComplete: true,
+	refresh: vi.fn(),
+}));
+vi.mock("@/features/for-you/for-you.context", () => ({
+	useForYou: () => {
+		const { state } = useCollaborationSession();
+		return {
+			...queue,
+			items: buildForYouItems(state, {
+				runs: [],
+				delegations: [],
+				roomSource: () => undefined,
+			}),
+			setPriority: vi.fn(),
+		};
+	},
+}));
+vi.mock("@/features/for-you/for-you-card", () => ({
+	ForYouCard: ({
+		item,
+		view,
+	}: {
+		item: ForYouItem;
+		view: "board" | "list";
+	}) => (
+		<article data-view={view}>
+			<button type="button">{item.title}</button>
+		</article>
+	),
+}));
 
 vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
 	LandingChatComposer: () => (
@@ -62,6 +100,7 @@ function createBriefState(): CollaborationState {
 		status: "active",
 	}));
 	state.reviews = [];
+	state.memories = [];
 	state.workspaces = {};
 	state.items = [
 		{
@@ -200,14 +239,6 @@ function renderBrief(state = createBriefState()) {
 	return { ...result, router, onChange };
 }
 
-function workCard(title: string): HTMLElement {
-	const card = within(screen.getByRole("region", { name: "Needs you" }))
-		.getByRole("link", { name: title })
-		.closest("article");
-	if (!card) throw new Error(`Missing work card: ${title}`);
-	return card;
-}
-
 beforeAll(() => {
 	// JSDOM does not provide the pointer-capture APIs used by the shared Select.
 	HTMLElement.prototype.hasPointerCapture = () => false;
@@ -217,6 +248,9 @@ beforeAll(() => {
 afterEach(() => {
 	cleanup();
 	localStorage.clear();
+	queue.errors = [];
+	queue.isLoading = false;
+	queue.isComplete = true;
 	vi.clearAllMocks();
 });
 
@@ -234,14 +268,14 @@ it("shows the complete daily brief without applying or replacing saved widget cu
 	for (const name of [
 		"Your day",
 		"Handled",
-		"Needs you",
+		"For you",
 		"Start a conversation",
-		"Brain wants to check",
+		"Brain",
 	]) {
 		expect(screen.getByRole("region", { name })).toBeVisible();
 	}
 	expect(
-		screen.getByRole("link", { name: "Confirm revised pricing" }),
+		screen.getByRole("button", { name: "Confirm revised pricing" }),
 	).toBeVisible();
 	expect(
 		screen.queryByRole("button", { name: /Customize dashboard/i }),
@@ -271,13 +305,13 @@ it("keeps all topics visible with the composer before the mobile reading order",
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
 		"3 things need you",
 	);
-	const needs = within(screen.getByRole("region", { name: "Needs you" }));
+	const needs = within(screen.getByRole("region", { name: "For you" }));
 	for (const name of [
 		"Review the sprint backlog",
 		"Confirm revised pricing",
 		"Choose support tier",
 	]) {
-		expect(needs.getByRole("link", { name })).toBeVisible();
+		expect(needs.getByRole("button", { name })).toBeVisible();
 	}
 	expect(
 		screen.queryByRole("combobox", { name: "Topic scope" }),
@@ -302,73 +336,53 @@ it("keeps all topics visible with the composer before the mobile reading order",
 		),
 	).toEqual([
 		"Start a conversation",
-		"Needs you",
-		"Brain wants to check",
+		"For you",
+		"Brain",
 		"Your day",
 		"Handled",
 	]);
 	expect(request).not.toHaveBeenCalled();
 });
 
-it("moves completed work into Handled and reopens only the chosen item after later changes", async () => {
-	const user = userEvent.setup();
-	const { onChange } = renderBrief();
-	await user.click(
-		within(workCard("Confirm revised pricing")).getByRole("button", {
-			name: "Mark handled",
-		}),
+it("uses the queue priority order and keeps Brain review items out of the context panel", () => {
+	const state = createBriefState();
+	state.items = state.items.map((item) => ({
+		...item,
+		priority: item.id === "sprint" ? "P0" : "P2",
+	}));
+	const initial = createInitialCollaborationState();
+	state.reviews = initial.reviews
+		.filter((review) => review.status === "open")
+		.slice(0, 1);
+	renderBrief(state);
+	const preview = within(screen.getByRole("region", { name: "For you" }));
+	expect(preview.getAllByRole("article")[0]).toHaveTextContent(
+		"Review the sprint backlog",
 	);
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"2 things need you",
-	);
+	for (const article of preview.getAllByRole("article"))
+		expect(article).toHaveAttribute("data-view", "list");
+	expect(preview.getAllByRole("article")).toHaveLength(4);
 	expect(
-		within(screen.getByRole("region", { name: "Handled" })).getByText(
-			"2 completed",
+		within(screen.getByRole("region", { name: "Brain" })).queryByRole(
+			"article",
 		),
-	).toBeVisible();
-	await user.click(
-		within(workCard("Choose support tier")).getByRole("button", {
-			name: "Mark handled",
-		}),
-	);
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"1 thing needs you",
-	);
-	await user.click(
-		screen.getByRole("button", {
-			name: "Undo: reopen Confirm revised pricing",
-		}),
-	);
-	expect(workCard("Confirm revised pricing")).toBeVisible();
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"2 things need you",
-	);
-	const handled = within(screen.getByRole("region", { name: "Handled" }));
-	expect(
-		handled.getByRole("link", { name: "Choose support tier" }),
-	).toBeVisible();
-	expect(
-		handled.getByRole("link", { name: "Send the sprint notes" }),
-	).toBeVisible();
-	expect(
-		handled.queryByRole("link", { name: "Confirm revised pricing" }),
 	).not.toBeInTheDocument();
-	expect(onChange.mock.lastCall?.[0].commands).toEqual([
-		{ type: "item.update", itemId: "pricing", changes: { status: "open" } },
-	]);
+	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+		"4 things need you",
+	);
 });
 
-it("links the global overview to Work and Brain directories", () => {
+it("links the global overview to For you and Brain directories", () => {
 	renderBrief();
-	expect(screen.getByRole("link", { name: "3 open" })).toHaveAttribute(
+	expect(screen.getByRole("link", { name: "3 for you" })).toHaveAttribute(
 		"href",
-		"/work/all",
+		"/for-you",
 	);
 	const directories = within(
 		screen.getByRole("navigation", { name: "Brain directories" }),
 	);
 	for (const [name, path] of [
-		["Topics", "/work"],
+		["Topics", "/tasks/topics"],
 		["People", "/brain/people"],
 		["Threads", "/brain/threads"],
 		["Sources", "/brain/sources"],
@@ -380,42 +394,57 @@ it("links the global overview to Work and Brain directories", () => {
 	}
 });
 
-it("keeps a failed empty work refresh distinct from being caught up and offers retry", async () => {
+it("keeps failed, loading, partial, and complete empty queues distinct", async () => {
 	const user = userEvent.setup();
 	const state = createBriefState();
 	state.items = [];
-	const refresh = vi.fn();
-	const content = (error: string) => (
+	const content = () => (
 		<MemoryRouter>
 			<CollaborationSessionProvider initialState={state}>
-				<WorkUpdatesContext.Provider
-					value={{
-						isRefreshing: false,
-						lastUpdated: null,
-						error,
-						lastMailCheck: null,
-						refresh,
-						isSyncing: false,
-						lastSync: null,
-						syncError: "",
-						syncMail: vi.fn(),
-					}}
-				>
-					<BriefNeeds />
-				</WorkUpdatesContext.Provider>
+				<BriefNeeds />
 			</CollaborationSessionProvider>
 		</MemoryRouter>
 	);
-	const { rerender } = render(content("Could not refresh your work."));
+	queue.errors = ["Could not check agent activity."];
+	const { rerender } = render(content());
 	expect(screen.getByRole("alert")).toHaveTextContent(
-		"Could not refresh your work.",
+		"Could not check agent activity.",
 	);
 	expect(screen.queryByText(/You're all caught up/)).not.toBeInTheDocument();
 	await user.click(screen.getByRole("button", { name: "Retry" }));
-	expect(refresh).toHaveBeenCalledTimes(1);
-	rerender(content(""));
-	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+	expect(queue.refresh).toHaveBeenCalledOnce();
+	queue.errors = [];
+	queue.isLoading = true;
+	rerender(content());
+	expect(screen.getByText("Loading this section")).toBeInTheDocument();
+	expect(screen.queryByText(/You're all caught up/)).not.toBeInTheDocument();
+	queue.isLoading = false;
+	queue.isComplete = false;
+	rerender(content());
 	expect(
-		screen.getByText("You're all caught up. Nothing needs you right now."),
+		screen.getByText(
+			"Nothing found yet. Some sources are still being checked.",
+		),
 	).toBeVisible();
+	queue.isComplete = true;
+	rerender(content());
+	expect(
+		screen.getByText("You're all caught up. Nothing to review right now."),
+	).toBeVisible();
+});
+
+it("keeps the topic-filtered preview linked to the queue instead of replacing the topic workspace", () => {
+	render(
+		<MemoryRouter>
+			<CollaborationSessionProvider initialState={createBriefState()}>
+				<BriefNeeds topicId="tailspin" compact />
+			</CollaborationSessionProvider>
+		</MemoryRouter>,
+	);
+	expect(
+		screen.getByRole("link", { name: "See all 2 For you items" }),
+	).toHaveAttribute("href", "/for-you?topic=tailspin");
+	expect(
+		screen.queryByRole("button", { name: "Review the sprint backlog" }),
+	).not.toBeInTheDocument();
 });

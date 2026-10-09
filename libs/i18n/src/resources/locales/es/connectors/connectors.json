@@ -66,6 +66,7 @@
 		"inbox": "Bandeja de entrada",
 		"unreadOnly": "No leídos",
 		"searchPlaceholder": "Buscar asuntos",
+		"outlookSearchLimit": "La búsqueda de Outlook muestra hasta 1.000 correos coincidentes. Borra la búsqueda para explorar todos los correos de esta carpeta.",
 		"empty": "No hay correos en esta carpeta",
 		"noUnread": "No hay correos sin leer en esta carpeta",
 		"unknownSender": "Remitente desconocido",
@@ -98,7 +99,8 @@
 		"loadingAttachments": "Cargando archivos adjuntos...",
 		"conversations": "Conversaciones",
 		"showQuoted": "Mostrar los correos citados",
-		"hideQuoted": "Ocultar los correos citados"
+		"hideQuoted": "Ocultar los correos citados",
+		"filters": "Filtros"
 	},
 	"calendar": {
 		"range": "{{start}} a {{end}}",
@@ -153,7 +155,8 @@
 			"day": "Día siguiente",
 			"threeDays": "3 días siguientes",
 			"month": "Mes siguiente"
-		}
+		},
+		"openCalendar": "Abrir calendario"
 	},
 	"teams": {
 		"team": "Equipo",

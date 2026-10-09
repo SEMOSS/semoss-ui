@@ -17,6 +17,8 @@ export interface CalendarApp {
 	nameKey: string;
 	/** The string key of the app an event opens in, such as `Outlook`. */
 	appNameKey: string;
+	/** The provider's calendar home, independent of any selected event. */
+	calendarUrl: string;
 	/** The app's name in saved files, which are written in English. */
 	sourceName: string;
 	/** The calendar's reactor calls. */
@@ -31,6 +33,7 @@ export const CALENDAR_APPS: Record<ConnectorAccount, CalendarApp> = {
 		brand: "outlook-calendar",
 		nameKey: "services.outlookCalendar",
 		appNameKey: "services.outlook",
+		calendarUrl: "https://outlook.office.com/calendar/",
 		sourceName: "Outlook calendar",
 		pixels: calendarPixels("MicrosoftCalendar"),
 	},
@@ -40,6 +43,7 @@ export const CALENDAR_APPS: Record<ConnectorAccount, CalendarApp> = {
 		brand: "google-calendar",
 		nameKey: "services.googleCalendar",
 		appNameKey: "services.googleCalendar",
+		calendarUrl: "https://calendar.google.com/calendar/",
 		sourceName: "Google Calendar",
 		pixels: calendarPixels("GoogleCalendar"),
 	},

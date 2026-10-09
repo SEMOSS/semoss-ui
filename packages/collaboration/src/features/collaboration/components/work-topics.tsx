@@ -21,8 +21,8 @@ export function WorkTopics() {
 			header={
 				<CollaborationPageHeader
 					layoutClassName="flex-col sm:flex-row"
-					title="Work"
-					description="Choose a topic to focus on its actions, threads, and sessions."
+					title="Topics"
+					description="Explore the topics behind your tasks, threads, and sessions."
 					actions={
 						<>
 							<Button
@@ -31,7 +31,7 @@ export function WorkTopics() {
 								size="sm"
 								className="pointer-coarse:min-h-11"
 							>
-								<Link to="/work/all">All work</Link>
+								<Link to="/for-you">For you</Link>
 							</Button>
 							<Button
 								ref={createButtonRef}
@@ -49,7 +49,7 @@ export function WorkTopics() {
 			}
 		>
 			{topics.length ? (
-				<ul aria-label="Work topics" className="divide-y divide-border">
+				<ul aria-label="Task topics" className="divide-y divide-border">
 					{topics.map((topic) => {
 						const open = selectWorkItems(state, {
 							topicId: topic.id,
@@ -61,7 +61,7 @@ export function WorkTopics() {
 						return (
 							<li key={topic.id}>
 								<Link
-									to={`/work/topic/${encodeURIComponent(topic.id)}`}
+									to={`/tasks/topic/${encodeURIComponent(topic.id)}`}
 									className="focus-visible:-outline-offset-2 flex min-w-0 flex-col gap-4 p-5 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring sm:flex-row sm:items-center md:px-6"
 								>
 									<div className="min-w-0 flex-1 space-y-2">
@@ -110,7 +110,7 @@ export function WorkTopics() {
 				<div className="space-y-2 p-6">
 					<P>No topics yet.</P>
 					<P className="text-muted-foreground text-sm">
-						Create a topic to organize your work, or open All work
+						Create a topic to organize your tasks, or open For you
 						to see unfiled actions.
 					</P>
 				</div>

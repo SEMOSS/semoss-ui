@@ -74,15 +74,15 @@ export function DashboardNeeds({ widget }: { widget: DashboardWidget }) {
 							: "No pending decisions in your available conversations."}
 					</p>
 					<Button asChild variant="outline" size="sm">
-						<Link to="/work/waiting">Waiting on others</Link>
+						<Link to="/tasks/waiting">Waiting on others</Link>
 					</Button>
 				</div>
 			)}
 			<div className="flex flex-wrap gap-3 text-muted-foreground text-xs">
-				<Link className="hover:underline" to="/work/waiting">
+				<Link className="hover:underline" to="/tasks/waiting">
 					Waiting on others
 				</Link>
-				<Link className="hover:underline" to="/work/done">
+				<Link className="hover:underline" to="/tasks/done">
 					Handled
 				</Link>
 				{state.items.length >= 5000 && (

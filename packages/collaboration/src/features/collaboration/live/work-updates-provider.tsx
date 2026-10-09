@@ -6,11 +6,14 @@ import {
 	useState,
 } from "react";
 import { MAIL_SENT_EVENT } from "@/features/connectors/api/microsoft";
+import { ROOM_TREE_CHANGED } from "@/features/room-tree/room-tree-events";
 import type { InsightActions } from "@/lib/pixel";
+import type { Thread } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import {
 	type MailCheck,
 	type MailSyncResult,
+	type PendingReviewCoverage,
 	readWorkUpdates,
 	syncMail,
 } from "./live-state";
@@ -20,13 +23,30 @@ import { WorkUpdatesContext } from "./work-updates.context";
 const SENT_SYNC_DELAY_MS = 5000;
 
 /** Ids of records edited locally between two snapshots (or created locally since the first). */
-export function changedSince<T extends { id: string }>(before: T[], now: T[]) {
+export function changedSince<T extends { id: string }>(
+	before: T[],
+	now: T[],
+): string[] {
 	const prior = new Map(
 		before.map((record) => [record.id, JSON.stringify(record)]),
 	);
 	return now
 		.filter((record) => prior.get(record.id) !== JSON.stringify(record))
 		.map((record) => record.id);
+}
+
+/** Compare only saved identities and associations that can change the room tree. */
+function roomTreeMappingSignature(threads: Thread[]): string {
+	return JSON.stringify(
+		threads
+			.filter((thread) => thread.roomId || thread.topicLinks.length)
+			.sort((left, right) => left.id.localeCompare(right.id))
+			.map((thread) => [
+				thread.id,
+				thread.roomId,
+				thread.topicLinks.map((link) => link.topicId).sort(),
+			]),
+	);
 }
 
 /** One visible-page refresh owner updates data without replacing mounted editors. */
@@ -46,6 +66,7 @@ export function WorkUpdatesProvider({
 		isRefreshing: false,
 		lastUpdated: null as string | null,
 		lastMailCheck: null as MailCheck | null,
+		pendingCoverage: null as PendingReviewCoverage | null,
 		error: "",
 	});
 	const [mail, setMail] = useState({
@@ -58,6 +79,7 @@ export function WorkUpdatesProvider({
 	const queued = useRef(false);
 	const syncing = useRef(false);
 	const generation = useRef(0);
+	const savedRoomMappings = useRef<string | null>(null);
 	const refresh = useCallback(() => {
 		if (pending.current) return;
 		const token = generation.current;
@@ -68,10 +90,34 @@ export function WorkUpdatesProvider({
 			await sync?.settled();
 			return readWorkUpdates(actions);
 		})()
-			.then(async ({ lastMailCheck, ...updates }) => {
+			.then(async ({ lastMailCheck, pendingCoverage, ...updates }) => {
 				await sync?.settled();
 				if (token !== generation.current) return;
 				const localId = sync?.localId ?? ((id: string) => id);
+				// A saved deletion during this read must not be resurrected by its older response.
+				const removed = (
+					key: "memories" | "reviews" | "topics" | "people",
+				): Set<string> => {
+					const currentIds = new Set(
+						latest.current[key].map((record) => record.id),
+					);
+					return new Set(
+						requestedState[key]
+							.filter((record) => !currentIds.has(record.id))
+							.map((record) => record.id),
+					);
+				};
+				const removedMemoryIds = removed("memories");
+				const removedReviewIds = removed("reviews");
+				const removedTopicIds = removed("topics");
+				const removedPersonIds = removed("people");
+				const threads = updates.threads.map((thread) => ({
+					...thread,
+					topicLinks: thread.topicLinks.map((link) => ({
+						...link,
+						topicId: localId(link.topicId),
+					})),
+				}));
 				const workspaces = Object.fromEntries(
 					Object.entries(updates.workspaces).map(
 						([id, workspace]) => {
@@ -92,6 +138,9 @@ export function WorkUpdatesProvider({
 									...(step.itemId
 										? { itemId: localId(step.itemId) }
 										: {}),
+									linkTopicId: step.linkTopicId
+										? localId(step.linkTopicId)
+										: undefined,
 								}))
 								.filter(
 									(step) =>
@@ -106,15 +155,64 @@ export function WorkUpdatesProvider({
 					type: "live.refresh",
 					updates: {
 						...updates,
+						threads,
 						workspaces,
 						items: updates.items.map((item) => ({
 							...item,
 							id: localId(item.id),
+							topicIds: item.topicIds.map(localId),
 						})),
-						memories: updates.memories.map((memory) => ({
-							...memory,
-							id: localId(memory.id),
-						})),
+						memories: updates.memories
+							.map((memory) => ({
+								...memory,
+								id: localId(memory.id),
+								about: memory.about.map((ref) => ({
+									...ref,
+									id: localId(ref.id),
+								})),
+								replacesId: memory.replacesId
+									? localId(memory.replacesId)
+									: null,
+							}))
+							.filter(
+								(memory) => !removedMemoryIds.has(memory.id),
+							),
+						reviews: updates.reviews
+							?.map((review) => ({
+								...review,
+								id: localId(review.id),
+								refId: review.refId
+									? localId(review.refId)
+									: null,
+								topicId: review.topicId
+									? localId(review.topicId)
+									: undefined,
+							}))
+							.filter(
+								(review) => !removedReviewIds.has(review.id),
+							),
+						topics: updates.topics
+							?.map((topic) => ({
+								...topic,
+								id: localId(topic.id),
+								goals: topic.goals.map((goal) => ({
+									...goal,
+									noteId: localId(goal.noteId),
+								})),
+								people: topic.people.map((person) => ({
+									...person,
+									personId: localId(person.personId),
+								})),
+							}))
+							.filter((topic) => !removedTopicIds.has(topic.id)),
+						people: updates.people
+							?.map((person) => ({
+								...person,
+								id: localId(person.id),
+							}))
+							.filter(
+								(person) => !removedPersonIds.has(person.id),
+							),
 						keepItemIds: changedSince(
 							requestedState.items,
 							latest.current.items,
@@ -122,6 +220,18 @@ export function WorkUpdatesProvider({
 						keepMemoryIds: changedSince(
 							requestedState.memories,
 							latest.current.memories,
+						),
+						keepReviewIds: changedSince(
+							requestedState.reviews,
+							latest.current.reviews,
+						),
+						keepTopicIds: changedSince(
+							requestedState.topics,
+							latest.current.topics,
+						),
+						keepPersonIds: changedSince(
+							requestedState.people,
+							latest.current.people,
 						),
 						keepThreadIds: changedSince(
 							requestedState.threads,
@@ -137,10 +247,18 @@ export function WorkUpdatesProvider({
 						),
 					},
 				});
+				const mappings = roomTreeMappingSignature(threads);
+				const previousMappings =
+					savedRoomMappings.current ??
+					roomTreeMappingSignature(requestedState.threads);
+				savedRoomMappings.current = mappings;
+				if (mappings !== previousMappings)
+					window.dispatchEvent(new Event(ROOM_TREE_CHANGED));
 				setStatus({
 					isRefreshing: false,
 					lastUpdated: new Date().toISOString(),
 					lastMailCheck,
+					pendingCoverage: pendingCoverage ?? null,
 					error: "",
 				});
 			})

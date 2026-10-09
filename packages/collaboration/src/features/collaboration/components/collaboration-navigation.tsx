@@ -1,68 +1,38 @@
-import { Brain, BriefcaseBusiness, Inbox } from "lucide-react";
-import { useState } from "react";
+import { Brain, Inbox } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
-import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
-import { selectWorkItems } from "../state/collaboration.selectors";
-import { useCollaborationSession } from "../state/collaboration-session.context";
-import { suggestedMemories } from "../state/memory";
+import { useForYou } from "@/features/for-you/for-you.context";
 import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
-import { CollaborationSettingsLink } from "./collaboration-settings-link";
+import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationTopicsNavigation } from "./collaboration-topics-navigation";
 
 interface CollaborationNavigationProps {
 	/** Renders a compact icon rail on desktop. */
 	isCollapsed?: boolean;
-	/** Controls the saved topic disclosure when rendered by the shell. */
-	isTopicsOpen?: boolean;
-	/** Saves the user's topic disclosure preference. */
-	onTopicsOpenChange?: (isOpen: boolean) => void;
-	/** Controls the saved session disclosure when rendered by the shell. */
-	isSessionsOpen?: boolean;
-	/** Saves the user's session disclosure preference. */
-	onSessionsOpenChange?: (isOpen: boolean) => void;
-	/** Opens the shell-owned topic editor independently of mobile navigation. */
-	onNewTopic?: (trigger: HTMLButtonElement) => void;
 	/** Closes mobile navigation after choosing a destination. */
 	onNavigate?: () => void;
 }
 
-/** One quiet navigation follows the daily brief, topics, and conversations. */
+/** One quiet navigation follows pending work, Brain, and saved conversations. */
 export function CollaborationNavigation({
 	isCollapsed = false,
-	isTopicsOpen,
-	onTopicsOpenChange,
-	isSessionsOpen,
-	onSessionsOpenChange,
-	onNewTopic,
 	onNavigate,
 }: CollaborationNavigationProps) {
-	const { state } = useCollaborationSession();
+	const { items } = useForYou();
 	const { pathname } = useLocation();
-	const [isLocalTopicsOpen, setIsLocalTopicsOpen] = useState(false);
-	const reviews =
-		state.reviews.filter((review) => review.status === "open").length +
-		suggestedMemories(state.memories).length;
 	const links = [
 		{
-			to: "/",
+			to: "/for-you",
 			label: "For you",
 			icon: Inbox,
-			count: selectWorkItems(state, { view: "needs_me" }).total,
-			isActive: pathname === "/",
-		},
-		{
-			to: "/work",
-			label: "Work",
-			icon: BriefcaseBusiness,
-			count: 0,
-			isActive: pathname === "/work" || pathname.startsWith("/work/"),
+			count: items.length,
+			isActive: pathname === "/for-you" || pathname === "/for-you/",
 		},
 		{
 			to: "/brain",
 			label: "Brain",
 			icon: Brain,
-			count: reviews,
+			count: 0,
 			isActive: pathname === "/brain" || pathname.startsWith("/brain/"),
 		},
 	];
@@ -119,29 +89,13 @@ export function CollaborationNavigation({
 				))}
 			</nav>
 			<div className="flex min-h-0 flex-1 flex-col pr-1">
-				<div
-					className={cn(
-						"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
-						isCollapsed && "hidden",
-					)}
-				>
-					<CollaborationTopicsNavigation
-						isOpen={isTopicsOpen ?? isLocalTopicsOpen}
-						onOpenChange={
-							onTopicsOpenChange ?? setIsLocalTopicsOpen
-						}
-						onNavigate={onNavigate}
-						onNewTopic={onNewTopic}
-					/>
-					<ChatHistoryList
-						isOpen={isSessionsOpen}
-						onOpenChange={onSessionsOpenChange}
-						onNavigate={onNavigate}
-					/>
-				</div>
+				<CollaborationTopicsNavigation
+					isHidden={isCollapsed}
+					onNavigate={onNavigate}
+				/>
 			</div>
 			<div className="shrink-0 border-sidebar-border border-t p-2 pr-3">
-				<CollaborationSettingsLink
+				<CollaborationProfileMenu
 					isCollapsed={isCollapsed}
 					onNavigate={onNavigate}
 				/>

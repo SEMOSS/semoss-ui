@@ -6,15 +6,34 @@ import { createInitialCollaborationState } from "@/features/collaboration/state/
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
 import { BriefHeader } from "./brief-header";
 
+const refresh = vi.hoisted(() => ({
+	queue: vi.fn(),
+	calendar: vi.fn(),
+	mail: vi.fn(),
+	all: vi.fn(),
+}));
+
+vi.mock("@/features/for-you/for-you.context", () => ({
+	useForYou: () => ({ items: [], isLoading: false, refresh: refresh.queue }),
+}));
+
 vi.mock("./dashboard.context", () => ({
 	useDashboard: () => ({
-		calendar: { data: [], checkedAt: null, isLoading: false },
-		mail: { checkedAt: null, isLoading: false },
-		refreshSources: vi.fn(),
+		calendar: {
+			data: [],
+			checkedAt: null,
+			isLoading: false,
+			refresh: refresh.calendar,
+		},
+		mail: { checkedAt: null, isLoading: false, refresh: refresh.mail },
+		refreshSources: refresh.all,
 	}),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	vi.clearAllMocks();
+});
 
 /** Header counts use real selectors; external source snapshots remain empty. */
 function renderHeader(withItems = false) {
@@ -38,9 +57,9 @@ function renderHeader(withItems = false) {
 			path: "/",
 			element: <BriefHeader />,
 		},
-		{ path: "/work/all", element: <h1>All work</h1> },
-		{ path: "/work/done", element: <h1>Handled work</h1> },
-		{ path: "/work/waiting", element: <h1>Waiting work</h1> },
+		{ path: "/for-you", element: <h1>For you</h1> },
+		{ path: "/tasks/done", element: <h1>Handled tasks</h1> },
+		{ path: "/tasks/waiting", element: <h1>Waiting tasks</h1> },
 	]);
 	render(
 		<CollaborationSessionProvider initialState={state}>
@@ -51,9 +70,9 @@ function renderHeader(withItems = false) {
 }
 
 it.each([
-	["0 open", "/work/all", "All work"],
-	["0 handled", "/work/done", "Handled work"],
-	["0 waiting on others", "/work/waiting", "Waiting work"],
+	["0 for you", "/for-you", "For you"],
+	["0 handled", "/tasks/done", "Handled tasks"],
+	["0 waiting on others", "/tasks/waiting", "Waiting tasks"],
 ])(
 	"keeps %s navigable when the queue is empty",
 	async (name, path, heading) => {
@@ -68,16 +87,28 @@ it.each([
 	},
 );
 
-it("counts all topics and links to the corresponding global work lists", () => {
+it("counts all topics and links to the corresponding global task lists", () => {
 	renderHeader(true);
 	expect(screen.getByRole("link", { name: "1 handled" })).toHaveAttribute(
 		"href",
-		"/work/done",
+		"/tasks/done",
 	);
 	expect(
 		screen.getByRole("link", { name: "1 waiting on others" }),
-	).toHaveAttribute("href", "/work/waiting");
+	).toHaveAttribute("href", "/tasks/waiting");
 	expect(
 		screen.queryByRole("combobox", { name: "Topic scope" }),
 	).not.toBeInTheDocument();
+});
+
+it("refreshes the shared queue and each brief source once", async () => {
+	const user = userEvent.setup();
+	renderHeader();
+	await user.click(
+		screen.getByRole("button", { name: "Refresh your brief" }),
+	);
+	expect(refresh.queue).toHaveBeenCalledOnce();
+	expect(refresh.calendar).toHaveBeenCalledOnce();
+	expect(refresh.mail).toHaveBeenCalledOnce();
+	expect(refresh.all).not.toHaveBeenCalled();
 });

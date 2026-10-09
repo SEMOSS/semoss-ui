@@ -249,7 +249,7 @@ export function ThreadSettings({
 			)}
 			{sections.includes("visibility") && (
 				<Section
-					title="Work visibility"
+					title="Task visibility"
 					variant={presentation === "widgets" ? "widget" : "plain"}
 				>
 					<div className="flex items-center justify-between gap-3">
@@ -269,7 +269,7 @@ export function ThreadSettings({
 						/>
 					</div>
 					<Small className="text-muted-foreground">
-						Ignored threads stay in Brain but get no Work items, and
+						Ignored threads stay in Brain but get no new tasks, and
 						their open items are hidden. Turn this off to resume the
 						thread.
 					</Small>
