@@ -1,16 +1,6 @@
-import {
-	Building2,
-	Check,
-	Download,
-	Lock,
-	Mail,
-	ShieldCheck,
-	Sparkles,
-	Tags,
-	Users,
-} from "lucide-react";
+import { Lock } from "lucide-react";
 import { useEffect, useState } from "react";
-import { cn, P } from "@semoss/ui/next";
+import { P, Progress } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
 import type { MailboxOverview } from "./onboarding-api";
 import {
@@ -28,18 +18,14 @@ import { Failure, LoadingCards } from "./onboarding-ui";
 import { useOnboardingProgress } from "./use-onboarding-progress";
 
 const STEPS = [
-	{ label: "Your mailbox", caption: "A first look", icon: Mail },
-	{
-		label: "Keep out",
-		caption: "Before anything is read",
-		icon: ShieldCheck,
-	},
-	{ label: "Import", caption: "Recent conversations", icon: Download },
-	{ label: "People", caption: "Who matters most", icon: Users },
-	{ label: "Outside", caption: "Clients and partners", icon: Building2 },
-	{ label: "Sort", caption: "Automated mail set aside", icon: Sparkles },
-	{ label: "Topics", caption: "What your work is about", icon: Tags },
-	{ label: "Work", caption: "Filed for you", icon: Check },
+	{ label: "Your mailbox" },
+	{ label: "Keep out" },
+	{ label: "Import" },
+	{ label: "People" },
+	{ label: "Outside" },
+	{ label: "Sort" },
+	{ label: "Topics" },
+	{ label: "Work" },
 ];
 
 /** First run with real mail: look, keep out, import headers, people, sort, topics from what is left, then file into Work. */
@@ -76,72 +62,33 @@ export function Onboarding({
 
 	return (
 		<div className="min-h-dvh bg-background text-foreground">
-			<div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
-				<header className="space-y-6">
-					<div className="space-y-1">
-						<P className="font-bold text-xl tracking-tight">
-							collaboration<span className="text-primary">.</span>
-						</P>
-						<P className="text-muted-foreground text-sm">
-							Set up your people, topics, and Work.
-						</P>
-					</div>
-					<ol
-						aria-label="Setup steps"
-						className="grid grid-cols-4 gap-2 sm:grid-cols-8"
-					>
-						{STEPS.map(({ label, icon: Icon }, index) => {
-							const isDone = index < step;
-							const isActive = index === step;
-							return (
-								<li
-									key={label}
-									aria-current={isActive ? "step" : undefined}
-									className={cn(
-										"flex min-w-0 flex-col items-center gap-2 rounded-lg p-2 text-center",
-										isActive && "bg-primary/10",
-									)}
-								>
-									<span
-										className={cn(
-											"flex size-8 items-center justify-center rounded-full ring-1 transition-colors motion-reduce:transition-none",
-											isDone
-												? "bg-primary text-primary-foreground ring-primary"
-												: isActive
-													? "bg-card text-primary ring-2 ring-primary"
-													: "bg-card text-muted-foreground ring-border",
-										)}
-									>
-										{isDone ? (
-											<Check
-												className="size-4"
-												aria-hidden="true"
-											/>
-										) : (
-											<Icon
-												className="size-4"
-												aria-hidden="true"
-											/>
-										)}
-									</span>
-									<span
-										className={cn(
-											"break-words font-medium text-xs",
-											!isActive &&
-												!isDone &&
-												"text-muted-foreground",
-										)}
-									>
-										{label}
-									</span>
-								</li>
-							);
-						})}
+			<div className="mx-auto flex max-w-5xl flex-col gap-4 p-4 md:p-6">
+				<header className="flex flex-col gap-2">
+					<P className="font-bold text-lg tracking-tight">
+						collaboration<span className="text-primary">.</span>
+					</P>
+					<Progress
+						value={started ? ((step + 1) / STEPS.length) * 100 : 0}
+						aria-label={`Setup progress: step ${step + 1} of ${STEPS.length}, ${STEPS[step]?.label}`}
+						className="h-1"
+					/>
+					<ol aria-label="Setup steps" className="sr-only">
+						{STEPS.map(({ label }, index) => (
+							<li
+								key={label}
+								aria-current={
+									index === step ? "step" : undefined
+								}
+							>
+								{label}
+								{index < step ? " (done)" : ""}
+							</li>
+						))}
 					</ol>
 				</header>
 				<main
 					key={step}
-					className="fade-in-0 flex min-w-0 animate-in flex-col gap-8 rounded-xl border bg-card p-4 duration-200 motion-reduce:animate-none sm:p-8"
+					className="fade-in-0 flex min-w-0 animate-in flex-col gap-6 rounded-xl border bg-card p-4 duration-200 motion-reduce:animate-none sm:p-6"
 				>
 					{!started && !isResuming && !error && (
 						<WelcomeStep
@@ -194,9 +141,9 @@ export function Onboarding({
 					{started && step === 6 && <TopicsStep {...common} />}
 					{started && step === 7 && <FilingStep {...common} />}
 				</main>
-				<P className="flex items-center gap-2 text-muted-foreground text-sm">
-					<Lock className="size-4 shrink-0" aria-hidden="true" /> Your
-					keep-out preferences apply throughout setup.
+				<P className="flex items-center gap-2 text-muted-foreground text-xs">
+					<Lock className="size-3.5 shrink-0" aria-hidden="true" />{" "}
+					Your keep-out preferences apply throughout setup.
 				</P>
 			</div>
 		</div>

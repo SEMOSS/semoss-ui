@@ -1,7 +1,7 @@
 import { z } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
 import { callPixel, pixel } from "@/lib/pixel";
-import { mapJob } from "./onboarding-api";
+import { type Job, mapJob } from "./onboarding-api";
 import { topicClues, topicCluesSchema } from "./topic-clues";
 
 export { topicClues } from "./topic-clues";
@@ -17,6 +17,7 @@ export const topicDraftSchema = z.object({
 	terms: topicCluesSchema,
 	keep: z.boolean(),
 	removedPeople: z.array(z.string()),
+	addedPeople: z.array(z.string()),
 });
 
 export const topicReviewDraftSchema = z.object({
@@ -42,6 +43,11 @@ export const topicReviewApplySchema = topicReviewDraftSchema.superRefine(
 
 const reviewTopicSchema = topicDraftSchema.extend({
 	terms: topicCluesSchema.default(""),
+	addedPeople: z.array(z.string()).default([]),
+	addedPeopleInfo: z
+		.array(z.object({ id: z.string(), name: z.string() }))
+		.default([]),
+	suggestedTerms: z.array(z.string()).default([]),
 	id: z
 		.string()
 		.nullish()
@@ -60,6 +66,27 @@ const reviewTopicSchema = topicDraftSchema.extend({
 	sampleSubjects: z.array(z.string()).default([]),
 	people: z.array(z.object({ id: z.string(), name: z.string() })).default([]),
 	domains: z.array(z.string()).default([]),
+	area: z
+		.string()
+		.nullish()
+		.transform((value) => value ?? null),
+	youWrote: z.number().default(0),
+	vipThreads: z.number().default(0),
+	// an area's first topic keeps its own name here while it stands for the whole area
+	own: z
+		.object({ name: z.string().nullish() })
+		.nullish()
+		.transform((value) => value ?? null),
+});
+
+/** A broad area of work: one topic, or several shown as one until the owner keeps them separate. */
+const topicAreaSchema = z.object({
+	key: z.string().min(1),
+	name: z.string(),
+	about: z.string().default(""),
+	topicKeys: z.array(z.string()).min(1),
+	suggested: z.boolean().default(false),
+	split: z.boolean().default(false),
 });
 
 const receiptTopicSchema = z.object({
@@ -136,6 +163,7 @@ export const topicReviewSchema = z
 		profileConflicts: z.array(topicProfileConflictSchema).default([]),
 		draft: z.object({
 			topics: z.array(reviewTopicSchema),
+			areas: z.array(topicAreaSchema).default([]),
 			guidance: z.string().default(""),
 			granularity: z
 				.enum(["broad", "projects", "detailed"])
@@ -233,27 +261,71 @@ export const optionalReviewResponseSchema = z
 	);
 
 export type TopicReviewDraft = z.infer<typeof topicReviewDraftSchema>;
+export type TopicArea = z.infer<typeof topicAreaSchema>;
 export type TopicDraft = z.infer<typeof topicDraftSchema>;
 export type TopicReview = z.infer<typeof topicReviewSchema>;
 export type ReviewTopic = z.infer<typeof reviewTopicSchema>;
 
-const pendingReviews = new WeakMap<InsightActions, Promise<TopicReview>>();
+/** The saved draft, or the background job still grouping and naming topics. */
+export type TopicReviewStart =
+	| { review: TopicReview; job: null }
+	| { review: null; job: Job };
+
+const startResponseSchema = z
+	.object({
+		exists: z.boolean(),
+		review: topicReviewSchema.nullish(),
+		job: filingJobSchema.nullish(),
+	})
+	.transform((result, context): TopicReviewStart => {
+		if (result.exists && result.review)
+			return { review: result.review, job: null };
+		if (!result.exists && result.job)
+			return { review: null, job: result.job };
+		context.addIssue({
+			code: "custom",
+			message:
+				"The topic review start returned neither a draft nor a job",
+		});
+		return z.NEVER;
+	});
+
+const pendingReviews = new WeakMap<InsightActions, Promise<TopicReviewStart>>();
 
 /** Share only initialization in flight; the durable server draft owns later visits. */
 export function startTopicReview(
 	actions: InsightActions,
-): Promise<TopicReview> {
+): Promise<TopicReviewStart> {
 	const pending = pendingReviews.get(actions);
 	if (pending) return pending;
 	const request = callPixel(
 		actions,
 		pixel("BrainStartTopicReview"),
-		reviewResponseSchema,
-	)
-		.then((result) => result.review)
-		.finally(() => pendingReviews.delete(actions));
+		startResponseSchema,
+	).finally(() => pendingReviews.delete(actions));
 	pendingReviews.set(actions, request);
 	return request;
+}
+
+/** Keep an area's topics separate, or as one topic again; the server returns the new draft. */
+export async function setTopicArea(
+	actions: InsightActions,
+	review: TopicReview,
+	areaKey: string,
+	split: boolean,
+): Promise<TopicReview> {
+	return (
+		await callPixel(
+			actions,
+			pixel("BrainSetTopicArea", {
+				reviewId: review.id,
+				revision: review.revision,
+				area: areaKey,
+				split,
+			}),
+			reviewResponseSchema,
+		)
+	).review;
 }
 
 /** Read the saved review, for recovery after a response is lost. */
@@ -339,8 +411,13 @@ export async function applyTopicReview(
 			"The saved topic names or descriptions do not match your review. Reload the saved review before continuing.",
 		);
 	}
+	// parts of a skipped area are skipped with it, not merged
+	const keptKeys = new Set(expected.map((topic) => topic.key));
 	const expectedMerges = review.draft.topics.filter(
-		(topic) => topic.mergedIntoKey && !topic.mergeApplied,
+		(topic) =>
+			topic.mergedIntoKey &&
+			!topic.mergeApplied &&
+			keptKeys.has(topic.mergedIntoKey),
 	);
 	const merges = saved.result.merges ?? [];
 	if (

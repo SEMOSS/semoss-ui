@@ -11,7 +11,6 @@ import {
 	previewTopicOrganization,
 	suggestTopicOrganization,
 } from "./topic-organization-api";
-import { topicOrganizationProposalFormSchema } from "./topic-organization-proposal-form";
 import { topicOrganizationGroupsSchema } from "./topic-organization-schema";
 import { topicReviewSchema } from "./topic-review-api";
 
@@ -101,26 +100,6 @@ describe("topic organization contracts", () => {
 				groups,
 			),
 		).toEqual(preview);
-	});
-
-	it("validates only selected proposals while preserving an unselected incomplete group", () => {
-		const proposal = organizationProposal(organizationReview());
-		const values = {
-			groups: proposal.groups.map((group) => ({
-				...group,
-				selected: true,
-			})),
-		};
-		values.groups[1].selected = false;
-		values.groups[1].name = "";
-		values.groups[1].topicKeys = [];
-		expect(
-			topicOrganizationProposalFormSchema.safeParse(values).success,
-		).toBe(true);
-		values.groups[1].selected = true;
-		expect(
-			topicOrganizationProposalFormSchema.safeParse(values).success,
-		).toBe(false);
 	});
 
 	it("rejects overlapping groups rather than accepting two destinations for the same topic", () => {

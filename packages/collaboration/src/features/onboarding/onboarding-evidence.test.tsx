@@ -1,22 +1,21 @@
-import {
-	act,
-	cleanup,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
-import { TopicConversationContext } from "./topic-conversation-context";
 import {
+	changesSent,
 	evidenceSession,
 	makeEvidence,
-	wire,
 } from "./topic-evidence.test-fixtures";
-import { deferred, reviewSession } from "./topic-review.test-fixtures";
+import { DOT } from "./topic-flow-utils";
+import {
+	deferred,
+	makeAreaReview,
+	nextStage,
+	press,
+	reviewSession,
+} from "./topic-review.test-fixtures";
 import { TopicsStep } from "./topics-step";
 
 function step(actions: InsightActions, onNext = vi.fn()) {
@@ -32,345 +31,266 @@ function step(actions: InsightActions, onNext = vi.fn()) {
 	);
 }
 
-async function inspect(user: ReturnType<typeof userEvent.setup>) {
-	const trigger = await screen.findByRole("button", {
-		name: "Inspect conversations for Northwind Migration",
-	});
-	await user.click(trigger);
-	const dialog = await screen.findByRole("dialog");
-	await within(dialog).findByRole("heading", {
-		name: "TLS certificate renewal",
-	});
-	return { trigger, dialog };
+async function openConversations(session: ReturnType<typeof evidenceSession>) {
+	const user = userEvent.setup();
+	const view = render(step(session.actions));
+	await screen.findByRole("heading", { name: "Your main areas of work" });
+	await nextStage(user, "people");
+	await nextStage(user, "conversations");
+	await screen.findByText("Topic 1 of 2");
+	return { user, view };
 }
 
-afterEach(cleanup);
+const subjects = () =>
+	screen
+		.getAllByRole("checkbox")
+		.map((box) => box.getAttribute("id"))
+		.filter(Boolean).length;
 
-describe("onboarding conversation review", () => {
-	it("opens real examples, reads source context only on demand, and returns keyboard focus", async () => {
+beforeEach(() => {
+	vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+});
+afterEach(() => {
+	cleanup();
+	vi.restoreAllMocks();
+});
+
+describe("onboarding conversation check", () => {
+	it("shows each conversation with its date, size and people", async () => {
 		const session = evidenceSession();
-		const user = userEvent.setup();
-		render(step(session.actions));
-		const { trigger, dialog } = await inspect(user);
-		expect(within(dialog).getByText(/2023/)).toBeVisible();
-		expect(within(dialog).getByText(/2 examples are hidden/)).toBeVisible();
+		await openConversations(session);
 		expect(
-			session.run.mock.calls.some(([request]) =>
-				request.startsWith("BrainGetThreadMessages"),
-			),
-		).toBe(false);
-		await user.click(
-			within(dialog).getByRole("button", {
-				name: "Read recent messages",
-			}),
-		);
-		expect(
-			await within(dialog).findByText("Please renew the certificate."),
+			await screen.findByText("TLS certificate renewal"),
 		).toBeVisible();
-		expect(
-			within(dialog).getByText(/Showing the five most recent/),
-		).toBeVisible();
-		expect(
-			within(dialog).getByRole("link", { name: "Open in Outlook" }),
-		).toHaveAttribute("href", "https://outlook.office.com/mail/message-1");
-		await user.click(
-			within(dialog).getByRole("button", { name: "Done reviewing" }),
+		expect(screen.getByText(/3 messages/)).toHaveTextContent(
+			`${DOT} 3 messages ${DOT} Ana Lima`,
 		);
-		await waitFor(() => expect(trigger).toHaveFocus());
+		expect(screen.getByText(`${DOT} 1 conversation`)).toBeVisible();
+		// nothing is previous on the first topic
 		expect(
-			session.run.mock.calls.some(
-				([request]) =>
-					request.startsWith("BrainApply") ||
-					request.startsWith("RunAgent"),
-			),
-		).toBe(false);
+			screen.queryByRole("button", { name: "Previous topic" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Looks right, next topic" }),
+		).toBeVisible();
 	});
 
-	it("previews a rejection, preserves profile edits, and undoes only the conversation choice", async () => {
+	it("moves a conversation to another topic at once and does not confirm it again", async () => {
 		const session = evidenceSession();
-		const user = userEvent.setup();
-		render(step(session.actions));
-		const description = await screen.findAllByRole("textbox", {
-			name: "What this topic covers",
+		const { user } = await openConversations(session);
+		const trigger = await screen.findByRole("button", {
+			name: 'Move "TLS certificate renewal" to another topic',
 		});
-		await user.clear(description[0]);
-		await user.type(description[0], "Northwind rollout only.");
-		const { dialog } = await inspect(user);
+		await waitFor(() => expect(trigger).toBeEnabled());
+		await user.click(trigger);
 		await user.click(
-			within(dialog).getByRole("button", {
-				name: /Does not belong here/,
+			await screen.findByRole("menuitem", {
+				name: "Platform Operations",
 			}),
 		);
 		expect(
-			await within(dialog).findByText("Keep out of Northwind Migration"),
-		).toBeVisible();
-		expect(within(dialog).getByText("Client A · primary")).toBeVisible();
-		await user.click(
-			within(dialog).getByRole("button", {
-				name: "Undo last correction",
-			}),
-		);
-		await waitFor(() =>
-			expect(
-				within(dialog).queryByText("After saving this setup"),
-			).not.toBeInTheDocument(),
-		);
-		await user.click(
-			within(dialog).getByRole("button", { name: "Done reviewing" }),
-		);
-		expect(
-			screen.getAllByRole("textbox", {
-				name: "What this topic covers",
-			})[0],
-		).toHaveValue("Northwind rollout only.");
-		expect(session.saved?.draft.corrections).toEqual([]);
-	});
-
-	it.each(["Move", "Also link"] as const)(
-		"previews %s with an explicit destination and keeps unrelated links",
-		async (action) => {
-			const session = evidenceSession();
-			const user = userEvent.setup();
-			const onNext = vi.fn();
-			render(step(session.actions, onNext));
-			const { dialog } = await inspect(user);
-			const select = within(dialog).getByRole("combobox", {
-				name: "Another topic for this conversation",
-			});
-			select.focus();
-			await user.keyboard("{Enter}");
-			await waitFor(() =>
-				expect(
-					screen.getByRole("option", { name: "Platform Operations" }),
-				).toHaveFocus(),
-			);
-			await user.keyboard("{Enter}");
-			await user.click(
-				within(dialog).getByRole("button", { name: action }),
-			);
-			expect(
-				await within(dialog).findByText(
-					action === "Move"
-						? "Platform Operations · primary"
-						: "Northwind Migration · primary",
-				),
-			).toBeVisible();
-			expect(within(dialog).getByText("Client A")).toBeVisible();
-			const request = session.run.mock.calls.find(([statement]) =>
-				statement.startsWith("BrainChangeTopicReview("),
-			)?.[0];
-			expect(request).toContain(
-				action === "Move" ? '"type":"move"' : '"type":"also_link"',
-			);
-			expect(request).toContain('"targetKey":"topic-2"');
-			expect(request).toContain(
-				'"versions":{"thread-1":"relationship-version-1"}',
-			);
-			expect(onNext).not.toHaveBeenCalled();
-		},
-	);
-
-	it("retries an uncertain correction with the same operation ID and blocks other choices meanwhile", async () => {
-		const session = evidenceSession();
-		session.afterChange.mockRejectedValueOnce(
-			new Error("Connection lost after the correction was saved"),
-		);
-		const user = userEvent.setup();
-		render(step(session.actions));
-		const { dialog } = await inspect(user);
-		await user.click(
-			within(dialog).getByRole("button", { name: /Belongs here in/ }),
-		);
-		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
-			"Connection lost",
-		);
-		expect(
-			within(dialog).getByRole("button", {
-				name: /Does not belong here/,
-			}),
-		).toBeDisabled();
-		await user.click(within(dialog).getByRole("button", { name: "Retry" }));
-		expect(
-			await within(dialog).findByText("After saving this setup"),
-		).toBeVisible();
-		const requests = session.run.mock.calls
-			.filter(([statement]) =>
-				statement.startsWith("BrainChangeTopicReview("),
-			)
-			.map(([statement]) => statement);
-		expect(requests).toHaveLength(2);
-		expect(requests[1]).toBe(requests[0]);
-		expect(session.saved?.revision).toBe(2);
-	});
-
-	it("recovers the authoritative draft after a conflict without firing a second correction", async () => {
-		const session = evidenceSession();
-		session.afterChange.mockRejectedValueOnce(
-			new Error("Refresh before correcting this conversation"),
-		);
-		const user = userEvent.setup();
-		render(step(session.actions));
-		const { dialog } = await inspect(user);
-		await user.click(
-			within(dialog).getByRole("button", {
-				name: /Does not belong here/,
-			}),
-		);
-		await within(dialog).findByRole("alert");
-		await user.click(
-			within(dialog).getByRole("button", { name: "Reload saved review" }),
-		);
-		await waitFor(() =>
-			expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument(),
-		);
-		expect(
-			within(dialog).getByText("Keep out of Northwind Migration"),
-		).toBeVisible();
-		expect(session.afterChange).toHaveBeenCalledOnce();
-	});
-
-	it("keeps the evidence dialog open while a correction acknowledgement is pending", async () => {
-		const session = evidenceSession();
-		const pending = deferred<void>();
-		session.afterChange.mockImplementationOnce(() => pending.promise);
-		const user = userEvent.setup();
-		render(step(session.actions));
-		const { dialog } = await inspect(user);
-		await user.click(
-			within(dialog).getByRole("button", { name: /Belongs here in/ }),
-		);
-		expect(
-			within(dialog).getByRole("button", { name: "Done reviewing" }),
-		).toBeDisabled();
-		await user.keyboard("{Escape}");
-		expect(dialog).toBeVisible();
-		await act(async () => pending.resolve());
-		await waitFor(() =>
-			expect(
-				within(dialog).getByRole("button", { name: "Done reviewing" }),
-			).toBeEnabled(),
-		);
-	});
-
-	it("searches on Enter without submitting the onboarding form", async () => {
-		const session = evidenceSession();
-		const onNext = vi.fn();
-		const user = userEvent.setup();
-		render(step(session.actions, onNext));
-		const { dialog } = await inspect(user);
-		await user.type(
-			within(dialog).getByRole("textbox", {
-				name: "Search conversation subjects",
-			}),
-			"unmatched{Enter}",
-		);
-		expect(
-			await within(dialog).findByText(
-				/No readable conversation examples/,
+			await screen.findByText(
+				new RegExp(`Moved to Platform Operations ${DOT}`),
 			),
 		).toBeVisible();
-		expect(onNext).not.toHaveBeenCalled();
+		expect(changesSent(session)).toEqual([
+			{
+				revision: 1,
+				operationId: expect.any(String),
+				change: {
+					type: "move",
+					topicKey: "topic-1",
+					targetKey: "topic-2",
+					threadIds: ["thread-1"],
+					versions: { "thread-1": "relationship-version-1" },
+				},
+			},
+		]);
+		const box = screen.getByRole("checkbox", {
+			name: /TLS certificate renewal/,
+		});
+		expect(box).toBeDisabled();
+		expect(box).not.toBeChecked();
 		expect(
-			session.run.mock.calls.some(([statement]) =>
-				statement.startsWith("BrainApply"),
-			),
-		).toBe(false);
+			screen.queryByRole("button", { name: /^Move "/ }),
+		).not.toBeInTheDocument();
+
+		await press(user, "Looks right, next topic");
+		expect(await screen.findByText("Topic 2 of 2")).toBeVisible();
+		// the moved one is already decided, so nothing else goes out for topic 1
+		expect(changesSent(session)).toHaveLength(1);
+		expect(session.saved?.draft.corrections).toEqual([
+			{
+				threadId: "thread-1",
+				topicKey: "topic-1",
+				state: "exclude",
+				primary: false,
+			},
+			{
+				threadId: "thread-1",
+				topicKey: "topic-2",
+				state: "include",
+				primary: true,
+			},
+		]);
 	});
 
-	it("allows Teams context reading while blocking a whole-chat correction", async () => {
+	it("shows ten at a time and loads the next page only when the first is used up", async () => {
+		const session = evidenceSession();
+		session.evidence.mockImplementation(async (review, key, offset) =>
+			makeEvidence(review, key, { total: 25, offset }),
+		);
+		const { user } = await openConversations(session);
+		await screen.findByRole("checkbox", { name: /Conversation 10/ });
+		expect(subjects()).toBe(10);
+		expect(
+			screen.queryByRole("checkbox", { name: /Conversation 11/ }),
+		).not.toBeInTheDocument();
+		const evidenceReads = () =>
+			session.run.mock.calls.filter(([statement]) =>
+				statement.startsWith("BrainGetTopicReviewEvidence("),
+			);
+		expect(evidenceReads()).toHaveLength(2);
+
+		// the first read held twenty, so this one is local
+		await user.click(screen.getByRole("button", { name: /Show more/ }));
+		await screen.findByRole("checkbox", { name: /Conversation 20/ });
+		expect(subjects()).toBe(20);
+		expect(evidenceReads()).toHaveLength(2);
+		expect(
+			screen.getByRole("button", { name: /Show more/ }),
+		).toHaveTextContent("(5 left)");
+
+		await user.click(screen.getByRole("button", { name: /Show more/ }));
+		await screen.findByRole("checkbox", { name: /Conversation 25/ });
+		expect(subjects()).toBe(25);
+		expect(evidenceReads()).toHaveLength(3);
+		expect(evidenceReads()[2][0]).toContain("offset=[20]");
+		expect(
+			screen.queryByRole("button", { name: /Show more/ }),
+		).not.toBeInTheDocument();
+	});
+
+	it("records only the conversations that were on screen", async () => {
+		const session = evidenceSession();
+		session.evidence.mockImplementation(async (review, key, offset) =>
+			makeEvidence(review, key, { total: 25, offset }),
+		);
+		const { user } = await openConversations(session);
+		await screen.findByRole("checkbox", { name: /Conversation 10/ });
+		await press(user, "Looks right, next topic");
+		await screen.findByText("Topic 2 of 2");
+		const [only] = changesSent(session);
+		expect(changesSent(session)).toHaveLength(1);
+		expect(only.change).toMatchObject({
+			type: "confirm",
+			topicKey: "topic-1",
+		});
+		expect("threadIds" in only.change && only.change.threadIds).toEqual(
+			Array.from({ length: 10 }, (_, index) => `thread-${index + 1}`),
+		);
+	});
+
+	it("leaves a Teams chat alone: it cannot be unchecked, moved or confirmed", async () => {
 		const session = evidenceSession();
 		session.evidence.mockImplementation(async (review, key) => {
-			const page = makeEvidence(review, key);
+			const page = makeEvidence(review, key, { total: 2 });
 			page.items[0].source = "teams";
 			page.items[0].canCorrect = false;
 			return page;
 		});
-		const user = userEvent.setup();
-		render(step(session.actions));
-		const { dialog } = await inspect(user);
+		const { user } = await openConversations(session);
+		const chat = await screen.findByRole("checkbox", {
+			name: /TLS certificate renewal/,
+		});
+		expect(chat).toBeDisabled();
+		expect(screen.getByText("Teams")).toBeVisible();
 		expect(
-			within(dialog).getByRole("button", { name: /Belongs here in/ }),
-		).toBeDisabled();
-		expect(
-			within(dialog).getByRole("button", {
-				name: /Does not belong here/,
+			screen.queryByRole("button", {
+				name: 'Move "TLS certificate renewal" to another topic',
 			}),
-		).toBeDisabled();
+		).not.toBeInTheDocument();
 		expect(
-			within(dialog).getByRole("button", {
-				name: "Read recent messages",
+			await screen.findByRole("button", {
+				name: 'Move "Conversation 2" to another topic',
 			}),
-		).toBeEnabled();
-		expect(
-			within(dialog).getByText(/This chat may span several topics/),
 		).toBeVisible();
+		await press(user, "Looks right, next topic");
+		await screen.findByText("Topic 2 of 2");
+		const [only] = changesSent(session);
+		expect(changesSent(session)).toHaveLength(1);
+		expect("threadIds" in only.change && only.change.threadIds).toEqual([
+			"thread-2",
+		]);
 	});
 
-	it("ignores a correction response after switching to another authenticated insight", async () => {
+	it("retries an uncertain correction with the same operation ID", async () => {
+		const session = evidenceSession();
+		session.afterChange.mockRejectedValueOnce(
+			new Error("Connection lost after the correction was saved"),
+		);
+		const { user } = await openConversations(session);
+		await user.click(
+			await screen.findByRole("checkbox", {
+				name: /TLS certificate renewal/,
+			}),
+		);
+		await press(user, "Looks right, next topic");
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"Connection lost",
+		);
+		// still on the first topic
+		expect(screen.getByText("Topic 1 of 2")).toBeVisible();
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+		await waitFor(() =>
+			expect(screen.queryByRole("alert")).not.toBeInTheDocument(),
+		);
+		const sent = changesSent(session);
+		expect(sent).toHaveLength(2);
+		expect(sent[1]).toEqual(sent[0]);
+		expect(session.saved?.revision).toBe(2);
+		expect(session.saved?.draft.corrections).toHaveLength(1);
+	});
+
+	it("shows a failed read, and still lets you move on", async () => {
+		const session = evidenceSession();
+		session.evidence.mockRejectedValue(
+			new Error("Conversations are unavailable"),
+		);
+		const { user } = await openConversations(session);
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"Conversations are unavailable",
+		);
+		await press(user, "Looks right, next topic");
+		expect(await screen.findByText("Topic 2 of 2")).toBeVisible();
+		expect(changesSent(session)).toEqual([]);
+	});
+
+	it("ignores a correction response that arrives after switching to another insight", async () => {
 		const old = evidenceSession();
-		const current = reviewSession();
+		const current = reviewSession(async () => makeAreaReview());
 		const pending = deferred<void>();
 		old.afterChange.mockImplementationOnce(() => pending.promise);
-		const user = userEvent.setup();
 		const view = render(step(old.actions));
-		const { dialog } = await inspect(user);
+		const user = userEvent.setup();
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await nextStage(user, "people");
+		await nextStage(user, "conversations");
 		await user.click(
-			within(dialog).getByRole("button", {
-				name: /Does not belong here/,
+			await screen.findByRole("checkbox", {
+				name: /TLS certificate renewal/,
 			}),
 		);
+		await press(user, "Looks right, next topic");
+		await waitFor(() => expect(old.afterChange).toHaveBeenCalled());
 		view.rerender(step(current.actions));
-		await screen.findByDisplayValue("Northwind Migration");
-		await act(async () => pending.resolve());
-		expect(
-			screen.queryByText("Keep out of Northwind Migration"),
-		).not.toBeInTheDocument();
-		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-		expect(current.saved?.draft.corrections).toBeUndefined();
-	});
-
-	it("hides previous source text immediately when the conversation changes", async () => {
-		const pending = deferred<ReturnType<typeof wire>>();
-		const run = vi.fn(async (statement: string) => {
-			if (statement.includes("thread-2")) return pending.promise;
-			return wire({
-				threadId: "thread-1",
-				source: "email",
-				messages: [
-					{
-						id: "m-1",
-						text: "Old conversation text",
-						at: "2023-10-12T09:00:00Z",
-					},
-				],
-				hiddenCount: 0,
-				unavailableCount: 0,
-				hasMore: false,
-			});
+		const heading = await screen.findByRole("heading", {
+			name: "Your main areas of work",
 		});
-		const actions = { run } as unknown as InsightActions;
-		const view = render(
-			<TopicConversationContext actions={actions} threadId="thread-1" />,
-		);
-		await screen.findByText("Old conversation text");
-		view.rerender(
-			<TopicConversationContext actions={actions} threadId="thread-2" />,
-		);
-		expect(
-			screen.queryByText("Old conversation text"),
-		).not.toBeInTheDocument();
-		await act(async () =>
-			pending.resolve(
-				wire({
-					threadId: "thread-2",
-					source: "email",
-					messages: [{ id: "m-2", text: "Current text" }],
-					hiddenCount: 0,
-					unavailableCount: 0,
-					hasMore: false,
-				}),
-			),
-		);
-		expect(await screen.findByText("Current text")).toBeVisible();
+		await act(async () => pending.resolve());
+		expect(heading).toBeVisible();
+		expect(screen.queryByText(/Topic \d of \d/)).not.toBeInTheDocument();
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(current.saved?.draft.corrections).toBeUndefined();
 	});
 });
