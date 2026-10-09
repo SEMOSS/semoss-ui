@@ -88,6 +88,10 @@ interface CatalogOverviewProps {
 	id: string;
 	/** User's permission in the catalog */
 	permission: Role;
+	/** Current display name — shown as an editable field in edit mode. */
+	displayName?: string;
+	/** Called on save when the display name has changed. */
+	onSaveDisplayName?: (id: string, name: string) => Promise<void>;
 	/** Keys to show in the overview */
 	metaKeys: {
 		display_options:
@@ -143,6 +147,8 @@ interface CatalogOverviewProps {
 export const CatalogOverview = ({
 	id,
 	permission,
+	displayName,
+	onSaveDisplayName,
 	metaKeys,
 	metaValues,
 	description,
@@ -158,6 +164,7 @@ export const CatalogOverview = ({
 }: CatalogOverviewProps) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isEditMode, setIsEditMode] = useState(false);
+	const [editDisplayName, setEditDisplayName] = useState(displayName ?? "");
 	const [form, setForm] = useState<CatalogOverviewForm>({
 		description: "",
 		markdown: "",
@@ -208,9 +215,11 @@ export const CatalogOverview = ({
 
 		setForm(nextForm);
 		setInitialForm(nextForm);
+		setEditDisplayName(displayName ?? "");
 		setIsEditMode(false);
 	}, [
 		id,
+		displayName,
 		description,
 		markdown,
 		tags,
@@ -221,7 +230,9 @@ export const CatalogOverview = ({
 
 	const isEditable = permission === "OWNER" || permission === "EDIT";
 	const isEditing = isEditable && isEditMode;
-	const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
+	const isDirty =
+		JSON.stringify(form) !== JSON.stringify(initialForm) ||
+		editDisplayName !== (displayName ?? "");
 	const markdownClassName =
 		markdownVariant === "document"
 			? "w-full text-sm leading-relaxed"
@@ -314,8 +325,14 @@ export const CatalogOverview = ({
 				{},
 			);
 
-			// save it
 			await onSave(id, metadata);
+
+			if (
+				onSaveDisplayName &&
+				editDisplayName.trim() !== (displayName ?? "")
+			) {
+				await onSaveDisplayName(id, editDisplayName.trim());
+			}
 
 			setInitialForm(form);
 			setIsEditMode(false);
@@ -673,6 +690,18 @@ export const CatalogOverview = ({
 			<div className="my-1 border-border border-b pb-2 last:mb-0 last:border-b-0">
 				{isEditing ? (
 					<div className="space-y-6">
+						{onSaveDisplayName !== undefined && (
+							<Field>
+								<FieldLabel>Display Name</FieldLabel>
+								<Input
+									value={editDisplayName}
+									onChange={(e) =>
+										setEditDisplayName(e.target.value)
+									}
+									placeholder="Display name"
+								/>
+							</Field>
+						)}
 						<Field>
 							<FieldLabel>About</FieldLabel>
 							<MarkdownEditor
