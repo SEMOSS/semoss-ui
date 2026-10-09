@@ -24,6 +24,7 @@ export const TYPE_OPTIONS = [
 export const EXECUTION_OPTIONS = [
 	{ value: "auto", label: "Auto" },
 	{ value: "ask", label: "Ask first" },
+	{ value: "yesno", label: "Yes/No" },
 	{ value: "disabled", label: "Disabled" },
 ];
 

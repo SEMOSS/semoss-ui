@@ -4,6 +4,7 @@ export const SYSTEM__PLAYGROUND = "SYSTEM__PLAYGROUND";
 
 export const MCP_EXECUTION_AUTO = "auto";
 export const MCP_EXECUTION_ASK = "ask";
+export const MCP_EXECUTION_YESNO = "yesno";
 /**
  * Executed by the backend agent harness, not client-dispatched — so neither
  * ever equals MCP_EXECUTION_AUTO, which the FE's own continueToolExecution
@@ -13,6 +14,8 @@ export const MCP_EXECUTION_ASK = "ask";
  */
 export const MCP_EXECUTION_AGENT_ASK = "agent-ask";
 export const MCP_EXECUTION_AGENT_AUTO = "agent-auto";
+/** Agent-run counterpart to MCP_EXECUTION_YESNO. */
+export const MCP_EXECUTION_AGENT_YESNO = "agent-yesno";
 
 export const MCP_DISPLAY_INLINE = "inline";
 export const MCP_DISPLAY_SIDEBAR = "sidebar";

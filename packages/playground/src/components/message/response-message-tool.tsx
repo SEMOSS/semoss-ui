@@ -8,7 +8,7 @@ import {
 	XCircleIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useToolView } from "@semoss/shared";
 import { Button, cn, Spinner, toast, useIsMobile } from "@semoss/ui/next";
@@ -23,7 +23,11 @@ import { useSidebarPanelActive } from "@/hooks/use-sidebar-panel-active";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type { ToolStore } from "@/stores/tool/tool.store";
-import { getToolAppId, isAskExecutionMode } from "@/utility/mcp-utils";
+import {
+	getToolAppId,
+	isAskExecutionMode,
+	isYesNoExecutionMode,
+} from "@/utility/mcp-utils";
 import { ToolsView } from "../mcp/tools-view";
 import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
@@ -77,10 +81,12 @@ export const ResponseMessageTool = observer(
 			return <ResponseMessageToolStreaming tool={tool} />;
 		const message = tool.message;
 		if (tool.display === "hidden" || !message) return null;
+		const toolExecution = tool.json._meta?.SMSS_MCP_EXECUTION;
+		const isYesNo = isYesNoExecutionMode(toolExecution);
 		const needsDecision =
 			Boolean(tool.pendingAction) ||
 			(tool.status === "INITIAL" &&
-				isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION));
+				(isAskExecutionMode(toolExecution) || isYesNo));
 		const failed = tool.status === "ERROR";
 		const cancelled = tool.status === "CANCELLED";
 		const running = tool.status === "LOADING";
@@ -129,6 +135,26 @@ export const ResponseMessageTool = observer(
 				);
 			} finally {
 				setIsCancelling(false);
+			}
+		};
+		const handleApprove = async (e: MouseEvent) => {
+			e.stopPropagation();
+			try {
+				await tool.approve();
+			} catch (error) {
+				toast.error(
+					error instanceof Error ? error.message : String(error),
+				);
+			}
+		};
+		const handleReject = async (e: MouseEvent) => {
+			e.stopPropagation();
+			try {
+				await tool.reject();
+			} catch (error) {
+				toast.error(
+					error instanceof Error ? error.message : String(error),
+				);
 			}
 		};
 		const handleOpen = () => {
@@ -234,8 +260,38 @@ export const ResponseMessageTool = observer(
 					<ResponseMessageToolMenu
 						message={message}
 						tool={tool}
-						showCancelInMenu={needsDecision && canCancel}
+						showCancelInMenu={
+							needsDecision && canCancel && !isYesNo
+						}
 					/>
+					{needsDecision && isYesNo && (
+						<>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								aria-label={t("actions.reject")}
+								disabled={tool.isRejecting}
+								onClick={handleReject}
+							>
+								<XCircleIcon
+									aria-hidden="true"
+									className="size-4"
+								/>
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								aria-label={t("actions.approve")}
+								disabled={tool.isApproving}
+								onClick={handleApprove}
+							>
+								<CheckIcon
+									aria-hidden="true"
+									className="size-4"
+								/>
+							</Button>
+						</>
+					)}
 				</div>
 				{isLarge && needsDecision ? (
 					componentView ? (

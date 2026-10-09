@@ -18,7 +18,11 @@ import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { ResponseMessageStore } from "@/stores/message/response-message.store";
 import type { RoomStore } from "@/stores/room/room.store";
 import type { ToolStore } from "@/stores/tool/tool.store";
-import { getToolEngineId, isAskExecutionMode } from "@/utility/mcp-utils";
+import {
+	getToolEngineId,
+	isAskExecutionMode,
+	isYesNoExecutionMode,
+} from "@/utility/mcp-utils";
 import { ToolField } from "./tool-field";
 
 export interface ToolsDefaultViewProps {
@@ -147,8 +151,10 @@ export const ToolsDefaultView = observer(
 		const optionalFields = Object.entries(properties).filter(
 			([fieldName]) => !required.includes(fieldName),
 		);
+		const toolExecution = tool?.json._meta?.SMSS_MCP_EXECUTION;
 		const isAutoExecuting =
-			!isAskExecutionMode(tool?.json._meta?.SMSS_MCP_EXECUTION) &&
+			!isAskExecutionMode(toolExecution) &&
+			!isYesNoExecutionMode(toolExecution) &&
 			tool.status !== "SUCCESS";
 
 		// The call is over (succeeded or not), so the form is no longer actionable
