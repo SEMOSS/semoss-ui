@@ -116,9 +116,12 @@ export interface Job {
 	finishedAt: string;
 	/** "topics" for the filing pass after onboarding keeps topics. */
 	mode: string;
+	/** Topic-review provenance, absent on older jobs. */
+	reviewId: string;
+	reviewRevision: number | null;
 }
 
-function mapJob(out: Row): Job {
+export function mapJob(out: Row): Job {
 	const status = str(out.status);
 	return {
 		id: str(out.id),
@@ -132,13 +135,25 @@ function mapJob(out: Row): Job {
 		error: str(out.error),
 		finishedAt: str(out.finishedAt),
 		mode: str((out.params as Row | undefined)?.mode),
+		reviewId: str((out.params as Row | undefined)?.reviewId),
+		reviewRevision:
+			typeof (out.params as Row | undefined)?.reviewRevision === "number"
+				? num((out.params as Row).reviewRevision)
+				: null,
 	};
 }
 
-export type JobKind = "import" | "classify";
+export type JobKind = "import" | "classify" | "topic_map";
 
-export async function getJob(actions: InsightActions, kind: JobKind) {
-	return mapJob(await run(actions, pixel("BrainGetJob", { kind })));
+export async function getJob(
+	actions: InsightActions,
+	kind: JobKind,
+	jobId?: string,
+	mode?: "sort" | "topics",
+): Promise<Job> {
+	return mapJob(
+		await run(actions, pixel("BrainGetJob", { kind, jobId, mode })),
+	);
 }
 
 /** teams turns Teams chats on or off for this and later imports. */
@@ -264,13 +279,6 @@ export async function suggestAccounts(
 		vips: num(a.vips),
 		suggested: a.suggested === true,
 	}));
-}
-
-export async function listAccounts(
-	actions: InsightActions,
-): Promise<{ id: string; name: string }[]> {
-	const out = await run(actions, pixel("BrainListAccounts", { limit: 1000 }));
-	return rows(out.items).map((a) => ({ id: str(a.id), name: str(a.name) }));
 }
 
 export async function saveAccounts(

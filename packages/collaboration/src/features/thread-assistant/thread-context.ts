@@ -101,7 +101,7 @@ export const PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS = [
 	LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS,
 ].join("\n");
 /** Built-in Work rules live in the backend collaboration system prompt. */
-export const THREAD_ASSISTANT_INSTRUCTIONS = "";
+const THREAD_ASSISTANT_INSTRUCTIONS = "";
 
 /** The platform agent behind every thread's assistant; Work reads it with the Brain settings. */
 export interface ThreadAgent {

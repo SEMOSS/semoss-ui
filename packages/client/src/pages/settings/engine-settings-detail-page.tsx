@@ -8,7 +8,7 @@ import {
 	SettingsTiles,
 	UpdateSMSS,
 } from "@/components/settings";
-import { useAPI, useSettings } from "@/hooks";
+import { useAPI, useConfig, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { ALL_TYPES } from "@/types";
 
@@ -26,6 +26,9 @@ const EngineSettingsUserDetailPage = (props: EngineSettingsDetailPageProps) => {
 	const { type } = props;
 
 	const { id } = useParams();
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
 	const navigate = useNavigate();
 	const { search } = useLocation();
 
@@ -93,6 +96,7 @@ const EngineSettingsUserDetailPage = (props: EngineSettingsDetailPageProps) => {
 						type={type}
 						id={id}
 						onChange={() => getUserEnginePermission.refresh()}
+						isDirectoryAvailable={isDirectoryAvailable}
 					/>
 				)}
 				{view === "PENDING" && (
@@ -110,6 +114,9 @@ const EngineSettingsAdminDetailPage = (
 	const { type } = props;
 
 	const { id } = useParams();
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
 	const navigate = useNavigate();
 	const { search } = useLocation();
 
@@ -139,7 +146,12 @@ const EngineSettingsAdminDetailPage = (
 					</TabsList>
 				</Tabs>
 				{view === "CURRENT" && (
-					<MembersTable type={type} id={id} adminMode />
+					<MembersTable
+						type={type}
+						id={id}
+						adminMode
+						isDirectoryAvailable={isDirectoryAvailable}
+					/>
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable type={type} id={id} />

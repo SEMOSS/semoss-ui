@@ -44,17 +44,6 @@ export function formatMessageTime(
 	}).format(date);
 }
 
-/** Copy the same text and thinking content as the original message action. */
-export function messageText(message: ConversationMessage): string {
-	if (message.delegationReply) return message.delegationReply.text ?? "";
-	if (message.delegationRequest) return message.delegationRequest.question;
-	return message.parts
-		.flatMap((part) =>
-			part.type === "text" || part.type === "thinking" ? [part.text] : [],
-		)
-		.join("\n\n");
-}
-
 /** Inspectors use source metadata even when tools are visually regrouped. */
 export function toolMessageTimestamps(
 	messages: ConversationMessage[],

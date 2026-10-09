@@ -56,9 +56,9 @@ vi.mock("@semoss/sdk/react", () => ({
 		...(recipientRead.result ?? {
 			status: "SUCCESS",
 			data: {
-				uid: query
+				id: query
 					? JSON.parse(
-							query.match(/uid=(\[[^\]]*\])/)?.[1] ?? "[]",
+							query.match(/\bid=(\[[^\]]*\])/)?.[1] ?? "[]",
 						)[0]
 					: "",
 				replyRecipients: {

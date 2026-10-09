@@ -56,6 +56,57 @@ chevron included, through `TreeViewItem`'s `rowClassName`.
 `FileExplorer` is **not** deprecated — it is the shell `@semoss/panels`'
 `FileExplorerPane` renders, and `libs/panels` is its main consumer.
 
+### Tool views (`components/tool-view/`)
+
+A tool names the view a call is drawn with in `_meta.SMSS_MCP_UI.resourceURI`. A
+`component://<library>/<view>?<params>` URI names a React component the host draws in the page,
+never in a frame; `system://` and portal paths stay pages. This folder is the contract between
+the libraries that provide views and the hosts that draw them, and knows nothing about any one
+library:
+
+- `ToolViewProps` is what every view receives: the `call` (its reactor, arguments, result, and
+  status), the URI's `params` (such as `intent` and `provider`, which configure the view and never
+  carry data), the `mode` (`approval` while the call waits for the user, `result` otherwise), the
+  decisions (`onApprove` with edited arguments, `onDecline`, and `onRespond`, which resolves the
+  call with what the user did instead, without running it), and the `host`'s offers (sign in,
+  save, add to context).
+- A library exports a `ToolViewLibrary`, a plain map of views by name, usually lazy. A host passes
+  the libraries it draws to `ToolViewProvider`, at module scope, and finds a call's view with
+  `useToolView(uri)`, which returns null for a URI it does not draw.
+- `ToolViewRenderer` draws a found view with a placeholder while its code loads and the host's
+  fallback if it fails (`ToolViewBoundary`). A host shows its generic view for a `component://`
+  URI it cannot draw (`isToolViewUri`).
+
+`@semoss/connectors` provides the `mail` and `calendar` libraries; the playground draws them.
+
+### Members (`components/members/`)
+
+`MembersTable` lists a project's or engine's members and opens `AddMembersOverlay` to add more.
+When the server can search the organization's Microsoft directory (`msGraphLookup` in
+`/api/config`), the host passes `isDirectoryAvailable` and the dialog shows `UserSourceToggle`,
+a choice between existing users and the whole organization. The dialog starts on the
+organization and sends the choice as `msGraphLookup`. Without the prop it sends nothing and the
+backend decides, which means the directory whenever the directory is available. A person picked
+from the directory gets an account when their permission is saved. The table reads no config
+itself: the client keeps `/api/config` in its own store, and the other apps read it through
+`useInsight`.
+
+`AddMembersOverlay` is the one dialog for adding people anywhere in the apps. For a project or
+engine, pass `id` and `type`. To add people to something else, such as a team's members or
+managers, pass a `people` source instead: it loads the candidates, adds the people picked, and
+can retitle the dialog and mark people who cannot be picked, by click or by Enter. With
+`people`, the dialog picks people without access levels. When its `add` rejects, the dialog keeps
+the people picked and stays open, and the host's list reloads when it closes, since some may have
+been added. Add and Delete are disabled while their request runs. Reuse it rather than building
+another people picker.
+
+`MembersTable` is likewise the one members table. Teams use it for their members and managers by
+passing a `source` that loads, removes and adds people (its `people` goes to the add dialog) and
+can rename a member, for example to "Manager". With a `source` the table has no permission column
+or edit dialog, and `readOnly` alone decides whether the viewer can change the list. A new
+`source` reloads the list from the start with nothing selected, and a failed load shows its error
+with Try Again. It marks the signed in user with a star either way.
+
 ### The file editors are gone (`components/file/file-*.tsx`)
 
 `FileEditor` and the six viewers it dispatched to — `file-code-editor`,

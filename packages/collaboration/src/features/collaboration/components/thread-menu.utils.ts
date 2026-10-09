@@ -1,3 +1,5 @@
+import { threadPath } from "@/lib/workspace-paths";
+
 export type ThreadMenuArea = "work" | "brain";
 
 /** Build a thread link without losing the deployment path or query string. */
@@ -10,13 +12,8 @@ export function threadUrl(
 	url.hash =
 		area === "brain"
 			? `/brain/threads/${encodeURIComponent(threadId)}`
-			: `/work/thread/${encodeURIComponent(threadId)}`;
+			: threadPath(threadId);
 	return url.href;
-}
-
-/** A stable destination for returning from a thread's workbench. */
-export function threadMenuTriggerId(threadId: string): string {
-	return `work-thread-menu-${encodeURIComponent(threadId)}`;
 }
 
 /** Return to a visible trigger, falling back to the surviving page landmark. */

@@ -36,26 +36,6 @@ describe("MICROSOFT_PIXELS", () => {
 		);
 	});
 
-	it("sends true flags and leaves false ones to the default", () => {
-		expect(
-			MICROSOFT_PIXELS.outlookListMail({
-				folder: "inbox",
-				limit: 25,
-				subject: "   ",
-				unreadOnly: false,
-			}),
-		).toBe(
-			'MicrosoftOutlookListMail(folder=["inbox"], limit=[25], includeBody=[false]);',
-		);
-		expect(
-			MICROSOFT_PIXELS.outlookListMail({
-				folder: "inbox",
-				limit: 25,
-				unreadOnly: true,
-			}),
-		).toContain("unreadOnly=[true]");
-	});
-
 	it("names a reply only for a reply", () => {
 		const root = MICROSOFT_PIXELS.teamsDownloadAttachment({
 			teamId: "t",

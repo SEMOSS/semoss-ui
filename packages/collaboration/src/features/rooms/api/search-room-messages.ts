@@ -1,7 +1,7 @@
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 
-const PLAYGROUND_PROJECT_ID = "SYSTEM__PLAYGROUND";
+const COLLABORATION_PROJECT_ID = "SYSTEM__COLLABORATION";
 const ROOM_SEARCH_LIMIT = 50;
 
 const roomContentMatchSchema = z
@@ -25,6 +25,7 @@ export interface RoomContentMatch {
 export async function searchRoomMessages(
 	actions: InsightActions,
 	search: string,
+	offset = 0,
 ): Promise<RoomContentMatch[]> {
 	const query = search.trim();
 	if (!query) return [];
@@ -33,9 +34,10 @@ export async function searchRoomMessages(
 		actions,
 		`META | ${pixel("SearchRoomMessages", {
 			search: query,
-			project: PLAYGROUND_PROJECT_ID,
+			project: COLLABORATION_PROJECT_ID,
 			limit: ROOM_SEARCH_LIMIT,
-			offset: 0,
+			offset,
+			includeUnnamedRooms: true,
 		})}`,
 		roomContentMatchesSchema,
 	);

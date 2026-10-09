@@ -437,6 +437,14 @@ export function automationDocumentToN8nWorkflow(
 			name,
 			nodes: exportedNodes,
 			connections,
+			nodeGroups: (workflowDocument.nodeGroups ?? [])
+				.map((group) => ({
+					...group,
+					nodeIds: group.nodeIds.filter((nodeId) =>
+						exportedNodes.some((node) => node.id === nodeId),
+					),
+				}))
+				.filter((group) => group.nodeIds.length > 0),
 			pinData: {},
 			active: false,
 			settings: { executionOrder: "v1" },

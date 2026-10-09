@@ -23,6 +23,7 @@ import {
 	removeEngineUserPermissions,
 } from "@semoss/sdk";
 import { download, useInsight, usePixel } from "@semoss/sdk/react";
+import { type UserSource, UserSourceToggle } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -31,6 +32,7 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -51,6 +53,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { decodeBase64ToBytes } from "@semoss/utility/encoding";
+import { getErrorMessage } from "@semoss/utility/error";
 import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
 import { EmbedDocumentsOverlay } from "@/components/knowledge/embed-documents-overlay";
@@ -79,10 +82,10 @@ type EngineUser = {
 
 type SearchUser = {
 	id: string;
-	name: string;
-	email: string;
+	name: string | null;
+	email: string | null;
 	type: string;
-	username: string;
+	username: string | null;
 };
 
 const getFileIcon = (fileName: string) => {
@@ -206,8 +209,14 @@ export const KnowledgeDetailPage = observer(() => {
 	const [searchLoading, setSearchLoading] = useState(false);
 	const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
 	const [selectedRole, setSelectedRole] = useState<string>("READ_ONLY");
+	const [userSource, setUserSource] = useState<UserSource>("directory");
 	const [removeTarget, setRemoveTarget] = useState<EngineUser | null>(null);
 	const insight = useInsight();
+	const isDirectoryAvailable = insight.system?.config.msGraphLookup === true;
+	// Without the directory, leave the choice to the backend
+	const msGraphLookup = isDirectoryAvailable
+		? userSource === "directory"
+		: undefined;
 	useEffect(() => {
 		if (!previewDoc) {
 			setPreviewBlobUrl(null);
@@ -284,11 +293,16 @@ export const KnowledgeDetailPage = observer(() => {
 				username: selectedUser.username,
 			},
 		] as unknown as PostUser[]);
+		closeAddDialog();
+		void loadMembers();
+	};
+
+	const closeAddDialog = () => {
 		setAddOpen(false);
 		setUserSearch("");
 		setSelectedUser(null);
 		setSelectedRole("READ_ONLY");
-		void loadMembers();
+		setUserSource("directory");
 	};
 
 	const handleRoleChange = async (userId: string, newRole: string) => {
@@ -318,23 +332,46 @@ export const KnowledgeDetailPage = observer(() => {
 	useEffect(() => {
 		if (!userSearch || !addOpen) {
 			setSearchResults([]);
+			setSearchLoading(false);
 			return;
 		}
-		const t = setTimeout(async () => {
+		// a search that a newer one replaced must not overwrite its results
+		let isStale = false;
+		const timer = setTimeout(async () => {
 			setSearchLoading(true);
 			try {
 				const results = await getEngineUsersNoCredentials(
 					knowledgeId,
 					false,
 					userSearch,
+					undefined,
+					undefined,
+					msGraphLookup,
 				);
-				setSearchResults(results as unknown as SearchUser[]);
+				if (!isStale) {
+					setSearchResults(results as unknown as SearchUser[]);
+				}
+			} catch (error) {
+				if (!isStale) {
+					setSearchResults([]);
+					toast.error(
+						getErrorMessage(
+							error,
+							t("members:errors.loadUsersFailed"),
+						),
+					);
+				}
 			} finally {
-				setSearchLoading(false);
+				if (!isStale) {
+					setSearchLoading(false);
+				}
 			}
 		}, 300);
-		return () => clearTimeout(t);
-	}, [userSearch, addOpen, knowledgeId]);
+		return () => {
+			isStale = true;
+			clearTimeout(timer);
+		};
+	}, [userSearch, addOpen, knowledgeId, msGraphLookup, t]);
 
 	const sortedDocuments = useMemo(() => {
 		if (getDocuments.status !== "SUCCESS") return [];
@@ -843,7 +880,12 @@ export const KnowledgeDetailPage = observer(() => {
 						)}
 					</DialogContent>
 				</Dialog>
-				<Dialog open={addOpen} onOpenChange={setAddOpen}>
+				<Dialog
+					open={addOpen}
+					onOpenChange={(isOpen) =>
+						isOpen ? setAddOpen(true) : closeAddDialog()
+					}
+				>
 					<DialogContent className="sm:max-w-md">
 						<DialogHeader>
 							<DialogTitle>
@@ -851,6 +893,15 @@ export const KnowledgeDetailPage = observer(() => {
 							</DialogTitle>
 						</DialogHeader>
 						<div className="flex flex-col gap-4">
+							{isDirectoryAvailable && (
+								<UserSourceToggle
+									value={userSource}
+									onValueChange={(next) => {
+										setUserSource(next);
+										setSelectedUser(null);
+									}}
+								/>
+							)}
 							<Input
 								aria-label={t("knowledge:studio.searchUsers")}
 								className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -869,15 +920,24 @@ export const KnowledgeDetailPage = observer(() => {
 										<button
 											key={u.id}
 											type="button"
-											className={`w-full px-3 py-2 text-start text-sm hover:bg-muted transition-colors${selectedUser?.id === u.id ? "bg-muted font-medium" : ""}`}
+											className={cn(
+												"w-full px-3 py-2 text-start text-sm transition-colors hover:bg-muted",
+												selectedUser?.id === u.id &&
+													"bg-muted font-medium",
+											)}
+											aria-pressed={
+												selectedUser?.id === u.id
+											}
 											onClick={() => setSelectedUser(u)}
 										>
 											<span className="font-medium">
-												{u.name}
+												{u.name || u.email || u.id}
 											</span>
-											<span className="ms-2 text-muted-foreground">
-												{u.email}
-											</span>
+											{u.email && (
+												<span className="ms-2 text-muted-foreground">
+													{u.email}
+												</span>
+											)}
 										</button>
 									))}
 								</div>
@@ -913,7 +973,7 @@ export const KnowledgeDetailPage = observer(() => {
 							<div className="flex justify-end gap-2">
 								<Button
 									variant="outline"
-									onClick={() => setAddOpen(false)}
+									onClick={closeAddDialog}
 								>
 									{t("knowledge:studio.cancel")}
 								</Button>

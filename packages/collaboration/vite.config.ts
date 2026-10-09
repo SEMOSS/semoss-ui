@@ -1,4 +1,4 @@
-import type { ConfigEnv } from "vite";
+import { type ConfigEnv, loadEnv } from "vite";
 import { resolve } from "node:path";
 import {
 	createViteConfig,
@@ -6,6 +6,7 @@ import {
 	localeManualChunks,
 } from "@semoss/config";
 import { aiSdkStubAlias, scopePptxViewerCssPlugin } from "@semoss/panels/vite";
+import { collaborationDevServer } from "./dev-server";
 
 const monacoApi = resolve(
 	import.meta.dirname,
@@ -40,5 +41,11 @@ const baseConfig = createViteConfig({
 export default (env: ConfigEnv) => {
 	const config = baseConfig(env);
 	config.plugins = [scopePptxViewerCssPlugin, ...(config.plugins ?? [])];
+	if (env.command === "serve") {
+		config.server = collaborationDevServer(
+			loadEnv(env.mode, process.cwd(), ""),
+			config.server,
+		);
+	}
 	return config;
 };

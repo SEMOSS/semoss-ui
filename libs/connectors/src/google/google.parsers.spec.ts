@@ -4,17 +4,9 @@ import {
 	parseLocalWallClock,
 } from "@semoss/utility/date";
 import { toPlainText } from "../core/connector.format";
-import {
-	gmailMessageToMarkdown,
-	googleDocToMarkdown,
-	googleEventToMarkdown,
-} from "./google.markdown";
+import { googleDocToMarkdown } from "./google.markdown";
 import {
 	parseDriveFiles,
-	parseGmailList,
-	parseGmailMessage,
-	parseGoogleCalendarDays,
-	parseGoogleCalendarEvent,
 	parseGoogleDocContent,
 	parseGoogleDocs,
 } from "./google.parsers";
@@ -28,62 +20,6 @@ describe("Google parsers", () => {
 			{ id: "1", name: "Alpha" },
 		]);
 		expect(files.map((file) => file.name)).toEqual(["Alpha", "beta.pdf"]);
-	});
-
-	it("reads Gmail listings, keeping the preview", () => {
-		const [message] = parseGmailList([
-			{
-				id: "m1",
-				subject: "Hi",
-				from: "Ada <ada@example.com>",
-				pre_content: "Hello",
-			},
-		]);
-		expect(message).toEqual({
-			id: "m1",
-			subject: "Hi",
-			from: "Ada <ada@example.com>",
-			snippet: "Hello",
-		});
-	});
-
-	it("gives a read email the id it was read with", () => {
-		const message = parseGmailMessage("m1")({
-			from: "ada@example.com",
-			content: "<p>Hi</p>",
-		});
-		expect(message.id).toBe("m1");
-		expect(message.content).toBe("<p>Hi</p>");
-	});
-
-	it("reads calendar days, earliest first, dropping empty ones", () => {
-		const days = parseGoogleCalendarDays([
-			{ date: "2026-09-28", events: [{ id: "b", summary: "Later" }] },
-			{
-				date: "2026-09-27",
-				events: [{ id: "a", recurringEventId: "r" }],
-			},
-			{ date: "2026-09-29", events: [] },
-		]);
-		expect(days.map((day) => day.date)).toEqual([
-			"2026-09-27",
-			"2026-09-28",
-		]);
-		expect(days[0].events[0].recurringEventId).toBe("r");
-	});
-
-	it("reads an event with its guests", () => {
-		const event = parseGoogleCalendarEvent("e1")({
-			summary: "Sync",
-			startTime: "2026-09-27T09:00:00",
-			attendees: [
-				{ email: "grace@example.com", responseStatus: "accepted" },
-				{},
-			],
-			hangoutLink: "https://meet.example/abc",
-		});
-		expect(event).toMatchObject({ id: "e1", summary: "Sync" });
-		expect(event.attendees).toHaveLength(1);
 	});
 
 	it("reads documents and their text", () => {
@@ -106,17 +42,7 @@ describe("Google parsers", () => {
 
 describe("Google pixels and links", () => {
 	it("builds the reactor calls", () => {
-		expect(GOOGLE_PIXELS.gmailRead("m1")).toBe(
-			'GoogleGmailReadEmail(id=["m1"]);',
-		);
-		expect(
-			GOOGLE_PIXELS.calendarList({
-				startDate: "2026-09-27T00:00:00",
-				endDate: "2026-10-03T23:59:59",
-			}),
-		).toBe(
-			'GoogleCalendarList(startDate=["2026-09-27T00:00:00"], endDate=["2026-10-03T23:59:59"]);',
-		);
+		expect(GOOGLE_PIXELS.docsRead("d1")).toBe('GoogleDocsRead(id=["d1"]);');
 	});
 
 	it("opens Google's own files in their editors", () => {
@@ -162,29 +88,7 @@ describe("Google text", () => {
 		expect(parseLocalWallClock("soon")).toBeNull();
 	});
 
-	it("writes Gmail, events, and docs as Markdown", () => {
-		expect(
-			gmailMessageToMarkdown({
-				id: "m",
-				subject: "Hi",
-				from: "ada@example.com",
-				content: "<p>Numbers</p>",
-			}),
-		).toContain("Numbers");
-		expect(
-			googleEventToMarkdown({
-				id: "e",
-				summary: "Sync",
-				startTime: "2026-09-27T09:00:00",
-				endTime: "2026-09-27T09:30:00",
-				attendees: [
-					{ email: "grace@example.com", responseStatus: "accepted" },
-				],
-				frequency: "WEEKLY",
-			}),
-		).toContain(
-			"**Repeats:** weekly  \n**Guests:** grace@example.com (accepted)",
-		);
+	it("writes docs as Markdown", () => {
 		expect(
 			googleDocToMarkdown(
 				{ title: "Plan", content: "Step" },

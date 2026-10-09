@@ -75,6 +75,40 @@ it("reads a new email and the open editor it changes", () => {
 	});
 });
 
+it.each([{}, { replyTo: "mail-2" }])(
+	"distinguishes explicitly cleared envelope fields from omitted fields: %s",
+	(source) => {
+		const proposal = (fields: Record<string, unknown>) =>
+			readDraftProposal(
+				message([
+					composeEmailPart({
+						...source,
+						openEmailId: "open-email",
+						...fields,
+					}),
+				]),
+			);
+		expect(
+			proposal({ to: "", cc: "", bcc: "", subject: "" }),
+		).toMatchObject({
+			to: "",
+			cc: "",
+			bcc: "",
+			subject: "",
+		});
+		expect(proposal({})).toMatchObject({
+			to: undefined,
+			cc: undefined,
+			bcc: undefined,
+			subject: undefined,
+		});
+		expect(proposal({ cc: "", message: "  \n\t" })).toMatchObject({
+			cc: "",
+			body: undefined,
+		});
+	},
+);
+
 it("uses the last ComposeEmail call in a response", () => {
 	expect(
 		readDraftProposal(

@@ -8,9 +8,11 @@ import type { StepRunStatus } from "../../domain/automation.types";
 
 /** Blue used wherever a step or edge sits on the path leading to the selected node. */
 export const PATH_HIGHLIGHT_COLOR = "var(--primary)";
+export const LOOP_PATH_HIGHLIGHT_COLOR = "var(--chart-2)";
 
 /** Tailwind border class matching `PATH_HIGHLIGHT_COLOR`, for node cards. */
 export const PATH_HIGHLIGHT_BORDER_CLASS = "border-primary/60";
+export const LOOP_PATH_HIGHLIGHT_BORDER_CLASS = "border-chart-2/70";
 
 const RUN_STATUS_COLOR: Partial<Record<StepRunStatus, string>> = {
 	running: "#3b82f6",
@@ -31,8 +33,9 @@ export function getFlowStrokeColor(
 	runStatus: StepRunStatus | undefined,
 	isPathHighlighted: boolean,
 	defaultColor: string,
+	pathColor: string = PATH_HIGHLIGHT_COLOR,
 ): string {
-	if (isPathHighlighted) return PATH_HIGHLIGHT_COLOR;
+	if (isPathHighlighted) return pathColor;
 	const runColor = runStatus && RUN_STATUS_COLOR[runStatus];
 	if (runColor) return runColor;
 	return defaultColor;
@@ -43,8 +46,9 @@ export function getFlowBorderClass(
 	runStatus: StepRunStatus | undefined,
 	isPathHighlighted: boolean,
 	fallbackClass: string,
+	pathHighlightClass: string = PATH_HIGHLIGHT_BORDER_CLASS,
 ): string {
-	if (isPathHighlighted) return PATH_HIGHLIGHT_BORDER_CLASS;
+	if (isPathHighlighted) return pathHighlightClass;
 	const runClass = runStatus && RUN_STATUS_BORDER_CLASS[runStatus];
 	if (runClass) return runClass;
 	return fallbackClass;

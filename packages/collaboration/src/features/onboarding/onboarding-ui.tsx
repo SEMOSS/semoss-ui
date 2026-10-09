@@ -23,12 +23,12 @@ export function StepHeader({
 	aside?: ReactNode;
 }) {
 	return (
-		<div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-			<div className="max-w-xl space-y-2">
+		<div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+			<div className="max-w-2xl space-y-1.5">
 				<p className="font-medium text-primary text-xs uppercase tracking-widest">
 					{eyebrow}
 				</p>
-				<h1 className="font-semibold text-2xl tracking-tight md:text-3xl">
+				<h1 className="font-semibold text-xl tracking-tight md:text-2xl">
 					{title}
 				</h1>
 				{children && (
@@ -53,9 +53,9 @@ export function StepActions({
 	note?: ReactNode;
 }) {
 	return (
-		<div className="-mx-6 md:-mx-10 -mb-6 md:-mb-10 mt-2 flex flex-wrap items-center gap-3 rounded-b-3xl border-t bg-muted/30 px-6 py-4 md:px-10">
+		<div className="-mx-4 sm:-mx-6 -mb-4 sm:-mb-6 sticky bottom-0 z-10 mt-2 flex flex-wrap items-center gap-3 rounded-b-xl border-t bg-card/95 px-4 py-3 backdrop-blur sm:px-6">
 			{onBack && (
-				<Button variant="ghost" onClick={onBack}>
+				<Button type="button" variant="ghost" onClick={onBack}>
 					Back
 				</Button>
 			)}
@@ -259,7 +259,12 @@ export function Failure({
 			<AlertDescription className="flex items-center justify-between gap-2">
 				<span>{error}</span>
 				{onRetry && (
-					<Button size="sm" variant="outline" onClick={onRetry}>
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						onClick={onRetry}
+					>
 						Retry
 					</Button>
 				)}

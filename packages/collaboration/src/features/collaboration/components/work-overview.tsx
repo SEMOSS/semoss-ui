@@ -1,131 +1,121 @@
-import { CalendarDays, Clock, Sparkles } from "lucide-react";
 import { Link } from "react-router";
 import { P, Small } from "@semoss/ui/next";
+import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
-import { selectWorkItems } from "../state/collaboration.selectors";
+import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { ReviewCard } from "./review-card";
+import { memoriesAbout } from "../state/memory";
+import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 
-/** Relevant upcoming events, review questions, and waiting items from shared state. */
-export function WorkOverview() {
+interface WorkOverviewProps {
+	/** All supporting context belongs to this topic. */
+	topic: Topic;
+}
+
+/** Confirmed people, notes, and linked calendar threads for one topic. */
+export function WorkOverview({ topic }: WorkOverviewProps) {
 	const { state } = useCollaborationSession();
-	const coming = state.threads
-		.filter((thread) => thread.channel === "calendar" && !thread.muted)
-		.slice(0, 4);
-	const reviews = state.reviews
-		.filter((review) => review.status === "open")
-		.slice(0, 3);
-	const { items: waitingItems, total: waitingTotal } = selectWorkItems(
-		state,
-		{ view: "waiting" },
+	const members = topic.people.flatMap((member) => {
+		if (member.state !== "member") return [];
+		const person = state.people.find(
+			(candidate) =>
+				candidate.id === member.personId &&
+				candidate.isSample === topic.isSample,
+		);
+		return person ? [{ person, role: member.role }] : [];
+	});
+	// a topic's notes are memories about it
+	const notes = memoriesAbout(state.memories, {
+		type: "topic",
+		id: topic.id,
+	}).filter((memory) => memory.state === "active" && memory.confirmed);
+	const calendar = state.threads.filter(
+		(thread) =>
+			thread.channel === "calendar" &&
+			!thread.muted &&
+			thread.isSample === topic.isSample &&
+			thread.topicLinks.some(
+				(link) =>
+					link.topicId === topic.id && link.source !== "suggested",
+			),
 	);
-	const waiting = waitingItems.slice(0, 4);
 	return (
 		<>
-			<Section title="Coming up" variant="card">
-				{coming.length ? (
-					coming.map((thread) => (
+			<Section title="People" variant="card">
+				{members.length ? (
+					members.map(({ person, role }) => (
+						<div key={person.id} className="flex items-start gap-3">
+							<PersonAvatar
+								name={person.name}
+								initials={person.initials}
+							/>
+							<div className="min-w-0 space-y-1">
+								<Link
+									to={`/brain/people/${encodeURIComponent(person.id)}`}
+									className="break-words font-medium text-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+								>
+									{person.name}
+								</Link>
+								{role && (
+									<Small className="block break-words font-normal text-muted-foreground text-xs">
+										{role}
+									</Small>
+								)}
+							</div>
+						</div>
+					))
+				) : (
+					<P className="text-muted-foreground text-sm">
+						No confirmed people yet.
+					</P>
+				)}
+			</Section>
+			<Section title="Confirmed notes" variant="card">
+				{notes.length ? (
+					notes.map((note) => (
+						<P
+							key={note.id}
+							className="break-words border-border border-b pb-3 text-sm leading-relaxed last:border-0 last:pb-0"
+						>
+							{note.text}
+						</P>
+					))
+				) : (
+					<P className="text-muted-foreground text-sm">
+						No confirmed notes yet.
+					</P>
+				)}
+			</Section>
+			<Section title="Linked calendar" variant="card">
+				{calendar.length ? (
+					calendar.map((thread) => (
 						<div
 							key={thread.id}
-							className="space-y-1 border-border/50 border-b pb-2 last:border-0 last:pb-0"
+							className="space-y-1 border-border border-b pb-3 last:border-0 last:pb-0"
 						>
 							<Link
-								className="font-medium text-sm hover:underline"
-								to={`/work/thread/${encodeURIComponent(thread.id)}`}
+								to={threadPath(thread.id)}
+								className="break-words font-medium text-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
 							>
 								{thread.subject}
 							</Link>
-							<Small className="font-normal text-muted-foreground">
+							<Small className="block font-normal text-muted-foreground text-xs">
 								{thread.when || dateLabel(thread.lastAt)}
 							</Small>
 							{thread.conflict && (
-								<Small className="font-normal text-warning">
+								<Small className="block break-words font-normal text-warning">
 									{thread.conflict}
 								</Small>
 							)}
 						</div>
 					))
 				) : (
-					<P className="flex items-center gap-3 text-muted-foreground text-sm">
-						<CalendarDays
-							aria-hidden="true"
-							className="size-5 shrink-0"
-						/>
-						No loaded events.
-					</P>
-				)}
-			</Section>
-			<Section
-				title="Brain wants to check"
-				icon={Sparkles}
-				variant="card"
-				flush={reviews.length > 0}
-				action={
-					<Link
-						className="rounded-sm font-medium text-primary text-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-						to="/brain"
-					>
-						See all
-					</Link>
-				}
-			>
-				{reviews.length ? (
-					<div>
-						{reviews.map((review) => (
-							<ReviewCard
-								key={review.id}
-								review={review}
-								compact
-							/>
-						))}
-					</div>
-				) : (
 					<P className="text-muted-foreground text-sm">
-						All caught up.
+						No linked calendar threads.
 					</P>
 				)}
 			</Section>
-			{waiting.length > 0 && (
-				<Section
-					title="Waiting on others"
-					variant="card"
-					flush
-					action={
-						<span className="text-muted-foreground text-sm tabular-nums">
-							{waitingTotal}
-						</span>
-					}
-				>
-					<ul>
-						{waiting.map((item) => (
-							<li
-								key={item.id}
-								className="flex gap-3 border-border border-b px-4 py-3 last:border-0"
-							>
-								<Clock
-									aria-hidden="true"
-									className="mt-1 size-4 shrink-0 text-muted-foreground"
-								/>
-								<div className="min-w-0">
-									<Link
-										className="break-words text-sm hover:underline"
-										to={`/work/thread/${encodeURIComponent(item.threadId)}`}
-									>
-										{item.title}
-									</Link>
-									<Small className="font-normal text-muted-foreground">
-										{state.people.find(
-											(person) =>
-												person.id === item.actorId,
-										)?.name || "Someone else"}
-									</Small>
-								</div>
-							</li>
-						))}
-					</ul>
-				</Section>
-			)}
 		</>
 	);
 }

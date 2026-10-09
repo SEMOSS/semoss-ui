@@ -13,6 +13,7 @@ export type AutomationWorkflowNodeType =
 	| "storage.upload"
 	| "storage.download"
 	| "storage.delete"
+	| "data.extract"
 	| "vector.search"
 	| "vector.add"
 	| "vector.delete"
@@ -22,6 +23,7 @@ export type AutomationWorkflowNodeType =
 	| "control.wait"
 	| "control.if"
 	| "control.jev"
+	| "control.loop"
 	| "developer.python";
 
 export type AutomationPortKind = "control" | "data";
@@ -52,6 +54,7 @@ export type AutomationNodeCategory =
 	| "model"
 	| "agent"
 	| "storage"
+	| "data"
 	| "vector"
 	| "function"
 	| "app"
@@ -117,6 +120,8 @@ export interface AutomationWorkflowNode<
 	position: { x: number; y: number };
 	config: AutomationWorkflowNodeConfig;
 	codeMode: AutomationNodeCodeMode;
+	/** Nested acyclic graph executed by a container node such as control.loop. */
+	body?: AutomationWorkflowGraph;
 }
 
 export type AutomationWorkflowGraphNode = AutomationWorkflowNode;
@@ -147,11 +152,20 @@ export interface AutomationWorkflowGraph {
 	edges: AutomationWorkflowEdge[];
 }
 
+/** Visual-only canvas grouping, compatible with the n8n nodeGroups convention. */
+export interface AutomationNodeGroup {
+	id: string;
+	name: string;
+	nodeIds: string[];
+	description?: string;
+}
+
 export interface AutomationWorkflowDocument {
 	formatVersion: 2;
 	description?: string;
 	triggerBindings: TriggerBinding[];
 	graph: AutomationWorkflowGraph;
+	nodeGroups?: AutomationNodeGroup[];
 }
 
 export type ConfigFieldType =
@@ -182,6 +196,7 @@ export type AutomationOutputFieldType =
 	| "boolean"
 	| "number"
 	| "object"
+	| "object[]"
 	| "string"
 	| "string[]";
 

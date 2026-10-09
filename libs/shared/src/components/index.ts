@@ -24,3 +24,33 @@ export * from "./paired-file-upload";
 export * from "./project";
 export * from "./prompts";
 export * from "./skills";
+export type {
+	ToolCallOutcome,
+	ToolViewCall,
+	ToolViewCallStatus,
+	ToolViewComponent,
+	ToolViewHost,
+	ToolViewLibraries,
+	ToolViewLibrary,
+	ToolViewMode,
+	ToolViewProps,
+	ToolViewSavedFile,
+} from "./tool-view/tool-view.types";
+export {
+	ToolViewProvider,
+	type ToolViewProviderProps,
+} from "./tool-view/tool-view-provider";
+export {
+	ToolViewRenderer,
+	type ToolViewRendererProps,
+} from "./tool-view/tool-view-renderer";
+export {
+	isToolViewUri,
+	parseToolViewUri,
+	TOOL_VIEW_URI_SCHEME,
+	type ToolViewUri,
+} from "./tool-view/tool-view-uri";
+export {
+	type ResolvedToolView,
+	useToolView,
+} from "./tool-view/use-tool-view";

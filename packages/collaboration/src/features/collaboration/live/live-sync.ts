@@ -3,16 +3,16 @@ import { pixel } from "@/lib/pixel";
 import type {
 	CollaborationCommand,
 	CollaborationState,
+	Memory,
 	Rule,
 	Topic,
 	TopicGoal,
-	TopicNote,
 } from "../state/collaboration.types";
 import type { CollaborationChange } from "../state/collaboration-session.context";
 import { runBatch } from "./live-state";
 
 // Saves live-mode changes by diffing the state before and after each settled change, so any UI built on
-// the existing commands is saved without knowing which button caused it. Undo is a change like any other.
+// the existing commands is saved without knowing which button caused it.
 
 // commands with no backend yet, or that carry what the server already holds; their effects stay in this
 // browser session
@@ -25,6 +25,7 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"source.status",
 	"live-profile.set",
 	"snooze.expire",
+	"memory.server",
 ]);
 
 // a create returns the server id for the local one
@@ -40,7 +41,6 @@ interface Plan {
 }
 
 const LOCAL = /^local-/;
-const TOPIC_REMOVAL = /^(BrainDeleteTopic|BrainMergeTopics)\(/;
 // records imported in the browser from "Load your sources" have no server row yet
 const imported = (value: string) =>
 	value.startsWith("connected") || value.startsWith("session:");
@@ -63,86 +63,35 @@ export function createLiveSync(
 ): LiveSync {
 	const ids = new Map<string, string>();
 	const id = (value: string) => ids.get(value) ?? value;
-	// server topic id -> changeId from its delete or merge, for undo
-	const topicChanges = new Map<string, string>();
-	// topics this session deleted or merged away, so an undo that brings one back is known up front
-	const removedTopics = new Set<string>();
 	let queue = Promise.resolve();
 	const withServerIds = (statement: string) =>
 		statement.replace(/"(local-[^"]+)"/g, (match, local) =>
 			ids.has(local) ? JSON.stringify(ids.get(local)) : match,
 		);
 
-	const sync = (settled: CollaborationChange): void => {
-		// an undo can carry commands that changed nothing (the 30 s snooze check); it is saved by diff alone
-		const change = settled.undo ? { ...settled, commands: [] } : settled;
+	const sync = (change: CollaborationChange): void => {
 		const unsaved = change.commands.filter((command) =>
 			SESSION_ONLY.has(command.type),
 		);
 		if (unsaved.length && unsaved.length === change.commands.length) return;
-		// undoing a delete or merge brings a topic back; the server puts back its rows in one call
-		const restored = change.undo
-			? restoredTopics(change).filter((topicId) =>
-					removedTopics.delete(topicId),
-				)
-			: [];
-		if (restored.length) {
-			queue = queue
-				.then(async () => {
-					const changeIds = restored.flatMap((topicId) => {
-						const changeId = topicChanges.get(id(topicId));
-						topicChanges.delete(id(topicId));
-						return changeId ? [changeId] : [];
-					});
-					await runBatch(
-						actions,
-						changeIds.map((changeId) =>
-							pixel("BrainUndoTopicChange", { changeId }),
-						),
-					);
-				})
-				.catch((cause: unknown) =>
-					onError(
-						cause instanceof Error ? cause.message : String(cause),
-					),
-				);
-			return;
-		}
-		const plan = planChange(change, id);
-		if (!plan.creates.length && !plan.statements.length) return;
-		for (const topicId of restoredTopics({
-			...change,
-			previous: change.next,
-			next: change.previous,
-		}))
-			removedTopics.add(topicId);
 		queue = queue
 			.then(async () => {
+				// Earlier queued creates may have replaced these ids.
+				const plan = planChange(change, id);
 				for (const create of plan.creates) {
 					// a step can point at an item created earlier in this change
 					const [out] = await runBatch(actions, [
 						withServerIds(create.statement),
 					]);
 					const serverId = create.idOf(out);
-					if (serverId) ids.set(create.localId, serverId);
+					if (!serverId)
+						throw new Error(
+							"The saved record did not return an id.",
+						);
+					ids.set(create.localId, serverId);
 				}
 				// statements built before the creates ran still hold local ids
-				const outputs = await runBatch(
-					actions,
-					plan.statements.map(withServerIds),
-				);
-				outputs.forEach((out, index) => {
-					const { topicId, changeId } = (out ?? {}) as {
-						topicId?: string;
-						changeId?: string;
-					};
-					if (
-						TOPIC_REMOVAL.test(plan.statements[index]) &&
-						topicId &&
-						changeId
-					)
-						topicChanges.set(topicId, changeId);
-				});
+				await runBatch(actions, plan.statements.map(withServerIds));
 			})
 			.catch((cause: unknown) =>
 				onError(cause instanceof Error ? cause.message : String(cause)),
@@ -155,15 +104,7 @@ export function createLiveSync(
 	});
 }
 
-// topics in the new state that the previous one did not have
-function restoredTopics(change: CollaborationChange): string[] {
-	const before = byId(change.previous.topics);
-	return change.next.topics
-		.filter((topic) => !before.has(topic.id))
-		.map((topic) => topic.id);
-}
-
-export function planChange(
+function planChange(
 	change: CollaborationChange,
 	id: (value: string) => string,
 ): Plan {
@@ -207,6 +148,7 @@ export function planChange(
 	planPeople(plan, prev, next, id);
 	planRules(plan, prev, next, id);
 	planReviews(plan, prev, next, change.commands, id);
+	planMemories(plan, prev, next, change.commands, id);
 	planProfile(plan, prev, next);
 	planRooms(plan, prev, next, id);
 	return plan;
@@ -220,6 +162,7 @@ const TOPIC_FIELDS = [
 	"color",
 	"description",
 	"keywords",
+	"calendarSeries",
 ] as const;
 
 function planTopics(
@@ -253,7 +196,7 @@ function planTopics(
 				);
 			planTopicParts(
 				plan,
-				{ ...topic, goals: [], notes: [], people: [] },
+				{ ...topic, goals: [], people: [] },
 				topic,
 				id,
 			);
@@ -291,29 +234,18 @@ function planTopicParts(
 	id: (v: string) => string,
 ) {
 	const topicId = id(topic.id);
-	const notes = (goals: TopicGoal[], rows: TopicNote[]) =>
-		new Map<string, { kind: string; text: string; state: string }>([
-			...goals.map(
+	const notes = (goals: TopicGoal[]) =>
+		new Map<string, { kind: string; text: string; state: string }>(
+			goals.map(
 				(goal) =>
 					[
 						goal.noteId,
 						{ kind: "goal", text: goal.text, state: goal.status },
 					] as const,
 			),
-			...rows.map(
-				(note) =>
-					[
-						note.noteId,
-						{
-							kind: note.kind,
-							text: note.text,
-							state: note.status,
-						},
-					] as const,
-			),
-		]);
-	const before = notes(old.goals, old.notes);
-	const after = notes(topic.goals, topic.notes);
+		);
+	const before = notes(old.goals);
+	const after = notes(topic.goals);
 	for (const [noteId, note] of after) {
 		const was = before.get(noteId);
 		if (was && same(was, note)) continue;
@@ -410,8 +342,7 @@ function planThreads(
 						remove: true,
 					}),
 				);
-		// the new primary goes last and demotes the old one itself; the server cannot set a link back to
-		// suggested, so an undo to suggested is left alone
+		// The new primary goes last and demotes the old one itself. Suggested links stay server-owned.
 		const changed = thread.topicLinks
 			.filter((link) => {
 				const was = oldLinks.get(link.topicId);
@@ -479,11 +410,15 @@ function planItems(
 		if (!changed.length) continue;
 		const args: Record<string, unknown> = { itemId: id(item.id) };
 		for (const field of changed) {
-			// reopening clears the reason on the server; the history keeps it
+			// reopening clears the reason on the server
 			if (field === "closedReason" && !item.closedReason) continue;
 			// leaving snoozed clears snoozeUntil on the server by itself
 			if (field === "snoozeUntil" && !item.snoozeUntil) continue;
-			if (field === "priority" && !item.priority) continue;
+			// A present empty noun clears the optional priority on existing servers.
+			if (field === "priority" && !item.priority) {
+				args.priority = [];
+				continue;
+			}
 			if (field === "suggested") args.suggested = item.suggested === true;
 			else args[field] = item[field];
 		}
@@ -545,8 +480,7 @@ function planRules(
 	for (const rule of next.rules) {
 		const old = before.get(rule.id);
 		const active = !rule.disabledAt;
-		// a new rule, or a removed one brought back by undo, is saved as a new server rule
-		if (active && (!old || old.disabledAt))
+		if (active && !old)
 			plan.creates.push({
 				localId: rule.id,
 				statement: pixel("BrainSaveRule", { rule: ruleFields(rule) }),
@@ -574,13 +508,8 @@ function planReviews(
 	const before = byId(prev.reviews);
 	for (const review of next.reviews) {
 		const old = before.get(review.id);
-		if (!old || old.status === review.status) continue;
-		if (review.status === "open") {
-			plan.statements.push(
-				pixel("BrainReopenReview", { reviewId: review.id }),
-			);
+		if (!old || old.status === review.status || review.status === "open")
 			continue;
-		}
 		const command = commands.find(
 			(
 				candidate,
@@ -612,6 +541,87 @@ function planReviews(
 	}
 }
 
+const MEMORY_FIELDS = ["kind", "text", "about", "pinned", "expiresAt"] as const;
+
+/** BrainSaveMemory's memory map: the owner's fields, with nothing pixel would drop as null. */
+function memoryFields(
+	memory: Memory,
+	fields: readonly (typeof MEMORY_FIELDS)[number][],
+) {
+	return Object.fromEntries(
+		fields.map((field) => [field, memory[field] ?? ""]),
+	);
+}
+
+/** The BrainResolveMemory action for a Keep, Confirm, or Dismiss, or for a dismissed memory brought back. */
+function memoryAction(old: Memory, memory: Memory): string | null {
+	if (old.state === memory.state)
+		return !old.confirmed && memory.confirmed ? "confirm" : null;
+	if (memory.state === "dismissed") return "dismiss";
+	if (old.state === "dismissed")
+		return memory.state === "suggested" ? "reopen" : "restore";
+	return old.state === "suggested" ? "accept" : null;
+}
+
+// one memory at a time; a state change goes through BrainResolveMemory, so its side effects (a kept
+// suggestion replacing an older memory) happen on the server
+function planMemories(
+	plan: Plan,
+	prev: CollaborationState,
+	next: CollaborationState,
+	commands: CollaborationCommand[],
+	id: (v: string) => string,
+) {
+	const before = byId(prev.memories.filter((memory) => !memory.isSample));
+	const after = byId(next.memories.filter((memory) => !memory.isSample));
+	const cleared = commands.some((command) => command.type === "memory.clear");
+	if (cleared)
+		plan.statements.push(pixel("BrainDeleteMemory", { all: true }));
+	for (const memory of after.values()) {
+		const old = before.get(memory.id);
+		if (!old) {
+			if (LOCAL.test(memory.id))
+				plan.creates.push({
+					localId: memory.id,
+					statement: pixel("BrainSaveMemory", {
+						memory: memoryFields(memory, MEMORY_FIELDS),
+					}),
+					idOf: (out) => (out as { id?: string })?.id,
+				});
+			continue;
+		}
+		const changed = MEMORY_FIELDS.filter(
+			(field) => !same(old[field], memory[field]),
+		);
+		if (changed.length) {
+			// the owner's edit confirms it, and accepts a suggestion
+			plan.statements.push(
+				pixel("BrainSaveMemory", {
+					memory: {
+						id: id(memory.id),
+						...memoryFields(memory, changed),
+					},
+				}),
+			);
+			continue;
+		}
+		const action = memoryAction(old, memory);
+		if (action)
+			plan.statements.push(
+				pixel("BrainResolveMemory", {
+					memoryId: id(memory.id),
+					action,
+				}),
+			);
+	}
+	if (cleared) return;
+	for (const memory of before.values())
+		if (!after.has(memory.id) && !LOCAL.test(id(memory.id)))
+			plan.statements.push(
+				pixel("BrainDeleteMemory", { memoryId: id(memory.id) }),
+			);
+}
+
 const PROFILE_FIELDS = [
 	"name",
 	"email",
@@ -626,6 +636,7 @@ const SETTINGS_FIELDS = [
 	"fileAt",
 	"askAt",
 	"sourcesJson",
+	"memory",
 ] as const;
 
 function planProfile(
@@ -664,9 +675,7 @@ const STEP_FIELDS = [
 	"itemId",
 	"linkTopicId",
 ] as const;
-const FACT_FIELDS = ["text", "from", "status", "sourcePersonId"] as const;
-
-// steps and facts are saved one row at a time; a cleared field goes out as "" since pixel drops nulls
+// steps are saved one row at a time; a cleared field goes out as "" since pixel drops nulls
 function planWorkspaces(
 	plan: Plan,
 	prev: CollaborationState,
@@ -688,14 +697,6 @@ function planWorkspaces(
 			remove: "WorkDeleteStep",
 			key: "step",
 			idKey: "stepId",
-			id,
-		});
-		planRows(plan, threadId, before?.facts ?? [], after?.facts ?? [], {
-			fields: FACT_FIELDS,
-			save: "WorkSaveFact",
-			remove: "WorkDeleteFact",
-			key: "fact",
-			idKey: "factId",
 			id,
 		});
 	}
@@ -720,17 +721,17 @@ function planRows<T extends { id: string }>(
 	for (const row of newRows) {
 		const old = before.get(row.id);
 		if (!old) {
+			if (!LOCAL.test(row.id)) continue;
 			const fields = Object.fromEntries(
 				how.fields
 					.filter((field) => row[field] != null && row[field] !== "")
 					.map((field) => [field, row[field]]),
 			);
-			if (LOCAL.test(row.id))
-				plan.creates.push({
-					localId: row.id,
-					statement: pixel(how.save, { threadId, [how.key]: fields }),
-					idOf: (out) => (out as { id?: string })?.id,
-				});
+			plan.creates.push({
+				localId: row.id,
+				statement: pixel(how.save, { threadId, [how.key]: fields }),
+				idOf: (out) => (out as { id?: string })?.id,
+			});
 			continue;
 		}
 		const changed = how.fields.filter(

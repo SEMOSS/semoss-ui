@@ -11,7 +11,7 @@ export type ReplyRecipients = z.infer<typeof replyRecipientsSchema>;
 /** Read the original envelope independently of assistant context. */
 export function replyRecipientsPixel(sourceUid: string): string {
 	return pixel("MicrosoftOutlookGetMail", {
-		uid: sourceUid,
+		id: sourceUid,
 		maxBodyChars: 1,
 		includeAttachments: false,
 		includeReplyRecipients: true,
@@ -19,7 +19,7 @@ export function replyRecipientsPixel(sourceUid: string): string {
 }
 
 export const replyRecipientsResponseSchema = z.object({
-	uid: z.string().min(1),
+	id: z.string().min(1),
 	replyRecipients: replyRecipientsSchema,
 });
 

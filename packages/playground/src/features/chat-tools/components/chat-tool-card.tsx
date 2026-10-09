@@ -28,6 +28,7 @@ import {
 	isFolderToolCall,
 } from "../tools/chat-tool-kind";
 import { FOLDER_TOOL_NAMES, isFolderToolName } from "../tools/folder-tools";
+import { readToolResponseDetail } from "../tools/tool-response-detail";
 import { ToolTextBlock } from "./tool-text-block";
 import { ToolValueRow } from "./tool-value-row";
 
@@ -41,12 +42,6 @@ export interface ChatToolCardProps {
 
 /** Longest argument shown as a plain value before it becomes a text block. */
 const INLINE_VALUE_MAX = 80;
-
-/**
- * Where the room's tool loop appends the details of a failed or stopped call
- * to the guidance it gives the model. The card shows only the details.
- */
-const DETAIL_MARKERS = ["\n\nError Details: ", "\n\nCancellation Details: "];
 
 /**
  * An argument value as text.
@@ -72,17 +67,8 @@ const isSet = (value: unknown): boolean => value === true || value === "true";
  * @param response - The saved response.
  * @return Text for display.
  */
-const formatResponse = (response: string): string => {
-	let detail = response;
-	for (const marker of DETAIL_MARKERS) {
-		const index = response.indexOf(marker);
-		if (index !== -1) {
-			detail = response.slice(index + marker.length);
-			break;
-		}
-	}
-	return formatJson(detail);
-};
+const formatResponse = (response: string): string =>
+	formatJson(readToolResponseDetail(response));
 
 /**
  * The card for a work folder or connector call: what it does, whether it is

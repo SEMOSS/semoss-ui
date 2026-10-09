@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import { threadPath } from "@/lib/workspace-paths";
 import { channelMeta } from "../channel-meta";
 import { dateLabel } from "../date-label";
 import { selectThreadContext } from "../state/collaboration.selectors";
@@ -45,7 +46,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 	const author =
 		person?.name || (item.actorId === "assistant" ? "Assistant" : "You");
 	const { label: channelLabel, icon: Icon } = channelMeta(item.channel);
-	const path = `/work/thread/${encodeURIComponent(thread.id)}`;
+	const path = threadPath(thread.id);
 	return (
 		<ThreadMenu thread={thread} item={item}>
 			{(menu) => (

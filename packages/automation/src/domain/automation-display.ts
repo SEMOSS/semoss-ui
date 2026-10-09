@@ -6,8 +6,10 @@ import {
 	Database,
 	GitBranch,
 	LayoutGrid,
+	ListTree,
 	type LucideIcon,
 	Play,
+	Repeat2,
 	Sigma,
 } from "lucide-react";
 import { formatDurationMs } from "@semoss/utility/date";
@@ -54,6 +56,13 @@ export const STEP_TYPES: {
 		description: "Call a custom function or external API",
 		icon: Sigma,
 		color: "text-cyan-600",
+	},
+	{
+		type: "data",
+		label: "Extract Value",
+		description: "Read one value from JSON, XML, or a downloaded file",
+		icon: ListTree,
+		color: "text-teal-600",
 	},
 	{
 		type: "app",
@@ -113,8 +122,15 @@ export const TYPE_DISPLAY_META: Record<
 	"vector-engine": STEP_TYPES[2],
 	"storage-engine": STEP_TYPES[3],
 	"function-engine": STEP_TYPES[4],
-	app: STEP_TYPES[5],
-	wait: STEP_TYPES[6],
+	data: STEP_TYPES[5],
+	app: STEP_TYPES[6],
+	wait: STEP_TYPES[7],
+	loop: {
+		label: "Loop over items",
+		description: "Repeat a nested sequence for every item or batch",
+		icon: Repeat2,
+		color: "text-primary",
+	},
 	branch: {
 		label: "Decision",
 		description: "Evaluate a condition and route to the matching path",

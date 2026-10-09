@@ -1,14 +1,12 @@
-import type { ComponentType } from "react";
+import type { ReactNode } from "react";
 import {
+	CalendarAgendaView,
 	type ConnectorViewerProps,
 	type ConnectorViewerService,
-	GmailViewer,
-	GoogleCalendarViewer,
 	GoogleDocsViewer,
 	GoogleDriveViewer,
+	MailboxView,
 	OneDriveViewer,
-	OutlookCalendarViewer,
-	OutlookMailViewer,
 	TeamsChannelViewer,
 	TeamsChatViewer,
 	TeamsFilesViewer,
@@ -23,13 +21,13 @@ import { ConnectorViewerPanel } from "./connector-viewer-panel";
  * the viewer holds its place while other tabs are in front.
  *
  * @param service - The viewer's service.
- * @param viewer - The shared viewer.
+ * @param render - Shows the shared viewer with the props the room gives it.
  * @param name - The tab's default name; the room passes a translated one.
  * @return The blueprint.
  */
 const createViewerPanel = (
 	service: ConnectorViewerService,
-	viewer: ComponentType<ConnectorViewerProps>,
+	render: (props: ConnectorViewerProps) => ReactNode,
 	name: string,
 ): WorkbenchPanelConfig => {
 	const { brand, provider } = getConnectorSource(service);
@@ -41,7 +39,7 @@ const createViewerPanel = (
 		canRename: false,
 		mount: "keepAlive",
 		content: () => (
-			<ConnectorViewerPanel viewer={viewer} provider={provider} />
+			<ConnectorViewerPanel render={render} provider={provider} />
 		),
 	};
 };
@@ -49,65 +47,69 @@ const createViewerPanel = (
 /** The user's OneDrive. */
 export const ONEDRIVE_PANEL = createViewerPanel(
 	"onedrive",
-	OneDriveViewer,
+	(props) => <OneDriveViewer {...props} />,
 	"OneDrive",
 );
 
 /** The user's Outlook mail. */
 export const OUTLOOK_MAIL_PANEL = createViewerPanel(
 	"outlook-mail",
-	OutlookMailViewer,
+	(props) => <MailboxView {...props} provider="microsoft" />,
 	"Outlook Mail",
 );
 
 /** The user's Outlook calendar. */
 export const OUTLOOK_CALENDAR_PANEL = createViewerPanel(
 	"outlook-calendar",
-	OutlookCalendarViewer,
+	(props) => <CalendarAgendaView {...props} provider="microsoft" />,
 	"Outlook Calendar",
 );
 
 /** The user's Teams channels and their threads. */
 export const TEAMS_CHANNELS_PANEL = createViewerPanel(
 	"teams-channels",
-	TeamsChannelViewer,
+	(props) => <TeamsChannelViewer {...props} />,
 	"Teams channels",
 );
 
 /** The files shared in the user's Teams channels. */
 export const TEAMS_FILES_PANEL = createViewerPanel(
 	"teams-files",
-	TeamsFilesViewer,
+	(props) => <TeamsFilesViewer {...props} />,
 	"Teams files",
 );
 
 /** The user's Google Drive. */
 export const GOOGLE_DRIVE_PANEL = createViewerPanel(
 	"google-drive",
-	GoogleDriveViewer,
+	(props) => <GoogleDriveViewer {...props} />,
 	"Google Drive",
 );
 
 /** The user's Gmail. */
-export const GMAIL_PANEL = createViewerPanel("gmail", GmailViewer, "Gmail");
+export const GMAIL_PANEL = createViewerPanel(
+	"gmail",
+	(props) => <MailboxView {...props} provider="google" />,
+	"Gmail",
+);
 
 /** The user's Google Calendar. */
 export const GOOGLE_CALENDAR_PANEL = createViewerPanel(
 	"google-calendar",
-	GoogleCalendarViewer,
+	(props) => <CalendarAgendaView {...props} provider="google" />,
 	"Google Calendar",
 );
 
 /** The user's Google Docs. */
 export const GOOGLE_DOCS_PANEL = createViewerPanel(
 	"google-docs",
-	GoogleDocsViewer,
+	(props) => <GoogleDocsViewer {...props} />,
 	"Google Docs",
 );
 
 /** The user's Teams chats. */
 export const TEAMS_CHATS_PANEL = createViewerPanel(
 	"teams-chats",
-	TeamsChatViewer,
+	(props) => <TeamsChatViewer {...props} />,
 	"Teams chats",
 );

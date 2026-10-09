@@ -11,12 +11,3 @@ export interface Agent {
 	mcp: MCPConfig[];
 	members: string[];
 }
-
-/** Fields edited outside the profile form's direct controls. */
-type AgentFieldUpdate =
-	| { key: "skills"; value: Agent["skills"] }
-	| { key: "mcp"; value: Agent["mcp"] }
-	| { key: "members"; value: Agent["members"] };
-
-/** Updates one collection field of an editable agent draft. */
-export type AgentFieldUpdater = (update: AgentFieldUpdate) => void;
