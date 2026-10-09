@@ -73,6 +73,7 @@ export function RoomEmailProvider({
 		() => new Set(source?.messages.map((message) => message.id) ?? []),
 		[source],
 	);
+	const openDraftRef = useRef<((draftId: string) => void) | null>(null);
 	const error = useRoomEmailProposals({
 		thread,
 		composer: store,
@@ -80,6 +81,8 @@ export function RoomEmailProvider({
 		allowedSources,
 		isReady,
 		loadAttachment: session.readEmailAttachment,
+		// openDraft is declared below; the ref reads it when a run finishes
+		onOpen: (draftId) => openDraftRef.current?.(draftId),
 	});
 	useEmailSendApprovals(store, workbench);
 	const openSource = useCallback(
@@ -133,6 +136,7 @@ export function RoomEmailProvider({
 		},
 		[openWorkbench, store, workbench.store],
 	);
+	openDraftRef.current = openDraft;
 	const selectSourceMessage = useCallback(
 		(messageId: string): void => {
 			if (
