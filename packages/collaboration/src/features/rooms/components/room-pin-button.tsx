@@ -31,14 +31,18 @@ export function RoomPinButton({
 	const tree = useContext(RoomTreeContext);
 	const [isSaving, setIsSaving] = useState(false);
 	const saving = useRef(false);
-	const isPinned = tree?.pinnedRoomIds
-		? tree.pinnedRoomIds.includes(roomId)
-		: pinned;
+	const isPinned =
+		tree?.pinStates?.[roomId] ??
+		(tree?.pinnedRoomIds?.includes(roomId)
+			? true
+			: tree?.pinsComplete
+				? false
+				: pinned);
 	const isUnknown = isPinned === undefined;
 	const label = isUnknown
 		? tree?.error
 			? "Retry room pin status"
-			: "Loading room pin status"
+			: "Pin status unavailable"
 		: `${isPinned ? "Unpin" : "Pin"} room: ${roomName || "Untitled chat"}`;
 	async function handlePin(): Promise<void> {
 		if (isUnknown) {

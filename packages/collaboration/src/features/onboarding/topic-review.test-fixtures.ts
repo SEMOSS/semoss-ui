@@ -127,63 +127,83 @@ export function reviewSession(
 	const afterApply = vi.fn(
 		async (_review: ReviewWire): Promise<void> => undefined,
 	);
-	const run = vi.fn(async (statement: string) => {
-		if (statement === "BrainStartTopicReview();")
-			saved ||= await generate();
-		else if (statement === "BrainGetTopicReview();") {
-			/* Read the same owner draft. */
-		} else if (statement.startsWith("BrainSaveTopicReview(")) {
-			if (!saved) throw new Error("Review not found");
-			const match = statement.match(/draft=(\[[\s\S]*\])\);$/);
-			if (!match) throw new Error("Missing draft");
-			const [draft] = JSON.parse(match[1]) as [TopicReviewDraft];
-			const topics = draft.topics.map((topic) => {
-				const original = saved?.draft.topics.find(
-					(current) => current.key === topic.key,
-				);
+	const run = vi.fn(
+		async (
+			statement: string,
+		): Promise<{
+			pixelReturn: { output: unknown; operationType: string[] }[];
+		}> => {
+			if (statement.startsWith("BrainPreviewTopicReach("))
 				return {
-					...{
-						reason: "",
-						threadIds: [],
-						sampleSubjects: [],
-						people: [],
-						domains: [],
-						accepted: false,
-					},
-					...original,
-					...topic,
-					id: original?.id ?? topic.id,
+					pixelReturn: [
+						{
+							output: {
+								threads: 2,
+								together: 1,
+								samples: ["Northwind launch readiness"],
+							},
+							operationType: ["MAP"],
+						},
+					],
 				};
-			});
-			if (
-				JSON.stringify(topics) !== JSON.stringify(saved.draft.topics) ||
-				draft.guidance !== saved.draft.guidance ||
-				draft.granularity !== saved.draft.granularity
-			) {
-				saved.draft.topics = topics;
-				saved.draft.guidance = draft.guidance;
-				saved.draft.granularity = draft.granularity;
-				saved.revision += 1;
-			}
-			await afterSave(saved);
-		} else if (statement.startsWith("BrainApplyTopicReview(")) {
-			if (!saved) throw new Error("Review not found");
-			if (saved.appliedRevision !== saved.revision)
-				saved = applyReceipt(saved);
-			await afterApply(saved);
-		} else throw new Error(`Unexpected request: ${statement}`);
-		return {
-			pixelReturn: [
-				{
-					output: {
-						exists: saved !== null,
-						review: structuredClone(saved),
+			if (statement === "BrainStartTopicReview();")
+				saved ||= await generate();
+			else if (statement === "BrainGetTopicReview();") {
+				/* Read the same owner draft. */
+			} else if (statement.startsWith("BrainSaveTopicReview(")) {
+				if (!saved) throw new Error("Review not found");
+				const match = statement.match(/draft=(\[[\s\S]*\])\);$/);
+				if (!match) throw new Error("Missing draft");
+				const [draft] = JSON.parse(match[1]) as [TopicReviewDraft];
+				const topics = draft.topics.map((topic) => {
+					const original = saved?.draft.topics.find(
+						(current) => current.key === topic.key,
+					);
+					return {
+						...{
+							reason: "",
+							threadIds: [],
+							sampleSubjects: [],
+							people: [],
+							domains: [],
+							accepted: false,
+						},
+						...original,
+						...topic,
+						id: original?.id ?? topic.id,
+					};
+				});
+				if (
+					JSON.stringify(topics) !==
+						JSON.stringify(saved.draft.topics) ||
+					draft.guidance !== saved.draft.guidance ||
+					draft.granularity !== saved.draft.granularity
+				) {
+					saved.draft.topics = topics;
+					saved.draft.guidance = draft.guidance;
+					saved.draft.granularity = draft.granularity;
+					saved.revision += 1;
+				}
+				await afterSave(saved);
+			} else if (statement.startsWith("BrainApplyTopicReview(")) {
+				if (!saved) throw new Error("Review not found");
+				if (saved.appliedRevision !== saved.revision)
+					saved = applyReceipt(saved);
+				await afterApply(saved);
+			} else throw new Error(`Unexpected request: ${statement}`);
+			return {
+				pixelReturn: [
+					{
+						output: {
+							exists: saved !== null,
+							review: structuredClone(saved),
+						},
+						operationType: ["MAP"],
 					},
-					operationType: ["MAP"],
-				},
-			],
-		};
-	});
+				],
+			};
+		},
+	);
 	return {
 		actions: { run } as unknown as InsightActions,
 		run,

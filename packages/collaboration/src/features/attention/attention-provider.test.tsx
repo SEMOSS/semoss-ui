@@ -21,6 +21,12 @@ vi.mock("@/features/dashboard/use-agent-attention", () => ({
 }));
 vi.mock("@/features/collaboration/live/work-updates.context", () => ({
 	useWorkUpdates: () => mocks.updates,
+	useCollaborationResource: () => ({
+		error: mocks.updates?.error ?? "",
+		isLoading: mocks.updates?.isRefreshing ?? false,
+		complete: !mocks.updates || Boolean(mocks.updates.pendingCoverage),
+		refresh: () => mocks.updates?.refresh(),
+	}),
 }));
 vi.mock("@/features/rooms/api/read-room-source-association", () => ({
 	readRoomSourceAssociation: vi.fn(),
@@ -120,7 +126,10 @@ beforeEach(() => {
 		},
 	};
 	mocks.updates = null;
-	vi.mocked(readRoomSourceAssociation).mockResolvedValue(null);
+	vi.mocked(readRoomSourceAssociation).mockResolvedValue({
+		threadId: null,
+		topicIds: [],
+	});
 });
 afterEach(() => localStorage.clear());
 
@@ -171,11 +180,11 @@ it("retains incomplete coverage and retries the shared sources", async () => {
 	render(content({ ...state(), items: [], reviews: [] }));
 	expect(screen.getAllByText("Partial")).toHaveLength(2);
 	expect(screen.getAllByText("Review refresh unavailable")).toHaveLength(2);
-	expect(refresh).toHaveBeenCalledTimes(1);
+	expect(refresh).not.toHaveBeenCalled();
 	await userEvent
 		.setup()
 		.click(screen.getByRole("button", { name: "Refresh Home" }));
-	expect(refresh).toHaveBeenCalledTimes(2);
+	expect(refresh).toHaveBeenCalledTimes(3);
 	expect(mocks.attention.refresh).toHaveBeenCalledTimes(1);
 });
 
@@ -225,7 +234,10 @@ it("loads one shared room association for duplicate action feeds and exposes una
 	);
 	expect(readRoomSourceAssociation).toHaveBeenCalledTimes(1);
 	expect(screen.getAllByText("Partial")).toHaveLength(2);
-	vi.mocked(readRoomSourceAssociation).mockResolvedValue(null);
+	vi.mocked(readRoomSourceAssociation).mockResolvedValue({
+		threadId: null,
+		topicIds: [],
+	});
 	await userEvent
 		.setup()
 		.click(screen.getByRole("button", { name: "Refresh Board" }));

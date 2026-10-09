@@ -143,7 +143,7 @@ export function mapJob(out: Row): Job {
 	};
 }
 
-export type JobKind = "import" | "classify";
+export type JobKind = "import" | "classify" | "topic_map";
 
 export async function getJob(
 	actions: InsightActions,
@@ -170,16 +170,6 @@ export async function startImport(
 export async function startClassify(actions: InsightActions) {
 	return mapJob(
 		await run(actions, pixel("BrainClassifyThreads", { async: true })),
-	);
-}
-
-/** After topics are kept: file the sorted real mail under them, as a classify job. */
-export async function startTopicFiling(actions: InsightActions) {
-	return mapJob(
-		await run(
-			actions,
-			pixel("BrainClassifyThreads", { topics: true, async: true }),
-		),
 	);
 }
 
@@ -292,126 +282,6 @@ export async function saveAccounts(
 				account: { name: a.name, domain: a.domain, kind: a.kind },
 			}),
 		);
-}
-
-export interface TopicSuggestion {
-	id: string;
-	name: string;
-	kind: string;
-	accountId: string;
-	reason: string;
-	threads: number;
-	members: number;
-	sampleSubjects: string[];
-	/** Threads the owner wrote on, and threads with a VIP. */
-	youWrote: number;
-	vipThreads: number;
-	/** Pre-checked: the owner took part, or a VIP is on it. */
-	suggested: boolean;
-	/** The topic model's one line on what the topic covers. */
-	about: string;
-	/** Key people and the outside domains on half its threads or more. */
-	people: { id: string; name: string }[];
-	domains: string[];
-}
-
-export interface TopicSuggestions {
-	topics: TopicSuggestion[];
-	/** Set when no topic model is configured or it failed; topics is then empty. */
-	modelError?: string;
-}
-
-const pendingTopicSuggestions = new WeakMap<
-	InsightActions,
-	Promise<TopicSuggestions>
->();
-
-/** Share only a running generation in this insight; later visits generate afresh. */
-export function suggestTopics(
-	actions: InsightActions,
-): Promise<TopicSuggestions> {
-	const pending = pendingTopicSuggestions.get(actions);
-	if (pending) return pending;
-
-	// Generation writes suggestions, so overlapping calls must not race each other.
-	const request = requestTopicSuggestions(actions).finally(() => {
-		pendingTopicSuggestions.delete(actions);
-	});
-	pendingTopicSuggestions.set(actions, request);
-	return request;
-}
-
-async function requestTopicSuggestions(
-	actions: InsightActions,
-): Promise<TopicSuggestions> {
-	const out = await run(actions, pixel("BrainSuggestTopics"));
-	return {
-		modelError: out.modelError ? str(out.modelError) : undefined,
-		topics: rows(out.topics).map((t) => ({
-			id: str(t.id),
-			name: str(t.name),
-			kind: str(t.kind),
-			accountId: str(t.accountId),
-			reason: str(t.reason),
-			threads: rows(t.threadIds).length,
-			members: rows(t.memberIds).length,
-			sampleSubjects: rows(t.sampleSubjects).map((x) => str(x)),
-			youWrote: num(t.youWrote),
-			vipThreads: num(t.vipThreads),
-			suggested: t.suggested === true,
-			about: str(t.about),
-			people: rows(t.people).map((p) => ({
-				id: str(p.id),
-				name: str(p.name),
-			})),
-			domains: rows(t.domains).map((d) => str(d)),
-		})),
-	};
-}
-
-export interface KeptTopic {
-	/** Absent for a topic the owner added. */
-	id?: string;
-	name: string;
-	/** Sent only when the owner wrote or changed it. */
-	description?: string;
-	/** Key people the owner took off the topic. */
-	removedPeople?: string[];
-}
-
-/** Accepted and added topics go active under the owner's name; skipped ones are deleted. */
-export async function saveTopics(
-	actions: InsightActions,
-	accepted: KeptTopic[],
-	skipped: string[],
-) {
-	for (const t of accepted) {
-		const saved = await run(
-			actions,
-			pixel("BrainSaveTopic", {
-				topic: {
-					...(t.id ? { id: t.id } : {}),
-					name: t.name,
-					...(t.description !== undefined
-						? { description: t.description }
-						: {}),
-					status: "active",
-				},
-			}),
-		);
-		const topicId = t.id ?? str(saved.id);
-		for (const personId of t.removedPeople ?? [])
-			await run(
-				actions,
-				pixel("BrainSetTopicPerson", {
-					topicId,
-					personId,
-					state: "removed",
-				}),
-			);
-	}
-	for (const id of skipped)
-		await run(actions, pixel("BrainDeleteTopic", { topicId: id }));
 }
 
 // deletes everything this owner has in Collaboration except the Microsoft link

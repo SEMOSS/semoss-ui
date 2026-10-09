@@ -8,11 +8,11 @@ export interface VisibleResource<T> {
 	refresh: () => void;
 }
 
-/** A snapshot reader with stale-result guards and visibility-aware refresh. */
+/** A snapshot reader with stale-result guards and explicit refresh. */
 export function useVisibleResource<T>(
 	load: () => Promise<T>,
 	enabled: boolean,
-	interval = 60_000,
+	_interval = 60_000,
 ): VisibleResource<T> {
 	const [state, setState] = useState<Omit<VisibleResource<T>, "refresh">>({
 		data: null,
@@ -23,24 +23,34 @@ export function useVisibleResource<T>(
 	const [revision, setRevision] = useState(0);
 	const refresh = useCallback(() => setRevision((value) => value + 1), []);
 	const generation = useRef(0);
+	const cached = useRef<{ load: () => Promise<T>; revision: number } | null>(
+		null,
+	);
 	useEffect(() => {
 		void revision;
-		if (!enabled) return;
+		if (
+			!enabled ||
+			(cached.current?.load === load &&
+				cached.current.revision === revision)
+		)
+			return;
 		const token = ++generation.current;
 		let pending = false;
 		const read = async () => {
-			if (pending || document.visibilityState === "hidden") return;
+			if (pending) return;
 			pending = true;
 			setState((current) => ({ ...current, isLoading: true, error: "" }));
 			try {
 				const data = await load();
-				if (generation.current === token)
+				if (generation.current === token) {
+					cached.current = { load, revision };
 					setState({
 						data,
 						isLoading: false,
 						error: "",
 						checkedAt: new Date(),
 					});
+				}
 			} catch (cause) {
 				if (generation.current === token)
 					setState((current) => ({
@@ -56,15 +66,9 @@ export function useVisibleResource<T>(
 			}
 		};
 		void read();
-		const timer = window.setInterval(() => void read(), interval);
-		window.addEventListener("focus", read);
-		document.addEventListener("visibilitychange", read);
 		return () => {
 			generation.current++;
-			window.clearInterval(timer);
-			window.removeEventListener("focus", read);
-			document.removeEventListener("visibilitychange", read);
 		};
-	}, [enabled, load, interval, revision]);
+	}, [enabled, load, revision]);
 	return { ...state, isLoading: enabled && state.isLoading, refresh };
 }

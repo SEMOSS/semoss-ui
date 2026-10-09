@@ -19,8 +19,8 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import { ROOM_TREE_CHANGED } from "@/features/room-tree/room-tree-events";
 import { createTopic } from "./api/topic-api";
 
 const schema = z.object({
@@ -43,6 +43,7 @@ export function CreateTopicDialog({
 }: CreateTopicDialogProps) {
 	const { actions } = useInsight();
 	const { dispatch } = useCollaborationSession();
+	const updates = useWorkUpdates();
 	const form = useForm<CreateTopicValues>({
 		resolver: zodResolver(schema),
 		defaultValues: { name: "", description: "" },
@@ -64,7 +65,7 @@ export function CreateTopicDialog({
 			});
 			return;
 		}
-		window.dispatchEvent(new Event(ROOM_TREE_CHANGED));
+		updates?.refresh();
 		toast.success("Topic created");
 		onSubmit(id);
 	};

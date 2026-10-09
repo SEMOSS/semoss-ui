@@ -22,7 +22,7 @@ it("preserves direct source-less work across refresh, thread changes, topic merg
 		now,
 	);
 	expect(state.items[0]).toEqual(directItem);
-	expect(state.topics[0].stats.openItems).toBe(1);
+	expect(state.topics[0].stats.openItems).toBe(savedTopic.stats.openItems);
 	state = collaborationReducer(
 		state,
 		{ type: "topic.merge", sourceId: savedTopic.id, targetId: "target" },

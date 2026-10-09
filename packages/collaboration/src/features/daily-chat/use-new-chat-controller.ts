@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
+import { linkRoomTopic } from "@/features/rooms/api/room-topics";
 import type {
 	RoomSession,
 	RoomSessionSnapshot,
@@ -50,7 +51,7 @@ export function useNewChatController(
 		"prompt" in request && typeof request.prompt === "string"
 			? request.prompt
 			: "";
-	const { insightId: scope } = useInsight();
+	const { insightId: scope, actions } = useInsight();
 	const location = useLocation();
 	const navigate = useNavigate();
 	// Allocation can finish after returning to this same history entry. Observe the
@@ -105,10 +106,22 @@ export function useNewChatController(
 		const release = session.retain();
 		const sending = (async () => {
 			const roomId = await session.create("New chat");
+			if (draft.topicId && draft.linkedTopicId !== draft.topicId) {
+				await linkRoomTopic(actions, roomId, draft.topicId);
+				draft.linkedTopicId = draft.topicId;
+			}
 			const submitted = session.send(submission);
-			if (active.current === entryToken) void navigate(roomPath(roomId));
-			markNewChatDraftStarted(scope, draft, roomId);
+			if (!draft.topicId) {
+				if (active.current === entryToken)
+					void navigate(roomPath(roomId));
+				markNewChatDraftStarted(scope, draft, roomId);
+			}
 			await submitted;
+			if (draft.topicId) {
+				if (active.current === entryToken)
+					void navigate(roomPath(roomId));
+				markNewChatDraftStarted(scope, draft, roomId);
+			}
 		})().finally(() => {
 			draft.pendingSubmission = null;
 			release();

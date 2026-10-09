@@ -574,9 +574,12 @@ const IMPORT_PHASES = [
 	{ steps: ["queued", "mailbox"], label: "Connecting to your mailbox" },
 	{ steps: ["reading inbox"], label: "Checking your Inbox" },
 	{ steps: ["reading sentitems"], label: "Checking your Sent mail" },
-	{ steps: ["reading Teams chats"], label: "Reading Teams chats" },
 	{ steps: ["importing"], label: "Building threads and people" },
-	{ steps: ["threads", "people"], label: "Ranking who matters" },
+	{ steps: ["threads"], label: "Updating threads" },
+	{ steps: ["directory"], label: "Checking your organization" },
+	{ steps: ["people"], label: "Ranking who matters" },
+	{ steps: ["reading Teams chats"], label: "Reading Teams chats" },
+	{ steps: ["ranking"], label: "Updating people and threads" },
 ];
 
 function phaseOf(job: Job, phases: { steps: string[] }[]) {
@@ -717,7 +720,11 @@ export function ImportStep({
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 					<StatTile
 						label="Messages"
-						value={formatCount(counts.messages)}
+						value={formatCount(
+							counts.messages ??
+								Number(counts.inboxMessages ?? 0) +
+									Number(counts.sentMessages ?? 0),
+						)}
 					/>
 					<StatTile
 						label="Threads"
@@ -734,6 +741,50 @@ export function ImportStep({
 						value={formatCount(counts.keptOut ?? 0)}
 						tone="muted"
 					/>
+				</div>
+			)}
+			{active && (
+				<div
+					className="space-y-1 text-muted-foreground text-sm"
+					aria-live="polite"
+				>
+					<p>
+						{formatCount(counts.inboxMessages)} inbox messages ·{" "}
+						{formatCount(counts.sentMessages)} sent messages
+					</p>
+					{typeof counts.managerName === "string" && (
+						<p>Manager: {counts.managerName}</p>
+					)}
+					{Array.isArray(counts.topPeople) && (
+						<p>
+							People:{" "}
+							{counts.topPeople
+								.flatMap((person) =>
+									typeof person?.name === "string"
+										? [person.name]
+										: [],
+								)
+								.join(", ")}
+						</p>
+					)}
+					{Array.isArray(counts.outsideOrgs) && (
+						<p>
+							Organizations:{" "}
+							{counts.outsideOrgs
+								.flatMap((org) =>
+									typeof org?.name === "string"
+										? [org.name]
+										: [],
+								)
+								.join(", ")}
+						</p>
+					)}
+					{counts.teamsChats !== undefined && (
+						<p>
+							Teams chats: {formatCount(counts.teamsChatsRead)} of{" "}
+							{formatCount(counts.teamsChats)}
+						</p>
+					)}
 				</div>
 			)}
 			{active && <TeamsImportNotice counts={counts} />}

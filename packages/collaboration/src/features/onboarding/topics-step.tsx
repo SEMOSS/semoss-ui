@@ -8,8 +8,13 @@ import {
 	StepActions,
 	StepHeader,
 } from "./onboarding-ui";
-import { startTopicReview, type TopicReview } from "./topic-review-api";
+import {
+	getTopicReview,
+	startTopicReview,
+	type TopicReview,
+} from "./topic-review-api";
 import { TopicReviewForm } from "./topic-review-form";
+import { useJob } from "./use-job";
 
 interface ReviewLoad {
 	actions: OnboardingStepProps["actions"];
@@ -26,26 +31,53 @@ export function TopicsStep(props: OnboardingStepProps) {
 		error: null,
 	});
 	const request = useRef(0);
+	const {
+		job,
+		follow,
+		error: jobError,
+		refresh: refreshJob,
+	} = useJob(actions, "topic_map", "");
 	const handleLoad = useCallback((): void => {
 		const ticket = ++request.current;
 		setLoad({ actions, review: null, error: null });
 		void startTopicReview(actions).then(
-			(review) => {
-				if (ticket === request.current)
-					setLoad({ actions, review, error: null });
+			(result) => {
+				if (ticket !== request.current) return;
+				if ("pending" in result) follow(result.job);
+				else setLoad({ actions, review: result, error: null });
 			},
 			(cause: unknown) => {
 				if (ticket === request.current)
 					setLoad({ actions, review: null, error: message(cause) });
 			},
 		);
-	}, [actions]);
+	}, [actions, follow]);
 	useEffect(() => {
 		handleLoad();
 		return () => {
 			request.current += 1;
 		};
 	}, [handleLoad]);
+	useEffect(() => {
+		if (job?.status !== "done") return;
+		const ticket = ++request.current;
+		void getTopicReview(actions)
+			.then((review) => {
+				if (!review)
+					throw new Error(
+						"The job finished without a saved review. Try loading it again.",
+					);
+				if (ticket === request.current)
+					setLoad({ actions, review, error: null });
+			})
+			.catch((cause: unknown) => {
+				if (ticket === request.current)
+					setLoad({ actions, review: null, error: message(cause) });
+			});
+		return () => {
+			request.current++;
+		};
+	}, [actions, job]);
 	const current =
 		load.actions === actions ? load : { review: null, error: null };
 	if (current.review)
@@ -61,10 +93,24 @@ export function TopicsStep(props: OnboardingStepProps) {
 			<StepHeader eyebrow={eyebrow} title="What your work is about">
 				Load your saved review or find initial topic suggestions.
 			</StepHeader>
-			{current.error ? (
-				<Failure error={current.error} onRetry={handleLoad} />
+			{current.error || jobError || job?.status === "failed" ? (
+				<Failure
+					error={
+						current.error ||
+						jobError ||
+						job?.error ||
+						"Topic review could not be prepared."
+					}
+					onRetry={jobError ? refreshJob : handleLoad}
+				/>
 			) : (
-				<LoadingCards label="Loading your topic review…" />
+				<LoadingCards
+					label={
+						job?.status === "running"
+							? `Preparing your topics… ${job.progress}%`
+							: "Loading your topic review…"
+					}
+				/>
 			)}
 			<StepActions onBack={onBack}>
 				<Button disabled>Keep 0 topics</Button>

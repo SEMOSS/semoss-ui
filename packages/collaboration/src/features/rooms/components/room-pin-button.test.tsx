@@ -20,6 +20,7 @@ vi.mock("@semoss/ui/next", async (importOriginal) => ({
 const tree: RoomTreeState = {
 	rooms: [],
 	pinnedRoomIds: ["older-pin"],
+	pinsComplete: true,
 	hasMore: false,
 	isLoading: false,
 	error: "",
@@ -30,7 +31,7 @@ const tree: RoomTreeState = {
 };
 
 beforeEach(() => {
-	vi.clearAllMocks();
+	vi.resetAllMocks();
 });
 
 it("recognizes a pin outside the visible sidebar page", () => {

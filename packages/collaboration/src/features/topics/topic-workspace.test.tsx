@@ -126,7 +126,7 @@ it("retains empty topics, honest unavailable actions, and keyboard-accessible co
 	expect(
 		screen.getByText("Nothing needs your input in this topic right now."),
 	).toBeVisible();
-	expect(screen.getByRole("button", { name: "New chat" })).toBeDisabled();
+	expect(screen.getByRole("button", { name: "New chat" })).toBeEnabled();
 	expect(
 		screen.getByRole("button", { name: "Add an action item" }),
 	).toBeDisabled();
@@ -139,8 +139,8 @@ it("retains empty topics, honest unavailable actions, and keyboard-accessible co
 	await user.keyboard("{Enter}");
 	expect(screen.getByText("Prepare for client meetings")).toBeVisible();
 	await user.click(screen.getByRole("tab", { name: "Chat" }));
-	expect(screen.getByRole("link", { name: /Home/ })).toHaveAttribute(
+	expect(screen.getByRole("link", { name: "My topics" })).toHaveAttribute(
 		"href",
-		"/",
+		"/tasks/topics",
 	);
 });

@@ -41,7 +41,7 @@ export function useAgentAttention(
 	useEffect(() => {
 		void revision;
 		void refreshRevision;
-		if (!enabled) return;
+		if (!enabled || revision === 0) return;
 		let cancelled = false;
 		let busy = false;
 		const read = async () => {
@@ -73,14 +73,8 @@ export function useAgentAttention(
 			if (!cancelled) setIsLoading(false);
 		};
 		void read();
-		const timer = window.setInterval(() => void read(), 60_000);
-		window.addEventListener("focus", read);
-		document.addEventListener("visibilitychange", read);
 		return () => {
 			cancelled = true;
-			window.clearInterval(timer);
-			window.removeEventListener("focus", read);
-			document.removeEventListener("visibilitychange", read);
 		};
 	}, [actions, insightId, enabled, revision, refreshRevision]);
 	function refresh(): void {

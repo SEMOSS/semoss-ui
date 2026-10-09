@@ -9,9 +9,7 @@ import {
 } from "@semoss/ui/next";
 import { useThreadInsights } from "@/features/work-thread/use-thread-insights";
 import type { Thread, ThreadWorkspace } from "../state/collaboration.types";
-import { useCollaborationSession } from "../state/collaboration-session.context";
 import { Section } from "./section";
-import { TextEntryForm } from "./text-entry-form";
 
 /** Brain's summary, made in the background, and the user-owned goal share one compact section. */
 export function ThreadSummary({
@@ -22,8 +20,6 @@ export function ThreadSummary({
 	workspace: ThreadWorkspace;
 }) {
 	const insights = useThreadInsights(thread);
-	const { dispatch } = useCollaborationSession();
-	const [isEditing, setIsEditing] = useState(false);
 	const summary =
 		thread.summary ||
 		(insights.isGenerating
@@ -109,38 +105,29 @@ export function ThreadSummary({
 					</Button>
 				)}
 			</div>
-			{isEditing ? (
-				<TextEntryForm
-					label="Thread goal"
-					initialValue={workspace.goal}
-					submitLabel="Save goal"
-					onSave={(goal) => {
-						dispatch({
-							type: "thread.goal",
-							threadId: thread.id,
-							goal,
-						});
-						setIsEditing(false);
-					}}
-				/>
-			) : (
-				<div className="flex flex-wrap items-start gap-2">
-					{workspace.goal && (
-						<P className="min-w-0 flex-1 break-words text-muted-foreground">
-							<span className="font-medium">Goal: </span>
-							{workspace.goal}
-						</P>
-					)}
-					<Button
-						type="button"
-						size="sm"
-						variant="ghost"
-						onClick={() => setIsEditing(true)}
-					>
-						{workspace.goal ? "Edit goal" : "Add goal"}
-					</Button>
-				</div>
-			)}
+			<div className="flex flex-wrap items-start gap-2">
+				{workspace.goal && (
+					<P className="min-w-0 flex-1 break-words text-muted-foreground">
+						<span className="font-medium">Goal: </span>
+						{workspace.goal}
+					</P>
+				)}
+				<Button
+					type="button"
+					size="sm"
+					variant="ghost"
+					disabled
+					aria-describedby={`${summaryId}-goal`}
+				>
+					{workspace.goal ? "Edit goal" : "Add goal"}
+				</Button>
+			</div>
+			<P
+				id={`${summaryId}-goal`}
+				className="text-muted-foreground text-sm"
+			>
+				Thread goals cannot be saved yet.
+			</P>
 		</Section>
 	);
 }

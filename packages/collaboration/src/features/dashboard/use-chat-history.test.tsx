@@ -75,6 +75,7 @@ it("retains newly created chats before the server list catches up and refreshes 
 			}),
 		),
 	);
+	act(() => result.current.refresh());
 	await waitFor(() =>
 		expect(
 			result.current.rooms.find((row) => row.roomId === "room-0")
@@ -115,7 +116,7 @@ it("preserves creation dates and room metadata when saved activity updates histo
 			}),
 		),
 	);
-	await waitFor(() => expect(result.current.error).toBe("offline"));
+	expect(read).toHaveBeenCalledTimes(1);
 	expect(result.current.rooms[0]).toMatchObject({
 		roomId: "room-1",
 		roomName: "Existing chat",
@@ -160,7 +161,7 @@ it("ignores history notifications from a retained room in a previous account sco
 			}),
 		),
 	);
-	await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+	expect(read).toHaveBeenCalledTimes(1);
 	expect(
 		result.current.rooms.some((room) => room.roomId === "current-room"),
 	).toBe(true);

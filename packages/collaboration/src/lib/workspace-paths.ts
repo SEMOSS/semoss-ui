@@ -10,10 +10,15 @@ export function roomPath(roomId: string, itemId?: string): string {
 }
 
 /** Start a conversation from the overview before a backend room exists. */
-export function newRoomPath(agentId?: string, modelId?: string) {
+export function newRoomPath(
+	agentId?: string,
+	modelId?: string,
+	topicId?: string,
+) {
 	const search = new URLSearchParams();
 	if (agentId) search.set("agentId", agentId);
 	if (modelId) search.set("model", modelId);
+	if (topicId) search.set("topicId", topicId);
 
 	const query = search.toString();
 	return query ? `/?${query}` : "/";

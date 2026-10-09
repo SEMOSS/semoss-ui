@@ -178,7 +178,11 @@ describe("Topic attention collection", () => {
 				{ ...run, runId: "finished", status: "COMPLETED" },
 			],
 			delegations: [delegation],
-			roomSource: () => ({ status: "ready", threadId: "thread" }),
+			roomSource: () => ({
+				status: "ready",
+				threadId: "thread",
+				topicIds: ["launch"],
+			}),
 		});
 		expect(items.map((item) => item.id).sort()).toEqual([
 			"action:action",
@@ -269,7 +273,11 @@ describe("Topic attention collection", () => {
 			{
 				runs: [run],
 				delegations: [],
-				roomSource: () => ({ status: "ready", threadId: "thread" }),
+				roomSource: () => ({
+					status: "ready",
+					threadId: "thread",
+					topicIds: ["launch"],
+				}),
 			},
 		);
 		expect(items).toHaveLength(4);
@@ -286,7 +294,7 @@ describe("Topic attention collection", () => {
 		);
 	});
 
-	it("resolves direct, saved-source and verified legacy topic links without broad person inference", () => {
+	it("resolves saved room topic links without source-thread or person inference", () => {
 		const state = initialState({
 			memories: [
 				memory,
@@ -325,6 +333,7 @@ describe("Topic attention collection", () => {
 			roomSource: (id) => ({
 				status: "ready",
 				threadId: id === "room" ? "thread" : null,
+				topicIds: ["launch"],
 			}),
 		});
 		expect(

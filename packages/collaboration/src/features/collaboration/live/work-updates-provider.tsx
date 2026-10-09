@@ -6,50 +6,39 @@ import {
 	useState,
 } from "react";
 import { MAIL_SENT_EVENT } from "@/features/connectors/api/microsoft";
-import { ROOM_TREE_CHANGED } from "@/features/room-tree/room-tree-events";
+import { readTopic, readTopicItems } from "@/features/topics/api/topic-api";
 import type { InsightActions } from "@/lib/pixel";
-import type { Thread } from "../state/collaboration.types";
+import type {
+	CollaborationCommand,
+	CollaborationState,
+} from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import {
-	type MailCheck,
 	type MailSyncResult,
-	type PendingReviewCoverage,
-	readWorkUpdates,
+	type ResourceRows,
+	type ResourceScope,
+	readResourceRows,
 	syncMail,
 } from "./live-state";
 import type { LiveSync } from "./live-sync";
-import { WorkUpdatesContext } from "./work-updates.context";
+import {
+	COLLABORATION_SAVED,
+	type ResourceStatus,
+	WorkUpdatesContext,
+} from "./work-updates.context";
 
-const SENT_SYNC_DELAY_MS = 5000;
-
-/** Ids of records edited locally between two snapshots (or created locally since the first). */
+/** Ids changed after a request began. */
 export function changedSince<T extends { id: string }>(
 	before: T[],
 	now: T[],
 ): string[] {
-	const prior = new Map(
-		before.map((record) => [record.id, JSON.stringify(record)]),
-	);
+	const prior = new Map(before.map((row) => [row.id, JSON.stringify(row)]));
 	return now
-		.filter((record) => prior.get(record.id) !== JSON.stringify(record))
-		.map((record) => record.id);
+		.filter((row) => prior.get(row.id) !== JSON.stringify(row))
+		.map((row) => row.id);
 }
 
-/** Compare only saved identities and associations that can change the room tree. */
-function roomTreeMappingSignature(threads: Thread[]): string {
-	return JSON.stringify(
-		threads
-			.filter((thread) => thread.roomId || thread.topicLinks.length)
-			.sort((left, right) => left.id.localeCompare(right.id))
-			.map((thread) => [
-				thread.id,
-				thread.roomId,
-				thread.topicLinks.map((link) => link.topicId).sort(),
-			]),
-	);
-}
-
-/** One visible-page refresh owner updates data without replacing mounted editors. */
+/** One account's resource cache, shared by existing pages and editors. Reads are demand-driven. */
 export function WorkUpdatesProvider({
 	actions,
 	sync,
@@ -59,305 +48,331 @@ export function WorkUpdatesProvider({
 	sync?: LiveSync;
 	children: ReactNode;
 }) {
-	const { dispatch, state } = useCollaborationSession();
+	const { state, dispatch } = useCollaborationSession();
 	const latest = useRef(state);
 	latest.current = state;
-	const [status, setStatus] = useState({
-		isRefreshing: false,
-		lastUpdated: null as string | null,
-		lastMailCheck: null as MailCheck | null,
-		pendingCoverage: null as PendingReviewCoverage | null,
-		error: "",
-	});
+	const [resources, setResources] = useState<
+		Partial<Record<ResourceScope, ResourceStatus>>
+	>({});
+	const cache = useRef<Partial<Record<ResourceScope, ResourceStatus>>>({});
+	const pending = useRef(new Map<ResourceScope, Promise<void>>());
+	const queued = useRef(new Set<ResourceScope>());
+	const generation = useRef(0);
 	const [mail, setMail] = useState({
 		isSyncing: false,
 		lastSync: null as MailSyncResult | null,
 		syncError: "",
 	});
-	const pending = useRef(false);
-	// a reload asked for while one is in flight (a finished sync) runs right after it
-	const queued = useRef(false);
 	const syncing = useRef(false);
-	const generation = useRef(0);
-	const savedRoomMappings = useRef<string | null>(null);
-	const refresh = useCallback(() => {
-		if (pending.current) return;
-		const token = generation.current;
-		const requestedState = latest.current;
-		pending.current = true;
-		setStatus((current) => ({ ...current, isRefreshing: true }));
-		void (async () => {
-			await sync?.settled();
-			return readWorkUpdates(actions);
-		})()
-			.then(async ({ lastMailCheck, pendingCoverage, ...updates }) => {
+	const publish = useCallback(
+		(scope: ResourceScope, value: ResourceStatus) => {
+			cache.current = { ...cache.current, [scope]: value };
+			setResources(cache.current);
+		},
+		[],
+	);
+	const loadResource = useCallback(
+		(scope: ResourceScope, force = false): Promise<void> => {
+			const inFlight = pending.current.get(scope);
+			if (inFlight) {
+				if (force) queued.current.add(scope);
+				return inFlight;
+			}
+			const old = cache.current[scope];
+			if (!force && old) return Promise.resolve();
+			const token = generation.current;
+			publish(scope, {
+				...old,
+				isLoading: true,
+				error: "",
+				complete: old?.complete ?? false,
+			});
+			const request = (async () => {
 				await sync?.settled();
 				if (token !== generation.current) return;
+				const baseline = latest.current;
 				const localId = sync?.localId ?? ((id: string) => id);
-				// A saved deletion during this read must not be resurrected by its older response.
-				const removed = (
-					key: "memories" | "reviews" | "topics" | "people",
-				): Set<string> => {
-					const currentIds = new Set(
-						latest.current[key].map((record) => record.id),
+				const serverId = sync?.serverId ?? ((id: string) => id);
+				const id = scope.includes(":")
+					? scope.slice(scope.indexOf(":") + 1)
+					: "";
+				let rows: ResourceRows;
+				if (scope.startsWith("topic:"))
+					rows = { topics: [await readTopic(actions, serverId(id))] };
+				else if (scope.startsWith("topic-work:"))
+					rows = {
+						items: await readTopicItems(
+							actions,
+							serverId(id),
+							(items) => {
+								if (token !== generation.current) return;
+								dispatch({
+									type: "topic.work.received",
+									topicId: id,
+									complete: false,
+									items: items.map((item) => ({
+										...item,
+										id: localId(item.id),
+										topicIds: item.topicIds.map(localId),
+										linkTopicId: item.linkTopicId
+											? localId(item.linkTopicId)
+											: null,
+										assignee: item.assignee
+											? localId(item.assignee)
+											: null,
+									})),
+									baseline: {
+										topicExists: baseline.topics.some(
+											(topic) => topic.id === id,
+										),
+										items: baseline.items,
+									},
+									keepItemIds: changedSince(
+										baseline.items,
+										latest.current.items,
+									),
+								});
+							},
+							() => token !== generation.current,
+						),
+					};
+				else
+					rows = await readResourceRows(
+						actions,
+						id ? `topic-context:${serverId(id)}` : scope,
+						() => token !== generation.current,
 					);
-					return new Set(
-						requestedState[key]
-							.filter((record) => !currentIds.has(record.id))
-							.map((record) => record.id),
-					);
-				};
-				const removedMemoryIds = removed("memories");
-				const removedReviewIds = removed("reviews");
-				const removedTopicIds = removed("topics");
-				const removedPersonIds = removed("people");
-				const threads = updates.threads.map((thread) => ({
-					...thread,
-					topicLinks: thread.topicLinks.map((link) => ({
-						...link,
-						topicId: localId(link.topicId),
-					})),
-				}));
-				const workspaces = Object.fromEntries(
-					Object.entries(updates.workspaces).map(
-						([id, workspace]) => {
-							const before = new Set(
-								requestedState.workspaces[id]?.steps.map(
-									(step) => step.id,
-								),
-							);
-							const current = new Set(
-								latest.current.workspaces[id]?.steps.map(
-									(step) => step.id,
-								),
-							);
-							const steps = workspace.steps
-								.map((step) => ({
-									...step,
-									id: localId(step.id),
-									...(step.itemId
-										? { itemId: localId(step.itemId) }
-										: {}),
-									linkTopicId: step.linkTopicId
-										? localId(step.linkTopicId)
-										: undefined,
-								}))
-								.filter(
-									(step) =>
-										!before.has(step.id) ||
-										current.has(step.id),
-								);
-							return [id, { ...workspace, steps }];
-						},
-					),
-				);
-				dispatch({
-					type: "live.refresh",
-					updates: {
-						...updates,
-						baseline: {
-							topics: requestedState.topics,
-							threads: requestedState.threads,
-							items: requestedState.items,
-						},
-						threads,
-						workspaces,
-						items: updates.items.map((item) => ({
-							...item,
-							id: localId(item.id),
-							topicIds: item.topicIds.map(localId),
-							linkTopicId: item.linkTopicId
-								? localId(item.linkTopicId)
-								: null,
-							assignee: item.assignee
-								? localId(item.assignee)
-								: null,
-						})),
-						memories: updates.memories
-							.map((memory) => ({
-								...memory,
-								id: localId(memory.id),
-								about: memory.about.map((ref) => ({
-									...ref,
-									id: localId(ref.id),
-								})),
-								replacesId: memory.replacesId
-									? localId(memory.replacesId)
-									: null,
-							}))
-							.filter(
-								(memory) => !removedMemoryIds.has(memory.id),
-							),
-						reviews: updates.reviews
-							?.map((review) => ({
-								...review,
-								id: localId(review.id),
-								refId: review.refId
-									? localId(review.refId)
-									: null,
-								topicId: review.topicId
-									? localId(review.topicId)
-									: undefined,
-							}))
-							.filter(
-								(review) => !removedReviewIds.has(review.id),
-							),
-						topics: updates.topics
-							?.map((topic) => ({
-								...topic,
-								id: localId(topic.id),
-								goals: topic.goals.map((goal) => ({
-									...goal,
-									noteId: localId(goal.noteId),
-								})),
-								people: topic.people.map((person) => ({
-									...person,
-									personId: localId(person.personId),
-								})),
-							}))
-							.filter((topic) => !removedTopicIds.has(topic.id)),
-						people: updates.people
-							?.map((person) => ({
-								...person,
-								id: localId(person.id),
-							}))
-							.filter(
-								(person) => !removedPersonIds.has(person.id),
-							),
-						keepItemIds: changedSince(
-							requestedState.items,
-							latest.current.items,
-						),
-						keepMemoryIds: changedSince(
-							requestedState.memories,
-							latest.current.memories,
-						),
-						keepReviewIds: changedSince(
-							requestedState.reviews,
-							latest.current.reviews,
-						),
-						keepTopicIds: changedSince(
-							requestedState.topics,
-							latest.current.topics,
-						),
-						keepPersonIds: changedSince(
-							requestedState.people,
-							latest.current.people,
-						),
-						keepThreadIds: changedSince(
-							requestedState.threads,
-							latest.current.threads,
-						),
-						keepStepIds: Object.entries(
-							latest.current.workspaces,
-						).flatMap(([id, workspace]) =>
-							changedSince(
-								requestedState.workspaces[id]?.steps ?? [],
-								workspace.steps,
-							),
-						),
-					},
-				});
-				const mappings = roomTreeMappingSignature(threads);
-				const previousMappings =
-					savedRoomMappings.current ??
-					roomTreeMappingSignature(requestedState.threads);
-				savedRoomMappings.current = mappings;
-				if (mappings !== previousMappings)
-					window.dispatchEvent(new Event(ROOM_TREE_CHANGED));
-				setStatus({
-					isRefreshing: false,
-					lastUpdated: new Date().toISOString(),
-					lastMailCheck,
-					pendingCoverage: pendingCoverage ?? null,
-					error: "",
-				});
-			})
-			.catch((cause: unknown) => {
-				if (token === generation.current)
-					setStatus((current) => ({
-						...current,
-						isRefreshing: false,
-						error:
-							cause instanceof Error
-								? cause.message
-								: "Updates are unavailable.",
-					}));
-			})
-			.finally(() => {
+				await sync?.settled();
 				if (token !== generation.current) return;
-				pending.current = false;
-				if (queued.current) {
-					queued.current = false;
-					refreshRef.current();
-				}
-			});
-	}, [actions, dispatch, sync]);
-	const refreshRef = useRef(refresh);
-	refreshRef.current = refresh;
-	/** The Refresh button: pull new mail from Microsoft 365 first, then reload Brain and Work. */
+				// Preserve identities belonging to earlier optimistic creates, including nested associations.
+				rows = JSON.parse(
+					JSON.stringify(rows, (key, value) => {
+						if (
+							[
+								"id",
+								"topicId",
+								"personId",
+								"noteId",
+								"refId",
+								"replacesId",
+								"assignee",
+								"linkTopicId",
+							].includes(key) &&
+							typeof value === "string"
+						)
+							return localId(value);
+						if (
+							[
+								"topicIds",
+								"topics",
+								"participants",
+								"vips",
+							].includes(key) &&
+							Array.isArray(value) &&
+							value.every((id) => typeof id === "string")
+						)
+							return value.map(localId);
+						return value;
+					}),
+				) as ResourceRows;
+				dispatch({ type: "resource.received", scope, rows, baseline });
+				publish(scope, {
+					isLoading: false,
+					error: "",
+					complete: true,
+					checkedAt: new Date().toISOString(),
+					total: Object.values(rows).reduce(
+						(sum, values) => sum + values.length,
+						0,
+					),
+				});
+			})()
+				.catch((cause: unknown) => {
+					if (token === generation.current)
+						publish(scope, {
+							...old,
+							isLoading: false,
+							complete: old?.complete ?? false,
+							error:
+								cause instanceof Error
+									? cause.message
+									: "Could not load this information.",
+						});
+				})
+				.finally(() => {
+					if (token !== generation.current) return;
+					pending.current.delete(scope);
+					if (queued.current.delete(scope))
+						void loadRef.current(scope, true);
+				});
+			pending.current.set(scope, request);
+			return request;
+		},
+		[actions, sync, dispatch, publish],
+	);
+	const loadRef = useRef(loadResource);
+	loadRef.current = loadResource;
+	const refresh = useCallback(() => {
+		void loadResource("directory", true);
+	}, [loadResource]);
 	const syncNow = useCallback(() => {
 		if (syncing.current) return;
 		const token = generation.current;
 		syncing.current = true;
 		setMail((current) => ({ ...current, isSyncing: true, syncError: "" }));
-		syncMail(actions)
+		void syncMail(actions)
 			.then((result) => {
 				if (token !== generation.current) return;
 				setMail({ isSyncing: false, lastSync: result, syncError: "" });
-				if (pending.current) queued.current = true;
-				else refreshRef.current();
+				for (const scope of Object.keys(
+					cache.current,
+				) as ResourceScope[])
+					void loadResource(scope, true);
 			})
 			.catch((cause: unknown) => {
-				if (token !== generation.current) return;
-				setMail((current) => ({
-					...current,
-					isSyncing: false,
-					syncError:
-						cause instanceof Error
-							? cause.message
-							: "New mail could not be checked.",
-				}));
+				if (token === generation.current)
+					setMail((current) => ({
+						...current,
+						isSyncing: false,
+						syncError:
+							cause instanceof Error
+								? cause.message
+								: "Could not check mail.",
+					}));
 			})
 			.finally(() => {
 				if (token === generation.current) syncing.current = false;
 			});
-	}, [actions]);
-	// a reply sent from the app reaches Sent Items a moment later; sync it in so the card it answered closes
+	}, [actions, loadResource]);
 	useEffect(() => {
-		let timer: number | undefined;
-		const onSent = () => {
-			window.clearTimeout(timer);
-			timer = window.setTimeout(syncNow, SENT_SYNC_DELAY_MS);
-		};
-		window.addEventListener(MAIL_SENT_EVENT, onSent);
+		void loadResource("directory");
 		return () => {
-			window.clearTimeout(timer);
-			window.removeEventListener(MAIL_SENT_EVENT, onSent);
+			generation.current++;
+			pending.current.clear();
+			queued.current.clear();
+			cache.current = {};
 		};
-	}, [syncNow]);
+	}, [loadResource]);
 	useEffect(() => {
-		const check = () => {
-			if (document.visibilityState === "visible") refresh();
+		// Saves identify the collections they changed. Re-read only already-used resources.
+		const onSaved = (event: Event) => {
+			const detail = (
+				event as CustomEvent<{
+					actions: InsightActions;
+					commands: CollaborationCommand[];
+					previous?: CollaborationState;
+				}>
+			).detail;
+			if (!detail || detail.actions !== actions) return;
+			const { commands, previous } = detail;
+			const affected = new Set<ResourceScope>();
+			const topicIds = new Set<string>();
+			for (const command of commands) {
+				if ("topicId" in command) topicIds.add(command.topicId);
+				if (command.type === "topic.save" && command.topic.id)
+					topicIds.add(command.topic.id);
+				if (command.type === "topic.merge") {
+					topicIds.add(command.sourceId);
+					topicIds.add(command.targetId);
+				}
+				if (
+					command.type.startsWith("topic.") ||
+					command.type === "review.resolve"
+				)
+					affected.add("directory");
+				if (command.type.startsWith("item.")) {
+					affected.add("items");
+					if ("itemId" in command) {
+						const item =
+							latest.current.items.find(
+								(row) => row.id === command.itemId,
+							) ??
+							previous?.items.find(
+								(row) => row.id === command.itemId,
+							);
+						for (const id of [
+							...(item?.topicIds ?? []),
+							...(item?.linkTopicId ? [item.linkTopicId] : []),
+						]) {
+							affected.add(`topic-work:${id}`);
+							affected.add(`topic:${id}`);
+						}
+					}
+				}
+				if (command.type.startsWith("thread.")) affected.add("threads");
+				if (command.type.startsWith("memory.")) {
+					affected.add("memories");
+					const memory =
+						command.type === "memory.save"
+							? command.memory
+							: "memoryId" in command
+								? (latest.current.memories.find(
+										(row) => row.id === command.memoryId,
+									) ??
+									previous?.memories.find(
+										(row) => row.id === command.memoryId,
+									))
+								: undefined;
+					for (const ref of memory?.about ?? [])
+						if (ref.type === "topic")
+							affected.add(`topic-context:${ref.id}`);
+				}
+				if (command.type.startsWith("person.")) {
+					affected.add("people");
+					if ("personId" in command) {
+						for (const person of [
+							latest.current.people.find(
+								(row) => row.id === command.personId,
+							),
+							previous?.people.find(
+								(row) => row.id === command.personId,
+							),
+						]) {
+							for (const id of person?.topics ?? [])
+								affected.add(`topic-context:${id}`);
+						}
+					}
+				}
+				if (command.type.startsWith("rule.")) affected.add("rules");
+				if (command.type.startsWith("review.")) affected.add("reviews");
+			}
+			for (const id of topicIds) {
+				if (!latest.current.topics.some((topic) => topic.id === id))
+					continue;
+				affected.add(`topic:${id}`);
+				affected.add(`topic-context:${id}`);
+				affected.add(`topic-work:${id}`);
+			}
+			for (const scope of affected)
+				if (cache.current[scope]) void loadResource(scope, true);
 		};
-		const timer = window.setInterval(check, 30_000);
-		window.addEventListener("focus", check);
-		document.addEventListener("visibilitychange", check);
+		window.addEventListener(COLLABORATION_SAVED, onSaved);
+		window.addEventListener(MAIL_SENT_EVENT, syncNow);
 		return () => {
-			generation.current += 1;
-			pending.current = false;
-			queued.current = false;
-			syncing.current = false;
-			window.clearInterval(timer);
-			window.removeEventListener("focus", check);
-			document.removeEventListener("visibilitychange", check);
+			window.removeEventListener(COLLABORATION_SAVED, onSaved);
+			window.removeEventListener(MAIL_SENT_EVENT, syncNow);
 		};
-	}, [refresh]);
+	}, [actions, loadResource, syncNow]);
+	const directory = resources.directory;
 	return (
 		<WorkUpdatesContext.Provider
 			value={{
-				...status,
 				...mail,
+				resources,
+				loadResource,
+				isRefreshing: directory?.isLoading ?? true,
+				lastUpdated: directory?.checkedAt ?? null,
+				error: directory?.error ?? "",
+				lastMailCheck: null,
+				pendingCoverage:
+					resources.reviews?.complete && resources.memories?.complete
+						? {
+								reviews: state.reviews.length,
+								suggestedMemories: state.memories.filter(
+									(memory) => memory.state === "suggested",
+								).length,
+							}
+						: null,
 				refresh,
 				syncMail: syncNow,
 				settled: sync?.settled,

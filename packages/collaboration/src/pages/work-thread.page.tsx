@@ -8,6 +8,7 @@ import {
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { Alert, AlertDescription, Button, P, Spinner } from "@semoss/ui/next";
+import { useCollaborationResource } from "@/features/collaboration/live/work-updates.context";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { createSourceImportAttempt } from "@/features/rooms/source-import/source-import-attempt";
 import { roomPath } from "@/lib/workspace-paths";
@@ -17,6 +18,13 @@ export function WorkThreadPage() {
 	const { threadId = "" } = useParams();
 	const { actions, insightId } = useInsight();
 	const { state } = useCollaborationSession();
+	const related = state.items.find((item) => item.threadId === threadId);
+	const topicId = related?.linkTopicId || related?.topicIds[0];
+	const metadata = useCollaborationResource(
+		topicId ? `topic-context:${topicId}` : "threads",
+		!threadId.startsWith("connected:") &&
+			!state.threads.some((thread) => thread.id === threadId),
+	);
 	const location = useLocation();
 	const navigate = useNavigate();
 	const currentState = useRef(state);
@@ -46,6 +54,7 @@ export function WorkThreadPage() {
 		}
 	}, [attempt, navigate]);
 	useEffect(() => {
+		if (metadata.isLoading || metadata.error) return;
 		activeAttempt.current = attempt;
 		const release = attempt.retain();
 		void open();
@@ -53,7 +62,7 @@ export function WorkThreadPage() {
 			if (activeAttempt.current === attempt) activeAttempt.current = null;
 			release();
 		};
-	}, [attempt, open]);
+	}, [attempt, open, metadata.isLoading, metadata.error]);
 	const progress =
 		snapshot.phase === "loading-source"
 			? "Loading thread…"
@@ -62,16 +71,21 @@ export function WorkThreadPage() {
 				: "Saving thread to room files…";
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-auto p-6">
-			{snapshot.error ? (
+			{snapshot.error || metadata.error ? (
 				<>
 					<Alert variant="destructive">
-						<AlertDescription>{snapshot.error}</AlertDescription>
+						<AlertDescription>
+							{snapshot.error || metadata.error}
+						</AlertDescription>
 					</Alert>
 					<Button
 						type="button"
 						variant="outline"
 						className="min-h-11 self-start"
-						onClick={() => void open()}
+						onClick={() => {
+							if (metadata.error) metadata.refresh();
+							else void open();
+						}}
 					>
 						Retry opening thread
 					</Button>

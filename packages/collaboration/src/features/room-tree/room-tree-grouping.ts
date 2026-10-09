@@ -1,29 +1,10 @@
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { RoomRow } from "@/features/rooms/api/room-schemas";
-import type {
-	RoomTreeResponse,
-	RoomTreeRoom,
-	RoomTreeTopic,
-} from "./room-tree.types";
+import type { RoomTopic } from "@/features/rooms/api/room-topics";
+import type { RoomTreeResponse, RoomTreeRoom } from "./room-tree.types";
 
-/** The lightweight fields supplied by BrainListTopics. */
-export interface RoomTreeTopicMetadata {
-	id: string;
-	name: string;
-	short?: string;
-	status?: string;
-}
-
-/** Brain thread links, including the older direct room association. */
-export interface RoomTreeThreadMetadata {
-	id: string;
-	roomId?: string | null;
-	topicLinks: { topicId: string }[];
-}
-
-/** A null identity means the source metadata was read and no explicit link exists. */
 export interface RoomTreeAssociation {
-	threadId: string | null;
+	topics: RoomTopic[];
 	unavailable?: boolean;
 }
 
@@ -44,59 +25,26 @@ function compareActivity(left: number | null, right: number | null): number {
 
 /** Resolve one row per room without loading conversations or mutating cached inputs. */
 export function groupRoomTree(
-	topics: RoomTreeTopicMetadata[],
-	threads: RoomTreeThreadMetadata[],
 	rooms: RoomRow[],
 	associations: ReadonlyMap<string, RoomTreeAssociation>,
 	activity: ReadonlyMap<string, string>,
 ): RoomTreeResponse {
-	const topicsById = new Map<string, RoomTreeTopic>();
-	for (const topic of topics) {
-		if (topic.status === "archived") continue;
-		topicsById.set(topic.id, {
-			topicId: topic.id,
-			name: topic.name,
-			short: topic.short,
-		});
-	}
-	const explicitTopics = new Map<string, Set<string>>();
-	const legacyTopics = new Map<string, Set<string>>();
-	for (const thread of threads) {
-		const linkedTopics = new Set(
-			thread.topicLinks
-				.map((link) => link.topicId)
-				.filter((topicId) => topicsById.has(topicId)),
-		);
-		explicitTopics.set(thread.id, linkedTopics);
-		if (thread.roomId) {
-			const linked = legacyTopics.get(thread.roomId) ?? new Set<string>();
-			for (const topicId of linkedTopics) linked.add(topicId);
-			legacyTopics.set(thread.roomId, linked);
-		}
-	}
-
 	const activityById = new Map<string, number | null>();
 	const orderedRooms = [
 		...new Map(rooms.map((room) => [room.roomId, room])).values(),
 	]
 		.map((room): RoomTreeRoom => {
 			const association = associations.get(room.roomId);
-			const topicIds =
-				!association || association.unavailable
-					? undefined
-					: association.threadId === null
-						? legacyTopics.get(room.roomId)
-						: explicitTopics.get(association.threadId);
-			const roomTopics = [...(topicIds ?? [])]
-				.flatMap((topicId) => {
-					const topic = topicsById.get(topicId);
-					return topic ? [topic] : [];
-				})
+			const roomTopics = (association?.topics ?? [])
+				.filter((topic) => topic.state === "linked")
+				.map((topic) => ({
+					topicId: topic.topicId,
+					name: topic.name || "Topic",
+				}))
 				.sort(
 					(left, right) =>
-						left.name.localeCompare(right.name, undefined, {
-							sensitivity: "base",
-						}) || left.topicId.localeCompare(right.topicId),
+						left.name.localeCompare(right.name) ||
+						left.topicId.localeCompare(right.topicId),
 				);
 			const serverActivity = activityTime(room.dateUpdated);
 			const localActivity = activityTime(activity.get(room.roomId));

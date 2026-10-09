@@ -111,3 +111,28 @@ it("retains the selected message folder while another folder is loaded", async (
 	});
 	expect(result.current.selected?.folder).toBe("inbox");
 });
+
+it("refreshes only on demand, never on a timer or focus", async () => {
+	vi.useFakeTimers();
+	vi.mocked(listMail).mockResolvedValue({
+		folder: "inbox",
+		count: 1,
+		messages: [mail],
+	});
+	vi.mocked(listMailFolders).mockResolvedValue({ count: 0, folders: [] });
+	const { result, unmount } = renderHook(() => useSources());
+	try {
+		await act(() => result.current.loadMail(filters));
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(120000);
+			window.dispatchEvent(new Event("focus"));
+			document.dispatchEvent(new Event("visibilitychange"));
+		});
+		expect(listMail).toHaveBeenCalledOnce();
+		await act(async () => result.current.refreshMail());
+		expect(listMail).toHaveBeenCalledTimes(2);
+	} finally {
+		unmount();
+		vi.useRealTimers();
+	}
+});

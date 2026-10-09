@@ -7,7 +7,6 @@ import {
 	setThreadAgent,
 	type ThreadAgent,
 } from "../../thread-assistant/thread-context";
-import { createEmptyWorkspace } from "../state/collaboration.reducer";
 import type {
 	Account,
 	CollaborationCommand,
@@ -16,17 +15,20 @@ import type {
 	MemoryRef,
 	Person,
 	Profile,
+	ResourceRows,
+	ResourceScope,
 	ReviewEntry,
 	Rule,
 	Settings,
 	SourceStatus,
 	Thread,
-	ThreadWorkspace,
 	Topic,
 	WorkItem,
 	WorkspaceMessage,
 	WorkspaceStep,
 } from "../state/collaboration.types";
+
+export type { ResourceRows, ResourceScope } from "../state/collaboration.types";
 
 // Brain and Work state loaded from the Collaboration reactors.
 // Every record loads as connected (isSample false).
@@ -53,7 +55,6 @@ export async function runBatch(
 }
 
 type Row = Record<string, unknown>;
-type Page = { items: Row[]; total: number };
 
 const str = (value: unknown, fallback = ""): string =>
 	typeof value === "string" ? value : fallback;
@@ -172,7 +173,6 @@ export function mapMemory(row: Row): Memory {
 	};
 }
 
-const REFRESH_PAGE_SIZE = 500;
 const MAX_REFRESH_PAGES = 100;
 
 const completePageSchema = z.object({
@@ -189,6 +189,7 @@ async function readCompleteRows(
 	firstPage: unknown,
 	statementAt: (offset: number) => string,
 	label: string,
+	isCancelled: () => boolean,
 ): Promise<Row[]> {
 	const first = completePageSchema.parse(firstPage);
 	const total = first.total;
@@ -212,44 +213,11 @@ async function readCompleteRows(
 				`${label} returned an incomplete count. Try again.`,
 			);
 		if (pageNumber + 1 === MAX_REFRESH_PAGES) break;
+		if (isCancelled()) throw new Error("Resource read superseded.");
 		const [raw] = await runBatch(actions, [statementAt(offset)]);
 		page = completePageSchema.parse(raw);
 	}
 	throw new Error(`${label} could not be fully refreshed. Try again.`);
-}
-
-const reviewStatement = (offset: number) =>
-	pixel("BrainListReview", {
-		status: "open",
-		limit: REFRESH_PAGE_SIZE,
-		offset,
-	});
-const memoryStatement = (state: "active" | "suggested", offset: number) =>
-	pixel("BrainListMemories", {
-		state: [state],
-		limit: REFRESH_PAGE_SIZE,
-		offset,
-	});
-const topicStatement = (offset: number) =>
-	pixel("BrainListTopics", { limit: 1000, offset });
-const peopleStatement = (offset: number) =>
-	pixel("BrainListPeople", { limit: REFRESH_PAGE_SIZE, offset });
-
-/** Keep one memory identity when its state changes between the two independent lists. */
-function mapListedMemories(active: Row[], suggested: Row[]): Memory[] {
-	if (
-		active.some((row) => row.state !== "active") ||
-		suggested.some((row) => row.state !== "suggested")
-	)
-		throw new Error("Memories returned an unexpected state. Try again.");
-	return [
-		...new Map(
-			[...active, ...suggested].map((row) => [
-				str(row.id),
-				mapMemory(row),
-			]),
-		).values(),
-	];
 }
 
 // the platform agent behind each thread's assistant; absent when unset or not shared with this user
@@ -318,7 +286,7 @@ export function mapTopic(row: Row): Topic {
 	};
 }
 
-function mapPerson(row: Row): Person {
+export function mapPerson(row: Row): Person {
 	const channels = (row.channels ?? {}) as Row;
 	const name = str(row.name, str(row.email, "Unknown"));
 	return {
@@ -479,142 +447,119 @@ function mapReview(row: Row, topics: Topic[]): ReviewEntry {
 	};
 }
 
-/** Load initial task/context data, all pending pages, and complete topic details. */
+/** Startup reads only profile and settings; the account resource cache owns the topic directory. */
 export async function loadLiveState(
 	actions: InsightActions,
+	isCurrent: () => boolean = () => true,
 ): Promise<CollaborationState> {
-	const [
-		profileRow,
-		settingsRow,
-		accountsPage,
-		topicsPage,
-		peoplePage,
-		threadsPage,
-		itemsPage,
-		openReviews,
-		acceptedReviews,
-		dismissedReviews,
-		rulesPage,
-		roomsPage,
-		workspacesPage,
-		activeMemoriesPage,
-		suggestedMemoriesPage,
-	] = (await runBatch(actions, [
+	const [profileRow, settingsRow] = (await runBatch(actions, [
 		pixel("BrainGetProfile"),
 		pixel("BrainGetSettings"),
-		pixel("BrainListAccounts", { limit: 1000 }),
-		topicStatement(0),
-		pixel("BrainListPeople", { limit: 5000 }),
-		pixel("BrainListThreads", { limit: 5000, detail: true }),
-		pixel("WorkListItems", { view: "all", limit: 5000 }),
-		reviewStatement(0),
-		pixel("BrainListReview", { status: "accepted", limit: 1000 }),
-		pixel("BrainListReview", { status: "dismissed", limit: 1000 }),
-		pixel("BrainListRules"),
-		pixel("WorkListOpenRooms"),
-		pixel("WorkListWorkspaces"),
-		memoryStatement("active", 0),
-		memoryStatement("suggested", 0),
-	])) as [
-		Row,
-		Row,
-		Page,
-		Page,
-		Page,
-		Page,
-		Page,
-		Page,
-		Page,
-		Page,
-		Page,
-		Page,
-		Page,
-		Page,
-		Page,
-	];
-
-	// The directory can exceed one page; topic goals and people require bounded detail batches.
-	const [topicRows, openReviewRows, activeMemoryRows, suggestedMemoryRows] =
-		await Promise.all([
-			readCompleteRows(
-				actions,
-				topicsPage,
-				topicStatement,
-				"Topics",
-			).then(async (topics) => {
-				const details: Row[] = [];
-				const schema = z
-					.object({ id: z.string().min(1) })
-					.passthrough();
-				for (let offset = 0; offset < topics.length; offset += 50) {
-					const batch = topics.slice(offset, offset + 50);
-					const rows = await runBatch(
-						actions,
-						batch.map((topic) =>
-							pixel("BrainGetTopic", { topicId: topic.id }),
-						),
-					);
-					rows.forEach((raw, index) => {
-						const row = schema.parse(raw);
-						if (row.id !== batch[index].id)
-							throw new Error(
-								"Received context for a different topic.",
-							);
-						details.push(row);
-					});
-				}
-				return details;
-			}),
-			readCompleteRows(
-				actions,
-				openReviews,
-				reviewStatement,
-				"Review suggestions",
-			),
-			readCompleteRows(
-				actions,
-				activeMemoriesPage,
-				(offset) => memoryStatement("active", offset),
-				"Active memories",
-			),
-			readCompleteRows(
-				actions,
-				suggestedMemoriesPage,
-				(offset) => memoryStatement("suggested", offset),
-				"Suggested memories",
-			),
-		]);
-	const topics = topicRows.map(mapTopic);
-	const people = peoplePage.items.map(mapPerson);
-	const self = people.find((person) => person.relationship === "self");
-	const profile = mapProfile(profileRow, self?.id);
+	])) as Row[];
+	const profile = mapProfile(profileRow, undefined);
 	const settings = mapSettings(settingsRow);
-	setThreadAgent(mapThreadAgent(settingsRow.assistantAgent));
-
+	if (isCurrent()) setThreadAgent(mapThreadAgent(settingsRow.assistantAgent));
 	return {
 		today: new Date().toISOString().slice(0, 10),
-		topics,
-		people,
-		threads: threadsPage.items.map(mapThread),
-		items: itemsPage.items.map(mapItem),
-		reviews: [
-			...openReviewRows,
-			...acceptedReviews.items,
-			...dismissedReviews.items,
-		].map((row) => mapReview(row, topics)),
-		accounts: accountsPage.items as unknown as Account[],
+		topics: [],
+		people: [],
+		threads: [],
+		items: [],
+		reviews: [],
+		accounts: [],
 		profile,
 		liveProfile: profile,
 		settings,
-		rules: rulesPage.items.map(
-			(row) => ({ ...row, isSample: false }) as unknown as Rule,
-		),
+		rules: [],
 		sources: mapSources(settings),
-		workspaces: mapWorkspaces(workspacesPage),
-		memories: mapListedMemories(activeMemoryRows, suggestedMemoryRows),
-		openThreadIds: roomsPage.items.map((room) => str(room.threadId)),
+		workspaces: {},
+		memories: [],
+		openThreadIds: [],
 		sequence: 1,
 	};
+}
+
+/** Follow server totals; only complete, stable collections can reconcile deleted rows. */
+export async function readResourceRows(
+	actions: InsightActions,
+	scope: ResourceScope,
+	isCancelled: () => boolean = () => false,
+): Promise<ResourceRows> {
+	const topicId = scope.startsWith("topic-context:")
+		? scope.slice("topic-context:".length)
+		: undefined;
+	const read = async (
+		reactor: string,
+		args: Record<string, unknown> = {},
+	) => {
+		const statement = (offset: number) =>
+			pixel(reactor, { ...args, limit: 100, offset });
+		const [first] = await runBatch(actions, [statement(0)]);
+		return readCompleteRows(
+			actions,
+			first,
+			statement,
+			reactor,
+			isCancelled,
+		);
+	};
+	if (scope === "directory")
+		return { topics: (await read("BrainListTopics")).map(mapTopic) };
+	if (scope === "items")
+		return {
+			items: (
+				await read("WorkListItems", { view: "all", sort: "priority" })
+			).map(mapItem),
+		};
+	if (scope === "threads")
+		return {
+			threads: (await read("BrainListThreads", { detail: true })).map(
+				mapThread,
+			),
+		};
+	if (scope === "people")
+		return { people: (await read("BrainListPeople")).map(mapPerson) };
+	if (scope === "memories")
+		return {
+			memories: (
+				await read("BrainListMemories", {
+					state: ["active", "suggested"],
+				})
+			).map(mapMemory),
+		};
+	if (scope === "reviews")
+		return {
+			reviews: (await read("BrainListReview", { status: "open" })).map(
+				(row) => mapReview(row, []),
+			),
+		};
+	if (scope === "accounts")
+		return {
+			accounts: (await read("BrainListAccounts")) as unknown as Account[],
+		};
+	if (scope === "rules")
+		return {
+			rules: (await read("BrainListRules")).map(
+				(row) => ({ ...row, isSample: false }) as unknown as Rule,
+			),
+		};
+	if (topicId) {
+		const [people, memories, threads] = await Promise.all([
+			read("BrainListPeople", { topicId }),
+			read("BrainListMemories", {
+				refType: "topic",
+				refId: topicId,
+				state: ["active", "suggested"],
+			}),
+			read("BrainListThreads", { topicId, detail: true }),
+		]);
+		return {
+			people: people.map(mapPerson),
+			memories: memories.map(mapMemory),
+			threads: threads.map(mapThread),
+		};
+	}
+	throw new Error("Unknown collaboration resource.");
 }
 
 // a due day is saved as midnight UTC; as a plain date it shows on that day in every time zone
@@ -635,20 +580,6 @@ function mapStep(step: Row): WorkspaceStep {
 		linkTopicId: opt(step.linkTopicId),
 		...(step.origin === "brain" ? { isGenerated: true } : {}),
 	};
-}
-
-// saved goal and steps; messages load when the thread opens, and a thread's facts are memories
-function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
-	return Object.fromEntries(
-		page.items.map((row) => [
-			str(row.threadId),
-			{
-				...createEmptyWorkspace(),
-				goal: str(row.goal),
-				steps: list<Row>(row.steps).map(mapStep),
-			},
-		]),
-	);
 }
 
 const attachmentSchema = z.object({
@@ -844,117 +775,6 @@ export interface PendingReviewCoverage {
 	suggestedMemories: number;
 }
 
-/** One atomic refresh; optional context fields preserve compatibility with isolated callers. */
-export interface WorkUpdates
-	extends Pick<
-		CollaborationState,
-		"threads" | "workspaces" | "items" | "memories"
-	> {
-	reviews?: ReviewEntry[];
-	topics?: Topic[];
-	people?: Person[];
-	pendingCoverage?: PendingReviewCoverage;
-	lastMailCheck: MailCheck | null;
-}
-
-/** Refresh task metadata and complete pending collections without replacing mounted editors. */
-export async function readWorkUpdates(
-	actions: InsightActions,
-): Promise<WorkUpdates> {
-	const outputs = await runBatch(actions, [
-		pixel("BrainListThreads", { limit: 5000, detail: true }),
-		pixel("WorkListWorkspaces"),
-		pixel("WorkListItems", { view: "all", limit: 5000 }),
-		pixel("BrainGetJob", { kind: "sync" }),
-		memoryStatement("active", 0),
-		memoryStatement("suggested", 0),
-		reviewStatement(0),
-		peopleStatement(0),
-	]);
-	const schema = z.object({
-		items: z.array(z.record(z.string(), z.unknown())),
-		total: z.number().optional().default(0),
-	});
-	const [threads, workspaces, items] = outputs
-		.slice(0, 3)
-		.map((output) => schema.parse(output));
-	const [activeRows, suggestedRows, reviewRows, peopleRows] =
-		await Promise.all([
-			readCompleteRows(
-				actions,
-				outputs[4],
-				(offset) => memoryStatement("active", offset),
-				"Active memories",
-			),
-			readCompleteRows(
-				actions,
-				outputs[5],
-				(offset) => memoryStatement("suggested", offset),
-				"Suggested memories",
-			),
-			readCompleteRows(
-				actions,
-				outputs[6],
-				reviewStatement,
-				"Review suggestions",
-			),
-			readCompleteRows(actions, outputs[7], peopleStatement, "People"),
-		]);
-	const memories = mapListedMemories(activeRows, suggestedRows);
-	const topicIds = new Set<string>();
-	for (const row of reviewRows) {
-		const data = (row.data ?? {}) as Row;
-		for (const id of [
-			data.candidate,
-			data.suggestedTopic,
-			...list(data.candidates),
-		])
-			if (typeof id === "string" && id) topicIds.add(id);
-	}
-	for (const thread of threads.items)
-		for (const link of list<Row>(thread.topicLinks))
-			if (str(link.topicId)) topicIds.add(str(link.topicId));
-	for (const memory of memories)
-		for (const ref of memory.about)
-			if (ref.type === "topic") topicIds.add(ref.id);
-	for (const item of items.items) {
-		if (str(item.linkTopicId)) topicIds.add(str(item.linkTopicId));
-		for (const topicId of list(item.topicIds))
-			if (typeof topicId === "string" && topicId) topicIds.add(topicId);
-	}
-	const topics: Topic[] = [];
-	const ids = [...topicIds];
-	const topicSchema = z.object({ id: z.string().min(1) }).passthrough();
-	// Keep detail batches bounded when many threads refer to different topics.
-	for (let offset = 0; offset < ids.length; offset += 50) {
-		const batch = ids.slice(offset, offset + 50);
-		const rows = await runBatch(
-			actions,
-			batch.map((topicId) => pixel("BrainGetTopic", { topicId })),
-		);
-		rows.forEach((raw, index) => {
-			const row = topicSchema.parse(raw);
-			if (row.id !== batch[index])
-				throw new Error("Received context for a different topic.");
-			topics.push(mapTopic(row));
-		});
-	}
-	return {
-		threads: threads.items.map(mapThread),
-		workspaces: mapWorkspaces(workspaces),
-		items: items.items.map(mapItem),
-		memories,
-		reviews: reviewRows.map((row) => mapReview(row, topics)),
-		topics,
-		people: peopleRows.map(mapPerson),
-		pendingCoverage: {
-			reviews: reviewRows.length,
-			suggestedMemories: suggestedRows.length,
-		},
-		lastMailCheck: mapMailCheck(outputs[3]),
-	};
-}
-
 /** What the thread's assistant gets from memory: BrainRecallMemories. */
 export interface ThreadRecall {
 	enabled: boolean;
@@ -987,18 +807,6 @@ export interface MailCheck {
 	/** When it finished, or started while still running. */
 	at: string;
 	error: string;
-}
-
-function mapMailCheck(output: unknown): MailCheck | null {
-	const job = (output ?? {}) as Row;
-	const status = opt(job.status);
-	if (status !== "running" && status !== "done" && status !== "failed")
-		return null;
-	return {
-		status,
-		at: str(job.finishedAt) || str(job.startedAt),
-		error: str(job.error),
-	};
 }
 
 export type SyncOutcome = "new" | "updated" | "cleared" | "automated" | "quiet";

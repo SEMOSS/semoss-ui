@@ -92,7 +92,7 @@ export function TopicDetail() {
 							</Button>
 							<TopicActions
 								topic={topic}
-								threadCount={threads.length}
+								threadCount={topic.stats.threads}
 							/>
 						</>
 					}
@@ -102,7 +102,7 @@ export function TopicDetail() {
 							{state.accounts.find(
 								(account) => account.id === topic.accountId,
 							)?.name || "No account"}{" "}
-							· {topic.kind} · {threads.length} threads ·{" "}
+							· {topic.kind} · {topic.stats.threads} threads ·{" "}
 							{members.length} people
 						</Small>
 						<TopicChip topic={topic} />

@@ -3,6 +3,7 @@ import {
 	useCallback,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import { useInsight } from "@semoss/sdk/react";
@@ -21,25 +22,37 @@ export function CollaborationDataProvider({
 }: {
 	children: ReactNode;
 }) {
-	return <LiveSessionProvider>{children}</LiveSessionProvider>;
+	const { insightId } = useInsight();
+	return (
+		<LiveSessionProvider key={insightId}>{children}</LiveSessionProvider>
+	);
 }
 
 function LiveSessionProvider({ children }: { children: ReactNode }) {
 	const { actions } = useInsight();
 	const [state, setState] = useState<CollaborationState | null>(null);
+	const request = useRef(0);
 	const [error, setError] = useState<string | null>(null);
 	const load = useCallback(() => {
+		const token = ++request.current;
+		setState(null);
 		setError(null);
-		loadLiveState(actions)
-			.then(setState)
-			.catch((cause: unknown) =>
-				setError(
-					cause instanceof Error ? cause.message : String(cause),
-				),
-			);
+		loadLiveState(actions, () => token === request.current)
+			.then((value) => {
+				if (token === request.current) setState(value);
+			})
+			.catch((cause: unknown) => {
+				if (token === request.current)
+					setError(
+						cause instanceof Error ? cause.message : String(cause),
+					);
+			});
 	}, [actions]);
 	useEffect(() => {
 		load();
+		return () => {
+			request.current++;
+		};
 	}, [load]);
 	// the page and the server can disagree after a failed save, so offer a reload
 	const sync = useMemo(

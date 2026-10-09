@@ -8,7 +8,7 @@ import { WorkThreadPage } from "./work-thread.page";
 const mocks = vi.hoisted(() => ({
 	createAttempt: vi.fn(),
 	actions: {},
-	state: {},
+	state: { items: [], threads: [] },
 }));
 vi.mock("@semoss/sdk/react", () => ({
 	useInsight: () => ({ insightId: "owner-insight", actions: mocks.actions }),

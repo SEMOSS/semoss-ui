@@ -407,8 +407,40 @@ export interface CollaborationState {
 	sequence: number;
 }
 
+export type ResourceScope =
+	| "directory"
+	| "items"
+	| "threads"
+	| "people"
+	| "memories"
+	| "reviews"
+	| "accounts"
+	| "rules"
+	| `topic:${string}`
+	| `topic-work:${string}`
+	| `topic-context:${string}`;
+export type ResourceRows = Partial<
+	Pick<
+		CollaborationState,
+		| "topics"
+		| "items"
+		| "threads"
+		| "people"
+		| "memories"
+		| "reviews"
+		| "accounts"
+		| "rules"
+	>
+>;
+
 /** Commands contain UI intent and updates received from the backend. */
 export type CollaborationCommand =
+	| {
+			type: "resource.received";
+			scope: ResourceScope;
+			rows: ResourceRows;
+			baseline: ResourceRows;
+	  }
 	| { type: "topic.received"; topic: Topic }
 	| { type: "topic.goal.received"; topicId: string; goal: TopicGoal }
 	| { type: "item.received"; item: WorkItem }

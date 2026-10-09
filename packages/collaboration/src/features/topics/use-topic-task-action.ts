@@ -67,6 +67,17 @@ export function useTopicTaskAction(item: WorkItem | null): TopicTaskAction {
 							: null,
 					},
 				});
+				for (const id of new Set([
+					...item.topicIds,
+					...saved.topicIds.map(localId),
+					item.linkTopicId,
+					saved.linkTopicId ? localId(saved.linkTopicId) : null,
+				])) {
+					if (!id) continue;
+					const scope = `topic:${id}` as const;
+					if (updates?.resources?.[scope])
+						void updates.loadResource?.(scope, true);
+				}
 			}
 			return true;
 		} catch (cause: unknown) {

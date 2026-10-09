@@ -55,6 +55,7 @@ export function useJob(
 	const request = useRef(0);
 	const trackedId = useRef(jobId);
 	const active = useRef(false);
+	const failures = useRef(0);
 	const scope = useRef<JobScope>({ actions, kind, jobId, mode });
 	scope.current = { actions, kind, jobId, mode };
 
@@ -87,6 +88,7 @@ export function useJob(
 					"The background job does not match this setup step.",
 				);
 			}
+			failures.current = 0;
 			// Once found, follow this job even if a newer unrelated job starts.
 			if (next.id) trackedId.current = next.id;
 			setState({
@@ -114,9 +116,10 @@ export function useJob(
 				error: cause instanceof Error ? cause.message : String(cause),
 				isLoading: false,
 			}));
-			timer.current = setTimeout(() => {
-				void poll();
-			}, POLL_MS * 2);
+			if (trackedId.current && ++failures.current <= 2)
+				timer.current = setTimeout(() => {
+					void poll();
+				}, POLL_MS * 2);
 		}
 	}, [actions, kind, jobId, mode]);
 

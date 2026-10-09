@@ -11,7 +11,7 @@ export function TopicChip({
 	onRemove,
 	removeLabel,
 }: {
-	topic: Topic;
+	topic: Pick<Topic, "id" | "short" | "name">;
 	suggested?: boolean;
 	onRemove?: () => void;
 	removeLabel?: string;
@@ -50,7 +50,7 @@ export function TopicChip({
 				type="button"
 				aria-label={removeLabel ?? `Remove ${topic.short}`}
 				onClick={onRemove}
-				className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 			>
 				<X className="size-3" aria-hidden="true" />
 			</button>

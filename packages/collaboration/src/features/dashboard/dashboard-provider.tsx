@@ -9,6 +9,7 @@ import { useLocation, useNavigate } from "react-router";
 import { Env, useInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { AttentionProvider } from "@/features/attention/attention-provider";
+import { useCollaborationResource } from "@/features/collaboration/live/work-updates.context";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
 	listCalendarEvents,
@@ -22,6 +23,7 @@ import { dashboardStorageKey } from "./dashboard-layout";
 import { RoomSourceAssociationsProvider } from "./room-source-associations-provider";
 import { useChatHistory } from "./use-chat-history";
 import { useDashboardLayout } from "./use-dashboard-layout";
+import { useTopicSessionEvents } from "./use-topic-sessions";
 import { useVisibleResource } from "./use-visible-resource";
 
 /** Account-keyed shell data; opening the palette reuses the dashboard's source snapshots. */
@@ -33,8 +35,16 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 	const account = state.profile.email || state.profile.id;
 	const deployment = `${window.location.origin}${Env.MODULE}${window.location.pathname}`;
 	const layout = useDashboardLayout(dashboardStorageKey(account, deployment));
-	const history = useChatHistory();
 	const [isSearchOpen, setSearchOpen] = useState(false);
+	const history = useChatHistory(isSearchOpen);
+	useTopicSessionEvents();
+	useCollaborationResource("threads", isSearchOpen);
+	useCollaborationResource("people", isSearchOpen);
+	useCollaborationResource(
+		"items",
+		isSearchOpen || location.pathname === "/",
+	);
+
 	const [source, selectSource] = useState<SourceSelection | null>(null);
 	const searchReturnFocus = useRef<HTMLElement | null>(null);
 	const sourceReturnFocus = useRef<HTMLElement | null>(null);
@@ -58,10 +68,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 			opening.current++;
 		};
 	}, [location.key]);
-	const isActive =
-		location.pathname === "/" ||
-		location.pathname.startsWith("/thread/") ||
-		isSearchOpen;
+	const isActive = location.pathname === "/" || isSearchOpen;
 	const loadCalendar = useCallback(
 		async () => (await listCalendarEvents(actions)).events,
 		[actions],
@@ -133,6 +140,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 					)}
 				>
 					<AttentionProvider
+						enabled={location.pathname === "/for-you"}
 						account={account}
 						deployment={deployment}
 						refreshRevision={refreshRevision}

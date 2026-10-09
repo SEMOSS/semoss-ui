@@ -7,6 +7,7 @@ import {
 } from "react";
 import { isRecord } from "@semoss/utility/object";
 import { ROOM_HISTORY_CHANGED } from "@/features/rooms/api/list-rooms";
+import { listRoomTopics } from "@/features/rooms/api/room-topics";
 import type { InsightActions } from "@/lib/pixel";
 import { RoomReadContext } from "./room-read.context";
 import { RoomTreeContext } from "./room-tree.context";
@@ -55,6 +56,38 @@ export function RoomTreeProvider({
 			if (event instanceof CustomEvent) {
 				const detail: unknown = event.detail;
 				if (
+					!isRecord(detail) ||
+					(detail.scope !== undefined &&
+						detail.scope !== activityScope) ||
+					(detail.actions !== undefined &&
+						detail.actions !== actionsRef.current)
+				)
+					return;
+				if (typeof detail.roomId === "string") {
+					store.recordRoom({
+						roomId: detail.roomId,
+						...(typeof detail.roomName === "string"
+							? { roomName: detail.roomName }
+							: {}),
+						...(typeof detail.dateUpdated === "string"
+							? { dateUpdated: detail.dateUpdated }
+							: {}),
+						...(typeof detail.deleted === "boolean"
+							? { deleted: detail.deleted }
+							: {}),
+						...(typeof detail.pinned === "boolean"
+							? { pinned: detail.pinned }
+							: {}),
+					});
+					if (detail.pinned === true)
+						void listRoomTopics(actionsRef.current, detail.roomId)
+							.then((topics) => {
+								if (typeof detail.roomId === "string")
+									store.recordTopics(detail.roomId, topics);
+							})
+							.catch(() => undefined);
+				}
+				if (
 					isRecord(detail) &&
 					detail.scope === activityScope &&
 					typeof detail.roomId === "string" &&
@@ -75,20 +108,29 @@ export function RoomTreeProvider({
 						store.recordActivity(roomId, savedAt);
 				}
 			}
-			store.refresh();
 		};
 		const handleStorage = (event: StorageEvent): void => {
 			if (event.key === readStorageKey) store.syncReadState();
 		};
 		window.addEventListener(ROOM_HISTORY_CHANGED, handleHistoryChanged);
-		window.addEventListener(ROOM_TREE_CHANGED, store.refresh);
+		const onTopics = (event: Event) => {
+			if (
+				event instanceof CustomEvent &&
+				event.detail?.roomId &&
+				(!event.detail.actions ||
+					event.detail.actions === actionsRef.current) &&
+				Array.isArray(event.detail.topics)
+			)
+				store.recordTopics(event.detail.roomId, event.detail.topics);
+		};
+		window.addEventListener(ROOM_TREE_CHANGED, onTopics);
 		window.addEventListener("storage", handleStorage);
 		return () => {
 			window.removeEventListener(
 				ROOM_HISTORY_CHANGED,
 				handleHistoryChanged,
 			);
-			window.removeEventListener(ROOM_TREE_CHANGED, store.refresh);
+			window.removeEventListener(ROOM_TREE_CHANGED, onTopics);
 			window.removeEventListener("storage", handleStorage);
 			release();
 		};

@@ -54,7 +54,7 @@ interface SourcesResult {
 	connect: () => Promise<void>;
 }
 
-/** Own source reads, visible mailbox refreshes, and stale-selection guards. */
+/** Own explicit source reads and stale-selection guards. */
 export function useSources(): SourcesResult {
 	const { actions } = useInsight();
 	const [mail, setMail] = useState<OutlookMail[]>([]);
@@ -79,17 +79,6 @@ export function useSources(): SourcesResult {
 		if (lastFilters.current && !pendingMail.current)
 			void loadMail(lastFilters.current);
 	};
-	useEffect(() => {
-		const refresh = () => {
-			if (document.visibilityState === "visible") refreshRef.current();
-		};
-		const timer = window.setInterval(refresh, 30_000);
-		window.addEventListener("focus", refresh);
-		return () => {
-			window.clearInterval(timer);
-			window.removeEventListener("focus", refresh);
-		};
-	}, []);
 	const generation = useRef<Record<SourceArea, number>>({
 		mail: 0,
 		teams: 0,

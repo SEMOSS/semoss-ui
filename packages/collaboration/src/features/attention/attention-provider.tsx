@@ -7,6 +7,7 @@ interface AttentionProviderProps {
 	account: string;
 	deployment: string;
 	refreshRevision: number;
+	enabled?: boolean;
 	children: ReactNode;
 }
 
@@ -16,8 +17,14 @@ export function AttentionProvider({
 	deployment,
 	refreshRevision,
 	children,
+	enabled = true,
 }: AttentionProviderProps) {
-	const value = useAttentionState(account, deployment, refreshRevision);
+	const value = useAttentionState(
+		account,
+		deployment,
+		refreshRevision,
+		enabled,
+	);
 	return (
 		<AttentionContext.Provider value={value}>
 			{children}

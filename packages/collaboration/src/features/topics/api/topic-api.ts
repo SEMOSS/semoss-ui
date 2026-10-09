@@ -1,11 +1,6 @@
 import { z } from "@semoss/ui/next";
-import {
-	mapItem,
-	mapThread,
-	mapTopic,
-} from "@/features/collaboration/live/live-state";
+import { mapItem, mapTopic } from "@/features/collaboration/live/live-state";
 import type {
-	Thread,
 	Topic,
 	WorkItem,
 } from "@/features/collaboration/state/collaboration.types";
@@ -81,29 +76,6 @@ export const workItemSchema = z.object({
 	closedAt: z.string().nullish(),
 });
 
-const threadSchema = z
-	.object({
-		id: z.string().min(1),
-		channel: z.enum(["email", "teams", "calendar", "room", "task"]),
-		subject: z.string().nullable(),
-		muted: z.boolean(),
-		messageCount: z.number().int().nonnegative(),
-		lastAt: z.string().nullable(),
-		roomId: z.string().nullable(),
-		topicLinks: z.array(
-			z.object({
-				topicId: z.string().min(1),
-				source: z.string(),
-				confidence: z.number().nullable(),
-				primary: z.boolean(),
-			}),
-		),
-		participants: z.array(
-			z.object({ personId: z.string().min(1) }).passthrough(),
-		),
-	})
-	.passthrough();
-
 const PAGE_SIZE = 100;
 const MAX_PAGES = 100;
 
@@ -136,7 +108,7 @@ export async function readTopic(
 ): Promise<Topic> {
 	const row = await callPixel(
 		actions,
-		pixel("BrainGetTopic", { topicId }),
+		pixel("BrainListTopics", { topicId }),
 		topicDetailSchema,
 	);
 	if (row.id !== topicId)
@@ -180,36 +152,6 @@ export async function readTopicItems(
 	return rows.map(mapItem);
 }
 
-/** Read topic source metadata only; this never loads message bodies or starts a room. */
-export async function readTopicThreads(
-	actions: InsightActions,
-	topicId: string,
-	isCancelled: () => boolean,
-): Promise<Thread[]> {
-	const rows = await readPages(
-		actions,
-		(offset) =>
-			pixel("BrainListThreads", {
-				topicId,
-				detail: true,
-				limit: PAGE_SIZE,
-				offset,
-			}),
-		threadSchema,
-		() => undefined,
-		isCancelled,
-	);
-	if (
-		rows.some(
-			(thread) =>
-				!thread.topicLinks.some((link) => link.topicId === topicId),
-		)
-	)
-		throw new Error("Sources returned an unrelated topic. Try again.");
-	return rows.map(mapThread);
-}
-
-/** A repeated page, moving total, or bound is incomplete data, never a successful empty result. */
 async function readPages<Row extends { id: string }>(
 	actions: InsightActions,
 	statementAt: (offset: number) => string,

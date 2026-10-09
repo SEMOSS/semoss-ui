@@ -12,6 +12,7 @@ import type {
 } from "../state/collaboration.types";
 import type { CollaborationChange } from "../state/collaboration-session.context";
 import { runBatch } from "./live-state";
+import { COLLABORATION_SAVED } from "./work-updates.context";
 
 // Saves live-mode changes by diffing the state before and after each settled change, so any UI built on
 // the existing commands is saved without knowing which button caused it.
@@ -29,6 +30,8 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"snooze.expire",
 	"memory.server",
 	"topic.received",
+	"resource.received",
+	"thread.goal",
 	"topic.goal.received",
 	"item.received",
 	"topic.work.received",
@@ -102,6 +105,15 @@ export function createLiveSync(
 				}
 				// statements built before the creates ran still hold local ids
 				await runBatch(actions, plan.statements.map(withServerIds));
+				window.dispatchEvent(
+					new CustomEvent(COLLABORATION_SAVED, {
+						detail: {
+							actions,
+							commands: change.commands,
+							previous: change.previous,
+						},
+					}),
+				);
 				if (plan.affectsRoomTree)
 					window.dispatchEvent(new Event(ROOM_TREE_CHANGED));
 			})
@@ -127,6 +139,7 @@ function planChange(
 	// simultaneous owner edit is the only difference that is written back.
 	const prev = change.commands.reduce(
 		(previous, command) =>
+			command.type === "resource.received" ||
 			command.type === "topic.received" ||
 			command.type === "topic.goal.received" ||
 			command.type === "item.received" ||
@@ -401,11 +414,6 @@ function planThreads(
 					topicId: id(link.topicId),
 					primary: link.primary,
 				}),
-			);
-		const goal = next.workspaces[thread.id]?.goal ?? "";
-		if (goal !== (prev.workspaces[thread.id]?.goal ?? ""))
-			plan.statements.push(
-				pixel("WorkSetThreadGoal", { threadId: thread.id, goal }),
 			);
 	}
 }

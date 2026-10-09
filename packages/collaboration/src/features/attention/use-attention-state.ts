@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
+import {
+	useCollaborationResource,
+	useWorkUpdates,
+} from "@/features/collaboration/live/work-updates.context";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { useRoomSourceAssociations } from "@/features/dashboard/room-source-associations.context";
 import { useAgentAttention } from "@/features/dashboard/use-agent-attention";
@@ -13,10 +16,14 @@ export function useAttentionState(
 	account: string,
 	deployment: string,
 	refreshRevision: number,
+	enabled = true,
 ): AttentionState {
 	const { state } = useCollaborationSession();
 	const updates = useWorkUpdates();
-	const agentAttention = useAgentAttention(true, refreshRevision);
+	const itemsResource = useCollaborationResource("items", enabled);
+	const reviewsResource = useCollaborationResource("reviews", enabled);
+	const memoriesResource = useCollaborationResource("memories", enabled);
+	const agentAttention = useAgentAttention(enabled, refreshRevision);
 	const preferences = useAttentionPriorities(
 		attentionPriorityStorageKey(account, deployment),
 	);
@@ -49,11 +56,9 @@ export function useAttentionState(
 		[agentAttention.runs, agentAttention.delegations.data, state.memories],
 	);
 	useEffect(() => activation.retain(), [activation]);
-	useEffect(() => activation.inspect(roomIds), [activation, roomIds]);
-	const refreshWork = updates?.refresh;
 	useEffect(() => {
-		refreshWork?.();
-	}, [refreshWork]);
+		if (enabled) activation.inspect(roomIds);
+	}, [activation, roomIds, enabled]);
 	const items = buildAttentionItems(state, {
 		runs: agentAttention.runs,
 		delegations: agentAttention.delegations.data ?? [],
@@ -67,7 +72,9 @@ export function useAttentionState(
 	const errors = [
 		...new Set(
 			[
-				updates?.error,
+				itemsResource.error,
+				reviewsResource.error,
+				memoriesResource.error,
 				...agentAttention.scan.errors,
 				agentAttention.delegations.error,
 				preferences.error,
@@ -87,11 +94,13 @@ export function useAttentionState(
 	];
 	const workComplete = !updates || Boolean(updates.pendingCoverage);
 	const isLoading = Boolean(
-		updates?.isRefreshing ||
+		itemsResource.isLoading ||
+			reviewsResource.isLoading ||
+			memoriesResource.isLoading ||
 			agentAttention.isLoading ||
 			agentAttention.delegations.isLoading ||
 			topicsLoading ||
-			(!workComplete && !updates?.error),
+			(enabled && !workComplete && !updates?.error),
 	);
 	return {
 		items,
@@ -105,7 +114,9 @@ export function useAttentionState(
 		errors,
 		agentAttention,
 		refresh: () => {
-			refreshWork?.();
+			itemsResource.refresh();
+			reviewsResource.refresh();
+			memoriesResource.refresh();
 			agentAttention.refresh();
 			activation.inspect(roomIds, true);
 		},

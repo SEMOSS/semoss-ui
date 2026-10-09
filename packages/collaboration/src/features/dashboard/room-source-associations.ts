@@ -3,9 +3,14 @@ import type { InsightActions } from "@/lib/pixel";
 
 /** Only source identities are retained; room settings and source envelopes are not. */
 type RoomSourceAssociation =
-	| { status: "loading"; threadId?: string | null }
-	| { status: "ready"; threadId: string | null }
-	| { status: "error"; error: string; threadId?: string | null };
+	| { status: "loading"; threadId?: string | null; topicIds?: string[] }
+	| { status: "ready"; threadId: string | null; topicIds?: string[] }
+	| {
+			status: "error";
+			error: string;
+			threadId?: string | null;
+			topicIds?: string[];
+	  };
 
 interface AssociationRead {
 	activation: symbol;
@@ -48,8 +53,7 @@ export function createRoomSourceAssociations(
 			let owners = 0;
 			let generation = 0;
 			const get = (roomId: string): RoomSourceAssociation | undefined => {
-				// Readers share the latest result. Each activation still rechecks on
-				// first inspect, but another mounted reader cannot strand this one loading.
+				// Readers share confirmed associations until an explicit retry.
 				return snapshot.get(roomId)?.value;
 			};
 			return {
@@ -68,8 +72,9 @@ export function createRoomSourceAssociations(
 					if (owners === 0) return;
 					const ids = roomIds.filter(
 						(id) =>
-							!requested.has(id) ||
-							(retry && get(id)?.status === "error"),
+							(!requested.has(id) &&
+								get(id)?.status !== "ready") ||
+							retry,
 					);
 					if (!ids.length) return;
 					for (const id of ids) requested.add(id);
@@ -81,6 +86,7 @@ export function createRoomSourceAssociations(
 								value: {
 									status: "loading",
 									threadId: snapshot.get(id)?.value.threadId,
+									topicIds: snapshot.get(id)?.value.topicIds,
 								},
 							},
 						]),
@@ -100,18 +106,22 @@ export function createRoomSourceAssociations(
 									.map(async (id) => {
 										let value: RoomSourceAssociation;
 										try {
-											const threadId =
+											const association =
 												await readRoomSourceAssociation(
 													getActions(),
 													id,
+													retry,
 												);
 											value = {
 												status: "ready",
-												threadId,
+												...association,
 											};
 										} catch (cause) {
 											value = {
 												status: "error",
+												topicIds:
+													snapshot.get(id)?.value
+														.topicIds,
 												threadId:
 													snapshot.get(id)?.value
 														.threadId,

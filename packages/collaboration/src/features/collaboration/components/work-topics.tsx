@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
 import { CreateTopicDialog } from "@/features/topics/create-topic-dialog";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
+import { useCollaborationResource } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { topicTone } from "../topic-tone";
 import { CollaborationPageHeader } from "./collaboration-page-header";
@@ -12,13 +13,12 @@ import { CollaborationSurface } from "./collaboration-surface";
 /** Work starts with the topics that give each action its purpose. */
 export function WorkTopics() {
 	const { state } = useCollaborationSession();
+	const directory = useCollaborationResource("directory");
 	const navigate = useNavigate();
 	const [isCreating, setIsCreating] = useState(false);
 	const createButtonRef = useRef<HTMLButtonElement>(null);
 	const topics = state.topics
-		.filter(
-			(topic) => topic.status === "active" || topic.status === "dormant",
-		)
+		.filter((topic) => topic.status !== "archived")
 		.sort(
 			(a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
 		);
@@ -50,7 +50,7 @@ export function WorkTopics() {
 						</>
 					}
 				>
-					<WorkRefreshStatus />
+					<WorkRefreshStatus directory />
 				</CollaborationPageHeader>
 			}
 		>
@@ -87,10 +87,11 @@ export function WorkTopics() {
 												</Badge>
 											)}
 										</div>
-										<P className="max-w-prose break-words text-muted-foreground text-sm leading-relaxed">
-											{topic.description ||
-												"No description yet."}
-										</P>
+										{topic.description && (
+											<P className="max-w-prose break-words text-muted-foreground text-sm leading-relaxed">
+												{topic.description}
+											</P>
+										)}
 									</div>
 									<div className="flex shrink-0 items-center gap-4 text-muted-foreground text-sm tabular-nums">
 										<ArrowRight
@@ -105,9 +106,17 @@ export function WorkTopics() {
 				</ul>
 			) : (
 				<div className="space-y-2 p-6">
-					<P>No topics yet.</P>
+					<P>
+						{directory.isLoading
+							? "Loading topics…"
+							: directory.error
+								? "Topics could not be loaded."
+								: "No topics yet."}
+					</P>
 					<P className="text-muted-foreground text-sm">
-						Create a topic to organize your tasks and context.
+						{directory.complete
+							? "Create a topic to organize your tasks and context."
+							: "Use Refresh to check your saved topics."}
 					</P>
 				</div>
 			)}

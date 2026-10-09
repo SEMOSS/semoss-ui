@@ -6,7 +6,7 @@ import {
 	RefreshCw,
 } from "lucide-react";
 import { useId, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
 	Alert,
 	AlertDescription,
@@ -31,6 +31,7 @@ import { CollaborationPage } from "@/features/collaboration/components/collabora
 import { TopicActions } from "@/features/collaboration/components/topic-actions";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { TopicSessions } from "@/features/dashboard/topic-sessions";
+import { newRoomPath } from "@/lib/workspace-paths";
 import { TopicActivity } from "./topic-activity";
 import { TopicContext } from "./topic-context";
 import { TopicGoals } from "./topic-goals";
@@ -44,9 +45,10 @@ const tabStyle =
 /** A topic's goals, real work, context, and verified rooms in one landing page. */
 export function TopicWorkspace({ topicId }: { topicId: string }) {
 	const { state } = useCollaborationSession();
-	const work = useTopicWork(topicId);
-	const attention = useAttention();
+	const navigate = useNavigate();
 	const [tab, setTab] = useState("overview");
+	const work = useTopicWork(topicId, tab);
+	const attention = useAttention();
 	const unavailableId = useId();
 	const contextTriggerRef = useRef<HTMLButtonElement>(null);
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
@@ -62,12 +64,8 @@ export function TopicWorkspace({ topicId }: { topicId: string }) {
 		],
 		{ topicId },
 	);
-	const threads = state.threads.filter((thread) =>
-		thread.topicLinks.some((link) => link.topicId === topicId),
-	);
 	const refresh = (): void => {
 		work.refresh();
-		attention.refresh();
 	};
 	if (!topic) {
 		return (
@@ -143,10 +141,18 @@ export function TopicWorkspace({ topicId }: { topicId: string }) {
 						</Button>
 						<TopicActions
 							topic={topic}
-							threadCount={threads.length}
+							threadCount={topic.stats.threads}
 						/>
 						<Button
-							disabled
+							disabled={
+								topic.status === "suggested" ||
+								topic.status === "archived"
+							}
+							onClick={() =>
+								void navigate(
+									newRoomPath(undefined, undefined, topic.id),
+								)
+							}
 							aria-describedby={`${unavailableId}-chat`}
 						>
 							<Plus aria-hidden="true" />
@@ -157,11 +163,19 @@ export function TopicWorkspace({ topicId }: { topicId: string }) {
 						id={`${unavailableId}-chat`}
 						className="text-muted-foreground text-sm sm:text-right"
 					>
-						Topic chats aren’t available yet.
+						{topic.status === "suggested"
+							? "Accept this topic before starting a chat."
+							: topic.status === "archived"
+								? "Restore this topic before starting a chat."
+								: "Start a chat with this topic’s saved context."}
 					</P>
 				</div>
 			</header>
-			<TopicGoals topic={topic} />
+			{work.hasDetails ? (
+				<TopicGoals topic={topic} />
+			) : work.isDetailLoading ? (
+				<output>Loading topic details…</output>
+			) : null}
 			{work.error && (
 				<Alert variant="destructive" className="mb-4">
 					<AlertDescription className="flex flex-wrap items-center justify-between gap-3">
@@ -370,27 +384,40 @@ export function TopicWorkspace({ topicId }: { topicId: string }) {
 					</div>
 				</TabsContent>
 				<TabsContent value="context" className="mt-0">
-					<TopicContext topic={topic} />
+					<TopicContext
+						topic={topic}
+						isComplete={work.isComplete}
+						isLoading={work.isLoading}
+					/>
 				</TabsContent>
 				<TabsContent value="rooms" className="mt-0">
 					<TopicSessions topicId={topic.id} />
 					<P className="pb-6 text-muted-foreground text-sm">
-						These rooms are linked through source threads. Attaching
-						a chat directly to this topic isn’t available yet.
+						Rooms keep the topic links you and Brain have saved.
 					</P>
 				</TabsContent>
 				<TabsContent value="chat" className="mt-0">
 					<section className="max-w-prose space-y-4 py-8">
 						<H2 className="font-medium text-xl">
-							Topic chat is not available yet.
+							Chat about {topic.name}
 						</H2>
 						<P className="text-base text-muted-foreground">
-							Chats can’t be attached directly to a topic yet. You
-							can open an existing conversation from Rooms or
-							start an ordinary chat from Home.
+							Start a conversation using this topic’s saved
+							context, or open a linked conversation from Rooms.
 						</P>
-						<Button asChild variant="outline">
-							<Link to="/">Go to Home</Link>
+						<Button
+							variant="outline"
+							disabled={
+								topic.status === "suggested" ||
+								topic.status === "archived"
+							}
+							onClick={() =>
+								void navigate(
+									newRoomPath(undefined, undefined, topic.id),
+								)
+							}
+						>
+							New topic chat
 						</Button>
 					</section>
 				</TabsContent>

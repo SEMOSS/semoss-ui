@@ -1,20 +1,17 @@
-import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
-import { roomSourceSchema } from "../source-import/room-source";
-import { roomOptionsEnvelopeSchema } from "./room-schemas";
+import type { InsightActions } from "@/lib/pixel";
+import { readRoomTopicAssociations } from "./room-topics";
 
-/** Read a saved source association without opening the room or its messages. */
+/** Direct topic membership never depends on a source thread. */
 export async function readRoomSourceAssociation(
 	actions: InsightActions,
 	roomId: string,
-): Promise<string | null> {
-	const { OPTIONS: options } = await callPixel(
-		actions,
-		pixel("GetRoomOptions", { roomId }),
-		roomOptionsEnvelopeSchema,
-	);
-	if (options.source === undefined) return null;
-	const source = roomSourceSchema.safeParse(options.source);
-	if (!source.success)
-		throw new Error("This session's source link could not be read.");
-	return source.data.threadId;
+	refresh = false,
+): Promise<{ threadId: string | null; topicIds: string[] }> {
+	const result = await readRoomTopicAssociations(actions, roomId, refresh);
+	return {
+		threadId: result.threadId ?? null,
+		topicIds: result.topics
+			.filter((topic) => topic.state === "linked")
+			.map((topic) => topic.topicId),
+	};
 }

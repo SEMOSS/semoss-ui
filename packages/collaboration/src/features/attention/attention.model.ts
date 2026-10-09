@@ -53,6 +53,7 @@ export type AttentionItem = AttentionBase &
 export interface AttentionRoomAssociation {
 	status: "ready" | "loading" | "error";
 	threadId?: string | null;
+	topicIds?: string[];
 }
 
 interface AttentionSources {
@@ -111,29 +112,9 @@ export function buildAttentionItems(
 	const roomTopics = (roomId?: string | null): TopicAssociation => {
 		if (!roomId) return { topicIds: [], topicStatus: "ready" };
 		const association = roomSource(roomId);
-		const linked = association?.threadId
-			? threadTopics(association.threadId)
-			: {
-					topicIds:
-						association?.threadId === null
-							? state.threads
-									.filter(
-										(thread) => thread.roomId === roomId,
-									)
-									.flatMap((thread) =>
-										thread.topicLinks.map(
-											(link) => link.topicId,
-										),
-									)
-							: [],
-					topicStatus: "ready" as const,
-				};
 		return {
-			topicIds: [...new Set(linked.topicIds)],
-			topicStatus:
-				association?.status === "ready"
-					? linked.topicStatus
-					: (association?.status ?? "loading"),
+			topicIds: [...new Set(association?.topicIds ?? [])],
+			topicStatus: association?.status ?? "loading",
 		};
 	};
 	const items: AttentionItem[] = selectWorkItems(state, {

@@ -44,6 +44,7 @@ const mocks = vi.hoisted(() => ({
 	create: vi.fn<() => Promise<string>>(),
 	send: vi.fn<(submission: ComposerSubmission) => Promise<void>>(),
 	createSession: vi.fn(),
+	link: vi.fn(),
 }));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
@@ -52,6 +53,9 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 vi.mock("@semoss/shared", async (original) => ({
 	...(await original<typeof import("@semoss/shared")>()),
 	EngineSelect: ({ name }: { name: string }) => <span>{name}</span>,
+}));
+vi.mock("@/features/rooms/api/room-topics", () => ({
+	linkRoomTopic: mocks.link,
 }));
 vi.mock("@/features/rooms/room-session", () => ({
 	createRoomSession: () => mocks.createSession(),
@@ -322,6 +326,7 @@ beforeEach(() => {
 	mocks.scope = crypto.randomUUID();
 	mocks.create.mockResolvedValue("actual-room");
 	mocks.send.mockResolvedValue(undefined);
+	mocks.link.mockReset().mockResolvedValue([]);
 	sessions = [];
 	mocks.createSession.mockImplementation(() => {
 		const session = roomSessionFixture();
@@ -803,4 +808,52 @@ it("shows Files errors next to the composer and supports retry", async () => {
 	expect(mocks.create).toHaveBeenCalledTimes(2);
 	expect(mocks.send).not.toHaveBeenCalled();
 	expect(router.state.location.pathname).toBe("/");
+});
+
+it("links a topic before sending and retries a failed link with the same room and draft", async () => {
+	mocks.link.mockRejectedValueOnce(new Error("Topic could not be linked"));
+	const router = setup(undefined, "?topicId=topic-one");
+	await enterText("Review this topic");
+	submit();
+	await waitFor(() => expect(mocks.link).toHaveBeenCalledOnce());
+	expect(mocks.send).not.toHaveBeenCalled();
+	expect(router.state.location.pathname).toBe("/");
+	expect(screen.getByRole("textbox")).toHaveTextContent("Review this topic");
+	submit();
+	submit();
+	await waitFor(() =>
+		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
+	);
+	expect(mocks.create).toHaveBeenCalledOnce();
+	expect(mocks.link).toHaveBeenLastCalledWith(
+		expect.anything(),
+		"actual-room",
+		"topic-one",
+	);
+	expect(mocks.link).toHaveBeenCalledTimes(2);
+	expect(mocks.send).toHaveBeenCalledExactlyOnceWith({
+		text: "Review this topic",
+		files: [],
+	});
+});
+
+it("retries a failed topic submission without allocating or linking again", async () => {
+	mocks.send.mockRejectedValueOnce(new Error("Send failed"));
+	const router = setup(undefined, "?topicId=topic-one");
+	await enterText("Keep this topic draft");
+	submit();
+	await waitFor(() =>
+		expect(sessions[0].getSnapshot().submissionError).toBe("Send failed"),
+	);
+	expect(router.state.location.pathname).toBe("/");
+	expect(screen.getByRole("textbox")).toHaveTextContent(
+		"Keep this topic draft",
+	);
+	submit();
+	await waitFor(() =>
+		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
+	);
+	expect(mocks.create).toHaveBeenCalledOnce();
+	expect(mocks.link).toHaveBeenCalledOnce();
+	expect(mocks.send).toHaveBeenCalledTimes(2);
 });

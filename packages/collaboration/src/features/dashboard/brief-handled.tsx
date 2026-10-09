@@ -1,6 +1,7 @@
 import { CircleCheck } from "lucide-react";
 import { Link } from "react-router";
 import { Button, P } from "@semoss/ui/next";
+import { useCollaborationResource } from "@/features/collaboration/live/work-updates.context";
 import { selectWorkItems } from "@/features/collaboration/state/collaboration.selectors";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { roomPath, threadPath } from "@/lib/workspace-paths";
@@ -8,6 +9,9 @@ import { BriefPanel } from "./brief-panel";
 
 /** A compact history with explicit reopen, rather than a global undo of unrelated work. */
 export function BriefHandled({ topicId }: { topicId?: string }) {
+	const resource = useCollaborationResource(
+		topicId ? `topic-work:${topicId}` : "items",
+	);
 	const { state, dispatch } = useCollaborationSession();
 	const items = selectWorkItems(state, {
 		view: "done_today",
@@ -18,7 +22,14 @@ export function BriefHandled({ topicId }: { topicId?: string }) {
 		),
 	);
 	return (
-		<BriefPanel title="Handled" detail={`${items.length} completed`}>
+		<BriefPanel
+			title="Handled"
+			detail={
+				resource.complete && !resource.error
+					? `${items.length} completed`
+					: ""
+			}
+		>
 			{items.length ? (
 				<ul className="divide-y">
 					{items.slice(0, 4).map((item) => (
@@ -77,8 +88,15 @@ export function BriefHandled({ topicId }: { topicId?: string }) {
 				</ul>
 			) : (
 				<P className="py-4 text-muted-foreground text-sm">
-					Completed work will appear here.
+					{resource.isLoading
+						? "Loading completed work…"
+						: resource.error || "Completed work will appear here."}
 				</P>
+			)}
+			{resource.error && (
+				<Button variant="ghost" onClick={resource.refresh}>
+					Retry completed work
+				</Button>
 			)}
 			{items.length > 0 && (
 				<Link

@@ -55,10 +55,11 @@ export function TopicReviewForm({
 			initialReview.draft.topics[0]?.key ??
 			null,
 	);
-	const [focusRequest, setFocusRequest] = useState<{
-		key: string;
-		field: "name" | "description" | "short" | "terms";
-	} | null>(null);
+	const [focusRequest, setFocusRequest] = useState<
+		| { key: string; field: "name" | "description" | "short" | "terms" }
+		| { elementId: string }
+		| null
+	>(null);
 	const controller = useTopicReviewDraft(actions, initialReview);
 	const changes = useTopicReviewChanges(actions, controller, form);
 	const organization = useTopicOrganization(
@@ -87,6 +88,7 @@ export function TopicReviewForm({
 		changes.isChanging ||
 		isOpeningEvidence ||
 		organization.isAsking ||
+		organization.isChatting ||
 		organization.isOpening;
 	const inspectedTopic = values.topics.find(
 		(topic) => topic.key === inspection?.key,
@@ -104,7 +106,9 @@ export function TopicReviewForm({
 	const combineTopic = availableTopics.find(
 		(topic) => topic.key === combineKey,
 	);
-	const error = errors.root?.server?.message || controller.error;
+	const error =
+		errors.root?.server?.message ||
+		(!changes.error ? controller.error : null);
 
 	useEffect(() => {
 		const subscription = form.watch(() => {
@@ -115,13 +119,19 @@ export function TopicReviewForm({
 
 	useEffect(() => {
 		if (!focusRequest) return;
+		if ("elementId" in focusRequest) {
+			if (isBusy || changes.error) return;
+			document.getElementById(focusRequest.elementId)?.focus();
+			setFocusRequest(null);
+			return;
+		}
 		const index = fields.findIndex(
 			(topic) => topic.key === focusRequest.key,
 		);
 		if (index < 0) return;
 		form.setFocus(`topics.${index}.${focusRequest.field}`);
 		setFocusRequest(null);
-	}, [fields, focusRequest, form]);
+	}, [fields, focusRequest, form, isBusy, changes.error]);
 
 	const handleSubmit = async (draft: TopicReviewDraft): Promise<void> => {
 		try {
@@ -229,10 +239,12 @@ export function TopicReviewForm({
 					overlapping suggestions.
 				</StepHeader>
 				<TopicOrganizationContext
+					organization={organization}
+					topics={values.topics}
+					canGroup={availableTopics.length > 0}
 					isBusy={
 						isBusy ||
 						!!changes.error ||
-						availableTopics.length === 0 ||
 						controller.review.profileConflicts.length > 0
 					}
 					isAsking={organization.isAsking}
@@ -329,57 +341,112 @@ export function TopicReviewForm({
 					{fields.map((field, index) => {
 						const topic = values.topics[index];
 						if (!topic || combinedKeys.has(topic.key)) return null;
+						const area = controller.review.draft.areas?.find(
+							(area) => area.topicKeys.includes(topic.key),
+						);
+						const firstVisibleKey = area?.topicKeys.find(
+							(key) => !combinedKeys.has(key),
+						);
+						const hasSavedMember = area?.topicKeys.some((key) =>
+							controller.review.draft.topics.some(
+								(row) => row.key === key && row.accepted,
+							),
+						);
 						return (
-							<TopicReviewCard
-								key={field.id}
-								evidence={controller.review.draft.topics.find(
-									(item) => item.key === topic.key,
+							<div key={field.id} className="space-y-3">
+								{area && firstVisibleKey === topic.key && (
+									<div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+										<P className="min-w-0 break-words font-medium text-sm">
+											{area.name}
+										</P>
+										{area.topicKeys.length > 1 && (
+											<Button
+												id={`${inspectPrefix}-area-${area.key}`}
+												type="button"
+												size="sm"
+												variant="outline"
+												disabled={
+													isBusy ||
+													!!changes.error ||
+													hasSavedMember
+												}
+												onClick={() => {
+													setFocusRequest({
+														elementId: `${inspectPrefix}-area-${area.key}`,
+													});
+													void changes.setArea(
+														area.key,
+														!area.split,
+													);
+												}}
+											>
+												{area.split
+													? "Combine into one topic"
+													: "Keep topics separate"}
+											</Button>
+										)}
+										{hasSavedMember &&
+											area.topicKeys.length > 1 && (
+												<P className="text-muted-foreground text-sm">
+													Saved topics can be combined
+													using the topic controls
+													below.
+												</P>
+											)}
+									</div>
 								)}
-								value={topic}
-								index={index}
-								isExpanded={topic.key === expandedKey}
-								onToggle={() =>
-									setExpandedKey(
-										topic.key === expandedKey
-											? null
-											: topic.key,
-									)
-								}
-								onCombine={() => setCombineKey(topic.key)}
-								isSubmitting={isBusy}
-								inspectId={`${inspectPrefix}-inspect-${topic.key}`}
-								onInspect={(trigger) =>
-									void handleInspect(topic.key, trigger)
-								}
-								onRemovePerson={(personId) =>
-									form.setValue(
-										`topics.${index}.removedPeople`,
-										[
-											...new Set([
-												...topic.removedPeople,
-												personId,
-											]),
-										],
-										{ shouldDirty: true },
-									)
-								}
-								onRestorePerson={(personId) =>
-									form.setValue(
-										`topics.${index}.removedPeople`,
-										topic.removedPeople.filter(
-											(id) => id !== personId,
-										),
-										{ shouldDirty: true },
-									)
-								}
-							/>
+								<TopicReviewCard
+									actions={actions}
+									key={field.id}
+									evidence={controller.review.draft.topics.find(
+										(item) => item.key === topic.key,
+									)}
+									value={topic}
+									index={index}
+									isExpanded={topic.key === expandedKey}
+									onToggle={() =>
+										setExpandedKey(
+											topic.key === expandedKey
+												? null
+												: topic.key,
+										)
+									}
+									onCombine={() => setCombineKey(topic.key)}
+									isSubmitting={isBusy || !!changes.error}
+									inspectId={`${inspectPrefix}-inspect-${topic.key}`}
+									onInspect={(trigger) =>
+										void handleInspect(topic.key, trigger)
+									}
+									onRemovePerson={(personId) =>
+										form.setValue(
+											`topics.${index}.removedPeople`,
+											[
+												...new Set([
+													...topic.removedPeople,
+													personId,
+												]),
+											],
+											{ shouldDirty: true },
+										)
+									}
+									onRestorePerson={(personId) =>
+										form.setValue(
+											`topics.${index}.removedPeople`,
+											topic.removedPeople.filter(
+												(id) => id !== personId,
+											),
+											{ shouldDirty: true },
+										)
+									}
+								/>
+							</div>
 						);
 					})}
 				</div>
 				<Button
 					type="button"
 					variant="outline"
-					disabled={isBusy || fields.length >= 100}
+					disabled={isBusy || !!changes.error || fields.length >= 100}
 					onClick={() => {
 						const key = `added-${crypto.randomUUID()}`;
 						setExpandedKey(key);
@@ -443,7 +510,7 @@ export function TopicReviewForm({
 						<Button
 							type="button"
 							variant="ghost"
-							disabled={isBusy}
+							disabled={isBusy || !!changes.error}
 							onClick={() => void handleBack()}
 						>
 							{isGoingBack ? "Saving…" : "Back"}
@@ -466,20 +533,36 @@ export function TopicReviewForm({
 					</Button>
 				</StepActions>
 			</Form>
-			{combineTopic && !organization.preview && (
-				<TopicCombineDialog
-					key={combineTopic.key}
+			{combineTopic &&
+				!organization.preview &&
+				!organization.chatCombination && (
+					<TopicCombineDialog
+						key={combineTopic.key}
+						topics={availableTopics}
+						topic={combineTopic}
+						isBusy={isBusy}
+						error={organization.error}
+						triggerId={organizationTriggerId}
+						onPreview={organization.openPreview}
+						onClose={() => setCombineKey(null)}
+					/>
+				)}
+			{organization.chatCombination && !organization.preview && (
+				<TopicOrganizationProposalDialog
+					key={`chat-${organization.chatCombination.index}-${organization.chatCombination.proposal.revision}`}
+					proposal={organization.chatCombination.proposal}
 					topics={availableTopics}
-					topic={combineTopic}
 					isBusy={isBusy}
+					isStale={organization.isChatStale}
 					error={organization.error}
-					triggerId={organizationTriggerId}
-					onPreview={organization.openPreview}
-					onClose={() => setCombineKey(null)}
+					triggerId={`${organizationTriggerId}-chat`}
+					onPreview={organization.openChatPreview}
+					onClose={organization.closeChatCombination}
 				/>
 			)}
 			{organization.proposal &&
 				organization.isProposalOpen &&
+				!organization.chatCombination &&
 				!organization.preview && (
 					<TopicOrganizationProposalDialog
 						key={organization.proposal.revision}
@@ -498,7 +581,11 @@ export function TopicReviewForm({
 					preview={organization.preview}
 					isBusy={changes.isChanging}
 					error={changes.error || organization.error}
-					triggerId={organizationTriggerId}
+					triggerId={
+						organization.chatCombination
+							? `${organizationTriggerId}-chat`
+							: organizationTriggerId
+					}
 					onAccept={() => void organization.acceptPreview()}
 					onClose={organization.closePreview}
 				/>

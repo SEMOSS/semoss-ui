@@ -7,7 +7,15 @@ import { useCollaborationSession } from "@/features/collaboration/state/collabor
 import { memoriesAbout } from "@/features/collaboration/state/memory";
 
 /** Existing confirmed context and source conversations for this topic. */
-export function TopicContext({ topic }: { topic: Topic }) {
+export function TopicContext({
+	topic,
+	isComplete = true,
+	isLoading = false,
+}: {
+	topic: Topic;
+	isComplete?: boolean;
+	isLoading?: boolean;
+}) {
 	const { state } = useCollaborationSession();
 	const notes = memoriesAbout(state.memories, {
 		type: "topic",
@@ -16,6 +24,7 @@ export function TopicContext({ topic }: { topic: Topic }) {
 	const members = topic.people.filter((member) => member.state === "member");
 	return (
 		<div className="space-y-8 py-6">
+			{isLoading && <output>Loading topic context…</output>}
 			<section className="space-y-3">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<H2 className="font-medium text-xl">
@@ -48,7 +57,9 @@ export function TopicContext({ topic }: { topic: Topic }) {
 						</ul>
 					) : (
 						<P className="text-base text-muted-foreground">
-							No confirmed notes for this topic yet.
+							{isComplete
+								? "No confirmed notes for this topic yet."
+								: "Notes have not finished loading."}
 						</P>
 					)}
 				</section>
@@ -98,14 +109,22 @@ export function TopicContext({ topic }: { topic: Topic }) {
 						</ul>
 					) : (
 						<P className="text-base text-muted-foreground">
-							No confirmed people for this topic yet.
+							{isComplete
+								? "No confirmed people for this topic yet."
+								: "People have not finished loading."}
 						</P>
 					)}
 				</section>
 			</div>
 			<section className="space-y-3 border-border border-t pt-6">
 				<H2 className="font-medium text-xl">Source threads</H2>
-				<TopicWorkThreads topicId={topic.id} />
+				{isComplete ? (
+					<TopicWorkThreads topicId={topic.id} />
+				) : (
+					<P className="text-muted-foreground">
+						Source threads have not finished loading.
+					</P>
+				)}
 			</section>
 		</div>
 	);

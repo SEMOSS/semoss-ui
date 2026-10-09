@@ -21,13 +21,23 @@ interface TopicSessionsProps {
 
 /** Saved conversations with explicit links to this topic's source threads. */
 export function TopicSessions({ topicId }: TopicSessionsProps) {
-	const { history, openRoom, openingRoom } = useDashboard();
+	const { openRoom, openingRoom } = useDashboard();
 	const sessions = useTopicSessions(topicId);
 	return (
 		<section aria-label="Topic sessions" className="space-y-4 p-4 md:p-6">
-			<P className="text-muted-foreground text-sm">
-				Conversations opened from this topic's threads.
-			</P>
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<P className="text-muted-foreground text-sm">
+					Conversations linked to this topic.
+				</P>
+				<Button
+					variant="ghost"
+					size="sm"
+					disabled={sessions.isLoading}
+					onClick={sessions.retry}
+				>
+					Refresh rooms
+				</Button>
+			</div>
 			{sessions.rooms.length > 0 && (
 				<ul className="divide-y divide-border">
 					{sessions.rooms.map((room) => {
@@ -82,7 +92,7 @@ export function TopicSessions({ topicId }: TopicSessionsProps) {
 								<RoomPinButton
 									roomId={room.roomId}
 									roomName={title}
-									pinned={room.pinned === true}
+									pinned={room.pinned}
 								/>
 							</li>
 						);
@@ -99,9 +109,7 @@ export function TopicSessions({ topicId }: TopicSessionsProps) {
 				<Alert variant="destructive">
 					<AlertDescription className="space-y-2">
 						<P className="text-sm">
-							Could not check {sessions.errorCount}{" "}
-							{sessions.errorCount === 1 ? "session" : "sessions"}
-							. These results may be incomplete.
+							{sessions.error} These results may be incomplete.
 						</P>
 						<Button
 							type="button"
@@ -116,37 +124,21 @@ export function TopicSessions({ topicId }: TopicSessionsProps) {
 					</AlertDescription>
 				</Alert>
 			)}
-			{history.error && (
-				<Alert variant="destructive">
-					<AlertDescription className="space-y-2">
-						<P className="text-sm">{history.error}</P>
-						<Button
-							type="button"
-							size="sm"
-							variant="outline"
-							className="pointer-coarse:min-h-11"
-							onClick={history.retry}
-						>
-							Retry sessions
-						</Button>
-					</AlertDescription>
-				</Alert>
-			)}
 			{!sessions.isLoading &&
 				!sessions.errorCount &&
-				!history.error &&
 				!sessions.rooms.length && (
 					<P className="text-muted-foreground text-sm">
-						No linked sessions in loaded history.
+						No rooms are linked to this topic yet.
 					</P>
 				)}
 			{sessions.checkedCount > 0 && (
 				<Small className="block font-normal text-muted-foreground text-xs">
-					Checked {sessions.checkedCount} saved{" "}
+					Showing {sessions.checkedCount} of{" "}
+					{sessions.total ?? sessions.checkedCount} saved{" "}
 					{sessions.checkedCount === 1 ? "session" : "sessions"}.
 				</Small>
 			)}
-			{sessions.hasMore && !history.error && (
+			{sessions.hasMore && (
 				<Button
 					type="button"
 					variant="outline"

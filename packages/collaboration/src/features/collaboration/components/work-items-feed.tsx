@@ -138,7 +138,9 @@ export function WorkItemsFeed({
 						Latest
 					</ToggleGroupItem>
 				</ToggleGroup>
-				<WorkRefreshStatus />
+				<WorkRefreshStatus
+					scope={topicId ? `topic-work:${topicId}` : "items"}
+				/>
 				<div className="ml-auto flex items-center gap-2">
 					<output className="text-muted-foreground text-sm tabular-nums">
 						{items.length} {items.length === 1 ? "item" : "items"}

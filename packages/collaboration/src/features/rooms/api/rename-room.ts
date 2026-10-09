@@ -14,5 +14,9 @@ export async function renameRoom(
 		roomWriteSchema,
 	);
 	if (!renamed) throw new Error("SEMOSS did not rename the room.");
-	window.dispatchEvent(new Event(ROOM_HISTORY_CHANGED));
+	window.dispatchEvent(
+		new CustomEvent(ROOM_HISTORY_CHANGED, {
+			detail: { actions, roomId, roomName: name },
+		}),
+	);
 }

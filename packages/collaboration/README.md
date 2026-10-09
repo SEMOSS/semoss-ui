@@ -8,17 +8,17 @@ appearance, context rules, and data reset.
 
 ## Navigation and Home
 
-The sidebar shows **My topics**, including active and dormant topics with no tasks
+The sidebar shows **My topics**, including suggested, active, and dormant topics with no tasks
 or rooms, followed by **Pinned rooms**. Topics sort alphabetically. **New topic**
 opens the name-and-description form from either the sidebar or the topic directory;
-successful creation opens the saved topic. Suggested topics remain in Brain review.
+successful creation opens the saved topic. Displaying a suggestion preserves its saved status; acceptance stays an explicit existing action.
 Pinned rooms use the existing saved pin state and can be pinned or unpinned from
 the conversation header and topic Rooms tab. Unpinned rooms remain accessible
 through search and topic Rooms.
 
 The sidebar keeps its saved collapse preference, loaded room depth, unread markers,
 and scroll position across routes. The mobile sidebar remains a navigation drawer.
-Room topic dots and hover/focus details use verified source associations. The
+Room topic dots and hover/focus details use saved `BrainListRoomTopics` associations. The
 account footer retains Settings and Log out, including visible retryable errors.
 The logo returns to Home; the shared header retains search and room controls.
 Conversation editors and drafts remain mounted while changing workbench panes.
@@ -50,16 +50,43 @@ agent approvals open their owning conversation's approval workflow. Brain decisi
 and suggested memories retain their existing review actions. Non-work review
 priorities remain browser preferences scoped to the account and deployment.
 
-Context combines the description, saved goals, confirmed memories, people, and
-linked source threads. Rooms lists saved source-linked conversations, including
-unpinned rooms, with loading, partial-result, retry, and pagination states.
+Context loads the selected topic’s people, memories, and source threads when opened.
+Rooms loads direct `BrainListTopicRooms` associations in pages of 25, including
+rooms with no source thread. Server activity timestamps and totals are retained.
 
-Topic Chat/New chat, standalone action creation, manual ordering, and the activity
-timeline show unavailable explanations where existing backend capabilities are
-missing. No invented activity, counts, or goal-based ranking is displayed. The
-verified contracts and remaining requirements are documented in
-[topic-workspace-gaps.md](docs/topic-workspace-gaps.md). This change adds no reactors
-or database migrations.
+Topic Chat/New chat opens the existing Home composer with an optional `topicId`.
+First send allocates a room and links that topic before submitting. A failed link
+or send retains the allocated room and draft for retry. Suggested and archived
+topics cannot start a topic chat until their status changes through an existing action.
+Unsupported controls stay disabled; [TODO.md](TODO.md) is the sole remaining gap list.
+Verified source contracts are summarized in [topic-workspace-gaps.md](docs/topic-workspace-gaps.md).
+
+Startup reads profile, settings, the shared paginated topic directory, and the
+first pinned-room page. Topic detail uses `BrainListTopics(topicId=...)`; Overview
+loads that topic’s tasks. Other pages and search request their own resources when
+used, and account-scoped caches preserve loaded data across routes. Refresh on
+My topics discovers topics created elsewhere without scanning tasks or rooms.
+Confirmed mutations refresh affected, already-loaded resources. Collection polling,
+window-focus reloads, and automatic scans of every agent’s activity are removed.
+Active onboarding jobs and run observers retain their completion/recovery lifecycle.
+
+Onboarding accepts either a saved review or a pending `topic_map` job, follows that
+exact job, and reads the saved review on completion. Staged areas can be kept
+separate or combined through `BrainSetTopicArea`, after flushing profile edits.
+The expanded editor supports paginated people search, explicit suggested-clue
+acceptance, and a debounced `BrainPreviewTopicReach` for the selected people.
+Area metadata, people selections, clues, and conversation corrections survive
+saved-review reconciliation. Skipping an area does not require merge receipts
+for its skipped children.
+
+The existing assistant section retains both grouping suggestions and review chat.
+`BrainSuggestTopicOrganization` covers every kept topic; `BrainTopicReviewChat`
+answers questions and proposes add/edit/keep/skip/combine changes. Nothing applies
+automatically. Accepted profile proposals share draft saving; combinations open
+the editable grouping dialog and authoritative impact preview. Both flows retain
+target selection, revision checks, partial acceptance, undo for structural changes,
+and recovery of uncertain writes from the saved review. Optional assistant or
+preview failures leave direct topic editing available.
 
 Legacy For you and Tasks/Work root links redirect to the selected topic or topic
 directory. Waiting/done query bookmarks retain their status view and applicable
@@ -131,23 +158,32 @@ and Work status changes are synchronized to the backend. Sample records remain l
 
 The account-scoped sidebar reads saved topics independently of room history. Room
 reads use `GetPlaygroundRooms(pinned=true)` before pagination; `PinRoom` persists
-changes. Metadata checks resolve explicit source links and legacy Brain associations
-without opening transcripts. Each pinned room appears once; **Show 25 more** reveals
-the next page. Empty active/dormant topics remain navigable. Hover details never load
-conversation messages.
+changes. `BrainListRoomTopics` resolves direct associations only for loaded rows,
+without opening transcripts or inferring membership from source threads. Each pinned
+room appears once; **Show 25 more** reveals the next page. Suggested, active, and
+dormant topics remain navigable even with no rooms or tasks. Hover details never
+load conversation messages.
 
-The existing room API provides creation dates but no saved-activity timestamp.
-The browser therefore remembers saved activity per account and deployment and
-uses creation dates for rooms with no known activity. Historical activity from
-other browsers is unavailable until the API supplies it. Renaming a room does
-not move it upward. Rooms with unreadable associations remain reachable with an
-unavailable-topic indicator and a retry message. Large histories can take longer
-to resolve because metadata is read through the existing per-room API.
+The chat-header picker stays reachable during association loading and failures.
+Returned association names remain visible even when the topic directory has no
+matching row. Owners can link topics, accept association suggestions, dismiss or
+remove links, and explicitly restore dismissed links. Saved suggested topics must
+be accepted in My topics before they can be linked. Confirmed writes reconcile
+chips, loaded sidebar rows, and affected topic-room caches. **Refresh room topics**
+reads delayed background classifications explicitly. The backend supplies linked
+topic context to chat.
+
+Topic-room pages use `BrainListTopicRooms` activity timestamps. The pinned-room
+API supplies creation dates; that sidebar still supplements them with activity
+observed by this browser, scoped to the account and deployment. Renaming a room
+does not move it upward. Rooms with unreadable associations remain reachable with
+an unavailable-topic indicator and a retry message. Association reads are bounded
+to the loaded pinned pages.
 
 Saved room activity and completed topic changes refresh the list while retaining
 loaded depth; route changes do not reload it. Failed refreshes retain visible
-rooms and expose retry controls. No backend changes, deployment, or database
-migration are required.
+rooms and expose retry controls. This frontend targets the current backend reactor
+contracts and requires those reactors to be deployed; it includes no backend changes.
 
 A small blue dot marks unread room activity observed by this browser. Read markers
 are stored locally per account and deployment and shared across tabs. The first
@@ -157,13 +193,6 @@ tab or a mobile workbench covering the conversation does not mark it read. Openi
 a room consumes its known activity without another request. Renames do not create
 unread activity. This is frontend-only state; it does not sync across devices or
 recover activity the existing room API cannot report.
-
-- [ ] **Room list cleanup (`room-tree-cleanup`):** Replace repeated full-history
-  scans and per-room metadata reads with incremental loading and cache
-  invalidation. Remove browser recency when existing APIs provide saved activity.
-  Preserve account isolation, source-link precedence, unique room rows, linked-topic
-  dots, 25-room pagination, unread markers, and navigation state. Keep the current
-  work frontend-only.
 
 Every conversation uses one `RoomSession` and the existing Playground agent
 harness: collaboration rooms, `RunAgent`, streamed events, approvals,
@@ -192,9 +221,9 @@ over another page.
 ## Microsoft sources and drafts
 
 Sources are initially loaded through explicit actions under Brain → Sources.
-Loaded email lists refresh while the page is visible and on return to the app.
-Work also refreshes existing Brain/Work summaries and actions without remounting
-readers or drafts; connection failures offer a retry on the source and Work pages.
+Loaded email lists refresh on request. Confirmed saves update affected cached
+records without remounting readers or drafts; failures retain visible rows and
+offer a retry.
 Webhook delivery and automatic agent execution remain backend integration dependencies.
 They use the existing SEMOSS Microsoft reactors and `oauth("microsoft")`; the
 backend must have Microsoft authentication and the relevant permissions enabled.
@@ -280,7 +309,7 @@ chosen for a room's composer use the room's ordinary upload and submission flow.
 | `/tasks`, `/tasks/all`, `/work`, `/work/all` | Redirect to the selected topic or topic directory; waiting/done query bookmarks retain their status view |
 | `/tasks/waiting`, `/tasks/done` | Waiting and handled action views |
 | `/tasks/topics` | Topic directory |
-| `/tasks/topic/:topicId` | Topic overview, context, source-linked rooms, and capability states |
+| `/tasks/topic/:topicId` | Topic overview, context, directly linked rooms, and capability states |
 | `/work/waiting`, `/work/done`, `/work/topics`, `/work/topic/:topicId` | Compatible status and topic workspace aliases |
 | `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |
@@ -355,58 +384,6 @@ pnpm --filter @semoss/collaboration test
 pnpm --filter @semoss/collaboration build
 ```
 
-The October 7, 2026 landing/topic Work implementation passed all 921 tests across
-125 files, package type checking, the production build, and Biome checks on all
-42 touched TypeScript files using Node 24.4.0. Existing React test warnings and
-large-bundle build warnings remain. The real-layout preview was inspected at
-320, 360, 720, and 1440 CSS pixels in light/dark themes, including long content,
-keyboard composer and tab navigation, topic sessions, and the mobile Settings
-workbench. No horizontal page overflow was observed. Native 200% zoom is not
-available in the preview browser; the equivalent 720-pixel reflow was checked.
-Live backend sends/uploads and real-device screen-reader behavior were not
-exercised by this preview pass; lifecycle and recovery checks use test fixtures.
-
-The October 6, 2026 backend-compatibility pass used Node 24.4.0: all 1,055 tests
-across 138 files passed, along with package type-check, production build, and
-Biome checks on changed source/configuration files. Regression coverage includes
-queued server IDs, priority clearing, topic calendar series,
-native source identities, empty versus omitted email fields, and HTTPS development
-configuration. Existing React test warnings and large-bundle build warnings remain.
-The isolated browser reached sign-in; authenticated Microsoft operations and
-delivery were not exercised. No backend files were changed.
-
-The Settings consolidation passed 62 focused tests across settings, routes,
-dashboard layout/interactions, and Collaboration interactions, plus package
-type-check, production build, and Biome checks on touched source files. The build
-reports large-bundle warnings. Its design fixture was checked at 320, 360, and
-1440 CSS pixels in light/dark themes, including mobile navigation, keyboard theme
-selection, draft retention, source navigation, and reset confirmation/cancellation.
-Reset writes were mocked. Live backend writes, screen-reader announcements, and
-native 200% browser zoom were not exercised by this pass.
-
-Dashboard behavioral tests cover paginated chats and retry, stale search responses,
-independent Outlook queries, scoped message search, account/storage isolation,
-reversible presets, keyboard resizing/reordering, stable app nodes, source reader
-initialization, agent snapshots, visible refresh, and calendar DST boundaries.
-
-The dashboard was checked at 320, 360, and 1440 CSS pixels in light/dark themes.
-Settings customization, keyboard search, Brain navigation, layout persistence,
-and cancel/restore were exercised in the development preview. The signed-in app
-was inspected for Home, Brain, and New Task. Native 200% zoom, live Microsoft
-calendar/email operations, pending approvals/delegations, and published app
-embedding/permission changes still need an end-to-end integration pass. The
-in-app browser could not open the HTTPS deployment because its certificate was
-untrusted; no certificate settings were changed.
-
-The coordinated header update passed 123 focused tests across navigation, account
-menus, search, settings, room controls, and conversation/workbench state. Package
-type-check, production build, and touched-file Biome checks passed using Node
-24.4.0; the build retains the existing large-chunk warnings. The preview was checked
-at 320, 360, and 1440 CSS pixels in light/dark themes, including long names/titles,
-loading/error states, keyboard focus, account navigation, and retained chat drafts
-across pane changes. The unified room header remains 56px tall without horizontal page
-overflow; route transitions clear the room controls without remounting global controls.
-Logout success/failure/pending cases were mocked; no live session was ended. Native
-200% browser zoom and real-device touch/screen-reader behavior were not exercised.
-The preview's Files panel lacked an AccessStoreProvider, so file operations were not
-validated by this shell pass.
+The current verification results and unavailable integration checks are recorded in
+[TODO.md](TODO.md). Source inspection establishes the frontend contracts; it does
+not establish which responses an individual affected user receives.

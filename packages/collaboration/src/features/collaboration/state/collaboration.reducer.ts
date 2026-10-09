@@ -2,6 +2,7 @@ import type {
 	CollaborationCommand,
 	CollaborationState,
 	Memory,
+	Person,
 	ReviewEntry,
 	Thread,
 	ThreadTopicLink,
@@ -90,7 +91,7 @@ export function tomorrowAtEight(now: string, timezone: string): string {
 	return new Date(instant).toISOString();
 }
 
-/** Derive all displayed membership/count values from the current shared records. */
+/** Derive sample membership/count values while retaining canonical live summaries. */
 export function reconcileCollaborationState(
 	state: CollaborationState,
 ): CollaborationState {
@@ -101,6 +102,7 @@ export function reconcileCollaborationState(
 			topicLinks: normalizeTopicLinks(thread.topicLinks),
 		})),
 		topics: state.topics.map((topic) => {
+			if (!topic.isSample) return topic;
 			const threads = state.threads.filter((thread) =>
 				thread.topicLinks.some((link) => link.topicId === topic.id),
 			);
@@ -125,30 +127,27 @@ export function reconcileCollaborationState(
 		}),
 		people: state.people.map((person) => ({
 			...person,
-			topics: state.topics
-				.filter((topic) =>
-					topic.people.some(
-						(member) =>
-							member.personId === person.id &&
-							member.state === "member",
-					),
-				)
-				.map((topic) => topic.id),
+			topics: !person.isSample
+				? person.topics
+				: state.topics
+						.filter((topic) =>
+							topic.people.some(
+								(member) =>
+									member.personId === person.id &&
+									member.state === "member",
+							),
+						)
+						.map((topic) => topic.id),
 		})),
-		profile: {
-			...state.profile,
-			vips: state.people
-				.filter((person) => person.isSample && person.vip)
-				.map((person) => person.id),
-		},
-		liveProfile: state.liveProfile
-			? {
-					...state.liveProfile,
+		profile: state.liveProfile
+			? state.profile
+			: {
+					...state.profile,
 					vips: state.people
-						.filter((person) => !person.isSample && person.vip)
+						.filter((person) => person.isSample && person.vip)
 						.map((person) => person.id),
-				}
-			: null,
+				},
+		liveProfile: state.liveProfile,
 	};
 }
 
@@ -1256,6 +1255,119 @@ export function collaborationReducer(
 					threadId: id,
 					isSample: false,
 				});
+			break;
+		}
+		case "resource.received": {
+			const { scope, rows, baseline } = command;
+			const topicId = scope.includes(":")
+				? scope.slice(scope.indexOf(":") + 1)
+				: undefined;
+			if (
+				topicId &&
+				baseline.topics.some((topic) => topic.id === topicId) &&
+				!state.topics.some((topic) => topic.id === topicId)
+			)
+				break;
+			for (const key of [
+				"topics",
+				"items",
+				"threads",
+				"people",
+				"memories",
+				"reviews",
+				"accounts",
+				"rules",
+			] as const) {
+				const incoming = rows[key];
+				if (!incoming) continue;
+				// Each property retains its own concrete array type at the state boundary.
+				const current = state[key] as {
+					id: string;
+					isSample?: boolean;
+				}[];
+				const before = new Map(
+					(baseline[key] ?? []).map(
+						(row) => [row.id, JSON.stringify(row)] as const,
+					),
+				);
+				const currentIds = new Set(current.map((row) => row.id));
+				const receivedIds = new Set(incoming.map((row) => row.id));
+				const keep = (row: { id: string }) =>
+					before.get(row.id) !== JSON.stringify(row);
+				const deleted = new Set(
+					[...before.keys()].filter((id) => !currentIds.has(id)),
+				);
+				const inScope = (row: { id: string }) => {
+					if (!topicId) return true;
+					if (key === "topics") return row.id === topicId;
+					if (key === "items") {
+						const item = row as WorkItem;
+						return (
+							item.linkTopicId === topicId ||
+							item.topicIds.includes(topicId)
+						);
+					}
+					if (key === "memories")
+						return (row as Memory).about.some(
+							(ref) => ref.type === "topic" && ref.id === topicId,
+						);
+					// People and threads can belong to other topics; scoped reads only replace returned records.
+					return false;
+				};
+				const merged = current.filter(
+					(row) =>
+						row.isSample ||
+						!inScope(row) ||
+						receivedIds.has(row.id) ||
+						keep(row),
+				);
+				for (const row of incoming) {
+					if (deleted.has(row.id)) continue;
+					const index = merged.findIndex((old) => old.id === row.id);
+					if (index < 0) merged.push(row);
+					else if (!keep(merged[index])) {
+						if (scope === "directory") {
+							// Summary rows do not carry editable detail fields.
+							const old = merged[index] as Topic;
+							const summary = row as Topic;
+							const updated = {
+								...old,
+								id: summary.id,
+								name: summary.name,
+								short: summary.short,
+								accountId: summary.accountId,
+								kind: summary.kind,
+								color: summary.color,
+								status: summary.status,
+								stats: summary.stats,
+							};
+							merged[index] = updated;
+						} else merged[index] = row;
+					}
+				}
+				if (topicId && (key === "threads" || key === "people")) {
+					for (const row of merged) {
+						if (
+							row.isSample ||
+							receivedIds.has(row.id) ||
+							keep(row)
+						)
+							continue;
+						if (key === "threads") {
+							const thread = row as Thread;
+							thread.topicLinks = thread.topicLinks.filter(
+								(link) => link.topicId !== topicId,
+							);
+						} else {
+							const person = row as Person;
+							person.topics = person.topics.filter(
+								(id) => id !== topicId,
+							);
+						}
+					}
+				}
+				Object.assign(state, { [key]: merged });
+			}
 			break;
 		}
 		case "live.refresh": {

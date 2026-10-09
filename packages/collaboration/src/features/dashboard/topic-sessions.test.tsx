@@ -1,297 +1,161 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
-import { readRoomSourceAssociation } from "@/features/rooms/api/read-room-source-association";
-import type { RoomRow } from "@/features/rooms/api/room-schemas";
-import { RoomSourceAssociationsProvider } from "./room-source-associations-provider";
+import { ROOM_TREE_CHANGED } from "@/features/room-tree/room-tree-events";
 import { TopicSessions } from "./topic-sessions";
+import { useTopicSessionEvents } from "./use-topic-sessions";
 
 const mocks = vi.hoisted(() => ({
-	rooms: [] as RoomRow[],
-	isLoading: false,
-	error: "",
-	hasMore: false,
-	loadMore: vi.fn(),
-	retry: vi.fn(),
-	openRoom: vi.fn(),
 	actions: { run: vi.fn() },
+	insightId: "one",
+	openRoom: vi.fn(),
 }));
-
-vi.mock("@semoss/sdk/react", () => ({
-	useInsight: () => ({ actions: mocks.actions, insightId: "owner" }),
-}));
-
-vi.mock("@/features/rooms/api/read-room-source-association", () => ({
-	readRoomSourceAssociation: vi.fn(),
-}));
-vi.mock("@/features/collaboration/state/collaboration-session.context", () => ({
-	useCollaborationSession: () => ({
-		state: {
-			threads: [
-				{
-					id: "source-one",
-					roomId: "legacy",
-					topicLinks: [{ topicId: "topic-one" }],
-				},
-				{
-					id: "source-two",
-					roomId: "mismatch",
-					topicLinks: [{ topicId: "topic-one" }],
-				},
-				{
-					id: "source-other",
-					roomId: null,
-					topicLinks: [{ topicId: "topic-other" }],
-				},
-			],
-		},
-	}),
-}));
+vi.mock("@semoss/sdk/react", () => ({ useInsight: () => mocks }));
 vi.mock("./dashboard.context", () => ({
-	useDashboard: () => ({
-		history: {
-			rooms: mocks.rooms,
-			isLoading: mocks.isLoading,
-			error: mocks.error,
-			hasMore: mocks.hasMore,
-			loadMore: mocks.loadMore,
-			retry: mocks.retry,
-		},
-		openRoom: mocks.openRoom,
-		openingRoom: null,
-	}),
+	useDashboard: () => ({ openRoom: mocks.openRoom, openingRoom: null }),
 }));
-
-const read = vi.mocked(readRoomSourceAssociation);
-const rows = (count: number): RoomRow[] =>
-	Array.from({ length: count }, (_, index) => ({
-		roomId: `room-${index}`,
-		roomName: `Session ${index}`,
-	}));
-
-function content(
-	isActive = true,
-	owner = "account-one",
-	topicId = "topic-one",
-) {
-	return (
-		<MemoryRouter>
-			<RoomSourceAssociationsProvider
-				key={owner}
-				actions={mocks.actions as never}
-			>
-				{isActive ? (
-					<TopicSessions topicId={topicId} />
-				) : (
-					<p>Actions tab</p>
-				)}
-			</RoomSourceAssociationsProvider>
-		</MemoryRouter>
-	);
-}
-
+const page = (start = 0, count = 25, total = 27) => ({
+	pixelReturn: [
+		{
+			output: {
+				topicId: "topic",
+				items: Array.from({ length: count }, (_, index) => ({
+					roomId: `r${start + index}`,
+					name: `Chat ${start + index}`,
+					lastAt: "2026-10-09 12:00:00",
+				})),
+				total,
+			},
+			operationType: [],
+		},
+	],
+});
+const content = () => (
+	<MemoryRouter>
+		<TopicSessions topicId="topic" />
+	</MemoryRouter>
+);
 beforeEach(() => {
-	vi.clearAllMocks();
-	mocks.rooms = [];
-	mocks.isLoading = false;
-	mocks.error = "";
-	mocks.hasMore = false;
-	read.mockReset();
-	read.mockResolvedValue(null);
+	mocks.actions = { run: vi.fn().mockResolvedValue(page()) };
+	mocks.insightId = "one";
+	mocks.openRoom.mockClear();
 });
-
-it("reads no metadata before activation and inspects only 25 already-loaded rooms per batch", async () => {
-	mocks.rooms = rows(70);
-	const view = render(content(false));
-	expect(read).not.toHaveBeenCalled();
-	view.rerender(content());
-	await screen.findByText("Checked 25 saved sessions.");
-	expect(read).toHaveBeenCalledTimes(25);
-	await userEvent
-		.setup()
-		.click(screen.getByRole("button", { name: "Load more sessions" }));
-	await screen.findByText("Checked 50 saved sessions.");
-	expect(read).toHaveBeenCalledTimes(50);
-	expect(mocks.loadMore).not.toHaveBeenCalled();
-});
-
-it("keeps separate rooms for one source and uses legacy links only when source metadata is absent", async () => {
-	mocks.rooms = ["first", "second", "legacy", "mismatch", "generic"].map(
-		(roomId) => ({ roomId, roomName: roomId }),
-	);
-	read.mockImplementation(
-		async (_actions, roomId) =>
-			({
-				first: "source-one",
-				second: "source-one",
-				mismatch: "source-other",
-			})[roomId] ?? null,
-	);
+afterEach(cleanup);
+it("uses direct topic rooms without source threads or history scans, with unknown pin state disabled", async () => {
 	render(content());
-	await screen.findByText("Checked 5 saved sessions.");
-	expect(screen.getAllByRole("link")).toHaveLength(3);
-	for (const name of [/^first/, /^second/, /^legacy/])
-		expect(screen.getByRole("link", { name })).toBeVisible();
-	await userEvent
-		.setup()
-		.click(screen.getByRole("link", { name: /^second/ }));
-	expect(mocks.openRoom).toHaveBeenCalledExactlyOnceWith("second");
-	expect(mocks.actions.run).not.toHaveBeenCalled();
-});
-
-it("keeps partial results visible and retries only failed metadata without a false empty state", async () => {
-	mocks.rooms = [
-		{ roomId: "good", roomName: "Known session" },
-		{ roomId: "failed", roomName: "Recovered session" },
-	];
-	read.mockImplementation(async (_actions, roomId) => {
-		if (roomId === "failed") throw new Error("Offline");
-		return "source-one";
-	});
-	render(content());
-	await screen.findByRole("link", { name: /^Known session/ });
-	await screen.findByText(
-		"Could not check 1 session. These results may be incomplete.",
+	await screen.findByRole("link", { name: /Chat 0/ });
+	expect(mocks.actions.run).toHaveBeenCalledExactlyOnceWith(
+		'BrainListTopicRooms(topicId=["topic"], limit=[25], offset=[0]);',
 	);
 	expect(
-		screen.queryByText("No linked sessions in loaded history."),
+		screen.getAllByRole("button", { name: "Pin status unavailable" })[0],
+	).toBeDisabled();
+	expect(screen.getByText(/Showing 25 of 27/)).toBeInTheDocument();
+});
+it("loads the next server page only on request", async () => {
+	render(content());
+	await screen.findByRole("link", { name: /Chat 0/ });
+	mocks.actions.run.mockResolvedValueOnce(page(25, 2));
+	await userEvent.click(
+		screen.getByRole("button", { name: "Load more sessions" }),
+	);
+	await screen.findByRole("link", { name: /Chat 26/ });
+	expect(mocks.actions.run).toHaveBeenLastCalledWith(
+		'BrainListTopicRooms(topicId=["topic"], limit=[25], offset=[25]);',
+	);
+	expect(
+		screen.queryByRole("button", { name: "Load more sessions" }),
 	).not.toBeInTheDocument();
-	read.mockResolvedValue("source-one");
-	await userEvent
-		.setup()
-		.click(screen.getByRole("button", { name: "Retry session links" }));
-	await screen.findByRole("link", { name: /^Recovered session/ });
-	expect(read.mock.calls.map((call) => call[1])).toEqual([
-		"good",
-		"failed",
-		"failed",
-	]);
-	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
-
-it("requests the next history page explicitly when the current 25 rows are exhausted", async () => {
-	mocks.rooms = rows(25);
-	mocks.hasMore = true;
-	const view = render(content());
-	await screen.findByText("Checked 25 saved sessions.");
-	await userEvent
-		.setup()
-		.click(screen.getByRole("button", { name: "Load more sessions" }));
-	expect(mocks.loadMore).toHaveBeenCalledOnce();
-	mocks.rooms = rows(50);
-	view.rerender(content());
-	await screen.findByText("Checked 50 saved sessions.");
-	expect(read).toHaveBeenCalledTimes(50);
+it("retains saved rows after refresh failure and distinguishes failure from empty", async () => {
+	render(content());
+	await screen.findByRole("link", { name: /Chat 0/ });
+	mocks.actions.run.mockRejectedValueOnce(new Error("Offline"));
+	await userEvent.click(
+		screen.getByRole("button", { name: "Refresh rooms" }),
+	);
+	await screen.findByText(/Offline/);
+	expect(screen.getByRole("link", { name: /Chat 0/ })).toBeInTheDocument();
+	mocks.actions.run.mockResolvedValueOnce(page(0, 0, 0));
+	await userEvent.click(
+		screen.getByRole("button", { name: "Retry session links" }),
+	);
+	await screen.findByText("No rooms are linked to this topic yet.");
 });
-
-it("revalidates associations on a new tab activation without relying on room timestamps", async () => {
-	mocks.rooms = [{ roomId: "room-one", roomName: "Changed source" }];
-	read.mockResolvedValue(null);
-	const view = render(content());
-	await screen.findByText("No linked sessions in loaded history.");
-	view.rerender(content(false));
-	read.mockResolvedValue("source-one");
-	view.rerender(content());
-	await screen.findByRole("link", { name: /^Changed source/ });
-	expect(read).toHaveBeenCalledTimes(2);
+it("reuses topic pages on cached revisits and isolates another insight", async () => {
+	const first = render(content());
+	await screen.findByRole("link", { name: /Chat 0/ });
+	first.unmount();
+	const second = render(content());
+	await screen.findByRole("link", { name: /Chat 0/ });
+	expect(mocks.actions.run).toHaveBeenCalledTimes(1);
+	second.unmount();
+	mocks.insightId = "two";
+	mocks.actions.run.mockImplementationOnce(() => new Promise(() => {}));
+	render(content());
+	expect(
+		screen.queryByRole("link", { name: /Chat 0/ }),
+	).not.toBeInTheDocument();
 });
-
-it("discards pending results when the account/insight owner changes", async () => {
-	mocks.rooms = [{ roomId: "same-room", roomName: "Old account session" }];
-	let resolveOld: ((value: string | null) => void) | undefined;
-	read.mockImplementationOnce(
+it("keeps a late response in its own account cache", async () => {
+	let finish: (value: ReturnType<typeof page>) => void = () => undefined;
+	mocks.actions.run.mockImplementationOnce(
 		() =>
 			new Promise((resolve) => {
-				resolveOld = resolve;
-			}),
-	).mockResolvedValue(null);
-	const view = render(content());
-	await waitFor(() => expect(read).toHaveBeenCalledOnce());
-	view.rerender(content(true, "account-two"));
-	await screen.findByText("No linked sessions in loaded history.");
-	await act(async () => resolveOld?.("source-one"));
-	expect(
-		screen.queryByRole("link", { name: /^Old account session/ }),
-	).not.toBeInTheDocument();
-	expect(read).toHaveBeenCalledTimes(2);
-});
-
-it("keeps history failure distinct from an empty linked-session result", () => {
-	mocks.error = "Saved sessions could not be loaded.";
-	render(content());
-	expect(screen.getByRole("alert")).toHaveTextContent(mocks.error);
-	expect(
-		screen.queryByText("No linked sessions in loaded history."),
-	).not.toBeInTheDocument();
-	expect(
-		screen.getByRole("button", { name: "Retry sessions" }),
-	).toBeVisible();
-});
-
-it("keeps verified associations through revalidation and failure until a successful read replaces them", async () => {
-	mocks.rooms = [{ roomId: "cached", roomName: "Verified conversation" }];
-	read.mockResolvedValue("source-one");
-	const view = render(content());
-	await screen.findByRole("link", { name: /^Verified conversation/ });
-	view.rerender(content(false));
-	let failRefresh: ((cause: Error) => void) | undefined;
-	read.mockImplementationOnce(
-		() =>
-			new Promise((_resolve, reject) => {
-				failRefresh = reject;
+				finish = resolve;
 			}),
 	);
-	view.rerender(content());
+	const first = render(content());
+	await waitFor(() => expect(mocks.actions.run).toHaveBeenCalledTimes(1));
+	first.unmount();
+	mocks.insightId = "two";
+	mocks.actions.run.mockResolvedValueOnce(page(0, 0, 0));
+	render(content());
+	await screen.findByText("No rooms are linked to this topic yet.");
+	await act(async () => finish(page()));
 	expect(
-		screen.getByRole("link", { name: /^Verified conversation/ }),
-	).toBeVisible();
-	expect(screen.getByRole("status")).toHaveTextContent(
-		"Checking linked sessions",
-	);
-	await act(async () => failRefresh?.(new Error("Offline")));
-	expect(
-		screen.getByRole("link", { name: /^Verified conversation/ }),
-	).toBeVisible();
-	expect(screen.getByRole("alert")).toHaveTextContent(
-		"results may be incomplete",
-	);
-	read.mockResolvedValue("source-other");
-	await userEvent
-		.setup()
-		.click(screen.getByRole("button", { name: "Retry session links" }));
-	await screen.findByText("No linked sessions in loaded history.");
-	expect(
-		screen.queryByRole("link", { name: /^Verified conversation/ }),
+		screen.queryByRole("link", { name: /Chat 0/ }),
 	).not.toBeInTheDocument();
 });
-
-it("interprets timezone-free room timestamps as UTC and labels missing or invalid dates", async () => {
-	mocks.rooms = [
-		{
-			roomId: "dated",
-			roomName: "Dated conversation",
-			dateUpdated: "2026-10-07 08:30:00",
-		},
-		{
-			roomId: "invalid",
-			roomName: "Invalid date",
-			dateCreated: "not-a-date",
-		},
-		{ roomId: "missing", roomName: "Missing date" },
-	];
-	read.mockResolvedValue("source-one");
+it("opens a direct room by keyboard", async () => {
 	render(content());
-	const dated = await screen.findByRole("link", {
-		name: /^Dated conversation/,
-	});
-	expect(dated.querySelector("time")).toHaveAttribute(
-		"dateTime",
-		"2026-10-07T08:30:00.000Z",
+	const link = await screen.findByRole("link", { name: /Chat 0/ });
+	link.focus();
+	await userEvent.keyboard("{Enter}");
+	expect(mocks.openRoom).toHaveBeenCalledWith("r0");
+});
+
+it("invalidates a cached topic after an owner link change while its tab is closed", async () => {
+	function Shell({ show }: { show: boolean }) {
+		useTopicSessionEvents();
+		return (
+			<MemoryRouter>
+				{show && <TopicSessions topicId="topic" />}
+			</MemoryRouter>
+		);
+	}
+	const { rerender } = render(<Shell show />);
+	await screen.findByRole("link", { name: /Chat 0/ });
+	rerender(<Shell show={false} />);
+	act(() =>
+		window.dispatchEvent(
+			new CustomEvent(ROOM_TREE_CHANGED, {
+				detail: {
+					actions: mocks.actions,
+					roomId: "new-room",
+					topicId: "topic",
+					topics: [],
+				},
+			}),
+		),
 	);
-	expect(
-		screen.getByRole("link", { name: /^Invalid date/ }),
-	).toHaveTextContent("Date unavailable");
-	expect(
-		screen.getByRole("link", { name: /^Missing date/ }),
-	).toHaveTextContent("Date unavailable");
+	expect(mocks.actions.run).toHaveBeenCalledOnce();
+	mocks.actions.run.mockResolvedValueOnce(page(0, 1, 1));
+	rerender(<Shell show />);
+	await waitFor(() => expect(mocks.actions.run).toHaveBeenCalledTimes(2));
+	await waitFor(() =>
+		expect(
+			screen.queryByRole("link", { name: /Chat 24/ }),
+		).not.toBeInTheDocument(),
+	);
 });

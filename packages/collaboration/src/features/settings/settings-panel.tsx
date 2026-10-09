@@ -1,8 +1,9 @@
 import { NavLink, useLocation } from "react-router";
-import { cn } from "@semoss/ui/next";
+import { Button, cn } from "@semoss/ui/next";
 import { AboutYou } from "@/features/collaboration/components/about-you";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import { CollaborationPageHeader } from "@/features/collaboration/components/collaboration-page-header";
+import { useCollaborationResource } from "@/features/collaboration/live/work-updates.context";
 import { AppearanceSettings } from "./appearance-settings";
 import { DataSettings } from "./data-settings";
 import { RulesSettings } from "./rules-settings";
@@ -15,6 +16,10 @@ export function SettingsPanel() {
 		settingsSections.find(({ id }) =>
 			pathname.replace(/\/$/, "").endsWith(`/${id}`),
 		)?.id ?? "about-you";
+	const resource = useCollaborationResource(
+		selected === "rules" ? "rules" : "people",
+		selected === "rules" || selected === "about-you",
+	);
 	return (
 		<CollaborationPage>
 			<CollaborationPageHeader
@@ -44,6 +49,17 @@ export function SettingsPanel() {
 					))}
 				</nav>
 				<div className="min-w-0 max-w-4xl flex-1">
+					{resource.isLoading && (
+						<output>Loading saved settings…</output>
+					)}
+					{resource.error && (
+						<p role="alert">
+							{resource.error}{" "}
+							<Button variant="ghost" onClick={resource.refresh}>
+								Retry
+							</Button>
+						</p>
+					)}
 					<div hidden={selected !== "about-you"}>
 						<AboutYou />
 					</div>

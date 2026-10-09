@@ -5,6 +5,8 @@ import {
 
 export interface NewChatDraft {
 	id: string;
+	topicId?: string;
+	linkedTopicId?: string;
 	session: RoomSession;
 	startedRoomId: string;
 	pendingSubmission: Promise<void> | null;
@@ -95,6 +97,7 @@ function getNewChatDraft(
 	let hasSeededSettings = false;
 	const draft: NewChatDraft = {
 		id,
+		topicId: new URLSearchParams(search).get("topicId") || undefined,
 		session,
 		startedRoomId: "",
 		pendingSubmission: null,

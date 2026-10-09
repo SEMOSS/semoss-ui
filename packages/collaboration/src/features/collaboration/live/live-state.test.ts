@@ -5,132 +5,13 @@ import {
 	loadLiveState,
 	loadThreadMessages,
 	mapMemory,
+	mapThread,
+	readResourceRows,
 	readThreadInsights,
 	readThreadMessagesPage,
-	readWorkUpdates,
 	summarizeThread,
 	syncMail,
 } from "./live-state";
-
-it("uses only native source ids provided by BrainListThreads", async () => {
-	const run = vi.fn().mockResolvedValue({
-		pixelReturn: [
-			{
-				output: {
-					items: [
-						{
-							id: "brain-teams",
-							channel: "teams",
-							latestMessageId: "message-1",
-						},
-						{
-							id: "brain-email",
-							channel: "email",
-							latestMessageId: "mail-1",
-						},
-						{
-							id: "brain-without-mail",
-							channel: "email",
-							latestMessageId: null,
-						},
-						{
-							id: "teams-with-native-id",
-							channel: "teams",
-							conversationId: "chat-1",
-							latestMessageId: "message-2",
-						},
-					],
-				},
-			},
-			{ output: { items: [] } },
-			{ output: { items: [] } },
-			{ output: { status: "none" } },
-			// Active memories, suggested memories, open reviews, and people.
-			...Array.from({ length: 4 }, () => ({
-				output: { items: [], total: 0 },
-			})),
-		],
-	});
-	const { threads } = await readWorkUpdates({
-		run,
-	} as unknown as InsightActions);
-	expect(threads[0]).toMatchObject({
-		id: "brain-teams",
-		channel: "teams",
-		source: undefined,
-	});
-	expect(threads[1].source).toMatchObject({
-		kind: "outlook",
-		nativeId: "mail-1",
-	});
-	expect(threads[2].source).toBeUndefined();
-	expect(threads[3].source).toMatchObject({
-		kind: "teams",
-		nativeId: "chat-1",
-	});
-});
-
-it("rejects an overlapping topic directory instead of showing it as complete", async () => {
-	const topics = [
-		{ id: "one", name: "First" },
-		{ id: "two", name: "Second" },
-	];
-	const response = (outputs: unknown[]) => ({
-		pixelReturn: outputs.map((output) => ({ output, operationType: [] })),
-	});
-	const run = vi.fn(async (statement: string) => {
-		if (statement.startsWith("BrainGetTopic")) return response(topics);
-		return response([
-			{},
-			{},
-			{ items: [] },
-			{ items: [topics[0], topics[0], topics[1], topics[1]], total: 4 },
-			...Array.from({ length: 11 }, () => ({ items: [], total: 0 })),
-		]);
-	});
-	await expect(
-		loadLiveState({ run } as unknown as InsightActions),
-	).rejects.toThrow("Topics returned overlapping pages");
-	expect(run).toHaveBeenCalledTimes(1);
-});
-
-it("loads topics beyond the initial thousand with bounded detail batches", async () => {
-	const topics = Array.from({ length: 1001 }, (_, index) => ({
-		id: `topic-${index}`,
-		name: `Topic ${index}`,
-	}));
-	const response = (outputs: unknown[]) => ({
-		pixelReturn: outputs.map((output) => ({ output, operationType: [] })),
-	});
-	const empty = { items: [], total: 0 };
-	const run = vi.fn(async (statement: string) => {
-		if (statement.startsWith("BrainGetProfile"))
-			return response([
-				{},
-				{},
-				empty,
-				{ items: topics.slice(0, 1000), total: topics.length },
-				...Array.from({ length: 11 }, () => empty),
-			]);
-		if (statement.startsWith("BrainListTopics")) {
-			expect(statement).toContain("offset=[1000]");
-			return response([
-				{ items: topics.slice(1000), total: topics.length },
-			]);
-		}
-		const ids = [...statement.matchAll(/topicId=\["(topic-\d+)"\]/g)].map(
-			(match) => match[1],
-		);
-		expect(ids.length).toBeLessThanOrEqual(50);
-		return response(
-			ids.map((id) => topics.find((topic) => topic.id === id)),
-		);
-	});
-	const state = await loadLiveState({ run } as unknown as InsightActions);
-	expect(state.topics).toHaveLength(1001);
-	expect(state.topics.at(-1)?.id).toBe("topic-1000");
-	expect(run).toHaveBeenCalledTimes(23);
-});
 
 it("requests optional display bodies while preserving exclusions, links and legacy text", async () => {
 	const displayBody = {
@@ -375,238 +256,106 @@ it("maps a server memory and drops links it does not know", () => {
 	});
 });
 
-it("paginates open reviews and suggested memories independently of active memories and loads their context", async () => {
-	const response = (outputs: unknown[]) => ({
-		pixelReturn: outputs.map((output) => ({ output, operationType: [] })),
-	});
-	const review = (id: string, topicId: string) => ({
-		id,
-		kind: "new_topic",
-		status: "open",
-		data: { candidate: topicId },
-		createdAt: "2026-10-08T12:00:00Z",
-	});
-	const active = Array.from({ length: 500 }, (_, index) => ({
-		id: `active-${index}`,
-		state: "active",
+function response(output: unknown) {
+	return { pixelReturn: [{ output, operationType: [] }] };
+}
+
+it("limits startup to profile and settings", async () => {
+	const run = vi
+		.fn()
+		.mockResolvedValue({ pixelReturn: [{ output: {} }, { output: {} }] });
+	const state = await loadLiveState({ run } as unknown as InsightActions);
+	expect(run).toHaveBeenCalledExactlyOnceWith(
+		"BrainGetProfile(); BrainGetSettings();",
+	);
+	expect(state.topics).toEqual([]);
+	expect(state.items).toEqual([]);
+	expect(state.people).toEqual([]);
+});
+
+it("lists saved topics across pages, including suggestions and empty topics, without fetching details", async () => {
+	const topics = Array.from({ length: 203 }, (_, index) => ({
+		id: `t-${index}`,
+		name: `Topic ${index}`,
+		status:
+			index % 3 === 0
+				? "suggested"
+				: index % 3 === 1
+					? "active"
+					: "dormant",
+		stats: { threads: 0, openItems: 0, lastActivity: null },
 	}));
 	const run = vi.fn(async (statement: string) => {
-		if (statement.startsWith("BrainListThreads"))
-			return response([
-				{ items: [] },
-				{ items: [] },
-				{ items: [] },
-				{ status: "none" },
-				{ items: active, total: 501 },
-				{
-					items: [{ id: "suggestion-1", state: "suggested" }],
-					total: 2,
-				},
-				{ items: [review("review-1", "topic-1")], total: 2 },
-				{ items: [{ id: "person-1", name: "Priya" }], total: 2 },
-			]);
-		if (statement.startsWith('BrainListMemories(state=["active"]'))
-			return response([
-				{ items: [{ id: "active-500", state: "active" }], total: 501 },
-			]);
-		if (statement.startsWith('BrainListMemories(state=["suggested"]'))
-			return response([
-				{
-					items: [
-						{
-							id: "suggestion-2",
-							state: "suggested",
-							about: [{ type: "topic", id: "topic-2" }],
-						},
-					],
-					total: 2,
-				},
-			]);
-		if (statement.startsWith("BrainListReview"))
-			return response([
-				{ items: [review("review-2", "topic-2")], total: 2 },
-			]);
-		if (statement.startsWith("BrainListPeople"))
-			return response([
-				{
-					items: [
-						{ id: "person-2", name: "Kira", follow: "suggested" },
-					],
-					total: 2,
-				},
-			]);
-		if (statement.startsWith("BrainGetTopic"))
-			return response([
-				{ id: "topic-1", name: "Launch" },
-				{ id: "topic-2", name: "Planning" },
-			]);
-		throw new Error(`Unexpected statement: ${statement}`);
+		expect(statement).toMatch(
+			/^BrainListTopics\(limit=\[100\], offset=\[\d+\]\);$/,
+		);
+		const offset = Number(statement.match(/offset=\[(\d+)\]/)?.[1]);
+		return response({
+			items: topics.slice(offset, offset + 100),
+			total: topics.length,
+		});
 	});
-	const updates = await readWorkUpdates({ run } as unknown as InsightActions);
-	expect(updates.memories).toHaveLength(503);
-	expect(
-		updates.memories
-			.filter((memory) => memory.state === "suggested")
-			.map((memory) => memory.id),
-	).toEqual(["suggestion-1", "suggestion-2"]);
-	expect(updates.reviews).toMatchObject([
-		{
-			id: "review-1",
-			refId: "topic-1",
-			candidate: { name: "Launch" },
-			createdAt: "2026-10-08T12:00:00Z",
-			isSample: false,
-		},
-		{ id: "review-2", refId: "topic-2", candidate: { name: "Planning" } },
-	]);
-	expect(updates.people?.map((person) => person.id)).toEqual([
-		"person-1",
-		"person-2",
-	]);
-	expect(updates.pendingCoverage).toEqual({
-		reviews: 2,
-		suggestedMemories: 2,
-	});
-	expect(run.mock.calls.map(([statement]) => statement)).toContain(
-		'BrainListMemories(state=["active"], limit=[500], offset=[500]);',
+	const rows = await readResourceRows(
+		{ run } as unknown as InsightActions,
+		"directory",
 	);
-	expect(run.mock.calls.map(([statement]) => statement)).toContain(
-		'BrainListMemories(state=["suggested"], limit=[500], offset=[1]);',
-	);
-	expect(run.mock.calls.map(([statement]) => statement)).toContain(
-		'BrainListReview(status=["open"], limit=[500], offset=[1]);',
-	);
+	expect(rows.topics).toHaveLength(203);
+	expect(rows.topics?.[0].status).toBe("suggested");
+	expect(run).toHaveBeenCalledTimes(3);
 });
 
 it.each([
-	{
-		name: "missing rows",
-		second: { items: [], total: 2 },
-		error: "changed while refreshing",
-	},
-	{
-		name: "changed total",
-		second: { items: [{ id: "review-2" }], total: 1 },
-		error: "changed while refreshing",
-	},
-	{
-		name: "repeated rows",
-		second: { items: [{ id: "review-1" }], total: 2 },
-		error: "overlapping pages",
-	},
-	{
-		name: "invalid rows",
-		second: { items: [{ text: "No identity" }], total: 2 },
-		error: "id",
-	},
+	{ items: [], total: 2 },
+	{ items: [{ id: "one" }], total: 3 },
+	{ items: [{ id: "one" }], total: 2 },
+	{ items: [{}], total: 2 },
 ])(
-	"rejects $name so a partial review snapshot cannot remove existing pending entries",
-	async ({ second, error }) => {
-		const response = (outputs: unknown[]) => ({
-			pixelReturn: outputs.map((output) => ({ output })),
-		});
+	"rejects partial or inconsistent directory continuation %j",
+	async (next) => {
 		const run = vi
 			.fn()
 			.mockResolvedValueOnce(
-				response([
-					{ items: [] },
-					{ items: [] },
-					{ items: [] },
-					{ status: "none" },
-					{ items: [], total: 0 },
-					{ items: [], total: 0 },
-					{ items: [{ id: "review-1" }], total: 2 },
-					{ items: [], total: 0 },
-				]),
+				response({
+					items: [{ id: "one", name: "One", status: "suggested" }],
+					total: 2,
+				}),
 			)
-			.mockResolvedValueOnce(response([second]));
+			.mockResolvedValueOnce(response(next));
 		await expect(
-			readWorkUpdates({ run } as unknown as InsightActions),
-		).rejects.toThrow(error);
+			readResourceRows({ run } as unknown as InsightActions, "directory"),
+		).rejects.toThrow();
 	},
 );
 
-it("does not return partial pending data when a later memory page fails", async () => {
-	const response = (outputs: unknown[]) => ({
-		pixelReturn: outputs.map((output) => ({ output })),
-	});
-	const run = vi
-		.fn()
-		.mockResolvedValueOnce(
-			response([
-				{ items: [] },
-				{ items: [] },
-				{ items: [] },
-				{ status: "none" },
-				{ items: [{ id: "kept", state: "active" }], total: 1 },
-				{
-					items: [{ id: "suggestion-1", state: "suggested" }],
-					total: 2,
-				},
-				{ items: [], total: 0 },
-				{ items: [], total: 0 },
-			]),
-		)
-		.mockRejectedValueOnce(new Error("Memory page unavailable"));
-	await expect(
-		readWorkUpdates({ run } as unknown as InsightActions),
-	).rejects.toThrow("Memory page unavailable");
+it("reads scoped context using the backend topic filters", async () => {
+	const run = vi.fn().mockResolvedValue(response({ items: [], total: 0 }));
+	await readResourceRows(
+		{ run } as unknown as InsightActions,
+		"topic-context:one",
+	);
+	const statements = run.mock.calls.map(([statement]) => statement);
+	expect(statements).toHaveLength(3);
+	expect(statements).toContain(
+		'BrainListPeople(topicId=["one"], limit=[100], offset=[0]);',
+	);
+	expect(statements).toContain(
+		'BrainListThreads(topicId=["one"], detail=[true], limit=[100], offset=[0]);',
+	);
+	expect(statements).toContain(
+		'BrainListMemories(refType=["topic"], refId=["one"], state=["active","suggested"], limit=[100], offset=[0]);',
+	);
 });
 
-it("loads every initial pending page while retaining review history and active memories", async () => {
-	const response = (outputs: unknown[]) => ({
-		pixelReturn: outputs.map((output) => ({ output })),
-	});
-	const empty = { items: [], total: 0 };
-	const review = (id: string, status: string) => ({
-		id,
-		kind: "unassigned",
-		status,
-	});
-	const run = vi.fn(async (statement: string) => {
-		if (statement.startsWith("BrainGetProfile"))
-			return response([
-				{},
-				{},
-				empty,
-				empty,
-				empty,
-				empty,
-				empty,
-				{ items: [review("open-1", "open")], total: 2 },
-				{ items: [review("accepted", "accepted")], total: 1 },
-				{ items: [review("dismissed", "dismissed")], total: 1 },
-				empty,
-				empty,
-				empty,
-				{ items: [{ id: "active", state: "active" }], total: 1 },
-				{
-					items: [{ id: "suggested-1", state: "suggested" }],
-					total: 2,
-				},
-			]);
-		if (statement.startsWith("BrainListReview"))
-			return response([{ items: [review("open-2", "open")], total: 2 }]);
-		if (statement.startsWith("BrainListMemories"))
-			return response([
-				{
-					items: [{ id: "suggested-2", state: "suggested" }],
-					total: 2,
-				},
-			]);
-		throw new Error(`Unexpected statement: ${statement}`);
-	});
-	const state = await loadLiveState({ run } as unknown as InsightActions);
-	expect(state.reviews.map(({ id, status }) => ({ id, status }))).toEqual([
-		{ id: "open-1", status: "open" },
-		{ id: "open-2", status: "open" },
-		{ id: "accepted", status: "accepted" },
-		{ id: "dismissed", status: "dismissed" },
-	]);
-	expect(state.reviews.every((entry) => entry.isSample === false)).toBe(true);
-	expect(state.memories.map((memory) => memory.id)).toEqual([
-		"active",
-		"suggested-1",
-		"suggested-2",
-	]);
+it("preserves native source identities without inventing them", () => {
+	expect(
+		mapThread({ id: "missing", channel: "email" }).source,
+	).toBeUndefined();
+	expect(
+		mapThread({ id: "email", channel: "email", latestMessageId: "native" })
+			.source,
+	).toMatchObject({ kind: "outlook", nativeId: "native" });
+	expect(
+		mapThread({ id: "teams", channel: "teams", conversationId: "chat" })
+			.source,
+	).toMatchObject({ kind: "teams", nativeId: "chat" });
 });

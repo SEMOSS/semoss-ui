@@ -7,7 +7,7 @@ export interface RoomTreeRoom {
 	activityAt?: string;
 	/** Server-owned pin state, retained independently of sidebar pagination. */
 	pinned?: boolean;
-	/** Every surviving source topic, sorted by name then identity. */
+	/** Every saved linked topic, sorted by name then identity. */
 	topics: RoomTreeTopic[];
 	/** Browser-only activity that has not been viewed in this account. */
 	isUnread?: boolean;
@@ -21,12 +21,16 @@ export interface RoomTreeTopic {
 }
 
 export interface RoomTreeResponse {
+	hasMore?: boolean;
+	nextOffset?: number;
 	rooms: RoomTreeRoom[];
 	/** Partial association failures leave the affected rooms visible without topic labels. */
 	warning?: string;
 }
 
 export interface RoomTreeSnapshot {
+	pinsComplete?: boolean;
+	pinStates?: Readonly<Record<string, boolean>>;
 	rooms: RoomTreeRoom[];
 	/** Undefined until the first successful pin read; includes later sidebar pages. */
 	pinnedRoomIds?: readonly string[];

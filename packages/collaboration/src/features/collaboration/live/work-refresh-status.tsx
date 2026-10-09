@@ -9,8 +9,16 @@ import {
 } from "@semoss/ui/next";
 import { threadPath } from "@/lib/workspace-paths";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import type { MailCheck, MailSyncResult, SyncOutcome } from "./live-state";
-import { useWorkUpdates } from "./work-updates.context";
+import type {
+	MailCheck,
+	MailSyncResult,
+	ResourceScope,
+	SyncOutcome,
+} from "./live-state";
+import {
+	useCollaborationResource,
+	useWorkUpdates,
+} from "./work-updates.context";
 
 const time = (at: string) =>
 	new Date(at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -55,9 +63,54 @@ function describeCheck(check: MailCheck | null): string {
 }
 
 /** A Refresh action and one quiet status line; what came in opens in a popover. */
-export function WorkRefreshStatus({ className }: { className?: string }) {
+export function WorkRefreshStatus({
+	className,
+	directory = false,
+	scope = directory ? "directory" : undefined,
+}: {
+	className?: string;
+	directory?: boolean;
+	scope?: ResourceScope;
+}) {
+	const topics = useCollaborationResource(
+		scope ?? "directory",
+		Boolean(scope),
+	);
 	const updates = useWorkUpdates();
 	if (!updates) return null;
+	if (scope)
+		return (
+			<div
+				className={cn(
+					"flex flex-wrap items-center gap-2 text-muted-foreground text-sm",
+					className,
+				)}
+			>
+				<Button
+					variant="ghost"
+					size="sm"
+					disabled={topics.isLoading}
+					onClick={topics.refresh}
+				>
+					<RefreshCw aria-hidden="true" />
+					Refresh
+				</Button>
+				<output>
+					{topics.isLoading
+						? directory
+							? "Loading topics…"
+							: "Loading tasks…"
+						: topics.error ||
+							(topics.complete
+								? directory
+									? "Topics are up to date"
+									: "Tasks are up to date"
+								: directory
+									? "Topics have not loaded"
+									: "Tasks have not loaded")}
+				</output>
+			</div>
+		);
 	// a sync started elsewhere (after a send, later the webhook) shows here too
 	const checking =
 		updates.isSyncing || updates.lastMailCheck?.status === "running";

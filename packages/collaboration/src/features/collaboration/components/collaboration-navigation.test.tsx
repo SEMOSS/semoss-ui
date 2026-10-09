@@ -124,7 +124,7 @@ describe("CollaborationNavigation", () => {
 		expect(within(rooms).getAllByRole("listitem")).toHaveLength(2);
 	});
 
-	it("shows active and dormant topics alphabetically, including topics without work", () => {
+	it("shows suggested, active and dormant topics alphabetically, including topics without work", () => {
 		const state = createInitialCollaborationState();
 		const base = state.topics[0];
 		if (!base) throw new Error("Missing topic fixture");
@@ -154,7 +154,7 @@ describe("CollaborationNavigation", () => {
 			within(topics)
 				.getAllByRole("link")
 				.map((link) => link.textContent),
-		).toEqual(["Alpha", "Zulu"]);
+		).toEqual(["Alpha", "Suggested", "Zulu"]);
 		expect(
 			within(topics).getByRole("link", { name: "Alpha" }),
 		).toHaveAttribute("aria-current", "page");

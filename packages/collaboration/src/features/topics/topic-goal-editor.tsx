@@ -94,6 +94,8 @@ export function TopicGoalEditor({
 							updates?.localId?.(saved.noteId) ?? saved.noteId,
 					},
 				});
+				if (updates?.resources?.[`topic:${topic.id}`])
+					void updates.loadResource?.(`topic:${topic.id}`, true);
 			}
 		} catch (cause: unknown) {
 			form.setError("root.server", {

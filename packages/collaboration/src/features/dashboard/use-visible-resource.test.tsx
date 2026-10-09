@@ -28,21 +28,25 @@ it("ignores stale reads and keeps the latest successful snapshot through isolate
 	await waitFor(() => expect(result.current.error).toBe(""));
 });
 
-it("suspends hidden and disabled resources and refreshes on return", async () => {
-	const visibility = vi
-		.spyOn(document, "visibilityState", "get")
-		.mockReturnValue("hidden");
+it("loads on use, caches revisits, and does not refresh on focus or timers", async () => {
 	const load = vi.fn().mockResolvedValue([]);
 	const { result, rerender } = renderHook(
 		({ enabled }) => useVisibleResource(load, enabled),
-		{ initialProps: { enabled: true } },
+		{ initialProps: { enabled: false } },
 	);
 	expect(load).not.toHaveBeenCalled();
-	visibility.mockReturnValue("visible");
-	act(() => document.dispatchEvent(new Event("visibilitychange")));
-	await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
+	rerender({ enabled: true });
+	await waitFor(() => expect(result.current.checkedAt).not.toBeNull());
 	rerender({ enabled: false });
-	act(() => window.dispatchEvent(new Event("focus")));
+	rerender({ enabled: true });
+	vi.useFakeTimers();
+	act(() => {
+		vi.advanceTimersByTime(120000);
+		window.dispatchEvent(new Event("focus"));
+		document.dispatchEvent(new Event("visibilitychange"));
+	});
 	expect(load).toHaveBeenCalledTimes(1);
-	expect(result.current.isLoading).toBe(false);
+	vi.useRealTimers();
+	act(() => result.current.refresh());
+	await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
 });

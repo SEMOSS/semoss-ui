@@ -8,7 +8,7 @@ vi.mock("@/features/rooms/api/read-room-source-association", () => ({
 
 it("shares settled results and retryable errors between overlapping active readers", async () => {
 	const read = vi.mocked(readRoomSourceAssociation);
-	read.mockResolvedValue("thread");
+	read.mockResolvedValue({ threadId: "thread", topicIds: ["topic"] });
 	const cache = createRoomSourceAssociations(() => ({}) as never);
 	const first = cache.createActivation();
 	const second = cache.createActivation();
@@ -17,18 +17,22 @@ it("shares settled results and retryable errors between overlapping active reade
 	first.inspect(["room"]);
 	await vi.waitFor(() => expect(first.get("room")?.status).toBe("ready"));
 	read.mockRejectedValue(new Error("Offline"));
-	second.inspect(["room"]);
+	second.inspect(["room"], true);
 	await vi.waitFor(() => expect(second.get("room")?.status).toBe("error"));
 	expect(first.get("room")).toMatchObject({
 		status: "error",
 		threadId: "thread",
 	});
-	read.mockResolvedValue("updated-thread");
+	read.mockResolvedValue({
+		threadId: "updated-thread",
+		topicIds: ["updated"],
+	});
 	first.inspect(["room"], true);
 	await vi.waitFor(() =>
 		expect(second.get("room")).toEqual({
 			status: "ready",
 			threadId: "updated-thread",
+			topicIds: ["updated"],
 		}),
 	);
 	expect(first.get("room")).toEqual(second.get("room"));

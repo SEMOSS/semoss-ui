@@ -13,6 +13,7 @@ import type { InsightActions } from "@/lib/pixel";
 import {
 	organizationReview,
 	organizationSession,
+	packet,
 } from "./topic-organization.test-fixtures";
 import type {
 	TopicOrganizationPreview,
@@ -572,4 +573,68 @@ describe("owner-guided topic setup", () => {
 			expect(session.afterApply).not.toHaveBeenCalled();
 		},
 	);
+});
+
+it("routes a chat combination through the editable grouping preview and retains undo", async () => {
+	const session = organizationSession();
+	const original = session.run.getMockImplementation();
+	if (!original) throw new Error("Missing transport fixture");
+	session.run.mockImplementation(async (statement) => {
+		if (statement.startsWith("BrainTopicReviewChat("))
+			return packet({
+				reviewId: session.saved?.id,
+				revision: session.saved?.revision,
+				reply: "Review the recruiting combination.",
+				changes: [
+					{
+						type: "combine",
+						topicKey: "",
+						topicKeys: ["topic-1", "topic-2"],
+						name: "Campus recruiting",
+						description: "University hiring",
+						addTerms: [],
+						addPeople: [],
+						removePeople: [],
+						reason: "Related work",
+					},
+				],
+			});
+		return original(statement);
+	});
+	const user = userEvent.setup();
+	render(step(session.actions));
+	await user.type(
+		await screen.findByRole("textbox", {
+			name: "Message the setup assistant",
+		}),
+		"Combine recruiting",
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Send to setup assistant" }),
+	);
+	await user.click(
+		await screen.findByRole("button", { name: "Review combination" }),
+	);
+	await user.click(
+		await screen.findByRole("button", { name: "Preview selected changes" }),
+	);
+	await screen.findByText(/Update topic references on/);
+	expect(
+		session.saved?.draft.topics.filter((topic) => topic.keep),
+	).toHaveLength(3);
+	await user.click(
+		screen.getByRole("button", { name: "Use this grouping in my draft" }),
+	);
+	await screen.findByRole("button", { name: "Edit Campus recruiting" });
+	expect(
+		session.saved?.draft.topics.filter((topic) => topic.keep),
+	).toHaveLength(2);
+	await user.click(screen.getByRole("button", { name: "Undo last change" }));
+	await screen.findByRole("button", { name: "Edit VCU Hiring" });
+	expect(
+		session.saved?.draft.topics.filter((topic) => topic.keep),
+	).toHaveLength(3);
+	expect(
+		screen.getByRole("button", { name: "Suggest a better grouping" }),
+	).toBeEnabled();
 });

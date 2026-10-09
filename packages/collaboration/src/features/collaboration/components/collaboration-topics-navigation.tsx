@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router";
 import {
 	Button,
@@ -13,6 +12,7 @@ import {
 import { useRoomTree } from "@/features/room-tree/room-tree.context";
 import { RoomTreeRoomLink } from "@/features/room-tree/room-tree-room-link";
 import { CreateTopicDialog } from "@/features/topics/create-topic-dialog";
+import { useCollaborationResource } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { topicTone } from "../topic-tone";
 
@@ -29,15 +29,14 @@ export function CollaborationTopicsNavigation({
 	onNavigate,
 }: CollaborationTopicsNavigationProps) {
 	const tree = useRoomTree();
+	const directory = useCollaborationResource("directory");
 	const { state } = useCollaborationSession();
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const [isCreating, setIsCreating] = useState(false);
 	const createButtonRef = useRef<HTMLButtonElement>(null);
 	const topics = state.topics
-		.filter(
-			(topic) => topic.status === "active" || topic.status === "dormant",
-		)
+		.filter((topic) => topic.status !== "archived")
 		.sort(
 			(left, right) =>
 				left.name.localeCompare(right.name, undefined, {
@@ -46,6 +45,19 @@ export function CollaborationTopicsNavigation({
 		);
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const roomListRef = useRef<HTMLUListElement>(null);
+	const pendingFocus = useRef<number | null>(null);
+	useEffect(() => {
+		if (tree.isLoading || pendingFocus.current === null) return;
+		if (!tree.rooms[pendingFocus.current]) {
+			pendingFocus.current = null;
+			return;
+		}
+		roomListRef.current?.children
+			.item(pendingFocus.current)
+			?.querySelector<HTMLAnchorElement>("a")
+			?.focus();
+		pendingFocus.current = null;
+	}, [tree.isLoading, tree.rooms]);
 	const { scrollTop } = tree;
 	useEffect(() => {
 		if (!isHidden && scrollRef.current)
@@ -119,26 +131,46 @@ export function CollaborationTopicsNavigation({
 						);
 					})}
 				</ul>
-				{topics.length === 0 && (
-					<div className="space-y-2 px-2 py-2">
-						<Small className="block font-normal text-muted-foreground text-xs leading-5">
-							Create a topic to bring related work together.
-						</Small>
+				{directory.isLoading && (
+					<output className="block p-2 text-muted-foreground text-xs">
+						Loading topics…
+					</output>
+				)}
+				{directory.error && (
+					<div role="alert" className="p-2 text-xs">
+						<p>{directory.error}</p>
 						<Button
-							type="button"
-							variant="outline"
+							variant="ghost"
 							size="sm"
-							className="pointer-coarse:min-h-11"
-							onClick={(event) => {
-								createButtonRef.current = event.currentTarget;
-								setIsCreating(true);
-							}}
+							onClick={directory.refresh}
 						>
-							<Plus aria-hidden="true" />
-							Create your first topic
+							Retry topics
 						</Button>
 					</div>
 				)}
+				{topics.length === 0 &&
+					directory.complete &&
+					!directory.error && (
+						<div className="space-y-2 px-2 py-2">
+							<Small className="block font-normal text-muted-foreground text-xs leading-5">
+								Create a topic to bring related work together.
+							</Small>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="pointer-coarse:min-h-11"
+								onClick={(event) => {
+									createButtonRef.current =
+										event.currentTarget;
+									setIsCreating(true);
+								}}
+							>
+								<Plus aria-hidden="true" />
+								Create your first topic
+							</Button>
+						</div>
+					)}
 			</nav>
 			<nav
 				aria-label="Pinned rooms"
@@ -170,13 +202,8 @@ export function CollaborationTopicsNavigation({
 								tree.loadMore();
 								return;
 							}
-							const firstNewRoomIndex = tree.rooms.length;
-							// Local paging must commit before its disappearing button gives up focus.
-							flushSync(() => tree.loadMore());
-							roomListRef.current?.children
-								.item(firstNewRoomIndex)
-								?.querySelector<HTMLAnchorElement>("a")
-								?.focus();
+							pendingFocus.current = tree.rooms.length;
+							tree.loadMore();
 						}}
 					>
 						{tree.isLoading ? "Loading…" : "Show 25 more"}

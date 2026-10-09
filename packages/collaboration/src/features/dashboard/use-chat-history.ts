@@ -19,7 +19,7 @@ export interface ChatHistory {
 }
 
 /** Keep previously loaded pages and scroll position when the route changes. */
-export function useChatHistory(): ChatHistory {
+export function useChatHistory(enabled = true): ChatHistory {
 	const { actions, insightId } = useInsight();
 	const [rooms, setRooms] = useState<RoomRow[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -94,9 +94,21 @@ export function useChatHistory(): ChatHistory {
 		void read(true);
 	}, [read]);
 	useEffect(() => {
-		refresh();
 		const changed = (event: Event) => {
 			if (event instanceof CustomEvent) {
+				if (event.detail?.actions && event.detail.actions !== actions)
+					return;
+				if (
+					event.detail?.deleted === true &&
+					typeof event.detail.roomId === "string"
+				) {
+					setRooms((current) =>
+						current.filter(
+							(room) => room.roomId !== event.detail.roomId,
+						),
+					);
+					return;
+				}
 				const row = z
 					.object({
 						scope: z.string().optional(),
@@ -134,7 +146,6 @@ export function useChatHistory(): ChatHistory {
 					);
 				}
 			}
-			refresh();
 		};
 		window.addEventListener(ROOM_HISTORY_CHANGED, changed);
 		return () => {
@@ -142,7 +153,10 @@ export function useChatHistory(): ChatHistory {
 			busy.current = false;
 			window.removeEventListener(ROOM_HISTORY_CHANGED, changed);
 		};
-	}, [insightId, refresh]);
+	}, [insightId, actions]);
+	useEffect(() => {
+		if (enabled && offset.current === 0 && !busy.current) refresh();
+	}, [enabled, refresh]);
 	useEffect(() => {
 		if (!isLoading && refreshQueued.current) {
 			refreshQueued.current = false;
