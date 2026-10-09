@@ -86,6 +86,11 @@ jobs:
                 cd packages/browser-automation
                 pnpm run build
 
+            - name: Build collaboration
+              run: |
+                cd packages/collaboration
+                pnpm run build
+
             # ---------- Download and Set Up semoss/bi -----------
             
             - name: Remove previous legacy folder
@@ -135,10 +140,12 @@ jobs:
                 mkdir -p semoss-ui-build/packages/playground
                 mkdir -p semoss-ui-build/packages/terminal
                 mkdir -p semoss-ui-build/packages/browser-automation
+                mkdir -p semoss-ui-build/packages/collaboration
                 cp -r packages/client/dist semoss-ui-build/packages/client
                 cp -r packages/playground/dist semoss-ui-build/packages/playground
                 cp -r packages/terminal/dist semoss-ui-build/packages/terminal
                 cp -r packages/browser-automation/dist semoss-ui-build/packages/browser-automation
+                cp -r packages/collaboration/dist semoss-ui-build/packages/collaboration
                 cp -r packages/legacy semoss-ui-build/packages
                 cp -r index.html semoss-ui-build/
             
@@ -269,6 +276,11 @@ jobs:
             - name: Build browser automation
               run: |
                 cd packages/browser-automation
+                pnpm run build
+
+            - name: Build collaboration
+              run: |
+                cd packages/collaboration
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
@@ -500,6 +512,11 @@ jobs:
             - name: Build browser automation
               run: |
                 cd packages/browser-automation
+                pnpm run build
+
+            - name: Build collaboration
+              run: |
+                cd packages/collaboration
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
