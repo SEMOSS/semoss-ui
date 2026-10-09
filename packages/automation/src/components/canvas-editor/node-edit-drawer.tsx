@@ -1,13 +1,6 @@
-import {
-	ChevronDown,
-	Code2,
-	ExternalLink,
-	HelpCircle,
-	Lock,
-	Trash2,
-} from "lucide-react";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { MonacoEditor } from "@semoss/shared";
+import { Code2, ExternalLink, HelpCircle, Lock, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	Button,
 	Field,
@@ -20,36 +13,61 @@ import {
 } from "@semoss/ui/next";
 import type {
 	AutomationNode,
-	AutomationNodeTrace,
 	StepRunStatus,
 } from "../../domain/automation.types";
 import { getDisplayMeta } from "../../domain/automation-display";
+import {
+	type AutomationScopeEntry,
+	getAutomationScopeExpression,
+} from "../../domain/automation-inspector";
 import {
 	getGeneratedPythonPreview,
 	getWorkflowNodeDefinition,
 	validateAutomationOutputVariable,
 } from "../../domain/automation-workflow-adapter";
-import { OutputPreview } from "../form-editor/output-preview";
-import { TraceDetail } from "../form-editor/trace-detail";
+import { StatusIcon } from "../status-icon";
+import {
+	AutomationPythonEditor,
+	type AutomationPythonEditorHandle,
+} from "./automation-python-editor";
+import { AutomationScopeExplorer } from "./automation-scope-explorer";
 import { StepForm } from "./step-form";
 
-/** Values the runtime seeds into every run's scope, regardless of the graph. */
-const RUN_SCOPE_VARIABLES = ["date", "triggered_at", "run_id"];
+const RUN_STATUS_LABELS: Record<StepRunStatus, string> = {
+	idle: "Idle",
+	running: "Running",
+	waiting: "Waiting for input",
+	success: "Success",
+	error: "Failed",
+};
 
+const RUN_STATUS_CLASSES: Record<StepRunStatus, string> = {
+	idle: "border-border text-muted-foreground",
+	running: "border-primary/30 bg-primary/5 text-primary",
+	waiting:
+		"border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400",
+	success:
+		"border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+	error: "border-destructive/30 bg-destructive/5 text-destructive",
+};
 export interface NodeEditDrawerProps {
 	step: AutomationNode;
 	appId: string;
 	upstreamVars: string[];
+	scopeEntries: AutomationScopeEntry[];
 	runStatus?: StepRunStatus;
 	runError?: string;
-	runOutput?: string | null;
-	runTrace?: AutomationNodeTrace;
 	devMode?: boolean;
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: () => void;
 	/** Pops the raw Python source out into a larger editor, for a host rendering this drawer
 	 * alongside the canvas instead of in a separate iframe. */
 	onOpenPythonEditor?: (nodeId: string, source: string) => void;
+	/** Switches the trace/run-details panel to the latest run, selected on this node. */
+	onViewRunDetails?: (stepId: string) => void;
+	/** When true, this node's compiled Python source is open in a real file editor tab —
+	 * the inline editor is locked so the two copies can't diverge. */
+	pythonFileOpen?: boolean;
 	/** When true, renders the node's configuration as view-only: mutating fields, the
 	 * delete action, and raw Python editing (inline and the popout modal) are all disabled. */
 	readOnly?: boolean;
@@ -74,17 +92,17 @@ export function NodeEditDrawer({
 	step,
 	appId,
 	upstreamVars,
+	scopeEntries,
 	runStatus,
 	runError,
-	runOutput,
-	runTrace,
 	devMode = false,
 	onUpdate,
 	onDelete,
 	onOpenPythonEditor,
+	onViewRunDetails,
+	pythonFileOpen = false,
 	readOnly = false,
 }: NodeEditDrawerProps) {
-	const [outputExpanded, setOutputExpanded] = useState(false);
 	const [editorMode, setEditorMode] = useState<"form" | "python">("form");
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
@@ -92,7 +110,11 @@ export function NodeEditDrawer({
 		: undefined;
 	const isCustomSource = step.workflowCodeMode === "custom";
 	const isDeveloperPython = step.workflowType === "developer.python";
-	const isDecisionBranch = step.workflowType === "control.if";
+	const isDecisionBranch =
+		step.workflowType === "control.if" ||
+		step.workflowType === "control.jev";
+	const isLoop = step.workflowType === "control.loop";
+	const isJavaOwnedControl = isDecisionBranch || isLoop;
 	const hasOutputVariable =
 		step.workflowType !== "trigger.start" && !isDecisionBranch;
 	const outputVariableError = hasOutputVariable
@@ -100,7 +122,7 @@ export function NodeEditDrawer({
 		: null;
 	const showPythonEditor =
 		isDeveloperPython ||
-		(!isDecisionBranch && devMode && editorMode === "python");
+		(!isJavaOwnedControl && devMode && editorMode === "python");
 	const canRevertToGenerated =
 		isCustomSource && workflowDefinition?.defaultCodeMode === "generated";
 	const persistedPythonSource =
@@ -124,6 +146,7 @@ export function NodeEditDrawer({
 		null,
 	);
 	const pendingPythonUpdateRef = useRef<PendingPythonUpdate | null>(null);
+	const pythonEditorRef = useRef<AutomationPythonEditorHandle | null>(null);
 	const activePythonStepIdRef = useRef(step.id);
 	const onUpdateRef = useRef(onUpdate);
 	// Newest version of each node the drawer has rendered. The pending edit records which
@@ -132,8 +155,12 @@ export function NodeEditDrawer({
 	// inside the debounce window is not written back stale.
 	const latestStepsRef = useRef(new Map<string, AutomationNode>());
 	const { resolvedTheme } = useTheme();
-	const [showPythonVariablePicker, setShowPythonVariablePicker] =
-		useState(false);
+	// Position (relative to the lock overlay) of the "can't edit" tooltip, so it
+	// follows the cursor instead of sitting fixed at one corner.
+	const [pythonLockPointer, setPythonLockPointer] = useState<{
+		x: number;
+		y: number;
+	} | null>(null);
 	const Icon = meta.icon;
 	useEffect(() => {
 		onUpdateRef.current = onUpdate;
@@ -174,7 +201,7 @@ export function NodeEditDrawer({
 	}, [flushPythonUpdate, pythonSource, step.id]);
 	useEffect(() => () => flushPythonUpdate(), [flushPythonUpdate]);
 	const updatePythonSource = (source: string) => {
-		if (readOnly) return;
+		if (readOnly || pythonFileOpen) return;
 		setPythonDraft(source);
 		pendingPythonUpdateRef.current = { source, step };
 		if (pythonUpdateTimeoutRef.current) {
@@ -184,49 +211,15 @@ export function NodeEditDrawer({
 	};
 	// Custom source reads upstream values off the scope mapping. A ${...} reference is only
 	// resolved for generated nodes, and is not valid Python syntax on its own.
-	const insertPythonVariable = (variable: string) => {
+	const insertPythonExpression = (expression: string) => {
+		if (pythonEditorRef.current) {
+			pythonEditorRef.current.insertText(expression);
+			return;
+		}
 		const separator =
 			pythonDraft.length === 0 || pythonDraft.endsWith("\n") ? "" : "\n";
-		updatePythonSource(
-			`${pythonDraft}${separator}scope[${JSON.stringify(variable)}]`,
-		);
+		updatePythonSource(`${pythonDraft}${separator}${expression}`);
 	};
-	const pythonVariablePicker = (
-		<div className="relative">
-			<Button
-				size="sm"
-				variant="ghost"
-				className="h-6 gap-0.5 px-1.5 text-[10px] text-primary"
-				onClick={() => setShowPythonVariablePicker((isOpen) => !isOpen)}
-			>
-				+ Variable
-				<ChevronDown className="size-3" />
-			</Button>
-			{showPythonVariablePicker && (
-				<div className="absolute top-full right-0 z-50 mt-1 min-w-45 rounded-md border bg-popover py-1 shadow-md">
-					{[...upstreamVars, ...RUN_SCOPE_VARIABLES].map(
-						(variable) => (
-							<button
-								key={variable}
-								type="button"
-								onMouseDown={(event) => {
-									event.preventDefault();
-									insertPythonVariable(variable);
-									setShowPythonVariablePicker(false);
-								}}
-								className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left font-mono text-xs hover:bg-accent hover:text-accent-foreground"
-							>
-								<span className="text-[10px] text-muted-foreground">
-									scope
-								</span>
-								{variable}
-							</button>
-						),
-					)}
-				</div>
-			)}
-		</div>
-	);
 	const openPythonModal = () => {
 		if (readOnly) return;
 		flushPythonUpdate();
@@ -267,33 +260,36 @@ export function NodeEditDrawer({
 
 			<div className="flex-1 overflow-y-auto px-4 py-4">
 				<div className="space-y-4">
-					{runStatus === "success" && runOutput && (
-						<div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2">
-							<p className="mb-1 font-medium text-[10px] text-emerald-700 uppercase tracking-wide dark:text-emerald-400">
-								Last run output
-							</p>
-							<OutputPreview
-								value={runOutput}
-								expanded={outputExpanded}
-								onToggle={() =>
-									setOutputExpanded((value) => !value)
-								}
-								nodeType={step.type}
-							/>
+					{runStatus && runStatus !== "idle" && (
+						<div
+							className={`flex items-start justify-between gap-2 rounded-lg border px-3 py-2 ${RUN_STATUS_CLASSES[runStatus]}`}
+						>
+							<div className="flex min-w-0 items-start gap-1.5 font-medium text-[11px]">
+								<StatusIcon
+									className="mt-0.5 size-3.5 shrink-0"
+									status={runStatus}
+								/>
+								<span className="line-clamp-2">
+									{RUN_STATUS_LABELS[runStatus]}
+									{runStatus === "error" && runError
+										? `: ${runError}`
+										: ""}
+								</span>
+							</div>
+							{onViewRunDetails && (
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									className="h-6 shrink-0 gap-1 px-2 text-[11px]"
+									onClick={() => onViewRunDetails(step.id)}
+								>
+									View run details
+									<ExternalLink className="size-3" />
+								</Button>
+							)}
 						</div>
 					)}
-
-					{runStatus === "error" && runError && (
-						<div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
-							<p className="mb-1 font-medium text-[10px] text-destructive uppercase tracking-wide">
-								Step failed
-							</p>
-							<pre className="max-h-20 overflow-y-auto whitespace-pre-wrap break-all font-sans text-[11px] text-destructive/80">
-								{runError}
-							</pre>
-						</div>
-					)}
-					{runTrace && <TraceDetail trace={runTrace} step={step} />}
 
 					<Field>
 						<FieldLabel className="text-xs">Label</FieldLabel>
@@ -312,7 +308,7 @@ export function NodeEditDrawer({
 						/>
 					</Field>
 
-					{hasOutputVariable && (
+					{hasOutputVariable && devMode && (
 						<Field>
 							<FieldLabel className="text-xs">
 								Output variable
@@ -332,7 +328,7 @@ export function NodeEditDrawer({
 								aria-invalid={Boolean(outputVariableError)}
 							/>
 							<p
-								className={`text-[11px] ${outputVariableError ? "text-destructive" : "text-muted-foreground"}`}
+								className={`text-xs ${outputVariableError ? "text-destructive" : "text-muted-foreground"}`}
 							>
 								{outputVariableError ??
 									`Later steps can use \${${step.outputVar}}.`}
@@ -351,17 +347,21 @@ export function NodeEditDrawer({
 								<p className="text-[11px] text-muted-foreground">
 									{pythonSourceUnavailable
 										? "Not available for historical runs."
-										: isDecisionBranch
-											? "This decision evaluates its conditions in order and uses the first matching path."
-											: isDeveloperPython
-												? "This node runs its custom Python source."
-												: isCustomSource
-													? "This node uses custom Python."
-													: "Use the form or inspect the generated Python."}
+										: step.workflowType === "control.jev"
+											? "Jev chooses a configured route, or the low-confidence path when no answer is confident enough."
+											: step.workflowType === "control.if"
+												? "This decision evaluates its conditions in order and uses the first matching path."
+												: isLoop
+													? "The loop repeats its nested steps for every item or batch."
+													: isDeveloperPython
+														? "This node runs its custom Python source."
+														: isCustomSource
+															? "This node uses custom Python."
+															: "Use the form or inspect the generated Python."}
 								</p>
 							</div>
 							{!isDeveloperPython &&
-								!isDecisionBranch &&
+								!isJavaOwnedControl &&
 								devMode && (
 									<div className="flex rounded-md border bg-muted/40 p-0.5">
 										<button
@@ -392,7 +392,7 @@ export function NodeEditDrawer({
 
 						{!isDeveloperPython &&
 							editorMode === "form" &&
-							(isCustomSource && !isDecisionBranch ? (
+							(isCustomSource && !isJavaOwnedControl ? (
 								<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
 									<p className="font-medium text-xs">
 										Custom Python is active
@@ -513,7 +513,19 @@ export function NodeEditDrawer({
 												</TooltipContent>
 											</Tooltip>
 										</FieldLabel>
-										{!readOnly && pythonVariablePicker}
+										{!readOnly && !pythonFileOpen && (
+											<AutomationScopeExplorer
+												entries={scopeEntries}
+												onSelect={(entry, access) =>
+													insertPythonExpression(
+														getAutomationScopeExpression(
+															entry,
+															access,
+														),
+													)
+												}
+											/>
+										)}
 										{!readOnly && (
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -537,52 +549,81 @@ export function NodeEditDrawer({
 										)}
 									</div>
 								</div>
-								<div className="h-75 overflow-hidden rounded-lg border bg-muted/30">
-									<Suspense
-										fallback={
-											<pre className="h-full overflow-auto p-3 font-mono text-xs">
-												{pythonDraft}
-											</pre>
+								<div className="relative h-75 overflow-visible rounded-lg border bg-muted/30">
+									<div
+										className={
+											pythonFileOpen
+												? "h-full opacity-50"
+												: "h-full"
 										}
 									>
-										<MonacoEditor
-											height="100%"
-											width="100%"
-											language="python"
+										<AutomationPythonEditor
+											ref={pythonEditorRef}
+											value={pythonDraft}
+											onChange={updatePythonSource}
+											scopeEntries={scopeEntries}
 											theme={
 												resolvedTheme === "dark"
 													? "vs-dark"
 													: "vs"
 											}
-											value={pythonDraft}
-											onChange={(value) =>
-												updatePythonSource(value ?? "")
+											readOnly={
+												readOnly || pythonFileOpen
 											}
-											options={{
-												automaticLayout: true,
-												fontSize: 13,
-												lineNumbers: "on",
-												minimap: { enabled: false },
-												folding: true,
-												scrollBeyondLastLine: false,
-												wordWrap: "on",
-												readOnly,
-												padding: {
-													top: 12,
-													bottom: 12,
-												},
-											}}
 										/>
-									</Suspense>
+									</div>
+									{pythonFileOpen && (
+										<div
+											role="note"
+											className="absolute inset-0 z-20 cursor-not-allowed"
+											aria-label="Can't edit here while the file is open"
+											onMouseMove={(event) =>
+												setPythonLockPointer({
+													x: event.clientX,
+													y: event.clientY,
+												})
+											}
+											onMouseLeave={() =>
+												setPythonLockPointer(null)
+											}
+										>
+											{pythonLockPointer &&
+												createPortal(
+													// Portalled to <body> — position: fixed only
+													// resolves against the viewport when every
+													// ancestor is untransformed, and this panel sits
+													// inside dock/dialog wrappers that aren't
+													// guaranteed to be, which threw the tooltip out
+													// of alignment with the actual cursor.
+													<div
+														className="pointer-events-none fixed z-9999 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-popover-foreground text-xs shadow-md"
+														style={{
+															left:
+																pythonLockPointer.x +
+																12,
+															top:
+																pythonLockPointer.y +
+																12,
+														}}
+													>
+														Can&apos;t edit here
+														while the file is open
+													</div>,
+													document.body,
+												)}
+										</div>
+									)}
 								</div>
 								<p className="text-muted-foreground text-xs">
-									{readOnly
-										? "View only."
-										: isDecisionBranch
-											? "Decision branches use generated code."
-											: isCustomSource
-												? "This custom source is saved with the node."
-												: "Editing generated source creates a custom node."}
+									{pythonFileOpen
+										? "Can't edit here while the file is open."
+										: readOnly
+											? "View only."
+											: isDecisionBranch
+												? "Decision branches use generated code."
+												: isCustomSource
+													? "This custom source is saved with the node."
+													: "Editing generated source creates a custom node."}
 								</p>
 							</Field>
 						)}

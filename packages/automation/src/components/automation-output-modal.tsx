@@ -11,12 +11,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { isTabularArray } from "@semoss/utility/json";
+import { isTabularArray, tryParseJson } from "@semoss/utility/json";
 import {
 	looksLikeHtmlDocument,
 	looksLikeMarkdown,
 	normalizeForMarkdown,
-} from "@semoss/utility/string/markdown";
+} from "@semoss/utility/markdown";
 
 interface AutomationOutputModalProps {
 	output: string | null;
@@ -40,13 +40,7 @@ function AutomationOutputModalContent({
 	const [expandVersion, setExpandVersion] = useState(0);
 	const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
 	const value = output ?? "";
-	const parsed = useMemo(() => {
-		try {
-			return JSON.parse(value);
-		} catch {
-			return null;
-		}
-	}, [value]);
+	const parsed = useMemo(() => tryParseJson(value) ?? null, [value]);
 	const formatted = parsed === null ? value : JSON.stringify(parsed, null, 2);
 	const isObjectOutput = parsed !== null && typeof parsed === "object";
 	const isTable = isObjectOutput && isTabularArray(parsed);

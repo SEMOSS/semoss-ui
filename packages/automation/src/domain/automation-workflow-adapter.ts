@@ -1,3 +1,4 @@
+import { isRecord } from "@semoss/utility/object";
 import type {
 	AutomationEdge,
 	AutomationNode,
@@ -7,8 +8,10 @@ import type {
 import { getAutomationNodeDefinition } from "./automation-node-catalog";
 import type {
 	AutomationBranchClause,
+	AutomationJevRoute,
 	AutomationJsonValue,
 	AutomationNodeDefinition,
+	AutomationNodeGroup,
 	AutomationWorkflowDocument,
 	AutomationWorkflowEdge,
 	AutomationWorkflowNode,
@@ -22,6 +25,7 @@ export interface CanvasWorkflowDocument {
 	triggerBindings: TriggerBinding[];
 	steps: AutomationNode[];
 	edges: AutomationEdge[];
+	nodeGroups?: AutomationNodeGroup[];
 }
 
 export type AutomationNodeSources = Record<string, string>;
@@ -76,7 +80,7 @@ function stringValue(value: unknown): string {
 
 function jsonObjectValue(value: unknown): string {
 	if (typeof value === "string") return value;
-	if (value && typeof value === "object" && !Array.isArray(value)) {
+	if (isRecord(value)) {
 		return JSON.stringify(value);
 	}
 	return "";
@@ -85,6 +89,20 @@ function jsonObjectValue(value: unknown): string {
 function jsonArrayValue(value: unknown): string {
 	if (typeof value === "string") return value;
 	return Array.isArray(value) ? JSON.stringify(value) : "";
+}
+
+function jsonValueText(value: unknown): string {
+	if (typeof value === "string") return value;
+	return value === undefined || value === null ? "" : JSON.stringify(value);
+}
+
+function jsonValueOrString(value: string): AutomationJsonValue {
+	const parsed = parsedJsonValue(value);
+	return parsed === undefined ? value : parsed;
+}
+
+function fallbackValue(value: string): AutomationJsonValue {
+	return value.trim() ? jsonValueOrString(value) : null;
 }
 
 function isAutomationJsonValue(value: unknown): value is AutomationJsonValue {
@@ -133,6 +151,30 @@ function branchClauses(value: unknown): AutomationBranchClause[] {
 			? [{ id: candidate.id, condition: candidate.condition }]
 			: [];
 	});
+}
+
+function jevRoutes(value: unknown): AutomationJevRoute[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((route) => {
+		if (!route || typeof route !== "object") return [];
+		const candidate = route as Partial<AutomationJevRoute>;
+		return typeof candidate.id === "string" &&
+			typeof candidate.description === "string"
+			? [
+					{
+						id: candidate.id,
+						description: candidate.description,
+						...(typeof candidate.answer === "boolean"
+							? { answer: candidate.answer }
+							: {}),
+					},
+				]
+			: [];
+	});
+}
+
+function isRoutingWorkflowType(type: AutomationWorkflowNodeType): boolean {
+	return type === "control.if" || type === "control.jev";
 }
 
 /**
@@ -204,6 +246,14 @@ def run(scope):
     return storage.list(scope.resolve(STORAGE_PATH))
 `;
 	}
+	if (category === "data") {
+		return `SOURCE = ${pythonLiteral(config.source)}
+PATH = ${pythonLiteral(config.path)}
+
+def run(scope):
+    return extract_data_element(scope.resolve(SOURCE), scope.resolve(PATH))
+`;
+	}
 	if (category === "vector") {
 		return `from ai_server import VectorEngine
 
@@ -264,6 +314,9 @@ def run(scope):
 	return {"branch": "else", "value": False}
 `;
 	}
+	if (type === "control.jev") {
+		return "# Jev decisions execute through the server-owned TypeSafe engine.\n";
+	}
 	return `# Write arbitrary Python for this automation node here.
 # scope is a read-only, run-local mapping: inputs, globals, metadata, and prior outputs by outputVar.
 # Read required values with scope["outputVar"] and optional values with scope.get("outputVar").
@@ -296,10 +349,12 @@ function canvasTypeForWorkflow(
 	if (category === "database") return "database-engine";
 	if (category === "model") return "model-engine";
 	if (category === "storage") return "storage-engine";
+	if (category === "data") return "data";
 	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
-	if (type === "control.if") return "branch";
+	if (type === "control.loop") return "loop";
+	if (isRoutingWorkflowType(type)) return "branch";
 	return "app";
 }
 
@@ -336,11 +391,20 @@ function defaultCanvasConfig(
 			paramValues: jsonObjectValue(config.paramValues),
 			values: stringValue(config.text),
 			image: stringValue(config.image),
+			urls: jsonArrayValue(config.urls),
 			prompt: stringValue(config.prompt),
 			entities: jsonArrayValue(config.entities),
+			maskEntities: jsonArrayValue(config.maskEntities),
 		};
 	}
 	if (category === "storage") {
+		const fileTypes = Array.isArray(config.extensions)
+			? config.extensions
+					.filter(
+						(value): value is string => typeof value === "string",
+					)
+					.join(", ")
+			: stringValue(config.extensions);
 		const operation =
 			type === "storage.read"
 				? "read-base64"
@@ -355,8 +419,24 @@ function defaultCanvasConfig(
 			engineId,
 			operation,
 			storagePath: stringValue(config.path),
+			fileTypes,
 			filePath: stringValue(config.destination),
-			metadata: "",
+			metadata: jsonObjectValue(config.metadata),
+			convertToPdf: config.convertToPdf === true,
+			version: stringValue(config.version),
+			leaveFolderStructure: config.leaveFolderStructure === true,
+		};
+	}
+	if (category === "data") {
+		return {
+			source: jsonValueText(config.source),
+			path: stringValue(config.path),
+			format:
+				config.format === "json" || config.format === "xml"
+					? config.format
+					: "auto",
+			missingValue: jsonValueText(config.missingValue),
+			nullValue: jsonValueText(config.nullValue),
 		};
 	}
 	if (category === "vector") {
@@ -375,13 +455,13 @@ function defaultCanvasConfig(
 			operation,
 			command: operation === "search" ? value : "",
 			limit: numberValue(config.limit, 5),
-			filters: stringValue(config.filters),
+			filters: jsonObjectValue(config.filters),
 			metaFilters: "",
 			filePath: operation === "add-file" ? value : "",
-			source: stringValue(config.source),
-			space: stringValue(config.collection),
+			source: "",
+			space: stringValue(config.space),
 			filePaths: "",
-			paramValues: stringValue(config.paramValues),
+			paramValues: jsonObjectValue(config.paramValues),
 			fileNames: operation === "delete" ? value : "",
 		};
 	}
@@ -402,8 +482,54 @@ function defaultCanvasConfig(
 	if (type === "control.wait") {
 		return { seconds: String(numberValue(config.durationSeconds, 5)) };
 	}
+	if (type === "control.loop") {
+		const mode =
+			config.mode === "repeat" || config.mode === "while"
+				? config.mode
+				: "forEach";
+		const maxIterations = numberValue(config.maxIterations, 100);
+		if (mode === "repeat") {
+			return {
+				mode,
+				count: numberValue(config.count, 1),
+				maxIterations,
+			};
+		}
+		if (mode === "while") {
+			return {
+				mode,
+				condition: stringValue(config.condition),
+				maxIterations,
+			};
+		}
+		const items = config.items;
+		return {
+			mode,
+			items:
+				typeof items === "string"
+					? items
+					: JSON.stringify(
+							Array.isArray(items) ? items : [],
+							null,
+							2,
+						),
+			batchSize: numberValue(config.batchSize, 1),
+			maxIterations,
+		};
+	}
 	if (type === "control.if") {
 		return { clauses: branchClauses(config.clauses) };
+	}
+	if (type === "control.jev") {
+		return {
+			engineId,
+			state: stringValue(config.state),
+			question: stringValue(config.question),
+			questionType: config.questionType === "noul" ? "noul" : "choice",
+			clauses: jevRoutes(config.clauses),
+			confidenceThreshold: numberValue(config.confidenceThreshold, 0),
+			paramValues: jsonObjectValue(config.paramValues),
+		};
 	}
 	return {
 		pixel: stringValue(config.pixel),
@@ -423,9 +549,7 @@ function withPythonSource(
 function normalizeWorkflowConfig(
 	config: unknown,
 ): AutomationWorkflowNodeConfig {
-	return config && typeof config === "object" && !Array.isArray(config)
-		? (config as AutomationWorkflowNodeConfig)
-		: {};
+	return isRecord(config) ? (config as AutomationWorkflowNodeConfig) : {};
 }
 
 function canvasTypeToWorkflow(
@@ -438,6 +562,8 @@ function canvasTypeToWorkflow(
 			return "database.query";
 		case "storage-engine":
 			return "storage.list";
+		case "data":
+			return "data.extract";
 		case "vector-engine":
 			return "vector.search";
 		case "model-engine":
@@ -446,6 +572,8 @@ function canvasTypeToWorkflow(
 			return "function.execute";
 		case "wait":
 			return "control.wait";
+		case "loop":
+			return "control.loop";
 		case "branch":
 			return "control.if";
 		case "app":
@@ -479,15 +607,19 @@ function mergeCanvasConfig(
 		const expression = getConfigValue(config, "expression");
 		const limit = getConfigValue(config, "limit");
 		if (typeof expression === "string") next.query = expression;
-		if (typeof limit === "number") next.limit = limit;
+		if (type === "database.query") {
+			if (typeof limit === "number") next.limit = limit;
+		}
 	}
 	if (category === "model") {
 		const command = getConfigValue(config, "command");
 		const context = getConfigValue(config, "context");
 		const values = getConfigValue(config, "values");
 		const image = getConfigValue(config, "image");
+		const urls = getConfigValue(config, "urls");
 		const paramValues = getConfigValue(config, "paramValues");
 		const entities = getConfigValue(config, "entities");
+		const maskEntities = getConfigValue(config, "maskEntities");
 		if (typeof command === "string") {
 			if (type === "model.embeddings") next.text = command;
 			else next.prompt = command;
@@ -497,7 +629,10 @@ function mergeCanvasConfig(
 			next.text = values;
 		}
 		if (typeof image === "string") next.image = image;
-		if (type === "model.chat" && typeof paramValues === "string") {
+		if (type === "model.vision" && typeof urls === "string") {
+			next.urls = urls.trim() ? (parsedJsonValue(urls) ?? urls) : [];
+		}
+		if (typeof paramValues === "string") {
 			if (paramValues.trim()) {
 				next.paramValues = parsedJsonValue(paramValues) ?? paramValues;
 			} else {
@@ -507,12 +642,64 @@ function mergeCanvasConfig(
 		if (type === "model.ner" && typeof entities === "string") {
 			next.entities = parsedJsonValue(entities) ?? entities;
 		}
+		if (type === "model.ner" && typeof maskEntities === "string") {
+			next.maskEntities = maskEntities.trim()
+				? (parsedJsonValue(maskEntities) ?? maskEntities)
+				: [];
+		}
 	}
 	if (category === "storage") {
 		const storagePath = getConfigValue(config, "storagePath");
+		const fileTypes = getConfigValue(config, "fileTypes");
 		const filePath = getConfigValue(config, "filePath");
+		const metadata = getConfigValue(config, "metadata");
+		const convertToPdf = getConfigValue(config, "convertToPdf");
+		const version = getConfigValue(config, "version");
+		const leaveFolderStructure = getConfigValue(
+			config,
+			"leaveFolderStructure",
+		);
 		if (typeof storagePath === "string") next.path = storagePath;
+		if (typeof fileTypes === "string") {
+			const trimmedFileTypes = fileTypes.trim();
+			next.extensions = trimmedFileTypes.startsWith("${")
+				? trimmedFileTypes
+				: trimmedFileTypes
+						.split(",")
+						.map((value) => value.trim())
+						.filter(Boolean);
+		}
 		if (typeof filePath === "string") next.destination = filePath;
+		if (typeof metadata === "string") {
+			next.metadata = metadata.trim()
+				? (parsedJsonValue(metadata) ?? metadata)
+				: {};
+		}
+		if (typeof convertToPdf === "boolean") {
+			next.convertToPdf = convertToPdf;
+		}
+		if (typeof version === "string") next.version = version;
+		if (typeof leaveFolderStructure === "boolean") {
+			next.leaveFolderStructure = leaveFolderStructure;
+		}
+	}
+	if (category === "data") {
+		const source = getConfigValue(config, "source");
+		const path = getConfigValue(config, "path");
+		const format = getConfigValue(config, "format");
+		const missingValue = getConfigValue(config, "missingValue");
+		const nullValue = getConfigValue(config, "nullValue");
+		if (typeof source === "string") next.source = jsonValueOrString(source);
+		if (typeof path === "string") next.path = path;
+		if (format === "auto" || format === "json" || format === "xml") {
+			next.format = format;
+		}
+		if (typeof missingValue === "string") {
+			next.missingValue = fallbackValue(missingValue);
+		}
+		if (typeof nullValue === "string") {
+			next.nullValue = fallbackValue(nullValue);
+		}
 	}
 	if (category === "vector") {
 		const operation = getConfigValue(config, "operation");
@@ -520,8 +707,7 @@ function mergeCanvasConfig(
 		const filePath = getConfigValue(config, "filePath");
 		const filePaths = getConfigValue(config, "filePaths");
 		const fileNames = getConfigValue(config, "fileNames");
-		const collection = getConfigValue(config, "space");
-		const source = getConfigValue(config, "source");
+		const space = getConfigValue(config, "space");
 		const filters = getConfigValue(config, "filters");
 		const paramValues = getConfigValue(config, "paramValues");
 		const limit = getConfigValue(config, "limit");
@@ -537,10 +723,17 @@ function mergeCanvasConfig(
 						? fileNames
 						: command;
 		if (typeof value === "string") next.value = value;
-		if (typeof collection === "string") next.collection = collection;
-		if (typeof source === "string") next.source = source;
-		if (typeof filters === "string") next.filters = filters;
-		if (typeof paramValues === "string") next.paramValues = paramValues;
+		if (typeof space === "string") next.space = space;
+		if (typeof filters === "string") {
+			next.filters = filters.trim()
+				? (parsedJsonValue(filters) ?? filters)
+				: {};
+		}
+		if (typeof paramValues === "string") {
+			next.paramValues = paramValues.trim()
+				? (parsedJsonValue(paramValues) ?? paramValues)
+				: {};
+		}
 		if (typeof limit === "number") next.limit = limit;
 	}
 	if (type === "function.execute") {
@@ -569,7 +762,62 @@ function mergeCanvasConfig(
 			if (Number.isFinite(duration)) next.durationSeconds = duration;
 		}
 	}
+	if (type === "control.loop") {
+		delete next.items;
+		delete next.batchSize;
+		delete next.count;
+		delete next.condition;
+		const mode = getConfigValue(config, "mode");
+		const maxIterations = getConfigValue(config, "maxIterations");
+		next.mode = mode === "repeat" || mode === "while" ? mode : "forEach";
+		if (typeof maxIterations === "number") {
+			next.maxIterations = maxIterations;
+		}
+		if (next.mode === "forEach") {
+			const items = getConfigValue(config, "items");
+			const batchSize = getConfigValue(config, "batchSize");
+			if (typeof items === "string") {
+				const trimmedItems = items.trim();
+				next.items = trimmedItems.startsWith("${")
+					? trimmedItems
+					: (parsedJsonValue(trimmedItems) ?? trimmedItems);
+			}
+			if (typeof batchSize === "number") next.batchSize = batchSize;
+		} else if (next.mode === "repeat") {
+			const count = getConfigValue(config, "count");
+			if (typeof count === "number") next.count = count;
+		} else {
+			const condition = getConfigValue(config, "condition");
+			if (typeof condition === "string") next.condition = condition;
+		}
+	}
 	if (type === "control.if") {
+		next.clauses = (
+			config as Extract<NodeConfig, { clauses: unknown }>
+		).clauses;
+	}
+	if (type === "control.jev") {
+		const state = getConfigValue(config, "state");
+		const question = getConfigValue(config, "question");
+		const questionType = getConfigValue(config, "questionType");
+		const confidenceThreshold = getConfigValue(
+			config,
+			"confidenceThreshold",
+		);
+		const paramValues = getConfigValue(config, "paramValues");
+		if (typeof state === "string") next.state = state;
+		if (typeof question === "string") next.question = question;
+		if (questionType === "choice" || questionType === "noul") {
+			next.questionType = questionType;
+		}
+		if (typeof confidenceThreshold === "number") {
+			next.confidenceThreshold = confidenceThreshold;
+		}
+		if (typeof paramValues === "string") {
+			next.paramValues = paramValues.trim()
+				? (parsedJsonValue(paramValues) ?? paramValues)
+				: {};
+		}
 		next.clauses = (
 			config as Extract<NodeConfig, { clauses: unknown }>
 		).clauses;
@@ -603,6 +851,7 @@ export function createCanvasWorkflowNode(
 		workflowType: type,
 		workflowConfig,
 		workflowCodeMode: definition.defaultCodeMode,
+		...(type === "control.loop" ? { body: { nodes: [], edges: [] } } : {}),
 	};
 }
 
@@ -631,6 +880,38 @@ function canvasNodeFromWorkflow(
 		workflowType: node.type,
 		workflowConfig,
 		workflowCodeMode: node.codeMode,
+		...(node.body
+			? {
+					body: {
+						nodes: node.body.nodes.map((bodyNode) =>
+							canvasNodeFromWorkflow(bodyNode, nodeSources),
+						),
+						edges: node.body.edges.map(workflowEdgeToCanvasEdge),
+					},
+				}
+			: {}),
+	};
+}
+
+function workflowEdgeToCanvasEdge(
+	edge: AutomationWorkflowEdge,
+): AutomationEdge {
+	return {
+		id: edge.id,
+		source: edge.source,
+		target: edge.target,
+		sourceHandle:
+			edge.sourcePort === "out"
+				? `out-${edge.source}`
+				: edge.sourcePort.startsWith("case:")
+					? `case-${edge.source}-${edge.sourcePort.slice(5)}`
+					: edge.sourcePort === "else"
+						? `else-${edge.source}`
+						: edge.sourcePort,
+		targetHandle:
+			edge.targetPort === "in" ? `in-${edge.target}` : edge.targetPort,
+		kind: edge.kind,
+		...(edge.kind === "data" ? { dataType: edge.dataType } : {}),
 	};
 }
 
@@ -641,7 +922,51 @@ export function createInitialCanvasWorkflowDocument(): CanvasWorkflowDocument {
 		triggerBindings: [MANUAL_TRIGGER],
 		steps: [trigger],
 		edges: [],
+		nodeGroups: [],
 	};
+}
+
+function normalizeNodeGroups(
+	value: unknown,
+	availableNodeIds: Set<string>,
+): AutomationNodeGroup[] {
+	if (!Array.isArray(value)) return [];
+	const assignedNodeIds = new Set<string>();
+	return value.flatMap((candidate) => {
+		if (
+			!isRecord(candidate) ||
+			typeof candidate.id !== "string" ||
+			typeof candidate.name !== "string" ||
+			!Array.isArray(candidate.nodeIds)
+		) {
+			return [];
+		}
+		const groupNodeIds = new Set<string>();
+		const nodeIds = candidate.nodeIds.filter((nodeId): nodeId is string => {
+			if (
+				typeof nodeId !== "string" ||
+				!availableNodeIds.has(nodeId) ||
+				assignedNodeIds.has(nodeId) ||
+				groupNodeIds.has(nodeId)
+			) {
+				return false;
+			}
+			groupNodeIds.add(nodeId);
+			return true;
+		});
+		if (nodeIds.length === 0) return [];
+		for (const nodeId of nodeIds) assignedNodeIds.add(nodeId);
+		return [
+			{
+				id: candidate.id,
+				name: candidate.name,
+				nodeIds,
+				...(typeof candidate.description === "string"
+					? { description: candidate.description }
+					: {}),
+			},
+		];
+	});
 }
 
 export function canvasDocumentFromWorkflow(
@@ -661,25 +986,11 @@ export function canvasDocumentFromWorkflow(
 				? document.triggerBindings
 				: [MANUAL_TRIGGER],
 		steps,
-		edges: document.graph.edges.map((edge) => ({
-			id: edge.id,
-			source: edge.source,
-			target: edge.target,
-			sourceHandle:
-				edge.sourcePort === "out"
-					? `out-${edge.source}`
-					: edge.sourcePort.startsWith("case:")
-						? `case-${edge.source}-${edge.sourcePort.slice(5)}`
-						: edge.sourcePort === "else"
-							? `else-${edge.source}`
-							: edge.sourcePort,
-			targetHandle:
-				edge.targetPort === "in"
-					? `in-${edge.target}`
-					: edge.targetPort,
-			kind: edge.kind,
-			...(edge.kind === "data" ? { dataType: edge.dataType } : {}),
-		})),
+		edges: document.graph.edges.map(workflowEdgeToCanvasEdge),
+		nodeGroups: normalizeNodeGroups(
+			document.nodeGroups,
+			new Set(steps.map((step) => step.id)),
+		),
 	};
 }
 
@@ -688,21 +999,116 @@ export function getCanvasNodeSources(
 ): AutomationNodeSources {
 	return Object.fromEntries(
 		steps.flatMap((step) => {
+			const bodySources = step.body
+				? Object.entries(getCanvasNodeSources(step.body.nodes))
+				: [];
 			const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
 			if (
 				type === "trigger.start" ||
-				type === "control.if" ||
+				isRoutingWorkflowType(type) ||
 				step.workflowCodeMode !== "custom"
 			) {
-				return [];
+				return bodySources;
 			}
 			const source = step.workflowConfig?.pythonSource;
 			if (typeof source !== "string" || source.trim() === "") {
-				return [];
+				return bodySources;
 			}
-			return [[step.id, source]];
+			return [[step.id, source], ...bodySources];
 		}),
 	);
+}
+
+function canvasNodeToWorkflow(step: AutomationNode): AutomationWorkflowNode {
+	const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) throw new Error(`Unknown automation node type: ${type}`);
+	const config = mergeCanvasConfig(
+		type,
+		step.config,
+		step.workflowConfig ?? structuredClone(definition.defaultConfig),
+	);
+	// Every other node's Python is persisted as its own file under automation-nodes/,
+	// so carrying a copy in the config would duplicate it. The trigger has no such
+	// file: AutomationRuntime.triggerSource reads its optional setup source straight
+	// out of this config, making this the only place it can live.
+	const { pythonSource, ...persistedConfig } = config;
+	if (type === "trigger.start") {
+		persistedConfig.globals = sanitizeTriggerGlobals(
+			persistedConfig.globals,
+		);
+		if (typeof pythonSource === "string" && pythonSource.trim() !== "") {
+			persistedConfig.pythonSource = pythonSource;
+		}
+	}
+	return {
+		id: step.id,
+		type,
+		label: step.label || definition.label,
+		...(type === "trigger.start" || isRoutingWorkflowType(type)
+			? {}
+			: { outputVar: step.outputVar }),
+		position: step.position,
+		config: persistedConfig,
+		codeMode: isRoutingWorkflowType(type)
+			? "generated"
+			: (step.workflowCodeMode ?? definition.defaultCodeMode),
+		...(step.body
+			? {
+					body: canvasGraphToWorkflow(
+						step.body.nodes,
+						step.body.edges,
+					),
+				}
+			: {}),
+	};
+}
+
+function canvasEdgeToWorkflow(edge: AutomationEdge): AutomationWorkflowEdge {
+	return edge.kind === "data"
+		? {
+				id: edge.id,
+				kind: "data",
+				dataType: edge.dataType ?? "unknown",
+				source: edge.source,
+				sourcePort: edge.sourceHandle?.startsWith("out-")
+					? "out"
+					: (edge.sourceHandle ?? "result"),
+				target: edge.target,
+				targetPort: edge.targetHandle?.startsWith("in-")
+					? "in"
+					: (edge.targetHandle ?? "in"),
+			}
+		: {
+				id: edge.id,
+				kind: "control",
+				source: edge.source,
+				sourcePort: edge.sourceHandle?.startsWith("out-")
+					? "out"
+					: edge.sourceHandle?.startsWith("case-")
+						? `case:${edge.sourceHandle.slice(
+								`case-${edge.source}-`.length,
+							)}`
+						: edge.sourceHandle?.startsWith("else-")
+							? "else"
+							: (edge.sourceHandle ?? "out"),
+				target: edge.target,
+				targetPort: edge.targetHandle?.startsWith("in-")
+					? "in"
+					: (edge.targetHandle ?? "in"),
+			};
+}
+
+function canvasGraphToWorkflow(
+	steps: AutomationNode[],
+	edges: AutomationEdge[],
+): AutomationWorkflowDocument["graph"] {
+	const nodes = steps.map(canvasNodeToWorkflow);
+	const nodeIds = new Set(nodes.map((node) => node.id));
+	const graphEdges: AutomationWorkflowEdge[] = edges
+		.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+		.map(canvasEdgeToWorkflow);
+	return { nodes, edges: graphEdges };
 }
 
 export function canvasDocumentToWorkflow({
@@ -710,91 +1116,15 @@ export function canvasDocumentToWorkflow({
 	triggerBindings,
 	steps,
 	edges,
+	nodeGroups,
 }: CanvasWorkflowDocument): AutomationWorkflowDocument {
-	const nodes = steps.map((step): AutomationWorkflowNode => {
-		const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
-		const definition = getWorkflowNodeDefinition(type);
-		if (!definition)
-			throw new Error(`Unknown automation node type: ${type}`);
-		const config = mergeCanvasConfig(
-			type,
-			step.config,
-			step.workflowConfig ?? structuredClone(definition.defaultConfig),
-		);
-		// Every other node's Python is persisted as its own file under automation-nodes/,
-		// so carrying a copy in the config would duplicate it. The trigger has no such
-		// file: AutomationRuntime.triggerSource reads its optional setup source straight
-		// out of this config, making this the only place it can live.
-		const { pythonSource, ...persistedConfig } = config;
-		if (type === "trigger.start") {
-			persistedConfig.globals = sanitizeTriggerGlobals(
-				persistedConfig.globals,
-			);
-			if (
-				typeof pythonSource === "string" &&
-				pythonSource.trim() !== ""
-			) {
-				persistedConfig.pythonSource = pythonSource;
-			}
-		}
-		return {
-			id: step.id,
-			type,
-			label: step.label || definition.label,
-			...(type === "trigger.start" || type === "control.if"
-				? {}
-				: { outputVar: step.outputVar }),
-			position: step.position,
-			config: persistedConfig,
-			codeMode:
-				type === "control.if"
-					? "generated"
-					: (step.workflowCodeMode ?? definition.defaultCodeMode),
-		};
-	});
-	const nodeIds = new Set(nodes.map((node) => node.id));
-	const graphEdges: AutomationWorkflowEdge[] = edges
-		.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
-		.map((edge) =>
-			edge.kind === "data"
-				? {
-						id: edge.id,
-						kind: "data",
-						dataType: edge.dataType ?? "unknown",
-						source: edge.source,
-						sourcePort: edge.sourceHandle?.startsWith("out-")
-							? "out"
-							: (edge.sourceHandle ?? "result"),
-						target: edge.target,
-						targetPort: edge.targetHandle?.startsWith("in-")
-							? "in"
-							: (edge.targetHandle ?? "in"),
-					}
-				: {
-						id: edge.id,
-						kind: "control",
-						source: edge.source,
-						sourcePort: edge.sourceHandle?.startsWith("out-")
-							? "out"
-							: edge.sourceHandle?.startsWith("case-")
-								? `case:${edge.sourceHandle.slice(
-										`case-${edge.source}-`.length,
-									)}`
-								: edge.sourceHandle?.startsWith("else-")
-									? "else"
-									: (edge.sourceHandle ?? "out"),
-						target: edge.target,
-						targetPort: edge.targetHandle?.startsWith("in-")
-							? "in"
-							: (edge.targetHandle ?? "in"),
-					},
-		);
 	return {
 		formatVersion: 2,
 		...(description.trim() ? { description: description.trim() } : {}),
 		triggerBindings:
 			triggerBindings.length > 0 ? triggerBindings : [MANUAL_TRIGGER],
-		graph: { nodes, edges: graphEdges },
+		graph: canvasGraphToWorkflow(steps, edges),
+		...(nodeGroups?.length ? { nodeGroups } : {}),
 	};
 }
 
@@ -828,10 +1158,19 @@ export function validateCanvasWorkflowNode(
 			) {
 				return [`${schema.label} must be at least ${schema.minimum}`];
 			}
+			if (
+				!missing &&
+				schema.maximum !== undefined &&
+				(typeof value !== "number" ||
+					!Number.isFinite(value) ||
+					value > schema.maximum)
+			) {
+				return [`${schema.label} must be at most ${schema.maximum}`];
+			}
 			return [];
 		},
 	);
-	if (type !== "trigger.start" && type !== "control.if") {
+	if (type !== "trigger.start" && !isRoutingWorkflowType(type)) {
 		const outputVariableError = validateAutomationOutputVariable(
 			node.outputVar,
 		);
@@ -854,11 +1193,21 @@ export function validateCanvasWorkflowNode(
 			errors.push("JSON arguments must be valid JSON");
 		}
 	}
+	if (type === "model.vision") {
+		const image = stringValue(config.image).trim();
+		const urls = config.urls;
+		const hasUrls =
+			(Array.isArray(urls) && urls.length > 0) ||
+			(typeof urls === "string" && urls.trim() !== "");
+		if (!image && !hasUrls) {
+			errors.push("A media path or media URL is required");
+		}
+	}
 	// Source is only rejected once written: an untouched node saves with no source and the
 	// server persists its generated scaffold instead.
 	if (
 		type !== "trigger.start" &&
-		type !== "control.if" &&
+		!isRoutingWorkflowType(type) &&
 		node.workflowCodeMode === "custom"
 	) {
 		const source = stringValue(config.pythonSource);
@@ -874,5 +1223,147 @@ export function validateCanvasWorkflowNode(
 			errors.push("Each condition is required");
 		}
 	}
+	if (type === "control.jev") {
+		const routes = jevRoutes(config.clauses);
+		const questionType = config.questionType === "noul" ? "noul" : "choice";
+		if (routes.length === 0) {
+			errors.push("At least one route is required");
+		} else if (routes.some((route) => route.description.trim() === "")) {
+			errors.push("Each route description is required");
+		}
+		if (
+			questionType === "noul" &&
+			(routes.length !== 2 ||
+				routes.filter((route) => route.answer === true).length !== 1 ||
+				routes.filter((route) => route.answer === false).length !== 1)
+		) {
+			errors.push(
+				"Yes / No decisions require one Yes path and one No path",
+			);
+		}
+		const minimumConfidence = questionType === "noul" ? 0.5 : 0;
+		if (
+			typeof config.confidenceThreshold !== "number" ||
+			config.confidenceThreshold < minimumConfidence ||
+			config.confidenceThreshold > 1
+		) {
+			errors.push(
+				`Minimum confidence must be from ${minimumConfidence} through 1`,
+			);
+		}
+	}
+	if (type === "control.loop") {
+		const maxIterations = config.maxIterations;
+		if (config.mode === "forEach") {
+			const items = config.items;
+			const validReference =
+				typeof items === "string" &&
+				/^\$\{[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*|\.[0-9]+)*}$/.test(
+					items.trim(),
+				);
+			let validArray = Array.isArray(items);
+			if (!validArray && typeof items === "string" && !validReference) {
+				try {
+					validArray = Array.isArray(JSON.parse(items));
+				} catch {
+					validArray = false;
+				}
+			}
+			if (!validReference && !validArray) {
+				errors.push(
+					"Items must be a JSON array or an exact variable reference",
+				);
+			}
+		} else if (config.mode === "repeat") {
+			if (
+				typeof config.count !== "number" ||
+				!Number.isInteger(config.count) ||
+				config.count < 1 ||
+				typeof maxIterations !== "number" ||
+				config.count > maxIterations
+			) {
+				errors.push(
+					"Number of times must be a whole number no greater than the safety limit",
+				);
+			}
+		} else if (config.mode === "while") {
+			if (
+				typeof config.condition !== "string" ||
+				!config.condition.trim()
+			) {
+				errors.push("Continue while condition is required");
+			}
+		} else {
+			errors.push("Choose how the loop should repeat");
+		}
+		if (
+			typeof maxIterations !== "number" ||
+			!Number.isInteger(maxIterations) ||
+			maxIterations < 1 ||
+			maxIterations > 10_000
+		) {
+			errors.push(
+				"Safety limit must be a whole number from 1 through 10000",
+			);
+		}
+		if (!node.body || node.body.nodes.length === 0) {
+			errors.push("Add at least one step inside the loop");
+		} else {
+			const bodyValidationNodes = [...allNodes, ...node.body.nodes];
+			for (const bodyNode of node.body.nodes) {
+				const bodyErrors = [
+					...validateCanvasWorkflowNode(
+						bodyNode,
+						bodyValidationNodes,
+					),
+					...validateCanvasWorkflowConnections(
+						bodyNode,
+						node.body.edges,
+					),
+				];
+				errors.push(
+					...bodyErrors.map(
+						(error) => `Inside "${bodyNode.label}": ${error}`,
+					),
+				);
+			}
+		}
+	}
 	return errors;
+}
+
+/** Validates the control edges required before a routing node can execute. */
+export function validateCanvasWorkflowConnections(
+	node: AutomationNode,
+	edges: AutomationEdge[],
+): string[] {
+	const type = node.workflowType ?? canvasTypeToWorkflow(node.type);
+	if (!isRoutingWorkflowType(type)) return [];
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) return [];
+	const config = mergeCanvasConfig(
+		type,
+		node.config,
+		node.workflowConfig ?? definition.defaultConfig,
+	);
+	const clauses =
+		type === "control.jev"
+			? jevRoutes(config.clauses)
+			: branchClauses(config.clauses);
+	const connectedHandles = new Set(
+		edges
+			.filter((edge) => edge.source === node.id)
+			.map((edge) => edge.sourceHandle),
+	);
+	const hasEveryRoute = clauses.every((clause) =>
+		connectedHandles.has(`case-${node.id}-${clause.id}`),
+	);
+	const hasFallback = connectedHandles.has(`else-${node.id}`);
+	return hasEveryRoute && hasFallback
+		? []
+		: [
+				type === "control.jev"
+					? "Every route and the low-confidence path must be connected"
+					: "Every condition and the Else path must be connected",
+			];
 }

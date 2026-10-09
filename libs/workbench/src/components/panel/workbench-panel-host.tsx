@@ -16,10 +16,10 @@ interface WorkbenchPanelHostProps {
 }
 
 /**
- * One absolutely-positioned panel body, drawn over its measured slot. Bodies
- * live in the flat panel layer rather than inside the docks, so moving a tab
- * between docks only changes where a body is drawn — React never unmounts
- * it, and editors, terminals, and scroll positions survive the move.
+ * One positioned panel body, drawn over its measured slot. Bodies live in the
+ * flat panel layer rather than inside the docks, so moving a tab between docks
+ * only changes where a body is drawn — React never unmounts it, and editors,
+ * terminals, and scroll positions survive the move.
  */
 export const WorkbenchPanelHost: FC<WorkbenchPanelHostProps> = memo(
 	({ pid, slotKeyOverride, secondary = false }) => {
@@ -82,7 +82,10 @@ export const WorkbenchPanelHost: FC<WorkbenchPanelHostProps> = memo(
 				style={
 					rect
 						? {
-								position: "absolute",
+								position:
+									rect.coordinateMode === "viewport"
+										? "fixed"
+										: "absolute",
 								left: rect.left,
 								top: rect.top,
 								width: rect.width,

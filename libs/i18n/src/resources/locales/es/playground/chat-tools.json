@@ -1,0 +1,81 @@
+{
+	"menu": {
+		"showTools": "Mostrar herramientas del chat"
+	},
+	"panel": {
+		"title": "Herramientas del chat",
+		"description": "Lo que el asistente puede usar en tu próximo mensaje.",
+		"toolboxTitle": "Caja de herramientas de este chat",
+		"toolboxDescription": "Los conectores activados para este chat, desde mcp/pixel_mcp.json en Archivos del chat.",
+		"toolboxEmpty": "No hay conectores activados.",
+		"toolboxError": "No se pudo leer la caja de herramientas de este chat.",
+		"otherTools": "Otras herramientas",
+		"addedTitle": "Cajas de herramientas añadidas",
+		"addedDescription": "Cada caja de herramientas aporta sus propias herramientas.",
+		"addedEmpty": "No se añadieron cajas de herramientas.",
+		"parameters": "Parámetros",
+		"required": "Obligatorio",
+		"noParameters": "Sin parámetros.",
+		"defaultTitle": "Herramientas predeterminadas",
+		"defaultDescription": "Se añaden a cada mensaje y se ejecutan en este navegador, en Archivos del chat.",
+		"defaultEmpty": "Todas las herramientas predeterminadas están desactivadas en la configuración de la sala.",
+		"openSettings": "Configuración de la sala",
+		"agentTitle": "Herramientas del agente",
+		"agentDescription": "Las ejecuciones del agente traen sus propias herramientas de archivos, shell y código, y trabajan en Archivos del chat."
+	},
+	"defaultTools": {
+		"label": "Herramientas predeterminadas",
+		"description": "Herramientas que este navegador añade a cada mensaje y ejecuta en Archivos del chat. Automático ejecuta una herramienta sola, Preguntar espera tu aprobación en cada llamada y Desactivada la deja fuera.",
+		"modes": {
+			"auto": "Automático",
+			"ask": "Preguntar",
+			"disabled": "Desactivada"
+		}
+	},
+	"tools": {
+		"rootFolder": "Nivel superior de la carpeta",
+		"moveSummary": "{{from}} a {{to}}",
+		"titles": {
+			"folder_list": "Listar carpeta",
+			"folder_read": "Leer archivo",
+			"folder_search": "Buscar en la carpeta",
+			"folder_write": "Escribir archivo",
+			"folder_edit": "Editar archivo",
+			"folder_create_directory": "Crear carpeta",
+			"folder_move": "Mover o renombrar",
+			"folder_delete": "Eliminar"
+		}
+	},
+	"card": {
+		"status": {
+			"waiting": "Requiere aprobación",
+			"queued": "En cola",
+			"running": "En ejecución",
+			"done": "Completado",
+			"failed": "Fallido",
+			"notRun": "No ejecutado"
+		},
+		"folderApproval": "El asistente quiere cambiar un archivo en Archivos del chat. Revisa el cambio y luego permítelo o deniégalo.",
+		"connectorApproval": "El asistente quiere actuar con tu cuenta. Revisa los detalles y luego permite o deniega la acción.",
+		"file": "Archivo",
+		"path": "Ruta",
+		"rootFolder": "Nivel superior de la carpeta",
+		"query": "Búsqueda",
+		"newContents": "Contenido nuevo",
+		"replace": "Reemplazar",
+		"with": "Por",
+		"replaceAll": "Se reemplazan todas las apariciones.",
+		"from": "Origen",
+		"to": "Destino",
+		"deleteRecursive": "También se elimina todo lo que contiene esta carpeta.",
+		"noArguments": "Sin detalles",
+		"result": "Resultado",
+		"error": "Error",
+		"allow": "Permitir",
+		"allowing": "Permitiendo...",
+		"deny": "Denegar",
+		"denying": "Denegando...",
+		"decisionError": "No se pudo completar la acción. {{message}}",
+		"chatFiles": "Archivos del chat"
+	}
+}

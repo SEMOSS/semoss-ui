@@ -11,6 +11,8 @@ import {
 } from "@xyflow/react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { getErrorMessage } from "@semoss/utility/error";
+import { tryParseJson } from "@semoss/utility/json";
 import "@xyflow/react/dist/style.css";
 import {
 	Bot,
@@ -61,7 +63,6 @@ import {
 	isActiveStatus,
 	isFailureStatus,
 	toPrettyJson,
-	tryParseJson,
 } from "./agent-activity-types";
 import { AnalyzeRunPanel } from "./agent-run-assessment";
 
@@ -505,7 +506,7 @@ const buildTranscriptStepNodes = (run: AgentRunDetail): TreeNodeSpec[] => {
 		if (!message.visible) {
 			continue;
 		}
-		const role = message.ornaments?.agentRunRole;
+		const role = message.agentRun?.role ?? message.ornaments?.agentRunRole;
 
 		if (role === "input") {
 			const textPart = message.parts.find((part) => part.type === "TEXT");
@@ -1072,10 +1073,7 @@ export const AgentRunGraph = ({
 					[runId]: {
 						status: "error",
 						judgeModelId,
-						message:
-							error instanceof Error
-								? error.message
-								: String(error),
+						message: getErrorMessage(error),
 					},
 				}));
 			}

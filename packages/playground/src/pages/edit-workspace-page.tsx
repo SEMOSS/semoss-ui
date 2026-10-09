@@ -1,154 +1,97 @@
-import {
-	BlocksIcon,
-	BookOpenIcon,
-	HammerIcon,
-	Maximize2Icon,
-	SparklesIcon,
-	UsersRound,
-} from "lucide-react";
+import { UsersRound } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { usePixel } from "@semoss/sdk/react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
-	MCPSelector,
+	AgentForm,
+	type AgentFormValues,
+	type AgentWorkspace,
 	MembersTable,
-	PromptSelector,
-	SkillSelector,
+	toAgentFormValues,
+	toAgentPromptTitles,
 } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
 	Button,
-	Field,
-	FieldLabel,
-	Input,
 	Spinner,
-	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { InstructionsModal } from "@/components";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
-import type { MCPConfig, SkillConfig, Workspace } from "@/types";
-import {
-	mcpToPlatformUrl,
-	promptToPlatformUrl,
-	splitMcpByType,
-} from "@/utility/mcp-utils";
+import { getErrorMessage } from "@semoss/utility/error";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
+import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
 
-const FORM_ID = "workspace-edit-form";
+/** The values the form was seeded with, and the agent they belong to. */
+interface AgentFormSeed {
+	workspaceId: string;
+	values: AgentFormValues;
+}
 
 /**
  * Renders the EditWorkspacePage for editing existing agents.
  *
- * Mirrors the detail page layout (About → Knowledge → Toolboxes →
- * Prompts → Members) with editable controls and an editable
- * MembersTable in place of the read-only view.
+ * The shared agent form, the same one the client's agent pages use, followed
+ * by the members table, which saves per action rather than with the form.
  */
 export const EditWorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
+	const { system } = useInsight();
+	const isDirectoryAvailable = system?.config.msGraphLookup === true;
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChat();
 	const { root } = useRoot();
+	const featureFlags = root.theme.featureFlags;
 
-	const nameId = useId();
-	const descriptionId = useId();
-	const instructionId = useId();
-
-	const [name, setName] = useState("");
-	const [description, setDescription] = useState("");
-	const [instructions, setInstructions] = useState("");
-	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
-	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
-	const [skills, setSkills] = useState<SkillConfig[]>([]);
-	const [prompts, setPrompts] = useState<string[]>([]);
+	const [seed, setSeed] = useState<AgentFormSeed | null>(null);
+	const [formValues, setFormValues] = useState<AgentFormValues | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
-	const [instructionsModal, setInstructionsModal] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
+	const seededWorkspace = useRef<string | null>(null);
 
-	const getWorkspace = usePixel<Workspace>(
+	const getWorkspace = usePixel<AgentWorkspace & { workspace_id: string }>(
 		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
 		{
 			data: null,
 			onError: (_d, e) => {
 				toast.error(
 					t("workspace:edit.failedToLoad", {
-						error: e instanceof Error ? e.message : "Unknown error",
+						error: getErrorMessage(e, "Unknown error"),
 					}),
 				);
 			},
 		},
 	);
 
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("workspace:breadcrumbs.home"), path: "/" },
-			{ name: t("workspace:breadcrumbs.agent"), path: "/agent" },
-			{
-				name:
-					getWorkspace.status === "SUCCESS"
-						? getWorkspace.data.name
-						: t("workspace:breadcrumbs.loading"),
-				path: `/agent/${workspaceId}`,
-			},
-			{
-				name: t("workspace:breadcrumbs.edit"),
-				path: `/agent/${workspaceId}/edit`,
-			},
-		],
-	});
-
-	// Hydrate from workspace data
+	// AgentForm reads its values once on mount, so it is seeded once per
+	// agent: a refetch never overwrites unsaved edits, and a different agent
+	// remounts the form with its own values
 	useEffect(() => {
-		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) return;
+		if (
+			getWorkspace.status !== "SUCCESS" ||
+			!getWorkspace.data ||
+			getWorkspace.data.workspace_id !== workspaceId ||
+			seededWorkspace.current === workspaceId
+		)
+			return;
 		const w = getWorkspace.data;
-		setName(w.name || "");
-		setDescription(w.description || "");
-		setInstructions((w.system_prompt || "").replace(/\\n/g, "\n"));
-		setPrompts(w.prompts ?? []);
-		const { knowledge: nextKnowledge, toolbox: nextToolbox } =
-			splitMcpByType(w.mcp ?? []);
-		setKnowledge(nextKnowledge);
-		setToolbox(nextToolbox);
-		setSkills(w.skills ?? []);
-	}, [getWorkspace.status, getWorkspace.data]);
+		const values = {
+			...toAgentFormValues(w),
+			instructions: (w.system_prompt || "").replace(/\\n/g, "\n"),
+		};
+		seededWorkspace.current = workspaceId;
+		setSeed({ workspaceId, values });
+		setFormValues(values);
+		setSaveError(null);
+	}, [workspaceId, getWorkspace.status, getWorkspace.data]);
 
-	// Track whether form differs from the loaded workspace
-	const isDirty = useMemo(() => {
-		if (!getWorkspace.data) return false;
-		const w = getWorkspace.data;
-		const initialInstructions = (w.system_prompt || "").replace(
-			/\\n/g,
-			"\n",
-		);
-		const { knowledge: initKnowledge, toolbox: initToolbox } =
-			splitMcpByType(w.mcp ?? []);
-		const idsKey = (arr: { id: string }[]) =>
-			arr
-				.map((a) => a.id)
-				.sort()
-				.join("|");
-		const stringIdsKey = (arr: string[]) => [...arr].sort().join("|");
-		return (
-			name !== (w.name || "") ||
-			description !== (w.description || "") ||
-			instructions !== initialInstructions ||
-			stringIdsKey(prompts) !== stringIdsKey(w.prompts ?? []) ||
-			idsKey(knowledge) !== idsKey(initKnowledge) ||
-			idsKey(toolbox) !== idsKey(initToolbox) ||
-			idsKey(skills) !== idsKey(w.skills ?? [])
-		);
-	}, [
-		name,
-		description,
-		instructions,
-		prompts,
-		knowledge,
-		toolbox,
-		skills,
-		getWorkspace.data,
-	]);
-
-	if (getWorkspace.status === "LOADING") {
+	if (
+		getWorkspace.status === "INITIAL" ||
+		getWorkspace.status === "LOADING"
+	) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Spinner />
@@ -156,7 +99,12 @@ export const EditWorkspacePage = observer(() => {
 		);
 	}
 
-	if (getWorkspace.status === "ERROR" || !workspaceId) {
+	if (
+		getWorkspace.status === "ERROR" ||
+		!workspaceId ||
+		!getWorkspace.data ||
+		getWorkspace.data.workspace_id !== workspaceId
+	) {
 		return (
 			<div className="@container relative h-full w-full overflow-hidden">
 				<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
@@ -171,28 +119,36 @@ export const EditWorkspacePage = observer(() => {
 		);
 	}
 
+	if (!seed || seed.workspaceId !== workspaceId || !formValues) {
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
+	}
+
+	const isDirty = JSON.stringify(formValues) !== JSON.stringify(seed.values);
+
 	const handleCancel = () => {
 		navigate(`/agent/${workspaceId}`);
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (isSaving) return;
-
+	const handleSave = async () => {
+		const name = formValues.name.trim();
+		if (isSaving || !name) return;
 		setIsSaving(true);
+		setSaveError(null);
 		try {
-			await chat.editWorkspace(workspaceId, {
+			const warning = await chat.editWorkspace(workspaceId, {
+				...formValues,
 				name,
-				description,
-				system_prompt: instructions,
-				prompts,
-				mcp: [...knowledge, ...toolbox],
-				skills,
 			});
+			if (warning) toast.warning(warning);
 			navigate(`/agent/${workspaceId}`);
 		} catch (err) {
-			toast.error(
-				err instanceof Error
+			// The form keeps its values, so a retry sends the same edits
+			setSaveError(
+				err instanceof Error && err.message
 					? err.message
 					: t("notifications:workspace.saveError"),
 			);
@@ -203,11 +159,11 @@ export const EditWorkspacePage = observer(() => {
 
 	return (
 		<div className="@container h-full w-full overflow-y-auto">
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
 				{/* Sticky header so Save/Cancel stay reachable while scrolling */}
-				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
 					<div className="min-w-0 flex-1">
-						<div className="truncate font-semibold text-2xl text-foreground leading-tight">
+						<div className="font-semibold text-2xl text-foreground leading-tight">
 							{t("workspace:edit.title")}
 						</div>
 						<div className="text-muted-foreground text-sm">
@@ -225,9 +181,11 @@ export const EditWorkspacePage = observer(() => {
 							{t("common:buttons.cancel")}
 						</Button>
 						<Button
-							type="submit"
-							form={FORM_ID}
-							disabled={isSaving || !name.trim() || !isDirty}
+							type="button"
+							onClick={handleSave}
+							disabled={
+								isSaving || !formValues.name.trim() || !isDirty
+							}
 							data-testid="workspace-edit-page--save-btn"
 						>
 							{t("workspace:actions.save")}
@@ -235,169 +193,32 @@ export const EditWorkspacePage = observer(() => {
 					</div>
 				</div>
 
-				{/* Members section is OUTSIDE the form because member changes
-				    are saved per-action by MembersTable, not as part of the
-				    workspace save payload. */}
-				<form
-					id={FORM_ID}
-					onSubmit={handleSubmit}
-					className="flex flex-col gap-8"
-				>
-					{/* About */}
-					<section className="flex flex-col gap-4">
-						<h2 className="font-semibold text-foreground text-lg">
-							{t("workspace:detail.about.title")}
-						</h2>
-						<Field>
-							<FieldLabel htmlFor={nameId}>
-								{t("workspace:form.nameLabel")}
-							</FieldLabel>
-							<Input
-								id={nameId}
-								placeholder={t("common:placeholders.enterName")}
-								value={name}
-								disabled={isSaving}
-								onChange={(e) => setName(e.target.value)}
-								data-testid="workspace-edit-page--name"
-							/>
-						</Field>
-						<Field>
-							<FieldLabel htmlFor={descriptionId}>
-								{t("workspace:form.descriptionLabel")}
-							</FieldLabel>
-							<Input
-								id={descriptionId}
-								placeholder={t(
-									"common:placeholders.enterDescription",
-								)}
-								value={description}
-								disabled={isSaving}
-								onChange={(e) => setDescription(e.target.value)}
-								data-testid="workspace-edit-page--description"
-							/>
-						</Field>
-						<Field>
-							<div className="flex items-center justify-between">
-								<FieldLabel htmlFor={instructionId}>
-									{t("workspace:form.instructionsLabel")}
-								</FieldLabel>
-								<Button
-									type="button"
-									variant="ghost"
-									size="sm"
-									onClick={() => setInstructionsModal(true)}
-									disabled={isSaving}
-									data-testid="workspace-edit-page--expand-instructions-btn"
-								>
-									<Maximize2Icon />
-									{t("workspace:instructions.expand")}
-								</Button>
-							</div>
-							<Textarea
-								id={instructionId}
-								placeholder={t(
-									"common:placeholders.enterInstructions",
-								)}
-								value={instructions}
-								disabled={isSaving}
-								onChange={(e) =>
-									setInstructions(e.target.value)
-								}
-								rows={6}
-								className="max-h-96 overflow-y-auto"
-								data-testid="workspace-edit-page--instructions"
-							/>
-							<div className="text-muted-foreground text-xs">
-								{t("workspace:instructions.charCount", {
-									count: instructions.length,
-								})}
-							</div>
-						</Field>
-					</section>
+				{saveError && (
+					<Alert variant="destructive">
+						<AlertDescription>{saveError}</AlertDescription>
+					</Alert>
+				)}
 
-					{/* Knowledge */}
-					<section className="flex flex-col gap-3">
-						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-							<BookOpenIcon className="size-5" />
-							{t("workspace:detail.tabs.knowledge")}
-						</h2>
-						<MCPSelector
-							type="KNOWLEDGE"
-							values={knowledge}
-							disabled={isSaving}
-							onChange={(next) => setKnowledge(next)}
-							className="h-112"
-							workspaceId={workspaceId}
-							enableKnowledgeMCP={
-								root.theme.featureFlags?.enableKnowledgeMCP
-							}
-							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
-									? mcpToPlatformUrl
-									: undefined
-							}
-						/>
-					</section>
+				<AgentForm
+					key={seed.workspaceId}
+					data={seed.values}
+					onChange={setFormValues}
+					disabled={isSaving}
+					promptTitles={toAgentPromptTitles(getWorkspace.data)}
+					knownHookKinds={getWorkspace.data.known_hook_kinds ?? []}
+					defaultTools={getWorkspace.data.default_tools ?? []}
+					workspaceId={workspaceId}
+					links={getPlaygroundAgentLinks(
+						featureFlags?.showPlatformLinks,
+					)}
+					showName
+					enableKnowledgeMCP={featureFlags?.enableKnowledgeMCP}
+					showSystemTools={featureFlags?.showSystemTools}
+					showSystemSkills={featureFlags?.showSystemSkills}
+					className="p-0"
+				/>
 
-					{/* Toolboxes */}
-					<section className="flex flex-col gap-3">
-						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-							<HammerIcon className="size-5" />
-							{t("workspace:detail.tabs.toolbox")}
-						</h2>
-						<MCPSelector
-							type="TOOLBOX"
-							values={toolbox}
-							disabled={isSaving}
-							onChange={(next) => setToolbox(next)}
-							className="h-112"
-							workspaceId={workspaceId}
-							enableKnowledgeMCP={
-								root.theme.featureFlags?.enableKnowledgeMCP
-							}
-							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
-									? mcpToPlatformUrl
-									: undefined
-							}
-						/>
-					</section>
-
-					{/* Skills */}
-					<section className="flex flex-col gap-3">
-						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-							<BlocksIcon className="size-5" />
-							{t("workspace:detail.tabs.skills")}
-						</h2>
-						<SkillSelector
-							values={skills}
-							disabled={isSaving}
-							onChange={(next) => setSkills(next)}
-							className="h-112"
-						/>
-					</section>
-
-					{/* Prompts */}
-					<section className="flex flex-col gap-3">
-						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-							<SparklesIcon className="size-5" />
-							{t("workspace:detail.tabs.prompts")}
-						</h2>
-						<PromptSelector
-							values={prompts}
-							disabled={isSaving}
-							onChange={(next) => setPrompts(next)}
-							className="h-112"
-							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
-									? promptToPlatformUrl
-									: undefined
-							}
-						/>
-					</section>
-				</form>
-
-				{/* Members (outside the form — saved per-action) */}
+				{/* Members (saved per action, not with the form) */}
 				<section className="flex flex-col gap-3">
 					<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 						<UsersRound className="size-5" />
@@ -407,19 +228,14 @@ export const EditWorkspacePage = observer(() => {
 						{t("workspace:members.autoSaveHint")}
 					</p>
 					<div className="min-h-32">
-						<MembersTable id={workspaceId} type="WORKSPACE" />
+						<MembersTable
+							id={workspaceId}
+							type="WORKSPACE"
+							isDirectoryAvailable={isDirectoryAvailable}
+						/>
 					</div>
 				</section>
 			</div>
-
-			{/* Instructions modal (editable, live-bound to local state) */}
-			<InstructionsModal
-				open={instructionsModal}
-				onOpenChange={setInstructionsModal}
-				value={instructions}
-				onChange={setInstructions}
-				disabled={isSaving}
-			/>
 		</div>
 	);
 });

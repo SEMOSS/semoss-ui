@@ -31,6 +31,8 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { encodeTextToBase64 } from "@semoss/utility/encoding";
+import { getErrorMessage } from "@semoss/utility/error";
 import { useSession } from "@/hooks";
 
 interface AutomationImportExportCardProps {
@@ -50,7 +52,10 @@ interface PendingImport {
 interface ModelEngine {
 	engine_id: string;
 	engine_name: string;
+	engine_display_name?: string;
 }
+
+const LEAVE_DATABASE_UNASSIGNED = "__leave_database_unassigned__";
 
 function isSavedAutomation(value: unknown): value is SavedAutomation {
 	return (
@@ -59,13 +64,6 @@ function isSavedAutomation(value: unknown): value is SavedAutomation {
 		(value as { formatVersion?: unknown }).formatVersion === 2 &&
 		typeof (value as { graph?: unknown }).graph === "object"
 	);
-}
-
-function encodeBase64(value: string): string {
-	const bytes = new TextEncoder().encode(value);
-	let binary = "";
-	for (const byte of bytes) binary += String.fromCharCode(byte);
-	return btoa(binary);
 }
 
 export const AutomationImportExportCard = ({
@@ -79,9 +77,22 @@ export const AutomationImportExportCard = ({
 		null,
 	);
 	const [modelEngineId, setModelEngineId] = useState("");
+	const [databaseEngineMappings, setDatabaseEngineMappings] = useState<
+		Record<string, string>
+	>({});
 	const modelEngines = usePixel<ModelEngine[]>(
 		pendingImport
 			? 'MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);'
+			: "",
+		{ data: [] },
+	);
+	const hasDatabaseNodes =
+		pendingImport?.document.graph.nodes.some((node) =>
+			node.type.startsWith("database."),
+		) ?? false;
+	const databaseEngines = usePixel<ModelEngine[]>(
+		hasDatabaseNodes
+			? 'MyEngines(engineTypes=["DATABASE"], limit=[1000], offset=[0]);'
 			: "",
 		{ data: [] },
 	);
@@ -91,6 +102,29 @@ export const AutomationImportExportCard = ({
 			(typeof node.config.engineId !== "string" ||
 				node.config.engineId.trim() === ""),
 	);
+	const importedDatabaseEngineIds = Array.from(
+		new Set(
+			(pendingImport?.document.graph.nodes ?? [])
+				.filter((node) => node.type.startsWith("database."))
+				.map((node) =>
+					typeof node.config.engineId === "string"
+						? node.config.engineId
+						: "",
+				),
+		),
+	);
+	const accessibleDatabaseEngineIds = new Set(
+		databaseEngines.data.map((engine) => engine.engine_id),
+	);
+	const unresolvedDatabaseEngineIds =
+		databaseEngines.status === "SUCCESS"
+			? importedDatabaseEngineIds.filter(
+					(engineId) => !accessibleDatabaseEngineIds.has(engineId),
+				)
+			: [];
+	const hasUnassignedDatabaseMapping = Object.values(
+		databaseEngineMappings,
+	).includes(LEAVE_DATABASE_UNASSIGNED);
 
 	const loadAutomation = async (): Promise<SavedAutomation> => {
 		const response = await runPixel(
@@ -122,11 +156,7 @@ export const AutomationImportExportCard = ({
 			}
 		} catch (error) {
 			console.error(error);
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to export automation.",
-			);
+			toast.error(getErrorMessage(error, "Unable to export automation."));
 		} finally {
 			setIsExporting(false);
 		}
@@ -138,14 +168,11 @@ export const AutomationImportExportCard = ({
 			const parsed = await parseAutomationImportFileAsync(
 				await file.text(),
 			);
+			setDatabaseEngineMappings({});
 			setPendingImport(parsed);
 		} catch (error) {
 			console.error(error);
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to import automation.",
-			);
+			toast.error(getErrorMessage(error, "Unable to import automation."));
 		} finally {
 			setIsImporting(false);
 		}
@@ -157,52 +184,108 @@ export const AutomationImportExportCard = ({
 			toast.error("Select a model engine before importing.");
 			return;
 		}
+		if (hasDatabaseNodes && databaseEngines.status !== "SUCCESS") {
+			toast.error("Unable to verify accessible database engines.");
+			return;
+		}
+		if (
+			unresolvedDatabaseEngineIds.some(
+				(engineId) => !databaseEngineMappings[engineId],
+			)
+		) {
+			toast.error(
+				"Select a replacement for each inaccessible database engine.",
+			);
+			return;
+		}
 		try {
 			setIsImporting(true);
-			const document = unresolvedModelNodes?.length
-				? {
-						...pendingImport.document,
-						graph: {
-							...pendingImport.document.graph,
-							nodes: pendingImport.document.graph.nodes.map(
-								(node) =>
-									unresolvedModelNodes.some(
-										(candidate) => candidate.id === node.id,
-									)
-										? {
-												...node,
-												config: {
-													...node.config,
-													engineId: modelEngineId,
-												},
-											}
-										: node,
-							),
-						},
-					}
-				: pendingImport.document;
+			const unresolvedModelNodeIds = new Set(
+				(unresolvedModelNodes ?? []).map((node) => node.id),
+			);
+			const databaseEngineNames = new Map(
+				databaseEngines.data.map((engine) => [
+					engine.engine_id,
+					engine.engine_display_name || engine.engine_name,
+				]),
+			);
+			const document = {
+				...pendingImport.document,
+				graph: {
+					...pendingImport.document.graph,
+					nodes: pendingImport.document.graph.nodes.map((node) => {
+						const importedEngineId =
+							typeof node.config.engineId === "string"
+								? node.config.engineId
+								: "";
+						const databaseEngineMapping =
+							node.type.startsWith("database.") &&
+							unresolvedDatabaseEngineIds.includes(
+								importedEngineId,
+							)
+								? databaseEngineMappings[importedEngineId]
+								: undefined;
+						const databaseEngineId =
+							databaseEngineMapping === LEAVE_DATABASE_UNASSIGNED
+								? ""
+								: databaseEngineMapping;
+						const databaseEngineName =
+							databaseEngineMapping === LEAVE_DATABASE_UNASSIGNED
+								? ""
+								: databaseEngineId
+									? (databaseEngineNames.get(
+											databaseEngineId,
+										) ?? databaseEngineId)
+									: undefined;
+						const modelEngine = unresolvedModelNodeIds.has(node.id)
+							? modelEngineId
+							: undefined;
+						if (
+							databaseEngineMapping === undefined &&
+							!modelEngine
+						) {
+							return node;
+						}
+						return {
+							...node,
+							config: {
+								...node.config,
+								...(databaseEngineMapping !== undefined
+									? {
+											engineId: databaseEngineId,
+											engineName: databaseEngineName,
+										}
+									: {}),
+								...(modelEngine
+									? { engineId: modelEngine }
+									: {}),
+							},
+						};
+					}),
+				},
+			};
 			const response = await runPixel(
-				`SaveAutomation(project=${JSON.stringify([project.project_id])}, json=${JSON.stringify([encodeBase64(JSON.stringify(document))])}, nodeSources=${JSON.stringify([encodeBase64(JSON.stringify(pendingImport.nodeSources))])});`,
+				`SaveAutomation(project=${JSON.stringify([project.project_id])}, json=${JSON.stringify([encodeTextToBase64(JSON.stringify(document))])}, nodeSources=${JSON.stringify([encodeTextToBase64(JSON.stringify(pendingImport.nodeSources))])});`,
 			);
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join("\n"));
 			}
 			setPendingImport(null);
 			setModelEngineId("");
-			if (pendingImport.warnings.length > 0) {
+			setDatabaseEngineMappings({});
+			if (
+				pendingImport.warnings.length > 0 ||
+				hasUnassignedDatabaseMapping
+			) {
 				toast.warning(
-					`Automation imported with ${pendingImport.warnings.length} warning(s)`,
+					`Automation imported with ${pendingImport.warnings.length + Number(hasUnassignedDatabaseMapping)} warning(s)${hasUnassignedDatabaseMapping ? "; database engines remain unassigned" : ""}`,
 				);
 			} else {
 				toast.success("Automation imported");
 			}
 		} catch (error) {
 			console.error(error);
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to save automation.",
-			);
+			toast.error(getErrorMessage(error, "Unable to save automation."));
 		} finally {
 			setIsImporting(false);
 		}
@@ -273,6 +356,7 @@ export const AutomationImportExportCard = ({
 					if (!open) {
 						setPendingImport(null);
 						setModelEngineId("");
+						setDatabaseEngineMappings({});
 					}
 				}}
 			>
@@ -320,6 +404,71 @@ export const AutomationImportExportCard = ({
 							</Select>
 						</div>
 					) : null}
+					{hasDatabaseNodes &&
+						databaseEngines.status === "LOADING" && (
+							<P className="text-sm">
+								Checking database engine access...
+							</P>
+						)}
+					{hasDatabaseNodes && databaseEngines.status === "ERROR" && (
+						<div className="flex flex-col items-start gap-2">
+							<P className="text-destructive text-sm">
+								Could not load accessible database engines.
+							</P>
+							<Button
+								variant="outline"
+								onClick={() => databaseEngines.refresh()}
+							>
+								Retry
+							</Button>
+						</div>
+					)}
+					{unresolvedDatabaseEngineIds.map((engineId) => (
+						<div className="flex flex-col gap-2" key={engineId}>
+							<P className="text-sm">
+								Choose a replacement for database engine{" "}
+								{engineId || "(not selected)"}.
+							</P>
+							<Select
+								value={databaseEngineMappings[engineId] ?? ""}
+								onValueChange={(value) =>
+									setDatabaseEngineMappings((previous) => ({
+										...previous,
+										[engineId]: value,
+									}))
+								}
+								disabled={databaseEngines.status !== "SUCCESS"}
+							>
+								<SelectTrigger
+									aria-label={`Replacement for database engine ${engineId || "not selected"}`}
+								>
+									<SelectValue placeholder="Select a database engine" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem
+										value={LEAVE_DATABASE_UNASSIGNED}
+									>
+										Leave unassigned
+									</SelectItem>
+									{databaseEngines.data.map((engine) => (
+										<SelectItem
+											key={engine.engine_id}
+											value={engine.engine_id}
+										>
+											{engine.engine_display_name ||
+												engine.engine_name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					))}
+					{hasUnassignedDatabaseMapping && (
+						<P className="text-muted-foreground text-sm">
+							Unassigned database steps need an accessible engine
+							before they can be saved or run from the editor.
+						</P>
+					)}
 					<DialogFooter>
 						<Button
 							variant="outline"
@@ -331,6 +480,12 @@ export const AutomationImportExportCard = ({
 						<Button
 							disabled={
 								isImporting ||
+								(hasDatabaseNodes &&
+									databaseEngines.status !== "SUCCESS") ||
+								unresolvedDatabaseEngineIds.some(
+									(engineId) =>
+										!databaseEngineMappings[engineId],
+								) ||
 								Boolean(
 									unresolvedModelNodes?.length &&
 										!modelEngineId,

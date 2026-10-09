@@ -1,0 +1,533 @@
+import { download, oauth } from "@semoss/sdk";
+import {
+	connectMicrosoft,
+	downloadStagedAttachment,
+	getMail,
+	getTeamsMessages,
+	listCalendarEvents,
+	listMail,
+	listMailFolders,
+	listTeamsChats,
+	parseAddresses,
+	safeSourceUrl,
+	saveEmailDraft,
+	sendEmailDraft,
+	stageMailAttachment,
+	UncertainDraftError,
+	UncertainSendError,
+} from "./microsoft";
+
+vi.mock("@semoss/sdk", () => ({ download: vi.fn(), oauth: vi.fn() }));
+
+function response(output: unknown) {
+	return { pixelReturn: [{ output, operationType: [] }] };
+}
+const mail = {
+	id: "mail-1",
+	subject: "A subject",
+	unread: true,
+	hasAttachments: false,
+};
+
+describe("Microsoft source adapters", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.useRealTimers();
+	});
+	it("requests bounded mail headers only and safely serializes filters", async () => {
+		const run = vi
+			.fn()
+			.mockResolvedValue(
+				response({ folder: "inbox", count: 1, messages: [mail] }),
+			);
+		const subject = 'quarter "one"; not a Pixel';
+		await expect(
+			listMail({ run } as never, { subject }),
+		).resolves.toMatchObject({ count: 1 });
+		expect(run.mock.calls[0]?.[0]).toContain(
+			"limit=[20], sinceDays=[7], includeBody=[false]",
+		);
+		expect(run.mock.calls[0]?.[0]).toContain(
+			`subject=${JSON.stringify([subject])}`,
+		);
+	});
+	it.each([1, 7, 30, 90] as const)(
+		"serializes the selected %i-day range without widening the header read",
+		async (sinceDays) => {
+			const run = vi
+				.fn()
+				.mockResolvedValue(
+					response({ folder: "inbox", count: 0, messages: [] }),
+				);
+			await listMail({ run } as never, { sinceDays });
+			expect(run.mock.calls[0]?.[0]).toContain(
+				`limit=[20], sinceDays=[${sinceDays}], includeBody=[false]`,
+			);
+		},
+	);
+	it.each([0, 14, 91, Number.NaN, null, "30"])(
+		"rejects unsupported supplied date range %s before reading mail",
+		(sinceDays) => {
+			const run = vi.fn();
+			expect(() =>
+				listMail({ run } as never, { sinceDays: sinceDays as never }),
+			).toThrow("1, 7, 30, or 90 days");
+			expect(run).not.toHaveBeenCalled();
+		},
+	);
+	it("reads one message id with a body cap and attachment metadata", async () => {
+		const run = vi
+			.fn()
+			.mockResolvedValue(
+				response({ ...mail, id: "opaque/+id", body: "Actual email" }),
+			);
+		await expect(
+			getMail({ run } as never, "opaque/+id"),
+		).resolves.toMatchObject({ uid: "opaque/+id" });
+		expect(run).toHaveBeenCalledWith(
+			'MicrosoftOutlookGetMail(id=["opaque/+id"], maxBodyChars=[12000], includeAttachments=[true], includeDisplayBody=[true]);',
+		);
+	});
+	it("rejects invalid payloads and Pixel errors instead of loading fixtures", async () => {
+		const run = vi
+			.fn()
+			.mockResolvedValueOnce(response({ count: 0 }))
+			.mockResolvedValueOnce({
+				pixelReturn: [
+					{
+						operationType: ["ERROR"],
+						output: "Mail.Read permission required",
+					},
+				],
+			});
+		await expect(listMail({ run } as never)).rejects.toThrow(
+			"unexpected shape",
+		);
+		await expect(listMail({ run } as never)).rejects.toThrow("Mail.Read");
+	});
+	it("lists folder identities without fabricating totals", async () => {
+		const run = vi.fn().mockResolvedValue(
+			response({
+				count: 1,
+				folders: [
+					{
+						id: "native-folder",
+						name: "Client",
+						kind: "folder",
+						totalCount: 43,
+					},
+				],
+			}),
+		);
+		await expect(listMailFolders({ run } as never)).resolves.toMatchObject({
+			folders: [{ id: "native-folder" }],
+		});
+		expect(run).toHaveBeenCalledWith("MicrosoftOutlookListMailFolders();");
+	});
+	it("bounds Teams and calendar reads and leaves chat previews off", async () => {
+		const run = vi
+			.fn()
+			.mockResolvedValueOnce(response({ count: 0, chats: [] }))
+			.mockResolvedValueOnce(
+				response({ chatId: "chat", count: 0, messages: [] }),
+			)
+			.mockResolvedValueOnce(response({ count: 0, events: [] }));
+		const actions = { run } as never;
+		await listTeamsChats(actions);
+		await getTeamsMessages(actions, "chat");
+		await listCalendarEvents(actions);
+		expect(run.mock.calls.map(([expression]) => expression)).toEqual([
+			"MicrosoftTeamsListChats(limit=[20], includeLastMessage=[false]);",
+			'MicrosoftTeamsListChatMessages(chatId=["chat"], includeDisplayBody=[true], limit=[30], maxBodyChars=[12000]);',
+			"MicrosoftCalendarListEvents(days=[7], limit=[30], includeBody=[false]);",
+		]);
+	});
+	it("rejects malformed timestamps at the source boundary", async () => {
+		const run = vi
+			.fn()
+			.mockResolvedValue(
+				response({ ...mail, receivedDate: "not a date" }),
+			);
+		await expect(getMail({ run } as never, "mail-1")).rejects.toThrow(
+			"Invalid source date",
+		);
+	});
+	it("allows incomplete new drafts, validating only supplied addresses", async () => {
+		const run = vi.fn().mockResolvedValue(
+			response({
+				draft: true,
+				id: "draft",
+				to: ["server-variant@example.com"],
+				webLink: "https://outlook.office.com/mail/drafts/id",
+			}),
+		);
+		await expect(
+			saveEmailDraft({ run } as never, {
+				mode: "new",
+				to: "",
+				cc: "",
+				bcc: "",
+				subject: "",
+				body: "",
+			}),
+		).resolves.toEqual({
+			savedDraftId: "draft",
+			webLink: "https://outlook.office.com/mail/drafts/id",
+		});
+		expect(run.mock.calls[0]?.[0]).toContain("MicrosoftOutlookSaveDraft(");
+		expect(run.mock.calls[0]?.[0]).toContain("html=[false]");
+	});
+	it("never submits malformed supplied addresses", async () => {
+		const run = vi.fn();
+		await expect(
+			saveEmailDraft({ run } as never, {
+				mode: "new",
+				to: "not an address",
+				cc: "",
+				bcc: "",
+				subject: "",
+				body: "",
+			}),
+		).rejects.toThrow("email addresses");
+		expect(run).not.toHaveBeenCalled();
+	});
+	it("hardcodes native reply/forward draft mode and reads their draft receipts", async () => {
+		const run = vi
+			.fn()
+			.mockResolvedValueOnce(
+				response({
+					draft: true,
+					repliedTo: "original",
+					id: "reply-draft",
+					to: ["original@example.com"],
+					cc: [],
+				}),
+			)
+			.mockResolvedValueOnce(
+				response({
+					draft: true,
+					forwarded: "original",
+					id: "forward-draft",
+				}),
+			);
+		await expect(
+			saveEmailDraft({ run } as never, {
+				mode: "reply",
+				sourceUid: "original",
+				attachments: ["hello.txt"],
+				body: "Thanks",
+				replyAll: false,
+			}),
+		).resolves.toMatchObject({ savedDraftId: "reply-draft" });
+		await expect(
+			saveEmailDraft({ run } as never, {
+				mode: "forward",
+				sourceUid: "original",
+				attachments: ["hello.txt"],
+				body: "",
+				to: "person@example.com",
+			}),
+		).resolves.toMatchObject({ savedDraftId: "forward-draft" });
+		for (const [expression] of run.mock.calls) {
+			expect(expression).toContain("asDraft=[true]");
+			expect(expression).toContain('attachments=["hello.txt"]');
+		}
+		expect(run.mock.calls[0]?.[0]).toContain("replyAll=[false]");
+	});
+	it("treats missing or wrong draft receipts as uncertain without retrying", async () => {
+		const run = vi.fn().mockResolvedValue(
+			response({
+				draft: true,
+				repliedTo: "different",
+				id: "draft",
+				to: [],
+				cc: [],
+			}),
+		);
+		await expect(
+			saveEmailDraft({ run } as never, {
+				mode: "reply",
+				sourceUid: "original",
+				body: "Thanks",
+				replyAll: false,
+			}),
+		).rejects.toBeInstanceOf(UncertainDraftError);
+		expect(run).toHaveBeenCalledTimes(1);
+	});
+	it("does not call a successful sent response a draft", async () => {
+		const run = vi
+			.fn()
+			.mockResolvedValue(
+				response({ sent: true, forwarded: "original", id: "id" }),
+			);
+		await expect(
+			saveEmailDraft({ run } as never, {
+				mode: "forward",
+				sourceUid: "original",
+				to: "p@example.com",
+				body: "",
+			}),
+		).rejects.toBeInstanceOf(UncertainDraftError);
+	});
+	it("stages unique files and obtains an export key before browser download", async () => {
+		vi.spyOn(crypto, "randomUUID").mockReturnValue(
+			"11111111-1111-1111-1111-111111111111",
+		);
+		const name = "11111111-1111-1111-1111-111111111111-report.pdf";
+		const run = vi
+			.fn()
+			.mockResolvedValueOnce(
+				response({
+					success: true,
+					id: "mail",
+					attachmentId: "attachment",
+					name: "report.pdf",
+					filePath: name,
+					size: 10,
+				}),
+			)
+			.mockResolvedValueOnce(response("download-key"));
+		const file = await stageMailAttachment(
+			{ run } as never,
+			"insight",
+			"mail",
+			"attachment",
+			"report.pdf",
+		);
+		await downloadStagedAttachment({ run } as never, file);
+		expect(run.mock.calls[0]?.[0]).toContain(`fileName=["${name}"]`);
+		expect(run.mock.calls[1]?.[0]).toBe(
+			`DownloadInsightAsset(filePath=["${name}"]);`,
+		);
+		expect(download).toHaveBeenCalledWith("insight", "download-key");
+	});
+	it("rejects staging receipts from a different selected file", async () => {
+		const run = vi.fn().mockResolvedValue(
+			response({
+				success: true,
+				id: "other",
+				attachmentId: "id",
+				name: "a",
+				filePath: "a",
+				size: 1,
+			}),
+		);
+		await expect(
+			stageMailAttachment({ run } as never, "insight", "mail", "id", "a"),
+		).rejects.toThrow("does not match");
+	});
+	it("ends an unresolved OAuth attempt with an actionable error", async () => {
+		vi.useFakeTimers();
+		vi.mocked(oauth).mockReturnValue(new Promise(() => undefined));
+		const task = connectMicrosoft(200);
+		const assertion = expect(task).rejects.toThrow("Allow popups");
+		await vi.advanceTimersByTimeAsync(200);
+		await assertion;
+	});
+	it("accepts HTTPS source links and deduplicates valid addresses", () => {
+		expect(safeSourceUrl("javascript:alert(1)")).toBeUndefined();
+		expect(safeSourceUrl("http://outlook.office.com")).toBeUndefined();
+		expect(
+			parseAddresses("a@example.com; a@example.com, b@example.com"),
+		).toEqual(["a@example.com", "b@example.com"]);
+	});
+});
+
+it.each(["new", "reply", "forward"] as const)(
+	"saves %s HTML drafts without ever sending",
+	async (mode) => {
+		const run = vi.fn().mockResolvedValue(
+			response(
+				mode === "new"
+					? { draft: true, id: "draft" }
+					: {
+							draft: true,
+							id: "draft",
+							repliedTo: "original",
+							forwarded: "original",
+							to: ["person@example.com"],
+							cc: [],
+						},
+			),
+		);
+		await saveEmailDraft({ run } as never, {
+			mode,
+			sourceUid: "original",
+			to: "person@example.com",
+			cc: "",
+			bcc: "",
+			subject: "Draft",
+			replyAll: true,
+			body: "<p><strong>Formatted</strong></p>",
+			bodyFormat: "html",
+		});
+		expect(run).toHaveBeenCalledTimes(1);
+		expect(run.mock.calls[0]?.[0]).toContain("html=[true]");
+		expect(run.mock.calls[0]?.[0]).toContain("<strong>Formatted</strong>");
+		expect(run.mock.calls[0]?.[0]).not.toMatch(/MicrosoftOutlookSend/);
+		if (mode !== "new")
+			expect(run.mock.calls[0]?.[0]).toContain("asDraft=[true]");
+	},
+);
+
+it("rejects empty rich replies before writing", async () => {
+	const run = vi.fn();
+	await expect(
+		saveEmailDraft({ run } as never, {
+			mode: "reply",
+			sourceUid: "id",
+			bodyFormat: "html",
+			body: "<p>&nbsp;<br></p>",
+			replyAll: false,
+		}),
+	).rejects.toThrow();
+	expect(run).not.toHaveBeenCalled();
+});
+
+it("requires an exact successful draft ID receipt from the existing sending endpoint", async () => {
+	const run = vi
+		.fn()
+		.mockResolvedValue(response({ sent: true, draftId: "exact/+id" }));
+	await expect(
+		sendEmailDraft({ run } as never, "exact/+id"),
+	).resolves.toEqual({ sent: true, draftId: "exact/+id" });
+	expect(run).toHaveBeenCalledExactlyOnceWith(
+		'MicrosoftOutlookSendDraft(id=["exact/+id"]);',
+	);
+});
+
+it.each([
+	{ sent: true, draftId: "other" },
+	{ sent: false, draftId: "id" },
+	{},
+	null,
+])(
+	"treats an unconfirmed send receipt as uncertain without retrying: %s",
+	async (output) => {
+		const run = vi.fn().mockResolvedValue(response(output));
+		await expect(
+			sendEmailDraft({ run } as never, "id"),
+		).rejects.toBeInstanceOf(UncertainSendError);
+		expect(run).toHaveBeenCalledTimes(1);
+	},
+);
+
+it("surfaces missing send permission and keeps the result uncertain", async () => {
+	const run = vi.fn().mockResolvedValue({
+		pixelReturn: [
+			{
+				operationType: ["ERROR"],
+				output: "Mail.Send permission required",
+			},
+		],
+	});
+	await expect(sendEmailDraft({ run } as never, "id")).rejects.toThrow(
+		"Mail.Send permission required",
+	);
+	expect(run).toHaveBeenCalledTimes(1);
+});
+
+it("preserves explicitly typed source HTML through both Microsoft readers", async () => {
+	const displayBody = {
+		contentType: "html",
+		content: "<blockquote>Quoted</blockquote><pre>  code</pre>",
+		isTruncated: false,
+	};
+	const run = vi
+		.fn()
+		.mockResolvedValueOnce(
+			response({
+				...mail,
+				displayBody,
+				body: "Plain",
+				webLink: "https://outlook.office.com/mail/id",
+			}),
+		)
+		.mockResolvedValueOnce(
+			response({
+				chatId: "chat",
+				count: 1,
+				messages: [{ id: "message", body: "Plain", displayBody }],
+			}),
+		);
+	expect((await getMail({ run } as never, "mail-1")).displayBody).toEqual(
+		displayBody,
+	);
+	expect(
+		(await getTeamsMessages({ run } as never, "chat")).messages[0]
+			?.displayBody,
+	).toEqual(displayBody);
+});
+
+it("serializes explicit reply recipients, including empty lists, and verifies the receipt", async () => {
+	const run = vi.fn().mockResolvedValue(
+		response({
+			draft: true,
+			id: "draft",
+			repliedTo: "source",
+			to: ["CHANGED@example.com"],
+			cc: [],
+		}),
+	);
+	await expect(
+		saveEmailDraft({ run } as never, {
+			mode: "reply",
+			sourceUid: "source",
+			replyAll: true,
+			body: "<p>Reply</p>",
+			bodyFormat: "html",
+			overrideRecipients: true,
+			to: "changed@example.com",
+			cc: "",
+		}),
+	).resolves.toMatchObject({ savedDraftId: "draft" });
+	expect(run).toHaveBeenCalledOnce();
+	expect(run.mock.calls[0]?.[0]).toContain(
+		'overrideRecipients=[true], to=["changed@example.com"], cc=[]',
+	);
+});
+
+it.each([
+	undefined,
+	{ to: ["unexpected@example.com"], cc: [] },
+	{ to: ["changed@example.com"], cc: ["removed@example.com"] },
+])("requires confirmation of the edited recipients: %s", async (recipients) => {
+	const run = vi.fn().mockResolvedValue(
+		response({
+			draft: true,
+			id: "draft",
+			repliedTo: "source",
+			...recipients,
+		}),
+	);
+	await expect(
+		saveEmailDraft({ run } as never, {
+			mode: "reply",
+			sourceUid: "source",
+			replyAll: true,
+			body: "<p>Reply</p>",
+			bodyFormat: "html",
+			overrideRecipients: true,
+			to: "changed@example.com",
+			cc: "",
+		}),
+	).rejects.toBeInstanceOf(UncertainDraftError);
+	expect(run).toHaveBeenCalledOnce();
+});
+
+it("rejects invalid edited reply addresses before starting a write", async () => {
+	const run = vi.fn();
+	await expect(
+		saveEmailDraft({ run } as never, {
+			mode: "reply",
+			sourceUid: "source",
+			replyAll: true,
+			body: "<p>Reply</p>",
+			bodyFormat: "html",
+			overrideRecipients: true,
+			to: "valid@example.com",
+			cc: "invalid",
+		}),
+	).rejects.toThrow("email addresses");
+	expect(run).not.toHaveBeenCalled();
+});

@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { Navigate, Outlet } from "react-router";
 import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
 import { AutomationWorkbenchPage } from "@/components/workbench/automation";
 import {
@@ -11,9 +11,10 @@ import {
 	ViewAppPage,
 } from "../app";
 import { AgentActivityPage } from "./agent/agent-activity-page";
+import { AgentOverviewPage } from "./agent/agent-overview-page";
+import { AgentSettingsLayout } from "./agent/agent-settings-layout";
 import { CreateAgentPage } from "./agent/create-agent-page";
 import { EditAgentPage } from "./agent/edit-agent-page";
-import { ViewAgentPage } from "./agent/view-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
 import { EditAppPage } from "./app/edit-app-page";
 import { CreateAutomationPage } from "./automation/create-automation-page";
@@ -21,9 +22,11 @@ import { CreateNotebookPage } from "./notebook/create-notebook-page";
 import { EditNotebookPage } from "./notebook/edit-notebook-page";
 import { ViewNotebookPage } from "./notebook/view-notebook-page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
+import { ProjectDescriptionSettingsPage } from "./project-description-settings-page";
 import { ProjectLayout } from "./project-layout";
 import { ProjectOverviewPage } from "./project-overview-page";
 import { ProjectTabsLayout } from "./project-tabs-layout";
+import { ProjectTagsSettingsPage } from "./project-tags-settings-page";
 import { CreateSkillPage } from "./skill/create-skill-page";
 import { EditSkillPage } from "./skill/edit-skill-page";
 import { ViewSkillPage } from "./skill/view-skill-page";
@@ -98,7 +101,7 @@ export const PROJECT_ROUTES: {
 									{
 										name: "Settings",
 										path: "settings",
-										restrict: ["OWNER"],
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "Access Control",
@@ -203,6 +206,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -237,6 +245,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "settings",
+								element: <AppSettingsPage />,
 							},
 							{
 								path: "smss",
@@ -289,6 +301,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -313,6 +330,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "settings",
+								element: <AppSettingsPage />,
 							},
 							{
 								path: "smss",
@@ -452,8 +473,10 @@ export const PROJECT_ROUTES: {
 						element: <EditAgentPage />,
 					},
 					{
+						// Agents land on their Overview tab; keep old /view
+						// links working
 						path: "view",
-						element: <ViewAgentPage />,
+						element: <Navigate to=".." relative="path" replace />,
 					},
 					{
 						path: "*",
@@ -481,6 +504,15 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -491,7 +523,31 @@ export const PROJECT_ROUTES: {
 						children: [
 							{
 								path: "",
-								element: <ProjectOverviewPage />,
+								element: <AgentOverviewPage />,
+							},
+							{
+								path: "settings",
+								element: <AgentSettingsLayout />,
+								children: [
+									{
+										path: "",
+										element: <Navigate to="tags" replace />,
+									},
+									{
+										path: "image",
+										element: <AppSettingsPage />,
+									},
+									{
+										path: "tags",
+										element: <ProjectTagsSettingsPage />,
+									},
+									{
+										path: "description",
+										element: (
+											<ProjectDescriptionSettingsPage />
+										),
+									},
+								],
 							},
 							{
 								path: "github",

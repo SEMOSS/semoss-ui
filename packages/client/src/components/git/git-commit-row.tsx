@@ -16,7 +16,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { formatDateToLocal } from "@/utility/date";
+import { formatLocalDateTime } from "@semoss/utility/date";
 import type { GitCommit, GitCommitFile } from "./git.types";
 import { GitRestoreDialog } from "./git-restore-dialog";
 
@@ -60,7 +60,7 @@ export const GitCommitRow = ({
 		<CollapsibleTrigger asChild>
 			<button
 				type="button"
-				aria-label={`${subject}, committed by ${commit.author.userId} on ${formatDateToLocal(commit.date)}`}
+				aria-label={`${subject}, committed by ${commit.author.userId} on ${formatLocalDateTime(commit.date)}`}
 				className="group flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 			>
 				<ChevronRightIcon
@@ -76,7 +76,7 @@ export const GitCommitRow = ({
 					</span>
 					<span className="block truncate text-muted-foreground text-xs">
 						{commit.author.userId} ·{" "}
-						{formatDateToLocal(commit.date)}
+						{formatLocalDateTime(commit.date)}
 					</span>
 					{commit.refs && commit.refs.length > 0 ? (
 						<span className="mt-1 flex flex-wrap gap-1">

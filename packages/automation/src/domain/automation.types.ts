@@ -1,6 +1,7 @@
 import type {
 	AutomationBranchClause,
 	AutomationDataType,
+	AutomationJevRoute,
 	AutomationNodeCodeMode,
 	AutomationWorkflowNodeConfig,
 	AutomationWorkflowNodeType,
@@ -12,11 +13,13 @@ export type AutomationNodeType =
 	| "trigger"
 	| "database-engine"
 	| "storage-engine"
+	| "data"
 	| "vector-engine"
 	| "model-engine"
 	| "function-engine"
 	| "app"
 	| "branch"
+	| "loop"
 	| "wait";
 
 // ─── shared form types ────────────────────────────────────────────────────────
@@ -50,8 +53,21 @@ export interface StorageEngineConfig {
 	engineName?: string;
 	operation: "list" | "download" | "upload" | "delete" | "read-base64";
 	storagePath: string;
+	/** Comma-separated extensions used by List files, for example pdf, png, jpg. */
+	fileTypes: string;
 	filePath: string;
 	metadata: string;
+	convertToPdf: boolean;
+	version: string;
+	leaveFolderStructure: boolean;
+}
+
+export interface DataExtractConfig {
+	source: string;
+	path: string;
+	format: "auto" | "json" | "xml";
+	missingValue: string;
+	nullValue: string;
 }
 
 export interface VectorEngineConfig {
@@ -87,8 +103,10 @@ export interface ModelEngineConfig {
 	paramValues: string;
 	values: string;
 	image: string;
+	urls: string;
 	prompt: string;
 	entities: string;
+	maskEntities: string;
 }
 
 export interface FunctionEngineConfig {
@@ -116,21 +134,69 @@ export interface WaitConfig {
 	seconds: string;
 }
 
+interface BoundedLoopConfig {
+	maxIterations: number;
+}
+
+/** Repeats the nested graph for every item or bounded group in a collection. */
+export interface ForEachLoopConfig extends BoundedLoopConfig {
+	mode: "forEach";
+	/** A JSON array or an exact scope reference such as ${records} or ${download.files}. */
+	items: string;
+	batchSize: number;
+}
+
+/** Repeats the nested graph a fixed number of times. */
+export interface RepeatLoopConfig extends BoundedLoopConfig {
+	mode: "repeat";
+	count: number;
+}
+
+/** Repeats the nested graph while a bounded condition remains true. */
+export interface WhileLoopConfig extends BoundedLoopConfig {
+	mode: "while";
+	condition: string;
+}
+
+export type LoopConfig = ForEachLoopConfig | RepeatLoopConfig | WhileLoopConfig;
+
 export interface BranchConfig {
 	clauses: AutomationBranchClause[];
 }
+
+export interface JevDecisionConfig {
+	engineId: string;
+	engineName?: string;
+	state: string;
+	question: string;
+	questionType: "choice" | "noul";
+	clauses: AutomationJevRoute[];
+	confidenceThreshold: number;
+	paramValues: string;
+}
+
+export type RoutingConfig = BranchConfig | JevDecisionConfig;
 
 export type NodeConfig =
 	| TriggerConfig
 	| DatabaseEngineConfig
 	| StorageEngineConfig
+	| DataExtractConfig
 	| VectorEngineConfig
 	| ModelEngineConfig
 	| FunctionEngineConfig
 	| AppConfig
 	| AgentRunConfig
 	| BranchConfig
+	| JevDecisionConfig
+	| LoopConfig
 	| WaitConfig;
+
+/** Canvas projection of the nested graph owned by a container node. */
+export interface AutomationNodeBody {
+	nodes: AutomationNode[];
+	edges: AutomationEdge[];
+}
 
 export interface AutomationNode {
 	id: string;
@@ -146,6 +212,7 @@ export interface AutomationNode {
 	workflowType?: AutomationWorkflowNodeType;
 	workflowConfig?: AutomationWorkflowNodeConfig;
 	workflowCodeMode?: AutomationNodeCodeMode;
+	body?: AutomationNodeBody;
 }
 
 export interface AutomationEdge {
@@ -231,18 +298,38 @@ export interface AutomationExecutedDefinition {
 	snapshot?: string;
 }
 
+/** Per-iteration result record for loop nodes, as returned by buildNodeResults. */
+export interface AutomationNodeIteration {
+	/** 0-based iteration index matching the backend's buildNodeResults contract. */
+	index: number;
+	nodeResults: AutomationNodeResult[];
+}
+
 export interface AutomationNodeResult {
 	NODE_ID: string;
 	NODE_LABEL: string;
 	STATUS: NodeStatus;
 	DURATION_MS: number;
 	OUTPUT_PREVIEW: string | null;
+	OUTPUT_VALUE?: string | null;
+	/** Standard SEMOSS frame noun for row-shaped output in the live run Insight. */
+	OUTPUT_FRAME?: {
+		type: "FRAME_MAP";
+		value: {
+			frameType: string;
+			alias?: string;
+			queryName?: string;
+		};
+	};
 	ERROR_MESSAGE: string | null;
 	trace?: AutomationNodeTrace;
+	iterations?: AutomationNodeIteration[];
 }
 
 export interface AutomationRunDetail extends AutomationRunSummary {
 	DEFINITION_SNAPSHOT?: string;
+	/** Temporary workspace for an active or recently completed run on this server. */
+	executionInsightId?: string;
 	nodeResults: AutomationNodeResult[];
 }
 

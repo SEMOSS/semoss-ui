@@ -5,7 +5,10 @@
  * into `@semoss/shared`.
  */
 
-import { IMAGE_MIME_TYPES, splitInlineImages } from "@semoss/utility/file";
+import { getErrorMessage } from "@semoss/utility/error";
+import { IMAGE_MIME_TYPES, splitInlineImages } from "@semoss/utility/image";
+import { isRecord } from "@semoss/utility/object";
+import { stripAnsiStyleCodes } from "@semoss/utility/text";
 import type {
 	JupyterCell,
 	JupyterCellType,
@@ -13,9 +16,6 @@ import type {
 	JupyterNotebook,
 	JupyterOutput,
 } from "./notebook.types";
-
-// Built from a char code to avoid a control character in a regex literal.
-const ANSI_ESCAPE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
 
 /** Read a MIME entry from an output data bundle as a single string. */
 export const getMimeString = (
@@ -30,17 +30,13 @@ export const getMimeString = (
 	return null;
 };
 
-/** Strip ANSI SGR escape sequences so colored logs/tracebacks render as plain text. */
-export const stripAnsi = (value: string): string =>
-	value.replace(ANSI_ESCAPE, "");
-
 /**
  * The plain-text representation of an output for the clipboard, or null when
  * there is nothing useful to copy (image-only or widget output).
  */
 export const getOutputCopyText = (output: JupyterOutput): string | null => {
 	if (output.output_type === "stream") {
-		return stripAnsi(normalizeSource(output.text));
+		return stripAnsiStyleCodes(normalizeSource(output.text));
 	}
 
 	if (output.output_type === "error") {
@@ -48,13 +44,13 @@ export const getOutputCopyText = (output: JupyterOutput): string | null => {
 			Array.isArray(output.traceback) && output.traceback.length
 				? output.traceback.join("\n")
 				: `${output.ename}: ${output.evalue}`;
-		return stripAnsi(traceback);
+		return stripAnsiStyleCodes(traceback);
 	}
 
 	const { data } = output;
 	const plain = getMimeString(data, "text/plain");
 	if (plain !== null) {
-		return stripAnsi(plain);
+		return stripAnsiStyleCodes(plain);
 	}
 
 	// Image-only, HTML-only, and widget outputs have no useful plain text.
@@ -76,9 +72,7 @@ export const normalizeSource = (source: string | string[]): string =>
 
 /** Narrow an unknown parsed value to a plain object, or `{}` when it is not one. */
 const asRecord = (value: unknown): Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value)
-		? (value as Record<string, unknown>)
-		: {};
+	isRecord(value) ? (value as Record<string, unknown>) : {};
 
 /** Narrow an unknown parsed value to an nbformat `source` (string or lines), else `""`. */
 const asSource = (value: unknown): string | string[] =>
@@ -147,9 +141,7 @@ export const validateNotebook = (raw: string): JupyterNotebook => {
 	try {
 		parsed = JSON.parse(raw);
 	} catch (e) {
-		throw new Error(
-			e instanceof Error ? e.message : "Unable to parse .ipynb",
-		);
+		throw new Error(getErrorMessage(e, "Unable to parse .ipynb"));
 	}
 
 	const record = asRecord(parsed);

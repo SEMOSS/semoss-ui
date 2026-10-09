@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@semoss/utility/error";
 export interface ScriptStep {
 	id: number;
 	type: "NAVIGATE" | "TYPE" | "CLICK" | "SCROLL" | "WAIT";
@@ -96,7 +97,7 @@ export class ScriptExecutor {
 			return script;
 		} catch (error) {
 			throw new Error(
-				`Failed to parse script: ${error instanceof Error ? error.message : String(error)}`,
+				`Failed to parse script: ${getErrorMessage(error)}`,
 			);
 		}
 	}
@@ -247,7 +248,7 @@ export class ScriptExecutor {
 			return script;
 		} catch (error) {
 			throw new Error(
-				`Failed to parse Google Recorder script: ${error instanceof Error ? error.message : String(error)}`,
+				`Failed to parse Google Recorder script: ${getErrorMessage(error)}`,
 			);
 		}
 	}

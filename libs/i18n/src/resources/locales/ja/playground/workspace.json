@@ -16,7 +16,8 @@
 		"createAgent": "エージェントを作成",
 		"edit": "編集",
 		"delete": "削除",
-		"newChat": "新しいチャット"
+		"newChat": "新しいチャット",
+		"moreActions": "{{name}} のその他の操作"
 	},
 	"card": {
 		"deleteConfirmTitle": "本当によろしいですか？",
@@ -164,5 +165,22 @@
 	},
 	"skills": {
 		"noSkills": "スキルが追加されていません"
+	},
+	"catalog": {
+		"title": "マイ エージェント",
+		"description": "利用できるエージェントとチャットするか、独自のエージェントを作成します。",
+		"filters": {
+			"label": "エージェントを絞り込む",
+			"createdByMe": "自分が作成",
+			"owner": "所有者",
+			"edit": "編集可能",
+			"view": "閲覧のみ"
+		},
+		"sort": {
+			"label": "エージェントを並べ替え",
+			"name": "名前",
+			"newest": "新しい順",
+			"edited": "最近編集した順"
+		}
 	}
 }

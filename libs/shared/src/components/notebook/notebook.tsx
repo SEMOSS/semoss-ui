@@ -28,6 +28,8 @@ import {
 	ContextMenuTrigger,
 	Muted,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { getErrorMessage } from "@semoss/utility/error";
 import type {
 	JupyterCell,
 	JupyterCellType,
@@ -164,9 +166,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 				setParseError(null);
 			} catch (e) {
 				setNotebook(null);
-				setParseError(
-					e instanceof Error ? e.message : "Invalid notebook",
-				);
+				setParseError(getErrorMessage(e, "Invalid notebook"));
 			}
 		}, [content]);
 
@@ -310,7 +310,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 					}));
 				}
 			} catch (e) {
-				const message = e instanceof Error ? e.message : String(e);
+				const message = getErrorMessage(e);
 				outputs = toCellOutputs([], message, true, executionCount);
 			} finally {
 				currentJobIdRef.current = null;
@@ -515,12 +515,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 			if (!notebook) return;
 			const script = exportAsPythonScript(notebook);
 			const blob = new Blob([script], { type: "text/x-python" });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = "notebook.py";
-			a.click();
-			URL.revokeObjectURL(url);
+			downloadBlob(blob, "notebook.py");
 		};
 
 		/** Persist an edited cell source (code or markdown) so it can be saved. */
@@ -788,7 +783,9 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 																	1,
 														};
 
-													let cellBody: React.ReactElement;
+													let cellBody: React.ReactElement<{
+														dragHandleProps?: React.HTMLAttributes<HTMLElement>;
+													}>;
 													if (
 														cell.cell_type ===
 														"code"

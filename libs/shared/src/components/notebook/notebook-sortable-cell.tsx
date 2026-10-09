@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVerticalIcon } from "lucide-react";
 import React from "react";
+import type { NotebookCellBaseProps } from "./notebook-cell";
 
 interface NotebookSortableCellProps {
 	/** Stable cell id used by dnd-kit for sorting. */
@@ -13,7 +14,9 @@ interface NotebookSortableCellProps {
 	/** Registers the sortable node so the parent can scroll it into view. */
 	onNodeRef?: (node: HTMLDivElement | null) => void;
 	/** The cell to render; receives injected `dragHandleProps` via cloneElement. */
-	children: React.ReactElement;
+	children: React.ReactElement<
+		Pick<NotebookCellBaseProps, "dragHandleProps">
+	>;
 }
 
 /**
@@ -46,6 +49,10 @@ export const SortableCell: React.FC<NotebookSortableCellProps> = ({
 		setNodeRef(node);
 		onNodeRef?.(node);
 	};
+	const dragHandleProps: React.HTMLAttributes<HTMLElement> = {
+		...attributes,
+		...listeners,
+	};
 
 	if (isDragging) {
 		return (
@@ -55,7 +62,7 @@ export const SortableCell: React.FC<NotebookSortableCellProps> = ({
 					{...listeners}
 					className="flex w-full cursor-grabbing items-center gap-2 rounded-md border border-primary border-dashed bg-primary/5 px-3 py-2 text-muted-foreground text-xs shadow-sm"
 				>
-					<GripVerticalIcon className="size-3.5" />
+					<GripVerticalIcon aria-hidden="true" className="size-3.5" />
 					<span className="font-mono">{label ?? "Moving cell"}</span>
 				</div>
 			</div>
@@ -64,9 +71,7 @@ export const SortableCell: React.FC<NotebookSortableCellProps> = ({
 
 	return (
 		<div ref={setRef} style={style}>
-			{React.cloneElement(children, {
-				dragHandleProps: { ...attributes, ...listeners },
-			})}
+			{React.cloneElement(children, { dragHandleProps })}
 		</div>
 	);
 };

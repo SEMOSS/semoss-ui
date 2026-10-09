@@ -1,7 +1,15 @@
 import { usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { EngineSelect } from "@semoss/shared";
-import { Field, FieldLabel } from "@semoss/ui/next";
+import {
+	Field,
+	FieldLabel,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 
 export interface EnginePickerFieldProps {
 	/** Field label shown above the engine picker */
@@ -18,6 +26,10 @@ export interface EnginePickerFieldProps {
 	required?: boolean;
 	/** When true, the picker is locked to its current selection */
 	disabled?: boolean;
+	/** Optional exact engine subtypes accepted by this node. */
+	allowedEngineSubtypes?: string[];
+	/** Optional engine subtypes that this node cannot execute. */
+	excludedEngineSubtypes?: string[];
 }
 
 export function EnginePickerField({
@@ -28,6 +40,8 @@ export function EnginePickerField({
 	onChange,
 	required = false,
 	disabled = false,
+	allowedEngineSubtypes,
+	excludedEngineSubtypes,
 }: EnginePickerFieldProps) {
 	// Workflow JSON persists the stable engine ID, not a display label that can
 	// become stale. Resolve the label from the current user's accessible catalog
@@ -42,6 +56,25 @@ export function EnginePickerField({
 		? selectedEngines[0].engine_display_name ||
 			selectedEngines[0].engine_name
 		: "";
+	const subtypeRestricted = Boolean(
+		allowedEngineSubtypes?.length || excludedEngineSubtypes?.length,
+	);
+	const { data: subtypeEngines } = usePixel<Engine[]>(
+		subtypeRestricted
+			? `META | MyEngines(engineTypes=${JSON.stringify(engineTypes)}, limit=[1000], offset=[0]);`
+			: "",
+		{ data: [] },
+	);
+	const selectableEngines = subtypeEngines.filter((engine) => {
+		const subtype = engine.engine_subtype ?? "";
+		if (
+			allowedEngineSubtypes?.length &&
+			!allowedEngineSubtypes.includes(subtype)
+		) {
+			return false;
+		}
+		return !excludedEngineSubtypes?.includes(subtype);
+	});
 
 	return (
 		<Field>
@@ -53,13 +86,43 @@ export function EnginePickerField({
 					</span>
 				)}
 			</FieldLabel>
-			<EngineSelect
-				name={name || resolvedName || value}
-				value={value}
-				engineTypes={engineTypes}
-				onChange={onChange}
-				disabled={disabled}
-			/>
+			{subtypeRestricted ? (
+				<Select
+					value={value}
+					onValueChange={(engineId) => {
+						const engine = selectableEngines.find(
+							(candidate) => candidate.engine_id === engineId,
+						);
+						if (engine) onChange(engine);
+					}}
+					disabled={disabled}
+				>
+					<SelectTrigger>
+						<SelectValue
+							placeholder={name || resolvedName || "Select"}
+						/>
+					</SelectTrigger>
+					<SelectContent>
+						{selectableEngines.map((engine) => (
+							<SelectItem
+								key={engine.engine_id}
+								value={engine.engine_id}
+							>
+								{engine.engine_display_name ||
+									engine.engine_name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			) : (
+				<EngineSelect
+					name={name || resolvedName || value}
+					value={value}
+					engineTypes={engineTypes}
+					onChange={onChange}
+					disabled={disabled}
+				/>
+			)}
 		</Field>
 	);
 }

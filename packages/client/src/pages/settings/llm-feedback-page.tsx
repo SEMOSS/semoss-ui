@@ -34,6 +34,10 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { copyTextToClipboard } from "@semoss/utility/clipboard";
+import { escapeCsvValue } from "@semoss/utility/csv";
+import { formatJson } from "@semoss/utility/json";
 
 interface LLMFeedback {
 	AGENT_ID: string;
@@ -150,25 +154,7 @@ export const LLMFeedbackPage = () => {
 
 	const prettyFormat = useCallback((value: unknown): string => {
 		if (value === null || value === undefined || value === "") return "";
-		const str = String(value);
-		try {
-			return JSON.stringify(JSON.parse(str), null, 2);
-		} catch {
-			return str;
-		}
-	}, []);
-
-	const copyToClipboard = useCallback(async (text: string, label: string) => {
-		if (!text) {
-			toast.error(`${label} is empty`);
-			return;
-		}
-		try {
-			await navigator.clipboard.writeText(text);
-			toast.success(`Copied ${label}`);
-		} catch {
-			toast.error(`Failed to copy ${label}`);
-		}
+		return formatJson(String(value));
 	}, []);
 
 	useEffect(() => {
@@ -225,12 +211,6 @@ export const LLMFeedbackPage = () => {
 		}
 	}, [getCount.status, getCount.data, getCount.error]);
 
-	const escapeCsvValue = (value: unknown): string => {
-		if (value === null || value === undefined) return "";
-		const str = String(value);
-		return `"${str.replace(/"/g, '""')}"`;
-	};
-
 	const handleExportToCsv = async () => {
 		if (!startDate || !endDate || count === 0) return;
 
@@ -278,14 +258,10 @@ export const LLMFeedbackPage = () => {
 			const blob = new Blob([csvContent], {
 				type: "text/csv;charset=utf-8;",
 			});
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = `llm-feedback-${new Date().toISOString().split("T")[0]}.csv`;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(url);
+			downloadBlob(
+				blob,
+				`llm-feedback-${new Date().toISOString().split("T")[0]}.csv`,
+			);
 
 			toast.success("Exported to CSV");
 		} catch (error) {
@@ -524,12 +500,27 @@ export const LLMFeedbackPage = () => {
 													variant="ghost"
 													size="icon"
 													className="size-5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
-													onClick={() =>
-														copyToClipboard(
+													onClick={() => {
+														if (!display) {
+															toast.error(
+																`${label} is empty`,
+															);
+															return;
+														}
+														void copyTextToClipboard(
 															display,
-															label,
-														)
-													}
+															{
+																onSuccess: () =>
+																	toast.success(
+																		`Copied ${label}`,
+																	),
+																onError: () =>
+																	toast.error(
+																		`Failed to copy ${label}`,
+																	),
+															},
+														);
+													}}
 													aria-label={`Copy ${label}`}
 												>
 													<Copy className="size-3" />

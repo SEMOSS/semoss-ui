@@ -517,6 +517,14 @@ export const runAgentMessage = async (
 			return acc;
 		}, "");
 
+		// attachments uploaded to the room's insight, as AskPlayground sends them
+		const media = inputMessage.parts.reduce<string[]>((acc, part) => {
+			if (part.type === "MEDIA" && part.mediaInfo.fileLocation) {
+				acc.push(part.mediaInfo.fileLocation);
+			}
+			return acc;
+		}, []);
+
 		const handle = await AgentStore.start(
 			{
 				roomId: room.roomId,
@@ -524,6 +532,7 @@ export const runAgentMessage = async (
 				engine: room.model.engine_id,
 				harnessType: AGENT_HARNESS_TYPE,
 				agentId: room.options.workspace?.workspace_id,
+				media: media,
 			},
 			room.insightId,
 		);
@@ -601,7 +610,7 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 		(InputMessageStore | ResponseMessageStore)[]
 	>();
 	room.history.forEach((message) => {
-		const runId = message.ornaments.agentRunId;
+		const runId = message.agentRun?.runId;
 		if (!runId) return;
 		const messages = messagesByRunId.get(runId) ?? [];
 		messages.push(message);
@@ -647,7 +656,7 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
  * never part of an agent run, or if it already settled.
  */
 export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
-	const runId = responseMessage.ornaments.agentRunId;
+	const runId = responseMessage.agentRun?.runId;
 	if (!runId) {
 		return;
 	}

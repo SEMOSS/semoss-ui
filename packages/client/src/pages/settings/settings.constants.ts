@@ -2,6 +2,7 @@ import {
 	mdiAccountGroup,
 	// mdiTextBoxMultipleOutline,
 	mdiArchive,
+	mdiChartTimelineVariant,
 	// mdiClock,
 	mdiChatProcessingOutline,
 	mdiClipboardTextOutline,
@@ -42,6 +43,31 @@ export const SETTINGS_ROUTES: {
 			"View and make changes to settings to engines and apps. As an admin, view and manage platform settings.",
 		icon: mdiCog,
 		history: [],
+	},
+	{
+		title: "My Profile",
+		path: "my-profile",
+		description: "Update settings related to your profile.",
+		icon: mdiDatabase,
+		history: ["settings/"],
+		admin: false,
+	},
+	{
+		title: "My Files",
+		path: "my-files",
+		description: "Browse, upload, and manage the files in your user space.",
+		icon: mdiFolder,
+		history: ["settings/"],
+		admin: false,
+	},
+	{
+		title: "My Teams",
+		path: "managed-teams",
+		description:
+			"Add and remove the members and managers of the teams you manage",
+		icon: mdiAccountGroup,
+		history: ["managed-teams"],
+		admin: false,
 	},
 	{
 		title: "App, Agent, & Skill Settings",
@@ -168,7 +194,8 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Team Permissions",
 		path: "team-permissions",
-		description: "View and edit permissions for teams",
+		description:
+			"Create teams, choose their members and managers, and give them access to projects and engines",
 		icon: mdiDatabase,
 		history: ["team-permissions"],
 		admin: true,
@@ -184,11 +211,17 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Team Permissions",
 		path: "team-permissions/:type/:id",
-		description:
-			"View team permissions and members assigned to custom teams",
+		description: "A team's members, managers, and access",
 		icon: mdiDatabase,
 		history: ["team-permissions", "team-permissions/<type>/<id>"],
 		admin: true,
+	},
+	{
+		title: "My Teams",
+		path: "managed-teams/:id",
+		description: "A team you manage",
+		icon: mdiAccountGroup,
+		history: ["managed-teams", "managed-teams/<id>"],
 	},
 	{
 		title: "Configuration",
@@ -208,6 +241,15 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
+		title: "Enterprise Usage & Activity",
+		path: "enterprise-usage",
+		description:
+			"Explore Platform-Wide Model Usage, Adoption, Performance, And Activity.",
+		icon: mdiChartTimelineVariant,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
 		title: "Admin Query",
 		path: "admin-query",
 		description: "Query the platform databases directly. Use with caution.",
@@ -222,22 +264,6 @@ export const SETTINGS_ROUTES: {
 		icon: mdiPalette,
 		history: ["settings/"],
 		admin: true,
-	},
-	{
-		title: "My Profile",
-		path: "my-profile",
-		description: "Update settings related to your profile.",
-		icon: mdiDatabase,
-		history: ["settings/"],
-		admin: false,
-	},
-	{
-		title: "My Files",
-		path: "my-files",
-		description: "Browse, upload, and manage the files in your user space.",
-		icon: mdiFolder,
-		history: ["settings/"],
-		admin: false,
 	},
 	{
 		title: "View RDF Map",

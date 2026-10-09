@@ -18,10 +18,13 @@ export function useAutomationNode(nodeId: string) {
 	return {
 		node: automation.nodes.find((node) => node.id === nodeId),
 		readOnly: automation.readOnly,
-		open: () => automation.openNode(nodeId),
+		open: (bodyNodeId?: string) => automation.openNode(nodeId, bodyNodeId),
+		openLoopEditor: () => automation.openLoopEditor(nodeId),
 		delete: () => automation.deleteNode(nodeId),
+		deleteDownstream: () => automation.deleteNodeAndDownstream(nodeId),
 		addAfter: (sourceHandle?: string) =>
 			automation.addNodeAfter(nodeId, sourceHandle),
+		update: automation.updateNode,
 		viewAgentRun: automation.viewAgentRun,
 	};
 }

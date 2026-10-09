@@ -13,9 +13,11 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { formatLocalDateTime } from "@semoss/utility/date";
+import { getErrorMessage } from "@semoss/utility/error";
+import { metadataKeyToLabel } from "@semoss/utility/text";
 import { MarkdownEditor, NoDetailsEmptyState } from "@/components/common";
-import { metakeyToLabel, normalizeTagArray } from "@/utility";
-import { formatDateToLocal } from "@/utility/date";
+import { normalizeTagArray } from "@/utility";
 import { CatalogTagInput } from "./catalog-tag-input";
 import { CatalogTags } from "./catalog-tags";
 
@@ -336,11 +338,7 @@ export const CatalogOverview = ({
 			setIsEditMode(false);
 			toast.success("Successfully updated details");
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Error updating details",
-			);
+			toast.error(getErrorMessage(error, "Error updating details"));
 		} finally {
 			setIsLoading(false);
 		}
@@ -610,7 +608,7 @@ export const CatalogOverview = ({
 
 				{dynamicMetaKeys.map((meta) => {
 					const label =
-						meta.display_label || metakeyToLabel(meta.metakey);
+						meta.display_label || metadataKeyToLabel(meta.metakey);
 
 					if (
 						(meta.display_options === "multi-typeahead" ||
@@ -768,7 +766,7 @@ export const CatalogOverview = ({
 									<Field>
 										<FieldLabel>Created</FieldLabel>
 										<div className="text-muted-foreground text-sm">
-											{formatDateToLocal(dateCreated)}
+											{formatLocalDateTime(dateCreated)}
 										</div>
 									</Field>
 								)}
@@ -776,7 +774,9 @@ export const CatalogOverview = ({
 									<Field>
 										<FieldLabel>Updated</FieldLabel>
 										<div className="text-muted-foreground text-sm">
-											{formatDateToLocal(dateLastEdited)}
+											{formatLocalDateTime(
+												dateLastEdited,
+											)}
 										</div>
 									</Field>
 								)}

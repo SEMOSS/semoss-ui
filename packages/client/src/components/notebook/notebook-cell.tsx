@@ -52,11 +52,13 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { hasInlineImage } from "@semoss/utility/file";
+import { formatDurationMs } from "@semoss/utility/date";
+import { hasInlineImage } from "@semoss/utility/image";
+import { isOutputJSON } from "@semoss/utility/json";
 import { useProject, useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
-import { copyTextToClipboard, isOutputJSON } from "@/utility";
+import { copyTextToClipboard } from "@/utility";
 import { replaceInBlocks } from "@/utility/dependency-replacer";
 import { getDependentBlocks } from "@/utility/dependency-scanner";
 import { DependencyPromptModal } from "../blocks-workspace";
@@ -306,14 +308,8 @@ export const NotebookCell = observer(
 			}
 		};
 
-		const getCompactExecutionTime = (ms: number | undefined) => {
-			if (!ms) return "";
-			if (ms < 1000) return `${ms}ms`;
-			if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-			const minutes = Math.floor(ms / 60000);
-			const seconds = Math.floor((ms % 60000) / 1000);
-			return `${minutes}m ${seconds}s`;
-		};
+		const getCompactExecutionTime = (ms: number | undefined): string =>
+			ms ? formatDurationMs(ms) : "";
 
 		const runCellAndBelowHandler = () => {
 			try {
@@ -1363,7 +1359,7 @@ export const NotebookCell = observer(
 											onSelect={() => duplicateCell()}
 										>
 											<CopyPlus className="size-4" />
-											Duplicate cell
+											Duplicate Cell
 										</DropdownMenuItem>
 										{cell.query.id ===
 											MCP_NOTEBOOK_NAME && (
@@ -1393,7 +1389,7 @@ export const NotebookCell = observer(
 												) : (
 													<>
 														<HammerIcon size={14} />
-														Make Available through
+														Make Available Through
 														MCP
 													</>
 												)}
@@ -1404,7 +1400,7 @@ export const NotebookCell = observer(
 											onSelect={() => deleteCell()}
 										>
 											<Trash2 className="size-4" />
-											Delete cell
+											Delete Cell
 										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>

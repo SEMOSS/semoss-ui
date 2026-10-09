@@ -52,6 +52,15 @@ export interface FileExplorerProps {
 	 * action column, and extra context-menu entries.
 	 */
 	itemActions?: (item: FileItem) => FileExplorerItemActions;
+
+	/**
+	 * Draw a failed listing the host's own way, such as a sign in prompt for a
+	 * signed out account. Return undefined to fall back to the error message.
+	 */
+	renderError?: (
+		error: Error | undefined,
+		retry: () => void,
+	) => React.ReactNode;
 }
 
 /**
@@ -74,6 +83,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	header,
 	newFileOverlay: NewFileOverlayComponent,
 	itemActions,
+	renderError,
 }) => {
 	const { t } = useTranslation("common");
 	const { capabilities, commands, dnd, newFile, tree } = explorer;
@@ -204,6 +214,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 					<span className="w-[var(--date-col-width,100px)] overflow-hidden truncate px-2 text-end font-medium">
 						{t("fileExplorer.dateModified")}
 					</span>
+					{/* the width of each row's More actions button */}
+					<span aria-hidden className="w-7 shrink-0" />
 				</div>
 
 				<ScrollArea className="[&>div>div]:block! h-full min-h-0 w-full flex-1">
@@ -213,14 +225,17 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						</div>
 					)}
 
-					{tree.status === "ERROR" && (
-						<div className="flex items-center justify-center py-16">
-							<Muted className="text-destructive">
-								{tree.error?.message ||
-									t("fileExplorer.failedToLoadFiles")}
-							</Muted>
-						</div>
-					)}
+					{tree.status === "ERROR" &&
+						(renderError?.(tree.error, () =>
+							commands.refresh(),
+						) ?? (
+							<div className="flex items-center justify-center py-16">
+								<Muted className="text-destructive">
+									{tree.error?.message ||
+										t("fileExplorer.failedToLoadFiles")}
+								</Muted>
+							</div>
+						))}
 
 					{showTree && (
 						<TreeView<FileItem>

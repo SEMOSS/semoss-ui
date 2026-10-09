@@ -17,6 +17,7 @@ import {
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
 import { useAssistantStore, useProject, useSession } from "@/hooks";
+import { NOTEBOOK_ANALYST_AGENT } from "@/stores/assistant/assistant-agents";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
@@ -38,6 +39,12 @@ import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
 /** Notebook every project of type NOTEBOOK is created with. */
 const NOTEBOOK_PATH = "/public/main.ipynb";
 const NOTEBOOK_NAME = "main.ipynb";
+
+/**
+ * The same notebook as the agent's file tools address it: relative to the
+ * project asset folder the run is bound to, which reject a leading slash.
+ */
+const NOTEBOOK_AGENT_PATH = "public/main.ipynb";
 
 /** The seeded main.ipynb editor tab. Dedupe happens on `config.path`. */
 const NOTEBOOK_EDITOR_ID = "notebook-main";
@@ -154,7 +161,7 @@ export const NotebookWorkbench: React.FC = () => {
 
 	const assistantStore = useAssistantStore(workbenchId);
 
-	// keep the assistant's system prompt/tools in sync with the active notebook
+	// Keep project context and tools in sync; the agent defines notebook behavior.
 	const filesChanged = useAssistantFilesChanged({
 		type: "APP",
 		app: project.project_id,
@@ -169,8 +176,9 @@ export const NotebookWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
+			defaultAgent: NOTEBOOK_ANALYST_AGENT,
 			onRunCompleted: filesChanged,
-			systemPrompt: `You are the assistant for the ${name} notebook workbench (${project.project_id}). Your role is to help the user build and run this notebook and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active notebook.`,
+			systemPrompt: `Active notebook workbench: ${name}. Project ID: ${project.project_id}. User permission: ${permission}. Your working directory is this project's asset folder. Its notebooks are the .ipynb files under public, and you can create, edit, and add notebooks there with your file tools. ${NOTEBOOK_AGENT_PATH} is the default notebook; the workbench shows it as ${NOTEBOOK_PATH}. Pass file tools workbench paths without the leading slash. The default notebook does not identify the currently selected editor tab; use the conversation and the existing files to determine the destination.`,
 			mcp: [
 				{
 					type: "PROJECT",

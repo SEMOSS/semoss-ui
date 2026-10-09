@@ -53,11 +53,12 @@ application features; this inventory does not require moving existing features.
 | `assets/` | Images and static files |
 | `components/` | Components grouped by feature area (`project/`, `engine/`, `settings/`, …) |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
+| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree (see below) |
 | `stores/` | State owners (`assistant/`, `config/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
 | `types/` | TypeScript types (`<name>.types.ts`) |
-| `utility/` | Utility functions grouped by type |
+| `utility/` | Client-specific adapters and compatibility exports; generic helpers live in `@semoss/utility` |
 | `main.tsx`, `App.tsx`, `index.css` | App entry files |
 
 ### Routing (`pages/`)
@@ -80,8 +81,8 @@ application features; this inventory does not require moving existing features.
   Use their owning hooks, such as `hooks/use-session.ts` and `hooks/use-config.ts`; there is
   no `stores/root`, `stores/monolith`, or `useRootStore` entry to extend.
 - **Domain state** uses its existing context/store contract. See the
-  [client workbench guide](./src/components/workbench/AGENTS.md) for dock, assistant,
-  permission, database, and model-chat state. General local-state and orchestration rules
+  [client workbench components](./src/components/workbench/) and
+  [domain stores](./src/stores/workbench/) for their owning implementations. General local-state and orchestration rules
   belong to the [React skill](../../skills/react-standard.skill.md#logic-state-and-effects).
 
 ## Styling

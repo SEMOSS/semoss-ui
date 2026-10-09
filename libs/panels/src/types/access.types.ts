@@ -3,6 +3,7 @@ import {
 	getUserProjectPermission,
 	type Role,
 } from "@semoss/sdk";
+import { getErrorMessage } from "@semoss/utility/error";
 
 /** Kinds of resource a permission can be resolved for. */
 export type ResourceType = "ENGINE" | "PROJECT" | "INSIGHT";
@@ -96,8 +97,7 @@ export const createPermissionCache = (
 				return permission;
 			})
 			.catch((error: unknown) => {
-				const message =
-					error instanceof Error ? error.message : String(error);
+				const message = getErrorMessage(error);
 				write(key, {
 					status: "ERROR",
 					permission: current?.permission,

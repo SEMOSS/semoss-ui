@@ -1,0 +1,1153 @@
+import { OverflowNode } from "@lexical/overflow";
+import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
+import { CharacterLimitPlugin } from "@lexical/react/LexicalCharacterLimitPlugin";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
+import { ListPlugin } from "@lexical/react/LexicalListPlugin";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
+import {
+	$createLineBreakNode,
+	$createParagraphNode,
+	$createTextNode,
+	$getRoot,
+	type LexicalEditor,
+} from "lexical";
+import {
+	BookOpen,
+	Mail,
+	MailPlus,
+	Mic,
+	Paperclip,
+	Plus,
+	Send,
+	Settings2,
+	Sparkles,
+	Square,
+	Undo,
+	WandSparkles,
+} from "lucide-react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { type Engine, EngineSelect, type MCPConfig } from "@semoss/shared";
+import {
+	Button,
+	cn,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+	P,
+	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
+import {
+	EMAIL_HTML_CONFIG,
+	EMAIL_NODES,
+	EMAIL_THEME,
+	exportEmailHtml,
+} from "@/features/email/email-editor-config";
+import { EmailEditorPlugin } from "@/features/email/email-editor-plugin";
+import { EmailFormatToolbar } from "@/features/email/email-format-toolbar";
+import { emailLink } from "@/features/email/email-html";
+import type { ComposerSubmission, RoomSettings } from "../types/room";
+import {
+	COMPOSER_MAX_CHARACTERS,
+	type ComposerActionControls,
+	type ComposerDraft,
+	type ComposerPanelAction,
+	type ComposerPrompt,
+} from "./room-composer.types";
+import { RoomComposerEnterPlugin } from "./room-composer-enter-plugin";
+import { RoomComposerFiles } from "./room-composer-files";
+import { RoomComposerFocusPlugin } from "./room-composer-focus-plugin";
+import { RoomComposerPasteScrollPlugin } from "./room-composer-paste-scroll-plugin";
+import {
+	RoomComposerSlashPlugin,
+	type RoomSlashCommand,
+} from "./room-composer-slash-plugin";
+import { RoomPromptPicker } from "./room-prompt-picker";
+import { RoomSettingsDialog } from "./room-settings-dialog";
+
+interface RoomComposerProps {
+	/** Captured once on mount; subsequent typing remains owned by Lexical. */
+	initialDraft?: ComposerDraft;
+	/** Reports document and file changes to an optional host-owned memory store. */
+	onDraftChange?: (draft: ComposerDraft) => void;
+	/** Existing rooms autofocus; thread restoration opts out. */
+	autoFocus?: boolean;
+	/** Increment after an explicit action to reveal and focus this editor. */
+	focusRequest?: number;
+	/** Keep content until confirmed success, including while its route is detached. */
+	retainUntilSent?: boolean;
+	/** A retained submission failure, if the host owns the transaction. */
+	submissionError?: string;
+	/** A stable rich document with destination-specific formatting and serialization. */
+	emailMode?: "assistant" | "draft" | "send";
+	/** Thread-owned panels available directly from +. */
+	panelActions?: readonly ComposerPanelAction[];
+	/** Source attachment choices, colocated with uploads. */
+	attachmentContent?: ReactNode;
+	/** Visible queued source attachments. */
+	attachmentSummary?: ReactNode;
+	/** Optional host shortcuts, retaining the built-in upload and optimize commands. */
+	extraCommands?: readonly RoomSlashCommand[];
+	/** Saved prompts already available to this conversation. */
+	prompts?: readonly ComposerPrompt[];
+	/** Stable focus return target when closing a host panel. */
+	actionsTriggerId?: string;
+	/** Replaces the default + menu while retaining the composer's upload picker. */
+	renderActions?: (controls: ComposerActionControls) => ReactNode;
+	/** Work owns settings in its dock instead of this menu. */
+	hideSettingsAction?: boolean;
+	/** Optional visible destination-specific send label. */
+	submitLabel?: string;
+	/** Destination-specific icon; defaults to the send arrow. */
+	submitIcon?: ReactNode;
+	/** Optional controls above the editable text, inside the composer surface. */
+	header?: ReactNode;
+	/** Destination-specific guidance for an empty editor. */
+	placeholder?: string;
+	/** Non-model actions such as saving an email draft can opt out. */
+	requiresModel?: boolean;
+	/** Draft editing uses Enter for newlines and Ctrl/Cmd+Enter to save. */
+	submitOnEnter?: boolean;
+	/** Optional caller-owned controls rendered in the composer toolbar. */
+	children?: ReactNode;
+	/** Classes applied to the composer root. */
+	className?: string;
+	/** Classes applied to the bordered composer surface. */
+	surfaceClassName?: string;
+	/** Classes applied to the editable message surface. */
+	inputClassName?: string;
+	/** Name used to label the message input and send action. */
+	agentName: string;
+	agent?: AgentConfiguration;
+	/** Whether a message submission is in progress. */
+	isSubmitting: boolean;
+	/** Whether the agent is currently producing a response. */
+	isRunning: boolean;
+	/** Whether cancellation is in progress. */
+	isCancelling: boolean;
+	/** Selected model identifier; an empty value disables sending. */
+	modelId: string;
+	/** Selected model display name. */
+	modelName: string;
+	/** Whether the selected model is being persisted. */
+	isModelSaving: boolean;
+	/** Whether the model selector is locked. */
+	isModelLocked?: boolean;
+	/** Whether the model selector is rendered in the toolbar. */
+	showModelSelector?: boolean;
+	/** Whether the prompt optimization control appears in the toolbar. */
+	showPromptOptimization?: boolean;
+	/** Additional caller-owned reason that sending is unavailable. */
+	isSendDisabled?: boolean;
+	/** Model selection error displayed with the composer. */
+	modelError: Error | null;
+	/** Agent instructions supplied to prompt optimization. */
+	roomInstructions: string;
+	/** Room-authored settings currently applied to this conversation. */
+	roomSettings: RoomSettings;
+	/** Settings overlay style; existing room consumers retain the dialog. */
+	settingsPresentation?: "dialog" | "drawer";
+	/** Agent resources that remain active but cannot be removed from the room. */
+	inheritedMcp: MCPConfig[];
+	/** Whether opening room settings is temporarily unavailable. */
+	isSettingsDisabled?: boolean;
+	/** Persists a newly selected model. */
+	onModelChange: (engine: Engine) => Promise<void>;
+	/** Persists room-only instructions and resources. */
+	onSaveRoomSettings: (settings: RoomSettings) => Promise<void>;
+	/** Optimizes the current draft. */
+	onOptimizePrompt: (draft: string, instructions: string) => Promise<string>;
+	/** Submits a message and any attachments. */
+	onSend: (submission: ComposerSubmission) => Promise<void>;
+	/** Stops the active response. */
+	onStop: () => Promise<void>;
+	/** Called after a message is sent successfully. */
+	onSent?: () => void;
+}
+
+const EMPTY_ACTIONS: readonly ComposerPanelAction[] = [];
+const EMPTY_COMMANDS: readonly RoomSlashCommand[] = [];
+const EMPTY_PROMPTS: readonly ComposerPrompt[] = [];
+
+const MAX_CHARACTERS = COMPOSER_MAX_CHARACTERS;
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+const initialConfig = {
+	namespace: "CollaborationRoomComposer",
+	theme: {
+		paragraph: "m-0",
+	},
+	nodes: [OverflowNode, ...EMAIL_NODES],
+	html: EMAIL_HTML_CONFIG,
+	onError(error: Error) {
+		throw error;
+	},
+};
+
+function errorMessage(cause: unknown) {
+	return cause instanceof Error
+		? cause.message
+		: "The message could not be sent. Please try again.";
+}
+
+function writeEditorText(editor: LexicalEditor | null, text: string) {
+	if (!editor) return;
+	editor.update(() => {
+		const root = $getRoot();
+		root.clear();
+		for (const line of text.split("\n")) {
+			root.append($createParagraphNode().append($createTextNode(line)));
+		}
+		root.selectEnd();
+	});
+}
+
+/** Seed a reviewed prompt without inventing paragraph breaks or moving focus. */
+function $initializePlainTextDraft(text: string): void {
+	const paragraph = $createParagraphNode();
+	for (const [index, line] of text.split("\n").entries()) {
+		if (index > 0) paragraph.append($createLineBreakNode());
+		paragraph.append($createTextNode(line));
+	}
+	$getRoot().append(paragraph);
+}
+
+function tooltipButton(
+	label: string,
+	button: React.ReactElement,
+	content = label,
+) {
+	return (
+		<Tooltip disableHoverableContent={false}>
+			<TooltipTrigger asChild>{button}</TooltipTrigger>
+			<TooltipContent>{content}</TooltipContent>
+		</Tooltip>
+	);
+}
+
+/** Collaboration-native Lexical composer for room and landing surfaces. */
+export function RoomComposer({
+	initialDraft,
+	onDraftChange,
+	autoFocus = true,
+	focusRequest = 0,
+	retainUntilSent = false,
+	submissionError: retainedError,
+	emailMode,
+	panelActions = EMPTY_ACTIONS,
+	attachmentContent,
+	attachmentSummary,
+	extraCommands = EMPTY_COMMANDS,
+	prompts = EMPTY_PROMPTS,
+	actionsTriggerId,
+	renderActions,
+	children,
+	className,
+	surfaceClassName,
+	inputClassName,
+	agentName,
+	submitLabel,
+	submitIcon,
+	header,
+	placeholder,
+	requiresModel = true,
+	submitOnEnter = true,
+	agent,
+	isSubmitting,
+	isRunning,
+	isCancelling,
+	modelId,
+	modelName,
+	isModelSaving,
+	isModelLocked = false,
+	showModelSelector = true,
+	showPromptOptimization = true,
+	hideSettingsAction = false,
+	isSendDisabled = false,
+	modelError,
+	roomInstructions,
+	roomSettings,
+	settingsPresentation = "dialog",
+	inheritedMcp,
+	isSettingsDisabled = false,
+	onModelChange,
+	onSaveRoomSettings,
+	onOptimizePrompt,
+	onSend,
+	onStop,
+	onSent,
+}: RoomComposerProps) {
+	const ContentPlugin = emailMode ? RichTextPlugin : PlainTextPlugin;
+	const isEmail = Boolean(emailMode && emailMode !== "assistant");
+	const editorRef = useRef<LexicalEditor | null>(null);
+	const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
+	const actionsTriggerRef = useRef<HTMLButtonElement | null>(null);
+	const recognitionRef = useRef<SpeechRecognition | null>(null);
+	const submittingRef = useRef(false);
+	const initial = useRef(initialDraft);
+	const documentRef = useRef(initialDraft?.document ?? null);
+	const draftRef = useRef(initialDraft?.text ?? "");
+	const [draft, setDraft] = useState(initialDraft?.text ?? "");
+	const [files, setFiles] = useState<File[]>(initialDraft?.files ?? []);
+	const [fileError, setFileError] = useState("");
+	const [submissionError, setSubmissionError] = useState("");
+	const [isDragging, setIsDragging] = useState(false);
+	const [canDictate, setCanDictate] = useState(false);
+	const [isListening, setIsListening] = useState(false);
+	const [isOptimizing, setIsOptimizing] = useState(false);
+	const [originalDraft, setOriginalDraft] = useState<string | null>(null);
+	const [isActionsOpen, setIsActionsOpen] = useState(false);
+	const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const [isPromptPickerOpen, setIsPromptPickerOpen] = useState(false);
+	const isOpeningPanel = useRef(false);
+	const pendingPanelAction = useRef<(() => void) | null>(null);
+
+	draftRef.current = draft;
+	useEffect(() => {
+		onDraftChange?.({
+			document: documentRef.current,
+			text: draftRef.current,
+			files,
+		});
+	}, [files, onDraftChange]);
+
+	const focusEditor = useCallback(() => {
+		requestAnimationFrame(() => editorRef.current?.focus());
+	}, []);
+
+	const setEditorText = useCallback((text: string) => {
+		draftRef.current = text;
+		writeEditorText(editorRef.current, text);
+		setDraft(text);
+	}, []);
+
+	const addFiles = useCallback((incoming: File[]) => {
+		if (incoming.length === 0) return;
+		setFiles((current) => {
+			const known = new Set(
+				current.map(
+					(file) => `${file.name}-${file.size}-${file.lastModified}`,
+				),
+			);
+			const unique = incoming.filter(
+				(file) =>
+					!known.has(
+						`${file.name}-${file.size}-${file.lastModified}`,
+					),
+			);
+			if (unique.some((file) => file.size > MAX_FILE_SIZE)) {
+				setFileError("Each attachment must be 10 MiB or smaller.");
+				return current;
+			}
+			if (current.length + unique.length > MAX_FILES) {
+				setFileError("You can attach up to five files.");
+				return current;
+			}
+			setFileError("");
+			return [...current, ...unique];
+		});
+	}, []);
+
+	const submit = useCallback(
+		async (
+			text = draftRef.current,
+			submittedFiles = files,
+			clearDraft = true,
+		) => {
+			const trimmed = text.trim();
+			if (
+				!trimmed ||
+				trimmed.length > MAX_CHARACTERS ||
+				(requiresModel && !modelId) ||
+				isModelSaving ||
+				isRunning ||
+				isSubmitting ||
+				isSendDisabled ||
+				submittingRef.current
+			) {
+				return;
+			}
+
+			onDraftChange?.({
+				document:
+					editorRef.current?.getEditorState().toJSON() ??
+					documentRef.current,
+				text: draftRef.current,
+				files,
+			});
+			submittingRef.current = true;
+			setSubmissionError("");
+			const previousDraft = draftRef.current;
+			const previousEditorState = editorRef.current?.getEditorState();
+			const html =
+				isEmail && editorRef.current
+					? exportEmailHtml(editorRef.current)
+					: undefined;
+			const previousFiles = files;
+			if (clearDraft && !isEmail && !retainUntilSent) {
+				setEditorText("");
+				setFiles([]);
+				setOriginalDraft(null);
+			}
+
+			try {
+				await onSend({
+					text: trimmed,
+					files: submittedFiles,
+					...(html !== undefined ? { html } : {}),
+				});
+				if (clearDraft && (isEmail || retainUntilSent)) {
+					setEditorText("");
+					setFiles([]);
+					setOriginalDraft(null);
+				}
+				onSent?.();
+			} catch (cause) {
+				if (clearDraft && !isEmail && !retainUntilSent) {
+					if (previousEditorState && editorRef.current) {
+						editorRef.current.setEditorState(previousEditorState);
+						draftRef.current = previousDraft;
+						setDraft(previousDraft);
+					} else setEditorText(previousDraft);
+					setFiles(previousFiles);
+				}
+				setSubmissionError(errorMessage(cause));
+				focusEditor();
+			} finally {
+				submittingRef.current = false;
+			}
+		},
+		[
+			isEmail,
+			retainUntilSent,
+			onDraftChange,
+			files,
+			focusEditor,
+			isRunning,
+			isSendDisabled,
+			isSubmitting,
+			isModelSaving,
+			modelId,
+			requiresModel,
+			onSend,
+			onSent,
+			setEditorText,
+		],
+	);
+
+	const optimize = useCallback(
+		async (source = draftRef.current) => {
+			const current = source.trim();
+			if (!current || !modelId || isOptimizing || isRunning) return;
+			setIsOptimizing(true);
+			setSubmissionError("");
+			try {
+				const optimized = await onOptimizePrompt(
+					current,
+					roomInstructions,
+				);
+				setOriginalDraft(source);
+				setEditorText(optimized);
+				focusEditor();
+			} catch (cause) {
+				setSubmissionError(errorMessage(cause));
+				focusEditor();
+			} finally {
+				setIsOptimizing(false);
+			}
+		},
+		[
+			focusEditor,
+			isOptimizing,
+			isRunning,
+			modelId,
+			onOptimizePrompt,
+			roomInstructions,
+			setEditorText,
+		],
+	);
+
+	const revertOptimization = useCallback(() => {
+		if (originalDraft === null) return;
+		setEditorText(originalDraft);
+		setOriginalDraft(null);
+		focusEditor();
+	}, [focusEditor, originalDraft, setEditorText]);
+
+	useEffect(() => {
+		const Recognition =
+			window.SpeechRecognition ?? window.webkitSpeechRecognition;
+		setCanDictate(Boolean(Recognition));
+		if (!Recognition) return;
+
+		const recognition = new Recognition();
+		recognition.continuous = true;
+		recognition.interimResults = false;
+		recognition.lang = navigator.language || "en-US";
+		recognition.onstart = () => setIsListening(true);
+		recognition.onresult = (event) => {
+			let transcript = "";
+			for (
+				let index = event.resultIndex;
+				index < event.results.length;
+				index++
+			) {
+				if (event.results[index].isFinal) {
+					transcript += event.results[index][0]?.transcript ?? "";
+				}
+			}
+			if (!transcript.trim()) return;
+			const current = draftRef.current;
+			const separator = current && !current.endsWith(" ") ? " " : "";
+			setEditorText(`${current}${separator}${transcript.trim()}`);
+		};
+		recognition.onerror = (event) => {
+			setIsListening(false);
+			if (event.error !== "aborted") {
+				setSubmissionError(
+					event.message || "Speech recognition could not continue.",
+				);
+			}
+			focusEditor();
+		};
+		recognition.onend = () => {
+			setIsListening(false);
+			focusEditor();
+		};
+		recognitionRef.current = recognition;
+
+		return () => {
+			recognition.onstart = null;
+			recognition.onresult = null;
+			recognition.onerror = null;
+			recognition.onend = null;
+			recognition.stop();
+			recognitionRef.current = null;
+		};
+	}, [focusEditor, setEditorText]);
+
+	const toggleDictation = useCallback(() => {
+		try {
+			if (isListening) recognitionRef.current?.stop();
+			else recognitionRef.current?.start();
+		} catch (cause) {
+			setIsListening(false);
+			setSubmissionError(errorMessage(cause));
+			focusEditor();
+		}
+	}, [focusEditor, isListening]);
+
+	const openFilePicker = useCallback(() => {
+		setIsActionsOpen(false);
+		requestAnimationFrame(() => fileInputRef.current?.click());
+	}, []);
+
+	const openSettings = useCallback(() => {
+		isOpeningPanel.current = true;
+		setIsActionsOpen(false);
+		setIsSettingsOpen(true);
+	}, []);
+
+	const slashCommands = useMemo<RoomSlashCommand[]>(
+		() => [
+			...extraCommands,
+			{
+				id: "document",
+				label: "/document",
+				description: "Attach a document to this message",
+				icon: Paperclip,
+				onSelect: openFilePicker,
+			},
+			{
+				id: "optimize",
+				label: "/optimize",
+				description: "Improve the current prompt",
+				icon: WandSparkles,
+				disabled: !draft.trim() || !modelId || isOptimizing,
+				onSelect: (text) => void optimize(text),
+			},
+		],
+		[draft, modelId, isOptimizing, openFilePicker, optimize, extraCommands],
+	);
+
+	const alert =
+		fileError || retainedError || submissionError || modelError?.message;
+	const sendDisabled =
+		!draft.trim() ||
+		draft.length > MAX_CHARACTERS ||
+		(requiresModel && !modelId) ||
+		isSubmitting ||
+		isModelSaving ||
+		isSendDisabled;
+
+	return (
+		<div
+			data-slot="room-composer"
+			className={cn(
+				"@container/composer shrink-0 bg-background",
+				className,
+			)}
+		>
+			<fieldset
+				aria-label="Message composer drop area"
+				disabled={retainUntilSent && isSubmitting}
+				className={cn(
+					"relative m-0 min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-0 shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 motion-reduce:transition-none",
+					surfaceClassName,
+					isDragging && "border-primary ring-2 ring-primary/20",
+				)}
+				onDragEnter={(event) => {
+					event.preventDefault();
+					setIsDragging(true);
+				}}
+				onDragOver={(event) => event.preventDefault()}
+				onDragLeave={(event) => {
+					if (
+						!event.currentTarget.contains(
+							event.relatedTarget as Node | null,
+						)
+					) {
+						setIsDragging(false);
+					}
+				}}
+				onDrop={(event) => {
+					event.preventDefault();
+					setIsDragging(false);
+					addFiles(Array.from(event.dataTransfer.files));
+					focusEditor();
+				}}
+			>
+				<input
+					ref={fileInputRef}
+					type="file"
+					multiple
+					className="sr-only"
+					aria-label="Choose attachments"
+					onChange={(event) => {
+						addFiles(Array.from(event.target.files ?? []));
+						event.target.value = "";
+						focusEditor();
+					}}
+				/>
+				{header}
+				{attachmentSummary}
+				<RoomComposerFiles
+					files={files}
+					onRemove={(index) =>
+						setFiles((current) =>
+							current.filter(
+								(_, fileIndex) => fileIndex !== index,
+							),
+						)
+					}
+				/>
+				<LexicalComposer
+					initialConfig={{
+						...initialConfig,
+						editorState: initial.current?.document
+							? JSON.stringify(initial.current.document)
+							: initial.current?.text
+								? () =>
+										$initializePlainTextDraft(
+											initial.current?.text ?? "",
+										)
+								: undefined,
+						theme: emailMode ? EMAIL_THEME : initialConfig.theme,
+					}}
+				>
+					{emailMode && (
+						<div hidden={!isEmail}>
+							<EmailFormatToolbar disabled={isSubmitting} />
+						</div>
+					)}
+					{emailMode && (
+						<>
+							<EmailEditorPlugin disabled={isSubmitting} />
+							<ListPlugin />
+							<LinkPlugin
+								validateUrl={(value) =>
+									Boolean(emailLink(value))
+								}
+							/>
+							<TablePlugin
+								hasHorizontalScroll
+								hasTabHandler={false}
+							/>
+						</>
+					)}
+					<div
+						className="relative max-h-64 overflow-auto"
+						ref={(element) => {
+							scrollViewportRef.current = element;
+						}}
+					>
+						<ContentPlugin
+							contentEditable={
+								<ContentEditable
+									aria-label={`Message ${agentName}`}
+									className={cn(
+										"min-h-20 px-4 py-3 text-base leading-relaxed outline-none",
+										inputClassName,
+									)}
+									onPaste={(event) => {
+										const pastedFiles = Array.from(
+											event.clipboardData.items,
+										)
+											.filter(
+												(item) => item.kind === "file",
+											)
+											.map((item) => item.getAsFile())
+											.filter(
+												(file): file is File =>
+													file !== null,
+											);
+										if (pastedFiles.length > 0)
+											addFiles(pastedFiles);
+									}}
+								/>
+							}
+							placeholder={
+								<P className="pointer-events-none absolute top-3 right-4 left-4 text-muted-foreground leading-relaxed">
+									{placeholder ?? `Message ${agentName}…`}
+								</P>
+							}
+							ErrorBoundary={LexicalErrorBoundary}
+						/>
+					</div>
+					<div className="flex min-w-0 flex-wrap items-center gap-2 bg-card p-2">
+						{renderActions ? (
+							renderActions({
+								onAttachFiles: openFilePicker,
+								triggerRef: actionsTriggerRef,
+								triggerId: actionsTriggerId,
+								disabled: isSubmitting,
+							})
+						) : (
+							<DropdownMenu
+								open={isActionsOpen}
+								onOpenChange={setIsActionsOpen}
+							>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<DropdownMenuTrigger asChild>
+											<Button
+												ref={actionsTriggerRef}
+												id={actionsTriggerId}
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="pointer-coarse:size-11 rounded-full text-muted-foreground"
+												aria-label="Open composer actions"
+											>
+												<Plus aria-hidden="true" />
+											</Button>
+										</DropdownMenuTrigger>
+									</TooltipTrigger>
+									<TooltipContent>
+										Add files or open a panel
+									</TooltipContent>
+								</Tooltip>
+								<DropdownMenuContent
+									align="start"
+									side="top"
+									aria-label="Composer actions"
+									className="w-72 max-w-(--radix-dropdown-menu-content-available-width)"
+									onCloseAutoFocus={(event) => {
+										if (isOpeningPanel.current) {
+											event.preventDefault();
+											isOpeningPanel.current = false;
+											// Open after the menu releases its focus trap, including retained mobile panels.
+											const openPanel =
+												pendingPanelAction.current;
+											pendingPanelAction.current = null;
+											openPanel?.();
+											requestAnimationFrame(() => {
+												const trigger =
+													actionsTriggerRef.current;
+												// Dialogs and mobile docks claim focus themselves.
+												if (
+													document.activeElement ===
+														document.body &&
+													trigger?.isConnected &&
+													!trigger.matches(
+														":disabled",
+													) &&
+													!trigger.closest(
+														"[inert]",
+													) &&
+													trigger.getClientRects()
+														.length > 0 &&
+													getComputedStyle(trigger)
+														.visibility ===
+														"visible"
+												)
+													trigger.focus();
+											});
+										}
+									}}
+								>
+									<DropdownMenuItem
+										className="pointer-coarse:min-h-11"
+										onSelect={openFilePicker}
+									>
+										<Paperclip aria-hidden="true" />
+										Attach files
+									</DropdownMenuItem>
+									{attachmentContent && (
+										<DropdownMenuItem
+											className="pointer-coarse:min-h-11"
+											onSelect={() => {
+												isOpeningPanel.current = true;
+												setIsAttachmentsOpen(true);
+											}}
+										>
+											<Paperclip aria-hidden="true" />
+											Source attachments
+										</DropdownMenuItem>
+									)}
+									{!isEmail && prompts.length > 0 && (
+										<DropdownMenuItem
+											className="pointer-coarse:min-h-11"
+											onSelect={() => {
+												setIsActionsOpen(false);
+												isOpeningPanel.current = true;
+												setIsPromptPickerOpen(true);
+											}}
+										>
+											<BookOpen aria-hidden="true" />
+											Prompt library
+										</DropdownMenuItem>
+									)}
+									{panelActions.length > 0 && (
+										<>
+											<DropdownMenuSeparator />
+											{panelActions.map((action) => (
+												<DropdownMenuItem
+													key={action.id}
+													disabled={action.disabled}
+													className="pointer-coarse:min-h-11"
+													onSelect={() => {
+														isOpeningPanel.current = true;
+														pendingPanelAction.current =
+															action.onSelect;
+														setIsActionsOpen(false);
+													}}
+												>
+													<action.icon aria-hidden="true" />
+													{action.label}
+												</DropdownMenuItem>
+											))}
+										</>
+									)}
+									{!hideSettingsAction && (
+										<DropdownMenuItem
+											className="pointer-coarse:min-h-11"
+											disabled={isSettingsDisabled}
+											onSelect={openSettings}
+										>
+											<Settings2 aria-hidden="true" />
+											Open settings
+										</DropdownMenuItem>
+									)}
+								</DropdownMenuContent>
+							</DropdownMenu>
+						)}
+						<div className="flex min-w-0 flex-1 items-center gap-2">
+							{children}
+							<div className="ms-auto flex min-w-0 flex-1 flex-wrap @md/composer:flex-nowrap items-center justify-end gap-2">
+								{showModelSelector && (
+									<div className="min-w-24 flex-1 sm:max-w-52">
+										<EngineSelect
+											className="h-8 pointer-coarse:min-h-11 w-full gap-1 rounded-full border-none bg-transparent px-3 py-1 text-xs shadow-none hover:bg-primary/5 dark:hover:bg-primary/10"
+											name={modelName}
+											value={modelId}
+											disabled={
+												isRunning ||
+												isSubmitting ||
+												isModelSaving ||
+												isModelLocked
+											}
+											engineTypes={["MODEL"]}
+											metaFilters={[
+												{ tag: "text-generation" },
+											]}
+											showEngineIcon={false}
+											onChange={(engine) =>
+												void onModelChange(engine)
+											}
+											popoverContentProps={{
+												align: "start",
+											}}
+										/>
+									</div>
+								)}
+								{tooltipButton(
+									isListening
+										? "Stop dictation"
+										: "Start dictation",
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon-sm"
+										className="pointer-coarse:size-11 rounded-full text-muted-foreground"
+										aria-label={
+											isListening
+												? "Stop dictation"
+												: "Start dictation"
+										}
+										disabled={!canDictate}
+										onClick={toggleDictation}
+									>
+										<Mic
+											aria-hidden="true"
+											className={cn(
+												isListening &&
+													"animate-pulse text-destructive",
+											)}
+										/>
+									</Button>,
+									canDictate
+										? undefined
+										: "Dictation is unavailable in this browser",
+								)}
+								{showPromptOptimization &&
+									(originalDraft !== null
+										? tooltipButton(
+												"Revert optimized prompt",
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon-sm"
+													className="pointer-coarse:size-11 rounded-full text-muted-foreground"
+													aria-label="Revert optimized prompt"
+													disabled={
+														isEmail || isSubmitting
+													}
+													onClick={revertOptimization}
+												>
+													<Undo aria-hidden="true" />
+												</Button>,
+											)
+										: tooltipButton(
+												"Optimize prompt",
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon-sm"
+													className="pointer-coarse:size-11 rounded-full text-muted-foreground"
+													aria-label="Optimize prompt"
+													disabled={
+														isEmail ||
+														isSubmitting ||
+														!draft.trim() ||
+														!modelId ||
+														isOptimizing ||
+														isRunning
+													}
+													onClick={() =>
+														void optimize()
+													}
+												>
+													{isOptimizing ? (
+														<Spinner />
+													) : (
+														<Sparkles aria-hidden="true" />
+													)}
+												</Button>,
+											))}
+							</div>
+						</div>
+						{tooltipButton(
+							isRunning
+								? isCancelling
+									? "Cancelling"
+									: "Stop"
+								: (submitLabel ?? "Send"),
+							<Button
+								type="button"
+								size={
+									submitLabel && !isRunning && !isEmail
+										? "sm"
+										: "icon-sm"
+								}
+								className={cn(
+									"ms-auto pointer-coarse:min-h-11 pointer-coarse:min-w-11 rounded-full",
+									isEmail && "size-11 sm:size-8",
+								)}
+								aria-label={
+									isRunning
+										? isCancelling
+											? "Cancelling turn"
+											: "Stop response"
+										: (submitLabel ??
+											`Send message to ${agentName}`)
+								}
+								disabled={
+									isRunning ? isCancelling : sendDisabled
+								}
+								onClick={() => {
+									if (isRunning) void onStop();
+									else void submit();
+								}}
+							>
+								{isCancelling || isSubmitting ? (
+									<Spinner />
+								) : isRunning ? (
+									<Square
+										aria-hidden="true"
+										className="size-3"
+										fill="currentColor"
+									/>
+								) : (
+									(submitIcon ??
+									(emailMode === "draft" ? (
+										<MailPlus aria-hidden="true" />
+									) : emailMode === "send" ? (
+										<Mail aria-hidden="true" />
+									) : (
+										<Send aria-hidden="true" />
+									)))
+								)}
+								{!isRunning && !isEmail && submitLabel}
+							</Button>,
+						)}
+					</div>
+					<OnChangePlugin
+						onChange={(editorState) => {
+							editorState.read(() => {
+								const text = $getRoot().getTextContent();
+								if (
+									!emailMode &&
+									text.length > MAX_CHARACTERS
+								) {
+									setEditorText(
+										text.slice(0, MAX_CHARACTERS),
+									);
+									return;
+								}
+								draftRef.current = text;
+								documentRef.current = editorState.toJSON();
+								setDraft(text);
+								onDraftChange?.({
+									document: documentRef.current,
+									text,
+									files,
+								});
+							});
+						}}
+					/>
+					<HistoryPlugin />
+					{autoFocus && <AutoFocusPlugin />}
+					<RoomComposerFocusPlugin
+						request={focusRequest}
+						isReadOnly={retainUntilSent ? isSubmitting : undefined}
+					/>
+					<EditorRefPlugin editorRef={editorRef} />
+					<CharacterLimitPlugin
+						charset="UTF-16"
+						maxLength={MAX_CHARACTERS}
+						renderer={({ remainingCharacters }) => (
+							<output
+								className={cn(
+									"absolute right-3 bottom-12 text-muted-foreground text-xs",
+									remainingCharacters > 500 && "sr-only",
+									remainingCharacters < 0 &&
+										"text-destructive",
+								)}
+							>
+								{remainingCharacters} characters remaining
+							</output>
+						)}
+					/>
+					<RoomComposerEnterPlugin
+						submitOnEnter={submitOnEnter}
+						isKeyboardSubmitDisabled={emailMode === "send"}
+						onSubmit={() => void submit()}
+					/>
+					<RoomComposerPasteScrollPlugin
+						scrollRef={scrollViewportRef}
+					/>
+					{!isEmail && (
+						<RoomComposerSlashPlugin commands={slashCommands} />
+					)}
+				</LexicalComposer>
+			</fieldset>
+			{attachmentContent && (
+				<Dialog
+					open={isAttachmentsOpen}
+					onOpenChange={setIsAttachmentsOpen}
+				>
+					<DialogContent
+						aria-describedby={undefined}
+						onCloseAutoFocus={(event) => {
+							event.preventDefault();
+							actionsTriggerRef.current?.focus();
+						}}
+					>
+						<DialogHeader>
+							<DialogTitle>Source attachments</DialogTitle>
+						</DialogHeader>
+						{attachmentContent}
+					</DialogContent>
+				</Dialog>
+			)}
+			<RoomPromptPicker
+				open={isPromptPickerOpen}
+				onOpenChange={setIsPromptPickerOpen}
+				prompts={prompts}
+				returnFocusRef={actionsTriggerRef}
+				onSelect={(text) => {
+					setEditorText(text);
+					focusEditor();
+				}}
+			/>
+			<RoomSettingsDialog
+				open={isSettingsOpen}
+				presentation={settingsPresentation}
+				agentName={agentName}
+				agent={agent}
+				modelId={modelId}
+				modelName={modelName}
+				isModelLocked={isModelLocked}
+				isReadOnly={isRunning || isSubmitting || isSettingsDisabled}
+				settings={roomSettings}
+				inheritedMcp={inheritedMcp}
+				returnFocusRef={actionsTriggerRef}
+				onOpenChange={setIsSettingsOpen}
+				onSave={onSaveRoomSettings}
+			/>
+			{alert && (
+				<P className="mt-1.5 text-destructive text-xs" role="alert">
+					{alert}
+				</P>
+			)}
+		</div>
+	);
+}

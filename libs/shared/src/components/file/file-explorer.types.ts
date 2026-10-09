@@ -1,4 +1,4 @@
-import type { DragEvent, MouseEvent, ReactNode } from "react";
+import type { DragEvent, KeyboardEvent, MouseEvent, ReactNode } from "react";
 import type { FileItem, FileMode } from "./file.types";
 import type {
 	FileExplorerAdapter,
@@ -30,6 +30,12 @@ export interface FileExplorerPrimaryAction {
 export interface FileExplorerSecondaryAction {
 	name: string;
 	action: (item: FileItem) => Promise<void>;
+	/**
+	 * Where the right-click menu lists it: among the item's own actions, before
+	 * Delete (the default), or after every standard entry, set apart by a
+	 * divider.
+	 */
+	placement?: "item" | "end";
 }
 
 /**
@@ -146,8 +152,13 @@ export interface FileExplorerTreeState {
 	contextMenu: FileExplorerContextMenuState | null;
 	clipboard: FileExplorerClipboard | null;
 	closeContextMenu(): void;
+	/**
+	 * Open the context menu for a row, or for empty space with no item: at the
+	 * pointer for a right-click or a click, or under the focused element for a
+	 * key press.
+	 */
 	openContextMenu(
-		e: MouseEvent,
+		e: MouseEvent | KeyboardEvent,
 		item: FileItem | null,
 		targetPath: string,
 		secondaryActions?: FileExplorerSecondaryAction[],
@@ -255,8 +266,17 @@ export interface FileExplorerActionProps {
 
 /** Options for `useFileExplorer`. */
 export interface FileExplorerOptions {
-	/** Which asset tree to browse. */
+	/**
+	 * Which asset tree to browse. With a custom `adapter`, the mode only says
+	 * which insight its Pixels run in.
+	 */
 	mode: FileMode;
+	/**
+	 * A source of the host's own, such as a connector's drive, in place of the
+	 * mode's asset tree. Keep its identity stable: a new adapter reloads the
+	 * listing.
+	 */
+	adapter?: FileExplorerAdapter;
 	/** Directory to open at. Defaults to `"/"`. */
 	initialPath?: string;
 	/**

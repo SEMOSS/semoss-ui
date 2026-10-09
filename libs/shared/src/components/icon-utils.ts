@@ -1,31 +1,17 @@
+import { hashString } from "@semoss/utility/text";
 import {
 	ENGINE_ICON_FALLBACK_FILE,
 	ENGINE_IMAGES,
 	loadEngineIcon,
 } from "../constants/engine-images.constants";
 
-const hashString = (str: string): number => {
-	let hash = 0;
-	for (let i = 0; i < str.length; i++) {
-		hash = (hash << 5) - hash + str.charCodeAt(i);
-		hash |= 0;
-	}
-	return Math.abs(hash);
-};
+export { buildInitials } from "@semoss/utility/text";
 
 const normalizeEngineKey = (value?: string) =>
 	(value || "")
 		.trim()
 		.replace(/[^A-Za-z0-9]+/g, "_")
 		.toUpperCase();
-
-export const buildInitials = (label: string): string => {
-	const tokens = label.split(/[^A-Za-z0-9]+/).filter((token) => token.length);
-	return tokens
-		.map((token) => token[0].toUpperCase())
-		.slice(0, 3)
-		.join("");
-};
 
 export const getAppCatalogAvatarStyle = (label: string) => {
 	const base = hashString(label || "App") % 360;

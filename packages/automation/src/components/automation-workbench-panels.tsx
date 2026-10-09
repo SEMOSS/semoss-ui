@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,
+	AutomationRunSummary,
 } from "../domain/automation.types";
 import type { AutomationInspectorSnapshot } from "../domain/automation-inspector";
 import type { N8nImportConversionModel } from "../domain/n8n-import-adapter";
@@ -25,16 +26,30 @@ export interface AutomationWorkbenchContextValue {
 	onHistoryChanged: () => void;
 	inspectorSnapshot: AutomationInspectorSnapshot | null;
 	traceSnapshot: AutomationTraceSnapshot | null;
+	activeRuns: AutomationRunSummary[];
+	followedRunId: string | null;
+	selectedRun: AutomationRunDetail | null;
+	onRunsChange: (runs: AutomationRunSummary[]) => void;
+	onViewRun: (run: AutomationRunDetail) => void;
+	onExitHistoricalView: () => void;
 	historyRefreshToken: number;
 	onOpenOutput: (output: string) => void;
 	onAskAssistant: (prompt: string) => void;
 	onOpenPythonEditor: (nodeId: string, source: string) => void;
+	/** Whether a node's compiled Python source is currently open in a real file editor tab. */
+	isPythonFileOpen: (nodeId: string) => boolean;
+	/** Switches the trace/run-details panel to the latest run, selected on this node. */
+	onViewRunDetails: (stepId: string) => void;
+	/** The node `onViewRunDetails` last asked to be focused, and a token bumped on every call
+	 * so re-focusing the same node (after navigating away) still takes effect. */
+	runDetailsFocusNodeId: string | null;
+	runDetailsFocusToken: number;
 }
 
 export const AutomationWorkbenchContext =
 	createContext<AutomationWorkbenchContextValue | null>(null);
 
-function useAutomationWorkbenchContext(): AutomationWorkbenchContextValue {
+export function useAutomationWorkbenchContext(): AutomationWorkbenchContextValue {
 	const context = useContext(AutomationWorkbenchContext);
 	if (!context) {
 		throw new Error(
@@ -56,6 +71,7 @@ export const AutomationEditorPanel = () => {
 			onTraceChange={context.onTraceChange}
 			onInspectorChange={context.onInspectorChange}
 			onHistoryChanged={context.onHistoryChanged}
+			onExitHistoricalView={context.onExitHistoricalView}
 		/>
 	);
 };
@@ -69,15 +85,15 @@ export const AutomationInspectorPanel = () => {
 			description={snapshot?.description ?? ""}
 			devMode={snapshot?.devMode ?? false}
 			editingStep={snapshot?.editingStep ?? null}
+			editingNodeGroup={snapshot?.editingNodeGroup ?? null}
 			onPrepareSchedule={() =>
 				context.canvasRef.current?.prepareSchedule() ??
 				Promise.resolve(false)
 			}
 			upstreamVars={snapshot?.upstreamVars ?? []}
+			scopeEntries={snapshot?.scopeEntries ?? []}
 			stepRunStatus={snapshot?.stepRunStatus}
 			stepRunError={snapshot?.stepRunError}
-			stepRunOutput={snapshot?.stepRunOutput}
-			stepRunTrace={snapshot?.stepRunTrace}
 			readOnly={context.readOnly || Boolean(snapshot?.readOnly)}
 			onDescriptionChange={(description) =>
 				context.canvasRef.current?.applyInspectorAction({
@@ -102,7 +118,25 @@ export const AutomationInspectorPanel = () => {
 					stepId,
 				})
 			}
+			onUpdateNodeGroup={(group) =>
+				context.canvasRef.current?.applyInspectorAction({
+					type: "update-node-group",
+					group,
+				})
+			}
+			onUngroupNodeGroup={(groupId) =>
+				context.canvasRef.current?.applyInspectorAction({
+					type: "delete-node-group",
+					groupId,
+				})
+			}
 			onOpenPythonEditor={context.onOpenPythonEditor}
+			pythonFileOpen={
+				snapshot?.editingStep
+					? context.isPythonFileOpen(snapshot.editingStep.id)
+					: false
+			}
+			onViewRunDetails={context.onViewRunDetails}
 		/>
 	);
 };
@@ -121,15 +155,19 @@ export const AutomationTracePanel = () => {
 			steps={snapshot?.steps ?? []}
 			results={snapshot?.results ?? []}
 			executedDefinition={snapshot?.executedDefinition ?? null}
+			activeRun={snapshot?.activeRun ?? null}
+			activeRuns={context.activeRuns}
+			followedRunId={context.followedRunId}
+			selectedRun={context.selectedRun}
+			onRunsChange={context.onRunsChange}
 			onDismiss={() => undefined}
 			onOpenOutput={context.onOpenOutput}
 			onAskAssistant={context.onAskAssistant}
-			onViewRun={(run) =>
-				context.canvasRef.current?.viewHistoricalRun(run)
-			}
-			onExitHistoricalView={() =>
-				context.canvasRef.current?.exitHistoricalView()
-			}
+			onViewRun={context.onViewRun}
+			onViewAgentRun={context.onAgentRunTrace}
+			onExitHistoricalView={context.onExitHistoricalView}
+			focusNodeId={context.runDetailsFocusNodeId}
+			focusToken={context.runDetailsFocusToken}
 		/>
 	);
 };

@@ -52,7 +52,7 @@ const META_UI_KEYS: MetaKeyDoc[] = [
 	{
 		key: "resourceURI",
 		type: "string",
-		desc: 'Path to a custom portal page to render as the tool\'s UI, e.g. "/my-portal/page". Requires displayLocation other than hidden.',
+		desc: 'The tool\'s UI: a page of the project\'s portal, e.g. "/my-portal/page"; an app that ships with the web app, "system://<package>/<path>"; or one of the chat\'s own views, "component://<library>/<view>?<params>", such as "component://mail/compose?intent=send&provider=google" or "component://calendar/agenda?provider=microsoft". The mail views are list, message, and compose; the calendar views are agenda, event, event-edit, and availability. Requires displayLocation other than hidden.',
 	},
 	{
 		key: "autoOpen",

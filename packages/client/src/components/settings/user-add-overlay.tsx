@@ -1,7 +1,10 @@
 import { Download, Shield, Upload } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import type { UserSearchResult } from "@semoss/sdk";
 import {
+	Avatar,
+	AvatarFallback,
 	Button,
 	Dialog,
 	DialogContent,
@@ -9,6 +12,12 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Input,
+	Item,
+	ItemActions,
+	ItemContent,
+	ItemDescription,
+	ItemMedia,
+	ItemTitle,
 	Label,
 	Select,
 	SelectContent,
@@ -16,9 +25,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Switch,
+	ToggleGroup,
+	ToggleGroupItem,
 	toast,
 } from "@semoss/ui/next";
 import { createUser, editMemberInfo } from "@/api";
+import {
+	DirectoryPersonSearch,
+	getPersonLabel,
+} from "@/features/directory-person-search/directory-person-search";
 import { useConfig, useSettings } from "@/hooks";
 import type { ApiResponse } from "@/types";
 
@@ -111,6 +126,21 @@ const emailValidate = (email: string) => {
 	return emailRegex.test(email);
 };
 
+/** How a new member's details are entered */
+type EntryMode = "directory" | "manual";
+
+/** Narrows a toggle value to an entry mode */
+const isEntryMode = (value: string): value is EntryMode =>
+	value === "directory" || value === "manual";
+
+/** Values the form starts from for a new member */
+const NEW_USER_VALUES: Partial<EditUserForm> = {
+	model_usage_restriction: "null",
+};
+
+/** Lets a toggle label wrap instead of overflowing a narrow dialog */
+const ENTRY_MODE_ITEM_CLASS = "h-auto min-h-9 flex-1 whitespace-normal py-1.5";
+
 interface UserAddOverlayProps {
 	/**
 	 * Track if the model is open or close
@@ -139,6 +169,18 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 	const { adminMode } = useSettings();
 
 	const isNewUser = user === null;
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
+	const [entryMode, setEntryMode] = useState<EntryMode>("directory");
+	const [selectedPerson, setSelectedPerson] =
+		useState<UserSearchResult | null>(null);
+	const entryModeLabelId = useId();
+	const entryModeHintId = useId();
+	// a new member can be found in the organization's directory instead of typed in
+	const canFindInDirectory = isNewUser && isDirectoryAvailable;
+	const isFindingInDirectory =
+		canFindInDirectory && entryMode === "directory";
 
 	const {
 		control,
@@ -180,7 +222,54 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 	const email = watch("email");
 	const userId = watch("id", "");
 	const userName = watch("name", "");
-	const isSaveDisabled = !userId?.trim() || !userName?.trim();
+	const isSaveDisabled =
+		!userId?.trim() ||
+		!userName?.trim() ||
+		(isFindingInDirectory && !selectedPerson);
+
+	/**
+	 * Closes the overlay, clearing the directory choice and, for a new member,
+	 * the entered values
+	 */
+	const handleClose = (success: boolean) => {
+		setEntryMode("directory");
+		setSelectedPerson(null);
+		if (isNewUser) {
+			reset(NEW_USER_VALUES);
+		}
+		onClose(success);
+	};
+
+	/** Fills the form from the person picked in the directory */
+	const handleSelectPerson = (person: UserSearchResult) => {
+		setSelectedPerson(person);
+		reset({
+			...NEW_USER_VALUES,
+			type: person.type ?? "MICROSOFT",
+			id: person.id,
+			name: person.name ?? "",
+			email: person.email ?? "",
+			username: person.username ?? "",
+		});
+	};
+
+	/** Starts the directory search over */
+	const handleClearPerson = () => {
+		setSelectedPerson(null);
+		reset(NEW_USER_VALUES);
+	};
+
+	const handleEntryModeChange = (value: string) => {
+		// a single toggle group sends "" when the active item is pressed again
+		if (!isEntryMode(value)) {
+			return;
+		}
+		setEntryMode(value);
+		// typing details keeps whoever was picked; searching starts over
+		if (value === "directory") {
+			handleClearPerson();
+		}
+	};
 
 	const usageRestritctionTypes: Record<string, string> = {
 		null: "None",
@@ -272,7 +361,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 				toast.error(String(e));
 			} finally {
 				// close the overlay
-				onClose(success);
+				handleClose(success);
 			}
 		},
 		(e) => {
@@ -300,7 +389,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 	return (
 		<Dialog
 			open={open}
-			onOpenChange={(isOpen) => !isOpen && onClose(false)}
+			onOpenChange={(isOpen) => !isOpen && handleClose(false)}
 		>
 			<DialogContent
 				aria-describedby={undefined}
@@ -312,7 +401,93 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={editUser} className="space-y-6">
-					<section className="space-y-3">
+					{canFindInDirectory ? (
+						<section className="space-y-3">
+							<p
+								id={entryModeLabelId}
+								className="font-medium text-sm"
+							>
+								How do you want to add this person?
+							</p>
+							<ToggleGroup
+								type="single"
+								variant="outline"
+								value={entryMode}
+								onValueChange={handleEntryModeChange}
+								aria-labelledby={entryModeLabelId}
+								aria-describedby={entryModeHintId}
+								className="w-full"
+							>
+								<ToggleGroupItem
+									value="directory"
+									className={ENTRY_MODE_ITEM_CLASS}
+								>
+									Find in Your Organization
+								</ToggleGroupItem>
+								<ToggleGroupItem
+									value="manual"
+									className={ENTRY_MODE_ITEM_CLASS}
+								>
+									Enter Details Myself
+								</ToggleGroupItem>
+							</ToggleGroup>
+							<p
+								id={entryModeHintId}
+								className="text-muted-foreground text-xs"
+							>
+								{entryMode === "directory"
+									? "Search by name and their details are filled in for you. They sign in with their Microsoft account."
+									: "Type in the person's sign in details yourself."}
+							</p>
+						</section>
+					) : null}
+
+					{isFindingInDirectory ? (
+						<section className="space-y-3">
+							<p className="font-medium text-sm">Person</p>
+							{selectedPerson ? (
+								<Item variant="outline" size="sm">
+									<ItemMedia>
+										<Avatar className="size-8">
+											<AvatarFallback className="text-muted-foreground text-sm">
+												{getPersonLabel(selectedPerson)
+													.charAt(0)
+													.toUpperCase()}
+											</AvatarFallback>
+										</Avatar>
+									</ItemMedia>
+									<ItemContent className="min-w-0">
+										<ItemTitle className="block w-full truncate">
+											{getPersonLabel(selectedPerson)}
+										</ItemTitle>
+										<ItemDescription className="truncate">
+											{selectedPerson.email ??
+												"Microsoft account"}
+										</ItemDescription>
+									</ItemContent>
+									<ItemActions>
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											onClick={handleClearPerson}
+										>
+											Choose Someone Else
+										</Button>
+									</ItemActions>
+								</Item>
+							) : (
+								<DirectoryPersonSearch
+									onSelect={handleSelectPerson}
+								/>
+							)}
+						</section>
+					) : null}
+
+					<section
+						className="space-y-3"
+						hidden={isFindingInDirectory}
+					>
 						<p className="font-medium text-sm">Credentials</p>
 						<div className="grid gap-4">
 							<Controller
@@ -485,7 +660,10 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 						)}
 					</section>
 
-					<section className="space-y-3">
+					<section
+						className="space-y-3"
+						hidden={isFindingInDirectory}
+					>
 						<p className="font-medium text-sm">Details</p>
 						<div className="grid gap-4">
 							<Controller
@@ -626,7 +804,10 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 						</div>
 					</section>
 
-					<section className="space-y-3">
+					<section
+						className="space-y-3"
+						hidden={isFindingInDirectory && !selectedPerson}
+					>
 						<p className="font-medium text-sm">
 							Model Limit Restrictions
 						</p>
@@ -831,7 +1012,10 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 						</div>
 					</section>
 
-					<section className="space-y-3">
+					<section
+						className="space-y-3"
+						hidden={isFindingInDirectory && !selectedPerson}
+					>
 						<p className="font-medium text-sm">Permissions</p>
 						<div className="space-y-2">
 							<div className="flex items-start justify-between gap-4 rounded-md border border-border/60 p-3">
@@ -927,7 +1111,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 						<Button
 							variant="outline"
 							type="button"
-							onClick={() => onClose(false)}
+							onClick={() => handleClose(false)}
 						>
 							Cancel
 						</Button>

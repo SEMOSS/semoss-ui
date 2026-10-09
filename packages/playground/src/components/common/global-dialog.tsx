@@ -28,7 +28,7 @@ export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = observer(
 		return (
 			<Dialog open={visible}>
 				<DialogContent
-					className="max-h-[90dvh] grid-rows-[auto_1fr_auto] overflow-hidden sm:max-w-4xl"
+					className="max-h-[90dvh] grid-rows-[auto_1fr_auto] overflow-hidden sm:max-w-3xl"
 					showCloseButton={false}
 				>
 					<DialogHeader>

@@ -1,0 +1,33 @@
+/* Suggestion/hover widgets default to z-index 40, which sits behind the node
+   drawer's own overlays; raise it so long suggestion lists stay visible.
+   Monaco sizes these against the page body, not the editor, and sets that
+   width inline via JS on both the widget and its internal list/rows — so
+   the override needs !important on all of them, plus overflow: hidden on
+   the widget itself, or the rows just bleed past the clamped box.
+   Imported directly by automation-python-editor.tsx (rather than living in
+   index.css) so it's bundled wherever the editor is used, including when
+   embedded inside packages/client, which doesn't load automation's
+   standalone-entry index.css. */
+.monaco-editor .suggest-widget,
+.monaco-editor .parameter-hints-widget,
+.monaco-editor .monaco-hover {
+  z-index: 200;
+}
+
+.monaco-editor .suggest-widget,
+.monaco-editor .parameter-hints-widget {
+  max-width: var(--automation-editor-width, 480px) !important;
+  overflow: hidden !important;
+  /* Clamping the width leaves the widget short of where Monaco's own left
+     offset assumed it would end, so it reads as shifted left of the cursor;
+     nudge it back right by a fixed amount rather than computing it exactly. */
+  margin-left: 36px;
+}
+
+.monaco-editor .suggest-widget .monaco-list,
+.monaco-editor .suggest-widget .monaco-list-rows,
+.monaco-editor .suggest-widget .monaco-list-row,
+.monaco-editor .suggest-widget .suggest-details-container {
+  max-width: 100% !important;
+  width: 100% !important;
+}

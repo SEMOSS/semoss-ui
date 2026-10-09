@@ -1,15 +1,37 @@
-import { Copy } from "lucide-react";
-import type { ReactNode } from "react";
+import { Copy, PencilIcon } from "lucide-react";
+import { type ReactNode, useRef, useState } from "react";
 import {
 	Button,
+	cn,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { EntityNameInput } from "./entity-name-input";
+
+/** Rename input text per size, matched to the name it replaces. */
+const NAME_INPUT_CLASSES = {
+	default:
+		"h-auto px-2 py-0.5 font-semibold text-2xl leading-tight md:text-[30px]",
+	compact:
+		"h-auto px-2 py-0.5 font-semibold text-xl leading-tight md:text-2xl",
+	sm: "h-6 px-1 py-0 font-medium text-base leading-tight md:text-base",
+} as const;
+
+/** A renamable name highlights on hover without moving its text. */
+const RENAMABLE_NAME_CLASS =
+	"-mx-1 min-w-0 cursor-text rounded-md px-1 hover:bg-muted";
+
+/**
+ * The rename button shows on hover or keyboard focus, and always on touch
+ * screens, which have no hover.
+ */
+const RENAME_BUTTON_CLASS =
+	"shrink-0 text-muted-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover/name:opacity-100 pointer-coarse:opacity-100";
 
 interface EntityHeaderProps {
-	/** Rendered icon — placed inside a sized wrapper. Omit for no-icon headers. */
+	/** Rendered icon, placed inside a sized wrapper. Omit for no-icon headers. */
 	icon?: ReactNode;
 	/** Entity display name shown as the title. */
 	name: string;
@@ -34,6 +56,19 @@ interface EntityHeaderProps {
 	idTestId?: string;
 	/** Optional data-testid for the copy button. */
 	copyTestId?: string;
+	/**
+	 * Saves a new name; reject to report a failure. When set, a rename button
+	 * sits beside the name, and double-clicking the name also starts a rename.
+	 * Enter or leaving the input saves, Escape cancels, and a toast reports
+	 * the result.
+	 */
+	onRename?: (name: string) => Promise<void>;
+	/** Tooltip and accessible name for the rename button and input. Default: "Rename". */
+	renameLabel?: string;
+	/** Shown right after the name, such as a type badge or icon buttons that act on the entity. */
+	nameAddon?: ReactNode;
+	/** Shown below the name and id, such as the entity's description. */
+	description?: ReactNode;
 }
 
 export const EntityHeader = ({
@@ -47,7 +82,15 @@ export const EntityHeader = ({
 	nameTestId,
 	idTestId,
 	copyTestId,
+	onRename,
+	renameLabel = "Rename",
+	nameAddon,
+	description,
 }: EntityHeaderProps) => {
+	const [isRenaming, setIsRenaming] = useState(false);
+	// set when a rename ends from the keyboard, so focus returns to the button
+	const shouldFocusRenameRef = useRef(false);
+
 	const handleCopy = () => {
 		if (!id) return;
 		try {
@@ -85,11 +128,78 @@ export const EntityHeader = ({
 			? "break-words font-semibold text-foreground text-xl leading-tight md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-2xl"
 			: "break-words font-semibold text-2xl text-foreground leading-tight md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]";
 
+	/**
+	 * Close the rename input, returning focus to the rename button when asked
+	 */
+	const handleRenameDone = (restoreFocus: boolean) => {
+		shouldFocusRenameRef.current = restoreFocus;
+		setIsRenaming(false);
+	};
+
+	const nameElementProps = {
+		// a name with something after it shrinks so the row can truncate it
+		className: cn(
+			nameClass,
+			onRename && RENAMABLE_NAME_CLASS,
+			nameAddon && "min-w-0",
+		),
+		"data-testid": nameTestId,
+		onDoubleClick: onRename ? () => setIsRenaming(true) : undefined,
+	};
+	const nameElement = isSm ? (
+		<span {...nameElementProps}>{name}</span>
+	) : (
+		<h1 {...nameElementProps}>{name}</h1>
+	);
+
 	const idClass = isSm
 		? "min-w-0 truncate text-muted-foreground text-xs"
 		: isCompact
 			? "text-muted-foreground text-xs"
 			: "text-muted-foreground text-sm";
+
+	/** The name, the rename input, or the name with its rename button */
+	const renderName = (): ReactNode =>
+		isRenaming && onRename ? (
+			<EntityNameInput
+				name={name}
+				label={renameLabel}
+				className={NAME_INPUT_CLASSES[size]}
+				onRename={onRename}
+				onDone={handleRenameDone}
+			/>
+		) : onRename ? (
+			<div className="group/name flex min-w-0 items-center gap-1">
+				{nameElement}
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<Button
+							ref={(element) => {
+								if (element && shouldFocusRenameRef.current) {
+									shouldFocusRenameRef.current = false;
+									element.focus();
+								}
+							}}
+							variant="ghost"
+							size="icon-sm"
+							aria-label={renameLabel}
+							onClick={() => setIsRenaming(true)}
+							className={cn(
+								RENAME_BUTTON_CLASS,
+								isSm && "size-6",
+							)}
+						>
+							<PencilIcon
+								className={isSm ? "size-3" : "size-4"}
+							/>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{renameLabel}</TooltipContent>
+				</Tooltip>
+			</div>
+		) : (
+			nameElement
+		);
 
 	return (
 		<div className={wrapperClass}>
@@ -102,14 +212,13 @@ export const EntityHeader = ({
 			)}
 
 			<div className="flex min-w-0 flex-1 flex-col">
-				{isSm ? (
-					<span className={nameClass} data-testid={nameTestId}>
-						{name}
-					</span>
+				{nameAddon ? (
+					<div className="flex min-w-0 flex-wrap items-center gap-2">
+						{renderName()}
+						{nameAddon}
+					</div>
 				) : (
-					<h1 className={nameClass} data-testid={nameTestId}>
-						{name}
-					</h1>
+					renderName()
 				)}
 				{id && (
 					<div
@@ -145,6 +254,7 @@ export const EntityHeader = ({
 						)}
 					</div>
 				)}
+				{description ? <div className="mt-1">{description}</div> : null}
 			</div>
 
 			{actions && (

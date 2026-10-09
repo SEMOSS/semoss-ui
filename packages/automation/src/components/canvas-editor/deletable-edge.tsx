@@ -11,6 +11,10 @@ export interface DeletableEdgeData extends Record<string, unknown> {
 	onDelete: (edgeId: string) => void;
 	readOnly?: boolean;
 	hovered?: boolean;
+	/** This edge's position among its source's other outgoing edges, so fanned-out
+	 * branch/jev routes bend at different X positions instead of stacking on one line. */
+	laneIndex?: number;
+	laneCount?: number;
 }
 
 /** Custom React Flow edge rendering a delete button at its midpoint. */
@@ -26,6 +30,15 @@ export function DeletableEdge({
 	markerEnd,
 	data,
 }: EdgeProps<Edge<DeletableEdgeData>>) {
+	const laneCount = data?.laneCount ?? 1;
+	const laneIndex = data?.laneIndex ?? 0;
+	let centerX: number | undefined;
+	if (laneCount > 1) {
+		const gap = targetX - sourceX;
+		const spread = Math.min(28, Math.abs(gap) / (laneCount + 1));
+		centerX =
+			sourceX + gap / 2 + (laneIndex - (laneCount - 1) / 2) * spread;
+	}
 	const [edgePath, labelX, labelY] = getSmoothStepPath({
 		sourceX,
 		sourceY,
@@ -33,6 +46,7 @@ export function DeletableEdge({
 		targetX,
 		targetY,
 		targetPosition,
+		...(centerX !== undefined ? { centerX } : {}),
 	});
 
 	return (

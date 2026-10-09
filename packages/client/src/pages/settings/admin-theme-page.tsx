@@ -44,6 +44,7 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	createAdminTheme,
 	deleteAdminTheme,
@@ -179,6 +180,8 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		enableDarkMode: true,
 		hideToolsInIframe: false,
 		hideChatHistory: false,
+		showSystemSkills: true,
+		showSystemTools: true,
 	},
 };
 
@@ -284,6 +287,18 @@ const FEATURE_FLAGS: {
 		label: "Hide Chat History",
 		description:
 			'Hides the chat-history list in the sidebar and the "All Chats" page/nav link, so users cannot browse past conversations. New chats can still be started.',
+	},
+	{
+		key: "showSystemSkills",
+		label: "Show System Skills",
+		description:
+			"Shows MCP-tagged projects with the SYSTEM tag in the toolbox skills list.",
+	},
+	{
+		key: "showSystemTools",
+		label: "Show System Tools",
+		description:
+			"Shows engines with the SYSTEM tag in the toolbox tools list.",
 	},
 ];
 
@@ -601,9 +616,7 @@ export const AdminThemePage: React.FC = () => {
 				getThemes.refresh();
 			}
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Failed to save theme",
-			);
+			toast.error(getErrorMessage(error, "Failed to save theme"));
 		} finally {
 			setIsLoading(false);
 		}
@@ -621,11 +634,7 @@ export const AdminThemePage: React.FC = () => {
 			setThemeId("");
 			getThemes.refresh();
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to delete theme",
-			);
+			toast.error(getErrorMessage(error, "Failed to delete theme"));
 		} finally {
 			setIsLoading(false);
 		}
@@ -641,11 +650,7 @@ export const AdminThemePage: React.FC = () => {
 			toast.success("Theme activated");
 			getThemes.refresh();
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to activate theme",
-			);
+			toast.error(getErrorMessage(error, "Failed to activate theme"));
 		} finally {
 			setIsLoading(false);
 		}

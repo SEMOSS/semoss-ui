@@ -1,8 +1,17 @@
 import { DownloadIcon } from "lucide-react";
 import type { PowerPointViewerHandle } from "pptx-react-viewer";
-import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react";
-import { decodeBase64Asset, encodeBase64Asset } from "@semoss/shared";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { decodeBase64Asset } from "@semoss/shared";
 import { Button, Muted, Spinner } from "@semoss/ui/next";
+import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
 import type { FileViewProps } from "../../types/file-view.types";
@@ -18,6 +27,10 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 	const panel = useFilePanel(config, { base64: true });
 	const viewerRef = useRef<PowerPointViewerHandle>(null);
 	const [isDirty, setIsDirty] = useState(false);
+	useEffect(() => {
+		if (panel.read.status === "SUCCESS" && panel.read.revision > 0)
+			setIsDirty(false);
+	}, [panel.read.revision, panel.read.status]);
 	const content = useMemo(
 		() => decodeBase64Asset(panel.read.data),
 		[panel.read.data],
@@ -31,7 +44,7 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 		if (!handle) return;
 
 		const bytes = await handle.getContent();
-		const saved = await panel.save(encodeBase64Asset(bytes));
+		const saved = await panel.save(encodeBytesToBase64(bytes));
 		if (saved) {
 			setIsDirty(false);
 		}
@@ -40,11 +53,15 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 	const requestSave = useCallback(() => void save(), [save]);
 
 	useFileViewControls(onControls, {
+		canDownload: panel.access.status === "ready",
+		download: panel.download,
 		// gated on the deck being dirty, not just writable: the bytes come
 		// back re-serialised every time, so an idle save would rewrite the
 		// file with a byte-different copy of what is already there
-		canSave: !panel.readOnly && isDirty,
-		isBusy: panel.isBusy,
+		canSave: !panel.readOnly && isDirty && panel.read.status === "SUCCESS",
+		isDirty,
+		isBusy: panel.isBusy || panel.access.status === "loading",
+		canRefresh: panel.access.status === "ready",
 		refresh: panel.read.refresh,
 		save: requestSave,
 	});

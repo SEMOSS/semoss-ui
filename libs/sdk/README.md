@@ -73,6 +73,27 @@ const logout = async () => insight.actions.logout();
 Login and logout return booleans, not `{ output }`. Inspect failed results and
 `insight.error`; supported OAuth providers depend on the server configuration.
 
+-   Know what the session is signed in to
+
+`Logins` holds the session's logins for the whole page, so every insight and
+view sees the same answer. The insight fills it from the config when it loads
+and after each login, and resets it on logout. Read it again, sign in to one more provider,
+or sign one out with its actions; in React, `useLogins()` reads it again when a
+view mounts and whenever the window regains focus.
+
+```ts
+import { Logins } from "@semoss/sdk";
+
+const { logins, primaryLogin, status } = Logins.getSnapshot(); // logins: { NATIVE: "Ada" }
+await Logins.refresh(); // reuses a read younger than 30 seconds
+await Logins.connect("MICROSOFT"); // from a click: opens a fresh sign in popup
+await Logins.disconnect("MICROSOFT"); // never the session's own login
+```
+
+`connect` throws `PopupBlockedError` when the browser blocks the popup, and
+`disconnect` throws `SessionLoginDisconnectError` for the login the session
+belongs to.
+
 -   Ask an LLM and return a result
 
 ```ts
@@ -407,3 +428,26 @@ Or configure the output path once and just run `npm run skills:extract`:
 
 Skills are versioned with the SDK — upgrading `@semoss/sdk` and re-running extraction keeps
 your assistant's knowledge current.
+
+## Catalog images
+
+Use the server-assigned engine or project ID after the resource has been created:
+
+```ts
+import { uploadEngineImage, uploadProjectImage } from "@semoss/sdk";
+
+const image = await uploadProjectImage(projectId, file); // agents, skills, apps
+// image.imageUrl is a download path on the backend origin.
+await uploadEngineImage(engineId, file);
+```
+
+Both functions send one multipart `file` through the SDK's auth/CSRF transport and
+return `CatalogImageUploadResult` (`id`, `name`, `message`, `imageUrl`, `contentType`).
+They use `/api/project-{id}/image/upload` and `/api/e-{id}/image/upload`; the backend
+must provide these routes and the caller must have edit permission.
+
+`CATALOG_IMAGE_ACCEPT`, `CATALOG_IMAGE_MAX_BYTES`, and
+`getCatalogImageValidationError(file)` support client-side file pickers. PNG, JPEG,
+and GIF files up to 10 MiB are accepted. The backend also verifies image bytes and
+limits decoded images to 25 million pixels. Upload failures reject the promise;
+retain the created ID and retry the upload without creating another resource.

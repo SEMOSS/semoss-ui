@@ -7,17 +7,19 @@ import {
 	type Node,
 	ReactFlow,
 	type ReactFlowInstance,
+	SelectionMode,
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
+import { encodeTextToBase64 } from "@semoss/utility/encoding";
+
 import "@xyflow/react/dist/style.css";
 import {
 	CheckCircle,
 	Code2,
-	Hand,
+	Layers3,
 	Loader2,
 	Lock,
-	MousePointer2,
 	Play,
 	RefreshCw,
 	Save,
@@ -49,6 +51,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Input,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -65,16 +68,21 @@ import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,
 	AutomationToolContext,
-	BranchConfig,
+	RoutingConfig,
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
-import type {
-	AutomationInspectorAction,
-	AutomationInspectorSnapshot,
+import {
+	type AutomationInspectorAction,
+	type AutomationInspectorSnapshot,
+	type AutomationScopeEntry,
+	declaredAutomationScopeEntries,
+	inferNestedAutomationScopeEntries,
 } from "../../domain/automation-inspector";
+import { getAutomationNodeDefinition } from "../../domain/automation-node-catalog";
 import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 import type {
+	AutomationNodeGroup,
 	AutomationWorkflowDocument,
 	AutomationWorkflowNodeType,
 	TriggerBinding,
@@ -86,15 +94,25 @@ import {
 	createCanvasWorkflowNode,
 	createInitialCanvasWorkflowDocument,
 	getCanvasNodeSources,
+	validateCanvasWorkflowConnections,
 	validateCanvasWorkflowNode,
 } from "../../domain/automation-workflow-adapter";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
 import { DeletableEdge } from "./deletable-edge";
-import { getFlowStrokeColor } from "./flow-colors";
+import { getFlowStrokeColor, LOOP_PATH_HIGHLIGHT_COLOR } from "./flow-colors";
+import {
+	insertLoopBodyNode,
+	type LoopBodyInsertionPoint,
+	layoutLoopBodyNodes,
+	removeLoopBodyNode,
+} from "./loop-body-graph";
+import { getLoopBodyScope } from "./loop-scope";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
+import { AutomationNodeGroupFrame } from "./nodes/automation-node-group";
 import { BranchNode } from "./nodes/branch-node";
+import { LoopNode } from "./nodes/loop-node";
 import { TriggerNode } from "./nodes/trigger-node";
 import type { AutomationTraceSnapshot } from "./tabs/runs-tab";
 import { UndoBanner } from "./undo-banner";
@@ -103,6 +121,8 @@ const nodeTypes = {
 	trigger: TriggerNode,
 	automation: AutomationNodeCard,
 	branch: BranchNode,
+	loop: LoopNode,
+	nodeGroup: AutomationNodeGroupFrame,
 } as const;
 
 const CHANGE_HIGHLIGHT_DURATION_MS = 2500;
@@ -114,7 +134,15 @@ function isStepHighlighted(
 	stepId: string,
 ): boolean {
 	if (!highlight) return false;
-	return highlight.all || highlight.stepIds.has(stepId);
+	if (highlight.all === true) return true;
+	return highlight.stepIds.has(stepId);
+}
+
+function canAddToLoop(type: AutomationWorkflowNodeType): boolean {
+	if (type === "trigger.start" || type === "control.loop") {
+		return false;
+	}
+	return getAutomationNodeDefinition(type)?.category !== "agent";
 }
 
 function replaceOutputVariableReferences<T>(
@@ -165,6 +193,41 @@ function customSourceReferencesOutput(
 	);
 }
 
+function automationValueReferencesOutput(
+	value: unknown,
+	outputVariable: string,
+): boolean {
+	if (typeof value === "string") {
+		return value.includes(`\${${outputVariable}}`);
+	}
+	if (Array.isArray(value)) {
+		return value.some((item) =>
+			automationValueReferencesOutput(item, outputVariable),
+		);
+	}
+	if (value && typeof value === "object") {
+		return Object.values(value).some((item) =>
+			automationValueReferencesOutput(item, outputVariable),
+		);
+	}
+	return false;
+}
+
+function automationNodeReferencesOutput(
+	node: AutomationNode,
+	outputVariable: string,
+): boolean {
+	return (
+		automationValueReferencesOutput(node.config, outputVariable) ||
+		automationValueReferencesOutput(node.workflowConfig, outputVariable) ||
+		customSourceReferencesOutput(node, outputVariable) ||
+		(node.body?.nodes.some((bodyNode) =>
+			automationNodeReferencesOutput(bodyNode, outputVariable),
+		) ??
+			false)
+	);
+}
+
 function uniqueOutputVar(preferred: string, steps: AutomationNode[]): string {
 	const taken = new Set(steps.map((step) => step.outputVar));
 	if (!taken.has(preferred)) return preferred;
@@ -180,15 +243,77 @@ const edgeTypes = {
 
 // ---- Layout constants ----
 const NODE_WIDTH = 280;
+const TRIGGER_NODE_WIDTH = 120;
+const LOOP_EXPANDED_WIDTH = 640;
+const LOOP_BODY_OFFSET_X = 24;
+const LOOP_BODY_OFFSET_Y = 148;
+const LOOP_BODY_RIGHT_PADDING = 48;
 const DEFAULT_NODE_HEIGHT = 120;
 const NODE_COLUMN_GAP = 100;
 const NODE_LANE_GAP = 40;
 const FIRST_BRANCH_ROUTE_OFFSET = 24;
 
+function canvasNodeHeight(node: AutomationNode): number {
+	if (node.type !== "branch") return DEFAULT_NODE_HEIGHT;
+	return 88 + ((node.config as RoutingConfig).clauses.length - 1) * 48;
+}
+
+function canvasNodeDimensions(
+	node: AutomationNode,
+	isExpandedLoop: boolean,
+): { width: number; height: number } {
+	if (node.type === "trigger") {
+		return { width: TRIGGER_NODE_WIDTH, height: DEFAULT_NODE_HEIGHT };
+	}
+	if (node.type !== "loop") {
+		return {
+			width: NODE_WIDTH,
+			height: canvasNodeHeight(node),
+		};
+	}
+	const body = node.body ?? { nodes: [], edges: [] };
+	if (!isExpandedLoop) {
+		const previewCount = Math.min(body.nodes.length, 3);
+		const previewHeight =
+			body.nodes.length === 0
+				? 48
+				: previewCount * 42 +
+					16 +
+					Math.max(0, previewCount - 1) * 6 +
+					(body.nodes.length > previewCount ? 22 : 0);
+		return { width: NODE_WIDTH, height: 176 + previewHeight };
+	}
+	const bodyNodes =
+		body.nodes.length > 1 &&
+		body.nodes.every(
+			(bodyNode) =>
+				bodyNode.position.x === 0 && bodyNode.position.y === 0,
+		)
+			? layoutLoopBodyNodes(body)
+			: body.nodes;
+	const right = Math.max(
+		LOOP_EXPANDED_WIDTH - LOOP_BODY_OFFSET_X,
+		...bodyNodes.map((bodyNode) => bodyNode.position.x + NODE_WIDTH),
+	);
+	const bottom = Math.max(
+		120,
+		...bodyNodes.map(
+			(bodyNode) => bodyNode.position.y + canvasNodeHeight(bodyNode),
+		),
+	);
+	return {
+		width: Math.max(
+			LOOP_EXPANDED_WIDTH,
+			right + LOOP_BODY_OFFSET_X + LOOP_BODY_RIGHT_PADDING,
+		),
+		height: Math.max(360, LOOP_BODY_OFFSET_Y + bottom + 64),
+	};
+}
+
 function branchRouteIndex(step: AutomationNode, handle: string): number {
 	if (step.type !== "branch") return 0;
 	const clauses = (
-		step.config as import("../../domain/automation.types").BranchConfig
+		step.config as import("../../domain/automation.types").RoutingConfig
 	).clauses;
 	if (handle === `else-${step.id}`) return clauses.length;
 	const prefix = `case-${step.id}-`;
@@ -271,6 +396,8 @@ export interface AutomationCanvasProps {
 	/** Fired after a run completes/refreshes, so a host's separately-rendered run history view
 	 * knows to refetch. */
 	onHistoryChanged?: () => void;
+	/** Keeps host-owned run panels in sync when the canvas leaves historical mode. */
+	onExitHistoricalView?: () => void;
 }
 
 /** Imperative surface for hosts that render the inspector/schedule UI outside this canvas
@@ -283,6 +410,11 @@ export interface AutomationCanvasHandle {
 	viewHistoricalRun: (run: AutomationRunDetail) => void;
 	/** Returns the canvas to the live editable graph. */
 	exitHistoricalView: () => void;
+	/** Applies a saved file-editor tab's content onto its node's in-memory pythonSource, so a
+	 * later Save can't clobber it with the stale copy the canvas loaded with. Looks the step up
+	 * by id rather than going through `applyInspectorAction`, since the saved tab is not
+	 * necessarily the step currently open in the inspector. No-ops for an unknown/removed step. */
+	syncPythonSource: (stepId: string, source: string) => void;
 }
 
 type TriggerAutomationOutput = AutomationRunDetail;
@@ -297,6 +429,8 @@ interface AutomationNodeStreamData {
 	OUTPUT_PREVIEW?: string | null;
 	ERROR_MESSAGE?: string | null;
 	trace?: AutomationNodeResult["trace"];
+	PARENT_NODE_ID?: string;
+	ITERATION_INDEX?: number;
 	DEFINITION_VERSION?: number;
 	DEFINITION_HASH?: string;
 	DEFINITION_SNAPSHOT?: string;
@@ -305,8 +439,11 @@ interface AutomationNodeStreamData {
 interface CanvasWorkflowDraft {
 	steps: AutomationNode[];
 	edges: AutomationEdge[];
+	nodeGroups?: AutomationNodeGroup[];
 	description: string;
 	triggerBindings: TriggerBinding[];
+	/** Revision the draft was based on, used to prevent stale saves. */
+	baseRevision: string | null;
 	savedAt: number;
 }
 
@@ -348,13 +485,6 @@ function ensureTriggerNode(nodes: AutomationNode[]): AutomationNode[] {
 	return withTrigger.map((node) =>
 		node.position ? node : { ...node, position: { x: 0, y: 0 } },
 	);
-}
-
-function encodeBase64(value: string): string {
-	const bytes = new TextEncoder().encode(value);
-	let binary = "";
-	for (const byte of bytes) binary += String.fromCharCode(byte);
-	return btoa(binary);
 }
 
 function createsCycle(
@@ -533,6 +663,7 @@ export const AutomationCanvasContent = forwardRef<
 		onTraceChange,
 		onInspectorChange,
 		onHistoryChanged,
+		onExitHistoricalView,
 	},
 	ref,
 ) {
@@ -543,6 +674,9 @@ export const AutomationCanvasContent = forwardRef<
 
 	const [saving, setSaving] = useState(false);
 	const [confirmReload, setConfirmReload] = useState(false);
+	const [deleteDownstreamStepId, setDeleteDownstreamStepId] = useState<
+		string | null
+	>(null);
 	const [description, setDescription] = useState("");
 	const [devMode, setDevMode] = useState(
 		() => localStorage.getItem(`automation-devmode-${appId}`) === "true",
@@ -562,6 +696,16 @@ export const AutomationCanvasContent = forwardRef<
 		() => createInitialCanvasWorkflowDocument().steps,
 	);
 	const [graphEdges, setGraphEdges] = useState<AutomationEdge[]>([]);
+	const [nodeGroups, setNodeGroups] = useState<AutomationNodeGroup[]>([]);
+	const [collapsedNodeGroupIds, setCollapsedNodeGroupIds] = useState<
+		Set<string>
+	>(() => new Set());
+	const [expandedLoopIds, setExpandedLoopIds] = useState<Set<string>>(
+		() => new Set(),
+	);
+	const [scopeVariablesByNode, setScopeVariablesByNode] = useState<
+		Record<string, AutomationScopeEntry[]>
+	>({});
 	const [triggerBindings, setTriggerBindings] = useState<TriggerBinding[]>(
 		() => createInitialCanvasWorkflowDocument().triggerBindings,
 	);
@@ -588,17 +732,26 @@ export const AutomationCanvasContent = forwardRef<
 
 	// Drawer state — which step is being edited
 	const [editingStepId, setEditingStepId] = useState<string | null>(null);
-	const [canvasMode, setCanvasMode] = useState<"interact" | "pan">(
-		"interact",
-	);
+	const [selectedNodeGroupId, setSelectedNodeGroupId] = useState<
+		string | null
+	>(null);
+	const [selectedBodyNodeId, setSelectedBodyNodeId] = useState<
+		string | undefined
+	>();
 	const [latestRunStatus, setLatestRunStatus] = useState<RunStatus | null>(
 		null,
 	);
 	const [latestRunResults, setLatestRunResults] = useState<
 		AutomationNodeResult[]
 	>([]);
+	const [scopeSampleResults, setScopeSampleResults] = useState<
+		AutomationNodeResult[]
+	>([]);
 	const [latestRunDefinition, setLatestRunDefinition] =
 		useState<AutomationExecutedDefinition | null>(null);
+	const [activeRun, setActiveRun] = useState<AutomationRunDetail | null>(
+		null,
+	);
 	// DB-backed run id for the in-progress run, used to poll GetAutomationRun as a
 	// fallback in case the live progress stream drops an update (see the periodic
 	// reconciliation effect below).
@@ -606,10 +759,21 @@ export const AutomationCanvasContent = forwardRef<
 	const [aiRunSummary, setAiRunSummary] = useState<string | null>(null);
 	const [generatingAiSummary, setGeneratingAiSummary] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
+	// A save can be followed by Run before React commits another render. Keep the
+	// concurrency token synchronous so that follow-up saves use the new revision.
+	const definitionRevisionRef = useRef<string | null>(null);
 	const [mcpDone, setMcpDone] = useState(false);
 	const [undoSnapshot, setUndoSnapshot] = useState<AutomationNode[] | null>(
 		null,
 	);
+	const [addingToLoopId, setAddingToLoopId] = useState<string | null>(null);
+	const [loopBodyInsertionPoint, setLoopBodyInsertionPoint] =
+		useState<LoopBodyInsertionPoint | null>(null);
+	const [isNodeGroupDialogOpen, setIsNodeGroupDialogOpen] = useState(false);
+	const [editingNodeGroupId, setEditingNodeGroupId] = useState<string | null>(
+		null,
+	);
+	const [nodeGroupName, setNodeGroupName] = useState("");
 	/** A historical run currently being viewed read-only on the canvas, in place of the live editable graph. */
 	const [historicalRun, setHistoricalRun] =
 		useState<AutomationRunDetail | null>(null);
@@ -623,12 +787,57 @@ export const AutomationCanvasContent = forwardRef<
 		[historicalDoc, steps],
 	);
 	const displayEdges = historicalDoc ? historicalDoc.edges : graphEdges;
+	const displayNodeGroups = historicalDoc?.nodeGroups ?? nodeGroups;
+	const selectedNodeGroup =
+		displayNodeGroups.find((group) => group.id === selectedNodeGroupId) ??
+		null;
+	const expandedNodeOffsets = useMemo(() => {
+		const offsets = new Map<string, number>();
+		for (const loopId of expandedLoopIds) {
+			const downstreamIds = downstreamControlNodeIds(
+				[loopId],
+				displayEdges,
+			);
+			const loop = displaySteps.find((step) => step.id === loopId);
+			const expandedWidth = loop
+				? canvasNodeDimensions(loop, true).width
+				: LOOP_EXPANDED_WIDTH;
+			for (const nodeId of downstreamIds) {
+				if (nodeId === loopId) continue;
+				offsets.set(
+					nodeId,
+					(offsets.get(nodeId) ?? 0) + (expandedWidth - NODE_WIDTH),
+				);
+			}
+		}
+		return offsets;
+	}, [displayEdges, displaySteps, expandedLoopIds]);
+	const setLoopExpanded = useCallback((nodeId: string, expanded: boolean) => {
+		setExpandedLoopIds((current) => {
+			const next = new Set(current);
+			if (expanded) next.add(nodeId);
+			else next.delete(nodeId);
+			return next;
+		});
+	}, []);
 	const displayResults = useMemo(
 		() =>
 			historicalRun
 				? (historicalRun.nodeResults ?? [])
 				: latestRunResults,
 		[historicalRun, latestRunResults],
+	);
+	const scopeResults = useMemo(
+		() =>
+			historicalRun || latestRunResults.length > 0
+				? displayResults
+				: scopeSampleResults,
+		[
+			displayResults,
+			historicalRun,
+			latestRunResults.length,
+			scopeSampleResults,
+		],
 	);
 	const { displayStatuses, displayErrors, displayDurations } = useMemo(() => {
 		if (!historicalRun) {
@@ -681,6 +890,10 @@ export const AutomationCanvasContent = forwardRef<
 		setHistoricalRun(run);
 	}, []);
 	const exitHistoricalView = useCallback(() => setHistoricalRun(null), []);
+	const handleExitHistoricalView = useCallback(() => {
+		exitHistoricalView();
+		onExitHistoricalView?.();
+	}, [exitHistoricalView, onExitHistoricalView]);
 	const hasRunnableSteps = steps.some(
 		(step) => step.workflowType !== "trigger.start",
 	);
@@ -691,6 +904,15 @@ export const AutomationCanvasContent = forwardRef<
 	const editingStep = useMemo(
 		() => displaySteps.find((s) => s.id === editingStepId) ?? null,
 		[displaySteps, editingStepId],
+	);
+	const selectedLoopBodyStep = useMemo(
+		() =>
+			editingStep?.type === "loop" && selectedBodyNodeId
+				? (editingStep.body?.nodes.find(
+						(node) => node.id === selectedBodyNodeId,
+					) ?? null)
+				: null,
+		[editingStep, selectedBodyNodeId],
 	);
 	/** Edges on the path from the trigger to the selected node, highlighted blue. */
 	const highlightedPathEdgeIds = useMemo(
@@ -711,6 +933,28 @@ export const AutomationCanvasContent = forwardRef<
 		}
 		return nodeIds;
 	}, [editingStepId, displayEdges, highlightedPathEdgeIds]);
+	const selectedLoopBodyPath = useMemo(() => {
+		const empty = {
+			edgeIds: new Set<string>(),
+			nodeIds: new Set<string>(),
+		};
+		if (!selectedBodyNodeId) return empty;
+		const loop = displaySteps.find((step) =>
+			step.body?.nodes.some((node) => node.id === selectedBodyNodeId),
+		);
+		if (!loop?.body) return empty;
+		const edgeIds = ancestorControlEdgeIds(
+			selectedBodyNodeId,
+			loop.body.edges,
+		);
+		const nodeIds = new Set<string>([selectedBodyNodeId]);
+		for (const edge of loop.body.edges) {
+			if (!edgeIds.has(edge.id)) continue;
+			nodeIds.add(edge.source);
+			nodeIds.add(edge.target);
+		}
+		return { edgeIds, nodeIds };
+	}, [displaySteps, selectedBodyNodeId]);
 
 	useEffect(() => {
 		onTraceChange?.({
@@ -721,8 +965,10 @@ export const AutomationCanvasContent = forwardRef<
 			steps,
 			results: latestRunResults,
 			executedDefinition: latestRunDefinition,
+			activeRun,
 		});
 	}, [
+		activeRun,
 		aiRunSummary,
 		generatingAiSummary,
 		latestRunResults,
@@ -756,6 +1002,25 @@ export const AutomationCanvasContent = forwardRef<
 	// React Flow state
 	const [rfNodes, setRfNodes, onRfNodesChange] = useNodesState<Node>([]);
 	const [rfEdges, setRfEdges] = useEdgesState<Edge>([]);
+	const selectedNodeIdsRef = useRef(new Set<string>());
+	const [groupSelectionIds, setGroupSelectionIds] = useState<Set<string>>(
+		() => new Set(),
+	);
+	const handleRfNodesChange = useCallback(
+		(changes: Parameters<typeof onRfNodesChange>[0]) => {
+			onRfNodesChange(changes);
+			for (const change of changes) {
+				if (change.type !== "select") continue;
+				if (change.id.startsWith("node-group-")) continue;
+				if (change.selected) {
+					selectedNodeIdsRef.current.add(change.id);
+				} else {
+					selectedNodeIdsRef.current.delete(change.id);
+				}
+			}
+		},
+		[onRfNodesChange],
+	);
 	const canvasContainerRef = useRef<HTMLDivElement>(null);
 	const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
 	const [canvasInitialized, setCanvasInitialized] = useState(false);
@@ -840,6 +1105,80 @@ export const AutomationCanvasContent = forwardRef<
 			) {
 				return;
 			}
+			const sourceLoop = steps.find((step) =>
+				step.body?.nodes.some((node) => node.id === connection.source),
+			);
+			const targetLoop = steps.find((step) =>
+				step.body?.nodes.some((node) => node.id === connection.target),
+			);
+			if (sourceLoop || targetLoop) {
+				if (!sourceLoop || sourceLoop.id !== targetLoop?.id) {
+					toast.error(
+						"Connections must stay within the same loop or the main workflow.",
+					);
+					return;
+				}
+				const body = sourceLoop.body ?? { nodes: [], edges: [] };
+				const sourceHandle =
+					connection.sourceHandle ?? `out-${connection.source}`;
+				if (
+					body.edges.some(
+						(edge) =>
+							edge.kind === "control" &&
+							edge.source === connection.source &&
+							(edge.sourceHandle ?? `out-${edge.source}`) ===
+								sourceHandle,
+					)
+				) {
+					toast.error(
+						"This output is already connected. Parallel execution is not supported yet.",
+					);
+					return;
+				}
+				if (
+					body.edges.some(
+						(edge) =>
+							edge.source === connection.source &&
+							edge.target === connection.target,
+					)
+				) {
+					return;
+				}
+				if (
+					createsCycle(
+						body.edges,
+						connection.source,
+						connection.target,
+					)
+				) {
+					toast.error("Loop steps must remain an acyclic graph.");
+					return;
+				}
+				const edge: AutomationEdge = {
+					id: `loop-${sourceLoop.id}-${crypto.randomUUID()}`,
+					source: connection.source,
+					target: connection.target,
+					sourceHandle,
+					targetHandle:
+						connection.targetHandle ?? `in-${connection.target}`,
+					kind: "control",
+				};
+				setSteps((previous) =>
+					previous.map((step) =>
+						step.id === sourceLoop.id
+							? {
+									...step,
+									body: {
+										...body,
+										edges: [...body.edges, edge],
+									},
+								}
+							: step,
+					),
+				);
+				setIsDirty(true);
+				return;
+			}
 			const source = steps.find((step) => step.id === connection.source);
 			const target = steps.find((step) => step.id === connection.target);
 			if (!source || !target || target.type === "trigger") {
@@ -849,6 +1188,22 @@ export const AutomationCanvasContent = forwardRef<
 				return;
 			}
 			setGraphEdges((previous) => {
+				const sourceHandle =
+					connection.sourceHandle ?? `out-${connection.source}`;
+				if (
+					previous.some(
+						(edge) =>
+							edge.kind === "control" &&
+							edge.source === connection.source &&
+							(edge.sourceHandle ?? `out-${edge.source}`) ===
+								sourceHandle,
+					)
+				) {
+					toast.error(
+						"This output is already connected. Parallel execution is not supported yet.",
+					);
+					return previous;
+				}
 				if (
 					previous.some(
 						(edge) =>
@@ -874,9 +1229,7 @@ export const AutomationCanvasContent = forwardRef<
 						id: `e-${connection.source}-${connection.target}-${crypto.randomUUID()}`,
 						source: connection.source,
 						target: connection.target,
-						sourceHandle:
-							connection.sourceHandle ??
-							`out-${connection.source}`,
+						sourceHandle,
 						targetHandle:
 							connection.targetHandle ??
 							`in-${connection.target}`,
@@ -893,6 +1246,294 @@ export const AutomationCanvasContent = forwardRef<
 			previous.filter((edge) => edge.id !== edgeId),
 		);
 	}, []);
+	const deleteLoopBodyEdge = useCallback((loopId: string, edgeId: string) => {
+		setSteps((previous) =>
+			previous.map((step) =>
+				step.id === loopId && step.body
+					? {
+							...step,
+							body: {
+								...step.body,
+								edges: step.body.edges.filter(
+									(edge) => edge.id !== edgeId,
+								),
+							},
+						}
+					: step,
+			),
+		);
+		setIsDirty(true);
+	}, []);
+
+	const moveNodeIntoLoop = useCallback(
+		(nodeId: string, loopId: string) => {
+			if (readOnly || viewingHistory) return;
+			const node = steps.find((step) => step.id === nodeId);
+			const loop = steps.find(
+				(step) => step.id === loopId && step.type === "loop",
+			);
+			if (!node || !loop || node.id === loop.id) return;
+			if (
+				node.type === "trigger" ||
+				node.type === "loop" ||
+				(node.type === "branch" &&
+					graphEdges.some((edge) => edge.source === nodeId))
+			) {
+				toast.error(
+					node.type === "branch"
+						? "Disconnect this decision's outgoing routes before moving it into a loop."
+						: "Triggers and nested loops cannot be moved into a loop group.",
+				);
+				return;
+			}
+			if (
+				graphEdges.some(
+					(edge) =>
+						(edge.source === nodeId || edge.target === nodeId) &&
+						edge.kind === "data",
+				)
+			) {
+				toast.error(
+					"Reconnect data links before moving this step into a loop.",
+				);
+				return;
+			}
+			const body = loop.body ?? { nodes: [], edges: [] };
+			if (
+				body.nodes.some(
+					(bodyNode) => bodyNode.outputVar === node.outputVar,
+				) ||
+				steps.some(
+					(step) =>
+						step.id !== nodeId && step.outputVar === node.outputVar,
+				) ||
+				(node.outputVar &&
+					steps.some(
+						(candidate) =>
+							candidate.id !== nodeId &&
+							automationNodeReferencesOutput(
+								candidate,
+								node.outputVar,
+							),
+					))
+			) {
+				toast.error(
+					"Resolve output-variable conflicts or references before moving this step into the loop.",
+				);
+				return;
+			}
+			const terminalNodes = body.nodes.filter(
+				(bodyNode) =>
+					!body.edges.some(
+						(edge) =>
+							edge.kind === "control" &&
+							edge.source === bodyNode.id,
+					),
+			);
+			const nextBody = {
+				nodes: [...body.nodes, { ...node, position: { x: 0, y: 0 } }],
+				edges: [
+					...body.edges,
+					...terminalNodes.map((terminal, index) => ({
+						id: `loop-${terminal.id}-${node.id}-${index}`,
+						kind: "control" as const,
+						source: terminal.id,
+						target: node.id,
+						sourceHandle:
+							terminal.type === "branch"
+								? `else-${terminal.id}`
+								: `out-${terminal.id}`,
+						targetHandle: `in-${node.id}`,
+					})),
+				],
+			};
+			const positionedNextBody = {
+				...nextBody,
+				nodes: layoutLoopBodyNodes(nextBody),
+			};
+			setSteps((previous) =>
+				previous
+					.filter((step) => step.id !== nodeId)
+					.map((step) =>
+						step.id === loopId
+							? { ...step, body: positionedNextBody }
+							: step,
+					),
+			);
+			setNodeGroups((previous) =>
+				previous
+					.map((group) => ({
+						...group,
+						nodeIds: group.nodeIds.filter((id) => id !== nodeId),
+					}))
+					.filter((group) => group.nodeIds.length > 0),
+			);
+			const seenEdges = new Set<string>();
+			setGraphEdges(
+				graphEdges.flatMap((edge) => {
+					const source =
+						edge.source === nodeId ? loopId : edge.source;
+					const target =
+						edge.target === nodeId ? loopId : edge.target;
+					if (source === target) return [];
+					const sourceHandle =
+						edge.source === nodeId
+							? `out-${loopId}`
+							: edge.sourceHandle;
+					const targetHandle =
+						edge.target === nodeId
+							? `in-${loopId}`
+							: edge.targetHandle;
+					const key = `${source}:${sourceHandle}:${target}:${targetHandle}`;
+					if (seenEdges.has(key)) return [];
+					seenEdges.add(key);
+					return [
+						{ ...edge, source, target, sourceHandle, targetHandle },
+					];
+				}),
+			);
+			setLoopExpanded(loopId, true);
+			setEditingStepId(loopId);
+			setSelectedBodyNodeId(nodeId);
+			setIsDirty(true);
+		},
+		[graphEdges, readOnly, setLoopExpanded, steps, viewingHistory],
+	);
+
+	const moveBodyNodeOut = useCallback(
+		(
+			loopId: string,
+			nodeId: string,
+			dropPosition?: { x: number; y: number },
+		): boolean => {
+			if (readOnly || viewingHistory) return false;
+			const loop = steps.find(
+				(step) => step.id === loopId && step.type === "loop",
+			);
+			const node = loop?.body?.nodes.find(
+				(bodyNode) => bodyNode.id === nodeId,
+			);
+			if (!loop?.body || !node) return false;
+			if (node.type === "branch" || node.type === "loop") {
+				toast.error(
+					"Move routing and loop steps out after simplifying them.",
+				);
+				return false;
+			}
+			if (
+				loop.body.edges.some(
+					(edge) =>
+						(edge.source === nodeId || edge.target === nodeId) &&
+						edge.kind === "data",
+				) ||
+				graphEdges.some(
+					(edge) => edge.source === loopId && edge.kind === "data",
+				)
+			) {
+				toast.error(
+					"Reconnect data links before moving this step out of the loop.",
+				);
+				return false;
+			}
+			const remainingBodyNodes = loop.body.nodes.filter(
+				(bodyNode) => bodyNode.id !== nodeId,
+			);
+			const incomingBodyEdges = loop.body.edges.filter(
+				(edge) => edge.kind === "control" && edge.target === nodeId,
+			);
+			const outgoingBodyEdges = loop.body.edges.filter(
+				(edge) => edge.kind === "control" && edge.source === nodeId,
+			);
+			if (incomingBodyEdges.length > 1 || outgoingBodyEdges.length > 1) {
+				toast.error(
+					"Reconnect this step's multiple routes before moving it out of the loop.",
+				);
+				return false;
+			}
+			if (
+				steps.some((step) => step.outputVar === node.outputVar) ||
+				(node.outputVar &&
+					(steps
+						.filter((step) => step.id !== loopId)
+						.some((step) =>
+							automationNodeReferencesOutput(
+								step,
+								node.outputVar,
+							),
+						) ||
+						remainingBodyNodes.some((bodyNode) =>
+							automationNodeReferencesOutput(
+								bodyNode,
+								node.outputVar,
+							),
+						)))
+			) {
+				toast.error(
+					"Resolve output-variable conflicts or references before moving this step out of the loop.",
+				);
+				return false;
+			}
+			const outgoingEdges = graphEdges.filter(
+				(edge) => edge.source === loopId && edge.kind === "control",
+			);
+			const nextEdges: AutomationEdge[] = [
+				{
+					id: `e-${loopId}-${nodeId}-${crypto.randomUUID()}`,
+					kind: "control",
+					source: loopId,
+					target: nodeId,
+					sourceHandle: `out-${loopId}`,
+					targetHandle: `in-${nodeId}`,
+				},
+				...outgoingEdges.map((edge, index) => ({
+					...edge,
+					id: `e-${nodeId}-${edge.target}-${index}`,
+					source: nodeId,
+					sourceHandle: `out-${nodeId}`,
+				})),
+			];
+			const body = removeLoopBodyNode(loop.body, nodeId);
+			setSteps((previous) => [
+				...previous.map((step) =>
+					step.id === loopId ? { ...step, body } : step,
+				),
+				{
+					...node,
+					position: dropPosition
+						? {
+								x:
+									dropPosition.x -
+									(expandedNodeOffsets.get(nodeId) ?? 0),
+								y: dropPosition.y,
+							}
+						: {
+								x:
+									loop.position.x +
+									NODE_WIDTH +
+									NODE_COLUMN_GAP,
+								y: loop.position.y,
+							},
+				},
+			]);
+			setGraphEdges((previous) => [
+				...previous.filter(
+					(edge) =>
+						!outgoingEdges.some(
+							(outgoing) => outgoing.id === edge.id,
+						),
+				),
+				...nextEdges,
+			]);
+			setSelectedBodyNodeId(undefined);
+			setEditingStepId(nodeId);
+			setIsDirty(true);
+			toast.success(
+				"Moved step out of loop; it now runs after the loop.",
+			);
+			return true;
+		},
+		[expandedNodeOffsets, graphEdges, readOnly, steps, viewingHistory],
+	);
 
 	const layoutNodes = useCallback(
 		(
@@ -934,6 +1575,9 @@ export const AutomationCanvasContent = forwardRef<
 			}
 
 			const positions = new Map<string, { x: number; y: number }>();
+			const orderedColumns = [...columns.entries()].sort(
+				([left], [right]) => left - right,
+			);
 			const canvasHeight =
 				canvasContainerRef.current?.clientHeight ?? 600;
 			const laneHeights: number[] = [];
@@ -949,13 +1593,24 @@ export const AutomationCanvasContent = forwardRef<
 				laneHeights.reduce((total, height) => total + height, 0) +
 				NODE_LANE_GAP * Math.max(0, laneHeights.length - 1);
 			const firstLaneY = Math.max(0, (canvasHeight - totalHeight) / 2);
-			for (const [column, columnNodes] of columns) {
+			const columnOffsets = new Map<number, number>();
+			let nextColumnX = 0;
+			for (const [column, columnNodes] of orderedColumns) {
+				columnOffsets.set(column, nextColumnX);
+				nextColumnX +=
+					Math.max(
+						...columnNodes.map(
+							(node) => canvasNodeDimensions(node, false).width,
+						),
+					) + NODE_COLUMN_GAP;
+			}
+			for (const [column, columnNodes] of orderedColumns) {
 				let y = firstLaneY;
 				for (const node of columnNodes) {
 					const lane = columnNodes.indexOf(node);
 					const nodeHeight = getNodeHeight(node.id);
 					positions.set(node.id, {
-						x: column * (NODE_WIDTH + NODE_COLUMN_GAP),
+						x: columnOffsets.get(column) ?? 0,
 						y:
 							y +
 							((laneHeights[lane] ?? nodeHeight) - nodeHeight) /
@@ -977,6 +1632,8 @@ export const AutomationCanvasContent = forwardRef<
 		let cancelled = false;
 		loadedRef.current = false;
 		setWorkflowLoaded(false);
+		setCollapsedNodeGroupIds(new Set());
+		definitionRevisionRef.current = null;
 		initialLayoutAppliedRef.current = false;
 		skipDraftPersistenceRef.current = true;
 		initialViewFittedRef.current = false;
@@ -986,8 +1643,15 @@ export const AutomationCanvasContent = forwardRef<
 				const output = response.pixelReturn?.[0]?.output as
 					| (AutomationWorkflowDocument & {
 							nodeSources?: Record<string, string>;
+							revision?: string;
+							scopeVariables?: Record<
+								string,
+								AutomationScopeEntry[]
+							>;
 					  })
 					| undefined;
+				definitionRevisionRef.current = output?.revision ?? null;
+				setScopeVariablesByNode(output?.scopeVariables ?? {});
 				const saved = isWorkflowDocument(output)
 					? canvasDocumentFromWorkflow(output, output.nodeSources)
 					: createInitialCanvasWorkflowDocument();
@@ -1014,8 +1678,13 @@ export const AutomationCanvasContent = forwardRef<
 						const draft = JSON.parse(
 							rawDraft,
 						) as CanvasWorkflowDraft;
+						definitionRevisionRef.current =
+							typeof draft.baseRevision === "string"
+								? draft.baseRevision
+								: (output?.revision ?? null);
 						setSteps(ensureTriggerNode(draft.steps));
 						setGraphEdges(draft.edges);
+						setNodeGroups(draft.nodeGroups ?? []);
 						setDescription(draft.description);
 						setTriggerBindings(draft.triggerBindings);
 						setIsDirty(true);
@@ -1033,6 +1702,7 @@ export const AutomationCanvasContent = forwardRef<
 						: loadedSteps,
 				);
 				setGraphEdges(saved.edges);
+				setNodeGroups(saved.nodeGroups ?? []);
 				setDescription(saved.description);
 				setTriggerBindings(saved.triggerBindings);
 				setIsDirty(false);
@@ -1046,6 +1716,7 @@ export const AutomationCanvasContent = forwardRef<
 					const initial = createInitialCanvasWorkflowDocument();
 					setSteps(initial.steps);
 					setGraphEdges(initial.edges);
+					setNodeGroups(initial.nodeGroups ?? []);
 					setDescription(initial.description);
 					setTriggerBindings(initial.triggerBindings);
 				}
@@ -1110,8 +1781,10 @@ export const AutomationCanvasContent = forwardRef<
 		const draft = {
 			steps,
 			edges: graphEdges,
+			nodeGroups,
 			description,
 			triggerBindings,
+			baseRevision: definitionRevisionRef.current,
 			savedAt: Date.now(),
 		};
 		localStorage.setItem(
@@ -1119,7 +1792,15 @@ export const AutomationCanvasContent = forwardRef<
 			JSON.stringify(draft),
 		);
 		setIsDirty(true);
-	}, [steps, graphEdges, description, triggerBindings, appId, readOnly]);
+	}, [
+		steps,
+		graphEdges,
+		nodeGroups,
+		description,
+		triggerBindings,
+		appId,
+		readOnly,
+	]);
 
 	// ---- Derived values ----
 	const stepOutputPreviews = useMemo(
@@ -1136,10 +1817,13 @@ export const AutomationCanvasContent = forwardRef<
 		() =>
 			steps.flatMap((step) => {
 				if (step.workflowType === "trigger.start") return [];
-				const issues = validateCanvasWorkflowNode(step, steps);
+				const issues = [
+					...validateCanvasWorkflowNode(step, steps),
+					...validateCanvasWorkflowConnections(step, graphEdges),
+				];
 				return issues.length > 0 ? [{ step, issues }] : [];
 			}),
-		[steps],
+		[graphEdges, steps],
 	);
 	const incompleteCount = validationIssues.length;
 
@@ -1170,6 +1854,104 @@ export const AutomationCanvasContent = forwardRef<
 	const addStep = useCallback(
 		(type: AutomationWorkflowNodeType) => {
 			if (readOnly || viewingHistory) return;
+			if (addingToLoopId) {
+				const loop = steps.find(
+					(step) =>
+						step.id === addingToLoopId && step.type === "loop",
+				);
+				if (!loop) return;
+				const allNodes = steps.flatMap((step) => [
+					step,
+					...(step.body?.nodes ?? []),
+				]);
+				const newStep = createCanvasWorkflowNode(type, allNodes.length);
+				newStep.outputVar = uniqueOutputVar(
+					newStep.outputVar,
+					allNodes,
+				);
+				const body = loop.body ?? { nodes: [], edges: [] };
+				const bodyIsUnpositioned = body.nodes.every(
+					(node) => node.position.x === 0 && node.position.y === 0,
+				);
+				const positionedBody =
+					bodyIsUnpositioned && body.nodes.length > 1
+						? { ...body, nodes: layoutLoopBodyNodes(body) }
+						: body;
+				if (loopBodyInsertionPoint) {
+					newStep.position = { x: 0, y: 0 };
+				}
+				const terminalNodes = positionedBody.nodes.filter(
+					(node) =>
+						!positionedBody.edges.some(
+							(edge) =>
+								edge.kind === "control" &&
+								edge.source === node.id,
+						),
+				);
+				let nextBody: {
+					nodes: AutomationNode[];
+					edges: AutomationEdge[];
+				};
+				if (loopBodyInsertionPoint) {
+					nextBody = insertLoopBodyNode(
+						positionedBody,
+						newStep,
+						loopBodyInsertionPoint,
+					);
+				} else {
+					newStep.position =
+						terminalNodes.length > 0
+							? {
+									x:
+										Math.max(
+											...terminalNodes.map(
+												(node) => node.position.x,
+											),
+										) + 260,
+									y: terminalNodes[0].position.y,
+								}
+							: { x: 0, y: 0 };
+					const nextBodyEdges: AutomationEdge[] = [
+						...positionedBody.edges,
+						...terminalNodes.map((node, index) => ({
+							id: `loop-${node.id}-${newStep.id}-${index}`,
+							kind: "control" as const,
+							source: node.id,
+							target: newStep.id,
+							sourceHandle:
+								node.type === "branch"
+									? `else-${node.id}`
+									: `out-${node.id}`,
+							targetHandle: `in-${newStep.id}`,
+						})),
+					];
+					nextBody = {
+						nodes: [...positionedBody.nodes, newStep],
+						edges: nextBodyEdges,
+					};
+				}
+				nextBody = {
+					...nextBody,
+					nodes: layoutLoopBodyNodes(nextBody),
+				};
+				setSteps((previous) =>
+					previous.map((step) =>
+						step.id === loop.id
+							? {
+									...step,
+									body: nextBody,
+								}
+							: step,
+					),
+				);
+				setIsDirty(true);
+				setShowAddMenu(false);
+				setAddingToLoopId(null);
+				setLoopBodyInsertionPoint(null);
+				setEditingStepId(loop.id);
+				setSelectedBodyNodeId(newStep.id);
+				return;
+			}
 			const previousStep = addAfterStepId
 				? steps.find((step) => step.id === addAfterStepId)
 				: undefined;
@@ -1178,7 +1960,9 @@ export const AutomationCanvasContent = forwardRef<
 			const id = newStep.id;
 			if (previousStep) {
 				const targetX =
-					previousStep.position.x + NODE_WIDTH + NODE_COLUMN_GAP;
+					previousStep.position.x +
+					canvasNodeDimensions(previousStep, false).width +
+					NODE_COLUMN_GAP;
 				// Find siblings already connected from this node (+ handle)
 				const sourceHandle = addAfterHandle ?? `out-${previousStep.id}`;
 				const siblingIds = graphEdges
@@ -1239,6 +2023,8 @@ export const AutomationCanvasContent = forwardRef<
 				]);
 			}
 			setShowAddMenu(false);
+			setAddingToLoopId(null);
+			setLoopBodyInsertionPoint(null);
 			setAddAfterStepId(null);
 			setAddAfterHandle(null);
 			setEditingStepId(id);
@@ -1247,6 +2033,8 @@ export const AutomationCanvasContent = forwardRef<
 			});
 		},
 		[
+			addingToLoopId,
+			loopBodyInsertionPoint,
 			addAfterStepId,
 			addAfterHandle,
 			fitWorkflow,
@@ -1260,6 +2048,31 @@ export const AutomationCanvasContent = forwardRef<
 
 	const updateStep = useCallback(
 		(updated: AutomationNode) => {
+			const parentLoop = steps.find((step) =>
+				step.body?.nodes.some((node) => node.id === updated.id),
+			);
+			if (parentLoop?.body) {
+				const parentLoopId = parentLoop.id;
+				setSteps((previous) =>
+					previous.map((step) =>
+						step.id === parentLoopId && step.body
+							? {
+									...step,
+									body: {
+										...step.body,
+										nodes: step.body.nodes.map((node) =>
+											node.id === updated.id
+												? updated
+												: node,
+										),
+									},
+								}
+							: step,
+					),
+				);
+				setIsDirty(true);
+				return;
+			}
 			const currentStep = steps.find((step) => step.id === updated.id);
 			const previousOutputVariable = currentStep?.outputVar ?? "";
 			const outputVariableChanged =
@@ -1293,13 +2106,13 @@ export const AutomationCanvasContent = forwardRef<
 			const currentClauses =
 				currentStep?.type === "branch"
 					? (
-							currentStep.config as import("../../domain/automation.types").BranchConfig
+							currentStep.config as import("../../domain/automation.types").RoutingConfig
 						).clauses
 					: [];
 			const updatedClauses =
 				updated.type === "branch"
 					? (
-							updated.config as import("../../domain/automation.types").BranchConfig
+							updated.config as import("../../domain/automation.types").RoutingConfig
 						).clauses
 					: [];
 			const routeCountChange =
@@ -1353,7 +2166,7 @@ export const AutomationCanvasContent = forwardRef<
 				const validHandles = new Set([
 					`else-${updated.id}`,
 					...(
-						updated.config as import("../../domain/automation.types").BranchConfig
+						updated.config as import("../../domain/automation.types").RoutingConfig
 					).clauses.map(
 						(clause) => `case-${updated.id}-${clause.id}`,
 					),
@@ -1384,90 +2197,227 @@ export const AutomationCanvasContent = forwardRef<
 		[graphEdges, steps],
 	);
 
-	const deleteStep = useCallback((id: string) => {
-		setSteps((prev) => prev.filter((s) => s.id !== id));
-		setGraphEdges((previous) => {
-			// Only control edges are bridged, and each bridge keeps the handles of the
-			// edges it replaces: the source handle carries a decision node's case/else
-			// routing, and an edge with no kind is invisible to the upstream-variable
-			// walk and is rejected by the server as a malformed branch port.
-			const incoming = previous.filter(
-				(edge) => edge.target === id && edge.kind !== "data",
+	const deleteStep = useCallback(
+		(id: string, removeDownstream = false) => {
+			const parentLoop = steps.find((step) =>
+				step.body?.nodes.some((node) => node.id === id),
 			);
-			const outgoing = previous.filter(
-				(edge) => edge.source === id && edge.kind !== "data",
-			);
-			const remaining = previous.filter(
-				(edge) => edge.source !== id && edge.target !== id,
-			);
-
-			for (const inbound of incoming) {
-				for (const outbound of outgoing) {
-					if (
-						inbound.source !== outbound.target &&
-						!remaining.some(
-							(edge) =>
-								edge.source === inbound.source &&
-								edge.target === outbound.target,
-						)
-					) {
-						remaining.push({
-							id: `e-${inbound.source}-${outbound.target}-${crypto.randomUUID()}`,
-							source: inbound.source,
-							target: outbound.target,
-							sourceHandle: inbound.sourceHandle,
-							targetHandle: outbound.targetHandle,
-							kind: "control",
-						});
-					}
-				}
+			if (parentLoop) {
+				setSteps((previous) =>
+					previous.map((step) => {
+						if (step.id !== parentLoop.id || !step.body)
+							return step;
+						const removedIds = removeDownstream
+							? downstreamControlNodeIds([id], step.body.edges)
+							: new Set([id]);
+						return {
+							...step,
+							body: {
+								nodes: step.body.nodes.filter(
+									(node) => !removedIds.has(node.id),
+								),
+								edges: step.body.edges.filter(
+									(edge) =>
+										!removedIds.has(edge.source) &&
+										!removedIds.has(edge.target),
+								),
+							},
+						};
+					}),
+				);
+				setSelectedBodyNodeId(undefined);
+				setIsDirty(true);
+				return;
 			}
-			return remaining;
-		});
-		setEditingStepId((prev) => (prev === id ? null : prev));
-		setStepStatuses((prev) => {
-			const next = { ...prev };
-			delete next[id];
-			return next;
-		});
-		setStepErrors((prev) => {
-			const next = { ...prev };
-			delete next[id];
-			return next;
-		});
-		setStepDurations((prev) => {
-			const next = { ...prev };
-			delete next[id];
-			return next;
-		});
-		setLatestRunResults((prev) => prev.filter((r) => r.NODE_ID !== id));
-	}, []);
+			const removedIds = removeDownstream
+				? downstreamControlNodeIds([id], graphEdges)
+				: new Set([id]);
+			setSteps((prev) => prev.filter((step) => !removedIds.has(step.id)));
+			setNodeGroups((previous) =>
+				previous
+					.map((group) => ({
+						...group,
+						nodeIds: group.nodeIds.filter(
+							(nodeId) => !removedIds.has(nodeId),
+						),
+					}))
+					.filter((group) => group.nodeIds.length > 0),
+			);
+			setGraphEdges((previous) =>
+				previous.filter(
+					(edge) =>
+						!removedIds.has(edge.source) &&
+						!removedIds.has(edge.target),
+				),
+			);
+			setEditingStepId((prev) =>
+				prev && removedIds.has(prev) ? null : prev,
+			);
+			setStepStatuses((prev) => {
+				const next = { ...prev };
+				for (const removedId of removedIds) delete next[removedId];
+				return next;
+			});
+			setStepErrors((prev) => {
+				const next = { ...prev };
+				for (const removedId of removedIds) delete next[removedId];
+				return next;
+			});
+			setStepDurations((prev) => {
+				const next = { ...prev };
+				for (const removedId of removedIds) delete next[removedId];
+				return next;
+			});
+			setLatestRunResults((prev) =>
+				prev.filter((result) => !removedIds.has(result.NODE_ID)),
+			);
+		},
+		[graphEdges, steps],
+	);
 
 	const upstreamVarsFor = useCallback(
 		(stepId: string) =>
 			upstreamVariablesFor(displaySteps, displayEdges, stepId),
 		[displayEdges, displaySteps],
 	);
+	const scopeEntriesFor = useCallback(
+		(stepId: string): AutomationScopeEntry[] => {
+			const serverEntries = scopeVariablesByNode[stepId];
+			const baseEntries: AutomationScopeEntry[] =
+				serverEntries ??
+				["date", "triggered_at", "run_id"].map((name) => ({
+					name,
+					source: "runtime" as const,
+					label: name,
+					description: "Available from this node's run scope.",
+					availability: "guaranteed" as const,
+					pythonExpression: `scope[${JSON.stringify(name)}]`,
+					templateExpression: `\${${name}}`,
+				}));
+			if (!serverEntries) {
+				for (const name of upstreamVarsFor(stepId)) {
+					const sourceStep = displaySteps.find(
+						(step) => step.outputVar === name,
+					);
+					const stepNumber = sourceStep
+						? (stepDisplayOrder.get(sourceStep.id) ?? 0) + 1
+						: undefined;
+					baseEntries.push({
+						name,
+						source: "node",
+						label: sourceStep?.label ?? name,
+						description: stepNumber
+							? `Output from step ${stepNumber}.`
+							: "Output from an earlier step.",
+						availability: "guaranteed",
+						pythonExpression: `scope[${JSON.stringify(name)}]`,
+						templateExpression: `\${${name}}`,
+						sourceNodeId: sourceStep?.id,
+					});
+				}
+			}
+			const nestedEntries = baseEntries.flatMap((entry) => {
+				if (entry.source !== "node" || !entry.sourceNodeId) return [];
+				const sourceStep = displaySteps.find(
+					(step) => step.id === entry.sourceNodeId,
+				);
+				const definition = sourceStep?.workflowType
+					? getAutomationNodeDefinition(sourceStep.workflowType)
+					: undefined;
+				const declared = definition
+					? declaredAutomationScopeEntries(
+							entry,
+							definition.outputSchema,
+						)
+					: [];
+				const output = scopeResults.find(
+					(result) => result.NODE_ID === entry.sourceNodeId,
+				);
+				const observed = inferNestedAutomationScopeEntries(
+					entry,
+					output?.OUTPUT_VALUE ?? output?.OUTPUT_PREVIEW,
+				);
+				const merged = new Map(
+					declared.map((declaredEntry) => [
+						declaredEntry.name,
+						declaredEntry,
+					]),
+				);
+				for (const observedEntry of observed) {
+					if (!merged.has(observedEntry.name)) {
+						merged.set(observedEntry.name, observedEntry);
+					}
+				}
+				return [...merged.values()];
+			});
+			return [...baseEntries, ...nestedEntries];
+		},
+		[
+			displaySteps,
+			scopeResults,
+			scopeVariablesByNode,
+			stepDisplayOrder,
+			upstreamVarsFor,
+		],
+	);
+	const templateVariablesFor = useCallback(
+		(stepId: string): string[] =>
+			scopeEntriesFor(stepId).map((entry) => entry.name),
+		[scopeEntriesFor],
+	);
+	const inspectorContext = useMemo(() => {
+		if (!editingStep) {
+			return {
+				step: null,
+				upstreamVars: [] as string[],
+				scopeEntries: [] as AutomationScopeEntry[],
+			};
+		}
+		const upstreamVars = templateVariablesFor(editingStep.id);
+		const scopeEntries = scopeEntriesFor(editingStep.id);
+		if (!selectedLoopBodyStep) {
+			return { step: editingStep, upstreamVars, scopeEntries };
+		}
+		const bodyScope = getLoopBodyScope({
+			loop: editingStep,
+			selectedNodeId: selectedLoopBodyStep.id,
+			upstreamVars,
+			scopeEntries,
+		});
+		return {
+			step: selectedLoopBodyStep,
+			upstreamVars: bodyScope.upstreamVars,
+			scopeEntries: bodyScope.scopeEntries,
+		};
+	}, [
+		editingStep,
+		scopeEntriesFor,
+		selectedLoopBodyStep,
+		templateVariablesFor,
+	]);
 
 	useEffect(() => {
 		const snapshot: AutomationInspectorSnapshot = {
 			description,
 			devMode,
 			readOnly: readOnly || viewingHistory,
-			editingStep,
-			upstreamVars: editingStep ? upstreamVarsFor(editingStep.id) : [],
-			stepRunStatus: editingStep
-				? displayStatuses[editingStep.id]
+			editingStep: inspectorContext.step,
+			editingNodeGroup: selectedNodeGroup,
+			upstreamVars: inspectorContext.upstreamVars,
+			scopeEntries: inspectorContext.scopeEntries,
+			stepRunStatus: inspectorContext.step
+				? displayStatuses[inspectorContext.step.id]
 				: undefined,
-			stepRunError: editingStep
-				? displayErrors[editingStep.id]
+			stepRunError: inspectorContext.step
+				? displayErrors[inspectorContext.step.id]
 				: undefined,
-			stepRunOutput: editingStep
-				? (stepOutputPreviews[editingStep.id] ?? null)
+			stepRunOutput: inspectorContext.step
+				? (stepOutputPreviews[inspectorContext.step.id] ?? null)
 				: null,
-			stepRunTrace: editingStep
+			stepRunTrace: inspectorContext.step
 				? displayResults.find(
-						(result) => result.NODE_ID === editingStep.id,
+						(result) =>
+							result.NODE_ID === inspectorContext.step?.id,
 					)?.trace
 				: undefined,
 		};
@@ -1477,24 +2427,83 @@ export const AutomationCanvasContent = forwardRef<
 		devMode,
 		readOnly,
 		viewingHistory,
-		editingStep,
+		inspectorContext,
 		onInspectorChange,
+		selectedNodeGroup,
 		displayErrors,
 		stepOutputPreviews,
 		displayStatuses,
 		displayResults,
-		upstreamVarsFor,
 	]);
 
 	const applyInspectorAction = useCallback(
 		(action: AutomationInspectorAction) => {
 			if ((readOnly || viewingHistory) && action.type !== "close") return;
 			switch (action.type) {
-				case "update-step":
-					updateStep(action.step);
+				case "update-step": {
+					const isBodyStep = Boolean(
+						editingStep?.type === "loop" &&
+							action.step.id !== editingStep.id &&
+							editingStep.body?.nodes.some(
+								(node) => node.id === action.step.id,
+							),
+					);
+					if (!isBodyStep || !editingStep) {
+						updateStep(action.step);
+						break;
+					}
+					updateStep({
+						...editingStep,
+						body: {
+							...(editingStep.body ?? { nodes: [], edges: [] }),
+							nodes: (editingStep.body?.nodes ?? []).map(
+								(node) =>
+									node.id === action.step.id
+										? action.step
+										: node,
+							),
+						},
+					});
 					break;
-				case "delete-step":
-					deleteStep(action.stepId);
+				}
+				case "delete-step": {
+					const isBodyStep = Boolean(
+						editingStep?.type === "loop" &&
+							editingStep.body?.nodes.some(
+								(node) => node.id === action.stepId,
+							),
+					);
+					if (!isBodyStep || !editingStep) {
+						deleteStep(action.stepId);
+						break;
+					}
+					const body = removeLoopBodyNode(
+						editingStep.body ?? { nodes: [], edges: [] },
+						action.stepId,
+					);
+					updateStep({ ...editingStep, body });
+					setSelectedBodyNodeId(body.nodes[0]?.id);
+					break;
+				}
+				case "update-node-group":
+					setNodeGroups((previous) =>
+						previous.map((group) =>
+							group.id === action.group.id ? action.group : group,
+						),
+					);
+					setIsDirty(true);
+					break;
+				case "delete-node-group":
+					setNodeGroups((previous) =>
+						previous.filter((group) => group.id !== action.groupId),
+					);
+					setCollapsedNodeGroupIds((previous) => {
+						const next = new Set(previous);
+						next.delete(action.groupId);
+						return next;
+					});
+					setSelectedNodeGroupId(null);
+					setIsDirty(true);
 					break;
 				case "update-description":
 					setDescription(action.description);
@@ -1503,11 +2512,26 @@ export const AutomationCanvasContent = forwardRef<
 					handleDevModeChange(action.devMode);
 					break;
 				case "close":
-					setEditingStepId(null);
+					if (selectedNodeGroupId) {
+						setSelectedNodeGroupId(null);
+					} else if (selectedBodyNodeId) {
+						setSelectedBodyNodeId(undefined);
+					} else {
+						setEditingStepId(null);
+					}
 					break;
 			}
 		},
-		[deleteStep, handleDevModeChange, readOnly, updateStep, viewingHistory],
+		[
+			deleteStep,
+			editingStep,
+			handleDevModeChange,
+			readOnly,
+			selectedBodyNodeId,
+			selectedNodeGroupId,
+			updateStep,
+			viewingHistory,
+		],
 	);
 
 	const save = useCallback(async (): Promise<boolean> => {
@@ -1543,21 +2567,35 @@ export const AutomationCanvasContent = forwardRef<
 				triggerBindings,
 				steps,
 				edges: graphEdges,
+				nodeGroups,
 			});
 			const nodeSources = getCanvasNodeSources(steps);
-			const definitionPayload = encodeBase64(JSON.stringify(definition));
-			const nodeSourcesPayload = encodeBase64(
+			const definitionPayload = encodeTextToBase64(
+				JSON.stringify(definition),
+			);
+			const nodeSourcesPayload = encodeTextToBase64(
 				JSON.stringify(nodeSources),
 			);
+			const expectedRevisionArgument = definitionRevisionRef.current
+				? `, expectedRevision=${JSON.stringify([definitionRevisionRef.current])}`
+				: "";
 			const response = await runPixel(
-				`SaveAutomation(project=${JSON.stringify([appId])}, json=${JSON.stringify([definitionPayload])}, nodeSources=${JSON.stringify([nodeSourcesPayload])});`,
+				`SaveAutomation(project=${JSON.stringify([appId])}, json=${JSON.stringify([definitionPayload])}, nodeSources=${JSON.stringify([nodeSourcesPayload])}${expectedRevisionArgument});`,
 			);
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join("\n"));
 			}
 			const output = response.pixelReturn?.[0]?.output as
-				| { nodeSources?: Record<string, string> }
+				| {
+						nodeSources?: Record<string, string>;
+						revision?: string;
+						scopeVariables?: Record<string, AutomationScopeEntry[]>;
+				  }
 				| undefined;
+			if (typeof output?.revision === "string") {
+				definitionRevisionRef.current = output.revision;
+			}
+			setScopeVariablesByNode(output?.scopeVariables ?? {});
 			if (output?.nodeSources) {
 				skipDraftPersistenceRef.current = true;
 				setSteps((previous) =>
@@ -1580,12 +2618,14 @@ export const AutomationCanvasContent = forwardRef<
 			toast.success("Automation saved");
 			return true;
 		} catch (error) {
+			const message =
+				error instanceof Error
+					? normalizeAutomationErrorMessage(error.message)
+					: "Unknown error";
 			toast.error(
-				`Save failed: ${
-					error instanceof Error
-						? normalizeAutomationErrorMessage(error.message)
-						: "Unknown error"
-				}`,
+				message.includes("Automation changed since it was loaded")
+					? "Save blocked because this automation changed elsewhere. Your draft is still here; reload the saved workflow before reapplying it."
+					: `Save failed: ${message}`,
 			);
 			return false;
 		} finally {
@@ -1595,6 +2635,7 @@ export const AutomationCanvasContent = forwardRef<
 		appId,
 		description,
 		graphEdges,
+		nodeGroups,
 		readOnly,
 		steps,
 		triggerBindings,
@@ -1606,6 +2647,47 @@ export const AutomationCanvasContent = forwardRef<
 		[isDirty, save],
 	);
 
+	const syncPythonSource = useCallback(
+		(stepId: string, source: string) => {
+			if (readOnly || viewingHistory) return;
+			const step = steps.find((candidate) => candidate.id === stepId);
+			if (step) {
+				updateStep({
+					...step,
+					workflowCodeMode: "custom",
+					workflowConfig: {
+						...step.workflowConfig,
+						pythonSource: source,
+					},
+				});
+				return;
+			}
+			const parentLoop = steps.find((candidate) =>
+				candidate.body?.nodes.some((node) => node.id === stepId),
+			);
+			if (!parentLoop?.body) return;
+			updateStep({
+				...parentLoop,
+				body: {
+					...parentLoop.body,
+					nodes: parentLoop.body.nodes.map((node) =>
+						node.id === stepId
+							? {
+									...node,
+									workflowCodeMode: "custom",
+									workflowConfig: {
+										...node.workflowConfig,
+										pythonSource: source,
+									},
+								}
+							: node,
+					),
+				},
+			});
+		},
+		[readOnly, steps, updateStep, viewingHistory],
+	);
+
 	useImperativeHandle(
 		ref,
 		() => ({
@@ -1614,6 +2696,7 @@ export const AutomationCanvasContent = forwardRef<
 			refresh,
 			viewHistoricalRun,
 			exitHistoricalView,
+			syncPythonSource,
 		}),
 		[
 			applyInspectorAction,
@@ -1621,6 +2704,7 @@ export const AutomationCanvasContent = forwardRef<
 			refresh,
 			viewHistoricalRun,
 			exitHistoricalView,
+			syncPythonSource,
 		],
 	);
 
@@ -1674,11 +2758,13 @@ export const AutomationCanvasContent = forwardRef<
 			setLatestRunStatus(runData.STATUS);
 			setRunning(runData.STATUS === "RUNNING");
 			setLatestRunResults(nodeResults);
+			setScopeSampleResults(nodeResults);
 			setLatestRunDefinition({
 				version: runData.DEFINITION_VERSION,
 				hash: runData.DEFINITION_HASH,
 				snapshot: runData.DEFINITION_SNAPSHOT,
 			});
+			setActiveRun(runData);
 		},
 		[steps],
 	);
@@ -1691,27 +2777,39 @@ export const AutomationCanvasContent = forwardRef<
 			return;
 		}
 		restoredActiveRunForProjectRef.current = appId;
+		setScopeSampleResults([]);
 		let cancelled = false;
 		void listAutomationRuns(appId, 20)
-			.then((runs) =>
-				runs.find(
+			.then((runs) => {
+				const activeRun = runs.find(
 					(run) =>
 						run.STATUS === "WAITING_FOR_INPUT" ||
 						run.STATUS === "RUNNING",
-				),
-			)
-			.then((activeRun) =>
-				activeRun ? getAutomationRun(appId, activeRun.RUN_ID) : null,
-			)
-			.then((activeRun) => {
-				if (!cancelled && activeRun) {
-					applyRunData(activeRun);
-					setAiRunSummary(activeRun.RESULT_SUMMARY ?? null);
-					setLiveRunId(activeRun.RUN_ID);
+				);
+				const scopeSampleRun =
+					activeRun ??
+					runs.find((run) => run.STATUS === "SUCCESS") ??
+					runs[0];
+				return scopeSampleRun
+					? getAutomationRun(appId, scopeSampleRun.RUN_ID)
+					: null;
+			})
+			.then((run) => {
+				if (!cancelled && run) {
+					if (
+						run.STATUS === "WAITING_FOR_INPUT" ||
+						run.STATUS === "RUNNING"
+					) {
+						applyRunData(run);
+						setAiRunSummary(run.RESULT_SUMMARY ?? null);
+						setLiveRunId(run.RUN_ID);
+					} else {
+						setScopeSampleResults(run.nodeResults ?? []);
+					}
 				}
 			})
 			.catch(() => {
-				// Run history remains available if best-effort active-run restoration fails.
+				// Run history remains available if best-effort scope restoration fails.
 			});
 		return () => {
 			cancelled = true;
@@ -1784,6 +2882,7 @@ export const AutomationCanvasContent = forwardRef<
 				}));
 			}
 			setLatestRunResults((previous) => {
+				if (progress.PARENT_NODE_ID) return previous;
 				const existing = previous.find(
 					(result) => result.NODE_ID === nodeId,
 				);
@@ -1870,14 +2969,20 @@ export const AutomationCanvasContent = forwardRef<
 		const invalidSteps = steps.filter(
 			(step) =>
 				step.workflowType !== "trigger.start" &&
-				validateCanvasWorkflowNode(step, steps).length > 0,
+				[
+					...validateCanvasWorkflowNode(step, steps),
+					...validateCanvasWorkflowConnections(step, graphEdges),
+				].length > 0,
 		);
 		if (invalidSteps.length > 0) {
 			const firstInvalidStep = invalidSteps[0];
-			const firstIssue = validateCanvasWorkflowNode(
-				firstInvalidStep,
-				steps,
-			)[0];
+			const firstIssue = [
+				...validateCanvasWorkflowNode(firstInvalidStep, steps),
+				...validateCanvasWorkflowConnections(
+					firstInvalidStep,
+					graphEdges,
+				),
+			][0];
 			toast.error(
 				`Cannot run: "${firstInvalidStep.label}" needs ${firstIssue ?? "required information"}.${invalidSteps.length > 1 ? ` Review ${invalidSteps.length - 1} other highlighted step${invalidSteps.length === 2 ? "" : "s"}.` : ""}`,
 			);
@@ -1896,6 +3001,7 @@ export const AutomationCanvasContent = forwardRef<
 		setLatestRunStatus("RUNNING");
 		setLatestRunResults([]);
 		setLatestRunDefinition(null);
+		setActiveRun(null);
 		setLiveRunId(null);
 		try {
 			const { jobId } = await runPixelAsync(
@@ -1946,7 +3052,15 @@ export const AutomationCanvasContent = forwardRef<
 					"Automation did not return completed run details.",
 				);
 			}
-			applyRunData(finalDetail);
+			// TriggerAutomation returns the durable result, while GetAutomationRun also
+			// decorates live row-shaped outputs with their standard SEMOSS frame nouns.
+			// Re-read the canonical detail once at completion so the result panel can
+			// page the frame immediately instead of briefly falling back to raw JSON.
+			const completedDetail = await getAutomationRun(
+				appId,
+				finalDetail.RUN_ID,
+			).catch(() => finalDetail);
+			applyRunData(completedDetail);
 			setAiRunSummary(finalDetail.RESULT_SUMMARY ?? null);
 			notifyHistoryChanged();
 			if (finalDetail.STATUS === "SUCCESS") {
@@ -2050,6 +3164,7 @@ export const AutomationCanvasContent = forwardRef<
 		applyNodeProgress,
 		applyRunData,
 		applyRunStarted,
+		graphEdges,
 		mcpContext,
 		mcpMode,
 		notifyHistoryChanged,
@@ -2149,8 +3264,208 @@ export const AutomationCanvasContent = forwardRef<
 				highlightedPathEdgeIds.has(edge.id),
 				edgeColor,
 			);
+		const getLoopBodyEdgeStrokeColor = (edge: AutomationEdge): string =>
+			getFlowStrokeColor(
+				hasStarted(edge.source)
+					? displayStatuses[edge.target]
+					: undefined,
+				selectedLoopBodyPath.edgeIds.has(edge.id),
+				edgeColor,
+				LOOP_PATH_HIGHLIGHT_COLOR,
+			);
+		const selectedRootNodeIds = new Set(
+			displaySteps
+				.filter((step) => groupSelectionIds.has(step.id))
+				.map((step) => step.id),
+		);
+		const isGroupSelection = (nodeId: string): boolean =>
+			selectedRootNodeIds.has(nodeId);
+		const visibleNodeGroups = displayNodeGroups;
+		const collapsedNodeIds = new Set(
+			visibleNodeGroups
+				.filter((group) => collapsedNodeGroupIds.has(group.id))
+				.flatMap((group) => {
+					const members = displaySteps.filter((step) =>
+						group.nodeIds.includes(step.id),
+					);
+					return members.flatMap((step) => [
+						step.id,
+						...(step.body?.nodes.map((node) => node.id) ?? []),
+					]);
+				}),
+		);
+		const collapsedGroupByNodeId = new Map<string, AutomationNodeGroup>();
+		const collapsedGroupPorts = new Map<
+			string,
+			Array<{ id: string; type: "source" | "target" }>
+		>();
+		for (const group of visibleNodeGroups) {
+			if (!collapsedNodeGroupIds.has(group.id)) continue;
+			for (const nodeId of group.nodeIds) {
+				if (!collapsedGroupByNodeId.has(nodeId)) {
+					collapsedGroupByNodeId.set(nodeId, group);
+				}
+			}
+		}
+		for (const edge of displayEdges) {
+			const sourceGroup = collapsedGroupByNodeId.get(edge.source);
+			const targetGroup = collapsedGroupByNodeId.get(edge.target);
+			if (sourceGroup?.id && sourceGroup.id === targetGroup?.id) continue;
+			if (sourceGroup) {
+				const ports = collapsedGroupPorts.get(sourceGroup.id) ?? [];
+				ports.push({ id: `group-source-${edge.id}`, type: "source" });
+				collapsedGroupPorts.set(sourceGroup.id, ports);
+			}
+			if (targetGroup) {
+				const ports = collapsedGroupPorts.get(targetGroup.id) ?? [];
+				ports.push({ id: `group-target-${edge.id}`, type: "target" });
+				collapsedGroupPorts.set(targetGroup.id, ports);
+			}
+		}
+		for (const group of visibleNodeGroups) {
+			const members = displaySteps.filter((node) =>
+				group.nodeIds.includes(node.id),
+			);
+			if (members.length === 0) continue;
+			const isGroupCollapsed = collapsedNodeGroupIds.has(group.id);
+			const positionedMembers = members.map((node) => ({
+				...node,
+				position: {
+					x:
+						node.position.x +
+						(expandedNodeOffsets.get(node.id) ?? 0),
+					y: node.position.y,
+				},
+			}));
+			const left = Math.min(
+				...positionedMembers.map((node) => node.position.x),
+			);
+			const top = Math.min(
+				...positionedMembers.map((node) => node.position.y),
+			);
+			const right = Math.max(
+				...positionedMembers.map(
+					(node) =>
+						node.position.x +
+						canvasNodeDimensions(node, expandedLoopIds.has(node.id))
+							.width,
+				),
+			);
+			const bottom = Math.max(
+				...positionedMembers.map(
+					(node) =>
+						node.position.y +
+						canvasNodeDimensions(node, expandedLoopIds.has(node.id))
+							.height,
+				),
+			);
+			const padding = 28;
+			newNodes.push({
+				id: `node-group-${group.id}`,
+				type: "nodeGroup",
+				position: { x: left - padding, y: top - padding - 12 },
+				data: {
+					group,
+					collapsed: isGroupCollapsed,
+					members: members.slice(0, 3),
+					memberCount: members.length,
+					ports: (collapsedGroupPorts.get(group.id) ?? []).map(
+						(port, index, ports) => ({
+							...port,
+							position: ((index + 1) / (ports.length + 1)) * 100,
+						}),
+					),
+					onSelect: (groupId: string) => {
+						setSelectedNodeGroupId(groupId);
+						setEditingStepId(null);
+						setSelectedBodyNodeId(undefined);
+					},
+					onToggle: (groupId: string) => {
+						const viewport =
+							reactFlowInstanceRef.current?.getViewport();
+						initialViewFittedRef.current = true;
+						const willCollapse =
+							!collapsedNodeGroupIds.has(groupId);
+						if (willCollapse) {
+							const memberIds = new Set(
+								visibleNodeGroups.find(
+									(item) => item.id === groupId,
+								)?.nodeIds ?? [],
+							);
+							for (const memberId of memberIds) {
+								selectedNodeIdsRef.current.delete(memberId);
+							}
+							setGroupSelectionIds(
+								(previous) =>
+									new Set(
+										[...previous].filter(
+											(nodeId) => !memberIds.has(nodeId),
+										),
+									),
+							);
+							const expandedMemberLoops = new Set(
+								displaySteps
+									.filter(
+										(step) =>
+											memberIds.has(step.id) &&
+											step.type === "loop",
+									)
+									.map((step) => step.id),
+							);
+							setExpandedLoopIds((previous) => {
+								const next = new Set(previous);
+								for (const loopId of expandedMemberLoops) {
+									next.delete(loopId);
+								}
+								return next;
+							});
+							setRfNodes((previous) =>
+								previous.map((node) =>
+									memberIds.has(node.id)
+										? { ...node, selected: false }
+										: node,
+								),
+							);
+						}
+						setCollapsedNodeGroupIds((previous) => {
+							const next = new Set(previous);
+							if (next.has(groupId)) next.delete(groupId);
+							else next.add(groupId);
+							return next;
+						});
+						if (viewport) {
+							window.requestAnimationFrame(() => {
+								void reactFlowInstanceRef.current?.setViewport(
+									viewport,
+									{ duration: 0 },
+								);
+							});
+						}
+					},
+				},
+				selectable: false,
+				focusable: false,
+				draggable: false,
+				zIndex: 0,
+				style: {
+					width: isGroupCollapsed
+						? NODE_WIDTH
+						: right - left + padding * 2,
+					height: isGroupCollapsed
+						? 72 +
+							Math.min(members.length, 3) * 36 +
+							(members.length > 3 ? 22 : 0)
+						: bottom - top + padding * 2 + 12,
+				},
+			});
+		}
 
 		displaySteps.forEach((step) => {
+			const expansionOffset = expandedNodeOffsets.get(step.id) ?? 0;
+			const displayPosition = {
+				x: step.position.x + expansionOffset,
+				y: step.position.y,
+			};
 			const outgoingEdges = displayEdges.filter(
 				(item) => item.source === step.id,
 			);
@@ -2159,7 +3474,7 @@ export const AutomationCanvasContent = forwardRef<
 				newNodes.push({
 					id: step.id,
 					type: "trigger",
-					position: step.position,
+					position: displayPosition,
 					data: {
 						label: description.trim() || "Start",
 						devMode,
@@ -2182,12 +3497,16 @@ export const AutomationCanvasContent = forwardRef<
 							displayStatuses[step.id] ??
 							(running ? "running" : undefined),
 						pathHighlighted: highlightedPathNodeIds.has(step.id),
+						groupSelectionActive: isGroupSelection(step.id),
+						hasOutgoingControlEdge: outgoingEdges.some(
+							(edge) => edge.kind === "control",
+						),
 					},
 					draggable: true,
-					style: { width: NODE_WIDTH },
+					style: { width: TRIGGER_NODE_WIDTH },
 				});
 			} else if (step.type === "branch") {
-				const branchConfig = step.config as BranchConfig;
+				const branchConfig = step.config as RoutingConfig;
 				const handleColors: Record<string, string> = {};
 				for (const clause of branchConfig.clauses) {
 					const handleId = `case-${step.id}-${clause.id}`;
@@ -2209,13 +3528,63 @@ export const AutomationCanvasContent = forwardRef<
 				newNodes.push({
 					id: step.id,
 					type: "branch",
-					position: step.position,
+					position: displayPosition,
 					data: {
 						step,
 						index: stepDisplayOrder.get(step.id) ?? 0,
 						runStatus: displayStatuses[step.id],
 						runError: displayErrors[step.id],
 						runDuration: displayDurations[step.id],
+						isIncomplete:
+							[
+								...validateCanvasWorkflowNode(step, steps),
+								...validateCanvasWorkflowConnections(
+									step,
+									graphEdges,
+								),
+							].length > 0 && !displayStatuses[step.id],
+						locked: running || readOnly || viewingHistory,
+						highlighted: isStepHighlighted(
+							changeHighlight,
+							step.id,
+						),
+						handleColors,
+						pathHighlighted: highlightedPathNodeIds.has(step.id),
+						groupSelectionActive: isGroupSelection(step.id),
+					},
+					style: { width: NODE_WIDTH },
+				});
+			} else if (step.type === "loop") {
+				const body = step.body ?? { nodes: [], edges: [] };
+				const isLoopExpanded = expandedLoopIds.has(step.id);
+				const bodyNodesAreUnpositioned = body.nodes.every(
+					(node) => node.position.x === 0 && node.position.y === 0,
+				);
+				const bodyNodes =
+					bodyNodesAreUnpositioned && body.nodes.length > 1
+						? layoutLoopBodyNodes(body)
+						: body.nodes;
+				const bodyLeft = LOOP_BODY_OFFSET_X;
+				const bodyTop = LOOP_BODY_OFFSET_Y;
+				const loopDimensions = canvasNodeDimensions(
+					step,
+					isLoopExpanded,
+				);
+				newNodes.push({
+					id: step.id,
+					type: "loop",
+					position: displayPosition,
+					zIndex: expandedLoopIds.has(step.id) ? 10 : 0,
+					data: {
+						step,
+						index: stepDisplayOrder.get(step.id) ?? 0,
+						runStatus: displayStatuses[step.id],
+						runError: displayErrors[step.id],
+						runDuration: displayDurations[step.id],
+						runOutput: stepOutputPreviews[step.id] ?? null,
+						hasOutgoingControlEdge: outgoingEdges.some(
+							(edge) => edge.kind === "control",
+						),
 						isIncomplete:
 							validateCanvasWorkflowNode(step, steps).length >
 								0 && !displayStatuses[step.id],
@@ -2224,11 +3593,176 @@ export const AutomationCanvasContent = forwardRef<
 							changeHighlight,
 							step.id,
 						),
-						handleColors,
 						pathHighlighted: highlightedPathNodeIds.has(step.id),
+						groupSelectionActive: isGroupSelection(step.id),
+						expanded: expandedLoopIds.has(step.id),
+						onExpandedChange: (expanded: boolean) =>
+							setLoopExpanded(step.id, expanded),
+						onFocusExpanded: () => {
+							window.requestAnimationFrame(() => {
+								window.requestAnimationFrame(() => {
+									reactFlowInstanceRef.current?.fitView({
+										nodes: [{ id: step.id }],
+										padding: 0.2,
+										duration: 250,
+										maxZoom: 1,
+									});
+								});
+							});
+						},
+						onFocusCollapsed: () => {
+							window.requestAnimationFrame(() => {
+								window.requestAnimationFrame(() => {
+									reactFlowInstanceRef.current?.fitView({
+										padding: 0.2,
+										duration: 250,
+										maxZoom: 1,
+									});
+								});
+							});
+						},
+						onAddBodyStep: () => {
+							setAddingToLoopId(step.id);
+							setLoopBodyInsertionPoint(null);
+							setAddAfterStepId(null);
+							setAddAfterHandle(null);
+							setShowAddMenu(true);
+						},
 					},
-					style: { width: NODE_WIDTH },
+					style: {
+						width: loopDimensions.width,
+						height: isLoopExpanded
+							? loopDimensions.height
+							: undefined,
+						pointerEvents: isLoopExpanded ? "none" : "auto",
+					},
 				});
+				if (isLoopExpanded && !collapsedNodeIds.has(step.id)) {
+					bodyNodes.forEach((bodyNode, bodyIndex) => {
+						const isBranch = bodyNode.type === "branch";
+						const bodyOutgoingEdges = body.edges.filter(
+							(edge) => edge.source === bodyNode.id,
+						);
+						const handleColors: Record<string, string> = {};
+						if (isBranch) {
+							const branchConfig =
+								bodyNode.config as RoutingConfig;
+							for (const clause of branchConfig.clauses) {
+								const handleId = `case-${bodyNode.id}-${clause.id}`;
+								const edge = bodyOutgoingEdges.find(
+									(item) => item.sourceHandle === handleId,
+								);
+								handleColors[handleId] = edge
+									? getLoopBodyEdgeStrokeColor(edge)
+									: edgeColor;
+							}
+							const elseHandleId = `else-${bodyNode.id}`;
+							const elseEdge = bodyOutgoingEdges.find(
+								(item) => item.sourceHandle === elseHandleId,
+							);
+							handleColors[elseHandleId] = elseEdge
+								? getLoopBodyEdgeStrokeColor(elseEdge)
+								: edgeColor;
+						}
+						newNodes.push({
+							id: bodyNode.id,
+							type: isBranch ? "branch" : "automation",
+							position: {
+								x:
+									displayPosition.x +
+									bodyLeft +
+									bodyNode.position.x,
+								y:
+									displayPosition.y +
+									bodyTop +
+									bodyNode.position.y,
+							},
+							zIndex: 12,
+							data: {
+								step: bodyNode,
+								index: bodyIndex,
+								runStatus: displayStatuses[bodyNode.id],
+								runError: displayErrors[bodyNode.id],
+								runDuration: displayDurations[bodyNode.id],
+								runOutput:
+									stepOutputPreviews[bodyNode.id] ?? null,
+								hasOutgoingControlEdge: bodyOutgoingEdges.some(
+									(edge) => edge.kind === "control",
+								),
+								runTrace: displayResults.find(
+									(result) => result.NODE_ID === bodyNode.id,
+								)?.trace,
+								isIncomplete:
+									validateCanvasWorkflowNode(
+										bodyNode,
+										body.nodes,
+									).length > 0 &&
+									!displayStatuses[bodyNode.id],
+								locked: running || readOnly || viewingHistory,
+								highlighted: isStepHighlighted(
+									changeHighlight,
+									bodyNode.id,
+								),
+								handleColors,
+								pathHighlighted:
+									selectedLoopBodyPath.nodeIds.has(
+										bodyNode.id,
+									),
+								loopPathHighlighted:
+									selectedLoopBodyPath.nodeIds.has(
+										bodyNode.id,
+									),
+								onMoveOut:
+									bodyNode.type === "branch" ||
+									bodyNode.type === "loop"
+										? undefined
+										: () =>
+												moveBodyNodeOut(
+													step.id,
+													bodyNode.id,
+												),
+							},
+							style: { width: NODE_WIDTH },
+						});
+						bodyOutgoingEdges.forEach((edge, laneIndex) => {
+							const strokeColor =
+								getLoopBodyEdgeStrokeColor(edge);
+							newEdges.push({
+								...edge,
+								id: `loop-${step.id}-${edge.id}`,
+								sourceHandle:
+									edge.sourceHandle ?? `out-${edge.source}`,
+								targetHandle:
+									edge.targetHandle ?? `in-${edge.target}`,
+								type: "deletable",
+								markerEnd: {
+									type: MarkerType.ArrowClosed,
+									width: 12,
+									height: 12,
+									color: strokeColor,
+								},
+								style: {
+									stroke: strokeColor,
+									strokeWidth: 1.5,
+								},
+								data: {
+									onDelete:
+										readOnly || viewingHistory
+											? undefined
+											: () =>
+													deleteLoopBodyEdge(
+														step.id,
+														edge.id,
+													),
+									readOnly: readOnly || viewingHistory,
+									hovered: edge.id === hoveredEdgeId,
+									laneIndex,
+									laneCount: bodyOutgoingEdges.length,
+								},
+							});
+						});
+					});
+				}
 			} else {
 				const runTrace = displayResults.find(
 					(result) => result.NODE_ID === step.id,
@@ -2236,7 +3770,7 @@ export const AutomationCanvasContent = forwardRef<
 				newNodes.push({
 					id: step.id,
 					type: "automation",
-					position: step.position,
+					position: displayPosition,
 					data: {
 						step,
 						index: stepDisplayOrder.get(step.id) ?? 0,
@@ -2245,6 +3779,9 @@ export const AutomationCanvasContent = forwardRef<
 						runDuration: displayDurations[step.id],
 						runOutput: stepOutputPreviews[step.id] ?? null,
 						runTrace,
+						hasOutgoingControlEdge: outgoingEdges.some(
+							(edge) => edge.kind === "control",
+						),
 						isIncomplete:
 							validateCanvasWorkflowNode(step, steps).length >
 								0 && !displayStatuses[step.id],
@@ -2254,16 +3791,37 @@ export const AutomationCanvasContent = forwardRef<
 							step.id,
 						),
 						pathHighlighted: highlightedPathNodeIds.has(step.id),
+						groupSelectionActive: isGroupSelection(step.id),
 					},
 					style: { width: NODE_WIDTH },
 				});
 			}
 
-			for (const edge of outgoingEdges) {
+			outgoingEdges.forEach((edge, laneIndex) => {
+				const sourceGroup = collapsedGroupByNodeId.get(edge.source);
+				const targetGroup = collapsedGroupByNodeId.get(edge.target);
+				if (sourceGroup && sourceGroup.id === targetGroup?.id) return;
+				const renderedEdgeId =
+					sourceGroup || targetGroup
+						? `group-edge-${edge.id}`
+						: edge.id;
 				const strokeColor = getEdgeStrokeColor(edge);
 				const isPathHighlighted = highlightedPathEdgeIds.has(edge.id);
 				newEdges.push({
 					...edge,
+					id: renderedEdgeId,
+					source: sourceGroup
+						? `node-group-${sourceGroup.id}`
+						: edge.source,
+					target: targetGroup
+						? `node-group-${targetGroup.id}`
+						: edge.target,
+					sourceHandle: sourceGroup
+						? `group-source-${edge.id}`
+						: edge.sourceHandle,
+					targetHandle: targetGroup
+						? `group-target-${edge.id}`
+						: edge.targetHandle,
 					type: "deletable",
 					markerEnd: {
 						type: MarkerType.ArrowClosed,
@@ -2276,24 +3834,51 @@ export const AutomationCanvasContent = forwardRef<
 						strokeWidth: isPathHighlighted ? 2.5 : 1.5,
 					},
 					data: {
-						onDelete: viewingHistory ? undefined : deleteEdge,
+						onDelete: viewingHistory
+							? undefined
+							: () => deleteEdge(edge.id),
 						readOnly: readOnly || viewingHistory,
-						hovered: edge.id === hoveredEdgeId,
+						hovered: renderedEdgeId === hoveredEdgeId,
+						laneIndex,
+						laneCount: outgoingEdges.length,
 					},
 				});
-			}
+			});
 		});
 
+		const renderedNodeIds = new Set(newNodes.map((node) => node.id));
+		for (const selectedNodeId of selectedNodeIdsRef.current) {
+			if (!renderedNodeIds.has(selectedNodeId)) {
+				selectedNodeIdsRef.current.delete(selectedNodeId);
+			}
+		}
+		for (const node of newNodes) {
+			if (collapsedNodeIds.has(node.id)) {
+				node.hidden = true;
+			}
+			if (
+				node.type !== "nodeGroup" &&
+				selectedNodeIdsRef.current.has(node.id)
+			) {
+				node.selected = true;
+			}
+		}
 		setRfNodes(newNodes);
 		setRfEdges(newEdges);
 	}, [
 		steps,
+		groupSelectionIds,
+		collapsedNodeGroupIds,
 		displaySteps,
+		displayNodeGroups,
 		displayEdges,
+		expandedLoopIds,
+		expandedNodeOffsets,
 		displayStatuses,
 		displayErrors,
 		displayDurations,
 		displayResults,
+		selectedLoopBodyPath,
 		viewingHistory,
 		stepOutputPreviews,
 		description,
@@ -2304,6 +3889,7 @@ export const AutomationCanvasContent = forwardRef<
 		stepDisplayOrder,
 		changeHighlight,
 		deleteEdge,
+		deleteLoopBodyEdge,
 		edgeColor,
 		hoveredEdgeId,
 		highlightedPathEdgeIds,
@@ -2311,6 +3897,8 @@ export const AutomationCanvasContent = forwardRef<
 		layoutNodes,
 		setRfNodes,
 		setRfEdges,
+		moveBodyNodeOut,
+		setLoopExpanded,
 	]);
 
 	useEffect(() => {
@@ -2354,20 +3942,214 @@ export const AutomationCanvasContent = forwardRef<
 		return () => cancelAnimationFrame(frame);
 	}, [canvasInitialized, rfNodes]);
 
+	const moveNodeBetweenGroups = useCallback(
+		(nodeId: string, targetGroupId?: string) => {
+			const targetGroup = targetGroupId
+				? nodeGroups.find((group) => group.id === targetGroupId)
+				: undefined;
+			if (targetGroupId && !targetGroup) return;
+			const currentGroupIds = nodeGroups
+				.filter((group) => group.nodeIds.includes(nodeId))
+				.map((group) => group.id);
+			if (
+				(targetGroup &&
+					currentGroupIds.length === 1 &&
+					currentGroupIds[0] === targetGroup.id) ||
+				(!targetGroup && currentGroupIds.length === 0)
+			) {
+				return;
+			}
+			const nextGroups = nodeGroups
+				.map((group) => ({
+					...group,
+					nodeIds: group.nodeIds.filter((id) => id !== nodeId),
+				}))
+				.filter((group) => group.nodeIds.length > 0);
+			if (targetGroup) {
+				const existingGroup = nextGroups.find(
+					(group) => group.id === targetGroup.id,
+				);
+				if (existingGroup) {
+					existingGroup.nodeIds.push(nodeId);
+				} else {
+					nextGroups.push({ ...targetGroup, nodeIds: [nodeId] });
+				}
+			}
+			setNodeGroups(nextGroups);
+			setIsDirty(true);
+		},
+		[nodeGroups],
+	);
+
 	// ---- Persist canvas positions ----
 	const onNodeDragStop = useCallback(
 		(_event: React.MouseEvent, draggedNode: Node) => {
 			if (readOnly || viewingHistory) return;
-			setSteps((previousSteps) =>
-				previousSteps.map((step) =>
-					step.id === draggedNode.id
-						? { ...step, position: { ...draggedNode.position } }
-						: step,
-				),
+			const containingLoop = steps.find((step) =>
+				step.body?.nodes.some((node) => node.id === draggedNode.id),
 			);
+			const nodeElements =
+				canvasContainerRef.current?.querySelectorAll<HTMLElement>(
+					".react-flow__node",
+				);
+			const draggedElement = Array.from(nodeElements ?? []).find(
+				(element) => element.dataset.id === draggedNode.id,
+			);
+			const draggedRect = draggedElement?.getBoundingClientRect();
+			let droppedIntoGroup = false;
+			if (draggedRect) {
+				const centerX = draggedRect.left + draggedRect.width / 2;
+				const centerY = draggedRect.top + draggedRect.height / 2;
+				const groupElements =
+					canvasContainerRef.current?.querySelectorAll<HTMLElement>(
+						"[data-group-id]",
+					);
+				const targetGroup = Array.from(groupElements ?? []).find(
+					(element) => {
+						const rect = element.getBoundingClientRect();
+						return (
+							centerX >= rect.left &&
+							centerX <= rect.right &&
+							centerY >= rect.top &&
+							centerY <= rect.bottom
+						);
+					},
+				);
+				if (containingLoop?.body) {
+					const loopElement = Array.from(
+						canvasContainerRef.current?.querySelectorAll<HTMLElement>(
+							".react-flow__node[data-id]",
+						) ?? [],
+					).find(
+						(element) => element.dataset.id === containingLoop.id,
+					);
+					const loopRect = loopElement?.getBoundingClientRect();
+					const remainsInsideLoop = Boolean(
+						loopRect &&
+							centerX >= loopRect.left &&
+							centerX <= loopRect.right &&
+							centerY >= loopRect.top &&
+							centerY <= loopRect.bottom,
+					);
+					if (!remainsInsideLoop) {
+						const movedOut = moveBodyNodeOut(
+							containingLoop.id,
+							draggedNode.id,
+							draggedNode.position,
+						);
+						if (movedOut) {
+							moveNodeBetweenGroups(
+								draggedNode.id,
+								targetGroup?.dataset.groupId,
+							);
+						}
+						return;
+					}
+					const loopDisplayX =
+						containingLoop.position.x +
+						(expandedNodeOffsets.get(containingLoop.id) ?? 0);
+					setSteps((previous) =>
+						previous.map((step) =>
+							step.id === containingLoop.id && step.body
+								? {
+										...step,
+										body: {
+											...step.body,
+											nodes: step.body.nodes.map(
+												(node) =>
+													node.id === draggedNode.id
+														? {
+																...node,
+																position: {
+																	x: Math.max(
+																		0,
+																		draggedNode
+																			.position
+																			.x -
+																			loopDisplayX -
+																			LOOP_BODY_OFFSET_X,
+																	),
+																	y: Math.max(
+																		0,
+																		draggedNode
+																			.position
+																			.y -
+																			containingLoop
+																				.position
+																				.y -
+																			LOOP_BODY_OFFSET_Y,
+																	),
+																},
+															}
+														: node,
+											),
+										},
+									}
+								: step,
+						),
+					);
+					setIsDirty(true);
+					return;
+				}
+				if (draggedNode.type !== "loop") {
+					const loopElements =
+						canvasContainerRef.current?.querySelectorAll<HTMLElement>(
+							"[data-loop-id]",
+						);
+					const targetLoop = Array.from(loopElements ?? []).find(
+						(element) => {
+							const rect = element.getBoundingClientRect();
+							return (
+								centerX >= rect.left &&
+								centerX <= rect.right &&
+								centerY >= rect.top &&
+								centerY <= rect.bottom
+							);
+						},
+					);
+					const loopId = targetLoop?.dataset.loopId;
+					if (loopId) {
+						moveNodeIntoLoop(draggedNode.id, loopId);
+						return;
+					}
+				}
+				moveNodeBetweenGroups(
+					draggedNode.id,
+					targetGroup?.dataset.groupId,
+				);
+				droppedIntoGroup = Boolean(targetGroup);
+			}
+			setSteps((previousSteps) => {
+				const positionedSteps = previousSteps.map((step) =>
+					step.id === draggedNode.id
+						? {
+								...step,
+								position: {
+									x:
+										draggedNode.position.x -
+										(expandedNodeOffsets.get(step.id) ?? 0),
+									y: draggedNode.position.y,
+								},
+							}
+						: step,
+				);
+				return droppedIntoGroup
+					? layoutNodes(positionedSteps, graphEdges)
+					: positionedSteps;
+			});
 			setIsDirty(true);
 		},
-		[readOnly, viewingHistory],
+		[
+			expandedNodeOffsets,
+			moveNodeIntoLoop,
+			moveNodeBetweenGroups,
+			moveBodyNodeOut,
+			steps,
+			graphEdges,
+			layoutNodes,
+			readOnly,
+			viewingHistory,
+		],
 	);
 
 	const cleanUpLayout = useCallback(() => {
@@ -2376,29 +4158,132 @@ export const AutomationCanvasContent = forwardRef<
 		setSteps((previous) => layoutNodes(previous, graphEdges));
 		setIsDirty(true);
 	}, [graphEdges, layoutNodes, readOnly, viewingHistory]);
-	const openNode = useCallback((nodeId: string) => {
-		setShowAddMenu(false);
-		setEditingStepId(nodeId);
-	}, []);
+	const selectedCanvasNodeIds = displaySteps
+		.filter((step) => groupSelectionIds.has(step.id))
+		.map((step) => step.id);
+	const openNodeGroupDialog = useCallback(
+		(group?: AutomationNodeGroup) => {
+			setEditingNodeGroupId(group?.id ?? null);
+			setNodeGroupName(group?.name ?? `Group ${nodeGroups.length + 1}`);
+			setIsNodeGroupDialogOpen(true);
+		},
+		[nodeGroups.length],
+	);
+	const saveNodeGroup = useCallback(() => {
+		const name = nodeGroupName.trim();
+		if (!name) {
+			toast.error("Enter a group name.");
+			return;
+		}
+		if (editingNodeGroupId) {
+			setNodeGroups((previous) =>
+				previous.map((group) =>
+					group.id === editingNodeGroupId
+						? { ...group, name }
+						: group,
+				),
+			);
+		} else {
+			if (selectedCanvasNodeIds.length < 2) {
+				toast.error("Select at least two nodes to create a group.");
+				return;
+			}
+			const groupedNodeIds = new Set(selectedCanvasNodeIds);
+			setNodeGroups((previous) => [
+				...previous
+					.map((group) => ({
+						...group,
+						nodeIds: group.nodeIds.filter(
+							(nodeId) => !groupedNodeIds.has(nodeId),
+						),
+					}))
+					.filter((group) => group.nodeIds.length > 0),
+				{
+					id: `group-${crypto.randomUUID()}`,
+					name,
+					nodeIds: selectedCanvasNodeIds,
+				},
+			]);
+			for (const nodeId of groupedNodeIds) {
+				selectedNodeIdsRef.current.delete(nodeId);
+			}
+			setGroupSelectionIds(new Set());
+			setRfNodes((previous) =>
+				previous.map((node) =>
+					groupedNodeIds.has(node.id)
+						? { ...node, selected: false }
+						: node,
+				),
+			);
+		}
+		setIsDirty(true);
+		setIsNodeGroupDialogOpen(false);
+		setEditingNodeGroupId(null);
+	}, [editingNodeGroupId, nodeGroupName, selectedCanvasNodeIds, setRfNodes]);
+	const openNode = useCallback(
+		(nodeId: string, bodyNodeId?: string) => {
+			const parentLoop = steps.find((step) =>
+				step.body?.nodes.some((node) => node.id === nodeId),
+			);
+			setShowAddMenu(false);
+			setEditingStepId(parentLoop?.id ?? nodeId);
+			setSelectedBodyNodeId(
+				bodyNodeId ?? (parentLoop ? nodeId : undefined),
+			);
+		},
+		[steps],
+	);
+	const openLoopEditor = useCallback(
+		(nodeId: string) => {
+			setShowAddMenu(false);
+			setLoopExpanded(nodeId, true);
+			setEditingStepId(nodeId);
+			setSelectedBodyNodeId(undefined);
+		},
+		[setLoopExpanded],
+	);
 	const addNodeAfter = useCallback(
 		(nodeId: string, sourceHandle?: string) => {
 			if (viewingHistory) return;
+			const parentLoop = steps.find((step) =>
+				step.body?.nodes.some((node) => node.id === nodeId),
+			);
+			if (parentLoop) {
+				setEditingStepId(parentLoop.id);
+				setSelectedBodyNodeId(nodeId);
+				setAddingToLoopId(parentLoop.id);
+				setLoopBodyInsertionPoint({
+					sourceId: nodeId,
+					sourceHandle: sourceHandle ?? `out-${nodeId}`,
+				});
+				setShowAddMenu(true);
+				return;
+			}
 			setEditingStepId(null);
+			setAddingToLoopId(null);
+			setLoopBodyInsertionPoint(null);
 			setAddAfterStepId(nodeId);
 			setAddAfterHandle(sourceHandle ?? null);
 			setShowAddMenu(true);
 		},
-		[viewingHistory],
+		[steps, viewingHistory],
 	);
 	const automationContextValue = useMemo(
 		() => ({
-			nodes: displaySteps,
+			nodes: displaySteps.flatMap((step) => [
+				step,
+				...(step.body?.nodes ?? []),
+			]),
 			readOnly,
 			viewingHistory,
 			running,
 			openNode,
+			openLoopEditor,
 			deleteNode: deleteStep,
+			deleteNodeAndDownstream: (nodeId: string) =>
+				setDeleteDownstreamStepId(nodeId),
 			addNodeAfter,
+			updateNode: updateStep,
 			viewAgentRun: onViewAgentRun,
 		}),
 		[
@@ -2406,9 +4291,11 @@ export const AutomationCanvasContent = forwardRef<
 			deleteStep,
 			displaySteps,
 			onViewAgentRun,
+			openLoopEditor,
 			openNode,
 			readOnly,
 			running,
+			updateStep,
 			viewingHistory,
 		],
 	);
@@ -2461,7 +4348,9 @@ export const AutomationCanvasContent = forwardRef<
 											<Button
 												size="sm"
 												variant="outline"
-												onClick={exitHistoricalView}
+												onClick={
+													handleExitHistoricalView
+												}
 											>
 												Return to editor
 											</Button>
@@ -2496,22 +4385,21 @@ export const AutomationCanvasContent = forwardRef<
 										nodeTypes={nodeTypes as never}
 										edgeTypes={edgeTypes as never}
 										nodesDraggable={
-											!readOnly &&
-											!viewingHistory &&
-											canvasMode === "interact"
+											!readOnly && !viewingHistory
 										}
 										nodesConnectable={
 											!readOnly &&
 											!viewingHistory &&
-											canvasMode === "interact" &&
 											!running
 										}
-										panOnDrag={
-											canvasMode === "pan" ? true : [2]
-										}
-										panOnScroll={canvasMode !== "pan"}
+										panOnDrag
+										panOnScroll
+										selectionOnDrag
+										selectionKeyCode={null}
+										selectionMode={SelectionMode.Partial}
+										multiSelectionKeyCode="Shift"
 										zoomOnPinch
-										zoomOnScroll={canvasMode === "pan"}
+										zoomOnScroll={false}
 										minZoom={0.3}
 										maxZoom={1.5}
 										defaultEdgeOptions={{
@@ -2530,21 +4418,101 @@ export const AutomationCanvasContent = forwardRef<
 										onPaneContextMenu={(event) =>
 											event.preventDefault()
 										}
-										onNodeClick={
-											canvasMode === "interact"
-												? (_e, node) => {
-														setShowAddMenu(false);
-														setEditingStepId(
-															node.id,
-														);
+										onNodeClick={(_event, node) => {
+											setShowAddMenu(false);
+											if (node.type === "nodeGroup") {
+												const group = (
+													node.data as {
+														group?: AutomationNodeGroup;
 													}
-												: undefined
-										}
-										onNodesChange={onRfNodesChange}
+												).group;
+												if (group) {
+													selectedNodeIdsRef.current.clear();
+													setGroupSelectionIds(
+														new Set(),
+													);
+													setSelectedNodeGroupId(
+														group.id,
+													);
+													setEditingStepId(null);
+													setSelectedBodyNodeId(
+														undefined,
+													);
+												}
+												return;
+											}
+											setSelectedNodeGroupId(null);
+											const parentLoop = steps.find(
+												(step) =>
+													step.body?.nodes.some(
+														(bodyNode) =>
+															bodyNode.id ===
+															node.id,
+													),
+											);
+											if (!parentLoop) {
+												const additive =
+													_event.shiftKey ||
+													_event.metaKey ||
+													_event.ctrlKey;
+												setGroupSelectionIds(
+													(previous) => {
+														const next = additive
+															? new Set(previous)
+															: new Set<string>();
+														if (
+															additive &&
+															next.has(node.id)
+														) {
+															next.delete(
+																node.id,
+															);
+														} else {
+															next.add(node.id);
+														}
+														selectedNodeIdsRef.current =
+															new Set(next);
+														return next;
+													},
+												);
+											} else if (
+												!_event.shiftKey &&
+												!_event.metaKey &&
+												!_event.ctrlKey
+											) {
+												selectedNodeIdsRef.current.clear();
+												setGroupSelectionIds(new Set());
+											}
+											setEditingStepId(
+												parentLoop?.id ?? node.id,
+											);
+											setSelectedBodyNodeId(
+												parentLoop
+													? node.id
+													: undefined,
+											);
+										}}
+										onNodesChange={handleRfNodesChange}
+										onSelectionEnd={() => {
+											const rootIds = new Set(
+												displaySteps
+													.filter((step) =>
+														selectedNodeIdsRef.current.has(
+															step.id,
+														),
+													)
+													.map((step) => step.id),
+											);
+											setGroupSelectionIds(rootIds);
+										}}
 										onNodeDragStop={onNodeDragStop}
 										onPaneClick={() => {
 											setShowAddMenu(false);
+											setSelectedNodeGroupId(null);
 											setEditingStepId(null);
+											setSelectedBodyNodeId(undefined);
+											selectedNodeIdsRef.current.clear();
+											setGroupSelectionIds(new Set());
 										}}
 										onConnect={onConnect}
 										onEdgeMouseEnter={(_e, edge) =>
@@ -2585,6 +4553,51 @@ export const AutomationCanvasContent = forwardRef<
 												</TooltipTrigger>
 												<TooltipContent side="bottom">
 													Reload the saved workflow
+												</TooltipContent>
+											</Tooltip>
+										)}
+										{!readOnly && (
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<span
+														tabIndex={
+															selectedCanvasNodeIds.length <
+															2
+																? 0
+																: -1
+														}
+														className="inline-flex"
+													>
+														<Button
+															size="sm"
+															variant="outline"
+															className="bg-background shadow-sm"
+															disabled={
+																selectedCanvasNodeIds.length <
+																2
+															}
+															onClick={() =>
+																openNodeGroupDialog()
+															}
+														>
+															<Layers3
+																className="mr-1.5 size-3.5"
+																aria-hidden
+															/>
+															Create Group
+														</Button>
+													</span>
+												</TooltipTrigger>
+												<TooltipContent side="bottom">
+													<span className="block">
+														Shift-click nodes or
+														Shift-drag a selection
+														box.
+													</span>
+													<span className="block">
+														Select at least two to
+														create a group.
+													</span>
 												</TooltipContent>
 											</Tooltip>
 										)}
@@ -2738,47 +4751,6 @@ export const AutomationCanvasContent = forwardRef<
 													<TooltipTrigger asChild>
 														<button
 															type="button"
-															aria-label="Interact mode"
-															onClick={() =>
-																setCanvasMode(
-																	"interact",
-																)
-															}
-															className={`flex items-center justify-center rounded p-1.5 transition-colors ${canvasMode === "interact" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-														>
-															<MousePointer2 className="h-4 w-4" />
-														</button>
-													</TooltipTrigger>
-													<TooltipContent side="top">
-														Interact mode (V)
-													</TooltipContent>
-												</Tooltip>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<button
-															type="button"
-															aria-label="Pan mode"
-															onClick={() =>
-																setCanvasMode(
-																	"pan",
-																)
-															}
-															className={`flex items-center justify-center rounded p-1.5 transition-colors ${canvasMode === "pan" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-														>
-															<Hand className="h-4 w-4" />
-														</button>
-													</TooltipTrigger>
-													<TooltipContent side="top">
-														Pan mode (H)
-													</TooltipContent>
-												</Tooltip>
-											</div>
-
-											<div className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5">
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<button
-															type="button"
 															aria-pressed={
 																!devMode
 															}
@@ -2866,14 +4838,108 @@ export const AutomationCanvasContent = forwardRef<
 			</Dialog>
 
 			<Dialog
+				open={deleteDownstreamStepId !== null}
+				onOpenChange={(open) => {
+					if (!open) setDeleteDownstreamStepId(null);
+				}}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>
+							Delete this step and everything after it?
+						</DialogTitle>
+						<DialogDescription>
+							This removes every step reachable from the selected
+							step. This action can be reviewed before saving.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setDeleteDownstreamStepId(null)}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={() => {
+								if (deleteDownstreamStepId) {
+									deleteStep(deleteDownstreamStepId, true);
+								}
+								setDeleteDownstreamStepId(null);
+							}}
+						>
+							Delete all
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={isNodeGroupDialogOpen}
+				onOpenChange={setIsNodeGroupDialogOpen}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>
+							{editingNodeGroupId
+								? "Rename Group"
+								: "Group nodes"}
+						</DialogTitle>
+						<DialogDescription>
+							{editingNodeGroupId
+								? "Update the title shown above this group."
+								: `Create a visual group around ${selectedCanvasNodeIds.length} selected nodes.`}
+						</DialogDescription>
+					</DialogHeader>
+					<Input
+						aria-label="Group name"
+						value={nodeGroupName}
+						onChange={(event) =>
+							setNodeGroupName(event.target.value)
+						}
+						placeholder="Group name"
+						autoFocus
+					/>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setIsNodeGroupDialogOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={saveNodeGroup}>
+							{editingNodeGroupId
+								? "Rename Group"
+								: "Create Group"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+			<Dialog
 				open={!readOnly && showAddMenu}
-				onOpenChange={setShowAddMenu}
+				onOpenChange={(open) => {
+					setShowAddMenu(open);
+					if (!open) {
+						setAddingToLoopId(null);
+						setLoopBodyInsertionPoint(null);
+					}
+				}}
 			>
 				<DialogContent className="flex h-[80vh] max-w-3xl flex-col p-0">
 					<DialogHeader className="sr-only">
 						<DialogTitle>Add workflow node</DialogTitle>
 					</DialogHeader>
-					<AddNodeMenu onSelect={addStep} />
+					<AddNodeMenu
+						onSelect={addStep}
+						nodeFilter={addingToLoopId ? canAddToLoop : undefined}
+						title={addingToLoopId ? "Add a loop step" : undefined}
+						description={
+							addingToLoopId
+								? "Choose an action to include in the loop."
+								: undefined
+						}
+					/>
 				</DialogContent>
 			</Dialog>
 		</AutomationContext.Provider>

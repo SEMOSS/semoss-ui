@@ -1,9 +1,6 @@
-/* eslint-disable */
-/** biome-ignore-all lint/nursery/useSortedClasses: using existing Tailwind order in this file */
-
 import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { Env, post, useInsight } from "@semoss/sdk/react";
 import {
@@ -32,6 +29,7 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
+	Spinner,
 	Tabs,
 	TabsContent,
 	TabsList,
@@ -41,6 +39,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
 
 type DocumentLibraryEngine = {
@@ -99,9 +98,16 @@ export const DocumentLibrary = () => {
 
 	const { actions } = useInsight();
 	const [data, setData] = useState([]);
+	const [loading, setLoading] = useState(true);
+	const [loadError, setLoadError] = useState(false);
+	const [reload, setReload] = useState(0);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: explicit retry counter restarts this read after an error.
 	useEffect(() => {
+		let active = true;
 		const getEngines = async () => {
+			setLoading(true);
+			setLoadError(false);
 			try {
 				const result = await actions.run(
 					`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"])`,
@@ -114,14 +120,20 @@ export const DocumentLibrary = () => {
 				}
 
 				const output = pixelData.output;
-				setData([output]);
+				if (active) setData([output]);
 			} catch (error) {
 				console.error("Error retrieving vectors", error);
+				if (active) setLoadError(true);
+			} finally {
+				if (active) setLoading(false);
 			}
 		};
 
-		getEngines();
-	}, [actions]);
+		void getEngines();
+		return () => {
+			active = false;
+		};
+	}, [actions, reload]);
 
 	const centers = useMemo(() => {
 		const tags = new Set<string>();
@@ -169,7 +181,7 @@ export const DocumentLibrary = () => {
 				if (cancelled) {
 					return;
 				}
-				setAssetsError(e instanceof Error ? e.message : String(e));
+				setAssetsError(getErrorMessage(e));
 			})
 			.finally(() => {
 				if (cancelled) {
@@ -260,7 +272,7 @@ export const DocumentLibrary = () => {
 				console.error(e);
 			}
 
-			return (matchesSearch && matchesCenter) || matchesName;
+			return (matchesSearch || matchesName) && matchesCenter;
 		})
 		.filter((item) => {
 			if (!showFavoritesOnly) return true;
@@ -312,7 +324,7 @@ export const DocumentLibrary = () => {
 
 	return (
 		<TooltipProvider>
-			<div className="space-y-6 p-6">
+			<div className="mx-auto h-full w-full max-w-5xl space-y-6 overflow-y-auto px-4 py-6 sm:px-6">
 				<NewKnowledgeOverlay
 					open={isNewKnowledgeOpen}
 					onClose={(knowledge) => {
@@ -362,17 +374,17 @@ export const DocumentLibrary = () => {
 							</DialogDescription>
 						</DialogHeader>
 
-						<div className="space-y-3">
+						<div className="space-y-3 px-0">
 							{isLoadingAssets ? (
-								<div className="text-sm text-muted-foreground">
+								<div className="text-muted-foreground text-sm">
 									{t("knowledge:messages.loadingDocuments")}
 								</div>
 							) : assetsError ? (
-								<div className="text-sm text-destructive">
+								<div className="text-destructive text-sm">
 									{assetsError}
 								</div>
 							) : documentFiles.length === 0 ? (
-								<div className="text-sm text-muted-foreground">
+								<div className="text-muted-foreground text-sm">
 									{t("knowledge:messages.noDocuments")}
 								</div>
 							) : (
@@ -383,11 +395,11 @@ export const DocumentLibrary = () => {
 											className="flex items-center justify-between gap-3 px-3 py-2"
 										>
 											<div className="min-w-0">
-												<p className="truncate text-sm font-medium">
+												<p className="truncate font-medium text-sm">
 													{getDisplayName(f)}
 												</p>
 												{getDisplayPath(f) ? (
-													<p className="truncate text-xs text-muted-foreground">
+													<p className="truncate text-muted-foreground text-xs">
 														{getDisplayPath(f)}
 													</p>
 												) : null}
@@ -400,9 +412,9 @@ export const DocumentLibrary = () => {
 					</DialogContent>
 				</Dialog>
 
-				<Card className="rounded-xl border-border bg-card shadow-sm">
-					<CardHeader className="pb-3">
-						<CardTitle className="text-xl">
+				<Card className="rounded-none border-0 border-b bg-transparent shadow-none">
+					<CardHeader className="px-0 pb-3">
+						<CardTitle className="text-2xl">
 							{t("knowledge:title")}{" "}
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -438,7 +450,7 @@ export const DocumentLibrary = () => {
 							{t("knowledge:subtitle")}
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-3">
+					<CardContent className="space-y-3 px-0">
 						<Tabs
 							value={libraryTab}
 							onValueChange={(v) =>
@@ -458,9 +470,12 @@ export const DocumentLibrary = () => {
 							</TabsList>
 							<TabsContent value={libraryTab}>
 								<div className="flex w-full flex-col gap-3">
-									<div className="flex w-full flex-row flex-wrap items-center gap-2 items-bottom">
-										<InputGroup className="min-w-[220px] flex-1 bg-background">
+									<div className="flex w-full flex-row flex-wrap items-center gap-2">
+										<InputGroup className="min-w-0 flex-1 basis-full bg-background sm:basis-auto">
 											<InputGroupInput
+												aria-label={t(
+													"common:buttons.search",
+												)}
 												placeholder={t(
 													"common:buttons.search",
 												)}
@@ -481,8 +496,10 @@ export const DocumentLibrary = () => {
 													size="sm"
 												>
 													{centerFilter.length === 0
-														? "Tags"
-														: `Tags (${centerFilter.length})`}
+														? t(
+																"knowledge:studio.tags",
+															)
+														: `${t("knowledge:studio.tags")} (${centerFilter.length})`}
 													<ChevronDown className="ms-1 h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
@@ -491,10 +508,16 @@ export const DocumentLibrary = () => {
 												align="start"
 											>
 												<Command>
-													<CommandInput placeholder="Search tags…" />
+													<CommandInput
+														placeholder={t(
+															"knowledge:studio.searchTags",
+														)}
+													/>
 													<CommandList className="max-h-[50vh]">
 														<CommandEmpty>
-															No tags found.
+															{t(
+																"knowledge:studio.noTags",
+															)}
 														</CommandEmpty>
 														<CommandGroup>
 															{centers.map(
@@ -559,7 +582,7 @@ export const DocumentLibrary = () => {
 														: "h-4 w-4"
 												}
 											/>
-											Favorites
+											{t("knowledge:studio.favorites")}
 										</Button>
 
 										<Popover>
@@ -569,8 +592,12 @@ export const DocumentLibrary = () => {
 													size="sm"
 												>
 													{sortBy === "name"
-														? "Sort: Name"
-														: "Sort: Date"}
+														? t(
+																"knowledge:studio.sortName",
+															)
+														: t(
+																"knowledge:studio.sortDate",
+															)}
 													<ChevronDown className="ms-1 h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
@@ -590,7 +617,9 @@ export const DocumentLibrary = () => {
 														setSortBy("name")
 													}
 												>
-													Name (A-Z)
+													{t(
+														"knowledge:studio.sortName",
+													)}
 												</Button>
 												<Button
 													variant={
@@ -604,7 +633,9 @@ export const DocumentLibrary = () => {
 														setSortBy("date")
 													}
 												>
-													Date (newest)
+													{t(
+														"knowledge:studio.sortDate",
+													)}
 												</Button>
 											</PopoverContent>
 										</Popover>
@@ -626,27 +657,40 @@ export const DocumentLibrary = () => {
 					</CardContent>
 				</Card>
 
-				{filteredItems.length > 0 ? (
-					<div className="max-h-[70vh] overflow-y-auto pe-1">
-						<div className="flex flex-col gap-2 max-w-3xl">
-							{filteredItems.map((item, index) => (
-								<button
-									type="button"
-									key={item.engine_name || item.id || index}
-									className="text-start w-full"
-									onClick={() =>
-										navigate(`/knowledge/${item.id}`)
-									}
-								>
-									<Card className="group transition hover:bg-muted/40">
-										<CardContent className="flex items-center gap-4 py-2">
+				{loading ? (
+					<div className="flex justify-center p-8">
+						<Spinner />
+					</div>
+				) : loadError ? (
+					<div
+						role="alert"
+						className="flex flex-col items-center gap-3 rounded-xl border p-6"
+					>
+						<p>{t("knowledge:studio.loadError")}</p>
+						<Button
+							variant="outline"
+							onClick={() => setReload((value) => value + 1)}
+						>
+							{t("knowledge:studio.retry")}
+						</Button>
+					</div>
+				) : filteredItems.length > 0 ? (
+					<div className="w-full">
+						<div className="flex flex-col gap-2">
+							{filteredItems.map((item) => (
+								<div key={item.id} className="w-full">
+									<Card className="group border-border bg-card shadow-none transition-colors hover:border-primary/30">
+										<CardContent className="flex flex-wrap items-center gap-3 p-3">
 											<div className="min-w-0 flex-1">
-												<div className="flex min-w-0 items-center gap-2">
-													<p className="min-w-0 truncate text-sm font-medium">
+												<div className="flex min-w-0 flex-wrap items-center gap-2">
+													<Link
+														to={`/knowledge/${item.id}`}
+														className="min-w-0 break-words font-medium text-foreground text-sm hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+													>
 														{item.name}
-													</p>
+													</Link>
 													{item.tag.length > 0 && (
-														<div className="flex shrink-0 flex-wrap gap-1">
+														<div className="flex min-w-0 flex-wrap gap-1">
 															{item.tag.map(
 																(tag) => (
 																	<Badge
@@ -665,7 +709,7 @@ export const DocumentLibrary = () => {
 												</div>
 											</div>
 											{item.dateCreated && (
-												<p className="w-44 shrink-0 text-end text-xs text-muted-foreground tabular-nums">
+												<p className="hidden shrink-0 text-end text-muted-foreground text-xs tabular-nums lg:block">
 													{formatDateTime(
 														item.dateCreated,
 													)}
@@ -683,7 +727,15 @@ export const DocumentLibrary = () => {
 																	item,
 																)
 															}
-															aria-label="Toggle favorite"
+															aria-label={t(
+																"knowledge:studio.favorite",
+															)}
+															aria-pressed={
+																favorites[
+																	item.id
+																] ??
+																item.favorite
+															}
 														>
 															<Bookmark
 																className={`h-4 w-4 ${
@@ -698,7 +750,9 @@ export const DocumentLibrary = () => {
 														</Button>
 													</TooltipTrigger>
 													<TooltipContent>
-														Favorite
+														{t(
+															"knowledge:studio.favorite",
+														)}
 													</TooltipContent>
 												</Tooltip>
 												<Button
@@ -718,7 +772,7 @@ export const DocumentLibrary = () => {
 											</div>
 										</CardContent>
 									</Card>
-								</button>
+								</div>
 							))}
 						</div>
 					</div>

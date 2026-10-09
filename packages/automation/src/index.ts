@@ -10,6 +10,7 @@ export {
 	AutomationInspectorPanel,
 	AutomationTracePanel,
 	AutomationWorkbenchContext,
+	useAutomationWorkbenchContext,
 } from "./components/automation-workbench-panels";
 export type {
 	AutomationCanvasHandle,
@@ -23,6 +24,7 @@ export type {
 	AutomationNode,
 	AutomationNodeTrace,
 	AutomationRunDetail,
+	AutomationRunSummary,
 	AutomationToolContext,
 } from "./domain/automation.types";
 export type {
@@ -39,7 +41,10 @@ export type {
 	AutomationInspectorSnapshot,
 } from "./domain/automation-inspector";
 export { downloadN8nExport } from "./domain/automation-to-n8n-adapter";
-export type { AutomationWorkflowDocument } from "./domain/automation-workflow.types";
+export type {
+	AutomationNodeGroup,
+	AutomationWorkflowDocument,
+} from "./domain/automation-workflow.types";
 export type { AutomationNodeSources } from "./domain/automation-workflow-adapter";
 export type {
 	N8nImportConversion,

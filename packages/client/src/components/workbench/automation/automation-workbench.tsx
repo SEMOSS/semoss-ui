@@ -18,6 +18,7 @@ import {
 	useState,
 } from "react";
 import { Link } from "react-router";
+import { useStore } from "zustand";
 import {
 	AgentRunDialog,
 	type AutomationCanvasHandle,
@@ -27,6 +28,7 @@ import {
 	type AutomationNodeTrace,
 	AutomationOutputModal,
 	type AutomationRunDetail,
+	type AutomationRunSummary,
 	AutomationTracePanel,
 	type AutomationTraceSnapshot,
 	AutomationWorkbenchContext,
@@ -34,9 +36,14 @@ import {
 	type N8nImportConversionInput,
 	type N8nImportConversionResult,
 } from "@semoss/automation";
-import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
-import { runPixel } from "@semoss/sdk";
-import { InsightProvider } from "@semoss/sdk/react";
+import {
+	FILE_PANEL_COMPONENTS,
+	FILE_PANEL_EVENTS,
+	type FileSavedEvent,
+	getFilePanelScope,
+} from "@semoss/panels";
+import { type Role, runPixel } from "@semoss/sdk";
+import { InsightProvider, useInsight } from "@semoss/sdk/react";
 import { type MCPConfig, MonacoEditor } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -54,23 +61,40 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	useCacheData,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
 import {
 	useWorkbench,
+	useWorkbenchCommands,
+	useWorkbenchEvent,
 	Workbench,
+	WorkbenchCommandMenuButton,
 	type WorkbenchComponent,
 	type WorkbenchLayout,
 	type WorkbenchPanelConfigAny,
+	WorkbenchResetButton,
+	type WorkbenchSnapshot,
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { stripMcpToolAlias } from "@/components/assistant/assistant-tools";
 import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { AssistantStoreProvider, WorkbenchProvider } from "@/contexts";
-import { useAssistantStore, useProject } from "@/hooks";
+import { useAssistantStore, useProject, useSession } from "@/hooks";
 import type { BuildTool } from "@/stores/assistant";
-import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
+import { AUTOMATION_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
+import {
+	createAutomationWorkbenchStore,
+	WORKBENCH_COMPONENTS,
+} from "@/stores/workbench";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../shared";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+} from "../workbench.presets";
+import { AUTOMATION_RUN_FILES_PANEL } from "./automation-run-files-panel";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
 
 const AUTOMATION_MUTATION_TOOLS = new Set([
@@ -79,10 +103,6 @@ const AUTOMATION_MUTATION_TOOLS = new Set([
 	"UpdateAutomationCustomStep",
 	"RemoveAutomationStep",
 ]);
-const AUTOMATION_BUILDER_AGENT = {
-	workspace_id: "workflow-automation-builder",
-	name: "Automation Building Agent",
-};
 const MAX_ASSISTANT_DRAFT_LENGTH = 8000;
 const SINGLE_STEP_ID_KEYS = ["stepId", "nodeId", "step_id", "node_id", "id"];
 const STEP_ID_LIST_KEYS = ["stepIds", "nodeIds", "step_ids", "node_ids", "ids"];
@@ -110,10 +130,60 @@ function extractChangedStepIds(
 const EDITOR = "automation-editor";
 const INSPECTOR = "automation-inspector";
 const TRACE = "automation-trace";
+const RUN_FILES = "automation-run-files";
 const FILES = WORKBENCH_COMPONENTS.FILE_EXPLORER;
 const FILE_EDITOR = WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
 const MCP_EDITOR = WORKBENCH_COMPONENTS.FILE_MCP_EDITOR;
 const SETTINGS = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
+// Backend writes each custom-Python node's compiled source here as a real
+// project asset (see SaveAutomation) — this is the same file the workflow
+// executes from.
+const AUTOMATION_NODES_ASSET_PATH = "/automation-nodes/";
+
+// Node ids are minted as `${type}-${crypto.randomUUID()}` (see automation-workflow-adapter.ts),
+// but the backend names each compiled asset after the step's label slug, not its type — e.g.
+// imported n8n steps get saved as "prepare_incident_context__<uuid>.py" instead of
+// "developer-python-<uuid>.py". The uuid suffix is the only part guaranteed to match.
+const UUID_PATTERN =
+	/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+/**
+ * Find the on-disk asset for a node's Python source, so the "Open Editor"
+ * button can open the real file instead of an in-memory copy of it.
+ *
+ * @param appId - Project the automation lives in.
+ * @param nodeId - Node whose compiled source file we're looking for.
+ * @return The asset's name/path, or null if none was found (e.g. the node
+ * hasn't been saved yet).
+ */
+async function findAutomationNodeAsset(
+	appId: string,
+	nodeId: string,
+): Promise<{ name: string; path: string } | null> {
+	const response = await runPixel(
+		`BrowseAppAssets(filePath=${JSON.stringify([
+			AUTOMATION_NODES_ASSET_PATH,
+		])}, project=${JSON.stringify([appId])});`,
+	);
+	if (response.errors.length > 0) return null;
+	const entries = response.pixelReturn?.[0]?.output;
+	if (!Array.isArray(entries)) return null;
+	const nodeUuid = nodeId.match(UUID_PATTERN)?.[0];
+	const match = entries.find(
+		(entry): entry is { name: string; path: string } => {
+			if (
+				!entry ||
+				typeof entry !== "object" ||
+				typeof (entry as { name?: unknown }).name !== "string"
+			) {
+				return false;
+			}
+			const name = (entry as { name: string }).name;
+			return nodeUuid ? name.includes(nodeUuid) : name.includes(nodeId);
+		},
+	);
+	return match ? { name: match.name, path: match.path } : null;
+}
 
 const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
 	{ name: "Overview", component: "project-overview" },
@@ -168,6 +238,12 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 			name: "Run details",
 			canClose: false,
 		},
+		[RUN_FILES]: {
+			id: RUN_FILES,
+			type: RUN_FILES,
+			name: "Run files",
+			canClose: false,
+		},
 		[SETTINGS]: {
 			id: SETTINGS,
 			type: SETTINGS,
@@ -188,7 +264,7 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 		},
 	},
 	borders: {
-		left: { panelIds: [FILES], activeId: null, size: 320 },
+		left: { panelIds: [FILES, RUN_FILES], activeId: null, size: 320 },
 		bottom: { panelIds: [TRACE], activeId: null, size: 300 },
 		right: {
 			panelIds: [INSPECTOR, WORKBENCH_COMPONENTS.ASSISTANT],
@@ -200,6 +276,7 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 
 interface AutomationWorkbenchProps {
 	appId: string;
+	permission: Role;
 	readOnly: boolean;
 	projectName: string;
 	catalogPath?: string;
@@ -224,11 +301,7 @@ function parseConversionModelOutput(
 			candidate = JSON.parse(normalized);
 			continue;
 		}
-		if (
-			candidate &&
-			typeof candidate === "object" &&
-			!Array.isArray(candidate)
-		) {
+		if (isRecord(candidate)) {
 			const object = candidate as Record<string, unknown>;
 			if (Array.isArray(object.conversions)) break;
 			const nested = object.response ?? object.output;
@@ -277,6 +350,11 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		canClose: false,
 		canRename: false,
 		icon: ({ className }) => <FileCode2Icon className={className} />,
+		// Without this, switching the main tabset to a Python file tab unmounts
+		// the canvas (default "lazy"), wiping editingStep/inspector selection
+		// and every other in-memory canvas state — it only ever shared a
+		// tabset with itself before file tabs could open alongside it.
+		mount: "keepAlive",
 		content: AutomationEditorPanel,
 	},
 	[INSPECTOR]: {
@@ -336,6 +414,7 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		mount: "keepAlive",
 		content: AutomationTracePanel,
 	},
+	[RUN_FILES]: AUTOMATION_RUN_FILES_PANEL,
 	[SETTINGS]: {
 		name: "Settings",
 		canRename: false,
@@ -350,18 +429,120 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 export const AutomationWorkbench = observer(
 	({
 		appId,
+		permission,
 		readOnly,
 		projectName,
 		catalogPath,
 		onShare,
 	}: AutomationWorkbenchProps) => {
 		const layoutActions = useWorkbench((state) => state.layout.actions);
+		const insight = useInsight();
 		const workbenchLayout = useMemo(
 			() => createAutomationLayout(appId),
 			[appId],
 		);
+		// Paths of every open Python-node file tab, so the inline editor can lock
+		// itself while the same file is being edited in a real editor tab.
+		// Selects the stable `panels` record, not a derived array — an inline
+		// filter/map here would return a new array reference on every store
+		// notification, defeating useSyncExternalStore's snapshot check and
+		// spinning into "Maximum update depth exceeded".
+		const panels = useWorkbench((state) => state.layout.panels);
+		const openPythonNodeFilePaths = useMemo(
+			() =>
+				Object.values(panels)
+					.filter((record) => record.type === FILE_EDITOR)
+					.map(
+						(record) =>
+							(record.config as { path?: string } | undefined)
+								?.path,
+					)
+					.filter((path): path is string => Boolean(path)),
+			[panels],
+		);
+		const isPythonFileOpen = useCallback(
+			(nodeId: string) => {
+				const nodeUuid = nodeId.match(UUID_PATTERN)?.[0];
+				return openPythonNodeFilePaths.some((path) =>
+					nodeUuid ? path.includes(nodeUuid) : path.includes(nodeId),
+				);
+			},
+			[openPythonNodeFilePaths],
+		);
 		const workbenchId = readOnly ? `${appId}--read-only` : appId;
+		const [workbenchSnapshot, onWorkbenchSnapshotChange] =
+			useCacheData<WorkbenchSnapshot>(
+				`workbench-layout--${workbenchId}--1`,
+				workbenchLayout,
+			);
+		const [automationStore] = useState(() =>
+			createAutomationWorkbenchStore(),
+		);
+		const traceSnapshot = useStore(
+			automationStore,
+			(state) => state.traceSnapshot,
+		);
+		const activeRuns = useStore(
+			automationStore,
+			(state) => state.activeRuns,
+		);
+		const followedRunId = useStore(
+			automationStore,
+			(state) => state.followedRunId,
+		);
+		const selectedRun = useStore(
+			automationStore,
+			(state) => state.selectedRun,
+		);
+		const historyRefreshToken = useStore(
+			automationStore,
+			(state) => state.historyRefreshToken,
+		);
+		const runDetailsFocus = useStore(
+			automationStore,
+			(state) => state.runDetailsFocus,
+		);
 		const assistantStore = useAssistantStore(workbenchId);
+		const syncPermission = useSession((state) => state.syncPermission);
+		const refreshPermission = useSession(
+			(state) => state.refreshPermission,
+		);
+
+		useEffect(() => {
+			syncPermission("PROJECT", appId, permission);
+			void refreshPermission("PROJECT", appId).catch(() => undefined);
+		}, [appId, permission, refreshPermission, syncPermission]);
+
+		useWorkbenchCommands([
+			createReconnectCommand(insight),
+			...createFileCommands({ readOnly }),
+			createOpenPanelCommand({
+				id: "workbench.automation-files.open",
+				label: "Open Project Files",
+				type: FILES,
+				config: { mode: { type: "APP", app: appId } },
+			}),
+			createOpenPanelCommand({
+				id: "workbench.automation-run-files.open",
+				label: "Open Run Files",
+				type: RUN_FILES,
+			}),
+			createOpenPanelCommand({
+				id: "workbench.automation-run-details.open",
+				label: "Open Run Details",
+				type: TRACE,
+			}),
+			createOpenPanelCommand({
+				id: "workbench.automation-inspector.open",
+				label: "Open Inspector",
+				type: INSPECTOR,
+			}),
+			createOpenPanelCommand({
+				id: "workbench.automation-settings.open",
+				label: "Open Settings",
+				type: SETTINGS,
+			}),
+		]);
 		const conversionModel = useCallback(
 			async (
 				input: N8nImportConversionInput,
@@ -405,12 +586,9 @@ export const AutomationWorkbench = observer(
 		);
 		const setAssistantDraft = assistantStore.getState().setDraft;
 		const canvasRef = useRef<AutomationCanvasHandle>(null);
-		const [traceSnapshot, setTraceSnapshot] =
-			useState<AutomationTraceSnapshot | null>(null);
 		const [outputModal, setOutputModal] = useState<string | null>(null);
 		const [inspectorSnapshot, setInspectorSnapshot] =
 			useState<AutomationInspectorSnapshot | null>(null);
-		const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
 		const [agentRunTrace, setAgentRunTrace] =
 			useState<AutomationNodeTrace | null>(null);
 		const [agentRunAutomationUpdate, setAgentRunAutomationUpdate] =
@@ -422,7 +600,10 @@ export const AutomationWorkbench = observer(
 			openedWith: string;
 		} | null>(null);
 		const wasRunningRef = useRef(false);
-		const editingStepIdRef = useRef<string | null>(null);
+		const inspectorSelectionRef = useRef<string | null>(null);
+		// Which node a Python-node file tab's path belongs to, so a save of it
+		// can be mirrored onto that node's in-memory step (see syncPythonSource).
+		const pythonNodeAssetPathsRef = useRef(new Map<string, string>());
 
 		const selectPanel = useCallback(
 			(panelId: string) => {
@@ -489,7 +670,7 @@ export const AutomationWorkbench = observer(
 		);
 		const handleTraceChange = useCallback(
 			(snapshot: AutomationTraceSnapshot) => {
-				setTraceSnapshot(snapshot);
+				automationStore.getState().setTraceSnapshot(snapshot);
 				// Only switch tabs on the false->true transition — the canvas re-emits this
 				// snapshot on every progress tick while a run is in flight, and re-selecting an
 				// already-active panel on every tick is unnecessary render churn.
@@ -498,27 +679,46 @@ export const AutomationWorkbench = observer(
 				}
 				wasRunningRef.current = snapshot.running;
 			},
-			[selectPanel],
+			[automationStore, selectPanel],
 		);
 		const handleInspectorChange = useCallback(
 			(snapshot: AutomationInspectorSnapshot) => {
 				setInspectorSnapshot(snapshot);
-				const editingStepId = snapshot.editingStep?.id ?? null;
-				// Only switch tabs when a different step starts being edited, not on every
-				// snapshot re-emitted while the same step stays open (e.g. its run status ticking).
+				const selectionId = snapshot.editingNodeGroup
+					? `group:${snapshot.editingNodeGroup.id}`
+					: (snapshot.editingStep?.id ?? null);
+				// Switch tabs when a different step or group starts being edited, not on
+				// every snapshot re-emitted while the same selection stays open.
 				if (
-					editingStepId &&
-					editingStepId !== editingStepIdRef.current
+					selectionId &&
+					selectionId !== inspectorSelectionRef.current
 				) {
 					selectPanel(INSPECTOR);
 				}
-				editingStepIdRef.current = editingStepId;
+				inspectorSelectionRef.current = selectionId;
 			},
 			[selectPanel],
 		);
 		const handleHistoryChanged = useCallback(() => {
-			setHistoryRefreshToken((token) => token + 1);
-		}, []);
+			automationStore.getState().markHistoryChanged();
+		}, [automationStore]);
+		const handleRunsChange = useCallback(
+			(runs: AutomationRunSummary[]) => {
+				automationStore.getState().setKnownRuns(runs);
+			},
+			[automationStore],
+		);
+		const handleViewRun = useCallback(
+			(run: AutomationRunDetail) => {
+				automationStore.getState().selectRun(run);
+				canvasRef.current?.viewHistoricalRun(run);
+			},
+			[automationStore],
+		);
+		const handleExitHistoricalView = useCallback(() => {
+			automationStore.getState().clearSelectedRun();
+			canvasRef.current?.exitHistoricalView();
+		}, [automationStore]);
 		const handleAskAssistant = useCallback(
 			(prompt: string) => {
 				setAssistantDraft(prompt.slice(0, MAX_ASSISTANT_DRAFT_LENGTH));
@@ -526,10 +726,61 @@ export const AutomationWorkbench = observer(
 			},
 			[selectPanel, setAssistantDraft],
 		);
+		const handleViewRunDetails = useCallback(
+			(stepId: string) => {
+				automationStore.getState().focusRunNode(stepId);
+				selectPanel(TRACE);
+			},
+			[automationStore, selectPanel],
+		);
 		const handleOpenPythonEditor = useCallback(
-			(nodeId: string, source: string) =>
-				setPythonEditor({ nodeId, source, openedWith: source }),
-			[],
+			async (nodeId: string, source: string) => {
+				const asset = await findAutomationNodeAsset(appId, nodeId);
+				if (asset) {
+					pythonNodeAssetPathsRef.current.set(asset.path, nodeId);
+					layoutActions.selectPanel(
+						FILE_EDITOR,
+						{
+							mode: { type: "APP", app: appId },
+							name: asset.name,
+							path: asset.path,
+						},
+						{ name: asset.name },
+					);
+					return;
+				}
+				// No compiled asset yet (e.g. a brand-new node) — fall back to
+				// editing the in-memory draft in the modal.
+				setPythonEditor({ nodeId, source, openedWith: source });
+			},
+			[appId, layoutActions],
+		);
+
+		// A save from the file-editor tab writes straight to the asset, bypassing
+		// the canvas's in-memory step entirely — mirror it back in so a later
+		// canvas Save can't clobber the file with the stale copy it loaded with.
+		useWorkbenchEvent<FileSavedEvent>(
+			FILE_PANEL_EVENTS.FILE_SAVED,
+			(event) => {
+				const nodeId = pythonNodeAssetPathsRef.current.get(event.path);
+				if (
+					!nodeId ||
+					event.scope !==
+						getFilePanelScope({ type: "APP", app: appId })
+				) {
+					return;
+				}
+				void (async () => {
+					const response = await runPixel<[string]>(
+						`GetAppAssets(filePath=${JSON.stringify([event.path])}, project=${JSON.stringify([appId])});`,
+					);
+					if (response.errors.length > 0) return;
+					const content = response.pixelReturn?.[0]?.output;
+					if (typeof content === "string") {
+						canvasRef.current?.syncPythonSource(nodeId, content);
+					}
+				})();
+			},
 		);
 
 		const workbenchContextValue = useMemo<AutomationWorkbenchContextValue>(
@@ -545,10 +796,20 @@ export const AutomationWorkbench = observer(
 				onHistoryChanged: handleHistoryChanged,
 				inspectorSnapshot,
 				traceSnapshot,
+				activeRuns,
+				followedRunId,
+				selectedRun,
+				onRunsChange: handleRunsChange,
+				onViewRun: handleViewRun,
+				onExitHistoricalView: handleExitHistoricalView,
 				historyRefreshToken,
 				onOpenOutput: setOutputModal,
 				onAskAssistant: handleAskAssistant,
 				onOpenPythonEditor: handleOpenPythonEditor,
+				isPythonFileOpen,
+				onViewRunDetails: handleViewRunDetails,
+				runDetailsFocusNodeId: runDetailsFocus?.nodeId ?? null,
+				runDetailsFocusToken: runDetailsFocus?.token ?? 0,
 			}),
 			[
 				appId,
@@ -556,12 +817,21 @@ export const AutomationWorkbench = observer(
 				conversionModel,
 				handleAskAssistant,
 				handleHistoryChanged,
+				handleExitHistoricalView,
 				handleInspectorChange,
 				handleOpenPythonEditor,
+				handleRunsChange,
 				handleTraceChange,
+				handleViewRunDetails,
+				handleViewRun,
 				historyRefreshToken,
 				inspectorSnapshot,
+				isPythonFileOpen,
+				activeRuns,
+				followedRunId,
 				readOnly,
+				runDetailsFocus,
+				selectedRun,
 				traceSnapshot,
 			],
 		);
@@ -570,7 +840,7 @@ export const AutomationWorkbench = observer(
 		useEffect(() => {
 			configureAssistant({
 				systemPrompt: "",
-				agent: AUTOMATION_BUILDER_AGENT,
+				defaultAgent: AUTOMATION_BUILDER_AGENT,
 				mcp: automationMcp,
 				runParams: { project: appId },
 				onToolCompleted: handleAutomationToolCompleted,
@@ -597,7 +867,7 @@ export const AutomationWorkbench = observer(
 											<Link to={catalogPath}>
 												<span className="inline-flex items-center gap-1.5">
 													Automation Catalog
-													<span className="rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+													<span className="rounded border px-1 py-0.5 font-semibold text-xs leading-none">
 														BETA
 													</span>
 												</span>
@@ -740,9 +1010,20 @@ export const AutomationWorkbench = observer(
 						value={workbenchContextValue}
 					>
 						<Workbench
-							snapshot={workbenchLayout}
+							snapshot={workbenchSnapshot}
+							onChange={onWorkbenchSnapshotChange}
 							borderSlots={{
-								left: { after: <AutomationSettingsToggle /> },
+								left: {
+									after: (
+										<>
+											<WorkbenchCommandMenuButton />
+											<AutomationSettingsToggle />
+											<WorkbenchResetButton
+												snapshot={workbenchLayout}
+											/>
+										</>
+									),
+								},
 							}}
 						/>
 					</AutomationWorkbenchContext.Provider>
@@ -761,6 +1042,7 @@ export const AutomationWorkbenchPage = observer(() => {
 			<WorkbenchProvider components={AUTOMATION_COMPONENTS}>
 				<AutomationWorkbench
 					appId={project.project_id}
+					permission={permission}
 					readOnly={readOnly}
 					projectName={
 						project.project_display_name || project.project_name

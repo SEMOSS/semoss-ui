@@ -5,7 +5,6 @@ import {
 	FileTextIcon,
 	HelpCircle,
 	Loader2Icon,
-	MapIcon,
 	MessagesSquareIcon,
 	MoreVertical,
 	PencilIcon,
@@ -54,15 +53,22 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	SidebarRail,
 	Spinner,
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
-import { useChat, useRoot, useTour } from "@/hooks";
-import { getDateBucket, normalizeTimestamp } from "@/utility";
+import {
+	DATE_BUCKET_ORDER,
+	getDateBucket,
+	parseTimestampWithUtcDefault,
+} from "@semoss/utility/date";
+import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
+import { NavigationRail } from "@/features/navigation/navigation-rail";
+import { NavigationToggle } from "@/features/navigation/navigation-toggle";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
@@ -82,16 +88,10 @@ try {
 export const GlobalNav = observer(() => {
 	const { t } = useTranslation("sidebar");
 
-	const BUCKETS = [
-		t("buckets.favorites"),
-		t("buckets.today"),
-		t("buckets.yesterday"),
-		t("buckets.fewDaysAgo"),
-		t("buckets.lastWeek"),
-		t("buckets.thisMonth"),
-		t("buckets.lastMonth"),
-		t("buckets.older"),
-	] as const;
+	const dateBucketLabels = DATE_BUCKET_ORDER.map((bucket) =>
+		t(`buckets.${bucket}`),
+	);
+	const BUCKETS = [t("buckets.favorites"), ...dateBucketLabels];
 	const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
 	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);
 	const [downloadingFormat, setDownloadingFormat] = useState<string | null>(
@@ -101,7 +101,6 @@ export const GlobalNav = observer(() => {
 	const [search, setSearch] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
 	const { chat } = useChat();
-	const { startTour } = useTour();
 	const { open, openMobile, isMobile } = useSidebar();
 	const hideChatHistory = !!root.theme.featureFlags?.hideChatHistory;
 	// True when the sidebar is actually visible to the user.
@@ -130,10 +129,6 @@ export const GlobalNav = observer(() => {
 
 	const navigate = useNavigate();
 
-	const handleStartTour = () => {
-		navigate("/new");
-		startTour();
-	};
 	const getPinnedRooms = useIteratorPixel<
 		{
 			ROOM_ID: string;
@@ -332,7 +327,7 @@ export const GlobalNav = observer(() => {
 			// Skip rooms handled by the dedicated pinned query
 			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
 
-			const d = normalizeTimestamp(val.DATE_CREATED);
+			const d = parseTimestampWithUtcDefault(val.DATE_CREATED);
 			const bucket = getDateBucket(d);
 			acc[t(`buckets.${bucket}`)].push(val);
 
@@ -340,13 +335,7 @@ export const GlobalNav = observer(() => {
 		},
 		{
 			[t("buckets.favorites")]: [...getPinnedRooms.data],
-			[t("buckets.today")]: [],
-			[t("buckets.yesterday")]: [],
-			[t("buckets.fewDaysAgo")]: [],
-			[t("buckets.lastWeek")]: [],
-			[t("buckets.thisMonth")]: [],
-			[t("buckets.lastMonth")]: [],
-			[t("buckets.older")]: [],
+			...Object.fromEntries(dateBucketLabels.map((label) => [label, []])),
 		} as Record<string, typeof getRooms.data>,
 	);
 
@@ -441,10 +430,10 @@ export const GlobalNav = observer(() => {
 			>
 				<SidebarHeader>
 					<SidebarMenu className="gap-1 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:px-2">
-						<SidebarMenuItem className="flex items-center overflow-hidden">
+						<SidebarMenuItem className="flex min-w-0 items-center">
 							<SidebarMenuButton
 								size="lg"
-								className="h-8"
+								className="h-8 min-w-0 flex-1 group-data-[collapsible=icon]:hidden"
 								asChild
 							>
 								<Link
@@ -455,6 +444,8 @@ export const GlobalNav = observer(() => {
 									<AppLogo full={open} />
 								</Link>
 							</SidebarMenuButton>
+							<NavigationToggle />
+							<MobileNavigationClose />
 						</SidebarMenuItem>
 					</SidebarMenu>
 
@@ -633,7 +624,7 @@ export const GlobalNav = observer(() => {
 														t("messages.untitled");
 													const date = root.theme
 														.sidebar.chatHistoryDate
-														? normalizeTimestamp(
+														? parseTimestampWithUtcDefault(
 																room.DATE_CREATED,
 															)
 																.toDate()
@@ -971,23 +962,12 @@ export const GlobalNav = observer(() => {
 								)}
 							</div>
 						)}
-						{root.theme.tour?.show !== false && (
-							<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
-								<SidebarMenuButton
-									onClick={handleStartTour}
-									data-tour="tour-take-tour"
-								>
-									<MapIcon />
-									{t("takeTour")}
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-						)}
 						<SidebarMenuItem>
 							<NavUser />
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarFooter>
-				<SidebarRail />
+				<NavigationRail />
 			</Sidebar>
 
 			{/* Download Conversation Dialog */}

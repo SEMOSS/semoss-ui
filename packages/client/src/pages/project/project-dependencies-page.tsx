@@ -19,6 +19,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { capitalize as toCapitalized } from "@semoss/utility/text";
 import { CatalogGrid, CatalogGridItem } from "@/components/catalog";
 import { EditProjectDependenciesDialog } from "@/components/project";
 import { TYPE_TO_ROUTE } from "@/constants";
@@ -53,11 +54,6 @@ const DEPENDENCY_TYPE_CONFIG = {
 	STORAGE: { kind: "engine", route: TYPE_TO_ROUTE.STORAGE },
 	GUARDRAIL: { kind: "engine", route: TYPE_TO_ROUTE.GUARDRAIL },
 } satisfies Record<string, DependencyTypeConfig>;
-
-const toCapitalized = (word: string): string => {
-	if (!word) return "";
-	return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-};
 
 export const ProjectDependenciesPage = () => {
 	const { project, dependencies, permission, refresh } = useProject();
@@ -129,6 +125,7 @@ export const ProjectDependenciesPage = () => {
 										id={d.engine_id}
 										icon={
 											<AppCatalogAvatar
+												projectId={d.engine_id}
 												name={
 													d.engine_name || d.engine_id
 												}

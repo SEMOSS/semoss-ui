@@ -14,8 +14,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { CatalogGridItem } from "@/components/catalog";
-import { normalizeTagArray } from "@/utility";
+import { CatalogGridItem } from "@/components/catalog/catalog-grid-item";
+import { normalizeTagArray } from "@/utility/tags";
 
 export interface ProjectGridItemProps {
 	/** Display style - list row or grid card */
@@ -194,8 +194,9 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 
 	const icon = (
 		<AppCatalogAvatar
+			projectId={project.project_id}
 			name={displayName || project.project_id}
-			className="h-full w-full rounded text-lg"
+			className="size-12 rounded text-lg"
 		/>
 	);
 

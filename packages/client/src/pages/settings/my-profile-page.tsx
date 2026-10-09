@@ -33,15 +33,19 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { formatDateTimeWithRelativeDay } from "@semoss/utility/date";
+import { sanitizeFileNameStem } from "@semoss/utility/file";
 import {
 	createUserAccessKey,
 	deleteUserAccessKeys,
 	editMemberInfo,
 	setUserDefaultModel,
 } from "@/api/auth";
+import { MicrosoftSubscriptions } from "@/components/settings";
 import { SdkBlock } from "@/components/shared/sdk-block";
 import { useAPI, useConfig, useSession, useSettings } from "@/hooks";
-import { formatDate, getSDKSnippet } from "@/utility";
+import { getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
 
 interface CreateAccessKeyForm {
@@ -107,6 +111,10 @@ export const MyProfilePage = () => {
 	] = useState<string>("");
 
 	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
+	// the config keys logins by auth provider, so a Microsoft entry is the only
+	// sign that somebody has a Microsoft login to subscribe with
+	const microsoftLogin = (logins as unknown as { MICROSOFT?: string })
+		?.MICROSOFT;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({
@@ -139,22 +147,12 @@ export const MyProfilePage = () => {
 
 	const downloadAccessKeyJson = () => {
 		if (!ACCESSKEY || !SECRETKEY) return;
-		const slug =
-			TOKENNAME.trim()
-				.replace(/[^A-Za-z0-9._-]+/g, "-")
-				.replace(/^-+|-+$/g, "") || "access-key";
+		const slug = sanitizeFileNameStem(TOKENNAME) || "access-key";
 		const blob = new Blob(
 			[JSON.stringify({ ACCESSKEY, SECRETKEY }, null, 2)],
 			{ type: "application/json" },
 		);
-		const url = URL.createObjectURL(blob);
-		const anchor = document.createElement("a");
-		anchor.href = url;
-		anchor.download = `${slug}-credentials.json`;
-		document.body.appendChild(anchor);
-		anchor.click();
-		anchor.remove();
-		URL.revokeObjectURL(url);
+		downloadBlob(blob, `${slug}-credentials.json`);
 	};
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
@@ -345,7 +343,9 @@ export const MyProfilePage = () => {
 								</Label>
 								<span className="text-sm">
 									{lastLogin
-										? formatDate(lastLogin) || lastLogin
+										? formatDateTimeWithRelativeDay(
+												lastLogin,
+											) || lastLogin
 										: "—"}
 								</span>
 							</div>
@@ -642,6 +642,10 @@ export const MyProfilePage = () => {
 					</div>
 				)}
 			</div>
+
+			<MicrosoftSubscriptions
+				signedIntoMicrosoft={microsoftLogin !== undefined}
+			/>
 
 			{/* JS SDK */}
 			<div className="rounded-lg border bg-card px-6 py-5">

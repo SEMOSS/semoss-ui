@@ -1,5 +1,12 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import type { AutomationNode } from "./automation.types";
+import type {
+	AutomationNode,
+	DatabaseEngineConfig,
+	DataExtractConfig,
+	ModelEngineConfig,
+	StorageEngineConfig,
+	VectorEngineConfig,
+} from "./automation.types";
 import { setAutomationNodeDefinitions } from "./automation-node-catalog";
 import type {
 	AutomationNodeCategory,
@@ -15,6 +22,8 @@ import {
 	getCanvasNodeSources,
 	getGeneratedPythonPreview,
 	validateAutomationOutputVariable,
+	validateCanvasWorkflowConnections,
+	validateCanvasWorkflowNode,
 } from "./automation-workflow-adapter";
 
 /**
@@ -38,6 +47,7 @@ function definition(
 		category,
 		defaultConfig,
 		configSchema: {},
+		outputSchema: {},
 		inputs: [],
 		outputs: [],
 		defaultCodeMode: "generated",
@@ -83,13 +93,68 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 		engineId: "",
 		path: "",
 	}),
+	definition("storage.upload", "storage", "Upload file", {
+		engineId: "",
+		path: "",
+		destination: "",
+		metadata: {},
+	}),
+	definition(
+		"data.extract",
+		"data",
+		"Extract value",
+		{
+			source: "",
+			path: "",
+			format: "auto",
+			missingValue: null,
+			nullValue: null,
+		},
+		false,
+	),
 	definition("model.chat", "model", "Chat model", {
 		engineId: "",
 		prompt: "",
 	}),
+	definition("model.vision", "model", "Analyze image", {
+		engineId: "",
+		prompt: "",
+		image: "",
+		urls: [],
+		paramValues: {},
+	}),
 	definition("control.if", "control", "Decision", {
 		clauses: [{ id: "initial", condition: "" }],
 	}),
+	definition(
+		"control.loop",
+		"control",
+		"Repeat steps",
+		{
+			mode: "forEach",
+			items: [],
+			batchSize: 1,
+			count: 1,
+			condition: "",
+			maxIterations: 100,
+		},
+		false,
+	),
+	definition(
+		"control.jev",
+		"control",
+		"Jev decision",
+		{
+			engineId: "",
+			state: "",
+			question: "Choose a route.",
+			questionType: "choice",
+			clauses: [{ id: "initial", description: "" }],
+			confidenceThreshold: 0,
+			paramValues: {},
+		},
+		false,
+	),
 	definition("developer.python", "developer", "Python", {}),
 ];
 
@@ -113,6 +178,76 @@ function documentOf(steps: AutomationNode[]) {
 	});
 }
 
+describe("database query limit", () => {
+	it("preserves the business user's result limit", () => {
+		const step = node("database.query");
+		const saved = documentOf([
+			{
+				...step,
+				config: {
+					...(step.config as DatabaseEngineConfig),
+					engineId: "database-1",
+					expression: "SELECT * FROM CLAIMS ORDER BY ID",
+					limit: 100,
+				},
+			},
+		]);
+
+		expect(saved.graph.nodes[0]?.config).toMatchObject({
+			engineId: "database-1",
+			query: "SELECT * FROM CLAIMS ORDER BY ID",
+			limit: 100,
+		});
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedQuery = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "database.query",
+		);
+		expect(reloadedQuery?.config).toMatchObject({
+			limit: 100,
+		});
+	});
+});
+
+describe("data extraction", () => {
+	it("preserves source, path, format, and fallback values", () => {
+		const step = node("data.extract");
+		const saved = documentOf([
+			{
+				...step,
+				config: {
+					...(step.config as DataExtractConfig),
+					source: "$" + "{download.filePath}",
+					path: "orders[0].customer.name",
+					format: "json",
+					missingValue: '"Unknown customer"',
+					nullValue: '"Not provided"',
+				},
+			},
+		]);
+
+		expect(saved.graph.nodes[0]?.config).toMatchObject({
+			source: "$" + "{download.filePath}",
+			path: "orders[0].customer.name",
+			format: "json",
+			missingValue: "Unknown customer",
+			nullValue: "Not provided",
+		});
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedExtract = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "data.extract",
+		);
+		expect(reloadedExtract?.config).toMatchObject({
+			source: "$" + "{download.filePath}",
+			path: "orders[0].customer.name",
+			format: "json",
+			missingValue: "Unknown customer",
+			nullValue: "Not provided",
+		});
+	});
+});
+
 describe("getGeneratedPythonPreview", () => {
 	/**
 	 * `resolve` is a method on the scope mapping the runtime passes in, not a
@@ -121,6 +256,13 @@ describe("getGeneratedPythonPreview", () => {
 	 */
 	it("resolves through scope for every node type", () => {
 		for (const definition of TEST_NODE_DEFINITIONS) {
+			if (
+				["control.if", "control.jev", "control.loop"].includes(
+					definition.type,
+				)
+			) {
+				continue;
+			}
 			const source = getGeneratedPythonPreview(node(definition.type));
 			const total = source.match(/resolve\(/g)?.length ?? 0;
 			const qualified = source.match(/scope\.resolve\(/g)?.length ?? 0;
@@ -179,6 +321,13 @@ describe("getGeneratedPythonPreview", () => {
 
 	it("always emits a run entry point", () => {
 		for (const definition of TEST_NODE_DEFINITIONS) {
+			if (
+				["control.if", "control.jev", "control.loop"].includes(
+					definition.type,
+				)
+			) {
+				continue;
+			}
 			expect(
 				definesRunEntryPoint(
 					getGeneratedPythonPreview(node(definition.type)),
@@ -186,6 +335,331 @@ describe("getGeneratedPythonPreview", () => {
 				`${definition.type} must define run(scope)`,
 			).toBe(true);
 		}
+	});
+});
+
+describe("loop container mapping", () => {
+	it("preserves its nested graph and body node sources", () => {
+		const bodyNode = node("developer.python", {
+			id: "double-item",
+			label: "Double item",
+			outputVar: "doubled",
+			workflowCodeMode: "custom",
+			workflowConfig: {
+				pythonSource:
+					'def run(scope):\n    return scope.get("batch_context", {}).get("item") * 2\n',
+			},
+		});
+		const loop = node("control.loop", {
+			id: "batch-loop",
+			outputVar: "batch_context",
+			config: {
+				mode: "forEach",
+				items: "$" + "{numbers}",
+				batchSize: 1,
+				maxIterations: 25,
+			},
+			body: { nodes: [bodyNode], edges: [] },
+		});
+
+		const saved = documentOf([loop]);
+		expect(saved.graph.nodes[0]).toMatchObject({
+			type: "control.loop",
+			outputVar: "batch_context",
+			config: {
+				mode: "forEach",
+				items: "$" + "{numbers}",
+				batchSize: 1,
+				maxIterations: 25,
+			},
+			body: {
+				nodes: [{ id: "double-item", type: "developer.python" }],
+				edges: [],
+			},
+		});
+		expect(getCanvasNodeSources([loop])).toEqual({
+			"double-item": bodyNode.workflowConfig?.pythonSource,
+		});
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {
+			"double-item": bodyNode.workflowConfig?.pythonSource ?? "",
+		});
+		const reloadedLoop = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "control.loop",
+		);
+		expect(reloadedLoop?.body?.nodes[0]).toMatchObject({
+			id: "double-item",
+			workflowType: "developer.python",
+			workflowConfig: {
+				pythonSource: bodyNode.workflowConfig?.pythonSource,
+			},
+		});
+	});
+
+	it.each([
+		{
+			mode: "repeat" as const,
+			count: 4,
+			maxIterations: 10,
+		},
+		{
+			mode: "while" as const,
+			condition: "$" + '{loop_context.previous.status} != "complete"',
+			maxIterations: 10,
+		},
+	])("round trips $mode configuration", (config) => {
+		const bodyNode = node("developer.python", { id: "body-step" });
+		const loop = node("control.loop", {
+			id: "loop",
+			outputVar: "loop_context",
+			config,
+			body: { nodes: [bodyNode], edges: [] },
+		});
+
+		const saved = documentOf([loop]);
+		expect(saved.graph.nodes[0].config).toMatchObject(config);
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedLoop = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "control.loop",
+		);
+		expect(reloadedLoop?.config).toMatchObject(config);
+	});
+
+	it("validates repeat and while settings", () => {
+		const bodyNode = node("developer.python", { id: "body-step" });
+		const invalidRepeat = node("control.loop", {
+			config: { mode: "repeat", count: 11, maxIterations: 10 },
+			body: { nodes: [bodyNode], edges: [] },
+		});
+		const invalidWhile = node("control.loop", {
+			config: { mode: "while", condition: "", maxIterations: 10 },
+			body: { nodes: [bodyNode], edges: [] },
+		});
+
+		expect(
+			validateCanvasWorkflowNode(invalidRepeat, [invalidRepeat]),
+		).toContain(
+			"Number of times must be a whole number no greater than the safety limit",
+		);
+		expect(
+			validateCanvasWorkflowNode(invalidWhile, [invalidWhile]),
+		).toContain("Continue while condition is required");
+	});
+
+	it("requires an array source and at least one nested step", () => {
+		const loop = node("control.loop", {
+			config: {
+				mode: "forEach",
+				items: "not a list",
+				batchSize: 1,
+				maxIterations: 10,
+			},
+			body: { nodes: [], edges: [] },
+		});
+
+		expect(validateCanvasWorkflowNode(loop, [loop])).toEqual(
+			expect.arrayContaining([
+				"Items must be a JSON array or an exact variable reference",
+				"Add at least one step inside the loop",
+			]),
+		);
+	});
+
+	it("identifies the invalid nested step and its missing routes", () => {
+		const decision = node("control.if", {
+			id: "decision",
+			label: "Choose path",
+			config: { clauses: [{ id: "case-1", condition: "" }] },
+		});
+		const target = node("developer.python", { id: "target" });
+		const loop = node("control.loop", {
+			config: {
+				mode: "forEach",
+				items: "[1]",
+				batchSize: 1,
+				maxIterations: 10,
+			},
+			body: {
+				nodes: [decision, target],
+				edges: [
+					{
+						id: "case-edge",
+						source: decision.id,
+						target: target.id,
+						sourceHandle: `case-${decision.id}-case-1`,
+					},
+				],
+			},
+		});
+
+		expect(validateCanvasWorkflowNode(loop, [loop])).toEqual(
+			expect.arrayContaining([
+				'Inside "Choose path": Each condition is required',
+				'Inside "Choose path": Every condition and the Else path must be connected',
+			]),
+		);
+	});
+});
+
+describe("Jev decision mapping", () => {
+	it("preserves typed routing configuration without a Python source", () => {
+		const ticketReference = "$" + "{ticket}";
+		const step = node("control.jev", {
+			config: {
+				engineId: "jev-engine",
+				state: ticketReference,
+				question: "Route this ticket.",
+				questionType: "choice",
+				clauses: [
+					{ id: "billing", description: "Payments and refunds" },
+					{ id: "technical", description: "Bugs and errors" },
+				],
+				confidenceThreshold: 0.8,
+				paramValues: '{"timeout":5}',
+			},
+		});
+
+		const saved = documentOf([step]);
+		expect(saved.graph.nodes[0]).toMatchObject({
+			type: "control.jev",
+			codeMode: "generated",
+			config: {
+				engineId: "jev-engine",
+				state: ticketReference,
+				question: "Route this ticket.",
+				questionType: "choice",
+				clauses: [
+					{ id: "billing", description: "Payments and refunds" },
+					{ id: "technical", description: "Bugs and errors" },
+				],
+				confidenceThreshold: 0.8,
+				paramValues: { timeout: 5 },
+			},
+		});
+		expect(getCanvasNodeSources([step])).toEqual({});
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedJev = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "control.jev",
+		);
+		expect(reloadedJev?.workflowConfig).toMatchObject({
+			engineId: "jev-engine",
+			state: ticketReference,
+			questionType: "choice",
+			confidenceThreshold: 0.8,
+		});
+	});
+
+	it("preserves explicit Yes and No route identities for Noul decisions", () => {
+		const step = node("control.jev", {
+			config: {
+				engineId: "jev-engine",
+				state: "$" + "{ticket}",
+				question: "Can this ticket be handled automatically?",
+				questionType: "noul",
+				clauses: [
+					{ id: "automatic", description: "Continue", answer: true },
+					{
+						id: "review",
+						description: "Human review",
+						answer: false,
+					},
+				],
+				confidenceThreshold: 0.75,
+				paramValues: "{}",
+			},
+		});
+
+		const saved = documentOf([step]);
+		expect(saved.graph.nodes[0]?.config).toMatchObject({
+			questionType: "noul",
+			clauses: [
+				{ id: "automatic", answer: true },
+				{ id: "review", answer: false },
+			],
+		});
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedJev = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "control.jev",
+		);
+		expect(reloadedJev?.config).toMatchObject({
+			questionType: "noul",
+			clauses: [
+				{ id: "automatic", answer: true },
+				{ id: "review", answer: false },
+			],
+		});
+	});
+
+	it("rejects ambiguous Noul route mappings and confidence below one half", () => {
+		const step = node("control.jev", {
+			config: {
+				engineId: "jev-engine",
+				state: "$" + "{ticket}",
+				question: "Can this ticket be handled automatically?",
+				questionType: "noul",
+				clauses: [
+					{ id: "first", description: "First", answer: true },
+					{ id: "second", description: "Second", answer: true },
+				],
+				confidenceThreshold: 0.4,
+				paramValues: "{}",
+			},
+		});
+
+		expect(validateCanvasWorkflowNode(step, [step])).toEqual(
+			expect.arrayContaining([
+				"Yes / No decisions require one Yes path and one No path",
+				"Minimum confidence must be from 0.5 through 1",
+			]),
+		);
+	});
+
+	it("requires every Jev route and low-confidence path before execution", () => {
+		const step = node("control.jev", {
+			id: "jev",
+			config: {
+				engineId: "jev-engine",
+				state: "$" + "{ticket}",
+				question: "Can this ticket be handled automatically?",
+				questionType: "noul",
+				clauses: [
+					{ id: "yes", description: "Continue", answer: true },
+					{ id: "no", description: "Stop", answer: false },
+				],
+				confidenceThreshold: 0.75,
+				paramValues: "{}",
+			},
+		});
+		const yesEdge = {
+			id: "yes-edge",
+			source: step.id,
+			target: "yes-target",
+			sourceHandle: `case-${step.id}-yes`,
+		};
+		const noEdge = {
+			id: "no-edge",
+			source: step.id,
+			target: "no-target",
+			sourceHandle: `case-${step.id}-no`,
+		};
+		const fallbackEdge = {
+			id: "fallback-edge",
+			source: step.id,
+			target: "fallback-target",
+			sourceHandle: `else-${step.id}`,
+		};
+
+		expect(validateCanvasWorkflowConnections(step, [yesEdge])).toEqual([
+			"Every route and the low-confidence path must be connected",
+		]);
+		expect(
+			validateCanvasWorkflowConnections(step, [
+				yesEdge,
+				noEdge,
+				fallbackEdge,
+			]),
+		).toEqual([]);
 	});
 });
 
@@ -278,6 +752,79 @@ describe("vector node value mapping", () => {
 			]);
 			expect(saved.graph.nodes[0]?.config.value, type).toBe(value);
 		}
+	});
+});
+
+describe("optional engine parameters", () => {
+	it("persists supported storage, vector, and vision options as typed values", () => {
+		const upload = node("storage.upload");
+		const search = node("vector.search");
+		const vision = node("model.vision");
+		const saved = documentOf([
+			{
+				...upload,
+				config: {
+					...(upload.config as StorageEngineConfig),
+					engineId: "storage-1",
+					storagePath: "archive",
+					filePath: "report.pdf",
+					metadata: '{"case":"123"}',
+				},
+			},
+			{
+				...search,
+				config: {
+					...(search.config as VectorEngineConfig),
+					engineId: "vector-1",
+					command: "claims",
+					filters: '{"category":"report"}',
+					paramValues: '{"threshold":0.7}',
+				},
+			},
+			{
+				...vision,
+				config: {
+					...(vision.config as ModelEngineConfig),
+					engineId: "model-1",
+					command: "Describe these images",
+					urls: '["https://example.com/image.png"]',
+					paramValues: '{"temperature":0.2}',
+				},
+			},
+		]);
+
+		expect(saved.graph.nodes[0]?.config.metadata).toEqual({ case: "123" });
+		expect(saved.graph.nodes[1]?.config.filters).toEqual({
+			category: "report",
+		});
+		expect(saved.graph.nodes[1]?.config.paramValues).toEqual({
+			threshold: 0.7,
+		});
+		expect(saved.graph.nodes[2]?.config.urls).toEqual([
+			"https://example.com/image.png",
+		]);
+		expect(saved.graph.nodes[2]?.config.paramValues).toEqual({
+			temperature: 0.2,
+		});
+	});
+
+	it("persists storage list file types as a typed array", () => {
+		const listFiles = node("storage.list");
+		const saved = documentOf([
+			{
+				...listFiles,
+				config: {
+					...(listFiles.config as StorageEngineConfig),
+					fileTypes: "pdf, png, .jpg",
+				},
+			},
+		]);
+
+		expect(saved.graph.nodes[0]?.config.extensions).toEqual([
+			"pdf",
+			"png",
+			".jpg",
+		]);
 	});
 });
 

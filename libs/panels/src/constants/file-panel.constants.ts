@@ -64,6 +64,15 @@ export const FILE_PANEL_EVENTS = {
 	 * restored, a terminal saved one.
 	 */
 	FILES_CHANGED: "files:changed",
+	/**
+	 * A file panel just saved its own buffer. Unlike `FILES_CHANGED` (which a
+	 * panel showing the same path treats as "you are stale, re-read"), this
+	 * fires for every save including the panel's own — it's for a listener
+	 * that isn't a file panel at all and has no buffer of its own to keep in
+	 * sync, e.g. the automation canvas mirroring a node's compiled Python
+	 * source file into its in-memory step.
+	 */
+	FILE_SAVED: "files:saved",
 } as const;
 
 /**
@@ -77,4 +86,12 @@ export interface FilesChangedEvent {
 	scope: string;
 	/** The specific files, when the producer knows them. */
 	paths?: string[];
+}
+
+/** What `FILE_SAVED` carries. */
+export interface FileSavedEvent {
+	/** `getFilePanelScope(mode)` of the file that was saved. */
+	scope: string;
+	/** The path that was saved. */
+	path: string;
 }

@@ -1,7 +1,9 @@
 import { runPixel } from "@semoss/sdk";
+import { isRecord } from "@semoss/utility/object";
 import type {
 	AutomationNodeCatalog,
 	AutomationNodeDefinition,
+	AutomationOutputFieldSchema,
 	AutomationPort,
 	ConfigFieldSchema,
 } from "../domain/automation-workflow.types";
@@ -13,6 +15,8 @@ const NODE_CATEGORIES = new Set([
 	"model",
 	"agent",
 	"storage",
+	"data",
+	"browser",
 	"vector",
 	"function",
 	"app",
@@ -31,10 +35,14 @@ const CONFIG_FIELD_TYPES = new Set([
 	"string[]",
 	"textarea",
 ]);
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+const OUTPUT_FIELD_TYPES = new Set([
+	"boolean",
+	"number",
+	"object",
+	"object[]",
+	"string",
+	"string[]",
+]);
 
 function isConfigFieldSchema(value: unknown): value is ConfigFieldSchema {
 	return (
@@ -43,6 +51,20 @@ function isConfigFieldSchema(value: unknown): value is ConfigFieldSchema {
 		CONFIG_FIELD_TYPES.has(value.type) &&
 		typeof value.label === "string" &&
 		value.label.length > 0
+	);
+}
+
+function isOutputFieldSchema(
+	value: unknown,
+): value is AutomationOutputFieldSchema {
+	return (
+		isRecord(value) &&
+		typeof value.type === "string" &&
+		OUTPUT_FIELD_TYPES.has(value.type) &&
+		typeof value.label === "string" &&
+		value.label.length > 0 &&
+		typeof value.description === "string" &&
+		typeof value.required === "boolean"
 	);
 }
 
@@ -68,6 +90,8 @@ function isNodeDefinition(value: unknown): value is AutomationNodeDefinition {
 		!isRecord(value.defaultConfig) ||
 		!isRecord(value.configSchema) ||
 		!Object.values(value.configSchema).every(isConfigFieldSchema) ||
+		!isRecord(value.outputSchema) ||
+		!Object.values(value.outputSchema).every(isOutputFieldSchema) ||
 		!Array.isArray(value.inputs) ||
 		!value.inputs.every(isPort) ||
 		!Array.isArray(value.outputs) ||

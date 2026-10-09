@@ -354,6 +354,10 @@ export interface ThemeMap {
 			enableTableExport?: boolean;
 			/** Whether to show the temperature slider in room settings. Defaults to false. */
 			enableTemperature?: boolean;
+			/** Whether to show items tagged SYSTEM in the MCP selector skills list (MyProjects). Defaults to true. */
+			showSystemSkills?: boolean;
+			/** Whether to show items tagged SYSTEM in the MCP selector tools list (MyEngines for TOOLBOX). Defaults to true. */
+			showSystemTools?: boolean;
 		};
 	};
 }
@@ -416,7 +420,7 @@ export interface Skill {
 export type SkillConfig = Pick<Skill, "id" | "name">;
 
 export interface ProjectDependency {
-	engine_type: Project["project_type"] | Engine["engine_type"];
+	engine_type: Project["project_type"] | Engine["engine_type"] | "PROJECT";
 	engine_id: string;
 	engine_name: string;
 	engine_subtype?: string;
