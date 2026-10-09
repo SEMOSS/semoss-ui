@@ -1,4 +1,10 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+	cleanup,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
@@ -60,12 +66,49 @@ describe("onboarding start", () => {
 		expect(session.run).not.toHaveBeenCalled();
 		await user.click(screen.getByRole("button", { name: "Start setup" }));
 		expect(
-			await screen.findByDisplayValue("Recruiting UNC and VCU"),
+			await screen.findByRole("checkbox", {
+				name: "Recruiting UNC and VCU",
+			}),
 		).toBeEnabled();
-		expect(session.run.mock.calls.map(([statement]) => statement)).toEqual([
-			"BrainGetTopicReview();",
-			"BrainStartTopicReview();",
-		]);
+		expect(
+			session.run.mock.calls
+				.map(([statement]) => statement)
+				.filter(
+					(statement) => !statement.startsWith("BrainListPeople("),
+				),
+		).toEqual(["BrainGetTopicReview();", "BrainStartTopicReview();"]);
+	});
+
+	it("marks the current step in the progress bar and the step list", async () => {
+		const session = reviewSession(async () =>
+			makeReview("Recruiting UNC and VCU"),
+		);
+		await session.run("BrainStartTopicReview();");
+		const user = userEvent.setup();
+		render(<Onboarding actions={session.actions} />);
+		expect(
+			screen.getByRole("progressbar", {
+				name: "Setup progress: step 1 of 8, Your mailbox",
+			}),
+		).toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: "Start setup" }));
+		await screen.findByRole("checkbox", { name: "Recruiting UNC and VCU" });
+		expect(
+			screen.getByRole("progressbar", {
+				name: "Setup progress: step 7 of 8, Topics",
+			}),
+		).toBeInTheDocument();
+		const steps = within(
+			screen.getByRole("list", { name: "Setup steps" }),
+		).getAllByRole("listitem");
+		expect(steps).toHaveLength(8);
+		expect(steps[0]).toHaveTextContent("Your mailbox (done)");
+		expect(steps[6]).toHaveTextContent("Topics");
+		expect(steps[6]).toHaveAttribute("aria-current", "step");
+		expect(steps[7]).not.toHaveAttribute("aria-current");
+		expect(
+			steps.filter((item) => item.hasAttribute("aria-current")),
+		).toHaveLength(1);
 	});
 
 	it("keeps a failed resume check visible and does not begin mailbox work", async () => {

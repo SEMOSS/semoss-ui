@@ -8,51 +8,59 @@ import {
 } from "./topic-review.test-fixtures";
 import type { TopicReview } from "./topic-review-api";
 
+/** Items are numbered from 1; item 1 is the detailed one. Pages follow offset, limit and total. */
 export function makeEvidence(
 	review: Pick<TopicReview, "id" | "revision">,
 	topicKey = "topic-1",
+	page: { total?: number; offset?: number; limit?: number } = {},
 ): TopicEvidence {
+	const { total = 1, offset = 0, limit = 20 } = page;
+	const count = Math.max(0, Math.min(limit, total - offset));
+	const items = Array.from({ length: count }, (_, index) =>
+		evidenceItem(offset + index + 1),
+	);
 	return {
 		reviewId: review.id,
 		revision: review.revision,
 		topicKey,
-		items: [
-			{
-				id: "thread-1",
-				source: "email",
-				subject: "TLS certificate renewal",
-				lastMessageAt: "2023-10-12T09:00:00Z",
-				messageCount: 3,
-				people: [
-					{ id: "p-1", name: "Ana Lima", email: "ana@example.org" },
-				],
-				links: [
-					{
-						topicId: "topic-1",
-						name: "Northwind Migration",
-						source: "seed",
-						confidence: 74,
-						primary: true,
-					},
-					{
-						topicId: "topic-3",
-						name: "Client A",
-						source: "you",
-						confidence: 100,
-						primary: false,
-					},
-				],
-				rejectedTopicIds: [],
-				canCorrect: true,
-				version: "relationship-version-1",
-			},
-		],
-		total: 1,
-		offset: 0,
-		hasMore: false,
+		items,
+		total,
+		offset,
+		hasMore: offset + count < total,
 		hiddenOrUnavailable: 2,
 		limited: false,
 		scope: "Imported examples and existing topic links",
+	};
+}
+
+function evidenceItem(number: number): TopicEvidence["items"][number] {
+	return {
+		id: `thread-${number}`,
+		source: "email",
+		subject:
+			number === 1 ? "TLS certificate renewal" : `Conversation ${number}`,
+		lastMessageAt: "2023-10-12T09:00:00Z",
+		messageCount: 3,
+		people: [{ id: "p-1", name: "Ana Lima", email: "ana@example.org" }],
+		links: [
+			{
+				topicId: "topic-1",
+				name: "Northwind Migration",
+				source: "seed",
+				confidence: 74,
+				primary: true,
+			},
+			{
+				topicId: "topic-3",
+				name: "Client A",
+				source: "you",
+				confidence: 100,
+				primary: false,
+			},
+		],
+		rejectedTopicIds: [],
+		canCorrect: true,
+		version: `relationship-version-${number}`,
 	};
 }
 
@@ -76,25 +84,43 @@ export function wire(output: unknown) {
 	return { pixelReturn: [{ output, operationType: ["MAP"] }] };
 }
 
+/** A topic with no conversations yet; there is nothing to check, so nothing is sent. */
+export async function noEvidence(
+	review: ReviewWire,
+	key: string,
+	_offset: number,
+) {
+	return makeEvidence(review, key, { total: 0 });
+}
+
+/** Every BrainChangeTopicReview request so far, with the revision it was sent against. */
+export function changesSent(session: {
+	run: { mock: { calls: unknown[][] } };
+}) {
+	return session.run.mock.calls
+		.map(([statement]) => String(statement))
+		.filter((statement) => statement.startsWith("BrainChangeTopicReview("))
+		.map((statement) => ({
+			revision: Number(statement.match(/revision=\[(\d+)\]/)?.[1]),
+			operationId: JSON.parse(
+				statement.match(/operationId=(\[[^\]]+\])/)?.[1] || "[]",
+			)[0] as string,
+			change: JSON.parse(
+				statement.match(/change=(\[[\s\S]*\])\);$/)?.[1] || "[]",
+			)[0] as TopicReviewChange,
+		}));
+}
+
 /** Controlled transport acknowledgements only; relationship transactions are checked in H2. */
-export function evidenceSession() {
-	const session = reviewSession(async () => twoTopics());
+export function evidenceSession(initial: ReviewWire = twoTopics()) {
+	const session = reviewSession(async () => structuredClone(initial));
 	const afterChange = vi.fn(
 		async (_review: ReviewWire): Promise<void> => undefined,
 	);
+	// override with mockImplementation for longer lists or locked conversations
 	const evidence = vi.fn(
-		async (review: ReviewWire, key: string, query: string) => {
-			const page = makeEvidence(review, key);
-			if (
-				query &&
-				!page.items[0].subject
-					.toLowerCase()
-					.includes(query.toLowerCase())
-			)
-				page.items = [];
-			page.total = page.items.length;
-			return page;
-		},
+		async (review: ReviewWire, key: string, _offset: number) =>
+			makeEvidence(review, key),
 	);
 	const run = vi.fn(async (statement: string) => {
 		if (statement.startsWith("BrainGetTopicReviewEvidence(")) {
@@ -102,29 +128,10 @@ export function evidenceSession() {
 			const key = JSON.parse(
 				statement.match(/topicKey=(\[[^\]]+\])/)?.[1] || "[]",
 			)[0] as string;
-			const query = JSON.parse(
-				statement.match(/query=(\[[^\]]*\])/)?.[1] || '[""]',
-			)[0] as string;
-			return wire(await evidence(session.saved, key, query));
-		}
-		if (statement.startsWith("BrainGetThreadMessages(")) {
-			return wire({
-				threadId: "thread-1",
-				source: "email",
-				hiddenCount: 1,
-				unavailableCount: 0,
-				hasMore: true,
-				messages: [
-					{
-						id: "message-1",
-						fromName: "Ana Lima",
-						fromAddress: "ana@example.org",
-						at: "2023-10-12T09:00:00Z",
-						text: "Please renew the certificate.",
-						webLink: "https://outlook.office.com/mail/message-1",
-					},
-				],
-			});
+			const offset = Number(
+				statement.match(/offset=\[(\d+)\]/)?.[1] ?? 0,
+			);
+			return wire(await evidence(session.saved, key, offset));
 		}
 		if (statement.startsWith("BrainChangeTopicReview(")) {
 			const review = session.saved;
@@ -153,9 +160,21 @@ export function evidenceSession() {
 						"Organization changes use the organization transport fixture",
 					);
 				} else {
-					review.draft.corrections = [
-						{
-							threadId: "thread-1",
+					// each conversation keeps its latest choice per topic
+					const touched = new Set([
+						change.topicKey,
+						change.targetKey,
+					]);
+					const next = (review.draft.corrections ?? []).filter(
+						(row) =>
+							!(
+								change.threadIds.includes(row.threadId) &&
+								touched.has(row.topicKey)
+							),
+					);
+					for (const threadId of change.threadIds) {
+						next.push({
+							threadId,
 							topicKey: change.topicKey,
 							state:
 								change.type === "move" ||
@@ -163,15 +182,16 @@ export function evidenceSession() {
 									? "exclude"
 									: "include",
 							primary: false,
-						},
-					];
-					if (change.targetKey)
-						review.draft.corrections.push({
-							threadId: "thread-1",
-							topicKey: change.targetKey,
-							state: "include",
-							primary: change.type === "move",
 						});
+						if (change.targetKey)
+							next.push({
+								threadId,
+								topicKey: change.targetKey,
+								state: "include",
+								primary: change.type === "move",
+							});
+					}
+					review.draft.corrections = next;
 					review.draft.history = [
 						{
 							id: operationId,

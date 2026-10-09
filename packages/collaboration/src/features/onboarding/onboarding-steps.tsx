@@ -17,11 +17,19 @@ import {
 	Zap,
 } from "lucide-react";
 import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
-import { Badge, Button, cn, Input, Label, P, Switch } from "@semoss/ui/next";
+import {
+	Badge,
+	Button,
+	cn,
+	Input,
+	Label,
+	P,
+	Progress,
+	Switch,
+} from "@semoss/ui/next";
 import { PersonAvatar } from "../collaboration/components/person-avatar";
 import {
 	type AccountSuggestion,
-	type Job,
 	type KeepOutSuggestion,
 	LOOK_DAYS,
 	listPeople,
@@ -44,7 +52,6 @@ import {
 	formatCount,
 	LoadingCards,
 	message,
-	PhaseRow,
 	ProgressRing,
 	SelectCard,
 	StatTile,
@@ -570,19 +577,53 @@ export function KeepOutStep({
 	);
 }
 
-const IMPORT_PHASES = [
-	{ steps: ["queued", "mailbox"], label: "Connecting to your mailbox" },
-	{ steps: ["reading inbox"], label: "Checking your Inbox" },
-	{ steps: ["reading sentitems"], label: "Checking your Sent mail" },
-	{ steps: ["reading Teams chats"], label: "Reading Teams chats" },
-	{ steps: ["importing"], label: "Building threads and people" },
-	{ steps: ["threads", "people"], label: "Ranking who matters" },
-];
+// what the import is doing, in the owner's words; importing runs once for mail and once for Teams
+function importLabel(step: string, mailReady: boolean): string {
+	switch (step) {
+		case "reading inbox":
+			return "Reading your Inbox";
+		case "reading sentitems":
+			return "Reading your Sent mail";
+		case "importing":
+			return mailReady ? "Adding your Teams chats" : "Adding your mail";
+		case "threads":
+		case "directory":
+		case "people":
+			return "Finding who matters";
+		case "reading Teams chats":
+			return "Reading your Teams chats";
+		case "ranking":
+			return "Ranking who matters";
+		default:
+			return "Connecting to your mailbox";
+	}
+}
 
-function phaseOf(job: Job, phases: { steps: string[] }[]) {
-	if (job.status === "done") return phases.length;
-	const index = phases.findIndex((p) => p.steps.includes(job.step));
-	return index < 0 ? 0 : index;
+function named(value: unknown): { name: string; detail: string }[] {
+	return Array.isArray(value)
+		? value
+				.filter(
+					(item): item is Record<string, unknown> =>
+						!!item && typeof item === "object",
+				)
+				.map((item) => ({
+					name: String(item.name ?? ""),
+					detail:
+						typeof item.people === "number"
+							? `${item.people} people, ${formatCount(Number(item.threads ?? 0))} conversations`
+							: "",
+				}))
+				.filter((item) => item.name)
+		: [];
+}
+
+function FoundRow({ label, children }: { label: string; children: ReactNode }) {
+	return (
+		<div className="grid gap-1 md:grid-cols-[11rem_minmax(0,1fr)] md:items-start">
+			<P className="pt-0.5 text-muted-foreground text-xs">{label}</P>
+			<div className="flex flex-wrap gap-1.5">{children}</div>
+		</div>
+	);
 }
 
 export function ImportStep({
@@ -624,8 +665,24 @@ export function ImportStep({
 	};
 
 	const active = job && (startedHere || done) && job.status !== "none";
-	const phase = job ? phaseOf(job, IMPORT_PHASES) : 0;
 	const counts = job?.counts ?? {};
+	// mail is in and people are ranked; Teams chats may still be coming
+	const mailReady = counts.mailReady === true;
+	const progress = done ? 100 : (job?.progress ?? 0);
+	const chats = Number(counts.teamsChats ?? 0);
+	const chatsRead = Number(counts.teamsChatsRead ?? 0);
+	const teamsLine =
+		typeof counts.teamsMessages === "number"
+			? `Teams: ${formatCount(counts.teamsMessages)} messages from ${formatCount(chats)} chats`
+			: chats > 0
+				? `Teams: ${formatCount(chatsRead)} of ${formatCount(chats)} chats read`
+				: running && teams && !mailReady
+					? "Teams chats come after your mail"
+					: "";
+	const topPeople = named(counts.topPeople);
+	const outside = named(counts.outsideOrgs);
+	const managerName =
+		typeof counts.managerName === "string" ? counts.managerName : "";
 	return (
 		<>
 			<StepHeader
@@ -636,30 +693,23 @@ export function ImportStep({
 				chats if you want them in Work. Your exclusions still apply.
 			</StepHeader>
 			{active ? (
-				<div className="grid items-center gap-8 md:grid-cols-[auto_minmax(0,1fr)]">
-					<div className="flex justify-center">
-						<ProgressRing value={done ? 100 : (job?.progress ?? 0)}>
-							<span className="text-muted-foreground text-xs">
-								{done ? "complete" : "importing"}
-							</span>
-						</ProgressRing>
+				<div className="flex flex-col gap-2">
+					<div className="flex items-baseline justify-between gap-2 text-sm">
+						<P className="font-medium">
+							{done
+								? "Import complete"
+								: importLabel(job?.step ?? "", mailReady)}
+						</P>
+						<P className="text-muted-foreground tabular-nums">
+							{progress}%
+						</P>
 					</div>
-					<ol className="space-y-3">
-						{IMPORT_PHASES.map((p, index) => (
-							<PhaseRow
-								key={p.label}
-								state={
-									index < phase
-										? "done"
-										: index === phase && running
-											? "active"
-											: "todo"
-								}
-							>
-								{p.label}
-							</PhaseRow>
-						))}
-					</ol>
+					<Progress value={progress} />
+					{teamsLine && (
+						<P className="text-muted-foreground text-sm">
+							{teamsLine}
+						</P>
+					)}
 				</div>
 			) : (
 				<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/40 px-6 py-10 text-center">
@@ -735,6 +785,45 @@ export function ImportStep({
 					/>
 				</div>
 			)}
+			{active &&
+				(managerName || topPeople.length > 0 || outside.length > 0) && (
+					<section
+						aria-label="Found so far"
+						className="flex flex-col gap-3 rounded-lg border p-4"
+					>
+						<P className="font-medium text-sm">Found so far</P>
+						{managerName && (
+							<FoundRow label="Your manager">
+								<Badge variant="secondary">{managerName}</Badge>
+							</FoundRow>
+						)}
+						{topPeople.length > 0 && (
+							<FoundRow label="You talk with most">
+								{topPeople.map((person) => (
+									<Badge
+										key={person.name}
+										variant="secondary"
+									>
+										{person.name}
+									</Badge>
+								))}
+							</FoundRow>
+						)}
+						{outside.length > 0 && (
+							<FoundRow label="Outside organizations">
+								{outside.map((org) => (
+									<Badge
+										key={org.name}
+										variant="outline"
+										title={org.detail}
+									>
+										{org.name}
+									</Badge>
+								))}
+							</FoundRow>
+						)}
+					</section>
+				)}
 			{active && <TeamsImportNotice counts={counts} />}
 			{job?.status === "failed" && (
 				<Failure
@@ -745,8 +834,15 @@ export function ImportStep({
 			{(startError || error) && (
 				<Failure error={startError || error || ""} />
 			)}
-			<StepActions onBack={running ? undefined : onBack}>
-				{done && (
+			<StepActions
+				onBack={running ? undefined : onBack}
+				note={
+					running && mailReady
+						? "Teams chats keep importing while you go on."
+						: undefined
+				}
+			>
+				{(done || (running && mailReady)) && (
 					<Next
 						onClick={onNext}
 						variant={startedHere ? "default" : "outline"}
@@ -787,8 +883,11 @@ function PersonCard({
 	onVip,
 	onFollow,
 	featured,
+	vipReason,
 }: {
 	person: OnboardingPerson;
+	/** Why Brain starred this person, while the star is still its suggestion. */
+	vipReason?: string;
 	vip: boolean;
 	followed: boolean;
 	manager: boolean;
@@ -825,6 +924,11 @@ function PersonCard({
 				<div className="truncate text-muted-foreground text-xs">
 					{subtitle}
 				</div>
+				{vip && vipReason && (
+					<div className="truncate text-chart-4 text-xs">
+						Maybe a VIP: {vipReason}
+					</div>
+				)}
 				{person.follow === "suggested" && person.followReason && (
 					<div className="truncate text-muted-foreground text-xs">
 						{person.followReason}
@@ -886,6 +990,9 @@ export function PeopleStep({
 	const [people, setPeople] = useState<OnboardingPerson[] | null>(null);
 	const [followed, setFollowed] = useState<Set<string>>(new Set());
 	const [vips, setVips] = useState<Set<string>>(new Set());
+	const [vipReasons, setVipReasons] = useState<Map<string, string>>(
+		new Map(),
+	);
 	const [error, setError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [showAll, setShowAll] = useState(false);
@@ -923,10 +1030,13 @@ export function PeopleStep({
 					),
 				);
 				const chosen = list.filter((p) => p.vip).map((p) => p.id);
-				// nobody starred yet: suggest the manager and the strongest contacts
+				const reasons = new Map<string, string>();
+				// nobody starred yet: suggest the manager and the strongest contacts, saying why
 				if (!chosen.length) {
-					if (managerId && list.some((p) => p.id === managerId))
+					if (managerId && list.some((p) => p.id === managerId)) {
 						chosen.push(managerId);
+						reasons.set(managerId, "your manager");
+					}
 					let strongest = 0;
 					for (const p of list)
 						if (
@@ -935,10 +1045,18 @@ export function PeopleStep({
 							!chosen.includes(p.id)
 						) {
 							chosen.push(p.id);
+							reasons.set(
+								p.id,
+								p.followReason
+									? p.followReason.charAt(0).toLowerCase() +
+											p.followReason.slice(1)
+									: "one of your strongest contacts",
+							);
 							strongest++;
 						}
 				}
 				setVips(new Set(chosen));
+				setVipReasons(reasons);
 			})
 			.catch((cause: unknown) => setError(message(cause)));
 	}, [actions, selfEmail, managerId]);
@@ -1034,6 +1152,7 @@ export function PeopleStep({
 			vip={vips.has(p.id)}
 			followed={followed.has(p.id) || vips.has(p.id)}
 			manager={p.id === managerId}
+			vipReason={vipReasons.get(p.id)}
 			onVip={() => {
 				setVips((prev) => toggled(prev, p.id));
 				setFollowed((prev) => new Set(prev).add(p.id));
@@ -1416,6 +1535,9 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	);
 	const [startError, setStartError] = useState<string | null>(null);
 	const [starting, setStarting] = useState(false);
+	// Sort waits for Teams chats the import is still reading
+	const { job: importJob } = useJob(actions, "import");
+	const importing = importJob?.status === "running";
 	const running = job?.status === "running";
 	// the sort itself, not the topic filing that may come after it
 	const failures = Number(job?.counts.errors ?? 0);
@@ -1513,6 +1635,15 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 			{isLoading && (
 				<LoadingCards label="Checking your sorting progress..." />
 			)}
+			{importing && !running && !done && (
+				<P className="text-muted-foreground text-sm">
+					Your Teams chats are still importing
+					{Number(importJob?.counts.teamsChats ?? 0) > 0
+						? ` (${formatCount(Number(importJob?.counts.teamsChatsRead ?? 0))} of ${formatCount(Number(importJob?.counts.teamsChats))} chats)`
+						: ""}
+					. Sorting starts once they are in.
+				</P>
+			)}
 			{job?.status === "failed" && (
 				<Failure
 					error={job.error || "Sorting stopped."}
@@ -1541,7 +1672,13 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 				{!running && !done && (
 					<Next
 						onClick={start}
-						disabled={starting || isLoading || !!error || !job}
+						disabled={
+							starting ||
+							isLoading ||
+							!!error ||
+							!job ||
+							importing
+						}
 					>
 						Sort my threads
 					</Next>

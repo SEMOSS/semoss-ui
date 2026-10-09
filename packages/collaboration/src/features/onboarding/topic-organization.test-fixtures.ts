@@ -11,7 +11,6 @@ import {
 	type ReviewWire,
 	reviewSession,
 } from "./topic-review.test-fixtures";
-import type { ReviewTopic } from "./topic-review-api";
 
 export function organizationReview(count = 3): ReviewWire {
 	const review = makeReview("UNC Recruiting");
@@ -283,33 +282,10 @@ export function organizationSession(initial = organizationReview()) {
 			await afterChange(review);
 			return packet({ exists: true, review });
 		}
-		const pendingSources =
-			review?.draft.topics
-				.filter((topic) => topic.mergedIntoKey && !topic.mergeApplied)
-				.map((topic) => structuredClone(topic)) ?? [];
 		const response = await base.run(statement);
 		if (statement.startsWith("BrainApplyTopicReview(") && base.saved) {
-			const saved = base.saved;
-			saved.result.merges = pendingSources.map((source) => {
-				const target = saved.result.topics.find(
-					(topic) => topic.key === source.mergedIntoKey,
-				);
-				if (!target) throw new Error("Missing fixture merge receipt");
-				const applied = saved.draft.topics.find(
-					(topic) => topic.key === source.key,
-				) as ReviewTopic;
-				applied.id = null;
-				applied.mergeApplied = true;
-				return {
-					sourceKey: source.key,
-					targetKey: target.key,
-					sourceId: source.id,
-					targetId: target.id,
-					mergedInto: target.id,
-				};
-			});
-			saved.draft.history = [];
-			return packet({ exists: true, review: saved });
+			base.saved.draft.history = [];
+			return packet({ exists: true, review: base.saved });
 		}
 		return response;
 	});

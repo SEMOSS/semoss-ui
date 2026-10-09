@@ -1,5 +1,4 @@
 import {
-	act,
 	cleanup,
 	render,
 	screen,
@@ -8,416 +7,319 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
+import { makeEvidence } from "./topic-evidence.test-fixtures";
 import {
 	organizationReview,
 	organizationSession,
+	packet,
 } from "./topic-organization.test-fixtures";
-import type {
-	TopicOrganizationPreview,
-	TopicOrganizationProposal,
-} from "./topic-organization-api";
-import { deferred } from "./topic-review.test-fixtures";
+import {
+	makeAreaReview,
+	nextStage,
+	press,
+	reviewSession,
+} from "./topic-review.test-fixtures";
+import type { SetupChange } from "./topic-setup-api";
 import { TopicsStep } from "./topics-step";
 
-function step(actions: InsightActions, onNext = vi.fn(), onBack = vi.fn()) {
+function step(actions: InsightActions, onNext = vi.fn()) {
 	return (
 		<StrictMode>
 			<TopicsStep
 				actions={actions}
 				onNext={onNext}
-				onBack={onBack}
+				onBack={vi.fn()}
 				eyebrow="Step 7 of 8"
 			/>
 		</StrictMode>
 	);
 }
 
-afterEach(cleanup);
+const SAVED = { timeout: 3000 };
+// a right arrow, kept out of the source as a literal
+const ARROW = String.fromCharCode(8594);
 
-describe("owner-guided topic setup", () => {
-	it("keeps a large review compact and opens the invalid collapsed profile before focusing its error", async () => {
-		const session = organizationSession(organizationReview(25));
+const change = (extra: Partial<SetupChange>): SetupChange => ({
+	type: "edit_topic",
+	topicKey: "",
+	topicKeys: [],
+	name: "",
+	description: "",
+	addTerms: [],
+	addPeople: [],
+	removePeople: [],
+	reason: "",
+	...extra,
+});
+
+/** The organization fixture plus a scripted chat reply and topics with no conversations. */
+function assistantSession(
+	changes: SetupChange[],
+	initial = organizationReview(),
+) {
+	const session = organizationSession(initial);
+	const run = vi.fn(async (statement: string) => {
+		if (statement.startsWith("BrainTopicReviewChat(")) {
+			if (!session.saved) throw new Error("Review not found");
+			return packet({
+				reviewId: session.saved.id,
+				revision: session.saved.revision,
+				reply: "Here is what I would change.",
+				changes,
+			});
+		}
+		if (statement.startsWith("BrainGetTopicReviewEvidence(")) {
+			if (!session.saved) throw new Error("Review not found");
+			const key = JSON.parse(
+				statement.match(/topicKey=(\[[^\]]+\])/)?.[1] || "[]",
+			)[0] as string;
+			return packet(makeEvidence(session.saved, key, { total: 0 }));
+		}
+		return session.run(statement);
+	});
+	return { session, run, actions: { run } as unknown as InsightActions };
+}
+
+async function askAssistant(user: ReturnType<typeof userEvent.setup>) {
+	await user.click(screen.getByRole("button", { name: "Ask the assistant" }));
+	await user.type(
+		await screen.findByRole("textbox", {
+			name: "Message the setup assistant",
+		}),
+		"Recruiting is one area.",
+	);
+	await user.click(screen.getByRole("button", { name: "Send" }));
+}
+
+async function openCombinePreview(user: ReturnType<typeof userEvent.setup>) {
+	await askAssistant(user);
+	await user.click(await screen.findByRole("button", { name: "Apply" }));
+	return screen.findByRole("dialog", {
+		name: "Review your grouping changes",
+	});
+}
+
+const combine = change({
+	type: "combine",
+	topicKeys: ["topic-1", "topic-2"],
+	name: "Recruiting",
+	description: "Recruiting across UNC and VCU.",
+	reason: "The same recruiting area.",
+});
+
+beforeEach(() => {
+	vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+});
+afterEach(() => {
+	cleanup();
+	vi.restoreAllMocks();
+});
+
+const statements = (run: { mock: { calls: unknown[][] } }, reactor: string) =>
+	run.mock.calls
+		.map(([statement]) => String(statement))
+		.filter((statement) => statement.startsWith(`${reactor}(`));
+
+describe("regrouping areas without the assistant", () => {
+	it("saves pending edits first, then regroups against the new revision", async () => {
+		const session = reviewSession(async () => makeAreaReview());
 		const user = userEvent.setup();
 		render(step(session.actions));
-		await screen.findByDisplayValue("UNC Recruiting");
-		expect(
-			screen.getAllByRole("textbox", { name: "Topic name" }),
-		).toHaveLength(1);
 		await user.click(
-			screen.getByRole("button", { name: "Edit Project 25" }),
-		);
-		const name = screen.getByRole("textbox", { name: "Topic name" });
-		await user.clear(name);
-		await user.click(
-			screen.getByRole("button", { name: "Edit UNC Recruiting" }),
+			await screen.findByRole("checkbox", {
+				name: "Platform Operations",
+			}),
 		);
 		await user.click(
-			screen.getByRole("button", { name: "Keep 25 topics" }),
+			screen.getByRole("button", { name: "Keep these separate" }),
 		);
-		await screen.findByText(
-			"Name this topic or turn off Keep before continuing",
+		await screen.findByRole("button", { name: "Combine into one topic" });
+		const calls = session.run.mock.calls.map(([statement]) => statement);
+		const save = calls.findIndex((statement) =>
+			statement.startsWith("BrainSaveTopicReview("),
 		);
+		const regroup = calls.findIndex((statement) =>
+			statement.startsWith("BrainSetTopicArea("),
+		);
+		expect(save).toBeGreaterThan(-1);
+		expect(regroup).toBeGreaterThan(save);
+		expect(calls[regroup]).toContain("revision=[2]");
+		// the earlier edit survives the regroup
 		expect(
-			screen.getAllByRole("textbox", { name: "Topic name" }),
-		).toHaveLength(1);
+			screen.getByRole("checkbox", { name: "Platform Operations" }),
+		).not.toBeChecked();
 		expect(
-			screen.getByRole("textbox", { name: "Topic name" }),
-		).toHaveFocus();
-		expect(screen.getByRole("textbox", { name: "Topic name" })).toHaveValue(
-			"",
-		);
-		expect(session.afterApply).not.toHaveBeenCalled();
+			session.saved?.draft.topics.find((topic) => topic.key === "topic-3")
+				?.keep,
+		).toBe(false);
 	});
 
-	it("saves free-text context and the owner's preferred detail across Back and remount", async () => {
-		const session = organizationSession();
-		const onBack = vi.fn();
+	it("changes which topics the next steps list", async () => {
+		const session = reviewSession(async () => makeAreaReview());
 		const user = userEvent.setup();
-		const first = render(step(session.actions, vi.fn(), onBack));
-		await screen.findByDisplayValue("UNC Recruiting");
-		await user.type(
-			screen.getByRole("textbox", {
-				name: "Give the assistant some context (optional)",
-			}),
-			"Recruiting with John M and Taylor J: UNC + VCU. Client A with Jim and Hank.",
-		);
-		screen
-			.getByRole("combobox", { name: "How broad should your topics be?" })
-			.focus();
-		await user.keyboard("{ArrowDown}");
-		await user.click(
-			screen.getByRole("option", {
-				name: "Individual projects and clients",
-			}),
-		);
-		await user.click(screen.getByRole("button", { name: "Back" }));
-		await waitFor(() => expect(onBack).toHaveBeenCalledOnce());
-		first.unmount();
 		render(step(session.actions));
+		await user.click(
+			await screen.findByRole("button", { name: "Keep these separate" }),
+		);
+		await screen.findByRole("checkbox", { name: "VCU Hiring" });
+		await nextStage(user, "people");
+		expect(screen.getByText("UNC Recruiting")).toBeVisible();
+		expect(screen.getByText("VCU Hiring")).toBeVisible();
+		expect(screen.queryByText("Recruiting")).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: "Back" }));
+		await user.click(
+			await screen.findByRole("button", {
+				name: "Combine into one topic",
+			}),
+		);
+		await screen.findByRole("button", { name: "Keep these separate" });
+		await nextStage(user, "people");
+		expect(screen.getByText("Recruiting")).toBeVisible();
+		expect(screen.queryByText("VCU Hiring")).not.toBeInTheDocument();
+		expect(screen.queryByText("UNC Recruiting")).not.toBeInTheDocument();
+	});
+
+	it("keeps the area as it was and says why when regrouping fails", async () => {
+		const session = reviewSession(async () => makeAreaReview());
+		const run = vi.fn(async (statement: string) => {
+			if (statement.startsWith("BrainSetTopicArea("))
+				throw new Error("Could not regroup these topics");
+			return session.run(statement);
+		});
+		const user = userEvent.setup();
+		render(step({ run } as unknown as InsightActions));
+		await user.click(
+			await screen.findByRole("button", { name: "Keep these separate" }),
+		);
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"Could not regroup these topics",
+		);
 		expect(
-			await screen.findByDisplayValue(/Recruiting with John M/),
+			screen.getByRole("button", { name: "Keep these separate" }),
 		).toBeEnabled();
 		expect(
-			screen.getByRole("combobox", {
-				name: "How broad should your topics be?",
+			screen.getByRole("button", { name: "Reload saved topics" }),
+		).toBeEnabled();
+		expect(
+			screen.queryByRole("checkbox", { name: "VCU Hiring" }),
+		).not.toBeInTheDocument();
+	});
+});
+
+describe("setup assistant", () => {
+	it("applies several proposed changes to the draft at once", async () => {
+		const { session, actions } = assistantSession([
+			change({
+				type: "edit_topic",
+				topicKey: "topic-1",
+				name: "Campus Hiring",
+				addTerms: ["campus"],
 			}),
-		).toHaveTextContent("Individual projects and clients");
-		expect(session.afterSuggest).not.toHaveBeenCalled();
+			change({ type: "skip", topicKey: "topic-3" }),
+			change({
+				type: "add_topic",
+				name: "Backend Hiring",
+				description: "Engineering recruiting.",
+			}),
+		]);
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await askAssistant(user);
+		expect(await screen.findByText("Update UNC Recruiting")).toBeVisible();
+		expect(screen.getByText("Skip Northwind Delivery")).toBeVisible();
+		await user.click(screen.getByRole("button", { name: "Apply all" }));
+		const chat = screen.getByRole("dialog", { name: "Setup assistant" });
+		await waitFor(() =>
+			expect(within(chat).getAllByText("Done")).toHaveLength(3),
+		);
+		await user.keyboard("{Escape}");
+		expect(
+			await screen.findByRole("checkbox", { name: "Campus Hiring" }),
+		).toBeChecked();
+		expect(
+			screen.getByRole("checkbox", { name: "Northwind Delivery" }),
+		).not.toBeChecked();
+		expect(
+			screen.getByRole("checkbox", { name: "Backend Hiring" }),
+		).toBeChecked();
+		await waitFor(
+			() =>
+				expect(
+					session.saved?.draft.topics.map((topic) => [
+						topic.name,
+						topic.keep,
+					]),
+				).toEqual([
+					["Campus Hiring", true],
+					["VCU Hiring", true],
+					["Northwind Delivery", false],
+					["Backend Hiring", true],
+				]),
+			SAVED,
+		);
+		expect(session.saved?.draft.topics[0].terms).toBe("UNC\ncampus");
+		// the assistant proposes; only saving the topics applies anything
+		expect(session.saved?.appliedRevision).toBeNull();
 	});
 
-	it("reviews and edits an assistant proposal, previews saved impact, and changes only the draft until final save", async () => {
-		const session = organizationSession();
+	it("previews a proposed combination, then adds it to the draft and files it on Save", async () => {
+		const { session, actions, run } = assistantSession([combine]);
 		const onNext = vi.fn();
 		const user = userEvent.setup();
-		render(step(session.actions, onNext));
-		await screen.findByDisplayValue("UNC Recruiting");
-		await user.click(
-			screen.getByRole("button", { name: "Suggest a better grouping" }),
-		);
-		const proposed = await screen.findByRole("dialog", {
-			name: "Suggested topic groups",
-		});
-		expect(within(proposed).getByText(/3 topics → 2 topics/)).toBeVisible();
+		render(step(actions, onNext));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		const preview = await openCombinePreview(user);
 		expect(
-			session.saved?.draft.topics.filter((topic) => topic.keep),
-		).toHaveLength(3);
-		await user.click(
-			within(proposed).getByRole("checkbox", {
-				name: "Use Northwind Delivery",
-			}),
-		);
-		await user.click(
-			within(proposed).getByRole("button", {
-				name: "Edit proposed Recruiting",
-			}),
-		);
-		await user.clear(
-			within(proposed).getByRole("textbox", {
-				name: "Proposed topic name",
-			}),
-		);
-		await user.type(
-			within(proposed).getByRole("textbox", {
-				name: "Proposed topic name",
-			}),
-			"Campus Talent",
-		);
-		expect(document.querySelector("form form")).toBeNull();
-		await user.click(
-			within(proposed).getByRole("button", {
-				name: "Preview selected changes",
-			}),
-		);
-		const preview = await screen.findByRole("dialog", {
-			name: "Review your grouping changes",
-		});
-		expect(
-			within(preview).getByRole("heading", { name: "Campus Talent" }),
+			within(preview).getByText(`3 topics ${ARROW} 2 topics kept`),
 		).toBeVisible();
 		expect(
-			within(preview).getByText(/1 Work items and 3 checklist steps/),
+			within(preview).getByRole("heading", { name: "Recruiting" }),
 		).toBeVisible();
 		expect(session.saved?.appliedRevision).toBeNull();
+		expect(statements(run, "BrainChangeTopicReview")).toHaveLength(0);
+
 		await user.click(
 			within(preview).getByRole("button", {
 				name: "Use this grouping in my draft",
 			}),
 		);
-		await screen.findByRole("button", { name: "Keep 2 topics" });
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", {
+					name: "Review your grouping changes",
+				}),
+			).not.toBeInTheDocument(),
+		);
+		await user.keyboard("{Escape}");
+		expect(await screen.findByText("2 topics kept")).toBeVisible();
 		expect(
-			screen.getByRole("button", { name: "Edit Northwind Delivery" }),
-		).toBeEnabled();
+			session.saved?.draft.topics.find(
+				(topic) => topic.key === "topic-2",
+			),
+		).toMatchObject({ keep: false, mergedIntoKey: "topic-1" });
 		expect(session.saved?.appliedRevision).toBeNull();
 		expect(session.afterApply).not.toHaveBeenCalled();
-		await user.click(screen.getByRole("button", { name: "Keep 2 topics" }));
+
+		await nextStage(user, "people");
+		await nextStage(user, "conversations");
+		await press(user, "Looks right, next topic");
+		await press(user, "Looks right, finish");
+		await user.click(
+			await screen.findByRole("button", { name: "Save 2 topics" }),
+		);
 		await waitFor(() => expect(onNext).toHaveBeenCalledOnce());
 		expect(session.saved?.result.topics.map((topic) => topic.name)).toEqual(
-			["Campus Talent", "Northwind Delivery"],
+			["Recruiting", "Northwind Delivery"],
 		);
 		expect(session.saved?.result.merges).toHaveLength(1);
 	});
 
-	it("lets the owner remove one contributor without dropping that topic from setup", async () => {
-		const session = organizationSession();
-		const user = userEvent.setup();
-		render(step(session.actions));
-		await screen.findByDisplayValue("UNC Recruiting");
-		await user.click(
-			screen.getByRole("button", { name: "Suggest a better grouping" }),
-		);
-		const dialog = await screen.findByRole("dialog", {
-			name: "Suggested topic groups",
-		});
-		await user.click(
-			within(dialog).getByRole("button", {
-				name: "Edit proposed Recruiting",
-			}),
-		);
-		await user.click(
-			within(dialog).getByRole("checkbox", { name: "VCU Hiring" }),
-		);
-		expect(within(dialog).getByText(/3 topics → 3 topics/)).toBeVisible();
-		await user.click(
-			within(dialog).getByRole("button", {
-				name: "Preview selected changes",
-			}),
-		);
-		const preview = await screen.findByRole("dialog", {
-			name: "Review your grouping changes",
-		});
-		await user.click(
-			within(preview).getByRole("button", {
-				name: "Use this grouping in my draft",
-			}),
-		);
-		await screen.findByRole("button", { name: "Keep 3 topics" });
-		expect(
-			screen.getByRole("button", { name: "Edit VCU Hiring" }),
-		).toBeEnabled();
-	});
-
-	it("combines directly without the assistant and retains selected aliases until the owner edits them", async () => {
-		const session = organizationSession();
-		const user = userEvent.setup();
-		render(step(session.actions));
-		await screen.findByDisplayValue("UNC Recruiting");
-		await user.click(
-			screen.getByRole("button", {
-				name: "Combine UNC Recruiting with other topics",
-			}),
-		);
-		const dialog = await screen.findByRole("dialog", {
-			name: "Combine overlapping topics",
-		});
-		await user.click(
-			within(dialog).getByRole("button", { name: "Preview combination" }),
-		);
-		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
-			"Choose at least two",
-		);
-		await user.click(
-			within(dialog).getByRole("checkbox", { name: "VCU Hiring" }),
-		);
-		const clues = within(dialog).getByRole("textbox", {
-			name: "Project names and other clues (optional)",
-		});
-		expect(clues).toHaveValue("UNC\nVCU");
-		await user.clear(clues);
-		await user.type(clues, "Campus hiring");
-		await user.click(
-			within(dialog).getByRole("checkbox", {
-				name: "Northwind Delivery",
-			}),
-		);
-		expect(clues).toHaveValue("Campus hiring");
-		await user.click(
-			within(dialog).getByRole("button", { name: "Preview combination" }),
-		);
-		const preview = await screen.findByRole("dialog", {
-			name: "Review your grouping changes",
-		});
-		expect(
-			within(preview).getByText("3 topics → 1 topics kept"),
-		).toBeVisible();
-		await user.click(
-			within(preview).getByRole("button", { name: "Back to topics" }),
-		);
-		expect(session.afterSuggest).not.toHaveBeenCalled();
-		expect(
-			session.saved?.draft.topics.filter((topic) => topic.keep),
-		).toHaveLength(3);
-	});
-
-	it("restores contributing topics with Undo while preserving a later owner name", async () => {
-		const session = organizationSession();
-		const user = userEvent.setup();
-		render(step(session.actions));
-		await screen.findByDisplayValue("UNC Recruiting");
-		await user.click(
-			screen.getByRole("button", { name: "Suggest a better grouping" }),
-		);
-		await screen.findByRole("dialog", { name: "Suggested topic groups" });
-		await user.click(
-			screen.getByRole("button", { name: "Preview selected changes" }),
-		);
-		await screen.findByRole("dialog", {
-			name: "Review your grouping changes",
-		});
-		await user.click(
-			screen.getByRole("button", {
-				name: "Use this grouping in my draft",
-			}),
-		);
-		await screen.findByRole("button", { name: "Keep 2 topics" });
-		const name = screen.getByRole("textbox", { name: "Topic name" });
-		await user.clear(name);
-		await user.type(name, "Owner's Talent Area");
-		await user.click(
-			screen.getByRole("button", { name: "Undo last change" }),
-		);
-		await screen.findByRole("button", { name: "Keep 3 topics" });
-		expect(screen.getByRole("textbox", { name: "Topic name" })).toHaveValue(
-			"Owner's Talent Area",
-		);
-		expect(
-			screen.getByRole("button", { name: "Edit VCU Hiring" }),
-		).toBeEnabled();
-		expect(session.afterApply).not.toHaveBeenCalled();
-	});
-
-	it("recovers a committed grouping after response loss before resubmitting an older draft", async () => {
-		const session = organizationSession();
-		const user = userEvent.setup();
-		session.afterChange.mockRejectedValueOnce(
-			new Error("Connection lost after grouping was saved"),
-		);
-		render(step(session.actions));
-		await screen.findByDisplayValue("UNC Recruiting");
-		await user.click(
-			screen.getByRole("button", { name: "Suggest a better grouping" }),
-		);
-		await screen.findByRole("dialog", { name: "Suggested topic groups" });
-		await user.click(
-			screen.getByRole("button", { name: "Preview selected changes" }),
-		);
-		const preview = await screen.findByRole("dialog", {
-			name: "Review your grouping changes",
-		});
-		await user.click(
-			within(preview).getByRole("button", {
-				name: "Use this grouping in my draft",
-			}),
-		);
-		expect(await within(preview).findByRole("alert")).toHaveTextContent(
-			"Connection lost",
-		);
-		await user.click(
-			within(preview).getByRole("button", { name: "Back to topics" }),
-		);
-		await user.click(screen.getByRole("button", { name: "Retry" }));
-		await screen.findByRole("button", { name: "Keep 2 topics" });
-		expect(
-			session.run.mock.calls.filter(([statement]) =>
-				statement.startsWith("BrainChangeTopicReview("),
-			),
-		).toHaveLength(1);
-		expect(
-			session.run.mock.calls.some(
-				([statement]) => statement === "BrainGetTopicReview();",
-			),
-		).toBe(true);
-		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-	});
-
-	it("keeps manual setup usable after an assistant error and restores focus when proposals are dismissed", async () => {
-		const session = organizationSession();
-		const user = userEvent.setup();
-		session.afterSuggest.mockRejectedValueOnce(
-			new Error("Assistant unavailable; draft preserved"),
-		);
-		render(step(session.actions));
-		await screen.findByDisplayValue("UNC Recruiting");
-		const trigger = screen.getByRole("button", {
-			name: "Suggest a better grouping",
-		});
-		await user.click(trigger);
-		await screen.findByRole("alert");
-		expect(
-			screen.getByRole("button", { name: "Add a topic" }),
-		).toBeEnabled();
-		expect(screen.getByRole("textbox", { name: "Topic name" })).toHaveValue(
-			"UNC Recruiting",
-		);
-		await user.click(trigger);
-		await screen.findByRole("dialog", { name: "Suggested topic groups" });
-		await user.keyboard("{Escape}");
-		await waitFor(() =>
-			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-		);
-		expect(trigger).toHaveFocus();
-	});
-
-	it("keeps the proposal open while its authoritative preview is pending", async () => {
-		const session = organizationSession();
-		const user = userEvent.setup();
-		const pending = deferred<TopicOrganizationPreview>();
-		session.afterPreview.mockImplementationOnce(() => pending.promise);
-		render(step(session.actions));
-		await screen.findByDisplayValue("UNC Recruiting");
-		await user.click(
-			screen.getByRole("button", { name: "Suggest a better grouping" }),
-		);
-		const proposed = await screen.findByRole("dialog", {
-			name: "Suggested topic groups",
-		});
-		await user.click(
-			within(proposed).getByRole("button", {
-				name: "Preview selected changes",
-			}),
-		);
-		await waitFor(() => expect(session.afterPreview).toHaveBeenCalled());
-		await user.keyboard("{Escape}");
-		expect(proposed).toBeVisible();
-		expect(
-			within(proposed).getByRole("button", {
-				name: /Preparing preview…/,
-			}),
-		).toBeDisabled();
-		await act(async () =>
-			pending.resolve(session.afterPreview.mock.calls[0][0]),
-		);
-		expect(
-			await screen.findByRole("dialog", {
-				name: "Review your grouping changes",
-			}),
-		).toBeVisible();
-	});
-
-	it("shows a blocked Teams scope honestly without enabling a whole-chat combination", async () => {
-		const session = organizationSession();
-		const user = userEvent.setup();
+	it("shows a blocked combination honestly and does not change the draft", async () => {
+		const { session, actions } = assistantSession([combine]);
 		session.afterPreview.mockImplementationOnce(async (preview) => ({
 			...preview,
 			groups: preview.groups.map((group) => ({
@@ -426,27 +328,10 @@ describe("owner-guided topic setup", () => {
 				reason: "Saved Teams links need exchange-aware combination.",
 			})),
 		}));
-		render(step(session.actions));
-		await screen.findByDisplayValue("UNC Recruiting");
-		await user.click(
-			screen.getByRole("button", {
-				name: "Combine UNC Recruiting with other topics",
-			}),
-		);
-		const combine = await screen.findByRole("dialog", {
-			name: "Combine overlapping topics",
-		});
-		await user.click(
-			within(combine).getByRole("checkbox", { name: "VCU Hiring" }),
-		);
-		await user.click(
-			within(combine).getByRole("button", {
-				name: "Preview combination",
-			}),
-		);
-		const preview = await screen.findByRole("dialog", {
-			name: "Review your grouping changes",
-		});
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		const preview = await openCombinePreview(user);
 		expect(
 			within(preview).getByText(/Saved Teams links need/),
 		).toBeVisible();
@@ -458,90 +343,92 @@ describe("owner-guided topic setup", () => {
 		expect(session.afterChange).not.toHaveBeenCalled();
 	});
 
-	it("requires fresh suggestions when the owner updates the organizing context", async () => {
-		const session = organizationSession();
+	it("recovers a committed combination after a lost response before anything older is saved", async () => {
+		const { session, actions, run } = assistantSession([combine]);
+		session.afterChange.mockRejectedValueOnce(
+			new Error("Connection lost after grouping was saved"),
+		);
 		const user = userEvent.setup();
-		render(step(session.actions));
-		await screen.findByDisplayValue("UNC Recruiting");
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		const preview = await openCombinePreview(user);
 		await user.click(
-			screen.getByRole("button", { name: "Suggest a better grouping" }),
-		);
-		await screen.findByRole("dialog", { name: "Suggested topic groups" });
-		await user.click(
-			screen.getByRole("button", { name: "Back to topics" }),
-		);
-		await user.type(
-			screen.getByRole("textbox", {
-				name: "Give the assistant some context (optional)",
+			within(preview).getByRole("button", {
+				name: "Use this grouping in my draft",
 			}),
-			"Keep UNC and VCU separate.",
+		);
+		expect(await within(preview).findByRole("alert")).toHaveTextContent(
+			"Connection lost",
 		);
 		await user.click(
-			screen.getByRole("button", { name: "Review suggested groups" }),
+			within(preview).getByRole("button", { name: "Back to topics" }),
 		);
-		const proposed = await screen.findByRole("dialog", {
-			name: "Suggested topic groups",
-		});
-		expect(within(proposed).getByRole("status")).toHaveTextContent(
-			"Your setup changed",
-		);
-		expect(
-			within(proposed).getByRole("button", {
-				name: "Preview selected changes",
-			}),
-		).toBeDisabled();
-		expect(session.afterPreview).not.toHaveBeenCalled();
+		await user.keyboard("{Escape}");
+		await user.click(await screen.findByRole("button", { name: "Retry" }));
+		expect(await screen.findByText("2 topics kept")).toBeVisible();
+		// the server already had it, so the change is not sent twice
+		expect(statements(run, "BrainChangeTopicReview")).toHaveLength(1);
+		expect(statements(run, "BrainGetTopicReview")).toHaveLength(1);
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 
-	it("ignores a late assistant response after switching authenticated insights", async () => {
-		const old = organizationSession();
-		const current = organizationSession(organizationReview(4));
-		const pending = deferred<TopicOrganizationProposal>();
-		old.afterSuggest.mockImplementationOnce(() => pending.promise);
+	it("tells you when a proposal no longer fits your topics", async () => {
+		const { actions } = assistantSession([
+			change({ type: "skip", topicKey: "topic-unknown" }),
+		]);
 		const user = userEvent.setup();
-		const view = render(step(old.actions));
-		await screen.findByDisplayValue("UNC Recruiting");
-		await user.click(
-			screen.getByRole("button", { name: "Suggest a better grouping" }),
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await askAssistant(user);
+		await user.click(await screen.findByRole("button", { name: "Apply" }));
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"no longer fits your topics",
 		);
-		await waitFor(() => expect(old.afterSuggest).toHaveBeenCalled());
-		view.rerender(step(current.actions));
-		await screen.findByRole("button", { name: "Keep 4 topics" });
-		await act(async () =>
-			pending.resolve(old.afterSuggest.mock.calls[0][0]),
-		);
-		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-		expect(current.saved?.draft.topics).toHaveLength(4);
 	});
+});
+
+describe("saved topics that changed during setup", () => {
+	const conflict = {
+		topicKey: "topic-1",
+		profileVersion: "b".repeat(64),
+		exists: true,
+		canReconcile: true,
+		reason: "",
+		savedProfile: {
+			name: "External Recruiting",
+			short: "Talent",
+			description: "Edited in another view",
+			terms: "External clue",
+			kind: "internal",
+			status: "active",
+			people: [],
+		},
+	};
 
 	it.each(["saved", "draft"] as const)(
-		"resolves an external profile conflict with the explicit %s choice",
+		"holds Save until you choose the %s profile",
 		async (choice) => {
 			const initial = organizationReview();
-			initial.profileConflicts = [
-				{
-					topicKey: "topic-1",
-					profileVersion: "b".repeat(64),
-					exists: true,
-					canReconcile: true,
-					reason: "",
-					savedProfile: {
-						name: "External Recruiting",
-						short: "Talent",
-						description: "Edited in another view",
-						terms: "External clue",
-						kind: "internal",
-						status: "active",
-						people: [],
-					},
-				},
-			];
-			const session = organizationSession(initial);
+			initial.profileConflicts = [conflict];
+			const { session, actions } = assistantSession([], initial);
 			const user = userEvent.setup();
-			render(step(session.actions));
-			await screen.findByDisplayValue("UNC Recruiting");
+			render(step(actions));
+			await screen.findByRole("heading", {
+				name: "Your main areas of work",
+			});
+			await nextStage(user, "people");
+			await nextStage(user, "conversations");
+			for (const name of [
+				"Looks right, next topic",
+				"Looks right, next topic",
+				"Looks right, finish",
+			])
+				await press(user, name);
 			expect(
-				screen.getByRole("button", { name: "Keep 3 topics" }),
+				await screen.findByText("Saved topics changed during setup"),
+			).toBeVisible();
+			expect(
+				screen.getByRole("button", { name: "Save 3 topics" }),
 			).toBeDisabled();
 			await user.click(
 				screen.getByRole("button", {
@@ -562,12 +449,14 @@ describe("owner-guided topic setup", () => {
 				).not.toBeInTheDocument(),
 			);
 			expect(
-				screen.getByRole("textbox", { name: "Topic name" }),
-			).toHaveValue(
-				choice === "saved" ? "External Recruiting" : "UNC Recruiting",
-			);
+				screen.getByText(
+					choice === "saved"
+						? "External Recruiting"
+						: "UNC Recruiting",
+				),
+			).toBeVisible();
 			expect(
-				screen.getByRole("button", { name: "Keep 3 topics" }),
+				screen.getByRole("button", { name: "Save 3 topics" }),
 			).toBeEnabled();
 			expect(session.afterApply).not.toHaveBeenCalled();
 		},
