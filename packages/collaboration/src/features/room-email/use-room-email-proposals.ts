@@ -69,7 +69,7 @@ function readyEmailMessages(turn: AgentTurnSnapshot): ConversationMessage[] {
 	];
 }
 
-/** Restore completed email tools into retained editors without opening any panels. */
+/** Restore completed email tools into retained editors; a draft from the run that just finished opens. */
 export function useRoomEmailProposals({
 	thread,
 	composer,
@@ -77,6 +77,7 @@ export function useRoomEmailProposals({
 	allowedSources,
 	isReady,
 	loadAttachment,
+	onOpen,
 }: {
 	thread: Pick<Thread, "id" | "subject" | "source">;
 	composer: EmailEditorStore;
@@ -84,7 +85,10 @@ export function useRoomEmailProposals({
 	allowedSources: Set<string>;
 	isReady: boolean;
 	loadAttachment?: (file: AgentEmailAttachment) => Promise<File>;
+	onOpen?: (draftId: string) => void;
 }): string {
+	const onOpenRef = useRef(onOpen);
+	onOpenRef.current = onOpen;
 	const observedRun = useRef(false);
 	const baseline = useRef<number | null>(null);
 	const [error, setError] = useState("");
@@ -128,6 +132,8 @@ export function useRoomEmailProposals({
 		);
 		let selectedSource: string | undefined;
 		let openEmail: SubmittedThreadContext["openEmail"];
+		// only a draft written after the owner's latest message opens; replays stay closed
+		let toOpen: string | undefined;
 		for (const [index, message] of messages.entries()) {
 			if (message.role === "user") {
 				selectedSource = undefined;
@@ -196,6 +202,8 @@ export function useRoomEmailProposals({
 				.emailDrafts.some((draft) => draft.seed.id === id);
 			// a new email needs no source, so any thread or session can open one
 			if (!isSourcedProposal(proposal)) {
+				if (!isOpen && isNewCompletion && index > lastUserIndex)
+					toOpen = id;
 				if (!isOpen)
 					composer.requestEmailDraft(
 						{
@@ -225,6 +233,7 @@ export function useRoomEmailProposals({
 				continue;
 			}
 			if (isOpen) continue;
+			if (isNewCompletion && index > lastUserIndex) toOpen = id;
 			composer.requestEmailDraft(
 				{
 					id,
@@ -239,6 +248,7 @@ export function useRoomEmailProposals({
 				false,
 			);
 		}
+		if (toOpen) onOpenRef.current?.(toOpen);
 	}, [allowedSources, composer, isReady, snapshot.turn, thread]);
 	useEffect(() => {
 		if (!isReady) return;
