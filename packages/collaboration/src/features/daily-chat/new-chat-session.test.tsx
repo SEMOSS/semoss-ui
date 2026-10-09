@@ -18,6 +18,7 @@ import { RoomSettingsPanelContext } from "@/features/rooms/components/room-setti
 import type {
 	RoomSession,
 	RoomSessionSnapshot,
+	RoomSubmissionSnapshot,
 } from "@/features/rooms/room-session";
 import type { ComposerSubmission } from "@/features/rooms/types/room";
 import type { ThreadChatSettings } from "@/features/thread-assistant/thread-settings";
@@ -174,6 +175,31 @@ function roomSessionFixture() {
 		setComposerDraft: vi.fn(
 			(composerDraft: RoomSessionSnapshot["composerDraft"]) =>
 				update({ composerDraft }),
+		),
+		addContextFile: vi.fn<RoomSession["addContextFile"]>((file) => {
+			if (
+				snapshot.contextFiles.some(
+					(existing) => existing.fileLocation === file.fileLocation,
+				)
+			)
+				return;
+			update({ contextFiles: [...snapshot.contextFiles, { ...file }] });
+		}),
+		removeContextFile: vi.fn<RoomSession["removeContextFile"]>((path) => {
+			update({
+				contextFiles: snapshot.contextFiles.filter(
+					(file) => file.fileLocation !== path,
+				),
+			});
+		}),
+		captureSubmission: vi.fn(
+			(submission: ComposerSubmission): RoomSubmissionSnapshot => ({
+				composer: {
+					...snapshot.composerDraft,
+					files: [...submission.files],
+				},
+				contextFiles: [...snapshot.contextFiles],
+			}),
 		),
 		create: vi.fn(async () => {
 			if (snapshot.roomId) return snapshot.roomId;
@@ -385,6 +411,52 @@ it("awaits room creation, then opens the actual room while its first message is 
 	expect(router.state.location.pathname).toBe(roomPath("actual-room"));
 });
 
+it("captures the submitted draft and queue before first-send room allocation", async () => {
+	let allocate: (roomId: string) => void = () => undefined;
+	mocks.create.mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				allocate = resolve;
+			}),
+	);
+	setup();
+	await enterText("Original request");
+	const firstFile = new File(["first"], "first.txt", { type: "text/plain" });
+	const laterFile = new File(["later"], "later.txt", { type: "text/plain" });
+	const firstContext = { fileName: "First.md", fileLocation: "First.md" };
+	const laterContext = { fileName: "Later.md", fileLocation: "Later.md" };
+	fireEvent.change(screen.getByLabelText("Choose attachments"), {
+		target: { files: [firstFile] },
+	});
+	act(() => sessions[0].addContextFile(firstContext));
+	submit();
+	const captured = sessions[0].captureSubmission.mock.results[0]?.value;
+	expect(captured).toMatchObject({
+		composer: { text: "Original request", files: [firstFile] },
+		contextFiles: [firstContext],
+	});
+	expect(mocks.create).toHaveBeenCalledOnce();
+	expect(sessions[0].send).not.toHaveBeenCalled();
+	act(() => {
+		sessions[0].addContextFile(laterContext);
+		sessions[0].setComposerDraft({
+			document: null,
+			text: "Later edit",
+			files: [firstFile, laterFile],
+		});
+	});
+	await act(async () => allocate("actual-room"));
+	expect(sessions[0].send).toHaveBeenCalledExactlyOnceWith(
+		{ text: "Original request", files: [firstFile] },
+		{},
+		captured,
+	);
+	expect(captured).toMatchObject({
+		composer: { text: "Original request", files: [firstFile] },
+		contextFiles: [firstContext],
+	});
+});
+
 it("retains the editable draft after failed creation and retries without submitting twice", async () => {
 	mocks.create.mockRejectedValueOnce(new Error("Could not create the room."));
 	const router = setup({ prompt: "Keep my request" });
@@ -465,7 +537,7 @@ it("opens landing Settings in one workbench panel and keeps draft and unsaved se
 	await settleFocus();
 	await waitFor(() => expect(actions).toHaveFocus());
 	await user.keyboard("{Enter}");
-	await user.click(screen.getByRole("menuitem", { name: "Open workbench" }));
+	await user.click(screen.getByRole("menuitem", { name: "Settings" }));
 	await settleFocus();
 	expect(screen.getByRole("textbox", { name: "Instructions" })).toBe(
 		instructions,
@@ -475,7 +547,9 @@ it("opens landing Settings in one workbench panel and keeps draft and unsaved se
 	const panels = JSON.parse(
 		screen.getByLabelText("Workbench panels").textContent ?? "{}",
 	);
-	expect(Object.values(panels)).toHaveLength(1);
+	expect(Object.keys(panels)).toHaveLength(3);
+	expect(panels).toHaveProperty("collaboration-emails");
+	expect(panels).toHaveProperty("collaboration-calendar");
 	await user.click(screen.getByRole("button", { name: "Save settings" }));
 	await waitFor(() =>
 		expect(sessions[0].getSnapshot().settings.instructions).toBe(
@@ -497,10 +571,27 @@ it("allocates only for explicit chat files and reuses that room on the first sen
 	await user.click(
 		screen.getByRole("button", { name: "Open composer actions" }),
 	);
-	await user.click(screen.getByRole("menuitem", { name: "Open workbench" }));
+	await user.click(screen.getByRole("menuitem", { name: "Open Emails" }));
 	expect(mocks.create).not.toHaveBeenCalled();
-	expect(screen.getByLabelText("Workbench panels")).toHaveTextContent("{}");
-	await user.click(screen.getByRole("button", { name: "Show chat files" }));
+	const browsers = JSON.parse(
+		screen.getByLabelText("Workbench panels").textContent ?? "{}",
+	);
+	expect(Object.keys(browsers)).toEqual([
+		"collaboration-emails",
+		"collaboration-calendar",
+	]);
+	await user.click(
+		screen.getByRole("button", { name: "Open composer actions" }),
+	);
+	expect(
+		screen.queryByRole("menuitem", { name: "Open workbench" }),
+	).not.toBeInTheDocument();
+	await user.click(screen.getByRole("menuitem", { name: "Open Calendar" }));
+	expect(mocks.create).not.toHaveBeenCalled();
+	await user.click(
+		screen.getByRole("button", { name: "Open composer actions" }),
+	);
+	await user.click(screen.getByRole("menuitem", { name: "Open Files" }));
 	await waitFor(() => expect(mocks.create).toHaveBeenCalledOnce());
 	await waitFor(() =>
 		expect(screen.getByLabelText("Workbench panels")).toHaveTextContent(
@@ -510,9 +601,8 @@ it("allocates only for explicit chat files and reuses that room on the first sen
 	expect(router.state.location.pathname).toBe("/");
 	expect(mocks.send).not.toHaveBeenCalled();
 	await user.click(
-		screen.getByRole("button", { name: "Open composer actions" }),
+		screen.getByRole("button", { name: "Back to conversation" }),
 	);
-	await user.click(screen.getByRole("menuitem", { name: "Hide workbench" }));
 	submit();
 	await waitFor(() =>
 		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
@@ -533,8 +623,7 @@ it("keeps the workbench hidden when a pending file request finishes", async () =
 	await user.click(
 		screen.getByRole("button", { name: "Open composer actions" }),
 	);
-	await user.click(screen.getByRole("menuitem", { name: "Open workbench" }));
-	await user.click(screen.getByRole("button", { name: "Show chat files" }));
+	await user.click(screen.getByRole("menuitem", { name: "Open Files" }));
 	await waitFor(() => expect(mocks.create).toHaveBeenCalledOnce());
 	await user.click(
 		screen.getByRole("button", { name: "Back to conversation" }),
@@ -639,7 +728,7 @@ it("opens landing Files in place, reuses its allocated room, and consumes the sh
 	await user.click(
 		screen.getByRole("button", { name: "Open composer actions" }),
 	);
-	await user.click(screen.getByRole("menuitem", { name: "Show chat files" }));
+	await user.click(screen.getByRole("menuitem", { name: "Open Files" }));
 	await waitFor(() => expect(router.state.location.pathname).toBe("/"));
 	await waitFor(() => expect(mocks.create).toHaveBeenCalledOnce());
 	expect(screen.getByLabelText("Workbench panels")).toHaveTextContent(
@@ -736,7 +825,7 @@ it("shows Files errors next to the composer and supports retry", async () => {
 	await user.click(
 		screen.getByRole("button", { name: "Open composer actions" }),
 	);
-	await user.click(screen.getByRole("menuitem", { name: "Show chat files" }));
+	await user.click(screen.getByRole("menuitem", { name: "Open Files" }));
 	const alert = await screen.findByRole("alert");
 	expect(alert).toHaveTextContent("Files are unavailable.");
 	expect(

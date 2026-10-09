@@ -52,7 +52,7 @@ export const useConnectorSaver = (
 	service: ConnectorViewerService,
 	host: ConnectorViewerProps,
 ): ConnectorSaver => {
-	const { saveTargetName, onSaved, onAddToContext } = host;
+	const { saveTargetName, onSaved, onAddToContext, prepareSave } = host;
 	const { insightId } = useInsight();
 	const { t } = useTranslation("connectors");
 	const [busyKeys, setBusyKeys] = useState<ReadonlySet<string>>(
@@ -89,7 +89,10 @@ export const useConnectorSaver = (
 			}
 			runningKeysRef.current.add(request.key);
 			setBusyKeys((previous) => new Set(previous).add(request.key));
+			let release: (() => void) | undefined;
 			try {
+				const prepared = await prepareSave?.();
+				if (typeof prepared === "function") release = prepared;
 				const file = await saveToInsight(
 					insightId,
 					service,
@@ -118,6 +121,7 @@ export const useConnectorSaver = (
 					),
 				);
 			} finally {
+				if (typeof release === "function") release();
 				runningKeysRef.current.delete(request.key);
 				if (isMountedRef.current) {
 					setBusyKeys((previous) => {
@@ -128,7 +132,7 @@ export const useConnectorSaver = (
 				}
 			}
 		},
-		[insightId, onAddToContext, onSaved, service, t],
+		[insightId, onAddToContext, onSaved, prepareSave, service, t],
 	);
 
 	const save = useCallback(

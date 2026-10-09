@@ -36,14 +36,30 @@ export function ToolWorkbench({
 	const dock = useRef<HTMLElement>(null);
 	const focusWorkbench = useCallback(() => dock.current?.focus(), []);
 	const isMobile = useIsMobile();
+	const [containerWidth, setContainerWidth] = useState<number | null>(null);
+	const isCompact = containerWidth === null ? isMobile : containerWidth < 768;
 	useEffect(() => {
-		if (!isMobile || !isOpen) return;
+		if (!isOpen || !dock.current) return;
+		const element = dock.current;
+		const measure = () => {
+			const width = element.getBoundingClientRect().width;
+			if (width > 0) setContainerWidth(width);
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [isOpen]);
+	useEffect(() => {
+		if (!isCompact || !isOpen) return;
 		// Activity must reveal retained panels before the mobile control can focus.
-		const frame = window.requestAnimationFrame(() =>
-			backButton.current?.focus(),
-		);
+		const frame = window.requestAnimationFrame(() => {
+			if (!dock.current?.contains(document.activeElement)) {
+				backButton.current?.focus();
+			}
+		});
 		return () => window.cancelAnimationFrame(frame);
-	}, [isMobile, isOpen]);
+	}, [isCompact, isOpen]);
 
 	async function showFiles() {
 		if (isPreparingFiles || isOpeningFiles || filesDisabled) return;
@@ -69,19 +85,22 @@ export function ToolWorkbench({
 				<WorkbenchProvider store={store}>
 					<section
 						ref={dock}
+						data-compact={isCompact}
 						aria-label="Workbench panels"
 						tabIndex={-1}
-						className="focus-visible:-outline-offset-2 flex size-full min-h-0 flex-col focus-visible:outline-2 focus-visible:outline-ring"
+						className="focus-visible:-outline-offset-2 flex size-full min-h-0 min-w-0 flex-col focus-visible:outline-2 focus-visible:outline-ring"
 					>
-						<Button
-							ref={backButton}
-							type="button"
-							variant="ghost"
-							className="shrink-0 md:hidden"
-							onClick={closeWorkbench}
-						>
-							Back to conversation
-						</Button>
+						{isCompact && (
+							<Button
+								ref={backButton}
+								type="button"
+								variant="ghost"
+								className="shrink-0"
+								onClick={closeWorkbench}
+							>
+								Back to conversation
+							</Button>
+						)}
 						{fileError && (
 							<p
 								role="alert"
@@ -90,8 +109,9 @@ export function ToolWorkbench({
 								{fileError}
 							</p>
 						)}
-						<div className="relative min-h-0 flex-1">
+						<div className="relative min-h-0 min-w-0 flex-1">
 							<Workbench
+								layoutMode={isCompact ? "compact" : "auto"}
 								snapshot={snapshot}
 								borderSlots={{
 									left: {

@@ -7,6 +7,7 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useContext, useState } from "react";
 import { createMemoryRouter, useLocation } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +17,7 @@ import { RoomHeader } from "@/features/rooms/components/room-header";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "../state/collaboration-session.context";
 import { CollaborationFrame } from "./collaboration-frame";
+import { CollaborationHeaderLayoutContext } from "./collaboration-header.context";
 
 const remote = vi.hoisted(() => ({
 	actions: { run: vi.fn(), logout: vi.fn() },
@@ -88,12 +90,83 @@ function DraftFixture() {
 	);
 }
 
-function renderFrame(path = "/") {
+/** Register a resizable conversation without mounting remote room workflows. */
+function SplitDraftFixture() {
+	const registerConversation = useContext(CollaborationHeaderLayoutContext);
+	const [isWorkbenchOpen, setIsWorkbenchOpen] = useState(false);
+	const { pathname } = useLocation();
+	return (
+		<section
+			aria-label="Conversation column"
+			ref={
+				isWorkbenchOpen && pathname.startsWith("/thread/")
+					? registerConversation
+					: undefined
+			}
+		>
+			<button
+				type="button"
+				onClick={() => setIsWorkbenchOpen((isOpen) => !isOpen)}
+			>
+				{isWorkbenchOpen ? "Hide workspace" : "Show workspace"}
+			</button>
+			<DraftFixture />
+		</section>
+	);
+}
+
+/** Supply the geometry jsdom cannot calculate and deliver column resize events. */
+function mockConversationColumn(initialWidth: number) {
+	let width = initialWidth;
+	const listeners = new Map<Element, () => void>();
+	const originalRect = HTMLElement.prototype.getBoundingClientRect;
+	vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+		function (this: HTMLElement) {
+			return this.getAttribute("aria-label") === "Conversation column"
+				? new DOMRect(0, 0, width, 800)
+				: originalRect.call(this);
+		},
+	);
+	vi.stubGlobal(
+		"ResizeObserver",
+		class implements ResizeObserver {
+			private readonly targets = new Set<Element>();
+			constructor(private readonly callback: ResizeObserverCallback) {}
+			observe(target: Element): void {
+				this.targets.add(target);
+				listeners.set(target, () => this.callback([], this));
+			}
+			unobserve(target: Element): void {
+				this.targets.delete(target);
+				listeners.delete(target);
+			}
+			disconnect(): void {
+				for (const target of this.targets) listeners.delete(target);
+				this.targets.clear();
+			}
+		},
+	);
+	return (nextWidth: number): void => {
+		act(() => {
+			width = nextWidth;
+			for (const listener of listeners.values()) listener();
+		});
+	};
+}
+
+function renderFrame(path = "/", hasSplitWorkspace = false) {
 	const router = createMemoryRouter(
 		[
 			{
 				Component: FrameFixture,
-				children: [{ path: "*", Component: DraftFixture }],
+				children: [
+					{
+						path: "*",
+						Component: hasSplitWorkspace
+							? SplitDraftFixture
+							: DraftFixture,
+					},
+				],
 			},
 		],
 		{ initialEntries: [path] },
@@ -160,6 +233,83 @@ afterEach(() => {
 });
 
 describe("CollaborationFrame", () => {
+	it("tracks the conversation width and restores the header without remounting controls or drafts", async () => {
+		const resizeColumn = mockConversationColumn(460);
+		const { router, user } = renderFrame("/thread/room%3Aone", true);
+		const search = screen.getByRole("button", {
+			name: "Search your workspace",
+		});
+		const account = screen.getByRole("button", {
+			name: /Account menu for/,
+		});
+		const header = search.closest("header");
+		const draft = screen.getByRole("textbox", {
+			name: "Conversation draft",
+		});
+		await user.type(draft, "Keep this draft while resizing");
+		expect(header).not.toHaveClass("md:absolute");
+
+		await user.click(
+			screen.getByRole("button", { name: "Show workspace" }),
+		);
+		expect(header).toHaveClass("md:absolute");
+		expect(header).toHaveStyle({ "--conversation-width": "460px" });
+		act(() => draft.focus());
+		resizeColumn(620);
+		expect(header).toHaveStyle({ "--conversation-width": "620px" });
+		expect(draft).toHaveFocus();
+		expect(draft).toHaveValue("Keep this draft while resizing");
+
+		await user.click(
+			screen.getByRole("button", { name: "Hide workspace" }),
+		);
+		expect(header).not.toHaveClass("md:absolute");
+		expect(header?.style.getPropertyValue("--conversation-width")).toBe("");
+		resizeColumn(520);
+		expect(header?.style.getPropertyValue("--conversation-width")).toBe("");
+		await user.click(
+			screen.getByRole("button", { name: "Show workspace" }),
+		);
+		expect(header).toHaveStyle({ "--conversation-width": "520px" });
+		await act(() => router.navigate("/brain"));
+		expect(header).not.toHaveClass("md:absolute");
+		expect(header?.style.getPropertyValue("--conversation-width")).toBe("");
+		expect(
+			screen.getByRole("button", { name: "Search your workspace" }),
+		).toBe(search);
+		expect(screen.getByRole("button", { name: /Account menu for/ })).toBe(
+			account,
+		);
+		expect(search.closest("header")).toBe(header);
+		expect(
+			screen.getByRole("textbox", { name: "Conversation draft" }),
+		).toBe(draft);
+		expect(draft).toHaveValue("Keep this draft while resizing");
+	});
+
+	it("restores the full header when the conversation column is hidden and measures it when shown again", async () => {
+		const resizeColumn = mockConversationColumn(460);
+		const { user } = renderFrame("/thread/room%3Aone", true);
+		const header = screen
+			.getByRole("button", { name: "Search your workspace" })
+			.closest("header");
+		await user.click(
+			screen.getByRole("button", { name: "Show workspace" }),
+		);
+		expect(header).toHaveStyle({ "--conversation-width": "460px" });
+		resizeColumn(0);
+		expect(header).not.toHaveClass("md:absolute");
+		expect(header?.style.getPropertyValue("--conversation-width")).toBe("");
+		resizeColumn(380);
+		expect(header).toHaveClass("md:absolute");
+		expect(header).toHaveStyle({ "--conversation-width": "380px" });
+		expect(
+			screen
+				.getByRole("button", { name: "Search your workspace" })
+				.closest("header"),
+		).toBe(header);
+	});
+
 	it("keeps one header and search palette mounted across page and room navigation", async () => {
 		const { router, user } = renderFrame();
 		const header = screen
@@ -171,10 +321,10 @@ describe("CollaborationFrame", () => {
 		const account = screen.getByRole("button", {
 			name: /Account menu for/,
 		});
-		expect(header).toContainElement(account);
+		expect(header).not.toContainElement(account);
 		expect(
 			screen.getByRole("complementary", { name: "Workspace navigation" }),
-		).not.toContainElement(account);
+		).toContainElement(account);
 		for (const path of [
 			"/brain",
 			"/settings/about-you",
@@ -481,6 +631,34 @@ describe("CollaborationFrame", () => {
 		await act(() => router.navigate("/work/waiting"));
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
+
+	it.each(["/", "/settings"])(
+		"opens the mobile account menu from navigation and closes the drawer after choosing Settings from %s",
+		async (path) => {
+			isWide = false;
+			const { user, router } = renderFrame(path);
+			await user.click(
+				screen.getByRole("button", { name: "Open navigation" }),
+			);
+			const drawer = screen.getByRole("dialog", {
+				name: "Workspace navigation",
+			});
+			const account = within(drawer).getByRole("button", {
+				name: /Account menu for/,
+			});
+			await user.click(account);
+			await user.keyboard("{Escape}");
+			await waitFor(() => expect(account).toHaveFocus());
+			expect(drawer).toBeVisible();
+			await user.click(account);
+			await user.click(
+				screen.getByRole("menuitem", { name: "Settings" }),
+			);
+			await waitFor(() => expect(screen.getByRole("main")).toHaveFocus());
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+			expect(router.state.location.pathname).toBe("/settings");
+		},
+	);
 
 	it("opens Search directly from the mobile header and returns focus there", async () => {
 		isWide = false;

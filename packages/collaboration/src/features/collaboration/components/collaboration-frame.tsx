@@ -1,5 +1,5 @@
 import { Menu, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { Env } from "@semoss/sdk/react";
 import {
@@ -21,7 +21,10 @@ import { useDashboard } from "@/features/dashboard/dashboard.context";
 import { DashboardSourceDialog } from "@/features/dashboard/dashboard-source-dialog";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationHeader } from "./collaboration-header";
-import { CollaborationHeaderContext } from "./collaboration-header.context";
+import {
+	CollaborationHeaderContext,
+	CollaborationHeaderLayoutContext,
+} from "./collaboration-header.context";
 import { CollaborationNavigation } from "./collaboration-navigation";
 import { CollaborationSearch } from "./collaboration-search";
 import { TopicEditor } from "./topic-editor";
@@ -49,6 +52,23 @@ export function CollaborationFrame() {
 	const [headerControls, setHeaderControls] = useState<HTMLDivElement | null>(
 		null,
 	);
+	const [conversationColumn, setConversationColumn] =
+		useState<HTMLElement | null>(null);
+	const [conversationWidth, setConversationWidth] = useState<number>();
+	useLayoutEffect(() => {
+		if (!conversationColumn) {
+			setConversationWidth(undefined);
+			return;
+		}
+		const measure = () => {
+			const width = conversationColumn.getBoundingClientRect().width;
+			setConversationWidth(width > 0 ? width : undefined);
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(conversationColumn);
+		return () => observer.disconnect();
+	}, [conversationColumn]);
 	const [isCreatingTopic, setIsCreatingTopic] = useState(false);
 	const { pathname } = useLocation();
 	const [navigationOverride, setNavigationOverride] = useState<{
@@ -198,9 +218,12 @@ export function CollaborationFrame() {
 					</TooltipContent>
 				</Tooltip>
 			</aside>
-			<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 				<CollaborationHeaderContext.Provider value={headerControls}>
-					<CollaborationHeader roomControlsRef={setHeaderControls}>
+					<CollaborationHeader
+						roomControlsRef={setHeaderControls}
+						conversationWidth={conversationWidth}
+					>
 						<Sheet
 							open={isNavOpen}
 							onOpenChange={(open) => {
@@ -283,7 +306,11 @@ export function CollaborationFrame() {
 						tabIndex={-1}
 						className="flex min-h-0 min-w-0 flex-1 flex-col outline-none"
 					>
-						<Outlet />
+						<CollaborationHeaderLayoutContext.Provider
+							value={setConversationColumn}
+						>
+							<Outlet />
+						</CollaborationHeaderLayoutContext.Provider>
 					</main>
 				</CollaborationHeaderContext.Provider>
 			</div>

@@ -37,7 +37,8 @@
 		"saved": "تم حفظ {{name}}",
 		"openIn": "فتح في {{service}}",
 		"saveError": "تعذّر حفظ {{name}}. {{message}}",
-		"contextError": "تعذّرت إضافة {{name}} إلى السياق. {{message}}"
+		"contextError": "تعذّرت إضافة {{name}} إلى السياق. {{message}}",
+		"addToChat": "إضافة إلى المحادثة"
 	},
 	"status": {
 		"signInTitle": "تسجيل الدخول إلى {{account}}",
@@ -98,7 +99,10 @@
 		"loadingAttachments": "جارٍ تحميل المرفقات...",
 		"conversations": "المحادثات",
 		"showQuoted": "إظهار الرسائل المقتبسة",
-		"hideQuoted": "إخفاء الرسائل المقتبسة"
+		"hideQuoted": "إخفاء الرسائل المقتبسة",
+		"filters": "عوامل التصفية",
+		"pageError": "تعذر تحميل المزيد من الرسائل.",
+		"emptyPage": "أعاد صندوق البريد صفحة فارغة. حاول مرة أخرى."
 	},
 	"calendar": {
 		"range": "من {{start}} إلى {{end}}",
@@ -157,7 +161,9 @@
 			"day": "اليوم التالي",
 			"threeDays": "الأيام الثلاثة التالية",
 			"month": "الشهر التالي"
-		}
+		},
+		"title": "التقويم",
+		"openCalendar": "فتح التقويم"
 	},
 	"teams": {
 		"team": "الفريق",

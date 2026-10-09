@@ -388,6 +388,35 @@ describe("RoomComposer", () => {
 		},
 	);
 
+	it("lets the session retain a draft when a resolved send was cancelled before submission", async () => {
+		const user = userEvent.setup();
+		const file = new File(["notes"], "notes.txt", { type: "text/plain" });
+		const onSend = vi.fn(async () => undefined);
+		renderComposer({
+			initialDraft: {
+				document: null,
+				text: "Keep for retry",
+				files: [file],
+			},
+			retainUntilSent: true,
+			clearOnSent: false,
+			onSend,
+		});
+		const editor = screen.getByRole("textbox", {
+			name: "Message Research agent",
+		});
+		await user.click(editor);
+		await user.keyboard("{Enter}");
+		expect(onSend).toHaveBeenCalledExactlyOnceWith({
+			text: "Keep for retry",
+			files: [file],
+		});
+		expect(editor).toHaveTextContent("Keep for retry");
+		expect(
+			screen.getByRole("button", { name: "Remove notes.txt" }),
+		).toBeVisible();
+	});
+
 	it("preserves focus claimed by the panel opened from the composer menu", async () => {
 		const user = userEvent.setup();
 		renderComposer({
@@ -847,6 +876,78 @@ describe("RoomComposer", () => {
 		).toBeInTheDocument();
 		expect(screen.getByRole("alert")).toHaveTextContent("Upload failed");
 	});
+
+	it.each([false, true])(
+		"retains later files and editor changes after a pending send (changed text: %s)",
+		async (shouldEditText) => {
+			const user = userEvent.setup();
+			let finishSend: () => void = () => undefined;
+			const onSend = vi.fn(
+				() =>
+					new Promise<void>((resolve) => {
+						finishSend = resolve;
+					}),
+			);
+			const onDraftChange = vi.fn();
+			const onSent = vi.fn();
+			renderComposer({
+				retainUntilSent: true,
+				onSend,
+				onDraftChange,
+				onSent,
+			});
+			const editor = screen.getByRole("textbox", {
+				name: "Message Research agent",
+			});
+			const first = new File(["first"], "first.txt", {
+				type: "text/plain",
+			});
+			const later = new File(["later"], "later.txt", {
+				type: "text/plain",
+			});
+			fireEvent.change(screen.getByLabelText("Choose attachments"), {
+				target: { files: [first] },
+			});
+			await user.click(editor);
+			pasteText(editor, "First request");
+			await user.keyboard("{Enter}");
+			expect(onSend).toHaveBeenCalledExactlyOnceWith({
+				text: "First request",
+				files: [first],
+			});
+			fireEvent.drop(
+				screen.getByRole("group", {
+					name: "Message composer drop area",
+				}),
+				{
+					dataTransfer: { files: [later] },
+				},
+			);
+			if (shouldEditText) {
+				await user.click(editor);
+				pasteText(editor, "Next request");
+				await waitFor(() =>
+					expect(editor).toHaveTextContent("Next request"),
+				);
+			}
+			const expectedText = shouldEditText ? editor.textContent : "";
+			await act(async () => finishSend());
+			await waitFor(() => expect(onSent).toHaveBeenCalledOnce());
+			expect(
+				screen.queryByRole("button", { name: "Remove first.txt" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Remove later.txt" }),
+			).toBeVisible();
+			expect(editor.textContent).toBe(expectedText);
+			expect(onDraftChange).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					text: expectedText,
+					files: [later],
+				}),
+			);
+		},
+	);
 
 	it("requires a selected model before enabling Send", async () => {
 		const user = userEvent.setup();

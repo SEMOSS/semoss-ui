@@ -1,3 +1,14 @@
+/** Return a normalized absolute HTTPS link, or undefined for an unsafe URL. */
+export const safeHttpsUrl = (value: string | undefined): string | undefined => {
+	if (!value) return undefined;
+	try {
+		const url = new URL(value);
+		return url.protocol === "https:" ? url.href : undefined;
+	} catch {
+		return undefined;
+	}
+};
+
 /** Replace favicon links; browser globals are accessed only when called. */
 export const setFavicon = (href: string) => {
 	// Remove existing icon links

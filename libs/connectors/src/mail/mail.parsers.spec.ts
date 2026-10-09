@@ -27,6 +27,7 @@ describe("mail", () => {
 		});
 
 		expect(page.hasMore).toBe(true);
+		expect(page.rawCount).toBe(1);
 		expect(page.messages[0]).toMatchObject({
 			id: "AAMk=",
 			from: "ada@example.com",
@@ -37,6 +38,19 @@ describe("mail", () => {
 			attachments: [],
 			isBodyTruncated: false,
 		});
+	});
+
+	it("retains the raw count before malformed messages are dropped", () => {
+		expect(
+			parseMailPage({
+				count: 3,
+				hasMore: true,
+				messages: [{ id: "ok" }, {}, null],
+			}),
+		).toMatchObject({ rawCount: 3, messages: [{ id: "ok" }] });
+		expect(parseMailPage({ messages: [{ id: "ok" }, {}] }).rawCount).toBe(
+			2,
+		);
 	});
 
 	it("says which text was cut, without the mark the backend leaves", () => {

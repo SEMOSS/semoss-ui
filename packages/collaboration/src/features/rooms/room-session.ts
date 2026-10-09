@@ -47,6 +47,7 @@ import {
 } from "./api/room-schemas";
 import type { UploadedRoomFile } from "./api/upload-room-files";
 import type { ComposerDraft } from "./components/room-composer.types";
+import { removeSubmittedComposerDraft } from "./components/submitted-composer-draft";
 import { type RoomSource, roomSourceSchema } from "./source-import/room-source";
 import type { ComposerSubmission, PendingToolApproval } from "./types/room";
 
@@ -68,6 +69,12 @@ const EMPTY_TURN: AgentTurnSnapshot = {
 	transportError: null,
 	settlementVersion: 0,
 };
+
+/** Exact queue entries sent by one attempt, including an uncertain response. */
+export interface RoomSubmissionSnapshot {
+	composer: ComposerDraft;
+	contextFiles: UploadedRoomFile[];
+}
 
 /** The same state backs a new draft, an imported source, and a saved room. */
 export interface RoomSessionSnapshot {
@@ -113,7 +120,7 @@ export class RoomSession {
 	private readonly isNewRoom: boolean;
 	private configurationRevision = 0;
 	private uncertainCommand: string | null = null;
-	private uncertainDraft: ComposerDraft | null = null;
+	private uncertainDraft: RoomSubmissionSnapshot | null = null;
 	private optionQueue: Promise<void> = Promise.resolve();
 
 	constructor(
@@ -191,8 +198,9 @@ export class RoomSession {
 			!s.turn.isSubmitting &&
 			!s.hasUnconfirmedSubmission &&
 			!s.isCreationUncertain &&
-			(discardDraft ||
-				(!s.composerDraft.text && !s.composerDraft.files.length)) &&
+			!s.contextFiles.length &&
+			!s.composerDraft.files.length &&
+			(discardDraft || !s.composerDraft.text) &&
 			canEvictRoomEmailStore(this)
 		);
 	}
@@ -213,6 +221,18 @@ export class RoomSession {
 	}
 	setComposerDraft = (composerDraft: ComposerDraft): void => {
 		this.update({ composerDraft });
+	};
+	/** Queue a saved file once without replacing an existing submission's entry. */
+	addContextFile = (file: UploadedRoomFile): void => {
+		if (
+			this.snapshot.contextFiles.some(
+				(current) => current.fileLocation === file.fileLocation,
+			)
+		)
+			return;
+		this.update({
+			contextFiles: [...this.snapshot.contextFiles, { ...file }],
+		});
 	};
 	removeContextFile = (path: string): void => {
 		this.update({
@@ -296,8 +316,7 @@ export class RoomSession {
 		this.attach();
 		await this.refreshHistory();
 		await this.controller?.reconnect();
-		if (source && !this.hasUserMessage())
-			this.update({ contextFiles: [source.file] });
+		if (source && !this.hasUserMessage()) this.addContextFile(source.file);
 	}
 	private config(): AgentTurnConfig {
 		return {
@@ -460,10 +479,8 @@ export class RoomSession {
 	setSource = async (value: RoomSource): Promise<void> => {
 		const source = roomSourceSchema.parse(value);
 		await this.updateOptions({ source });
-		this.update({
-			source,
-			contextFiles: this.hasUserMessage() ? [] : [source.file],
-		});
+		this.update({ source });
+		if (!this.hasUserMessage()) this.addContextFile(source.file);
 	};
 	resolveDefaults = async (): Promise<void> => {
 		const revision = ++this.configurationRevision;
@@ -606,9 +623,22 @@ export class RoomSession {
 			text,
 		);
 	}
+	/** Capture an attempt before room allocation or uploads can accept later edits. */
+	captureSubmission = (
+		submission: ComposerSubmission,
+	): RoomSubmissionSnapshot => ({
+		composer: {
+			...this.snapshot.composerDraft,
+			files: [...submission.files],
+		},
+		contextFiles: [...this.snapshot.contextFiles],
+	});
 	send = async (
 		submission: ComposerSubmission,
 		context: Partial<SubmittedThreadContext> = {},
+		submittedDraft: RoomSubmissionSnapshot = this.captureSubmission(
+			submission,
+		),
 	): Promise<void> => {
 		this.assertIdle();
 		if (!this.isConfigured || !this.controller)
@@ -624,7 +654,7 @@ export class RoomSession {
 			context,
 		);
 		const existingMedia = [...(submission.existingMedia ?? [])];
-		for (const file of this.snapshot.contextFiles) {
+		for (const file of submittedDraft.contextFiles) {
 			if (
 				!existingMedia.some(
 					(entry) => entry.fileLocation === file.fileLocation,
@@ -640,14 +670,18 @@ export class RoomSession {
 			submissionError: "",
 			submissionNotice: null,
 		});
-		const submittedDraft = this.snapshot.composerDraft;
 		let requested = false;
 		try {
 			if (this.snapshot.options?.modelId !== this.snapshot.modelId)
 				await this.updateOptions({ modelId: this.snapshot.modelId });
 			requested = true;
 			const accepted = await this.controller.send(
-				{ ...submission, text: command, existingMedia },
+				{
+					...submission,
+					text: command,
+					files: submittedDraft.composer.files,
+					existingMedia,
+				},
 				this.config(),
 			);
 			if (accepted) this.clearSubmittedDraft(submittedDraft);
@@ -663,22 +697,24 @@ export class RoomSession {
 			this.update({ isPreparing: false });
 		}
 	};
-	private clearSubmittedDraft(submittedDraft: ComposerDraft | null): void {
+	private clearSubmittedDraft(
+		submittedDraft: RoomSubmissionSnapshot | null,
+	): void {
+		if (!submittedDraft) return;
 		const current = this.snapshot.composerDraft;
-		const unchanged =
-			submittedDraft !== null &&
-			current.text === submittedDraft.text &&
-			JSON.stringify(current.document) ===
-				JSON.stringify(submittedDraft.document) &&
-			current.files.length === submittedDraft.files.length &&
-			current.files.every(
-				(file, index) => file === submittedDraft.files[index],
-			);
+		const composerDraft = removeSubmittedComposerDraft(
+			current,
+			submittedDraft.composer,
+		);
+		const submittedFiles = new Set(submittedDraft.contextFiles);
 		this.update({
-			composerDraft: unchanged ? emptyDraft() : current,
-			contextFiles: [],
+			composerDraft,
+			contextFiles: this.snapshot.contextFiles.filter(
+				(file) => !submittedFiles.has(file),
+			),
 			composerResetKey:
-				this.snapshot.composerResetKey + (unchanged ? 1 : 0),
+				this.snapshot.composerResetKey +
+				(composerDraft !== current ? 1 : 0),
 			hasUnconfirmedSubmission: false,
 			submissionError: "",
 		});

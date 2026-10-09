@@ -1,11 +1,13 @@
 import {
+	CalendarDays,
 	FolderOpen,
+	Mail,
 	PanelRightClose,
-	PanelRightOpen,
 	Settings2,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, Button } from "@semoss/ui/next";
+import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
 import { ROOM_SETTINGS_PANEL_TYPE } from "@/features/rooms/components/room-settings-panel";
 import type {
 	RoomSession,
@@ -46,6 +48,7 @@ export function NewChatWorkspace({
 }: NewChatWorkspaceProps) {
 	const workbench = useToolWorkbench();
 	const { isOpen, openWorkbench, closeWorkbench, store } = workbench;
+	const { returnToBrowser } = useRoomConnectors();
 	const [hasOpenedWorkbench, setHasOpenedWorkbench] = useState(false);
 	const active = useRef(true);
 	const [filesError, setFilesError] = useState("");
@@ -116,7 +119,7 @@ export function NewChatWorkspace({
 					},
 					{
 						id: "files",
-						label: "Show chat files",
+						label: "Open Files",
 						icon: FolderOpen,
 						onSelect: () => {
 							openWorkbench(undefined, actionsTriggerId);
@@ -124,14 +127,40 @@ export function NewChatWorkspace({
 						},
 					},
 					{
-						id: "workbench",
-						label: isOpen ? "Hide workbench" : "Open workbench",
-						icon: isOpen ? PanelRightClose : PanelRightOpen,
+						id: "emails",
+						label: "Open Emails",
+						icon: Mail,
 						onSelect: () =>
-							isOpen
-								? closeWorkbench()
-								: openWorkbench(undefined, actionsTriggerId),
+							returnToBrowser(
+								"mail",
+								"microsoft",
+								undefined,
+								actionsTriggerId,
+							),
 					},
+					{
+						id: "calendar",
+						label: "Open Calendar",
+						icon: CalendarDays,
+						onSelect: () =>
+							returnToBrowser(
+								"calendar",
+								"microsoft",
+								undefined,
+								actionsTriggerId,
+							),
+					},
+					// The landing composer has no separate desktop workbench toggle.
+					...(isOpen
+						? [
+								{
+									id: "hide-workbench",
+									label: "Hide workbench",
+									icon: PanelRightClose,
+									onSelect: closeWorkbench,
+								},
+							]
+						: []),
 				]}
 			/>
 			{filesError && (

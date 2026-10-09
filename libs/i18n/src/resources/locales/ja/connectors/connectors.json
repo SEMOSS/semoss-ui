@@ -37,7 +37,8 @@
 		"saved": "{{name}} を保存しました",
 		"openIn": "{{service}} で開く",
 		"saveError": "{{name}} を保存できませんでした。{{message}}",
-		"contextError": "{{name}} をコンテキストに追加できませんでした。{{message}}"
+		"contextError": "{{name}} をコンテキストに追加できませんでした。{{message}}",
+		"addToChat": "チャットに追加"
 	},
 	"status": {
 		"signInTitle": "{{account}} にサインイン",
@@ -98,7 +99,10 @@
 		"loadingAttachments": "添付ファイルを読み込んでいます...",
 		"conversations": "スレッド表示",
 		"showQuoted": "引用されたメールを表示",
-		"hideQuoted": "引用されたメールを非表示"
+		"hideQuoted": "引用されたメールを非表示",
+		"filters": "フィルター",
+		"pageError": "追加のメッセージを読み込めませんでした。",
+		"emptyPage": "メールボックスから空のページが返されました。もう一度お試しください。"
 	},
 	"calendar": {
 		"range": "{{start}} から {{end}}",
@@ -153,7 +157,9 @@
 			"day": "次の日",
 			"threeDays": "次の3日間",
 			"month": "次の月"
-		}
+		},
+		"title": "カレンダー",
+		"openCalendar": "カレンダーを開く"
 	},
 	"teams": {
 		"team": "チーム",

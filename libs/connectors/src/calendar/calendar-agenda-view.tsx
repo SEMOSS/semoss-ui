@@ -1,14 +1,21 @@
 import {
 	CalendarDaysIcon,
 	CalendarIcon,
+	ExternalLinkIcon,
 	RefreshCwIcon,
 	VideoIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import type { ConnectorBrand } from "@semoss/shared";
-import { cn } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { formatLocalDateKey } from "@semoss/utility/date";
 import { ConnectorCalendar } from "../components/connector-calendar";
 import { ConnectorIconButton } from "../components/connector-icon-button";
@@ -17,11 +24,17 @@ import { ConnectorViewerHeader } from "../components/connector-viewer-header";
 import { parseGraphDate, parseGraphDay } from "../core/connector.format";
 import type {
 	ConnectorAccount,
+	ConnectorFocusRequest,
 	ConnectorViewerProps,
 } from "../core/connector.types";
 import { groupCalendarEvents } from "../core/connector-calendar";
 import { runConnectorPixel } from "../core/connector-pixel";
-import { useCalendarWindow } from "../core/use-calendar-window";
+import {
+	type CalendarWindow,
+	useCalendarWindow,
+} from "../core/use-calendar-window";
+import { useConnectorControls } from "../core/use-connector-controls";
+import { useConnectorFocus } from "../core/use-connector-focus";
 import { useConnectorQuery } from "../core/use-connector-query";
 import {
 	type ConnectorSaveRequest,
@@ -43,12 +56,28 @@ import { useEventTime } from "./use-event-time";
 
 const MAX_EVENTS = 100;
 
+/** An event and the browser row that opened it. */
+export interface CalendarEventSelection {
+	event: CalendarEvent;
+	itemKey: string;
+}
+
 /** Props for {@link CalendarAgendaView}. */
 export interface CalendarAgendaViewProps extends ConnectorViewerProps {
 	/** The account whose calendar is read: Outlook for `microsoft`, Google Calendar for `google`. */
 	provider: ConnectorAccount;
 	/** The logo the header shows. Defaults to the calendar's own. */
 	brand?: ConnectorBrand;
+	/** Share navigation between the host's agenda and full-calendar tab. */
+	calendar?: CalendarWindow;
+	/** Keep an agenda in a rail, or adapt a full calendar to its container. */
+	presentation?: "default" | "agenda" | "calendar";
+	/** Open the host's retained full-calendar tab. */
+	onOpenCalendar?: () => void;
+	/** Let the host open events in retained tabs instead of replacing the list. */
+	onOpenEvent?: (selection: CalendarEventSelection) => void;
+	/** Restore a row after returning from a retained event tab. */
+	focusItem?: ConnectorFocusRequest;
 }
 
 /**
@@ -57,15 +86,27 @@ export interface CalendarAgendaViewProps extends ConnectorViewerProps {
  * the same way; only the reactors it calls and the names it shows differ.
  */
 export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
-	const { provider, onSignIn, showHeader = true } = props;
+	const {
+		provider,
+		onSignIn,
+		showHeader = true,
+		isVisible = true,
+		onControlsChange,
+		presentation = "default",
+		onOpenCalendar,
+		onOpenEvent,
+		focusItem,
+	} = props;
 	const app = CALENDAR_APPS[provider];
 	const { t } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver(app.service, props);
 	const describeTime = useEventTime();
-	const calendar = useCalendarWindow();
+	const localCalendar = useCalendarWindow();
+	const calendar = props.calendar ?? localCalendar;
 	const [openEvent, setOpenEvent] = useState<CalendarEvent | null>(null);
-	const { listRef, rememberItem } = useReturnFocus<HTMLDivElement>(
+	const browserRef = useRef<HTMLElement>(null);
+	const { listRef, rememberItem } = useReturnFocus<HTMLUListElement>(
 		openEvent !== null,
 	);
 	const serviceName = t(app.nameKey);
@@ -77,6 +118,40 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 		}),
 		parseCalendarEvents,
 	);
+	const externalHref =
+		provider === "google"
+			? "https://calendar.google.com/calendar/"
+			: undefined;
+	const externalLabel = t("actions.openIn", { service: t(app.appNameKey) });
+	useConnectorControls(
+		{
+			refresh: {
+				onRefresh: query.reload,
+				isRefreshing: query.isRefreshing,
+			},
+			onOpenCalendar,
+			openIn: externalHref
+				? { href: externalHref, label: externalLabel }
+				: undefined,
+		},
+		onControlsChange,
+		isVisible && openEvent === null,
+	);
+	useConnectorFocus(
+		listRef,
+		focusItem,
+		isVisible && openEvent === null,
+		query.status !== "loading",
+		browserRef,
+	);
+	const handleOpenEvent = (event: CalendarEvent, itemKey: string): void => {
+		if (onOpenEvent) {
+			onOpenEvent({ event, itemKey });
+			return;
+		}
+		rememberItem(itemKey);
+		setOpenEvent(event);
+	};
 	const events = query.data?.events ?? [];
 	const days = groupCalendarEvents(events, calendar.range, (event) => ({
 		start: event.isAllDay
@@ -116,20 +191,43 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 
 	// in the header, or at the end of the toolbar when the host leaves
 	// the header out
-	const refreshButton = (
+	const refreshButton = !onControlsChange ? (
 		<ConnectorIconButton
 			icon={RefreshCwIcon}
 			label={t("common.refresh")}
 			isSpinning={query.isRefreshing}
 			onClick={query.reload}
 		/>
-	);
+	) : null;
+	const externalLink =
+		externalHref && !onControlsChange && presentation !== "default" ? (
+			<Tooltip disableHoverableContent={false}>
+				<TooltipTrigger asChild>
+					<Button variant="ghost" size="icon-sm" asChild>
+						<a
+							href={externalHref}
+							target="_blank"
+							rel="noopener noreferrer"
+							aria-label={externalLabel}
+						>
+							<ExternalLinkIcon aria-hidden className="size-4" />
+						</a>
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>{externalLabel}</TooltipContent>
+			</Tooltip>
+		) : null;
 
 	return (
-		<div className="flex h-full min-h-0 flex-col">
+		<section
+			ref={browserRef}
+			tabIndex={-1}
+			aria-label={serviceName}
+			className="focus-visible:-outline-offset-2 flex h-full min-h-0 min-w-0 flex-col overflow-hidden focus-visible:outline-2 focus-visible:outline-ring"
+		>
 			<div
 				className={cn(
-					"flex h-full min-h-0 flex-col",
+					"flex h-full min-h-0 min-w-0 flex-col",
 					openEvent !== null && "hidden",
 				)}
 			>
@@ -140,11 +238,23 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 						title={serviceName}
 					>
 						{refreshButton}
+						{externalLink}
 					</ConnectorViewerHeader>
 				) : null}
 				<ConnectorCalendar
 					calendar={calendar}
-					actions={showHeader ? undefined : refreshButton}
+					presentation={presentation}
+					onOpenCalendar={
+						onControlsChange ? undefined : onOpenCalendar
+					}
+					actions={
+						showHeader ? undefined : (
+							<>
+								{refreshButton}
+								{externalLink}
+							</>
+						)
+					}
 					query={{ ...query, data: days }}
 					serviceName={serviceName}
 					account={app.account}
@@ -172,10 +282,7 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 					}
 					getTitle={eventTitle}
 					getEventKey={(event) => event.id}
-					onOpenEvent={(event, itemKey) => {
-						rememberItem(itemKey);
-						setOpenEvent(event);
-					}}
+					onOpenEvent={handleOpenEvent}
 					renderEvent={(event, day) => {
 						const request = eventRequest(event);
 						const title = eventTitle(event);
@@ -203,10 +310,7 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 									time: describeTime(event, true),
 								})}
 								isBusy={saver.isBusy(request.key)}
-								onOpen={() => {
-									rememberItem(itemKey);
-									setOpenEvent(event);
-								}}
+								onOpen={() => handleOpenEvent(event, itemKey)}
 								actions={{
 									itemName: title,
 									serviceName: t(app.appNameKey),
@@ -230,9 +334,11 @@ export const CalendarAgendaView = (props: CalendarAgendaViewProps) => {
 					summary={openEvent}
 					saver={saver}
 					onSignIn={onSignIn}
+					isVisible={isVisible}
+					onControlsChange={onControlsChange}
 					onBack={() => setOpenEvent(null)}
 				/>
 			) : null}
-		</div>
+		</section>
 	);
 };
