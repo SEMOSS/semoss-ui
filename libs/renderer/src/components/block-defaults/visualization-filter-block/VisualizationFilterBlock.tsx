@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useState } from "react";
 import { toast } from "@semoss/ui/next";
@@ -40,8 +41,8 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 		useBlock<VisualizationFilterBlockDef>(id);
 	const { state } = useBlocks();
 	const [resetChecked, setResetChecked] = useState(false);
-	// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
-	const blocks = state.blocks;
+	const [isLoading, setIsLoading] = useState(false);
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
@@ -50,9 +51,9 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 	}, [data]);
 
 	const mode = data.displayType.toLowerCase();
-	const handleApply = async (selected, type?: string) => {
+	const handleApply = async (selected: string[], type?: string) => {
 		if (selected.length === 0) {
-			toast.warning("No options selected.");
+			toast.warning("No options selected.", { position: "top-right" });
 			return;
 		}
 		//set initial value of valuesString -- will change based off mode and array length
@@ -62,26 +63,32 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 			setData("selectedValues", selected);
 		}
 
+		// Set loading to true and try filter logic
+		setIsLoading(true);
 		try {
 			for (let i = 0; i < data.frame.length; i++) {
 				// Construct the command to set a filter on the frame based on the selected column and values
 				const pixelCommand = `META | UnfilterFrame(${data.frame[i]});`;
 
 				// Execute the command as a side effect in the application state
-				// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
-				const response = await state.runSideEffect(pixelCommand);
+				await state.runSideEffect(pixelCommand);
 			}
 			// biome-ignore lint/correctness/noUnusedVariables: <use error as needed>
 		} catch (error) {
 			// If an error occurs, notify the user with an error message
 			toast.error(
 				"Invalid response or errors found while applying the filter.",
+				{ position: "top-right" },
 			);
+			setIsLoading(false);
+			return;
 		}
 
 		if (type === "slider") {
 			// Convert the selected string values to numbers for range
-			const selectedNumbers = selected.map((s) => parseInt(s, 10));
+			const selectedNumbers = selected.map((s: string) =>
+				parseInt(s, 10),
+			);
 			valuesString = `[${selectedNumbers}]`;
 		} else {
 			// if selected is only one value, do not create an array of values to pass in (this is to account for multi select)
@@ -99,15 +106,21 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 				const pixelCommand = `META | ${data.frame[i]} | AddFrameFilter(((${data.column} == ${selected.length > 0 ? valuesString : "[]"})));`;
 
 				// Execute the command as a side effect in the application state
-				// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
-				const response = await state.runSideEffect(pixelCommand);
+				await state.runSideEffect(pixelCommand);
 			}
+			// If successful, notify the user with a success message
+			toast.success("Filter applied successfully!", {
+				position: "top-right",
+			});
 			// biome-ignore lint/correctness/noUnusedVariables: <use as needed>
 		} catch (error) {
 			// If an error occurs, notify the user with an error message
 			toast.error(
 				"Invalid response or errors found while applying the filter.",
+				{ position: "top-right" },
 			);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -124,14 +137,13 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 		// Reset the resetChecked state to true to indicate that the reset action has been performed
 		setResetChecked(true);
 
+		setIsLoading(true);
 		try {
 			for (let i = 0; i < data.frame.length; i++) {
 				// Construct the command to unfilter the frame in the application state
 				const pixelUnfilterCommand = `META | UnfilterFrame(${data.frame[i]});`;
 				// Execute the command as a side effect in the application state
-				// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
-				const response =
-					await state.runSideEffect(pixelUnfilterCommand);
+				await state.runSideEffect(pixelUnfilterCommand);
 				const res = await state.runSideEffect(
 					`META | Frame(${data.frame[i]}) | Select(${data.column}).as([${data.column}])|Group(${data.column})|Sort(${data.column}) | Offset(0) | Limit(1000) | Collect(1000);`,
 				);
@@ -141,20 +153,30 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 						data?: { values?: any[] };
 					}
 				)?.data?.values;
-				const options = values.map((item) => String(item[0]));
-				setData("listOptions", options);
+				if (values) {
+					const options = values.map((item) => String(item[0]));
+					setData("listOptions", options);
+				}
 			}
+			// If successful reset occurs, notify the user with a success message
+			toast.success("Unfilter applied successfully!", {
+				position: "top-right",
+			});
 		} catch (error) {
 			// If an error occurs, notify the user with an error message
 			toast.error(
 				`Invalid response or errors found while fetching options. ${error}`,
+				{ position: "top-right" },
 			);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 	return (
 		<div
 			style={{
 				...data.style,
+				position: "relative",
 			}}
 			{...attrs}
 		>
@@ -248,6 +270,18 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 					)}
 				</div>
 			</div>
+			{/* Loading Overlay */}
+			{isLoading && (
+				<div
+					className="absolute inset-0 z-[1300] flex flex-col items-center justify-center gap-1.5 rounded backdrop-blur-sm"
+					style={{
+						backgroundColor: "rgba(255, 255, 255, 0.7)",
+					}}
+				>
+					<Loader2 className="size-8 animate-spin text-primary" />
+					<p className="font-medium text-sm">Applying filter...</p>
+				</div>
+			)}
 		</div>
 	);
 });
