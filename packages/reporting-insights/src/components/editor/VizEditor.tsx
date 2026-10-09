@@ -813,6 +813,7 @@ export function VizEditor(props: VizEditorProps) {
 					<CsvExportConfigPanel
 						viz={viz}
 						columns={columns}
+						rows={previewRows}
 						onUpdate={onUpdate}
 					/>
 				) : (

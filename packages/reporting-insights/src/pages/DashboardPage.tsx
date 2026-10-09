@@ -50,6 +50,7 @@ import type {
 	DashboardQuery,
 	Parameter,
 	Sheet,
+	VisualizationStyling,
 } from "@/types/dashboard";
 import {
 	buildFlexModel,
@@ -86,6 +87,11 @@ interface SheetCanvasProps {
 	runKeys: Record<string, number>;
 	hasParamSheet: boolean;
 	makeSaveModel: (sheetId: string) => (model: Model) => void;
+	onTableStylingChange?: (
+		sheetId: string,
+		vizId: string,
+		updates: Partial<NonNullable<VisualizationStyling["table"]>>,
+	) => void;
 	layoutRef?: MutableRefObject<ILayoutApi | null>;
 }
 const SheetCanvas = memo(function SheetCanvas({
@@ -96,6 +102,7 @@ const SheetCanvas = memo(function SheetCanvas({
 	runKeys,
 	hasParamSheet,
 	makeSaveModel,
+	onTableStylingChange,
 	layoutRef,
 }: SheetCanvasProps) {
 	const factory = useCallback(
@@ -124,11 +131,28 @@ const SheetCanvas = memo(function SheetCanvas({
 						fillContainer
 						hasParamSheet={hasParamSheet}
 						loadAfterParams={loadAfterParams}
+						onTableStylingChange={
+							onTableStylingChange
+								? (updates) =>
+										onTableStylingChange(
+											sheet.id,
+											viz.id,
+											updates,
+										)
+								: undefined
+						}
 					/>
 				</div>
 			);
 		},
-		[sheet, queries, paramValues, runKeys, hasParamSheet],
+		[
+			sheet,
+			queries,
+			paramValues,
+			runKeys,
+			hasParamSheet,
+			onTableStylingChange,
+		],
 	);
 	const onModelChange = useMemo(
 		() => makeSaveModel(sheet.id),
@@ -199,6 +223,10 @@ export function DashboardPage() {
 	const [showSaveAs, setShowSaveAs] = useState(false);
 	const dashboard = def ?? meta;
 	const sheets = dashboard ? getDashboardSheets(dashboard) : [];
+	const latestDashboardRef = useRef<Dashboard | null>(dashboard ?? null);
+	useEffect(() => {
+		latestDashboardRef.current = dashboard ?? null;
+	}, [dashboard]);
 	useTabColors(sheets.flatMap((s) => s.visualizations));
 
 	// Permission (from the listing).
@@ -365,33 +393,82 @@ export function DashboardPage() {
 
 	// ── Debounced save of model JSON back to store (per sheet) ────────────────
 	const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - only dashboard.id/sheets should recreate this; dashboard itself is read fresh inside the debounced closure
+	const persistDashboard = useCallback(
+		(nextDashboard: Dashboard, updateLocalState: boolean) => {
+			latestDashboardRef.current = nextDashboard;
+			if (updateLocalState) setDef(nextDashboard);
+			if (saveTimer.current) clearTimeout(saveTimer.current);
+			saveTimer.current = setTimeout(() => {
+				void updateDashboard(nextDashboard.id, {
+					sheets: nextDashboard.sheets,
+					queries: nextDashboard.queries,
+					customColorPalettes: nextDashboard.customColorPalettes,
+				}).catch(() => undefined);
+			}, 400);
+		},
+		[updateDashboard],
+	);
 	const makeSaveModel = useCallback(
 		(sheetId: string) => (model: Model, action?: { type?: string }) => {
 			// Tab selection / active-tabset / maximize are view-only — never persist them
 			// (saving overwrites the asset via DeleteAsset + PublishAsset). Only real
 			// structural edits (move/resize/add/delete) should write back.
 			if (isViewOnlyLayoutAction(action)) return;
-			if (saveTimer.current) clearTimeout(saveTimer.current);
-			saveTimer.current = setTimeout(() => {
-				if (!dashboard) return;
-				const flexLayout = model.toJson() as unknown as Record<
-					string,
-					unknown
-				>;
-				const newSheets = sheets.map((s) =>
-					s.id === sheetId ? { ...s, flexLayout } : s,
-				);
-				// Persist the migrated query registry alongside the sheets so the saved
-				// `queryId` references never dangle (they'd still fall back, but stay clean).
-				void updateDashboard(dashboard.id, {
-					sheets: newSheets,
-					queries: dashboard.queries,
-					customColorPalettes: dashboard.customColorPalettes,
-				}).catch(() => undefined);
-			}, 400);
+			const currentDashboard = latestDashboardRef.current;
+			if (!currentDashboard) return;
+			const flexLayout = model.toJson() as unknown as Record<
+				string,
+				unknown
+			>;
+			const newSheets = getDashboardSheets(currentDashboard).map(
+				(sheet) =>
+					sheet.id === sheetId ? { ...sheet, flexLayout } : sheet,
+			);
+			persistDashboard({ ...currentDashboard, sheets: newSheets }, false);
 		},
-		[dashboard?.id, sheets],
+		[persistDashboard],
+	);
+
+	const handleTableStylingChange = useCallback(
+		(
+			sheetId: string,
+			vizId: string,
+			updates: Partial<NonNullable<VisualizationStyling["table"]>>,
+		) => {
+			const currentDashboard = latestDashboardRef.current;
+			if (!currentDashboard) return;
+			const newSheets = getDashboardSheets(currentDashboard).map(
+				(sheet) =>
+					sheet.id !== sheetId
+						? sheet
+						: {
+								...sheet,
+								visualizations: sheet.visualizations.map(
+									(viz) =>
+										viz.id !== vizId
+											? viz
+											: {
+													...viz,
+													config: {
+														...viz.config,
+														styling: {
+															...viz.config
+																?.styling,
+															table: {
+																...viz.config
+																	?.styling
+																	?.table,
+																...updates,
+															},
+														},
+													},
+												},
+								),
+							},
+			);
+			persistDashboard({ ...currentDashboard, sheets: newSheets }, true);
+		},
+		[persistDashboard],
 	);
 
 	// Keep-alive: sheets are mounted on first visit and kept mounted (toggled via
@@ -754,6 +831,11 @@ export function DashboardPage() {
 												runKeys={runKeys}
 												hasParamSheet={hasParamSheet}
 												makeSaveModel={makeSaveModel}
+												onTableStylingChange={
+													canEdit
+														? handleTableStylingChange
+														: undefined
+												}
 												layoutRef={getLayoutRef(
 													sheet.id,
 												)}

@@ -493,6 +493,7 @@ export interface VisualizationStyling {
 		header?: ColumnStyling;
 		cell?: ColumnStyling;
 		wrapText?: WrapTextConfig;
+		columnWidths?: ColumnWidthsConfig;
 		rowSpanning?: boolean;
 		showExport?: boolean;
 		colorRules?: ColorRule[];
@@ -613,6 +614,12 @@ export interface SortRule {
 	direction: SortDirection;
 	/** Values in display order, used when direction === 'custom'. */
 	customOrder?: string[];
+}
+
+export interface ColumnWidthsConfig {
+	enabled: boolean;
+	/** User-resized widths in pixels, keyed by column name. */
+	widths: Record<string, number>;
 }
 
 /**

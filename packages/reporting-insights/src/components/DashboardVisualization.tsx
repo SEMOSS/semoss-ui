@@ -8,6 +8,7 @@ import {
 	Download,
 	Radar as RadarIcon,
 	RefreshCw,
+	RotateCcw,
 	ScatterChart as ScatterChartIcon,
 	SlidersHorizontal,
 	Zap,
@@ -86,6 +87,7 @@ import type {
 	MultiLineStyling,
 	StackBarStyling,
 	Visualization,
+	VisualizationStyling,
 } from "@/types/dashboard";
 
 // ── Chart palette ─────────────────────────────────────────────────────────────
@@ -183,6 +185,10 @@ interface Props {
 	 * Called when the multiline chart requests a styling update (e.g. save-zoom on brush release).
 	 */
 	onMultilineStylingChange?: (updates: Partial<MultiLineStyling>) => void;
+	/** Called when a table column resize should be persisted to visualization styling. */
+	onTableStylingChange?: (
+		updates: Partial<NonNullable<VisualizationStyling["table"]>>,
+	) => void;
 }
 
 // Facet navigation bar
@@ -356,6 +362,7 @@ export function DashboardVisualization({
 	onLineStylingChange,
 	onComboStylingChange,
 	onMultilineStylingChange,
+	onTableStylingChange,
 }: Props) {
 	const { actions } = useInsight();
 	const sharedRun = useQueryRunner();
@@ -377,6 +384,7 @@ export function DashboardVisualization({
 	const [tableExportError, setTableExportError] = useState<string | null>(
 		null,
 	);
+	const [colWidthResetKey, setColWidthResetKey] = useState(0);
 	// csvexport: data is fetched on demand (button click) rather than on app load.
 	const [pendingExport, setPendingExport] = useState(false);
 	const [exportDownloadKey, setExportDownloadKey] = useState(0);
@@ -1335,6 +1343,7 @@ export function DashboardVisualization({
 					phi={visualization.phi}
 					onExportClick={handleExportClick}
 					downloadKey={exportDownloadKey}
+					formatRules={visualization.config?.styling?.formatRules}
 				/>
 			);
 		}
@@ -2550,6 +2559,15 @@ export function DashboardVisualization({
 				config={visualization.config}
 				pageSize={pageSize}
 				onPageSizeChange={setPageSize}
+				onColumnWidthsChange={
+					onTableStylingChange
+						? (widths) =>
+								onTableStylingChange({
+									columnWidths: { enabled: true, widths },
+								})
+						: undefined
+				}
+				resetKey={colWidthResetKey}
 				currentPage={currentPage}
 				onPageChange={setCurrentPage}
 				hasMoreRows={hasMoreInDb}
@@ -2692,6 +2710,29 @@ export function DashboardVisualization({
 						onCancel={() => setShowPhiModal(false)}
 					/>
 				)}
+				{visualization.visualizationType === "table" &&
+					visualization.config?.styling?.table?.columnWidths
+						?.enabled && (
+						<button
+							type="button"
+							onClick={() => {
+								if (onTableStylingChange) {
+									onTableStylingChange({
+										columnWidths: {
+											enabled: true,
+											widths: {},
+										},
+									});
+								} else {
+									setColWidthResetKey((k) => k + 1);
+								}
+							}}
+							title="Reset column widths"
+							className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+						>
+							<RotateCcw className="h-3.5 w-3.5" />
+						</button>
+					)}
 				<button
 					type="button"
 					onClick={() => void loadData(0, true)}

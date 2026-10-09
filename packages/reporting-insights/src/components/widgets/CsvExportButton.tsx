@@ -7,7 +7,9 @@ import { useEffect, useRef, useState } from "react";
 import { PhiExportWarningModal } from "@/components/PhiExportWarningModal";
 import { aggregateNumericValues } from "@/lib/aggregation";
 import { buildReportingCsvFilename, downloadCsvFile } from "@/lib/csvExport";
+import { formatValue } from "@/lib/formatValue";
 import { csvColDisplayName } from "@/lib/tableAggregate";
+import type { FormatRule } from "@/types/dashboard";
 
 export interface CsvExportConfig {
 	csvExportLabel?: string;
@@ -34,6 +36,7 @@ function processRows(
 	rows: Record<string, unknown>[],
 	exportColumns: string[] | undefined,
 	aggregations: Record<string, string>,
+	fmtRules: FormatRule[],
 ): Record<string, unknown>[] {
 	if (!rows.length) return rows;
 	const allCols = Object.keys(rows[0]);
@@ -41,6 +44,9 @@ function processRows(
 		exportColumns && exportColumns.length > 0
 			? exportColumns.filter((c) => allCols.includes(c))
 			: allCols;
+
+	const fmt = (val: unknown, col: string) =>
+		fmtRules.length ? formatValue(val, col, fmtRules) : val;
 
 	const activeAggs = Object.fromEntries(
 		activeCols
@@ -50,7 +56,7 @@ function processRows(
 
 	if (Object.keys(activeAggs).length === 0) {
 		return rows.map((r) =>
-			Object.fromEntries(activeCols.map((c) => [c, r[c]])),
+			Object.fromEntries(activeCols.map((c) => [c, fmt(r[c], c)])),
 		);
 	}
 
@@ -65,32 +71,30 @@ function processRows(
 	}
 	return Array.from(groups.values()).map((grp) => {
 		const result: Record<string, unknown> = {};
-		for (const c of groupByCols) result[c] = grp[0][c];
+		for (const c of groupByCols) result[c] = fmt(grp[0][c], c);
 		for (const c of aggCols) {
 			const values = grp.map((r) => r[c]);
 			const displayKey = csvColDisplayName(c, activeAggs[c]);
+			let aggValue: unknown;
 			switch (activeAggs[c]) {
 				case "sum":
 				case "count":
 				case "avg":
 				case "countUnique":
-					result[displayKey] = aggregateNumericValues(
-						values,
-						activeAggs[c],
-						0,
-					);
+					aggValue = aggregateNumericValues(values, activeAggs[c], 0);
 					break;
 				case "min":
 				case "max":
-					result[displayKey] = aggregateNumericValues(
+					aggValue = aggregateNumericValues(
 						values,
 						activeAggs[c],
 						null,
 					);
 					break;
 				default:
-					result[displayKey] = grp[0][c];
+					aggValue = grp[0][c];
 			}
+			result[displayKey] = fmt(aggValue, c);
 		}
 		return result;
 	});
@@ -111,6 +115,8 @@ interface Props {
 	onExportClick?: () => void;
 	/** Increment this value to trigger an automatic download once data has been fetched. */
 	downloadKey?: number;
+	/** Format rules to apply to cell values before writing to CSV. */
+	formatRules?: FormatRule[];
 }
 
 export function CsvExportButton({
@@ -123,6 +129,7 @@ export function CsvExportButton({
 	phi,
 	onExportClick,
 	downloadKey,
+	formatRules,
 }: Props) {
 	const [showPhiModal, setShowPhiModal] = useState(false);
 	const cfg = config ?? {};
@@ -130,6 +137,7 @@ export function CsvExportButton({
 		rows ?? [],
 		cfg.exportColumns,
 		cfg.exportAggregations ?? {},
+		formatRules ?? [],
 	);
 	const aggs = cfg.exportAggregations ?? {};
 	const baseCols =

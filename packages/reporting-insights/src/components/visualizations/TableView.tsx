@@ -22,7 +22,7 @@ import {
 	Table2,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui";
 import { formatValue } from "@/lib/formatValue";
 import { aggregateTableRows, aggShortLabel } from "@/lib/tableAggregate";
@@ -38,6 +38,8 @@ interface Props {
 	/** Controlled page size; if omitted, defaults to `config.tablePageSize ?? 50`. */
 	pageSize?: number | "";
 	onPageSizeChange?: (size: number | "") => void;
+	/** Persist user-resized column widths when the table is rendered in an editor. */
+	onColumnWidthsChange?: (widths: Record<string, number>) => void;
 	/** Controlled current page (0-indexed); if omitted, internal state is used. */
 	currentPage?: number;
 	onPageChange?: (page: number) => void;
@@ -72,6 +74,19 @@ interface Props {
 	 * never reaches a state where `tableColumns === []` is intentional.
 	 */
 	showEmptyColumnsGuard?: boolean;
+	/** When this value changes, local column width state resets to the configured widths. */
+	resetKey?: number;
+}
+
+const MIN_COLUMN_WIDTH = 72;
+const MAX_DEFAULT_COLUMN_WIDTH = 360;
+const EMPTY_COLUMN_WIDTHS: Record<string, number> = {};
+
+function defaultColumnWidth(column: string): number {
+	return Math.min(
+		MAX_DEFAULT_COLUMN_WIDTH,
+		Math.max(MIN_COLUMN_WIDTH, column.length * 8 + 40),
+	);
 }
 
 // ── Helpers (module-private) ─────────────────────────────────────────────────
@@ -110,6 +125,7 @@ export function TableView({
 	footerExtra,
 	pageSize: pageSizeProp,
 	onPageSizeChange,
+	onColumnWidthsChange,
 	currentPage: currentPageProp,
 	onPageChange,
 	totalRowCount,
@@ -122,10 +138,45 @@ export function TableView({
 	exportTitle = "Export to CSV",
 	exportError,
 	showEmptyColumnsGuard = false,
+	resetKey,
 }: Props) {
 	const cfg = config ?? {};
 	const tableStyling = cfg.styling?.table;
 	const formatRules = cfg.styling?.formatRules ?? [];
+	const columnWidthsConfig = tableStyling?.columnWidths;
+	const columnResizingEnabled = columnWidthsConfig?.enabled ?? false;
+	const configuredColumnWidths =
+		columnWidthsConfig?.widths ?? EMPTY_COLUMN_WIDTHS;
+	const [columnWidthState, setColumnWidthState] = useState(() => ({
+		source: configuredColumnWidths,
+		widths: configuredColumnWidths,
+	}));
+	const hasMeasuredRef = useRef(false);
+	if (columnWidthState.source !== configuredColumnWidths) {
+		hasMeasuredRef.current = false;
+		setColumnWidthState({
+			source: configuredColumnWidths,
+			widths: configuredColumnWidths,
+		});
+	}
+	const [lastResetKey, setLastResetKey] = useState(resetKey ?? 0);
+	if (resetKey !== undefined && resetKey !== lastResetKey) {
+		setLastResetKey(resetKey);
+		hasMeasuredRef.current = false;
+		setColumnWidthState({
+			source: configuredColumnWidths,
+			widths: configuredColumnWidths,
+		});
+	}
+	const columnWidths = columnWidthState.widths;
+	const resizeRef = useRef<{
+		column: string;
+		pointerId: number;
+		startX: number;
+		startWidth: number;
+		currentWidth: number;
+		initialWidths: Record<string, number>;
+	} | null>(null);
 
 	// Uncontrolled fallbacks. Initial page size: configured rows-per-page
 	// (styling.table.pageSize, legacy tablePageSize fallback), else 50. '' → 50.
@@ -167,6 +218,138 @@ export function TableView({
 	const cols = cfg.tableColumns?.length
 		? cfg.tableColumns.filter((col) => allCols.includes(col))
 		: allCols;
+	const getColumnWidth = (column: string) =>
+		columnWidths[column] ?? defaultColumnWidth(column);
+	const totalColumnWidth = cols.reduce(
+		(totalWidth, column) => totalWidth + getColumnWidth(column),
+		0,
+	);
+
+	// useFixedLayout is true only once we have explicit widths, either stored
+	// in config or measured from the DOM. This keeps the initial render looking
+	// the same as the disabled state so columns start at natural browser widths
+	// rather than the name-length formula.
+	const hasWidths = Object.keys(columnWidths).length > 0;
+	const useFixedLayout = columnResizingEnabled && hasWidths;
+
+	const tableRef = useRef<HTMLTableElement>(null);
+	const colsRef = useRef(cols);
+	colsRef.current = cols;
+	const onColumnWidthsChangeRef = useRef(onColumnWidthsChange);
+	onColumnWidthsChangeRef.current = onColumnWidthsChange;
+	const columnWidthsRef = useRef(columnWidths);
+	columnWidthsRef.current = columnWidths;
+
+	// When resizing is enabled but no widths are stored, render without
+	// table-fixed so the browser distributes columns naturally. After that
+	// first paint, measure the actual <th> widths and switch to fixed layout
+	// with those measurements.
+	useLayoutEffect(() => {
+		if (
+			!columnResizingEnabled ||
+			hasMeasuredRef.current ||
+			!tableRef.current
+		) {
+			return;
+		}
+		if (Object.keys(columnWidthsRef.current).length > 0) {
+			hasMeasuredRef.current = true;
+			return;
+		}
+		const ths =
+			tableRef.current.querySelectorAll<HTMLTableCellElement>(
+				"thead tr th",
+			);
+		if (ths.length === 0) return;
+		const widths: Record<string, number> = {};
+		colsRef.current.forEach((col, i) => {
+			const th = ths[i];
+			if (th) widths[col] = Math.max(MIN_COLUMN_WIDTH, th.offsetWidth);
+		});
+		if (Object.keys(widths).length > 0) {
+			hasMeasuredRef.current = true;
+			setColumnWidthState((current) => ({ ...current, widths }));
+			onColumnWidthsChangeRef.current?.(widths);
+		}
+	}, [columnResizingEnabled]);
+
+	const updateColumnWidth = (column: string, width: number) => {
+		const nextWidths = {
+			...columnWidths,
+			[column]: Math.max(MIN_COLUMN_WIDTH, Math.round(width)),
+		};
+		setColumnWidthState((current) => ({ ...current, widths: nextWidths }));
+		onColumnWidthsChange?.(nextWidths);
+	};
+
+	const startColumnResize = (
+		event: React.PointerEvent<HTMLSpanElement>,
+		column: string,
+	) => {
+		if (!columnResizingEnabled) return;
+		event.preventDefault();
+		event.currentTarget.setPointerCapture(event.pointerId);
+
+		// When no widths are stored yet, read actual rendered <th> widths from
+		// the DOM so every other column keeps its natural browser width during
+		// the drag.
+		let initialWidths = columnWidths;
+		let startWidth = getColumnWidth(column);
+		if (!hasWidths && tableRef.current) {
+			const ths =
+				tableRef.current.querySelectorAll<HTMLTableCellElement>(
+					"thead tr th",
+				);
+			const domWidths: Record<string, number> = {};
+			cols.forEach((col, i) => {
+				const th = ths[i];
+				if (th)
+					domWidths[col] = Math.max(MIN_COLUMN_WIDTH, th.offsetWidth);
+			});
+			if (Object.keys(domWidths).length > 0) {
+				initialWidths = domWidths;
+				startWidth = domWidths[column] ?? startWidth;
+			}
+		}
+
+		resizeRef.current = {
+			column,
+			pointerId: event.pointerId,
+			startX: event.clientX,
+			startWidth,
+			currentWidth: startWidth,
+			initialWidths,
+		};
+	};
+
+	const resizeColumn = (event: React.PointerEvent<HTMLSpanElement>) => {
+		const resize = resizeRef.current;
+		if (!resize || resize.pointerId !== event.pointerId) return;
+		resize.currentWidth = Math.max(
+			MIN_COLUMN_WIDTH,
+			Math.round(resize.startWidth + event.clientX - resize.startX),
+		);
+		setColumnWidthState((current) => ({
+			...current,
+			widths: {
+				...resize.initialWidths,
+				[resize.column]: resize.currentWidth,
+			},
+		}));
+	};
+
+	const finishColumnResize = (event: React.PointerEvent<HTMLSpanElement>) => {
+		const resize = resizeRef.current;
+		if (!resize || resize.pointerId !== event.pointerId) return;
+		resizeRef.current = null;
+		if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+			event.currentTarget.releasePointerCapture(event.pointerId);
+		}
+		onColumnWidthsChange?.({
+			...resize.initialWidths,
+			[resize.column]: resize.currentWidth,
+		});
+	};
 
 	// Row total: when aggregated, that's the grouped row count. Otherwise prefer the
 	// caller's `totalRowCount` (main app's full DB accumulator), else local length.
@@ -238,6 +421,11 @@ export function TableView({
 			wrapConfig?.enabled &&
 			(wrapConfig.columns.length === 0 ||
 				wrapConfig.columns.includes(col));
+		if (useFixedLayout) {
+			return shouldWrap
+				? `${baseClasses} break-words`
+				: `${baseClasses} whitespace-nowrap overflow-hidden text-ellipsis`;
+		}
 		return shouldWrap ? baseClasses : `${baseClasses} whitespace-nowrap`;
 	};
 
@@ -264,8 +452,32 @@ export function TableView({
 		<div className="flex h-full flex-col">
 			<div className="flex-1 overflow-auto">
 				<table
-					className={`${(tableStyling?.fitContainerWidth ?? true) ? "min-w-full" : "w-auto"} border-collapse text-sm`}
+					ref={tableRef}
+					className={`${
+						useFixedLayout
+							? "table-fixed"
+							: (tableStyling?.fitContainerWidth ?? true)
+								? "min-w-full"
+								: "w-auto"
+					} border-collapse text-sm`}
+					style={
+						useFixedLayout
+							? { width: `${totalColumnWidth}px` }
+							: undefined
+					}
 				>
+					{useFixedLayout && (
+						<colgroup>
+							{cols.map((column) => (
+								<col
+									key={column}
+									style={{
+										width: `${getColumnWidth(column)}px`,
+									}}
+								/>
+							))}
+						</colgroup>
+					)}
 					<thead>
 						<tr className="sticky top-0 border-slate-200 border-b bg-slate-50">
 							{cols.map((c) => {
@@ -276,13 +488,66 @@ export function TableView({
 									<th
 										key={c}
 										style={getHeaderStyle(c)}
-										className="whitespace-nowrap px-4 py-2.5 text-left font-semibold text-slate-600 text-xs uppercase tracking-wide"
+										className={`whitespace-nowrap px-4 py-2.5 text-left font-semibold text-slate-600 text-xs uppercase tracking-wide ${columnResizingEnabled ? "relative" : ""}`}
 									>
-										{c}
-										{aggHint && (
-											<span className="ml-1 font-normal text-slate-400 normal-case">
-												· {aggHint}
-											</span>
+										<div
+											className={
+												columnResizingEnabled
+													? "overflow-hidden text-ellipsis"
+													: undefined
+											}
+										>
+											{c}
+											{aggHint && (
+												<span className="ml-1 font-normal text-slate-400 normal-case">
+													· {aggHint}
+												</span>
+											)}
+										</div>
+										{columnResizingEnabled && (
+											// biome-ignore lint/a11y/useSemanticElements: an <hr> can't be focusable or carry pointer-drag/keyboard resize handlers
+											<span
+												role="separator"
+												aria-label={`Resize ${c} column`}
+												aria-orientation="vertical"
+												aria-valuenow={getColumnWidth(
+													c,
+												)}
+												aria-valuemin={MIN_COLUMN_WIDTH}
+												aria-valuemax={2000}
+												tabIndex={0}
+												onPointerDown={(event) =>
+													startColumnResize(event, c)
+												}
+												onPointerMove={resizeColumn}
+												onPointerUp={finishColumnResize}
+												onPointerCancel={
+													finishColumnResize
+												}
+												onLostPointerCapture={
+													finishColumnResize
+												}
+												onKeyDown={(event) => {
+													if (
+														event.key !==
+															"ArrowLeft" &&
+														event.key !==
+															"ArrowRight"
+													) {
+														return;
+													}
+													event.preventDefault();
+													updateColumnWidth(
+														c,
+														getColumnWidth(c) +
+															(event.key ===
+															"ArrowRight"
+																? 8
+																: -8),
+													);
+												}}
+												className="absolute top-0 right-0 h-full w-2 translate-x-1/2 cursor-col-resize touch-none select-none hover:bg-blue-400/30 focus:bg-blue-400/30 focus:outline-none"
+											/>
 										)}
 									</th>
 								);

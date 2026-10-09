@@ -5,9 +5,12 @@ import {
 	type DropResult,
 } from "@hello-pangea/dnd";
 import { GripVertical, Hash, Search, Type, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ColorPicker } from "@/components/tools/shared/ColorPicker";
+import { FilterVisualization } from "@/components/tools/shared/FilterVisualization";
+import { FormatDataValues } from "@/components/tools/shared/FormatDataValues";
+import { SortValues } from "@/components/tools/shared/SortValues";
 import { ToolAccordion } from "@/components/tools/shared/ToolAccordion";
 import { Input, Select } from "@/components/ui";
 import type { Column } from "@/components/VizConfigTabs";
@@ -25,16 +28,29 @@ function TypeIcon({ dt }: { dt: string }) {
 interface Props {
 	viz: VizLike;
 	columns: Column[];
+	rows?: Array<Record<string, unknown>>;
 	onUpdate: (patch: Partial<VizLike>) => void;
 }
 
-export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
+export function CsvExportConfigPanel({ viz, columns, rows, onUpdate }: Props) {
 	const [activeTab, setActiveTab] = useState<"data" | "tools">("data");
 	const [search, setSearch] = useState("");
 
 	const patch = (p: Record<string, unknown>) =>
 		onUpdate({ config: { ...viz.config, ...p } });
+	const patchStyling = (s: Record<string, unknown>) =>
+		onUpdate({
+			config: {
+				...viz.config,
+				styling: { ...(viz.config?.styling ?? {}), ...s },
+			},
+		});
 	const cfg = viz.config ?? {};
+	const styling = viz.config?.styling ?? {};
+	const colNames = columns.map((c) => c.name);
+	const columnTypes = Object.fromEntries(
+		columns.map((c) => [c.name, c.dataType]),
+	);
 
 	// exportColumns: ordered list of columns in the drop zone.
 	// undefined means the widget exports all columns by default.
@@ -46,12 +62,21 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 	const colByName = (name: string): Column =>
 		columns.find((c) => c.name === name) ?? { name, dataType: "STRING" };
 
+	const buttonLabelId = useId();
+	const borderStyleId = useId();
+	const borderWidthId = useId();
+	const fontSizeId = useId();
+	const textAlignId = useId();
+	const heightId = useId();
+	const widthId = useId();
+	const alignmentId = useId();
+
 	const filteredAvailable = useMemo(() => {
 		const available = columns.filter((c) => !selectedSet.has(c.name));
 		if (!search.trim()) return available;
 		const term = search.toLowerCase();
 		return available.filter((c) => c.name.toLowerCase().includes(term));
-	}, [columns, exportColumns, search]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [columns, selectedSet, search]);
 
 	const setExportColumns = (
 		next: string[],
@@ -195,10 +220,14 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 							<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
 								{/* Button label input */}
 								<div className="flex-shrink-0">
-									<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+									<label
+										htmlFor={buttonLabelId}
+										className="mb-1.5 block font-semibold text-stone-600 text-xs"
+									>
 										Button Label
 									</label>
 									<Input
+										id={buttonLabelId}
 										type="text"
 										value={cfg.csvExportLabel ?? ""}
 										onChange={(e) =>
@@ -215,12 +244,12 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 								{/* Columns drop zone */}
 								<div className="flex min-h-0 flex-1 flex-col">
 									<div className="mb-1.5 flex items-center justify-between">
-										<label className="font-semibold text-stone-600 text-xs">
+										<span className="font-semibold text-stone-600 text-xs">
 											Columns
 											{exportColumns.length > 0
 												? ` · ${exportColumns.length}`
 												: ""}
-										</label>
+										</span>
 										<div className="flex items-center gap-1">
 											<button
 												type="button"
@@ -390,6 +419,46 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 					</DragDropContext>
 				) : (
 					<div>
+						<ToolAccordion title="Filter Visualization">
+							<FilterVisualization
+								columns={colNames}
+								rows={rows}
+								value={styling.vizFilter}
+								onChange={(vizFilter) =>
+									patchStyling({ vizFilter })
+								}
+								onReset={() =>
+									patchStyling({ vizFilter: undefined })
+								}
+							/>
+						</ToolAccordion>
+						<ToolAccordion title="Sort Values">
+							<SortValues
+								columns={colNames}
+								rows={rows}
+								value={styling.sortValues}
+								onChange={(sortValues) =>
+									patchStyling({ sortValues })
+								}
+								onReset={() =>
+									patchStyling({ sortValues: undefined })
+								}
+							/>
+						</ToolAccordion>
+						<ToolAccordion title="Format Data Values">
+							<FormatDataValues
+								columns={colNames}
+								rows={rows}
+								columnTypes={columnTypes}
+								value={styling.formatRules ?? []}
+								onChange={(formatRules) =>
+									patchStyling({ formatRules })
+								}
+								onReset={() =>
+									patchStyling({ formatRules: undefined })
+								}
+							/>
+						</ToolAccordion>
 						<ToolAccordion title="Button Style">
 							<ColorPicker
 								label="Background Color"
@@ -404,10 +473,14 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 						<ToolAccordion title="Border">
 							<div className="space-y-3">
 								<div>
-									<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+									<label
+										htmlFor={borderStyleId}
+										className="mb-1.5 block font-semibold text-stone-600 text-xs"
+									>
 										Style
 									</label>
 									<Select
+										id={borderStyleId}
 										value={cfg.borderStyle ?? "none"}
 										onChange={(e) =>
 											patch({
@@ -438,10 +511,14 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 									cfg.borderStyle !== "none" && (
 										<>
 											<div>
-												<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+												<label
+													htmlFor={borderWidthId}
+													className="mb-1.5 block font-semibold text-stone-600 text-xs"
+												>
 													Width (px)
 												</label>
 												<Input
+													id={borderWidthId}
 													type="number"
 													min={0}
 													value={
@@ -478,11 +555,15 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 						<ToolAccordion title="Font Style">
 							<div className="space-y-3">
 								<div>
-									<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+									<label
+										htmlFor={fontSizeId}
+										className="mb-1.5 block font-semibold text-stone-600 text-xs"
+									>
 										Font Size
 									</label>
 									<div className="flex gap-2">
 										<Input
+											id={fontSizeId}
 											type="number"
 											min={0}
 											value={cfg.fontSize ?? ""}
@@ -525,10 +606,14 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 									defaultColor="#ffffff"
 								/>
 								<div>
-									<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+									<label
+										htmlFor={textAlignId}
+										className="mb-1.5 block font-semibold text-stone-600 text-xs"
+									>
 										Text Alignment
 									</label>
 									<Select
+										id={textAlignId}
 										value={cfg.textAlign ?? "center"}
 										onChange={(e) =>
 											patch({ textAlign: e.target.value })
@@ -546,11 +631,15 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 						<ToolAccordion title="Size">
 							<div className="space-y-3">
 								<div>
-									<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+									<label
+										htmlFor={heightId}
+										className="mb-1.5 block font-semibold text-stone-600 text-xs"
+									>
 										Height
 									</label>
 									<div className="flex gap-2">
 										<Input
+											id={heightId}
 											type="number"
 											min={0}
 											value={cfg.buttonHeight ?? ""}
@@ -585,11 +674,15 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 									</div>
 								</div>
 								<div>
-									<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+									<label
+										htmlFor={widthId}
+										className="mb-1.5 block font-semibold text-stone-600 text-xs"
+									>
 										Width
 									</label>
 									<div className="flex gap-2">
 										<Input
+											id={widthId}
 											type="number"
 											min={0}
 											value={cfg.buttonWidth ?? ""}
@@ -628,10 +721,14 @@ export function CsvExportConfigPanel({ viz, columns, onUpdate }: Props) {
 
 						<ToolAccordion title="Alignment">
 							<div>
-								<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+								<label
+									htmlFor={alignmentId}
+									className="mb-1.5 block font-semibold text-stone-600 text-xs"
+								>
 									Horizontal Alignment
 								</label>
 								<Select
+									id={alignmentId}
 									value={cfg.alignment ?? "center"}
 									onChange={(e) =>
 										patch({ alignment: e.target.value })

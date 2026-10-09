@@ -1174,6 +1174,30 @@ export function EditMode() {
 																},
 															})
 														}
+														onTableStylingChange={(
+															updates,
+														) =>
+															updateViz(viz.id, {
+																config: {
+																	...(viz.config ??
+																		{}),
+																	styling: {
+																		...(viz
+																			.config
+																			?.styling ??
+																			{}),
+																		table: {
+																			...(viz
+																				.config
+																				?.styling
+																				?.table ??
+																				{}),
+																			...updates,
+																		},
+																	},
+																},
+															})
+														}
 													/>
 												</div>
 											) : (
@@ -2178,6 +2202,21 @@ function VizCard({
 										multiline: {
 											...(viz.config?.styling
 												?.multiline ?? {}),
+											...updates,
+										},
+									},
+								},
+							})
+						}
+						onTableStylingChange={(updates) =>
+							onUpdate({
+								config: {
+									...(viz.config ?? {}),
+									styling: {
+										...(viz.config?.styling ?? {}),
+										table: {
+											...(viz.config?.styling?.table ??
+												{}),
 											...updates,
 										},
 									},

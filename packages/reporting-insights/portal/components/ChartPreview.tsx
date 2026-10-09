@@ -48,6 +48,7 @@ import { applyVizSort } from "@/lib/vizSort";
 import type {
 	MultiLineStyling,
 	VisualizationConfig as SharedVisualizationConfig,
+	VisualizationStyling,
 } from "@/types/dashboard";
 import type { VisualizationConfig, VisualizationType } from "../types";
 
@@ -77,6 +78,10 @@ interface Props {
 	onFilterDefaultValuesChange?: (values: string[]) => void;
 	/** MultiLine chart: called when zoom/brush interaction updates styling state (e.g. saved zoom fractions). */
 	onMultilineStylingChange?: (updates: Partial<MultiLineStyling>) => void;
+	/** Table: called when user-resized column widths should be persisted. */
+	onTableStylingChange?: (
+		updates: Partial<NonNullable<VisualizationStyling["table"]>>,
+	) => void;
 }
 
 export function ChartPreview({
@@ -87,6 +92,7 @@ export function ChartPreview({
 	filterDefaultValues,
 	onFilterDefaultValuesChange,
 	onMultilineStylingChange,
+	onTableStylingChange,
 }: Props) {
 	// Portal's VisualizationConfig is a structural subset of the shared dashboard
 	// config (kpiAggregation enums differ slightly); bridge it once for the shared
@@ -355,7 +361,20 @@ export function ChartPreview({
 		// Delegate to the shared `TableView` so editor preview honors header /
 		// cell styling, color rules, wrap text, and `fitContainerWidth` exactly
 		// the same way the published dashboard does.
-		return withTitle(<TableView data={data} config={sharedConfig} />);
+		return withTitle(
+			<TableView
+				data={data}
+				config={sharedConfig}
+				onColumnWidthsChange={
+					onTableStylingChange
+						? (widths) =>
+								onTableStylingChange({
+									columnWidths: { enabled: true, widths },
+								})
+						: undefined
+				}
+			/>,
+		);
 	}
 
 	if (vt === "stackbar") {

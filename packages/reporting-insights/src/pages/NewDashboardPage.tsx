@@ -2272,6 +2272,33 @@ export function NewDashboardPage() {
 																			},
 																		);
 																	}}
+																	onTableStylingChange={(
+																		updates,
+																	) => {
+																		updateVisualization(
+																			viz.id,
+																			{
+																				config: {
+																					...viz.config,
+																					styling:
+																						{
+																							...(viz
+																								.config
+																								?.styling ??
+																								{}),
+																							table: {
+																								...(viz
+																									.config
+																									?.styling
+																									?.table ??
+																									{}),
+																								...updates,
+																							},
+																						},
+																				},
+																			},
+																		);
+																	}}
 																/>
 															) : resolveQuery(
 																	viz,
@@ -4023,6 +4050,21 @@ function VizCard({
 								config: {
 									...(vizForEditor.config ?? {}),
 									filterDefaultValues: values,
+								},
+							})
+						}
+						onTableStylingChange={(updates) =>
+							onUpdate({
+								config: {
+									...(vizForEditor.config ?? {}),
+									styling: {
+										...(vizForEditor.config?.styling ?? {}),
+										table: {
+											...(vizForEditor.config?.styling
+												?.table ?? {}),
+											...updates,
+										},
+									},
 								},
 							})
 						}

@@ -64,6 +64,7 @@ import { UnstackToggle } from "./stackbar/UnstackToggle";
 import { ZoomXAxis } from "./stackbar/ZoomXAxis";
 import { ZoomYAxis } from "./stackbar/ZoomYAxis";
 import { CellStyling } from "./table/CellStyling";
+import { ColumnWidths } from "./table/ColumnWidths";
 import { ExportButton } from "./table/ExportButton";
 import { HeaderStyling } from "./table/HeaderStyling";
 import { RowSpanning } from "./table/RowSpanning";
@@ -771,6 +772,17 @@ export function ToolsPanel({
 						})
 					}
 					onReset={() => updateTableStyling({ colorRules: [] })}
+				/>
+			</ToolAccordion>
+			<ToolAccordion title="Columns Width">
+				<ColumnWidths
+					value={styling.table?.columnWidths}
+					onChange={(columnWidths) =>
+						updateTableStyling({ columnWidths })
+					}
+					onReset={() =>
+						updateTableStyling({ columnWidths: undefined })
+					}
 				/>
 			</ToolAccordion>
 
@@ -4220,20 +4232,14 @@ export function ToolsPanel({
 							].includes(visualizationType)
 								? eventsTool
 								: null,
-							![
-								"filter",
-								"htmlblock",
-								"markdown",
-								"csvexport",
-							].includes(visualizationType)
+							!["filter", "htmlblock", "markdown"].includes(
+								visualizationType,
+							)
 								? sortTool
 								: null,
-							![
-								"filter",
-								"htmlblock",
-								"markdown",
-								"csvexport",
-							].includes(visualizationType)
+							!["filter", "htmlblock", "markdown"].includes(
+								visualizationType,
+							)
 								? formatTool
 								: null,
 							visualizationType !== "puck" &&
