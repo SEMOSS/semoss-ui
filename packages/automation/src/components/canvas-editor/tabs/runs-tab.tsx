@@ -313,6 +313,7 @@ export function RunsTab({
 		if (selectedRun) {
 			return (
 				<HistoryRunView
+					key={selectedRun.RUN_ID}
 					run={selectedRun}
 					onBack={goBack}
 					onOutputPopout={handleOutputPopout}
@@ -617,9 +618,15 @@ function HistoryRunView({
 		[executedSteps],
 	);
 	const results = run.nodeResults ?? [];
+	const latestSuccessfulResult = [...results]
+		.reverse()
+		.find((result) => result.STATUS === "SUCCESS");
 	const selectedResult =
 		results.find((result) => result.NODE_ID === selectedNodeId) ??
-		results.find((result) => result.NODE_ID === run.FAILED_NODE_ID) ??
+		(run.STATUS === "FAILED"
+			? results.find((result) => result.NODE_ID === run.FAILED_NODE_ID)
+			: null) ??
+		latestSuccessfulResult ??
 		results[results.length - 1] ??
 		null;
 
