@@ -71,6 +71,12 @@ code may import from `core/` and `components/`; those two never import from them
 - **`onAddToContext` is the host's.** The viewer saves the item, then hands the saved file over;
   the action only shows when the host passes the callback. `onSaved` replaces the viewer's own
   confirmation, and `onSignIn` opens the account's sign in, which must happen inside the click.
+- **Save preparation belongs to the originating host.** Optional
+  `prepareSave?: () => Promise<void | (() => void)>` runs before saving. A returned release
+  function runs in `finally`, after save callbacks, including failures and navigation away.
+  The host retains its originating session before preparing its files; if preparation rejects,
+  the host releases that retention itself. Saves capture their insight and callbacks when
+  requested. Browsing does not invoke preparation or allocate a saved chat.
 - **Signed out is a state, not an error.** `runConnectorPixel` turns the backend's
   `LOGGIN_REQUIRED_ERROR` (its spelling) into `ConnectorSignInError`, and HTTP 401 counts the
   same, since the backend treats a token without an expiry as valid. Google's 403 for a missing
@@ -82,6 +88,13 @@ code may import from `core/` and `components/`; those two never import from them
   `limit` and `offset` and answer `hasMore`; a view that stops at its limit says so. The other
   reactors return no pagination tokens, so their lists that reach their `limit` say so or read
   more by raising it.
+- **Mailbox pages stay at 25 messages.** `useMailPages` advances `offset` by `MailPage.rawCount`
+  before malformed entries and duplicate IDs are removed, and continues while `hasMore` is
+  true. Refresh and filter/provider/insight changes restart the sequence. Concurrent page
+  requests are guarded and stale responses discarded. Additional-page failures retain loaded
+  rows and retry the same offset; expired authentication uses the existing sign-in flow. An
+  empty raw page with `hasMore` is retryable, not an end-of-list signal. Shared connector
+  queries also discard retained data when their originating insight changes.
 - **Mail reads threads whole.** Emails of one conversation share a row. Opening one reads the
   thread from every folder with `<prefix>ListMail(conversationId=...)`. Outlook reports each
   email's `uniqueBody`, its text without the history it quotes; `mail/mail.threads.ts` cuts
@@ -161,6 +174,28 @@ width, detail actions remain above the scrolling body, and all surfaces use sema
 colors. A host that already names the viewer, such as in a tab, passes `showHeader={false}`;
 the refresh then sits at the end of the viewer's toolbar row (the calendars' `actions`), and
 Teams Chats, which has no toolbar, keeps a slim row for it. Keep the existing shared file explorer for OneDrive and Teams Files.
+
+Hosts can opt into retained browsing without depending on a particular dock. `MailboxView`
+accepts `presentation="compact"`, `onOpenItem(MailSelection)`, and a `focusItem` request
+(`{ itemKey, requestId }`). `MailDetailView` renders the selected message or thread using the
+provider captured in that selection. `CalendarAgendaView` accepts `onOpenEvent`,
+`onOpenCalendar`, and a shared `CalendarWindow` from the exported `useCalendarWindow`;
+`CalendarEventDetailView` renders a selected event for its fixed provider. Calendar
+`presentation="agenda"` keeps the date-grouped browser; `presentation="calendar"` adapts
+below 640px of its own container and restores the chosen grid when wider. The default
+presentation preserves Playground's existing calendar/list behavior.
+
+Optional `onControlsChange(ConnectorViewerControls)` publishes refresh, external-link,
+internal Open calendar, and mail/event Add to Context actions instead of showing their inline
+equivalents. Only visible viewers publish (`isVisible` defaults to true); hosts keep callbacks
+scoped to their provider/tab and own registration, retention, and navigation. Omitting the callback restores existing viewer
+controls, including in compact host layouts. Mail detail links use only a matching loaded
+message, or the newest loaded matching thread message, validated as an absolute HTTPS URL;
+there is no mailbox-home fallback. Retained detail `focusRequestId` values request heading
+focus on each open/reopen, while browser `focusItem` restores the originating row or focuses
+the list when the row is gone (the browser container in empty/error states). Hidden viewers
+do not move focus. Omitting these optional host APIs preserves inline detail
+navigation and existing Playground controls.
 
 `CalendarAgendaView` uses `ConnectorCalendar` and `useCalendarWindow`: Sunday-first weeks (the
 default), day, three-day, and month views. The List View button shows the current range as an

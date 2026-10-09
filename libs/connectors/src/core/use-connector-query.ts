@@ -47,6 +47,8 @@ export interface ConnectorQueryOptions {
 }
 
 interface QueryState<T> {
+	/** Never reuse data across originating insights, even for identical pixels. */
+	insightId: string | undefined;
 	/** The pixel the state belongs to. */
 	pixel: string | null;
 	listKey: string | undefined;
@@ -77,6 +79,7 @@ export const useConnectorQuery = <T>(
 	const { listKey } = options;
 	const [reloadCount, setReloadCount] = useState(0);
 	const [state, setState] = useState<QueryState<T>>({
+		insightId: undefined,
 		pixel: null,
 		listKey: undefined,
 		status: "idle",
@@ -95,11 +98,13 @@ export const useConnectorQuery = <T>(
 		let isCancelled = false;
 		setState((previous) => {
 			const isSameList =
-				previous.pixel === pixel ||
-				(listKey !== undefined && previous.listKey === listKey);
+				previous.insightId === insightId &&
+				(previous.pixel === pixel ||
+					(listKey !== undefined && previous.listKey === listKey));
 			return isSameList && previous.data !== null
 				? { ...previous, pixel: pixel, isRefreshing: true }
 				: {
+						insightId,
 						pixel: pixel,
 						listKey: listKey,
 						status: "loading",
@@ -115,6 +120,7 @@ export const useConnectorQuery = <T>(
 				(data) => {
 					if (!isCancelled) {
 						setState({
+							insightId,
 							pixel: pixel,
 							listKey: listKey,
 							status: "ready",
@@ -128,6 +134,7 @@ export const useConnectorQuery = <T>(
 					if (!isCancelled) {
 						const info = classifyConnectorError(error);
 						setState({
+							insightId,
 							pixel: pixel,
 							listKey: listKey,
 							status:
@@ -160,8 +167,9 @@ export const useConnectorQuery = <T>(
 	}
 
 	// the render before the effect picks up a new pixel
-	if (state.pixel !== pixel) {
+	if (state.pixel !== pixel || state.insightId !== insightId) {
 		const isSameList =
+			state.insightId === insightId &&
 			listKey !== undefined &&
 			state.listKey === listKey &&
 			state.data !== null;

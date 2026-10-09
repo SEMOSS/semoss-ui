@@ -23,7 +23,9 @@ vi.mock("@semoss/i18n", () => ({
 					? template
 					: key === "calendar.eventCount"
 						? "{{count}} events"
-						: key;
+						: key === "calendar.openCalendar"
+							? "Open calendar"
+							: key;
 			return text.replace(/{{(\w+)}}/g, (_, field: string) =>
 				String(values?.[field] ?? ""),
 			);
@@ -111,6 +113,7 @@ beforeEach(() => {
 afterEach(async () => {
 	await act(async () => root.unmount());
 	container.remove();
+	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
 
@@ -221,3 +224,50 @@ it.each(["week", "day", "threeDays"] as const)(
 		expect(container.textContent).toContain("Open Planning");
 	},
 );
+
+it("keeps a rail agenda with date navigation and a separate Open calendar action", async () => {
+	const onOpenCalendar = vi.fn();
+	await render({ presentation: "agenda", onOpenCalendar });
+	expect(container.querySelectorAll("button[data-day]")).toHaveLength(0);
+	expect(container.querySelector("[role='combobox']")).toBeNull();
+	expect(container.textContent).toContain("Open Planning");
+	expect(container.textContent).not.toContain("List View");
+	await click("Open calendar");
+	expect(onOpenCalendar).toHaveBeenCalledOnce();
+	await click("Today");
+	expect(today).toHaveBeenCalledOnce();
+});
+
+it("uses the full calendar's container width and restores its chosen grid when widened", async () => {
+	let width = 639;
+	let resize: (() => void) | undefined;
+	vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+		() => new DOMRect(0, 0, width, 500),
+	);
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			constructor(callback: () => void) {
+				resize = callback;
+			}
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
+	await render({ presentation: "calendar" });
+	expect(container.querySelectorAll("button[data-day]")).toHaveLength(0);
+	expect(container.textContent).toContain("Open Planning");
+	expect(container.textContent).not.toContain("Calendar View");
+	width = 640;
+	await act(async () => resize?.());
+	expect(container.querySelectorAll("button[data-day]")).toHaveLength(42);
+	expect(setView).not.toHaveBeenCalled();
+	await click("List View");
+	width = 300;
+	await act(async () => resize?.());
+	width = 900;
+	await act(async () => resize?.());
+	expect(container.querySelectorAll("button[data-day]")).toHaveLength(0);
+	expect(container.textContent).toContain("Calendar View");
+});

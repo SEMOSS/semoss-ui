@@ -11,6 +11,10 @@ export interface ConnectorDetailField {
 
 /** Props for {@link ConnectorDetailView}. */
 export interface ConnectorDetailViewProps {
+	/** Hidden retained details must not move focus. Defaults to true. */
+	isVisible?: boolean;
+	/** Changes whenever the host explicitly opens or reopens this detail. */
+	focusRequestId?: number;
 	/** The item's subject or name. */
 	title: string;
 	/**
@@ -42,16 +46,18 @@ export const ConnectorDetailView = ({
 	fields = [],
 	actions,
 	children,
+	isVisible = true,
+	focusRequestId,
 }: ConnectorDetailViewProps) => {
 	const headingRef = useRef<HTMLHeadingElement>(null);
 	const shownFields = fields.filter((field) => field.value.trim() !== "");
 	const isOpenedFromList = onBack !== undefined;
 
 	useEffect(() => {
-		if (isOpenedFromList) {
+		if (isVisible && (isOpenedFromList || focusRequestId !== undefined)) {
 			headingRef.current?.focus();
 		}
-	}, [isOpenedFromList]);
+	}, [isOpenedFromList, isVisible, focusRequestId]);
 
 	return (
 		<div className="flex h-full min-h-0 flex-col">
@@ -67,7 +73,7 @@ export const ConnectorDetailView = ({
 				<H4
 					ref={headingRef}
 					tabIndex={-1}
-					className="min-w-0 flex-1 truncate font-medium text-sm outline-none"
+					className="min-w-0 flex-1 truncate font-medium text-sm focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
 					title={title}
 				>
 					{title}

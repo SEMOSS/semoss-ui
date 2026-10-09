@@ -37,7 +37,8 @@
 		"saved": "Se guardó {{name}}",
 		"openIn": "Abrir en {{service}}",
 		"saveError": "No se pudo guardar {{name}}. {{message}}",
-		"contextError": "No se pudo añadir {{name}} al contexto. {{message}}"
+		"contextError": "No se pudo añadir {{name}} al contexto. {{message}}",
+		"addToChat": "Añadir al chat"
 	},
 	"status": {
 		"signInTitle": "Inicia sesión en {{account}}",
@@ -98,7 +99,10 @@
 		"loadingAttachments": "Cargando archivos adjuntos...",
 		"conversations": "Conversaciones",
 		"showQuoted": "Mostrar los correos citados",
-		"hideQuoted": "Ocultar los correos citados"
+		"hideQuoted": "Ocultar los correos citados",
+		"filters": "Filtros",
+		"pageError": "No se pudieron cargar más mensajes.",
+		"emptyPage": "El buzón devolvió una página vacía. Inténtalo de nuevo."
 	},
 	"calendar": {
 		"range": "{{start}} a {{end}}",
@@ -153,7 +157,9 @@
 			"day": "Día siguiente",
 			"threeDays": "3 días siguientes",
 			"month": "Mes siguiente"
-		}
+		},
+		"title": "Calendario",
+		"openCalendar": "Abrir calendario"
 	},
 	"teams": {
 		"team": "Equipo",

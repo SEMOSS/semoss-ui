@@ -52,8 +52,17 @@ export function getHistoryChatDraft(
 		id = crypto.randomUUID();
 	historyDrafts.delete(historyKey);
 	historyDrafts.set(historyKey, { scope, id, isLanding });
-	for (const key of historyDrafts.keys()) {
+	for (const [key, entry] of historyDrafts) {
 		if (historyDrafts.size <= MAX_RETAINED_DRAFTS * 2) break;
+		const snapshot = drafts
+			.get(`${entry.scope}:${entry.id}`)
+			?.session.getSnapshot();
+		if (
+			key === historyKey ||
+			snapshot?.contextFiles.length ||
+			snapshot?.composerDraft.files.length
+		)
+			continue;
 		historyDrafts.delete(key);
 	}
 	return getNewChatDraft(scope, id, prompt, search);
@@ -128,8 +137,11 @@ function getNewChatDraft(
 			drafts.size <= MAX_RETAINED_DRAFTS
 		)
 			continue;
+		const snapshot = candidate.session.getSnapshot();
+		if (snapshot.contextFiles.length || snapshot.composerDraft.files.length)
+			continue;
 		// Allocated rooms belong to the shared room registry after navigation.
-		if (!candidate.session.getSnapshot().roomId) {
+		if (!snapshot.roomId) {
 			if (!candidate.session.canEvict({ discardDraft: true })) continue;
 			candidate.session.dispose();
 		}

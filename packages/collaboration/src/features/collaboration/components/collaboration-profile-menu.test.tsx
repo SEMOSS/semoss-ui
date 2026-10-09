@@ -14,6 +14,7 @@ vi.mock("@semoss/sdk/react", () => ({
 
 /** Render account actions with real menu and routing behavior. */
 function renderMenu() {
+	const onNavigate = vi.fn();
 	const state = createInitialCollaborationState();
 	state.profile.name = "Stored name";
 	state.liveProfile = {
@@ -22,7 +23,10 @@ function renderMenu() {
 		email: "taylor@example.invalid",
 	};
 	const router = createMemoryRouter([
-		{ path: "*", element: <CollaborationProfileMenu /> },
+		{
+			path: "*",
+			element: <CollaborationProfileMenu onNavigate={onNavigate} />,
+		},
 		{ path: "/login", element: <p>Signed out</p> },
 	]);
 	render(
@@ -30,7 +34,7 @@ function renderMenu() {
 			<RouterProvider router={router} />
 		</CollaborationSessionProvider>,
 	);
-	return { router, user: userEvent.setup() };
+	return { router, onNavigate, user: userEvent.setup() };
 }
 
 beforeEach(() => {
@@ -40,7 +44,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 it("shows the current account and supports keyboard dismissal and Settings navigation", async () => {
-	const { router, user } = renderMenu();
+	const { router, onNavigate, user } = renderMenu();
 	const trigger = screen.getByRole("button", {
 		name: "Account menu for Taylor Morgan",
 	});
@@ -57,6 +61,7 @@ it("shows the current account and supports keyboard dismissal and Settings navig
 	await user.click(trigger);
 	await user.click(screen.getByRole("menuitem", { name: "Settings" }));
 	expect(router.state.location.pathname).toBe("/settings");
+	expect(onNavigate).toHaveBeenCalledOnce();
 	expect(screen.queryByRole("menu")).not.toBeInTheDocument();
 	expect(logout).not.toHaveBeenCalled();
 });

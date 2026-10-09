@@ -40,6 +40,10 @@ const dashboard = vi.hoisted(() => ({
 vi.mock("@/features/dashboard/dashboard.context", () => ({
 	useDashboard: () => dashboard,
 }));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => ({ actions: { logout: vi.fn() } }),
+}));
 
 /** Exercise the controlled navigation contract without involving persistence. */
 function NavigationFixture({ onNavigate }: { onNavigate?: () => void }) {
@@ -284,6 +288,7 @@ describe("CollaborationNavigation", () => {
 			screen.getByRole("link", { name: "Work" }),
 			screen.getByRole("link", { name: "Brain" }),
 			screen.getByRole("link", { name: "Settings" }),
+			screen.getByRole("button", { name: /Account menu for/ }),
 		];
 		for (const control of controls) {
 			expect(control).toBeVisible();
@@ -294,20 +299,28 @@ describe("CollaborationNavigation", () => {
 		}
 	});
 
-	it("keeps a direct Settings link in the sidebar while leaving Search and account to the header", async () => {
+	it("keeps Settings and account in the sidebar while leaving Search in the header", async () => {
 		const { user, onNavigate, router } = renderNavigation();
 		expect(
 			screen.queryByRole("button", { name: "Search your workspace" }),
 		).not.toBeInTheDocument();
 		const settings = screen.getByRole("link", { name: "Settings" });
 		expect(settings).toHaveTextContent("Settings");
-		expect(
-			screen.queryByRole("button", {
-				name: /Account menu|Switch to .* theme/,
-			}),
-		).not.toBeInTheDocument();
+		const account = screen.getByRole("button", {
+			name: /Account menu for/,
+		});
+		expect(account).toBeVisible();
+		await user.click(
+			screen.getByRole("button", { name: "Toggle navigation fixture" }),
+		);
+		expect(screen.getByRole("button", { name: /Account menu for/ })).toBe(
+			account,
+		);
 		await user.click(settings);
 		expect(onNavigate).toHaveBeenCalledOnce();
 		expect(router.state.location.pathname).toBe("/settings");
+		await user.click(account);
+		await user.click(screen.getByRole("menuitem", { name: "Settings" }));
+		expect(onNavigate).toHaveBeenCalledTimes(2);
 	});
 });

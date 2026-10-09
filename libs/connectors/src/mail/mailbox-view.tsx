@@ -4,12 +4,18 @@ import {
 	PaperclipIcon,
 	RefreshCwIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import type { ConnectorBrand } from "@semoss/shared";
 import {
+	Button,
 	cn,
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+	Muted,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -23,12 +29,16 @@ import { ConnectorItemRow } from "../components/connector-item-row";
 import { ConnectorList } from "../components/connector-list";
 import { ConnectorSearchField } from "../components/connector-search-field";
 import { ConnectorViewerHeader } from "../components/connector-viewer-header";
+import { ConnectorViewerStatus } from "../components/connector-viewer-status";
 import { formatListDate } from "../core/connector.format";
 import type {
 	ConnectorAccount,
+	ConnectorFocusRequest,
 	ConnectorViewerProps,
 } from "../core/connector.types";
 import { runConnectorPixel } from "../core/connector-pixel";
+import { useConnectorControls } from "../core/use-connector-controls";
+import { useConnectorFocus } from "../core/use-connector-focus";
 import { useConnectorQuery } from "../core/use-connector-query";
 import {
 	type ConnectorSaveRequest,
@@ -36,11 +46,7 @@ import {
 } from "../core/use-connector-saver";
 import { useReturnFocus } from "../core/use-return-focus";
 import { mailMessageFileName, mailMessageToMarkdown } from "./mail.markdown";
-import {
-	parseMailFolders,
-	parseMailMessageDetail,
-	parseMailPage,
-} from "./mail.parsers";
+import { parseMailFolders, parseMailMessageDetail } from "./mail.parsers";
 import {
 	groupMailByConversation,
 	type MailConversation,
@@ -48,18 +54,15 @@ import {
 } from "./mail.threads";
 import type { MailMessage } from "./mail.types";
 import { MAIL_APPS } from "./mail-apps";
+import { MailCompactRow } from "./mail-compact-row";
+import type { MailSelection } from "./mail-detail-view";
 import { MailMessageView } from "./mail-message-view";
 import {
 	MailThreadView,
 	readConversation,
 	threadSaveRequest,
 } from "./mail-thread-view";
-
-/** How many emails a list reads at first, and how many more each time. */
-const PAGE_SIZE = 25;
-
-/** The most emails the backend reads at once. */
-const MAX_EMAILS = 100;
+import { useMailPages } from "./use-mail-pages";
 
 /** The inbox's well known name, which every mailbox takes in place of its id. */
 const INBOX = "inbox";
@@ -82,6 +85,12 @@ export interface MailboxViewProps extends ConnectorViewerProps {
 	provider: ConnectorAccount;
 	/** The logo the header shows. Defaults to the mailbox's own. */
 	brand?: ConnectorBrand;
+	/** Opt into the narrow browser toolbar and two-line mail rows. */
+	presentation?: "default" | "compact";
+	/** Let the host open a retained detail instead of replacing this browser. */
+	onOpenItem?: (selection: MailSelection) => void;
+	/** Restore focus to the originating row after host navigation. */
+	focusItem?: ConnectorFocusRequest;
 }
 
 /**
@@ -95,7 +104,18 @@ export interface MailboxViewProps extends ConnectorViewerProps {
  * user's own replies included.
  */
 export const MailboxView = (props: MailboxViewProps) => {
-	const { provider, onSignIn, showHeader = true } = props;
+	const {
+		provider,
+		onSignIn,
+		showHeader = true,
+		isVisible = true,
+		onControlsChange,
+		presentation = "default",
+		onOpenItem,
+		focusItem,
+	} = props;
+	const browserRef = useRef<HTMLDivElement>(null);
+	const Row = presentation === "compact" ? MailCompactRow : ConnectorItemRow;
 	const app = MAIL_APPS[provider];
 	const { t, i18n } = useTranslation("connectors");
 	const { insightId } = useInsight();
@@ -109,10 +129,6 @@ export const MailboxView = (props: MailboxViewProps) => {
 	const debouncedSubject = useDebouncedValue(search.trim());
 	// clearing the search takes effect at once rather than after the delay
 	const subject = search.trim() === "" ? "" : debouncedSubject;
-	const listKey = `${folder}|${subject}|${isUnreadOnly}`;
-	// more emails are read for one list; a different list starts over
-	const [paging, setPaging] = useState({ key: listKey, limit: PAGE_SIZE });
-	const limit = paging.key === listKey ? paging.limit : PAGE_SIZE;
 	const { listRef, rememberItem } = useReturnFocus(openConversation !== null);
 	const serviceName = t(app.nameKey);
 
@@ -131,18 +147,21 @@ export const MailboxView = (props: MailboxViewProps) => {
 	const folderName =
 		folders.find((entry) => entry.id === folder)?.name ?? t("mail.inbox");
 
-	const query = useConnectorQuery(
-		app.pixels.listMail({
-			folder: folder,
-			limit: limit,
-			subject: subject,
-			unreadOnly: isUnreadOnly,
-		}),
-		parseMailPage,
-		{ listKey: listKey },
+	const query = useMailPages({
+		provider,
+		folder,
+		subject,
+		unreadOnly: isUnreadOnly,
+		isGrouped,
+	});
+	const emails = query.data ?? [];
+	useConnectorFocus(
+		listRef,
+		focusItem,
+		isVisible,
+		query.status !== "loading",
+		browserRef,
 	);
-	const emails = query.data?.messages ?? [];
-	const emailCount = emails.length;
 	const conversations = groupMailByConversation(emails, isGrouped);
 	const conversationsQuery = {
 		...query,
@@ -151,12 +170,20 @@ export const MailboxView = (props: MailboxViewProps) => {
 
 	// the folders fail with the mail when the account is signed out, so both
 	// are read again after a sign in or a refresh
-	const reload = () => {
+	const reload = useCallback(() => {
 		query.reload();
-		if (foldersQuery.status !== "ready") {
-			foldersQuery.reload();
-		}
-	};
+		if (foldersQuery.status !== "ready") foldersQuery.reload();
+	}, [query.reload, foldersQuery.status, foldersQuery.reload]);
+	useConnectorControls(
+		{
+			refresh: {
+				onRefresh: reload,
+				isRefreshing: query.isRefreshing || query.status === "loading",
+			},
+		},
+		onControlsChange,
+		isVisible && openConversation === null,
+	);
 
 	/**
 	 * Run a read in the current insight.
@@ -217,7 +244,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 
 	// in the header, or at the end of the toolbar when the host leaves
 	// the header out
-	const refreshButton = (
+	const refreshButton = onControlsChange ? null : (
 		<ConnectorIconButton
 			icon={RefreshCwIcon}
 			label={t("common.refresh")}
@@ -227,7 +254,12 @@ export const MailboxView = (props: MailboxViewProps) => {
 	);
 
 	return (
-		<div className="flex h-full min-h-0 flex-col">
+		<section
+			ref={browserRef}
+			tabIndex={-1}
+			aria-label={serviceName}
+			className="focus-visible:-outline-offset-2 flex h-full min-h-0 min-w-0 flex-col focus-visible:outline-2 focus-visible:outline-ring"
+		>
 			<div
 				className={cn(
 					"flex h-full min-h-0 flex-col",
@@ -264,24 +296,55 @@ export const MailboxView = (props: MailboxViewProps) => {
 								))}
 							</SelectContent>
 						</Select>
-						<Toggle
-							variant="default"
-							className="h-8 px-2 text-xs"
-							size="sm"
-							pressed={isUnreadOnly}
-							onPressedChange={setIsUnreadOnly}
-						>
-							{t("mail.unreadOnly")}
-						</Toggle>
-						<Toggle
-							variant="default"
-							className="h-8 px-2 text-xs"
-							size="sm"
-							pressed={isGrouped}
-							onPressedChange={setIsGrouped}
-						>
-							{t("mail.conversations")}
-						</Toggle>
+						{presentation === "compact" ? (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										className="h-8 text-xs shadow-none"
+									>
+										{t("mail.filters")}
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuCheckboxItem
+										checked={isUnreadOnly}
+										onCheckedChange={setIsUnreadOnly}
+									>
+										{t("mail.unreadOnly")}
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem
+										checked={isGrouped}
+										onCheckedChange={setIsGrouped}
+									>
+										{t("mail.conversations")}
+									</DropdownMenuCheckboxItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						) : (
+							<>
+								<Toggle
+									variant="default"
+									className="h-8 px-2 text-xs"
+									size="sm"
+									pressed={isUnreadOnly}
+									onPressedChange={setIsUnreadOnly}
+								>
+									{t("mail.unreadOnly")}
+								</Toggle>
+								<Toggle
+									variant="default"
+									className="h-8 px-2 text-xs"
+									size="sm"
+									pressed={isGrouped}
+									onPressedChange={setIsGrouped}
+								>
+									{t("mail.conversations")}
+								</Toggle>
+							</>
+						)}
+
 						{showHeader ? null : refreshButton}
 					</div>
 					<ConnectorSearchField
@@ -298,8 +361,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 					onClearSearch={subject ? () => setSearch("") : undefined}
 					onSignIn={onSignIn}
 					listRef={listRef}
-					isFull={query.data?.hasMore === true}
-					limitNote={t("mail.limitReached", { count: emailCount })}
+					isFull={query.hasMore && !query.pageError}
 					emptyText={
 						subject
 							? t("common.noResults", { query: subject })
@@ -307,18 +369,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 								? t("mail.noUnread")
 								: t("mail.empty")
 					}
-					onShowMore={
-						limit < MAX_EMAILS
-							? () =>
-									setPaging({
-										key: listKey,
-										limit: Math.min(
-											limit + PAGE_SIZE,
-											MAX_EMAILS,
-										),
-									})
-							: undefined
-					}
+					onShowMore={query.loadMore}
 				>
 					{(threads) =>
 						threads.map((conversation) => {
@@ -342,7 +393,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 									? MailsIcon
 									: MailIcon;
 							return (
-								<ConnectorItemRow
+								<Row
 									key={conversation.key}
 									itemKey={conversation.key}
 									icon={
@@ -386,7 +437,24 @@ export const MailboxView = (props: MailboxViewProps) => {
 									isBusy={isBusy}
 									onOpen={() => {
 										rememberItem(conversation.key);
-										setOpenConversation(conversation);
+										if (onOpenItem) {
+											onOpenItem({
+												provider,
+												itemKey: conversation.key,
+												folderName,
+												...(isWholeThread(conversation)
+													? {
+															kind: "thread",
+															conversation,
+														}
+													: {
+															kind: "message",
+															message:
+																conversation.latest,
+														}),
+											});
+										} else
+											setOpenConversation(conversation);
 									}}
 									actions={{
 										itemName: title,
@@ -406,6 +474,52 @@ export const MailboxView = (props: MailboxViewProps) => {
 						})
 					}
 				</ConnectorList>
+				{query.status === "ready" &&
+				emails.length === 0 &&
+				query.hasMore &&
+				!query.pageError ? (
+					<Button
+						variant="outline"
+						size="sm"
+						className="my-2 self-center"
+						disabled={query.isRefreshing}
+						onClick={query.loadMore}
+					>
+						{t(
+							query.isRefreshing
+								? "common.loadingMore"
+								: "common.showMore",
+						)}
+					</Button>
+				) : null}
+				{query.pageError?.kind === "signIn" ? (
+					<div className="max-h-full shrink-0 overflow-y-auto border-border border-t">
+						<ConnectorViewerStatus
+							query={{
+								status: "signedOut",
+								error: query.pageError,
+								reload: query.loadMore,
+							}}
+							serviceName={serviceName}
+							account={provider}
+							onSignIn={onSignIn}
+						/>
+					</div>
+				) : query.pageError ? (
+					<div
+						role="alert"
+						className="flex shrink-0 flex-col items-start gap-2 border-border border-t p-3"
+					>
+						<Muted>{t("mail.pageError")}</Muted>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={query.loadMore}
+						>
+							{t("common.retry")}
+						</Button>
+					</div>
+				) : null}
 			</div>
 
 			{openConversation && isWholeThread(openConversation) ? (
@@ -416,6 +530,8 @@ export const MailboxView = (props: MailboxViewProps) => {
 					folderName={folderName}
 					saver={saver}
 					onSignIn={onSignIn}
+					isVisible={isVisible}
+					onControlsChange={onControlsChange}
 					onBack={() => setOpenConversation(null)}
 				/>
 			) : openConversation ? (
@@ -426,9 +542,11 @@ export const MailboxView = (props: MailboxViewProps) => {
 					folderName={folderName}
 					saver={saver}
 					onSignIn={onSignIn}
+					isVisible={isVisible}
+					onControlsChange={onControlsChange}
 					onBack={() => setOpenConversation(null)}
 				/>
 			) : null}
-		</div>
+		</section>
 	);
 };

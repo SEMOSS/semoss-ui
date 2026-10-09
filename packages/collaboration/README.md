@@ -21,13 +21,16 @@ Mobile navigation remains a
 drawer below 1024px. Waiting on others and Handled are always linked from the
 For you summary. Brain contains Review, People, Threads, and Sources navigation;
 Settings has a direct link in the sidebar footer, with an icon-only link when
-collapsed. The avatar in the top-right header opens a menu with the account name,
+collapsed. The avatar sits at the bottom left beneath Settings in both the sidebar
+and mobile navigation drawer. It opens an upward menu with the account name,
 Settings, and Log out. Logout failures remain visible and retryable. Appearance
 controls remain in Settings only.
 
 A persistent 56px header blends into the page canvas alongside the full-height sidebar.
-Search stays on the left and the account avatar on the right across all workspace
-routes, including full-width workbenches. Mobile uses the same header with a drawer trigger.
+Opening a saved room's workbench gives it the full desktop height. The header follows
+the resizable conversation column, keeping the room name and Search
+above the conversation. Search contracts to an icon when the header is narrow.
+Mobile keeps the full-width header above the compact workbench, with a drawer trigger.
 Search still uses one palette and ⌘/Ctrl K.
 Saved conversations compose their title, small agent avatar, and contextual/workbench
 actions into that same header, without a second toolbar or horizontal divider.
@@ -98,6 +101,41 @@ sender and subject queries, and pinned apps. Results are deduplicated; stale
 responses are ignored and category failures are isolated. Work/Brain list limits
 (5,000 actions, threads, and people; 1,000 topics) are surfaced when reached.
 Calendar and Outlook bounds are shown alongside their results.
+
+## Chat email and calendar browsers
+
+The chat workbench starts with a collapsed Files → Emails → Calendar rail. Its
+panels open at 300px and can be resized from 300px to 640px. A new draft initially
+has Emails and Calendar; opening Files inserts it
+first. Outlook branding and Microsoft sign-in belong to Collaboration, while
+the readers, save actions, and connector data come from `@semoss/connectors`.
+The shared viewers retain their existing Playground defaults and Google support.
+
+Email browsing uses fixed 25-message pages, raw server offsets, deduplicated
+messages, and retry without losing loaded rows. Changing a folder, search, or
+filter restarts the list. Messages, conversations, events, and the full calendar
+open retained tabs, reused by provider and item identity while the chat is open.
+Explicit reopening focuses the detail heading; Back reveals and focuses the
+originating browser row without closing the detail tab. The calendar rail and
+full calendar share dates and view selection. A calendar narrower than 640px
+shows an agenda and restores the selected grid view when it widens.
+
+The dock measures its own width and uses compact navigation below 768px.
+Desktop refresh and external links live in workbench headers; compact layouts
+use the viewer's inline controls. Email links require a matching loaded message
+with an absolute HTTPS URL. Hidden viewers cannot publish another panel's controls.
+
+Browsing initializes a draft's insight without saving a room or running an agent.
+Saving prepares and retains the originating room, then refreshes its Files scope
+without changing selection or navigation. Add to chat also queues the saved file,
+deduplicated by file location. Draft and saved chats share removable attachment
+chips. Queued attachments survive navigation and source restoration; pending
+submission cleanup removes only submitted entries, preserving later additions,
+including a removed and re-added path. These viewers do not send email or edit
+calendar events, and require no persistence migration or backend changes.
+
+Host navigation and session adapters live in `src/features/room-connectors`.
+The workbench remains independent of connectors and authentication.
 
 ## State and backend boundaries
 
@@ -290,6 +328,31 @@ pnpm --filter @semoss/collaboration type-check
 pnpm --filter @semoss/collaboration test
 pnpm --filter @semoss/collaboration build
 ```
+
+The October 9, 2026 chat email/calendar integration was checked with Node 24.4.0
+and pnpm 10.13.1. Connectors passed all 185 tests and workbench passed all 65.
+Collaboration passed 1,076 tests with two existing failures in the source-email
+and stale-recipient fixtures; Playground passed 253 with four existing failures
+in workspace-editor and attachment fixtures. All six failures were reproduced
+against the original source. Regression coverage includes retained tabs/focus,
+container breakpoints, more than 100 mail messages, stale requests and retry,
+originating-session saves, and attachment additions during pending submissions.
+
+Type checking introduced no new errors: the baseline remains 13 Collaboration
+fixture errors, two connector fixture errors, and two Playground attachment
+fixture errors. Workbench type checking passes. Both production application
+builds and changed-file Biome checks pass; existing large-chunk warnings remain.
+Temporary baseline and preview harnesses are excluded from the implementation.
+
+The real shared viewers and workbench were inspected in a fixture browser at
+320, 360, and 1440px, with 300px rails, light/dark themes, the 767/768px workbench
+and 639/640px calendar transitions, and 720px reflow equivalent to 200% zoom from
+1440px. Loading, empty, error, disconnected, and long-content states showed no
+horizontal page overflow. Keyboard checks confirmed detail open/reopen, tab reuse,
+row return, full-calendar rail collapse, and agenda focus after reopening the rail.
+The selected month grid also survived narrowing and widening. Native browser zoom
+and live Microsoft operations were not exercised; saves and account data were
+isolated by the preview fixtures.
 
 The October 7, 2026 landing/topic Work implementation passed all 921 tests across
 125 files, package type checking, the production build, and Biome checks on all

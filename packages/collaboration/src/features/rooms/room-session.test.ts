@@ -1,4 +1,5 @@
 import { getAgent } from "@/features/agents/api/get-agent";
+import { getHistoryChatDraft } from "@/features/daily-chat/new-chat-drafts";
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import { resolveThreadModel } from "@/features/thread-assistant/api/thread-model";
 import {
@@ -351,6 +352,218 @@ it("does not queue source context again when the room already has a user message
 	const session = own(getRoomSession(crypto.randomUUID(), "used-room"));
 	await session.initialize();
 	expect(session.getSnapshot().contextFiles).toEqual([]);
+});
+
+it("deduplicates queued files and preserves them through source setup and navigation", async () => {
+	const scope = crypto.randomUUID();
+	const session = own(getRoomSession(scope, "queued-room"));
+	const file = { fileName: "Saved-event.md", fileLocation: "Saved-event.md" };
+	session.addContextFile(file);
+	session.addContextFile({ ...file });
+	const queued = session.getSnapshot().contextFiles[0];
+	transport.options.set("queued-room", { modelId: "model-one", source });
+	await session.initialize();
+	await session.setSource(source);
+	expect(session.getSnapshot().contextFiles).toEqual([file, source.file]);
+	expect(session.getSnapshot().contextFiles[0]).toBe(queued);
+	expect(getRoomSession(scope, "queued-room")).toBe(session);
+	expect(session.canEvict({ discardDraft: true })).toBe(false);
+	session.removeContextFile(file.fileLocation);
+	session.removeContextFile(source.file.fileLocation);
+	expect(session.canEvict()).toBe(true);
+});
+
+it("retains native attachments even when the draft cache may discard text", async () => {
+	const session = draft();
+	await session.initialize();
+	const file = new File(["notes"], "notes.txt");
+	session.setComposerDraft({
+		document: null,
+		text: "Review my notes",
+		files: [file],
+	});
+	expect(session.canEvict()).toBe(false);
+	expect(session.canEvict({ discardDraft: true })).toBe(false);
+	session.setComposerDraft({
+		document: null,
+		text: "Review my notes",
+		files: [],
+	});
+	expect(session.canEvict()).toBe(false);
+	expect(session.canEvict({ discardDraft: true })).toBe(true);
+});
+
+it.each([
+	["native", false],
+	["native", true],
+	["context", false],
+	["context", true],
+] as const)(
+	"restores %s attachments after 45 history entries with allocated=%s",
+	async (attachment, isAllocated) => {
+		const scope = crypto.randomUUID();
+		const original = getHistoryChatDraft(
+			scope,
+			"original",
+			true,
+			"",
+			"",
+			"",
+		);
+		const session = own(original.session);
+		if (isAllocated) await session.create("Saved attachments");
+		const native = new File(["notes"], "notes.txt");
+		const context = { fileName: "Saved.md", fileLocation: "Saved.md" };
+		if (attachment === "native")
+			session.setComposerDraft({
+				document: null,
+				text: "Review",
+				files: [native],
+			});
+		else session.addContextFile(context);
+		for (let index = 0; index < 45; index++) {
+			own(
+				getHistoryChatDraft(scope, `later-${index}`, true, "", "", "")
+					.session,
+			);
+		}
+		const restored = getHistoryChatDraft(
+			scope,
+			"original",
+			true,
+			"",
+			"",
+			"",
+		);
+		expect(restored).toBe(original);
+		expect(restored.session.getSnapshot()).toMatchObject({
+			contextFiles: attachment === "context" ? [context] : [],
+			composerDraft: { files: attachment === "native" ? [native] : [] },
+		});
+		session.removeContextFile(context.fileLocation);
+		session.setComposerDraft({ document: null, text: "", files: [] });
+	},
+);
+
+it("clears only submitted queue entries and native files after an accepted send", async () => {
+	const session = draft();
+	await session.create("Attachments");
+	const first = { fileName: "First.md", fileLocation: "First.md" };
+	const later = { fileName: "Later.md", fileLocation: "Later.md" };
+	const native = new File(["first"], "first.txt");
+	const added = new File(["later"], "later.txt");
+	session.addContextFile(first);
+	session.setComposerDraft({
+		document: null,
+		text: "Review",
+		files: [native],
+	});
+	const pending = deferred<Awaited<ReturnType<typeof uploadRoomFiles>>>();
+	vi.mocked(uploadRoomFiles).mockReturnValueOnce(pending.promise);
+	const sent = session.send({ text: "Review", files: [native] });
+	session.addContextFile(later);
+	session.removeContextFile(first.fileLocation);
+	session.addContextFile(first);
+	session.setComposerDraft({
+		document: null,
+		text: "My next request",
+		files: [native, added],
+	});
+	pending.resolve([{ fileName: native.name, fileLocation: native.name }]);
+	await sent;
+	expect(session.getSnapshot()).toMatchObject({
+		contextFiles: [later, first],
+		composerDraft: { text: "My next request", files: [added] },
+		composerResetKey: 1,
+	});
+	expect(runApi.startAgentRun).toHaveBeenCalledWith(
+		session.insight.insightId,
+		expect.objectContaining({ media: [native.name, first.fileLocation] }),
+	);
+});
+
+it("retains later queued and native files when an uncertain submission is confirmed", async () => {
+	const session = draft();
+	await session.create("Attachments");
+	const first = { fileName: "First.md", fileLocation: "First.md" };
+	const later = { fileName: "Later.md", fileLocation: "Later.md" };
+	const native = new File(["first"], "first.txt");
+	const added = new File(["later"], "later.txt");
+	session.addContextFile(first);
+	session.setComposerDraft({
+		document: null,
+		text: "Review",
+		files: [native],
+	});
+	vi.mocked(runApi.startAgentRun).mockRejectedValueOnce(
+		new Error("Disconnected"),
+	);
+	await expect(
+		session.send({ text: "Review", files: [native] }),
+	).rejects.toThrow("Disconnected");
+	const submitted = vi.mocked(runApi.startAgentRun).mock.calls[0][1].command;
+	session.addContextFile(later);
+	session.setComposerDraft({
+		document: null,
+		text: "Review",
+		files: [native, added],
+	});
+	vi.mocked(getRoomMessages).mockResolvedValue([
+		{
+			messageId: "confirmed",
+			type: "INPUT_TEXT",
+			parts: [{ type: "TEXT", text: submitted }],
+		},
+	]);
+	await session.reconnect();
+	expect(session.getSnapshot()).toMatchObject({
+		hasUnconfirmedSubmission: false,
+		contextFiles: [later],
+		composerDraft: { text: "", files: [added] },
+		composerResetKey: 1,
+	});
+});
+
+it("excludes additions during room allocation from the already submitted draft", async () => {
+	const session = draft();
+	await session.initialize();
+	const first = { fileName: "First.md", fileLocation: "First.md" };
+	const later = { fileName: "Later.md", fileLocation: "Later.md" };
+	const native = new File(["first"], "first.txt");
+	const added = new File(["later"], "later.txt");
+	session.addContextFile(first);
+	session.setComposerDraft({
+		document: null,
+		text: "Review",
+		files: [native],
+	});
+	const submission = { text: "Review", files: [native] };
+	const submittedDraft = session.captureSubmission(submission);
+	const created = session.create("Attachments");
+	submission.files.push(added);
+	session.addContextFile(later);
+	session.setComposerDraft({
+		document: null,
+		text: "Later edit",
+		files: [native, added],
+	});
+	await created;
+	vi.mocked(uploadRoomFiles).mockResolvedValueOnce([
+		{ fileName: native.name, fileLocation: native.name },
+	]);
+	await session.send(submission, {}, submittedDraft);
+	expect(uploadRoomFiles).toHaveBeenCalledExactlyOnceWith(
+		session.insight.insightId,
+		[native],
+	);
+	expect(runApi.startAgentRun).toHaveBeenCalledWith(
+		session.insight.insightId,
+		expect.objectContaining({ media: [native.name, first.fileLocation] }),
+	);
+	expect(session.getSnapshot()).toMatchObject({
+		contextFiles: [later],
+		composerDraft: { text: "Later edit", files: [added] },
+	});
 });
 
 it("serializes settings and source metadata writes without losing either", async () => {

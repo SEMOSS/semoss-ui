@@ -4,6 +4,9 @@ import { Button } from "@semoss/ui/next";
 import { EmptyView } from "@/components/common/empty-view";
 import { toolMessageTimestamps } from "@/features/messages/utils/message-metadata";
 import { toolsFromMessages } from "@/features/messages/utils/thread-items";
+import { ROOM_CONNECTOR_COMPONENTS } from "@/features/room-connectors/room-connectors.components";
+import { createRoomConnectorLayout } from "@/features/room-connectors/room-connectors.constants";
+import { RoomConnectorsProvider } from "@/features/room-connectors/room-connectors-provider";
 import { ROOM_EMAIL_PANEL_COMPONENTS } from "@/features/room-email/room-email-panel";
 import { RoomEmailProvider } from "@/features/room-email/room-email-provider";
 import { ROOM_EMAIL_SOURCE_PANEL_COMPONENTS } from "@/features/room-email/room-email-source-panel";
@@ -16,6 +19,7 @@ import { RoomWorkspace } from "./room-workspace";
 
 const ROOM_COMPONENTS = {
 	...TOOL_WORKBENCH_COMPONENTS,
+	...ROOM_CONNECTOR_COMPONENTS,
 	...ROOM_EMAIL_PANEL_COMPONENTS,
 	...ROOM_EMAIL_SOURCE_PANEL_COMPONENTS,
 	...ROOM_SETTINGS_PANEL_COMPONENTS,
@@ -107,6 +111,7 @@ export function RoomView({
 						key={sessionId}
 						autoReveal={false}
 						components={ROOM_COMPONENTS}
+						createLayout={createRoomConnectorLayout}
 						roomId={sessionId}
 						insightId={insightId}
 						tools={tools}
@@ -115,34 +120,36 @@ export function RoomView({
 						onApproveTool={onApproveTool}
 						onRejectTool={onRejectTool}
 					>
-						<RoomSettingsPanelContext.Provider
-							value={{
-								agentName: agent.name,
-								agent,
-								modelId,
-								modelName,
-								settings: roomSettings,
-								inheritedMcp: agent.mcp,
-								isReadOnly:
-									isSending || isRunning || isModelSaving,
-								isModelLocked,
-								onSave: onSaveRoomSettings,
-							}}
-						>
-							{roomSession && roomSnapshot ? (
-								<RoomEmailProvider
-									session={roomSession}
-									roomId={sessionId}
-									source={roomSnapshot.source}
-									turn={roomSnapshot.turn}
-									isReady={roomSnapshot.isReady}
-								>
-									{workspace}
-								</RoomEmailProvider>
-							) : (
-								workspace
-							)}
-						</RoomSettingsPanelContext.Provider>
+						<RoomConnectorsProvider session={roomSession}>
+							<RoomSettingsPanelContext.Provider
+								value={{
+									agentName: agent.name,
+									agent,
+									modelId,
+									modelName,
+									settings: roomSettings,
+									inheritedMcp: agent.mcp,
+									isReadOnly:
+										isSending || isRunning || isModelSaving,
+									isModelLocked,
+									onSave: onSaveRoomSettings,
+								}}
+							>
+								{roomSession && roomSnapshot ? (
+									<RoomEmailProvider
+										session={roomSession}
+										roomId={sessionId}
+										source={roomSnapshot.source}
+										turn={roomSnapshot.turn}
+										isReady={roomSnapshot.isReady}
+									>
+										{workspace}
+									</RoomEmailProvider>
+								) : (
+									workspace
+								)}
+							</RoomSettingsPanelContext.Provider>
+						</RoomConnectorsProvider>
 					</ToolWorkbenchProvider>
 				</div>
 			) : (

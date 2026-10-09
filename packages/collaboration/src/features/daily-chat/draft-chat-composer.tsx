@@ -2,6 +2,7 @@ import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { RoomComposer } from "@/features/rooms/components/room-composer";
 import type { ComposerPanelAction } from "@/features/rooms/components/room-composer.types";
+import { RoomContextFiles } from "@/features/rooms/components/room-context-files";
 import type {
 	RoomSession,
 	RoomSessionSnapshot,
@@ -84,6 +85,14 @@ export function DraftChatComposer({
 				initialDraft={snapshot.composerDraft}
 				onDraftChange={session.setComposerDraft}
 				retainUntilSent
+				clearOnSent={false}
+				attachmentSummary={
+					<RoomContextFiles
+						files={snapshot.contextFiles}
+						onRemove={session.removeContextFile}
+						isDisabled={isBusy || snapshot.turn.isRunning}
+					/>
+				}
 				submissionError={
 					snapshot.submissionError ||
 					snapshot.settingsError ||

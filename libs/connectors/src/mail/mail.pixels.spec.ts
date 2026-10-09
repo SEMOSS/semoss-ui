@@ -44,6 +44,21 @@ describe("mail pixels", () => {
 		);
 	});
 
+	it("passes the raw page offset to both providers, including zero", () => {
+		for (const app of Object.values(MAIL_APPS)) {
+			expect(
+				app.pixels.listMail({ folder: "inbox", limit: 25, offset: 0 }),
+			).toContain("offset=[0]");
+			expect(
+				app.pixels.listMail({
+					folder: "inbox",
+					limit: 25,
+					offset: 125,
+				}),
+			).toContain("offset=[125]");
+		}
+	});
+
 	it("writes every recipient, and leaves empty lists out", () => {
 		expect(
 			MAIL_APPS.google.pixels.saveDraft({

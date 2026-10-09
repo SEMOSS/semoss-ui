@@ -7,6 +7,7 @@ import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { suggestedMemories } from "../state/memory";
 import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
+import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationSettingsLink } from "./collaboration-settings-link";
 import { CollaborationTopicsNavigation } from "./collaboration-topics-navigation";
 
@@ -140,11 +141,12 @@ export function CollaborationNavigation({
 					/>
 				</div>
 			</div>
-			<div className="shrink-0 border-sidebar-border border-t p-2 pr-3">
+			<div className="flex shrink-0 flex-col items-start gap-1 border-sidebar-border border-t p-2 pr-3">
 				<CollaborationSettingsLink
 					isCollapsed={isCollapsed}
 					onNavigate={onNavigate}
 				/>
+				<CollaborationProfileMenu onNavigate={onNavigate} />
 			</div>
 		</div>
 	);
