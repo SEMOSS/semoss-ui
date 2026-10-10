@@ -1,8 +1,12 @@
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Muted } from "@semoss/ui/next";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 import { ConnectorActionBar } from "../components/connector-action-bar";
 import { ConnectorDetailView } from "../components/connector-detail-view";
 import { ConnectorViewerStatus } from "../components/connector-viewer-status";
+import type { ConnectorViewerProps } from "../core/connector.types";
+import { useConnectorControls } from "../core/use-connector-controls";
 import { useConnectorQuery } from "../core/use-connector-query";
 import type {
 	ConnectorSaveRequest,
@@ -76,7 +80,10 @@ export const threadSaveRequest = (
 });
 
 /** Props for {@link MailThreadView}. */
-export interface MailThreadViewProps {
+export interface MailThreadViewProps
+	extends Pick<ConnectorViewerProps, "isVisible" | "onControlsChange"> {
+	/** Re-focuses the heading when a retained detail is explicitly reopened. */
+	focusRequestId?: number;
 	/** The mailbox the thread is in. */
 	app: MailApp;
 	/** The thread as the folder's list shows it. */
@@ -86,7 +93,7 @@ export interface MailThreadViewProps {
 	/** Saves the thread and its attachments into the insight. */
 	saver: ConnectorSaver;
 	/** Goes back to the list. */
-	onBack: () => void;
+	onBack?: () => void;
 	/** Starts the sign in, when the host offers one. */
 	onSignIn?: () => Promise<boolean>;
 }
@@ -105,6 +112,9 @@ export const MailThreadView = ({
 	saver,
 	onBack,
 	onSignIn,
+	isVisible = true,
+	onControlsChange,
+	focusRequestId,
 }: MailThreadViewProps) => {
 	const { t } = useTranslation("connectors");
 	const query = useConnectorQuery(
@@ -114,9 +124,14 @@ export const MailThreadView = ({
 		}),
 		parseMailPage,
 	);
-	const thread = query.data
-		? selectThread(query.data.messages, conversation.conversationId)
-		: null;
+	const loadedMessages = query.data?.messages;
+	const thread = useMemo(
+		() =>
+			loadedMessages
+				? selectThread(loadedMessages, conversation.conversationId)
+				: null,
+		[loadedMessages, conversation.conversationId],
+	);
 	const serviceName = t(app.nameKey);
 	const title =
 		normalizeMailSubject(conversation.latest.subject) ||
@@ -129,18 +144,49 @@ export const MailThreadView = ({
 		),
 	].join(", ");
 	const newestFirst = thread ? [...thread].reverse() : [];
-
-	const request = (emails: MailMessage[]) =>
-		threadSaveRequest(
-			app,
-			conversation.key,
-			title,
-			conversation.latest.subject,
-			async () => emails,
-		);
+	const webUrl = safeHttpsUrl(newestFirst[0]?.webLink);
+	const { addToContext } = saver;
+	const isThreadBusy = saver.isBusy(conversation.key);
+	const request = useCallback(
+		(emails: MailMessage[]) =>
+			threadSaveRequest(
+				app,
+				conversation.key,
+				title,
+				conversation.latest.subject,
+				async () => emails,
+			),
+		[app, conversation.key, conversation.latest.subject, title],
+	);
+	const handleAddToContext = useCallback(() => {
+		if (thread) addToContext?.(request(thread));
+	}, [addToContext, request, thread]);
+	useConnectorControls(
+		{
+			openIn: webUrl
+				? {
+						href: webUrl,
+						label: t("actions.openIn", {
+							service: t(app.appNameKey),
+						}),
+					}
+				: undefined,
+			addToContext:
+				thread?.length && addToContext
+					? {
+							onAddToContext: handleAddToContext,
+							isBusy: isThreadBusy,
+						}
+					: undefined,
+		},
+		onControlsChange,
+		isVisible,
+	);
 
 	return (
 		<ConnectorDetailView
+			isVisible={isVisible}
+			focusRequestId={focusRequestId}
 			title={title}
 			backLabel={t("mail.backTo", { folder: folderName })}
 			onBack={onBack}
@@ -156,12 +202,13 @@ export const MailThreadView = ({
 			actions={
 				thread ? (
 					<ConnectorActionBar
-						serviceName={serviceName}
+						serviceName={t(app.appNameKey)}
+						webUrl={onControlsChange ? undefined : webUrl}
 						saveLabel={saver.saveLabel}
-						isBusy={saver.isBusy(conversation.key)}
+						isBusy={isThreadBusy}
 						onAddToContext={
-							saver.addToContext
-								? () => saver.addToContext?.(request(thread))
+							!onControlsChange && addToContext
+								? handleAddToContext
 								: undefined
 						}
 						onSave={() => saver.save(request(thread))}

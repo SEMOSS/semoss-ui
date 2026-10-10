@@ -1,11 +1,15 @@
+import { useCallback } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 import { ConnectorActionBar } from "../components/connector-action-bar";
 import { ConnectorDetailView } from "../components/connector-detail-view";
 import { ConnectorTextBody } from "../components/connector-text-body";
 import { ConnectorViewerStatus } from "../components/connector-viewer-status";
 import { formatFullDate } from "../core/connector.format";
+import type { ConnectorViewerProps } from "../core/connector.types";
 import { runConnectorPixel } from "../core/connector-pixel";
+import { useConnectorControls } from "../core/use-connector-controls";
 import { useConnectorQuery } from "../core/use-connector-query";
 import type {
 	ConnectorSaveRequest,
@@ -19,7 +23,10 @@ import { MailAttachmentList } from "./mail-attachment-list";
 import { readConversation, threadSaveRequest } from "./mail-thread-view";
 
 /** Props for {@link MailMessageView}. */
-export interface MailMessageViewProps {
+export interface MailMessageViewProps
+	extends Pick<ConnectorViewerProps, "isVisible" | "onControlsChange"> {
+	/** Re-focuses the heading when a retained detail is explicitly reopened. */
+	focusRequestId?: number;
 	/** The mailbox the email is in. */
 	app: MailApp;
 	/** The email as the list showed it, until the full one is read. */
@@ -52,6 +59,9 @@ export const MailMessageView = ({
 	onBack,
 	onSignIn,
 	isSummaryComplete = false,
+	isVisible = true,
+	onControlsChange,
+	focusRequestId,
 }: MailMessageViewProps) => {
 	const { t, i18n } = useTranslation("connectors");
 	const { insightId } = useInsight();
@@ -59,9 +69,17 @@ export const MailMessageView = ({
 		app.pixels.getMail(summary.id),
 		parseMailMessageDetail,
 	);
-	const message = query.data ?? (isSummaryComplete ? summary : null);
+	const message =
+		query.data?.id === summary.id
+			? query.data
+			: isSummaryComplete
+				? summary
+				: null;
+	const webUrl = safeHttpsUrl(message?.webLink);
 	const serviceName = t(app.nameKey);
 	const title = (message ?? summary).subject || t("common.noSubject");
+	const noInsightMessage = t("errors.noInsight");
+	const { addToContext } = saver;
 
 	/**
 	 * How to save the email: its whole thread, read from every folder, when it
@@ -70,35 +88,70 @@ export const MailMessageView = ({
 	 * @param full - The email, read in full.
 	 * @return The save request.
 	 */
-	const messageRequest = (full: MailMessage): ConnectorSaveRequest => {
-		const conversationId = full.conversationId;
-		if (conversationId) {
-			return threadSaveRequest(app, full.id, title, full.subject, () => {
-				if (!insightId) {
-					throw new Error(t("errors.noInsight"));
-				}
-				return readConversation(
+	const messageRequest = useCallback(
+		(full: MailMessage): ConnectorSaveRequest => {
+			const conversationId = full.conversationId;
+			if (conversationId) {
+				return threadSaveRequest(
 					app,
-					(pixel) => runConnectorPixel(pixel, insightId),
-					conversationId,
+					full.id,
+					title,
+					full.subject,
+					() => {
+						if (!insightId) {
+							throw new Error(noInsightMessage);
+						}
+						return readConversation(
+							app,
+							(pixel) => runConnectorPixel(pixel, insightId),
+							conversationId,
+						);
+					},
 				);
-			});
-		}
-		return {
-			key: full.id,
-			name: title,
-			source: {
-				kind: "text",
-				fileName: mailMessageFileName(full),
-				getContent: () => mailMessageToMarkdown(app, full),
-			},
-		};
-	};
+			}
+			return {
+				key: full.id,
+				name: title,
+				source: {
+					kind: "text",
+					fileName: mailMessageFileName(full),
+					getContent: () => mailMessageToMarkdown(app, full),
+				},
+			};
+		},
+		[app, insightId, noInsightMessage, title],
+	);
+	const handleAddToContext = useCallback(() => {
+		if (message) addToContext?.(messageRequest(message));
+	}, [addToContext, message, messageRequest]);
 
 	const isMessageBusy = saver.isBusy(summary.id);
+	useConnectorControls(
+		{
+			openIn: webUrl
+				? {
+						href: webUrl,
+						label: t("actions.openIn", {
+							service: t(app.appNameKey),
+						}),
+					}
+				: undefined,
+			addToContext:
+				message && addToContext
+					? {
+							onAddToContext: handleAddToContext,
+							isBusy: isMessageBusy,
+						}
+					: undefined,
+		},
+		onControlsChange,
+		isVisible,
+	);
 
 	return (
 		<ConnectorDetailView
+			isVisible={isVisible}
+			focusRequestId={focusRequestId}
 			title={title}
 			backLabel={
 				folderName
@@ -135,15 +188,12 @@ export const MailMessageView = ({
 				message ? (
 					<ConnectorActionBar
 						serviceName={t(app.appNameKey)}
-						webUrl={message.webLink}
+						webUrl={onControlsChange ? undefined : webUrl}
 						saveLabel={saver.saveLabel}
 						isBusy={isMessageBusy}
 						onAddToContext={
-							saver.addToContext
-								? () =>
-										saver.addToContext?.(
-											messageRequest(message),
-										)
+							!onControlsChange && addToContext
+								? handleAddToContext
 								: undefined
 						}
 						onSave={() => saver.save(messageRequest(message))}

@@ -37,7 +37,8 @@
 		"saved": "Saved {{name}}",
 		"openIn": "Open in {{service}}",
 		"saveError": "Could not save {{name}}. {{message}}",
-		"contextError": "Could not add {{name}} to context. {{message}}"
+		"contextError": "Could not add {{name}} to context. {{message}}",
+		"addToChat": "Add to chat"
 	},
 	"status": {
 		"signInTitle": "Sign In to {{account}}",
@@ -98,7 +99,10 @@
 		"loadingAttachments": "Loading attachments...",
 		"conversations": "Conversations",
 		"showQuoted": "Show Quoted Emails",
-		"hideQuoted": "Hide Quoted Emails"
+		"hideQuoted": "Hide Quoted Emails",
+		"filters": "Filters",
+		"pageError": "Could not load more messages.",
+		"emptyPage": "The mailbox returned an empty page. Try again."
 	},
 	"calendar": {
 		"range": "{{start}} to {{end}}",
@@ -153,7 +157,9 @@
 			"day": "Next day",
 			"threeDays": "Next 3 days",
 			"month": "Next month"
-		}
+		},
+		"title": "Calendar",
+		"openCalendar": "Open calendar"
 	},
 	"teams": {
 		"team": "Team",

@@ -30,8 +30,30 @@ export interface ConnectorSavedFile {
 	service: ConnectorViewerService;
 }
 
+/** Transient actions a host can display in its own viewer chrome. */
+export interface ConnectorViewerControls {
+	refresh?: { onRefresh: () => void; isRefreshing: boolean };
+	/** Opens the host's retained calendar panel, independently of external links. */
+	onOpenCalendar?: () => void;
+	addToContext?: { onAddToContext: () => void; isBusy: boolean };
+	openIn?: { href: string; label: string };
+}
+
+/** An explicit request to return keyboard focus to a browser item. */
+export interface ConnectorFocusRequest {
+	itemKey: string;
+	requestId: number;
+}
+
 /** What a host gives every connector viewer. */
 export interface ConnectorViewerProps {
+	/** Prepare the originating file space; release its lifetime after the save. */
+	// biome-ignore lint/suspicious/noConfusingVoidType: preserves the host's Promise<void> preparation contract
+	prepareSave?: () => Promise<void | (() => void)>;
+	/** Whether this retained viewer is currently visible. Defaults to true. */
+	isVisible?: boolean;
+	/** Publish actions to host chrome instead of rendering their inline equivalents. */
+	onControlsChange?: (controls: ConnectorViewerControls) => void;
 	/**
 	 * What the host calls the insight's files, such as `Chat files`. It names
 	 * the save action, which always saves into the current insight.

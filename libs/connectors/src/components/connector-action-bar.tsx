@@ -5,7 +5,12 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Button } from "@semoss/ui/next";
+import {
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 
 /** Props for {@link ConnectorActionBar}. */
 export interface ConnectorActionBarProps {
@@ -64,17 +69,28 @@ export const ConnectorActionBar = ({
 				{saveLabel}
 			</Button>
 			{webUrl ? (
-				<Button
-					variant="ghost"
-					size="sm"
-					className="h-8 px-2 text-xs"
-					asChild
-				>
-					<a href={webUrl} target="_blank" rel="noopener noreferrer">
-						<ExternalLinkIcon aria-hidden />
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-8 px-2 text-xs"
+							asChild
+						>
+							<a
+								href={webUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<ExternalLinkIcon aria-hidden />
+								{t("actions.openIn", { service: serviceName })}
+							</a>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>
 						{t("actions.openIn", { service: serviceName })}
-					</a>
-				</Button>
+					</TooltipContent>
+				</Tooltip>
 			) : null}
 			{children}
 		</div>

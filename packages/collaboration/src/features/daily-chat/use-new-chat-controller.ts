@@ -102,10 +102,11 @@ export function useNewChatController(
 	}, [entryToken, initialize, session]);
 	const handleSend = (submission: ComposerSubmission): Promise<void> => {
 		if (draft.pendingSubmission) return draft.pendingSubmission;
+		const submittedDraft = session.captureSubmission(submission);
 		const release = session.retain();
 		const sending = (async () => {
 			const roomId = await session.create("New chat");
-			const submitted = session.send(submission);
+			const submitted = session.send(submission, {}, submittedDraft);
 			if (active.current === entryToken) void navigate(roomPath(roomId));
 			markNewChatDraftStarted(scope, draft, roomId);
 			await submitted;

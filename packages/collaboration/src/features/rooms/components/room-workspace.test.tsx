@@ -1,6 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import type { ComponentProps } from "react";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
+import { CollaborationHeaderLayoutContext } from "@/features/collaboration/components/collaboration-header.context";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import {
 	CollaborationSessionProvider,
@@ -14,13 +21,32 @@ import { RoomWorkspace } from "./room-workspace";
 // what the mocked composer sends
 const composerText = vi.hoisted(() => ({ value: "" }));
 
+vi.mock("@semoss/i18n", async (original) => ({
+	...(await original<typeof import("@semoss/i18n")>()),
+	useTranslation: () => ({
+		t: (key: string, values?: { name?: string }) =>
+			key === "contextItems.remove"
+				? `Remove ${values?.name} from your next message`
+				: key,
+	}),
+}));
+
 const workbenchState = vi.hoisted(() => ({
+	insightId: "room-insight",
 	isOpen: true,
 	activeToolId: null as string | null,
 	openWorkbench: vi.fn(),
 	closeWorkbench: vi.fn(),
 	selectPanel: vi.fn(),
+	updatePanel: vi.fn(),
 	openFile: vi.fn(),
+	returnToBrowser: vi.fn(),
+}));
+
+vi.mock("@/features/room-connectors/room-connectors.context", () => ({
+	useRoomConnectors: () => ({
+		returnToBrowser: workbenchState.returnToBrowser,
+	}),
 }));
 
 vi.mock("@/features/tools/tool-workbench.context", () => ({
@@ -29,7 +55,10 @@ vi.mock("@/features/tools/tool-workbench.context", () => ({
 		store: {
 			getState: () => ({
 				layout: {
-					actions: { selectPanel: workbenchState.selectPanel },
+					actions: {
+						selectPanel: workbenchState.selectPanel,
+						updatePanel: workbenchState.updatePanel,
+					},
 				},
 			}),
 		},
@@ -166,7 +195,9 @@ describe("RoomWorkspace", () => {
 		workbenchState.openWorkbench.mockClear();
 		workbenchState.closeWorkbench.mockClear();
 		workbenchState.selectPanel.mockClear();
+		workbenchState.updatePanel.mockClear();
 		workbenchState.openFile.mockClear();
+		workbenchState.returnToBrowser.mockClear();
 	});
 
 	it("opens a PowerPoint linked by a reply it watched live, but not one from history", () => {
@@ -227,7 +258,7 @@ describe("RoomWorkspace", () => {
 		expect(workbenchState.openWorkbench).toHaveBeenCalledWith();
 	});
 
-	it("opens Settings as a selected panel and allows opening an empty workbench from the composer", () => {
+	it("opens Settings, Files, Emails, and Calendar from the composer", () => {
 		workbenchState.isOpen = false;
 		render(<RoomWorkspace {...defaultProps} />);
 		fireEvent.click(screen.getByRole("button", { name: "Settings" }));
@@ -240,8 +271,35 @@ describe("RoomWorkspace", () => {
 			expect.any(String),
 		);
 		workbenchState.selectPanel.mockClear();
-		fireEvent.click(screen.getByRole("button", { name: "Open workbench" }));
-		expect(workbenchState.selectPanel).not.toHaveBeenCalled();
+		workbenchState.openWorkbench.mockClear();
+		fireEvent.click(screen.getByRole("button", { name: "Open Files" }));
+		expect(workbenchState.selectPanel).toHaveBeenCalledWith(
+			"file-explorer",
+			{ mode: { type: "INSIGHT", insightId: "room-insight" } },
+			{
+				name: "Files",
+				target: { kind: "border", side: "left", index: 0 },
+			},
+		);
+		expect(workbenchState.openWorkbench).toHaveBeenCalledWith(
+			undefined,
+			expect.any(String),
+		);
+		for (const [label, browser] of [
+			["Open Emails", "mail"],
+			["Open Calendar", "calendar"],
+		]) {
+			fireEvent.click(screen.getByRole("button", { name: label }));
+			expect(workbenchState.returnToBrowser).toHaveBeenLastCalledWith(
+				browser,
+				"microsoft",
+				undefined,
+				expect.any(String),
+			);
+		}
+		expect(
+			screen.queryByRole("button", { name: "Open workbench" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("retains unsaved panel state while the workbench is hidden", () => {
@@ -302,6 +360,68 @@ describe("RoomWorkspace", () => {
 
 		expect(panelSizes(container)).toEqual([30, 70]);
 	});
+
+	it("keeps room controls wide enough as the shared workspace resizes without losing a panel draft", () => {
+		let workspaceWidth = 800;
+		let resizeWorkspace: () => void = () => undefined;
+		const originalRect = HTMLElement.prototype.getBoundingClientRect;
+		const geometry = vi
+			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+			.mockImplementation(function (this: HTMLElement) {
+				return this.firstElementChild?.getAttribute("data-slot") ===
+					"resizable-panel-group"
+					? new DOMRect(0, 0, workspaceWidth, 800)
+					: originalRect.call(this);
+			});
+		const OriginalResizeObserver = globalThis.ResizeObserver;
+		vi.stubGlobal(
+			"ResizeObserver",
+			class implements ResizeObserver {
+				constructor(callback: ResizeObserverCallback) {
+					resizeWorkspace = () => callback([], this);
+				}
+				observe() {}
+				unobserve() {}
+				disconnect() {}
+			},
+		);
+		try {
+			const { container } = render(
+				<CollaborationHeaderLayoutContext.Provider value={vi.fn()}>
+					<RoomWorkspace {...defaultProps} />
+				</CollaborationHeaderLayoutContext.Provider>,
+			);
+			expect(panelSizes(container)).toEqual([40, 60]);
+			const draft = screen.getByRole("textbox", { name: "Panel draft" });
+			fireEvent.change(draft, {
+				target: { value: "Keep these settings while resizing" },
+			});
+			const handle = screen.getByRole("separator", {
+				name: "Resize tool workbench",
+			});
+			fireEvent.keyDown(handle, { key: "Home" });
+			expect(panelSizes(container)).toEqual([40, 60]);
+
+			act(() => {
+				workspaceWidth = 640;
+				resizeWorkspace();
+			});
+			expect(panelSizes(container)).toEqual([50, 50]);
+			act(() => {
+				workspaceWidth = 1600;
+				resizeWorkspace();
+			});
+			fireEvent.keyDown(handle, { key: "Home" });
+			expect(panelSizes(container)).toEqual([20, 80]);
+			expect(screen.getByRole("textbox", { name: "Panel draft" })).toBe(
+				draft,
+			);
+			expect(draft).toHaveValue("Keep these settings while resizing");
+		} finally {
+			vi.stubGlobal("ResizeObserver", OriginalResizeObserver);
+			geometry.mockRestore();
+		}
+	});
 });
 
 it("visibly queues the imported source file and allows removal before the first message", () => {
@@ -325,7 +445,7 @@ it("visibly queues the imported source file and allows removal before the first 
 	).not.toBeInTheDocument();
 	fireEvent.click(
 		screen.getByRole("button", {
-			name: "Remove Project-email.md from context",
+			name: "Remove Project-email.md from your next message",
 		}),
 	);
 	expect(remove).toHaveBeenCalledWith(file.fileLocation);

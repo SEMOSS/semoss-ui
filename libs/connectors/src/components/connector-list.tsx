@@ -135,7 +135,12 @@ export const ConnectorList = <T,>({
 							</div>
 						) : (
 							<div className="flex flex-col gap-2 pb-2">
-								<ul ref={listRef} className="flex flex-col">
+								<ul
+									ref={listRef}
+									tabIndex={-1}
+									aria-label={serviceName}
+									className="focus-visible:-outline-offset-2 flex flex-col focus-visible:outline-2 focus-visible:outline-ring"
+								>
 									{children(items)}
 								</ul>
 								{isFull && onShowMore ? (
