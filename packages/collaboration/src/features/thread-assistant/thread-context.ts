@@ -249,7 +249,7 @@ export function lastSubmittedContext(
 		if (message.role !== "user") continue;
 		for (const part of message.parts) {
 			if (part.type !== "text") continue;
-			const saved = readThreadCommand(part.text);
+			const saved = readThreadCommand(part.command ?? part.text);
 			if (saved?.context.threadId === threadId) return saved.context;
 		}
 	}

@@ -623,10 +623,9 @@ export class RoomSession {
 					this.snapshot.settingsError ||
 					"Check room settings.",
 			);
-		const command = this.command(
-			submission.text.trim() || "Please review the attached files.",
-			context,
-		);
+		const userText =
+			submission.text.trim() || "Please review the attached files.";
+		const command = this.command(userText, context);
 		const existingMedia = [...(submission.existingMedia ?? [])];
 		for (const file of this.snapshot.contextFiles) {
 			if (
@@ -651,7 +650,7 @@ export class RoomSession {
 				await this.updateOptions({ modelId: this.snapshot.modelId });
 			requested = true;
 			const accepted = await this.controller.send(
-				{ ...submission, text: command, existingMedia },
+				{ ...submission, text: command, userText, existingMedia },
 				this.config(),
 			);
 			if (accepted) this.clearSubmittedDraft(submittedDraft);
@@ -705,7 +704,9 @@ export class RoomSession {
 						message.parts.some(
 							(part) =>
 								part.type === "text" &&
-								part.text === this.uncertainCommand,
+								(part.command ?? part.text).startsWith(
+									this.uncertainCommand ?? "",
+								),
 						),
 				);
 				if (found) this.clearSubmittedDraft(this.uncertainDraft);

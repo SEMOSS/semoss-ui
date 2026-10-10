@@ -141,7 +141,7 @@ export function useRoomEmailProposals({
 				for (const part of message.parts) {
 					const command =
 						part.type === "text"
-							? readThreadCommand(part.text)
+							? readThreadCommand(part.command ?? part.text)
 							: null;
 					if (command?.context.threadId === thread.id) {
 						selectedSource =
