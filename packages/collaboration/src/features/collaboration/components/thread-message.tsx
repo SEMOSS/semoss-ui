@@ -110,7 +110,7 @@ export function ThreadMessage({
 						key={message.id}
 						body={message.displayBody}
 						channel={channel}
-						title={`Email from ${name}`}
+						title={`${channel === "teams" ? "Message" : "Email"} from ${name}`}
 					/>
 				) : (
 					<div

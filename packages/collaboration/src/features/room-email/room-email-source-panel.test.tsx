@@ -95,6 +95,7 @@ function setup(overrides: Partial<EmailContext> = {}, messageId?: string) {
 		sourceError: null,
 		reloadSource: vi.fn(),
 		hasSourceEmail: true,
+		hasSourceChat: false,
 		openSource: vi.fn(),
 		selectSourceMessage: vi.fn(),
 		replyToSource: vi.fn(),

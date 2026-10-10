@@ -2,27 +2,60 @@ import { z } from "@semoss/ui/next";
 import { importSourceCommand } from "@/features/collaboration/import-source";
 import { readThreadMessagesPage } from "@/features/collaboration/live/live-state";
 import type { WorkspaceMessage } from "@/features/collaboration/state/collaboration.types";
-import { getMail } from "@/features/connectors/api/microsoft";
+import {
+	getMail,
+	getTeamsMessages,
+	safeSourceUrl,
+} from "@/features/connectors/api/microsoft";
 import { importOutlookMail } from "@/features/connectors/api/source-mapping";
-import type { RoomSource } from "@/features/rooms/source-import/room-source";
+import {
+	canReadRoomSource,
+	type RoomSource,
+} from "@/features/rooms/source-import/room-source";
 import type { InsightActions } from "@/lib/pixel";
 
-/** Reload only this room's included emails, preserving native identities and source order. */
+/** Reload only this room's included messages, preserving native identities and source order. */
 export async function loadRoomSourceEmails(
 	actions: InsightActions,
 	source: RoomSource,
 ): Promise<WorkspaceMessage[]> {
-	if (
-		source.channel !== "email" ||
-		(source.kind !== "brain" && source.kind !== "outlook")
-	)
-		return [];
+	if (!canReadRoomSource(source)) return [];
 	const envelopes = [
 		...new Map(
 			source.messages.map((message) => [message.id, message]),
 		).values(),
 	];
 	if (!envelopes.length) return [];
+	// a chat connected from Sources, not synced by the Brain: read it live
+	if (source.kind === "teams") {
+		if (!source.nativeId) return [];
+		const page = await getTeamsMessages(actions, source.nativeId);
+		const live = new Map(
+			page.messages
+				.filter((message) => !message.isDeleted)
+				.map((message): [string, WorkspaceMessage] => [
+					message.id,
+					{
+						id: message.id,
+						fromId: message.fromId ?? "",
+						fromName: message.fromName,
+						at: message.createdDateTime ?? "",
+						text: message.body,
+						displayBody: message.displayBody,
+						webLink: safeSourceUrl(
+							message.webUrl ?? source.webLink,
+						),
+						isTruncated: message.bodyTruncated,
+					},
+				]),
+		);
+		return envelopes.flatMap((envelope) => {
+			const message = live.get(envelope.id);
+			return message
+				? [{ ...message, at: message.at || envelope.at }]
+				: [];
+		});
+	}
 	if (source.kind === "outlook") {
 		return Promise.all(
 			envelopes.map(async (envelope): Promise<WorkspaceMessage> => {
@@ -93,7 +126,7 @@ export async function loadRoomSourceEmails(
 		if (!remaining.size || !page.hasMore) break;
 		if (!page.nextCursor || cursors.has(page.nextCursor)) {
 			throw new Error(
-				"The server could not continue this email thread. Try loading it again.",
+				"The server could not continue this thread. Try loading it again.",
 			);
 		}
 		cursors.add(page.nextCursor);

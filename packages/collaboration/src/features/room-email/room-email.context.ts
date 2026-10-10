@@ -22,6 +22,8 @@ interface RoomEmailContextValue {
 	sourceError: string | null;
 	reloadSource: () => void;
 	hasSourceEmail: boolean;
+	/** The room was opened from a Teams chat; its reader is the Teams panel. */
+	hasSourceChat: boolean;
 	openSource: (returnFocusId?: string) => void;
 	selectSourceMessage: (messageId: string) => void;
 	replyToSource: (messageId: string) => void;
