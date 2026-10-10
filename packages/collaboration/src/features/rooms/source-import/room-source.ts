@@ -30,3 +30,14 @@ export const roomSourceSchema = z.object({
 });
 
 export type RoomSource = z.infer<typeof roomSourceSchema>;
+
+/** Whether a room's source has messages its reader can load: an email or a Teams chat. */
+export function canReadRoomSource(source: RoomSource | null): boolean {
+	if (!source?.messages.length) return false;
+	if (source.channel === "email")
+		return source.kind === "brain" || source.kind === "outlook";
+	return (
+		source.channel === "teams" &&
+		(source.kind === "brain" || source.kind === "teams")
+	);
+}

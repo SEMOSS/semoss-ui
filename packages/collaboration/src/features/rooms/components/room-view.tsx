@@ -10,6 +10,7 @@ import { RoomConnectorsProvider } from "@/features/room-connectors/room-connecto
 import { ROOM_EMAIL_PANEL_COMPONENTS } from "@/features/room-email/room-email-panel";
 import { RoomEmailProvider } from "@/features/room-email/room-email-provider";
 import { ROOM_EMAIL_SOURCE_PANEL_COMPONENTS } from "@/features/room-email/room-email-source-panel";
+import { ROOM_TEAMS_SOURCE_PANEL_COMPONENTS } from "@/features/room-email/room-teams-source-panel";
 import type { RoomViewProps } from "@/features/rooms/types/room";
 import { ToolWorkbenchProvider } from "@/features/tools/components/tool-workbench-provider";
 import { TOOL_WORKBENCH_COMPONENTS } from "@/features/tools/tool-workbench.components";
@@ -22,6 +23,7 @@ const ROOM_COMPONENTS = {
 	...ROOM_CONNECTOR_COMPONENTS,
 	...ROOM_EMAIL_PANEL_COMPONENTS,
 	...ROOM_EMAIL_SOURCE_PANEL_COMPONENTS,
+	...ROOM_TEAMS_SOURCE_PANEL_COMPONENTS,
 	...ROOM_SETTINGS_PANEL_COMPONENTS,
 };
 

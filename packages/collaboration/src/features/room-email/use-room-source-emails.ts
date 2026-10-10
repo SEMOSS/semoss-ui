@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { toError } from "@semoss/utility/error";
 import type { WorkspaceMessage } from "@/features/collaboration/state/collaboration.types";
-import type { RoomSource } from "@/features/rooms/source-import/room-source";
+import {
+	canReadRoomSource,
+	type RoomSource,
+} from "@/features/rooms/source-import/room-source";
 import { loadRoomSourceEmails } from "./load-room-source-emails";
 import type { RoomEmailSession } from "./room-email.context";
 
@@ -33,15 +36,10 @@ export function useRoomSourceEmails(
 		() => setRevision((value) => value + 1),
 		[],
 	);
-	const canRead = Boolean(
-		isReady &&
-			source?.channel === "email" &&
-			(source.kind === "brain" || source.kind === "outlook") &&
-			source.messages.length,
-	);
+	const canRead = isReady && canReadRoomSource(source);
 	useEffect(() => {
 		if (!canRead || !source) return;
-		// A retry is explicit; ordinary turn/stream updates do not refetch email.
+		// A retry is explicit; ordinary turn/stream updates do not refetch the source.
 		let isCurrent = true;
 		const release = session.retain();
 		setRead({

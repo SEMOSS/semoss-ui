@@ -148,8 +148,8 @@ it("clears a failed read on explicit retry and releases both operations", async 
 it.each<{ label: string; source: RoomSource | null; isReady: boolean }>([
 	{ label: "no source", source: null, isReady: true },
 	{
-		label: "non-email source",
-		source: { ...source("a"), channel: "teams", kind: "teams" },
+		label: "calendar source",
+		source: { ...source("a"), channel: "calendar", kind: "calendar" },
 		isReady: true,
 	},
 	{

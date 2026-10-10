@@ -1,4 +1,11 @@
-import { Brain, CalendarDays, FolderOpen, Mail, Settings2 } from "lucide-react";
+import {
+	Brain,
+	CalendarDays,
+	FolderOpen,
+	Mail,
+	MessagesSquare,
+	Settings2,
+} from "lucide-react";
 import {
 	useContext,
 	useEffect,
@@ -323,12 +330,17 @@ export function RoomWorkspace({
 								panelActions={
 									showToolWorkbench
 										? [
-												...(roomEmail?.hasSourceEmail
+												...(roomEmail?.hasSourceEmail ||
+												roomEmail?.hasSourceChat
 													? [
 															{
 																id: "source-email",
-																label: "View email",
-																icon: Mail,
+																label: roomEmail.hasSourceEmail
+																	? "View email"
+																	: "View Teams chat",
+																icon: roomEmail.hasSourceEmail
+																	? Mail
+																	: MessagesSquare,
 																onSelect: () =>
 																	roomEmail.openSource(
 																		actionsTriggerId,
