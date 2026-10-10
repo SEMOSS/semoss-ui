@@ -13,6 +13,8 @@ export interface ComposerSubmission {
 	/** Sanitized email HTML, emitted only for email destinations. */
 	html?: string;
 	text: string;
+	/** What the user typed, when text wraps it in thread context. */
+	userText?: string;
 	files: File[];
 	/** Explicitly selected native files staged in this exact room insight. */
 	existingMedia?: {

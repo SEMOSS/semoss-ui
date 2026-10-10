@@ -42,6 +42,7 @@ import { readLastModel, rememberLastModel } from "./api/last-model";
 import { ROOM_HISTORY_CHANGED } from "./api/list-rooms";
 import {
 	type PlaygroundRoomOptions,
+	readableRoomName,
 	roomOptionsEnvelopeSchema,
 	roomWriteSchema,
 } from "./api/room-schemas";
@@ -50,6 +51,8 @@ import type { ComposerDraft } from "./components/room-composer.types";
 import { removeSubmittedComposerDraft } from "./components/submitted-composer-draft";
 import { type RoomSource, roomSourceSchema } from "./source-import/room-source";
 import type { ComposerSubmission, PendingToolApproval } from "./types/room";
+
+export const NEW_CHAT_TITLE = "New chat";
 
 const emptyDraft = (): ComposerDraft => ({
 	document: null,
@@ -134,7 +137,7 @@ export class RoomSession {
 			: (last?.modelId ?? getThreadAgent()?.modelId ?? "");
 		this.snapshot = {
 			roomId,
-			title: "New chat",
+			title: NEW_CHAT_TITLE,
 			options: null,
 			source: null,
 			contextFiles: [],
@@ -296,7 +299,7 @@ export class RoomSession {
 		this.update({
 			options,
 			source,
-			title: envelope.ROOM_NAME || this.snapshot.title,
+			title: readableRoomName(envelope.ROOM_NAME) || this.snapshot.title,
 			modelId: options.modelId,
 			// A just-created room reloads its own model; keep the name resolved for it.
 			modelName:
@@ -417,7 +420,8 @@ export class RoomSession {
 				this.insight.actions,
 				this.insight.insightId,
 				{
-					name: title,
+					// the placeholder is not a name; RunAgent names the room from its first request
+					name: title === NEW_CHAT_TITLE ? undefined : title,
 					workspaceId: settings.agentId || null,
 					workspaceName: this.snapshot.agent?.name,
 					modelId: settings.modelId,
@@ -649,10 +653,9 @@ export class RoomSession {
 					this.snapshot.settingsError ||
 					"Check room settings.",
 			);
-		const command = this.command(
-			submission.text.trim() || "Please review the attached files.",
-			context,
-		);
+		const userText =
+			submission.text.trim() || "Please review the attached files.";
+		const command = this.command(userText, context);
 		const existingMedia = [...(submission.existingMedia ?? [])];
 		for (const file of submittedDraft.contextFiles) {
 			if (
@@ -679,6 +682,7 @@ export class RoomSession {
 				{
 					...submission,
 					text: command,
+					userText,
 					files: submittedDraft.composer.files,
 					existingMedia,
 				},
@@ -737,7 +741,9 @@ export class RoomSession {
 						message.parts.some(
 							(part) =>
 								part.type === "text" &&
-								part.text === this.uncertainCommand,
+								(part.command ?? part.text).startsWith(
+									this.uncertainCommand ?? "",
+								),
 						),
 				);
 				if (found) this.clearSubmittedDraft(this.uncertainDraft);
