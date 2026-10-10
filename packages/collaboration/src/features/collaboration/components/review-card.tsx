@@ -1,6 +1,7 @@
 import { FolderPlus, MessagesSquare, UserRoundPlus } from "lucide-react";
 import { Link } from "react-router";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import { topicChoiceCandidates } from "../state/collaboration.selectors";
 import type { ReviewEntry } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { topicTone } from "../topic-tone";
@@ -30,6 +31,15 @@ export function ReviewCard({
 				? "Person"
 				: "Topic choice";
 	const actionClassName = compact ? "h-7 px-2.5" : undefined;
+	const choices =
+		review.kind === "topic_choice" && thread
+			? topicChoiceCandidates(review, thread).flatMap((topicId) => {
+					const topic = state.topics.find(
+						(candidate) => candidate.id === topicId,
+					);
+					return topic ? [topic] : [];
+				})
+			: [];
 	const resolve = (
 		decision: "accept" | "dismiss" | "both" | "merge",
 		targetTopicId?: string,
@@ -89,49 +99,57 @@ export function ReviewCard({
 						{review.detail}
 					</Small>
 				)}
+				{/* what the thread is about, so the owner can answer without opening it */}
+				{review.kind === "topic_choice" && thread && !compact && (
+					<P className="line-clamp-2 text-muted-foreground text-xs leading-5">
+						{thread.summary && `${thread.summary} `}
+						<Link
+							to={`/brain/threads/${encodeURIComponent(thread.id)}`}
+							className="whitespace-nowrap text-foreground underline underline-offset-2 hover:no-underline"
+						>
+							Open thread
+						</Link>
+					</P>
+				)}
 				{review.status === "open" && (
 					<div className="flex flex-wrap gap-2 pt-1">
 						{review.kind === "topic_choice" && thread ? (
 							<>
-								{thread.topicLinks.map((link) => {
-									const topic = state.topics.find(
-										(candidate) =>
-											candidate.id === link.topicId,
-									);
-									return (
-										topic && (
-											<Button
-												key={link.topicId}
-												variant="outline"
-												size="sm"
-												className={actionClassName}
-												onClick={() =>
-													resolve("accept", topic.id)
-												}
-											>
-												<span
-													aria-hidden="true"
-													className={cn(
-														"size-2 shrink-0 rounded-xs",
-														topicTone(topic.id),
-													)}
-												/>
-												{topic.short}
-											</Button>
-										)
-									);
-								})}
-								<Button
-									variant="outline"
-									size="sm"
-									className={cn(
-										actionClassName,
-										"font-normal",
-									)}
-									onClick={() => resolve("both")}
-								>
-									Both
-								</Button>
+								{choices.map((topic) => (
+									<Button
+										key={topic.id}
+										variant="outline"
+										size="sm"
+										className={actionClassName}
+										onClick={() =>
+											resolve("accept", topic.id)
+										}
+									>
+										<span
+											aria-hidden="true"
+											className={cn(
+												"size-2 shrink-0 rounded-xs",
+												topicTone(topic.id),
+											)}
+										/>
+										{choices.length === 1
+											? `File under ${topic.short}`
+											: topic.short}
+									</Button>
+								))}
+								{choices.length > 1 && (
+									<Button
+										variant="outline"
+										size="sm"
+										className={cn(
+											actionClassName,
+											"font-normal",
+										)}
+										onClick={() => resolve("both")}
+									>
+										Both
+									</Button>
+								)}
 							</>
 						) : review.kind === "unassigned" ? (
 							<Button
@@ -190,7 +208,11 @@ export function ReviewCard({
 							)}
 							onClick={() => resolve("dismiss")}
 						>
-							Dismiss
+							{review.kind !== "topic_choice" || !thread
+								? "Dismiss"
+								: choices.length > 1
+									? "Neither"
+									: "Not this topic"}
 						</Button>
 					</div>
 				)}

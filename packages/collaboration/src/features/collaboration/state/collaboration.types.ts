@@ -175,6 +175,8 @@ export interface ReviewEntry {
 	actions: string[];
 	resolvedAt?: string;
 	topicId?: string;
+	/** A topic choice's candidate topics: one to confirm or two to pick between. */
+	candidates?: string[];
 	candidate?: {
 		name: string;
 		accountId: string | null;

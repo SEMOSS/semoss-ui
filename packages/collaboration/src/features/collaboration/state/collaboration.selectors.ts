@@ -2,11 +2,25 @@ import type {
 	CollaborationState,
 	ContextMessage,
 	Person,
+	ReviewEntry,
 	Rule,
 	Thread,
 	ThreadContext,
 	WorkItem,
 } from "./collaboration.types";
+
+/** The topics a topic choice asks about; older reviews without candidates fall back to the thread's suggestions. */
+export function topicChoiceCandidates(
+	review: ReviewEntry,
+	thread: Thread,
+): string[] {
+	const linked = new Set(thread.topicLinks.map((link) => link.topicId));
+	return review.candidates?.length
+		? review.candidates.filter((topicId) => linked.has(topicId))
+		: thread.topicLinks
+				.filter((link) => link.source === "suggested")
+				.map((link) => link.topicId);
+}
 
 /** Work filters never mix sample and connected items implicitly. */
 export function selectWorkItems(
