@@ -1,3 +1,4 @@
+import { topicChoiceCandidates } from "./collaboration.selectors";
 import type {
 	CollaborationCommand,
 	CollaborationState,
@@ -602,6 +603,23 @@ export function collaborationReducer(
 			if (command.decision === "dismiss") {
 				review.status = "dismissed";
 				review.resolvedAt = now;
+				// "Neither" / "Not this topic": the suggested candidates come off, so the thread is not left half-filed
+				const thread =
+					review.kind === "topic_choice"
+						? state.threads.find(
+								(candidate) => candidate.id === review.refId,
+							)
+						: undefined;
+				if (thread) {
+					const candidates = topicChoiceCandidates(review, thread);
+					thread.topicLinks = thread.topicLinks.filter(
+						(link) =>
+							link.source !== "suggested" ||
+							!candidates.includes(link.topicId),
+					);
+					thread.needsTopicChoice = false;
+					syncThreadItems(state, thread.id);
+				}
 				break;
 			}
 			if (review.kind === "new_topic") {
@@ -643,25 +661,23 @@ export function collaborationReducer(
 					(candidate) => candidate.id === review.refId,
 				);
 				if (!thread) break;
+				// only the topics this review asks about change; the thread's other links stay as they are
+				const candidates = topicChoiceCandidates(review, thread);
 				if (command.decision === "both")
-					thread.topicLinks = thread.topicLinks.map((link) => ({
-						...link,
-						source: "confirmed",
-					}));
+					thread.topicLinks = thread.topicLinks.map((link) =>
+						candidates.includes(link.topicId)
+							? { ...link, source: "confirmed" }
+							: link,
+					);
 				else {
 					const topicId = command.targetTopicId;
-					if (
-						!topicId ||
-						!thread.topicLinks.some(
-							(link) => link.topicId === topicId,
-						)
-					)
-						break;
+					if (!topicId || !candidates.includes(topicId)) break;
 					thread.topicLinks = thread.topicLinks
 						.filter(
 							(link) =>
 								link.source !== "suggested" ||
-								link.topicId === topicId,
+								link.topicId === topicId ||
+								!candidates.includes(link.topicId),
 						)
 						.map((link) => ({
 							...link,

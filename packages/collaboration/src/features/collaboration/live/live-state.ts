@@ -386,6 +386,10 @@ function mapReview(row: Row, topics: Topic[]): ReviewEntry {
 		actions: list<string>(row.actions),
 		resolvedAt: opt(row.resolvedAt),
 		topicId: kind === "add_person" ? opt(data.suggestedTopic) : undefined,
+		candidates:
+			kind === "topic_choice"
+				? list<string>(data.candidates).map(String)
+				: undefined,
 		candidate:
 			kind === "new_topic"
 				? {
