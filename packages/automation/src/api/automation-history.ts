@@ -13,6 +13,17 @@ export interface AutomationRunFramePage {
 	total: number;
 }
 
+interface AutomationRunNodeDataResponse extends AutomationRunFramePage {
+	available: boolean;
+	referenceId?: string;
+	runId: string;
+	nodeId: string;
+	outputVariable?: string;
+	offset: number;
+	limit: number;
+	hasMore: boolean;
+}
+
 /** Returns the most recent persisted runs for an automation project. */
 export async function listAutomationRuns(
 	appId: string,
@@ -81,6 +92,39 @@ export async function getAutomationRunFramePage(
 	}
 
 	return { headers: data.headers, rows: data.values, total };
+}
+
+/** Pages retained node data directly from durable run history. */
+export async function getAutomationRunNodeDataPage(
+	appId: string,
+	runId: string,
+	nodeId: string,
+	offset: number,
+): Promise<AutomationRunFramePage> {
+	const response = await runPixel(
+		`GetAutomationRunNodeData(project=${JSON.stringify([appId])}, runId=${JSON.stringify([runId])}, nodeId=${JSON.stringify([nodeId])}, offset=${JSON.stringify([String(offset)])}, limit=${JSON.stringify([String(RUN_DATA_PAGE_SIZE)])});`,
+	);
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join("\n"));
+	}
+	const output = response.pixelReturn?.[0]?.output as
+		| AutomationRunNodeDataResponse
+		| undefined;
+	if (
+		!output?.available ||
+		!Array.isArray(output.headers) ||
+		!output.headers.every((header) => typeof header === "string") ||
+		!Array.isArray(output.rows) ||
+		!output.rows.every((row) => Array.isArray(row)) ||
+		typeof output.total !== "number"
+	) {
+		throw new Error("Retained Automation node data is unavailable.");
+	}
+	return {
+		headers: output.headers,
+		rows: output.rows,
+		total: output.total,
+	};
 }
 
 /** Continues a durable run after its trace-linked child agent finishes an input flow. */

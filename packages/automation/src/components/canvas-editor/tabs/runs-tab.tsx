@@ -42,6 +42,7 @@ import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
 import { RunNodeDataViewer } from "./run-node-data-viewer";
+import { RunSourceDataView } from "./run-source-data-view";
 
 export interface RunsTabSnapshot {
 	running: boolean;
@@ -278,6 +279,8 @@ export function RunsTab({
 	if (view === "live" || (view === "history" && running)) {
 		return (
 			<LiveRunView
+				appId={appId}
+				runId={activeRun?.RUN_ID ?? null}
 				executionInsightId={activeRun?.executionInsightId ?? null}
 				running={running}
 				latestRunStatus={latestRunStatus}
@@ -314,6 +317,7 @@ export function RunsTab({
 			return (
 				<HistoryRunView
 					key={selectedRun.RUN_ID}
+					appId={appId}
 					run={selectedRun}
 					onBack={goBack}
 					onOutputPopout={handleOutputPopout}
@@ -482,6 +486,8 @@ function RunHistoryBreadcrumb({
 
 /** Live run detail with navigation back to the history list. */
 function LiveRunView({
+	appId,
+	runId,
 	executionInsightId,
 	running,
 	latestRunStatus,
@@ -497,6 +503,8 @@ function LiveRunView({
 	focusToken,
 	onViewAgentRun,
 }: Omit<AutomationTraceSnapshot, "executedDefinition"> & {
+	appId: string;
+	runId: string | null;
 	executionInsightId: string | null;
 	onOutputPopout: (output: string) => void;
 	onAskAssistant: () => void;
@@ -585,6 +593,8 @@ function LiveRunView({
 				)}
 			<ResultsPanel
 				key={executionInsightId ?? "live"}
+				appId={appId}
+				runId={runId}
 				executionInsightId={executionInsightId}
 				results={results}
 				onOutputPopout={onOutputPopout}
@@ -599,12 +609,14 @@ function LiveRunView({
 
 /** Historical run detail with back button and run metadata. */
 function HistoryRunView({
+	appId,
 	run,
 	onBack,
 	onOutputPopout,
 	onViewRun,
 	onViewAgentRun,
 }: {
+	appId: string;
 	run: AutomationRunDetail;
 	onBack: () => void;
 	onOutputPopout: (output: string) => void;
@@ -612,6 +624,7 @@ function HistoryRunView({
 	onViewAgentRun?: (trace: AutomationNodeTrace) => void;
 }) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+	const [detailMode, setDetailMode] = useState<"steps" | "sources">("steps");
 	const executedSteps = useMemo(() => getExecutedSteps(run), [run]);
 	const stepMap = useMemo(
 		() => new Map(executedSteps.map((s) => [s.id, s])),
@@ -649,6 +662,30 @@ function HistoryRunView({
 					)}
 				</div>
 				<div className="flex shrink-0 items-center gap-2">
+					<div className="flex rounded-md border p-0.5">
+						<Button
+							type="button"
+							size="sm"
+							variant={
+								detailMode === "steps" ? "secondary" : "ghost"
+							}
+							className="h-6 px-2 text-xs"
+							onClick={() => setDetailMode("steps")}
+						>
+							Steps
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							variant={
+								detailMode === "sources" ? "secondary" : "ghost"
+							}
+							className="h-6 px-2 text-xs"
+							onClick={() => setDetailMode("sources")}
+						>
+							Source data
+						</Button>
+					</div>
 					{onViewRun && (
 						<Button
 							size="sm"
@@ -663,17 +700,29 @@ function HistoryRunView({
 				</div>
 			</div>
 
-			<div className="mt-3 flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-card">
-				<ResultsPanel
-					key={run.RUN_ID}
-					executionInsightId={run.executionInsightId ?? null}
-					results={results}
-					onOutputPopout={onOutputPopout}
-					selectedResult={selectedResult}
-					stepMap={stepMap}
-					onSelectNode={setSelectedNodeId}
-					onViewAgentRun={onViewAgentRun}
-				/>
+			<div className="mt-3 flex min-h-0 flex-1 overflow-hidden">
+				{detailMode === "sources" ? (
+					<RunSourceDataView
+						appId={appId}
+						run={run}
+						onOutputPopout={onOutputPopout}
+					/>
+				) : (
+					<div className="flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-card">
+						<ResultsPanel
+							key={run.RUN_ID}
+							appId={appId}
+							runId={run.RUN_ID}
+							executionInsightId={run.executionInsightId ?? null}
+							results={results}
+							onOutputPopout={onOutputPopout}
+							selectedResult={selectedResult}
+							stepMap={stepMap}
+							onSelectNode={setSelectedNodeId}
+							onViewAgentRun={onViewAgentRun}
+						/>
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -681,6 +730,8 @@ function HistoryRunView({
 
 /** Shared results panel: left nav + right output. */
 function ResultsPanel({
+	appId,
+	runId,
 	executionInsightId,
 	results,
 	selectedResult,
@@ -689,6 +740,8 @@ function ResultsPanel({
 	onSelectNode,
 	onViewAgentRun,
 }: {
+	appId: string;
+	runId: string | null;
 	executionInsightId: string | null;
 	results: AutomationNodeResult[];
 	selectedResult: AutomationNodeResult | null;
@@ -1140,13 +1193,21 @@ function ResultsPanel({
 									message={displayResult.ERROR_MESSAGE}
 								/>
 							)}
-							{executionInsightId &&
-							displayResult.STATUS === "SUCCESS" &&
-							displayResult.OUTPUT_FRAME ? (
+							{displayResult.STATUS === "SUCCESS" &&
+							((executionInsightId &&
+								displayResult.OUTPUT_FRAME) ||
+								(displayResult.outputDataAvailable &&
+									runId)) ? (
 								<RunNodeDataViewer
-									key={`${executionInsightId}:${displayResult.NODE_ID}:${selectedBodyKey?.iterationIndex ?? "root"}`}
+									key={`${executionInsightId ?? runId}:${displayResult.trace?.nodeId ?? displayResult.NODE_ID}:${selectedBodyKey?.iterationIndex ?? "root"}`}
 									insightId={executionInsightId}
 									frame={displayResult.OUTPUT_FRAME}
+									appId={appId}
+									runId={runId ?? undefined}
+									nodeId={
+										displayResult.trace?.nodeId ??
+										displayResult.NODE_ID
+									}
 									outputPreview={
 										displayResult.OUTPUT_PREVIEW ?? ""
 									}

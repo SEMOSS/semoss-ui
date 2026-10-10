@@ -16,6 +16,7 @@ import {
 import {
 	type AutomationRunFramePage,
 	getAutomationRunFramePage,
+	getAutomationRunNodeDataPage,
 } from "../../../api";
 import type { AutomationNodeResult } from "../../../domain/automation.types";
 import { normalizeAutomationErrorMessage } from "../../../domain/automation-utils";
@@ -23,8 +24,11 @@ import { normalizeAutomationErrorMessage } from "../../../domain/automation-util
 const PAGE_SIZE = 50;
 
 interface RunNodeDataViewerProps {
-	insightId: string;
-	frame: NonNullable<AutomationNodeResult["OUTPUT_FRAME"]>;
+	insightId?: string | null;
+	frame?: NonNullable<AutomationNodeResult["OUTPUT_FRAME"]>;
+	appId?: string;
+	runId?: string;
+	nodeId?: string;
 	outputPreview: string;
 	onOutputPopout: (output: string) => void;
 }
@@ -33,6 +37,9 @@ interface RunNodeDataViewerProps {
 export function RunNodeDataViewer({
 	insightId,
 	frame,
+	appId,
+	runId,
+	nodeId,
 	outputPreview,
 	onOutputPopout,
 }: RunNodeDataViewerProps) {
@@ -45,7 +52,22 @@ export function RunNodeDataViewer({
 		setLoading(true);
 		setError(null);
 		try {
-			setPage(await getAutomationRunFramePage(insightId, frame, offset));
+			if (insightId && frame) {
+				setPage(
+					await getAutomationRunFramePage(insightId, frame, offset),
+				);
+			} else if (appId && runId && nodeId) {
+				setPage(
+					await getAutomationRunNodeDataPage(
+						appId,
+						runId,
+						nodeId,
+						offset,
+					),
+				);
+			} else {
+				throw new Error("Automation node data is unavailable.");
+			}
 		} catch (requestError) {
 			setError(
 				requestError instanceof Error
@@ -55,7 +77,7 @@ export function RunNodeDataViewer({
 		} finally {
 			setLoading(false);
 		}
-	}, [frame, insightId, offset]);
+	}, [appId, frame, insightId, nodeId, offset, runId]);
 
 	useEffect(() => {
 		void load();

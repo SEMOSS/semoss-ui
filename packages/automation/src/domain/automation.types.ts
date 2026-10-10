@@ -320,6 +320,13 @@ export interface AutomationNodeResult {
 			queryName?: string;
 		};
 	};
+	/** Output variable captured for source/history inspection. */
+	outputVariable?: string;
+	/** True when a durable tabular snapshot can be paged without the execution Insight. */
+	outputDataAvailable?: boolean;
+	outputDataReferenceId?: string;
+	outputDataRowCount?: number;
+	outputDataColumnCount?: number;
 	ERROR_MESSAGE: string | null;
 	trace?: AutomationNodeTrace;
 	iterations?: AutomationNodeIteration[];
@@ -327,6 +334,7 @@ export interface AutomationNodeResult {
 
 export interface AutomationRunDetail extends AutomationRunSummary {
 	DEFINITION_SNAPSHOT?: string;
+	INPUT_SNAPSHOT?: string;
 	/** Temporary workspace for an active or recently completed run on this server. */
 	executionInsightId?: string;
 	nodeResults: AutomationNodeResult[];
