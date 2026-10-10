@@ -1,8 +1,5 @@
 import { createContext, type RefObject, useContext } from "react";
-import type {
-	CalendarEvent,
-	OutlookMail,
-} from "@/features/connectors/api/microsoft-schemas";
+import type { CalendarEvent } from "@/features/connectors/api/microsoft-schemas";
 import type { InsightActions } from "@/lib/pixel";
 import type { ChatHistory } from "./use-chat-history";
 import type { useDashboardLayout } from "./use-dashboard-layout";
@@ -17,7 +14,6 @@ export interface DashboardContextValue {
 	layout: ReturnType<typeof useDashboardLayout>;
 	history: ChatHistory;
 	calendar: VisibleResource<CalendarEvent[]>;
-	mail: VisibleResource<OutlookMail[]>;
 	refreshSources: () => void;
 	refreshRevision: number;
 	isSearchOpen: boolean;

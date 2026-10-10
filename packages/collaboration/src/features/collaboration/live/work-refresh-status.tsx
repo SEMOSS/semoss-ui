@@ -12,7 +12,8 @@ import { useCollaborationSession } from "../state/collaboration-session.context"
 import type { MailCheck, MailSyncResult, SyncOutcome } from "./live-state";
 import { useWorkUpdates } from "./work-updates.context";
 
-const time = (at: string) =>
+/** The time Microsoft 365 was last checked, the same on every surface. */
+export const checkTime = (at: string) =>
 	new Date(at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 // what each outcome means to the owner, in summary order
@@ -51,7 +52,7 @@ function describeSync(result: MailSyncResult): string {
 function describeCheck(check: MailCheck | null): string {
 	if (!check) return "Mail not checked yet";
 	if (check.status === "failed") return "Last mail check failed";
-	return check.at ? `Checked ${time(check.at)}` : "Checked";
+	return check.at ? `Checked ${checkTime(check.at)}` : "Checked";
 }
 
 /** A Refresh action and one quiet status line; what came in opens in a popover. */

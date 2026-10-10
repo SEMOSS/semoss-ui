@@ -11,6 +11,7 @@ import { useCollaborationSession } from "../state/collaboration-session.context"
 import {
 	type MailCheck,
 	type MailSyncResult,
+	readMailCheck,
 	readWorkUpdates,
 	syncMail,
 } from "./live-state";
@@ -18,6 +19,10 @@ import type { LiveSync } from "./live-sync";
 import { WorkUpdatesContext } from "./work-updates.context";
 
 const SENT_SYNC_DELAY_MS = 5000;
+// while a sync or its summaries run elsewhere, how often to ask whether they moved on
+const WATCH_MS = 4000;
+// coming back to the tab re-reads, but not again within this long
+const FOCUS_REREAD_MS = 15_000;
 
 /** Ids of records edited locally between two snapshots (or created locally since the first). */
 export function changedSince<T extends { id: string }>(before: T[], now: T[]) {
@@ -207,11 +212,69 @@ export function WorkUpdatesProvider({
 			window.removeEventListener(MAIL_SENT_EVENT, onSent);
 		};
 	}, [syncNow]);
+	// the session load has the data but not when mail was last checked
+	useEffect(() => {
+		let cancelled = false;
+		readMailCheck(actions)
+			.then((lastMailCheck) => {
+				if (!cancelled)
+					setStatus((current) =>
+						current.lastMailCheck
+							? current
+							: { ...current, lastMailCheck },
+					);
+			})
+			.catch(() => undefined);
+		return () => {
+			cancelled = true;
+		};
+	}, [actions]);
+	// nothing new arrives on its own until the webhook: re-read only while a sync or its summaries are still
+	// running, with a cheap job check, and reload when they move on
+	const watched = status.lastMailCheck;
+	useEffect(() => {
+		if (
+			mail.isSyncing ||
+			!watched ||
+			(watched.status !== "running" && !watched.insightsPending)
+		)
+			return;
+		let cancelled = false;
+		let timer: number | undefined;
+		const poll = () => {
+			timer = window.setTimeout(async () => {
+				if (document.visibilityState === "hidden") return poll();
+				try {
+					const next = await readMailCheck(actions);
+					if (cancelled) return;
+					if (
+						next?.status !== watched.status ||
+						next.insightsPending !== watched.insightsPending
+					)
+						refreshRef.current();
+					else poll();
+				} catch {
+					if (!cancelled) poll();
+				}
+			}, WATCH_MS);
+		};
+		poll();
+		return () => {
+			cancelled = true;
+			window.clearTimeout(timer);
+		};
+	}, [actions, watched, mail.isSyncing]);
+	const lastRead = useRef(0);
 	useEffect(() => {
 		const check = () => {
-			if (document.visibilityState === "visible") refresh();
+			if (
+				document.visibilityState !== "visible" ||
+				Date.now() - lastRead.current < FOCUS_REREAD_MS
+			)
+				return;
+			lastRead.current = Date.now();
+			refresh();
 		};
-		const timer = window.setInterval(check, 30_000);
 		window.addEventListener("focus", check);
 		document.addEventListener("visibilitychange", check);
 		return () => {
@@ -219,7 +282,6 @@ export function WorkUpdatesProvider({
 			pending.current = false;
 			queued.current = false;
 			syncing.current = false;
-			window.clearInterval(timer);
 			window.removeEventListener("focus", check);
 			document.removeEventListener("visibilitychange", check);
 		};

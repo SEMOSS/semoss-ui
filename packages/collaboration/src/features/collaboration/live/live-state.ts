@@ -774,6 +774,8 @@ export interface MailCheck {
 	/** When it finished, or started while still running. */
 	at: string;
 	error: string;
+	/** Thread summaries from the sync still being written. */
+	insightsPending: number;
 }
 
 function mapMailCheck(output: unknown): MailCheck | null {
@@ -785,7 +787,18 @@ function mapMailCheck(output: unknown): MailCheck | null {
 		status,
 		at: str(job.finishedAt) || str(job.startedAt),
 		error: str(job.error),
+		insightsPending: Number(job.insightsPending) || 0,
 	};
+}
+
+/** Only the newest sync and its pending summaries: cheap enough to poll while they finish. */
+export async function readMailCheck(
+	actions: InsightActions,
+): Promise<MailCheck | null> {
+	const [job] = await runBatch(actions, [
+		pixel("BrainGetJob", { kind: "sync" }),
+	]);
+	return mapMailCheck(job);
 }
 
 export type SyncOutcome = "new" | "updated" | "cleared" | "automated" | "quiet";

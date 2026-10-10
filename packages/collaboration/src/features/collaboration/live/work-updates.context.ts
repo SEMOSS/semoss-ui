@@ -7,7 +7,7 @@ export interface WorkUpdatesStatus {
 	error: string;
 	/** The newest mail sync on the server, read with each reload. */
 	lastMailCheck: MailCheck | null;
-	/** Re-read Brain and Work from the database (automatic, every 30 seconds and on focus). */
+	/** Re-read Brain and Work from the database (on focus, and while a sync or its summaries finish). */
 	refresh: () => void;
 	isSyncing: boolean;
 	/** Counts from the last finished mail sync in this page. */

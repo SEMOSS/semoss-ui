@@ -13,13 +13,14 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
-import { readWorkUpdates, syncMail } from "./live-state";
+import { readMailCheck, readWorkUpdates, syncMail } from "./live-state";
 import type { LiveSync } from "./live-sync";
 import { WorkRefreshStatus } from "./work-refresh-status";
 import { useWorkUpdates } from "./work-updates.context";
 import { WorkUpdatesProvider } from "./work-updates-provider";
 
 vi.mock("./live-state", () => ({
+	readMailCheck: vi.fn().mockResolvedValue(null),
 	readWorkUpdates: vi.fn(),
 	syncMail: vi.fn(),
 }));
@@ -218,6 +219,60 @@ it("syncs once shortly after a reply is sent from the app", async () => {
 			await vi.advanceTimersByTimeAsync(5000);
 		});
 		expect(syncMail).toHaveBeenCalledTimes(1);
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+it("re-reads only while sync summaries are still landing, then stops", async () => {
+	vi.useFakeTimers();
+	try {
+		const state = createInitialCollaborationState();
+		const check = (insightsPending: number) => ({
+			status: "done" as const,
+			at: "2026-10-10T17:21:18Z",
+			error: "",
+			insightsPending,
+		});
+		vi.mocked(readWorkUpdates).mockReset();
+		vi.mocked(readWorkUpdates).mockResolvedValue({
+			threads: state.threads,
+			items: [],
+			workspaces: {},
+			memories: [],
+			lastMailCheck: check(0),
+		});
+		vi.mocked(readMailCheck).mockReset();
+		vi.mocked(readMailCheck)
+			.mockResolvedValueOnce(check(3))
+			.mockResolvedValueOnce(check(3))
+			.mockResolvedValueOnce(check(0));
+		render(
+			<CollaborationSessionProvider initialState={state}>
+				<WorkUpdatesProvider actions={{} as InsightActions}>
+					<WorkRefreshStatus />
+				</WorkUpdatesProvider>
+			</CollaborationSessionProvider>,
+		);
+		// startup check finds 3 summaries pending; an unchanged count does not reload
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(0);
+		});
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(4000);
+		});
+		expect(readMailCheck).toHaveBeenCalledTimes(2);
+		expect(readWorkUpdates).not.toHaveBeenCalled();
+		// they land: one full reload, and nothing pending means no more checks
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(4000);
+		});
+		expect(readWorkUpdates).toHaveBeenCalledTimes(1);
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(60_000);
+		});
+		expect(readMailCheck).toHaveBeenCalledTimes(3);
+		expect(readWorkUpdates).toHaveBeenCalledTimes(1);
 	} finally {
 		vi.useRealTimers();
 	}

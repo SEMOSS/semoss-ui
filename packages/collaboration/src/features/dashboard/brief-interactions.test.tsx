@@ -162,13 +162,6 @@ function BriefHarness({
 						checkedAt: null,
 						refresh: vi.fn(),
 					},
-					mail: {
-						data: [],
-						error: "",
-						isLoading: false,
-						checkedAt: null,
-						refresh: vi.fn(),
-					},
 					refreshSources: vi.fn(),
 					refreshRevision: 0,
 					isSearchOpen: false,
