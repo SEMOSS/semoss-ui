@@ -92,7 +92,17 @@ export function ReviewCard({
 						!compact && "font-semibold",
 					)}
 				>
-					{review.text}
+					{/* the card names the thread, so the name itself opens it */}
+					{review.kind === "topic_choice" && thread ? (
+						<Link
+							to={`/brain/threads/${encodeURIComponent(thread.id)}`}
+							className="hover:underline"
+						>
+							{review.text}
+						</Link>
+					) : (
+						review.text
+					)}
 				</P>
 				{review.detail && (
 					<Small className="font-normal text-muted-foreground text-xs leading-5">
@@ -100,17 +110,13 @@ export function ReviewCard({
 					</Small>
 				)}
 				{/* what the thread is about, so the owner can answer without opening it */}
-				{review.kind === "topic_choice" && thread && !compact && (
-					<P className="line-clamp-2 text-muted-foreground text-xs leading-5">
-						{thread.summary && `${thread.summary} `}
-						<Link
-							to={`/brain/threads/${encodeURIComponent(thread.id)}`}
-							className="whitespace-nowrap text-foreground underline underline-offset-2 hover:no-underline"
-						>
-							Open thread
-						</Link>
-					</P>
-				)}
+				{review.kind === "topic_choice" &&
+					thread?.summary &&
+					!compact && (
+						<P className="line-clamp-2 text-muted-foreground text-xs leading-5">
+							{thread.summary}
+						</P>
+					)}
 				{review.status === "open" && (
 					<div className="flex flex-wrap gap-2 pt-1">
 						{review.kind === "topic_choice" && thread ? (
