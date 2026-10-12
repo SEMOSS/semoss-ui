@@ -99,7 +99,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("keeps the overview, Work, and Brain distinct with folded Topics", () => {
+	it("places Routines above Work and keeps folded Topics separate", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -121,7 +121,7 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["For you", "Work", "Unassigned", "Brain"]);
+		).toEqual(["For you", "Routines", "Work", "Unassigned", "Brain"]);
 		expect(
 			within(main).getByRole("link", { name: "For you" }),
 		).toHaveTextContent(/^For you$/);
@@ -194,6 +194,21 @@ describe("CollaborationNavigation", () => {
 		);
 	});
 
+	it("opens Routines by keyboard and marks only that destination current", async () => {
+		const { user, router, onNavigate } = renderNavigation();
+		const routines = screen.getByRole("link", { name: "Routines" });
+		act(() => routines.focus());
+		await user.keyboard("{Enter}");
+		expect(router.state.location.pathname).toBe("/routines");
+		expect(onNavigate).toHaveBeenCalledOnce();
+		expect(routines).toHaveAttribute("aria-current", "page");
+		for (const name of ["For you", "Work", "Unassigned", "Brain"]) {
+			expect(screen.getByRole("link", { name })).not.toHaveAttribute(
+				"aria-current",
+			);
+		}
+	});
+
 	it.each(["/work", "/work/all", "/work/waiting", "/work/done"])(
 		"selects Work on %s",
 		(path) => {
@@ -241,7 +256,7 @@ describe("CollaborationNavigation", () => {
 			name: /^Northwind Eng\b/,
 		});
 		expect(selected).toHaveAttribute("aria-current", "page");
-		for (const name of ["For you", "Work", "Brain"]) {
+		for (const name of ["For you", "Routines", "Work", "Brain"]) {
 			expect(screen.getByRole("link", { name })).not.toHaveAttribute(
 				"aria-current",
 			);
@@ -309,6 +324,7 @@ describe("CollaborationNavigation", () => {
 		);
 		const controls = [
 			screen.getByRole("link", { name: "For you" }),
+			screen.getByRole("link", { name: "Routines" }),
 			screen.getByRole("link", { name: "Work" }),
 			screen.getByRole("link", { name: "Unassigned" }),
 			screen.getByRole("link", { name: "Brain" }),
