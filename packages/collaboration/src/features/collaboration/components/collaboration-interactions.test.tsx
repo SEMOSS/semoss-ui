@@ -11,6 +11,7 @@ import { useRef } from "react";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, describe, expect, it } from "vitest";
+import { TopicPage } from "@/pages/topic.page";
 import { WorkPage } from "@/pages/work.page";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { selectThreadContext } from "../state/collaboration.selectors";
@@ -29,7 +30,6 @@ import { CollaborationSearch } from "./collaboration-search";
 import { PersonDetail } from "./person-detail";
 import { ProfileForm } from "./profile-form";
 import { RulesEditor } from "./rules-editor";
-import { TopicDetail } from "./topic-detail";
 import { TopicEditor } from "./topic-editor";
 
 /** Observe only the context submitted to the assistant, alongside real route controls. */
@@ -66,10 +66,9 @@ function renderSession(
 		[
 			{ path: "/work/all", Component: WorkPage },
 			{ path: "/work/done", Component: WorkPage },
-			{ path: "/work/topic/:topicId", Component: WorkPage },
 			{ path: "/brain", Component: BrainReview },
 			{ path: "/brain/memory", Component: BrainMemory },
-			{ path: "/brain/topics/:topicId", Component: TopicDetail },
+			{ path: "/topics/:topicId", Component: TopicPage },
 			{ path: "/brain/threads/:threadId", Component: BrainThread },
 			{ path: "/brain/people/:personId", Component: PersonDetail },
 			{ path: "/rules", Component: RulesEditor },
@@ -274,10 +273,9 @@ describe("collaboration Work and Brain integration", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("shows a topic's notes as memories and adds one about the topic", async () => {
+	it("preserves a topic memory draft when notes collapse and adds it about the topic", async () => {
 		const user = userEvent.setup();
-		renderSession("/brain/topics/t-geng");
-		await user.click(screen.getByRole("tab", { name: /Goals and notes/ }));
+		renderSession("/topics/t-geng");
 		expect(
 			screen.getByText(
 				"Ava prefers a written pre-read 48h before any review.",
@@ -285,6 +283,17 @@ describe("collaboration Work and Brain integration", () => {
 		).toBeInTheDocument();
 		const note = screen.getByLabelText("New note");
 		await user.type(note, "Hugo owns the demo environment.");
+		const notesTrigger = screen.getByRole("button", {
+			name: "Notes for the assistant",
+		});
+		await user.click(notesTrigger);
+		expect(
+			screen.queryByRole("textbox", { name: "New note" }),
+		).not.toBeInTheDocument();
+		await user.click(notesTrigger);
+		expect(screen.getByRole("textbox", { name: "New note" })).toHaveValue(
+			"Hugo owns the demo environment.",
+		);
 		const form = note.closest("form");
 		if (!form) throw new Error("Missing note form");
 		await user.click(within(form).getByRole("button", { name: "Add" }));
@@ -303,8 +312,7 @@ describe("collaboration Work and Brain integration", () => {
 				articleFor("Add Gia Moreno to Northwind - Sales / GTM?"),
 			).getByRole("button", { name: "Add person" }),
 		);
-		await act(() => router.navigate("/brain/topics/t-gsales"));
-		await user.click(screen.getByRole("tab", { name: "People" }));
+		await act(() => router.navigate("/topics/t-gsales"));
 		const memberSection = sectionFor("In this topic");
 		const personLink = within(memberSection).getByRole("link", {
 			name: "Gia Moreno",
@@ -325,10 +333,9 @@ describe("collaboration Work and Brain integration", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("updates a topic goal in Brain and shows its completed state in Work", async () => {
+	it("updates a topic goal and keeps it completed while switching workspace views", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/brain/topics/t-geng");
-		await user.click(screen.getByRole("tab", { name: "Goals and notes" }));
+		renderSession("/topics/t-geng");
 		const title =
 			"Present agent architecture at Northwind eng review (Oct 15)";
 		const checkbox = screen.getByRole("checkbox", { name: title });
@@ -339,8 +346,163 @@ describe("collaboration Work and Brain integration", () => {
 				(goal) => goal.text === title,
 			)?.status,
 		).toBe("done");
-		await act(() => router.navigate("/work/topic/t-geng"));
-		expect(screen.getByText(title, {})).toHaveClass("line-through");
+		await user.click(screen.getByRole("tab", { name: "Threads" }));
+		await user.click(screen.getByRole("tab", { name: "Actions" }));
+		expect(screen.getByRole("checkbox", { name: title })).toBeChecked();
+		expect(screen.getByText(title)).not.toHaveClass("line-through");
+	});
+
+	it("adds goals, keywords, and people through the compact topic controls", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const topic = state.topics.find(
+			(candidate) => candidate.id === "t-geng",
+		);
+		if (!topic) throw new Error("Missing sample topic");
+		topic.goals = [];
+		topic.keywords = [];
+		topic.people = [];
+		state.memories = [];
+		renderSession("/topics/t-geng", state);
+		expect(
+			screen.queryByRole("textbox", { name: "New goal" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("textbox", { name: "Add keyword" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("combobox", { name: "Add someone" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("textbox", { name: "New note" }),
+		).not.toBeInTheDocument();
+
+		const goalTrigger = screen.getByRole("button", { name: "Add goal" });
+		await user.click(goalTrigger);
+		const goal = screen.getByLabelText("New goal");
+		await user.type(goal, "Share the architecture review.");
+		const goalForm = goal.closest("form");
+		if (!goalForm) throw new Error("Missing goal form");
+		await user.click(
+			within(goalForm).getByRole("button", { name: "Add goal" }),
+		);
+		expect(
+			screen.getByRole("checkbox", {
+				name: "Share the architecture review.",
+			}),
+		).not.toBeChecked();
+
+		await user.click(screen.getByRole("button", { name: "Add keyword" }));
+		const keyword = screen.getByRole("textbox", { name: "Add keyword" });
+		await user.type(keyword, "architecture update");
+		const keywordForm = keyword.closest("form");
+		if (!keywordForm) throw new Error("Missing keyword form");
+		await user.click(
+			within(keywordForm).getByRole("button", { name: "Add" }),
+		);
+		await user.keyboard("{Escape}");
+		await user.click(
+			screen.getByRole("button", {
+				name: "Remove keyword architecture update",
+			}),
+		);
+		expect(
+			screen.queryByText("architecture update"),
+		).not.toBeInTheDocument();
+
+		const peopleTrigger = screen.getByRole("button", {
+			name: "Add people",
+		});
+		await user.click(peopleTrigger);
+		act(() =>
+			screen.getByRole("combobox", { name: "Add someone" }).focus(),
+		);
+		await user.keyboard("{Enter}");
+		await waitFor(() =>
+			expect(
+				screen.getByRole("option", { name: "Ava Reed" }),
+			).toHaveFocus(),
+		);
+		await user.keyboard("{Enter}");
+		await user.click(screen.getByRole("button", { name: "Add person" }));
+		await user.keyboard("{Escape}");
+		expect(
+			within(sectionFor("In this topic")).getByRole("link", {
+				name: "Ava Reed",
+			}),
+		).toBeInTheDocument();
+		await waitFor(() => expect(peopleTrigger).toHaveFocus());
+	});
+
+	it("counts each active feed thread once and distinguishes open, waiting, and muted threads", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const item = state.items.find(
+			(candidate) => candidate.threadId === "th-geng-review",
+		);
+		const mutedThread = state.threads.find(
+			(candidate) => candidate.id === "th-hugo-chat",
+		);
+		if (!item || !mutedThread)
+			throw new Error("Missing sample thread or item");
+		mutedThread.muted = true;
+		state.items.push(
+			{ ...item, id: "second-review-action" },
+			{ ...item, id: "muted-action", threadId: mutedThread.id },
+		);
+		renderSession("/topics/t-geng", state);
+		await user.click(screen.getByRole("tab", { name: "Threads" }));
+		expect(screen.getByText("2 in your feed")).toBeInTheDocument();
+		expect(
+			screen.queryByRole("link", { name: "Open feed" }),
+		).not.toBeInTheDocument();
+		const openRow = screen
+			.getByRole("link", {
+				name: "Agent architecture at our Oct 15 eng review?",
+			})
+			.closest("li");
+		const waitingRow = screen
+			.getByRole("link", { name: "Sandbox access for pilot team" })
+			.closest("li");
+		const mutedRow = screen
+			.getByRole("link", { name: mutedThread.subject })
+			.closest("li");
+		if (!openRow || !waitingRow || !mutedRow)
+			throw new Error("Missing topic thread row");
+		expect(within(openRow).getByText("For you")).toBeInTheDocument();
+		expect(within(waitingRow).getByText("Waiting")).toBeInTheDocument();
+		expect(
+			within(waitingRow).queryByText("For you"),
+		).not.toBeInTheDocument();
+		expect(within(mutedRow).queryByText("For you")).not.toBeInTheDocument();
+		expect(within(mutedRow).queryByText("Waiting")).not.toBeInTheDocument();
+	});
+
+	it("shows an unloaded participant's name without linking to a missing person", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const thread = state.threads.find(
+			(candidate) => candidate.id === "th-geng-review",
+		);
+		if (!thread) throw new Error("Missing sample thread");
+		thread.participants.unshift({
+			personId: "unloaded-person",
+			name: "Pending participant",
+			role: "from",
+			included: true,
+		});
+		renderSession("/topics/t-geng", state);
+		await user.click(screen.getByRole("tab", { name: "Threads" }));
+		const row = screen
+			.getByRole("link", { name: thread.subject })
+			.closest("li");
+		if (!row) throw new Error("Missing topic thread row");
+		expect(
+			within(row).getByText("Pending participant"),
+		).toBeInTheDocument();
+		expect(
+			within(row).queryByRole("link", { name: "Pending participant" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("allows more than three topic links and retains one selected primary", async () => {
@@ -554,8 +716,8 @@ describe("collaboration Work and Brain integration", () => {
 
 	it("returns focus to the edit-topic action after cancelling its dialog", async () => {
 		const user = userEvent.setup();
-		renderSession("/brain/topics/t-geng");
-		const trigger = screen.getByRole("button", { name: "Edit topic" });
+		renderSession("/topics/t-geng");
+		const trigger = screen.getByRole("button", { name: /: Edit topic$/ });
 		await user.click(trigger);
 		const dialog = screen.getByRole("dialog", { name: "Edit topic" });
 		await user.click(
@@ -584,7 +746,7 @@ function TopicCreationFixture() {
 					.map((topic) => (
 						<a
 							key={topic.id}
-							href={`/brain/topics/${encodeURIComponent(topic.id)}`}
+							href={`/topics/${encodeURIComponent(topic.id)}`}
 						>
 							{topic.name}
 						</a>
@@ -626,8 +788,6 @@ describe("new topic form", () => {
 				hidden: true,
 			}),
 		).getByText("New initiative");
-		expect(link.getAttribute("href")).toMatch(
-			/^\/brain\/topics\/local-topic-/,
-		);
+		expect(link.getAttribute("href")).toMatch(/^\/topics\/local-topic-/);
 	});
 });

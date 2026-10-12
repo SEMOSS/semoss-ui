@@ -29,6 +29,7 @@ export interface TopicGoal {
 	noteId: string;
 	text: string;
 	status: "open" | "done";
+	resolution?: string;
 }
 
 interface TopicPerson {
@@ -434,6 +435,13 @@ export type CollaborationCommand =
 	| { type: "source.deleted"; sourceId: string }
 	| { type: "session.create"; sessionId: string }
 	| { type: "topic.save"; topic: Partial<Topic> & { name?: string } }
+	| {
+			type: "topic.goal.server";
+			topicId: string;
+			/** Goal before the read; newer local changes take precedence over its result. */
+			before?: TopicGoal;
+			goal: TopicGoal;
+	  }
 	| { type: "topic.merge"; sourceId: string; targetId: string }
 	| { type: "topic.delete"; topicId: string }
 	| {

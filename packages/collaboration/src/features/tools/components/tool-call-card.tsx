@@ -182,7 +182,7 @@ function GenericToolCallCard({
 	const isEmailSend = component === TOOL_COMPONENTS.emailSend;
 	// ComposeEmail retains a room-local editor; only this action opens its panel.
 	const isEmailCompose = component === TOOL_COMPONENTS.emailCompose;
-	const isEditorDraft = isEmailCompose && Boolean(roomEmail);
+	const isRoomCompose = isEmailCompose && Boolean(roomEmail);
 	// SendEmail on the open email waits for Send in that editor or on this card
 	const sendDraft =
 		isEmailSend && roomEmail
@@ -194,12 +194,16 @@ function GenericToolCallCard({
 							asString(tool.arguments.openEmailId),
 					)
 			: undefined;
-	const draftPreview = isEditorDraft ? emailDraftToolPreview(tool) : null;
+	const draftPreview = isRoomCompose ? emailDraftToolPreview(tool) : null;
 	// a compose card names what its editor holds, not what the model guessed
 	const editorEmail = useEditorEmail(
 		isEmailCompose ? roomEmail?.store : undefined,
 		asString(tool.arguments.openEmailId) || composeDraftId(tool.id),
 	);
+	const isEditorDraft =
+		isRoomCompose && Boolean(editorEmail) && tool.status === "COMPLETED";
+	const isDraftUnavailable =
+		isRoomCompose && !editorEmail && tool.status === "COMPLETED";
 	const composeKind =
 		editorEmail?.mode ??
 		(asString(tool.arguments.replyTo)
@@ -226,7 +230,7 @@ function GenericToolCallCard({
 		(isSubmit || isRequest ? SUBMIT_LABELS[tool.status] : undefined) ??
 		(pendingApproval?.requiresResponse ? "Needs your input" : undefined);
 	const details = {
-		...statusDetails(tool.status),
+		...statusDetails(isDraftUnavailable ? "FAILED" : tool.status),
 		...(statusLabel && { label: statusLabel }),
 	};
 	const title = isSubmit
@@ -236,7 +240,7 @@ function GenericToolCallCard({
 			: draftPreview
 				? (editorEmail?.subject ?? draftPreview.subject)
 				: tool.title;
-	const heading = isEditorDraft
+	const heading = isRoomCompose
 		? title
 			? `${draftLabel} \u00b7 ${title}`
 			: draftLabel
@@ -272,6 +276,7 @@ function GenericToolCallCard({
 		return null;
 
 	const status =
+		(isDraftUnavailable ? "Draft unavailable" : undefined) ??
 		(sendDraft ? SEND_STATUS[tool.status] : undefined) ??
 		(isEmailCompose && draftPreview
 			? COMPOSE_STATUS[tool.status]
@@ -288,7 +293,10 @@ function GenericToolCallCard({
 			open={
 				!isEditorDraft &&
 				!sendDraft &&
-				(isInline || isEmailDraft || isEmailSend || isEmailCompose)
+				(isInline ||
+					isEmailDraft ||
+					isEmailSend ||
+					(isEmailCompose && !isRoomCompose))
 			}
 			data-tool-id={tool.id}
 			className={cn(
@@ -310,7 +318,7 @@ function GenericToolCallCard({
 								roomEmail.openDraft(sendDraft.seed.id);
 								return;
 							}
-							if (isEmailCompose && roomEmail) {
+							if (isEditorDraft && roomEmail) {
 								const editorId =
 									asString(tool.arguments.openEmailId) ||
 									composeDraftId(tool.id);
@@ -324,11 +332,13 @@ function GenericToolCallCard({
 						aria-expanded={
 							!isEditorDraft && opensInline ? isInline : undefined
 						}
-						aria-controls={isInline ? detailId : undefined}
+						aria-controls={
+							!isEditorDraft && isInline ? detailId : undefined
+						}
 						aria-label={
 							isEditorDraft || sendDraft
-								? `Open email draft: ${title || draftLabel}`
-								: `${title} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
+								? `Open email draft: ${heading || draftLabel}`
+								: `${heading} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
 						}
 						{...(tool.status !== "FAILED"
 							? { "aria-describedby": statusId }
@@ -341,9 +351,11 @@ function GenericToolCallCard({
 								roomEmail && "size-8 rounded-lg bg-muted",
 								roomEmail &&
 									tool.status === "COMPLETED" &&
+									!isDraftUnavailable &&
 									"bg-success/10 text-success",
 								roomEmail &&
-									tool.status === "FAILED" &&
+									(tool.status === "FAILED" ||
+										isDraftUnavailable) &&
 									"bg-destructive/10 text-destructive",
 								roomEmail &&
 									tool.status === "INPUT_REQUIRED" &&
@@ -370,12 +382,15 @@ function GenericToolCallCard({
 							)}
 							<Muted
 								id={statusId}
+								role={isRoomCompose ? "status" : undefined}
 								className={cn(
 									"wrap-anywhere text-xs",
 									roomEmail &&
 										tool.status === "COMPLETED" &&
+										!isDraftUnavailable &&
 										"text-success",
-									tool.status === "FAILED" &&
+									(tool.status === "FAILED" ||
+										isDraftUnavailable) &&
 										"text-destructive",
 									tool.status === "INPUT_REQUIRED" &&
 										"text-warning",
@@ -441,7 +456,9 @@ function GenericToolCallCard({
 					<DelegationRequestApproval tool={tool} action={approval} />
 				) : approval ? (
 					<DelegationSubmitApproval tool={tool} action={approval} />
-				) : isEmailDraft || isEmailSend || isEmailCompose ? (
+				) : isEmailDraft ||
+					isEmailSend ||
+					(isEmailCompose && !isRoomCompose) ? (
 					<EmailDraftCard
 						tool={tool}
 						mode={

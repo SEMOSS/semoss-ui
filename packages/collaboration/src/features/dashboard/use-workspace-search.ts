@@ -6,7 +6,7 @@ import type { MailSearchFilters } from "@/features/connectors/types";
 import { listRoomsPage } from "@/features/rooms/api/list-rooms";
 import { searchRoomMessages } from "@/features/rooms/api/search-room-messages";
 import type { InsightActions } from "@/lib/pixel";
-import { threadPath } from "@/lib/workspace-paths";
+import { threadPath, topicPath } from "@/lib/workspace-paths";
 
 export interface WorkspaceSearchResult {
 	id: string;
@@ -63,7 +63,7 @@ export function searchWorkspaceRecords(
 				label: topic.name,
 				detail: topic.description || "Topic",
 				group: "Topics",
-				path: `/brain/topics/${encodeURIComponent(topic.id)}`,
+				path: topicPath(topic.id),
 			}),
 		),
 		...state.threads.map(

@@ -378,6 +378,23 @@ export function collaborationReducer(
 				state.topics.push(newTopic(state, command.topic, now));
 			break;
 		}
+		case "topic.goal.server": {
+			const topic = state.topics.find(
+				(entry) => entry.id === command.topicId,
+			);
+			if (!topic || topic.isSample) break;
+			const index = topic.goals.findIndex(
+				(goal) => goal.noteId === command.goal.noteId,
+			);
+			if (
+				JSON.stringify(topic.goals[index]) !==
+				JSON.stringify(command.before)
+			)
+				break;
+			if (index < 0) topic.goals.push(command.goal);
+			else topic.goals[index] = command.goal;
+			break;
+		}
 		case "topic.merge":
 			mergeTopics(state, command.sourceId, command.targetId);
 			break;
@@ -434,6 +451,7 @@ export function collaborationReducer(
 			if (!text) break;
 			const noteId = command.noteId ?? `local-note-${state.sequence++}`;
 			const goal = {
+				...existing,
 				noteId,
 				text,
 				status:

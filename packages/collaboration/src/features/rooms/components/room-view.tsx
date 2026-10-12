@@ -1,7 +1,9 @@
 import { Menu, Plus } from "lucide-react";
-import { useMemo } from "react";
-import { Button } from "@semoss/ui/next";
+import { useEffect, useMemo, useRef } from "react";
+import { Button, z } from "@semoss/ui/next";
+import { tryParseJson } from "@semoss/utility/json";
 import { EmptyView } from "@/components/common/empty-view";
+import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { toolMessageTimestamps } from "@/features/messages/utils/message-metadata";
 import { toolsFromMessages } from "@/features/messages/utils/thread-items";
 import { ROOM_CONNECTOR_COMPONENTS } from "@/features/room-connectors/room-connectors.components";
@@ -26,6 +28,11 @@ const ROOM_COMPONENTS = {
 	...ROOM_TEAMS_SOURCE_PANEL_COMPONENTS,
 	...ROOM_SETTINGS_PANEL_COMPONENTS,
 };
+
+const completedGoalResultSchema = z.object({
+	changes: z.array(z.string()),
+	topic: z.object({ id: z.string().min(1) }),
+});
 
 export function RoomView({
 	roomSession,
@@ -64,6 +71,32 @@ export function RoomView({
 	onNewRoom,
 	onOpenRooms,
 }: RoomViewProps) {
+	const updates = useWorkUpdates();
+	const handleApproveTool: RoomViewProps["onApproveTool"] = async (
+		approval,
+		parameters,
+	) => {
+		await onApproveTool(approval, parameters);
+		if (
+			approval.toolName !== "EditTopic" ||
+			typeof parameters.completeGoalId !== "string"
+		)
+			return;
+		const goalId = parameters.completeGoalId.trim();
+		if (!goalId) return;
+		const topicId =
+			typeof parameters.topicId === "string"
+				? parameters.topicId
+				: undefined;
+		const topic =
+			typeof parameters.name === "string" && parameters.name.trim()
+				? parameters.name
+				: typeof parameters.topic === "string"
+					? parameters.topic
+					: undefined;
+		if (topicId || topic)
+			updates?.refreshTopicGoal({ topicId, topic }, goalId);
+	};
 	const session = sessions.find((candidate) => candidate.id === sessionId);
 	const { tools, toolCreatedAt } = useMemo(
 		() => ({
@@ -72,6 +105,34 @@ export function RoomView({
 		}),
 		[thread, pendingApprovals, toolStates],
 	);
+	const refreshedGoals = useRef(new Set<string>());
+	const refreshTopicGoal = updates?.refreshTopicGoal;
+	useEffect(() => {
+		if (!refreshTopicGoal) return;
+		for (const tool of Object.values(tools)) {
+			const key = `${sessionId}:${tool.id}`;
+			if (
+				tool.name !== "CompleteGoal" ||
+				tool.status !== "COMPLETED" ||
+				tool.error ||
+				refreshedGoals.current.has(key)
+			)
+				continue;
+			const result = completedGoalResultSchema.safeParse(
+				tryParseJson(tool.output ?? ""),
+			);
+			const goalId = tool.arguments.goalId;
+			if (
+				!result.success ||
+				!result.data.changes.includes("goal completed") ||
+				typeof goalId !== "string" ||
+				!goalId.trim()
+			)
+				continue;
+			refreshedGoals.current.add(key);
+			refreshTopicGoal({ topicId: result.data.topic.id }, goalId.trim());
+		}
+	}, [refreshTopicGoal, sessionId, tools]);
 
 	const workspace = session ? (
 		<RoomWorkspace
@@ -119,7 +180,7 @@ export function RoomView({
 						tools={tools}
 						toolCreatedAt={toolCreatedAt}
 						pendingApprovals={pendingApprovals}
-						onApproveTool={onApproveTool}
+						onApproveTool={handleApproveTool}
 						onRejectTool={onRejectTool}
 					>
 						<RoomConnectorsProvider session={roomSession}>

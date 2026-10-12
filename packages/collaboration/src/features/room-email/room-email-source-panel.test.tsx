@@ -2,7 +2,9 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ContextType } from "react";
 import { createWorkbenchStore, WorkbenchProvider } from "@semoss/workbench";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import type { WorkspaceMessage } from "@/features/collaboration/state/collaboration.types";
+import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
 import type { RoomSource } from "@/features/rooms/source-import/room-source";
 import type { InsightActions } from "@/lib/pixel";
 import { RoomEmailContext } from "./room-email.context";
@@ -78,6 +80,7 @@ function setup(overrides: Partial<EmailContext> = {}, messageId?: string) {
 			},
 			retain: vi.fn(() => vi.fn()),
 			readEmailAttachment: vi.fn(),
+			updateSourceFile: vi.fn().mockResolvedValue(undefined),
 		},
 		source,
 		sourceMessages: [
@@ -279,4 +282,100 @@ it("resets remote-image consent when a different email is selected", async () =>
 	expect(
 		screen.getByTitle("Email from Alex").getAttribute("srcdoc"),
 	).not.toContain("<img");
+});
+
+it("defaults to the newest email someone else sent, not the owner's own reply", async () => {
+	const ownReply: WorkspaceMessage = {
+		...firstMessage,
+		id: "own-reply",
+		fromId: "owner",
+		fromName: "Owner",
+		fromAddress: "Owner@Example.com",
+		at: "2026-10-08T12:00:00Z",
+		text: "Thanks, see you then.",
+	};
+	const test = setup({
+		source: {
+			...source,
+			messages: [
+				...source.messages,
+				{ id: ownReply.id, at: ownReply.at },
+			],
+		},
+		sourceMessages: [firstMessage, latestMessage, ownReply],
+	});
+	const state = createInitialCollaborationState();
+	await act(async () => {
+		render(
+			<CollaborationSessionProvider
+				initialState={{
+					...state,
+					liveProfile: { ...state.profile, id: "owner" },
+				}}
+			>
+				{test.content()}
+			</CollaborationSessionProvider>,
+		);
+	});
+	expect(screen.getByRole("heading", { name: "Friday plans" })).toBeVisible();
+	expect(test.value.selectSourceMessage).toHaveBeenLastCalledWith(
+		"latest-email",
+	);
+});
+
+it("matches the owner by address and falls back to the newest email when only the owner wrote", async () => {
+	const ownReply: WorkspaceMessage = {
+		...firstMessage,
+		id: "own-reply",
+		fromId: "someone-else-id",
+		fromAddress: "OWNER@example.com",
+		at: "2026-10-08T12:00:00Z",
+	};
+	const onlyOwn: WorkspaceMessage = {
+		...ownReply,
+		id: "only-own",
+		fromId: "me",
+	};
+	const state = createInitialCollaborationState();
+	const withProfile = (
+		content: ReturnType<ReturnType<typeof setup>["content"]>,
+	) => (
+		<CollaborationSessionProvider
+			initialState={{
+				...state,
+				liveProfile: {
+					...state.profile,
+					id: "owner",
+					email: "owner@example.com",
+				},
+			}}
+		>
+			{content}
+		</CollaborationSessionProvider>
+	);
+	const mixed = setup({
+		source: {
+			...source,
+			messages: [
+				...source.messages,
+				{ id: ownReply.id, at: ownReply.at },
+			],
+		},
+		sourceMessages: [firstMessage, latestMessage, ownReply],
+	});
+	const view = await act(async () => render(withProfile(mixed.content())));
+	expect(mixed.value.selectSourceMessage).toHaveBeenLastCalledWith(
+		"latest-email",
+	);
+	view.unmount();
+	const alone = setup({
+		source: { ...source, messages: [{ id: onlyOwn.id, at: onlyOwn.at }] },
+		sourceMessages: [onlyOwn],
+	});
+	await act(async () => {
+		render(withProfile(alone.content()));
+	});
+	expect(alone.value.selectSourceMessage).toHaveBeenLastCalledWith(
+		"only-own",
+	);
 });

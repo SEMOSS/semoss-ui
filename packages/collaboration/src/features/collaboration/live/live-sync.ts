@@ -26,6 +26,7 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"live-profile.set",
 	"snooze.expire",
 	"memory.server",
+	"topic.goal.server",
 ]);
 
 // a create returns the server id for the local one

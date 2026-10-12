@@ -9,8 +9,18 @@ const mocks = vi.hoisted(() => ({
 	load: vi.fn(),
 	upload: vi.fn(),
 	createSession: vi.fn(),
+	listRooms: vi.fn(),
+	link: vi.fn(),
+	association: vi.fn(),
 }));
 vi.mock("./load-source-thread", () => ({ loadSourceThread: mocks.load }));
+vi.mock("../api/read-room-source-association", () => ({
+	readRoomSourceAssociation: mocks.association,
+}));
+vi.mock("../api/room-threads", () => ({
+	listThreadRooms: mocks.listRooms,
+	linkRoomThread: mocks.link,
+}));
 vi.mock("../api/upload-room-files", () => ({ uploadRoomFiles: mocks.upload }));
 vi.mock("../room-session", () => ({ createRoomSession: mocks.createSession }));
 
@@ -54,7 +64,15 @@ function setup() {
 	return { attempt, session, order, leave, release };
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+	vi.clearAllMocks();
+	mocks.listRooms.mockResolvedValue([]);
+	mocks.link.mockResolvedValue(undefined);
+	mocks.association.mockResolvedValue({
+		threadId: "source-one",
+		isDelegation: false,
+	});
+});
 
 it("reads, binds a fresh room, uploads to its isolated insight, and persists the receipt", async () => {
 	const { attempt, session, order, release } = setup();
@@ -177,4 +195,98 @@ it("releases an abandoned insight when navigation happens before room allocation
 	await expect(attempt.start()).resolves.toBeNull();
 	expect(session.create).not.toHaveBeenCalled();
 	expect(session.dispose).toHaveBeenCalledOnce();
+});
+
+it("reopens the newest chat opened from the thread without reading or creating", async () => {
+	mocks.listRooms.mockResolvedValue([
+		{ roomId: "topic-chat", origin: "you" },
+		{ roomId: "thread-chat", origin: "thread" },
+		{ roomId: "older-thread-chat", origin: "thread" },
+	]);
+	const { attempt } = setup();
+	await expect(attempt.start()).resolves.toEqual({ roomId: "thread-chat" });
+	expect(mocks.listRooms).toHaveBeenCalledWith({}, "source-one");
+	expect(attempt.getSnapshot()).toMatchObject({
+		phase: "ready",
+		roomId: "thread-chat",
+	});
+	expect(mocks.load).not.toHaveBeenCalled();
+	expect(mocks.createSession).not.toHaveBeenCalled();
+	expect(mocks.link).not.toHaveBeenCalled();
+});
+
+it("skips a chat opened from the thread that has no readable source of it", async () => {
+	mocks.listRooms.mockResolvedValue([
+		{ roomId: "legacy-chat", origin: "thread" },
+		{ roomId: "broken-chat", origin: "thread" },
+		{ roomId: "source-chat", origin: "thread" },
+	]);
+	mocks.association.mockImplementation(async (_actions, roomId: string) => {
+		if (roomId === "legacy-chat")
+			return { threadId: null, isDelegation: false };
+		if (roomId === "broken-chat") throw new Error("unreadable source");
+		return { threadId: "source-one", isDelegation: false };
+	});
+	const { attempt } = setup();
+	await expect(attempt.start()).resolves.toEqual({ roomId: "source-chat" });
+	mocks.association.mockResolvedValue({
+		threadId: null,
+		isDelegation: false,
+	});
+	const again = setup();
+	await expect(again.attempt.start()).resolves.toMatchObject({
+		roomId: "new-room",
+	});
+});
+
+it("opens a new chat when the thread is only included elsewhere, and links it", async () => {
+	mocks.listRooms.mockResolvedValue([
+		{ roomId: "topic-chat", origin: "you" },
+	]);
+	const { attempt, order } = setup();
+	mocks.link.mockImplementation(async () => {
+		order.push("link");
+	});
+	await expect(attempt.start()).resolves.toMatchObject({
+		roomId: "new-room",
+	});
+	expect(order).toEqual([
+		"read",
+		"initialize",
+		"create-bind",
+		"upload",
+		"source",
+		"link",
+	]);
+	expect(mocks.link).toHaveBeenCalledWith({}, "new-room", "source-one");
+});
+
+it("still opens a new chat when the lookup or the link fails", async () => {
+	mocks.listRooms.mockRejectedValue(new Error("Reactor not found"));
+	mocks.link.mockRejectedValue(new Error("Reactor not found"));
+	const { attempt } = setup();
+	await expect(attempt.start()).resolves.toMatchObject({
+		roomId: "new-room",
+	});
+	expect(attempt.getSnapshot().error).toBeNull();
+});
+
+it("does not look up chats for a source outside Brain", async () => {
+	setup();
+	const id = "connected:outlook:mail-one";
+	const state = sourceImportState();
+	const connected = {
+		...state,
+		threads: state.threads.map((thread) => ({ ...thread, id })),
+	};
+	const attempt = createSourceImportAttempt(
+		"owner-insight",
+		id,
+		{} as InsightActions,
+		() => connected,
+	);
+	const leave = attempt.retain();
+	await attempt.start();
+	expect(mocks.listRooms).not.toHaveBeenCalled();
+	leave();
 });

@@ -19,6 +19,7 @@ const transport = vi.hoisted(() => ({
 	nextInsight: 0,
 	nextRoom: 0,
 	run: vi.fn(),
+	fileSave: vi.fn(),
 	options: new Map<string, Record<string, unknown>>(),
 	failOptions: false,
 }));
@@ -101,12 +102,15 @@ beforeEach(() => {
 	setThreadAgent(null);
 	transport.options.clear();
 	transport.failOptions = false;
+	transport.fileSave.mockResolvedValue("Success!");
 	transport.run.mockImplementation(
 		async (_insightId: string, statement: string) => {
 			const roomId = JSON.parse(
 				statement.match(/roomId=(\[[^\]]*\])/)?.[1] ?? '[""]',
 			)[0] as string;
 			let output: unknown = true;
+			if (statement.startsWith("SaveInsightAssetsBase64"))
+				output = await transport.fileSave(statement);
 			if (statement.startsWith("CreatePlaygroundRoom"))
 				output = { roomId: `created-${++transport.nextRoom}` };
 			if (statement.startsWith("GetRoomOptions"))
@@ -581,6 +585,126 @@ it("serializes settings and source metadata writes without losing either", async
 		instructions: "Concise answers",
 		overrideSystemPrompt: false,
 	});
+});
+
+it("refreshes the existing source file and identities without replacing its queued attachment", async () => {
+	const session = draft();
+	await session.create("Imported");
+	await session.setSource(source);
+	const queued = session.getSnapshot().contextFiles[0];
+	const submission = { text: "Review the reply", files: [] };
+	const submittedDraft = session.captureSubmission(submission);
+	const refreshed = {
+		...source,
+		messages: [...source.messages, { id: "new-reply", at: "2026-10-11" }],
+	};
+	const markdown = '# New reply\nHello "世界" </encode> \\';
+	await session.updateSourceFile(refreshed, markdown);
+	expect(transport.fileSave).toHaveBeenCalledTimes(1);
+	const statement = transport.fileSave.mock.calls[0][0] as string;
+	expect(statement).toContain(
+		`SaveInsightAssetsBase64(filePath=[${JSON.stringify(source.file.fileLocation)}],`,
+	);
+	const encoded = statement.match(/<encode>(.*)<\/encode>/)?.[1] ?? "";
+	expect(
+		new TextDecoder().decode(
+			Uint8Array.from(atob(encoded), (character) =>
+				character.charCodeAt(0),
+			),
+		),
+	).toBe(markdown);
+	expect(statement).not.toContain("世界");
+	expect(uploadRoomFiles).not.toHaveBeenCalled();
+	expect(session.getSnapshot().source).toEqual(refreshed);
+	expect(transport.options.get(session.getSnapshot().roomId)?.source).toEqual(
+		refreshed,
+	);
+	expect(session.getSnapshot().contextFiles[0]).toBe(queued);
+	await session.send(submission, {}, submittedDraft);
+	expect(session.getSnapshot().contextFiles).toEqual([]);
+});
+
+it("saves draft-only changes without rewriting unchanged room source metadata", async () => {
+	const session = draft();
+	await session.create("Imported");
+	await session.setSource(source);
+	const current = session.getSnapshot().source;
+	transport.run.mockClear();
+	await session.updateSourceFile(source, "# Email\nDraft reply");
+	expect(transport.run).toHaveBeenCalledTimes(1);
+	expect(transport.fileSave).toHaveBeenCalledTimes(1);
+	expect(session.getSnapshot().source).toBe(current);
+});
+
+it.each(["file", "metadata"])(
+	"preserves source metadata when its %s write fails and allows retry",
+	async (failure) => {
+		const session = draft();
+		await session.create("Imported");
+		await session.setSource(source);
+		const refreshed = {
+			...source,
+			messages: [
+				...source.messages,
+				{ id: "new-reply", at: "2026-10-11" },
+			],
+		};
+		if (failure === "file") transport.fileSave.mockResolvedValueOnce(false);
+		else transport.failOptions = true;
+		await expect(
+			session.updateSourceFile(refreshed, "# New reply"),
+		).rejects.toThrow();
+		expect(session.getSnapshot().source).toEqual(source);
+		expect(
+			transport.options.get(session.getSnapshot().roomId)?.source,
+		).toEqual(source);
+		await session.updateSourceFile(refreshed, "# New reply");
+		expect(session.getSnapshot().source).toEqual(refreshed);
+	},
+);
+
+it("serializes source revisions and retains the session while a file save is pending", async () => {
+	const session = draft();
+	await session.create("Imported");
+	await session.setSource(source);
+	session.removeContextFile(source.file.fileLocation);
+	const pending = deferred<string>();
+	transport.fileSave.mockReturnValueOnce(pending.promise);
+	const first = session.updateSourceFile(source, "# First revision");
+	const refreshed = { ...source, title: "Latest subject" };
+	const second = session.updateSourceFile(refreshed, "# Latest revision");
+	await vi.waitFor(() => expect(transport.fileSave).toHaveBeenCalledTimes(1));
+	expect(session.getSnapshot().source).toEqual(source);
+	expect(session.canEvict()).toBe(false);
+	pending.resolve("Success!");
+	await Promise.all([first, second]);
+	expect(transport.fileSave).toHaveBeenCalledTimes(2);
+	expect(session.getSnapshot().source).toEqual(refreshed);
+	expect(session.canEvict()).toBe(true);
+});
+
+it("does not overwrite a replaced source or save after its session is disposed", async () => {
+	const session = draft();
+	await session.create("Imported");
+	await session.setSource(source);
+	const replacement = session.setSource({
+		...source,
+		threadId: "other-thread",
+	});
+	const stale = expect(
+		session.updateSourceFile(source, "# Stale reply"),
+	).rejects.toThrow("source has changed");
+	await replacement;
+	await stale;
+	expect(transport.fileSave).not.toHaveBeenCalled();
+	session.dispose();
+	await expect(
+		session.updateSourceFile(
+			{ ...source, threadId: "other-thread" },
+			"# Stale",
+		),
+	).rejects.toThrow("source has changed");
+	expect(transport.fileSave).not.toHaveBeenCalled();
 });
 
 it("preserves the draft and source file when cancelled before the run is submitted", async () => {

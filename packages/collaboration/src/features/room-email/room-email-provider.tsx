@@ -6,6 +6,7 @@ import {
 	useRef,
 	useSyncExternalStore,
 } from "react";
+import { FILE_PANEL_EVENTS, getFilePanelScope } from "@semoss/panels";
 import { Alert, AlertDescription, toast } from "@semoss/ui/next";
 import type { Thread } from "@/features/collaboration/state/collaboration.types";
 import type { AgentTurnSnapshot } from "@/features/rooms/api/agent-turn-controller";
@@ -42,10 +43,34 @@ export function RoomEmailProvider({
 }: RoomEmailProviderProps) {
 	const store = getRoomEmailStore(session);
 	// Refresh consumers when a completed tool adds a retained editor.
-	useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+	const memory = useSyncExternalStore(
+		store.subscribe,
+		store.getSnapshot,
+		store.getSnapshot,
+	);
 	const workbench = useToolWorkbench();
 	const { openWorkbench } = workbench;
-	const sourceEmails = useRoomSourceEmails(session, source, isReady);
+	const handleFileUpdated = useCallback(
+		(path: string) => {
+			workbench.store
+				.getState()
+				.events.actions.emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
+					scope: getFilePanelScope({
+						type: "INSIGHT",
+						insightId: session.insight.insightId,
+					}),
+					paths: [path],
+				});
+		},
+		[session, workbench.store],
+	);
+	const sourceEmails = useRoomSourceEmails(
+		session,
+		source,
+		isReady,
+		memory.sourceDrafts,
+		handleFileUpdated,
+	);
 	const hasSourceEmail = Boolean(
 		source?.channel === "email" &&
 			(source.kind === "brain" || source.kind === "outlook") &&
