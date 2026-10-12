@@ -9,7 +9,6 @@ import { BriefHeader } from "./brief-header";
 vi.mock("./dashboard.context", () => ({
 	useDashboard: () => ({
 		calendar: { data: [], checkedAt: null, isLoading: false },
-		mail: { checkedAt: null, isLoading: false },
 		refreshSources: vi.fn(),
 	}),
 }));

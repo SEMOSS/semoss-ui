@@ -16,7 +16,7 @@ it("reads only options and returns the validated source identity", async () => {
 	});
 	await expect(
 		readRoomSourceAssociation({ run } as never, "room-one"),
-	).resolves.toBe("source-one");
+	).resolves.toEqual({ threadId: "source-one", isDelegation: false });
 	expect(run).toHaveBeenCalledExactlyOnceWith(
 		'GetRoomOptions(roomId=["room-one"]);',
 	);
@@ -30,7 +30,31 @@ it.each([{ OPTIONS: {} }, {}])(
 		});
 		await expect(
 			readRoomSourceAssociation({ run } as never, "room-one"),
-		).resolves.toBeNull();
+		).resolves.toEqual({ threadId: null, isDelegation: false });
+	},
+);
+
+it.each([
+	["action-one", true],
+	[" ", false],
+	[null, false],
+	[undefined, false],
+	[42, true],
+])(
+	"recognizes delegation room options without an extra read",
+	async (delegation, isDelegation) => {
+		const run = vi.fn().mockResolvedValue({
+			pixelReturn: [
+				{
+					output: { OPTIONS: { delegation_action_id: delegation } },
+					operationType: [],
+				},
+			],
+		});
+		await expect(
+			readRoomSourceAssociation({ run } as never, "room-one"),
+		).resolves.toEqual({ threadId: null, isDelegation });
+		expect(run).toHaveBeenCalledOnce();
 	},
 );
 

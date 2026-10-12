@@ -194,6 +194,8 @@ export interface OnboardingPerson {
 	automated: boolean;
 	follow: "following" | "suggested" | "declined" | null;
 	followReason: string;
+	/** Set when the owner linked them to an account. */
+	accountId: string;
 }
 
 /** Strongest first, filtered by relationship ("automated"), follow state, or a name/email search. */
@@ -228,6 +230,7 @@ export async function listPeople(
 				? p.follow
 				: null,
 		followReason: str(p.followReason),
+		accountId: str(p.accountId),
 	}));
 }
 
@@ -292,6 +295,38 @@ export async function saveAccounts(
 				account: { name: a.name, domain: a.domain, kind: a.kind },
 			}),
 		);
+}
+
+/** One outside person kept by email: their own account (no domain, so it claims no one else), external, followed. */
+export async function saveContacts(
+	actions: InsightActions,
+	people: OnboardingPerson[],
+) {
+	for (const p of people) {
+		const accountId =
+			p.accountId ||
+			str(
+				(
+					await run(
+						actions,
+						pixel("BrainSaveAccount", {
+							account: { name: p.name, kind: "client" },
+						}),
+					)
+				).id,
+			);
+		await run(
+			actions,
+			pixel("BrainSavePerson", {
+				person: {
+					id: p.id,
+					accountId,
+					relationship: "external",
+					follow: "following",
+				},
+			}),
+		);
+	}
 }
 
 export interface TopicSuggestion {

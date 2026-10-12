@@ -7,7 +7,7 @@ export function composeEmailPart(
 	args: Record<string, unknown>,
 	id = `compose-${++next}`,
 	status: "COMPLETED" | "FAILED" | "RUNNING" = "COMPLETED",
-	output?: Record<string, unknown>,
+	output: Record<string, unknown> | null = { shown: true },
 ): ConversationMessagePart {
 	return {
 		type: "tool",

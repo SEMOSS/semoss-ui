@@ -9,10 +9,7 @@ import { useLocation, useNavigate } from "react-router";
 import { Env, useInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import {
-	listCalendarEvents,
-	listMail,
-} from "@/features/connectors/api/microsoft";
+import { listCalendarEvents } from "@/features/connectors/api/microsoft";
 import { roomPath } from "@/lib/workspace-paths";
 import { DashboardContext, type SourceSelection } from "./dashboard.context";
 import { dashboardStorageKey } from "./dashboard-layout";
@@ -67,21 +64,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 		async () => (await listCalendarEvents(actions)).events,
 		[actions],
 	);
-	const loadMail = useCallback(
-		async () => (await listMail(actions)).messages,
-		[actions],
-	);
 	const calendar = useVisibleResource(
 		loadCalendar,
 		isActive && state.settings.sourcesJson.calendar === true,
 	);
-	const mail = useVisibleResource(
-		loadMail,
-		isActive && state.settings.sourcesJson.email === true,
-	);
 	function refreshSources(): void {
 		calendar.refresh();
-		mail.refresh();
 		setRefreshRevision((value) => value + 1);
 	}
 	const openRoom = async (roomId: string): Promise<void> => {
@@ -107,7 +95,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 				layout,
 				history,
 				calendar,
-				mail,
 				refreshSources,
 				refreshRevision,
 				isSearchOpen,

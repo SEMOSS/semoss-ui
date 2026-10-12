@@ -152,6 +152,73 @@ it("step and memory edits and removals go out as saves and deletes", async () =>
 	expect(sent[4]).toBe('BrainDeleteMemory(memoryId=["server-memory"]);');
 });
 
+it("does not save an assistant goal completion again", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = createInitialCollaborationState();
+	const topic = previous.topics[0];
+	topic.isSample = false;
+	const command: CollaborationCommand = {
+		type: "topic.goal.server",
+		topicId: topic.id,
+		before: topic.goals[0],
+		goal: {
+			...topic.goals[0],
+			status: "done",
+			resolution: "Released version 2.0",
+		},
+	};
+	const next = collaborationReducer(previous, command, NOW);
+	sync({ previous, next, commands: [command] });
+	await sync.settled();
+	expect(next.topics[0].goals[0].status).toBe("done");
+	expect(sent).toEqual([]);
+});
+
+it("preserves a goal resolution while saving reopen, edit, and completion changes", async () => {
+	const { actions, sent } = fakeActions();
+	const onError = vi.fn();
+	const sync = createLiveSync(actions, onError);
+	let state = createInitialCollaborationState();
+	const topic = state.topics[0];
+	topic.isSample = false;
+	topic.goals = [
+		{
+			noteId: "goal",
+			text: "Get room code for Florida",
+			status: "done",
+			resolution: "Florida room code is 444553",
+		},
+	];
+	for (const status of ["open", "done"] as const) {
+		const command: CollaborationCommand = {
+			type: "topic.note",
+			topicId: topic.id,
+			kind: "goal",
+			operation: "save",
+			noteId: "goal",
+			text: "Confirm room code for Florida",
+			status,
+		};
+		const next = collaborationReducer(state, command, NOW);
+		sync({ previous: state, next, commands: [command] });
+		state = next;
+		await sync.settled();
+		expect(state.topics[0].goals[0]).toEqual({
+			...topic.goals[0],
+			text: "Confirm room code for Florida",
+			status,
+		});
+	}
+	expect(sent).toEqual(
+		["open", "done"].map(
+			(status) =>
+				`BrainSaveTopicNote(topicId=["${topic.id}"], noteId=["goal"], kind=["goal"], text=["Confirm room code for Florida"], state=["${status}"]);`,
+		),
+	);
+	expect(onError).not.toHaveBeenCalled();
+});
+
 it("memory state changes go through BrainResolveMemory, and Delete all is one call", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());

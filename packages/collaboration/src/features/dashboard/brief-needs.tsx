@@ -4,6 +4,7 @@ import { Button, cn, H2, P } from "@semoss/ui/next";
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { selectWorkItems } from "@/features/collaboration/state/collaboration.selectors";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { topicPath } from "@/lib/workspace-paths";
 import { BriefActionCard } from "./brief-action-card";
 import { DashboardResourceStatus } from "./dashboard-resource-status";
 
@@ -93,13 +94,7 @@ export function BriefNeeds({
 					variant="link"
 					className="mt-3 h-auto min-h-8 pointer-coarse:min-h-11 p-0 font-mono font-normal text-foreground text-sm"
 				>
-					<Link
-						to={
-							topicId
-								? `/work/topic/${encodeURIComponent(topicId)}`
-								: "/work/all"
-						}
-					>
+					<Link to={topicId ? topicPath(topicId) : "/work/all"}>
 						See all {items.length} →
 					</Link>
 				</Button>

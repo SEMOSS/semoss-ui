@@ -141,7 +141,7 @@ export function useRoomEmailProposals({
 				for (const part of message.parts) {
 					const command =
 						part.type === "text"
-							? readThreadCommand(part.text)
+							? readThreadCommand(part.command ?? part.text)
 							: null;
 					if (command?.context.threadId === thread.id) {
 						selectedSource =
@@ -162,6 +162,16 @@ export function useRoomEmailProposals({
 						)
 				: undefined;
 			if (target) {
+				if (
+					isSourcedProposal(proposal) &&
+					(target.seed.mode !== proposal.mode ||
+						target.seed.sourceUid !== proposal.sourceMessageId)
+				) {
+					setError(
+						"This change is for a different email or a different kind of draft. Your open draft was kept. Ask the assistant to create a separate draft.",
+					);
+					continue;
+				}
 				if (composer.claimProposalRevision(id)) {
 					const state = target.getSnapshot();
 					if (
@@ -221,8 +231,9 @@ export function useRoomEmailProposals({
 				continue;
 			}
 			if (
-				thread.source?.kind !== "outlook" ||
-				!allowedSources.has(proposal.sourceMessageId) ||
+				(!proposal.sourceMessage &&
+					(thread.source?.kind !== "outlook" ||
+						!allowedSources.has(proposal.sourceMessageId))) ||
 				(selectedSource !== undefined &&
 					proposal.sourceMessageId !== selectedSource)
 			) {
@@ -240,7 +251,7 @@ export function useRoomEmailProposals({
 					assistantMessageId: message.runId || message.id,
 					mode: proposal.mode,
 					sourceUid: proposal.sourceMessageId,
-					subject: thread.subject,
+					subject: proposal.sourceMessage?.subject ?? thread.subject,
 					body: proposal.body ?? "",
 					to: proposal.to,
 					cc: proposal.cc,
@@ -275,6 +286,12 @@ export function useRoomEmailProposals({
 					);
 					continue;
 				}
+				if (
+					isSourcedProposal(proposal) &&
+					(target.seed.mode !== proposal.mode ||
+						target.seed.sourceUid !== proposal.sourceMessageId)
+				)
+					continue;
 				void target.addAgentAttachments(
 					proposal.toolId,
 					proposal.attachments ?? [],

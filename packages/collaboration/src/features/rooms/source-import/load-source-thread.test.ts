@@ -58,7 +58,9 @@ it("loads all Brain pages, deduplicates, sorts and excludes restricted source co
 		"source-one",
 	);
 	expect(run).toHaveBeenCalledTimes(2);
+	expect(run.mock.calls[0]?.[0]).toContain("refresh=[true]");
 	expect(run.mock.calls[1]?.[0]).toContain('cursor=["older"]');
+	expect(run.mock.calls[1]?.[0]).not.toContain("refresh=");
 	expect(document.messages.map((message) => message.id)).toEqual([
 		"oldest",
 		"latest",

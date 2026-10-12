@@ -13,6 +13,7 @@ import {
 	Small,
 	Textarea,
 } from "@semoss/ui/next";
+import { topicPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
 import type { Memory, MemoryRef } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -30,7 +31,7 @@ function refPath(ref: MemoryRef): string | null {
 		case "person":
 			return `/brain/people/${encodeURIComponent(ref.id)}`;
 		case "topic":
-			return `/brain/topics/${encodeURIComponent(ref.id)}`;
+			return topicPath(ref.id);
 		case "thread":
 			return `/work/thread/${encodeURIComponent(ref.id)}`;
 		case "account":

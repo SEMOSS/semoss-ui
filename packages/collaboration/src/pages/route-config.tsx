@@ -6,7 +6,7 @@ import { settingsSections } from "@/features/settings/settings-sections";
 import { ErrorPage } from "@/pages/error.page";
 import { NotFoundPage } from "@/pages/not-found.page";
 
-/** Work and Brain share a canonical conversation route. */
+/** Work and Brain share canonical topic and conversation routes. */
 export const routes: RouteObject[] = [
 	{
 		Component: RootLayout,
@@ -35,7 +35,6 @@ export const routes: RouteObject[] = [
 								"work/all",
 								"work/waiting",
 								"work/done",
-								"work/topic/:topicId",
 							].map((path) => ({
 								path,
 								id: path,
@@ -43,6 +42,29 @@ export const routes: RouteObject[] = [
 									Component: (
 										await import("@/pages/work.page")
 									).WorkPage,
+								}),
+							})),
+							{
+								path: "topics/:topicId",
+								id: "topic",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/topic.page")
+									).TopicPage,
+								}),
+							},
+							...[
+								"work/topic/:topicId",
+								"brain/topics/:topicId",
+							].map((path) => ({
+								path,
+								id: path,
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/legacy-topic.page"
+										)
+									).LegacyTopicPage,
 								}),
 							})),
 							{
@@ -62,7 +84,6 @@ export const routes: RouteObject[] = [
 								"brain/people/:personId",
 								"brain/threads",
 								"brain/threads/:threadId",
-								"brain/topics/:topicId",
 							].map((path) => ({
 								path,
 								id: path,

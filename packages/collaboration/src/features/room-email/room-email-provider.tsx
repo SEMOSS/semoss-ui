@@ -6,6 +6,7 @@ import {
 	useRef,
 	useSyncExternalStore,
 } from "react";
+import { FILE_PANEL_EVENTS, getFilePanelScope } from "@semoss/panels";
 import { Alert, AlertDescription, toast } from "@semoss/ui/next";
 import type { Thread } from "@/features/collaboration/state/collaboration.types";
 import type { AgentTurnSnapshot } from "@/features/rooms/api/agent-turn-controller";
@@ -16,6 +17,7 @@ import { RoomEmailContext, type RoomEmailSession } from "./room-email.context";
 import { ROOM_EMAIL_PANEL_TYPE } from "./room-email-panel";
 import { ROOM_EMAIL_SOURCE_PANEL_TYPE } from "./room-email-source-panel";
 import { getRoomEmailStore } from "./room-email-store";
+import { ROOM_TEAMS_SOURCE_PANEL_TYPE } from "./room-teams-source-panel";
 import { useEmailSendApprovals } from "./use-email-send-approvals";
 import { useRoomEmailProposals } from "./use-room-email-proposals";
 import { useRoomSourceEmails } from "./use-room-source-emails";
@@ -41,13 +43,42 @@ export function RoomEmailProvider({
 }: RoomEmailProviderProps) {
 	const store = getRoomEmailStore(session);
 	// Refresh consumers when a completed tool adds a retained editor.
-	useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+	const memory = useSyncExternalStore(
+		store.subscribe,
+		store.getSnapshot,
+		store.getSnapshot,
+	);
 	const workbench = useToolWorkbench();
 	const { openWorkbench } = workbench;
-	const sourceEmails = useRoomSourceEmails(session, source, isReady);
+	const handleFileUpdated = useCallback(
+		(path: string) => {
+			workbench.store
+				.getState()
+				.events.actions.emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
+					scope: getFilePanelScope({
+						type: "INSIGHT",
+						insightId: session.insight.insightId,
+					}),
+					paths: [path],
+				});
+		},
+		[session, workbench.store],
+	);
+	const sourceEmails = useRoomSourceEmails(
+		session,
+		source,
+		isReady,
+		memory.sourceDrafts,
+		handleFileUpdated,
+	);
 	const hasSourceEmail = Boolean(
 		source?.channel === "email" &&
 			(source.kind === "brain" || source.kind === "outlook") &&
+			source.messages.length,
+	);
+	const hasSourceChat = Boolean(
+		source?.channel === "teams" &&
+			(source.kind === "brain" || source.kind === "teams") &&
 			source.messages.length,
 	);
 	const thread = useMemo(
@@ -87,29 +118,31 @@ export function RoomEmailProvider({
 	useEmailSendApprovals(store, workbench);
 	const openSource = useCallback(
 		(returnFocusId?: string): void => {
-			if (!hasSourceEmail) return;
+			if (!hasSourceEmail && !hasSourceChat) return;
 			workbench.store
 				.getState()
 				.layout.actions.selectPanel(
-					ROOM_EMAIL_SOURCE_PANEL_TYPE,
+					hasSourceEmail
+						? ROOM_EMAIL_SOURCE_PANEL_TYPE
+						: ROOM_TEAMS_SOURCE_PANEL_TYPE,
 					{},
-					{ name: "Email" },
+					{ name: hasSourceEmail ? "Email" : "Teams chat" },
 				);
 			openWorkbench(undefined, returnFocusId);
 		},
-		[hasSourceEmail, openWorkbench, workbench.store],
+		[hasSourceChat, hasSourceEmail, openWorkbench, workbench.store],
 	);
 	const openedSourceOwner = useRef<RoomEmailSession | null>(null);
 	useEffect(() => {
 		if (
 			!isReady ||
-			!hasSourceEmail ||
+			(!hasSourceEmail && !hasSourceChat) ||
 			openedSourceOwner.current === session
 		)
 			return;
 		openedSourceOwner.current = session;
 		openSource(roomWorkbenchTriggerId(roomId));
-	}, [hasSourceEmail, isReady, openSource, roomId, session]);
+	}, [hasSourceChat, hasSourceEmail, isReady, openSource, roomId, session]);
 	const openDraft = useCallback(
 		(draftId: string): void => {
 			const draft = store
@@ -205,6 +238,7 @@ export function RoomEmailProvider({
 				source,
 				...sourceEmails,
 				hasSourceEmail,
+				hasSourceChat,
 				openSource,
 				selectSourceMessage,
 				replyToSource,

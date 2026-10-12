@@ -188,14 +188,7 @@ export function NewChatWorkspace({
 					aria-label="Workbench"
 					className="relative h-128 min-h-0 min-w-0 bg-background"
 				>
-					<ToolWorkbench
-						onOpenSettings={openSettings}
-						onOpenFiles={openFiles}
-						isOpeningFiles={snapshot.isPreparing}
-						filesDisabled={
-							!snapshot.isReady || snapshot.isCreationUncertain
-						}
-					/>
+					<ToolWorkbench />
 				</aside>
 			)}
 		</section>

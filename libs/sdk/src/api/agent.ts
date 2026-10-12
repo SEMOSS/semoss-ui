@@ -41,6 +41,10 @@ import { runPixel } from "./base";
  * ("default" | "acceptEdits" | "plan" | "bypassPermissions"), and strips its
  * known keys before passing the rest (e.g. `thinking`, `effort`) through to
  * the model provider.
+ * @param params.agentParams - Run values for the agent, never sent to the
+ * model. The semoss harness reads `userText`: what the user typed when
+ * `command` wraps it in extra context; it names the room and is what the
+ * message shows.
  * @param insightId - Insight to run the pixel against.
  * @returns The submitted run's id, room id, and initial status (always
  * "SUBMITTED") — not a full snapshot.
@@ -59,6 +63,7 @@ export const runAgent = async (
 		space?: string;
 		subdir?: string;
 		paramValues?: Record<string, unknown>;
+		agentParams?: Record<string, unknown>;
 	},
 	insightId?: string,
 ): Promise<{ runId: string; roomId: string; status: AgentRunStatusValue }> => {
@@ -74,6 +79,7 @@ export const runAgent = async (
 		urls,
 		space,
 		subdir,
+		agentParams,
 	} = params;
 	const paramValues =
 		subdir !== undefined
@@ -97,6 +103,9 @@ export const runAgent = async (
 		urls && urls.length > 0 ? `url=${JSON.stringify(urls)}` : null,
 		paramValues && Object.keys(paramValues).length > 0
 			? `paramValues=[${JSON.stringify(paramValues)}]`
+			: null,
+		agentParams && Object.keys(agentParams).length > 0
+			? `agentParams=[${JSON.stringify(agentParams)}]`
 			: null,
 		"wait=false",
 	].filter((clause): clause is string => clause !== null);

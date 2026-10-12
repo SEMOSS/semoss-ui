@@ -3,6 +3,20 @@ import { safeSourceUrl } from "@/features/connectors/api/microsoft";
 import type { SourceThreadDocument } from "./load-source-thread";
 import type { RoomSource } from "./room-source";
 
+/** A reply retained by this chat, distinct from messages read from the mailbox. */
+export interface SourceEmailDraft {
+	id: string;
+	replyTo: string;
+	status: "draft" | "saved" | "sending" | "sent" | "uncertain";
+	subject: string;
+	to: string;
+	cc: string;
+	bcc: string;
+	body: string;
+	attachments: string[];
+	savedMessageId?: string;
+}
+
 /** Render source text literally, preserving paragraphs without interpreting sender markup. */
 function sourceText(text: string): string {
 	return text
@@ -13,7 +27,10 @@ function sourceText(text: string): string {
 }
 
 /** A readable Markdown snapshot; no display HTML or excluded text enters the room. */
-export function sourceThreadMarkdown(document: SourceThreadDocument): string {
+export function sourceThreadMarkdown(
+	document: SourceThreadDocument,
+	drafts: SourceEmailDraft[] = [],
+): string {
 	const { thread, messages, limitations } = document;
 	const blocks = [
 		`# ${sourceText(thread.subject.replace(/[\r\n]+/g, " ") || "Untitled thread")}`,
@@ -49,6 +66,43 @@ export function sourceThreadMarkdown(document: SourceThreadDocument): string {
 		blocks.push(
 			"_There are no included source messages in this snapshot._",
 		);
+	const includedIds = new Set(messages.map((message) => message.id));
+	const replies = drafts.filter(
+		(draft) =>
+			includedIds.has(draft.replyTo) &&
+			(draft.body.trim() || draft.attachments.length) &&
+			!(
+				draft.status === "sent" &&
+				includedIds.has(draft.savedMessageId ?? "")
+			),
+	);
+	if (replies.length) blocks.push("# Replies from this chat");
+	const statuses: Record<SourceEmailDraft["status"], string> = {
+		draft: "Draft — not sent",
+		saved: "Saved draft — not sent",
+		sending: "Sending — delivery not yet confirmed",
+		sent: "Sent",
+		uncertain: "Save or delivery status unknown — check the mailbox",
+	};
+	for (const reply of replies) {
+		blocks.push(
+			`## ${statuses[reply.status]}`,
+			[
+				["Subject", reply.subject],
+				["To", reply.to],
+				["Cc", reply.cc],
+				["Bcc", reply.bcc],
+				["Attachments", reply.attachments.join(", ")],
+			]
+				.filter((field) => field[1])
+				.map(
+					([label, value]) =>
+						`**${label}:** ${sourceText(value ?? "")}`,
+				)
+				.join("  \n"),
+			sourceText(reply.body).replace(/\n/g, "  \n"),
+		);
+	}
 	return `${blocks.filter(Boolean).join("\n\n")}\n`;
 }
 

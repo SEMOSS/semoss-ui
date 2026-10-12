@@ -10,6 +10,7 @@ import type {
 	WorkItem,
 } from "@/features/collaboration/state/collaboration.types";
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
+import { TopicPage } from "./topic.page";
 import { WorkPage } from "./work.page";
 
 const sessions = vi.hoisted(() => ({ mounted: vi.fn() }));
@@ -213,13 +214,10 @@ function workState(): CollaborationState {
 function renderWork(path: string, initialState = workState()) {
 	const router = createMemoryRouter(
 		[
-			...[
-				"/work",
-				"/work/all",
-				"/work/waiting",
-				"/work/done",
-				"/work/topic/:topicId",
-			].map((route) => ({ path: route, Component: WorkPage })),
+			...["/work", "/work/all", "/work/waiting", "/work/done"].map(
+				(route) => ({ path: route, Component: WorkPage }),
+			),
+			{ path: "/topics/:topicId", Component: TopicPage },
 			{ path: "/thread/:threadId", element: <p>Source import</p> },
 		],
 		{ initialEntries: [path] },
@@ -237,7 +235,7 @@ it("opens Work as a topic index with selector-based counts and the existing new-
 	expect(screen.getByRole("heading", { name: "Work" })).toBeVisible();
 	const index = screen.getByRole("list", { name: "Work topics" });
 	const alpha = within(index).getByRole("link", { name: /Alpha launch/ });
-	expect(alpha).toHaveAttribute("href", "/work/topic/alpha");
+	expect(alpha).toHaveAttribute("href", "/topics/alpha");
 	expect(alpha).toHaveTextContent("Ship the launch with the customer.");
 	expect(alpha).toHaveTextContent("3 open");
 	expect(alpha).toHaveTextContent("1 waiting");
@@ -255,25 +253,37 @@ it("opens Work as a topic index with selector-based counts and the existing new-
 	expect(create).toHaveFocus();
 });
 
-it("keeps topic goals visible and supporting context confirmed and scoped", () => {
-	const state = workState();
-	renderWork("/work/topic/alpha", state);
+it("combines scoped work with editable goals, people, and notes in one topic", async () => {
+	const { user } = renderWork("/topics/alpha");
 	expect(screen.getByRole("heading", { name: "Alpha launch" })).toBeVisible();
 	expect(
-		screen.getByRole("region", { name: "Topic goals" }),
-	).toHaveTextContent("Launch by Friday");
-	expect(screen.getByRole("link", { name: "Edit in Brain" })).toHaveAttribute(
-		"href",
-		"/brain/topics/alpha",
+		screen.getByRole("checkbox", { name: "Launch by Friday" }),
+	).not.toBeChecked();
+	await user.click(
+		screen.getByRole("checkbox", { name: "Launch by Friday" }),
 	);
+	expect(
+		screen.getByRole("checkbox", { name: "Launch by Friday" }),
+	).toBeChecked();
+	expect(
+		screen.queryByRole("link", { name: "Edit in Brain" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.queryByRole("link", { name: "Open feed" }),
+	).not.toBeInTheDocument();
+	expect(screen.getByText("Confirmed Alpha context")).toBeVisible();
+	expect(screen.getByText("Unconfirmed Alpha guess")).toBeVisible();
 	const context = screen.getByRole("complementary", {
 		name: "Topic context",
 	});
-	expect(context).toHaveTextContent("Confirmed Alpha context");
-	expect(context).not.toHaveTextContent("Unconfirmed Alpha guess");
-	expect(context).toHaveTextContent("Launch owner");
-	expect(context).not.toHaveTextContent("Suggested");
-	expect(context).toHaveTextContent("Source alpha-done");
+	expect(within(context).getByText("· Launch owner")).not.toHaveClass(
+		"sr-only",
+	);
+	expect(
+		within(context).getByRole("heading", { name: "Suggested" }),
+	).toBeVisible();
+	expect(screen.getByRole("button", { name: "Add people" })).toBeVisible();
+	expect(screen.getByRole("button", { name: "Add keyword" })).toBeVisible();
 	expect(
 		screen.queryByRole("heading", { name: "Brain wants to check" }),
 	).not.toBeInTheDocument();
@@ -287,8 +297,33 @@ it("keeps topic goals visible and supporting context confirmed and scoped", () =
 	expect(sessions.mounted).not.toHaveBeenCalled();
 });
 
+it("shows a goal resolution as plain text and keeps it when reopening and completing the goal", async () => {
+	const state = workState();
+	const goal = {
+		noteId: "goal",
+		text: "Get room code for Florida",
+		status: "done" as const,
+		resolution: "Florida room code is 444553 <b>Keep this code</b>",
+	};
+	state.topics[0].goals = [goal];
+	const { user } = renderWork("/topics/alpha", state);
+	const checkbox = screen.getByRole("checkbox", { name: goal.text });
+	const resolution = screen.getByText(goal.resolution);
+	expect(checkbox).toBeChecked();
+	expect(resolution).toBeVisible();
+	expect(resolution.querySelector("b")).toBeNull();
+	expect(resolution.closest(".line-through")).toBeNull();
+	expect(screen.getByText(goal.text)).toHaveClass("line-through");
+	await user.click(checkbox);
+	expect(checkbox).not.toBeChecked();
+	expect(screen.getByText(goal.resolution)).toBeVisible();
+	await user.click(checkbox);
+	expect(checkbox).toBeChecked();
+	expect(screen.getByText(goal.resolution)).toBeVisible();
+});
+
 it("combines topic status and source filters, keeps multi-topic work, and sorts scoped rows", async () => {
-	const { user } = renderWork("/work/topic/alpha");
+	const { user } = renderWork("/topics/alpha");
 	await user.click(
 		screen.getByRole("button", { name: "Filter by source: All sources" }),
 	);
@@ -370,7 +405,7 @@ it("defaults All work to Needs you while preserving Open and direct legacy statu
 });
 
 it("opens source threads by their canonical import route and reads sessions only on selection", async () => {
-	const { router, user } = renderWork("/work/topic/alpha");
+	const { router, user } = renderWork("/topics/alpha");
 	await user.click(screen.getByRole("tab", { name: "Threads" }));
 	expect(sessions.mounted).not.toHaveBeenCalled();
 	expect(
@@ -388,7 +423,7 @@ it("opens source threads by their canonical import route and reads sessions only
 	expect(sessions.mounted).toHaveBeenCalledWith("alpha");
 	await user.click(screen.getByRole("tab", { name: "Actions" }));
 	expect(screen.queryByText("Sessions for alpha")).not.toBeInTheDocument();
-	await act(() => router.navigate("/work/topic/beta"));
+	await act(() => router.navigate("/topics/beta"));
 	expect(screen.getByRole("tab", { name: "Actions" })).toHaveAttribute(
 		"aria-selected",
 		"true",
@@ -403,11 +438,11 @@ it("opens source threads by their canonical import route and reads sessions only
 });
 
 it("never falls back to global work for an unknown topic", () => {
-	renderWork("/work/topic/missing");
+	renderWork("/topics/missing");
 	expect(
 		screen.getByRole("heading", { name: "Topic unavailable" }),
 	).toBeVisible();
-	expect(screen.getByRole("link", { name: "Back to Work" })).toHaveAttribute(
+	expect(screen.getByRole("link", { name: "All topics" })).toHaveAttribute(
 		"href",
 		"/work",
 	);

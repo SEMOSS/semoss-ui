@@ -54,14 +54,14 @@ export function DraftChatComposer({
 				<Alert variant="destructive">
 					<AlertDescription>
 						{snapshot.error.message}
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => void onInitialize()}
+						>
+							Retry connection
+						</Button>
 					</AlertDescription>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => void onInitialize()}
-					>
-						Retry connection
-					</Button>
 				</Alert>
 			)}
 			{snapshot.isCreationUncertain && (

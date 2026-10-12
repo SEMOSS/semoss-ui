@@ -42,14 +42,18 @@ import { readLastModel, rememberLastModel } from "./api/last-model";
 import { ROOM_HISTORY_CHANGED } from "./api/list-rooms";
 import {
 	type PlaygroundRoomOptions,
+	readableRoomName,
 	roomOptionsEnvelopeSchema,
 	roomWriteSchema,
 } from "./api/room-schemas";
+import { saveRoomSourceFile } from "./api/save-room-source-file";
 import type { UploadedRoomFile } from "./api/upload-room-files";
 import type { ComposerDraft } from "./components/room-composer.types";
 import { removeSubmittedComposerDraft } from "./components/submitted-composer-draft";
 import { type RoomSource, roomSourceSchema } from "./source-import/room-source";
 import type { ComposerSubmission, PendingToolApproval } from "./types/room";
+
+export const NEW_CHAT_TITLE = "New chat";
 
 const emptyDraft = (): ComposerDraft => ({
 	document: null,
@@ -122,6 +126,7 @@ export class RoomSession {
 	private uncertainCommand: string | null = null;
 	private uncertainDraft: RoomSubmissionSnapshot | null = null;
 	private optionQueue: Promise<void> = Promise.resolve();
+	private sourceQueue: Promise<void> = Promise.resolve();
 
 	constructor(
 		readonly scope: string,
@@ -134,7 +139,7 @@ export class RoomSession {
 			: (last?.modelId ?? getThreadAgent()?.modelId ?? "");
 		this.snapshot = {
 			roomId,
-			title: "New chat",
+			title: NEW_CHAT_TITLE,
 			options: null,
 			source: null,
 			contextFiles: [],
@@ -296,7 +301,7 @@ export class RoomSession {
 		this.update({
 			options,
 			source,
-			title: envelope.ROOM_NAME || this.snapshot.title,
+			title: readableRoomName(envelope.ROOM_NAME) || this.snapshot.title,
 			modelId: options.modelId,
 			// A just-created room reloads its own model; keep the name resolved for it.
 			modelName:
@@ -417,7 +422,8 @@ export class RoomSession {
 				this.insight.actions,
 				this.insight.insightId,
 				{
-					name: title,
+					// the placeholder is not a name; RunAgent names the room from its first request
+					name: title === NEW_CHAT_TITLE ? undefined : title,
 					workspaceId: settings.agentId || null,
 					workspaceName: this.snapshot.agent?.name,
 					modelId: settings.modelId,
@@ -478,9 +484,58 @@ export class RoomSession {
 	};
 	setSource = async (value: RoomSource): Promise<void> => {
 		const source = roomSourceSchema.parse(value);
-		await this.updateOptions({ source });
-		this.update({ source });
-		if (!this.hasUserMessage()) this.addContextFile(source.file);
+		const save = this.sourceQueue.then(async () => {
+			await this.updateOptions({ source });
+			this.update({ source });
+			if (!this.hasUserMessage()) this.addContextFile(source.file);
+		});
+		this.sourceQueue = save.catch(() => undefined);
+		return save;
+	};
+	/** Refresh the same asset before publishing its updated source identities. */
+	updateSourceFile = async (
+		value: RoomSource,
+		markdown: string,
+	): Promise<void> => {
+		const source = roomSourceSchema.parse(value);
+		const roomId = this.snapshot.roomId;
+		const release = this.retain();
+		const assertCurrent = () => {
+			const current = this.snapshot.source;
+			if (
+				this.isDisposed ||
+				!roomId ||
+				this.snapshot.roomId !== roomId ||
+				current?.threadId !== source.threadId ||
+				current.kind !== source.kind ||
+				current.file.fileLocation !== source.file.fileLocation ||
+				current.file.fileName !== source.file.fileName
+			)
+				throw new Error(
+					"This room's source has changed. Refresh it again.",
+				);
+		};
+		const save = this.sourceQueue
+			.then(async () => {
+				assertCurrent();
+				await saveRoomSourceFile(
+					this.insight.actions,
+					source.file.fileLocation,
+					markdown,
+				);
+				assertCurrent();
+				if (
+					JSON.stringify(this.snapshot.source) ===
+					JSON.stringify(source)
+				)
+					return;
+				await this.updateOptions({ source });
+				assertCurrent();
+				this.update({ source });
+			})
+			.finally(release);
+		this.sourceQueue = save.catch(() => undefined);
+		return save;
 	};
 	resolveDefaults = async (): Promise<void> => {
 		const revision = ++this.configurationRevision;
@@ -649,10 +704,9 @@ export class RoomSession {
 					this.snapshot.settingsError ||
 					"Check room settings.",
 			);
-		const command = this.command(
-			submission.text.trim() || "Please review the attached files.",
-			context,
-		);
+		const userText =
+			submission.text.trim() || "Please review the attached files.";
+		const command = this.command(userText, context);
 		const existingMedia = [...(submission.existingMedia ?? [])];
 		for (const file of submittedDraft.contextFiles) {
 			if (
@@ -679,6 +733,7 @@ export class RoomSession {
 				{
 					...submission,
 					text: command,
+					userText,
 					files: submittedDraft.composer.files,
 					existingMedia,
 				},
@@ -737,7 +792,9 @@ export class RoomSession {
 						message.parts.some(
 							(part) =>
 								part.type === "text" &&
-								part.text === this.uncertainCommand,
+								(part.command ?? part.text).startsWith(
+									this.uncertainCommand ?? "",
+								),
 						),
 				);
 				if (found) this.clearSubmittedDraft(this.uncertainDraft);

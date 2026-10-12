@@ -291,6 +291,7 @@ export class AgentTurnController {
 				agentId: config.agentId,
 				engine: config.engine,
 				command,
+				userText: submission.userText,
 				media: [
 					...files.map((file) => file.fileLocation),
 					...existingMedia.map((file) => file.fileLocation),
