@@ -60,6 +60,12 @@ interface EngineSelectProps {
 
 	/** Optional icon rendered before the selected name in the trigger. */
 	triggerIcon?: React.ReactNode;
+	/**
+	 * Opens the list as a modal popover. Set it when the picker is inside a
+	 * dialog: the list is rendered outside the dialog, which otherwise blocks
+	 * scrolling it.
+	 */
+	modal?: boolean;
 }
 
 // ============================================================================
@@ -89,6 +95,7 @@ export const EngineSelect = ({
 	showEngineId,
 	showEngineIcon = true,
 	triggerIcon,
+	modal = false,
 }: EngineSelectProps) => {
 	// ========================================================================
 	// State & Hooks
@@ -191,7 +198,7 @@ export const EngineSelect = ({
 	// ========================================================================
 
 	return (
-		<Popover open={open && !disabled} onOpenChange={setOpen}>
+		<Popover open={open && !disabled} onOpenChange={setOpen} modal={modal}>
 			<PopoverTrigger asChild>
 				<Button
 					id={id}

@@ -84,8 +84,8 @@ library:
 `MembersTable` lists a project's or engine's members and opens `AddMembersOverlay` to add more.
 When the server can search the organization's Microsoft directory (`msGraphLookup` in
 `/api/config`), the host passes `isDirectoryAvailable` and the dialog shows `UserSourceToggle`,
-a choice between existing users and the whole organization. The dialog starts on the
-organization and sends the choice as `msGraphLookup`. Without the prop it sends nothing and the
+a choice between existing users and the whole organization. The dialog starts on existing
+users and sends the choice as `msGraphLookup`. Without the prop it sends nothing and the
 backend decides, which means the directory whenever the directory is available. A person picked
 from the directory gets an account when their permission is saved. The table reads no config
 itself: the client keeps `/api/config` in its own store, and the other apps read it through
@@ -106,6 +106,21 @@ can rename a member, for example to "Manager". With a `source` the table has no 
 or edit dialog, and `readOnly` alone decides whether the viewer can change the list. A new
 `source` reloads the list from the start with nothing selected, and a failed load shows its error
 with Try Again. It marks the signed in user with a star either way.
+
+Both show each person's login, since two people can share an id on different logins. The
+table's Login Type column uses `LoginTypeLabel` (`components/login-type-label.tsx`): the login's
+logo or icon (`LoginTypeIcon`; a person for native logins, a key for API logins) and its name from
+`getLoginTypeName`. The dialogs' rows use `MemberAvatar` (`members/member-avatar.tsx`): the person's
+initial with their login's logo on a badge at its corner, the login's name in the title and for
+screen readers, and the id under the name. Use them wherever people are listed rather than
+showing the stored label, such as `API_USER`.
+
+The login the session is signed in with is starred wherever people are listed:
+`useIsCurrentLogin()` (`hooks/use-is-current-login.ts`) checks a person's login type and id against
+the account ids the SDK's `Logins` holds, reading them as they are so every row can call it.
+`MemberAvatar` and the members table show a star in place of the initial; a lone login logo gets
+`CurrentLoginStar` (`components/current-login-star.tsx`) at its corner. The members table also
+stars its host's `currentUserId` when the login type is not known.
 
 ### The file editors are gone (`components/file/file-*.tsx`)
 

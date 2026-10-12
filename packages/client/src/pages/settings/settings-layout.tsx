@@ -112,12 +112,20 @@ export const SettingsLayout = () => {
 		isSettingsIndexRoute && hasPrivacyCenterThemeContent;
 
 	// a team's page has its own header: the team's name, type, description and actions
+	// a team's Bulk Access Management keeps the team's header, as the team's page does
 	const isAdminTeamDetail =
-		matchedRoute?.path === "team-permissions/:type/:id";
+		matchedRoute?.path === "team-permissions/:type/:id" ||
+		matchedRoute?.path ===
+			"team-permissions/:type/:id/bulk-access-management";
 	const isTeamDetail =
-		isAdminTeamDetail || matchedRoute?.path === "managed-teams/:id";
+		isAdminTeamDetail ||
+		matchedRoute?.path === "managed-teams/:id" ||
+		matchedRoute?.path === "managed-teams/:id/bulk-access-management";
 
-	const isAppDetail = matchedRoute?.path === "app/:id";
+	// an app's admin mode Bulk Access Management and effective permissions keep the app's header
+	const isAppDetail =
+		matchedRoute?.path === "app/:id" ||
+		matchedRoute?.path.startsWith("app/:id/") === true;
 
 	const engineDetailType = useMemo<
 		| "DATABASE"
@@ -328,24 +336,40 @@ export const SettingsLayout = () => {
 													(r) =>
 														r.path === link ||
 														r.path ===
-															link.replace(
-																"/<id>",
-																"/:id",
-															),
+															link
+																.replace(
+																	"/<type>",
+																	"/:type",
+																)
+																.replace(
+																	"/<id>",
+																	"/:id",
+																),
 												);
 
 											const isLastItem =
 												routeHistory.length - 1 === idx;
-											const label = link.includes("<id>")
+											// a page under a detail page, such as a team's
+											// Bulk Access Management, is named by its own title
+											const label = link.endsWith("<id>")
 												? detailDisplayName || id
 												: isLastItem
 													? matchedRoute.title
 													: linkRoute?.title || link;
 
-											const to = link.replace(
-												"<id>",
-												id ?? "",
-											);
+											const to = link
+												.replace(
+													"<type>",
+													encodeURIComponent(
+														type ?? "",
+													),
+												)
+												.replace(
+													"<id>",
+													encodeURIComponent(
+														id ?? "",
+													),
+												);
 											const toRoot = to.split("/")[0];
 											const breadcrumbTo =
 												shouldPreserveEngineCatalogSearch &&

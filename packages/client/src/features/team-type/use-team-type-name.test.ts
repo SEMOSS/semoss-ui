@@ -61,6 +61,7 @@ describe("useTeamTypeName", () => {
 		["ldap", "Active Directory"],
 		["GITHUB", "GitHub"],
 		["PRODUCT_HUNT", "Product Hunt"],
+		["API_USER", "API"],
 	])("names %s %s when the server does not list it", (type, name) => {
 		expect(nameOf(type)).toBe(name);
 	});

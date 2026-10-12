@@ -1,5 +1,6 @@
-import { Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
+import { Plus, Search, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useIsCurrentLogin } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -17,6 +18,7 @@ import {
 	InputGroupInput,
 	Spinner,
 } from "@semoss/ui/next";
+import { LoginTypeBadge } from "@/features/team-type/login-type-badge";
 import type { SETTINGS_MEMBER } from "./settings.types";
 import { useMembers } from "./use-members";
 import { UserAddOverlay } from "./user-add-overlay";
@@ -56,6 +58,7 @@ export const MemberList = ({
 		refresh,
 		removeMember,
 	} = useMembers();
+	const isCurrentLogin = useIsCurrentLogin();
 
 	const [addOpen, setAddOpen] = useState(false);
 	const [addUser, setAddUser] = useState<SETTINGS_MEMBER | null>(null);
@@ -152,23 +155,43 @@ export const MemberList = ({
 								}`}
 								onClick={() => onSelectUser(user)}
 							>
-								<Avatar className="size-8 shrink-0">
-									<AvatarFallback>
-										{displayName.charAt(0).toUpperCase()}
-									</AvatarFallback>
-								</Avatar>
+								{/* the login the session is signed in with is starred, as in the members table */}
+								{user.type &&
+								isCurrentLogin(user.type, user.id) ? (
+									<Avatar
+										className="size-8 shrink-0"
+										title="You are signed in with this login"
+									>
+										<AvatarFallback className="bg-primary/10 text-primary">
+											<Star
+												className="size-4 fill-primary"
+												aria-hidden
+											/>
+											<span className="sr-only">
+												You are signed in with this
+												login
+											</span>
+										</AvatarFallback>
+									</Avatar>
+								) : (
+									<Avatar className="size-8 shrink-0">
+										<AvatarFallback>
+											{displayName
+												.charAt(0)
+												.toUpperCase()}
+										</AvatarFallback>
+									</Avatar>
+								)}
 								<div className="flex min-w-0 flex-1 flex-col leading-tight">
 									<span className="flex min-w-0 items-center gap-1.5 font-medium text-sm">
 										<span className="truncate">
 											{displayName}
 										</span>
 										{user.type ? (
-											<Badge
-												variant="outline"
-												className="shrink-0 rounded-full font-normal text-[10px]"
-											>
-												{user.type}
-											</Badge>
+											<LoginTypeBadge
+												type={user.type}
+												className="rounded-full text-[10px]"
+											/>
 										) : null}
 										{user.admin ? (
 											<span

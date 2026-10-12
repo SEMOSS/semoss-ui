@@ -147,6 +147,18 @@ export const PROJECT_ROUTES: {
 								element: <ProjectAccessControl />,
 							},
 							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<ProjectAccessControl view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<ProjectAccessControl view="EFFECTIVE" />
+								),
+							},
+							{
 								path: "smss",
 								element: <AppSmssPage />,
 							},
@@ -247,6 +259,18 @@ export const PROJECT_ROUTES: {
 								element: <ProjectAccessControl />,
 							},
 							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<ProjectAccessControl view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<ProjectAccessControl view="EFFECTIVE" />
+								),
+							},
+							{
 								path: "settings",
 								element: <AppSettingsPage />,
 							},
@@ -330,6 +354,18 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<ProjectAccessControl view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<ProjectAccessControl view="EFFECTIVE" />
+								),
 							},
 							{
 								path: "settings",
@@ -441,6 +477,18 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<ProjectAccessControl view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<ProjectAccessControl view="EFFECTIVE" />
+								),
 							},
 							{
 								path: "smss",
@@ -564,6 +612,18 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<ProjectAccessControl view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<ProjectAccessControl view="EFFECTIVE" />
+								),
 							},
 							{
 								path: "smss",

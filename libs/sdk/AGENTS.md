@@ -127,6 +127,12 @@ The SDK owns what the session is signed in to, so an app never tracks or caches 
   signs them out.
 - `refresh` joins a read in flight and reuses one younger than 30 seconds; `useLogins()` reads
   again when a view mounts and whenever the window regains focus.
+- `accountIds` is the user id of each login, from the config's `loginDetails`; the logins read
+  has no ids. A read drops the id of a login the session signed out of, and a login signed in to
+  since the config was read has none until the config is read again. Once logins are known, a
+  config only adds the id of a login that has none, and only when it names that login the same
+  way, so a config cached for an earlier session never replaces them. The client app seeds
+  `Logins` from its own config read, at start and after each login, and resets it on logout.
 - `connect` signs in to one more provider with a fresh popup (see `connectLogin` in
   [`api/auth.ts`](./src/api/auth.ts)): a listed provider is signed out first, since the backend
   keeps listing an expired token. Neither it nor `disconnect` ever signs out the session's own

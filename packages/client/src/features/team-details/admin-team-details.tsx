@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@semoss/ui/next";
+import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { useGroupManagersSource } from "@/features/group-managers/use-group-managers-source";
 import { useTeamMembersSource } from "@/features/team-members/use-team-members-source";
 import { TeamResourceAccessPanel } from "@/features/team-resource-access/team-resource-access-panel";
@@ -34,6 +35,11 @@ export const AdminTeamDetails = ({ id, type }: AdminTeamDetailsProps) => {
 		<div className="flex flex-col gap-6">
 			{isCustom ? (
 				<>
+					<BulkAccessManagementCard
+						to="bulk-access-management"
+						noun="team"
+						description="see its members and managers beside a search of the app and your organization, add many at once, and copy them from another team or an app or engine"
+					/>
 					<TeamPeopleCard
 						title="Managers"
 						description="User's who can manage this team's members."
