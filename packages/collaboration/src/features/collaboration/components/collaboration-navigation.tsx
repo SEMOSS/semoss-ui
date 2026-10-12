@@ -3,8 +3,8 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
+import { selectToday } from "@/features/dashboard/today-selectors";
 import { lexicon } from "@/lib/lexicon";
-import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
 import { CollaborationProfileMenu } from "./collaboration-profile-menu";
@@ -48,7 +48,8 @@ export function CollaborationNavigation({
 			to: "/",
 			label: lexicon.today,
 			icon: Inbox,
-			count: selectWorkItems(state, { view: "needs_me" }).total,
+			// only what is due today, so the badge stays meaningful
+			count: selectToday(state).due,
 			isActive: pathname === "/",
 		},
 		{

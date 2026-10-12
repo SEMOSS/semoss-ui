@@ -17,7 +17,6 @@ import type { InsightActions } from "@/lib/pixel";
 import { DashboardPage } from "@/pages/dashboard.page";
 import { BriefNeeds } from "./brief-needs";
 import { DashboardContext } from "./dashboard.context";
-import { presetWidgets, saveDashboardPreferences } from "./dashboard-layout";
 import { useDashboardLayout } from "./use-dashboard-layout";
 
 vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
@@ -194,7 +193,7 @@ function renderBrief(state = createBriefState()) {
 }
 
 function workCard(title: string): HTMLElement {
-	const card = within(screen.getByRole("region", { name: "Needs you" }))
+	const card = within(screen.getByRole("region", { name: "Do today" }))
 		.getByRole("link", { name: title })
 		.closest("article");
 	if (!card) throw new Error(`Missing work card: ${title}`);
@@ -213,74 +212,8 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 
-it("shows the complete daily brief without applying or replacing saved widget customization", () => {
-	saveDashboardPreferences(storageKey, {
-		version: 1,
-		widgets: presetWidgets().map((widget) => ({
-			...widget,
-			visible: false,
-		})),
-		presets: [],
-	});
-	const saved = localStorage.getItem(storageKey);
-	renderBrief();
-	for (const name of [
-		"Your day",
-		"Handled",
-		"Needs you",
-		"Start a conversation",
-		"Brain wants to check",
-	]) {
-		expect(screen.getByRole("region", { name })).toBeVisible();
-	}
-	expect(
-		screen.getByRole("link", { name: "Confirm revised pricing" }),
-	).toBeVisible();
-	expect(
-		screen.queryByRole("button", { name: /Customize dashboard/i }),
-	).not.toBeInTheDocument();
-	expect(
-		screen.queryByRole("button", { name: /^Resize / }),
-	).not.toBeInTheDocument();
-	expect(localStorage.getItem(storageKey)).toBe(saved);
-});
-
-it("greets by the given name for first-last and last-first profile names", () => {
-	renderBrief();
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		/^Good (morning|afternoon|evening), Riley\. 3 things need you\.$/,
-	);
-	cleanup();
-	const state = createBriefState();
-	state.profile.name = "Wong, Riley";
-	renderBrief(state);
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		/^Good (morning|afternoon|evening), Riley\. 3 things need you\.$/,
-	);
-});
-
-it("keeps all topics visible with the composer before the mobile reading order", () => {
+it("shows Today as greeting, ask box, Do today and Your day without setup panels", () => {
 	const { container } = renderBrief();
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"3 things need you",
-	);
-	const needs = within(screen.getByRole("region", { name: "Needs you" }));
-	for (const name of [
-		"Review the sprint backlog",
-		"Confirm revised pricing",
-		"Choose support tier",
-	]) {
-		expect(needs.getByRole("link", { name })).toBeVisible();
-	}
-	expect(
-		screen.queryByRole("combobox", { name: "Topic scope" }),
-	).not.toBeInTheDocument();
-	expect(
-		screen.queryByRole("region", { name: "Ask" }),
-	).not.toBeInTheDocument();
-	expect(
-		screen.queryByRole("link", { name: "Chat" }),
-	).not.toBeInTheDocument();
 	expect(
 		[
 			...container.querySelectorAll(
@@ -293,84 +226,127 @@ it("keeps all topics visible with the composer before the mobile reading order",
 					region.getAttribute("aria-labelledby") || "",
 				)?.textContent,
 		),
-	).toEqual([
-		"Start a conversation",
-		"Needs you",
-		"Brain wants to check",
-		"Your day",
-		"Handled",
-	]);
+	).toEqual(["Start a conversation", "Do today", "Your day"]);
+	for (const name of ["Brain wants to check", "Handled", "Needs you"]) {
+		expect(screen.queryByRole("region", { name })).not.toBeInTheDocument();
+	}
+	for (const name of [
+		"What do I need to do today?",
+		"Prep me for my next meeting",
+		"What am I waiting on?",
+	]) {
+		expect(screen.getByRole("button", { name })).toBeVisible();
+	}
 	expect(request).not.toHaveBeenCalled();
 });
 
-it("moves completed work into Handled and reopens only the chosen item after later changes", async () => {
-	const user = userEvent.setup();
-	const { onChange } = renderBrief();
-	await user.click(
-		within(workCard("Confirm revised pricing")).getByRole("button", {
-			name: "Mark handled",
-		}),
-	);
+it("greets by the given name for first-last and last-first profile names", () => {
+	renderBrief();
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"2 things need you",
+		/^Good (morning|afternoon|evening), Riley\. Nothing due today\.$/,
 	);
-	expect(
-		within(screen.getByRole("region", { name: "Handled" })).getByText(
-			"2 completed",
-		),
-	).toBeVisible();
-	await user.click(
-		within(workCard("Choose support tier")).getByRole("button", {
-			name: "Mark handled",
-		}),
-	);
+	cleanup();
+	const state = createBriefState();
+	state.profile.name = "Wong, Riley";
+	renderBrief(state);
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"1 thing needs you",
+		/^Good (morning|afternoon|evening), Riley\. Nothing due today\.$/,
 	);
-	await user.click(
-		screen.getByRole("button", {
-			name: "Undo: reopen Confirm revised pricing",
-		}),
+});
+
+it("puts overdue and due-today work first and counts it in the headline", () => {
+	const state = createBriefState();
+	const now = Date.now();
+	state.items = state.items.map((item) =>
+		item.id === "support"
+			? { ...item, due: new Date(now - 86_400_000).toISOString() }
+			: item.id === "sprint"
+				? { ...item, due: new Date(now).toISOString() }
+				: item,
 	);
-	expect(workCard("Confirm revised pricing")).toBeVisible();
+	renderBrief(state);
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"2 things need you",
+		"2 due today",
 	);
-	const handled = within(screen.getByRole("region", { name: "Handled" }));
+	const today = within(screen.getByRole("region", { name: "Do today" }));
 	expect(
-		handled.getByRole("link", { name: "Choose support tier" }),
-	).toBeVisible();
-	expect(
-		handled.getByRole("link", { name: "Send the sprint notes" }),
-	).toBeVisible();
-	expect(
-		handled.queryByRole("link", { name: "Confirm revised pricing" }),
-	).not.toBeInTheDocument();
-	expect(onChange.mock.lastCall?.[0].commands).toEqual([
-		{ type: "item.update", itemId: "pricing", changes: { status: "open" } },
+		today
+			.getAllByRole("heading", { level: 3 })
+			.map((heading) => heading.textContent),
+	).toEqual([
+		"Choose support tier",
+		"Review the sprint backlog",
+		"Confirm revised pricing",
 	]);
 });
 
-it("links the global overview to Work and Brain directories", () => {
-	renderBrief();
-	expect(screen.getByRole("link", { name: "3 open" })).toHaveAttribute(
+it("shows at most five tasks and keeps the rest behind See everything", () => {
+	const state = createBriefState();
+	const [first] = state.items;
+	if (!first) throw new Error("Missing sample item");
+	state.items = [
+		...state.items,
+		...Array.from({ length: 4 }, (_, index) => ({
+			...first,
+			id: `extra-${index}`,
+			title: `Extra task ${index}`,
+			score: 10 - index,
+		})),
+	];
+	renderBrief(state);
+	const today = within(screen.getByRole("region", { name: "Do today" }));
+	expect(today.getAllByRole("article")).toHaveLength(5);
+	expect(
+		today.getByRole("link", { name: "See everything (7)" }),
+	).toHaveAttribute("href", "/work/all");
+	expect(today.getByRole("link", { name: "1 done" })).toHaveAttribute(
 		"href",
-		"/work/all",
+		"/work/done",
 	);
-	const directories = within(
-		screen.getByRole("navigation", { name: "Brain directories" }),
+});
+
+it("keeps one main action and Done visible, with context one click away", async () => {
+	const user = userEvent.setup();
+	const { onChange } = renderBrief();
+	const card = workCard("Confirm revised pricing");
+	expect(
+		within(card).getByRole("link", { name: "Review reply" }),
+	).toHaveAttribute("href", "/thread/pricing-thread");
+	expect(
+		within(card).queryByText("Review the conversation before replying."),
+	).not.toBeInTheDocument();
+	await user.click(
+		within(card).getByRole("button", { name: "Show details" }),
 	);
-	for (const [name, path] of [
-		["Topics", "/work"],
-		["People", "/brain/people"],
-		["Threads", "/brain/threads"],
-		["Sources", "/brain/sources"],
-	]) {
-		expect(directories.getByRole("link", { name })).toHaveAttribute(
-			"href",
-			path,
-		);
-	}
+	expect(
+		within(card).getByText("Review the conversation before replying."),
+	).toBeVisible();
+	expect(
+		within(card).getByRole("link", { name: "Ask about this" }),
+	).toBeVisible();
+	await user.click(within(card).getByRole("button", { name: "Done" }));
+	expect(onChange.mock.lastCall?.[0].commands).toEqual([
+		{ type: "item.update", itemId: "pricing", changes: { status: "done" } },
+	]);
+	expect(
+		within(screen.getByRole("region", { name: "Do today" })).queryByRole(
+			"link",
+			{ name: "Confirm revised pricing" },
+		),
+	).not.toBeInTheDocument();
+	expect(screen.getByRole("link", { name: "2 done" })).toBeVisible();
+});
+
+it("fills the ask box from a suggestion without sending it", async () => {
+	const user = userEvent.setup();
+	const { router } = renderBrief();
+	await user.click(
+		screen.getByRole("button", { name: "What am I waiting on?" }),
+	);
+	expect(router.state.location.state).toEqual({
+		prompt: expect.stringMatching(/waiting on/),
+	});
+	expect(request).not.toHaveBeenCalled();
 });
 
 it("keeps a failed empty work refresh distinct from being caught up and offers retry", async () => {
