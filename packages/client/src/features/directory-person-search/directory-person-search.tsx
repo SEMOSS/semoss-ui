@@ -1,11 +1,10 @@
 import { type ChangeEvent, useState } from "react";
 import { searchForUser, type UserSearchResult } from "@semoss/sdk";
 import { useIteratorApi } from "@semoss/sdk/react";
+import { PersonIdentity } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
-	Avatar,
-	AvatarFallback,
 	cn,
 	Input,
 	ScrollArea,
@@ -27,7 +26,7 @@ const STATUS_CLASS =
 
 /** The row style the shared add-members dialog uses, so the people pickers match */
 const PERSON_ROW_CLASS =
-	"flex w-full items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2 text-start hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-muted/40";
+	"flex w-full items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2 text-start hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-muted/40";
 
 /**
  * The text a person is shown by: their name, then their email, then their id
@@ -150,31 +149,15 @@ export const DirectoryPersonSearch = ({
 										className={PERSON_ROW_CLASS}
 										onClick={() => onSelect(person)}
 									>
-										<span className="flex min-w-0 items-center gap-2">
-											<Avatar className="size-8">
-												<AvatarFallback className="text-muted-foreground text-sm">
-													{label
-														.charAt(0)
-														.toUpperCase()}
-												</AvatarFallback>
-											</Avatar>
-											<span className="flex min-w-0 flex-col">
-												<span className="truncate font-medium text-sm">
-													{label}
-												</span>
-												<span className="truncate text-muted-foreground text-xs">
-													id: {person.id}
-												</span>
-												{person.email ? (
-													<span className="truncate text-muted-foreground text-xs">
-														email: {person.email}
-													</span>
-												) : null}
-											</span>
-										</span>
+										<PersonIdentity
+											name={label}
+											type={person.type ?? ""}
+											id={person.id}
+											email={person.email}
+										/>
 										{person.hasAccount ? (
 											<span className="shrink-0 text-muted-foreground text-xs">
-												Already a Member
+												Has an Account
 											</span>
 										) : null}
 									</button>

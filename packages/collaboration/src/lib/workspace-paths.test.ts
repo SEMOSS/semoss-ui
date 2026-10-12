@@ -3,7 +3,12 @@ import {
 	roomPath,
 	sessionsPath,
 	threadPath,
+	topicPath,
 } from "./workspace-paths";
+
+it("encodes a topic identity as one shared workspace route segment", () => {
+	expect(topicPath("client/one?#")).toBe("/topics/client%2Fone%3F%23");
+});
 
 it("encodes a conversation identity as one canonical route segment", () => {
 	expect(threadPath("connected:email/one?#")).toBe(

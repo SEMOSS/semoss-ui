@@ -46,6 +46,7 @@ import {
 	roomOptionsEnvelopeSchema,
 	roomWriteSchema,
 } from "./api/room-schemas";
+import { saveRoomSourceFile } from "./api/save-room-source-file";
 import type { UploadedRoomFile } from "./api/upload-room-files";
 import type { ComposerDraft } from "./components/room-composer.types";
 import { removeSubmittedComposerDraft } from "./components/submitted-composer-draft";
@@ -125,6 +126,7 @@ export class RoomSession {
 	private uncertainCommand: string | null = null;
 	private uncertainDraft: RoomSubmissionSnapshot | null = null;
 	private optionQueue: Promise<void> = Promise.resolve();
+	private sourceQueue: Promise<void> = Promise.resolve();
 
 	constructor(
 		readonly scope: string,
@@ -482,9 +484,58 @@ export class RoomSession {
 	};
 	setSource = async (value: RoomSource): Promise<void> => {
 		const source = roomSourceSchema.parse(value);
-		await this.updateOptions({ source });
-		this.update({ source });
-		if (!this.hasUserMessage()) this.addContextFile(source.file);
+		const save = this.sourceQueue.then(async () => {
+			await this.updateOptions({ source });
+			this.update({ source });
+			if (!this.hasUserMessage()) this.addContextFile(source.file);
+		});
+		this.sourceQueue = save.catch(() => undefined);
+		return save;
+	};
+	/** Refresh the same asset before publishing its updated source identities. */
+	updateSourceFile = async (
+		value: RoomSource,
+		markdown: string,
+	): Promise<void> => {
+		const source = roomSourceSchema.parse(value);
+		const roomId = this.snapshot.roomId;
+		const release = this.retain();
+		const assertCurrent = () => {
+			const current = this.snapshot.source;
+			if (
+				this.isDisposed ||
+				!roomId ||
+				this.snapshot.roomId !== roomId ||
+				current?.threadId !== source.threadId ||
+				current.kind !== source.kind ||
+				current.file.fileLocation !== source.file.fileLocation ||
+				current.file.fileName !== source.file.fileName
+			)
+				throw new Error(
+					"This room's source has changed. Refresh it again.",
+				);
+		};
+		const save = this.sourceQueue
+			.then(async () => {
+				assertCurrent();
+				await saveRoomSourceFile(
+					this.insight.actions,
+					source.file.fileLocation,
+					markdown,
+				);
+				assertCurrent();
+				if (
+					JSON.stringify(this.snapshot.source) ===
+					JSON.stringify(source)
+				)
+					return;
+				await this.updateOptions({ source });
+				assertCurrent();
+				this.update({ source });
+			})
+			.finally(release);
+		this.sourceQueue = save.catch(() => undefined);
+		return save;
 	};
 	resolveDefaults = async (): Promise<void> => {
 		const revision = ++this.configurationRevision;

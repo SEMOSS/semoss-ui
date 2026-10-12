@@ -1,7 +1,6 @@
 import { DashboardAgents } from "./dashboard-agents";
 import { DashboardApp } from "./dashboard-app";
 import { DashboardDay } from "./dashboard-day";
-import { DashboardEmail } from "./dashboard-email";
 import type { DashboardWidget } from "./dashboard-layout";
 import { DashboardNeeds } from "./dashboard-needs";
 
@@ -17,7 +16,8 @@ export function DashboardWidgetContent({
 		case "needs":
 			return <DashboardNeeds widget={widget} />;
 		case "email":
-			return <DashboardEmail widget={widget} />;
+			// the inbox list is gone (Work has the mail); saved layouts may still name it
+			return null;
 		case "agents":
 			return <DashboardAgents visible={widget.visible} />;
 		case "app":

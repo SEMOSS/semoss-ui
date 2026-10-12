@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { Card, cn, H2 } from "@semoss/ui/next";
+import { Card, cn, H2, H3 } from "@semoss/ui/next";
 
 /** An unframed section for the operational Brain and Work surfaces. */
 export function Section({
@@ -11,6 +11,7 @@ export function Section({
 	className,
 	variant = "plain",
 	flush = false,
+	level = 2,
 }: {
 	/** Section heading. */
 	title: string;
@@ -24,9 +25,12 @@ export function Section({
 	variant?: "plain" | "widget" | "card";
 	/** Card only: a ruled header over edge-to-edge rows that bring their own padding. */
 	flush?: boolean;
+	/** 3 for a group inside another section. */
+	level?: 2 | 3;
 }) {
 	const isCard = variant === "card";
 	const Container = isCard ? Card : "div";
+	const Heading = level === 3 ? H3 : H2;
 	return (
 		<section
 			className={cn(
@@ -49,12 +53,14 @@ export function Section({
 						isCard && "mx-5 border-border border-b pt-5 pb-4",
 					)}
 				>
-					<H2
+					<Heading
 						className={cn(
 							"flex items-center gap-2",
 							isCard
 								? "font-mono font-normal text-muted-foreground text-xs uppercase tracking-widest"
-								: "font-medium text-base",
+								: level === 3
+									? "font-medium text-sm"
+									: "font-medium text-base",
 						)}
 					>
 						{Icon && (
@@ -64,7 +70,7 @@ export function Section({
 							/>
 						)}
 						{title}
-					</H2>
+					</Heading>
 					{action}
 				</div>
 				{isCard && !flush ? (

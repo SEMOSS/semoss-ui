@@ -2,6 +2,7 @@ import { ArrowRight, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link } from "react-router";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import { topicPath } from "@/lib/workspace-paths";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -61,7 +62,7 @@ export function WorkTopics() {
 						return (
 							<li key={topic.id}>
 								<Link
-									to={`/work/topic/${encodeURIComponent(topic.id)}`}
+									to={topicPath(topic.id)}
 									className="focus-visible:-outline-offset-2 flex min-w-0 flex-col gap-4 p-5 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring sm:flex-row sm:items-center md:px-6"
 								>
 									<div className="min-w-0 flex-1 space-y-2">

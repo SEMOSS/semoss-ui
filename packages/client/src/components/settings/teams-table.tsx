@@ -1,7 +1,9 @@
-import { Plus, Trash2 } from "lucide-react";
+import { Info, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Dialog,
 	DialogContent,
@@ -15,6 +17,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Spinner,
 	Table,
 	TableBody,
 	TableCell,
@@ -22,6 +25,9 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
@@ -38,7 +44,9 @@ import {
 	GROUP_ACCESS_LEVELS,
 	getGroupAccessLevel,
 } from "@/features/group-access/group-access-levels";
+import { TeamPeopleSheet } from "@/features/team-people/team-people-sheet";
 import { TEAM_RESOURCE_NOUNS } from "@/features/team-resource-access/team-resource-nouns";
+import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 import { TeamTypeBadge } from "@/features/team-type/team-type-badge";
 import { useServerPagination } from "@/hooks";
 
@@ -95,32 +103,44 @@ export interface TeamsTableProps {
 	id: string;
 	/**
 	 * Whether the viewer can give, change and remove team access: the
-	 * resource's owners and admins
+	 * resource's owners. Being an admin does not count here, since an admin can
+	 * also act as an ordinary user.
 	 */
 	canManage?: boolean;
+	/**
+	 * Whether the viewer can see who is in the custom teams: the resource's
+	 * owners and editors
+	 */
+	canViewPeople?: boolean;
 }
 
 /**
- * Lists the teams that have access to a project or engine. Its owners can give
- * more teams access, change a team's access level, and take access away.
+ * Lists the teams that have access to a project or engine. Its owners and
+ * editors can see who is in each custom team, and its owners can give more
+ * teams access, change a team's access level, and take access away.
  */
 export const TeamsTable = ({
 	type,
 	id,
 	canManage = false,
+	canViewPeople = false,
 }: TeamsTableProps) => {
 	const [teams, setTeams] = useState<TeamRow[]>([]);
 	const [totalTeams, setTotalTeams] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
+	// why the last read of the teams failed, or null
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const [usesServerPagination, setUsesServerPagination] = useState(false);
 	const [refreshCount, setRefreshCount] = useState(0);
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	// a new key each time the add dialog opens starts it with a fresh list
 	const [addDialogKey, setAddDialogKey] = useState(0);
 	const [removeTarget, setRemoveTarget] = useState<TeamRow | null>(null);
+	const [peopleTeam, setPeopleTeam] = useState<TeamRow | null>(null);
 	const [isChanging, setIsChanging] = useState(false);
 	const noun = TEAM_RESOURCE_NOUNS[type].singular;
-	const columnCount = canManage ? 5 : 4;
+	const hasActions = canManage || canViewPeople;
+	const columnCount = hasActions ? 5 : 4;
 	const {
 		page,
 		rowsPerPage,
@@ -142,6 +162,7 @@ export const TeamsTable = ({
 		let isStale = false;
 		const fetchTeams = async () => {
 			setIsLoading(true);
+			setLoadError(null);
 			try {
 				const getGroups =
 					type === "ENGINE"
@@ -188,10 +209,10 @@ export const TeamsTable = ({
 				if (isStale) {
 					return;
 				}
-				console.error(e);
 				setTeams([]);
 				setTotalTeams(0);
 				setUsesServerPagination(false);
+				setLoadError(getErrorMessage(e, "Could not load the teams"));
 			} finally {
 				if (!isStale) {
 					setIsLoading(false);
@@ -251,7 +272,24 @@ export const TeamsTable = ({
 	};
 
 	return (
-		<div className="rounded-xl">
+		<div className="flex flex-col gap-4 rounded-xl">
+			{loadError ? (
+				<Alert variant="destructive">
+					<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+						{loadError}
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() =>
+								setRefreshCount((count) => count + 1)
+							}
+						>
+							Try Again
+						</Button>
+					</AlertDescription>
+				</Alert>
+			) : null}
 			<div className="rounded-xl border border-border">
 				<div className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl border-border border-b bg-background px-6 py-3">
 					<H4>Teams</H4>
@@ -278,7 +316,7 @@ export const TeamsTable = ({
 									</div>
 								</TableHead>
 								<TableHead className="px-4">
-									Group Type
+									Members From
 								</TableHead>
 								<TableHead className="p-0">
 									<div className="px-4 py-3 text-left">
@@ -288,7 +326,7 @@ export const TeamsTable = ({
 								<TableHead className="px-4">
 									Permission Date
 								</TableHead>
-								{canManage ? (
+								{hasActions ? (
 									<TableHead className="px-4">
 										<span className="sr-only">Actions</span>
 									</TableHead>
@@ -350,22 +388,94 @@ export const TeamsTable = ({
 										<TableCell className="px-4">
 											{team.dateAdded}
 										</TableCell>
-										{canManage ? (
-											<TableCell className="px-4 text-right">
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													disabled={isChanging}
-													aria-label={`Remove access for ${team.id}`}
-													onClick={() =>
-														setRemoveTarget(team)
-													}
-												>
-													<Trash2
-														className="size-4"
-														aria-hidden
-													/>
-												</Button>
+										{hasActions ? (
+											<TableCell className="px-4">
+												<div className="flex items-center justify-end gap-1">
+													{canViewPeople &&
+													team.type ===
+														CUSTOM_TEAM_TYPE ? (
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<Button
+																	variant="ghost"
+																	size="icon-sm"
+																	aria-label={`View people in ${team.id}`}
+																	onClick={() =>
+																		setPeopleTeam(
+																			team,
+																		)
+																	}
+																>
+																	<Users
+																		className="size-4"
+																		aria-hidden
+																	/>
+																</Button>
+															</TooltipTrigger>
+															<TooltipContent>
+																View People
+															</TooltipContent>
+														</Tooltip>
+													) : canViewPeople ? (
+														// a login provider's group has no member list here
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<Button
+																	variant="ghost"
+																	size="icon-sm"
+																	aria-label={`Why the people in ${team.id} cannot be listed`}
+																>
+																	<Info
+																		className="size-4"
+																		aria-hidden
+																	/>
+																</Button>
+															</TooltipTrigger>
+															<TooltipContent className="max-w-xs">
+																This team's
+																members come
+																from its login
+																provider when
+																they sign in, so
+																they cannot be
+																listed here.
+															</TooltipContent>
+														</Tooltip>
+													) : null}
+													{canManage ? (
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<Button
+																	variant="ghost"
+																	size="icon-sm"
+																	disabled={
+																		isChanging
+																	}
+																	aria-label={`Remove access for ${team.id}`}
+																	onClick={() =>
+																		setRemoveTarget(
+																			team,
+																		)
+																	}
+																>
+																	<Trash2
+																		className="size-4"
+																		aria-hidden
+																	/>
+																</Button>
+															</TooltipTrigger>
+															<TooltipContent>
+																Remove Access
+															</TooltipContent>
+														</Tooltip>
+													) : null}
+												</div>
 											</TableCell>
 										) : null}
 									</TableRow>
@@ -376,9 +486,15 @@ export const TeamsTable = ({
 										colSpan={columnCount}
 										className="text-center"
 									>
-										{isLoading
-											? "Loading teams..."
-											: "No teams have access yet"}
+										{/* after a failed read, the error above says why there are none */}
+										{isLoading ? (
+											<span className="flex items-center justify-center gap-2 text-muted-foreground">
+												<Spinner />
+												Loading teams...
+											</span>
+										) : loadError ? null : (
+											"No teams have access yet"
+										)}
 									</TableCell>
 								</TableRow>
 							)}
@@ -419,6 +535,19 @@ export const TeamsTable = ({
 							setRefreshCount((count) => count + 1);
 						}
 					}}
+				/>
+			) : null}
+
+			{canViewPeople ? (
+				<TeamPeopleSheet
+					team={peopleTeam}
+					target={{ resource: type, resourceId: id }}
+					canRemoveAccess={canManage}
+					onRemoveAccess={() => {
+						setRemoveTarget(peopleTeam);
+						setPeopleTeam(null);
+					}}
+					onClose={() => setPeopleTeam(null)}
 				/>
 			) : null}
 

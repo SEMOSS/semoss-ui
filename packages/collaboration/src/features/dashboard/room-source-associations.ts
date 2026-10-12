@@ -1,11 +1,12 @@
 import { readRoomSourceAssociation } from "@/features/rooms/api/read-room-source-association";
+import { listRoomTopics } from "@/features/rooms/api/room-topics";
 import type { InsightActions } from "@/lib/pixel";
 
-/** Only source identities are retained; room settings and source envelopes are not. */
-type RoomSourceAssociation =
-	| { status: "loading"; threadId?: string | null }
-	| { status: "ready"; threadId: string | null }
-	| { status: "error"; error: string; threadId?: string | null };
+/** Only source and linked topic identities are retained, without room content. */
+type RoomSourceAssociation = {
+	threadId?: string | null;
+	topicIds?: string[];
+} & ({ status: "loading" | "ready" } | { status: "error"; error: string });
 
 interface AssociationRead {
 	activation: symbol;
@@ -52,7 +53,7 @@ export function createRoomSourceAssociations(
 				if (!entry) return undefined;
 				return entry.activation === activation
 					? entry.value
-					: { status: "loading", threadId: entry.value.threadId };
+					: { ...entry.value, status: "loading" };
 			};
 			return {
 				get,
@@ -81,8 +82,8 @@ export function createRoomSourceAssociations(
 							{
 								activation,
 								value: {
+									...snapshot.get(id)?.value,
 									status: "loading",
-									threadId: snapshot.get(id)?.value.threadId,
 								},
 							},
 						]),
@@ -100,27 +101,53 @@ export function createRoomSourceAssociations(
 								ids
 									.slice(offset, offset + 4)
 									.map(async (id) => {
-										let value: RoomSourceAssociation;
+										let value: RoomSourceAssociation = {
+											...snapshot.get(id)?.value,
+											status: "ready",
+										};
+										let isDelegation = false;
 										try {
-											const threadId =
+											const source =
 												await readRoomSourceAssociation(
 													getActions(),
 													id,
 												);
-											value = {
-												status: "ready",
-												threadId,
-											};
+											value.threadId = source.threadId;
+											isDelegation = source.isDelegation;
 										} catch (cause) {
 											value = {
+												...value,
 												status: "error",
-												threadId:
-													snapshot.get(id)?.value
-														.threadId,
 												error:
 													cause instanceof Error
 														? cause.message
 														: "Could not check this session's source link.",
+											};
+										}
+										if (!isActive()) return;
+										try {
+											// Delegation rooms are not assistant chats and reject topic reads.
+											const topics = isDelegation
+												? []
+												: await listRoomTopics(
+														getActions(),
+														id,
+													);
+											value.topicIds = topics
+												.filter(
+													(topic) =>
+														topic.state ===
+														"linked",
+												)
+												.map((topic) => topic.topicId);
+										} catch (cause) {
+											value = {
+												...value,
+												status: "error",
+												error:
+													cause instanceof Error
+														? cause.message
+														: "Could not check this session's topic links.",
 											};
 										}
 										if (isActive())

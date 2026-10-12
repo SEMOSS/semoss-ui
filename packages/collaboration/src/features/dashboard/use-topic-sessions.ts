@@ -15,7 +15,7 @@ interface TopicSessionsState {
 	retry: () => void;
 }
 
-/** Match explicit source links while inspecting only user-requested history batches. */
+/** Match linked topics and sources in user-requested history batches. */
 export function useTopicSessions(topicId: string): TopicSessionsState {
 	const { state } = useCollaborationSession();
 	const { history } = useDashboard();
@@ -56,14 +56,14 @@ export function useTopicSessions(topicId: string): TopicSessionsState {
 		}
 		// Keep verified links visible while refreshes run or fail. An unverified
 		// or malformed source never invents a legacy association.
-		if (entry?.threadId !== undefined) {
-			if (
-				entry.threadId === null
+		if (
+			entry?.topicIds?.includes(topicId) ||
+			(entry?.threadId !== undefined &&
+				(entry.threadId === null
 					? legacyRoomIds.has(room.roomId)
-					: threadIds.has(entry.threadId)
-			)
-				rooms.push(room);
-		}
+					: threadIds.has(entry.threadId)))
+		)
+			rooms.push(room);
 	}
 	return {
 		rooms,

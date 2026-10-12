@@ -218,17 +218,30 @@ export const deleteTeam = async (groupid: string, type?: string) => {
 	await postTeamChange(url, postData, "The team was not deleted");
 };
 
+/**
+ * Get the members of a custom team
+ * @param groupId - The team
+ * @param limit - Page size
+ * @param offset - Number of members already loaded
+ * @param searchTerm - Text to search for
+ * @param admin - Whether to use the admin endpoint; the team's managers use the
+ * other one
+ * @param target - A project or engine the signed in user owns or edits, to
+ * read the members through; see {@link GroupAccessTarget}
+ */
 export const getTeamUsers = async (
 	groupId: string,
 	limit: number,
 	offset: number,
 	searchTerm: string,
 	admin = true,
+	target?: GroupAccessTarget,
 ) => {
 	let url = `${Env.MODULE}/api/auth/${admin ? "admin/" : ""}`;
 	url += "group/getGroupMembers";
 	const params = new URLSearchParams();
 	if (groupId) params.set("groupId", groupId);
+	setAccessTarget(params, target);
 	if (limit) params.set("limit", String(limit));
 	if (offset) params.set("offset", String(offset));
 	if (searchTerm) params.set("searchTerm", searchTerm);
@@ -244,15 +257,24 @@ export const getTeamUsers = async (
 	return response.data;
 };
 
+/**
+ * Count the members of a custom team
+ * @param groupId - The team
+ * @param searchTerm - Text to search for
+ * @param admin - Whether to use the admin endpoint
+ * @param target - As for getTeamUsers
+ */
 export const getTeamUsersCount = async (
 	groupId: string,
 	searchTerm?: string,
 	admin = true,
+	target?: GroupAccessTarget,
 ) => {
 	let url = `${Env.MODULE}/api/auth/${admin ? "admin/" : ""}`;
 	url += "group/getNumMembersInGroup";
 	const params = new URLSearchParams();
 	if (groupId) params.set("groupId", groupId);
+	setAccessTarget(params, target);
 	if (searchTerm) params.set("searchTerm", searchTerm);
 	const query = params.toString();
 	if (query) {
@@ -527,7 +549,11 @@ export interface GroupManager {
 	email?: string | null;
 }
 
-/** A project or engine whose owner is about to give a team access to it */
+/**
+ * A project or engine a custom team's managers and members are read through:
+ * its owners can read them even before the team has access to it, such as when
+ * giving the team access, and its editors once the team has access
+ */
 export interface GroupAccessTarget {
 	/** Project or engine */
 	resource: GroupAccessResource;
@@ -536,12 +562,29 @@ export interface GroupAccessTarget {
 }
 
 /**
+ * Adds the project or engine a team's people are read through to a request
+ * @param params - The request's parameters
+ * @param target - The project or engine, if any
+ */
+const setAccessTarget = (
+	params: URLSearchParams,
+	target?: GroupAccessTarget,
+): void => {
+	if (target) {
+		params.set(
+			target.resource === "PROJECT" ? "projectId" : "engineId",
+			target.resourceId,
+		);
+	}
+};
+
+/**
  * Get the managers of a custom team
  * @param groupId - The team
  * @param admin - Whether to use the admin endpoint; the team's managers use the
  * other one
- * @param target - The project or engine the signed in user owns and is giving
- * the team access to, so they can see who manages it first
+ * @param target - A project or engine the signed in user owns or edits, to
+ * read the managers through; see {@link GroupAccessTarget}
  * @returns The managers. Entries without a user id are left out.
  */
 export const getGroupManagers = async (
@@ -550,12 +593,7 @@ export const getGroupManagers = async (
 	target?: GroupAccessTarget,
 ): Promise<GroupManager[]> => {
 	const params = new URLSearchParams({ groupId });
-	if (target) {
-		params.set(
-			target.resource === "PROJECT" ? "projectId" : "engineId",
-			target.resourceId,
-		);
-	}
+	setAccessTarget(params, target);
 	const url = `${Env.MODULE}/api/auth/${admin ? "admin/" : ""}group/getGroupManagers?${params.toString()}`;
 	const response = await get<unknown>(url);
 	if (!response || !Array.isArray(response.data)) {
@@ -633,8 +671,8 @@ const groupAccessUrl = (resource: GroupAccessResource): string =>
 	`${Env.MODULE}/api/auth/group/${resource === "PROJECT" ? "project" : "engine"}`;
 
 /**
- * Get the teams that do not have access to a project or engine yet. Owners and
- * admins only.
+ * Get the teams that do not have access to a project or engine yet. Its owners
+ * only; admins act in admin mode.
  * @param resource - Project or engine
  * @param resourceId - Its id
  * @param searchTerm - Text matched against the team name
@@ -682,7 +720,8 @@ export const getAvailableGroupsForResource = async (
 };
 
 /**
- * Give a team access to a project or engine. Owners and admins only.
+ * Give a team access to a project or engine. Its owners only; admins act in
+ * admin mode.
  * @param resource - Project or engine
  * @param resourceId - Its id
  * @param group - The team
@@ -706,7 +745,8 @@ export const addGroupResourceAccess = async (
 	);
 
 /**
- * Change the access a team has to a project or engine. Owners and admins only.
+ * Change the access a team has to a project or engine. Its owners only; admins
+ * act in admin mode.
  * @param resource - Project or engine
  * @param resourceId - Its id
  * @param group - The team
@@ -731,7 +771,8 @@ export const editGroupResourceAccess = async (
 	);
 
 /**
- * Take a team's access to a project or engine away. Owners and admins only.
+ * Take a team's access to a project or engine away. Its owners only; admins act
+ * in admin mode.
  * @param resource - Project or engine
  * @param resourceId - Its id
  * @param group - The team

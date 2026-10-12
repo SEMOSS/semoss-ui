@@ -22,8 +22,6 @@ import {
 } from "@semoss/sdk";
 import { useIteratorApi } from "@semoss/sdk/react";
 import {
-	Avatar,
-	AvatarFallback,
 	Button,
 	cn,
 	Dialog,
@@ -41,8 +39,10 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
+import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
 import { returnAccessType } from "./common";
 import { ModelRestrictionFields } from "./model-restriction-fields";
+import { PersonIdentity } from "./person-identity";
 import { type UserSource, UserSourceToggle } from "./user-source-toggle";
 
 /** A person the dialog lists and can add */
@@ -92,7 +92,8 @@ interface UserSelected extends AddMembersCandidate {
 	permission: string;
 }
 
-interface AddMembersOverlayProps {
+/** Props for {@link AddMembersOverlay}. */
+export interface AddMembersOverlayProps {
 	/** Id of the project or engine members are added to; unused with `people` */
 	id?: string;
 	/** Kind of resource; projects and workspaces use the project endpoints. Unused with `people`. */
@@ -117,7 +118,7 @@ interface AddMembersOverlayProps {
 	/**
 	 * Whether the server can search the organization's Microsoft directory.
 	 * When true, the dialog offers a choice between existing users and the
-	 * whole organization, starting on the organization.
+	 * whole organization, starting on the existing users.
 	 */
 	isDirectoryAvailable?: boolean;
 	/**
@@ -135,11 +136,16 @@ const getDisplayName = (user: AddMembersCandidate): string =>
 const MEMBER_ROW_CLASS =
 	"flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2";
 
+/**
+ * The dialog for adding people: to a project or engine with an access level
+ * each, or, with `people`, to whatever the host's source adds them to.
+ */
 export const AddMembersOverlay = ({
 	id,
 	type,
 	open,
 	onClose,
+	className,
 	adminMode = false,
 	isDirectoryAvailable = false,
 	people,
@@ -148,6 +154,7 @@ export const AddMembersOverlay = ({
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [searchKey, setSearchKey] = useState<string>("");
 	const debouncedSearchKey = useDebouncedValue(searchKey, 300);
+	const isCurrentLogin = useIsCurrentLogin();
 	const [selectedUsers, setSelectedUsers] = useState<UserSelected[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	// whether an add through the host ran, so its list reloads when the dialog closes
@@ -157,7 +164,8 @@ export const AddMembersOverlay = ({
 	const [maxTime, setMaxTime] = useState<string>("");
 	const [frequency, setFrequency] = useState<string>("DAY");
 	const [userPermission, setUserPermission] = useState<string>("");
-	const [source, setSource] = useState<UserSource>("directory");
+	// with both available, people already in the app are searched first
+	const [source, setSource] = useState<UserSource>("existing");
 	// Without the directory, leave the choice to the backend
 	const msGraphLookup = isDirectoryAvailable
 		? source === "directory"
@@ -349,7 +357,7 @@ export const AddMembersOverlay = ({
 		setMaxTime("");
 		setFrequency("DAY");
 		setUserPermission("");
-		setSource("directory");
+		setSource("existing");
 	};
 
 	const permissionLabel = (permission: string): string => {
@@ -413,7 +421,12 @@ export const AddMembersOverlay = ({
 				onClose(shouldReload);
 			}}
 		>
-			<DialogContent className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden">
+			<DialogContent
+				className={cn(
+					"flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden",
+					className,
+				)}
+			>
 				<DialogHeader>
 					<DialogTitle className="font-medium text-base leading-6">
 						{people?.title ?? t("dialog.title")}
@@ -486,33 +499,16 @@ export const AddMembersOverlay = ({
 													toggleUserSelected(item)
 												}
 											>
-												<span className="flex items-center gap-2">
-													<Avatar className="h-8 w-8">
-														<AvatarFallback className="text-muted-foreground text-sm">
-															{getDisplayName(
-																item,
-															)
-																.charAt(0)
-																.toUpperCase()}
-														</AvatarFallback>
-													</Avatar>
-													<span className="flex min-w-0 flex-col">
-														<span className="truncate font-medium text-sm">
-															{getDisplayName(
-																item,
-															)}
-														</span>
-														<span className="truncate text-muted-foreground text-xs">
-															id: {item.id}
-														</span>
-														{item.email && (
-															<span className="truncate text-muted-foreground text-xs">
-																email:{" "}
-																{item.email}
-															</span>
-														)}
-													</span>
-												</span>
+												<PersonIdentity
+													name={getDisplayName(item)}
+													type={item.type}
+													id={item.id}
+													email={item.email}
+													isCurrentLogin={isCurrentLogin(
+														item.type,
+														item.id,
+													)}
+												/>
 												{unavailableReason ? (
 													<span className="shrink-0 text-muted-foreground text-xs">
 														{unavailableReason}
@@ -558,28 +554,16 @@ export const AddMembersOverlay = ({
 												key={`${u.type}-${u.id}`}
 												className={MEMBER_ROW_CLASS}
 											>
-												<span className="flex items-center gap-2">
-													<Avatar className="h-8 w-8">
-														<AvatarFallback className="text-muted-foreground text-sm">
-															{getDisplayName(u)
-																.charAt(0)
-																.toUpperCase()}
-														</AvatarFallback>
-													</Avatar>
-													<span className="flex min-w-0 flex-col">
-														<span className="truncate font-medium text-sm">
-															{getDisplayName(u)}
-														</span>
-														<span className="truncate text-muted-foreground text-xs">
-															id: {u.id}
-														</span>
-														{u.email && (
-															<span className="truncate text-muted-foreground text-xs">
-																email: {u.email}
-															</span>
-														)}
-													</span>
-												</span>
+												<PersonIdentity
+													name={getDisplayName(u)}
+													type={u.type}
+													id={u.id}
+													email={u.email}
+													isCurrentLogin={isCurrentLogin(
+														u.type,
+														u.id,
+													)}
+												/>
 												<div className="flex flex-col items-end gap-1.5">
 													<button
 														type="button"

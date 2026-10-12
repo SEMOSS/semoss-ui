@@ -1,5 +1,7 @@
 import type { CollaborationState } from "@/features/collaboration/state/collaboration.types";
 import type { InsightActions } from "@/lib/pixel";
+import { readRoomSourceAssociation } from "../api/read-room-source-association";
+import { linkRoomThread, listThreadRooms } from "../api/room-threads";
 import { uploadRoomFiles } from "../api/upload-room-files";
 import { createRoomSession, type RoomSession } from "../room-session";
 import {
@@ -23,7 +25,8 @@ interface SourceImportSnapshot {
 /** Verified room and file destinations produced by one source import. */
 export interface SourceImportResult {
 	roomId: string;
-	file: RoomSource["file"];
+	/** Absent when the thread's existing chat was reopened instead. */
+	file?: RoomSource["file"];
 }
 
 /** One route activation owns one import, including all retries of its partial work. */
@@ -32,6 +35,38 @@ export interface SourceImportAttempt {
 	subscribe: (listener: () => void) => () => void;
 	getSnapshot: () => SourceImportSnapshot;
 	start: () => Promise<SourceImportResult | null>;
+}
+
+/** The newest chat opened from a Brain thread, which reopening the thread returns to. */
+async function threadRoom(
+	actions: InsightActions,
+	state: CollaborationState,
+	threadId: string,
+): Promise<string | null> {
+	const thread = state.threads.find((current) => current.id === threadId);
+	if (
+		!thread ||
+		thread.isSample ||
+		threadId.startsWith("connected:") ||
+		threadId.startsWith("session:")
+	)
+		return null;
+	try {
+		for (const room of await listThreadRooms(actions, threadId)) {
+			if (room.origin !== "thread") continue;
+			// only a chat whose saved source is this thread can show its email; older chats (workThread) have none
+			const linked = await readRoomSourceAssociation(
+				actions,
+				room.roomId,
+			).catch(() => null);
+			if (linked?.threadId === threadId && !linked.isDelegation)
+				return room.roomId;
+		}
+		return null;
+	} catch {
+		// the lookup is a shortcut: without it the thread opens in a new chat, as before
+		return null;
+	}
 }
 
 const pendingImports = new Map<
@@ -82,12 +117,24 @@ export function createSourceImportAttempt(
 		let releaseRoom: (() => void) | undefined;
 		try {
 			assertActive();
-			if (snapshot.phase === "ready" && uploadedFile)
+			if (snapshot.phase === "ready")
 				return { roomId: snapshot.roomId, file: uploadedFile };
 			update({
 				error: null,
 				phase: document ? "creating-room" : "loading-source",
 			});
+			if (!document && !session) {
+				const existing = await threadRoom(
+					actions,
+					stateReader(),
+					threadId,
+				);
+				assertActive();
+				if (existing) {
+					update({ phase: "ready", roomId: existing });
+					return { roomId: existing };
+				}
+			}
 			document ??= await loadSourceThread(
 				actions,
 				() => stateReader(),
@@ -116,6 +163,11 @@ export function createSourceImportAttempt(
 			await session.setSource(
 				roomSourceFromDocument(document, uploadedFile),
 			);
+			// so reopening the thread finds this chat; its first run links it too, so a failure only costs that
+			if (document.kind === "brain")
+				await linkRoomThread(actions, roomId, threadId).catch(
+					() => undefined,
+				);
 			assertActive();
 			update({ phase: "ready", roomId });
 			return { roomId, file: uploadedFile };

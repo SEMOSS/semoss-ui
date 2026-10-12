@@ -2,9 +2,8 @@ import { Download, Shield, Upload } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { UserSearchResult } from "@semoss/sdk";
+import { PersonIdentity } from "@semoss/shared";
 import {
-	Avatar,
-	AvatarFallback,
 	Button,
 	Dialog,
 	DialogContent,
@@ -15,9 +14,6 @@ import {
 	Item,
 	ItemActions,
 	ItemContent,
-	ItemDescription,
-	ItemMedia,
-	ItemTitle,
 	Label,
 	Select,
 	SelectContent,
@@ -447,23 +443,15 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 							<p className="font-medium text-sm">Person</p>
 							{selectedPerson ? (
 								<Item variant="outline" size="sm">
-									<ItemMedia>
-										<Avatar className="size-8">
-											<AvatarFallback className="text-muted-foreground text-sm">
-												{getPersonLabel(selectedPerson)
-													.charAt(0)
-													.toUpperCase()}
-											</AvatarFallback>
-										</Avatar>
-									</ItemMedia>
 									<ItemContent className="min-w-0">
-										<ItemTitle className="block w-full truncate">
-											{getPersonLabel(selectedPerson)}
-										</ItemTitle>
-										<ItemDescription className="truncate">
-											{selectedPerson.email ??
-												"Microsoft account"}
-										</ItemDescription>
+										<PersonIdentity
+											name={getPersonLabel(
+												selectedPerson,
+											)}
+											type={selectedPerson.type ?? ""}
+											id={selectedPerson.id}
+											email={selectedPerson.email}
+										/>
 									</ItemContent>
 									<ItemActions>
 										<Button

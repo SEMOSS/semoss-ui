@@ -18,6 +18,7 @@ import {
 	type WorkbenchPanelProps,
 } from "@semoss/workbench";
 import { dateLabel } from "@/features/collaboration/date-label";
+import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { useRoomEmail } from "./room-email.context";
 import { RoomSourceEmail } from "./room-source-email";
 
@@ -41,6 +42,7 @@ export function RoomEmailSourcePanel({ id }: WorkbenchPanelProps) {
 		replyToSource,
 		selectSourceMessage,
 	} = useRoomEmail();
+	const profile = useOptionalCollaborationSession()?.state.liveProfile;
 	const selectorId = useId();
 	const allowedIds = new Set(source?.messages.map((message) => message.id));
 	const messages = sourceMessages.filter(
@@ -49,8 +51,16 @@ export function RoomEmailSourcePanel({ id }: WorkbenchPanelProps) {
 			allowedIds.has(message.id) &&
 			!message.excluded,
 	);
+	// sample data calls the owner "me"; live data uses the owner's person id
+	const isOwnEmail = (item: (typeof messages)[number]) =>
+		item.fromId === "me" ||
+		item.fromId === profile?.id ||
+		(Boolean(profile?.email) &&
+			item.fromAddress?.toLowerCase() === profile?.email.toLowerCase());
+	// the newest email someone else sent: a reply to the owner's own last email is rarely what they want
 	const message =
 		messages.find((item) => item.id === config.messageId) ??
+		messages.filter((item) => !isOwnEmail(item)).at(-1) ??
 		messages.at(-1);
 	const messageId = message?.id;
 	useEffect(() => {

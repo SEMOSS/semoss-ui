@@ -22,6 +22,7 @@ import {
 	SelectValue,
 	toast,
 } from "@semoss/ui/next";
+import { topicPath } from "@/lib/workspace-paths";
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 
@@ -126,9 +127,7 @@ export function TopicActions({
 								toast.success(
 									`Merged ${topic.name} into ${target.name}.`,
 								);
-								navigate(
-									`/brain/topics/${encodeURIComponent(target.id)}`,
-								);
+								navigate(topicPath(target.id));
 							}}
 						>
 							Merge
@@ -168,7 +167,7 @@ export function TopicActions({
 								});
 								close();
 								toast.success(`Deleted ${topic.name}.`);
-								navigate("/brain");
+								navigate("/work");
 							}}
 						>
 							Delete topic

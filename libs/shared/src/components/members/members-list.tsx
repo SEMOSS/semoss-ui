@@ -1,4 +1,4 @@
-import { ChevronDown, Pencil, Star, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
 	editEngineUserPermissions,
@@ -10,7 +10,6 @@ import {
 	removeProjectUserPermissions,
 } from "@semoss/sdk";
 import {
-	Avatar,
 	Button,
 	Checkbox,
 	Dialog,
@@ -33,22 +32,52 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
+import { LoginTypeLabel } from "../login-type-label";
 import { returnAccessType } from "./common";
+import { PersonIdentity } from "./person-identity";
 
+/** A member as the members endpoints list them */
 export interface MemberUser {
+	/** User id */
 	id: string;
+	/** Display name */
 	name: string;
+	/** Login type, such as NATIVE or MICROSOFT */
 	type: string;
+	/** Email address */
 	email: string;
+	/** Access level: OWNER, EDIT or READ_ONLY */
 	permission: string;
+	/** Id of who gave the access */
 	permission_granted_by: string;
+	/** Login type of who gave the access */
 	permission_granted_by_type: string;
+	/** When the access was given or the member was added */
 	date_added: string;
+	/** A model engine's usage restriction, such as TOKEN or COMPUTE */
 	usage_restriction?: string;
+	/** How often a model engine's limits reset, such as DAY */
 	usage_frequency?: string;
+	/** A model engine's token limit */
 	max_tokens?: number;
+	/** A model engine's response time limit, in milliseconds */
 	max_response_time?: number;
 }
+
+/** What the list calls each access level */
+const ACCESS_LEVEL_LABELS: Readonly<Record<string, string>> = {
+	OWNER: "Author",
+	EDIT: "Editor",
+	READ_ONLY: "Read-Only",
+};
+
+/**
+ * @param permission - an access level, such as READ_ONLY
+ * @returns what the list calls it
+ */
+const getAccessLevelLabel = (permission: string): string =>
+	ACCESS_LEVEL_LABELS[permission] ?? "Select Access";
 
 /**
  * Where the list reads and removes members, for a host whose members are not a
@@ -68,7 +97,8 @@ export interface MembersListSource {
 	memberLabel?: string;
 }
 
-interface MembersProps {
+/** Props for {@link MembersList}. */
+export interface MembersListProps {
 	/** Id of the project or engine; unused with `source` */
 	id?: string;
 	/** Kind of resource; unused with `source` */
@@ -82,14 +112,23 @@ interface MembersProps {
 		| "FUNCTION"
 		| "WORKSPACE"
 		| "GUARDRAIL";
+	/** Lists only the members matching this search */
 	search?: string;
+	/** Whether the list is inside the add dialog, which hides selection and row actions */
 	isAddMember?: boolean;
+	/** Reloads the list from the start whenever it changes */
 	refreshList?: number;
+	/** Lists only the members with this access level, or all for "" or "select access" */
 	permission?: string;
+	/** Called when a member's Edit button is clicked */
 	onEdit?: (user: MemberUser) => void;
+	/** Whether the viewer is an owner, who can change other owners and make people owners */
 	isOwner?: boolean;
+	/** Whether to use the admin endpoints, where the viewer can change anyone */
 	adminMode?: boolean;
+	/** The signed in user's id, starred when a member's login type is not known */
 	currentUserId?: string;
+	/** The viewer's access level on the project or engine; OWNER and EDIT can change members */
 	myPermission?: string;
 	/**
 	 * Read-only mode: hides bulk-select, the checkbox column, the
@@ -117,6 +156,11 @@ const formatValue = (input?: string) => {
 	return mappings[input.toUpperCase()] ?? input;
 };
 
+/**
+ * The members of a project or engine, or of a host's `source`, with each
+ * person's login and, for a project or engine, their access level. Loads more
+ * as it scrolls, and asks before removing anyone.
+ */
 export const MembersList = ({
 	id,
 	type,
@@ -131,10 +175,11 @@ export const MembersList = ({
 	myPermission = "",
 	readOnly = false,
 	source,
-}: MembersProps) => {
+}: MembersListProps) => {
 	// a host's members have no project or engine permission
 	const hasPermissions = !source;
 	const memberLabel = source?.memberLabel ?? "Member";
+	const isCurrentLogin = useIsCurrentLogin();
 	const [userData, setUserData] = useState<MemberUser[]>([]);
 	const [totalMembers, setTotalMembers] = useState<number>(0);
 	const [refreshData, setRefreshData] = useState<number>(0);
@@ -504,41 +549,41 @@ export const MembersList = ({
 											</TableCell>
 										)}
 										<TableCell>
-											<div className="flex items-center gap-2">
-												{user.id === currentUserId ? (
-													<Avatar className="items-center justify-center bg-primary/10 text-primary">
-														<Star className="h-4 w-4 fill-primary" />
-													</Avatar>
-												) : (
-													<Avatar className="items-center justify-center bg-muted text-muted-foreground">
-														{user.name
-															.charAt(0)
-															.toUpperCase()}
-													</Avatar>
-												)}
-												<span className="flex flex-col overflow-hidden">
-													<span className="font-semibold text-accent-foreground text-sm">
-														{user.name}
-													</span>
-													<span className="text-muted-foreground text-xs">
-														id: {user.id}
-													</span>
-													<span className="text-muted-foreground text-xs">
-														email: {user.email}
-													</span>
-												</span>
-											</div>
+											{/* the login the session is signed in with, or the
+											host's user id when the login type is not known */}
+											<PersonIdentity
+												name={user.name}
+												type={user.type}
+												id={user.id}
+												email={user.email}
+												isCurrentLogin={
+													user.type
+														? isCurrentLogin(
+																user.type,
+																user.id,
+															)
+														: user.id ===
+															currentUserId
+												}
+											/>
 										</TableCell>
 										<TableCell>
-											<span className="text-sm">
-												{user.type ?? "-"}
-											</span>
+											{user.type ? (
+												<LoginTypeLabel
+													type={user.type}
+													className="text-sm"
+												/>
+											) : (
+												<span className="text-sm">
+													-
+												</span>
+											)}
 										</TableCell>
 										{hasPermissions && (
 											<TableCell>
 												{readOnly ? (
 													<span className="text-sm">
-														{returnAccessType(
+														{getAccessLevelLabel(
 															user.permission,
 														)}
 													</span>
@@ -557,7 +602,7 @@ export const MembersList = ({
 																type="button"
 																variant="outline"
 																size="default"
-																className="w-[120px]"
+																className="w-32"
 																disabled={
 																	!canEditMembers ||
 																	(user.permission ===
@@ -566,7 +611,7 @@ export const MembersList = ({
 																}
 															>
 																<span>
-																	{returnAccessType(
+																	{getAccessLevelLabel(
 																		user.permission,
 																	)}
 																</span>
@@ -589,7 +634,7 @@ export const MembersList = ({
 																		)
 																	}
 																>
-																	Viewer
+																	Read-Only
 																</DropdownMenuCheckboxItem>
 																<DropdownMenuCheckboxItem
 																	checked={
@@ -622,7 +667,7 @@ export const MembersList = ({
 																			)
 																		}
 																	>
-																		Owner
+																		Author
 																	</DropdownMenuCheckboxItem>
 																)}
 															</DropdownMenuRadioGroup>
@@ -797,22 +842,18 @@ export const MembersList = ({
 						{usersToDelete.map((u) => (
 							<div
 								key={`${u.type}-${u.id}`}
-								className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2.5"
+								className="rounded-md border bg-muted/40 px-3 py-2.5"
 							>
-								<Avatar className="h-9 w-9 items-center justify-center bg-muted text-muted-foreground text-sm">
-									{u.name.charAt(0).toUpperCase()}
-								</Avatar>
-								<div className="flex flex-col">
-									<span className="font-medium text-sm">
-										{u.name}
-									</span>
-									<span className="text-muted-foreground text-xs">
-										id: {u.id}
-									</span>
-									<span className="text-muted-foreground text-xs">
-										email: {u.email}
-									</span>
-								</div>
+								<PersonIdentity
+									name={u.name}
+									type={u.type}
+									id={u.id}
+									email={u.email}
+									isCurrentLogin={isCurrentLogin(
+										u.type,
+										u.id,
+									)}
+								/>
 							</div>
 						))}
 					</div>

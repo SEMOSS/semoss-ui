@@ -209,7 +209,8 @@ export const KnowledgeDetailPage = observer(() => {
 	const [searchLoading, setSearchLoading] = useState(false);
 	const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
 	const [selectedRole, setSelectedRole] = useState<string>("READ_ONLY");
-	const [userSource, setUserSource] = useState<UserSource>("directory");
+	// with both available, people already in the app are searched first
+	const [userSource, setUserSource] = useState<UserSource>("existing");
 	const [removeTarget, setRemoveTarget] = useState<EngineUser | null>(null);
 	const insight = useInsight();
 	const isDirectoryAvailable = insight.system?.config.msGraphLookup === true;
@@ -302,7 +303,7 @@ export const KnowledgeDetailPage = observer(() => {
 		setUserSearch("");
 		setSelectedUser(null);
 		setSelectedRole("READ_ONLY");
-		setUserSource("directory");
+		setUserSource("existing");
 	};
 
 	const handleRoleChange = async (userId: string, newRole: string) => {

@@ -14,6 +14,8 @@ import {
 } from "@semoss/ui/next";
 import { channelMeta } from "../channel-meta";
 import { dateLabel } from "../date-label";
+import { WorkRefreshStatus } from "../live/work-refresh-status";
+import { threadNeedsTopic } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { resumeThread } from "../work-item-actions";
 import { BrainOverview } from "./brain-overview";
@@ -29,36 +31,51 @@ export function ThreadsDirectory() {
 	const [params, setParams] = useSearchParams();
 	const [query, setQuery] = useState("");
 	const filter = params.get("filter") ?? "all";
-	const threads = state.threads.filter((thread) => {
-		if (!thread.subject.toLowerCase().includes(query.toLowerCase()))
-			return false;
-		if (filter === "needs")
-			return (
-				thread.needsTopicChoice ||
-				!thread.topicLinks.some((link) => link.source !== "suggested")
-			);
-		if (filter === "multi") return thread.topicLinks.length > 1;
-		if (filter === "excluded")
-			return thread.participants.some(
-				(participant) => !participant.included,
-			);
-		if (filter === "muted") return thread.muted;
-		if (filter === "automated") return thread.automated === true;
-		return true;
-	});
+	const search = query.trim().toLocaleLowerCase();
+	const threads = state.threads
+		.filter((thread) => {
+			const participants = thread.participants.map((participant) => {
+				const person = state.people.find(
+					(candidate) => candidate.id === participant.personId,
+				);
+				return `${participant.name ?? person?.name ?? ""} ${participant.email ?? person?.email ?? ""}`;
+			});
+			if (
+				!`${thread.subject} ${participants.join(" ")}`
+					.toLocaleLowerCase()
+					.includes(search)
+			)
+				return false;
+			if (filter === "needs") return threadNeedsTopic(thread);
+			if (filter === "multi") return thread.topicLinks.length > 1;
+			if (filter === "excluded")
+				return thread.participants.some(
+					(participant) => !participant.included,
+				);
+			if (filter === "muted") return thread.muted;
+			if (filter === "automated") return thread.automated === true;
+			return true;
+		})
+		.sort((a, b) => b.lastAt.localeCompare(a.lastAt));
 	return (
 		<CollaborationSurface
 			header={
 				<CollaborationPageHeader
-					title="Threads"
-					description="Conversations you have filed. A thread can belong to several topics."
-				/>
+					title={filter === "needs" ? "Unassigned" : "Threads"}
+					description={
+						filter === "needs"
+							? "Imported conversations waiting for a topic, including mail with no action needed. Open a thread to read it or assign a topic."
+							: "All imported conversations, including those without a topic. A thread can belong to several topics."
+					}
+				>
+					<WorkRefreshStatus />
+				</CollaborationPageHeader>
 			}
 			aside={<BrainOverview />}
 			asideTitle="Brain overview"
 		>
 			<div className="flex flex-wrap items-center gap-2 border-b p-4 md:px-6">
-				<div className="min-w-40 flex-1">
+				<div className="w-full min-w-0 sm:w-auto sm:min-w-40 sm:flex-1">
 					<Label
 						htmlFor={`${fieldId}-thread-search`}
 						className="sr-only"
@@ -69,7 +86,7 @@ export function ThreadsDirectory() {
 						id={`${fieldId}-thread-search`}
 						value={query}
 						onChange={(event) => setQuery(event.target.value)}
-						placeholder="Filter by subject"
+						placeholder="Search by subject, name, or email"
 						className="h-9 text-sm"
 					/>
 				</div>
@@ -94,7 +111,7 @@ export function ThreadsDirectory() {
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="all">All threads</SelectItem>
-							<SelectItem value="needs">Needs a topic</SelectItem>
+							<SelectItem value="needs">Unassigned</SelectItem>
 							<SelectItem value="multi">
 								Several topics
 							</SelectItem>
@@ -126,9 +143,9 @@ export function ThreadsDirectory() {
 											{channelMeta(thread.channel).label}
 										</span>
 									</span>
-									<div className="min-w-0 flex-1">
+									<div className="min-w-0 flex-1 basis-48 sm:basis-0">
 										<Link
-											className="break-words font-medium text-sm hover:underline"
+											className="break-words font-medium text-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
 											to={`/brain/threads/${encodeURIComponent(thread.id)}`}
 										>
 											{thread.subject}
@@ -187,9 +204,32 @@ export function ThreadsDirectory() {
 				})}
 			</ul>
 			{!threads.length && (
-				<P className="p-6 text-muted-foreground">
-					No matching threads.
-				</P>
+				<div className="space-y-2 p-6">
+					<P className="text-muted-foreground">
+						{search
+							? "No matching threads. Try another subject, name, or email."
+							: filter === "needs"
+								? "No unassigned conversations. Imported mail without a confirmed topic will appear here."
+								: "No threads match this filter."}
+					</P>
+					{search ? (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setQuery("")}
+						>
+							Clear search
+						</Button>
+					) : filter !== "all" ? (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setParams({})}
+						>
+							View all threads
+						</Button>
+					) : null}
+				</div>
 			)}
 		</CollaborationSurface>
 	);

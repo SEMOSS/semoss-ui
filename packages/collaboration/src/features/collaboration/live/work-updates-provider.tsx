@@ -11,6 +11,8 @@ import { useCollaborationSession } from "../state/collaboration-session.context"
 import {
 	type MailCheck,
 	type MailSyncResult,
+	readMailCheck,
+	readTopicGoals,
 	readWorkUpdates,
 	syncMail,
 } from "./live-state";
@@ -18,6 +20,11 @@ import type { LiveSync } from "./live-sync";
 import { WorkUpdatesContext } from "./work-updates.context";
 
 const SENT_SYNC_DELAY_MS = 5000;
+// while a sync or its summaries run elsewhere, how often to ask whether they moved on
+const WATCH_MS = 4000;
+// coming back to the tab re-reads, but not again within this long
+const FOCUS_REREAD_MS = 15_000;
+const MAIL_CHECK_MS = 60_000;
 
 /** Ids of records edited locally between two snapshots (or created locally since the first). */
 export function changedSince<T extends { id: string }>(before: T[], now: T[]) {
@@ -57,7 +64,51 @@ export function WorkUpdatesProvider({
 	// a reload asked for while one is in flight (a finished sync) runs right after it
 	const queued = useRef(false);
 	const syncing = useRef(false);
+	const lastMailAttempt = useRef(0);
+	const hasConnectedMail = state.sources.some(
+		(source) =>
+			source.id === "email" &&
+			source.status === "connected" &&
+			!source.isSample,
+	);
 	const generation = useRef(0);
+	const refreshTopicGoal = useCallback(
+		(topic: { topicId?: string; topic?: string }, noteId: string) => {
+			const token = generation.current;
+			const before = latest.current.topics;
+			void (async () => {
+				await sync?.settled();
+				const incoming = await readTopicGoals(actions, topic);
+				await sync?.settled();
+				if (token !== generation.current) return;
+				const localId = sync?.localId ?? ((id: string) => id);
+				const topicId = localId(incoming.id);
+				const goal = incoming.goals.find(
+					(entry) => entry.noteId === noteId,
+				);
+				if (!goal) return;
+				const goalId = localId(goal.noteId);
+				dispatch({
+					type: "topic.goal.server",
+					topicId,
+					before: before
+						.find((entry) => entry.id === topicId)
+						?.goals.find((entry) => entry.noteId === goalId),
+					goal: { ...goal, noteId: goalId },
+				});
+			})().catch((cause: unknown) => {
+				if (token === generation.current)
+					setStatus((current) => ({
+						...current,
+						error:
+							cause instanceof Error
+								? cause.message
+								: "Topic goals could not be refreshed.",
+					}));
+			});
+		},
+		[actions, dispatch, sync],
+	);
 	const refresh = useCallback(() => {
 		if (pending.current) return;
 		const token = generation.current;
@@ -171,6 +222,7 @@ export function WorkUpdatesProvider({
 		if (syncing.current) return;
 		const token = generation.current;
 		syncing.current = true;
+		lastMailAttempt.current = Date.now();
 		setMail((current) => ({ ...current, isSyncing: true, syncError: "" }));
 		syncMail(actions)
 			.then((result) => {
@@ -207,26 +259,112 @@ export function WorkUpdatesProvider({
 			window.removeEventListener(MAIL_SENT_EVENT, onSent);
 		};
 	}, [syncNow]);
+	// the session load has the data but not when mail was last checked
 	useEffect(() => {
-		const check = () => {
-			if (document.visibilityState === "visible") refresh();
+		let cancelled = false;
+		readMailCheck(actions)
+			.then((lastMailCheck) => {
+				if (!cancelled)
+					setStatus((current) =>
+						current.lastMailCheck
+							? current
+							: { ...current, lastMailCheck },
+					);
+			})
+			.catch(() => undefined);
+		return () => {
+			cancelled = true;
 		};
-		const timer = window.setInterval(check, 30_000);
+	}, [actions]);
+	// Follow a running sync and its summaries with a cheap job check.
+	const watched = status.lastMailCheck;
+	useEffect(() => {
+		if (
+			mail.isSyncing ||
+			!watched ||
+			(watched.status !== "running" && !watched.insightsPending)
+		)
+			return;
+		let cancelled = false;
+		let timer: number | undefined;
+		const poll = () => {
+			timer = window.setTimeout(async () => {
+				if (document.visibilityState === "hidden") return poll();
+				try {
+					const next = await readMailCheck(actions);
+					if (cancelled) return;
+					if (
+						next?.status !== watched.status ||
+						next.insightsPending !== watched.insightsPending
+					)
+						refreshRef.current();
+					else poll();
+				} catch {
+					if (!cancelled) poll();
+				}
+			}, WATCH_MS);
+		};
+		poll();
+		return () => {
+			cancelled = true;
+			window.clearTimeout(timer);
+		};
+	}, [actions, watched, mail.isSyncing]);
+	const lastRead = useRef(0);
+	useEffect(() => {
+		// Graph cannot notify local servers; keep all Collaboration views current while visible.
+		const checkMail = () => {
+			if (
+				!hasConnectedMail ||
+				document.visibilityState !== "visible" ||
+				Date.now() - lastMailAttempt.current < MAIL_CHECK_MS
+			)
+				return false;
+			syncNow();
+			return true;
+		};
+		const check = () => {
+			if (
+				document.visibilityState !== "visible" ||
+				Date.now() - lastRead.current < FOCUS_REREAD_MS
+			)
+				return;
+			lastRead.current = Date.now();
+			if (!checkMail()) refresh();
+		};
+		const initialCheck = window.setTimeout(checkMail, 0);
+		const timer = hasConnectedMail
+			? window.setInterval(checkMail, MAIL_CHECK_MS)
+			: undefined;
 		window.addEventListener("focus", check);
 		document.addEventListener("visibilitychange", check);
 		return () => {
-			generation.current += 1;
-			pending.current = false;
-			queued.current = false;
-			syncing.current = false;
+			window.clearTimeout(initialCheck);
 			window.clearInterval(timer);
 			window.removeEventListener("focus", check);
 			document.removeEventListener("visibilitychange", check);
 		};
-	}, [refresh]);
+	}, [refresh, syncNow, hasConnectedMail]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Changing the insight invalidates its pending requests.
+	useEffect(
+		() => () => {
+			generation.current += 1;
+			pending.current = false;
+			queued.current = false;
+			syncing.current = false;
+			lastMailAttempt.current = 0;
+		},
+		[actions],
+	);
 	return (
 		<WorkUpdatesContext.Provider
-			value={{ ...status, ...mail, refresh, syncMail: syncNow }}
+			value={{
+				...status,
+				...mail,
+				refresh,
+				refreshTopicGoal,
+				syncMail: syncNow,
+			}}
 		>
 			{children}
 		</WorkUpdatesContext.Provider>

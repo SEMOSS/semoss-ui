@@ -19,6 +19,12 @@ export interface LoginsSnapshot {
 	 * upper case (`NATIVE`, `MICROSOFT`, `GOOGLE`, ...).
 	 */
 	logins: Record<string, string>;
+	/**
+	 * The user id of each login the session holds, keyed by provider in upper
+	 * case, as the system config's `loginDetails` names them. A login signed in
+	 * to after the config was read has none until the config is read again.
+	 */
+	accountIds: Record<string, string>;
 	/** The login the session belongs to, such as `NATIVE`, or null when not known. */
 	primaryLogin: string | null;
 	/**
@@ -36,6 +42,7 @@ export interface LoginsSnapshot {
 /** What is known before the session's config is read. */
 const EMPTY_SNAPSHOT: LoginsSnapshot = {
 	logins: {},
+	accountIds: {},
 	primaryLogin: null,
 	connectorAccess: null,
 	availableProviders: [],
@@ -54,6 +61,36 @@ const normalizeProviders = (
 					typeof entry.provider === "string",
 			)
 		: [];
+
+/**
+ * The user id of each login in the config's `loginDetails`, keyed by provider
+ * in upper case. Entries without an id are left out.
+ */
+const parseAccountIds = (value: unknown): Record<string, string> => {
+	const accountIds: Record<string, string> = {};
+	if (typeof value !== "object" || value === null) {
+		return accountIds;
+	}
+	for (const [provider, details] of Object.entries(value)) {
+		const id =
+			typeof details === "object" && details !== null && "id" in details
+				? details.id
+				: null;
+		if (typeof id === "string" && id) {
+			accountIds[provider.toUpperCase()] = id;
+		}
+	}
+	return accountIds;
+};
+
+/** The account ids of the logins the session still holds. */
+const keepHeldAccounts = (
+	accountIds: Record<string, string>,
+	logins: Record<string, string>,
+): Record<string, string> =>
+	Object.fromEntries(
+		Object.entries(accountIds).filter(([provider]) => provider in logins),
+	);
 
 /**
  * What the session is signed in to, for the whole page: every insight, view,
@@ -98,15 +135,18 @@ export class LoginsStore {
 	};
 
 	/**
-	 * Take what the system config says about the session. Its logins are only
-	 * taken while none have been read, since the config is read once per page
-	 * and a later read is newer; its login settings do not change while the
-	 * session lasts.
+	 * Take what the system config says about the session. Its logins and their
+	 * account ids are taken while none have been read, since the config is read
+	 * once per page and a later read is newer; its login settings do not change
+	 * while the session lasts. Once logins are known, a config only adds the
+	 * account id of a login that has none, and only when it names that login the
+	 * same way, so a copy cached for an earlier session never replaces them.
 	 *
 	 * @param config - The system config.
 	 */
 	seed = (config: {
 		logins?: unknown;
+		loginDetails?: unknown;
 		primaryLogin?: unknown;
 		connectorAccess?: unknown;
 		availableProviders?: unknown;
@@ -120,22 +160,44 @@ export class LoginsStore {
 			availableProviders: normalizeProviders(config.availableProviders),
 		};
 		if (this.snapshot.status === "loading") {
+			const logins = parseLogins(config.logins);
 			this.readAt = Date.now();
 			this.set({
 				...settings,
-				logins: parseLogins(config.logins),
+				logins,
+				accountIds: keepHeldAccounts(
+					parseAccountIds(config.loginDetails),
+					logins,
+				),
 				status: "ready",
 			});
 			return;
 		}
 		const current = this.snapshot;
+		// the config is the only place the account ids come from
+		const configLogins = parseLogins(config.logins);
+		const accountIds = { ...current.accountIds };
+		for (const [provider, id] of Object.entries(
+			keepHeldAccounts(
+				parseAccountIds(config.loginDetails),
+				current.logins,
+			),
+		)) {
+			if (
+				!(provider in accountIds) &&
+				configLogins[provider] === current.logins[provider]
+			) {
+				accountIds[provider] = id;
+			}
+		}
 		if (
 			current.primaryLogin !== settings.primaryLogin ||
 			current.connectorAccess !== settings.connectorAccess ||
 			JSON.stringify(current.availableProviders) !==
-				JSON.stringify(settings.availableProviders)
+				JSON.stringify(settings.availableProviders) ||
+			JSON.stringify(current.accountIds) !== JSON.stringify(accountIds)
 		) {
-			this.set({ ...current, ...settings });
+			this.set({ ...current, ...settings, accountIds });
 		}
 	};
 
@@ -183,6 +245,11 @@ export class LoginsStore {
 						this.set({
 							...this.snapshot,
 							logins: logins,
+							// a login signed out of loses its account id
+							accountIds: keepHeldAccounts(
+								this.snapshot.accountIds,
+								logins,
+							),
 							status: "ready",
 						});
 						return logins;

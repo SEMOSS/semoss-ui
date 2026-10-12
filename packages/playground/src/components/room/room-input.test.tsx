@@ -17,6 +17,7 @@ const openSettings = vi.hoisted(() => vi.fn());
 // stable, as the SDK's are, so views keep the same logins between renders
 const sessionLogins = vi.hoisted(() => ({
 	logins: {},
+	accountIds: {},
 	primaryLogin: null,
 	connectorAccess: null,
 	availableProviders: [],
