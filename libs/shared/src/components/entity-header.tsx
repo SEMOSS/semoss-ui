@@ -30,7 +30,8 @@ const RENAMABLE_NAME_CLASS =
 const RENAME_BUTTON_CLASS =
 	"shrink-0 text-muted-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover/name:opacity-100 pointer-coarse:opacity-100";
 
-interface EntityHeaderProps {
+/** Props for {@link EntityHeader}. */
+export interface EntityHeaderProps {
 	/** Rendered icon, placed inside a sized wrapper. Omit for no-icon headers. */
 	icon?: ReactNode;
 	/** Entity display name shown as the title. */
@@ -71,6 +72,11 @@ interface EntityHeaderProps {
 	description?: ReactNode;
 }
 
+/**
+ * The header of a project's, engine's or other entity's page or dialog: its
+ * icon, name, id with a copy button, and actions, with an optional rename,
+ * something right after the name, and a description below it.
+ */
 export const EntityHeader = ({
 	icon,
 	name,

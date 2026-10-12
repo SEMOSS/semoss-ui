@@ -174,6 +174,8 @@ export const useTeamChanges = (
 		setPeople(NO_PEOPLE);
 		setCanChange(NO_CHANGES_ALLOWED);
 		setHasLoaded(false);
+		// loading from the same render, so the view goes straight to its spinner
+		setIsLoading(true);
 		refresh();
 	};
 

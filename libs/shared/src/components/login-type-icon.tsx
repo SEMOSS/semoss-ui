@@ -8,6 +8,7 @@ const LOGIN_ICONS: Readonly<Record<string, LucideIcon>> = {
 	NATIVE: UserRound,
 };
 
+/** Props for {@link LoginTypeIcon}. */
 export interface LoginTypeIconProps {
 	/** The login's stored label, such as NATIVE, MICROSOFT or API_USER */
 	type: string;

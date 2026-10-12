@@ -52,9 +52,10 @@ export const ReviewChangeRow = ({
 	const style = ACTION_STYLES[action];
 
 	return (
+		// what the change does goes under the person on a narrow screen, so their name keeps its room
 		<li
 			className={cn(
-				"flex items-center gap-3 px-3 py-2",
+				"flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:gap-3",
 				reason && "bg-destructive/5",
 			)}
 		>
@@ -78,7 +79,7 @@ export const ReviewChangeRow = ({
 					) : null}
 				</AccessIdentity>
 			</div>
-			<div className="flex shrink-0 items-center gap-2">
+			<div className="flex flex-wrap items-center gap-2 sm:shrink-0">
 				{detail ? (
 					<span className="text-muted-foreground text-xs">
 						{detail}

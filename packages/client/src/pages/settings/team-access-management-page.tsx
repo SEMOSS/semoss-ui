@@ -2,7 +2,8 @@ import { Navigate, useParams } from "react-router";
 import { TeamAccessManagement } from "@/features/team-access-management/team-access-management";
 import { MANAGED_TEAMS_PATH } from "@/features/team-list/team-paths";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
-import { useConfig, useSession } from "@/hooks";
+import { useConfig } from "@/hooks/use-config";
+import { useSession } from "@/hooks/use-session";
 
 export interface TeamAccessManagementPageProps {
 	/**

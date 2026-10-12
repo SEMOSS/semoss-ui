@@ -24,9 +24,9 @@
 		"remove": "Remove {{name}}"
 	},
 	"permission": {
-		"viewer": "Viewer",
+		"viewer": "Read-Only",
 		"editor": "Editor",
-		"owner": "Owner"
+		"owner": "Author"
 	},
 	"restrictions": {
 		"title": "Model Limit Restrictions (for all selected users)",

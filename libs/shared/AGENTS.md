@@ -105,22 +105,30 @@ passing a `source` that loads, removes and adds people (its `people` goes to the
 can rename a member, for example to "Manager". With a `source` the table has no permission column
 or edit dialog, and `readOnly` alone decides whether the viewer can change the list. A new
 `source` reloads the list from the start with nothing selected, and a failed load shows its error
-with Try Again. It marks the signed in user with a star either way.
+with Try Again. It marks the signed in user with a star either way. The table, its edit dialog
+and the add dialog call the access levels Author (`OWNER`), Editor (`EDIT`) and Read-Only
+(`READ_ONLY`).
 
-Both show each person's login, since two people can share an id on different logins. The
-table's Login Type column uses `LoginTypeLabel` (`components/login-type-label.tsx`): the login's
-logo or icon (`LoginTypeIcon`; a person for native logins, a key for API logins) and its name from
-`getLoginTypeName`. The dialogs' rows use `MemberAvatar` (`members/member-avatar.tsx`): the person's
-initial with their login's logo on a badge at its corner, the login's name in the title and for
-screen readers, and the id under the name. Use them wherever people are listed rather than
-showing the stored label, such as `API_USER`.
+**Showing a person: `PersonIdentity` is the default.** Every list, table, dropdown and picker
+of people shows each person with `PersonIdentity` (`members/person-identity.tsx`), so people
+look the same everywhere: `MemberAvatar` (their initial, or a star for the login the session is
+signed in with, with their login's logo on a round badge at its corner, since two people can
+share an id on different logins), their name, and under it `id: ...` and `email: ...`. It takes
+one detail line for narrow lists (`isCompact`), something beside the name such as an admin badge
+(`nameAddon`), and more lines under the details (`children`). It works out the star from the
+login type and id with `useIsCurrentLogin()`, unless the host passes `isCurrentLogin`. It is
+made of spans, so it can sit inside a button. Do not build another row, avatar or star for a
+person; extend `PersonIdentity` instead. A summary that only stacks a few avatars, with no
+names, is the one exception.
 
-The login the session is signed in with is starred wherever people are listed:
-`useIsCurrentLogin()` (`hooks/use-is-current-login.ts`) checks a person's login type and id against
-the account ids the SDK's `Logins` holds, reading them as they are so every row can call it.
-`MemberAvatar` and the members table show a star in place of the initial; a lone login logo gets
-`CurrentLoginStar` (`components/current-login-star.tsx`) at its corner. The members table also
-stars its host's `currentUserId` when the login type is not known.
+`useIsCurrentLogin()` (`hooks/use-is-current-login.ts`) checks a person's login type and id
+against the account ids the SDK's `Logins` holds, reading them as they are so every row can call
+it. A lone login logo, outside an avatar, gets `CurrentLoginStar` (`components/current-login-star.tsx`)
+at its corner. The members table also stars its host's `currentUserId` when the login type is not
+known, and keeps a Login Type column with `LoginTypeLabel` (`components/login-type-label.tsx`):
+the login's logo or icon (`LoginTypeIcon`; a person for native logins, a key for API logins) and
+its name from `getLoginTypeName`. Show a login's name that way rather than the stored label, such
+as `API_USER`.
 
 ### The file editors are gone (`components/file/file-*.tsx`)
 

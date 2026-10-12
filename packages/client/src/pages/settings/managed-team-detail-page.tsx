@@ -6,7 +6,7 @@ import { TeamPeopleCard } from "@/features/team-details/team-people-card";
 import { useTeamMembersSource } from "@/features/team-members/use-team-members-source";
 import { TeamResourceAccessPanel } from "@/features/team-resource-access/team-resource-access-panel";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
-import { useConfig } from "@/hooks";
+import { useConfig } from "@/hooks/use-config";
 
 /**
  * One custom team, for its managers, on one page: add and remove its members
@@ -37,7 +37,7 @@ export const ManagedTeamDetailPage = () => {
 			/>
 			<TeamPeopleCard
 				title="Managers"
-				description="User's who can manage this team's members."
+				description="Managers change who is in this team and who manages it."
 				source={managersSource}
 				isDirectoryAvailable={isDirectoryAvailable}
 			/>

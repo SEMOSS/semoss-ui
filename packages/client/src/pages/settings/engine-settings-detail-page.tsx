@@ -84,7 +84,7 @@ const EngineSettingsUserDetailPage = (props: EngineSettingsDetailPageProps) => {
 					onValueChange={(value) => setView(value as VIEW)}
 				>
 					<TabsList className="w-fit max-w-full flex-wrap">
-						<TabsTrigger value={"CURRENT"}>Member</TabsTrigger>
+						<TabsTrigger value={"CURRENT"}>Members</TabsTrigger>
 						<TabsTrigger
 							disabled={permission === "READ_ONLY"}
 							value={"PENDING"}
@@ -142,7 +142,7 @@ const EngineSettingsAdminDetailPage = (
 						onValueChange={(value) => setView(value as VIEW)}
 					>
 						<TabsList className="w-fit max-w-full flex-wrap">
-							<TabsTrigger value={"CURRENT"}>Member</TabsTrigger>
+							<TabsTrigger value={"CURRENT"}>Members</TabsTrigger>
 							<TabsTrigger value={"PENDING"}>
 								Pending Requests
 							</TabsTrigger>

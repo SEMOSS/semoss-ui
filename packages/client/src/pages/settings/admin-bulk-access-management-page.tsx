@@ -1,7 +1,8 @@
 import { Navigate, useParams } from "react-router";
 import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-access-management";
 import { useAdminResourceName } from "@/features/bulk-access-management/use-admin-resource-name";
-import { useConfig, useSession } from "@/hooks";
+import { useConfig } from "@/hooks/use-config";
+import { useSession } from "@/hooks/use-session";
 
 export interface AdminBulkAccessManagementPageProps {
 	/** An app or an engine */

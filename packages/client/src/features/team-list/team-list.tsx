@@ -200,8 +200,8 @@ export const TeamList = ({
 														<span className="sr-only">
 															{team.memberCount ===
 															1
-																? "member"
-																: "members"}
+																? " member"
+																: " members"}
 														</span>
 													</span>
 												)}

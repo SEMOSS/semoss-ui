@@ -52,7 +52,8 @@ export const AccessSourceChip = ({
 			<span className="truncate font-medium">
 				{source.kind === "TEAM" ? (
 					<>
-						<span className="sr-only">Team </span>
+						{/* the icon alone shows the team's type, so it is read out here */}
+						<span className="sr-only">{teamTypeName} team </span>
 						{source.id}
 					</>
 				) : (

@@ -1,7 +1,7 @@
 import { Navigate, useParams } from "react-router";
 import { useAdminResourceName } from "@/features/bulk-access-management/use-admin-resource-name";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
-import { useSession } from "@/hooks";
+import { useSession } from "@/hooks/use-session";
 
 export interface AdminEffectivePermissionsPageProps {
 	/** An app or an engine */
