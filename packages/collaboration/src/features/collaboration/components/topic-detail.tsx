@@ -1,5 +1,12 @@
-import { ChevronDown, LockKeyhole, Plus, X } from "lucide-react";
-import { useId, useRef, useState } from "react";
+import {
+	Bot,
+	ChevronDown,
+	LockKeyhole,
+	MessageSquare,
+	Plus,
+	X,
+} from "lucide-react";
+import { lazy, Suspense, useId, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
 	Badge,
@@ -43,8 +50,15 @@ import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
 import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
+import { TopicGoalPopover } from "./topic-goal-popover";
 import { TopicThreadRow } from "./topic-thread-row";
 import { WorkItemsFeed } from "./work-items-feed";
+
+const LandingChatComposer = lazy(() =>
+	import("@/features/daily-chat/landing-chat-composer").then((module) => ({
+		default: module.LandingChatComposer,
+	})),
+);
 
 // people groups in reading order, with the one action each membership allows
 const MEMBERSHIPS = [
@@ -73,6 +87,8 @@ export function TopicDetail() {
 	const { state, dispatch } = useCollaborationSession();
 	const [isEditing, setIsEditing] = useState(false);
 	const [tab, setTab] = useState("actions");
+	const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+	const [hasOpenedAssistant, setHasOpenedAssistant] = useState(false);
 	const editButtonRef = useRef<HTMLButtonElement>(null);
 	const [personToAdd, setPersonToAdd] = useState("");
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
@@ -121,11 +137,14 @@ export function TopicDetail() {
 	const doneGoals = topic.goals.filter((goal) => goal.status === "done");
 	const feedThreadCount = new Set(workItems.map((item) => item.threadId))
 		.size;
+	const canStartAssistant =
+		topic.status === "active" || topic.status === "dormant";
 
 	return (
 		<CollaborationPage>
 			<CollaborationPageHeader
 				titleClassName="font-bold"
+				layoutClassName="flex-col md:flex-row"
 				title={
 					<span className="flex min-w-0 items-center gap-3">
 						<span
@@ -155,7 +174,27 @@ export function TopicDetail() {
 					</Button>
 				}
 				actions={
-					<TopicActions topic={topic} threadCount={threads.length} />
+					<>
+						<Button
+							variant="outline"
+							className="pointer-coarse:min-h-11"
+							aria-expanded={isAssistantOpen}
+							aria-controls={`${fieldId}-assistant`}
+							onClick={() => {
+								setHasOpenedAssistant(true);
+								setIsAssistantOpen((open) => !open);
+							}}
+						>
+							<MessageSquare aria-hidden="true" />
+							{isAssistantOpen
+								? "Hide assistant"
+								: "Ask assistant"}
+						</Button>
+						<TopicActions
+							topic={topic}
+							threadCount={threads.length}
+						/>
+					</>
 				}
 			>
 				<div className="ml-6 flex flex-wrap items-center gap-2">
@@ -235,106 +274,138 @@ export function TopicDetail() {
 					)}
 				</div>
 			</CollaborationPageHeader>
+			<section
+				id={`${fieldId}-assistant`}
+				aria-label="Topic assistant"
+				hidden={!isAssistantOpen}
+				className="mb-8 space-y-3"
+			>
+				<P className="text-muted-foreground text-sm">
+					{canStartAssistant
+						? "Ask about this topic’s goals, people, and emails."
+						: "Set this topic to Active or Dormant to start a chat."}
+				</P>
+				{hasOpenedAssistant && canStartAssistant && (
+					<Suspense fallback={<output>Loading assistant…</output>}>
+						<LandingChatComposer topicId={topic.id} />
+					</Suspense>
+				)}
+			</section>
 			<div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-3">
 				<div className="min-w-0 space-y-5 xl:col-span-2">
 					<section aria-labelledby={`${fieldId}-goals`}>
 						<Card className={cardClassName}>
 							<div className={cardHeaderClassName}>
-								<div className="flex flex-wrap items-center gap-2">
+								<div className="min-w-0 space-y-2">
 									<H2
 										id={`${fieldId}-goals`}
-										className="font-bold text-base"
+										className="font-bold text-lg"
 									>
 										Goals
 									</H2>
-									<Small className="font-normal text-muted-foreground">
-										{topic.goals.length
-											? `${doneGoals.length} of ${topic.goals.length} done`
-											: "None yet"}
-									</Small>
-								</div>
-								<Popover>
-									<PopoverTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											aria-label="Add goal"
-											className="text-muted-foreground"
-										>
-											<Plus aria-hidden="true" />
-										</Button>
-									</PopoverTrigger>
-									<PopoverContent
-										align="end"
-										aria-label="Add goal"
-									>
-										<TextEntryForm
-											label="New goal"
-											onSave={(text) =>
-												dispatch({
-													type: "topic.note",
-													topicId: topic.id,
-													kind: "goal",
-													operation: "save",
-													text,
-													status: "open",
-												})
-											}
-										/>
-									</PopoverContent>
-								</Popover>
-							</div>
-							{topic.goals.length > 0 && (
-								<div className="space-y-4 border-t px-5 py-4">
-									<Progress
-										aria-label="Goals done"
-										className="h-1.5"
-										value={
-											(doneGoals.length /
-												topic.goals.length) *
-											100
-										}
-									/>
-									<div className="space-y-1">
-										{topic.goals.map((goal) => (
-											<div
-												key={goal.noteId}
-												className="flex items-start gap-3 py-1"
-											>
-												<Checkbox
-													id={`${fieldId}-${goal.noteId}`}
-													checked={
-														goal.status === "done"
-													}
-													onCheckedChange={(
-														checked,
-													) =>
-														dispatch({
-															type: "topic.note",
-															topicId: topic.id,
-															kind: "goal",
-															operation: "save",
-															noteId: goal.noteId,
-															status:
-																checked === true
-																	? "done"
-																	: "open",
-														})
-													}
-												/>
-												<Label
-													htmlFor={`${fieldId}-${goal.noteId}`}
-													className={
-														goal.status === "done"
-															? "min-w-0 break-words font-normal text-muted-foreground line-through"
-															: "min-w-0 break-words font-normal"
-													}
-												>
-													{goal.text}
-												</Label>
-											</div>
-										))}
+									<div className="flex flex-wrap items-center gap-3">
+										{topic.goals.length > 0 && (
+											<Progress
+												aria-label="Goals completed"
+												aria-valuenow={
+													(doneGoals.length /
+														topic.goals.length) *
+													100
+												}
+												aria-valuetext={`${doneGoals.length} of ${topic.goals.length} complete`}
+												className={cn(
+													"h-1.5 w-16 bg-muted [&>div]:motion-reduce:transition-none",
+													doneGoals.length ===
+														topic.goals.length &&
+														"[&>div]:bg-success",
+												)}
+												value={
+													(doneGoals.length /
+														topic.goals.length) *
+													100
+												}
+											/>
+										)}
+										<Small className="font-normal text-muted-foreground text-xs tabular-nums">
+											<output>
+												{topic.goals.length
+													? `${doneGoals.length} of ${topic.goals.length} complete`
+													: "No goals yet"}
+											</output>
+										</Small>
 									</div>
+								</div>
+								<TopicGoalPopover topicId={topic.id} />
+							</div>
+							{topic.goals.length > 0 ? (
+								<ul
+									aria-label="Topic goals"
+									className="divide-y divide-border border-t px-5"
+								>
+									{topic.goals.map((goal) => (
+										<li
+											key={goal.noteId}
+											className="flex items-start gap-3 py-5"
+										>
+											<Checkbox
+												id={`${fieldId}-${goal.noteId}`}
+												checked={goal.status === "done"}
+												className="after:-inset-2.5 relative size-6 rounded-full border-muted-foreground bg-background shadow-none after:absolute after:content-[''] data-[state=checked]:border-success data-[state=checked]:bg-success/10 data-[state=checked]:text-foreground dark:data-[state=checked]:bg-success/10"
+												onCheckedChange={(checked) =>
+													dispatch({
+														type: "topic.note",
+														topicId: topic.id,
+														kind: "goal",
+														operation: "save",
+														noteId: goal.noteId,
+														status:
+															checked === true
+																? "done"
+																: "open",
+													})
+												}
+											/>
+											<div className="min-w-0 flex-1 space-y-3">
+												<div className="flex flex-col items-start gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+													<Label
+														htmlFor={`${fieldId}-${goal.noteId}`}
+														className="wrap-anywhere block min-w-0 cursor-pointer whitespace-pre-wrap font-medium text-base text-foreground leading-6"
+													>
+														{goal.text}
+													</Label>
+													<Small className="shrink-0 font-normal text-muted-foreground text-xs leading-6">
+														{goal.status === "done"
+															? "Completed"
+															: "Open"}
+													</Small>
+												</div>
+												{goal.resolution && (
+													<div className="space-y-2 rounded-lg bg-muted/60 p-3 sm:p-4">
+														<Small className="flex items-center gap-2 font-medium text-foreground text-xs leading-5">
+															<Bot
+																aria-hidden="true"
+																className="size-4 shrink-0 text-muted-foreground"
+															/>
+															AI accomplishment
+														</Small>
+														<P className="wrap-anywhere max-w-prose whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
+															{goal.resolution}
+														</P>
+													</div>
+												)}
+											</div>
+										</li>
+									))}
+								</ul>
+							) : (
+								<div className="space-y-1 border-t px-5 py-6">
+									<P className="font-medium text-sm">
+										Give this topic a direction
+									</P>
+									<P className="text-muted-foreground text-sm">
+										Add a goal for you and your assistant to
+										work toward.
+									</P>
 								</div>
 							)}
 						</Card>
@@ -452,15 +523,15 @@ export function TopicDetail() {
 							>
 								<MemoryList
 									memories={topicMemories}
-									emptyText="Notes here are memories. The assistant uses them on this topic's threads."
+									emptyText="Notes here help the assistant with this topic and its threads."
 									addLabel="New note"
 									about={{ type: "topic", id: topic.id }}
 									isSample={topic.isSample}
 								/>
 								<Small className={hintClassName}>
 									Confirmed goals and notes are available to
-									the assistant when this topic is confirmed
-									on a thread.
+									the assistant in chats and threads linked to
+									this topic.
 								</Small>
 							</Section>
 						</CollapsibleContent>

@@ -9,6 +9,14 @@ import type {
 	WorkItem,
 } from "./collaboration.types";
 
+/** Imported conversations stay discoverable until their topic is confirmed. */
+export function threadNeedsTopic(thread: Thread): boolean {
+	return (
+		thread.needsTopicChoice === true ||
+		!thread.topicLinks.some((link) => link.source !== "suggested")
+	);
+}
+
 /** The topics a topic choice asks about; older reviews without candidates fall back to the thread's suggestions. */
 export function topicChoiceCandidates(
 	review: ReviewEntry,

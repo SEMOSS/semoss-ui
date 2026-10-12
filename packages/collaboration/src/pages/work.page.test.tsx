@@ -297,6 +297,31 @@ it("combines scoped work with editable goals, people, and notes in one topic", a
 	expect(sessions.mounted).not.toHaveBeenCalled();
 });
 
+it("shows a goal resolution as plain text and keeps it when reopening and completing the goal", async () => {
+	const state = workState();
+	const goal = {
+		noteId: "goal",
+		text: "Get room code for Florida",
+		status: "done" as const,
+		resolution: "Florida room code is 444553 <b>Keep this code</b>",
+	};
+	state.topics[0].goals = [goal];
+	const { user } = renderWork("/topics/alpha", state);
+	const checkbox = screen.getByRole("checkbox", { name: goal.text });
+	const resolution = screen.getByText(goal.resolution);
+	expect(checkbox).toBeChecked();
+	expect(resolution).toBeVisible();
+	expect(resolution.querySelector("b")).toBeNull();
+	expect(resolution.closest(".line-through")).toBeNull();
+	expect(screen.getByText(goal.text)).toHaveClass("line-through");
+	await user.click(checkbox);
+	expect(checkbox).not.toBeChecked();
+	expect(screen.getByText(goal.resolution)).toBeVisible();
+	await user.click(checkbox);
+	expect(checkbox).toBeChecked();
+	expect(screen.getByText(goal.resolution)).toBeVisible();
+});
+
 it("combines topic status and source filters, keeps multi-topic work, and sorts scoped rows", async () => {
 	const { user } = renderWork("/topics/alpha");
 	await user.click(

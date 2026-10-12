@@ -348,7 +348,8 @@ describe("collaboration Work and Brain integration", () => {
 		).toBe("done");
 		await user.click(screen.getByRole("tab", { name: "Threads" }));
 		await user.click(screen.getByRole("tab", { name: "Actions" }));
-		expect(screen.getByText(title, {})).toHaveClass("line-through");
+		expect(screen.getByRole("checkbox", { name: title })).toBeChecked();
+		expect(screen.getByText(title)).not.toHaveClass("line-through");
 	});
 
 	it("adds goals, keywords, and people through the compact topic controls", async () => {
@@ -382,8 +383,9 @@ describe("collaboration Work and Brain integration", () => {
 		await user.type(goal, "Share the architecture review.");
 		const goalForm = goal.closest("form");
 		if (!goalForm) throw new Error("Missing goal form");
-		await user.click(within(goalForm).getByRole("button", { name: "Add" }));
-		await user.keyboard("{Escape}");
+		await user.click(
+			within(goalForm).getByRole("button", { name: "Add goal" }),
+		);
 		expect(
 			screen.getByRole("checkbox", {
 				name: "Share the architecture review.",

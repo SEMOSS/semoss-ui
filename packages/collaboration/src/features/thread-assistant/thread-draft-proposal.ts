@@ -16,10 +16,15 @@ const openEmailId = z.string().trim().min(1).optional();
 const attachments = z.array(emailAttachmentSchema).max(10).optional();
 const attachmentError = z.string().optional();
 const addresses = z.string().trim().max(4000);
+// Server-confirmed sources let topic chats reply without importing one thread.
+const sourceMessage = z
+	.object({ id: z.string().trim().min(1), subject: z.string() })
+	.optional();
 // a reply's to and cc replace the native lists when given; a forward's to is required to save
 const replySchema = z.object({
 	mode: z.enum(["reply", "forward"]),
 	sourceMessageId: z.string().trim().min(1),
+	sourceMessage,
 	to: addresses.optional(),
 	cc: addresses.optional(),
 	bcc: addresses.optional(),
@@ -79,7 +84,6 @@ function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 		typeof value === "string" ? value : undefined;
 	const replyTo = text(args.replyTo)?.trim();
 	const forward = text(args.forward)?.trim();
-	const source = replyTo || forward;
 	const authoredBody = text(args.message);
 	const editorId = text(args.openEmailId)?.trim() || undefined;
 	let prepared: unknown;
@@ -88,6 +92,45 @@ function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 	} catch {
 		prepared = null;
 	}
+	const operation = z
+		.object({
+			shown: z.literal(true),
+			mode: z.enum(["reply", "forward", "new", "edit"]).optional(),
+			replyTo: z.string().trim().min(1).optional(),
+			forward: z.string().trim().min(1).optional(),
+			sourceMessage,
+		})
+		.safeParse(prepared);
+	if (!operation.success || (replyTo && forward)) return null;
+	const mode = replyTo
+		? "reply"
+		: forward
+			? "forward"
+			: editorId
+				? "edit"
+				: "new";
+	const resolved = operation.data;
+	const hasOperation =
+		resolved.mode !== undefined ||
+		resolved.replyTo !== undefined ||
+		resolved.forward !== undefined;
+	if (
+		hasOperation &&
+		(resolved.mode !== mode ||
+			(mode === "reply") !== Boolean(resolved.replyTo) ||
+			(mode === "forward") !== Boolean(resolved.forward))
+	)
+		return null;
+	// Older successful calls carry native IDs only in their arguments.
+	const source = hasOperation
+		? resolved.replyTo || resolved.forward
+		: replyTo || forward;
+	if (source?.toLowerCase() === "selected") return null;
+	if (
+		resolved.sourceMessage &&
+		(!hasOperation || resolved.sourceMessage.id !== source)
+	)
+		return null;
 	const requested = Array.isArray(args.attachments)
 		? args.attachments.length
 		: 0;
@@ -113,6 +156,7 @@ function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 					...fileFields,
 					mode: replyTo ? "reply" : "forward",
 					sourceMessageId: source,
+					sourceMessage: resolved.sourceMessage,
 					to: text(args.to),
 					cc: text(args.cc),
 					bcc: text(args.bcc),

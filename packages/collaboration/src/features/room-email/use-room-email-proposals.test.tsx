@@ -186,6 +186,217 @@ it("does not create a proposal for an excluded source", () => {
 	expect(composer.getSnapshot().emailDrafts).toEqual([]);
 });
 
+it.each([
+	{ argument: "replyTo", mode: "reply" },
+	{ argument: "forward", mode: "forward" },
+])(
+	"opens a server-confirmed $mode in a topic chat without an imported source",
+	({ argument, mode }) => {
+		const { base, completed, composer } = setup();
+		const onOpen = vi.fn();
+		const props = {
+			...base,
+			thread: { ...base.thread, source: undefined },
+			allowedSources: new Set<string>(),
+			onOpen,
+		};
+		const view = renderHook(useRoomEmailProposals, {
+			initialProps: {
+				...props,
+				snapshot: {
+					turn: { ...base.snapshot.turn, isRunning: true },
+				},
+			},
+		});
+		const settled = {
+			...props,
+			snapshot: {
+				turn: {
+					...completed.snapshot.turn,
+					messages: [
+						{
+							...completed.snapshot.turn.messages[0],
+							parts: [
+								composeEmailPart(
+									{
+										[argument]: "topic-email",
+										message: "Friday works.",
+									},
+									"topic-call",
+									"COMPLETED",
+									{
+										shown: true,
+										mode,
+										[argument]: "topic-email",
+										sourceMessage: {
+											id: "topic-email",
+											subject: "Meeting",
+										},
+									},
+								),
+							],
+						},
+					],
+				},
+			},
+		};
+		view.rerender(settled);
+		const [draft] = composer.getSnapshot().emailDrafts;
+		expect(draft.seed).toMatchObject({
+			mode,
+			sourceUid: "topic-email",
+			subject: "Meeting",
+			body: "Friday works.",
+		});
+		expect(onOpen).toHaveBeenCalledWith(composeDraftId("topic-call"));
+		composer.requestEmailDraft(draft.seed);
+		expect(composer.openEmailContext()).toMatchObject({
+			[argument]: "topic-email",
+		});
+		draft.setValues({
+			...draft.getSnapshot().values,
+			body: "<p>My changes</p>",
+		});
+		view.rerender({ ...settled, snapshot: { ...settled.snapshot } });
+		expect(composer.getSnapshot().emailDrafts).toEqual([draft]);
+		expect(draft.getSnapshot().values.body).toBe("<p>My changes</p>");
+		expect(onOpen).toHaveBeenCalledTimes(1);
+	},
+);
+
+it("does not trust authored source metadata in a topic chat", () => {
+	const { completed, composer } = setup();
+	renderHook(useRoomEmailProposals, {
+		initialProps: {
+			...completed,
+			thread: { ...completed.thread, source: undefined },
+			allowedSources: new Set<string>(),
+			snapshot: {
+				turn: {
+					...completed.snapshot.turn,
+					messages: [
+						{
+							...completed.snapshot.turn.messages[0],
+							parts: [
+								composeEmailPart({
+									replyTo: "topic-email",
+									message: "Friday works.",
+									sourceMessage: {
+										id: "topic-email",
+										subject: "Meeting",
+									},
+								}),
+							],
+						},
+					],
+				},
+			},
+		},
+	});
+	expect(composer.getSnapshot().emailDrafts).toEqual([]);
+});
+
+it.each([
+	{ argument: "replyTo", mode: "reply" },
+	{ argument: "forward", mode: "forward" },
+])("hands the resolved selected $mode to the editor", ({ argument, mode }) => {
+	const { completed, composer } = setup();
+	const messages: ConversationMessage[] = [
+		{
+			id: "prompt",
+			role: "user",
+			parts: [
+				{
+					type: "text",
+					text: threadCommand(
+						{
+							threadId: completed.thread.id,
+							contextRevision: "revision",
+							contextText: "sources",
+							selectedSourceMessageId: "email",
+						},
+						"Draft a response to the selected email.",
+					),
+				},
+			],
+		},
+		{
+			id: "answer",
+			role: "assistant",
+			parts: [
+				composeEmailPart(
+					{ [argument]: "selected", message: "Friday works." },
+					"selected-call",
+					"COMPLETED",
+					{ shown: true, mode, [argument]: "email" },
+				),
+			],
+		},
+	];
+	renderHook(useRoomEmailProposals, {
+		initialProps: {
+			...completed,
+			snapshot: { turn: { ...completed.snapshot.turn, messages } },
+		},
+	});
+	const [draft] = composer.getSnapshot().emailDrafts;
+	expect(draft.seed).toMatchObject({ mode, sourceUid: "email" });
+	composer.requestEmailDraft(draft.seed);
+	expect(composer.openEmailContext()).toMatchObject({ [argument]: "email" });
+});
+
+it.each([
+	null,
+	{ shown: true },
+	{ shown: false, mode: "reply", replyTo: "email" },
+	{ shown: true, mode: "reply", replyTo: "selected" },
+	{ shown: true, mode: "new" },
+])(
+	"keeps existing drafts and opens nothing for an unresolved selection: %s",
+	(output) => {
+		const { completed, composer } = setup();
+		const view = renderHook(useRoomEmailProposals, {
+			initialProps: completed,
+		});
+		const [original] = composer.getSnapshot().emailDrafts;
+		original.setValues({
+			...original.getSnapshot().values,
+			body: "<p>My edited reply</p>",
+		});
+		view.rerender({
+			...completed,
+			snapshot: {
+				turn: {
+					...completed.snapshot.turn,
+					messages: [
+						...completed.snapshot.turn.messages,
+						{
+							id: "selected-answer",
+							role: "assistant",
+							parts: [
+								composeEmailPart(
+									{
+										replyTo: "selected",
+										message: "New reply",
+									},
+									"selected-call",
+									"COMPLETED",
+									output,
+								),
+							],
+						},
+					],
+				},
+			},
+		});
+		expect(composer.getSnapshot().emailDrafts).toEqual([original]);
+		expect(original.getSnapshot().values.body).toBe(
+			"<p>My edited reply</p>",
+		);
+		expect(composer.openEmailContext()).toBeUndefined();
+	},
+);
+
 it("creates only the corrected draft after a failed compose attempt", () => {
 	const { completed, composer } = setup();
 	const failed: ConversationMessage = {
@@ -345,41 +556,65 @@ it("ignores a ComposeEmail call without an email", () => {
 	expect(composer.getSnapshot().emailDrafts).toHaveLength(0);
 });
 
-it("rejects a proposal for a different included email than the requested message", () => {
-	const { completed, composer } = setup();
-	const prompt: ConversationMessage = {
-		id: "prompt",
-		role: "user",
-		parts: [
-			{
-				type: "text",
-				text: threadCommand(
-					{
-						threadId: completed.thread.id,
-						contextRevision: "revision",
-						contextText: "sources",
-						selectedSourceMessageId: "different-email",
+it.each([undefined, { id: "email", subject: "Meeting" }])(
+	"rejects a proposal for another selected email even with server source metadata: %s",
+	(sourceMessage) => {
+		const { completed, composer } = setup();
+		const prompt: ConversationMessage = {
+			id: "prompt",
+			role: "user",
+			parts: [
+				{
+					type: "text",
+					text: threadCommand(
+						{
+							threadId: completed.thread.id,
+							contextRevision: "revision",
+							contextText: "sources",
+							selectedSourceMessageId: "different-email",
+						},
+						"Draft a reply to this email using the thread context.",
+					),
+				},
+			],
+		};
+		renderHook(useRoomEmailProposals, {
+			initialProps: {
+				...completed,
+				allowedSources: new Set(["email", "different-email"]),
+				snapshot: {
+					...completed.snapshot,
+					turn: {
+						...completed.snapshot.turn,
+						messages: [
+							prompt,
+							{
+								...completed.snapshot.turn.messages[0],
+								parts: [
+									composeEmailPart(
+										{
+											replyTo: "email",
+											message: "Friday works.",
+										},
+										"reply-call",
+										"COMPLETED",
+										{
+											shown: true,
+											mode: "reply",
+											replyTo: "email",
+											sourceMessage,
+										},
+									),
+								],
+							},
+						],
 					},
-					"Draft a reply to this email using the thread context.",
-				),
-			},
-		],
-	};
-	renderHook(useRoomEmailProposals, {
-		initialProps: {
-			...completed,
-			allowedSources: new Set(["email", "different-email"]),
-			snapshot: {
-				...completed.snapshot,
-				turn: {
-					...completed.snapshot.turn,
-					messages: [prompt, ...completed.snapshot.turn.messages],
 				},
 			},
-		},
-	});
-	expect(composer.getSnapshot().emailDrafts).toHaveLength(0);
-});
+		});
+		expect(composer.getSnapshot().emailDrafts).toHaveLength(0);
+	},
+);
 
 // a session: compose an email, then ask in chat to change the open one
 function revisionTurn(
@@ -465,6 +700,139 @@ it("updates the open editor in place when the assistant changes it", () => {
 	expect(values.subject).toBe("Hello");
 	expect(values.body).toContain("hope you are well");
 });
+
+it.each([
+	{ sourceId: "second-email", argument: "replyTo", mode: "reply" },
+	{ sourceId: "first-email", argument: "forward", mode: "forward" },
+])(
+	"preserves a topic draft when a $mode revision targets $sourceId",
+	({ sourceId, argument, mode }) => {
+		const { completed, composer } = setup();
+		const replies: ConversationMessage[] = [
+			"first-email",
+			"second-email",
+		].map((id) => ({
+			id,
+			role: "assistant",
+			parts: [
+				composeEmailPart(
+					{
+						replyTo: id,
+						message: `Reply to ${id}`,
+						to: `${id}@example.com`,
+					},
+					id,
+					"COMPLETED",
+					{
+						shown: true,
+						mode: "reply",
+						replyTo: id,
+						sourceMessage: { id, subject: id },
+					},
+				),
+			],
+		}));
+		const loadAttachment = vi.fn(
+			async () => new File(["note"], "note.txt"),
+		);
+		const props = {
+			...completed,
+			thread: { ...completed.thread, source: undefined },
+			allowedSources: new Set<string>(),
+			loadAttachment,
+		};
+		const view = renderHook(useRoomEmailProposals, {
+			initialProps: {
+				...props,
+				snapshot: {
+					turn: { ...completed.snapshot.turn, messages: replies },
+				},
+			},
+		});
+		const [first, second] = composer.getSnapshot().emailDrafts;
+		composer.requestEmailDraft(first.seed);
+		const before = first.getSnapshot();
+		const file = {
+			path: ".email-attachments/file/note.txt",
+			name: "note.txt",
+			size: 4,
+			sha256: "a".repeat(64),
+		};
+		const change: ConversationMessage = {
+			id: "change",
+			role: "assistant",
+			parts: [
+				composeEmailPart(
+					{
+						openEmailId: first.seed.id,
+						[argument]: sourceId,
+						message: "Wrong reply",
+						to: "wrong@example.com",
+						attachments: ["note.txt"],
+					},
+					"wrong-change",
+					"COMPLETED",
+					{
+						shown: true,
+						mode,
+						[argument]: sourceId,
+						sourceMessage: { id: sourceId, subject: sourceId },
+						attachments: [file],
+					},
+				),
+			],
+		};
+		view.rerender({
+			...props,
+			snapshot: {
+				turn: {
+					...completed.snapshot.turn,
+					messages: [...replies, change],
+				},
+			},
+		});
+		expect(view.result.current).toContain("Your open draft was kept");
+		expect(first.getSnapshot()).toBe(before);
+		expect(first.seed).toMatchObject({
+			mode: "reply",
+			sourceUid: "first-email",
+		});
+		expect(composer.getSnapshot().emailDrafts).toEqual([first, second]);
+		expect(loadAttachment).not.toHaveBeenCalled();
+		view.rerender({
+			...props,
+			snapshot: {
+				turn: {
+					...completed.snapshot.turn,
+					messages: [
+						...replies,
+						{
+							id: "correct-change",
+							role: "assistant",
+							parts: [
+								composeEmailPart(
+									{
+										openEmailId: first.seed.id,
+										message: "Correct revision",
+									},
+									"correct-change",
+								),
+							],
+						},
+					],
+				},
+			},
+		});
+		expect(first.getSnapshot().values).toMatchObject({
+			body: "<p>Correct revision</p>",
+			to: "first-email@example.com",
+		});
+		expect(first.seed).toMatchObject({
+			mode: "reply",
+			sourceUid: "first-email",
+		});
+	},
+);
 
 it("keeps the owner's edits when they typed while the assistant was writing", () => {
 	const { base, completed, composer } = setup();

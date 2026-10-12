@@ -2,18 +2,26 @@ import {
 	act,
 	fireEvent,
 	render,
+	renderHook,
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import { StrictMode } from "react";
 import { MemoryRouter } from "react-router";
 import { MAIL_SENT_EVENT } from "@/features/connectors/api/microsoft";
+import { deferred } from "@/features/onboarding/topic-review.test-fixtures";
 import type { InsightActions } from "@/lib/pixel";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
-import { readMailCheck, readWorkUpdates, syncMail } from "./live-state";
+import {
+	readMailCheck,
+	readTopicGoals,
+	readWorkUpdates,
+	syncMail,
+} from "./live-state";
 import type { LiveSync } from "./live-sync";
 import { WorkRefreshStatus } from "./work-refresh-status";
 import { useWorkUpdates } from "./work-updates.context";
@@ -21,6 +29,7 @@ import { WorkUpdatesProvider } from "./work-updates-provider";
 
 vi.mock("./live-state", () => ({
 	readMailCheck: vi.fn().mockResolvedValue(null),
+	readTopicGoals: vi.fn(),
 	readWorkUpdates: vi.fn(),
 	syncMail: vi.fn(),
 }));
@@ -55,6 +64,149 @@ function Harness() {
 		</>
 	);
 }
+
+it("refreshes an approved goal after queued saves while preserving other goals and newer local edits", async () => {
+	const state = createInitialCollaborationState();
+	const topic = state.topics[0];
+	topic.isSample = false;
+	topic.goals = [
+		{ noteId: "local-goal", text: "Ship the release", status: "open" },
+		{ noteId: "other-goal", text: "Keep editing", status: "open" },
+	];
+	const saving = deferred<void>();
+	const read = deferred<Awaited<ReturnType<typeof readTopicGoals>>>();
+	const sync: LiveSync = Object.assign(vi.fn(), {
+		settled: vi
+			.fn()
+			.mockReturnValueOnce(saving.promise)
+			.mockResolvedValue(undefined),
+		localId: (id: string) => (id === "server-goal" ? "local-goal" : id),
+	});
+	vi.mocked(readTopicGoals).mockReset().mockReturnValueOnce(read.promise);
+	const { result, unmount } = renderHook(
+		() => ({
+			...useCollaborationSession(),
+			updates: useWorkUpdates(),
+		}),
+		{
+			wrapper: ({ children }) => (
+				<CollaborationSessionProvider initialState={state}>
+					<WorkUpdatesProvider
+						actions={{} as InsightActions}
+						sync={sync}
+					>
+						{children}
+					</WorkUpdatesProvider>
+				</CollaborationSessionProvider>
+			),
+		},
+	);
+	act(() =>
+		result.current.updates?.refreshTopicGoal(
+			{ topicId: topic.id },
+			"server-goal",
+		),
+	);
+	expect(readTopicGoals).not.toHaveBeenCalled();
+	await act(async () => saving.resolve());
+	expect(readTopicGoals).toHaveBeenCalledWith({}, { topicId: topic.id });
+	const server = {
+		id: topic.id,
+		goals: [
+			{
+				noteId: "server-goal",
+				text: "Ship the release",
+				status: "done" as const,
+				resolution: "Released version 2.0",
+			},
+			{
+				noteId: "other-goal",
+				text: "Stale server copy",
+				status: "done" as const,
+			},
+		],
+	};
+	await act(async () => read.resolve(server));
+	expect(result.current.state.topics[0].goals).toEqual([
+		{
+			...topic.goals[0],
+			status: "done",
+			resolution: "Released version 2.0",
+		},
+		topic.goals[1],
+	]);
+
+	const stale = deferred<typeof server>();
+	vi.mocked(readTopicGoals).mockReturnValueOnce(stale.promise);
+	act(() =>
+		result.current.updates?.refreshTopicGoal(
+			{ topicId: topic.id },
+			"server-goal",
+		),
+	);
+	await waitFor(() => expect(readTopicGoals).toHaveBeenCalledTimes(2));
+	act(() =>
+		result.current.dispatch({
+			type: "topic.note",
+			topicId: topic.id,
+			kind: "goal",
+			operation: "save",
+			noteId: "local-goal",
+			text: "Updated locally",
+			status: "open",
+		}),
+	);
+	await act(async () => stale.resolve(server));
+	expect(result.current.state.topics[0].goals[0]).toEqual({
+		noteId: "local-goal",
+		text: "Updated locally",
+		status: "open",
+		resolution: "Released version 2.0",
+	});
+	unmount();
+});
+
+it("does not mark a goal done when the server still says open or the read fails", async () => {
+	const state = createInitialCollaborationState();
+	const topic = state.topics[0];
+	topic.isSample = false;
+	const goal = topic.goals[0];
+	goal.status = "open";
+	vi.mocked(readTopicGoals)
+		.mockReset()
+		.mockResolvedValueOnce({ id: topic.id, goals: [goal] })
+		.mockRejectedValueOnce(new Error("Topic read unavailable"));
+	const { result } = renderHook(
+		() => ({
+			...useCollaborationSession(),
+			updates: useWorkUpdates(),
+		}),
+		{
+			wrapper: ({ children }) => (
+				<CollaborationSessionProvider initialState={state}>
+					<WorkUpdatesProvider actions={{} as InsightActions}>
+						{children}
+					</WorkUpdatesProvider>
+				</CollaborationSessionProvider>
+			),
+		},
+	);
+	await act(async () =>
+		result.current.updates?.refreshTopicGoal(
+			{ topicId: topic.id },
+			goal.noteId,
+		),
+	);
+	expect(result.current.state.topics[0].goals[0].status).toBe("open");
+	await act(async () =>
+		result.current.updates?.refreshTopicGoal(
+			{ topicId: topic.id },
+			goal.noteId,
+		),
+	);
+	expect(result.current.updates?.error).toBe("Topic read unavailable");
+	expect(result.current.state.topics[0].goals[0].status).toBe("open");
+});
 it("deduplicates server echoes, ignores removed actions during a refresh, and releases its listener", async () => {
 	const state = createInitialCollaborationState();
 	const threadId = state.threads[0].id;
@@ -277,3 +429,99 @@ it("re-reads only while sync summaries are still landing, then stops", async () 
 		vi.useRealTimers();
 	}
 });
+
+it("checks connected mail while visible and applies incoming replies without a manual refresh", async () => {
+	vi.useFakeTimers();
+	const visibility = vi.spyOn(document, "visibilityState", "get");
+	visibility.mockReturnValue("visible");
+	try {
+		const state = createInitialCollaborationState();
+		state.sources[0].isSample = false;
+		const incoming = { ...state.threads[0], messageCount: 7 };
+		const syncing = deferred<Awaited<ReturnType<typeof syncMail>>>();
+		const syncResult = {
+			newMessages: 1,
+			closedByReply: 0,
+			outcomes: {},
+			changes: [],
+		};
+		vi.mocked(readMailCheck).mockReset().mockResolvedValue(null);
+		vi.mocked(readWorkUpdates)
+			.mockReset()
+			.mockResolvedValue({
+				threads: [incoming],
+				items: [],
+				workspaces: {},
+				memories: [],
+				lastMailCheck: null,
+			});
+		vi.mocked(syncMail)
+			.mockReset()
+			.mockReturnValueOnce(syncing.promise)
+			.mockResolvedValue(syncResult);
+		const { result, unmount } = renderHook(useCollaborationSession, {
+			wrapper: ({ children }) => (
+				<StrictMode>
+					<CollaborationSessionProvider initialState={state}>
+						<WorkUpdatesProvider actions={{} as InsightActions}>
+							{children}
+						</WorkUpdatesProvider>
+					</CollaborationSessionProvider>
+				</StrictMode>
+			),
+		});
+		await act(async () => vi.advanceTimersByTimeAsync(0));
+		expect(syncMail).toHaveBeenCalledTimes(1);
+		await act(async () => vi.advanceTimersByTimeAsync(60_000));
+		expect(syncMail).toHaveBeenCalledTimes(1);
+		expect(readWorkUpdates).not.toHaveBeenCalled();
+		await act(async () => syncing.resolve(syncResult));
+		expect(result.current.state.threads[0].messageCount).toBe(7);
+		await act(async () => vi.advanceTimersByTimeAsync(60_000));
+		expect(syncMail).toHaveBeenCalledTimes(2);
+		visibility.mockReturnValue("hidden");
+		await act(async () => vi.advanceTimersByTimeAsync(120_000));
+		expect(syncMail).toHaveBeenCalledTimes(2);
+		visibility.mockReturnValue("visible");
+		await act(async () => {
+			fireEvent(document, new Event("visibilitychange"));
+			fireEvent(window, new Event("focus"));
+		});
+		expect(syncMail).toHaveBeenCalledTimes(3);
+		unmount();
+		await act(async () => vi.advanceTimersByTimeAsync(60_000));
+		fireEvent(window, new Event("focus"));
+		expect(syncMail).toHaveBeenCalledTimes(3);
+	} finally {
+		visibility.mockRestore();
+		vi.useRealTimers();
+	}
+});
+
+it.each(["sample", "off"])(
+	"does not automatically sync %s mail",
+	async (source) => {
+		vi.useFakeTimers();
+		try {
+			const state = createInitialCollaborationState();
+			if (source === "off") {
+				state.sources[0].isSample = false;
+				state.sources[0].status = "off";
+			}
+			vi.mocked(syncMail).mockClear();
+			vi.mocked(readMailCheck).mockReset().mockResolvedValue(null);
+			const { unmount } = render(
+				<CollaborationSessionProvider initialState={state}>
+					<WorkUpdatesProvider actions={{} as InsightActions}>
+						<WorkRefreshStatus />
+					</WorkUpdatesProvider>
+				</CollaborationSessionProvider>,
+			);
+			await act(async () => vi.advanceTimersByTimeAsync(120_000));
+			expect(syncMail).not.toHaveBeenCalled();
+			unmount();
+		} finally {
+			vi.useRealTimers();
+		}
+	},
+);

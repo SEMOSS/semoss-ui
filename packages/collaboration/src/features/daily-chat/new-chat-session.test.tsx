@@ -12,6 +12,7 @@ import { RouterProvider } from "react-router/dom";
 import { TooltipProvider } from "@semoss/ui/next";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
+import { linkRoomTopic } from "@/features/rooms/api/room-topics";
 import { RoomSettingsForm } from "@/features/rooms/components/room-settings-form";
 import { ROOM_SETTINGS_PANEL_TYPE } from "@/features/rooms/components/room-settings-panel";
 import { RoomSettingsPanelContext } from "@/features/rooms/components/room-settings-panel.context";
@@ -25,6 +26,7 @@ import type { ThreadChatSettings } from "@/features/thread-assistant/thread-sett
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { roomPath } from "@/lib/workspace-paths";
 import { LandingChatComposer } from "./landing-chat-composer";
+import { getHistoryChatDraft } from "./new-chat-drafts";
 
 const mocks = vi.hoisted(() => ({
 	scope: "",
@@ -43,10 +45,23 @@ vi.mock("@semoss/shared", async (original) => ({
 vi.mock("@/features/rooms/room-session", () => ({
 	createRoomSession: () => mocks.createSession(),
 }));
+vi.mock("@/features/rooms/api/room-topics", () => ({
+	linkRoomTopic: vi.fn(),
+}));
 
 vi.mock("@/features/work-thread/thread-agent-select", () => ({
-	ThreadAgentSelect: ({ onChange }: { onChange: (id: string) => void }) => (
-		<button type="button" onClick={() => onChange("chosen-agent")}>
+	ThreadAgentSelect: ({
+		onChange,
+		disabled,
+	}: {
+		onChange: (id: string) => void;
+		disabled: boolean;
+	}) => (
+		<button
+			type="button"
+			disabled={disabled}
+			onClick={() => onChange("chosen-agent")}
+		>
 			Choose agent
 		</button>
 	),
@@ -233,17 +248,22 @@ function RoomDestination() {
 	const { threadId } = useParams();
 	return <output aria-label="Room identity">{threadId}</output>;
 }
-function setup(navigationState?: unknown, search = "") {
+function TopicComposer() {
+	const { topicId } = useParams();
+	return <LandingChatComposer key={topicId} topicId={topicId} />;
+}
+function setup(navigationState?: unknown, search = "", pathname = "/") {
 	const router = createMemoryRouter(
 		[
 			{ path: "/", Component: LandingChatComposer },
+			{ path: "/topics/:topicId", Component: TopicComposer },
 			{ path: "/work", element: <div>Work</div> },
 			{ path: "/thread/:threadId", Component: RoomDestination },
 		],
 		{
 			initialEntries: [
 				"/work",
-				{ pathname: "/", search, state: navigationState },
+				{ pathname, search, state: navigationState },
 			],
 			initialIndex: 1,
 		},
@@ -313,6 +333,9 @@ beforeEach(() => {
 	mocks.scope = crypto.randomUUID();
 	mocks.create.mockResolvedValue("actual-room");
 	mocks.send.mockResolvedValue(undefined);
+	vi.mocked(linkRoomTopic).mockImplementation(
+		async (_actions, _roomId, topicId) => [{ topicId, state: "linked" }],
+	);
 	sessions = [];
 	mocks.createSession.mockImplementation(() => {
 		const session = roomSessionFixture();
@@ -831,4 +854,172 @@ it("shows Files errors next to the composer and supports retry", async () => {
 	expect(mocks.create).toHaveBeenCalledTimes(2);
 	expect(mocks.send).not.toHaveBeenCalled();
 	expect(router.state.location.pathname).toBe("/");
+});
+
+it("keeps a topic assistant local and links its room before the first unchanged request", async () => {
+	let confirmLink: (() => void) | undefined;
+	vi.mocked(linkRoomTopic).mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				confirmLink = () =>
+					resolve([{ topicId: "topic-one", state: "linked" }]);
+			}),
+	);
+	const router = setup(undefined, "", "/topics/topic-one");
+	const id = draftIdentity();
+	expect(mocks.create).not.toHaveBeenCalled();
+	expect(linkRoomTopic).not.toHaveBeenCalled();
+	await enterText("What should we prioritize?");
+	submit();
+	submit();
+	await waitFor(() => expect(linkRoomTopic).toHaveBeenCalledOnce());
+	expect(linkRoomTopic).toHaveBeenCalledWith(
+		sessions[0].insight.actions,
+		"actual-room",
+		"topic-one",
+	);
+	expect(mocks.create).toHaveBeenCalledOnce();
+	expect(mocks.send).not.toHaveBeenCalled();
+	expect(router.state.location.pathname).toBe("/topics/topic-one");
+	expect(screen.getByRole("button", { name: "Choose agent" })).toBeDisabled();
+	submit();
+	await act(async () => confirmLink?.());
+	await waitFor(() =>
+		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
+	);
+	expect(mocks.create).toHaveBeenCalledOnce();
+	expect(linkRoomTopic).toHaveBeenCalledOnce();
+	expect(mocks.send).toHaveBeenCalledExactlyOnceWith({
+		text: "What should we prioritize?",
+		files: [],
+	});
+	await act(() => router.navigate(-1));
+	expect(router.state.location.pathname).toBe("/topics/topic-one");
+	expect(draftIdentity()).not.toBe(id);
+	expect(screen.getByRole("textbox").textContent).toBe("");
+});
+
+it.each(["error", "suggested", "dismissed", "other-topic"])(
+	"retains the topic draft and allocated room when topic linking returns %s",
+	async (result) => {
+		if (result === "error")
+			vi.mocked(linkRoomTopic).mockRejectedValueOnce(
+				new Error("The topic could not be linked."),
+			);
+		else
+			vi.mocked(linkRoomTopic).mockResolvedValueOnce([
+				{
+					topicId:
+						result === "other-topic" ? "other-topic" : "topic-one",
+					state:
+						result === "suggested" || result === "dismissed"
+							? result
+							: "linked",
+				},
+			]);
+		const router = setup(
+			{ prompt: "Keep this request" },
+			"",
+			"/topics/topic-one",
+		);
+		const id = draftIdentity();
+		submit();
+		await screen.findByRole("alert");
+		expect(router.state.location.pathname).toBe("/topics/topic-one");
+		expect(draftIdentity()).toBe(id);
+		expect(screen.getByRole("textbox")).toHaveTextContent(
+			"Keep this request",
+		);
+		expect(sessions[0].getSnapshot().roomId).toBe("actual-room");
+		expect(mocks.send).not.toHaveBeenCalled();
+		submit();
+		await waitFor(() =>
+			expect(router.state.location.pathname).toBe(
+				roomPath("actual-room"),
+			),
+		);
+		expect(mocks.create).toHaveBeenCalledOnce();
+		expect(linkRoomTopic).toHaveBeenCalledTimes(2);
+		expect(mocks.send).toHaveBeenCalledExactlyOnceWith({
+			text: "Keep this request",
+			files: [],
+		});
+	},
+);
+
+it("isolates home and topic drafts even when navigation requests the same draft identity", async () => {
+	const router = setup({ prompt: "Home question" });
+	const homeId = draftIdentity();
+	await act(() =>
+		router.navigate("/topics/topic-one", {
+			state: { sessionId: homeId, prompt: "First topic question" },
+		}),
+	);
+	const firstId = draftIdentity();
+	expect(firstId).not.toBe(homeId);
+	expect(screen.getByRole("textbox")).toHaveTextContent(
+		"First topic question",
+	);
+	await act(() =>
+		router.navigate("/topics/topic-two", {
+			state: { sessionId: firstId, prompt: "Second topic question" },
+		}),
+	);
+	expect(draftIdentity()).not.toBe(firstId);
+	expect(screen.getByRole("textbox")).toHaveTextContent(
+		"Second topic question",
+	);
+	await act(() => router.navigate("/", { state: { sessionId: firstId } }));
+	expect(screen.getByRole("textbox").textContent).toBe("");
+	await act(() => router.navigate(-2));
+	expect(draftIdentity()).toBe(firstId);
+	expect(screen.getByRole("textbox")).toHaveTextContent(
+		"First topic question",
+	);
+	await act(() => router.navigate(-1));
+	expect(draftIdentity()).toBe(homeId);
+	expect(screen.getByRole("textbox")).toHaveTextContent("Home question");
+	expect(mocks.create).not.toHaveBeenCalled();
+	expect(linkRoomTopic).not.toHaveBeenCalled();
+});
+
+it("keeps a pending topic link owned by its original draft after navigating away and back", async () => {
+	let confirmLink: (() => void) | undefined;
+	vi.mocked(linkRoomTopic).mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				confirmLink = () =>
+					resolve([{ topicId: "topic-one", state: "linked" }]);
+			}),
+	);
+	const router = setup(undefined, "", "/topics/topic-one");
+	const id = draftIdentity();
+	await enterText("Original topic request");
+	submit();
+	await waitFor(() => expect(linkRoomTopic).toHaveBeenCalledOnce());
+	await act(() => router.navigate("/work"));
+	for (let index = 0; index < 45; index++)
+		getHistoryChatDraft(
+			mocks.scope,
+			`other-entry-${index}`,
+			true,
+			"",
+			"",
+			"",
+			"topic-other",
+		);
+	await act(() => router.navigate(-1));
+	expect(draftIdentity()).toBe(id);
+	expect(screen.getByRole("button", { name: "Choose agent" })).toBeDisabled();
+	submit();
+	await act(async () => confirmLink?.());
+	expect(router.state.location.pathname).toBe("/topics/topic-one");
+	expect(draftIdentity()).not.toBe(id);
+	expect(screen.getByRole("textbox").textContent).toBe("");
+	expect(mocks.create).toHaveBeenCalledOnce();
+	expect(linkRoomTopic).toHaveBeenCalledOnce();
+	expect(mocks.send).toHaveBeenCalledExactlyOnceWith({
+		text: "Original topic request",
+		files: [],
+	});
 });

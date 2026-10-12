@@ -72,6 +72,9 @@ it("reads permitted Brain pages and returns only room identities in their saved 
 		);
 	const messages = await loadRoomSourceEmails(actionsFor(run), source);
 	expect(messages.map((item) => item.id)).toEqual(["older", "newer"]);
+	expect(
+		run.mock.calls.some(([statement]) => statement.includes("refresh=")),
+	).toBe(false);
 	expect(messages[0]).toMatchObject({
 		displayBody: { contentType: "html", content: "<p>Original older</p>" },
 		to: ["Recipient"],
@@ -268,6 +271,12 @@ it("refreshes every Brain page to discover replies beyond the imported identitie
 		"reply",
 	]);
 	expect(run).toHaveBeenCalledTimes(3);
+	// only the first page asks the server to read the mailbox first
+	expect(
+		run.mock.calls.map(([statement]) =>
+			statement.includes("refresh=[true]"),
+		),
+	).toEqual([true, false, false]);
 });
 
 it("continues discovering replies after the imported envelopes become empty", async () => {

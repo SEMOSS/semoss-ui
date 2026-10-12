@@ -388,6 +388,7 @@ it("keeps a failed empty work refresh distinct from being caught up and offers r
 						error,
 						lastMailCheck: null,
 						refresh,
+						refreshTopicGoal: vi.fn(),
 						isSyncing: false,
 						lastSync: null,
 						syncError: "",

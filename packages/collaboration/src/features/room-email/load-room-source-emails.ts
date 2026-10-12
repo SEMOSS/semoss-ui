@@ -133,6 +133,7 @@ export async function loadRoomSourceEmails(
 			actions,
 			source.threadId,
 			cursor,
+			includeNewReplies && !cursor,
 		);
 		if (includeNewReplies && page.unavailableCount)
 			throw new Error(

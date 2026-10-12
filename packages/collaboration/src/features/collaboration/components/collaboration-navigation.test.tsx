@@ -121,7 +121,7 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["For you", "Work", "Brain"]);
+		).toEqual(["For you", "Work", "Unassigned", "Brain"]);
 		expect(
 			within(main).getByRole("link", { name: "For you" }),
 		).toHaveTextContent(/^For you$/);
@@ -168,6 +168,28 @@ describe("CollaborationNavigation", () => {
 			"page",
 		);
 		expect(screen.getByRole("link", { name: "Work" })).not.toHaveAttribute(
+			"aria-current",
+		);
+	});
+
+	it("opens Unassigned by keyboard and counts conversations without requiring an action", async () => {
+		const state = createInitialCollaborationState();
+		state.items = [];
+		state.threads = state.threads.slice(0, 2).map((thread, index) => ({
+			...thread,
+			topicLinks: index === 0 ? [] : thread.topicLinks,
+			needsTopicChoice: false,
+		}));
+		const { user, router, onNavigate } = renderNavigation("/", state);
+		const unassigned = screen.getByRole("link", { name: "Unassigned" });
+		expect(unassigned).toHaveTextContent("Unassigned1");
+		act(() => unassigned.focus());
+		await user.keyboard("{Enter}");
+		expect(router.state.location.pathname).toBe("/brain/threads");
+		expect(router.state.location.search).toBe("?filter=needs");
+		expect(onNavigate).toHaveBeenCalledOnce();
+		expect(unassigned).toHaveAttribute("aria-current", "page");
+		expect(screen.getByRole("link", { name: "Brain" })).not.toHaveAttribute(
 			"aria-current",
 		);
 	});
@@ -288,6 +310,7 @@ describe("CollaborationNavigation", () => {
 		const controls = [
 			screen.getByRole("link", { name: "For you" }),
 			screen.getByRole("link", { name: "Work" }),
+			screen.getByRole("link", { name: "Unassigned" }),
 			screen.getByRole("link", { name: "Brain" }),
 			screen.getByRole("link", { name: "Settings" }),
 			screen.getByRole("button", { name: /Account menu for/ }),

@@ -14,18 +14,19 @@ import { useDashboard } from "./dashboard.context";
 import { useTopicSessions } from "./use-topic-sessions";
 
 interface TopicSessionsProps {
-	/** The topic whose current source threads identify linked conversations. */
+	/** The topic whose linked chats and source threads identify conversations. */
 	topicId: string;
 }
 
-/** Saved conversations with explicit links to this topic's source threads. */
+/** Saved conversations linked to this topic directly or through its threads. */
 export function TopicSessions({ topicId }: TopicSessionsProps) {
 	const { history, openRoom, openingRoom } = useDashboard();
 	const sessions = useTopicSessions(topicId);
 	return (
 		<section aria-label="Topic sessions" className="space-y-4 p-4 md:p-6">
 			<P className="text-muted-foreground text-sm">
-				Conversations opened from this topic's threads.
+				Topic chats and conversations opened from this topic's imported
+				threads.
 			</P>
 			{sessions.rooms.length > 0 && (
 				<ul className="divide-y divide-border">

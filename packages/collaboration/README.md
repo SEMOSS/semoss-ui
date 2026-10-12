@@ -76,9 +76,34 @@ with Actions, Threads, and Sessions alongside editable goals, people, notes, and
 filing signals. Existing Work and Brain topic links redirect to that workspace.
 Thread rows retain source details, calendar timing, and thread controls.
 
-Topic Sessions reads validated `RoomOptions.source.threadId` metadata only when
-its tab opens, in batches of 25. Associations are cached within the current
-account and insight, rechecked when reopening the tab, and show partial failures,
+Ask assistant opens the existing chat composer within the topic. Its draft is
+separate from the home composer and other topics, and survives hiding the
+assistant. Before the first message is sent, the room must be confirmed linked
+to that topic. The agent receives the server's topic brief and can retrieve
+topic details, search its emails, and read source threads through the existing
+collaboration tools. A failed link retains the draft and room for retry.
+Archived and suggested topics must be set to Active or Dormant before starting
+a chat.
+
+On each turn the assistant receives open goals, including their IDs, from the
+chat's topics and the confirmed topics of its included threads. When current
+evidence fulfills a goal, `CompleteGoal` marks it done automatically, saves the
+outcome as a short accomplishment without internal IDs or citations, and the
+assistant tells the owner. Successful tool results
+refresh the goal list. Plans, promises, and partial answers leave goals open.
+
+With memory enabled, the assistant also checks each turn for lasting preferences,
+useful facts, and corrections stated by the owner. It uses `Remember` immediately,
+checks for existing memories, and updates them with `replaces` instead of creating
+duplicates. New and learned memories save automatically; changes to owner-written
+or confirmed memories still use the existing approval card. General preferences
+use `everywhere`, while topic-specific memories keep their topic links.
+
+Topic Sessions reads validated `RoomOptions.source.threadId` metadata and linked
+room topics only when its tab opens, in batches of 25. Direct topic chats and
+conversations opened from its source threads are included. Delegation rooms skip
+the room-topic lookup. Associations are cached within the current account and
+insight, rechecked when reopening the tab, and show partial failures,
 retry, and further loading. Multiple rooms from one source are retained; older
 explicit thread-to-room links remain supported. Selecting any saved session
 opens that exact room. No persistence migration is needed.
@@ -174,7 +199,12 @@ Sources are initially loaded through explicit actions under Brain → Sources.
 Loaded email lists refresh while the page is visible and on return to the app.
 Work also refreshes existing Brain/Work summaries and actions without remounting
 readers or drafts; connection failures offer a retry on the source and Work pages.
-Webhook delivery and automatic agent execution remain backend integration dependencies.
+Connected mail is checked on opening Collaboration, every minute while visible,
+and when returning after a minute away, using the existing mailbox sync. This
+also works on local servers that cannot receive Graph webhooks. Unassigned in
+the main navigation lists imported conversations without a confirmed topic,
+including mail with no action needed, with sender/subject search and topic assignment.
+Automatic agent execution remains a backend integration dependency.
 They use the existing SEMOSS Microsoft reactors and `oauth("microsoft")`; the
 backend must have Microsoft authentication and the relevant permissions enabled.
 Failures are displayed without substituting sample results.
@@ -191,7 +221,11 @@ Truncated content is identified. These bounds describe the available first page,
 not complete mailbox or conversation synchronization.
 
 Outlook supports formatted new, native reply/reply-all, and forward drafts. The
-shared Lexical editor exports sanitized HTML with inline formatting, including
+send path records the originating Collaboration chat and its explicit topic links
+before delivery; the sent copy and replies inherit those links during ingestion.
+When Graph provides a draft Message-ID, an alias also catches replies that arrive
+before the sent copy. Drafts remain editable in their originating chat until sent.
+The shared Lexical editor exports sanitized HTML with inline formatting, including
 tables. Reply/forward saving creates a native draft, prepends authored HTML to
 Outlook's quoted body, and updates that new draft before confirming success.
 Further saves create a new copy. Reply composers show editable To and Cc chips,
