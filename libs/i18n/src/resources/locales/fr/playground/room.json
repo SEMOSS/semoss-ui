@@ -1,5 +1,8 @@
 {
 	"welcome": "Bienvenue, {{name}}",
+	"suggestions": {
+		"title": "Suggestions pour poursuivre"
+	},
 	"settings": {
 		"title": "Paramètres de la salle",
 		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
