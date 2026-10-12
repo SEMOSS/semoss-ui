@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useContext } from "react";
 import { cn } from "@semoss/ui/next";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
+import { CollaborationHeaderLayoutContext } from "@/features/collaboration/components/collaboration-header.context";
 import { roomWorkbenchTriggerId } from "../room-workbench-trigger-id";
 import type { RoomViewProps } from "../types/room";
 import { RoomHeader } from "./room-header";
@@ -51,14 +52,23 @@ export function RoomConversation({
 	isLanding = false,
 	isHidden = false,
 }: RoomConversationProps) {
+	const setConversationColumn = useContext(CollaborationHeaderLayoutContext);
+	const hasFullHeightWorkbench =
+		Boolean(setConversationColumn) &&
+		isToolWorkbenchOpen &&
+		showToolWorkbench &&
+		!isLanding &&
+		!isHidden;
 	return (
 		<section
+			ref={hasFullHeightWorkbench ? setConversationColumn : undefined}
 			hidden={isHidden}
 			aria-label="Communication thread"
 			className={cn(
 				"@container/conversation size-full min-h-0 min-w-0 flex-col",
 				isHidden ? "hidden" : "flex",
 				isLanding && "overflow-y-auto",
+				hasFullHeightWorkbench && "md:pt-14",
 			)}
 		>
 			{!isLanding && (

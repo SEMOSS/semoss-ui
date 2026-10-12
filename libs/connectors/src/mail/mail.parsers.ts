@@ -103,13 +103,18 @@ const parseMailMessage = (entry: unknown): MailMessage | null => {
  * @param raw - The reactor's output, `{ folder, offset, count, hasMore, messages }`.
  * @return The emails, newest first, and whether there are more.
  */
-export const parseMailPage = (raw: unknown): MailPage => ({
-	messages: parseEach(
-		requireList(raw, "messages", "any messages"),
-		parseMailMessage,
-	),
-	hasMore: isRecord(raw) && raw.hasMore === true,
-});
+export const parseMailPage = (raw: unknown): MailPage => {
+	const messages = requireList(raw, "messages", "any messages");
+	const count = isRecord(raw) ? readNumber(raw.count) : undefined;
+	return {
+		messages: parseEach(messages, parseMailMessage),
+		rawCount:
+			count !== undefined && Number.isSafeInteger(count) && count >= 0
+				? count
+				: messages.length,
+		hasMore: isRecord(raw) && raw.hasMore === true,
+	};
+};
 
 /**
  * One email, from `GetMail`.

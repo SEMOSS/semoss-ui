@@ -72,6 +72,7 @@ export interface AutomationWorkflowNodeConfig
 		string,
 		| AutomationJsonValue
 		| AutomationBranchClause[]
+		| AutomationJevQuestion[]
 		| AutomationJevRoute[]
 		| AutomationGlobalVariable[]
 		| undefined
@@ -95,10 +96,46 @@ export interface AutomationBranchClause {
 	condition: string;
 }
 
-/** A named route exposed by a `control.jev` decision node. */
+export type AutomationJevQuestionType = "choice" | "score" | "noul";
+
+/** One named typed question evaluated within a `control.jev` request. */
+export interface AutomationJevQuestion {
+	key: string;
+	type: AutomationJevQuestionType;
+	instructions: string;
+	criteria?: Record<string, string> | string[];
+}
+
+export type AutomationJevRouteMatch = "all" | "any";
+export type AutomationJevRouteField =
+	| "choice"
+	| "score"
+	| "noul"
+	| "confidence"
+	| "probability";
+export type AutomationJevRouteOperator =
+	| "equals"
+	| "notEquals"
+	| "greaterThan"
+	| "greaterThanOrEqual"
+	| "lessThan"
+	| "lessThanOrEqual";
+
+/** One threshold or value comparison used by a JEV route. */
+export interface AutomationJevRouteCondition {
+	questionKey: string;
+	field: AutomationJevRouteField;
+	operator: AutomationJevRouteOperator;
+	value: string | number;
+	option?: string;
+}
+
+/** A named ordered route exposed by a `control.jev` decision node. */
 export interface AutomationJevRoute {
 	id: string;
 	description: string;
+	match?: AutomationJevRouteMatch;
+	conditions?: AutomationJevRouteCondition[];
 	/** Explicit outcome represented by this route for a Noul Yes/No question. */
 	answer?: boolean;
 }

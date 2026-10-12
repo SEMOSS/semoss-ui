@@ -37,7 +37,8 @@
 		"saved": "{{name}} is opgeslagen",
 		"openIn": "Openen in {{service}}",
 		"saveError": "Kan {{name}} niet opslaan. {{message}}",
-		"contextError": "Kan {{name}} niet aan de context toevoegen. {{message}}"
+		"contextError": "Kan {{name}} niet aan de context toevoegen. {{message}}",
+		"addToChat": "Toevoegen aan chat"
 	},
 	"status": {
 		"signInTitle": "Aanmelden bij {{account}}",
@@ -98,7 +99,10 @@
 		"loadingAttachments": "Bijlagen laden...",
 		"conversations": "Gesprekken",
 		"showQuoted": "Geciteerde e-mails tonen",
-		"hideQuoted": "Geciteerde e-mails verbergen"
+		"hideQuoted": "Geciteerde e-mails verbergen",
+		"filters": "Filters",
+		"pageError": "Meer berichten konden niet worden geladen.",
+		"emptyPage": "De mailbox gaf een lege pagina terug. Probeer het opnieuw."
 	},
 	"calendar": {
 		"range": "{{start}} tot {{end}}",
@@ -153,7 +157,9 @@
 			"day": "Volgende dag",
 			"threeDays": "Volgende 3 dagen",
 			"month": "Volgende maand"
-		}
+		},
+		"title": "Agenda",
+		"openCalendar": "Agenda openen"
 	},
 	"teams": {
 		"team": "Team",

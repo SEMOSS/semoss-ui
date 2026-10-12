@@ -2,19 +2,32 @@ import { z } from "@semoss/ui/next";
 import { importSourceCommand } from "@/features/collaboration/import-source";
 import { readThreadMessagesPage } from "@/features/collaboration/live/live-state";
 import type { WorkspaceMessage } from "@/features/collaboration/state/collaboration.types";
-import { getMail } from "@/features/connectors/api/microsoft";
+import {
+	getMail,
+	getTeamsMessages,
+	safeSourceUrl,
+} from "@/features/connectors/api/microsoft";
 import { importOutlookMail } from "@/features/connectors/api/source-mapping";
-import type { RoomSource } from "@/features/rooms/source-import/room-source";
+import {
+	canReadRoomSource,
+	type RoomSource,
+} from "@/features/rooms/source-import/room-source";
 import type { InsightActions } from "@/lib/pixel";
 
-/** Reload only this room's included emails, preserving native identities and source order. */
+/** Reload only this room's included messages, preserving native identities and source order. */
 export async function loadRoomSourceEmails(
 	actions: InsightActions,
 	source: RoomSource,
+	includeNewReplies = false,
 ): Promise<WorkspaceMessage[]> {
 	if (
-		source.channel !== "email" ||
-		(source.kind !== "brain" && source.kind !== "outlook")
+		!canReadRoomSource(source) &&
+		!(
+			includeNewReplies &&
+			source.channel === "email" &&
+			(source.kind === "brain" ||
+				(source.kind === "outlook" && source.nativeId))
+		)
 	)
 		return [];
 	const envelopes = [
@@ -22,7 +35,44 @@ export async function loadRoomSourceEmails(
 			source.messages.map((message) => [message.id, message]),
 		).values(),
 	];
-	if (!envelopes.length) return [];
+	if (
+		includeNewReplies &&
+		!envelopes.length &&
+		source.kind === "outlook" &&
+		source.nativeId
+	)
+		envelopes.push({ id: source.nativeId, at: "" });
+	if (!envelopes.length && !includeNewReplies) return [];
+	// a chat connected from Sources, not synced by the Brain: read it live
+	if (source.kind === "teams") {
+		if (!source.nativeId) return [];
+		const page = await getTeamsMessages(actions, source.nativeId);
+		const live = new Map(
+			page.messages
+				.filter((message) => !message.isDeleted)
+				.map((message): [string, WorkspaceMessage] => [
+					message.id,
+					{
+						id: message.id,
+						fromId: message.fromId ?? "",
+						fromName: message.fromName,
+						at: message.createdDateTime ?? "",
+						text: message.body,
+						displayBody: message.displayBody,
+						webLink: safeSourceUrl(
+							message.webUrl ?? source.webLink,
+						),
+						isTruncated: message.bodyTruncated,
+					},
+				]),
+		);
+		return envelopes.flatMap((envelope) => {
+			const message = live.get(envelope.id);
+			return message
+				? [{ ...message, at: message.at || envelope.at }]
+				: [];
+		});
+	}
 	if (source.kind === "outlook") {
 		return Promise.all(
 			envelopes.map(async (envelope): Promise<WorkspaceMessage> => {
@@ -83,22 +133,33 @@ export async function loadRoomSourceEmails(
 			actions,
 			source.threadId,
 			cursor,
+			includeNewReplies && !cursor,
 		);
+		if (includeNewReplies && page.unavailableCount)
+			throw new Error(
+				"Some source emails could not be read. The existing file has been kept; try refreshing again.",
+			);
 		for (const message of page.messages) {
-			if (!allowed.has(message.id)) continue;
+			if (!includeNewReplies && !allowed.has(message.id)) continue;
 			remaining.delete(message.id);
 			if (message.excluded) messages.delete(message.id);
 			else messages.set(message.id, message);
 		}
-		if (!remaining.size || !page.hasMore) break;
+		if ((!includeNewReplies && !remaining.size) || !page.hasMore) break;
 		if (!page.nextCursor || cursors.has(page.nextCursor)) {
 			throw new Error(
-				"The server could not continue this email thread. Try loading it again.",
+				"The server could not continue this thread. Try loading it again.",
 			);
 		}
 		cursors.add(page.nextCursor);
 		cursor = page.nextCursor;
 	} while (cursor);
+	if (includeNewReplies)
+		return [...messages.values()].sort(
+			(left, right) =>
+				left.at.localeCompare(right.at) ||
+				left.id.localeCompare(right.id),
+		);
 	return envelopes.flatMap((envelope) => {
 		const message = messages.get(envelope.id);
 		return message ? [message] : [];

@@ -1,7 +1,14 @@
 import { createStore, type StoreApi } from "zustand";
 import type { PermissionCache } from "@semoss/panels";
 import { createPermissionCache } from "@semoss/panels";
-import { download, logout, oauth, runPixel, upload } from "@semoss/sdk/react";
+import {
+	download,
+	Logins,
+	logout,
+	oauth,
+	runPixel,
+	upload,
+} from "@semoss/sdk/react";
 import {
 	login as authenticate,
 	confirmOTP,
@@ -235,6 +242,8 @@ export const createSessionStore = (
 		},
 		logout: async () => {
 			await logout();
+			// the next session's logins and account ids come from its own config
+			Logins.reset();
 			get().clearPermissions();
 			set({
 				user: resetUser(false),

@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
 	Button,
+	cn,
 	H1,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { checkTime } from "@/features/collaboration/live/work-refresh-status";
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { selectWorkItems } from "@/features/collaboration/state/collaboration.selectors";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
@@ -18,7 +20,7 @@ import { dayKey } from "./dashboard-selectors";
 /** A factual, live headline for the available work and next meeting. */
 export function BriefHeader() {
 	const { state } = useCollaborationSession();
-	const { calendar, mail, refreshSources } = useDashboard();
+	const { calendar, refreshSources } = useDashboard();
 	const updates = useWorkUpdates();
 	const [now, setNow] = useState(() => new Date());
 	useEffect(() => {
@@ -65,11 +67,10 @@ export function BriefHeader() {
 					new Date(item.due) <= next,
 			).length
 		: 0;
-	const checkedAt =
-		updates?.lastUpdated ?? calendar.checkedAt ?? mail.checkedAt;
-	const checked = checkedAt ? new Date(checkedAt) : null;
-	const isRefreshing = Boolean(
-		updates?.isRefreshing || calendar.isLoading || mail.isLoading,
+	// the same check as Work's Refresh: when Microsoft 365 was last read, not when this page re-read
+	const check = updates?.lastMailCheck ?? null;
+	const isChecking = Boolean(
+		updates?.isSyncing || check?.status === "running",
 	);
 	return (
 		<header className="mb-4 space-y-4">
@@ -117,32 +118,37 @@ export function BriefHeader() {
 				</Link>
 				<span aria-hidden="true">·</span>
 				<span>
-					{isRefreshing
+					{isChecking
 						? "checking…"
-						: checked
-							? `checked ${checked.toLocaleTimeString(undefined, { timeZone: zone, hour: "2-digit", minute: "2-digit", hour12: false })}`
-							: "from your available conversations"}
+						: updates?.syncError || check?.status === "failed"
+							? "last check failed"
+							: check?.at
+								? `checked ${checkTime(check.at)}`
+								: "from your available conversations"}
 				</span>
 				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
 							variant="ghost"
 							size="icon-sm"
-							aria-label="Refresh your brief"
-							disabled={isRefreshing}
+							aria-label="Check for new mail"
+							disabled={!updates || isChecking}
 							className="-ml-2 pointer-coarse:size-11 size-7 text-muted-foreground"
 							onClick={() => {
-								updates?.refresh();
+								updates?.syncMail();
 								refreshSources();
 							}}
 						>
 							<RefreshCw
 								aria-hidden="true"
-								className="size-3.5"
+								className={cn(
+									"size-3.5",
+									isChecking && "animate-spin",
+								)}
 							/>
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>Refresh your brief</TooltipContent>
+					<TooltipContent>Check for new mail</TooltipContent>
 				</Tooltip>
 			</div>
 		</header>

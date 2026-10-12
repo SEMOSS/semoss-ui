@@ -7,11 +7,17 @@ export function openToolWorkbenchFiles(
 	insightId = workbench.insightId,
 ): void {
 	if (!insightId) throw new Error("Create a room before opening its files.");
-	workbench.store
-		.getState()
-		.layout.actions.selectPanel(
-			FILE_PANEL_TYPES.FILE_EXPLORER,
-			{ mode: { type: "INSIGHT", insightId } },
-			{ name: "Files", target: { kind: "border", side: "left" } },
-		);
+	const id = workbench.store.getState().layout.actions.selectPanel(
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+		{ mode: { type: "INSIGHT", insightId } },
+		{
+			name: "Files",
+			target: { kind: "border", side: "left", index: 0 },
+		},
+	);
+	workbench.store.getState().layout.actions.updatePanel(id, {
+		minWidth: 300,
+		canClose: false,
+		canDrag: false,
+	});
 }

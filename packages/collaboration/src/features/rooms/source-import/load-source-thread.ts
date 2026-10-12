@@ -143,6 +143,7 @@ export async function loadSourceThread(
 				actions,
 				threadId,
 				cursor,
+				!cursor,
 			);
 			assertActive();
 			for (const message of page.messages) {

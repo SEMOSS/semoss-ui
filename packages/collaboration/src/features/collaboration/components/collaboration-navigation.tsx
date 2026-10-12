@@ -1,12 +1,16 @@
-import { Brain, BriefcaseBusiness, Inbox } from "lucide-react";
+import { Brain, BriefcaseBusiness, Inbox, Mail } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
-import { selectWorkItems } from "../state/collaboration.selectors";
+import {
+	selectWorkItems,
+	threadNeedsTopic,
+} from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { suggestedMemories } from "../state/memory";
 import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
+import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationSettingsLink } from "./collaboration-settings-link";
 import { CollaborationTopicsNavigation } from "./collaboration-topics-navigation";
 
@@ -38,7 +42,10 @@ export function CollaborationNavigation({
 	onNavigate,
 }: CollaborationNavigationProps) {
 	const { state } = useCollaborationSession();
-	const { pathname } = useLocation();
+	const { pathname, search } = useLocation();
+	const isUnassigned =
+		pathname === "/brain/threads" &&
+		new URLSearchParams(search).get("filter") === "needs";
 	const [isLocalTopicsOpen, setIsLocalTopicsOpen] = useState(false);
 	const reviews =
 		state.reviews.filter((review) => review.status === "open").length +
@@ -59,11 +66,20 @@ export function CollaborationNavigation({
 			isActive: pathname === "/work" || pathname.startsWith("/work/"),
 		},
 		{
+			to: "/brain/threads?filter=needs",
+			label: "Unassigned",
+			icon: Mail,
+			count: state.threads.filter(threadNeedsTopic).length,
+			isActive: isUnassigned,
+		},
+		{
 			to: "/brain",
 			label: "Brain",
 			icon: Brain,
 			count: reviews,
-			isActive: pathname === "/brain" || pathname.startsWith("/brain/"),
+			isActive:
+				!isUnassigned &&
+				(pathname === "/brain" || pathname.startsWith("/brain/")),
 		},
 	];
 	return (
@@ -140,11 +156,12 @@ export function CollaborationNavigation({
 					/>
 				</div>
 			</div>
-			<div className="shrink-0 border-sidebar-border border-t p-2 pr-3">
+			<div className="flex shrink-0 flex-col items-start gap-1 border-sidebar-border border-t p-2 pr-3">
 				<CollaborationSettingsLink
 					isCollapsed={isCollapsed}
 					onNavigate={onNavigate}
 				/>
+				<CollaborationProfileMenu onNavigate={onNavigate} />
 			</div>
 		</div>
 	);

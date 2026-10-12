@@ -1,6 +1,6 @@
 import { ChevronRight, Plus } from "lucide-react";
 import { useRef, useState } from "react";
-import { NavLink, useLocation } from "react-router";
+import { NavLink } from "react-router";
 import {
 	Button,
 	Collapsible,
@@ -12,6 +12,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { topicPath } from "@/lib/workspace-paths";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { topicTone } from "../topic-tone";
@@ -28,7 +29,7 @@ interface CollaborationTopicsNavigationProps {
 	onNavigate?: () => void;
 }
 
-/** Topics connect the daily work feed with its underlying Brain records. */
+/** Every topic opens the same workspace from any part of collaboration. */
 export function CollaborationTopicsNavigation({
 	isOpen,
 	onOpenChange,
@@ -36,7 +37,6 @@ export function CollaborationTopicsNavigation({
 	onNavigate,
 }: CollaborationTopicsNavigationProps) {
 	const { state } = useCollaborationSession();
-	const { pathname } = useLocation();
 	const [isCreatingTopic, setIsCreatingTopic] = useState(false);
 	const newTopicRef = useRef<HTMLButtonElement>(null);
 	const topics = state.topics.filter((topic) => topic.status !== "archived");
@@ -92,7 +92,7 @@ export function CollaborationTopicsNavigation({
 								<NavLink
 									key={topic.id}
 									aria-label={`${topic.short}: ${topic.name}`}
-									to={`${pathname.startsWith("/brain") ? "/brain/topics" : "/work/topic"}/${encodeURIComponent(topic.id)}`}
+									to={topicPath(topic.id)}
 									onClick={onNavigate}
 									className={({ isActive }) =>
 										cn(

@@ -36,6 +36,8 @@ import {
 	type GroupAccessResource,
 	type GroupManager,
 	getAvailableGroupsForResource,
+	getTeams,
+	toTeamSummaries,
 } from "@/api/teams";
 import { useGroupManagers } from "@/features/group-managers/use-group-managers";
 import { TEAM_RESOURCE_NOUNS } from "@/features/team-resource-access/team-resource-nouns";
@@ -70,6 +72,19 @@ export interface AddGroupAccessDialogProps {
 	resourceId: string;
 	/** Called when the dialog closes, with true after a team was given access */
 	onClose: (added?: boolean) => void;
+	/**
+	 * Adds the chosen team to a permission batch instead of giving it access
+	 * now, as Bulk Access Management does; the dialog then closes without saving
+	 * anything
+	 */
+	onStage?: (team: AvailableGroup, level: Role) => void;
+	/**
+	 * Whether in admin mode, from Bulk Access Management, where every team is listed
+	 * and its managers are read as an admin; it then only stages teams
+	 */
+	admin?: boolean;
+	/** Teams that already have access, left out of the list, as `type:id` keys */
+	excludedTeams?: ReadonlySet<string>;
 }
 
 /**
@@ -84,6 +99,9 @@ export const AddGroupAccessDialog = ({
 	resource,
 	resourceId,
 	onClose,
+	onStage,
+	admin = false,
+	excludedTeams,
 }: AddGroupAccessDialogProps) => {
 	const levelId = useId();
 	const [searchTerm, setSearchTerm] = useState("");
@@ -98,13 +116,27 @@ export const AddGroupAccessDialog = ({
 	const groups = useIteratorApi<AvailableGroup>(
 		async (limit, offset) => {
 			try {
-				const page = await getAvailableGroupsForResource(
-					resource,
-					resourceId,
-					debouncedSearch,
-					limit,
-					offset,
-				);
+				// an admin lists every team, since the owner endpoint is for owners
+				const page = admin
+					? toTeamSummaries(
+							await getTeams(
+								true,
+								debouncedSearch,
+								limit,
+								offset,
+							),
+						).map((team) => ({
+							id: team.id,
+							type: team.type,
+							description: team.description,
+						}))
+					: await getAvailableGroupsForResource(
+							resource,
+							resourceId,
+							debouncedSearch,
+							limit,
+							offset,
+						);
 				setListError(null);
 				return page;
 			} catch (e) {
@@ -113,7 +145,11 @@ export const AddGroupAccessDialog = ({
 			}
 		},
 		{ enabled: open, limit: PAGE_SIZE },
-		[debouncedSearch, resource, resourceId],
+		[debouncedSearch, resource, resourceId, admin],
+	);
+	// the teams with access are left out as they show, so paging is not cut short
+	const shownGroups = groups.data.filter(
+		(group) => !excludedTeams?.has(`${group.type}:${group.id}`),
 	);
 
 	const { setScroll } = useInfiniteScroll({
@@ -127,10 +163,11 @@ export const AddGroupAccessDialog = ({
 		isLoading: isLoadingManagers,
 		error: managersError,
 		refresh: refreshManagers,
-	} = useGroupManagers(isCustomTeam && selected ? selected.id : null, false, {
-		resource,
-		resourceId,
-	});
+	} = useGroupManagers(
+		isCustomTeam && selected ? selected.id : null,
+		admin,
+		admin ? undefined : { resource, resourceId },
+	);
 	// the owner must know who controls a custom team's members before trusting them
 	const isManagersUnknown =
 		isCustomTeam && (isLoadingManagers || managersError !== null);
@@ -155,6 +192,11 @@ export const AddGroupAccessDialog = ({
 
 	const handleSubmit = async () => {
 		if (!selected) {
+			return;
+		}
+		if (onStage) {
+			onStage(selected, level);
+			handleClose();
 			return;
 		}
 		setIsSubmitting(true);
@@ -220,12 +262,12 @@ export const AddGroupAccessDialog = ({
 						className="flex flex-col gap-1.5 p-2"
 						aria-busy={groups.isLoading}
 					>
-						{groups.isLoading && groups.data.length === 0 ? (
+						{groups.isLoading && shownGroups.length === 0 ? (
 							<p className={STATUS_CLASS}>
 								<Spinner />
 								Loading teams...
 							</p>
-						) : groups.data.length === 0 ? (
+						) : shownGroups.length === 0 ? (
 							listError ? null : (
 								<output className={STATUS_CLASS}>
 									{debouncedSearch
@@ -235,7 +277,7 @@ export const AddGroupAccessDialog = ({
 							)
 						) : (
 							<ul className="flex flex-col gap-1.5">
-								{groups.data.map((group) => {
+								{shownGroups.map((group) => {
 									const isSelected =
 										selected?.id === group.id &&
 										selected.type === group.type;
@@ -452,7 +494,11 @@ export const AddGroupAccessDialog = ({
 						}
 						onClick={handleSubmit}
 					>
-						{isSubmitting ? "Authorizing..." : "Authorize Access"}
+						{onStage
+							? "Add to My Changes"
+							: isSubmitting
+								? "Authorizing..."
+								: "Authorize Access"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

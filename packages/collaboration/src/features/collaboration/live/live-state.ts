@@ -2,7 +2,7 @@ import { z } from "@semoss/ui/next";
 import type { SourceAttachment } from "@/features/connectors/types";
 import { readDisplayBody } from "@/features/email/message-body";
 import type { InsightActions } from "@/lib/pixel";
-import { PixelError, pixel } from "@/lib/pixel";
+import { callPixel, PixelError, pixel } from "@/lib/pixel";
 import {
 	setThreadAgent,
 	type ThreadAgent,
@@ -386,6 +386,10 @@ function mapReview(row: Row, topics: Topic[]): ReviewEntry {
 		actions: list<string>(row.actions),
 		resolvedAt: opt(row.resolvedAt),
 		topicId: kind === "add_person" ? opt(data.suggestedTopic) : undefined,
+		candidates:
+			kind === "topic_choice"
+				? list<string>(data.candidates).map(String)
+				: undefined,
 		candidate:
 			kind === "new_topic"
 				? {
@@ -587,6 +591,8 @@ export async function readThreadMessagesPage(
 	actions: InsightActions,
 	threadId: string,
 	cursor?: string,
+	// first read the mailbox for mail Brain does not hold yet; the server throttles it
+	refresh = false,
 ): Promise<ThreadMessagePage> {
 	const [raw] = (await runBatch(actions, [
 		pixel("BrainGetThreadMessages", {
@@ -595,6 +601,7 @@ export async function readThreadMessagesPage(
 			includeDisplayBody: true,
 			includeAttachments: true,
 			cursor,
+			refresh: refresh || undefined,
 		}),
 	])) as [Row];
 	const out = threadPageSchema.parse(raw);
@@ -742,6 +749,28 @@ export async function readWorkUpdates(actions: InsightActions): Promise<
 	};
 }
 
+/** Read the current goals after an assistant edits a topic, including calls that use its name. */
+export function readTopicGoals(
+	actions: InsightActions,
+	topic: { topicId?: string; topic?: string },
+): Promise<Pick<Topic, "id" | "goals">> {
+	return callPixel(
+		actions,
+		pixel("BrainListTopics", topic),
+		z.object({
+			id: z.string().min(1),
+			goals: z.array(
+				z.object({
+					noteId: z.string().min(1),
+					text: z.string(),
+					status: z.enum(["open", "done"]),
+					resolution: z.string().optional(),
+				}),
+			),
+		}),
+	);
+}
+
 /** What the thread's assistant gets from memory: BrainRecallMemories. */
 export interface ThreadRecall {
 	enabled: boolean;
@@ -774,6 +803,8 @@ export interface MailCheck {
 	/** When it finished, or started while still running. */
 	at: string;
 	error: string;
+	/** Thread summaries from the sync still being written. */
+	insightsPending: number;
 }
 
 function mapMailCheck(output: unknown): MailCheck | null {
@@ -785,7 +816,18 @@ function mapMailCheck(output: unknown): MailCheck | null {
 		status,
 		at: str(job.finishedAt) || str(job.startedAt),
 		error: str(job.error),
+		insightsPending: Number(job.insightsPending) || 0,
 	};
+}
+
+/** Only the newest sync and its pending summaries: cheap enough to poll while they finish. */
+export async function readMailCheck(
+	actions: InsightActions,
+): Promise<MailCheck | null> {
+	const [job] = await runBatch(actions, [
+		pixel("BrainGetJob", { kind: "sync" }),
+	]);
+	return mapMailCheck(job);
 }
 
 export type SyncOutcome = "new" | "updated" | "cleared" | "automated" | "quiet";

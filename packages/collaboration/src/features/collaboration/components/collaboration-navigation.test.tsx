@@ -40,6 +40,10 @@ const dashboard = vi.hoisted(() => ({
 vi.mock("@/features/dashboard/dashboard.context", () => ({
 	useDashboard: () => dashboard,
 }));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => ({ actions: { logout: vi.fn() } }),
+}));
 
 /** Exercise the controlled navigation contract without involving persistence. */
 function NavigationFixture({ onNavigate }: { onNavigate?: () => void }) {
@@ -117,7 +121,7 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["For you", "Work", "Brain"]);
+		).toEqual(["For you", "Work", "Unassigned", "Brain"]);
 		expect(
 			within(main).getByRole("link", { name: "For you" }),
 		).toHaveTextContent(/^For you$/);
@@ -168,32 +172,50 @@ describe("CollaborationNavigation", () => {
 		);
 	});
 
-	it.each([
-		"/work",
-		"/work/all",
-		"/work/waiting",
-		"/work/done",
-		"/work/topic/t-geng",
-	])("selects Work on %s", (path) => {
-		renderNavigation(path);
-		expect(screen.getByRole("link", { name: "Work" })).toHaveAttribute(
-			"aria-current",
-			"page",
-		);
-		expect(
-			screen.getByRole("link", { name: "For you" }),
-		).not.toHaveAttribute("aria-current");
+	it("opens Unassigned by keyboard and counts conversations without requiring an action", async () => {
+		const state = createInitialCollaborationState();
+		state.items = [];
+		state.threads = state.threads.slice(0, 2).map((thread, index) => ({
+			...thread,
+			topicLinks: index === 0 ? [] : thread.topicLinks,
+			needsTopicChoice: false,
+		}));
+		const { user, router, onNavigate } = renderNavigation("/", state);
+		const unassigned = screen.getByRole("link", { name: "Unassigned" });
+		expect(unassigned).toHaveTextContent("Unassigned1");
+		act(() => unassigned.focus());
+		await user.keyboard("{Enter}");
+		expect(router.state.location.pathname).toBe("/brain/threads");
+		expect(router.state.location.search).toBe("?filter=needs");
+		expect(onNavigate).toHaveBeenCalledOnce();
+		expect(unassigned).toHaveAttribute("aria-current", "page");
 		expect(screen.getByRole("link", { name: "Brain" })).not.toHaveAttribute(
 			"aria-current",
 		);
 	});
+
+	it.each(["/work", "/work/all", "/work/waiting", "/work/done"])(
+		"selects Work on %s",
+		(path) => {
+			renderNavigation(path);
+			expect(screen.getByRole("link", { name: "Work" })).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+			expect(
+				screen.getByRole("link", { name: "For you" }),
+			).not.toHaveAttribute("aria-current");
+			expect(
+				screen.getByRole("link", { name: "Brain" }),
+			).not.toHaveAttribute("aria-current");
+		},
+	);
 
 	it.each([
 		"/brain",
 		"/brain/people/p-ava",
 		"/brain/threads/th-geng-review",
 		"/brain/sources",
-		"/brain/topics/t-geng",
 	])("keeps Brain selected on %s", (path) => {
 		renderNavigation(path);
 		expect(screen.getByRole("link", { name: "Brain" })).toHaveAttribute(
@@ -208,9 +230,8 @@ describe("CollaborationNavigation", () => {
 		);
 	});
 
-	it("opens Topics by keyboard and preserves the active topic destination", async () => {
-		const { user, router, onNavigate } =
-			renderNavigation("/work/topic/t-geng");
+	it("opens Topics by keyboard and selects only the shared topic workspace", async () => {
+		const { user, router, onNavigate } = renderNavigation("/topics/t-geng");
 		const disclosure = screen.getByRole("button", { name: "Topics" });
 		act(() => disclosure.focus());
 		await user.keyboard("{Enter}");
@@ -220,14 +241,21 @@ describe("CollaborationNavigation", () => {
 			name: /^Northwind Eng\b/,
 		});
 		expect(selected).toHaveAttribute("aria-current", "page");
+		for (const name of ["For you", "Work", "Brain"]) {
+			expect(screen.getByRole("link", { name })).not.toHaveAttribute(
+				"aria-current",
+			);
+		}
 		await user.click(selected);
 		expect(onNavigate).toHaveBeenCalledOnce();
-		await act(() => router.navigate("/brain/topics/t-geng"));
-		expect(
-			within(
-				screen.getByRole("navigation", { name: "Topics" }),
-			).getByRole("link", { name: /^Northwind Eng\b/ }),
-		).toHaveAttribute("href", "/brain/topics/t-geng");
+		for (const path of ["/brain", "/work", "/"]) {
+			await act(() => router.navigate(path));
+			expect(
+				within(
+					screen.getByRole("navigation", { name: "Topics" }),
+				).getByRole("link", { name: /^Northwind Eng\b/ }),
+			).toHaveAttribute("href", "/topics/t-geng");
+		}
 	});
 
 	it("opens New topic independently of the folded Topics disclosure and returns focus", async () => {
@@ -282,8 +310,10 @@ describe("CollaborationNavigation", () => {
 		const controls = [
 			screen.getByRole("link", { name: "For you" }),
 			screen.getByRole("link", { name: "Work" }),
+			screen.getByRole("link", { name: "Unassigned" }),
 			screen.getByRole("link", { name: "Brain" }),
 			screen.getByRole("link", { name: "Settings" }),
+			screen.getByRole("button", { name: /Account menu for/ }),
 		];
 		for (const control of controls) {
 			expect(control).toBeVisible();
@@ -294,20 +324,28 @@ describe("CollaborationNavigation", () => {
 		}
 	});
 
-	it("keeps a direct Settings link in the sidebar while leaving Search and account to the header", async () => {
+	it("keeps Settings and account in the sidebar while leaving Search in the header", async () => {
 		const { user, onNavigate, router } = renderNavigation();
 		expect(
 			screen.queryByRole("button", { name: "Search your workspace" }),
 		).not.toBeInTheDocument();
 		const settings = screen.getByRole("link", { name: "Settings" });
 		expect(settings).toHaveTextContent("Settings");
-		expect(
-			screen.queryByRole("button", {
-				name: /Account menu|Switch to .* theme/,
-			}),
-		).not.toBeInTheDocument();
+		const account = screen.getByRole("button", {
+			name: /Account menu for/,
+		});
+		expect(account).toBeVisible();
+		await user.click(
+			screen.getByRole("button", { name: "Toggle navigation fixture" }),
+		);
+		expect(screen.getByRole("button", { name: /Account menu for/ })).toBe(
+			account,
+		);
 		await user.click(settings);
 		expect(onNavigate).toHaveBeenCalledOnce();
 		expect(router.state.location.pathname).toBe("/settings");
+		await user.click(account);
+		await user.click(screen.getByRole("menuitem", { name: "Settings" }));
+		expect(onNavigate).toHaveBeenCalledTimes(2);
 	});
 });

@@ -1,6 +1,7 @@
 import type {
 	AutomationBranchClause,
 	AutomationDataType,
+	AutomationJevQuestion,
 	AutomationJevRoute,
 	AutomationNodeCodeMode,
 	AutomationWorkflowNodeConfig,
@@ -168,10 +169,8 @@ export interface JevDecisionConfig {
 	engineId: string;
 	engineName?: string;
 	state: string;
-	question: string;
-	questionType: "choice" | "noul";
+	questions: AutomationJevQuestion[];
 	clauses: AutomationJevRoute[];
-	confidenceThreshold: number;
 	paramValues: string;
 }
 

@@ -16,6 +16,7 @@ import {
 	getTeamResources,
 	getTeams,
 	getTeamUsers,
+	getTeamUsersCount,
 	readTeamDescription,
 	removeGroupManager,
 	toTeamMembers,
@@ -253,6 +254,41 @@ describe("getGroupManagers", () => {
 			"No Response to get team managers",
 		);
 	});
+});
+
+describe("getTeamUsers and getTeamUsersCount", () => {
+	it("reads a team's members for its managers without a resource", async () => {
+		vi.mocked(get).mockResolvedValue(respond([]));
+
+		await getTeamUsers("Sales", 25, 50, "ada", false);
+		expect(get).toHaveBeenCalledExactlyOnceWith(
+			"/Monolith/api/auth/group/getGroupMembers?groupId=Sales&limit=25&offset=50&searchTerm=ada",
+		);
+	});
+
+	it.each([
+		["PROJECT", "projectId"],
+		["ENGINE", "engineId"],
+	] as const)(
+		"names the %s an owner or editor reads a team's members through",
+		async (resource, param) => {
+			vi.mocked(get).mockResolvedValue(respond(3));
+			const target = { resource, resourceId: "resource-1" };
+
+			await getTeamUsers("Sales", 25, 0, "", false, target);
+			await expect(
+				getTeamUsersCount("Sales", undefined, false, target),
+			).resolves.toBe(3);
+			expect(get).toHaveBeenNthCalledWith(
+				1,
+				`/Monolith/api/auth/group/getGroupMembers?groupId=Sales&${param}=resource-1&limit=25`,
+			);
+			expect(get).toHaveBeenNthCalledWith(
+				2,
+				`/Monolith/api/auth/group/getNumMembersInGroup?groupId=Sales&${param}=resource-1`,
+			);
+		},
+	);
 });
 
 describe("getGroupsWithAccessToEngine and getGroupsWithAccessToProject", () => {

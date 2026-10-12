@@ -69,7 +69,7 @@ function readyEmailMessages(turn: AgentTurnSnapshot): ConversationMessage[] {
 	];
 }
 
-/** Restore completed email tools into retained editors without opening any panels. */
+/** Restore completed email tools into retained editors; a draft from the run that just finished opens. */
 export function useRoomEmailProposals({
 	thread,
 	composer,
@@ -77,6 +77,7 @@ export function useRoomEmailProposals({
 	allowedSources,
 	isReady,
 	loadAttachment,
+	onOpen,
 }: {
 	thread: Pick<Thread, "id" | "subject" | "source">;
 	composer: EmailEditorStore;
@@ -84,7 +85,10 @@ export function useRoomEmailProposals({
 	allowedSources: Set<string>;
 	isReady: boolean;
 	loadAttachment?: (file: AgentEmailAttachment) => Promise<File>;
+	onOpen?: (draftId: string) => void;
 }): string {
+	const onOpenRef = useRef(onOpen);
+	onOpenRef.current = onOpen;
 	const observedRun = useRef(false);
 	const baseline = useRef<number | null>(null);
 	const [error, setError] = useState("");
@@ -128,6 +132,8 @@ export function useRoomEmailProposals({
 		);
 		let selectedSource: string | undefined;
 		let openEmail: SubmittedThreadContext["openEmail"];
+		// only a draft written after the owner's latest message opens; replays stay closed
+		let toOpen: string | undefined;
 		for (const [index, message] of messages.entries()) {
 			if (message.role === "user") {
 				selectedSource = undefined;
@@ -135,7 +141,7 @@ export function useRoomEmailProposals({
 				for (const part of message.parts) {
 					const command =
 						part.type === "text"
-							? readThreadCommand(part.text)
+							? readThreadCommand(part.command ?? part.text)
 							: null;
 					if (command?.context.threadId === thread.id) {
 						selectedSource =
@@ -156,6 +162,16 @@ export function useRoomEmailProposals({
 						)
 				: undefined;
 			if (target) {
+				if (
+					isSourcedProposal(proposal) &&
+					(target.seed.mode !== proposal.mode ||
+						target.seed.sourceUid !== proposal.sourceMessageId)
+				) {
+					setError(
+						"This change is for a different email or a different kind of draft. Your open draft was kept. Ask the assistant to create a separate draft.",
+					);
+					continue;
+				}
 				if (composer.claimProposalRevision(id)) {
 					const state = target.getSnapshot();
 					if (
@@ -196,6 +212,8 @@ export function useRoomEmailProposals({
 				.emailDrafts.some((draft) => draft.seed.id === id);
 			// a new email needs no source, so any thread or session can open one
 			if (!isSourcedProposal(proposal)) {
+				if (!isOpen && isNewCompletion && index > lastUserIndex)
+					toOpen = id;
 				if (!isOpen)
 					composer.requestEmailDraft(
 						{
@@ -213,8 +231,9 @@ export function useRoomEmailProposals({
 				continue;
 			}
 			if (
-				thread.source?.kind !== "outlook" ||
-				!allowedSources.has(proposal.sourceMessageId) ||
+				(!proposal.sourceMessage &&
+					(thread.source?.kind !== "outlook" ||
+						!allowedSources.has(proposal.sourceMessageId))) ||
 				(selectedSource !== undefined &&
 					proposal.sourceMessageId !== selectedSource)
 			) {
@@ -225,13 +244,14 @@ export function useRoomEmailProposals({
 				continue;
 			}
 			if (isOpen) continue;
+			if (isNewCompletion && index > lastUserIndex) toOpen = id;
 			composer.requestEmailDraft(
 				{
 					id,
 					assistantMessageId: message.runId || message.id,
 					mode: proposal.mode,
 					sourceUid: proposal.sourceMessageId,
-					subject: thread.subject,
+					subject: proposal.sourceMessage?.subject ?? thread.subject,
 					body: proposal.body ?? "",
 					to: proposal.to,
 					cc: proposal.cc,
@@ -239,6 +259,7 @@ export function useRoomEmailProposals({
 				false,
 			);
 		}
+		if (toOpen) onOpenRef.current?.(toOpen);
 	}, [allowedSources, composer, isReady, snapshot.turn, thread]);
 	useEffect(() => {
 		if (!isReady) return;
@@ -265,6 +286,12 @@ export function useRoomEmailProposals({
 					);
 					continue;
 				}
+				if (
+					isSourcedProposal(proposal) &&
+					(target.seed.mode !== proposal.mode ||
+						target.seed.sourceUid !== proposal.sourceMessageId)
+				)
+					continue;
 				void target.addAgentAttachments(
 					proposal.toolId,
 					proposal.attachments ?? [],

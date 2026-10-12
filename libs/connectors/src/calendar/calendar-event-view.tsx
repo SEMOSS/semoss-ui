@@ -1,10 +1,14 @@
 import { VideoIcon } from "lucide-react";
+import { useCallback } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button } from "@semoss/ui/next";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 import { ConnectorActionBar } from "../components/connector-action-bar";
 import { ConnectorDetailView } from "../components/connector-detail-view";
 import { ConnectorTextBody } from "../components/connector-text-body";
 import { ConnectorViewerStatus } from "../components/connector-viewer-status";
+import type { ConnectorViewerProps } from "../core/connector.types";
+import { useConnectorControls } from "../core/use-connector-controls";
 import { useConnectorQuery } from "../core/use-connector-query";
 import type {
 	ConnectorSaveRequest,
@@ -20,7 +24,8 @@ import type { CalendarApp } from "./calendar-apps";
 import { useEventTime } from "./use-event-time";
 
 /** Props for {@link CalendarEventView}. */
-export interface CalendarEventViewProps {
+export interface CalendarEventViewProps
+	extends Pick<ConnectorViewerProps, "isVisible" | "onControlsChange"> {
 	/** The calendar the event is on. */
 	app: CalendarApp;
 	/** The event as the list showed it, until the full one is read. */
@@ -37,6 +42,8 @@ export interface CalendarEventViewProps {
 	 * a read that fails, such as for an event since deleted, keeps it.
 	 */
 	isSummaryComplete?: boolean;
+	/** Every explicit open, including selecting an existing tab, requests focus. */
+	focusRequestId?: number;
 }
 
 /**
@@ -50,6 +57,9 @@ export const CalendarEventView = ({
 	onBack,
 	onSignIn,
 	isSummaryComplete = false,
+	isVisible = true,
+	onControlsChange,
+	focusRequestId,
 }: CalendarEventViewProps) => {
 	const { t } = useTranslation("connectors");
 	const describeTime = useEventTime();
@@ -57,20 +67,55 @@ export const CalendarEventView = ({
 		app.pixels.getEvent(summary.id),
 		parseCalendarEventDetail,
 	);
-	const event = query.data ?? (isSummaryComplete ? summary : null);
+	const event =
+		query.data?.id === summary.id
+			? query.data
+			: isSummaryComplete
+				? summary
+				: null;
 	const shown = event ?? summary;
 	const serviceName = t(app.nameKey);
 	const title = shown.subject || t("calendar.noTitle");
+	const webUrl = safeHttpsUrl(event?.webLink);
+	const { addToContext } = saver;
+	const isEventBusy = saver.isBusy(summary.id);
 
-	const request = (full: CalendarEvent): ConnectorSaveRequest => ({
-		key: full.id,
-		name: title,
-		source: {
-			kind: "text",
-			fileName: calendarEventFileName(full),
-			getContent: () => calendarEventToMarkdown(app, full),
+	const request = useCallback(
+		(full: CalendarEvent): ConnectorSaveRequest => ({
+			key: full.id,
+			name: title,
+			source: {
+				kind: "text",
+				fileName: calendarEventFileName(full),
+				getContent: () => calendarEventToMarkdown(app, full),
+			},
+		}),
+		[app, title],
+	);
+	const handleAddToContext = useCallback(() => {
+		if (event) addToContext?.(request(event));
+	}, [addToContext, event, request]);
+	useConnectorControls(
+		{
+			openIn: webUrl
+				? {
+						href: webUrl,
+						label: t("actions.openIn", {
+							service: t(app.appNameKey),
+						}),
+					}
+				: undefined,
+			addToContext:
+				event && addToContext
+					? {
+							onAddToContext: handleAddToContext,
+							isBusy: isEventBusy,
+						}
+					: undefined,
 		},
-	});
+		onControlsChange,
+		isVisible,
+	);
 
 	const organizer =
 		shown.organizerName && shown.organizer
@@ -84,6 +129,8 @@ export const CalendarEventView = ({
 	return (
 		<ConnectorDetailView
 			title={title}
+			isVisible={isVisible}
+			focusRequestId={focusRequestId}
 			backLabel={t("calendar.back")}
 			onBack={onBack}
 			fields={[
@@ -106,11 +153,11 @@ export const CalendarEventView = ({
 					<ConnectorActionBar
 						serviceName={t(app.appNameKey)}
 						saveLabel={saver.saveLabel}
-						webUrl={event.webLink}
-						isBusy={saver.isBusy(event.id)}
+						webUrl={onControlsChange ? undefined : webUrl}
+						isBusy={isEventBusy}
 						onAddToContext={
-							saver.addToContext
-								? () => saver.addToContext?.(request(event))
+							!onControlsChange && addToContext
+								? handleAddToContext
 								: undefined
 						}
 						onSave={() => saver.save(request(event))}

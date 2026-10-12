@@ -3,12 +3,15 @@ import type {
 	AutomationEdge,
 	AutomationNode,
 	AutomationNodeType,
+	JevDecisionConfig,
 	NodeConfig,
 } from "./automation.types";
 import { getAutomationNodeDefinition } from "./automation-node-catalog";
 import type {
 	AutomationBranchClause,
+	AutomationJevQuestion,
 	AutomationJevRoute,
+	AutomationJevRouteCondition,
 	AutomationJsonValue,
 	AutomationNodeDefinition,
 	AutomationNodeGroup,
@@ -153,23 +156,208 @@ function branchClauses(value: unknown): AutomationBranchClause[] {
 	});
 }
 
+function jevQuestions(value: unknown): AutomationJevQuestion[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap<AutomationJevQuestion>((question) => {
+		if (!isRecord(question)) return [];
+		const key = question.key;
+		const type = question.type;
+		const instructions = question.instructions;
+		if (
+			typeof key !== "string" ||
+			(type !== "choice" && type !== "score" && type !== "noul") ||
+			typeof instructions !== "string"
+		) {
+			return [];
+		}
+		if (type === "choice") {
+			const criteria = isRecord(question.criteria)
+				? Object.fromEntries(
+						Object.entries(question.criteria).filter(
+							(entry): entry is [string, string] =>
+								typeof entry[1] === "string",
+						),
+					)
+				: {};
+			return [{ key, type, instructions, criteria }];
+		}
+		if (type === "score") {
+			const criteria = Array.isArray(question.criteria)
+				? question.criteria.filter(
+						(level): level is string => typeof level === "string",
+					)
+				: [];
+			return [{ key, type, instructions, criteria }];
+		}
+		const criteria = isRecord(question.criteria)
+			? Object.fromEntries(
+					Object.entries(question.criteria).filter(
+						(entry): entry is [string, string] =>
+							(entry[0] === "true" || entry[0] === "false") &&
+							typeof entry[1] === "string",
+					),
+				)
+			: undefined;
+		return [
+			{
+				key,
+				type,
+				instructions,
+				...(criteria ? { criteria } : {}),
+			},
+		];
+	});
+}
+
+function jevRouteConditions(value: unknown): AutomationJevRouteCondition[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((condition) => {
+		if (!isRecord(condition)) return [];
+		const {
+			questionKey,
+			field,
+			operator,
+			value: expected,
+			option,
+		} = condition;
+		if (
+			typeof questionKey !== "string" ||
+			!["choice", "score", "noul", "confidence", "probability"].includes(
+				String(field),
+			) ||
+			![
+				"equals",
+				"notEquals",
+				"greaterThan",
+				"greaterThanOrEqual",
+				"lessThan",
+				"lessThanOrEqual",
+			].includes(String(operator)) ||
+			(typeof expected !== "string" && typeof expected !== "number")
+		) {
+			return [];
+		}
+		return [
+			{
+				questionKey,
+				field: field as AutomationJevRouteCondition["field"],
+				operator: operator as AutomationJevRouteCondition["operator"],
+				value: expected,
+				...(typeof option === "string" ? { option } : {}),
+			},
+		];
+	});
+}
+
 function jevRoutes(value: unknown): AutomationJevRoute[] {
 	if (!Array.isArray(value)) return [];
 	return value.flatMap((route) => {
-		if (!route || typeof route !== "object") return [];
-		const candidate = route as Partial<AutomationJevRoute>;
-		return typeof candidate.id === "string" &&
-			typeof candidate.description === "string"
+		if (!isRecord(route)) return [];
+		return typeof route.id === "string" &&
+			typeof route.description === "string"
 			? [
 					{
-						id: candidate.id,
-						description: candidate.description,
-						...(typeof candidate.answer === "boolean"
-							? { answer: candidate.answer }
+						id: route.id,
+						description: route.description,
+						...(route.match === "any"
+							? { match: "any" as const }
+							: route.match === "all"
+								? { match: "all" as const }
+								: {}),
+						...(Array.isArray(route.conditions)
+							? {
+									conditions: jevRouteConditions(
+										route.conditions,
+									),
+								}
+							: {}),
+						...(typeof route.answer === "boolean"
+							? { answer: route.answer }
 							: {}),
 					},
 				]
 			: [];
+	});
+}
+
+function legacyJevQuestions(
+	config: AutomationWorkflowNodeConfig,
+): AutomationJevQuestion[] {
+	const type = config.questionType === "noul" ? "noul" : "choice";
+	const routes = jevRoutes(config.clauses);
+	return [
+		{
+			key: "route",
+			type,
+			instructions: stringValue(config.question),
+			...(type === "choice"
+				? {
+						criteria: Object.fromEntries(
+							routes.map((route) => [
+								route.id,
+								route.description,
+							]),
+						),
+					}
+				: {}),
+		},
+	];
+}
+
+function legacyJevRoutes(
+	config: AutomationWorkflowNodeConfig,
+): AutomationJevRoute[] {
+	const type = config.questionType === "noul" ? "noul" : "choice";
+	const threshold = numberValue(
+		config.confidenceThreshold,
+		type === "noul" ? 0.5 : 0,
+	);
+	return jevRoutes(config.clauses).map((route) => {
+		if (type === "choice") {
+			return {
+				id: route.id,
+				description: route.description,
+				match: "all",
+				conditions: [
+					{
+						questionKey: "route",
+						field: "choice",
+						operator: "equals",
+						value: route.id,
+					},
+					...(threshold > 0
+						? [
+								{
+									questionKey: "route",
+									field: "confidence" as const,
+									operator: "greaterThanOrEqual" as const,
+									value: threshold,
+								},
+							]
+						: []),
+				],
+			};
+		}
+		const isYes = route.answer === true;
+		return {
+			id: route.id,
+			description: route.description,
+			match: "all",
+			conditions: [
+				{
+					questionKey: "route",
+					field: "noul",
+					operator: isYes ? "greaterThanOrEqual" : "lessThan",
+					value: 0.5,
+				},
+				{
+					questionKey: "route",
+					field: "noul",
+					operator: isYes ? "greaterThanOrEqual" : "lessThanOrEqual",
+					value: isYes ? threshold : 1 - threshold,
+				},
+			],
+		};
 	});
 }
 
@@ -521,13 +709,17 @@ function defaultCanvasConfig(
 		return { clauses: branchClauses(config.clauses) };
 	}
 	if (type === "control.jev") {
+		const questions = jevQuestions(config.questions);
+		const routes = jevRoutes(config.clauses);
+		const hasRuleRoutes = routes.some(
+			(route) => (route.conditions?.length ?? 0) > 0,
+		);
 		return {
 			engineId,
 			state: stringValue(config.state),
-			question: stringValue(config.question),
-			questionType: config.questionType === "noul" ? "noul" : "choice",
-			clauses: jevRoutes(config.clauses),
-			confidenceThreshold: numberValue(config.confidenceThreshold, 0),
+			questions:
+				questions.length > 0 ? questions : legacyJevQuestions(config),
+			clauses: hasRuleRoutes ? routes : legacyJevRoutes(config),
 			paramValues: jsonObjectValue(config.paramValues),
 		};
 	}
@@ -535,6 +727,17 @@ function defaultCanvasConfig(
 		pixel: stringValue(config.pixel),
 		appId: stringValue(config.appId),
 	};
+}
+
+/**
+ * Projects both current and legacy persisted JEV configuration into the canvas contract.
+ * Kept public because local drafts created before the multi-question editor may bypass the
+ * workflow-document adapter when the editor restores them.
+ */
+export function normalizeJevDecisionConfig(
+	config: AutomationWorkflowNodeConfig,
+): JevDecisionConfig {
+	return defaultCanvasConfig("control.jev", config) as JevDecisionConfig;
 }
 
 function withPythonSource(
@@ -798,29 +1001,22 @@ function mergeCanvasConfig(
 	}
 	if (type === "control.jev") {
 		const state = getConfigValue(config, "state");
-		const question = getConfigValue(config, "question");
-		const questionType = getConfigValue(config, "questionType");
-		const confidenceThreshold = getConfigValue(
-			config,
-			"confidenceThreshold",
-		);
 		const paramValues = getConfigValue(config, "paramValues");
 		if (typeof state === "string") next.state = state;
-		if (typeof question === "string") next.question = question;
-		if (questionType === "choice" || questionType === "noul") {
-			next.questionType = questionType;
-		}
-		if (typeof confidenceThreshold === "number") {
-			next.confidenceThreshold = confidenceThreshold;
-		}
 		if (typeof paramValues === "string") {
 			next.paramValues = paramValues.trim()
 				? (parsedJsonValue(paramValues) ?? paramValues)
 				: {};
 		}
-		next.clauses = (
-			config as Extract<NodeConfig, { clauses: unknown }>
-		).clauses;
+		const jevConfig = config as Extract<
+			NodeConfig,
+			{ questions: unknown; clauses: unknown }
+		>;
+		next.questions = jevConfig.questions;
+		next.clauses = jevConfig.clauses;
+		delete next.question;
+		delete next.questionType;
+		delete next.confidenceThreshold;
 	}
 	return next;
 }
@@ -1224,32 +1420,151 @@ export function validateCanvasWorkflowNode(
 		}
 	}
 	if (type === "control.jev") {
+		const questions = jevQuestions(config.questions);
 		const routes = jevRoutes(config.clauses);
-		const questionType = config.questionType === "noul" ? "noul" : "choice";
+		const questionKeys = new Set<string>();
+		const questionsByKey = new Map<string, AutomationJevQuestion>();
+		if (questions.length === 0) {
+			errors.push("At least one Jev question is required");
+		}
+		for (const question of questions) {
+			if (!PYTHON_IDENTIFIER_PATTERN.test(question.key)) {
+				errors.push(
+					"Each Jev response key must start with a letter or underscore and contain only letters, numbers, and underscores",
+				);
+			}
+			if (questionKeys.has(question.key)) {
+				errors.push("Jev response keys must be unique");
+			}
+			questionKeys.add(question.key);
+			questionsByKey.set(question.key, question);
+			if (!question.instructions.trim()) {
+				errors.push(`Question "${question.key}" needs instructions`);
+			}
+			if (
+				question.type === "choice" &&
+				(!question.criteria ||
+					Array.isArray(question.criteria) ||
+					Object.keys(question.criteria).length === 0)
+			) {
+				errors.push(
+					`Question "${question.key}" needs at least one choice`,
+				);
+			} else if (
+				question.type === "choice" &&
+				question.criteria &&
+				!Array.isArray(question.criteria) &&
+				Object.entries(question.criteria).some(
+					([key, description]) =>
+						key.trim() === "" || description.trim() === "",
+				)
+			) {
+				errors.push(
+					`Question "${question.key}" needs a key and description for every choice`,
+				);
+			}
+			if (
+				question.type === "score" &&
+				(!Array.isArray(question.criteria) ||
+					question.criteria.length < 2)
+			) {
+				errors.push(
+					`Question "${question.key}" needs at least two rubric levels`,
+				);
+			} else if (
+				question.type === "score" &&
+				Array.isArray(question.criteria) &&
+				question.criteria.some((level) => level.trim() === "")
+			) {
+				errors.push(
+					`Question "${question.key}" needs a description for every rubric level`,
+				);
+			}
+			if (
+				question.type === "noul" &&
+				(!question.criteria ||
+					Array.isArray(question.criteria) ||
+					Object.keys(question.criteria).length !== 2 ||
+					!("true" in question.criteria) ||
+					!("false" in question.criteria) ||
+					question.criteria.true.trim() === "" ||
+					question.criteria.false.trim() === "")
+			) {
+				errors.push(
+					`Question "${question.key}" needs descriptions for Yes and No`,
+				);
+			}
+		}
 		if (routes.length === 0) {
 			errors.push("At least one route is required");
 		} else if (routes.some((route) => route.description.trim() === "")) {
 			errors.push("Each route description is required");
 		}
-		if (
-			questionType === "noul" &&
-			(routes.length !== 2 ||
-				routes.filter((route) => route.answer === true).length !== 1 ||
-				routes.filter((route) => route.answer === false).length !== 1)
-		) {
-			errors.push(
-				"Yes / No decisions require one Yes path and one No path",
-			);
-		}
-		const minimumConfidence = questionType === "noul" ? 0.5 : 0;
-		if (
-			typeof config.confidenceThreshold !== "number" ||
-			config.confidenceThreshold < minimumConfidence ||
-			config.confidenceThreshold > 1
-		) {
-			errors.push(
-				`Minimum confidence must be from ${minimumConfidence} through 1`,
-			);
+		for (const route of routes) {
+			if (!route.conditions?.length) {
+				errors.push(
+					`Route "${route.description || route.id}" needs a rule`,
+				);
+				continue;
+			}
+			for (const condition of route.conditions) {
+				const question = questionsByKey.get(condition.questionKey);
+				if (!question) {
+					errors.push(
+						`Route "${route.description || route.id}" references an unknown question`,
+					);
+					continue;
+				}
+				const fields =
+					question.type === "choice"
+						? ["choice", "confidence", "probability"]
+						: question.type === "score"
+							? ["score", "confidence", "probability"]
+							: ["noul"];
+				if (!fields.includes(condition.field)) {
+					errors.push(
+						`Route "${route.description || route.id}" uses an answer measure that does not match question "${question.key}"`,
+					);
+				}
+				if (
+					condition.field === "choice" &&
+					(question.type !== "choice" ||
+						!question.criteria ||
+						Array.isArray(question.criteria) ||
+						!(String(condition.value) in question.criteria))
+				) {
+					errors.push(
+						`Route "${route.description || route.id}" must use a configured choice`,
+					);
+				}
+				if (condition.field === "probability") {
+					const validOptions =
+						question.type === "choice" &&
+						question.criteria &&
+						!Array.isArray(question.criteria)
+							? Object.keys(question.criteria)
+							: question.type === "score" &&
+									Array.isArray(question.criteria)
+								? question.criteria.map((_, index) =>
+										String(index),
+									)
+								: [];
+					if (
+						!condition.option ||
+						!validOptions.includes(condition.option)
+					) {
+						errors.push(
+							`Route "${route.description || route.id}" must use a configured probability option`,
+						);
+					}
+				}
+				if (
+					typeof condition.value === "number" &&
+					(condition.value < 0 || condition.value > 1)
+				) {
+					errors.push("Jev thresholds must be from 0 through 1");
+				}
+			}
 		}
 	}
 	if (type === "control.loop") {
@@ -1363,7 +1678,7 @@ export function validateCanvasWorkflowConnections(
 		? []
 		: [
 				type === "control.jev"
-					? "Every route and the low-confidence path must be connected"
+					? "Every route and the fallback path must be connected"
 					: "Every condition and the Else path must be connected",
 			];
 }

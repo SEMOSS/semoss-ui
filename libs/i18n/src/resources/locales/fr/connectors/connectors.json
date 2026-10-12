@@ -37,7 +37,8 @@
 		"saved": "{{name}} enregistré",
 		"openIn": "Ouvrir dans {{service}}",
 		"saveError": "Impossible d'enregistrer {{name}}. {{message}}",
-		"contextError": "Impossible d'ajouter {{name}} au contexte. {{message}}"
+		"contextError": "Impossible d'ajouter {{name}} au contexte. {{message}}",
+		"addToChat": "Ajouter au chat"
 	},
 	"status": {
 		"signInTitle": "Connectez-vous à {{account}}",
@@ -98,7 +99,10 @@
 		"loadingAttachments": "Chargement des pièces jointes...",
 		"conversations": "Conversations",
 		"showQuoted": "Afficher les e-mails cités",
-		"hideQuoted": "Masquer les e-mails cités"
+		"hideQuoted": "Masquer les e-mails cités",
+		"filters": "Filtres",
+		"pageError": "Impossible de charger davantage de messages.",
+		"emptyPage": "La boîte mail a renvoyé une page vide. Réessayez."
 	},
 	"calendar": {
 		"range": "Du {{start}} au {{end}}",
@@ -153,7 +157,9 @@
 			"day": "Jour suivant",
 			"threeDays": "3 jours suivants",
 			"month": "Mois suivant"
-		}
+		},
+		"title": "Calendrier",
+		"openCalendar": "Ouvrir le calendrier"
 	},
 	"teams": {
 		"team": "Équipe",

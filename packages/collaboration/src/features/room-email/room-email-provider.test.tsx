@@ -17,7 +17,12 @@ const workbench = vi.hoisted(() => {
 	const selectPanel = vi.fn();
 	return {
 		selectPanel,
-		store: { getState: () => ({ layout: { actions: { selectPanel } } }) },
+		store: {
+			getState: () => ({
+				layout: { actions: { selectPanel } },
+				events: { actions: { emit: vi.fn() } },
+			}),
+		},
 		openWorkbench: vi.fn(),
 		tools: {} as Record<string, ConversationTool>,
 		pendingApprovals: [] as PendingToolApproval[],
@@ -65,6 +70,7 @@ function session(): RoomEmailSession {
 		},
 		retain: vi.fn(() => vi.fn()),
 		readEmailAttachment: vi.fn(),
+		updateSourceFile: vi.fn().mockResolvedValue(undefined),
 	};
 }
 

@@ -1,5 +1,6 @@
 import { download, oauth } from "@semoss/sdk";
 import { z } from "@semoss/ui/next";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 import { draftText, sanitizeDraftHtml } from "@/features/email/email-html";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 import {
@@ -26,15 +27,7 @@ import {
 import { sameRecipientAddresses } from "./reply-recipients";
 
 /** Only an HTTPS provider URL may become a clickable external link. */
-export function safeSourceUrl(value: string | undefined): string | undefined {
-	if (!value) return undefined;
-	try {
-		const url = new URL(value);
-		return url.protocol === "https:" ? url.href : undefined;
-	} catch {
-		return undefined;
-	}
-}
+export const safeSourceUrl = safeHttpsUrl;
 
 /** Split a reviewable recipient list without accepting empty or malformed addresses. */
 export function parseAddresses(value: string): string[] {

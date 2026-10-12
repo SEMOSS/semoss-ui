@@ -88,6 +88,7 @@ import {
 } from "./room-composer-slash-plugin";
 import { RoomPromptPicker } from "./room-prompt-picker";
 import { RoomSettingsDialog } from "./room-settings-dialog";
+import { isSubmittedComposerContent } from "./submitted-composer-draft";
 
 interface RoomComposerProps {
 	/** Captured once on mount; subsequent typing remains owned by Lexical. */
@@ -100,6 +101,8 @@ interface RoomComposerProps {
 	focusRequest?: number;
 	/** Keep content until confirmed success, including while its route is detached. */
 	retainUntilSent?: boolean;
+	/** Session-owned drafts reset after confirmed acceptance instead of any resolved send. */
+	clearOnSent?: boolean;
 	/** A retained submission failure, if the host owns the transaction. */
 	submissionError?: string;
 	/** A stable rich document with destination-specific formatting and serialization. */
@@ -257,6 +260,7 @@ export function RoomComposer({
 	autoFocus = true,
 	focusRequest = 0,
 	retainUntilSent = false,
+	clearOnSent = true,
 	submissionError: retainedError,
 	emailMode,
 	panelActions = EMPTY_ACTIONS,
@@ -406,12 +410,17 @@ export function RoomComposer({
 			setSubmissionError("");
 			const previousDraft = draftRef.current;
 			const previousEditorState = editorRef.current?.getEditorState();
+			const submittedDraft: ComposerDraft = {
+				document: previousEditorState?.toJSON() ?? documentRef.current,
+				text: previousDraft,
+				files: [...submittedFiles],
+			};
 			const html =
 				isEmail && editorRef.current
 					? exportEmailHtml(editorRef.current)
 					: undefined;
 			const previousFiles = files;
-			if (clearDraft && !isEmail && !retainUntilSent) {
+			if (clearDraft && clearOnSent && !isEmail && !retainUntilSent) {
 				setEditorText("");
 				setFiles([]);
 				setOriginalDraft(null);
@@ -423,14 +432,31 @@ export function RoomComposer({
 					files: submittedFiles,
 					...(html !== undefined ? { html } : {}),
 				});
-				if (clearDraft && (isEmail || retainUntilSent)) {
-					setEditorText("");
-					setFiles([]);
-					setOriginalDraft(null);
+				if (clearDraft && clearOnSent && (isEmail || retainUntilSent)) {
+					if (
+						isSubmittedComposerContent(
+							{
+								document:
+									editorRef.current
+										?.getEditorState()
+										.toJSON() ?? documentRef.current,
+								text: draftRef.current,
+								files: [],
+							},
+							submittedDraft,
+						)
+					) {
+						setEditorText("");
+						setOriginalDraft(null);
+					}
+					const sentFiles = new Set(submittedDraft.files);
+					setFiles((current) =>
+						current.filter((file) => !sentFiles.has(file)),
+					);
 				}
 				onSent?.();
 			} catch (cause) {
-				if (clearDraft && !isEmail && !retainUntilSent) {
+				if (clearDraft && clearOnSent && !isEmail && !retainUntilSent) {
 					if (previousEditorState && editorRef.current) {
 						editorRef.current.setEditorState(previousEditorState);
 						draftRef.current = previousDraft;
@@ -445,6 +471,7 @@ export function RoomComposer({
 			}
 		},
 		[
+			clearOnSent,
 			isEmail,
 			retainUntilSent,
 			onDraftChange,

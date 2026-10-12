@@ -72,6 +72,9 @@ it("reads permitted Brain pages and returns only room identities in their saved 
 		);
 	const messages = await loadRoomSourceEmails(actionsFor(run), source);
 	expect(messages.map((item) => item.id)).toEqual(["older", "newer"]);
+	expect(
+		run.mock.calls.some(([statement]) => statement.includes("refresh=")),
+	).toBe(false);
 	expect(messages[0]).toMatchObject({
 		displayBody: { contentType: "html", content: "<p>Original older</p>" },
 		to: ["Recipient"],
@@ -177,8 +180,8 @@ it("keeps a formatted Outlook sender separate from its canonical saved address",
 	const output = {
 		...mail("older").pixelReturn[0].output,
 		from: "Carla Jimenez <carla@example.com>",
-		to: "Riley Warren <owner@example.com>",
-		cc: "Dana Osei <dana@example.com>",
+		to: ["Riley Warren <owner@example.com>"],
+		cc: ["Dana Osei <dana@example.com>"],
 	};
 	const run = vi.fn().mockResolvedValue(response(output));
 	const messages = await loadRoomSourceEmails(actionsFor(run), {
@@ -242,4 +245,69 @@ it("reads duplicate saved Outlook identities only once", async () => {
 	});
 	expect(messages.map((item) => item.id)).toEqual(["older"]);
 	expect(run).toHaveBeenCalledOnce();
+});
+
+it("refreshes every Brain page to discover replies beyond the imported identities", async () => {
+	const run = vi
+		.fn()
+		.mockResolvedValueOnce(
+			page([message("newer"), message("reply")], {
+				hasMore: true,
+				nextCursor: "older-page",
+			}),
+		)
+		.mockResolvedValueOnce(
+			page([message("older"), message("excluded", true)], {
+				hasMore: true,
+				nextCursor: "last-page",
+			}),
+		)
+		.mockResolvedValueOnce(page([message("oldest")]));
+	const messages = await loadRoomSourceEmails(actionsFor(run), source, true);
+	expect(messages.map((item) => item.id)).toEqual([
+		"newer",
+		"older",
+		"oldest",
+		"reply",
+	]);
+	expect(run).toHaveBeenCalledTimes(3);
+	// only the first page asks the server to read the mailbox first
+	expect(
+		run.mock.calls.map(([statement]) =>
+			statement.includes("refresh=[true]"),
+		),
+	).toEqual([true, false, false]);
+});
+
+it("continues discovering replies after the imported envelopes become empty", async () => {
+	const run = vi.fn().mockResolvedValue(page([message("reply")]));
+	expect(
+		await loadRoomSourceEmails(
+			actionsFor(run),
+			{ ...source, messages: [] },
+			true,
+		),
+	).toEqual([expect.objectContaining({ id: "reply" })]);
+});
+
+it("rejects partial refreshes so unavailable messages cannot silently disappear from the file", async () => {
+	const run = vi
+		.fn()
+		.mockResolvedValue(page([message("newer")], { unavailableCount: 1 }));
+	await expect(
+		loadRoomSourceEmails(actionsFor(run), source, true),
+	).rejects.toThrow("existing file has been kept");
+});
+
+it("rechecks an excluded Outlook selection using its saved native message identity", async () => {
+	const run = vi.fn().mockResolvedValue(mail("older"));
+	const messages = await loadRoomSourceEmails(
+		actionsFor(run),
+		{ ...source, kind: "outlook", nativeId: "older", messages: [] },
+		true,
+	);
+	expect(messages.map((message) => message.id)).toEqual(["older"]);
+	expect(run.mock.calls[0]?.[0]).toContain(
+		'MicrosoftOutlookGetMail(id=["older"]',
+	);
 });

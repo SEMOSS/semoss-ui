@@ -8,15 +8,13 @@ import { PeopleDirectory } from "@/features/collaboration/components/people-dire
 import { PersonDetail } from "@/features/collaboration/components/person-detail";
 import { SourcesAndRules } from "@/features/collaboration/components/sources-and-rules";
 import { ThreadsDirectory } from "@/features/collaboration/components/threads-directory";
-import { TopicDetail } from "@/features/collaboration/components/topic-detail";
 
 /** Thin routes compose the Brain feature views. */
 export function BrainPage() {
 	const { pathname } = useLocation();
-	const { topicId, personId, threadId } = useParams();
+	const { personId, threadId } = useParams();
 	let content: ReactNode;
-	if (topicId) content = <TopicDetail key={topicId} />;
-	else if (personId) content = <PersonDetail key={personId} />;
+	if (personId) content = <PersonDetail key={personId} />;
 	else if (threadId) content = <BrainThread key={threadId} />;
 	else if (pathname.endsWith("/memory")) content = <BrainMemory />;
 	else if (pathname.endsWith("/sources")) content = <SourcesAndRules />;

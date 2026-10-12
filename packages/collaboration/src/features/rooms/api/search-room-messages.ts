@@ -1,5 +1,6 @@
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
+import { readableRoomName } from "./room-schemas";
 
 const COLLABORATION_PROJECT_ID = "SYSTEM__COLLABORATION";
 const ROOM_SEARCH_LIMIT = 50;
@@ -44,7 +45,7 @@ export async function searchRoomMessages(
 
 	return rows.map((row) => ({
 		roomId: row.room_id,
-		roomName: row.room_name?.trim() || "Untitled room",
+		roomName: readableRoomName(row.room_name) || "Untitled room",
 		dateCreated: row.date_created ?? undefined,
 	}));
 }

@@ -39,6 +39,7 @@ import {
 	type OnboardingPerson,
 	type RuleKind,
 	saveAccounts,
+	saveContacts,
 	savePeople,
 	saveRules,
 	startClassify,
@@ -1403,6 +1404,10 @@ function AccountCard({
 export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	const [accounts, setAccounts] = useState<AccountSuggestion[] | null>(null);
 	const [picked, setPicked] = useState<Set<string>>(new Set());
+	// outside people kept by exact email; picked holds their ids beside the domains
+	const [contacts, setContacts] = useState<OnboardingPerson[]>([]);
+	const [email, setEmail] = useState("");
+	const [addError, setAddError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	useEffect(() => {
@@ -1427,11 +1432,49 @@ export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 				actions,
 				accounts.filter((a) => picked.has(a.domain)),
 			);
+			await saveContacts(
+				actions,
+				contacts.filter((c) => picked.has(c.id)),
+			);
 			onNext();
 		} catch (cause) {
 			setError(message(cause));
 		} finally {
 			setBusy(false);
+		}
+	};
+
+	const addContact = async () => {
+		const wanted = email.trim().toLowerCase();
+		if (!wanted.includes("@")) {
+			setAddError("Enter a full email address.");
+			return;
+		}
+		setAddError(null);
+		try {
+			const match = (await listPeople(actions, { query: wanted })).find(
+				(p) => p.email.toLowerCase() === wanted,
+			);
+			if (!match) {
+				setAddError(`No one with ${wanted} in your imported mail.`);
+			} else if (
+				match.relationship === "colleague" ||
+				match.relationship === "self"
+			) {
+				setAddError(
+					`${match.email} is in your organization; follow colleagues on the People step.`,
+				);
+			} else {
+				setContacts((prev) =>
+					prev.some((c) => c.id === match.id)
+						? prev
+						: [...prev, match],
+				);
+				setPicked((prev) => new Set(prev).add(match.id));
+				setEmail("");
+			}
+		} catch (cause) {
+			setAddError(message(cause));
 		}
 	};
 
@@ -1478,6 +1521,65 @@ export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 					</div>
 				</section>
 			)}
+			<section className="space-y-3">
+				<h2 className="font-medium text-sm">Add a specific person</h2>
+				<p className="text-muted-foreground text-xs">
+					Keep one outside contact by email instead of their whole
+					organization, such as a client on a personal address.
+				</p>
+				{contacts.length > 0 && (
+					<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+						{contacts.map((c) => (
+							<SelectCard
+								key={c.id}
+								label={`Keep ${c.name}`}
+								selected={picked.has(c.id)}
+								onToggle={() =>
+									setPicked((prev) => toggled(prev, c.id))
+								}
+							>
+								<PersonAvatar
+									name={c.name}
+									className="size-10"
+								/>
+								<span className="min-w-0">
+									<span className="block break-words font-medium">
+										{c.name}
+									</span>
+									<span className="block break-all text-muted-foreground text-xs">
+										{c.email}
+									</span>
+								</span>
+							</SelectCard>
+						))}
+					</div>
+				)}
+				<form
+					className="flex max-w-md items-center gap-2"
+					noValidate
+					onSubmit={(event) => {
+						event.preventDefault();
+						void addContact();
+					}}
+				>
+					<Input
+						type="email"
+						className="h-9 flex-1"
+						value={email}
+						placeholder="name@example.com"
+						aria-label="Outside email to keep"
+						onChange={(event) => setEmail(event.target.value)}
+					/>
+					<Button type="submit" variant="outline">
+						<Plus aria-hidden="true" /> Add
+					</Button>
+				</form>
+				{addError && (
+					<P className="text-destructive text-xs" role="alert">
+						{addError}
+					</P>
+				)}
+			</section>
 			{error && <Failure error={error} />}
 			<StepActions onBack={onBack}>
 				<Next onClick={save} disabled={busy || !accounts}>

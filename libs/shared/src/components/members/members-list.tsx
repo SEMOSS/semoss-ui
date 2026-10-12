@@ -33,7 +33,10 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
+import { LoginTypeLabel } from "../login-type-label";
 import { returnAccessType } from "./common";
+import { MemberAvatar } from "./member-avatar";
 
 export interface MemberUser {
 	id: string;
@@ -135,6 +138,7 @@ export const MembersList = ({
 	// a host's members have no project or engine permission
 	const hasPermissions = !source;
 	const memberLabel = source?.memberLabel ?? "Member";
+	const isCurrentLogin = useIsCurrentLogin();
 	const [userData, setUserData] = useState<MemberUser[]>([]);
 	const [totalMembers, setTotalMembers] = useState<number>(0);
 	const [refreshData, setRefreshData] = useState<number>(0);
@@ -505,7 +509,17 @@ export const MembersList = ({
 										)}
 										<TableCell>
 											<div className="flex items-center gap-2">
-												{user.id === currentUserId ? (
+												{/* the login the session is signed in with, or the
+												host's user id when the login type is not known */}
+												{(
+													user.type
+														? isCurrentLogin(
+																user.type,
+																user.id,
+															)
+														: user.id ===
+															currentUserId
+												) ? (
 													<Avatar className="items-center justify-center bg-primary/10 text-primary">
 														<Star className="h-4 w-4 fill-primary" />
 													</Avatar>
@@ -530,9 +544,16 @@ export const MembersList = ({
 											</div>
 										</TableCell>
 										<TableCell>
-											<span className="text-sm">
-												{user.type ?? "-"}
-											</span>
+											{user.type ? (
+												<LoginTypeLabel
+													type={user.type}
+													className="text-sm"
+												/>
+											) : (
+												<span className="text-sm">
+													-
+												</span>
+											)}
 										</TableCell>
 										{hasPermissions && (
 											<TableCell>
@@ -799,9 +820,15 @@ export const MembersList = ({
 								key={`${u.type}-${u.id}`}
 								className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2.5"
 							>
-								<Avatar className="h-9 w-9 items-center justify-center bg-muted text-muted-foreground text-sm">
-									{u.name.charAt(0).toUpperCase()}
-								</Avatar>
+								<MemberAvatar
+									name={u.name}
+									type={u.type}
+									isCurrentLogin={isCurrentLogin(
+										u.type,
+										u.id,
+									)}
+									className="h-9 w-9"
+								/>
 								<div className="flex flex-col">
 									<span className="font-medium text-sm">
 										{u.name}

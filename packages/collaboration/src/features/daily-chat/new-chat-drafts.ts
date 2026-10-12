@@ -5,6 +5,7 @@ import {
 
 export interface NewChatDraft {
 	id: string;
+	topicId: string;
 	session: RoomSession;
 	startedRoomId: string;
 	pendingSubmission: Promise<void> | null;
@@ -15,10 +16,15 @@ const MAX_RETAINED_DRAFTS = 20;
 const drafts = new Map<string, NewChatDraft>();
 const historyDrafts = new Map<
 	string,
-	{ scope: string; id: string; isLanding: boolean }
+	{ scope: string; id: string; isLanding: boolean; topicId: string }
 >();
 const listeners = new Set<() => void>();
 let lifecycleVersion = 0;
+
+function publishDrafts(): void {
+	lifecycleVersion++;
+	for (const listener of listeners) listener();
+}
 
 /** Observe first-send handoffs even when allocation finishes under another route. */
 export function subscribeNewChatDrafts(listener: () => void): () => void {
@@ -33,6 +39,15 @@ export function getNewChatDraftVersion(): number {
 	return lifecycleVersion;
 }
 
+/** Keep every mounted draft busy through allocation, topic linking, and submission. */
+export function setNewChatDraftSubmission(
+	draft: NewChatDraft,
+	submission: Promise<void> | null,
+): void {
+	draft.pendingSubmission = submission;
+	publishDrafts();
+}
+
 /** Keep each browser history entry attached to its own bounded in-memory draft. */
 export function getHistoryChatDraft(
 	scope: string,
@@ -41,22 +56,37 @@ export function getHistoryChatDraft(
 	requestedId: string,
 	prompt: string,
 	search: string,
+	topicId = "",
 ): NewChatDraft {
-	const historyKey = `${scope}:${isLanding ? "landing" : "new"}:${entryKey}`;
+	const historyKey = JSON.stringify([scope, topicId, isLanding, entryKey]);
 	let id =
 		historyDrafts.get(historyKey)?.id ??
-		(/^[a-f0-9-]{36}$/.test(requestedId)
+		(!topicId && /^[a-f0-9-]{36}$/.test(requestedId)
 			? requestedId
 			: crypto.randomUUID());
-	if (isLanding && drafts.get(`${scope}:${id}`)?.startedRoomId)
+	if (
+		isLanding &&
+		drafts.get(JSON.stringify([scope, topicId, id]))?.startedRoomId
+	)
 		id = crypto.randomUUID();
 	historyDrafts.delete(historyKey);
-	historyDrafts.set(historyKey, { scope, id, isLanding });
-	for (const key of historyDrafts.keys()) {
+	historyDrafts.set(historyKey, { scope, id, isLanding, topicId });
+	for (const [key, entry] of historyDrafts) {
 		if (historyDrafts.size <= MAX_RETAINED_DRAFTS * 2) break;
+		const draft = drafts.get(
+			JSON.stringify([entry.scope, entry.topicId, entry.id]),
+		);
+		const snapshot = draft?.session.getSnapshot();
+		if (
+			key === historyKey ||
+			draft?.pendingSubmission ||
+			snapshot?.contextFiles.length ||
+			snapshot?.composerDraft.files.length
+		)
+			continue;
 		historyDrafts.delete(key);
 	}
-	return getNewChatDraft(scope, id, prompt, search);
+	return getNewChatDraft(scope, id, prompt, search, topicId);
 }
 
 /** A started draft belongs to its conversation; every landing alias becomes fresh. */
@@ -67,11 +97,15 @@ export function markNewChatDraftStarted(
 ): void {
 	draft.startedRoomId = roomId;
 	for (const [key, entry] of historyDrafts) {
-		if (entry.scope === scope && entry.id === draft.id && entry.isLanding)
+		if (
+			entry.scope === scope &&
+			entry.id === draft.id &&
+			entry.topicId === draft.topicId &&
+			entry.isLanding
+		)
 			historyDrafts.delete(key);
 	}
-	lifecycleVersion++;
-	for (const listener of listeners) listener();
+	publishDrafts();
 }
 
 /** Retain local drafts across navigation within one account's app session. */
@@ -80,8 +114,9 @@ function getNewChatDraft(
 	id: string,
 	prompt: string,
 	search = "",
+	topicId = "",
 ): NewChatDraft {
-	const key = `${scope}:${id}`;
+	const key = JSON.stringify([scope, topicId, id]);
 	const existing = drafts.get(key);
 	if (existing) {
 		drafts.delete(key);
@@ -95,6 +130,7 @@ function getNewChatDraft(
 	let hasSeededSettings = false;
 	const draft: NewChatDraft = {
 		id,
+		topicId,
 		session,
 		startedRoomId: "",
 		pendingSubmission: null,
@@ -122,14 +158,17 @@ function getNewChatDraft(
 	};
 	drafts.set(key, draft);
 	for (const [candidateKey, candidate] of drafts) {
-		if (candidate === draft) continue;
+		if (candidate === draft || candidate.pendingSubmission) continue;
 		if (
 			candidate.session.scope === scope &&
 			drafts.size <= MAX_RETAINED_DRAFTS
 		)
 			continue;
+		const snapshot = candidate.session.getSnapshot();
+		if (snapshot.contextFiles.length || snapshot.composerDraft.files.length)
+			continue;
 		// Allocated rooms belong to the shared room registry after navigation.
-		if (!candidate.session.getSnapshot().roomId) {
+		if (!snapshot.roomId) {
 			if (!candidate.session.canEvict({ discardDraft: true })) continue;
 			candidate.session.dispose();
 		}

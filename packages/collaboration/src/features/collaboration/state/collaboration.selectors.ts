@@ -2,11 +2,33 @@ import type {
 	CollaborationState,
 	ContextMessage,
 	Person,
+	ReviewEntry,
 	Rule,
 	Thread,
 	ThreadContext,
 	WorkItem,
 } from "./collaboration.types";
+
+/** Imported conversations stay discoverable until their topic is confirmed. */
+export function threadNeedsTopic(thread: Thread): boolean {
+	return (
+		thread.needsTopicChoice === true ||
+		!thread.topicLinks.some((link) => link.source !== "suggested")
+	);
+}
+
+/** The topics a topic choice asks about; older reviews without candidates fall back to the thread's suggestions. */
+export function topicChoiceCandidates(
+	review: ReviewEntry,
+	thread: Thread,
+): string[] {
+	const linked = new Set(thread.topicLinks.map((link) => link.topicId));
+	return review.candidates?.length
+		? review.candidates.filter((topicId) => linked.has(topicId))
+		: thread.topicLinks
+				.filter((link) => link.source === "suggested")
+				.map((link) => link.topicId);
+}
 
 /** Work filters never mix sample and connected items implicitly. */
 export function selectWorkItems(
@@ -134,7 +156,11 @@ function revisionOf(value: string): string {
 
 /** Exact assistant context uses allowed messages and the owner's confirmed profile only; memories come from the server. */
 export function selectThreadContext(
-	state: CollaborationState,
+	state: Pick<
+		CollaborationState,
+		"threads" | "workspaces" | "rules" | "people" | "topics" | "accounts"
+	> &
+		Partial<Pick<CollaborationState, "profile" | "liveProfile">>,
 	threadId: string,
 ): ThreadContext | null {
 	const thread = state.threads.find((candidate) => candidate.id === threadId);

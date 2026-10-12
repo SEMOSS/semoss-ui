@@ -37,7 +37,8 @@
 		"saved": "{{name}} सहेजा गया",
 		"openIn": "{{service}} में खोलें",
 		"saveError": "{{name}} को सहेजा नहीं जा सका। {{message}}",
-		"contextError": "{{name}} को संदर्भ में जोड़ा नहीं जा सका। {{message}}"
+		"contextError": "{{name}} को संदर्भ में जोड़ा नहीं जा सका। {{message}}",
+		"addToChat": "चैट में जोड़ें"
 	},
 	"status": {
 		"signInTitle": "{{account}} में साइन इन करें",
@@ -98,7 +99,10 @@
 		"loadingAttachments": "अटैचमेंट लोड हो रहे हैं...",
 		"conversations": "बातचीत",
 		"showQuoted": "उद्धृत ईमेल दिखाएं",
-		"hideQuoted": "उद्धृत ईमेल छिपाएं"
+		"hideQuoted": "उद्धृत ईमेल छिपाएं",
+		"filters": "फ़िल्टर",
+		"pageError": "और संदेश लोड नहीं हो सके।",
+		"emptyPage": "मेलबॉक्स ने खाली पृष्ठ लौटाया। फिर से कोशिश करें।"
 	},
 	"calendar": {
 		"range": "{{start}} से {{end}}",
@@ -153,7 +157,9 @@
 			"day": "अगला दिन",
 			"threeDays": "अगले 3 दिन",
 			"month": "अगला महीना"
-		}
+		},
+		"title": "कैलेंडर",
+		"openCalendar": "कैलेंडर खोलें"
 	},
 	"teams": {
 		"team": "टीम",

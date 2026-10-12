@@ -23,6 +23,7 @@
 		"@lexical/rich-text": "0.39.0",
 		"@lexical/selection": "0.39.0",
 		"@lexical/table": "0.39.0",
+		"@semoss/connectors": "workspace:*",
 		"@semoss/i18n": "workspace:*",
 		"@semoss/panels": "workspace:*",
 		"@semoss/sdk": "workspace:*",

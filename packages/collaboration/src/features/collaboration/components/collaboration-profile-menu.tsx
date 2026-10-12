@@ -13,12 +13,22 @@ import {
 	P,
 	Small,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { PersonAvatar } from "./person-avatar";
 
+interface CollaborationProfileMenuProps {
+	/** Closes mobile navigation after choosing a destination. */
+	onNavigate?: () => void;
+}
+
 /** Account actions use the current session and leave failed logout attempts retryable. */
-export function CollaborationProfileMenu() {
+export function CollaborationProfileMenu({
+	onNavigate,
+}: CollaborationProfileMenuProps) {
 	const { state } = useCollaborationSession();
 	const { actions } = useInsight();
 	const navigate = useNavigate();
@@ -50,24 +60,29 @@ export function CollaborationProfileMenu() {
 
 	return (
 		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-			<DropdownMenuTrigger asChild>
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					className="size-11 rounded-full"
-					aria-label={`Account menu for ${name}`}
-				>
-					<PersonAvatar
-						name={name}
-						className="size-8 shrink-0"
-						tone="bg-primary/10 text-primary"
-					/>
-				</Button>
-			</DropdownMenuTrigger>
+			<Tooltip disableHoverableContent={false}>
+				<TooltipTrigger asChild>
+					<DropdownMenuTrigger asChild>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="size-11 rounded-full"
+							aria-label={`Account menu for ${name}`}
+						>
+							<PersonAvatar
+								name={name}
+								className="size-8 shrink-0"
+								tone="bg-primary/10 text-primary"
+							/>
+						</Button>
+					</DropdownMenuTrigger>
+				</TooltipTrigger>
+				<TooltipContent side="right">Account</TooltipContent>
+			</Tooltip>
 			<DropdownMenuContent
-				align="end"
-				side="bottom"
+				align="start"
+				side="top"
 				className="w-64 motion-reduce:animate-none"
 			>
 				<DropdownMenuLabel className="space-y-1 px-2 py-2">
@@ -87,7 +102,11 @@ export function CollaborationProfileMenu() {
 					<Link
 						to="/settings"
 						onClick={(event) => {
-							if (isLogoutPending.current) event.preventDefault();
+							if (isLogoutPending.current) {
+								event.preventDefault();
+								return;
+							}
+							onNavigate?.();
 						}}
 					>
 						<Settings aria-hidden="true" />

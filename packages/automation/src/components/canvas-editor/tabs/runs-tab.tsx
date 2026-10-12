@@ -313,6 +313,7 @@ export function RunsTab({
 		if (selectedRun) {
 			return (
 				<HistoryRunView
+					key={selectedRun.RUN_ID}
 					run={selectedRun}
 					onBack={goBack}
 					onOutputPopout={handleOutputPopout}
@@ -617,9 +618,15 @@ function HistoryRunView({
 		[executedSteps],
 	);
 	const results = run.nodeResults ?? [];
+	const latestSuccessfulResult = [...results]
+		.reverse()
+		.find((result) => result.STATUS === "SUCCESS");
 	const selectedResult =
 		results.find((result) => result.NODE_ID === selectedNodeId) ??
-		results.find((result) => result.NODE_ID === run.FAILED_NODE_ID) ??
+		(run.STATUS === "FAILED"
+			? results.find((result) => result.NODE_ID === run.FAILED_NODE_ID)
+			: null) ??
+		latestSuccessfulResult ??
 		results[results.length - 1] ??
 		null;
 
@@ -656,7 +663,7 @@ function HistoryRunView({
 				</div>
 			</div>
 
-			<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
+			<div className="mt-3 flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-card">
 				<ResultsPanel
 					key={run.RUN_ID}
 					executionInsightId={run.executionInsightId ?? null}
@@ -690,6 +697,8 @@ function ResultsPanel({
 	onSelectNode: (id: string) => void;
 	onViewAgentRun?: (trace: AutomationNodeTrace) => void;
 }) {
+	const outputPanelRef = useRef<HTMLElement>(null);
+	const previousOutputSelectionRef = useRef<string | null>(null);
 	const [expandedLoopIds, setExpandedLoopIds] = useState<Set<string>>(
 		new Set(),
 	);
@@ -749,6 +758,19 @@ function ResultsPanel({
 	}, [stepMap]);
 
 	const displayResult = selectedBodyResult ?? selectedResult;
+	const outputSelectionKey = JSON.stringify([
+		displayResult?.NODE_ID,
+		selectedBodyKey?.loopNodeId,
+		selectedBodyKey?.iterationIndex,
+	]);
+	useEffect(() => {
+		if (previousOutputSelectionRef.current === outputSelectionKey) return;
+		previousOutputSelectionRef.current = outputSelectionKey;
+		if (outputPanelRef.current) {
+			outputPanelRef.current.scrollTop = 0;
+		}
+	}, [outputSelectionKey]);
+
 	const displayStep = displayResult
 		? (stepMap.get(displayResult.NODE_ID) ??
 			bodyStepMap.get(displayResult.NODE_ID))
@@ -1050,6 +1072,7 @@ function ResultsPanel({
 				)}
 			</nav>
 			<section
+				ref={outputPanelRef}
 				className="min-w-0 flex-1 overflow-y-auto p-3"
 				aria-live="polite"
 			>

@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
+import { linkRoomTopic } from "@/features/rooms/api/room-topics";
 import type {
 	RoomSession,
 	RoomSessionSnapshot,
@@ -20,6 +21,7 @@ import {
 	getHistoryChatDraft,
 	getNewChatDraftVersion,
 	markNewChatDraftStarted,
+	setNewChatDraftSubmission,
 	subscribeNewChatDrafts,
 } from "./new-chat-drafts";
 
@@ -34,9 +36,10 @@ export interface NewChatController {
 	onSelectAgent: (agentId: string) => Promise<void>;
 }
 
-/** Own the overview draft and its first-send transaction. */
+/** Own a page's draft and its first-send transaction. */
 export function useNewChatController(
 	navigationState: unknown,
+	topicId?: string,
 ): NewChatController {
 	const request =
 		typeof navigationState === "object" && navigationState !== null
@@ -67,6 +70,7 @@ export function useNewChatController(
 		requestedId,
 		prompt,
 		location.search,
+		topicId,
 	);
 	const { session } = draft;
 	const snapshot = useSyncExternalStore(
@@ -102,18 +106,36 @@ export function useNewChatController(
 	}, [entryToken, initialize, session]);
 	const handleSend = (submission: ComposerSubmission): Promise<void> => {
 		if (draft.pendingSubmission) return draft.pendingSubmission;
+		const submittedDraft = session.captureSubmission(submission);
 		const release = session.retain();
 		const sending = (async () => {
 			const roomId = await session.create("New chat");
-			const submitted = session.send(submission);
+			if (topicId) {
+				const topics = await linkRoomTopic(
+					session.insight.actions,
+					roomId,
+					topicId,
+				);
+				if (
+					!topics.some(
+						(topic) =>
+							topic.topicId === topicId &&
+							topic.state === "linked",
+					)
+				)
+					throw new Error(
+						"Could not attach this chat to the topic. Try sending again.",
+					);
+			}
+			const submitted = session.send(submission, {}, submittedDraft);
 			if (active.current === entryToken) void navigate(roomPath(roomId));
 			markNewChatDraftStarted(scope, draft, roomId);
 			await submitted;
 		})().finally(() => {
-			draft.pendingSubmission = null;
+			setNewChatDraftSubmission(draft, null);
 			release();
 		});
-		draft.pendingSubmission = sending;
+		setNewChatDraftSubmission(draft, sending);
 		return sending;
 	};
 	const handleSaveSettings = (values: RoomSettings): Promise<void> =>
@@ -142,7 +164,9 @@ export function useNewChatController(
 	return {
 		draftId: draft.id,
 		session,
-		snapshot,
+		snapshot: draft.pendingSubmission
+			? { ...snapshot, isPreparing: true }
+			: snapshot,
 		agentError,
 		onInitialize: initialize,
 		onSend: handleSend,

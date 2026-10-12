@@ -348,7 +348,7 @@ export function NodeEditDrawer({
 									{pythonSourceUnavailable
 										? "Not available for historical runs."
 										: step.workflowType === "control.jev"
-											? "Jev chooses a configured route, or the low-confidence path when no answer is confident enough."
+											? "Jev answers typed questions, then the first matching route runs; otherwise the fallback path runs."
 											: step.workflowType === "control.if"
 												? "This decision evaluates its conditions in order and uses the first matching path."
 												: isLoop

@@ -82,6 +82,7 @@ import {
 import { getAutomationNodeDefinition } from "../../domain/automation-node-catalog";
 import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 import type {
+	AutomationGlobalVariable,
 	AutomationNodeGroup,
 	AutomationWorkflowDocument,
 	AutomationWorkflowNodeType,
@@ -114,6 +115,7 @@ import { AutomationNodeGroupFrame } from "./nodes/automation-node-group";
 import { BranchNode } from "./nodes/branch-node";
 import { LoopNode } from "./nodes/loop-node";
 import { TriggerNode } from "./nodes/trigger-node";
+import { RunInputDialog } from "./run-input-dialog";
 import type { AutomationTraceSnapshot } from "./tabs/runs-tab";
 import { UndoBanner } from "./undo-banner";
 
@@ -418,6 +420,7 @@ export interface AutomationCanvasHandle {
 }
 
 type TriggerAutomationOutput = AutomationRunDetail;
+type RunInputs = Record<string, string>;
 
 interface AutomationNodeStreamData {
 	kind?: string;
@@ -685,6 +688,8 @@ export const AutomationCanvasContent = forwardRef<
 		"inspector" | "validation"
 	>("inspector");
 	const [running, setRunning] = useState(false);
+	const [isRunInputDialogOpen, setIsRunInputDialogOpen] = useState(false);
+	const pendingRunInputsRef = useRef<RunInputs | null>(null);
 	const [stepStatuses, setStepStatuses] = useState<
 		Record<string, StepRunStatus>
 	>({});
@@ -752,6 +757,22 @@ export const AutomationCanvasContent = forwardRef<
 	const [activeRun, setActiveRun] = useState<AutomationRunDetail | null>(
 		null,
 	);
+	const runInputDefinitions = useMemo(() => {
+		const trigger = steps.find(
+			(step) => step.workflowType === "trigger.start",
+		);
+		if (!Array.isArray(trigger?.workflowConfig?.globals)) return [];
+		return trigger.workflowConfig.globals.filter(
+			(value): value is AutomationGlobalVariable =>
+				typeof value === "object" &&
+				value !== null &&
+				"name" in value &&
+				typeof value.name === "string" &&
+				value.name.length > 0 &&
+				"defaultValue" in value &&
+				typeof value.defaultValue === "string",
+		);
+	}, [steps]);
 	// DB-backed run id for the in-progress run, used to poll GetAutomationRun as a
 	// fallback in case the live progress stream drops an update (see the periodic
 	// reconciliation effect below).
@@ -2958,6 +2979,9 @@ export const AutomationCanvasContent = forwardRef<
 	}, [running, liveRunId, appId, applyRunData]);
 
 	const run = useCallback(async () => {
+		const runInputs = pendingRunInputsRef.current;
+		const isPreparedRun = runInputs !== null;
+		pendingRunInputsRef.current = null;
 		if (viewingHistory) {
 			toast.error("Return to the editor before running this automation.");
 			return;
@@ -2966,14 +2990,19 @@ export const AutomationCanvasContent = forwardRef<
 			toast.error("You have read-only access to this automation.");
 			return;
 		}
-		const invalidSteps = steps.filter(
-			(step) =>
-				step.workflowType !== "trigger.start" &&
-				[
-					...validateCanvasWorkflowNode(step, steps),
-					...validateCanvasWorkflowConnections(step, graphEdges),
-				].length > 0,
-		);
+		const invalidSteps = isPreparedRun
+			? []
+			: steps.filter(
+					(step) =>
+						step.workflowType !== "trigger.start" &&
+						[
+							...validateCanvasWorkflowNode(step, steps),
+							...validateCanvasWorkflowConnections(
+								step,
+								graphEdges,
+							),
+						].length > 0,
+				);
 		if (invalidSteps.length > 0) {
 			const firstInvalidStep = invalidSteps[0];
 			const firstIssue = [
@@ -2990,7 +3019,11 @@ export const AutomationCanvasContent = forwardRef<
 			return;
 		}
 		// In trigger mode the automation is already saved — skip the save step.
-		if (mcpMode !== "trigger" && !(await save())) return;
+		if (!isPreparedRun && mcpMode !== "trigger" && !(await save())) return;
+		if (!isPreparedRun && runInputDefinitions.length > 0) {
+			setIsRunInputDialogOpen(true);
+			return;
+		}
 
 		setRunning(true);
 		setAiRunSummary(null);
@@ -3004,8 +3037,12 @@ export const AutomationCanvasContent = forwardRef<
 		setActiveRun(null);
 		setLiveRunId(null);
 		try {
+			const inputsArgument =
+				runInputs && Object.keys(runInputs).length > 0
+					? `, inputs=${JSON.stringify(runInputs)}`
+					: "";
 			const { jobId } = await runPixelAsync(
-				`TriggerAutomation(project=${JSON.stringify([appId])});`,
+				`TriggerAutomation(project=${JSON.stringify([appId])}${inputsArgument});`,
 			);
 			if (!jobId) throw new Error("Automation did not return a job ID.");
 
@@ -3169,10 +3206,20 @@ export const AutomationCanvasContent = forwardRef<
 		mcpMode,
 		notifyHistoryChanged,
 		readOnly,
+		runInputDefinitions.length,
 		save,
 		steps,
 		viewingHistory,
 	]);
+
+	const handleRunWithInputs = useCallback(
+		(inputs: RunInputs): void => {
+			pendingRunInputsRef.current = inputs;
+			setIsRunInputDialogOpen(false);
+			void run();
+		},
+		[run],
+	);
 
 	const handleDoneReturnToChat = useCallback(async () => {
 		if (readOnly || saving) return;
@@ -4802,6 +4849,12 @@ export const AutomationCanvasContent = forwardRef<
 				</div>
 			</div>
 
+			<RunInputDialog
+				open={isRunInputDialogOpen}
+				inputs={runInputDefinitions}
+				onCancel={() => setIsRunInputDialogOpen(false)}
+				onRun={handleRunWithInputs}
+			/>
 			<Dialog open={confirmReload} onOpenChange={setConfirmReload}>
 				<DialogContent className="max-w-md">
 					<DialogHeader>

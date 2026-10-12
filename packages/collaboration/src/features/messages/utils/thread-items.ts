@@ -61,7 +61,10 @@ function persistedPartToConversationPart(
 	switch (part.type) {
 		case "TEXT": {
 			const text = (part.uiText ?? part.text ?? "").trim();
-			return text ? { type: "text", text } : null;
+			if (!text) return null;
+			return part.text && part.text !== part.uiText
+				? { type: "text", text, command: part.text }
+				: { type: "text", text };
 		}
 		case "THINKING":
 			return part.thinking.trim()

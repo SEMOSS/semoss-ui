@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { type ReactNode, useRef } from "react";
 import {
 	Button,
@@ -15,6 +16,7 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { getWorkbenchMenuLabel } from "../../constants/workbench-menu.constants";
 import { useWorkbench } from "../../hooks/use-workbench";
 import { useWorkbenchCommands } from "../../hooks/use-workbench-commands";
@@ -155,6 +157,10 @@ export function WorkbenchMenus({
 					className={triggerClass}
 				>
 					{t("view")}
+					<ChevronDown
+						aria-hidden="true"
+						className={WORKBENCH_STYLES.chromeIcon}
+					/>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
