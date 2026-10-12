@@ -179,7 +179,7 @@ export function CollaborationFrame() {
 			</a>
 			<aside
 				ref={desktopNavigationRef}
-				aria-label="Workspace navigation"
+				aria-label="Navigation"
 				data-side="left"
 				data-state={isCollapsed ? "collapsed" : "expanded"}
 				className={cn(
@@ -271,9 +271,7 @@ export function CollaborationFrame() {
 								}}
 							>
 								<SheetHeader className="sr-only">
-									<SheetTitle>
-										Workspace navigation
-									</SheetTitle>
+									<SheetTitle>Navigation</SheetTitle>
 								</SheetHeader>
 								<SheetClose asChild>
 									<Button

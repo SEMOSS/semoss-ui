@@ -209,7 +209,7 @@ beforeEach(() => {
 	vi.spyOn(HTMLElement.prototype, "getClientRects").mockImplementation(
 		function (this: HTMLElement) {
 			const isDesktopControl = Boolean(
-				this.closest('aside[aria-label="Workspace navigation"]'),
+				this.closest('aside[aria-label="Navigation"]'),
 			);
 			const isMobileControl =
 				this.getAttribute("aria-label") === "Open navigation";
@@ -237,7 +237,7 @@ describe("CollaborationFrame", () => {
 		const resizeColumn = mockConversationColumn(460);
 		const { router, user } = renderFrame("/thread/room%3Aone", true);
 		const search = screen.getByRole("button", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		const account = screen.getByRole("button", {
 			name: /Account menu for/,
@@ -274,9 +274,7 @@ describe("CollaborationFrame", () => {
 		await act(() => router.navigate("/brain"));
 		expect(header).not.toHaveClass("md:absolute");
 		expect(header?.style.getPropertyValue("--conversation-width")).toBe("");
-		expect(
-			screen.getByRole("button", { name: "Search your workspace" }),
-		).toBe(search);
+		expect(screen.getByRole("button", { name: "Search" })).toBe(search);
 		expect(screen.getByRole("button", { name: /Account menu for/ })).toBe(
 			account,
 		);
@@ -291,7 +289,7 @@ describe("CollaborationFrame", () => {
 		const resizeColumn = mockConversationColumn(460);
 		const { user } = renderFrame("/thread/room%3Aone", true);
 		const header = screen
-			.getByRole("button", { name: "Search your workspace" })
+			.getByRole("button", { name: "Search" })
 			.closest("header");
 		await user.click(
 			screen.getByRole("button", { name: "Show workspace" }),
@@ -304,26 +302,24 @@ describe("CollaborationFrame", () => {
 		expect(header).toHaveClass("md:absolute");
 		expect(header).toHaveStyle({ "--conversation-width": "380px" });
 		expect(
-			screen
-				.getByRole("button", { name: "Search your workspace" })
-				.closest("header"),
+			screen.getByRole("button", { name: "Search" }).closest("header"),
 		).toBe(header);
 	});
 
 	it("keeps one header and search palette mounted across page and room navigation", async () => {
 		const { router, user } = renderFrame();
 		const header = screen
-			.getByRole("button", { name: "Search your workspace" })
+			.getByRole("button", { name: "Search" })
 			.closest("header");
 		const search = screen.getByRole("button", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		const account = screen.getByRole("button", {
 			name: /Account menu for/,
 		});
 		expect(header).not.toContainElement(account);
 		expect(
-			screen.getByRole("complementary", { name: "Workspace navigation" }),
+			screen.getByRole("complementary", { name: "Navigation" }),
 		).toContainElement(account);
 		for (const path of [
 			"/brain",
@@ -348,12 +344,10 @@ describe("CollaborationFrame", () => {
 			}
 			expect(
 				screen
-					.getByRole("button", { name: "Search your workspace" })
+					.getByRole("button", { name: "Search" })
 					.closest("header"),
 			).toBe(header);
-			expect(
-				screen.getByRole("button", { name: "Search your workspace" }),
-			).toBe(search);
+			expect(screen.getByRole("button", { name: "Search" })).toBe(search);
 			expect(
 				screen.getByRole("button", { name: /Account menu for/ }),
 			).toBe(account);
@@ -363,13 +357,15 @@ describe("CollaborationFrame", () => {
 		).not.toBeInTheDocument();
 		act(() => search.focus());
 		await user.keyboard("{Control>}k{/Control}");
-		expect(
-			screen.getAllByRole("dialog", { name: "Search your workspace" }),
-		).toHaveLength(1);
+		expect(screen.getAllByRole("dialog", { name: "Search" })).toHaveLength(
+			1,
+		);
 		await user.keyboard("{Escape}");
 		await waitFor(() => expect(search).toHaveFocus());
 		await user.click(search);
-		await user.click(screen.getByRole("option", { name: /Brain/ }));
+		await user.click(
+			screen.getByRole("option", { name: /Topics and filing/ }),
+		);
 		await waitFor(() =>
 			expect(router.state.location.pathname).toBe("/brain"),
 		);
@@ -381,7 +377,7 @@ describe("CollaborationFrame", () => {
 		async (key) => {
 			const { user } = renderFrame("/thread/room%3Aroom-one");
 			const navigation = screen.getByRole("complementary", {
-				name: "Workspace navigation",
+				name: "Navigation",
 			});
 			const draft = screen.getByRole("textbox", {
 				name: "Conversation draft",
@@ -393,11 +389,11 @@ describe("CollaborationFrame", () => {
 			).toBeVisible();
 			expect(
 				screen.getByRole("button", {
-					name: "Search your workspace",
+					name: "Search",
 				}),
 			).toBeVisible();
 			expect(
-				within(navigation).getByRole("link", { name: "For you" }),
+				within(navigation).getByRole("link", { name: "Today" }),
 			).toBeVisible();
 			const expand = screen.getByRole("button", {
 				name: "Expand navigation",
@@ -454,7 +450,7 @@ describe("CollaborationFrame", () => {
 	it("collapses each opened room and restores the sidebar preference on other pages", async () => {
 		const { router, user } = renderFrame();
 		const navigation = screen.getByRole("complementary", {
-			name: "Workspace navigation",
+			name: "Navigation",
 		});
 		const writes = vi.spyOn(Storage.prototype, "setItem");
 		expect(navigation).toHaveClass("w-64");
@@ -493,7 +489,7 @@ describe("CollaborationFrame", () => {
 	it("restores the collapsed sidebar and both disclosures together after a fresh mount", async () => {
 		const { user } = renderFrame();
 		await user.click(screen.getByRole("button", { name: "Topics" }));
-		await user.click(screen.getByRole("button", { name: "Sessions" }));
+		await user.click(screen.getByRole("button", { name: "Chats" }));
 		await user.click(
 			screen.getByRole("button", { name: "Collapse navigation" }),
 		);
@@ -509,11 +505,12 @@ describe("CollaborationFrame", () => {
 		expect(
 			screen.getByRole("navigation", { name: "Topics" }),
 		).toBeVisible();
+		expect(screen.getByRole("button", { name: "Chats" })).toHaveAttribute(
+			"aria-expanded",
+			"false",
+		);
 		expect(
-			screen.getByRole("button", { name: "Sessions" }),
-		).toHaveAttribute("aria-expanded", "false");
-		expect(
-			screen.queryByRole("navigation", { name: "Sessions" }),
+			screen.queryByRole("navigation", { name: "Chats" }),
 		).not.toBeInTheDocument();
 	});
 
@@ -524,28 +521,27 @@ describe("CollaborationFrame", () => {
 			screen.getByRole("button", { name: "Open navigation" }),
 		);
 		const dialog = screen.getByRole("dialog", {
-			name: "Workspace navigation",
+			name: "Navigation",
 		});
-		await user.click(
-			within(dialog).getByRole("button", { name: "Sessions" }),
-		);
+		await user.click(within(dialog).getByRole("button", { name: "Chats" }));
 		await user.keyboard("{Escape}");
 		await user.click(
 			screen.getByRole("button", { name: "Open navigation" }),
 		);
 		expect(
 			within(screen.getByRole("dialog")).getByRole("button", {
-				name: "Sessions",
+				name: "Chats",
 			}),
 		).toHaveAttribute("aria-expanded", "false");
 		setDesktop(true);
 		await waitFor(() =>
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
 		);
-		expect(
-			screen.getByRole("button", { name: "Sessions" }),
-		).toHaveAttribute("aria-expanded", "false");
-		await user.click(screen.getByRole("button", { name: "Sessions" }));
+		expect(screen.getByRole("button", { name: "Chats" })).toHaveAttribute(
+			"aria-expanded",
+			"false",
+		);
+		await user.click(screen.getByRole("button", { name: "Chats" }));
 		expect(
 			screen.getByRole("button", { name: "Pricing conversation" }),
 		).toBeVisible();
@@ -561,7 +557,7 @@ describe("CollaborationFrame", () => {
 			});
 			await user.click(trigger);
 			const dialog = screen.getByRole("dialog", {
-				name: "Workspace navigation",
+				name: "Navigation",
 			});
 			expect(dialog).toContainElement(
 				document.activeElement as HTMLElement,
@@ -586,17 +582,17 @@ describe("CollaborationFrame", () => {
 
 	it("closes mobile navigation on selection and sends focus into the destination", async () => {
 		isWide = false;
-		const { user, router } = renderFrame();
+		const { user, router } = renderFrame("/brain");
 		await user.click(
 			screen.getByRole("button", { name: "Open navigation" }),
 		);
 		const dialog = screen.getByRole("dialog", {
-			name: "Workspace navigation",
+			name: "Navigation",
 		});
-		await user.click(within(dialog).getByRole("link", { name: "Brain" }));
+		await user.click(within(dialog).getByRole("link", { name: "Today" }));
 		await waitFor(() => expect(screen.getByRole("main")).toHaveFocus());
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-		expect(router.state.location.pathname).toBe("/brain");
+		expect(router.state.location.pathname).toBe("/");
 	});
 
 	it.each(["/", "/settings"])(
@@ -608,7 +604,7 @@ describe("CollaborationFrame", () => {
 				screen.getByRole("button", { name: "Open navigation" }),
 			);
 			const drawer = screen.getByRole("dialog", {
-				name: "Workspace navigation",
+				name: "Navigation",
 			});
 			await user.click(
 				within(drawer).getByRole("link", { name: "Settings" }),
@@ -626,7 +622,7 @@ describe("CollaborationFrame", () => {
 			screen.getByRole("button", { name: "Open navigation" }),
 		);
 		expect(
-			screen.getByRole("dialog", { name: "Workspace navigation" }),
+			screen.getByRole("dialog", { name: "Navigation" }),
 		).toBeVisible();
 		await act(() => router.navigate("/work/waiting"));
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -641,7 +637,7 @@ describe("CollaborationFrame", () => {
 				screen.getByRole("button", { name: "Open navigation" }),
 			);
 			const drawer = screen.getByRole("dialog", {
-				name: "Workspace navigation",
+				name: "Navigation",
 			});
 			const account = within(drawer).getByRole("button", {
 				name: /Account menu for/,
@@ -664,11 +660,11 @@ describe("CollaborationFrame", () => {
 		isWide = false;
 		const { user } = renderFrame();
 		const trigger = screen.getByRole("button", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await user.click(trigger);
 		const search = screen.getByRole("dialog", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await waitFor(() =>
 			expect(
@@ -676,7 +672,7 @@ describe("CollaborationFrame", () => {
 			).toHaveFocus(),
 		);
 		expect(
-			screen.queryByRole("dialog", { name: "Workspace navigation" }),
+			screen.queryByRole("dialog", { name: "Navigation" }),
 		).not.toBeInTheDocument();
 		await user.keyboard("{Escape}");
 		await waitFor(() => expect(trigger).toHaveFocus());
@@ -689,7 +685,7 @@ describe("CollaborationFrame", () => {
 		await user.click(trigger);
 		await user.keyboard("{Control>}k{/Control}");
 		const search = screen.getByRole("dialog", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await waitFor(() =>
 			expect(
@@ -697,7 +693,7 @@ describe("CollaborationFrame", () => {
 			).toHaveFocus(),
 		);
 		expect(
-			screen.queryByRole("dialog", { name: "Workspace navigation" }),
+			screen.queryByRole("dialog", { name: "Navigation" }),
 		).not.toBeInTheDocument();
 		await user.keyboard("{Escape}");
 		await waitFor(() => expect(trigger).toHaveFocus());
@@ -709,11 +705,11 @@ describe("CollaborationFrame", () => {
 			screen.getByRole("button", { name: "Collapse navigation" }),
 		);
 		const trigger = screen.getByRole("button", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await user.click(trigger);
 		const dialog = screen.getByRole("dialog", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await waitFor(() =>
 			expect(
@@ -731,7 +727,7 @@ describe("CollaborationFrame", () => {
 			screen.getByRole("button", { name: "Open navigation" }),
 		);
 		const drawer = screen.getByRole("dialog", {
-			name: "Workspace navigation",
+			name: "Navigation",
 		});
 		expect(drawer).toBeVisible();
 		setDesktop(true);
@@ -773,7 +769,7 @@ describe("CollaborationFrame", () => {
 				screen.getByRole("button", { name: "Open navigation" }),
 			);
 			const navigation = screen.getByRole("dialog", {
-				name: "Workspace navigation",
+				name: "Navigation",
 			});
 			await user.click(
 				within(navigation).getByRole("button", { name: "New topic" }),

@@ -53,14 +53,12 @@ export function AppearanceSettings() {
 						{
 							value: "light",
 							label: "Light",
-							description:
-								"A light background for your workspace.",
+							description: "A light background.",
 						},
 						{
 							value: "dark",
 							label: "Dark",
-							description:
-								"A dark background for your workspace.",
+							description: "A dark background.",
 						},
 						{
 							value: "system",

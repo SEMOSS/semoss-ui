@@ -681,11 +681,11 @@ describe("collaboration Work and Brain integration", () => {
 		renderSession("/search");
 		await user.click(
 			screen.getByRole("button", {
-				name: "Search your workspace",
+				name: "Search",
 			}),
 		);
 		const dialog = screen.getByRole("dialog", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await user.type(
 			within(dialog).getByRole("combobox", {
@@ -707,7 +707,7 @@ describe("collaboration Work and Brain integration", () => {
 		const user = userEvent.setup();
 		renderSession("/search");
 		const trigger = screen.getByRole("button", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await user.click(trigger);
 		await user.keyboard("{Escape}");

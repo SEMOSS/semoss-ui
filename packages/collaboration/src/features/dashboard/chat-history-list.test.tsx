@@ -62,19 +62,20 @@ it.each(["empty", "loading", "error"])(
 		render(<RouterProvider router={router} />);
 		const content =
 			state === "loading"
-				? screen.getByRole("status", { name: "Loading sessions" })
+				? screen.getByRole("status", { name: "Loading chats" })
 				: state === "error"
 					? screen.getByRole("alert")
 					: screen.getByText(
 							"Your conversations will appear here after your first message.",
 						);
 		expect(content).toBeVisible();
-		await user.click(screen.getByRole("button", { name: "Sessions" }));
+		await user.click(screen.getByRole("button", { name: "Chats" }));
 		expect(content).not.toBeVisible();
-		expect(
-			screen.getByRole("button", { name: "Sessions" }),
-		).toHaveAttribute("aria-expanded", "false");
-		await user.click(screen.getByRole("button", { name: "Sessions" }));
+		expect(screen.getByRole("button", { name: "Chats" })).toHaveAttribute(
+			"aria-expanded",
+			"false",
+		);
+		await user.click(screen.getByRole("button", { name: "Chats" }));
 		expect(content).toBeVisible();
 	},
 );
@@ -94,10 +95,10 @@ it("pauses automatic pagination while Sessions is collapsed and resumes on reope
 	);
 	render(<RouterProvider router={router} />);
 	expect(observe).toHaveBeenCalledOnce();
-	await user.click(screen.getByRole("button", { name: "Sessions" }));
+	await user.click(screen.getByRole("button", { name: "Chats" }));
 	expect(disconnect).toHaveBeenCalledOnce();
 	expect(observer).toHaveBeenCalledOnce();
-	await user.click(screen.getByRole("button", { name: "Sessions" }));
+	await user.click(screen.getByRole("button", { name: "Chats" }));
 	expect(observe).toHaveBeenCalledTimes(2);
 });
 
@@ -108,11 +109,11 @@ it("collapses by keyboard without losing the mounted sessions, selection, or scr
 		{ initialEntries: ["/thread/room%3Aroom-one"] },
 	);
 	render(<RouterProvider router={router} />);
-	const trigger = screen.getByRole("button", { name: "Sessions" });
+	const trigger = screen.getByRole("button", { name: "Chats" });
 	const session = screen.getByRole("button", {
 		name: "Pricing conversation",
 	});
-	const list = screen.getByRole("navigation", { name: "Sessions" });
+	const list = screen.getByRole("navigation", { name: "Chats" });
 	const scroller = list.parentElement;
 	if (!scroller) throw new Error("Sessions must have a scroll container");
 	scroller.scrollTop = 180;
@@ -124,7 +125,7 @@ it("collapses by keyboard without losing the mounted sessions, selection, or scr
 	expect(session).toBeInTheDocument();
 	expect(session).not.toBeVisible();
 	expect(
-		screen.queryByRole("navigation", { name: "Sessions" }),
+		screen.queryByRole("navigation", { name: "Chats" }),
 	).not.toBeInTheDocument();
 	await user.tab();
 	expect(session).not.toHaveFocus();
@@ -138,7 +139,7 @@ it("collapses by keyboard without losing the mounted sessions, selection, or scr
 	expect(screen.getByRole("button", { name: "Pricing conversation" })).toBe(
 		session,
 	);
-	expect(screen.getByRole("navigation", { name: "Sessions" })).toBe(list);
+	expect(screen.getByRole("navigation", { name: "Chats" })).toBe(list);
 	expect(scroller.scrollTop).toBe(180);
 	expect(session).toHaveAttribute("aria-current", "page");
 	expect(router.state.location.pathname).toBe("/thread/room%3Aroom-one");

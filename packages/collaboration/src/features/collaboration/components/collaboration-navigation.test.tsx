@@ -99,7 +99,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("places Routines above Work and keeps folded Topics separate", () => {
+	it("keeps Today and Routines as the main destinations with folded Topics", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -121,76 +121,43 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["For you", "Routines", "Work", "Unassigned", "Brain"]);
+		).toEqual(["Today", "Routines"]);
 		expect(
-			within(main).getByRole("link", { name: "For you" }),
-		).toHaveTextContent(/^For you$/);
-		expect(
-			within(main).getByRole("link", { name: "Brain" }),
-		).toHaveTextContent(/^Brain$/);
-		expect(screen.queryByText("Waiting on others")).not.toBeInTheDocument();
-		expect(screen.queryByText("Handled")).not.toBeInTheDocument();
+			within(main).getByRole("link", { name: "Today" }),
+		).toHaveTextContent(/^Today$/);
+		for (const name of ["For you", "Work", "Unassigned", "Brain"]) {
+			expect(
+				screen.queryByRole("link", { name }),
+			).not.toBeInTheDocument();
+		}
 		expect(screen.getByRole("button", { name: "Topics" })).toHaveAttribute(
 			"aria-expanded",
 			"false",
 		);
 		expect(screen.getByRole("button", { name: "New topic" })).toBeVisible();
-		expect(screen.getByRole("region", { name: "Sessions" })).toBeVisible();
+		expect(screen.getByRole("region", { name: "Chats" })).toBeVisible();
 	});
 
-	it("shows nonzero work and Brain review counts without introducing zero labels", () => {
+	it("shows a nonzero Today count without introducing zero labels", () => {
 		const state = createInitialCollaborationState();
 		state.items = state.items
 			.filter((item) => item.status === "open" && item.askType !== "fyi")
 			.slice(0, 2);
-		state.reviews = state.reviews.slice(0, 1);
 		state.topics = [];
 		state.memories = [];
 		renderNavigation("/", state);
 
 		expect(
-			within(screen.getByRole("link", { name: "For you" })).getByText(
-				"2",
-			),
-		).toBeVisible();
-		expect(
-			within(screen.getByRole("link", { name: "Brain" })).getByText(
-				/^1\b/,
-			),
+			within(screen.getByRole("link", { name: "Today" })).getByText("2"),
 		).toBeVisible();
 		expect(screen.queryByText(/^0(?: to check)?$/)).not.toBeInTheDocument();
 	});
 
-	it("selects For you only on the landing page", () => {
+	it("selects Today only on the landing page", () => {
 		renderNavigation("/");
-		expect(screen.getByRole("link", { name: "For you" })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: "Today" })).toHaveAttribute(
 			"aria-current",
 			"page",
-		);
-		expect(screen.getByRole("link", { name: "Work" })).not.toHaveAttribute(
-			"aria-current",
-		);
-	});
-
-	it("opens Unassigned by keyboard and counts conversations without requiring an action", async () => {
-		const state = createInitialCollaborationState();
-		state.items = [];
-		state.threads = state.threads.slice(0, 2).map((thread, index) => ({
-			...thread,
-			topicLinks: index === 0 ? [] : thread.topicLinks,
-			needsTopicChoice: false,
-		}));
-		const { user, router, onNavigate } = renderNavigation("/", state);
-		const unassigned = screen.getByRole("link", { name: "Unassigned" });
-		expect(unassigned).toHaveTextContent("Unassigned1");
-		act(() => unassigned.focus());
-		await user.keyboard("{Enter}");
-		expect(router.state.location.pathname).toBe("/brain/threads");
-		expect(router.state.location.search).toBe("?filter=needs");
-		expect(onNavigate).toHaveBeenCalledOnce();
-		expect(unassigned).toHaveAttribute("aria-current", "page");
-		expect(screen.getByRole("link", { name: "Brain" })).not.toHaveAttribute(
-			"aria-current",
 		);
 	});
 
@@ -202,45 +169,20 @@ describe("CollaborationNavigation", () => {
 		expect(router.state.location.pathname).toBe("/routines");
 		expect(onNavigate).toHaveBeenCalledOnce();
 		expect(routines).toHaveAttribute("aria-current", "page");
-		for (const name of ["For you", "Work", "Unassigned", "Brain"]) {
-			expect(screen.getByRole("link", { name })).not.toHaveAttribute(
-				"aria-current",
-			);
-		}
+		expect(screen.getByRole("link", { name: "Today" })).not.toHaveAttribute(
+			"aria-current",
+		);
 	});
 
-	it.each(["/work", "/work/all", "/work/waiting", "/work/done"])(
-		"selects Work on %s",
-		(path) => {
-			renderNavigation(path);
-			expect(screen.getByRole("link", { name: "Work" })).toHaveAttribute(
-				"aria-current",
-				"page",
-			);
-			expect(
-				screen.getByRole("link", { name: "For you" }),
-			).not.toHaveAttribute("aria-current");
-			expect(
-				screen.getByRole("link", { name: "Brain" }),
-			).not.toHaveAttribute("aria-current");
-		},
-	);
-
 	it.each([
+		"/work",
+		"/work/all",
 		"/brain",
-		"/brain/people/p-ava",
-		"/brain/threads/th-geng-review",
-		"/brain/sources",
-	])("keeps Brain selected on %s", (path) => {
+		"/brain/threads",
+		"/settings/about-you",
+	])("leaves Today unselected on %s", (path) => {
 		renderNavigation(path);
-		expect(screen.getByRole("link", { name: "Brain" })).toHaveAttribute(
-			"aria-current",
-			"page",
-		);
-		expect(
-			screen.getByRole("link", { name: "For you" }),
-		).not.toHaveAttribute("aria-current");
-		expect(screen.getByRole("link", { name: "Work" })).not.toHaveAttribute(
+		expect(screen.getByRole("link", { name: "Today" })).not.toHaveAttribute(
 			"aria-current",
 		);
 	});
@@ -256,11 +198,9 @@ describe("CollaborationNavigation", () => {
 			name: /^Northwind Eng\b/,
 		});
 		expect(selected).toHaveAttribute("aria-current", "page");
-		for (const name of ["For you", "Routines", "Work", "Brain"]) {
-			expect(screen.getByRole("link", { name })).not.toHaveAttribute(
-				"aria-current",
-			);
-		}
+		expect(screen.getByRole("link", { name: "Today" })).not.toHaveAttribute(
+			"aria-current",
+		);
 		await user.click(selected);
 		expect(onNavigate).toHaveBeenCalledOnce();
 		for (const path of ["/brain", "/work", "/"]) {
@@ -292,7 +232,7 @@ describe("CollaborationNavigation", () => {
 		const session = screen.getByRole("button", {
 			name: "Pricing conversation",
 		});
-		const list = screen.getByRole("navigation", { name: "Sessions" });
+		const list = screen.getByRole("navigation", { name: "Chats" });
 		const scroller = list.parentElement;
 		if (!scroller) throw new Error("Sessions must have a scroll container");
 		scroller.scrollTop = 180;
@@ -312,7 +252,7 @@ describe("CollaborationNavigation", () => {
 		expect(
 			screen.getByRole("button", { name: "Pricing conversation" }),
 		).toBe(session);
-		expect(screen.getByRole("navigation", { name: "Sessions" })).toBe(list);
+		expect(screen.getByRole("navigation", { name: "Chats" })).toBe(list);
 		expect(scroller.scrollTop).toBe(180);
 		expect(session).toHaveAttribute("aria-current", "page");
 	});
@@ -323,11 +263,8 @@ describe("CollaborationNavigation", () => {
 			screen.getByRole("button", { name: "Toggle navigation fixture" }),
 		);
 		const controls = [
-			screen.getByRole("link", { name: "For you" }),
+			screen.getByRole("link", { name: "Today" }),
 			screen.getByRole("link", { name: "Routines" }),
-			screen.getByRole("link", { name: "Work" }),
-			screen.getByRole("link", { name: "Unassigned" }),
-			screen.getByRole("link", { name: "Brain" }),
 			screen.getByRole("link", { name: "Settings" }),
 			screen.getByRole("button", { name: /Account menu for/ }),
 		];
@@ -343,7 +280,7 @@ describe("CollaborationNavigation", () => {
 	it("keeps Settings and account in the sidebar while leaving Search in the header", async () => {
 		const { user, onNavigate, router } = renderNavigation();
 		expect(
-			screen.queryByRole("button", { name: "Search your workspace" }),
+			screen.queryByRole("button", { name: "Search" }),
 		).not.toBeInTheDocument();
 		const settings = screen.getByRole("link", { name: "Settings" });
 		expect(settings).toHaveTextContent("Settings");

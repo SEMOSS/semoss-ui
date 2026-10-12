@@ -37,6 +37,7 @@ import {
 	TabsTrigger,
 } from "@semoss/ui/next";
 import { TopicSessions } from "@/features/dashboard/topic-sessions";
+import { lexicon } from "@/lib/lexicon";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
 import { topicTone } from "../topic-tone";
@@ -104,7 +105,7 @@ export function TopicDetail() {
 			>
 				<div className="flex flex-col items-start gap-4 p-6">
 					<P className="text-muted-foreground">
-						This topic is not available in the current workspace.
+						This topic is not available.
 					</P>
 					<Button asChild variant="outline">
 						<Link to="/work">All topics</Link>
@@ -418,7 +419,7 @@ export function TopicDetail() {
 						>
 							<div className="border-b px-5 py-4">
 								<TabsList
-									aria-label="Topic workspace"
+									aria-label="Topic sections"
 									className={collaborationTabsStyles.list}
 								>
 									<TabsTrigger
@@ -443,7 +444,7 @@ export function TopicDetail() {
 											collaborationTabsStyles.trigger
 										}
 									>
-										Sessions
+										{lexicon.chats}
 									</TabsTrigger>
 								</TabsList>
 							</div>

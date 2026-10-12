@@ -19,7 +19,7 @@ export function SettingsPanel() {
 		<CollaborationPage>
 			<CollaborationPageHeader
 				title="Settings"
-				description="Your profile, preferences, and workspace configuration."
+				description="Your profile, preferences, and how the assistant works for you."
 			/>
 			<div className="flex min-w-0 flex-col gap-4 md:flex-row md:gap-6">
 				<nav

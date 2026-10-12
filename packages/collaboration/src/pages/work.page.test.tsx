@@ -419,7 +419,7 @@ it("opens source threads by their canonical import route and reads sessions only
 			name: "Thread actions for Source alpha-email",
 		}),
 	).toBeVisible();
-	await user.click(screen.getByRole("tab", { name: "Sessions" }));
+	await user.click(screen.getByRole("tab", { name: "Chats" }));
 	expect(sessions.mounted).toHaveBeenCalledWith("alpha");
 	await user.click(screen.getByRole("tab", { name: "Actions" }));
 	expect(screen.queryByText("Sessions for alpha")).not.toBeInTheDocument();

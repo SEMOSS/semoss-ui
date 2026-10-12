@@ -17,6 +17,7 @@ import {
 	getDateBucket,
 	parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
+import { lexicon } from "@/lib/lexicon";
 import { roomPath } from "@/lib/workspace-paths";
 import { useDashboard } from "./dashboard.context";
 
@@ -107,7 +108,7 @@ export function ChatHistoryList({
 			asChild
 		>
 			<section
-				aria-label="Sessions"
+				aria-label={lexicon.chats}
 				className={cn(
 					"flex flex-col",
 					isExpanded ? "min-h-28 flex-1" : "shrink-0",
@@ -128,7 +129,7 @@ export function ChatHistoryList({
 									isExpanded && "rotate-90",
 								)}
 							/>
-							Sessions
+							{lexicon.chats}
 						</Button>
 					</CollapsibleTrigger>
 				</div>
@@ -143,7 +144,7 @@ export function ChatHistoryList({
 						}}
 						className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
 					>
-						<nav aria-label="Sessions" className="space-y-2">
+						<nav aria-label={lexicon.chats} className="space-y-2">
 							{roomsByDate.map(({ bucket, rooms }) => (
 								<div key={bucket} className="space-y-0.5">
 									<Small className="px-2 text-muted-foreground text-xs leading-4">
@@ -208,7 +209,7 @@ export function ChatHistoryList({
 						</nav>
 						{history.isLoading && (
 							<output
-								aria-label="Loading sessions"
+								aria-label="Loading chats"
 								className="block space-y-2 p-2"
 							>
 								<Skeleton className="h-4 w-full" />
@@ -226,7 +227,7 @@ export function ChatHistoryList({
 									className="pointer-coarse:min-h-11 px-2 text-xs"
 									onClick={history.retry}
 								>
-									Retry sessions
+									Retry chats
 								</Button>
 							</div>
 						)}
@@ -248,7 +249,7 @@ export function ChatHistoryList({
 									className="pointer-coarse:min-h-11 w-full px-2 text-muted-foreground text-xs"
 									onClick={history.loadMore}
 								>
-									Load more sessions
+									Load more chats
 								</Button>
 							)}
 					</div>

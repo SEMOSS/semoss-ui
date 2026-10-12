@@ -1,20 +1,11 @@
-import {
-	Brain,
-	BriefcaseBusiness,
-	CalendarClock,
-	Inbox,
-	Mail,
-} from "lucide-react";
+import { CalendarClock, Inbox } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
-import {
-	selectWorkItems,
-	threadNeedsTopic,
-} from "../state/collaboration.selectors";
+import { lexicon } from "@/lib/lexicon";
+import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { suggestedMemories } from "../state/memory";
 import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
 import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationSettingsLink } from "./collaboration-settings-link";
@@ -48,18 +39,14 @@ export function CollaborationNavigation({
 	onNavigate,
 }: CollaborationNavigationProps) {
 	const { state } = useCollaborationSession();
-	const { pathname, search } = useLocation();
-	const isUnassigned =
-		pathname === "/brain/threads" &&
-		new URLSearchParams(search).get("filter") === "needs";
+	const { pathname } = useLocation();
 	const [isLocalTopicsOpen, setIsLocalTopicsOpen] = useState(false);
-	const reviews =
-		state.reviews.filter((review) => review.status === "open").length +
-		suggestedMemories(state.memories).length;
+	// Work, filing and setup stay reachable from Today, Settings and search;
+	// Routines stays here because it is the proactive part
 	const links = [
 		{
 			to: "/",
-			label: "For you",
+			label: lexicon.today,
 			icon: Inbox,
 			count: selectWorkItems(state, { view: "needs_me" }).total,
 			isActive: pathname === "/",
@@ -70,29 +57,6 @@ export function CollaborationNavigation({
 			icon: CalendarClock,
 			count: 0,
 			isActive: pathname === "/routines",
-		},
-		{
-			to: "/work",
-			label: "Work",
-			icon: BriefcaseBusiness,
-			count: 0,
-			isActive: pathname === "/work" || pathname.startsWith("/work/"),
-		},
-		{
-			to: "/brain/threads?filter=needs",
-			label: "Unassigned",
-			icon: Mail,
-			count: state.threads.filter(threadNeedsTopic).length,
-			isActive: isUnassigned,
-		},
-		{
-			to: "/brain",
-			label: "Brain",
-			icon: Brain,
-			count: reviews,
-			isActive:
-				!isUnassigned &&
-				(pathname === "/brain" || pathname.startsWith("/brain/")),
 		},
 	];
 	return (
