@@ -22,8 +22,6 @@ import {
 } from "@semoss/sdk";
 import { useIteratorApi } from "@semoss/sdk/react";
 import {
-	Avatar,
-	AvatarFallback,
 	Button,
 	cn,
 	Dialog,
@@ -41,7 +39,9 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
+import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
 import { returnAccessType } from "./common";
+import { MemberAvatar } from "./member-avatar";
 import { ModelRestrictionFields } from "./model-restriction-fields";
 import { type UserSource, UserSourceToggle } from "./user-source-toggle";
 
@@ -117,7 +117,7 @@ interface AddMembersOverlayProps {
 	/**
 	 * Whether the server can search the organization's Microsoft directory.
 	 * When true, the dialog offers a choice between existing users and the
-	 * whole organization, starting on the organization.
+	 * whole organization, starting on the existing users.
 	 */
 	isDirectoryAvailable?: boolean;
 	/**
@@ -148,6 +148,7 @@ export const AddMembersOverlay = ({
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [searchKey, setSearchKey] = useState<string>("");
 	const debouncedSearchKey = useDebouncedValue(searchKey, 300);
+	const isCurrentLogin = useIsCurrentLogin();
 	const [selectedUsers, setSelectedUsers] = useState<UserSelected[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	// whether an add through the host ran, so its list reloads when the dialog closes
@@ -157,7 +158,8 @@ export const AddMembersOverlay = ({
 	const [maxTime, setMaxTime] = useState<string>("");
 	const [frequency, setFrequency] = useState<string>("DAY");
 	const [userPermission, setUserPermission] = useState<string>("");
-	const [source, setSource] = useState<UserSource>("directory");
+	// with both available, people already in the app are searched first
+	const [source, setSource] = useState<UserSource>("existing");
 	// Without the directory, leave the choice to the backend
 	const msGraphLookup = isDirectoryAvailable
 		? source === "directory"
@@ -349,7 +351,7 @@ export const AddMembersOverlay = ({
 		setMaxTime("");
 		setFrequency("DAY");
 		setUserPermission("");
-		setSource("directory");
+		setSource("existing");
 	};
 
 	const permissionLabel = (permission: string): string => {
@@ -487,15 +489,16 @@ export const AddMembersOverlay = ({
 												}
 											>
 												<span className="flex items-center gap-2">
-													<Avatar className="h-8 w-8">
-														<AvatarFallback className="text-muted-foreground text-sm">
-															{getDisplayName(
-																item,
-															)
-																.charAt(0)
-																.toUpperCase()}
-														</AvatarFallback>
-													</Avatar>
+													<MemberAvatar
+														name={getDisplayName(
+															item,
+														)}
+														type={item.type}
+														isCurrentLogin={isCurrentLogin(
+															item.type,
+															item.id,
+														)}
+													/>
 													<span className="flex min-w-0 flex-col">
 														<span className="truncate font-medium text-sm">
 															{getDisplayName(
@@ -559,13 +562,14 @@ export const AddMembersOverlay = ({
 												className={MEMBER_ROW_CLASS}
 											>
 												<span className="flex items-center gap-2">
-													<Avatar className="h-8 w-8">
-														<AvatarFallback className="text-muted-foreground text-sm">
-															{getDisplayName(u)
-																.charAt(0)
-																.toUpperCase()}
-														</AvatarFallback>
-													</Avatar>
+													<MemberAvatar
+														name={getDisplayName(u)}
+														type={u.type}
+														isCurrentLogin={isCurrentLogin(
+															u.type,
+															u.id,
+														)}
+													/>
 													<span className="flex min-w-0 flex-col">
 														<span className="truncate font-medium text-sm">
 															{getDisplayName(u)}

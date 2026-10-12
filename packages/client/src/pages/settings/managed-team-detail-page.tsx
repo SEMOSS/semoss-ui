@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useParams } from "react-router";
+import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { useGroupManagersSource } from "@/features/group-managers/use-group-managers-source";
 import { TeamPeopleCard } from "@/features/team-details/team-people-card";
 import { useTeamMembersSource } from "@/features/team-members/use-team-members-source";
@@ -29,6 +30,11 @@ export const ManagedTeamDetailPage = () => {
 
 	return (
 		<div className="flex flex-col gap-6">
+			<BulkAccessManagementCard
+				to="bulk-access-management"
+				noun="team"
+				description="see its members and managers beside a search of the app and your organization, add many at once, and copy them from another team or an app or engine"
+			/>
 			<TeamPeopleCard
 				title="Managers"
 				description="User's who can manage this team's members."
