@@ -1,0 +1,314 @@
+import {
+	Handle,
+	type NodeProps,
+	Position,
+	useUpdateNodeInternals,
+} from "@xyflow/react";
+import {
+	ChevronDown,
+	ChevronUp,
+	Layers3,
+	Pencil,
+	Plus,
+	Repeat2,
+	Trash2,
+} from "lucide-react";
+import {
+	Button,
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuSeparator,
+	ContextMenuTrigger,
+} from "@semoss/ui/next";
+import type { LoopConfig } from "../../../domain/automation.types";
+import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
+import { useAutomationNode } from "../../../hooks/use-automation";
+import { StatusIcon } from "../../status-icon";
+import { getFlowBorderClass } from "../flow-colors";
+import type { AutomationNodeData } from "./automation-node";
+
+/** Summarizes the collection a loop will consume without exposing raw JSON on the canvas. */
+function getItemsLabel(items: string): string {
+	const trimmed = items.trim();
+	const reference =
+		/^\$\{([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*|\.[0-9]+)*)}$/.exec(
+			trimmed,
+		);
+	if (reference) return reference[1];
+	try {
+		const parsed: unknown = JSON.parse(trimmed);
+		if (Array.isArray(parsed)) {
+			return `${parsed.length} item${parsed.length === 1 ? "" : "s"}`;
+		}
+	} catch {
+		// An incomplete value is expected while the user is authoring the form.
+	}
+	return "Choose a list";
+}
+
+function getLoopSummary(config: LoopConfig): string {
+	if (config.mode === "repeat") {
+		return `${config.count} time${config.count === 1 ? "" : "s"}`;
+	}
+	if (config.mode === "while") {
+		return `While condition is true · Max ${config.maxIterations}`;
+	}
+	const groupLabel =
+		config.batchSize > 1
+			? `Groups of ${config.batchSize}`
+			: "One item at a time";
+	return `${getItemsLabel(config.items)} · ${groupLabel}`;
+}
+
+function getLoopBodyLabel(config: LoopConfig): string {
+	if (config.mode === "repeat") return "Repeat this sequence";
+	if (config.mode === "while") return "Repeat while condition is true";
+	return config.batchSize > 1
+		? "Repeat for each group"
+		: "Repeat for each item";
+}
+
+/** Canvas card for a loop container and the sequence it repeats. */
+export function LoopNode({ data }: NodeProps) {
+	const d = data as AutomationNodeData;
+	const automationNode = useAutomationNode(d.step.id);
+	const updateNodeInternals = useUpdateNodeInternals();
+	const isExpanded = Boolean(d.expanded);
+	const config = d.step.config as LoopConfig;
+	const bodyNodes = d.step.body?.nodes ?? [];
+	const hasOutgoingControlEdge = Boolean(d.hasOutgoingControlEdge);
+	const borderClass = getFlowBorderClass(
+		d.runStatus,
+		Boolean(d.pathHighlighted),
+		d.isIncomplete ? "border-warning" : "border-primary/40",
+	);
+
+	return (
+		<ContextMenu>
+			<ContextMenuTrigger asChild>
+				<section
+					aria-label={`${d.step.label} loop`}
+					className={`group relative h-full ${isExpanded ? "pointer-events-none w-full bg-transparent" : "w-70 bg-card shadow-sm"} rounded-2xl border-2 ${borderClass} ${d.highlighted ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""} ${d.groupSelectionActive ? "ring-2 ring-chart-2 ring-offset-2 ring-offset-background" : ""} ${d.locked ? "opacity-75" : ""}`}
+				>
+					<header className="pointer-events-auto flex items-start gap-3 border-b bg-primary/5 px-4 py-3">
+						<span className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+							<Repeat2 className="size-4" aria-hidden />
+							<span className="-top-1.5 -left-1.5 absolute flex size-4 items-center justify-center rounded-full border bg-background font-medium text-muted-foreground text-xs">
+								{d.index + 1}
+							</span>
+						</span>
+						<div className="min-w-0 flex-1">
+							<p className="truncate font-semibold text-sm">
+								{d.step.label || "Loop over items"}
+							</p>
+							<p className="truncate text-muted-foreground text-xs">
+								{getLoopSummary(config)}
+							</p>
+						</div>
+						{d.runStatus && d.runStatus !== "idle" && (
+							<StatusIcon
+								status={d.runStatus}
+								className="mt-1 size-4 shrink-0"
+							/>
+						)}
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="nodrag shrink-0"
+							onClick={(event) => {
+								event.stopPropagation();
+								d.onExpandedChange?.(!isExpanded);
+								if (!isExpanded) d.onFocusExpanded?.();
+								else d.onFocusCollapsed?.();
+								window.requestAnimationFrame(() => {
+									window.requestAnimationFrame(() =>
+										updateNodeInternals(d.step.id),
+									);
+								});
+							}}
+							aria-expanded={isExpanded}
+						>
+							{isExpanded ? (
+								<ChevronUp className="size-4" aria-hidden />
+							) : (
+								<ChevronDown className="size-4" aria-hidden />
+							)}
+							{isExpanded ? "Collapse" : "Expand"}
+						</Button>
+					</header>
+
+					<div
+						className={`space-y-2 px-3 py-3 ${isExpanded ? "pointer-events-none" : ""}`}
+					>
+						<div className="flex items-center justify-between gap-2 px-1">
+							<span className="flex items-center gap-1.5 font-medium text-xs">
+								<Layers3
+									className="size-3.5 text-primary"
+									aria-hidden
+								/>
+								{getLoopBodyLabel(config)}
+							</span>
+							<span className="text-muted-foreground text-xs">
+								{bodyNodes.length} step
+								{bodyNodes.length === 1 ? "" : "s"}
+							</span>
+						</div>
+
+						{isExpanded ? (
+							<section
+								data-loop-id={d.step.id}
+								className="pointer-events-none h-full min-h-44"
+								aria-label="Loop workflow group"
+							>
+								{bodyNodes.length === 0 && (
+									<p className="pt-8 text-center text-muted-foreground text-xs">
+										Drop steps into this group or add one
+										below.
+									</p>
+								)}
+							</section>
+						) : (
+							<div className="rounded-xl border border-primary/30 border-dashed bg-muted/30 p-2">
+								{bodyNodes.length === 0 ? (
+									<p className="px-2 py-3 text-center text-muted-foreground text-xs">
+										Add the steps this loop should repeat.
+									</p>
+								) : (
+									<ol className="space-y-1.5">
+										{bodyNodes
+											.slice(0, 3)
+											.map((bodyNode, index) => {
+												const display =
+													bodyNode.workflowType
+														? getWorkflowNodeDisplay(
+																bodyNode.workflowType,
+															)
+														: null;
+												const Icon =
+													display?.icon ?? Layers3;
+												return (
+													<li
+														key={bodyNode.id}
+														className="flex items-center gap-2 rounded-lg border bg-background px-2.5 py-2"
+													>
+														<span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+															<Icon
+																className="size-3.5"
+																aria-hidden
+															/>
+														</span>
+														<span className="min-w-0 flex-1 truncate text-xs">
+															{bodyNode.label}
+														</span>
+														<span className="text-muted-foreground text-xs">
+															{index + 1}
+														</span>
+													</li>
+												);
+											})}
+										{bodyNodes.length > 3 && (
+											<li className="px-2 py-1 text-center text-muted-foreground text-xs">
+												+{bodyNodes.length - 3} more
+											</li>
+										)}
+									</ol>
+								)}
+							</div>
+						)}
+
+						<div className="flex gap-2">
+							{!d.locked && !isExpanded && (
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									className="flex-1"
+									onClick={(event) => {
+										event.stopPropagation();
+										automationNode.open();
+									}}
+								>
+									<Pencil className="size-3.5" aria-hidden />
+									Settings
+								</Button>
+							)}
+							{!d.locked && !isExpanded && (
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									className="flex-1"
+									onClick={(event) => {
+										event.stopPropagation();
+										d.onAddBodyStep?.();
+									}}
+								>
+									<Plus className="size-3.5" aria-hidden />
+									Add step
+								</Button>
+							)}
+						</div>
+					</div>
+
+					<Handle
+						id={`in-${d.step.id}`}
+						type="target"
+						position={Position.Left}
+						isConnectable={!d.locked}
+						className="pointer-events-auto size-2! border-2! border-background! bg-muted-foreground/50!"
+					/>
+					<Handle
+						id={`out-${d.step.id}`}
+						type="source"
+						position={Position.Right}
+						isConnectable={!d.locked && !hasOutgoingControlEdge}
+						onClick={(event) => {
+							if (d.locked || hasOutgoingControlEdge) return;
+							event.stopPropagation();
+							automationNode.addAfter();
+						}}
+						aria-label={
+							hasOutgoingControlEdge
+								? "Loop output connected"
+								: "Add a step after the loop or drag to connect"
+						}
+						className={`${hasOutgoingControlEdge ? "size-2! bg-muted-foreground/50!" : "border! size-7! border-border! bg-background! shadow-sm transition-colors hover:border-primary!"} pointer-events-auto border-2! border-background!`}
+					/>
+					{!d.locked && !hasOutgoingControlEdge && (
+						<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-0 flex size-7 translate-x-1/2 items-center justify-center text-muted-foreground">
+							<Plus className="size-4" aria-hidden />
+						</span>
+					)}
+				</section>
+			</ContextMenuTrigger>
+			{!d.locked && (
+				<ContextMenuContent>
+					<ContextMenuItem
+						onSelect={() => d.onExpandedChange?.(true)}
+					>
+						Expand loop group
+					</ContextMenuItem>
+					<ContextMenuItem onSelect={() => automationNode.open()}>
+						Loop settings
+					</ContextMenuItem>
+					<ContextMenuSeparator />
+					<ContextMenuItem
+						className="text-destructive focus:text-destructive"
+						onSelect={() => automationNode.delete()}
+					>
+						<Trash2 className="size-4" aria-hidden />
+						Delete and detach
+					</ContextMenuItem>
+					<ContextMenuItem
+						className="text-destructive focus:text-destructive"
+						onSelect={() => automationNode.deleteDownstream()}
+					>
+						Delete and remove all after
+					</ContextMenuItem>
+				</ContextMenuContent>
+			)}
+		</ContextMenu>
+	);
+}

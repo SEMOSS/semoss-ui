@@ -15,3 +15,31 @@ export async function listRooms(actions: InsightActions): Promise<RoomRow[]> {
 
 	return rows.map(mapPlaygroundRoom);
 }
+
+export const ROOM_PAGE_SIZE = 25;
+export const ROOM_HISTORY_CHANGED = "collaboration:room-history-changed";
+
+/** Read one server page without changing the legacy all-rooms contract. */
+export async function listRoomsPage(
+	actions: InsightActions,
+	offset = 0,
+	search?: string,
+): Promise<{ rooms: RoomRow[]; hasMore: boolean; nextOffset: number }> {
+	const rows = await callPixel(
+		actions,
+		`META | ${pixel("GetPlaygroundRooms", {
+			mode: "collaboration",
+			sort: ["DESC"],
+			limit: ROOM_PAGE_SIZE,
+			offset,
+			search: search?.trim() || undefined,
+			includeUnnamedRooms: true,
+		})}`,
+		playgroundRoomsSchema,
+	);
+	return {
+		rooms: rows.map(mapPlaygroundRoom),
+		hasMore: rows.length === ROOM_PAGE_SIZE,
+		nextOffset: offset + rows.length,
+	};
+}

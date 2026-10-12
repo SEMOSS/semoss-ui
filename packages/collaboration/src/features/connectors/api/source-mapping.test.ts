@@ -58,16 +58,16 @@ it("keeps missing Teams contact addresses absent and sorts messages chronologica
 });
 
 it("normalizes UTC calendar moments without treating them as browser-local time", () => {
-	expect(calendarUtc("2026-09-25T10:00:00.0000000", "UTC")).toBe(
+	expect(calendarUtc("2026-09-25T10:00:00Z")).toBe(
 		"2026-09-25T10:00:00.000Z",
 	);
-	expect(() =>
-		calendarUtc("2026-09-25T10:00:00", "Eastern Standard Time"),
-	).toThrow("unexpected time zone");
+	// a whole day event comes back as its date
+	expect(calendarUtc("2026-09-25")).toBe("2026-09-25T00:00:00.000Z");
+	expect(() => calendarUtc("not a date")).toThrow("invalid date");
 	const source = importCalendarEvent({
 		id: "event",
-		start: "2026-09-25T10:00:00",
-		startTimeZone: "UTC",
+		start: "2026-09-25T10:00:00Z",
+		timeZone: "America/New_York",
 		body: "Agenda",
 		attendees: [],
 	});

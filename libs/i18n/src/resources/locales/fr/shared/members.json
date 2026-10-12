@@ -3,17 +3,26 @@
 		"title": "Ajouter des membres",
 		"description": "Recherchez des utilisateurs et invitez-les pour cette ressource."
 	},
+	"source": {
+		"label": "Rechercher dans",
+		"existing": "Utilisateurs existants",
+		"directory": "Votre organisation",
+		"existingHint": "Les personnes qui ont déjà un compte ici.",
+		"directoryHint": "Toute personne de votre organisation, même si elle ne s'est jamais connectée. Un compte lui est créé lorsque vous l'ajoutez."
+	},
 	"search": {
 		"placeholder": "Rechercher par nom ou e-mail...",
 		"searching": "Recherche d'utilisateurs...",
 		"empty": "Aucun utilisateur trouvé",
+		"emptyDirectory": "Personne dans votre organisation ne correspond à cette recherche",
 		"added": "Ajouté"
 	},
 	"selected": {
 		"count_one": "{{count}} utilisateur sélectionné",
 		"count_many": "{{count}} utilisateurs sélectionnés",
 		"count_other": "{{count}} utilisateurs sélectionnés",
-		"empty": "Aucun utilisateur sélectionné"
+		"empty": "Aucun utilisateur sélectionné",
+		"remove": "Retirer {{name}}"
 	},
 	"permission": {
 		"viewer": "Lecteur",

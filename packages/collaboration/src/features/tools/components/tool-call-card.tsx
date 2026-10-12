@@ -6,7 +6,7 @@ import {
 	Hourglass,
 	Mail,
 } from "lucide-react";
-import { useContext, useId, useState } from "react";
+import { useContext, useId, useMemo, useRef, useState } from "react";
 import {
 	Button,
 	Collapsible,
@@ -28,15 +28,12 @@ import {
 } from "@/features/delegations/components/delegation-submit-approval";
 import { WithdrawDelegation } from "@/features/delegations/components/withdraw-delegation";
 import type { ConversationTool } from "@/features/messages/types/message";
+import { RoomEmailContext } from "@/features/room-email/room-email.context";
+import { useEditorEmail } from "@/features/room-email/use-editor-email";
 import { composeDraftId } from "@/features/thread-assistant/thread-draft-proposal";
-import { useEditorEmail } from "@/features/work-thread/use-editor-email";
-import { WorkEmailContext } from "@/features/work-thread/work-email.context";
 import { toolCardTriggerId } from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
-import {
-	emailDraftToolPreview,
-	isEmailDraftTool,
-} from "../utils/email-draft-tool";
+import { emailDraftToolPreview } from "../utils/email-draft-tool";
 import { getToolComponent, TOOL_COMPONENTS } from "../utils/tool-components";
 import {
 	getToolDisplayLocation,
@@ -44,6 +41,7 @@ import {
 } from "../utils/tool-metadata";
 import { EmailDraftCard } from "./email-draft-card";
 import { EmailSendActions } from "./email-send-actions";
+import { MemoryToolCard, parseMemoryResult } from "./memory-tool-card";
 import { ToolCallMenu } from "./tool-call-menu";
 import { ToolFailureTooltip } from "./tool-failure-tooltip";
 import { ToolInline } from "./tool-inline";
@@ -51,7 +49,7 @@ import { ToolInline } from "./tool-inline";
 const COMPOSE_STATUS: Partial<Record<ConversationTool["status"], string>> = {
 	QUEUED: "Writing",
 	RUNNING: "Writing",
-	COMPLETED: "In your email editor",
+	COMPLETED: "Draft ready",
 	FAILED: "Needs attention",
 };
 
@@ -124,18 +122,44 @@ function resultField(
 	}
 }
 
-/** Playground-style tool card with one movable inline/workbench detail view. */
-export function ToolCallCard({
-	tool,
-	createdAt,
-	onMenuOpenChange,
-}: {
+interface ToolCallCardProps {
 	tool: ConversationTool;
 	/** Timestamp of the source message, including folded continuations. */
 	createdAt?: string;
 	/** Keep contextual controls mounted and visible while their portal is open. */
 	onMenuOpenChange?: (isOpen: boolean) => void;
-}) {
+}
+
+/** Playground-style tool card; a finished Remember or Forget shows what changed in memory instead. */
+export function ToolCallCard(props: ToolCallCardProps) {
+	const { tool } = props;
+	// a call first seen before it finished ran while this page was open
+	const sawRunning = useRef(tool.status !== "COMPLETED");
+	const memoryResult = useMemo(
+		() =>
+			tool.status === "COMPLETED" &&
+			getToolComponent(tool) === TOOL_COMPONENTS.memory
+				? parseMemoryResult(tool.output)
+				: null,
+		[tool],
+	);
+	if (memoryResult)
+		return (
+			<MemoryToolCard
+				tool={tool}
+				result={memoryResult}
+				isLive={sawRunning.current}
+			/>
+		);
+	return <GenericToolCallCard {...props} />;
+}
+
+/** Playground-style tool card with one movable inline/workbench detail view. */
+function GenericToolCallCard({
+	tool,
+	createdAt,
+	onMenuOpenChange,
+}: ToolCallCardProps) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const detailId = useId();
 	const statusId = useId();
@@ -152,20 +176,17 @@ export function ToolCallCard({
 	} = useToolWorkbench();
 	const isSubmit = isDelegationSubmit(tool);
 	const isRequest = isDelegationRequest(tool);
-	const workEmail = useContext(WorkEmailContext);
+	const roomEmail = useContext(RoomEmailContext);
 	const component = getToolComponent(tool);
-	// Work also opens reply and forward drafts in its email panel
-	const isEmailDraft =
-		component === TOOL_COMPONENTS.emailDraft ||
-		(Boolean(workEmail) && isEmailDraftTool(tool));
+	const isEmailDraft = component === TOOL_COMPONENTS.emailDraft;
 	const isEmailSend = component === TOOL_COMPONENTS.emailSend;
-	// ComposeEmail writes into Work's email editor; the card reopens that editor
+	// ComposeEmail retains a room-local editor; only this action opens its panel.
 	const isEmailCompose = component === TOOL_COMPONENTS.emailCompose;
-	const isWorkDraft = (isEmailDraft || isEmailCompose) && Boolean(workEmail);
+	const isRoomCompose = isEmailCompose && Boolean(roomEmail);
 	// SendEmail on the open email waits for Send in that editor or on this card
 	const sendDraft =
-		isEmailSend && workEmail
-			? workEmail.composer
+		isEmailSend && roomEmail
+			? roomEmail.store
 					.getSnapshot()
 					.emailDrafts.find(
 						(item) =>
@@ -173,12 +194,16 @@ export function ToolCallCard({
 							asString(tool.arguments.openEmailId),
 					)
 			: undefined;
-	const draftPreview = isWorkDraft ? emailDraftToolPreview(tool) : null;
+	const draftPreview = isRoomCompose ? emailDraftToolPreview(tool) : null;
 	// a compose card names what its editor holds, not what the model guessed
 	const editorEmail = useEditorEmail(
-		isEmailCompose ? workEmail?.composer : undefined,
+		isEmailCompose ? roomEmail?.store : undefined,
 		asString(tool.arguments.openEmailId) || composeDraftId(tool.id),
 	);
+	const isEditorDraft =
+		isRoomCompose && Boolean(editorEmail) && tool.status === "COMPLETED";
+	const isDraftUnavailable =
+		isRoomCompose && !editorEmail && tool.status === "COMPLETED";
 	const composeKind =
 		editorEmail?.mode ??
 		(asString(tool.arguments.replyTo)
@@ -205,7 +230,7 @@ export function ToolCallCard({
 		(isSubmit || isRequest ? SUBMIT_LABELS[tool.status] : undefined) ??
 		(pendingApproval?.requiresResponse ? "Needs your input" : undefined);
 	const details = {
-		...statusDetails(tool.status),
+		...statusDetails(isDraftUnavailable ? "FAILED" : tool.status),
 		...(statusLabel && { label: statusLabel }),
 	};
 	const title = isSubmit
@@ -215,7 +240,7 @@ export function ToolCallCard({
 			: draftPreview
 				? (editorEmail?.subject ?? draftPreview.subject)
 				: tool.title;
-	const heading = isWorkDraft
+	const heading = isRoomCompose
 		? title
 			? `${draftLabel} \u00b7 ${title}`
 			: draftLabel
@@ -234,7 +259,7 @@ export function ToolCallCard({
 		isRequest && !approval && tool.status === "INPUT_REQUIRED"
 			? resultField(tool.output, "runId")
 			: undefined;
-	const Icon = isWorkDraft || sendDraft ? Mail : details.icon;
+	const Icon = isEditorDraft || sendDraft ? Mail : details.icon;
 	const isInline = isToolInline(tool.id);
 	const isInWorkbench = isOpen && activeToolId === tool.id;
 	const isActive = isInline || isInWorkbench;
@@ -251,6 +276,7 @@ export function ToolCallCard({
 		return null;
 
 	const status =
+		(isDraftUnavailable ? "Draft unavailable" : undefined) ??
 		(sendDraft ? SEND_STATUS[tool.status] : undefined) ??
 		(isEmailCompose && draftPreview
 			? COMPOSE_STATUS[tool.status]
@@ -265,14 +291,17 @@ export function ToolCallCard({
 	return (
 		<Collapsible
 			open={
-				!isWorkDraft &&
+				!isEditorDraft &&
 				!sendDraft &&
-				(isInline || isEmailDraft || isEmailSend || isEmailCompose)
+				(isInline ||
+					isEmailDraft ||
+					isEmailSend ||
+					(isEmailCompose && !isRoomCompose))
 			}
 			data-tool-id={tool.id}
 			className={cn(
 				"group/tool min-w-0 rounded-xl border border-border/60 transition-colors duration-150 motion-reduce:transition-none",
-				workEmail ? "bg-background" : "bg-muted/20",
+				roomEmail ? "bg-background" : "bg-muted/20",
 				isActive && "border-primary/50 bg-background",
 			)}
 		>
@@ -284,34 +313,16 @@ export function ToolCallCard({
 						type="button"
 						variant="ghost"
 						className="h-auto min-h-10 min-w-0 flex-1 justify-start gap-2 whitespace-normal rounded-xl px-3 py-2 text-start"
-						onClick={(event) => {
-							if (sendDraft && workEmail) {
-								workEmail.composer.requestEmailDraft(
-									sendDraft.seed,
-								);
+						onClick={() => {
+							if (sendDraft && roomEmail) {
+								roomEmail.openDraft(sendDraft.seed.id);
 								return;
 							}
-							if (isEmailCompose && workEmail) {
+							if (isEditorDraft && roomEmail) {
 								const editorId =
 									asString(tool.arguments.openEmailId) ||
 									composeDraftId(tool.id);
-								const draft = workEmail.composer
-									.getSnapshot()
-									.emailDrafts.find(
-										(item) => item.seed.id === editorId,
-									);
-								if (draft)
-									workEmail.composer.requestEmailDraft(
-										draft.seed,
-									);
-								return;
-							}
-							if (isWorkDraft && workEmail) {
-								workEmail.openEmail(
-									tool.id,
-									"tool",
-									event.currentTarget,
-								);
+								roomEmail.openDraft(editorId);
 								return;
 							}
 							if (isInline) closeTool(tool.id);
@@ -319,13 +330,15 @@ export function ToolCallCard({
 							else openWorkbench(tool.id);
 						}}
 						aria-expanded={
-							!isWorkDraft && opensInline ? isInline : undefined
+							!isEditorDraft && opensInline ? isInline : undefined
 						}
-						aria-controls={isInline ? detailId : undefined}
+						aria-controls={
+							!isEditorDraft && isInline ? detailId : undefined
+						}
 						aria-label={
-							isWorkDraft || sendDraft
-								? `Open email draft: ${title || draftLabel}`
-								: `${title} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
+							isEditorDraft || sendDraft
+								? `Open email draft: ${heading || draftLabel}`
+								: `${heading} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
 						}
 						{...(tool.status !== "FAILED"
 							? { "aria-describedby": statusId }
@@ -335,14 +348,16 @@ export function ToolCallCard({
 							className={cn(
 								"flex size-4 shrink-0 items-center justify-center",
 								details.iconClassName,
-								workEmail && "size-8 rounded-lg bg-muted",
-								workEmail &&
+								roomEmail && "size-8 rounded-lg bg-muted",
+								roomEmail &&
 									tool.status === "COMPLETED" &&
+									!isDraftUnavailable &&
 									"bg-success/10 text-success",
-								workEmail &&
-									tool.status === "FAILED" &&
+								roomEmail &&
+									(tool.status === "FAILED" ||
+										isDraftUnavailable) &&
 									"bg-destructive/10 text-destructive",
-								workEmail &&
+								roomEmail &&
 									tool.status === "INPUT_REQUIRED" &&
 									"bg-warning/10 text-warning",
 							)}
@@ -367,12 +382,15 @@ export function ToolCallCard({
 							)}
 							<Muted
 								id={statusId}
+								role={isRoomCompose ? "status" : undefined}
 								className={cn(
 									"wrap-anywhere text-xs",
-									workEmail &&
+									roomEmail &&
 										tool.status === "COMPLETED" &&
+										!isDraftUnavailable &&
 										"text-success",
-									tool.status === "FAILED" &&
+									(tool.status === "FAILED" ||
+										isDraftUnavailable) &&
 										"text-destructive",
 									tool.status === "INPUT_REQUIRED" &&
 										"text-warning",
@@ -381,7 +399,7 @@ export function ToolCallCard({
 								{status}
 							</Muted>
 						</span>
-						{isWorkDraft ? (
+						{isEditorDraft ? (
 							<ArrowUpRight
 								aria-hidden="true"
 								className="size-4 shrink-0 text-muted-foreground"
@@ -407,7 +425,7 @@ export function ToolCallCard({
 						}
 					/>
 				)}
-				{!isWorkDraft && !sendDraft && (
+				{!isEditorDraft && !sendDraft && (
 					<div
 						className="pointer-events-none flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-150 ease-out group-focus-within/tool:pointer-events-auto group-focus-within/tool:opacity-100 group-focus-within/tool:duration-0 group-hover/tool:pointer-events-auto group-hover/tool:opacity-100 data-[menu-open=true]:pointer-events-auto data-[menu-open=true]:opacity-100 motion-reduce:transition-none [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100 [@media(pointer:coarse)]:pointer-events-auto [@media(pointer:coarse)]:opacity-100"
 						data-menu-open={isMenuOpen}
@@ -423,10 +441,10 @@ export function ToolCallCard({
 					</div>
 				)}
 			</div>
-			{sendDraft && pendingApproval && workEmail && (
+			{sendDraft && pendingApproval && roomEmail && (
 				<EmailSendActions
 					draft={sendDraft}
-					onSend={() => workEmail.composer.requestSend(sendDraft)}
+					onSend={() => roomEmail.requestSend(sendDraft)}
 					onReject={() => onRejectTool(pendingApproval)}
 				/>
 			)}
@@ -438,7 +456,9 @@ export function ToolCallCard({
 					<DelegationRequestApproval tool={tool} action={approval} />
 				) : approval ? (
 					<DelegationSubmitApproval tool={tool} action={approval} />
-				) : isEmailDraft || isEmailSend || isEmailCompose ? (
+				) : isEmailDraft ||
+					isEmailSend ||
+					(isEmailCompose && !isRoomCompose) ? (
 					<EmailDraftCard
 						tool={tool}
 						mode={

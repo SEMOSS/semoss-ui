@@ -21,6 +21,8 @@ export interface RoomSlashCommand {
 	description: string;
 	icon: ComponentType<{ className?: string }>;
 	disabled?: boolean;
+	/** Puts this text where the slash token was, for a command the user finishes by typing; onSelect does not run. */
+	insertText?: string;
 	onSelect: (text: string) => void;
 }
 
@@ -67,6 +69,14 @@ export function RoomComposerSlashPlugin({
 				closeMenu,
 			) => {
 				if (option.command.disabled) return;
+				const { insertText } = option.command;
+				if (insertText) {
+					const inserted = $createTextNode(insertText);
+					textNodeContainingQuery?.replace(inserted);
+					inserted.selectEnd();
+					closeMenu();
+					return;
+				}
 				textNodeContainingQuery?.replace($createTextNode(""));
 				const text = $getRoot().getTextContent();
 				closeMenu();

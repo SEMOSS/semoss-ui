@@ -1,7 +1,7 @@
 import { z } from "@semoss/ui/next";
 
 /** Original source content is display-only, never part of assistant context. */
-export const displayBodySchema = z.object({
+const displayBodySchema = z.object({
 	contentType: z.enum(["html", "text"]),
 	content: z.string().max(128 * 1024),
 	isTruncated: z.boolean().optional(),

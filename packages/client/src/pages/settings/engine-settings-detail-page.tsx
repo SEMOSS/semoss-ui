@@ -1,14 +1,16 @@
+import { ListChecks } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import type { Role } from "@semoss/sdk";
 import { MembersTable } from "@semoss/shared";
-import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
+import { Button, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import {
 	PendingMembersTable,
 	SettingsTiles,
 	UpdateSMSS,
 } from "@/components/settings";
-import { useAPI, useSettings } from "@/hooks";
+import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
+import { useAPI, useConfig, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { ALL_TYPES } from "@/types";
 
@@ -26,6 +28,9 @@ const EngineSettingsUserDetailPage = (props: EngineSettingsDetailPageProps) => {
 	const { type } = props;
 
 	const { id } = useParams();
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
 	const navigate = useNavigate();
 	const { search } = useLocation();
 
@@ -79,7 +84,7 @@ const EngineSettingsUserDetailPage = (props: EngineSettingsDetailPageProps) => {
 					onValueChange={(value) => setView(value as VIEW)}
 				>
 					<TabsList className="w-fit max-w-full flex-wrap">
-						<TabsTrigger value={"CURRENT"}>Member</TabsTrigger>
+						<TabsTrigger value={"CURRENT"}>Members</TabsTrigger>
 						<TabsTrigger
 							disabled={permission === "READ_ONLY"}
 							value={"PENDING"}
@@ -93,6 +98,7 @@ const EngineSettingsUserDetailPage = (props: EngineSettingsDetailPageProps) => {
 						type={type}
 						id={id}
 						onChange={() => getUserEnginePermission.refresh()}
+						isDirectoryAvailable={isDirectoryAvailable}
 					/>
 				)}
 				{view === "PENDING" && (
@@ -110,6 +116,9 @@ const EngineSettingsAdminDetailPage = (
 	const { type } = props;
 
 	const { id } = useParams();
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
 	const navigate = useNavigate();
 	const { search } = useLocation();
 
@@ -127,19 +136,41 @@ const EngineSettingsAdminDetailPage = (
 				}}
 			/>
 			<div className="flex w-full flex-col gap-4">
-				<Tabs
-					value={view}
-					onValueChange={(value) => setView(value as VIEW)}
-				>
-					<TabsList className="w-fit max-w-full flex-wrap">
-						<TabsTrigger value={"CURRENT"}>Member</TabsTrigger>
-						<TabsTrigger value={"PENDING"}>
-							Pending Requests
-						</TabsTrigger>
-					</TabsList>
-				</Tabs>
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<Tabs
+						value={view}
+						onValueChange={(value) => setView(value as VIEW)}
+					>
+						<TabsList className="w-fit max-w-full flex-wrap">
+							<TabsTrigger value={"CURRENT"}>Members</TabsTrigger>
+							<TabsTrigger value={"PENDING"}>
+								Pending Requests
+							</TabsTrigger>
+						</TabsList>
+					</Tabs>
+					{view === "CURRENT" ? (
+						<Button asChild variant="outline" size="sm">
+							<Link to="effective-permissions" relative="path">
+								<ListChecks className="size-4" aria-hidden />
+								Effective Permissions
+							</Link>
+						</Button>
+					) : null}
+				</div>
+				{view === "CURRENT" ? (
+					<BulkAccessManagementCard
+						to="bulk-access-management"
+						noun="engine"
+						description="make many changes in admin mode, copy access from another app or engine, and review everything before it is saved"
+					/>
+				) : null}
 				{view === "CURRENT" && (
-					<MembersTable type={type} id={id} adminMode />
+					<MembersTable
+						type={type}
+						id={id}
+						adminMode
+						isDirectoryAvailable={isDirectoryAvailable}
+					/>
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable type={type} id={id} />

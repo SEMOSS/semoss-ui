@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type {
 	AutomationNode,
 	DatabaseEngineConfig,
+	DataExtractConfig,
 	ModelEngineConfig,
 	StorageEngineConfig,
 	VectorEngineConfig,
@@ -20,6 +21,7 @@ import {
 	definesRunEntryPoint,
 	getCanvasNodeSources,
 	getGeneratedPythonPreview,
+	normalizeJevDecisionConfig,
 	validateAutomationOutputVariable,
 	validateCanvasWorkflowConnections,
 	validateCanvasWorkflowNode,
@@ -98,6 +100,19 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 		destination: "",
 		metadata: {},
 	}),
+	definition(
+		"data.extract",
+		"data",
+		"Extract value",
+		{
+			source: "",
+			path: "",
+			format: "auto",
+			missingValue: null,
+			nullValue: null,
+		},
+		false,
+	),
 	definition("model.chat", "model", "Chat model", {
 		engineId: "",
 		prompt: "",
@@ -113,17 +128,50 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 		clauses: [{ id: "initial", condition: "" }],
 	}),
 	definition(
+		"control.loop",
+		"control",
+		"Repeat steps",
+		{
+			mode: "forEach",
+			items: [],
+			batchSize: 1,
+			count: 1,
+			condition: "",
+			maxIterations: 100,
+		},
+		false,
+	),
+	definition(
 		"control.jev",
 		"control",
 		"Jev decision",
 		{
 			engineId: "",
 			state: "",
-			question: "Choose a route.",
-			questionType: "choice",
-			clauses: [{ id: "initial", description: "" }],
-			confidenceThreshold: 0,
-			paramValues: {},
+			questions: [
+				{
+					key: "route",
+					type: "choice",
+					instructions: "Choose a route.",
+					criteria: { initial: "" },
+				},
+			],
+			clauses: [
+				{
+					id: "initial",
+					description: "",
+					match: "all",
+					conditions: [
+						{
+							questionKey: "route",
+							field: "choice",
+							operator: "equals",
+							value: "initial",
+						},
+					],
+				},
+			],
+			paramValues: { timeout: 30, max_retries: 2 },
 		},
 		false,
 	),
@@ -181,6 +229,45 @@ describe("database query limit", () => {
 	});
 });
 
+describe("data extraction", () => {
+	it("preserves source, path, format, and fallback values", () => {
+		const step = node("data.extract");
+		const saved = documentOf([
+			{
+				...step,
+				config: {
+					...(step.config as DataExtractConfig),
+					source: "$" + "{download.filePath}",
+					path: "orders[0].customer.name",
+					format: "json",
+					missingValue: '"Unknown customer"',
+					nullValue: '"Not provided"',
+				},
+			},
+		]);
+
+		expect(saved.graph.nodes[0]?.config).toMatchObject({
+			source: "$" + "{download.filePath}",
+			path: "orders[0].customer.name",
+			format: "json",
+			missingValue: "Unknown customer",
+			nullValue: "Not provided",
+		});
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedExtract = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "data.extract",
+		);
+		expect(reloadedExtract?.config).toMatchObject({
+			source: "$" + "{download.filePath}",
+			path: "orders[0].customer.name",
+			format: "json",
+			missingValue: "Unknown customer",
+			nullValue: "Not provided",
+		});
+	});
+});
+
 describe("getGeneratedPythonPreview", () => {
 	/**
 	 * `resolve` is a method on the scope mapping the runtime passes in, not a
@@ -189,7 +276,11 @@ describe("getGeneratedPythonPreview", () => {
 	 */
 	it("resolves through scope for every node type", () => {
 		for (const definition of TEST_NODE_DEFINITIONS) {
-			if (["control.if", "control.jev"].includes(definition.type)) {
+			if (
+				["control.if", "control.jev", "control.loop"].includes(
+					definition.type,
+				)
+			) {
 				continue;
 			}
 			const source = getGeneratedPythonPreview(node(definition.type));
@@ -250,7 +341,11 @@ describe("getGeneratedPythonPreview", () => {
 
 	it("always emits a run entry point", () => {
 		for (const definition of TEST_NODE_DEFINITIONS) {
-			if (["control.if", "control.jev"].includes(definition.type)) {
+			if (
+				["control.if", "control.jev", "control.loop"].includes(
+					definition.type,
+				)
+			) {
 				continue;
 			}
 			expect(
@@ -263,20 +358,258 @@ describe("getGeneratedPythonPreview", () => {
 	});
 });
 
+describe("loop container mapping", () => {
+	it("preserves its nested graph and body node sources", () => {
+		const bodyNode = node("developer.python", {
+			id: "double-item",
+			label: "Double item",
+			outputVar: "doubled",
+			workflowCodeMode: "custom",
+			workflowConfig: {
+				pythonSource:
+					'def run(scope):\n    return scope.get("batch_context", {}).get("item") * 2\n',
+			},
+		});
+		const loop = node("control.loop", {
+			id: "batch-loop",
+			outputVar: "batch_context",
+			config: {
+				mode: "forEach",
+				items: "$" + "{numbers}",
+				batchSize: 1,
+				maxIterations: 25,
+			},
+			body: { nodes: [bodyNode], edges: [] },
+		});
+
+		const saved = documentOf([loop]);
+		expect(saved.graph.nodes[0]).toMatchObject({
+			type: "control.loop",
+			outputVar: "batch_context",
+			config: {
+				mode: "forEach",
+				items: "$" + "{numbers}",
+				batchSize: 1,
+				maxIterations: 25,
+			},
+			body: {
+				nodes: [{ id: "double-item", type: "developer.python" }],
+				edges: [],
+			},
+		});
+		expect(getCanvasNodeSources([loop])).toEqual({
+			"double-item": bodyNode.workflowConfig?.pythonSource,
+		});
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {
+			"double-item": bodyNode.workflowConfig?.pythonSource ?? "",
+		});
+		const reloadedLoop = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "control.loop",
+		);
+		expect(reloadedLoop?.body?.nodes[0]).toMatchObject({
+			id: "double-item",
+			workflowType: "developer.python",
+			workflowConfig: {
+				pythonSource: bodyNode.workflowConfig?.pythonSource,
+			},
+		});
+	});
+
+	it.each([
+		{
+			mode: "repeat" as const,
+			count: 4,
+			maxIterations: 10,
+		},
+		{
+			mode: "while" as const,
+			condition: "$" + '{loop_context.previous.status} != "complete"',
+			maxIterations: 10,
+		},
+	])("round trips $mode configuration", (config) => {
+		const bodyNode = node("developer.python", { id: "body-step" });
+		const loop = node("control.loop", {
+			id: "loop",
+			outputVar: "loop_context",
+			config,
+			body: { nodes: [bodyNode], edges: [] },
+		});
+
+		const saved = documentOf([loop]);
+		expect(saved.graph.nodes[0].config).toMatchObject(config);
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedLoop = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "control.loop",
+		);
+		expect(reloadedLoop?.config).toMatchObject(config);
+	});
+
+	it("validates repeat and while settings", () => {
+		const bodyNode = node("developer.python", { id: "body-step" });
+		const invalidRepeat = node("control.loop", {
+			config: { mode: "repeat", count: 11, maxIterations: 10 },
+			body: { nodes: [bodyNode], edges: [] },
+		});
+		const invalidWhile = node("control.loop", {
+			config: { mode: "while", condition: "", maxIterations: 10 },
+			body: { nodes: [bodyNode], edges: [] },
+		});
+
+		expect(
+			validateCanvasWorkflowNode(invalidRepeat, [invalidRepeat]),
+		).toContain(
+			"Number of times must be a whole number no greater than the safety limit",
+		);
+		expect(
+			validateCanvasWorkflowNode(invalidWhile, [invalidWhile]),
+		).toContain("Continue while condition is required");
+	});
+
+	it("requires an array source and at least one nested step", () => {
+		const loop = node("control.loop", {
+			config: {
+				mode: "forEach",
+				items: "not a list",
+				batchSize: 1,
+				maxIterations: 10,
+			},
+			body: { nodes: [], edges: [] },
+		});
+
+		expect(validateCanvasWorkflowNode(loop, [loop])).toEqual(
+			expect.arrayContaining([
+				"Items must be a JSON array or an exact variable reference",
+				"Add at least one step inside the loop",
+			]),
+		);
+	});
+
+	it("identifies the invalid nested step and its missing routes", () => {
+		const decision = node("control.if", {
+			id: "decision",
+			label: "Choose path",
+			config: { clauses: [{ id: "case-1", condition: "" }] },
+		});
+		const target = node("developer.python", { id: "target" });
+		const loop = node("control.loop", {
+			config: {
+				mode: "forEach",
+				items: "[1]",
+				batchSize: 1,
+				maxIterations: 10,
+			},
+			body: {
+				nodes: [decision, target],
+				edges: [
+					{
+						id: "case-edge",
+						source: decision.id,
+						target: target.id,
+						sourceHandle: `case-${decision.id}-case-1`,
+					},
+				],
+			},
+		});
+
+		expect(validateCanvasWorkflowNode(loop, [loop])).toEqual(
+			expect.arrayContaining([
+				'Inside "Choose path": Each condition is required',
+				'Inside "Choose path": Every condition and the Else path must be connected',
+			]),
+		);
+	});
+});
+
 describe("Jev decision mapping", () => {
-	it("preserves typed routing configuration without a Python source", () => {
+	it("normalizes a legacy local draft before the node card or editor reads it", () => {
+		const normalized = normalizeJevDecisionConfig({
+			engineId: "jev-engine",
+			state: "A support request",
+			questionType: "choice",
+			question: "Which team owns this request?",
+			confidenceThreshold: 0.75,
+			clauses: [
+				{
+					id: "billing",
+					description: "Billing",
+				},
+				{
+					id: "technical",
+					description: "Technical support",
+				},
+			],
+		});
+
+		expect(normalized.questions).toEqual([
+			expect.objectContaining({
+				key: "route",
+				type: "choice",
+				instructions: "Which team owns this request?",
+			}),
+		]);
+		expect(normalized.clauses).toHaveLength(2);
+		expect(normalized.clauses[0]?.conditions).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					questionKey: "route",
+					field: "choice",
+					value: "billing",
+				}),
+			]),
+		);
+	});
+
+	it("preserves mixed typed questions and ordered route rules", () => {
 		const ticketReference = "$" + "{ticket}";
 		const step = node("control.jev", {
 			config: {
 				engineId: "jev-engine",
 				state: ticketReference,
-				question: "Route this ticket.",
-				questionType: "choice",
-				clauses: [
-					{ id: "billing", description: "Payments and refunds" },
-					{ id: "technical", description: "Bugs and errors" },
+				questions: [
+					{
+						key: "department",
+						type: "choice",
+						instructions: "Which team owns this ticket?",
+						criteria: {
+							billing: "Payments and refunds",
+							technical: "Bugs and errors",
+						},
+					},
+					{
+						key: "urgency",
+						type: "score",
+						instructions: "How urgent is it?",
+						criteria: ["Routine", "Urgent"],
+					},
+					{
+						key: "safe_to_automate",
+						type: "noul",
+						instructions: "Can this run without a person?",
+						criteria: { true: "Safe", false: "Needs review" },
+					},
 				],
-				confidenceThreshold: 0.8,
+				clauses: [
+					{
+						id: "urgent-technical",
+						description: "Urgent technical review",
+						match: "all",
+						conditions: [
+							{
+								questionKey: "department",
+								field: "choice",
+								operator: "equals",
+								value: "technical",
+							},
+							{
+								questionKey: "urgency",
+								field: "score",
+								operator: "greaterThanOrEqual",
+								value: 0.7,
+							},
+						],
+					},
+				],
 				paramValues: '{"timeout":5}',
 			},
 		});
@@ -288,13 +621,30 @@ describe("Jev decision mapping", () => {
 			config: {
 				engineId: "jev-engine",
 				state: ticketReference,
-				question: "Route this ticket.",
-				questionType: "choice",
+				questions: expect.arrayContaining([
+					expect.objectContaining({
+						key: "department",
+						type: "choice",
+					}),
+					expect.objectContaining({ key: "urgency", type: "score" }),
+					expect.objectContaining({
+						key: "safe_to_automate",
+						type: "noul",
+					}),
+				]),
 				clauses: [
-					{ id: "billing", description: "Payments and refunds" },
-					{ id: "technical", description: "Bugs and errors" },
+					expect.objectContaining({
+						id: "urgent-technical",
+						match: "all",
+						conditions: expect.arrayContaining([
+							expect.objectContaining({
+								questionKey: "urgency",
+								field: "score",
+								value: 0.7,
+							}),
+						]),
+					}),
 				],
-				confidenceThreshold: 0.8,
 				paramValues: { timeout: 5 },
 			},
 		});
@@ -307,89 +657,134 @@ describe("Jev decision mapping", () => {
 		expect(reloadedJev?.workflowConfig).toMatchObject({
 			engineId: "jev-engine",
 			state: ticketReference,
-			questionType: "choice",
-			confidenceThreshold: 0.8,
+			questions: expect.arrayContaining([
+				expect.objectContaining({
+					key: "safe_to_automate",
+					type: "noul",
+				}),
+			]),
 		});
 	});
 
-	it("preserves explicit Yes and No route identities for Noul decisions", () => {
+	it("validates each route against a known typed answer", () => {
 		const step = node("control.jev", {
 			config: {
 				engineId: "jev-engine",
 				state: "$" + "{ticket}",
-				question: "Can this ticket be handled automatically?",
-				questionType: "noul",
-				clauses: [
-					{ id: "automatic", description: "Continue", answer: true },
+				questions: [
 					{
-						id: "review",
-						description: "Human review",
-						answer: false,
+						key: "safe_to_automate",
+						type: "noul",
+						instructions: "Can this ticket run automatically?",
+						criteria: { true: "Safe", false: "Needs review" },
 					},
 				],
-				confidenceThreshold: 0.75,
+				clauses: [
+					{
+						id: "automatic",
+						description: "Continue automatically",
+						match: "all",
+						conditions: [
+							{
+								questionKey: "safe_to_automate",
+								field: "noul",
+								operator: "greaterThanOrEqual",
+								value: 0.8,
+							},
+						],
+					},
+				],
 				paramValues: "{}",
 			},
 		});
 
-		const saved = documentOf([step]);
-		expect(saved.graph.nodes[0]?.config).toMatchObject({
-			questionType: "noul",
-			clauses: [
-				{ id: "automatic", answer: true },
-				{ id: "review", answer: false },
-			],
-		});
-		const reloaded = canvasDocumentFromWorkflow(saved, {});
-		const reloadedJev = reloaded.steps.find(
-			(candidate) => candidate.workflowType === "control.jev",
-		);
-		expect(reloadedJev?.config).toMatchObject({
-			questionType: "noul",
-			clauses: [
-				{ id: "automatic", answer: true },
-				{ id: "review", answer: false },
-			],
-		});
+		expect(validateCanvasWorkflowNode(step, [step])).toEqual([]);
 	});
 
-	it("rejects ambiguous Noul route mappings and confidence below one half", () => {
+	it("rejects unknown question references and missing route rules", () => {
 		const step = node("control.jev", {
 			config: {
 				engineId: "jev-engine",
 				state: "$" + "{ticket}",
-				question: "Can this ticket be handled automatically?",
-				questionType: "noul",
-				clauses: [
-					{ id: "first", description: "First", answer: true },
-					{ id: "second", description: "Second", answer: true },
+				questions: [
+					{
+						key: "decision",
+						type: "choice",
+						instructions: "Choose a path.",
+						criteria: { continue: "Continue" },
+					},
 				],
-				confidenceThreshold: 0.4,
+				clauses: [
+					{
+						id: "first",
+						description: "First",
+						conditions: [],
+					},
+					{
+						id: "second",
+						description: "Second",
+						conditions: [
+							{
+								questionKey: "missing",
+								field: "choice",
+								operator: "equals",
+								value: "continue",
+							},
+						],
+					},
+				],
 				paramValues: "{}",
 			},
 		});
 
 		expect(validateCanvasWorkflowNode(step, [step])).toEqual(
 			expect.arrayContaining([
-				"Yes / No decisions require one Yes path and one No path",
-				"Minimum confidence must be from 0.5 through 1",
+				'Route "First" needs a rule',
+				'Route "Second" references an unknown question',
 			]),
 		);
 	});
 
-	it("requires every Jev route and low-confidence path before execution", () => {
+	it("requires every JEV route and fallback path before execution", () => {
 		const step = node("control.jev", {
 			id: "jev",
 			config: {
 				engineId: "jev-engine",
 				state: "$" + "{ticket}",
-				question: "Can this ticket be handled automatically?",
-				questionType: "noul",
-				clauses: [
-					{ id: "yes", description: "Continue", answer: true },
-					{ id: "no", description: "Stop", answer: false },
+				questions: [
+					{
+						key: "route",
+						type: "choice",
+						instructions: "Choose a path.",
+						criteria: { yes: "Continue", no: "Stop" },
+					},
 				],
-				confidenceThreshold: 0.75,
+				clauses: [
+					{
+						id: "yes",
+						description: "Continue",
+						conditions: [
+							{
+								questionKey: "route",
+								field: "choice",
+								operator: "equals",
+								value: "yes",
+							},
+						],
+					},
+					{
+						id: "no",
+						description: "Stop",
+						conditions: [
+							{
+								questionKey: "route",
+								field: "choice",
+								operator: "equals",
+								value: "no",
+							},
+						],
+					},
+				],
 				paramValues: "{}",
 			},
 		});
@@ -413,7 +808,7 @@ describe("Jev decision mapping", () => {
 		};
 
 		expect(validateCanvasWorkflowConnections(step, [yesEdge])).toEqual([
-			"Every route and the low-confidence path must be connected",
+			"Every route and the fallback path must be connected",
 		]);
 		expect(
 			validateCanvasWorkflowConnections(step, [
@@ -568,6 +963,25 @@ describe("optional engine parameters", () => {
 		expect(saved.graph.nodes[2]?.config.paramValues).toEqual({
 			temperature: 0.2,
 		});
+	});
+
+	it("persists storage list file types as a typed array", () => {
+		const listFiles = node("storage.list");
+		const saved = documentOf([
+			{
+				...listFiles,
+				config: {
+					...(listFiles.config as StorageEngineConfig),
+					fileTypes: "pdf, png, .jpg",
+				},
+			},
+		]);
+
+		expect(saved.graph.nodes[0]?.config.extensions).toEqual([
+			"pdf",
+			"png",
+			".jpg",
+		]);
 	});
 });
 

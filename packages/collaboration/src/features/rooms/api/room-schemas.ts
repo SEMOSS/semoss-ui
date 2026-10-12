@@ -28,11 +28,21 @@ export interface RoomRow {
 
 export const playgroundRoomsSchema = z.array(roomRowSchema);
 
+// rooms named before RunAgent stripped the work context carry its raw marker
+export function readableRoomName(
+	name: string | null | undefined,
+): string | undefined {
+	const trimmed = name?.trim();
+	if (!trimmed || trimmed.startsWith("[SEMOSS_WORK_CONTEXT_V1]"))
+		return undefined;
+	return trimmed;
+}
+
 /** Normalize the reactor's uppercase columns at the API boundary. */
 export function mapPlaygroundRoom(row: PlaygroundRoomRow): RoomRow {
 	return {
 		roomId: row.ROOM_ID,
-		roomName: row.ROOM_NAME ?? undefined,
+		roomName: readableRoomName(row.ROOM_NAME),
 		modelId: row.MODEL_ID ?? undefined,
 		workspaceId: row.WORKSPACE_ID ?? undefined,
 		dateCreated: row.DATE_CREATED ?? undefined,

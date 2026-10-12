@@ -3,15 +3,24 @@
 		"title": "メンバーを追加",
 		"description": "ユーザーを検索して、このリソースに招待します。"
 	},
+	"source": {
+		"label": "検索対象",
+		"existing": "既存のユーザー",
+		"directory": "組織全体",
+		"existingHint": "すでにアカウントを持っているユーザーです。",
+		"directoryHint": "組織内のすべての人が対象です。一度もサインインしていない人も含まれ、追加するとアカウントが作成されます。"
+	},
 	"search": {
 		"placeholder": "名前またはメールアドレスで検索...",
 		"searching": "ユーザーを検索しています...",
 		"empty": "ユーザーが見つかりません",
+		"emptyDirectory": "組織内に一致する人が見つかりません",
 		"added": "追加済み"
 	},
 	"selected": {
 		"count_other": "{{count}} 人のユーザーを選択中",
-		"empty": "ユーザーが選択されていません"
+		"empty": "ユーザーが選択されていません",
+		"remove": "{{name}} を削除"
 	},
 	"permission": {
 		"viewer": "閲覧者",

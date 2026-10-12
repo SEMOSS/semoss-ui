@@ -61,6 +61,8 @@ export type ConversationMessagePart = {
 	| {
 			type: "text";
 			text: string;
+			/** What the model received, when it differs from what the user typed. */
+			command?: string;
 			state?: ConversationPartState;
 	  }
 	| {

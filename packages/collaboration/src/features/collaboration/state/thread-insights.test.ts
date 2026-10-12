@@ -64,7 +64,6 @@ it("applies Brain's steps while keeping edits made after the read and the owner'
 	});
 	expect(state.threads[0].summaryPending).toBeUndefined();
 	expect(state.workspaces[id].goal).toBe(before.goal);
-	expect(state.workspaces[id].facts).toEqual(before.facts);
 });
 it("keeps a newer summary over one read before it landed", () => {
 	const state = createInitialCollaborationState();

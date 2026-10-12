@@ -1,6 +1,6 @@
-/** Underlined content tabs shared by the Work and Brain sheets. */
+/** Quiet segmented tabs matching the Brief's view controls. */
 export const collaborationTabsStyles = {
-	list: "h-auto gap-1 rounded-none bg-transparent p-0",
+	list: "h-auto max-w-full flex-wrap gap-1 rounded-xl border bg-muted/50 p-1",
 	trigger:
-		"h-10 rounded-none border-0 border-b-2 border-transparent px-3 py-2 font-normal text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:font-medium data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:border-b-primary dark:data-[state=active]:bg-transparent",
+		"h-8 pointer-coarse:min-h-11 rounded-lg border-0 px-3 py-2 font-normal text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-card",
 };

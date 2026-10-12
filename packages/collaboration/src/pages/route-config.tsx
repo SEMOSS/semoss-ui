@@ -1,13 +1,12 @@
 import { Navigate, type RouteObject } from "react-router";
-import { AgentLayout } from "@/components/layouts/agent-layout";
 import { AuthorizedLayout } from "@/components/layouts/authorized-layout";
 import { RootLayout } from "@/components/layouts/root-layout";
 import { CollaborationLayout } from "@/features/collaboration/components/collaboration-layout";
-import { LegacyRoomLayout } from "@/features/collaboration/components/legacy-room-layout";
+import { settingsSections } from "@/features/settings/settings-sections";
 import { ErrorPage } from "@/pages/error.page";
 import { NotFoundPage } from "@/pages/not-found.page";
 
-/** Work and Brain own the product routes; existing room links remain valid. */
+/** Work and Brain share canonical topic and conversation routes. */
 export const routes: RouteObject[] = [
 	{
 		Component: RootLayout,
@@ -25,13 +24,17 @@ export const routes: RouteObject[] = [
 							{
 								index: true,
 								id: "home",
-								element: <Navigate to="/work" replace />,
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/dashboard.page")
+									).DashboardPage,
+								}),
 							},
 							...[
 								"work",
+								"work/all",
 								"work/waiting",
 								"work/done",
-								"work/topic/:topicId",
 							].map((path) => ({
 								path,
 								id: path,
@@ -42,23 +45,45 @@ export const routes: RouteObject[] = [
 								}),
 							})),
 							{
-								path: "work/thread/:threadId",
-								id: "work-thread",
+								path: "topics/:topicId",
+								id: "topic",
 								lazy: async () => ({
 									Component: (
-										await import("@/pages/work-thread.page")
-									).WorkThreadPage,
+										await import("@/pages/topic.page")
+									).TopicPage,
+								}),
+							},
+							...[
+								"work/topic/:topicId",
+								"brain/topics/:topicId",
+							].map((path) => ({
+								path,
+								id: path,
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/legacy-topic.page"
+										)
+									).LegacyTopicPage,
+								}),
+							})),
+							{
+								path: "thread/:threadId",
+								id: "thread",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/thread.page")
+									).ThreadPage,
 								}),
 							},
 							...[
 								"brain",
-								"brain/profile",
+								"brain/memory",
 								"brain/sources",
 								"brain/people",
 								"brain/people/:personId",
 								"brain/threads",
 								"brain/threads/:threadId",
-								"brain/topics/:topicId",
 							].map((path) => ({
 								path,
 								id: path,
@@ -68,42 +93,6 @@ export const routes: RouteObject[] = [
 									).BrainPage,
 								}),
 							})),
-							{
-								Component: LegacyRoomLayout,
-								children: [
-									{
-										path: "room/:roomId",
-										Component: AgentLayout,
-										children: [
-											{
-												index: true,
-												id: "room",
-												lazy: async () => ({
-													Component: (
-														await import(
-															"@/pages/room.page"
-														)
-													).RoomPage,
-												}),
-											},
-											{
-												path: "*",
-												id: "room-not-found",
-												Component: NotFoundPage,
-											},
-										],
-									},
-								],
-							},
-							{
-								path: "new",
-								id: "new-session",
-								lazy: async () => ({
-									Component: (
-										await import("@/pages/new-session.page")
-									).NewSessionPage,
-								}),
-							},
 							...["room"].map((path) => ({
 								path,
 								element: <Navigate to="/work" replace />,
@@ -114,10 +103,47 @@ export const routes: RouteObject[] = [
 								element: <Navigate to="/brain" replace />,
 							},
 							{
-								path: "settings",
+								path: "brain/profile",
 								element: (
-									<Navigate to="/brain/sources" replace />
+									<Navigate
+										to="/settings/about-you"
+										replace
+									/>
 								),
+							},
+							{
+								path: "settings/dashboard",
+								element: (
+									<Navigate
+										to="/settings/about-you"
+										replace
+									/>
+								),
+							},
+							{
+								path: "settings",
+								id: "settings",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/settings.page")
+									).SettingsPage,
+								}),
+								children: [
+									{
+										index: true,
+										element: (
+											<Navigate
+												to="/settings/about-you"
+												replace
+											/>
+										),
+									},
+									...settingsSections.map(({ id }) => ({
+										path: id,
+										id: `settings/${id}`,
+										element: <></>,
+									})),
+								],
 							},
 							{
 								path: "*",

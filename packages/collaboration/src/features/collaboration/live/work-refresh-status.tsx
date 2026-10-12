@@ -7,11 +7,13 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@semoss/ui/next";
+import { threadPath } from "@/lib/workspace-paths";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import type { MailCheck, MailSyncResult, SyncOutcome } from "./live-state";
 import { useWorkUpdates } from "./work-updates.context";
 
-const time = (at: string) =>
+/** The time Microsoft 365 was last checked, the same on every surface. */
+export const checkTime = (at: string) =>
 	new Date(at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 // what each outcome means to the owner, in summary order
@@ -30,8 +32,12 @@ const OUTCOMES: { key: SyncOutcome; summary: string; label: string }[] = [
 // outcomes that have a Work item, so the thread opens in Work with its chat; the rest only exist in Brain
 const IN_WORK = new Set<SyncOutcome>(["new", "updated", "cleared"]);
 
-const threadPath = (outcome: SyncOutcome, threadId: string) =>
-	`/${IN_WORK.has(outcome) ? "work/thread" : "brain/threads"}/${encodeURIComponent(threadId)}`;
+/** Open actionable mail in its conversation and other outcomes in Brain. */
+function syncThreadPath(outcome: SyncOutcome, threadId: string): string {
+	return IN_WORK.has(outcome)
+		? threadPath(threadId)
+		: `/brain/threads/${encodeURIComponent(threadId)}`;
+}
 
 // where the new mail went, not just how many messages came in
 function describeSync(result: MailSyncResult): string {
@@ -46,7 +52,7 @@ function describeSync(result: MailSyncResult): string {
 function describeCheck(check: MailCheck | null): string {
 	if (!check) return "Mail not checked yet";
 	if (check.status === "failed") return "Last mail check failed";
-	return check.at ? `Checked ${time(check.at)}` : "Checked";
+	return check.at ? `Checked ${checkTime(check.at)}` : "Checked";
 }
 
 /** A Refresh action and one quiet status line; what came in opens in a popover. */
@@ -165,7 +171,10 @@ function SyncChanges({
 										>
 											<Link
 												className="hover:underline"
-												to={threadPath(key, threadId)}
+												to={syncThreadPath(
+													key,
+													threadId,
+												)}
 											>
 												{state.threads.find(
 													(thread) =>

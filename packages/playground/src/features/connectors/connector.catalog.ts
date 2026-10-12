@@ -24,6 +24,11 @@ export interface ConnectorTool {
 	reactor: string;
 	/** Whether the call waits for the user. */
 	execution: ConnectorToolExecution;
+	/**
+	 * Whether the reactor names its own view, as every mail and calendar reactor
+	 * does, so the toolbox keeps where and how the reactor shows its calls.
+	 */
+	declaresView?: boolean;
 }
 
 /** An app within a provider, and the tools it brings. */
@@ -67,50 +72,81 @@ const ask = (reactor: string): ConnectorTool => ({
 	execution: "ask",
 });
 
+/** An operation every mailbox or calendar offers, and whether it asks first. */
+type ConnectorOperation = readonly [
+	operation: string,
+	execution: ConnectorToolExecution,
+];
+
 /**
- * Every service the playground can switch on. Reactors that write to or read
- * from arbitrary server paths (`GoogleDriveDownload`, `GoogleDriveUpload`) are
- * left out: a room tool should only touch the room, and the Microsoft
- * equivalents already confine files to the room's folder. So is
- * `GoogleGmailSummarizeTopKEmails`: it summarizes nothing, listing the newest
- * emails with a preview, so its name would have the assistant expect
- * summaries it never gets. The Gmail viewer lists mail with it.
+ * The mail operations every mailbox offers. Each mailbox's reactor for one is
+ * named after the mailbox, such as `MicrosoftOutlookListMail` and
+ * `GoogleGmailListMail`, takes the same keys, and answers the same way.
+ */
+const MAIL_OPERATIONS: readonly ConnectorOperation[] = [
+	["ListMail", "auto"],
+	["GetMail", "auto"],
+	["ListMailFolders", "auto"],
+	["DownloadAttachment", "auto"],
+	["SaveDraft", "auto"],
+	["MarkMailRead", "auto"],
+	["SendMail", "ask"],
+	["SendDraft", "ask"],
+	["ReplyMail", "ask"],
+	["ForwardMail", "ask"],
+	["MoveMail", "ask"],
+	["DeleteMail", "ask"],
+];
+
+/** The calendar operations every calendar offers, named the same way. */
+const CALENDAR_OPERATIONS: readonly ConnectorOperation[] = [
+	["ListCalendars", "auto"],
+	["ListEvents", "auto"],
+	["GetEvent", "auto"],
+	["GetSchedule", "auto"],
+	["ListPermissions", "auto"],
+	["CreateEvent", "ask"],
+	["UpdateEvent", "ask"],
+	["RespondToEvent", "ask"],
+	["DeleteEvent", "ask"],
+];
+
+/**
+ * One app's reactor for each operation.
+ *
+ * @param prefix - What the app's reactor names start with, such as `GoogleGmail`.
+ * @param operations - The operations the app offers.
+ * @return The app's tools.
+ */
+const operationTools = (
+	prefix: string,
+	operations: readonly ConnectorOperation[],
+): ConnectorTool[] =>
+	operations.map(([operation, execution]) => ({
+		reactor: `${prefix}${operation}`,
+		execution: execution,
+		declaresView: true,
+	}));
+
+/**
+ * Every service the playground can switch on. Outlook and Gmail offer the same
+ * mail tools, and the two calendars the same calendar tools. Reactors that
+ * write to or read from arbitrary server paths (`GoogleDriveDownload`,
+ * `GoogleDriveUpload`) are left out: a room tool should only touch the room,
+ * and the Microsoft equivalents already confine files to the room's folder.
  */
 export const CONNECTOR_SERVICES: readonly ConnectorService[] = [
 	{
 		id: "outlook",
 		provider: "MICROSOFT",
 		accessKey: "outlook",
-		tools: [
-			auto("MicrosoftOutlookListMail"),
-			auto("MicrosoftOutlookGetMail"),
-			auto("MicrosoftOutlookListMailFolders"),
-			auto("MicrosoftOutlookDownloadAttachment"),
-			auto("MicrosoftOutlookSaveDraft"),
-			auto("MicrosoftOutlookMarkMailRead"),
-			ask("MicrosoftOutlookSendMail"),
-			ask("MicrosoftOutlookSendDraft"),
-			ask("MicrosoftOutlookReplyMail"),
-			ask("MicrosoftOutlookForwardMail"),
-			ask("MicrosoftOutlookMoveMail"),
-			ask("MicrosoftOutlookDeleteMail"),
-		],
+		tools: operationTools("MicrosoftOutlook", MAIL_OPERATIONS),
 	},
 	{
 		id: "outlook-calendar",
 		provider: "MICROSOFT",
 		accessKey: "calendar",
-		tools: [
-			auto("MicrosoftCalendarListCalendars"),
-			auto("MicrosoftCalendarListEvents"),
-			auto("MicrosoftCalendarGetEvent"),
-			auto("MicrosoftCalendarGetSchedule"),
-			auto("MicrosoftCalendarListPermissions"),
-			ask("MicrosoftCalendarCreateEvent"),
-			ask("MicrosoftCalendarUpdateEvent"),
-			ask("MicrosoftCalendarRespondToEvent"),
-			ask("MicrosoftCalendarDeleteEvent"),
-		],
+		tools: operationTools("MicrosoftCalendar", CALENDAR_OPERATIONS),
 	},
 	{
 		id: "onedrive",
@@ -158,26 +194,15 @@ export const CONNECTOR_SERVICES: readonly ConnectorService[] = [
 		provider: "GOOGLE",
 		accessKey: "gmail",
 		tools: [
-			auto("GoogleGmailList"),
-			auto("GoogleGmailGetUnreadEmails"),
-			auto("GoogleGmailReadEmail"),
+			...operationTools("GoogleGmail", MAIL_OPERATIONS),
 			auto("GoogleGmailProfileById"),
-			ask("GoogleGmailSendEmail"),
-			ask("GoogleGmailDeleteEmail"),
 		],
 	},
 	{
 		id: "google-calendar",
 		provider: "GOOGLE",
 		accessKey: "calendar",
-		tools: [
-			auto("GoogleCalendarList"),
-			auto("GoogleCalendarReadEvent"),
-			auto("GoogleCalendarSearchEvent"),
-			ask("GoogleCalendarCreateEvent"),
-			ask("GoogleCalendarUpdateEvent"),
-			ask("GoogleCalendarDeleteEvent"),
-		],
+		tools: operationTools("GoogleCalendar", CALENDAR_OPERATIONS),
 	},
 	{
 		id: "google-drive",
@@ -499,12 +524,16 @@ export const buildUserConnectorTools = (
 	).flatMap((service) =>
 		service.tools.map((tool) => ({
 			reactor: tool.reactor,
-			metadata: {
-				SMSS_MCP_EXECUTION: tool.execution,
-				SMSS_MCP_UI: {
-					displayLocation:
-						tool.execution === "ask" ? "inline" : "sidebar",
-				},
-			},
+			// a reactor that names its own view keeps where it shows it; the rest show
+			// a call that asks inline, where its Allow is
+			metadata: tool.declaresView
+				? { SMSS_MCP_EXECUTION: tool.execution }
+				: {
+						SMSS_MCP_EXECUTION: tool.execution,
+						SMSS_MCP_UI: {
+							displayLocation:
+								tool.execution === "ask" ? "inline" : "sidebar",
+						},
+					},
 		})),
 	);

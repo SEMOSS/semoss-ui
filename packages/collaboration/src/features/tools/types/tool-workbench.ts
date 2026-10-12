@@ -26,7 +26,7 @@ export interface ToolWorkbenchContextValue {
 	isToolInline: (toolId: string) => boolean;
 	getToolDisplayMode: (toolId: string) => ToolDisplayMode;
 	openInline: (toolId: string) => void;
-	openWorkbench: (toolId?: string) => void;
+	openWorkbench: (toolId?: string, returnFocusId?: string) => void;
 	/**
 	 * Open a file in the dock: from the room folder, or from another insight
 	 * such as the attachment download area, which the dock never re-points.

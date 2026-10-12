@@ -100,16 +100,18 @@ export function importTeamsChat(
 	};
 }
 
-/** Calendar reactors are requested in UTC; do not reinterpret another zone as browser local time. */
-export function calendarUtc(
-	value: string | undefined,
-	zone: string | undefined,
-): string | undefined {
+/**
+ * Calendar reactors answer in UTC, and with only the date for a whole day event,
+ * which is read as the start of that day in UTC; nothing is reinterpreted as
+ * browser local time.
+ */
+export function calendarUtc(value: string | undefined): string | undefined {
 	if (!value) return undefined;
-	const hasOffset = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
-	if (!hasOffset && zone && !["UTC", "Etc/UTC"].includes(zone))
-		throw new Error("The calendar returned an unexpected time zone.");
-	const normalized = hasOffset ? value : `${value}Z`;
+	const normalized = /^\d{4}-\d{2}-\d{2}$/.test(value)
+		? `${value}T00:00:00Z`
+		: /(?:Z|[+-]\d{2}:\d{2})$/i.test(value)
+			? value
+			: `${value}Z`;
 	const timestamp = Date.parse(normalized);
 	if (!Number.isFinite(timestamp))
 		throw new Error("The calendar returned an invalid date.");
@@ -120,7 +122,7 @@ export function calendarUtc(
 export function importCalendarEvent(event: CalendarEvent): ImportedSource {
 	if (event.body === undefined)
 		throw new Error("Read this event before adding it to Work.");
-	const start = calendarUtc(event.start, event.startTimeZone);
+	const start = calendarUtc(event.start);
 	const body = [
 		event.body,
 		start ? `Starts: ${start}` : "",

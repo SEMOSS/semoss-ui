@@ -1,4 +1,3 @@
-import { useId } from "react";
 import {
 	Button,
 	Form,
@@ -45,7 +44,6 @@ export function ProfileForm({
 		},
 		resetOptions: { keepDirtyValues: true },
 	});
-	const timezoneErrorId = useId();
 	return (
 		<Form
 			form={form}
@@ -70,14 +68,7 @@ export function ProfileForm({
 			}}
 		>
 			<FormInput name="role" label="Role" />
-			<FormInput
-				name="timezone"
-				label="Time zone"
-				aria-describedby={timezoneErrorId}
-			/>
-			<span id={timezoneErrorId} className="sr-only">
-				{form.formState.errors.timezone?.message}
-			</span>
+			<FormInput name="timezone" label="Time zone" />
 			<FormInput name="workingHours" label="Working hours" />
 			<FormTextarea
 				name="style"

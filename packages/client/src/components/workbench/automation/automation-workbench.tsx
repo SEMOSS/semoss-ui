@@ -600,7 +600,7 @@ export const AutomationWorkbench = observer(
 			openedWith: string;
 		} | null>(null);
 		const wasRunningRef = useRef(false);
-		const editingStepIdRef = useRef<string | null>(null);
+		const inspectorSelectionRef = useRef<string | null>(null);
 		// Which node a Python-node file tab's path belongs to, so a save of it
 		// can be mirrored onto that node's in-memory step (see syncPythonSource).
 		const pythonNodeAssetPathsRef = useRef(new Map<string, string>());
@@ -684,16 +684,18 @@ export const AutomationWorkbench = observer(
 		const handleInspectorChange = useCallback(
 			(snapshot: AutomationInspectorSnapshot) => {
 				setInspectorSnapshot(snapshot);
-				const editingStepId = snapshot.editingStep?.id ?? null;
-				// Only switch tabs when a different step starts being edited, not on every
-				// snapshot re-emitted while the same step stays open (e.g. its run status ticking).
+				const selectionId = snapshot.editingNodeGroup
+					? `group:${snapshot.editingNodeGroup.id}`
+					: (snapshot.editingStep?.id ?? null);
+				// Switch tabs when a different step or group starts being edited, not on
+				// every snapshot re-emitted while the same selection stays open.
 				if (
-					editingStepId &&
-					editingStepId !== editingStepIdRef.current
+					selectionId &&
+					selectionId !== inspectorSelectionRef.current
 				) {
 					selectPanel(INSPECTOR);
 				}
-				editingStepIdRef.current = editingStepId;
+				inspectorSelectionRef.current = selectionId;
 			},
 			[selectPanel],
 		);

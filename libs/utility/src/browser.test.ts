@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { downloadBlob, setFavicon } from "./browser";
+import { downloadBlob, safeHttpsUrl, setFavicon } from "./browser";
 
 afterEach(() => {
 	vi.restoreAllMocks();
@@ -10,6 +10,20 @@ afterEach(() => {
 });
 
 describe("browser resources", () => {
+	it("accepts absolute HTTPS item links without restricting provider hosts", () => {
+		expect(safeHttpsUrl(" https://example.org/item?id=1#detail ")).toBe(
+			"https://example.org/item?id=1#detail",
+		);
+		for (const value of [
+			undefined,
+			"",
+			"/item/1",
+			"javascript:alert(1)",
+			"http://example.org/item",
+			"not a url",
+		])
+			expect(safeHttpsUrl(value)).toBeUndefined();
+	});
 	it("downloads the original Blob with the requested filename and cleans up", () => {
 		const blob = new Blob(["hello"]);
 		const createObjectURL = vi.fn(() => "blob:test");

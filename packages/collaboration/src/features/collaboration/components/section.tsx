@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { cn, H2 } from "@semoss/ui/next";
+import { Card, cn, H2, H3 } from "@semoss/ui/next";
 
 /** An unframed section for the operational Brain and Work surfaces. */
 export function Section({
@@ -11,6 +11,7 @@ export function Section({
 	className,
 	variant = "plain",
 	flush = false,
+	level = 2,
 }: {
 	/** Section heading. */
 	title: string;
@@ -24,42 +25,60 @@ export function Section({
 	variant?: "plain" | "widget" | "card";
 	/** Card only: a ruled header over edge-to-edge rows that bring their own padding. */
 	flush?: boolean;
+	/** 3 for a group inside another section. */
+	level?: 2 | 3;
 }) {
 	const isCard = variant === "card";
+	const Container = isCard ? Card : "div";
+	const Heading = level === 3 ? H3 : H2;
 	return (
 		<section
 			className={cn(
-				isCard
-					? "overflow-hidden rounded-xl border border-border bg-card shadow-sm"
-					: "space-y-4",
+				"min-w-0",
 				variant === "widget" &&
 					"space-y-4 border-border border-b pb-6 last:border-0 last:pb-0",
 				className,
 			)}
 		>
-			<div
-				className={cn(
-					"flex items-center justify-between gap-2",
-					isCard && "px-4",
-					isCard && (flush ? "border-border border-b py-3" : "pt-4"),
-				)}
+			<Container
+				className={
+					isCard
+						? "min-w-0 gap-0 overflow-hidden p-0 shadow-none"
+						: "space-y-4"
+				}
 			>
-				<H2 className="flex items-center gap-2 font-medium text-base">
-					{Icon && (
-						<Icon
-							aria-hidden="true"
-							className="size-4 shrink-0 text-primary"
-						/>
+				<div
+					className={cn(
+						"flex items-center justify-between gap-2",
+						isCard && "mx-5 border-border border-b pt-5 pb-4",
 					)}
-					{title}
-				</H2>
-				{action}
-			</div>
-			{isCard && !flush ? (
-				<div className="space-y-3 px-4 pt-2.5 pb-4">{children}</div>
-			) : (
-				children
-			)}
+				>
+					<Heading
+						className={cn(
+							"flex items-center gap-2",
+							isCard
+								? "font-mono font-normal text-muted-foreground text-xs uppercase tracking-widest"
+								: level === 3
+									? "font-medium text-sm"
+									: "font-medium text-base",
+						)}
+					>
+						{Icon && (
+							<Icon
+								aria-hidden="true"
+								className="size-4 shrink-0 text-muted-foreground"
+							/>
+						)}
+						{title}
+					</Heading>
+					{action}
+				</div>
+				{isCard && !flush ? (
+					<div className="space-y-3 p-5 pt-4">{children}</div>
+				) : (
+					children
+				)}
+			</Container>
 		</section>
 	);
 }

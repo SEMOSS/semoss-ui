@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { type ReactNode, useRef } from "react";
 import {
 	Button,
@@ -15,6 +16,7 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { getWorkbenchMenuLabel } from "../../constants/workbench-menu.constants";
 import { useWorkbench } from "../../hooks/use-workbench";
 import { useWorkbenchCommands } from "../../hooks/use-workbench-commands";
@@ -28,6 +30,10 @@ interface WorkbenchMenusProps {
 	viewItems?: ReactNode;
 	/** Hosts can replace the navigation submenu with their own destinations. */
 	showNavigation?: boolean;
+	/** Hide the layout submenu and side-area toggles without changing dock behavior. */
+	showLayoutActions?: boolean;
+	/** Hosts can expose the command palette from a separate control. */
+	showCommandPalette?: boolean;
 	/** Optional host translation; the default is English. */
 	translate?: WorkbenchMenuTranslate;
 	/** Dismiss a containing mobile drawer after choosing a panel. */
@@ -43,6 +49,8 @@ export function WorkbenchMenus({
 	maximize,
 	viewItems,
 	showNavigation = true,
+	showLayoutActions = true,
+	showCommandPalette = true,
 	textSize = "sm",
 }: WorkbenchMenusProps) {
 	const actions = useWorkbench((s) => s.layout.actions);
@@ -75,6 +83,9 @@ export function WorkbenchMenus({
 	const occupiedSides = WORKBENCH_SIDES.filter(
 		(side) => borders[side].panelIds.length > 0,
 	);
+	const hasPrimaryActions = showCommandPalette || Boolean(maximize);
+	const hasNavigationSection =
+		(!isMobile && showLayoutActions) || showNavigation;
 	const menuTextClass =
 		textSize === "xs"
 			? "[&_[data-slot=dropdown-menu-label]]:text-xs [&_[role^=menuitem]]:text-xs"
@@ -146,6 +157,10 @@ export function WorkbenchMenus({
 					className={triggerClass}
 				>
 					{t("view")}
+					<ChevronDown
+						aria-hidden="true"
+						className={WORKBENCH_STYLES.chromeIcon}
+					/>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
@@ -168,23 +183,29 @@ export function WorkbenchMenus({
 				{viewItems && (
 					<>
 						{viewItems}
-						<DropdownMenuSeparator />
+						{(hasPrimaryActions || hasNavigationSection) && (
+							<DropdownMenuSeparator />
+						)}
 					</>
 				)}
-				<DropdownMenuItem
-					onSelect={() => {
-						afterMenuClose.current = () => setCommandOpen(true);
-					}}
-				>
-					{t("commandPalette")}
-				</DropdownMenuItem>
+				{showCommandPalette && (
+					<DropdownMenuItem
+						onSelect={() => {
+							afterMenuClose.current = () => setCommandOpen(true);
+						}}
+					>
+						{t("commandPalette")}
+					</DropdownMenuItem>
+				)}
 				{maximize && (
 					<DropdownMenuItem onSelect={maximize.onToggle}>
 						{t(maximize.isMaximized ? "restore" : "maximize")}
 					</DropdownMenuItem>
 				)}
-				{(!isMobile || showNavigation) && <DropdownMenuSeparator />}
-				{!isMobile && (
+				{hasPrimaryActions && hasNavigationSection && (
+					<DropdownMenuSeparator />
+				)}
+				{!isMobile && showLayoutActions && (
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger>
 							{t("layout")}
@@ -288,7 +309,7 @@ export function WorkbenchMenus({
 						</DropdownMenuSubContent>
 					</DropdownMenuSub>
 				)}
-				{!isMobile && (
+				{!isMobile && showLayoutActions && (
 					<>
 						{occupiedSides.length > 0 && <DropdownMenuSeparator />}
 						{occupiedSides.map((side) => (

@@ -40,6 +40,9 @@ beforeEach(() => vi.clearAllMocks());
 it("saves model, temperature and unchanged instructions together", async () => {
 	const onSave = vi.fn().mockResolvedValue(undefined);
 	render(<RoomSettingsDialog {...props} onSave={onSave} />);
+	expect(
+		screen.queryByRole("button", { name: "Agent settings" }),
+	).not.toBeInTheDocument();
 	fireEvent.click(screen.getByRole("button", { name: "Model model-1" }));
 	fireEvent.change(screen.getByRole("spinbutton", { name: "Temperature" }), {
 		target: { value: "0.35" },
