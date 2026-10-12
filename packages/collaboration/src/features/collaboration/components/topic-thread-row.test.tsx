@@ -96,7 +96,7 @@ it("opens the conversation and keeps source details in the thread menu", async (
 			name: "Thread actions for Launch review",
 		}),
 	);
-	await user.click(screen.getByRole("button", { name: "View in Brain" }));
+	await user.click(screen.getByRole("button", { name: "Filing details" }));
 	expect(router.state.location.pathname).toBe(`/brain/threads/${threadId}`);
 });
 

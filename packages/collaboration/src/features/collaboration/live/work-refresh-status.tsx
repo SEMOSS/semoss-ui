@@ -26,7 +26,7 @@ const OUTCOMES: { key: SyncOutcome; summary: string; label: string }[] = [
 		summary: "automated",
 		label: "Automated, kept out of Work",
 	},
-	{ key: "quiet", summary: "no action needed", label: "In Brain, no action" },
+	{ key: "quiet", summary: "no action needed", label: "Filed, no action" },
 ];
 
 // outcomes that have a Work item, so the thread opens in Work with its chat; the rest only exist in Brain

@@ -857,8 +857,8 @@ export function TopicDetail() {
 								)}
 								<P className="text-muted-foreground text-sm leading-relaxed">
 									{topic.keywords.length
-										? "Brain uses these keywords to file threads under this topic."
-										: "Brain won't file threads here on its own until this topic has keywords."}
+										? "The assistant uses these keywords to file threads under this topic."
+										: "The assistant won't file threads here on its own until this topic has keywords."}
 								</P>
 								{topic.calendarSeries.length > 0 && (
 									<div className="space-y-1 border-t pt-3">

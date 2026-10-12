@@ -2,6 +2,8 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
 import { BrainPage } from "./brain.page";
 
 vi.mock("@/features/collaboration/components/brain-memory", () => ({
@@ -28,7 +30,7 @@ vi.mock("@/features/collaboration/components/threads-directory", () => ({
 
 afterEach(cleanup);
 
-/** Exercises route selection and Brain navigation while isolating domain reads. */
+/** Exercises route selection and the shared Settings tabs while isolating domain reads. */
 function renderBrain(path: string) {
 	const router = createMemoryRouter(
 		[
@@ -42,35 +44,47 @@ function renderBrain(path: string) {
 		].map((route) => ({ path: route, Component: BrainPage })),
 		{ initialEntries: [path] },
 	);
-	render(<RouterProvider router={router} />);
+	render(
+		<CollaborationSessionProvider
+			initialState={createInitialCollaborationState()}
+		>
+			<RouterProvider router={router} />
+		</CollaborationSessionProvider>,
+	);
 	return router;
 }
 
 it.each([
-	["/brain", "Review content", "Review"],
+	["/brain", "Review content", "Topics and filing"],
 	["/brain/memory", "Memory content", "Memory"],
 	["/brain/people", "People content", "People"],
 	["/brain/people/person-one", "Person detail", "People"],
-	["/brain/threads", "Threads content", "Threads"],
-	["/brain/threads/thread-one", "Thread detail", "Threads"],
+	["/brain/threads", "Threads content", "Conversations"],
+	["/brain/threads/thread-one", "Thread detail", "Conversations"],
 	["/brain/sources", "Sources content", "Sources"],
 ] as const)(
-	"keeps every Brain destination available at %s",
+	"keeps every setup destination available at %s",
 	(path, heading, active) => {
 		renderBrain(path);
 		expect(screen.getByRole("heading", { name: heading })).toBeVisible();
 		const navigation = within(
-			screen.getByRole("navigation", { name: "Brain" }),
+			screen.getByRole("navigation", { name: "Settings" }),
 		);
-		expect(navigation.getAllByRole("link")).toHaveLength(5);
+		expect(navigation.getAllByRole("link")).toHaveLength(9);
 		for (const label of [
-			"Review",
-			"Memory",
+			"About you",
+			"Topics and filing",
+			"Conversations",
 			"People",
-			"Threads",
+			"Memory",
 			"Sources",
+			"Rules",
+			"Appearance",
+			"Data",
 		]) {
-			const link = navigation.getByRole("link", { name: label });
+			const link = navigation.getByRole("link", {
+				name: new RegExp(`^${label}\\b`),
+			});
 			if (label === active)
 				expect(link).toHaveAttribute("aria-current", "page");
 			else expect(link).not.toHaveAttribute("aria-current");
@@ -78,7 +92,7 @@ it.each([
 	},
 );
 
-it("opens a Brain directory by keyboard from a nested detail route", async () => {
+it("opens a setup tab by keyboard from a nested detail route", async () => {
 	const user = userEvent.setup();
 	const router = renderBrain("/brain/threads/thread-one");
 	screen.getByRole("link", { name: "People" }).focus();

@@ -26,7 +26,7 @@ export function SourcesAndRules() {
 						and drafting are separate actions.
 					</P>
 					<P className="text-muted-foreground">
-						Brain edits and loaded source content stay in this
+						Filing edits and loaded source content stay in this
 						session. Assistant conversations and Outlook drafts have
 						their own storage.
 					</P>

@@ -309,7 +309,7 @@ export function SourcesView({ onImport, onDraftReply }: SourcesViewProps) {
 				Imported sources stay in this session. Asking the assistant
 				about them stores the selected context in the backend
 				conversation. Source permissions and saved conversations are
-				separate from local Brain edits.
+				separate from local filing edits.
 			</P>
 			<EmailDraftDialog
 				isOpen={isNewDraftOpen}

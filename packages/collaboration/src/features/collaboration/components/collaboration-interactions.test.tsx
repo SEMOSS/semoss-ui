@@ -233,7 +233,7 @@ describe("collaboration Work and Brain integration", () => {
 			within(kept).queryByText("Not used until you keep it"),
 		).not.toBeInTheDocument();
 		expect(
-			within(kept).getByText(/Suggested by Brain/),
+			within(kept).getByText(/Suggested by the assistant/),
 		).toBeInTheDocument();
 	});
 

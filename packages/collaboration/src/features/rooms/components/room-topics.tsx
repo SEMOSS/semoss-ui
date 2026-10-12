@@ -124,9 +124,9 @@ export function RoomTopics({
 							</TooltipTrigger>
 							<TooltipContent>
 								{suggested
-									? `Brain thinks this chat is about ${topic.name}`
+									? `The assistant thinks this chat is about ${topic.name}`
 									: byBrain
-										? `Brain tagged this chat ${topic.name}; remove it if that is wrong`
+										? `The assistant tagged this chat ${topic.name}; remove it if that is wrong`
 										: `This chat is about ${topic.name}`}
 							</TooltipContent>
 						</Tooltip>

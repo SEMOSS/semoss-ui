@@ -364,7 +364,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 										variant="ghost"
 										size="sm"
 										className="font-normal"
-										title="No more Work from this thread; it stays in Brain"
+										title="No more tasks from this thread; it stays filed"
 										onClick={() =>
 											ignoreThread(dispatch, thread)
 										}
