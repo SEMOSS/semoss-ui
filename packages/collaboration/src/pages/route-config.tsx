@@ -30,6 +30,15 @@ export const routes: RouteObject[] = [
 									).DashboardPage,
 								}),
 							},
+							{
+								path: "routines",
+								id: "routines",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/routines.page")
+									).RoutinesPage,
+								}),
+							},
 							...[
 								"work",
 								"work/all",
