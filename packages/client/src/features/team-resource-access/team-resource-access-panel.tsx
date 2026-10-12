@@ -34,6 +34,9 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
@@ -246,12 +249,12 @@ export const TeamResourceAccessPanel = ({
 					{!readOnly && selectedRows.length > 0 ? (
 						<Button
 							variant="outline"
-							className="text-destructive"
+							className="text-destructive hover:bg-destructive/10 hover:text-destructive"
 							disabled={isChanging}
 							onClick={() => setRemoveTargets(selectedRows)}
 						>
 							<Trash2 className="size-4" aria-hidden />
-							Remove {selectedRows.length}
+							Remove Access ({selectedRows.length})
 						</Button>
 					) : null}
 				</div>
@@ -435,24 +438,35 @@ export const TeamResourceAccessPanel = ({
 												</TableCell>
 												{readOnly ? null : (
 													<TableCell className="w-12 pr-4 text-right">
-														<Button
-															variant="ghost"
-															size="icon-sm"
-															disabled={
-																isChanging
-															}
-															aria-label={`Remove access to ${resource.name}`}
-															onClick={() =>
-																setRemoveTargets(
-																	[resource],
-																)
-															}
-														>
-															<Trash2
-																className="size-4"
-																aria-hidden
-															/>
-														</Button>
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<Button
+																	variant="ghost"
+																	size="icon-sm"
+																	disabled={
+																		isChanging
+																	}
+																	aria-label={`Remove access to ${resource.name}`}
+																	onClick={() =>
+																		setRemoveTargets(
+																			[
+																				resource,
+																			],
+																		)
+																	}
+																>
+																	<Trash2
+																		className="size-4"
+																		aria-hidden
+																	/>
+																</Button>
+															</TooltipTrigger>
+															<TooltipContent>
+																Remove Access
+															</TooltipContent>
+														</Tooltip>
 													</TableCell>
 												)}
 											</TableRow>

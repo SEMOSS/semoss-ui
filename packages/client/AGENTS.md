@@ -105,11 +105,12 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   its members and its access join the changes (the members as a second batch on the team), so
   they are saved, or left out, with the rest. `permission-batch-review-dialog.tsx` is shared
   with the team view.
-- **Nothing is lost by accident.** Both views ask before Discard Changes drops the staged
-  changes, and `use-unsaved-changes-guard.ts` warns before leaving the page with changes that
-  are not saved (the browser's warning on closing or reloading, and `discard-changes-dialog.tsx`
-  for a move within the app). After a save, the lists are cleared until the access is read
-  again, so the access from before the save is never shown.
+- **Nothing is lost by accident.** Load Latest Access reads the access again and keeps the
+  staged changes. Both views ask before Discard Changes drops them, and
+  `use-unsaved-changes-guard.ts` warns before leaving the page with changes that are not saved
+  (the browser's warning on closing or reloading, and `discard-changes-dialog.tsx` for a move
+  within the app). After a save, the lists are cleared until the access is read again, so the
+  access from before the save is never shown.
 - **Admin mode.** Outside admin mode an admin has only their own permissions, since an admin can
   also act as an ordinary user. The Access Control tab, My Teams and their Bulk Access
   Management views call `/auth/permissionBatch` with the user's permissions. Admin mode calls
@@ -123,31 +124,43 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   button beside the title). Both views list the people on the left and put
   `add-people-card.tsx` on the right: the app's people, listed from the start and paged as they
   scroll, the directory search, and the Bring In Access menu (`bring-in-access-menu.tsx`), which
-  holds the copy flows, Add Team and Make a Team. The list's column stretches to the card's
-  height, so the two end together, and the card stays in view while a longer list scrolls. In
-  the project and engine view's table (`permission-batch-list.tsx`), each row's change (Added,
-  Changed, Removed) sits beside its remove or undo button in one narrow last column.
+  holds the copy flows and, in the project and engine view, Add Team and (in admin mode) Make a
+  Team From These People. The list's column stretches to the card's height, so the two end
+  together, and the card stays in view while a longer list scrolls. In the project and engine
+  view's table (`permission-batch-list.tsx`), each row's change (Added, Changed, Removed) sits
+  beside its remove or undo button in one narrow last column.
 - **`features/team-access-management/`** is Bulk Access Management for a custom team's members
   and managers, at `settings/managed-teams/:id/bulk-access-management` and
   `settings/team-permissions/:type/:id/bulk-access-management`, for its managers and admins. A
   Members and a Managers tab each show their list (`team-role-list.tsx`, worded by
-  `team-role-copy.ts`) beside the Add People card; managers are copied only from another team.
+  `team-role-copy.ts`) beside the Add People card; Copy People From a Team (`copy-team-people-dialog.tsx`) lists every team the user can copy from, this one included, and then shows the chosen team's members and managers as cards (`copy-source-option.tsx`, read by `use-team-people-to-copy.ts`) with how many people each holds and how many are new; a card is disabled when its list is empty, everyone in it is already there, it cannot be read, or it is the list being changed. So managers added by mistake can be copied into the members in one step, then removed from the managers.
   `team-changes.ts` turns the edits into a batch for each list that changes (`TEAM` and
   `TEAM_MANAGERS` targets), saved together after one review, and keys people by login type and
   id (`getTeamPersonKey`), since a team keeps each person's login. Outside admin mode, a manager
   who stages removing themselves is warned that they lose the team once the changes are
   applied.
-- **Login type.** People lists show the logo of each person's login beside their name
-  (`access-identity.tsx`, with the login's name in its title), since two people can share an id
-  on different logins.
+- **People.** Every list of people in the client shows each person with the shared
+  `PersonIdentity` (see [libs/shared/AGENTS.md](../../libs/shared/AGENTS.md)): their avatar with
+  their login's logo on a round badge, starred for the signed in login, their name, and their id
+  and email. `access-identity.tsx` hands people to it and draws a team with its type's icon in a
+  circle of the same size, so people and teams line up. The Members settings list, Effective
+  Permissions, the directory search, Add User and the service accounts table use it too; tables
+  that need it also keep a Login Type column.
 - **`features/effective-permissions/`** is the Effective Permissions view of a project or an
   engine, at `<app or engine path>/:id/access-control/effective-permissions`, opened from the
   button beside Member Permissions: one row per person with the most access they have and every
-  source of it, direct or through a custom team (`getEffectivePermissions`). Members of teams that
-  mirror a login provider's groups are not in the database, so those teams are named apart.
+  source of it, direct or through a custom team (`getEffectivePermissions`), filtered by where
+  the access comes from (Everyone, Direct Only, Teams Only, Both). Its Refresh reads the access
+  again. Members of teams that mirror a login provider's groups are not in the database, so each
+  such team shows as one row of its own.
 - **`features/team-people/`** is the read only side panel the Teams table opens on a custom team:
   its managers and members, read through the resource with `getTeamUsers` and
   `getGroupManagers` given the project or engine, for the resource's owners and editors.
+  `TeamPeopleManagers` and `TeamPeopleMembers` are also shown in Give a Team Access
+  (`features/group-access/`): before authorizing, See Managers and Members shows a custom team's
+  managers and members in place of the team list, and the All Teams breadcrumb goes back to the
+  list with its search and scroll kept. A resource's owners may read them even before the team
+  has access to it (its editors only once it does). In admin mode they are read as an admin.
 
 ## State Management
 

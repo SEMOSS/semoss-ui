@@ -192,7 +192,14 @@ export interface EffectivePermissions {
 	/** One row per person */
 	people: EffectivePermissionRow[];
 	/** Teams whose members come from a login provider, so they are not listed */
-	unlistedTeams: { id: string; type: string; level: AccessLevel }[];
+	unlistedTeams: {
+		/** The team's name */
+		id: string;
+		/** The team's type, such as MICROSOFT */
+		type: string;
+		/** The access the team gives */
+		level: AccessLevel;
+	}[];
 }
 
 /**
@@ -200,7 +207,7 @@ export interface EffectivePermissions {
  * anything; outside it an admin has only their own permissions
  * @returns the base URL of the permission batch calls
  */
-const PERMISSION_BATCH_URL = (admin: boolean) =>
+const permissionBatchUrl = (admin: boolean): string =>
 	`${Env.MODULE}/api/auth/${admin ? "admin/" : ""}permissionBatch`;
 
 const LEVELS: readonly string[] = ["OWNER", "EDIT", "READ_ONLY"];
@@ -298,7 +305,7 @@ export const getResourcePermissions = async (
 ): Promise<ResourcePermissions> => {
 	const params = new URLSearchParams({ kind: target.kind, id: target.id });
 	const response = await get<unknown>(
-		`${PERMISSION_BATCH_URL(admin)}/getPermissions?${params.toString()}`,
+		`${permissionBatchUrl(admin)}/getPermissions?${params.toString()}`,
 	);
 	const data: unknown = response?.data;
 	if (!isObject(data) || !isObject(data.allowedPermissionChanges)) {
@@ -362,7 +369,7 @@ export const getTeamPeople = async (
 		id: groupId,
 	});
 	const response = await get<unknown>(
-		`${PERMISSION_BATCH_URL(admin)}/getPermissions?${params.toString()}`,
+		`${permissionBatchUrl(admin)}/getPermissions?${params.toString()}`,
 	);
 	const data: unknown = response?.data;
 	if (!isObject(data) || !isObject(data.allowedPermissionChanges)) {
@@ -380,51 +387,65 @@ export const getTeamPeople = async (
 };
 
 /**
+ * Reads what validating one batch found, or throws when it is not well formed:
+ * the results are matched to the batches and changes by position and index, so
+ * none can be left out.
+ * @param row - The result the backend sent
+ * @returns The batch's target, why it is blocked, and each change's result
+ */
+const readBatchValidation = (row: unknown): PermissionBatchValidation => {
+	const what = "validate the permission batch";
+	const target = isObject(row) && isObject(row.target) ? row.target : null;
+	const kind = target ? readTargetKind(target.kind) : null;
+	const id = target ? readText(target.id) : null;
+	if (!isObject(row) || !target || !kind || !id) {
+		throw Error(`Unexpected Response to ${what}: a batch has no target`);
+	}
+	const projectId = readText(target.projectId);
+	return {
+		target: { kind, id, ...(projectId ? { projectId } : {}) },
+		reason: readText(row.reason),
+		changes: readList(row.changes, what).map((change) => {
+			const index = isObject(change) ? readNumber(change.index) : null;
+			if (!isObject(change) || index === null) {
+				throw Error(
+					`Unexpected Response to ${what}: a change has no index`,
+				);
+			}
+			return {
+				index,
+				allowed: change.allowed === true,
+				reason: readText(change.reason),
+			};
+		}),
+	};
+};
+
+/**
  * Validate permission batches without saving them. Each change is checked
  * against the same rules as the single permission calls, and against the
  * current access, so a change someone already made or undid is reported.
  * @param batches - The batches; a target can be in only one
  * @param admin - Whether to use admin mode; outside it an admin has only their own permissions
- * @returns What validating each batch found, in order
+ * @returns What validating each batch found, one result per batch in the order sent
+ * @throws When the response does not have one well formed result per batch
  */
 export const validatePermissionBatches = async (
 	batches: PermissionBatch[],
 	admin = false,
 ): Promise<PermissionBatchValidation[]> => {
 	const response = await post<unknown>(
-		`${PERMISSION_BATCH_URL(admin)}/validatePermissionBatches`,
+		`${permissionBatchUrl(admin)}/validatePermissionBatches`,
 		{ batches },
 		{},
 	);
-	return readList(response?.data, "validate the permission batch").flatMap(
-		(row) => {
-			if (!isObject(row) || !isObject(row.target)) {
-				return [];
-			}
-			const kind = readTargetKind(row.target.kind);
-			const id = readText(row.target.id);
-			if (!kind || !id) {
-				return [];
-			}
-			const projectId = readText(row.target.projectId);
-			return [
-				{
-					target: { kind, id, ...(projectId ? { projectId } : {}) },
-					reason: readText(row.reason),
-					changes: readList(
-						row.changes,
-						"validate the permission batch",
-					)
-						.filter(isObject)
-						.map((change) => ({
-							index: readNumber(change.index) ?? -1,
-							allowed: change.allowed === true,
-							reason: readText(change.reason),
-						})),
-				},
-			];
-		},
-	);
+	const rows = readList(response?.data, "validate the permission batch");
+	if (rows.length !== batches.length) {
+		throw Error(
+			"Unexpected Response to validate the permission batch: not one result per batch",
+		);
+	}
+	return rows.map(readBatchValidation);
 };
 
 /**
@@ -441,7 +462,7 @@ export const savePermissionBatches = async (
 	admin = false,
 ): Promise<PermissionBatchSaveResult> => {
 	const response = await post<unknown>(
-		`${PERMISSION_BATCH_URL(admin)}/savePermissionBatches`,
+		`${permissionBatchUrl(admin)}/savePermissionBatches`,
 		{ batches },
 		{},
 	);
@@ -478,7 +499,7 @@ export const getPermissionsToCopy = async (
 		targetId: target.id,
 	});
 	const response = await get<unknown>(
-		`${PERMISSION_BATCH_URL(admin)}/getPermissionsToCopy?${params.toString()}`,
+		`${permissionBatchUrl(admin)}/getPermissionsToCopy?${params.toString()}`,
 	);
 	return readList(response?.data, "read the permissions to copy").flatMap(
 		(row) => {
@@ -540,7 +561,7 @@ export const getEffectivePermissions = async (
 ): Promise<EffectivePermissions> => {
 	const params = new URLSearchParams({ kind: target.kind, id: target.id });
 	const response = await get<unknown>(
-		`${PERMISSION_BATCH_URL(admin)}/getEffectivePermissions?${params.toString()}`,
+		`${permissionBatchUrl(admin)}/getEffectivePermissions?${params.toString()}`,
 	);
 	const data: unknown = response?.data;
 	if (!isObject(data)) {

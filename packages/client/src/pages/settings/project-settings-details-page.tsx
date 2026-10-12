@@ -71,7 +71,7 @@ const AppSettingsUserDetailPage = () => {
 					onValueChange={(val) => setView(val as VIEW)}
 				>
 					<TabsList className="w-fit max-w-full flex-wrap">
-						<TabsTrigger value={"CURRENT"}>Member</TabsTrigger>
+						<TabsTrigger value={"CURRENT"}>Members</TabsTrigger>
 						<TabsTrigger
 							disabled={permission === "READ_ONLY"}
 							value={"PENDING"}
@@ -133,7 +133,7 @@ const AppSettingsAdminDetailPage = () => {
 						onValueChange={(val) => setView(val as VIEW)}
 					>
 						<TabsList className="w-fit max-w-full flex-wrap">
-							<TabsTrigger value={"CURRENT"}>Member</TabsTrigger>
+							<TabsTrigger value={"CURRENT"}>Members</TabsTrigger>
 							<TabsTrigger value={"PENDING"}>
 								Pending Requests
 							</TabsTrigger>

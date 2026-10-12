@@ -21,7 +21,8 @@ import {
 import type { Project } from "../../types";
 import { AppCatalogAvatar } from "../app-catalog-avatar";
 
-interface ProjectSelectProps {
+/** Props for {@link ProjectSelect}. */
+export interface ProjectSelectProps {
 	/** Connect the trigger to its visible field label. */
 	id?: string;
 	/** Field description announced when the trigger receives focus. */

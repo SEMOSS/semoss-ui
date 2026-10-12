@@ -1,6 +1,7 @@
 import { Copy, Download, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
+import { PersonIdentity } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -434,9 +435,6 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 										);
 									const displayName =
 										account.name || account.id || "Unknown";
-									const avatarLabel = displayName
-										.charAt(0)
-										.toUpperCase();
 
 									return (
 										<TableRow
@@ -507,26 +505,15 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 															"No email",
 													}}
 												>
-													<div className="flex items-center gap-3">
-														<Avatar className="size-8">
-															<AvatarFallback>
-																{avatarLabel}
-															</AvatarFallback>
-														</Avatar>
-														<div className="flex flex-col">
-															<span className="max-w-[220px] truncate font-medium">
-																{displayName}
-															</span>
-															<span className="text-muted-foreground text-xs">
-																id: {account.id}
-															</span>
-															<span className="text-muted-foreground text-xs">
-																email:{" "}
-																{account.email ||
-																	"No email"}
-															</span>
-														</div>
-													</div>
+													<PersonIdentity
+														name={displayName}
+														type={
+															account.type ?? ""
+														}
+														id={account.id}
+														email={account.email}
+														className="max-w-xs"
+													/>
 												</UserPopover>
 											</TableCell>
 											<TableCell>

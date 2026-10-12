@@ -15,6 +15,9 @@ import {
 	type GroupManager,
 	getAvailableGroupsForResource,
 	getGroupManagers,
+	getTeamUsers,
+	getTeamUsersCount,
+	type TeamMember,
 } from "@/api/teams";
 import { AddGroupAccessDialog } from "./add-group-access-dialog";
 
@@ -22,6 +25,10 @@ vi.mock("@/api/teams", () => ({
 	addGroupResourceAccess: vi.fn(),
 	getAvailableGroupsForResource: vi.fn(),
 	getGroupManagers: vi.fn(),
+	getTeamUsers: vi.fn(),
+	getTeamUsersCount: vi.fn(),
+	// the members are read as they come back, so the test returns them shaped
+	toTeamMembers: (data: unknown) => data,
 }));
 
 /** The part of the config store the team type names read */
@@ -72,6 +79,14 @@ const ADA: GroupManager = {
 	type: "NATIVE",
 	name: "Ada Lovelace",
 };
+const GRACE: TeamMember = {
+	userId: "grace",
+	type: "NATIVE",
+	name: "Grace Hopper",
+	email: null,
+	username: null,
+	dateAdded: null,
+};
 
 /** A promise the test settles by hand */
 function defer<T>() {
@@ -114,6 +129,8 @@ describe("AddGroupAccessDialog", () => {
 			.mockReset()
 			.mockResolvedValue([SALES, ENGINEERING]);
 		vi.mocked(getGroupManagers).mockReset();
+		vi.mocked(getTeamUsers).mockReset();
+		vi.mocked(getTeamUsersCount).mockReset();
 		vi.mocked(addGroupResourceAccess).mockReset();
 		Element.prototype.scrollIntoView = vi.fn();
 		vi.stubGlobal(
@@ -183,6 +200,39 @@ describe("AddGroupAccessDialog", () => {
 			expect(getAuthorize()).toBeEnabled();
 		},
 	);
+
+	it("shows a custom team's managers and members before it is authorized", async () => {
+		vi.mocked(getGroupManagers).mockResolvedValue([ADA]);
+		vi.mocked(getTeamUsers).mockResolvedValue([GRACE]);
+		vi.mocked(getTeamUsersCount).mockResolvedValue(1);
+		renderDialog();
+
+		fireEvent.click(await findTeam("Sales"));
+		fireEvent.click(
+			await screen.findByRole("button", {
+				name: "See Managers and Members",
+			}),
+		);
+
+		expect(await screen.findByText("Grace Hopper")).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Managers" }),
+		).toBeInTheDocument();
+		expect(getTeamUsers).toHaveBeenCalledWith("Sales", 25, 0, "", false, {
+			resource: "PROJECT",
+			resourceId: "project-1",
+		});
+		expect(getAuthorize()).toBeEnabled();
+
+		fireEvent.click(screen.getByRole("button", { name: "All Teams" }));
+
+		expect(
+			screen.queryByRole("heading", { name: "Members" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "See Managers and Members" }),
+		).toBeInTheDocument();
+	});
 
 	it("offers Try Again when the managers cannot be read, and stays unauthorized", async () => {
 		vi.mocked(getGroupManagers)

@@ -1,11 +1,23 @@
-import { Check, Search, ShieldAlert, TriangleAlert } from "lucide-react";
-import { type ChangeEvent, useId, useState } from "react";
+import {
+	Check,
+	Search,
+	ShieldAlert,
+	TriangleAlert,
+	UsersRound,
+} from "lucide-react";
+import { type ChangeEvent, useEffect, useId, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { useIteratorApi } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
 	AlertTitle,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
 	cn,
 	Dialog,
@@ -40,6 +52,8 @@ import {
 	toTeamSummaries,
 } from "@/api/teams";
 import { useGroupManagers } from "@/features/group-managers/use-group-managers";
+import { TeamPeopleManagers } from "@/features/team-people/team-people-managers";
+import { TeamPeopleMembers } from "@/features/team-people/team-people-members";
 import { TEAM_RESOURCE_NOUNS } from "@/features/team-resource-access/team-resource-nouns";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 import { TeamTypeBadge } from "@/features/team-type/team-type-badge";
@@ -52,6 +66,9 @@ const PAGE_SIZE = 20;
 /** Centered status line inside the results pane */
 const STATUS_CLASS =
 	"flex items-center justify-center gap-2 px-3 py-6 text-center text-muted-foreground text-sm";
+
+/** A section heading in the team's people */
+const SECTION_TITLE_CLASS = "font-medium text-sm";
 
 /** The row style the shared add-members dialog uses, so the pickers match */
 const TEAM_ROW_CLASS =
@@ -91,8 +108,9 @@ export interface AddGroupAccessDialogProps {
  * Lets the owner of a project or engine give a team access to it. Before they
  * confirm, it says who decides the team's members, so the owner knows whom they
  * are trusting with the access; a custom team cannot be authorized until its
- * managers are known. Give it a new key each time it opens so it starts from an
- * empty search.
+ * managers are known. The owner can also open a custom team's managers and
+ * members, to see exactly who gets the access. Give it a new key each time it
+ * opens so it starts from an empty search.
  */
 export const AddGroupAccessDialog = ({
 	open,
@@ -107,6 +125,8 @@ export const AddGroupAccessDialog = ({
 	const [searchTerm, setSearchTerm] = useState("");
 	const debouncedSearch = useDebouncedValue(searchTerm.trim(), 300);
 	const [selected, setSelected] = useState<AvailableGroup | null>(null);
+	// the chosen custom team's managers and members replace the team list
+	const [isShowingPeople, setIsShowingPeople] = useState(false);
 	const [level, setLevel] = useState<Role>("READ_ONLY");
 	const [listError, setListError] = useState<string | null>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
@@ -151,6 +171,34 @@ export const AddGroupAccessDialog = ({
 	const shownGroups = groups.data.filter(
 		(group) => !excludedTeams?.has(`${group.type}:${group.id}`),
 	);
+	const shownCount = shownGroups.length;
+	const loadedCount = groups.data.length;
+	const {
+		isLoading: isLoadingGroups,
+		hasMore,
+		next: loadMoreGroups,
+	} = groups;
+
+	useEffect(() => {
+		// a page whose teams all have access shows nothing to scroll, so the
+		// next page is read rather than saying every team has access
+		if (
+			open &&
+			!isLoadingGroups &&
+			hasMore &&
+			loadedCount > 0 &&
+			shownCount === 0
+		) {
+			loadMoreGroups();
+		}
+	}, [
+		open,
+		isLoadingGroups,
+		hasMore,
+		loadedCount,
+		shownCount,
+		loadMoreGroups,
+	]);
 
 	const { setScroll } = useInfiniteScroll({
 		disabled: groups.isLoading || !groups.hasMore,
@@ -181,6 +229,7 @@ export const AddGroupAccessDialog = ({
 	const handleClose = (added?: boolean) => {
 		setSearchTerm("");
 		setSelected(null);
+		setIsShowingPeople(false);
 		setLevel("READ_ONLY");
 		setSubmitError(null);
 		onClose(added);
@@ -234,7 +283,66 @@ export const AddGroupAccessDialog = ({
 					</DialogDescription>
 				</DialogHeader>
 
-				<InputGroup>
+				{isShowingPeople && selected ? (
+					// the dialog's own gap, so the breadcrumb sits evenly between
+					// the description above and the people below
+					<div className="flex flex-col gap-4">
+						{/* as tall as the search it replaces, so the dialog keeps its height */}
+						<Breadcrumb className="flex min-h-9 flex-col justify-center">
+							<BreadcrumbList className="gap-2 sm:gap-2">
+								<BreadcrumbItem>
+									<BreadcrumbLink asChild>
+										<button
+											type="button"
+											className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+											onClick={() =>
+												setIsShowingPeople(false)
+											}
+										>
+											All Teams
+										</button>
+									</BreadcrumbLink>
+								</BreadcrumbItem>
+								<BreadcrumbSeparator />
+								<BreadcrumbItem className="min-w-0 gap-2">
+									<BreadcrumbPage className="wrap-break-word min-w-0 font-medium">
+										{selected.id}
+									</BreadcrumbPage>
+									<TeamTypeBadge type={selected.type} />
+								</BreadcrumbItem>
+							</BreadcrumbList>
+						</Breadcrumb>
+						<ScrollArea className="h-72 shrink-0 rounded-md border bg-background">
+							<div className="flex flex-col gap-4 p-3">
+								<section className="flex flex-col gap-2">
+									<h3 className={SECTION_TITLE_CLASS}>
+										Managers
+									</h3>
+									<TeamPeopleManagers
+										managers={managers}
+										isLoading={isLoadingManagers}
+										error={managersError}
+									/>
+								</section>
+								<section className="flex flex-col gap-2">
+									<h3 className={SECTION_TITLE_CLASS}>
+										Members
+									</h3>
+									<TeamPeopleMembers
+										key={selected.id}
+										groupId={selected.id}
+										target={{ resource, resourceId }}
+										admin={admin}
+									/>
+								</section>
+							</div>
+						</ScrollArea>
+					</div>
+				) : null}
+
+				{/* the team list stays mounted while the people show, so going
+				back keeps its search, its loaded pages and where it was scrolled */}
+				<InputGroup className={cn(isShowingPeople && "hidden")}>
 					<InputGroupAddon>
 						<Search className="size-4" aria-hidden />
 					</InputGroupAddon>
@@ -248,7 +356,7 @@ export const AddGroupAccessDialog = ({
 					/>
 				</InputGroup>
 
-				{listError ? (
+				{listError && !isShowingPeople ? (
 					<Alert variant="destructive">
 						<AlertDescription>{listError}</AlertDescription>
 					</Alert>
@@ -256,7 +364,10 @@ export const AddGroupAccessDialog = ({
 
 				<ScrollArea
 					viewportRef={setScroll}
-					className="h-72 shrink-0 rounded-md border bg-background"
+					className={cn(
+						"h-72 shrink-0 rounded-md border bg-background",
+						isShowingPeople && "hidden",
+					)}
 				>
 					<div
 						className="flex flex-col gap-1.5 p-2"
@@ -456,6 +567,24 @@ export const AddGroupAccessDialog = ({
 										of this app.
 									</p>
 								)}
+								{isCustomTeam &&
+								!isLoadingManagers &&
+								managersError === null &&
+								!isShowingPeople ? (
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										className="self-start"
+										onClick={() => setIsShowingPeople(true)}
+									>
+										<UsersRound
+											className="size-4"
+											aria-hidden
+										/>
+										See Managers and Members
+									</Button>
+								) : null}
 								{level === "OWNER" ? (
 									<p className="flex items-start gap-2 font-semibold">
 										<TriangleAlert

@@ -105,6 +105,8 @@ export const ProjectAccessControl = ({
 						</p>
 					) : view === "BULK_ACCESS_MANAGEMENT" ? (
 						<BulkAccessManagement
+							// a new target starts from its own access, never the last one's staged changes
+							key={`${target.kind}:${target.id}`}
 							target={target}
 							name={name}
 							noun="app"
@@ -115,6 +117,8 @@ export const ProjectAccessControl = ({
 						/>
 					) : view === "EFFECTIVE" ? (
 						<EffectivePermissions
+							// a new target reads its own access afresh
+							key={`${target.kind}:${target.id}`}
 							target={target}
 							name={name}
 							backTo=".."

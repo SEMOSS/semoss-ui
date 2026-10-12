@@ -1,16 +1,15 @@
-import { Info, RefreshCw, Search, Star } from "lucide-react";
+import { Info, RefreshCw, Search } from "lucide-react";
 import { useState } from "react";
 import type {
 	EffectivePermissionRow,
 	EffectivePermissions as EffectivePermissionsData,
 	PermissionTargetResource,
 } from "@semoss/sdk";
-import { LoginTypeLabel, useIsCurrentLogin } from "@semoss/shared";
+import { LoginTypeLabel, PersonIdentity } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
 	AlertTitle,
-	Avatar,
 	Button,
 	InputGroup,
 	InputGroupAddon,
@@ -81,7 +80,6 @@ export const EffectivePermissions = ({
 	admin = false,
 	headingLevel = 2,
 }: EffectivePermissionsProps) => {
-	const isCurrentLogin = useIsCurrentLogin();
 	const { access, isLoading, error, refresh } = useEffectivePermissions(
 		target,
 		admin,
@@ -154,7 +152,7 @@ export const EffectivePermissions = ({
 				<Alert>
 					<Info className="size-4" aria-hidden />
 					<AlertTitle>
-						Some teams cannot be listed person by person
+						Login Provider Teams Show as One Row
 					</AlertTitle>
 					<AlertDescription>
 						Teams that mirror a group in a login provider, such as
@@ -168,7 +166,8 @@ export const EffectivePermissions = ({
 
 			{isLoading && !access ? (
 				<output className="flex items-center justify-center gap-2 py-12 text-muted-foreground text-sm">
-					<Spinner className="size-4" />
+					{/* the output announces the text, so the spinner is not a second status */}
+					<Spinner className="size-4" aria-hidden />
 					Loading who can use this...
 				</output>
 			) : access ? (
@@ -229,12 +228,29 @@ export const EffectivePermissions = ({
 									<TableRow>
 										<TableCell
 											colSpan={4}
-											className="text-center"
+											className="py-6 text-center text-muted-foreground"
 										>
 											{people.length === 0 &&
-											unlistedTeams.length === 0
-												? "No one can use this yet"
-												: "No one matches"}
+											unlistedTeams.length === 0 ? (
+												"No one can use this yet"
+											) : (
+												<div className="flex flex-col items-center gap-2">
+													No one matches the search or
+													filter
+													<Button
+														type="button"
+														variant="outline"
+														size="sm"
+														onClick={() => {
+															setSearch("");
+															setFilter("ALL");
+															setPage(0);
+														}}
+													>
+														Show Everyone
+													</Button>
+												</div>
+											)}
 										</TableCell>
 									</TableRow>
 								) : (
@@ -257,55 +273,14 @@ export const EffectivePermissions = ({
 												key={`${row.subject.type}:${row.subject.id}`}
 											>
 												<TableCell className="pl-6">
-													<div className="flex items-center gap-2">
-														{/* the login the session is signed in with is starred, as in the members table */}
-														{isCurrentLogin(
-															row.subject.type,
-															row.subject.id,
-														) ? (
-															<Avatar
-																className="items-center justify-center bg-primary/10 text-primary"
-																title="You are signed in with this login"
-															>
-																<Star
-																	className="size-4 fill-primary"
-																	aria-hidden
-																/>
-																<span className="sr-only">
-																	You are
-																	signed in
-																	with this
-																	login
-																</span>
-															</Avatar>
-														) : (
-															<Avatar className="items-center justify-center bg-muted text-muted-foreground">
-																{label
-																	.charAt(0)
-																	.toUpperCase()}
-															</Avatar>
-														)}
-														<span className="flex min-w-0 flex-col">
-															<span className="truncate font-semibold text-sm">
-																{label}
-															</span>
-															<span className="truncate text-muted-foreground text-xs">
-																id:{" "}
-																{row.subject.id}
-															</span>
-															{row.subject
-																.email ? (
-																<span className="truncate text-muted-foreground text-xs">
-																	email:{" "}
-																	{
-																		row
-																			.subject
-																			.email
-																	}
-																</span>
-															) : null}
-														</span>
-													</div>
+													<PersonIdentity
+														name={label}
+														type={row.subject.type}
+														id={row.subject.id}
+														email={
+															row.subject.email
+														}
+													/>
 												</TableCell>
 												<TableCell>
 													<LoginTypeLabel

@@ -7,13 +7,12 @@ import {
 	SheetFooter,
 	SheetHeader,
 	SheetTitle,
-	Spinner,
 } from "@semoss/ui/next";
 import type { GroupAccessTarget, GroupKey } from "@/api/teams";
-import { AccessIdentity } from "@/features/bulk-access-management/access-identity";
 import { useGroupManagers } from "@/features/group-managers/use-group-managers";
 import { TEAM_RESOURCE_NOUNS } from "@/features/team-resource-access/team-resource-nouns";
 import { TeamTypeBadge } from "@/features/team-type/team-type-badge";
+import { TeamPeopleManagers } from "./team-people-managers";
 import { TeamPeopleMembers } from "./team-people-members";
 
 /** A section heading inside the sheet */
@@ -63,7 +62,9 @@ export const TeamPeopleSheet = ({
 			<SheetContent className="w-full overflow-y-auto sm:max-w-lg">
 				<SheetHeader>
 					<div className="flex flex-wrap items-center gap-2 pe-8">
-						<SheetTitle>{team?.id}</SheetTitle>
+						<SheetTitle className="wrap-break-word min-w-0">
+							{team?.id}
+						</SheetTitle>
 						{team ? <TeamTypeBadge type={team.type} /> : null}
 					</div>
 					<SheetDescription>
@@ -75,45 +76,11 @@ export const TeamPeopleSheet = ({
 				<div className="flex flex-col gap-6 px-4">
 					<section className="flex flex-col gap-2">
 						<h3 className={SECTION_TITLE_CLASS}>Managers</h3>
-						{error ? (
-							<p
-								role="alert"
-								className="text-destructive text-sm"
-							>
-								{error}
-							</p>
-						) : isLoading ? (
-							<div className="flex items-center gap-2 text-muted-foreground text-sm">
-								<Spinner className="size-4" />
-								Loading managers...
-							</div>
-						) : managers.length === 0 ? (
-							<p className="text-muted-foreground text-sm">
-								No one manages this team yet. Only admins can
-								change its members.
-							</p>
-						) : (
-							<ul className="flex flex-col divide-y divide-border rounded-md border border-border">
-								{managers.map((manager) => (
-									<li
-										key={`${manager.type}:${manager.userid}`}
-										className="px-3 py-2"
-									>
-										<AccessIdentity
-											kind="USER"
-											type={manager.type}
-											name={
-												manager.name ||
-												manager.email ||
-												manager.userid
-											}
-											id={manager.userid}
-											email={manager.email}
-										/>
-									</li>
-								))}
-							</ul>
-						)}
+						<TeamPeopleManagers
+							managers={managers}
+							isLoading={isLoading}
+							error={error}
+						/>
 					</section>
 
 					<section className="flex flex-col gap-2">

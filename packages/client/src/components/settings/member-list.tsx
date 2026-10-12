@@ -1,9 +1,7 @@
-import { Plus, Search, ShieldCheck, Star, Trash2 } from "lucide-react";
+import { Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useIsCurrentLogin } from "@semoss/shared";
+import { PersonIdentity } from "@semoss/shared";
 import {
-	Avatar,
-	AvatarFallback,
 	Badge,
 	Button,
 	Card,
@@ -18,7 +16,6 @@ import {
 	InputGroupInput,
 	Spinner,
 } from "@semoss/ui/next";
-import { LoginTypeBadge } from "@/features/team-type/login-type-badge";
 import type { SETTINGS_MEMBER } from "./settings.types";
 import { useMembers } from "./use-members";
 import { UserAddOverlay } from "./user-add-overlay";
@@ -58,7 +55,6 @@ export const MemberList = ({
 		refresh,
 		removeMember,
 	} = useMembers();
-	const isCurrentLogin = useIsCurrentLogin();
 
 	const [addOpen, setAddOpen] = useState(false);
 	const [addUser, setAddUser] = useState<SETTINGS_MEMBER | null>(null);
@@ -116,13 +112,13 @@ export const MemberList = ({
 							setAddOpen(true);
 						}}
 					>
-						<Plus className="size-4" />
+						<Plus className="size-4" aria-hidden />
 						Add
 					</Button>
 				</div>
 				<InputGroup>
 					<InputGroupAddon>
-						<Search className="size-4" />
+						<Search className="size-4" aria-hidden />
 					</InputGroupAddon>
 					<InputGroupInput
 						placeholder="Search users"
@@ -147,7 +143,8 @@ export const MemberList = ({
 						const isSelected = user.id === selectedUserId;
 						return (
 							<button
-								key={user.id}
+								// two people can share an id on different logins
+								key={`${user.type}:${user.id}`}
 								type="button"
 								data-state={isSelected ? "selected" : undefined}
 								className={`flex w-full items-center gap-2.5 border-border/40 border-b px-3 py-2 text-start hover:bg-accent ${
@@ -155,45 +152,14 @@ export const MemberList = ({
 								}`}
 								onClick={() => onSelectUser(user)}
 							>
-								{/* the login the session is signed in with is starred, as in the members table */}
-								{user.type &&
-								isCurrentLogin(user.type, user.id) ? (
-									<Avatar
-										className="size-8 shrink-0"
-										title="You are signed in with this login"
-									>
-										<AvatarFallback className="bg-primary/10 text-primary">
-											<Star
-												className="size-4 fill-primary"
-												aria-hidden
-											/>
-											<span className="sr-only">
-												You are signed in with this
-												login
-											</span>
-										</AvatarFallback>
-									</Avatar>
-								) : (
-									<Avatar className="size-8 shrink-0">
-										<AvatarFallback>
-											{displayName
-												.charAt(0)
-												.toUpperCase()}
-										</AvatarFallback>
-									</Avatar>
-								)}
-								<div className="flex min-w-0 flex-1 flex-col leading-tight">
-									<span className="flex min-w-0 items-center gap-1.5 font-medium text-sm">
-										<span className="truncate">
-											{displayName}
-										</span>
-										{user.type ? (
-											<LoginTypeBadge
-												type={user.type}
-												className="rounded-full text-[10px]"
-											/>
-										) : null}
-										{user.admin ? (
+								<PersonIdentity
+									name={displayName}
+									type={user.type ?? ""}
+									id={user.id}
+									email={user.email}
+									className="flex-1"
+									nameAddon={
+										user.admin ? (
 											<span
 												title="Admin"
 												className="inline-flex shrink-0 text-primary"
@@ -203,15 +169,9 @@ export const MemberList = ({
 													aria-label="Admin"
 												/>
 											</span>
-										) : null}
-									</span>
-									<span className="truncate text-muted-foreground text-xs">
-										id: {user.id}
-									</span>
-									<span className="truncate text-muted-foreground text-xs">
-										email: {user.email || "—"}
-									</span>
-								</div>
+										) : null
+									}
+								/>
 								<Button
 									variant="ghost"
 									size="icon-sm"
@@ -221,7 +181,7 @@ export const MemberList = ({
 										setDeleteTarget(user);
 									}}
 								>
-									<Trash2 className="size-4" />
+									<Trash2 className="size-4" aria-hidden />
 								</Button>
 							</button>
 						);

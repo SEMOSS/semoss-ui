@@ -177,11 +177,13 @@ export const PermissionBatchList = ({
 							<TableRow>
 								<TableCell
 									colSpan={showModelLimits ? 5 : 4}
-									className="text-center"
+									className="py-6 text-center text-muted-foreground"
 								>
 									{entries.length === 0
 										? "No one has access yet"
-										: "No one matches"}
+										: normalizedSearch
+											? "No one matches"
+											: "No changes yet"}
 								</TableCell>
 							</TableRow>
 						) : (

@@ -107,7 +107,7 @@ export const SETTINGS_ROUTES: {
 		title: "My Teams",
 		path: "managed-teams",
 		description:
-			"Add and remove the members and managers of the teams you manage",
+			"Add and remove the members and managers of the teams you manage.",
 		icon: mdiAccountGroup,
 		history: ["managed-teams"],
 		admin: false,
@@ -238,7 +238,7 @@ export const SETTINGS_ROUTES: {
 		title: "Team Permissions",
 		path: "team-permissions",
 		description:
-			"Create teams, choose their members and managers, and give them access to projects and engines",
+			"Create teams, choose their members and managers, and give them access to projects and engines.",
 		icon: mdiDatabase,
 		history: ["team-permissions"],
 		admin: true,
@@ -383,7 +383,7 @@ export const SETTINGS_ROUTES: {
 			title: "Effective Permissions",
 			path: `${root}/:id/effective-permissions`,
 			description:
-				"Admin mode: everyone who can use it, whatever your own access.",
+				"Admin mode: see everyone who can use it, whatever your own access.",
 			icon,
 			history: [
 				root,

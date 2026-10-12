@@ -136,7 +136,7 @@ export const TeamAccessManagement = ({
 		role === "MANAGERS"
 			? [
 					{
-						label: "Copy Managers From a Team",
+						label: "Copy People From a Team",
 						icon: Users,
 						disabled: !team.canChange.MANAGERS,
 						onSelect: () => openDialog("COPY_TEAM"),
@@ -144,7 +144,7 @@ export const TeamAccessManagement = ({
 				]
 			: [
 					{
-						label: "Copy Members From a Team",
+						label: "Copy People From a Team",
 						icon: Users,
 						disabled: !team.canChange.MEMBERS,
 						onSelect: () => openDialog("COPY_TEAM"),
@@ -178,8 +178,15 @@ export const TeamAccessManagement = ({
 							disabled={team.isLoading}
 							onClick={team.refresh}
 						>
-							<RefreshCw className="size-4" aria-hidden />
-							Refresh
+							<RefreshCw
+								className={
+									team.isLoading
+										? "size-4 animate-spin motion-reduce:animate-none"
+										: "size-4"
+								}
+								aria-hidden
+							/>
+							Load Latest Access
 						</Button>
 						<Button
 							type="button"

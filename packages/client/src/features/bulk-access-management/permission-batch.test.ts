@@ -360,5 +360,11 @@ describe("describeChangeDetail", () => {
 				{ level: "EDIT", usageRestriction: "TOKEN", maxTokens: 100 },
 			),
 		).toBe("Editor, 100 tokens");
+		expect(
+			describeChangeDetail(
+				{ level: "EDIT", usageRestriction: "TOKEN", maxTokens: 100 },
+				{ level: "EDIT" },
+			),
+		).toBe("Editor, no usage limit");
 	});
 });

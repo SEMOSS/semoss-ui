@@ -320,7 +320,8 @@ export const AccessPersonSearch = ({
 							</p>
 						) : isSearchingDirectory &&
 							directory.people.length === 0 ? (
-							<p className={STATUS_CLASS}>
+							// set like the section's other lines, so it does not jump as the results come
+							<p className="flex items-center gap-2 text-muted-foreground text-sm">
 								<Spinner className="size-4" />
 								Searching...
 							</p>

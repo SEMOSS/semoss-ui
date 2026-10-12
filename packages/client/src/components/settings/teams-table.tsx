@@ -2,6 +2,8 @@ import { Info, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Dialog,
 	DialogContent,
@@ -15,6 +17,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Spinner,
 	Table,
 	TableBody,
 	TableCell,
@@ -125,6 +128,8 @@ export const TeamsTable = ({
 	const [teams, setTeams] = useState<TeamRow[]>([]);
 	const [totalTeams, setTotalTeams] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
+	// why the last read of the teams failed, or null
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const [usesServerPagination, setUsesServerPagination] = useState(false);
 	const [refreshCount, setRefreshCount] = useState(0);
 	const [isAddOpen, setIsAddOpen] = useState(false);
@@ -157,6 +162,7 @@ export const TeamsTable = ({
 		let isStale = false;
 		const fetchTeams = async () => {
 			setIsLoading(true);
+			setLoadError(null);
 			try {
 				const getGroups =
 					type === "ENGINE"
@@ -203,10 +209,10 @@ export const TeamsTable = ({
 				if (isStale) {
 					return;
 				}
-				console.error(e);
 				setTeams([]);
 				setTotalTeams(0);
 				setUsesServerPagination(false);
+				setLoadError(getErrorMessage(e, "Could not load the teams"));
 			} finally {
 				if (!isStale) {
 					setIsLoading(false);
@@ -266,7 +272,24 @@ export const TeamsTable = ({
 	};
 
 	return (
-		<div className="rounded-xl">
+		<div className="flex flex-col gap-4 rounded-xl">
+			{loadError ? (
+				<Alert variant="destructive">
+					<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+						{loadError}
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() =>
+								setRefreshCount((count) => count + 1)
+							}
+						>
+							Try Again
+						</Button>
+					</AlertDescription>
+				</Alert>
+			) : null}
 			<div className="rounded-xl border border-border">
 				<div className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl border-border border-b bg-background px-6 py-3">
 					<H4>Teams</H4>
@@ -293,7 +316,7 @@ export const TeamsTable = ({
 									</div>
 								</TableHead>
 								<TableHead className="px-4">
-									Group Type
+									Members From
 								</TableHead>
 								<TableHead className="p-0">
 									<div className="px-4 py-3 text-left">
@@ -463,9 +486,15 @@ export const TeamsTable = ({
 										colSpan={columnCount}
 										className="text-center"
 									>
-										{isLoading
-											? "Loading teams..."
-											: "No teams have access yet"}
+										{/* after a failed read, the error above says why there are none */}
+										{isLoading ? (
+											<span className="flex items-center justify-center gap-2 text-muted-foreground">
+												<Spinner />
+												Loading teams...
+											</span>
+										) : loadError ? null : (
+											"No teams have access yet"
+										)}
 									</TableCell>
 								</TableRow>
 							)}

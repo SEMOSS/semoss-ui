@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { cn } from "@semoss/ui/next";
 
+/** Props for {@link CurrentLoginStar}. */
 export interface CurrentLoginStarProps {
 	/** Classes for the badge, such as where it sits */
 	className?: string;

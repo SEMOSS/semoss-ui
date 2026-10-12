@@ -301,19 +301,30 @@ export const BulkAccessManagement = ({
 	};
 
 	const handleCopied = (
+		copiedCount: number,
 		count: { added: number; conflicts: number },
 		from: string,
 	) => {
+		if (copiedCount === 0) {
+			toast.info(`No one to copy from ${from}`);
+			return;
+		}
 		if (count.added === 0 && count.conflicts === 0) {
 			toast.info(`Everyone from ${from} already has this access`);
 			return;
 		}
 		const conflicts =
-			count.conflicts > 0
-				? ` ${count.conflicts} already have different access; choose what to keep.`
-				: "";
+			count.conflicts === 1
+				? "1 already has different access; choose what to keep."
+				: `${count.conflicts} already have different access; choose what to keep.`;
+		if (count.added === 0) {
+			toast.success(`From ${from}, ${conflicts}`);
+			return;
+		}
 		toast.success(
-			`Added ${count.added} from ${from} to your changes.${conflicts}`,
+			count.conflicts === 0
+				? `Added ${count.added} from ${from} to your changes.`
+				: `Added ${count.added} from ${from} to your changes. ${conflicts}`,
 		);
 	};
 
@@ -324,6 +335,8 @@ export const BulkAccessManagement = ({
 			return;
 		}
 		const members = team.type === CUSTOM_TEAM_TYPE ? stagedPeople : [];
+		const memberCount =
+			members.length === 1 ? "1 member" : `${members.length} members`;
 		if (members.length > 0) {
 			setNewTeamMembers((prev) => [
 				...prev,
@@ -339,12 +352,12 @@ export const BulkAccessManagement = ({
 			],
 			{ level: "READ_ONLY" },
 			members.length > 0
-				? `New team, with ${members.length} members to add`
+				? `New team, with ${memberCount} to add`
 				: "New team",
 		);
 		toast.success(
 			members.length > 0
-				? `${team.id} was made. Its ${members.length} members and its Read-Only access are in your changes, and are saved when you apply them.`
+				? `${team.id} was made. Its ${memberCount} and its Read-Only access are in your changes, and are saved when you apply them.`
 				: `${team.id} was made. Its Read-Only access is in your changes, and is saved when you apply them.`,
 		);
 	};
@@ -376,8 +389,15 @@ export const BulkAccessManagement = ({
 							disabled={batch.isLoading}
 							onClick={batch.refresh}
 						>
-							<RefreshCw className="size-4" aria-hidden />
-							Refresh
+							<RefreshCw
+								className={
+									batch.isLoading
+										? "size-4 animate-spin motion-reduce:animate-none"
+										: "size-4"
+								}
+								aria-hidden
+							/>
+							Load Latest Access
 						</Button>
 						<Button
 							type="button"
@@ -524,6 +544,7 @@ export const BulkAccessManagement = ({
 				target={target}
 				onCopy={(rows, from) =>
 					handleCopied(
+						rows.length,
 						batch.copy(rows, {
 							note: `Copied from ${from}`,
 							keepModelLimits: isModel,
@@ -542,6 +563,7 @@ export const BulkAccessManagement = ({
 				canGiveAuthorAccess={allowedChanges?.canGiveAuthorAccess}
 				onCopy={(rows, team, level) =>
 					handleCopied(
+						rows.length,
 						batch.copy(rows, {
 							note: `Copied from the ${team} team`,
 							level,
