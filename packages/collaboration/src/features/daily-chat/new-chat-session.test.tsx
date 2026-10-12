@@ -66,13 +66,7 @@ vi.mock("@/features/agents/api/use-agent-resources", () => ({
 	}),
 }));
 vi.mock("@/features/tools/components/tool-workbench", () => ({
-	ToolWorkbench: ({
-		onOpenSettings,
-		onOpenFiles,
-	}: {
-		onOpenSettings?: () => void;
-		onOpenFiles?: () => Promise<void> | void;
-	}) => {
+	ToolWorkbench: () => {
 		const workbench = useToolWorkbench();
 		const settings = useContext(RoomSettingsPanelContext);
 		const panels = useSyncExternalStore(
@@ -89,12 +83,6 @@ vi.mock("@/features/tools/components/tool-workbench", () => ({
 					onClick={() => workbench.closeWorkbench()}
 				>
 					Back to conversation
-				</button>
-				<button type="button" onClick={onOpenSettings}>
-					File settings
-				</button>
-				<button type="button" onClick={() => void onOpenFiles?.()}>
-					Show chat files
 				</button>
 				<output aria-label="Workbench panels">
 					{JSON.stringify(panels)}
@@ -543,7 +531,9 @@ it("opens landing Settings in one workbench panel and keeps draft and unsaved se
 		instructions,
 	);
 	expect(instructions).toHaveValue("Keep responses concise");
-	await user.click(screen.getByRole("button", { name: "File settings" }));
+	await user.click(actions);
+	await user.click(screen.getByRole("menuitem", { name: "Settings" }));
+	await settleFocus();
 	const panels = JSON.parse(
 		screen.getByLabelText("Workbench panels").textContent ?? "{}",
 	);

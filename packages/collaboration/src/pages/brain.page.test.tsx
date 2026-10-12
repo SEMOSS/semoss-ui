@@ -25,9 +25,6 @@ vi.mock("@/features/collaboration/components/sources-and-rules", () => ({
 vi.mock("@/features/collaboration/components/threads-directory", () => ({
 	ThreadsDirectory: () => <h1>Threads content</h1>,
 }));
-vi.mock("@/features/collaboration/components/topic-detail", () => ({
-	TopicDetail: () => <h1>Topic detail</h1>,
-}));
 
 afterEach(cleanup);
 
@@ -42,7 +39,6 @@ function renderBrain(path: string) {
 			"/brain/threads",
 			"/brain/threads/:threadId",
 			"/brain/sources",
-			"/brain/topics/:topicId",
 		].map((route) => ({ path: route, Component: BrainPage })),
 		{ initialEntries: [path] },
 	);
@@ -58,7 +54,6 @@ it.each([
 	["/brain/threads", "Threads content", "Threads"],
 	["/brain/threads/thread-one", "Thread detail", "Threads"],
 	["/brain/sources", "Sources content", "Sources"],
-	["/brain/topics/topic-one", "Topic detail", null],
 ] as const)(
 	"keeps every Brain destination available at %s",
 	(path, heading, active) => {

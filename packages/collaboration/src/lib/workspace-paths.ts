@@ -1,3 +1,8 @@
+/** One topic workspace contains its actions, conversations, and context. */
+export function topicPath(topicId: string): string {
+	return `/topics/${encodeURIComponent(topicId)}`;
+}
+
 /** Canonical conversation route; identity stays independent of its backend room. */
 export function threadPath(threadId: string): string {
 	return `/thread/${encodeURIComponent(threadId)}`;

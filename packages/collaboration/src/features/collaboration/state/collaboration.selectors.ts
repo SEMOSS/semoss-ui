@@ -148,7 +148,11 @@ function revisionOf(value: string): string {
 
 /** Exact assistant context uses allowed messages and the owner's confirmed profile only; memories come from the server. */
 export function selectThreadContext(
-	state: CollaborationState,
+	state: Pick<
+		CollaborationState,
+		"threads" | "workspaces" | "rules" | "people" | "topics" | "accounts"
+	> &
+		Partial<Pick<CollaborationState, "profile" | "liveProfile">>,
 	threadId: string,
 ): ThreadContext | null {
 	const thread = state.threads.find((candidate) => candidate.id === threadId);

@@ -78,6 +78,7 @@ function setup(overrides: Partial<EmailContext> = {}, messageId?: string) {
 			},
 			retain: vi.fn(() => vi.fn()),
 			readEmailAttachment: vi.fn(),
+			updateSourceFile: vi.fn().mockResolvedValue(undefined),
 		},
 		source,
 		sourceMessages: [

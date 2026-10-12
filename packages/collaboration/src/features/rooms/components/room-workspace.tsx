@@ -466,9 +466,7 @@ export function RoomWorkspace({
 									aria-label="Tool workbench"
 									className="relative size-full min-h-0 bg-background"
 								>
-									<ToolWorkbench
-										onOpenSettings={openSettings}
-									/>
+									<ToolWorkbench />
 								</aside>
 							</ResizablePanel>
 						</>

@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { Link } from "react-router";
 import { Badge, cn } from "@semoss/ui/next";
+import { topicPath } from "@/lib/workspace-paths";
 import type { Topic } from "../state/collaboration.types";
 import { topicTone } from "../topic-tone";
 
@@ -34,7 +35,7 @@ export function TopicChip({
 			{suggested ? "?" : ""}
 		</>
 	);
-	const to = `/brain/topics/${encodeURIComponent(topic.id)}`;
+	const to = topicPath(topic.id);
 	if (!onRemove)
 		return (
 			<Badge asChild variant="outline" className={className}>

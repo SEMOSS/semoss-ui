@@ -186,6 +186,47 @@ it("does not create a proposal for an excluded source", () => {
 	expect(composer.getSnapshot().emailDrafts).toEqual([]);
 });
 
+it("creates only the corrected draft after a failed compose attempt", () => {
+	const { completed, composer } = setup();
+	const failed: ConversationMessage = {
+		id: "failed-attempt",
+		role: "assistant",
+		parts: [
+			composeEmailPart(
+				{ replyTo: "invalid-email-id", message: "Friday works." },
+				"failed-compose",
+				"FAILED",
+			),
+		],
+	};
+	const view = renderHook(useRoomEmailProposals, {
+		initialProps: {
+			...completed,
+			snapshot: {
+				turn: { ...completed.snapshot.turn, messages: [failed] },
+			},
+		},
+	});
+	expect(composer.getSnapshot().emailDrafts).toHaveLength(0);
+	view.rerender({
+		...completed,
+		snapshot: {
+			turn: {
+				...completed.snapshot.turn,
+				messages: [failed, ...completed.snapshot.turn.messages],
+			},
+		},
+	});
+	const drafts = composer.getSnapshot().emailDrafts;
+	expect(drafts).toHaveLength(1);
+	expect(drafts[0].seed).toMatchObject({
+		id: composeDraftId("compose-email"),
+		sourceUid: "email",
+		body: "Friday works.",
+	});
+	expect(view.result.current).toBe("");
+});
+
 it("opens a new email from a session with no source email", () => {
 	const { completed, composer } = setup();
 	const session = { ...completed.thread, source: undefined };

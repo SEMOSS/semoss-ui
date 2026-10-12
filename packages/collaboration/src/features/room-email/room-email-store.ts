@@ -3,6 +3,7 @@ import {
 	type EmailDraftSeed,
 } from "@/features/connectors/api/email-draft-editor";
 import { draftText } from "@/features/email/email-html";
+import type { SourceEmailDraft } from "@/features/rooms/source-import/source-thread-file";
 import type { SubmittedThreadContext } from "@/features/thread-assistant/thread-context";
 
 /** The email-only state consumed by readers, tool cards and approval bindings. */
@@ -19,13 +20,20 @@ export interface EmailEditorStore {
 
 /** Retain email edits with their owning room, independently of dock visibility. */
 export class RoomEmailStore implements EmailEditorStore {
-	private snapshot: { emailDrafts: EmailDraftEditor[] } = { emailDrafts: [] };
+	private snapshot: {
+		emailDrafts: EmailDraftEditor[];
+		sourceDrafts: SourceEmailDraft[];
+	} = { emailDrafts: [], sourceDrafts: [] };
 	private listeners = new Set<() => void>();
+	private draftSubscriptions: (() => void)[] = [];
 	private openDraftId: string | null = null;
 	private selectedSourceMessageId: string | undefined;
 	private appliedRevisions = new Set<string>();
 
-	getSnapshot = (): { emailDrafts: EmailDraftEditor[] } => this.snapshot;
+	getSnapshot = (): {
+		emailDrafts: EmailDraftEditor[];
+		sourceDrafts: SourceEmailDraft[];
+	} => this.snapshot;
 	subscribe = (listener: () => void): (() => void) => {
 		this.listeners.add(listener);
 		return () => this.listeners.delete(listener);
@@ -54,10 +62,57 @@ export class RoomEmailStore implements EmailEditorStore {
 		if (existing) return existing;
 		const draft = new EmailDraftEditor(seed);
 		this.snapshot = {
+			...this.snapshot,
 			emailDrafts: [...this.snapshot.emailDrafts, draft],
 		};
-		for (const listener of this.listeners) listener();
+		this.draftSubscriptions.push(draft.subscribe(this.updateSourceDrafts));
+		this.updateSourceDrafts();
 		return draft;
+	};
+
+	/** Only changes to the reply text, envelope or delivery state refresh its file. */
+	private updateSourceDrafts = (): void => {
+		const sourceDrafts = this.snapshot.emailDrafts.flatMap(
+			(draft): SourceEmailDraft[] => {
+				if (draft.seed.mode !== "reply" || !draft.seed.sourceUid)
+					return [];
+				const state = draft.getSnapshot();
+				return [
+					{
+						id: draft.seed.id,
+						replyTo: draft.seed.sourceUid,
+						status: state.isSent
+							? "sent"
+							: state.isUncertain ||
+									(state.hasPendingSend && !state.isSending)
+								? "uncertain"
+								: state.isSending
+									? "sending"
+									: state.saved && !state.isDirty
+										? "saved"
+										: "draft",
+						subject: state.values.subject,
+						to: state.values.to,
+						cc: state.values.cc,
+						bcc: state.values.bcc,
+						body: draftText(state.values.body, "html", true),
+						attachments: state.values.files.map(
+							({ file }) => file.name,
+						),
+						savedMessageId: state.saved?.savedDraftId,
+					},
+				];
+			},
+		);
+		this.snapshot = {
+			...this.snapshot,
+			sourceDrafts:
+				JSON.stringify(sourceDrafts) ===
+				JSON.stringify(this.snapshot.sourceDrafts)
+					? this.snapshot.sourceDrafts
+					: sourceDrafts,
+		};
+		for (const listener of this.listeners) listener();
 	};
 
 	/** Read at submission time so the assistant receives the owner's latest edits. */
@@ -100,6 +155,8 @@ export class RoomEmailStore implements EmailEditorStore {
 
 	/** Release attachment resources when the owning room is disposed. */
 	dispose = (): void => {
+		for (const unsubscribe of this.draftSubscriptions) unsubscribe();
+		this.draftSubscriptions = [];
 		for (const draft of this.snapshot.emailDrafts) draft.dispose();
 		this.listeners.clear();
 	};

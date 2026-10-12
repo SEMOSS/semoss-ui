@@ -71,9 +71,10 @@ The overview orders pending actions by deadline and uses existing Work commands
 for marking items handled and reopening them. `/work` lists topics with their
 status, description, and selector-derived open/waiting counts. `/work/all` starts
 with Needs you and provides Open, Waiting, Handled, and Snoozed filters; legacy
-waiting/handled links remain valid. Each topic workspace leads with its goals
-and Edit in Brain, then Actions, Threads, and Sessions tabs, with topic-specific
-people, confirmed notes, and linked calendar threads.
+waiting/handled links remain valid. Every topic entry opens `/topics/:topicId`,
+with Actions, Threads, and Sessions alongside editable goals, people, notes, and
+filing signals. Existing Work and Brain topic links redirect to that workspace.
+Thread rows retain source details, calendar timing, and thread controls.
 
 Topic Sessions reads validated `RoomOptions.source.threadId` metadata only when
 its tab opens, in batches of 25. Associations are cached within the current
@@ -256,12 +257,13 @@ chosen for a room's composer use the room's ordinary upload and submission flow.
 | `/` | Global landing overview and compact chat composer |
 | `/work` | Topic overview |
 | `/work/all`, `/work/waiting`, `/work/done` | Global work lists |
-| `/work/topic/:topicId` | Topic actions, threads, sessions, and context |
+| `/topics/:topicId` | Shared topic actions, threads, sessions, and editable context |
+| `/work/topic/:topicId`, `/brain/topics/:topicId` | Redirects to the shared topic workspace |
 | `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |
 | `/settings/about-you`, `/settings/appearance`, `/settings/rules`, `/settings/data` | Profile/VIPs, theme, context rules, and data reset |
 | `/brain/people`, `/brain/people/:personId` | People directory and detail |
-| `/brain/threads`, `/brain/threads/:threadId`, `/brain/topics/:topicId` | Context directories and detail |
+| `/brain/threads`, `/brain/threads/:threadId` | Thread context directory and detail |
 
 `/room` redirects to Work; `/agents/*` redirects to Brain;
 `/settings` and the legacy `/brain/profile` and `/settings/dashboard` links open Settings → About you.

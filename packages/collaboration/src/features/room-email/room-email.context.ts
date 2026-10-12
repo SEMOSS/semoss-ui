@@ -11,6 +11,8 @@ export interface RoomEmailSession {
 	insight: { insightId: string; actions: InsightActions };
 	retain: () => () => void;
 	readEmailAttachment: (file: AgentEmailAttachment) => Promise<File>;
+	/** Refresh this room's existing generated email file and its source envelopes. */
+	updateSourceFile: (source: RoomSource, markdown: string) => Promise<void>;
 }
 
 interface RoomEmailContextValue {

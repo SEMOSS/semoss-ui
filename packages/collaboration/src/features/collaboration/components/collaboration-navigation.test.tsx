@@ -172,32 +172,28 @@ describe("CollaborationNavigation", () => {
 		);
 	});
 
-	it.each([
-		"/work",
-		"/work/all",
-		"/work/waiting",
-		"/work/done",
-		"/work/topic/t-geng",
-	])("selects Work on %s", (path) => {
-		renderNavigation(path);
-		expect(screen.getByRole("link", { name: "Work" })).toHaveAttribute(
-			"aria-current",
-			"page",
-		);
-		expect(
-			screen.getByRole("link", { name: "For you" }),
-		).not.toHaveAttribute("aria-current");
-		expect(screen.getByRole("link", { name: "Brain" })).not.toHaveAttribute(
-			"aria-current",
-		);
-	});
+	it.each(["/work", "/work/all", "/work/waiting", "/work/done"])(
+		"selects Work on %s",
+		(path) => {
+			renderNavigation(path);
+			expect(screen.getByRole("link", { name: "Work" })).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+			expect(
+				screen.getByRole("link", { name: "For you" }),
+			).not.toHaveAttribute("aria-current");
+			expect(
+				screen.getByRole("link", { name: "Brain" }),
+			).not.toHaveAttribute("aria-current");
+		},
+	);
 
 	it.each([
 		"/brain",
 		"/brain/people/p-ava",
 		"/brain/threads/th-geng-review",
 		"/brain/sources",
-		"/brain/topics/t-geng",
 	])("keeps Brain selected on %s", (path) => {
 		renderNavigation(path);
 		expect(screen.getByRole("link", { name: "Brain" })).toHaveAttribute(
@@ -212,9 +208,8 @@ describe("CollaborationNavigation", () => {
 		);
 	});
 
-	it("opens Topics by keyboard and preserves the active topic destination", async () => {
-		const { user, router, onNavigate } =
-			renderNavigation("/work/topic/t-geng");
+	it("opens Topics by keyboard and selects only the shared topic workspace", async () => {
+		const { user, router, onNavigate } = renderNavigation("/topics/t-geng");
 		const disclosure = screen.getByRole("button", { name: "Topics" });
 		act(() => disclosure.focus());
 		await user.keyboard("{Enter}");
@@ -224,14 +219,21 @@ describe("CollaborationNavigation", () => {
 			name: /^Northwind Eng\b/,
 		});
 		expect(selected).toHaveAttribute("aria-current", "page");
+		for (const name of ["For you", "Work", "Brain"]) {
+			expect(screen.getByRole("link", { name })).not.toHaveAttribute(
+				"aria-current",
+			);
+		}
 		await user.click(selected);
 		expect(onNavigate).toHaveBeenCalledOnce();
-		await act(() => router.navigate("/brain/topics/t-geng"));
-		expect(
-			within(
-				screen.getByRole("navigation", { name: "Topics" }),
-			).getByRole("link", { name: /^Northwind Eng\b/ }),
-		).toHaveAttribute("href", "/brain/topics/t-geng");
+		for (const path of ["/brain", "/work", "/"]) {
+			await act(() => router.navigate(path));
+			expect(
+				within(
+					screen.getByRole("navigation", { name: "Topics" }),
+				).getByRole("link", { name: /^Northwind Eng\b/ }),
+			).toHaveAttribute("href", "/topics/t-geng");
+		}
 	});
 
 	it("opens New topic independently of the folded Topics disclosure and returns focus", async () => {
