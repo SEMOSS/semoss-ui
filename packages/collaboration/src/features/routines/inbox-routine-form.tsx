@@ -268,14 +268,14 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 						</datalist>
 						<FormInput
 							name="emailCount"
-							label="Emails to scan (required)"
+							label="Recent threads to include (required)"
 							type="number"
 							min={1}
 							max={100}
 							step={1}
 							required
 							disabled={isSubmitting}
-							description="Scan the newest emails since your last successful brief, up to this limit. Includes read and unread mail, with Brain exclusions applied. The first brief uses your latest emails."
+							description="The brief covers this many of your most recent Brain threads, plus your active topics. Brain syncs your mail first, and the finished brief is also emailed to you."
 							className="max-w-md"
 						/>
 					</FieldGroup>
@@ -325,9 +325,10 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 								aria-hidden="true"
 							/>
 							<Small className="leading-relaxed">
-								Your brief stays here in Routines. This routine
-								reads your inbox; it does not send or change
-								emails.
+								Your brief stays here in Routines and is emailed
+								only to you. This routine reads your inbox
+								through Brain; it does not send other emails or
+								change your mail.
 							</Small>
 						</div>
 					</aside>

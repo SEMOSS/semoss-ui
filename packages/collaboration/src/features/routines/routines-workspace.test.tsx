@@ -121,7 +121,7 @@ describe("InboxRoutineForm", () => {
 		await user.clear(timezone);
 		await user.type(timezone, "America/Chicago");
 		const count = screen.getByRole("spinbutton", {
-			name: "Emails to scan (required)",
+			name: "Recent threads to include (required)",
 		});
 		await user.clear(count);
 		await user.type(count, "40");
@@ -142,11 +142,15 @@ describe("InboxRoutineForm", () => {
 
 	it.each([
 		[
-			"Emails to scan (required)",
+			"Recent threads to include (required)",
 			"101",
 			"Choose between 1 and 100 emails.",
 		],
-		["Emails to scan (required)", "", "Choose a whole number of emails."],
+		[
+			"Recent threads to include (required)",
+			"",
+			"Choose a whole number of emails.",
+		],
 		["Run time (required)", "", "Choose a valid run time."],
 		[
 			"Time zone (required)",
@@ -202,7 +206,7 @@ describe("InboxRoutineForm", () => {
 			new Error("Scheduler could not save this schedule"),
 		);
 		const count = screen.getByRole("spinbutton", {
-			name: "Emails to scan (required)",
+			name: "Recent threads to include (required)",
 		});
 		await user.clear(count);
 		await user.type(count, "60");
@@ -245,7 +249,7 @@ describe("InboxRoutineForm", () => {
 		expect(screen.getByLabelText("Run time (required)")).toBeDisabled();
 		expect(screen.getByLabelText("Time zone (required)")).toBeDisabled();
 		expect(
-			screen.getByLabelText("Emails to scan (required)"),
+			screen.getByLabelText("Recent threads to include (required)"),
 		).toBeDisabled();
 		await act(async () => completeSave({ ...routine, configured: true }));
 		expect(
@@ -476,5 +480,31 @@ describe("InboxRoutineBrief", () => {
 		expect(
 			screen.getByRole("link", { name: "Open session" }),
 		).toHaveAttribute("href", "/thread/room%3Abrief%2Fwith%20spaces");
+	});
+
+	it("warns on a completed brief whose email could not be sent", () => {
+		render(
+			<MemoryRouter>
+				<InboxRoutineBrief
+					routine={{
+						...routine,
+						lastRun: {
+							status: "completed",
+							startedAt: "2026-10-12T12:00:00Z",
+							finishedAt: "2026-10-12T12:01:00Z",
+							roomId: null,
+							summary: "Reply to Dana before Thursday.",
+							error: "The brief was saved but the email could not be sent.",
+						},
+					}}
+				/>
+			</MemoryRouter>,
+		);
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"The brief was saved but the email could not be sent.",
+		);
+		expect(
+			screen.getByText("Reply to Dana before Thursday."),
+		).toBeVisible();
 	});
 });
