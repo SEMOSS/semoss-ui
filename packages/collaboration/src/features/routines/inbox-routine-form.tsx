@@ -275,7 +275,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 							step={1}
 							required
 							disabled={isSubmitting}
-							description="Scan the newest emails since your last successful brief, up to this limit. Includes read and unread mail, with Brain exclusions applied. The first brief uses your latest emails."
+							description="Scan the newest emails since your last successful brief, up to this limit. Includes read and unread mail, with your filing exclusions applied. The first brief uses your latest emails."
 							className="max-w-md"
 						/>
 					</FieldGroup>
