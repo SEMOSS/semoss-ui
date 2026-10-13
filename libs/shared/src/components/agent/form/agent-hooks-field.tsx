@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { useId } from "react";
+import { useEffect, useId } from "react";
 import {
 	type UseFormClearErrors,
 	type UseFormSetError,
@@ -14,7 +14,9 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	Field,
 	FieldDescription,
+	FieldError,
 	FieldLabel,
 	Muted,
 	Small,
@@ -31,6 +33,9 @@ import {
 } from "../agent-hook-header";
 import { AgentHookBindingsField } from "./agent-hook-bindings-field";
 import type { AgentFormValues } from "./types";
+
+const hasPixelTerminator = (pixel: string) =>
+	pixel.trim().length === 0 || pixel.trimEnd().endsWith(";");
 
 interface AgentHooksFieldProps {
 	control: Control<AgentFormValues>;
@@ -60,7 +65,21 @@ export const AgentHooksField = ({
 		append: appendHook,
 		remove: removeHook,
 	} = useFieldArray({ control, name: "hooks" });
-	const hooks = useWatch({ control, name: "hooks" });
+	const hooks = useWatch({ control, name: "hooks" }) ?? [];
+	const pixelSemicolonError = t("form.hooks.pixelSemicolonError");
+
+	useEffect(() => {
+		hooks.forEach((hook, index) => {
+			if (hook.kind !== PIXEL_HOOK_KIND) return;
+			const name = `hooks.${index}.pixel` as const;
+			if (!hasPixelTerminator(hook.pixel ?? "")) {
+				setError(name, {
+					type: "validate",
+					message: pixelSemicolonError,
+				});
+			}
+		});
+	}, [hooks, pixelSemicolonError, setError]);
 
 	// A no-param kind (git_commit/log_tools/ppt_to_pdf) is meaningless to add
 	// twice - once present, drop it from the "add hook" list. `pixel` stays
@@ -93,24 +112,62 @@ export const AgentHooksField = ({
 								/>
 								{hookField.kind === PIXEL_HOOK_KIND && (
 									<>
-										<div className="flex flex-col gap-1.5">
-											<FieldLabel htmlFor={pixelId}>
-												{t("form.hooks.pixelLabel")}
-											</FieldLabel>
-											<Controller
-												name={`hooks.${index}.pixel`}
-												control={control}
-												render={({ field }) => (
-													<Textarea
-														id={pixelId}
-														placeholder="MyReactor(arg='value');"
-														rows={2}
-														className="max-h-40 font-mono text-xs"
-														{...field}
-													/>
-												)}
-											/>
-										</div>
+										<Controller
+											name={`hooks.${index}.pixel`}
+											control={control}
+											rules={{
+												validate: (value) =>
+													hasPixelTerminator(
+														value ?? "",
+													) || pixelSemicolonError,
+											}}
+											render={({ field, fieldState }) => {
+												const error =
+													fieldState.error?.message;
+												const errorId = `${pixelId}-error`;
+												return (
+													<Field
+														data-invalid={!!error}
+													>
+														<FieldLabel
+															htmlFor={pixelId}
+														>
+															{t(
+																"form.hooks.pixelLabel",
+															)}
+														</FieldLabel>
+														<Textarea
+															{...field}
+															id={pixelId}
+															placeholder="LogMessage(message=[agent_output]);"
+															rows={2}
+															className="max-h-40 font-mono text-xs"
+															aria-invalid={
+																!!error
+															}
+															aria-describedby={
+																errorId
+															}
+														/>
+														{error ? (
+															<FieldError
+																id={errorId}
+															>
+																{error}
+															</FieldError>
+														) : (
+															<FieldDescription
+																id={errorId}
+															>
+																{t(
+																	"form.hooks.pixelSemicolonHelp",
+																)}
+															</FieldDescription>
+														)}
+													</Field>
+												);
+											}}
+										/>
 										<Controller
 											name={`hooks.${index}.events`}
 											control={control}

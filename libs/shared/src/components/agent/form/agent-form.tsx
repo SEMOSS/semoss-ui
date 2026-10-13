@@ -100,6 +100,7 @@ export const AgentForm = ({
 		formState: { errors },
 	} = useForm<AgentFormValues>({
 		defaultValues: data,
+		mode: "onChange",
 	});
 
 	const greetingEnabled = watch("greetingEnabled");
