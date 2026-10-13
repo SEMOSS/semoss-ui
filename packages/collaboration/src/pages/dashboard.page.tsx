@@ -9,17 +9,17 @@ import { TodaySuggestions } from "@/features/dashboard/today-suggestions";
 export function DashboardPage() {
 	return (
 		<CollaborationPage>
-			{/* one left-led column: greeting, ask box, then the list; the day runs beside it from the top */}
-			<div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-x-12 gap-y-10 pt-2 sm:pt-8 lg:grid-cols-12">
+			{/* the ask box leads; today's list waits below it */}
+			<div className="mx-auto w-full max-w-3xl pt-4 pb-12 sm:pt-12">
+				<BriefHeader />
+				<LandingChatComposer />
+				<TodaySuggestions />
+			</div>
+			<div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-6 lg:grid-cols-12">
 				<div className="min-w-0 lg:col-span-8">
-					<BriefHeader />
-					<LandingChatComposer />
-					<TodaySuggestions />
-					<div className="mt-12">
-						<BriefNeeds />
-					</div>
+					<BriefNeeds />
 				</div>
-				<div className="min-w-0 lg:col-span-4 lg:pt-3">
+				<div className="min-w-0 lg:col-span-4">
 					<BriefDay />
 				</div>
 			</div>
