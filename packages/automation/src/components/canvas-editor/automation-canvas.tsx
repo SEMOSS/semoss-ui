@@ -778,10 +778,10 @@ export const AutomationCanvasContent = forwardRef<
 				typeof value.defaultValue === "string",
 		);
 	}, [steps]);
-	// DB-backed run id for the in-progress run, used to poll GetAutomationRun as a
-	// fallback in case the live progress stream drops an update (see the periodic
-	// reconciliation effect below).
-	const [liveRunId, setLiveRunId] = useState<string | null>(null);
+	// A run restored after this page loaded has no local Pixel job stream to follow.
+	// Only that reconnect case uses durable run reconciliation; runs started from
+	// this canvas are driven exclusively by TriggerAutomation's progress stream.
+	const [reconnectRunId, setReconnectRunId] = useState<string | null>(null);
 	const [aiRunSummary, setAiRunSummary] = useState<string | null>(null);
 	const [generatingAiSummary, setGeneratingAiSummary] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
@@ -2836,7 +2836,7 @@ export const AutomationCanvasContent = forwardRef<
 					) {
 						applyRunData(run);
 						setAiRunSummary(run.RESULT_SUMMARY ?? null);
-						setLiveRunId(run.RUN_ID);
+						setReconnectRunId(run.RUN_ID);
 					} else {
 						setScopeSampleResults(run.nodeResults ?? []);
 					}
@@ -2868,7 +2868,12 @@ export const AutomationCanvasContent = forwardRef<
 		appliedExternalRunRef.current = externalRunSignature;
 		applyRunData(externalRunUpdate);
 		setAiRunSummary(externalRunUpdate.RESULT_SUMMARY ?? null);
-		setLiveRunId(externalRunUpdate.RUN_ID);
+		setReconnectRunId((current) =>
+			current === externalRunUpdate.RUN_ID &&
+			externalRunUpdate.STATUS === "RUNNING"
+				? current
+				: null,
+		);
 		notifyHistoryChanged();
 	}, [
 		applyRunData,
@@ -2880,12 +2885,6 @@ export const AutomationCanvasContent = forwardRef<
 	const applyNodeProgress = useCallback(
 		(progress: AutomationNodeStreamData) => {
 			const { NODE_ID: nodeId, STATUS: status } = progress;
-			const runId = progress.RUN_ID;
-			if (runId) {
-				setLiveRunId((previous) =>
-					previous === runId ? previous : runId,
-				);
-			}
 			if (!nodeId || !status) return;
 			const stepStatus: StepRunStatus =
 				status === "FAILED"
@@ -2964,32 +2963,33 @@ export const AutomationCanvasContent = forwardRef<
 			hash: data.DEFINITION_HASH,
 			snapshot: data.DEFINITION_SNAPSHOT,
 		});
-		if (data.RUN_ID) {
-			setLiveRunId(data.RUN_ID);
-		}
 	}, []);
 
-	// Fallback reconciliation: the live progress stream is best-effort and can drop an
-	// update (observed with agent-run trace events). Re-fetch the DB-backed run detail
-	// on an interval while running so the canvas self-heals within a few seconds even
-	// if a stream event never arrives.
+	// Reconnect reconciliation: a run restored after navigation has no Pixel job id,
+	// so its durable record is the only available status source. Never poll runs
+	// started by this canvas; their TriggerAutomation stream owns live progress.
 	useEffect(() => {
-		if (!running || !liveRunId) return;
+		if (!running || !reconnectRunId) return;
 		let cancelled = false;
 		const interval = window.setInterval(() => {
-			getAutomationRun(appId, liveRunId)
+			getAutomationRun(appId, reconnectRunId)
 				.then((detail) => {
-					if (!cancelled) applyRunData(detail);
+					if (!cancelled) {
+						applyRunData(detail);
+						if (detail.STATUS !== "RUNNING") {
+							setReconnectRunId(null);
+						}
+					}
 				})
 				.catch(() => {
-					// Best-effort; the live stream remains the primary source of truth.
+					// Best-effort; history can still be opened manually.
 				});
 		}, 2500);
 		return () => {
 			cancelled = true;
 			window.clearInterval(interval);
 		};
-	}, [running, liveRunId, appId, applyRunData]);
+	}, [running, reconnectRunId, appId, applyRunData]);
 
 	const run = useCallback(async () => {
 		const runInputs = pendingRunInputsRef.current;
@@ -3048,7 +3048,7 @@ export const AutomationCanvasContent = forwardRef<
 		setLatestRunResults([]);
 		setLatestRunDefinition(null);
 		setActiveRun(null);
-		setLiveRunId(null);
+		setReconnectRunId(null);
 		try {
 			const inputsArgument =
 				runInputs && Object.keys(runInputs).length > 0
