@@ -7,6 +7,12 @@ import { dashboardTimeZone, eventStart } from "./dashboard-calendar";
 import { DashboardResourceStatus } from "./dashboard-resource-status";
 import { dayKey } from "./dashboard-selectors";
 
+// Directory names arrive as "Last, First"; show "First Last"
+function givenFirst(name: string) {
+	const [family, given] = name.split(",", 2);
+	return given?.trim() ? `${given.trim()} ${family.trim()}` : name;
+}
+
 /** Today's calendar, with a live time marker and source-backed meeting details. */
 export function BriefDay({ compact = false }: { compact?: boolean }) {
 	const { state } = useCollaborationSession();
@@ -58,7 +64,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 								{index === markerIndex && (
 									<div className="flex items-center gap-4 py-4 text-primary">
 										<time
-											className="w-12 shrink-0 font-mono text-xs"
+											className="w-12 shrink-0 text-xs tabular-nums"
 											dateTime={now.toISOString()}
 										>
 											{time.format(now)}
@@ -82,7 +88,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 									>
 										<time
 											dateTime={entry.start.toISOString()}
-											className="w-12 shrink-0 pt-0.5 font-mono text-sm"
+											className="w-12 shrink-0 pt-0.5 text-sm tabular-nums"
 										>
 											{time.format(entry.start)}
 										</time>
@@ -110,7 +116,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 											</Button>
 											<P
 												className={cn(
-													"mt-1 font-mono text-muted-foreground text-xs leading-5",
+													"mt-1 text-muted-foreground text-xs leading-5",
 													compact && "truncate",
 												)}
 											>
@@ -118,8 +124,9 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 													.slice(0, 2)
 													.map(
 														(person) =>
-															person.name ||
-															person.address,
+															givenFirst(
+																person.name,
+															) || person.address,
 													)
 													.filter(Boolean)
 													.join(", ")}
@@ -136,7 +143,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 													<Button
 														size="sm"
 														variant="secondary"
-														className="mt-2 h-7 rounded-md px-2 font-mono font-normal text-xs"
+														className="mt-2 h-7 rounded-md px-2 font-normal text-xs"
 														onClick={() =>
 															setSource({
 																kind: "calendar",
@@ -145,7 +152,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 															})
 														}
 													>
-														Prepare for meeting →
+														Prepare for meeting
 													</Button>
 												)}
 										</div>
