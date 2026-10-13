@@ -39,9 +39,7 @@ function renderHeader(dues: (string | null)[] = []) {
 
 it("says nothing is due when the queue has no deadlines today", () => {
 	renderHeader([null, new Date(Date.now() + 3 * 86_400_000).toISOString()]);
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		/Nothing due today\.$/,
-	);
+	expect(screen.getByText("Nothing is due today.")).toBeVisible();
 });
 
 it("counts overdue and due-today work, not the whole queue", () => {
@@ -52,9 +50,7 @@ it("counts overdue and due-today work, not the whole queue", () => {
 		null,
 		new Date(now + 3 * 86_400_000).toISOString(),
 	]);
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		/2 due today\.$/,
-	);
+	expect(screen.getByText("2 things are due today.")).toBeVisible();
 	for (const name of [/open$/, /handled$/, /waiting on others$/]) {
 		expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
 	}

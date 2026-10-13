@@ -69,18 +69,28 @@ export function BriefActionCard({ item }: { item: WorkItem }) {
 											</span>
 										</>
 									)}
-									<span aria-hidden="true">{"\u00b7"}</span>
-									<BriefDeadline
-										item={item}
-										timeZone={state.profile.timezone}
-									/>
+									{/* only real deadlines and urgent items; "high priority" on every row reads as pressure */}
+									{(item.due || item.priority === "P0") && (
+										<>
+											<span aria-hidden="true">
+												{"\u00b7"}
+											</span>
+											<BriefDeadline
+												item={item}
+												timeZone={
+													state.profile.timezone
+												}
+											/>
+										</>
+									)}
 								</P>
 							</div>
 							<div className="flex shrink-0 items-center gap-1">
 								<Button
 									asChild
 									size="sm"
-									className="bg-foreground font-normal text-background hover:bg-foreground/90"
+									variant="outline"
+									className="font-normal"
 								>
 									<Link to={path}>
 										{item.askType === "reply"

@@ -9,12 +9,13 @@ import { TodaySuggestions } from "@/features/dashboard/today-suggestions";
 export function DashboardPage() {
 	return (
 		<CollaborationPage>
-			<BriefHeader />
-			<div className="mb-6 min-w-0">
+			{/* the ask box leads; today's list waits below it */}
+			<div className="mx-auto w-full max-w-3xl pt-4 pb-12 sm:pt-12">
+				<BriefHeader />
 				<LandingChatComposer />
 				<TodaySuggestions />
 			</div>
-			<div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+			<div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-6 lg:grid-cols-12">
 				<div className="min-w-0 lg:col-span-8">
 					<BriefNeeds />
 				</div>

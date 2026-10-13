@@ -193,7 +193,9 @@ function renderBrief(state = createBriefState()) {
 }
 
 function workCard(title: string): HTMLElement {
-	const card = within(screen.getByRole("region", { name: "Do today" }))
+	const card = within(
+		screen.getByRole("region", { name: "When you're ready" }),
+	)
 		.getByRole("link", { name: title })
 		.closest("article");
 	if (!card) throw new Error(`Missing work card: ${title}`);
@@ -212,7 +214,7 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 
-it("shows Today as greeting, ask box, Do today and Your day without setup panels", () => {
+it("shows Today as greeting, ask box, the short list and Your day without setup panels", () => {
 	const { container } = renderBrief();
 	expect(
 		[
@@ -226,7 +228,7 @@ it("shows Today as greeting, ask box, Do today and Your day without setup panels
 					region.getAttribute("aria-labelledby") || "",
 				)?.textContent,
 		),
-	).toEqual(["Start a conversation", "Do today", "Your day"]);
+	).toEqual(["Start a conversation", "When you're ready", "Your day"]);
 	for (const name of ["Brain wants to check", "Handled", "Needs you"]) {
 		expect(screen.queryByRole("region", { name })).not.toBeInTheDocument();
 	}
@@ -243,15 +245,17 @@ it("shows Today as greeting, ask box, Do today and Your day without setup panels
 it("greets by the given name for first-last and last-first profile names", () => {
 	renderBrief();
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		/^Good (morning|afternoon|evening), Riley\. Nothing due today\.$/,
+		/^Good (morning|afternoon|evening), Riley\.$/,
 	);
+	expect(screen.getByText("Nothing is due today.")).toBeVisible();
 	cleanup();
 	const state = createBriefState();
 	state.profile.name = "Wong, Riley";
 	renderBrief(state);
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		/^Good (morning|afternoon|evening), Riley\. Nothing due today\.$/,
+		/^Good (morning|afternoon|evening), Riley\.$/,
 	);
+	expect(screen.getByText("Nothing is due today.")).toBeVisible();
 });
 
 it("puts overdue and due-today work first and counts it in the headline", () => {
@@ -265,10 +269,10 @@ it("puts overdue and due-today work first and counts it in the headline", () => 
 				: item,
 	);
 	renderBrief(state);
-	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"2 due today",
+	expect(screen.getByText("2 things are due today.")).toBeVisible();
+	const today = within(
+		screen.getByRole("region", { name: "When you're ready" }),
 	);
-	const today = within(screen.getByRole("region", { name: "Do today" }));
 	expect(
 		today
 			.getAllByRole("heading", { level: 3 })
@@ -280,7 +284,8 @@ it("puts overdue and due-today work first and counts it in the headline", () => 
 	]);
 });
 
-it("shows at most five tasks and keeps the rest behind See everything", () => {
+it("starts with three tasks, shows up to five, and keeps the rest behind See everything", async () => {
+	const user = userEvent.setup();
 	const state = createBriefState();
 	const [first] = state.items;
 	if (!first) throw new Error("Missing sample item");
@@ -294,7 +299,11 @@ it("shows at most five tasks and keeps the rest behind See everything", () => {
 		})),
 	];
 	renderBrief(state);
-	const today = within(screen.getByRole("region", { name: "Do today" }));
+	const today = within(
+		screen.getByRole("region", { name: "When you're ready" }),
+	);
+	expect(today.getAllByRole("article")).toHaveLength(3);
+	await user.click(today.getByRole("button", { name: "Show 2 more" }));
 	expect(today.getAllByRole("article")).toHaveLength(5);
 	expect(
 		today.getByRole("link", { name: "See everything (7)" }),
@@ -329,10 +338,9 @@ it("keeps one main action and Done visible, with context one click away", async 
 		{ type: "item.update", itemId: "pricing", changes: { status: "done" } },
 	]);
 	expect(
-		within(screen.getByRole("region", { name: "Do today" })).queryByRole(
-			"link",
-			{ name: "Confirm revised pricing" },
-		),
+		within(
+			screen.getByRole("region", { name: "When you're ready" }),
+		).queryByRole("link", { name: "Confirm revised pricing" }),
 	).not.toBeInTheDocument();
 	expect(screen.getByRole("link", { name: "2 done" })).toBeVisible();
 });

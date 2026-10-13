@@ -4,6 +4,7 @@ import {
 	Button,
 	cn,
 	H1,
+	P,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -59,20 +60,29 @@ export function BriefHeader() {
 	const isChecking = Boolean(
 		updates?.isSyncing || check?.status === "running",
 	);
+	const at = next?.toLocaleTimeString(undefined, {
+		timeZone: zone,
+		hour: "numeric",
+		minute: "2-digit",
+	});
+	// facts first, said gently; the ask box below is the invitation
+	const dueLine =
+		due === 0
+			? "Nothing is due today."
+			: due === 1
+				? "One thing is due today."
+				: `${due} things are due today.`;
 	return (
-		<header className="mb-4 flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
-			<H1 className="min-w-0 max-w-3xl flex-1 font-medium text-2xl leading-snug tracking-tight 2xl:text-3xl">
+		<header className="mb-6 flex flex-col items-center gap-2 text-center">
+			<H1 className="font-medium text-3xl tracking-tight 2xl:text-4xl">
 				{greeting}
-				{name ? `, ${name}` : ""}.{" "}
-				<span className="text-muted-foreground">
-					{due > 0 ? `${due} due today` : "Nothing due today"}
-					{next
-						? `, next meeting at ${next.toLocaleTimeString(undefined, { timeZone: zone, hour: "2-digit", minute: "2-digit", hour12: false })}`
-						: ""}
-					.
-				</span>
+				{name ? `, ${name}` : ""}.
 			</H1>
-			<div className="flex items-center gap-1 text-muted-foreground text-xs">
+			<P className="text-base text-muted-foreground">
+				{dueLine}
+				{at ? ` Your next meeting is at ${at}.` : ""}
+			</P>
+			<div className="flex items-center gap-1 text-muted-foreground/80 text-xs">
 				<span>
 					{isChecking
 						? "Checking\u2026"

@@ -20,7 +20,7 @@ const SUGGESTIONS = [
 export function TodaySuggestions() {
 	const navigate = useNavigate();
 	return (
-		<div className="mt-2 flex flex-wrap gap-2">
+		<div className="mt-3 flex flex-wrap justify-center gap-2">
 			{SUGGESTIONS.map(({ label, prompt }) => (
 				<Button
 					key={label}
