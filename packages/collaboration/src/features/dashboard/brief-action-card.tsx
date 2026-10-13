@@ -1,4 +1,4 @@
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import {
@@ -139,7 +139,8 @@ export function BriefActionCard({ item }: { item: WorkItem }) {
 						</div>
 						<CollapsibleContent className="space-y-3 px-4 pb-4">
 							{context && (
-								<div className="rounded-lg border bg-muted/20 p-3">
+								// plain text under the title; a box inside the list's box is one container too many
+								<div className="max-w-prose">
 									<P className="mb-1 text-muted-foreground text-xs">
 										{draft ? "Draft reply" : "Context"}
 									</P>
@@ -165,10 +166,6 @@ export function BriefActionCard({ item }: { item: WorkItem }) {
 										},
 									}}
 								>
-									<Sparkles
-										aria-hidden="true"
-										className="size-3"
-									/>
 									Ask about this
 								</Link>
 							</Button>

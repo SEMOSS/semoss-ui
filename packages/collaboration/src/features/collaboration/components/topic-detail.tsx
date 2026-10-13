@@ -75,8 +75,9 @@ const MEMBERSHIPS = [
 ] as const;
 
 const cardClassName = "min-w-0 gap-0 overflow-hidden p-0 shadow-none";
-const cardHeaderClassName =
-	"flex min-w-0 flex-wrap items-center justify-between gap-3 px-5 py-4";
+// the context column is plain sections on the page, ruled apart; only the work list is boxed
+const asideHeaderClassName =
+	"flex min-w-0 flex-wrap items-center justify-between gap-3 pb-3";
 const contextHeadingClassName = "font-display font-semibold text-base";
 // suggested people past this many sit behind "Show more"
 const SUGGESTED_PREVIEW = 3;
@@ -348,19 +349,24 @@ export function TopicDetail() {
 								<WorkItemsList feed={feed} />
 							</TabsContent>
 							<TabsContent value="threads" className="mt-0">
-								<div className={cardHeaderClassName}>
-									<H2 className="font-bold text-base">
-										Threads{" "}
-										<span className="font-normal text-muted-foreground tabular-nums">
-											{threads.length}
-										</span>
-									</H2>
-									{feedThreadCount > 0 && (
-										<Small className="font-normal text-muted-foreground">
-											{feedThreadCount} in your feed
-										</Small>
-									)}
-								</div>
+								{/* the tab already says Threads; this line only counts them */}
+								{threads.length > 0 && (
+									<P className="px-4 py-3 text-muted-foreground text-sm tabular-nums md:px-5">
+										{threads.length}{" "}
+										{threads.length === 1
+											? "thread"
+											: "threads"}
+										{feedThreadCount > 0 && (
+											<>
+												{" \u00b7 "}
+												<span>
+													{feedThreadCount} in your
+													feed
+												</span>
+											</>
+										)}
+									</P>
+								)}
 								{threads.length ? (
 									<ul
 										aria-label="Topic threads"
@@ -380,7 +386,7 @@ export function TopicDetail() {
 										))}
 									</ul>
 								) : (
-									<P className="border-t px-5 py-4 text-muted-foreground text-sm">
+									<P className="px-5 py-4 text-muted-foreground text-sm">
 										No threads in this topic yet. Add it
 										from a thread's details.
 									</P>
@@ -394,10 +400,13 @@ export function TopicDetail() {
 						</Tabs>
 					</Card>
 				</div>
-				<aside aria-label="Topic context" className="min-w-0 space-y-5">
+				<aside
+					aria-label="Topic context"
+					className="min-w-0 divide-y divide-border xl:pt-1 [&>section:first-child]:pt-0 [&>section]:py-6"
+				>
 					<section aria-labelledby={`${fieldId}-goals`}>
-						<Card className={cardClassName}>
-							<div className={cardHeaderClassName}>
+						<div>
+							<div className={asideHeaderClassName}>
 								<div className="min-w-0 space-y-1.5">
 									<H2
 										id={`${fieldId}-goals`}
@@ -442,7 +451,7 @@ export function TopicDetail() {
 							{topic.goals.length > 0 ? (
 								<ul
 									aria-label="Topic goals"
-									className="divide-y divide-border border-t px-5"
+									className="divide-y divide-border border-t"
 								>
 									{topic.goals.map((goal) => (
 										<li
@@ -493,16 +502,16 @@ export function TopicDetail() {
 									))}
 								</ul>
 							) : (
-								<P className="px-5 pb-5 text-muted-foreground text-sm">
+								<P className="text-muted-foreground text-sm">
 									Add a goal for you and your assistant to
 									work toward.
 								</P>
 							)}
-						</Card>
+						</div>
 					</section>
 					<section aria-labelledby={`${fieldId}-people`}>
-						<Card className={cardClassName}>
-							<div className={cardHeaderClassName}>
+						<div>
+							<div className={asideHeaderClassName}>
 								<div className="flex items-center gap-3">
 									<H2
 										id={`${fieldId}-people`}
@@ -595,7 +604,7 @@ export function TopicDetail() {
 									</PopoverContent>
 								</Popover>
 							</div>
-							<div className="space-y-4 px-5 pb-5">
+							<div className="space-y-4">
 								{MEMBERSHIPS.map(
 									({
 										state: membership,
@@ -753,11 +762,11 @@ export function TopicDetail() {
 									},
 								)}
 							</div>
-						</Card>
+						</div>
 					</section>
 					<section aria-labelledby={`${fieldId}-assistant-context`}>
-						<Card className={cardClassName}>
-							<div className={cardHeaderClassName}>
+						<div>
+							<div className={asideHeaderClassName}>
 								<H2
 									id={`${fieldId}-assistant-context`}
 									className={contextHeadingClassName}
@@ -765,7 +774,7 @@ export function TopicDetail() {
 									Assistant
 								</H2>
 							</div>
-							<div className="space-y-3 px-5 pb-5">
+							<div className="space-y-3">
 								<div className="flex items-center justify-between gap-2">
 									<H3 className="font-medium text-sm">
 										Keywords
@@ -906,7 +915,7 @@ export function TopicDetail() {
 									</CollapsibleContent>
 								</Collapsible>
 							</div>
-						</Card>
+						</div>
 					</section>
 				</aside>
 			</div>

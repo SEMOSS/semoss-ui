@@ -1,4 +1,4 @@
-import { Check, Plus, Reply, RotateCcw, Sparkles, X } from "lucide-react";
+import { Check, Plus, Reply, RotateCcw, X } from "lucide-react";
 import { Link } from "react-router";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
 import { givenFirst } from "@/lib/person-name";
@@ -151,7 +151,6 @@ export function WorkItemCard({
 								variant="outline"
 								className="border-primary/30 bg-primary/10 px-2 text-primary"
 							>
-								<Sparkles aria-hidden="true" />
 								Suggestion
 							</Badge>
 						) : (
