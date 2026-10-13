@@ -13,6 +13,8 @@ import {
 	AlertDescription,
 	AlertTitle,
 	Button,
+	ToggleGroup,
+	ToggleGroupItem,
 	toast,
 } from "@semoss/ui/next";
 import { formatDurationMs } from "@semoss/utility/date";
@@ -41,8 +43,8 @@ import { ErrorDetail } from "../../form-editor/error-detail";
 import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
+import { RunDataBrowser } from "./run-data-browser";
 import { RunNodeDataViewer } from "./run-node-data-viewer";
-import { RunSourceDataView } from "./run-source-data-view";
 
 export interface RunsTabSnapshot {
 	running: boolean;
@@ -624,7 +626,7 @@ function HistoryRunView({
 	onViewAgentRun?: (trace: AutomationNodeTrace) => void;
 }) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-	const [detailMode, setDetailMode] = useState<"steps" | "sources">("steps");
+	const [detailMode, setDetailMode] = useState<"steps" | "data">("steps");
 	const executedSteps = useMemo(() => getExecutedSteps(run), [run]);
 	const stepMap = useMemo(
 		() => new Map(executedSteps.map((s) => [s.id, s])),
@@ -662,30 +664,20 @@ function HistoryRunView({
 					)}
 				</div>
 				<div className="flex shrink-0 items-center gap-2">
-					<div className="flex rounded-md border p-0.5">
-						<Button
-							type="button"
-							size="sm"
-							variant={
-								detailMode === "steps" ? "secondary" : "ghost"
-							}
-							className="h-6 px-2 text-xs"
-							onClick={() => setDetailMode("steps")}
-						>
-							Steps
-						</Button>
-						<Button
-							type="button"
-							size="sm"
-							variant={
-								detailMode === "sources" ? "secondary" : "ghost"
-							}
-							className="h-6 px-2 text-xs"
-							onClick={() => setDetailMode("sources")}
-						>
-							Source data
-						</Button>
-					</div>
+					<ToggleGroup
+						type="single"
+						value={detailMode}
+						onValueChange={(value) => {
+							if (value === "steps" || value === "data")
+								setDetailMode(value);
+						}}
+						variant="outline"
+						size="sm"
+						aria-label="Run detail view"
+					>
+						<ToggleGroupItem value="steps">Steps</ToggleGroupItem>
+						<ToggleGroupItem value="data">Run data</ToggleGroupItem>
+					</ToggleGroup>
 					{onViewRun && (
 						<Button
 							size="sm"
@@ -701,8 +693,8 @@ function HistoryRunView({
 			</div>
 
 			<div className="mt-3 flex min-h-0 flex-1 overflow-hidden">
-				{detailMode === "sources" ? (
-					<RunSourceDataView
+				{detailMode === "data" ? (
+					<RunDataBrowser
 						appId={appId}
 						run={run}
 						onOutputPopout={onOutputPopout}
