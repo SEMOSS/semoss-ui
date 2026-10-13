@@ -36,13 +36,6 @@ export type AutomationNodeSources = Record<string, string>;
 const MANUAL_TRIGGER: TriggerBinding = { id: "manual", type: "manual" };
 const PYTHON_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-/** DatabaseEngine method per write node. Reads go through execQuery instead. */
-const DATABASE_WRITE_METHODS: Record<string, string | undefined> = {
-	"database.insert": "insertData",
-	"database.update": "updateData",
-	"database.delete": "removeData",
-};
-
 // Drops unfinished "Add input" rows so a blank name never reaches the backend save validator.
 function sanitizeTriggerGlobals(value: unknown): AutomationJsonValue {
 	if (!Array.isArray(value)) return value as AutomationJsonValue;
@@ -138,10 +131,6 @@ function numberValue(value: unknown, fallback: number): number {
 	return typeof value === "number" && Number.isFinite(value)
 		? value
 		: fallback;
-}
-
-function pythonLiteral(value: unknown): string {
-	return JSON.stringify(value ?? "");
 }
 
 function branchClauses(value: unknown): AutomationBranchClause[] {
@@ -363,155 +352,6 @@ function legacyJevRoutes(
 
 function isRoutingWorkflowType(type: AutomationWorkflowNodeType): boolean {
 	return type === "control.if" || type === "control.jev";
-}
-
-/**
- * Shows the direct SDK implementation before the server has persisted its canonical copy.
- * Saving a generated node always replaces this preview with the authoritative backend renderer.
- */
-export function getGeneratedPythonPreview(step: AutomationNode): string {
-	const type = step.workflowType;
-	const config = type
-		? mergeCanvasConfig(type, step.config, step.workflowConfig ?? {})
-		: {};
-	const category = type
-		? getWorkflowNodeDefinition(type)?.category
-		: undefined;
-	// Byte-for-byte the server's AutomationSourceRenderer.triggerSource. The save path
-	// compares the persisted trigger source against that template to decide whether the
-	// node is still generated, so drift here would mark every untouched trigger custom.
-	if (type === "trigger.start") {
-		return `# Declare globals in trigger.start config.globals.
-# Define optional setup here; return a map only for additional runtime values.
-def run(scope):
-    return {}
-`;
-	}
-	if (category === "database") {
-		// execQuery only runs reads. Each write operation has its own method, the same
-		// mapping AutomationSourceRenderer.databaseWriteSource applies server side.
-		const writeMethod = DATABASE_WRITE_METHODS[type ?? ""];
-		if (writeMethod) {
-			return `from ai_server import DatabaseEngine
-
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-QUERY = ${pythonLiteral(config.query)}
-
-def run(scope):
-    database = DatabaseEngine(engine_id=scope.resolve(ENGINE_ID))
-    return database.${writeMethod}(query=scope.resolve(QUERY))
-`;
-		}
-		return `from ai_server import DatabaseEngine
-
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-QUERY = ${pythonLiteral(config.query)}
-
-def run(scope):
-    database = DatabaseEngine(engine_id=scope.resolve(ENGINE_ID))
-    return database.execQuery(query=scope.resolve(QUERY), return_pandas=False)
-`;
-	}
-	if (category === "model") {
-		return `from ai_server import ModelEngine
-
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-PROMPT = ${pythonLiteral(config.prompt ?? config.text)}
-
-def run(scope):
-    model = ModelEngine(engine_id=scope.resolve(ENGINE_ID))
-    return model.ask(command=scope.resolve(PROMPT))
-`;
-	}
-	if (category === "storage") {
-		return `from ai_server import StorageEngine
-
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-STORAGE_PATH = ${pythonLiteral(config.path)}
-
-def run(scope):
-    storage = StorageEngine(engine_id=scope.resolve(ENGINE_ID))
-    return storage.list(scope.resolve(STORAGE_PATH))
-`;
-	}
-	if (category === "data") {
-		return `SOURCE = ${pythonLiteral(config.source)}
-PATH = ${pythonLiteral(config.path)}
-
-def run(scope):
-    return extract_data_element(scope.resolve(SOURCE), scope.resolve(PATH))
-`;
-	}
-	if (category === "vector") {
-		return `from ai_server import VectorEngine
-
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-QUERY = ${pythonLiteral(config.value)}
-
-def run(scope):
-    vector = VectorEngine(engine_id=scope.resolve(ENGINE_ID))
-    return vector.nearestNeighbor(search_statement=scope.resolve(QUERY), limit=5)
-`;
-	}
-	if (type === "function.execute") {
-		return `from ai_server import FunctionEngine
-import json
-
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-ARGUMENTS = ${pythonLiteral(config.arguments)}
-
-def run(scope):
-    function = FunctionEngine(engine_id=scope.resolve(ENGINE_ID))
-    return function.execute(parameterMap=json.loads(scope.resolve(ARGUMENTS)))
-`;
-	}
-	if (type === "app.pixel") {
-		return `from semoss import Insight
-import json
-
-APP_ID = ${pythonLiteral(config.appId)}
-PIXEL = ${pythonLiteral(config.pixel)}
-
-def run(scope):
-    app_id = scope.resolve(APP_ID)
-    pixel = scope.resolve(PIXEL)
-    if app_id:
-        pixel = "LoadApp(project=" + json.dumps(app_id) + "); " + pixel
-    return Insight().run_pixel(pixel, raw=False)
-`;
-	}
-	if (type === "control.wait") {
-		return `import time
-
-SECONDS = ${pythonLiteral(config.durationSeconds)}
-
-def run(scope):
-    seconds = float(SECONDS)
-    time.sleep(seconds)
-    return {"waitedSeconds": seconds}
-`;
-	}
-	if (type === "control.if") {
-		const clauses = branchClauses(config.clauses);
-		return `CLAUSES = ${pythonLiteral(clauses)}
-
-def run(scope):
-	for clause in CLAUSES:
-		if bool(eval(scope.resolve(clause["condition"]))):
-			return {"branch": "case:" + clause["id"], "value": True}
-	return {"branch": "else", "value": False}
-`;
-	}
-	if (type === "control.jev") {
-		return "# Jev decisions execute through the server-owned TypeSafe engine.\n";
-	}
-	return `# Write arbitrary Python for this automation node here.
-# scope is a read-only, run-local mapping: inputs, globals, metadata, and prior outputs by outputVar.
-# Read required values with scope["outputVar"] and optional values with scope.get("outputVar").
-# Return a JSON-shaped value to pass data to the next node.
-def run(scope):
-    return {}
-`;
 }
 
 /**
@@ -744,7 +584,10 @@ function withPythonSource(
 	type: AutomationWorkflowNodeType,
 	config: AutomationWorkflowNodeConfig,
 ): AutomationWorkflowNodeConfig {
-	if (type === "trigger.start") return config;
+	if (type !== "developer.python") {
+		const { pythonSource: _pythonSource, ...typedConfig } = config;
+		return typedConfig;
+	}
 	const pythonSource = stringValue(config.pythonSource);
 	return pythonSource ? { ...config, pythonSource } : config;
 }
@@ -1060,7 +903,7 @@ function canvasNodeFromWorkflow(
 		structuredClone(normalizeWorkflowConfig(node.config)),
 	);
 	const workflowConfig =
-		node.type === "trigger.start" ||
+		node.type !== "developer.python" ||
 		typeof nodeSources[node.id] !== "string"
 			? persistedConfig
 			: { ...persistedConfig, pythonSource: nodeSources[node.id] };
@@ -1199,11 +1042,7 @@ export function getCanvasNodeSources(
 				? Object.entries(getCanvasNodeSources(step.body.nodes))
 				: [];
 			const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
-			if (
-				type === "trigger.start" ||
-				isRoutingWorkflowType(type) ||
-				step.workflowCodeMode !== "custom"
-			) {
+			if (type !== "developer.python") {
 				return bodySources;
 			}
 			const source = step.workflowConfig?.pythonSource;
@@ -1224,18 +1063,13 @@ function canvasNodeToWorkflow(step: AutomationNode): AutomationWorkflowNode {
 		step.config,
 		step.workflowConfig ?? structuredClone(definition.defaultConfig),
 	);
-	// Every other node's Python is persisted as its own file under automation-nodes/,
-	// so carrying a copy in the config would duplicate it. The trigger has no such
-	// file: AutomationRuntime.triggerSource reads its optional setup source straight
-	// out of this config, making this the only place it can live.
-	const { pythonSource, ...persistedConfig } = config;
+	// Explicit Python is persisted as its own file under automation-nodes/.
+	const persistedConfig = { ...config };
+	delete persistedConfig.pythonSource;
 	if (type === "trigger.start") {
 		persistedConfig.globals = sanitizeTriggerGlobals(
 			persistedConfig.globals,
 		);
-		if (typeof pythonSource === "string" && pythonSource.trim() !== "") {
-			persistedConfig.pythonSource = pythonSource;
-		}
 	}
 	return {
 		id: step.id,
@@ -1246,9 +1080,7 @@ function canvasNodeToWorkflow(step: AutomationNode): AutomationWorkflowNode {
 			: { outputVar: step.outputVar }),
 		position: step.position,
 		config: persistedConfig,
-		codeMode: isRoutingWorkflowType(type)
-			? "generated"
-			: (step.workflowCodeMode ?? definition.defaultCodeMode),
+		codeMode: type === "developer.python" ? "custom" : "generated",
 		...(step.body
 			? {
 					body: canvasGraphToWorkflow(
@@ -1399,13 +1231,7 @@ export function validateCanvasWorkflowNode(
 			errors.push("A media path or media URL is required");
 		}
 	}
-	// Source is only rejected once written: an untouched node saves with no source and the
-	// server persists its generated scaffold instead.
-	if (
-		type !== "trigger.start" &&
-		!isRoutingWorkflowType(type) &&
-		node.workflowCodeMode === "custom"
-	) {
+	if (type === "developer.python") {
 		const source = stringValue(config.pythonSource);
 		if (source.trim() !== "" && !definesRunEntryPoint(source)) {
 			errors.push("a top-level run(scope) function");

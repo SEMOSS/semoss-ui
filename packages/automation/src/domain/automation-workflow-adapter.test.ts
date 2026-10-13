@@ -20,7 +20,6 @@ import {
 	createCanvasWorkflowNode,
 	definesRunEntryPoint,
 	getCanvasNodeSources,
-	getGeneratedPythonPreview,
 	normalizeJevDecisionConfig,
 	validateAutomationOutputVariable,
 	validateCanvasWorkflowConnections,
@@ -265,96 +264,6 @@ describe("data extraction", () => {
 			missingValue: "Unknown customer",
 			nullValue: "Not provided",
 		});
-	});
-});
-
-describe("getGeneratedPythonPreview", () => {
-	/**
-	 * `resolve` is a method on the scope mapping the runtime passes in, not a
-	 * builtin. A bare `resolve(...)` raises NameError as soon as a user edits the
-	 * preview into a custom node, which is how this code reaches production.
-	 */
-	it("resolves through scope for every node type", () => {
-		for (const definition of TEST_NODE_DEFINITIONS) {
-			if (
-				["control.if", "control.jev", "control.loop"].includes(
-					definition.type,
-				)
-			) {
-				continue;
-			}
-			const source = getGeneratedPythonPreview(node(definition.type));
-			const total = source.match(/resolve\(/g)?.length ?? 0;
-			const qualified = source.match(/scope\.resolve\(/g)?.length ?? 0;
-			expect(
-				qualified,
-				`${definition.type} must call scope.resolve`,
-			).toBe(total);
-		}
-	});
-
-	it("uses the write method matching each database operation", () => {
-		expect(getGeneratedPythonPreview(node("database.insert"))).toContain(
-			"database.insertData(query=scope.resolve(QUERY))",
-		);
-		expect(getGeneratedPythonPreview(node("database.update"))).toContain(
-			"database.updateData(query=scope.resolve(QUERY))",
-		);
-		expect(getGeneratedPythonPreview(node("database.delete"))).toContain(
-			"database.removeData(query=scope.resolve(QUERY))",
-		);
-	});
-
-	/** execQuery only runs SELECT, so a write must never fall back to it. */
-	it("never renders a read call for a write node", () => {
-		for (const type of [
-			"database.insert",
-			"database.update",
-			"database.delete",
-		] as const) {
-			expect(getGeneratedPythonPreview(node(type))).not.toContain(
-				"execQuery",
-			);
-		}
-		expect(getGeneratedPythonPreview(node("database.query"))).toContain(
-			"execQuery",
-		);
-	});
-
-	/**
-	 * The server compares a persisted trigger source against the identical
-	 * template in AutomationSourceRenderer.triggerSource to decide whether the
-	 * trigger is still generated. Drift on either side marks every untouched
-	 * trigger custom, so the exact bytes are the contract.
-	 */
-	it("matches the server trigger template byte for byte", () => {
-		expect(getGeneratedPythonPreview(node("trigger.start"))).toBe(
-			[
-				"# Declare globals in trigger.start config.globals.",
-				"# Define optional setup here; return a map only for additional runtime values.",
-				"def run(scope):",
-				"    return {}",
-				"",
-			].join("\n"),
-		);
-	});
-
-	it("always emits a run entry point", () => {
-		for (const definition of TEST_NODE_DEFINITIONS) {
-			if (
-				["control.if", "control.jev", "control.loop"].includes(
-					definition.type,
-				)
-			) {
-				continue;
-			}
-			expect(
-				definesRunEntryPoint(
-					getGeneratedPythonPreview(node(definition.type)),
-				),
-				`${definition.type} must define run(scope)`,
-			).toBe(true);
-		}
 	});
 });
 
@@ -820,23 +729,15 @@ describe("Jev decision mapping", () => {
 	});
 });
 
-describe("trigger setup source", () => {
-	/**
-	 * Every other node persists its Python as a file under automation-nodes/. The
-	 * trigger has none, so config is the only place its setup source can live and
-	 * the save path has to keep it.
-	 */
-	it("survives a save and reload round trip", () => {
+describe("Python source ownership", () => {
+	it("strips legacy trigger setup source from the typed trigger", () => {
 		const source = 'def run(scope):\n    return {"cutoff": 1}\n';
 		const trigger = node("trigger.start", {
 			workflowConfig: { pythonSource: source },
 		});
 
 		const saved = documentOf([trigger]);
-		expect(saved.graph.nodes[0]?.config.pythonSource).toBe(source);
-
-		const reloaded = canvasDocumentFromWorkflow(saved, {});
-		expect(reloaded.steps[0]?.workflowConfig?.pythonSource).toBe(source);
+		expect(saved.graph.nodes[0]?.config.pythonSource).toBeUndefined();
 	});
 
 	it("is left out of the node source map", () => {
@@ -856,8 +757,7 @@ describe("trigger setup source", () => {
 		expect(saved.graph.nodes[0]?.config.pythonSource).toBeUndefined();
 	});
 
-	/** Non-trigger nodes keep their source in a file, so config must not duplicate it. */
-	it("is stripped from every other node type", () => {
+	it("strips source from every typed node", () => {
 		const saved = documentOf([
 			node("database.query", {
 				workflowCodeMode: "custom",

@@ -183,7 +183,12 @@ function customSourceReferencesOutput(
 	step: AutomationNode,
 	outputVariable: string,
 ): boolean {
-	if (step.workflowCodeMode !== "custom") return false;
+	if (
+		step.workflowType !== "developer.python" ||
+		step.workflowCodeMode !== "custom"
+	) {
+		return false;
+	}
 	const source = step.workflowConfig?.pythonSource;
 	if (typeof source !== "string") return false;
 	return (
@@ -412,10 +417,10 @@ export interface AutomationCanvasHandle {
 	viewHistoricalRun: (run: AutomationRunDetail) => void;
 	/** Returns the canvas to the live editable graph. */
 	exitHistoricalView: () => void;
-	/** Applies a saved file-editor tab's content onto its node's in-memory pythonSource, so a
-	 * later Save can't clobber it with the stale copy the canvas loaded with. Looks the step up
-	 * by id rather than going through `applyInspectorAction`, since the saved tab is not
-	 * necessarily the step currently open in the inspector. No-ops for an unknown/removed step. */
+	/** Applies a saved file-editor tab only to an explicit developer.python node's in-memory
+	 * source, so a later Save cannot clobber it with a stale copy. Looks the step up by id rather
+	 * than using `applyInspectorAction`, since the tab need not be the inspected step. No-ops for
+	 * unknown, removed, or typed nodes. */
 	syncPythonSource: (stepId: string, source: string) => void;
 }
 
@@ -2622,7 +2627,8 @@ export const AutomationCanvasContent = forwardRef<
 				setSteps((previous) =>
 					previous.map((step) => {
 						const source = output.nodeSources?.[step.id];
-						return typeof source === "string"
+						return step.workflowType === "developer.python" &&
+							typeof source === "string"
 							? {
 									...step,
 									workflowConfig: {
@@ -2672,7 +2678,7 @@ export const AutomationCanvasContent = forwardRef<
 		(stepId: string, source: string) => {
 			if (readOnly || viewingHistory) return;
 			const step = steps.find((candidate) => candidate.id === stepId);
-			if (step) {
+			if (step?.workflowType === "developer.python") {
 				updateStep({
 					...step,
 					workflowCodeMode: "custom",
@@ -2692,7 +2698,8 @@ export const AutomationCanvasContent = forwardRef<
 				body: {
 					...parentLoop.body,
 					nodes: parentLoop.body.nodes.map((node) =>
-						node.id === stepId
+						node.id === stepId &&
+						node.workflowType === "developer.python"
 							? {
 									...node,
 									workflowCodeMode: "custom",
