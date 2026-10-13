@@ -21,6 +21,7 @@ import { CreateAutomationPage } from "./automation/create-automation-page";
 import { CreateNotebookPage } from "./notebook/create-notebook-page";
 import { EditNotebookPage } from "./notebook/edit-notebook-page";
 import { ViewNotebookPage } from "./notebook/view-notebook-page";
+import { ProjectAuditPage } from "./project-audit.page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
 import { ProjectDescriptionSettingsPage } from "./project-description-settings-page";
 import { ProjectLayout } from "./project-layout";
@@ -109,6 +110,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -145,6 +151,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "audit",
+								element: <ProjectAuditPage />,
 							},
 							{
 								path: "smss",
@@ -211,6 +221,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -249,6 +264,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "settings",
 								element: <AppSettingsPage />,
+							},
+							{
+								path: "audit",
+								element: <ProjectAuditPage />,
 							},
 							{
 								path: "smss",
@@ -306,6 +325,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -334,6 +358,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "settings",
 								element: <AppSettingsPage />,
+							},
+							{
+								path: "audit",
+								element: <ProjectAuditPage />,
 							},
 							{
 								path: "smss",
@@ -405,6 +433,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -441,6 +474,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "audit",
+								element: <ProjectAuditPage />,
 							},
 							{
 								path: "smss",
@@ -513,6 +550,11 @@ export const PROJECT_ROUTES: {
 										],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -564,6 +606,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "audit",
+								element: <ProjectAuditPage />,
 							},
 							{
 								path: "smss",

@@ -1,4 +1,11 @@
-import { Download, RefreshCw } from "lucide-react";
+import {
+	ChevronDown,
+	ChevronLeft,
+	ChevronRight,
+	Download,
+	RefreshCw,
+	SlidersHorizontal,
+} from "lucide-react";
 import { useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
@@ -7,6 +14,9 @@ import {
 	AlertTitle,
 	Badge,
 	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
 	H4,
 	P,
 	Skeleton,
@@ -51,6 +61,7 @@ function severityVariant(severity: AuditEvent["SEVERITY"]) {
 
 /** Browse, filter, and export the security and administrative audit trail. */
 export const AuditTrails = () => {
+	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [query, setQuery] = useState({
 		filters: EMPTY_AUDIT_FILTERS,
 		page: 0,
@@ -61,6 +72,9 @@ export const AuditTrails = () => {
 		query.page,
 	);
 	const hasFilters = Object.values(query.filters).some(Boolean);
+	const activeFilterCount = Object.values(query.filters).filter(
+		Boolean,
+	).length;
 	const handleApply = (filters: AuditTrailFilters) => {
 		setQuery({ filters, page: 0 });
 	};
@@ -105,39 +119,62 @@ export const AuditTrails = () => {
 		}
 	};
 	return (
-		<div className="flex w-full min-w-0 flex-col gap-6 pb-8">
-			<AuditTrailsFilters onApply={handleApply} />
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-				<output>
-					<P className="text-muted-foreground text-sm">
-						{isLoading
-							? "Loading audit events…"
-							: error
-								? "Audit events could not be loaded."
-								: `${events.length} ${events.length === 1 ? "event" : "events"} on page ${query.page + 1} · Newest first · Times in UTC`}
-					</P>
-				</output>
-				<div className="flex gap-2">
-					<Button
-						type="button"
-						variant="outline"
-						disabled={isLoading || isExporting || Boolean(error)}
-						onClick={handleExport}
-					>
-						<Download className="size-4" aria-hidden="true" />
-						{isExporting ? "Exporting…" : "Export CSV"}
-					</Button>
-					<Button
-						type="button"
-						variant="outline"
-						disabled={isLoading}
-						onClick={refresh}
-					>
-						<RefreshCw className="size-4" aria-hidden="true" />
-						Refresh
-					</Button>
+		<div className="flex w-full min-w-0 flex-col pb-8">
+			<Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+				<div
+					role="toolbar"
+					aria-label="Audit table controls"
+					className="flex flex-wrap items-center justify-between gap-3 border-b py-3"
+				>
+					<CollapsibleTrigger asChild>
+						<Button variant="outline" aria-label="Audit filters">
+							<SlidersHorizontal
+								aria-hidden="true"
+								className="size-4"
+							/>
+							Filters
+							{activeFilterCount > 0 && (
+								<Badge variant="secondary">
+									{activeFilterCount}
+								</Badge>
+							)}
+							<ChevronDown
+								aria-hidden="true"
+								className={`size-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
+							/>
+						</Button>
+					</CollapsibleTrigger>
+					<div className="flex gap-2">
+						<Button
+							type="button"
+							variant="outline"
+							disabled={
+								isLoading || isExporting || Boolean(error)
+							}
+							onClick={handleExport}
+						>
+							<Download className="size-4" aria-hidden="true" />
+							{isExporting ? "Exporting…" : "Export CSV"}
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="icon"
+							aria-label="Refresh"
+							title="Refresh audit trail"
+							disabled={isLoading}
+							onClick={refresh}
+						>
+							<RefreshCw className="size-4" aria-hidden="true" />
+						</Button>
+					</div>
 				</div>
-			</div>
+				<CollapsibleContent forceMount hidden={!filtersOpen}>
+					<div className="border-b py-4">
+						<AuditTrailsFilters onApply={handleApply} />
+					</div>
+				</CollapsibleContent>
+			</Collapsible>
 			{error ? (
 				<Alert variant="destructive">
 					<AlertTitle>Unable to load audit trails</AlertTitle>
@@ -162,7 +199,7 @@ export const AuditTrails = () => {
 					))}
 				</div>
 			) : events.length === 0 ? (
-				<div className="flex min-h-60 flex-col items-center justify-center gap-2 rounded-lg border border-border p-6 text-center">
+				<div className="flex min-h-60 flex-col items-center justify-center gap-2 p-6 text-center">
 					<H4 className="font-medium text-base">
 						{hasFilters
 							? "No matching audit events"
@@ -178,7 +215,7 @@ export const AuditTrails = () => {
 				</div>
 			) : (
 				<section
-					className="min-w-0 overflow-x-auto rounded-lg border border-border focus-visible:outline-2 focus-visible:outline-ring"
+					className="min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring"
 					aria-label="Audit events"
 					// biome-ignore lint/a11y/noNoninteractiveTabindex: keyboard users need to scroll the bounded results table.
 					tabIndex={0}
@@ -277,18 +314,31 @@ export const AuditTrails = () => {
 					</Table>
 				</section>
 			)}
-			<nav
-				className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-				aria-label="Audit events pagination"
-			>
-				<P className="text-muted-foreground text-sm">
-					Page {query.page + 1} · Up to {AUDIT_PAGE_SIZE} events per
-					page
-				</P>
-				<div className="flex gap-2">
+			<footer className="flex flex-col gap-3 border-t py-3 sm:flex-row sm:items-center sm:justify-between">
+				<output>
+					<P className="text-muted-foreground text-sm">
+						{isLoading
+							? "Loading audit events…"
+							: error
+								? "Audit events unavailable"
+								: events.length === 0
+									? "0 events"
+									: `Showing ${query.page * AUDIT_PAGE_SIZE + 1}-${query.page * AUDIT_PAGE_SIZE + events.length} events`}
+					</P>
+				</output>
+				<nav
+					aria-label="Audit events pagination"
+					className="flex flex-wrap items-center gap-2"
+				>
+					<span className="text-muted-foreground text-sm">
+						{AUDIT_PAGE_SIZE} per page
+					</span>
 					<Button
 						type="button"
 						variant="outline"
+						size="icon"
+						aria-label="Previous"
+						title="Previous page"
 						disabled={isLoading || query.page === 0}
 						onClick={() =>
 							setQuery((previous) => ({
@@ -297,11 +347,17 @@ export const AuditTrails = () => {
 							}))
 						}
 					>
-						Previous
+						<ChevronLeft aria-hidden="true" className="size-4" />
 					</Button>
+					<span className="min-w-16 text-center text-sm">
+						Page {query.page + 1}
+					</span>
 					<Button
 						type="button"
 						variant="outline"
+						size="icon"
+						aria-label="Next"
+						title="Next page"
 						disabled={isLoading || Boolean(error) || !hasNextPage}
 						onClick={() =>
 							setQuery((previous) => ({
@@ -310,10 +366,10 @@ export const AuditTrails = () => {
 							}))
 						}
 					>
-						Next
+						<ChevronRight aria-hidden="true" className="size-4" />
 					</Button>
-				</div>
-			</nav>
+				</nav>
+			</footer>
 		</div>
 	);
 };

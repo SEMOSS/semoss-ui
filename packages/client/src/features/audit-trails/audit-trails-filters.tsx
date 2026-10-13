@@ -78,12 +78,17 @@ const TEXT_FILTERS: {
 ];
 
 interface AuditTrailsFiltersProps {
+	/** Resource views cannot change the backend-enforced resource scope. */
+	resourceScoped?: boolean;
 	/** Applies the filters and returns to the first page. */
 	onApply: (filters: AuditTrailFilters) => void;
 }
 
 /** Keep filter drafts separate from the filters used by the current query. */
-export const AuditTrailsFilters = ({ onApply }: AuditTrailsFiltersProps) => {
+export const AuditTrailsFilters = ({
+	onApply,
+	resourceScoped = false,
+}: AuditTrailsFiltersProps) => {
 	const form = useForm<AuditTrailFilters>({
 		resolver: zodResolver(schema),
 		defaultValues: EMPTY_AUDIT_FILTERS,
@@ -95,23 +100,32 @@ export const AuditTrailsFilters = ({ onApply }: AuditTrailsFiltersProps) => {
 	return (
 		<Form
 			form={form}
-			onSubmit={(values) => onApply(normalizeAuditFilters(values))}
+			onSubmit={(values) =>
+				onApply(
+					normalizeAuditFilters({
+						...values,
+						category: resourceScoped ? "" : values.category,
+					}),
+				)
+			}
 			className="flex flex-col gap-4"
 			aria-label="Audit trails filters"
 		>
 			<div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				<FormSelect
-					name="category"
-					label="Category"
-					placeholder="All categories"
-				>
-					<SelectItem value={ALL}>All categories</SelectItem>
-					{AUDIT_CATEGORIES.map((category) => (
-						<SelectItem key={category} value={category}>
-							{category}
-						</SelectItem>
-					))}
-				</FormSelect>
+				{!resourceScoped && (
+					<FormSelect
+						name="category"
+						label="Category"
+						placeholder="All categories"
+					>
+						<SelectItem value={ALL}>All categories</SelectItem>
+						{AUDIT_CATEGORIES.map((category) => (
+							<SelectItem key={category} value={category}>
+								{category}
+							</SelectItem>
+						))}
+					</FormSelect>
+				)}
 				<FormSelect
 					name="status"
 					label="Status"
@@ -137,12 +151,22 @@ export const AuditTrailsFilters = ({ onApply }: AuditTrailsFiltersProps) => {
 						</SelectItem>
 					))}
 				</FormSelect>
-				{TEXT_FILTERS.map((filter) => (
+				{TEXT_FILTERS.filter(
+					(filter) =>
+						!resourceScoped ||
+						["eventType", "actorId", "subjectId"].includes(
+							filter.name,
+						),
+				).map((filter) => (
 					<FormInput
 						key={filter.name}
 						name={filter.name}
 						label={filter.label}
-						placeholder={filter.placeholder}
+						placeholder={
+							resourceScoped && filter.name === "eventType"
+								? "For example, PERMISSION_ADD"
+								: filter.placeholder
+						}
 					/>
 				))}
 				<FormInput name="from" label="From (UTC)" type="date" />

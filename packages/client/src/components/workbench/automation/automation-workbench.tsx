@@ -199,6 +199,7 @@ const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
 		component: "access-control",
 		restrict: ["OWNER", "EDIT"],
 	},
+	{ name: "Audit Trail", component: "audit", restrict: ["OWNER"] },
 	{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 ];
 

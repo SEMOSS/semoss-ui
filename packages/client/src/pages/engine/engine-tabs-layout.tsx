@@ -45,12 +45,14 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 	const navigate = useNavigate();
 	const { catalog, engine, permission, type, update } = useEngine();
 	const insightID = useSession((state) => state.insightID);
+	const isAdmin = useSession((state) => state.user.admin);
 	const enginePath = `${catalog.path}/${engine.engine_id}`;
 
 	// get the visible tabs based on permission
 	const visibleTabs = useMemo(() => {
 		// get the routes based on permission
 		return tabs.filter((tab) => {
+			if (tab.path === "audit" && isAdmin) return true;
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -59,7 +61,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 			}
 			return tab.restrict.includes(permission);
 		});
-	}, [tabs, permission]);
+	}, [tabs, permission, isAdmin]);
 
 	/**
 	 * Gets active tab

@@ -4,6 +4,7 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -83,6 +84,36 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("Audit Trails settings", () => {
+	it("groups controls and pagination around the table with collapsed admin filters", () => {
+		renderPage();
+		const toolbar = screen.getByRole("toolbar", {
+			name: "Audit table controls",
+		});
+		const toggle = within(toolbar).getByRole("button", {
+			name: "Audit filters",
+		});
+		expect(toggle).toHaveAttribute("aria-expanded", "false");
+		expect(
+			screen.queryByRole("combobox", { name: "Category" }),
+		).not.toBeInTheDocument();
+		expect(
+			within(toolbar).getByRole("button", { name: "Refresh" }),
+		).toBeInTheDocument();
+		expect(
+			within(toolbar).getByRole("button", { name: "Export CSV" }),
+		).toBeInTheDocument();
+		fireEvent.click(toggle);
+		expect(
+			screen.getByRole("combobox", { name: "Category" }),
+		).toBeInTheDocument();
+		const pagination = screen.getByRole("navigation", {
+			name: "Audit events pagination",
+		});
+		expect(pagination.parentElement).toHaveTextContent(
+			"Showing 1-1 events",
+		);
+		expect(within(pagination).getByText("Page 1")).toBeInTheDocument();
+	});
 	it("exposes a navigable card only in admin mode", () => {
 		const view = render(
 			<MemoryRouter initialEntries={["/settings"]}>
@@ -123,6 +154,7 @@ describe("Audit Trails settings", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Next" }));
 		expect(mocks.usePixel.mock.lastCall?.[0]).toContain("Offset(25)");
 		expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+		fireEvent.click(screen.getByRole("button", { name: "Audit filters" }));
 		fireEvent.change(screen.getByLabelText("Actor user ID"), {
 			target: { value: "actor-1" },
 		});

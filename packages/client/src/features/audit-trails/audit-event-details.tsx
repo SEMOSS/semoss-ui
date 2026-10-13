@@ -111,12 +111,17 @@ const GROUPS: {
 ];
 
 interface AuditEventDetailsProps {
-	/** Complete event returned by the existing backend. */
-	event: AuditEvent;
+	/** Complete admin event or reduced resource-owner projection. */
+	event: Partial<AuditEvent>;
+	/** Omit administrative request, source, and failure diagnostics. */
+	resourceScoped?: boolean;
 }
 
 /** Inspect all event fields with a focus-managed, dismissible details sheet. */
-export const AuditEventDetails = ({ event }: AuditEventDetailsProps) => {
+export const AuditEventDetails = ({
+	event,
+	resourceScoped = false,
+}: AuditEventDetailsProps) => {
 	const descriptionId = useId();
 	return (
 		<Sheet>
@@ -138,14 +143,25 @@ export const AuditEventDetails = ({ event }: AuditEventDetailsProps) => {
 					<SheetTitle>Audit event details</SheetTitle>
 					<SheetDescription>
 						<span id={descriptionId}>
-							Recorded action, actor, affected user, request,
-							resource, changes, and failure details.
+							{resourceScoped
+								? "Resource audit event"
+								: "Recorded action, actor, affected user, request, resource, changes, and failure details."}
 						</span>
 					</SheetDescription>
 				</SheetHeader>
 				<div className="min-h-0 flex-1 overflow-y-auto px-4">
 					<div className="flex flex-col gap-6 pb-4">
-						{GROUPS.map((group) => (
+						{GROUPS.filter(
+							(group) =>
+								!resourceScoped ||
+								[
+									"Event",
+									"Actor",
+									"Affected user",
+									"Resource",
+									"Changes and details",
+								].includes(group.title),
+						).map((group) => (
 							<section
 								key={group.title}
 								className="flex flex-col gap-2"
@@ -154,40 +170,50 @@ export const AuditEventDetails = ({ event }: AuditEventDetailsProps) => {
 									{group.title}
 								</H3>
 								<dl className="flex flex-col gap-4">
-									{group.fields.map(([column, label]) => (
-										<div key={column} className="min-w-0">
-											<dt className="text-muted-foreground text-sm">
-												{label}
-											</dt>
-											<dd className="mt-1 min-w-0">
-												{group.code &&
-												event[column] !== null &&
-												event[column] !== "" ? (
-													<MultilineCode className="block whitespace-pre-wrap break-words bg-muted text-foreground text-sm">
-														{formatAuditValue(
-															event[column],
-														)}
-													</MultilineCode>
-												) : (
-													<P className="break-words text-sm">
-														{TIME_COLUMNS.includes(
-															column,
-														)
-															? formatAuditTime(
-																	event[
-																		column
-																	],
-																)
-															: String(
-																	event[
-																		column
-																	] ?? "—",
-																)}
-													</P>
-												)}
-											</dd>
-										</div>
-									))}
+									{group.fields
+										.filter(
+											([column]) =>
+												!resourceScoped ||
+												column in event,
+										)
+										.map(([column, label]) => (
+											<div
+												key={column}
+												className="min-w-0"
+											>
+												<dt className="text-muted-foreground text-sm">
+													{label}
+												</dt>
+												<dd className="mt-1 min-w-0">
+													{group.code &&
+													event[column] !== null &&
+													event[column] !== "" ? (
+														<MultilineCode className="block whitespace-pre-wrap break-words bg-muted text-foreground text-sm">
+															{formatAuditValue(
+																event[column],
+															)}
+														</MultilineCode>
+													) : (
+														<P className="break-words text-sm">
+															{TIME_COLUMNS.includes(
+																column,
+															)
+																? formatAuditTime(
+																		event[
+																			column
+																		],
+																	)
+																: String(
+																		event[
+																			column
+																		] ??
+																			"—",
+																	)}
+														</P>
+													)}
+												</dd>
+											</div>
+										))}
 								</dl>
 							</section>
 						))}
