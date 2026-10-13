@@ -23,8 +23,10 @@ export function getNodePythonViewState(
 		step.workflowType === "control.if" ||
 		step.workflowType === "control.jev" ||
 		step.workflowType === "control.loop";
-	const showPythonEditor =
-		isDeveloperPython && devMode && editorMode === "python";
+	// A developer.python node exists specifically so its source can be authored.
+	// Keep that editor available in both Design and Dev modes; Dev mode controls
+	// conversion of typed nodes, not whether an explicit Python node is usable.
+	const showPythonEditor = isDeveloperPython;
 
 	return {
 		isCustomSource,

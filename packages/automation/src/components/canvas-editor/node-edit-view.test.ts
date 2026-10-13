@@ -45,14 +45,26 @@ describe("node Python view", () => {
 	});
 
 	it("keeps developer Python editable without a conversion step", () => {
-		const state = getNodePythonViewState(
+		const pythonMode = getNodePythonViewState(
 			node("developer.python", "custom"),
 			true,
 			"python",
 		);
+		const formMode = getNodePythonViewState(
+			node("developer.python", "custom"),
+			true,
+			"form",
+		);
+		const designMode = getNodePythonViewState(
+			node("developer.python", "custom"),
+			false,
+			"form",
+		);
 
-		expect(state.isDeveloperPython).toBe(true);
-		expect(state.showPythonEditor).toBe(true);
+		expect(pythonMode.isDeveloperPython).toBe(true);
+		expect(pythonMode.showPythonEditor).toBe(true);
+		expect(formMode.showPythonEditor).toBe(true);
+		expect(designMode.showPythonEditor).toBe(true);
 	});
 
 	it("converts generated code without mutating the original node", () => {

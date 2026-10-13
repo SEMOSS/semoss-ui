@@ -2055,7 +2055,14 @@ export const AutomationCanvasContent = forwardRef<
 			setAddAfterHandle(null);
 			setEditingStepId(id);
 			window.requestAnimationFrame(() => {
-				window.requestAnimationFrame(fitWorkflow);
+				window.requestAnimationFrame(() => {
+					reactFlowInstanceRef.current?.fitView({
+						nodes: [{ id }],
+						padding: 0.5,
+						duration: 250,
+						maxZoom: 1,
+					});
+				});
 			});
 		},
 		[
@@ -2063,7 +2070,6 @@ export const AutomationCanvasContent = forwardRef<
 			loopBodyInsertionPoint,
 			addAfterStepId,
 			addAfterHandle,
-			fitWorkflow,
 			getNodeHeight,
 			graphEdges,
 			readOnly,
