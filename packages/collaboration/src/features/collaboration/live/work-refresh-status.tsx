@@ -88,11 +88,8 @@ export function WorkRefreshStatus({ className }: { className?: string }) {
 					aria-hidden="true"
 					className={cn("text-primary", checking && "animate-spin")}
 				/>
-				{updates.isSyncing
-					? "Checking..."
-					: error
-						? "Try again"
-						: "Refresh"}
+				{/* the status next to it already says "Checking mail..." */}
+				{error && !updates.isSyncing ? "Try again" : "Refresh"}
 			</Button>
 			<output>
 				{checking

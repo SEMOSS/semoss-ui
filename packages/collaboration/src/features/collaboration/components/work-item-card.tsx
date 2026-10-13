@@ -9,7 +9,6 @@ import { selectThreadContext } from "../state/collaboration.selectors";
 import type { WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { noResponseNeeded } from "../work-item-actions";
-import { PersonAvatar } from "./person-avatar";
 import { ThreadMenu } from "./thread-menu";
 import { TopicChip } from "./topic-chip";
 
@@ -21,7 +20,7 @@ const URGENCY_TONES: Record<string, string> = {
 	"This week": "bg-warning",
 };
 
-/** A work item with independent navigation and reversible session actions; Snooze and Ignore live in its menu. */
+/** A compact work row: title, one line of who/where/why with its actions, then the summary. Snooze and Ignore live in its menu. */
 export function WorkItemCard({
 	item,
 	topicId,
@@ -47,197 +46,179 @@ export function WorkItemCard({
 		(item.actorId === "assistant" ? "Assistant" : "You");
 	const { label: channelLabel, icon: Icon } = channelMeta(item.channel);
 	const path = threadPath(thread.id);
+	// open and waiting rows keep their two actions out of the way until the row is hovered or focused
+	const isQuiet =
+		!item.suggested && item.status !== "done" && item.status !== "snoozed";
+	const suggestedLinks = thread.topicLinks.filter(
+		(link) => link.topicId !== topicId || link.source === "suggested",
+	);
 	return (
 		<ThreadMenu thread={thread} item={item}>
 			{(menu) => (
-				<article className="group/item flex gap-3 border-border border-b border-l-3 border-l-transparent py-4 pr-4 pl-3 transition-colors focus-within:border-l-primary focus-within:bg-accent hover:border-l-primary hover:bg-accent md:pr-6 md:pl-5">
-					<PersonAvatar
-						name={author}
-						initials={person?.initials}
-						className="size-9"
-					/>
-					<div className="min-w-0 flex-1">
-						<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-							<span className="font-medium text-base">
-								{author}
-							</span>
-							<span
-								className="inline-flex text-muted-foreground"
-								title={channelLabel}
-							>
-								<Icon aria-hidden="true" className="size-4" />
-								<span className="sr-only">{channelLabel}</span>
-							</span>
-							{item.suggested ? (
-								<Badge
-									variant="outline"
-									className="border-primary/30 bg-primary/10 px-2 text-primary text-sm"
-								>
-									<Sparkles aria-hidden="true" />
-									Suggestion
-								</Badge>
-							) : (
-								item.priority === "P0" && (
-									<Badge
-										variant="outline"
-										className="border-transparent bg-destructive/10 px-2 text-destructive text-sm"
-									>
-										Urgent
-									</Badge>
-								)
-							)}
-							<div className="ml-auto flex items-center gap-3">
-								{item.due && (
-									<Small
-										className={cn(
-											"font-normal",
-											item.priority === "P0"
-												? "text-destructive"
-												: "text-muted-foreground",
-										)}
-									>
-										Due{" "}
-										{dateLabel(item.due, undefined, "date")}
-									</Small>
-								)}
-								<Small className="font-normal text-muted-foreground group-focus-within/item:text-primary group-hover/item:text-primary">
-									{dateLabel(item.received)}
-								</Small>
-								{menu}
-							</div>
-						</div>
-						<div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+				<article className="group/item border-border border-b px-4 py-3 transition-colors focus-within:bg-accent/60 hover:bg-accent/60 md:px-5">
+					<div className="flex items-start gap-3">
+						<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
 							<Link
 								to={path}
-								className="break-words font-medium text-base leading-snug hover:underline focus-visible:outline-2 focus-visible:outline-ring group-focus-within/item:text-primary group-hover/item:text-primary"
+								className="break-words font-medium text-base leading-snug hover:underline focus-visible:outline-2 focus-visible:outline-ring"
 							>
 								{item.title}
 							</Link>
-							{thread.topicLinks
-								.filter(
-									(link) =>
-										link.topicId !== topicId ||
-										link.source === "suggested",
-								)
-								.map((link) => {
-									const topic = state.topics.find(
-										(candidate) =>
-											candidate.id === link.topicId,
-									);
-									return (
-										topic && (
-											<div
-												key={link.topicId}
-												className="flex flex-wrap items-center gap-1"
-											>
-												<TopicChip
-													topic={topic}
-													suggested={
-														link.source ===
-														"suggested"
-													}
-												/>
-												{link.source ===
-													"suggested" && (
-													<>
-														<Button
-															variant="ghost"
-															size="sm"
-															className="h-7 px-2"
-															aria-label={`Confirm ${topic.short} for ${thread.subject}`}
-															onClick={() =>
-																dispatch({
-																	type: "thread.link",
-																	threadId:
-																		thread.id,
-																	topicId:
-																		topic.id,
-																	operation:
-																		"confirm",
-																})
-															}
-														>
-															Yes
-														</Button>
-														<Button
-															variant="ghost"
-															size="sm"
-															className="h-7 px-2"
-															aria-label={`Remove ${topic.short} from ${thread.subject}`}
-															onClick={() =>
-																dispatch({
-																	type: "thread.link",
-																	threadId:
-																		thread.id,
-																	topicId:
-																		topic.id,
-																	operation:
-																		"remove",
-																})
-															}
-														>
-															No
-														</Button>
-													</>
-												)}
-											</div>
-										)
-									);
-								})}
-						</div>
-						{thread.summary && (
-							<P className="mt-1 line-clamp-2 break-words text-muted-foreground text-sm leading-relaxed">
-								{thread.summary}
-							</P>
-						)}
-						{item.reasons.length > 0 && (
-							<div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-								{item.reasons.map((reason, index) => {
-									const urgency = reason.startsWith(
-										URGENCY_PREFIX,
-									)
-										? reason.slice(URGENCY_PREFIX.length)
-										: null;
-									return (
-										<span
-											key={`${index}-${reason}`}
-											className={cn(
-												"inline-flex items-center gap-1.5",
-												index === 0
-													? "text-foreground"
-													: "text-muted-foreground",
-											)}
+							{suggestedLinks.map((link) => {
+								const topic = state.topics.find(
+									(candidate) =>
+										candidate.id === link.topicId,
+								);
+								return (
+									topic && (
+										<div
+											key={link.topicId}
+											className="flex flex-wrap items-center gap-1"
 										>
-											{urgency !== null && (
+											<TopicChip
+												topic={topic}
+												suggested={
+													link.source === "suggested"
+												}
+											/>
+											{link.source === "suggested" && (
 												<>
-													<span
-														aria-hidden="true"
-														className={cn(
-															"size-2 shrink-0 rounded-full",
-															URGENCY_TONES[
-																urgency
-															] ??
-																"bg-muted-foreground/50",
-														)}
-													/>
-													<span className="sr-only">
-														{URGENCY_PREFIX}
-													</span>
+													<Button
+														variant="ghost"
+														size="sm"
+														className="h-7 px-2"
+														aria-label={`Confirm ${topic.short} for ${thread.subject}`}
+														onClick={() =>
+															dispatch({
+																type: "thread.link",
+																threadId:
+																	thread.id,
+																topicId:
+																	topic.id,
+																operation:
+																	"confirm",
+															})
+														}
+													>
+														Yes
+													</Button>
+													<Button
+														variant="ghost"
+														size="sm"
+														className="h-7 px-2"
+														aria-label={`Remove ${topic.short} from ${thread.subject}`}
+														onClick={() =>
+															dispatch({
+																type: "thread.link",
+																threadId:
+																	thread.id,
+																topicId:
+																	topic.id,
+																operation:
+																	"remove",
+															})
+														}
+													>
+														No
+													</Button>
 												</>
 											)}
-											{urgency ?? reason}
-										</span>
-									);
-								})}
-							</div>
+										</div>
+									)
+								);
+							})}
+						</div>
+						<div className="-mt-1 -mr-2 flex shrink-0 items-center gap-1">
+							<Small className="font-normal text-muted-foreground text-xs">
+								{dateLabel(item.received)}
+							</Small>
+							{menu}
+						</div>
+					</div>
+					<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
+						<span className="inline-flex items-center gap-1.5 text-foreground">
+							{author}
+							<span className="inline-flex" title={channelLabel}>
+								<Icon
+									aria-hidden="true"
+									className="size-3.5 text-muted-foreground"
+								/>
+								<span className="sr-only">{channelLabel}</span>
+							</span>
+						</span>
+						{item.suggested ? (
+							<Badge
+								variant="outline"
+								className="border-primary/30 bg-primary/10 px-2 text-primary"
+							>
+								<Sparkles aria-hidden="true" />
+								Suggestion
+							</Badge>
+						) : (
+							item.priority === "P0" && (
+								<Badge
+									variant="outline"
+									className="border-transparent bg-destructive/10 px-2 text-destructive"
+								>
+									Urgent
+								</Badge>
+							)
 						)}
-						<div className="-ml-2 mt-2 flex flex-wrap items-center gap-0.5 [&_[data-slot=button]:hover]:bg-foreground/5 [&_[data-slot=button]]:px-2 [&_svg]:text-muted-foreground">
+						{item.due && (
+							<span
+								className={cn(
+									item.priority === "P0" &&
+										"text-destructive",
+								)}
+							>
+								Due {dateLabel(item.due, undefined, "date")}
+							</span>
+						)}
+						{item.reasons.map((reason, index) => {
+							const urgency = reason.startsWith(URGENCY_PREFIX)
+								? reason.slice(URGENCY_PREFIX.length)
+								: null;
+							return (
+								<span
+									key={`${index}-${reason}`}
+									className="inline-flex items-center gap-1.5"
+								>
+									{urgency !== null && (
+										<>
+											<span
+												aria-hidden="true"
+												className={cn(
+													"size-2 shrink-0 rounded-full",
+													URGENCY_TONES[urgency] ??
+														"bg-muted-foreground/50",
+												)}
+											/>
+											<span className="sr-only">
+												{URGENCY_PREFIX}
+											</span>
+										</>
+									)}
+									{urgency ?? reason}
+								</span>
+							);
+						})}
+						<span>
+							{thread.messageCount}{" "}
+							{thread.messageCount === 1 ? "message" : "messages"}
+							{excludedCount > 0 && `, ${excludedCount} excluded`}
+						</span>
+						<div
+							className={cn(
+								"-my-1 ml-auto flex flex-wrap items-center gap-0.5 [&_[data-slot=button]:hover]:bg-foreground/5 [&_[data-slot=button]]:px-2 [&_svg]:text-muted-foreground",
+								isQuiet &&
+									"pointer-fine:opacity-0 pointer-fine:transition-opacity pointer-fine:group-focus-within/item:opacity-100 pointer-fine:group-hover/item:opacity-100",
+							)}
+						>
 							{item.suggested ? (
 								<>
 									<Button
 										variant="outline"
 										size="sm"
-										className="mr-1 ml-2"
 										onClick={() =>
 											dispatch({
 												type: "item.update",
@@ -279,6 +260,18 @@ export function WorkItemCard({
 								</Button>
 							) : item.status === "snoozed" ? (
 								<>
+									{item.snoozeUntil && (
+										<Small className="px-2 font-normal text-muted-foreground">
+											Until{" "}
+											{dateLabel(
+												item.snoozeUntil,
+												(item.isSample
+													? state.profile
+													: state.liveProfile
+												)?.timezone,
+											)}
+										</Small>
+									)}
 									<Button
 										variant="ghost"
 										size="sm"
@@ -298,18 +291,6 @@ export function WorkItemCard({
 										<RotateCcw aria-hidden="true" />
 										Bring back
 									</Button>
-									{item.snoozeUntil && (
-										<Small className="px-2 font-normal text-muted-foreground">
-											Until{" "}
-											{dateLabel(
-												item.snoozeUntil,
-												(item.isSample
-													? state.profile
-													: state.liveProfile
-												)?.timezone,
-											)}
-										</Small>
-									)}
 								</>
 							) : (
 								<>
@@ -343,16 +324,13 @@ export function WorkItemCard({
 									</Button>
 								</>
 							)}
-							<Small className="ml-auto font-normal text-muted-foreground">
-								{thread.messageCount}{" "}
-								{thread.messageCount === 1
-									? "message"
-									: "messages"}
-								{excludedCount > 0 &&
-									` · ${excludedCount} excluded`}
-							</Small>
 						</div>
 					</div>
+					{thread.summary && (
+						<P className="mt-1 line-clamp-1 break-words text-muted-foreground text-sm leading-relaxed">
+							{thread.summary}
+						</P>
+					)}
 				</article>
 			)}
 		</ThreadMenu>

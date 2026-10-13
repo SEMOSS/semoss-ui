@@ -357,7 +357,7 @@ describe("collaboration Work and Brain integration", () => {
 			)?.status,
 		).toBe("done");
 		await user.click(screen.getByRole("tab", { name: "Threads" }));
-		await user.click(screen.getByRole("tab", { name: "Actions" }));
+		await user.click(screen.getByRole("tab", { name: /^Actions/ }));
 		expect(screen.getByRole("checkbox", { name: title })).toBeChecked();
 		expect(screen.getByText(title)).not.toHaveClass("line-through");
 	});

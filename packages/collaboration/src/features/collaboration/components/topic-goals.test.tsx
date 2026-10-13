@@ -115,7 +115,6 @@ it("does not invent an accomplishment for a completed goal without one", () => {
 
 it("explains an empty goals section and preserves add-goal validation and focus", async () => {
 	const { goals, onChange, user } = setup([]);
-	expect(goals.getByText("Give this topic a direction")).toBeVisible();
 	expect(
 		goals.getByText(
 			"Add a goal for you and your assistant to work toward.",

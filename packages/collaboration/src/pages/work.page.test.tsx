@@ -427,10 +427,10 @@ it("opens source threads by their canonical import route and reads sessions only
 	).toBeVisible();
 	await user.click(screen.getByRole("tab", { name: "Chats" }));
 	expect(sessions.mounted).toHaveBeenCalledWith("alpha");
-	await user.click(screen.getByRole("tab", { name: "Actions" }));
+	await user.click(screen.getByRole("tab", { name: /^Actions/ }));
 	expect(screen.queryByText("Sessions for alpha")).not.toBeInTheDocument();
 	await act(() => router.navigate("/topics/beta"));
-	expect(screen.getByRole("tab", { name: "Actions" })).toHaveAttribute(
+	expect(screen.getByRole("tab", { name: /^Actions/ })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
