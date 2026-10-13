@@ -38,6 +38,7 @@ import {
 } from "@semoss/ui/next";
 import { TopicSessions } from "@/features/dashboard/topic-sessions";
 import { lexicon } from "@/lib/lexicon";
+import { givenFirst } from "@/lib/person-name";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
 import { topicTone } from "../topic-tone";
@@ -47,7 +48,6 @@ import { CollaborationSurface } from "./collaboration-surface";
 import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { MemoryList } from "./memory-list";
 import { PersonAvatar } from "./person-avatar";
-import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
 import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
@@ -76,8 +76,9 @@ const MEMBERSHIPS = [
 const cardClassName = "min-w-0 gap-0 overflow-hidden p-0 shadow-none";
 const cardHeaderClassName =
 	"flex min-w-0 flex-wrap items-center justify-between gap-3 px-5 py-4";
-const contextHeadingClassName =
-	"font-normal text-muted-foreground text-xs uppercase tracking-widest";
+const contextHeadingClassName = "font-display font-semibold text-base";
+// suggested people past this many sit behind "Show more"
+const SUGGESTED_PREVIEW = 3;
 const hintClassName =
 	"block font-normal text-muted-foreground text-xs leading-5";
 
@@ -92,6 +93,7 @@ export function TopicDetail() {
 	const [hasOpenedAssistant, setHasOpenedAssistant] = useState(false);
 	const editButtonRef = useRef<HTMLButtonElement>(null);
 	const [personToAdd, setPersonToAdd] = useState("");
+	const [showAllSuggested, setShowAllSuggested] = useState(false);
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
 	const topicMemories = memoriesAbout(state.memories, {
 		type: "topic",
@@ -198,7 +200,7 @@ export function TopicDetail() {
 					</>
 				}
 			>
-				<div className="ml-6 flex flex-wrap items-center gap-2">
+				<div className="ml-4 flex flex-wrap items-center gap-1">
 					<Label
 						htmlFor={`${fieldId}-topic-status`}
 						className="sr-only"
@@ -221,7 +223,7 @@ export function TopicDetail() {
 					>
 						<SelectTrigger
 							id={`${fieldId}-topic-status`}
-							className="h-8 w-auto gap-2 bg-card shadow-none"
+							className="h-8 w-auto gap-2 border-0 bg-transparent px-2 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent"
 						>
 							<span
 								aria-hidden="true"
@@ -248,10 +250,10 @@ export function TopicDetail() {
 						</SelectContent>
 					</Select>
 					<Button
-						variant="outline"
+						variant="ghost"
 						size="sm"
 						aria-label={`${topic.kind} · ${accountName}: Edit topic kind and account`}
-						className="h-auto min-h-8 max-w-full bg-card shadow-none"
+						className="h-auto min-h-8 max-w-full font-normal text-muted-foreground"
 						onClick={(event) => {
 							editButtonRef.current = event.currentTarget;
 							setIsEditing(true);
@@ -300,7 +302,7 @@ export function TopicDetail() {
 								<div className="min-w-0 space-y-2">
 									<H2
 										id={`${fieldId}-goals`}
-										className="font-bold text-lg"
+										className="font-display font-semibold text-base"
 									>
 										Goals
 									</H2>
@@ -346,12 +348,12 @@ export function TopicDetail() {
 									{topic.goals.map((goal) => (
 										<li
 											key={goal.noteId}
-											className="flex items-start gap-3 py-5"
+											className="flex items-start gap-3 py-3"
 										>
 											<Checkbox
 												id={`${fieldId}-${goal.noteId}`}
 												checked={goal.status === "done"}
-												className="after:-inset-2.5 relative size-6 rounded-full border-muted-foreground bg-background shadow-none after:absolute after:content-[''] data-[state=checked]:border-success data-[state=checked]:bg-success/10 data-[state=checked]:text-foreground dark:data-[state=checked]:bg-success/10"
+												className="after:-inset-2.5 relative mt-0.5 size-5 rounded-full border-muted-foreground bg-background shadow-none after:absolute after:content-[''] data-[state=checked]:border-success data-[state=checked]:bg-success/10 data-[state=checked]:text-foreground dark:data-[state=checked]:bg-success/10"
 												onCheckedChange={(checked) =>
 													dispatch({
 														type: "topic.note",
@@ -366,20 +368,13 @@ export function TopicDetail() {
 													})
 												}
 											/>
-											<div className="min-w-0 flex-1 space-y-3">
-												<div className="flex flex-col items-start gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-													<Label
-														htmlFor={`${fieldId}-${goal.noteId}`}
-														className="wrap-anywhere block min-w-0 cursor-pointer whitespace-pre-wrap font-medium text-base text-foreground leading-6"
-													>
-														{goal.text}
-													</Label>
-													<Small className="shrink-0 font-normal text-muted-foreground text-xs leading-6">
-														{goal.status === "done"
-															? "Completed"
-															: "Open"}
-													</Small>
-												</div>
+											<div className="min-w-0 flex-1 space-y-2">
+												<Label
+													htmlFor={`${fieldId}-${goal.noteId}`}
+													className="wrap-anywhere block min-w-0 cursor-pointer whitespace-pre-wrap font-normal text-base text-foreground leading-6"
+												>
+													{goal.text}
+												</Label>
 												{goal.resolution && (
 													<div className="space-y-2 rounded-lg bg-muted/60 p-3 sm:p-4">
 														<Small className="flex items-center gap-2 font-medium text-foreground text-xs leading-5">
@@ -500,43 +495,6 @@ export function TopicDetail() {
 							</TabsContent>
 						</Tabs>
 					</Card>
-					<Collapsible
-						open={areNotesOpen}
-						onOpenChange={setAreNotesOpen}
-					>
-						<CollapsibleTrigger asChild>
-							<Button
-								variant="ghost"
-								size="sm"
-								className="group text-muted-foreground"
-							>
-								<ChevronDown
-									aria-hidden="true"
-									className="-rotate-90 group-data-[state=open]:rotate-0"
-								/>
-								Notes for the assistant
-							</Button>
-						</CollapsibleTrigger>
-						<CollapsibleContent forceMount hidden={!areNotesOpen}>
-							<Section
-								title="Notes for the assistant"
-								className="px-5 py-4"
-							>
-								<MemoryList
-									memories={topicMemories}
-									emptyText="Notes here help the assistant with this topic and its threads."
-									addLabel="New note"
-									about={{ type: "topic", id: topic.id }}
-									isSample={topic.isSample}
-								/>
-								<Small className={hintClassName}>
-									Confirmed goals and notes are available to
-									the assistant in chats and threads linked to
-									this topic.
-								</Small>
-							</Section>
-						</CollapsibleContent>
-					</Collapsible>
 				</div>
 				<aside aria-label="Topic context" className="min-w-0 space-y-5">
 					<section aria-labelledby={`${fieldId}-people`}>
@@ -595,7 +553,9 @@ export function TopicDetail() {
 																	person.id
 																}
 															>
-																{person.name}
+																{givenFirst(
+																	person.name,
+																)}
 															</SelectItem>
 														),
 													)}
@@ -644,6 +604,12 @@ export function TopicDetail() {
 											(person) =>
 												person.state === membership,
 										);
+										const hidden =
+											membership === "suggested" &&
+											!showAllSuggested
+												? rows.length -
+													SUGGESTED_PREVIEW
+												: 0;
 										if (
 											!rows.length &&
 											membership !== "member"
@@ -664,95 +630,112 @@ export function TopicDetail() {
 													{title}
 												</H3>
 												<div>
-													{rows.map((member) => {
-														const personThreads =
-															threads.filter(
-																(thread) =>
-																	thread.participants.some(
-																		(
-																			participant,
-																		) =>
-																			participant.personId ===
-																			member.personId,
-																	),
-															).length;
-														const person =
-															state.people.find(
-																(candidate) =>
-																	candidate.id ===
-																	member.personId,
-															);
-														return (
-															person && (
-																<div
-																	key={
-																		person.id
-																	}
-																	className="flex items-start gap-3 py-1"
-																>
-																	<PersonAvatar
-																		name={
-																			person.name
+													{rows
+														.slice(
+															0,
+															hidden > 0
+																? SUGGESTED_PREVIEW
+																: undefined,
+														)
+														.map((member) => {
+															const personThreads =
+																threads.filter(
+																	(thread) =>
+																		thread.participants.some(
+																			(
+																				participant,
+																			) =>
+																				participant.personId ===
+																				member.personId,
+																		),
+																).length;
+															const person =
+																state.people.find(
+																	(
+																		candidate,
+																	) =>
+																		candidate.id ===
+																		member.personId,
+																);
+															return (
+																person && (
+																	<div
+																		key={
+																			person.id
 																		}
-																		initials={
-																			person.initials
-																		}
-																	/>
-																	<div className="min-w-0 flex-1">
-																		<Link
-																			className="break-words font-medium text-sm hover:underline"
-																			to={`/brain/people/${encodeURIComponent(person.id)}`}
-																		>
-																			{
+																		className="flex items-start gap-3 py-1"
+																	>
+																		<PersonAvatar
+																			name={
 																				person.name
 																			}
-																		</Link>
-																		<Small className="mt-0.5 block font-normal text-muted-foreground text-xs leading-5">
-																			On{" "}
+																			initials={
+																				person.initials
+																			}
+																		/>
+																		<div className="min-w-0 flex-1">
+																			<Link
+																				className="break-words font-medium text-sm hover:underline"
+																				to={`/brain/people/${encodeURIComponent(person.id)}`}
+																			>
+																				{givenFirst(
+																					person.name,
+																				)}
+																			</Link>
+																			<Small className="mt-0.5 block font-normal text-muted-foreground text-xs leading-5">
+																				{(membership ===
+																					"suggested" &&
+																					member.reason) ||
+																					`On ${personThreads} ${personThreads === 1 ? "thread" : "threads"}`}
+																				<span>
+																					{member.role
+																						? ` · ${member.role}`
+																						: ""}
+																				</span>
+																			</Small>
+																		</div>
+																		<Button
+																			variant="ghost"
+																			size="sm"
+																			onClick={() =>
+																				dispatch(
+																					{
+																						type: "topic.person",
+																						topicId:
+																							topic.id,
+																						personId:
+																							person.id,
+																						state: next,
+																					},
+																				)
+																			}
+																		>
 																			{
-																				personThreads
-																			}{" "}
-																			{personThreads ===
-																			1
-																				? "thread"
-																				: "threads"}
-																			<span>
-																				{member.role
-																					? ` · ${member.role}`
-																					: ""}
-																			</span>
-																			{member.reason
-																				? ` · ${member.reason}`
-																				: ""}
-																		</Small>
+																				action
+																			}
+																		</Button>
 																	</div>
-																	<Button
-																		variant="ghost"
-																		size="sm"
-																		onClick={() =>
-																			dispatch(
-																				{
-																					type: "topic.person",
-																					topicId:
-																						topic.id,
-																					personId:
-																						person.id,
-																					state: next,
-																				},
-																			)
-																		}
-																	>
-																		{action}
-																	</Button>
-																</div>
-															)
-														);
-													})}
+																)
+															);
+														})}
 													{!rows.length && (
 														<Small className="font-normal text-muted-foreground text-xs">
-															No confirmed members
-															yet.
+															No one added yet.
 														</Small>
+													)}
+													{hidden > 0 && (
+														<Button
+															variant="ghost"
+															size="sm"
+															className="-ml-2 mt-1 font-normal text-muted-foreground"
+															onClick={() =>
+																setShowAllSuggested(
+																	true,
+																)
+															}
+														>
+															Show {hidden} more
+														</Button>
 													)}
 												</div>
 											</section>
@@ -762,58 +745,56 @@ export function TopicDetail() {
 							</div>
 						</Card>
 					</section>
-					<section aria-labelledby={`${fieldId}-signals`}>
+					<section aria-labelledby={`${fieldId}-assistant-context`}>
 						<Card className={cardClassName}>
 							<div className={cardHeaderClassName}>
-								<div className="flex items-center gap-3">
-									<H2
-										id={`${fieldId}-signals`}
-										className={contextHeadingClassName}
-									>
-										Signals
-									</H2>
-									{!topic.keywords.length && (
-										<Small className="font-normal text-muted-foreground">
-											None yet
-										</Small>
-									)}
-								</div>
-								<Popover>
-									<PopoverTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											aria-label="Add keyword"
-											className="text-muted-foreground"
-										>
-											<Plus aria-hidden="true" />
-										</Button>
-									</PopoverTrigger>
-									<PopoverContent
-										align="end"
-										aria-label="Add keyword"
-									>
-										<TextEntryForm
-											label="Add keyword"
-											onSave={(text) =>
-												dispatch({
-													type: "topic.save",
-													topic: {
-														id: topic.id,
-														keywords: [
-															...new Set([
-																...topic.keywords,
-																text,
-															]),
-														],
-													},
-												})
-											}
-										/>
-									</PopoverContent>
-								</Popover>
+								<H2
+									id={`${fieldId}-assistant-context`}
+									className={contextHeadingClassName}
+								>
+									Assistant
+								</H2>
 							</div>
 							<div className="space-y-3 px-5 pb-5">
+								<div className="flex items-center justify-between gap-2">
+									<H3 className="font-medium text-sm">
+										Keywords
+									</H3>
+									<Popover>
+										<PopoverTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												aria-label="Add keyword"
+												className="text-muted-foreground"
+											>
+												<Plus aria-hidden="true" />
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent
+											align="end"
+											aria-label="Add keyword"
+										>
+											<TextEntryForm
+												label="Add keyword"
+												onSave={(text) =>
+													dispatch({
+														type: "topic.save",
+														topic: {
+															id: topic.id,
+															keywords: [
+																...new Set([
+																	...topic.keywords,
+																	text,
+																]),
+															],
+														},
+													})
+												}
+											/>
+										</PopoverContent>
+									</Popover>
+								</div>
 								{topic.keywords.length > 0 && (
 									<div className="flex flex-wrap gap-2">
 										{topic.keywords.map((word) => (
@@ -857,8 +838,8 @@ export function TopicDetail() {
 								)}
 								<P className="text-muted-foreground text-sm leading-relaxed">
 									{topic.keywords.length
-										? "The assistant uses these keywords to file threads under this topic."
-										: "The assistant won't file threads here on its own until this topic has keywords."}
+										? "New threads that match are filed here."
+										: "Add keywords so new threads are filed here on their own."}
 								</P>
 								{topic.calendarSeries.length > 0 && (
 									<div className="space-y-1 border-t pt-3">
@@ -875,6 +856,45 @@ export function TopicDetail() {
 										))}
 									</div>
 								)}
+								<Collapsible
+									open={areNotesOpen}
+									onOpenChange={setAreNotesOpen}
+									className="border-t pt-3"
+								>
+									<CollapsibleTrigger asChild>
+										<Button
+											variant="ghost"
+											size="sm"
+											className="group -ml-2 font-medium"
+										>
+											<ChevronDown
+												aria-hidden="true"
+												className="-rotate-90 group-data-[state=open]:rotate-0"
+											/>
+											Notes for the assistant
+										</Button>
+									</CollapsibleTrigger>
+									<CollapsibleContent
+										forceMount
+										hidden={!areNotesOpen}
+										className="space-y-3 pt-2"
+									>
+										<MemoryList
+											memories={topicMemories}
+											emptyText="Notes here help the assistant with this topic and its threads."
+											addLabel="New note"
+											about={{
+												type: "topic",
+												id: topic.id,
+											}}
+											isSample={topic.isSample}
+										/>
+										<Small className={hintClassName}>
+											Goals and notes are used in chats
+											and threads linked to this topic.
+										</Small>
+									</CollapsibleContent>
+								</Collapsible>
 							</div>
 						</Card>
 					</section>

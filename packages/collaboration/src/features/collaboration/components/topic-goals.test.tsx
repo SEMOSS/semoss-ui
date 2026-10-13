@@ -61,8 +61,9 @@ it("keeps the goal readable and names the AI accomplishment separately", () => {
 	expect(goals.getByText(completedGoal.text)).not.toHaveClass("line-through");
 	expect(goals.getByText("AI accomplishment")).toBeVisible();
 	expect(goals.getByText(completedGoal.resolution)).toBeVisible();
-	expect(goals.getByText("Completed")).toBeVisible();
-	expect(goals.getByText("Open")).toBeVisible();
+	expect(
+		goals.getByRole("checkbox", { name: openGoal.text }),
+	).not.toBeChecked();
 	expect(goals.getByRole("status")).toHaveTextContent("1 of 2 complete");
 	expect(
 		goals.getByRole("progressbar", { name: "Goals completed" }),

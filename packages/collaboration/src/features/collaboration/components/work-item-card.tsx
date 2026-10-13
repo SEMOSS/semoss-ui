@@ -1,22 +1,14 @@
-import {
-	BellOff,
-	Check,
-	Clock,
-	Plus,
-	Reply,
-	RotateCcw,
-	Sparkles,
-	X,
-} from "lucide-react";
+import { Check, Plus, Reply, RotateCcw, Sparkles, X } from "lucide-react";
 import { Link } from "react-router";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import { givenFirst } from "@/lib/person-name";
 import { threadPath } from "@/lib/workspace-paths";
 import { channelMeta } from "../channel-meta";
 import { dateLabel } from "../date-label";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import type { WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { ignoreThread, noResponseNeeded } from "../work-item-actions";
+import { noResponseNeeded } from "../work-item-actions";
 import { PersonAvatar } from "./person-avatar";
 import { ThreadMenu } from "./thread-menu";
 import { TopicChip } from "./topic-chip";
@@ -29,8 +21,15 @@ const URGENCY_TONES: Record<string, string> = {
 	"This week": "bg-warning",
 };
 
-/** A work item with independent navigation and reversible session actions. */
-export function WorkItemCard({ item }: { item: WorkItem }) {
+/** A work item with independent navigation and reversible session actions; Snooze and Ignore live in its menu. */
+export function WorkItemCard({
+	item,
+	topicId,
+}: {
+	item: WorkItem;
+	/** The topic page showing this card; its own chip is left off unless still unconfirmed. */
+	topicId?: string;
+}) {
 	const { state, dispatch } = useCollaborationSession();
 	const thread = state.threads.find(
 		(candidate) => candidate.id === item.threadId,
@@ -44,7 +43,8 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 		(candidate) => candidate.id === item.actorId,
 	);
 	const author =
-		person?.name || (item.actorId === "assistant" ? "Assistant" : "You");
+		(person?.name && givenFirst(person.name)) ||
+		(item.actorId === "assistant" ? "Assistant" : "You");
 	const { label: channelLabel, icon: Icon } = channelMeta(item.channel);
 	const path = threadPath(thread.id);
 	return (
@@ -113,69 +113,77 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 							>
 								{item.title}
 							</Link>
-							{thread.topicLinks.map((link) => {
-								const topic = state.topics.find(
-									(candidate) =>
-										candidate.id === link.topicId,
-								);
-								return (
-									topic && (
-										<div
-											key={link.topicId}
-											className="flex flex-wrap items-center gap-1"
-										>
-											<TopicChip
-												topic={topic}
-												suggested={
-													link.source === "suggested"
-												}
-											/>
-											{link.source === "suggested" && (
-												<>
-													<Button
-														variant="ghost"
-														size="sm"
-														className="h-7 px-2"
-														aria-label={`Confirm ${topic.short} for ${thread.subject}`}
-														onClick={() =>
-															dispatch({
-																type: "thread.link",
-																threadId:
-																	thread.id,
-																topicId:
-																	topic.id,
-																operation:
-																	"confirm",
-															})
-														}
-													>
-														Yes
-													</Button>
-													<Button
-														variant="ghost"
-														size="sm"
-														className="h-7 px-2"
-														aria-label={`Remove ${topic.short} from ${thread.subject}`}
-														onClick={() =>
-															dispatch({
-																type: "thread.link",
-																threadId:
-																	thread.id,
-																topicId:
-																	topic.id,
-																operation:
-																	"remove",
-															})
-														}
-													>
-														No
-													</Button>
-												</>
-											)}
-										</div>
-									)
-								);
-							})}
+							{thread.topicLinks
+								.filter(
+									(link) =>
+										link.topicId !== topicId ||
+										link.source === "suggested",
+								)
+								.map((link) => {
+									const topic = state.topics.find(
+										(candidate) =>
+											candidate.id === link.topicId,
+									);
+									return (
+										topic && (
+											<div
+												key={link.topicId}
+												className="flex flex-wrap items-center gap-1"
+											>
+												<TopicChip
+													topic={topic}
+													suggested={
+														link.source ===
+														"suggested"
+													}
+												/>
+												{link.source ===
+													"suggested" && (
+													<>
+														<Button
+															variant="ghost"
+															size="sm"
+															className="h-7 px-2"
+															aria-label={`Confirm ${topic.short} for ${thread.subject}`}
+															onClick={() =>
+																dispatch({
+																	type: "thread.link",
+																	threadId:
+																		thread.id,
+																	topicId:
+																		topic.id,
+																	operation:
+																		"confirm",
+																})
+															}
+														>
+															Yes
+														</Button>
+														<Button
+															variant="ghost"
+															size="sm"
+															className="h-7 px-2"
+															aria-label={`Remove ${topic.short} from ${thread.subject}`}
+															onClick={() =>
+																dispatch({
+																	type: "thread.link",
+																	threadId:
+																		thread.id,
+																	topicId:
+																		topic.id,
+																	operation:
+																		"remove",
+																})
+															}
+														>
+															No
+														</Button>
+													</>
+												)}
+											</div>
+										)
+									);
+								})}
 						</div>
 						{thread.summary && (
 							<P className="mt-1 line-clamp-2 break-words text-muted-foreground text-sm leading-relaxed">
@@ -332,45 +340,6 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 									>
 										<Check aria-hidden="true" />
 										Done
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="font-normal"
-										onClick={() =>
-											dispatch({
-												type: "item.update",
-												itemId: item.id,
-												changes: { status: "snoozed" },
-											})
-										}
-									>
-										<Clock aria-hidden="true" />
-										Snooze
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="font-normal"
-										title="Clears this item; a new request on the thread still shows up"
-										onClick={() =>
-											noResponseNeeded(dispatch, item)
-										}
-									>
-										<X aria-hidden="true" />
-										No response needed
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="font-normal"
-										title="No more tasks from this thread; it stays filed"
-										onClick={() =>
-											ignoreThread(dispatch, thread)
-										}
-									>
-										<BellOff aria-hidden="true" />
-										Ignore thread
 									</Button>
 								</>
 							)}

@@ -171,8 +171,13 @@ describe("collaboration Work and Brain integration", () => {
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
-				name: "No response needed",
+				name: /actions for/,
 			}),
+		);
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: /actions for/ }),
+			).getByRole("button", { name: "No response needed" }),
 		);
 		expect(
 			screen.queryByRole("link", { name: title }),
@@ -194,8 +199,13 @@ describe("collaboration Work and Brain integration", () => {
 		const router = renderSession("/work/all", state);
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
-				name: "Ignore thread",
+				name: /actions for/,
 			}),
+		);
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: /actions for/ }),
+			).getByRole("button", { name: "Ignore thread" }),
 		);
 		expect(
 			screen.queryByRole("link", { name: title }),

@@ -1,17 +1,12 @@
 import { useEffect, useState } from "react";
 import { Button, cn, P } from "@semoss/ui/next";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { givenFirst } from "@/lib/person-name";
 import { BriefPanel } from "./brief-panel";
 import { useDashboard } from "./dashboard.context";
 import { dashboardTimeZone, eventStart } from "./dashboard-calendar";
 import { DashboardResourceStatus } from "./dashboard-resource-status";
 import { dayKey } from "./dashboard-selectors";
-
-// Directory names arrive as "Last, First"; show "First Last"
-function givenFirst(name: string) {
-	const [family, given] = name.split(",", 2);
-	return given?.trim() ? `${given.trim()} ${family.trim()}` : name;
-}
 
 /** Today's calendar, with a live time marker and source-backed meeting details. */
 export function BriefDay({ compact = false }: { compact?: boolean }) {

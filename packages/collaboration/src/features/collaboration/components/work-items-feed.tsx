@@ -13,19 +13,12 @@ import {
 	DropdownMenuTrigger,
 	P,
 	Small,
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
-	ToggleGroup,
-	ToggleGroupItem,
 } from "@semoss/ui/next";
 import { channelMeta } from "../channel-meta";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import type { Channel } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { WorkItemCard } from "./work-item-card";
 
 const STATUS_FILTERS = [
@@ -71,130 +64,127 @@ export function WorkItemsFeed({ topicId, initialFilter }: WorkItemsFeedProps) {
 		items.some((item) => item.isSample === isSample),
 	);
 
+	const total = (view: (typeof STATUS_FILTERS)[number]["view"]) =>
+		selectWorkItems(state, { topicId, view }).total;
+	// one control: the button names the current view, the menu holds status, order, and source
+	const viewLabel = [
+		`${selected?.label ?? "Open"} ${items.length}`,
+		sort === "latest" && "Latest",
+		activeMeta?.label,
+	]
+		.filter(Boolean)
+		.join(", ");
+
 	return (
-		<Tabs
-			value={status}
-			onValueChange={(value) => {
-				const filter = filters.find(
-					(candidate) => candidate.value === value,
-				);
-				if (filter) setStatus(filter.value);
-			}}
-			className="gap-0"
-		>
-			<div className="border-border border-b p-4 md:px-5">
-				<TabsList
-					aria-label="Work status"
-					className={collaborationTabsStyles.list}
-				>
-					{filters.map((filter) => (
-						<TabsTrigger
-							key={filter.value}
-							value={filter.value}
-							className={collaborationTabsStyles.trigger}
-						>
-							{filter.label}
-							<span className="text-muted-foreground tabular-nums">
-								{
-									selectWorkItems(state, {
-										topicId,
-										view: filter.view,
-									}).total
-								}
-							</span>
-						</TabsTrigger>
-					))}
-				</TabsList>
-			</div>
+		<div>
 			<div className="flex flex-wrap items-center gap-3 border-border border-b px-4 py-3 md:px-5">
-				<ToggleGroup
-					type="single"
-					size="sm"
-					value={sort}
-					aria-label="Sort work"
-					onValueChange={(value) => {
-						if (value === "top" || value === "latest")
-							setSort(value);
-					}}
-				>
-					<ToggleGroupItem
-						value="top"
-						className="pointer-coarse:min-h-11"
-					>
-						Top
-					</ToggleGroupItem>
-					<ToggleGroupItem
-						value="latest"
-						className="pointer-coarse:min-h-11"
-					>
-						Latest
-					</ToggleGroupItem>
-				</ToggleGroup>
 				<WorkRefreshStatus />
-				<div className="ml-auto flex items-center gap-2">
-					<output className="text-muted-foreground text-sm tabular-nums">
-						{items.length} {items.length === 1 ? "item" : "items"}
-					</output>
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant={activeMeta ? "secondary" : "outline"}
-								size="sm"
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant={
+								activeMeta || sort === "latest"
+									? "secondary"
+									: "outline"
+							}
+							size="sm"
+							className="ml-auto pointer-coarse:min-h-11 tabular-nums"
+							aria-label={`Filter work: ${viewLabel}`}
+						>
+							<ListFilter aria-hidden="true" />
+							{viewLabel}
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="min-w-56">
+						<DropdownMenuLabel>Show</DropdownMenuLabel>
+						<DropdownMenuRadioGroup
+							aria-label="Work status"
+							value={status}
+							onValueChange={(value) => {
+								const filter = filters.find(
+									(candidate) => candidate.value === value,
+								);
+								if (filter) setStatus(filter.value);
+							}}
+						>
+							{filters.map((filter) => (
+								<DropdownMenuRadioItem
+									key={filter.value}
+									value={filter.value}
+									className="pointer-coarse:min-h-11"
+								>
+									{filter.label}
+									<span className="ml-auto pl-4 text-muted-foreground tabular-nums">
+										{total(filter.view)}
+									</span>
+								</DropdownMenuRadioItem>
+							))}
+						</DropdownMenuRadioGroup>
+						<DropdownMenuSeparator />
+						<DropdownMenuLabel>Order</DropdownMenuLabel>
+						<DropdownMenuRadioGroup
+							aria-label="Sort work"
+							value={sort}
+							onValueChange={(value) => {
+								if (value === "top" || value === "latest")
+									setSort(value);
+							}}
+						>
+							<DropdownMenuRadioItem
+								value="top"
 								className="pointer-coarse:min-h-11"
-								aria-label={`Filter by source: ${activeMeta?.label ?? "All sources"}`}
 							>
-								<ListFilter aria-hidden="true" />
-								{activeMeta?.label ?? "All sources"}
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuLabel>Source</DropdownMenuLabel>
-							<DropdownMenuSeparator />
-							<DropdownMenuRadioGroup
-								aria-label="Source"
-								value={activeChannel ?? "all"}
-								onValueChange={(value) =>
-									setChannel(
-										channels.find(
-											(candidate) => candidate === value,
-										),
-									)
-								}
+								Top
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem
+								value="latest"
+								className="pointer-coarse:min-h-11"
 							>
-								{["all", ...channels].map((value) => {
-									const meta =
-										value === "all"
-											? null
-											: channelMeta(value);
-									const Icon = meta?.icon;
-									return (
-										<DropdownMenuRadioItem
-											key={value}
-											value={value}
-											className="pointer-coarse:min-h-11"
-										>
-											{Icon && (
-												<Icon aria-hidden="true" />
-											)}
-											{meta?.label ?? "All sources"}
-											<span className="ml-auto pl-4 text-muted-foreground tabular-nums">
-												{meta
-													? all.filter(
-															(item) =>
-																item.channel ===
-																value,
-														).length
-													: all.length}
-											</span>
-										</DropdownMenuRadioItem>
-									);
-								})}
-							</DropdownMenuRadioGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
+								Latest
+							</DropdownMenuRadioItem>
+						</DropdownMenuRadioGroup>
+						<DropdownMenuSeparator />
+						<DropdownMenuLabel>Source</DropdownMenuLabel>
+						<DropdownMenuRadioGroup
+							aria-label="Source"
+							value={activeChannel ?? "all"}
+							onValueChange={(value) =>
+								setChannel(
+									channels.find(
+										(candidate) => candidate === value,
+									),
+								)
+							}
+						>
+							{["all", ...channels].map((value) => {
+								const meta =
+									value === "all" ? null : channelMeta(value);
+								const Icon = meta?.icon;
+								return (
+									<DropdownMenuRadioItem
+										key={value}
+										value={value}
+										className="pointer-coarse:min-h-11"
+									>
+										{Icon && <Icon aria-hidden="true" />}
+										{meta?.label ?? "All sources"}
+										<span className="ml-auto pl-4 text-muted-foreground tabular-nums">
+											{meta
+												? all.filter(
+														(item) =>
+															item.channel ===
+															value,
+													).length
+												: all.length}
+										</span>
+									</DropdownMenuRadioItem>
+								);
+							})}
+						</DropdownMenuRadioGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
-			<TabsContent value={status} className="mt-0">
+			<section aria-label={viewLabel}>
 				{groups.map((isSample) => (
 					<section
 						key={String(isSample)}
@@ -222,7 +212,11 @@ export function WorkItemsFeed({ topicId, initialFilter }: WorkItemsFeedProps) {
 						{items
 							.filter((item) => item.isSample === isSample)
 							.map((item) => (
-								<WorkItemCard key={item.id} item={item} />
+								<WorkItemCard
+									key={item.id}
+									item={item}
+									topicId={topicId}
+								/>
 							))}
 					</section>
 				))}
@@ -250,7 +244,7 @@ export function WorkItemsFeed({ topicId, initialFilter }: WorkItemsFeedProps) {
 						)}
 					</div>
 				)}
-			</TabsContent>
-		</Tabs>
+			</section>
+		</div>
 	);
 }
