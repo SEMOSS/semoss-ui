@@ -74,7 +74,7 @@ export function BriefHeader() {
 				: `${due} things are due today.`;
 	return (
 		<header className="mb-6 flex flex-col items-center gap-2 text-center">
-			<H1 className="font-medium text-3xl tracking-tight 2xl:text-4xl">
+			<H1 className="font-display font-medium text-3xl leading-tight sm:text-[2.5rem]">
 				{greeting}
 				{name ? `, ${name}` : ""}.
 			</H1>

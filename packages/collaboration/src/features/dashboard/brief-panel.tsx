@@ -17,10 +17,7 @@ export function BriefPanel({
 	return (
 		<section aria-labelledby={titleId} className="min-w-0">
 			<header className="mb-3 flex min-h-8 items-center justify-between gap-3 px-1">
-				<H2
-					id={titleId}
-					className="font-medium text-base text-muted-foreground"
-				>
+				<H2 id={titleId} className="font-display font-semibold text-lg">
 					{title}
 				</H2>
 				{detail !== undefined && detail !== null && (

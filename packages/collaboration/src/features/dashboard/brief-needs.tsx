@@ -24,7 +24,7 @@ export function BriefNeeds() {
 	return (
 		<section aria-label={lexicon.doToday} className="min-w-0">
 			<header className="mb-3 flex min-h-8 items-center justify-between gap-2 px-1">
-				<H2 className="font-medium text-base text-muted-foreground">
+				<H2 className="font-display font-semibold text-lg">
 					{lexicon.doToday}
 				</H2>
 				<div className="flex items-center gap-3 text-sm">

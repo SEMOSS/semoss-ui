@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400..700&family=Petrona:wght@400..700&display=swap");
 @import "@semoss/ui/globals.css";
 @import "@semoss/shared/globals.css";
 @import "@semoss/connectors/globals.css";
@@ -5,3 +6,18 @@
 @import "@semoss/panels/globals.css";
 
 @source "./**/*.{ts,tsx}";
+
+/* Swappable font: Settings > Appearance, default in lib/typeface.ts. "standard" keeps the shared Geist. */
+:root {
+	--font-display: var(--font-sans);
+}
+:root[data-typeface="calm"] {
+	--font-sans:
+		"Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI",
+		sans-serif;
+	--font-display: "Petrona", Georgia, "Times New Roman", serif;
+}
+
+@theme inline {
+	--font-display: var(--font-display);
+}
