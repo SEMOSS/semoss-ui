@@ -1,4 +1,10 @@
-import { Brain, BriefcaseBusiness, Inbox, Mail } from "lucide-react";
+import {
+	Brain,
+	BriefcaseBusiness,
+	CalendarClock,
+	Inbox,
+	Mail,
+} from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
@@ -57,6 +63,13 @@ export function CollaborationNavigation({
 			icon: Inbox,
 			count: selectWorkItems(state, { view: "needs_me" }).total,
 			isActive: pathname === "/",
+		},
+		{
+			to: "/routines",
+			label: "Routines",
+			icon: CalendarClock,
+			count: 0,
+			isActive: pathname === "/routines",
 		},
 		{
 			to: "/work",
