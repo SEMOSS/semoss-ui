@@ -28,7 +28,7 @@ These are follow-up product and integration work, not implemented or proven by t
 | Priority | Product behavior | Acceptance boundary |
 | --- | --- | --- |
 | 1 | Put the latest prepared brief on Today, with what changed, a few next actions, and source links. | Only show a brief after a successful run; preserve timestamp and partial-source availability. Reuse the Routines result rather than inventing a second inbox. |
-| 2 | Offer Summary, Next steps, and Draft reply when opening a source conversation. | Carry the source forward, preserve typed drafts, and distinguish starting an assistant request from sending an email. A prepared draft requires an actual generated result. |
+| 2 | Editable source starting points are now implemented in the desktop conversation pass. Continue toward useful generated results. | Source and typed drafts are retained; selecting a starting point does not submit. A prepared reply still requires an actual generated result and review. |
 | 3 | Nudge for a real deadline, unanswered commitment, or upcoming meeting. | Include why now, the source, one action, Later, and quiet hours. Test duplicate suppression and stale-source recovery. Measure useful actions and dismissals. |
 | 4 | Reduce filing upkeep through suggested topic links and remembered preferences. | Learn from confirmed choices; request correction only for uncertain, consequential changes. Keep explanations and undo close to the action. |
 | 5 | Keep recovery local to the affected source. | An unavailable connection should explain what is missing and offer one recovery link. General Settings badges should not turn every visit into a maintenance task. |
@@ -49,3 +49,5 @@ The fake inbox currently includes repeated subjects and sparse summaries. Meanin
 Screenshots and the visual audit are saved in the workspace task folder `AGENTS_TASKS/collaboration-design-2026-10-14/`. The Today before/after comparison uses the same 1382-by-724 viewport. Build and test logs are under `/private/tmp/collaboration-calm-*` for this local session.
 
 The subsequent [Topic and All work review](topic-and-work-ui-review.md) implements optional topic context, work search, quieter rows, and narrow-screen fixes.
+
+The [Desktop source conversation review](source-conversation-ui-review.md) implements editable starting points, readable queued source labels, and typing-dependent room optimization. Desktop is the owner's current priority.

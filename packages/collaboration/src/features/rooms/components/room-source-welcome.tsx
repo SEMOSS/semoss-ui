@@ -1,4 +1,3 @@
-import { FileText } from "lucide-react";
 import { H3, P } from "@semoss/ui/next";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import type { RoomSource } from "../source-import/room-source";
@@ -20,16 +19,8 @@ export function RoomSourceWelcome({ source }: { source: RoomSource }) {
 			</H3>
 			{summary && <P className="text-sm leading-relaxed">{summary}</P>}
 			<P className="text-muted-foreground text-sm leading-relaxed">
-				Ask for a summary, help with next steps, or a reply draft.
-			</P>
-			<P className="flex items-start gap-2 text-muted-foreground text-xs leading-5">
-				<FileText
-					aria-hidden="true"
-					className="mt-0.5 size-4 shrink-0"
-				/>
-				<span className="min-w-0 break-words">
-					Source saved in this chat: {source.file.fileName}
-				</span>
+				Ask a question or start with a summary, next steps, or a reply
+				draft.
 			</P>
 		</div>
 	);
