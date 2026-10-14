@@ -1,3 +1,4 @@
+import { getToolLoadingMessage } from "@/features/tools/utils/tool-metadata";
 import type { ConversationMessage } from "../types/message";
 import { messageHasVisiblePart } from "./message-presentation";
 import { findStreamingCodeFence } from "./streaming-code";
@@ -18,6 +19,33 @@ export function messageActivityLabel(
 	if (live.phase === "awaiting_approval") return null;
 	if (live.phase === "cancelling") return "Cancelling…";
 
+	// Model activity is authoritative when a prior tool event is still reconciling.
+	if (live.activity !== "model") {
+		const activeTools = message.parts.flatMap((part) =>
+			part.type === "tool" &&
+			messageHasVisiblePart(part) &&
+			(part.tool.status === "QUEUED" || part.tool.status === "RUNNING")
+				? [part.tool]
+				: [],
+		);
+		if (activeTools.length === 1)
+			return getToolLoadingMessage(activeTools[0]);
+		if (activeTools.length > 1) {
+			const running = activeTools.filter(
+				(tool) => tool.status === "RUNNING",
+			);
+			const queued = activeTools.length - running.length;
+			const descriptions = new Set(running.map(getToolLoadingMessage));
+			const activity =
+				descriptions.size === 1
+					? [...descriptions][0]
+					: running.length
+						? "Running tool calls…"
+						: "Preparing tool calls…";
+			return `${activity} · ${running.length} running${queued ? ` · ${queued} queued` : ""}`;
+		}
+	}
+
 	for (let index = message.parts.length - 1; index >= 0; index -= 1) {
 		const part = message.parts[index];
 		if (
@@ -36,16 +64,8 @@ export function messageActivityLabel(
 				? "Writing code…"
 				: "Writing response…";
 		}
-		if (
-			part.type === "tool" &&
-			messageHasVisiblePart(part) &&
-			(part.tool.status === "QUEUED" || part.tool.status === "RUNNING")
-		) {
-			return part.tool.title === "Loading tool…"
-				? "Loading tool…"
-				: `Using ${part.tool.title}…`;
-		}
 	}
+	if (live.activity === "model") return "Preparing a response…";
 	return message.parts.some(messageHasVisiblePart) ||
 		live.phase === "executing_tools"
 		? "Working…"
@@ -54,7 +74,19 @@ export function messageActivityLabel(
 
 /** The current visible thinking/tool already explains progress in context. */
 export function hasInlineActivity(message: ConversationMessage): boolean {
-	if (message.live?.phase === "cancelling") return false;
+	if (
+		message.live?.phase === "cancelling" ||
+		message.live?.activity === "model"
+	)
+		return false;
+	const activeTools = message.parts.filter(
+		(part) =>
+			part.type === "tool" &&
+			messageHasVisiblePart(part) &&
+			(part.tool.status === "RUNNING" || part.tool.status === "QUEUED"),
+	);
+	// A single row describes one call; concurrent calls need a visible aggregate.
+	if (activeTools.length) return activeTools.length === 1;
 	for (let index = message.parts.length - 1; index >= 0; index -= 1) {
 		const part = message.parts[index];
 		if (!messageHasVisiblePart(part)) continue;
