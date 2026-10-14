@@ -55,10 +55,10 @@ const formSchema = inboxRoutineSettingsSchema
 	.extend({
 		emailCount: z
 			.string()
-			.regex(/^\d+$/, "Choose a whole number of emails.")
+			.regex(/^\d+$/, "Choose a whole number of threads.")
 			.refine(
 				(value) => Number(value) >= 1 && Number(value) <= 100,
-				"Choose between 1 and 100 emails.",
+				"Choose between 1 and 100 threads.",
 			),
 	});
 type RoutineFormValues = z.infer<typeof formSchema>;
@@ -195,8 +195,8 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 					</Badge>
 				</div>
 				<CardDescription>
-					Start your day with a clear summary of your latest emails,
-					what needs a reply, and upcoming deadlines.
+					Start your day with a clear summary of your recent work
+					conversations, what needs a reply, and upcoming deadlines.
 				</CardDescription>
 			</CardHeader>
 			<Form
@@ -241,7 +241,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 									<P className="text-muted-foreground text-xs">
 										{schedule.timezone.replaceAll("_", " ")}{" "}
 										· Up to {schedule.emailCount || "—"}{" "}
-										emails
+										threads
 									</P>
 								</div>
 								<CollapsibleTrigger asChild>
@@ -354,14 +354,14 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 								</datalist>
 								<FormInput
 									name="emailCount"
-									label="Emails to scan (required)"
+									label="Recent threads to include (required)"
 									type="number"
 									min={1}
 									max={100}
 									step={1}
 									required
 									disabled={isSubmitting}
-									description="Scan the newest emails since your last successful brief, up to this limit. Includes read and unread mail, with your filing exclusions applied. The first brief uses your latest emails."
+									description="The brief covers this many of your most recent Brain threads, plus your active topics. Brain syncs your mail first, and the finished brief is also emailed to you."
 									className="max-w-md"
 								/>
 							</CollapsibleContent>
@@ -397,9 +397,10 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 								aria-hidden="true"
 							/>
 							<Small className="leading-relaxed">
-								Your brief stays here in Routines. This routine
-								reads your inbox; it does not send or change
-								emails.
+								Your brief stays here in Routines and is emailed
+								only to you. This routine reads your inbox
+								through Brain; it does not send other emails or
+								change your mail.
 							</Small>
 						</div>
 					</aside>

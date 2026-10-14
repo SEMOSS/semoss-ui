@@ -2,6 +2,7 @@ import { DownloadIcon, UploadIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import {
 	type AutomationWorkflowDocument,
+	buildAutomationImportSaveAggregate,
 	downloadAutomationExport,
 	downloadN8nExport,
 	parseAutomationImportFileAsync,
@@ -264,8 +265,12 @@ export const AutomationImportExportCard = ({
 					}),
 				},
 			};
+			const aggregate = buildAutomationImportSaveAggregate(
+				pendingImport,
+				document,
+			);
 			const response = await runPixel(
-				`SaveAutomation(project=${JSON.stringify([project.project_id])}, json=${JSON.stringify([encodeTextToBase64(JSON.stringify(document))])}, nodeSources=${JSON.stringify([encodeTextToBase64(JSON.stringify(pendingImport.nodeSources))])});`,
+				`SaveAutomation(project=${JSON.stringify([project.project_id])}, json=${JSON.stringify([encodeTextToBase64(aggregate.definitionJson)])}, nodeSources=${JSON.stringify([encodeTextToBase64(aggregate.nodeSourcesJson)])});`,
 			);
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join("\n"));

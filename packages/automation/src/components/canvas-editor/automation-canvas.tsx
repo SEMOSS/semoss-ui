@@ -183,7 +183,12 @@ function customSourceReferencesOutput(
 	step: AutomationNode,
 	outputVariable: string,
 ): boolean {
-	if (step.workflowCodeMode !== "custom") return false;
+	if (
+		step.workflowType !== "developer.python" ||
+		step.workflowCodeMode !== "custom"
+	) {
+		return false;
+	}
 	const source = step.workflowConfig?.pythonSource;
 	if (typeof source !== "string") return false;
 	return (
@@ -412,10 +417,10 @@ export interface AutomationCanvasHandle {
 	viewHistoricalRun: (run: AutomationRunDetail) => void;
 	/** Returns the canvas to the live editable graph. */
 	exitHistoricalView: () => void;
-	/** Applies a saved file-editor tab's content onto its node's in-memory pythonSource, so a
-	 * later Save can't clobber it with the stale copy the canvas loaded with. Looks the step up
-	 * by id rather than going through `applyInspectorAction`, since the saved tab is not
-	 * necessarily the step currently open in the inspector. No-ops for an unknown/removed step. */
+	/** Applies a saved file-editor tab only to an explicit developer.python node's in-memory
+	 * source, so a later Save cannot clobber it with a stale copy. Looks the step up by id rather
+	 * than using `applyInspectorAction`, since the tab need not be the inspected step. No-ops for
+	 * unknown, removed, or typed nodes. */
 	syncPythonSource: (stepId: string, source: string) => void;
 }
 
@@ -773,10 +778,10 @@ export const AutomationCanvasContent = forwardRef<
 				typeof value.defaultValue === "string",
 		);
 	}, [steps]);
-	// DB-backed run id for the in-progress run, used to poll GetAutomationRun as a
-	// fallback in case the live progress stream drops an update (see the periodic
-	// reconciliation effect below).
-	const [liveRunId, setLiveRunId] = useState<string | null>(null);
+	// A run restored after this page loaded has no local Pixel job stream to follow.
+	// Only that reconnect case uses durable run reconciliation; runs started from
+	// this canvas are driven exclusively by TriggerAutomation's progress stream.
+	const [reconnectRunId, setReconnectRunId] = useState<string | null>(null);
 	const [aiRunSummary, setAiRunSummary] = useState<string | null>(null);
 	const [generatingAiSummary, setGeneratingAiSummary] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
@@ -2050,7 +2055,14 @@ export const AutomationCanvasContent = forwardRef<
 			setAddAfterHandle(null);
 			setEditingStepId(id);
 			window.requestAnimationFrame(() => {
-				window.requestAnimationFrame(fitWorkflow);
+				window.requestAnimationFrame(() => {
+					reactFlowInstanceRef.current?.fitView({
+						nodes: [{ id }],
+						padding: 0.5,
+						duration: 250,
+						maxZoom: 1,
+					});
+				});
 			});
 		},
 		[
@@ -2058,7 +2070,6 @@ export const AutomationCanvasContent = forwardRef<
 			loopBodyInsertionPoint,
 			addAfterStepId,
 			addAfterHandle,
-			fitWorkflow,
 			getNodeHeight,
 			graphEdges,
 			readOnly,
@@ -2622,7 +2633,8 @@ export const AutomationCanvasContent = forwardRef<
 				setSteps((previous) =>
 					previous.map((step) => {
 						const source = output.nodeSources?.[step.id];
-						return typeof source === "string"
+						return step.workflowType === "developer.python" &&
+							typeof source === "string"
 							? {
 									...step,
 									workflowConfig: {
@@ -2672,7 +2684,7 @@ export const AutomationCanvasContent = forwardRef<
 		(stepId: string, source: string) => {
 			if (readOnly || viewingHistory) return;
 			const step = steps.find((candidate) => candidate.id === stepId);
-			if (step) {
+			if (step?.workflowType === "developer.python") {
 				updateStep({
 					...step,
 					workflowCodeMode: "custom",
@@ -2692,7 +2704,8 @@ export const AutomationCanvasContent = forwardRef<
 				body: {
 					...parentLoop.body,
 					nodes: parentLoop.body.nodes.map((node) =>
-						node.id === stepId
+						node.id === stepId &&
+						node.workflowType === "developer.python"
 							? {
 									...node,
 									workflowCodeMode: "custom",
@@ -2823,7 +2836,7 @@ export const AutomationCanvasContent = forwardRef<
 					) {
 						applyRunData(run);
 						setAiRunSummary(run.RESULT_SUMMARY ?? null);
-						setLiveRunId(run.RUN_ID);
+						setReconnectRunId(run.RUN_ID);
 					} else {
 						setScopeSampleResults(run.nodeResults ?? []);
 					}
@@ -2855,7 +2868,12 @@ export const AutomationCanvasContent = forwardRef<
 		appliedExternalRunRef.current = externalRunSignature;
 		applyRunData(externalRunUpdate);
 		setAiRunSummary(externalRunUpdate.RESULT_SUMMARY ?? null);
-		setLiveRunId(externalRunUpdate.RUN_ID);
+		setReconnectRunId((current) =>
+			current === externalRunUpdate.RUN_ID &&
+			externalRunUpdate.STATUS === "RUNNING"
+				? current
+				: null,
+		);
 		notifyHistoryChanged();
 	}, [
 		applyRunData,
@@ -2867,12 +2885,6 @@ export const AutomationCanvasContent = forwardRef<
 	const applyNodeProgress = useCallback(
 		(progress: AutomationNodeStreamData) => {
 			const { NODE_ID: nodeId, STATUS: status } = progress;
-			const runId = progress.RUN_ID;
-			if (runId) {
-				setLiveRunId((previous) =>
-					previous === runId ? previous : runId,
-				);
-			}
 			if (!nodeId || !status) return;
 			const stepStatus: StepRunStatus =
 				status === "FAILED"
@@ -2951,32 +2963,33 @@ export const AutomationCanvasContent = forwardRef<
 			hash: data.DEFINITION_HASH,
 			snapshot: data.DEFINITION_SNAPSHOT,
 		});
-		if (data.RUN_ID) {
-			setLiveRunId(data.RUN_ID);
-		}
 	}, []);
 
-	// Fallback reconciliation: the live progress stream is best-effort and can drop an
-	// update (observed with agent-run trace events). Re-fetch the DB-backed run detail
-	// on an interval while running so the canvas self-heals within a few seconds even
-	// if a stream event never arrives.
+	// Reconnect reconciliation: a run restored after navigation has no Pixel job id,
+	// so its durable record is the only available status source. Never poll runs
+	// started by this canvas; their TriggerAutomation stream owns live progress.
 	useEffect(() => {
-		if (!running || !liveRunId) return;
+		if (!running || !reconnectRunId) return;
 		let cancelled = false;
 		const interval = window.setInterval(() => {
-			getAutomationRun(appId, liveRunId)
+			getAutomationRun(appId, reconnectRunId)
 				.then((detail) => {
-					if (!cancelled) applyRunData(detail);
+					if (!cancelled) {
+						applyRunData(detail);
+						if (detail.STATUS !== "RUNNING") {
+							setReconnectRunId(null);
+						}
+					}
 				})
 				.catch(() => {
-					// Best-effort; the live stream remains the primary source of truth.
+					// Best-effort; history can still be opened manually.
 				});
 		}, 2500);
 		return () => {
 			cancelled = true;
 			window.clearInterval(interval);
 		};
-	}, [running, liveRunId, appId, applyRunData]);
+	}, [running, reconnectRunId, appId, applyRunData]);
 
 	const run = useCallback(async () => {
 		const runInputs = pendingRunInputsRef.current;
@@ -3035,7 +3048,7 @@ export const AutomationCanvasContent = forwardRef<
 		setLatestRunResults([]);
 		setLatestRunDefinition(null);
 		setActiveRun(null);
-		setLiveRunId(null);
+		setReconnectRunId(null);
 		try {
 			const inputsArgument =
 				runInputs && Object.keys(runInputs).length > 0

@@ -32,6 +32,7 @@ export type {
 	AutomationImportResult,
 } from "./domain/automation-import-export";
 export {
+	buildAutomationImportSaveAggregate,
 	downloadAutomationExport,
 	parseAutomationImportFile,
 	parseAutomationImportFileAsync,
