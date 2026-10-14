@@ -1,13 +1,5 @@
-import {
-	ChevronDown,
-	ChevronLeft,
-	ChevronRight,
-	Download,
-	RefreshCw,
-	SlidersHorizontal,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
 import { useState } from "react";
-import { runPixel } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -16,7 +8,6 @@ import {
 	Button,
 	Collapsible,
 	CollapsibleContent,
-	CollapsibleTrigger,
 	H4,
 	P,
 	Skeleton,
@@ -35,13 +26,13 @@ import {
 	AUDIT_PAGE_SIZE,
 	type AuditEvent,
 	type AuditTrailFilters,
-	buildAuditTrailsExportPixel,
 	EMPTY_AUDIT_FILTERS,
+	exportAuditEvents,
 	formatAuditTime,
-	parseAuditEvents,
 	toAuditCsv,
 } from "@/api/audit-trails";
 import { AuditEventDetails } from "./audit-event-details";
+import { AuditFilterToggle } from "./audit-filter-toggle";
 import { AuditTrailsFilters } from "./audit-trails-filters";
 import { useAuditTrails } from "./use-audit-trails";
 
@@ -62,15 +53,21 @@ function severityVariant(severity: AuditEvent["SEVERITY"]) {
 /** Browse, filter, and export the security and administrative audit trail. */
 export const AuditTrails = () => {
 	const [filtersOpen, setFiltersOpen] = useState(false);
-	const [query, setQuery] = useState({
+	const [query, setQuery] = useState<{
+		filters: AuditTrailFilters;
+		page: number;
+		snapshot?: string;
+	}>({
 		filters: EMPTY_AUDIT_FILTERS,
 		page: 0,
 	});
 	const [isExporting, setIsExporting] = useState(false);
-	const { events, hasNextPage, isLoading, error, refresh } = useAuditTrails(
-		query.filters,
-		query.page,
-	);
+	const { events, hasNextPage, isLoading, error, refresh, snapshot } =
+		useAuditTrails(query.filters, query.page, query.snapshot);
+	const handleRefresh = () => {
+		setQuery({ filters: query.filters, page: 0 });
+		if (query.page === 0 && query.snapshot === undefined) refresh();
+	};
 	const hasFilters = Object.values(query.filters).some(Boolean);
 	const activeFilterCount = Object.values(query.filters).filter(
 		Boolean,
@@ -81,18 +78,10 @@ export const AuditTrails = () => {
 	const handleExport = async () => {
 		setIsExporting(true);
 		try {
-			const response = await runPixel(
-				buildAuditTrailsExportPixel(query.filters),
+			const exported = await exportAuditEvents(
+				query.filters,
+				snapshot ?? query.snapshot,
 			);
-			const result = response?.pixelReturn?.[0];
-			if (!result || result.operationType?.includes("ERROR")) {
-				throw new Error(
-					typeof result?.output === "string"
-						? result.output
-						: "The audit events could not be exported.",
-				);
-			}
-			const exported = parseAuditEvents(result.output);
 			if (exported.length === 0) {
 				toast.error("There are no audit events to export.");
 				return;
@@ -126,24 +115,10 @@ export const AuditTrails = () => {
 					aria-label="Audit table controls"
 					className="flex flex-wrap items-center justify-between gap-3 border-b py-3"
 				>
-					<CollapsibleTrigger asChild>
-						<Button variant="outline" aria-label="Audit filters">
-							<SlidersHorizontal
-								aria-hidden="true"
-								className="size-4"
-							/>
-							Filters
-							{activeFilterCount > 0 && (
-								<Badge variant="secondary">
-									{activeFilterCount}
-								</Badge>
-							)}
-							<ChevronDown
-								aria-hidden="true"
-								className={`size-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
-							/>
-						</Button>
-					</CollapsibleTrigger>
+					<AuditFilterToggle
+						open={filtersOpen}
+						activeFilterCount={activeFilterCount}
+					/>
 					<div className="flex gap-2">
 						<Button
 							type="button"
@@ -163,7 +138,7 @@ export const AuditTrails = () => {
 							aria-label="Refresh"
 							title="Refresh audit trail"
 							disabled={isLoading}
-							onClick={refresh}
+							onClick={handleRefresh}
 						>
 							<RefreshCw className="size-4" aria-hidden="true" />
 						</Button>
@@ -183,7 +158,7 @@ export const AuditTrails = () => {
 						<Button
 							type="button"
 							variant="outline"
-							onClick={refresh}
+							onClick={handleRefresh}
 						>
 							Retry
 						</Button>
@@ -344,6 +319,7 @@ export const AuditTrails = () => {
 							setQuery((previous) => ({
 								...previous,
 								page: previous.page - 1,
+								snapshot: snapshot ?? previous.snapshot,
 							}))
 						}
 					>
@@ -363,6 +339,7 @@ export const AuditTrails = () => {
 							setQuery((previous) => ({
 								...previous,
 								page: previous.page + 1,
+								snapshot: snapshot ?? previous.snapshot,
 							}))
 						}
 					>

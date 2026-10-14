@@ -33,6 +33,7 @@ vi.mock("@/hooks/useSettings", () => ({
 /** Model the actual Collect table shape, including nullable event fields. */
 function result(count: number) {
 	return {
+		snapshot: "100",
 		data: {
 			headers: AUDIT_EVENT_COLUMNS,
 			values: Array.from({ length: count }, (_, index) =>
@@ -144,7 +145,7 @@ describe("Audit Trails settings", () => {
 	it("uses the lookahead row for pagination and resets the page when applying filters", async () => {
 		mocks.usePixel.mockImplementation((pixel: string) => ({
 			status: "SUCCESS",
-			data: result(pixel.includes("Offset(0)") ? 26 : 1),
+			data: result(pixel.includes("page=[0]") ? 26 : 1),
 			refresh: mocks.refresh,
 		}));
 		renderPage();
@@ -152,7 +153,8 @@ describe("Audit Trails settings", () => {
 			screen.getAllByRole("button", { name: /View details for event/ }),
 		).toHaveLength(25);
 		fireEvent.click(screen.getByRole("button", { name: "Next" }));
-		expect(mocks.usePixel.mock.lastCall?.[0]).toContain("Offset(25)");
+		expect(mocks.usePixel.mock.lastCall?.[0]).toContain("page=[1]");
+		expect(mocks.usePixel.mock.lastCall?.[0]).toContain('snapshot=["100"]');
 		expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
 		fireEvent.click(screen.getByRole("button", { name: "Audit filters" }));
 		fireEvent.change(screen.getByLabelText("Actor user ID"), {
@@ -161,12 +163,13 @@ describe("Audit Trails settings", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
 		await waitFor(() =>
 			expect(mocks.usePixel.mock.lastCall?.[0]).toContain(
-				'ACTOR_USER_ID == "actor-1"',
+				'actorId=["actor-1"]',
 			),
 		);
-		expect(mocks.usePixel.mock.lastCall?.[0]).toContain("Offset(0)");
+		expect(mocks.usePixel.mock.lastCall?.[0]).toContain("page=[0]");
+		expect(mocks.usePixel.mock.lastCall?.[0]).not.toContain("snapshot=");
 		fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-		expect(mocks.usePixel.mock.lastCall?.[0]).not.toContain("Filter(");
+		expect(mocks.usePixel.mock.lastCall?.[0]).not.toContain("actorId=");
 	});
 
 	it("shows all details as text and closes with Escape", async () => {
@@ -203,7 +206,7 @@ describe("Audit Trails settings", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
 		await waitFor(() => expect(mocks.downloadBlob).toHaveBeenCalledOnce());
 		expect(mocks.runPixel.mock.lastCall?.[0]).toContain(
-			"AdminUserAuditEvents(export=[true])",
+			"AdminAuditEvents(export=[true]",
 		);
 		const [blob, fileName] = mocks.downloadBlob.mock.lastCall ?? [];
 		expect(fileName).toMatch(/^audit-trails-\d{4}-\d{2}-\d{2}\.csv$/);

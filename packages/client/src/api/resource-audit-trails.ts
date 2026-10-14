@@ -1,4 +1,5 @@
 import { z } from "@semoss/ui/next";
+import { auditPixelLiteral } from "./audit-pixel";
 import type { AuditTrailFilters } from "./audit-trails";
 
 export type AuditScope = "ENGINE" | "PROJECT";
@@ -82,10 +83,7 @@ export function buildResourceAuditPixel(
 		if (filters[key]) options[key] = filters[key];
 	}
 	const argumentsText = Object.entries(options)
-		.map(
-			([key, value]) =>
-				`${key}=[${JSON.stringify(value).replace(/</g, "\\u003c")}]`,
-		)
+		.map(([key, value]) => `${key}=[${auditPixelLiteral(value)}]`)
 		.join(",");
 	return `${scope === "ENGINE" ? "Engine" : "Project"}AuditEvents(${argumentsText});`;
 }

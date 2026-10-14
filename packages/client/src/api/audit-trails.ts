@@ -1,7 +1,9 @@
+import { runPixel } from "@semoss/sdk/react";
 import { escapeCsvValue } from "@semoss/utility/csv";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import { formatJson } from "@semoss/utility/json";
 import { isRecord } from "@semoss/utility/object";
+import { auditPixelLiteral } from "./audit-pixel";
 
 /** Columns selected by the AdminUserAuditEvents reactor, in schema order. */
 export const AUDIT_EVENT_COLUMNS = [
@@ -137,7 +139,11 @@ export function normalizeAuditFilters(
 		EMPTY_AUDIT_FILTERS,
 	) as (keyof AuditTrailFilters)[]) {
 		const value = (filters[key] ?? "").trim();
-		normalized[key] = value === AUDIT_FILTER_ALL ? "" : value;
+		normalized[key] =
+			["category", "status", "severity", "targetType"].includes(key) &&
+			value === AUDIT_FILTER_ALL
+				? ""
+				: value;
 	}
 	return normalized;
 }
@@ -161,17 +167,29 @@ const EXACT_FILTER_COLUMNS: Record<
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-/**
- * Encode a user value as a Pixel string literal. Escape '<' as well as JSON
- * string characters so the Pixel preprocessor cannot interpret user-provided
- * <encode> or other markup blocks.
- */
-function pixelLiteral(value: string): string {
-	return JSON.stringify(value).replace(/</g, "\\u003c");
+/** Validate actual UTC calendar dates, not just their shape. */
+function auditDate(value: string, label: string): Date {
+	const date = new Date(`${value}T00:00:00Z`);
+	if (
+		!DATE_PATTERN.test(value) ||
+		Number.isNaN(date.getTime()) ||
+		date.toISOString().slice(0, 10) !== value
+	) {
+		throw new Error(`Invalid ${label} date.`);
+	}
+	return date;
+}
+
+function validateDates(filters: AuditTrailFilters): void {
+	if (filters.from) auditDate(filters.from, "start");
+	if (filters.to) auditDate(filters.to, "end");
+	if (filters.from && filters.to && filters.from > filters.to)
+		throw new Error("Invalid audit date range.");
 }
 
 /** Build the `| Filter(...)` clause shared by paging and export reads. */
 export function buildAuditFilterClause(filters: AuditTrailFilters): string {
+	validateDates(filters);
 	const clauses: string[] = [];
 	for (const [key, column] of Object.entries(EXACT_FILTER_COLUMNS) as [
 		keyof typeof EXACT_FILTER_COLUMNS,
@@ -180,22 +198,22 @@ export function buildAuditFilterClause(filters: AuditTrailFilters): string {
 		const value = filters[key].trim();
 		if (value) {
 			clauses.push(
-				`USER_AUDIT_EVENTS__${column} == ${pixelLiteral(value)}`,
+				`USER_AUDIT_EVENTS__${column} == ${auditPixelLiteral(value)}`,
 			);
 		}
 	}
 	const from = filters.from.trim();
 	const to = filters.to.trim();
 	if (from) {
-		if (!DATE_PATTERN.test(from)) throw new Error("Invalid start date.");
 		clauses.push(
-			`USER_AUDIT_EVENTS__EVENT_TIME >= ${pixelLiteral(`${from} 00:00:00`)}`,
+			`USER_AUDIT_EVENTS__EVENT_TIME >= ${auditPixelLiteral(`${from} 00:00:00`)}`,
 		);
 	}
 	if (to) {
-		if (!DATE_PATTERN.test(to)) throw new Error("Invalid end date.");
+		const nextDay = auditDate(to, "end");
+		nextDay.setUTCDate(nextDay.getUTCDate() + 1);
 		clauses.push(
-			`USER_AUDIT_EVENTS__EVENT_TIME <= ${pixelLiteral(`${to} 23:59:59`)}`,
+			`USER_AUDIT_EVENTS__EVENT_TIME < ${auditPixelLiteral(`${nextDay.toISOString().slice(0, 10)} 00:00:00`)}`,
 		);
 	}
 	return clauses.length ? ` | Filter(${clauses.join(", ")})` : "";
@@ -205,18 +223,74 @@ export function buildAuditFilterClause(filters: AuditTrailFilters): string {
 export function buildAuditTrailsPixel(
 	filters: AuditTrailFilters,
 	page: number,
+	snapshot?: string,
 ): string {
 	if (!Number.isSafeInteger(page) || page < 0) {
 		throw new Error("Invalid audit trails page.");
 	}
-	return `AdminUserAuditEvents()${buildAuditFilterClause(filters)} | Offset(${page * AUDIT_PAGE_SIZE}) | Limit(${AUDIT_PAGE_SIZE + 1}) | Collect(${AUDIT_PAGE_SIZE + 1});`;
+	return adminAuditPixel(filters, [`page=[${page}]`], snapshot);
+}
+
+/** Build a materialized read; the server owns limits and completed-read auditing. */
+function adminAuditPixel(
+	filters: AuditTrailFilters,
+	args: string[],
+	snapshot?: string,
+): string {
+	validateDates(filters);
+	for (const key of Object.keys(
+		EMPTY_AUDIT_FILTERS,
+	) as (keyof AuditTrailFilters)[]) {
+		const value = filters[key].trim();
+		if (value) args.push(`${key}=[${auditPixelLiteral(value)}]`);
+	}
+	if (snapshot !== undefined) {
+		if (!/^[0-9]{1,19}$/.test(snapshot))
+			throw new Error("Invalid audit snapshot.");
+		args.push(`snapshot=[${auditPixelLiteral(snapshot)}]`);
+	}
+	return `AdminAuditEvents(${args.join(",")});`;
+}
+
+/** Snapshot sequence is a string to preserve 64-bit precision in the browser. */
+export function parseAuditSnapshot(output: unknown): string {
+	if (
+		!isRecord(output) ||
+		typeof output.snapshot !== "string" ||
+		!/^[0-9]{1,19}$/.test(output.snapshot)
+	) {
+		throw new Error(
+			"The audit response is missing its pagination snapshot.",
+		);
+	}
+	return output.snapshot;
 }
 
 /** Build the export read; the backend records it as AUDIT_EXPORT. */
 export function buildAuditTrailsExportPixel(
 	filters: AuditTrailFilters,
+	snapshot?: string,
 ): string {
-	return `AdminUserAuditEvents(export=[true])${buildAuditFilterClause(filters)} | Limit(${AUDIT_EXPORT_LIMIT}) | Collect(${AUDIT_EXPORT_LIMIT});`;
+	return adminAuditPixel(filters, ["export=[true]"], snapshot);
+}
+
+/** Retrieve the bounded export through the admin reader and validate its result. */
+export async function exportAuditEvents(
+	filters: AuditTrailFilters,
+	snapshot?: string,
+): Promise<AuditEvent[]> {
+	const response = await runPixel(
+		buildAuditTrailsExportPixel(filters, snapshot),
+	);
+	const result = response?.pixelReturn?.[0];
+	if (!result || result.operationType?.includes("ERROR")) {
+		throw new Error(
+			typeof result?.output === "string"
+				? result.output
+				: "The audit events could not be exported.",
+		);
+	}
+	return parseAuditEvents(result.output);
 }
 
 /** Validate a Collect task response and map headers independently of column order. */

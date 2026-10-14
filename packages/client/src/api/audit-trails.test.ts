@@ -3,6 +3,7 @@ import {
 	AUDIT_EVENT_COLUMNS,
 	AUDIT_FILTER_ALL,
 	type AuditEvent,
+	buildAuditFilterClause,
 	buildAuditTrailsExportPixel,
 	buildAuditTrailsPixel,
 	EMPTY_AUDIT_FILTERS,
@@ -32,18 +33,12 @@ describe("existing audit trails query contract", () => {
 			},
 			0,
 		);
-		expect(pixel).toContain('USER_AUDIT_EVENTS__CATEGORY == "AUTHZ"');
-		expect(pixel).toContain('USER_AUDIT_EVENTS__SEVERITY == "HIGH"');
-		expect(pixel).toContain(
-			'USER_AUDIT_EVENTS__SUBJECT_USER_ID == "user-2"',
-		);
-		expect(pixel).toContain('USER_AUDIT_EVENTS__PROJECT_ID == "project-1"');
-		expect(pixel).toContain(
-			'USER_AUDIT_EVENTS__EVENT_TIME >= "2026-10-01 00:00:00"',
-		);
-		expect(pixel).toContain(
-			'USER_AUDIT_EVENTS__EVENT_TIME <= "2026-10-08 23:59:59"',
-		);
+		expect(pixel).toContain('category=["AUTHZ"]');
+		expect(pixel).toContain('severity=["HIGH"]');
+		expect(pixel).toContain('subjectId=["user-2"]');
+		expect(pixel).toContain('projectId=["project-1"]');
+		expect(pixel).toContain('from=["2026-10-01"]');
+		expect(pixel).toContain('to=["2026-10-08"]');
 		expect(() =>
 			buildAuditTrailsPixel(
 				{ ...EMPTY_AUDIT_FILTERS, from: '2026" | DeleteEngine();' },
@@ -57,8 +52,8 @@ describe("existing audit trails query contract", () => {
 			...EMPTY_AUDIT_FILTERS,
 			status: "DENIED",
 		});
-		expect(pixel).toContain("AdminUserAuditEvents(export=[true])");
-		expect(pixel).toContain('USER_AUDIT_EVENTS__STATUS == "DENIED"');
+		expect(pixel).toContain("AdminAuditEvents(export=[true]");
+		expect(pixel).toContain('status=["DENIED"]');
 		expect(pixel).not.toContain("Offset(");
 	});
 
@@ -87,8 +82,8 @@ describe("existing audit trails query contract", () => {
 
 	it("uses the authorized reactor and bounds page reads with a lookahead row", () => {
 		const pixel = buildAuditTrailsPixel(EMPTY_AUDIT_FILTERS, 2);
-		expect(pixel).toContain("AdminUserAuditEvents()");
-		expect(pixel).toContain("Offset(50) | Limit(26) | Collect(26)");
+		expect(pixel).toContain("AdminAuditEvents(page=[2])");
+		expect(pixel).not.toContain("Collect(");
 		expect(pixel).not.toContain("AuditLogsReport");
 		expect(() => buildAuditTrailsPixel(EMPTY_AUDIT_FILTERS, -1)).toThrow();
 	});
@@ -99,11 +94,52 @@ describe("existing audit trails query contract", () => {
 			{ ...EMPTY_AUDIT_FILTERS, actorId: value },
 			0,
 		);
-		const literal = pixel.match(/ACTOR_USER_ID == (.*)\) \| Offset/)?.[1];
+		const literal = pixel.match(/actorId=\[(.*)\]\);/)?.[1];
 		expect(literal).toBeDefined();
 		expect(JSON.parse(literal ?? "null")).toBe(value);
 		expect(pixel).not.toContain("<encode>");
 		expect(pixel).not.toContain("</encode>");
+	});
+
+	it("preserves snapshot precision and validates UTC calendar boundaries", () => {
+		expect(
+			buildAuditTrailsPixel(EMPTY_AUDIT_FILTERS, 1, "9007199254740993"),
+		).toContain('snapshot=["9007199254740993"]');
+		expect(() =>
+			buildAuditTrailsPixel(EMPTY_AUDIT_FILTERS, 1, "injected"),
+		).toThrow();
+		expect(
+			buildAuditFilterClause({
+				...EMPTY_AUDIT_FILTERS,
+				to: "2024-02-29",
+			}),
+		).toContain('EVENT_TIME < "2024-03-01 00:00:00"');
+		expect(
+			buildAuditFilterClause({
+				...EMPTY_AUDIT_FILTERS,
+				to: "2026-12-31",
+			}),
+		).toContain('EVENT_TIME < "2027-01-01 00:00:00"');
+		expect(() =>
+			buildAuditTrailsPixel(
+				{ ...EMPTY_AUDIT_FILTERS, to: "2026-02-30" },
+				0,
+			),
+		).toThrow();
+		expect(() =>
+			buildAuditTrailsPixel(
+				{
+					...EMPTY_AUDIT_FILTERS,
+					from: "2026-10-14",
+					to: "2026-10-13",
+				},
+				0,
+			),
+		).toThrow();
+		expect(
+			normalizeAuditFilters({ ...EMPTY_AUDIT_FILTERS, actorId: "all" })
+				.actorId,
+		).toBe("all");
 	});
 
 	it("maps reordered and qualified headers, preserving missing optional values", () => {

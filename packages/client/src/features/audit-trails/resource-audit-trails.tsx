@@ -2,11 +2,9 @@ import {
 	ArrowDown,
 	ArrowUp,
 	ArrowUpDown,
-	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
 	RefreshCw,
-	SlidersHorizontal,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -16,7 +14,6 @@ import {
 	Button,
 	Collapsible,
 	CollapsibleContent,
-	CollapsibleTrigger,
 	P,
 	Select,
 	SelectContent,
@@ -41,6 +38,7 @@ import type {
 	AuditSort,
 } from "@/api/resource-audit-trails";
 import { AuditEventDetails } from "./audit-event-details";
+import { AuditFilterToggle } from "./audit-filter-toggle";
 import { AuditTrailsFilters } from "./audit-trails-filters";
 import { useResourceAuditTrails } from "./use-resource-audit-trails";
 
@@ -104,24 +102,10 @@ export function ResourceAuditTrails({
 					aria-label="Audit table controls"
 					className="flex items-center justify-between gap-3 border-b py-3"
 				>
-					<CollapsibleTrigger asChild>
-						<Button variant="outline" aria-label="Audit filters">
-							<SlidersHorizontal
-								aria-hidden="true"
-								className="size-4"
-							/>
-							Filters
-							{activeFilterCount > 0 && (
-								<Badge variant="secondary">
-									{activeFilterCount}
-								</Badge>
-							)}
-							<ChevronDown
-								aria-hidden="true"
-								className={`size-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
-							/>
-						</Button>
-					</CollapsibleTrigger>
+					<AuditFilterToggle
+						open={filtersOpen}
+						activeFilterCount={activeFilterCount}
+					/>
 					<Button
 						variant="outline"
 						size="icon"
