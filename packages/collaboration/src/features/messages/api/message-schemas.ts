@@ -128,6 +128,7 @@ const normalizeRoomMessage = (value: unknown) => {
 		modelId: raw.modelId ?? raw.MODEL_ID,
 		tokens: raw.tokens ?? raw.TOKENS,
 		parts,
+		ornaments: raw.ornaments ?? raw.ORNAMENTS,
 	};
 
 	if (typeof text === "string" && typeof type === "string") {

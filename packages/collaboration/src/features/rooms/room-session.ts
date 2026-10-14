@@ -705,7 +705,9 @@ export class RoomSession {
 					"Check room settings.",
 			);
 		const userText =
-			submission.text.trim() || "Please review the attached files.";
+			submission.userContentFormat === "html-v1" && submission.userContent
+				? submission.userContent
+				: submission.text.trim() || "Please review the attached files.";
 		const command = this.command(userText, context);
 		const existingMedia = [...(submission.existingMedia ?? [])];
 		for (const file of submittedDraft.contextFiles) {

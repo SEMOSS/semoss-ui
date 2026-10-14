@@ -222,9 +222,10 @@ export function RoomWorkspace({
 	}
 
 	function handleSend(submission: ComposerSubmission): Promise<void> {
-		const remembered = memorySession
-			? rememberCommand(submission.text)
-			: null;
+		const remembered =
+			memorySession && !submission.userContentFormat
+				? rememberCommand(submission.text)
+				: null;
 		if (memorySession && remembered && !submission.files.length) {
 			memorySession.dispatch({
 				type: "memory.save",
