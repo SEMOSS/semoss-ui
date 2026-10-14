@@ -1,5 +1,8 @@
 {
 	"welcome": "Welkom, {{name}}",
+	"suggestions": {
+		"title": "Voorgestelde vervolgberichten"
+	},
 	"settings": {
 		"title": "Kamerinstellingen",
 		"description": "Werk de kamerinstellingen bij en pas het gedrag van de chat aan",

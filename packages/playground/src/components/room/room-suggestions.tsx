@@ -1,8 +1,10 @@
 import { ListMinusIcon, PlusIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { usePixel } from "@semoss/sdk/react";
-import type { RoomStore } from "@/stores";
+import { useTranslation } from "@semoss/i18n";
+import { Button, Small } from "@semoss/ui/next";
+import { useRoomSuggestions } from "@/features/suggestions/use-room-suggestions";
+import type { RoomStore } from "@/stores/room/room.store";
 
 interface RoomSuggestionsProps {
 	/** Room to load */
@@ -10,58 +12,45 @@ interface RoomSuggestionsProps {
 }
 
 /**
- * The suggestions page for a room
+ * Follow-up messages that continue the conversation or use its attached tools.
  */
 export const RoomSuggestions: React.FC<RoomSuggestionsProps> = observer(
 	({ room }) => {
-		const getSuggestions = usePixel<{ suggestions: string[] }>(
-			!room.isLoading && !room.error
-				? `GenerateFollowUpQuestions(engine=["${room.model.app_id}"], roomId=["${room.roomId}"])`
-				: "",
-			{
-				data: {
-					suggestions: [],
-				},
-			},
-			room.insightId,
-		);
-
-		// hide if not successful
-		if (getSuggestions.status !== "SUCCESS") {
+		const { t } = useTranslation("room");
+		const suggestions = useRoomSuggestions(room);
+		if (suggestions.length === 0) {
 			return null;
 		}
 
-		// hide if no suggestions
-		if (getSuggestions.data.suggestions.length === 0) {
-			return null;
-		}
-
-		// TODO: animate
 		return (
-			<div className="mx-8 flex animate-accordion-down flex-col items-start overflow-hidden rounded-lg border border-border bg-primary-foreground shadow-sm">
-				<div className="flex w-full flex-row items-center gap-1 p-2">
-					<ListMinusIcon className="size-4" />
-					<div className="font-medium text-sm">
-						Suggested Questions
-					</div>
+			<div className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-background">
+				<div className="flex items-center gap-2 bg-muted/50 p-2">
+					<ListMinusIcon aria-hidden="true" className="size-4" />
+					<Small>{t("suggestions.title")}</Small>
 				</div>
-				{getSuggestions.data.suggestions.map((suggestion) => (
-					<button
+				{suggestions.map((suggestion) => (
+					<Button
 						key={suggestion}
-						className="flex w-full flex-row flex-wrap gap-2.5 border-border border-t bg-background px-2 py-3 text-muted-foreground outline-none transition-colors duration-100 hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+						variant="ghost"
+						className="h-auto min-h-11 w-full justify-between whitespace-normal rounded-none border-border border-t p-3 text-start font-normal"
 						type="button"
 						onClick={() => {
-							room.askMessage(suggestion, []);
+							void room
+								.askMessage(suggestion, [])
+								.catch((error: unknown) => {
+									room.setError(
+										error instanceof Error
+											? error
+											: new Error(String(error)),
+									);
+								});
 						}}
 					>
-						<div
-							className="flex-1 truncate text-start text-sm"
-							title={suggestion}
-						>
+						<span className="wrap-anywhere min-w-0 flex-1">
 							{suggestion}
-						</div>
-						<PlusIcon className="size-4" />
-					</button>
+						</span>
+						<PlusIcon aria-hidden="true" className="size-4" />
+					</Button>
 				))}
 			</div>
 		);
