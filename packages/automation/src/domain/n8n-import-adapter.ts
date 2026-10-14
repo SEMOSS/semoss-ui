@@ -644,14 +644,14 @@ export async function n8nWorkflowToAutomationDocumentWithModel(
 		const isPythonFallback = converted.type === "developer.python";
 		const pythonSource = isPythonFallback
 			? pythonFallbackSource(node, converted.pythonSource)
-			: converted.pythonSource;
+			: undefined;
 		result.warnings = result.warnings.filter(
 			(warning) => warning !== placeholderWarning,
 		);
 		Object.assign(importedNode, {
 			type: converted.type,
 			config: isPythonFallback ? { pythonSource } : converted.config,
-			codeMode: isPythonFallback ? "custom" : converted.codeMode,
+			codeMode: isPythonFallback ? "custom" : "generated",
 			label: isPythonFallback
 				? `\u26a0\ufe0f ${converted.label ?? node.name}`.replace(
 						"\u26a0\ufe0f \u26a0\ufe0f ",

@@ -56,11 +56,13 @@ const EmptyRunFiles = ({ children }: { children: React.ReactNode }) => (
 const AutomationRunFilesPanel: WorkbenchComponent = ({ id }) => {
 	const { selectedRun, traceSnapshot } = useAutomationWorkbenchContext();
 	const activeRun = traceSnapshot?.activeRun ?? null;
-	const run =
-		selectedRun ??
-		(traceSnapshot?.running || activeRun?.executionInsightId
-			? activeRun
-			: null);
+	// A newly started run must own this panel even if a historical selection has
+	// not finished clearing from the shared workbench store. Otherwise the panel
+	// keeps showing the old run's closed-workspace message while files are being
+	// downloaded into the active run Insight.
+	const run = traceSnapshot?.running
+		? activeRun
+		: (selectedRun ?? (activeRun?.executionInsightId ? activeRun : null));
 	const insightId = run?.executionInsightId;
 
 	if (insightId) {

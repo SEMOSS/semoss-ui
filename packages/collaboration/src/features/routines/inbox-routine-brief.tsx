@@ -102,6 +102,11 @@ export function InboxRoutineBrief({ routine }: { routine: InboxRoutine }) {
 							</Button>
 						)}
 					</div>
+					{run.error && (
+						<Alert>
+							<AlertDescription>{run.error}</AlertDescription>
+						</Alert>
+					)}
 					{run.summary ? (
 						<Markdown
 							className="min-w-0 break-words"

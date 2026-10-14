@@ -290,6 +290,27 @@ export interface AutomationRunSummary {
 	DEFINITION_HASH?: string;
 }
 
+export type AutomationRunImplementationView =
+	| {
+			viewKind: "PYTHON";
+			legacyPython: boolean;
+			nodeType: "developer.python";
+			sourceIdentity:
+				| "developer.python"
+				| "developer.python.compatibility";
+			sourceNodeId: string;
+			historicalNodeType?: string;
+			source: string;
+	  }
+	| {
+			viewKind: "IMPLEMENTATION";
+			legacyPython: false;
+			nodeType: string;
+			config: Record<string, unknown>;
+			implementationId: string;
+			definitionHash: string;
+	  };
+
 /** Immutable definition metadata captured when an automation run starts. */
 export interface AutomationExecutedDefinition {
 	version?: number;
@@ -325,11 +346,43 @@ export interface AutomationNodeResult {
 	iterations?: AutomationNodeIteration[];
 }
 
+export interface AutomationSavedResultReference {
+	RESULT_ID: string;
+	NODE_ID: string;
+	PARENT_NODE_ID?: string | null;
+	ITERATION_INDEX?: number | null;
+	RESULT_KIND: "VALUE" | "TABLE" | "FILE";
+	ROW_COUNT?: number;
+	BYTE_COUNT: number;
+	CHECKSUM: string;
+	RETAIN_UNTIL: string;
+	CAPTURE_STATE: "RETAINED";
+	RESULT_ROLE?: string;
+	LOGICAL_NAME?: string;
+}
+
+export interface AutomationSavedTableColumn {
+	name: string;
+	type: string;
+}
+
+export interface AutomationSavedResultPage
+	extends AutomationSavedResultReference {
+	schema?: AutomationSavedTableColumn[];
+	rows?: unknown[][];
+	offset?: number;
+	nextOffset?: number;
+	hasMore?: boolean;
+	value?: unknown;
+	manifest?: unknown;
+}
+
 export interface AutomationRunDetail extends AutomationRunSummary {
 	DEFINITION_SNAPSHOT?: string;
 	/** Temporary workspace for an active or recently completed run on this server. */
 	executionInsightId?: string;
 	nodeResults: AutomationNodeResult[];
+	savedResults?: AutomationSavedResultReference[];
 }
 
 export interface AutomationToolContext {
