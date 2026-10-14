@@ -4,6 +4,7 @@ import {
 	ChevronRightIcon,
 	FileCode2Icon,
 	FolderTreeIcon,
+	ListTreeIcon,
 	PanelRightIcon,
 	SettingsIcon,
 	Share2,
@@ -29,6 +30,7 @@ import {
 	AutomationOutputModal,
 	type AutomationRunDetail,
 	type AutomationRunSummary,
+	AutomationSourceExplorerPanel,
 	AutomationTracePanel,
 	type AutomationTraceSnapshot,
 	AutomationWorkbenchContext,
@@ -130,6 +132,8 @@ function extractChangedStepIds(
 const EDITOR = "automation-editor";
 const INSPECTOR = "automation-inspector";
 const TRACE = "automation-trace";
+const SOURCE_EXPLORER = "automation-source-explorer";
+const SOURCE_EXPLORER_FULL = "automation-source-explorer-full";
 const RUN_FILES = "automation-run-files";
 const FILES = WORKBENCH_COMPONENTS.FILE_EXPLORER;
 const FILE_EDITOR = WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
@@ -238,6 +242,18 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 			name: "Run details",
 			canClose: false,
 		},
+		[SOURCE_EXPLORER]: {
+			id: SOURCE_EXPLORER,
+			type: SOURCE_EXPLORER,
+			name: "Source Explorer",
+			canClose: false,
+		},
+		[SOURCE_EXPLORER_FULL]: {
+			id: SOURCE_EXPLORER_FULL,
+			type: SOURCE_EXPLORER_FULL,
+			name: "Source Explorer",
+			canClose: true,
+		},
 		[RUN_FILES]: {
 			id: RUN_FILES,
 			type: RUN_FILES,
@@ -265,7 +281,11 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 	},
 	borders: {
 		left: { panelIds: [FILES, RUN_FILES], activeId: null, size: 320 },
-		bottom: { panelIds: [TRACE], activeId: null, size: 300 },
+		bottom: {
+			panelIds: [TRACE, SOURCE_EXPLORER],
+			activeId: null,
+			size: 360,
+		},
 		right: {
 			panelIds: [INSPECTOR, WORKBENCH_COMPONENTS.ASSISTANT],
 			activeId: WORKBENCH_COMPONENTS.ASSISTANT,
@@ -273,6 +293,56 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 		},
 	},
 });
+
+/**
+ * Add newly required Automation panels to a previously saved workbench layout.
+ *
+ * Workbench layouts are cached per project. Adding a panel only to the default
+ * layout would therefore hide it from existing users until they reset all of
+ * their layout customizations. Keep their arrangement intact and dock only the
+ * missing Source Explorer panel in the standard bottom border.
+ */
+const reconcileAutomationLayout = (
+	snapshot: WorkbenchSnapshot,
+): WorkbenchSnapshot => {
+	const treeContainsPanel = (node: WorkbenchLayout["tree"]): boolean =>
+		node.type === "tabset"
+			? node.panelIds.includes(SOURCE_EXPLORER)
+			: node.children.some(treeContainsPanel);
+	const borderContainsPanel = Object.values(snapshot.borders ?? {}).some(
+		(border) => border?.panelIds.includes(SOURCE_EXPLORER),
+	);
+
+	if (treeContainsPanel(snapshot.tree) || borderContainsPanel) {
+		return snapshot;
+	}
+
+	const bottom = snapshot.borders?.bottom ?? {
+		panelIds: [],
+		activeId: null,
+		size: 360,
+	};
+
+	return {
+		...snapshot,
+		panels: {
+			...snapshot.panels,
+			[SOURCE_EXPLORER]: {
+				id: SOURCE_EXPLORER,
+				type: SOURCE_EXPLORER,
+				name: "Source Explorer",
+				canClose: false,
+			},
+		},
+		borders: {
+			...snapshot.borders,
+			bottom: {
+				...bottom,
+				panelIds: [...bottom.panelIds, SOURCE_EXPLORER],
+			},
+		},
+	};
+};
 
 interface AutomationWorkbenchProps {
 	appId: string;
@@ -414,6 +484,23 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		mount: "keepAlive",
 		content: AutomationTracePanel,
 	},
+	[SOURCE_EXPLORER]: {
+		name: "Source Explorer",
+		canClose: false,
+		canRename: false,
+		enableBorderHeader: false,
+		icon: ({ className }) => <ListTreeIcon className={className} />,
+		mount: "keepAlive",
+		content: AutomationSourceExplorerPanel,
+	},
+	[SOURCE_EXPLORER_FULL]: {
+		name: "Source Explorer",
+		canClose: true,
+		canRename: false,
+		icon: ({ className }) => <ListTreeIcon className={className} />,
+		mount: "keepAlive",
+		content: AutomationSourceExplorerPanel,
+	},
 	[RUN_FILES]: AUTOMATION_RUN_FILES_PANEL,
 	[SETTINGS]: {
 		name: "Settings",
@@ -470,11 +557,24 @@ export const AutomationWorkbench = observer(
 			[openPythonNodeFilePaths],
 		);
 		const workbenchId = readOnly ? `${appId}--read-only` : appId;
-		const [workbenchSnapshot, onWorkbenchSnapshotChange] =
+		const [cachedWorkbenchSnapshot, onWorkbenchSnapshotChange] =
 			useCacheData<WorkbenchSnapshot>(
 				`workbench-layout--${workbenchId}--1`,
 				workbenchLayout,
 			);
+		const workbenchSnapshot = useMemo(
+			() => reconcileAutomationLayout(cachedWorkbenchSnapshot),
+			[cachedWorkbenchSnapshot],
+		);
+		useEffect(() => {
+			if (workbenchSnapshot !== cachedWorkbenchSnapshot) {
+				onWorkbenchSnapshotChange(workbenchSnapshot);
+			}
+		}, [
+			cachedWorkbenchSnapshot,
+			onWorkbenchSnapshotChange,
+			workbenchSnapshot,
+		]);
 		const [automationStore] = useState(() =>
 			createAutomationWorkbenchStore(),
 		);
@@ -521,6 +621,11 @@ export const AutomationWorkbench = observer(
 				label: "Open Project Files",
 				type: FILES,
 				config: { mode: { type: "APP", app: appId } },
+			}),
+			createOpenPanelCommand({
+				id: "workbench.automation-source-explorer.open",
+				label: "Open Source Explorer",
+				type: SOURCE_EXPLORER_FULL,
 			}),
 			createOpenPanelCommand({
 				id: "workbench.automation-run-files.open",
@@ -733,6 +838,18 @@ export const AutomationWorkbench = observer(
 			},
 			[automationStore, selectPanel],
 		);
+		const handleOpenSourceExplorerFull = useCallback(() => {
+			selectPanel(SOURCE_EXPLORER_FULL);
+		}, [selectPanel]);
+		const handleOpenRunFiles = useCallback(() => {
+			selectPanel(RUN_FILES);
+		}, [selectPanel]);
+		const handleSourceRunSelected = useCallback(
+			(run: AutomationRunDetail) => {
+				automationStore.getState().selectRun(run);
+			},
+			[automationStore],
+		);
 		const handleOpenPythonEditor = useCallback(
 			async (nodeId: string, source: string) => {
 				const asset = await findAutomationNodeAsset(appId, nodeId);
@@ -804,6 +921,9 @@ export const AutomationWorkbench = observer(
 				onExitHistoricalView: handleExitHistoricalView,
 				historyRefreshToken,
 				onOpenOutput: setOutputModal,
+				onOpenSourceExplorerFull: handleOpenSourceExplorerFull,
+				onOpenRunFiles: handleOpenRunFiles,
+				onSourceRunSelected: handleSourceRunSelected,
 				onAskAssistant: handleAskAssistant,
 				onOpenPythonEditor: handleOpenPythonEditor,
 				isPythonFileOpen,
@@ -820,6 +940,9 @@ export const AutomationWorkbench = observer(
 				handleExitHistoricalView,
 				handleInspectorChange,
 				handleOpenPythonEditor,
+				handleOpenRunFiles,
+				handleOpenSourceExplorerFull,
+				handleSourceRunSelected,
 				handleRunsChange,
 				handleTraceChange,
 				handleViewRunDetails,

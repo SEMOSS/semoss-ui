@@ -7,6 +7,7 @@ export interface StatusBadgeProps {
 }
 
 const STATUS_LABELS: Record<string, string> = {
+	SUBMITTED: "Submitted",
 	PENDING: "Waiting",
 	RUNNING: "Running",
 	WAITING_FOR_INPUT: "Needs input",

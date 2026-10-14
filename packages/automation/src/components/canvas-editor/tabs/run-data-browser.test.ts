@@ -17,7 +17,7 @@ function nodeResult(
 		DURATION_MS: 25,
 		OUTPUT_PREVIEW: preview,
 		ERROR_MESSAGE: null,
-		outputVariable: `${id}_result`,
+		OUTPUT_VAR_NAME: `${id}_result`,
 	};
 }
 
@@ -41,6 +41,7 @@ describe("run data browser items", () => {
 		loop.iterations = [
 			{
 				index: 0,
+				input: { veteranNumber: "VET-100", comment: "Call back" },
 				nodeResults: [nodeResult("send-0", "SUCCESS", "VET-100")],
 			},
 			{
@@ -64,6 +65,7 @@ describe("run data browser items", () => {
 				key: "loop:0",
 				label: "loop · Item 1",
 				status: "SUCCESS",
+				input: expect.stringContaining('"veteranNumber": "VET-100"'),
 			}),
 		);
 		expect(items[2]).toEqual(
@@ -75,7 +77,7 @@ describe("run data browser items", () => {
 		expect(items[2].searchText).toContain("VET-101");
 	});
 
-	it("does not invent a loop input value that history does not retain", () => {
+	it("labels old runs that predate exact loop-input retention", () => {
 		const loop = nodeResult("loop", "SUCCESS", "processed 1");
 		loop.iterations = [
 			{
@@ -86,6 +88,6 @@ describe("run data browser items", () => {
 
 		const items = buildRunDataItems(runDetail([loop]));
 
-		expect(items[1].input).toContain("not retained separately");
+		expect(items[1].input).toContain("predates exact loop-input retention");
 	});
 });
