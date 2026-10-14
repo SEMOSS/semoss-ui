@@ -1,5 +1,11 @@
-import { CalendarClock, Check, Inbox, LockKeyhole } from "lucide-react";
-import { useId } from "react";
+import {
+	CalendarClock,
+	Check,
+	ChevronDown,
+	Inbox,
+	LockKeyhole,
+} from "lucide-react";
+import { useId, useState } from "react";
 import { Link } from "react-router";
 import {
 	Alert,
@@ -13,6 +19,9 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
 	Field,
 	FieldError,
 	FieldGroup,
@@ -64,6 +73,8 @@ const dayNames = {
 	SUN: "Sunday",
 };
 
+const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI"] as const;
+
 /** Keeps input strings at the form boundary and uses the local zone for first setup. */
 function formValues(routine: InboxRoutine): RoutineFormValues {
 	return {
@@ -92,11 +103,27 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 		defaultValues: formValues(routine),
 	});
 	const { errors, isSubmitting, isDirty } = form.formState;
+	const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+	const schedule = form.watch();
 	const enabled = form.watch("enabled");
+	const daysLabel =
+		schedule.days.length === 7
+			? "Every day"
+			: schedule.days.length === 5 &&
+					WEEKDAYS.every((day) => schedule.days.includes(day))
+				? "Weekdays"
+				: schedule.days
+						.map((day) => dayNames[day].slice(0, 3))
+						.join(", ") || "Choose days";
 	const isAvailable =
 		routine.schedulerAvailable &&
 		routine.assistantAvailable &&
 		routine.mailboxAvailable;
+	// Service guidance still uses the former navigation label.
+	const availabilityMessage = routine.availabilityMessage?.replace(
+		/\bBrain\b/g,
+		"Settings",
+	);
 	const status = routine.enabled
 		? "Scheduled"
 		: routine.configured
@@ -121,7 +148,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 		if (values.enabled && !isAvailable) {
 			form.setError("root.server", {
 				message:
-					routine.availabilityMessage ||
+					availabilityMessage ||
 					"Connect your inbox and check service availability before enabling this routine.",
 			});
 			return;
@@ -177,6 +204,15 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 				onSubmit={handleSubmit}
 				noValidate
 				aria-busy={isSubmitting}
+				onError={(fieldErrors) => {
+					const firstField = (
+						["days", "time", "timezone", "emailCount"] as const
+					).find((name) => fieldErrors[name]);
+					if (firstField) {
+						setIsScheduleOpen(true);
+						requestAnimationFrame(() => form.setFocus(firstField));
+					}
+				}}
 			>
 				<CardContent className="grid min-w-0 gap-8 py-6 lg:grid-cols-5">
 					<FieldGroup className="min-w-0 lg:col-span-3">
@@ -193,112 +229,148 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 							}
 						/>
 						<Separator />
-						<FormField
-							control={form.control}
-							name="days"
-							render={({ field, fieldState }) => (
-								<Field data-invalid={Boolean(fieldState.error)}>
-									<FieldLabel id={`${id}-days-label`}>
-										Run on (required)
-									</FieldLabel>
-									<ToggleGroup
-										type="multiple"
-										variant="outline"
-										spacing={1}
-										className="flex-wrap"
-										value={field.value}
-										onValueChange={field.onChange}
-										onBlur={field.onBlur}
-										aria-labelledby={`${id}-days-label`}
-										aria-describedby={
-											fieldState.error
-												? `${id}-days-error`
-												: undefined
-										}
-										aria-invalid={Boolean(fieldState.error)}
+						<Collapsible
+							open={isScheduleOpen}
+							onOpenChange={setIsScheduleOpen}
+						>
+							<div className="flex flex-wrap items-start justify-between gap-3">
+								<div className="space-y-1">
+									<P className="text-sm">
+										{daysLabel} at {schedule.time || "—"}
+									</P>
+									<P className="text-muted-foreground text-xs">
+										{schedule.timezone.replaceAll("_", " ")}{" "}
+										· Up to {schedule.emailCount || "—"}{" "}
+										emails
+									</P>
+								</div>
+								<CollapsibleTrigger asChild>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="pointer-coarse:min-h-11 font-normal"
 										disabled={isSubmitting}
 									>
-										{INBOX_ROUTINE_DAYS.map(
-											(day, index) => (
-												<ToggleGroupItem
-													key={day}
-													value={day}
-													aria-label={dayNames[day]}
-													ref={
-														index === 0
-															? field.ref
-															: undefined
-													}
-													className="min-h-11 min-w-11"
+										{isScheduleOpen
+											? "Hide schedule"
+											: "Change schedule"}
+										<ChevronDown
+											aria-hidden="true"
+											className="size-4"
+										/>
+									</Button>
+								</CollapsibleTrigger>
+							</div>
+							<CollapsibleContent
+								forceMount
+								hidden={!isScheduleOpen}
+								className="space-y-6 pt-6"
+							>
+								<FormField
+									control={form.control}
+									name="days"
+									render={({ field, fieldState }) => (
+										<Field
+											data-invalid={Boolean(
+												fieldState.error,
+											)}
+										>
+											<FieldLabel id={`${id}-days-label`}>
+												Run on (required)
+											</FieldLabel>
+											<ToggleGroup
+												type="multiple"
+												variant="outline"
+												spacing={1}
+												className="flex-wrap"
+												value={field.value}
+												onValueChange={field.onChange}
+												onBlur={field.onBlur}
+												aria-labelledby={`${id}-days-label`}
+												aria-describedby={
+													fieldState.error
+														? `${id}-days-error`
+														: undefined
+												}
+												aria-invalid={Boolean(
+													fieldState.error,
+												)}
+												disabled={isSubmitting}
+											>
+												{INBOX_ROUTINE_DAYS.map(
+													(day, index) => (
+														<ToggleGroupItem
+															key={day}
+															value={day}
+															aria-label={
+																dayNames[day]
+															}
+															ref={
+																index === 0
+																	? field.ref
+																	: undefined
+															}
+															className="min-h-11 min-w-11"
+														>
+															{dayNames[
+																day
+															].slice(0, 3)}
+														</ToggleGroupItem>
+													),
+												)}
+											</ToggleGroup>
+											{fieldState.error && (
+												<FieldError
+													id={`${id}-days-error`}
 												>
-													{dayNames[day].slice(0, 3)}
-												</ToggleGroupItem>
-											),
-										)}
-									</ToggleGroup>
-									{fieldState.error && (
-										<FieldError id={`${id}-days-error`}>
-											{fieldState.error.message}
-										</FieldError>
+													{fieldState.error.message}
+												</FieldError>
+											)}
+										</Field>
 									)}
-								</Field>
-							)}
-						/>
-						<FieldGroup className="grid min-w-0 gap-4 sm:grid-cols-2">
-							<FormInput
-								name="time"
-								label="Run time (required)"
-								type="time"
-								required
-								disabled={isSubmitting}
-							/>
-							<FormInput
-								name="timezone"
-								label="Time zone (required)"
-								list={`${id}-timezones`}
-								required
-								disabled={isSubmitting}
-								description="Keeps your chosen local time as daylight saving changes."
-							/>
-						</FieldGroup>
-						<datalist id={`${id}-timezones`}>
-							{timezones.map((zone) => (
-								<option key={zone} value={zone} />
-							))}
-						</datalist>
-						<FormInput
-							name="emailCount"
-							label="Emails to scan (required)"
-							type="number"
-							min={1}
-							max={100}
-							step={1}
-							required
-							disabled={isSubmitting}
-							description="Scan the newest emails since your last successful brief, up to this limit. Includes read and unread mail, with your filing exclusions applied. The first brief uses your latest emails."
-							className="max-w-md"
-						/>
+								/>
+								<FieldGroup className="grid min-w-0 gap-4 sm:grid-cols-2">
+									<FormInput
+										name="time"
+										label="Run time (required)"
+										type="time"
+										required
+										disabled={isSubmitting}
+									/>
+									<FormInput
+										name="timezone"
+										label="Time zone (required)"
+										list={`${id}-timezones`}
+										required
+										disabled={isSubmitting}
+										description="Keeps your chosen local time as daylight saving changes."
+									/>
+								</FieldGroup>
+								<datalist id={`${id}-timezones`}>
+									{timezones.map((zone) => (
+										<option key={zone} value={zone} />
+									))}
+								</datalist>
+								<FormInput
+									name="emailCount"
+									label="Emails to scan (required)"
+									type="number"
+									min={1}
+									max={100}
+									step={1}
+									required
+									disabled={isSubmitting}
+									description="Scan the newest emails since your last successful brief, up to this limit. Includes read and unread mail, with your filing exclusions applied. The first brief uses your latest emails."
+									className="max-w-md"
+								/>
+							</CollapsibleContent>
+						</Collapsible>
 					</FieldGroup>
 					<aside
 						aria-label="About this routine"
 						className="flex min-w-0 flex-col gap-6 border-t pt-6 lg:col-span-2 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8"
 					>
-						<div className="flex flex-col gap-3">
-							<H3 className="text-base">
-								A brief you can act on
-							</H3>
-							<ul className="flex flex-col gap-3 text-muted-foreground text-sm leading-relaxed">
-								<li>
-									A quick overview of recent conversations
-								</li>
-								<li>
-									Requests and messages that need your
-									attention
-								</li>
-								<li>Dates, decisions, and useful next steps</li>
-							</ul>
-						</div>
-						<Separator />
 						<div className="flex flex-col gap-2">
 							<H3 className="flex items-center gap-2 text-base">
 								<CalendarClock
@@ -311,7 +383,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 								{nextRun ??
 									(routine.enabled
 										? "Waiting for the scheduler."
-										: "Choose your schedule to get started.")}
+										: "Enable the brief when you're ready.")}
 							</P>
 							{nextRun && (
 								<Small className="break-words text-muted-foreground">
@@ -337,7 +409,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 						<Alert>
 							<AlertTitle>Setup needs attention</AlertTitle>
 							<AlertDescription>
-								{routine.availabilityMessage ||
+								{availabilityMessage ||
 									"Your inbox connection, scheduler, or assistant is unavailable. Check your connection or contact your administrator."}
 								{!routine.mailboxAvailable && (
 									<Button

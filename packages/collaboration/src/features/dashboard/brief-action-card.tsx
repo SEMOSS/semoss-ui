@@ -5,7 +5,6 @@ import {
 	Button,
 	Collapsible,
 	CollapsibleContent,
-	CollapsibleTrigger,
 	cn,
 	H3,
 	P,
@@ -17,7 +16,7 @@ import { topicTone } from "@/features/collaboration/topic-tone";
 import { threadPath } from "@/lib/workspace-paths";
 import { BriefDeadline } from "./brief-deadline";
 
-/** One task per row: one main action and Done; context and the rest stay one click away. */
+/** One next action and Done, with a preview before opening the conversation. */
 export function BriefActionCard({ item }: { item: WorkItem }) {
 	const { state, dispatch } = useCollaborationSession();
 	const [isOpen, setIsOpen] = useState(false);
@@ -32,11 +31,26 @@ export function BriefActionCard({ item }: { item: WorkItem }) {
 		item.topicIds.includes(candidate.id),
 	);
 	const draft = state.workspaces[thread.id]?.drafts[0];
-	const context =
-		draft?.body || thread.summary || item.reasons.join(" \u00b7 ");
+	const preview = draft?.body || thread.summary;
+	const context = preview || item.reasons.join(" \u00b7 ");
 	const path = threadPath(thread.id);
 	return (
-		<ThreadMenu thread={thread} item={item}>
+		<ThreadMenu
+			thread={thread}
+			item={item}
+			additionalActions={
+				context
+					? [
+							{
+								id: "details",
+								label: isOpen ? "Hide details" : "Show details",
+								icon: ChevronDown,
+								onSelect: () => setIsOpen((open) => !open),
+							},
+						]
+					: []
+			}
+		>
 			{(menu) => (
 				<Collapsible open={isOpen} onOpenChange={setIsOpen} asChild>
 					<article className="min-w-0 border-b last:border-b-0">
@@ -84,6 +98,12 @@ export function BriefActionCard({ item }: { item: WorkItem }) {
 										</>
 									)}
 								</P>
+								{preview && (
+									<P className="line-clamp-1 text-muted-foreground text-xs leading-5">
+										{draft ? "Draft: " : ""}
+										{preview}
+									</P>
+								)}
 							</div>
 							<div className="flex shrink-0 items-center gap-1">
 								<Button
@@ -94,7 +114,9 @@ export function BriefActionCard({ item }: { item: WorkItem }) {
 								>
 									<Link to={path}>
 										{item.askType === "reply"
-											? "Review reply"
+											? draft
+												? "Review reply"
+												: "Open"
 											: item.askType === "approve"
 												? "Review decision"
 												: "Open"}
@@ -114,26 +136,6 @@ export function BriefActionCard({ item }: { item: WorkItem }) {
 								>
 									Done
 								</Button>
-								<CollapsibleTrigger asChild>
-									<Button
-										size="icon-sm"
-										variant="ghost"
-										aria-label={
-											isOpen
-												? "Hide details"
-												: "Show details"
-										}
-										className="text-muted-foreground"
-									>
-										<ChevronDown
-											aria-hidden="true"
-											className={cn(
-												"size-4",
-												isOpen && "rotate-180",
-											)}
-										/>
-									</Button>
-								</CollapsibleTrigger>
 								{menu}
 							</div>
 						</div>

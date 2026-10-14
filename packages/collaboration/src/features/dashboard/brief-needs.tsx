@@ -1,5 +1,4 @@
 import { CheckCheck } from "lucide-react";
-import { useState } from "react";
 import { Link } from "react-router";
 import { Button, H2, P } from "@semoss/ui/next";
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
@@ -10,16 +9,11 @@ import { BriefActionCard } from "./brief-action-card";
 import { DashboardResourceStatus } from "./dashboard-resource-status";
 import { selectToday } from "./today-selectors";
 
-const FIRST = 3;
-
 /** A short list of what to do today; the full queue stays behind See everything. */
 export function BriefNeeds() {
 	const { state } = useCollaborationSession();
 	const updates = useWorkUpdates();
 	const { items, total } = selectToday(state);
-	// three to start; the rest of today's five are one click away
-	const [showAll, setShowAll] = useState(false);
-	const shown = showAll ? items : items.slice(0, FIRST);
 	const done = selectWorkItems(state, { view: "done_today" }).total;
 	return (
 		<section aria-label={lexicon.doToday} className="min-w-0">
@@ -52,20 +46,10 @@ export function BriefNeeds() {
 			/>
 			{items.length > 0 && (
 				<div className="overflow-hidden rounded-xl border bg-card">
-					{shown.map((item) => (
+					{items.map((item) => (
 						<BriefActionCard key={item.id} item={item} />
 					))}
 				</div>
-			)}
-			{items.length > shown.length && (
-				<Button
-					variant="link"
-					size="sm"
-					className="mt-2 h-auto px-1 font-normal text-muted-foreground"
-					onClick={() => setShowAll(true)}
-				>
-					Show {items.length - shown.length} more
-				</Button>
 			)}
 			{!items.length && !updates?.isRefreshing && !updates?.error && (
 				<div className="rounded-xl border bg-card p-6">

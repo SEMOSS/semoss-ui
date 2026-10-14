@@ -56,7 +56,7 @@ const routine: InboxRoutine = {
 };
 
 /** Exercise the actual shared form controls without issuing scheduler writes. */
-function renderForm(record: InboxRoutine = routine) {
+function renderForm(record: InboxRoutine = routine, expandSchedule = true) {
 	const onSave = vi.fn(async (settings: InboxRoutineSettings) => ({
 		...record,
 		...settings,
@@ -67,6 +67,10 @@ function renderForm(record: InboxRoutine = routine) {
 			<InboxRoutineForm routine={record} onSave={onSave} />
 		</MemoryRouter>,
 	);
+	if (expandSchedule)
+		fireEvent.click(
+			screen.getByRole("button", { name: "Change schedule" }),
+		);
 	return { user: userEvent.setup(), onSave };
 }
 
@@ -86,7 +90,11 @@ afterEach(cleanup);
 
 describe("InboxRoutineForm", () => {
 	it("starts off and requires a save after choosing to enable the brief", async () => {
-		const { user, onSave } = renderForm();
+		const { user, onSave } = renderForm(routine, false);
+		expect(
+			screen.queryByRole("button", { name: "Monday" }),
+		).not.toBeInTheDocument();
+		expect(screen.getByText("Weekdays at 08:00")).toBeVisible();
 		const toggle = screen.getByRole("switch", {
 			name: "Enable daily brief",
 		});

@@ -47,6 +47,39 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
+it("keeps five recent chats and the older active chat reachable, with the archive available on request", async () => {
+	dashboard.history.rooms = Array.from({ length: 8 }, (_, index) => ({
+		roomId: `room-${index}`,
+		roomName: `Conversation ${index}`,
+	}));
+	const user = userEvent.setup();
+	const router = createMemoryRouter(
+		[{ path: "/thread/:threadId", Component: ChatHistoryList }],
+		{ initialEntries: ["/thread/room%3Aroom-7"] },
+	);
+	render(<RouterProvider router={router} />);
+	expect(
+		screen.getByRole("button", { name: "Conversation 4" }),
+	).toBeVisible();
+	expect(
+		screen.queryByRole("button", { name: "Conversation 5" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.getByRole("button", { name: "Conversation 7" }),
+	).toHaveAttribute("aria-current", "page");
+	await user.click(screen.getByRole("button", { name: "All chats" }));
+	expect(
+		screen.getByRole("button", { name: "Conversation 5" }),
+	).toBeVisible();
+	await user.click(screen.getByRole("button", { name: "Show recent chats" }));
+	expect(
+		screen.queryByRole("button", { name: "Conversation 5" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.getByRole("button", { name: "Conversation 7" }),
+	).toBeVisible();
+});
+
 it.each(["empty", "loading", "error"])(
 	"keeps the Sessions disclosure usable while %s content is hidden and restored",
 	async (state) => {
@@ -94,6 +127,8 @@ it("pauses automatic pagination while Sessions is collapsed and resumes on reope
 		{ initialEntries: ["/"] },
 	);
 	render(<RouterProvider router={router} />);
+	expect(observe).not.toHaveBeenCalled();
+	await user.click(screen.getByRole("button", { name: "All chats" }));
 	expect(observe).toHaveBeenCalledOnce();
 	await user.click(screen.getByRole("button", { name: "Chats" }));
 	expect(disconnect).toHaveBeenCalledOnce();

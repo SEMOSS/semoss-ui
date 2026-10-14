@@ -31,6 +31,8 @@ const dateLabels: Record<DateBucket, string> = {
 	older: "Earlier",
 };
 
+const RECENT_CHAT_LIMIT = 5;
+
 interface ChatHistoryListProps {
 	/** Controls the disclosure when the shell owns its saved preference. */
 	isOpen?: boolean;
@@ -47,6 +49,7 @@ export function ChatHistoryList({
 	onNavigate,
 }: ChatHistoryListProps) {
 	const [isLocalOpen, setIsLocalOpen] = useState(true);
+	const [isShowingAll, setIsShowingAll] = useState(false);
 	const isExpanded = isOpen ?? isLocalOpen;
 	const { history, openRoom, openingRoom } = useDashboard();
 	const { pathname, state: routeState } = useLocation();
@@ -59,9 +62,17 @@ export function ChatHistoryList({
 			: undefined;
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const sentinelRef = useRef<HTMLDivElement>(null);
+	const visibleRooms = isShowingAll
+		? history.rooms
+		: history.rooms.filter(
+				(room, index) =>
+					index < RECENT_CHAT_LIMIT ||
+					pathname === roomPath(room.roomId) ||
+					openedRoomId === room.roomId,
+			);
 	const roomsByDate = DATE_BUCKET_ORDER.map((bucket) => ({
 		bucket,
-		rooms: history.rooms.filter((room) => {
+		rooms: visibleRooms.filter((room) => {
 			const date = room.dateUpdated || room.dateCreated;
 			return (
 				(date
@@ -77,6 +88,7 @@ export function ChatHistoryList({
 	useEffect(() => {
 		if (
 			!isExpanded ||
+			!isShowingAll ||
 			!history.hasMore ||
 			history.isLoading ||
 			history.error ||
@@ -96,6 +108,7 @@ export function ChatHistoryList({
 		return () => observer.disconnect();
 	}, [
 		isExpanded,
+		isShowingAll,
 		history.hasMore,
 		history.isLoading,
 		history.error,
@@ -144,6 +157,16 @@ export function ChatHistoryList({
 						}}
 						className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
 					>
+						{isShowingAll && (
+							<Button
+								variant="ghost"
+								size="sm"
+								className="pointer-coarse:min-h-11 w-full justify-start px-2 text-muted-foreground text-xs"
+								onClick={() => setIsShowingAll(false)}
+							>
+								Show recent chats
+							</Button>
+						)}
 						<nav aria-label={lexicon.chats} className="space-y-2">
 							{roomsByDate.map(({ bucket, rooms }) => (
 								<div key={bucket} className="space-y-0.5">
@@ -240,7 +263,20 @@ export function ChatHistoryList({
 								</P>
 							)}
 						<div ref={sentinelRef} className="h-1" />
-						{history.hasMore &&
+						{!isShowingAll &&
+							(history.rooms.length > RECENT_CHAT_LIMIT ||
+								history.hasMore) && (
+								<Button
+									variant="ghost"
+									size="sm"
+									className="pointer-coarse:min-h-11 w-full justify-start px-2 text-muted-foreground text-xs"
+									onClick={() => setIsShowingAll(true)}
+								>
+									All chats
+								</Button>
+							)}
+						{isShowingAll &&
+							history.hasMore &&
 							!history.isLoading &&
 							!history.error && (
 								<Button

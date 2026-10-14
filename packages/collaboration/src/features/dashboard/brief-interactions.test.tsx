@@ -132,10 +132,12 @@ function BriefHarness({
 	children,
 	state,
 	onChange,
+	calendarError = "",
 }: {
 	children: ReactNode;
 	state: CollaborationState;
 	onChange: (change: CollaborationChange) => void;
+	calendarError?: string;
 }) {
 	const layout = useDashboardLayout(storageKey);
 	return (
@@ -156,7 +158,7 @@ function BriefHarness({
 					},
 					calendar: {
 						data: [],
-						error: "",
+						error: calendarError,
 						isLoading: false,
 						checkedAt: null,
 						refresh: vi.fn(),
@@ -179,13 +181,17 @@ function BriefHarness({
 	);
 }
 
-function renderBrief(state = createBriefState()) {
+function renderBrief(state = createBriefState(), calendarError = "") {
 	const onChange = vi.fn<(change: CollaborationChange) => void>();
 	const router = createMemoryRouter([
 		{ path: "/", Component: DashboardPage },
 	]);
 	const result = render(
-		<BriefHarness state={state} onChange={onChange}>
+		<BriefHarness
+			state={state}
+			onChange={onChange}
+			calendarError={calendarError}
+		>
 			<RouterProvider router={router} />
 		</BriefHarness>,
 	);
@@ -242,6 +248,36 @@ it("shows Today as greeting, ask box, the short list and Your day without setup 
 	expect(request).not.toHaveBeenCalled();
 });
 
+it.each(["disconnected", "failed"])(
+	"does not describe an unavailable calendar as a free day when %s",
+	(status) => {
+		const state = createBriefState();
+		state.settings.sourcesJson.calendar = status !== "disconnected";
+		renderBrief(
+			state,
+			status === "failed" ? "Calendar could not be loaded." : "",
+		);
+		const calendar = within(
+			screen.getByRole("region", { name: "Your day" }),
+		);
+		expect(calendar.queryByText("0 meetings")).not.toBeInTheDocument();
+		expect(
+			calendar.queryByText("No meetings today. A little room to focus."),
+		).not.toBeInTheDocument();
+	},
+);
+
+it("shows a free day after the calendar has successfully returned no events", () => {
+	const state = createBriefState();
+	state.settings.sourcesJson.calendar = true;
+	renderBrief(state);
+	const calendar = within(screen.getByRole("region", { name: "Your day" }));
+	expect(calendar.getByText("0 meetings")).toBeVisible();
+	expect(
+		calendar.getByText("No meetings today. A little room to focus."),
+	).toBeVisible();
+});
+
 it("greets by the given name for first-last and last-first profile names", () => {
 	renderBrief();
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
@@ -284,8 +320,7 @@ it("puts overdue and due-today work first and counts it in the headline", () => 
 	]);
 });
 
-it("starts with three tasks, shows up to five, and keeps the rest behind See everything", async () => {
-	const user = userEvent.setup();
+it("shows the five-task limit without another click and keeps the rest behind See everything", () => {
 	const state = createBriefState();
 	const [first] = state.items;
 	if (!first) throw new Error("Missing sample item");
@@ -302,9 +337,10 @@ it("starts with three tasks, shows up to five, and keeps the rest behind See eve
 	const today = within(
 		screen.getByRole("region", { name: "When you're ready" }),
 	);
-	expect(today.getAllByRole("article")).toHaveLength(3);
-	await user.click(today.getByRole("button", { name: "Show 2 more" }));
 	expect(today.getAllByRole("article")).toHaveLength(5);
+	expect(
+		today.queryByRole("button", { name: /Show .* more/ }),
+	).not.toBeInTheDocument();
 	expect(
 		today.getByRole("link", { name: "See everything (7)" }),
 	).toHaveAttribute("href", "/work/all");
@@ -314,22 +350,26 @@ it("starts with three tasks, shows up to five, and keeps the rest behind See eve
 	);
 });
 
-it("keeps one main action and Done visible, with context one click away", async () => {
+it("previews context and keeps one main action and Done visible, with details in the menu", async () => {
 	const user = userEvent.setup();
 	const { onChange } = renderBrief();
 	const card = workCard("Confirm revised pricing");
-	expect(
-		within(card).getByRole("link", { name: "Review reply" }),
-	).toHaveAttribute("href", "/thread/pricing-thread");
-	expect(
-		within(card).queryByText("Review the conversation before replying."),
-	).not.toBeInTheDocument();
-	await user.click(
-		within(card).getByRole("button", { name: "Show details" }),
+	expect(within(card).getByRole("link", { name: "Open" })).toHaveAttribute(
+		"href",
+		"/thread/pricing-thread",
 	);
 	expect(
 		within(card).getByText("Review the conversation before replying."),
 	).toBeVisible();
+	await user.click(
+		within(card).getByRole("button", {
+			name: "Thread actions for Confirm revised pricing",
+		}),
+	);
+	await user.click(screen.getByRole("button", { name: "Show details" }));
+	expect(
+		within(card).getAllByText("Review the conversation before replying."),
+	).toHaveLength(2);
 	expect(
 		within(card).getByRole("link", { name: "Ask about this" }),
 	).toBeVisible();

@@ -31,7 +31,7 @@ export function RoutinesWorkspace() {
 			<div className="mx-auto flex max-w-5xl flex-col gap-6">
 				<CollaborationPageHeader
 					title="Routines"
-					description="Put recurring work on your schedule. Choose a routine, set it up, and find the results here."
+					description="Let your assistant take care of the repeat work. Your briefs appear here."
 					className="mb-0"
 				/>
 				{isLoading ? (
