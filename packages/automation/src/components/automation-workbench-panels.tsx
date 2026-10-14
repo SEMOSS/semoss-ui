@@ -147,6 +147,7 @@ export const AutomationTracePanel = () => {
 	return (
 		<RunsTab
 			appId={context.appId}
+			devMode={context.inspectorSnapshot?.devMode ?? false}
 			refreshToken={context.historyRefreshToken}
 			running={snapshot?.running ?? false}
 			latestRunStatus={snapshot?.latestRunStatus ?? null}
