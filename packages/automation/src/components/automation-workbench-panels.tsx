@@ -176,14 +176,23 @@ export const AutomationTracePanel = () => {
 	);
 };
 
+interface AutomationSourceExplorerPanelProps {
+	/** Hides the dock-only action when the explorer already occupies a full workbench tab. */
+	fullView?: boolean;
+}
+
 /** Renders searchable durable run history independently of the editable canvas. */
-export const AutomationSourceExplorerPanel = () => {
+export const AutomationSourceExplorerPanel = ({
+	fullView = false,
+}: AutomationSourceExplorerPanelProps) => {
 	const context = useAutomationWorkbenchContext();
 	return (
 		<SourceExplorerPanel
 			appId={context.appId}
 			onOpenOutput={context.onOpenOutput}
-			onOpenFullView={context.onOpenSourceExplorerFull}
+			onOpenFullView={
+				fullView ? undefined : context.onOpenSourceExplorerFull
+			}
 			onOpenRunFiles={context.onOpenRunFiles}
 			onRunSelected={context.onSourceRunSelected}
 		/>

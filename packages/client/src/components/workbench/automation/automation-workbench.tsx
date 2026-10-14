@@ -30,7 +30,6 @@ import {
 	AutomationOutputModal,
 	type AutomationRunDetail,
 	type AutomationRunSummary,
-	AutomationSourceExplorerPanel,
 	AutomationTracePanel,
 	type AutomationTraceSnapshot,
 	AutomationWorkbenchContext,
@@ -98,6 +97,11 @@ import {
 } from "../workbench.presets";
 import { AUTOMATION_RUN_FILES_PANEL } from "./automation-run-files-panel";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
+import {
+	AUTOMATION_SOURCE_EXPLORER_FULL,
+	AutomationSourceExplorerDockedPanel,
+	AutomationSourceExplorerFullPanel,
+} from "./automation-source-explorer-panels";
 
 const AUTOMATION_MUTATION_TOOLS = new Set([
 	"AddAutomationStep",
@@ -133,7 +137,7 @@ const EDITOR = "automation-editor";
 const INSPECTOR = "automation-inspector";
 const TRACE = "automation-trace";
 const SOURCE_EXPLORER = "automation-source-explorer";
-const SOURCE_EXPLORER_FULL = "automation-source-explorer-full";
+const SOURCE_EXPLORER_FULL = AUTOMATION_SOURCE_EXPLORER_FULL;
 const RUN_FILES = "automation-run-files";
 const FILES = WORKBENCH_COMPONENTS.FILE_EXPLORER;
 const FILE_EDITOR = WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
@@ -491,7 +495,7 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		enableBorderHeader: false,
 		icon: ({ className }) => <ListTreeIcon className={className} />,
 		mount: "keepAlive",
-		content: AutomationSourceExplorerPanel,
+		content: AutomationSourceExplorerDockedPanel,
 	},
 	[SOURCE_EXPLORER_FULL]: {
 		name: "Source Explorer",
@@ -499,7 +503,7 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		canRename: false,
 		icon: ({ className }) => <ListTreeIcon className={className} />,
 		mount: "keepAlive",
-		content: AutomationSourceExplorerPanel,
+		content: AutomationSourceExplorerFullPanel,
 	},
 	[RUN_FILES]: AUTOMATION_RUN_FILES_PANEL,
 	[SETTINGS]: {
