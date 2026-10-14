@@ -156,19 +156,24 @@ export const NewRoomPage = observer(() => {
 				const engines = pixelReturn[0].output ?? [];
 				if (cancelled) return;
 
-				const exhausted: string[] = [];
-				await Promise.allSettled(
-					engines.map(async (engine) => {
-						const engineId = engine.app_id || engine.engine_id;
-						if (!engineId) return;
-						const { errors } = await runPixel(
-							`GetUserModelUsageRestrictions(engine=["${engineId}"]);`,
+				const exhausted = engines
+					.filter((engine) => {
+						const r = (
+							engine as {
+								usageRestriction?: {
+									maxValue: number | null;
+									currentValue: number;
+								};
+							}
+						).usageRestriction;
+						return (
+							r &&
+							r.maxValue != null &&
+							r.currentValue >= r.maxValue
 						);
-						if (errors.length > 0) {
-							exhausted.push(engineId);
-						}
-					}),
-				);
+					})
+					.map((engine) => engine.app_id || engine.engine_id)
+					.filter(Boolean) as string[];
 
 				if (!cancelled) setQuotaExhaustedIds(exhausted);
 			} catch {

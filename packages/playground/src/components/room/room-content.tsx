@@ -72,29 +72,29 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			>(
 				`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
 			);
-			const engineIds = (engineReturn[0].output ?? [])
-				.map((engine) => engine.app_id || engine.engine_id)
-				.filter(Boolean);
+			const engines = engineReturn[0].output ?? [];
 
-			if (engineIds.length === 0) {
+			if (engines.length === 0) {
 				setQuotaExhaustedIds([]);
 				return;
 			}
 
-			// Step 2: chain all restriction checks into one pixel string so they
-			// are sent as a single HTTP request. Each operation maps to its own
-			// entry in pixelReturn.
-			const restrictionPixel = engineIds
-				.map((id) => `GetUserModelUsageRestrictions(engine=["${id}"]);`)
-				.join(" ");
-
-			const { pixelReturn: restrictionReturn } =
-				await runPixel(restrictionPixel);
-
-			// operationType is string[] — use .includes() to check for errors.
-			const exhausted = engineIds.filter((_, i) =>
-				restrictionReturn[i]?.operationType.includes("ERROR"),
-			);
+			const exhausted = engines
+				.filter((engine) => {
+					const r = (
+						engine as {
+							usageRestriction?: {
+								maxValue: number | null;
+								currentValue: number;
+							};
+						}
+					).usageRestriction;
+					return (
+						r && r.maxValue != null && r.currentValue >= r.maxValue
+					);
+				})
+				.map((engine) => engine.app_id || engine.engine_id)
+				.filter(Boolean) as string[];
 
 			setQuotaExhaustedIds(exhausted);
 		} catch {
