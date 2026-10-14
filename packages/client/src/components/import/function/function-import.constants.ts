@@ -330,8 +330,8 @@ export const FUNCTION_CONNECTIONS = {
 			disable: false,
 			icon: RESTAPI,
 			description:
-				"Start a real-time AI avatar, make it speak, and close the session. The browser connects to the avatar stream directly.",
-			link: "https://docs.heygen.com/",
+				"Run a real-time AI avatar on your own LiveTalking server. The browser connects to the avatar stream directly; SEMOSS relays the control calls.",
+			link: "https://github.com/lipku/LiveTalking",
 			fields: [
 				{
 					key: "FUNCTION_TYPE",
@@ -367,36 +367,30 @@ export const FUNCTION_CONNECTIONS = {
 				{
 					key: "AVATAR_PROVIDER",
 					label: "Avatar Provider",
-					value: "HEYGEN",
+					value: "LIVETALKING",
 					type: "select",
-					options: [{ display: "HeyGen", value: "HEYGEN" }],
+					options: [
+						{
+							display: "LiveTalking (self-hosted)",
+							value: "LIVETALKING",
+						},
+					],
 					disabled: false,
 					required: true,
 					helperText:
-						"The service that renders the avatar. HeyGen is the only provider supported today.",
+						"The self-hosted avatar server. LiveTalking (Apache-2.0) is the only provider supported today.",
 					category: "General",
 				},
 				{
-					key: "API_KEY",
-					label: "API Key",
+					key: "SERVER_URL",
+					label: "Avatar Server URL",
 					value: "",
-					type: "password",
+					type: "text",
 					disabled: false,
 					required: true,
 					helperText:
-						"The provider API key. It stays on the server and is never returned to callers.",
-					category: "Credentials",
-				},
-				{
-					key: "API_BASE",
-					label: "API Base URL",
-					value: "https://api.heygen.com",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Change this only when routing through a proxy that mirrors the provider API.",
-					category: "Credentials",
+						"Base URL of the LiveTalking server, ie https://avatar.example.gov:8010. The server API has no authentication, so keep it reachable only from the SEMOSS server.",
+					category: "Settings",
 				},
 				{
 					key: "DEFAULT_AVATAR_ID",
@@ -406,33 +400,30 @@ export const FUNCTION_CONNECTIONS = {
 					disabled: false,
 					required: false,
 					helperText:
-						"Avatar used when a caller does not pick one. Leave blank to use the provider default.",
+						"Avatar used when a caller does not pick one. Must already exist on the avatar server. Leave blank to use the server default.",
 					category: "Settings",
 				},
 				{
-					key: "DEFAULT_VOICE_ID",
-					label: "Default Voice ID",
+					key: "DEFAULT_AVATAR_MODEL",
+					label: "Avatar Model",
+					value: "musetalk",
+					type: "select",
+					options: [{ display: "MuseTalk", value: "musetalk" }],
+					disabled: false,
+					required: false,
+					helperText:
+						"Lip-sync model used to build new avatars. MuseTalk is MIT-licensed; Wav2Lip is excluded because its weights are non-commercial.",
+					category: "Settings",
+				},
+				{
+					key: "HEADERS",
+					label: "Request Headers",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: false,
 					helperText:
-						"Voice used when a caller does not pick one. Leave blank to use the avatar default.",
-					category: "Settings",
-				},
-				{
-					key: "DEFAULT_QUALITY",
-					label: "Default Stream Quality",
-					value: "medium",
-					type: "select",
-					options: [
-						{ display: "low", value: "low" },
-						{ display: "medium", value: "medium" },
-						{ display: "high", value: "high" },
-					],
-					disabled: false,
-					required: false,
-					helperText: "Higher quality uses more bandwidth.",
+						"Optional JSON object of headers to send to the avatar server, ie a gateway key. Leave blank for none.",
 					category: "Settings",
 				},
 				{
@@ -465,7 +456,7 @@ export const FUNCTION_CONNECTIONS = {
 					disabled: false,
 					required: false,
 					helperText:
-						"Leave empty to use the built in parameters: action, sessionId, text, avatarId, voiceId, quality, and taskType.",
+						"Leave empty to use the built in parameters: action, sdp, type, avatarId, sessionId, text, interrupt, model, videoPath, and taskId.",
 					category: "Function Metadata",
 				},
 				{
