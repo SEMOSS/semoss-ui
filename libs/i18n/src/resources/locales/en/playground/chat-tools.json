@@ -1,0 +1,81 @@
+{
+	"menu": {
+		"showTools": "Show Chat Tools"
+	},
+	"panel": {
+		"title": "Chat Tools",
+		"description": "What the assistant can use in your next message.",
+		"toolboxTitle": "This Chat's Toolbox",
+		"toolboxDescription": "The connectors switched on for this chat, from mcp/pixel_mcp.json in Chat Files.",
+		"toolboxEmpty": "No connectors are switched on.",
+		"toolboxError": "Could not read this chat's toolbox.",
+		"otherTools": "Other Tools",
+		"addedTitle": "Added Toolboxes",
+		"addedDescription": "Each toolbox brings its own tools.",
+		"addedEmpty": "No toolboxes added.",
+		"parameters": "Parameters",
+		"required": "Required",
+		"noParameters": "No parameters.",
+		"defaultTitle": "Default Tools",
+		"defaultDescription": "Added to every message and run in this browser, in Chat Files.",
+		"defaultEmpty": "Every default tool is disabled in Room Settings.",
+		"openSettings": "Room Settings",
+		"agentTitle": "Agent Tools",
+		"agentDescription": "Agent runs bring their own file, shell, and code tools, and work in Chat Files."
+	},
+	"defaultTools": {
+		"label": "Default Tools",
+		"description": "Tools this browser adds to every message and runs in Chat Files. Auto runs a tool on its own, Ask waits for your approval of each call, and Disabled leaves it out.",
+		"modes": {
+			"auto": "Auto",
+			"ask": "Ask",
+			"disabled": "Disabled"
+		}
+	},
+	"tools": {
+		"rootFolder": "Top of the Folder",
+		"moveSummary": "{{from}} to {{to}}",
+		"titles": {
+			"folder_list": "List Folder",
+			"folder_read": "Read File",
+			"folder_search": "Search Folder",
+			"folder_write": "Write File",
+			"folder_edit": "Edit File",
+			"folder_create_directory": "Create Folder",
+			"folder_move": "Move or Rename",
+			"folder_delete": "Delete"
+		}
+	},
+	"card": {
+		"status": {
+			"waiting": "Needs Approval",
+			"queued": "Queued",
+			"running": "Running",
+			"done": "Done",
+			"failed": "Failed",
+			"notRun": "Not Run"
+		},
+		"folderApproval": "The assistant wants to change a file in Chat Files. Review the change, then allow or deny it.",
+		"connectorApproval": "The assistant wants to act with your account. Review the details, then allow or deny it.",
+		"file": "File",
+		"path": "Path",
+		"rootFolder": "Top of the Folder",
+		"query": "Looking For",
+		"newContents": "New Contents",
+		"replace": "Replace",
+		"with": "With",
+		"replaceAll": "Every occurrence is replaced.",
+		"from": "From",
+		"to": "To",
+		"deleteRecursive": "Everything inside this folder is deleted too.",
+		"noArguments": "No Details",
+		"result": "Result",
+		"error": "Error",
+		"allow": "Allow",
+		"allowing": "Allowing...",
+		"deny": "Deny",
+		"denying": "Denying...",
+		"decisionError": "Could not complete that. {{message}}",
+		"chatFiles": "Chat Files"
+	}
+}

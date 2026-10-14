@@ -36,7 +36,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useSession } from "@/hooks";
-import ColumnEditModal from "./column-edit-modal";
+import { ColumnEditModal } from "./column-edit-modal";
 
 interface ParsedResult {
 	headers: string[];
@@ -58,7 +58,7 @@ interface ColumnMetadata {
 	logicalName?: string[];
 }
 
-const ExcelDataSelection = ({
+export const ExcelDataSelection = ({
 	files,
 	fileName,
 	onImport,
@@ -727,7 +727,11 @@ const ExcelDataSelection = ({
 																	/>
 
 																	{!enablePreview ? (
-																		<Tooltip>
+																		<Tooltip
+																			disableHoverableContent={
+																				false
+																			}
+																		>
 																			<TooltipTrigger
 																				asChild
 																			>
@@ -857,7 +861,11 @@ const ExcelDataSelection = ({
 																		{/* Data Type */}
 																		<TableCell className="py-2 pr-6 pl-4 text-center">
 																			<TooltipProvider>
-																				<Tooltip>
+																				<Tooltip
+																					disableHoverableContent={
+																						false
+																					}
+																				>
 																					<TooltipTrigger
 																						asChild
 																					>
@@ -993,5 +1001,3 @@ const ExcelDataSelection = ({
 		</TooltipProvider>
 	);
 };
-
-export default ExcelDataSelection;

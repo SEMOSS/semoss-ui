@@ -1,0 +1,269 @@
+export type AutomationWorkflowNodeType =
+	| "trigger.start"
+	| "database.query"
+	| "database.insert"
+	| "database.update"
+	| "database.delete"
+	| "model.chat"
+	| "model.embeddings"
+	| "model.vision"
+	| "model.ner"
+	| "storage.list"
+	| "storage.read"
+	| "storage.upload"
+	| "storage.download"
+	| "storage.delete"
+	| "data.extract"
+	| "vector.search"
+	| "vector.add"
+	| "vector.delete"
+	| "function.execute"
+	| "agent.run"
+	| "app.pixel"
+	| "control.wait"
+	| "control.if"
+	| "control.jev"
+	| "control.loop"
+	| "developer.python";
+
+export type AutomationPortKind = "control" | "data";
+export type AutomationDataType =
+	| "boolean"
+	| "number"
+	| "string"
+	| "object"
+	| "array"
+	| "record"
+	| "table"
+	| "unknown";
+
+export interface AutomationPort {
+	id: string;
+	label: string;
+	kind: AutomationPortKind;
+	direction: "input" | "output";
+	dataType?: AutomationDataType;
+	required?: boolean;
+	multiple?: boolean;
+}
+
+export type AutomationNodeCodeMode = "generated" | "custom";
+export type AutomationNodeCategory =
+	| "trigger"
+	| "database"
+	| "model"
+	| "agent"
+	| "storage"
+	| "data"
+	| "vector"
+	| "function"
+	| "app"
+	| "control"
+	| "developer";
+
+export type TriggerBinding =
+	| { id: string; type: "manual" }
+	| { id: string; type: "schedule"; cron: string; timezone: string }
+	| { id: string; type: "webhook"; path: string; secretId?: string }
+	| { id: string; type: "event"; eventName: string; source?: string };
+
+export interface AutomationWorkflowNodeConfig
+	extends Record<
+		string,
+		| AutomationJsonValue
+		| AutomationBranchClause[]
+		| AutomationJevQuestion[]
+		| AutomationJevRoute[]
+		| AutomationGlobalVariable[]
+		| undefined
+	> {
+	/** Python artifact executed for this non-trigger node. */
+	pythonSource?: string;
+}
+
+/** JSON-compatible configuration supplied by a backend node definition. */
+export type AutomationJsonValue =
+	| boolean
+	| number
+	| string
+	| null
+	| AutomationJsonValue[]
+	| { [key: string]: AutomationJsonValue };
+
+/** An ordered conditional route on a `control.if` node. */
+export interface AutomationBranchClause {
+	id: string;
+	condition: string;
+}
+
+export type AutomationJevQuestionType = "choice" | "score" | "noul";
+
+/** One named typed question evaluated within a `control.jev` request. */
+export interface AutomationJevQuestion {
+	key: string;
+	type: AutomationJevQuestionType;
+	instructions: string;
+	criteria?: Record<string, string> | string[];
+}
+
+export type AutomationJevRouteMatch = "all" | "any";
+export type AutomationJevRouteField =
+	| "choice"
+	| "score"
+	| "noul"
+	| "confidence"
+	| "probability";
+export type AutomationJevRouteOperator =
+	| "equals"
+	| "notEquals"
+	| "greaterThan"
+	| "greaterThanOrEqual"
+	| "lessThan"
+	| "lessThanOrEqual";
+
+/** One threshold or value comparison used by a JEV route. */
+export interface AutomationJevRouteCondition {
+	questionKey: string;
+	field: AutomationJevRouteField;
+	operator: AutomationJevRouteOperator;
+	value: string | number;
+	option?: string;
+}
+
+/** A named ordered route exposed by a `control.jev` decision node. */
+export interface AutomationJevRoute {
+	id: string;
+	description: string;
+	match?: AutomationJevRouteMatch;
+	conditions?: AutomationJevRouteCondition[];
+	/** Explicit outcome represented by this route for a Noul Yes/No question. */
+	answer?: boolean;
+}
+
+/** A trigger-owned input available to every downstream node at runtime. */
+export interface AutomationGlobalVariable {
+	name: string;
+	defaultValue: string;
+	description?: string;
+}
+
+export interface AutomationWorkflowNode<
+	T extends AutomationWorkflowNodeType = AutomationWorkflowNodeType,
+> {
+	id: string;
+	type: T;
+	label: string;
+	outputVar?: string;
+	position: { x: number; y: number };
+	config: AutomationWorkflowNodeConfig;
+	codeMode: AutomationNodeCodeMode;
+	/** Nested acyclic graph executed by a container node such as control.loop. */
+	body?: AutomationWorkflowGraph;
+}
+
+export type AutomationWorkflowGraphNode = AutomationWorkflowNode;
+
+export interface AutomationControlEdge {
+	id: string;
+	kind: "control";
+	source: string;
+	sourcePort: string;
+	target: string;
+	targetPort: string;
+}
+
+export interface AutomationDataEdge {
+	id: string;
+	kind: "data";
+	dataType: AutomationDataType;
+	source: string;
+	sourcePort: string;
+	target: string;
+	targetPort: string;
+}
+
+export type AutomationWorkflowEdge = AutomationControlEdge | AutomationDataEdge;
+
+export interface AutomationWorkflowGraph {
+	nodes: AutomationWorkflowGraphNode[];
+	edges: AutomationWorkflowEdge[];
+}
+
+/** Visual-only canvas grouping, compatible with the n8n nodeGroups convention. */
+export interface AutomationNodeGroup {
+	id: string;
+	name: string;
+	nodeIds: string[];
+	description?: string;
+}
+
+export interface AutomationWorkflowDocument {
+	formatVersion: 2;
+	description?: string;
+	triggerBindings: TriggerBinding[];
+	graph: AutomationWorkflowGraph;
+	nodeGroups?: AutomationNodeGroup[];
+}
+
+export type ConfigFieldType =
+	| "boolean"
+	| "branch-clauses"
+	| "number"
+	| "engine"
+	| "globals"
+	| "json"
+	| "string"
+	| "string[]"
+	| "textarea"
+	| "code";
+
+export interface ConfigFieldSchema {
+	type: ConfigFieldType;
+	label: string;
+	description?: string;
+	required?: boolean;
+	minimum?: number;
+	maximum?: number;
+	placeholder?: string;
+	defaultValue?: AutomationJsonValue;
+	engineType?: string;
+}
+
+export type AutomationOutputFieldType =
+	| "boolean"
+	| "number"
+	| "object"
+	| "object[]"
+	| "string"
+	| "string[]";
+
+/** One known field in a node's successful structured result. */
+export interface AutomationOutputFieldSchema {
+	type: AutomationOutputFieldType;
+	label: string;
+	description: string;
+	required: boolean;
+}
+
+export interface AutomationNodeDefinition {
+	type: AutomationWorkflowNodeType;
+	label: string;
+	description: string;
+	category: AutomationNodeCategory;
+	defaultConfig: AutomationWorkflowNodeConfig;
+	configSchema: Record<string, ConfigFieldSchema>;
+	outputSchema: Record<string, AutomationOutputFieldSchema>;
+	inputs: readonly AutomationPort[];
+	outputs: readonly AutomationPort[];
+	defaultCodeMode: AutomationNodeCodeMode;
+	requiredPermission: string;
+	supportsOutput: boolean;
+	supportsCustomCode: boolean;
+	engineType?: string;
+}
+
+/** Versioned node-definition catalog returned by SEMOSS. */
+export interface AutomationNodeCatalog {
+	schemaVersion: number;
+	nodes: readonly AutomationNodeDefinition[];
+}

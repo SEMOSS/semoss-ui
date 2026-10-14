@@ -1,1 +1,4 @@
-export { GuardrailWorkbench } from "./guardrail-workbench";
+export {
+	GUARDRAIL_WORKBENCH_COMPONENTS,
+	GuardrailWorkbench,
+} from "./guardrail-workbench";

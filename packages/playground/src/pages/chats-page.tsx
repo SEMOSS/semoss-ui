@@ -16,6 +16,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { Navigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
@@ -41,14 +42,19 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { CHECKBOX_CLASS, ChatRow, type RoomItem } from "@/components";
-import { SYSTEM__PLAYGROUND } from "@/constants";
-import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import {
 	DATE_BUCKET_ORDER,
 	getDateBucket,
-	normalizeTimestamp,
-} from "@/utility";
+	parseTimestampWithUtcDefault,
+} from "@semoss/utility/date";
+import {
+	CHECKBOX_CLASS,
+	ChatRow,
+	type RoomItem,
+} from "@/components/chats/chat-row";
+import { SYSTEM__PLAYGROUND } from "@/constants";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
 
 /**
  * All-chats page.
@@ -59,6 +65,7 @@ import {
 export const ChatsPage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "sidebar"]);
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -91,19 +98,9 @@ export const ChatsPage = observer(() => {
 		"word" | "pdf" | null
 	>(null);
 
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("workspace:breadcrumbs.home"), path: "/" },
-			{
-				name: t("workspace:chats.title"),
-				path: "/chats",
-			},
-		],
-	});
-
 	const getRooms = useIteratorPixel<RoomItem[], RoomItem>(
 		(limit, offset) =>
-			`META | GetPlaygroundRooms(${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""}${hasDateRange ? `startDate=["${startDate}"], endDate=["${endDate}"], ` : ""}limit=${limit}, offset=${offset}, sortBy=["${sortField}"], sort=["${sortDir === "newest" ? "DESC" : "ASC"}"]);`,
+			`META | GetPlaygroundRooms(${debouncedSearch ? `search = "%24%7BdebouncedSearch%7D", ` : ""}${hasDateRange ? `startDate=["${startDate}"], endDate=["${endDate}"], ` : ""}limit=${limit}, offset=${offset}, sortBy=["${sortField}"], sort=["${sortDir === "newest" ? "DESC" : "ASC"}"]);`,
 		(response) => (response.length < 25 ? -1 : Infinity),
 		(response) => response,
 		{ limit: 25 },
@@ -221,8 +218,8 @@ export const ChatsPage = observer(() => {
 			...extra,
 		].sort(
 			(a, b) =>
-				normalizeTimestamp(b.DATE_CREATED).valueOf() -
-				normalizeTimestamp(a.DATE_CREATED).valueOf(),
+				parseTimestampWithUtcDefault(b.DATE_CREATED).valueOf() -
+				parseTimestampWithUtcDefault(a.DATE_CREATED).valueOf(),
 		);
 	}, [getRooms.data, getContentMatches.data, deletedSet]);
 
@@ -246,8 +243,8 @@ export const ChatsPage = observer(() => {
 			const direction = sortDir === "newest" ? -1 : 1;
 			return (
 				direction *
-				(normalizeTimestamp(getSortTimestamp(a)).valueOf() -
-					normalizeTimestamp(getSortTimestamp(b)).valueOf())
+				(parseTimestampWithUtcDefault(getSortTimestamp(a)).valueOf() -
+					parseTimestampWithUtcDefault(getSortTimestamp(b)).valueOf())
 			);
 		},
 		[sortDir, getSortTimestamp],
@@ -274,7 +271,7 @@ export const ChatsPage = observer(() => {
 
 		const byBucket = new Map<string, RoomItem[]>();
 		for (const room of nonPinned) {
-			const d = normalizeTimestamp(getSortTimestamp(room));
+			const d = parseTimestampWithUtcDefault(getSortTimestamp(room));
 			if (!d.isValid()) continue;
 			const bucket = getDateBucket(d);
 			const rooms = byBucket.get(bucket);
@@ -506,6 +503,10 @@ export const ChatsPage = observer(() => {
 		/>
 	);
 
+	if (root.theme.featureFlags?.hideChatHistory) {
+		return <Navigate to="/" replace />;
+	}
+
 	return (
 		<div className="@container flex h-full w-full flex-col overflow-hidden">
 			<div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 overflow-hidden @3xl:px-12 @md:px-6 px-4 pt-8">
@@ -664,7 +665,7 @@ export const ChatsPage = observer(() => {
 				{/* Select-all toolbar — always visible so the user can select
 				    every chat without first selecting one. */}
 				{hasRooms && (
-					<div className="flex h-8 items-center gap-3 px-1">
+					<div className="flex min-h-10 flex-wrap items-center gap-3 px-1">
 						<Checkbox
 							checked={allSelected}
 							onCheckedChange={toggleSelectAll}
@@ -779,7 +780,7 @@ export const ChatsPage = observer(() => {
 									)}
 
 									{/* Date-grouped sections — a single ungrouped
-										    section (no divider) when sorting by name */}
+									    section (no divider) when sorting by name */}
 									{groups.map((g) => (
 										<Fragment key={g.bucket}>
 											{g.label !== null && (

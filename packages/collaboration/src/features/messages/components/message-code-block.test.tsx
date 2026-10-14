@@ -1,0 +1,47 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { normalizeCodeLanguage } from "../utils/normalize-code-language";
+import { MessageCodeBlock } from "./message-code-block";
+
+describe("MessageCodeBlock", () => {
+	it("falls back safely for unknown syntax labels", () => {
+		expect(normalizeCodeLanguage("custom-lang")).toEqual({
+			language: "txt",
+			label: "CUSTOM-LANG",
+		});
+	});
+
+	it("enables copy and a read-only expanded view after completion", async () => {
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", {
+			configurable: true,
+			value: { writeText },
+		});
+		render(<MessageCodeBlock code="const value = 1;" language="ts" />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Copy code" }));
+		await waitFor(() =>
+			expect(writeText).toHaveBeenCalledWith("const value = 1;"),
+		);
+		const expand = screen.getByRole("button", { name: "Expand code" });
+		fireEvent.click(expand);
+
+		expect(screen.getByText("Read-only generated code.")).toBeTruthy();
+		expect(
+			screen.getByRole("region", { name: "Expanded TS code" }),
+		).toBeTruthy();
+		fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+		await waitFor(() => expect(expand).toHaveFocus());
+	});
+
+	it("reserves action space without disabled buttons while code is growing", () => {
+		render(
+			<MessageCodeBlock code="const value" language="ts" isStreaming />,
+		);
+
+		expect(screen.getByText("Generating TS…")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Copy code" })).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "Expand code" }),
+		).toBeNull();
+	});
+});

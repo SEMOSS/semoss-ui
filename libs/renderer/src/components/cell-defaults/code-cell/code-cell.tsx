@@ -11,6 +11,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import {
@@ -63,6 +64,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
 	const { cell, isExpanded, agentModelEngine } = props;
 	const { state } = useBlocks();
+	const { resolvedTheme } = useTheme();
+	const editorTheme = resolvedTheme === "dark" ? "vs-dark" : "vs";
 
 	const [editorHeight, setEditorHeight] = useState<number>(null);
 	const [LLMLoading, setLLMLoading] = useState(false);
@@ -561,6 +564,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 									<Markdown>{codeValue}</Markdown>
 								) : (
 									<MonacoEditor
+										theme={editorTheme}
 										width="100%"
 										height={getHeight()}
 										language={
@@ -594,6 +598,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 							<>
 								<Suspense fallback={<>...</>}>
 									<MonacoDiffEditor
+										theme={editorTheme}
 										width="100%"
 										height={getHeight()}
 										original={oldContentDiffEdit}
@@ -640,6 +645,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 								) : (
 									<MonacoEditor
 										key={count}
+										theme={editorTheme}
 										width="100%"
 										height={getHeight()}
 										language={

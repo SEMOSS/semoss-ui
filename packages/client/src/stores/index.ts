@@ -1,3 +1,4 @@
+export * from "./assistant";
 export * from "./config";
 export * from "./designer";
 export * from "./page";

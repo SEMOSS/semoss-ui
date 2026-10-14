@@ -37,11 +37,12 @@ export const RoomCompactionIndicator: React.FC<RoomCompactionIndicatorProps> =
 			return () => clearTimeout(timer);
 		}, [isActive]);
 
+		if (!isOpen) {
+			return null;
+		}
+
 		return (
-			<div
-				className="overflow-hidden transition-all duration-300 ease-in-out"
-				style={{ maxHeight: isOpen ? "2.5rem" : "0" }}
-			>
+			<div className="max-h-10 overflow-hidden transition-all duration-300 ease-in-out">
 				<div className="pb-4">
 					{message.conversationCompactedAbove ? (
 						<Tooltip>

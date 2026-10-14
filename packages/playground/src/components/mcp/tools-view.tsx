@@ -3,7 +3,15 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isRequestUserInputAction, parseUserInputRequest } from "@semoss/sdk";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
+import { isToolViewUri, useToolView } from "@semoss/shared";
 import { AgentUserInputCard, Skeleton, toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { ChatToolCard } from "@/features/chat-tools/components/chat-tool-card";
+import {
+	isChatToolCall,
+	isFolderToolCall,
+} from "@/features/chat-tools/tools/chat-tool-kind";
+import { ComponentToolView } from "@/features/tool-views/component-tool-view";
 import type { RoomStore } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
@@ -72,9 +80,13 @@ export const ToolsView = observer(
 
 		// A system app UI is resolved entirely from _meta, so skip the metadata
 		// lookup below: there may be no project or engine behind the tool at all.
-		const systemAppUrl = resolveSystemAppUrl(
-			tool?._meta?.SMSS_MCP_UI?.resourceURI,
-		);
+		const resourceURI = tool?._meta?.SMSS_MCP_UI?.resourceURI;
+		const systemAppUrl = resolveSystemAppUrl(resourceURI);
+
+		// A component:// view is drawn in the page from the call itself, so it
+		// needs no lookup either, and is never loaded in a frame.
+		const toolView = useToolView(resourceURI);
+		const isComponentView = isToolViewUri(resourceURI);
 
 		// get the metadata — PROJECT-hosted tools use ProjectInfo, every other
 		// engine type (VECTOR, STORAGE, DATABASE, MODEL, FUNCTION, ...) uses
@@ -84,7 +96,7 @@ export const ToolsView = observer(
 		const getAppInfo = usePixel<{
 			project_type?: "BLOCKS" | "CODE" | "INSIGHT" | "";
 		}>(
-			app && !systemAppUrl
+			app && !systemAppUrl && !isComponentView
 				? isProjectType
 					? `ProjectInfo(project=["${app}"]);`
 					: `EngineInfo(engine=["${app}"]);`
@@ -142,6 +154,14 @@ export const ToolsView = observer(
 			const chooseUrl = async () => {
 				// Ignore if no tool
 				if (!tool) {
+					setUrl("");
+					setIsLoading(false);
+					return;
+				}
+
+				// A component:// view is drawn below, or the generic view when
+				// the playground has no such view; neither is a page.
+				if (isComponentView) {
 					setUrl("");
 					setIsLoading(false);
 					return;
@@ -253,6 +273,7 @@ export const ToolsView = observer(
 			tool,
 			toolResponse,
 			systemAppUrl,
+			isComponentView,
 			getAppInfo.status,
 			getAppInfo.data,
 		]);
@@ -265,6 +286,37 @@ export const ToolsView = observer(
 
 		if (!tool) {
 			return null;
+		}
+
+		// A call that names a component:// view the playground draws gets it,
+		// in place of its card; work folder calls keep theirs.
+		if (liveTool && toolView && !isFolderToolCall(tool)) {
+			return (
+				<ComponentToolView
+					tool={liveTool}
+					view={toolView}
+					variant="panel"
+					fallback={
+						isChatToolCall(tool) ? (
+							<ChatToolCard tool={liveTool} variant="panel" />
+						) : (
+							<ToolsDefaultView
+								room={room}
+								app={app}
+								message={message}
+								tool={liveTool}
+							/>
+						)
+					}
+				/>
+			);
+		}
+
+		// Work folder and connector calls have their own card: the folder
+		// tools run in the browser, and neither has an MCP project to fetch a
+		// schema or a UI from.
+		if (liveTool && isChatToolCall(tool)) {
+			return <ChatToolCard tool={liveTool} variant="panel" />;
 		}
 
 		// Server tools (e.g. provider-side web_search) have no MCP project to
@@ -310,9 +362,10 @@ export const ToolsView = observer(
 												);
 											} catch (error) {
 												toast.error(
-													error instanceof Error
-														? error.message
-														: "Unable to submit these answers.",
+													getErrorMessage(
+														error,
+														"Unable to submit these answers.",
+													),
 												);
 											}
 										}}

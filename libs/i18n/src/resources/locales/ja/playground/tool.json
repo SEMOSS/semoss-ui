@@ -27,7 +27,10 @@
 		"labelOpen": "実行済みツール ({{count}})",
 		"labelStreaming_one": "{{count}} 個のツールを読み込み中…",
 		"labelStreaming_other": "{{count}} 個のツールを読み込み中…",
+		"labelPartial_one": "{{count}} 件完了、{{loadingCount}} 件読み込み中…",
+		"labelPartial_other": "{{count}} 件完了、{{loadingCount}} 件読み込み中…",
 		"summaryCompleted": "{{count}} 件完了",
+		"summaryLoading": "{{count}} 件読み込み中",
 		"summaryError": "{{count}} 件失敗",
 		"summaryCancelled": "{{count}} 件キャンセル"
 	},
@@ -67,5 +70,42 @@
 		"cancel": "キャンセル",
 		"retry": "再試行",
 		"checking": "確認中..."
+	},
+	"activity": {
+		"steps": "ツールの実行状況（{{count}}）",
+		"needsInput": "入力が必要です",
+		"cancelError": "このツールをキャンセルできませんでした。",
+		"actions": "ツールの操作"
+	},
+	"inspector": {
+		"input": "入力",
+		"info": "情報",
+		"tabsLabel": "ツールの詳細",
+		"find": "検索",
+		"copy": "コピー",
+		"copied": "クリップボードにコピーしました",
+		"copyFailed": "クリップボードにコピーできませんでした",
+		"wrap": "行を折り返す",
+		"foldAll": "すべて折りたたむ",
+		"unfoldAll": "すべて展開",
+		"text": "テキスト",
+		"expandedDescription": "読み取り専用のデータです。検索、コピー、セクションの折りたたみでデータを確認できます。",
+		"toolName": "ツール名",
+		"callId": "呼び出し ID",
+		"source": "ソース",
+		"execution": "実行モード",
+		"inputSchema": "入力スキーマ",
+		"metadata": "メタデータ",
+		"emptyOutput": "このツールは出力を返しませんでした。",
+		"runningOutput": "ツールを実行中です。出力はここに表示されます。",
+		"inputView": "入力の表示",
+		"pretty": "整形",
+		"raw": "Raw",
+		"emptyString": "空の文字列",
+		"itemCount": "項目数: {{total}}",
+		"fieldCount": "フィールド数: {{total}}",
+		"showMore": "さらに表示（残り {{remaining}} 件）",
+		"showLess": "表示を減らす",
+		"showFullValue": "値をすべて表示"
 	}
 }

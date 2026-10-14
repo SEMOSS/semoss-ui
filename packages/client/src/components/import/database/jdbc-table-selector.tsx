@@ -27,7 +27,7 @@ interface TableViewSelectorProps {
 	onClose: () => void;
 }
 
-const TableViewSelector = ({
+export const TableViewSelector = ({
 	tables = [],
 	views = [],
 	onApply,
@@ -262,7 +262,9 @@ const TableViewSelector = ({
 		return (
 			<div className="space-y-4 p-2 md:p-4">
 				<DialogHeader className="text-left">
-					<DialogTitle>External Database Connection</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						External Database Connection
+					</DialogTitle>
 				</DialogHeader>
 
 				<Card className="border-border/70">
@@ -338,7 +340,9 @@ const TableViewSelector = ({
 		<div className="flex h-full min-h-0 flex-col gap-4 p-2 md:p-4">
 			<DialogHeader className="text-left">
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<DialogTitle>Select Tables and Views</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Select Tables and Views
+					</DialogTitle>
 					<Badge variant="secondary">
 						{totalSelectedCount} selected
 					</Badge>
@@ -391,5 +395,3 @@ const TableViewSelector = ({
 		</div>
 	);
 };
-
-export default TableViewSelector;

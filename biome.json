@@ -10,6 +10,11 @@
 		"ignoreUnknown": false,
 		"includes": [
 			"**/*.js",
+			"**/*.mjs",
+			"**/*.cjs",
+			"**/*.mts",
+			"**/*.cts",
+			"**/*.jsonc",
 			"**/*.jsx",
 			"**/*.ts",
 			"**/*.tsx",
@@ -22,6 +27,7 @@
 			"node_modules/**",
 			"dist/**",
 			"build/**",
+			"storybook-static/**",
 			".next/**",
 			".turbo/**",
 			"coverage/**",
@@ -41,17 +47,21 @@
 			"correctness": {
 				"noUnusedVariables": "error",
 				"noUnusedImports": "error",
+				"useHookAtTopLevel": "error",
 				"useExhaustiveDependencies": {
 					"fix": "none",
-					"level": "warn",
+					"level": "error",
 					"options": {}
 				}
 			},
 			"style": {
+				"noDefaultExport": "error",
+				"noNonNullAssertion": "error",
 				"useConst": "error"
 			},
 			"suspicious": {
 				"noExplicitAny": "error",
+				"noTsIgnore": { "level": "error", "fix": "none" },
 				"noConsole": "off",
 				"noDebugger": "error",
 				"noVar": "error"
@@ -114,6 +124,14 @@
 	},
 	"overrides": [
 		{
+			"includes": ["libs/**/src/**", "packages/**/src/**"],
+			"linter": {
+				"rules": {
+					"nursery": { "useReactFunctionComponents": "error" }
+				}
+			}
+		},
+		{
 			"includes": ["**/src/assets/img/**", "**/src/assets/loginProviders/**"],
 			"linter": { "enabled": false },
 			"formatter": { "enabled": false }
@@ -129,7 +147,7 @@
 			}
 		},
 		{
-			"includes": ["**/*.config.{js,ts,mjs}"],
+			"includes": ["**/*.config.{js,ts,mjs}", "!**/src/**"],
 			"linter": {
 				"rules": {
 					"style": {

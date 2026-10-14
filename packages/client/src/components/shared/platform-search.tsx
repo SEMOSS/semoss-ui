@@ -89,7 +89,7 @@ export const PlatformSearch = () => {
 
 	return (
 		<>
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<Button
 						variant="ghost"
@@ -109,7 +109,9 @@ export const PlatformSearch = () => {
 					showCloseButton={true}
 				>
 					<DialogHeader className="sr-only">
-						<DialogTitle>Command</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Command
+						</DialogTitle>
 						<DialogDescription>
 							Run a platform command
 						</DialogDescription>

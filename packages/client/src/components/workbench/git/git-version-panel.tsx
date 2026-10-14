@@ -1,15 +1,19 @@
 import { GitBranchIcon } from "lucide-react";
 import { useEffect } from "react";
+import { useAccess } from "@semoss/panels";
 import { useIteratorPixel } from "@semoss/sdk/react";
-import type { GitCommit, GitDataStatus } from "@/components/git";
-import { GitHistory } from "@/components/git";
-import { useWorkbenchAccess, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
-} from "@/stores/workbench";
-import { WorkbenchAccessError } from "../core/workbench-access-error";
-import { WorkbenchAccessLoading } from "../core/workbench-access-loading";
+} from "@semoss/workbench";
+import {
+	useWorkbenchControl,
+	useWorkbenchPanel,
+	WorkbenchPanelError,
+	WorkbenchPanelLoading,
+} from "@semoss/workbench";
+import type { GitCommit, GitDataStatus } from "@/components/git";
+import { GitHistory } from "@/components/git";
 import { GitCommitRowAdapter } from "./git-commit-row";
 import {
 	GitVersionControl,
@@ -19,12 +23,10 @@ import {
 const PAGE_SIZE = 20;
 
 /** Connect scoped commit history and panel refresh state to shared Git UI. */
-const GitVersionPanel = ({
-	config,
-	id,
-	value,
-}: WorkbenchPanelProps<GitVersionParams, number>) => {
-	const access = useWorkbenchAccess(config.type, config.id);
+const GitVersionPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, value } = useWorkbenchPanel<GitVersionParams, number>(id);
+
+	const access = useAccess(config.type, config.id);
 	const prefix = config.type === "ENGINE" ? "Engine" : "Project";
 	const resource =
 		config.type === "ENGINE"
@@ -60,18 +62,12 @@ const GitVersionPanel = ({
 	}, [history.reset, value]);
 
 	if (access.status === "loading") {
-		return (
-			<WorkbenchAccessLoading
-				className="size-full"
-				label="Loading resource access"
-			/>
-		);
+		return <WorkbenchPanelLoading label="Loading resource access" />;
 	}
 
 	if (access.status === "error") {
 		return (
-			<WorkbenchAccessError
-				className="size-full"
+			<WorkbenchPanelError
 				message={access.error}
 				onRetry={() => void access.refresh()}
 			/>
@@ -99,19 +95,6 @@ const GitVersionPanel = ({
 					/>
 				)}
 			/>
-			{access.refreshing ? (
-				<WorkbenchAccessLoading
-					className="absolute inset-0 bg-background/80"
-					label="Refreshing resource access"
-				/>
-			) : null}
-			{access.refreshError ? (
-				<WorkbenchAccessError
-					className="absolute inset-0 bg-background/90"
-					message={access.refreshError}
-					onRetry={() => void access.refresh()}
-				/>
-			) : null}
 		</div>
 	);
 };

@@ -27,6 +27,7 @@ const INTERCEPTABLE_METHODS = vi.hoisted(() => [
 				nameIsFromSource: false,
 				type: "InputMessage",
 				guardable: true,
+				carriesToolResults: true,
 			},
 			{
 				name: "arg1",
@@ -34,6 +35,7 @@ const INTERCEPTABLE_METHODS = vi.hoisted(() => [
 				nameIsFromSource: false,
 				type: "Room",
 				guardable: false,
+				carriesToolResults: false,
 			},
 		],
 	},
@@ -602,6 +604,47 @@ test("exposes every failure option and reveals the block settings", async () => 
 	expect(
 		within(responseEntry).getByLabelText("Custom block message"),
 	).toBeInTheDocument();
+});
+
+test("keeps tool results screened until a check opts out", async () => {
+	renderSettings();
+
+	const entry = await screen.findByTestId(
+		"engine-guardrail-settings--pipeline-0-input-entry-0",
+	);
+	expect(within(entry).getByLabelText(/^Screen every turn/)).toBeChecked();
+	expect(
+		within(entry).queryByLabelText("Tools to skip"),
+	).not.toBeInTheDocument();
+
+	fireEvent.click(within(entry).getByLabelText(/^Skip listed tools/));
+	expect(within(entry).getByLabelText("Tools to skip")).toBeInTheDocument();
+});
+
+test("offers no tool-result setting on a call that carries none", async () => {
+	renderSettings({
+		pipelines: {
+			embeddings: {
+				input: [
+					{
+						reactorClass: INPUT_REACTOR,
+						params: {
+							guardrailEngineId: "guardrail-1",
+							blockOnGuardrailFailure: true,
+							inputMapping: { prompt: "arg0" },
+						},
+					},
+				],
+			},
+		},
+	});
+
+	const entry = await screen.findByTestId(
+		"engine-guardrail-settings--pipeline-0-input-entry-0",
+	);
+	expect(
+		within(entry).queryByLabelText(/^Screen every turn/),
+	).not.toBeInTheDocument();
 });
 
 test("shows the parameter wiring without an extra disclosure step", async () => {

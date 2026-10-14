@@ -1,0 +1,398 @@
+import type {
+	AutomationBranchClause,
+	AutomationDataType,
+	AutomationJevQuestion,
+	AutomationJevRoute,
+	AutomationNodeCodeMode,
+	AutomationWorkflowNodeConfig,
+	AutomationWorkflowNodeType,
+} from "./automation-workflow.types";
+
+// ─── node types ───────────────────────────────────────────────────────────────
+
+export type AutomationNodeType =
+	| "trigger"
+	| "database-engine"
+	| "storage-engine"
+	| "data"
+	| "vector-engine"
+	| "model-engine"
+	| "function-engine"
+	| "app"
+	| "branch"
+	| "loop"
+	| "wait";
+
+// ─── shared form types ────────────────────────────────────────────────────────
+
+/** A single parameter in a reactor's signature, as returned by GetReactorSignature. */
+export interface ReactorParam {
+	name: string;
+	type: string;
+	required: boolean;
+	description?: string;
+}
+
+// ─── node configs (one per node type) ────────────────────────────────────────
+
+export interface TriggerConfig {
+	/** Node-level config mode — lowercase by convention, distinct from the run-level AutomationTriggerType enum. */
+	mode: "manual";
+}
+
+export interface DatabaseEngineConfig {
+	engineId: string;
+	engineName?: string;
+	operation: "query" | "write";
+	expression: string;
+	/** JSON array of values bound to positional query parameters. */
+	parameters: string;
+	limit: number;
+	commit: boolean;
+}
+
+export interface StorageEngineConfig {
+	engineId: string;
+	engineName?: string;
+	operation: "list" | "download" | "upload" | "delete" | "read-base64";
+	storagePath: string;
+	/** Comma-separated extensions used by List files, for example pdf, png, jpg. */
+	fileTypes: string;
+	filePath: string;
+	metadata: string;
+	convertToPdf: boolean;
+	version: string;
+	leaveFolderStructure: boolean;
+}
+
+export interface DataExtractConfig {
+	source: string;
+	path: string;
+	format: "auto" | "json" | "xml";
+	missingValue: string;
+	nullValue: string;
+}
+
+export interface VectorEngineConfig {
+	engineId: string;
+	engineName?: string;
+	operation:
+		| "search"
+		| "add-file"
+		| "add-csv"
+		| "list"
+		| "delete"
+		| "download";
+	command: string;
+	/** Unset while the field is blank; the engine then applies its own default. */
+	limit?: number;
+	filters: string;
+	metaFilters: string;
+	filePath: string;
+	source: string;
+	space: string;
+	filePaths: string;
+	paramValues: string;
+	fileNames: string;
+}
+
+export interface ModelEngineConfig {
+	engineId: string;
+	engineName?: string;
+	engineSubtype?: string;
+	operation: "llm" | "embeddings" | "vision" | "ner";
+	command: string;
+	context: string;
+	paramValues: string;
+	values: string;
+	image: string;
+	urls: string;
+	prompt: string;
+	entities: string;
+	maskEntities: string;
+}
+
+export interface FunctionEngineConfig {
+	engineId: string;
+	engineName?: string;
+	operation: "execute" | "streaming";
+	params: string;
+}
+
+export interface AppConfig {
+	pixel: string;
+	appId?: string;
+	appName?: string;
+}
+
+export interface AgentRunConfig {
+	workspaceId: string;
+	workspaceName?: string;
+	engineId: string;
+	engineName?: string;
+	command: string;
+}
+
+export interface WaitConfig {
+	seconds: string;
+}
+
+interface BoundedLoopConfig {
+	maxIterations: number;
+}
+
+/** Repeats the nested graph for every item or bounded group in a collection. */
+export interface ForEachLoopConfig extends BoundedLoopConfig {
+	mode: "forEach";
+	/** A JSON array or an exact scope reference such as ${records} or ${download.files}. */
+	items: string;
+	batchSize: number;
+}
+
+/** Repeats the nested graph a fixed number of times. */
+export interface RepeatLoopConfig extends BoundedLoopConfig {
+	mode: "repeat";
+	count: number;
+}
+
+/** Repeats the nested graph while a bounded condition remains true. */
+export interface WhileLoopConfig extends BoundedLoopConfig {
+	mode: "while";
+	condition: string;
+}
+
+export type LoopConfig = ForEachLoopConfig | RepeatLoopConfig | WhileLoopConfig;
+
+export interface BranchConfig {
+	clauses: AutomationBranchClause[];
+}
+
+export interface JevDecisionConfig {
+	engineId: string;
+	engineName?: string;
+	state: string;
+	questions: AutomationJevQuestion[];
+	clauses: AutomationJevRoute[];
+	paramValues: string;
+}
+
+export type RoutingConfig = BranchConfig | JevDecisionConfig;
+
+export type NodeConfig =
+	| TriggerConfig
+	| DatabaseEngineConfig
+	| StorageEngineConfig
+	| DataExtractConfig
+	| VectorEngineConfig
+	| ModelEngineConfig
+	| FunctionEngineConfig
+	| AppConfig
+	| AgentRunConfig
+	| BranchConfig
+	| JevDecisionConfig
+	| LoopConfig
+	| WaitConfig;
+
+/** Canvas projection of the nested graph owned by a container node. */
+export interface AutomationNodeBody {
+	nodes: AutomationNode[];
+	edges: AutomationEdge[];
+}
+
+export interface AutomationNode {
+	id: string;
+	type: AutomationNodeType;
+	position: { x: number; y: number };
+	label: string;
+	outputVar: string;
+	config: NodeConfig;
+	/**
+	 * The persisted workflow type and configuration. `type` and `config` remain the
+	 * canvas compatibility projection used by the established business forms.
+	 */
+	workflowType?: AutomationWorkflowNodeType;
+	workflowConfig?: AutomationWorkflowNodeConfig;
+	workflowCodeMode?: AutomationNodeCodeMode;
+	body?: AutomationNodeBody;
+}
+
+export interface AutomationEdge {
+	id: string;
+	source: string;
+	target: string;
+	sourceHandle?: string;
+	targetHandle?: string;
+	kind?: "control" | "data";
+	dataType?: AutomationDataType;
+}
+
+// ─── step run status (live, FE-side during a manual run) ─────────────────────
+
+export type StepRunStatus =
+	| "idle"
+	| "running"
+	| "waiting"
+	| "success"
+	| "error";
+
+// ─── run history ──────────────────────────────────────────────────────────────
+
+export type RunStatus =
+	| "RUNNING"
+	| "WAITING_FOR_INPUT"
+	| "SUCCESS"
+	| "FAILED"
+	| "INTERRUPTED"
+	| "CANCELLED";
+
+export type NodeStatus =
+	| "PENDING"
+	| "RUNNING"
+	| "WAITING_FOR_INPUT"
+	| "SUCCESS"
+	| "FAILED"
+	| "SKIPPED";
+
+/** Durable references to the SEMOSS activity produced by one automation node. */
+export interface AutomationNodeTrace {
+	roomId?: string;
+	modelMessageId?: string;
+	agentRunId?: string;
+	workspaceId?: string;
+	/** The durable Automation run that explicitly recorded this trace. */
+	automationRunId?: string;
+	/** The durable Automation node that explicitly recorded this trace. */
+	nodeId?: string;
+	/** Durable agent-run status (e.g. "RUNNING", "INPUT_REQUIRED") as of the last observed change. */
+	agentStatus?: string;
+}
+
+/**
+ * How a run was initiated.
+ * - MANUAL: triggered by a user clicking Run in the editor.
+ * - PLAYGROUND: triggered by the AI playground sidebar via the MCP TriggerAutomation tool.
+ * - SCHEDULED: triggered by a scheduler job configured for the automation.
+ */
+export type AutomationTriggerType = "MANUAL" | "PLAYGROUND" | "SCHEDULED";
+
+export interface AutomationRunSummary {
+	RUN_ID: string;
+	PROJECT_ID: string;
+	AUTOMATION_ID?: string;
+	STARTED_AT: string;
+	COMPLETED_AT: string | null;
+	STATUS: RunStatus;
+	TRIGGER_TYPE?: AutomationTriggerType;
+	TOTAL_NODES?: number;
+	COMPLETED_NODES?: number;
+	FAILED_NODE_ID?: string;
+	ERROR_MESSAGE?: string | null;
+	RESULT_SUMMARY?: string | null;
+	DEFINITION_VERSION?: number;
+	DEFINITION_HASH?: string;
+}
+
+export type AutomationRunImplementationView =
+	| {
+			viewKind: "PYTHON";
+			legacyPython: boolean;
+			nodeType: "developer.python";
+			sourceIdentity:
+				| "developer.python"
+				| "developer.python.compatibility";
+			sourceNodeId: string;
+			historicalNodeType?: string;
+			source: string;
+	  }
+	| {
+			viewKind: "IMPLEMENTATION";
+			legacyPython: false;
+			nodeType: string;
+			config: Record<string, unknown>;
+			implementationId: string;
+			definitionHash: string;
+	  };
+
+/** Immutable definition metadata captured when an automation run starts. */
+export interface AutomationExecutedDefinition {
+	version?: number;
+	hash?: string;
+	snapshot?: string;
+}
+
+/** Per-iteration result record for loop nodes, as returned by buildNodeResults. */
+export interface AutomationNodeIteration {
+	/** 0-based iteration index matching the backend's buildNodeResults contract. */
+	index: number;
+	nodeResults: AutomationNodeResult[];
+}
+
+export interface AutomationNodeResult {
+	NODE_ID: string;
+	NODE_LABEL: string;
+	STATUS: NodeStatus;
+	DURATION_MS: number;
+	OUTPUT_PREVIEW: string | null;
+	OUTPUT_VALUE?: string | null;
+	/** Standard SEMOSS frame noun for row-shaped output in the live run Insight. */
+	OUTPUT_FRAME?: {
+		type: "FRAME_MAP";
+		value: {
+			frameType: string;
+			alias?: string;
+			queryName?: string;
+		};
+	};
+	ERROR_MESSAGE: string | null;
+	trace?: AutomationNodeTrace;
+	iterations?: AutomationNodeIteration[];
+}
+
+export interface AutomationSavedResultReference {
+	RESULT_ID: string;
+	NODE_ID: string;
+	PARENT_NODE_ID?: string | null;
+	ITERATION_INDEX?: number | null;
+	RESULT_KIND: "VALUE" | "TABLE" | "FILE";
+	ROW_COUNT?: number;
+	BYTE_COUNT: number;
+	CHECKSUM: string;
+	RETAIN_UNTIL: string;
+	CAPTURE_STATE: "RETAINED";
+	RESULT_ROLE?: string;
+	LOGICAL_NAME?: string;
+}
+
+export interface AutomationSavedTableColumn {
+	name: string;
+	type: string;
+}
+
+export interface AutomationSavedResultPage
+	extends AutomationSavedResultReference {
+	schema?: AutomationSavedTableColumn[];
+	rows?: unknown[][];
+	offset?: number;
+	nextOffset?: number;
+	hasMore?: boolean;
+	value?: unknown;
+	manifest?: unknown;
+}
+
+export interface AutomationRunDetail extends AutomationRunSummary {
+	DEFINITION_SNAPSHOT?: string;
+	/** Temporary workspace for an active or recently completed run on this server. */
+	executionInsightId?: string;
+	nodeResults: AutomationNodeResult[];
+	savedResults?: AutomationSavedResultReference[];
+}
+
+export interface AutomationToolContext {
+	id: string;
+	name: string;
+	message: string;
+	roomId: string;
+	projectId: string;
+	parameters: Record<string, unknown>;
+	toolResponse?: unknown;
+}

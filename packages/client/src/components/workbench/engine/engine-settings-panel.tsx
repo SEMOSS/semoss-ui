@@ -2,6 +2,7 @@ import { SettingsIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useEngine } from "@/hooks";
 import { EngineActivityPage } from "@/pages/engine/engine-activity-page";
 import { EngineMcpUsagePage } from "@/pages/engine/engine-mcp-usage-page";
@@ -10,7 +11,6 @@ import { EngineOverviewPage } from "@/pages/engine/engine-overview-page";
 import { EngineSettingsPage } from "@/pages/engine/engine-settings-page";
 import { EngineSmssPage } from "@/pages/engine/engine-smss-page";
 import { EngineUsagePage } from "@/pages/engine/engine-usage-page";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
 
 export interface EngineSettingsPanelProps {
 	/** Settings tabs to display; differs by engine type */
@@ -105,6 +105,45 @@ const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 		</div>
 	);
 };
+
+/**
+ * The tabs every engine workbench shows.
+ *
+ * Five of the six passed this exact array literal — thirty-one lines each. The
+ * sixth, database, adds Metadata; see `withTab`.
+ */
+export const ENGINE_SETTINGS_TABS: EngineSettingsPanelProps["tabs"] = [
+	{
+		name: "Overview",
+		component: "overview",
+		restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
+	},
+	{
+		name: "Usage",
+		component: "usage",
+		restrict: ["READ_ONLY", "EDIT", "OWNER"],
+	},
+	{
+		name: "MCP",
+		component: "mcp-usage",
+		restrict: ["READ_ONLY", "EDIT", "OWNER"],
+	},
+	{
+		name: "Activity Log",
+		component: "activity",
+		restrict: ["READ_ONLY", "EDIT", "OWNER"],
+	},
+	{
+		name: "Access Control",
+		component: "access-control",
+		restrict: ["EDIT", "OWNER"],
+	},
+	{
+		name: "SMSS",
+		component: "smss",
+		restrict: ["OWNER"],
+	},
+];
 
 /**
  * Builds the settings blueprint for one engine domain. Each domain calls

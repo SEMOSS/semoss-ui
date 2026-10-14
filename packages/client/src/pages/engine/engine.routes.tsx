@@ -9,6 +9,7 @@ import { DatabaseWorkbenchPage } from "./database-workbench-page";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineDescriptionSettingsPage } from "./engine-description-settings-page";
 import { EngineGuardrailSettingsPage } from "./engine-guardrail-settings-page";
+import { EngineImageSettingsPage } from "./engine-image-settings-page";
 import { EngineIndexPage } from "./engine-index-page";
 import { EngineLayout } from "./engine-layout";
 import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
@@ -120,6 +121,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -141,6 +147,22 @@ export const ENGINE_ROUTES: {
 							{
 								path: "access-control",
 								element: <EngineSettingsPage />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
+							},
+							{
+								path: "settings",
+								element: <EngineImageSettingsPage />,
 							},
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
@@ -266,6 +288,18 @@ export const ENGINE_ROUTES: {
 								element: <EngineSettingsPage />,
 							},
 							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
+							},
+							{
 								path: "settings",
 								element: <EngineSettingsLayout />,
 								children: [
@@ -274,6 +308,10 @@ export const ENGINE_ROUTES: {
 										element: (
 											<Navigate to="model" replace />
 										),
+									},
+									{
+										path: "image",
+										element: <EngineImageSettingsPage />,
 									},
 									{
 										path: "model",
@@ -404,6 +442,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -429,6 +472,22 @@ export const ENGINE_ROUTES: {
 							{
 								path: "access-control",
 								element: <EngineSettingsPage />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
+							},
+							{
+								path: "settings",
+								element: <EngineImageSettingsPage />,
 							},
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
@@ -522,6 +581,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -543,6 +607,22 @@ export const ENGINE_ROUTES: {
 							{
 								path: "access-control",
 								element: <EngineSettingsPage />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
+							},
+							{
+								path: "settings",
+								element: <EngineImageSettingsPage />,
 							},
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
@@ -636,6 +716,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -657,6 +742,22 @@ export const ENGINE_ROUTES: {
 							{
 								path: "access-control",
 								element: <EngineSettingsPage />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
+							},
+							{
+								path: "settings",
+								element: <EngineImageSettingsPage />,
 							},
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
@@ -741,6 +842,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -758,6 +864,22 @@ export const ENGINE_ROUTES: {
 							{
 								path: "access-control",
 								element: <EngineSettingsPage />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
+							},
+							{
+								path: "settings",
+								element: <EngineImageSettingsPage />,
 							},
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },

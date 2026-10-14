@@ -31,6 +31,9 @@ interface SkillSelectorProps {
 
 	/** Extra classes appended to the outer wrapper (e.g. for sizing) */
 	className?: string;
+
+	/** When false, hides skills tagged SYSTEM. Defaults to true (show all). */
+	showSystemSkills?: boolean;
 }
 
 /**
@@ -41,6 +44,7 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
 	disabled,
 	onChange,
 	className,
+	showSystemSkills = true,
 }) => {
 	const { t } = useTranslation("mcp");
 	const [search, setSearch] = useState<string>("");
@@ -59,13 +63,24 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
 	/**
 	 * Get all of the skills with lazy loading
 	 */
-	const getSkills = useIteratorPixel<App[], App>(
+	const hasSystemTag = (tag: string | string[] | undefined): boolean => {
+		if (!tag) return false;
+		return Array.isArray(tag) ? tag.includes("SYSTEM") : tag === "SYSTEM";
+	};
+
+	const getSkills = useIteratorPixel<
+		(App & { tag?: string | string[] })[],
+		App
+	>(
 		(limit, offset) =>
-			`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}projectType=["SKILL"], limit=[${limit}], offset=[${offset}])`,
+			`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}metaKeys=["tag"], projectType=["SKILL"], limit=[${limit}], offset=[${offset}])`,
 		(response) => (response.length < 25 ? -1 : Infinity),
-		(response) => response,
+		(response) =>
+			response.filter(
+				(item) => showSystemSkills || !hasSystemTag(item.tag),
+			),
 		{ limit: 25 },
-		[debouncedSearch],
+		[debouncedSearch, showSystemSkills],
 	);
 
 	/**

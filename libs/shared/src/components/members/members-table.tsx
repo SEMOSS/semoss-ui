@@ -9,7 +9,6 @@ import {
 	runPixel,
 } from "@semoss/sdk";
 import {
-	Avatar,
 	Button,
 	Dialog,
 	DialogContent,
@@ -29,13 +28,34 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
-import { AddMembersOverlay } from "./add-members";
+import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
+import { AddMembersOverlay, type AddMembersPeopleSource } from "./add-members";
 import { formatNum, parseNum } from "./common";
-import { MembersList, type MemberUser } from "./members-list";
+import {
+	MembersList,
+	type MembersListSource,
+	type MemberUser,
+} from "./members-list";
+import { PersonIdentity } from "./person-identity";
 
-interface MembersProps {
-	id: string;
-	type:
+/**
+ * Where the table reads, removes and adds members, for a host whose members are
+ * not a project's or engine's, such as a team's members or managers. Make it
+ * with useMemo so the table does not reload on every render.
+ */
+export interface MembersSource extends MembersListSource {
+	/** Lists and adds people in the add dialog */
+	people: AddMembersPeopleSource;
+	/** The add button's label, in place of "Add Members" */
+	addLabel?: string;
+}
+
+/** Props for {@link MembersTable}. */
+export interface MembersTableProps {
+	/** Id of the project or engine; unused with `source` */
+	id?: string;
+	/** Kind of resource; unused with `source` */
+	type?:
 		| "PROJECT"
 		| "ENGINE"
 		| "DATABASE"
@@ -45,9 +65,13 @@ interface MembersProps {
 		| "FUNCTION"
 		| "WORKSPACE"
 		| "GUARDRAIL";
+	/** Called after the viewer changes their own access level, which can change what they may do */
 	onChange?: () => void;
+	/** Whether the viewer is an owner; the table also reads the viewer's access level itself */
 	isOwner?: boolean;
+	/** Whether to use the admin endpoints, where the viewer can change anyone */
 	adminMode?: boolean;
+	/** The signed in user's id; the table reads it itself when left out */
 	currentUserId?: string;
 	/**
 	 * Read-only mode:
@@ -56,8 +80,24 @@ interface MembersProps {
 	 *   - renders the Permission column as static text (no dropdown)
 	 */
 	readOnly?: boolean;
+	/**
+	 * Whether the server can search the organization's Microsoft directory
+	 * (`msGraphLookup` in the system config). When true, adding members offers
+	 * a choice between existing users and the whole organization.
+	 */
+	isDirectoryAvailable?: boolean;
+	/**
+	 * Reads, removes and adds members through the host instead of a project's
+	 * or engine's endpoints. The table then has no permissions, and readOnly
+	 * decides whether the viewer can change the members.
+	 */
+	source?: MembersSource;
 }
 
+/**
+ * A searchable table of a project's or engine's members, or of a host's
+ * `source`, with buttons to add, edit and remove them as the viewer may.
+ */
 export const MembersTable = ({
 	id,
 	type,
@@ -66,7 +106,9 @@ export const MembersTable = ({
 	adminMode = false,
 	currentUserId,
 	readOnly = false,
-}: MembersProps) => {
+	isDirectoryAvailable = false,
+	source,
+}: MembersTableProps) => {
 	const [openAddMembers, setOpenAddMembers] = useState<boolean>(false);
 	const [listRefreshKey, setListRefreshKey] = useState<number>(0);
 	const [searchKey, setSearchKey] = useState<string>("");
@@ -77,6 +119,7 @@ export const MembersTable = ({
 	const [myPermission, setMyPermission] = useState<string>("");
 	const effectiveIsOwner = isOwner || myPermission === "OWNER";
 	const effectiveCurrentUserId = currentUserId ?? myUserId;
+	const isCurrentLogin = useIsCurrentLogin();
 
 	useEffect(() => {
 		runPixel<[Record<string, { id: string; name: string; email: string }>]>(
@@ -92,6 +135,8 @@ export const MembersTable = ({
 	}, []);
 
 	useEffect(() => {
+		// a host's members have no project or engine permission to read
+		if (source || !id) return;
 		const isProject = type === "PROJECT" || type === "WORKSPACE";
 		const fetchPermission = isProject
 			? getUserProjectPermission(id)
@@ -101,7 +146,7 @@ export const MembersTable = ({
 				if (perm) setMyPermission(perm);
 			})
 			.catch(() => undefined);
-	}, [id, type]);
+	}, [id, type, source]);
 
 	// Edit dialog state
 	const [editUser, setEditUser] = useState<MemberUser | null>(null);
@@ -121,7 +166,7 @@ export const MembersTable = ({
 	};
 
 	const saveUserEdit = async () => {
-		if (!editUser) return;
+		if (!editUser || !id) return;
 		const isProject = type === "PROJECT" || type === "WORKSPACE";
 
 		const payload: Record<string, unknown> = {
@@ -163,7 +208,7 @@ export const MembersTable = ({
 		if (success) {
 			toast.success("User updated successfully.");
 			// Editing your own permission can change what you're allowed to see/do
-			// here (and in ancestors gating on it), so let them resync — unlike
+			// here (and in ancestors gating on it), so let them resync, unlike
 			// adding a member, which never changes your own permission.
 			if (editUser.id === myUserId) {
 				setMyPermission(editPermission);
@@ -177,10 +222,11 @@ export const MembersTable = ({
 	return (
 		<div className="w-full">
 			{/* Header Section */}
-			<div className="flex flex-column gap-[10px] rounded-xl rounded-ee-none rounded-es-none border-gray-200 border-b bg-muted p-4 align-start">
-				<div className="flex h-[36px] w-full flex-column gap-2">
+			<div className="flex flex-column gap-2.5 rounded-xl rounded-ee-none rounded-es-none border-border border-b bg-muted p-4 align-start">
+				<div className="flex h-9 w-full flex-column gap-2">
 					<InputGroup className="flex h-auto gap-1 self-stretch bg-background px-2 py-1 align-center">
 						<InputGroupInput
+							aria-label="Search"
 							placeholder="Search"
 							value={searchKey}
 							onChange={(e) => setSearchKey(e.target.value)}
@@ -190,7 +236,8 @@ export const MembersTable = ({
 						</InputGroupAddon>
 					</InputGroup>
 					{!readOnly &&
-						(adminMode ||
+						(source ||
+							adminMode ||
 							myPermission === "OWNER" ||
 							myPermission === "EDIT") && (
 							<Button
@@ -201,7 +248,9 @@ export const MembersTable = ({
 							>
 								<div className="flex flex-column items-center gap-2">
 									<Plus />
-									<span>Add Members</span>
+									<span>
+										{source?.addLabel ?? "Add Members"}
+									</span>
 								</div>
 							</Button>
 						)}
@@ -220,6 +269,7 @@ export const MembersTable = ({
 				currentUserId={effectiveCurrentUserId}
 				myPermission={myPermission}
 				readOnly={readOnly}
+				source={source}
 			/>
 
 			{/** Add members overlay */}
@@ -237,34 +287,34 @@ export const MembersTable = ({
 					}
 				}}
 				adminMode={adminMode}
+				isDirectoryAvailable={isDirectoryAvailable}
+				people={source?.people}
 			/>
 
-			{/* Edit member dialog — rendered here, outside the table */}
+			{/* Edit member dialog: rendered here, outside the table */}
 			{editUser && (
 				<Dialog open onOpenChange={() => setEditUser(null)}>
 					<DialogContent>
-						<DialogTitle>Edit Member</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Edit Member
+						</DialogTitle>
 						<DialogDescription>
 							Update this member's permission level for the
 							resource.
 						</DialogDescription>
 						<div className="flex flex-col gap-4 py-2">
 							{/* User card */}
-							<div className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2.5">
-								<Avatar className="h-9 w-9 items-center justify-center bg-muted text-muted-foreground text-sm">
-									{editUser.name.charAt(0).toUpperCase()}
-								</Avatar>
-								<div className="flex flex-col">
-									<span className="font-medium text-sm">
-										{editUser.name}
-									</span>
-									<span className="text-muted-foreground text-xs">
-										id: {editUser.id}
-									</span>
-									<span className="text-muted-foreground text-xs">
-										email: {editUser.email}
-									</span>
-								</div>
+							<div className="rounded-md border bg-muted/40 px-3 py-2.5">
+								<PersonIdentity
+									name={editUser.name}
+									type={editUser.type}
+									id={editUser.id}
+									email={editUser.email}
+									isCurrentLogin={isCurrentLogin(
+										editUser.type,
+										editUser.id,
+									)}
+								/>
 							</div>
 
 							<div className="flex flex-col gap-1.5">
@@ -278,14 +328,14 @@ export const MembersTable = ({
 									</SelectTrigger>
 									<SelectContent className="w-full">
 										<SelectItem value="READ_ONLY">
-											Viewer
+											Read-Only
 										</SelectItem>
 										<SelectItem value="EDIT">
 											Editor
 										</SelectItem>
 										{(effectiveIsOwner || adminMode) && (
 											<SelectItem value="OWNER">
-												Owner
+												Author
 											</SelectItem>
 										)}
 									</SelectContent>

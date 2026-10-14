@@ -106,7 +106,7 @@ export const ListenerActionOverlay = observer(
 		return (
 			<>
 				<DialogHeader>
-					<DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
 						{`${isNewAction ? "Add" : "Edit"} ${listener}`}
 					</DialogTitle>
 				</DialogHeader>

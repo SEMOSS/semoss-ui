@@ -11,7 +11,8 @@ export const isProjectType = (type?: string): boolean => {
 		type === "BLOCKS" ||
 		type === "CODE" ||
 		type === "INSIGHT" ||
-		type === "NOTEBOOK"
+		type === "NOTEBOOK" ||
+		type === "AUTOMATION"
 	);
 };
 
@@ -33,6 +34,8 @@ export const getProjectLabel = (type?: Project["project_type"]): string => {
 		return "Insight";
 	} else if (type === "NOTEBOOK") {
 		return "Notebook";
+	} else if (type === "AUTOMATION") {
+		return "Automation";
 	}
 
 	return "Project";
@@ -86,4 +89,49 @@ export const isOwnerPermission = (
 	permission?: number | string | null,
 ): boolean => {
 	return permission === 1 || permission === "OWNER";
+};
+
+/** An access filter the catalog filter box offers, as the backend counts it. */
+export type CatalogAccessFilter =
+	| "CREATED_BY_ME"
+	| "OWNER"
+	| "EDIT"
+	| "READ_ONLY";
+
+/** The access filters, in display order, with their labels. */
+export const CATALOG_ACCESS_FILTERS: readonly {
+	value: CatalogAccessFilter;
+	label: string;
+}[] = [
+	{ value: "CREATED_BY_ME", label: "Created by Me" },
+	{ value: "OWNER", label: "Owner" },
+	{ value: "EDIT", label: "Can Edit" },
+	{ value: "READ_ONLY", label: "View Only" },
+];
+
+/** The permission level each access filter keeps. */
+const ACCESS_PERMISSION_LEVELS: Partial<Record<CatalogAccessFilter, number>> = {
+	OWNER: 1,
+	EDIT: 2,
+	READ_ONLY: 3,
+};
+
+/**
+ * The `MyProjects` / `MyEngines` arguments for the chosen access filters: the
+ * permission filters keep a resource the user holds any of them on, and
+ * Created by Me narrows to what the user made.
+ *
+ * @param access - The chosen access filters.
+ * @returns The arguments, each followed by `, `; empty when none are chosen.
+ */
+export const buildAccessFilterParams = (
+	access: readonly CatalogAccessFilter[],
+): string => {
+	const levels = access.flatMap((filter) => {
+		const level = ACCESS_PERMISSION_LEVELS[filter];
+		return level === undefined ? [] : [level];
+	});
+	return `${levels.length > 0 ? `effectivePermissions=${JSON.stringify(levels)}, ` : ""}${
+		access.includes("CREATED_BY_ME") ? "createdByMe=[true], " : ""
+	}`;
 };

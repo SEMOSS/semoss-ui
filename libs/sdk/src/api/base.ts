@@ -84,7 +84,10 @@ export const runPixel = async <O extends unknown[] | []>(
 		const { output, operationType } = p;
 
 		if (operationType.indexOf("ERROR") > -1) {
-			errors.push(output as string);
+			// output isn't always a string - avoid "[object Object]"
+			errors.push(
+				typeof output === "string" ? output : JSON.stringify(output),
+			);
 		}
 	}
 
@@ -162,7 +165,10 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
 		const { output, operationType } = p;
 
 		if (operationType.indexOf("ERROR") > -1) {
-			errors.push(output as string);
+			// output isn't always a string - avoid "[object Object]"
+			errors.push(
+				typeof output === "string" ? output : JSON.stringify(output),
+			);
 		}
 	}
 

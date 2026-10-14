@@ -39,9 +39,11 @@ export const PromptBuilderContextTestDialog = (props: {
 			open={props.open}
 			onOpenChange={(open) => !open && props.close()}
 		>
-			<DialogContent className="max-w-2xl">
+			<DialogContent aria-describedby={undefined} className="max-w-2xl">
 				<DialogHeader>
-					<DialogTitle>Test Prompt</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Test Prompt
+					</DialogTitle>
 				</DialogHeader>
 				<div className="flex h-[40vh] w-full items-center justify-center">
 					{loading ? (

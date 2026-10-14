@@ -28,6 +28,8 @@ import {
 	ContextMenuTrigger,
 	Muted,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { getErrorMessage } from "@semoss/utility/error";
 import type {
 	JupyterCell,
 	JupyterCellType,
@@ -102,7 +104,8 @@ export interface NotebookHandle {
  * run server-side (Python via the `Py()` reactor) with their outputs mapped
  * back to nbformat. Edits are surfaced through `onChange`; running and
  * serializing are also available imperatively via `ref` (`NotebookHandle`).
- * File I/O (load / save / download) is owned by the `FileNotebook` wrapper.
+ * File I/O (load / save / download) is owned by the caller — the workbench's
+ * `FileNotebookView`, or the terminal's notebook tab.
  */
 export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 	(
@@ -163,9 +166,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 				setParseError(null);
 			} catch (e) {
 				setNotebook(null);
-				setParseError(
-					e instanceof Error ? e.message : "Invalid notebook",
-				);
+				setParseError(getErrorMessage(e, "Invalid notebook"));
 			}
 		}, [content]);
 
@@ -309,7 +310,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 					}));
 				}
 			} catch (e) {
-				const message = e instanceof Error ? e.message : String(e);
+				const message = getErrorMessage(e);
 				outputs = toCellOutputs([], message, true, executionCount);
 			} finally {
 				currentJobIdRef.current = null;
@@ -514,12 +515,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 			if (!notebook) return;
 			const script = exportAsPythonScript(notebook);
 			const blob = new Blob([script], { type: "text/x-python" });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = "notebook.py";
-			a.click();
-			URL.revokeObjectURL(url);
+			downloadBlob(blob, "notebook.py");
 		};
 
 		/** Persist an edited cell source (code or markdown) so it can be saved. */
@@ -680,8 +676,9 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 			});
 		};
 
-		// Expose running + serialization so a wrapper (e.g. FileNotebook) can drive
-		// the notebook from its own toolbar and persist the current state.
+		// Expose running + serialization so a wrapper (e.g. the workbench's
+		// notebook panel) can drive the notebook from its own toolbar and
+		// persist the current state.
 		useImperativeHandle(ref, () => ({
 			runAll: runAllCells,
 			interrupt: interruptExecution,
@@ -786,7 +783,9 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 																	1,
 														};
 
-													let cellBody: React.ReactElement;
+													let cellBody: React.ReactElement<{
+														dragHandleProps?: React.HTMLAttributes<HTMLElement>;
+													}>;
 													if (
 														cell.cell_type ===
 														"code"

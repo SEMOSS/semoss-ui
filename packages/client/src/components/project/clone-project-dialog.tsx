@@ -27,7 +27,8 @@ const schema = z.object({
 	isGlobal: z.boolean().default(false),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormInputValues = z.input<typeof schema>;
+type FormValues = z.output<typeof schema>;
 
 export interface CloneProjectDialogProps {
 	/** Track if the dialog is open */
@@ -51,7 +52,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 					? "Notebook"
 					: "App";
 
-	const form = useForm<FormValues>({
+	const form = useForm<FormInputValues, unknown, FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: {
 			name: "",
@@ -139,7 +140,9 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 		>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Clone {label}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Clone {label}
+					</DialogTitle>
 					<DialogDescription>
 						Create a new {label.toLowerCase()} from this template.
 					</DialogDescription>

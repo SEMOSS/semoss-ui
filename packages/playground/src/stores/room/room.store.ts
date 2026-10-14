@@ -1,4 +1,13 @@
-import { makeAutoObservable, runInAction } from "mobx";
+import { makeAutoObservable, observable, runInAction } from "mobx";
+import type { StoreApi } from "zustand";
+import { getI18n } from "@semoss/i18n";
+import {
+	FILE_PANEL_TYPES,
+	type FilePanelMode,
+	type FilePanelValue,
+	getFilePanelType,
+	isFilePanelType,
+} from "@semoss/panels";
 import {
 	getPixelAsyncResult,
 	console as getPixelConsole,
@@ -6,19 +15,30 @@ import {
 	runPixelAsync,
 	uploadInsight,
 } from "@semoss/sdk/react";
-import { FlexLayout, type ThemeMap } from "@semoss/shared";
-import { STREAMING_PLACEHOLDER_ID } from "@/constants";
+import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
+import { stringifyJsonWithSortedKeys } from "@semoss/utility/json";
 import {
-	type AbstractMessageStore,
-	createMessageStore,
-	InputMessageStore,
-	ResponseMessageStore,
-	ToolStore,
-} from "@/stores";
+	createWorkbenchStore,
+	type WorkbenchPanelConfigAny,
+	type WorkbenchPanelId,
+	type WorkbenchPanelParams,
+	type WorkbenchPanelType,
+	type WorkbenchSnapshot,
+	type WorkbenchState,
+} from "@semoss/workbench";
+import { STREAMING_PLACEHOLDER_ID } from "@/constants";
+import { ChatToolsStore } from "@/features/chat-tools/chat-tools.store";
+import { ConnectorsStore } from "@/features/connectors/connectors.store";
+import { ContextItemsStore } from "@/features/conversation/context-items.store";
+import type { AbstractMessageStore } from "@/stores/message/abstract-message.store";
 import {
 	reconnectAgentRun,
 	reconstructAllSubagents,
 } from "@/stores/message/agent-harness";
+import { InputMessageStore } from "@/stores/message/input-message.store";
+import { ResponseMessageStore } from "@/stores/message/response-message.store";
+import { createMessageStore } from "@/stores/message/utility";
+import { ToolStore } from "@/stores/tool/tool.store";
 import type {
 	Engine,
 	InputPixelMessage,
@@ -32,10 +52,28 @@ import type {
 	Workspace,
 } from "@/types";
 import {
+	getRoomFileMode,
+	ROOM_PANEL_TYPES,
+	ROOM_SIDEBAR_LAYOUT,
+} from "./room-sidebar";
+import {
 	type StreamHandlers,
 	StreamJobController,
 	type StreamOptions,
 } from "./stream-job-controller";
+
+/**
+ * The MCPs the backend stores for a room. Workspace MCPs and the room's own
+ * toolbox, which is read from the room folder, are reported but not stored.
+ */
+const getStoredMcp = (mcp: MCPConfig[] = []): MCPConfig[] =>
+	mcp.filter((item) => !item?.fromWorkspace && !item?.fromRoom);
+
+/**
+ * A comparable key for room options as the backend stores them.
+ */
+const getStoredOptionsKey = (options: { mcp?: MCPConfig[] }): string =>
+	stringifyJsonWithSortedKeys({ ...options, mcp: getStoredMcp(options.mcp) });
 
 interface RoomStoreInterface {
 	/**
@@ -87,6 +125,13 @@ interface RoomStoreInterface {
 	root: ResponseMessageStore;
 
 	/**
+	 * The agent's scripted opening message, rendered as the first bubble in
+	 * the transcript. Re-read from the workspace on every initialize() — not
+	 * a message, never sent to the model. Empty when there is none.
+	 */
+	agentGreeting: string;
+
+	/**
 	 * Active tools
 	 */
 	tools: Record<string, ToolStore>;
@@ -134,27 +179,27 @@ interface RoomStoreInterface {
 		 * Temperature of the model (0–1). Only used when enableTemperature is true.
 		 */
 		temperature?: number;
+
+		/**
+		 * How this chat runs each default tool: `auto`, `ask`, or `disabled`,
+		 * by tool name, for the tools set apart from their usual way. The
+		 * browser sends the tools that are not disabled with every chat
+		 * message; the backend only stores the setting.
+		 */
+		defaultTools?: Record<string, "auto" | "ask" | "disabled">;
 	};
 
 	/**
 	 *  Sidebar information
 	 */
 	sidebar: {
-		/** Track if the sidebar is open */
+		/**
+		 * Track if the sidebar is open.
+		 *
+		 * Only whether the panel is on screen. What is *in* it lives in the
+		 * room's workbench store, which outlives every open/close.
+		 */
 		isOpen: boolean;
-
-		/**
-		 * FlexLayout model
-		 */
-		model: FlexLayout.Model;
-
-		/**
-		 * Count of the model;
-		 */
-		counter: number;
-
-		/** Per-path counter used to force-remount file editor tabs */
-		fileKeys: Record<string, number>;
 	};
 }
 
@@ -182,6 +227,7 @@ export class RoomStore {
 		},
 		model: null as unknown as Engine,
 		root: null as unknown as ResponseMessageStore,
+		agentGreeting: "",
 		tools: {},
 		options: {
 			predefinedPrompts: [],
@@ -191,45 +237,125 @@ export class RoomStore {
 		},
 		sidebar: {
 			isOpen: false,
-			fileKeys: {},
-			model: FlexLayout.Model.fromJson({
-				global: {
-					borderEnableTabScrollbar: true,
-					tabSetEnableTabScrollbar: true,
-				},
-				borders: [],
-				layout: {
-					type: "row",
-					weight: 0,
-					children: [],
-				},
-			}),
-			counter: 0,
 		},
 	};
 
-	constructor(
-		theme: ThemeMap["playground"],
-		roomId: string,
-		insightId: string = "new",
-	) {
+	/**
+	 * Key of the options the backend holds, as of the last read or save. A
+	 * save that would not change them is skipped.
+	 */
+	private _storedOptionsKey: string | null = null;
+
+	/**
+	 * The dock backing the sidebar.
+	 *
+	 * Owned by the room rather than by `<Workbench>` for two reasons: panels are
+	 * opened from outside React (a tool store reacting to a stream) and while
+	 * the sidebar is closed, and the arrangement has to survive the sidebar
+	 * being closed and reopened, which unmounts the shell.
+	 *
+	 * Read it to drive the sidebar from React (`useStore(room.workbench, …)`);
+	 * the `openSidebarPanel` family covers everything the room itself needs.
+	 */
+	readonly workbench: StoreApi<WorkbenchState>;
+
+	/** Stable initialization reference shared by the store and every sidebar mount. */
+	sidebarSnapshot: WorkbenchSnapshot = ROOM_SIDEBAR_LAYOUT;
+	/**
+	 * The default tools the room's chat sends and the user's decisions on the
+	 * calls that wait for them. Its own store with its own observability, like
+	 * the dock, and so are the two below.
+	 */
+	readonly chatTools: ChatToolsStore;
+
+	/** The connectors switched on for the room and the accounts they sign in with. */
+	readonly connectors: ConnectorsStore;
+
+	/** The files queued for the room's next message. */
+	readonly contextItems: ContextItemsStore;
+
+	constructor(options: {
+		theme: ThemeMap["playground"];
+		roomId: string;
+		insightId?: string;
+		/**
+		 * The sidebar's panel blueprints. Handed in rather than imported: they
+		 * live in `@/components`, which imports `@/stores`, so importing them
+		 * here would close a module cycle. The composition root passes them
+		 * down.
+		 */
+		panelComponents: Record<string, WorkbenchPanelConfigAny>;
+	}) {
+		const { theme, roomId, insightId = "new", panelComponents } = options;
 		this._theme = theme;
 		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
 
-		// make it observable
-		makeAutoObservable(this);
+		this.workbench = createWorkbenchStore({ components: panelComponents });
+		this.workbench
+			.getState()
+			.layout.actions.loadSnapshot(this.sidebarSnapshot);
+		this._syncSidebarFileMode();
 
-		// increment the counter whenever the model changes
-		this._store.sidebar.model.addChangeListener((action) => {
-			this.tickSidebar(action);
+		this.chatTools = new ChatToolsStore(this);
+		this.connectors = new ConnectorsStore(this);
+		this.contextItems = new ContextItemsStore();
+
+		// make it observable -- the dock is a zustand store with its own
+		// subscription model, and deep-observing it would be nonsense
+		makeAutoObservable(this, {
+			workbench: false,
+			chatTools: false,
+			connectors: false,
+			contextItems: false,
+			sidebarSnapshot: observable.ref,
 		});
+
+		this._watchSidebar();
 	}
 
 	/**
-	 * Getters
+	 * Mirror the dock's two facts the rest of the room cares about: a tool whose
+	 * panel was closed is no longer open, and a sidebar with nothing left in it
+	 * closes itself.
+	 *
+	 * This is the replacement for the FlexLayout change listener, and the reason
+	 * the room store holds the dock: both reactions have to fire whether the
+	 * close came from the tab's × or from `closeTool`.
 	 */
+	private _watchSidebar = (): void => {
+		let previous = this.workbench.getState().layout.panels;
+
+		this.workbench.subscribe((state) => {
+			const panels = state.layout.panels;
+			if (panels === previous) {
+				return;
+			}
+
+			const closed = Object.values(previous).filter(
+				(record) => !(record.id in panels),
+			);
+			previous = panels;
+
+			for (const record of closed) {
+				if (record.type !== ROOM_PANEL_TYPES.TOOL) {
+					continue;
+				}
+				const toolId = (record.config as { toolId?: string })?.toolId;
+				const tool = toolId ? this.getTool(toolId) : null;
+				tool?.setIsOpen(false);
+			}
+
+			if (
+				this._store.sidebar.isOpen &&
+				state.layout.openPanelIds.length === 0
+			) {
+				this.closeSidebar();
+			}
+		});
+	};
+
 	/**
 	 * Get the id of the roomId
 	 */
@@ -291,12 +417,13 @@ export class RoomStore {
 	}
 
 	/**
-	 * Surface an error on the room. Public so callers outside this store — e.g.
-	 * ToolSaveController, when a tool-phase stop fails to persist — can report a
-	 * failure that isn't already caught by runRoomPixel/streamJob's own
-	 * setErrorOnFail handling.
+	 * Surface an error on the room, or clear it with null. Public so callers
+	 * outside this store — e.g. ToolSaveController, when a tool-phase stop fails
+	 * to persist — can report a failure that isn't already caught by
+	 * runRoomPixel/streamJob's own setErrorOnFail handling, and so a rewrite
+	 * starts its turn without the last one's error.
 	 */
-	setError = (error: Error): void => {
+	setError = (error: Error | null): void => {
 		runInAction(() => {
 			this._store.error = error;
 		});
@@ -321,6 +448,13 @@ export class RoomStore {
 	 */
 	get model() {
 		return this._store.model;
+	}
+
+	/**
+	 * Get the agent's scripted opening message (see RoomStoreInterface.agentGreeting).
+	 */
+	get agentGreeting() {
+		return this._store.agentGreeting;
 	}
 
 	/**
@@ -451,13 +585,10 @@ export class RoomStore {
 	 * (not context window - this is the actual sum of all input + output tokens)
 	 */
 	get totalTokensConsumed(): number {
-		let total = 0;
-		for (const message of this.history) {
-			if (message.tokens) {
-				total += message.tokens;
-			}
-		}
-		return total;
+		return this.history.reduce(
+			(total, message) => total + (message.tokens || 0),
+			0,
+		);
 	}
 
 	/**
@@ -516,8 +647,11 @@ export class RoomStore {
 	/** Actions */
 	/**
 	 * Initialize the room and load messages and options if they are there
+	 *
+	 * @param options - `isNew`: the room was just created, so it has no tool
+	 * file for its connectors to be read from.
 	 */
-	initialize = async () => {
+	initialize = async ({ isNew = false }: { isNew?: boolean } = {}) => {
 		try {
 			// get all of the messages, get all the options
 			const response = await this.runRoomPixel<
@@ -536,11 +670,20 @@ export class RoomStore {
 				OPTIONS?: RoomStoreInterface["options"];
 				ROOM_NAME?: string;
 			};
+			// read before the workspace merge below edits the nested objects
+			const storedOptionsKey = optionsOutput.OPTIONS
+				? getStoredOptionsKey(optionsOutput.OPTIONS)
+				: null;
 
 			// sync the insight ID
 			runInAction(() => {
 				this._store.insightId = response.insightId;
 			});
+			this._syncSidebarFileMode();
+
+			// the insight is bound to the room now, so the room's tool file can
+			// be read, unless the room was only just created
+			void this.connectors.restore({ isNew: isNew });
 
 			// create the root
 			const root = new ResponseMessageStore(this, {
@@ -575,7 +718,7 @@ export class RoomStore {
 			let activeModelId = this._store.model?.engine_id;
 
 			// This is done as seperate loops because of linking
-			for (const pixelMessage of messageOutput) {
+			messageOutput.forEach((pixelMessage) => {
 				if (pixelMessage.io === "INPUT") {
 					activeModelId = pixelMessage.modelId;
 				}
@@ -590,12 +733,10 @@ export class RoomStore {
 						pixelMessage.summaryLeafMessageId || "",
 					message: message,
 				};
-			}
+			});
 
 			// link the messages
-			for (const mId in messages) {
-				const m = messages[mId];
-
+			Object.values(messages).forEach((m) => {
 				const parent = messages[m.parentMessageId];
 				if (parent) {
 					parent.message.addChild(m.message);
@@ -604,14 +745,18 @@ export class RoomStore {
 					const pseudoParent = messages[m.summaryLeafMessageId];
 					if (pseudoParent) {
 						pseudoParent.message.addChild(m.message);
-						(
-							pseudoParent.message as ResponseMessageStore
-						).setConversationCompactedAbove?.(true);
+						if (
+							pseudoParent.message instanceof ResponseMessageStore
+						) {
+							pseudoParent.message.setConversationCompactedAbove(
+								true,
+							);
+						}
 					} else {
 						root.addChild(m.message);
 					}
 				}
-			}
+			});
 
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
@@ -655,6 +800,7 @@ export class RoomStore {
 			// named a model of its own - a room the user has already chatted in
 			// keeps the model those messages ran on.
 			let agentDefaultModelId = "";
+			let agentGreeting = "";
 
 			if (!newOptions.workspace?.workspace_id) {
 				delete newOptions.workspace;
@@ -664,7 +810,10 @@ export class RoomStore {
 						PixelMessage[],
 						{ OPTIONS?: Workspace }, // partial because this doesn't work for old rooms
 					]
-				>(`GetWorkspace('${newOptions.workspace?.workspace_id}')`);
+				>(
+					`GetWorkspace('${newOptions.workspace?.workspace_id}')`,
+					false,
+				);
 
 				const workspaceOutput = workspaceResponse.pixelReturn[0]
 					.output as Workspace;
@@ -676,6 +825,9 @@ export class RoomStore {
 
 				agentDefaultModelId =
 					workspaceOutput?.config_json?.model_id ?? "";
+				agentGreeting = workspaceOutput?.config_json?.greeting_enabled
+					? (workspaceOutput?.config_json?.greeting ?? "")
+					: "";
 
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (
@@ -684,10 +836,10 @@ export class RoomStore {
 				) {
 					// Create a map of existing MCPs by composite key
 					const existingMCPs = new Map<string, MCPConfig>();
-					for (const mcp of newOptions.mcp || []) {
+					(newOptions.mcp || []).forEach((mcp) => {
 						const key = `${mcp.id}-${mcp.type}`;
 						existingMCPs.set(key, mcp);
-					}
+					});
 
 					// Add workspace MCPs with fromWorkspace flag
 					const workspaceMCPs = workspaceOutput.mcp.map((mcp) => ({
@@ -714,11 +866,16 @@ export class RoomStore {
 			}
 
 			// set the model based on the history, or on the agent's default when
-			// the room has never named one
+			// the room has never named one. A room that already holds that model,
+			// as a new room does, has nothing to look up.
 			const modelIdToLoad = activeModelId || agentDefaultModelId;
-			if (modelIdToLoad) {
+			if (
+				modelIdToLoad &&
+				modelIdToLoad !== this._store.model?.engine_id
+			) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
 					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(modelIdToLoad)})`,
+					false,
 				);
 
 				const model = pixelReturn[0].output[0];
@@ -732,6 +889,9 @@ export class RoomStore {
 			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
+				this._storedOptionsKey = storedOptionsKey;
+
+				this._store.agentGreeting = agentGreeting;
 
 				// Restore the persisted room name so the breadcrumb shows it on
 				// load/refresh (GetPlaygroundMessages doesn't carry the name).
@@ -791,6 +951,7 @@ export class RoomStore {
 					...fetched.OPTIONS,
 					mcp: merged,
 				});
+				this._storedOptionsKey = getStoredOptionsKey(fetched.OPTIONS);
 			});
 		} catch (e) {
 			// non-critical — swallow errors so the chat isn't disrupted
@@ -799,26 +960,31 @@ export class RoomStore {
 	};
 
 	/**
-	 * UpdateRoomOptions
+	 * UpdateRoomOptions. Skips the save when the backend already holds these
+	 * options, and leaves the room's loading state alone, since it runs ahead
+	 * of the turn that uses them.
 	 * @param options - full set of new options
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
-			// Filter out MCPs the backend reports but does not store: workspace MCPs
-			// and the room's own toolbox, which is read from the room folder.
 			const optionsToSave = {
 				...options,
 				modelId: this._store.model.engine_id,
-				mcp: options.mcp.filter(
-					(mcp) => !mcp?.fromWorkspace && !mcp?.fromRoom,
-				),
+				mcp: getStoredMcp(options.mcp),
 			};
 
-			await this.runRoomPixel(
-				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
-					optionsToSave,
-				)}]);`,
-			);
+			const optionsKey = getStoredOptionsKey(optionsToSave);
+			if (optionsKey !== this._storedOptionsKey) {
+				await this.runRoomPixel(
+					`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
+						optionsToSave,
+					)}]);`,
+					false,
+				);
+				runInAction(() => {
+					this._storedOptionsKey = optionsKey;
+				});
+			}
 
 			this.setOptions(options);
 		} catch (e) {
@@ -852,27 +1018,16 @@ export class RoomStore {
 		tool.syncMessage(message, part, options);
 	};
 
+	/** Every tool this room has seen, by id. */
+	get tools() {
+		return this._store.tools;
+	}
+
 	/**
 	 * Get a tool
 	 * @param toolId - the id of the tool
 	 */
 	getTool = (toolId: string): ToolStore => {
-		return this._store.tools[toolId] || null;
-	};
-
-	/**
-	 * Get a tool by nodeId
-	 * @param nodeId - the id of the tool
-	 */
-	getToolByNodeId = (nodeId: string): ToolStore => {
-		if (!nodeId.startsWith("tool--")) {
-			return null as unknown as ToolStore;
-		}
-
-		// strip out the id from the nodeId
-		const toolId = nodeId.replace("tool--", "");
-
-		//get the tool based on the id
 		return this._store.tools[toolId] || null;
 	};
 
@@ -902,141 +1057,183 @@ export class RoomStore {
 	/**
 	 * Sidebar
 	 */
-	/**
-	 * Check if a sidebar node is selected
-	 * @param nodeId - node id to check
-	 */
-	isSidebarNodeSelected = (nodeId: string): boolean => {
-		if (!this._store.sidebar.isOpen) {
-			return false;
-		}
-
-		let isSelected = false;
-		this._store.sidebar.model.visitNodes((node) => {
-			if (node.getType() === "tabset") {
-				const tabset = node as FlexLayout.TabSetNode;
-				if (tabset.getSelectedNode()?.getId() === nodeId) {
-					isSelected = true;
-					return;
-				}
-			}
-		});
-
-		return isSelected;
-	};
+	/** The file scope every file panel in this sidebar is opened in. */
+	get fileMode() {
+		return getRoomFileMode(this._store.insightId);
+	}
 
 	/**
-	 * Add a sidebar node and open it
-	 * @param node - node to open. This will select and/or create the node
-	 */
-	addSidebarNode = (
-		nodeId: string,
-		options: {
-			[key: string]: unknown;
-		},
-	): void => {
-		// mark as open
-		this._store.sidebar.isOpen = true;
-
-		// select the node if there
-		const selectedNode = this._store.sidebar.model.getNodeById(nodeId);
-		if (selectedNode) {
-			this._store.sidebar.model.doAction(
-				FlexLayout.Actions.selectTab(selectedNode.getId()),
-			);
-			return;
-		}
-
-		// create the node if it is not there
-		// where to add the node
-		const addId =
-			this._store.sidebar.model.getActiveTabset()?.getId() ||
-			this._store.sidebar.model.getRoot().getChildren()[0]?.getId() ||
-			"";
-
-		// create and select the panel
-		this._store.sidebar.model.doAction(
-			FlexLayout.Actions.addNode(
-				{
-					...options,
-					id: nodeId,
-				},
-				addId,
-				FlexLayout.DockLocation.CENTER,
-				-1,
-				true,
-			),
-		);
-	};
-
-	/**
-	 * Open or focus a sidebar file-editor tab for a path.
+	 * Reveal a sidebar panel, opening the sidebar itself and creating the panel
+	 * if it is not already there.
 	 *
-	 * When `forceRefresh` is true and the tab already exists, increments a
-	 * config `refreshKey` to force a remount of the editor for that tab.
+	 * Identity is the blueprint's `matches` over `config`, so the callers no
+	 * longer mint node ids to dedupe by — a tool panel is "the same panel" when
+	 * its `toolId` matches, whatever its instance id happens to be.
+	 *
+	 * @param type - Which blueprint to open.
+	 * @param config - The instance's parameters, and what it dedupes on.
+	 * @param name - Tab label for a newly created instance.
+	 * @return The revealed or created panel id.
 	 */
-	openFileEditorSidebarNode = (
-		path: string,
-		options?: {
-			name?: string;
-			forceRefresh?: boolean;
-		},
-	): void => {
-		const fileName =
-			options?.name ?? path.split("/").filter(Boolean).pop() ?? path;
-		const model = this._store.sidebar.model;
+	openSidebarPanel = (
+		type: WorkbenchPanelType,
+		config: WorkbenchPanelParams = {},
+		name?: string,
+	): WorkbenchPanelId => {
+		this._store.sidebar.isOpen = true;
+		return this.workbench
+			.getState()
+			.layout.actions.selectPanel(type, config, name ? { name } : {});
+	};
 
-		const matchedNodes: FlexLayout.TabNode[] = [];
-		model.visitNodes((node) => {
-			if (
-				matchedNodes.length > 0 ||
-				!(node instanceof FlexLayout.TabNode)
-			) {
-				return;
-			}
+	/** Adopt a draft's arrangement before mounting this room's first sidebar. */
+	restoreSidebarLayout = (snapshot: WorkbenchSnapshot): void => {
+		this.sidebarSnapshot = snapshot;
+		this.workbench.getState().layout.actions.loadSnapshot(snapshot);
+	};
 
-			const config = node.getConfig() as { path?: string } | undefined;
-			if (
-				node.getComponent() === "room-file-editor" &&
-				config?.path === path
-			) {
-				matchedNodes.push(node);
-			}
-		});
-
-		const selectedNode = matchedNodes[0];
-		if (selectedNode) {
-			if (options?.forceRefresh) {
-				const prev = this._store.sidebar.fileKeys[path] ?? 0;
-				this._store.sidebar.fileKeys[path] = prev + 1;
-			}
-
-			model.doAction(FlexLayout.Actions.selectTab(selectedNode.getId()));
-			this._store.sidebar.isOpen = true;
+	/** Restore the existing work area, or open Room settings when it is empty. */
+	openSidebar = (): void => {
+		if (this.workbench.getState().layout.openPanelIds.length === 0) {
+			this.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
 			return;
 		}
 
-		this.addSidebarNode(`FILE--${path}`, {
-			type: "tab",
-			name: fileName,
-			component: "room-file-editor",
-			config: {
-				name: fileName,
-				path,
-			},
-			enableClose: true,
-		});
+		this._store.sidebar.isOpen = true;
 	};
 
 	/**
-	 * Remove a sidebar node and close if last one
-	 * @param node - node to remove
+	 * Reveal the sidebar's editor for a file, opening it if it is not there.
+	 *
+	 * Which editor depends on the extension — `getFilePanelType` picks between
+	 * the code, markdown, notebook, image, PDF, pptx and download panels.
+	 *
+	 * @param path - The file's insight-relative path.
+	 * @param name - Tab label; defaults to the file's own name.
+	 * @return The revealed or created panel id.
 	 */
-	removeSidebarNode = (nodeId: string): void => {
-		// trigger the action to remove it
-		this._store.sidebar.model.doAction(
-			FlexLayout.Actions.deleteTab(nodeId),
+	openFileSidebarPanel = (
+		path: string,
+		name?: string,
+		options?: { refresh?: boolean },
+	): WorkbenchPanelId => {
+		const fileName = name ?? path.split("/").filter(Boolean).pop() ?? path;
+		const pid = this.openSidebarPanel(
+			getFilePanelType(path),
+			{ mode: this.fileMode, name: fileName, path: path },
+			fileName,
 		);
+
+		if (options?.refresh) {
+			// A panel this call just created reads on mount; one that was
+			// already open is holding the copy that was just overwritten.
+			(
+				this.workbench.getState().layout.values[pid] as
+					| FilePanelValue
+					| undefined
+			)?.refresh();
+		}
+
+		return pid;
+	};
+
+	/**
+	 * Re-point the sidebar's restored file panels at the room's current insight.
+	 *
+	 * A room binds to a fresh insight every time it loads. Panels opened before
+	 * that binding completes need their mode updated before they mount so reads,
+	 * saves, and dedupe all use the room's live insight.
+	 */
+	private _syncSidebarFileMode = (): void => {
+		const { actions } = this.workbench.getState().layout;
+		const mode = this.fileMode;
+
+		for (const record of actions.findPanels((candidate) => {
+			const panelMode = (
+				candidate.config as { mode?: FilePanelMode } | undefined
+			)?.mode;
+			return (
+				isFilePanelType(candidate.type) &&
+				panelMode?.type === "INSIGHT" &&
+				panelMode.insightId !== mode.insightId
+			);
+		})) {
+			actions.updatePanel(record.id, {
+				config: { ...record.config, mode: mode },
+			});
+		}
+	};
+
+	/**
+	 * Reveal the sidebar's file explorer, opening it if it is not there.
+	 *
+	 * There is one explorer per room — the blueprint dedupes on scope alone —
+	 * so a link into a folder navigates the one that is already open rather
+	 * than stacking up a tab per directory, the way the old node-id-per-path
+	 * convention did.
+	 *
+	 * @param initialPath - Directory to show. Defaults to wherever it was.
+	 * @param name - Tab label for a newly created instance. Defaults to the
+	 * chat files label, which keeps the room's own files apart from a
+	 * connector work folder.
+	 * @return The revealed or created panel id.
+	 */
+	openSidebarFileExplorer = (
+		initialPath?: string,
+		name?: string,
+	): WorkbenchPanelId => {
+		const pid = this.openSidebarPanel(
+			FILE_PANEL_TYPES.FILE_EXPLORER,
+			{ mode: this.fileMode },
+			// no translations outside the app, as in tests; the blueprint names it
+			name ?? getI18n()?.t("room:menuFileExplorer.name"),
+		);
+
+		if (initialPath) {
+			const { actions, values } = this.workbench.getState().layout;
+			// `initialPath` is read once, on mount, so it covers the panel this
+			// call just created; an explorer already on screen has to be told.
+			actions.updatePanel(pid, {
+				config: { mode: this.fileMode, initialPath: initialPath },
+			});
+			(values[pid] as FileExplorerApi | undefined)?.commands.navigateTo(
+				initialPath,
+			);
+		}
+
+		return pid;
+	};
+
+	/**
+	 * Reload the chat files explorer, if it is open, after a file was saved
+	 * into the room's folder from outside it.
+	 */
+	refreshSidebarFileExplorer = (): void => {
+		const { actions, values } = this.workbench.getState().layout;
+		for (const record of actions.matchPanels(
+			FILE_PANEL_TYPES.FILE_EXPLORER,
+			{ mode: this.fileMode },
+		)) {
+			(
+				values[record.id] as FileExplorerApi | undefined
+			)?.commands.refresh();
+		}
+	};
+
+	/**
+	 * Close a sidebar panel matching `config`, if one is open.
+	 *
+	 * @param type - Which blueprint to close.
+	 * @param config - The instance's parameters, matched as `selectPanel` does.
+	 */
+	closeSidebarPanel = (
+		type: WorkbenchPanelType,
+		config: WorkbenchPanelParams = {},
+	): void => {
+		const { actions } = this.workbench.getState().layout;
+		for (const record of actions.matchPanels(type, config)) {
+			actions.closePanel(record.id);
+		}
 	};
 
 	/**
@@ -1046,33 +1243,6 @@ export class RoomStore {
 		this._store.sidebar.isOpen = false;
 	};
 
-	/**
-	 * Increment the counter and close if there are no nodes
-	 */
-	tickSidebar = async (action: FlexLayout.Action): Promise<void> => {
-		this._store.sidebar.counter += 1;
-
-		// if it is a delete
-		if (action.type === FlexLayout.Actions.DELETE_TAB) {
-			const tool = this.getToolByNodeId(action.data.node);
-			if (tool) {
-				tool.setIsOpen(false);
-			}
-		}
-
-		// check if there are any tabs left
-		let hasTabs = false;
-		this._store.sidebar.model.visitNodes((node) => {
-			if (node.getType() === "tab") {
-				hasTabs = true;
-				return;
-			}
-		});
-
-		if (!hasTabs) {
-			this.closeSidebar();
-		}
-	};
 	/**
 	 * Helpers
 	 */
@@ -1084,6 +1254,28 @@ export class RoomStore {
 	 */
 	setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
+	};
+
+	/**
+	 * Whether the room takes a file of this name as an attachment. The theme
+	 * may limit attachments to some extensions; without a limit, every file
+	 * is taken, and with one, a file needs an allowed extension.
+	 *
+	 * @param fileName - The file's name.
+	 * @return True when the file may be attached.
+	 */
+	acceptsAttachment = (fileName: string): boolean => {
+		const allowed = this._theme.allowedFileTypes;
+		if (!allowed || allowed.length === 0) {
+			return true;
+		}
+		const normalize = (value: string) =>
+			value.trim().toLowerCase().replace(/^\./, "");
+		const extension = normalize(fileName.split(".").pop() ?? "");
+		return (
+			extension !== "" &&
+			allowed.some((type) => normalize(type) === extension)
+		);
 	};
 
 	/**
@@ -1108,10 +1300,22 @@ export class RoomStore {
 			throw new Error("Prompt is required");
 		}
 
+		const blockedFiles = files.filter(
+			(file) => !this.acceptsAttachment(file.name),
+		);
+		if (blockedFiles.length > 0) {
+			throw new Error(
+				`Attachments disabled by this Playground's file policy: ${blockedFiles.map((file) => file.name).join(", ")}.`,
+			);
+		}
+
 		this.setIsLoading(true);
+		// a new turn starts without the last one's error
+		this._store.error = null;
 
 		// Create the input message immediately so the user's bubble and the
-		// thinking placeholder are visible during the file upload wait
+		// thinking placeholder are visible while the options save and the
+		// files upload
 		const inputMessage = new InputMessageStore(this, {
 			io: "INPUT",
 			type: "INPUT_TEXT",
@@ -1145,7 +1349,7 @@ export class RoomStore {
 			platform_generated: true,
 			modelId: this.model.engine_id,
 			dateCreated: new Date().toISOString(),
-			parts: [{ type: "THINKING", thinking: "" }],
+			parts: [],
 			tokens: 0,
 			ornaments: {
 				modelName:
@@ -1161,6 +1365,10 @@ export class RoomStore {
 			uploadPlaceholder.isThinking = true;
 		});
 
+		// files queued from the sidebar are already in the room's folder, so
+		// they go with the message as they are; a silent turn leaves them queued
+		const queuedFiles = visible ? this.contextItems.take() : [];
+
 		// upload the files
 		let mediaInputs: {
 			fileName: string;
@@ -1168,6 +1376,9 @@ export class RoomStore {
 		}[] = [];
 
 		try {
+			// save the settings this turn runs with, when they changed
+			await this.updateRoomOptions(this.options);
+
 			// upload the files if there are any
 			if (files.length > 0) {
 				const response = await uploadInsight(
@@ -1189,60 +1400,74 @@ export class RoomStore {
 					throw uploadError;
 				}
 
-				const normalizeExt = (value: string) =>
-					value.trim().toLowerCase().replace(/^\./, "");
-
-				mediaInputs = uploaded.filter((f) => {
-					const allowed = this._theme.allowedFileTypes;
-
-					// If not configured (or empty), allow all
-					if (!allowed || allowed.length === 0) return true;
-
-					const allowedSet = new Set(allowed.map(normalizeExt));
-
-					const rawExt = f.fileName.split(".").pop() ?? "";
-					const ext = normalizeExt(rawExt);
-
-					// If there's no extension, it's not allowed (when allow-list is configured)
-					if (!ext) return false;
-
-					return allowedSet.has(ext);
-				});
-
-				// Append media parts to the already-visible input message
-				runInAction(() => {
-					for (const file of mediaInputs) {
-						inputMessage.parts.push({
-							type: "MEDIA",
-							mediaInfo: {
-								base64Data: "",
-								fileFormat: "",
-								fileName: file.fileName,
-								fileLocation: file.fileLocation,
-								mediaInputType: "FILE",
-								mimeType: "",
-							},
-						});
-					}
-				});
+				mediaInputs = uploaded;
 			}
+
+			mediaInputs = [
+				...mediaInputs,
+				...queuedFiles.map((item) => ({
+					fileName: item.name,
+					fileLocation: item.path,
+				})),
+			];
+			const blockedInputs = mediaInputs.filter(
+				(file) => !this.acceptsAttachment(file.fileName),
+			);
+			if (blockedInputs.length > 0) {
+				throw new Error(
+					`Attachments disabled by this Playground's file policy: ${blockedInputs.map((file) => file.fileName).join(", ")}.`,
+				);
+			}
+
+			// Append media parts to the already-visible input message
+			runInAction(() => {
+				mediaInputs.forEach((file) => {
+					inputMessage.parts.push({
+						type: "MEDIA",
+						mediaInfo: {
+							base64Data: "",
+							fileFormat: "",
+							fileName: file.fileName,
+							fileLocation: file.fileLocation,
+							mediaInputType: "FILE",
+							mimeType: "",
+						},
+					});
+				});
+			});
 		} catch (e) {
-			// remove the placeholder messages if the upload fails
+			// the queued files were not sent, so they wait for the next try
+			this.contextItems.restore(queuedFiles);
+
+			// remove the placeholder messages and stop the room spinner
 			runInAction(() => {
 				uploadPlaceholder.isThinking = false;
 			});
 			parentMessage.removeChild(inputMessage);
+			this.setIsLoading(false);
 
-			// Re-throw UploadErrors as-is (e.g. the uploaded.length === 0 case above)
-			if ((e as Error)?.name === "UploadError") {
-				throw e;
+			// Network-level failures (ERR_FAILED / Failed to fetch) mean the
+			// browser couldn't complete the request — most likely the file is
+			// locked at the OS level. Convert to UploadError so callers show
+			// the "file in use" toast instead of a silent failure.
+			if (e instanceof TypeError) {
+				const uploadError = new Error("File is in use");
+				uploadError.name = "UploadError";
+				throw uploadError;
 			}
 
 			throw e;
 		}
 
 		// run the message, reusing the upload placeholder as the streaming response
-		await parentMessage.runMessage(inputMessage, uploadPlaceholder);
+		try {
+			await parentMessage.runMessage(inputMessage, uploadPlaceholder);
+		} catch (e) {
+			// the message is withdrawn and its text restored, so its queued files
+			// wait with it
+			this.contextItems.restore(queuedFiles);
+			throw e;
+		}
 	};
 
 	/**

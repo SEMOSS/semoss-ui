@@ -1,30 +1,15 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
-import { useTranslation } from "@semoss/i18n";
-import { useChat, useGlobalBreadcrumbs } from "@/hooks";
+import { useChat } from "@/hooks/use-chat";
 
 export const EmbedPage: React.FC = observer(() => {
-	const { t } = useTranslation("workspace");
 	const { "*": splatPath } = useParams();
 	const basePath = splatPath?.split("/")[0] ?? "";
 	const { chat } = useChat();
 	const navigate = useNavigate();
 
 	const pageInfo = chat.embeddedPageMap[basePath] ?? null;
-
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{
-				name: t("breadcrumbs.home"),
-				path: "/",
-			},
-			{
-				name: pageInfo?.name ?? basePath,
-				path: `/embed/${basePath}`,
-			},
-		],
-	});
 
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent) => {

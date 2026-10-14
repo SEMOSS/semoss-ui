@@ -7,7 +7,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { AdminQueryWorkbench } from "@/components/workbench";
+import {
+	ADMIN_QUERY_COMPONENTS,
+	AdminQueryWorkbench,
+} from "@/components/workbench";
 import { EngineContext, WorkbenchProvider } from "@/contexts";
 import { useConfig, useSettings } from "@/hooks";
 
@@ -92,13 +95,14 @@ export const AdminQueryPage = () => {
 							},
 							permission: "OWNER",
 							refresh: () => null,
+							update: () => null,
 						}}
 					>
 						{/* keyed per database so each system DB gets its own
 						workbench instance and persisted layout */}
 						<WorkbenchProvider
-							cacheKey={`admin-query--${selectedDatabase}`}
 							key={selectedDatabase}
+							components={ADMIN_QUERY_COMPONENTS}
 						>
 							<AdminQueryWorkbench />
 						</WorkbenchProvider>

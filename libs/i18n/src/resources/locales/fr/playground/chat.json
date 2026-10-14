@@ -1,5 +1,6 @@
 {
 	"messages": {
+		"actions": "Actions du message",
 		"placeholder": "Tapez un message...",
 		"sending": "Envoi en cours...",
 		"error": "Échec de l'envoi du message"
@@ -29,8 +30,6 @@
 		"fastForwardToEnd": "Aller à la fin",
 		"completeToolsAsk_one": "Veuillez compléter l'outil pour continuer.",
 		"completeToolsAsk_other": "Veuillez compléter les outils pour continuer.",
-		"completeToolsAuto_one": "Veuillez attendre que l'outil se termine.",
-		"completeToolsAuto_other": "Veuillez attendre que les outils se terminent.",
 		"emptyResponse": "Réponse vide."
 	},
 	"input": {

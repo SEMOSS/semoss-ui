@@ -52,22 +52,38 @@ export interface FileExplorerProps {
 	 * action column, and extra context-menu entries.
 	 */
 	itemActions?: (item: FileItem) => FileExplorerItemActions;
+
+	/**
+	 * Draw a failed listing the host's own way, such as a sign in prompt for a
+	 * signed out account. Return undefined to fall back to the error message.
+	 */
+	renderError?: (
+		error: Error | undefined,
+		retry: () => void,
+	) => React.ReactNode;
 }
 
 /**
  * A file tree over one asset scope: browse, search, open, and (when the mode
  * allows it) create, rename, move, copy, delete, upload, and download.
  *
- * This component is presentational — `useFileExplorer` owns the state, so a
- * consumer that needs to drive the explorer from outside (a toolbar, a panel
- * chrome control, a command) holds the same api object and calls
- * `explorer.commands`.
+ * Presentational — `useFileExplorer` owns the state, so a consumer that needs
+ * to drive the explorer from outside (a toolbar, a panel chrome control, a
+ * command) holds the same api object and calls `explorer.commands`.
+ *
+ * Not deprecated: this is the shell the workbench's `FILE_EXPLORER_PANEL`
+ * renders, through `@semoss/panels`' `FileExplorerPane`. What is on its way
+ * out is mounting it *directly as a page-level surface* — new code should open
+ * the panel and get tabs, split, persistence, and the chrome controls with it.
+ * Two direct mounts are left, `app-workspace` and `skill-public-files`, and a
+ * read-only embedded tree may never want to be a dock.
  */
 export const FileExplorer: React.FC<FileExplorerProps> = ({
 	explorer,
 	header,
 	newFileOverlay: NewFileOverlayComponent,
 	itemActions,
+	renderError,
 }) => {
 	const { t } = useTranslation("common");
 	const { capabilities, commands, dnd, newFile, tree } = explorer;
@@ -135,7 +151,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						<span className="overflow-hidden truncate font-medium">
 							{t("fileExplorer.name")}
 						</span>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<Button
 									data-testid="file-explorer-bulk-shortcuts-button"
@@ -198,6 +214,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 					<span className="w-[var(--date-col-width,100px)] overflow-hidden truncate px-2 text-end font-medium">
 						{t("fileExplorer.dateModified")}
 					</span>
+					{/* the width of each row's More actions button */}
+					<span aria-hidden className="w-7 shrink-0" />
 				</div>
 
 				<ScrollArea className="[&>div>div]:block! h-full min-h-0 w-full flex-1">
@@ -207,14 +225,17 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						</div>
 					)}
 
-					{tree.status === "ERROR" && (
-						<div className="flex items-center justify-center py-16">
-							<Muted className="text-destructive">
-								{tree.error?.message ||
-									t("fileExplorer.failedToLoadFiles")}
-							</Muted>
-						</div>
-					)}
+					{tree.status === "ERROR" &&
+						(renderError?.(tree.error, () =>
+							commands.refresh(),
+						) ?? (
+							<div className="flex items-center justify-center py-16">
+								<Muted className="text-destructive">
+									{tree.error?.message ||
+										t("fileExplorer.failedToLoadFiles")}
+								</Muted>
+							</div>
+						))}
 
 					{showTree && (
 						<TreeView<FileItem>

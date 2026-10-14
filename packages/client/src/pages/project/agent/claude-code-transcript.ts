@@ -176,11 +176,8 @@ const toTranscriptMessages = (
 				io: "OUTPUT",
 				type: "RESPONSE_TOOL",
 				dateCreated: eventTimestamp(event) ?? "",
-				ornaments: {
-					modelName: data.model ?? "",
-					agentRunRole: "assistant_tool",
-					agentRunId: runId,
-				},
+				agentRun: { runId, role: "assistant_tool" },
+				ornaments: { modelName: data.model ?? "" },
 				parts,
 			});
 			return;
@@ -207,11 +204,8 @@ const toTranscriptMessages = (
 				io: "INPUT",
 				type: "INPUT_TOOL_EXEC",
 				dateCreated: data.timestamp ?? "",
-				ornaments: {
-					modelName: "",
-					agentRunRole: "tool_result",
-					agentRunId: runId,
-				},
+				agentRun: { runId, role: "tool_result" },
+				ornaments: { modelName: "" },
 				parts: [
 					{
 						type: "TOOL_RESULT",
@@ -255,11 +249,11 @@ export const mergeClaudeCodeTranscript = (
 	}
 
 	const existing = run.messages ?? [];
-	const inputs = existing.filter(
-		(message) => message.ornaments?.agentRunRole === "input",
-	);
+	const role = (message: TranscriptMessage) =>
+		message.agentRun?.role ?? message.ornaments?.agentRunRole;
+	const inputs = existing.filter((message) => role(message) === "input");
 	const finals = existing.filter(
-		(message) => message.ornaments?.agentRunRole === "final_output",
+		(message) => role(message) === "final_output",
 	);
 	const others = existing.filter(
 		(message) => !inputs.includes(message) && !finals.includes(message),

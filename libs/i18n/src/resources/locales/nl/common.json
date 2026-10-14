@@ -7,7 +7,9 @@
 		"close": "Sluiten",
 		"confirm": "Bevestigen",
 		"upload": "Uploaden",
-		"search": "Zoeken"
+		"search": "Zoeken",
+		"retry": "Opnieuw proberen",
+		"refresh": "Vernieuwen"
 	},
 	"labels": {
 		"name": "Naam",
@@ -71,7 +73,9 @@
 		"pathLabel": "Pad: {{path}}",
 		"lastModifiedLabel": "Laatst gewijzigd: {{date}}",
 		"bulkShortcutsAria": "Sneltoetsen voor bulkselectie",
-		"bulkShortcutsTooltip": "Ctrl/Cmd+klik selecteert meerdere items. Ctrl/Cmd+A selecteert alle zichtbare items.",
+		"bulkShortcutsTooltip": "Ctrl/Cmd+klik selecteert meerdere items. Ctrl/Cmd+A selecteert alle zichtbare items. Klik met de rechtermuisknop op een rij, of gebruik de knop ... aan het eind, voor meer acties.",
+		"moreActions": "Meer acties",
+		"moreActionsFor": "Meer acties voor {{name}}",
 		"toggleMenu": "Menu in-/uitschakelen",
 		"resizeDateColumn": "Datumkolom vergroten/verkleinen",
 		"failedToLoadFiles": "Bestanden laden mislukt",

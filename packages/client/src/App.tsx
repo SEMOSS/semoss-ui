@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { clientResources, I18nBuilder, I18nextProvider } from "@semoss/i18n";
+import { AccessStoreProvider } from "@semoss/panels";
 import { Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { ConfigStoreProvider, SessionStoreProvider } from "@/contexts";
@@ -69,15 +70,19 @@ export const App = () => {
 	return (
 		<ConfigStoreProvider store={configStore}>
 			<SessionStoreProvider store={sessionStore}>
-				<I18nextProvider i18n={i18n}>
-					<ThemeProvider
-						defaultTheme="light"
-						storageKey="smss-ui-theme-client"
-					>
-						<AppWrapper />
-						<Toaster />
-					</ThemeProvider>
-				</I18nextProvider>
+				{/* the session store carries the permission cache the file
+				    panels read, so it satisfies AccessStore directly */}
+				<AccessStoreProvider store={sessionStore}>
+					<I18nextProvider i18n={i18n}>
+						<ThemeProvider
+							defaultTheme="light"
+							storageKey="smss-ui-theme-client"
+						>
+							<AppWrapper />
+							<Toaster />
+						</ThemeProvider>
+					</I18nextProvider>
+				</AccessStoreProvider>
 			</SessionStoreProvider>
 		</ConfigStoreProvider>
 	);

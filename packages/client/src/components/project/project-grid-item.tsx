@@ -14,8 +14,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { CatalogGridItem } from "@/components/catalog";
-import { normalizeTagArray } from "@/utility";
+import { CatalogGridItem } from "@/components/catalog/catalog-grid-item";
+import { normalizeTagArray } from "@/utility/tags";
 
 export interface ProjectGridItemProps {
 	/** Display style - list row or grid card */
@@ -94,9 +94,10 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 	const actions = (
 		<>
 			{showInfo && (
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={"Open Details in a New Tab"}
 							variant="ghost"
 							size="icon-sm"
 							onClick={(e) => {
@@ -112,61 +113,90 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 				</Tooltip>
 			)}
 			{typeof project.project_global === "boolean" && showGlobal && (
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<span
+							className="inline-flex"
+							tabIndex={
+								project.user_permission !== 1 ? 0 : undefined
+							}
+						>
+							<Button
+								aria-label={
+									project.project_global
+										? "Global"
+										: "Private"
+								}
+								variant="ghost"
+								size="icon-sm"
+								onClick={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									if (project.user_permission === 1) {
+										onGlobal(project);
+									}
+								}}
+								disabled={project.user_permission !== 1}
+							>
+								{project.project_global ? (
+									<LockKeyholeOpen className="size-4 text-muted-foreground" />
+								) : (
+									<LockKeyhole className="size-4 text-muted-foreground" />
+								)}
+							</Button>
+						</span>
+					</TooltipTrigger>
+					<TooltipContent>
+						{project.user_permission !== 1
+							? "Only an owner can change visibility"
+							: project.project_global
+								? "Global"
+								: "Private"}
+					</TooltipContent>
+				</Tooltip>
+			)}
+			{showFavorite && onFavorite && (
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={
+								isFavorited
+									? `Unbookmark ${displayName}`
+									: `Bookmark ${displayName}`
+							}
 							variant="ghost"
 							size="icon-sm"
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
-								if (project.user_permission === 1) {
-									onGlobal(project);
-								}
+								onFavorite(project);
 							}}
-							disabled={project.user_permission !== 1}
 						>
-							{project.project_global ? (
-								<LockKeyholeOpen className="size-4 text-muted-foreground" />
+							{isFavorited ? (
+								<BookmarkCheck className="size-4 text-primary" />
 							) : (
-								<LockKeyhole className="size-4 text-muted-foreground" />
+								<Bookmark className="size-4" />
 							)}
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>
-						{project.project_global ? "Global" : "Private"}
+					<TooltipContent
+						sideOffset={4}
+						className="max-w-xs break-words"
+					>
+						{isFavorited
+							? `Unbookmark ${displayName}`
+							: `Bookmark ${displayName}`}
 					</TooltipContent>
 				</Tooltip>
-			)}
-			{showFavorite && onFavorite && (
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					title={
-						isFavorited
-							? `Unbookmark ${displayName}`
-							: `Bookmark ${displayName}`
-					}
-					onClick={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-						onFavorite(project);
-					}}
-				>
-					{isFavorited ? (
-						<BookmarkCheck className="size-4 text-primary" />
-					) : (
-						<Bookmark className="size-4" />
-					)}
-				</Button>
 			)}
 		</>
 	);
 
 	const icon = (
 		<AppCatalogAvatar
+			projectId={project.project_id}
 			name={displayName || project.project_id}
-			className="h-full w-full rounded text-lg"
+			className="size-12 rounded text-lg"
 		/>
 	);
 

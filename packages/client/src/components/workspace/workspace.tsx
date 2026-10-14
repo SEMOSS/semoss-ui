@@ -4,10 +4,10 @@ import { Spinner, toast } from "@semoss/ui/next";
 import { WorkspaceContext } from "@/contexts";
 import { useNavigate } from "@/hooks/useNavigate";
 
-const BlocksWorkspace = lazy(() =>
-	import("@/components/blocks-workspace").then((m) => ({
-		default: m.BlocksWorkspace,
-	})),
+const BlocksWorkbench = lazy(() =>
+	import("@/components/workbench/project/blocks/blocks-workbench").then(
+		(m) => ({ default: m.BlocksWorkbench }),
+	),
 );
 
 import { useProject } from "@/hooks";
@@ -15,7 +15,7 @@ import { WorkspaceStore } from "@/stores";
 
 const WorkspaceLoadingState = () => {
 	return (
-		<div className="absolute inset-0 z-[1501] flex items-center justify-center bg-background/50">
+		<div className="absolute inset-0 z-1501 flex items-center justify-center bg-background/50">
 			<Spinner />
 		</div>
 	);
@@ -90,9 +90,9 @@ export const Workspace: React.FC = () => {
 			}}
 		>
 			<Suspense fallback={<WorkspaceLoadingState />}>
-				{/* Only BLOCKS remains on this shell — CODE, NOTEBOOK, SKILL and
-				    AGENT render on the workbench. */}
-				{type === "BLOCKS" && <BlocksWorkspace />}
+				{/* What this still owns is the store, not a shell: every
+				    project type renders on the workbench now. */}
+				{type === "BLOCKS" && <BlocksWorkbench />}
 			</Suspense>
 		</WorkspaceContext.Provider>
 	);

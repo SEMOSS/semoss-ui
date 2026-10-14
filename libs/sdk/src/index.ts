@@ -1,6 +1,14 @@
 import "./listener";
 
 export * from "./api";
+export {
+	CATALOG_IMAGE_ACCEPT,
+	CATALOG_IMAGE_MAX_BYTES,
+	type CatalogImageUploadResult,
+	getCatalogImageValidationError,
+	uploadEngineImage,
+	uploadProjectImage,
+} from "./api/image";
 export * from "./constants";
 export * from "./env";
 export {
@@ -8,6 +16,9 @@ export {
 	createRoom,
 	InsightStore as Insight,
 	isRequestUserInputAction,
+	Logins,
+	type LoginsSnapshot,
+	LoginsStore,
 	normalizeUserInputQuestion,
 	parseUserInputRequest,
 	RoomStore,

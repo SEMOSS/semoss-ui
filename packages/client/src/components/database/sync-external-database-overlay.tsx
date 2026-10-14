@@ -118,7 +118,10 @@ export const SyncExternalDatabaseOverlay: React.FC<
 				{/* Header */}
 
 				<DialogHeader>
-					<DialogTitle> Sync Changes</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						{" "}
+						Sync Changes
+					</DialogTitle>
 					<DialogDescription>
 						Select tables and views below to sync with external
 						database changes.

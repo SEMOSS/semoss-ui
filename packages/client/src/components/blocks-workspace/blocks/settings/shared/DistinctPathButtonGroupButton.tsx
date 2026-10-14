@@ -9,7 +9,13 @@ import {
 	type PathValue,
 	useBlock,
 } from "@semoss/renderer";
-import { Button, cn } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { formatToDataTestId } from "@/utility";
 
@@ -135,19 +141,35 @@ export const DistinctPathButtonGroupButton = observer(
 		const isActive = value === styleValue || (isDefault ? !value : false);
 
 		return (
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				className={cn(isActive && "text-primary")}
-				onClick={onClick}
-				title={title}
-				disabled={isDisabled}
-				data-testid={formatToDataTestId(
-					`distinctPathButtonGroupButton-${title}-btn`,
-				)}
-			>
-				<ButtonIcon />
-			</Button>
+			<Tooltip disableHoverableContent={false}>
+				<TooltipTrigger asChild>
+					<span
+						className="inline-flex"
+						tabIndex={isDisabled ? 0 : undefined}
+					>
+						<Button
+							aria-label={title}
+							variant="ghost"
+							size="icon-sm"
+							className={cn(isActive && "text-primary")}
+							onClick={onClick}
+							disabled={isDisabled}
+							data-testid={formatToDataTestId(
+								`distinctPathButtonGroupButton-${title}-btn`,
+							)}
+						>
+							<ButtonIcon />
+						</Button>
+					</span>
+				</TooltipTrigger>
+				<TooltipContent sideOffset={4} className="max-w-xs break-words">
+					{isDisabled
+						? title === "Underlined"
+							? "Links are already underlined"
+							: "Headings are already bold"
+						: title}
+				</TooltipContent>
+			</Tooltip>
 		);
 	},
 );

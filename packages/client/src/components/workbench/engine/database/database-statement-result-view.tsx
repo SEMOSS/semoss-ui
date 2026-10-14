@@ -98,23 +98,32 @@ export const DatabaseStatementResultView = ({
 
 		<div className="flex flex-none items-center">
 			{result.type === "TABLE" && canExport && (
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
-						<Button
-							disabled={isExporting}
-							variant="outline"
-							size="icon-sm"
-							onClick={() => onExport(result)}
-							aria-label={`Export statement ${result.statement} results`}
+						<span
+							className="inline-flex"
+							tabIndex={isExporting ? 0 : undefined}
 						>
-							{isExporting ? (
-								<Spinner />
-							) : (
-								<Download aria-hidden />
-							)}
-						</Button>
+							<Button
+								disabled={isExporting}
+								variant="outline"
+								size="icon-sm"
+								onClick={() => onExport(result)}
+								aria-label={`Export statement ${result.statement} results`}
+							>
+								{isExporting ? (
+									<Spinner />
+								) : (
+									<Download aria-hidden />
+								)}
+							</Button>
+						</span>
 					</TooltipTrigger>
-					<TooltipContent>Export statement results</TooltipContent>
+					<TooltipContent>
+						{isExporting
+							? "Exporting results…"
+							: "Export statement results"}
+					</TooltipContent>
 				</Tooltip>
 			)}
 			<div className="flex-1" />

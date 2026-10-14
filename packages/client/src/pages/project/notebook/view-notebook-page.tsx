@@ -14,7 +14,10 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
-import { NotebookViewWorkbench } from "@/components/workbench";
+import {
+	NOTEBOOK_VIEW_WORKBENCH_COMPONENTS,
+	NotebookViewWorkbench,
+} from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { usePage, useProject } from "@/hooks";
 
@@ -32,7 +35,7 @@ export const ViewNotebookPage = () => {
 
 	return (
 		<InsightProvider options={{ app: project.project_id }}>
-			<WorkbenchProvider cacheKey={`${project.project_id}-view`}>
+			<WorkbenchProvider components={NOTEBOOK_VIEW_WORKBENCH_COMPONENTS}>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>
@@ -62,9 +65,10 @@ export const ViewNotebookPage = () => {
 					</Breadcrumb>
 				</NavbarLeft>
 				<NavbarRight>
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<Button
+								aria-label={"Settings"}
 								variant="ghost"
 								size="icon"
 								data-testid={"settings"}
@@ -91,7 +95,7 @@ export const ViewNotebookPage = () => {
 						</Button>
 					)}
 				</NavbarRight>
-				<NotebookViewWorkbench />
+				<NotebookViewWorkbench variant="view" />
 			</WorkbenchProvider>
 		</InsightProvider>
 	);

@@ -2,7 +2,6 @@
 export type FileEditorKind =
 	| "code"
 	| "download"
-	| "html"
 	| "image"
 	| "markdown"
 	| "notebook"
@@ -24,7 +23,7 @@ const DOWNLOAD_ONLY_EXTENSIONS = new Set(["doc", "docx", "ppt", "xls", "xlsx"]);
 /**
  * Resolve the dedicated workbench panel kind for a file path.
  *
- * Unsupported extensions intentionally use the code panel.
+ * HTML and unsupported extensions intentionally use the code panel.
  *
  * @param path - File path to classify.
  * @returns The file's workbench editor kind.
@@ -46,10 +45,6 @@ export const getFileEditorKind = (path: string): FileEditorKind => {
 
 	if (extension === "pptx") {
 		return "pptx";
-	}
-
-	if (extension === "html" || extension === "htm") {
-		return "html";
 	}
 
 	if (extension === "md" || extension === "markdown") {

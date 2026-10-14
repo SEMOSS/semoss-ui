@@ -24,8 +24,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import { useChat } from "@/hooks";
-import { normalizeTimestamp } from "@/utility";
 
 export interface RoomItem {
 	ROOM_ID: string;
@@ -58,7 +58,7 @@ interface ChatRowProps {
 /** Formats a timestamp for the date columns as a compact date + time,
  *  falling back to the raw string when it can't be parsed. */
 const formatDateCell = (raw: string) => {
-	const d = normalizeTimestamp(raw);
+	const d = parseTimestampWithUtcDefault(raw);
 	return d.isValid() ? d.format("MM/DD/YY h:mm A") : raw;
 };
 

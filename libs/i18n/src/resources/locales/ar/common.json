@@ -7,7 +7,9 @@
 		"close": "إغلاق",
 		"confirm": "تأكيد",
 		"upload": "رفع",
-		"search": "بحث"
+		"search": "بحث",
+		"retry": "إعادة المحاولة",
+		"refresh": "تحديث"
 	},
 	"labels": {
 		"name": "الاسم",
@@ -71,7 +73,9 @@
 		"pathLabel": "المسار: {{path}}",
 		"lastModifiedLabel": "آخر تعديل: {{date}}",
 		"bulkShortcutsAria": "اختصارات التحديد المتعدد",
-		"bulkShortcutsTooltip": "Ctrl/Cmd+نقر يحدد عناصر متعددة. Ctrl/Cmd+A يحدد جميع العناصر المرئية.",
+		"bulkShortcutsTooltip": "Ctrl/Cmd+نقر يحدد عناصر متعددة. Ctrl/Cmd+A يحدد جميع العناصر المرئية. انقر بزر الماوس الأيمن على صف، أو استخدم الزر ... في نهايته، لمزيد من الإجراءات.",
+		"moreActions": "مزيد من الإجراءات",
+		"moreActionsFor": "مزيد من الإجراءات لـ {{name}}",
 		"toggleMenu": "تبديل القائمة",
 		"resizeDateColumn": "تغيير حجم عمود التاريخ",
 		"failedToLoadFiles": "فشل تحميل الملفات",

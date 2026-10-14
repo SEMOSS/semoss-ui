@@ -7,6 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { AccessStoreProvider, createAccessStore } from "@semoss/panels";
 import type {
 	AppRef,
 	ConsoleContext,
@@ -174,6 +175,12 @@ export const TerminalProvider = ({
 	const [view, setView] = useState<TerminalView>(initialView);
 	const [title, setTitle] = useState("");
 	const [open, setOpen] = useState(true);
+
+	// The file panels resolve resource permissions off a host-supplied cache.
+	// The terminal has no session store of its own, so it mounts one here — the
+	// provider is the single root every terminal surface hangs off, which is
+	// what keeps two panes from disagreeing about the same resource.
+	const [accessStore] = useState(createAccessStore);
 
 	const [save, setSaveState] = useState<SaveModalState>({
 		open: false,
@@ -400,7 +407,9 @@ export const TerminalProvider = ({
 
 	return (
 		<TerminalContextInternal.Provider value={value}>
-			{children}
+			<AccessStoreProvider store={accessStore}>
+				{children}
+			</AccessStoreProvider>
 		</TerminalContextInternal.Provider>
 	);
 };

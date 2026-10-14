@@ -1,11 +1,9 @@
 import { FolderTreeIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel } from "@semoss/sdk/react";
 import { DropdownMenuItem, toast } from "@semoss/ui/next";
 import { useChat, useRoot } from "@/hooks";
-import { RoomStore } from "@/stores";
-
-const ROOM_FILE_EXPLORER_ID = "FILE_EXPLORER";
+import type { RoomStore } from "@/stores";
+import { createEarlyRoom } from "./create-early-room";
 
 interface RoomInputMenuNewFileExplorerProps {
 	/** Current room mode */
@@ -37,33 +35,18 @@ export const RoomInputMenuNewFileExplorer = ({
 				e.preventDefault();
 				onSelect();
 				try {
-					const { errors, pixelReturn, insightId } = await runPixel<
-						[{ roomId: string }]
-					>("CreatePlaygroundRoom()", "new");
-
-					if (errors.length > 0) {
-						throw new Error(errors.join(""));
-					}
-
-					const roomId = pixelReturn[0].output.roomId;
-					const room = new RoomStore(root.theme, roomId, insightId);
-
-					room.setModel(chat.models.selected);
-					room.setMode(mode === "agent" ? "agent" : "chat");
-					await room.initialize();
-					await room.updateRoomOptions(options);
-
-					// Register in the cache so loadRoom finds it after navigation.
-					chat.registerRoom(room);
+					const room = await createEarlyRoom({
+						theme: root.theme,
+						chat: chat,
+						mode: mode,
+						options: options,
+					});
 
 					// Open the file explorer sidebar tab.
-					room.addSidebarNode(ROOM_FILE_EXPLORER_ID, {
-						type: "tab",
-						name: t("menuFileExplorer.name"),
-						component: "room-file-explorer",
-						config: {},
-						enableClose: true,
-					});
+					room.openSidebarFileExplorer(
+						undefined,
+						t("menuFileExplorer.name"),
+					);
 
 					onRoomCreated(room);
 				} catch {

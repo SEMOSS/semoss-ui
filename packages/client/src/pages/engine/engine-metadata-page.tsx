@@ -1099,9 +1099,12 @@ Error ${e.message || "Unknown error"}
 								</div>
 							)}
 							{isModified && (
-								<Tooltip>
+								<Tooltip disableHoverableContent={false}>
 									<TooltipTrigger asChild>
 										<Button
+											aria-label={
+												"Reset to last saved state"
+											}
 											size="sm"
 											variant="outline"
 											onClick={handleReset}
@@ -1117,9 +1120,12 @@ Error ${e.message || "Unknown error"}
 							)}
 
 							{isRdbms && (
-								<Tooltip>
+								<Tooltip disableHoverableContent={false}>
 									<TooltipTrigger asChild>
 										<Button
+											aria-label={
+												"Sync the metamodel with the database"
+											}
 											size="sm"
 											variant="outline"
 											onClick={() =>
@@ -1136,9 +1142,10 @@ Error ${e.message || "Unknown error"}
 								</Tooltip>
 							)}
 
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Button
+										aria-label={"Download the metadata"}
 										size="sm"
 										variant="outline"
 										onClick={() =>
@@ -1154,33 +1161,45 @@ Error ${e.message || "Unknown error"}
 								</TooltipContent>
 							</Tooltip>
 
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
-									<Button
-										size="sm"
-										disabled={!isModified}
-										variant="outline"
-										className={
-											showSaveReminder
-												? saveButtonHighlightClass
-												: undefined
-										}
-										onClick={() => saveDatabase()}
-										data-testid="engineMetadata-save-btn"
+									<span
+										className="inline-flex"
+										tabIndex={!isModified ? 0 : undefined}
 									>
-										<SaveIcon
+										<Button
+											aria-label={
+												showSaveReminder
+													? saveTooltipText
+													: "Save changes to the metamodel"
+											}
+											size="sm"
+											disabled={!isModified}
+											variant="outline"
 											className={
 												showSaveReminder
-													? "animate-pulse"
+													? saveButtonHighlightClass
 													: undefined
 											}
-										/>
-									</Button>
+											onClick={() => saveDatabase()}
+											data-testid="engineMetadata-save-btn"
+										>
+											<SaveIcon
+												className={
+													showSaveReminder
+														? "animate-pulse"
+														: undefined
+												}
+											/>
+										</Button>
+									</span>
 								</TooltipTrigger>
 								<TooltipContent>
-									{showSaveReminder
-										? saveTooltipText
-										: "Save changes to the metamodel"}
+									{!isModified
+										? "No changes to save"
+										: showSaveReminder
+											? saveTooltipText
+											: "Save changes to the metamodel"}
 								</TooltipContent>
 							</Tooltip>
 						</div>

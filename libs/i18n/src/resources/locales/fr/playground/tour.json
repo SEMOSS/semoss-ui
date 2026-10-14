@@ -6,19 +6,19 @@
 		},
 		"input": {
 			"title": "Démarrer une conversation",
-			"content": "Saisissez votre question ici et appuyez sur Entrée."
+			"content": "Saisissez votre question et appuyez sur Entrée. Sur la première ligne, appuyez sur Haut pour réutiliser un message précédent ; Bas avance et Échap restaure le brouillon."
 		},
 		"inputMenu": {
-			"title": "Joindre et configurer",
-			"content": "Ajoutez des fichiers, des agents, des bibliothèques de connaissances et des outils pour enrichir votre conversation."
+			"title": "Ajouter à votre discussion",
+			"content": "Utilisez + pour joindre des fichiers, ajouter des connaissances ou des outils, choisir un agent ou ouvrir l’espace de travail."
 		},
 		"model": {
 			"title": "Modèle",
 			"content": "Sélectionnez le modèle d'IA qui propulse votre conversation."
 		},
 		"record": {
-			"title": "Enregistrer",
-			"content": "Cliquez pour parler, votre voix sera convertie en texte."
+			"title": "Actions de saisie",
+			"content": "Utilisez le microphone pour dicter, le livre pour parcourir les messages ou l’indicateur de contexte pour consulter l’utilisation."
 		},
 		"newChat": {
 			"title": "Nouveau chat",
@@ -34,7 +34,7 @@
 		},
 		"takeTour": {
 			"title": "Faire le tour",
-			"content": "Rejouez cette visite guidée à tout moment."
+			"content": "Relancez cette visite à tout moment depuis le menu sous votre nom."
 		}
 	},
 	"controls": {

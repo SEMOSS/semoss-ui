@@ -53,7 +53,7 @@ interface EditTableProps {
 	}) => void;
 }
 
-const EditTable: React.FC<EditTableProps> = ({
+export const EditTable: React.FC<EditTableProps> = ({
 	open,
 	onClose,
 	node = null,
@@ -188,9 +188,14 @@ const EditTable: React.FC<EditTableProps> = ({
 
 	return (
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-			<DialogContent className="max-w-[600px] overflow-y-auto">
+			<DialogContent
+				aria-describedby={undefined}
+				className="max-w-[600px] overflow-y-auto"
+			>
 				<DialogHeader className="relative">
-					<DialogTitle>Edit {nodeName || "Table"}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Edit {nodeName || "Table"}
+					</DialogTitle>
 				</DialogHeader>
 
 				<Tabs
@@ -350,5 +355,3 @@ const EditTable: React.FC<EditTableProps> = ({
 		</Dialog>
 	);
 };
-
-export default EditTable;
