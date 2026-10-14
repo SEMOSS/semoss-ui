@@ -12,6 +12,7 @@ import {
 } from "../utils/message-presentation";
 import { MessageActions } from "./message-actions";
 import { MessagePart } from "./message-part";
+import { MessageTaskOutcome } from "./message-task-outcome";
 import { MessageTimestamp } from "./message-timestamp";
 import { MessageToolActivity } from "./message-tool-activity";
 
@@ -44,6 +45,11 @@ export function MessageTimelineEntry({
 	const reply = message.delegationReply;
 	const request = message.delegationRequest;
 	const isDelegation = !!(reply || request);
+	const outcomes = new Map<string, ConversationMessage["taskOutcome"]>();
+	for (const source of [message, ...parts.map((item) => item.message)]) {
+		if (source.role === "assistant" && source.taskOutcome)
+			outcomes.set(source.runId ?? source.id, source.taskOutcome);
+	}
 
 	return (
 		<article
@@ -149,6 +155,10 @@ export function MessageTimelineEntry({
 							),
 						)}
 				</div>
+				{!isUser &&
+					[...outcomes].map(([id, outcome]) => (
+						<MessageTaskOutcome key={id} outcome={outcome} />
+					))}
 				<MessageActions message={message} parts={parts} />
 				{!isBubble && ((!isWork && isUser) || isDelegation) && (
 					<MessageTimestamp

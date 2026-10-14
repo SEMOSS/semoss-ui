@@ -52,7 +52,9 @@ export function RoomThread({
 						}
 					: part,
 			) ?? [],
-		live: phase ? { phase, hasObservationIssue } : liveMessage?.live,
+		live: phase
+			? { ...liveMessage?.live, phase, hasObservationIssue }
+			: liveMessage?.live,
 	};
 
 	return (

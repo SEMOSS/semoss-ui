@@ -115,6 +115,8 @@ export interface ConversationMessage {
 	runId?: string;
 	/** Durable run outcome, when supplied by the run controller. */
 	runStatus?: AgentRun["status"];
+	/** Task fulfillment is separate from execution completion; absent means unknown. */
+	taskOutcome?: AgentRun["taskOutcome"];
 	parentMessageId?: string;
 	visible?: boolean;
 	delegationReply?: DelegationReply;
@@ -122,5 +124,7 @@ export interface ConversationMessage {
 	live?: {
 		phase: PlaygroundTurnPhase;
 		hasObservationIssue: boolean;
+		/** Harness activity takes precedence over stale per-call events. */
+		activity?: string;
 	};
 }

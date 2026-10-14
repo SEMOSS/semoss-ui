@@ -47,9 +47,22 @@ export function shouldAutoOpenTool(tool: ConversationTool): boolean {
 
 export function getToolLoadingMessage(tool: ConversationTool): string {
 	const message = uiMetadata(tool)?.loadingMessage;
-	return typeof message === "string" && message.trim()
-		? message
-		: "Tool is running\u2026";
+	if (tool.status === "QUEUED")
+		return `Waiting to run ${tool.title || tool.name}…`;
+	if (typeof message === "string" && message.trim()) return message.trim();
+	const originalName = tool.metadata?.SMSS_ORIGINAL_TOOL_NAME;
+	const name = typeof originalName === "string" ? originalName : tool.name;
+	const activities: Record<string, string> = {
+		SearchMail: "Searching relevant emails…",
+		ReadThread: "Reading matching conversations…",
+		ListTopics: "Finding conversation topics…",
+		LoadSkill: "Reading task instructions…",
+		WriteFile: "Writing a file…",
+		EditFile: "Updating a file…",
+		MultiEdit: "Updating files…",
+		WaitForSubAgent: "Waiting for another agent…",
+	};
+	return activities[name] ?? `Running ${tool.title || tool.name}…`;
 }
 
 /** Resolve a declared MCP UI resource, falling back to the JSON tool view. */

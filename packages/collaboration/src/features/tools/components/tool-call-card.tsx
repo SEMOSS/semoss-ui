@@ -75,7 +75,7 @@ function statusDetails(status: ConversationTool["status"]) {
 			return {
 				icon: CircleX,
 				label: "Failed",
-				iconClassName: "text-destructive",
+				iconClassName: "text-muted-foreground",
 			};
 		case "REJECTED":
 		case "CANCELLED":
@@ -284,7 +284,7 @@ function GenericToolCallCard({
 		draftPreview?.status ??
 		(isSubmit || isRequest
 			? (tool.statusLabel ?? outcome ?? details.label)
-			: tool.status === "RUNNING"
+			: tool.status === "RUNNING" || tool.status === "QUEUED"
 				? getToolLoadingMessage(tool)
 				: details.label);
 
@@ -354,8 +354,7 @@ function GenericToolCallCard({
 									!isDraftUnavailable &&
 									"bg-success/10 text-success",
 								roomEmail &&
-									(tool.status === "FAILED" ||
-										isDraftUnavailable) &&
+									isDraftUnavailable &&
 									"bg-destructive/10 text-destructive",
 								roomEmail &&
 									tool.status === "INPUT_REQUIRED" &&
@@ -389,9 +388,7 @@ function GenericToolCallCard({
 										tool.status === "COMPLETED" &&
 										!isDraftUnavailable &&
 										"text-success",
-									(tool.status === "FAILED" ||
-										isDraftUnavailable) &&
-										"text-destructive",
+									isDraftUnavailable && "text-destructive",
 									tool.status === "INPUT_REQUIRED" &&
 										"text-warning",
 								)}
