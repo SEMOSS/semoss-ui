@@ -4,15 +4,119 @@ import { createInitialCollaborationState } from "../state/collaboration.fixtures
 import {
 	loadLiveState,
 	loadThreadMessages,
+	mapMemory,
 	readThreadInsights,
 	readThreadMessagesPage,
+	readTopicGoals,
+	readWorkUpdates,
 	summarizeThread,
 	syncMail,
 } from "./live-state";
 
+it("reads authoritative goals with optional resolutions and rejects invalid topic results", async () => {
+	const topic = {
+		id: "topic",
+		goals: [
+			{
+				noteId: "goal",
+				text: "Get room code for Florida",
+				status: "done",
+				resolution: "Florida room code is 444553",
+			},
+			{ noteId: "next", text: "Book the room", status: "open" },
+		],
+	};
+	const run = vi
+		.fn()
+		.mockResolvedValueOnce({ pixelReturn: [{ output: topic }] })
+		.mockResolvedValueOnce({
+			pixelReturn: [
+				{
+					output: {
+						...topic,
+						goals: [{ ...topic.goals[0], status: "closed" }],
+					},
+				},
+			],
+		});
+	const actions = { run } as unknown as InsightActions;
+	expect(await readTopicGoals(actions, { topic: "Launch" })).toEqual(topic);
+	expect(run).toHaveBeenCalledWith('BrainListTopics(topic=["Launch"]);');
+	await expect(readTopicGoals(actions, { topicId: "topic" })).rejects.toThrow(
+		"unexpected shape",
+	);
+});
+
+it("uses only native source ids provided by BrainListThreads", async () => {
+	const run = vi.fn().mockResolvedValue({
+		pixelReturn: [
+			{
+				output: {
+					items: [
+						{
+							id: "brain-teams",
+							channel: "teams",
+							latestMessageId: "message-1",
+						},
+						{
+							id: "brain-email",
+							channel: "email",
+							latestMessageId: "mail-1",
+						},
+						{
+							id: "brain-without-mail",
+							channel: "email",
+							latestMessageId: null,
+						},
+						{
+							id: "teams-with-native-id",
+							channel: "teams",
+							conversationId: "chat-1",
+							latestMessageId: "message-2",
+						},
+					],
+				},
+			},
+			{ output: { items: [] } },
+			{ output: { items: [] } },
+			{ output: { status: "none" } },
+			// BrainListMemories
+			{ output: { items: [] } },
+		],
+	});
+	const { threads } = await readWorkUpdates({
+		run,
+	} as unknown as InsightActions);
+	expect(threads[0]).toMatchObject({
+		id: "brain-teams",
+		channel: "teams",
+		source: undefined,
+	});
+	expect(threads[1].source).toMatchObject({
+		kind: "outlook",
+		nativeId: "mail-1",
+	});
+	expect(threads[2].source).toBeUndefined();
+	expect(threads[3].source).toMatchObject({
+		kind: "teams",
+		nativeId: "chat-1",
+	});
+});
+
 it("loads each topic once when the list contains duplicate records", async () => {
 	const topics = [
-		{ id: "one", name: "First" },
+		{
+			id: "one",
+			name: "First",
+			goals: [
+				{
+					noteId: "goal",
+					text: "Get room code for Florida",
+					status: "done",
+					resolution: "Florida room code is 444553",
+				},
+			],
+		},
 		{ id: "two", name: "Second" },
 	];
 	const response = (outputs: unknown[]) => ({
@@ -25,14 +129,15 @@ it("loads each topic once when the list contains duplicate records", async () =>
 			{},
 			{ items: [] },
 			{ items: [topics[0], topics[0], topics[1], topics[1]] },
-			...Array.from({ length: 9 }, () => ({ items: [] })),
+			...Array.from({ length: 10 }, () => ({ items: [] })),
 		]);
 	});
 	const state = await loadLiveState({ run } as unknown as InsightActions);
 	expect(run.mock.calls[1]?.[0]).toBe(
 		'BrainGetTopic(topicId=["one"]); BrainGetTopic(topicId=["two"]);',
 	);
-	expect(state.topics.map(({ id, name }) => ({ id, name }))).toEqual(topics);
+	expect(state.topics).toMatchObject(topics);
+	expect(state.topics[1].goals).toEqual([]);
 });
 
 it("requests optional display bodies while preserving exclusions, links and legacy text", async () => {
@@ -232,4 +337,48 @@ it("reads Brain's summary runs with generated steps and plain due days", async (
 	await expect(readThreadInsights(actions, "other-thread")).rejects.toThrow(
 		"different thread",
 	);
+});
+
+it("maps a server memory and drops links it does not know", () => {
+	expect(
+		mapMemory({
+			id: "m1",
+			kind: "preference",
+			text: "Sign as Rob",
+			state: "active",
+			origin: "assistant",
+			confirmed: false,
+			pinned: true,
+			about: [
+				{ type: "person", id: "p1", name: "Priya" },
+				{ type: "team", id: "x" },
+				{ type: "topic" },
+			],
+			expiresAt: "2026-11-01T00:00:00Z",
+			source: { kind: "chat", roomId: "room-1", ignored: 3 },
+			createdAt: "2026-10-01T00:00:00Z",
+		}),
+	).toEqual({
+		id: "m1",
+		kind: "preference",
+		text: "Sign as Rob",
+		state: "active",
+		origin: "assistant",
+		confirmed: false,
+		pinned: true,
+		about: [{ type: "person", id: "p1" }],
+		expiresAt: "2026-11-01T00:00:00Z",
+		replacesId: null,
+		source: { kind: "chat", roomId: "room-1" },
+		createdAt: "2026-10-01T00:00:00Z",
+		updatedAt: "2026-10-01T00:00:00Z",
+		isSample: false,
+	});
+	expect(
+		mapMemory({ id: "m2", state: "superseded", origin: "x" }),
+	).toMatchObject({
+		kind: "fact",
+		state: "dismissed",
+		origin: "you",
+	});
 });

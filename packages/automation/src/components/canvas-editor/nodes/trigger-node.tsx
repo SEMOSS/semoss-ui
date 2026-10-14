@@ -12,6 +12,8 @@ export type TriggerNodeData = {
 	runStatus?: "running" | "success" | "error";
 	/** True when this step sits on the path leading to the selected node. */
 	pathHighlighted?: boolean;
+	groupSelectionActive?: boolean;
+	hasOutgoingControlEdge?: boolean;
 	triggerModes?: OptionalTriggerMode[];
 };
 
@@ -33,8 +35,8 @@ export function TriggerNode({ data, id }: NodeProps) {
 				type="button"
 				aria-label="Edit trigger"
 				disabled={automationNode.readOnly}
-				onClick={automationNode.open}
-				className={`relative flex h-18 w-18 rotate-45 appearance-none items-center justify-center rounded-lg border-2 ${statusBorderClass} ${runningClass} bg-card p-0 shadow-sm disabled:cursor-default`}
+				onClick={() => automationNode.open()}
+				className={`relative flex h-18 w-18 rotate-45 appearance-none items-center justify-center rounded-lg border-2 ${statusBorderClass} ${runningClass} ${trigger.groupSelectionActive ? "ring-2 ring-chart-2 ring-offset-2 ring-offset-background" : ""} bg-card p-0 shadow-sm disabled:cursor-default`}
 			>
 				<span className="absolute inset-0.5 rounded-md bg-card" />
 				<Zap className="-rotate-45 relative h-5 w-5 text-success" />
@@ -53,20 +55,27 @@ export function TriggerNode({ data, id }: NodeProps) {
 				id={`out-${id}`}
 				type="source"
 				position={Position.Right}
-				isConnectable
+				isConnectable={!trigger.hasOutgoingControlEdge}
 				onClick={(event) => {
+					if (trigger.hasOutgoingControlEdge) return;
 					event.stopPropagation();
 					automationNode.addAfter();
 				}}
-				aria-label="Add node or drag to connect"
-				className="border! right-[calc(50%-58px)]! h-7! w-7! border-emerald-500/40! bg-background! shadow-sm transition-colors hover:border-emerald-500!"
+				aria-label={
+					trigger.hasOutgoingControlEdge
+						? "Trigger output connected"
+						: "Add node or drag to connect"
+				}
+				className={`${trigger.hasOutgoingControlEdge ? "h-2! w-2! bg-muted-foreground/50!" : "border! right-[calc(50%-58px)]! h-7! w-7! border-emerald-500/40! bg-background! shadow-sm transition-colors hover:border-emerald-500!"} border-2! border-background!`}
 			/>
-			<span
-				data-tour="add-step"
-				className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-[calc(50%-58px)] z-10 flex h-7 w-7 translate-x-1/2 items-center justify-center text-emerald-600"
-			>
-				<Plus className="h-4 w-4" />
-			</span>
+			{!trigger.hasOutgoingControlEdge && (
+				<span
+					data-tour="add-step"
+					className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-[calc(50%-58px)] z-10 flex h-7 w-7 translate-x-1/2 items-center justify-center text-emerald-600"
+				>
+					<Plus className="h-4 w-4" />
+				</span>
+			)}
 		</div>
 	);
 }

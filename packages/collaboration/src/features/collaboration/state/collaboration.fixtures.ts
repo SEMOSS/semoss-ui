@@ -31,25 +31,6 @@ const SAMPLE_STATE: CollaborationState = {
 					noteId: "t-geng-goal-3",
 				},
 			],
-			notes: [
-				{
-					text: "Ava prefers a written pre-read 48h before any review.",
-					by: "you",
-					date: "2026-09-18T16:00:00.000Z",
-					status: "confirmed",
-					noteId: "t-geng-note-1",
-					kind: "note",
-				},
-				{
-					text: "Pilot scope is limited to 2 use cases (claims triage, contract Q&A).",
-					by: "assistant",
-					date: "2026-09-20T16:00:00.000Z",
-					status: "draft",
-					source: "Email from Hugo Lane, Sep 20",
-					noteId: "t-geng-note-2",
-					kind: "note",
-				},
-			],
 			keywords: [
 				"agent architecture",
 				"sandbox",
@@ -126,17 +107,6 @@ const SAMPLE_STATE: CollaborationState = {
 					noteId: "t-gsales-goal-2",
 				},
 			],
-			notes: [
-				{
-					text: "Gia Moreno (procurement) needs pricing in their template, not ours.",
-					by: "assistant",
-					date: "2026-09-23T16:00:00.000Z",
-					status: "draft",
-					source: "Email from Gia Moreno, Sep 23",
-					noteId: "t-gsales-note-1",
-					kind: "note",
-				},
-			],
 			keywords: [
 				"pricing",
 				"procurement",
@@ -210,16 +180,6 @@ const SAMPLE_STATE: CollaborationState = {
 					noteId: "t-trip-goal-3",
 				},
 			],
-			notes: [
-				{
-					text: "Keep dinner under the client-entertainment limit; one guest is vegetarian.",
-					by: "you",
-					date: "2026-09-23T16:00:00.000Z",
-					status: "confirmed",
-					noteId: "t-trip-note-1",
-					kind: "note",
-				},
-			],
 			keywords: [
 				"flight",
 				"hotel",
@@ -267,16 +227,6 @@ const SAMPLE_STATE: CollaborationState = {
 					text: "Give Ian a build vs buy recommendation before Fri ELT",
 					status: "open",
 					noteId: "t-elt-goal-1",
-				},
-			],
-			notes: [
-				{
-					text: "Ian wants one page, numbers first.",
-					by: "you",
-					date: "2026-09-10T16:00:00.000Z",
-					status: "confirmed",
-					noteId: "t-elt-note-1",
-					kind: "note",
 				},
 			],
 			keywords: ["ELT", "platform", "build vs buy", "investment"],
@@ -327,7 +277,6 @@ const SAMPLE_STATE: CollaborationState = {
 					noteId: "t-board-goal-1",
 				},
 			],
-			notes: [],
 			keywords: ["board", "readout", "slide", "deck"],
 			people: [
 				{
@@ -370,7 +319,6 @@ const SAMPLE_STATE: CollaborationState = {
 					noteId: "t-budget-goal-1",
 				},
 			],
-			notes: [],
 			keywords: ["FY27", "budget", "line items", "tooling", "forecast"],
 			people: [
 				{
@@ -413,7 +361,6 @@ const SAMPLE_STATE: CollaborationState = {
 					noteId: "t-fabrikam-goal-1",
 				},
 			],
-			notes: [],
 			keywords: ["GPU", "capacity", "reservation", "DGX"],
 			people: [
 				{
@@ -1584,6 +1531,7 @@ const SAMPLE_STATE: CollaborationState = {
 			calendar: false,
 			teams: false,
 		},
+		memory: { use: true, learn: true },
 		version: 1,
 	},
 	rules: [
@@ -1673,33 +1621,6 @@ const SAMPLE_STATE: CollaborationState = {
 	workspaces: {
 		"th-geng-review": {
 			goal: "Lock the Oct 15 review: 45-min slot, attendee list, pre-read to Ava by Oct 13.",
-			facts: [
-				{
-					text: "Ava prefers a written pre-read 48h before reviews.",
-					from: "Topic note - Northwind Eng (you)",
-					status: "confirmed",
-					id: "th-geng-review-fact-1",
-				},
-				{
-					text: "Pilot scope is limited to 2 use cases.",
-					from: "Email from Hugo, Sep 20",
-					status: "draft",
-					id: "th-geng-review-fact-2",
-					sourcePersonId: "p-hugo",
-				},
-				{
-					text: "You are onsite in Seattle Oct 14-15.",
-					from: "Topic - Northwind onsite",
-					status: "confirmed",
-					id: "th-geng-review-fact-3",
-				},
-				{
-					text: "Hugo owns the demo environment.",
-					from: "Brain - people",
-					status: "confirmed",
-					id: "th-geng-review-fact-4",
-				},
-			],
 			messages: [
 				{
 					id: "m1",
@@ -1877,27 +1798,6 @@ const SAMPLE_STATE: CollaborationState = {
 		},
 		"th-elt-chat": {
 			goal: "Give Ian a one-page build vs buy recommendation, numbers first, before Friday's ELT.",
-			facts: [
-				{
-					text: "Ian wants one page, numbers first.",
-					from: "Topic note - ELT (you)",
-					status: "confirmed",
-					id: "th-elt-chat-fact-1",
-				},
-				{
-					text: "Tooling line items total $412K for FY27.",
-					from: "Email from Kira, today",
-					status: "confirmed",
-					id: "th-elt-chat-fact-2",
-					sourcePersonId: "p-kira",
-				},
-				{
-					text: "Jade will reuse the recommendation on the board slide.",
-					from: "ELT prep chat",
-					status: "draft",
-					id: "th-elt-chat-fact-3",
-				},
-			],
 			messages: [
 				{
 					id: "o1",
@@ -2002,20 +1902,6 @@ const SAMPLE_STATE: CollaborationState = {
 		},
 		"th-leo-chat": {
 			goal: "Arrive Seattle Oct 13 evening; host the Northwind sales happy hour Oct 14 5-6 PM; dinner for 6 at 7:30 PM.",
-			facts: [
-				{
-					text: "Keep dinner under the client-entertainment limit; one guest is vegetarian.",
-					from: "Topic note - Northwind onsite (you)",
-					status: "confirmed",
-					id: "th-leo-chat-fact-1",
-				},
-				{
-					text: "Travel Desk itinerary is waiting for your approval.",
-					from: "Travel Desk email, today",
-					status: "confirmed",
-					id: "th-leo-chat-fact-2",
-				},
-			],
 			messages: [
 				{
 					id: "j1",
@@ -2125,6 +2011,295 @@ const SAMPLE_STATE: CollaborationState = {
 			],
 		},
 	},
+	memories: [
+		{
+			id: "m-sample-pref-1",
+			kind: "preference",
+			text: "Keep emails to Northwind short and lead with the decision.",
+			state: "active",
+			origin: "you",
+			confirmed: true,
+			about: [],
+			source: {
+				kind: "ui",
+			},
+			createdAt: "2026-09-15T16:00:00.000Z",
+			updatedAt: "2026-09-15T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "t-geng-note-1",
+			kind: "fact",
+			text: "Ava prefers a written pre-read 48h before any review.",
+			state: "active",
+			origin: "you",
+			confirmed: true,
+			about: [
+				{
+					type: "topic",
+					id: "t-geng",
+				},
+			],
+			source: {
+				kind: "topic_note",
+			},
+			createdAt: "2026-09-18T16:00:00.000Z",
+			updatedAt: "2026-09-18T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "t-geng-note-2",
+			kind: "fact",
+			text: "Pilot scope is limited to 2 use cases (claims triage, contract Q&A).",
+			state: "suggested",
+			origin: "brain",
+			confirmed: false,
+			about: [
+				{
+					type: "topic",
+					id: "t-geng",
+				},
+			],
+			source: {
+				kind: "topic_note",
+				label: "Email from Hugo Lane, Sep 20",
+			},
+			createdAt: "2026-09-20T16:00:00.000Z",
+			updatedAt: "2026-09-20T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "t-gsales-note-1",
+			kind: "fact",
+			text: "Gia Moreno (procurement) needs pricing in their template, not ours.",
+			state: "suggested",
+			origin: "brain",
+			confirmed: false,
+			about: [
+				{
+					type: "topic",
+					id: "t-gsales",
+				},
+			],
+			source: {
+				kind: "topic_note",
+				label: "Email from Gia Moreno, Sep 23",
+			},
+			createdAt: "2026-09-23T16:00:00.000Z",
+			updatedAt: "2026-09-23T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "t-trip-note-1",
+			kind: "fact",
+			text: "Keep dinner under the client-entertainment limit; one guest is vegetarian.",
+			state: "active",
+			origin: "you",
+			confirmed: true,
+			about: [
+				{
+					type: "topic",
+					id: "t-trip",
+				},
+			],
+			source: {
+				kind: "topic_note",
+			},
+			createdAt: "2026-09-23T16:00:00.000Z",
+			updatedAt: "2026-09-23T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "t-elt-note-1",
+			kind: "fact",
+			text: "Ian wants one page, numbers first.",
+			state: "active",
+			origin: "you",
+			confirmed: true,
+			about: [
+				{
+					type: "topic",
+					id: "t-elt",
+				},
+			],
+			source: {
+				kind: "topic_note",
+			},
+			createdAt: "2026-09-10T16:00:00.000Z",
+			updatedAt: "2026-09-10T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "th-geng-review-fact-2",
+			kind: "fact",
+			text: "Pilot scope is limited to 2 use cases.",
+			state: "suggested",
+			origin: "brain",
+			confirmed: false,
+			about: [
+				{
+					type: "thread",
+					id: "th-geng-review",
+				},
+			],
+			source: {
+				kind: "thread_fact",
+				threadId: "th-geng-review",
+				label: "Email from Hugo, Sep 20",
+				personId: "p-hugo",
+			},
+			createdAt: "2026-09-24T16:00:00.000Z",
+			updatedAt: "2026-09-24T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "th-geng-review-fact-3",
+			kind: "fact",
+			text: "You are onsite in Seattle Oct 14-15.",
+			state: "active",
+			origin: "you",
+			confirmed: true,
+			about: [
+				{
+					type: "thread",
+					id: "th-geng-review",
+				},
+			],
+			source: {
+				kind: "thread_fact",
+				threadId: "th-geng-review",
+				label: "Topic - Northwind onsite",
+			},
+			createdAt: "2026-09-24T16:00:00.000Z",
+			updatedAt: "2026-09-24T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "th-geng-review-fact-4",
+			kind: "fact",
+			text: "Hugo owns the demo environment.",
+			state: "active",
+			origin: "you",
+			confirmed: true,
+			about: [
+				{
+					type: "thread",
+					id: "th-geng-review",
+				},
+			],
+			source: {
+				kind: "thread_fact",
+				threadId: "th-geng-review",
+				label: "Brain - people",
+			},
+			createdAt: "2026-09-24T16:00:00.000Z",
+			updatedAt: "2026-09-24T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "th-elt-chat-fact-2",
+			kind: "fact",
+			text: "Tooling line items total $412K for FY27.",
+			state: "active",
+			origin: "you",
+			confirmed: true,
+			about: [
+				{
+					type: "thread",
+					id: "th-elt-chat",
+				},
+			],
+			source: {
+				kind: "thread_fact",
+				threadId: "th-elt-chat",
+				label: "Email from Kira, today",
+				personId: "p-kira",
+			},
+			createdAt: "2026-09-24T16:00:00.000Z",
+			updatedAt: "2026-09-24T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "th-elt-chat-fact-3",
+			kind: "fact",
+			text: "Jade will reuse the recommendation on the board slide.",
+			state: "suggested",
+			origin: "brain",
+			confirmed: false,
+			about: [
+				{
+					type: "thread",
+					id: "th-elt-chat",
+				},
+			],
+			source: {
+				kind: "thread_fact",
+				threadId: "th-elt-chat",
+				label: "ELT prep chat",
+			},
+			createdAt: "2026-09-24T16:00:00.000Z",
+			updatedAt: "2026-09-24T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+		{
+			id: "th-leo-chat-fact-2",
+			kind: "fact",
+			text: "Travel Desk itinerary is waiting for your approval.",
+			state: "active",
+			origin: "you",
+			confirmed: true,
+			about: [
+				{
+					type: "thread",
+					id: "th-leo-chat",
+				},
+			],
+			source: {
+				kind: "thread_fact",
+				threadId: "th-leo-chat",
+				label: "Travel Desk email, today",
+			},
+			createdAt: "2026-09-24T16:00:00.000Z",
+			updatedAt: "2026-09-24T16:00:00.000Z",
+			pinned: false,
+			expiresAt: null,
+			replacesId: null,
+			isSample: true,
+		},
+	],
 	openThreadIds: ["th-geng-review", "th-elt-chat", "th-leo-chat"],
 	sequence: 1,
 };

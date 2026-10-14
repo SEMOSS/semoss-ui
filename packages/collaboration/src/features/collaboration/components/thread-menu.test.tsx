@@ -12,7 +12,6 @@ import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { TooltipProvider, toast } from "@semoss/ui/next";
-import { readThreadWorkbenchRequest } from "@/features/work-thread/thread-workbench-request";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import type { CollaborationState } from "../state/collaboration.types";
 import {
@@ -32,21 +31,22 @@ function MenuFixture({
 	sidebarTitle,
 	itemId,
 	sourceMessageId,
+	selectedThreadId = threadId,
 }: {
 	hideMuted?: boolean;
 	sidebarTitle?: string;
 	itemId?: string;
 	sourceMessageId?: string;
+	selectedThreadId?: string;
 }) {
-	const { state, undo } = useCollaborationSession();
-	const thread = state.threads.find((candidate) => candidate.id === threadId);
+	const { state } = useCollaborationSession();
+	const thread = state.threads.find(
+		(candidate) => candidate.id === selectedThreadId,
+	);
 	if (!thread) throw new Error("Missing fixture thread");
 	const isVisible = !hideMuted || !thread.muted;
 	const content = (
 		<main tabIndex={-1}>
-			<button type="button" onClick={undo}>
-				Undo
-			</button>
 			<output aria-label="Session state">{JSON.stringify(state)}</output>
 			{isVisible && (
 				<ThreadMenu
@@ -85,6 +85,7 @@ function setup(
 		path?: string;
 		state?: CollaborationState;
 		navigation?: boolean;
+		selectedThreadId?: string;
 	} = {},
 ) {
 	const state = options.state ?? createInitialCollaborationState();
@@ -154,6 +155,20 @@ afterEach(() => {
 });
 
 describe("thread menus", () => {
+	it("offers the room import without promising implicit email actions", async () => {
+		const { open } = setup();
+		await open();
+		for (const name of [
+			"New email",
+			"Draft reply",
+			"Reply",
+			"Forward",
+			"Delete email",
+			"Open workbench",
+		])
+			expect(queryMenuAction({ name })).toBeNull();
+		expect(getMenuAction({ name: "Open in room" })).toBeVisible();
+	});
 	it.each(["/work", "/brain/threads"])(
 		"offers matching right-click and overflow actions on %s",
 		async (path) => {
@@ -169,16 +184,16 @@ describe("thread menus", () => {
 				(item) => item.textContent,
 			);
 			expect(contextActions).toContain(
-				path === "/work" ? "Open workbench" : "Open Brain overview",
+				path === "/work" ? "Open in room" : "Open Brain overview",
 			);
 			for (const removed of [
+				"Open in Work",
 				"Manage topics…",
 				"Summarize",
 				"Draft reply",
 				"Extract next steps",
 			])
 				expect(contextActions).not.toContain(removed);
-			expect(screen.getByText("Assistant")).toBeVisible();
 			expect(contextActions).not.toContain("Done");
 			expect(router.state.location.pathname).toBe(path);
 			await user.keyboard("{Escape}");
@@ -247,12 +262,12 @@ describe("thread menus", () => {
 					area,
 				),
 			).toBe(
-				`https://example.test/apps/collaboration/?tenant=one#/${area}/${area === "work" ? "thread" : "threads"}/a%2Fb%20%3F`,
+				`https://example.test/apps/collaboration/?tenant=one#/${area === "work" ? "thread" : "brain/threads"}/a%2Fb%20%3F`,
 			);
 		},
 	);
 
-	it("ignores a thread, restores a surviving focus target, and supports Undo", async () => {
+	it("ignores a thread and restores a surviving focus target", async () => {
 		const { user, open } = setup({ hideMuted: true });
 		await open();
 		await user.click(getMenuAction({ name: "Ignore thread" }));
@@ -262,8 +277,6 @@ describe("thread menus", () => {
 				?.muted,
 		).toBe(true);
 		await waitFor(() => expect(screen.getByRole("main")).toHaveFocus());
-		await user.click(screen.getByRole("button", { name: "Undo" }));
-		expect(screen.getByRole("article")).toBeVisible();
 	});
 
 	it("offers Resume for an ignored thread", async () => {
@@ -280,24 +293,15 @@ describe("thread menus", () => {
 		).toBe(false);
 	});
 
-	it.each(["/work", `/work/thread/${threadId}`])(
-		"requests the selected workbench from %s",
+	it.each(["/work", `/thread/${threadId}`])(
+		"opens the source in a room from %s without legacy route commands",
 		async (path) => {
 			const { user, router, open } = setup({ path });
 			await open();
-			await user.click(getMenuAction({ name: "Open workbench" }));
-			expect(router.state.location.pathname).toBe(
-				`/work/thread/${threadId}`,
-			);
-			expect(
-				readThreadWorkbenchRequest(
-					router.state.location.state,
-					threadId,
-				)?.threadId,
-			).toBe(threadId);
-			expect(router.state.historyAction).toBe(
-				path === "/work" ? "PUSH" : "REPLACE",
-			);
+			await user.click(getMenuAction({ name: "Open in room" }));
+			expect(router.state.location.pathname).toBe(`/thread/${threadId}`);
+			expect(router.state.location.state).toBeNull();
+			expect(router.state.historyAction).toBe("PUSH");
 		},
 	);
 
@@ -313,9 +317,7 @@ describe("thread menus", () => {
 		});
 		await open();
 		expect(getMenuActions().map((item) => item.textContent)).toEqual([
-			"Ask assistant",
-			"New email",
-			"Open in Work",
+			"Open in room",
 			"View in Brain",
 			"Copy link",
 			"Ignore thread",
@@ -343,14 +345,13 @@ describe("thread menus", () => {
 		);
 	});
 
-	it("uses the Brain menu in shared navigation and opens the registered page sidebar", async () => {
+	it("opens the registered Brain sidebar through its contextual thread menu", async () => {
 		const state = createInitialCollaborationState();
 		state.openThreadIds = [threadId];
 		const { user, router } = setup({
 			state,
 			path: "/brain/threads",
 			sidebarTitle: "Brain overview",
-			navigation: true,
 		});
 		const trigger = screen.getAllByRole("button", {
 			name: /^(Thread|Email) actions for/,
@@ -363,25 +364,6 @@ describe("thread menus", () => {
 		).toBeVisible();
 		expect(router.state.location.pathname).toBe("/brain/threads");
 	});
-
-	it.each([true, false])(
-		"closes a room and only leaves the page when it is active (%s)",
-		async (active) => {
-			const state = createInitialCollaborationState();
-			state.openThreadIds = [threadId];
-			const path = active ? `/work/thread/${threadId}` : "/work";
-			const { user, router, open } = setup({ state, path });
-			await open();
-			await user.click(getMenuAction({ name: "Close room" }));
-			expect(sessionState().openThreadIds).not.toContain(threadId);
-			expect(
-				sessionState().threads.some((thread) => thread.id === threadId),
-			).toBe(true);
-			expect(router.state.location.pathname).toBe(
-				active ? "/work" : path,
-			);
-		},
-	);
 
 	it("marks only the selected Work item done and exposes Move back afterward", async () => {
 		const state = createInitialCollaborationState();
@@ -415,7 +397,7 @@ describe("thread menus", () => {
 
 	it("navigates to Brain without changing thread data", async () => {
 		const { user, open, router } = setup({
-			path: `/work/thread/${threadId}`,
+			path: `/thread/${threadId}`,
 		});
 		const before = sessionState().threads;
 		await open();
@@ -431,7 +413,7 @@ describe("thread menus", () => {
 	});
 });
 
-it("targets its own email and omits thread-level organization", async () => {
+it("offers the email source in a room and omits thread organization", async () => {
 	const state = createInitialCollaborationState();
 	const thread = state.threads.find((item) => item.id === threadId);
 	if (!thread) throw new Error("Missing thread");
@@ -441,15 +423,16 @@ it("targets its own email and omits thread-level organization", async () => {
 		sourceMessageId: "later-email",
 	});
 	await open();
-	expect(queryMenuAction({ name: "Ignore thread" })).toBeNull();
-	expect(queryMenuAction({ name: "Open workbench" })).toBeNull();
-	expect(getMenuAction({ name: "Reply" })).toBeVisible();
-	await user.click(getMenuAction({ name: "Draft reply" }));
-	expect(router.state.location.state.threadAction).toMatchObject({
-		threadId,
-		action: "draft",
-		sourceMessageId: "later-email",
-	});
+	for (const name of [
+		"Ignore thread",
+		"Open workbench",
+		"Reply",
+		"Draft reply",
+	])
+		expect(queryMenuAction({ name })).toBeNull();
+	await user.click(getMenuAction({ name: "Open in room" }));
+	expect(router.state.location.pathname).toBe(`/thread/${threadId}`);
+	expect(router.state.location.state).toBeNull();
 });
 
 it("does not open the action popover on hover", async () => {

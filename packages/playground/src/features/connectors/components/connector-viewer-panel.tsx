@@ -1,12 +1,15 @@
-import type { ComponentType } from "react";
+import type { ReactNode } from "react";
 import type { ConnectorViewerProps } from "@semoss/connectors";
 import type { ConnectorProviderId } from "../connector.catalog";
 import { useRoomConnectorHost } from "../sources/use-room-connector-host";
 
 /** Props for {@link ConnectorViewerPanel}. */
 export interface ConnectorViewerPanelProps {
-	/** The shared viewer to show, such as `OneDriveViewer`. */
-	viewer: ComponentType<ConnectorViewerProps>;
+	/**
+	 * Shows the shared viewer, such as `OneDriveViewer` or the `MailboxView`
+	 * for one account, with the props the room gives it.
+	 */
+	render: (props: ConnectorViewerProps) => ReactNode;
 	/** The account it reads with, which its sign in opens. */
 	provider: ConnectorProviderId;
 }
@@ -17,9 +20,9 @@ export interface ConnectorViewerPanelProps {
  * names it and shows its logo, so the viewer leaves its own header out.
  */
 export const ConnectorViewerPanel = ({
-	viewer: Viewer,
+	render,
 	provider,
 }: ConnectorViewerPanelProps) => {
 	const host = useRoomConnectorHost(provider);
-	return <Viewer {...host} showHeader={false} />;
+	return render({ ...host, showHeader: false });
 };

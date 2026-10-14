@@ -24,6 +24,7 @@ import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,
 	AutomationRunSummary,
+	AutomationSavedResultReference,
 	RunStatus,
 } from "../../../domain/automation.types";
 import { buildAssistantHandoffPrompt } from "../../../domain/automation-assistant-handoff";
@@ -42,6 +43,14 @@ import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
 import { RunNodeDataViewer } from "./run-node-data-viewer";
+import { RunNodeSourceViewer } from "./run-node-source-viewer";
+import {
+	findSavedResultForOccurrence,
+	getRunNodeDataSource,
+	getRunNodeOccurrenceKey,
+	RUN_NODE_VIEW_LABELS,
+	RUN_RESULTS_LAYOUT_CLASSES,
+} from "./run-node-view-state";
 
 export interface RunsTabSnapshot {
 	running: boolean;
@@ -278,7 +287,10 @@ export function RunsTab({
 	if (view === "live" || (view === "history" && running)) {
 		return (
 			<LiveRunView
+				appId={appId}
+				runId={activeRun?.RUN_ID ?? null}
 				executionInsightId={activeRun?.executionInsightId ?? null}
+				savedResults={activeRun?.savedResults ?? []}
 				running={running}
 				latestRunStatus={latestRunStatus}
 				aiRunSummary={aiRunSummary}
@@ -313,6 +325,8 @@ export function RunsTab({
 		if (selectedRun) {
 			return (
 				<HistoryRunView
+					key={selectedRun.RUN_ID}
+					appId={appId}
 					run={selectedRun}
 					onBack={goBack}
 					onOutputPopout={handleOutputPopout}
@@ -468,7 +482,10 @@ function RunHistoryBreadcrumb({
 			>
 				Run History
 			</button>
-			<ChevronRight className="size-4 shrink-0" aria-hidden="true" />
+			<ChevronRight
+				className="size-4 shrink-0 text-muted-foreground"
+				aria-hidden="true"
+			/>
 			<span className="truncate font-semibold text-muted-foreground text-sm">
 				{current}
 			</span>
@@ -478,7 +495,10 @@ function RunHistoryBreadcrumb({
 
 /** Live run detail with navigation back to the history list. */
 function LiveRunView({
+	appId,
+	runId,
 	executionInsightId,
+	savedResults,
 	running,
 	latestRunStatus,
 	aiRunSummary,
@@ -493,7 +513,10 @@ function LiveRunView({
 	focusToken,
 	onViewAgentRun,
 }: Omit<AutomationTraceSnapshot, "executedDefinition"> & {
+	appId: string;
+	runId: string | null;
 	executionInsightId: string | null;
+	savedResults: AutomationSavedResultReference[];
 	onOutputPopout: (output: string) => void;
 	onAskAssistant: () => void;
 	onDismiss: () => void;
@@ -511,7 +534,10 @@ function LiveRunView({
 	const [bannerDismissed, setBannerDismissed] = useState(false);
 	const previousRunStatusRef = useRef(latestRunStatus);
 
-	const stepMap = new Map(steps.map((step) => [step.id, step]));
+	const stepMap = useMemo(
+		() => new Map(steps.map((step) => [step.id, step])),
+		[steps],
+	);
 	const runningResult =
 		results.find(
 			(r) => r.STATUS === "RUNNING" || r.STATUS === "WAITING_FOR_INPUT",
@@ -577,7 +603,11 @@ function LiveRunView({
 					</div>
 				)}
 			<ResultsPanel
+				key={executionInsightId ?? "live"}
+				appId={appId}
+				runId={runId}
 				executionInsightId={executionInsightId}
+				savedResults={savedResults}
 				results={results}
 				onOutputPopout={onOutputPopout}
 				selectedResult={selectedResult}
@@ -591,12 +621,14 @@ function LiveRunView({
 
 /** Historical run detail with back button and run metadata. */
 function HistoryRunView({
+	appId,
 	run,
 	onBack,
 	onOutputPopout,
 	onViewRun,
 	onViewAgentRun,
 }: {
+	appId: string;
 	run: AutomationRunDetail;
 	onBack: () => void;
 	onOutputPopout: (output: string) => void;
@@ -605,10 +637,22 @@ function HistoryRunView({
 }) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const executedSteps = useMemo(() => getExecutedSteps(run), [run]);
-	const stepMap = new Map(executedSteps.map((s) => [s.id, s]));
+	const stepMap = useMemo(
+		() => new Map(executedSteps.map((s) => [s.id, s])),
+		[executedSteps],
+	);
 	const results = run.nodeResults ?? [];
+	const latestSuccessfulResult = [...results]
+		.reverse()
+		.find((result) => result.STATUS === "SUCCESS");
 	const selectedResult =
-		results.find((r) => r.NODE_ID === selectedNodeId) ?? results[0] ?? null;
+		results.find((result) => result.NODE_ID === selectedNodeId) ??
+		(run.STATUS === "FAILED"
+			? results.find((result) => result.NODE_ID === run.FAILED_NODE_ID)
+			: null) ??
+		latestSuccessfulResult ??
+		results[results.length - 1] ??
+		null;
 
 	return (
 		<div className="flex h-full min-h-0 flex-col p-3">
@@ -643,9 +687,13 @@ function HistoryRunView({
 				</div>
 			</div>
 
-			<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
+			<div className="mt-3 flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-card">
 				<ResultsPanel
+					key={run.RUN_ID}
+					appId={appId}
+					runId={run.RUN_ID}
 					executionInsightId={run.executionInsightId ?? null}
+					savedResults={run.savedResults ?? []}
 					results={results}
 					onOutputPopout={onOutputPopout}
 					selectedResult={selectedResult}
@@ -660,7 +708,10 @@ function HistoryRunView({
 
 /** Shared results panel: left nav + right output. */
 function ResultsPanel({
+	appId,
+	runId,
 	executionInsightId,
+	savedResults,
 	results,
 	selectedResult,
 	stepMap,
@@ -668,7 +719,10 @@ function ResultsPanel({
 	onSelectNode,
 	onViewAgentRun,
 }: {
+	appId: string;
+	runId: string | null;
 	executionInsightId: string | null;
+	savedResults: AutomationSavedResultReference[];
 	results: AutomationNodeResult[];
 	selectedResult: AutomationNodeResult | null;
 	stepMap: Map<string, AutomationNode>;
@@ -676,22 +730,133 @@ function ResultsPanel({
 	onSelectNode: (id: string) => void;
 	onViewAgentRun?: (trace: AutomationNodeTrace) => void;
 }) {
-	const selectedStep = selectedResult
-		? stepMap.get(selectedResult.NODE_ID)
+	const outputPanelRef = useRef<HTMLElement>(null);
+	const previousOutputSelectionRef = useRef<string | null>(null);
+	const [expandedLoopIds, setExpandedLoopIds] = useState<Set<string>>(
+		new Set(),
+	);
+	const [expandedIterationKeys, setExpandedIterationKeys] = useState<
+		Set<string>
+	>(() => new Set());
+	const [contentView, setContentView] = useState<"output" | "source">(
+		"output",
+	);
+
+	const [selectedBodyKey, setSelectedBodyKey] = useState<{
+		loopNodeId: string;
+		nodeId: string;
+		iterationIndex: number;
+	} | null>(null);
+
+	const selectedBodyResult = useMemo(() => {
+		if (!selectedBodyKey) return null;
+		const loopResult = results.find(
+			(result) => result.NODE_ID === selectedBodyKey.loopNodeId,
+		);
+		const iteration = loopResult?.iterations?.find(
+			(candidate) => candidate.index === selectedBodyKey.iterationIndex,
+		);
+		return (
+			iteration?.nodeResults.find(
+				(result) => result.NODE_ID === selectedBodyKey.nodeId,
+			) ?? null
+		);
+	}, [results, selectedBodyKey]);
+
+	useEffect(() => {
+		const iterations = selectedResult?.iterations;
+		if (!selectedResult || !iterations?.length) {
+			setSelectedBodyKey(null);
+			return;
+		}
+		const loopNodeId = selectedResult.NODE_ID;
+		setSelectedBodyKey((current) => {
+			if (current?.loopNodeId !== loopNodeId) return null;
+			const iteration = iterations.find(
+				(candidate) => candidate.index === current.iterationIndex,
+			);
+			return iteration?.nodeResults.some(
+				(result) => result.NODE_ID === current.nodeId,
+			)
+				? current
+				: null;
+		});
+	}, [selectedResult]);
+
+	const bodyStepMap = useMemo(() => {
+		const map = new Map<string, AutomationNode>();
+		for (const step of stepMap.values()) {
+			for (const bodyNode of step.body?.nodes ?? []) {
+				map.set(bodyNode.id, bodyNode);
+			}
+		}
+		return map;
+	}, [stepMap]);
+
+	const displayResult = selectedBodyResult ?? selectedResult;
+	const outputSelectionKey = JSON.stringify([
+		displayResult?.NODE_ID,
+		selectedBodyKey?.loopNodeId,
+		selectedBodyKey?.iterationIndex,
+	]);
+	useEffect(() => {
+		if (previousOutputSelectionRef.current === outputSelectionKey) return;
+		previousOutputSelectionRef.current = outputSelectionKey;
+		if (outputPanelRef.current) {
+			outputPanelRef.current.scrollTop = 0;
+		}
+	}, [outputSelectionKey]);
+
+	const displayStep = displayResult
+		? (stepMap.get(displayResult.NODE_ID) ??
+			bodyStepMap.get(displayResult.NODE_ID))
 		: undefined;
-	const selectedAgentTrace = selectedResult?.trace;
+	const selectedAgentTrace = displayResult?.trace;
 	const reviewAgentTrace =
 		selectedAgentTrace?.agentRunId &&
 		selectedAgentTrace.automationRunId &&
 		selectedAgentTrace.nodeId
 			? selectedAgentTrace
 			: null;
+	const occurrence = selectedBodyKey
+		? {
+				parentNodeId: selectedBodyKey.loopNodeId,
+				iterationIndex: selectedBodyKey.iterationIndex,
+			}
+		: null;
+	const savedResult = displayResult
+		? findSavedResultForOccurrence(
+				savedResults,
+				displayResult.NODE_ID,
+				occurrence,
+			)
+		: undefined;
+	const dataSource = displayResult
+		? getRunNodeDataSource(
+				savedResult,
+				executionInsightId,
+				displayResult.OUTPUT_FRAME,
+			)
+		: { kind: "preview" as const };
+	const occurrenceKey =
+		displayResult && runId
+			? getRunNodeOccurrenceKey(runId, displayResult.NODE_ID, occurrence)
+			: null;
+
+	const handleSelectNode = useCallback(
+		(nodeId: string) => {
+			setSelectedBodyKey(null);
+			setContentView("output");
+			onSelectNode(nodeId);
+		},
+		[onSelectNode],
+	);
 
 	return (
-		<div className="flex min-h-0 flex-1 overflow-hidden">
+		<div className={RUN_RESULTS_LAYOUT_CLASSES.root}>
 			<nav
-				className="w-56 shrink-0 overflow-y-auto border-border border-r bg-muted/20 p-2"
-				aria-label="Run actions"
+				className={RUN_RESULTS_LAYOUT_CLASSES.navigation}
+				aria-label={RUN_NODE_VIEW_LABELS.navigation}
 			>
 				{results.length === 0 ? (
 					<p className="px-2 py-3 text-muted-foreground text-xs">
@@ -709,68 +874,292 @@ function ResultsPanel({
 							const iconColor =
 								workflowDisplay?.color ?? meta.color;
 							const active =
-								selectedResult?.NODE_ID === result.NODE_ID;
+								selectedResult?.NODE_ID === result.NODE_ID &&
+								!selectedBodyKey;
 							const displayStatus =
 								step?.type === "trigger" &&
 								result.STATUS === "PENDING"
 									? "SUCCESS"
 									: result.STATUS;
+							const hasIterations =
+								result.iterations &&
+								result.iterations.length > 0;
+							const isExpanded = expandedLoopIds.has(
+								result.NODE_ID,
+							);
 
 							return (
-								<button
-									key={result.NODE_ID}
-									type="button"
-									onClick={() => onSelectNode(result.NODE_ID)}
-									className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left ${active ? "bg-accent text-accent-foreground" : "hover:bg-muted"}`}
-								>
-									<span
-										className={`flex size-6 shrink-0 items-center justify-center rounded bg-muted ${iconColor}`}
+								<div key={result.NODE_ID}>
+									<div
+										className={`flex items-center rounded-md ${active ? "bg-accent text-accent-foreground" : ""}`}
 									>
-										<Icon className="size-3.5" />
-									</span>
-									<span className="min-w-0 flex-1">
-										<span className="block truncate text-xs">
-											{index + 1}.{" "}
-											{result.NODE_LABEL ||
-												step?.label ||
-												meta.label}
-										</span>
-										<span className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-xs">
-											<StatusBadge
-												status={displayStatus}
-											/>{" "}
-											{formatDurationMs(
-												result.DURATION_MS,
-											)}
-										</span>
-									</span>
-								</button>
+										<button
+											type="button"
+											onClick={() =>
+												handleSelectNode(result.NODE_ID)
+											}
+											className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2 text-left hover:bg-muted"
+										>
+											<span
+												className={`flex size-6 shrink-0 items-center justify-center rounded bg-muted ${iconColor}`}
+											>
+												<Icon
+													className="size-3.5"
+													aria-hidden="true"
+												/>
+											</span>
+											<span className="min-w-0 flex-1">
+												<span className="block truncate text-xs">
+													{index + 1}.{" "}
+													{result.NODE_LABEL ||
+														step?.label ||
+														meta.label}
+												</span>
+												<span className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-xs">
+													<StatusBadge
+														status={displayStatus}
+													/>{" "}
+													{formatDurationMs(
+														result.DURATION_MS,
+													)}
+													{hasIterations && (
+														<>
+															{" · "}
+															{
+																result
+																	.iterations
+																	?.length
+															}{" "}
+															iterations
+														</>
+													)}
+												</span>
+											</span>
+										</button>
+										{hasIterations && (
+											<button
+												type="button"
+												onClick={() =>
+													setExpandedLoopIds(
+														(prev) => {
+															const next =
+																new Set(prev);
+															if (
+																next.has(
+																	result.NODE_ID,
+																)
+															) {
+																next.delete(
+																	result.NODE_ID,
+																);
+															} else {
+																next.add(
+																	result.NODE_ID,
+																);
+															}
+															return next;
+														},
+													)
+												}
+												className="mr-1 flex size-6 shrink-0 items-center justify-center rounded hover:bg-muted"
+												aria-expanded={isExpanded}
+												aria-label={
+													isExpanded
+														? `Collapse ${result.NODE_LABEL || step?.label || "loop"} iterations`
+														: `Expand ${result.NODE_LABEL || step?.label || "loop"} iterations`
+												}
+											>
+												<ChevronRight
+													className={`size-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+													aria-hidden="true"
+												/>
+											</button>
+										)}
+									</div>
+									{hasIterations && isExpanded && (
+										<div className="mt-0.5 ml-2 space-y-0.5 border-border/50 border-l pl-2">
+											{result.iterations?.map((iter) => {
+												const iterationKey = `${executionInsightId ?? "run"}:${result.NODE_ID}:${iter.index}`;
+												const isIterationExpanded =
+													expandedIterationKeys.has(
+														iterationKey,
+													);
+												return (
+													<div key={iter.index}>
+														<button
+															type="button"
+															className="flex w-full items-center gap-1 rounded px-2 py-1 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide hover:bg-muted"
+															aria-expanded={
+																isIterationExpanded
+															}
+															onClick={() => {
+																setExpandedIterationKeys(
+																	(
+																		previous,
+																	) => {
+																		const next =
+																			new Set(
+																				previous,
+																			);
+																		if (
+																			next.has(
+																				iterationKey,
+																			)
+																		) {
+																			next.delete(
+																				iterationKey,
+																			);
+																		} else {
+																			next.add(
+																				iterationKey,
+																			);
+																		}
+																		return next;
+																	},
+																);
+																if (
+																	isIterationExpanded &&
+																	selectedBodyKey?.loopNodeId ===
+																		result.NODE_ID &&
+																	selectedBodyKey.iterationIndex ===
+																		iter.index
+																) {
+																	setSelectedBodyKey(
+																		null,
+																	);
+																}
+															}}
+														>
+															<ChevronRight
+																className={`size-3.5 transition-transform ${isIterationExpanded ? "rotate-90" : ""}`}
+																aria-hidden="true"
+															/>
+															Iteration{" "}
+															{iter.index + 1}
+															<span className="ml-auto font-normal normal-case">
+																{
+																	iter
+																		.nodeResults
+																		.length
+																}{" "}
+																steps
+															</span>
+														</button>
+														{isIterationExpanded && (
+															<div className="space-y-0.5 pl-2">
+																{iter.nodeResults.map(
+																	(
+																		bodyResult,
+																	) => {
+																		const bodyStep =
+																			bodyStepMap.get(
+																				bodyResult.NODE_ID,
+																			);
+																		const bodyMeta =
+																			getDisplayMeta(
+																				bodyStep?.type ??
+																					"app",
+																			);
+																		const bodyDisplay =
+																			bodyStep?.workflowType
+																				? getWorkflowNodeDisplay(
+																						bodyStep.workflowType,
+																					)
+																				: null;
+																		const BodyIcon =
+																			bodyDisplay?.icon ??
+																			bodyMeta.icon;
+																		const bodyIconColor =
+																			bodyDisplay?.color ??
+																			bodyMeta.color;
+																		const bodyActive =
+																			selectedBodyKey?.loopNodeId ===
+																				result.NODE_ID &&
+																			selectedBodyKey?.nodeId ===
+																				bodyResult.NODE_ID &&
+																			selectedBodyKey?.iterationIndex ===
+																				iter.index;
+																		return (
+																			<button
+																				key={`${iter.index}-${bodyResult.NODE_ID}`}
+																				type="button"
+																				onClick={() => {
+																					setContentView(
+																						"output",
+																					);
+																					setSelectedBodyKey(
+																						{
+																							loopNodeId:
+																								result.NODE_ID,
+																							nodeId: bodyResult.NODE_ID,
+																							iterationIndex:
+																								iter.index,
+																						},
+																					);
+																				}}
+																				className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ${bodyActive ? "bg-accent text-accent-foreground" : "hover:bg-muted"}`}
+																			>
+																				<span
+																					className={`flex size-5 shrink-0 items-center justify-center rounded bg-muted ${bodyIconColor}`}
+																				>
+																					<BodyIcon className="size-3" />
+																				</span>
+																				<span className="min-w-0 flex-1">
+																					<span className="block truncate text-xs">
+																						{bodyResult.NODE_LABEL ||
+																							bodyStep?.label ||
+																							bodyMeta.label}
+																					</span>
+																					<span className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-xs">
+																						<StatusBadge
+																							status={
+																								bodyResult.STATUS
+																							}
+																						/>{" "}
+																						{formatDurationMs(
+																							bodyResult.DURATION_MS,
+																						)}
+																					</span>
+																				</span>
+																			</button>
+																		);
+																	},
+																)}
+															</div>
+														)}
+													</div>
+												);
+											})}
+										</div>
+									)}
+								</div>
 							);
 						})}
 					</div>
 				)}
 			</nav>
 			<section
-				className="min-w-0 flex-1 overflow-y-auto p-3"
+				ref={outputPanelRef}
+				className={RUN_RESULTS_LAYOUT_CLASSES.content}
 				aria-live="polite"
 			>
-				{selectedResult ? (
-					selectedResult.STATUS === "RUNNING" &&
-					!selectedResult.OUTPUT_PREVIEW?.trim() ? (
-						<div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground text-xs">
+				{displayResult ? (
+					displayResult.STATUS === "RUNNING" &&
+					!displayResult.OUTPUT_PREVIEW?.trim() ? (
+						<div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground text-xs">
 							<Loader2 className="size-5 animate-spin text-primary" />
 							<span>
 								Executing step{" "}
-								{selectedResult.NODE_LABEL || "..."}...
+								{displayResult.NODE_LABEL || "..."}...
 							</span>
 						</div>
-					) : selectedResult.STATUS === "WAITING_FOR_INPUT" &&
-						!selectedResult.OUTPUT_PREVIEW?.trim() ? (
+					) : displayResult.STATUS === "WAITING_FOR_INPUT" &&
+						!displayResult.OUTPUT_PREVIEW?.trim() ? (
 						<div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground text-xs">
 							<Clock3 className="size-5 text-warning" />
 							<span>
-								{selectedResult.NODE_LABEL || "Agent"} is
-								waiting for input.
+								{displayResult.NODE_LABEL || "Agent"} is waiting
+								for input.
 							</span>
 							{reviewAgentTrace && onViewAgentRun && (
 								<Button
@@ -786,59 +1175,133 @@ function ResultsPanel({
 						</div>
 					) : (
 						<div className="space-y-3">
-							{selectedResult.STATUS === "WAITING_FOR_INPUT" &&
-								reviewAgentTrace &&
-								onViewAgentRun && (
+							{selectedBodyKey && (
+								<p className="text-muted-foreground text-xs">
+									Iteration{" "}
+									{selectedBodyKey.iterationIndex + 1}
+									{" · "}
+									{displayResult.NODE_LABEL ||
+										displayStep?.label ||
+										"Loop step"}
+								</p>
+							)}
+							{runId && (
+								<fieldset className="flex w-fit max-w-full flex-wrap rounded-md border bg-muted/40 p-0.5">
+									<legend className="sr-only">
+										{RUN_NODE_VIEW_LABELS.detailView}
+									</legend>
 									<Button
 										type="button"
 										size="sm"
-										onClick={() =>
-											onViewAgentRun(reviewAgentTrace)
+										variant={
+											contentView === "output"
+												? "secondary"
+												: "ghost"
 										}
+										aria-pressed={contentView === "output"}
+										onClick={() => setContentView("output")}
 									>
-										<Clock3
-											className="size-4"
-											aria-hidden
-										/>
-										Review request
+										{RUN_NODE_VIEW_LABELS.output}
 									</Button>
-								)}
-							{selectedResult.ERROR_MESSAGE && (
-								<ErrorDetail
-									message={selectedResult.ERROR_MESSAGE}
-								/>
+									<Button
+										type="button"
+										size="sm"
+										variant={
+											contentView === "source"
+												? "secondary"
+												: "ghost"
+										}
+										aria-pressed={contentView === "source"}
+										onClick={() => setContentView("source")}
+									>
+										{RUN_NODE_VIEW_LABELS.source}
+									</Button>
+								</fieldset>
 							)}
-							{executionInsightId &&
-							selectedResult.STATUS === "SUCCESS" &&
-							selectedResult.OUTPUT_FRAME ? (
-								<RunNodeDataViewer
-									key={`${executionInsightId}:${selectedResult.NODE_ID}`}
-									insightId={executionInsightId}
-									frame={selectedResult.OUTPUT_FRAME}
-									outputPreview={
-										selectedResult.OUTPUT_PREVIEW ?? ""
-									}
-									onOutputPopout={onOutputPopout}
+							{contentView === "source" && runId ? (
+								<RunNodeSourceViewer
+									key={occurrenceKey}
+									appId={appId}
+									runId={runId}
+									nodeId={displayResult.NODE_ID}
 								/>
 							) : (
-								<CellOutputBlock
-									output={
-										selectedResult.OUTPUT_PREVIEW ??
-										"No output was produced."
-									}
-									onOutputPopout={() =>
-										onOutputPopout(
-											selectedResult.OUTPUT_PREVIEW ??
-												"No output was produced.",
-										)
-									}
-								/>
-							)}
-							{selectedResult.trace && (
-								<TraceDetail
-									trace={selectedResult.trace}
-									step={selectedStep}
-								/>
+								<>
+									{displayResult.STATUS ===
+										"WAITING_FOR_INPUT" &&
+										reviewAgentTrace &&
+										onViewAgentRun && (
+											<Button
+												type="button"
+												size="sm"
+												onClick={() =>
+													onViewAgentRun(
+														reviewAgentTrace,
+													)
+												}
+											>
+												<Clock3
+													className="size-4"
+													aria-hidden
+												/>
+												Review request
+											</Button>
+										)}
+									{displayResult.ERROR_MESSAGE && (
+										<ErrorDetail
+											message={
+												displayResult.ERROR_MESSAGE
+											}
+										/>
+									)}
+									{displayResult.STATUS === "SUCCESS" &&
+									dataSource.kind !== "preview" ? (
+										<RunNodeDataViewer
+											key={occurrenceKey}
+											appId={appId}
+											insightId={
+												dataSource.kind === "live"
+													? dataSource.insightId
+													: (executionInsightId ??
+														undefined)
+											}
+											frame={
+												dataSource.kind === "live"
+													? dataSource.frame
+													: displayResult.OUTPUT_FRAME
+											}
+											savedResult={
+												dataSource.kind === "retained"
+													? dataSource.savedResult
+													: undefined
+											}
+											outputPreview={
+												displayResult.OUTPUT_PREVIEW ??
+												""
+											}
+											onOutputPopout={onOutputPopout}
+										/>
+									) : (
+										<CellOutputBlock
+											output={
+												displayResult.OUTPUT_PREVIEW ??
+												"No output was produced."
+											}
+											onOutputPopout={() =>
+												onOutputPopout(
+													displayResult.OUTPUT_PREVIEW ??
+														"No output was produced.",
+												)
+											}
+										/>
+									)}
+									{displayResult.trace && (
+										<TraceDetail
+											trace={displayResult.trace}
+											step={displayStep}
+										/>
+									)}
+								</>
 							)}
 						</div>
 					)

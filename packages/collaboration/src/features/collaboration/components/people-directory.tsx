@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import {
 	Badge,
 	Button,
-	H1,
+	H2,
 	Input,
 	Label,
 	P,
@@ -17,6 +17,7 @@ import {
 import { isFollowed, type Person } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { BrainOverview } from "./brain-overview";
+import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
 import { PersonAvatar } from "./person-avatar";
 import { TopicChip } from "./topic-chip";
@@ -112,9 +113,9 @@ export function PeopleDirectory() {
 		empty?: string,
 	) => (
 		<section aria-label={title}>
-			<h2 className="px-4 pt-4 pb-2 font-medium text-muted-foreground text-xs md:px-6">
+			<H2 className="px-4 pt-4 pb-2 font-medium text-muted-foreground text-xs md:px-6">
 				{title}
-			</h2>
+			</H2>
 			{list.length > 0 ? (
 				<ul>{list.map(render)}</ul>
 			) : (
@@ -129,17 +130,16 @@ export function PeopleDirectory() {
 
 	return (
 		<CollaborationSurface
+			header={
+				<CollaborationPageHeader
+					title="People"
+					description="The people you follow, VIPs first. Search to find anyone else."
+				/>
+			}
 			aside={<BrainOverview />}
 			asideTitle="Brain overview"
 		>
-			<header className="space-y-1.5 px-4 pt-5 pb-4 md:px-6">
-				<H1 className="font-semibold text-xl">People</H1>
-				<P className="text-muted-foreground text-sm">
-					The people you follow, VIPs first. Search to find anyone
-					else.
-				</P>
-			</header>
-			<div className="flex flex-wrap items-center gap-2 border-b px-4 pb-3 md:px-6">
+			<div className="flex flex-wrap items-center gap-2 border-b p-4 md:px-6">
 				<div className="min-w-40 flex-1">
 					<Label
 						htmlFor={`${fieldId}-people-filter`}

@@ -66,6 +66,17 @@ export function StorageEngineForm({
 					readOnly={readOnly}
 				/>
 			)}
+			{config.operation === "list" && (
+				<BoundInput
+					label="Only include file types (optional)"
+					value={config.fileTypes}
+					placeholder="pdf, png, jpg"
+					description="Separate file extensions with commas. Leave blank to include every path returned by storage."
+					onChange={(fileTypes) => onChange({ ...config, fileTypes })}
+					upstreamVars={upstreamVars}
+					readOnly={readOnly}
+				/>
+			)}
 			{config.operation === "upload" && (
 				<BoundInput
 					label="Metadata (JSON, optional)"

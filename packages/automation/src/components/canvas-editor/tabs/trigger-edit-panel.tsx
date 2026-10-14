@@ -1,24 +1,8 @@
-import { Code2, Lock, Play, Plus, Trash2, X } from "lucide-react";
-import {
-	Suspense,
-	useCallback,
-	useEffect,
-	useId,
-	useRef,
-	useState,
-} from "react";
-import { MonacoEditor } from "@semoss/shared";
-import {
-	Button,
-	Field,
-	FieldLabel,
-	Input,
-	Textarea,
-	useTheme,
-} from "@semoss/ui/next";
+import { Lock, Play, Plus, Trash2, X } from "lucide-react";
+import { useId, useState } from "react";
+import { Button, Field, FieldLabel, Input, Textarea } from "@semoss/ui/next";
 import type { AutomationNode } from "../../../domain/automation.types";
 import type { AutomationGlobalVariable } from "../../../domain/automation-workflow.types";
-import { getGeneratedPythonPreview } from "../../../domain/automation-workflow-adapter";
 import { SchedulePanel } from "../schedule-dialog";
 
 interface TriggerEditPanelProps {
@@ -29,7 +13,7 @@ interface TriggerEditPanelProps {
 	onPrepareSchedule: () => Promise<boolean>;
 	step: AutomationNode;
 	onUpdate: (step: AutomationNode) => void;
-	/** When false (business mode), the setup Python editor is hidden. */
+	/** Retained for host compatibility; trigger nodes never expose Python. */
 	devMode?: boolean;
 	readOnly?: boolean;
 }
@@ -53,7 +37,6 @@ export function TriggerEditPanel({
 	onPrepareSchedule,
 	step,
 	onUpdate,
-	devMode = false,
 	readOnly = false,
 }: TriggerEditPanelProps) {
 	const [globalRows, setGlobalRows] = useState<GlobalInputRow[]>(() => {
@@ -104,55 +87,6 @@ export function TriggerEditPanel({
 				globals: nextRows.map((row) => row.value),
 			},
 		});
-	};
-
-	const { resolvedTheme } = useTheme();
-	const persistedPythonSource =
-		typeof step.workflowConfig?.pythonSource === "string"
-			? step.workflowConfig.pythonSource
-			: "";
-	const [pythonDraft, setPythonDraft] = useState(
-		persistedPythonSource || getGeneratedPythonPreview(step),
-	);
-	const pythonTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const pendingPythonRef = useRef<string | null>(null);
-	// The flush merges onto the newest version of the node rather than the one captured
-	// when typing started, so a global input edited inside the debounce window is not
-	// written back stale.
-	const latestStepRef = useRef(step);
-	const onUpdateRef = useRef(onUpdate);
-	useEffect(() => {
-		latestStepRef.current = step;
-		onUpdateRef.current = onUpdate;
-	}, [step, onUpdate]);
-
-	const flushPythonSource = useCallback(() => {
-		if (pythonTimeoutRef.current) {
-			clearTimeout(pythonTimeoutRef.current);
-			pythonTimeoutRef.current = null;
-		}
-		const pending = pendingPythonRef.current;
-		if (pending === null) return;
-		pendingPythonRef.current = null;
-		const target = latestStepRef.current;
-		onUpdateRef.current({
-			...target,
-			workflowConfig: {
-				...target.workflowConfig,
-				pythonSource: pending,
-			},
-		});
-	}, []);
-	useEffect(() => () => flushPythonSource(), [flushPythonSource]);
-
-	const updatePythonSource = (source: string) => {
-		if (readOnly) return;
-		setPythonDraft(source);
-		pendingPythonRef.current = source;
-		if (pythonTimeoutRef.current) {
-			clearTimeout(pythonTimeoutRef.current);
-		}
-		pythonTimeoutRef.current = setTimeout(flushPythonSource, 300);
 	};
 
 	return (
@@ -387,67 +321,6 @@ export function TriggerEditPanel({
 							</Button>
 						)}
 					</div>
-					{devMode && (
-						<div className="space-y-3 rounded-lg border p-3">
-							<div>
-								<p className="flex items-center gap-1.5 font-medium text-sm">
-									<Code2
-										className="size-3.5 text-primary"
-										aria-hidden
-									/>
-									Setup Python
-								</p>
-								<p className="text-muted-foreground text-xs">
-									Runs once before the first step.
-									Module-level variables, and anything
-									run(scope) returns, are added to scope for
-									every step to read. Use it for values that
-									have to be computed when the run starts,
-									such as a date derived from a global input.
-								</p>
-							</div>
-							<div className="h-64 overflow-hidden rounded-lg border bg-muted/30">
-								<Suspense
-									fallback={
-										<pre className="h-full overflow-auto p-3 font-mono text-xs">
-											{pythonDraft}
-										</pre>
-									}
-								>
-									<MonacoEditor
-										height="100%"
-										width="100%"
-										language="python"
-										theme={
-											resolvedTheme === "dark"
-												? "vs-dark"
-												: "vs"
-										}
-										value={pythonDraft}
-										onChange={(value) =>
-											updatePythonSource(value ?? "")
-										}
-										options={{
-											automaticLayout: true,
-											fontSize: 13,
-											lineNumbers: "on",
-											minimap: { enabled: false },
-											folding: true,
-											scrollBeyondLastLine: false,
-											wordWrap: "on",
-											readOnly,
-											padding: { top: 12, bottom: 12 },
-										}}
-									/>
-								</Suspense>
-							</div>
-							<p className="text-muted-foreground text-xs">
-								{readOnly
-									? "View only."
-									: 'Read a global input with scope["name"]. Leave the template as is when the trigger needs no setup.'}
-							</p>
-						</div>
-					)}
 				</div>
 			</div>
 		</div>

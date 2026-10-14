@@ -16,10 +16,15 @@ const openEmailId = z.string().trim().min(1).optional();
 const attachments = z.array(emailAttachmentSchema).max(10).optional();
 const attachmentError = z.string().optional();
 const addresses = z.string().trim().max(4000);
+// Server-confirmed sources let topic chats reply without importing one thread.
+const sourceMessage = z
+	.object({ id: z.string().trim().min(1), subject: z.string() })
+	.optional();
 // a reply's to and cc replace the native lists when given; a forward's to is required to save
 const replySchema = z.object({
 	mode: z.enum(["reply", "forward"]),
 	sourceMessageId: z.string().trim().min(1),
+	sourceMessage,
 	to: addresses.optional(),
 	cc: addresses.optional(),
 	bcc: addresses.optional(),
@@ -29,12 +34,12 @@ const replySchema = z.object({
 	attachments,
 	attachmentError,
 });
-// a new email; "to" may be empty when the assistant could not find the address
+// An omitted envelope field keeps the open email's value; an empty string clears it.
 const newEmailSchema = z.object({
-	to: addresses,
+	to: addresses.optional(),
 	cc: addresses.optional(),
 	bcc: addresses.optional(),
-	subject: z.string().trim().max(1000),
+	subject: z.string().trim().max(1000).optional(),
 	body,
 	openEmailId,
 	attachments,
@@ -60,12 +65,6 @@ export function isSourcedProposal(
 	return "sourceMessageId" in proposal;
 }
 
-export function isReplyProposal(
-	proposal: ThreadDraftProposal,
-): proposal is SourcedDraftProposal {
-	return isSourcedProposal(proposal) && proposal.mode === "reply";
-}
-
 /**
  * Draft rules sent with rooms created before the backend prompt owned them (Semoss
  * CollaborationPrompts DRAFTS); kept verbatim so those rooms are still recognized.
@@ -85,13 +84,53 @@ function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 		typeof value === "string" ? value : undefined;
 	const replyTo = text(args.replyTo)?.trim();
 	const forward = text(args.forward)?.trim();
-	const source = replyTo || forward;
+	const authoredBody = text(args.message);
+	const editorId = text(args.openEmailId)?.trim() || undefined;
 	let prepared: unknown;
 	try {
 		prepared = JSON.parse(tool.output || "null");
 	} catch {
 		prepared = null;
 	}
+	const operation = z
+		.object({
+			shown: z.literal(true),
+			mode: z.enum(["reply", "forward", "new", "edit"]).optional(),
+			replyTo: z.string().trim().min(1).optional(),
+			forward: z.string().trim().min(1).optional(),
+			sourceMessage,
+		})
+		.safeParse(prepared);
+	if (!operation.success || (replyTo && forward)) return null;
+	const mode = replyTo
+		? "reply"
+		: forward
+			? "forward"
+			: editorId
+				? "edit"
+				: "new";
+	const resolved = operation.data;
+	const hasOperation =
+		resolved.mode !== undefined ||
+		resolved.replyTo !== undefined ||
+		resolved.forward !== undefined;
+	if (
+		hasOperation &&
+		(resolved.mode !== mode ||
+			(mode === "reply") !== Boolean(resolved.replyTo) ||
+			(mode === "forward") !== Boolean(resolved.forward))
+	)
+		return null;
+	// Older successful calls carry native IDs only in their arguments.
+	const source = hasOperation
+		? resolved.replyTo || resolved.forward
+		: replyTo || forward;
+	if (source?.toLowerCase() === "selected") return null;
+	if (
+		resolved.sourceMessage &&
+		(!hasOperation || resolved.sourceMessage.id !== source)
+	)
+		return null;
 	const requested = Array.isArray(args.attachments)
 		? args.attachments.length
 		: 0;
@@ -117,21 +156,22 @@ function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 					...fileFields,
 					mode: replyTo ? "reply" : "forward",
 					sourceMessageId: source,
-					to: text(args.to) || undefined,
-					cc: text(args.cc) || undefined,
-					bcc: text(args.bcc) || undefined,
-					subject: text(args.subject) || undefined,
-					body: text(args.message) || undefined,
-					openEmailId: text(args.openEmailId) || undefined,
+					sourceMessage: resolved.sourceMessage,
+					to: text(args.to),
+					cc: text(args.cc),
+					bcc: text(args.bcc),
+					subject: text(args.subject),
+					body: authoredBody?.trim() ? authoredBody : undefined,
+					openEmailId: editorId,
 				}
 			: {
 					...fileFields,
-					to: text(args.to) ?? "",
-					cc: text(args.cc) || undefined,
-					bcc: text(args.bcc) || undefined,
-					subject: text(args.subject) ?? "",
-					body: text(args.message) || undefined,
-					openEmailId: text(args.openEmailId) || undefined,
+					to: text(args.to),
+					cc: text(args.cc),
+					bcc: text(args.bcc),
+					subject: text(args.subject),
+					body: authoredBody?.trim() ? authoredBody : undefined,
+					openEmailId: editorId,
 				},
 	);
 	return result.success ? result.data : null;

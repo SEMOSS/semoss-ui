@@ -1,9 +1,9 @@
-import { useId } from "react";
 import {
 	Button,
 	Form,
 	FormInput,
 	FormSelect,
+	H3,
 	P,
 	SelectItem,
 	Small,
@@ -12,7 +12,6 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { Section } from "./section";
 
 const ruleSchema = z.object({
 	kind: z.enum([
@@ -59,11 +58,13 @@ export function RulesEditor() {
 		},
 		resetOptions: { keepDirtyValues: true },
 	});
-	const errorId = useId();
 	return (
 		<div className="space-y-6">
-			<Section title="Exclude from future context">
-				<P className="text-muted-foreground">
+			<section className="space-y-4">
+				<H3 className="font-medium text-base">
+					Exclude from future context
+				</H3>
+				<P className="text-base text-muted-foreground">
 					Rules filter selected content sent in future questions. They
 					do not change your mailbox, erase saved conversations, or
 					remove quoted text inside other messages.
@@ -75,15 +76,17 @@ export function RulesEditor() {
 							key={rule.id}
 							className="flex flex-wrap items-center gap-3 border-b pb-3"
 						>
-							<Small className="font-medium">
+							<Small className="font-medium text-base">
 								{rule.kind.replace("never_", "")}
 							</Small>
-							<Small className="min-w-0 flex-1 break-words">
+							<Small className="min-w-0 flex-1 break-words text-base">
 								{rule.value}
 							</Small>
 							<Button
 								variant="ghost"
 								size="sm"
+								className="pointer-coarse:min-h-11"
+								aria-label={`Remove ${rule.kind.replace("never_", "")} rule ${rule.value}`}
 								onClick={() =>
 									dispatch({
 										type: "rule.remove",
@@ -112,22 +115,15 @@ export function RulesEditor() {
 						<SelectItem value="never_folder">Folder</SelectItem>
 						<SelectItem value="never_keyword">Keyword</SelectItem>
 					</FormSelect>
-					<FormInput
-						name="value"
-						label="Value (required)"
-						required
-						aria-describedby={`${errorId}-rule`}
-					/>
-					<span id={`${errorId}-rule`} className="sr-only">
-						{ruleForm.formState.errors.value?.message}
-					</span>
+					<FormInput name="value" label="Value (required)" required />
 					<Button type="submit" variant="outline">
 						Add rule
 					</Button>
 				</Form>
-			</Section>
-			<Section title="Filing preferences">
-				<P className="text-muted-foreground">
+			</section>
+			<section className="space-y-4 border-border border-t pt-6">
+				<H3 className="font-medium text-base">Filing preferences</H3>
+				<P className="text-base text-muted-foreground">
 					These thresholds are session preferences. Automatic
 					classification and ingestion are not connected.
 				</P>
@@ -151,33 +147,25 @@ export function RulesEditor() {
 						min={60}
 						max={99}
 						label="File automatically at (%)"
-						aria-describedby={`${errorId}-file`}
 					/>
-					<span id={`${errorId}-file`} className="sr-only">
-						{settingsForm.formState.errors.fileAt?.message}
-					</span>
 					<FormInput
 						name="askAt"
 						type="number"
 						min={10}
 						max={94}
 						label="Ask from (%)"
-						aria-describedby={`${errorId}-ask`}
 					/>
-					<span id={`${errorId}-ask`} className="sr-only">
-						{settingsForm.formState.errors.askAt?.message}
-					</span>
 					<Button type="submit" variant="outline">
 						Save preferences
 					</Button>
 					{Object.keys(settingsForm.formState.dirtyFields).length >
 						0 && (
-						<Small className="text-muted-foreground">
+						<Small className="text-base text-muted-foreground">
 							Unsaved preferences
 						</Small>
 					)}
 				</Form>
-			</Section>
+			</section>
 		</div>
 	);
 }

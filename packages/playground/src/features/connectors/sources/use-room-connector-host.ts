@@ -16,6 +16,22 @@ import {
 import { signInToProvider } from "../connector-sign-in";
 
 /**
+ * A file saved into the chat's files. A connector's tool view may not say
+ * which viewer it came from.
+ */
+export type RoomSavedFile = Pick<ConnectorSavedFile, "path" | "name"> &
+	Partial<Pick<ConnectorSavedFile, "service">>;
+
+/** What the room gives a connector viewer, or a connector's tool view. */
+export interface RoomConnectorHost
+	extends Omit<ConnectorViewerProps, "onSaved" | "onAddToContext"> {
+	/** Called once an item is saved into the chat's files. */
+	onSaved: (file: RoomSavedFile) => void;
+	/** Saves an item into the chat's files and queues it for the next message. */
+	onAddToContext: (file: RoomSavedFile) => void;
+}
+
+/**
  * What the room gives a Microsoft 365 viewer in its sidebar.
  *
  * Saved items land in the chat's own files, the same place uploads go and
@@ -29,7 +45,7 @@ import { signInToProvider } from "../connector-sign-in";
  */
 export const useRoomConnectorHost = (
 	providerId: ConnectorProviderId,
-): ConnectorViewerProps => {
+): RoomConnectorHost => {
 	const room = useRoom();
 	// on the new-chat page the draft's input holds the queue
 	const nextMessageRoom = useNextMessageRoom() ?? room;
@@ -38,7 +54,7 @@ export const useRoomConnectorHost = (
 	const chatFilesName = tRoom("menuFileExplorer.name");
 
 	const onSaved = useCallback(
-		(file: ConnectorSavedFile) => {
+		(file: RoomSavedFile) => {
 			room.refreshSidebarFileExplorer();
 			toast.success(
 				t("sources.saved", { name: file.name, target: chatFilesName }),
@@ -54,7 +70,7 @@ export const useRoomConnectorHost = (
 	);
 
 	const onAddToContext = useCallback(
-		(file: ConnectorSavedFile) => {
+		(file: RoomSavedFile) => {
 			room.refreshSidebarFileExplorer();
 			if (!nextMessageRoom.acceptsAttachment(file.name)) {
 				toast.error(
