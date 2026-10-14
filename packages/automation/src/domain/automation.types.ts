@@ -45,6 +45,8 @@ export interface DatabaseEngineConfig {
 	engineName?: string;
 	operation: "query" | "write";
 	expression: string;
+	/** JSON array of values bound to positional query parameters. */
+	parameters: string;
 	limit: number;
 	commit: boolean;
 }

@@ -398,6 +398,7 @@ function defaultCanvasConfig(
 			engineId,
 			operation: type === "database.query" ? "query" : "write",
 			expression: stringValue(config.query),
+			parameters: jsonArrayValue(config.parameters),
 			limit: numberValue(config.limit, 50),
 			commit: config.commit !== false,
 		};
@@ -651,8 +652,14 @@ function mergeCanvasConfig(
 
 	if (category === "database") {
 		const expression = getConfigValue(config, "expression");
+		const parameters = getConfigValue(config, "parameters");
 		const limit = getConfigValue(config, "limit");
 		if (typeof expression === "string") next.query = expression;
+		if (typeof parameters === "string") {
+			next.parameters = parameters.trim()
+				? (parsedJsonValue(parameters) ?? parameters)
+				: [];
+		}
 		if (type === "database.query") {
 			if (typeof limit === "number") next.limit = limit;
 		}
