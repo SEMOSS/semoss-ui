@@ -1,4 +1,10 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
@@ -43,6 +49,8 @@ function setup(goals: TopicGoal[]) {
 			<RouterProvider router={router} />
 		</CollaborationSessionProvider>,
 	);
+	if (!goals.length)
+		fireEvent.click(screen.getByRole("button", { name: "Context" }));
 	return {
 		goals: within(screen.getByRole("region", { name: "Goals" })),
 		onChange,

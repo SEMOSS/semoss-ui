@@ -47,3 +47,5 @@ The fake inbox currently includes repeated subjects and sparse summaries. Meanin
 - No email was sent, routine enabled, or live connection changed. Source navigation exercised the existing room import path, which can create a blank source chat. Browser checks establish local UI behavior; they do not establish generated-answer quality or a successful scheduled brief.
 
 Screenshots and the visual audit are saved in the workspace task folder `AGENTS_TASKS/collaboration-design-2026-10-14/`. The Today before/after comparison uses the same 1382-by-724 viewport. Build and test logs are under `/private/tmp/collaboration-calm-*` for this local session.
+
+The subsequent [Topic and All work review](topic-and-work-ui-review.md) implements optional topic context, work search, quieter rows, and narrow-screen fixes.

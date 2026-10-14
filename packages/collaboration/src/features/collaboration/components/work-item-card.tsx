@@ -1,6 +1,15 @@
-import { Check, Plus, Reply, RotateCcw, X } from "lucide-react";
+import { Check, ChevronDown, Plus, Reply, RotateCcw, X } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router";
-import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import {
+	Badge,
+	Button,
+	Collapsible,
+	CollapsibleContent,
+	cn,
+	P,
+	Small,
+} from "@semoss/ui/next";
 import { givenFirst } from "@/lib/person-name";
 import { threadPath } from "@/lib/workspace-paths";
 import { channelMeta } from "../channel-meta";
@@ -20,7 +29,7 @@ const URGENCY_TONES: Record<string, string> = {
 	"This week": "bg-warning",
 };
 
-/** A compact work row: title, one line of who/where/why with its actions, then the summary. Snooze and Ignore live in its menu. */
+/** A compact work row with visible urgency and source; classification details, Snooze, and Ignore live in its menu. */
 export function WorkItemCard({
 	item,
 	topicId,
@@ -30,6 +39,7 @@ export function WorkItemCard({
 	topicId?: string;
 }) {
 	const { state, dispatch } = useCollaborationSession();
+	const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 	const thread = state.threads.find(
 		(candidate) => candidate.id === item.threadId,
 	);
@@ -53,224 +63,231 @@ export function WorkItemCard({
 		(link) => link.topicId !== topicId || link.source === "suggested",
 	);
 	return (
-		<ThreadMenu thread={thread} item={item}>
+		<ThreadMenu
+			thread={thread}
+			item={item}
+			additionalActions={[
+				{
+					id: "details",
+					label: isDetailsOpen ? "Hide details" : "Show details",
+					icon: ChevronDown,
+					onSelect: () => setIsDetailsOpen((open) => !open),
+				},
+			]}
+		>
 			{(menu) => (
-				<article className="group/item border-border border-b px-4 py-3 transition-colors focus-within:bg-accent/60 hover:bg-accent/60 md:px-5">
-					<div className="flex items-start gap-3">
-						<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-							<Link
-								to={path}
-								className="break-words font-medium text-base leading-snug hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-							>
-								{item.title}
-							</Link>
-							{suggestedLinks.map((link) => {
-								const topic = state.topics.find(
-									(candidate) =>
-										candidate.id === link.topicId,
-								);
-								return (
-									topic && (
-										<div
-											key={link.topicId}
-											className="flex flex-wrap items-center gap-1"
-										>
-											<TopicChip
-												topic={topic}
-												suggested={
-													link.source === "suggested"
-												}
-											/>
-											{link.source === "suggested" && (
-												<>
-													<Button
-														variant="ghost"
-														size="sm"
-														className="h-7 px-2"
-														aria-label={`Confirm ${topic.short} for ${thread.subject}`}
-														onClick={() =>
-															dispatch({
-																type: "thread.link",
-																threadId:
-																	thread.id,
-																topicId:
-																	topic.id,
-																operation:
-																	"confirm",
-															})
-														}
-													>
-														Yes
-													</Button>
-													<Button
-														variant="ghost"
-														size="sm"
-														className="h-7 px-2"
-														aria-label={`Remove ${topic.short} from ${thread.subject}`}
-														onClick={() =>
-															dispatch({
-																type: "thread.link",
-																threadId:
-																	thread.id,
-																topicId:
-																	topic.id,
-																operation:
-																	"remove",
-															})
-														}
-													>
-														No
-													</Button>
-												</>
-											)}
-										</div>
-									)
-								);
-							})}
+				<Collapsible
+					open={isDetailsOpen}
+					onOpenChange={setIsDetailsOpen}
+					asChild
+				>
+					<article className="group/item border-border border-b px-4 py-3 transition-colors focus-within:bg-accent/60 hover:bg-accent/60 md:px-5">
+						<div className="flex flex-wrap items-start gap-x-3 gap-y-1">
+							<div className="flex min-w-0 flex-1 basis-48 flex-wrap items-center gap-x-2 gap-y-1">
+								<Link
+									to={path}
+									className="break-words font-medium text-base leading-snug hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+								>
+									{item.title}
+								</Link>
+								{suggestedLinks.map((link) => {
+									const topic = state.topics.find(
+										(candidate) =>
+											candidate.id === link.topicId,
+									);
+									return (
+										topic && (
+											<div
+												key={link.topicId}
+												className="flex flex-wrap items-center gap-1"
+											>
+												<TopicChip
+													topic={topic}
+													suggested={
+														link.source ===
+														"suggested"
+													}
+												/>
+												{link.source ===
+													"suggested" && (
+													<>
+														<Button
+															variant="ghost"
+															size="sm"
+															className="h-7 px-2"
+															aria-label={`Confirm ${topic.short} for ${thread.subject}`}
+															onClick={() =>
+																dispatch({
+																	type: "thread.link",
+																	threadId:
+																		thread.id,
+																	topicId:
+																		topic.id,
+																	operation:
+																		"confirm",
+																})
+															}
+														>
+															Yes
+														</Button>
+														<Button
+															variant="ghost"
+															size="sm"
+															className="h-7 px-2"
+															aria-label={`Remove ${topic.short} from ${thread.subject}`}
+															onClick={() =>
+																dispatch({
+																	type: "thread.link",
+																	threadId:
+																		thread.id,
+																	topicId:
+																		topic.id,
+																	operation:
+																		"remove",
+																})
+															}
+														>
+															No
+														</Button>
+													</>
+												)}
+											</div>
+										)
+									);
+								})}
+							</div>
+							<div className="-mt-1 -mr-2 ml-auto flex shrink-0 items-center gap-1">
+								<Small className="font-normal text-muted-foreground text-xs">
+									{dateLabel(item.received)}
+								</Small>
+								{menu}
+							</div>
 						</div>
-						<div className="-mt-1 -mr-2 flex shrink-0 items-center gap-1">
-							<Small className="font-normal text-muted-foreground text-xs">
-								{dateLabel(item.received)}
-							</Small>
-							{menu}
-						</div>
-					</div>
-					<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
-						<span className="inline-flex items-center gap-1.5 text-foreground">
-							{author}
-							<span className="inline-flex" title={channelLabel}>
-								<Icon
-									aria-hidden="true"
-									className="size-3.5 text-muted-foreground"
-								/>
-								<span className="sr-only">{channelLabel}</span>
+						<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
+							<span className="inline-flex items-center gap-1.5 text-foreground">
+								{author}
+								<span
+									className="inline-flex"
+									title={channelLabel}
+								>
+									<Icon
+										aria-hidden="true"
+										className="size-3.5 text-muted-foreground"
+									/>
+									<span className="sr-only">
+										{channelLabel}
+									</span>
+								</span>
 							</span>
-						</span>
-						{item.suggested ? (
-							<Badge
-								variant="outline"
-								className="border-primary/30 bg-primary/10 px-2 text-primary"
-							>
-								Suggestion
-							</Badge>
-						) : (
-							item.priority === "P0" && (
+							{item.suggested ? (
 								<Badge
 									variant="outline"
-									className="border-transparent bg-destructive/10 px-2 text-destructive"
+									className="border-primary/30 bg-primary/10 px-2 text-primary"
 								>
-									Urgent
+									Suggestion
 								</Badge>
-							)
-						)}
-						{item.due && (
-							<span
+							) : (
+								item.priority === "P0" && (
+									<Badge
+										variant="outline"
+										className="border-transparent bg-destructive/10 px-2 text-destructive"
+									>
+										Urgent
+									</Badge>
+								)
+							)}
+							{item.due && (
+								<span
+									className={cn(
+										item.priority === "P0" &&
+											"text-destructive",
+									)}
+								>
+									Due {dateLabel(item.due, undefined, "date")}
+								</span>
+							)}
+							{item.reasons
+								.filter((reason) =>
+									reason.startsWith(URGENCY_PREFIX),
+								)
+								.map((reason, index) => {
+									const urgency = reason.startsWith(
+										URGENCY_PREFIX,
+									)
+										? reason.slice(URGENCY_PREFIX.length)
+										: null;
+									return (
+										<span
+											key={`${index}-${reason}`}
+											className="inline-flex items-center gap-1.5"
+										>
+											{urgency !== null && (
+												<>
+													<span
+														aria-hidden="true"
+														className={cn(
+															"size-2 shrink-0 rounded-full",
+															URGENCY_TONES[
+																urgency
+															] ??
+																"bg-muted-foreground/50",
+														)}
+													/>
+													<span className="sr-only">
+														{URGENCY_PREFIX}
+													</span>
+												</>
+											)}
+											{urgency ?? reason}
+										</span>
+									);
+								})}
+							{excludedCount > 0 && (
+								<span>
+									{excludedCount}{" "}
+									{excludedCount === 1
+										? "participant excluded"
+										: "participants excluded"}
+								</span>
+							)}
+							<div
 								className={cn(
-									item.priority === "P0" &&
-										"text-destructive",
+									"-my-1 ml-auto flex flex-wrap items-center gap-0.5 [&_[data-slot=button]:hover]:bg-foreground/5 pointer-coarse:[&_[data-slot=button]]:min-h-11 [&_[data-slot=button]]:px-2 [&_svg]:text-muted-foreground",
+									isQuiet &&
+										"md:pointer-fine:opacity-0 md:pointer-fine:transition-opacity md:pointer-fine:group-hover/item:opacity-100 md:pointer-fine:group-focus-within/item:opacity-100",
 								)}
 							>
-								Due {dateLabel(item.due, undefined, "date")}
-							</span>
-						)}
-						{item.reasons.map((reason, index) => {
-							const urgency = reason.startsWith(URGENCY_PREFIX)
-								? reason.slice(URGENCY_PREFIX.length)
-								: null;
-							return (
-								<span
-									key={`${index}-${reason}`}
-									className="inline-flex items-center gap-1.5"
-								>
-									{urgency !== null && (
-										<>
-											<span
-												aria-hidden="true"
-												className={cn(
-													"size-2 shrink-0 rounded-full",
-													URGENCY_TONES[urgency] ??
-														"bg-muted-foreground/50",
-												)}
-											/>
-											<span className="sr-only">
-												{URGENCY_PREFIX}
-											</span>
-										</>
-									)}
-									{urgency ?? reason}
-								</span>
-							);
-						})}
-						<span>
-							{thread.messageCount}{" "}
-							{thread.messageCount === 1 ? "message" : "messages"}
-							{excludedCount > 0 && `, ${excludedCount} excluded`}
-						</span>
-						<div
-							className={cn(
-								"-my-1 ml-auto flex flex-wrap items-center gap-0.5 [&_[data-slot=button]:hover]:bg-foreground/5 [&_[data-slot=button]]:px-2 [&_svg]:text-muted-foreground",
-								isQuiet &&
-									"pointer-fine:opacity-0 pointer-fine:transition-opacity pointer-fine:group-focus-within/item:opacity-100 pointer-fine:group-hover/item:opacity-100",
-							)}
-						>
-							{item.suggested ? (
-								<>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() =>
-											dispatch({
-												type: "item.update",
-												itemId: item.id,
-												changes: { suggested: false },
-											})
-										}
-									>
-										<Plus aria-hidden="true" />
-										Add to my list
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="font-normal"
-										onClick={() =>
-											noResponseNeeded(dispatch, item)
-										}
-									>
-										<X aria-hidden="true" />
-										No response needed
-									</Button>
-								</>
-							) : item.status === "done" ? (
-								<Button
-									variant="ghost"
-									size="sm"
-									className="font-normal"
-									onClick={() =>
-										dispatch({
-											type: "item.update",
-											itemId: item.id,
-											changes: { status: "open" },
-										})
-									}
-								>
-									<RotateCcw aria-hidden="true" />
-									Move back
-								</Button>
-							) : item.status === "snoozed" ? (
-								<>
-									{item.snoozeUntil && (
-										<Small className="px-2 font-normal text-muted-foreground">
-											Until{" "}
-											{dateLabel(
-												item.snoozeUntil,
-												(item.isSample
-													? state.profile
-													: state.liveProfile
-												)?.timezone,
-											)}
-										</Small>
-									)}
+								{item.suggested ? (
+									<>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() =>
+												dispatch({
+													type: "item.update",
+													itemId: item.id,
+													changes: {
+														suggested: false,
+													},
+												})
+											}
+										>
+											<Plus aria-hidden="true" />
+											Add to my list
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											className="font-normal"
+											onClick={() =>
+												noResponseNeeded(dispatch, item)
+											}
+										>
+											<X aria-hidden="true" />
+											No response needed
+										</Button>
+									</>
+								) : item.status === "done" ? (
 									<Button
 										variant="ghost"
 										size="sm"
@@ -279,58 +296,112 @@ export function WorkItemCard({
 											dispatch({
 												type: "item.update",
 												itemId: item.id,
-												changes: {
-													status:
-														item.snoozedFrom ??
-														"open",
-												},
+												changes: { status: "open" },
 											})
 										}
 									>
 										<RotateCcw aria-hidden="true" />
-										Bring back
+										Move back
 									</Button>
-								</>
-							) : (
-								<>
-									<Button
-										asChild
-										variant="ghost"
-										size="sm"
-										className="font-normal"
-									>
-										<Link to={path}>
-											<Reply aria-hidden="true" />
-											{item.status === "waiting"
-												? "Nudge"
-												: "Respond"}
-										</Link>
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="font-normal"
-										onClick={() =>
-											dispatch({
-												type: "item.update",
-												itemId: item.id,
-												changes: { status: "done" },
-											})
-										}
-									>
-										<Check aria-hidden="true" />
-										Done
-									</Button>
-								</>
-							)}
+								) : item.status === "snoozed" ? (
+									<>
+										{item.snoozeUntil && (
+											<Small className="px-2 font-normal text-muted-foreground">
+												Until{" "}
+												{dateLabel(
+													item.snoozeUntil,
+													(item.isSample
+														? state.profile
+														: state.liveProfile
+													)?.timezone,
+												)}
+											</Small>
+										)}
+										<Button
+											variant="ghost"
+											size="sm"
+											className="font-normal"
+											onClick={() =>
+												dispatch({
+													type: "item.update",
+													itemId: item.id,
+													changes: {
+														status:
+															item.snoozedFrom ??
+															"open",
+													},
+												})
+											}
+										>
+											<RotateCcw aria-hidden="true" />
+											Bring back
+										</Button>
+									</>
+								) : (
+									<>
+										<Button
+											asChild
+											variant="ghost"
+											size="sm"
+											className="font-normal"
+										>
+											<Link to={path}>
+												<Reply aria-hidden="true" />
+												{item.status === "waiting"
+													? "Review follow-up"
+													: "Open"}
+											</Link>
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											className="font-normal"
+											onClick={() =>
+												dispatch({
+													type: "item.update",
+													itemId: item.id,
+													changes: { status: "done" },
+												})
+											}
+										>
+											<Check aria-hidden="true" />
+											Done
+										</Button>
+									</>
+								)}
+							</div>
 						</div>
-					</div>
-					{thread.summary && (
-						<P className="mt-1 line-clamp-1 break-words text-muted-foreground text-sm leading-relaxed">
-							{thread.summary}
-						</P>
-					)}
-				</article>
+						{thread.summary && (
+							<P className="mt-1 line-clamp-1 break-words text-muted-foreground text-sm leading-relaxed">
+								{thread.summary}
+							</P>
+						)}
+						<CollapsibleContent
+							forceMount
+							hidden={!isDetailsOpen}
+							className="mt-3 space-y-2 border-t pt-3 text-muted-foreground text-sm"
+						>
+							<P className="text-sm">
+								{thread.messageCount}{" "}
+								{thread.messageCount === 1
+									? "message"
+									: "messages"}
+							</P>
+							{item.reasons.length > 0 && (
+								<ul
+									aria-label="Why this is in your work list"
+									className="space-y-1"
+								>
+									{item.reasons.map((reason, index) => (
+										<li key={`${index}-${reason}`}>
+											{reason}
+										</li>
+									))}
+								</ul>
+							)}
+						</CollapsibleContent>
+					</article>
+				</Collapsible>
 			)}
 		</ThreadMenu>
 	);

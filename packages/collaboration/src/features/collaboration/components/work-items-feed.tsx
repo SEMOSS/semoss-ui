@@ -1,5 +1,11 @@
 import { ListFilter } from "lucide-react";
-import { useState } from "react";
+import {
+	type Dispatch,
+	type RefObject,
+	type SetStateAction,
+	useRef,
+	useState,
+} from "react";
 import { Link } from "react-router";
 import {
 	Badge,
@@ -18,9 +24,10 @@ import {
 import { channelMeta } from "../channel-meta";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { selectWorkItems } from "../state/collaboration.selectors";
-import type { Channel } from "../state/collaboration.types";
+import type { Channel, WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { WorkItemCard } from "./work-item-card";
+import { WorkSearch } from "./work-search";
 
 const STATUS_FILTERS = [
 	{ value: "needs_me", label: "Needs you", view: "needs_me" },
@@ -40,11 +47,17 @@ interface WorkFeedOptions {
 }
 
 /** The feed's view (status, order, source) and the rows it selects; split so a page can place the menu itself. */
-export function useWorkFeed({ topicId, initialFilter }: WorkFeedOptions) {
+export function useWorkFeed({
+	topicId,
+	initialFilter,
+}: WorkFeedOptions): WorkFeed {
 	const { state } = useCollaborationSession();
 	const [sort, setSort] = useState<"top" | "latest">("top");
 	const [channel, setChannel] = useState<Channel>();
 	const [status, setStatus] = useState(initialFilter);
+	const [query, setQuery] = useState("");
+	const searchRef = useRef<HTMLInputElement>(null);
+	const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
 	const filters = STATUS_FILTERS.filter(
 		(filter) => !topicId || filter.value !== "needs_me",
 	);
@@ -58,9 +71,40 @@ export function useWorkFeed({ topicId, initialFilter }: WorkFeedOptions) {
 	const activeChannel =
 		channel && channels.includes(channel) ? channel : undefined;
 	const activeMeta = activeChannel ? channelMeta(activeChannel) : null;
-	const items = activeChannel
+	const sourceItems = activeChannel
 		? all.filter((item) => item.channel === activeChannel)
 		: all;
+	const items = terms.length
+		? sourceItems.filter((item) => {
+				const thread = state.threads.find(
+					(candidate) => candidate.id === item.threadId,
+				);
+				const person = state.people.find(
+					(candidate) => candidate.id === item.actorId,
+				);
+				const topics = state.topics.filter((topic) =>
+					thread?.topicLinks.some(
+						(link) => link.topicId === topic.id,
+					),
+				);
+				const text = [
+					item.title,
+					thread?.subject,
+					thread?.summary,
+					person?.name,
+					channelMeta(item.channel).label,
+					...topics.flatMap((topic) => [topic.name, topic.short]),
+				]
+					.filter(Boolean)
+					.join(" ")
+					.toLocaleLowerCase();
+				return terms.every((term) => text.includes(term));
+			})
+		: sourceItems;
+	const clearSearch = () => {
+		setQuery("");
+		searchRef.current?.focus();
+	};
 	// the button names the current view; the menu holds status, order, and source
 	const viewLabel = [
 		`${selected?.label ?? "Open"} ${items.length}`,
@@ -71,6 +115,11 @@ export function useWorkFeed({ topicId, initialFilter }: WorkFeedOptions) {
 		.join(", ");
 	return {
 		topicId,
+		query,
+		setQuery,
+		searchRef,
+		clearSearch,
+		hasQuery: terms.length > 0,
 		filters,
 		status,
 		setStatus,
@@ -89,7 +138,28 @@ export function useWorkFeed({ topicId, initialFilter }: WorkFeedOptions) {
 	};
 }
 
-export type WorkFeed = ReturnType<typeof useWorkFeed>;
+export interface WorkFeed {
+	topicId?: string;
+	query: string;
+	setQuery: Dispatch<SetStateAction<string>>;
+	searchRef: RefObject<HTMLInputElement | null>;
+	clearSearch: () => void;
+	hasQuery: boolean;
+	filters: Array<(typeof STATUS_FILTERS)[number]>;
+	status: WorkStatusFilter;
+	setStatus: Dispatch<SetStateAction<WorkStatusFilter>>;
+	selected: (typeof STATUS_FILTERS)[number] | undefined;
+	sort: "top" | "latest";
+	setSort: Dispatch<SetStateAction<"top" | "latest">>;
+	channels: Channel[];
+	activeChannel: Channel | undefined;
+	activeMeta: ReturnType<typeof channelMeta> | null;
+	setChannel: Dispatch<SetStateAction<Channel | undefined>>;
+	all: WorkItem[];
+	items: WorkItem[];
+	viewLabel: string;
+	total: (view: (typeof STATUS_FILTERS)[number]["view"]) => number;
+}
 
 /** Shared, explicitly scoped work filters and rows with existing item commands. */
 export function WorkItemsFeed(options: WorkFeedOptions) {
@@ -97,6 +167,7 @@ export function WorkItemsFeed(options: WorkFeedOptions) {
 	return (
 		<div>
 			<div className="flex flex-wrap items-center gap-3 border-border border-b px-4 py-3 md:px-5">
+				<WorkSearch feed={feed} />
 				<WorkRefreshStatus />
 				<WorkFilterMenu feed={feed} className="ml-auto" />
 			</div>
@@ -237,7 +308,16 @@ export function WorkFilterMenu({
 
 /** The rows for the feed's current view, with an empty state that offers a way out. */
 export function WorkItemsList({ feed }: { feed: WorkFeed }) {
-	const { topicId, items, status, selected, setStatus, viewLabel } = feed;
+	const {
+		topicId,
+		items,
+		status,
+		selected,
+		setStatus,
+		viewLabel,
+		hasQuery,
+		clearSearch,
+	} = feed;
 	const groups = [false, true].filter((isSample) =>
 		items.some((item) => item.isSample === isSample),
 	);
@@ -276,11 +356,22 @@ export function WorkItemsList({ feed }: { feed: WorkFeed }) {
 			{!items.length && (
 				<div className="space-y-3 p-6">
 					<P className="text-muted-foreground text-sm">
-						{status === "needs_me"
-							? "No work needs you right now."
-							: `No ${selected?.label.toLocaleLowerCase() ?? "open"} items ${topicId ? "in this topic" : "in this view"}.`}
+						{hasQuery
+							? "No work matches your search in this view."
+							: status === "needs_me"
+								? "No work needs you right now."
+								: `No ${selected?.label.toLocaleLowerCase() ?? "open"} items ${topicId ? "in this topic" : "in this view"}.`}
 					</P>
-					{status !== "open" ? (
+					{hasQuery ? (
+						<Button
+							variant="outline"
+							size="sm"
+							className="pointer-coarse:min-h-11"
+							onClick={clearSearch}
+						>
+							Clear search
+						</Button>
+					) : status !== "open" ? (
 						<Button
 							variant="outline"
 							size="sm"

@@ -3,6 +3,7 @@ import {
 	ChevronDown,
 	LockKeyhole,
 	MessageSquare,
+	PanelRightOpen,
 	Plus,
 	X,
 } from "lucide-react";
@@ -94,6 +95,8 @@ export function TopicDetail() {
 	const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 	const [hasOpenedAssistant, setHasOpenedAssistant] = useState(false);
 	const editButtonRef = useRef<HTMLButtonElement>(null);
+	const contextButtonRef = useRef<HTMLButtonElement>(null);
+	const contextRef = useRef<HTMLElement>(null);
 	const [personToAdd, setPersonToAdd] = useState("");
 	const [showAllSuggested, setShowAllSuggested] = useState(false);
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
@@ -101,6 +104,9 @@ export function TopicDetail() {
 		type: "topic",
 		id: topicId ?? "",
 	});
+	const [isContextOpen, setIsContextOpen] = useState(
+		Boolean(topic?.goals.length),
+	);
 	const [areNotesOpen, setAreNotesOpen] = useState(topicMemories.length > 0);
 	const feed = useWorkFeed({ topicId: topicId ?? "", initialFilter: "open" });
 	if (!topic)
@@ -166,21 +172,51 @@ export function TopicDetail() {
 					</span>
 				}
 				description={
-					<Button
-						ref={editButtonRef}
-						variant="ghost"
-						aria-label={`${topic.description || "Add a description"}: Edit topic`}
-						className="h-auto min-h-6 max-w-full justify-start whitespace-normal p-0 pl-6 text-left font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
-						onClick={(event) => {
-							editButtonRef.current = event.currentTarget;
-							setIsEditing(true);
-						}}
-					>
-						{topic.description || "Add a description"}
-					</Button>
+					topic.description ? (
+						<Button
+							ref={editButtonRef}
+							variant="ghost"
+							aria-label={`${topic.description}: Edit topic`}
+							className="h-auto min-h-6 max-w-full justify-start whitespace-normal p-0 pl-6 text-left font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
+							onClick={(event) => {
+								editButtonRef.current = event.currentTarget;
+								setIsEditing(true);
+							}}
+						>
+							{topic.description}
+						</Button>
+					) : undefined
 				}
 				actions={
 					<>
+						<Button
+							ref={contextButtonRef}
+							variant={isContextOpen ? "secondary" : "outline"}
+							className="pointer-coarse:min-h-11"
+							aria-expanded={isContextOpen}
+							aria-controls={`${fieldId}-context`}
+							onClick={() => {
+								setIsContextOpen((open) => !open);
+								if (!isContextOpen) {
+									requestAnimationFrame(() => {
+										const context = contextRef.current;
+										if (
+											context &&
+											context.getBoundingClientRect()
+												.top >= window.innerHeight
+										) {
+											context.focus();
+											context.scrollIntoView({
+												block: "start",
+											});
+										}
+									});
+								}
+							}}
+						>
+							<PanelRightOpen aria-hidden="true" />
+							Context
+						</Button>
 						<Button
 							variant="outline"
 							className="pointer-coarse:min-h-11"
@@ -203,82 +239,18 @@ export function TopicDetail() {
 					</>
 				}
 			>
-				<div className="ml-4 flex flex-wrap items-center gap-1">
-					<Label
-						htmlFor={`${fieldId}-topic-status`}
-						className="sr-only"
-					>
-						Topic status
-					</Label>
-					<Select
-						value={topic.status}
-						onValueChange={(status) => {
-							if (
-								status === "active" ||
-								status === "dormant" ||
-								status === "archived"
-							)
-								dispatch({
-									type: "topic.save",
-									topic: { id: topic.id, status },
-								});
-						}}
-					>
-						<SelectTrigger
-							id={`${fieldId}-topic-status`}
-							className="h-8 w-auto gap-2 border-0 bg-transparent px-2 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent"
-						>
-							<span
-								aria-hidden="true"
-								className={cn(
-									"size-2 shrink-0 rounded-full",
-									topic.status === "active"
-										? "bg-success"
-										: topic.status === "suggested"
-											? "bg-warning"
-											: "bg-muted-foreground",
-								)}
-							/>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="active">Active</SelectItem>
-							<SelectItem value="dormant">Dormant</SelectItem>
-							<SelectItem value="archived">Archived</SelectItem>
-							{topic.status === "suggested" && (
-								<SelectItem value="suggested">
-									Suggested
-								</SelectItem>
-							)}
-						</SelectContent>
-					</Select>
-					<Button
-						variant="ghost"
-						size="sm"
-						aria-label={`${topic.kind} · ${accountName}: Edit topic kind and account`}
-						className="h-auto min-h-8 max-w-full font-normal text-muted-foreground"
-						onClick={(event) => {
-							editButtonRef.current = event.currentTarget;
-							setIsEditing(true);
-						}}
-					>
-						<LockKeyhole
-							aria-hidden="true"
-							className="shrink-0 text-muted-foreground"
-						/>
-						<span className="min-w-0 whitespace-normal break-words text-left">
-							<span className="capitalize">{topic.kind}</span> ·{" "}
-							{accountName}
-						</span>
-						<ChevronDown
-							aria-hidden="true"
-							className="shrink-0 text-muted-foreground"
-						/>
-					</Button>
-					{topic.isSample && (
-						<Badge variant="secondary">Sample</Badge>
-					)}
-				</div>
+				{(topic.isSample || topic.status !== "active") && (
+					<div className="ml-6 flex flex-wrap items-center gap-2">
+						{topic.status !== "active" && (
+							<Badge variant="outline" className="capitalize">
+								{topic.status}
+							</Badge>
+						)}
+						{topic.isSample && (
+							<Badge variant="secondary">Sample</Badge>
+						)}
+					</div>
+				)}
 			</CollaborationPageHeader>
 			<section
 				id={`${fieldId}-assistant`}
@@ -297,8 +269,18 @@ export function TopicDetail() {
 					</Suspense>
 				)}
 			</section>
-			<div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-3">
-				<div className="min-w-0 space-y-5 xl:col-span-2">
+			<div
+				className={cn(
+					"grid min-w-0 grid-cols-1 items-start gap-5",
+					isContextOpen && "xl:grid-cols-3",
+				)}
+			>
+				<div
+					className={cn(
+						"min-w-0 space-y-5",
+						isContextOpen && "xl:col-span-2",
+					)}
+				>
 					<Card className={cardClassName}>
 						<Tabs
 							value={tab}
@@ -401,9 +383,31 @@ export function TopicDetail() {
 					</Card>
 				</div>
 				<aside
+					ref={contextRef}
+					tabIndex={-1}
+					id={`${fieldId}-context`}
+					hidden={!isContextOpen}
 					aria-label="Topic context"
-					className="min-w-0 divide-y divide-border xl:pt-1 [&>section:first-child]:pt-0 [&>section]:py-6"
+					className="min-w-0 divide-y divide-border focus-visible:outline-2 focus-visible:outline-ring xl:pt-1 [&>section:first-of-type]:pt-0 [&>section]:py-6"
 				>
+					<div className="flex items-center justify-between gap-3 pb-4 xl:hidden">
+						<H2 className={contextHeadingClassName}>
+							Topic context
+						</H2>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							className="pointer-coarse:size-11"
+							aria-label="Close topic context"
+							onClick={() => {
+								setIsContextOpen(false);
+								contextButtonRef.current?.focus();
+							}}
+						>
+							<X aria-hidden="true" />
+						</Button>
+					</div>
 					<section aria-labelledby={`${fieldId}-goals`}>
 						<div>
 							<div className={asideHeaderClassName}>
@@ -915,6 +919,95 @@ export function TopicDetail() {
 									</CollapsibleContent>
 								</Collapsible>
 							</div>
+						</div>
+					</section>
+					<section aria-labelledby={`${fieldId}-settings`}>
+						<H2
+							id={`${fieldId}-settings`}
+							className={cn(contextHeadingClassName, "pb-3")}
+						>
+							Topic settings
+						</H2>
+						<div className="flex flex-wrap items-center gap-1">
+							<Label
+								htmlFor={`${fieldId}-topic-status`}
+								className="sr-only"
+							>
+								Topic status
+							</Label>
+							<Select
+								value={topic.status}
+								onValueChange={(status) => {
+									if (
+										status === "active" ||
+										status === "dormant" ||
+										status === "archived"
+									)
+										dispatch({
+											type: "topic.save",
+											topic: { id: topic.id, status },
+										});
+								}}
+							>
+								<SelectTrigger
+									id={`${fieldId}-topic-status`}
+									className="h-8 w-auto gap-2 border-0 bg-transparent px-2 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent"
+								>
+									<span
+										aria-hidden="true"
+										className={cn(
+											"size-2 shrink-0 rounded-full",
+											topic.status === "active"
+												? "bg-success"
+												: topic.status === "suggested"
+													? "bg-warning"
+													: "bg-muted-foreground",
+										)}
+									/>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="active">
+										Active
+									</SelectItem>
+									<SelectItem value="dormant">
+										Dormant
+									</SelectItem>
+									<SelectItem value="archived">
+										Archived
+									</SelectItem>
+									{topic.status === "suggested" && (
+										<SelectItem value="suggested">
+											Suggested
+										</SelectItem>
+									)}
+								</SelectContent>
+							</Select>
+							<Button
+								variant="ghost"
+								size="sm"
+								aria-label={`${topic.kind} · ${accountName}: Edit topic kind and account`}
+								className="h-auto min-h-8 max-w-full font-normal text-muted-foreground"
+								onClick={(event) => {
+									editButtonRef.current = event.currentTarget;
+									setIsEditing(true);
+								}}
+							>
+								<LockKeyhole
+									aria-hidden="true"
+									className="shrink-0 text-muted-foreground"
+								/>
+								<span className="min-w-0 whitespace-normal break-words text-left">
+									<span className="capitalize">
+										{topic.kind}
+									</span>{" "}
+									· {accountName}
+								</span>
+								<ChevronDown
+									aria-hidden="true"
+									className="shrink-0 text-muted-foreground"
+								/>
+							</Button>
 						</div>
 					</section>
 				</aside>

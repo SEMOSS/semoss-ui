@@ -1,4 +1,11 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
@@ -24,6 +31,7 @@ vi.mock("@/features/dashboard/topic-sessions", () => ({
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
+	vi.restoreAllMocks();
 });
 
 /** Mixed status/source fixture exposes accidental global scope and stale stored totals. */
@@ -312,7 +320,7 @@ it("shows a goal resolution as plain text and keeps it when reopening and comple
 	expect(resolution).toBeVisible();
 	expect(resolution.querySelector("b")).toBeNull();
 	expect(resolution.closest(".line-through")).toBeNull();
-	expect(screen.getByText(goal.text)).toHaveClass("line-through");
+	expect(screen.getByText(goal.text)).not.toHaveClass("line-through");
 	await user.click(checkbox);
 	expect(checkbox).not.toBeChecked();
 	expect(screen.getByText(goal.resolution)).toBeVisible();
@@ -453,4 +461,154 @@ it("never falls back to global work for an unknown topic", () => {
 	);
 	expect(screen.queryByRole("article")).not.toBeInTheDocument();
 	expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+});
+
+it("keeps empty-topic setup optional and preserves context when toggled", async () => {
+	const { user } = renderWork("/topics/beta");
+	const toggle = screen.getByRole("button", { name: "Context" });
+	expect(toggle).toHaveAttribute("aria-expanded", "false");
+	expect(
+		screen.queryByRole("complementary", { name: "Topic context" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.getByRole("link", { name: "Action beta-open" }),
+	).toBeVisible();
+	await user.click(toggle);
+	expect(
+		screen.getByRole("heading", { name: "Topic settings" }),
+	).toBeVisible();
+	expect(
+		screen.getByRole("combobox", { name: "Topic status" }),
+	).toBeVisible();
+	await user.click(
+		screen.getByRole("button", { name: "Notes for the assistant" }),
+	);
+	await user.click(toggle);
+	expect(
+		screen.queryByRole("button", { name: "Add keyword" }),
+	).not.toBeInTheDocument();
+	await user.click(toggle);
+	expect(
+		screen.getByRole("button", { name: "Notes for the assistant" }),
+	).toHaveAttribute("aria-expanded", "true");
+	expect(toggle).toHaveFocus();
+});
+
+it("finds work within status and source, clears an empty search, and restores keyboard focus", async () => {
+	const { user } = renderWork("/work/all");
+	const search = screen.getByRole("searchbox", { name: "Find work" });
+	await user.type(search, " ALPHA email ");
+	expect(
+		screen.getByRole("link", { name: "Action alpha-email" }),
+	).toBeVisible();
+	expect(screen.getByRole("link", { name: "Action shared" })).toBeVisible();
+	expect(
+		screen.queryByRole("link", { name: "Action beta-open" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.queryByRole("link", { name: "Action alpha-fyi" }),
+	).not.toBeInTheDocument();
+	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
+	await user.click(screen.getByRole("menuitemradio", { name: "Waiting 1" }));
+	await waitFor(() =>
+		expect(screen.queryByRole("menu")).not.toBeInTheDocument(),
+	);
+	expect(
+		screen.getByRole("link", { name: "Action alpha-wait" }),
+	).toBeVisible();
+	await user.clear(search);
+	await user.type(search, "no matching work");
+	expect(
+		screen.getByText("No work matches your search in this view."),
+	).toBeVisible();
+	await user.click(
+		within(screen.getByRole("region", { name: "Waiting 0" })).getByRole(
+			"button",
+			{ name: "Clear search" },
+		),
+	);
+	expect(search).toHaveValue("");
+	expect(search).toHaveFocus();
+	expect(
+		screen.getByRole("link", { name: "Action alpha-wait" }),
+	).toBeVisible();
+	await user.type(search, "alpha");
+	await user.keyboard("{Escape}");
+	expect(search).toHaveValue("");
+	expect(search).toHaveFocus();
+});
+
+it("searches summaries and people while retaining the selected source", async () => {
+	const state = workState();
+	const email = state.threads.find((thread) => thread.id === "alpha-email");
+	const fyi = state.threads.find((thread) => thread.id === "alpha-fyi");
+	if (!email || !fyi) throw new Error("Missing search fixtures");
+	email.summary = "Confirm the rollout schedule";
+	fyi.summary = "Rollout notes";
+	const { user } = renderWork("/work/all", state);
+	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
+	await user.click(screen.getByRole("menuitemradio", { name: "Open 4" }));
+	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
+	await user.click(screen.getByRole("menuitemradio", { name: "Teams 1" }));
+	const search = screen.getByRole("searchbox", { name: "Find work" });
+	await user.type(search, "rollout");
+	expect(
+		screen.getByRole("link", { name: "Action alpha-fyi" }),
+	).toBeVisible();
+	expect(
+		screen.queryByRole("link", { name: "Action alpha-email" }),
+	).not.toBeInTheDocument();
+	await user.clear(search);
+	await user.type(search, state.people[0].name);
+	expect(
+		screen.getByRole("link", { name: "Action alpha-fyi" }),
+	).toBeVisible();
+});
+
+it("keeps urgency visible and classification reasons under row details", async () => {
+	const state = workState();
+	const item = state.items.find((item) => item.id === "alpha-email");
+	if (!item) throw new Error("Missing details fixture");
+	item.reasons = ["Asks you to act", "From a VIP", "Urgency: Today"];
+	const thread = state.threads.find((thread) => thread.id === item.threadId);
+	if (!thread) throw new Error("Missing details thread");
+	thread.participants = [
+		{ personId: state.people[0].id, role: "Participant", included: false },
+	];
+	const { user } = renderWork("/work/all", state);
+	expect(screen.getByText("Today")).toBeVisible();
+	expect(screen.getByText("1 participant excluded")).toBeVisible();
+	expect(screen.getByText("From a VIP")).not.toBeVisible();
+	await user.click(
+		screen.getByRole("button", {
+			name: "Thread actions for Source alpha-email",
+		}),
+	);
+	await user.click(screen.getByRole("button", { name: "Show details" }));
+	expect(screen.getByText("From a VIP")).toBeVisible();
+	expect(
+		screen.getByRole("list", { name: "Why this is in your work list" }),
+	).toHaveTextContent("Asks you to act");
+	expect(
+		screen.getByRole("button", {
+			name: "Thread actions for Source alpha-email",
+		}),
+	).toHaveFocus();
+});
+
+it("takes focus to context below the viewport and returns to the work on close", async () => {
+	const { user } = renderWork("/topics/beta");
+	const context = screen.getByRole("complementary", { hidden: true });
+	vi.spyOn(context, "getBoundingClientRect").mockReturnValue(
+		new DOMRect(0, 1200, 320, 800),
+	);
+	const toggle = screen.getByRole("button", { name: "Context" });
+	await user.click(toggle);
+	await waitFor(() => expect(context).toHaveFocus());
+	await user.click(
+		screen.getByRole("button", { name: "Close topic context" }),
+	);
+	expect(toggle).toHaveFocus();
+	expect(toggle).toHaveAttribute("aria-expanded", "false");
+	expect(context).not.toBeVisible();
 });
