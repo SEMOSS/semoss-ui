@@ -148,6 +148,9 @@ function BriefHarness({
 					layout,
 					history: {
 						rooms: [],
+						closedRoomIds: [],
+						setRoomClosed: vi.fn(),
+						closeError: "",
 						isLoading: false,
 						error: "",
 						hasMore: false,

@@ -1,6 +1,6 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import {
 	Button,
 	Collapsible,
@@ -10,6 +10,9 @@ import {
 	P,
 	Skeleton,
 	Small,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import {
 	DATE_BUCKET_ORDER,
@@ -48,6 +51,9 @@ export function ChatHistoryList({
 	onOpenChange,
 	onNavigate,
 }: ChatHistoryListProps) {
+	const navigate = useNavigate();
+	const disclosureRef = useRef<HTMLButtonElement>(null);
+	const shouldFocusContent = useRef(false);
 	const [isLocalOpen, setIsLocalOpen] = useState(true);
 	const [isShowingAll, setIsShowingAll] = useState(false);
 	const isExpanded = isOpen ?? isLocalOpen;
@@ -62,9 +68,12 @@ export function ChatHistoryList({
 			: undefined;
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const sentinelRef = useRef<HTMLDivElement>(null);
+	const activeRooms = history.rooms.filter(
+		(room) => !history.closedRoomIds.includes(room.roomId),
+	);
 	const visibleRooms = isShowingAll
-		? history.rooms
-		: history.rooms.filter(
+		? activeRooms
+		: activeRooms.filter(
 				(room, index) =>
 					index < RECENT_CHAT_LIMIT ||
 					pathname === roomPath(room.roomId) ||
@@ -81,6 +90,14 @@ export function ChatHistoryList({
 			);
 		}),
 	})).filter((group) => group.rooms.length > 0);
+	useEffect(() => {
+		if (pathname === "/" && shouldFocusContent.current) {
+			shouldFocusContent.current = false;
+			document
+				.querySelector<HTMLElement>(".collaboration-frame main")
+				?.focus();
+		}
+	}, [pathname]);
 	useEffect(() => {
 		if (isExpanded && scrollRef.current)
 			scrollRef.current.scrollTop = history.scrollTop.current;
@@ -130,6 +147,7 @@ export function ChatHistoryList({
 				<div className="shrink-0 px-2">
 					<CollapsibleTrigger asChild>
 						<Button
+							ref={disclosureRef}
 							type="button"
 							variant="ghost"
 							size="sm"
@@ -182,49 +200,96 @@ export function ChatHistoryList({
 										const title =
 											room.roomName || "Untitled chat";
 										return (
-											<Button
+											<div
 												key={room.roomId}
-												variant="ghost"
-												title={title}
-												aria-current={
-													isActive
-														? "page"
-														: undefined
-												}
-												aria-label={
-													openingRoom === room.roomId
-														? `Opening ${title}`
-														: title
-												}
-												className={cn(
-													"h-auto min-h-8 pointer-coarse:min-h-11 w-full justify-start gap-2 rounded-lg px-2 py-1 font-normal text-xs hover:bg-foreground/5",
-													isActive &&
-														"bg-foreground/5 font-medium",
-												)}
-												disabled={
-													openingRoom === room.roomId
-												}
-												onClick={() => {
-													void openRoom(
-														room.roomId,
-													).then(onNavigate);
-												}}
+												className="group flex min-w-0 items-center"
 											>
-												<span
-													aria-hidden="true"
-													className={cn(
-														"size-1.5 shrink-0 rounded-full",
+												<Button
+													variant="ghost"
+													title={title}
+													aria-current={
 														isActive
-															? "bg-foreground"
-															: "bg-transparent",
+															? "page"
+															: undefined
+													}
+													aria-label={
+														openingRoom ===
+														room.roomId
+															? `Opening ${title}`
+															: title
+													}
+													className={cn(
+														"h-auto min-h-8 pointer-coarse:min-h-11 min-w-0 flex-1 justify-start gap-2 rounded-lg px-2 py-1 font-normal text-xs hover:bg-foreground/5",
+														isActive &&
+															"bg-foreground/5 font-medium",
 													)}
-												/>
-												<span className="truncate">
-													{openingRoom === room.roomId
-														? "Opening…"
-														: title}
-												</span>
-											</Button>
+													disabled={
+														openingRoom ===
+														room.roomId
+													}
+													onClick={() => {
+														void openRoom(
+															room.roomId,
+														).then(onNavigate);
+													}}
+												>
+													<span
+														aria-hidden="true"
+														className={cn(
+															"size-1.5 shrink-0 rounded-full",
+															isActive
+																? "bg-foreground"
+																: "bg-transparent",
+														)}
+													/>
+													<span className="truncate">
+														{openingRoom ===
+														room.roomId
+															? "Opening…"
+															: title}
+													</span>
+												</Button>
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
+													<TooltipTrigger asChild>
+														<Button
+															type="button"
+															variant="ghost"
+															size="icon-sm"
+															aria-label={`Close chat: ${title}`}
+															className="pointer-coarse:size-11 shrink-0 text-muted-foreground opacity-0 pointer-coarse:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100"
+															disabled={
+																openingRoom ===
+																room.roomId
+															}
+															onClick={() => {
+																if (
+																	!history.setRoomClosed(
+																		room.roomId,
+																		true,
+																	)
+																)
+																	return;
+																if (isActive) {
+																	shouldFocusContent.current = true;
+																	void navigate(
+																		"/",
+																	);
+																} else
+																	disclosureRef.current?.focus();
+															}}
+														>
+															<X aria-hidden="true" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent>
+														Close chat
+													</TooltipContent>
+												</Tooltip>
+											</div>
 										);
 									})}
 								</div>
@@ -238,6 +303,11 @@ export function ChatHistoryList({
 								<Skeleton className="h-4 w-full" />
 								<Skeleton className="h-4 w-3/4" />
 							</output>
+						)}
+						{history.closeError && (
+							<P role="alert" className="p-2 text-xs leading-4">
+								{history.closeError}
+							</P>
 						)}
 						{history.error && (
 							<div role="alert" className="space-y-2 p-2">
@@ -256,15 +326,16 @@ export function ChatHistoryList({
 						)}
 						{!history.isLoading &&
 							!history.error &&
-							history.rooms.length === 0 && (
+							activeRooms.length === 0 && (
 								<P className="p-2 text-muted-foreground text-xs leading-4">
-									Your conversations will appear here after
-									your first message.
+									{history.closedRoomIds.length
+										? "No open chats here. Start a new chat or find a previous one in Search."
+										: "Your conversations will appear here after your first message."}
 								</P>
 							)}
 						<div ref={sentinelRef} className="h-1" />
 						{!isShowingAll &&
-							(history.rooms.length > RECENT_CHAT_LIMIT ||
+							(activeRooms.length > RECENT_CHAT_LIMIT ||
 								history.hasMore) && (
 								<Button
 									variant="ghost"

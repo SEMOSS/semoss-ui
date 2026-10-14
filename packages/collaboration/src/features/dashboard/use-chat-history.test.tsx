@@ -84,3 +84,26 @@ it("retains newly created chats before the server list catches up and refreshes 
 		true,
 	);
 });
+
+it("keeps a chat closed after refresh and allows reopening without deleting its record", async () => {
+	read.mockResolvedValue({
+		rooms: rows(0, 2),
+		hasMore: false,
+		nextOffset: 2,
+	});
+	localStorage.removeItem("test-closed-chats");
+	const first = renderHook(() => useChatHistory("test-closed-chats"));
+	await waitFor(() => expect(first.result.current.rooms).toHaveLength(2));
+	act(() => {
+		expect(first.result.current.setRoomClosed("room-0", true)).toBe(true);
+	});
+	expect(first.result.current.rooms).toHaveLength(2);
+	first.unmount();
+	const next = renderHook(() => useChatHistory("test-closed-chats"));
+	expect(next.result.current.closedRoomIds).toEqual(["room-0"]);
+	act(() => {
+		next.result.current.setRoomClosed("room-0", false);
+	});
+	expect(next.result.current.closedRoomIds).toEqual([]);
+	localStorage.removeItem("test-closed-chats");
+});

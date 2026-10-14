@@ -15,6 +15,9 @@ const dashboard = vi.hoisted(() => ({
 			{ roomId: "room-one", roomName: "Pricing conversation" },
 			{ roomId: "room-two", roomName: "Sprint conversation" },
 		],
+		closedRoomIds: [] as string[],
+		setRoomClosed: vi.fn(),
+		closeError: "",
 		isLoading: false,
 		error: "",
 		hasMore: false,
@@ -40,6 +43,9 @@ beforeEach(() => {
 	dashboard.history.error = "";
 	dashboard.history.scrollTop.current = 0;
 	dashboard.history.hasMore = false;
+	dashboard.history.closedRoomIds = [];
+	dashboard.history.setRoomClosed.mockReturnValue(true);
+	dashboard.history.closeError = "";
 });
 
 afterEach(() => {
@@ -225,4 +231,28 @@ it("marks the saved session opened into a Work thread and moves the selection to
 	expect(
 		screen.getByRole("button", { name: "Pricing conversation" }),
 	).not.toHaveAttribute("aria-current");
+});
+
+it("closes the current chat by keyboard and returns to Today", async () => {
+	const user = userEvent.setup();
+	const router = createMemoryRouter(
+		[
+			{ path: "/", element: <p>Today</p> },
+			{ path: "/thread/:threadId", Component: ChatHistoryList },
+		],
+		{ initialEntries: ["/thread/room%3Aroom-one"] },
+	);
+	render(<RouterProvider router={router} />);
+	act(() =>
+		screen
+			.getByRole("button", { name: "Close chat: Pricing conversation" })
+			.focus(),
+	);
+	await user.keyboard("{Enter}");
+	expect(dashboard.history.setRoomClosed).toHaveBeenCalledWith(
+		"room-one",
+		true,
+	);
+	expect(router.state.location.pathname).toBe("/");
+	expect(dashboard.openRoom).not.toHaveBeenCalled();
 });
