@@ -6,3 +6,4 @@ export const AccessPermissionEnum = {
 
 export * from "./engine-images.constants";
 export * from "./login-provider-icons.constants";
+export * from "./login-type-names.constants";

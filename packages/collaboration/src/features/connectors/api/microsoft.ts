@@ -1,5 +1,6 @@
 import { download, oauth } from "@semoss/sdk";
 import { z } from "@semoss/ui/next";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 import { draftText, sanitizeDraftHtml } from "@/features/email/email-html";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 import {
@@ -26,15 +27,7 @@ import {
 import { sameRecipientAddresses } from "./reply-recipients";
 
 /** Only an HTTPS provider URL may become a clickable external link. */
-export function safeSourceUrl(value: string | undefined): string | undefined {
-	if (!value) return undefined;
-	try {
-		const url = new URL(value);
-		return url.protocol === "https:" ? url.href : undefined;
-	} catch {
-		return undefined;
-	}
-}
+export const safeSourceUrl = safeHttpsUrl;
 
 /** Split a reviewable recipient list without accepting empty or malformed addresses. */
 export function parseAddresses(value: string): string[] {
@@ -75,7 +68,7 @@ export async function getMail(actions: InsightActions, uid: string) {
 	const mail = await callPixel(
 		actions,
 		pixel("MicrosoftOutlookGetMail", {
-			uid,
+			id: uid,
 			maxBodyChars: 12_000,
 			includeAttachments: true,
 			includeDisplayBody: true,
@@ -122,21 +115,20 @@ export function getTeamsMessages(actions: InsightActions, chatId: string) {
 	);
 }
 
-/** Load the next seven days of calendar headers in a known time zone. */
+/** Load the next seven days of calendar headers, whose times come back in UTC. */
 export function listCalendarEvents(actions: InsightActions) {
 	return callPixel(
 		actions,
 		pixel("MicrosoftCalendarListEvents", {
 			days: 7,
 			limit: 30,
-			timeZone: "UTC",
 			includeBody: false,
 		}),
 		eventsSchema,
 	);
 }
 
-/** Fetch a selected event; UTC is also requested on the detail operation. */
+/** Fetch a selected event, whose times come back in UTC. */
 export async function getCalendarEvent(
 	actions: InsightActions,
 	eventId: string,
@@ -144,8 +136,7 @@ export async function getCalendarEvent(
 	const event = await callPixel(
 		actions,
 		pixel("MicrosoftCalendarGetEvent", {
-			eventId,
-			timeZone: "UTC",
+			id: eventId,
 			maxBodyChars: 12_000,
 		}),
 		eventSchema,
@@ -198,14 +189,14 @@ export async function saveEmailDraft(
 					cc,
 					bcc,
 					subject: input.subject,
-					message: body,
+					body: body,
 					html,
 					attachments: input.attachments ?? [],
 				}),
 				newDraftReceiptSchema,
 			);
 			return {
-				savedDraftId: receipt.draftId,
+				savedDraftId: receipt.id,
 				webLink: safeSourceUrl(receipt.webLink),
 			};
 		}
@@ -213,8 +204,8 @@ export async function saveEmailDraft(
 			const receipt = await callPixel(
 				actions,
 				pixel("MicrosoftOutlookReplyMail", {
-					uid: input.sourceUid,
-					comment: body,
+					id: input.sourceUid,
+					body: body,
 					...(html ? { html: true } : {}),
 					replyAll: input.replyAll,
 					...(input.overrideRecipients
@@ -231,24 +222,23 @@ export async function saveEmailDraft(
 				);
 			if (
 				input.overrideRecipients &&
-				(!receipt.recipients ||
-					!sameRecipientAddresses(to, receipt.recipients.to) ||
-					!sameRecipientAddresses(cc, receipt.recipients.cc))
+				(!sameRecipientAddresses(to, receipt.to) ||
+					!sameRecipientAddresses(cc, receipt.cc))
 			)
 				throw new Error(
 					"The saved reply recipients could not be confirmed.",
 				);
 			return {
-				savedDraftId: receipt.uid,
+				savedDraftId: receipt.id,
 				webLink: safeSourceUrl(receipt.webLink),
 			};
 		}
 		const receipt = await callPixel(
 			actions,
 			pixel("MicrosoftOutlookForwardMail", {
-				uid: input.sourceUid,
+				id: input.sourceUid,
 				to,
-				comment: body,
+				body: body,
 				...(html ? { html: true } : {}),
 				asDraft: true,
 				attachments: input.attachments ?? [],
@@ -258,7 +248,7 @@ export async function saveEmailDraft(
 		if (receipt.forwarded !== input.sourceUid)
 			throw new Error("The draft receipt refers to a different email.");
 		return {
-			savedDraftId: receipt.uid,
+			savedDraftId: receipt.id,
 			webLink: safeSourceUrl(receipt.webLink),
 		};
 	} catch (cause: unknown) {
@@ -287,14 +277,14 @@ export async function stageMailAttachment(
 	const receipt = await callPixel(
 		actions,
 		pixel("MicrosoftOutlookDownloadAttachment", {
-			uid,
+			id: uid,
 			attachmentId,
 			fileName,
 		}),
 		stagedAttachmentSchema,
 	);
 	if (
-		receipt.uid !== uid ||
+		receipt.id !== uid ||
 		receipt.attachmentId !== attachmentId ||
 		receipt.filePath !== fileName
 	)
@@ -374,7 +364,7 @@ export async function sendEmailDraft(
 	try {
 		const result = await callPixel(
 			actions,
-			pixel("MicrosoftOutlookSendDraft", { draftId }),
+			pixel("MicrosoftOutlookSendDraft", { id: draftId }),
 			z.object({ sent: z.literal(true), draftId: z.string().min(1) }),
 		);
 		if (result.draftId !== draftId)
@@ -394,15 +384,15 @@ export async function trashEmail(
 	if (!uid.trim()) throw new Error("Select an email to delete.");
 	const receipt = await callPixel(
 		actions,
-		pixel("MicrosoftOutlookMoveMail", { uid, folder: "deleteditems" }),
+		pixel("MicrosoftOutlookMoveMail", { id: uid, folder: "deleteditems" }),
 		z.object({
 			moved: z.literal(true),
-			previousUid: z.string(),
-			uid: z.string().min(1),
+			previousId: z.string(),
+			id: z.string().min(1),
 			folder: z.literal("deleteditems"),
 		}),
 	);
-	if (receipt.previousUid !== uid)
+	if (receipt.previousId !== uid)
 		throw new Error(
 			"The move receipt refers to a different email. Check Outlook before retrying.",
 		);

@@ -45,7 +45,18 @@ const ICON_CLASS = "size-4";
 
 type CardConfig = { icon: ReactNode; color: string; label?: string };
 
+/** The color every team settings card shares */
+const TEAMS_CARD_COLOR = "#8364B8";
+
 const CardMapper: Record<string, CardConfig> = {
+	"My Profile": {
+		icon: <CircleUserRound className={ICON_CLASS} />,
+		color: "#471F96",
+	},
+	"My Files": {
+		icon: <FolderOpen className={ICON_CLASS} />,
+		color: "#F59E0B",
+	},
 	"Database Settings": {
 		icon: <Database className={ICON_CLASS} />,
 		color: "#00A593",
@@ -105,27 +116,23 @@ const CardMapper: Record<string, CardConfig> = {
 	},
 	Teams: {
 		icon: <Users2 className={ICON_CLASS} />,
-		color: "#8364B8",
+		color: TEAMS_CARD_COLOR,
 	},
 	"Teams Management": {
 		icon: <Users2 className={ICON_CLASS} />,
-		color: "#8364B8",
+		color: TEAMS_CARD_COLOR,
 	},
 	"Team Permissions": {
 		icon: <ShieldUser className={ICON_CLASS} />,
-		color: "#8364B8",
+		color: TEAMS_CARD_COLOR,
+	},
+	"My Teams": {
+		icon: <Users2 className={ICON_CLASS} />,
+		color: TEAMS_CARD_COLOR,
 	},
 	"Service Accounts": {
 		icon: <KeyRound className={ICON_CLASS} />,
 		color: "#6B7280",
-	},
-	"My Profile": {
-		icon: <CircleUserRound className={ICON_CLASS} />,
-		color: "#471F96",
-	},
-	"My Files": {
-		icon: <FolderOpen className={ICON_CLASS} />,
-		color: "#F59E0B",
 	},
 	Jobs: {
 		icon: <Briefcase className={ICON_CLASS} />,

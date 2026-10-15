@@ -1,7 +1,9 @@
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
+import { threadPath, topicPath } from "@/lib/workspace-paths";
 import {
 	mapItem,
+	mapMemory,
 	mapPerson,
 	mapThread,
 	mapTopic,
@@ -47,12 +49,9 @@ export async function searchCollaboration(
 export function searchResultPath(
 	entry: Pick<SearchEntry, "kind" | "id">,
 ): string {
-	const roots = {
-		thread: "/work/thread/",
-		person: "/brain/people/",
-		topic: "/brain/topics/",
-	};
-	return roots[entry.kind] + encodeURIComponent(entry.id);
+	if (entry.kind === "thread") return threadPath(entry.id);
+	if (entry.kind === "topic") return topicPath(entry.id);
+	return `/brain/people/${encodeURIComponent(entry.id)}`;
 }
 
 const rowSchema = z.object({ id: z.string().min(1) }).passthrough();
@@ -61,6 +60,7 @@ const recordSchema = z.object({
 	people: z.array(rowSchema),
 	threads: z.array(rowSchema),
 	items: z.array(rowSchema),
+	memories: z.array(rowSchema).default([]),
 	workspaces: z.object({
 		items: z.array(z.object({ threadId: z.string().min(1) }).passthrough()),
 		total: z.number().int().nonnegative(),
@@ -93,6 +93,7 @@ export async function loadSearchRecord(
 		people: result.people.map(mapPerson),
 		threads,
 		items: result.items.map(mapItem),
+		memories: result.memories.map(mapMemory),
 		workspaces: {
 			...Object.fromEntries(
 				threads.map((thread) => [thread.id, createEmptyWorkspace()]),

@@ -1,39 +1,45 @@
+import type { ReactNode } from "react";
 import { useLocation, useParams } from "react-router";
-import { AboutYou } from "@/features/collaboration/components/about-you";
+import { BrainMemory } from "@/features/collaboration/components/brain-memory";
 import { BrainReview } from "@/features/collaboration/components/brain-review";
 import { BrainThread } from "@/features/collaboration/components/brain-thread";
+import { CollaborationBrainNavigation } from "@/features/collaboration/components/collaboration-brain-navigation";
 import { PeopleDirectory } from "@/features/collaboration/components/people-directory";
 import { PersonDetail } from "@/features/collaboration/components/person-detail";
 import { SavedRecordBoundary } from "@/features/collaboration/components/saved-record-boundary";
 import { SourcesAndRules } from "@/features/collaboration/components/sources-and-rules";
 import { ThreadsDirectory } from "@/features/collaboration/components/threads-directory";
-import { TopicDetail } from "@/features/collaboration/components/topic-detail";
 
 /** Thin routes compose the Brain feature views. */
 export function BrainPage() {
 	const { pathname } = useLocation();
-	const { topicId, personId, threadId } = useParams();
-	if (topicId)
-		return (
-			<SavedRecordBoundary kind="topic" id={topicId}>
-				<TopicDetail key={topicId} />
-			</SavedRecordBoundary>
-		);
+	const { personId, threadId } = useParams();
+	let content: ReactNode;
 	if (personId)
-		return (
+		content = (
 			<SavedRecordBoundary kind="person" id={personId}>
 				<PersonDetail key={personId} />
 			</SavedRecordBoundary>
 		);
-	if (threadId)
-		return (
+	else if (threadId)
+		content = (
 			<SavedRecordBoundary kind="thread" id={threadId}>
 				<BrainThread key={threadId} />
 			</SavedRecordBoundary>
 		);
-	if (pathname.endsWith("/profile")) return <AboutYou />;
-	if (pathname.endsWith("/sources")) return <SourcesAndRules />;
-	if (pathname.endsWith("/people")) return <PeopleDirectory />;
-	if (pathname.endsWith("/threads")) return <ThreadsDirectory />;
-	return <BrainReview />;
+	else if (pathname.endsWith("/memory")) content = <BrainMemory />;
+	else if (pathname.endsWith("/sources")) content = <SourcesAndRules />;
+	else if (pathname.endsWith("/people")) content = <PeopleDirectory />;
+	else if (pathname.endsWith("/threads")) content = <ThreadsDirectory />;
+	else content = <BrainReview />;
+	return (
+		<>
+			<div className="shrink-0 bg-muted/15 px-4 pt-4 sm:px-6 lg:px-8">
+				<div className="mx-auto w-full max-w-screen-2xl">
+					<CollaborationBrainNavigation />
+				</div>
+			</div>
+			{content}
+		</>
+	);
 }

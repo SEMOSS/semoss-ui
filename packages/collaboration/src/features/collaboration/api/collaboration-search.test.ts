@@ -32,13 +32,13 @@ describe("search API boundaries", () => {
 	});
 	it("encodes record IDs in all three navigation routes", () => {
 		expect(searchResultPath({ kind: "thread", id: "a/b #?" })).toBe(
-			"/work/thread/a%2Fb%20%23%3F",
+			"/thread/a%2Fb%20%23%3F",
 		);
 		expect(searchResultPath({ kind: "person", id: "person/one" })).toBe(
 			"/brain/people/person%2Fone",
 		);
 		expect(searchResultPath({ kind: "topic", id: "topic/one" })).toBe(
-			"/brain/topics/topic%2Fone",
+			"/topics/topic%2Fone",
 		);
 	});
 	it("requires the requested identity before hydrating a destination", async () => {
@@ -70,9 +70,13 @@ describe("search API boundaries", () => {
 		expect(command.threads[0].source?.nativeId).toBe(
 			"fixture-native-message",
 		);
-		expect(command.workspaces[entry.id].goal).toBe(
-			"Saved search fixture goal",
+		expect(command.workspaces[entry.id].steps[0].text).toBe(
+			"Saved search fixture step",
 		);
+		expect(command.memories[0]).toMatchObject({
+			id: "saved-memory",
+			text: "Current saved context",
+		});
 		expect(command.items[0]).toMatchObject({
 			id: "work-1",
 			threadId: entry.id,

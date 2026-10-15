@@ -7,8 +7,8 @@ import {
 } from "@semoss/panels";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
 import { RoomProvider } from "@/contexts/room.context";
-import { normalizeFolderPath } from "@/features/teamwork/folders/folder-path";
-import { useNextMessageRoom } from "@/features/teamwork/sources/next-message-room";
+import { normalizeFolderPath } from "@/features/chat-tools/folders/folder-path";
+import { useNextMessageRoom } from "@/features/conversation/next-message-room.context";
 import { RoomWorkbenchMenus } from "@/features/workbench/room-workbench-menus";
 import type { WorkspaceMenuItemsProps } from "@/features/workbench/workspace-menu-items";
 import type { RoomStore } from "@/stores/room/room.store";
@@ -45,14 +45,12 @@ export const RoomSidebar = observer(
 									name: t("actions.addToContext"),
 									placement: "end",
 									action: async () => {
-										nextMessageRoom.teamwork.addContextItem(
-											{
-												path: normalizeFolderPath(
-													item.path,
-												),
-												name: item.name,
-											},
-										);
+										nextMessageRoom.contextItems.add({
+											path: normalizeFolderPath(
+												item.path,
+											),
+											name: item.name,
+										});
 									},
 								},
 							],

@@ -29,6 +29,11 @@ export interface AutomationImportOptions {
 	conversionModel?: N8nImportConversionModel;
 }
 
+export interface AutomationImportSaveAggregate {
+	definitionJson: string;
+	nodeSourcesJson: string;
+}
+
 function isNativeAutomationExport(
 	value: unknown,
 ): value is NativeAutomationExport {
@@ -54,6 +59,21 @@ export function buildNativeAutomationExport(
 	nodeSources: AutomationNodeSources,
 ): NativeAutomationExport {
 	return { ...workflowDocument, nodeSources };
+}
+
+/**
+ * Serializes an imported aggregate for SaveAutomation without projecting it through
+ * the canvas adapter. The backend remains authoritative for legacy Python ownership
+ * migration, so typed modified source and trigger setup bytes arrive untouched.
+ */
+export function buildAutomationImportSaveAggregate(
+	result: AutomationImportResult,
+	document: AutomationWorkflowDocument = result.document,
+): AutomationImportSaveAggregate {
+	return {
+		definitionJson: JSON.stringify(document),
+		nodeSourcesJson: JSON.stringify(result.nodeSources),
+	};
 }
 
 /** Parses a file from either "Export" (native) or an n8n workflow export. */

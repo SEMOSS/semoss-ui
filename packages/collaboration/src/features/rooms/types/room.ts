@@ -6,12 +6,15 @@ import type {
 	PlaygroundTurnPhase,
 } from "@/features/messages/types/message";
 import type { Session } from "@/types/session";
+import type { RoomSession, RoomSessionSnapshot } from "../room-session";
 
 /** One draft submitted by the room composer. */
 export interface ComposerSubmission {
 	/** Sanitized email HTML, emitted only for email destinations. */
 	html?: string;
 	text: string;
+	/** What the user typed, when text wraps it in thread context. */
+	userText?: string;
 	files: File[];
 	/** Explicitly selected native files staged in this exact room insight. */
 	existingMedia?: {
@@ -50,6 +53,9 @@ export interface PendingToolApproval {
 
 /** Everything the room screen renders and every action it can raise. */
 export interface RoomViewProps {
+	/** Retained room state shared with creation and source import. */
+	roomSession?: RoomSession;
+	roomSnapshot?: RoomSessionSnapshot;
 	agent: AgentConfiguration;
 	insightId: string;
 	sessions: Session[];
@@ -84,7 +90,6 @@ export interface RoomViewProps {
 		argumentsValue: Record<string, unknown>,
 	) => Promise<void>;
 	onRejectTool: (approval: PendingToolApproval) => Promise<void>;
-	onConfigure: (id: string) => void;
 	onNewRoom: (agentId?: string) => void;
 	onOpenRooms: () => void;
 }

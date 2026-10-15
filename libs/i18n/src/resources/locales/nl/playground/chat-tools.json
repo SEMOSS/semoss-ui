@@ -1,0 +1,81 @@
+{
+	"menu": {
+		"showTools": "Chattools tonen"
+	},
+	"panel": {
+		"title": "Chattools",
+		"description": "Wat de assistent in je volgende bericht kan gebruiken.",
+		"toolboxTitle": "Toolbox van deze chat",
+		"toolboxDescription": "De connectors die voor deze chat aan staan, uit mcp/pixel_mcp.json in Chatbestanden.",
+		"toolboxEmpty": "Er staan geen connectors aan.",
+		"toolboxError": "De toolbox van deze chat kon niet worden gelezen.",
+		"otherTools": "Andere tools",
+		"addedTitle": "Toegevoegde toolboxes",
+		"addedDescription": "Elke toolbox brengt zijn eigen tools mee.",
+		"addedEmpty": "Geen toolboxes toegevoegd.",
+		"parameters": "Parameters",
+		"required": "Verplicht",
+		"noParameters": "Geen parameters.",
+		"defaultTitle": "Standaardtools",
+		"defaultDescription": "Aan elk bericht toegevoegd en in deze browser uitgevoerd, in Chatbestanden.",
+		"defaultEmpty": "Alle standaardtools zijn uitgeschakeld in de ruimte-instellingen.",
+		"openSettings": "Ruimte-instellingen",
+		"agentTitle": "Tools van de agent",
+		"agentDescription": "Agentruns hebben hun eigen tools voor bestanden, shell en code, en werken in Chatbestanden."
+	},
+	"defaultTools": {
+		"label": "Standaardtools",
+		"description": "Tools die deze browser aan elk bericht toevoegt en uitvoert in Chatbestanden. Automatisch voert een tool zelfstandig uit, Vragen wacht bij elke aanroep op je goedkeuring en Uitgeschakeld laat hem weg.",
+		"modes": {
+			"auto": "Automatisch",
+			"ask": "Vragen",
+			"disabled": "Uitgeschakeld"
+		}
+	},
+	"tools": {
+		"rootFolder": "Hoofdniveau van de map",
+		"moveSummary": "{{from}} naar {{to}}",
+		"titles": {
+			"folder_list": "Map weergeven",
+			"folder_read": "Bestand lezen",
+			"folder_search": "Map doorzoeken",
+			"folder_write": "Bestand schrijven",
+			"folder_edit": "Bestand bewerken",
+			"folder_create_directory": "Map maken",
+			"folder_move": "Verplaatsen of hernoemen",
+			"folder_delete": "Verwijderen"
+		}
+	},
+	"card": {
+		"status": {
+			"waiting": "Goedkeuring nodig",
+			"queued": "In wachtrij",
+			"running": "Bezig",
+			"done": "Voltooid",
+			"failed": "Mislukt",
+			"notRun": "Niet uitgevoerd"
+		},
+		"folderApproval": "De assistent wil een bestand in Chatbestanden wijzigen. Bekijk de wijziging en sta deze toe of weiger deze.",
+		"connectorApproval": "De assistent wil een actie uitvoeren met je account. Bekijk de details en sta de actie toe of weiger deze.",
+		"file": "Bestand",
+		"path": "Pad",
+		"rootFolder": "Hoofdniveau van de map",
+		"query": "Zoekterm",
+		"newContents": "Nieuwe inhoud",
+		"replace": "Vervangen",
+		"with": "Door",
+		"replaceAll": "Elke overeenkomst wordt vervangen.",
+		"from": "Van",
+		"to": "Naar",
+		"deleteRecursive": "Alles in deze map wordt ook verwijderd.",
+		"noArguments": "Geen details",
+		"result": "Resultaat",
+		"error": "Fout",
+		"allow": "Toestaan",
+		"allowing": "Bezig met toestaan...",
+		"deny": "Weigeren",
+		"denying": "Bezig met weigeren...",
+		"decisionError": "Kan dit niet voltooien. {{message}}",
+		"chatFiles": "Chatbestanden"
+	}
+}

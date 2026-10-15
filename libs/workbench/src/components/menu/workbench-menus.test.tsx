@@ -244,3 +244,83 @@ it("allows a host section to replace Navigate without changing shared defaults",
 	fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
 	expect(openSettings).toHaveBeenCalledTimes(1);
 });
+
+it("hides layout actions and occupied side toggles while retaining host actions and the palette", async () => {
+	const store = createWorkbenchStore({
+		components: { editor: { content: DraftEditor, mount: "keepAlive" } },
+	});
+	store.getState().layout.actions.loadSnapshot(SNAPSHOT);
+	store.getState().layout.actions.movePanel("b", {
+		kind: "border",
+		side: "left",
+	});
+	const openSettings = vi.fn();
+	render(
+		<WorkbenchProvider store={store}>
+			<WorkbenchMenus
+				showNavigation={false}
+				showLayoutActions={false}
+				viewItems={
+					<DropdownMenuItem onSelect={openSettings}>
+						Settings
+					</DropdownMenuItem>
+				}
+			/>
+		</WorkbenchProvider>,
+	);
+	openMenu("View");
+	expect(
+		await screen.findByRole("menuitem", { name: "Settings" }),
+	).toBeVisible();
+	expect(screen.queryByRole("menuitem", { name: "Layout" })).toBeNull();
+	expect(
+		screen.queryByRole("menuitemcheckbox", { name: "Left Side Area" }),
+	).toBeNull();
+	expect(screen.getAllByRole("separator")).toHaveLength(1);
+	expect(
+		screen.getByRole("menuitem", { name: "Command Palette…" }),
+	).toBeVisible();
+	fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
+	expect(openSettings).toHaveBeenCalledOnce();
+	openMenu("View");
+	fireEvent.click(
+		await screen.findByRole("menuitem", { name: "Command Palette…" }),
+	);
+	await waitFor(() =>
+		expect(store.getState().command.isCommandOpen).toBe(true),
+	);
+	expect(store.getState().layout.borders.left.panelIds).toEqual(["b"]);
+});
+
+it("renders only host entries without separators when shared menu actions are hidden", async () => {
+	const store = createWorkbenchStore({
+		components: { editor: { content: DraftEditor, mount: "keepAlive" } },
+	});
+	store.getState().layout.actions.loadSnapshot(SNAPSHOT);
+	store.getState().layout.actions.movePanel("b", {
+		kind: "border",
+		side: "left",
+	});
+	render(
+		<WorkbenchProvider store={store}>
+			<WorkbenchMenus
+				showNavigation={false}
+				showLayoutActions={false}
+				showCommandPalette={false}
+				viewItems={
+					<>
+						<DropdownMenuItem>Show chat files</DropdownMenuItem>
+						<DropdownMenuItem>Open settings</DropdownMenuItem>
+					</>
+				}
+			/>
+		</WorkbenchProvider>,
+	);
+	openMenu("View");
+	await screen.findByRole("menuitem", { name: "Show chat files" });
+	expect(
+		screen.getAllByRole("menuitem").map((item) => item.textContent),
+	).toEqual(["Show chat files", "Open settings"]);
+	expect(screen.queryByRole("menuitemcheckbox")).toBeNull();
+	expect(screen.queryByRole("separator")).toBeNull();
+});

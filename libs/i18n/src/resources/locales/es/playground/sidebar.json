@@ -104,7 +104,8 @@
 				"dark": "Oscuro"
 			},
 			"language": "Idioma",
-			"languageDescription": "El idioma en el que se muestra la aplicación."
+			"languageDescription": "El idioma en el que se muestra la aplicación.",
+			"version": "Versión {{version}}"
 		}
 	}
 }

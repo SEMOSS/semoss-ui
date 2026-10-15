@@ -71,7 +71,7 @@ describe("importing updated fixtures after a completed import", () => {
 				screen.queryByRole("button", { name: "Continue" }),
 			).not.toBeInTheDocument(),
 		);
-		expect(screen.getByText("importing")).toBeInTheDocument();
+		expect(screen.getByText("Reading your Inbox")).toBeInTheDocument();
 	});
 
 	it("keeps rerun available after a start failure", async () => {

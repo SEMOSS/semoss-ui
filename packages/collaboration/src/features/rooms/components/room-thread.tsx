@@ -1,5 +1,5 @@
 import { ArrowDown, ShieldCheck } from "lucide-react";
-import { Fragment, useContext } from "react";
+import { Fragment, type ReactNode, useContext } from "react";
 import { Button, Muted, Separator, Spinner } from "@semoss/ui/next";
 import { EmptyView } from "@/components/common/empty-view";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
@@ -23,6 +23,7 @@ export function RoomThread({
 	resumeSignal = 0,
 	phase = null,
 	hasObservationIssue = false,
+	children,
 }: {
 	agent: AgentConfiguration;
 	thread: ConversationMessage[];
@@ -31,6 +32,8 @@ export function RoomThread({
 	resumeSignal?: number;
 	phase?: PlaygroundTurnPhase | null;
 	hasObservationIssue?: boolean;
+	/** Source-thread actions stay alongside the shared room transcript. */
+	children?: ReactNode;
 }) {
 	const scroll = useFollowScroll({ resetKey: roomId, resumeSignal });
 	const workbench = useContext(ToolWorkbenchContext);
@@ -126,6 +129,7 @@ export function RoomThread({
 					<div className="min-h-10 pt-2">
 						<MessageActivityPart message={activityMessage} />
 					</div>
+					{children}
 				</div>
 			</section>
 			{!scroll.isFollowing && scroll.hasMoreBelow && (

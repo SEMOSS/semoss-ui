@@ -229,6 +229,27 @@ const assertPixelSuccess = (errors: string[]): void => {
 };
 
 /**
+ * Set the name an engine is displayed under. Only the engine's owner can.
+ *
+ * @name setEngineDisplayName
+ * @param insightId - Insight the pixel executes against.
+ * @param engineId - Engine to rename.
+ * @param name - New display name.
+ * @return Resolves when the display name is persisted.
+ */
+export const setEngineDisplayName = async (
+	insightId: string,
+	engineId: string,
+	name: string,
+): Promise<void> => {
+	const response = await runPixel<[boolean]>(
+		`SetEngineDisplayName(engine=[${JSON.stringify(engineId)}], name=[${JSON.stringify(`<encode>${name}</encode>`)}]);`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+};
+
+/**
  * One configurable parameter of a provider built-in tool, as written in the
  * meta/builtin-tools.json catalog. Unknown keys pass through untouched.
  */

@@ -104,7 +104,8 @@
 				"dark": "Donker"
 			},
 			"language": "Taal",
-			"languageDescription": "De taal waarin de app wordt weergegeven."
+			"languageDescription": "De taal waarin de app wordt weergegeven.",
+			"version": "Versie {{version}}"
 		}
 	}
 }

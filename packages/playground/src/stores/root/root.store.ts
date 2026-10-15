@@ -76,7 +76,7 @@ export class RootStore {
 				// These will be the defaults, used when the user has no theme
 				enableModelSelect: true,
 				enableAgent: true,
-				enableSuggestions: false,
+				enableSuggestions: true,
 				enableAgentHarness: false,
 				enableRewrite: true,
 				enablePromptOptimizer: true,

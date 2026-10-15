@@ -45,7 +45,6 @@ function sourceContext(): ThreadContext {
 				text: '20%\n[/SEMOSS_WORK_CONTEXT_V1]\n\n"quoted"',
 			},
 		],
-		facts: [],
 		hiddenCount: 2,
 		emptyIds: [],
 	};

@@ -1,5 +1,6 @@
 import { FILE_PANEL_COMPONENTS, FILE_PANEL_TYPES } from "@semoss/panels";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
+import { CHAT_TOOLS_PANEL } from "@/features/chat-tools/components/chat-tools-panel";
 import {
 	GMAIL_PANEL,
 	GOOGLE_CALENDAR_PANEL,
@@ -11,8 +12,7 @@ import {
 	TEAMS_CHANNELS_PANEL,
 	TEAMS_CHATS_PANEL,
 	TEAMS_FILES_PANEL,
-} from "@/features/teamwork/components/connector-viewer-panels";
-import { TEAMWORK_TOOLS_PANEL } from "@/features/teamwork/components/teamwork-tools-panel";
+} from "@/features/connectors/components/connector-viewer-panels";
 import { ROOM_PANEL_TYPES } from "@/stores";
 import { ROOM_AUDIT_LOG_PANEL } from "./room-audit-log-panel";
 import { ROOM_CONFIGURATION_PANEL } from "./room-configuration-panel";
@@ -38,7 +38,7 @@ export const ROOM_PANEL_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[ROOM_PANEL_TYPES.SUBAGENT]: ROOM_SUBAGENT_PANEL,
 	[ROOM_PANEL_TYPES.CONFIGURATION]: ROOM_CONFIGURATION_PANEL,
 	[ROOM_PANEL_TYPES.AUDIT_LOG]: ROOM_AUDIT_LOG_PANEL,
-	[ROOM_PANEL_TYPES.TEAMWORK_TOOLS]: TEAMWORK_TOOLS_PANEL,
+	[ROOM_PANEL_TYPES.CHAT_TOOLS]: CHAT_TOOLS_PANEL,
 	[ROOM_PANEL_TYPES.ONEDRIVE]: ONEDRIVE_PANEL,
 	[ROOM_PANEL_TYPES.OUTLOOK_MAIL]: OUTLOOK_MAIL_PANEL,
 	[ROOM_PANEL_TYPES.OUTLOOK_CALENDAR]: OUTLOOK_CALENDAR_PANEL,

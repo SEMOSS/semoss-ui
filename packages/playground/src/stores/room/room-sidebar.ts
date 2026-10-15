@@ -21,7 +21,7 @@ export const ROOM_PANEL_TYPES = {
 	CONFIGURATION: "room-configuration",
 	AUDIT_LOG: "room-audit-log",
 	/** The tools the assistant has for the next message. */
-	TEAMWORK_TOOLS: "room-teamwork-tools",
+	CHAT_TOOLS: "room-chat-tools",
 	/** The user's OneDrive. */
 	ONEDRIVE: "room-onedrive",
 	/** The user's Outlook mail. */

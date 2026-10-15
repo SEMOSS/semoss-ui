@@ -1,5 +1,6 @@
 import {
 	type DragEvent,
+	type KeyboardEvent as ReactKeyboardEvent,
 	type MouseEvent as ReactMouseEvent,
 	useCallback,
 	useEffect,
@@ -30,6 +31,7 @@ import {
 	canMoveItemToDirectory,
 	ensureDirectoryPath,
 	FILE_EXPLORER_DRAG_DATA_TYPE,
+	getContextMenuAnchor,
 	getFileOperationErrorMessage,
 	getItemName,
 	getParentPath,
@@ -246,19 +248,21 @@ export const useFileExplorer = (
 	}, []);
 
 	/**
-	 * Open the context menu at a pointer position.
+	 * Open the context menu: at the pointer for a right-click or a click, or
+	 * under the focused element for a key (Shift+F10, the menu key) or a button
+	 * pressed with one.
 	 *
-	 * Right-clicking a row outside the current selection drops the selection,
+	 * Opening it on a row outside the current selection drops the selection,
 	 * so the menu always acts on what the user just pointed at.
 	 *
-	 * @param e - The originating mouse event; its client coords place the menu.
+	 * @param e - The right-click, click, or key press; see `getContextMenuAnchor`.
 	 * @param item - The row under the pointer, or null for empty space.
 	 * @param targetPath - The directory the create/paste entries act on.
 	 * @param secondaryActions - Consumer entries to append to the menu.
 	 */
 	const openContextMenu = useCallback(
 		(
-			e: ReactMouseEvent,
+			e: ReactMouseEvent | ReactKeyboardEvent,
 			item: FileItem | null,
 			targetPath: string,
 			secondaryActions: FileExplorerSecondaryAction[] = [],
@@ -270,8 +274,7 @@ export const useFileExplorer = (
 			);
 			setContextTargetPath(item?.path ?? null);
 			setContextMenu({
-				x: e.clientX,
-				y: e.clientY,
+				...getContextMenuAnchor(e),
 				item: item,
 				targetPath: targetPath,
 				secondaryActions: secondaryActions,

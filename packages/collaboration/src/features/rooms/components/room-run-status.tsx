@@ -1,6 +1,7 @@
 import { ShieldCheck, TriangleAlert } from "lucide-react";
 import { Alert, Button, P, useIsMobile } from "@semoss/ui/next";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
+import { getEditorSendId } from "@/features/room-email/room-email-tools";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { PendingToolApproval } from "../types/room";
 import { turnErrorSummary } from "../utils/turn-error";
@@ -106,9 +107,12 @@ export function RoomRunStatus({
 					{pendingApprovals.map((approval) => {
 						const tool = tools[approval.toolId];
 						const title = tool?.title ?? approval.toolName;
+						const editorSendId = getEditorSendId(tool, approval);
 						// a tool UI or a question has to be opened; a plain call can be decided here
 						const canDecideHere =
-							!approval.requiresResponse && !approval.uiUrl;
+							!approval.requiresResponse &&
+							!approval.uiUrl &&
+							!editorSendId;
 						const isDisabled = !tool || approval.isDeciding;
 						return (
 							<div
@@ -143,7 +147,9 @@ export function RoomRunStatus({
 									variant="ghost"
 									disabled={isDisabled}
 									onClick={() =>
-										isMobile && !reviewInWorkbench
+										isMobile &&
+										!reviewInWorkbench &&
+										!editorSendId
 											? openInline(approval.toolId)
 											: openWorkbench(approval.toolId)
 									}

@@ -1,5 +1,8 @@
 {
 	"welcome": "Bienvenido, {{name}}",
+	"suggestions": {
+		"title": "Seguimientos sugeridos"
+	},
 	"settings": {
 		"title": "Configuración de la sala",
 		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",
@@ -176,5 +179,9 @@
 		"failed": "No se pudo optimizar el mensaje",
 		"tooLarge": "El mensaje es demasiado largo para optimizarlo. Acórtalo primero.",
 		"noPermission": "No tienes permiso para usar este modelo"
+	},
+	"contextItems": {
+		"label": "Añadido a tu próximo mensaje",
+		"remove": "Quitar {{name}} de tu próximo mensaje"
 	}
 }

@@ -1,4 +1,4 @@
-import type { DragEvent, MouseEvent, ReactNode } from "react";
+import type { DragEvent, KeyboardEvent, MouseEvent, ReactNode } from "react";
 import type { FileItem, FileMode } from "./file.types";
 import type {
 	FileExplorerAdapter,
@@ -152,8 +152,13 @@ export interface FileExplorerTreeState {
 	contextMenu: FileExplorerContextMenuState | null;
 	clipboard: FileExplorerClipboard | null;
 	closeContextMenu(): void;
+	/**
+	 * Open the context menu for a row, or for empty space with no item: at the
+	 * pointer for a right-click or a click, or under the focused element for a
+	 * key press.
+	 */
 	openContextMenu(
-		e: MouseEvent,
+		e: MouseEvent | KeyboardEvent,
 		item: FileItem | null,
 		targetPath: string,
 		secondaryActions?: FileExplorerSecondaryAction[],

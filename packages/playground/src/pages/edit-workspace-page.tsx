@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { usePixel } from "@semoss/sdk/react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	AgentForm,
 	type AgentFormValues,
@@ -38,6 +38,8 @@ interface AgentFormSeed {
  */
 export const EditWorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
+	const { system } = useInsight();
+	const isDirectoryAvailable = system?.config.msGraphLookup === true;
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChat();
@@ -226,7 +228,11 @@ export const EditWorkspacePage = observer(() => {
 						{t("workspace:members.autoSaveHint")}
 					</p>
 					<div className="min-h-32">
-						<MembersTable id={workspaceId} type="WORKSPACE" />
+						<MembersTable
+							id={workspaceId}
+							type="WORKSPACE"
+							isDirectoryAvailable={isDirectoryAvailable}
+						/>
 					</div>
 				</section>
 			</div>

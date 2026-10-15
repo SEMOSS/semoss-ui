@@ -21,6 +21,7 @@ vi.mock("@semoss/sdk/react", async (importOriginal) => {
 		...actual,
 		runPixel: mocks.runPixel,
 		logout: mocks.logout,
+		oauth: mocks.oauth,
 	};
 });
 

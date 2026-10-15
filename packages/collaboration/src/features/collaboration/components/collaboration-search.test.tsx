@@ -6,10 +6,12 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createMemoryRouter, useParams } from "react-router";
+import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BrainPage } from "@/pages/brain.page";
+import { ThreadPage } from "@/pages/thread.page";
+import { TopicPage } from "@/pages/topic.page";
 import {
 	emptySearchSession,
 	searchEntries,
@@ -20,7 +22,8 @@ import {
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
 import { CollaborationSearch } from "./collaboration-search";
-import { SavedRecordBoundary } from "./saved-record-boundary";
+
+vi.mock("@/pages/work-thread.page", () => ({ WorkThreadPage: ThreadContent }));
 
 const { run } = vi.hoisted(() => ({ run: vi.fn() }));
 const actions = { run };
@@ -39,24 +42,16 @@ function ThreadContent() {
 		<>
 			<h1>{thread?.subject}</h1>
 			<p>{thread?.source?.nativeId}</p>
-			<p>{thread && state.workspaces[thread.id]?.goal}</p>
+			<p>{thread && state.workspaces[thread.id]?.steps[0]?.text}</p>
 		</>
-	);
-}
-function ThreadDestination() {
-	const { threadId = "" } = useParams();
-	return (
-		<SavedRecordBoundary kind="thread" id={threadId}>
-			<ThreadContent />
-		</SavedRecordBoundary>
 	);
 }
 function mount() {
 	const router = createMemoryRouter([
 		{ path: "/", Component: CollaborationSearch },
 		{ path: "/brain/people/:personId", Component: BrainPage },
-		{ path: "/brain/topics/:topicId", Component: BrainPage },
-		{ path: "/work/thread/:threadId", Component: ThreadDestination },
+		{ path: "/topics/:topicId", Component: TopicPage },
+		{ path: "/thread/:threadId", Component: ThreadPage },
 	]);
 	render(
 		<CollaborationSessionProvider initialState={emptySearchSession()}>
@@ -68,10 +63,10 @@ function mount() {
 async function openSearch() {
 	await userEvent.click(
 		screen.getByRole("button", {
-			name: "Search threads, people and topics",
+			name: "Search your workspace",
 		}),
 	);
-	return screen.getByRole("textbox", { name: "Search" });
+	return screen.getByRole("combobox", { name: "Search" });
 }
 beforeEach(() => {
 	run.mockReset();
@@ -105,21 +100,20 @@ describe("saved Collaboration search", () => {
 				person: "Person",
 				thread: "Thread",
 			}[kind];
-			const result = await screen.findByRole("link", {
+			const result = await screen.findByRole("option", {
 				name: `${entry.name} ${label}`,
 			});
 			expect(run).toHaveBeenCalledWith(
 				expect.stringContaining('query=["searchcase"]'),
 			);
-			result.focus();
-			await userEvent.keyboard("{Enter}");
+			await userEvent.click(result);
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 			await screen.findByRole("heading", { name: entry.name });
 			expect(router.state.location.pathname).toBe(
 				{
-					topic: "/brain/topics/",
+					topic: "/topics/",
 					person: "/brain/people/",
-					thread: "/work/thread/",
+					thread: "/thread/",
 				}[kind] + entry.id,
 			);
 			if (kind === "thread") {
@@ -127,7 +121,7 @@ describe("saved Collaboration search", () => {
 					screen.getByText("fixture-native-message"),
 				).toBeInTheDocument();
 				expect(
-					screen.getByText("Saved search fixture goal"),
+					screen.getByText("Saved search fixture step"),
 				).toBeInTheDocument();
 			}
 		},
@@ -136,52 +130,64 @@ describe("saved Collaboration search", () => {
 	it("retrieves matches after the first 30", async () => {
 		mount();
 		await userEvent.type(await openSearch(), "SearchCase");
-		await screen.findByText("30 of 45 matching items");
-		expect(screen.getAllByRole("link")).toHaveLength(30);
-		await userEvent.click(
-			screen.getByRole("button", { name: "Load more" }),
-		);
-		await screen.findByText("45 of 45 matching items");
-		expect(screen.getAllByRole("link")).toHaveLength(45);
+		await screen.findByText(/30 of 45 saved matches/);
 		expect(
-			screen.getByRole("link", { name: "SearchCase 44 Thread" }),
+			screen
+				.getAllByRole("option")
+				.filter((row) => row.textContent?.includes("SearchCase")),
+		).toHaveLength(30);
+		await userEvent.click(
+			screen.getByRole("option", { name: "Load more saved records" }),
+		);
+		await screen.findByText(/45 of 45 saved matches/);
+		expect(screen.getAllByRole("option")).toHaveLength(45);
+		expect(
+			screen.getByRole("option", { name: "SearchCase 44 Thread" }),
 		).toBeInTheDocument();
 		expect(
-			screen.queryByRole("button", { name: "Load more" }),
+			screen.queryByRole("option", { name: "Load more saved records" }),
 		).not.toBeInTheDocument();
 	});
 
 	it("distinguishes idle, loading, no results and recoverable errors", async () => {
 		mount();
 		const input = await openSearch();
-		expect(
-			screen.getByText("Enter a name or subject to search."),
-		).toBeInTheDocument();
+		expect(screen.getByText("For you")).toBeInTheDocument();
 		expect(run).not.toHaveBeenCalled();
 		run.mockResolvedValueOnce(response({ items: [], total: 0 }));
 		fireEvent.change(input, { target: { value: "missing" } });
-		expect(screen.getByText("Searching…")).toBeInTheDocument();
+		expect(
+			screen.getByText("Searching connected records…"),
+		).toBeInTheDocument();
 		await screen.findByText(/No matching items/);
 		run.mockRejectedValueOnce(new Error("Offline fixture"));
 		fireEvent.change(input, { target: { value: "searchcase" } });
 		await screen.findByRole("alert");
 		expect(screen.queryByText(/No matching items/)).not.toBeInTheDocument();
-		await userEvent.click(screen.getByRole("button", { name: "Retry" }));
-		await screen.findByText("30 of 45 matching items");
+		await userEvent.click(
+			screen.getByRole("button", { name: "Retry search" }),
+		);
+		await screen.findByText(/30 of 45 saved matches/);
 	});
 
 	it("retains the first page when loading more fails, then retries the same offset", async () => {
 		mount();
 		await userEvent.type(await openSearch(), "searchcase");
-		await screen.findByText("30 of 45 matching items");
+		await screen.findByText(/30 of 45 saved matches/);
 		run.mockRejectedValueOnce(new Error("Second page failed"));
 		await userEvent.click(
-			screen.getByRole("button", { name: "Load more" }),
+			screen.getByRole("option", { name: "Load more saved records" }),
 		);
 		await screen.findByRole("alert");
-		expect(screen.getAllByRole("link")).toHaveLength(30);
-		await userEvent.click(screen.getByRole("button", { name: "Retry" }));
-		await screen.findByText("45 of 45 matching items");
+		expect(
+			screen
+				.getAllByRole("option")
+				.filter((row) => row.textContent?.includes("SearchCase")),
+		).toHaveLength(30);
+		await userEvent.click(
+			screen.getByRole("button", { name: "Retry search" }),
+		);
+		await screen.findByText(/45 of 45 saved matches/);
 		expect(
 			run.mock.calls
 				.slice(-2)
@@ -202,7 +208,7 @@ describe("saved Collaboration search", () => {
 		fireEvent.change(input, { target: { value: "old" } });
 		await waitFor(() => expect(run).toHaveBeenCalledTimes(1));
 		fireEvent.change(input, { target: { value: "new" } });
-		await screen.findByText("30 of 45 matching items");
+		await screen.findByText(/30 of 45 saved matches/);
 		resolveOld(
 			response({
 				items: [{ kind: "person", id: "old", name: "Stale result" }],
@@ -212,16 +218,20 @@ describe("saved Collaboration search", () => {
 		await waitFor(() =>
 			expect(screen.queryByText("Stale result")).not.toBeInTheDocument(),
 		);
-		expect(screen.getAllByRole("link")).toHaveLength(30);
+		expect(
+			screen
+				.getAllByRole("option")
+				.filter((row) => row.textContent?.includes("SearchCase")),
+		).toHaveLength(30);
 	});
 
 	it("supports both shortcuts, focuses input, and restores trigger focus on Escape", async () => {
-		mount();
+		const router = mount();
 		const trigger = screen.getByRole("button", {
-			name: "Search threads, people and topics",
+			name: "Search your workspace",
 		});
 		fireEvent.keyDown(window, { key: "K", ctrlKey: true });
-		const input = await screen.findByRole("textbox", { name: "Search" });
+		const input = await screen.findByRole("combobox", { name: "Search" });
 		await waitFor(() => expect(input).toHaveFocus());
 		fireEvent.keyDown(window, { key: "k", metaKey: true });
 		expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -230,18 +240,28 @@ describe("saved Collaboration search", () => {
 		await waitFor(() => expect(trigger).toHaveFocus());
 		await openSearch();
 		await userEvent.type(
-			screen.getByRole("textbox", { name: "Search" }),
+			screen.getByRole("combobox", { name: "Search" }),
 			"searchcase",
 		);
-		await screen.findByText("30 of 45 matching items");
-		await userEvent.tab();
-		expect(screen.getAllByRole("link")[0]).toHaveFocus();
+		await screen.findByText(/30 of 45 saved matches/);
+		await userEvent.keyboard("{ArrowDown}");
+		await waitFor(() =>
+			expect(
+				screen.getByRole("combobox", { name: "Search" }),
+			).toHaveAttribute("aria-activedescendant"),
+		);
+		await userEvent.keyboard("{Enter}");
+		await waitFor(() =>
+			expect(router.state.location.pathname).toMatch(
+				/^\/(thread|topics|brain\/people)\//,
+			),
+		);
 	});
 
 	it("shows record loading and retry when navigation detail fails", async () => {
 		mount();
 		await userEvent.type(await openSearch(), "searchcase");
-		const result = await screen.findByRole("link", {
+		const result = await screen.findByRole("option", {
 			name: "SearchCase 01 Person",
 		});
 		run.mockRejectedValueOnce(new Error("Record unavailable"));

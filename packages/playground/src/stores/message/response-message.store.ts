@@ -5,13 +5,14 @@ import {
 	observable,
 	runInAction,
 } from "mobx";
-import { download } from "@semoss/sdk/react";
+import { download, runMcpTool } from "@semoss/sdk/react";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	MCP_EXECUTION_AUTO,
 	STREAMING_PLACEHOLDER_ID,
 	TURN_CANCELLATION_PROMPT,
 } from "@/constants";
-import { isFolderToolCall } from "@/features/teamwork/tools/teamwork-tool-kind";
+import { isFolderToolCall } from "@/features/chat-tools/tools/chat-tool-kind";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { getToolEngineId } from "@/utility/mcp-utils";
@@ -258,7 +259,7 @@ paramValues=[${JSON.stringify({
 				room.options.temperature !== undefined
 					? { temperature: room.options.temperature }
 					: {}),
-				...room.teamwork.chatParamValues,
+				...room.chatTools.chatParamValues,
 			})}]`;
 
 			// wait for the pixel to run with streaming
@@ -653,48 +654,53 @@ paramValues=[${JSON.stringify({
 		// work folder tools run in the browser, against the room's folder, and
 		// record their own result
 		if (isFolderToolCall(tool.json)) {
-			await this.room.teamwork.runChatTool(tool);
+			await this.room.chatTools.runChatTool(tool);
 			return;
 		}
 
-		// mark as loading
+		try {
+			await this.runMcpToolCall(tool);
+		} catch {
+			// Error in AddPlaygroundToolExecution handled by saveToolExecution, which will set the tool status to error and save the error response
+		}
+	};
+
+	/**
+	 * Run an MCP tool call against the room's insight and save what it
+	 * returned as the call's response. A failed run saves its error instead,
+	 * so the model reads why.
+	 *
+	 * @param tool - A call that has not run yet.
+	 * @throws Error when the response cannot be saved.
+	 */
+	runMcpToolCall = async (tool: ToolStore): Promise<void> => {
 		runInAction(() => {
 			tool.status = "LOADING";
 		});
 
+		let output = "";
+		let toolError = false;
 		try {
-			let output = "";
-			let toolError = false;
-
-			try {
-				// wait for the pixel to run
-				const response = await this.room.runRoomPixel<[unknown]>(
-					`RunMCPTool(project = [ "${getToolEngineId(tool.json._meta)}" ], roomId=${JSON.stringify(this.room.roomId)}, function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
-					false,
-					false,
-				);
-
-				const rawOutput = response.pixelReturn[0].output;
-				output =
-					typeof rawOutput === "string"
-						? rawOutput
-						: JSON.stringify(rawOutput);
-			} catch (e) {
-				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
-				output = (e as Error).message;
-				toolError = true;
-			}
-
-			// save the response
-			await this.saveToolExecution(
-				tool,
-				output,
-				toolError ? "error" : "success",
-				tool.parameters,
+			output = await runMcpTool(
+				{
+					project: getToolEngineId(tool.json._meta),
+					roomId: this.room.roomId,
+					name: tool.json.name,
+					paramValues: tool.parameters,
+				},
+				this.room.insightId,
 			);
-		} catch {
-			// Error in AddPlaygroundToolExecution handled by saveToolExecution, which will set the tool status to error and save the error response
+		} catch (e) {
+			output = getErrorMessage(e);
+			toolError = true;
 		}
+
+		await this.saveToolExecution(
+			tool,
+			output,
+			toolError ? "error" : "success",
+			tool.parameters,
+		);
 	};
 
 	/**

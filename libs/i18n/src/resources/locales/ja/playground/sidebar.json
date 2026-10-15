@@ -104,7 +104,8 @@
 				"dark": "ダーク"
 			},
 			"language": "言語",
-			"languageDescription": "アプリの表示言語。"
+			"languageDescription": "アプリの表示言語。",
+			"version": "バージョン {{version}}"
 		}
 	}
 }

@@ -3,11 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
+import { ToolViewProvider } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { RoomContent } from "@/components/room/room-content";
 import { RoomSidebar } from "@/components/room/room-sidebar";
 import { FileDragProvider } from "@/contexts/file-drag-context";
+import { RoomProvider } from "@/contexts/room.context";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
+import { TOOL_VIEW_LIBRARIES } from "@/features/tool-views/tool-view-libraries";
 import { useChat } from "@/hooks/use-chat";
 import type { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
@@ -107,26 +110,30 @@ export const RoomPage = observer(() => {
 			options={{ insightId: room.insightId }}
 			destroyOnUnmount={false}
 		>
-			<ConversationWorkspace
-				isOpen={room.sidebar.isOpen}
-				onOpenWorkArea={() => {
-					if (
-						room.workbench.getState().layout.openPanelIds.length ===
-						0
-					) {
-						room.openSidebarPanel(
-							ROOM_PANEL_TYPES.CONFIGURATION,
-							{},
-							t("settings.panelTitle"),
-						);
-					} else room.openSidebar();
-				}}
-				panel={<RoomSidebar room={room} />}
-			>
-				<FileDragProvider>
-					<RoomContent room={room} />
-				</FileDragProvider>
-			</ConversationWorkspace>
+			<RoomProvider room={room}>
+				<ToolViewProvider libraries={TOOL_VIEW_LIBRARIES}>
+					<ConversationWorkspace
+						isOpen={room.sidebar.isOpen}
+						onOpenWorkArea={() => {
+							if (
+								room.workbench.getState().layout.openPanelIds
+									.length === 0
+							) {
+								room.openSidebarPanel(
+									ROOM_PANEL_TYPES.CONFIGURATION,
+									{},
+									t("settings.panelTitle"),
+								);
+							} else room.openSidebar();
+						}}
+						panel={<RoomSidebar room={room} />}
+					>
+						<FileDragProvider>
+							<RoomContent room={room} />
+						</FileDragProvider>
+					</ConversationWorkspace>
+				</ToolViewProvider>
+			</RoomProvider>
 		</InsightProvider>
 	);
 });

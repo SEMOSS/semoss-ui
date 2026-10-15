@@ -10,40 +10,40 @@ import userEvent from "@testing-library/user-event";
 import { useRef } from "react";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { TopicPage } from "@/pages/topic.page";
+import { WorkPage } from "@/pages/work.page";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { selectThreadContext } from "../state/collaboration.selectors";
-import type { ThreadContext } from "../state/collaboration.types";
+import type {
+	CollaborationCommand,
+	ThreadContext,
+} from "../state/collaboration.types";
 import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
+
+vi.mock("../api/use-collaboration-search", () => ({
+	useCollaborationSearch: () => ({
+		entries: [],
+		total: 0,
+		status: "idle",
+		error: null,
+		hasMore: false,
+	}),
+}));
+
+import { BrainMemory } from "./brain-memory";
 import { BrainReview } from "./brain-review";
 import { BrainThread } from "./brain-thread";
 import { CollaborationSearch } from "./collaboration-search";
 import { PersonDetail } from "./person-detail";
 import { ProfileForm } from "./profile-form";
 import { RulesEditor } from "./rules-editor";
-import { TopicDetail } from "./topic-detail";
 import { TopicEditor } from "./topic-editor";
-import { WorkFeed } from "./work-feed";
 
 /** Observe only the context submitted to the assistant, alongside real route controls. */
-vi.mock("../api/use-collaboration-search", () => ({
-	useCollaborationSearch: (query: string) => ({
-		term: query.trim().toLowerCase(),
-		entries: query.trim().toLowerCase().includes("ava")
-			? [{ kind: "person", id: "p-ava", name: "Ava Reed" }]
-			: [],
-		total: query ? 1 : 0,
-		status: "ready",
-		error: null,
-		hasMore: false,
-		loadMore: () => {},
-		retry: () => {},
-	}),
-}));
-
 function ContextObserver() {
 	const { state } = useCollaborationSession();
 	return (
@@ -53,11 +53,12 @@ function ContextObserver() {
 	);
 }
 
-function HistoryControl() {
-	const { undo, canUndo } = useCollaborationSession();
+/** Apply a separate state update while a form has unsaved fields. */
+function SessionUpdateControl({ command }: { command: CollaborationCommand }) {
+	const { dispatch } = useCollaborationSession();
 	return (
-		<button type="button" disabled={!canUndo} onClick={undo}>
-			Undo local edit
+		<button type="button" onClick={() => dispatch(command)}>
+			Apply session update
 		</button>
 	);
 }
@@ -70,14 +71,15 @@ function ProfileFixture() {
 function renderSession(
 	path: string,
 	initialState = createInitialCollaborationState(),
+	update?: CollaborationCommand,
 ) {
 	const router = createMemoryRouter(
 		[
-			{ path: "/work", Component: WorkFeed },
-			{ path: "/work/done", Component: WorkFeed },
-			{ path: "/work/topic/:topicId", Component: WorkFeed },
+			{ path: "/work/all", Component: WorkPage },
+			{ path: "/work/done", Component: WorkPage },
 			{ path: "/brain", Component: BrainReview },
-			{ path: "/brain/topics/:topicId", Component: TopicDetail },
+			{ path: "/brain/memory", Component: BrainMemory },
+			{ path: "/topics/:topicId", Component: TopicPage },
 			{ path: "/brain/threads/:threadId", Component: BrainThread },
 			{ path: "/brain/people/:personId", Component: PersonDetail },
 			{ path: "/rules", Component: RulesEditor },
@@ -90,7 +92,7 @@ function renderSession(
 		<CollaborationSessionProvider initialState={initialState}>
 			<RouterProvider router={router} />
 			<ContextObserver />
-			<HistoryControl />
+			{update && <SessionUpdateControl command={update} />}
 		</CollaborationSessionProvider>,
 	);
 	return router;
@@ -122,7 +124,7 @@ afterEach(cleanup);
 describe("collaboration Work and Brain integration", () => {
 	it("carries Work topic confirmation into Brain's learned links and the assistant snapshot", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work");
+		const router = renderSession("/work/all");
 		expect(
 			submittedContext().topics.map((topic) => topic.id),
 		).not.toContain("t-trip");
@@ -151,9 +153,9 @@ describe("collaboration Work and Brain integration", () => {
 		).toBe(true);
 	});
 
-	it("shows completed Work items in Done and restores them with shared undo", async () => {
+	it("shows completed Work items in Done and reopens the selected item", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work");
+		const router = renderSession("/work/all");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
@@ -165,17 +167,18 @@ describe("collaboration Work and Brain integration", () => {
 		).not.toBeInTheDocument();
 		await act(() => router.navigate("/work/done"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
-		await act(() => router.navigate("/brain"));
 		await user.click(
-			screen.getByRole("button", { name: "Undo latest change" }),
+			within(articleFor(title)).getByRole("button", {
+				name: "Move back",
+			}),
 		);
-		await act(() => router.navigate("/work"));
+		await act(() => router.navigate("/work/all"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 
 	it("clears an item with No response needed and keeps it out of Done", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work");
+		const router = renderSession("/work/all");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
@@ -199,7 +202,7 @@ describe("collaboration Work and Brain integration", () => {
 			(item) => item.title === title,
 		)?.threadId;
 		if (!threadId) throw new Error("Missing thread");
-		const router = renderSession("/work", state);
+		const router = renderSession("/work/all", state);
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
 				name: "Ignore thread",
@@ -216,31 +219,100 @@ describe("collaboration Work and Brain integration", () => {
 		});
 		expect(ignored).toBeChecked();
 		await user.click(ignored);
-		await act(() => router.navigate("/work"));
+		await act(() => router.navigate("/work/all"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 
-	it("confirms draft notes before including them in assistant context", async () => {
+	it("keeps a suggested memory from review, which puts it in use", async () => {
 		const user = userEvent.setup();
-		renderSession("/brain");
+		const router = renderSession("/brain");
 		const text =
 			"Pilot scope is limited to 2 use cases (claims triage, contract Q&A).";
+		const row = screen.getByRole("article", { name: `Memory: ${text}` });
 		expect(
-			submittedContext()
-				.topics.flatMap((topic) => topic.notes)
-				.some((note) => note.text === text),
-		).toBe(false);
+			within(row).getByText("Not used until you keep it"),
+		).toBeInTheDocument();
 		await user.click(
-			within(articleFor(text)).getByRole("button", {
-				name: "Confirm note",
+			within(row).getByRole("button", { name: `Keep memory: ${text}` }),
+		);
+		expect(
+			screen.queryByRole("article", { name: `Memory: ${text}` }),
+		).not.toBeInTheDocument();
+		await act(() => router.navigate("/brain/memory"));
+		const kept = screen.getByRole("article", { name: `Memory: ${text}` });
+		expect(
+			within(kept).queryByText("Not used until you keep it"),
+		).not.toBeInTheDocument();
+		expect(
+			within(kept).getByText(/Suggested by Brain/),
+		).toBeInTheDocument();
+	});
+
+	it("adds, edits, and removes a memory on the Memory page", async () => {
+		const user = userEvent.setup();
+		renderSession("/brain/memory");
+		await user.type(
+			screen.getByLabelText("New memory"),
+			"Keep status emails to three bullets.",
+		);
+		await user.click(screen.getByRole("button", { name: "Add" }));
+		const row = screen.getByRole("article", {
+			name: "Memory: Keep status emails to three bullets.",
+		});
+		expect(within(row).getByText("Preference")).toBeInTheDocument();
+		await user.click(
+			within(row).getByRole("button", {
+				name: "Edit memory: Keep status emails to three bullets.",
+			}),
+		);
+		const field = within(row).getByLabelText("Memory");
+		await user.clear(field);
+		await user.type(field, "Keep status emails to two bullets.");
+		await user.click(
+			within(row).getByRole("button", { name: "Save memory" }),
+		);
+		const edited = screen.getByRole("article", {
+			name: "Memory: Keep status emails to two bullets.",
+		});
+		await user.click(
+			within(edited).getByRole("button", {
+				name: "Remove memory: Keep status emails to two bullets.",
 			}),
 		);
 		expect(
-			submittedContext()
-				.topics.flatMap((topic) => topic.notes)
-				.some((note) => note.text === text),
-		).toBe(true);
-		expect(screen.queryByText(text, {})).not.toBeInTheDocument();
+			screen.queryByText("Keep status emails to two bullets."),
+		).not.toBeInTheDocument();
+	});
+
+	it("preserves a topic memory draft when notes collapse and adds it about the topic", async () => {
+		const user = userEvent.setup();
+		renderSession("/topics/t-geng");
+		expect(
+			screen.getByText(
+				"Ava prefers a written pre-read 48h before any review.",
+			),
+		).toBeInTheDocument();
+		const note = screen.getByLabelText("New note");
+		await user.type(note, "Hugo owns the demo environment.");
+		const notesTrigger = screen.getByRole("button", {
+			name: "Notes for the assistant",
+		});
+		await user.click(notesTrigger);
+		expect(
+			screen.queryByRole("textbox", { name: "New note" }),
+		).not.toBeInTheDocument();
+		await user.click(notesTrigger);
+		expect(screen.getByRole("textbox", { name: "New note" })).toHaveValue(
+			"Hugo owns the demo environment.",
+		);
+		const form = note.closest("form");
+		if (!form) throw new Error("Missing note form");
+		await user.click(within(form).getByRole("button", { name: "Add" }));
+		expect(
+			screen.getByRole("article", {
+				name: "Memory: Hugo owns the demo environment.",
+			}),
+		).toBeInTheDocument();
 	});
 
 	it("accepts a person in review and keeps topic and person membership screens consistent", async () => {
@@ -251,8 +323,7 @@ describe("collaboration Work and Brain integration", () => {
 				articleFor("Add Gia Moreno to Northwind - Sales / GTM?"),
 			).getByRole("button", { name: "Add person" }),
 		);
-		await act(() => router.navigate("/brain/topics/t-gsales"));
-		await user.click(screen.getByRole("tab", { name: "People" }));
+		await act(() => router.navigate("/topics/t-gsales"));
 		const memberSection = sectionFor("In this topic");
 		const personLink = within(memberSection).getByRole("link", {
 			name: "Gia Moreno",
@@ -273,10 +344,9 @@ describe("collaboration Work and Brain integration", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("updates a topic goal in Brain and shows its completed state in Work", async () => {
+	it("updates a topic goal and keeps it completed while switching workspace views", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/brain/topics/t-geng");
-		await user.click(screen.getByRole("tab", { name: "Goals and notes" }));
+		renderSession("/topics/t-geng");
 		const title =
 			"Present agent architecture at Northwind eng review (Oct 15)";
 		const checkbox = screen.getByRole("checkbox", { name: title });
@@ -287,8 +357,163 @@ describe("collaboration Work and Brain integration", () => {
 				(goal) => goal.text === title,
 			)?.status,
 		).toBe("done");
-		await act(() => router.navigate("/work/topic/t-geng"));
-		expect(screen.getByText(title, {})).toHaveClass("line-through");
+		await user.click(screen.getByRole("tab", { name: "Threads" }));
+		await user.click(screen.getByRole("tab", { name: "Actions" }));
+		expect(screen.getByRole("checkbox", { name: title })).toBeChecked();
+		expect(screen.getByText(title)).not.toHaveClass("line-through");
+	});
+
+	it("adds goals, keywords, and people through the compact topic controls", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const topic = state.topics.find(
+			(candidate) => candidate.id === "t-geng",
+		);
+		if (!topic) throw new Error("Missing sample topic");
+		topic.goals = [];
+		topic.keywords = [];
+		topic.people = [];
+		state.memories = [];
+		renderSession("/topics/t-geng", state);
+		expect(
+			screen.queryByRole("textbox", { name: "New goal" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("textbox", { name: "Add keyword" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("combobox", { name: "Add someone" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("textbox", { name: "New note" }),
+		).not.toBeInTheDocument();
+
+		const goalTrigger = screen.getByRole("button", { name: "Add goal" });
+		await user.click(goalTrigger);
+		const goal = screen.getByLabelText("New goal");
+		await user.type(goal, "Share the architecture review.");
+		const goalForm = goal.closest("form");
+		if (!goalForm) throw new Error("Missing goal form");
+		await user.click(
+			within(goalForm).getByRole("button", { name: "Add goal" }),
+		);
+		expect(
+			screen.getByRole("checkbox", {
+				name: "Share the architecture review.",
+			}),
+		).not.toBeChecked();
+
+		await user.click(screen.getByRole("button", { name: "Add keyword" }));
+		const keyword = screen.getByRole("textbox", { name: "Add keyword" });
+		await user.type(keyword, "architecture update");
+		const keywordForm = keyword.closest("form");
+		if (!keywordForm) throw new Error("Missing keyword form");
+		await user.click(
+			within(keywordForm).getByRole("button", { name: "Add" }),
+		);
+		await user.keyboard("{Escape}");
+		await user.click(
+			screen.getByRole("button", {
+				name: "Remove keyword architecture update",
+			}),
+		);
+		expect(
+			screen.queryByText("architecture update"),
+		).not.toBeInTheDocument();
+
+		const peopleTrigger = screen.getByRole("button", {
+			name: "Add people",
+		});
+		await user.click(peopleTrigger);
+		act(() =>
+			screen.getByRole("combobox", { name: "Add someone" }).focus(),
+		);
+		await user.keyboard("{Enter}");
+		await waitFor(() =>
+			expect(
+				screen.getByRole("option", { name: "Ava Reed" }),
+			).toHaveFocus(),
+		);
+		await user.keyboard("{Enter}");
+		await user.click(screen.getByRole("button", { name: "Add person" }));
+		await user.keyboard("{Escape}");
+		expect(
+			within(sectionFor("In this topic")).getByRole("link", {
+				name: "Ava Reed",
+			}),
+		).toBeInTheDocument();
+		await waitFor(() => expect(peopleTrigger).toHaveFocus());
+	});
+
+	it("counts each active feed thread once and distinguishes open, waiting, and muted threads", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const item = state.items.find(
+			(candidate) => candidate.threadId === "th-geng-review",
+		);
+		const mutedThread = state.threads.find(
+			(candidate) => candidate.id === "th-hugo-chat",
+		);
+		if (!item || !mutedThread)
+			throw new Error("Missing sample thread or item");
+		mutedThread.muted = true;
+		state.items.push(
+			{ ...item, id: "second-review-action" },
+			{ ...item, id: "muted-action", threadId: mutedThread.id },
+		);
+		renderSession("/topics/t-geng", state);
+		await user.click(screen.getByRole("tab", { name: "Threads" }));
+		expect(screen.getByText("2 in your feed")).toBeInTheDocument();
+		expect(
+			screen.queryByRole("link", { name: "Open feed" }),
+		).not.toBeInTheDocument();
+		const openRow = screen
+			.getByRole("link", {
+				name: "Agent architecture at our Oct 15 eng review?",
+			})
+			.closest("li");
+		const waitingRow = screen
+			.getByRole("link", { name: "Sandbox access for pilot team" })
+			.closest("li");
+		const mutedRow = screen
+			.getByRole("link", { name: mutedThread.subject })
+			.closest("li");
+		if (!openRow || !waitingRow || !mutedRow)
+			throw new Error("Missing topic thread row");
+		expect(within(openRow).getByText("For you")).toBeInTheDocument();
+		expect(within(waitingRow).getByText("Waiting")).toBeInTheDocument();
+		expect(
+			within(waitingRow).queryByText("For you"),
+		).not.toBeInTheDocument();
+		expect(within(mutedRow).queryByText("For you")).not.toBeInTheDocument();
+		expect(within(mutedRow).queryByText("Waiting")).not.toBeInTheDocument();
+	});
+
+	it("shows an unloaded participant's name without linking to a missing person", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const thread = state.threads.find(
+			(candidate) => candidate.id === "th-geng-review",
+		);
+		if (!thread) throw new Error("Missing sample thread");
+		thread.participants.unshift({
+			personId: "unloaded-person",
+			name: "Pending participant",
+			role: "from",
+			included: true,
+		});
+		renderSession("/topics/t-geng", state);
+		await user.click(screen.getByRole("tab", { name: "Threads" }));
+		const row = screen
+			.getByRole("link", { name: thread.subject })
+			.closest("li");
+		if (!row) throw new Error("Missing topic thread row");
+		expect(
+			within(row).getByText("Pending participant"),
+		).toBeInTheDocument();
+		expect(
+			within(row).queryByRole("link", { name: "Pending participant" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("allows more than three topic links and retains one selected primary", async () => {
@@ -391,15 +616,22 @@ describe("collaboration Work and Brain integration", () => {
 		const value = screen.getByText("benefits@contoso.example", {});
 		const row = value.parentElement;
 		if (!row) throw new Error("Missing rule row");
-		await user.click(within(row).getByRole("button", { name: "Remove" }));
+		await user.click(
+			within(row).getByRole("button", {
+				name: "Remove sender rule benefits@contoso.example",
+			}),
+		);
 		expect(
 			screen.queryByText("benefits@contoso.example", {}),
 		).not.toBeInTheDocument();
 	});
 
-	it("refreshes pristine preferences after undo while preserving unsaved fields", async () => {
+	it("refreshes pristine preferences after a session update while preserving unsaved fields", async () => {
 		const user = userEvent.setup();
-		renderSession("/rules");
+		renderSession("/rules", createInitialCollaborationState(), {
+			type: "settings.save",
+			changes: { fileAt: 85, askAt: 40 },
+		});
 		const fileAt = screen.getByRole("spinbutton", {
 			name: "File automatically at (%)",
 		});
@@ -414,15 +646,22 @@ describe("collaboration Work and Brain integration", () => {
 		await user.clear(fileAt);
 		await user.type(fileAt, "91");
 		await user.click(
-			screen.getByRole("button", { name: "Undo local edit" }),
+			screen.getByRole("button", { name: "Apply session update" }),
 		);
 		expect(fileAt).toHaveValue(91);
 		expect(askAt).toHaveValue(40);
 	});
 
-	it("keeps an unsaved profile draft while undo restores the other confirmed fields", async () => {
+	it("keeps an unsaved profile draft while a session update refreshes other fields", async () => {
 		const user = userEvent.setup();
-		renderSession("/profile");
+		renderSession("/profile", createInitialCollaborationState(), {
+			type: "profile.save",
+			target: "sample",
+			changes: {
+				role: { value: "Team lead", source: "you" },
+				workingHours: "8:00 - 18:30 ET",
+			},
+		});
 		const role = screen.getByRole("textbox", { name: "Role" });
 		const workingHours = screen.getByRole("textbox", {
 			name: "Working hours",
@@ -439,7 +678,7 @@ describe("collaboration Work and Brain integration", () => {
 		await user.clear(role);
 		await user.type(role, "Chief architect");
 		await user.click(
-			screen.getByRole("button", { name: "Undo local edit" }),
+			screen.getByRole("button", { name: "Apply session update" }),
 		);
 		expect(role).toHaveValue("Chief architect");
 		expect(workingHours).toHaveValue("8:00 - 18:30 ET");
@@ -453,22 +692,21 @@ describe("collaboration Work and Brain integration", () => {
 		renderSession("/search");
 		await user.click(
 			screen.getByRole("button", {
-				name: "Search threads, people and topics",
+				name: "Search your workspace",
 			}),
 		);
 		const dialog = screen.getByRole("dialog", {
 			name: "Search your workspace",
 		});
 		await user.type(
-			within(dialog).getByRole("textbox", {
+			within(dialog).getByRole("combobox", {
 				name: "Search",
 			}),
 			"Ava",
 		);
-		const result = within(dialog).getByRole("link", {
-			name: "Ava Reed Person",
+		const result = within(dialog).getByRole("option", {
+			name: /Ava Reed/,
 		});
-		expect(result).toHaveAttribute("href", "/brain/people/p-ava");
 		await user.click(result);
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 		expect(
@@ -480,7 +718,7 @@ describe("collaboration Work and Brain integration", () => {
 		const user = userEvent.setup();
 		renderSession("/search");
 		const trigger = screen.getByRole("button", {
-			name: "Search threads, people and topics",
+			name: "Search your workspace",
 		});
 		await user.click(trigger);
 		await user.keyboard("{Escape}");
@@ -489,8 +727,8 @@ describe("collaboration Work and Brain integration", () => {
 
 	it("returns focus to the edit-topic action after cancelling its dialog", async () => {
 		const user = userEvent.setup();
-		renderSession("/brain/topics/t-geng");
-		const trigger = screen.getByRole("button", { name: "Edit topic" });
+		renderSession("/topics/t-geng");
+		const trigger = screen.getByRole("button", { name: /: Edit topic$/ });
 		await user.click(trigger);
 		const dialog = screen.getByRole("dialog", { name: "Edit topic" });
 		await user.click(
@@ -519,7 +757,7 @@ function TopicCreationFixture() {
 					.map((topic) => (
 						<a
 							key={topic.id}
-							href={`/brain/topics/${encodeURIComponent(topic.id)}`}
+							href={`/topics/${encodeURIComponent(topic.id)}`}
 						>
 							{topic.name}
 						</a>
@@ -561,8 +799,6 @@ describe("new topic form", () => {
 				hidden: true,
 			}),
 		).getByText("New initiative");
-		expect(link.getAttribute("href")).toMatch(
-			/^\/brain\/topics\/local-topic-/,
-		);
+		expect(link.getAttribute("href")).toMatch(/^\/topics\/local-topic-/);
 	});
 });

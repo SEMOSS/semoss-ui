@@ -28,10 +28,19 @@ export function emptySearchSession() {
 	};
 }
 
-/** Server detail payloads, including a thread's native identity and saved goal. */
+/** Server detail payloads, including a thread's native identity and saved steps. */
 export function searchRecordFixture(entry: SearchEntry) {
 	return {
 		items: [],
+		memories: [
+			{
+				id: "saved-memory",
+				text: "Current saved context",
+				state: "active",
+				kind: "fact",
+				about: [{ type: entry.kind, id: entry.id }],
+			},
+		],
 		topics:
 			entry.kind === "topic"
 				? [
@@ -79,8 +88,14 @@ export function searchRecordFixture(entry: SearchEntry) {
 					? [
 							{
 								threadId: entry.id,
-								goal: "Saved search fixture goal",
-								steps: [],
+								steps: [
+									{
+										id: "saved-step",
+										text: "Saved search fixture step",
+										kind: "task",
+										status: "open",
+									},
+								],
 								facts: [],
 							},
 						]

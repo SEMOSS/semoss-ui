@@ -18,8 +18,8 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components/mcp/mcp-overlay";
+import { DefaultToolsField } from "@/features/chat-tools/components/default-tools-field";
 import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
-import { TeamworkDefaultToolsField } from "@/features/teamwork/components/teamwork-default-tools-field";
 import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
 import { splitMcpByType } from "@/utility/mcp-utils";
@@ -214,7 +214,7 @@ export const RoomOptionsForm = observer(
 						/>
 					))}
 					{!isAgentMode && (
-						<TeamworkDefaultToolsField
+						<DefaultToolsField
 							defaultTools={options.defaultTools}
 							disabled={disabled}
 							onChange={(defaultTools) => {

@@ -20,6 +20,7 @@ import { getErrorMessage } from "@semoss/utility/error";
  */
 
 import type {
+	AutomationNodeGroup,
 	AutomationWorkflowDocument,
 	AutomationWorkflowEdge,
 	AutomationWorkflowNode,
@@ -55,6 +56,8 @@ export interface N8nNode {
 export interface N8nWorkflow {
 	name?: string;
 	nodes: N8nNode[];
+	/** Custom visual-group metadata supported by some n8n workflow exports. */
+	nodeGroups?: unknown;
 	/** Keyed by connection type ("main", "ai_languageModel", ...) — only "main" is used for control flow. */
 	connections: Record<
 		string,
@@ -360,6 +363,7 @@ const AUTOMATION_NODE_TYPES: readonly AutomationWorkflowNodeType[] = [
 	"storage.upload",
 	"storage.download",
 	"storage.delete",
+	"data.extract",
 	"vector.search",
 	"vector.add",
 	"vector.delete",
@@ -521,6 +525,58 @@ export function n8nWorkflowToAutomationDocument(
 	const triggerBindings: TriggerBinding[] = [
 		{ id: "manual", type: "manual" },
 	];
+	const importedNodeIds = new Set(nodes.map((node) => node.id));
+	const assignedNodeIds = new Set<string>();
+	const nodeGroups: AutomationNodeGroup[] = Array.isArray(workflow.nodeGroups)
+		? workflow.nodeGroups.flatMap((candidate) => {
+				if (
+					!candidate ||
+					typeof candidate !== "object" ||
+					!Array.isArray((candidate as { nodeIds?: unknown }).nodeIds)
+				) {
+					return [];
+				}
+				const group = candidate as {
+					id?: unknown;
+					name?: unknown;
+					nodeIds: unknown[];
+					description?: unknown;
+				};
+				if (
+					typeof group.id !== "string" ||
+					typeof group.name !== "string"
+				) {
+					return [];
+				}
+				const groupNodeIds = new Set<string>();
+				const nodeIds = group.nodeIds.filter(
+					(nodeId): nodeId is string => {
+						if (
+							typeof nodeId !== "string" ||
+							!importedNodeIds.has(nodeId) ||
+							assignedNodeIds.has(nodeId) ||
+							groupNodeIds.has(nodeId)
+						) {
+							return false;
+						}
+						groupNodeIds.add(nodeId);
+						return true;
+					},
+				);
+				if (nodeIds.length === 0) return [];
+				for (const nodeId of nodeIds) assignedNodeIds.add(nodeId);
+				return [
+					{
+						id: group.id,
+						name: group.name,
+						nodeIds,
+						...(typeof group.description === "string"
+							? { description: group.description }
+							: {}),
+					},
+				];
+			})
+		: [];
 
 	return {
 		document: {
@@ -530,6 +586,7 @@ export function n8nWorkflowToAutomationDocument(
 				: {}),
 			triggerBindings,
 			graph: { nodes, edges },
+			...(nodeGroups.length > 0 ? { nodeGroups } : {}),
 		},
 		nodeSources,
 		warnings,
@@ -587,14 +644,14 @@ export async function n8nWorkflowToAutomationDocumentWithModel(
 		const isPythonFallback = converted.type === "developer.python";
 		const pythonSource = isPythonFallback
 			? pythonFallbackSource(node, converted.pythonSource)
-			: converted.pythonSource;
+			: undefined;
 		result.warnings = result.warnings.filter(
 			(warning) => warning !== placeholderWarning,
 		);
 		Object.assign(importedNode, {
 			type: converted.type,
 			config: isPythonFallback ? { pythonSource } : converted.config,
-			codeMode: isPythonFallback ? "custom" : converted.codeMode,
+			codeMode: isPythonFallback ? "custom" : "generated",
 			label: isPythonFallback
 				? `\u26a0\ufe0f ${converted.label ?? node.name}`.replace(
 						"\u26a0\ufe0f \u26a0\ufe0f ",

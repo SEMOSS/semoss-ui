@@ -104,7 +104,8 @@
 				"dark": "डार्क"
 			},
 			"language": "भाषा",
-			"languageDescription": "वह भाषा जिसमें ऐप दिखाया जाता है।"
+			"languageDescription": "वह भाषा जिसमें ऐप दिखाया जाता है।",
+			"version": "संस्करण {{version}}"
 		}
 	}
 }

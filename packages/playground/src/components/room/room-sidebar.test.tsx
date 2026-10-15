@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { FileExplorerHost } from "@semoss/panels";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
-import { NextMessageRoomProvider } from "@/features/teamwork/sources/next-message-room";
+import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
 import { RoomStore } from "@/stores/room/room.store";
 import { RootStore } from "@/stores/root/root.store";
 import { RoomSidebar } from "./room-sidebar";
@@ -289,12 +289,12 @@ test.each([false, true])(
 			await actions[0].action(file);
 		});
 		const target = isDraft ? draft : room;
-		expect(target.teamwork.contextItems).toEqual([
+		expect(target.contextItems.items).toEqual([
 			expect.objectContaining({ path: "notes.txt", name: "notes.txt" }),
 		]);
 		expect(
 			host?.secondaryActions?.({ ...file, type: "directory" }, mode),
 		).toEqual([]);
-		if (isDraft) expect(room.teamwork.contextItems).toEqual([]);
+		if (isDraft) expect(room.contextItems.items).toEqual([]);
 	},
 );

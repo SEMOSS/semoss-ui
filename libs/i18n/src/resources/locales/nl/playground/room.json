@@ -1,5 +1,8 @@
 {
 	"welcome": "Welkom, {{name}}",
+	"suggestions": {
+		"title": "Voorgestelde vervolgberichten"
+	},
 	"settings": {
 		"title": "Kamerinstellingen",
 		"description": "Werk de kamerinstellingen bij en pas het gedrag van de chat aan",
@@ -180,5 +183,9 @@
 		"failed": "Prompt optimaliseren mislukt",
 		"tooLarge": "De prompt is te lang om te optimaliseren. Maak deze eerst korter.",
 		"noPermission": "Je hebt geen toestemming om dit model te gebruiken"
+	},
+	"contextItems": {
+		"label": "Toegevoegd aan je volgende bericht",
+		"remove": "{{name}} uit je volgende bericht verwijderen"
 	}
 }

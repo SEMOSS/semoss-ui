@@ -281,6 +281,14 @@ assumed `room.model.app_id` field. `RoomStore` has no `model` field. The wrapper
 passes this string through; verify the deployed reactor's identifier contract.
 It wraps tool output in `<encode>` markers and does not URL-encode it.
 
+To run a chat tool call itself, `runMcpTool({ project, roomId, name, paramValues }, insightId?)`
+calls RunMCPTool and returns `Promise<string>`: the tool's text, JSON for output
+that is not text, or `""` for none. It rejects when the pixel fails or answers
+with no statement; submit that failure with `mcpToolStatus: "error"`. Use
+`decideAgentRunAction` instead for a paused agent run's tool.
+`makeUserPixelMcp({ filePath, generator, tools })` writes a generator's tools
+into a pixel MCP file in the user's own assets.
+
 The client owns chat tool execution, authorization, concurrency, and result
 submission. There is no SDK `toolAutoExecutionLimit` option or default of five.
 Report a genuine tool failure using `mcpToolStatus: "error"`; a failure to save a

@@ -4,6 +4,7 @@ import {
 	isOutputJSON,
 	parseJsonStringArray,
 	parseStructuredOutput,
+	stringifyJsonWithSortedKeys,
 	tryParseJson,
 } from "./json";
 
@@ -85,6 +86,32 @@ describe("JSON formatting", () => {
 	it("preserves the raw input if a deeply nested value cannot be serialized", () => {
 		const value = `${"[".repeat(20000)}0${"]".repeat(20000)}`;
 		expect(formatJson(value)).toBe(value);
+	});
+});
+
+describe("JSON with sorted keys", () => {
+	it("gives equal strings for values whose keys were set in a different order, at any depth", () => {
+		expect(
+			stringifyJsonWithSortedKeys({
+				b: 1,
+				a: { d: [{ y: 1, x: 2 }], c: 2 },
+			}),
+		).toBe(
+			stringifyJsonWithSortedKeys({
+				a: { c: 2, d: [{ x: 2, y: 1 }] },
+				b: 1,
+			}),
+		);
+		expect(stringifyJsonWithSortedKeys({ b: 1, a: 2 })).toBe(
+			'{"a":2,"b":1}',
+		);
+	});
+	it("keeps array order and drops undefined values as JSON.stringify does", () => {
+		expect(
+			stringifyJsonWithSortedKeys({ list: [3, 1, 2], gone: undefined }),
+		).toBe('{"list":[3,1,2]}');
+		expect(stringifyJsonWithSortedKeys("text")).toBe('"text"');
+		expect(stringifyJsonWithSortedKeys(null)).toBe("null");
 	});
 });
 

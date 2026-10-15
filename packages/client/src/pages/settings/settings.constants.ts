@@ -15,6 +15,49 @@ import {
 	mdiTabletCellphone,
 } from "@mdi/js";
 
+/**
+ * The settings pages of apps and engines that open Bulk Access Management and
+ * Effective Permissions in admin mode, by their path
+ */
+export const ADMIN_ACCESS_SETTINGS_PAGES: {
+	/** The page's path, such as "app" or "model" */
+	root: string;
+	/** An app, or an engine */
+	kind: "PROJECT" | "ENGINE";
+	/** The engine's type, for an engine */
+	engineType?: string;
+	/** The page's icon */
+	icon: string;
+}[] = [
+	{ root: "app", kind: "PROJECT", icon: mdiClipboardTextOutline },
+	{
+		root: "database",
+		kind: "ENGINE",
+		engineType: "DATABASE",
+		icon: mdiDatabase,
+	},
+	{
+		root: "function",
+		kind: "ENGINE",
+		engineType: "FUNCTION",
+		icon: mdiDatabase,
+	},
+	{
+		root: "guardrail",
+		kind: "ENGINE",
+		engineType: "GUARDRAIL",
+		icon: mdiDatabase,
+	},
+	{ root: "model", kind: "ENGINE", engineType: "MODEL", icon: mdiDatabase },
+	{
+		root: "storage",
+		kind: "ENGINE",
+		engineType: "STORAGE",
+		icon: mdiArchive,
+	},
+	{ root: "vector", kind: "ENGINE", engineType: "VECTOR", icon: mdiDatabase },
+];
+
 export const SETTINGS_ROUTES: {
 	/*** Title of the page */
 	title: string;
@@ -43,6 +86,31 @@ export const SETTINGS_ROUTES: {
 			"View and make changes to settings to engines and apps. As an admin, view and manage platform settings.",
 		icon: mdiCog,
 		history: [],
+	},
+	{
+		title: "My Profile",
+		path: "my-profile",
+		description: "Update settings related to your profile.",
+		icon: mdiDatabase,
+		history: ["settings/"],
+		admin: false,
+	},
+	{
+		title: "My Files",
+		path: "my-files",
+		description: "Browse, upload, and manage the files in your user space.",
+		icon: mdiFolder,
+		history: ["settings/"],
+		admin: false,
+	},
+	{
+		title: "My Teams",
+		path: "managed-teams",
+		description:
+			"Add and remove the members and managers of the teams you manage.",
+		icon: mdiAccountGroup,
+		history: ["managed-teams"],
+		admin: false,
 	},
 	{
 		title: "App, Agent, & Skill Settings",
@@ -169,7 +237,8 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Team Permissions",
 		path: "team-permissions",
-		description: "View and edit permissions for teams",
+		description:
+			"Create teams, choose their members and managers, and give them access to projects and engines.",
 		icon: mdiDatabase,
 		history: ["team-permissions"],
 		admin: true,
@@ -185,11 +254,40 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Team Permissions",
 		path: "team-permissions/:type/:id",
-		description:
-			"View team permissions and members assigned to custom teams",
+		description: "A team's members, managers, and access",
 		icon: mdiDatabase,
 		history: ["team-permissions", "team-permissions/<type>/<id>"],
 		admin: true,
+	},
+	{
+		title: "Bulk Access Management",
+		path: "team-permissions/:type/:id/bulk-access-management",
+		description: "Change who is in a team and who manages it",
+		icon: mdiDatabase,
+		history: [
+			"team-permissions",
+			"team-permissions/<type>/<id>",
+			"team-permissions/<type>/<id>/bulk-access-management",
+		],
+		admin: true,
+	},
+	{
+		title: "My Teams",
+		path: "managed-teams/:id",
+		description: "A team you manage",
+		icon: mdiAccountGroup,
+		history: ["managed-teams", "managed-teams/<id>"],
+	},
+	{
+		title: "Bulk Access Management",
+		path: "managed-teams/:id/bulk-access-management",
+		description: "Change who is in a team and who manages it",
+		icon: mdiAccountGroup,
+		history: [
+			"managed-teams",
+			"managed-teams/<id>",
+			"managed-teams/<id>/bulk-access-management",
+		],
 	},
 	{
 		title: "Configuration",
@@ -234,22 +332,6 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
-		title: "My Profile",
-		path: "my-profile",
-		description: "Update settings related to your profile.",
-		icon: mdiDatabase,
-		history: ["settings/"],
-		admin: false,
-	},
-	{
-		title: "My Files",
-		path: "my-files",
-		description: "Browse, upload, and manage the files in your user space.",
-		icon: mdiFolder,
-		history: ["settings/"],
-		admin: false,
-	},
-	{
 		title: "View RDF Map",
 		path: "view-rdf-map",
 		description: "See configuration details in the RDF Map of the instance",
@@ -283,4 +365,32 @@ export const SETTINGS_ROUTES: {
 		history: ["jobs", "edit-job/:id"],
 		admin: true,
 	},
+	...ADMIN_ACCESS_SETTINGS_PAGES.flatMap(({ root, icon }) => [
+		{
+			title: "Bulk Access Management",
+			path: `${root}/:id/bulk-access-management`,
+			description:
+				"Admin mode: every change is allowed, whatever your own access.",
+			icon,
+			history: [
+				root,
+				`${root}/<id>`,
+				`${root}/<id>/bulk-access-management`,
+			],
+			admin: true,
+		},
+		{
+			title: "Effective Permissions",
+			path: `${root}/:id/effective-permissions`,
+			description:
+				"Admin mode: see everyone who can use it, whatever your own access.",
+			icon,
+			history: [
+				root,
+				`${root}/<id>`,
+				`${root}/<id>/effective-permissions`,
+			],
+			admin: true,
+		},
+	]),
 ];

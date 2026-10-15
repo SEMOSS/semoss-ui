@@ -1,4 +1,4 @@
-import { Env, get, post } from "@semoss/sdk/react";
+import { Env, get, post, runPixel } from "@semoss/sdk/react";
 
 export const setProjectFavorite = async (
 	projectId: string,
@@ -250,4 +250,27 @@ export const updateProjectSmssProperties = async (
 		},
 		{},
 	);
+};
+
+/**
+ * Set the name a project is displayed under. Only the project's owner can.
+ *
+ * @name setProjectDisplayName
+ * @param insightId - Insight the pixel executes against.
+ * @param projectId - Project to rename.
+ * @param name - New display name.
+ * @return Resolves when the display name is persisted.
+ */
+export const setProjectDisplayName = async (
+	insightId: string,
+	projectId: string,
+	name: string,
+): Promise<void> => {
+	const response = await runPixel<[boolean]>(
+		`SetProjectDisplayName(project=[${JSON.stringify(projectId)}], name=[${JSON.stringify(`<encode>${name}</encode>`)}]);`,
+		insightId,
+	);
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
 };

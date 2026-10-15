@@ -24,6 +24,39 @@ const ANSI_ESCAPE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
 export const stripAnsiStyleCodes = (value: string): string =>
 	value.replace(ANSI_ESCAPE, "");
 
+const NAMED_HTML_ENTITIES: Record<string, string> = {
+	amp: "&",
+	apos: "'",
+	gt: ">",
+	lt: "<",
+	nbsp: "\u00a0",
+	quot: '"',
+};
+
+const HTML_ENTITY = /&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi;
+
+/**
+ * Decode the HTML character references a server-side sanitizer writes into
+ * stored text, such as `&amp;`, `&#39;` and `&#x27;`. It decodes in one pass, so
+ * `&amp;lt;` becomes `&lt;` rather than `<`, and keeps unknown names and
+ * references to invalid code points as they are.
+ */
+export const decodeHtmlEntities = (value: string): string =>
+	value.replace(HTML_ENTITY, (reference, body: string) => {
+		const name = body.toLowerCase();
+		if (!name.startsWith("#")) {
+			return NAMED_HTML_ENTITIES[name] ?? reference;
+		}
+		const codePoint = name.startsWith("#x")
+			? Number.parseInt(name.slice(2), 16)
+			: Number.parseInt(name.slice(1), 10);
+		const isValid =
+			codePoint > 0 &&
+			codePoint <= 0x10ffff &&
+			(codePoint < 0xd800 || codePoint > 0xdfff);
+		return isValid ? String.fromCodePoint(codePoint) : reference;
+	});
+
 /** Split a string at its first period. */
 export const splitAtPeriod = (
 	value: string,
