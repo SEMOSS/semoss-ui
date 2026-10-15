@@ -23,6 +23,7 @@ export type RunNodeDataSource =
 	| { kind: "preview" };
 
 export type AsyncViewerState = "loading" | "error" | "empty" | "ready";
+export type RunNodeContentView = "output" | "source";
 
 export const RUN_NODE_VIEW_LABELS = {
 	navigation: "Run nodes",
@@ -113,4 +114,12 @@ export function getAsyncViewerState(
 	if (error) return "error";
 	if (!hasValue || isEmpty) return "empty";
 	return "ready";
+}
+
+/** Restricts implementation details to the workbench's explicit developer mode. */
+export function getVisibleRunNodeContentView(
+	requestedView: RunNodeContentView,
+	devMode: boolean,
+): RunNodeContentView {
+	return devMode ? requestedView : "output";
 }
