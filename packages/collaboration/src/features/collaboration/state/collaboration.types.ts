@@ -406,6 +406,15 @@ export interface CollaborationState {
 /** Commands contain UI intent and updates received from the backend. */
 export type CollaborationCommand =
 	| {
+			type: "records.loaded";
+			items: WorkItem[];
+			topics: Topic[];
+			people: Person[];
+			threads: Thread[];
+			memories: Memory[];
+			workspaces: Record<string, ThreadWorkspace>;
+	  }
+	| {
 			type: "live.refresh";
 			updates: Pick<
 				CollaborationState,

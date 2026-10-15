@@ -1031,3 +1031,31 @@ it("applies server changes to items already shown, except ones edited locally du
 	);
 	expect(next.items).toHaveLength(state.items.length);
 });
+
+it("hydrates missing search records once and keeps locally edited records", () => {
+	const initial = createInitialCollaborationState();
+	const topic = initial.topics[0];
+	const edited = apply(initial, {
+		type: "topic.save",
+		topic: { id: topic.id, name: "Local name" },
+	});
+	const command: CollaborationCommand = {
+		type: "records.loaded",
+		topics: [
+			{ ...topic, name: "Stale name" },
+			{ ...topic, id: "saved-topic" },
+		],
+		people: [],
+		threads: [],
+		items: [],
+		memories: [],
+		workspaces: {},
+	};
+	const loaded = apply(apply(edited, command), command);
+	expect(loaded.topics.find((row) => row.id === topic.id)?.name).toBe(
+		"Local name",
+	);
+	expect(
+		loaded.topics.filter((row) => row.id === "saved-topic"),
+	).toHaveLength(1);
+});
