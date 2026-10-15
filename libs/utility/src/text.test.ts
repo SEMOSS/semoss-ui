@@ -5,6 +5,7 @@ import {
 	capitalizeFirstLetter,
 	countLines,
 	countOccurrences,
+	decodeHtmlEntities,
 	formatTextByteSize,
 	hashString,
 	readNonBlankString,
@@ -50,6 +51,25 @@ describe("text contracts", () => {
 		expect(countLines("\n")).toBe(0);
 		expect(formatTextByteSize("🙂")).toBe("4 B");
 		expect(formatTextByteSize("x".repeat(1024))).toBe("1.0 KB");
+	});
+	it("decodes HTML character references in one pass", () => {
+		expect(decodeHtmlEntities("R&amp;D&#39;s &quot;team&quot;")).toBe(
+			'R&D\'s "team"',
+		);
+		expect(decodeHtmlEntities("&lt;b&gt; &#x27;x&#X27; &#64;")).toBe(
+			"<b> 'x' @",
+		);
+		expect(decodeHtmlEntities("&AMP; &nbsp;")).toBe("& \u00a0");
+		expect(decodeHtmlEntities("&amp;lt;")).toBe("&lt;");
+	});
+	it("keeps unknown and invalid HTML character references", () => {
+		expect(decodeHtmlEntities("&copy; &bogus; & amp;")).toBe(
+			"&copy; &bogus; & amp;",
+		);
+		expect(decodeHtmlEntities("&#0; &#xD800; &#x110000;")).toBe(
+			"&#0; &#xD800; &#x110000;",
+		);
+		expect(decodeHtmlEntities("")).toBe("");
 	});
 	it("removes only ANSI SGR sequences", () => {
 		expect(stripAnsiStyleCodes("\u001b[31mred\u001b[0m\u001b[2J")).toBe(

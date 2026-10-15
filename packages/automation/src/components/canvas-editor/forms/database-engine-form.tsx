@@ -9,6 +9,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import { Field, FieldLabel, Input } from "@semoss/ui/next";
 import type { DatabaseEngineConfig } from "../../../domain/automation.types";
+import { getAutomationNodeDefinition } from "../../../domain/automation-node-catalog";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
 
@@ -36,6 +37,10 @@ export function DatabaseEngineForm({
 }: DatabaseEngineFormProps) {
 	const limitId = useId();
 	const limitDescriptionId = useId();
+	const limitSchema =
+		getAutomationNodeDefinition("database.query")?.configSchema.limit;
+	const minimumLimit = limitSchema?.minimum;
+	const maximumLimit = limitSchema?.maximum;
 	const [structure, setStructure] = useState<TableStructure[]>([]);
 	const [schemaLoading, setSchemaLoading] = useState(false);
 	const [schemaError, setSchemaError] = useState(false);
@@ -159,6 +164,17 @@ export function DatabaseEngineForm({
 				readOnly={readOnly}
 			/>
 
+			<BoundInput
+				label="Parameters (JSON array, optional)"
+				value={config.parameters ?? ""}
+				onChange={(value) => onChange({ ...config, parameters: value })}
+				upstreamVars={upstreamVars}
+				placeholder={'["$' + '{loop.item.appointmentBlockId}"]'}
+				mono
+				minRows={3}
+				readOnly={readOnly}
+			/>
+
 			{config.operation === "query" && (
 				<Field>
 					<FieldLabel htmlFor={limitId}>Result limit</FieldLabel>
@@ -166,8 +182,8 @@ export function DatabaseEngineForm({
 						id={limitId}
 						aria-describedby={limitDescriptionId}
 						type="number"
-						min={1}
-						max={1000}
+						min={minimumLimit}
+						max={maximumLimit}
 						value={config.limit}
 						onChange={(event) =>
 							onChange({
@@ -183,7 +199,10 @@ export function DatabaseEngineForm({
 						id={limitDescriptionId}
 						className="text-muted-foreground text-xs"
 					>
-						1–1,000 rows
+						{minimumLimit !== undefined &&
+						maximumLimit !== undefined
+							? `${minimumLimit.toLocaleString()}–${maximumLimit.toLocaleString()} rows`
+							: "Enter the maximum number of rows to return."}
 					</p>
 				</Field>
 			)}

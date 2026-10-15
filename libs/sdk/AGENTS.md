@@ -127,6 +127,12 @@ The SDK owns what the session is signed in to, so an app never tracks or caches 
   signs them out.
 - `refresh` joins a read in flight and reuses one younger than 30 seconds; `useLogins()` reads
   again when a view mounts and whenever the window regains focus.
+- `accountIds` is the user id of each login, from the config's `loginDetails`; the logins read
+  has no ids. A read drops the id of a login the session signed out of, and a login signed in to
+  since the config was read has none until the config is read again. Once logins are known, a
+  config only adds the id of a login that has none, and only when it names that login the same
+  way, so a config cached for an earlier session never replaces them. The client app seeds
+  `Logins` from its own config read, at start and after each login, and resets it on logout.
 - `connect` signs in to one more provider with a fresh popup (see `connectLogin` in
   [`api/auth.ts`](./src/api/auth.ts)): a listed provider is signed out first, since the backend
   keeps listing an expired token. Neither it nor `disconnect` ever signs out the session's own
@@ -137,3 +143,24 @@ The SDK owns what the session is signed in to, so an app never tracks or caches 
   cannot be read. So besides watching the popup close or come back, it reads the login every two
   seconds and closes the popup once it is there. `oauth` rejects when the popup ends without the
   login rather than leaving the sign in waiting. Apps call the SDK's `oauth`; none keeps a copy.
+
+## Permission Batches
+
+[`api/access.ts`](./src/api/access.ts) holds Bulk Access Management's calls to the backend's
+permission batch endpoints, `/api/auth/permissionBatch`, or `/api/auth/admin/permissionBatch` when
+a call's `admin` is true, where an admin can read and change anything:
+
+- `getResourcePermissions` (`getPermissions`) reads the people and teams who can use a project or
+  engine and what the signed in user may change (`allowedPermissionChanges`). `getTeamPeople`
+  reads a custom team's members or managers through the same endpoint.
+- `validatePermissionBatches` and `savePermissionBatches` post the batches as JSON in the
+  `batches` form field. Validating returns one result per batch, in the order sent, and each
+  change's result carries its index in its batch. Saving saves every change of every batch, or
+  none.
+- `getPermissionsToCopy` reads the people to copy from one project, engine or team into another,
+  with their access on both. `getEffectivePermissions` reads everyone who can use a project or
+  engine, and where their access comes from.
+
+Each call checks the response's shape and throws when it is not what the call reads. Lists of
+people leave out rows without an id, login type or known level; validation results are never
+left out, since they are matched to the batches by position.

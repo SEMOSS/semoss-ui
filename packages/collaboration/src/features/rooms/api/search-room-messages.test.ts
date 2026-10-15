@@ -7,7 +7,7 @@ function pixelResponse(output: unknown) {
 }
 
 describe("searchRoomMessages", () => {
-	it("searches room content through the playground project without loading messages", async () => {
+	it("searches room content through the Collaboration project without loading messages", async () => {
 		const run = vi.fn().mockResolvedValue(
 			pixelResponse([
 				{
@@ -29,7 +29,7 @@ describe("searchRoomMessages", () => {
 		]);
 		expect(run).toHaveBeenCalledOnce();
 		expect(run).toHaveBeenCalledWith(
-			'META | SearchRoomMessages(search=["launch \\"notes\\""], project=["SYSTEM__PLAYGROUND"], limit=[50], offset=[0]);',
+			'META | SearchRoomMessages(search=["launch \\"notes\\""], project=["SYSTEM__COLLABORATION"], limit=[50], offset=[0], includeUnnamedRooms=[true]);',
 		);
 		expect(String(run.mock.calls[0]?.[0])).not.toMatch(
 			/GetPlaygroundRooms|GetPlaygroundMessages/,

@@ -1,5 +1,5 @@
 import { createStore, type StoreApi } from "zustand";
-import { CSRF, Env } from "@semoss/sdk/react";
+import { CSRF, Env, Logins } from "@semoss/sdk/react";
 import { config as getConfig } from "@/api";
 import { THEME } from "@/constants";
 
@@ -27,6 +27,8 @@ interface RootConfig {
 	csrf: boolean;
 	adminOnlyViewMenuBarFlag: boolean;
 	notificationEnabled: boolean;
+	/** Whether people searches can look in the organization's Microsoft directory */
+	msGraphLookup?: boolean;
 	[key: string]: unknown;
 }
 
@@ -118,6 +120,10 @@ export const createConfigStore = (): StoreApi<ConfigStoreState> =>
 				a.display_order > b.display_order ? 1 : -1,
 			);
 			set({ config, theme: themeFor(config) });
+			// the SDK keeps the session's logins and their account ids for every
+			// view; they start over from this config, read at start and after each login
+			Logins.reset();
+			Logins.seed(data);
 
 			// set the csrf
 			CSRF.isEnabled = config.csrf;

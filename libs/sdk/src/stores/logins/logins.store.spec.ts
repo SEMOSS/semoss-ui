@@ -24,6 +24,7 @@ describe("LoginsStore", () => {
 		store.seed({ logins: { native: "Ada" }, primaryLogin: "native" });
 		expect(store.getSnapshot()).toEqual({
 			logins: { NATIVE: "Ada" },
+			accountIds: {},
 			primaryLogin: "NATIVE",
 			connectorAccess: null,
 			availableProviders: [],
@@ -94,6 +95,58 @@ describe("LoginsStore", () => {
 		expect(listener).not.toHaveBeenCalled();
 	});
 
+	it("takes the account id of each login the config names", () => {
+		const store = new LoginsStore();
+		store.seed({
+			logins: { NATIVE: "Ada", MICROSOFT: "Ada L" },
+			loginDetails: {
+				native: { id: "ada", name: "Ada" },
+				MICROSOFT: { id: "ada-ms", name: "Ada L" },
+				GOOGLE: { id: "not-held", name: "Ada G" },
+				GITHUB: { name: "no id" },
+			},
+		});
+
+		expect(store.getSnapshot().accountIds).toEqual({
+			NATIVE: "ada",
+			MICROSOFT: "ada-ms",
+		});
+	});
+
+	it("never takes account ids from a config that names the logins differently", () => {
+		const store = new LoginsStore();
+		store.seed({
+			logins: { NATIVE: "Bea" },
+			loginDetails: { NATIVE: { id: "bea" } },
+		});
+
+		// a copy of the config cached for an earlier session
+		store.seed({
+			logins: { NATIVE: "Ada" },
+			loginDetails: {
+				NATIVE: { id: "ada" },
+				MICROSOFT: { id: "ada-ms" },
+			},
+		});
+
+		expect(store.getSnapshot().accountIds).toEqual({ NATIVE: "bea" });
+	});
+
+	it("drops the account id of a login the session signs out of", async () => {
+		const store = new LoginsStore();
+		store.seed({
+			logins: { NATIVE: "Ada", MICROSOFT: "Ada L" },
+			loginDetails: {
+				NATIVE: { id: "ada" },
+				MICROSOFT: { id: "ada-ms" },
+			},
+		});
+
+		await store.refresh({ maxAgeMs: 0 });
+
+		expect(store.getSnapshot().accountIds).toEqual({ NATIVE: "ada" });
+	});
+
 	it("starts over after a reset, taking the next config", () => {
 		const store = new LoginsStore();
 		store.seed({ logins: { NATIVE: "Ada" }, primaryLogin: "NATIVE" });
@@ -102,6 +155,7 @@ describe("LoginsStore", () => {
 		store.seed({ logins: {}, primaryLogin: undefined });
 		expect(store.getSnapshot()).toEqual({
 			logins: {},
+			accountIds: {},
 			primaryLogin: null,
 			connectorAccess: null,
 			availableProviders: [],

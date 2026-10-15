@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type RefObject, useState } from "react";
 import {
 	Button,
 	Dialog,
@@ -15,11 +15,14 @@ export function RoomPromptPicker({
 	open,
 	onOpenChange,
 	prompts,
+	returnFocusRef,
 	onSelect,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	prompts: readonly ComposerPrompt[];
+	/** Restore menu-trigger focus when the picker closes. */
+	returnFocusRef?: RefObject<HTMLButtonElement | null>;
 	onSelect: (text: string) => void;
 }) {
 	const [search, setSearch] = useState("");
@@ -29,7 +32,14 @@ export function RoomPromptPicker({
 	);
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-full overflow-y-auto sm:max-w-xl">
+			<DialogContent
+				className="max-h-full overflow-y-auto sm:max-w-xl"
+				onCloseAutoFocus={(event) => {
+					if (!returnFocusRef?.current) return;
+					event.preventDefault();
+					returnFocusRef.current.focus();
+				}}
+			>
 				<DialogHeader>
 					<DialogTitle>Prompt library</DialogTitle>
 					<DialogDescription>

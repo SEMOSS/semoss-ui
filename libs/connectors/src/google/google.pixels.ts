@@ -18,55 +18,6 @@ export const GOOGLE_PIXELS = {
 		call("GoogleDriveList", { limit: limit }),
 
 	/**
-	 * The newest emails, with a preview of each.
-	 *
-	 * @param limit - How many emails to read.
-	 * @return The pixel.
-	 */
-	gmailRecent: (limit: number): string =>
-		call("GoogleGmailSummarizeTopKEmails", { limit: limit }),
-
-	/**
-	 * The newest unread emails, with a preview of each.
-	 *
-	 * @param limit - How many emails to read.
-	 * @return The pixel.
-	 */
-	gmailUnread: (limit: number): string =>
-		call("GoogleGmailGetUnreadEmails", { limit: limit }),
-
-	/**
-	 * One email with its text. Gmail marks it read.
-	 *
-	 * @param messageId - The email.
-	 * @return The pixel.
-	 */
-	gmailRead: (messageId: string): string =>
-		call("GoogleGmailReadEmail", { id: id(messageId) }),
-
-	/**
-	 * The events of the primary calendar between two wall clock times, which
-	 * the backend reads in the user's zone.
-	 *
-	 * @param options - The window, as `YYYY-MM-DDTHH:mm:ss` without a zone.
-	 * @return The pixel.
-	 */
-	calendarList: (options: { startDate: string; endDate: string }): string =>
-		call("GoogleCalendarList", {
-			startDate: options.startDate,
-			endDate: options.endDate,
-		}),
-
-	/**
-	 * One event with its times, place, and guests.
-	 *
-	 * @param eventId - The event.
-	 * @return The pixel.
-	 */
-	calendarRead: (eventId: string): string =>
-		call("GoogleCalendarReadEvent", { id: id(eventId) }),
-
-	/**
 	 * The user's Google Docs.
 	 *
 	 * @param limit - How many documents to read.

@@ -4,7 +4,14 @@ import {
 	ChevronRightIcon,
 	ListIcon,
 } from "lucide-react";
-import { type ReactNode, type Ref, useId, useState } from "react";
+import {
+	type ReactNode,
+	type Ref,
+	useId,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -47,7 +54,8 @@ export interface ConnectorCalendarProps<T> {
 	serviceName: string;
 	account?: ConnectorAccount;
 	onSignIn?: () => Promise<boolean>;
-	focusRef?: Ref<HTMLDivElement>;
+	/** The agenda list, for row and missing-row focus restoration. */
+	focusRef?: Ref<HTMLUListElement>;
 	limitNote?: string;
 	getTitle: (event: T) => string;
 	getEventKey: (event: T) => string;
@@ -57,6 +65,10 @@ export interface ConnectorCalendarProps<T> {
 	renderEvent: (event: T, day: Date) => ReactNode;
 	/** Buttons at the end of the toolbar, such as refresh. */
 	actions?: ReactNode;
+	/** A host may keep a rail in agenda mode or request a responsive full calendar. */
+	presentation?: "default" | "agenda" | "calendar";
+	/** Opens the host's full calendar independently of external calendar links. */
+	onOpenCalendar?: () => void;
 }
 
 /** Switch date spans and toggle between the calendar canvas and list view. */
@@ -75,9 +87,30 @@ export const ConnectorCalendar = <T,>({
 	onOpenEvent,
 	renderEvent,
 	actions,
+	presentation = "default",
+	onOpenCalendar,
 }: ConnectorCalendarProps<T>) => {
 	const { t, i18n } = useTranslation("connectors");
-	const [isGridOpen, setIsGridOpen] = useState(true);
+	const [isGridRequested, setIsGridRequested] = useState(true);
+	const [isNarrow, setIsNarrow] = useState(false);
+	const containerRef = useRef<HTMLDivElement>(null);
+	useLayoutEffect(() => {
+		const element = containerRef.current;
+		if (presentation !== "calendar" || !element) return;
+		const measure = () => {
+			const width = element.getBoundingClientRect().width;
+			// Retained hidden panels report zero until their slot is visible.
+			if (width > 0) setIsNarrow(width < 640);
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [presentation]);
+	const isGridOpen =
+		presentation !== "agenda" &&
+		isGridRequested &&
+		!(presentation === "calendar" && isNarrow);
 	const gridId = useId();
 	const days = query.data ?? [];
 	const titles = new Map(
@@ -123,9 +156,9 @@ export const ConnectorCalendar = <T,>({
 		isGridOpen && calendar.view !== "month" && isCanvasAvailable;
 	return (
 		<div
-			ref={focusRef}
+			ref={containerRef}
 			dir={i18n.dir()}
-			className="@container/calendar flex min-h-0 flex-1 flex-col"
+			className="@container/calendar flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
 		>
 			<div className="flex shrink-0 flex-wrap items-center gap-x-2 border-border border-b bg-muted/10 px-2">
 				<div className="flex min-w-0 flex-1 @lg/calendar:basis-0 basis-full items-center gap-1 py-1">
@@ -158,50 +191,69 @@ export const ConnectorCalendar = <T,>({
 					</Button>
 				</div>
 				<div className="ms-auto flex flex-wrap items-center justify-end gap-1 py-1">
-					<Select
-						value={calendar.view}
-						onValueChange={(value) => {
-							if (isCalendarView(value)) calendar.setView(value);
-						}}
-						dir={i18n.dir()}
-					>
-						<SelectTrigger
-							size="sm"
-							aria-label={t("calendar.view")}
-							className="h-8 w-auto min-w-24 gap-2 bg-background text-xs shadow-none"
+					{presentation !== "agenda" ? (
+						<Select
+							value={calendar.view}
+							onValueChange={(value) => {
+								if (isCalendarView(value))
+									calendar.setView(value);
+							}}
+							dir={i18n.dir()}
 						>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{VIEWS.map((view) => (
-								<SelectItem key={view} value={view}>
-									{t(`calendar.${view}`)}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						className="min-w-32 text-xs shadow-none"
-						aria-expanded={isGridOpen}
-						aria-controls={
-							isGridOpen && isCanvasAvailable ? gridId : undefined
-						}
-						onClick={() => setIsGridOpen((open) => !open)}
-					>
-						{isGridOpen ? (
-							<ListIcon aria-hidden />
-						) : (
+							<SelectTrigger
+								size="sm"
+								aria-label={t("calendar.view")}
+								className="h-8 w-auto min-w-24 gap-2 bg-background text-xs shadow-none"
+							>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{VIEWS.map((view) => (
+									<SelectItem key={view} value={view}>
+										{t(`calendar.${view}`)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					) : null}
+					{presentation !== "agenda" &&
+					!(presentation === "calendar" && isNarrow) ? (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="min-w-32 text-xs shadow-none"
+							aria-expanded={isGridOpen}
+							aria-controls={
+								isGridOpen && isCanvasAvailable
+									? gridId
+									: undefined
+							}
+							onClick={() => setIsGridRequested((open) => !open)}
+						>
+							{isGridOpen ? (
+								<ListIcon aria-hidden />
+							) : (
+								<CalendarDaysIcon aria-hidden />
+							)}
+							{t(
+								isGridOpen
+									? "calendar.listView"
+									: "calendar.calendarView",
+							)}
+						</Button>
+					) : null}
+					{onOpenCalendar ? (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={onOpenCalendar}
+						>
 							<CalendarDaysIcon aria-hidden />
-						)}
-						{t(
-							isGridOpen
-								? "calendar.listView"
-								: "calendar.calendarView",
-						)}
-					</Button>
+							{t("calendar.openCalendar")}
+						</Button>
+					) : null}
 					{actions}
 				</div>
 			</div>
@@ -263,7 +315,12 @@ export const ConnectorCalendar = <T,>({
 									{t("calendar.agenda")}
 								</H4>
 							) : null}
-							<ul>
+							<ul
+								ref={focusRef}
+								tabIndex={-1}
+								aria-label={t("calendar.agenda")}
+								className="focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
+							>
 								{shownDays.map(({ day, events }) => (
 									<li key={formatLocalDateKey(day)}>
 										<H4 className="sticky top-0 z-10 border-border border-b bg-muted px-3 py-2 font-medium text-xs">
@@ -289,16 +346,18 @@ export const ConnectorCalendar = <T,>({
 										)}
 									</li>
 								))}
+								{shownDays.length === 0 ? (
+									<li>
+										<Muted className="px-3 py-8 text-center">
+											{t(
+												limitNote
+													? "calendar.noLoadedEvents"
+													: "calendar.emptyRange",
+											)}
+										</Muted>
+									</li>
+								) : null}
 							</ul>
-							{shownDays.length === 0 ? (
-								<Muted className="px-3 py-8 text-center">
-									{t(
-										limitNote
-											? "calendar.noLoadedEvents"
-											: "calendar.emptyRange",
-									)}
-								</Muted>
-							) : null}
 						</>
 					)}
 				</ScrollArea>

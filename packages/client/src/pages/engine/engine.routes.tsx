@@ -155,6 +155,18 @@ export const ENGINE_ROUTES: {
 								element: <EngineSettingsPage />,
 							},
 							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
+							},
+							{
 								path: "settings",
 								element: <EngineImageSettingsPage />,
 							},
@@ -286,6 +298,18 @@ export const ENGINE_ROUTES: {
 							{
 								path: "access-control",
 								element: <EngineSettingsPage />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
 							},
 							{
 								path: "settings",
@@ -468,6 +492,18 @@ export const ENGINE_ROUTES: {
 								element: <EngineSettingsPage />,
 							},
 							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
+							},
+							{
 								path: "settings",
 								element: <EngineImageSettingsPage />,
 							},
@@ -595,6 +631,18 @@ export const ENGINE_ROUTES: {
 							{
 								path: "access-control",
 								element: <EngineSettingsPage />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
 							},
 							{
 								path: "settings",
@@ -726,6 +774,18 @@ export const ENGINE_ROUTES: {
 								element: <EngineSettingsPage />,
 							},
 							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
+							},
+							{
 								path: "settings",
 								element: <EngineImageSettingsPage />,
 							},
@@ -840,6 +900,18 @@ export const ENGINE_ROUTES: {
 							{
 								path: "access-control",
 								element: <EngineSettingsPage />,
+							},
+							{
+								path: "access-control/bulk-access-management",
+								element: (
+									<EngineSettingsPage view="BULK_ACCESS_MANAGEMENT" />
+								),
+							},
+							{
+								path: "access-control/effective-permissions",
+								element: (
+									<EngineSettingsPage view="EFFECTIVE" />
+								),
 							},
 							{
 								path: "settings",

@@ -85,6 +85,7 @@ export const AutomationInspectorPanel = () => {
 			description={snapshot?.description ?? ""}
 			devMode={snapshot?.devMode ?? false}
 			editingStep={snapshot?.editingStep ?? null}
+			editingNodeGroup={snapshot?.editingNodeGroup ?? null}
 			onPrepareSchedule={() =>
 				context.canvasRef.current?.prepareSchedule() ??
 				Promise.resolve(false)
@@ -117,6 +118,18 @@ export const AutomationInspectorPanel = () => {
 					stepId,
 				})
 			}
+			onUpdateNodeGroup={(group) =>
+				context.canvasRef.current?.applyInspectorAction({
+					type: "update-node-group",
+					group,
+				})
+			}
+			onUngroupNodeGroup={(groupId) =>
+				context.canvasRef.current?.applyInspectorAction({
+					type: "delete-node-group",
+					groupId,
+				})
+			}
 			onOpenPythonEditor={context.onOpenPythonEditor}
 			pythonFileOpen={
 				snapshot?.editingStep
@@ -134,6 +147,7 @@ export const AutomationTracePanel = () => {
 	return (
 		<RunsTab
 			appId={context.appId}
+			devMode={context.inspectorSnapshot?.devMode ?? false}
 			refreshToken={context.historyRefreshToken}
 			running={snapshot?.running ?? false}
 			latestRunStatus={snapshot?.latestRunStatus ?? null}

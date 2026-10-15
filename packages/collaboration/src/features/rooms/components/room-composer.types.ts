@@ -1,7 +1,20 @@
 import type { SerializedEditorState } from "lexical";
 import type { LucideIcon } from "lucide-react";
+import type { RefObject } from "react";
 
 export const COMPOSER_MAX_CHARACTERS = 8_000;
+
+/** Shared upload and focus controls for a host-owned composer actions menu. */
+export interface ComposerActionControls {
+	/** Opens the composer's existing upload picker. */
+	onAttachFiles: () => void;
+	/** Connects the host trigger to overlays that return composer focus. */
+	triggerRef: RefObject<HTMLButtonElement | null>;
+	/** Optional stable DOM id assigned by the conversation host. */
+	triggerId?: string;
+	/** Prevents actions while the composer submits its current message. */
+	disabled: boolean;
+}
 
 /** A host-owned destination in the composer's + menu. */
 export interface ComposerPanelAction {

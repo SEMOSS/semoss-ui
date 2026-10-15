@@ -6,7 +6,7 @@ import {
 const controllers = new Map<string, AgentTurnController>();
 const MAX_IDLE_ROOMS = 20;
 
-/** Share one poll consumer between Work and legacy views of the same owned room. */
+/** Share one poll consumer for each actual room in the owning application scope. */
 export function getAgentTurnController(
 	config: AgentTurnConfig,
 ): AgentTurnController {

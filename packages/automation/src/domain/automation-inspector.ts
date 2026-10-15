@@ -5,7 +5,10 @@ import type {
 	AutomationNodeTrace,
 	StepRunStatus,
 } from "./automation.types";
-import type { AutomationOutputFieldSchema } from "./automation-workflow.types";
+import type {
+	AutomationNodeGroup,
+	AutomationOutputFieldSchema,
+} from "./automation-workflow.types";
 
 /** Server-derived description of one value visible to a node at runtime. */
 export interface AutomationScopeEntry {
@@ -36,9 +39,7 @@ export function getAutomationScopeExpression(
 			`scope.get(${JSON.stringify(entry.name)})`
 		);
 	}
-	return (
-		entry.requiredPythonExpression ?? `scope[${JSON.stringify(entry.name)}]`
-	);
+	return entry.requiredPythonExpression ?? entry.pythonExpression;
 }
 
 const MAX_DISCOVERED_SCOPE_FIELDS = 60;
@@ -167,6 +168,7 @@ export interface AutomationInspectorSnapshot {
 	 * `readOnly` prop were ever out of sync with the canvas. */
 	readOnly: boolean;
 	editingStep: AutomationNode | null;
+	editingNodeGroup?: AutomationNodeGroup | null;
 	upstreamVars: string[];
 	scopeEntries: AutomationScopeEntry[];
 	stepRunStatus?: StepRunStatus;
@@ -178,6 +180,8 @@ export interface AutomationInspectorSnapshot {
 export type AutomationInspectorAction =
 	| { type: "update-step"; step: AutomationNode }
 	| { type: "delete-step"; stepId: string }
+	| { type: "update-node-group"; group: AutomationNodeGroup }
+	| { type: "delete-node-group"; groupId: string }
 	| { type: "update-description"; description: string }
 	| { type: "update-dev-mode"; devMode: boolean }
 	| { type: "close" };

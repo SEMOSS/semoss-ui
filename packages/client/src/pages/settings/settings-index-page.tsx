@@ -130,6 +130,10 @@ const CardMapper: Record<string, CardConfig> = {
 		icon: <ShieldUser className={ICON_CLASS} />,
 		className: "bg-chart-3/10 text-chart-3",
 	},
+	"My Teams": {
+		icon: <Users2 className={ICON_CLASS} />,
+		className: "bg-chart-3/10 text-chart-3",
+	},
 	"Service Accounts": {
 		icon: <KeyRound className={ICON_CLASS} />,
 		className: "bg-muted text-muted-foreground",

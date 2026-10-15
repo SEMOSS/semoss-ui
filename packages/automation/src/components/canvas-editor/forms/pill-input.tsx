@@ -1,5 +1,12 @@
 import { ChevronDown } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+	useCallback,
+	useContext,
+	useEffect,
+	useId,
+	useRef,
+	useState,
+} from "react";
 import {
 	Button,
 	FieldLabel,
@@ -9,6 +16,8 @@ import {
 	PopoverTrigger,
 	Small,
 } from "@semoss/ui/next";
+import { AutomationVariableContext } from "../automation-variable-context";
+import { getAutomationVariableDisplay } from "../automation-variable-display";
 
 export interface PillInputProps {
 	/** Field label */
@@ -106,24 +115,30 @@ function partialVariableStart(textBeforeCaret: string): number {
 }
 
 /** Creates a pill span for a known variable. */
-function makePill(name: string): HTMLSpanElement {
+function makePill(name: string, label: string): HTMLSpanElement {
 	const span = document.createElement("span");
 	span.contentEditable = "false";
 	span.dataset.var = name;
 	span.className =
-		"inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-mono font-medium " +
+		"inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium " +
 		"bg-primary/10 text-primary border border-primary/20 select-none cursor-default mx-0.5";
-	span.textContent = `\${${name}}`;
+	span.textContent = label;
+	span.title = `\${${name}}`;
 	return span;
 }
 
 /** Replaces the full DOM content of the editor from a value string. Tries to preserve cursor at end. */
-function renderDOM(el: HTMLElement, value: string, knownVars: string[]) {
+function renderDOM(
+	el: HTMLElement,
+	value: string,
+	knownVars: string[],
+	getLabel: (name: string) => string,
+) {
 	el.innerHTML = "";
 	const segs = parseSegments(value, knownVars);
 	for (const seg of segs) {
 		if (seg.type === "var") {
-			el.appendChild(makePill(seg.name));
+			el.appendChild(makePill(seg.name, getLabel(seg.name)));
 		} else {
 			// Split on newlines, inserting <br> for each line break
 			const lines = seg.text.split("\n");
@@ -144,7 +159,11 @@ function renderDOM(el: HTMLElement, value: string, knownVars: string[]) {
 }
 
 /** Scans text nodes near the current caret for a complete `${knownVar}` pattern and converts it. */
-function tryConvertPillAtCaret(el: HTMLElement, knownVars: string[]) {
+function tryConvertPillAtCaret(
+	el: HTMLElement,
+	knownVars: string[],
+	getLabel: (name: string) => string,
+) {
 	const sel = window.getSelection();
 	if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return;
 	const range = sel.getRangeAt(0);
@@ -164,7 +183,7 @@ function tryConvertPillAtCaret(el: HTMLElement, knownVars: string[]) {
 	// Replace the full `${varName}` token in the text with a pill
 	const before = document.createTextNode(text.slice(0, matchIdx));
 	const after = document.createTextNode(text.slice(caretOffset));
-	const pill = makePill(potential);
+	const pill = makePill(potential, getLabel(potential));
 
 	el.insertBefore(after, anchor);
 	el.insertBefore(pill, after);
@@ -180,14 +199,14 @@ function tryConvertPillAtCaret(el: HTMLElement, knownVars: string[]) {
 }
 
 const MIN_H_MAP: Record<number, string> = {
-	1: "min-h-[1.5rem]",
-	2: "min-h-[3rem]",
-	3: "min-h-[4.5rem]",
-	4: "min-h-[6rem]",
-	5: "min-h-[7.5rem]",
-	6: "min-h-[9rem]",
-	7: "min-h-[10.5rem]",
-	8: "min-h-[12rem]",
+	1: "min-h-6",
+	2: "min-h-12",
+	3: "min-h-18",
+	4: "min-h-24",
+	5: "min-h-30",
+	6: "min-h-36",
+	7: "min-h-42",
+	8: "min-h-48",
 };
 
 export function PillInput({
@@ -202,6 +221,7 @@ export function PillInput({
 	required = false,
 	readOnly = false,
 }: PillInputProps) {
+	const variableContext = useContext(AutomationVariableContext);
 	const editorRef = useRef<HTMLDivElement>(null);
 	const lastValueRef = useRef<string>(value);
 	const skipSyncRef = useRef(false);
@@ -212,11 +232,25 @@ export function PillInput({
 	// +Variable picker
 	const [showPicker, setShowPicker] = useState(false);
 	const [variableQuery, setVariableQuery] = useState("");
+	const editorId = useId();
 	const variablePathInputId = useId();
 	const normalizedVariableQuery = variableQuery.trim();
-	const filteredPickerVars = upstreamVars.filter((variable) =>
-		variable.toLowerCase().includes(normalizedVariableQuery.toLowerCase()),
+	const variableDisplay = useCallback(
+		(name: string) =>
+			getAutomationVariableDisplay(name, variableContext.entries),
+		[variableContext.entries],
 	);
+	const variableLabel = useCallback(
+		(name: string) => variableDisplay(name).label,
+		[variableDisplay],
+	);
+	const normalizedQuery = normalizedVariableQuery.toLowerCase();
+	const filteredPickerVars = upstreamVars.filter((variable) => {
+		const display = variableDisplay(variable);
+		return [variable, display.label, display.description ?? ""].some(
+			(value) => value.toLowerCase().includes(normalizedQuery),
+		);
+	});
 	const canInsertCustomPath =
 		!upstreamVars.includes(normalizedVariableQuery) &&
 		isSupportedVariablePath(normalizedVariableQuery, upstreamVars);
@@ -226,10 +260,10 @@ export function PillInput({
 		const el = editorRef.current;
 		if (!el || skipSyncRef.current) return;
 		if (readDOM(el) !== value) {
-			renderDOM(el, value, upstreamVars);
+			renderDOM(el, value, upstreamVars, variableLabel);
 			lastValueRef.current = value;
 		}
-	}, [value, upstreamVars]);
+	}, [value, upstreamVars, variableLabel]);
 
 	const detectAutocomplete = useCallback(
 		(el: HTMLElement) => {
@@ -258,10 +292,14 @@ export function PillInput({
 			}
 			const filter = textBefore.slice(openIdx + 2).toLowerCase();
 			setAcVars(
-				upstreamVars.filter((v) => v.toLowerCase().includes(filter)),
+				upstreamVars.filter((variable) =>
+					[variable, variableLabel(variable)].some((value) =>
+						value.toLowerCase().includes(filter),
+					),
+				),
 			);
 		},
-		[upstreamVars],
+		[upstreamVars, variableLabel],
 	);
 
 	const emitChange = useCallback(
@@ -312,7 +350,11 @@ export function PillInput({
 			if (e.key === "}") {
 				requestAnimationFrame(() => {
 					if (!editorRef.current) return;
-					tryConvertPillAtCaret(editorRef.current, upstreamVars);
+					tryConvertPillAtCaret(
+						editorRef.current,
+						upstreamVars,
+						variableLabel,
+					);
 					emitChange(editorRef.current);
 					detectAutocomplete(editorRef.current);
 				});
@@ -357,7 +399,14 @@ export function PillInput({
 				}
 			}
 		},
-		[mono, upstreamVars, emitChange, detectAutocomplete, readOnly],
+		[
+			mono,
+			upstreamVars,
+			emitChange,
+			detectAutocomplete,
+			readOnly,
+			variableLabel,
+		],
 	);
 
 	/** Inserts a known variable as a pill at the current caret position. */
@@ -397,7 +446,7 @@ export function PillInput({
 					const after = document.createTextNode(
 						textContent.slice(caretOffset),
 					);
-					const pill = makePill(varName);
+					const pill = makePill(varName, variableLabel(varName));
 					el.insertBefore(after, textNode);
 					el.insertBefore(pill, after);
 					el.insertBefore(before, pill);
@@ -409,7 +458,7 @@ export function PillInput({
 					sel.addRange(newRange);
 				} else {
 					// Insert pill at current caret position via Range API
-					const span = makePill(varName);
+					const span = makePill(varName, variableLabel(varName));
 					range.insertNode(span);
 					range.setStartAfter(span);
 					range.collapse(true);
@@ -417,7 +466,7 @@ export function PillInput({
 					sel.addRange(range);
 				}
 			} else {
-				el.appendChild(makePill(varName));
+				el.appendChild(makePill(varName, variableLabel(varName)));
 				el.appendChild(document.createTextNode(""));
 			}
 
@@ -426,13 +475,13 @@ export function PillInput({
 			setVariableQuery("");
 			emitChange(el);
 		},
-		[emitChange, readOnly],
+		[emitChange, readOnly, variableLabel],
 	);
 
 	return (
 		<div className="flex flex-col gap-1">
 			<div className="flex items-center justify-between">
-				<FieldLabel>
+				<FieldLabel htmlFor={editorId}>
 					{label}
 					{required && (
 						<span className="ml-1 text-destructive" aria-hidden>
@@ -457,7 +506,7 @@ export function PillInput({
 								variant="ghost"
 								className="gap-1 text-xs"
 							>
-								+ Variable
+								Insert data
 								<ChevronDown
 									aria-hidden="true"
 									className="size-3"
@@ -487,12 +536,12 @@ export function PillInput({
 											insertVar(normalizedVariableQuery);
 										}
 									}}
-									placeholder="Search or enter output.field"
-									className="font-mono text-xs"
+									placeholder="Search previous steps or fields"
+									className="text-xs"
 								/>
 								<Small className="mt-1 text-muted-foreground">
-									Known field paths can be entered even when
-									they were not observed in a prior run.
+									Choose data from an earlier step or the
+									current loop pass.
 								</Small>
 							</div>
 							{canInsertCustomPath && (
@@ -500,11 +549,13 @@ export function PillInput({
 									type="button"
 									size="sm"
 									variant="ghost"
-									onMouseDown={(event) => {
-										event.preventDefault();
-										insertVar(normalizedVariableQuery);
-									}}
-									className="h-auto w-full justify-start gap-2 whitespace-normal rounded-none border-b px-3 py-2 text-left font-mono text-xs"
+									onMouseDown={(event) =>
+										event.preventDefault()
+									}
+									onClick={() =>
+										insertVar(normalizedVariableQuery)
+									}
+									className="h-auto w-full justify-start gap-2 whitespace-normal rounded-none border-b px-3 py-2 text-left text-xs"
 								>
 									<span className="text-muted-foreground text-xs">
 										Use
@@ -513,25 +564,37 @@ export function PillInput({
 								</Button>
 							)}
 							<div className="max-h-56 overflow-y-auto">
-								{filteredPickerVars.map((v) => (
-									<Button
-										key={v}
-										type="button"
-										size="sm"
-										variant="ghost"
-										onMouseDown={(e) => {
-											e.preventDefault();
-											insertVar(v);
-										}}
-										className="h-auto w-full justify-start gap-2 whitespace-normal rounded-none px-3 py-2 text-left font-mono text-xs"
-									>
-										<span className="text-muted-foreground text-xs">
-											{/* biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal display of ${} syntax */}
-											{"${}"}
-										</span>
-										{v}
-									</Button>
-								))}
+								{filteredPickerVars.map((variable) => {
+									const display = variableDisplay(variable);
+									return (
+										<Button
+											key={variable}
+											type="button"
+											size="sm"
+											variant="ghost"
+											onMouseDown={(event) =>
+												event.preventDefault()
+											}
+											onClick={() => insertVar(variable)}
+											className="h-auto w-full justify-start whitespace-normal rounded-none px-3 py-2 text-left text-xs"
+										>
+											<span className="flex min-w-0 flex-col items-start gap-0.5">
+												<span className="font-medium">
+													{display.label}
+												</span>
+												{variableContext.devMode ? (
+													<span className="break-all font-mono text-muted-foreground text-xs">
+														{`\${${variable}}`}
+													</span>
+												) : display.description ? (
+													<span className="line-clamp-2 text-muted-foreground text-xs">
+														{display.description}
+													</span>
+												) : null}
+											</span>
+										</Button>
+									);
+								})}
 								{filteredPickerVars.length === 0 &&
 									!canInsertCustomPath && (
 										<Small className="block px-3 py-2 text-muted-foreground">
@@ -548,12 +611,14 @@ export function PillInput({
 			<div className="relative">
 				{/* biome-ignore lint/a11y/useSemanticElements: contenteditable div is required for inline pill rendering */}
 				<div
+					id={editorId}
 					ref={editorRef}
 					role="textbox"
 					tabIndex={0}
 					aria-label={label}
 					aria-multiline={mono}
 					aria-readonly={readOnly}
+					aria-required={required}
 					contentEditable={!readOnly}
 					suppressContentEditableWarning
 					onInput={handleInput}
@@ -586,7 +651,7 @@ export function PillInput({
 						"w-full rounded-md border bg-background px-3 py-2 text-sm outline-none",
 						"focus:ring-2 focus:ring-ring focus:ring-offset-0",
 						mono
-							? `overflow-auto font-mono text-xs leading-relaxed ${MIN_H_MAP[minRows] ?? "min-h-[6rem]"}`
+							? `overflow-auto font-mono text-xs leading-relaxed ${MIN_H_MAP[minRows] ?? "min-h-24"}`
 							: "overflow-x-auto whitespace-nowrap",
 						readOnly ? "cursor-default bg-muted/30" : "",
 					].join(" ")}
@@ -603,22 +668,24 @@ export function PillInput({
 				{/* Autocomplete dropdown */}
 				{!readOnly && acVars.length > 0 && (
 					<div className="absolute top-full right-0 left-0 z-50 mt-0.5 max-h-40 overflow-y-auto rounded-md border bg-popover shadow-md">
-						{acVars.map((v) => (
-							<button
-								key={v}
+						{acVars.map((variable) => (
+							<Button
+								key={variable}
 								type="button"
-								onMouseDown={(e) => {
-									e.preventDefault();
-									insertVar(v);
-								}}
-								className="flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-xs hover:bg-accent hover:text-accent-foreground"
+								variant="ghost"
+								onMouseDown={(event) => event.preventDefault()}
+								onClick={() => insertVar(variable)}
+								className="h-auto w-full flex-col items-start gap-0.5 rounded-none px-3 py-2 text-left text-xs"
 							>
-								<span className="text-[10px] text-muted-foreground">
-									{/* biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal display of ${} syntax */}
-									{"${}"}
+								<span className="font-medium">
+									{variableLabel(variable)}
 								</span>
-								{v}
-							</button>
+								{variableContext.devMode && (
+									<span className="font-mono text-muted-foreground text-xs">
+										{`\${${variable}}`}
+									</span>
+								)}
+							</Button>
 						))}
 					</div>
 				)}

@@ -21,7 +21,6 @@ import {
 	getAutomationScopeExpression,
 } from "../../domain/automation-inspector";
 import {
-	getGeneratedPythonPreview,
 	getWorkflowNodeDefinition,
 	validateAutomationOutputVariable,
 } from "../../domain/automation-workflow-adapter";
@@ -31,6 +30,11 @@ import {
 	type AutomationPythonEditorHandle,
 } from "./automation-python-editor";
 import { AutomationScopeExplorer } from "./automation-scope-explorer";
+import {
+	convertNodeToCustomPython,
+	getNodePythonViewState,
+	type NodeEditorMode,
+} from "./node-edit-view";
 import { StepForm } from "./step-form";
 
 const RUN_STATUS_LABELS: Record<StepRunStatus, string> = {
@@ -103,26 +107,27 @@ export function NodeEditDrawer({
 	pythonFileOpen = false,
 	readOnly = false,
 }: NodeEditDrawerProps) {
-	const [editorMode, setEditorMode] = useState<"form" | "python">("form");
+	const [editorMode, setEditorMode] = useState<NodeEditorMode>("form");
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
 		? getWorkflowNodeDefinition(step.workflowType)
 		: undefined;
-	const isCustomSource = step.workflowCodeMode === "custom";
-	const isDeveloperPython = step.workflowType === "developer.python";
+	const {
+		isCustomSource,
+		isDeveloperPython,
+		isJavaOwnedControl,
+		showConversionPrompt,
+		showPythonEditor,
+	} = getNodePythonViewState(step, devMode, editorMode);
 	const isDecisionBranch =
 		step.workflowType === "control.if" ||
 		step.workflowType === "control.jev";
+	const isLoop = step.workflowType === "control.loop";
 	const hasOutputVariable =
 		step.workflowType !== "trigger.start" && !isDecisionBranch;
 	const outputVariableError = hasOutputVariable
 		? validateAutomationOutputVariable(step.outputVar)
 		: null;
-	const showPythonEditor =
-		isDeveloperPython ||
-		(!isDecisionBranch && devMode && editorMode === "python");
-	const canRevertToGenerated =
-		isCustomSource && workflowDefinition?.defaultCodeMode === "generated";
 	const persistedPythonSource =
 		typeof step.workflowConfig?.pythonSource === "string"
 			? step.workflowConfig.pythonSource
@@ -132,11 +137,11 @@ export function NodeEditDrawer({
 	// run(scope) and the save validator rejects source without one.
 	const pythonSource =
 		persistedPythonSource ||
-		(isCustomSource && !isDeveloperPython
-			? ""
-			: getGeneratedPythonPreview(step));
-	// Historical runs carry the executed graph shape but not saved node sources, so a
-	// custom-code node has nothing to show — hide the editor instead of rendering it empty.
+		(isDeveloperPython
+			? "# Write explicit Python for this node.\ndef run(scope):\n    return {}\n"
+			: "");
+	// Historical runs carry the executed graph shape but not saved node sources, so an
+	// explicit Python node may have nothing to show.
 	const pythonSourceUnavailable =
 		readOnly && isCustomSource && !persistedPythonSource;
 	const [pythonDraft, setPythonDraft] = useState(pythonSource);
@@ -177,6 +182,7 @@ export function NodeEditDrawer({
 		const target =
 			latestStepsRef.current.get(pendingUpdate.step.id) ??
 			pendingUpdate.step;
+		if (target.workflowType !== "developer.python") return;
 		onUpdateRef.current({
 			...target,
 			workflowCodeMode: "custom",
@@ -222,6 +228,12 @@ export function NodeEditDrawer({
 		if (readOnly) return;
 		flushPythonUpdate();
 		onOpenPythonEditor?.(step.id, pythonDraft);
+	};
+	const convertToPython = () => {
+		const convertedStep = convertNodeToCustomPython(step);
+		const source = convertedStep.workflowConfig?.pythonSource;
+		setPythonDraft(typeof source === "string" ? source : "");
+		onUpdate(convertedStep);
 	};
 
 	return (
@@ -306,7 +318,7 @@ export function NodeEditDrawer({
 						/>
 					</Field>
 
-					{hasOutputVariable && (
+					{hasOutputVariable && devMode && (
 						<Field>
 							<FieldLabel className="text-xs">
 								Output variable
@@ -326,7 +338,7 @@ export function NodeEditDrawer({
 								aria-invalid={Boolean(outputVariableError)}
 							/>
 							<p
-								className={`text-[11px] ${outputVariableError ? "text-destructive" : "text-muted-foreground"}`}
+								className={`text-xs ${outputVariableError ? "text-destructive" : "text-muted-foreground"}`}
 							>
 								{outputVariableError ??
 									`Later steps can use \${${step.outputVar}}.`}
@@ -346,18 +358,18 @@ export function NodeEditDrawer({
 									{pythonSourceUnavailable
 										? "Not available for historical runs."
 										: step.workflowType === "control.jev"
-											? "Jev chooses a configured route, or the low-confidence path when no answer is confident enough."
+											? "Jev answers typed questions, then the first matching route runs; otherwise the fallback path runs."
 											: step.workflowType === "control.if"
 												? "This decision evaluates its conditions in order and uses the first matching path."
-												: isDeveloperPython
-													? "This node runs its custom Python source."
-													: isCustomSource
-														? "This node uses custom Python."
-														: "Use the form or inspect the generated Python."}
+												: isLoop
+													? "The loop repeats its nested steps for every item or batch."
+													: isDeveloperPython
+														? "This node runs its custom Python source."
+														: "This typed node runs its server-owned implementation."}
 								</p>
 							</div>
 							{!isDeveloperPython &&
-								!isDecisionBranch &&
+								!isJavaOwnedControl &&
 								devMode && (
 									<div className="flex rounded-md border bg-muted/40 p-0.5">
 										<button
@@ -380,7 +392,7 @@ export function NodeEditDrawer({
 											}
 											className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "python" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
 										>
-											Python
+											Convert
 										</button>
 									</div>
 								)}
@@ -388,57 +400,7 @@ export function NodeEditDrawer({
 
 						{!isDeveloperPython &&
 							editorMode === "form" &&
-							(isCustomSource && !isDecisionBranch ? (
-								<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-									<p className="font-medium text-xs">
-										Custom Python is active
-									</p>
-									<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-										The form is unavailable because this
-										node&apos;s custom source controls its
-										behavior.
-									</p>
-									{devMode &&
-									canRevertToGenerated &&
-									!readOnly ? (
-										<Button
-											size="sm"
-											variant="outline"
-											className="mt-3 h-7 text-[11px]"
-											onClick={() => {
-												const {
-													pythonSource: _pythonSource,
-													...workflowConfig
-												} = step.workflowConfig ?? {};
-												onUpdate({
-													...step,
-													workflowCodeMode:
-														"generated",
-													workflowConfig,
-												});
-											}}
-										>
-											Revert to generated default
-										</Button>
-									) : devMode ? (
-										<Button
-											size="sm"
-											variant="outline"
-											className="mt-3 h-7 text-[11px]"
-											onClick={() =>
-												setEditorMode("python")
-											}
-										>
-											View Python source
-										</Button>
-									) : (
-										<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
-											Switch to Dev mode to view or edit
-											the custom Python source.
-										</p>
-									)}
-								</div>
-							) : supportsBusinessForm(step) ? (
+							(supportsBusinessForm(step) ? (
 								// Keyed by node so the form remounts when the drawer
 								// switches nodes. The engine forms seed local state
 								// from config in useState initializers, which only
@@ -454,7 +416,8 @@ export function NodeEditDrawer({
 								/>
 							) : (
 								<p className="rounded-lg border border-dashed px-3 py-2 text-[11px] text-muted-foreground">
-									This node is configured in Python.
+									This node uses its typed server
+									configuration.
 								</p>
 							))}
 
@@ -463,6 +426,30 @@ export function NodeEditDrawer({
 								Python source isn&apos;t available for this
 								historical run.
 							</p>
+						)}
+
+						{showConversionPrompt && (
+							<div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+								<div>
+									<p className="font-medium text-xs">
+										Type-owned execution is active
+									</p>
+									<p className="mt-1 text-muted-foreground text-xs leading-relaxed">
+										Converting replaces this typed node with
+										an explicit developer.python node.
+									</p>
+								</div>
+								{!readOnly && (
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										onClick={convertToPython}
+									>
+										Convert to Python
+									</Button>
+								)}
+							</div>
 						)}
 
 						{showPythonEditor && !pythonSourceUnavailable && (
@@ -619,7 +606,7 @@ export function NodeEditDrawer({
 												? "Decision branches use generated code."
 												: isCustomSource
 													? "This custom source is saved with the node."
-													: "Editing generated source creates a custom node."}
+													: "Generated nodes execute directly."}
 								</p>
 							</Field>
 						)}

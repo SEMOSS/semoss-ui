@@ -10,9 +10,14 @@ import {
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { useToolView } from "@semoss/shared";
 import { Button, cn, Spinner, toast, useIsMobile } from "@semoss/ui/next";
 import { ChatToolCard } from "@/features/chat-tools/components/chat-tool-card";
-import { isChatToolCall } from "@/features/chat-tools/tools/chat-tool-kind";
+import {
+	isChatToolCall,
+	isFolderToolCall,
+} from "@/features/chat-tools/tools/chat-tool-kind";
+import { ComponentToolView } from "@/features/tool-views/component-tool-view";
 import { useLoadingMessage } from "@/hooks/use-loading-message";
 import { useSidebarPanelActive } from "@/hooks/use-sidebar-panel-active";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
@@ -43,6 +48,7 @@ export const ResponseMessageTool = observer(
 			ROOM_PANEL_TYPES.TOOL,
 			{ toolId: tool.id },
 		);
+		const toolView = useToolView(tool.json._meta?.SMSS_MCP_UI?.resourceURI);
 		const { loadingMessage } = useLoadingMessage(
 			tool.status === "LOADING",
 			tool.json._meta?.SMSS_MCP_UI?.loadingMessage
@@ -129,6 +135,18 @@ export const ResponseMessageTool = observer(
 			if (isActive) tool.closeTool();
 			else tool.openTool(isMobile ? "inline" : undefined);
 		};
+		// a call that names a component:// view the playground draws shows it
+		// in place of its card; work folder calls keep theirs
+		const componentView =
+			toolView && !isFolderToolCall(tool.json) ? toolView : null;
+		// what the call shows if its view fails: the card it has without one
+		const fallbackView = !componentView ? null : isChatToolCall(
+				tool.json,
+			) ? (
+			<ChatToolCard tool={tool} variant="inline" />
+		) : (
+			<RoomInlineTool room={room} message={message} tool={tool} />
+		);
 		return (
 			<div
 				className={cn(
@@ -220,19 +238,37 @@ export const ResponseMessageTool = observer(
 					/>
 				</div>
 				{isLarge && needsDecision ? (
-					<div className="h-80 min-w-0 overflow-auto border-t">
-						<ToolsView
-							room={room}
-							app={getToolAppId(tool.json._meta)}
-							message={message.id}
-							toolId={tool.json.id}
-						/>
-					</div>
+					componentView ? (
+						<div className="min-w-0 border-t p-2">
+							<ComponentToolView
+								tool={tool}
+								view={componentView}
+								variant="inline"
+								fallback={fallbackView}
+							/>
+						</div>
+					) : (
+						<div className="h-80 min-w-0 overflow-auto border-t">
+							<ToolsView
+								room={room}
+								app={getToolAppId(tool.json._meta)}
+								message={message.id}
+								toolId={tool.json.id}
+							/>
+						</div>
+					)
 				) : (
 					tool.isOpen &&
 					tool.display === "inline" && (
 						<div className="p-2 pt-0">
-							{isChatToolCall(tool.json) ? (
+							{componentView ? (
+								<ComponentToolView
+									tool={tool}
+									view={componentView}
+									variant="inline"
+									fallback={fallbackView}
+								/>
+							) : isChatToolCall(tool.json) ? (
 								<ChatToolCard tool={tool} variant="inline" />
 							) : (
 								<RoomInlineTool

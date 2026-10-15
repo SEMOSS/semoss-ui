@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
 	// stable, as the SDK's are, so views keep the same logins between renders
 	logins: {
 		logins: {},
+		accountIds: {},
 		primaryLogin: null,
 		connectorAccess: null,
 		availableProviders: [],
