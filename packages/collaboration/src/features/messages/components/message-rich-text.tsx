@@ -16,7 +16,7 @@ export function MessageRichText({ html }: { html: string }) {
 			const props: Record<string, unknown> = { key };
 			if (tag === "td" || tag === "th") {
 				props.className =
-					"border border-border p-1 whitespace-pre-wrap align-top [&_p]:m-0";
+					"max-w-xs wrap-anywhere border border-border p-1 whitespace-pre-wrap align-top [&_p]:m-0";
 				for (const attribute of ["rowspan", "colspan"]) {
 					const value = node.getAttribute(attribute);
 					if (value)
@@ -36,12 +36,14 @@ export function MessageRichText({ html }: { html: string }) {
 				return (
 					<section
 						key={key}
-						className="my-2 max-w-full overflow-x-auto rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
+						className="my-2 max-h-96 max-w-full overflow-auto rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
 						// biome-ignore lint/a11y/noNoninteractiveTabindex: wide tables must be keyboard reachable for horizontal scrolling
 						tabIndex={0}
 						aria-label="Pasted table"
 					>
-						<table className="border-collapse">{children}</table>
+						<table className="w-max border-collapse">
+							{children}
+						</table>
 					</section>
 				);
 			return createElement(tag, props, ...(tag === "br" ? [] : children));
