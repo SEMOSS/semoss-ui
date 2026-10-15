@@ -18,9 +18,11 @@ export const DeleteJobModal = (props: {
 
 	return (
 		<Dialog open={isOpen} onOpenChange={close}>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent aria-describedby={undefined} className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Delete Job</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Delete Job
+					</DialogTitle>
 				</DialogHeader>
 
 				<div className="text-muted-foreground text-sm">

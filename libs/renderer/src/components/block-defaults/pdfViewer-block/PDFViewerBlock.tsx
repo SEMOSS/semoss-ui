@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { runPixel } from "@semoss/sdk/react";
 import { Button, Spinner } from "@semoss/ui/next";
 import { useBlock, useBlocks } from "../../../hooks";

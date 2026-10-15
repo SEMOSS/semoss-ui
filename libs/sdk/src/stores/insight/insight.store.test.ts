@@ -838,13 +838,13 @@ describe("InsightStore", () => {
 		});
 	});
 
-	// ---- actions.sendMCPResponseToPlayground() ------------------------------
+	// ---- actions.sendMCPResponseToRoom() -------------------------------------
 
-	describe("actions.sendMCPResponseToPlayground()", () => {
+	describe("actions.sendMCPResponseToRoom()", () => {
 		it("throws when Env.TOOL is not set", () => {
 			const store = new InsightStore();
 			expect(() =>
-				store.actions.sendMCPResponseToPlayground("response"),
+				store.actions.sendMCPResponseToRoom("response"),
 			).toThrow("No MCP tool execution context found");
 		});
 
@@ -861,13 +861,9 @@ describe("InsightStore", () => {
 			});
 
 			const store = new InsightStore();
-			store.actions.sendMCPResponseToPlayground(
-				"tool-response",
-				"success",
-				{
-					param: "val",
-				},
-			);
+			store.actions.sendMCPResponseToRoom("tool-response", "success", {
+				param: "val",
+			});
 
 			expect(postMessage).toHaveBeenCalledWith(
 				expect.objectContaining({ type: "SMSS_EXEC_TOOL" }),

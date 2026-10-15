@@ -1,6 +1,6 @@
 import { ChevronRight, UploadIcon, X } from "lucide-react";
 import { useId, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
 	Badge,
 	Breadcrumb,
@@ -24,7 +24,7 @@ import {
 import { MarkdownEditor } from "@/components/common/MarkdownEditor";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 type CreateSkillForm = {
@@ -37,7 +37,7 @@ type CreateSkillForm = {
 
 export const CreateSkillPage = () => {
 	const navigate = useNavigate();
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [tagInput, setTagInput] = useState("");
@@ -69,7 +69,7 @@ export const CreateSkillPage = () => {
 		try {
 			setIsLoading(true);
 
-			const { errors, pixelReturn } = await monolithStore.runQuery<
+			const { errors, pixelReturn } = await runPixel<
 				{
 					project_id: string;
 				}[]
@@ -84,12 +84,11 @@ export const CreateSkillPage = () => {
 
 			const hasMeta = form.tags.length > 0 || !!form.description;
 			if (hasMeta) {
-				const { pixelReturn: metaReturn } =
-					await monolithStore.runQuery(
-						`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-							{ tag: form.tags, description: form.description },
-						)}])`,
-					);
+				const { pixelReturn: metaReturn } = await runPixel(
+					`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+						{ tag: form.tags, description: form.description },
+					)}])`,
+				);
 
 				const operationType = metaReturn[0].operationType[0];
 				if (operationType.indexOf("ERROR") > -1) {

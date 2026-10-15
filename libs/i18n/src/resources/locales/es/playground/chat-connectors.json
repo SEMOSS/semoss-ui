@@ -1,0 +1,95 @@
+{
+	"providers": {
+		"MICROSOFT": {
+			"name": "Microsoft 365",
+			"brand": "Microsoft"
+		},
+		"GOOGLE": {
+			"name": "Google Workspace",
+			"scopesNote": "Gmail, Calendar, Drive y Docs requieren que tu administrador habilite esos permisos de Google para este servidor.",
+			"brand": "Google"
+		},
+		"connected": "Conectado",
+		"connectedAs": "Conectado como {{name}}",
+		"notConnected": "No conectado",
+		"unavailable": "No disponible en este servidor",
+		"signIn": "Iniciar sesión con {{brand}}",
+		"signInPrompt": "Inicia sesión para usar estas aplicaciones",
+		"reconnect": "Reconectar",
+		"connecting": "Esperando el inicio de sesión...",
+		"connectSuccess": "{{name}} está conectado",
+		"connectIncomplete": "{{name}} no se conectó. La ventana de inicio de sesión se cerró antes de terminar.",
+		"connectError": "No se pudo conectar {{name}}. {{message}}",
+		"popupBlocked": "Tu navegador bloqueó la ventana de inicio de sesión. Permite las ventanas emergentes para este sitio y vuelve a intentarlo.",
+		"loadErrorTitle": "No se pudieron comprobar tus cuentas conectadas",
+		"disconnect": "Desconectar",
+		"disconnecting": "Desconectando...",
+		"disconnectSuccess": "{{name}} se desconectó",
+		"disconnectError": "No se pudo desconectar {{name}}. {{message}}",
+		"sessionLoginNote": "Iniciaste sesión con esta cuenta, así que permanece conectada hasta que cierres sesión."
+	},
+	"services": {
+		"toolCounts_one": "{{count}} herramienta, {{ask}} con aprobación previa",
+		"toolCounts_other": "{{count}} herramientas, {{ask}} con aprobación previa",
+		"outlook": {
+			"name": "Correo de Outlook",
+			"description": "Lee, busca y redacta correos. Pide tu aprobación antes de enviar, responder o eliminar."
+		},
+		"outlook-calendar": {
+			"name": "Calendario de Outlook",
+			"description": "Consulta tu agenda y encuentra tiempo libre. Pide tu aprobación antes de enviar invitaciones o hacer cambios."
+		},
+		"onedrive": {
+			"name": "OneDrive",
+			"description": "Busca, lee y descarga tus archivos. Pide tu aprobación antes de subir, compartir o eliminar."
+		},
+		"teams": {
+			"name": "Microsoft Teams",
+			"description": "Lee chats, canales y archivos compartidos. Pide tu aprobación antes de enviar mensajes."
+		},
+		"gmail": {
+			"name": "Gmail",
+			"description": "Lee y busca correos. Pide tu aprobación antes de enviar o eliminar."
+		},
+		"google-calendar": {
+			"name": "Google Calendar",
+			"description": "Consulta tus eventos. Pide tu aprobación antes de crear eventos o hacer cambios."
+		},
+		"google-drive": {
+			"name": "Google Drive",
+			"description": "Lista y consulta tus archivos de Drive. Pide tu aprobación antes de eliminar."
+		},
+		"google-docs": {
+			"name": "Google Docs",
+			"description": "Lee tus documentos. Pide tu aprobación antes de crear, editar o eliminar."
+		}
+	},
+	"connectors": {
+		"saveError": "No se pudieron actualizar los conectores. {{message}}",
+		"adoptError": "El chat se inició, pero no se pudieron activar sus conectores. {{message}}"
+	},
+	"connections": {
+		"appsDescription": "Al iniciar sesión, la cuenta se vincula a tu sesión. El asistente solo ve lo que esa cuenta puede ver.",
+		"appsHint": "Activar o desactivar una aplicación aquí la cambia en todos tus chats, nuevos y existentes. El menú + de un chat abre la misma configuración.",
+		"settingsError": "No se pudo leer tu configuración de conectores."
+	},
+	"sources": {
+		"saved": "Se guardó {{name}} en {{target}}",
+		"show": "Mostrar",
+		"added": "{{name}} irá con tu próximo mensaje",
+		"notAccepted": "{{name}} se guardó en {{target}}, pero este chat no acepta ese tipo de archivo en un mensaje."
+	},
+	"signIn": {
+		"notice": "{{account}} no tiene la sesión iniciada, así que {{services}} no pueden funcionar en este chat.",
+		"action": "Iniciar sesión",
+		"dismiss": "Ocultar el aviso de inicio de sesión de {{account}}",
+		"toolFailed": "Esta llamada no se pudo ejecutar porque {{account}} no tiene la sesión iniciada. Inicia sesión y vuelve a pedirlo.",
+		"toolAction": "Iniciar sesión en {{account}}",
+		"notOffered": "Este servidor no ofrece iniciar sesión con {{account}}, así que {{services}} no pueden funcionar en este chat."
+	},
+	"scopes": {
+		"notice": "El inicio de sesión de {{account}} de este servidor no permite {{services}}, así que no pueden funcionar en este chat. Pide a tu administrador que añada el permiso que necesitan.",
+		"dismiss": "Ocultar el aviso de permisos de {{account}}",
+		"serviceBlocked": "No disponible: el inicio de sesión de este servidor no incluye el permiso necesario. Pide a tu administrador que lo añada."
+	}
+}

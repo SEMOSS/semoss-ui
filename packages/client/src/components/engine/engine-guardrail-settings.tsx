@@ -30,7 +30,8 @@ import {
 	useForm,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { getErrorMessage } from "@semoss/utility/error";
+import { useSession } from "@/hooks";
 import {
 	collectGuardrailConfigIssues,
 	createGuardrailPipeline,
@@ -77,7 +78,7 @@ export const EngineGuardrailSettings = ({
 	permission,
 	onUpdated,
 }: EngineGuardrailSettingsProps) => {
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const fieldId = useId();
 	const ruleSelectId = useId();
 	const isEditable = permission === "OWNER" || permission === "EDIT";
@@ -299,7 +300,7 @@ export const EngineGuardrailSettings = ({
 
 	const handleSubmit = async (values: GuardrailConfigFormValue) => {
 		try {
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`UpdateModelGuardrailConfig(engine=["${engineId}"], map=[${guardrailConfigToJson(values)}]);`,
 			);
 			const result = response.pixelReturn?.[0];
@@ -322,9 +323,10 @@ export const EngineGuardrailSettings = ({
 			onUpdated?.();
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to update the guardrail configuration.",
+				getErrorMessage(
+					error,
+					"Unable to update the guardrail configuration.",
+				),
 			);
 		}
 	};
@@ -665,7 +667,9 @@ export const EngineGuardrailSettings = ({
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Remove this rule?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Remove this rule?
+						</DialogTitle>
 						<DialogDescription>{removalSummary}</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>

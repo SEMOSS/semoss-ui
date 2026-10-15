@@ -31,8 +31,9 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { useProject, useRootStore } from "@/hooks";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
+import { getErrorMessage } from "@semoss/utility/error";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
+import { useProject, useSession } from "@/hooks";
 import { isProjectType } from "@/utility/catalog";
 
 /** Display metadata for one engine category card. */
@@ -143,7 +144,7 @@ const ManageEnginesDialog = ({
 	dependencies,
 	onClose,
 }: ManageEnginesDialogProps) => {
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const meta = CATEGORY_META[category];
 
 	const [search, setSearch] = useState("");
@@ -173,7 +174,7 @@ const ManageEnginesDialog = ({
 				const filterClause = trimmed
 					? `filterWord=${JSON.stringify(trimmed)}, `
 					: "";
-				const response = await configStore.runPixel<[Engine[]]>(
+				const response = await runPixel<[Engine[]]>(
 					`MyEngines(${filterClause}engineTypes=${JSON.stringify([category])}, limit=[${MANAGE_FETCH_LIMIT}], offset=[0]);`,
 				);
 				if (response.errors.length > 0) {
@@ -192,9 +193,7 @@ const ManageEnginesDialog = ({
 			} catch (error) {
 				if (!cancelled) {
 					toast.error(
-						error instanceof Error
-							? error.message
-							: "Failed to load engines",
+						getErrorMessage(error, "Failed to load engines"),
 					);
 				}
 			} finally {
@@ -205,7 +204,7 @@ const ManageEnginesDialog = ({
 			cancelled = true;
 			window.clearTimeout(timer);
 		};
-	}, [category, configStore, search]);
+	}, [category, runPixel, search]);
 
 	const toggleEngine = (engineId: string) => {
 		setSelectedIds((current) => {
@@ -231,7 +230,7 @@ const ManageEnginesDialog = ({
 				...others.map(toDependencyPayload),
 				...[...selectedIds].map((id) => ({ id, type: category })),
 			];
-			const response = await configStore.runPixel<string[]>(
+			const response = await runPixel<string[]>(
 				`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(payload)})`,
 			);
 			if (response.errors.length > 0) {
@@ -240,11 +239,7 @@ const ManageEnginesDialog = ({
 			toast.success(`${meta.label} updated`);
 			onClose(true);
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to update engines",
-			);
+			toast.error(getErrorMessage(error, "Failed to update engines"));
 		} finally {
 			setIsSaving(false);
 		}
@@ -254,7 +249,9 @@ const ManageEnginesDialog = ({
 		<Dialog open onOpenChange={(open) => !open && onClose(false)}>
 			<DialogContent className="flex max-h-[70vh] flex-col sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Manage {meta.label.toLowerCase()}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Manage {meta.label.toLowerCase()}
+					</DialogTitle>
 					<DialogDescription>{meta.blurb}.</DialogDescription>
 				</DialogHeader>
 
@@ -468,7 +465,7 @@ const EngineCategoryCard = ({
  */
 const ProjectEnginesPanel = () => {
 	const { project, dependencies, permission, refresh } = useProject();
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const [manageCategory, setManageCategory] = useState<string | null>(null);
 	const [isRemoving, setIsRemoving] = useState(false);
 	const canEdit = permission === "OWNER" || permission === "EDIT";
@@ -500,7 +497,7 @@ const ProjectEnginesPanel = () => {
 					(dependency) => dependency.engine_id !== engine.engine_id,
 				)
 				.map(toDependencyPayload);
-			const response = await configStore.runPixel<string[]>(
+			const response = await runPixel<string[]>(
 				`SetProjectDependencies(project="${project.project_id}", dependencies=${JSON.stringify(payload)})`,
 			);
 			if (response.errors.length > 0) {
@@ -509,11 +506,7 @@ const ProjectEnginesPanel = () => {
 			toast.success(`Removed ${engine.engine_name}`);
 			refresh();
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to remove engine",
-			);
+			toast.error(getErrorMessage(error, "Failed to remove engine"));
 		} finally {
 			setIsRemoving(false);
 		}

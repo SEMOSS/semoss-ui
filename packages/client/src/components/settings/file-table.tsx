@@ -12,11 +12,13 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
 	Dialog,
 	DialogContent,
+	DialogTitle,
 	H4,
 	Input,
 	P,
@@ -31,8 +33,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
-import { usePixel, useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 interface FileTableProps {
 	/**
@@ -99,7 +100,9 @@ export const FileTable = (props: FileTableProps) => {
 	const fileSearchRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const didMount = useRef<boolean>(false);
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const sessionUpload = useSession((state) => state.upload);
+	const download = useSession((state) => state.download);
 	const [exportLoading, setExportLoading] = useState(false);
 
 	// newly added state
@@ -292,7 +295,7 @@ export const FileTable = (props: FileTableProps) => {
 		query: string,
 	): Promise<PixelReturnLike> => {
 		try {
-			const response = await monolithStore.runQuery(query);
+			const response = await runPixel(query);
 			return response?.pixelReturn?.[0] ?? {};
 		} catch (queryError: unknown) {
 			const error = queryError as Record<string, unknown>;
@@ -411,13 +414,10 @@ export const FileTable = (props: FileTableProps) => {
 
 		try {
 			// Upload files to the server first
-			const upload = await uploadFile(
-				data.PROJECT_UPLOAD,
-				configStore.store.insightID,
-			);
+			const uploaded = await sessionUpload(data.PROJECT_UPLOAD);
 
 			const pixelReturn = await runEmbeddingQuery(
-				upload.map((file) => file.fileLocation),
+				uploaded.map((file) => file.fileLocation),
 			);
 
 			handleEmbeddingResponse(pixelReturn, "Successfully added document");
@@ -439,7 +439,7 @@ export const FileTable = (props: FileTableProps) => {
 		const { fileName } = file;
 		setIsLoading(true);
 		try {
-			const response = await monolithStore.runQuery(`
+			const response = await runPixel(`
             RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=["${fileName}"])
             `);
 
@@ -468,7 +468,7 @@ export const FileTable = (props: FileTableProps) => {
 		const fileArray = buildFileArrayString(files);
 
 		try {
-			const response = await monolithStore.runQuery(`
+			const response = await runPixel(`
                 RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=[${fileArray}])
             `);
 
@@ -499,10 +499,9 @@ export const FileTable = (props: FileTableProps) => {
 		const pixel = `META | VectorFileDownload(engine = "${id}", fileNames=[${fileArray}]);`;
 
 		try {
-			const response = await monolithStore.runQuery(pixel);
+			const response = await runPixel(pixel);
 			const { output } = response.pixelReturn[0];
-			const { insightId } = response;
-			monolithStore.download(insightId, String(output));
+			download(String(output));
 		} finally {
 			setExportLoading(false);
 		}
@@ -1074,11 +1073,14 @@ export const FileTable = (props: FileTableProps) => {
 				}}
 			>
 				<DialogContent
-					className="w-full max-w-[600px] border-border bg-background"
+					aria-describedby={undefined}
+					className="border-border bg-background sm:max-w-xl"
 					data-testid="file-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
-						<H4>Upload Files</H4>
+						<DialogTitle className="font-medium text-base leading-6">
+							Upload files
+						</DialogTitle>
 						<Controller
 							name="PROJECT_UPLOAD"
 							control={control}
@@ -1115,7 +1117,7 @@ export const FileTable = (props: FileTableProps) => {
 														: ""}{" "}
 													selected
 												</P>
-												<P className="break-words text-center text-muted-foreground text-sm">
+												<P className="wrap-break-word text-center text-muted-foreground text-sm">
 													{field.value
 														.map((f) => f.name)
 														.join(", ")}
@@ -1181,9 +1183,14 @@ export const FileTable = (props: FileTableProps) => {
 
 			{/* Delete Single File Modal */}
 			<Dialog open={deleteFileModal} onOpenChange={setDeleteFileModal}>
-				<DialogContent className="max-w-md border-border bg-background">
+				<DialogContent
+					aria-describedby={undefined}
+					className="max-w-md border-border bg-background"
+				>
 					<div className="flex flex-col gap-4">
-						<H4>Are you sure?</H4>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete files?
+						</DialogTitle>
 						{fileToDelete && (
 							<P>
 								This will remove <b>{fileToDelete.fileName}</b>
@@ -1219,9 +1226,14 @@ export const FileTable = (props: FileTableProps) => {
 
 			{/* Delete Multiple Files Modal */}
 			<Dialog open={deleteFilesModal} onOpenChange={setDeleteFilesModal}>
-				<DialogContent className="max-w-md border-border bg-background">
+				<DialogContent
+					aria-describedby={undefined}
+					className="max-w-md border-border bg-background"
+				>
 					<div className="flex flex-col gap-4">
-						<H4>Are you sure?</H4>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete files?
+						</DialogTitle>
 						<P>Would you like to delete all selected files?</P>
 						<div className="flex justify-end gap-2">
 							<Button

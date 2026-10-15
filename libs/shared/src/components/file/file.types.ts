@@ -23,8 +23,8 @@ export type FileMode =
 			// but against the current user's space (BrowseUserAssets,
 			// GetUserAssets, SaveUserAssets, DownloadUserAsset,
 			// DeleteUserAssets, RenameUserAsset, CopyUserAsset,
-			// SearchUserAssets). Currently only surfaced by `@semoss/terminal`'s
-			// ScopePicker — the client doesn't expose a User tab.
+			// SearchUserAssets). Surfaced by `@semoss/terminal`'s ScopePicker
+			// and the client's Settings > My Files page.
 			type: "USER";
 	  };
 
@@ -51,4 +51,10 @@ export type FileItem = {
 	 * Last modified date
 	 */
 	lastModified?: string;
+
+	/**
+	 * What a custom adapter knows about the item beyond its path, such as a
+	 * drive item's ids, for the host's row actions to read back.
+	 */
+	data?: unknown;
 };

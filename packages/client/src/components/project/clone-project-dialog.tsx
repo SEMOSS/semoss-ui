@@ -19,7 +19,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 const schema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -27,7 +27,8 @@ const schema = z.object({
 	isGlobal: z.boolean().default(false),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormInputValues = z.input<typeof schema>;
+type FormValues = z.output<typeof schema>;
 
 export interface CloneProjectDialogProps {
 	/** Track if the dialog is open */
@@ -40,7 +41,7 @@ export interface CloneProjectDialogProps {
 
 export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 	const { open, project, onClose } = props;
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const label =
 		project.project_type === "SKILL"
@@ -51,7 +52,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 					? "Notebook"
 					: "App";
 
-	const form = useForm<FormValues>({
+	const form = useForm<FormInputValues, unknown, FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: {
 			name: "",
@@ -81,7 +82,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 			let clonedProjectId: string | undefined;
 
 			if (project.project_type === "SKILL") {
-				const { errors, pixelReturn } = await configStore.runPixel(
+				const { errors, pixelReturn } = await runPixel(
 					`CloneSkill(skillId=["${project.project_id}"], name=["${escapePixelString(values.name.trim())}"]);`,
 				);
 
@@ -94,7 +95,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 						?.project_id || "",
 				);
 			} else {
-				const { errors, pixelReturn } = await configStore.runPixel(
+				const { errors, pixelReturn } = await runPixel(
 					`CreateAppFromTemplate(project=["${escapePixelString(values.name.trim())}"], projectTemplate=["${project.project_id}"], global=["${values.isGlobal}"]);`,
 				);
 
@@ -109,7 +110,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 
 				const trimmedDescription = values.description.trim();
 				if (trimmedDescription && clonedProjectId) {
-					const metaResponse = await configStore.runPixel(
+					const metaResponse = await runPixel(
 						`SetProjectMetadata(project=["${escapePixelString(clonedProjectId)}"], meta=[${JSON.stringify({ description: trimmedDescription })}]);`,
 					);
 
@@ -139,7 +140,9 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 		>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Clone {label}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Clone {label}
+					</DialogTitle>
 					<DialogDescription>
 						Create a new {label.toLowerCase()} from this template.
 					</DialogDescription>

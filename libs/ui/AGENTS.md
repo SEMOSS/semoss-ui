@@ -2,8 +2,9 @@
 
 This document provides context for AI coding assistants working with the SEMOSS UI component library.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md)
+> for implementation and the accessibility/form/mobile skills for relevant UI work.
 > Repo-wide design rules live in [../../DESIGN.md](../../DESIGN.md).
 
 ## Overview
@@ -23,7 +24,8 @@ This document provides context for AI coding assistants working with the SEMOSS 
 ## Design Tokens (`src/styles/globals.css`)
 
 Tokens are raw values on `:root` (light) and `.dark` (dark), mapped to Tailwind utilities via
-`@theme inline`. **Never hardcode a color, radius, or font — use the token's utility class.**
+`@theme inline`. Token consumption and definition exceptions follow
+[DESIGN.md](../../DESIGN.md#carve-outs-enumerated--nothing-else-is-exempt).
 
 ### Semantic colors
 
@@ -48,7 +50,7 @@ propose one before inventing blue status styling.
 
 ### Other tokens
 
-- **Radius**: `--radius: 0.625rem`, exposed as `rounded-sm/md/lg/xl`. Never `rounded-[10px]`.
+- **Radius**: `--radius: 0.625rem`, exposed as `rounded-sm/md/lg/xl`.
 - **Fonts**: `--font-sans` (Geist), `--font-mono` (Geist Mono) → `font-sans`, `font-mono`.
 - **Type scale**: the full Tailwind scale (`--text-xs` … `--text-9xl`, weights, tracking,
   leading) is re-declared as runtime CSS variables so it can be read at runtime.
@@ -109,8 +111,8 @@ import { Button, H2, Muted, cn, toast } from "@semoss/ui/next";
 @import "@semoss/ui/globals.css";
 ```
 
-- The bare `@semoss/ui` barrel currently re-exports `./next`, but **always import from
-  `@semoss/ui/next`** — 100% of existing imports already do; keep it that way.
+- The bare `@semoss/ui` barrel currently re-exports `./next`; the supported design-system
+  convention for consumers is `@semoss/ui/next`.
 - The `@/*` alias (e.g. `@/lib/utils`) is **internal to this lib** — consumers must never
   use it.
 
@@ -152,10 +154,11 @@ const buttonVariants = cva(
   (`default | destructive | outline | secondary | ghost | link`; sizes `default | sm | lg | icon`).
 - **`data-slot="<name>"`** attribute on every root and sub-part (used as styling hooks, e.g.
   `has-data-[slot=card-action]:grid-cols-[1fr_auto]`).
-- **Semantic token classes only** — never hex, never raw palette shades, never `text-[Npx]`.
+- Apply [DESIGN.md](../../DESIGN.md) for token and styling rules.
 - `asChild?: boolean` + Radix `Slot` for polymorphic components.
 - `className` is always the **last** argument to `cn(...)` so callers can override.
-- **Named exports only**; export the component together with its `xVariants`.
+- Export public components together with their `xVariants`, following the React skill's
+  [export policy](../../skills/react-standard.skill.md#architecture-and-exports).
 - Colocate related sub-components in the same file.
 
 ### The `cn()` Utility
@@ -173,7 +176,7 @@ through `@semoss/ui/next`.
 ```
 src/
 ├── next/            # All components (shadcn/Radix style, flat kebab-case files)
-│   └── index.ts     # Barrel — every component must be exported here
+│   └── index.ts     # Public component entry point
 ├── hooks/           # Shared React hooks
 ├── lib/             # Utilities (cn, etc.)
 ├── styles/          # globals.css — the design-token source of truth
@@ -182,18 +185,21 @@ src/
 
 ## Build System
 
-- **Bundler**: Rollup
-- **Output**: ES modules (`dist/index.mjs`), CSS (`dist/index.css` → `@semoss/ui/globals.css`)
+- **Bundler**: Vite 8 library build
+- **Output**: ES modules (`dist/index.mjs`, `dist/next.mjs`)
 - **Types**: TypeScript declarations (`dist/types/`)
-- **Styles**: PostCSS with `@tailwindcss/postcss`
+- **Styles**: `@semoss/ui/globals.css` exports `src/styles/globals.css` directly;
+  consumers process it with their Tailwind setup.
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Watch mode with Rollup |
-| `pnpm build` | Production build (minified) |
+| `pnpm dev` | Watch mode with Vite (`vite build --watch`) |
+| `pnpm build` | Production build |
 | `pnpm build:dev` | Development build |
+
+Run these commands from `libs/ui`, or use `pnpm --filter @semoss/ui <command>` from the root.
 
 ## Key Dependencies
 
@@ -201,9 +207,10 @@ src/
 - **class-variance-authority**: Component variants
 - **lucide-react**: Icon library
 - **tailwind-merge** + **clsx**: `cn()` class merging
-- **shiki**: Code syntax highlighting
-- **Peer dependencies**: `react: 18.3.1`, `react-dom: 18.3.1` only (MUI/Emotion were fully
-  removed from the repo — never reintroduce them)
+- **`@shikijs/*`**: Code syntax highlighting
+- **Peer dependencies**: React and React DOM `^18.3.1 || ^19.0.0`, plus
+  `react-hook-form`, `@hookform/resolvers`, and `zod`. Keep consumers compatible with
+  the ranges in `package.json`.
 
 ## Agent Guardrails
 
@@ -217,7 +224,7 @@ src/
 - **`src/next/index.ts` / `src/index.ts`** - Main exports, affect all consumers
 - **`src/styles/globals.css`** - Token changes affect every app; adding a token requires
   light + dark values and an `@theme inline` mapping
-- **`rollup.config.js`** - Build configuration
+- **`vite.config.ts`** - Build configuration
 - **`components.json`** - shadcn CLI configuration
 
 ### When Adding Components
@@ -231,11 +238,10 @@ src/
 ### Testing Components
 
 ```bash
-pnpm build          # Verify build succeeds
+pnpm --filter @semoss/ui build
 ```
 
 Then test in a consuming package:
 ```bash
-cd ../../packages/playground
-pnpm dev
+pnpm --filter @semoss/playground dev
 ```

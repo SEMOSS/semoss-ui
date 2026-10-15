@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useMemo } from "react";
+import { type JSX, useMemo } from "react";
 import {
 	Renderer,
 	type SerializedState,
@@ -7,9 +7,9 @@ import {
 	type Variable,
 } from "@semoss/renderer";
 import { Separator } from "@semoss/ui/next";
+import { isOutputJSON } from "@semoss/utility/json";
 import PreviewButton from "@/assets/img/PreviewRounded.png";
 import { JsonValueViewer } from "@/components/common/json-value-viewer";
-import { isOutputJSON } from "@/utility";
 import {
 	type EnginesByType,
 	findEngineRecord,

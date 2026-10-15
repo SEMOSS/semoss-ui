@@ -29,7 +29,10 @@ import { EngineSubtypeIcon } from "../engine-subtype-icon";
 // TypeScript Interfaces
 // ============================================================================
 
-interface EngineSelectProps {
+/** Props for {@link EngineSelect}. */
+export interface EngineSelectProps {
+	/** Associates the trigger with a field label. */
+	id?: string;
 	/** CSS classes for styling customization */
 	className?: string;
 
@@ -64,6 +67,15 @@ interface EngineSelectProps {
 	 * Engine IDs that should be greyed out and unselectable (e.g. monthly token quota exceeded).
 	 */
 	disabledEngineIds?: string[];
+
+	/** Optional icon rendered before the selected name in the trigger. */
+	triggerIcon?: React.ReactNode;
+	/**
+	 * Opens the list as a modal popover. Set it when the picker is inside a
+	 * dialog: the list is rendered outside the dialog, which otherwise blocks
+	 * scrolling it.
+	 */
+	modal?: boolean;
 }
 
 // ============================================================================
@@ -81,6 +93,7 @@ interface EngineSelectProps {
  * - Displays engine name and description
  */
 export const EngineSelect = ({
+	id,
 	className,
 	disabled,
 	name,
@@ -92,6 +105,8 @@ export const EngineSelect = ({
 	showEngineId,
 	showEngineIcon = true,
 	disabledEngineIds = [],
+	triggerIcon,
+	modal = false,
 }: EngineSelectProps) => {
 	// ========================================================================
 	// State & Hooks
@@ -194,12 +209,14 @@ export const EngineSelect = ({
 	// ========================================================================
 
 	return (
-		<Popover open={open && !disabled} onOpenChange={setOpen}>
+		<Popover open={open && !disabled} onOpenChange={setOpen} modal={modal}>
 			<PopoverTrigger asChild>
 				<Button
+					id={id}
+					type="button"
 					variant="outline"
 					role="combobox"
-					aria-expanded={open}
+					aria-expanded={open && !disabled}
 					disabled={disabled}
 					className={cn(
 						"w-full min-w-0 justify-start overflow-hidden border-input bg-transparent px-3 py-2",
@@ -207,6 +224,7 @@ export const EngineSelect = ({
 					)}
 				>
 					<div className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
+						{triggerIcon}
 						<span className="min-w-0 truncate">
 							{name || "Select"}
 						</span>

@@ -15,6 +15,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { escapeCsvValue } from "@semoss/utility/csv";
 import type { RoomStore } from "@/stores";
 import { BlockHeader } from "./block-header";
 import { CodePreviewBlock } from "./code-preview-block";
@@ -36,6 +38,20 @@ type BlockQuoteProps = ComponentProps<"blockquote"> & {
 	children?: ReactNode;
 	node?: unknown;
 };
+
+/**
+ * Builds the `urlTransform` for anything rendered as assistant content.
+ * Unmatched urls are rewritten to "", leaving the link inert.
+ */
+export const createMarkdownUrlTransform =
+	(allowedUrlPrefixes?: string[]) =>
+	(url: string): string => {
+		if (url.startsWith("room://")) return url;
+		if (allowedUrlPrefixes?.some((prefix) => url.startsWith(prefix)))
+			return url;
+		if (/^(https?:|mailto:|#)/.test(url)) return url;
+		return "";
+	};
 
 export const createMarkdownComponents = (
 	room?: RoomStore,
@@ -94,13 +110,7 @@ export const createMarkdownComponents = (
 						type="button"
 						className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
 						onClick={() => {
-							room.addSidebarNode(`FILE_EXPLORER--${path}`, {
-								type: "tab",
-								name: "Files",
-								component: "room-file-explorer",
-								config: { initialPath: path },
-								enableClose: true,
-							});
+							room.openSidebarFileExplorer(path);
 						}}
 					>
 						{children}
@@ -115,16 +125,8 @@ export const createMarkdownComponents = (
 					type="button"
 					className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
 					onClick={() => {
-						room.addSidebarNode("FILE_EXPLORER", {
-							type: "tab",
-							name: "Files",
-							component: "room-file-explorer",
-							config: {},
-							enableClose: true,
-						});
-						room.openFileEditorSidebarNode(path, {
-							name: filename,
-						});
+						room.openSidebarFileExplorer();
+						room.openFileSidebarPanel(path, filename);
 					}}
 				>
 					{children}
@@ -267,25 +269,14 @@ export const createMarkdownComponents = (
 			const csv = rows
 				.map((row) =>
 					Array.from(row.querySelectorAll("th, td"))
-						.map((cell) => {
-							const text = (cell.textContent ?? "").replace(
-								/"/g,
-								'""',
-							);
-							return `"${text}"`;
-						})
+						.map((cell) => escapeCsvValue(cell.textContent ?? ""))
 						.join(","),
 				)
 				.join("\n");
 
 			const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-			const url = URL.createObjectURL(blob);
 			const date = new Date().toISOString().slice(0, 10);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `table_response_${date}.csv`;
-			a.click();
-			URL.revokeObjectURL(url);
+			downloadBlob(blob, `table_response_${date}.csv`);
 		};
 
 		return (

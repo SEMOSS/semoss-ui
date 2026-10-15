@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { Button, toast } from "@semoss/ui/next";
 import {

@@ -19,8 +19,14 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import type { Project } from "../../types";
+import { AppCatalogAvatar } from "../app-catalog-avatar";
 
-interface ProjectSelectProps {
+/** Props for {@link ProjectSelect}. */
+export interface ProjectSelectProps {
+	/** Connect the trigger to its visible field label. */
+	id?: string;
+	/** Field description announced when the trigger receives focus. */
+	"aria-describedby"?: string;
 	/** CSS classes for styling customization. */
 	className?: string;
 	/** Whether the select is disabled. */
@@ -39,6 +45,14 @@ interface ProjectSelectProps {
 	popoverContentProps?: React.ComponentProps<typeof PopoverContent>;
 	/** Show the project ID under the project name instead of the description. */
 	showProjectId?: boolean;
+	/** Show each project's image beside its name, in the list and on the selected value. */
+	showProjectImage?: boolean;
+	/**
+	 * Opens the list as a modal popover. Set it when the picker is inside a
+	 * dialog: the list is rendered outside the dialog, which otherwise blocks
+	 * scrolling it.
+	 */
+	modal?: boolean;
 }
 
 /**
@@ -48,6 +62,8 @@ interface ProjectSelectProps {
  * @return A project selector with filtering and infinite scrolling.
  */
 export const ProjectSelect = ({
+	id,
+	"aria-describedby": ariaDescribedBy,
 	className,
 	disabled,
 	name,
@@ -57,6 +73,8 @@ export const ProjectSelect = ({
 	metaFilters,
 	popoverContentProps = {},
 	showProjectId,
+	showProjectImage = false,
+	modal = false,
 }: ProjectSelectProps) => {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
@@ -109,9 +127,11 @@ export const ProjectSelect = ({
 	);
 
 	return (
-		<Popover open={open && !disabled} onOpenChange={setOpen}>
+		<Popover open={open && !disabled} onOpenChange={setOpen} modal={modal}>
 			<PopoverTrigger asChild>
 				<Button
+					id={id}
+					aria-describedby={ariaDescribedBy}
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
@@ -122,6 +142,13 @@ export const ProjectSelect = ({
 					)}
 				>
 					<div className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
+						{showProjectImage && value ? (
+							<AppCatalogAvatar
+								projectId={value}
+								name={name}
+								className="size-5 shrink-0 rounded text-xs"
+							/>
+						) : null}
 						<span className="min-w-0 truncate">
 							{name || "Select"}
 						</span>
@@ -171,6 +198,13 @@ export const ProjectSelect = ({
 												"bg-primary/10 data-[selected=true]:bg-primary/15",
 										)}
 									>
+										{showProjectImage ? (
+											<AppCatalogAvatar
+												projectId={project.project_id}
+												name={displayName}
+												className="me-2 size-6 shrink-0 rounded-md text-xs"
+											/>
+										) : null}
 										<div className="flex flex-1 flex-col truncate">
 											<span className="truncate">
 												{displayName}

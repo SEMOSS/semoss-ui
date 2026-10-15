@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
 import { ErrorPage } from "./error-page";

@@ -1,0 +1,6 @@
+/*
+ * Tailwind has to scan this package's sources, or none of the file panels'
+ * classes are generated in the host's stylesheet. See `@semoss/workbench`'s
+ * copy of this file for why it lives here rather than in each host.
+ */
+@source "../**/*.{ts,tsx}";

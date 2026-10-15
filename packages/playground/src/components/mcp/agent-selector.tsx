@@ -1,30 +1,27 @@
 import {
 	Bot,
-	CheckIcon,
 	PlusIcon,
 	SearchIcon,
 	SquareArrowOutUpRightIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
 	Button,
-	Card,
-	CardContent,
 	cn,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
+	Label,
 	Muted,
+	RadioGroup,
+	RadioGroupItem,
 	ScrollArea,
 	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
@@ -32,267 +29,203 @@ import type { App, Workspace } from "@/types";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
-
 interface AgentSelectorProps {
 	value: WorkspaceRef | null;
 	onChange: (next: WorkspaceRef | null) => void;
 	disabled?: boolean;
 	className?: string;
+	/** Harness-enabled rooms can run without a saved agent. */
+	allowDefaultAgent?: boolean;
 }
 
-// TODO: design proper agent cards (see parallel TODO for MCPCard). The card
-// layout below is a placeholder kept visually consistent with MCPSelector.
-export const AgentSelector = observer(
-	({ value, onChange, disabled, className }: AgentSelectorProps) => {
-		const { t } = useTranslation(["mcp", "workspace"]);
-		const navigate = useNavigate();
-		const [search, setSearch] = useState("");
-		const debouncedSearch = useDebouncedValue(search);
-
-		const getWorkspaces = useIteratorPixel<App[], App>(
-			(limit, offset) =>
-				`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}projectType=["WORKSPACE"], limit=[${limit}], offset=[${offset}])`,
-			(response) => (response.length < 25 ? -1 : Infinity),
-			(response) => response,
-			{ limit: 25 },
-			[debouncedSearch],
-		);
-
-		const { setScroll } = useInfiniteScroll({
-			disabled: getWorkspaces.isLoading || !getWorkspaces.hasMore,
-			onNext: () => {
-				getWorkspaces.next();
-			},
-		});
-
-		const select = (w: App) => {
-			const ref: WorkspaceRef = {
-				workspace_id: w.project_id,
-				name: w.project_display_name || w.project_name,
-			};
-			onChange(value?.workspace_id === ref.workspace_id ? null : ref);
-		};
-
-		return (
-			<div
-				className={cn(
-					"flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm",
-					className,
-				)}
-			>
-				<div className="flex w-full shrink-0 flex-row gap-2 border-border border-b bg-muted p-4">
-					<div className="flex-1">
-						<InputGroup className="bg-background">
-							<InputGroupInput
-								autoFocus
-								placeholder={t("selector.search")}
-								value={search}
-								disabled={disabled}
-								onChange={(e) => setSearch(e.target.value)}
-							/>
-							<InputGroupAddon>
-								<SearchIcon />
-							</InputGroupAddon>
-						</InputGroup>
-					</div>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								onClick={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-									window.open("#/agent/new", "_blank");
-								}}
-								disabled={disabled}
-								data-testid="agent-selector--create-btn"
-							>
-								<PlusIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							{t("workspace:actions.createAgent", {
-								defaultValue: "Create an Agent",
-							})}
-						</TooltipContent>
-					</Tooltip>
-				</div>
-
-				<ScrollArea
-					className="min-h-0 w-full flex-1"
-					viewportRef={(e) => setScroll(e)}
+/** Searchable, keyboard-accessible agent selection with a deliberate default. */
+export function AgentSelector({
+	value,
+	onChange,
+	disabled,
+	className,
+	allowDefaultAgent = false,
+}: AgentSelectorProps) {
+	const { t } = useTranslation(["mcp", "workspace", "room", "common"]);
+	const id = useId();
+	const [search, setSearch] = useState("");
+	const debouncedSearch = useDebouncedValue(search);
+	const getWorkspaces = useIteratorPixel<App[], App>(
+		(limit, offset) =>
+			`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}projectType=["WORKSPACE"], limit=[${limit}], offset=[${offset}])`,
+		(response) => (response.length < 25 ? -1 : Infinity),
+		(response) => response,
+		{ limit: 25 },
+		[debouncedSearch],
+	);
+	const { setScroll } = useInfiniteScroll({
+		disabled: getWorkspaces.isLoading || !getWorkspaces.hasMore,
+		onNext: getWorkspaces.next,
+	});
+	return (
+		<div className={cn("flex min-h-0 flex-1 flex-col gap-4", className)}>
+			<div className="flex items-center gap-2">
+				<InputGroup className="min-w-0 flex-1">
+					<InputGroupInput
+						aria-label={t("room:menuWorkspace.searchPlaceholder")}
+						placeholder={t("room:menuWorkspace.searchPlaceholder")}
+						value={search}
+						disabled={disabled}
+						onChange={(event) => setSearch(event.target.value)}
+					/>
+					<InputGroupAddon>
+						<SearchIcon aria-hidden="true" />
+					</InputGroupAddon>
+				</InputGroup>
+				<Button
+					asChild
+					variant="outline"
+					size="sm"
+					data-testid="agent-selector--create-btn"
 				>
-					{getWorkspaces.isLoading &&
-						getWorkspaces.data.length === 0 && (
-							<div className="flex h-64 w-full items-center justify-center">
-								<Spinner />
-							</div>
-						)}
-					{!getWorkspaces.isLoading &&
-						getWorkspaces.data.length === 0 && (
-							<div className="flex h-64 w-full items-center justify-center">
-								<Muted>{t("selector.noAgentsFound")}</Muted>
-							</div>
-						)}
-					{getWorkspaces.data.length !== 0 && (
-						<>
-							<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-								{getWorkspaces.data.map((w) => {
-									const isSelected =
-										value?.workspace_id === w.project_id;
-									const permissionLabel =
-										w.user_permission === 1
-											? t("workspace:members.owner", {
-													defaultValue: "Owner",
-												})
-											: w.user_permission === 2
-												? t(
-														"workspace:members.editor",
-														{
-															defaultValue:
-																"Editor",
-														},
-													)
-												: t(
-														"workspace:members.readOnly",
-														{
-															defaultValue:
-																"Read-only",
-														},
-													);
-									return (
-										<Card
-											key={w.project_id}
-											onClick={() =>
-												!disabled && select(w)
-											}
-											className={cn(
-												"p-0 transition-colors",
-												!disabled &&
-													"cursor-pointer hover:bg-muted/30",
-												disabled &&
-													"cursor-not-allowed opacity-50",
-												isSelected && "border-primary",
-											)}
-										>
-											<CardContent className="flex flex-col gap-2 p-3">
-												{/* Row 1: open-page link + permission text on
-												    the left; selection checkbox on the right. */}
-												<div className="flex items-center gap-2">
-													<div className="flex min-w-0 flex-1 items-center gap-1.5">
-														<Tooltip>
-															<TooltipTrigger
-																asChild
-															>
-																<a
-																	href={`#/agent/${w.project_id}`}
-																	onClick={(
-																		event,
-																	) => {
-																		event.preventDefault();
-																		event.stopPropagation();
-																		navigate(
-																			`/agent/${w.project_id}`,
-																		);
-																	}}
-																	className="text-muted-foreground hover:text-foreground"
-																>
-																	<SquareArrowOutUpRightIcon className="size-4" />
-																</a>
-															</TooltipTrigger>
-															<TooltipContent>
-																{t(
-																	"agent.openAgentPage",
-																	{
-																		defaultValue:
-																			"Open agent page",
-																	},
-																)}
-															</TooltipContent>
-														</Tooltip>
-														{permissionLabel ? (
-															<span className="-translate-y-px text-[10px] text-muted-foreground capitalize">
-																{
-																	permissionLabel
-																}
-															</span>
-														) : null}
-													</div>
-													<div className="flex shrink-0 items-center gap-1.5">
-														<div
-															className={cn(
-																"flex size-4 items-center justify-center rounded border transition-colors",
-																isSelected
-																	? "border-primary bg-primary text-primary-foreground"
-																	: "border-muted-foreground/40",
-															)}
-														>
-															{isSelected ? (
-																<CheckIcon
-																	className="size-3"
-																	strokeWidth={
-																		3
-																	}
-																/>
-															) : null}
-														</div>
-													</div>
-												</div>
-
-												{/* Row 2: avatar + (name on top, type below). */}
-												<div className="flex items-start gap-2">
-													<AppCatalogAvatar
-														name={
-															w.project_display_name ||
-															w.project_name
-														}
-														className="size-10 shrink-0 rounded-md text-sm"
-													/>
-													<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-														<div className="wrap-break-word line-clamp-2 font-medium text-sm leading-tight">
-															{w.project_display_name ||
-																w.project_name}
-														</div>
-														<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-															<Bot className="size-3.5 shrink-0" />
-															<span>
-																{t(
-																	"agent.typeLabel",
-																	{
-																		defaultValue:
-																			"Agent",
-																	},
-																)}
-															</span>
-														</div>
-													</div>
-												</div>
-
-												{/* Row 3: description (full width) or spacer. */}
-												{w.description ? (
-													<div className="wrap-break-words line-clamp-4 text-muted-foreground text-xs">
-														{w.description}
-													</div>
-												) : (
-													<div
-														className="h-1"
-														aria-hidden
-													/>
-												)}
-											</CardContent>
-										</Card>
-									);
-								})}
-							</div>
-							{getWorkspaces.isLoading && (
-								<div className="flex w-full items-center justify-center pb-4">
-									<Spinner />
-								</div>
-							)}
-						</>
-					)}
-				</ScrollArea>
+					<a
+						href="#/agent/new"
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						<PlusIcon aria-hidden="true" />
+						{t("workspace:actions.createAgent")}
+					</a>
+				</Button>
 			</div>
-		);
-	},
-);
+			<ScrollArea className="min-h-0 flex-1" viewportRef={setScroll}>
+				<RadioGroup
+					aria-label={t("room:form.agentLabel")}
+					value={value?.workspace_id ?? ""}
+					disabled={disabled}
+					onValueChange={(next) => {
+						if (!next) {
+							onChange(null);
+							return;
+						}
+						const agent = getWorkspaces.data.find(
+							(item) => item.project_id === next,
+						);
+						if (agent)
+							onChange({
+								workspace_id: agent.project_id,
+								name:
+									agent.project_display_name ||
+									agent.project_name,
+							});
+					}}
+					className="gap-2 p-1"
+				>
+					<div className="flex items-center gap-3 rounded-lg border p-3">
+						<RadioGroupItem id={`${id}-default`} value="" />
+						<Label
+							htmlFor={`${id}-default`}
+							className="min-h-8 flex-1"
+						>
+							<Bot aria-hidden="true" className="size-4" />
+							{t(
+								allowDefaultAgent
+									? "room:modes.defaultAgent"
+									: "room:modes.noAgent",
+							)}
+						</Label>
+					</div>
+					{value &&
+						!getWorkspaces.data.some(
+							(item) => item.project_id === value.workspace_id,
+						) && (
+							<div className="flex items-center gap-3 rounded-lg border p-3">
+								<RadioGroupItem
+									id={`${id}-selected`}
+									value={value.workspace_id}
+								/>
+								<Label
+									htmlFor={`${id}-selected`}
+									className="break-words"
+								>
+									{value.name || value.workspace_id}
+								</Label>
+							</div>
+						)}
+					{getWorkspaces.data.map((agent) => {
+						const name =
+							agent.project_display_name || agent.project_name;
+						const permission =
+							agent.user_permission === 1
+								? "owner"
+								: agent.user_permission === 2
+									? "editor"
+									: "readOnly";
+						return (
+							<div
+								key={agent.project_id}
+								className="flex items-center gap-3 rounded-lg border p-3 hover:bg-accent"
+							>
+								<RadioGroupItem
+									id={`${id}-${agent.project_id}`}
+									value={agent.project_id}
+								/>
+								<AppCatalogAvatar
+									projectId={agent.project_id}
+									name={name}
+									className="size-10 shrink-0 rounded-md"
+								/>
+								<Label
+									htmlFor={`${id}-${agent.project_id}`}
+									className="min-w-0 flex-1 flex-col items-start gap-1"
+								>
+									<span className="break-words">{name}</span>
+									<Muted className="text-xs">
+										{t(`workspace:members.${permission}`)}
+									</Muted>
+									{agent.description && (
+										<Muted className="break-words text-sm">
+											{agent.description}
+										</Muted>
+									)}
+								</Label>
+								<Button asChild variant="ghost" size="icon-sm">
+									<a
+										href={`#/agent/${agent.project_id}`}
+										target="_blank"
+										rel="noopener noreferrer"
+										aria-label={`${t("agent.openAgentPage")} — ${name}`}
+									>
+										<SquareArrowOutUpRightIcon aria-hidden="true" />
+									</a>
+								</Button>
+							</div>
+						);
+					})}
+				</RadioGroup>
+				{getWorkspaces.isError ? (
+					<Alert variant="destructive" className="mt-3">
+						<AlertDescription>
+							{t("room:settings.agentLoadError")}
+						</AlertDescription>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={getWorkspaces.reset}
+						>
+							{t("room:studio.retry")}
+						</Button>
+					</Alert>
+				) : (
+					!getWorkspaces.isLoading &&
+					getWorkspaces.data.length === 0 && (
+						<Muted className="p-4">
+							{t("selector.noAgentsFound")}
+						</Muted>
+					)
+				)}
+				{getWorkspaces.isLoading && (
+					<div className="flex justify-center p-4">
+						<Spinner />
+					</div>
+				)}
+			</ScrollArea>
+		</div>
+	);
+}

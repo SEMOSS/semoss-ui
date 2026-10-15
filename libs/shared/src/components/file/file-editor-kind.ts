@@ -5,7 +5,8 @@ export type FileEditorKind =
 	| "image"
 	| "markdown"
 	| "notebook"
-	| "pdf";
+	| "pdf"
+	| "pptx";
 
 const IMAGE_EXTENSIONS = new Set([
 	"bmp",
@@ -17,14 +18,7 @@ const IMAGE_EXTENSIONS = new Set([
 	"webp",
 ]);
 
-const DOWNLOAD_ONLY_EXTENSIONS = new Set([
-	"doc",
-	"docx",
-	"ppt",
-	"pptx",
-	"xls",
-	"xlsx",
-]);
+const DOWNLOAD_ONLY_EXTENSIONS = new Set(["doc", "docx", "ppt", "xls", "xlsx"]);
 
 /**
  * Resolve the dedicated workbench panel kind for a file path.
@@ -47,6 +41,10 @@ export const getFileEditorKind = (path: string): FileEditorKind => {
 
 	if (extension === "pdf") {
 		return "pdf";
+	}
+
+	if (extension === "pptx") {
+		return "pptx";
 	}
 
 	if (extension === "md" || extension === "markdown") {

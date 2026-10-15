@@ -1,4 +1,5 @@
 import { Env, Insight } from "@semoss/sdk";
+import { getErrorMessage } from "@semoss/utility/error";
 import type {
 	GeneratedRecordingMetadata,
 	McpToolContext,
@@ -248,10 +249,10 @@ export async function generatePlaywrightRecordingMetadata(parameters: {
 	} catch (error) {
 		return {
 			success: false,
-			error:
-				error instanceof Error
-					? error.message
-					: "Unable to generate recording metadata",
+			error: getErrorMessage(
+				error,
+				"Unable to generate recording metadata",
+			),
 		};
 	}
 }

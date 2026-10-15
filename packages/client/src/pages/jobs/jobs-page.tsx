@@ -11,7 +11,7 @@ import {
 	Trash,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { runPixel, useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -26,8 +26,11 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useRootStore, useSettings } from "@/hooks";
+import { useSession, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { DeleteJobModal } from "./delete-job-modal";
 import type {
@@ -80,7 +83,7 @@ const formatNextRunIn = (iso: string | null | undefined): string | null => {
 };
 
 export function JobsPage() {
-	const { monolithStore } = useRootStore();
+	const sessionRunPixel = useSession((state) => state.runPixel);
 	const { adminMode } = useSettings();
 	const navigate = useNavigate();
 
@@ -174,8 +177,7 @@ export function JobsPage() {
 	const getJobs = () => {
 		setJobsLoading(true);
 		const pixel = "META|ListAllJobs()";
-		monolithStore
-			.runQuery<[Record<string, PixelReturnJob>]>(pixel)
+		sessionRunPixel<[Record<string, PixelReturnJob>]>(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 
@@ -232,8 +234,7 @@ export function JobsPage() {
 			pixel += `jobId=["${jobId[0]}"], `;
 			pixel += `jobGroup=["${jobGroup[0]}"]) `;
 		}
-		monolithStore
-			.runQuery(pixel)
+		sessionRunPixel(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType;
 				const output = response.pixelReturn[0].output as OutputType;
@@ -333,17 +334,16 @@ export function JobsPage() {
 		}
 		pixel += `limit=${rowsPerPage},offset=${page * rowsPerPage})`;
 
-		return monolithStore
-			.runQuery<
-				[
-					{
-						data: {
-							values: string[][];
-							headers: string[];
-						};
-					},
-				]
-			>(pixel)
+		return sessionRunPixel<
+			[
+				{
+					data: {
+						values: string[][];
+						headers: string[];
+					};
+				},
+			]
+		>(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 				if (type.indexOf("ERROR") > -1) {
@@ -514,8 +514,7 @@ export function JobsPage() {
 	const getStats = (window: "24h" | "7d" | "30d" = statsWindow) => {
 		setStatsLoading(true);
 		const pixel = `META|SchedulerStats(window=["${window}"])`;
-		monolithStore
-			.runQuery<[SchedulerStats]>(pixel)
+		sessionRunPixel<[SchedulerStats]>(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 				if (type.indexOf("ERROR") > -1) {
@@ -622,20 +621,35 @@ export function JobsPage() {
 							<TabsTrigger value="30d">30d</TabsTrigger>
 						</TabsList>
 					</Tabs>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-sm"
-						title="Refresh stats"
-						onClick={() => getStats(statsWindow)}
-						disabled={statsLoading}
-					>
-						<RefreshCw
-							className={`size-3.5 ${
-								statsLoading ? "animate-spin" : ""
-							}`}
-						/>
-					</Button>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<span
+								className="inline-flex"
+								tabIndex={statsLoading ? 0 : undefined}
+							>
+								<Button
+									aria-label={"Refresh stats"}
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									onClick={() => getStats(statsWindow)}
+									disabled={statsLoading}
+								>
+									<RefreshCw
+										className={`size-3.5 ${
+											statsLoading ? "animate-spin" : ""
+										}`}
+									/>
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{statsLoading ? "Refreshing…" : "Refresh stats"}
+						</TooltipContent>
+					</Tooltip>
 				</div>
 
 				<div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -866,22 +880,41 @@ export function JobsPage() {
 									</>
 								)}
 							</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								title="Refresh"
-								onClick={handleRefreshTable}
-								disabled={tableRefreshLoading}
-							>
-								<RefreshCw
-									className={`size-3.5 ${
-										tableRefreshLoading
-											? "animate-spin"
-											: ""
-									}`}
-								/>
-							</Button>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<span
+										className="inline-flex"
+										tabIndex={
+											tableRefreshLoading ? 0 : undefined
+										}
+									>
+										<Button
+											aria-label={"Refresh"}
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											onClick={handleRefreshTable}
+											disabled={tableRefreshLoading}
+										>
+											<RefreshCw
+												className={`size-3.5 ${
+													tableRefreshLoading
+														? "animate-spin"
+														: ""
+												}`}
+											/>
+										</Button>
+									</span>
+								</TooltipTrigger>
+								<TooltipContent
+									sideOffset={4}
+									className="max-w-xs break-words"
+								>
+									{tableRefreshLoading
+										? "Refreshing…"
+										: "Refresh"}
+								</TooltipContent>
+							</Tooltip>
 						</div>
 					</div>
 

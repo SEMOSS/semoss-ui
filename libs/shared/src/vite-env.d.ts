@@ -1,6 +1,6 @@
 // Type declarations for Vite-specific runtime features used in shared source
 // files. These are processed by Vite at build time but need TypeScript type
-// information to avoid errors when compiled via rollup/@rollup/plugin-typescript.
+// information so consuming packages compile the shared source without errors.
 
 // Extend ImportMeta to include Vite's glob import utility.
 interface ImportMeta {

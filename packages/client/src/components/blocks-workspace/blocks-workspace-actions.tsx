@@ -15,13 +15,13 @@ import {
 } from "@semoss/ui/next";
 import { ShareOverlay } from "@/components/ui";
 import { PreviewDialog } from "@/components/workspace";
-import { useProject, useRootStore, useWorkspace } from "@/hooks";
+import { useProject, useSession, useWorkspace } from "@/hooks";
 import { LLMSelectDialog } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
 	const { state } = useBlocks();
 
-	const { monolithStore } = useRootStore();
+	const sessionRunPixel = useSession((state) => state.runPixel);
 	const { workspace } = useWorkspace();
 	const { permission, project } = useProject();
 
@@ -113,7 +113,7 @@ export const BlocksWorkspaceActions = observer(() => {
 		});
 		try {
 			// save the json
-			const { errors } = await monolithStore.runQuery<[true]>(
+			const { errors } = await sessionRunPixel<[true]>(
 				`SaveAppBlocksJson(project=["${
 					project.project_id
 				}"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
@@ -147,9 +147,9 @@ export const BlocksWorkspaceActions = observer(() => {
 
 			// only get the json if the user can edit
 			if (permission === "OWNER" || permission === "EDIT") {
-				const { pixelReturn, errors } = await monolithStore.runQuery<
-					[true]
-				>(`GetAppBlocksJson ( project=['${project.project_id}']);`);
+				const { pixelReturn, errors } = await sessionRunPixel<[true]>(
+					`GetAppBlocksJson ( project=['${project.project_id}']);`,
+				);
 
 				if (errors.length > 0) {
 					throw new Error(errors.join(""));
@@ -195,9 +195,10 @@ export const BlocksWorkspaceActions = observer(() => {
 
 	return (
 		<div className="flex flex-row items-center gap-1">
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<Button
+						aria-label={"Modal Selection"}
 						variant="ghost"
 						size="icon-sm"
 						onClick={() => {
@@ -211,9 +212,10 @@ export const BlocksWorkspaceActions = observer(() => {
 				</TooltipTrigger>
 				<TooltipContent>Modal Selection</TooltipContent>
 			</Tooltip>
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<Button
+						aria-label={"Preview App"}
 						variant="ghost"
 						size="icon-sm"
 						onClick={() => {
@@ -225,9 +227,10 @@ export const BlocksWorkspaceActions = observer(() => {
 				</TooltipTrigger>
 				<TooltipContent>Preview App</TooltipContent>
 			</Tooltip>
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<Button
+						aria-label={"Share App"}
 						variant="ghost"
 						size="icon-sm"
 						onClick={() => {
@@ -239,9 +242,10 @@ export const BlocksWorkspaceActions = observer(() => {
 				</TooltipTrigger>
 				<TooltipContent>Share App</TooltipContent>
 			</Tooltip>
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<Button
+						aria-label={"Save App (ctrl/command + s)"}
 						variant="ghost"
 						size="icon-sm"
 						onClick={() => {
@@ -271,7 +275,7 @@ export const BlocksWorkspaceActions = observer(() => {
 				open={modelDialogOpen}
 				onOpenChange={(o) => !o && setModelDialogOpen(false)}
 			>
-				<DialogContent className="max-w-sm p-0">
+				<DialogContent showCloseButton={false} className="max-w-sm p-0">
 					<LLMSelectDialog
 						llmList={modelList}
 						selectedLLM={workspace.agentModelEngine || ""}
@@ -287,7 +291,10 @@ export const BlocksWorkspaceActions = observer(() => {
 				open={previewDialogOpen}
 				onOpenChange={(o) => !o && setPreviewDialogOpen(false)}
 			>
-				<DialogContent className="max-w-3xl p-0">
+				<DialogContent
+					aria-describedby={undefined}
+					className="max-w-3xl p-0"
+				>
 					{previewState ? (
 						<PreviewDialog
 							state={previewState}

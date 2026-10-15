@@ -109,7 +109,8 @@ function FormInput({
 	...inputProps
 }: FormInputProps) {
 	const { control } = useFormContext();
-	const id = React.useId();
+	const generatedId = React.useId();
+	const id = inputProps.id ?? generatedId;
 
 	return (
 		<FormField
@@ -122,13 +123,28 @@ function FormInput({
 						{...inputProps}
 						id={id}
 						aria-invalid={!!fieldState.error}
+						aria-describedby={
+							[
+								inputProps["aria-describedby"],
+								description ? `${id}-description` : undefined,
+								fieldState.error?.message
+									? `${id}-error`
+									: undefined,
+							]
+								.filter(Boolean)
+								.join(" ") || undefined
+						}
 						{...field}
 					/>
 					{description && (
-						<FieldDescription>{description}</FieldDescription>
+						<FieldDescription id={`${id}-description`}>
+							{description}
+						</FieldDescription>
 					)}
 					{fieldState.error?.message && (
-						<FieldError>{fieldState.error.message}</FieldError>
+						<FieldError id={`${id}-error`}>
+							{fieldState.error.message}
+						</FieldError>
 					)}
 				</Field>
 			)}
@@ -150,7 +166,8 @@ function FormTextarea({
 	...textareaProps
 }: FormTextareaProps) {
 	const { control } = useFormContext();
-	const id = React.useId();
+	const generatedId = React.useId();
+	const id = textareaProps.id ?? generatedId;
 
 	return (
 		<FormField
@@ -163,13 +180,28 @@ function FormTextarea({
 						{...textareaProps}
 						id={id}
 						aria-invalid={!!fieldState.error}
+						aria-describedby={
+							[
+								textareaProps["aria-describedby"],
+								description ? `${id}-description` : undefined,
+								fieldState.error?.message
+									? `${id}-error`
+									: undefined,
+							]
+								.filter(Boolean)
+								.join(" ") || undefined
+						}
 						{...field}
 					/>
 					{description && (
-						<FieldDescription>{description}</FieldDescription>
+						<FieldDescription id={`${id}-description`}>
+							{description}
+						</FieldDescription>
 					)}
 					{fieldState.error?.message && (
-						<FieldError>{fieldState.error.message}</FieldError>
+						<FieldError id={`${id}-error`}>
+							{fieldState.error.message}
+						</FieldError>
 					)}
 				</Field>
 			)}

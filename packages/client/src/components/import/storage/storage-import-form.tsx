@@ -27,7 +27,8 @@ import {
 	Separator,
 	toast,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { encodeTextToBase64 } from "@semoss/utility/encoding";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
@@ -64,7 +65,7 @@ export const StorageForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -89,9 +90,7 @@ export const StorageForm = ({
 			if (f.encode !== "base64") continue;
 			const raw = encoded[f.key];
 			if (typeof raw === "string" && raw.length > 0) {
-				encoded[f.key] = btoa(
-					String.fromCharCode(...new TextEncoder().encode(raw)),
-				);
+				encoded[f.key] = encodeTextToBase64(raw);
 			}
 		}
 		return encoded;
@@ -102,7 +101,7 @@ export const StorageForm = ({
 		const formData = encodeMarkedFields(rawFormData);
 		const pixel = `CreateStorageEngine(storage=["${formData.NAME}"],storageDetails=[${JSON.stringify(formData)}])`;
 
-		monolithStore.runQuery(pixel).then(async (response) => {
+		runPixel(pixel).then(async (response) => {
 			const pixelOutput = response.pixelReturn[0].output as {
 					engine_id?: string;
 					// engine_id is the current key; database_id is the legacy fallback
@@ -168,7 +167,7 @@ export const StorageForm = ({
 	const hasParameterizedValue = (str) => /<([^>]+)>/.test(str);
 
 	const executeWatchedFieldPixel = async (key, pixelStr, type) => {
-		const response = await monolithStore.runQuery(pixelStr);
+		const response = await runPixel(pixelStr);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -209,7 +208,7 @@ export const StorageForm = ({
 			userInput.trim(),
 		);
 
-		const response = await monolithStore.runQuery(pixelToExecute);
+		const response = await runPixel(pixelToExecute);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 

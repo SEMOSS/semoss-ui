@@ -1,10 +1,11 @@
-import { Outlet, useParams } from "react-router-dom";
+import { useCallback } from "react";
+import { Outlet, useParams } from "react-router";
 import { usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { EngineContext } from "@/contexts";
-import { useAPI, useRootStore } from "@/hooks";
+import { useAPI, useConfig } from "@/hooks";
 
 interface EngineLayoutProps {
 	/** Catalog information */
@@ -34,12 +35,12 @@ const getEngineOverviewMetaKeys = (
  */
 export const EngineLayout: React.FC<EngineLayoutProps> = ({ catalog }) => {
 	const { engineId } = useParams();
-	const { configStore } = useRootStore();
+	const databaseMetaKeys = useConfig(
+		(state) => state.config.databaseMetaKeys,
+	);
 
 	// Always request dedicated overview fields, including the catalog description.
-	const metaKeys = getEngineOverviewMetaKeys(
-		configStore.store.config.databaseMetaKeys,
-	);
+	const metaKeys = getEngineOverviewMetaKeys(databaseMetaKeys);
 
 	// get the metadata
 	const getEngineMetadata = usePixel<Engine>(
@@ -48,6 +49,16 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ catalog }) => {
 					[metaKeys],
 				)}); `
 			: "",
+	);
+
+	/**
+	 * Merge fields into the loaded engine without reloading it
+	 */
+	const update = useCallback(
+		(values: Partial<Engine>) => {
+			getEngineMetadata.update({ ...getEngineMetadata.data, ...values });
+		},
+		[getEngineMetadata.update, getEngineMetadata.data],
 	);
 
 	// get the user's role
@@ -86,6 +97,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ catalog }) => {
 				engine: getEngineMetadata.data,
 				permission: getUserEnginePermission.data,
 				refresh: getEngineMetadata.refresh,
+				update,
 			}}
 		>
 			<Outlet />

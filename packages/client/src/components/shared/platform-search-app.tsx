@@ -74,6 +74,7 @@ export const PlatformSearchApp = ({
 						}}
 					>
 						<AppCatalogAvatar
+							projectId={app.project_id}
 							name={appName || "App"}
 							className="size-8 shrink-0 rounded-md text-[11px]"
 						/>

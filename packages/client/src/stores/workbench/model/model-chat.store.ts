@@ -1,5 +1,6 @@
 import { createStore, type StoreApi } from "zustand";
 import { uploadInsight } from "@semoss/sdk/react";
+import { getErrorMessage as toErrorMessage } from "@semoss/utility/error";
 import type { BuiltinToolSelection, ModelBuiltinTools } from "@/api/engines";
 import { getModelBuiltinTools, getModelInputSupport } from "@/api/engines";
 import type {
@@ -168,16 +169,6 @@ export interface ModelChatStoreInterface {
 	/** Clear the transient error. */
 	dismissError: () => void;
 }
-
-/**
- * Extract a display message from a thrown value.
- *
- * @name toErrorMessage
- * @param error - Thrown value of any shape.
- * @return The Error's message, or the value coerced to a string.
- */
-const toErrorMessage = (error: unknown): string =>
-	error instanceof Error ? error.message : String(error);
 
 /** An empty stream accumulator. */
 const emptyStream = (): ModelChatStream => ({

@@ -16,8 +16,10 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
 import { createGuardrailEngine } from "@/api";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { EngineFormHeader } from "../shared/engine-form-header";
 
 const REQUIREMENT_VALUES = [
@@ -152,11 +154,7 @@ const policyMapSchema = z
 	.refine((value) => {
 		try {
 			const parsed = JSON.parse(value) as unknown;
-			if (
-				typeof parsed !== "object" ||
-				parsed === null ||
-				Array.isArray(parsed)
-			) {
+			if (!isRecord(parsed)) {
 				return false;
 			}
 
@@ -297,7 +295,7 @@ export const SqlQueryGuardrailForm = ({
 	icon,
 	onSubmit,
 }: SqlQueryGuardrailFormProps) => {
-	const { configStore } = useRootStore();
+	const insightID = useSession((state) => state.insightID);
 	const form = useForm<SqlQueryGuardrailFormValues>({
 		resolver: zodResolver(sqlQueryGuardrailSchema),
 		defaultValues: SQL_QUERY_GUARDRAIL_DEFAULTS,
@@ -309,7 +307,7 @@ export const SqlQueryGuardrailForm = ({
 	const handleSubmit = async (values: SqlQueryGuardrailFormValues) => {
 		try {
 			const engineId = await createGuardrailEngine(
-				configStore.store.insightID,
+				insightID,
 				values.MODEL_NAME,
 				toSqlQueryGuardrailDetails(values),
 			);
@@ -318,9 +316,10 @@ export const SqlQueryGuardrailForm = ({
 		} catch (error) {
 			console.error(error);
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to create the SQL query guardrail",
+				getErrorMessage(
+					error,
+					"Unable to create the SQL query guardrail",
+				),
 			);
 		}
 	};

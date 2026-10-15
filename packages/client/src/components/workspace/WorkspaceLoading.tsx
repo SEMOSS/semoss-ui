@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import type { JSX } from "react";
 import { LoadingScreen } from "@semoss/ui/next";
 import { useWorkspace } from "@/hooks";
 

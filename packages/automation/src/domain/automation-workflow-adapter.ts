@@ -1,0 +1,1517 @@
+import { isRecord } from "@semoss/utility/object";
+import type {
+	AutomationEdge,
+	AutomationNode,
+	AutomationNodeType,
+	JevDecisionConfig,
+	NodeConfig,
+} from "./automation.types";
+import { getAutomationNodeDefinition } from "./automation-node-catalog";
+import type {
+	AutomationBranchClause,
+	AutomationJevQuestion,
+	AutomationJevRoute,
+	AutomationJevRouteCondition,
+	AutomationJsonValue,
+	AutomationNodeDefinition,
+	AutomationNodeGroup,
+	AutomationWorkflowDocument,
+	AutomationWorkflowEdge,
+	AutomationWorkflowNode,
+	AutomationWorkflowNodeConfig,
+	AutomationWorkflowNodeType,
+	TriggerBinding,
+} from "./automation-workflow.types";
+
+export interface CanvasWorkflowDocument {
+	description: string;
+	triggerBindings: TriggerBinding[];
+	steps: AutomationNode[];
+	edges: AutomationEdge[];
+	nodeGroups?: AutomationNodeGroup[];
+}
+
+export type AutomationNodeSources = Record<string, string>;
+
+const MANUAL_TRIGGER: TriggerBinding = { id: "manual", type: "manual" };
+const PYTHON_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+// Drops unfinished "Add input" rows so a blank name never reaches the backend save validator.
+function sanitizeTriggerGlobals(value: unknown): AutomationJsonValue {
+	if (!Array.isArray(value)) return value as AutomationJsonValue;
+	return value.filter(
+		(entry) =>
+			entry !== null &&
+			typeof entry === "object" &&
+			typeof (entry as { name?: unknown }).name === "string" &&
+			(entry as { name: string }).name.trim() !== "",
+	) as AutomationJsonValue;
+}
+const PYTHON_KEYWORDS = new Set(
+	"False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield".split(
+		" ",
+	),
+);
+const RESERVED_OUTPUT_VARIABLES = new Set([
+	"date",
+	"triggered_at",
+	"run_id",
+	"_automation_room_id",
+]);
+
+/** Returns the user-facing validation error for a node output variable. */
+export function validateAutomationOutputVariable(value: string): string | null {
+	if (!PYTHON_IDENTIFIER_PATTERN.test(value) || PYTHON_KEYWORDS.has(value)) {
+		return "Use a valid Python variable name";
+	}
+	if (RESERVED_OUTPUT_VARIABLES.has(value)) {
+		return "This name is reserved by the automation runtime";
+	}
+	return null;
+}
+
+function stringValue(value: unknown): string {
+	return typeof value === "string" ? value : "";
+}
+
+function jsonObjectValue(value: unknown): string {
+	if (typeof value === "string") return value;
+	if (isRecord(value)) {
+		return JSON.stringify(value);
+	}
+	return "";
+}
+
+function jsonArrayValue(value: unknown): string {
+	if (typeof value === "string") return value;
+	return Array.isArray(value) ? JSON.stringify(value) : "";
+}
+
+function jsonValueText(value: unknown): string {
+	if (typeof value === "string") return value;
+	return value === undefined || value === null ? "" : JSON.stringify(value);
+}
+
+function jsonValueOrString(value: string): AutomationJsonValue {
+	const parsed = parsedJsonValue(value);
+	return parsed === undefined ? value : parsed;
+}
+
+function fallbackValue(value: string): AutomationJsonValue {
+	return value.trim() ? jsonValueOrString(value) : null;
+}
+
+function isAutomationJsonValue(value: unknown): value is AutomationJsonValue {
+	if (
+		value === null ||
+		typeof value === "boolean" ||
+		typeof value === "number" ||
+		typeof value === "string"
+	) {
+		return true;
+	}
+	if (Array.isArray(value)) return value.every(isAutomationJsonValue);
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		Object.values(value).every(isAutomationJsonValue)
+	);
+}
+
+function parsedJsonValue(value: string): AutomationJsonValue | undefined {
+	try {
+		const parsed: unknown = JSON.parse(value);
+		return isAutomationJsonValue(parsed) ? parsed : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function numberValue(value: unknown, fallback: number): number {
+	return typeof value === "number" && Number.isFinite(value)
+		? value
+		: fallback;
+}
+
+function branchClauses(value: unknown): AutomationBranchClause[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((clause) => {
+		if (!clause || typeof clause !== "object") return [];
+		const candidate = clause as Partial<AutomationBranchClause>;
+		return typeof candidate.id === "string" &&
+			typeof candidate.condition === "string"
+			? [{ id: candidate.id, condition: candidate.condition }]
+			: [];
+	});
+}
+
+function jevQuestions(value: unknown): AutomationJevQuestion[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap<AutomationJevQuestion>((question) => {
+		if (!isRecord(question)) return [];
+		const key = question.key;
+		const type = question.type;
+		const instructions = question.instructions;
+		if (
+			typeof key !== "string" ||
+			(type !== "choice" && type !== "score" && type !== "noul") ||
+			typeof instructions !== "string"
+		) {
+			return [];
+		}
+		if (type === "choice") {
+			const criteria = isRecord(question.criteria)
+				? Object.fromEntries(
+						Object.entries(question.criteria).filter(
+							(entry): entry is [string, string] =>
+								typeof entry[1] === "string",
+						),
+					)
+				: {};
+			return [{ key, type, instructions, criteria }];
+		}
+		if (type === "score") {
+			const criteria = Array.isArray(question.criteria)
+				? question.criteria.filter(
+						(level): level is string => typeof level === "string",
+					)
+				: [];
+			return [{ key, type, instructions, criteria }];
+		}
+		const criteria = isRecord(question.criteria)
+			? Object.fromEntries(
+					Object.entries(question.criteria).filter(
+						(entry): entry is [string, string] =>
+							(entry[0] === "true" || entry[0] === "false") &&
+							typeof entry[1] === "string",
+					),
+				)
+			: undefined;
+		return [
+			{
+				key,
+				type,
+				instructions,
+				...(criteria ? { criteria } : {}),
+			},
+		];
+	});
+}
+
+function jevRouteConditions(value: unknown): AutomationJevRouteCondition[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((condition) => {
+		if (!isRecord(condition)) return [];
+		const {
+			questionKey,
+			field,
+			operator,
+			value: expected,
+			option,
+		} = condition;
+		if (
+			typeof questionKey !== "string" ||
+			!["choice", "score", "noul", "confidence", "probability"].includes(
+				String(field),
+			) ||
+			![
+				"equals",
+				"notEquals",
+				"greaterThan",
+				"greaterThanOrEqual",
+				"lessThan",
+				"lessThanOrEqual",
+			].includes(String(operator)) ||
+			(typeof expected !== "string" && typeof expected !== "number")
+		) {
+			return [];
+		}
+		return [
+			{
+				questionKey,
+				field: field as AutomationJevRouteCondition["field"],
+				operator: operator as AutomationJevRouteCondition["operator"],
+				value: expected,
+				...(typeof option === "string" ? { option } : {}),
+			},
+		];
+	});
+}
+
+function jevRoutes(value: unknown): AutomationJevRoute[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((route) => {
+		if (!isRecord(route)) return [];
+		return typeof route.id === "string" &&
+			typeof route.description === "string"
+			? [
+					{
+						id: route.id,
+						description: route.description,
+						...(route.match === "any"
+							? { match: "any" as const }
+							: route.match === "all"
+								? { match: "all" as const }
+								: {}),
+						...(Array.isArray(route.conditions)
+							? {
+									conditions: jevRouteConditions(
+										route.conditions,
+									),
+								}
+							: {}),
+						...(typeof route.answer === "boolean"
+							? { answer: route.answer }
+							: {}),
+					},
+				]
+			: [];
+	});
+}
+
+function legacyJevQuestions(
+	config: AutomationWorkflowNodeConfig,
+): AutomationJevQuestion[] {
+	const type = config.questionType === "noul" ? "noul" : "choice";
+	const routes = jevRoutes(config.clauses);
+	return [
+		{
+			key: "route",
+			type,
+			instructions: stringValue(config.question),
+			...(type === "choice"
+				? {
+						criteria: Object.fromEntries(
+							routes.map((route) => [
+								route.id,
+								route.description,
+							]),
+						),
+					}
+				: {}),
+		},
+	];
+}
+
+function legacyJevRoutes(
+	config: AutomationWorkflowNodeConfig,
+): AutomationJevRoute[] {
+	const type = config.questionType === "noul" ? "noul" : "choice";
+	const threshold = numberValue(
+		config.confidenceThreshold,
+		type === "noul" ? 0.5 : 0,
+	);
+	return jevRoutes(config.clauses).map((route) => {
+		if (type === "choice") {
+			return {
+				id: route.id,
+				description: route.description,
+				match: "all",
+				conditions: [
+					{
+						questionKey: "route",
+						field: "choice",
+						operator: "equals",
+						value: route.id,
+					},
+					...(threshold > 0
+						? [
+								{
+									questionKey: "route",
+									field: "confidence" as const,
+									operator: "greaterThanOrEqual" as const,
+									value: threshold,
+								},
+							]
+						: []),
+				],
+			};
+		}
+		const isYes = route.answer === true;
+		return {
+			id: route.id,
+			description: route.description,
+			match: "all",
+			conditions: [
+				{
+					questionKey: "route",
+					field: "noul",
+					operator: isYes ? "greaterThanOrEqual" : "lessThan",
+					value: 0.5,
+				},
+				{
+					questionKey: "route",
+					field: "noul",
+					operator: isYes ? "greaterThanOrEqual" : "lessThanOrEqual",
+					value: isYes ? threshold : 1 - threshold,
+				},
+			],
+		};
+	});
+}
+
+function isRoutingWorkflowType(type: AutomationWorkflowNodeType): boolean {
+	return type === "control.if" || type === "control.jev";
+}
+
+/**
+ * Reports whether Python source binds a module-level `run`, the entry point the automation
+ * runtime calls. Only an unindented definition or assignment counts, matching the server's
+ * save-time check.
+ */
+export function definesRunEntryPoint(source: string): boolean {
+	return source
+		.split(/\r?\n/)
+		.some(
+			(line) =>
+				/^(?:async\s+)?def\s+run\s*\(/.test(line) ||
+				/^run\s*=/.test(line),
+		);
+}
+
+function canvasTypeForWorkflow(
+	type: AutomationWorkflowNodeType,
+): AutomationNodeType {
+	const category = getWorkflowNodeDefinition(type)?.category;
+	if (type === "trigger.start") return "trigger";
+	if (category === "database") return "database-engine";
+	if (category === "model") return "model-engine";
+	if (category === "storage") return "storage-engine";
+	if (category === "data") return "data";
+	if (category === "vector") return "vector-engine";
+	if (type === "function.execute") return "function-engine";
+	if (type === "control.wait") return "wait";
+	if (type === "control.loop") return "loop";
+	if (isRoutingWorkflowType(type)) return "branch";
+	return "app";
+}
+
+function defaultCanvasConfig(
+	type: AutomationWorkflowNodeType,
+	config: AutomationWorkflowNodeConfig,
+): NodeConfig {
+	const engineId = stringValue(config.engineId);
+	const category = getWorkflowNodeDefinition(type)?.category;
+	if (type === "trigger.start") return { mode: "manual" };
+	if (category === "database") {
+		return {
+			engineId,
+			operation: type === "database.query" ? "query" : "write",
+			expression: stringValue(config.query),
+			parameters: jsonArrayValue(config.parameters),
+			limit: numberValue(config.limit, 50),
+			commit: config.commit !== false,
+		};
+	}
+	if (category === "model") {
+		const operation =
+			type === "model.embeddings"
+				? "embeddings"
+				: type === "model.vision"
+					? "vision"
+					: type === "model.ner"
+						? "ner"
+						: "llm";
+		return {
+			engineId,
+			operation,
+			command: stringValue(config.prompt) || stringValue(config.text),
+			context: stringValue(config.systemPrompt),
+			paramValues: jsonObjectValue(config.paramValues),
+			values: stringValue(config.text),
+			image: stringValue(config.image),
+			urls: jsonArrayValue(config.urls),
+			prompt: stringValue(config.prompt),
+			entities: jsonArrayValue(config.entities),
+			maskEntities: jsonArrayValue(config.maskEntities),
+		};
+	}
+	if (category === "storage") {
+		const fileTypes = Array.isArray(config.extensions)
+			? config.extensions
+					.filter(
+						(value): value is string => typeof value === "string",
+					)
+					.join(", ")
+			: stringValue(config.extensions);
+		const operation =
+			type === "storage.read"
+				? "read-base64"
+				: type === "storage.download"
+					? "download"
+					: type === "storage.upload"
+						? "upload"
+						: type === "storage.delete"
+							? "delete"
+							: "list";
+		return {
+			engineId,
+			operation,
+			storagePath: stringValue(config.path),
+			fileTypes,
+			filePath: stringValue(config.destination),
+			metadata: jsonObjectValue(config.metadata),
+			convertToPdf: config.convertToPdf === true,
+			version: stringValue(config.version),
+			leaveFolderStructure: config.leaveFolderStructure === true,
+		};
+	}
+	if (category === "data") {
+		return {
+			source: jsonValueText(config.source),
+			path: stringValue(config.path),
+			format:
+				config.format === "json" || config.format === "xml"
+					? config.format
+					: "auto",
+			missingValue: jsonValueText(config.missingValue),
+			nullValue: jsonValueText(config.nullValue),
+		};
+	}
+	if (category === "vector") {
+		const operation =
+			type === "vector.search"
+				? "search"
+				: type === "vector.add"
+					? "add-file"
+					: type === "vector.delete"
+						? "delete"
+						: "list";
+		// The persisted `value` is shown in whichever field this operation's form renders.
+		const value = stringValue(config.value);
+		return {
+			engineId,
+			operation,
+			command: operation === "search" ? value : "",
+			limit: numberValue(config.limit, 5),
+			filters: jsonObjectValue(config.filters),
+			metaFilters: "",
+			filePath: operation === "add-file" ? value : "",
+			source: "",
+			space: stringValue(config.space),
+			filePaths: "",
+			paramValues: jsonObjectValue(config.paramValues),
+			fileNames: operation === "delete" ? value : "",
+		};
+	}
+	if (type === "function.execute") {
+		return {
+			engineId,
+			operation: "execute",
+			params: jsonObjectValue(config.arguments),
+		};
+	}
+	if (type === "agent.run") {
+		return {
+			workspaceId: stringValue(config.workspaceId),
+			engineId,
+			command: stringValue(config.command),
+		};
+	}
+	if (type === "control.wait") {
+		return { seconds: String(numberValue(config.durationSeconds, 5)) };
+	}
+	if (type === "control.loop") {
+		const mode =
+			config.mode === "repeat" || config.mode === "while"
+				? config.mode
+				: "forEach";
+		const maxIterations = numberValue(config.maxIterations, 100);
+		if (mode === "repeat") {
+			return {
+				mode,
+				count: numberValue(config.count, 1),
+				maxIterations,
+			};
+		}
+		if (mode === "while") {
+			return {
+				mode,
+				condition: stringValue(config.condition),
+				maxIterations,
+			};
+		}
+		const items = config.items;
+		return {
+			mode,
+			items:
+				typeof items === "string"
+					? items
+					: JSON.stringify(
+							Array.isArray(items) ? items : [],
+							null,
+							2,
+						),
+			batchSize: numberValue(config.batchSize, 1),
+			maxIterations,
+		};
+	}
+	if (type === "control.if") {
+		return { clauses: branchClauses(config.clauses) };
+	}
+	if (type === "control.jev") {
+		const questions = jevQuestions(config.questions);
+		const routes = jevRoutes(config.clauses);
+		const hasRuleRoutes = routes.some(
+			(route) => (route.conditions?.length ?? 0) > 0,
+		);
+		return {
+			engineId,
+			state: stringValue(config.state),
+			questions:
+				questions.length > 0 ? questions : legacyJevQuestions(config),
+			clauses: hasRuleRoutes ? routes : legacyJevRoutes(config),
+			paramValues: jsonObjectValue(config.paramValues),
+		};
+	}
+	return {
+		pixel: stringValue(config.pixel),
+		appId: stringValue(config.appId),
+	};
+}
+
+/**
+ * Projects both current and legacy persisted JEV configuration into the canvas contract.
+ * Kept public because local drafts created before the multi-question editor may bypass the
+ * workflow-document adapter when the editor restores them.
+ */
+export function normalizeJevDecisionConfig(
+	config: AutomationWorkflowNodeConfig,
+): JevDecisionConfig {
+	return defaultCanvasConfig("control.jev", config) as JevDecisionConfig;
+}
+
+function withPythonSource(
+	type: AutomationWorkflowNodeType,
+	config: AutomationWorkflowNodeConfig,
+): AutomationWorkflowNodeConfig {
+	if (type !== "developer.python") {
+		const { pythonSource: _pythonSource, ...typedConfig } = config;
+		return typedConfig;
+	}
+	const pythonSource = stringValue(config.pythonSource);
+	return pythonSource ? { ...config, pythonSource } : config;
+}
+
+function normalizeWorkflowConfig(
+	config: unknown,
+): AutomationWorkflowNodeConfig {
+	return isRecord(config) ? (config as AutomationWorkflowNodeConfig) : {};
+}
+
+function canvasTypeToWorkflow(
+	type: AutomationNodeType,
+): AutomationWorkflowNodeType {
+	switch (type) {
+		case "trigger":
+			return "trigger.start";
+		case "database-engine":
+			return "database.query";
+		case "storage-engine":
+			return "storage.list";
+		case "data":
+			return "data.extract";
+		case "vector-engine":
+			return "vector.search";
+		case "model-engine":
+			return "model.chat";
+		case "function-engine":
+			return "function.execute";
+		case "wait":
+			return "control.wait";
+		case "loop":
+			return "control.loop";
+		case "branch":
+			return "control.if";
+		case "app":
+			return "app.pixel";
+	}
+}
+
+function getConfigValue(
+	config: NodeConfig,
+	key: string,
+): string | number | boolean | undefined {
+	const value = (config as unknown as Record<string, unknown>)[key];
+	return typeof value === "string" ||
+		typeof value === "number" ||
+		typeof value === "boolean"
+		? value
+		: undefined;
+}
+
+function mergeCanvasConfig(
+	type: AutomationWorkflowNodeType,
+	config: NodeConfig,
+	workflowConfig: AutomationWorkflowNodeConfig,
+): AutomationWorkflowNodeConfig {
+	const next = { ...workflowConfig };
+	const category = getWorkflowNodeDefinition(type)?.category;
+	const engineId = getConfigValue(config, "engineId");
+	if (typeof engineId === "string") next.engineId = engineId;
+
+	if (category === "database") {
+		const expression = getConfigValue(config, "expression");
+		const parameters = getConfigValue(config, "parameters");
+		const limit = getConfigValue(config, "limit");
+		if (typeof expression === "string") next.query = expression;
+		if (typeof parameters === "string") {
+			next.parameters = parameters.trim()
+				? (parsedJsonValue(parameters) ?? parameters)
+				: [];
+		}
+		if (type === "database.query") {
+			if (typeof limit === "number") next.limit = limit;
+		}
+	}
+	if (category === "model") {
+		const command = getConfigValue(config, "command");
+		const context = getConfigValue(config, "context");
+		const values = getConfigValue(config, "values");
+		const image = getConfigValue(config, "image");
+		const urls = getConfigValue(config, "urls");
+		const paramValues = getConfigValue(config, "paramValues");
+		const entities = getConfigValue(config, "entities");
+		const maskEntities = getConfigValue(config, "maskEntities");
+		if (typeof command === "string") {
+			if (type === "model.embeddings") next.text = command;
+			else next.prompt = command;
+		}
+		if (typeof context === "string") next.systemPrompt = context;
+		if (type === "model.embeddings" && typeof values === "string") {
+			next.text = values;
+		}
+		if (typeof image === "string") next.image = image;
+		if (type === "model.vision" && typeof urls === "string") {
+			next.urls = urls.trim() ? (parsedJsonValue(urls) ?? urls) : [];
+		}
+		if (typeof paramValues === "string") {
+			if (paramValues.trim()) {
+				next.paramValues = parsedJsonValue(paramValues) ?? paramValues;
+			} else {
+				delete next.paramValues;
+			}
+		}
+		if (type === "model.ner" && typeof entities === "string") {
+			next.entities = parsedJsonValue(entities) ?? entities;
+		}
+		if (type === "model.ner" && typeof maskEntities === "string") {
+			next.maskEntities = maskEntities.trim()
+				? (parsedJsonValue(maskEntities) ?? maskEntities)
+				: [];
+		}
+	}
+	if (category === "storage") {
+		const storagePath = getConfigValue(config, "storagePath");
+		const fileTypes = getConfigValue(config, "fileTypes");
+		const filePath = getConfigValue(config, "filePath");
+		const metadata = getConfigValue(config, "metadata");
+		const convertToPdf = getConfigValue(config, "convertToPdf");
+		const version = getConfigValue(config, "version");
+		const leaveFolderStructure = getConfigValue(
+			config,
+			"leaveFolderStructure",
+		);
+		if (typeof storagePath === "string") next.path = storagePath;
+		if (typeof fileTypes === "string") {
+			const trimmedFileTypes = fileTypes.trim();
+			next.extensions = trimmedFileTypes.startsWith("${")
+				? trimmedFileTypes
+				: trimmedFileTypes
+						.split(",")
+						.map((value) => value.trim())
+						.filter(Boolean);
+		}
+		if (typeof filePath === "string") next.destination = filePath;
+		if (typeof metadata === "string") {
+			next.metadata = metadata.trim()
+				? (parsedJsonValue(metadata) ?? metadata)
+				: {};
+		}
+		if (typeof convertToPdf === "boolean") {
+			next.convertToPdf = convertToPdf;
+		}
+		if (typeof version === "string") next.version = version;
+		if (typeof leaveFolderStructure === "boolean") {
+			next.leaveFolderStructure = leaveFolderStructure;
+		}
+	}
+	if (category === "data") {
+		const source = getConfigValue(config, "source");
+		const path = getConfigValue(config, "path");
+		const format = getConfigValue(config, "format");
+		const missingValue = getConfigValue(config, "missingValue");
+		const nullValue = getConfigValue(config, "nullValue");
+		if (typeof source === "string") next.source = jsonValueOrString(source);
+		if (typeof path === "string") next.path = path;
+		if (format === "auto" || format === "json" || format === "xml") {
+			next.format = format;
+		}
+		if (typeof missingValue === "string") {
+			next.missingValue = fallbackValue(missingValue);
+		}
+		if (typeof nullValue === "string") {
+			next.nullValue = fallbackValue(nullValue);
+		}
+	}
+	if (category === "vector") {
+		const operation = getConfigValue(config, "operation");
+		const command = getConfigValue(config, "command");
+		const filePath = getConfigValue(config, "filePath");
+		const filePaths = getConfigValue(config, "filePaths");
+		const fileNames = getConfigValue(config, "fileNames");
+		const space = getConfigValue(config, "space");
+		const filters = getConfigValue(config, "filters");
+		const paramValues = getConfigValue(config, "paramValues");
+		const limit = getConfigValue(config, "limit");
+		// Every vector node carries one `value`: the search text, the comma-separated paths to
+		// add, or the comma-separated names to remove. The form asks for it under a different
+		// label per operation, so map whichever field that operation shows.
+		const value =
+			operation === "add-file"
+				? filePath
+				: operation === "add-csv"
+					? filePaths
+					: operation === "delete" || operation === "download"
+						? fileNames
+						: command;
+		if (typeof value === "string") next.value = value;
+		if (typeof space === "string") next.space = space;
+		if (typeof filters === "string") {
+			next.filters = filters.trim()
+				? (parsedJsonValue(filters) ?? filters)
+				: {};
+		}
+		if (typeof paramValues === "string") {
+			next.paramValues = paramValues.trim()
+				? (parsedJsonValue(paramValues) ?? paramValues)
+				: {};
+		}
+		if (typeof limit === "number") next.limit = limit;
+	}
+	if (type === "function.execute") {
+		const params = getConfigValue(config, "params");
+		if (typeof params === "string") {
+			next.arguments = parsedJsonValue(params) ?? params;
+		}
+	}
+	if (type === "agent.run") {
+		const workspaceId = getConfigValue(config, "workspaceId");
+		const command = getConfigValue(config, "command");
+		if (typeof workspaceId === "string") next.workspaceId = workspaceId;
+		if (typeof command === "string") next.command = command;
+		next.wait = true;
+	}
+	if (type === "app.pixel") {
+		const pixel = getConfigValue(config, "pixel");
+		const appId = getConfigValue(config, "appId");
+		if (typeof pixel === "string") next.pixel = pixel;
+		if (typeof appId === "string") next.appId = appId;
+	}
+	if (type === "control.wait") {
+		const seconds = getConfigValue(config, "seconds");
+		if (typeof seconds === "string" && seconds) {
+			const duration = Number(seconds);
+			if (Number.isFinite(duration)) next.durationSeconds = duration;
+		}
+	}
+	if (type === "control.loop") {
+		delete next.items;
+		delete next.batchSize;
+		delete next.count;
+		delete next.condition;
+		const mode = getConfigValue(config, "mode");
+		const maxIterations = getConfigValue(config, "maxIterations");
+		next.mode = mode === "repeat" || mode === "while" ? mode : "forEach";
+		if (typeof maxIterations === "number") {
+			next.maxIterations = maxIterations;
+		}
+		if (next.mode === "forEach") {
+			const items = getConfigValue(config, "items");
+			const batchSize = getConfigValue(config, "batchSize");
+			if (typeof items === "string") {
+				const trimmedItems = items.trim();
+				next.items = trimmedItems.startsWith("${")
+					? trimmedItems
+					: (parsedJsonValue(trimmedItems) ?? trimmedItems);
+			}
+			if (typeof batchSize === "number") next.batchSize = batchSize;
+		} else if (next.mode === "repeat") {
+			const count = getConfigValue(config, "count");
+			if (typeof count === "number") next.count = count;
+		} else {
+			const condition = getConfigValue(config, "condition");
+			if (typeof condition === "string") next.condition = condition;
+		}
+	}
+	if (type === "control.if") {
+		next.clauses = (
+			config as Extract<NodeConfig, { clauses: unknown }>
+		).clauses;
+	}
+	if (type === "control.jev") {
+		const state = getConfigValue(config, "state");
+		const paramValues = getConfigValue(config, "paramValues");
+		if (typeof state === "string") next.state = state;
+		if (typeof paramValues === "string") {
+			next.paramValues = paramValues.trim()
+				? (parsedJsonValue(paramValues) ?? paramValues)
+				: {};
+		}
+		const jevConfig = config as Extract<
+			NodeConfig,
+			{ questions: unknown; clauses: unknown }
+		>;
+		next.questions = jevConfig.questions;
+		next.clauses = jevConfig.clauses;
+		delete next.question;
+		delete next.questionType;
+		delete next.confidenceThreshold;
+	}
+	return next;
+}
+
+export function getWorkflowNodeDefinition(
+	type: AutomationWorkflowNodeType,
+): AutomationNodeDefinition | undefined {
+	return getAutomationNodeDefinition(type);
+}
+
+export function createCanvasWorkflowNode(
+	type: AutomationWorkflowNodeType,
+	index: number,
+): AutomationNode {
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) throw new Error(`Unknown automation node type: ${type}`);
+	const workflowConfig = withPythonSource(
+		type,
+		structuredClone(definition.defaultConfig),
+	);
+	return {
+		id: `${type.replace(".", "-")}-${crypto.randomUUID()}`,
+		type: canvasTypeForWorkflow(type),
+		label: definition.label,
+		position: { x: 0, y: index * 160 },
+		outputVar: `${type.replace(/\./g, "_")}_${index + 1}`,
+		config: defaultCanvasConfig(type, workflowConfig),
+		workflowType: type,
+		workflowConfig,
+		workflowCodeMode: definition.defaultCodeMode,
+		...(type === "control.loop" ? { body: { nodes: [], edges: [] } } : {}),
+	};
+}
+
+function canvasNodeFromWorkflow(
+	node: AutomationWorkflowNode,
+	nodeSources: AutomationNodeSources,
+): AutomationNode {
+	const persistedConfig = withPythonSource(
+		node.type,
+		structuredClone(normalizeWorkflowConfig(node.config)),
+	);
+	const workflowConfig =
+		node.type !== "developer.python" ||
+		typeof nodeSources[node.id] !== "string"
+			? persistedConfig
+			: { ...persistedConfig, pythonSource: nodeSources[node.id] };
+	return {
+		id: node.id,
+		type: canvasTypeForWorkflow(node.type),
+		label: node.label,
+		position: node.position,
+		outputVar:
+			node.outputVar ??
+			`${node.type.replace(/\./g, "_")}_${node.id.slice(-6)}`,
+		config: defaultCanvasConfig(node.type, workflowConfig),
+		workflowType: node.type,
+		workflowConfig,
+		workflowCodeMode: node.codeMode,
+		...(node.body
+			? {
+					body: {
+						nodes: node.body.nodes.map((bodyNode) =>
+							canvasNodeFromWorkflow(bodyNode, nodeSources),
+						),
+						edges: node.body.edges.map(workflowEdgeToCanvasEdge),
+					},
+				}
+			: {}),
+	};
+}
+
+function workflowEdgeToCanvasEdge(
+	edge: AutomationWorkflowEdge,
+): AutomationEdge {
+	return {
+		id: edge.id,
+		source: edge.source,
+		target: edge.target,
+		sourceHandle:
+			edge.sourcePort === "out"
+				? `out-${edge.source}`
+				: edge.sourcePort.startsWith("case:")
+					? `case-${edge.source}-${edge.sourcePort.slice(5)}`
+					: edge.sourcePort === "else"
+						? `else-${edge.source}`
+						: edge.sourcePort,
+		targetHandle:
+			edge.targetPort === "in" ? `in-${edge.target}` : edge.targetPort,
+		kind: edge.kind,
+		...(edge.kind === "data" ? { dataType: edge.dataType } : {}),
+	};
+}
+
+export function createInitialCanvasWorkflowDocument(): CanvasWorkflowDocument {
+	const trigger = createCanvasWorkflowNode("trigger.start", 0);
+	return {
+		description: "",
+		triggerBindings: [MANUAL_TRIGGER],
+		steps: [trigger],
+		edges: [],
+		nodeGroups: [],
+	};
+}
+
+function normalizeNodeGroups(
+	value: unknown,
+	availableNodeIds: Set<string>,
+): AutomationNodeGroup[] {
+	if (!Array.isArray(value)) return [];
+	const assignedNodeIds = new Set<string>();
+	return value.flatMap((candidate) => {
+		if (
+			!isRecord(candidate) ||
+			typeof candidate.id !== "string" ||
+			typeof candidate.name !== "string" ||
+			!Array.isArray(candidate.nodeIds)
+		) {
+			return [];
+		}
+		const groupNodeIds = new Set<string>();
+		const nodeIds = candidate.nodeIds.filter((nodeId): nodeId is string => {
+			if (
+				typeof nodeId !== "string" ||
+				!availableNodeIds.has(nodeId) ||
+				assignedNodeIds.has(nodeId) ||
+				groupNodeIds.has(nodeId)
+			) {
+				return false;
+			}
+			groupNodeIds.add(nodeId);
+			return true;
+		});
+		if (nodeIds.length === 0) return [];
+		for (const nodeId of nodeIds) assignedNodeIds.add(nodeId);
+		return [
+			{
+				id: candidate.id,
+				name: candidate.name,
+				nodeIds,
+				...(typeof candidate.description === "string"
+					? { description: candidate.description }
+					: {}),
+			},
+		];
+	});
+}
+
+export function canvasDocumentFromWorkflow(
+	document: AutomationWorkflowDocument,
+	nodeSources: AutomationNodeSources = {},
+): CanvasWorkflowDocument {
+	const steps = document.graph.nodes.map((node) =>
+		canvasNodeFromWorkflow(node, nodeSources),
+	);
+	if (!steps.some((node) => node.workflowType === "trigger.start")) {
+		steps.unshift(createCanvasWorkflowNode("trigger.start", 0));
+	}
+	return {
+		description: document.description ?? "",
+		triggerBindings:
+			document.triggerBindings.length > 0
+				? document.triggerBindings
+				: [MANUAL_TRIGGER],
+		steps,
+		edges: document.graph.edges.map(workflowEdgeToCanvasEdge),
+		nodeGroups: normalizeNodeGroups(
+			document.nodeGroups,
+			new Set(steps.map((step) => step.id)),
+		),
+	};
+}
+
+export function getCanvasNodeSources(
+	steps: AutomationNode[],
+): AutomationNodeSources {
+	return Object.fromEntries(
+		steps.flatMap((step) => {
+			const bodySources = step.body
+				? Object.entries(getCanvasNodeSources(step.body.nodes))
+				: [];
+			const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
+			if (type !== "developer.python") {
+				return bodySources;
+			}
+			const source = step.workflowConfig?.pythonSource;
+			if (typeof source !== "string" || source.trim() === "") {
+				return bodySources;
+			}
+			return [[step.id, source], ...bodySources];
+		}),
+	);
+}
+
+function canvasNodeToWorkflow(step: AutomationNode): AutomationWorkflowNode {
+	const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) throw new Error(`Unknown automation node type: ${type}`);
+	const config = mergeCanvasConfig(
+		type,
+		step.config,
+		step.workflowConfig ?? structuredClone(definition.defaultConfig),
+	);
+	// Explicit Python is persisted as its own file under automation-nodes/.
+	const persistedConfig = { ...config };
+	delete persistedConfig.pythonSource;
+	if (type === "trigger.start") {
+		persistedConfig.globals = sanitizeTriggerGlobals(
+			persistedConfig.globals,
+		);
+	}
+	return {
+		id: step.id,
+		type,
+		label: step.label || definition.label,
+		...(type === "trigger.start" || isRoutingWorkflowType(type)
+			? {}
+			: { outputVar: step.outputVar }),
+		position: step.position,
+		config: persistedConfig,
+		codeMode: type === "developer.python" ? "custom" : "generated",
+		...(step.body
+			? {
+					body: canvasGraphToWorkflow(
+						step.body.nodes,
+						step.body.edges,
+					),
+				}
+			: {}),
+	};
+}
+
+function canvasEdgeToWorkflow(edge: AutomationEdge): AutomationWorkflowEdge {
+	return edge.kind === "data"
+		? {
+				id: edge.id,
+				kind: "data",
+				dataType: edge.dataType ?? "unknown",
+				source: edge.source,
+				sourcePort: edge.sourceHandle?.startsWith("out-")
+					? "out"
+					: (edge.sourceHandle ?? "result"),
+				target: edge.target,
+				targetPort: edge.targetHandle?.startsWith("in-")
+					? "in"
+					: (edge.targetHandle ?? "in"),
+			}
+		: {
+				id: edge.id,
+				kind: "control",
+				source: edge.source,
+				sourcePort: edge.sourceHandle?.startsWith("out-")
+					? "out"
+					: edge.sourceHandle?.startsWith("case-")
+						? `case:${edge.sourceHandle.slice(
+								`case-${edge.source}-`.length,
+							)}`
+						: edge.sourceHandle?.startsWith("else-")
+							? "else"
+							: (edge.sourceHandle ?? "out"),
+				target: edge.target,
+				targetPort: edge.targetHandle?.startsWith("in-")
+					? "in"
+					: (edge.targetHandle ?? "in"),
+			};
+}
+
+function canvasGraphToWorkflow(
+	steps: AutomationNode[],
+	edges: AutomationEdge[],
+): AutomationWorkflowDocument["graph"] {
+	const nodes = steps.map(canvasNodeToWorkflow);
+	const nodeIds = new Set(nodes.map((node) => node.id));
+	const graphEdges: AutomationWorkflowEdge[] = edges
+		.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+		.map(canvasEdgeToWorkflow);
+	return { nodes, edges: graphEdges };
+}
+
+export function canvasDocumentToWorkflow({
+	description,
+	triggerBindings,
+	steps,
+	edges,
+	nodeGroups,
+}: CanvasWorkflowDocument): AutomationWorkflowDocument {
+	return {
+		formatVersion: 2,
+		...(description.trim() ? { description: description.trim() } : {}),
+		triggerBindings:
+			triggerBindings.length > 0 ? triggerBindings : [MANUAL_TRIGGER],
+		graph: canvasGraphToWorkflow(steps, edges),
+		...(nodeGroups?.length ? { nodeGroups } : {}),
+	};
+}
+
+export function validateCanvasWorkflowNode(
+	node: AutomationNode,
+	allNodes: AutomationNode[] = [node],
+): string[] {
+	const type = node.workflowType ?? canvasTypeToWorkflow(node.type);
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) return ["This node type is not supported"];
+	const config = mergeCanvasConfig(
+		type,
+		node.config,
+		node.workflowConfig ?? definition.defaultConfig,
+	);
+	const errors = Object.entries(definition.configSchema).flatMap(
+		([key, schema]) => {
+			const value = config[key];
+			const missing =
+				value === undefined ||
+				(typeof value === "string" && value.trim() === "");
+			if (schema.required && missing) {
+				return [`${schema.label} is required`];
+			}
+			if (
+				!missing &&
+				schema.minimum !== undefined &&
+				(typeof value !== "number" ||
+					!Number.isFinite(value) ||
+					value < schema.minimum)
+			) {
+				return [`${schema.label} must be at least ${schema.minimum}`];
+			}
+			if (
+				!missing &&
+				schema.maximum !== undefined &&
+				(typeof value !== "number" ||
+					!Number.isFinite(value) ||
+					value > schema.maximum)
+			) {
+				return [`${schema.label} must be at most ${schema.maximum}`];
+			}
+			return [];
+		},
+	);
+	if (type !== "trigger.start" && !isRoutingWorkflowType(type)) {
+		const outputVariableError = validateAutomationOutputVariable(
+			node.outputVar,
+		);
+		if (outputVariableError) {
+			errors.push(outputVariableError);
+		} else if (
+			allNodes.some(
+				(candidate) =>
+					candidate.id !== node.id &&
+					candidate.outputVar === node.outputVar,
+			)
+		) {
+			errors.push("Output variable must be unique");
+		}
+	}
+	if (type === "function.execute" && typeof config.arguments === "string") {
+		try {
+			JSON.parse(config.arguments);
+		} catch {
+			errors.push("JSON arguments must be valid JSON");
+		}
+	}
+	if (type === "model.vision") {
+		const image = stringValue(config.image).trim();
+		const urls = config.urls;
+		const hasUrls =
+			(Array.isArray(urls) && urls.length > 0) ||
+			(typeof urls === "string" && urls.trim() !== "");
+		if (!image && !hasUrls) {
+			errors.push("A media path or media URL is required");
+		}
+	}
+	if (type === "developer.python") {
+		const source = stringValue(config.pythonSource);
+		if (source.trim() !== "" && !definesRunEntryPoint(source)) {
+			errors.push("a top-level run(scope) function");
+		}
+	}
+	if (type === "control.if") {
+		const clauses = branchClauses(config.clauses);
+		if (clauses.length === 0) {
+			errors.push("A condition is required");
+		} else if (clauses.some((clause) => clause.condition.trim() === "")) {
+			errors.push("Each condition is required");
+		}
+	}
+	if (type === "control.jev") {
+		const questions = jevQuestions(config.questions);
+		const routes = jevRoutes(config.clauses);
+		const questionKeys = new Set<string>();
+		const questionsByKey = new Map<string, AutomationJevQuestion>();
+		if (questions.length === 0) {
+			errors.push("At least one Jev question is required");
+		}
+		for (const question of questions) {
+			if (!PYTHON_IDENTIFIER_PATTERN.test(question.key)) {
+				errors.push(
+					"Each Jev response key must start with a letter or underscore and contain only letters, numbers, and underscores",
+				);
+			}
+			if (questionKeys.has(question.key)) {
+				errors.push("Jev response keys must be unique");
+			}
+			questionKeys.add(question.key);
+			questionsByKey.set(question.key, question);
+			if (!question.instructions.trim()) {
+				errors.push(`Question "${question.key}" needs instructions`);
+			}
+			if (
+				question.type === "choice" &&
+				(!question.criteria ||
+					Array.isArray(question.criteria) ||
+					Object.keys(question.criteria).length === 0)
+			) {
+				errors.push(
+					`Question "${question.key}" needs at least one choice`,
+				);
+			} else if (
+				question.type === "choice" &&
+				question.criteria &&
+				!Array.isArray(question.criteria) &&
+				Object.entries(question.criteria).some(
+					([key, description]) =>
+						key.trim() === "" || description.trim() === "",
+				)
+			) {
+				errors.push(
+					`Question "${question.key}" needs a key and description for every choice`,
+				);
+			}
+			if (
+				question.type === "score" &&
+				(!Array.isArray(question.criteria) ||
+					question.criteria.length < 2)
+			) {
+				errors.push(
+					`Question "${question.key}" needs at least two rubric levels`,
+				);
+			} else if (
+				question.type === "score" &&
+				Array.isArray(question.criteria) &&
+				question.criteria.some((level) => level.trim() === "")
+			) {
+				errors.push(
+					`Question "${question.key}" needs a description for every rubric level`,
+				);
+			}
+			if (
+				question.type === "noul" &&
+				(!question.criteria ||
+					Array.isArray(question.criteria) ||
+					Object.keys(question.criteria).length !== 2 ||
+					!("true" in question.criteria) ||
+					!("false" in question.criteria) ||
+					question.criteria.true.trim() === "" ||
+					question.criteria.false.trim() === "")
+			) {
+				errors.push(
+					`Question "${question.key}" needs descriptions for Yes and No`,
+				);
+			}
+		}
+		if (routes.length === 0) {
+			errors.push("At least one route is required");
+		} else if (routes.some((route) => route.description.trim() === "")) {
+			errors.push("Each route description is required");
+		}
+		for (const route of routes) {
+			if (!route.conditions?.length) {
+				errors.push(
+					`Route "${route.description || route.id}" needs a rule`,
+				);
+				continue;
+			}
+			for (const condition of route.conditions) {
+				const question = questionsByKey.get(condition.questionKey);
+				if (!question) {
+					errors.push(
+						`Route "${route.description || route.id}" references an unknown question`,
+					);
+					continue;
+				}
+				const fields =
+					question.type === "choice"
+						? ["choice", "confidence", "probability"]
+						: question.type === "score"
+							? ["score", "confidence", "probability"]
+							: ["noul"];
+				if (!fields.includes(condition.field)) {
+					errors.push(
+						`Route "${route.description || route.id}" uses an answer measure that does not match question "${question.key}"`,
+					);
+				}
+				if (
+					condition.field === "choice" &&
+					(question.type !== "choice" ||
+						!question.criteria ||
+						Array.isArray(question.criteria) ||
+						!(String(condition.value) in question.criteria))
+				) {
+					errors.push(
+						`Route "${route.description || route.id}" must use a configured choice`,
+					);
+				}
+				if (condition.field === "probability") {
+					const validOptions =
+						question.type === "choice" &&
+						question.criteria &&
+						!Array.isArray(question.criteria)
+							? Object.keys(question.criteria)
+							: question.type === "score" &&
+									Array.isArray(question.criteria)
+								? question.criteria.map((_, index) =>
+										String(index),
+									)
+								: [];
+					if (
+						!condition.option ||
+						!validOptions.includes(condition.option)
+					) {
+						errors.push(
+							`Route "${route.description || route.id}" must use a configured probability option`,
+						);
+					}
+				}
+				if (
+					typeof condition.value === "number" &&
+					(condition.value < 0 || condition.value > 1)
+				) {
+					errors.push("Jev thresholds must be from 0 through 1");
+				}
+			}
+		}
+	}
+	if (type === "control.loop") {
+		const maxIterations = config.maxIterations;
+		if (config.mode === "forEach") {
+			const items = config.items;
+			const validReference =
+				typeof items === "string" &&
+				/^\$\{[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*|\.[0-9]+)*}$/.test(
+					items.trim(),
+				);
+			let validArray = Array.isArray(items);
+			if (!validArray && typeof items === "string" && !validReference) {
+				try {
+					validArray = Array.isArray(JSON.parse(items));
+				} catch {
+					validArray = false;
+				}
+			}
+			if (!validReference && !validArray) {
+				errors.push(
+					"Items must be a JSON array or an exact variable reference",
+				);
+			}
+		} else if (config.mode === "repeat") {
+			if (
+				typeof config.count !== "number" ||
+				!Number.isInteger(config.count) ||
+				config.count < 1 ||
+				typeof maxIterations !== "number" ||
+				config.count > maxIterations
+			) {
+				errors.push(
+					"Number of times must be a whole number no greater than the safety limit",
+				);
+			}
+		} else if (config.mode === "while") {
+			if (
+				typeof config.condition !== "string" ||
+				!config.condition.trim()
+			) {
+				errors.push("Continue while condition is required");
+			}
+		} else {
+			errors.push("Choose how the loop should repeat");
+		}
+		if (
+			typeof maxIterations !== "number" ||
+			!Number.isInteger(maxIterations) ||
+			maxIterations < 1 ||
+			maxIterations > 10_000
+		) {
+			errors.push(
+				"Safety limit must be a whole number from 1 through 10000",
+			);
+		}
+		if (!node.body || node.body.nodes.length === 0) {
+			errors.push("Add at least one step inside the loop");
+		} else {
+			const bodyValidationNodes = [...allNodes, ...node.body.nodes];
+			for (const bodyNode of node.body.nodes) {
+				const bodyErrors = [
+					...validateCanvasWorkflowNode(
+						bodyNode,
+						bodyValidationNodes,
+					),
+					...validateCanvasWorkflowConnections(
+						bodyNode,
+						node.body.edges,
+					),
+				];
+				errors.push(
+					...bodyErrors.map(
+						(error) => `Inside "${bodyNode.label}": ${error}`,
+					),
+				);
+			}
+		}
+	}
+	return errors;
+}
+
+/** Validates the control edges required before a routing node can execute. */
+export function validateCanvasWorkflowConnections(
+	node: AutomationNode,
+	edges: AutomationEdge[],
+): string[] {
+	const type = node.workflowType ?? canvasTypeToWorkflow(node.type);
+	if (!isRoutingWorkflowType(type)) return [];
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) return [];
+	const config = mergeCanvasConfig(
+		type,
+		node.config,
+		node.workflowConfig ?? definition.defaultConfig,
+	);
+	const clauses =
+		type === "control.jev"
+			? jevRoutes(config.clauses)
+			: branchClauses(config.clauses);
+	const connectedHandles = new Set(
+		edges
+			.filter((edge) => edge.source === node.id)
+			.map((edge) => edge.sourceHandle),
+	);
+	const hasEveryRoute = clauses.every((clause) =>
+		connectedHandles.has(`case-${node.id}-${clause.id}`),
+	);
+	const hasFallback = connectedHandles.has(`else-${node.id}`);
+	return hasEveryRoute && hasFallback
+		? []
+		: [
+				type === "control.jev"
+					? "Every route and the fallback path must be connected"
+					: "Every condition and the Else path must be connected",
+			];
+}

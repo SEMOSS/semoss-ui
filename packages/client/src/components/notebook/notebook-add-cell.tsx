@@ -10,7 +10,7 @@ import {
 	X,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { type JSX, useMemo, useState } from "react";
 import {
 	ActionMessages,
 	type CellStateConfig,
@@ -33,6 +33,9 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 	Input,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 
 interface AddCellOption {
@@ -117,11 +120,19 @@ const AddCellOptions: Record<string, AddCellOption> = {
 };
 
 export const NotebookAddCell = observer(
-	(props: { query: NotebookState; previousCellId?: string }): JSX.Element => {
+	(props: {
+		query: NotebookState;
+		previousCellId?: string;
+		/**
+		 * Skip the hover reveal. For an empty notebook, where this is the only
+		 * thing rendered and there is no cell to hover over to find it.
+		 */
+		alwaysVisible?: boolean;
+	}): JSX.Element => {
 		const [selectedAddCell, setSelectedAddCell] = useState<string>("");
 		const [isDataImportModalOpen, setIsDataImportModalOpen] =
 			useState<boolean>(false);
-		const { query, previousCellId = "" } = props;
+		const { query, previousCellId = "", alwaysVisible = false } = props;
 		const { state, notebook } = useBlocks();
 		const [searchQuery, setSearchQuery] = useState("");
 
@@ -251,7 +262,7 @@ export const NotebookAddCell = observer(
 
 					{/* Hover-reveal button bar centered over the divider */}
 					<div
-						className={`absolute inset-0 flex items-center justify-center transition-opacity ${selectedAddCell ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+						className={`absolute inset-0 flex items-center justify-center transition-opacity ${selectedAddCell || alwaysVisible ? "opacity-100" : "group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:hover)]:opacity-0"}`}
 					>
 						<div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-2.5 py-0.5 shadow-sm">
 							{AddCellOptions &&
@@ -262,25 +273,58 @@ export const NotebookAddCell = observer(
 										if (!value.options) {
 											// Simple button — no dropdown
 											return (
-												<Button
+												<Tooltip
 													key={`${query.id}-${previousCellId}-${value.display}`}
-													title={value.display}
-													variant="ghost"
-													size="sm"
-													disabled={
-														query.isLoading ||
-														value.disabled
+													disableHoverableContent={
+														false
 													}
-													className="h-7 w-7 p-0 text-muted-foreground"
-													onClick={() => {
-														appendCell(
-															value.defaultCellType,
-														);
-														setSelectedAddCell(key);
-													}}
 												>
-													{value.icon}
-												</Button>
+													<TooltipTrigger asChild>
+														<span
+															className="inline-flex"
+															tabIndex={
+																query.isLoading ||
+																value.disabled
+																	? 0
+																	: undefined
+															}
+														>
+															<Button
+																aria-label={
+																	value.display
+																}
+																variant="ghost"
+																size="sm"
+																disabled={
+																	query.isLoading ||
+																	value.disabled
+																}
+																className="h-7 w-7 p-0 text-muted-foreground"
+																onClick={() => {
+																	appendCell(
+																		value.defaultCellType,
+																	);
+																	setSelectedAddCell(
+																		key,
+																	);
+																}}
+															>
+																{value.icon}
+															</Button>
+														</span>
+													</TooltipTrigger>
+													<TooltipContent
+														sideOffset={4}
+														className="max-w-xs break-words"
+													>
+														{query.isLoading ||
+														value.disabled
+															? query.isLoading
+																? "Wait for the notebook to finish running"
+																: "This cell type is not available in this environment"
+															: value.display}
+													</TooltipContent>
+												</Tooltip>
 											);
 										}
 
@@ -294,26 +338,59 @@ export const NotebookAddCell = observer(
 													);
 												}}
 											>
-												<DropdownMenuTrigger asChild>
-													<Button
-														title={value.display}
-														variant="ghost"
-														size="sm"
-														disabled={
-															query.isLoading ||
-															value.disabled
-														}
-														className="h-7 w-7 p-0 text-muted-foreground"
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
+													<TooltipTrigger asChild>
+														<span
+															className="inline-flex"
+															tabIndex={
+																query.isLoading ||
+																value.disabled
+																	? 0
+																	: undefined
+															}
+														>
+															<DropdownMenuTrigger
+																asChild
+															>
+																<Button
+																	aria-label={
+																		value.display
+																	}
+																	variant="ghost"
+																	size="sm"
+																	disabled={
+																		query.isLoading ||
+																		value.disabled
+																	}
+																	className="h-7 w-7 p-0 text-muted-foreground"
+																>
+																	{value.icon}
+																	{selectedAddCell ===
+																	key ? (
+																		<ChevronUp className="-ml-1 size-2.5" />
+																	) : (
+																		<ChevronDown className="-ml-1 size-2.5" />
+																	)}
+																</Button>
+															</DropdownMenuTrigger>
+														</span>
+													</TooltipTrigger>
+													<TooltipContent
+														sideOffset={4}
+														className="max-w-xs break-words"
 													>
-														{value.icon}
-														{selectedAddCell ===
-														key ? (
-															<ChevronUp className="-ml-1 size-2.5" />
-														) : (
-															<ChevronDown className="-ml-1 size-2.5" />
-														)}
-													</Button>
-												</DropdownMenuTrigger>
+														{query.isLoading ||
+														value.disabled
+															? query.isLoading
+																? "Wait for the notebook to finish running"
+																: "This cell type is not available in this environment"
+															: value.display}
+													</TooltipContent>
+												</Tooltip>
 												<DropdownMenuContent align="start">
 													{key ===
 														"transformation" && (

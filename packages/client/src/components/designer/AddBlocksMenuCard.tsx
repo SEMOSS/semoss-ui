@@ -9,7 +9,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useDesigner, useRootStore } from "@/hooks";
+import { useDesigner, useSession } from "@/hooks";
 import type {
 	BlockLocalStorageData,
 	DesignerMenuItem,
@@ -37,7 +37,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	const { item, isCommunity, handleOnTrashClick } = props;
 	const { state } = useBlocks();
 	const { designer } = useDesigner();
-	const { configStore } = useRootStore();
+	const isAdmin = useSession((state) => state.user.admin);
 
 	const [_imageSrc, _setImageSrc] = useState(null);
 
@@ -226,10 +226,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 				{item.name}
 				{item.recentChanges && (
 					<TooltipProvider>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<span className="inline-flex items-center">
-									<Info className="size-4 text-blue-500" />
+									<Info className="size-4 text-primary" />
 								</span>
 							</TooltipTrigger>
 							<TooltipContent>
@@ -240,10 +240,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 				)}
 				{item.isBeta && (
 					<TooltipProvider>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<span className="inline-flex items-center">
-									<AlertTriangle className="size-4 text-amber-500" />
+									<AlertTriangle className="size-4 text-warning" />
 								</span>
 							</TooltipTrigger>
 							<TooltipContent>
@@ -260,7 +260,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 				onMouseLeave={() => setHovered(false)}
 				onMouseDown={handleMouseDown}
 			>
-				{hovered && isCommunity && configStore.store.user.admin && (
+				{hovered && isCommunity && isAdmin && (
 					<div
 						className="-right-6 absolute top-2.5 z-[1000] flex flex-col gap-1 rounded-lg border border-border bg-popover p-2"
 						style={{
@@ -291,7 +291,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 					}}
 				>
 					<TooltipProvider>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<div>
 									<BlockCardContent

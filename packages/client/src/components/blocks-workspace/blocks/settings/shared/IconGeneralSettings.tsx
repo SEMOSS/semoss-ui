@@ -48,7 +48,7 @@ export const IconGeneralSettings = ({ id }: { id: string }) => {
 			<div className="mt-2 flex flex-row items-center gap-2">
 				<div className="flex w-full flex-row items-center gap-0.5">
 					<Muted>Show Badge</Muted>
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<CircleHelp
 								style={{ marginLeft: "5px" }}

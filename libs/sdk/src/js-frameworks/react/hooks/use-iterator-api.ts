@@ -6,7 +6,7 @@ import {
 	useState,
 } from "react";
 
-export interface UseIteratorApiOptions {
+interface UseIteratorApiOptions {
 	/**
 	 * Page size passed as the `limit` argument to `fetchPage` (default 25). Must
 	 * be STABLE for the hook's lifetime: a runtime change re-fetches at the
@@ -22,7 +22,7 @@ export interface UseIteratorApiOptions {
 	enabled?: boolean;
 }
 
-export interface UseIteratorApiReturn<T> {
+interface UseIteratorApiReturn<T> {
 	data: T[];
 	isLoading: boolean;
 	hasMore: boolean;

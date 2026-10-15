@@ -31,7 +31,7 @@ export const FileExplorerNewAction: React.FC<FileExplorerActionProps> = ({
 	}
 
 	return (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<Button
 					data-testid="file-explorer-new-button"

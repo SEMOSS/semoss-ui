@@ -1,9 +1,10 @@
 import { createStore, type StoreApi } from "zustand";
 import type { ColumnInterface } from "@semoss/sdk";
 import { runPixel } from "@semoss/sdk/react";
+import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
+import type { WorkbenchPanelRecord, WorkbenchState } from "@semoss/workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.constants";
-import type { WorkbenchState } from "../workbench.store";
-import type { WorkbenchPanelRecord } from "../workbench.types";
 
 /**
  * Query mode handled by the database workbench. SQL/SPARQL are derived from
@@ -233,10 +234,6 @@ const parseAdminSchemaRows = (rows: unknown): DatabaseTableStructure[] => {
 	}));
 };
 
-/** Narrows an unknown value to a property-bearing object. */
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
-
 /** Parses the stable SQL batch payload returned by AbstractSqlQueryReactor. */
 export const parseStatementResults = (
 	output: unknown,
@@ -430,8 +427,7 @@ export const createDatabaseWorkbenchStore = (
 						return;
 					}
 
-					const message =
-						err instanceof Error ? err.message : "Unknown error";
+					const message = getErrorMessage(err, "Unknown error");
 
 					set((state) => ({
 						structure: {
@@ -501,8 +497,7 @@ export const createDatabaseWorkbenchStore = (
 						return;
 					}
 
-					const message =
-						err instanceof Error ? err.message : "Unknown error";
+					const message = getErrorMessage(err, "Unknown error");
 
 					set((state) => ({
 						category: {
@@ -680,8 +675,7 @@ export const createDatabaseWorkbenchStore = (
 					return;
 				}
 
-				const message =
-					err instanceof Error ? err.message : "Unknown error";
+				const message = getErrorMessage(err, "Unknown error");
 
 				set((state) => ({
 					results: {

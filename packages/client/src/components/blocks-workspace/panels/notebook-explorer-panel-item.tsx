@@ -11,12 +11,15 @@ import {
 	DialogTitle,
 	Input,
 	Label,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 
 interface NotebookExplorerItemProps {
 	id: string;
 	isSelected: boolean;
-	onClick: (event: React.MouseEvent<HTMLLIElement>) => void;
+	onClick: (event?: React.MouseEvent<HTMLLIElement>) => void;
 	onDragStart?: (event: React.DragEvent<HTMLLIElement>) => void;
 	onDragEnd?: (event: React.DragEvent<HTMLLIElement>) => void;
 	onTrashClick?: () => void;
@@ -44,8 +47,10 @@ export const NotebookExplorerItem: React.FC<NotebookExplorerItemProps> =
 		return (
 			<>
 				<li
-					className={`flex h-8 cursor-pointer items-center gap-1 px-4 ${
-						isSelected ? "bg-primary/10" : "hover:bg-accent"
+					className={`group mx-1 flex min-h-7 cursor-pointer items-center gap-2 rounded-md px-2 transition-colors ${
+						isSelected
+							? "bg-accent text-accent-foreground"
+							: "hover:bg-muted"
 					} ${isDragging ? "opacity-50" : ""}`}
 					draggable
 					onDragStart={(e) => {
@@ -60,33 +65,48 @@ export const NotebookExplorerItem: React.FC<NotebookExplorerItemProps> =
 					onKeyDown={(e) => e.key === "Enter" && onClick()}
 				>
 					<Notebook className="size-4 shrink-0 text-muted-foreground" />
-					<span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm">
+					<span className="min-w-0 flex-1 truncate text-sm">
 						{id}
 					</span>
-					<div className="flex items-center gap-0">
-						<button
-							type="button"
-							title="Duplicate"
-							className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground"
-							onClick={(e) => {
-								e.stopPropagation();
-								setNewName(`${id} copy`);
-								setIsDuplicateOpen(true);
-							}}
-						>
-							<Copy className="h-3.5 w-3.5" />
-						</button>
-						<button
-							type="button"
-							title="Delete"
-							className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-destructive"
-							onClick={(e) => {
-								e.stopPropagation();
-								setIsDeleteOpen(true);
-							}}
-						>
-							<Trash2 className="h-3.5 w-3.5" />
-						</button>
+					{/* Reserve the action space so hover and focus never resize the row. */}
+					<div className="flex shrink-0 items-center opacity-0 group-focus-within:opacity-100 group-hover:opacity-100">
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Duplicate notebook"
+									className="text-muted-foreground hover:text-foreground"
+									onClick={(e) => {
+										e.stopPropagation();
+										setNewName(`${id} copy`);
+										setIsDuplicateOpen(true);
+									}}
+								>
+									<Copy className="size-3.5" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Duplicate notebook</TooltipContent>
+						</Tooltip>
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Delete notebook"
+									className="text-muted-foreground hover:text-destructive"
+									onClick={(e) => {
+										e.stopPropagation();
+										setIsDeleteOpen(true);
+									}}
+								>
+									<Trash2 className="size-3.5" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Delete notebook</TooltipContent>
+						</Tooltip>
 					</div>
 				</li>
 
@@ -94,9 +114,11 @@ export const NotebookExplorerItem: React.FC<NotebookExplorerItemProps> =
 					open={isDuplicateOpen}
 					onOpenChange={(o) => !o && setIsDuplicateOpen(false)}
 				>
-					<DialogContent>
+					<DialogContent aria-describedby={undefined}>
 						<DialogHeader>
-							<DialogTitle>Duplicate Notebook</DialogTitle>
+							<DialogTitle className="font-medium text-base leading-6">
+								Duplicate Notebook
+							</DialogTitle>
 						</DialogHeader>
 						<div className="flex flex-col gap-2">
 							<Label htmlFor={nameInputId}>
@@ -107,7 +129,9 @@ export const NotebookExplorerItem: React.FC<NotebookExplorerItemProps> =
 								value={newName}
 								onChange={(e) => setNewName(e.target.value)}
 								// biome-ignore lint/suspicious/noExplicitAny: input ref callback
-								ref={(input: any) => input?.focus()}
+								ref={(input: any) => {
+									input?.focus();
+								}}
 								onKeyDown={(e) => {
 									if (e.key === "Enter" && newName.trim()) {
 										onCopyClick(newName.trim());
@@ -140,9 +164,11 @@ export const NotebookExplorerItem: React.FC<NotebookExplorerItemProps> =
 					open={isDeleteOpen}
 					onOpenChange={(o) => !o && setIsDeleteOpen(false)}
 				>
-					<DialogContent>
+					<DialogContent aria-describedby={undefined}>
 						<DialogHeader>
-							<DialogTitle>Delete Notebook?</DialogTitle>
+							<DialogTitle className="font-medium text-base leading-6">
+								Delete Notebook?
+							</DialogTitle>
 						</DialogHeader>
 						<p className="text-sm">
 							This will permanently delete <b>{id}</b>.

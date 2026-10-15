@@ -2,13 +2,17 @@
 
 This document provides context for AI coding assistants working with the SEMOSS CLI.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, commit
-> messages, and Biome config. **Note:** the CLI targets a different Node range (see below).
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md); the [React standard](../../skills/react-standard.skill.md)
+> applies its TypeScript rules here, not React UI architecture. The published CLI targets a
+> different Node range (see below); repository tooling still uses the root requirements.
 
 ## Overview
 
 `@semoss/cli` is a published command-line tool for deploying and initializing SEMOSS apps. It
-is built with the **oclif** framework and depends only on `@semoss/sdk`.
+is built with the **oclif** framework. Its only workspace runtime dependency is
+`@semoss/sdk`; external dependencies include oclif plugins, `adm-zip`, `dotenv`, `glob`,
+and `listr`.
 
 ## Build System
 
@@ -23,8 +27,15 @@ is built with the **oclif** framework and depends only on `@semoss/sdk`.
 |---------|-------------|
 | `pnpm build` | Clean `dist/` and compile (`shx rm -rf dist && tsc -b`) |
 
+Run from `packages/cli`, or use `pnpm --filter @semoss/cli build` from the root.
+
 Run the built CLI via its bin entry (`./bin/run.js`); oclif discovers commands from
 `./dist/commands`.
+
+**Packaging caveat:** `package.json` currently points `exports` to `./lib/index.js`, while
+its `files`, `types`, and oclif command paths use `dist/`. There is no local `lib/index.js`.
+Do not assume the library import entry works because the CLI bin works; this mismatch needs
+a separately scoped package-config fix and publish validation.
 
 ## Structure
 
@@ -38,6 +49,9 @@ A Node CLI (no React, no `pages/`):
 | `src/index.ts` | Package entry |
 | `bin/` | Executable entry (`run.js`) |
 | `test/` | Tests |
+
+There is no declared `test` script. Do not claim a package test command passed; validate
+the build and exercise affected commands explicitly.
 
 ## Agent Guardrails
 

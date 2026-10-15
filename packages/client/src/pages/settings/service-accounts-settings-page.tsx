@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { ServiceAccountsTable } from "@/components/settings";
 import { useSettings } from "@/hooks";
 

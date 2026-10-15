@@ -210,7 +210,7 @@ export const GanttTargetLine = observer(
 			);
 		}
 		return (
-			<div className="flex flex-col border-[#E6E6E6] border-b p-3">
+			<div className="flex flex-col border-border border-b p-3">
 				<div className="flex flex-row items-center gap-2 py-2">
 					<Switch
 						checked={targetLineData.showTodayDate}
@@ -231,7 +231,6 @@ export const GanttTargetLine = observer(
 					<span className="pl-2.5 text-sm">Show Today Date</span>
 				</div>
 				<div className="flex flex-col gap-2 py-2">
-					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
 					<label className="text-muted-foreground text-sm">
 						Select Target Date
@@ -243,7 +242,6 @@ export const GanttTargetLine = observer(
 					/>
 				</div>
 				<div className="flex flex-col gap-2 py-2">
-					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
 					<label className="text-muted-foreground text-sm">
 						Enter Target Label
@@ -255,7 +253,6 @@ export const GanttTargetLine = observer(
 					/>
 				</div>
 				<div className="flex flex-col gap-2 py-2">
-					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
 					<label className="text-muted-foreground text-sm">
 						Select Line/Label Color

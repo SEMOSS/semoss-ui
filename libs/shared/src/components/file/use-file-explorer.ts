@@ -1,5 +1,6 @@
 import {
 	type DragEvent,
+	type KeyboardEvent as ReactKeyboardEvent,
 	type MouseEvent as ReactMouseEvent,
 	useCallback,
 	useEffect,
@@ -12,6 +13,7 @@ import { useTranslation } from "@semoss/i18n";
 import { Env } from "@semoss/sdk";
 import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import { toast, useDebouncedValue } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
 import type { FileItem } from "./file.types";
 import { getFileExplorerAdapter } from "./file-explorer.adapters";
 import type {
@@ -29,6 +31,7 @@ import {
 	canMoveItemToDirectory,
 	ensureDirectoryPath,
 	FILE_EXPLORER_DRAG_DATA_TYPE,
+	getContextMenuAnchor,
 	getFileOperationErrorMessage,
 	getItemName,
 	getParentPath,
@@ -68,11 +71,13 @@ export const useFileExplorer = (
 ): FileExplorerApi => {
 	const {
 		mode,
+		adapter: customAdapter,
 		initialPath,
 		readOnly = false,
 		onItemSelect,
 		onItemsMoved,
 		onItemsDeleted,
+		onItemsWritten,
 		onVisibleItemsChange,
 		onItemDragStart,
 	} = options;
@@ -83,10 +88,14 @@ export const useFileExplorer = (
 	const { t } = useTranslation("common");
 	const instanceId = useId();
 
-	const adapter = useMemo(() => getFileExplorerAdapter(mode), [mode]);
+	const adapter = useMemo(
+		() => customAdapter ?? getFileExplorerAdapter(mode),
+		[customAdapter, mode],
+	);
 	const capabilities = useMemo(
 		() => ({
 			search: adapter.capabilities.search,
+			searchScope: adapter.capabilities.searchScope !== false,
 			download: adapter.capabilities.download,
 			mutate: adapter.capabilities.mutate && !readOnly,
 			upload: adapter.capabilities.upload && !readOnly,
@@ -172,7 +181,12 @@ export const useFileExplorer = (
 	);
 
 	const items = useMemo(() => {
-		const mapped = adapter.mapEntries(getFiles.data);
+		const mapped = adapter.mapEntries(
+			getFiles.data,
+			debouncedSearch && capabilities.search && searchType === "all"
+				? ""
+				: path,
+		);
 
 		// modes without server-side search still filter what they have, so a
 		// programmatic search term is never silently ignored
@@ -184,7 +198,14 @@ export const useFileExplorer = (
 		return mapped.filter((item) =>
 			item.name.toLowerCase().includes(needle),
 		);
-	}, [adapter, capabilities.search, debouncedSearch, getFiles.data]);
+	}, [
+		adapter,
+		capabilities.search,
+		debouncedSearch,
+		getFiles.data,
+		path,
+		searchType,
+	]);
 
 	/**
 	 * The last settled listing for the current directory.
@@ -227,19 +248,21 @@ export const useFileExplorer = (
 	}, []);
 
 	/**
-	 * Open the context menu at a pointer position.
+	 * Open the context menu: at the pointer for a right-click or a click, or
+	 * under the focused element for a key (Shift+F10, the menu key) or a button
+	 * pressed with one.
 	 *
-	 * Right-clicking a row outside the current selection drops the selection,
+	 * Opening it on a row outside the current selection drops the selection,
 	 * so the menu always acts on what the user just pointed at.
 	 *
-	 * @param e - The originating mouse event; its client coords place the menu.
+	 * @param e - The right-click, click, or key press; see `getContextMenuAnchor`.
 	 * @param item - The row under the pointer, or null for empty space.
 	 * @param targetPath - The directory the create/paste entries act on.
 	 * @param secondaryActions - Consumer entries to append to the menu.
 	 */
 	const openContextMenu = useCallback(
 		(
-			e: ReactMouseEvent,
+			e: ReactMouseEvent | ReactKeyboardEvent,
 			item: FileItem | null,
 			targetPath: string,
 			secondaryActions: FileExplorerSecondaryAction[] = [],
@@ -251,8 +274,7 @@ export const useFileExplorer = (
 			);
 			setContextTargetPath(item?.path ?? null);
 			setContextMenu({
-				x: e.clientX,
-				y: e.clientY,
+				...getContextMenuAnchor(e),
 				item: item,
 				targetPath: targetPath,
 				secondaryActions: secondaryActions,
@@ -348,10 +370,20 @@ export const useFileExplorer = (
 	/**
 	 * Reload the given directories. A search result is a flat list with no
 	 * per-directory reloaders, so it always falls back to a full reload.
+	 *
+	 * With no directories named, this means "everything on screen" — and that
+	 * is more than the root listing. Each expanded directory fetches its own
+	 * children and registers its own reloader, so reloading only the root left
+	 * every open folder showing the contents it already had: a file written
+	 * into one by an agent, a checkout, or another panel stayed invisible until
+	 * the user collapsed and re-expanded it.
 	 */
 	const refresh = (directoryPaths?: string[]) => {
 		if (debouncedSearch || !directoryPaths?.length) {
 			getFiles.refresh();
+			for (const reload of directoryRefreshRef.current.values()) {
+				reload();
+			}
 			return;
 		}
 
@@ -676,12 +708,14 @@ export const useFileExplorer = (
 			const normalizedTarget = ensureDirectoryPath(targetDirectory);
 			const affected = new Set<string>([normalizedTarget]);
 			const failed: string[] = [];
+			const written: string[] = [];
 			let copiedCount = 0;
 
 			for (const item of copyingItems) {
 				try {
 					const newPath = `${normalizedTarget}${getItemName(item)}`;
 					await insight.actions.run(adapter.copy(item.path, newPath));
+					written.push(newPath);
 					copiedCount += 1;
 				} catch (e) {
 					failed.push(getFileOperationErrorMessage(item.name, e));
@@ -692,6 +726,12 @@ export const useFileExplorer = (
 			clearSelection();
 			closeContextMenu();
 			refresh(Array.from(affected));
+
+			if (written.length > 0) {
+				// A copy onto an existing name replaces it, and nothing else
+				// in this flow tells a panel showing that file.
+				onItemsWritten?.(written);
+			}
 
 			if (copiedCount > 0) {
 				toast.success(
@@ -866,6 +906,9 @@ export const useFileExplorer = (
 		try {
 			await insight.actions.run(adapter.unzip(item.path));
 			refresh([getParentPath(item.path)]);
+			// An archive does not say what came out of it, so this cannot name
+			// the files it overwrote.
+			onItemsWritten?.();
 		} catch (e) {
 			toast.error(
 				getFileOperationErrorMessage(
@@ -943,14 +986,7 @@ export const useFileExplorer = (
 		}
 
 		const blob = await response.blob();
-		const objectUrl = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = objectUrl;
-		link.download = fileName;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(objectUrl);
+		downloadBlob(blob, fileName);
 	};
 
 	/**

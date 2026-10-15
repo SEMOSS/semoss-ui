@@ -30,8 +30,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
@@ -71,7 +70,8 @@ export const VectorForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -99,7 +99,7 @@ export const VectorForm = ({
 			formData.NAME
 		}"],conDetails=[${JSON.stringify(newFormData)}]);SetDatabaseMetadata(database=["${formData.NAME}"],meta=[${metaData}])`;
 
-		monolithStore.runQuery(pixel).then(async (response) => {
+		runPixel(pixel).then(async (response) => {
 			const pixelOutput = response.pixelReturn[0].output as {
 					engine_id?: string;
 					// engine_id is the current key; database_id is the legacy fallback
@@ -116,10 +116,7 @@ export const VectorForm = ({
 
 			if (EMBEDDINGS !== "") {
 				try {
-					const uploadedFiles = await uploadFile(
-						[EMBEDDINGS],
-						configStore.store.insightID,
-					);
+					const uploadedFiles = await upload([EMBEDDINGS]);
 
 					if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
 						toast.error(
@@ -129,8 +126,7 @@ export const VectorForm = ({
 						return;
 					}
 					const pixelExpressions = `CreateEmbeddingsFromDocuments(filePaths=["${uploadedFiles[0].fileLocation}"], engine=["${pixelOutput.engine_id || pixelOutput.database_id}"])`;
-					const response =
-						await monolithStore.runQuery(pixelExpressions);
+					const response = await runPixel(pixelExpressions);
 					const { output, operationType } = response.pixelReturn[0];
 					if (operationType.includes("ERROR")) {
 						toast.error(String(output));
@@ -194,7 +190,7 @@ export const VectorForm = ({
 	const hasParameterizedValue = (str) => /<([^>]+)>/.test(str);
 
 	const executeWatchedFieldPixel = async (key, pixelStr, type) => {
-		const response = await monolithStore.runQuery(pixelStr);
+		const response = await runPixel(pixelStr);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -237,7 +233,7 @@ export const VectorForm = ({
 			userInput.trim(),
 		);
 
-		const response = await monolithStore.runQuery(pixelToExecute);
+		const response = await runPixel(pixelToExecute);
 		const output = response.pixelReturn[0].output as { exists: boolean };
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -538,32 +534,46 @@ export const VectorForm = ({
 
 					case "file-upload":
 						return (
-							<div className="flex flex-col gap-2">
-								<P data-testid="vector-zip-upload-title">
+							<Field>
+								<FieldLabel
+									htmlFor={val.key}
+									data-testid="vector-zip-upload-title"
+								>
 									{val.label}
-								</P>
-								{/* Custom file upload - will need to replace FileDropzone */}
-								<div
-									className="flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-4 transition-colors hover:border-primary hover:bg-accent"
-									onClick={() => {
-										const input =
-											document.createElement("input");
-										input.type = "file";
-										input.accept =
+									{val.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<div className="relative flex min-h-24 flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-4 transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring hover:border-primary hover:bg-accent">
+									<Input
+										id={val.key}
+										name={field.name}
+										ref={field.ref}
+										type="file"
+										accept={
 											val.options?.extensions?.join(
 												",",
-											) || "*";
-										input.onchange = (e) => {
-											const file = (
-												e.target as HTMLInputElement
-											).files?.[0];
-											if (file) {
-												field.onChange(file);
-											}
-										};
-										input.click();
-									}}
-								>
+											) || "*"
+										}
+										disabled={val.disabled}
+										required={val.required}
+										aria-invalid={Boolean(error)}
+										aria-describedby={
+											error
+												? `${val.key}-error`
+												: undefined
+										}
+										className="absolute inset-0 h-full cursor-pointer opacity-0"
+										onBlur={field.onBlur}
+										onChange={(event) => {
+											const file =
+												event.currentTarget.files?.[0];
+											if (file) field.onChange(file);
+										}}
+										data-testid={`vector-form-input-${val.key}`}
+									/>
 									{field.value ? (
 										<P className="text-center text-foreground">
 											{(field.value as File).name ||
@@ -571,22 +581,22 @@ export const VectorForm = ({
 										</P>
 									) : (
 										<P className="text-center text-muted-foreground">
-											Drop your file here or click to
-											browse
+											Click to browse
 										</P>
 									)}
 								</div>
 								{error && (
-									<P
+									<FieldDescription
+										id={`${val.key}-error`}
 										className="text-destructive text-sm"
 										data-testid={`vector-form-error-${val.key}`}
 									>
 										{error.message ||
 											(val.rules?.pattern?.message ??
 												val.helperText)}
-									</P>
+									</FieldDescription>
 								)}
-							</div>
+							</Field>
 						);
 					case "checkbox":
 						return (

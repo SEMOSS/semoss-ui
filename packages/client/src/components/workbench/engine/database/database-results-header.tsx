@@ -1,6 +1,6 @@
 import { Table2Icon } from "lucide-react";
-import { useWorkbench } from "@/hooks";
-import type { WorkbenchChrome } from "@/stores/workbench";
+import type { WorkbenchComponent } from "@semoss/workbench";
+import { useWorkbench, useWorkbenchPanel } from "@semoss/workbench";
 import type { DatabaseQueryResultsConfig } from "./database-query-results-panel";
 
 /**
@@ -8,9 +8,9 @@ import type { DatabaseQueryResultsConfig } from "./database-query-results-panel"
  * query panel's live name, so renaming a query renames its results without
  * any rename listener.
  */
-export const DatabaseResultsHeader: WorkbenchChrome<
-	DatabaseQueryResultsConfig
-> = ({ config }) => {
+export const DatabaseResultsHeader: WorkbenchComponent = ({ id }) => {
+	const { config } = useWorkbenchPanel<DatabaseQueryResultsConfig>(id);
+
 	const sourcePanel = config.sourcePanel;
 	const queryName = useWorkbench(
 		(state) => state.layout.panels[sourcePanel]?.name,

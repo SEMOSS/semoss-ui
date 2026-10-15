@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { Muted } from "@semoss/ui/next";
 import ErrorSvg from "@/assets/img/Error.svg";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -10,7 +10,7 @@ import { useNavigate } from "@/hooks/useNavigate";
  */
 export const ErrorPage = () => {
 	const [countdown, setCountdown] = useState(10);
-	const timer = useRef<NodeJS.Timer>();
+	const timer = useRef<NodeJS.Timer>(undefined);
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 

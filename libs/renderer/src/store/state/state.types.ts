@@ -1,4 +1,5 @@
 import type React from "react";
+import type { JSX } from "react";
 import type { CellState } from "./cell.state";
 import type { NotebookStateConfig } from "./notebook.state";
 import type {

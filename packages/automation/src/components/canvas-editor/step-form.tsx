@@ -1,0 +1,200 @@
+import type {
+	AgentRunConfig,
+	AppConfig,
+	AutomationNode,
+	BranchConfig,
+	DatabaseEngineConfig,
+	DataExtractConfig,
+	FunctionEngineConfig,
+	LoopConfig,
+	ModelEngineConfig,
+	StorageEngineConfig,
+	VectorEngineConfig,
+	WaitConfig,
+} from "../../domain/automation.types";
+import type { AutomationWorkflowNodeConfig } from "../../domain/automation-workflow.types";
+import { normalizeJevDecisionConfig } from "../../domain/automation-workflow-adapter";
+import { AgentRunForm } from "./forms/agent-run-form";
+import { AppEngineForm } from "./forms/app-engine-form";
+import { BranchConditionBuilder } from "./forms/branch-condition-builder";
+import { DataExtractForm } from "./forms/data-extract-form";
+import { DatabaseEngineForm } from "./forms/database-engine-form";
+import { FunctionEngineForm } from "./forms/function-engine-form";
+import { JevDecisionForm } from "./forms/jev-decision-form";
+import { LoopForm } from "./forms/loop-form";
+import { ModelEngineForm } from "./forms/model-engine-form";
+import { PillInput } from "./forms/pill-input";
+import { StorageEngineForm } from "./forms/storage-engine-form";
+import { VectorEngineForm } from "./forms/vector-engine-form";
+
+interface StepFormProps {
+	step: AutomationNode;
+	upstreamVars: string[];
+	onUpdate: (step: AutomationNode) => void;
+	devMode?: boolean;
+	appId?: string;
+	/** When true, every field renders as non-editable and mutating actions are disabled */
+	readOnly?: boolean;
+}
+
+export function StepForm({
+	step,
+	upstreamVars,
+	onUpdate,
+	devMode = false,
+	appId = "",
+	readOnly = false,
+}: StepFormProps) {
+	const update = (config: AutomationNode["config"]) => {
+		if (readOnly) return;
+		onUpdate({ ...step, config });
+	};
+	if (step.workflowType === "agent.run") {
+		return (
+			<AgentRunForm
+				config={step.config as AgentRunConfig}
+				upstreamVars={upstreamVars}
+				onChange={update}
+				readOnly={readOnly}
+			/>
+		);
+	}
+	if (step.workflowType === "control.jev") {
+		const config = normalizeJevDecisionConfig(
+			step.config as unknown as AutomationWorkflowNodeConfig,
+		);
+		return (
+			<JevDecisionForm
+				config={config}
+				upstreamVars={upstreamVars}
+				onChange={update}
+				devMode={devMode}
+				readOnly={readOnly}
+			/>
+		);
+	}
+	switch (step.type) {
+		case "trigger":
+			return null;
+		case "database-engine":
+			return (
+				<DatabaseEngineForm
+					config={step.config as DatabaseEngineConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					readOnly={readOnly}
+				/>
+			);
+		case "data":
+			return (
+				<DataExtractForm
+					config={step.config as DataExtractConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					readOnly={readOnly}
+				/>
+			);
+		case "model-engine":
+			return (
+				<ModelEngineForm
+					config={step.config as ModelEngineConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					devMode={devMode}
+					readOnly={readOnly}
+				/>
+			);
+		case "vector-engine":
+			return (
+				<VectorEngineForm
+					config={step.config as VectorEngineConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					devMode={devMode}
+					readOnly={readOnly}
+				/>
+			);
+		case "storage-engine":
+			return (
+				<StorageEngineForm
+					config={step.config as StorageEngineConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					readOnly={readOnly}
+				/>
+			);
+		case "function-engine":
+			return (
+				<FunctionEngineForm
+					config={step.config as FunctionEngineConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					devMode={devMode}
+					readOnly={readOnly}
+				/>
+			);
+		case "app":
+			return (
+				<AppEngineForm
+					config={step.config as AppConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					currentAppId={appId}
+					devMode={devMode}
+					readOnly={readOnly}
+				/>
+			);
+		case "wait": {
+			const c = step.config as WaitConfig;
+			return (
+				<div className="flex flex-col gap-4">
+					<PillInput
+						label="Seconds to Wait"
+						required
+						value={c.seconds}
+						placeholder="30"
+						onChange={(v) => update({ ...c, seconds: v })}
+						upstreamVars={upstreamVars}
+						readOnly={readOnly}
+					/>
+					<p className="text-muted-foreground text-xs">
+						Maximum 3600 seconds (1 hour). You can reference an
+						earlier step's output using{" "}
+						<span className="font-mono">${"{variableName}"}</span>.
+					</p>
+				</div>
+			);
+		}
+		case "loop": {
+			const c = step.config as LoopConfig;
+			return (
+				<LoopForm
+					step={step}
+					config={c}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					devMode={devMode}
+					readOnly={readOnly}
+				/>
+			);
+		}
+		case "branch": {
+			const c = step.config as BranchConfig;
+			return (
+				<BranchConditionBuilder
+					clauses={c.clauses}
+					onChange={(clauses) => update({ ...c, clauses })}
+					upstreamVars={upstreamVars}
+					devMode={devMode}
+					readOnly={readOnly}
+				/>
+			);
+		}
+		default:
+			return (
+				<div className="text-muted-foreground text-xs">
+					No form for type: {step.type}
+				</div>
+			);
+	}
+}

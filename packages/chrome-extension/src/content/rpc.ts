@@ -1,3 +1,5 @@
+import { sleep } from "@semoss/utility/async";
+import { getErrorMessage } from "@semoss/utility/error";
 /**
  * RPC (Remote Procedure Call) system for communication between
  * background script and content script
@@ -7,9 +9,6 @@
 import ripple from "./ripple";
 
 // Helper function for delays
-export async function sleep(ms: number) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 /**
  * Get unique CSS selector for an element by its data-id
@@ -75,8 +74,7 @@ export const callRPC = async <T extends MethodName>(
 		}
 	}
 
-	const errorMsg =
-		lastError instanceof Error ? lastError.message : String(lastError);
+	const errorMsg = getErrorMessage(lastError);
 	throw new Error(`RPC call failed after ${maxTries} attempts: ${errorMsg}`);
 };
 
@@ -116,10 +114,7 @@ export const initializeRPC = () => {
 						}).catch((error: unknown) => {
 							console.error(`RPC method ${type} failed:`, error);
 							sendResponse({
-								error:
-									error instanceof Error
-										? error.message
-										: String(error),
+								error: getErrorMessage(error),
 							});
 						});
 
@@ -131,13 +126,12 @@ export const initializeRPC = () => {
 				} catch (error) {
 					console.error(`RPC method ${type} failed:`, error);
 					sendResponse({
-						error:
-							error instanceof Error
-								? error.message
-								: String(error),
+						error: getErrorMessage(error),
 					});
 				}
 			}
 		},
 	);
 };
+
+export { sleep } from "@semoss/utility/async";

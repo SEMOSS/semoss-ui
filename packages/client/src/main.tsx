@@ -5,6 +5,9 @@ import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import "./index.css";
 
 const container = document.getElementById("root");
+if (!container) {
+	throw new Error("Root element #root not found");
+}
 const root = createRoot(container);
 
 const mount = async () => {

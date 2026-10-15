@@ -1,8 +1,7 @@
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { type Location, Navigate, useLocation } from "react-router-dom";
+import { type Location, Navigate, useLocation } from "react-router";
 import {
 	getLoginProviderInitials,
 	getLoginProviderKey,
@@ -27,10 +26,11 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { setupResetPassword } from "@/api/auth";
 import loginDarkHero from "@/assets/img/login-dark-hero.gif";
 import loginHero from "@/assets/img/login-gif.gif";
-import { useRootStore, useThemeLogo } from "@/hooks";
+import { useConfig, useSession, useThemeLogo } from "@/hooks";
 
 interface TypeUserLogin {
 	USERNAME: string;
@@ -65,8 +65,21 @@ const LOGIN_TYPE_LABELS: Record<LoginPasswordResetType, string> = {
 	linotp: "LinOTP",
 };
 
-export const LoginPage = observer(() => {
-	const { configStore } = useRootStore();
+export const LoginPage = () => {
+	const theme = useConfig((state) => state.theme);
+	const availableProviders = useConfig(
+		(state) => state.config.availableProviders,
+	);
+	const nativeRegistration = useConfig(
+		(state) => state.config.nativeRegistration,
+	);
+	const status = useSession((state) => state.status);
+	const sessionLogin = useSession((state) => state.login);
+	const sessionLoginLDAP = useSession((state) => state.loginLDAP);
+	const sessionLoginOTP = useSession((state) => state.loginOTP);
+	const sessionConfirmOTP = useSession((state) => state.confirmOTP);
+	const sessionRegister = useSession((state) => state.register);
+	const sessionOauth = useSession((state) => state.oauth);
 	const { resolvedTheme } = useTheme();
 	const themeLogo = useThemeLogo();
 	const location = useLocation();
@@ -91,9 +104,9 @@ export const LoginPage = observer(() => {
 		Record<string, string>
 	>({});
 	const [heroImage, setHeroImage] = useState<string>(loginHero);
-	const customLightHeroImage = configStore.theme.loginHeroImage.trim();
-	const customDarkHeroImage = configStore.theme.loginHeroImageDark.trim();
-	const includeNameWithLogo = configStore.theme.includeNameWithLogo;
+	const customLightHeroImage = theme.loginHeroImage.trim();
+	const customDarkHeroImage = theme.loginHeroImageDark.trim();
+	const includeNameWithLogo = theme.includeNameWithLogo;
 	const isDarkMode = resolvedTheme === "dark";
 	const activeHeroImage = isDarkMode
 		? customDarkHeroImage || customLightHeroImage || loginDarkHero
@@ -154,21 +167,19 @@ export const LoginPage = observer(() => {
 			name: string;
 			isOauth: boolean;
 		}
-	> = configStore.store.config.availableProviders.reduce((acc, val) => {
+	> = availableProviders.reduce((acc, val) => {
 		acc[val.provider] = val;
 		return acc;
 	}, {});
 
-	const hasOAuth = configStore.store.config.availableProviders.some(
-		(val) => val.isOauth,
-	);
+	const hasOAuth = availableProviders.some((val) => val.isOauth);
 
 	const oauthProvidersSignature = useMemo(() => {
-		return configStore.store.config.availableProviders
+		return availableProviders
 			.filter((provider) => provider.isOauth)
 			.map((provider) => provider.provider.trim().toLowerCase())
 			.join("|");
-	}, [configStore.store.config.availableProviders]);
+	}, [availableProviders]);
 
 	const isNative = Object.hasOwn(availableProvidersMap, "native"),
 		isLdap = Object.hasOwn(availableProvidersMap, "ldap"),
@@ -259,8 +270,7 @@ export const LoginPage = observer(() => {
 
 		if (!showOTPCodeField) {
 			if (loginType === "native") {
-				await configStore
-					.login(data.USERNAME, data.PASSWORD)
+				await sessionLogin(data.USERNAME, data.PASSWORD)
 					.catch((err) => {
 						setError(err.message);
 					})
@@ -269,8 +279,7 @@ export const LoginPage = observer(() => {
 					});
 			}
 			if (loginType === "ldap") {
-				await configStore
-					.loginLDAP(data.USERNAME, data.PASSWORD)
+				await sessionLoginLDAP(data.USERNAME, data.PASSWORD)
 					.catch((err) => {
 						setError(err.message);
 					})
@@ -279,8 +288,7 @@ export const LoginPage = observer(() => {
 					});
 			}
 			if (loginType === "linotp") {
-				await configStore
-					.loginOTP(data.USERNAME, data.PASSWORD)
+				await sessionLoginOTP(data.USERNAME, data.PASSWORD)
 					.then(() => {
 						setShowOTPCodeField(true);
 					})
@@ -293,8 +301,7 @@ export const LoginPage = observer(() => {
 			}
 		}
 		if (showOTPCodeField) {
-			await configStore
-				.confirmOTP(data.OTP_CONFIRM)
+			await sessionConfirmOTP(data.OTP_CONFIRM)
 				.catch((err) => {
 					setError(err.message);
 				})
@@ -330,16 +337,15 @@ export const LoginPage = observer(() => {
 				return;
 			}
 
-			await configStore
-				.register(
-					`${data.FIRST_NAME} ${data.LAST_NAME}`,
-					data.USERNAME,
-					data.EMAIL,
-					data.PASSWORD,
-					data.PHONE,
-					data.EXTENTION,
-					data.COUNTRY_CODE,
-				)
+			await sessionRegister(
+				`${data.FIRST_NAME} ${data.LAST_NAME}`,
+				data.USERNAME,
+				data.EMAIL,
+				data.PASSWORD,
+				data.PHONE,
+				data.EXTENTION,
+				data.COUNTRY_CODE,
+			)
 				.then((res) => {
 					if (res) {
 						setError("");
@@ -363,8 +369,7 @@ export const LoginPage = observer(() => {
 	const oauth = async (provider: string) => {
 		setIsLoading(true);
 
-		await configStore
-			.oauth(provider)
+		await sessionOauth(provider)
 			.then(() => {
 				setIsLoading(false);
 				toast.success("Successfully logged in");
@@ -414,7 +419,7 @@ export const LoginPage = observer(() => {
 
 		const selectedLoginType =
 			loginType.toUpperCase() as LoginPasswordResetApiType;
-		const subjectPrefix = configStore.theme.name?.trim() || "SEMOSS";
+		const subjectPrefix = theme.name?.trim() || "SEMOSS";
 		const subject = `${subjectPrefix} Reset Password Request`;
 
 		setIsResetPasswordSubmitting(true);
@@ -433,10 +438,10 @@ export const LoginPage = observer(() => {
 			setResetPasswordSuccess(message);
 			toast.success(message);
 		} catch (submissionError) {
-			const message =
-				submissionError instanceof Error
-					? submissionError.message
-					: "Unable to submit password reset request.";
+			const message = getErrorMessage(
+				submissionError,
+				"Unable to submit password reset request.",
+			);
 
 			setResetPasswordError(message);
 			toast.error(message);
@@ -447,7 +452,7 @@ export const LoginPage = observer(() => {
 
 	const path = (location.state as { from: Location })?.from?.pathname || "/";
 
-	if (configStore.store.status === "SUCCESS") {
+	if (status === "SUCCESS") {
 		return <Navigate to={path} replace />;
 	}
 
@@ -493,14 +498,12 @@ export const LoginPage = observer(() => {
 									{themeLogo ? (
 										<img
 											src={themeLogo}
-											alt={
-												configStore.theme.name || "logo"
-											}
+											alt={theme.name || "logo"}
 										/>
 									) : null}
 									{includeNameWithLogo ? (
 										<span className="font-bold text-xl">
-											{configStore.theme.name}
+											{theme.name}
 										</span>
 									) : null}
 								</div>
@@ -532,59 +535,54 @@ export const LoginPage = observer(() => {
 								<div className="flex flex-col gap-4 [&_input]:border-input [&_input]:bg-background [&_input]:text-foreground [&_input]:shadow-none [&_input]:focus-visible:border-primary [&_input]:focus-visible:ring-primary/30 [&_label]:font-medium [&_label]:text-foreground">
 									{!register && hasOAuth && (
 										<>
-											{configStore.store.config.availableProviders.map(
-												(p) => {
-													if (!p.isOauth) return null;
+											{availableProviders.map((p) => {
+												if (!p.isOauth) return null;
 
-													const providerKey =
-														getLoginProviderKey(
-															p.provider,
-														);
-													const providerLogo =
-														oauthProviderLogos[
-															providerKey
-														];
-													const providerInitials =
-														getLoginProviderInitials(
-															p.name ||
-																p.provider,
-														);
-
-													return (
-														<Button
-															key={p.provider}
-															type="button"
-															variant="outline"
-															className="w-full gap-2"
-															onClick={() =>
-																oauth(
-																	p.provider,
-																)
-															}
-														>
-															{providerLogo ? (
-																<img
-																	src={
-																		providerLogo
-																	}
-																	alt=""
-																	aria-hidden="true"
-																	className="h-4 w-4 shrink-0 object-contain"
-																	loading="lazy"
-																	decoding="async"
-																/>
-															) : (
-																<span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-muted/60 font-semibold text-[9px] text-muted-foreground">
-																	{
-																		providerInitials
-																	}
-																</span>
-															)}
-															{p.name}
-														</Button>
+												const providerKey =
+													getLoginProviderKey(
+														p.provider,
 													);
-												},
-											)}
+												const providerLogo =
+													oauthProviderLogos[
+														providerKey
+													];
+												const providerInitials =
+													getLoginProviderInitials(
+														p.name || p.provider,
+													);
+
+												return (
+													<Button
+														key={p.provider}
+														type="button"
+														variant="outline"
+														className="w-full gap-2"
+														onClick={() =>
+															oauth(p.provider)
+														}
+													>
+														{providerLogo ? (
+															<img
+																src={
+																	providerLogo
+																}
+																alt=""
+																aria-hidden="true"
+																className="h-4 w-4 shrink-0 object-contain"
+																loading="lazy"
+																decoding="async"
+															/>
+														) : (
+															<span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-muted/60 font-semibold text-[9px] text-muted-foreground">
+																{
+																	providerInitials
+																}
+															</span>
+														)}
+														{p.name}
+													</Button>
+												);
+											})}
 											{hasUsernamePassword && (
 												<div className="flex items-center gap-4 py-1">
 													<Separator className="flex-1" />
@@ -1070,7 +1068,11 @@ export const LoginPage = observer(() => {
 																>
 																	Password *
 																</Label>
-																<Tooltip>
+																<Tooltip
+																	disableHoverableContent={
+																		false
+																	}
+																>
 																	<TooltipTrigger
 																		asChild
 																	>
@@ -1429,8 +1431,7 @@ export const LoginPage = observer(() => {
 															"Login"
 														)}
 													</Button>
-													{configStore.store.config
-														.nativeRegistration && (
+													{nativeRegistration && (
 														<div className="flex items-center justify-center gap-1 text-sm">
 															Don&apos;t have an
 															account?{" "}
@@ -1502,9 +1503,11 @@ export const LoginPage = observer(() => {
 					setForgotPassword(true);
 				}}
 			>
-				<DialogContent>
+				<DialogContent aria-describedby={undefined}>
 					<DialogHeader>
-						<DialogTitle>Forgot your password?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Forgot your password?
+						</DialogTitle>
 					</DialogHeader>
 					<div className="flex flex-col gap-3">
 						<p className="text-muted-foreground text-sm">
@@ -1534,7 +1537,7 @@ export const LoginPage = observer(() => {
 							</Alert>
 						) : null}
 						{resetPasswordSuccess ? (
-							<div className="rounded-md border border-green-500 bg-green-50 px-3 py-2 text-green-700 text-sm dark:bg-green-950/30 dark:text-green-400">
+							<div className="rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
 								{resetPasswordSuccess}
 							</div>
 						) : null}
@@ -1564,4 +1567,4 @@ export const LoginPage = observer(() => {
 			</Dialog>
 		</>
 	);
-});
+};

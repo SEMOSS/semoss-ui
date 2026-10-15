@@ -1,12 +1,10 @@
-import { ChevronRightIcon, SquareArrowOutUpRight } from "lucide-react";
-import { useMemo } from "react";
 import {
-	Link,
-	matchPath,
-	Outlet,
-	useLocation,
-	useResolvedPath,
-} from "react-router-dom";
+	ChevronRightIcon,
+	PencilIcon,
+	SquareArrowOutUpRight,
+} from "lucide-react";
+import { useMemo } from "react";
+import { Link, matchPath, Outlet, useLocation } from "react-router";
 import type { Role } from "@semoss/sdk";
 import { AppCatalogAvatar, EntityHeader } from "@semoss/shared";
 import {
@@ -21,9 +19,10 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { setProjectDisplayName } from "@/api/projects";
 import { ProjectAccessRequestButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useProject } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 interface ProjectTabsLayoutProps {
@@ -39,11 +38,13 @@ interface ProjectTabsLayoutProps {
  * Wrap the project routes and render the catalog header + tab navigation
  */
 export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
-	const { catalog, project, permission, refresh } = useProject();
+	const { catalog, project, permission, refresh, type, update } =
+		useProject();
+	const insightID = useSession((state) => state.insightID);
 
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
-	const resolvedPath = useResolvedPath("");
+	const projectPath = `${catalog.path}/${project.project_id}`;
 
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
@@ -62,17 +63,32 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	const activeTabIdx = useMemo(() => {
 		for (let i = 0; i < visibleTabs.length; i++) {
 			const tab = visibleTabs[i];
-			const fullPath = tab.path
-				? `${resolvedPath.pathname}/${tab.path}`
-				: resolvedPath.pathname;
-			if (matchPath({ path: fullPath, end: true }, pathname)) {
+			const tabPath = tab.path
+				? `${projectPath}/${tab.path}`
+				: projectPath;
+			if (
+				matchPath({ path: tabPath, end: true }, pathname) ||
+				(tab.path !== "" && matchPath(`${tabPath}/*`, pathname))
+			) {
 				return i;
 			}
 		}
 		return -1;
-	}, [visibleTabs, resolvedPath, pathname]);
+	}, [visibleTabs, projectPath, pathname]);
 
 	const activeTab = activeTabIdx >= 0 ? visibleTabs[activeTabIdx] : undefined;
+	const openProjectPath =
+		type === "AUTOMATION"
+			? `${catalog.path}/${project.project_id}/edit`
+			: `${catalog.path}/${project.project_id}/view`;
+
+	/**
+	 * Save the project's new display name and show it in place
+	 */
+	const handleRename = async (name: string) => {
+		await setProjectDisplayName(insightID, project.project_id, name);
+		update({ project_display_name: name });
+	};
 
 	return (
 		<div className="w-full">
@@ -109,6 +125,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 					<EntityHeader
 						icon={
 							<AppCatalogAvatar
+								projectId={project.project_id}
 								name={
 									project.project_display_name ||
 									project.project_name ||
@@ -125,6 +142,10 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 						id={project.project_id}
 						copyLabel="Copy ID"
 						idTestId="appDetail-id"
+						onRename={
+							permission === "OWNER" ? handleRename : undefined
+						}
+						renameLabel={`Rename ${catalog.name}`}
 						actions={
 							<>
 								{permission !== "OWNER" && (
@@ -136,21 +157,38 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 										}}
 									/>
 								)}
-								{permission !== "DISCOVERABLE" && (
-									<Button
-										asChild
-										variant="default"
-										className="gap-2"
-										data-testid="appDetail-open-btn"
-									>
-										<Link
-											to={`${catalog.path}/${project.project_id}/view`}
-										>
-											<SquareArrowOutUpRight className="size-4" />
-											Open {catalog.name}
-										</Link>
-									</Button>
-								)}
+								{type === "WORKSPACE"
+									? // Agents land on a read-only overview, so the
+										// header offers editing to those who can edit
+										(permission === "OWNER" ||
+											permission === "EDIT") && (
+											<Button
+												asChild
+												variant="default"
+												className="gap-2"
+												data-testid="appDetail-edit-btn"
+											>
+												<Link
+													to={`${catalog.path}/${project.project_id}/edit`}
+												>
+													<PencilIcon className="size-4" />
+													Edit
+												</Link>
+											</Button>
+										)
+									: permission !== "DISCOVERABLE" && (
+											<Button
+												asChild
+												variant="default"
+												className="gap-2"
+												data-testid="appDetail-open-btn"
+											>
+												<Link to={openProjectPath}>
+													<SquareArrowOutUpRight className="size-4" />
+													Open {catalog.name}
+												</Link>
+											</Button>
+										)}
 							</>
 						}
 					/>
@@ -170,7 +208,9 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 											value={tab.path}
 											onClick={() => {
 												navigate(
-													tab.path ? tab.path : ".",
+													tab.path
+														? `${projectPath}/${tab.path}`
+														: projectPath,
 												);
 											}}
 											data-testid={`appDetail-${tab.name}-tab`}

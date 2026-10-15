@@ -12,6 +12,7 @@
 		"resolveJsonModule": true,
 
 		/* Emit */
+		"rootDir": "./src",
 		"declaration": true,
 		"outDir": "./dist",
 		"declarationDir": "./dist/types",
@@ -22,6 +23,8 @@
 		"allowJs": true,
 		"esModuleInterop": true,
 		"isolatedModules": true,
+		"strict": false,
+		"noUncheckedSideEffectImports": false,
 
 		/* Lang and Env */
 		"paths": {
@@ -35,5 +38,5 @@
 		"src/next/**/*",
 		"src/styles/**/*"
 	],
-	"exclude": ["dist", "node_modules", "**/*.spec.ts"]
+	"exclude": ["dist", "node_modules", "**/*.spec.ts", "**/*.spec.tsx"]
 }

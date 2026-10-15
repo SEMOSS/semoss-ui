@@ -1,6 +1,5 @@
-import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
@@ -20,18 +19,18 @@ import { CloneProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { TemplateCard } from "@/components/templates";
 import { TYPE_TO_ROUTE } from "@/constants";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 
 /**
  * Template Catalog Landing Page
  * Displays available templates in a card grid following standard catalog layout
  */
-export const TemplatePage: React.FC = observer((): JSX.Element => {
+export const TemplatePage: React.FC = (): React.JSX.Element => {
 	const navigate = useNavigate();
-	const { configStore } = useRootStore();
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
 
 	// get metakeys of the ones we want
-	const metaKeys = configStore.store.config.projectMetaKeys
+	const metaKeys = projectMetaKeys
 		.filter((k) => {
 			return (
 				k.display_options === "single-checklist" ||
@@ -219,4 +218,4 @@ export const TemplatePage: React.FC = observer((): JSX.Element => {
 			)}
 		</>
 	);
-});
+};

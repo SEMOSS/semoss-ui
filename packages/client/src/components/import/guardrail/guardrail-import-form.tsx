@@ -42,8 +42,9 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
@@ -100,7 +101,8 @@ export const GuardrailForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const { configStore, monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -226,7 +228,7 @@ export const GuardrailForm = ({
 		setLoading(true);
 		try {
 			const engineId = await createGuardrailEngine(
-				configStore.store.insightID,
+				insightID,
 				formData.MODEL_NAME,
 				newFormData,
 			);
@@ -235,9 +237,7 @@ export const GuardrailForm = ({
 		} catch (error) {
 			console.error(error);
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to create the guardrail",
+				getErrorMessage(error, "Unable to create the guardrail"),
 			);
 		} finally {
 			setLoading(false);
@@ -357,7 +357,7 @@ export const GuardrailForm = ({
 	const hasParameterizedValue = (str) => /<([^>]+)>/.test(str);
 
 	const executeWatchedFieldPixel = async (key, pixelStr, type) => {
-		const response = await monolithStore.runQuery(pixelStr);
+		const response = await runPixel(pixelStr);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -397,7 +397,7 @@ export const GuardrailForm = ({
 			userInput.trim(),
 		);
 
-		const response = await monolithStore.runQuery(pixelToExecute);
+		const response = await runPixel(pixelToExecute);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -686,7 +686,9 @@ export const GuardrailForm = ({
 												LOCAL_PYTHON_GUARDRAIL_RETURN_STRUCTURE
 											}
 										</pre>
-										<Tooltip>
+										<Tooltip
+											disableHoverableContent={false}
+										>
 											<TooltipTrigger asChild>
 												<Button
 													type="button"

@@ -1,79 +1,20 @@
 import { Env } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
+import { copyTextToClipboard as copyText } from "@semoss/utility/clipboard";
+import { getErrorMessage } from "@semoss/utility/error";
 
-/**
- * @desc splits a string at the period
- * Used in the UI Builder and notebook
- */
-export const splitAtPeriod = (str, side = "left") => {
-	const indexOfPeriod = str.indexOf(".");
-	if (indexOfPeriod === -1) {
-		return str; // No period found, return the entire string
-	}
-
-	if (side === "left") {
-		return str.substring(0, indexOfPeriod);
-	} else if (side === "right") {
-		return str.substring(indexOfPeriod + 1);
-	} else {
-		throw new Error("Invalid side argument. Choose 'left' or 'right'");
-	}
-};
-
-/*
- * @desc capitalizes every word that is spaced
- * "hello world" --> "Hello World"
- */
-export const toTitleCase = (str: string) => {
-	return str.replace(/\w\S*/g, (txt) => {
-		return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-	});
-};
-
-/**
- * @desc Formats a raw metadata key into a display label. Splits on underscores
- * AND camelCase boundaries, then capitalizes each word. Casing of the rest of
- * each word is preserved so acronyms survive ("MCP" stays "MCP").
- * "data_classification" --> "Data Classification"
- * "maxOutputTokens" --> "Max Output Tokens"
- */
-export const metakeyToLabel = (metakey: string) => {
-	const spaced = metakey
-		.replace(/_/g, " ")
-		// "maxOutput" --> "max Output"
-		.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-		// "MCPServer" --> "MCP Server"
-		.replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
-		.replace(/\s+/g, " ")
-		.trim();
-
-	return spaced.replace(
-		/\S+/g,
-		(word) => word.charAt(0).toUpperCase() + word.slice(1),
-	);
-};
-
-/**
- * @desc splits word on _ and Uppercases first word
- * "this_is_a_string" --> "This is a string"
- */
-export const removeUnderscores = (str: string) => {
-	const frags = str.split("_");
-	for (let i = 0; i < frags.length; i++) {
-		frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
-	}
-	return frags.join(" ");
-};
+export { isOutputJSON } from "@semoss/utility/json";
+export { splitAtPeriod, toTitleCase } from "@semoss/utility/text";
 
 /**
  * @desc Copies string to clipboard
  */
-export const copyTextToClipboard = (text: string) => {
+export const copyTextToClipboard = async (text: string): Promise<void> => {
 	try {
-		navigator.clipboard.writeText(text);
+		await copyText(text);
 		toast.success("Successfully copied to clipboard");
-	} catch (e) {
-		toast.error(e.message);
+	} catch (error) {
+		toast.error(getErrorMessage(error));
 	}
 };
 
@@ -102,80 +43,4 @@ SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"`;
 	}
 };
 
-/**
- * @desc Checks if output and verify if its a JSON object
- */
-export const isOutputJSON = (output: unknown) => {
-	if (typeof output === "object" && output !== null) {
-		return output;
-	}
-	if (typeof output === "string") {
-		try {
-			return JSON.parse(output);
-		} catch {
-			const validateJsonString = output.replace(/'/g, '"');
-			try {
-				return JSON.parse(validateJsonString);
-			} catch {
-				return null;
-			}
-		}
-	}
-	return null;
-};
-
-function parseAsUTC(input: string): Date | null {
-	const m = input.match(
-		/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/,
-	);
-	if (!m) {
-		const d = new Date(input);
-		return Number.isNaN(d.getTime()) ? null : d; // fallback
-	}
-	const [, y, mo, d, h, mi, s] = m;
-	const ms = Date.UTC(+y, +mo - 1, +d, +h, +mi, +(s ?? "0"));
-	return new Date(ms);
-}
-
-export function formatDate(createdAt: string): string {
-	const dateUTC = parseAsUTC(createdAt);
-	if (!dateUTC) return "";
-
-	const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-
-	const dayKey = (d: Date) =>
-		new Intl.DateTimeFormat("en-CA", {
-			timeZone,
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-		}).format(d);
-
-	const now = new Date();
-	const todayKey = dayKey(now);
-	const yesterdayKey = dayKey(new Date(now.getTime() - 24 * 60 * 60 * 1000));
-	const itemKey = dayKey(dateUTC);
-
-	const timeStr = new Intl.DateTimeFormat("en-US", {
-		timeZone,
-		hour: "numeric",
-		minute: "2-digit",
-		hour12: true,
-	}).format(dateUTC);
-
-	if (itemKey === todayKey) return `Today, ${timeStr}`;
-	if (itemKey === yesterdayKey) return `Yesterday, ${timeStr}`;
-
-	return new Intl.DateTimeFormat("en-US", {
-		timeZone,
-		month: "short",
-		day: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-		hour12: true,
-	}).format(dateUTC);
-}
-
-export const formatToDataTestId = (text: string) => {
-	return text.replaceAll(/\(\)/g, "").replaceAll(" ", "-");
-};
+export { formatToDataTestId } from "@semoss/utility/text";

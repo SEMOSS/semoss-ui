@@ -187,14 +187,22 @@ export class StreamJobController {
 					isPolling = false;
 				} else if (response.status === "Error") {
 					throw new Error("Streaming job encountered an error");
-				} else if (response.status === "UnknownJob") {
-					// The job is gone from the server. If we stopped it, unwind
-					// silently and let stop() fire onCancel; otherwise it vanished
+				} else if (
+					response.status === "UnknownJob" ||
+					response.status === "Canceled"
+				) {
+					// The job is gone from the server, or the server cancelled it;
+					// either way it won't run further. If we stopped it, unwind
+					// silently and let stop() fire onCancel; otherwise it ended
 					// unexpectedly and there's nothing to fetch.
 					if (cancellable && this.stopIssued) {
 						return;
 					}
-					throw new Error("Streaming job no longer exists");
+					throw new Error(
+						response.status === "Canceled"
+							? "Streaming job was cancelled"
+							: "Streaming job no longer exists",
+					);
 				}
 
 				if (isPolling) {

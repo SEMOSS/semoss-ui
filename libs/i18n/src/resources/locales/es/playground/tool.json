@@ -27,7 +27,10 @@
 		"labelOpen": "Herramientas ejecutadas ({{count}})",
 		"labelStreaming_one": "Cargando {{count}} herramienta…",
 		"labelStreaming_other": "Cargando {{count}} herramientas…",
+		"labelPartial_one": "{{count}} herramienta completada, {{loadingCount}} cargando…",
+		"labelPartial_other": "{{count}} herramientas completadas, {{loadingCount}} cargando…",
 		"summaryCompleted": "{{count}} completado",
+		"summaryLoading": "{{count}} cargando",
 		"summaryError": "{{count}} fallido",
 		"summaryCancelled": "{{count}} cancelado"
 	},
@@ -67,5 +70,42 @@
 		"cancel": "Cancelar",
 		"retry": "Reintentar",
 		"checking": "Verificando..."
+	},
+	"activity": {
+		"steps": "Actividad de herramientas ({{count}})",
+		"needsInput": "Se necesita tu respuesta",
+		"cancelError": "No se pudo cancelar esta herramienta.",
+		"actions": "Acciones de herramienta"
+	},
+	"inspector": {
+		"input": "Entrada",
+		"info": "Información",
+		"tabsLabel": "Detalles de la herramienta",
+		"find": "Buscar",
+		"copy": "Copiar",
+		"copied": "Copiado al portapapeles",
+		"copyFailed": "No se pudo copiar al portapapeles",
+		"wrap": "Ajustar líneas",
+		"foldAll": "Contraer todo",
+		"unfoldAll": "Expandir todo",
+		"text": "Texto",
+		"expandedDescription": "Datos de solo lectura. Busque, copie o contraiga secciones para explorar los datos.",
+		"toolName": "Nombre de la herramienta",
+		"callId": "ID de la llamada",
+		"source": "Origen",
+		"execution": "Modo de ejecución",
+		"inputSchema": "Esquema de entrada",
+		"metadata": "Metadatos",
+		"emptyOutput": "Esta herramienta no devolvió ningún resultado.",
+		"runningOutput": "La herramienta se está ejecutando. El resultado aparecerá aquí.",
+		"inputView": "Vista de entrada",
+		"pretty": "Legible",
+		"raw": "JSON",
+		"emptyString": "Cadena vacía",
+		"itemCount": "Elementos: {{total}}",
+		"fieldCount": "Campos: {{total}}",
+		"showMore": "Mostrar más ({{remaining}} restantes)",
+		"showLess": "Mostrar menos",
+		"showFullValue": "Mostrar valor completo"
 	}
 }

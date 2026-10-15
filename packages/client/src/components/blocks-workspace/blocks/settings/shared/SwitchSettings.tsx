@@ -118,7 +118,7 @@ export const SwitchSettings = observer(
 					<div className="flex w-full flex-row items-center gap-0.5">
 						<Muted className="break-words">{label}</Muted>
 						{description && (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<CircleHelp
 										style={{

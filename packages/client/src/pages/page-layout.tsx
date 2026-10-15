@@ -1,29 +1,25 @@
-import { observer } from "mobx-react-lite";
-import { useMemo } from "react";
-import { Outlet } from "react-router-dom";
+import { useRef } from "react";
+import { Outlet } from "react-router";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { Page } from "@/components/shared/page";
 import { PageContext } from "@/contexts";
-import { PageStore } from "@/stores";
+import { createPageStore } from "@/stores";
 import { ErrorPage } from "./error-page";
 
 /**
  * Wrap the routes with a side navigation
  */
-export const PageLayout = observer(() => {
-	const page = useMemo(() => {
-		return new PageStore();
-	}, []);
-
-	if (!page) {
-		return null;
+export const PageLayout = () => {
+	const storeRef = useRef<ReturnType<typeof createPageStore> | null>(null);
+	if (!storeRef.current) {
+		storeRef.current = createPageStore();
 	}
 
 	return (
 		<ErrorBoundary fallback={<ErrorPage />}>
 			<PageContext.Provider
 				value={{
-					page: page,
+					store: storeRef.current,
 				}}
 			>
 				<Page>
@@ -32,4 +28,4 @@ export const PageLayout = observer(() => {
 			</PageContext.Provider>
 		</ErrorBoundary>
 	);
-});
+};

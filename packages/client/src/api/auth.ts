@@ -26,55 +26,6 @@ export const config = async () => {
 	return response.data;
 };
 
-export const run = async <O extends unknown[] | []>(
-	insightID: string,
-	pixel: string,
-) => {
-	// build the expression
-	let postData: Record<string, unknown> = {
-		expression: pixel,
-	};
-
-	if (insightID) {
-		postData = {
-			...postData,
-			insightId: insightID,
-		};
-	}
-	const response = await post<{
-		insightID: string;
-		pixelReturn: {
-			isMeta: boolean;
-			operationType: string[];
-			additionalOutput: {
-				output: string;
-			}[];
-			output: O[number];
-			pixelExpression: string;
-			pixelId: string;
-		}[];
-	}>(`${Env.MODULE}/api/engine/runPixel`, postData).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Pixel Response");
-	}
-	// collect the errors
-	const errors: string[] = [];
-	for (const p of response.data.pixelReturn) {
-		const { output, operationType } = p;
-		if (operationType.indexOf("ERROR") > -1) {
-			errors.push(output as string);
-		}
-	}
-	return {
-		errors: errors,
-		insightId: response.data.insightID,
-		pixelReturn: response.data.pixelReturn,
-	};
-};
-
 export const fileDownload = async (insightID: string, fileKey: string) => {
 	return new Promise<void>((resolve) => {
 		// create the download url
@@ -95,7 +46,7 @@ export const fileDownload = async (insightID: string, fileKey: string) => {
 	});
 };
 
-export const monolithLogin = async (
+export const login = async (
 	username: string,
 	password: string,
 ): Promise<boolean> => {
@@ -285,59 +236,11 @@ export const registerUser = async (
 	);
 };
 
-export const monolithLogout = async (): Promise<boolean> => {
+export const logout = async (): Promise<boolean> => {
 	await get(`${Env.MODULE}/api/auth/logout/all`).catch((err) => {
 		throw Error(err);
 	});
 	return true;
-};
-
-export const monolithOauth = async (provider: string): Promise<boolean> => {
-	// check if the user is logged in
-	const response = await get<{
-		name: string;
-	}>(`${Env.MODULE}/api/auth/userinfo/${provider}`).catch((error) => {
-		throw Error(error);
-	});
-	//check if they are already logged in
-	if (response.data?.name) {
-		return true;
-	}
-	return new Promise((resolve) => {
-		const url = `${Env.MODULE}/api/auth/login/${provider}`;
-		const popUpWindow = window.top.open(
-			url,
-			"_blank",
-			`height=${600},width=${400},top=${300},left=${600}`,
-		);
-		// setup an interval to see if the popup window is closed or successful
-		const interval = setInterval(async () => {
-			try {
-				if (
-					!popUpWindow ||
-					popUpWindow.closed ||
-					popUpWindow.closed === undefined
-				) {
-					clearInterval(interval);
-				} else if (
-					popUpWindow.document.location.href.indexOf(
-						`${window.location.host}`,
-					) > -1
-				) {
-					clearInterval(interval);
-					// close it
-					popUpWindow.close();
-					// try to get the info again
-					const response = await monolithOauth(provider);
-					// close it
-					resolve(response);
-				}
-			} catch (_err: unknown) {
-				// do nothing
-				// this is to work around the blocked frame error that comes up
-			}
-		}, 1000);
-	});
 };
 
 export const getLoginProperties = async () => {
@@ -360,6 +263,20 @@ export const modifyLoginProperties = async (provider, properties) => {
 	}).catch((error) => {
 		throw Error(error);
 	});
+	return response.data;
+};
+
+export const isAdminUser = async (): Promise<boolean> => {
+	const response = await get<boolean>(
+		`${Env.MODULE}/api/auth/admin/user/isAdminUser`,
+	).catch((error) => {
+		throw Error(error);
+	});
+
+	if (!response) {
+		throw Error("No Response to isAdminUser");
+	}
+
 	return response.data;
 };
 
@@ -812,9 +729,9 @@ export const createAPIUser = async (name: string) => {
 
 	const response = await post<Record<string, string>>(
 		url,
-		processPostData({
+		{
 			name: name,
-		}),
+		},
 		{},
 	).catch((error) => {
 		throw Error(error);
@@ -873,13 +790,11 @@ export const editMemberInfo = async (admin: boolean, user: unknown) => {
 		url += "admin/";
 	}
 	url += "user/editUser";
-	const response = await post<boolean>(
-		url,
-		processPostData(postData),
-		{},
-	).catch((e) => {
-		throw Error(e);
-	});
+	const response = await post<boolean>(url, { ...postData }, {}).catch(
+		(e) => {
+			throw Error(e);
+		},
+	);
 	return response;
 };
 
@@ -993,7 +908,7 @@ export const createUser = async (
 			modelMaxResponseTime: user.model_max_response_time,
 		};
 	}
-	const response = await post<boolean>(url, processPostData(newUserInfo), {});
+	const response = await post<boolean>(url, { ...newUserInfo }, {});
 	return response;
 };
 
@@ -1067,12 +982,4 @@ export const setUserDefaultModel = async (
 		throw Error(e);
 	});
 	return response;
-};
-
-const processPostData = (data: unknown) => {
-	const postRecordData: Record<string, unknown> = {};
-	Object.keys(data).forEach((item) => {
-		postRecordData[item] = data[item];
-	});
-	return postRecordData;
 };

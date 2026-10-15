@@ -1,8 +1,8 @@
 export type TerminalLocation = "workspace" | "panel" | "popup" | "pipeline";
 
 /**
- * The scope a file lives in — passed verbatim to `useFileExplorer` and
- * `<FileEditor mode>`. Re-exported rather than redeclared so the two can never
+ * The scope a file lives in — passed verbatim to `useFileExplorer` and to the
+ * file panels' `mode`. Re-exported rather than redeclared so the two can never
  * drift.
  */
 export type { FileMode } from "@semoss/shared";

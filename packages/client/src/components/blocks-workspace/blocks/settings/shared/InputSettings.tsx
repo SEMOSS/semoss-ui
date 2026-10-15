@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -64,6 +64,7 @@ export const InputSettings = observer(
 		min,
 	}: InputSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
+		const inputId = useId();
 
 		// track the value
 		const [value, setValue] = useState("");
@@ -150,8 +151,13 @@ export const InputSettings = observer(
 		};
 
 		return (
-			<BaseSettingSection label={label} description={description}>
+			<BaseSettingSection
+				label={label}
+				description={description}
+				htmlFor={inputId}
+			>
 				<Input
+					id={inputId}
 					value={value}
 					onChange={(e) => {
 						// sync the data on change

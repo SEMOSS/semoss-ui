@@ -6,9 +6,8 @@ import {
 	Pencil,
 	Trash2,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 import {
 	Alert,
 	AlertDescription,
@@ -37,21 +36,14 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { buildInitials, hashString } from "@semoss/utility/text";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { Prompt } from "../../components/prompt/prompt.types";
 import { PromptDeleteModal } from "../../components/prompt/prompt-delete-modal";
 import { PromptModal } from "./PromptModal";
-
-const hashString = (str: string): number => {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
-	}
-	return Math.abs(h);
-};
 
 const generateGradient = (name: string): string => {
 	const base = hashString(name) % 360;
@@ -61,12 +53,6 @@ const generateGradient = (name: string): string => {
 const generateInitialsColor = (name: string): string => {
 	const base = hashString(name) % 360;
 	return `hsl(${base}, 28%, 28%)`;
-};
-
-const buildInitials = (label: string): string => {
-	const tokens = label.split(/[^A-Za-z0-9]+/).filter((t) => t.length > 0);
-	const chars = tokens.map((t) => t[0].toUpperCase());
-	return chars.slice(0, 3).join("");
 };
 
 /**
@@ -119,9 +105,10 @@ const normalizeModelOption = (value: unknown): LlmModelOption | null => {
 	};
 };
 
-export const PromptDetailPage = observer(() => {
+export const PromptDetailPage = () => {
 	const { promptId } = useParams<{ promptId: string }>();
-	const { configStore, monolithStore } = useRootStore();
+	const userId = useSession((state) => state.user.id);
+	const runPixel = useSession((state) => state.runPixel);
 	const navigate = useNavigate();
 
 	const [versions, setVersions] = useState<Prompt[]>([]);
@@ -146,20 +133,20 @@ export const PromptDetailPage = observer(() => {
 
 	const isOwner = useMemo(() => {
 		if (!latestVersion) return false;
-		return latestVersion.created_by === configStore.store.user.id;
-	}, [latestVersion, configStore.store.user.id]);
+		return latestVersion.created_by === userId;
+	}, [latestVersion, userId]);
 
 	const loadPrompt = () => {
 		if (!promptId) return;
-		monolithStore
-			.runQuery(`GetPromptWithVersions(promptId='${promptId}')`)
-			.then((response) => {
+		runPixel(`GetPromptWithVersions(promptId='${promptId}')`).then(
+			(response) => {
 				const output = response.pixelReturn[0].output as Prompt[];
 				if (output && output.length > 0) {
 					setVersions(output);
 					setSelectedVersionIndex(0);
 				}
-			});
+			},
+		);
 	};
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — reruns on promptId change only
@@ -178,8 +165,7 @@ export const PromptDetailPage = observer(() => {
 		const pixel =
 			'META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);';
 
-		monolithStore
-			.runQuery(pixel)
+		runPixel(pixel)
 			.then((response) => {
 				if (!isMounted) return;
 
@@ -216,7 +202,7 @@ export const PromptDetailPage = observer(() => {
 		return () => {
 			isMounted = false;
 		};
-	}, [monolithStore]);
+	}, [runPixel]);
 
 	const selectVersion = (index: number) => {
 		setSelectedVersionIndex(index);
@@ -233,8 +219,7 @@ export const PromptDetailPage = observer(() => {
 			id: promptId,
 		};
 		const stringified = `UpdatePrompt ( map = [${JSON.stringify(promptMap)} ])`;
-		monolithStore
-			.runQuery(stringified)
+		runPixel(stringified)
 			.then(() => {
 				loadPrompt();
 			})
@@ -262,7 +247,7 @@ export const PromptDetailPage = observer(() => {
 
 		try {
 			const pixel = `LLM(engine="${selectedModelId}", command=["<encode>${promptInput}</encode>"])`;
-			const response = await monolithStore.runQuery(pixel);
+			const response = await runPixel(pixel);
 			const { output, operationType } = response.pixelReturn[0];
 
 			if (operationType.indexOf("ERROR") > -1) {
@@ -289,9 +274,7 @@ export const PromptDetailPage = observer(() => {
 			setTesterOutput(result || "No response received.");
 		} catch (error) {
 			setTesterError(
-				error instanceof Error
-					? error.message
-					: "Failed to run prompt test.",
+				getErrorMessage(error, "Failed to run prompt test."),
 			);
 		} finally {
 			setIsTesterRunning(false);
@@ -316,7 +299,7 @@ export const PromptDetailPage = observer(() => {
 		const stringified = `UpdatePrompt ( map = [${JSON.stringify(promptMap)} ])`;
 
 		try {
-			const response = await monolithStore.runQuery(stringified);
+			const response = await runPixel(stringified);
 			const { operationType, output } = response.pixelReturn[0];
 
 			if (operationType.indexOf("ERROR") > -1) {
@@ -333,10 +316,10 @@ export const PromptDetailPage = observer(() => {
 			toast.success("Prompt context saved as a new version");
 			loadPrompt();
 		} catch (error) {
-			const message =
-				error instanceof Error
-					? error.message
-					: "Failed to save prompt context.";
+			const message = getErrorMessage(
+				error,
+				"Failed to save prompt context.",
+			);
 			setTesterError(message);
 			toast.error(message);
 		} finally {
@@ -398,7 +381,7 @@ export const PromptDetailPage = observer(() => {
 						className="font-semibold text-2xl"
 						style={{ color: initialsColor }}
 					>
-						{buildInitials(promptTitle)}
+						{buildInitials(promptTitle, 3)}
 					</span>
 				</div>
 
@@ -413,7 +396,7 @@ export const PromptDetailPage = observer(() => {
 					{promptId && (
 						<div className="flex items-center gap-1 text-muted-foreground text-sm">
 							<span>{promptId}</span>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"
@@ -801,7 +784,11 @@ export const PromptDetailPage = observer(() => {
 															"Save Context"
 														)}
 													</Button>
-													<Tooltip>
+													<Tooltip
+														disableHoverableContent={
+															false
+														}
+													>
 														<TooltipTrigger asChild>
 															<Info className="size-4 text-muted-foreground" />
 														</TooltipTrigger>
@@ -899,7 +886,7 @@ export const PromptDetailPage = observer(() => {
 									? "Setting..."
 									: "Set as Active"}
 							</Button>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Info className="size-4 text-muted-foreground" />
 								</TooltipTrigger>
@@ -965,4 +952,4 @@ export const PromptDetailPage = observer(() => {
 			/>
 		</div>
 	);
-});
+};
