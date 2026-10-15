@@ -15,6 +15,22 @@ React hooks/providers such as `useInsight` and `InsightProvider` live under
 `@semoss/sdk/react`. There is no core export named `Room`. Framework-independent
 state does not imply that all SDK entry points are safe in Node or SSR environments.
 
+## Agent Profile Images
+
+Agent workspaces and skills use project catalog images. After creation returns a
+project ID, call `uploadProjectImage(projectId, file)` from `@semoss/sdk`.
+`uploadEngineImage(engineId, file)` handles engine catalog images. Both return
+`Promise<CatalogImageUploadResult>` with `id`, `name`, `message`, `imageUrl`, and
+`contentType`. `imageUrl` is a path on the backend origin, not necessarily the
+frontend origin. These calls require edit access and the resource-scoped image
+upload routes on Monolith.
+
+Use `CATALOG_IMAGE_ACCEPT`, `CATALOG_IMAGE_MAX_BYTES`, and
+`getCatalogImageValidationError(file)` for file-picker validation. Supported files
+are PNG, JPEG, and GIF up to 10 MiB. The server validates the bytes and enforces a
+25-million-pixel limit. A failure rejects; preserve the new project ID so a retry
+uploads to the same agent. Do not pass a temporary form ID or an agent run ID.
+
 ## Choose the Transport Explicitly
 
 | Operation | Submission | Progress | Settled result |
@@ -265,6 +281,14 @@ assumed `room.model.app_id` field. `RoomStore` has no `model` field. The wrapper
 passes this string through; verify the deployed reactor's identifier contract.
 It wraps tool output in `<encode>` markers and does not URL-encode it.
 
+To run a chat tool call itself, `runMcpTool({ project, roomId, name, paramValues }, insightId?)`
+calls RunMCPTool and returns `Promise<string>`: the tool's text, JSON for output
+that is not text, or `""` for none. It rejects when the pixel fails or answers
+with no statement; submit that failure with `mcpToolStatus: "error"`. Use
+`decideAgentRunAction` instead for a paused agent run's tool.
+`makeUserPixelMcp({ filePath, generator, tools })` writes a generator's tools
+into a pixel MCP file in the user's own assets.
+
 The client owns chat tool execution, authorization, concurrency, and result
 submission. There is no SDK `toolAutoExecutionLimit` option or default of five.
 Report a genuine tool failure using `mcpToolStatus: "error"`; a failure to save a
@@ -280,14 +304,22 @@ validate objects too. A string alone does not prove another tool should run.
 ## Agent Runs
 
 `runAgent(params, insightId?)` requires `roomId` and `command` strings. Optional
-fields are `engine`, `harnessType`, `agentId` (strings), `maxTurns` and
-`maxReflections` (numbers), `media` and `urls` (`string[]`), and
+fields are `engine`, `harnessType`, `agentId`, `space`, `subdir` (strings),
+`maxTurns` and `maxReflections` (numbers), `media` and `urls` (`string[]`), and
 `paramValues` (`Record<string, unknown>`, not the chat array form).
 There is no `images` or separate `agentParams` parameter in this version.
 
+`space` picks where the run works: `INSIGHT` (the room's folder, and what a run
+without `space` uses), `USER` (the user's file space), or an editable project
+id. `subdir` narrows that to a folder inside it. The backend refuses
+`paramValues.space`, `space` together with `paramValues.project`, and a
+`subdir` that leaves the space.
+
 The wrapper JSON-serializes raw command text, maps `agentId` to `workspaceId`,
-`urls` to `url`, and `media` to `media`; nonempty `paramValues` is sent as a
-one-element array. It does not URL-encode commands or inject a harness default.
+`urls` to `url`, and `media` to `media`; `space` is sent as its own argument
+and `subdir` as `paramValues.subdir`, replacing one already there. Nonempty
+`paramValues` is sent as a one-element array. It does not URL-encode commands
+or inject a harness default.
 The returned status is typed as `AgentRunStatusValue`, not guaranteed by local
 validation to equal `"SUBMITTED"`.
 

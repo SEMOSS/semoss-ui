@@ -6,7 +6,12 @@
 		"noToolboxesFound": "No toolboxes found",
 		"noKnowledgeFound": "No knowledge found",
 		"noAgentsFound": "No agents found",
-		"noSkillsFound": "لم يتم العثور على مهارات"
+		"noSkillsFound": "لم يتم العثور على مهارات",
+		"fromRoom": "من هذه المحادثة",
+		"loadError": "تعذّر تحميل الكتالوج.",
+		"retry": "حاول مرة أخرى",
+		"added": "تمت الإضافة",
+		"available": "متاح"
 	},
 	"permission": {
 		"owner": "Owner",

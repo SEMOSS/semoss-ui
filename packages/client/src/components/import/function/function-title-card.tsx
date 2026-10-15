@@ -7,8 +7,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { formatToDataTestId } from "@semoss/utility/text";
 import BRAIN from "@/assets/img/BRAIN.png";
-import { formatToDataTestId } from "@/utility";
 
 interface Function {
 	name: string;

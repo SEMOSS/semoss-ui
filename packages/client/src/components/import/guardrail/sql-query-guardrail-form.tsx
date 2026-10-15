@@ -16,6 +16,8 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
 import { createGuardrailEngine } from "@/api";
 import { useSession } from "@/hooks";
 import { EngineFormHeader } from "../shared/engine-form-header";
@@ -152,11 +154,7 @@ const policyMapSchema = z
 	.refine((value) => {
 		try {
 			const parsed = JSON.parse(value) as unknown;
-			if (
-				typeof parsed !== "object" ||
-				parsed === null ||
-				Array.isArray(parsed)
-			) {
+			if (!isRecord(parsed)) {
 				return false;
 			}
 
@@ -318,9 +316,10 @@ export const SqlQueryGuardrailForm = ({
 		} catch (error) {
 			console.error(error);
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to create the SQL query guardrail",
+				getErrorMessage(
+					error,
+					"Unable to create the SQL query guardrail",
+				),
 			);
 		}
 	};

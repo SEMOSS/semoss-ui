@@ -1,101 +1,25 @@
 import { BotIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
-import type { MCPConfig, SkillConfig } from "@semoss/shared";
+import {
+	AgentForm,
+	type AgentFormValues,
+	type AgentWorkspace,
+	buildEditWorkspacePixel,
+	getWorkspaceSaveWarning,
+	toAgentFormValues,
+	toAgentPromptTitles,
+} from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
 import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
-import {
-	type AgentDefaultTool,
-	AgentForm,
-	type AgentFormValues,
-	buildEditWorkspacePixel,
-	getWorkspaceSaveWarning,
-} from "@/components/agent-workspace/agent-form";
+import { AgentDefinitionView } from "@/components/agent-workspace/agent-viewer";
 import { useProject } from "@/hooks";
+import { CLIENT_AGENT_LINKS } from "@/utility";
 import { AgentEditorSaveControl } from "./agent-editor-save-control";
-
-type GetWorkspaceResponse = {
-	name: string;
-	description: string;
-	system_prompt: string;
-	mcp: MCPConfig[];
-	skills: SkillConfig[];
-	prompts: { id: string; name: string; type: string }[];
-	known_hook_kinds?: string[];
-	default_tools?: AgentDefaultTool[];
-	config_json?: {
-		model_id?: string;
-		use_default_agent_tools?: boolean;
-		greeting?: string;
-		greeting_enabled?: boolean;
-		tool_policy?: {
-			default_tools?: {
-				disabled?: string[];
-			};
-		};
-		budgets?: {
-			max_turns?: number;
-			max_reflections?: number;
-			max_seconds?: number;
-		};
-		spawn_policy?: {
-			max_subagent_depth?: number;
-			max_subagents_per_run?: number;
-			max_spawns_per_turn?: number;
-		};
-		subagents?: {
-			workspaceId: string;
-		}[];
-		hooks?: {
-			kind: string;
-			pixel?: string;
-			events?: string[];
-		}[];
-	};
-};
-
-/** Maps `GetWorkspace`'s response shape to `AgentForm`'s flat field values. */
-function toFormValues(response: GetWorkspaceResponse): AgentFormValues {
-	const allMcps = response.mcp ?? [];
-	return {
-		name: response.name ?? "",
-		description: response.description ?? "",
-		instructions: response.system_prompt ?? "",
-		modelId: response.config_json?.model_id ?? "",
-		useDefaultAgentTools:
-			response.config_json?.use_default_agent_tools ?? true,
-		greeting: response.config_json?.greeting ?? "",
-		greetingEnabled: response.config_json?.greeting_enabled ?? false,
-		disabledDefaultTools:
-			response.config_json?.tool_policy?.default_tools?.disabled ?? [],
-		maxTurns: response.config_json?.budgets?.max_turns?.toString() ?? "",
-		maxReflections:
-			response.config_json?.budgets?.max_reflections?.toString() ?? "",
-		maxSeconds:
-			response.config_json?.budgets?.max_seconds?.toString() ?? "",
-		maxSubagentDepth:
-			response.config_json?.spawn_policy?.max_subagent_depth?.toString() ??
-			"",
-		maxSubagentsPerRun:
-			response.config_json?.spawn_policy?.max_subagents_per_run?.toString() ??
-			"",
-		maxSpawnsPerTurn:
-			response.config_json?.spawn_policy?.max_spawns_per_turn?.toString() ??
-			"",
-		knowledge: allMcps.filter((m) => m.type === "VECTOR"),
-		toolboxes: allMcps.filter((m) => m.type !== "VECTOR"),
-		skills: response.skills ?? [],
-		prompts: (response.prompts ?? []).map((p) => p.id),
-		subagents: (response.config_json?.subagents ?? []).map((s) => ({
-			workspaceId: s.workspaceId,
-		})),
-		hooks: response.config_json?.hooks ?? [],
-	};
-}
 
 /** Save state the panel publishes to its chrome control (see `AgentEditorSaveControl`). */
 export interface AgentEditorSaveValue {
@@ -118,7 +42,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	// The insight's id resolves asynchronously after mount - fetching before
 	// it's ready would run GetWorkspace a wasted first time against no insight.
-	const { data: response, status } = usePixel<GetWorkspaceResponse>(
+	const { data: response, status } = usePixel<AgentWorkspace>(
 		insight.isReady
 			? `GetWorkspace(workspaceId=["${project.project_id}"]);`
 			: "",
@@ -132,7 +56,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 	// after that, so this doesn't re-run on every keystroke.
 	useEffect(() => {
 		if (status === "SUCCESS") {
-			setFormValues(toFormValues(response));
+			setFormValues(toAgentFormValues(response));
 		}
 	}, [status, response]);
 
@@ -172,13 +96,23 @@ const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 				<div className="flex h-full items-center justify-center">
 					<Spinner />
 				</div>
+			) : readOnly ? (
+				// Users who cannot edit get the read-only definition instead of
+				// a disabled form
+				<AgentDefinitionView
+					workspace={response}
+					className="px-6 py-6"
+				/>
 			) : (
 				<AgentForm
 					data={formValues}
 					onChange={setFormValues}
-					readOnly={readOnly || isLoading}
+					disabled={isLoading}
+					promptTitles={toAgentPromptTitles(response)}
 					knownHookKinds={response.known_hook_kinds ?? []}
 					defaultTools={response.default_tools ?? []}
+					workspaceId={project.project_id}
+					links={CLIENT_AGENT_LINKS}
 				/>
 			)}
 		</div>

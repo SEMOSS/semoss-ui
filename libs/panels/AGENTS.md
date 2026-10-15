@@ -63,6 +63,14 @@ network call at all.
 `useAccess`. That is deliberate — a chrome control renders outside its panel's subtree, so it
 cannot reuse the access the panel already resolved.
 
+## A host can add right-click entries to the explorer
+
+`FILE_EXPLORER_PANEL` asks the nearest `FileExplorerHostProvider` for extra entries per row
+(`secondaryActions(item, mode)`), so an app adds its own actions without forking the blueprint.
+The playground adds Add to Context to Chat Files this way. Entries with `placement: "end"` are
+listed after every standard entry. Keep the host object's identity stable: it is a dependency of
+every row's actions.
+
 ## A view renders a file; a host draws its actions
 
 `components/views/` holds one component per `FileEditorKind`. A view owns the read, the buffer
@@ -122,7 +130,7 @@ dock can mount one by supplying its own chrome and skipping `useFilesChanged`.
   specifier at `libs/shared/node_modules/...`; `vite.config.ts` here does the same so the tests run.
 - Everything else about panels — blueprints, mount policy, chrome controls, the dirty `*` marker —
   is in [the dock's AGENTS.md](../workbench/AGENTS.md) and
-  [the client's](../../packages/client/src/components/workbench/AGENTS.md).
+  [the client's host components](../../packages/client/src/components/workbench/).
 
 ## What a host has to wire up
 
@@ -147,3 +155,9 @@ pnpm --filter @semoss/panels test
 ```
 
 Also exercise an affected host when changing its panel or Vite integration.
+
+## Generic utilities
+
+Import reusable helpers from `@semoss/utility/<category>`, a direct workspace dependency.
+Follow the [utility guide](../utility/AGENTS.md). Keep domain policy and
+UI behavior here, and preserve public compatibility adapters when moving helpers.

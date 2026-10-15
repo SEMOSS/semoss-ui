@@ -15,6 +15,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { escapeCsvValue } from "@semoss/utility/csv";
 import type { RoomStore } from "@/stores";
 import { BlockHeader } from "./block-header";
 import { CodePreviewBlock } from "./code-preview-block";
@@ -267,25 +269,14 @@ export const createMarkdownComponents = (
 			const csv = rows
 				.map((row) =>
 					Array.from(row.querySelectorAll("th, td"))
-						.map((cell) => {
-							const text = (cell.textContent ?? "").replace(
-								/"/g,
-								'""',
-							);
-							return `"${text}"`;
-						})
+						.map((cell) => escapeCsvValue(cell.textContent ?? ""))
 						.join(","),
 				)
 				.join("\n");
 
 			const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-			const url = URL.createObjectURL(blob);
 			const date = new Date().toISOString().slice(0, 10);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `table_response_${date}.csv`;
-			a.click();
-			URL.revokeObjectURL(url);
+			downloadBlob(blob, `table_response_${date}.csv`);
 		};
 
 		return (

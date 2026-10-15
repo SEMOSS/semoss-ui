@@ -32,6 +32,7 @@ import {
 	DialogTitle,
 	Spinner,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { resumeAutomationRun } from "../../api";
 import type {
 	AutomationNodeTrace,
@@ -326,9 +327,10 @@ export function AgentRunDialog({
 			.catch((error: unknown) => {
 				resumedAgentStateRef.current = null;
 				setResumeError(
-					error instanceof Error
-						? error.message
-						: "The automation could not continue.",
+					getErrorMessage(
+						error,
+						"The automation could not continue.",
+					),
 				);
 			})
 			.finally(() => setResumingAutomation(false));

@@ -26,6 +26,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { Java } from "@/assets/img/Java";
 import { useSession, useSettings } from "@/hooks";
 import { AutomationImportExportCard } from "./automation-import-export-card";
@@ -244,11 +245,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			reset();
 		} catch (e) {
 			console.error(e);
-			toast.error(
-				e instanceof Error
-					? e.message
-					: "An unexpected error occurred.",
-			);
+			toast.error(getErrorMessage(e, "An unexpected error occurred."));
 		} finally {
 			// turn of loading
 			setIsLoading(false);
@@ -285,9 +282,10 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			);
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to export project. Please try again.",
+				getErrorMessage(
+					error,
+					"Failed to export project. Please try again.",
+				),
 			);
 		} finally {
 			setIsExporting(false);

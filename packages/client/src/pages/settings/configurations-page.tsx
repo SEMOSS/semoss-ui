@@ -14,6 +14,7 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { formatToDataTestId } from "@semoss/utility/text";
 import { modifyLoginProperties } from "@/api";
 import dropbox from "@/assets/img/DROPBOX.png";
 import github from "@/assets/img/GITHUB.svg";
@@ -22,7 +23,6 @@ import ms from "@/assets/img/ms.png";
 import other from "@/assets/img/other.png";
 import { useAPI, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { formatToDataTestId } from "@/utility";
 
 const SOCIAL = {
 	google: {

@@ -41,6 +41,17 @@ package (theme sync and MCP tool-completion signaling to the playground parent).
   than blocking until it finishes, so per-node use of that pair let a later node start before an
   earlier one had actually persisted its output. Inspect the current `src/hooks/` and
   `src/api/` integration; the former `use-automation-run.ts` path no longer exists.
+- `GetAutomationRun(project=[...], runId=[...])` includes the live execution Insight and SEMOSS's
+  standard `FRAME_MAP` noun for row-shaped node output. Page that frame through the existing
+  `Frame | QueryAll | Offset | Limit | Collect` Pixel path. If the run workspace has closed or the
+  result is not tabular, retain the saved output-preview fallback.
+- `control.loop` is a compound node whose `body` is a nested acyclic workflow
+  graph. Keep its body in the canonical workflow document, reuse the normal node
+  forms and catalog, and treat expand/collapse as transient canvas state. The
+  backend owns bounded sequential `forEach`, fixed-count `repeat`, and
+  condition-based `while` execution. Show these as business choices, expose the
+  backend-owned per-pass variables to nested forms, and do not model iteration
+  with a circular React Flow edge.
 
 ## Build System
 

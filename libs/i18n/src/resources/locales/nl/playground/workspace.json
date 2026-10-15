@@ -16,7 +16,8 @@
 		"createAgent": "Een agent aanmaken",
 		"edit": "Bewerken",
 		"delete": "Verwijderen",
-		"newChat": "Nieuwe chat"
+		"newChat": "Nieuwe chat",
+		"moreActions": "Meer acties voor {{name}}"
 	},
 	"card": {
 		"deleteConfirmTitle": "Weet u het zeker?",
@@ -165,5 +166,22 @@
 	},
 	"skills": {
 		"noSkills": "Geen vaardigheden toegevoegd"
+	},
+	"catalog": {
+		"title": "Mijn agents",
+		"description": "Chat met de agents die je kunt gebruiken, of maak je eigen agent.",
+		"filters": {
+			"label": "Agents filteren",
+			"createdByMe": "Door mij gemaakt",
+			"owner": "Eigenaar",
+			"edit": "Kan bewerken",
+			"view": "Alleen bekijken"
+		},
+		"sort": {
+			"label": "Agents sorteren",
+			"name": "Naam",
+			"newest": "Nieuwste",
+			"edited": "Onlangs bewerkt"
+		}
 	}
 }

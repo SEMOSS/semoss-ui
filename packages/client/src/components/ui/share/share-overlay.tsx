@@ -12,6 +12,7 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 
 interface ShareOverlayProps {
 	appId: string;
@@ -35,7 +36,7 @@ const CopyButton = ({
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "Failed to copy");
+			toast.error(getErrorMessage(e, "Failed to copy"));
 		}
 	};
 

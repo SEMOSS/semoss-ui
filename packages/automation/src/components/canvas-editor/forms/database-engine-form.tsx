@@ -5,10 +5,11 @@ import {
 	Loader2,
 	Search,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
-import { Input } from "@semoss/ui/next";
+import { Field, FieldLabel, Input } from "@semoss/ui/next";
 import type { DatabaseEngineConfig } from "../../../domain/automation.types";
+import { getAutomationNodeDefinition } from "../../../domain/automation-node-catalog";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
 
@@ -34,6 +35,12 @@ export function DatabaseEngineForm({
 	onChange,
 	readOnly = false,
 }: DatabaseEngineFormProps) {
+	const limitId = useId();
+	const limitDescriptionId = useId();
+	const limitSchema =
+		getAutomationNodeDefinition("database.query")?.configSchema.limit;
+	const minimumLimit = limitSchema?.minimum;
+	const maximumLimit = limitSchema?.maximum;
 	const [structure, setStructure] = useState<TableStructure[]>([]);
 	const [schemaLoading, setSchemaLoading] = useState(false);
 	const [schemaError, setSchemaError] = useState(false);
@@ -157,6 +164,49 @@ export function DatabaseEngineForm({
 				readOnly={readOnly}
 			/>
 
+			<BoundInput
+				label="Parameters (JSON array, optional)"
+				value={config.parameters ?? ""}
+				onChange={(value) => onChange({ ...config, parameters: value })}
+				upstreamVars={upstreamVars}
+				placeholder={'["$' + '{loop.item.appointmentBlockId}"]'}
+				mono
+				minRows={3}
+				readOnly={readOnly}
+			/>
+
+			{config.operation === "query" && (
+				<Field>
+					<FieldLabel htmlFor={limitId}>Result limit</FieldLabel>
+					<Input
+						id={limitId}
+						aria-describedby={limitDescriptionId}
+						type="number"
+						min={minimumLimit}
+						max={maximumLimit}
+						value={config.limit}
+						onChange={(event) =>
+							onChange({
+								...config,
+								limit: event.target.value
+									? Number(event.target.value)
+									: 50,
+							})
+						}
+						disabled={readOnly}
+					/>
+					<p
+						id={limitDescriptionId}
+						className="text-muted-foreground text-xs"
+					>
+						{minimumLimit !== undefined &&
+						maximumLimit !== undefined
+							? `${minimumLimit.toLocaleString()}–${maximumLimit.toLocaleString()} rows`
+							: "Enter the maximum number of rows to return."}
+					</p>
+				</Field>
+			)}
+
 			{config.engineId && (
 				<div className="flex flex-col gap-2">
 					<div className="flex items-center gap-2">
@@ -166,7 +216,7 @@ export function DatabaseEngineForm({
 						{schemaLoading && (
 							<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
 						)}
-						<span className="ml-auto text-[10px] text-muted-foreground/60">
+						<span className="ml-auto text-muted-foreground/60 text-xs">
 							{canInsertQuery ? "click to insert" : "reference"}
 						</span>
 					</div>
@@ -226,7 +276,7 @@ export function DatabaseEngineForm({
 													: table.table
 											}
 										>
-											<Database className="h-3 w-3 shrink-0 text-blue-500" />
+											<Database className="h-3 w-3 shrink-0 text-primary" />
 											<span className="font-medium">
 												{table.table}
 											</span>
@@ -256,7 +306,7 @@ export function DatabaseEngineForm({
 													<span className="flex-1 font-mono text-foreground/80">
 														{col.column}
 													</span>
-													<span className="shrink-0 text-[10px] text-muted-foreground/60">
+													<span className="shrink-0 text-muted-foreground/60 text-xs">
 														{col.type}
 													</span>
 												</button>

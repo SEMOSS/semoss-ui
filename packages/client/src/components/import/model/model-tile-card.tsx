@@ -8,7 +8,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { formatToDataTestId } from "@/utility";
+import { formatToDataTestId } from "@semoss/utility/text";
 
 const normalizeEngineKey = (value?: string) =>
 	(value || "").trim().replace(/\W+/g, "_").toUpperCase();

@@ -84,3 +84,9 @@ pnpm --filter @semoss/browser-automation build
 ```
 
 Report the ESLint gap above separately from the checks that can run.
+
+## Generic utilities
+
+Import reusable helpers from `@semoss/utility/<category>`, a direct workspace dependency.
+Follow the [utility guide](../../libs/utility/AGENTS.md). Keep domain policy and
+UI behavior here, and preserve public compatibility adapters when moving helpers.

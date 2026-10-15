@@ -16,7 +16,12 @@
 		"viewDetails": "Voir les détails",
 		"noToolboxesFound": "Aucune boîte à outils trouvée",
 		"noKnowledgeFound": "Aucune connaissance trouvée",
-		"noAgentsFound": "Aucun agent trouvé"
+		"noAgentsFound": "Aucun agent trouvé",
+		"fromRoom": "De cette discussion",
+		"loadError": "Impossible de charger le catalogue.",
+		"retry": "Réessayer",
+		"added": "Ajoutés",
+		"available": "Disponibles"
 	},
 	"overlay": {
 		"title": "Configurez votre chat",

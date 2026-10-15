@@ -1,6 +1,7 @@
 import { AlertCircle, Loader2 } from "lucide-react";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle, Button } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { fetchAutomationNodeDefinitions } from "../../api";
 import {
 	hasAutomationNodeDefinitions,
@@ -28,9 +29,10 @@ function loadNodeCatalog(): Promise<void> {
 }
 
 function errorMessage(error: unknown): string {
-	return error instanceof Error
-		? error.message
-		: "The Automation node catalog could not be loaded.";
+	return getErrorMessage(
+		error,
+		"The Automation node catalog could not be loaded.",
+	);
 }
 
 /** Loads the canonical backend node catalog before rendering a workflow canvas. */

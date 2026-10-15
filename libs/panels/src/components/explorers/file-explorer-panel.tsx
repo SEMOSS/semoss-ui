@@ -26,6 +26,7 @@ import {
 	FILE_PANEL_TYPES,
 	MCP,
 } from "../../constants/file-panel.constants";
+import { useFileExplorerHost } from "../../contexts/file-explorer-host.context";
 import { useAccess } from "../../hooks/use-access";
 import { useWorkbenchFilePanels } from "../../hooks/use-workbench-file-panels";
 import {
@@ -50,6 +51,7 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 	const { config } = useWorkbenchPanel<FileExplorerParams>(id);
 
 	const insight = useInsight();
+	const host = useFileExplorerHost();
 	const resource = getFilePanelResource(config.mode);
 	const access = useAccess(resource?.type ?? "INSIGHT", resource?.id ?? "");
 	const readOnly = access.status !== "ready" || access.readOnly;
@@ -179,9 +181,19 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 				});
 			}
 
-			return { actions };
+			return {
+				actions,
+				secondaryActions: host?.secondaryActions?.(item, mode) ?? [],
+			};
 		},
-		[mode, explorer.commands, insight.actions, layoutActions, readOnly],
+		[
+			mode,
+			explorer.commands,
+			insight.actions,
+			layoutActions,
+			readOnly,
+			host,
+		],
 	);
 
 	if (access.status === "loading") {

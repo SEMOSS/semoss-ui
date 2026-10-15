@@ -3,6 +3,7 @@ import {
 	type CodeEditorMenuItem,
 	DEFAULT_CODE_EDITOR_MENU_ITEMS,
 } from "@semoss/ui/next";
+import { getImageMimeType as getMimeType } from "@semoss/utility/image";
 import { FILE_PANEL_TYPES } from "../constants/file-panel.constants";
 
 const CODE_EDITOR_LANGUAGES: Record<string, string> = {
@@ -26,16 +27,6 @@ const CODE_EDITOR_LANGUAGES: Record<string, string> = {
 	xml: "xml",
 	yaml: "yaml",
 	yml: "yaml",
-};
-
-const IMAGE_MIME_TYPES: Record<string, string> = {
-	bmp: "image/bmp",
-	gif: "image/gif",
-	jpeg: "image/jpeg",
-	jpg: "image/jpeg",
-	png: "image/png",
-	svg: "image/svg+xml",
-	webp: "image/webp",
 };
 
 const READ_ONLY_CODE_EDITOR_MENU_ITEMS = DEFAULT_CODE_EDITOR_MENU_ITEMS.filter(
@@ -108,7 +99,7 @@ export const getCodeEditorLanguage = (path: string): string => {
 /** Infer an image MIME type from a file path. */
 export const getImageMimeType = (path: string): string => {
 	const extension = path.split(".").pop()?.toLowerCase() ?? "";
-	return IMAGE_MIME_TYPES[extension] ?? "image/png";
+	return getMimeType(extension);
 };
 
 /** Resolve a file path to its unified workbench panel type. */

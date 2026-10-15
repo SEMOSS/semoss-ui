@@ -3,7 +3,7 @@
 
 import { ChevronDown, ChevronUp, TriangleAlert, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useWatch } from "react-hook-form";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -11,6 +11,7 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	Controller,
 	Field,
 	FieldDescription,
 	FieldLabel,
@@ -27,7 +28,10 @@ import {
 	Switch,
 	Textarea,
 	toast,
+	useForm,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
+import { formatToDataTestId } from "@semoss/utility/text";
 import {
 	EngineBuiltinToolsField,
 	type ModelBuiltinTools,
@@ -38,7 +42,6 @@ import type {
 } from "@/components/engine/engine-metadata-display";
 import { useSession, useStepper } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { formatToDataTestId } from "@/utility";
 import type { CatalogMatchState } from "./model-catalog-match";
 import { ModelCatalogMatch } from "./model-catalog-match";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
@@ -872,6 +875,16 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									<Input
 										id={f.key}
 										type="url"
+										ref={ref}
+										name={field.name}
+										onBlur={field.onBlur}
+										required={f.required}
+										aria-invalid={!!error}
+										aria-describedby={
+											error || f.helperText
+												? fieldErrorTestId
+												: undefined
+										}
 										value={field.value ?? ""}
 										onChange={(e) =>
 											field.onChange(e.target.value)
@@ -880,6 +893,14 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										autoComplete="off"
 										data-testid={fieldInputTestId}
 									/>
+									{(error || f.helperText) && (
+										<FieldDescription
+											id={fieldErrorTestId}
+											data-testid={fieldErrorTestId}
+										>
+											{getHelperText(error, f)}
+										</FieldDescription>
+									)}
 								</Field>
 							);
 						case "password":
@@ -896,6 +917,11 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									<Input
 										id={f.key}
 										type="password"
+										aria-describedby={
+											f.helperText
+												? fieldErrorTestId
+												: undefined
+										}
 										value={field.value ?? ""}
 										onChange={(e) =>
 											field.onChange(e.target.value)
@@ -906,6 +932,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									/>
 									{f.helperText && (
 										<FieldDescription
+											id={fieldErrorTestId}
 											data-testid={fieldErrorTestId}
 										>
 											{f.helperText}
@@ -1058,11 +1085,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							);
 						case "reasoning-config": {
 							const asConfig = (raw: unknown) =>
-								raw &&
-								typeof raw === "object" &&
-								!Array.isArray(raw)
-									? (raw as ReasoningConfig)
-									: null;
+								isRecord(raw) ? (raw as ReasoningConfig) : null;
 							return (
 								<div data-testid={fieldWrapperTestId}>
 									<ModelReasoningConfigField
@@ -1106,6 +1129,15 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									>
 										<SelectTrigger
 											id={f.key}
+											ref={ref}
+											onBlur={field.onBlur}
+											aria-invalid={!!error}
+											aria-required={f.required}
+											aria-describedby={
+												error || f.helperText
+													? fieldErrorTestId
+													: undefined
+											}
 											className="w-full"
 											data-testid={fieldInputTestId}
 										>
@@ -1130,6 +1162,14 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											))}
 										</SelectContent>
 									</Select>
+									{(error || f.helperText) && (
+										<FieldDescription
+											id={fieldErrorTestId}
+											data-testid={fieldErrorTestId}
+										>
+											{getHelperText(error, f)}
+										</FieldDescription>
+									)}
 								</Field>
 							);
 						case "multiselect": {

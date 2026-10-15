@@ -34,6 +34,7 @@ import {
 	SelectValue,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { JsonValueViewer } from "@/components/common/json-value-viewer";
 // TODO: MOVE TO SDK/UTILITY LIB
 import { isOutputJSON, splitAtPeriod } from "../../utility";
@@ -290,8 +291,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						parseError = "Value must be a JSON array.";
 					}
 				} catch (e) {
-					parseError =
-						e instanceof Error ? e.message : "Invalid JSON.";
+					parseError = getErrorMessage(e, "Invalid JSON.");
 				}
 			}
 			return (

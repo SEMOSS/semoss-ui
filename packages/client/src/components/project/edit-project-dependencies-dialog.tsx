@@ -33,6 +33,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { isProjectType } from "@/utility/catalog";
 
 interface EditProjectDependenciesDialogProps {
@@ -65,6 +66,7 @@ export const EditProjectDependenciesDialog = ({
 		if (isProjectType(dep.engine_type)) {
 			return (
 				<AppCatalogAvatar
+					projectId={dep.engine_id}
 					name={dep.engine_name}
 					className={`shrink-0 rounded ${sizeClass} ${textClass}`}
 				/>
@@ -187,11 +189,7 @@ export const EditProjectDependenciesDialog = ({
 			toast.success("Successfully updated dependencies");
 			onClose(true);
 		} catch (e) {
-			toast.error(
-				e instanceof Error
-					? e.message
-					: "Failed to update dependencies",
-			);
+			toast.error(getErrorMessage(e, "Failed to update dependencies"));
 		} finally {
 			setIsSaving(false);
 		}

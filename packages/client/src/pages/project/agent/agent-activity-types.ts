@@ -241,13 +241,7 @@ export const isFailureStatus = (status: string): boolean =>
 export const isActiveStatus = (status: string): boolean =>
 	/running|submitted|input/i.test(status);
 
-export const tryParseJson = (value: string): unknown => {
-	try {
-		return JSON.parse(value);
-	} catch {
-		return undefined;
-	}
-};
+export { tryParseJson } from "@semoss/utility/json";
 
 export const toPrettyJson = (value: unknown): string =>
 	JSON.stringify(value, null, 2);

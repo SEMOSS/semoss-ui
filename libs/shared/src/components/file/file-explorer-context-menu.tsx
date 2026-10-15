@@ -10,6 +10,7 @@ import {
 import type {
 	FileExplorerApi,
 	FileExplorerContextMenuState,
+	FileExplorerSecondaryAction,
 } from "./file-explorer.types";
 import { getFileExplorerTestIdSegment } from "./file-explorer.utils";
 
@@ -155,18 +156,25 @@ export const FileExplorerContextMenu: FC<FileExplorerContextMenuProps> = ({
 		});
 	}
 
-	if (isOnItem && !isBulkAction) {
-		secondaryActions.forEach((secondaryAction) => {
-			entries.push({
-				key: `secondary-${secondaryAction.name}`,
-				label: secondaryAction.name,
-				action: async () => {
-					if (!item) return;
-					onClose();
-					await secondaryAction.action(item);
-				},
+	const toSecondaryEntry = (
+		secondaryAction: FileExplorerSecondaryAction,
+	): MenuEntry => ({
+		key: `secondary-${secondaryAction.name}`,
+		label: secondaryAction.name,
+		action: async () => {
+			if (!item) return;
+			onClose();
+			await secondaryAction.action(item);
+		},
+	});
+	const canRunSecondary = isOnItem && !isBulkAction;
+
+	if (canRunSecondary) {
+		secondaryActions
+			.filter((secondaryAction) => secondaryAction.placement !== "end")
+			.forEach((secondaryAction) => {
+				entries.push(toSecondaryEntry(secondaryAction));
 			});
-		});
 	}
 
 	if (isOnItem && capabilities.delete) {
@@ -203,6 +211,17 @@ export const FileExplorerContextMenu: FC<FileExplorerContextMenuProps> = ({
 				commands.openNewFile(targetPath, "add_directory");
 			},
 		});
+	}
+
+	if (canRunSecondary) {
+		secondaryActions
+			.filter((secondaryAction) => secondaryAction.placement === "end")
+			.forEach((secondaryAction, index) => {
+				entries.push({
+					...toSecondaryEntry(secondaryAction),
+					dividerBefore: index === 0 && entries.length > 0,
+				});
+			});
 	}
 
 	if (entries.length === 0) return null;

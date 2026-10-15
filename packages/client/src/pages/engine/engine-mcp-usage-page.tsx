@@ -13,6 +13,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { useEngine, useSession } from "@/hooks";
 
@@ -96,10 +97,10 @@ export const EngineMcpUsagePage = () => {
 						: undefined;
 				setMcpTools(Array.isArray(tools) ? tools : []);
 			} catch (error) {
-				const message =
-					error instanceof Error
-						? error.message
-						: "Unable to load MCP tools for this engine.";
+				const message = getErrorMessage(
+					error,
+					"Unable to load MCP tools for this engine.",
+				);
 				setMcpTools([]);
 				setMcpToolsError(message);
 			} finally {

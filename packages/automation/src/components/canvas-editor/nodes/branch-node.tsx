@@ -1,5 +1,6 @@
 import { Handle, type NodeProps, Position, useEdges } from "@xyflow/react";
 import {
+	ArrowUpRight,
 	BrainCircuit,
 	GitBranch,
 	Loader2,
@@ -17,15 +18,20 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { formatDurationMs } from "@semoss/utility/date";
 import type {
 	AutomationNode as AutomationGraphNode,
+	BranchConfig,
+	JevDecisionConfig,
 	RoutingConfig,
 	StepRunStatus,
 } from "../../../domain/automation.types";
-import { formatDurationMs } from "../../../domain/automation-utils";
 import { useAutomationNode } from "../../../hooks/use-automation";
 import { StatusIcon } from "../../status-icon";
-import { getFlowBorderClass } from "../flow-colors";
+import {
+	getFlowBorderClass,
+	LOOP_PATH_HIGHLIGHT_BORDER_CLASS,
+} from "../flow-colors";
 
 export type BranchNodeData = {
 	step: AutomationGraphNode;
@@ -39,8 +45,11 @@ export type BranchNodeData = {
 	highlighted?: boolean;
 	/** True when this step sits on the path leading to the selected node. */
 	pathHighlighted?: boolean;
+	loopPathHighlighted?: boolean;
+	groupSelectionActive?: boolean;
 	/** Color for each output handle (keyed by handle id), matching its edge's current render color. */
 	handleColors?: Record<string, string>;
+	onMoveOut?: () => void;
 };
 
 const STATUS_BORDER: Record<string, string> = {
@@ -63,20 +72,21 @@ export function BranchNode({ data }: NodeProps) {
 		pathHighlighted,
 	} = d;
 	const config = step.config as RoutingConfig;
-	const firstClause = config.clauses[0];
-	const firstDescription =
-		firstClause && "condition" in firstClause
-			? firstClause.condition
-			: firstClause?.description;
 	const isJevDecision = step.workflowType === "control.jev";
-	const isNoulDecision =
-		isJevDecision &&
-		"questionType" in config &&
-		config.questionType === "noul";
+	const clauses = Array.isArray(config.clauses) ? config.clauses : [];
+	const jevQuestions = isJevDecision
+		? (config as Partial<JevDecisionConfig>).questions
+		: undefined;
+	const firstDescription = isJevDecision
+		? (clauses[0] as JevDecisionConfig["clauses"][number] | undefined)
+				?.description
+		: (clauses[0] as BranchConfig["clauses"][number] | undefined)
+				?.condition;
+	const jevQuestionCount = isJevDecision ? (jevQuestions?.length ?? 0) : 0;
 	const DecisionIcon = isJevDecision ? BrainCircuit : GitBranch;
-	const additionalConditions = config.clauses.length - 1;
+	const additionalConditions = Math.max(clauses.length - 1, 0);
 	const edges = useEdges();
-	const outputCount = config.clauses.length + 1;
+	const outputCount = clauses.length + 1;
 	const elseConnected = edges.some(
 		(e) => e.source === step.id && e.sourceHandle === `else-${step.id}`,
 	);
@@ -84,11 +94,15 @@ export function BranchNode({ data }: NodeProps) {
 		runStatus,
 		Boolean(pathHighlighted),
 		STATUS_BORDER[isIncomplete ? "incomplete" : "idle"],
+		d.loopPathHighlighted ? LOOP_PATH_HIGHLIGHT_BORDER_CLASS : undefined,
 	);
 	const runningClass =
 		runStatus === "running" ? "automation-node-running" : "";
 	const highlightClass = highlighted
 		? "animate-pulse ring-2 ring-primary ring-offset-2 ring-offset-background"
+		: "";
+	const groupSelectionClass = d.groupSelectionActive
+		? "ring-2 ring-chart-2 ring-offset-2 ring-offset-background"
 		: "";
 
 	return (
@@ -96,7 +110,7 @@ export function BranchNode({ data }: NodeProps) {
 			<ContextMenuTrigger asChild>
 				{/* Route count controls canvas geometry, so this height is data-driven. */}
 				<div
-					className={`group relative w-70 rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
+					className={`group relative w-70 rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${groupSelectionClass} ${locked ? "opacity-75" : ""}`}
 					style={{ minHeight: `${88 + additionalConditions * 48}px` }}
 				>
 					<div className="relative z-1 m-0.5 rounded-[14px] bg-card">
@@ -125,6 +139,22 @@ export function BranchNode({ data }: NodeProps) {
 								>
 									<Trash2 className="size-3" />
 								</button>
+								{d.onMoveOut && (
+									<button
+										type="button"
+										aria-label={`Move ${step.label} out of loop`}
+										onClick={(event) => {
+											event.stopPropagation();
+											d.onMoveOut?.();
+										}}
+										className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+									>
+										<ArrowUpRight
+											className="size-3"
+											aria-hidden
+										/>
+									</button>
+								)}
 							</div>
 						)}
 
@@ -148,13 +178,13 @@ export function BranchNode({ data }: NodeProps) {
 										</TooltipContent>
 									</Tooltip>
 									<p className="mt-0.5 truncate text-muted-foreground text-xs">
-										{firstDescription
-											? additionalConditions > 0
-												? `${additionalConditions + 1} ${isJevDecision ? "routes" : "conditions"}`
-												: isJevDecision
-													? firstDescription
+										{isJevDecision
+											? `${jevQuestionCount} ${jevQuestionCount === 1 ? "question" : "questions"} • ${clauses.length} ${clauses.length === 1 ? "route" : "routes"}`
+											: firstDescription
+												? additionalConditions > 0
+													? `${additionalConditions + 1} conditions`
 													: `if ${firstDescription}`
-											: "No route configured"}
+												: "No route configured"}
 									</p>
 								</div>
 								{runStatus && runStatus !== "idle" && (
@@ -189,14 +219,10 @@ export function BranchNode({ data }: NodeProps) {
 						className="h-2! w-2! border-2! border-background! bg-muted-foreground/40!"
 					/>
 
-					{config.clauses.map((clause, index) => {
-						const routeLabel = isNoulDecision
-							? "answer" in clause && clause.answer
-								? "Yes"
-								: "No"
-							: isJevDecision
-								? `R${index + 1}`
-								: String(index + 1);
+					{clauses.map((clause, index) => {
+						const routeLabel = isJevDecision
+							? `R${index + 1}`
+							: String(index + 1);
 						const routeDescription =
 							"description" in clause
 								? clause.description
@@ -208,7 +234,7 @@ export function BranchNode({ data }: NodeProps) {
 								label={routeLabel}
 								ariaLabel={
 									isJevDecision
-										? `${isNoulDecision ? routeLabel : `Route ${index + 1}`}: ${routeDescription}`
+										? `Route ${index + 1}: ${routeDescription}`
 										: `Condition ${index + 1}: ${routeDescription}`
 								}
 								connected={edges.some(
@@ -257,13 +283,13 @@ export function BranchNode({ data }: NodeProps) {
 						className="text-destructive focus:text-destructive"
 						onSelect={() => automationNode.delete()}
 					>
-						Delete and detach
+						Delete and Detach
 					</ContextMenuItem>
 					<ContextMenuItem
 						className="text-destructive focus:text-destructive"
 						onSelect={() => automationNode.deleteDownstream()}
 					>
-						Delete and remove all after
+						Delete and Remove All After
 					</ContextMenuItem>
 				</ContextMenuContent>
 			)}
@@ -303,7 +329,7 @@ function BranchOutputHandle({
 				id={id}
 				type="source"
 				position={Position.Right}
-				isConnectable={!locked}
+				isConnectable={!locked && !connected}
 				onClick={(event) => {
 					event.stopPropagation();
 					if (!locked && !connected) onAdd();

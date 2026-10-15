@@ -1,19 +1,11 @@
+import { hashString } from "@semoss/utility/text";
 import {
 	ENGINE_ICON_FALLBACK_FILE,
 	ENGINE_IMAGES,
 	loadEngineIcon,
 } from "../constants/engine-images.constants";
 
-export { buildInitials } from "@semoss/utility";
-
-const hashString = (str: string): number => {
-	let hash = 0;
-	for (let i = 0; i < str.length; i++) {
-		hash = (hash << 5) - hash + str.charCodeAt(i);
-		hash |= 0;
-	}
-	return Math.abs(hash);
-};
+export { buildInitials } from "@semoss/utility/text";
 
 const normalizeEngineKey = (value?: string) =>
 	(value || "")

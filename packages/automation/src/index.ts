@@ -24,6 +24,7 @@ export type {
 	AutomationNode,
 	AutomationNodeTrace,
 	AutomationRunDetail,
+	AutomationRunSummary,
 	AutomationToolContext,
 } from "./domain/automation.types";
 export type {
@@ -31,6 +32,7 @@ export type {
 	AutomationImportResult,
 } from "./domain/automation-import-export";
 export {
+	buildAutomationImportSaveAggregate,
 	downloadAutomationExport,
 	parseAutomationImportFile,
 	parseAutomationImportFileAsync,
@@ -40,7 +42,10 @@ export type {
 	AutomationInspectorSnapshot,
 } from "./domain/automation-inspector";
 export { downloadN8nExport } from "./domain/automation-to-n8n-adapter";
-export type { AutomationWorkflowDocument } from "./domain/automation-workflow.types";
+export type {
+	AutomationNodeGroup,
+	AutomationWorkflowDocument,
+} from "./domain/automation-workflow.types";
 export type { AutomationNodeSources } from "./domain/automation-workflow-adapter";
 export type {
 	N8nImportConversion,

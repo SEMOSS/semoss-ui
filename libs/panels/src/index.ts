@@ -8,6 +8,11 @@ export {
 	isFilePanelType,
 } from "./constants/file-panel.constants";
 export { AccessStoreProvider } from "./contexts/access.context";
+export {
+	type FileExplorerHost,
+	FileExplorerHostProvider,
+	type FileExplorerHostProviderProps,
+} from "./contexts/file-explorer-host.context";
 export { useAccess } from "./hooks/use-access";
 export { type FileBuffer, useFileBuffer } from "./hooks/use-file-buffer";
 export {

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <title>BI dashboard system app</title>
+  <desc>BI dashboard illustration for the system app.</desc>
+  <defs>
+    <linearGradient id="system-app-bi-light-background" x2="1" y2="1">
+      <stop stop-color="#F3F7FF"/>
+      <stop offset="1" stop-color="#E3ECFA"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="32" fill="url(#system-app-bi-light-background)"/>
+  <rect x="12" y="12" width="216" height="216" rx="24" fill="none" stroke="#CBD9EE"/>
+  <rect x="43" y="48" width="154" height="130" rx="18" fill="#FFFFFF" stroke="#C1D2EB" stroke-width="2"/>
+  <path d="M61 76h56" stroke="#7C9ECA" stroke-width="6" stroke-linecap="round"/>
+  <path d="M62 153h110" stroke="#C1D2EB" stroke-width="3" stroke-linecap="round"/>
+  <rect x="65" y="115" width="24" height="35" rx="5" fill="#7C9ECA"/>
+  <rect x="104" y="96" width="24" height="54" rx="5" fill="#0C4BA2" opacity="0.75"/>
+  <rect x="143" y="77" width="24" height="73" rx="5" fill="#0C4BA2"/>
+</svg>

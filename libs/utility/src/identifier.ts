@@ -29,9 +29,21 @@ export const validateIdentifier = (
 ): string | undefined => {
 	const trimmed = value.trim();
 	if (!trimmed) return `${label} is required`;
-	if (!IDENTIFIER_PATTERN.test(trimmed)) {
+	if (!isValidIdentifier(trimmed)) {
 		return `${label} must start with a letter or underscore and contain only letters, numbers, underscores, or hyphens`;
 	}
 	if (taken.has(trimmed)) return `${label} "${trimmed}" is already in use`;
 	return undefined;
+};
+
+/** Test an identifier as supplied, without trimming it. */
+export const isValidIdentifier = (value: string): boolean =>
+	IDENTIFIER_PATTERN.test(value);
+
+/** Appends `_2`, `_3`, ... until the candidate no longer collides. */
+export const uniqueName = (base: string, taken: Set<string>): string => {
+	if (!taken.has(base)) return base;
+	let suffix = 2;
+	while (taken.has(`${base}_${suffix}`)) suffix += 1;
+	return `${base}_${suffix}`;
 };

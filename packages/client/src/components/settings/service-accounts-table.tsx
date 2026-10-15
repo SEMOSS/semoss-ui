@@ -1,6 +1,7 @@
 import { Copy, Download, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
+import { PersonIdentity } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -36,6 +37,9 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { getErrorMessage } from "@semoss/utility/error";
+import { sanitizeFileNameStem } from "@semoss/utility/file";
 import { createAPIUser, deleteMember } from "@/api";
 import { SdkBlock } from "@/components/shared/sdk-block";
 import { useAPI, useServerPagination, useSettings } from "@/hooks";
@@ -248,9 +252,7 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 			getUsers.refresh();
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to create service account",
+				getErrorMessage(error, "Unable to create service account"),
 			);
 		} finally {
 			setIsCreating(false);
@@ -260,22 +262,12 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 	const downloadCredentialsJson = () => {
 		if (!createdServiceAccount) return;
 		const slug =
-			newServiceAccountName
-				.trim()
-				.replace(/[^A-Za-z0-9._-]+/g, "-")
-				.replace(/^-+|-+$/g, "") || "service-account";
+			sanitizeFileNameStem(newServiceAccountName) || "service-account";
 		const blob = new Blob(
 			[JSON.stringify(createdServiceAccount, null, 2)],
 			{ type: "application/json" },
 		);
-		const url = URL.createObjectURL(blob);
-		const anchor = document.createElement("a");
-		anchor.href = url;
-		anchor.download = `${slug}-credentials.json`;
-		document.body.appendChild(anchor);
-		anchor.click();
-		anchor.remove();
-		URL.revokeObjectURL(url);
+		downloadBlob(blob, `${slug}-credentials.json`);
 	};
 
 	const deleteServiceAccounts = async (accounts: ServiceAccountUser[]) => {
@@ -443,9 +435,6 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 										);
 									const displayName =
 										account.name || account.id || "Unknown";
-									const avatarLabel = displayName
-										.charAt(0)
-										.toUpperCase();
 
 									return (
 										<TableRow
@@ -516,26 +505,15 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 															"No email",
 													}}
 												>
-													<div className="flex items-center gap-3">
-														<Avatar className="size-8">
-															<AvatarFallback>
-																{avatarLabel}
-															</AvatarFallback>
-														</Avatar>
-														<div className="flex flex-col">
-															<span className="max-w-[220px] truncate font-medium">
-																{displayName}
-															</span>
-															<span className="text-muted-foreground text-xs">
-																id: {account.id}
-															</span>
-															<span className="text-muted-foreground text-xs">
-																email:{" "}
-																{account.email ||
-																	"No email"}
-															</span>
-														</div>
-													</div>
+													<PersonIdentity
+														name={displayName}
+														type={
+															account.type ?? ""
+														}
+														id={account.id}
+														email={account.email}
+														className="max-w-xs"
+													/>
 												</UserPopover>
 											</TableCell>
 											<TableCell>

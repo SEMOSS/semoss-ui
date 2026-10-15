@@ -2,6 +2,11 @@ import { Field, FieldLabel, Input } from "@semoss/ui/next";
 import type { VectorEngineConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
+import { StringListInput } from "./string-list-input";
+
+function commaSeparatedList(value: string): string[] {
+	return value.split(",").map((item) => item.trim());
+}
 
 export interface VectorEngineFormProps {
 	/** Current node config */
@@ -70,17 +75,30 @@ export function VectorEngineForm({
 						/>
 					</Field>
 					{devMode && (
-						<BoundInput
-							label="Filters (JSON, optional)"
-							value={config.filters}
-							placeholder='{"category": "reports"}'
-							onChange={(v) =>
-								onChange({ ...config, filters: v })
-							}
-							upstreamVars={upstreamVars}
-							readOnly={readOnly}
-							mono
-						/>
+						<>
+							<BoundInput
+								label="Filters (JSON, optional)"
+								value={config.filters}
+								placeholder='{"category": "reports"}'
+								onChange={(v) =>
+									onChange({ ...config, filters: v })
+								}
+								upstreamVars={upstreamVars}
+								readOnly={readOnly}
+								mono
+							/>
+							<BoundInput
+								label="Engine Parameters (JSON, optional)"
+								value={config.paramValues}
+								placeholder='{"threshold": 0.7}'
+								onChange={(v) =>
+									onChange({ ...config, paramValues: v })
+								}
+								upstreamVars={upstreamVars}
+								readOnly={readOnly}
+								mono
+							/>
+						</>
 					)}
 				</>
 			)}
@@ -95,55 +113,85 @@ export function VectorEngineForm({
 						readOnly={readOnly}
 					/>
 					<BoundInput
-						label="Category (optional)"
-						value={config.source}
-						placeholder="internal-docs"
-						onChange={(v) => onChange({ ...config, source: v })}
-						upstreamVars={upstreamVars}
-						readOnly={readOnly}
-					/>
-					<BoundInput
-						label="Collection (optional)"
+						label="Source Space (optional)"
 						value={config.space}
-						placeholder="finance"
+						placeholder="Project ID or USER"
 						onChange={(v) => onChange({ ...config, space: v })}
 						upstreamVars={upstreamVars}
 						readOnly={readOnly}
 					/>
+					{devMode && (
+						<BoundInput
+							label="Engine Parameters (JSON, optional)"
+							value={config.paramValues}
+							placeholder='{"indexClass": "HNSW"}'
+							onChange={(v) =>
+								onChange({ ...config, paramValues: v })
+							}
+							upstreamVars={upstreamVars}
+							readOnly={readOnly}
+							mono
+						/>
+					)}
 				</>
 			)}
 			{config.operation === "add-csv" && (
 				<>
-					<BoundInput
-						label="File Paths (comma-separated)"
-						value={config.filePaths}
-						placeholder="/data/embeddings.csv"
-						onChange={(v) => onChange({ ...config, filePaths: v })}
-						upstreamVars={upstreamVars}
-						readOnly={readOnly}
-					/>
-					<BoundInput
-						label="Param Values (JSON, optional)"
-						value={config.paramValues}
-						placeholder='{"delimiter": ","}'
-						onChange={(v) =>
-							onChange({ ...config, paramValues: v })
+					<StringListInput
+						label="CSV files"
+						values={commaSeparatedList(config.filePaths)}
+						onChange={(filePaths) =>
+							onChange({
+								...config,
+								filePaths: filePaths.join(", "),
+							})
 						}
 						upstreamVars={upstreamVars}
+						itemLabel="File"
+						placeholder="/data/embeddings.csv"
 						readOnly={readOnly}
-						mono
 					/>
+					{devMode && (
+						<BoundInput
+							label="Engine Parameters (JSON, optional)"
+							value={config.paramValues}
+							placeholder='{"delimiter": ","}'
+							onChange={(paramValues) =>
+								onChange({ ...config, paramValues })
+							}
+							upstreamVars={upstreamVars}
+							readOnly={readOnly}
+							mono
+						/>
+					)}
 				</>
 			)}
 			{(config.operation === "delete" ||
 				config.operation === "download") && (
+				<StringListInput
+					label="Files"
+					values={commaSeparatedList(config.fileNames)}
+					onChange={(fileNames) =>
+						onChange({
+							...config,
+							fileNames: fileNames.join(", "),
+						})
+					}
+					upstreamVars={upstreamVars}
+					itemLabel="File"
+					placeholder="report.pdf"
+					readOnly={readOnly}
+				/>
+			)}
+			{config.operation === "delete" && devMode && (
 				<BoundInput
-					label="File Names (comma-separated)"
-					value={config.fileNames}
-					placeholder="doc1.pdf, doc2.docx"
-					onChange={(v) => onChange({ ...config, fileNames: v })}
+					label="Engine Parameters (JSON, optional)"
+					value={config.paramValues}
+					placeholder='{"deleteSource": true}'
+					onChange={(v) => onChange({ ...config, paramValues: v })}
 					upstreamVars={upstreamVars}
 					readOnly={readOnly}
+					mono
 				/>
 			)}
 		</div>

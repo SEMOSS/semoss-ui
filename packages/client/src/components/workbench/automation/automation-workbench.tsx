@@ -18,6 +18,7 @@ import {
 	useState,
 } from "react";
 import { Link } from "react-router";
+import { useStore } from "zustand";
 import {
 	AgentRunDialog,
 	type AutomationCanvasHandle,
@@ -27,6 +28,7 @@ import {
 	type AutomationNodeTrace,
 	AutomationOutputModal,
 	type AutomationRunDetail,
+	type AutomationRunSummary,
 	AutomationTracePanel,
 	type AutomationTraceSnapshot,
 	AutomationWorkbenchContext,
@@ -40,8 +42,8 @@ import {
 	type FileSavedEvent,
 	getFilePanelScope,
 } from "@semoss/panels";
-import { runPixel } from "@semoss/sdk";
-import { InsightProvider } from "@semoss/sdk/react";
+import { type Role, runPixel } from "@semoss/sdk";
+import { InsightProvider, useInsight } from "@semoss/sdk/react";
 import { type MCPConfig, MonacoEditor } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -59,26 +61,39 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	useCacheData,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
 import {
 	useWorkbench,
+	useWorkbenchCommands,
 	useWorkbenchEvent,
 	Workbench,
+	WorkbenchCommandMenuButton,
 	type WorkbenchComponent,
 	type WorkbenchLayout,
 	type WorkbenchPanelConfigAny,
 	WorkbenchResetButton,
+	type WorkbenchSnapshot,
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { stripMcpToolAlias } from "@/components/assistant/assistant-tools";
 import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { AssistantStoreProvider, WorkbenchProvider } from "@/contexts";
-import { useAssistantStore, useProject } from "@/hooks";
+import { useAssistantStore, useProject, useSession } from "@/hooks";
 import type { BuildTool } from "@/stores/assistant";
 import { AUTOMATION_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
-import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
+import {
+	createAutomationWorkbenchStore,
+	WORKBENCH_COMPONENTS,
+} from "@/stores/workbench";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../shared";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+} from "../workbench.presets";
 import { AUTOMATION_RUN_FILES_PANEL } from "./automation-run-files-panel";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
 
@@ -261,6 +276,7 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 
 interface AutomationWorkbenchProps {
 	appId: string;
+	permission: Role;
 	readOnly: boolean;
 	projectName: string;
 	catalogPath?: string;
@@ -285,11 +301,7 @@ function parseConversionModelOutput(
 			candidate = JSON.parse(normalized);
 			continue;
 		}
-		if (
-			candidate &&
-			typeof candidate === "object" &&
-			!Array.isArray(candidate)
-		) {
+		if (isRecord(candidate)) {
 			const object = candidate as Record<string, unknown>;
 			if (Array.isArray(object.conversions)) break;
 			const nested = object.response ?? object.output;
@@ -417,12 +429,14 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 export const AutomationWorkbench = observer(
 	({
 		appId,
+		permission,
 		readOnly,
 		projectName,
 		catalogPath,
 		onShare,
 	}: AutomationWorkbenchProps) => {
 		const layoutActions = useWorkbench((state) => state.layout.actions);
+		const insight = useInsight();
 		const workbenchLayout = useMemo(
 			() => createAutomationLayout(appId),
 			[appId],
@@ -456,7 +470,79 @@ export const AutomationWorkbench = observer(
 			[openPythonNodeFilePaths],
 		);
 		const workbenchId = readOnly ? `${appId}--read-only` : appId;
+		const [workbenchSnapshot, onWorkbenchSnapshotChange] =
+			useCacheData<WorkbenchSnapshot>(
+				`workbench-layout--${workbenchId}--1`,
+				workbenchLayout,
+			);
+		const [automationStore] = useState(() =>
+			createAutomationWorkbenchStore(),
+		);
+		const traceSnapshot = useStore(
+			automationStore,
+			(state) => state.traceSnapshot,
+		);
+		const activeRuns = useStore(
+			automationStore,
+			(state) => state.activeRuns,
+		);
+		const followedRunId = useStore(
+			automationStore,
+			(state) => state.followedRunId,
+		);
+		const selectedRun = useStore(
+			automationStore,
+			(state) => state.selectedRun,
+		);
+		const historyRefreshToken = useStore(
+			automationStore,
+			(state) => state.historyRefreshToken,
+		);
+		const runDetailsFocus = useStore(
+			automationStore,
+			(state) => state.runDetailsFocus,
+		);
 		const assistantStore = useAssistantStore(workbenchId);
+		const syncPermission = useSession((state) => state.syncPermission);
+		const refreshPermission = useSession(
+			(state) => state.refreshPermission,
+		);
+
+		useEffect(() => {
+			syncPermission("PROJECT", appId, permission);
+			void refreshPermission("PROJECT", appId).catch(() => undefined);
+		}, [appId, permission, refreshPermission, syncPermission]);
+
+		useWorkbenchCommands([
+			createReconnectCommand(insight),
+			...createFileCommands({ readOnly }),
+			createOpenPanelCommand({
+				id: "workbench.automation-files.open",
+				label: "Open Project Files",
+				type: FILES,
+				config: { mode: { type: "APP", app: appId } },
+			}),
+			createOpenPanelCommand({
+				id: "workbench.automation-run-files.open",
+				label: "Open Run Files",
+				type: RUN_FILES,
+			}),
+			createOpenPanelCommand({
+				id: "workbench.automation-run-details.open",
+				label: "Open Run Details",
+				type: TRACE,
+			}),
+			createOpenPanelCommand({
+				id: "workbench.automation-inspector.open",
+				label: "Open Inspector",
+				type: INSPECTOR,
+			}),
+			createOpenPanelCommand({
+				id: "workbench.automation-settings.open",
+				label: "Open Settings",
+				type: SETTINGS,
+			}),
+		]);
 		const conversionModel = useCallback(
 			async (
 				input: N8nImportConversionInput,
@@ -500,14 +586,9 @@ export const AutomationWorkbench = observer(
 		);
 		const setAssistantDraft = assistantStore.getState().setDraft;
 		const canvasRef = useRef<AutomationCanvasHandle>(null);
-		const [traceSnapshot, setTraceSnapshot] =
-			useState<AutomationTraceSnapshot | null>(null);
-		const [selectedRun, setSelectedRun] =
-			useState<AutomationRunDetail | null>(null);
 		const [outputModal, setOutputModal] = useState<string | null>(null);
 		const [inspectorSnapshot, setInspectorSnapshot] =
 			useState<AutomationInspectorSnapshot | null>(null);
-		const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
 		const [agentRunTrace, setAgentRunTrace] =
 			useState<AutomationNodeTrace | null>(null);
 		const [agentRunAutomationUpdate, setAgentRunAutomationUpdate] =
@@ -518,14 +599,8 @@ export const AutomationWorkbench = observer(
 			/** Source the dialog opened with, so dismissing without an edit changes nothing. */
 			openedWith: string;
 		} | null>(null);
-		// The node "View run details" last asked to be focused, and a token bumped on every
-		// call so re-focusing the same node (after navigating away) still takes effect.
-		const [runDetailsFocus, setRunDetailsFocus] = useState<{
-			nodeId: string;
-			token: number;
-		} | null>(null);
 		const wasRunningRef = useRef(false);
-		const editingStepIdRef = useRef<string | null>(null);
+		const inspectorSelectionRef = useRef<string | null>(null);
 		// Which node a Python-node file tab's path belongs to, so a save of it
 		// can be mirrored onto that node's in-memory step (see syncPythonSource).
 		const pythonNodeAssetPathsRef = useRef(new Map<string, string>());
@@ -595,7 +670,7 @@ export const AutomationWorkbench = observer(
 		);
 		const handleTraceChange = useCallback(
 			(snapshot: AutomationTraceSnapshot) => {
-				setTraceSnapshot(snapshot);
+				automationStore.getState().setTraceSnapshot(snapshot);
 				// Only switch tabs on the false->true transition — the canvas re-emits this
 				// snapshot on every progress tick while a run is in flight, and re-selecting an
 				// already-active panel on every tick is unnecessary render churn.
@@ -604,35 +679,46 @@ export const AutomationWorkbench = observer(
 				}
 				wasRunningRef.current = snapshot.running;
 			},
-			[selectPanel],
+			[automationStore, selectPanel],
 		);
 		const handleInspectorChange = useCallback(
 			(snapshot: AutomationInspectorSnapshot) => {
 				setInspectorSnapshot(snapshot);
-				const editingStepId = snapshot.editingStep?.id ?? null;
-				// Only switch tabs when a different step starts being edited, not on every
-				// snapshot re-emitted while the same step stays open (e.g. its run status ticking).
+				const selectionId = snapshot.editingNodeGroup
+					? `group:${snapshot.editingNodeGroup.id}`
+					: (snapshot.editingStep?.id ?? null);
+				// Switch tabs when a different step or group starts being edited, not on
+				// every snapshot re-emitted while the same selection stays open.
 				if (
-					editingStepId &&
-					editingStepId !== editingStepIdRef.current
+					selectionId &&
+					selectionId !== inspectorSelectionRef.current
 				) {
 					selectPanel(INSPECTOR);
 				}
-				editingStepIdRef.current = editingStepId;
+				inspectorSelectionRef.current = selectionId;
 			},
 			[selectPanel],
 		);
 		const handleHistoryChanged = useCallback(() => {
-			setHistoryRefreshToken((token) => token + 1);
-		}, []);
-		const handleViewRun = useCallback((run: AutomationRunDetail) => {
-			setSelectedRun(run);
-			canvasRef.current?.viewHistoricalRun(run);
-		}, []);
+			automationStore.getState().markHistoryChanged();
+		}, [automationStore]);
+		const handleRunsChange = useCallback(
+			(runs: AutomationRunSummary[]) => {
+				automationStore.getState().setKnownRuns(runs);
+			},
+			[automationStore],
+		);
+		const handleViewRun = useCallback(
+			(run: AutomationRunDetail) => {
+				automationStore.getState().selectRun(run);
+				canvasRef.current?.viewHistoricalRun(run);
+			},
+			[automationStore],
+		);
 		const handleExitHistoricalView = useCallback(() => {
-			setSelectedRun(null);
+			automationStore.getState().clearSelectedRun();
 			canvasRef.current?.exitHistoricalView();
-		}, []);
+		}, [automationStore]);
 		const handleAskAssistant = useCallback(
 			(prompt: string) => {
 				setAssistantDraft(prompt.slice(0, MAX_ASSISTANT_DRAFT_LENGTH));
@@ -642,13 +728,10 @@ export const AutomationWorkbench = observer(
 		);
 		const handleViewRunDetails = useCallback(
 			(stepId: string) => {
-				setRunDetailsFocus((current) => ({
-					nodeId: stepId,
-					token: (current?.token ?? 0) + 1,
-				}));
+				automationStore.getState().focusRunNode(stepId);
 				selectPanel(TRACE);
 			},
-			[selectPanel],
+			[automationStore, selectPanel],
 		);
 		const handleOpenPythonEditor = useCallback(
 			async (nodeId: string, source: string) => {
@@ -713,7 +796,10 @@ export const AutomationWorkbench = observer(
 				onHistoryChanged: handleHistoryChanged,
 				inspectorSnapshot,
 				traceSnapshot,
+				activeRuns,
+				followedRunId,
 				selectedRun,
+				onRunsChange: handleRunsChange,
 				onViewRun: handleViewRun,
 				onExitHistoricalView: handleExitHistoricalView,
 				historyRefreshToken,
@@ -734,12 +820,15 @@ export const AutomationWorkbench = observer(
 				handleExitHistoricalView,
 				handleInspectorChange,
 				handleOpenPythonEditor,
+				handleRunsChange,
 				handleTraceChange,
 				handleViewRunDetails,
 				handleViewRun,
 				historyRefreshToken,
 				inspectorSnapshot,
 				isPythonFileOpen,
+				activeRuns,
+				followedRunId,
 				readOnly,
 				runDetailsFocus,
 				selectedRun,
@@ -778,7 +867,7 @@ export const AutomationWorkbench = observer(
 											<Link to={catalogPath}>
 												<span className="inline-flex items-center gap-1.5">
 													Automation Catalog
-													<span className="rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+													<span className="rounded border px-1 py-0.5 font-semibold text-xs leading-none">
 														BETA
 													</span>
 												</span>
@@ -921,11 +1010,13 @@ export const AutomationWorkbench = observer(
 						value={workbenchContextValue}
 					>
 						<Workbench
-							snapshot={workbenchLayout}
+							snapshot={workbenchSnapshot}
+							onChange={onWorkbenchSnapshotChange}
 							borderSlots={{
 								left: {
 									after: (
 										<>
+											<WorkbenchCommandMenuButton />
 											<AutomationSettingsToggle />
 											<WorkbenchResetButton
 												snapshot={workbenchLayout}
@@ -951,6 +1042,7 @@ export const AutomationWorkbenchPage = observer(() => {
 			<WorkbenchProvider components={AUTOMATION_COMPONENTS}>
 				<AutomationWorkbench
 					appId={project.project_id}
+					permission={permission}
 					readOnly={readOnly}
 					projectName={
 						project.project_display_name || project.project_name

@@ -1,3 +1,4 @@
+import { isRecord } from "@semoss/utility/object";
 import type { McpToolContext } from "../types/browserEvents";
 
 export function getToolStringParameter(
@@ -13,7 +14,7 @@ export function getToolStringMapParameter(
 	key: string,
 ): Record<string, string> {
 	const value = context?.parameters?.[key];
-	if (!value || typeof value !== "object" || Array.isArray(value)) {
+	if (!isRecord(value)) {
 		return {};
 	}
 	return Object.fromEntries(

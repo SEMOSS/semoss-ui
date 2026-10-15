@@ -44,6 +44,7 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	createAdminTheme,
 	deleteAdminTheme,
@@ -166,7 +167,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 	featureFlags: {
 		enableAgent: true,
 		enableModelSelect: true,
-		enableSuggestions: false,
+		enableSuggestions: true,
 		enablePromptOptimizer: true,
 		enableAgentHarness: false,
 		showActivityLog: true,
@@ -615,9 +616,7 @@ export const AdminThemePage: React.FC = () => {
 				getThemes.refresh();
 			}
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Failed to save theme",
-			);
+			toast.error(getErrorMessage(error, "Failed to save theme"));
 		} finally {
 			setIsLoading(false);
 		}
@@ -635,11 +634,7 @@ export const AdminThemePage: React.FC = () => {
 			setThemeId("");
 			getThemes.refresh();
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to delete theme",
-			);
+			toast.error(getErrorMessage(error, "Failed to delete theme"));
 		} finally {
 			setIsLoading(false);
 		}
@@ -655,11 +650,7 @@ export const AdminThemePage: React.FC = () => {
 			toast.success("Theme activated");
 			getThemes.refresh();
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to activate theme",
-			);
+			toast.error(getErrorMessage(error, "Failed to activate theme"));
 		} finally {
 			setIsLoading(false);
 		}

@@ -27,11 +27,24 @@ import { runPixel } from "./base";
  * file type the model accepts (image, pdf, document, spreadsheet, audio,
  * video), or base64 image/PDF data URIs.
  * @param params.urls - URLs to attach to the command.
+ * @param params.space - Where the run works: `INSIGHT` for the room's own
+ * folder, which is what a run without it uses, `USER` for the user's file
+ * space, or the id of a project the user can edit. The harness's file, shell,
+ * and code tools all work there. Sent as its own argument, since the backend
+ * refuses `paramValues.space`, and never together with `paramValues.project`.
+ * @param params.subdir - A folder inside the space to work in instead of its
+ * top, such as `reports/2026`. Sent as `paramValues.subdir`, which it replaces
+ * when both are given; the backend refuses a path that leaves the space.
  * @param params.paramValues - Extra run parameters forwarded to the harness.
  * The semoss harness honors `project` (project the run edits; also drives the
- * git-commit hook), `permissionMode` ("default" | "acceptEdits" | "plan" |
- * "bypassPermissions"), and strips its known keys before passing the rest
- * (e.g. `thinking`, `effort`) through to the model provider.
+ * git-commit hook), `subdir` (see `params.subdir`), `permissionMode`
+ * ("default" | "acceptEdits" | "plan" | "bypassPermissions"), and strips its
+ * known keys before passing the rest (e.g. `thinking`, `effort`) through to
+ * the model provider.
+ * @param params.agentParams - Run values for the agent, never sent to the
+ * model. The semoss harness reads `userText`: what the user typed when
+ * `command` wraps it in extra context; it names the room and is what the
+ * message shows.
  * @param insightId - Insight to run the pixel against.
  * @returns The submitted run's id, room id, and initial status (always
  * "SUBMITTED") — not a full snapshot.
@@ -47,7 +60,10 @@ export const runAgent = async (
 		maxReflections?: number;
 		media?: string[];
 		urls?: string[];
+		space?: string;
+		subdir?: string;
 		paramValues?: Record<string, unknown>;
+		agentParams?: Record<string, unknown>;
 	},
 	insightId?: string,
 ): Promise<{ runId: string; roomId: string; status: AgentRunStatusValue }> => {
@@ -61,8 +77,14 @@ export const runAgent = async (
 		maxReflections,
 		media,
 		urls,
-		paramValues,
+		space,
+		subdir,
+		agentParams,
 	} = params;
+	const paramValues =
+		subdir !== undefined
+			? { ...params.paramValues, subdir: subdir }
+			: params.paramValues;
 
 	const clauses = [
 		`roomId=${JSON.stringify([roomId])}`,
@@ -72,6 +94,7 @@ export const runAgent = async (
 		// The backend's RunAgent pixel calls this workspaceId -- see the agentId
 		// param doc above for why the public name here differs.
 		agentId ? `workspaceId=${JSON.stringify([agentId])}` : null,
+		space ? `space=${JSON.stringify([space])}` : null,
 		maxTurns !== undefined ? `maxTurns=${JSON.stringify(maxTurns)}` : null,
 		maxReflections !== undefined
 			? `maxReflections=${JSON.stringify(maxReflections)}`
@@ -80,6 +103,9 @@ export const runAgent = async (
 		urls && urls.length > 0 ? `url=${JSON.stringify(urls)}` : null,
 		paramValues && Object.keys(paramValues).length > 0
 			? `paramValues=[${JSON.stringify(paramValues)}]`
+			: null,
+		agentParams && Object.keys(agentParams).length > 0
+			? `agentParams=[${JSON.stringify(agentParams)}]`
 			: null,
 		"wait=false",
 	].filter((clause): clause is string => clause !== null);

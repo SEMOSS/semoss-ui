@@ -34,8 +34,8 @@ import {
 	SidebarProvider,
 	SidebarSeparator,
 } from "@semoss/ui/next";
+import { formatToDataTestId } from "@semoss/utility/text";
 import { useConfig, usePage, useSession } from "@/hooks";
-import { formatToDataTestId } from "@/utility";
 import { LogoutPopover } from "./LogoutPopover";
 
 const CATALOG_ROUTES = [

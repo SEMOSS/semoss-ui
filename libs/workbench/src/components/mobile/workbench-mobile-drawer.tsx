@@ -13,7 +13,7 @@ import {
 	Muted,
 	ScrollArea,
 } from "@semoss/ui/next";
-import { useWorkbench } from "../../hooks";
+import { useWorkbench } from "../../hooks/use-workbench";
 import type { WorkbenchBorderSlot } from "../../types";
 import { resolveBorderSlot } from "../../utility/workbench-border-slot";
 
@@ -21,8 +21,7 @@ interface WorkbenchMobileDrawerProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	/**
-	 * The left rail's `after` slot. The mobile shell draws no rails, so the
-	 * workbench's own toolbar actions surface here instead.
+	 * The shell's combined toolbar slots, including its top-level menus.
 	 */
 	actionsSlot?: WorkbenchBorderSlot;
 }
@@ -53,6 +52,7 @@ export const WorkbenchMobileDrawer: FC<WorkbenchMobileDrawerProps> = ({
 		vertical: false,
 		open: false,
 		panelIds: [],
+		onNavigate: () => onOpenChange(false),
 	});
 	const showActions = Boolean(slotContent);
 
@@ -68,22 +68,18 @@ export const WorkbenchMobileDrawer: FC<WorkbenchMobileDrawerProps> = ({
 						Actions and every panel in this workbench.
 					</DrawerDescription>
 				</DrawerHeader>
-				<ScrollArea className="max-h-[60vh] min-h-0">
+				<ScrollArea className="min-h-0 flex-1">
 					<div className="flex flex-col gap-5 p-4">
 						{showActions ? (
 							<div>
-								<Muted className="text-xs uppercase tracking-widest">
-									Actions
-								</Muted>
-								<div className="mt-2 flex items-center justify-center gap-2 [&_button]:size-10 [&_svg]:size-4">
+								<Muted className="text-base">Actions</Muted>
+								<div className="mt-2 flex flex-wrap items-center justify-center gap-2 [&_button]:min-h-11 [&_button]:min-w-11 [&_svg]:size-4">
 									{slotContent}
 								</div>
 							</div>
 						) : null}
 						<div>
-							<Muted className="text-xs uppercase tracking-widest">
-								Open
-							</Muted>
+							<Muted className="text-base">Open</Muted>
 							<ul className="mt-2 flex flex-col gap-1">
 								{stacks.flatMap((stack) =>
 									stack.panelIds.map((pid) => {

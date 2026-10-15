@@ -20,6 +20,8 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
+import { formatDateTimeWithRelativeDay } from "@semoss/utility/date";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	createMsGraphSubscription,
 	deleteMsGraphSubscription,
@@ -29,7 +31,6 @@ import {
 	type MsGraphResource,
 	type MsGraphSubscription,
 } from "@/api/ms-graph";
-import { formatDate } from "@/utility";
 
 /** Props for {@link MicrosoftSubscriptions}. */
 export interface MicrosoftSubscriptionsProps {
@@ -44,6 +45,24 @@ const RESOURCE_LABELS: Record<MsGraphResource, string> = {
 	"me/messages": "Mail",
 	"me/events": "Calendar",
 };
+
+/** The resources offered, in the order the picker lists them. */
+const RESOURCES: readonly MsGraphResource[] = ["me/messages", "me/events"];
+
+/**
+ * Whether the deployment's Microsoft sign in allows subscribing to a resource.
+ *
+ * @param state - The availability the backend reported.
+ * @param resource - The resource.
+ * @return Whether its permission is in place.
+ */
+const allowsResource = (
+	state: MsGraphAvailability,
+	resource: MsGraphResource,
+): boolean =>
+	resource === "me/messages"
+		? state.canSubscribeToMail
+		: state.canSubscribeToEvents;
 
 /**
  * Lets somebody see and manage what Microsoft notifies this deployment about on
@@ -76,6 +95,15 @@ export const MicrosoftSubscriptions = ({
 		try {
 			const state = await getMsGraphAvailability();
 			setAvailability(state);
+			// start on a resource the deployment can subscribe to, so one it
+			// cannot never holds the picker
+			setResource((current) =>
+				allowsResource(state, current)
+					? current
+					: (RESOURCES.find((value) =>
+							allowsResource(state, value),
+						) ?? current),
+			);
 			// only worth listing when there is a Microsoft login to list against;
 			// otherwise the call would fail for a reason already being explained
 			setSubscriptions(
@@ -85,9 +113,10 @@ export const MicrosoftSubscriptions = ({
 			);
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Could not read your Microsoft subscriptions.",
+				getErrorMessage(
+					error,
+					"Could not read your Microsoft subscriptions.",
+				),
 			);
 		} finally {
 			setIsLoading(false);
@@ -120,9 +149,7 @@ export const MicrosoftSubscriptions = ({
 			// Microsoft's own refusal is the useful message here: it is the only
 			// thing that knows what the tenant actually consented to
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Could not create the subscription.",
+				getErrorMessage(error, "Could not create the subscription."),
 			);
 		} finally {
 			setIsWorking(false);
@@ -137,20 +164,22 @@ export const MicrosoftSubscriptions = ({
 			await refresh();
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Could not remove the subscription.",
+				getErrorMessage(error, "Could not remove the subscription."),
 			);
 		} finally {
 			setIsWorking(false);
 		}
 	};
 
-	const canSubscribe =
-		availability?.available === true &&
-		(resource === "me/messages"
-			? availability.canSubscribeToMail
-			: availability.canSubscribeToEvents);
+	const canSubscribeTo = (value: MsGraphResource): boolean =>
+		availability?.available === true && allowsResource(availability, value);
+	const canSubscribe = canSubscribeTo(resource);
+	// when nothing can be subscribed to, the reasons above already say why;
+	// otherwise name what is missing next to the picker
+	const blockedResources =
+		availability?.available === true
+			? RESOURCES.filter((value) => !canSubscribeTo(value))
+			: [];
 
 	return (
 		<div
@@ -189,7 +218,7 @@ export const MicrosoftSubscriptions = ({
 						onValueChange={(value) =>
 							setResource(value as MsGraphResource)
 						}
-						disabled={!canSubscribe || isWorking}
+						disabled={availability?.available !== true || isWorking}
 					>
 						<SelectTrigger
 							className="w-48"
@@ -198,8 +227,15 @@ export const MicrosoftSubscriptions = ({
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="me/messages">Mail</SelectItem>
-							<SelectItem value="me/events">Calendar</SelectItem>
+							{RESOURCES.map((value) => (
+								<SelectItem
+									key={value}
+									value={value}
+									disabled={!canSubscribeTo(value)}
+								>
+									{RESOURCE_LABELS[value]}
+								</SelectItem>
+							))}
 						</SelectContent>
 					</Select>
 					<Button
@@ -220,6 +256,20 @@ export const MicrosoftSubscriptions = ({
 						Refresh
 					</Button>
 				</div>
+				{blockedResources.length > 0 && (
+					<p
+						className="text-muted-foreground text-sm"
+						data-testid="microsoftSubscriptions-blocked"
+					>
+						{blockedResources
+							.map((value) => RESOURCE_LABELS[value])
+							.join(" and ")}{" "}
+						notifications are not available: this deployment's
+						Microsoft sign in does not include a permission for
+						them. An administrator can add one, after which everyone
+						has to sign in to Microsoft again.
+					</p>
+				)}
 
 				{isLoading ? (
 					<Spinner />
@@ -253,7 +303,7 @@ export const MicrosoftSubscriptions = ({
 									</TableCell>
 									<TableCell>
 										{subscription.expirationDateTime
-											? formatDate(
+											? formatDateTimeWithRelativeDay(
 													subscription.expirationDateTime,
 												)
 											: "Unknown"}

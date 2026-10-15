@@ -1,0 +1,232 @@
+{
+	"sections": {
+		"about": {
+			"title": "Acerca de",
+			"description": "Cómo se describe este agente, cómo se comporta y qué modelo utiliza."
+		},
+		"builtInTools": {
+			"title": "Herramientas integradas",
+			"description": "Herramientas predeterminadas de la implementación disponibles para este agente."
+		},
+		"knowledge": {
+			"title": "Conocimiento",
+			"description": "Fuentes de conocimiento que este agente puede consultar."
+		},
+		"toolboxes": {
+			"title": "Cajas de herramientas",
+			"description": "Herramientas y capacidades que este agente puede usar."
+		},
+		"skills": {
+			"title": "Habilidades",
+			"description": "Habilidades reutilizables que este agente puede cargar."
+		},
+		"prompts": {
+			"title": "Prompts",
+			"description": "Prompts preconfigurados que ofrece este agente."
+		},
+		"subagents": {
+			"title": "Subagentes",
+			"description": "Otros agentes en los que este agente puede delegar trabajo. Los nombres y las descripciones de las herramientas se generan automáticamente."
+		},
+		"executionLimits": {
+			"title": "Límites de ejecución",
+			"description": "Límites de tiempo de ejecución para el ciclo de herramientas del agente y la delegación a subagentes."
+		},
+		"hooks": {
+			"title": "Hooks",
+			"description": "Comportamiento personalizado que se ejecuta en puntos del ciclo de vida del agente."
+		}
+	},
+	"about": {
+		"description": "Descripción",
+		"noDescription": "Sin descripción",
+		"instructions": "Instrucciones",
+		"noInstructions": "Sin instrucciones",
+		"greeting": "Saludo",
+		"greetingOff": "Desactivado",
+		"greetingHelp": "Se muestra como el mensaje inicial del agente cuando se inicia una sala.",
+		"defaultModel": "Modelo predeterminado",
+		"roomModel": "Modelo de la sala",
+		"loading": "Cargando..."
+	},
+	"builtInTools": {
+		"label": "Herramientas integradas del agente",
+		"help": "Incluye las herramientas predeterminadas de la implementación además de las cajas de herramientas seleccionadas.",
+		"on": "Activadas",
+		"off": "Desactivadas",
+		"individual": "Herramientas individuales",
+		"enabledCount": "{{enabled}} de {{total}} habilitadas",
+		"allOff": "Todas desactivadas",
+		"searchLabel": "Buscar herramientas integradas",
+		"searchPlaceholder": "Buscar herramientas...",
+		"noneAvailable": "No hay herramientas integradas disponibles en esta implementación.",
+		"noMatch": "Ninguna herramienta coincide con \"{{query}}\"."
+	},
+	"empty": {
+		"knowledge": "No hay fuentes de conocimiento.",
+		"toolboxes": "No hay cajas de herramientas.",
+		"skills": "No hay habilidades.",
+		"prompts": "No hay prompts.",
+		"subagents": "No hay subagentes.",
+		"hooks": "No hay hooks."
+	},
+	"resource": {
+		"open": "Abrir {{name}}",
+		"openTooltip": "Abrir en el catálogo",
+		"remove": "Quitar {{name}}",
+		"removeTooltip": "Quitar",
+		"unavailableAgent": "Agente no disponible"
+	},
+	"mcpType": {
+		"PROJECT": "Proyecto",
+		"STORAGE": "Almacenamiento",
+		"DATABASE": "Base de datos",
+		"FUNCTION": "Función",
+		"MODEL": "Modelo",
+		"VECTOR": "Conocimiento",
+		"GUARDRAIL": "Guardrail",
+		"ROOM": "Sala"
+	},
+	"limits": {
+		"runBudget": {
+			"title": "Presupuesto de ejecución",
+			"description": "Límites máximos para una sola ejecución. Una ejecución puede pedir menos, nunca más."
+		},
+		"delegation": {
+			"title": "Delegación a subagentes",
+			"description": "Cuánto trabajo puede delegar este agente a subagentes."
+		},
+		"isDefault": "{{value}} (predeterminado)",
+		"noLimit": "Sin límite",
+		"defaultPlaceholder": "Predeterminado {{value}}",
+		"currently": "Actualmente {{duration}}.",
+		"errors": {
+			"wholeNumber": "Introduce un número entero.",
+			"min": "Introduce {{min}} o más."
+		},
+		"units": {
+			"turns": "turnos",
+			"rounds": "rondas",
+			"seconds": "segundos",
+			"levels": "niveles",
+			"subagents": "subagentes"
+		},
+		"duration": {
+			"hours": "{{count}} h",
+			"minutes": "{{count}} min",
+			"seconds": "{{count}} s"
+		},
+		"maxTurns": {
+			"label": "Máximo de turnos",
+			"description": "Llamadas al modelo que una ejecución puede hacer en su ciclo de herramientas. Una ejecución que sigue llamando herramientas al llegar al límite se detiene con un error. Las ejecuciones piden 30 de forma predeterminada, así que un valor mayor solo se aplica cuando una ejecución pide más."
+		},
+		"maxReflections": {
+			"label": "Máximo de reflexiones",
+			"description": "Rondas de revisión después de que el agente responde, en las que comprueba su trabajo y puede llamar a más herramientas. Las ejecuciones no piden ninguna de forma predeterminada, así que esto solo limita las ejecuciones que piden reflexiones."
+		},
+		"maxSeconds": {
+			"label": "Tiempo máximo de ejecución",
+			"description": "Límite de tiempo real para una ejecución. Vacío o 0 significa sin límite."
+		},
+		"maxSubagentDepth": {
+			"label": "Profundidad máxima de delegación",
+			"description": "Cuántos niveles de profundidad puede alcanzar la delegación. 1 permite que este agente delegue, pero no sus subagentes. 0 desactiva la delegación."
+		},
+		"maxSubagentsPerRun": {
+			"label": "Máximo de subagentes por ejecución",
+			"description": "Total de subagentes que puede iniciar una ejecución."
+		},
+		"maxSpawnsPerTurn": {
+			"label": "Máximo de subagentes por turno",
+			"description": "Subagentes que el agente puede iniciar desde un solo turno del modelo, por ejemplo para trabajar en paralelo."
+		},
+		"count": {
+			"turns_one": "{{count}} turno",
+			"turns_other": "{{count}} turnos",
+			"rounds_one": "{{count}} ronda",
+			"rounds_other": "{{count}} rondas",
+			"seconds_one": "{{count}} segundo",
+			"seconds_other": "{{count}} segundos",
+			"levels_one": "{{count}} nivel",
+			"levels_other": "{{count}} niveles",
+			"subagents_one": "{{count}} subagente",
+			"subagents_other": "{{count}} subagentes"
+		}
+	},
+	"hooks": {
+		"kinds": {
+			"pixel": {
+				"label": "Pixel",
+				"description": "Ejecuta una expresión pixel en los eventos del ciclo de vida que elijas."
+			},
+			"git_commit": {
+				"label": "Commit de Git",
+				"description": "Ejecuta git add . && git commit después de cada ejecución del agente."
+			},
+			"log_tools": {
+				"label": "Registrar llamadas a herramientas",
+				"description": "Registra el nombre, los parámetros y la duración de cada llamada a herramienta."
+			},
+			"ppt_to_pdf": {
+				"label": "PowerPoint a PDF",
+				"description": "Convierte a PDF el archivo de salida de la ejecución al terminar."
+			}
+		},
+		"runsOn": "Se ejecuta en",
+		"everyEvent": "Todos los eventos",
+		"noPixel": "Sin expresión pixel",
+		"remove": "Quitar el hook {{label}}",
+		"removeTooltip": "Quitar"
+	},
+	"form": {
+		"name": "Nombre",
+		"namePlaceholder": "Introduce un nombre",
+		"descriptionPlaceholder": "Introduce una descripción",
+		"instructionsPlaceholder": "Define el comportamiento, el rol y las instrucciones del agente",
+		"greetingToggle": "Activar saludo",
+		"greetingPlaceholder": "Hola, soy tu asistente de soporte de TI. Puedo ayudarte a restablecer una contraseña, revisar el estado de un ticket abierto o resolver un problema común. ¿Qué necesitas?",
+		"greetingOffNote": "El saludo está desactivado. Actívalo para usar este mensaje.",
+		"greetingHelp": "Se muestra como el mensaje inicial del agente cuando se inicia una sala. No consume tokens, pero el modelo no puede verlo, así que repite en las Instrucciones todo lo que necesite para actuar (las opciones que ofreces aquí).",
+		"useRoomModel": "Usar el modelo de la sala",
+		"modelHelp": "Déjalo sin definir para usar el modelo de la sala.",
+		"picker": {
+			"cancel": "Cancelar",
+			"done": "Listo"
+		},
+		"knowledge": {
+			"add": "Agregar conocimiento",
+			"description": "Selecciona las fuentes de conocimiento que este agente puede consultar. Haz clic en una fuente para agregarla o quitarla."
+		},
+		"toolboxes": {
+			"add": "Agregar cajas de herramientas",
+			"description": "Selecciona las cajas de herramientas que este agente puede usar. Haz clic en una para agregarla o quitarla."
+		},
+		"skills": {
+			"add": "Agregar habilidades",
+			"description": "Selecciona las habilidades reutilizables que este agente puede cargar. Haz clic en una habilidad para agregarla o quitarla."
+		},
+		"prompts": {
+			"add": "Agregar prompts",
+			"description": "Selecciona los prompts preconfigurados que ofrece este agente. Marca un prompt para agregarlo."
+		},
+		"subagents": {
+			"add": "Agregar subagente",
+			"searchPlaceholder": "Buscar agentes...",
+			"noneToAdd": "No hay otros agentes para agregar.",
+			"noMatch": "Ningún agente coincide con tu búsqueda."
+		},
+		"builtInTools": {
+			"enable": "Activar herramientas integradas del agente",
+			"enableAll": "Activar todas",
+			"disableAll": "Desactivar todas",
+			"offNote": "Las herramientas integradas están desactivadas para este agente. Las selecciones individuales se conservan para cuando se vuelvan a activar."
+		},
+		"hooks": {
+			"pixelLabel": "Expresión pixel",
+			"eventsLabel": "Eventos del ciclo de vida",
+			"eventsHelp": "Si no seleccionas ninguno, se ejecuta en todos los eventos.",
+			"add": "Agregar hook"
+		},
+		"createSettingsFailed": "El agente se creó, pero algunas de sus opciones no se pudieron guardar. Abre la página de edición del agente para intentarlo de nuevo."
+	}
+}

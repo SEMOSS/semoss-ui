@@ -17,6 +17,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { WORKBENCH_STYLES } from "@semoss/workbench";
 import { useAssistant } from "@/hooks/use-assistant";
 import { AssistantComposer } from "./assistant-composer";
@@ -57,7 +58,7 @@ export const AssistantPanel = () => {
 		try {
 			await onRebuild();
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : String(error));
+			toast.error(getErrorMessage(error));
 		} finally {
 			setIsRebuilding(false);
 		}

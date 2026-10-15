@@ -21,6 +21,8 @@ export interface PermissionDropdownProps {
 	handlePermissionChange: (newPermission: PermissionChange) => void;
 	activeUserPermission: string;
 	hideDeleteOption?: boolean;
+	disabled?: boolean;
+	label?: string;
 }
 
 export const PermissionDropdown = ({
@@ -28,10 +30,13 @@ export const PermissionDropdown = ({
 	handlePermissionChange,
 	activeUserPermission,
 	hideDeleteOption = false,
+	disabled: isPending = false,
+	label,
 }: PermissionDropdownProps) => {
 	const { t } = useTranslation("workspace");
 
 	const disabled =
+		isPending ||
 		activeUserPermission === "READ_ONLY" ||
 		(permission === "OWNER" && activeUserPermission !== "OWNER");
 	const hideOwnerOption = !disabled && activeUserPermission !== "OWNER";
@@ -47,7 +52,10 @@ export const PermissionDropdown = ({
 			// Disable if current user is read-only or trying to modify an owner without being an owner
 			disabled={disabled}
 		>
-			<SelectTrigger size="sm">
+			<SelectTrigger
+				size="sm"
+				aria-label={label ?? t("members.changePermissionButton")}
+			>
 				<SelectValue />
 			</SelectTrigger>
 			{/* Position checkmark on left side of menu items */}

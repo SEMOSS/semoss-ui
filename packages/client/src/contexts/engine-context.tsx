@@ -27,6 +27,9 @@ export type EngineContextType = {
 
 	/** refreshes metadata for the active engine */
 	refresh: () => void;
+
+	/** Merges fields into the loaded engine without reloading it */
+	update: (values: Partial<Engine>) => void;
 };
 
 /**

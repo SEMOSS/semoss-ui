@@ -46,6 +46,4 @@ export function getReplayWaitAfterMs(
 		: fallback;
 }
 
-export function wait(ms: number): Promise<void> {
-	return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
+export { sleep as wait } from "@semoss/utility/async";

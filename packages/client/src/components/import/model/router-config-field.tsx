@@ -19,6 +19,7 @@ import {
 	Switch,
 	Textarea,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
 import {
 	createDefaultRouterConfigValue,
 	createRouterEngineRef,
@@ -94,7 +95,7 @@ const normalizeEngineRef = (ref: unknown): RouterEngineRefFormValue => {
 
 /** Coerce whatever the form state holds into a well-formed editor value. */
 const normalizeRouterConfigValue = (value: unknown): RouterConfigFormValue => {
-	if (!value || typeof value !== "object" || Array.isArray(value)) {
+	if (!isRecord(value)) {
 		return createDefaultRouterConfigValue();
 	}
 	const v = value as Partial<RouterConfigFormValue>;
@@ -159,7 +160,7 @@ export const routerConfigFromJson = (raw: unknown): RouterConfigFormValue => {
 			parsed = null;
 		}
 	}
-	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+	if (!isRecord(parsed)) {
 		return createDefaultRouterConfigValue();
 	}
 	const cfg = parsed as Record<string, unknown>;

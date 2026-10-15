@@ -20,22 +20,10 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { buildInitials } from "@semoss/utility";
+import { buildInitials, hashString } from "@semoss/utility/text";
 import { PromptModal } from "../../../pages/prompt/PromptModal";
 import type { Prompt } from "../prompt.types";
 import { PromptDeleteModal } from "../prompt-delete-modal";
-
-/**
- * Hash string to number for gradient generation
- */
-const hashString = (str: string): number => {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
-	}
-	return Math.abs(h);
-};
 
 /**
  * Generate gradient based on prompt title

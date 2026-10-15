@@ -33,6 +33,9 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { formatDateTimeWithRelativeDay } from "@semoss/utility/date";
+import { sanitizeFileNameStem } from "@semoss/utility/file";
 import {
 	createUserAccessKey,
 	deleteUserAccessKeys,
@@ -42,7 +45,7 @@ import {
 import { MicrosoftSubscriptions } from "@/components/settings";
 import { SdkBlock } from "@/components/shared/sdk-block";
 import { useAPI, useConfig, useSession, useSettings } from "@/hooks";
-import { formatDate, getSDKSnippet } from "@/utility";
+import { getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
 
 interface CreateAccessKeyForm {
@@ -144,22 +147,12 @@ export const MyProfilePage = () => {
 
 	const downloadAccessKeyJson = () => {
 		if (!ACCESSKEY || !SECRETKEY) return;
-		const slug =
-			TOKENNAME.trim()
-				.replace(/[^A-Za-z0-9._-]+/g, "-")
-				.replace(/^-+|-+$/g, "") || "access-key";
+		const slug = sanitizeFileNameStem(TOKENNAME) || "access-key";
 		const blob = new Blob(
 			[JSON.stringify({ ACCESSKEY, SECRETKEY }, null, 2)],
 			{ type: "application/json" },
 		);
-		const url = URL.createObjectURL(blob);
-		const anchor = document.createElement("a");
-		anchor.href = url;
-		anchor.download = `${slug}-credentials.json`;
-		document.body.appendChild(anchor);
-		anchor.click();
-		anchor.remove();
-		URL.revokeObjectURL(url);
+		downloadBlob(blob, `${slug}-credentials.json`);
 	};
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
@@ -350,7 +343,9 @@ export const MyProfilePage = () => {
 								</Label>
 								<span className="text-sm">
 									{lastLogin
-										? formatDate(lastLogin) || lastLogin
+										? formatDateTimeWithRelativeDay(
+												lastLogin,
+											) || lastLogin
 										: "—"}
 								</span>
 							</div>

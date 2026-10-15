@@ -4,19 +4,24 @@ import type {
 	AutomationNode,
 	BranchConfig,
 	DatabaseEngineConfig,
+	DataExtractConfig,
 	FunctionEngineConfig,
-	JevDecisionConfig,
+	LoopConfig,
 	ModelEngineConfig,
 	StorageEngineConfig,
 	VectorEngineConfig,
 	WaitConfig,
 } from "../../domain/automation.types";
+import type { AutomationWorkflowNodeConfig } from "../../domain/automation-workflow.types";
+import { normalizeJevDecisionConfig } from "../../domain/automation-workflow-adapter";
 import { AgentRunForm } from "./forms/agent-run-form";
 import { AppEngineForm } from "./forms/app-engine-form";
 import { BranchConditionBuilder } from "./forms/branch-condition-builder";
+import { DataExtractForm } from "./forms/data-extract-form";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
 import { JevDecisionForm } from "./forms/jev-decision-form";
+import { LoopForm } from "./forms/loop-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
 import { PillInput } from "./forms/pill-input";
 import { StorageEngineForm } from "./forms/storage-engine-form";
@@ -55,16 +60,19 @@ export function StepForm({
 		);
 	}
 	if (step.workflowType === "control.jev") {
+		const config = normalizeJevDecisionConfig(
+			step.config as unknown as AutomationWorkflowNodeConfig,
+		);
 		return (
 			<JevDecisionForm
-				config={step.config as JevDecisionConfig}
+				config={config}
 				upstreamVars={upstreamVars}
 				onChange={update}
+				devMode={devMode}
 				readOnly={readOnly}
 			/>
 		);
 	}
-
 	switch (step.type) {
 		case "trigger":
 			return null;
@@ -72,6 +80,15 @@ export function StepForm({
 			return (
 				<DatabaseEngineForm
 					config={step.config as DatabaseEngineConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					readOnly={readOnly}
+				/>
+			);
+		case "data":
+			return (
+				<DataExtractForm
+					config={step.config as DataExtractConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					readOnly={readOnly}
@@ -112,6 +129,7 @@ export function StepForm({
 					config={step.config as FunctionEngineConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
+					devMode={devMode}
 					readOnly={readOnly}
 				/>
 			);
@@ -145,6 +163,19 @@ export function StepForm({
 						<span className="font-mono">${"{variableName}"}</span>.
 					</p>
 				</div>
+			);
+		}
+		case "loop": {
+			const c = step.config as LoopConfig;
+			return (
+				<LoopForm
+					step={step}
+					config={c}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					devMode={devMode}
+					readOnly={readOnly}
+				/>
 			);
 		}
 		case "branch": {

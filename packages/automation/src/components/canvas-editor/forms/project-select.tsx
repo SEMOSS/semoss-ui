@@ -15,7 +15,7 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { buildInitials } from "@semoss/utility";
+import { buildInitials, hashString as hashName } from "@semoss/utility/text";
 
 interface ProjectRow {
 	project_id: string;
@@ -57,12 +57,6 @@ const AVATAR_PALETTES = [
 		text: "text-orange-700 dark:text-orange-300",
 	},
 ];
-
-function hashName(s: string): number {
-	let h = 0;
-	for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-	return Math.abs(h);
-}
 
 function ProjectInitials({ name }: { name: string }) {
 	const letters = buildInitials(name, 2);

@@ -1,5 +1,6 @@
 {
 	"messages": {
+		"actions": "メッセージの操作",
 		"placeholder": "メッセージを入力...",
 		"sending": "送信中...",
 		"error": "メッセージの送信に失敗しました"

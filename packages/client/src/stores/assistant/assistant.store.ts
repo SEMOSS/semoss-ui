@@ -10,6 +10,7 @@ import {
 	uploadInsight,
 } from "@semoss/sdk";
 import type { Engine } from "@semoss/shared";
+import { getErrorMessage as toErrorMessage } from "@semoss/utility/error";
 import type { WorkbenchState } from "@semoss/workbench";
 import type {
 	ConversationRoom,
@@ -403,16 +404,6 @@ const buildRunFailureMessage = (
 		? `The assistant didn't finish your request: ${detail}`
 		: "The assistant didn't finish your request. Please try again.";
 };
-
-/**
- * Extract a display message from a thrown value.
- *
- * @name toErrorMessage
- * @param error - Thrown value of any shape.
- * @return The Error's message, or the value coerced to a string.
- */
-const toErrorMessage = (error: unknown): string =>
-	error instanceof Error ? error.message : String(error);
 
 /**
  * Creates the assistant store for one workbench: the

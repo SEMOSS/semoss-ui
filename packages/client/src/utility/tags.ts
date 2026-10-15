@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { hashString as hashTag } from "@semoss/utility/text";
 
 interface TagColorPalette {
 	backgroundColor: string;
@@ -22,17 +23,6 @@ export const normalizeTagArray = (tag?: string[] | string): string[] => {
 
 const normalizeTagKey = (tag: string): string => {
 	return tag.trim().toLowerCase().replace(/\s+/g, " ");
-};
-
-const hashTag = (value: string): number => {
-	let hash = 0;
-
-	for (let i = 0; i < value.length; i++) {
-		hash = (hash << 5) - hash + value.charCodeAt(i);
-		hash |= 0;
-	}
-
-	return Math.abs(hash);
 };
 
 const createTagPalette = (tag: string): TagColorPalette => {

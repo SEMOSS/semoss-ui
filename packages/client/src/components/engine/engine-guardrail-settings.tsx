@@ -30,6 +30,7 @@ import {
 	useForm,
 	zodResolver,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { useSession } from "@/hooks";
 import {
 	collectGuardrailConfigIssues,
@@ -322,9 +323,10 @@ export const EngineGuardrailSettings = ({
 			onUpdated?.();
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to update the guardrail configuration.",
+				getErrorMessage(
+					error,
+					"Unable to update the guardrail configuration.",
+				),
 			);
 		}
 	};

@@ -1,6 +1,8 @@
+import { parseJsonStringArray } from "@semoss/utility/json";
 import type { ModelEngineConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
+import { StringListInput } from "./string-list-input";
 
 export interface ModelEngineFormProps {
 	/** Current node config */
@@ -22,6 +24,10 @@ export function ModelEngineForm({
 	devMode = false,
 	readOnly = false,
 }: ModelEngineFormProps) {
+	const mediaUrls = config.urls.trim()
+		? parseJsonStringArray(config.urls)
+		: [];
+
 	return (
 		<div className="flex flex-col gap-4">
 			<EnginePickerField
@@ -78,15 +84,30 @@ export function ModelEngineForm({
 				</>
 			)}
 			{config.operation === "embeddings" && (
-				<BoundInput
-					label="Text to Embed"
-					required
-					value={config.values}
-					placeholder="${text_to_embed}"
-					onChange={(v) => onChange({ ...config, values: v })}
-					upstreamVars={upstreamVars}
-					readOnly={readOnly}
-				/>
+				<>
+					<BoundInput
+						label="Text to Embed"
+						required
+						value={config.values}
+						placeholder="${text_to_embed}"
+						onChange={(v) => onChange({ ...config, values: v })}
+						upstreamVars={upstreamVars}
+						readOnly={readOnly}
+					/>
+					{devMode && (
+						<BoundInput
+							label="Model Settings (JSON, optional)"
+							value={config.paramValues}
+							placeholder='{"batchSize": 32}'
+							onChange={(v) =>
+								onChange({ ...config, paramValues: v })
+							}
+							upstreamVars={upstreamVars}
+							readOnly={readOnly}
+							mono
+						/>
+					)}
+				</>
 			)}
 			{config.operation === "vision" && (
 				<>
@@ -101,24 +122,89 @@ export function ModelEngineForm({
 						mono
 					/>
 					<BoundInput
-						label="Image URL / Path"
-						required
+						label="Media Path(s)"
 						value={config.image}
-						placeholder="${image_url}"
+						placeholder="${downloaded_files.files}"
 						onChange={(v) => onChange({ ...config, image: v })}
 						upstreamVars={upstreamVars}
 						readOnly={readOnly}
 					/>
+					{mediaUrls !== null ? (
+						<StringListInput
+							label="Media URLs (optional)"
+							values={mediaUrls}
+							onChange={(urls) =>
+								onChange({
+									...config,
+									urls: JSON.stringify(urls),
+								})
+							}
+							upstreamVars={upstreamVars}
+							itemLabel="URL"
+							placeholder="https://example.com/image.png"
+							readOnly={readOnly}
+						/>
+					) : (
+						<BoundInput
+							label="Media URLs (JSON, optional)"
+							value={config.urls}
+							placeholder='["https://example.com/image.png"]'
+							description={
+								mediaUrls === null && !devMode
+									? "This existing value needs Developer mode to edit safely."
+									: undefined
+							}
+							onChange={(urls) => onChange({ ...config, urls })}
+							upstreamVars={upstreamVars}
+							readOnly={
+								readOnly || (!devMode && mediaUrls === null)
+							}
+							mono
+						/>
+					)}
+					<BoundInput
+						label="System Instructions (optional)"
+						value={config.context}
+						placeholder="e.g. Focus on clinical findings."
+						onChange={(v) => onChange({ ...config, context: v })}
+						upstreamVars={upstreamVars}
+						readOnly={readOnly}
+						mono
+					/>
+					{devMode && (
+						<BoundInput
+							label="Model Settings (JSON, optional)"
+							value={config.paramValues}
+							placeholder='{"temperature": 0.2}'
+							onChange={(v) =>
+								onChange({ ...config, paramValues: v })
+							}
+							upstreamVars={upstreamVars}
+							readOnly={readOnly}
+							mono
+						/>
+					)}
 				</>
 			)}
 			{config.operation === "ner" && (
 				<>
 					<BoundInput
-						label="Prompt"
+						label="Text to Analyze"
 						required
-						value={config.prompt}
-						placeholder="Extract entities from: ${text}"
-						onChange={(v) => onChange({ ...config, prompt: v })}
+						value={config.command}
+						placeholder="${text}"
+						onChange={(v) => onChange({ ...config, command: v })}
+						upstreamVars={upstreamVars}
+						readOnly={readOnly}
+						mono
+					/>
+					<BoundInput
+						label="Mask Entities (JSON, optional)"
+						value={config.maskEntities}
+						placeholder='["PERSON"]'
+						onChange={(v) =>
+							onChange({ ...config, maskEntities: v })
+						}
 						upstreamVars={upstreamVars}
 						readOnly={readOnly}
 						mono

@@ -19,6 +19,9 @@ export type ProjectContextType = {
 	permission: Role;
 	dependencies: ProjectDependency[];
 	refresh: () => void;
+
+	/** Merges fields into the loaded project without reloading it */
+	update: (values: Partial<Project>) => void;
 };
 
 export const ProjectContext = createContext<ProjectContextType | undefined>(

@@ -1,12 +1,12 @@
 import { Clock3 } from "lucide-react";
 import { useMemo } from "react";
+import { formatDurationMs } from "@semoss/utility/date";
 import type {
 	AutomationExecutedDefinition,
 	AutomationNode,
 	AutomationNodeResult,
 } from "../../domain/automation.types";
 import { getDisplayMeta } from "../../domain/automation-display";
-import { formatDurationMs } from "../../domain/automation-utils";
 import { StatusBadge } from "../status-badge";
 import { ErrorDetail } from "./error-detail";
 import { ExecutedDefinitionDetail } from "./executed-definition-detail";

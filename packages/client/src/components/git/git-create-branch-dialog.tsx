@@ -13,6 +13,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 
 const branchSchema = z.object({
 	name: z
@@ -65,11 +66,7 @@ export const GitCreateBranchDialog = ({
 			onSubmit(values.name);
 		} catch (error) {
 			console.error(error);
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to create branch",
-			);
+			toast.error(getErrorMessage(error, "Failed to create branch"));
 		}
 	};
 
