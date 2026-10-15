@@ -215,7 +215,10 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const CHAT_THEME = {
 	...EMAIL_THEME,
-	tableCell: "border border-border p-1 [&_p]:m-0",
+	table: "my-2 w-max border-collapse",
+	tableScrollableWrapper: "max-h-48 max-w-full overflow-auto",
+	tableCell:
+		"max-w-xs wrap-anywhere border border-border p-1 whitespace-pre-wrap align-top [&_p]:m-0",
 };
 
 const initialConfig = {
