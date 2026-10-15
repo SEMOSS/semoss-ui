@@ -2,6 +2,7 @@ import { cn } from "@semoss/ui/next";
 import { getLoginTypeName } from "../constants/login-type-names.constants";
 import { LoginTypeIcon } from "./login-type-icon";
 
+/** Props for {@link LoginTypeLabel}. */
 export interface LoginTypeLabelProps {
 	/** The login's stored label, such as NATIVE, MICROSOFT or API_USER */
 	type: string;

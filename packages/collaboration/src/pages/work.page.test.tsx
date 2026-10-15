@@ -1,5 +1,6 @@
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
@@ -449,3 +450,8 @@ it("never falls back to global work for an unknown topic", () => {
 	expect(screen.queryByRole("article")).not.toBeInTheDocument();
 	expect(screen.queryByRole("tab")).not.toBeInTheDocument();
 });
+
+// Route composition is exercised with isolated child views; hydration has its own integration coverage.
+vi.mock("@/features/collaboration/components/saved-record-boundary", () => ({
+	SavedRecordBoundary: ({ children }: { children: ReactNode }) => children,
+}));

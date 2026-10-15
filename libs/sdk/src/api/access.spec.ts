@@ -168,7 +168,6 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 					{ index: 0, allowed: false, reason: "Already has access" },
 				],
 			},
-			{ target: { kind: "NOPE", id: "x" }, changes: [] },
 		]);
 
 		const validations = await validatePermissionBatches([BATCH]);
@@ -189,6 +188,28 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 				],
 			},
 		]);
+	});
+
+	it("fails rather than leave out a result, since results match batches by position", async () => {
+		answerPost([{ target: { kind: "NOPE", id: "x" }, changes: [] }]);
+		await expect(validatePermissionBatches([BATCH])).rejects.toThrow(
+			"a batch has no target",
+		);
+
+		answerPost([
+			{
+				target: { kind: "PROJECT", id: "p1" },
+				changes: [{ allowed: true }],
+			},
+		]);
+		await expect(validatePermissionBatches([BATCH])).rejects.toThrow(
+			"a change has no index",
+		);
+
+		answerPost([]);
+		await expect(validatePermissionBatches([BATCH])).rejects.toThrow(
+			"not one result per batch",
+		);
 	});
 
 	it("reads how much was saved", async () => {

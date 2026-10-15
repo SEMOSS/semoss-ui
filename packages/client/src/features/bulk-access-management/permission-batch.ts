@@ -396,5 +396,6 @@ export const describeChangeDetail = (
 			? `${level}, now${until}`
 			: `${level}, no end date`;
 	}
-	return `${level}, ${describeModelLimit(staged)}`;
+	const limit = describeModelLimit(staged);
+	return `${level}, ${limit === "No limit" ? "no usage limit" : limit}`;
 };

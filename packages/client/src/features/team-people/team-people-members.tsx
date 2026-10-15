@@ -26,16 +26,20 @@ export interface TeamPeopleMembersProps {
 	groupId: string;
 	/** The project or engine the members are read through */
 	target: GroupAccessTarget;
+	/** Whether to read them as an admin, in admin mode, instead of through the target */
+	admin?: boolean;
 }
 
 /**
  * A custom team's members, searchable and paged, read through a project or
- * engine the team can use, so its owners and editors see who the team gives
- * access to.
+ * engine: its owners see who a team would give access to before they give it
+ * access, and its editors see them once the team can use it. In admin mode an
+ * admin reads them directly.
  */
 export const TeamPeopleMembers = ({
 	groupId,
 	target,
+	admin = false,
 }: TeamPeopleMembersProps) => {
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search.trim(), 300);
@@ -49,11 +53,11 @@ export const TeamPeopleMembers = ({
 					limit,
 					offset,
 					debouncedSearch,
-					false,
-					{ resource, resourceId },
+					admin,
+					admin ? undefined : { resource, resourceId },
 				),
 			),
-		[groupId, debouncedSearch, resource, resourceId],
+		[groupId, debouncedSearch, admin, resource, resourceId],
 	);
 	const countRows = useCallback(
 		async (): Promise<number> =>
@@ -61,11 +65,11 @@ export const TeamPeopleMembers = ({
 				await getTeamUsersCount(
 					groupId,
 					debouncedSearch || undefined,
-					false,
-					{ resource, resourceId },
+					admin,
+					admin ? undefined : { resource, resourceId },
 				),
 			) || 0,
-		[groupId, debouncedSearch, resource, resourceId],
+		[groupId, debouncedSearch, admin, resource, resourceId],
 	);
 	const { rows, totalCount, isLoading, error, pagination } = usePagedList({
 		loadPage,
@@ -101,11 +105,14 @@ export const TeamPeopleMembers = ({
 					Loading members...
 				</div>
 			) : rows.length === 0 ? (
-				<p className="py-6 text-center text-muted-foreground text-sm">
-					{debouncedSearch
-						? "No members match this search"
-						: "This team has no members yet"}
-				</p>
+				// a failed read says why above, not that the team is empty
+				error ? null : (
+					<p className="py-6 text-center text-muted-foreground text-sm">
+						{debouncedSearch
+							? "No members match this search"
+							: "This team has no members yet"}
+					</p>
+				)
 			) : (
 				<ul className="flex flex-col divide-y divide-border rounded-md border border-border">
 					{rows.map((member) => (

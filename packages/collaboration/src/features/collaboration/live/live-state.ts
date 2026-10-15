@@ -206,7 +206,7 @@ function mapSources(settings: Settings): SourceStatus[] {
 	}));
 }
 
-function mapTopic(row: Row): Topic {
+export function mapTopic(row: Row): Topic {
 	const stats = (row.stats ?? {}) as Row;
 	return {
 		id: str(row.id),
@@ -242,7 +242,7 @@ function mapTopic(row: Row): Topic {
 	};
 }
 
-function mapPerson(row: Row): Person {
+export function mapPerson(row: Row): Person {
 	const channels = (row.channels ?? {}) as Row;
 	const name = str(row.name, str(row.email, "Unknown"));
 	return {
@@ -284,7 +284,7 @@ const SOURCE_KINDS: Record<string, NonNullable<Thread["source"]>["kind"]> = {
 	calendar: "calendar",
 };
 
-function mapThread(row: Row): Thread {
+export function mapThread(row: Row): Thread {
 	const channel = (row.channel as Thread["channel"]) ?? "email";
 	// Brain ids are internal ids. Only expose a source target when the server supplies its native id.
 	const nativeId =
@@ -344,7 +344,7 @@ function mapThread(row: Row): Thread {
 	};
 }
 
-function mapItem(row: Row): WorkItem {
+export function mapItem(row: Row): WorkItem {
 	return {
 		id: str(row.id),
 		threadId: str(row.threadId),
@@ -514,7 +514,7 @@ function mapStep(step: Row): WorkspaceStep {
 }
 
 // saved goal and steps; messages load when the thread opens, and a thread's facts are memories
-function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
+export function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 	return Object.fromEntries(
 		page.items.map((row) => [
 			str(row.threadId),

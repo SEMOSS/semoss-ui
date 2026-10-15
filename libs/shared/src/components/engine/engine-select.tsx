@@ -25,7 +25,8 @@ import { EngineSubtypeIcon } from "../engine-subtype-icon";
 // TypeScript Interfaces
 // ============================================================================
 
-interface EngineSelectProps {
+/** Props for {@link EngineSelect}. */
+export interface EngineSelectProps {
 	/** Associates the trigger with a field label. */
 	id?: string;
 	/** CSS classes for styling customization */

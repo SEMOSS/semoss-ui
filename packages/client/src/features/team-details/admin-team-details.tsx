@@ -5,7 +5,7 @@ import { useGroupManagersSource } from "@/features/group-managers/use-group-mana
 import { useTeamMembersSource } from "@/features/team-members/use-team-members-source";
 import { TeamResourceAccessPanel } from "@/features/team-resource-access/team-resource-access-panel";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
-import { useConfig } from "@/hooks";
+import { useConfig } from "@/hooks/use-config";
 import { TeamPeopleCard } from "./team-people-card";
 
 export interface AdminTeamDetailsProps {
@@ -42,14 +42,14 @@ export const AdminTeamDetails = ({ id, type }: AdminTeamDetailsProps) => {
 					/>
 					<TeamPeopleCard
 						title="Managers"
-						description="User's who can manage this team's members."
+						description="Managers change who is in this team and who manages it."
 						source={managersSource}
 						adminMode
 						isDirectoryAvailable={isDirectoryAvailable}
 					/>
 					<TeamPeopleCard
 						title="Members"
-						description="Everyone in this team can use its projects and engines."
+						description="Everyone in this team can use the projects and engines it has been given."
 						source={membersSource}
 						adminMode
 						isDirectoryAvailable={isDirectoryAvailable}

@@ -102,7 +102,7 @@ export const PermissionBatchConflicts = ({
 					return (
 						<li
 							key={conflict.key}
-							className="flex flex-col gap-3 px-3 py-3 md:flex-row md:items-center md:justify-between"
+							className="flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between"
 						>
 							<AccessIdentity
 								kind="USER"
@@ -137,7 +137,7 @@ export const PermissionBatchConflicts = ({
 									type="button"
 									size="sm"
 									variant="outline"
-									aria-label={`Use the copied access for ${label}`}
+									aria-label={`Use from source for ${label}`}
 									onClick={() =>
 										onResolve(conflict.key, true)
 									}

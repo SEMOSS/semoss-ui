@@ -167,7 +167,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 	featureFlags: {
 		enableAgent: true,
 		enableModelSelect: true,
-		enableSuggestions: false,
+		enableSuggestions: true,
 		enablePromptOptimizer: true,
 		enableAgentHarness: false,
 		showActivityLog: true,

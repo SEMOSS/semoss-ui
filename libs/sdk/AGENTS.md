@@ -143,3 +143,24 @@ The SDK owns what the session is signed in to, so an app never tracks or caches 
   cannot be read. So besides watching the popup close or come back, it reads the login every two
   seconds and closes the popup once it is there. `oauth` rejects when the popup ends without the
   login rather than leaving the sign in waiting. Apps call the SDK's `oauth`; none keeps a copy.
+
+## Permission Batches
+
+[`api/access.ts`](./src/api/access.ts) holds Bulk Access Management's calls to the backend's
+permission batch endpoints, `/api/auth/permissionBatch`, or `/api/auth/admin/permissionBatch` when
+a call's `admin` is true, where an admin can read and change anything:
+
+- `getResourcePermissions` (`getPermissions`) reads the people and teams who can use a project or
+  engine and what the signed in user may change (`allowedPermissionChanges`). `getTeamPeople`
+  reads a custom team's members or managers through the same endpoint.
+- `validatePermissionBatches` and `savePermissionBatches` post the batches as JSON in the
+  `batches` form field. Validating returns one result per batch, in the order sent, and each
+  change's result carries its index in its batch. Saving saves every change of every batch, or
+  none.
+- `getPermissionsToCopy` reads the people to copy from one project, engine or team into another,
+  with their access on both. `getEffectivePermissions` reads everyone who can use a project or
+  engine, and where their access comes from.
+
+Each call checks the response's shape and throws when it is not what the call reads. Lists of
+people leave out rows without an id, login type or known level; validation results are never
+left out, since they are matched to the batches by position.

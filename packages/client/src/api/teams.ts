@@ -226,8 +226,8 @@ export const deleteTeam = async (groupid: string, type?: string) => {
  * @param searchTerm - Text to search for
  * @param admin - Whether to use the admin endpoint; the team's managers use the
  * other one
- * @param target - A project or engine the team can use that the signed in user
- * owns or edits, so they can see who the team gives access to
+ * @param target - A project or engine the signed in user owns or edits, to
+ * read the members through; see {@link GroupAccessTarget}
  */
 export const getTeamUsers = async (
 	groupId: string,
@@ -549,7 +549,11 @@ export interface GroupManager {
 	email?: string | null;
 }
 
-/** A project or engine whose owner is about to give a team access to it */
+/**
+ * A project or engine a custom team's managers and members are read through:
+ * its owners can read them even before the team has access to it, such as when
+ * giving the team access, and its editors once the team has access
+ */
 export interface GroupAccessTarget {
 	/** Project or engine */
 	resource: GroupAccessResource;
@@ -579,8 +583,8 @@ const setAccessTarget = (
  * @param groupId - The team
  * @param admin - Whether to use the admin endpoint; the team's managers use the
  * other one
- * @param target - The project or engine the signed in user owns and is giving
- * the team access to, so they can see who manages it first
+ * @param target - A project or engine the signed in user owns or edits, to
+ * read the managers through; see {@link GroupAccessTarget}
  * @returns The managers. Entries without a user id are left out.
  */
 export const getGroupManagers = async (

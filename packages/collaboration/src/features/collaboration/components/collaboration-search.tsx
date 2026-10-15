@@ -31,11 +31,14 @@ import {
 	useWorkspaceSearch,
 	type WorkspaceSearchResult,
 } from "@/features/dashboard/use-workspace-search";
+import { searchResultPath } from "../api/collaboration-search";
+import { useCollaborationSearch } from "../api/use-collaboration-search";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 
 const groups: WorkspaceSearchResult["group"][] = [
 	"Go to",
 	"Chats",
+	"Threads",
 	"Actions",
 	"People",
 	"Topics",
@@ -63,6 +66,7 @@ export function CollaborationSearch({
 		if (isOpen) didNavigate.current = false;
 	}, [isOpen]);
 	const windowId = useId();
+	const saved = useCollaborationSearch(query, isOpen);
 	const remote = useWorkspaceSearch(
 		dashboard?.actions ?? null,
 		query,
@@ -74,31 +78,43 @@ export function CollaborationSearch({
 		const handleKey = (event: KeyboardEvent) => {
 			if (
 				(event.metaKey || event.ctrlKey) &&
-				event.key.toLowerCase() === "k"
+				event.key.toLowerCase() === "k" &&
+				!event.repeat &&
+				!event.isComposing
 			) {
 				event.preventDefault();
-				setIsOpen(!isOpen);
+				setIsOpen(true);
 			}
 		};
 		window.addEventListener("keydown", handleKey);
 		return () => window.removeEventListener("keydown", handleKey);
-	}, [isOpen, setIsOpen]);
+	}, [setIsOpen]);
 	const term = query.trim().toLocaleLowerCase();
 	const errors = [
 		...remote.errors,
+		...(saved.error ? [`Saved records: ${saved.error}`] : []),
 		...(dashboard?.calendar.error
 			? [`Calendar: ${dashboard.calendar.error}`]
 			: []),
 	];
-	const limitedRecords =
-		state.people.length >= 5000 ||
-		state.topics.length >= 1000 ||
-		state.threads.length >= 5000 ||
-		state.items.length >= 5000;
 	const entries: WorkspaceSearchResult[] = term
 		? [
 				...remote.chats,
-				...searchWorkspaceRecords(state, query),
+				...searchWorkspaceRecords(state, query, false),
+				...saved.entries.map(
+					(entry): WorkspaceSearchResult => ({
+						id: `${entry.kind}:${entry.id}`,
+						label: entry.name,
+						detail: `${entry.kind === "thread" ? "Thread" : entry.kind === "person" ? "Person" : "Topic"}${entry.detail ? ` · ${entry.detail}` : ""}`,
+						group:
+							entry.kind === "thread"
+								? "Threads"
+								: entry.kind === "person"
+									? "People"
+									: "Topics",
+						path: searchResultPath(entry),
+					}),
+				),
 				...(dashboard?.calendar.data ?? [])
 					.filter((event) =>
 						`${event.subject} ${event.organizerName} ${event.location}`
@@ -232,9 +248,11 @@ export function CollaborationSearch({
 					/>
 					<CommandList className="max-h-96 p-2">
 						<CommandEmpty>
-							{remote.isLoading
+							{remote.isLoading || saved.status === "loading"
 								? "Searching…"
-								: "No matching items. Try another name or keyword."}
+								: errors.length > 0
+									? "Some searches failed. Retry below."
+									: "No matching items. Try another name or keyword."}
 						</CommandEmpty>
 						{groups.map((group) => {
 							const matches = entries.filter(
@@ -266,6 +284,15 @@ export function CollaborationSearch({
 								</CommandGroup>
 							) : null;
 						})}
+						{saved.hasMore && (
+							<CommandItem
+								value="more-saved-records"
+								disabled={saved.status === "loading"}
+								onSelect={saved.loadMore}
+							>
+								Load more saved records
+							</CommandItem>
+						)}
 						{remote.hasMore && (
 							<CommandItem
 								value="more-chats"
@@ -277,7 +304,7 @@ export function CollaborationSearch({
 						)}
 					</CommandList>
 				</Command>
-				{remote.isLoading && (
+				{(remote.isLoading || saved.status === "loading") && (
 					<output className="px-4 py-2 text-muted-foreground text-xs">
 						Searching connected records…
 					</output>
@@ -295,6 +322,7 @@ export function CollaborationSearch({
 							variant="outline"
 							onClick={() => {
 								remote.retry();
+								if (saved.status === "error") saved.retry();
 								dashboard?.calendar.refresh();
 							}}
 						>
@@ -304,9 +332,9 @@ export function CollaborationSearch({
 				)}
 				<div className="flex flex-wrap items-center gap-2 border-t bg-muted/30 p-3 text-muted-foreground text-xs">
 					<span className="min-w-0 flex-1">
-						{limitedRecords
-							? "Partial imported records (list limits apply)"
-							: "Available conversations, people, and topics"}
+						{saved.status === "ready" || saved.entries.length > 0
+							? `${saved.entries.length} of ${saved.total} saved matches`
+							: "Saved conversations, people, and topics"}
 						{state.settings.sourcesJson.calendar
 							? " · Up to 30 events this week"
 							: " · Calendar disconnected"}

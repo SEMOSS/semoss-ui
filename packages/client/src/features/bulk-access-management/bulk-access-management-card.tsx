@@ -22,13 +22,11 @@ export const BulkAccessManagementCard = ({
 }: BulkAccessManagementCardProps) => (
 	<div className="flex w-full items-start gap-3 rounded-md border border-border bg-muted/40 p-4">
 		<SlidersHorizontal
-			className="mt-0.5 size-4 flex-shrink-0 text-muted-foreground"
+			className="mt-0.5 size-4 shrink-0 text-muted-foreground"
 			aria-hidden
 		/>
 		<div className="flex flex-col gap-1">
-			<span className="font-semibold text-sm">
-				Detailed Access Configuration
-			</span>
+			<span className="font-medium text-sm">Bulk Access Management</span>
 			<P className="text-muted-foreground text-sm">
 				<Link
 					to={to}

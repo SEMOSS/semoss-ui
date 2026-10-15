@@ -24,6 +24,7 @@ import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,
 	AutomationRunSummary,
+	AutomationSavedResultReference,
 	RunStatus,
 } from "../../../domain/automation.types";
 import { buildAssistantHandoffPrompt } from "../../../domain/automation-assistant-handoff";
@@ -42,6 +43,16 @@ import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
 import { RunNodeDataViewer } from "./run-node-data-viewer";
+import { RunNodeSourceViewer } from "./run-node-source-viewer";
+import {
+	findSavedResultForOccurrence,
+	getRunNodeDataSource,
+	getRunNodeOccurrenceKey,
+	getVisibleRunNodeContentView,
+	RUN_NODE_VIEW_LABELS,
+	RUN_RESULTS_LAYOUT_CLASSES,
+	type RunNodeContentView,
+} from "./run-node-view-state";
 
 export interface RunsTabSnapshot {
 	running: boolean;
@@ -61,6 +72,8 @@ export interface AutomationTraceSnapshot extends RunsTabSnapshot {
 
 interface RunsTabProps extends AutomationTraceSnapshot {
 	appId: string;
+	/** Shows immutable implementation details only when the workbench is in Dev mode. */
+	devMode?: boolean;
 	refreshToken: number;
 	/** Active runs discovered by the shared workbench run store. */
 	activeRuns?: AutomationRunSummary[];
@@ -105,6 +118,7 @@ function getExecutedSteps(run: AutomationRunDetail | null): AutomationNode[] {
 
 export function RunsTab({
 	appId,
+	devMode = false,
 	refreshToken,
 	running,
 	latestRunStatus,
@@ -278,7 +292,11 @@ export function RunsTab({
 	if (view === "live" || (view === "history" && running)) {
 		return (
 			<LiveRunView
+				appId={appId}
+				devMode={devMode}
+				runId={activeRun?.RUN_ID ?? null}
 				executionInsightId={activeRun?.executionInsightId ?? null}
+				savedResults={activeRun?.savedResults ?? []}
 				running={running}
 				latestRunStatus={latestRunStatus}
 				aiRunSummary={aiRunSummary}
@@ -314,6 +332,8 @@ export function RunsTab({
 			return (
 				<HistoryRunView
 					key={selectedRun.RUN_ID}
+					appId={appId}
+					devMode={devMode}
 					run={selectedRun}
 					onBack={goBack}
 					onOutputPopout={handleOutputPopout}
@@ -482,7 +502,11 @@ function RunHistoryBreadcrumb({
 
 /** Live run detail with navigation back to the history list. */
 function LiveRunView({
+	appId,
+	devMode,
+	runId,
 	executionInsightId,
+	savedResults,
 	running,
 	latestRunStatus,
 	aiRunSummary,
@@ -497,7 +521,11 @@ function LiveRunView({
 	focusToken,
 	onViewAgentRun,
 }: Omit<AutomationTraceSnapshot, "executedDefinition"> & {
+	appId: string;
+	devMode: boolean;
+	runId: string | null;
 	executionInsightId: string | null;
+	savedResults: AutomationSavedResultReference[];
 	onOutputPopout: (output: string) => void;
 	onAskAssistant: () => void;
 	onDismiss: () => void;
@@ -585,7 +613,11 @@ function LiveRunView({
 				)}
 			<ResultsPanel
 				key={executionInsightId ?? "live"}
+				appId={appId}
+				devMode={devMode}
+				runId={runId}
 				executionInsightId={executionInsightId}
+				savedResults={savedResults}
 				results={results}
 				onOutputPopout={onOutputPopout}
 				selectedResult={selectedResult}
@@ -599,12 +631,16 @@ function LiveRunView({
 
 /** Historical run detail with back button and run metadata. */
 function HistoryRunView({
+	appId,
+	devMode,
 	run,
 	onBack,
 	onOutputPopout,
 	onViewRun,
 	onViewAgentRun,
 }: {
+	appId: string;
+	devMode: boolean;
 	run: AutomationRunDetail;
 	onBack: () => void;
 	onOutputPopout: (output: string) => void;
@@ -666,7 +702,11 @@ function HistoryRunView({
 			<div className="mt-3 flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-card">
 				<ResultsPanel
 					key={run.RUN_ID}
+					appId={appId}
+					devMode={devMode}
+					runId={run.RUN_ID}
 					executionInsightId={run.executionInsightId ?? null}
+					savedResults={run.savedResults ?? []}
 					results={results}
 					onOutputPopout={onOutputPopout}
 					selectedResult={selectedResult}
@@ -681,7 +721,11 @@ function HistoryRunView({
 
 /** Shared results panel: left nav + right output. */
 function ResultsPanel({
+	appId,
+	devMode,
+	runId,
 	executionInsightId,
+	savedResults,
 	results,
 	selectedResult,
 	stepMap,
@@ -689,7 +733,11 @@ function ResultsPanel({
 	onSelectNode,
 	onViewAgentRun,
 }: {
+	appId: string;
+	devMode: boolean;
+	runId: string | null;
 	executionInsightId: string | null;
+	savedResults: AutomationSavedResultReference[];
 	results: AutomationNodeResult[];
 	selectedResult: AutomationNodeResult | null;
 	stepMap: Map<string, AutomationNode>;
@@ -705,6 +753,12 @@ function ResultsPanel({
 	const [expandedIterationKeys, setExpandedIterationKeys] = useState<
 		Set<string>
 	>(() => new Set());
+	const [contentView, setContentView] =
+		useState<RunNodeContentView>("output");
+	const visibleContentView = getVisibleRunNodeContentView(
+		contentView,
+		devMode,
+	);
 
 	const [selectedBodyKey, setSelectedBodyKey] = useState<{
 		loopNodeId: string;
@@ -782,20 +836,45 @@ function ResultsPanel({
 		selectedAgentTrace.nodeId
 			? selectedAgentTrace
 			: null;
+	const occurrence = selectedBodyKey
+		? {
+				parentNodeId: selectedBodyKey.loopNodeId,
+				iterationIndex: selectedBodyKey.iterationIndex,
+			}
+		: null;
+	const savedResult = displayResult
+		? findSavedResultForOccurrence(
+				savedResults,
+				displayResult.NODE_ID,
+				occurrence,
+			)
+		: undefined;
+	const dataSource = displayResult
+		? getRunNodeDataSource(
+				savedResult,
+				executionInsightId,
+				displayResult.OUTPUT_FRAME,
+			)
+		: { kind: "preview" as const };
+	const occurrenceKey =
+		displayResult && runId
+			? getRunNodeOccurrenceKey(runId, displayResult.NODE_ID, occurrence)
+			: null;
 
 	const handleSelectNode = useCallback(
 		(nodeId: string) => {
 			setSelectedBodyKey(null);
+			setContentView("output");
 			onSelectNode(nodeId);
 		},
 		[onSelectNode],
 	);
 
 	return (
-		<div className="flex min-h-0 flex-1 overflow-hidden">
+		<div className={RUN_RESULTS_LAYOUT_CLASSES.root}>
 			<nav
-				className="w-56 shrink-0 overflow-y-auto border-border border-r bg-muted/20 p-2"
-				aria-label="Run actions"
+				className={RUN_RESULTS_LAYOUT_CLASSES.navigation}
+				aria-label={RUN_NODE_VIEW_LABELS.navigation}
 			>
 				{results.length === 0 ? (
 					<p className="px-2 py-3 text-muted-foreground text-xs">
@@ -842,7 +921,10 @@ function ResultsPanel({
 											<span
 												className={`flex size-6 shrink-0 items-center justify-center rounded bg-muted ${iconColor}`}
 											>
-												<Icon className="size-3.5" />
+												<Icon
+													className="size-3.5"
+													aria-hidden="true"
+												/>
 											</span>
 											<span className="min-w-0 flex-1">
 												<span className="block truncate text-xs">
@@ -1019,7 +1101,10 @@ function ResultsPanel({
 																			<button
 																				key={`${iter.index}-${bodyResult.NODE_ID}`}
 																				type="button"
-																				onClick={() =>
+																				onClick={() => {
+																					setContentView(
+																						"output",
+																					);
 																					setSelectedBodyKey(
 																						{
 																							loopNodeId:
@@ -1028,8 +1113,8 @@ function ResultsPanel({
 																							iterationIndex:
 																								iter.index,
 																						},
-																					)
-																				}
+																					);
+																				}}
 																				className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ${bodyActive ? "bg-accent text-accent-foreground" : "hover:bg-muted"}`}
 																			>
 																				<span
@@ -1073,7 +1158,7 @@ function ResultsPanel({
 			</nav>
 			<section
 				ref={outputPanelRef}
-				className="min-w-0 flex-1 overflow-y-auto p-3"
+				className={RUN_RESULTS_LAYOUT_CLASSES.content}
 				aria-live="polite"
 			>
 				{displayResult ? (
@@ -1118,59 +1203,123 @@ function ResultsPanel({
 										"Loop step"}
 								</p>
 							)}
-							{displayResult.STATUS === "WAITING_FOR_INPUT" &&
-								reviewAgentTrace &&
-								onViewAgentRun && (
+							{runId && devMode && (
+								<fieldset className="flex w-fit max-w-full flex-wrap rounded-md border bg-muted/40 p-0.5">
+									<legend className="sr-only">
+										{RUN_NODE_VIEW_LABELS.detailView}
+									</legend>
 									<Button
 										type="button"
 										size="sm"
-										onClick={() =>
-											onViewAgentRun(reviewAgentTrace)
+										variant={
+											contentView === "output"
+												? "secondary"
+												: "ghost"
 										}
+										aria-pressed={contentView === "output"}
+										onClick={() => setContentView("output")}
 									>
-										<Clock3
-											className="size-4"
-											aria-hidden
-										/>
-										Review request
+										{RUN_NODE_VIEW_LABELS.output}
 									</Button>
-								)}
-							{displayResult.ERROR_MESSAGE && (
-								<ErrorDetail
-									message={displayResult.ERROR_MESSAGE}
-								/>
+									<Button
+										type="button"
+										size="sm"
+										variant={
+											contentView === "source"
+												? "secondary"
+												: "ghost"
+										}
+										aria-pressed={contentView === "source"}
+										onClick={() => setContentView("source")}
+									>
+										{RUN_NODE_VIEW_LABELS.source}
+									</Button>
+								</fieldset>
 							)}
-							{executionInsightId &&
-							displayResult.STATUS === "SUCCESS" &&
-							displayResult.OUTPUT_FRAME ? (
-								<RunNodeDataViewer
-									key={`${executionInsightId}:${displayResult.NODE_ID}:${selectedBodyKey?.iterationIndex ?? "root"}`}
-									insightId={executionInsightId}
-									frame={displayResult.OUTPUT_FRAME}
-									outputPreview={
-										displayResult.OUTPUT_PREVIEW ?? ""
-									}
-									onOutputPopout={onOutputPopout}
+							{visibleContentView === "source" && runId ? (
+								<RunNodeSourceViewer
+									key={occurrenceKey}
+									appId={appId}
+									runId={runId}
+									nodeId={displayResult.NODE_ID}
 								/>
 							) : (
-								<CellOutputBlock
-									output={
-										displayResult.OUTPUT_PREVIEW ??
-										"No output was produced."
-									}
-									onOutputPopout={() =>
-										onOutputPopout(
-											displayResult.OUTPUT_PREVIEW ??
-												"No output was produced.",
-										)
-									}
-								/>
-							)}
-							{displayResult.trace && (
-								<TraceDetail
-									trace={displayResult.trace}
-									step={displayStep}
-								/>
+								<>
+									{displayResult.STATUS ===
+										"WAITING_FOR_INPUT" &&
+										reviewAgentTrace &&
+										onViewAgentRun && (
+											<Button
+												type="button"
+												size="sm"
+												onClick={() =>
+													onViewAgentRun(
+														reviewAgentTrace,
+													)
+												}
+											>
+												<Clock3
+													className="size-4"
+													aria-hidden
+												/>
+												Review request
+											</Button>
+										)}
+									{displayResult.ERROR_MESSAGE && (
+										<ErrorDetail
+											message={
+												displayResult.ERROR_MESSAGE
+											}
+										/>
+									)}
+									{displayResult.STATUS === "SUCCESS" &&
+									dataSource.kind !== "preview" ? (
+										<RunNodeDataViewer
+											key={occurrenceKey}
+											appId={appId}
+											insightId={
+												dataSource.kind === "live"
+													? dataSource.insightId
+													: (executionInsightId ??
+														undefined)
+											}
+											frame={
+												dataSource.kind === "live"
+													? dataSource.frame
+													: displayResult.OUTPUT_FRAME
+											}
+											savedResult={
+												dataSource.kind === "retained"
+													? dataSource.savedResult
+													: undefined
+											}
+											outputPreview={
+												displayResult.OUTPUT_PREVIEW ??
+												""
+											}
+											onOutputPopout={onOutputPopout}
+										/>
+									) : (
+										<CellOutputBlock
+											output={
+												displayResult.OUTPUT_PREVIEW ??
+												"No output was produced."
+											}
+											onOutputPopout={() =>
+												onOutputPopout(
+													displayResult.OUTPUT_PREVIEW ??
+														"No output was produced.",
+												)
+											}
+										/>
+									)}
+									{displayResult.trace && (
+										<TraceDetail
+											trace={displayResult.trace}
+											step={displayStep}
+										/>
+									)}
+								</>
 							)}
 						</div>
 					)

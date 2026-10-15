@@ -43,13 +43,14 @@ export const AccessViewHeader = ({
 	return (
 		<div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
 			<div className="flex min-w-0 flex-1 items-start gap-2">
+				{/* the back button is centered on the title's first line, 28px tall at both heading levels */}
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
 							asChild
 							variant="ghost"
 							size="icon-sm"
-							className="mt-0.5"
+							className="-my-0.5"
 						>
 							<Link
 								to={backTo}
