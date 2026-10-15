@@ -16,7 +16,7 @@ export function MessageRichText({ html }: { html: string }) {
 			const props: Record<string, unknown> = { key };
 			if (tag === "td" || tag === "th") {
 				props.className =
-					"border border-border min-w-20 p-2 whitespace-pre-wrap align-top";
+					"border border-border p-1 whitespace-pre-wrap align-top [&_p]:m-0";
 				for (const attribute of ["rowspan", "colspan"]) {
 					const value = node.getAttribute(attribute);
 					if (value)

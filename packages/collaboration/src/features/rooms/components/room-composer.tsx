@@ -213,6 +213,11 @@ const MAX_CHARACTERS = COMPOSER_MAX_CHARACTERS;
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
+const CHAT_THEME = {
+	...EMAIL_THEME,
+	tableCell: "border border-border p-1 [&_p]:m-0",
+};
+
 const initialConfig = {
 	namespace: "CollaborationRoomComposer",
 	theme: {
@@ -794,7 +799,7 @@ export function RoomComposer({
 											initial.current?.text ?? "",
 										)
 								: undefined,
-						theme: EMAIL_THEME,
+						theme: isEmail ? EMAIL_THEME : CHAT_THEME,
 					}}
 				>
 					{emailMode && (
