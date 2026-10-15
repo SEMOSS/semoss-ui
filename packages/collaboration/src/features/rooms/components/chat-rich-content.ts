@@ -33,15 +33,81 @@ export const CHAT_HTML_TAGS = [
 	"td",
 ];
 
+const CELL_BLOCK_TAGS = new Set([
+	"P",
+	"DIV",
+	"BLOCKQUOTE",
+	"UL",
+	"OL",
+	"LI",
+	"PRE",
+]);
+
+/** Remove source-layout whitespace before pre-wrap can turn it into empty editor paragraphs. */
+function normalizeClipboardCellWhitespace(cell: HTMLElement): void {
+	function visit(
+		element: HTMLElement,
+		inheritedPreserve: boolean,
+		inFlow: boolean,
+	): void {
+		const whiteSpace = element.style.whiteSpace;
+		const preserve =
+			whiteSpace === "normal" || whiteSpace === "nowrap"
+				? false
+				: ["pre", "pre-wrap", "pre-line", "break-spaces"].includes(
+						whiteSpace,
+					) ||
+					element.tagName === "PRE" ||
+					inheritedPreserve;
+		const flow =
+			inFlow ||
+			CELL_BLOCK_TAGS.has(element.tagName) ||
+			(element === cell && element.children.length > 0);
+		const hasBlocks = [...element.children].some((child) =>
+			CELL_BLOCK_TAGS.has(child.tagName),
+		);
+		for (const node of [...element.childNodes]) {
+			if (node.nodeType === Node.TEXT_NODE && !preserve) {
+				const text = node.textContent ?? "";
+				const hasLineWhitespace = /[\t\r\n\f]/.test(text);
+				if (
+					/^[\t\r\n\f ]+$/.test(text) &&
+					(hasBlocks ||
+						(flow &&
+							hasLineWhitespace &&
+							(!node.previousSibling || !node.nextSibling)))
+				) {
+					node.remove();
+				} else if (flow && hasLineWhitespace) {
+					node.textContent = text.replace(/[\t\r\n\f ]+/g, " ");
+				}
+			} else if (node instanceof HTMLElement) {
+				visit(node, preserve, flow);
+			}
+		}
+	}
+	visit(cell, false, false);
+}
+
 /** Sanitize restricted semantic message HTML before import, submission, or display. */
-export function sanitizeChatHtml(source: string): string {
+export function sanitizeChatHtml(
+	source: string,
+	input: "message" | "clipboard" = "message",
+): string {
 	if (new TextEncoder().encode(source).length > CHAT_HTML_MAX_BYTES)
 		throw new Error(
 			"This table is too large. Attach the source document instead.",
 		);
 	const safe = DOMPurify.sanitize(source, {
 		ALLOWED_TAGS: [...CHAT_HTML_TAGS, "b", "i", "strike", "div", "span"],
-		ALLOWED_ATTR: ["rowspan", "colspan", "scope"],
+		// Read only white-space semantics during clipboard normalization; all styles
+		// are removed below before the fragment can enter the editor or renderer.
+		ALLOWED_ATTR: [
+			"rowspan",
+			"colspan",
+			"scope",
+			...(input === "clipboard" ? ["style"] : []),
+		],
 		ALLOW_DATA_ATTR: false,
 		ALLOW_ARIA_ATTR: false,
 	});
@@ -59,6 +125,9 @@ export function sanitizeChatHtml(source: string): string {
 		for (const child of node.childNodes) visit(child, depth + 1);
 	}
 	visit(doc.body, 0);
+	if (input === "clipboard")
+		for (const cell of doc.querySelectorAll<HTMLElement>("td,th"))
+			normalizeClipboardCellWhitespace(cell);
 	let cells = 0;
 	for (const element of [...doc.body.querySelectorAll("*")]) {
 		const tag = element.tagName.toLowerCase();
@@ -150,7 +219,7 @@ export function exportChatHtml(editor: LexicalEditor): string | undefined {
 /** Preserve cell whitespace during import without accepting clipboard styling. */
 export function chatImportDocument(html: string): Document {
 	const doc = new DOMParser().parseFromString(
-		sanitizeChatHtml(html),
+		sanitizeChatHtml(html, "clipboard"),
 		"text/html",
 	);
 	if (doc.querySelector('th[scope="rowgroup"], th[scope="colgroup"]'))
