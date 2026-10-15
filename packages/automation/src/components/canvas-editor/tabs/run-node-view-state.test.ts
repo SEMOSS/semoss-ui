@@ -8,6 +8,7 @@ import {
 	getAsyncViewerState,
 	getRunNodeDataSource,
 	getRunNodeOccurrenceKey,
+	getVisibleRunNodeContentView,
 	mapSavedResultPage,
 	RUN_NODE_VIEW_LABELS,
 	RUN_RESULTS_LAYOUT_CLASSES,
@@ -111,6 +112,12 @@ describe("run node viewer states and invariants", () => {
 		);
 		expect(getAsyncViewerState(false, null, true, true)).toBe("empty");
 		expect(getAsyncViewerState(false, null, true, false)).toBe("ready");
+	});
+
+	it("shows implementation details only in developer mode", () => {
+		expect(getVisibleRunNodeContentView("source", false)).toBe("output");
+		expect(getVisibleRunNodeContentView("source", true)).toBe("source");
+		expect(getVisibleRunNodeContentView("output", true)).toBe("output");
 	});
 
 	it("provides explicit accessible names for detail and recovery controls", () => {
