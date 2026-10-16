@@ -5,6 +5,8 @@ import type {
 	AutomationRunImplementationView,
 	AutomationRunSummary,
 	AutomationSavedResultPage,
+	AutomationSavedResultReference,
+	AutomationSavedTableColumn,
 } from "../domain/automation.types";
 
 const RUN_DATA_PAGE_SIZE = 50;
@@ -15,6 +17,93 @@ export interface AutomationRunFramePage {
 	total: number;
 	nextOffset?: number;
 	hasMore?: boolean;
+}
+
+/** Bounded historical input data for authoring, never a live execution input. */
+export interface AutomationInputTablePreview {
+	runId: string;
+	startedAt: string;
+	columns: AutomationSavedTableColumn[];
+	page: AutomationRunFramePage;
+	insightId?: string;
+	frame?: AutomationNodeResult["OUTPUT_FRAME"];
+	savedResult?: AutomationSavedResultReference;
+	outputPreview: string;
+}
+
+/** Finds a successful upstream table in recent authorized runs without executing any nodes. */
+export async function loadAutomationInputTablePreview(
+	appId: string,
+	nodeId: string,
+): Promise<AutomationInputTablePreview | null> {
+	const runs = await listAutomationRuns(appId, 20);
+	for (const summary of runs) {
+		const run = await getAutomationRun(appId, summary.RUN_ID);
+		const result = run.nodeResults.find(
+			(node) => node.NODE_ID === nodeId && node.STATUS === "SUCCESS",
+		);
+		if (!result) continue;
+		const savedResult = run.savedResults?.find(
+			(saved) =>
+				saved.NODE_ID === nodeId &&
+				saved.RESULT_KIND === "TABLE" &&
+				!saved.PARENT_NODE_ID &&
+				saved.ITERATION_INDEX == null &&
+				saved.CAPTURE_STATE === "RETAINED",
+		);
+		if (savedResult) {
+			const saved = await getAutomationResult(
+				appId,
+				savedResult.RESULT_ID,
+				0,
+			);
+			if (
+				saved.NODE_ID !== nodeId ||
+				saved.RESULT_KIND !== "TABLE" ||
+				!saved.schema ||
+				!saved.rows ||
+				saved.rows.some((row) => row.length !== saved.schema?.length)
+			) {
+				throw new Error(
+					"The upstream table sample returned an invalid response.",
+				);
+			}
+			return {
+				runId: run.RUN_ID,
+				startedAt: run.STARTED_AT,
+				columns: saved.schema,
+				page: {
+					headers: saved.schema.map((column) => column.name),
+					rows: saved.rows,
+					total: saved.ROW_COUNT ?? 0,
+					nextOffset: saved.nextOffset,
+					hasMore: saved.hasMore,
+				},
+				savedResult,
+				outputPreview: result.OUTPUT_PREVIEW ?? "",
+			};
+		}
+		if (run.executionInsightId && result.OUTPUT_FRAME) {
+			const page = await getAutomationRunFramePage(
+				run.executionInsightId,
+				result.OUTPUT_FRAME,
+				0,
+			);
+			return {
+				runId: run.RUN_ID,
+				startedAt: run.STARTED_AT,
+				columns: page.headers.map((name) => ({
+					name,
+					type: "UNKNOWN",
+				})),
+				page,
+				insightId: run.executionInsightId,
+				frame: result.OUTPUT_FRAME,
+				outputPreview: result.OUTPUT_PREVIEW ?? "",
+			};
+		}
+	}
+	return null;
 }
 
 /** Returns the most recent persisted runs for an automation project. */

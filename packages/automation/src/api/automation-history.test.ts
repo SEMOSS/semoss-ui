@@ -4,6 +4,7 @@ import {
 	getAutomationResult,
 	getAutomationRunSource,
 	listAutomationRuns,
+	loadAutomationInputTablePreview,
 } from "./automation-history";
 
 vi.mock("@semoss/sdk", () => ({ runPixel: vi.fn() }));
@@ -27,6 +28,89 @@ function pixelResponse(output: unknown, errors: string[] = []) {
 
 describe("Automation history API validation", () => {
 	beforeEach(() => vi.resetAllMocks());
+
+	it("loads a bounded retained upstream table without running the workflow", async () => {
+		const reference = {
+			RESULT_ID: "table-1",
+			NODE_ID: "query-1",
+			RESULT_KIND: "TABLE",
+			ROW_COUNT: 2,
+			BYTE_COUNT: 20,
+			CHECKSUM: "checksum",
+			RETAIN_UNTIL: "2030-01-01",
+			CAPTURE_STATE: "RETAINED",
+		};
+		vi.mocked(runPixel)
+			.mockResolvedValueOnce(
+				pixelResponse([
+					{ RUN_ID: "run-1", PROJECT_ID: "app-1", STATUS: "SUCCESS" },
+				]),
+			)
+			.mockResolvedValueOnce(
+				pixelResponse({
+					RUN_ID: "run-1",
+					STARTED_AT: "2026-10-14",
+					nodeResults: [
+						{
+							NODE_ID: "query-1",
+							STATUS: "SUCCESS",
+							OUTPUT_PREVIEW: "table",
+						},
+					],
+					savedResults: [reference],
+				}),
+			)
+			.mockResolvedValueOnce(
+				pixelResponse({
+					...reference,
+					schema: [{ name: "STATUS", type: "STRING" }],
+					rows: [["active"], ["inactive"]],
+					offset: 0,
+					nextOffset: 2,
+					hasMore: false,
+				}),
+			);
+		await expect(
+			loadAutomationInputTablePreview("app-1", "query-1"),
+		).resolves.toMatchObject({
+			runId: "run-1",
+			columns: [{ name: "STATUS", type: "STRING" }],
+			page: { headers: ["STATUS"], rows: [["active"], ["inactive"]] },
+		});
+		expect(
+			vi
+				.mocked(runPixel)
+				.mock.calls.map(([expression]) => expression)
+				.join(" "),
+		).not.toMatch(/TriggerAutomation|RunAutomationDefinition|SqlQuery/);
+	});
+
+	it("does not offer failed or unrelated outputs as input table samples", async () => {
+		vi.mocked(runPixel)
+			.mockResolvedValueOnce(
+				pixelResponse([
+					{ RUN_ID: "run-1", PROJECT_ID: "app-1", STATUS: "FAILED" },
+				]),
+			)
+			.mockResolvedValueOnce(
+				pixelResponse({
+					RUN_ID: "run-1",
+					nodeResults: [{ NODE_ID: "query-1", STATUS: "FAILED" }],
+					savedResults: [],
+				}),
+			);
+		await expect(
+			loadAutomationInputTablePreview("app-1", "query-1"),
+		).resolves.toBeNull();
+	});
+
+	it("reports empty history without executing a query", async () => {
+		vi.mocked(runPixel).mockResolvedValueOnce(pixelResponse([]));
+		await expect(
+			loadAutomationInputTablePreview("app-1", "query-1"),
+		).resolves.toBeNull();
+		expect(runPixel).toHaveBeenCalledTimes(1);
+	});
 
 	it("surfaces Pixel errors instead of treating failed history as empty", async () => {
 		vi.mocked(runPixel).mockResolvedValue(

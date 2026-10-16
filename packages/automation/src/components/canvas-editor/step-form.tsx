@@ -3,6 +3,7 @@ import type {
 	AppConfig,
 	AutomationNode,
 	BranchConfig,
+	CleanConfig,
 	DatabaseEngineConfig,
 	DataExtractConfig,
 	FunctionEngineConfig,
@@ -17,6 +18,7 @@ import { normalizeJevDecisionConfig } from "../../domain/automation-workflow-ada
 import { AgentRunForm } from "./forms/agent-run-form";
 import { AppEngineForm } from "./forms/app-engine-form";
 import { BranchConditionBuilder } from "./forms/branch-condition-builder";
+import { CleanForm } from "./forms/clean-form";
 import { DataExtractForm } from "./forms/data-extract-form";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
@@ -89,6 +91,16 @@ export function StepForm({
 			return (
 				<DataExtractForm
 					config={step.config as DataExtractConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					readOnly={readOnly}
+				/>
+			);
+		case "clean":
+			return (
+				<CleanForm
+					appId={appId}
+					config={step.config as CleanConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					readOnly={readOnly}

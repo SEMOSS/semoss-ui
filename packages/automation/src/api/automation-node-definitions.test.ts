@@ -48,6 +48,40 @@ describe("Automation node catalog", () => {
 					supportsOutput: true,
 					supportsCustomCode: false,
 				},
+				{
+					type: "clean.process",
+					label: "Clean data",
+					description:
+						"Apply a selected cleaning operation to an upstream table.",
+					category: "clean",
+					defaultConfig: {
+						source: "",
+						operation: "purge",
+						columns: [],
+						column: "",
+						newColumn: "",
+						dataType: "STRING",
+						value: "",
+						newValue: "",
+						filters: [],
+					},
+					configSchema: {},
+					outputSchema: {},
+					inputs: [],
+					outputs: [
+						{
+							id: "result",
+							label: "Cleaned table",
+							kind: "data",
+							direction: "output",
+							dataType: "table",
+						},
+					],
+					defaultCodeMode: "generated",
+					requiredPermission: "NONE",
+					supportsOutput: true,
+					supportsCustomCode: false,
+				},
 			],
 		};
 		vi.mocked(runPixel).mockResolvedValue({

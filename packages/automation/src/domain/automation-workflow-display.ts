@@ -2,6 +2,7 @@ import {
 	Bot,
 	Braces,
 	BrainCircuit,
+	BrushCleaning,
 	Database,
 	FolderOpen,
 	FunctionSquare,
@@ -44,6 +45,9 @@ export function getWorkflowNodeDisplay(
 	}
 	if (category === "data") {
 		return { icon: ListTree, color: "text-teal-600" };
+	}
+	if (category === "clean") {
+		return { icon: BrushCleaning, color: "text-primary" };
 	}
 	if (category === "vector") {
 		return { icon: Network, color: "text-amber-600" };

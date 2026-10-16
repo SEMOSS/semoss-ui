@@ -1,0 +1,111 @@
+# Clean Nodes
+
+Clean nodes reuse the existing SEMOSS BI reactors. The backend catalog owns their
+definitions; the frontend adds a Clean group and configuration form.
+
+The canvas exposes one **Clean data** node. Select an operation in its inspector
+to show that operation's configuration. New nodes are saved as `clean.process`
+with an `operation` value (`purge`, `trim`, `replace`, `removeDuplicates`,
+`filterEmpty`, `imputeNulls`, `changeType`, `dropColumn`, or `renameColumn`). The
+operation determines which settings appear in the inspector.
+
+| Operation | Database frame | R frame | Python frame |
+| --- | --- | --- | --- |
+| Purge | Yes | Yes | Yes |
+| Trim | No | Yes | Yes |
+| Replace | No | Yes | Yes |
+| Remove duplicate rows | No | Yes | Yes |
+| Filter empty values | No | No | Yes |
+| Impute null values | No | No | Yes |
+| Change column type | No | No | Yes |
+| Drop columns | No | No | Yes |
+| Rename column | No | No | Yes |
+
+Compatibility follows the actual frame type, not the upstream node label.
+Automation database queries currently materialize their bounded results as
+Python frames. Those results are therefore compatible with Python cleaning.
+An actual database-backed frame supports only Purge. Cleaning never silently
+converts a frame to another runtime.
+
+## Input and Output
+
+`source` must be an exact reference, such as `${query_result}`, to a live table
+from this run. JSON arrays, table previews, and historical summaries are not
+accepted as executable frames.
+
+Each operation copies the input into a separate frame of the same runtime before
+invoking the BI routine. The original input remains unchanged. Copying preserves
+duplicate rows and the input's visible filters. Inputs are bounded by the
+backend's existing saved-table row limit.
+
+The cleaned output is available under the node's output variable, with normal
+table paging and durable run-history capture. Root graphs and loop bodies use
+the same execution path.
+
+## Purge
+
+Purge removes whole rows matching all configured filters from the local working
+dataset. Select a column, comparator, and value to identify the rows to remove.
+It does not drop columns, clear individual cells, or delete records from the
+source database. Use the **Builder** to add or remove filters and choose each
+column, comparator, value type, and value. The selected value type controls manual
+entry; sampled values preserve their own types. For multiple values, the selector
+applies to new entries without converting existing chips. Use **JSON** to edit or paste the
+equivalent array directly. Switching modes preserves text, numeric, boolean,
+and null values. Invalid JSON remains editable and cannot be switched into the
+builder until corrected. The node accepts 1 to 100 filter objects:
+
+```json
+[
+  { "column": "STATUS", "operator": "==", "value": "inactive" },
+  { "column": "AGE", "operator": ">=", "value": 18 }
+]
+```
+
+Supported operators are `==`, `!=`, `>`, `>=`, `<`, and `<=`. Values may be
+strings, numbers, booleans, null, or exact references to scalar run values.
+For `==` and `!=`, `value` may also be a nonempty list of up to 100 scalar
+values. In the Builder, choose **Multiple values**, add manual or sampled
+values, and remove individual selections as needed. Type a manual value and press
+Enter to add its chip inside the input. The field displays "Press Enter to add a
+value."; Backspace on an empty input removes the last chip. Types are preserved when
+switching to JSON. Range comparators continue to accept only one value.
+
+```json
+[
+  { "column": "HERO_ID", "operator": "==", "value": [1, 2, 3] }
+]
+```
+
+This rule removes rows whose `HERO_ID` is any of 1, 2, or 3. With `!=`, it
+removes rows whose non-null ID matches none of those values. Values within one
+rule use membership semantics; all separate removal rules must still match.
+
+The example removes inactive rows whose age is at least 18. Other rows remain.
+Null values do not match non-null comparison values; use `==` with a null value
+to explicitly remove nulls, or `!=` with null to remove non-null values.
+
+## Existing BI Limitations
+
+- Impute Nulls reuses BI defaults: numeric mean, string mode or `Unknown`, and
+  date/timestamp forward fill.
+- Change Column Type currently offers `STRING`, `FACTOR`, `DOUBLE`, and `DATE`,
+  the targets the existing BI reactor actually converts. Although the legacy
+  reactor accepts names such as `INT`, `BOOLEAN`, and `TIMESTAMP`, it currently
+  updates metadata without converting values for those targets, so Automation
+  does not expose them.
+- Drop Column and Rename Column update only the copied working frame, never the
+  source database. Rename targets must be simple identifiers and cannot collide
+  with another existing column.
+- Remove duplicates compares entire rows; it does not accept a subset of columns.
+- Filter empty values removes rows with null or empty values in any selected column.
+- Column names must exist and use letters, digits, and underscores, beginning
+  with a letter or underscore. This avoids passing executable syntax to legacy
+  R/Python routines.
+- Replace currently rejects double quotes, backslashes, and control characters
+  because the legacy reactors interpolate literals into scripts. Numeric
+  replacements must be numeric or a supported null marker. Python text-null
+  replacement is rejected because the existing reactor does not safely quote it.
+
+Deploy the matching Semoss backend changes and restart/reload the backend before
+using these nodes. An older backend catalog will not offer the Clean group.
