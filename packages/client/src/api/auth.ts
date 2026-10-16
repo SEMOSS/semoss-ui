@@ -82,11 +82,7 @@ export const loginOTP = async (
 
 	// track the status
 	let status: "success" | "change-password" = "success";
-	await post(`${Env.MODULE}/api/auth/loginLinOTP`, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	}).catch((error) => {
+	await post(`${Env.MODULE}/api/auth/loginLinOTP`, postData).catch((error) => {
 		if (
 			error.response &&
 			error.response.status === 401 &&
@@ -107,11 +103,7 @@ export const confirmOTP = async (otp: string): Promise<boolean> => {
 		otp: otp,
 		disableRedirect: true,
 	};
-	await post(`${Env.MODULE}/api/auth/loginLinOTP`, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	}).catch((error) => {
+	await post(`${Env.MODULE}/api/auth/loginLinOTP`, postData).catch((error) => {
 		// throw the message
 		throw Error(error.response.data.errorMessage);
 	});
