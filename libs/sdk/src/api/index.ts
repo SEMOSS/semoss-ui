@@ -8,6 +8,7 @@ export * from "./engine";
 export * from "./file";
 export * from "./insight";
 export * from "./mcp";
+export * from "./model-usage";
 export * from "./permissions";
 export * from "./user";
 export * from "./websocket";

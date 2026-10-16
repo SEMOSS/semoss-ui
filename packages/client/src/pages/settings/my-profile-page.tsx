@@ -44,6 +44,7 @@ import {
 } from "@/api/auth";
 import { MicrosoftSubscriptions } from "@/components/settings";
 import { SdkBlock } from "@/components/shared/sdk-block";
+import { MyModelUsageCard } from "@/features/my-model-usage/my-model-usage-card";
 import { useAPI, useConfig, useSession, useSettings } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
@@ -642,6 +643,8 @@ export const MyProfilePage = () => {
 					</div>
 				)}
 			</div>
+
+			<MyModelUsageCard />
 
 			<MicrosoftSubscriptions
 				signedIntoMicrosoft={microsoftLogin !== undefined}

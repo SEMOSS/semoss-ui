@@ -2,10 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { get, post } from "../utility";
 import {
 	getEffectivePermissions,
+	getMyUsageLimitPath,
+	getMyUsageLimitPaths,
 	getPermissionsToCopy,
 	getResourcePermissions,
 	getTeamPeople,
+	getUsageLimitPath,
 	type PermissionBatch,
+	readModelUsageLimit,
 	savePermissionBatches,
 	validatePermissionBatches,
 } from "./access";
@@ -38,11 +42,11 @@ const requestedUrl = (): URL => {
 };
 
 const BATCH: PermissionBatch = {
-	target: { kind: "PROJECT", id: "p1" },
+	target: { resourceType: "PROJECT", id: "p1" },
 	changes: [
 		{
 			action: "ADD",
-			subject: { kind: "USER", id: "ada", type: "NATIVE" },
+			subject: { category: "USER", id: "ada", type: "NATIVE" },
 			to: { level: "EDIT", endDate: "2026-12-31T00:00Z" },
 		},
 	],
@@ -58,7 +62,7 @@ describe("getResourcePermissions", () => {
 			people: [
 				{
 					subject: {
-						kind: "USER",
+						category: "USER",
 						id: "ada",
 						type: "NATIVE",
 						name: "Ada",
@@ -67,7 +71,18 @@ describe("getResourcePermissions", () => {
 					access: {
 						level: "OWNER",
 						endDate: "2026-12-31T00:00Z",
-						maxTokens: 100,
+						usageLimit: {
+							unlimited: false,
+							rules: [
+								{
+									metric: "TOKENS",
+									amount: 100,
+									window: "DAY",
+									counts: "EACH_PERSON",
+								},
+								{ metric: "NOPE", amount: 5, window: "DAY" },
+							],
+						},
 					},
 				},
 				{ subject: { id: "nolevel", type: "NATIVE" }, access: {} },
@@ -75,7 +90,7 @@ describe("getResourcePermissions", () => {
 			],
 			teams: [
 				{
-					subject: { kind: "TEAM", id: "Sales", type: "CUSTOM" },
+					subject: { category: "TEAM", id: "Sales", type: "CUSTOM" },
 					access: { level: "READ_ONLY" },
 				},
 			],
@@ -86,7 +101,7 @@ describe("getResourcePermissions", () => {
 		});
 
 		const access = await getResourcePermissions({
-			kind: "ENGINE",
+			resourceType: "ENGINE",
 			id: "e1",
 		});
 
@@ -94,12 +109,12 @@ describe("getResourcePermissions", () => {
 		expect(url.pathname).toContain(
 			"/api/auth/permissionBatch/getPermissions",
 		);
-		expect(url.searchParams.get("kind")).toBe("ENGINE");
+		expect(url.searchParams.get("resourceType")).toBe("ENGINE");
 		expect(url.searchParams.get("id")).toBe("e1");
 		expect(access.people).toEqual([
 			{
 				subject: {
-					kind: "USER",
+					category: "USER",
 					id: "ada",
 					type: "NATIVE",
 					name: "Ada",
@@ -108,16 +123,23 @@ describe("getResourcePermissions", () => {
 				access: {
 					level: "OWNER",
 					endDate: "2026-12-31T00:00Z",
-					usageRestriction: null,
-					usageFrequency: null,
-					maxTokens: 100,
-					maxResponseTime: null,
+					usageLimit: {
+						unlimited: false,
+						rules: [
+							{
+								metric: "TOKENS",
+								amount: 100,
+								window: "DAY",
+								counts: "EACH_PERSON",
+							},
+						],
+					},
 				},
 			},
 		]);
 		expect(access.teams).toHaveLength(1);
 		expect(access.teams[0].subject).toEqual({
-			kind: "TEAM",
+			category: "TEAM",
 			id: "Sales",
 			type: "CUSTOM",
 		});
@@ -126,13 +148,84 @@ describe("getResourcePermissions", () => {
 			canGiveAuthorAccess: false,
 			canChangeTeams: false,
 			addsAreAdminOnly: false,
+			limitLevels: [],
+			canChangeModelLimits: false,
+		});
+		expect(access.publicUse).toBeNull();
+		expect(access.modelTotal).toBeNull();
+		expect(access.costLimitsAvailable).toBe(false);
+		expect(access.price).toBeNull();
+	});
+
+	it("reads a model's public use, total, prices and the levels whose limits can change", async () => {
+		answerGet({
+			people: [],
+			teams: [],
+			allowedPermissionChanges: {
+				canChangePeople: true,
+				limitLevels: ["READ_ONLY", "NOPE"],
+				canChangeModelLimits: true,
+			},
+			publicUse: {
+				isPublic: false,
+				usageLimit: {
+					unlimited: false,
+					rules: [
+						{
+							metric: "COST",
+							amount: 2000000,
+							window: "DAY",
+							counts: "EACH_PERSON",
+						},
+					],
+				},
+			},
+			modelTotal: { usageLimit: { unlimited: false, rules: [] } },
+			costLimitsAvailable: true,
+			price: { servingProvider: "openai", input: 2.5, output: 10 },
+		});
+
+		const access = await getResourcePermissions({
+			resourceType: "ENGINE",
+			id: "e1",
+		});
+
+		expect(access.allowedPermissionChanges.limitLevels).toEqual([
+			"READ_ONLY",
+		]);
+		expect(access.allowedPermissionChanges.canChangeModelLimits).toBe(true);
+		expect(access.publicUse).toEqual({
+			isPublic: false,
+			usageLimit: {
+				unlimited: false,
+				rules: [
+					{
+						metric: "COST",
+						amount: 2000000,
+						window: "DAY",
+						counts: "EACH_PERSON",
+					},
+				],
+			},
+		});
+		// a limit with no rules is no limit defined
+		expect(access.modelTotal).toEqual({ usageLimit: null });
+		expect(access.costLimitsAvailable).toBe(true);
+		expect(access.price).toEqual({
+			servingProvider: "openai",
+			modelId: null,
+			input: 2.5,
+			output: 10,
+			cache_read: null,
+			cache_write: null,
+			reasoning: null,
 		});
 	});
 
 	it("fails when the response has no allowed changes", async () => {
 		answerGet({ people: [], teams: [] });
 		await expect(
-			getResourcePermissions({ kind: "PROJECT", id: "p1" }),
+			getResourcePermissions({ resourceType: "PROJECT", id: "p1" }),
 		).rejects.toThrow("No Response to read the permissions");
 	});
 });
@@ -163,7 +256,7 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 	it("posts the batches and reads each change's validation", async () => {
 		answerPost([
 			{
-				target: { kind: "PROJECT", id: "p1" },
+				target: { resourceType: "PROJECT", id: "p1" },
 				changes: [
 					{ index: 0, allowed: false, reason: "Already has access" },
 				],
@@ -181,7 +274,7 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 		);
 		expect(validations).toEqual([
 			{
-				target: { kind: "PROJECT", id: "p1" },
+				target: { resourceType: "PROJECT", id: "p1" },
 				reason: null,
 				changes: [
 					{ index: 0, allowed: false, reason: "Already has access" },
@@ -191,14 +284,16 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 	});
 
 	it("fails rather than leave out a result, since results match batches by position", async () => {
-		answerPost([{ target: { kind: "NOPE", id: "x" }, changes: [] }]);
+		answerPost([
+			{ target: { resourceType: "NOPE", id: "x" }, changes: [] },
+		]);
 		await expect(validatePermissionBatches([BATCH])).rejects.toThrow(
 			"a batch has no target",
 		);
 
 		answerPost([
 			{
-				target: { kind: "PROJECT", id: "p1" },
+				target: { resourceType: "PROJECT", id: "p1" },
 				changes: [{ allowed: true }],
 			},
 		]);
@@ -249,17 +344,17 @@ describe("getPermissionsToCopy", () => {
 		]);
 
 		const rows = await getPermissionsToCopy(
-			{ kind: "TEAM", id: "Sales & Ops" },
-			{ kind: "PROJECT", id: "p1" },
+			{ resourceType: "TEAM", id: "Sales & Ops" },
+			{ resourceType: "PROJECT", id: "p1" },
 		);
 
 		const url = requestedUrl();
 		expect(url.pathname).toContain(
 			"/api/auth/permissionBatch/getPermissionsToCopy",
 		);
-		expect(url.searchParams.get("sourceKind")).toBe("TEAM");
+		expect(url.searchParams.get("sourceResourceType")).toBe("TEAM");
 		expect(url.searchParams.get("sourceId")).toBe("Sales & Ops");
-		expect(url.searchParams.get("targetKind")).toBe("PROJECT");
+		expect(url.searchParams.get("targetResourceType")).toBe("PROJECT");
 		expect(url.searchParams.get("targetId")).toBe("p1");
 		expect(rows).toHaveLength(1);
 		expect(rows[0].subject.name).toBe("Ada");
@@ -282,17 +377,17 @@ describe("getEffectivePermissions", () => {
 					level: "EDIT",
 					sources: [
 						{
-							kind: "TEAM",
+							sourceType: "TEAM",
 							id: "Sales",
 							type: "CUSTOM",
 							level: "EDIT",
 						},
 						{
-							kind: "DIRECT",
+							sourceType: "DIRECT",
 							level: "READ_ONLY",
 							endDate: "2026-12-31T00:00Z",
 						},
-						{ kind: "TEAM", level: "EDIT" },
+						{ sourceType: "TEAM", level: "EDIT" },
 					],
 				},
 				{
@@ -302,7 +397,7 @@ describe("getEffectivePermissions", () => {
 				},
 				{
 					subject: { id: "nolevel", type: "NATIVE" },
-					sources: [{ kind: "DIRECT", level: "EDIT" }],
+					sources: [{ sourceType: "DIRECT", level: "EDIT" }],
 				},
 			],
 			unlistedTeams: [
@@ -312,7 +407,7 @@ describe("getEffectivePermissions", () => {
 		});
 
 		const access = await getEffectivePermissions({
-			kind: "PROJECT",
+			resourceType: "PROJECT",
 			id: "p1",
 		});
 
@@ -320,26 +415,414 @@ describe("getEffectivePermissions", () => {
 		expect(url.pathname).toContain(
 			"/api/auth/permissionBatch/getEffectivePermissions",
 		);
-		expect(url.searchParams.get("kind")).toBe("PROJECT");
+		expect(url.searchParams.get("resourceType")).toBe("PROJECT");
 		expect(url.searchParams.get("id")).toBe("p1");
 		expect(access.people).toHaveLength(1);
 		expect(access.people[0].sources).toEqual([
 			{
-				kind: "TEAM",
+				sourceType: "TEAM",
 				id: "Sales",
 				type: "CUSTOM",
 				level: "EDIT",
 				endDate: null,
 			},
 			{
-				kind: "DIRECT",
+				sourceType: "DIRECT",
 				level: "READ_ONLY",
 				endDate: "2026-12-31T00:00Z",
 			},
 		]);
 		expect(access.unlistedTeams).toEqual([
-			{ id: "Engineering", type: "MICROSOFT", level: "READ_ONLY" },
+			{
+				id: "Engineering",
+				type: "MICROSOFT",
+				level: "READ_ONLY",
+				usageLimit: null,
+			},
 		]);
+		expect(access.people[0].usage).toBeNull();
+		expect(access.publicUse).toBeNull();
+		expect(access.ceilings).toEqual([]);
+	});
+
+	it("reads which limit each person is billed to on a model", async () => {
+		const shared = {
+			metric: "COST",
+			amount: 100000000,
+			window: "DAY",
+			counts: "SHARED",
+		};
+		answerGet({
+			people: [
+				{
+					subject: { id: "eli", type: "NATIVE" },
+					level: "READ_ONLY",
+					sources: [
+						{
+							sourceType: "TEAM",
+							id: "Ops",
+							type: "CUSTOM",
+							level: "READ_ONLY",
+						},
+					],
+					usage: {
+						billedTo: {
+							limitType: "TEAM",
+							id: "Ops",
+							type: "CUSTOM",
+						},
+						unlimited: false,
+						rules: [shared],
+						nextTeams: [
+							{ id: "Data", type: "CUSTOM", rules: [shared] },
+							{ id: "Broken" },
+						],
+						notApplied: [
+							{ limitType: "PUBLIC", reason: "TEAM_WINS" },
+							{ limitType: "TEAM" },
+						],
+					},
+				},
+				{
+					subject: { id: "lee", type: "NATIVE" },
+					level: "READ_ONLY",
+					sources: [{ sourceType: "DIRECT", level: "READ_ONLY" }],
+					usage: { billedTo: null, unlimited: false, rules: [] },
+				},
+			],
+			unlistedTeams: [
+				{
+					id: "Engineering",
+					type: "MICROSOFT",
+					level: "READ_ONLY",
+					usageLimit: { unlimited: true },
+				},
+			],
+			publicUse: { isPublic: true, usageLimit: null },
+			ceilings: [
+				{ limitType: "MODEL_TOTAL", usageLimit: { rules: [shared] } },
+				{ limitType: "APP" },
+			],
+		});
+
+		const access = await getEffectivePermissions({
+			resourceType: "ENGINE",
+			id: "m1",
+		});
+
+		expect(access.people[0].usage).toEqual({
+			billedTo: { limitType: "TEAM", id: "Ops", type: "CUSTOM" },
+			unlimited: false,
+			rules: [shared],
+			nextTeams: [
+				{
+					id: "Data",
+					type: "CUSTOM",
+					unlimited: false,
+					rules: [shared],
+				},
+			],
+			notApplied: [
+				{
+					limitType: "PUBLIC",
+					id: null,
+					type: null,
+					reason: "TEAM_WINS",
+				},
+			],
+		});
+		expect(access.people[1].usage?.billedTo).toBeNull();
+		expect(access.unlistedTeams[0].usageLimit).toEqual({
+			unlimited: true,
+			rules: [],
+		});
+		expect(access.publicUse).toEqual({ isPublic: true, usageLimit: null });
+		expect(access.ceilings).toEqual([
+			{
+				limitType: "MODEL_TOTAL",
+				usageLimit: { unlimited: false, rules: [shared] },
+			},
+		]);
+	});
+});
+
+describe("readModelUsageLimit", () => {
+	it("reads a limit from an object or a JSON string, and no rules as no limit defined", () => {
+		const rule = {
+			metric: "TOKENS",
+			amount: 40000,
+			window: "MINUTE",
+			counts: "EACH_PERSON",
+		};
+		expect(
+			readModelUsageLimit(
+				JSON.stringify({ unlimited: false, rules: [rule] }),
+			),
+		).toEqual({ unlimited: false, rules: [rule] });
+		expect(readModelUsageLimit({ unlimited: true, rules: [rule] })).toEqual(
+			{
+				unlimited: true,
+				rules: [],
+			},
+		);
+		expect(readModelUsageLimit({ unlimited: false, rules: [] })).toBeNull();
+		expect(
+			readModelUsageLimit({
+				rules: [{ metric: "TOKENS", window: "DAY", counts: "SHARED" }],
+			}),
+		).toBeNull();
+		expect(readModelUsageLimit("not json")).toBeNull();
+		expect(readModelUsageLimit(null)).toBeNull();
+	});
+
+	it("keeps a window length above 1 on a minute or hour window, and leaves out the rest", () => {
+		const rule = {
+			metric: "TOKENS",
+			amount: 100000,
+			counts: "EACH_PERSON",
+		};
+		expect(
+			readModelUsageLimit({
+				unlimited: false,
+				rules: [
+					{ ...rule, window: "MINUTE", windowLength: 10 },
+					{ ...rule, window: "HOUR", windowLength: 6 },
+					{ ...rule, window: "HOUR", windowLength: 1 },
+					{ ...rule, window: "MINUTE", windowLength: null },
+					{ ...rule, window: "DAY", windowLength: 3 },
+					{ ...rule, window: "MINUTE", windowLength: 2.5 },
+				],
+			})?.rules,
+		).toEqual([
+			{ ...rule, window: "MINUTE", windowLength: 10 },
+			{ ...rule, window: "HOUR", windowLength: 6 },
+			{ ...rule, window: "HOUR" },
+			{ ...rule, window: "MINUTE" },
+			{ ...rule, window: "DAY" },
+			{ ...rule, window: "MINUTE" },
+		]);
+	});
+});
+
+describe("getUsageLimitPath and getMyUsageLimitPath", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	const PATH = {
+		engineId: "m1",
+		person: { id: "eli", type: "NATIVE" },
+		billedLimitType: "TEAM",
+		ceilings: [
+			{
+				layer: "CEILING",
+				limitType: "MODEL_TOTAL",
+				state: "CHECKED",
+				unlimited: false,
+				rules: [
+					{
+						metric: "COST",
+						amount: 2000000000,
+						window: "MONTH",
+						counts: "SHARED",
+						used: 1240000000,
+						resetsAt: "2026-11-01T00:00:00Z",
+					},
+				],
+			},
+		],
+		steps: [
+			// the backend leaves out null and empty fields
+			{
+				layer: "BILLED",
+				limitType: "DIRECT",
+				state: "NOT_DEFINED",
+				reason: "NO_GRANT",
+			},
+			{
+				layer: "BILLED",
+				limitType: "TEAM",
+				id: "Data",
+				type: "CUSTOM",
+				state: "BILLED",
+				accessSince: "2026-04-01T00:00:00Z",
+				unlimited: false,
+				rules: [],
+				teamTotal: { unlimited: true, rules: [] },
+			},
+			{ layer: "BILLED", limitType: "APP", state: "CHECKED" },
+		],
+	};
+
+	it("reads a person's path through the model's permission batch endpoint", async () => {
+		answerGet(PATH);
+
+		const path = await getUsageLimitPath("m1", {
+			id: "eli",
+			type: "NATIVE",
+		});
+
+		const url = requestedUrl();
+		expect(url.pathname).toContain(
+			"/api/auth/permissionBatch/getUsageLimitPath",
+		);
+		expect(url.searchParams.get("engineId")).toBe("m1");
+		expect(url.searchParams.get("userId")).toBe("eli");
+		expect(url.searchParams.get("userType")).toBe("NATIVE");
+		expect(path.billedLimitType).toBe("TEAM");
+		expect(path.ceilings[0].rules[0]).toEqual({
+			metric: "COST",
+			amount: 2000000000,
+			window: "MONTH",
+			counts: "SHARED",
+			used: 1240000000,
+			resetsAt: "2026-11-01T00:00:00Z",
+		});
+		// a step of a limit type the view does not know is left out
+		expect(path.steps.map((step) => step.limitType)).toEqual([
+			"DIRECT",
+			"TEAM",
+		]);
+		expect(path.steps[0]).toEqual({
+			layer: "BILLED",
+			limitType: "DIRECT",
+			id: null,
+			type: null,
+			state: "NOT_DEFINED",
+			reason: "NO_GRANT",
+			accessSince: null,
+			unlimited: false,
+			rules: [],
+			rulesHidden: false,
+			teamTotal: null,
+		});
+		expect(path.steps[1]).toMatchObject({
+			id: "Data",
+			accessSince: "2026-04-01T00:00:00Z",
+			teamTotal: { unlimited: true, rules: [] },
+		});
+	});
+
+	it("reads steps whose rules or team total the backend hides", async () => {
+		answerGet({
+			...PATH,
+			steps: [
+				{
+					layer: "BILLED",
+					limitType: "TEAM",
+					id: "Data",
+					type: "CUSTOM",
+					state: "NEXT",
+					unlimited: false,
+					rules: [
+						{
+							metric: "TOKENS",
+							amount: 1000,
+							window: "DAY",
+							counts: "SHARED",
+							used: 10,
+						},
+					],
+				},
+				{
+					layer: "BILLED",
+					limitType: "ALL_MODELS",
+					state: "BILLED",
+					rulesHidden: true,
+				},
+				{
+					layer: "BILLED",
+					limitType: "PLATFORM",
+					state: "NOT_REACHED",
+				},
+			],
+		});
+
+		const path = await getUsageLimitPath("m1", {
+			id: "eli",
+			type: "NATIVE",
+		});
+
+		expect(path.steps[0]).toMatchObject({
+			limitType: "TEAM",
+			rulesHidden: false,
+			teamTotal: null,
+		});
+		expect(path.steps[0]?.rules).toHaveLength(1);
+		expect(path.steps[1]).toMatchObject({
+			limitType: "ALL_MODELS",
+			state: "BILLED",
+			rules: [],
+			rulesHidden: true,
+			teamTotal: null,
+		});
+		expect(path.steps[2]).toMatchObject({
+			limitType: "PLATFORM",
+			rules: [],
+			rulesHidden: false,
+		});
+	});
+
+	it("uses the admin endpoint in admin mode", async () => {
+		answerGet(PATH);
+
+		await getUsageLimitPath("m1", { id: "eli", type: "NATIVE" }, true);
+
+		expect(requestedUrl().pathname).toContain(
+			"/api/auth/admin/permissionBatch/getUsageLimitPath",
+		);
+	});
+
+	it("reads the signed in person's own path", async () => {
+		answerGet(PATH);
+
+		const path = await getMyUsageLimitPath("m1");
+
+		const url = requestedUrl();
+		expect(url.pathname).toContain(
+			"/api/auth/permissionBatch/getMyUsageLimitPath",
+		);
+		expect(url.searchParams.get("engineId")).toBe("m1");
+		expect(path.person).toEqual({ id: "eli", type: "NATIVE" });
+	});
+
+	it("fails when the response names no person", async () => {
+		answerGet({ engineId: "m1", steps: [] });
+		await expect(getMyUsageLimitPath("m1")).rejects.toThrow(
+			"No Response to read your limit on this model",
+		);
+	});
+
+	it("reads the signed in person's path on every model, leaving out one that cannot be read", async () => {
+		answerGet({
+			models: [
+				{
+					engineId: "m1",
+					name: "GPT-5",
+					subtype: "OPEN_AI",
+					path: PATH,
+				},
+				{ engineId: "m2", name: "Broken", path: { engineId: "m2" } },
+				{ engineId: "m3", path: { ...PATH, engineId: "m3" } },
+			],
+		});
+
+		const models = await getMyUsageLimitPaths();
+
+		expect(requestedUrl().pathname).toContain(
+			"/api/auth/permissionBatch/getMyUsageLimitPaths",
+		);
+		expect(models.map((model) => model.engineId)).toEqual(["m1", "m3"]);
+		expect(models[0]).toMatchObject({ name: "GPT-5", subtype: "OPEN_AI" });
+		expect(models[1]).toMatchObject({ name: "m3", subtype: null });
+		expect(models[0]?.path.billedLimitType).toBe("TEAM");
+	});
+
+	it("fails when the response has no list of models", async () => {
+		answerGet({});
+		await expect(getMyUsageLimitPaths()).rejects.toThrow(
+			"No Response to read your limits on your models",
+		);
 	});
 });
 
@@ -367,7 +850,7 @@ describe("getTeamPeople", () => {
 		expect(url.pathname).toContain(
 			"/api/auth/permissionBatch/getPermissions",
 		);
-		expect(url.searchParams.get("kind")).toBe("TEAM");
+		expect(url.searchParams.get("resourceType")).toBe("TEAM");
 		expect(url.searchParams.get("id")).toBe("Sales");
 		expect(members.people.map((member) => member.id)).toEqual(["ada"]);
 		expect(members.canChange).toBe(true);
@@ -391,7 +874,7 @@ describe("getTeamPeople", () => {
 		expect(url.pathname).toContain(
 			"/api/auth/admin/permissionBatch/getPermissions",
 		);
-		expect(url.searchParams.get("kind")).toBe("TEAM_MANAGERS");
+		expect(url.searchParams.get("resourceType")).toBe("TEAM_MANAGERS");
 		expect(managers.people.map((manager) => manager.id)).toEqual(["grace"]);
 		expect(managers.canChange).toBe(false);
 	});

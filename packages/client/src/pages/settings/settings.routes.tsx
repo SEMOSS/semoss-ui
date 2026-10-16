@@ -87,7 +87,12 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 			],
 			[
 				`${root}/:id/effective-permissions`,
-				() => <AdminEffectivePermissionsPage kind={kind} />,
+				() => (
+					<AdminEffectivePermissionsPage
+						kind={kind}
+						engineType={engineType}
+					/>
+				),
 			],
 		]),
 	),

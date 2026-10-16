@@ -12,7 +12,7 @@ import {
 } from "./team-changes";
 
 const person = (id: string): AccessPerson => ({
-	kind: "USER",
+	category: "USER",
 	id,
 	type: "NATIVE",
 	name: `${id} name`,
@@ -53,15 +53,23 @@ describe("buildTeamBatches", () => {
 
 		expect(batches).toEqual([
 			{
-				target: { kind: "TEAM", id: "Sales" },
+				target: { resourceType: "TEAM", id: "Sales" },
 				changes: [
 					{
 						action: "ADD",
-						subject: { kind: "USER", id: "ada", type: "NATIVE" },
+						subject: {
+							category: "USER",
+							id: "ada",
+							type: "NATIVE",
+						},
 					},
 					{
 						action: "REMOVE",
-						subject: { kind: "USER", id: "grace", type: "NATIVE" },
+						subject: {
+							category: "USER",
+							id: "grace",
+							type: "NATIVE",
+						},
 					},
 				],
 			},
@@ -75,7 +83,7 @@ describe("buildTeamBatches", () => {
 				where: "Sales team members",
 				action: "ADD",
 				name: "ada name",
-				kind: "USER",
+				category: "USER",
 				type: "NATIVE",
 				id: "ada",
 				email: null,
@@ -88,7 +96,7 @@ describe("buildTeamBatches", () => {
 				where: "Sales team members",
 				action: "REMOVE",
 				name: "grace name",
-				kind: "USER",
+				category: "USER",
 				type: "NATIVE",
 				id: "grace",
 				email: null,
@@ -113,8 +121,8 @@ describe("buildTeamBatches", () => {
 		});
 
 		expect(batches.map((batch) => batch.target)).toEqual([
-			{ kind: "TEAM", id: "Sales" },
-			{ kind: "TEAM_MANAGERS", id: "Sales" },
+			{ resourceType: "TEAM", id: "Sales" },
+			{ resourceType: "TEAM_MANAGERS", id: "Sales" },
 		]);
 		expect(roles).toEqual(["MEMBERS", "MANAGERS"]);
 		const managerItem = items[items.length - 1];

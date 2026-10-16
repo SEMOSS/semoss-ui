@@ -1,4 +1,4 @@
-import type { Role } from "@semoss/sdk";
+import type { ModelUsageLimit, Role } from "@semoss/sdk";
 import { Env, get, post } from "@semoss/sdk/react";
 import { isRecord } from "@semoss/utility/object";
 import { decodeHtmlEntities, readNonBlankString } from "@semoss/utility/text";
@@ -726,12 +726,15 @@ export const getAvailableGroupsForResource = async (
  * @param resourceId - Its id
  * @param group - The team
  * @param permission - The access everyone in the team gets
+ * @param usageLimit - On a model, the team limit, with shared and each-member
+ * rules; left out or null for no limit defined
  */
 export const addGroupResourceAccess = async (
 	resource: GroupAccessResource,
 	resourceId: string,
 	group: GroupKey,
 	permission: Role,
+	usageLimit?: ModelUsageLimit | null,
 ) =>
 	post<{ success: boolean }>(
 		`${groupAccessUrl(resource)}/${resource === "PROJECT" ? "addGroupProjectPermission" : "addGroupEnginePermission"}`,
@@ -740,6 +743,8 @@ export const addGroupResourceAccess = async (
 			type: group.type,
 			[resource === "PROJECT" ? "projectId" : "engineId"]: resourceId,
 			permission,
+			// sent as JSON in the usageLimit form field
+			...(usageLimit ? { usageLimit } : {}),
 		},
 		{},
 	);
