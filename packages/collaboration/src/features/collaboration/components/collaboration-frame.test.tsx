@@ -23,6 +23,9 @@ const remote = vi.hoisted(() => ({
 	actions: { run: vi.fn(), logout: vi.fn() },
 	history: {
 		rooms: [{ roomId: "room-one", roomName: "Pricing conversation" }],
+		closedRoomIds: [] as string[],
+		setRoomClosed: vi.fn(() => true),
+		closeError: "",
 		isLoading: false,
 		error: "",
 		hasMore: false,

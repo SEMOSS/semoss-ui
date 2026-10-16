@@ -23,6 +23,17 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
+
+vi.mock("../api/use-collaboration-search", () => ({
+	useCollaborationSearch: () => ({
+		entries: [],
+		total: 0,
+		status: "idle",
+		error: null,
+		hasMore: false,
+	}),
+}));
+
 import { BrainMemory } from "./brain-memory";
 import { BrainReview } from "./brain-review";
 import { BrainThread } from "./brain-thread";
@@ -387,6 +398,8 @@ describe("collaboration Work and Brain integration", () => {
 			screen.queryByRole("textbox", { name: "New note" }),
 		).not.toBeInTheDocument();
 
+		// topic setup lives in the Context panel, which starts closed
+		await user.click(screen.getByRole("button", { name: "Context" }));
 		const goalTrigger = screen.getByRole("button", { name: "Add goal" });
 		await user.click(goalTrigger);
 		const goal = screen.getByLabelText("New goal");
@@ -479,12 +492,14 @@ describe("collaboration Work and Brain integration", () => {
 			.closest("li");
 		if (!openRow || !waitingRow || !mutedRow)
 			throw new Error("Missing topic thread row");
-		expect(within(openRow).getByText("For you")).toBeInTheDocument();
+		expect(within(openRow).getByText("Open action")).toBeInTheDocument();
 		expect(within(waitingRow).getByText("Waiting")).toBeInTheDocument();
 		expect(
-			within(waitingRow).queryByText("For you"),
+			within(waitingRow).queryByText("Open action"),
 		).not.toBeInTheDocument();
-		expect(within(mutedRow).queryByText("For you")).not.toBeInTheDocument();
+		expect(
+			within(mutedRow).queryByText("Open action"),
+		).not.toBeInTheDocument();
 		expect(within(mutedRow).queryByText("Waiting")).not.toBeInTheDocument();
 	});
 

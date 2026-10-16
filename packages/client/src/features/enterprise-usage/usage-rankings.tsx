@@ -23,9 +23,18 @@ import {
 import { rankingQuery } from "@/api/enterprise-usage-requests";
 import type { UsageDimension, UsageFilters } from "./usage.types";
 import { formatMetric, numeric } from "./usage-metrics";
+import { UsageNotes } from "./usage-notes";
 import { UsageState } from "./usage-state";
 import { useUsageExport } from "./use-usage-export";
 import { useUsageQuery } from "./use-usage-query";
+
+/** How to read the rankings. */
+const RANKING_NOTES = [
+	"Top 20 By Recorded Tokens In The Selected Period.",
+	"Bars Are Relative To The Largest Consumer.",
+	"Select A Name To Inspect Its Messages.",
+	"Search By Name Or ID In The Filters To Find Any Other Entity.",
+] as const;
 
 interface UsageRankingsProps {
 	/** Shared applied report filters. */
@@ -47,7 +56,10 @@ export function UsageRankings({ filters, onDrill }: UsageRankingsProps) {
 	return (
 		<section className="min-w-0 space-y-2">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<H3>Top Consumers</H3>
+				<div className="flex items-center gap-1">
+					<H3>Top Consumers</H3>
+					<UsageNotes title="Top Consumers" notes={RANKING_NOTES} />
+				</div>
 				<Button
 					variant="outline"
 					disabled={
@@ -83,12 +95,6 @@ export function UsageRankings({ filters, onDrill }: UsageRankingsProps) {
 					<AlertDescription>{exportError}</AlertDescription>
 				</Alert>
 			)}
-			<Muted>
-				Top 20 By Recorded Tokens In The Selected Period. Bars Are
-				Relative To The Largest Consumer. Select A Name To Inspect Its
-				Messages. Search By Name Or ID In The Filters To Find Any Other
-				Entity.
-			</Muted>
 			<Tabs
 				value={dimension}
 				onValueChange={(value) => {

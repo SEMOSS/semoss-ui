@@ -79,6 +79,55 @@ const logRow = {
 	LATENCY_MS: 1500,
 };
 
+const auditSummary = {
+	EVENTS: 2,
+	USAGE_LIMIT_CHANGES: 1,
+	ACCESS_CHANGES: 0,
+	DENIALS: 1,
+	ACTORS: 1,
+	PEOPLE_DENIED: 1,
+	PEOPLE_AFFECTED: 1,
+};
+const auditRow = {
+	EVENT_ID: "limit-1",
+	EVENT_TIME: "2024-03-01T10:00:00Z",
+	EVENT_TYPE: "USAGE_LIMIT_UPDATE",
+	STATUS: "SUCCESS",
+	ACTOR_USER_ID: "owner-1",
+	ACTOR_USER_TYPE: "NATIVE",
+	ACTOR_USER_NAME: "Owner One",
+	SUBJECT_USER_ID: "u-1",
+	SUBJECT_USER_TYPE: "NATIVE",
+	SUBJECT_USER_NAME: "Person One",
+	TARGET_TYPE: "ENGINE",
+	TARGET_ID: "model-1",
+	ENGINE_ID: "model-1",
+};
+const deniedRow = {
+	EVENT_ID: "denied-1",
+	EVENT_TIME: "2024-03-02T10:00:00Z",
+	EVENT_TYPE: "AUTHORIZATION_DENIED",
+	ACTION: "SetEngineGlobal",
+	STATUS: "DENIED",
+	ACTOR_USER_ID: "u-3",
+	ACTOR_USER_TYPE: "NATIVE",
+	ACTOR_USER_NAME: "Person Three",
+	TARGET_TYPE: "ENGINE",
+	TARGET_ID: "model-1",
+	ENGINE_ID: "model-1",
+};
+const denial = {
+	EVENT_ID: "denied-1",
+	ERROR_CODE: "PERMISSION_DENIED",
+	ERROR_MESSAGE: "User does not have permission",
+};
+const auditChange = {
+	EVENT_ID: "limit-1",
+	OLD_VALUE: '{"usageLimit":null}',
+	NEW_VALUE: '{"usageLimit":{"unlimited":true,"rules":[]}}',
+	DETAILS: '{"limitType":"DIRECT"}',
+};
+
 function dataset(row: Record<string, unknown>): {
 	rows: Record<string, unknown>[];
 } {
@@ -119,6 +168,20 @@ beforeEach(() => {
 						},
 					],
 				},
+			};
+		if (pixel.includes('source=["audit"]'))
+			return {
+				status: "SUCCESS",
+				refresh: mocks.refresh,
+				data: pixel.includes("AdminGetEnterpriseUsageDetail")
+					? dataset(
+							pixel.includes('recordId=["denied-1"]')
+								? denial
+								: auditChange,
+						)
+					: pixel.includes('view=["logs"]')
+						? { rows: [deniedRow, auditRow] }
+						: dataset(auditSummary),
 			};
 		let row: Record<string, unknown> = summary;
 		if (pixel.includes('view=["latency"]')) row = { P95_MS: 2000 };
@@ -375,6 +438,64 @@ describe("enterprise usage interactions", () => {
 			);
 		},
 	);
+	it("lists access and usage limit changes and denied requests with their people, and reads an event only once opened", async () => {
+		render(<EnterpriseUsage />);
+		fireEvent.mouseDown(
+			screen.getByRole("tab", { name: "Access & Limits" }),
+			{ button: 0, ctrlKey: false },
+		);
+		expect(
+			await screen.findByText("Usage Limit Changed"),
+		).toBeInTheDocument();
+		expect(screen.getByText("People Affected")).toBeInTheDocument();
+		expect(screen.getByText("Denied Requests")).toBeInTheDocument();
+		expect(screen.getByText("Access Denied")).toBeInTheDocument();
+		expect(screen.getByText("Tried SetEngineGlobal")).toBeInTheDocument();
+		expect(screen.getByText("Denied")).toBeInTheDocument();
+		expect(screen.getAllByText("Owner One").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Person One").length).toBeGreaterThan(0);
+		expect(
+			mocks.usePixel.mock.calls.some(([pixel]) =>
+				String(pixel).includes("AdminGetEnterpriseUsageDetail"),
+			),
+		).toBe(false);
+		const inspect = screen.getByRole("button", {
+			name: "View Event Details: limit-1",
+		});
+		fireEvent.click(inspect);
+		expect(await screen.findByRole("dialog")).toHaveAccessibleName(
+			"Change Detail",
+		);
+		expect(
+			screen.getByRole("heading", { name: "Before" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "After" }),
+		).toBeInTheDocument();
+		expect(
+			mocks.usePixel.mock.calls.some(
+				([pixel]) =>
+					String(pixel).includes("AdminGetEnterpriseUsageDetail") &&
+					String(pixel).includes('recordId=["limit-1"]'),
+			),
+		).toBe(true);
+		fireEvent.click(screen.getByRole("button", { name: "Close" }));
+		await waitFor(() => expect(inspect).toHaveFocus());
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "View Event Details: denied-1",
+			}),
+		);
+		expect(await screen.findByRole("dialog")).toHaveAccessibleName(
+			"Denied Request Detail",
+		);
+		expect(
+			screen.getByRole("heading", { name: "Reason" }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("heading", { name: "Before" }),
+		).not.toBeInTheDocument();
+	});
 	it("keeps source errors visible and retryable instead of reporting zero KPIs", () => {
 		mocks.usePixel.mockReturnValue({
 			status: "ERROR",

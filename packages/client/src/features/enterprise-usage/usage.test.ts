@@ -143,6 +143,21 @@ describe("enterprise usage reactor requests", () => {
 			'AdminGetEnterpriseUsageDetail(source=["model"], recordId=["input-1"]);',
 		);
 	});
+	it("reads an audit change by its event alone", () => {
+		const detail = detailQuery("audit", {
+			EVENT_ID: "limit-1",
+			EVENT_TYPE: "USAGE_LIMIT_UPDATE",
+			ACTOR_USER_ID: "owner-1",
+		});
+		expect(detail).toMatchObject({ source: "audit", limit: 1 });
+		expect(usagePixel(detail)).toBe(
+			'AdminGetEnterpriseUsageDetail(source=["audit"], recordId=["limit-1"]);',
+		);
+		expect(() => detailQuery("audit", { LOG_ID: "log-1" })).toThrow();
+		expect(usagePixel(logQuery("audit", filters, 1))).toContain(
+			'source=["audit"], view=["logs"]',
+		);
+	});
 });
 
 describe("usage data and KPI semantics", () => {
@@ -158,6 +173,29 @@ describe("usage data and KPI semantics", () => {
 			{ rows: [{ VALUE: {} }] },
 		])
 			expect(() => parseUsageRows(payload)).toThrow();
+	});
+	it("requires each audit view's own fields", () => {
+		const summary = summaryQuery("audit", filters);
+		const counts = {
+			EVENTS: 2,
+			USAGE_LIMIT_CHANGES: 1,
+			ACCESS_CHANGES: 1,
+			DENIALS: 1,
+			ACTORS: 1,
+			PEOPLE_DENIED: 1,
+			PEOPLE_AFFECTED: 2,
+		};
+		expect(parseUsageRows({ rows: [counts] }, summary)).toEqual([counts]);
+		expect(() =>
+			parseUsageRows({ rows: [{ EVENTS: 2, FAILED: 0 }] }, summary),
+		).toThrow();
+		const logs = logQuery("audit", filters);
+		expect(
+			parseUsageRows({ rows: [{ EVENT_ID: "limit-1" }] }, logs),
+		).toEqual([{ EVENT_ID: "limit-1" }]);
+		expect(() =>
+			parseUsageRows({ rows: [{ LOG_ID: "log-1" }] }, logs),
+		).toThrow();
 	});
 	it("preserves missing telemetry and zero-denominator rates", () => {
 		expect(numeric({ TOKENS: null }, "TOKENS")).toBeNull();

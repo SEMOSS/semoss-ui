@@ -7,6 +7,7 @@ import { TeamResourceAccessPanel } from "@/features/team-resource-access/team-re
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 import { useConfig } from "@/hooks/use-config";
 import { TeamPeopleCard } from "./team-people-card";
+import { TeamTotalCard } from "./team-total-card";
 
 export interface AdminTeamDetailsProps {
 	/** The team's name, which is also its id */
@@ -16,8 +17,9 @@ export interface AdminTeamDetailsProps {
 }
 
 /**
- * One team, for admins, on one page: its members and managers, then the
- * projects and engines it can use. The page header edits and deletes it.
+ * One team, for admins, on one page: its members and managers, its total
+ * usage limit across all models, then the projects and engines it can use. The
+ * page header edits and deletes it.
  * Render it only for admins, keyed by the team, so a renamed team starts from
  * fresh lists.
  */
@@ -67,6 +69,7 @@ export const AdminTeamDetails = ({ id, type }: AdminTeamDetailsProps) => {
 					</CardHeader>
 				</Card>
 			)}
+			<TeamTotalCard id={id} type={type} />
 			<TeamResourceAccessPanel kind="PROJECT" group={group} />
 			<TeamResourceAccessPanel kind="ENGINE" group={group} />
 		</div>
