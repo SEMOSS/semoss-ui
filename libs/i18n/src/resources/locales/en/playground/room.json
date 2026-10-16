@@ -1,5 +1,6 @@
 {
 	"welcome": "Welcome, {{name}}",
+	"defaultName": "New Chat",
 	"suggestions": {
 		"title": "Suggested follow-ups"
 	},

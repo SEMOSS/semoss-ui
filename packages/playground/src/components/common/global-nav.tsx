@@ -72,6 +72,7 @@ import { useRoot } from "@/hooks/use-root";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
+import { TypewriterText } from "./typewriter-text";
 
 let isIframed = false;
 try {
@@ -124,6 +125,11 @@ export const GlobalNav = observer(() => {
 	 */
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 	const [editingName, setEditingName] = useState("");
+	// Names the user typed in themselves, by room. Shown right away, and
+	// without the typewriter animation, until the refetched list catches up.
+	const [renamedNames, setRenamedNames] = useState<Record<string, string>>(
+		{},
+	);
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
 
@@ -274,6 +280,27 @@ export const GlobalNav = observer(() => {
 	}, [getRooms.data, chat]);
 
 	/**
+	 * Drop a user-typed name once the fetched lists return it, so later
+	 * server-side renames (e.g. a generated name) show through again
+	 */
+	useEffect(() => {
+		const fetchedNames = new Map(
+			[...getRooms.data, ...getPinnedRooms.data].map((r) => [
+				r.ROOM_ID,
+				r.ROOM_NAME,
+			]),
+		);
+		setRenamedNames((prev) => {
+			const remaining = Object.entries(prev).filter(
+				([roomId, name]) => fetchedNames.get(roomId) !== name,
+			);
+			return remaining.length === Object.keys(prev).length
+				? prev
+				: Object.fromEntries(remaining);
+		});
+	}, [getRooms.data, getPinnedRooms.data]);
+
+	/**
 	 * Save and restore scroll position when sidebar opens/closes
 	 */
 	useEffect(() => {
@@ -382,6 +409,9 @@ export const GlobalNav = observer(() => {
 			);
 
 			toast.success(t("toasts.roomRenamedSuccess"));
+
+			const trimmedName = editingName.trim();
+			setRenamedNames((prev) => ({ ...prev, [roomId]: trimmedName }));
 
 			// Reset state
 			setEditingRoomId(null);
@@ -556,7 +586,7 @@ export const GlobalNav = observer(() => {
 				</SidebarHeader>
 				{!hideChatHistory && (
 					<SidebarContent
-						className="min-h-[120px] flex-1 overflow-hidden pe-2 transition-all duration-200 ease-in-out"
+						className="min-h-30 flex-1 overflow-hidden pe-2 transition-all duration-200 ease-in-out"
 						data-tour="tour-chat-history"
 					>
 						<ScrollArea
@@ -620,6 +650,7 @@ export const GlobalNav = observer(() => {
 												{rooms.map((room) => {
 													const roomId = room.ROOM_ID;
 													const name =
+														renamedNames[roomId] ||
 														room.ROOM_NAME ||
 														t("messages.untitled");
 													const date = root.theme
@@ -719,11 +750,18 @@ export const GlobalNav = observer(() => {
 																		>
 																			<span
 																				dir="auto"
-																				className="truncate font-medium text-sm leading-tight"
+																				className="max-w-full truncate font-medium text-sm leading-tight"
 																			>
-																				{
-																					name
-																				}
+																				<TypewriterText
+																					text={
+																						name
+																					}
+																					animate={
+																						!renamedNames[
+																							roomId
+																						]
+																					}
+																				/>
 																			</span>
 																			{date && (
 																				<span className="text-muted-foreground text-xs leading-none">

@@ -1471,6 +1471,31 @@ export class RoomStore {
 	};
 
 	/**
+	 * Generate and persist a room name from the first user prompt. The room
+	 * has to exist server-side, so call this after the first message has
+	 * been sent. Agent rooms are named by the backend. Best-effort — failures
+	 * are swallowed so naming issues never disrupt the chat.
+	 */
+	generateRoomName = async (prompt: string): Promise<void> => {
+		try {
+			const response = await this.runRoomPixel<[string]>(
+				`RenameRoom(roomId=${JSON.stringify(this._store.roomId)}, name=["<encode>${prompt}</encode>"], model=["${this.model.engine_id}"]);`,
+				false,
+				false,
+			);
+
+			const name = response.pixelReturn[0].output;
+			if (name) {
+				runInAction(() => {
+					this.setMetadata({ name });
+				});
+			}
+		} catch (e) {
+			console.warn("Failed to generate room name:", e);
+		}
+	};
+
+	/**
 	 * Process a tool call
 	 * @param messageId - id of the message
 	 * @param toolId - id of the tool

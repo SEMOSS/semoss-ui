@@ -1,5 +1,6 @@
 {
 	"welcome": "{{name}}, स्वागत है",
+	"defaultName": "नई चैट",
 	"suggestions": {
 		"title": "सुझाए गए अगले संदेश"
 	},
