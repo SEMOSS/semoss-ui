@@ -2,7 +2,7 @@ import type {
 	AccessPerson,
 	PermissionBatch,
 	PermissionChange,
-	PermissionTargetResourceKind,
+	PermissionTargetResourceType,
 	TeamRole,
 } from "@semoss/sdk";
 import type { ReviewItem } from "@/features/bulk-access-management/permission-batch-review-dialog";
@@ -37,7 +37,7 @@ export const NO_TEAM_EDITS: TeamEdits = {
 export const TEAM_ROLES: readonly TeamRole[] = ["MEMBERS", "MANAGERS"];
 
 /** The permission batch target that changes each list */
-const TARGET_KINDS: Record<TeamRole, PermissionTargetResourceKind> = {
+const TARGET_RESOURCE_TYPES: Record<TeamRole, PermissionTargetResourceType> = {
 	MEMBERS: "TEAM",
 	MANAGERS: "TEAM_MANAGERS",
 };
@@ -112,7 +112,11 @@ export const buildTeamBatches = (
 				key,
 				change: {
 					action: "ADD",
-					subject: { kind: "USER", id: person.id, type: person.type },
+					subject: {
+						category: "USER",
+						id: person.id,
+						type: person.type,
+					},
 				},
 				person,
 			});
@@ -126,7 +130,7 @@ export const buildTeamBatches = (
 					change: {
 						action: "REMOVE",
 						subject: {
-							kind: "USER",
+							category: "USER",
 							id: person.id,
 							type: person.type,
 						},
@@ -145,7 +149,7 @@ export const buildTeamBatches = (
 				? `${groupId} team managers`
 				: `${groupId} team members`;
 		result.batches.push({
-			target: { kind: TARGET_KINDS[role], id: groupId },
+			target: { resourceType: TARGET_RESOURCE_TYPES[role], id: groupId },
 			changes: changes.map((item) => item.change),
 		});
 		result.roles.push(role);
@@ -157,7 +161,7 @@ export const buildTeamBatches = (
 				where,
 				action: item.change.action,
 				name: getPersonName(item.person),
-				kind: "USER" as const,
+				category: "USER" as const,
 				type: item.person.type,
 				id: item.person.id,
 				email: item.person.email,

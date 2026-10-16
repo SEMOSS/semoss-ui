@@ -1,4 +1,11 @@
-import { CSRF, Env, get, post } from "@semoss/sdk/react";
+import {
+	CSRF,
+	Env,
+	get,
+	type ModelUsageLimit,
+	post,
+	readModelUsageLimit,
+} from "@semoss/sdk/react";
 
 export const config = async () => {
 	// get the response
@@ -597,10 +604,8 @@ export const getAllUsers = async (
 			phoneextension?: string;
 			countrycode?: string;
 			username?: string;
-			model_usage_restriction?: string;
-			model_usage_frequency?: string;
-			model_max_tokens?: number;
-			model_max_response_time?: number;
+			/** The person's default for all models, as the backend sends it */
+			model_usage_limit?: unknown;
 		}[]
 	>(getAllUsersURL).catch((error) => {
 		throw Error(error);
@@ -643,7 +648,11 @@ export const getAllUsers = async (
 		throw Error("No Response to get Members");
 	}
 	const finalResponse = {
-		users: response.data,
+		// each person's default for all models, read into its one shape
+		users: response.data.map((user) => ({
+			...user,
+			model_usage_limit: readModelUsageLimit(user.model_usage_limit),
+		})),
 		totalUsers,
 		filteredUsers,
 	};
@@ -881,31 +890,14 @@ export const createUser = async (
 			phoneextension: user.phoneextension,
 		};
 	}
-	if (user.model_usage_restriction) {
-		if (user.model_usage_restriction === "null") {
-			user.model_usage_restriction = null;
-		}
+	// the person's default for all models, sent as JSON; none means none defined
+	const modelUsageLimit: ModelUsageLimit | null = readModelUsageLimit(
+		user.model_usage_limit,
+	);
+	if (modelUsageLimit) {
 		newUserInfo = {
 			...newUserInfo,
-			modelUsageRestriction: user.model_usage_restriction,
-		};
-	}
-	if (user.model_usage_frequency) {
-		newUserInfo = {
-			...newUserInfo,
-			modelUsageFrequency: user.model_usage_frequency,
-		};
-	}
-	if (user.model_max_tokens) {
-		newUserInfo = {
-			...newUserInfo,
-			modelMaxTokens: user.model_max_tokens,
-		};
-	}
-	if (user.model_max_response_time) {
-		newUserInfo = {
-			...newUserInfo,
-			modelMaxResponseTime: user.model_max_response_time,
+			modelUsageLimit,
 		};
 	}
 	const response = await post<boolean>(url, { ...newUserInfo }, {});

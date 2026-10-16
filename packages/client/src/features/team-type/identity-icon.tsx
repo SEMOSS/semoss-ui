@@ -5,7 +5,7 @@ import { useTeamTypeName } from "./use-team-type-name";
 
 export interface IdentityIconProps {
 	/** A person or a team */
-	kind: "USER" | "TEAM";
+	category: "USER" | "TEAM";
 	/** The person's login type, or the team's type */
 	type: string;
 	/** Whether it is the login the session is signed in with, starred at its corner */
@@ -21,15 +21,15 @@ export interface IdentityIconProps {
  * so lists do not repeat it in words.
  */
 export const IdentityIcon = ({
-	kind,
+	category,
 	type,
 	isCurrentLogin = false,
 	className,
 }: IdentityIconProps) => {
 	const typeName = useTeamTypeName(type);
-	const isStarred = kind === "USER" && isCurrentLogin;
+	const isStarred = category === "USER" && isCurrentLogin;
 	const label =
-		kind === "TEAM"
+		category === "TEAM"
 			? `${typeName} team`
 			: isStarred
 				? `You are signed in with this ${typeName} login`
@@ -38,7 +38,7 @@ export const IdentityIcon = ({
 
 	return (
 		<span className="relative inline-flex shrink-0" title={label}>
-			{kind === "TEAM" ? (
+			{category === "TEAM" ? (
 				<TeamTypeIcon
 					type={type}
 					name={typeName}

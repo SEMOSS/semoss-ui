@@ -1,5 +1,6 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
 import { BrainPage } from "./brain.page";
@@ -92,3 +93,8 @@ it("opens a Brain directory by keyboard from a nested detail route", async () =>
 		"page",
 	);
 });
+
+// Route composition is exercised with isolated child views; hydration has its own integration coverage.
+vi.mock("@/features/collaboration/components/saved-record-boundary", () => ({
+	SavedRecordBoundary: ({ children }: { children: ReactNode }) => children,
+}));

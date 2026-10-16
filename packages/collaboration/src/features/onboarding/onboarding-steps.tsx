@@ -836,15 +836,26 @@ export function ImportStep({
 				<Failure error={startError || error || ""} />
 			)}
 			<StepActions
-				onBack={running ? undefined : onBack}
+				onBack={running || starting ? undefined : onBack}
 				note={
 					running && mailReady
 						? "Teams chats keep importing while you go on."
 						: undefined
 				}
 			>
+				{done && (
+					<Button
+						variant="outline"
+						size="lg"
+						onClick={start}
+						disabled={starting}
+					>
+						{starting ? "Starting import…" : "Import again"}
+					</Button>
+				)}
 				{(done || (running && mailReady)) && (
 					<Next
+						disabled={starting}
 						onClick={onNext}
 						variant={startedHere ? "default" : "outline"}
 					>

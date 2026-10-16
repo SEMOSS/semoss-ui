@@ -44,7 +44,7 @@ export const ProjectAccessControl = ({
 	const { pathname } = useLocation();
 	const accessControlPath = getAccessControlPath(pathname);
 	const canOpenViews = canEditAccess && accessControlPath !== null;
-	const target = { kind: "PROJECT" as const, id: project.project_id };
+	const target = { resourceType: "PROJECT" as const, id: project.project_id };
 	const name =
 		project.project_display_name ||
 		project.project_name ||
@@ -106,7 +106,7 @@ export const ProjectAccessControl = ({
 					) : view === "BULK_ACCESS_MANAGEMENT" ? (
 						<BulkAccessManagement
 							// a new target starts from its own access, never the last one's staged changes
-							key={`${target.kind}:${target.id}`}
+							key={`${target.resourceType}:${target.id}`}
 							target={target}
 							name={name}
 							noun="app"
@@ -118,7 +118,7 @@ export const ProjectAccessControl = ({
 					) : view === "EFFECTIVE" ? (
 						<EffectivePermissions
 							// a new target reads its own access afresh
-							key={`${target.kind}:${target.id}`}
+							key={`${target.resourceType}:${target.id}`}
 							target={target}
 							name={name}
 							backTo=".."

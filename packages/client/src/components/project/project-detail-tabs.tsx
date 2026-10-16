@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ProjectAccessControl, ProjectOverview } from "@/components/project";
-import { useProject } from "@/hooks";
+import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail";
+import { useProject } from "@/hooks/use-project";
+import { useSession } from "@/hooks/use-session";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
 import { AppGithubPage } from "@/pages/app/app-github-page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
@@ -24,6 +26,7 @@ interface ProjectDetailTabsProps {
 			| "github"
 			| "settings"
 			| "access-control"
+			| "audit"
 			| "smss";
 		restrict?: Role[];
 	}[];
@@ -31,12 +34,15 @@ interface ProjectDetailTabsProps {
 
 export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 	const { project, type, permission, refresh } = useProject();
+	const isAdmin = useSession((state) => state.user.admin);
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
 
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
 		return tabs.filter((tab) => {
+			if (tab.component === "audit")
+				return permission === "OWNER" || isAdmin;
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -45,7 +51,7 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 			}
 			return tab.restrict.includes(permission);
 		});
-	}, [tabs, permission]);
+	}, [tabs, permission, isAdmin]);
 
 	// the current active tab index based on the current pathname
 	const activeTabIdx = useMemo(() => {
@@ -106,6 +112,14 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 					<ProjectAccessControl />
 				)}
 				{activeTab?.component === "smss" && <AppSmssPage />}
+				{activeTab?.component === "audit" &&
+					(permission === "OWNER" || isAdmin) && (
+						<ResourceAuditTrail
+							key={project.project_id}
+							scope="PROJECT"
+							resourceId={project.project_id}
+						/>
+					)}
 			</div>
 		</div>
 	);

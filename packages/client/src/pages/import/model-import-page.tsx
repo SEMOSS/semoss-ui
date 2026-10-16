@@ -258,6 +258,17 @@ const inferModelProvider = (
 	provider: string,
 	model: ModelVersionDefinition | null,
 ) => {
+	if (provider === "NVIDIA NIM") {
+		// The NEMO card branding identifies the serving platform, not the maker.
+		const namespace = model?.name.split("/")[0].toUpperCase();
+		const modelProvider =
+			namespace === "MISTRALAI" ? "MISTRAL_AI" : namespace;
+		return (
+			MODEL_PROVIDER_OPTIONS.find(({ value }) => value === modelProvider)
+				?.value ?? "OTHER"
+		);
+	}
+
 	const brand = model?.modelBrand?.toUpperCase();
 	if (brand && brand !== "BEDROCK")
 		return MODEL_PROVIDER_BY_BRAND[brand] || "OTHER";

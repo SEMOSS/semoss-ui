@@ -67,6 +67,8 @@ export type PlaygroundMessagePart = {
 	uiText?: string;
 	/** Reasoning content for THINKING parts. */
 	thinking?: string;
+	/** Provider field that supplied a THINKING part, when needed for replay. */
+	source?: string;
 	/** Attached file details for MEDIA parts. */
 	mediaInfo?: {
 		fileName: string;
