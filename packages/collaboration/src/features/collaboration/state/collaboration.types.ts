@@ -168,7 +168,18 @@ export interface WorkItem {
 
 export interface ReviewEntry {
 	id: string;
-	kind: "new_topic" | "topic_choice" | "add_person" | "unassigned";
+	kind:
+		| "new_topic"
+		| "topic_choice"
+		| "add_person"
+		| "unassigned"
+		| "wrong_topic"
+		| "merge_topic"
+		| "quiet_topic"
+		| "unknown_sender"
+		| "memory";
+	/** Saved reviews are answered atomically in Review; compact cards navigate there. */
+	remoteOnly?: boolean;
 	text: string;
 	detail: string;
 	refId: string | null;
@@ -405,6 +416,12 @@ export interface CollaborationState {
 
 /** Commands contain UI intent and updates received from the backend. */
 export type CollaborationCommand =
+	| {
+			type: "review.refresh";
+			removedTopicIds?: string[];
+			before: CollaborationState;
+			next: CollaborationState;
+	  }
 	| {
 			type: "live.refresh";
 			updates: Pick<

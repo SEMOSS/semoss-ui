@@ -376,6 +376,7 @@ function mapReview(row: Row, topics: Topic[]): ReviewEntry {
 	return {
 		id: str(row.id),
 		kind,
+		remoteOnly: true,
 		text: str(row.text),
 		detail: str(row.detail),
 		refId:

@@ -24,12 +24,17 @@ export function ReviewCard({
 			: review.kind === "new_topic"
 				? FolderPlus
 				: MessagesSquare;
-	const kindLabel =
-		review.kind === "new_topic"
-			? "New topic"
-			: review.kind === "add_person"
-				? "Person"
-				: "Topic choice";
+	const kindLabel = {
+		new_topic: "New topic",
+		topic_choice: "Topic choice",
+		add_person: "Person",
+		unassigned: "No topic",
+		wrong_topic: "Filing correction",
+		merge_topic: "Possible merge",
+		quiet_topic: "Quiet topic",
+		unknown_sender: "Frequent sender",
+		memory: "Memory",
+	}[review.kind];
 	const actionClassName = compact ? "h-7 px-2.5" : undefined;
 	const choices =
 		review.kind === "topic_choice" && thread
@@ -119,31 +124,85 @@ export function ReviewCard({
 					)}
 				{review.status === "open" && (
 					<div className="flex flex-wrap gap-2 pt-1">
-						{review.kind === "topic_choice" && thread ? (
+						{review.remoteOnly ? (
+							<Button
+								asChild
+								variant="outline"
+								size="sm"
+								className={actionClassName}
+							>
+								<Link to="/brain">Review in Brain</Link>
+							</Button>
+						) : (
 							<>
-								{choices.map((topic) => (
+								{review.kind === "topic_choice" && thread ? (
+									<>
+										{choices.map((topic) => (
+											<Button
+												key={topic.id}
+												variant="outline"
+												size="sm"
+												className={actionClassName}
+												onClick={() =>
+													resolve("accept", topic.id)
+												}
+											>
+												<span
+													aria-hidden="true"
+													className={cn(
+														"size-2 shrink-0 rounded-xs",
+														topicTone(topic.id),
+													)}
+												/>
+												{choices.length === 1
+													? `File under ${topic.short}`
+													: topic.short}
+											</Button>
+										))}
+										{choices.length > 1 && (
+											<Button
+												variant="outline"
+												size="sm"
+												className={cn(
+													actionClassName,
+													"font-normal",
+												)}
+												onClick={() => resolve("both")}
+											>
+												Both
+											</Button>
+										)}
+									</>
+								) : review.kind === "unassigned" ? (
 									<Button
-										key={topic.id}
+										asChild
 										variant="outline"
 										size="sm"
 										className={actionClassName}
-										onClick={() =>
-											resolve("accept", topic.id)
-										}
 									>
-										<span
-											aria-hidden="true"
-											className={cn(
-												"size-2 shrink-0 rounded-xs",
-												topicTone(topic.id),
-											)}
-										/>
-										{choices.length === 1
-											? `File under ${topic.short}`
-											: topic.short}
+										<Link
+											to={
+												thread
+													? `/brain/threads/${encodeURIComponent(thread.id)}`
+													: "/brain/threads?filter=needs"
+											}
+										>
+											Review thread
+										</Link>
 									</Button>
-								))}
-								{choices.length > 1 && (
+								) : (
+									<Button
+										variant="outline"
+										size="sm"
+										className={actionClassName}
+										onClick={() => resolve("accept")}
+									>
+										{review.kind === "new_topic"
+											? "Add topic"
+											: "Add person"}
+									</Button>
+								)}
+								{review.candidate?.mergeCandidate && (
 									<Button
 										variant="outline"
 										size="sm"
@@ -151,75 +210,38 @@ export function ReviewCard({
 											actionClassName,
 											"font-normal",
 										)}
-										onClick={() => resolve("both")}
+										aria-label="Merge into existing topic"
+										onClick={() =>
+											resolve(
+												"merge",
+												review.candidate
+													?.mergeCandidate ??
+													undefined,
+											)
+										}
 									>
-										Both
+										{compact
+											? "Merge"
+											: "Merge into existing topic"}
 									</Button>
 								)}
-							</>
-						) : review.kind === "unassigned" ? (
-							<Button
-								asChild
-								variant="outline"
-								size="sm"
-								className={actionClassName}
-							>
-								<Link
-									to={
-										thread
-											? `/brain/threads/${encodeURIComponent(thread.id)}`
-											: "/brain/threads?filter=needs"
-									}
+								<Button
+									variant="ghost"
+									size="sm"
+									className={cn(
+										actionClassName,
+										"font-normal text-muted-foreground",
+									)}
+									onClick={() => resolve("dismiss")}
 								>
-									Review thread
-								</Link>
-							</Button>
-						) : (
-							<Button
-								variant="outline"
-								size="sm"
-								className={actionClassName}
-								onClick={() => resolve("accept")}
-							>
-								{review.kind === "new_topic"
-									? "Add topic"
-									: "Add person"}
-							</Button>
+									{review.kind !== "topic_choice" || !thread
+										? "Dismiss"
+										: choices.length > 1
+											? "Neither"
+											: "Not this topic"}
+								</Button>
+							</>
 						)}
-						{review.candidate?.mergeCandidate && (
-							<Button
-								variant="outline"
-								size="sm"
-								className={cn(actionClassName, "font-normal")}
-								aria-label="Merge into existing topic"
-								onClick={() =>
-									resolve(
-										"merge",
-										review.candidate?.mergeCandidate ??
-											undefined,
-									)
-								}
-							>
-								{compact
-									? "Merge"
-									: "Merge into existing topic"}
-							</Button>
-						)}
-						<Button
-							variant="ghost"
-							size="sm"
-							className={cn(
-								actionClassName,
-								"font-normal text-muted-foreground",
-							)}
-							onClick={() => resolve("dismiss")}
-						>
-							{review.kind !== "topic_choice" || !thread
-								? "Dismiss"
-								: choices.length > 1
-									? "Neither"
-									: "Not this topic"}
-						</Button>
 					</div>
 				)}
 			</div>

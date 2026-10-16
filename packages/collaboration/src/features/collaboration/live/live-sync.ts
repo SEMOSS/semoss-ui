@@ -1,5 +1,6 @@
 import type { InsightActions } from "@/lib/pixel";
 import { pixel } from "@/lib/pixel";
+import { collaborationReducer } from "../state/collaboration.reducer";
 import type {
 	CollaborationCommand,
 	CollaborationState,
@@ -17,6 +18,7 @@ import { runBatch } from "./live-state";
 // commands with no backend yet, or that carry what the server already holds; their effects stay in this
 // browser session
 const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
+	"review.refresh",
 	"thread.insights",
 	"source.deleted",
 	"session.create",
@@ -70,7 +72,19 @@ export function createLiveSync(
 			ids.has(local) ? JSON.stringify(ids.get(local)) : match,
 		);
 
-	const sync = (change: CollaborationChange): void => {
+	const sync = (settled: CollaborationChange): void => {
+		const previous = settled.commands.reduce(
+			(state, command) =>
+				command.type === "review.refresh"
+					? collaborationReducer(
+							state,
+							command,
+							new Date().toISOString(),
+						)
+					: state,
+			settled.previous,
+		);
+		const change = { ...settled, previous };
 		const unsaved = change.commands.filter((command) =>
 			SESSION_ONLY.has(command.type),
 		);

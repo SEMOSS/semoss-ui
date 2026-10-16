@@ -361,6 +361,7 @@ export function WorkUpdatesProvider({
 			value={{
 				...status,
 				...mail,
+				settled: sync?.settled,
 				refresh,
 				refreshTopicGoal,
 				syncMail: syncNow,

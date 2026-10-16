@@ -12,6 +12,25 @@ import type {
 } from "./collaboration.types";
 import { dropTopicMemories, moveTopicMemories } from "./memory";
 
+/** Server refreshes preserve edits made locally while the request was in flight. */
+function mergeReviewRows<T extends { id: string }>(
+	current: T[],
+	before: T[],
+	incoming: T[],
+): T[] {
+	const previous = new Map(before.map((row) => [row.id, row]));
+	const next = new Map(incoming.map((row) => [row.id, row]));
+	const ids = new Set(current.map((row) => row.id));
+	return [
+		...current.map((row) =>
+			JSON.stringify(row) === JSON.stringify(previous.get(row.id))
+				? (next.get(row.id) ?? row)
+				: row,
+		),
+		...incoming.filter((row) => !ids.has(row.id)),
+	];
+}
+
 /** New workspaces contain no inferred source bodies or assistant history. */
 export function createEmptyWorkspace(): ThreadWorkspace {
 	return {
@@ -360,6 +379,58 @@ export function collaborationReducer(
 ): CollaborationState {
 	const state = structuredClone(previous);
 	switch (command.type) {
+		case "review.refresh": {
+			const removed = new Set(command.removedTopicIds);
+			state.topics = state.topics.filter(
+				(topic) =>
+					!removed.has(topic.id) ||
+					JSON.stringify(topic) !==
+						JSON.stringify(
+							command.before.topics.find(
+								(row) => row.id === topic.id,
+							),
+						),
+			);
+			state.topics = mergeReviewRows(
+				state.topics,
+				command.before.topics,
+				command.next.topics,
+			);
+			state.people = mergeReviewRows(
+				state.people,
+				command.before.people,
+				command.next.people,
+			);
+			state.threads = mergeReviewRows(
+				state.threads,
+				command.before.threads,
+				command.next.threads,
+			);
+			state.items = mergeReviewRows(
+				state.items,
+				command.before.items,
+				command.next.items,
+			);
+			state.memories = mergeReviewRows(
+				state.memories,
+				command.before.memories,
+				command.next.memories,
+			);
+			state.reviews = mergeReviewRows(
+				state.reviews,
+				command.before.reviews,
+				command.next.reviews,
+			);
+			for (const [id, workspace] of Object.entries(
+				command.next.workspaces,
+			))
+				if (
+					JSON.stringify(state.workspaces[id]) ===
+					JSON.stringify(command.before.workspaces[id])
+				)
+					state.workspaces[id] = workspace;
+			break;
+		}
 		case "topic.save": {
 			const topic = state.topics.find(
 				(candidate) => candidate.id === command.topic.id,

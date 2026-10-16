@@ -2,6 +2,8 @@ import { createContext, useContext } from "react";
 import type { MailCheck, MailSyncResult } from "./live-state";
 
 export interface WorkUpdatesStatus {
+	/** Finish queued edits before a Review mutation or server read. */
+	settled?: () => Promise<void>;
 	isRefreshing: boolean;
 	lastUpdated: string | null;
 	error: string;
