@@ -1,3 +1,5 @@
+import type { ModelUsageLimit } from "./api/access";
+
 /**
  * Script object
  */
@@ -21,11 +23,33 @@ export interface User {
 	id: string;
 	type?: string;
 	email?: string;
+	/**
+	 * On a model engine, the person's usage limit on their own grant, or null
+	 * for no limit defined
+	 */
+	usage_limit?: ModelUsageLimit | null;
 }
 
+/** A person's access to add or change through the project and engine user endpoints */
 export interface PostUser {
+	/** User id */
 	userid: string;
+	/** The access level */
 	permission: Role;
+	/** Login type, for a person picked from the directory */
+	type?: string | null;
+	/** Display name, for a person picked from the directory */
+	name?: string | null;
+	/** Email address, for a person picked from the directory */
+	email?: string | null;
+	/** Login name, for a person picked from the directory */
+	username?: string | null;
+	/**
+	 * On a model engine, the person's usage limit. A limit with no rules that is
+	 * not Unlimited means no limit defined; an edit that leaves it out keeps the
+	 * limit the person has.
+	 */
+	usageLimit?: ModelUsageLimit | null;
 }
 
 /**

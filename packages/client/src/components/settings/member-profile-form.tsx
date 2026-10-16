@@ -1,19 +1,14 @@
 import { Gauge } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ModelUsageLimit } from "@semoss/sdk";
 import {
-	Button,
-	Input,
-	Label,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Switch,
-	ToggleGroup,
-	ToggleGroupItem,
-	toast,
-} from "@semoss/ui/next";
+	findModelUsageLimitProblem,
+	ModelUsageLimitEditor,
+	type ModelUsageLimitEditorHandle,
+	toExplicitUsageLimit,
+	UsageLimitGuideButton,
+} from "@semoss/shared";
+import { Button, Input, Label, Switch, toast } from "@semoss/ui/next";
 import { editMemberInfo } from "@/api";
 import { useSettings } from "@/hooks";
 import type { SETTINGS_MEMBER } from "./settings.types";
@@ -28,25 +23,9 @@ interface ProfileForm {
 	admin: boolean;
 	publisher: boolean;
 	exporter: boolean;
-	restriction: string;
-	maxTokens: string;
-	maxResponseTime: string;
-	frequency: string;
+	/** The default for all models, or null for no limit defined */
+	usageLimit: ModelUsageLimit | null;
 }
-
-const RESTRICTION_LABELS: Record<string, string> = {
-	null: "None",
-	token: "Token",
-	compute: "Compute time",
-};
-
-const FREQUENCY_LABELS: Record<string, string> = {
-	DAY: "Daily",
-	WEEK: "Weekly",
-	MONTH: "Monthly",
-	YEAR: "Yearly",
-	ALL_TIME: "All time",
-};
 
 const toForm = (user: SETTINGS_MEMBER): ProfileForm => ({
 	name: user.name ?? "",
@@ -58,14 +37,7 @@ const toForm = (user: SETTINGS_MEMBER): ProfileForm => ({
 	admin: !!user.admin,
 	publisher: !!user.publisher,
 	exporter: !!user.exporter,
-	restriction: user.model_usage_restriction ?? "null",
-	maxTokens:
-		user.model_max_tokens != null ? String(user.model_max_tokens) : "",
-	maxResponseTime:
-		user.model_max_response_time != null
-			? String(user.model_max_response_time)
-			: "",
-	frequency: user.model_usage_frequency ?? "DAY",
+	usageLimit: user.model_usage_limit ?? null,
 });
 
 export interface MemberProfileFormProps {
@@ -75,8 +47,9 @@ export interface MemberProfileFormProps {
 }
 
 /**
- * A single inline view/edit form for a member's profile, roles, and model
- * limits. Values are editable in place and persisted together via Save.
+ * A single inline view/edit form for a member's profile, roles, and their
+ * default usage limit for all models. Values are editable in place and
+ * persisted together via Save.
  */
 export const MemberProfileForm = ({
 	user,
@@ -87,12 +60,25 @@ export const MemberProfileForm = ({
 	const [form, setForm] = useState<ProfileForm>(() => toForm(user));
 	const [initial, setInitial] = useState<ProfileForm>(() => toForm(user));
 	const [saving, setSaving] = useState(false);
+	// a new key starts the limit editor again, after a reset or a save
+	const [limitKey, setLimitKey] = useState(0);
+	const limitProblem = findModelUsageLimitProblem(form.usageLimit, {
+		source: "ALL_MODELS",
+		isCostAvailable: true,
+	});
+	// the limit's problems show from the first save they stop, until it is
+	// saved or reset
+	const [shouldShowLimitProblems, setShouldShowLimitProblems] =
+		useState(false);
+	const limitEditorRef = useRef<ModelUsageLimitEditorHandle>(null);
 
 	// Reseed when a different member is selected
 	useEffect(() => {
 		const next = toForm(user);
 		setForm(next);
 		setInitial(next);
+		setLimitKey((key) => key + 1);
+		setShouldShowLimitProblems(false);
 	}, [user]);
 
 	const isNative = (user.type ?? "").toUpperCase() === "NATIVE";
@@ -104,13 +90,24 @@ export const MemberProfileForm = ({
 	const set = (patch: Partial<ProfileForm>) =>
 		setForm((prev) => ({ ...prev, ...patch }));
 
-	const reset = () => setForm(initial);
+	const reset = () => {
+		setForm(initial);
+		setLimitKey((key) => key + 1);
+		setShouldShowLimitProblems(false);
+	};
 
 	const save = async () => {
+		if (limitProblem) {
+			setShouldShowLimitProblems(true);
+			limitEditorRef.current?.focusFirstProblem();
+			return;
+		}
 		setSaving(true);
 		try {
 			const payload: Record<string, unknown> = {
 				...user,
+				// an empty limit says no limit defined, which clears a limit the member has
+				model_usage_limit: toExplicitUsageLimit(form.usageLimit),
 				name: form.name,
 				username: form.username,
 				email: form.email,
@@ -134,25 +131,6 @@ export const MemberProfileForm = ({
 				payload.password = form.password;
 			}
 
-			// Model usage limits
-			if (form.restriction === "null") {
-				payload.model_usage_restriction = null;
-				payload.model_max_tokens = null;
-				payload.model_max_response_time = null;
-				payload.model_usage_frequency = null;
-			} else {
-				payload.model_usage_restriction = form.restriction;
-				payload.model_usage_frequency = form.frequency;
-				payload.model_max_tokens =
-					form.restriction === "token"
-						? Number(form.maxTokens) || null
-						: null;
-				payload.model_max_response_time =
-					form.restriction === "compute"
-						? Number(form.maxResponseTime) || null
-						: null;
-			}
-
 			const response = await editMemberInfo(adminMode, payload);
 			if (response?.data) {
 				toast.success("Profile saved");
@@ -166,26 +144,12 @@ export const MemberProfileForm = ({
 					admin: form.admin,
 					publisher: form.publisher,
 					exporter: form.exporter,
-					model_usage_restriction:
-						form.restriction === "null"
-							? undefined
-							: form.restriction,
-					model_usage_frequency:
-						form.restriction === "null"
-							? undefined
-							: form.frequency,
-					model_max_tokens:
-						form.restriction === "token"
-							? Number(form.maxTokens) || undefined
-							: undefined,
-					model_max_response_time:
-						form.restriction === "compute"
-							? Number(form.maxResponseTime) || undefined
-							: undefined,
+					model_usage_limit: form.usageLimit,
 				};
 				const nextForm = toForm(updated);
 				setInitial(nextForm);
 				setForm(nextForm);
+				setShouldShowLimitProblems(false);
 				onSaved(updated);
 			} else {
 				toast.error("Error saving profile");
@@ -229,7 +193,7 @@ export const MemberProfileForm = ({
 						<Input value={user.id} disabled />
 					</Field>
 					<Field label="Login Type">
-						<Input value={user.type || "—"} disabled />
+						<Input value={user.type || "-"} disabled />
 					</Field>
 				</div>
 			</section>
@@ -290,114 +254,38 @@ export const MemberProfileForm = ({
 				</div>
 			</section>
 
-			{/* Model limits */}
+			{/* the default usage limit for all models */}
 			<section className="flex flex-col gap-2">
-				<p className="font-medium text-sm">Model Limit Restrictions</p>
+				<p className="font-medium text-sm">User's Total Model Limit</p>
 				<div className="flex flex-col gap-3 rounded-lg border border-border/60 p-3">
 					<div className="flex items-start gap-3">
 						<div className="rounded-md bg-muted p-2">
-							<Gauge className="size-4 text-muted-foreground" />
+							<Gauge
+								className="size-4 text-muted-foreground"
+								aria-hidden
+							/>
 						</div>
-						<div className="flex-1">
-							<p className="font-medium text-sm">Usage limit</p>
-							<p className="text-muted-foreground text-xs">
-								Cap how much this member can consume model
-								resources.
-							</p>
-						</div>
-					</div>
-
-					<ToggleGroup
-						type="single"
-						variant="outline"
-						value={form.restriction}
-						onValueChange={(value) => {
-							if (!value) {
-								return;
-							}
-							set({
-								restriction: value,
-								maxTokens: "",
-								maxResponseTime: "",
-							});
-						}}
-						className="w-full"
-					>
-						{Object.entries(RESTRICTION_LABELS).map(
-							([value, label]) => (
-								<ToggleGroupItem
-									key={value}
-									value={value}
-									className="flex-1"
-								>
-									{label}
-								</ToggleGroupItem>
-							),
-						)}
-					</ToggleGroup>
-
-					{form.restriction === "null" ? (
-						<p className="text-muted-foreground text-xs">
-							Unrestricted — no usage limits are applied to this
-							member.
+						<p className="flex-1 text-muted-foreground text-xs">
+							This member's limit on any model where nothing more
+							specific applies: a Direct Limit, a Team Limit or
+							the Public Use Limit. Cost rules do not count models
+							without known prices.
 						</p>
-					) : (
-						<div className="grid grid-cols-2 gap-2.5">
-							{form.restriction === "token" ? (
-								<Field label="Max Tokens">
-									<Input
-										type="number"
-										value={form.maxTokens}
-										onChange={(e) =>
-											set({ maxTokens: e.target.value })
-										}
-									/>
-								</Field>
-							) : (
-								<Field label="Max Response Time">
-									<div className="flex items-center gap-2">
-										<Input
-											type="number"
-											value={form.maxResponseTime}
-											onChange={(e) =>
-												set({
-													maxResponseTime:
-														e.target.value,
-												})
-											}
-										/>
-										<span className="text-muted-foreground text-sm">
-											ms
-										</span>
-									</div>
-								</Field>
-							)}
-							<Field label="Frequency">
-								<Select
-									value={form.frequency}
-									onValueChange={(value) =>
-										set({ frequency: value })
-									}
-								>
-									<SelectTrigger className="w-full">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{Object.entries(FREQUENCY_LABELS).map(
-											([value, label]) => (
-												<SelectItem
-													key={value}
-													value={value}
-												>
-													{label}
-												</SelectItem>
-											),
-										)}
-									</SelectContent>
-								</Select>
-							</Field>
-						</div>
-					)}
+					</div>
+					<ModelUsageLimitEditor
+						key={limitKey}
+						ref={limitEditorRef}
+						defaultValue={form.usageLimit}
+						onChange={(usageLimit) => set({ usageLimit })}
+						source="ALL_MODELS"
+						label="Usage Limit"
+						shouldShowProblems={shouldShowLimitProblems}
+						disabled={saving}
+					/>
+					<UsageLimitGuideButton
+						className="self-start"
+						viewer={{ isAdminMode: true }}
+					/>
 				</div>
 			</section>
 

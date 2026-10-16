@@ -1,5 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 import type { PermissionGrant } from "@semoss/sdk";
+import { describeModelUsageLimit } from "@semoss/shared";
 import {
 	Button,
 	Card,
@@ -10,30 +11,29 @@ import {
 } from "@semoss/ui/next";
 import { formatLocalDateTime } from "@semoss/utility/date";
 import { AccessIdentity } from "./access-identity";
-import {
-	type BatchConflict,
-	describeModelLimit,
-	getLevelLabel,
-} from "./permission-batch";
+import { type BatchConflict, getLevelLabel } from "./permission-batch";
 
 /**
  * @param grant - a grant, or null for none
+ * @param isNew - whether the batch does not have the person yet
  * @returns a short description, such as "Editor, until Dec 31, 2026, 10,000 tokens a day"
  */
-const describeGrant = (grant: PermissionGrant | null): string => {
+const describeGrant = (
+	grant: PermissionGrant | null,
+	isNew = false,
+): string => {
 	if (!grant) {
-		return "Removed in your changes";
+		return isNew ? "Not added" : "Removed in your changes";
 	}
 	const endDate = formatLocalDateTime(
 		grant.endDate ?? undefined,
 		"MMM D, YYYY",
 	);
-	const limit = describeModelLimit(grant);
 	// a model's people can differ only in their usage limits
 	return [
 		getLevelLabel(grant.level),
 		endDate ? `until ${endDate}` : null,
-		limit === "No limit" ? null : limit,
+		grant.usageLimit ? describeModelUsageLimit(grant.usageLimit) : null,
 	]
 		.filter(Boolean)
 		.join(", ");
@@ -105,7 +105,7 @@ export const PermissionBatchConflicts = ({
 							className="flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between"
 						>
 							<AccessIdentity
-								kind="USER"
+								category="USER"
 								type={conflict.person.type}
 								name={label}
 								id={conflict.person.id}
@@ -114,7 +114,10 @@ export const PermissionBatchConflicts = ({
 							>
 								<span className="text-muted-foreground text-xs">
 									In My Changes:{" "}
-									{describeGrant(conflict.kept)}
+									{describeGrant(
+										conflict.kept,
+										conflict.isNew,
+									)}
 								</span>
 								<span className="text-muted-foreground text-xs">
 									{conflict.note}:{" "}

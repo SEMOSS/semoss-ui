@@ -8,8 +8,12 @@ export type AccessOrigin = "DIRECT" | "TEAMS" | "BOTH";
  * @returns whether they get it directly, only through teams, or both ways
  */
 export const getAccessOrigin = (row: EffectivePermissionRow): AccessOrigin => {
-	const isDirect = row.sources.some((source) => source.kind === "DIRECT");
-	const isThroughTeam = row.sources.some((source) => source.kind === "TEAM");
+	const isDirect = row.sources.some(
+		(source) => source.sourceType === "DIRECT",
+	);
+	const isThroughTeam = row.sources.some(
+		(source) => source.sourceType === "TEAM",
+	);
 	if (isDirect && isThroughTeam) {
 		return "BOTH";
 	}
@@ -34,7 +38,7 @@ export const matchesEffectiveSearch = (
 		row.subject.name,
 		row.subject.email,
 		...row.sources.map((source) =>
-			source.kind === "TEAM" ? source.id : null,
+			source.sourceType === "TEAM" ? source.id : null,
 		),
 	]
 		.filter((value): value is string => typeof value === "string")

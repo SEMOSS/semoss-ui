@@ -21,6 +21,70 @@ export * from "./login-type-icon";
 export * from "./login-type-label";
 export * from "./mcp";
 export * from "./members";
+export {
+	checkModelUsageLimitRules,
+	findModelUsageLimitProblem,
+	type ModelUsageLimitCheckOptions,
+	type ModelUsageRuleCheck,
+} from "./model-usage-limit/model-usage-limit-checks";
+export {
+	ModelUsageLimitEditor,
+	type ModelUsageLimitEditorHandle,
+	type ModelUsageLimitEditorProps,
+} from "./model-usage-limit/model-usage-limit-editor";
+export {
+	describeModelUsageLimit,
+	describeModelUsageRule,
+	formatComputeTime,
+	formatUsageAmount,
+	getSourceCounts,
+	getUsageShareStatus,
+	getUsedPercent,
+	hasCostRule,
+	isAcrossAllModels,
+	isSameModelUsageLimit,
+	isUnlimitedOffered,
+	MODEL_USAGE_METRICS,
+	MODEL_USAGE_WINDOWS,
+	type ModelUsageLimitSource,
+	parseDollarsToMicros,
+	toExplicitUsageLimit,
+	USAGE_SHARE_STATUS_LABELS,
+	type UsageShareStatus,
+} from "./model-usage-limit/model-usage-limit-format";
+export {
+	ModelUsageLimitRules,
+	type ModelUsageLimitRulesProps,
+} from "./model-usage-limit/model-usage-limit-rules";
+export {
+	UsageLimitGuide,
+	type UsageLimitGuideProps,
+	type UsageLimitGuideViewer,
+} from "./model-usage-limit/usage-limit-guide";
+export {
+	UsageLimitGuideButton,
+	type UsageLimitGuideButtonProps,
+} from "./model-usage-limit/usage-limit-guide-button";
+export {
+	USAGE_LIMIT_GUIDE_SECTIONS,
+	type UsageLimitGuideSection,
+} from "./model-usage-limit/usage-limit-guide-content";
+export {
+	UsageLimitGuideSheet,
+	type UsageLimitGuideSheetProps,
+} from "./model-usage-limit/usage-limit-guide-sheet";
+export {
+	describeBilledTo,
+	getUsageSourceLabel,
+	getUsageStepReasonLabel,
+	getUsageStepStateLabel,
+	OWNERS_END_LIMITED_ACCESS_REASON,
+	OWNERS_ONLY_LIMIT_REASON,
+} from "./model-usage-limit/usage-limit-labels";
+export {
+	UsageLimitPathView,
+	type UsageLimitPathViewProps,
+} from "./model-usage-limit/usage-limit-path-view";
 export * from "./monaco";
 export * from "./notebook";
 export * from "./paired-file-upload";
