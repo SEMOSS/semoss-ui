@@ -20,6 +20,7 @@ import { EngineAccessButton } from "@/components/engine/engine-access-button";
 import { EngineExportButton } from "@/components/engine/engine-export-button";
 import { NavbarHeader } from "@/components/shared/navbar-header";
 import { NavbarLeft } from "@/components/shared/navbar-left";
+import { MyUsageLimitButton } from "@/features/usage-limit-path/my-usage-limit-button";
 import { useSession } from "@/hooks/use-session";
 import { useEngine } from "@/hooks/useEngine";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -163,6 +164,17 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 								<EngineAccessButton />
 
 								<EngineExportButton />
+								{/* anyone who can use a model can see their own limit on it */}
+								{type === "MODEL" &&
+								permission !== "DISCOVERABLE" ? (
+									<MyUsageLimitButton
+										engineId={engine.engine_id}
+										modelName={
+											engine.engine_display_name ||
+											engine.engine_name
+										}
+									/>
+								) : null}
 								{(permission === "OWNER" ||
 									permission === "EDIT" ||
 									permission === "READ_ONLY") && (

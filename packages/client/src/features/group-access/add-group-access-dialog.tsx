@@ -5,9 +5,18 @@ import {
 	TriangleAlert,
 	UsersRound,
 } from "lucide-react";
-import { type ChangeEvent, useEffect, useId, useState } from "react";
-import type { Role } from "@semoss/sdk";
+import { type ChangeEvent, useEffect, useId, useRef, useState } from "react";
+import type { ModelUsageLimit, Role } from "@semoss/sdk";
 import { useIteratorApi } from "@semoss/sdk/react";
+import {
+	describeModelUsageLimit,
+	findModelUsageLimitProblem,
+	ModelUsageLimitEditor,
+	type ModelUsageLimitEditorHandle,
+	OWNERS_ONLY_LIMIT_REASON,
+	UsageLimitGuideButton,
+	useCostLimitsAvailable,
+} from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
@@ -58,6 +67,7 @@ import { TEAM_RESOURCE_NOUNS } from "@/features/team-resource-access/team-resour
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 import { TeamTypeBadge } from "@/features/team-type/team-type-badge";
 import { useTeamTypeName } from "@/features/team-type/use-team-type-name";
+import { PUBLIC_TEAM_HINT } from "@/features/team-usage-limit/team-usage-limit";
 import { GROUP_ACCESS_LEVELS } from "./group-access-levels";
 
 /** Teams fetched per page */
@@ -74,6 +84,20 @@ const SECTION_TITLE_CLASS = "font-medium text-sm";
 const TEAM_ROW_CLASS =
 	"flex w-full items-start gap-3 rounded-md border bg-muted/40 px-3 py-2 text-start hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
+/** What the dialog needs to know to give a team a limit on a model */
+export interface GroupAccessModel {
+	/** Whether the model is public, so a team with no limit defined uses the public use limit */
+	isPublic: boolean;
+	/** Whether the model has known prices; read from the model when left out */
+	isCostAvailable?: boolean;
+	/**
+	 * Whether the user can give the team a limit: the model's owners, and admins
+	 * in admin mode. False when not given, so the team is added with no limit
+	 * defined.
+	 */
+	canChangeLimit?: boolean;
+}
+
 /** The names of a team's managers, in a sentence */
 const getManagerNames = (managers: GroupManager[]): string =>
 	managers
@@ -83,7 +107,7 @@ const getManagerNames = (managers: GroupManager[]): string =>
 export interface AddGroupAccessDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
-	/** The kind of resource the team gets access to */
+	/** The type of resource the team gets access to */
 	resource: GroupAccessResource;
 	/** The project or engine id */
 	resourceId: string;
@@ -92,9 +116,13 @@ export interface AddGroupAccessDialogProps {
 	/**
 	 * Adds the chosen team to a permission batch instead of giving it access
 	 * now, as Bulk Access Management does; the dialog then closes without saving
-	 * anything
+	 * anything. On a model, the team limit comes with it, or null for none.
 	 */
-	onStage?: (team: AvailableGroup, level: Role) => void;
+	onStage?: (
+		team: AvailableGroup,
+		level: Role,
+		usageLimit: ModelUsageLimit | null,
+	) => void;
 	/**
 	 * Whether in admin mode, from Bulk Access Management, where every team is listed
 	 * and its managers are read as an admin; it then only stages teams
@@ -102,6 +130,11 @@ export interface AddGroupAccessDialogProps {
 	admin?: boolean;
 	/** Teams that already have access, left out of the list, as `type:id` keys */
 	excludedTeams?: ReadonlySet<string>;
+	/**
+	 * On a model, what the team limit needs; the dialog then shows it below the
+	 * access level, starting at No Limit Defined
+	 */
+	model?: GroupAccessModel;
 }
 
 /**
@@ -109,8 +142,9 @@ export interface AddGroupAccessDialogProps {
  * confirm, it says who decides the team's members, so the owner knows whom they
  * are trusting with the access; a custom team cannot be authorized until its
  * managers are known. The owner can also open a custom team's managers and
- * members, to see exactly who gets the access. Give it a new key each time it
- * opens so it starts from an empty search.
+ * members, to see exactly who gets the access. On a model, the team can be
+ * given a team limit with it, with shared and each-member rules. Give it a new
+ * key each time it opens so it starts from an empty search.
  */
 export const AddGroupAccessDialog = ({
 	open,
@@ -120,6 +154,7 @@ export const AddGroupAccessDialog = ({
 	onStage,
 	admin = false,
 	excludedTeams,
+	model,
 }: AddGroupAccessDialogProps) => {
 	const levelId = useId();
 	const [searchTerm, setSearchTerm] = useState("");
@@ -131,7 +166,24 @@ export const AddGroupAccessDialog = ({
 	const [listError, setListError] = useState<string | null>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [usageLimit, setUsageLimit] = useState<ModelUsageLimit | null>(null);
+	// the team limit's problems show from the first submit they stop
+	const [shouldShowLimitProblems, setShouldShowLimitProblems] =
+		useState(false);
+	const limitEditorRef = useRef<ModelUsageLimitEditorHandle>(null);
 	const noun = TEAM_RESOURCE_NOUNS[resource].singular;
+	const readCostAvailable = useCostLimitsAvailable(
+		model && model.isCostAvailable === undefined ? resourceId : null,
+		admin,
+	);
+	const isCostAvailable = model?.isCostAvailable ?? readCostAvailable;
+	const canGiveLimit = model?.canChangeLimit === true;
+	const limitProblem = canGiveLimit
+		? findModelUsageLimitProblem(usageLimit, {
+				source: "TEAM",
+				isCostAvailable,
+			})
+		: null;
 
 	const groups = useIteratorApi<AvailableGroup>(
 		async (limit, offset) => {
@@ -231,6 +283,8 @@ export const AddGroupAccessDialog = ({
 		setSelected(null);
 		setIsShowingPeople(false);
 		setLevel("READ_ONLY");
+		setUsageLimit(null);
+		setShouldShowLimitProblems(false);
 		setSubmitError(null);
 		onClose(added);
 	};
@@ -243,15 +297,36 @@ export const AddGroupAccessDialog = ({
 		if (!selected) {
 			return;
 		}
+		if (limitProblem) {
+			setShouldShowLimitProblems(true);
+			limitEditorRef.current?.focusFirstProblem();
+			return;
+		}
+		const limit = canGiveLimit ? usageLimit : null;
 		if (onStage) {
-			onStage(selected, level);
+			onStage(selected, level, limit);
 			handleClose();
 			return;
 		}
 		setIsSubmitting(true);
 		setSubmitError(null);
 		try {
-			await addGroupResourceAccess(resource, resourceId, selected, level);
+			if (model) {
+				await addGroupResourceAccess(
+					resource,
+					resourceId,
+					selected,
+					level,
+					limit,
+				);
+			} else {
+				await addGroupResourceAccess(
+					resource,
+					resourceId,
+					selected,
+					level,
+				);
+			}
 		} catch (e) {
 			setSubmitError(
 				getErrorMessage(e, "Could not give the team access"),
@@ -494,6 +569,39 @@ export const AddGroupAccessDialog = ({
 							</Select>
 						</div>
 
+						{canGiveLimit ? (
+							<ModelUsageLimitEditor
+								ref={limitEditorRef}
+								defaultValue={null}
+								onChange={setUsageLimit}
+								source="TEAM"
+								label="Team Limit"
+								isCostAvailable={isCostAvailable}
+								notDefinedHint={
+									model?.isPublic
+										? PUBLIC_TEAM_HINT
+										: undefined
+								}
+								shouldShowProblems={shouldShowLimitProblems}
+								disabled={isSubmitting}
+							/>
+						) : model ? (
+							<p className="text-muted-foreground text-xs">
+								{OWNERS_ONLY_LIMIT_REASON}. The team starts with
+								No Limit Defined.
+							</p>
+						) : null}
+						{model ? (
+							<UsageLimitGuideButton
+								className="self-start"
+								section="teams"
+								viewer={{
+									canSetModelLimits: canGiveLimit,
+									isAdminMode: admin,
+								}}
+							/>
+						) : null}
+
 						<Alert className="wrap-break-word bg-muted/40">
 							<ShieldAlert aria-hidden />
 							<AlertTitle className="font-semibold">
@@ -511,6 +619,19 @@ export const AddGroupAccessDialog = ({
 									</span>{" "}
 									access to this {noun}.
 								</p>
+								{canGiveLimit && usageLimit && !limitProblem ? (
+									<p>
+										Calls this team's limit applies to are
+										capped at{" "}
+										<span className="font-semibold">
+											{describeModelUsageLimit(
+												usageLimit,
+												"TEAM",
+											)}
+										</span>
+										.
+									</p>
+								) : null}
 								{isCustomTeam ? (
 									isLoadingManagers ? (
 										<p className="flex items-center gap-2">
@@ -605,6 +726,9 @@ export const AddGroupAccessDialog = ({
 					<Alert variant="destructive">
 						<AlertDescription>{submitError}</AlertDescription>
 					</Alert>
+				) : null}
+				{selected && shouldShowLimitProblems && limitProblem ? (
+					<p className="text-destructive text-xs">{limitProblem}</p>
 				) : null}
 
 				<DialogFooter>

@@ -1,8 +1,15 @@
 import { Download, Shield, Upload } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import type { UserSearchResult } from "@semoss/sdk";
-import { PersonIdentity } from "@semoss/shared";
+import type { ModelUsageLimit, UserSearchResult } from "@semoss/sdk";
+import {
+	findModelUsageLimitProblem,
+	ModelUsageLimitEditor,
+	type ModelUsageLimitEditorHandle,
+	PersonIdentity,
+	toExplicitUsageLimit,
+	UsageLimitGuideButton,
+} from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -44,11 +51,8 @@ interface User {
 	phone?: string;
 	phoneextension?: string;
 	username?: string;
-	model_usage_restriction?: string;
-	model_usage_frequency?: string;
-	model_max_tokens?: number;
-	model_max_response_time?: number;
-	unit?: string;
+	/** The person's default for all models, or null for no limit defined */
+	model_usage_limit?: ModelUsageLimit | null;
 }
 
 interface EditUserForm {
@@ -67,11 +71,6 @@ interface EditUserForm {
 	exporter: boolean;
 	publisher: boolean;
 	type: string;
-	model_usage_restriction?: string;
-	model_usage_frequency?: string;
-	model_max_tokens?: number;
-	model_max_response_time?: number;
-	unit?: string;
 }
 
 const passwordValidate = (password: string) => {
@@ -130,9 +129,7 @@ const isEntryMode = (value: string): value is EntryMode =>
 	value === "directory" || value === "manual";
 
 /** Values the form starts from for a new member */
-const NEW_USER_VALUES: Partial<EditUserForm> = {
-	model_usage_restriction: "null",
-};
+const NEW_USER_VALUES: Partial<EditUserForm> = {};
 
 /** Lets a toggle label wrap instead of overflowing a narrow dialog */
 const ENTRY_MODE_ITEM_CLASS = "h-auto min-h-9 flex-1 whitespace-normal py-1.5";
@@ -177,13 +174,26 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 	const canFindInDirectory = isNewUser && isDirectoryAvailable;
 	const isFindingInDirectory =
 		canFindInDirectory && entryMode === "directory";
+	// the default for all models, kept beside the form; a new key starts its editor again
+	const [usageLimit, setUsageLimit] = useState<ModelUsageLimit | null>(
+		user?.model_usage_limit ?? null,
+	);
+	const [limitKey, setLimitKey] = useState(0);
+	const limitProblem = findModelUsageLimitProblem(usageLimit, {
+		source: "ALL_MODELS",
+		isCostAvailable: true,
+	});
+	// the limit's problems show from the first save they stop
+	const [shouldShowLimitProblems, setShouldShowLimitProblems] =
+		useState(false);
+	const limitEditorRef = useRef<ModelUsageLimitEditorHandle>(null);
 
 	const {
 		control,
 		reset,
 		handleSubmit,
 		watch,
-		formState: { errors },
+		formState: { errors, isSubmitting },
 	} = useForm<EditUserForm>({
 		defaultValues: {
 			id: user?.id,
@@ -196,32 +206,26 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 			exporter: user?.exporter,
 			publisher: user?.exporter,
 			type: user?.type,
-			model_usage_restriction: user?.model_usage_restriction
-				? user?.model_usage_restriction
-				: "null",
-			model_usage_frequency: user?.model_usage_frequency,
-			model_max_tokens: user?.model_max_tokens,
-			model_max_response_time: user?.model_max_response_time,
 		},
 	});
 
 	useEffect(() => {
 		// reset on open or close
-		reset({
-			...(user || {}),
-			model_usage_restriction: user?.model_usage_restriction ?? "null", // always set default for new user
-		});
+		reset({ ...(user || {}) });
+		setUsageLimit(user?.model_usage_limit ?? null);
+		setLimitKey((key) => key + 1);
+		setShouldShowLimitProblems(false);
 	}, [user, reset]);
 
 	const type = watch("type", "");
-	const limitType = watch("model_usage_restriction", "");
 	const email = watch("email");
 	const userId = watch("id", "");
 	const userName = watch("name", "");
 	const isSaveDisabled =
 		!userId?.trim() ||
 		!userName?.trim() ||
-		(isFindingInDirectory && !selectedPerson);
+		(isFindingInDirectory && !selectedPerson) ||
+		isSubmitting;
 
 	/**
 	 * Closes the overlay, clearing the directory choice and, for a new member,
@@ -230,8 +234,11 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 	const handleClose = (success: boolean) => {
 		setEntryMode("directory");
 		setSelectedPerson(null);
+		setShouldShowLimitProblems(false);
 		if (isNewUser) {
 			reset(NEW_USER_VALUES);
+			setUsageLimit(null);
+			setLimitKey((key) => key + 1);
 		}
 		onClose(success);
 	};
@@ -267,25 +274,17 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 		}
 	};
 
-	const usageRestritctionTypes: Record<string, string> = {
-		null: "None",
-		token: "Token",
-		compute: "Compute time",
-	};
-	const frequencyTypes: Record<string, string> = {
-		DAY: "Daily",
-		WEEK: "Weekly",
-		MONTH: "Monthly",
-		YEAR: "Yearly",
-		ALL_TIME: "All time",
-	};
-	const unitTypes: string[] = ["milliseconds"];
-
 	/**
 	 * Create / edit the user
 	 */
 	const editUser = handleSubmit(
 		async (data: EditUserForm) => {
+			// a limit that cannot be saved stops the save and shows why
+			if (limitProblem) {
+				setShouldShowLimitProblems(true);
+				limitEditorRef.current?.focusFirstProblem();
+				return;
+			}
 			if (email !== user?.email) {
 				data.newEmail = email;
 			}
@@ -300,24 +299,11 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 					  }
 					| null = null;
 
-				if (data.model_usage_restriction === "token") {
-					data.model_max_response_time = null;
-				}
-				if (data.model_usage_restriction === "compute") {
-					data.model_max_tokens = null;
-				}
-				if (data.model_usage_restriction === "null") {
-					data.model_usage_restriction = null;
-					data.model_max_response_time = null;
-					data.model_max_tokens = null;
-					data.model_usage_frequency = null;
-				}
-
 				if (isNewUser) {
-					response = await createUser(
-						adminMode,
-						data as unknown as Record<string, unknown>,
-					);
+					response = await createUser(adminMode, {
+						...data,
+						model_usage_limit: usageLimit,
+					});
 				} else {
 					if (
 						data.exporter === undefined ||
@@ -332,7 +318,13 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 							data.exporter = false;
 						}
 					}
-					response = await editMemberInfo(adminMode, data);
+					response = await editMemberInfo(adminMode, {
+						...data,
+						exporter: data.exporter,
+						publisher: data.publisher,
+						// an empty limit says no limit defined, which clears a limit the member has
+						model_usage_limit: toExplicitUsageLimit(usageLimit),
+					});
 				}
 
 				if (!response) {
@@ -362,6 +354,10 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 		},
 		(e) => {
 			console.warn(e);
+			// the limit's problems show beside the fields' errors
+			if (limitProblem) {
+				setShouldShowLimitProblems(true);
+			}
 
 			const errorMessages = [];
 			for (const error in e) {
@@ -797,207 +793,25 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 						hidden={isFindingInDirectory && !selectedPerson}
 					>
 						<p className="font-medium text-sm">
-							Model Limit Restrictions
+							User's Total Model Limit
 						</p>
-						<div className="grid gap-4">
-							<Controller
-								name="model_usage_restriction"
-								defaultValue={"null"}
-								control={control}
-								rules={{ required: true }}
-								render={({ field }) => {
-									return (
-										<div className="grid gap-1.5">
-											<Label>Limit Type</Label>
-											<Select
-												value={
-													field.value
-														? field.value
-														: ""
-												}
-												onValueChange={(value) => {
-													field.onChange(value);
-												}}
-												data-testid="model-usage-restriction"
-											>
-												<SelectTrigger>
-													<SelectValue placeholder="Select limit type" />
-												</SelectTrigger>
-												<SelectContent>
-													{Object.entries(
-														usageRestritctionTypes,
-													).map((option, _i) => {
-														return (
-															<SelectItem
-																value={
-																	option[0]
-																}
-																key={`LimitType-${option[0]}`}
-															>
-																{option[1]}
-															</SelectItem>
-														);
-													})}
-												</SelectContent>
-											</Select>
-										</div>
-									);
-								}}
-							/>
-							{limitType === "token" && (
-								<Controller
-									name="model_max_tokens"
-									control={control}
-									rules={{ required: true }}
-									render={({ field }) => {
-										return (
-											<div className="grid gap-1.5">
-												<Label>Max Tokens</Label>
-												<Input
-													type="number"
-													value={
-														field.value
-															? field.value
-															: ""
-													}
-													onChange={(e) => {
-														field.onChange(
-															Number(
-																e.target.value,
-															),
-														);
-													}}
-													data-testid="model-max-tokens"
-												/>
-											</div>
-										);
-									}}
-								/>
-							)}
-							{limitType === "compute" && (
-								<div className="grid gap-4 md:grid-cols-[2fr_1fr]">
-									<Controller
-										name="model_max_response_time"
-										control={control}
-										rules={{ required: true }}
-										render={({ field }) => {
-											return (
-												<div className="grid gap-1.5">
-													<Label>
-														Max Response Time
-													</Label>
-													<Input
-														type="number"
-														value={
-															field.value
-																? field.value
-																: ""
-														}
-														onChange={(e) => {
-															field.onChange(
-																Number(
-																	e.target
-																		.value,
-																),
-															);
-														}}
-														data-testid="model-max-response-time"
-													/>
-												</div>
-											);
-										}}
-									/>
-									<Controller
-										name="unit"
-										control={control}
-										rules={{}}
-										render={() => {
-											return (
-												<div className="grid gap-1.5">
-													<Label>Unit</Label>
-													<Select
-														value={unitTypes[0]}
-														data-testid="unit-select"
-													>
-														<SelectTrigger>
-															<SelectValue />
-														</SelectTrigger>
-														<SelectContent>
-															{unitTypes.map(
-																(
-																	option,
-																	_i,
-																) => {
-																	return (
-																		<SelectItem
-																			value={
-																				option
-																			}
-																			key={`UnitType-${option}`}
-																			data-testid={`unit-select-${option}`}
-																		>
-																			{
-																				option
-																			}
-																		</SelectItem>
-																	);
-																},
-															)}
-														</SelectContent>
-													</Select>
-												</div>
-											);
-										}}
-									/>
-								</div>
-							)}
-							{limitType !== "null" && (
-								<Controller
-									name="model_usage_frequency"
-									control={control}
-									rules={{}}
-									render={({ field }) => {
-										return (
-											<div className="grid gap-1.5">
-												<Label>Frequency</Label>
-												<Select
-													value={
-														field.value
-															? field.value
-															: ""
-													}
-													onValueChange={(value) => {
-														field.onChange(value);
-													}}
-													data-testid="model-usage-frequency"
-												>
-													<SelectTrigger>
-														<SelectValue placeholder="Select frequency" />
-													</SelectTrigger>
-													<SelectContent>
-														{Object.entries(
-															frequencyTypes,
-														).map((option, _i) => {
-															return (
-																<SelectItem
-																	value={
-																		option[0]
-																	}
-																	key={`FrequencyType-${option[0]}`}
-																	data-testid={`frequency-select-${option[0]}`}
-																>
-																	{option[1]}
-																</SelectItem>
-															);
-														})}
-													</SelectContent>
-												</Select>
-											</div>
-										);
-									}}
-								/>
-							)}
-						</div>
+						<p className="text-muted-foreground text-xs">
+							This member's limit on any model where nothing more
+							specific applies: a Direct Limit, a Team Limit or
+							the Public Use Limit. Cost rules do not count models
+							without known prices.
+						</p>
+						<ModelUsageLimitEditor
+							key={limitKey}
+							ref={limitEditorRef}
+							defaultValue={usageLimit}
+							onChange={setUsageLimit}
+							source="ALL_MODELS"
+							label="Usage Limit"
+							shouldShowProblems={shouldShowLimitProblems}
+							disabled={isSubmitting}
+						/>
+						<UsageLimitGuideButton viewer={{ isAdminMode: true }} />
 					</section>
 
 					<section

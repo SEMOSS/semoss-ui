@@ -38,9 +38,9 @@ export const canCopyFrom = (source: CopySource): boolean =>
 
 /**
  * @param role - members or managers
- * @returns the source kind that reads that list of a team
+ * @returns the source resource type that reads that list of a team
  */
-const toSourceKind = (role: TeamRole): "TEAM" | "TEAM_MANAGERS" =>
+const toSourceResourceType = (role: TeamRole): "TEAM" | "TEAM_MANAGERS" =>
 	role === "MANAGERS" ? "TEAM_MANAGERS" : "TEAM";
 
 /**
@@ -63,7 +63,7 @@ export const useTeamPeopleToCopy = (
 	admin: boolean,
 ): CopySource[] => {
 	const [sources, setSources] = useState<CopySource[]>([]);
-	const { kind: targetKind, id: targetId } = target;
+	const { resourceType: targetResourceType, id: targetId } = target;
 	const rolesKey = roles.join(",");
 
 	useEffect(() => {
@@ -79,9 +79,11 @@ export const useTeamPeopleToCopy = (
 					role === "MEMBERS" || role === "MANAGERS",
 			);
 		const isTeamTarget =
-			targetKind === "TEAM" || targetKind === "TEAM_MANAGERS";
+			targetResourceType === "TEAM" ||
+			targetResourceType === "TEAM_MANAGERS";
 		const isSameList = (role: TeamRole) =>
-			team === targetId && toSourceKind(role) === targetKind;
+			team === targetId &&
+			toSourceResourceType(role) === targetResourceType;
 		setSources(
 			asked.map((role) => ({
 				role,
@@ -96,8 +98,8 @@ export const useTeamPeopleToCopy = (
 				continue;
 			}
 			getPermissionsToCopy(
-				{ kind: toSourceKind(role), id: team },
-				{ kind: targetKind, id: targetId },
+				{ resourceType: toSourceResourceType(role), id: team },
+				{ resourceType: targetResourceType, id: targetId },
 				admin,
 			)
 				.then((rows) => {
@@ -143,7 +145,7 @@ export const useTeamPeopleToCopy = (
 		return () => {
 			isStale = true;
 		};
-	}, [team, targetKind, targetId, rolesKey, admin]);
+	}, [team, targetResourceType, targetId, rolesKey, admin]);
 
 	return sources;
 };

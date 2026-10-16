@@ -7,6 +7,7 @@ import type {
 	UserSearchResult,
 } from "../types";
 import { get, post } from "../utility";
+import { readModelUsageLimit } from "./access";
 
 /**
  * Get the current user's permission for a project
@@ -110,7 +111,8 @@ export const getProjectUsers = async (
 };
 
 /**
- * Get users with access to an engine
+ * Get users with access to an engine. A model's members carry their usage
+ * limit as `usage_limit`.
  * @param engineId - The engine ID
  * @param admin - Whether to use admin endpoint
  * @param userId - Optional user ID to filter by
@@ -153,7 +155,18 @@ export const getEngineUsers = async (
 		throw Error("No Response to get users associated with engine");
 	}
 
-	return response.data;
+	// a model's members carry their usage limit, read here into its one shape
+	return {
+		...response.data,
+		members: (response.data.members ?? []).map((member) =>
+			"usage_limit" in member
+				? {
+						...member,
+						usage_limit: readModelUsageLimit(member.usage_limit),
+					}
+				: member,
+		),
+	};
 };
 
 /**
@@ -189,7 +202,9 @@ export const editProjectUserPermissions = async (
 /**
  * Edit user permissions for an engine
  * @param engineId - The engine ID
- * @param users - Array of users with their updated permissions
+ * @param users - Array of users with their updated permissions; on a model,
+ * each with its `usageLimit`, since a change without one keeps the limit the
+ * person has
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
  */
@@ -337,25 +352,19 @@ export const denyProjectUserAccessRequest = async (
 };
 
 /**
- * Propagate user permissions to project dependencies
+ * Propagate user permissions to project dependencies. The backend gives each
+ * person the access the signed-in user can give on each dependency, and asks
+ * the dependency's owners for the rest. There is no admin version.
  * @param projectId - The project ID
  * @param users - Array of users with their permissions to propagate
- * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
  */
 export const propagateUserPermissions = async (
 	projectId: string,
 	users: PostUser[],
-	admin = false,
 ): Promise<boolean> => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/propagateProjectDependencyPermissions";
-
 	const response = await post<{ success: boolean }>(
-		url,
+		`${Env.MODULE}/api/auth/project/propagateProjectDependencyPermissions`,
 		{
 			projectId,
 			userpermissions: users,
@@ -485,7 +494,8 @@ export const addProjectUserPermissions = async (
 /**
  * Add user permissions to an engine
  * @param engineId - The engine ID
- * @param users - Array of users with their permissions to add
+ * @param users - Array of users with their permissions to add; on a model,
+ * each can carry its `usageLimit`
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
  */

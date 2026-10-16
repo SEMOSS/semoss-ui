@@ -23,6 +23,17 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
+
+vi.mock("../api/use-collaboration-search", () => ({
+	useCollaborationSearch: () => ({
+		entries: [],
+		total: 0,
+		status: "idle",
+		error: null,
+		hasMore: false,
+	}),
+}));
+
 import { BrainMemory } from "./brain-memory";
 import { BrainReview } from "./brain-review";
 import { BrainThread } from "./brain-thread";

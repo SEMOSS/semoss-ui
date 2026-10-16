@@ -5,7 +5,9 @@ import {
 	editProjectUserPermissions,
 	getEngineUsers,
 	getProjectUsers,
+	type ModelUsageLimit,
 	type PostUser,
+	type Role,
 	removeEngineUserPermissions,
 	removeProjectUserPermissions,
 } from "@semoss/sdk";
@@ -34,6 +36,11 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
 import { LoginTypeLabel } from "../login-type-label";
+import {
+	describeModelUsageLimit,
+	toExplicitUsageLimit,
+} from "../model-usage-limit/model-usage-limit-format";
+import { OWNERS_END_LIMITED_ACCESS_REASON } from "../model-usage-limit/usage-limit-labels";
 import { returnAccessType } from "./common";
 import { PersonIdentity } from "./person-identity";
 
@@ -55,14 +62,8 @@ export interface MemberUser {
 	permission_granted_by_type: string;
 	/** When the access was given or the member was added */
 	date_added: string;
-	/** A model engine's usage restriction, such as TOKEN or COMPUTE */
-	usage_restriction?: string;
-	/** How often a model engine's limits reset, such as DAY */
-	usage_frequency?: string;
-	/** A model engine's token limit */
-	max_tokens?: number;
-	/** A model engine's response time limit, in milliseconds */
-	max_response_time?: number;
+	/** On a model engine, the usage limit on their own grant, or null for no limit defined */
+	usage_limit?: ModelUsageLimit | null;
 }
 
 /** What the list calls each access level */
@@ -76,7 +77,7 @@ const ACCESS_LEVEL_LABELS: Readonly<Record<string, string>> = {
  * @param permission - an access level, such as READ_ONLY
  * @returns what the list calls it
  */
-const getAccessLevelLabel = (permission: string): string =>
+export const getAccessLevelLabel = (permission: string): string =>
 	ACCESS_LEVEL_LABELS[permission] ?? "Select Access";
 
 /**
@@ -141,20 +142,6 @@ export interface MembersListProps {
 	 */
 	source?: MembersListSource;
 }
-
-const formatValue = (input?: string) => {
-	if (!input) return "-";
-	const mappings: Record<string, string> = {
-		TOKEN: "Token",
-		COMPUTE: "Compute time",
-		DAY: "Daily",
-		WEEK: "Weekly",
-		MONTH: "Monthly",
-		YEAR: "Yearly",
-		ALL_TIME: "All time",
-	};
-	return mappings[input.toUpperCase()] ?? input;
-};
 
 /**
  * The members of a project or engine, or of a host's `source`, with each
@@ -316,40 +303,20 @@ export const MembersList = ({
 		}
 	}, [refreshList]);
 
-	const updateUserPermission = async (
-		user: MemberUser,
-		permission: string,
-	) => {
+	const updateUserPermission = async (user: MemberUser, permission: Role) => {
+		if (!id) return;
 		const isProject = type === "PROJECT" || type === "WORKSPACE";
-		const payload: Record<string, unknown> = {
+		// a level change keeps a model member's limit as it is
+		const payload: PostUser = {
 			userid: user.id,
 			permission,
+			...(type === "MODEL"
+				? { usageLimit: toExplicitUsageLimit(user.usage_limit ?? null) }
+				: {}),
 		};
-		if (type === "MODEL") {
-			const r = user.usage_restriction;
-			if (r && r !== "null") {
-				payload.usageRestriction = r;
-				if (r.toUpperCase() === "TOKEN" && user.max_tokens != null)
-					payload.maxTokens = user.max_tokens;
-				if (
-					r.toUpperCase() === "COMPUTE" &&
-					user.max_response_time != null
-				)
-					payload.maxResponseTime = user.max_response_time;
-				payload.usageFrequency = user.usage_frequency;
-			}
-		}
 		const success = await (isProject
-			? editProjectUserPermissions(
-					id,
-					[payload] as unknown as PostUser[],
-					adminMode,
-				)
-			: editEngineUserPermissions(
-					id,
-					[payload] as unknown as PostUser[],
-					adminMode,
-				)
+			? editProjectUserPermissions(id, [payload], adminMode)
+			: editEngineUserPermissions(id, [payload], adminMode)
 		).catch((error: Error) => {
 			toast.error(error?.message || "Error updating user permission.");
 			return false;
@@ -412,16 +379,27 @@ export const MembersList = ({
 	const canEditMembers = hasPermissions
 		? adminMode || myPermission === "OWNER" || myPermission === "EDIT"
 		: !readOnly;
-	const selectableUsers = userDataFiltered.filter(
-		(u) => (u.permission !== "OWNER" || canActOnOwners) && canEditMembers,
-	);
+	// on a model, only its owners take away the access of someone with a usage
+	// limit: the limit goes with it, and they would fall through to another one
+	const canEndLimitedAccess = adminMode || isOwner;
+	const canRemove = (user: MemberUser): boolean =>
+		canEditMembers &&
+		(user.permission !== "OWNER" || canActOnOwners) &&
+		(type !== "MODEL" || !user.usage_limit || canEndLimitedAccess);
+	const hasLimitedMembersToKeep =
+		type === "MODEL" &&
+		canEditMembers &&
+		!canEndLimitedAccess &&
+		userDataFiltered.some((user) => Boolean(user.usage_limit));
+	// the selection is for taking access away
+	const selectableUsers = userDataFiltered.filter(canRemove);
 	const allSelected =
 		selectableUsers.length > 0 &&
 		selectableUsers.every((u) => selectedIds.has(u.id));
 	const someSelected = selectableUsers.some((u) => selectedIds.has(u.id));
 	const showSelectionAndActions = !isAddMember && !readOnly;
 	const colCount =
-		(type === "MODEL" ? 6 : 3) -
+		(type === "MODEL" ? 4 : 3) -
 		(hasPermissions ? 0 : 1) +
 		(showSelectionAndActions ? 2 : 0) +
 		1;
@@ -493,11 +471,7 @@ export const MembersList = ({
 									<TableHead>Permission</TableHead>
 								)}
 								{type === "MODEL" && (
-									<>
-										<TableHead>Limit Type</TableHead>
-										<TableHead>Limit Value</TableHead>
-										<TableHead>Frequency</TableHead>
-									</>
+									<TableHead>Usage Limit</TableHead>
 								)}
 								<TableHead>
 									{hasPermissions
@@ -535,12 +509,7 @@ export const MembersList = ({
 													checked={selectedIds.has(
 														user.id,
 													)}
-													disabled={
-														!canEditMembers ||
-														(user.permission ===
-															"OWNER" &&
-															!canActOnOwners)
-													}
+													disabled={!canRemove(user)}
 													onCheckedChange={() =>
 														toggleSelectUser(user)
 													}
@@ -676,41 +645,21 @@ export const MembersList = ({
 												)}
 											</TableCell>
 										)}
-										{type === "MODEL" &&
-											(() => {
-												const limitValue =
-													user.usage_restriction?.toUpperCase() ===
-													"COMPUTE"
-														? `${user.max_response_time?.toLocaleString() ?? "-"} ms`
-														: user.usage_restriction?.toUpperCase() ===
-																"TOKEN"
-															? (user.max_tokens?.toLocaleString() ??
-																"-")
-															: "-";
-												return (
-													<>
-														<TableCell>
-															<span className="text-sm">
-																{formatValue(
-																	user.usage_restriction,
-																)}
-															</span>
-														</TableCell>
-														<TableCell>
-															<span className="text-sm">
-																{limitValue}
-															</span>
-														</TableCell>
-														<TableCell>
-															<span className="text-sm">
-																{formatValue(
-																	user.usage_frequency,
-																)}
-															</span>
-														</TableCell>
-													</>
-												);
-											})()}
+										{type === "MODEL" && (
+											<TableCell className="max-w-64">
+												<span
+													className={
+														user.usage_limit
+															? "text-sm"
+															: "text-muted-foreground text-sm"
+													}
+												>
+													{describeModelUsageLimit(
+														user.usage_limit,
+													)}
+												</span>
+											</TableCell>
+										)}
 										<TableCell>
 											<span className="text-muted-foreground text-sm">
 												{user.date_added ?? "-"}
@@ -746,10 +695,7 @@ export const MembersList = ({
 														className="border-none"
 														aria-label={`Delete ${user.name}`}
 														disabled={
-															!canEditMembers ||
-															(user.permission ===
-																"OWNER" &&
-																!canActOnOwners)
+															!canRemove(user)
 														}
 														onClick={() =>
 															setUsersToDelete(
@@ -815,6 +761,11 @@ export const MembersList = ({
 						</TableBody>
 					</Table>
 				</div>
+				{hasLimitedMembersToKeep ? (
+					<p className="mt-2 text-muted-foreground text-xs">
+						{OWNERS_END_LIMITED_ACCESS_REASON}.
+					</p>
+				) : null}
 				<p className="mt-2 text-end text-muted-foreground text-sm">
 					{userData.length} of {totalMembers}{" "}
 					{memberLabel.toLowerCase()}

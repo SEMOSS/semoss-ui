@@ -1,21 +1,35 @@
 import { Info, UsersRound } from "lucide-react";
-import type { AccessLevel } from "@semoss/sdk";
-import { LoginTypeLabel } from "@semoss/shared";
+import type { UnlistedTeam } from "@semoss/sdk";
+import {
+	getUsageSourceLabel,
+	LoginTypeLabel,
+	ModelUsageLimitRules,
+} from "@semoss/shared";
 import { Avatar, TableCell, TableRow } from "@semoss/ui/next";
 import { getLevelLabel } from "@/features/bulk-access-management/permission-batch";
 import { useTeamTypeName } from "@/features/team-type/use-team-type-name";
 
 export interface ProviderTeamRowProps {
 	/** The team, which mirrors a group in a login provider */
-	team: { id: string; type: string; level: AccessLevel };
+	team: UnlistedTeam;
+	/** Whether the target is a model, so the row shows the team limit */
+	isModel?: boolean;
+	/** Whether the table has a last column for each person's limits */
+	hasActionsColumn?: boolean;
 }
 
 /**
  * A team whose members come from a login provider, as one row of the
  * Effective Permissions table: this app does not keep who is in it, so its
- * members cannot be listed one by one, and the row says so.
+ * members cannot be listed one by one, and the row says so. On a model it
+ * shows the team limit that applies to its members' calls when nothing more
+ * specific applies to them.
  */
-export const ProviderTeamRow = ({ team }: ProviderTeamRowProps) => {
+export const ProviderTeamRow = ({
+	team,
+	isModel = false,
+	hasActionsColumn = false,
+}: ProviderTeamRowProps) => {
 	const providerName = useTeamTypeName(team.type);
 
 	return (
@@ -45,7 +59,7 @@ export const ProviderTeamRow = ({ team }: ProviderTeamRowProps) => {
 			<TableCell className="font-medium">
 				{getLevelLabel(team.level)}
 			</TableCell>
-			<TableCell>
+			<TableCell className="min-w-56 whitespace-normal">
 				<span className="flex items-start gap-1.5 text-muted-foreground text-sm">
 					<Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
 					Everyone in this {providerName} group gets this access. Its
@@ -53,6 +67,26 @@ export const ProviderTeamRow = ({ team }: ProviderTeamRowProps) => {
 					listed one by one.
 				</span>
 			</TableCell>
+			{isModel ? (
+				<>
+					<TableCell className="min-w-40 whitespace-normal text-sm">
+						{team.usageLimit ? (
+							getUsageSourceLabel("TEAM", team.id)
+						) : (
+							<span className="text-muted-foreground">
+								No Limit Defined
+							</span>
+						)}
+					</TableCell>
+					<TableCell className="min-w-52 whitespace-normal text-sm">
+						<ModelUsageLimitRules
+							limit={team.usageLimit}
+							source="TEAM"
+						/>
+					</TableCell>
+				</>
+			) : null}
+			{hasActionsColumn ? <TableCell /> : null}
 		</TableRow>
 	);
 };
