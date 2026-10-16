@@ -4,6 +4,7 @@ import { AboutYou } from "@/features/collaboration/components/about-you";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import { AppearanceSettings } from "./appearance-settings";
 import { DataSettings } from "./data-settings";
+import { EmailSettings } from "./email-settings";
 import { RulesSettings } from "./rules-settings";
 import { SettingsTabBar } from "./settings-navigation";
 import { settingsSections } from "./settings-sections";
@@ -31,6 +32,7 @@ export function SettingsPanel() {
 					<div hidden={selected !== "rules"}>
 						<RulesSettings />
 					</div>
+					{selected === "email" && <EmailSettings />}
 					{selected === "data" && <DataSettings />}
 				</div>
 			</CollaborationPage>

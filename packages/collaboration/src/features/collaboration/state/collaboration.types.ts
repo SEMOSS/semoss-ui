@@ -232,6 +232,9 @@ export interface Settings {
 	sourcesJson: Record<string, boolean>;
 	/** Memory in the thread assistant, and suggestions from finished chats. */
 	memory: { use: boolean; learn: boolean };
+	/** The Outlook folder drafts are left in; blank means the mailbox's own Drafts. */
+	draftFolderId: string;
+	draftFolderName: string;
 	version: number;
 }
 

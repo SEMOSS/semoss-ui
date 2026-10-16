@@ -653,6 +653,8 @@ const SETTINGS_FIELDS = [
 	"askAt",
 	"sourcesJson",
 	"memory",
+	"draftFolderId",
+	"draftFolderName",
 ] as const;
 
 function planProfile(

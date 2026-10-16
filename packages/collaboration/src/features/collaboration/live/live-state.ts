@@ -119,6 +119,8 @@ function mapSettings(row: Row): Settings {
 			use: (row.memory as Row | undefined)?.use !== false,
 			learn: (row.memory as Row | undefined)?.learn !== false,
 		},
+		draftFolderId: str(row.draftFolderId),
+		draftFolderName: str(row.draftFolderName),
 		version: Number(row.version ?? 0),
 	};
 }
