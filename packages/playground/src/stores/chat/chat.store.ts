@@ -418,6 +418,10 @@ export class ChatStore {
 		(async () => {
 			try {
 				await room.askMessage(prompt, files, askOptions);
+				// agent rooms are named by the backend
+				if (room.mode === "chat") {
+					await room.generateRoomName(prompt);
+				}
 				runInAction(() => {
 					// increment the roomCounter to force re-render of the nav
 					this._store.keys.roomCounter++;

@@ -314,6 +314,10 @@ export const NewRoomPage = observer(() => {
 							files,
 							askOptions,
 						);
+						// agent rooms are named by the backend
+						if (preCreatedRoom.mode === "chat") {
+							await preCreatedRoom.generateRoomName(prompt);
+						}
 						runInAction(() => {
 							chat.keys.roomCounter++;
 						});
