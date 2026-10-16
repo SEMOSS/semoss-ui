@@ -10,6 +10,8 @@ export interface RunDataItem {
 	status?: AutomationNodeResult["STATUS"];
 	input: string;
 	results: AutomationNodeResult[];
+	loopNodeId?: string;
+	iterationIndex?: number;
 	searchText: string;
 }
 
@@ -31,7 +33,10 @@ export function buildRunDataItems(run: AutomationRunDetail): RunDataItem[] {
 	for (const loopResult of run.nodeResults) {
 		for (const iteration of loopResult.iterations ?? []) {
 			const label = `${loopResult.NODE_LABEL || loopResult.NODE_ID} · Item ${iteration.index + 1}`;
-			const input = `Loop item ${iteration.index + 1}. The exact loop input is not retained separately from its step outputs.`;
+			const input = formatIterationInput(
+				iteration.input,
+				iteration.index,
+			);
 			items.push({
 				key: `${runtimeNodeId(loopResult)}:${iteration.index}`,
 				label,
@@ -39,11 +44,25 @@ export function buildRunDataItems(run: AutomationRunDetail): RunDataItem[] {
 				status: statusForResults(iteration.nodeResults),
 				input,
 				results: iteration.nodeResults,
+				loopNodeId: runtimeNodeId(loopResult),
+				iterationIndex: iteration.index,
 				searchText: searchText(label, input, iteration.nodeResults),
 			});
 		}
 	}
 	return items;
+}
+
+function formatIterationInput(input: unknown, index: number): string {
+	if (input === undefined) {
+		return `Loop item ${index + 1}. This run predates exact loop-input retention.`;
+	}
+	if (typeof input === "string") return input;
+	try {
+		return JSON.stringify(input, null, 2);
+	} catch {
+		return String(input);
+	}
 }
 
 export function runtimeNodeId(result: AutomationNodeResult | null): string {
@@ -74,7 +93,7 @@ function searchText(
 		...results.flatMap((result) => [
 			result.NODE_LABEL,
 			result.NODE_ID,
-			result.outputVariable ?? "",
+			result.OUTPUT_VAR_NAME ?? "",
 			result.STATUS,
 			result.OUTPUT_PREVIEW ?? "",
 			result.ERROR_MESSAGE ?? "",

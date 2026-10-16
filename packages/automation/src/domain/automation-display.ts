@@ -85,6 +85,7 @@ export const STEP_TYPES: {
 // lowercase keys match the FE-only StepRunStatus used during live poll (idle,
 // running, waiting, success, error). getStatusClasses() handles both.
 export const STATUS_STYLES: Record<string, string> = {
+	SUBMITTED: "bg-muted text-muted-foreground",
 	PENDING: "bg-muted text-muted-foreground",
 	RUNNING: "bg-primary/10 text-primary",
 	WAITING_FOR_INPUT: "bg-warning/10 text-warning",

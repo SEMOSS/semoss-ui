@@ -8,6 +8,7 @@ export type { AutomationWorkbenchContextValue } from "./components/automation-wo
 export {
 	AutomationEditorPanel,
 	AutomationInspectorPanel,
+	AutomationSourceExplorerPanel,
 	AutomationTracePanel,
 	AutomationWorkbenchContext,
 	useAutomationWorkbenchContext,
