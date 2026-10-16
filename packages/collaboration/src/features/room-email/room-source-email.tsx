@@ -14,6 +14,7 @@ import { hasDisplayContent } from "@/features/email/email-html";
 import { EmailMessageHeader } from "@/features/email/email-message-header";
 import { SourceMessageBody } from "@/features/email/source-message-body";
 import type { RoomSource } from "@/features/rooms/source-import/room-source";
+import { RoomSourceAttachments } from "./room-source-attachments";
 
 interface RoomSourceEmailProps {
 	/** The room's imported envelope metadata and permitted source identities. */
@@ -45,8 +46,10 @@ export function RoomSourceEmail({
 		(message.displayBody.contentType === "html"
 			? hasDisplayContent(message.displayBody.content, "email")
 			: Boolean(message.displayBody.content.trim()));
-	const attachments = message.attachments?.length
-		? message.attachments
+	const fileAttachments = message.attachments ?? [];
+	// display-only names when the provider listed no native attachments
+	const attachmentNames = fileAttachments.length
+		? []
 		: (message.displayBody?.attachments ?? []);
 	const canReply =
 		source.channel === "email" &&
@@ -138,7 +141,12 @@ export function RoomSourceEmail({
 						{message.text || "No message text is available."}
 					</P>
 				)}
-				<EmailAttachmentReferences attachments={attachments} />
+				<RoomSourceAttachments
+					source={source}
+					message={message}
+					attachments={fileAttachments}
+				/>
+				<EmailAttachmentReferences attachments={attachmentNames} />
 				{message.isTruncated && !message.displayBody?.isTruncated && (
 					<P className="text-warning">
 						Source text was truncated. Open the original email in
