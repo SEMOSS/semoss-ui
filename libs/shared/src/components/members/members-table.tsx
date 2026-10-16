@@ -315,7 +315,7 @@ export const MembersTable = ({
 			{/* Edit member dialog: rendered here, outside the table */}
 			{editUser && (
 				<Dialog open onOpenChange={() => setEditUser(null)}>
-					<DialogContent>
+					<DialogContent className="sm:max-w-2xl">
 						<DialogTitle className="font-medium text-base leading-6">
 							Edit Member
 						</DialogTitle>

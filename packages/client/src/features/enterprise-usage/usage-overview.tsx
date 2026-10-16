@@ -34,10 +34,24 @@ import {
 	percentage,
 	periodChange,
 } from "./usage-metrics";
+import { UsageNotes } from "./usage-notes";
 import { UsageState } from "./usage-state";
 import { UsageTrend } from "./usage-trend";
 import { useUsageExport } from "./use-usage-export";
 import { useUsageQuery } from "./use-usage-query";
+
+/** How to read the token consumption overview. */
+const TOKEN_OVERVIEW_NOTES = [
+	"Token Reporting Coverage Is The Share Of Messages That Reported Token Counts.",
+	"Cache And Thinking Counts Are Provider Detail And Must Not Be Added To The Total.",
+	"Missing Counts Are Not An Estimate Of Zero Usage.",
+] as const;
+
+/** How to read the platform activity overview. */
+const ACTIVITY_OVERVIEW_NOTES = [
+	"Recorded Events Across Model, App, And Other Engine Operations.",
+	"A Model Call Can Also Create An Activity Event; These Counts Must Not Be Combined.",
+] as const;
 
 interface UsageOverviewProps {
 	/** Applied scope for aggregates, charts and exports. */
@@ -195,6 +209,8 @@ export function UsageOverview({
 				},
 			]
 		: [];
+	const title =
+		source === "model" ? "Token Consumption" : "Platform Activity";
 	const handleExport = (format: "csv" | "pdf"): Promise<void> =>
 		exportReport({
 			view: "overview",
@@ -206,11 +222,17 @@ export function UsageOverview({
 	return (
 		<div className="space-y-3">
 			<div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-				<H3>
-					{source === "model"
-						? "Token Consumption"
-						: "Platform Activity"}
-				</H3>
+				<div className="flex items-center gap-1">
+					<H3>{title}</H3>
+					<UsageNotes
+						title={title}
+						notes={
+							source === "model"
+								? TOKEN_OVERVIEW_NOTES
+								: ACTIVITY_OVERVIEW_NOTES
+						}
+					/>
+				</div>
 				<div className="flex flex-wrap gap-2">
 					<Button
 						variant="outline"
@@ -305,9 +327,7 @@ export function UsageOverview({
 									),
 									1,
 								)}
-								%. Cache And Thinking Counts Are Provider Detail
-								And Must Not Be Added To The Total. Missing
-								Counts Are Not An Estimate Of Zero Usage.
+								%
 							</Muted>
 						</div>
 					</UsageState>
@@ -411,11 +431,6 @@ export function UsageOverview({
 			)}
 			{source === "activity" && (
 				<div className="space-y-3">
-					<Muted>
-						Recorded Events Across Model, App, And Other Engine
-						Operations. A Model Call Can Also Create An Activity
-						Event; These Counts Must Not Be Combined.
-					</Muted>
 					<UsageState result={activity} label="Platform Activity">
 						<div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
 							{activityKpis.map((kpi) => (

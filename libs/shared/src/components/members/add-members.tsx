@@ -448,7 +448,7 @@ export const AddMembersOverlay = ({
 		>
 			<DialogContent
 				className={cn(
-					"flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden",
+					"flex max-h-[90vh] w-full flex-col gap-4 overflow-hidden sm:max-w-2xl",
 					className,
 				)}
 			>

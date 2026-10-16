@@ -2,8 +2,6 @@ import { RefreshCw, X } from "lucide-react";
 import { useState } from "react";
 import {
 	Button,
-	H4,
-	Muted,
 	Tabs,
 	TabsContent,
 	TabsList,
@@ -16,8 +14,10 @@ import type {
 	UsageDateRange,
 	UsageDimension,
 } from "./usage.types";
+import { UsageChanges } from "./usage-changes";
 import { UsageFilters } from "./usage-filters";
 import { UsageLog } from "./usage-log";
+import { UsageMetricNotes } from "./usage-metric-notes";
 import { UsageOverview } from "./usage-overview";
 import { UsageRankings } from "./usage-rankings";
 
@@ -126,6 +126,7 @@ export function EnterpriseUsage() {
 					</TabsTrigger>
 					<TabsTrigger value="messages">Messages</TabsTrigger>
 					<TabsTrigger value="activity">Activity Log</TabsTrigger>
+					<TabsTrigger value="changes">Access & Limits</TabsTrigger>
 				</TabsList>
 				<TabsContent value="overview" className="min-w-0 pt-2">
 					<UsageOverview
@@ -172,28 +173,11 @@ export function EnterpriseUsage() {
 						filters={applied}
 					/>
 				</TabsContent>
+				<TabsContent value="changes" className="min-w-0 pt-2">
+					<UsageChanges key={`audit-${queryKey}`} filters={applied} />
+				</TabsContent>
 			</Tabs>
-			<section className="space-y-2 border-t pt-2">
-				<H4>About These Metrics</H4>
-				<Muted>
-					Usage Reflects Retained Logs And Enabled Logging. Model
-					Requests Count INPUT Rows; Tokens Count INPUT And RESPONSE
-					Rows At Their Respective Logged Times. Model Inference
-					Records Include Chat, Embeddings, And Other Model Methods;
-					Vector Nearest-Neighbor Logs Are Excluded. App Attribution
-					Comes From The Room's Recorded App. Activity Events Come
-					From The Separate Activity Database.
-				</Muted>
-				<Muted>
-					Cache And Thinking Token Detail Depends On The Provider.
-					Latency Measures The Whole Model Response, Not Time To First
-					Token. Feedback Describes Rated Responses Only. These Logs
-					Do Not Provide Billed Spend, Reliable Per-Request Pricing,
-					Or A Complete LLM Failure Rate. A Dash Means Unavailable.
-					Engine Filters Apply To All Engine Types In Activity Logs
-					And To The Corresponding Model In Inference Logs.
-				</Muted>
-			</section>
+			<UsageMetricNotes />
 		</div>
 	);
 }

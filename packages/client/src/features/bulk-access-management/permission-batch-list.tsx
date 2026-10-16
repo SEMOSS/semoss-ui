@@ -640,7 +640,7 @@ export const PermissionBatchList = ({
 														{limitSummary}
 													</UsageLimitEditButton>
 												) : (
-													<span className="flex max-w-64 flex-col gap-0.5">
+													<span className="flex max-w-64 flex-col gap-0.5 whitespace-normal">
 														{limitSummary}
 														{entry.staged ? (
 															<span className="text-muted-foreground text-xs">

@@ -460,8 +460,8 @@ export const TeamsTable = ({
 									Permission Date
 								</TableHead>
 								{hasActions ? (
-									<TableHead className="px-4">
-										<span className="sr-only">Actions</span>
+									<TableHead className="w-px whitespace-nowrap px-4 text-center">
+										Actions
 									</TableHead>
 								) : null}
 							</TableRow>
@@ -546,7 +546,7 @@ export const TeamsTable = ({
 										</TableCell>
 										{hasActions ? (
 											<TableCell className="px-4">
-												<div className="flex items-center justify-end gap-1">
+												<div className="flex items-center justify-center gap-1">
 													{canViewPeople &&
 													team.type ===
 														CUSTOM_TEAM_TYPE ? (
