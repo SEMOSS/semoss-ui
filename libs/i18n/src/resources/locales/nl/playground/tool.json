@@ -10,6 +10,8 @@
 		"waitingForInput": "Wachten op invoer"
 	},
 	"actions": {
+		"approve": "Goedkeuren",
+		"reject": "Afwijzen",
 		"cancel": "Annuleren",
 		"expand": "Uitvouwen",
 		"collapse": "Samenvouwen",

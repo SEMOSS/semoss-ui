@@ -10,6 +10,8 @@
 		"waitingForInput": "Esperando entrada"
 	},
 	"actions": {
+		"approve": "Aprobar",
+		"reject": "Rechazar",
 		"cancel": "Cancelar",
 		"expand": "Expandir",
 		"collapse": "Colapsar",
