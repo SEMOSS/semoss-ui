@@ -8,11 +8,11 @@ import {
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AUDIT_EVENT_COLUMNS } from "@/api/audit-trails";
+import { AUDIT_EVENT_COLUMNS } from "@/api/audit-trail";
 import { EngineAuditPage } from "@/pages/engine/engine-audit.page";
 import { ProjectAuditPage } from "@/pages/project/project-audit.page";
-import { AuditTrailsFilters } from "./audit-trails-filters";
-import { ResourceAuditTrails } from "./resource-audit-trails";
+import { AuditTrailFilterForm } from "./audit-trail-filter-form";
+import { ResourceAuditTrail } from "./resource-audit-trail";
 
 const mocks = vi.hoisted(() => ({
 	usePixel: vi.fn(),
@@ -68,7 +68,7 @@ afterEach(cleanup);
 
 describe("resource audit trail", () => {
 	it("groups table actions above the table and the event range with pagination below it", () => {
-		render(<ResourceAuditTrails scope="ENGINE" resourceId="a" />);
+		render(<ResourceAuditTrail scope="ENGINE" resourceId="a" />);
 		const toolbar = screen.getByRole("toolbar", {
 			name: "Audit table controls",
 		});
@@ -96,7 +96,7 @@ describe("resource audit trail", () => {
 		);
 	});
 	it("starts collapsed and preserves filter drafts and applied filters when toggled", async () => {
-		render(<ResourceAuditTrails scope="ENGINE" resourceId="a" />);
+		render(<ResourceAuditTrail scope="ENGINE" resourceId="a" />);
 		const toggle = screen.getByRole("button", { name: "Audit filters" });
 		expect(toggle).toHaveAttribute("aria-expanded", "false");
 		expect(
@@ -123,7 +123,7 @@ describe("resource audit trail", () => {
 	it.each(["ENGINE", "PROJECT"] as const)(
 		"hides the category filter in the %s audit tab",
 		(scope) => {
-			render(<ResourceAuditTrails scope={scope} resourceId="a" />);
+			render(<ResourceAuditTrail scope={scope} resourceId="a" />);
 			expect(screen.queryByLabelText("Category")).not.toBeInTheDocument();
 			expect(screen.getByLabelText("Event type")).toBeInTheDocument();
 			expect(mocks.usePixel.mock.lastCall?.[0]).not.toContain(
@@ -132,7 +132,7 @@ describe("resource audit trail", () => {
 		},
 	);
 	it("keeps the category filter in the central admin viewer", () => {
-		render(<AuditTrailsFilters onApply={vi.fn()} />);
+		render(<AuditTrailFilterForm onApply={vi.fn()} />);
 		expect(screen.getByLabelText("Category")).toBeInTheDocument();
 	});
 	it("renders an event when the backend omits its null fields", () => {
@@ -160,7 +160,7 @@ describe("resource audit trail", () => {
 				],
 			},
 		});
-		render(<ResourceAuditTrails scope="PROJECT" resourceId="p" />);
+		render(<ResourceAuditTrail scope="PROJECT" resourceId="p" />);
 		expect(screen.getByText("PROJECT_CREATE")).toBeInTheDocument();
 		expect(screen.getByText("Ibrahim Mahaba")).toBeInTheDocument();
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -199,7 +199,7 @@ describe("resource audit trail", () => {
 		);
 	});
 	it("paginates, sorts on the server, and resets pagination when filters change", async () => {
-		render(<ResourceAuditTrails scope="ENGINE" resourceId="a" />);
+		render(<ResourceAuditTrail scope="ENGINE" resourceId="a" />);
 		fireEvent.click(screen.getByRole("button", { name: "Audit filters" }));
 		expect(screen.queryByLabelText("Engine ID")).not.toBeInTheDocument();
 		fireEvent.click(screen.getByRole("button", { name: "Next page" }));
@@ -227,7 +227,7 @@ describe("resource audit trail", () => {
 		expect(mocks.refresh).toHaveBeenCalledOnce();
 	});
 	it("does not render administrative fields or export controls", () => {
-		render(<ResourceAuditTrails scope="PROJECT" resourceId="p" />);
+		render(<ResourceAuditTrail scope="PROJECT" resourceId="p" />);
 		fireEvent.click(
 			screen.getByRole("button", {
 				name: "View details for event event-1",
@@ -249,7 +249,7 @@ describe("resource audit trail", () => {
 			error: { message: "Only current owners" },
 			refresh: mocks.refresh,
 		});
-		render(<ResourceAuditTrails scope="ENGINE" resourceId="a" />);
+		render(<ResourceAuditTrail scope="ENGINE" resourceId="a" />);
 		expect(screen.getByRole("alert")).toHaveTextContent(
 			"Only current owners",
 		);

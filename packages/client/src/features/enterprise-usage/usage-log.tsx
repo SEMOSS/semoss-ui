@@ -25,9 +25,30 @@ import {
 import type { UsageFilters, UsageSelection, UsageSource } from "./usage.types";
 import { UsageDetail } from "./usage-detail";
 import { formatMetric, numeric } from "./usage-metrics";
+import { UsageNotes } from "./usage-notes";
 import { UsageState } from "./usage-state";
 import { useUsageExport } from "./use-usage-export";
 import { useUsageQuery } from "./use-usage-query";
+
+/** What every export of a log does, whichever log it is. */
+const EXPORT_NOTES = [
+	"Exports Start At The Newest Matching Record, Whatever Page Is Shown.",
+	"Exports Include Metadata Only; Open A Record To See Its Content.",
+] as const;
+
+/** How to read the model message log. */
+const MODEL_LOG_NOTES = [
+	"Input And Response Are Separate Message Rows.",
+	"Model Request KPIs Count Inputs Once; Latency KPIs Use Response Rows Only.",
+	...EXPORT_NOTES,
+];
+
+/** How to read the activity log. */
+const ACTIVITY_LOG_NOTES = [
+	"Recorded Platform Operations, With User, App, Engine, And Outcome.",
+	"Unknown Outcomes Are Excluded From Success-Rate Calculations.",
+	...EXPORT_NOTES,
+];
 
 interface UsageLogProps {
 	/** Selects inference messages or platform events. */
@@ -50,14 +71,19 @@ export function UsageLog({ source, filters }: UsageLogProps) {
 		source === "model" ? "MESSAGE_ROWS" : "EVENTS",
 	);
 	const isModel = source === "model";
+	const title = isModel ? "Model Message Log" : "Enterprise Activity Log";
 	const handleExport = (): Promise<void> =>
 		exportReport({ view: "logs", format: "csv", source, filters });
 	return (
 		<div className="min-w-0 space-y-2">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<H3>
-					{isModel ? "Model Message Log" : "Enterprise Activity Log"}
-				</H3>
+				<div className="flex items-center gap-1">
+					<H3>{title}</H3>
+					<UsageNotes
+						title={title}
+						notes={isModel ? MODEL_LOG_NOTES : ACTIVITY_LOG_NOTES}
+					/>
+				</div>
 				<Button
 					variant="outline"
 					disabled={
@@ -73,13 +99,6 @@ export function UsageLog({ source, filters }: UsageLogProps) {
 						: "Export CSV (Up To 5,000 Rows)"}
 				</Button>
 			</div>
-			<Muted>
-				{isModel
-					? "Input And Response Are Separate Message Rows. Model Request KPIs Count Inputs Once; Latency KPIs Use Response Rows Only."
-					: "Recorded Platform Operations, With User, App, Engine, And Outcome. Unknown Outcomes Are Excluded From Success-Rate Calculations."}{" "}
-				Exports Start At The Newest Matching Record, Regardless Of The
-				Current Page, And Include Metadata Only.
-			</Muted>
 			<output className="text-muted-foreground text-sm">
 				{exportStatus}
 			</output>

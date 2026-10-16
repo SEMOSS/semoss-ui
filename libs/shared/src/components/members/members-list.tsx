@@ -36,10 +36,8 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
 import { LoginTypeLabel } from "../login-type-label";
-import {
-	describeModelUsageLimit,
-	toExplicitUsageLimit,
-} from "../model-usage-limit/model-usage-limit-format";
+import { toExplicitUsageLimit } from "../model-usage-limit/model-usage-limit-format";
+import { ModelUsageLimitRules } from "../model-usage-limit/model-usage-limit-rules";
 import { OWNERS_END_LIMITED_ACCESS_REASON } from "../model-usage-limit/usage-limit-labels";
 import { returnAccessType } from "./common";
 import { PersonIdentity } from "./person-identity";
@@ -646,18 +644,11 @@ export const MembersList = ({
 											</TableCell>
 										)}
 										{type === "MODEL" && (
-											<TableCell className="max-w-64">
-												<span
-													className={
-														user.usage_limit
-															? "text-sm"
-															: "text-muted-foreground text-sm"
-													}
-												>
-													{describeModelUsageLimit(
-														user.usage_limit,
-													)}
-												</span>
+											<TableCell className="min-w-52 whitespace-normal text-sm">
+												<ModelUsageLimitRules
+													limit={user.usage_limit}
+													source="DIRECT"
+												/>
 											</TableCell>
 										)}
 										<TableCell>

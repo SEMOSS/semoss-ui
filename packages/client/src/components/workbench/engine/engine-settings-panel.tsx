@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
-import { ResourceAuditTrails } from "@/features/audit-trails/resource-audit-trails";
+import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail";
 import { useSession } from "@/hooks/use-session";
 import { useEngine } from "@/hooks/useEngine";
 import { EngineActivityPage } from "@/pages/engine/engine-activity-page";
@@ -109,7 +109,7 @@ const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 				{activeTab?.component === "smss" && <EngineSmssPage />}
 				{activeTab?.component === "audit" &&
 					(permission === "OWNER" || isAdmin) && (
-						<ResourceAuditTrails
+						<ResourceAuditTrail
 							key={engine.engine_id}
 							scope="ENGINE"
 							resourceId={engine.engine_id}

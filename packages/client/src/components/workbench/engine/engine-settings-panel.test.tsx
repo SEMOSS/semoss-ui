@@ -39,8 +39,8 @@ vi.mock("@/pages/engine/engine-smss-page", () => ({
 vi.mock("@/pages/engine/engine-usage-page", () => ({
 	EngineUsagePage: () => null,
 }));
-vi.mock("@/features/audit-trails/resource-audit-trails", () => ({
-	ResourceAuditTrails: (props: unknown) => {
+vi.mock("@/features/audit-trail/resource-audit-trail", () => ({
+	ResourceAuditTrail: (props: unknown) => {
 		mocks.audit(props);
 		return <div>Engine audit history</div>;
 	},

@@ -16,6 +16,62 @@ import { UsagePayload } from "./usage-payload";
 import { UsageState } from "./usage-state";
 import { useUsageQuery } from "./use-usage-query";
 
+/** The kinds of record the panel shows; an audit event is a change or a denied request. */
+type DetailKind = "model" | "activity" | "change" | "denial";
+
+/** The panel's title and description for each kind of record. */
+const DETAIL_TEXT: Record<DetailKind, { title: string; description: string }> =
+	{
+		model: {
+			title: "Model Message Detail",
+			description:
+				"Stored Content For The Selected Record. Missing Content May Reflect Retention Settings Or Disabled Prompt/Response Logging.",
+		},
+		activity: {
+			title: "Activity Event Detail",
+			description:
+				"Stored Content For The Selected Record. Missing Content May Reflect Retention Settings Or Disabled Prompt/Response Logging.",
+		},
+		change: {
+			title: "Change Detail",
+			description:
+				"The Change Recorded For The Selected Event: What Was There Before, What Was Set, And Its Details.",
+		},
+		denial: {
+			title: "Denied Request Detail",
+			description:
+				"Why The Selected Request Was Denied, As The Audit Trail Recorded It.",
+		},
+	};
+
+/** The stored fields of each kind of record but a model message, with their labels. */
+const PAYLOAD_FIELDS: Record<
+	Exclude<DetailKind, "model">,
+	[string, string][]
+> = {
+	activity: [
+		["MESSAGE", "Event Message"],
+		["REQUEST", "Request"],
+		["RESPONSE", "Response"],
+	],
+	change: [
+		["OLD_VALUE", "Before"],
+		["NEW_VALUE", "After"],
+		["DETAILS", "Details"],
+	],
+	denial: [
+		["ERROR_MESSAGE", "Reason"],
+		["ERROR_CODE", "Error Code"],
+	],
+};
+
+/** What kind of record a selection is, from its source and, for an audit event, its outcome. */
+function detailKind(selection: UsageSelection | null): DetailKind {
+	if (selection?.source === "model") return "model";
+	if (selection?.source !== "audit") return "activity";
+	return selection.row.STATUS === "DENIED" ? "denial" : "change";
+}
+
 interface UsageDetailProps {
 	/** Selected event; null closes the panel and defers the body query. */
 	selection: UsageSelection | null;
@@ -34,6 +90,7 @@ export function UsageDetail({
 	const result = useUsageQuery(
 		selection ? detailQuery(selection.source, selection.row) : null,
 	);
+	const kind = detailKind(selection);
 	const handleCopyRecord = async (): Promise<void> => {
 		if (!selection || result.isLoading || result.error) return;
 		try {
@@ -68,15 +125,9 @@ export function UsageDetail({
 				}}
 			>
 				<SheetHeader className="pb-0">
-					<SheetTitle>
-						{selection?.source === "model"
-							? "Model Message Detail"
-							: "Activity Event Detail"}
-					</SheetTitle>
+					<SheetTitle>{DETAIL_TEXT[kind].title}</SheetTitle>
 					<SheetDescription>
-						Stored Content For The Selected Record. Missing Content
-						May Reflect Retention Settings Or Disabled
-						Prompt/Response Logging.
+						{DETAIL_TEXT[kind].description}
 					</SheetDescription>
 				</SheetHeader>
 				<div className="space-y-3 px-4 pb-6">
@@ -127,10 +178,10 @@ export function UsageDetail({
 						) : (
 							result.rows.map((row, index) => (
 								<div
-									key={`${row.MESSAGE_ID ?? row.LOG_ID}-${row.MESSAGE_TYPE ?? index}`}
+									key={`${row.MESSAGE_ID ?? row.LOG_ID ?? row.EVENT_ID}-${row.MESSAGE_TYPE ?? index}`}
 									className="min-w-0 space-y-3"
 								>
-									{selection?.source === "model" ? (
+									{kind === "model" ? (
 										<UsagePayload
 											label={
 												row.MESSAGE_TYPE === "INPUT"
@@ -140,18 +191,17 @@ export function UsageDetail({
 											value={row.MESSAGE_DATA}
 										/>
 									) : (
-										["MESSAGE", "REQUEST", "RESPONSE"].map(
-											(key) => (
+										PAYLOAD_FIELDS[kind].map(
+											([key, label]) => (
 												<UsagePayload
 													key={key}
-													label={
-														key === "MESSAGE"
-															? "Event Message"
-															: key === "REQUEST"
-																? "Request"
-																: "Response"
-													}
+													label={label}
 													value={row[key]}
+													missingText={
+														kind === "activity"
+															? undefined
+															: "Nothing Was Recorded."
+													}
 												/>
 											),
 										)

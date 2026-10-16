@@ -2,18 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
 	AUDIT_EVENT_COLUMNS,
 	AUDIT_FILTER_ALL,
+	AUDIT_TARGET_CATALOG_COLUMNS,
 	type AuditEvent,
 	buildAuditFilterClause,
-	buildAuditTrailsExportPixel,
-	buildAuditTrailsPixel,
+	buildAuditTrailExportPixel,
+	buildAuditTrailPixel,
 	EMPTY_AUDIT_FILTERS,
 	formatAuditTime,
 	normalizeAuditFilters,
 	parseAuditEvents,
 	toAuditCsv,
-} from "./audit-trails";
+} from "./audit-trail";
 
-describe("existing audit trails query contract", () => {
+describe("existing audit trail query contract", () => {
 	it("selects every column of the audit schema without the raw session id", () => {
 		expect(AUDIT_EVENT_COLUMNS).toHaveLength(39);
 		expect(AUDIT_EVENT_COLUMNS).toContain("SESSION_ID_HASH");
@@ -21,7 +22,7 @@ describe("existing audit trails query contract", () => {
 	});
 
 	it("filters on every supported field and an inclusive UTC date range", () => {
-		const pixel = buildAuditTrailsPixel(
+		const pixel = buildAuditTrailPixel(
 			{
 				...EMPTY_AUDIT_FILTERS,
 				category: "AUTHZ",
@@ -40,7 +41,7 @@ describe("existing audit trails query contract", () => {
 		expect(pixel).toContain('from=["2026-10-01"]');
 		expect(pixel).toContain('to=["2026-10-08"]');
 		expect(() =>
-			buildAuditTrailsPixel(
+			buildAuditTrailPixel(
 				{ ...EMPTY_AUDIT_FILTERS, from: '2026" | DeleteEngine();' },
 				0,
 			),
@@ -48,7 +49,7 @@ describe("existing audit trails query contract", () => {
 	});
 
 	it("marks exports so the backend records AUDIT_EXPORT", () => {
-		const pixel = buildAuditTrailsExportPixel({
+		const pixel = buildAuditTrailExportPixel({
 			...EMPTY_AUDIT_FILTERS,
 			status: "DENIED",
 		});
@@ -81,16 +82,16 @@ describe("existing audit trails query contract", () => {
 	});
 
 	it("uses the authorized reactor and bounds page reads with a lookahead row", () => {
-		const pixel = buildAuditTrailsPixel(EMPTY_AUDIT_FILTERS, 2);
+		const pixel = buildAuditTrailPixel(EMPTY_AUDIT_FILTERS, 2);
 		expect(pixel).toContain("AdminAuditEvents(page=[2])");
 		expect(pixel).not.toContain("Collect(");
 		expect(pixel).not.toContain("AuditLogsReport");
-		expect(() => buildAuditTrailsPixel(EMPTY_AUDIT_FILTERS, -1)).toThrow();
+		expect(() => buildAuditTrailPixel(EMPTY_AUDIT_FILTERS, -1)).toThrow();
 	});
 
 	it("keeps quotes, backslashes, newlines, and preprocessor tags inside a filter literal", () => {
 		const value = 'user"\\\n</encode><encode> | DeleteEngine();';
-		const pixel = buildAuditTrailsPixel(
+		const pixel = buildAuditTrailPixel(
 			{ ...EMPTY_AUDIT_FILTERS, actorId: value },
 			0,
 		);
@@ -103,10 +104,10 @@ describe("existing audit trails query contract", () => {
 
 	it("preserves snapshot precision and validates UTC calendar boundaries", () => {
 		expect(
-			buildAuditTrailsPixel(EMPTY_AUDIT_FILTERS, 1, "9007199254740993"),
+			buildAuditTrailPixel(EMPTY_AUDIT_FILTERS, 1, "9007199254740993"),
 		).toContain('snapshot=["9007199254740993"]');
 		expect(() =>
-			buildAuditTrailsPixel(EMPTY_AUDIT_FILTERS, 1, "injected"),
+			buildAuditTrailPixel(EMPTY_AUDIT_FILTERS, 1, "injected"),
 		).toThrow();
 		expect(
 			buildAuditFilterClause({
@@ -121,13 +122,13 @@ describe("existing audit trails query contract", () => {
 			}),
 		).toContain('EVENT_TIME < "2027-01-01 00:00:00"');
 		expect(() =>
-			buildAuditTrailsPixel(
+			buildAuditTrailPixel(
 				{ ...EMPTY_AUDIT_FILTERS, to: "2026-02-30" },
 				0,
 			),
 		).toThrow();
 		expect(() =>
-			buildAuditTrailsPixel(
+			buildAuditTrailPixel(
 				{
 					...EMPTY_AUDIT_FILTERS,
 					from: "2026-10-14",
@@ -181,11 +182,33 @@ describe("existing audit trails query contract", () => {
 		expect(() => parseAuditEvents(null)).toThrow("results table");
 	});
 
+	it("keeps the catalog's name and logo fields when the backend adds them", () => {
+		const row = AUDIT_EVENT_COLUMNS.map((column) =>
+			column === "EVENT_ID" ? "event-1" : null,
+		);
+		const [withCatalog] = parseAuditEvents({
+			data: {
+				headers: [
+					...AUDIT_EVENT_COLUMNS,
+					...AUDIT_TARGET_CATALOG_COLUMNS,
+				],
+				values: [[...row, "Model One", "MODEL", "OPEN_AI"]],
+			},
+		});
+		expect(withCatalog.TARGET_DISPLAY_NAME).toBe("Model One");
+		expect(withCatalog.TARGET_ENGINE_TYPE).toBe("MODEL");
+		expect(withCatalog.TARGET_ENGINE_SUBTYPE).toBe("OPEN_AI");
+		const [withoutCatalog] = parseAuditEvents({
+			data: { headers: AUDIT_EVENT_COLUMNS, values: [row] },
+		});
+		expect(withoutCatalog).not.toHaveProperty("TARGET_DISPLAY_NAME");
+	});
+
 	it("treats SQL timestamps without a zone as UTC", () => {
 		expect(formatAuditTime("2026-08-13 15:16:38")).toBe(
 			formatAuditTime("2026-08-13T15:16:38Z"),
 		);
-		expect(formatAuditTime(null)).toBe("—");
+		expect(formatAuditTime(null)).toBe("-");
 		expect(formatAuditTime("invalid date")).toBe("invalid date");
 	});
 });

@@ -59,10 +59,26 @@ export const AUDIT_EVENT_COLUMNS = [
 ] as const;
 
 export type AuditEventColumn = (typeof AUDIT_EVENT_COLUMNS)[number];
+
+/**
+ * What the backend adds to each event from the catalog: the current name of the
+ * engine or app it was on, and an engine's type and subtype, which pick its
+ * logo. A target the catalog no longer has gets none.
+ */
+export const AUDIT_TARGET_CATALOG_COLUMNS = [
+	"TARGET_DISPLAY_NAME",
+	"TARGET_ENGINE_TYPE",
+	"TARGET_ENGINE_SUBTYPE",
+] as const;
+
+export type AuditTargetCatalogColumn =
+	(typeof AUDIT_TARGET_CATALOG_COLUMNS)[number];
+
 export type AuditEvent = Record<
 	AuditEventColumn,
 	string | number | boolean | null
->;
+> &
+	Partial<Record<AuditTargetCatalogColumn, string | null>>;
 
 /** Exact-match filters plus an inclusive UTC date range. */
 export interface AuditTrailFilters {
@@ -109,6 +125,7 @@ export const AUDIT_SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 export const AUDIT_CATEGORIES = [
 	"AUTH",
 	"AUTHZ",
+	"USAGE_LIMIT",
 	"USER_ADMIN",
 	"GROUP_ADMIN",
 	"CREDENTIAL",
@@ -119,7 +136,6 @@ export const AUDIT_CATEGORIES = [
 	"AUTOMATION",
 	"SKILL",
 	"JOB",
-	"AGENT",
 	"CONFIG",
 	"AUDIT",
 ] as const;
@@ -220,13 +236,13 @@ export function buildAuditFilterClause(filters: AuditTrailFilters): string {
 }
 
 /** Build a bounded read, requesting one extra row to determine the next page. */
-export function buildAuditTrailsPixel(
+export function buildAuditTrailPixel(
 	filters: AuditTrailFilters,
 	page: number,
 	snapshot?: string,
 ): string {
 	if (!Number.isSafeInteger(page) || page < 0) {
-		throw new Error("Invalid audit trails page.");
+		throw new Error("Invalid audit trail page.");
 	}
 	return adminAuditPixel(filters, [`page=[${page}]`], snapshot);
 }
@@ -267,7 +283,7 @@ export function parseAuditSnapshot(output: unknown): string {
 }
 
 /** Build the export read; the backend records it as AUDIT_EXPORT. */
-export function buildAuditTrailsExportPixel(
+export function buildAuditTrailExportPixel(
 	filters: AuditTrailFilters,
 	snapshot?: string,
 ): string {
@@ -280,7 +296,7 @@ export async function exportAuditEvents(
 	snapshot?: string,
 ): Promise<AuditEvent[]> {
 	const response = await runPixel(
-		buildAuditTrailsExportPixel(filters, snapshot),
+		buildAuditTrailExportPixel(filters, snapshot),
 	);
 	const result = response?.pixelReturn?.[0];
 	if (!result || result.operationType?.includes("ERROR")) {
@@ -297,7 +313,7 @@ export async function exportAuditEvents(
 export function parseAuditEvents(output: unknown): AuditEvent[] {
 	if (!isRecord(output) || !isRecord(output.data)) {
 		throw new Error(
-			"The audit trails response did not contain a results table.",
+			"The audit trail response did not contain a results table.",
 		);
 	}
 	const { headers, values } = output.data;
@@ -307,7 +323,7 @@ export function parseAuditEvents(output: unknown): AuditEvent[] {
 		!Array.isArray(values)
 	) {
 		throw new Error(
-			"The audit trails response contained an invalid results table.",
+			"The audit trail response contained an invalid results table.",
 		);
 	}
 	// Collect's formatter can return no headers when the query has no rows.
@@ -320,7 +336,7 @@ export function parseAuditEvents(output: unknown): AuditEvent[] {
 	);
 	if (AUDIT_EVENT_COLUMNS.some((column) => !columnIndexes.has(column))) {
 		throw new Error(
-			"The audit trails response is missing expected event fields.",
+			"The audit trail response is missing expected event fields.",
 		);
 	}
 	return values.map((row: unknown): AuditEvent => {
@@ -336,18 +352,22 @@ export function parseAuditEvents(output: unknown): AuditEvent[] {
 			)
 		) {
 			throw new Error(
-				"The audit trails response contained an invalid event.",
+				"The audit trail response contained an invalid event.",
 			);
 		}
-		const event = Object.fromEntries(
-			AUDIT_EVENT_COLUMNS.map((column) => [
+		const event = Object.fromEntries([
+			...AUDIT_EVENT_COLUMNS.map((column) => [
 				column,
 				row[columnIndexes.get(column) ?? -1],
 			]),
-		) as AuditEvent;
+			// the catalog's fields are added when the backend could read them
+			...AUDIT_TARGET_CATALOG_COLUMNS.filter((column) =>
+				columnIndexes.has(column),
+			).map((column) => [column, row[columnIndexes.get(column) ?? -1]]),
+		]) as AuditEvent;
 		if (typeof event.EVENT_ID !== "string" || !event.EVENT_ID) {
 			throw new Error(
-				"The audit trails response contained an event without an ID.",
+				"The audit trail response contained an event without an ID.",
 			);
 		}
 		return event;
@@ -357,7 +377,7 @@ export function parseAuditEvents(output: unknown): AuditEvent[] {
 /** Show event timestamps in UTC, including SQL timestamps that omit a zone. */
 export function formatAuditTime(value: AuditEvent["EVENT_TIME"]): string {
 	if (value === null || value === "" || typeof value === "boolean")
-		return "—";
+		return "-";
 	const date =
 		typeof value === "number"
 			? new Date(value)
@@ -369,7 +389,7 @@ export function formatAuditTime(value: AuditEvent["EVENT_TIME"]): string {
 
 /** Pretty-print structured details without interpreting backend text as HTML. */
 export function formatAuditValue(value: AuditEvent[AuditEventColumn]): string {
-	if (value === null || value === "") return "—";
+	if (value === null || value === "") return "-";
 	if (typeof value === "number" || typeof value === "boolean") {
 		return String(value);
 	}

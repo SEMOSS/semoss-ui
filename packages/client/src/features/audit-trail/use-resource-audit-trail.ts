@@ -1,5 +1,5 @@
 import { usePixel } from "@semoss/sdk/react";
-import type { AuditTrailFilters } from "@/api/audit-trails";
+import type { AuditTrailFilters } from "@/api/audit-trail";
 import {
 	type AuditDirection,
 	type AuditScope,
@@ -7,10 +7,10 @@ import {
 	buildResourceAuditPixel,
 	parseResourceAuditPage,
 	type ResourceAuditEvent,
-} from "@/api/resource-audit-trails";
+} from "@/api/resource-audit-trail";
 
 /** Read a page with SDK cancellation and explicit payload validation. */
-export function useResourceAuditTrails(
+export function useResourceAuditTrail(
 	scope: AuditScope,
 	id: string,
 	filters: AuditTrailFilters,

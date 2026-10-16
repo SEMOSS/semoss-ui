@@ -157,7 +157,8 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   carries the new level. `team-usage-limit.ts` also holds the team limit words Bulk Access
   Management and Give a Team Access use.
 - **`features/model-usage-limits/`** is a model's total and its public use limit on the model's
-  Access Control tab, for its editors and owners (`model-usage-limits-card.tsx`), read with
+  Access Control tab, for its editors and owners (`model-usage-limits-card.tsx`, side by side on
+  wide screens and stacked on narrow ones), read with
   `getResourcePermissions` (`use-model-usage-limits.ts`). For the model's owners each summary is
   the same `usage-limit-edit-button.tsx` and opens `usage-limit-dialog.tsx`, and Save Limit saves
   at once: one permission batch on the engine with one `MODEL` or `PUBLIC` change
@@ -274,6 +275,26 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   managers and members in place of the team list, and the All Teams breadcrumb goes back to the
   list with its search and scroll kept. A resource's owners may read them even before the team
   has access to it (its editors only once it does). In admin mode they are read as an admin.
+
+### Audit Trail
+
+- **`features/audit-trail/`** is the audit trail: the admin Audit Trail at `settings/audit-trail`
+  (`audit-trail.tsx`, read with `AdminAuditEvents`), and a project's or engine's Audit tab for its
+  owners (`resource-audit-trail.tsx`), both through `api/audit-trail.ts` and
+  `api/resource-audit-trail.ts`. Each row names the event (`AuditEventSummary`: its label, what a
+  denied request tried, and the stored type the Event type filter matches), shows the actor and the
+  affected user with `AuditIdentity` (the shared `PersonIdentity`, or a cog for SEMOSS itself and a
+  robot for an agent in a circle of the same size), what it was on with `AuditTarget` (a user as a
+  person, an engine's logo with `EngineSubtypeIcon`, an app's image with `AppCatalogAvatar`, each
+  with its kind and id under its name, named as the catalog has
+  it now: the backend adds `TARGET_DISPLAY_NAME`, `TARGET_ENGINE_TYPE` and `TARGET_ENGINE_SUBTYPE`
+  to each event it returns, see `AUDIT_TARGET_CATALOG_COLUMNS`), and the
+  outcome and severity as `AuditStatusBadge` and `AuditSeverityBadge` (an icon or a dot in the
+  status color beside the word). `audit-labels.ts` holds the words for the backend's event types,
+  statuses, severities, categories and target types (`AuditEventType` and its siblings in SEMOSS);
+  a value it does not know is shown in words. The details sheet (`audit-event-details.tsx`) shows
+  only the fields an event recorded, JSON as a tree. Enterprise Usage's Access & Limits tab uses
+  the same pieces.
 
 ## State Management
 

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { AUDIT_EVENT_COLUMNS, EMPTY_AUDIT_FILTERS } from "./audit-trails";
+import { AUDIT_EVENT_COLUMNS, EMPTY_AUDIT_FILTERS } from "./audit-trail";
 import {
 	buildResourceAuditPixel,
 	parseResourceAuditPage,
-} from "./resource-audit-trails";
+} from "./resource-audit-trail";
 
 describe("resource-scoped audit contract", () => {
 	it("uses a materialized reactor and cannot override the resource through filters", () => {

@@ -30,7 +30,7 @@ describe("SettingsIndexPage merged navigation", () => {
 			"href",
 			"/settings/managed-teams",
 		);
-		expect(screen.queryByRole("link", { name: /Audit Trails/ })).toBeNull();
+		expect(screen.queryByRole("link", { name: /Audit Trail/ })).toBeNull();
 		expect(
 			screen.queryByRole("link", { name: /Team Permissions/ }),
 		).toBeNull();
@@ -40,8 +40,8 @@ describe("SettingsIndexPage merged navigation", () => {
 		settings.adminMode = true;
 		renderSettings();
 		expect(
-			screen.getByRole("link", { name: /Audit Trails/ }),
-		).toHaveAttribute("href", "/settings/audit-trails");
+			screen.getByRole("link", { name: /Audit Trail/ }),
+		).toHaveAttribute("href", "/settings/audit-trail");
 		expect(
 			screen.getByRole("link", { name: /Team Permissions/ }),
 		).toHaveAttribute("href", "/settings/team-permissions");
@@ -60,7 +60,7 @@ describe("SettingsIndexPage merged navigation", () => {
 			},
 		);
 		expect(
-			screen.getByRole("link", { name: /Audit Trails/ }),
+			screen.getByRole("link", { name: /Audit Trail/ }),
 		).toBeInTheDocument();
 		expect(screen.queryByRole("link", { name: /My Teams/ })).toBeNull();
 		fireEvent.click(screen.getByRole("button", { name: "Clear search" }));

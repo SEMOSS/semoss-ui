@@ -310,8 +310,17 @@ export const SETTINGS_ROUTES: {
 		title: "Enterprise Usage & Activity",
 		path: "enterprise-usage",
 		description:
-			"Explore Platform-Wide Model Usage, Adoption, Performance, And Activity.",
+			"Explore Platform-Wide Model Usage, Adoption, Performance, Activity, And Access And Limit Changes.",
 		icon: mdiChartTimelineVariant,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "Audit Trail",
+		path: "audit-trail",
+		description:
+			"Review sign-ins, permissions, and resource changes across the platform.",
+		icon: mdiClipboardTextOutline,
 		history: ["settings/"],
 		admin: true,
 	},
@@ -320,15 +329,6 @@ export const SETTINGS_ROUTES: {
 		path: "admin-query",
 		description: "Query the platform databases directly. Use with caution.",
 		icon: mdiDatabaseSearch,
-		history: ["settings/"],
-		admin: true,
-	},
-	{
-		title: "Audit Trails",
-		path: "audit-trails",
-		description:
-			"Review sign-ins, permissions, and resource changes across the platform.",
-		icon: mdiClipboardTextOutline,
 		history: ["settings/"],
 		admin: true,
 	},

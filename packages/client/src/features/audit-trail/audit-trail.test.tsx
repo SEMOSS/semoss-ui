@@ -8,8 +8,12 @@ import {
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AUDIT_EVENT_COLUMNS } from "@/api/audit-trails";
-import { AuditTrailsPage } from "@/pages/settings/audit-trails.page";
+import {
+	AUDIT_EVENT_COLUMNS,
+	AUDIT_TARGET_CATALOG_COLUMNS,
+	type AuditEventColumn,
+} from "@/api/audit-trail";
+import { AuditTrailPage } from "@/pages/settings/audit-trail.page";
 import { SettingsIndexPage } from "@/pages/settings/settings-index-page";
 
 const mocks = vi.hoisted(() => ({
@@ -35,7 +39,7 @@ function result(count: number) {
 	return {
 		snapshot: "100",
 		data: {
-			headers: AUDIT_EVENT_COLUMNS,
+			headers: [...AUDIT_EVENT_COLUMNS] as string[],
 			values: Array.from({ length: count }, (_, index) =>
 				AUDIT_EVENT_COLUMNS.map((column) => {
 					if (column === "EVENT_ID") return `event-${index}`;
@@ -45,7 +49,13 @@ function result(count: number) {
 					if (column === "SEVERITY") return "LOW";
 					if (column === "ACTOR_USER_NAME") return "Example user";
 					if (column === "ACTOR_IS_ADMIN") return false;
-					if (column === "SUBJECT_USER_NAME") return "Affected user";
+					if (column === "SUBJECT_USER_NAME")
+						return "Affected person";
+					if (column === "SESSION_ID_HASH") return "session-hash";
+					if (column === "ERROR_CODE") return "OPERATION_FAILED";
+					if (column === "HASH_CURRENT") return "event-hash";
+					if (column === "OLD_VALUE")
+						return '{"permission":"READ_ONLY"}';
 					if (column === "DETAILS")
 						return '{"reason":"USER_LOGOUT","text":"<script>unsafe()</script>"}';
 					return null;
@@ -58,11 +68,11 @@ function result(count: number) {
 /** Supply the Settings routes without mounting unrelated app providers. */
 function renderPage() {
 	return render(
-		<MemoryRouter initialEntries={["/settings/audit-trails"]}>
+		<MemoryRouter initialEntries={["/settings/audit-trail"]}>
 			<Routes>
 				<Route
-					path="/settings/audit-trails"
-					element={<AuditTrailsPage />}
+					path="/settings/audit-trail"
+					element={<AuditTrailPage />}
 				/>
 				<Route path="/settings" element={<div>Settings home</div>} />
 			</Routes>
@@ -84,7 +94,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe("Audit Trails settings", () => {
+describe("Audit Trail settings", () => {
 	it("groups controls and pagination around the table with collapsed admin filters", () => {
 		renderPage();
 		const toolbar = screen.getByRole("toolbar", {
@@ -122,8 +132,8 @@ describe("Audit Trails settings", () => {
 			</MemoryRouter>,
 		);
 		expect(
-			screen.getByRole("link", { name: /Audit Trails/ }),
-		).toHaveAttribute("href", "/settings/audit-trails");
+			screen.getByRole("link", { name: /Audit Trail/ }),
+		).toHaveAttribute("href", "/settings/audit-trail");
 		mocks.adminMode = false;
 		view.rerender(
 			<MemoryRouter initialEntries={["/settings"]}>
@@ -131,7 +141,7 @@ describe("Audit Trails settings", () => {
 			</MemoryRouter>,
 		);
 		expect(
-			screen.queryByRole("link", { name: /Audit Trails/ }),
+			screen.queryByRole("link", { name: /Audit Trail/ }),
 		).not.toBeInTheDocument();
 	});
 
@@ -182,17 +192,88 @@ describe("Audit Trails settings", () => {
 		const dialog = screen.getByRole("dialog", {
 			name: "Audit event details",
 		});
+		expect(dialog).toHaveTextContent("Signed In");
+		expect(dialog).toHaveTextContent("Succeeded");
+		expect(dialog).toHaveTextContent("Affected person");
 		expect(dialog).toHaveTextContent("Session ID hash");
-		expect(dialog).toHaveTextContent("Affected user name");
 		expect(dialog).toHaveTextContent("Error code");
 		expect(dialog).toHaveTextContent("Event hash");
 		expect(dialog).toHaveTextContent("Previous value");
+		// fields the event did not record are left out
+		expect(dialog).not.toHaveTextContent("Request path");
 		expect(dialog).toHaveTextContent("<script>unsafe()</script>");
 		expect(dialog.querySelector("script")).toBeNull();
 		fireEvent.keyDown(dialog, { key: "Escape" });
 		await waitFor(() =>
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
 		);
+	});
+
+	it("shows each event by name, its people with their identity, and what it was on", () => {
+		const event = result(1);
+		const row = event.data.values[0];
+		const set = (column: AuditEventColumn, value: string) => {
+			row[AUDIT_EVENT_COLUMNS.indexOf(column)] = value;
+		};
+		set("EVENT_TYPE", "PERMISSION_DELETE");
+		set("ACTION", "PERMISSION_EXPIRED");
+		set("ACTOR_USER_ID", "SYSTEM");
+		set("ACTOR_USER_TYPE", "SYSTEM");
+		set("ACTOR_USER_NAME", "SYSTEM");
+		set("TARGET_TYPE", "MODEL");
+		set("TARGET_ID", "model-1");
+		set("TARGET_NAME", "Model One");
+		mocks.usePixel.mockReturnValue({
+			status: "SUCCESS",
+			data: event,
+			refresh: mocks.refresh,
+		});
+		renderPage();
+		expect(screen.getByText("Access Ended")).toBeInTheDocument();
+		expect(screen.getByText("PERMISSION_DELETE")).toBeInTheDocument();
+		expect(screen.getByText("SEMOSS")).toBeInTheDocument();
+		expect(screen.getByText("System")).toBeInTheDocument();
+		expect(screen.getByText("Model One")).toBeInTheDocument();
+		expect(screen.getByText("Model")).toBeInTheDocument();
+		expect(screen.getByText("Affected person")).toBeInTheDocument();
+	});
+
+	it("shows the resource as the catalog has it now, over the name the event recorded", () => {
+		const event = result(1);
+		const row = event.data.values[0];
+		row[AUDIT_EVENT_COLUMNS.indexOf("TARGET_TYPE")] = "ENGINE";
+		row[AUDIT_EVENT_COLUMNS.indexOf("TARGET_ID")] = "model-1";
+		row[AUDIT_EVENT_COLUMNS.indexOf("TARGET_NAME")] = "Old name";
+		event.data.headers.push(...AUDIT_TARGET_CATALOG_COLUMNS);
+		row.push("Model One", "MODEL", "OPEN_AI");
+		mocks.usePixel.mockReturnValue({
+			status: "SUCCESS",
+			data: event,
+			refresh: mocks.refresh,
+		});
+		renderPage();
+		expect(screen.getByText("Model One")).toBeInTheDocument();
+		expect(screen.queryByText("Old name")).not.toBeInTheDocument();
+		// the catalog knows the kind of an engine the event recorded only as an engine
+		expect(screen.getByText("Model")).toBeInTheDocument();
+		expect(screen.getByText("id: model-1")).toBeInTheDocument();
+	});
+
+	it("shows a user the event was on as a person, with their id", () => {
+		const event = result(1);
+		const row = event.data.values[0];
+		row[AUDIT_EVENT_COLUMNS.indexOf("EVENT_TYPE")] = "USER_UPDATE";
+		row[AUDIT_EVENT_COLUMNS.indexOf("TARGET_TYPE")] = "USER";
+		row[AUDIT_EVENT_COLUMNS.indexOf("TARGET_ID")] = "target-user";
+		row[AUDIT_EVENT_COLUMNS.indexOf("TARGET_NAME")] = "Target Person";
+		mocks.usePixel.mockReturnValue({
+			status: "SUCCESS",
+			data: event,
+			refresh: mocks.refresh,
+		});
+		renderPage();
+		expect(screen.getByText("Target Person")).toBeInTheDocument();
+		expect(screen.getByText("id: target-user")).toBeInTheDocument();
 	});
 
 	it("exports the filtered events as CSV through the export-marked read", async () => {
@@ -209,7 +290,7 @@ describe("Audit Trails settings", () => {
 			"AdminAuditEvents(export=[true]",
 		);
 		const [blob, fileName] = mocks.downloadBlob.mock.lastCall ?? [];
-		expect(fileName).toMatch(/^audit-trails-\d{4}-\d{2}-\d{2}\.csv$/);
+		expect(fileName).toMatch(/^audit-trail-\d{4}-\d{2}-\d{2}\.csv$/);
 		expect((blob as Blob).type).toContain("text/csv");
 		expect((blob as Blob).size).toBeGreaterThan(0);
 	});
@@ -247,7 +328,7 @@ describe("Audit Trails settings", () => {
 		});
 		view.rerender(
 			<MemoryRouter>
-				<AuditTrailsPage />
+				<AuditTrailPage />
 			</MemoryRouter>,
 		);
 		expect(screen.getByText("No audit events yet")).toBeInTheDocument();
@@ -259,7 +340,7 @@ describe("Audit Trails settings", () => {
 		});
 		view.rerender(
 			<MemoryRouter>
-				<AuditTrailsPage />
+				<AuditTrailPage />
 			</MemoryRouter>,
 		);
 		expect(screen.getByRole("alert")).toHaveTextContent(

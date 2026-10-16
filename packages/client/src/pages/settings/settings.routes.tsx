@@ -8,7 +8,7 @@ import { AdminQueryPage } from "./admin-query-page";
 import { AdminTeamDetailPage } from "./admin-team-detail-page";
 import { AdminTeamsPage } from "./admin-teams-page";
 import { AdminThemePage } from "./admin-theme-page";
-import { AuditTrailsPage } from "./audit-trails.page";
+import { AuditTrailPage } from "./audit-trail.page";
 import { ConfigurationsPage } from "./configurations-page";
 import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
 import { EngineSettingsIndexPage } from "./engine-settings-index-page";
@@ -42,7 +42,7 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"social-properties": ConfigurationsPage,
 	"github-app": GitHubAppPage,
 	"admin-query": AdminQueryPage,
-	"audit-trails": AuditTrailsPage,
+	"audit-trail": AuditTrailPage,
 	"enterprise-usage": EnterpriseUsagePage,
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,

@@ -115,7 +115,8 @@ export const ModelUsageLimitsCard = ({
 						</AlertDescription>
 					</Alert>
 				) : (
-					<dl className="divide-y divide-border">
+					// side by side on wide screens, each limit's name beside its rules
+					<dl className="grid divide-y divide-border xl:grid-cols-2 xl:divide-x xl:divide-y-0">
 						{(["MODEL", "PUBLIC"] as const).map((category) => {
 							const source =
 								category === "MODEL" ? "MODEL_TOTAL" : "PUBLIC";
@@ -130,7 +131,7 @@ export const ModelUsageLimitsCard = ({
 							return (
 								<div
 									key={category}
-									className="grid gap-x-6 gap-y-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] sm:items-center"
+									className="grid gap-x-6 gap-y-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] sm:items-center xl:grid-cols-[minmax(0,12rem)_minmax(0,1fr)] xl:px-6 xl:py-0 xl:last:pe-0 xl:first:ps-0"
 								>
 									<dt className="flex flex-col gap-0.5">
 										<span className="text-sm">

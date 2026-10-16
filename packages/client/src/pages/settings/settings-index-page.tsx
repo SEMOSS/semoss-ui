@@ -102,13 +102,13 @@ const CardMapper: Record<string, CardConfig> = {
 		icon: <ChartBar className={ICON_CLASS} aria-hidden="true" />,
 		className: "bg-primary/10 text-primary",
 	},
+	"Audit Trail": {
+		icon: <ScrollText className={ICON_CLASS} />,
+		className: "bg-primary/10 text-primary",
+	},
 	"Admin Query": {
 		icon: <DatabaseZap className={ICON_CLASS} />,
 		className: "bg-chart-2/10 text-chart-2",
-	},
-	"Audit Trails": {
-		icon: <ScrollText className={ICON_CLASS} />,
-		className: "bg-primary/10 text-primary",
 	},
 	"Admin Theme": {
 		icon: <Palette className={ICON_CLASS} />,

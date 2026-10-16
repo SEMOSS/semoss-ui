@@ -10,7 +10,6 @@ import { useState } from "react";
 import {
 	Alert,
 	AlertDescription,
-	Badge,
 	Button,
 	Collapsible,
 	CollapsibleContent,
@@ -27,39 +26,44 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
-import {
-	EMPTY_AUDIT_FILTERS,
-	formatAuditTime,
-	formatAuditValue,
-} from "@/api/audit-trails";
+import { EMPTY_AUDIT_FILTERS, formatAuditTime } from "@/api/audit-trail";
 import type {
 	AuditDirection,
 	AuditScope,
 	AuditSort,
-} from "@/api/resource-audit-trails";
+} from "@/api/resource-audit-trail";
 import { AuditEventDetails } from "./audit-event-details";
+import { AuditEventSummary } from "./audit-event-summary";
 import { AuditFilterToggle } from "./audit-filter-toggle";
-import { AuditTrailsFilters } from "./audit-trails-filters";
-import { useResourceAuditTrails } from "./use-resource-audit-trails";
+import { AuditIdentity } from "./audit-identity";
+import { auditText } from "./audit-labels";
+import { AuditSeverityBadge } from "./audit-severity-badge";
+import { AuditStatusBadge } from "./audit-status-badge";
+import { AuditTrailFilterForm } from "./audit-trail-filter-form";
+import { useResourceAuditTrail } from "./use-resource-audit-trail";
 
 const columns: { label: string; sort?: AuditSort }[] = [
 	{ label: "Time (UTC)", sort: "EVENT_TIME" },
+	{ label: "Event", sort: "EVENT_TYPE" },
 	{ label: "Actor", sort: "ACTOR_USER_NAME" },
-	{ label: "Event type", sort: "EVENT_TYPE" },
 	{ label: "Affected user" },
 	{ label: "Status", sort: "STATUS" },
 	{ label: "Severity", sort: "SEVERITY" },
 	{ label: "Details" },
 ];
 
+export interface ResourceAuditTrailProps {
+	/** Whether the resource is an engine or a project */
+	scope: AuditScope;
+	/** The engine's or project's id */
+	resourceId: string;
+}
+
 /** Owner-only resource history; access is checked again by the backend on every read. */
-export function ResourceAuditTrails({
+export function ResourceAuditTrail({
 	scope,
 	resourceId,
-}: {
-	scope: AuditScope;
-	resourceId: string;
-}) {
+}: ResourceAuditTrailProps) {
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [query, setQuery] = useState({
 		filters: EMPTY_AUDIT_FILTERS,
@@ -69,7 +73,7 @@ export function ResourceAuditTrails({
 		direction: "DESC" as AuditDirection,
 	});
 	const { events, hasNextPage, isLoading, error, refresh } =
-		useResourceAuditTrails(
+		useResourceAuditTrail(
 			scope,
 			resourceId,
 			query.filters,
@@ -119,7 +123,7 @@ export function ResourceAuditTrails({
 				</div>
 				<CollapsibleContent forceMount hidden={!filtersOpen}>
 					<div className="border-b py-4">
-						<AuditTrailsFilters
+						<AuditTrailFilterForm
 							resourceScoped
 							onApply={(filters) =>
 								setQuery((previous) => ({
@@ -150,6 +154,11 @@ export function ResourceAuditTrails({
 								{columns.map((column) => (
 									<TableHead
 										key={column.label}
+										className={
+											column.label === "Details"
+												? "w-16 text-center"
+												: undefined
+										}
 										aria-sort={
 											column.sort
 												? query.sort === column.sort
@@ -201,35 +210,48 @@ export function ResourceAuditTrails({
 						<TableBody>
 							{events.map((event) => (
 								<TableRow key={event.EVENT_ID}>
-									<TableCell className="whitespace-nowrap">
+									<TableCell className="whitespace-nowrap text-sm">
 										{formatAuditTime(event.EVENT_TIME)}
 									</TableCell>
-									<TableCell className="max-w-64 break-all">
-										{formatAuditValue(
-											event.ACTOR_USER_NAME ||
-												event.ACTOR_USER_ID,
-										)}
+									<TableCell className="max-w-56">
+										<AuditEventSummary event={event} />
 									</TableCell>
-									<TableCell>{event.EVENT_TYPE}</TableCell>
-									<TableCell className="max-w-64 break-all">
-										{formatAuditValue(
-											event.SUBJECT_USER_NAME ||
+									<TableCell className="max-w-64">
+										<AuditIdentity
+											id={auditText(event.ACTOR_USER_ID)}
+											type={auditText(
+												event.ACTOR_USER_TYPE,
+											)}
+											name={auditText(
+												event.ACTOR_USER_NAME,
+											)}
+										/>
+									</TableCell>
+									<TableCell className="max-w-64">
+										<AuditIdentity
+											id={auditText(
 												event.SUBJECT_USER_ID,
-										)}
+											)}
+											type={auditText(
+												event.SUBJECT_USER_TYPE,
+											)}
+											name={auditText(
+												event.SUBJECT_USER_NAME,
+											)}
+											emptyLabel="-"
+										/>
 									</TableCell>
 									<TableCell>
-										<Badge
-											variant={
-												event.STATUS === "SUCCESS"
-													? "secondary"
-													: "destructive"
-											}
-										>
-											{event.STATUS}
-										</Badge>
+										<AuditStatusBadge
+											status={event.STATUS}
+										/>
 									</TableCell>
-									<TableCell>{event.SEVERITY}</TableCell>
 									<TableCell>
+										<AuditSeverityBadge
+											severity={event.SEVERITY}
+										/>
+									</TableCell>
+									<TableCell className="text-center">
 										<AuditEventDetails
 											event={event}
 											resourceScoped

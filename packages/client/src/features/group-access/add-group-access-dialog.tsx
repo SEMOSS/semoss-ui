@@ -348,7 +348,7 @@ export const AddGroupAccessDialog = ({
 				}
 			}}
 		>
-			<DialogContent className="sm:max-w-xl">
+			<DialogContent className="sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle className="font-medium text-base leading-6">
 						Give a Team Access

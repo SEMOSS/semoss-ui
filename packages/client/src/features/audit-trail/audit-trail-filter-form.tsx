@@ -16,7 +16,13 @@ import {
 	type AuditTrailFilters,
 	EMPTY_AUDIT_FILTERS,
 	normalizeAuditFilters,
-} from "@/api/audit-trails";
+} from "@/api/audit-trail";
+import {
+	AUDIT_CATEGORY_LABELS,
+	AUDIT_SEVERITY_LABELS,
+	AUDIT_STATUS_LABELS,
+	auditLabel,
+} from "./audit-labels";
 
 const date = z
 	.string()
@@ -77,7 +83,7 @@ const TEXT_FILTERS: {
 	{ name: "insightId", label: "Insight ID", placeholder: "Exact insight ID" },
 ];
 
-interface AuditTrailsFiltersProps {
+export interface AuditTrailFilterFormProps {
 	/** Resource views cannot change the backend-enforced resource scope. */
 	resourceScoped?: boolean;
 	/** Applies the filters and returns to the first page. */
@@ -85,10 +91,10 @@ interface AuditTrailsFiltersProps {
 }
 
 /** Keep filter drafts separate from the filters used by the current query. */
-export const AuditTrailsFilters = ({
+export const AuditTrailFilterForm = ({
 	onApply,
 	resourceScoped = false,
-}: AuditTrailsFiltersProps) => {
+}: AuditTrailFilterFormProps) => {
 	const form = useForm<AuditTrailFilters>({
 		resolver: zodResolver(schema),
 		defaultValues: EMPTY_AUDIT_FILTERS,
@@ -109,7 +115,7 @@ export const AuditTrailsFilters = ({
 				)
 			}
 			className="flex flex-col gap-4"
-			aria-label="Audit trails filters"
+			aria-label="Audit trail filters"
 		>
 			<div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				{!resourceScoped && (
@@ -121,7 +127,7 @@ export const AuditTrailsFilters = ({
 						<SelectItem value={ALL}>All categories</SelectItem>
 						{AUDIT_CATEGORIES.map((category) => (
 							<SelectItem key={category} value={category}>
-								{category}
+								{auditLabel(AUDIT_CATEGORY_LABELS, category)}
 							</SelectItem>
 						))}
 					</FormSelect>
@@ -134,7 +140,7 @@ export const AuditTrailsFilters = ({
 					<SelectItem value={ALL}>All statuses</SelectItem>
 					{AUDIT_STATUSES.map((status) => (
 						<SelectItem key={status} value={status}>
-							{status.charAt(0) + status.slice(1).toLowerCase()}
+							{auditLabel(AUDIT_STATUS_LABELS, status)}
 						</SelectItem>
 					))}
 				</FormSelect>
@@ -146,8 +152,7 @@ export const AuditTrailsFilters = ({
 					<SelectItem value={ALL}>All severities</SelectItem>
 					{AUDIT_SEVERITIES.map((severity) => (
 						<SelectItem key={severity} value={severity}>
-							{severity.charAt(0) +
-								severity.slice(1).toLowerCase()}
+							{auditLabel(AUDIT_SEVERITY_LABELS, severity)}
 						</SelectItem>
 					))}
 				</FormSelect>

@@ -1,6 +1,6 @@
 import { z } from "@semoss/ui/next";
 import { auditPixelLiteral } from "./audit-pixel";
-import type { AuditTrailFilters } from "./audit-trails";
+import type { AuditTrailFilters } from "./audit-trail";
 
 export type AuditScope = "ENGINE" | "PROJECT";
 export type AuditSort =
@@ -44,6 +44,10 @@ const eventSchema = z
 	.extend({
 		EVENT_ID: z.string().min(1),
 		EVENT_TYPE: z.string().min(1),
+		// the resource as the catalog has it now, with what picks an engine's logo
+		TARGET_DISPLAY_NAME: z.string().nullable().default(null),
+		TARGET_ENGINE_TYPE: z.string().nullable().default(null),
+		TARGET_ENGINE_SUBTYPE: z.string().nullable().default(null),
 	});
 const pageSchema = z.object({
 	events: z.array(eventSchema),

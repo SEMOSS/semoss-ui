@@ -47,7 +47,7 @@ export const TeamUsageLimitCell = ({
 	);
 	if (readOnlyReason) {
 		return (
-			<span className="flex max-w-64 flex-col gap-0.5">
+			<span className="flex max-w-64 flex-col gap-0.5 whitespace-normal">
 				{summary}
 				<span className="text-muted-foreground text-xs">
 					{readOnlyReason}

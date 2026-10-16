@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ProjectAccessControl, ProjectOverview } from "@/components/project";
-import { ResourceAuditTrails } from "@/features/audit-trails/resource-audit-trails";
+import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail";
 import { useProject } from "@/hooks/use-project";
 import { useSession } from "@/hooks/use-session";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
@@ -114,7 +114,7 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 				{activeTab?.component === "smss" && <AppSmssPage />}
 				{activeTab?.component === "audit" &&
 					(permission === "OWNER" || isAdmin) && (
-						<ResourceAuditTrails
+						<ResourceAuditTrail
 							key={project.project_id}
 							scope="PROJECT"
 							resourceId={project.project_id}

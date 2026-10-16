@@ -36,8 +36,8 @@ vi.mock("@/pages/project/agent/agent-activity-page", () => ({
 vi.mock("@/pages/project/project-dependencies-page", () => ({
 	ProjectDependenciesPage: () => null,
 }));
-vi.mock("@/features/audit-trails/resource-audit-trails", () => ({
-	ResourceAuditTrails: (props: unknown) => {
+vi.mock("@/features/audit-trail/resource-audit-trail", () => ({
+	ResourceAuditTrail: (props: unknown) => {
 		mocks.audit(props);
 		return <div>Automation audit history</div>;
 	},

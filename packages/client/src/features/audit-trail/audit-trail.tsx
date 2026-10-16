@@ -4,7 +4,6 @@ import {
 	Alert,
 	AlertDescription,
 	AlertTitle,
-	Badge,
 	Button,
 	Collapsible,
 	CollapsibleContent,
@@ -30,28 +29,32 @@ import {
 	exportAuditEvents,
 	formatAuditTime,
 	toAuditCsv,
-} from "@/api/audit-trails";
+} from "@/api/audit-trail";
 import { AuditEventDetails } from "./audit-event-details";
+import { AuditEventSummary } from "./audit-event-summary";
 import { AuditFilterToggle } from "./audit-filter-toggle";
-import { AuditTrailsFilters } from "./audit-trails-filters";
-import { useAuditTrails } from "./use-audit-trails";
+import { AuditIdentity } from "./audit-identity";
+import { auditText } from "./audit-labels";
+import { AuditSeverityBadge } from "./audit-severity-badge";
+import { AuditStatusBadge } from "./audit-status-badge";
+import { AuditTarget } from "./audit-target";
+import { AuditTrailFilterForm } from "./audit-trail-filter-form";
+import { useAuditTrail } from "./use-audit-trail";
 
-function statusVariant(status: AuditEvent["STATUS"]) {
-	return status === "FAILURE" || status === "ERROR" || status === "DENIED"
-		? "destructive"
-		: "outline";
-}
-
-function severityVariant(severity: AuditEvent["SEVERITY"]) {
-	return severity === "HIGH" || severity === "CRITICAL"
-		? "destructive"
-		: severity === "MEDIUM"
-			? "secondary"
-			: "outline";
-}
+/** The table's columns, in order; Details holds each event's details button */
+const COLUMNS = [
+	"Time (UTC)",
+	"Event",
+	"Actor",
+	"Resource",
+	"Affected user",
+	"Status",
+	"Severity",
+	"Details",
+] as const;
 
 /** Browse, filter, and export the security and administrative audit trail. */
-export const AuditTrails = () => {
+export const AuditTrail = () => {
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [query, setQuery] = useState<{
 		filters: AuditTrailFilters;
@@ -63,7 +66,7 @@ export const AuditTrails = () => {
 	});
 	const [isExporting, setIsExporting] = useState(false);
 	const { events, hasNextPage, isLoading, error, refresh, snapshot } =
-		useAuditTrails(query.filters, query.page, query.snapshot);
+		useAuditTrail(query.filters, query.page, query.snapshot);
 	const handleRefresh = () => {
 		setQuery({ filters: query.filters, page: 0 });
 		if (query.page === 0 && query.snapshot === undefined) refresh();
@@ -90,7 +93,7 @@ export const AuditTrails = () => {
 				new Blob([toAuditCsv(exported)], {
 					type: "text/csv;charset=utf-8;",
 				}),
-				`audit-trails-${new Date().toISOString().slice(0, 10)}.csv`,
+				`audit-trail-${new Date().toISOString().slice(0, 10)}.csv`,
 			);
 			toast.success(
 				exported.length >= AUDIT_EXPORT_LIMIT
@@ -129,7 +132,7 @@ export const AuditTrails = () => {
 							onClick={handleExport}
 						>
 							<Download className="size-4" aria-hidden="true" />
-							{isExporting ? "Exporting…" : "Export CSV"}
+							{isExporting ? "Exporting..." : "Export CSV"}
 						</Button>
 						<Button
 							type="button"
@@ -146,13 +149,13 @@ export const AuditTrails = () => {
 				</div>
 				<CollapsibleContent forceMount hidden={!filtersOpen}>
 					<div className="border-b py-4">
-						<AuditTrailsFilters onApply={handleApply} />
+						<AuditTrailFilterForm onApply={handleApply} />
 					</div>
 				</CollapsibleContent>
 			</Collapsible>
 			{error ? (
 				<Alert variant="destructive">
-					<AlertTitle>Unable to load audit trails</AlertTitle>
+					<AlertTitle>Unable to load the audit trail</AlertTitle>
 					<AlertDescription>
 						<P className="break-words text-sm">{error}</P>
 						<Button
@@ -205,82 +208,72 @@ export const AuditTrails = () => {
 						</TableCaption>
 						<TableHeader>
 							<TableRow>
-								{[
-									"Time (UTC)",
-									"Actor",
-									"Action",
-									"Event type",
-									"Resource",
-									"Affected user",
-									"Status",
-									"Severity",
-									"Details",
-								].map((label) => (
-									<TableHead key={label} scope="col">
+								{COLUMNS.map((label) => (
+									<TableHead
+										key={label}
+										scope="col"
+										className={
+											label === "Details"
+												? "w-16 text-center"
+												: undefined
+										}
+									>
 										{label}
 									</TableHead>
 								))}
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{events.map((event) => (
+							{events.map((event: AuditEvent) => (
 								<TableRow key={String(event.EVENT_ID)}>
-									<TableCell>
+									<TableCell className="whitespace-nowrap text-sm">
 										{formatAuditTime(event.EVENT_TIME)}
 									</TableCell>
-									<TableCell className="max-w-64 whitespace-normal break-words">
-										<P className="text-sm">
-											{event.ACTOR_USER_NAME ||
-												event.ACTOR_USER_ID ||
-												"—"}
-										</P>
-										{event.ACTOR_USER_NAME &&
-										event.ACTOR_USER_ID ? (
-											<P className="text-muted-foreground text-xs">
-												{event.ACTOR_USER_ID}
-											</P>
-										) : null}
+									<TableCell className="max-w-56">
+										<AuditEventSummary event={event} />
 									</TableCell>
-									<TableCell className="max-w-48 whitespace-normal break-words">
-										{event.ACTION || "—"}
-									</TableCell>
-									<TableCell className="max-w-48 whitespace-normal break-words">
-										{event.EVENT_TYPE || "—"}
-									</TableCell>
-									<TableCell className="max-w-64 whitespace-normal break-words">
-										<P className="text-sm">
-											{event.TARGET_NAME ||
-												event.TARGET_ID ||
-												"—"}
-										</P>
-										<P className="text-muted-foreground text-xs">
-											{event.TARGET_TYPE || "—"}
-										</P>
-									</TableCell>
-									<TableCell className="max-w-64 whitespace-normal break-words">
-										{event.SUBJECT_USER_NAME ||
-											event.SUBJECT_USER_ID ||
-											"—"}
-									</TableCell>
-									<TableCell>
-										<Badge
-											variant={statusVariant(
-												event.STATUS,
+									<TableCell className="max-w-64">
+										<AuditIdentity
+											id={auditText(event.ACTOR_USER_ID)}
+											type={auditText(
+												event.ACTOR_USER_TYPE,
 											)}
-										>
-											{event.STATUS || "Unknown"}
-										</Badge>
-									</TableCell>
-									<TableCell>
-										<Badge
-											variant={severityVariant(
-												event.SEVERITY,
+											name={auditText(
+												event.ACTOR_USER_NAME,
 											)}
-										>
-											{event.SEVERITY || "—"}
-										</Badge>
+											isAdmin={
+												event.ACTOR_IS_ADMIN === true
+											}
+										/>
+									</TableCell>
+									<TableCell className="max-w-64">
+										<AuditTarget event={event} />
+									</TableCell>
+									<TableCell className="max-w-64">
+										<AuditIdentity
+											id={auditText(
+												event.SUBJECT_USER_ID,
+											)}
+											type={auditText(
+												event.SUBJECT_USER_TYPE,
+											)}
+											name={auditText(
+												event.SUBJECT_USER_NAME,
+											)}
+											emptyLabel="-"
+										/>
 									</TableCell>
 									<TableCell>
+										<AuditStatusBadge
+											status={event.STATUS}
+										/>
+									</TableCell>
+									<TableCell>
+										<AuditSeverityBadge
+											severity={event.SEVERITY}
+										/>
+									</TableCell>
+									<TableCell className="text-center">
 										<AuditEventDetails event={event} />
 									</TableCell>
 								</TableRow>
@@ -293,7 +286,7 @@ export const AuditTrails = () => {
 				<output>
 					<P className="text-muted-foreground text-sm">
 						{isLoading
-							? "Loading audit events…"
+							? "Loading audit events..."
 							: error
 								? "Audit events unavailable"
 								: events.length === 0

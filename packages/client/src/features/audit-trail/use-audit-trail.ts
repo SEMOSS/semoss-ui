@@ -3,12 +3,12 @@ import {
 	AUDIT_PAGE_SIZE,
 	type AuditEvent,
 	type AuditTrailFilters,
-	buildAuditTrailsPixel,
+	buildAuditTrailPixel,
 	parseAuditEvents,
 	parseAuditSnapshot,
-} from "@/api/audit-trails";
+} from "@/api/audit-trail";
 
-interface AuditTrailsResult {
+interface AuditTrailResult {
 	events: AuditEvent[];
 	hasNextPage: boolean;
 	isLoading: boolean;
@@ -18,13 +18,13 @@ interface AuditTrailsResult {
 }
 
 /** Read one page using the SDK's cancellation and backend-error handling. */
-export function useAuditTrails(
+export function useAuditTrail(
 	filters: AuditTrailFilters,
 	page: number,
 	snapshot?: string,
-): AuditTrailsResult {
+): AuditTrailResult {
 	const result = usePixel<unknown>(
-		buildAuditTrailsPixel(filters, page, snapshot),
+		buildAuditTrailPixel(filters, page, snapshot),
 		{
 			data: null,
 		},

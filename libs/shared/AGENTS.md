@@ -100,6 +100,12 @@ the people picked and stays open, and the host's list reloads when it closes, si
 been added. Add and Delete are disabled while their request runs. Reuse it rather than building
 another people picker.
 
+The add dialog and the members table's edit dialog are `sm:max-w-2xl` wide, as are the client's
+team access dialogs (Give a Team Access, and giving a team access to a resource) and its usage
+limit dialog, so the dialogs that give access, and the usage limit editor most of them hold, read
+the same. The dialog primitive's own `sm:max-w-lg` wins over a plain `max-w-*`, so a dialog sets
+its width with `sm:max-w-*`.
+
 `MembersTable` is likewise the one members table. Teams use it for their members and managers by
 passing a `source` that loads, removes and adds people (its `people` goes to the add dialog) and
 can rename a member, for example to "Manager". With a `source` the table has no permission column
@@ -122,7 +128,8 @@ person; extend `PersonIdentity` instead. A summary that only stacks a few avatar
 names, is the one exception.
 
 On a model, the members table's edit dialog and the add dialog set each person's usage limit
-with `ModelUsageLimitEditor`, and the list shows it in one Usage Limit column. Only the model's
+with `ModelUsageLimitEditor`, and the list shows it in one Usage Limit column, one rule per line
+(`ModelUsageLimitRules`), wrapping rather than running into the next column. Only the model's
 owners, and admins in admin mode, set usage limits: anyone else sees the limit read-only with
 `OWNERS_ONLY_LIMIT_REASON` ("Only owners can set usage limits"). An editor can still change a
 Read-Only or Editor member's level in the edit dialog, which sends the limit back as it is, and
