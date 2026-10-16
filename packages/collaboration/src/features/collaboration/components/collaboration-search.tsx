@@ -50,10 +50,15 @@ const GO_TO = [
 		detail: "Every open, waiting and done item",
 		path: "/work/all",
 	},
-	{ id: "topics", label: "Topics", detail: "All your topics", path: "/work" },
+	{
+		id: "topics",
+		label: "Topics",
+		detail: "All your topics",
+		path: "/brain/topics",
+	},
 	{
 		id: "filing",
-		label: "Topics and filing",
+		label: "Review",
 		detail: "Check how mail is filed into topics",
 		path: "/brain",
 	},
@@ -77,8 +82,8 @@ const GO_TO = [
 	},
 	{
 		id: "sources",
-		label: "Sources",
-		detail: "Mail, Teams and calendar",
+		label: "Connections",
+		detail: "Microsoft 365, automatic updates and adding items",
 		path: "/brain/sources",
 	},
 	{

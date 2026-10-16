@@ -12,7 +12,13 @@ import { CollaborationSurface } from "./collaboration-surface";
 import { TopicEditor } from "./topic-editor";
 
 /** Work starts with the topics that give each action its purpose. */
-export function WorkTopics() {
+export function WorkTopics({
+	title = "Work",
+	description = "Choose a topic to focus on its actions, threads, and sessions.",
+}: {
+	title?: string;
+	description?: string;
+}) {
 	const { state } = useCollaborationSession();
 	const [isCreating, setIsCreating] = useState(false);
 	const createButtonRef = useRef<HTMLButtonElement>(null);
@@ -22,8 +28,8 @@ export function WorkTopics() {
 			header={
 				<CollaborationPageHeader
 					layoutClassName="flex-col sm:flex-row"
-					title="Work"
-					description="Choose a topic to focus on its actions, threads, and sessions."
+					title={title}
+					description={description}
 					actions={
 						<>
 							<Button

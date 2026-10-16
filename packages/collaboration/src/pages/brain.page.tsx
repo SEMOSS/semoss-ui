@@ -8,9 +8,10 @@ import { PersonDetail } from "@/features/collaboration/components/person-detail"
 import { SavedRecordBoundary } from "@/features/collaboration/components/saved-record-boundary";
 import { SourcesAndRules } from "@/features/collaboration/components/sources-and-rules";
 import { ThreadsDirectory } from "@/features/collaboration/components/threads-directory";
+import { WorkTopics } from "@/features/collaboration/components/work-topics";
 import { SettingsTabBar } from "@/features/settings/settings-navigation";
 
-/** Setup views (filing, conversations, people, memory, sources) under the Settings tab bar. */
+/** Setup views (topics, review, conversations, people, memory, sources) under the Settings tab bar. */
 export function BrainPage() {
 	const { pathname } = useLocation();
 	const { personId, threadId } = useParams();
@@ -31,6 +32,13 @@ export function BrainPage() {
 	else if (pathname.endsWith("/sources")) content = <SourcesAndRules />;
 	else if (pathname.endsWith("/people")) content = <PeopleDirectory />;
 	else if (pathname.endsWith("/threads")) content = <ThreadsDirectory />;
+	else if (pathname.endsWith("/topics"))
+		content = (
+			<WorkTopics
+				title="Topics"
+				description="What your mail and work are filed under. Open one to see its actions and conversations."
+			/>
+		);
 	else content = <BrainReview />;
 	return (
 		<>

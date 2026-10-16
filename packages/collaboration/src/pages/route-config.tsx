@@ -87,6 +87,7 @@ export const routes: RouteObject[] = [
 							},
 							...[
 								"brain",
+								"brain/topics",
 								"brain/memory",
 								"brain/sources",
 								"brain/people",

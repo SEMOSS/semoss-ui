@@ -366,9 +366,7 @@ describe("CollaborationFrame", () => {
 		await user.keyboard("{Escape}");
 		await waitFor(() => expect(search).toHaveFocus());
 		await user.click(search);
-		await user.click(
-			screen.getByRole("option", { name: /Topics and filing/ }),
-		);
+		await user.click(screen.getByRole("option", { name: /^Review/ }));
 		await waitFor(() =>
 			expect(router.state.location.pathname).toBe("/brain"),
 		);
@@ -376,7 +374,7 @@ describe("CollaborationFrame", () => {
 	});
 
 	it.each(["{Enter}", " "])(
-		"toggles the room sidebar with its rail using %s without remounting the draft",
+		"toggles the room sidebar with its header button using %s without remounting the draft",
 		async (key) => {
 			const { user } = renderFrame("/thread/room%3Aroom-one");
 			const navigation = screen.getByRole("complementary", {
@@ -403,9 +401,7 @@ describe("CollaborationFrame", () => {
 			});
 			expect(navigation).toContainElement(expand);
 			expect(expand.closest("header")).toBeNull();
-			expect(expand).toHaveAttribute("data-sidebar", "rail");
-			expect(expand).toHaveAttribute("tabindex", "0");
-			expect(expand.querySelector("svg")).toBeNull();
+			expect(expand.querySelector("svg")).not.toBeNull();
 			const controlsId = expand.getAttribute("aria-controls");
 			expect(controlsId).toBeTruthy();
 			expect(navigation).toContainElement(
@@ -423,11 +419,11 @@ describe("CollaborationFrame", () => {
 				screen.getByRole("textbox", { name: "Conversation draft" }),
 			).toBe(draft);
 			expect(draft).toHaveValue("Keep this unsent message");
-			const rail = screen.getByRole("button", {
+			const toggle = screen.getByRole("button", {
 				name: "Collapse navigation",
 			});
-			expect(rail).toBe(expand);
-			expect(rail).toHaveFocus();
+			expect(toggle).toBe(expand);
+			expect(toggle).toHaveFocus();
 			await user.keyboard(key);
 			expect(
 				screen.getByRole("button", { name: "Expand navigation" }),
@@ -437,7 +433,7 @@ describe("CollaborationFrame", () => {
 		},
 	);
 
-	it("returns focus to the rail when the navigation shortcut hides a focused session", async () => {
+	it("collapses navigation when opening a room hides a focused session", async () => {
 		const { user } = renderFrame();
 		act(() =>
 			screen
@@ -489,9 +485,8 @@ describe("CollaborationFrame", () => {
 		).toHaveAttribute("aria-expanded", "false");
 	});
 
-	it("restores the collapsed sidebar and both disclosures together after a fresh mount", async () => {
+	it("restores the collapsed sidebar and Chats disclosure together after a fresh mount", async () => {
 		const { user } = renderFrame();
-		await user.click(screen.getByRole("button", { name: "Topics" }));
 		await user.click(screen.getByRole("button", { name: "Chats" }));
 		await user.click(
 			screen.getByRole("button", { name: "Collapse navigation" }),
@@ -501,13 +496,6 @@ describe("CollaborationFrame", () => {
 		await user.click(
 			screen.getByRole("button", { name: "Expand navigation" }),
 		);
-		expect(screen.getByRole("button", { name: "Topics" })).toHaveAttribute(
-			"aria-expanded",
-			"true",
-		);
-		expect(
-			screen.getByRole("navigation", { name: "Topics" }),
-		).toBeVisible();
 		expect(screen.getByRole("button", { name: "Chats" })).toHaveAttribute(
 			"aria-expanded",
 			"false",
@@ -747,7 +735,7 @@ describe("CollaborationFrame", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	it("moves a focused mobile trigger to the desktop rail when the viewport widens", () => {
+	it("moves a focused mobile trigger to the desktop collapse button when the viewport widens", () => {
 		isWide = false;
 		renderFrame();
 		act(() =>
@@ -758,47 +746,4 @@ describe("CollaborationFrame", () => {
 			screen.getByRole("button", { name: "Collapse navigation" }),
 		).toHaveFocus();
 	});
-
-	it.each([false, true])(
-		"preserves a new topic draft when resizing its drawer to desktop (rail: %s)",
-		async (isCollapsed) => {
-			const { user } = renderFrame();
-			if (isCollapsed)
-				await user.click(
-					screen.getByRole("button", { name: "Collapse navigation" }),
-				);
-			setDesktop(false);
-			await user.click(
-				screen.getByRole("button", { name: "Open navigation" }),
-			);
-			const navigation = screen.getByRole("dialog", {
-				name: "Navigation",
-			});
-			await user.click(
-				within(navigation).getByRole("button", { name: "New topic" }),
-			);
-			const dialog = screen.getByRole("dialog", { name: "New topic" });
-			const name = within(dialog).getByRole("textbox", {
-				name: "Name (required)",
-			});
-			await user.type(name, "Northwind strategy");
-			setDesktop(true);
-			await waitFor(() => expect(navigation).not.toBeInTheDocument());
-			expect(screen.getByRole("dialog", { name: "New topic" })).toBe(
-				dialog,
-			);
-			expect(name).toHaveValue("Northwind strategy");
-			expect(name).toHaveFocus();
-			await user.click(
-				within(dialog).getByRole("button", { name: "Cancel" }),
-			);
-			await waitFor(() =>
-				expect(
-					screen.getByRole("button", {
-						name: isCollapsed ? "Expand navigation" : "New topic",
-					}),
-				).toHaveFocus(),
-			);
-		},
-	);
 });

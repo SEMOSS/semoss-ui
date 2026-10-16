@@ -28,6 +28,9 @@ vi.mock("@/features/collaboration/components/sources-and-rules", () => ({
 vi.mock("@/features/collaboration/components/threads-directory", () => ({
 	ThreadsDirectory: () => <h1>Threads content</h1>,
 }));
+vi.mock("@/features/collaboration/components/work-topics", () => ({
+	WorkTopics: () => <h1>Topics content</h1>,
+}));
 
 afterEach(cleanup);
 
@@ -36,6 +39,7 @@ function renderBrain(path: string) {
 	const router = createMemoryRouter(
 		[
 			"/brain",
+			"/brain/topics",
 			"/brain/memory",
 			"/brain/people",
 			"/brain/people/:personId",
@@ -56,13 +60,14 @@ function renderBrain(path: string) {
 }
 
 it.each([
-	["/brain", "Review content", "Topics and filing"],
+	["/brain", "Review content", "Review"],
+	["/brain/topics", "Topics content", "Topics"],
 	["/brain/memory", "Memory content", "Memory"],
 	["/brain/people", "People content", "People"],
 	["/brain/people/person-one", "Person detail", "People"],
 	["/brain/threads", "Threads content", "Conversations"],
 	["/brain/threads/thread-one", "Thread detail", "Conversations"],
-	["/brain/sources", "Sources content", "Sources"],
+	["/brain/sources", "Sources content", "Connections"],
 ] as const)(
 	"keeps every setup destination available at %s",
 	(path, heading, active) => {
@@ -71,14 +76,16 @@ it.each([
 		const navigation = within(
 			screen.getByRole("navigation", { name: "Settings" }),
 		);
-		expect(navigation.getAllByRole("link")).toHaveLength(9);
+		expect(navigation.getAllByRole("link")).toHaveLength(11);
 		for (const label of [
 			"About you",
-			"Topics and filing",
+			"Connections",
+			"Email",
+			"Topics",
+			"Review",
 			"Conversations",
 			"People",
 			"Memory",
-			"Sources",
 			"Rules",
 			"Appearance",
 			"Data",

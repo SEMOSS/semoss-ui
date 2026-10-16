@@ -4,7 +4,6 @@ import {
 	fireEvent,
 	render,
 	screen,
-	waitFor,
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -51,7 +50,6 @@ vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 /** Exercise the controlled navigation contract without involving persistence. */
 function NavigationFixture({ onNavigate }: { onNavigate?: () => void }) {
 	const [isCollapsed, setIsCollapsed] = useState(false);
-	const [isTopicsOpen, setIsTopicsOpen] = useState(false);
 	return (
 		<>
 			<Button
@@ -62,8 +60,6 @@ function NavigationFixture({ onNavigate }: { onNavigate?: () => void }) {
 			</Button>
 			<CollaborationNavigation
 				isCollapsed={isCollapsed}
-				isTopicsOpen={isTopicsOpen}
-				onTopicsOpenChange={setIsTopicsOpen}
 				onNavigate={onNavigate}
 			/>
 		</>
@@ -102,7 +98,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("keeps Today and Routines as the main destinations with folded Topics", () => {
+	it("keeps Today and Routines as the main destinations without Topics", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -133,11 +129,13 @@ describe("CollaborationNavigation", () => {
 				screen.queryByRole("link", { name }),
 			).not.toBeInTheDocument();
 		}
-		expect(screen.getByRole("button", { name: "Topics" })).toHaveAttribute(
-			"aria-expanded",
-			"false",
-		);
-		expect(screen.getByRole("button", { name: "New topic" })).toBeVisible();
+		// topics moved to Settings
+		expect(
+			screen.queryByRole("button", { name: "Topics" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "New topic" }),
+		).not.toBeInTheDocument();
 		expect(screen.getByRole("region", { name: "Chats" })).toBeVisible();
 	});
 
@@ -188,46 +186,6 @@ describe("CollaborationNavigation", () => {
 		expect(screen.getByRole("link", { name: "Today" })).not.toHaveAttribute(
 			"aria-current",
 		);
-	});
-
-	it("opens Topics by keyboard and selects only the shared topic workspace", async () => {
-		const { user, router, onNavigate } = renderNavigation("/topics/t-geng");
-		const disclosure = screen.getByRole("button", { name: "Topics" });
-		act(() => disclosure.focus());
-		await user.keyboard("{Enter}");
-		expect(disclosure).toHaveAttribute("aria-expanded", "true");
-		const topics = screen.getByRole("navigation", { name: "Topics" });
-		const selected = within(topics).getByRole("link", {
-			name: /^Northwind Eng\b/,
-		});
-		expect(selected).toHaveAttribute("aria-current", "page");
-		expect(screen.getByRole("link", { name: "Today" })).not.toHaveAttribute(
-			"aria-current",
-		);
-		await user.click(selected);
-		expect(onNavigate).toHaveBeenCalledOnce();
-		for (const path of ["/brain", "/work", "/"]) {
-			await act(() => router.navigate(path));
-			expect(
-				within(
-					screen.getByRole("navigation", { name: "Topics" }),
-				).getByRole("link", { name: /^Northwind Eng\b/ }),
-			).toHaveAttribute("href", "/topics/t-geng");
-		}
-	});
-
-	it("opens New topic independently of the folded Topics disclosure and returns focus", async () => {
-		const { user } = renderNavigation();
-		const trigger = screen.getByRole("button", { name: "New topic" });
-		const disclosure = screen.getByRole("button", { name: "Topics" });
-		await user.click(trigger);
-		const dialog = screen.getByRole("dialog", { name: "New topic" });
-		expect(disclosure).toHaveAttribute("aria-expanded", "false");
-		await user.click(
-			within(dialog).getByRole("button", { name: "Cancel" }),
-		);
-		await waitFor(() => expect(trigger).toHaveFocus());
-		expect(disclosure).toHaveAttribute("aria-expanded", "false");
 	});
 
 	it("preserves the mounted session scroller, its position, and selection when collapsed", async () => {

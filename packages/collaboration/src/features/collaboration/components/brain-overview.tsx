@@ -45,7 +45,7 @@ export function BrainOverview() {
 				</div>
 			</Section>
 			<Section
-				title="Sources"
+				title="Connections"
 				variant="card"
 				action={
 					<Link

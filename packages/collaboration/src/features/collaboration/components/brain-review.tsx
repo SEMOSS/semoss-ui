@@ -40,7 +40,7 @@ export function BrainReview() {
 		<CollaborationSurface
 			header={
 				<CollaborationPageHeader
-					title="Topics and filing"
+					title="Review"
 					description="Check how mail is filed into topics. The assistant asks here instead of on Today."
 				/>
 			}
@@ -48,7 +48,7 @@ export function BrainReview() {
 				<>
 					<BrainOverview />
 					<Button asChild variant="outline">
-						<Link to="/brain/sources">Sources</Link>
+						<Link to="/brain/sources">Connections</Link>
 					</Button>
 				</>
 			}

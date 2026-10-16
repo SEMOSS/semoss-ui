@@ -1,46 +1,40 @@
 import { CalendarClock, Inbox } from "lucide-react";
-import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
 import { selectToday } from "@/features/dashboard/today-selectors";
 import { lexicon } from "@/lib/lexicon";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
+import {
+	CollaborationNavigationHeader,
+	type NavigationToggle,
+} from "./collaboration-navigation-header";
 import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationSettingsLink } from "./collaboration-settings-link";
-import { CollaborationTopicsNavigation } from "./collaboration-topics-navigation";
 
 interface CollaborationNavigationProps {
 	/** Renders a compact icon rail on desktop. */
 	isCollapsed?: boolean;
-	/** Controls the saved topic disclosure when rendered by the shell. */
-	isTopicsOpen?: boolean;
-	/** Saves the user's topic disclosure preference. */
-	onTopicsOpenChange?: (isOpen: boolean) => void;
 	/** Controls the saved session disclosure when rendered by the shell. */
 	isSessionsOpen?: boolean;
 	/** Saves the user's session disclosure preference. */
 	onSessionsOpenChange?: (isOpen: boolean) => void;
-	/** Opens the shell-owned topic editor independently of mobile navigation. */
-	onNewTopic?: (trigger: HTMLButtonElement) => void;
 	/** Closes mobile navigation after choosing a destination. */
 	onNavigate?: () => void;
+	/** The desktop collapse button, shown in the header. */
+	toggle?: NavigationToggle;
 }
 
-/** One quiet navigation follows the daily brief, topics, and conversations. */
+/** One quiet navigation follows the daily brief and conversations; topics live in Settings. */
 export function CollaborationNavigation({
 	isCollapsed = false,
-	isTopicsOpen,
-	onTopicsOpenChange,
 	isSessionsOpen,
 	onSessionsOpenChange,
-	onNewTopic,
 	onNavigate,
+	toggle,
 }: CollaborationNavigationProps) {
 	const { state } = useCollaborationSession();
 	const { pathname } = useLocation();
-	const [isLocalTopicsOpen, setIsLocalTopicsOpen] = useState(false);
 	// Work, filing and setup stay reachable from Today, Settings and search;
 	// Routines stays here because it is the proactive part
 	const links = [
@@ -66,6 +60,7 @@ export function CollaborationNavigation({
 				<CollaborationNavigationHeader
 					isCollapsed={isCollapsed}
 					onNavigate={onNavigate}
+					toggle={toggle}
 				/>
 			</div>
 			<nav
@@ -119,14 +114,6 @@ export function CollaborationNavigation({
 						isCollapsed && "hidden",
 					)}
 				>
-					<CollaborationTopicsNavigation
-						isOpen={isTopicsOpen ?? isLocalTopicsOpen}
-						onOpenChange={
-							onTopicsOpenChange ?? setIsLocalTopicsOpen
-						}
-						onNavigate={onNavigate}
-						onNewTopic={onNewTopic}
-					/>
 					<ChatHistoryList
 						isOpen={isSessionsOpen}
 						onOpenChange={onSessionsOpenChange}
