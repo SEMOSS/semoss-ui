@@ -86,6 +86,46 @@ export const getUsageStepSource = (
 	step: Pick<UsageLimitPathStep, "limitType">,
 ): ModelUsageLimitSource => step.limitType;
 
+/** The type of usage limit of each source the logs record a call as billed to */
+const LOGGED_BILLED_SOURCES: Readonly<Record<string, UsageBilledLimitType>> = {
+	USER: "DIRECT",
+	TEAM: "TEAM",
+	PUBLIC: "PUBLIC",
+	ALL_MODELS: "ALL_MODELS",
+	PLATFORM: "PLATFORM",
+};
+
+/**
+ * Which usage limit a model call was billed to, as the inference and activity
+ * logs record it (BILLED_SOURCE_TYPE, BILLED_SUBJECT_ID and
+ * BILLED_SUBJECT_TYPE), such as "Direct Limit" or "Ops Team Limit"
+ *
+ * @param sourceType - the source billed: USER, TEAM, PUBLIC, ALL_MODELS or
+ * PLATFORM
+ * @param subjectId - the person's login id or the team billed
+ * @param subjectType - the matching login type or team type
+ * @returns the limit, the source type itself when it is not one this knows, or
+ * null when the logs record no source
+ */
+export const describeLoggedBilledTo = (
+	sourceType: unknown,
+	subjectId: unknown,
+	subjectType: unknown,
+): string | null => {
+	if (typeof sourceType !== "string" || !sourceType) {
+		return null;
+	}
+	const limitType = LOGGED_BILLED_SOURCES[sourceType];
+	if (!limitType) {
+		return sourceType;
+	}
+	return describeBilledTo({
+		limitType,
+		id: typeof subjectId === "string" ? subjectId : null,
+		type: typeof subjectType === "string" ? subjectType : null,
+	});
+};
+
 /**
  * Which limit applies to a person's calls, in a few words, such as "Direct
  * Limit", "Ops Team Limit, then Data" or "No Limit"
