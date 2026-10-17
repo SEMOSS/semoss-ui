@@ -56,7 +56,7 @@ export function topicSummary(
 			? `with ${names.slice(0, 3).join(", ")}${names.length > 3 ? ` and ${names.length - 3} more` : ""}`
 			: "",
 		evidence?.folders.length
-			? `from your Outlook folder${evidence.folders.length > 1 ? "s" : ""} ${evidence.folders.join(", ")}`
+			? `mostly in your folder${evidence.folders.length > 1 ? "s" : ""} ${evidence.folders.join(", ")}`
 			: "",
 	]
 		.filter(Boolean)

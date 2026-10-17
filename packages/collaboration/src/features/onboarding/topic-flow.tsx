@@ -264,6 +264,7 @@ export function TopicFlow({
 				keep: true,
 				removedPeople: [],
 				addedPeople: [],
+				fileFromFolder: false,
 				...seed,
 			},
 			{ shouldFocus: false },
