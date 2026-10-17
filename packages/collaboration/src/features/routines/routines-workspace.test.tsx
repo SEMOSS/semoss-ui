@@ -137,9 +137,14 @@ describe("InboxRoutineForm", () => {
 		fireEvent.change(screen.getByLabelText("Run time (required)"), {
 			target: { value: "09:15" },
 		});
-		const timezone = screen.getByLabelText("Time zone (required)");
-		await user.clear(timezone);
-		await user.type(timezone, "America/Chicago");
+		const timezone = screen.getByRole("combobox", {
+			name: "Time zone (required)",
+		});
+		timezone.focus();
+		await user.keyboard("{Enter}");
+		await user.click(
+			screen.getByRole("option", { name: "America/Chicago" }),
+		);
 		const count = screen.getByRole("spinbutton", {
 			name: "Emails to review for replies (required)",
 		});
@@ -170,11 +175,6 @@ describe("InboxRoutineForm", () => {
 			"Choose a whole number of emails.",
 		],
 		["Run time (required)", "", "Choose a valid run time."],
-		[
-			"Time zone (required)",
-			"Unknown/Zone",
-			"Enter a valid time zone, such as America/New_York.",
-		],
 	])(
 		"associates the invalid %s value %s with its correction",
 		async (label, value, message) => {
