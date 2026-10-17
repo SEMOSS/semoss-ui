@@ -6,6 +6,8 @@ export interface TypewriterTextProps {
 	className?: string;
 	/** Delay in ms between each revealed character */
 	speed?: number;
+	/** When false, a change to `text` shows immediately instead of typing */
+	animate?: boolean;
 }
 
 /**
@@ -20,6 +22,7 @@ export const TypewriterText = ({
 	text,
 	className,
 	speed = 30,
+	animate = true,
 }: TypewriterTextProps) => {
 	const [displayed, setDisplayed] = useState(text);
 	const previousText = useRef(text);
@@ -32,6 +35,12 @@ export const TypewriterText = ({
 			return;
 		}
 		previousText.current = text;
+
+		if (!animate) {
+			setDisplayed(text);
+			displayedRef.current = text;
+			return;
+		}
 
 		let interval: ReturnType<typeof setInterval>;
 
@@ -63,7 +72,7 @@ export const TypewriterText = ({
 		}
 
 		return () => clearInterval(interval);
-	}, [text, speed]);
+	}, [text, speed, animate]);
 
 	const isTyping = displayed !== text;
 

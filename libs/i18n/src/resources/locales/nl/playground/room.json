@@ -1,5 +1,6 @@
 {
 	"welcome": "Welkom, {{name}}",
+	"defaultName": "Nieuwe chat",
 	"suggestions": {
 		"title": "Voorgestelde vervolgberichten"
 	},

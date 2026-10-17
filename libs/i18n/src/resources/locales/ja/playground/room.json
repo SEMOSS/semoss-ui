@@ -1,5 +1,6 @@
 {
 	"welcome": "{{name}}さん、ようこそ",
+	"defaultName": "新しいチャット",
 	"suggestions": {
 		"title": "次のメッセージの提案"
 	},
