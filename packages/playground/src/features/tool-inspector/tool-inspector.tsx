@@ -10,7 +10,7 @@ import {
 	TabsTrigger,
 } from "@semoss/ui/next";
 import type { ToolStore } from "@/stores/tool/tool.store";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { isAskExecutionMode, isYesNoExecutionMode } from "@/utility/mcp-utils";
 import { ToolDataView } from "./tool-data-view";
 import { ToolInfo } from "./tool-info";
 import { ToolInputValue } from "./tool-input-value";
@@ -52,11 +52,15 @@ export const ToolInspector = observer(
 					ERROR: "failed",
 					CANCELLED: "cancelled",
 					LOADING: "running",
-					INITIAL: isAskExecutionMode(
-						tool.json._meta?.SMSS_MCP_EXECUTION,
-					)
-						? "waitingForInput"
-						: "queued",
+					INITIAL:
+						isAskExecutionMode(
+							tool.json._meta?.SMSS_MCP_EXECUTION,
+						) ||
+						isYesNoExecutionMode(
+							tool.json._meta?.SMSS_MCP_EXECUTION,
+						)
+							? "waitingForInput"
+							: "queued",
 				}[tool.status]
 			}`,
 		);

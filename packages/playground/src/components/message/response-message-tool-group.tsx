@@ -17,7 +17,7 @@ import {
 	Spinner,
 } from "@semoss/ui/next";
 import type { ToolStore } from "@/stores/tool/tool.store";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { isAskExecutionMode, isYesNoExecutionMode } from "@/utility/mcp-utils";
 import { ResponseMessageTool } from "./response-message-tool";
 
 export interface ResponseMessageToolGroupProps {
@@ -31,11 +31,16 @@ export const ResponseMessageToolGroup = observer(
 		const { t } = useTranslation("tool");
 		const [manualOpen, setManualOpen] = useState<boolean | null>(null);
 		const visibleTools = tools.filter((tool) => tool.display !== "hidden");
-		const needsDecision = (tool: ToolStore): boolean =>
-			Boolean(tool.pendingAction) ||
-			(tool.isResolved &&
-				tool.status === "INITIAL" &&
-				isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION));
+		const needsDecision = (tool: ToolStore): boolean => {
+			const execution = tool.json._meta?.SMSS_MCP_EXECUTION;
+			return (
+				Boolean(tool.pendingAction) ||
+				(tool.isResolved &&
+					tool.status === "INITIAL" &&
+					(isAskExecutionMode(execution) ||
+						isYesNoExecutionMode(execution)))
+			);
+		};
 		const pending = visibleTools.filter(needsDecision);
 		const activity = visibleTools.filter((tool) => !needsDecision(tool));
 		const isRunning = visibleTools.some(
