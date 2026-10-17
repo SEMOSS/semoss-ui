@@ -235,6 +235,11 @@ export function mapTopic(row: Row): Topic {
 			reason: opt(person.reason),
 		})),
 		calendarSeries: list<string>(row.calendarSeries),
+		folders: list<Row>(row.folders).map((folder) => ({
+			id: str(folder.id),
+			path: str(folder.path),
+			origin: opt(folder.origin),
+		})),
 		stats: {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),

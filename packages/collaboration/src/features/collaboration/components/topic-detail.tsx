@@ -53,6 +53,7 @@ import { PersonAvatar } from "./person-avatar";
 import { TextEntryForm } from "./text-entry-form";
 import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
+import { TopicFolders } from "./topic-folders";
 import { TopicGoalPopover } from "./topic-goal-popover";
 import { TopicThreadRow } from "./topic-thread-row";
 import { useWorkFeed, WorkFilterMenu, WorkItemsList } from "./work-items-feed";
@@ -879,6 +880,11 @@ export function TopicDetail() {
 										))}
 									</div>
 								)}
+								<TopicFolders
+									topicId={topic.id}
+									folders={topic.folders ?? []}
+									isSample={topic.isSample}
+								/>
 								<Collapsible
 									open={areNotesOpen}
 									onOpenChange={setAreNotesOpen}

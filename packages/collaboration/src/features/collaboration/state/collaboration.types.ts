@@ -54,6 +54,8 @@ export interface Topic {
 	goals: TopicGoal[];
 	people: TopicPerson[];
 	calendarSeries: string[];
+	/** Outlook folders the topic stands for; mail in them is filed under it. */
+	folders?: { id: string; path: string; origin?: string | null }[];
 	stats: { threads: number; openItems: number; lastActivity: string };
 	isSample: boolean;
 }

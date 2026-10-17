@@ -49,6 +49,15 @@ const SOURCE_STATUS: Record<
 	off: { label: "Off", variant: "outline" },
 };
 
+// what is read and skipped, and how many folders file straight into a topic
+function folderDetail(folders: NonNullable<Connection["folders"]>): string {
+	const made = `${folders.custom} ${folders.custom === 1 ? "folder" : "folders"} you made`;
+	const linked = folders.linked
+		? ` ${folders.linked} ${folders.linked === 1 ? "folder files" : "folders file"} straight into a topic.`
+		: "";
+	return `Inbox, Sent, Archive and ${made}. Deleted Items, Junk and Drafts are skipped.${linked}`;
+}
+
 // pilot sources the Brain actually reads today
 const SHOWN_SOURCES = new Set(["email", "calendar", "teams"]);
 
@@ -178,6 +187,17 @@ export function ConnectionsView() {
 					</Button>
 				</header>
 				<div className="divide-y">
+					{connection?.folders?.known && (
+						<Row
+							title="Outlook folders"
+							detail={folderDetail(connection.folders)}
+							state={
+								<Badge variant="secondary">
+									{connection.folders.read} read
+								</Badge>
+							}
+						/>
+					)}
 					{sources.map((source) => {
 						const status = SOURCE_STATUS[source.status];
 						return (

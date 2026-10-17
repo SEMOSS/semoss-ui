@@ -581,6 +581,10 @@ export function KeepOutStep({
 // what the import is doing, in the owner's words; importing runs once for mail and once for Teams
 function importLabel(step: string, mailReady: boolean): string {
 	switch (step) {
+		case "reading folders":
+			return "Reading your Outlook folders";
+		case "reading mail":
+			return "Reading your mail";
 		case "reading inbox":
 			return "Reading your Inbox";
 		case "reading sentitems":

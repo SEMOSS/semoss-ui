@@ -25,6 +25,16 @@ const connectionSchema = z.object({
 			lastSync: z.string().nullish(),
 		}),
 	),
+	// which Outlook folders mail is read from; known is false before the first import reads them
+	folders: z
+		.object({
+			known: z.boolean(),
+			read: z.number(),
+			custom: z.number(),
+			linked: z.number(),
+			updatedAt: z.string().nullish(),
+		})
+		.nullish(),
 });
 export type Connection = z.infer<typeof connectionSchema>;
 
