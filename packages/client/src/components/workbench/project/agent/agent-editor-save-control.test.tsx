@@ -37,6 +37,7 @@ describe("AgentEditorSaveControl", () => {
 			onSave: vi.fn(),
 			isLoading: false,
 			isFetching: false,
+			isFormValid: true,
 			readOnly: true,
 		});
 
@@ -49,6 +50,7 @@ describe("AgentEditorSaveControl", () => {
 			onSave,
 			isLoading: false,
 			isFetching: false,
+			isFormValid: true,
 			readOnly: false,
 		});
 

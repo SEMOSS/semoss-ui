@@ -8,6 +8,7 @@ import {
 	type AgentDefaultTool,
 	AgentForm,
 	type AgentFormValues,
+	type AgentHookCapabilities,
 } from "@semoss/shared";
 import {
 	Alert,
@@ -43,6 +44,7 @@ export const NewWorkspacePage = observer(() => {
 		AGENT_FORM_DEFAULT_VALUES,
 	);
 	const [isSaving, setIsSaving] = useState(false);
+	const [isFormValid, setIsFormValid] = useState(true);
 	const [saveError, setSaveError] = useState<string | null>(null);
 
 	// The built-in tool catalog and hook kinds are deployment-level, so they
@@ -50,6 +52,7 @@ export const NewWorkspacePage = observer(() => {
 	const formOptions = usePixel<{
 		default_tools?: AgentDefaultTool[];
 		known_hook_kinds?: string[];
+		hook_capabilities?: AgentHookCapabilities;
 	}>("GetAgentFormOptions();");
 	const isLoadingOptions =
 		formOptions.status === "INITIAL" || formOptions.status === "LOADING";
@@ -60,7 +63,7 @@ export const NewWorkspacePage = observer(() => {
 
 	const handleCreate = async () => {
 		const name = formValues.name.trim();
-		if (isSaving || isLoadingOptions || !name) return;
+		if (isSaving || isLoadingOptions || !isFormValid || !name) return;
 		setIsSaving(true);
 		setSaveError(null);
 		try {
@@ -113,6 +116,7 @@ export const NewWorkspacePage = observer(() => {
 							disabled={
 								isSaving ||
 								isLoadingOptions ||
+								!isFormValid ||
 								!formValues.name.trim()
 							}
 							data-testid="workspace-new-page--create-btn"
@@ -136,9 +140,13 @@ export const NewWorkspacePage = observer(() => {
 					<AgentForm
 						data={AGENT_FORM_DEFAULT_VALUES}
 						onChange={setFormValues}
+						onValidityChange={setIsFormValid}
 						disabled={isSaving}
 						knownHookKinds={
 							formOptions.data?.known_hook_kinds ?? []
+						}
+						hookCapabilities={
+							formOptions.data?.hook_capabilities ?? {}
 						}
 						defaultTools={formOptions.data?.default_tools ?? []}
 						links={getPlaygroundAgentLinks(

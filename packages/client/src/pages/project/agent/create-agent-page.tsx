@@ -8,6 +8,7 @@ import {
 	type AgentDefaultTool,
 	AgentForm,
 	type AgentFormValues,
+	type AgentHookCapabilities,
 	agentNeedsFollowUpEdit,
 	buildAddWorkspacePixel,
 	buildEditWorkspacePixel,
@@ -39,6 +40,7 @@ export const CreateAgentPage = () => {
 	const runPixel = useSession((state) => state.runPixel);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isFormValid, setIsFormValid] = useState(true);
 	const [formValues, setFormValues] = useState<AgentFormValues>(
 		AGENT_FORM_DEFAULT_VALUES,
 	);
@@ -48,6 +50,7 @@ export const CreateAgentPage = () => {
 	const formOptions = usePixel<{
 		default_tools?: AgentDefaultTool[];
 		known_hook_kinds?: string[];
+		hook_capabilities?: AgentHookCapabilities;
 	}>("GetAgentFormOptions();");
 
 	const navigateAgent = (appId: string) => {
@@ -56,7 +59,7 @@ export const CreateAgentPage = () => {
 	};
 
 	const onCreate = async () => {
-		if (isLoading || !formValues.name.trim()) return;
+		if (isLoading || !isFormValid || !formValues.name.trim()) return;
 		try {
 			setIsLoading(true);
 
@@ -148,9 +151,13 @@ export const CreateAgentPage = () => {
 					<AgentForm
 						data={AGENT_FORM_DEFAULT_VALUES}
 						onChange={setFormValues}
+						onValidityChange={setIsFormValid}
 						disabled={isLoading}
 						knownHookKinds={
 							formOptions.data?.known_hook_kinds ?? []
+						}
+						hookCapabilities={
+							formOptions.data?.hook_capabilities ?? {}
 						}
 						defaultTools={formOptions.data?.default_tools ?? []}
 						links={CLIENT_AGENT_LINKS}
@@ -163,7 +170,9 @@ export const CreateAgentPage = () => {
 					<Button
 						type="button"
 						onClick={onCreate}
-						disabled={!formValues.name.trim() || isLoading}
+						disabled={
+							!formValues.name.trim() || !isFormValid || isLoading
+						}
 						className="w-full sm:w-auto"
 					>
 						Create
