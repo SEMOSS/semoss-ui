@@ -84,7 +84,7 @@ it("opens the conversation and keeps source details in the thread menu", async (
 	const subject = screen.getByRole("link", { name: "Launch review" });
 	expect(subject).toHaveAttribute("href", `/thread/${threadId}`);
 	expect(subject).toHaveAttribute("title", "Launch review · main topic");
-	expect(screen.getByText("For you")).toBeVisible();
+	expect(screen.getByText("Open action")).toBeVisible();
 	expect(screen.getByText("Main topic")).toBeInTheDocument();
 	expect(
 		screen.getByText("Review the launch schedule with the team."),
@@ -96,7 +96,7 @@ it("opens the conversation and keeps source details in the thread menu", async (
 			name: "Thread actions for Launch review",
 		}),
 	);
-	await user.click(screen.getByRole("button", { name: "View in Brain" }));
+	await user.click(screen.getByRole("button", { name: "Filing details" }));
 	expect(router.state.location.pathname).toBe(`/brain/threads/${threadId}`);
 });
 
@@ -136,8 +136,11 @@ it("retains statuses, calendar details, resume, and topic unlinking", async () =
 	);
 	await user.click(
 		screen.getByRole("button", {
-			name: "Remove Launch review from this topic",
+			name: "Thread actions for Launch review",
 		}),
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Remove from this topic" }),
 	);
 	expect(onChange).toHaveBeenLastCalledWith(
 		expect.objectContaining({

@@ -262,7 +262,9 @@ it("keeps partial results visible and retries only failed metadata without a fal
 		"Could not check 1 session. These results may be incomplete.",
 	);
 	expect(
-		screen.queryByText("No linked sessions in loaded history."),
+		screen.queryByText(
+			"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+		),
 	).not.toBeInTheDocument();
 	read.mockResolvedValue({ threadId: "source-one", isDelegation: false });
 	await userEvent
@@ -296,7 +298,9 @@ it("revalidates associations on a new tab activation without relying on room tim
 	mocks.rooms = [{ roomId: "room-one", roomName: "Changed source" }];
 	read.mockResolvedValue({ threadId: null, isDelegation: false });
 	const view = render(content());
-	await screen.findByText("No linked sessions in loaded history.");
+	await screen.findByText(
+		"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+	);
 	view.rerender(content(false));
 	read.mockResolvedValue({ threadId: "source-one", isDelegation: false });
 	view.rerender(content());
@@ -321,7 +325,9 @@ it("discards pending results when the account/insight owner changes", async () =
 	const view = render(content());
 	await waitFor(() => expect(read).toHaveBeenCalledOnce());
 	view.rerender(content(true, "account-two"));
-	await screen.findByText("No linked sessions in loaded history.");
+	await screen.findByText(
+		"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+	);
 	await act(async () =>
 		resolveOld?.({ threadId: "source-one", isDelegation: false }),
 	);
@@ -346,7 +352,9 @@ it("discards pending topic links when the account/insight owner changes", async 
 	const view = render(content());
 	await waitFor(() => expect(readTopics).toHaveBeenCalledOnce());
 	view.rerender(content(true, "account-two"));
-	await screen.findByText("No linked sessions in loaded history.");
+	await screen.findByText(
+		"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+	);
 	await act(async () =>
 		resolveOld?.([{ topicId: "topic-one", state: "linked" }]),
 	);
@@ -358,7 +366,9 @@ it("keeps history failure distinct from an empty linked-session result", () => {
 	render(content());
 	expect(screen.getByRole("alert")).toHaveTextContent(mocks.error);
 	expect(
-		screen.queryByText("No linked sessions in loaded history."),
+		screen.queryByText(
+			"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+		),
 	).not.toBeInTheDocument();
 	expect(
 		screen.getByRole("button", { name: "Retry sessions" }),
@@ -396,7 +406,9 @@ it("keeps verified associations through revalidation and failure until a success
 	await userEvent
 		.setup()
 		.click(screen.getByRole("button", { name: "Retry session links" }));
-	await screen.findByText("No linked sessions in loaded history.");
+	await screen.findByText(
+		"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+	);
 	expect(
 		screen.queryByRole("link", { name: /^Verified conversation/ }),
 	).not.toBeInTheDocument();
@@ -456,7 +468,9 @@ it("keeps cached topic links visible through failed refreshes and retries them",
 	await userEvent
 		.setup()
 		.click(screen.getByRole("button", { name: "Retry session links" }));
-	await screen.findByText("No linked sessions in loaded history.");
+	await screen.findByText(
+		"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+	);
 	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	expect(readTopics).toHaveBeenCalledTimes(3);
 });

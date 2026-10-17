@@ -85,7 +85,10 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 		onSave: async (values) => {
 			if (values.enabled && !isAvailable) {
 				throw new Error(
-					routine.availabilityMessage ||
+					routine.availabilityMessage?.replace(
+						/\bBrain\b/g,
+						"Settings",
+					) ||
 						"Connect your inbox and check service availability before enabling this routine.",
 				);
 			}

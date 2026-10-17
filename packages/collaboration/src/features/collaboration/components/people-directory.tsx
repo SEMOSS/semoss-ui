@@ -137,7 +137,7 @@ export function PeopleDirectory() {
 				/>
 			}
 			aside={<BrainOverview />}
-			asideTitle="Brain overview"
+			asideTitle="Overview"
 		>
 			<div className="flex flex-wrap items-center gap-2 border-b p-4 md:px-6">
 				<div className="min-w-40 flex-1">

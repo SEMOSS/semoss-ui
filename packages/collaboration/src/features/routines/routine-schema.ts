@@ -1,7 +1,11 @@
 import { z } from "@semoss/ui/next";
 
 /** Routines whose completed output can be opened as a conversation. */
-export type RoutineId = "inbox-daily-brief" | "weekly-meeting-agendas";
+export type RoutineId =
+	| "inbox-daily-brief"
+	| "weekly-meeting-agendas"
+	// the id of one of the owner's own routines
+	| (string & {});
 
 export const ROUTINE_DAYS = [
 	"MON",

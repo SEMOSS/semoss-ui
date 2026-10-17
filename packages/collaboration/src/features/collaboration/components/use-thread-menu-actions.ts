@@ -92,7 +92,7 @@ export function useThreadMenuActions({
 					? [
 							{
 								id: "brain",
-								label: "View in Brain",
+								label: "Filing details",
 								icon: BookOpen,
 								onSelect: () => go(brainPath),
 								movesFocus: true,

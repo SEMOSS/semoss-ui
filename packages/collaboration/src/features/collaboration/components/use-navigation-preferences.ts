@@ -3,8 +3,6 @@ import { useState } from "react";
 interface NavigationPreferences {
 	/** Whether desktop navigation is displayed as an icon rail. */
 	isCollapsed: boolean;
-	/** Whether the Topics disclosure is expanded. */
-	isTopicsOpen: boolean;
 	/** Whether the Sessions disclosure is expanded. */
 	isSessionsOpen: boolean;
 }
@@ -40,7 +38,6 @@ function readPreferences(storageKey: string): NavigationPreferenceState {
 	return {
 		storageKey,
 		isCollapsed: readPreference(`${storageKey}:isCollapsed`),
-		isTopicsOpen: readPreference(`${storageKey}:isTopicsOpen`),
 		isSessionsOpen: readPreference(`${storageKey}:isSessionsOpen`, true),
 	};
 }
@@ -51,7 +48,6 @@ export function useNavigationPreferences(
 	deployment: string,
 ): NavigationPreferences & {
 	setIsCollapsed: (value: boolean) => void;
-	setIsTopicsOpen: (value: boolean) => void;
 	setIsSessionsOpen: (value: boolean) => void;
 } {
 	const storageKey = navigationStorageKey(account, deployment);
@@ -85,10 +81,8 @@ export function useNavigationPreferences(
 
 	return {
 		isCollapsed: preferences.isCollapsed,
-		isTopicsOpen: preferences.isTopicsOpen,
 		isSessionsOpen: preferences.isSessionsOpen,
 		setIsCollapsed: (value) => updatePreference("isCollapsed", value),
-		setIsTopicsOpen: (value) => updatePreference("isTopicsOpen", value),
 		setIsSessionsOpen: (value) => updatePreference("isSessionsOpen", value),
 	};
 }

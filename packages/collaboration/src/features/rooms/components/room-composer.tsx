@@ -117,6 +117,8 @@ interface RoomComposerProps {
 	extraCommands?: readonly RoomSlashCommand[];
 	/** Saved prompts already available to this conversation. */
 	prompts?: readonly ComposerPrompt[];
+	/** Starting points fill an empty editor for review; they never submit. */
+	starterPrompts?: readonly ComposerPrompt[];
 	/** Stable focus return target when closing a host panel. */
 	actionsTriggerId?: string;
 	/** Replaces the default + menu while retaining the composer's upload picker. */
@@ -164,6 +166,8 @@ interface RoomComposerProps {
 	showModelSelector?: boolean;
 	/** Whether the prompt optimization control appears in the toolbar. */
 	showPromptOptimization?: boolean;
+	/** Quiet room chrome until there is text to optimize. */
+	hideEmptyOptimization?: boolean;
 	/** Additional caller-owned reason that sending is unavailable. */
 	isSendDisabled?: boolean;
 	/** Model selection error displayed with the composer. */
@@ -268,6 +272,7 @@ export function RoomComposer({
 	attachmentSummary,
 	extraCommands = EMPTY_COMMANDS,
 	prompts = EMPTY_PROMPTS,
+	starterPrompts = EMPTY_PROMPTS,
 	actionsTriggerId,
 	renderActions,
 	children,
@@ -291,6 +296,7 @@ export function RoomComposer({
 	isModelLocked = false,
 	showModelSelector = true,
 	showPromptOptimization = true,
+	hideEmptyOptimization = false,
 	hideSettingsAction = false,
 	isSendDisabled = false,
 	modelError,
@@ -642,6 +648,36 @@ export function RoomComposer({
 				className,
 			)}
 		>
+			{!isEmail && !draft.trim() && starterPrompts.length > 0 && (
+				<fieldset
+					aria-label="Choose a starting point"
+					className="flex min-w-0 flex-wrap gap-2 border-0 p-0 pb-3"
+					disabled={
+						isSubmitting ||
+						isRunning ||
+						isSendDisabled ||
+						isOptimizing
+					}
+				>
+					{starterPrompts.map((prompt) => (
+						<Button
+							key={prompt.id}
+							type="button"
+							variant="outline"
+							size="sm"
+							className="pointer-coarse:min-h-11"
+							onClick={() => {
+								// A pending editor update must never overwrite the owner's words.
+								if (draftRef.current.trim()) return;
+								setEditorText(prompt.context);
+								focusEditor();
+							}}
+						>
+							{prompt.title}
+						</Button>
+					))}
+				</fieldset>
+			)}
 			<fieldset
 				aria-label="Message composer drop area"
 				disabled={retainUntilSent && isSubmitting}
@@ -965,6 +1001,10 @@ export function RoomComposer({
 										: "Dictation is unavailable in this browser",
 								)}
 								{showPromptOptimization &&
+									(!hideEmptyOptimization ||
+										draft.trim() ||
+										originalDraft !== null ||
+										isOptimizing) &&
 									(originalDraft !== null
 										? tooltipButton(
 												"Revert optimized prompt",

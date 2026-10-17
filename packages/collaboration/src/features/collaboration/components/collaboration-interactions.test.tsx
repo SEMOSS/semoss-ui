@@ -182,8 +182,13 @@ describe("collaboration Work and Brain integration", () => {
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
-				name: "No response needed",
+				name: /actions for/,
 			}),
+		);
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: /actions for/ }),
+			).getByRole("button", { name: "No response needed" }),
 		);
 		expect(
 			screen.queryByRole("link", { name: title }),
@@ -205,8 +210,13 @@ describe("collaboration Work and Brain integration", () => {
 		const router = renderSession("/work/all", state);
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
-				name: "Ignore thread",
+				name: /actions for/,
 			}),
+		);
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: /actions for/ }),
+			).getByRole("button", { name: "Ignore thread" }),
 		);
 		expect(
 			screen.queryByRole("link", { name: title }),
@@ -244,7 +254,7 @@ describe("collaboration Work and Brain integration", () => {
 			within(kept).queryByText("Not used until you keep it"),
 		).not.toBeInTheDocument();
 		expect(
-			within(kept).getByText(/Suggested by Brain/),
+			within(kept).getByText(/Suggested by the assistant/),
 		).toBeInTheDocument();
 	});
 
@@ -358,7 +368,7 @@ describe("collaboration Work and Brain integration", () => {
 			)?.status,
 		).toBe("done");
 		await user.click(screen.getByRole("tab", { name: "Threads" }));
-		await user.click(screen.getByRole("tab", { name: "Actions" }));
+		await user.click(screen.getByRole("tab", { name: /^Actions/ }));
 		expect(screen.getByRole("checkbox", { name: title })).toBeChecked();
 		expect(screen.getByText(title)).not.toHaveClass("line-through");
 	});
@@ -388,6 +398,8 @@ describe("collaboration Work and Brain integration", () => {
 			screen.queryByRole("textbox", { name: "New note" }),
 		).not.toBeInTheDocument();
 
+		// topic setup lives in the Context panel, which starts closed
+		await user.click(screen.getByRole("button", { name: "Context" }));
 		const goalTrigger = screen.getByRole("button", { name: "Add goal" });
 		await user.click(goalTrigger);
 		const goal = screen.getByLabelText("New goal");
@@ -480,12 +492,14 @@ describe("collaboration Work and Brain integration", () => {
 			.closest("li");
 		if (!openRow || !waitingRow || !mutedRow)
 			throw new Error("Missing topic thread row");
-		expect(within(openRow).getByText("For you")).toBeInTheDocument();
+		expect(within(openRow).getByText("Open action")).toBeInTheDocument();
 		expect(within(waitingRow).getByText("Waiting")).toBeInTheDocument();
 		expect(
-			within(waitingRow).queryByText("For you"),
+			within(waitingRow).queryByText("Open action"),
 		).not.toBeInTheDocument();
-		expect(within(mutedRow).queryByText("For you")).not.toBeInTheDocument();
+		expect(
+			within(mutedRow).queryByText("Open action"),
+		).not.toBeInTheDocument();
 		expect(within(mutedRow).queryByText("Waiting")).not.toBeInTheDocument();
 	});
 
@@ -692,11 +706,11 @@ describe("collaboration Work and Brain integration", () => {
 		renderSession("/search");
 		await user.click(
 			screen.getByRole("button", {
-				name: "Search your workspace",
+				name: "Search",
 			}),
 		);
 		const dialog = screen.getByRole("dialog", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await user.type(
 			within(dialog).getByRole("combobox", {
@@ -718,7 +732,7 @@ describe("collaboration Work and Brain integration", () => {
 		const user = userEvent.setup();
 		renderSession("/search");
 		const trigger = screen.getByRole("button", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await user.click(trigger);
 		await user.keyboard("{Escape}");

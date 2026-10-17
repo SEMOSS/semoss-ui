@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400..700&family=Petrona:wght@400..700&display=swap");
 @import "@semoss/ui/globals.css";
 @import "@semoss/shared/globals.css";
 @import "@semoss/connectors/globals.css";
@@ -5,3 +6,39 @@
 @import "@semoss/panels/globals.css";
 
 @source "./**/*.{ts,tsx}";
+
+/* Swappable font: Settings > Appearance, default in lib/typeface.ts. "standard" keeps the shared Geist. */
+:root {
+	--font-display: var(--font-sans);
+}
+:root[data-typeface="calm"] {
+	--font-sans:
+		"Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI",
+		sans-serif;
+	--font-display: "Petrona", Georgia, "Times New Roman", serif;
+}
+/* Calm light paper: no pure white or flat grey; neutrals lean toward the blue primary so they sit with it */
+:root[data-typeface="calm"]:not(.dark) {
+	--background: oklch(98.6% 0.004 255);
+	--secondary-background: oklch(99.4% 0.003 255);
+	--card: oklch(99.4% 0.003 255);
+	--popover: oklch(99.4% 0.003 255);
+	--foreground: oklch(21% 0.014 255);
+	--card-foreground: oklch(21% 0.014 255);
+	--popover-foreground: oklch(21% 0.014 255);
+	--secondary: oklch(96.2% 0.006 255);
+	--secondary-foreground: oklch(25% 0.014 255);
+	--muted: oklch(96.2% 0.006 255);
+	--muted-foreground: oklch(50% 0.016 255);
+	--accent-foreground: oklch(25% 0.014 255);
+	--border: oklch(91.5% 0.007 255);
+	--input: oklch(89.5% 0.008 255);
+	--ring-offset: oklch(98.6% 0.004 255);
+	--sidebar: oklch(97.4% 0.005 255);
+	--sidebar-foreground: oklch(21% 0.014 255);
+	--sidebar-border: oklch(91.5% 0.007 255);
+}
+
+@theme inline {
+	--font-display: var(--font-display);
+}

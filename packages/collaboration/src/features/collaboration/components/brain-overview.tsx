@@ -17,7 +17,7 @@ export function BrainOverview() {
 		.slice(0, 5);
 	return (
 		<>
-			<Section title="What Brain knows" variant="card">
+			<Section title="Summary" variant="card">
 				<div className="grid grid-cols-2 gap-2">
 					{[
 						["Topics", state.topics.length],
@@ -45,7 +45,7 @@ export function BrainOverview() {
 				</div>
 			</Section>
 			<Section
-				title="Sources"
+				title="Connections"
 				variant="card"
 				action={
 					<Link

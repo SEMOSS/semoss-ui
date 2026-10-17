@@ -31,9 +31,68 @@ import {
 	useWorkspaceSearch,
 	type WorkspaceSearchResult,
 } from "@/features/dashboard/use-workspace-search";
+import { lexicon } from "@/lib/lexicon";
 import { searchResultPath } from "../api/collaboration-search";
 import { useCollaborationSearch } from "../api/use-collaboration-search";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+
+// Pages that left the sidebar stay one search away
+const GO_TO = [
+	{
+		id: "home",
+		label: lexicon.today,
+		detail: "What needs you today",
+		path: "/",
+	},
+	{
+		id: "everything",
+		label: lexicon.everything,
+		detail: "Every open, waiting and done item",
+		path: "/work/all",
+	},
+	{
+		id: "topics",
+		label: "Topics",
+		detail: "All your topics",
+		path: "/brain/topics",
+	},
+	{
+		id: "filing",
+		label: "Review",
+		detail: "Check how mail is filed into topics",
+		path: "/brain",
+	},
+	{
+		id: "unassigned",
+		label: "Unassigned",
+		detail: "Conversations with no topic yet",
+		path: "/brain/threads?filter=needs",
+	},
+	{
+		id: "people",
+		label: "People",
+		detail: "Who you work with",
+		path: "/brain/people",
+	},
+	{
+		id: "memory",
+		label: "Memory",
+		detail: "What the assistant remembers",
+		path: "/brain/memory",
+	},
+	{
+		id: "sources",
+		label: "Connections",
+		detail: "Microsoft 365, automatic updates and adding items",
+		path: "/brain/sources",
+	},
+	{
+		id: "settings",
+		label: lexicon.settings,
+		detail: "Profile, rules and data",
+		path: "/settings",
+	},
+];
 
 const groups: WorkspaceSearchResult["group"][] = [
 	"Go to",
@@ -97,8 +156,14 @@ export function CollaborationSearch({
 			? [`Calendar: ${dashboard.calendar.error}`]
 			: []),
 	];
+	const goTo = GO_TO.filter(
+		(entry) =>
+			!term ||
+			`${entry.label} ${entry.detail}`.toLocaleLowerCase().includes(term),
+	).map((entry): WorkspaceSearchResult => ({ ...entry, group: "Go to" }));
 	const entries: WorkspaceSearchResult[] = term
 		? [
+				...goTo,
 				...remote.chats,
 				...searchWorkspaceRecords(state, query, false),
 				...saved.entries.map(
@@ -158,20 +223,7 @@ export function CollaborationSearch({
 					),
 			]
 		: [
-				{
-					id: "home",
-					label: "For you",
-					detail: "Your personal dashboard",
-					group: "Go to",
-					path: "/",
-				},
-				{
-					id: "brain",
-					label: "Brain",
-					detail: "People, topics, and your context",
-					group: "Go to",
-					path: "/brain",
-				},
+				...goTo,
 				...(dashboard?.history.rooms ?? []).slice(0, 8).map(
 					(room): WorkspaceSearchResult => ({
 						id: room.roomId,
@@ -205,7 +257,7 @@ export function CollaborationSearch({
 		>
 			{!paletteOnly && (
 				<DialogTrigger asChild>
-					<Button variant="ghost" aria-label="Search your workspace">
+					<Button variant="ghost" aria-label="Search">
 						<Search aria-hidden="true" />
 						Search
 					</Button>
@@ -218,7 +270,7 @@ export function CollaborationSearch({
 						event.preventDefault();
 						const trigger = [
 							...document.querySelectorAll<HTMLButtonElement>(
-								'button[aria-label="Search your workspace"], button[aria-label="Open navigation"]',
+								'button[aria-label="Search"], button[aria-label="Open navigation"]',
 							),
 						].find((button) => button.getClientRects().length > 0);
 						(didNavigate.current
@@ -232,7 +284,7 @@ export function CollaborationSearch({
 				}}
 			>
 				<DialogHeader className="sr-only">
-					<DialogTitle>Search your workspace</DialogTitle>
+					<DialogTitle>Search</DialogTitle>
 					<DialogDescription>
 						Find chats, actions, people, topics, calendar entries,
 						email, and pinned apps.
@@ -241,7 +293,7 @@ export function CollaborationSearch({
 				<Command shouldFilter={false} label="Search">
 					<CommandInput
 						aria-label="Search"
-						placeholder="Search your workspace…"
+						placeholder="Search mail, chats, people and topics…"
 						value={query}
 						onValueChange={setQuery}
 						className="pr-10"

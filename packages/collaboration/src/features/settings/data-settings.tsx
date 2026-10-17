@@ -17,9 +17,7 @@ export function DataSettings() {
 					</P>
 				</header>
 				<div className="space-y-4">
-					<H3 className="font-medium text-base">
-						Reset your workspace
-					</H3>
+					<H3 className="font-medium text-base">Reset your data</H3>
 					<P className="text-base text-muted-foreground">
 						Delete your profile, people, topics, threads, rules,
 						memories, and work items, then start onboarding again.

@@ -119,6 +119,8 @@ function mapSettings(row: Row): Settings {
 			use: (row.memory as Row | undefined)?.use !== false,
 			learn: (row.memory as Row | undefined)?.learn !== false,
 		},
+		draftFolderId: str(row.draftFolderId),
+		draftFolderName: str(row.draftFolderName),
 		version: Number(row.version ?? 0),
 	};
 }
@@ -233,6 +235,11 @@ export function mapTopic(row: Row): Topic {
 			reason: opt(person.reason),
 		})),
 		calendarSeries: list<string>(row.calendarSeries),
+		folders: list<Row>(row.folders).map((folder) => ({
+			id: str(folder.id),
+			path: str(folder.path),
+			origin: opt(folder.origin),
+		})),
 		stats: {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),

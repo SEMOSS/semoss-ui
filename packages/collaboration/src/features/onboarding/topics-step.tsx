@@ -100,9 +100,9 @@ export function TopicsStep(props: OnboardingStepProps) {
 	return (
 		<>
 			<StepHeader eyebrow={eyebrow} title="Finding your topics">
-				Brain groups your recent conversations, names each group and
-				then finds your main areas of work. This usually takes under a
-				minute.
+				The assistant groups your recent conversations, names each group
+				and then finds your main areas of work. This usually takes under
+				a minute.
 			</StepHeader>
 			{current.error || failed ? (
 				<Failure

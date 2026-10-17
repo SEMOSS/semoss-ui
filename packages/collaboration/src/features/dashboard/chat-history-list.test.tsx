@@ -15,6 +15,9 @@ const dashboard = vi.hoisted(() => ({
 			{ roomId: "room-one", roomName: "Pricing conversation" },
 			{ roomId: "room-two", roomName: "Sprint conversation" },
 		],
+		closedRoomIds: [] as string[],
+		setRoomClosed: vi.fn(),
+		closeError: "",
 		isLoading: false,
 		error: "",
 		hasMore: false,
@@ -40,11 +43,47 @@ beforeEach(() => {
 	dashboard.history.error = "";
 	dashboard.history.scrollTop.current = 0;
 	dashboard.history.hasMore = false;
+	dashboard.history.closedRoomIds = [];
+	dashboard.history.setRoomClosed.mockReturnValue(true);
+	dashboard.history.closeError = "";
 });
 
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
+});
+
+it("keeps five recent chats and the older active chat reachable, with the archive available on request", async () => {
+	dashboard.history.rooms = Array.from({ length: 8 }, (_, index) => ({
+		roomId: `room-${index}`,
+		roomName: `Conversation ${index}`,
+	}));
+	const user = userEvent.setup();
+	const router = createMemoryRouter(
+		[{ path: "/thread/:threadId", Component: ChatHistoryList }],
+		{ initialEntries: ["/thread/room%3Aroom-7"] },
+	);
+	render(<RouterProvider router={router} />);
+	expect(
+		screen.getByRole("button", { name: "Conversation 4" }),
+	).toBeVisible();
+	expect(
+		screen.queryByRole("button", { name: "Conversation 5" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.getByRole("button", { name: "Conversation 7" }),
+	).toHaveAttribute("aria-current", "page");
+	await user.click(screen.getByRole("button", { name: "All chats" }));
+	expect(
+		screen.getByRole("button", { name: "Conversation 5" }),
+	).toBeVisible();
+	await user.click(screen.getByRole("button", { name: "Show recent chats" }));
+	expect(
+		screen.queryByRole("button", { name: "Conversation 5" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.getByRole("button", { name: "Conversation 7" }),
+	).toBeVisible();
 });
 
 it.each(["empty", "loading", "error"])(
@@ -62,19 +101,20 @@ it.each(["empty", "loading", "error"])(
 		render(<RouterProvider router={router} />);
 		const content =
 			state === "loading"
-				? screen.getByRole("status", { name: "Loading sessions" })
+				? screen.getByRole("status", { name: "Loading chats" })
 				: state === "error"
 					? screen.getByRole("alert")
 					: screen.getByText(
 							"Your conversations will appear here after your first message.",
 						);
 		expect(content).toBeVisible();
-		await user.click(screen.getByRole("button", { name: "Sessions" }));
+		await user.click(screen.getByRole("button", { name: "Chats" }));
 		expect(content).not.toBeVisible();
-		expect(
-			screen.getByRole("button", { name: "Sessions" }),
-		).toHaveAttribute("aria-expanded", "false");
-		await user.click(screen.getByRole("button", { name: "Sessions" }));
+		expect(screen.getByRole("button", { name: "Chats" })).toHaveAttribute(
+			"aria-expanded",
+			"false",
+		);
+		await user.click(screen.getByRole("button", { name: "Chats" }));
 		expect(content).toBeVisible();
 	},
 );
@@ -93,11 +133,13 @@ it("pauses automatic pagination while Sessions is collapsed and resumes on reope
 		{ initialEntries: ["/"] },
 	);
 	render(<RouterProvider router={router} />);
+	expect(observe).not.toHaveBeenCalled();
+	await user.click(screen.getByRole("button", { name: "All chats" }));
 	expect(observe).toHaveBeenCalledOnce();
-	await user.click(screen.getByRole("button", { name: "Sessions" }));
+	await user.click(screen.getByRole("button", { name: "Chats" }));
 	expect(disconnect).toHaveBeenCalledOnce();
 	expect(observer).toHaveBeenCalledOnce();
-	await user.click(screen.getByRole("button", { name: "Sessions" }));
+	await user.click(screen.getByRole("button", { name: "Chats" }));
 	expect(observe).toHaveBeenCalledTimes(2);
 });
 
@@ -108,11 +150,11 @@ it("collapses by keyboard without losing the mounted sessions, selection, or scr
 		{ initialEntries: ["/thread/room%3Aroom-one"] },
 	);
 	render(<RouterProvider router={router} />);
-	const trigger = screen.getByRole("button", { name: "Sessions" });
+	const trigger = screen.getByRole("button", { name: "Chats" });
 	const session = screen.getByRole("button", {
 		name: "Pricing conversation",
 	});
-	const list = screen.getByRole("navigation", { name: "Sessions" });
+	const list = screen.getByRole("navigation", { name: "Chats" });
 	const scroller = list.parentElement;
 	if (!scroller) throw new Error("Sessions must have a scroll container");
 	scroller.scrollTop = 180;
@@ -124,7 +166,7 @@ it("collapses by keyboard without losing the mounted sessions, selection, or scr
 	expect(session).toBeInTheDocument();
 	expect(session).not.toBeVisible();
 	expect(
-		screen.queryByRole("navigation", { name: "Sessions" }),
+		screen.queryByRole("navigation", { name: "Chats" }),
 	).not.toBeInTheDocument();
 	await user.tab();
 	expect(session).not.toHaveFocus();
@@ -138,7 +180,7 @@ it("collapses by keyboard without losing the mounted sessions, selection, or scr
 	expect(screen.getByRole("button", { name: "Pricing conversation" })).toBe(
 		session,
 	);
-	expect(screen.getByRole("navigation", { name: "Sessions" })).toBe(list);
+	expect(screen.getByRole("navigation", { name: "Chats" })).toBe(list);
 	expect(scroller.scrollTop).toBe(180);
 	expect(session).toHaveAttribute("aria-current", "page");
 	expect(router.state.location.pathname).toBe("/thread/room%3Aroom-one");
@@ -189,4 +231,28 @@ it("marks the saved session opened into a Work thread and moves the selection to
 	expect(
 		screen.getByRole("button", { name: "Pricing conversation" }),
 	).not.toHaveAttribute("aria-current");
+});
+
+it("closes the current chat by keyboard and returns to Today", async () => {
+	const user = userEvent.setup();
+	const router = createMemoryRouter(
+		[
+			{ path: "/", element: <p>Today</p> },
+			{ path: "/thread/:threadId", Component: ChatHistoryList },
+		],
+		{ initialEntries: ["/thread/room%3Aroom-one"] },
+	);
+	render(<RouterProvider router={router} />);
+	act(() =>
+		screen
+			.getByRole("button", { name: "Close chat: Pricing conversation" })
+			.focus(),
+	);
+	await user.keyboard("{Enter}");
+	expect(dashboard.history.setRoomClosed).toHaveBeenCalledWith(
+		"room-one",
+		true,
+	);
+	expect(router.state.location.pathname).toBe("/");
+	expect(dashboard.openRoom).not.toHaveBeenCalled();
 });
