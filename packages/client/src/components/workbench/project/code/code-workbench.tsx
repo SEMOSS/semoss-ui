@@ -150,6 +150,11 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 			restrict: ["OWNER", "EDIT", "READ_ONLY"],
 		},
 		{
+			name: "Activity Log",
+			component: "activity",
+			restrict: ["OWNER", "EDIT", "READ_ONLY"],
+		},
+		{
 			name: "GitHub",
 			component: "github",
 			restrict: ["OWNER"],

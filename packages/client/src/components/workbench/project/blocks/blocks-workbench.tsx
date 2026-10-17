@@ -164,6 +164,11 @@ export const BLOCKS_WORKBENCH_COMPONENTS: Record<
 			component: "mcp-usage",
 			restrict: ["OWNER", "EDIT", "READ_ONLY"],
 		},
+		{
+			name: "Activity Log",
+			component: "activity",
+			restrict: ["OWNER", "EDIT", "READ_ONLY"],
+		},
 		{ name: "GitHub", component: "github", restrict: ["OWNER"] },
 		{ name: "Settings", component: "settings", restrict: ["OWNER"] },
 		{

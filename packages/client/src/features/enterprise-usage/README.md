@@ -47,6 +47,11 @@ Read responses are `{ rows, limit, source }`. Missing/disabled databases and que
 | Active users / apps / models / conversations | Distinct user / room project / message agent / room identifiers in matching inference rows |
 | Average / p95 latency | Non-negative `RESPONSE_TIME` on RESPONSE rows only, converted from milliseconds; p95 uses nearest rank |
 | Cache-read / cache-creation / thinking tokens | Provider-reported detail columns; not added to total tokens |
+| Recorded cost | `SUM(COST_MICROS)`: what each call was billed when it ran, at its model's prices then, on its RESPONSE row; null for a call whose model had no known prices |
+| Estimated cost | Rows logged before calls recorded their login type and cost (`USER_TYPE` and `COST_MICROS` null), added up per model and priced at the model's current base rates with `ModelUsageCost.costMicrosAtBaseRates`, as the usage limits' cost counters price them |
+| Model cost / cost coverage | Recorded plus estimated cost, null when nothing was priced / requests with a recorded or estimated cost (`PRICED_REQUESTS`) divided by model requests |
+| Message token parts | An INPUT row's tokens split into uncached input, cache-read and cache-creation tokens; a RESPONSE row's into visible output and thinking tokens, each capped by what is left, as a call is priced |
+| Billed to | `BILLED_SOURCE_TYPE`, `BILLED_SUBJECT_ID` and `BILLED_SUBJECT_TYPE`, on both rows of a call, named with the shared `describeBilledTo` (`USER` is the Direct Limit); null with a login type is No Limit, and a row with neither was logged before calls recorded it |
 | Positive feedback | Positive rated responses divided by rated responses, matching feedback on both message ID and type |
 | Platform events / users / failures | Rows / distinct users / explicit false outcomes in `AUDIT_LOGS` |
 | Activity success rate | Explicit true outcomes divided by known outcomes; null outcomes excluded |
@@ -64,7 +69,7 @@ Lookups collapse duplicate room/model rows before joining. Grouping uses stable 
 
 Inference includes chat, embeddings and other model methods. Vector `nearestNeighbor` messages are excluded. App attribution uses the room's recorded project, which may be missing or reflect its historical association. Activity logs can include operations also represented in inference logs; do not sum the two populations. Retention, logging configuration, asynchronous writes and provider support limit completeness.
 
-Spend, complete LLM failure rates, time to first token, department chargeback, quota utilization, and distinct human-versus-service adoption need additional authoritative telemetry/configuration. This dashboard does not estimate those values. Feedback is about rated responses, not a platform-wide quality score.
+Provider invoices, complete LLM failure rates, time to first token, department chargeback, quota utilization, and distinct human-versus-service adoption need additional authoritative telemetry/configuration. This dashboard does not estimate those values. Its cost is what calls were billed at the prices set on each model's Model Settings page, with older calls estimated at today's prices, not a provider's invoice. Feedback is about rated responses, not a platform-wide quality score.
 
 ## Exports
 
@@ -72,6 +77,7 @@ Spend, complete LLM failure rates, time to first token, department chargeback, q
 
 - KPI CSV includes applied filters, current/benchmark dates, generation time, and definitions.
 - Top-consumer CSV queries the top 20 on the server, with its scope included.
+- Every cost is exported in US dollars (`..._COST_USD`, titled "Cost (USD)"), never in millionths of a dollar; the PDF adds a Model Cost card, a daily cost chart and cost columns.
 - Log CSV queries the newest matching metadata records, up to 5,000, independent of the displayed page. Use narrower filters for larger datasets. The audit source exports this event log only, without old or new values or denial reasons.
 - PDF is generated with the existing Flying Saucer renderer and JFreeChart dependency. It includes a branded executive summary, current/benchmark charts, KPI comparisons, both periods' daily tables, reporting scope, generation attribution and reference, repeated headers, page numbers, and metric definitions. All dynamic text is escaped, chart images are generated in memory, and message bodies are excluded.
 - CSV quotes delimiters/newlines and neutralizes spreadsheet formulas. PDF markup escapes all dynamic data.
@@ -81,7 +87,7 @@ Spend, complete LLM failure rates, time to first token, department chargeback, q
 
 ## Dashboard Interaction And Comparisons
 
-Overview lands on platform activity. Token Consumption is a separate tab with model KPIs and trends. Access & Limits (`usage-changes.tsx`) shows the audit source: its counts, a paged log with who made each change or was denied and whom a change was for (the shared `PersonIdentity`), a denied request's attempted action, and, once an event is opened, a change's before and after or why a request was denied. Each dashboard queries and exports only its selected logging source. How the numbers are gathered and counted sits under About These Metrics at the bottom (`usage-metric-notes.tsx`), collapsed until opened. Each tab shows its data with no paragraphs about it: how to read a view sits behind the info button beside its title (`usage-notes.tsx`), a short list in a popover, and the comparison line keeps its dates visible with the same button for how periods are compared.
+Overview lands on platform activity. Token Consumption is a separate tab with model KPIs and trends, including Model Cost, Cost Coverage, a Cost breakdown (recorded, estimated, total and priced requests) and a daily cost chart. Top consumers list each one's cost, with Token Share and Cost Share bars: each consumer's part of all tokens and all cost in the period, from the model summary, so the bars add up to at most 100% (`usage-share-bar.tsx`), and the message log breaks each message's tokens into their parts and shows a call's cost on its response row and whom it was billed to (`usage-billed-to.ts`). Access & Limits (`usage-changes.tsx`) shows the audit source: its counts, a paged log with who made each change or was denied and whom a change was for (the shared `PersonIdentity`), a denied request's attempted action, and, once an event is opened, a change's before and after or why a request was denied. Each dashboard queries and exports only its selected logging source. How the numbers are gathered and counted sits under About These Metrics at the bottom (`usage-metric-notes.tsx`), collapsed until opened. Each tab shows its data with no paragraphs about it: how to read a view sits behind the info button beside its title (`usage-notes.tsx`), a short list in a popover, and the comparison line keeps its dates visible with the same button for how periods are compared.
 
 Date Range offers Last 7/30/90 Days and Custom. Presets populate draft dates; Custom exposes start/end inputs. Entity dropdowns also edit the draft. Apply Filters highlights when dates or entities differ from the applied scope and commits them together. Search only queries the catalog. Applied filters remain visible above all tabs.
 

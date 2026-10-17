@@ -17,6 +17,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { describeLoggedBilledTo } from "../model-usage-limit/usage-limit-labels";
 import { TimeDateFormatter } from "./common";
 
 interface JSONTreeViewProps {
@@ -170,7 +171,7 @@ const DetailField = ({ label, value, mono = false }: DetailFieldProps) => (
 			}`}
 		>
 			{value === null || value === undefined || value === ""
-				? "—"
+				? "-"
 				: value}
 		</span>
 	</div>
@@ -378,6 +379,14 @@ export const AuditLogsDetailDrawer = (props) => {
 						<DetailField
 							label={t("detail.fields.cacheWrite")}
 							value={logDetails.cacheCreationTokens}
+						/>
+						<DetailField
+							label={t("detail.fields.billedTo")}
+							value={describeLoggedBilledTo(
+								logDetails.billedSourceType,
+								logDetails.billedSubjectId,
+								logDetails.billedSubjectType,
+							)}
 						/>
 						<DetailField
 							label={t("detail.fields.user")}
