@@ -23,8 +23,14 @@ import {
 	USAGE_PAGE_SIZE,
 } from "@/api/enterprise-usage-requests";
 import type { UsageFilters, UsageSelection, UsageSource } from "./usage.types";
+import { describeMessageBilledTo } from "./usage-billed-to";
 import { UsageDetail } from "./usage-detail";
-import { formatMetric, numeric } from "./usage-metrics";
+import {
+	formatCost,
+	formatMetric,
+	messageTokenParts,
+	numeric,
+} from "./usage-metrics";
 import { UsageNotes } from "./usage-notes";
 import { UsageState } from "./usage-state";
 import { useUsageExport } from "./use-usage-export";
@@ -40,6 +46,9 @@ const EXPORT_NOTES = [
 const MODEL_LOG_NOTES = [
 	"Input And Response Are Separate Message Rows.",
 	"Model Request KPIs Count Inputs Once; Latency KPIs Use Response Rows Only.",
+	"An Input's Tokens Split Into Uncached Input, Cache-Read And Cache-Creation Tokens; A Response's Into Visible Output And Thinking Tokens.",
+	"A Call's Cost Is On Its Response Row, As Recorded When It Was Billed.",
+	"Billed To Is The Usage Limit The Call Counted Against; Messages Logged Before Calls Recorded It Say Not Recorded.",
 	...EXPORT_NOTES,
 ];
 
@@ -144,7 +153,12 @@ export function UsageLog({ source, filters }: UsageLogProps) {
 										"Method",
 										isModel ? "Message Type" : "Outcome",
 										...(isModel
-											? ["Tokens", "Latency (s)"]
+											? [
+													"Tokens",
+													"Cost",
+													"Billed To",
+													"Latency (s)",
+												]
 											: []),
 										"Details",
 									].map((label) => (
@@ -223,9 +237,43 @@ export function UsageLog({ source, filters }: UsageLogProps) {
 										</TableCell>
 										{isModel && (
 											<>
-												<TableCell>
-													{formatMetric(
-														numeric(row, "TOKENS"),
+												<TableCell className="min-w-36 whitespace-normal">
+													<span className="tabular-nums">
+														{formatMetric(
+															numeric(
+																row,
+																"TOKENS",
+															),
+														)}
+													</span>
+													{messageTokenParts(row).map(
+														(part) => (
+															<span
+																key={part.label}
+																className="block text-muted-foreground tabular-nums"
+															>
+																{formatMetric(
+																	part.tokens,
+																)}{" "}
+																{part.label}
+															</span>
+														),
+													)}
+												</TableCell>
+												<TableCell className="tabular-nums">
+													{row.MESSAGE_TYPE ===
+													"RESPONSE"
+														? formatCost(
+																numeric(
+																	row,
+																	"COST_MICROS",
+																),
+															)
+														: "-"}
+												</TableCell>
+												<TableCell className="max-w-48 whitespace-normal break-words">
+													{describeMessageBilledTo(
+														row,
 													)}
 												</TableCell>
 												<TableCell>

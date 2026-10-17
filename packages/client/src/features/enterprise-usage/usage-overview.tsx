@@ -28,6 +28,7 @@ import type {
 import { UsageBenchmark } from "./usage-benchmark";
 import {
 	fillUsageDays,
+	formatCost,
 	formatMetric,
 	modelKpis,
 	numeric,
@@ -43,6 +44,10 @@ import { useUsageQuery } from "./use-usage-query";
 /** How to read the token consumption overview. */
 const TOKEN_OVERVIEW_NOTES = [
 	"Token Reporting Coverage Is The Share Of Messages That Reported Token Counts.",
+	"Recorded Cost Is What Each Call Was Billed At Its Model's Prices At The Time.",
+	"Estimated Cost Prices Calls Logged Before Costs Were Recorded At Their Model's Current Base Rates.",
+	"Calls Of Models With No Known Prices Have No Cost; Cost Coverage Is The Share Of Requests With One.",
+	"Set A Model's Prices On Its Model Settings Page.",
 	"Cache And Thinking Counts Are Provider Detail And Must Not Be Added To The Total.",
 	"Missing Counts Are Not An Estimate Of Zero Usage.",
 ] as const;
@@ -209,6 +214,30 @@ export function UsageOverview({
 				},
 			]
 		: [];
+	const costRows = modelRow
+		? [
+				{
+					label: "Recorded Cost",
+					value: formatCost(
+						numeric(modelRow, "RECORDED_COST_MICROS"),
+					),
+				},
+				{
+					label: "Estimated Cost",
+					value: formatCost(
+						numeric(modelRow, "ESTIMATED_COST_MICROS"),
+					),
+				},
+				{
+					label: "Total Cost",
+					value: formatCost(numeric(modelRow, "COST_MICROS")),
+				},
+				{
+					label: "Priced Requests",
+					value: `${formatMetric(numeric(modelRow, "PRICED_REQUESTS"))} Of ${formatMetric(numeric(modelRow, "REQUESTS"))}`,
+				},
+			]
+		: [];
 	const title =
 		source === "model" ? "Token Consumption" : "Platform Activity";
 	const handleExport = (format: "csv" | "pdf"): Promise<void> =>
@@ -282,7 +311,7 @@ export function UsageOverview({
 								</AlertDescription>
 							</Alert>
 						)}
-						<div className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-5">
+						<div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-6">
 							{kpis.map((kpi) => (
 								<Card
 									key={kpi.label}
@@ -329,6 +358,21 @@ export function UsageOverview({
 								)}
 								%
 							</Muted>
+						</div>
+						<div className="mt-3 space-y-2">
+							<H4>Cost</H4>
+							<dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+								{costRows.map((row) => (
+									<div key={row.label}>
+										<dt className="text-muted-foreground text-sm">
+											{row.label}
+										</dt>
+										<dd className="font-medium tabular-nums">
+											{row.value}
+										</dd>
+									</div>
+								))}
+							</dl>
 						</div>
 					</UsageState>
 					{comparisonTrend.error && (
@@ -388,6 +432,22 @@ export function UsageOverview({
 										key: "OUTPUT_TOKENS",
 										label: "Output Tokens",
 										color: 2,
+									},
+								]}
+								selectedRange={selectedRange}
+								onRange={onRange}
+								onClearRange={onClearRange}
+							/>
+							<UsageTrend
+								title="Model Cost Over Time"
+								rows={modelDays}
+								comparisonRows={comparisonModelDays}
+								series={[
+									{
+										key: "COST_MICROS",
+										label: "US Dollars",
+										color: 5,
+										divisor: 1_000_000,
 									},
 								]}
 								selectedRange={selectedRange}

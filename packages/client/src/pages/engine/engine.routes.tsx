@@ -122,14 +122,14 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "Audit Trail",
 										path: "audit",
 										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "SMSS",
@@ -267,14 +267,14 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["EDIT", "OWNER"],
-									},
-									{
 										name: "Audit Trail",
 										path: "audit",
 										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["EDIT", "OWNER"],
 									},
 									{
 										name: "SMSS",
@@ -455,14 +455,14 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "Audit Trail",
 										path: "audit",
 										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "SMSS",
@@ -600,14 +600,14 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "Audit Trail",
 										path: "audit",
 										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "SMSS",
@@ -741,14 +741,14 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "Audit Trail",
 										path: "audit",
 										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "SMSS",
@@ -873,14 +873,14 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "Audit Trail",
 										path: "audit",
 										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "SMSS",

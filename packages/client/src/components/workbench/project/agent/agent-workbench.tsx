@@ -107,8 +107,10 @@ export const AGENT_WORKBENCH_COMPONENTS: Record<
 				component: "agent-activity",
 				restrict: ["OWNER", "EDIT", "READ_ONLY"],
 			},
-			// before Access Control
-			3,
+			// before Access Control, wherever the shared list puts it
+			PROJECT_SETTINGS_TABS.findIndex(
+				(tab) => tab.component === "access-control",
+			),
 		),
 	),
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,

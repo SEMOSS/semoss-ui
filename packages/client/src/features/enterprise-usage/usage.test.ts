@@ -21,6 +21,8 @@ import {
 import type { UsageFilters } from "./usage.types";
 import {
 	fillUsageDays,
+	formatCost,
+	messageTokenParts,
 	modelKpis,
 	numeric,
 	percentage,
@@ -243,6 +245,76 @@ describe("usage data and KPI semantics", () => {
 			LATENCY_MS: null,
 		});
 		expect(rows[1].REQUESTS).toBe(2);
+		// a quiet day cost nothing; a day only unpriced models used stays unknown
+		expect(rows[0].COST_MICROS).toBe(0);
+	});
+});
+
+describe("model cost and token parts", () => {
+	it("shows costs in dollars, keeping the first digits of a cost under a cent", () => {
+		expect(formatCost(null)).toBe("-");
+		expect(formatCost(0)).toBe("$0.00");
+		expect(formatCost(1_234_567_890)).toBe("$1,234.57");
+		expect(formatCost(2_500)).toBe("$0.0025");
+	});
+	it("reports what calls cost and how many requests a cost covers", () => {
+		const kpis = modelKpis(
+			{ REQUESTS: 4, COST_MICROS: 3_000_000, PRICED_REQUESTS: 3 },
+			{ REQUESTS: 4, COST_MICROS: 1_500_000 },
+		);
+		expect(kpis.find((kpi) => kpi.label === "Model Cost")).toMatchObject({
+			value: "$3.00",
+			description: "+100% Vs. Benchmark",
+		});
+		expect(kpis.find((kpi) => kpi.label === "Cost Coverage")?.value).toBe(
+			"75%",
+		);
+		expect(
+			modelKpis({ REQUESTS: 4 }).find((kpi) => kpi.label === "Model Cost")
+				?.value,
+		).toBe("-");
+	});
+	it("splits a prompt into uncached and cached tokens and a response into visible output and thinking", () => {
+		expect(
+			messageTokenParts({
+				MESSAGE_TYPE: "INPUT",
+				TOKENS: 1000,
+				CACHE_READ_TOKENS: 600,
+				CACHE_CREATION_TOKENS: 100,
+			}),
+		).toEqual([
+			{ label: "Uncached Input", tokens: 300 },
+			{ label: "Cache-Read", tokens: 600 },
+			{ label: "Cache-Creation", tokens: 100 },
+		]);
+		expect(
+			messageTokenParts({
+				MESSAGE_TYPE: "RESPONSE",
+				TOKENS: 300,
+				THINKING_TOKENS: 120,
+			}),
+		).toEqual([
+			{ label: "Visible Output", tokens: 180 },
+			{ label: "Thinking", tokens: 120 },
+		]);
+		// parts a provider reports beyond the total are capped by it
+		expect(
+			messageTokenParts({
+				MESSAGE_TYPE: "INPUT",
+				TOKENS: 100,
+				CACHE_READ_TOKENS: 150,
+			}),
+		).toEqual([{ label: "Cache-Read", tokens: 100 }]);
+		expect(
+			messageTokenParts({ MESSAGE_TYPE: "INPUT", TOKENS: 100 }),
+		).toEqual([]);
+		expect(
+			messageTokenParts({
+				MESSAGE_TYPE: "RESPONSE",
+				TOKENS: null,
+				THINKING_TOKENS: 5,
+			}),
+		).toEqual([]);
 	});
 });
 

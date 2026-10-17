@@ -10,6 +10,7 @@ import {
 	NewPromptBuilderAppPage,
 	ViewAppPage,
 } from "../app";
+import { AppActivityPage } from "../app/app-activity-page";
 import { AgentActivityPage } from "./agent/agent-activity-page";
 import { AgentOverviewPage } from "./agent/agent-overview-page";
 import { AgentSettingsLayout } from "./agent/agent-settings-layout";
@@ -95,6 +96,15 @@ export const PROJECT_ROUTES: {
 										],
 									},
 									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -134,6 +144,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "mcp-usage",
 								element: <AppMcpUsagePage />,
+							},
+							{
+								path: "activity",
+								element: <AppActivityPage />,
 							},
 
 							{
@@ -218,6 +232,15 @@ export const PROJECT_ROUTES: {
 										],
 									},
 									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -228,14 +251,14 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "Audit Trail",
 										path: "audit",
 										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "SMSS",
@@ -259,6 +282,10 @@ export const PROJECT_ROUTES: {
 										showRemoteConnection={false}
 									/>
 								),
+							},
+							{
+								path: "activity",
+								element: <AppActivityPage />,
 							},
 
 							{
@@ -334,6 +361,15 @@ export const PROJECT_ROUTES: {
 								tabs={[
 									{ name: "Overview", path: "" },
 									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -344,14 +380,14 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "Audit Trail",
 										path: "audit",
 										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "SMSS",
@@ -365,6 +401,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "",
 								element: <ProjectOverviewPage />,
+							},
+							{
+								path: "activity",
+								element: <AppActivityPage />,
 							},
 
 							{
@@ -454,6 +494,15 @@ export const PROJECT_ROUTES: {
 										],
 									},
 									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -493,6 +542,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "mcp-usage",
 								element: <AppMcpUsagePage />,
+							},
+							{
+								path: "activity",
+								element: <AppActivityPage />,
 							},
 
 							{
@@ -584,9 +637,23 @@ export const PROJECT_ROUTES: {
 										],
 									},
 									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "Access Control",
 										path: "access-control",
 										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
 									},
 									{
 										name: "Settings",
@@ -596,11 +663,6 @@ export const PROJECT_ROUTES: {
 											"EDIT",
 											"READ_ONLY",
 										],
-									},
-									{
-										name: "Audit Trail",
-										path: "audit",
-										restrict: ["OWNER"],
 									},
 									{
 										name: "SMSS",
@@ -650,6 +712,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "agent-activity",
 								element: <AgentActivityPage />,
+							},
+							{
+								path: "activity",
+								element: <AppActivityPage />,
 							},
 							{
 								path: "access-control",
