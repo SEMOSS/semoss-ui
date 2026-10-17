@@ -7,6 +7,7 @@ import { CollaborationPageHeader } from "@/features/collaboration/components/col
 import { saveAgendaRoutine } from "./agenda-routine-api";
 import { AgendaRoutineForm } from "./agenda-routine-form";
 import { agendaRoutineSchema } from "./agenda-routine-schema";
+import { CustomRoutinesTab } from "./custom-routines-tab";
 import { saveInboxRoutine } from "./inbox-routine-api";
 import { InboxRoutineForm } from "./inbox-routine-form";
 import { inboxRoutineSchema } from "./inbox-routine-schema";
@@ -16,6 +17,7 @@ import { RoutineLoader } from "./routine-loader";
 export function RoutinesWorkspace() {
 	const { actions } = useInsight();
 	const [hasOpenedAgendas, setHasOpenedAgendas] = useState(false);
+	const [hasOpenedMine, setHasOpenedMine] = useState(false);
 	return (
 		<CollaborationPage>
 			<div className="flex min-w-0 flex-col gap-6">
@@ -24,6 +26,7 @@ export function RoutinesWorkspace() {
 					className="gap-6"
 					onValueChange={(value) => {
 						if (value === "agendas") setHasOpenedAgendas(true);
+						if (value === "mine") setHasOpenedMine(true);
 					}}
 				>
 					<div className="relative isolate flex flex-col gap-6">
@@ -47,6 +50,7 @@ export function RoutinesWorkspace() {
 							<TabsTrigger value="agendas">
 								Weekly meeting agendas
 							</TabsTrigger>
+							<TabsTrigger value="mine">My routines</TabsTrigger>
 						</TabsList>
 					</div>
 					<TabsContent
@@ -99,6 +103,13 @@ export function RoutinesWorkspace() {
 								)}
 							</RoutineLoader>
 						)}
+					</TabsContent>
+					<TabsContent
+						value="mine"
+						forceMount
+						className="flex flex-col gap-6 data-[state=inactive]:hidden"
+					>
+						{hasOpenedMine && <CustomRoutinesTab />}
 					</TabsContent>
 				</Tabs>
 			</div>
