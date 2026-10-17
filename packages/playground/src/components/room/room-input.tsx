@@ -204,6 +204,9 @@ interface RoomInputProps {
 	 * is a persisted, committed choice, not something to back out of inline.
 	 */
 	onExitAgentHarness?: () => void;
+
+	/** Engine IDs that should be greyed out and unselectable (monthly token quota exceeded). */
+	disabledModelIds?: string[];
 }
 
 // ============================================================================
@@ -245,6 +248,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onSwitchToAgentHarness,
 		onExitAgentHarness,
 		onOpenSource,
+		disabledModelIds = [],
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -1095,6 +1099,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 														popoverContentProps={{
 															align: "end",
 														}}
+														disabledEngineIds={
+															disabledModelIds
+														}
 													/>
 												</span>
 											</TooltipTrigger>

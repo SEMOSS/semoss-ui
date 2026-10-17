@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
-import { InsightProvider, usePixel } from "@semoss/sdk/react";
+import { InsightProvider, runPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -121,6 +121,52 @@ export const NewRoomPage = observer(() => {
 	}, [root.theme.banner]);
 
 	const [isLoading, setIsLoading] = useState(false);
+
+	/** Engine IDs whose monthly token quota is at or over the limit */
+	const [quotaExhaustedIds, setQuotaExhaustedIds] = useState<string[]>([]);
+	// On mount, check each model's monthly quota and grey out exhausted ones.
+	useEffect(() => {
+		let cancelled = false;
+		async function checkQuotas() {
+			try {
+				const { pixelReturn } = await runPixel<
+					[{ app_id: string; engine_id: string }[]]
+				>(
+					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+				);
+				const engines = pixelReturn[0].output ?? [];
+				if (cancelled) return;
+
+				const exhausted = engines
+					.filter((engine) => {
+						const r = (
+							engine as {
+								usageRestriction?: {
+									maxValue: number | null;
+									currentValue: number;
+								};
+							}
+						).usageRestriction;
+						return (
+							r &&
+							r.maxValue != null &&
+							r.currentValue >= r.maxValue
+						);
+					})
+					.map((engine) => engine.app_id || engine.engine_id)
+					.filter(Boolean) as string[];
+
+				if (!cancelled) setQuotaExhaustedIds(exhausted);
+			} catch {
+				// ignore
+			}
+		}
+		checkQuotas();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
 	const submittedRef = useRef(false);
 	const greetingRoomStartedForRef = useRef<string>("");
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
@@ -851,6 +897,7 @@ export const NewRoomPage = observer(() => {
 									isSubmitDisabled={agentOptionsPending}
 									initialValue={initialPrompt}
 									model={chat.models.selected}
+								disabledModelIds={quotaExhaustedIds}
 									room={tempRoomStore}
 									setModel={(m) => {
 										chat.setSelectedModel(m);
