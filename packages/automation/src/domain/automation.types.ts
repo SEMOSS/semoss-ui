@@ -15,6 +15,7 @@ export type AutomationNodeType =
 	| "database-engine"
 	| "storage-engine"
 	| "data"
+	| "clean"
 	| "vector-engine"
 	| "model-engine"
 	| "function-engine"
@@ -71,6 +72,33 @@ export interface DataExtractConfig {
 	format: "auto" | "json" | "xml";
 	missingValue: string;
 	nullValue: string;
+}
+
+export const CLEAN_OPERATIONS = [
+	"purge",
+	"trim",
+	"replace",
+	"removeDuplicates",
+	"filterEmpty",
+	"imputeNulls",
+	"changeType",
+	"dropColumn",
+	"renameColumn",
+] as const;
+
+export type CleanOperation = (typeof CLEAN_OPERATIONS)[number];
+
+/** Configuration for native BI cleaning of a live upstream frame. */
+export interface CleanConfig {
+	source: string;
+	operation: CleanOperation;
+	columns: string[];
+	column: string;
+	newColumn: string;
+	dataType: string;
+	value: string;
+	newValue: string;
+	filters: string;
 }
 
 export interface VectorEngineConfig {
@@ -183,6 +211,7 @@ export type NodeConfig =
 	| DatabaseEngineConfig
 	| StorageEngineConfig
 	| DataExtractConfig
+	| CleanConfig
 	| VectorEngineConfig
 	| ModelEngineConfig
 	| FunctionEngineConfig

@@ -1,12 +1,14 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type {
 	AutomationNode,
+	CleanConfig,
 	DatabaseEngineConfig,
 	DataExtractConfig,
 	ModelEngineConfig,
 	StorageEngineConfig,
 	VectorEngineConfig,
 } from "./automation.types";
+import { CLEAN_OPERATIONS } from "./automation.types";
 import { setAutomationNodeDefinitions } from "./automation-node-catalog";
 import type {
 	AutomationNodeCategory,
@@ -26,13 +28,7 @@ import {
 	validateCanvasWorkflowNode,
 } from "./automation-workflow-adapter";
 
-/**
- * Minimal stand-in for the backend node catalog. Nothing in the domain layer
- * works until setAutomationNodeDefinitions has run, because the adapter reads a
- * node's category and defaults straight off its definition. These mirror
- * AutomationNodeCatalog.createDefinitions closely enough for the pure mapping
- * functions to behave the same.
- */
+/** Minimal catalog stand-in for the adapter's domain tests. */
 function definition(
 	type: AutomationWorkflowNodeType,
 	category: AutomationNodeCategory,
@@ -59,6 +55,23 @@ function definition(
 
 /** Every node type the domain tests exercise. */
 const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
+	definition(
+		"clean.process",
+		"clean",
+		"Clean data",
+		{
+			source: "",
+			operation: "purge",
+			columns: [],
+			filters: [],
+			column: "",
+			newColumn: "",
+			dataType: "STRING",
+			value: "",
+			newValue: "",
+		},
+		false,
+	),
 	definition("trigger.start", "trigger", "Start", {}, false),
 	definition("database.query", "database", "Query database", {
 		engineId: "",
@@ -197,6 +210,189 @@ function documentOf(steps: AutomationNode[]) {
 		edges: [],
 	});
 }
+
+describe("Clean nodes", () => {
+	it("round trips the selected operation on the generic Clean node", () => {
+		const step = node("clean.process");
+		const config: CleanConfig = {
+			...(step.config as CleanConfig),
+			operation: "changeType",
+			source: `\${table}`,
+			column: "AGE",
+			dataType: "DOUBLE",
+		};
+		const saved = documentOf([{ ...step, config }]);
+		const savedNode = saved.graph.nodes.find(
+			(item) => item.type === "clean.process",
+		);
+		expect(savedNode?.config).toMatchObject({
+			operation: "changeType",
+			column: "AGE",
+			dataType: "DOUBLE",
+		});
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {}).steps.find(
+			(candidate) => candidate.workflowType === "clean.process",
+		);
+		expect((reloaded?.config as CleanConfig).operation).toBe("changeType");
+	});
+
+	it("validates the generic Clean operation and its required fields", () => {
+		const step = node("clean.process");
+		expect(
+			validateCanvasWorkflowNode({
+				...step,
+				config: {
+					...(step.config as CleanConfig),
+					source: `\${table}`,
+					operation: "trim",
+					columns: [],
+				},
+			}),
+		).toContain("Select at least one nonblank column");
+		expect(
+			validateCanvasWorkflowNode({
+				...step,
+				config: {
+					...(step.config as CleanConfig),
+					source: `\${table}`,
+					operation: "unknown" as CleanConfig["operation"],
+				},
+			}),
+		).toContain("Select a supported Clean operation");
+	});
+
+	it("validates Change Type targets and Rename column names", () => {
+		const changeType = node("clean.process");
+		expect(
+			validateCanvasWorkflowNode({
+				...changeType,
+				config: {
+					...(changeType.config as CleanConfig),
+					operation: "changeType",
+					source: `\${table}`,
+					column: "AGE",
+					dataType: "INVALID",
+				},
+			}),
+		).toContain("Select a supported target type");
+		const rename = node("clean.process");
+		expect(
+			validateCanvasWorkflowNode({
+				...rename,
+				config: {
+					...(rename.config as CleanConfig),
+					operation: "renameColumn",
+					source: `\${table}`,
+					column: "AGE",
+					newColumn: "bad name",
+				},
+			}),
+		).toContain("Use a valid new column name");
+	});
+
+	it("accepts equality value lists but rejects lists for range comparisons", () => {
+		const purge = node("clean.process");
+		for (const operator of ["==", "!=", ">", "<="]) {
+			const errors = validateCanvasWorkflowNode({
+				...purge,
+				config: {
+					...(purge.config as CleanConfig),
+					operation: "purge",
+					source: `\${table}`,
+					filters: JSON.stringify([
+						{ column: "ID", operator, value: [1, 2, 3] },
+					]),
+				},
+			});
+			expect(errors.length).toBe(
+				operator === "==" || operator === "!=" ? 0 : 1,
+			);
+		}
+	});
+	it.each(CLEAN_OPERATIONS)(
+		"round trips %s without losing configuration or changing the node type",
+		(operation) => {
+			const step = node("clean.process");
+			const config: CleanConfig = {
+				operation,
+				source: `\${table}`,
+				columns: ["STATUS"],
+				column: "STATUS",
+				newColumn: "STATUS_NEW",
+				dataType: "STRING",
+				value: "old",
+				newValue: "new",
+				filters:
+					'[{"column":"STATUS","operator":"==","value":"active"}]',
+			};
+			const saved = documentOf([{ ...step, config }]);
+			const reloaded = canvasDocumentFromWorkflow(saved, {}).steps.find(
+				(candidate) => candidate.workflowType === "clean.process",
+			);
+			expect(reloaded?.type).toBe("clean");
+			expect(reloaded?.workflowType).toBe("clean.process");
+			expect((reloaded?.config as CleanConfig).operation).toBe(operation);
+			expect(reloaded?.config).toMatchObject({ source: `\${table}` });
+			expect(
+				documentOf(reloaded ? [reloaded] : []).graph.nodes[0]?.config,
+			).toEqual(saved.graph.nodes[0]?.config);
+			if (operation === "purge") {
+				expect(saved.graph.nodes[0]?.config.filters).toEqual([
+					{ column: "STATUS", operator: "==", value: "active" },
+				]);
+			}
+			if (operation === "replace") {
+				expect(reloaded?.config).toMatchObject({
+					columns: ["STATUS"],
+					value: "old",
+					newValue: "new",
+				});
+			}
+		},
+	);
+
+	it("rejects literal table names, empty columns, and malformed Purge filters", () => {
+		const trim = node("clean.process");
+		expect(
+			validateCanvasWorkflowNode({
+				...trim,
+				config: { ...(trim.config as CleanConfig), operation: "trim" },
+			}),
+		).toContain("Input table must be an exact upstream table reference");
+		expect(
+			validateCanvasWorkflowNode({
+				...trim,
+				config: {
+					...(trim.config as CleanConfig),
+					source: `\${table}`,
+					operation: "trim",
+					columns: [],
+				},
+			}),
+		).toContain("Select at least one nonblank column");
+		const purge = node("clean.process");
+		for (const filters of [
+			"[]",
+			"not JSON",
+			'[{"column":"ID","operator":"execute","value":1}]',
+		]) {
+			expect(
+				validateCanvasWorkflowNode({
+					...purge,
+					config: {
+						...(purge.config as CleanConfig),
+						operation: "purge",
+						source: `\${table}`,
+						filters,
+					},
+				}),
+			).toContain(
+				"Rows to remove must contain 1 to 100 valid JSON filters",
+			);
+		}
+	});
+});
 
 describe("database query limit", () => {
 	it("preserves the business user's result limit", () => {

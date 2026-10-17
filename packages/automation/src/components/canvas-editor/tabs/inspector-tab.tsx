@@ -6,7 +6,10 @@ import type {
 } from "../../../domain/automation.types";
 import type { AutomationScopeEntry } from "../../../domain/automation-inspector";
 import type { AutomationNodeGroup } from "../../../domain/automation-workflow.types";
-import { AutomationVariableContext } from "../automation-variable-context";
+import {
+	AutomationVariableContext,
+	type AutomationVariableContextValue,
+} from "../automation-variable-context";
 import { NodeEditDrawer } from "../node-edit-drawer";
 import { TriggerEditPanel } from "./trigger-edit-panel";
 
@@ -39,6 +42,8 @@ interface InspectorTabProps {
 	/** When true, the trigger/node panels render view-only and all mutating controls
 	 * (including delete and raw Python editing) are disabled. */
 	readOnly?: boolean;
+	/** Host-owned read-only tab for a selected upstream table output. */
+	onOpenInputTable?: AutomationVariableContextValue["onOpenInputTable"];
 }
 
 export function InspectorTab({
@@ -62,6 +67,7 @@ export function InspectorTab({
 	onViewRunDetails,
 	pythonFileOpen = false,
 	readOnly = false,
+	onOpenInputTable,
 }: InspectorTabProps) {
 	const groupLabelId = useId();
 	if (editingNodeGroup) {
@@ -125,7 +131,7 @@ export function InspectorTab({
 	if (editingStep) {
 		return (
 			<AutomationVariableContext.Provider
-				value={{ entries: scopeEntries, devMode }}
+				value={{ entries: scopeEntries, devMode, onOpenInputTable }}
 			>
 				<NodeEditDrawer
 					step={editingStep}

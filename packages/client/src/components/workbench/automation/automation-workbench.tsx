@@ -23,6 +23,7 @@ import {
 	AgentRunDialog,
 	type AutomationCanvasHandle,
 	AutomationEditorPanel,
+	type AutomationInputTablePreview,
 	AutomationInspectorPanel,
 	type AutomationInspectorSnapshot,
 	type AutomationNodeTrace,
@@ -94,6 +95,7 @@ import {
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../workbench.presets";
+import { AUTOMATION_INPUT_TABLE_PANEL } from "./automation-input-table-panel";
 import { AUTOMATION_RUN_FILES_PANEL } from "./automation-run-files-panel";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
 
@@ -421,6 +423,7 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		content: AutomationTracePanel,
 	},
 	[RUN_FILES]: AUTOMATION_RUN_FILES_PANEL,
+	[WORKBENCH_COMPONENTS.AUTOMATION_INPUT_TABLE]: AUTOMATION_INPUT_TABLE_PANEL,
 	[SETTINGS]: {
 		name: "Settings",
 		canRename: false,
@@ -762,6 +765,30 @@ export const AutomationWorkbench = observer(
 			[appId, layoutActions],
 		);
 
+		const handleOpenInputTable = useCallback(
+			(
+				nodeId: string,
+				label: string,
+				preview: AutomationInputTablePreview,
+			) => {
+				layoutActions.selectPanel(
+					WORKBENCH_COMPONENTS.AUTOMATION_INPUT_TABLE,
+					{
+						appId,
+						nodeId,
+						label,
+						runId: preview.runId,
+						startedAt: preview.startedAt,
+						insightId: preview.insightId,
+						frame: preview.frame,
+						savedResult: preview.savedResult,
+					},
+					{ name: `Input: ${label}` },
+				);
+			},
+			[appId, layoutActions],
+		);
+
 		// A save from the file-editor tab writes straight to the asset, bypassing
 		// the canvas's in-memory step entirely — mirror it back in so a later
 		// canvas Save can't clobber the file with the stale copy it loaded with.
@@ -812,6 +839,7 @@ export const AutomationWorkbench = observer(
 				onOpenOutput: setOutputModal,
 				onAskAssistant: handleAskAssistant,
 				onOpenPythonEditor: handleOpenPythonEditor,
+				onOpenInputTable: handleOpenInputTable,
 				isPythonFileOpen,
 				onViewRunDetails: handleViewRunDetails,
 				runDetailsFocusNodeId: runDetailsFocus?.nodeId ?? null,
@@ -826,6 +854,7 @@ export const AutomationWorkbench = observer(
 				handleExitHistoricalView,
 				handleInspectorChange,
 				handleOpenPythonEditor,
+				handleOpenInputTable,
 				handleRunsChange,
 				handleTraceChange,
 				handleViewRunDetails,

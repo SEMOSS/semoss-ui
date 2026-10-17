@@ -12,6 +12,7 @@ import type { WorkbenchPanelRecord } from "@semoss/workbench";
 export const WORKBENCH_COMPONENTS = {
 	...FILE_PANEL_TYPES,
 	AGENT_EDITOR: "project-agent-editor",
+	AUTOMATION_INPUT_TABLE: "automation-input-table",
 	ASSISTANT: "workbench-assistant",
 	BLOCKS_DESIGNER: "blocks-designer",
 	BLOCKS_EXPORT: "blocks-export",

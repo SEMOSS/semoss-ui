@@ -3,9 +3,11 @@ import type {
 	AutomationEdge,
 	AutomationNode,
 	AutomationNodeType,
+	CleanOperation,
 	JevDecisionConfig,
 	NodeConfig,
 } from "./automation.types";
+import { CLEAN_OPERATIONS } from "./automation.types";
 import { getAutomationNodeDefinition } from "./automation-node-catalog";
 import type {
 	AutomationBranchClause,
@@ -22,6 +24,7 @@ import type {
 	AutomationWorkflowNodeType,
 	TriggerBinding,
 } from "./automation-workflow.types";
+import { parsePurgeFilters } from "./purge-filters";
 
 export interface CanvasWorkflowDocument {
 	description: string;
@@ -378,6 +381,7 @@ function canvasTypeForWorkflow(
 	if (category === "model") return "model-engine";
 	if (category === "storage") return "storage-engine";
 	if (category === "data") return "data";
+	if (category === "clean") return "clean";
 	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
@@ -466,6 +470,24 @@ function defaultCanvasConfig(
 					: "auto",
 			missingValue: jsonValueText(config.missingValue),
 			nullValue: jsonValueText(config.nullValue),
+		};
+	}
+	if (category === "clean") {
+		return {
+			source: stringValue(config.source),
+			operation: cleanOperationFor(type, config),
+			columns: Array.isArray(config.columns)
+				? config.columns.filter(
+						(column): column is string =>
+							typeof column === "string",
+					)
+				: [],
+			column: stringValue(config.column),
+			newColumn: stringValue(config.newColumn),
+			dataType: stringValue(config.dataType) || "STRING",
+			value: stringValue(config.value),
+			newValue: stringValue(config.newValue),
+			filters: jsonArrayValue(config.filters) || "[]",
 		};
 	}
 	if (category === "vector") {
@@ -611,6 +633,8 @@ function canvasTypeToWorkflow(
 			return "storage.list";
 		case "data":
 			return "data.extract";
+		case "clean":
+			return "clean.process";
 		case "vector-engine":
 			return "vector.search";
 		case "model-engine":
@@ -638,6 +662,25 @@ function getConfigValue(
 		typeof value === "boolean"
 		? value
 		: undefined;
+}
+
+function cleanOperationValue(
+	type: AutomationWorkflowNodeType,
+	config: AutomationWorkflowNodeConfig,
+): string {
+	return type === "clean.process" ? stringValue(config.operation) : "";
+}
+
+function isCleanOperation(value: string): value is CleanOperation {
+	return CLEAN_OPERATIONS.some((operation) => operation === value);
+}
+
+function cleanOperationFor(
+	type: AutomationWorkflowNodeType,
+	config: AutomationWorkflowNodeConfig,
+): CleanOperation {
+	const value = cleanOperationValue(type, config);
+	return isCleanOperation(value) ? value : "purge";
 }
 
 function mergeCanvasConfig(
@@ -752,6 +795,40 @@ function mergeCanvasConfig(
 		}
 		if (typeof nullValue === "string") {
 			next.nullValue = fallbackValue(nullValue);
+		}
+	}
+	if (category === "clean") {
+		const configuredOperation = getConfigValue(config, "operation");
+		const operation =
+			type === "clean.process" && typeof configuredOperation === "string"
+				? configuredOperation
+				: cleanOperationFor(type, workflowConfig);
+		if (type === "clean.process") next.operation = operation;
+		next.source = config.source;
+		if (operation === "purge") {
+			next.filters = parsedJsonValue(config.filters) ?? config.filters;
+		} else if (
+			[
+				"trim",
+				"replace",
+				"filterEmpty",
+				"imputeNulls",
+				"dropColumn",
+			].includes(operation)
+		) {
+			next.columns = config.columns;
+		}
+		if (operation === "changeType") {
+			next.column = config.column;
+			next.dataType = config.dataType;
+		}
+		if (operation === "renameColumn") {
+			next.column = config.column;
+			next.newColumn = config.newColumn;
+		}
+		if (operation === "replace") {
+			next.value = config.value;
+			next.newValue = config.newValue;
 		}
 	}
 	if (category === "vector") {
@@ -1219,6 +1296,73 @@ export function validateCanvasWorkflowNode(
 			)
 		) {
 			errors.push("Output variable must be unique");
+		}
+	}
+	if (definition.category === "clean") {
+		const operationValue = cleanOperationValue(type, config);
+		const operationValid = isCleanOperation(operationValue);
+		if (!/^\$\{[^{}]+\}$/.test(stringValue(config.source).trim())) {
+			errors.push(
+				"Input table must be an exact upstream table reference",
+			);
+		}
+		if (type === "clean.process" && !operationValid) {
+			errors.push("Select a supported Clean operation");
+		}
+		const operation = operationValid ? operationValue : "";
+		if (operation === "purge") {
+			const purgeFilters = parsePurgeFilters(
+				JSON.stringify(config.filters ?? null),
+			);
+			if (
+				!purgeFilters.filters ||
+				purgeFilters.filters.length === 0 ||
+				purgeFilters.filters.some(
+					(filter) => filter.column.trim() === "",
+				)
+			) {
+				errors.push(
+					"Rows to remove must contain 1 to 100 valid JSON filters",
+				);
+			}
+		} else if (
+			[
+				"trim",
+				"replace",
+				"filterEmpty",
+				"imputeNulls",
+				"dropColumn",
+			].includes(operation) &&
+			(!Array.isArray(config.columns) ||
+				config.columns.length === 0 ||
+				config.columns.some(
+					(column) =>
+						typeof column !== "string" || column.trim() === "",
+				))
+		) {
+			errors.push("Select at least one nonblank column");
+		}
+		if (operation === "changeType") {
+			if (typeof config.column !== "string" || !config.column.trim()) {
+				errors.push("Column is required");
+			}
+			if (
+				!["STRING", "FACTOR", "DOUBLE", "DATE"].includes(
+					stringValue(config.dataType),
+				)
+			) {
+				errors.push("Select a supported target type");
+			}
+		}
+		if (operation === "renameColumn") {
+			if (typeof config.column !== "string" || !config.column.trim()) {
+				errors.push("Column is required");
+			}
+			if (
+				!/^[A-Za-z_][A-Za-z0-9_]*$/.test(stringValue(config.newColumn))
+			) {
+				errors.push("Use a valid new column name");
+			}
 		}
 	}
 	if (type === "function.execute" && typeof config.arguments === "string") {
