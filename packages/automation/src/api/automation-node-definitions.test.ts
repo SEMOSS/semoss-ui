@@ -97,7 +97,6 @@ describe("Automation node catalog", () => {
 						valueColumn: "",
 						maintainColumns: [],
 						aggregateFunction: "",
-						naReplace: "",
 						includeTime: false,
 						sigDigits: 2,
 						by100: false,

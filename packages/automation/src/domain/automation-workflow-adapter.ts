@@ -486,7 +486,6 @@ function defaultCanvasConfig(
 					)
 				: [],
 			aggregateFunction: stringValue(config.aggregateFunction),
-			naReplace: stringValue(config.naReplace),
 			includeTime: config.includeTime === true,
 			sigDigits: numberValue(config.sigDigits, 2),
 			by100: config.by100 === true,
@@ -847,7 +846,6 @@ function mergeCanvasConfig(
 				transformConfig,
 				"aggregateFunction",
 			);
-			const naReplace = getConfigValue(transformConfig, "naReplace");
 			const includeTime = getConfigValue(transformConfig, "includeTime");
 			const sigDigits = getConfigValue(transformConfig, "sigDigits");
 			const by100 = getConfigValue(transformConfig, "by100");
@@ -865,7 +863,6 @@ function mergeCanvasConfig(
 			}
 			if (typeof aggregateFunction === "string")
 				next.aggregateFunction = aggregateFunction;
-			if (typeof naReplace === "string") next.naReplace = naReplace;
 			if (typeof includeTime === "boolean")
 				next.includeTime = includeTime;
 			if (typeof sigDigits === "number") next.sigDigits = sigDigits;
@@ -1496,15 +1493,6 @@ export function validateCanvasWorkflowNode(
 				)
 			) {
 				errors.push("Select a supported aggregate function");
-			}
-			const naReplace = stringValue(config.naReplace);
-			if (
-				naReplace.length > 100 ||
-				hasUnsafeTransformLiteral(naReplace)
-			) {
-				errors.push(
-					"Pivot replacement value contains unsupported characters",
-				);
 			}
 		}
 		if (

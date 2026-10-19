@@ -12,6 +12,7 @@ import {
 	mapSavedResultPage,
 	RUN_NODE_VIEW_LABELS,
 	RUN_RESULTS_LAYOUT_CLASSES,
+	resolveLiveRunNodeId,
 } from "./run-node-view-state";
 
 function savedResult(
@@ -105,6 +106,46 @@ describe("run node occurrence identity", () => {
 });
 
 describe("run node viewer states and invariants", () => {
+	const result = (
+		nodeId: string,
+		status: AutomationNodeResult["STATUS"],
+	): AutomationNodeResult => ({
+		RUN_ID: "run-1",
+		NODE_ID: nodeId,
+		NODE_LABEL: nodeId,
+		STATUS: status,
+		STARTED_AT: "2026-10-19T00:00:00Z",
+		DURATION_MS: 1,
+		OUTPUT_KIND: "JSON",
+		OUTPUT_PREVIEW: "",
+	});
+
+	it("advances automatic live selection to the final successful node", () => {
+		const active = [result("query", "SUCCESS"), result("clean", "RUNNING")];
+		expect(resolveLiveRunNodeId(active, "query", false, "RUNNING")).toBe(
+			"clean",
+		);
+
+		const completed = [
+			result("query", "SUCCESS"),
+			result("clean", "SUCCESS"),
+			result("transform", "SUCCESS"),
+		];
+		expect(resolveLiveRunNodeId(completed, "clean", false, "SUCCESS")).toBe(
+			"transform",
+		);
+	});
+
+	it("preserves explicit selection and selects failures automatically", () => {
+		const failed = [result("query", "SUCCESS"), result("clean", "FAILED")];
+		expect(resolveLiveRunNodeId(failed, "query", true, "FAILED")).toBe(
+			"query",
+		);
+		expect(resolveLiveRunNodeId(failed, "query", false, "FAILED")).toBe(
+			"clean",
+		);
+	});
+
 	it("distinguishes loading, error, empty, and ready states", () => {
 		expect(getAsyncViewerState(true, null, false, false)).toBe("loading");
 		expect(getAsyncViewerState(false, "Failed", false, false)).toBe(

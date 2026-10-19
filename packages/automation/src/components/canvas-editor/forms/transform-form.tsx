@@ -16,6 +16,7 @@ import {
 	type TransformConfig,
 	type TransformOperation,
 } from "../../../domain/automation.types";
+import { InputTableInspector } from "./input-table-inspector";
 import { PillInput } from "./pill-input";
 import { StringListInput } from "./string-list-input";
 
@@ -24,6 +25,8 @@ interface TransformFormProps {
 	upstreamVars: string[];
 	onChange: (config: TransformConfig) => void;
 	readOnly?: boolean;
+	/** Owning automation project used to read authorized retained run data. */
+	appId?: string;
 }
 
 const TRANSFORM_OPERATION_LABELS: Record<TransformOperation, string> = {
@@ -74,6 +77,7 @@ export function TransformForm({
 	upstreamVars,
 	onChange,
 	readOnly = false,
+	appId = "",
 }: TransformFormProps) {
 	const id = useId();
 	const renderColumnField = (
@@ -305,22 +309,6 @@ export function TransformForm({
 								</SelectContent>
 							</Select>
 						</Field>
-						<Field>
-							<FieldLabel htmlFor={`${id}-na-replace`}>
-								Replace missing values (optional)
-							</FieldLabel>
-							<Input
-								id={`${id}-na-replace`}
-								value={config.naReplace}
-								onChange={(event) =>
-									onChange({
-										...config,
-										naReplace: event.target.value,
-									})
-								}
-								readOnly={readOnly}
-							/>
-						</Field>
 					</>
 				);
 			case "split":
@@ -398,6 +386,11 @@ export function TransformForm({
 							placeholder="${other_table}"
 							readOnly={readOnly}
 						/>
+						<InputTableInspector
+							appId={appId}
+							source={config.rightSource}
+							label="right table"
+						/>
 						{renderColumnField(
 							"left-join-column",
 							"Left join column",
@@ -460,6 +453,7 @@ export function TransformForm({
 				placeholder="${query_result}"
 				readOnly={readOnly}
 			/>
+			<InputTableInspector appId={appId} source={config.source} />
 			<Field>
 				<FieldLabel htmlFor={`${id}-transform-operation`}>
 					Operation

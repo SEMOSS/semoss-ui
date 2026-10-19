@@ -14,6 +14,7 @@ import {
 	type CleanConfig,
 	type CleanOperation,
 } from "../../../domain/automation.types";
+import { InputTableInspector } from "./input-table-inspector";
 import { BoundInput, PillInput } from "./pill-input";
 import { PurgeFilterInput } from "./purge-filter-input";
 import { StringListInput } from "./string-list-input";
@@ -27,6 +28,8 @@ interface CleanFormProps {
 	onChange: (config: CleanConfig) => void;
 	/** Locks the form for historical runs and read-only users. */
 	readOnly?: boolean;
+	/** Owning automation project used to read authorized retained run data. */
+	appId?: string;
 }
 
 const CLEAN_OPERATION_LABELS: Record<CleanOperation, string> = {
@@ -55,6 +58,7 @@ export function CleanForm({
 	upstreamVars,
 	onChange,
 	readOnly = false,
+	appId = "",
 }: CleanFormProps) {
 	const id = useId();
 	const operation = config.operation;
@@ -69,6 +73,7 @@ export function CleanForm({
 				placeholder="${query_result}"
 				readOnly={readOnly}
 			/>
+			<InputTableInspector appId={appId} source={config.source} />
 			<Field>
 				<FieldLabel htmlFor={`${id}-clean-operation`}>
 					Operation

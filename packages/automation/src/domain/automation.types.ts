@@ -130,7 +130,6 @@ export interface TransformConfig {
 	valueColumn: string;
 	maintainColumns: string[];
 	aggregateFunction: string;
-	naReplace: string;
 	includeTime: boolean;
 	sigDigits: number;
 	by100: boolean;
