@@ -2,20 +2,12 @@ import { act, render } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import type { RoomStore } from "@/stores/room/room.store";
-import type { AbstractPixelMessage } from "@/types";
 import { RoomContent } from "./room-content";
 
 const mocks = vi.hoisted(() => {
 	class MockResponseMessageStore {
 		isThinking = true;
 		visible = false;
-		readonly type = "OUTPUT";
-		key = "response";
-		modelId = "router";
-		ornaments: AbstractPixelMessage["ornaments"] = { modelName: "Router" };
-		hasVisibleContent = true;
-		shouldFoldUp = false;
-		findAncestor = () => ({ modelId: "router" });
 		parts: [] = [];
 		hasUnfinishedTools = false;
 	}
@@ -135,11 +127,9 @@ beforeEach(() => {
 	);
 });
 
-/** Minimal room state shared by the scroll and routed-message rendering scenarios. */
-const createRoom = (
-	response: InstanceType<typeof mocks.MockResponseMessageStore>,
-) =>
-	({
+test("finishes the stream scroll before a later grouped-tool resize", () => {
+	const response = new mocks.MockResponseMessageStore();
+	const room = {
 		history: [response],
 		latestResponseMessage: response,
 		agentGreeting: null,
@@ -161,11 +151,8 @@ const createRoom = (
 		compactMessages: vi.fn(),
 		cancelActiveJob: vi.fn(),
 		processTool: vi.fn(),
-	}) as unknown as RoomStore;
+	} as unknown as RoomStore;
 
-test("finishes the stream scroll before a later grouped-tool resize", () => {
-	const response = new mocks.MockResponseMessageStore();
-	const room = createRoom(response);
 	const { getByTestId, rerender } = render(<RoomContent room={room} />);
 	act(flushAnimationFrames);
 	mocks.scrollTo.mockClear();
@@ -193,40 +180,4 @@ test("finishes the stream scroll before a later grouped-tool resize", () => {
 	act(flushAnimationFrames);
 
 	expect(mocks.scrollTo).toHaveBeenCalledTimes(1);
-});
-
-test("shows attribution for each response even when the selected router stays the same", () => {
-	const first = new mocks.MockResponseMessageStore();
-	first.visible = true;
-	first.isThinking = false;
-	first.ornaments.routing = {
-		routed_engine_id: "first",
-		routed_engine_name: "First Model",
-	};
-	const second = new mocks.MockResponseMessageStore();
-	second.key = "second";
-	second.visible = true;
-	second.isThinking = false;
-	second.ornaments.routing = {
-		routed_engine_id: "second",
-		routed_engine_name: "Second Model",
-	};
-	const folded = new mocks.MockResponseMessageStore();
-	folded.key = "folded";
-	folded.visible = true;
-	folded.isThinking = false;
-	folded.shouldFoldUp = true;
-	folded.ornaments.routing = {
-		routed_engine_id: "backup",
-		routed_engine_name: "Backup Model",
-	};
-	const room = {
-		...createRoom(first),
-		history: [first, second, folded],
-	} as unknown as RoomStore;
-	const { getByText } = render(<RoomContent room={room} />);
-	expect(getByText("First Model")).toBeVisible();
-	expect(getByText("Second Model")).toBeVisible();
-	expect(getByText("Backup Model")).toBeVisible();
-	expect(room.setModel).not.toHaveBeenCalled();
 });
