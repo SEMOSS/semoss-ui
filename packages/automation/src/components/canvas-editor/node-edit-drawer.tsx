@@ -545,17 +545,19 @@ export function NodeEditDrawer({
 												}
 											/>
 										)}
-										<Button
-											type="button"
-											size="sm"
-											variant="outline"
-											className="h-7 px-2 text-xs"
-											onClick={() =>
-												setPythonExamplesOpen(true)
-											}
-										>
-											Examples
-										</Button>
+										{devMode && (
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												className="h-7 px-2 text-xs"
+												onClick={() =>
+													setPythonExamplesOpen(true)
+												}
+											>
+												Examples
+											</Button>
+										)}
 										{!readOnly && (
 											<Tooltip>
 												<TooltipTrigger asChild>
