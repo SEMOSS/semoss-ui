@@ -1,16 +1,24 @@
 ---
 name: react-standard
-description: "Use when creating, editing, refactoring, or reviewing React components, hooks, TypeScript source, and full staged files in SEMOSS. Covers architecture exceptions, type safety, performance, and validation."
+description: "Mandatory for all React work anywhere in the SEMOSS repository: creating, editing, refactoring, debugging, investigating, planning changes to, or reviewing components, hooks, contexts, providers, and React tests, stories, or examples. Also provides applicable TypeScript guidance for non-React source."
 ---
 
 # SEMOSS React Standard
 
-Apply this standard when implementing or reviewing `.ts`, `.tsx`, `.js`, and `.jsx`
-files under `libs/*/src/` and `packages/*/src/`, including nested directories and
-tests. Non-React code follows applicable TypeScript rules, not React-only architecture.
+Read this entire standard before every task involving React files, regardless of
+provider, agent role, directory, or task size. Follow the
+[root loading and delegation requirements](../AGENTS.md#required-skill-routing-all-agents).
+This includes `.tsx` and `.jsx` files, React components/hooks/context/providers
+in `.ts` or `.js` files, and React tests, stories, and examples anywhere in the
+repository, including outside `libs/*/src/` and `packages/*/src/`.
 
 ## Authorities and Scope
 
+- Loading this standard is mandatory for React work; apply each rule to the work
+  it governs. Non-React source follows applicable JavaScript/TypeScript rules
+  without introducing React architecture. Unrelated documentation, configuration,
+  scripts, and CI tasks do not require this skill solely because they are in the
+  repository.
 - Preserve the dependency boundaries and package conventions in
   [AGENTS.md](../AGENTS.md) and the owning package's guide.
 - [DESIGN.md](../DESIGN.md) governs UI composition, semantic tokens, primitives,
