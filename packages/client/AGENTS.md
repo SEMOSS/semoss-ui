@@ -61,6 +61,13 @@ application features; this inventory does not require moving existing features.
 | `utility/` | Client-specific adapters and compatibility exports; generic helpers live in `@semoss/utility` |
 | `main.tsx`, `App.tsx`, `index.css` | App entry files |
 
+Client `api/` modules contain application-specific requests. LinOTP login/OTP
+confirmation, file upload/download, engine-member listing, logout, and bulk
+permission changes use the owning `@semoss/sdk` APIs; logout is exposed through
+the session store. Reuse those APIs instead of restoring duplicate client wrappers.
+Database catalogs use paginated `MyEngines`/`AdminMyEngines` reactors. Audit reads
+and exports use the audit API builders backed by `AdminUserAuditEvents`.
+
 ### Routing (`pages/`)
 
 - `router.tsx` — entry point. Defines the `Router` (`observer`) plus `RouteConfig` and the

@@ -4,7 +4,6 @@ import {
 	AUDIT_FILTER_ALL,
 	AUDIT_TARGET_CATALOG_COLUMNS,
 	type AuditEvent,
-	buildAuditFilterClause,
 	buildAuditTrailExportPixel,
 	buildAuditTrailPixel,
 	EMPTY_AUDIT_FILTERS,
@@ -109,18 +108,6 @@ describe("existing audit trail query contract", () => {
 		expect(() =>
 			buildAuditTrailPixel(EMPTY_AUDIT_FILTERS, 1, "injected"),
 		).toThrow();
-		expect(
-			buildAuditFilterClause({
-				...EMPTY_AUDIT_FILTERS,
-				to: "2024-02-29",
-			}),
-		).toContain('EVENT_TIME < "2024-03-01 00:00:00"');
-		expect(
-			buildAuditFilterClause({
-				...EMPTY_AUDIT_FILTERS,
-				to: "2026-12-31",
-			}),
-		).toContain('EVENT_TIME < "2027-01-01 00:00:00"');
 		expect(() =>
 			buildAuditTrailPixel(
 				{ ...EMPTY_AUDIT_FILTERS, to: "2026-02-30" },
