@@ -262,7 +262,7 @@ export interface RouterRouteFormValue {
 	keywords: string;
 	/** Percent of traffic in weighted mode; the editor requires the routes to total 100. */
 	weight: number;
-	/** What the LLM classifier reads; required in llm mode. */
+	/** What the classifier reads; required in llm and typesafe modes. */
 	description: string;
 }
 
@@ -272,7 +272,7 @@ export interface RouterEngineRefFormValue {
 }
 
 export interface RouterConfigFormValue {
-	mode: "keyword" | "llm" | "weighted";
+	mode: "keyword" | "llm" | "typesafe" | "weighted";
 	sticky: boolean;
 	default_route: string;
 	classifier_engine: string;

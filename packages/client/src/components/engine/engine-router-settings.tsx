@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
-import { Button, Muted, Spinner, toast } from "@semoss/ui/next";
+import {
+	Alert,
+	AlertDescription,
+	Button,
+	Spinner,
+	toast,
+} from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { RouterConfigFormValue } from "@/components/import/model/model-import.constants";
 import {
@@ -43,6 +49,7 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 
 	const [value, setValue] = useState<RouterConfigFormValue | null>(null);
 	const [saving, setSaving] = useState(false);
+	const [saveError, setSaveError] = useState("");
 
 	useEffect(() => {
 		if (getConfig.status !== "SUCCESS") {
@@ -52,9 +59,10 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 	}, [getConfig.status, getConfig.data]);
 
 	const save = async () => {
+		setSaveError("");
 		const validation = validateRouterConfig(value);
 		if (validation !== true) {
-			toast.error(validation);
+			setSaveError(validation);
 			return;
 		}
 
@@ -65,6 +73,7 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 			);
 			const result = response.pixelReturn?.[0];
 			if (
+				!result ||
 				response.errors.length > 0 ||
 				String(result?.operationType || "").includes("ERROR")
 			) {
@@ -81,7 +90,7 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 			getConfig.refresh();
 			onUpdated?.();
 		} catch (error) {
-			toast.error(
+			setSaveError(
 				getErrorMessage(
 					error,
 					"Unable to update the routing configuration.",
@@ -93,6 +102,7 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 	};
 
 	if (
+		getConfig.status === "INITIAL" ||
 		getConfig.status === "LOADING" ||
 		(getConfig.status === "SUCCESS" && value === null)
 	) {
@@ -105,10 +115,20 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 
 	if (getConfig.status === "ERROR") {
 		return (
-			<Muted className="text-destructive">
-				{getConfig.error?.message ||
-					"Failed to load the routing configuration."}
-			</Muted>
+			<Alert variant="destructive">
+				<AlertDescription>
+					{getConfig.error?.message ||
+						"Failed to load the routing configuration."}
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						onClick={() => getConfig.refresh()}
+					>
+						Retry
+					</Button>
+				</AlertDescription>
+			</Alert>
 		);
 	}
 
@@ -120,13 +140,19 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 				disabled={!isEditable || saving}
 				excludeEngineId={engineId}
 			/>
+			{saveError && (
+				<Alert variant="destructive">
+					<AlertDescription>{saveError}</AlertDescription>
+				</Alert>
+			)}
 			<div className="flex w-full justify-end">
 				<Button
 					size="sm"
 					onClick={() => save()}
 					disabled={!isEditable || saving}
 				>
-					{saving ? "Saving..." : "Save Routing"}
+					{saving && <Spinner />}
+					{saving ? "Saving..." : "Save routing"}
 				</Button>
 			</div>
 		</div>
