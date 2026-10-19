@@ -1,5 +1,4 @@
 import { createContext, useContext } from "react";
-import type { AutomationInputTablePreview } from "../api/automation-history";
 import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,
@@ -37,12 +36,6 @@ export interface AutomationWorkbenchContextValue {
 	onOpenOutput: (output: string) => void;
 	onAskAssistant: (prompt: string) => void;
 	onOpenPythonEditor: (nodeId: string, source: string) => void;
-	/** Opens prior upstream output in a read-only workbench table tab. */
-	onOpenInputTable?: (
-		nodeId: string,
-		label: string,
-		preview: AutomationInputTablePreview,
-	) => void;
 	/** Whether a node's compiled Python source is currently open in a real file editor tab. */
 	isPythonFileOpen: (nodeId: string) => boolean;
 	/** Switches the trace/run-details panel to the latest run, selected on this node. */
@@ -138,7 +131,6 @@ export const AutomationInspectorPanel = () => {
 				})
 			}
 			onOpenPythonEditor={context.onOpenPythonEditor}
-			onOpenInputTable={context.onOpenInputTable}
 			pythonFileOpen={
 				snapshot?.editingStep
 					? context.isPythonFileOpen(snapshot.editingStep.id)

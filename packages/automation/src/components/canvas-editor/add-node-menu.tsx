@@ -2,7 +2,6 @@ import {
 	Bot,
 	Braces,
 	BrushCleaning,
-	ChevronDown,
 	Database,
 	FolderOpen,
 	FunctionSquare,
@@ -14,12 +13,7 @@ import {
 	Variable,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-	Input,
-} from "@semoss/ui/next";
+import { Input } from "@semoss/ui/next";
 import { getAutomationNodeDefinitions } from "../../domain/automation-node-catalog";
 import type {
 	AutomationNodeCategory,
@@ -87,9 +81,6 @@ export function AddNodeMenu({
 	description = "Choose a step for this automation.",
 }: AddNodeMenuProps) {
 	const [query, setQuery] = useState("");
-	const [collapsedCategories, setCollapsedCategories] = useState<
-		Set<AutomationNodeCategory>
-	>(() => new Set());
 	const normalizedQuery = query.trim().toLowerCase();
 	const nodeDefinitions = getAutomationNodeDefinitions();
 	const entriesByCategory = useMemo(
@@ -100,15 +91,13 @@ export function AddNodeMenu({
 					if (
 						node.category !== category ||
 						node.type === "trigger.start" ||
-						(node.category === "clean" &&
-							node.type !== "clean.process") ||
 						(nodeFilter && !nodeFilter(node.type))
 					) {
 						return false;
 					}
 					if (!normalizedQuery) return true;
 					const alias = SEARCH_ALIASES[node.type] ?? "";
-					return `${node.type} ${node.category} ${CATEGORY_META[node.category].label} ${node.label} ${node.description} ${alias}`
+					return `${node.label} ${node.description} ${alias}`
 						.toLowerCase()
 						.includes(normalizedQuery);
 				}),
@@ -136,86 +125,49 @@ export function AddNodeMenu({
 					/>
 				</div>
 			</div>
-			<div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+			<div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
 				{entriesByCategory.map(({ category, entries }) => {
 					if (entries.length === 0) return null;
 					const Icon = CATEGORY_META[category].icon;
-					const expanded =
-						normalizedQuery !== "" ||
-						!collapsedCategories.has(category);
 					return (
-						<Collapsible
-							key={category}
-							open={expanded}
-							onOpenChange={(open) => {
-								if (normalizedQuery) return;
-								setCollapsedCategories((current) => {
-									const next = new Set(current);
-									if (open) next.delete(category);
-									else next.add(category);
-									return next;
-								});
-							}}
-						>
-							<section>
-								<CollapsibleTrigger asChild>
-									<button
-										type="button"
-										className="flex w-full items-center gap-2 py-1 text-left text-muted-foreground transition-colors hover:text-foreground"
-									>
-										<Icon
-											className="size-3.5"
-											aria-hidden
-										/>
-										<span className="font-medium text-xs uppercase tracking-wide">
-											{CATEGORY_META[category].label}
-										</span>
-										<span className="text-xs">
-											{entries.length}
-										</span>
-										<ChevronDown
-											className={`ml-auto size-4 transition-transform ${expanded ? "rotate-180" : ""}`}
-											aria-hidden
-										/>
-									</button>
-								</CollapsibleTrigger>
-								<CollapsibleContent className="pt-2">
-									<div className="space-y-2">
-										{entries.map((node) => {
-											const NodeIcon =
-												getWorkflowNodeDisplay(
-													node.type,
-												).icon;
-											return (
-												<button
-													key={node.type}
-													type="button"
-													onClick={() =>
-														onSelect(node.type)
-													}
-													className="flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-muted/40"
-												>
-													<span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-primary">
-														<NodeIcon
-															className="size-4"
-															aria-hidden
-														/>
-													</span>
-													<span className="min-w-0 space-y-1">
-														<span className="block font-medium text-sm">
-															{node.label}
-														</span>
-														<span className="block text-muted-foreground text-xs">
-															{node.description}
-														</span>
-													</span>
-												</button>
-											);
-										})}
-									</div>
-								</CollapsibleContent>
-							</section>
-						</Collapsible>
+						<section key={category}>
+							<div className="mb-2 flex items-center gap-2 text-muted-foreground">
+								<Icon className="size-3.5" aria-hidden />
+								<p className="font-medium text-xs uppercase tracking-wide">
+									{CATEGORY_META[category].label}
+								</p>
+							</div>
+							<div className="space-y-2">
+								{entries.map((node) => {
+									const NodeIcon = getWorkflowNodeDisplay(
+										node.type,
+									).icon;
+									return (
+										<button
+											key={node.type}
+											type="button"
+											onClick={() => onSelect(node.type)}
+											className="flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-muted/40"
+										>
+											<span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-primary">
+												<NodeIcon
+													className="size-4"
+													aria-hidden
+												/>
+											</span>
+											<span className="min-w-0 space-y-1">
+												<span className="block font-medium text-sm">
+													{node.label}
+												</span>
+												<span className="block text-muted-foreground text-xs">
+													{node.description}
+												</span>
+											</span>
+										</button>
+									);
+								})}
+							</div>
+						</section>
 					);
 				})}
 			</div>

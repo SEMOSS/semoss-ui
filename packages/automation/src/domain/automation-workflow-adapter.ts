@@ -684,16 +684,8 @@ function canvasTypeToWorkflow(
 	}
 }
 
-function getConfigValue(
-	config: NodeConfig,
-	key: string,
-): string | number | boolean | undefined {
-	const value = (config as unknown as Record<string, unknown>)[key];
-	return typeof value === "string" ||
-		typeof value === "number" ||
-		typeof value === "boolean"
-		? value
-		: undefined;
+function getConfigValue(config: NodeConfig, key: string): unknown {
+	return (config as unknown as Record<string, unknown>)[key];
 }
 
 function cleanOperationValue(
