@@ -81,24 +81,62 @@ export const CLEAN_OPERATIONS = [
 	"removeDuplicates",
 	"filterEmpty",
 	"imputeNulls",
-	"changeType",
-	"dropColumn",
-	"renameColumn",
 ] as const;
 
 export type CleanOperation = (typeof CLEAN_OPERATIONS)[number];
+
+export const TRANSFORM_OPERATIONS = [
+	"changeType",
+	"dropColumn",
+	"renameColumn",
+	"addColumn",
+	"duplicateColumn",
+	"concatenate",
+	"pivot",
+	"lowerCase",
+	"properCase",
+	"split",
+	"splitUnpivot",
+	"timestampData",
+	"toPercent",
+	"transpose",
+	"unpivot",
+	"upperCase",
+	"join",
+] as const;
+
+export type TransformOperation = (typeof TRANSFORM_OPERATIONS)[number];
 
 /** Configuration for native BI cleaning of a live upstream frame. */
 export interface CleanConfig {
 	source: string;
 	operation: CleanOperation;
 	columns: string[];
-	column: string;
-	newColumn: string;
-	dataType: string;
 	value: string;
 	newValue: string;
 	filters: string;
+}
+
+/** Configuration for schema transforms applied to a live upstream frame. */
+export interface TransformConfig {
+	source: string;
+	operation: TransformOperation;
+	columns: string[];
+	column: string;
+	newColumn: string;
+	dataType: string;
+	delimiter: string;
+	pivotColumn: string;
+	valueColumn: string;
+	maintainColumns: string[];
+	aggregateFunction: string;
+	naReplace: string;
+	includeTime: boolean;
+	sigDigits: number;
+	by100: boolean;
+	rightSource: string;
+	rightColumn: string;
+	joinType: string;
 }
 
 export interface VectorEngineConfig {
@@ -212,6 +250,7 @@ export type NodeConfig =
 	| StorageEngineConfig
 	| DataExtractConfig
 	| CleanConfig
+	| TransformConfig
 	| VectorEngineConfig
 	| ModelEngineConfig
 	| FunctionEngineConfig

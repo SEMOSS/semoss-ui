@@ -6,6 +6,7 @@ import type {
 	DataExtractConfig,
 	ModelEngineConfig,
 	StorageEngineConfig,
+	TransformConfig,
 	VectorEngineConfig,
 } from "./automation.types";
 import { CLEAN_OPERATIONS } from "./automation.types";
@@ -64,11 +65,34 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 			operation: "purge",
 			columns: [],
 			filters: [],
+			value: "",
+			newValue: "",
+		},
+		false,
+	),
+	definition(
+		"data.transform",
+		"data",
+		"Transform data",
+		{
+			source: "",
+			operation: "changeType",
+			columns: [],
 			column: "",
 			newColumn: "",
 			dataType: "STRING",
-			value: "",
-			newValue: "",
+			delimiter: " ",
+			pivotColumn: "",
+			valueColumn: "",
+			maintainColumns: [],
+			aggregateFunction: "",
+			naReplace: "",
+			includeTime: false,
+			sigDigits: 2,
+			by100: false,
+			rightSource: "",
+			rightColumn: "",
+			joinType: "inner.join",
 		},
 		false,
 	),
@@ -216,25 +240,109 @@ describe("Clean nodes", () => {
 		const step = node("clean.process");
 		const config: CleanConfig = {
 			...(step.config as CleanConfig),
-			operation: "changeType",
+			operation: "trim",
 			source: `\${table}`,
-			column: "AGE",
-			dataType: "DOUBLE",
+			columns: ["NAME"],
 		};
 		const saved = documentOf([{ ...step, config }]);
 		const savedNode = saved.graph.nodes.find(
 			(item) => item.type === "clean.process",
 		);
 		expect(savedNode?.config).toMatchObject({
-			operation: "changeType",
-			column: "AGE",
-			dataType: "DOUBLE",
+			operation: "trim",
+			columns: ["NAME"],
 		});
 
 		const reloaded = canvasDocumentFromWorkflow(saved, {}).steps.find(
 			(candidate) => candidate.workflowType === "clean.process",
 		);
-		expect((reloaded?.config as CleanConfig).operation).toBe("changeType");
+		expect((reloaded?.config as CleanConfig).operation).toBe("trim");
+	});
+
+	it("round trips Transform config without treating it as Data Extract", () => {
+		const step = node("data.transform");
+		const config: TransformConfig = {
+			...(step.config as TransformConfig),
+			operation: "dropColumn",
+			source: `\${table}`,
+			columns: ["TEMP", "NOTES"],
+		};
+		const saved = documentOf([{ ...step, config }]);
+		const savedNode = saved.graph.nodes.find(
+			(item) => item.type === "data.transform",
+		);
+		expect(savedNode?.config).toMatchObject({
+			operation: "dropColumn",
+			columns: ["TEMP", "NOTES"],
+		});
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {}).steps.find(
+			(candidate) => candidate.workflowType === "data.transform",
+		);
+		expect(reloaded?.workflowType).toBe("data.transform");
+		expect((reloaded?.config as TransformConfig).columns).toEqual([
+			"TEMP",
+			"NOTES",
+		]);
+	});
+
+	it("round trips advanced Transform settings", () => {
+		const step = node("data.transform");
+		const config: TransformConfig = {
+			...(step.config as TransformConfig),
+			operation: "pivot",
+			source: `\${table}`,
+			pivotColumn: "STATUS",
+			valueColumn: "AMOUNT",
+			maintainColumns: ["ID"],
+			aggregateFunction: "sum",
+			naReplace: "0",
+			delimiter: ":",
+			includeTime: true,
+			sigDigits: 3,
+			by100: true,
+		};
+		const saved = documentOf([{ ...step, config }]);
+		const reloaded = canvasDocumentFromWorkflow(saved, {}).steps.find(
+			(candidate) => candidate.workflowType === "data.transform",
+		);
+		expect(reloaded?.config).toMatchObject({
+			operation: "pivot",
+			pivotColumn: "STATUS",
+			valueColumn: "AMOUNT",
+			maintainColumns: ["ID"],
+			aggregateFunction: "sum",
+			naReplace: "0",
+			delimiter: ":",
+			includeTime: true,
+			sigDigits: 3,
+			by100: true,
+		});
+	});
+
+	it("round trips both table inputs for Join", () => {
+		const step = node("data.transform");
+		const config: TransformConfig = {
+			...(step.config as TransformConfig),
+			operation: "join",
+			source: `\${left_table}`,
+			column: "LEFT_NAME",
+			rightSource: `\${right_table}`,
+			rightColumn: "RIGHT_NAME",
+			joinType: "left.outer.join",
+		};
+		const saved = documentOf([{ ...step, config }]);
+		const reloaded = canvasDocumentFromWorkflow(saved, {}).steps.find(
+			(candidate) => candidate.workflowType === "data.transform",
+		);
+		expect(reloaded?.config).toMatchObject({
+			operation: "join",
+			source: `\${left_table}`,
+			rightSource: `\${right_table}`,
+			column: "LEFT_NAME",
+			rightColumn: "RIGHT_NAME",
+			joinType: "left.outer.join",
+		});
 	});
 
 	it("validates the generic Clean operation and its required fields", () => {
@@ -262,13 +370,13 @@ describe("Clean nodes", () => {
 		).toContain("Select a supported Clean operation");
 	});
 
-	it("validates Change Type targets and Rename column names", () => {
-		const changeType = node("clean.process");
+	it("validates Transform operation inputs", () => {
+		const changeType = node("data.transform");
 		expect(
 			validateCanvasWorkflowNode({
 				...changeType,
 				config: {
-					...(changeType.config as CleanConfig),
+					...(changeType.config as TransformConfig),
 					operation: "changeType",
 					source: `\${table}`,
 					column: "AGE",
@@ -276,12 +384,12 @@ describe("Clean nodes", () => {
 				},
 			}),
 		).toContain("Select a supported target type");
-		const rename = node("clean.process");
+		const rename = node("data.transform");
 		expect(
 			validateCanvasWorkflowNode({
 				...rename,
 				config: {
-					...(rename.config as CleanConfig),
+					...(rename.config as TransformConfig),
 					operation: "renameColumn",
 					source: `\${table}`,
 					column: "AGE",
@@ -289,6 +397,62 @@ describe("Clean nodes", () => {
 				},
 			}),
 		).toContain("Use a valid new column name");
+		const drop = node("data.transform");
+		expect(
+			validateCanvasWorkflowNode({
+				...drop,
+				config: {
+					...(drop.config as TransformConfig),
+					operation: "dropColumn",
+					source: `\${table}`,
+					columns: [],
+				},
+			}),
+		).toContain("Select at least one nonblank column");
+	});
+
+	it("validates new Transform operation fields", () => {
+		const step = node("data.transform");
+		const delimiter = validateCanvasWorkflowNode({
+			...step,
+			config: {
+				...(step.config as TransformConfig),
+				operation: "split",
+				source: `\${table}`,
+				columns: ["NAME"],
+				delimiter: "'bad'",
+			},
+		});
+		expect(delimiter).toContain(
+			"Delimiter must be 1 to 100 characters without quotes or control characters",
+		);
+		const percent = validateCanvasWorkflowNode({
+			...step,
+			config: {
+				...(step.config as TransformConfig),
+				operation: "toPercent",
+				source: `\${table}`,
+				column: "RATE",
+				newColumn: "RATE_PCT",
+				sigDigits: 25,
+			},
+		});
+		expect(percent).toContain(
+			"Significant digits must be between 0 and 20",
+		);
+		const join = validateCanvasWorkflowNode({
+			...step,
+			config: {
+				...(step.config as TransformConfig),
+				operation: "join",
+				source: `\${table}`,
+				column: "ID",
+				rightSource: `\${other_table}`,
+				rightColumn: "ID",
+				joinType: "inner.join",
+			},
+		});
+		expect(join).toEqual([]);
 	});
 
 	it("accepts equality value lists but rejects lists for range comparisons", () => {
@@ -318,9 +482,6 @@ describe("Clean nodes", () => {
 				operation,
 				source: `\${table}`,
 				columns: ["STATUS"],
-				column: "STATUS",
-				newColumn: "STATUS_NEW",
-				dataType: "STRING",
 				value: "old",
 				newValue: "new",
 				filters:

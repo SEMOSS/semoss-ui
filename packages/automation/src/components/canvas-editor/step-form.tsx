@@ -10,6 +10,7 @@ import type {
 	LoopConfig,
 	ModelEngineConfig,
 	StorageEngineConfig,
+	TransformConfig,
 	VectorEngineConfig,
 	WaitConfig,
 } from "../../domain/automation.types";
@@ -27,6 +28,7 @@ import { LoopForm } from "./forms/loop-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
 import { PillInput } from "./forms/pill-input";
 import { StorageEngineForm } from "./forms/storage-engine-form";
+import { TransformForm } from "./forms/transform-form";
 import { VectorEngineForm } from "./forms/vector-engine-form";
 
 interface StepFormProps {
@@ -88,6 +90,17 @@ export function StepForm({
 				/>
 			);
 		case "data":
+			if (step.workflowType === "data.transform") {
+				return (
+					<TransformForm
+						appId={appId}
+						config={step.config as TransformConfig}
+						upstreamVars={upstreamVars}
+						onChange={update}
+						readOnly={readOnly}
+					/>
+				);
+			}
 			return (
 				<DataExtractForm
 					config={step.config as DataExtractConfig}

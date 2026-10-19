@@ -6,7 +6,6 @@ import {
 	Button,
 	Field,
 	FieldLabel,
-	Input,
 	P,
 	Select,
 	SelectContent,
@@ -40,15 +39,12 @@ interface CleanFormProps {
 }
 
 const CLEAN_OPERATION_LABELS: Record<CleanOperation, string> = {
-	purge: "Purge rows",
+	purge: "Drop rows",
 	trim: "Trim text",
 	replace: "Replace values",
 	removeDuplicates: "Remove duplicate rows",
 	filterEmpty: "Filter empty values",
 	imputeNulls: "Impute null values",
-	changeType: "Change column type",
-	dropColumn: "Drop columns",
-	renameColumn: "Rename column",
 };
 
 const CLEAN_DESCRIPTIONS: Record<CleanOperation, string> = {
@@ -60,9 +56,6 @@ const CLEAN_DESCRIPTIONS: Record<CleanOperation, string> = {
 	filterEmpty:
 		"Remove rows with null or empty values in any selected column.",
 	imputeNulls: "Fill missing values using defaults based on the column type.",
-	changeType: "Convert a column to text, category, number, or date.",
-	dropColumn: "Remove selected columns from this working dataset.",
-	renameColumn: "Rename a column in this working dataset.",
 };
 
 /** Configures native BI cleaning without allowing arbitrary execution code. */
@@ -86,9 +79,7 @@ export function CleanForm({
 		sourceEntry?.sourceNodeId,
 		config.source,
 	);
-	const availableColumns = input.preview?.columns ?? [];
 	const operation = config.operation;
-	const targetTypes = ["STRING", "FACTOR", "DOUBLE", "DATE"];
 	const inputPreviewControls = (
 		<>
 			<P className="text-muted-foreground text-xs">
@@ -202,131 +193,20 @@ export function CleanForm({
 					columns={input.preview?.columns}
 					sampleRows={input.preview?.page.rows}
 				/>
+			) : operation !== "removeDuplicates" ? (
+				<StringListInput
+					label="Columns"
+					itemLabel="Column"
+					values={config.columns}
+					onChange={(columns) => onChange({ ...config, columns })}
+					upstreamVars={[]}
+					placeholder="Column name"
+					readOnly={readOnly}
+				/>
 			) : (
-				<>
-					{operation === "changeType" ? (
-						<>
-							<Field>
-								<FieldLabel htmlFor={`${id}-change-column`}>
-									Column
-								</FieldLabel>
-								<Input
-									id={`${id}-change-column`}
-									value={config.column}
-									list={
-										availableColumns.length
-											? `${id}-input-columns`
-											: undefined
-									}
-									onChange={(event) =>
-										onChange({
-											...config,
-											column: event.target.value,
-										})
-									}
-									placeholder="Column name"
-									readOnly={readOnly}
-								/>
-							</Field>
-							<Field>
-								<FieldLabel htmlFor={`${id}-change-type`}>
-									New type
-								</FieldLabel>
-								<Select
-									value={config.dataType}
-									onValueChange={(dataType) =>
-										onChange({ ...config, dataType })
-									}
-									disabled={readOnly}
-								>
-									<SelectTrigger
-										id={`${id}-change-type`}
-										className="w-full"
-									>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{targetTypes.map((dataType) => (
-											<SelectItem
-												key={dataType}
-												value={dataType}
-											>
-												{dataType}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</Field>
-						</>
-					) : operation === "renameColumn" ? (
-						<>
-							<Field>
-								<FieldLabel htmlFor={`${id}-rename-column`}>
-									Column
-								</FieldLabel>
-								<Input
-									id={`${id}-rename-column`}
-									value={config.column}
-									list={
-										availableColumns.length
-											? `${id}-input-columns`
-											: undefined
-									}
-									onChange={(event) =>
-										onChange({
-											...config,
-											column: event.target.value,
-										})
-									}
-									placeholder="Column to rename"
-									readOnly={readOnly}
-								/>
-							</Field>
-							<Field>
-								<FieldLabel htmlFor={`${id}-new-column`}>
-									New column name
-								</FieldLabel>
-								<Input
-									id={`${id}-new-column`}
-									value={config.newColumn}
-									onChange={(event) =>
-										onChange({
-											...config,
-											newColumn: event.target.value,
-										})
-									}
-									placeholder="New column name"
-									readOnly={readOnly}
-								/>
-							</Field>
-						</>
-					) : operation !== "removeDuplicates" ? (
-						<StringListInput
-							label="Columns"
-							itemLabel="Column"
-							values={config.columns}
-							onChange={(columns) =>
-								onChange({ ...config, columns })
-							}
-							upstreamVars={[]}
-							placeholder="Column name"
-							readOnly={readOnly}
-						/>
-					) : (
-						<P className="text-muted-foreground text-sm">
-							Duplicates are compared across all columns.
-						</P>
-					)}
-					{availableColumns.length > 0 && (
-						<datalist id={`${id}-input-columns`}>
-							{availableColumns.map((column) => (
-								<option key={column.name} value={column.name}>
-									{column.type}
-								</option>
-							))}
-						</datalist>
-					)}
-				</>
+				<P className="text-muted-foreground text-sm">
+					Duplicates are compared across all columns.
+				</P>
 			)}
 			{operation === "replace" && (
 				<>

@@ -1,31 +1,58 @@
 # Clean Nodes
 
-Clean nodes reuse the existing SEMOSS BI reactors. The backend catalog owns their
-definitions; the frontend adds a Clean group and configuration form.
+Clean and Transform nodes reuse the existing SEMOSS BI reactors. The backend
+catalog owns their definitions; the frontend provides a Clean group and a
+Transform node in DATA.
 
 The canvas exposes one **Clean data** node. Select an operation in its inspector
 to show that operation's configuration. New nodes are saved as `clean.process`
 with an `operation` value (`purge`, `trim`, `replace`, `removeDuplicates`,
-`filterEmpty`, `imputeNulls`, `changeType`, `dropColumn`, or `renameColumn`). The
-operation determines which settings appear in the inspector.
+`filterEmpty`, or `imputeNulls`).
+
+Change Type, Drop columns, and Rename column are available on the separate
+**Transform data** node in the DATA category. Transform nodes are saved as
+`data.transform`; their `operation` value selects the transform configuration.
 
 | Operation | Database frame | R frame | Python frame |
 | --- | --- | --- | --- |
-| Purge | Yes | Yes | Yes |
-| Trim | No | Yes | Yes |
-| Replace | No | Yes | Yes |
-| Remove duplicate rows | No | Yes | Yes |
+| Drop rows (Purge) | Yes | No | Yes |
+| Trim | No | No | Yes |
+| Replace | No | No | Yes |
+| Remove duplicate rows | No | No | Yes |
 | Filter empty values | No | No | Yes |
 | Impute null values | No | No | Yes |
+
+| Transform operation | Database frame | R frame | Python frame |
+| --- | --- | --- | --- |
 | Change column type | No | No | Yes |
 | Drop columns | No | No | Yes |
 | Rename column | No | No | Yes |
+| Add column | No | No | Yes |
+| Duplicate column | No | No | Yes |
+| Concatenate columns | No | No | Yes |
+| Pivot | No | No | Yes |
+| Lower case | No | No | Yes |
+| Proper case | No | No | Yes |
+| Split columns | No | No | Yes |
+| Split and unpivot | No | No | Yes |
+| Add timestamp data | No | No | Yes |
+| Convert to percent | No | No | Yes |
+| Transpose | No | No | Yes |
+| Unpivot | No | No | Yes |
+| Upper case | No | No | Yes |
+| Join tables | Same database | No | Yes |
 
-Compatibility follows the actual frame type, not the upstream node label.
+Both node types reuse the existing SEMOSS BI reactors. Compatibility follows the
+actual frame type, not the upstream node label.
 Automation database queries currently materialize their bounded results as
 Python frames. Those results are therefore compatible with Python cleaning.
-An actual database-backed frame supports only Purge. Cleaning never silently
-converts a frame to another runtime.
+Native frames are deferred database-backed queries: data stays in its source
+database instead of being materialized into a Python/R frame.
+Among Clean operations, an actual database-backed frame supports only Drop rows
+(Purge). Other Clean and Transform operations require Python frames; R frames are
+not supported by Automation. Standard Join works with Python tables and native
+tables from the same database. These nodes never silently convert a frame to
+another runtime.
 
 ## Input and Output
 
@@ -33,16 +60,23 @@ converts a frame to another runtime.
 from this run. JSON arrays, table previews, and historical summaries are not
 accepted as executable frames.
 
-Each operation copies the input into a separate frame of the same runtime before
-invoking the BI routine. The original input remains unchanged. Copying preserves
-duplicate rows and the input's visible filters. Inputs are bounded by the
-backend's existing saved-table row limit.
+Single-frame operations copy the input into a separate frame of the same runtime
+before invoking the BI routine. The original input remains unchanged. Copying
+preserves duplicate rows and the input's visible filters. Inputs and outputs are
+bounded by the backend's saved-table row limit. Joins use the selected left and
+right table references and are subject to the same output limit.
 
-The cleaned output is available under the node's output variable, with normal
+The resulting table is available under the node's output variable, with normal
 table paging and durable run-history capture. Root graphs and loop bodies use
 the same execution path.
 
-## Purge
+After a Python transform changes the schema, Automation refreshes the frame's
+query selectors before publishing or capturing its output. Newly added columns
+remain available to downstream nodes, and saved column names, types, and row
+values stay aligned. Pivot supports missing-value replacement across multiple
+generated columns, including when no columns are selected to keep.
+
+## Drop Rows (Purge)
 
 Purge removes whole rows matching all configured filters from the local working
 dataset. Select a column, comparator, and value to identify the rows to remove.
@@ -89,7 +123,7 @@ to explicitly remove nulls, or `!=` with null to remove non-null values.
 
 - Impute Nulls reuses BI defaults: numeric mean, string mode or `Unknown`, and
   date/timestamp forward fill.
-- Change Column Type currently offers `STRING`, `FACTOR`, `DOUBLE`, and `DATE`,
+- Transform's Change Column Type currently offers `STRING`, `FACTOR`, `DOUBLE`, and `DATE`,
   the targets the existing BI reactor actually converts. Although the legacy
   reactor accepts names such as `INT`, `BOOLEAN`, and `TIMESTAMP`, it currently
   updates metadata without converting values for those targets, so Automation
@@ -99,6 +133,9 @@ to explicitly remove nulls, or `!=` with null to remove non-null values.
   with another existing column.
 - Remove duplicates compares entire rows; it does not accept a subset of columns.
 - Filter empty values removes rows with null or empty values in any selected column.
+- Join requires a second live upstream table and key columns. It supports inner, left outer,
+  and right outer joins. Fuzzy Join is not exposed because the existing fuzzy-match reactors
+  are R-only.
 - Column names must exist and use letters, digits, and underscores, beginning
   with a letter or underscore. This avoids passing executable syntax to legacy
   R/Python routines.

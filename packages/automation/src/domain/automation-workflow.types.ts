@@ -14,6 +14,7 @@ export type AutomationWorkflowNodeType =
 	| "storage.download"
 	| "storage.delete"
 	| "data.extract"
+	| "data.transform"
 	| "clean.process"
 	| "vector.search"
 	| "vector.add"
