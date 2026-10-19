@@ -121,6 +121,14 @@ export interface AgentRunMessageContext {
 	childStatus?: string;
 }
 
+/** Per-response attribution supplied by the model router after a successful call. */
+export interface ModelRouting {
+	router_engine_id?: string;
+	routed_engine_id: string;
+	routed_engine_name?: string;
+	routed_route_name?: string;
+}
+
 export interface AbstractPixelMessage {
 	io: "INPUT" | "OUTPUT";
 	messageId: string;
@@ -143,6 +151,8 @@ export interface AbstractPixelMessage {
 	agentRun?: AgentRunMessageContext;
 	ornaments: {
 		modelName?: string;
+		/** Successful destination, separate from the selected router modelId. */
+		routing?: ModelRouting;
 		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
 		agentRunRole?: string;
@@ -172,6 +182,8 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 	)[];
 	ornaments: {
 		modelName?: string;
+		/** Successful destination, separate from the selected router modelId. */
+		routing?: ModelRouting;
 		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
 		agentRunRole?: string;
