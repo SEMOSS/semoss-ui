@@ -722,6 +722,10 @@ function hasUnsafeTransformLiteral(value: string): boolean {
 	);
 }
 
+function isFrameColumnIdentifier(value: unknown): value is string {
+	return typeof value === "string" && /^[A-Za-z_][A-Za-z0-9_]*$/.test(value);
+}
+
 function transformOperationFor(
 	config: AutomationWorkflowNodeConfig,
 ): TransformOperation {
@@ -1396,12 +1400,18 @@ export function validateCanvasWorkflowNode(
 			if (
 				!Array.isArray(value) ||
 				(required && value.length === 0) ||
-				value.some(
-					(column) =>
-						typeof column !== "string" || column.trim() === "",
-				)
+				value.some((column) => !isFrameColumnIdentifier(column))
 			) {
-				errors.push("Select at least one nonblank column");
+				errors.push(
+					"Select columns using letters, digits, and underscores only",
+				);
+			}
+		};
+		const validateColumn = (value: unknown, label = "Column") => {
+			if (!isFrameColumnIdentifier(value)) {
+				errors.push(
+					`${label} must use letters, digits, and underscores only`,
+				);
 			}
 		};
 		const validateNewColumn = () => {
@@ -1435,9 +1445,7 @@ export function validateCanvasWorkflowNode(
 			validateColumns(config.columns);
 		}
 		if (operation === "changeType") {
-			if (typeof config.column !== "string" || !config.column.trim()) {
-				errors.push("Column is required");
-			}
+			validateColumn(config.column);
 			if (
 				!["STRING", "FACTOR", "DOUBLE", "DATE"].includes(
 					stringValue(config.dataType),
@@ -1447,9 +1455,7 @@ export function validateCanvasWorkflowNode(
 			}
 		}
 		if (operation === "renameColumn") {
-			if (typeof config.column !== "string" || !config.column.trim()) {
-				errors.push("Column is required");
-			}
+			validateColumn(config.column);
 			validateNewColumn();
 		}
 		if (
@@ -1470,8 +1476,7 @@ export function validateCanvasWorkflowNode(
 			errors.push("Select a supported new column type");
 		}
 		if (operation === "duplicateColumn" || operation === "toPercent") {
-			if (typeof config.column !== "string" || !config.column.trim())
-				errors.push("Column is required");
+			validateColumn(config.column);
 		}
 		if (operation === "concatenate") {
 			validateColumns(config.columns);
@@ -1482,10 +1487,8 @@ export function validateCanvasWorkflowNode(
 			validateDelimiter();
 		}
 		if (operation === "pivot") {
-			if (!stringValue(config.pivotColumn).trim())
-				errors.push("Pivot column is required");
-			if (!stringValue(config.valueColumn).trim())
-				errors.push("Value column is required");
+			validateColumn(config.pivotColumn, "Pivot column");
+			validateColumn(config.valueColumn, "Value column");
 			validateColumns(config.maintainColumns, false);
 			if (
 				!["", "sum", "mean", "median"].includes(
@@ -1575,11 +1578,12 @@ export function validateCanvasWorkflowNode(
 			(!Array.isArray(config.columns) ||
 				config.columns.length === 0 ||
 				config.columns.some(
-					(column) =>
-						typeof column !== "string" || column.trim() === "",
+					(column) => !isFrameColumnIdentifier(column),
 				))
 		) {
-			errors.push("Select at least one nonblank column");
+			errors.push(
+				"Select columns using letters, digits, and underscores only",
+			);
 		}
 	}
 	if (type === "function.execute" && typeof config.arguments === "string") {

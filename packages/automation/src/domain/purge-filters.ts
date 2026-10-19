@@ -12,6 +12,7 @@ export const PURGE_COMPARATORS = [
 export type PurgeComparator = (typeof PURGE_COMPARATORS)[number]["value"];
 export type PurgeValueType = "string" | "number" | "boolean";
 type PurgeScalar = string | number | boolean;
+const FRAME_COLUMN_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /** Editable rule values retain incomplete numeric input until it is corrected. */
 export interface PurgeFilterDraft {
@@ -62,6 +63,7 @@ export function parsePurgeFilters(
 		if (
 			!isRecord(filter) ||
 			typeof filter.column !== "string" ||
+			!FRAME_COLUMN_IDENTIFIER.test(filter.column) ||
 			!comparator ||
 			!("value" in filter) ||
 			!isPurgeScalar(filter.value) ||

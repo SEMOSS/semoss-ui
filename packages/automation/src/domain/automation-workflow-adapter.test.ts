@@ -354,7 +354,9 @@ describe("Clean nodes", () => {
 					columns: [],
 				},
 			}),
-		).toContain("Select at least one nonblank column");
+		).toContain(
+			"Select columns using letters, digits, and underscores only",
+		);
 		expect(
 			validateCanvasWorkflowNode({
 				...step,
@@ -405,7 +407,22 @@ describe("Clean nodes", () => {
 					columns: [],
 				},
 			}),
-		).toContain("Select at least one nonblank column");
+		).toContain(
+			"Select columns using letters, digits, and underscores only",
+		);
+		expect(
+			validateCanvasWorkflowNode({
+				...drop,
+				config: {
+					...(drop.config as TransformConfig),
+					operation: "dropColumn",
+					source: `\${table}`,
+					columns: ["bad column"],
+				},
+			}),
+		).toContain(
+			"Select columns using letters, digits, and underscores only",
+		);
 	});
 
 	it("validates new Transform operation fields", () => {
@@ -528,12 +545,15 @@ describe("Clean nodes", () => {
 					columns: [],
 				},
 			}),
-		).toContain("Select at least one nonblank column");
+		).toContain(
+			"Select columns using letters, digits, and underscores only",
+		);
 		const purge = node("clean.process");
 		for (const filters of [
 			"[]",
 			"not JSON",
 			'[{"column":"ID","operator":"execute","value":1}]',
+			'[{"column":"bad column","operator":"==","value":1}]',
 		]) {
 			expect(
 				validateCanvasWorkflowNode({

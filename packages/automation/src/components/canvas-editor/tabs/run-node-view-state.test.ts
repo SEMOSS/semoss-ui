@@ -110,14 +110,12 @@ describe("run node viewer states and invariants", () => {
 		nodeId: string,
 		status: AutomationNodeResult["STATUS"],
 	): AutomationNodeResult => ({
-		RUN_ID: "run-1",
 		NODE_ID: nodeId,
 		NODE_LABEL: nodeId,
 		STATUS: status,
-		STARTED_AT: "2026-10-19T00:00:00Z",
 		DURATION_MS: 1,
-		OUTPUT_KIND: "JSON",
 		OUTPUT_PREVIEW: "",
+		ERROR_MESSAGE: null,
 	});
 
 	it("advances automatic live selection to the final successful node", () => {

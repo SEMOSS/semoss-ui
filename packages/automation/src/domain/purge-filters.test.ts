@@ -52,6 +52,7 @@ describe("Purge builder and JSON conversion", () => {
 		'[{"column":"ID","operator":"==","value":null}]',
 		'[{"column":"ID","operator":"==","value":1e999}]',
 		'[{"column":"ID","operator":"==","value":1,"extra":true}]',
+		'[{"column":"bad column","operator":"==","value":1}]',
 	])("rejects unsupported JSON: %s", (json) => {
 		expect(parsePurgeFilters(json).error).toBeTruthy();
 	});
