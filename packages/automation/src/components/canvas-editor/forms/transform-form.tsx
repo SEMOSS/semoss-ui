@@ -1,9 +1,5 @@
-import { Table2 } from "lucide-react";
-import { useContext, useId } from "react";
+import { useId } from "react";
 import {
-	Alert,
-	AlertDescription,
-	Button,
 	Checkbox,
 	Field,
 	FieldLabel,
@@ -14,15 +10,12 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	Spinner,
 } from "@semoss/ui/next";
 import {
 	TRANSFORM_OPERATIONS,
 	type TransformConfig,
 	type TransformOperation,
 } from "../../../domain/automation.types";
-import { useAutomationInputPreview } from "../../../hooks/use-automation-input-preview";
-import { AutomationVariableContext } from "../automation-variable-context";
 import { PillInput } from "./pill-input";
 import { StringListInput } from "./string-list-input";
 
@@ -31,7 +24,6 @@ interface TransformFormProps {
 	upstreamVars: string[];
 	onChange: (config: TransformConfig) => void;
 	readOnly?: boolean;
-	appId?: string;
 }
 
 const TRANSFORM_OPERATION_LABELS: Record<TransformOperation, string> = {
@@ -82,94 +74,20 @@ export function TransformForm({
 	upstreamVars,
 	onChange,
 	readOnly = false,
-	appId = "",
 }: TransformFormProps) {
 	const id = useId();
-	const { entries, onOpenInputTable } = useContext(AutomationVariableContext);
-	const sourceName = config.source
-		.trim()
-		.match(/^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/)?.[1];
-	const sourceEntry = entries.find(
-		(entry) => entry.name === sourceName && entry.source === "node",
-	);
-	const input = useAutomationInputPreview(
-		appId,
-		sourceEntry?.sourceNodeId,
-		config.source,
-	);
-	const availableColumns = input.preview?.columns ?? [];
-	const inputPreviewControls = (
-		<>
-			<P className="text-muted-foreground text-xs">
-				Select an upstream table, then open its prior output for column
-				names and sample values. No steps are executed.
-			</P>
-			<Button
-				type="button"
-				variant="outline"
-				className="self-start"
-				disabled={
-					!appId ||
-					!onOpenInputTable ||
-					!sourceEntry?.sourceNodeId ||
-					input.loading
-				}
-				onClick={async () => {
-					const preview = await input.load();
-					if (preview && sourceEntry?.sourceNodeId) {
-						onOpenInputTable?.(
-							sourceEntry.sourceNodeId,
-							sourceEntry.label,
-							preview,
-						);
-					}
-				}}
-			>
-				{input.loading ? (
-					<Spinner className="size-4" />
-				) : (
-					<Table2 className="size-4" aria-hidden="true" />
-				)}
-				Open input table
-			</Button>
-			{input.error && (
-				<Alert variant="destructive">
-					<AlertDescription>{input.error}</AlertDescription>
-				</Alert>
-			)}
-			{input.empty && (
-				<P className="text-muted-foreground text-xs">
-					No successful upstream table output was found in the 20 most
-					recent runs. Enter columns manually until output is
-					available.
-				</P>
-			)}
-			{input.preview && (
-				<P className="text-muted-foreground text-xs">
-					Historical sample from {input.preview.startedAt}. Current
-					data or upstream edits may differ.
-				</P>
-			)}
-		</>
-	);
 	const renderColumnField = (
 		fieldId: string,
 		label: string,
 		value: string,
 		onChange: (value: string) => void,
 		placeholder = "Column name",
-		withSuggestions = true,
 	) => (
 		<Field>
 			<FieldLabel htmlFor={`${id}-${fieldId}`}>{label}</FieldLabel>
 			<Input
 				id={`${id}-${fieldId}`}
 				value={value}
-				list={
-					withSuggestions && availableColumns.length
-						? `${id}-input-columns`
-						: undefined
-				}
 				onChange={(event) => onChange(event.target.value)}
 				placeholder={placeholder}
 				readOnly={readOnly}
@@ -493,7 +411,6 @@ export function TransformForm({
 							(rightColumn) =>
 								onChange({ ...config, rightColumn }),
 							"Column in right table",
-							false,
 						)}
 						<Field>
 							<FieldLabel htmlFor={`${id}-join-type`}>
@@ -543,7 +460,6 @@ export function TransformForm({
 				placeholder="${query_result}"
 				readOnly={readOnly}
 			/>
-			{inputPreviewControls}
 			<Field>
 				<FieldLabel htmlFor={`${id}-transform-operation`}>
 					Operation
@@ -583,15 +499,6 @@ export function TransformForm({
 				{TRANSFORM_DESCRIPTIONS[config.operation]}
 			</P>
 			{renderOperationFields()}
-			{availableColumns.length > 0 && (
-				<datalist id={`${id}-input-columns`}>
-					{availableColumns.map((column) => (
-						<option key={column.name} value={column.name}>
-							{column.type}
-						</option>
-					))}
-				</datalist>
-			)}
 		</div>
 	);
 }

@@ -93,7 +93,6 @@ export function StepForm({
 			if (step.workflowType === "data.transform") {
 				return (
 					<TransformForm
-						appId={appId}
 						config={step.config as TransformConfig}
 						upstreamVars={upstreamVars}
 						onChange={update}
