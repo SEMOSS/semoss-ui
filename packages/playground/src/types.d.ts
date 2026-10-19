@@ -121,6 +121,37 @@ export interface AgentRunMessageContext {
 	childStatus?: string;
 }
 
+/** Request-local routing evidence returned by the backend, without credentials. */
+export interface RoutingTrace {
+	trace_id?: string;
+	routing_mode?: string;
+	selection_source?: string;
+	classifier_status?: string;
+	classifier_engine_id?: string;
+	classifier_engine_name?: string;
+	classifier_kind?: string;
+	classifier_model?: string;
+	classifier_choice?: string;
+	classifier_duration_ms?: number;
+	classifier_error?: string;
+	classifier_request?: unknown;
+	classifier_response?: unknown;
+	selected_engine_id?: string;
+	selected_route_name?: string;
+	fallback_used?: boolean;
+	attempts?: { engine_id: string; engine_name?: string; status: string }[];
+	downstream?: RoutingTrace;
+}
+
+/** Per-response attribution supplied by the model router after a successful call. */
+export interface ModelRouting {
+	router_engine_id?: string;
+	routed_engine_id: string;
+	routed_engine_name?: string;
+	routed_route_name?: string;
+	trace?: RoutingTrace;
+}
+
 export interface AbstractPixelMessage {
 	io: "INPUT" | "OUTPUT";
 	messageId: string;
@@ -143,6 +174,8 @@ export interface AbstractPixelMessage {
 	agentRun?: AgentRunMessageContext;
 	ornaments: {
 		modelName?: string;
+		/** Successful destination, separate from the selected router modelId. */
+		routing?: ModelRouting;
 		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
 		agentRunRole?: string;
@@ -172,6 +205,8 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 	)[];
 	ornaments: {
 		modelName?: string;
+		/** Successful destination, separate from the selected router modelId. */
+		routing?: ModelRouting;
 		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
 		agentRunRole?: string;
