@@ -303,7 +303,7 @@ export const createRouterEngineRef = (): RouterEngineRefFormValue => ({
 
 export const createDefaultRouterConfigValue = (): RouterConfigFormValue => ({
 	mode: "keyword",
-	sticky: true,
+	sticky: false,
 	default_route: "",
 	classifier_engine: "",
 	embeddings_engine: "",

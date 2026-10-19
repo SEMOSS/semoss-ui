@@ -44,15 +44,15 @@ const ROUTING_MODES: Array<{
 }> = [
 	{
 		value: "typesafe",
-		label: "Decision classifier · Jev / Laya",
+		label: "Decision classifier",
 		description:
-			"A TypeSafe decision model chooses an intent from your route descriptions. A destination LLM generates the answer.",
+			"A decision model chooses an intent from your route descriptions. A destination LLM generates the answer.",
 	},
 	{
 		value: "llm",
 		label: "LLM classifier",
 		description:
-			"A chat model reads your route descriptions and selects the destination. Existing TypeSafe classifier configurations also remain supported.",
+			"A chat model reads your route descriptions and selects the destination.",
 	},
 	{
 		value: "keyword",
@@ -111,7 +111,7 @@ const normalizeRouterConfigValue = (value: unknown): RouterConfigFormValue => {
 			: "keyword";
 	return {
 		mode,
-		sticky: typeof v.sticky === "boolean" ? v.sticky : true,
+		sticky: typeof v.sticky === "boolean" ? v.sticky : false,
 		default_route:
 			typeof v.default_route === "string" ? v.default_route : "",
 		classifier_engine:
@@ -231,7 +231,7 @@ export const routerConfigFromJson = (raw: unknown): RouterConfigFormValue => {
 			cfg.mode === "weighted"
 				? cfg.mode
 				: "keyword",
-		sticky: typeof cfg.sticky === "boolean" ? cfg.sticky : true,
+		sticky: typeof cfg.sticky === "boolean" ? cfg.sticky : false,
 		default_route:
 			typeof cfg.default_route === "string" ? cfg.default_route : "",
 		classifier_engine:
@@ -355,9 +355,6 @@ export const RouterConfigField = ({
 	const selectedClassifier = engineOptions.find(
 		(engine) => engine.engine_id === config.classifier_engine,
 	);
-	const isLegacyDecision =
-		config.mode === "llm" &&
-		selectedClassifier?.engine_subtype === "TYPESAFE";
 	const changeMode = (mode: string) => {
 		if (!ROUTING_MODES.some((option) => option.value === mode)) return;
 		const nextMode = mode as RouterConfigFormValue["mode"];
@@ -472,15 +469,13 @@ export const RouterConfigField = ({
 							config.classifier_engine,
 							(classifier_engine) =>
 								update({ classifier_engine }),
-							config.mode === "typesafe" || isLegacyDecision
+							config.mode === "typesafe"
 								? "decision"
 								: "classifier",
 						)}
 						<FieldDescription>
 							The classifier chooses an intent. It does not
 							generate the chat answer.
-							{isLegacyDecision &&
-								" This saved configuration uses the TypeSafe decision API."}
 						</FieldDescription>
 					</Field>
 				)}
