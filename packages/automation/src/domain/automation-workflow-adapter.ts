@@ -652,16 +652,8 @@ function canvasTypeToWorkflow(
 	}
 }
 
-function getConfigValue(
-	config: NodeConfig,
-	key: string,
-): string | number | boolean | undefined {
-	const value = (config as unknown as Record<string, unknown>)[key];
-	return typeof value === "string" ||
-		typeof value === "number" ||
-		typeof value === "boolean"
-		? value
-		: undefined;
+function getConfigValue(config: NodeConfig, key: string): unknown {
+	return (config as unknown as Record<string, unknown>)[key];
 }
 
 function cleanOperationValue(
@@ -799,14 +791,22 @@ function mergeCanvasConfig(
 	}
 	if (category === "clean") {
 		const configuredOperation = getConfigValue(config, "operation");
+		const source = getConfigValue(config, "source");
+		const filters = getConfigValue(config, "filters");
+		const columns = getConfigValue(config, "columns");
+		const column = getConfigValue(config, "column");
+		const dataType = getConfigValue(config, "dataType");
+		const newColumn = getConfigValue(config, "newColumn");
+		const value = getConfigValue(config, "value");
+		const newValue = getConfigValue(config, "newValue");
 		const operation =
 			type === "clean.process" && typeof configuredOperation === "string"
 				? configuredOperation
 				: cleanOperationFor(type, workflowConfig);
 		if (type === "clean.process") next.operation = operation;
-		next.source = config.source;
-		if (operation === "purge") {
-			next.filters = parsedJsonValue(config.filters) ?? config.filters;
+		if (typeof source === "string") next.source = source;
+		if (operation === "purge" && typeof filters === "string") {
+			next.filters = parsedJsonValue(filters) ?? filters;
 		} else if (
 			[
 				"trim",
@@ -814,21 +814,24 @@ function mergeCanvasConfig(
 				"filterEmpty",
 				"imputeNulls",
 				"dropColumn",
-			].includes(operation)
+			].includes(operation) &&
+			Array.isArray(columns)
 		) {
-			next.columns = config.columns;
+			next.columns = columns.filter(
+				(item): item is string => typeof item === "string",
+			);
 		}
 		if (operation === "changeType") {
-			next.column = config.column;
-			next.dataType = config.dataType;
+			if (typeof column === "string") next.column = column;
+			if (typeof dataType === "string") next.dataType = dataType;
 		}
 		if (operation === "renameColumn") {
-			next.column = config.column;
-			next.newColumn = config.newColumn;
+			if (typeof column === "string") next.column = column;
+			if (typeof newColumn === "string") next.newColumn = newColumn;
 		}
 		if (operation === "replace") {
-			next.value = config.value;
-			next.newValue = config.newValue;
+			if (typeof value === "string") next.value = value;
+			if (typeof newValue === "string") next.newValue = newValue;
 		}
 	}
 	if (category === "vector") {

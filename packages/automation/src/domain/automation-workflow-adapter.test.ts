@@ -291,9 +291,9 @@ describe("Clean nodes", () => {
 		).toContain("Use a valid new column name");
 	});
 
-	it("accepts equality value lists but rejects lists for range comparisons", () => {
+	it("rejects collection and null Purge values", () => {
 		const purge = node("clean.process");
-		for (const operator of ["==", "!=", ">", "<="]) {
+		for (const value of [[1, 2, 3], null, { nested: true }]) {
 			const errors = validateCanvasWorkflowNode({
 				...purge,
 				config: {
@@ -301,12 +301,12 @@ describe("Clean nodes", () => {
 					operation: "purge",
 					source: `\${table}`,
 					filters: JSON.stringify([
-						{ column: "ID", operator, value: [1, 2, 3] },
+						{ column: "ID", operator: "==", value },
 					]),
 				},
 			});
-			expect(errors.length).toBe(
-				operator === "==" || operator === "!=" ? 0 : 1,
+			expect(errors).toContain(
+				"Rows to remove must contain 1 to 100 valid JSON filters",
 			);
 		}
 	});

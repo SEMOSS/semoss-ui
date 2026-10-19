@@ -38,8 +38,6 @@ interface RunNodeDataViewerProps {
 	savedResult?: AutomationSavedResultReference;
 	outputPreview: string;
 	onOutputPopout: (output: string) => void;
-	/** Expands a docked table to the available panel size with a single scroll region. */
-	fillHeight?: boolean;
 }
 
 /** Pages a standard SEMOSS frame and falls back to the saved output preview. */
@@ -50,7 +48,6 @@ export function RunNodeDataViewer({
 	savedResult,
 	outputPreview,
 	onOutputPopout,
-	fillHeight = false,
 }: RunNodeDataViewerProps) {
 	const [page, setPage] = useState<AutomationRunFramePage | null>(null);
 	const [pageOffsets, setPageOffsets] = useState([0]);
@@ -122,12 +119,7 @@ export function RunNodeDataViewer({
 				{error && (
 					<Alert variant="destructive">
 						<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-							<span>
-								{error}
-								{outputPreview
-									? " Showing the saved preview."
-									: ""}
-							</span>
+							<span>{error} Showing the saved preview.</span>
 							<Button
 								type="button"
 								variant="outline"
@@ -141,12 +133,10 @@ export function RunNodeDataViewer({
 						</AlertDescription>
 					</Alert>
 				)}
-				{outputPreview && (
-					<CellOutputBlock
-						output={outputPreview}
-						onOutputPopout={() => onOutputPopout(outputPreview)}
-					/>
-				)}
+				<CellOutputBlock
+					output={outputPreview}
+					onOutputPopout={() => onOutputPopout(outputPreview)}
+				/>
 			</div>
 		);
 	}
@@ -159,13 +149,7 @@ export function RunNodeDataViewer({
 		(page.hasMore ?? nextOffset < total) && nextOffset > offset;
 
 	return (
-		<div
-			className={
-				fillHeight
-					? "flex h-full min-h-0 min-w-0 flex-col gap-2"
-					: "space-y-2"
-			}
-		>
+		<div className="space-y-2">
 			<div className="flex flex-wrap items-center justify-between gap-2 text-muted-foreground text-xs">
 				<span>
 					{total === 0
@@ -212,19 +196,13 @@ export function RunNodeDataViewer({
 				</output>
 			) : (
 				<section
-					className={
-						fillHeight
-							? "min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain rounded-md border"
-							: RUN_RESULTS_LAYOUT_CLASSES.scrollRegion
-					}
+					className={RUN_RESULTS_LAYOUT_CLASSES.scrollRegion}
 					aria-label={RUN_NODE_VIEW_LABELS.outputData}
 					// biome-ignore lint/a11y/noNoninteractiveTabindex: the bounded data table must support keyboard scrolling.
 					tabIndex={0}
 				>
 					<Table
-						className={
-							fillHeight ? "w-max min-w-full text-xs" : "text-xs"
-						}
+						className="text-xs"
 						wrapperClassName="overflow-visible"
 					>
 						<TableCaption className="sr-only">
@@ -252,19 +230,9 @@ export function RunNodeDataViewer({
 									{headers.map((header, columnIndex) => (
 										<TableCell
 											key={header}
-											className={
-												fillHeight
-													? "whitespace-nowrap py-1.5 align-top"
-													: "max-w-80 whitespace-normal py-1.5 align-top"
-											}
+											className="max-w-80 whitespace-normal py-1.5 align-top"
 										>
-											<span
-												className={
-													fillHeight
-														? "block"
-														: "wrap-break-word line-clamp-4"
-												}
-											>
+											<span className="line-clamp-4 break-words">
 												{formatCell(row[columnIndex])}
 											</span>
 										</TableCell>

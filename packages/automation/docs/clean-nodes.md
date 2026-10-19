@@ -9,23 +9,10 @@ with an `operation` value (`purge`, `trim`, `replace`, `removeDuplicates`,
 `filterEmpty`, `imputeNulls`, `changeType`, `dropColumn`, or `renameColumn`). The
 operation determines which settings appear in the inspector.
 
-| Operation | Database frame | R frame | Python frame |
-| --- | --- | --- | --- |
-| Purge | Yes | Yes | Yes |
-| Trim | No | Yes | Yes |
-| Replace | No | Yes | Yes |
-| Remove duplicate rows | No | Yes | Yes |
-| Filter empty values | No | No | Yes |
-| Impute null values | No | No | Yes |
-| Change column type | No | No | Yes |
-| Drop columns | No | No | Yes |
-| Rename column | No | No | Yes |
-
-Compatibility follows the actual frame type, not the upstream node label.
-Automation database queries currently materialize their bounded results as
-Python frames. Those results are therefore compatible with Python cleaning.
-An actual database-backed frame supports only Purge. Cleaning never silently
-converts a frame to another runtime.
+Clean operations currently support Python frames. Automation database queries
+materialize their bounded results as Python frames, so their output can feed a
+Clean node directly. Other frame backends fail validation instead of being
+silently converted to another runtime.
 
 ## Input and Output
 
@@ -49,11 +36,10 @@ dataset. Select a column, comparator, and value to identify the rows to remove.
 It does not drop columns, clear individual cells, or delete records from the
 source database. Use the **Builder** to add or remove filters and choose each
 column, comparator, value type, and value. The selected value type controls manual
-entry; sampled values preserve their own types. For multiple values, the selector
-applies to new entries without converting existing chips. Use **JSON** to edit or paste the
-equivalent array directly. Switching modes preserves text, numeric, boolean,
-and null values. Invalid JSON remains editable and cannot be switched into the
-builder until corrected. The node accepts 1 to 100 filter objects:
+entry. Use **JSON** to edit or paste the equivalent array directly. Switching
+modes preserves text, numeric, and boolean values. Invalid JSON remains editable
+and cannot be switched into the builder until corrected. The node accepts up to
+100 filter objects:
 
 ```json
 [
@@ -63,27 +49,9 @@ builder until corrected. The node accepts 1 to 100 filter objects:
 ```
 
 Supported operators are `==`, `!=`, `>`, `>=`, `<`, and `<=`. Values may be
-strings, numbers, booleans, null, or exact references to scalar run values.
-For `==` and `!=`, `value` may also be a nonempty list of up to 100 scalar
-values. In the Builder, choose **Multiple values**, add manual or sampled
-values, and remove individual selections as needed. Type a manual value and press
-Enter to add its chip inside the input. The field displays "Press Enter to add a
-value."; Backspace on an empty input removes the last chip. Types are preserved when
-switching to JSON. Range comparators continue to accept only one value.
-
-```json
-[
-  { "column": "HERO_ID", "operator": "==", "value": [1, 2, 3] }
-]
-```
-
-This rule removes rows whose `HERO_ID` is any of 1, 2, or 3. With `!=`, it
-removes rows whose non-null ID matches none of those values. Values within one
-rule use membership semantics; all separate removal rules must still match.
+strings, finite numbers, booleans, or exact references to scalar run values.
 
 The example removes inactive rows whose age is at least 18. Other rows remain.
-Null values do not match non-null comparison values; use `==` with a null value
-to explicitly remove nulls, or `!=` with null to remove non-null values.
 
 ## Existing BI Limitations
 
