@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import { useRef, useState } from "react";
 import {
 	Alert,
@@ -17,6 +18,7 @@ import { CollaborationSurface } from "@/features/collaboration/components/collab
 import { collaborationTabsStyles } from "@/features/collaboration/components/collaboration-tabs.styles";
 import { BrainFilingCorrection } from "./brain-filing-correction";
 import type { ReviewQuestion } from "./brain-review-api";
+import { OptimizeStages } from "./brain-review-optimize-stages";
 import { BrainReviewSection } from "./brain-review-section";
 import { useBrainReview } from "./use-brain-review";
 
@@ -159,6 +161,41 @@ export function BrainReviewWorkspace() {
 									aria-label="Mail filing coverage"
 								/>
 							)}
+							{(review.overview?.autoFiled.length ?? 0) > 0 && (
+								<details className="group rounded-md border bg-card text-sm">
+									<summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-md px-3 hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+										<ChevronRight
+											aria-hidden
+											className="size-4 shrink-0 transition-transform group-open:rotate-90"
+										/>
+										<span className="font-medium">
+											{`See the ${review.overview?.autoFiled.length} filings Brain made automatically`}
+										</span>
+									</summary>
+									<ul
+										className="max-h-64 space-y-1 overflow-auto border-t px-3 py-3"
+										aria-label="Filed automatically"
+									>
+										{review.overview?.autoFiled.map(
+											(row) => (
+												<li
+													key={`${row.threadId}-${row.topic}`}
+													className="break-words"
+												>
+													{row.subject}
+													<span className="text-muted-foreground">
+														{" → "}
+														{row.topic}
+														{row.confidence !=
+															null &&
+															` ${row.confidence}%`}
+													</span>
+												</li>
+											),
+										)}
+									</ul>
+								</details>
+							)}
 						</section>
 					)}
 					{running && (
@@ -178,6 +215,12 @@ export function BrainReviewWorkspace() {
 							Optimization found {found}. Review the suggestions
 							below.
 						</output>
+					)}
+					{review.job && (
+						<OptimizeStages
+							counts={counts}
+							jobFailed={review.job.status === "failed"}
+						/>
 					)}
 					{(review.job?.status === "failed" || review.jobError) && (
 						<Alert variant="destructive">

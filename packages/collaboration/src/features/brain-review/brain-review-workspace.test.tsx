@@ -458,3 +458,104 @@ it("summarizes a failed model job and keeps the traceback behind technical detai
 	await user.click(screen.getByText("Technical details"));
 	expect(screen.getByText(/Traceback/)).toBeVisible();
 });
+
+it("shows which model each Optimize step used and where it failed", async () => {
+	job = {
+		id: "partial-optimize",
+		kind: "optimize",
+		status: "failed",
+		progress: 55,
+		counts: {
+			stages: [
+				{
+					key: "filing",
+					model: "laya-local",
+					status: "ok",
+					calls: 12,
+					summary: "1 suggested, 11 not confident enough (needs 70%)",
+					items: [
+						{
+							label: "Replica lag in the dry run",
+							topic: "Northwind Migration",
+							confidence: 79,
+							result: "Suggested",
+						},
+					],
+				},
+				{ key: "newTopics", model: "qwen3-5-9b", status: "running" },
+			],
+		},
+		error: "Topic voting did not produce three complete answers",
+	};
+	mount();
+	const steps = await screen.findByRole("list", { name: "Optimize steps" });
+	expect(screen.getByText("More details").closest("details")).toHaveAttribute(
+		"open",
+	);
+	const [filing, topics] = Array.from(steps.children);
+	expect(filing).toHaveTextContent("laya-local · 12 conversations scored");
+	expect(filing).toHaveTextContent(
+		"Replica lag in the dry run → Northwind Migration 79% · Suggested",
+	);
+	expect(topics).toHaveTextContent(
+		"New topicsqwen3-5-9b · 0 model callsFailed here",
+	);
+});
+
+it("lists the conversations Brain filed automatically behind a disclosure", async () => {
+	overview.autoFiled = [
+		{
+			threadId: "auto-1",
+			subject: "Northwind Migration: cutover notice",
+			topic: "Northwind Migration",
+			confidence: 87,
+		},
+	];
+	mount();
+	const summary = await screen.findByText(
+		"See the 1 filings Brain made automatically",
+	);
+	expect(summary.closest("details")).not.toHaveAttribute("open");
+	expect(
+		screen.getByRole("list", { name: "Filed automatically", hidden: true }),
+	).toHaveTextContent(
+		"Northwind Migration: cutover notice → Northwind Migration 87%",
+	);
+});
+
+it("explains a duplicate check that failed or was skipped instead of reporting a bare zero", async () => {
+	job = {
+		id: "done-optimize",
+		kind: "optimize",
+		status: "done",
+		progress: 100,
+		counts: {
+			merges: 0,
+			stages: [
+				{
+					key: "merges",
+					model: "qwen3-5-9b",
+					status: "failed",
+					calls: 1,
+					note: "502 Bad Gateway",
+				},
+				{ key: "topicsAndPeople", status: "ok", calls: 0 },
+				{
+					key: "newTopics",
+					model: "qwen3-5-9b",
+					status: "skipped",
+					calls: 0,
+					note: "Fewer than 2 unfiled conversations",
+				},
+			],
+		},
+		error: null,
+	};
+	mount();
+	const steps = await screen.findByRole("list", { name: "Optimize steps" });
+	expect(steps).toHaveTextContent("Failed: 502 Bad Gateway");
+	expect(steps).toHaveTextContent("No model needed");
+	expect(steps).toHaveTextContent(
+		"Skipped: Fewer than 2 unfiled conversations",
+	);
+});

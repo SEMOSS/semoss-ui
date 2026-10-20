@@ -68,6 +68,16 @@ const overviewSchema = z.object({
 		total: z.number().int().nonnegative(),
 	}),
 	topics: z.array(z.object({ id: z.string().min(1), name: z.string() })),
+	autoFiled: z
+		.array(
+			z.object({
+				threadId: z.string(),
+				subject: z.string(),
+				topic: z.string(),
+				confidence: z.number().nullish(),
+			}),
+		)
+		.default([]),
 	job: jobSchema.nullable().default(null),
 });
 const decisionsSchema = z.object({
