@@ -63,6 +63,8 @@ export const routineStatusSchema = z.object({
 			summary: z.string().nullish().default(null),
 			html: z.string().nullish(),
 			error: z.string().nullish().default(null),
+			// connection, model, agent, delivery or interrupted; null on older runs
+			errorCause: z.string().nullish(),
 		})
 		.nullish()
 		.default(null),
