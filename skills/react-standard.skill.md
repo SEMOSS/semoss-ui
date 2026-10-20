@@ -53,7 +53,7 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
 - Put new application features in `src/features/<feature>/`, colocating their
   components, hooks, and helpers as needed. Keep routing under `pages/`, with
   thin route pages composing features. Existing features remain where they are
-  unless migration is explicitly scoped; libraries retain their package layout.
+  unless migration is explicitly scoped; `@semoss/ui`, `@semoss/sdk` and non-react libraries retain their package layout.
 - Reuse existing shared types/utilities without violating dependency boundaries.
   Keep single-use types near their owner; extract shared types only when useful.
 - Document functions with TSDoc and component props on their type/interface;
