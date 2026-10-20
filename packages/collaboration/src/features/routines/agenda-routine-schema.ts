@@ -1,4 +1,5 @@
 import { z } from "@semoss/ui/next";
+import { routineFlowSchema } from "./routine-flow-schema";
 import {
 	routineDaySchema,
 	routineScheduleSchema,
@@ -59,7 +60,10 @@ export const agendaRoutineSchema = routineScheduleSchema
 		ignored: z.array(z.string()).default([]),
 	})
 	.extend(routineStatusSchema.shape)
-	.extend({ id: z.literal("weekly-meeting-agendas") });
+	.extend({
+		id: z.literal("weekly-meeting-agendas"),
+		flow: routineFlowSchema.optional(),
+	});
 
 export type AgendaRoutineSettings = z.infer<typeof agendaRoutineSettingsSchema>;
 export type AgendaRoutine = z.infer<typeof agendaRoutineSchema>;
