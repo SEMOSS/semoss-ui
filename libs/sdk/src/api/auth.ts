@@ -1,5 +1,6 @@
 import { Env } from "../env";
 import { CSRF, get, post } from "../utility";
+import { HttpError } from "../utility/error";
 
 /**
  * Allow the user to login
@@ -49,19 +50,32 @@ export const loginLDAP = async (
  *
  * @param username - username to login with
  * @param pin - pin to login with
- * @returns true if the challenge was accepted
+ * @returns True if the challenge was accepted, or false when a password change is required.
  */
 export const loginOTP = async (
 	username: string,
 	pin: string,
 ): Promise<boolean> => {
-	await post(`${Env.MODULE}/api/auth/loginLinOTP`, {
-		username: username,
-		pin: pin,
-		disableRedirect: true,
-	});
-
-	return true;
+	try {
+		await post(`${Env.MODULE}/api/auth/loginLinOTP`, {
+			username: username,
+			pin: pin,
+			disableRedirect: true,
+		});
+		return true;
+	} catch (error) {
+		if (
+			error instanceof HttpError &&
+			error.status === 401 &&
+			typeof error.data === "object" &&
+			error.data !== null &&
+			"requirePwdChange" in error.data &&
+			error.data.requirePwdChange === true
+		) {
+			return false;
+		}
+		throw error;
+	}
 };
 
 /**

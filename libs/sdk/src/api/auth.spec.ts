@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Env } from "../env";
 import { get } from "../utility";
-import { connectLogin, oauth, parseLogins } from "./auth";
+import { confirmOTP, connectLogin, loginOTP, oauth, parseLogins } from "./auth";
 
 vi.mock("../utility", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../utility")>()),
@@ -185,5 +186,104 @@ describe("oauth", () => {
 		await expect(oauth("ms")).rejects.toMatchObject({
 			name: "PopupBlockedError",
 		});
+	});
+});
+
+describe("LinOTP authentication", () => {
+	const originalModule = Env.MODULE;
+
+	beforeEach(() => {
+		Env.update({ MODULE: "/Monolith" });
+		vi.stubGlobal("fetch", vi.fn());
+	});
+
+	afterEach(() => {
+		Env.update({ MODULE: originalModule });
+		vi.unstubAllGlobals();
+	});
+
+	it("requires a password change instead of accepting an OTP challenge", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(
+			Response.json(
+				{
+					errorMessage:
+						"User must change their password before login",
+					requirePwdChange: true,
+				},
+				{ status: 401 },
+			),
+		);
+
+		await expect(loginOTP("user", "pin")).resolves.toBe(false);
+	});
+
+	it.each<{
+		name: string;
+		status: number;
+		data: unknown;
+		message: string;
+	}>([
+		{
+			name: "invalid credentials",
+			status: 401,
+			data: { errorMessage: "Invalid username or pin" },
+			message: "Invalid username or pin",
+		},
+		{
+			name: "a password-change flag on a server error",
+			status: 500,
+			data: {
+				errorMessage: "Authentication unavailable",
+				requirePwdChange: true,
+			},
+			message: "Authentication unavailable",
+		},
+		{
+			name: "a malformed password-change flag",
+			status: 401,
+			data: {
+				errorMessage: "Invalid login response",
+				requirePwdChange: "true",
+			},
+			message: "Invalid login response",
+		},
+		{
+			name: "a null error response",
+			status: 401,
+			data: null,
+			message: "Request failed with status 401",
+		},
+	])(
+		"rejects $name rather than reporting a password-change outcome",
+		async ({ status, data, message }) => {
+			vi.mocked(fetch).mockResolvedValueOnce(
+				Response.json(data, { status }),
+			);
+
+			await expect(loginOTP("user", "pin")).rejects.toThrow(message);
+		},
+	);
+
+	it("reports the HTTP failure when the server returns non-JSON content", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(
+			new Response("<html>Bad Gateway</html>", { status: 502 }),
+		);
+
+		await expect(loginOTP("user", "pin")).rejects.toThrow(
+			"Request failed with status 502",
+		);
+	});
+
+	it("preserves the backend reason when OTP confirmation fails", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(
+			Response.json(
+				{ errorMessage: "The one-time passcode is invalid" },
+				{ status: 401 },
+			),
+		);
+
+		await expect(confirmOTP("000000")).rejects.toThrow(
+			"The one-time passcode is invalid",
+		);
 	});
 });

@@ -156,7 +156,7 @@ it("keeps inspected tools visible while grouping neighboring successes and failu
 	);
 	expect(screen.getByText("Open tool contents")).toBeVisible();
 	expect(
-		screen.getByRole("button", { name: "3 tools · 1 failed View steps" }),
+		screen.getByRole("button", { name: "3 tools used View steps" }),
 	).toBeInTheDocument();
 	expect(
 		screen.queryByRole("button", {
@@ -165,7 +165,7 @@ it("keeps inspected tools visible while grouping neighboring successes and failu
 	).toBeNull();
 });
 
-it("includes failures in the summary and reveals the specific errors on focus", async () => {
+it("keeps the summary neutral and reveals the specific errors on focus", async () => {
 	const items = tools("COMPLETED", "FAILED", "COMPLETED", "FAILED");
 	if (items[1].part.type !== "tool" || items[3].part.type !== "tool")
 		throw new Error("Expected tools");
@@ -173,7 +173,7 @@ it("includes failures in the summary and reveals the specific errors on focus", 
 	items[3].part.tool.output = "The subagent limit was reached.";
 	render(<MessageToolActivity items={items} />);
 	const summary = screen.getByRole("button", {
-		name: "4 tools · 2 failed View steps",
+		name: "4 tools used View steps",
 	});
 	expect(summary).toHaveAttribute("aria-expanded", "false");
 	act(() => summary.focus());
@@ -205,7 +205,7 @@ it("keeps the summary and expansion state stable when a finished tool reports a 
 	});
 	rerender(<MessageToolActivity items={tools("COMPLETED", "FAILED")} />);
 	expect(
-		screen.getByRole("button", { name: "2 tools · 1 failed Hide steps" }),
+		screen.getByRole("button", { name: "2 tools used Hide steps" }),
 	).toBe(summary);
 	expect(summary).toHaveAttribute("aria-expanded", "true");
 	expect(
@@ -226,7 +226,7 @@ it("shows failure details for a single tool and keeps focused failures visible",
 	rerender(<MessageToolActivity items={tools("FAILED", "COMPLETED")} />);
 	expect(row).toHaveFocus();
 	expect(
-		screen.queryByRole("button", { name: "2 tools · 1 failed View steps" }),
+		screen.queryByRole("button", { name: "2 tools used View steps" }),
 	).toBeNull();
 	const tooltip = await screen.findByRole("tooltip");
 	expect(tooltip).toHaveTextContent("No error details were provided.");
@@ -242,7 +242,7 @@ it("shows a bounded preview on hover while keeping every failed step accessible 
 	}
 	render(<MessageToolActivity items={items} />);
 	const summary = screen.getByRole("button", {
-		name: "4 tools · 4 failed View steps",
+		name: "4 tools used View steps",
 	});
 	await user.hover(summary);
 	const tooltip = await screen.findByRole("tooltip");

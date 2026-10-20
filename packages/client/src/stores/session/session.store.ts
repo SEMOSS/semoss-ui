@@ -2,8 +2,10 @@ import { createStore, type StoreApi } from "zustand";
 import type { PermissionCache } from "@semoss/panels";
 import { createPermissionCache } from "@semoss/panels";
 import {
+	confirmOTP,
 	download,
 	Logins,
+	loginOTP,
 	logout,
 	oauth,
 	runPixel,
@@ -11,10 +13,8 @@ import {
 } from "@semoss/sdk/react";
 import {
 	login as authenticate,
-	confirmOTP,
 	isAdminUser,
 	loginLDAP,
-	loginOTP,
 	registerUser,
 } from "@/api";
 import type { ConfigStore } from "@/stores/config";
@@ -203,10 +203,7 @@ export const createSessionStore = (
 			await get().initialize(await configStore.getState().initialize());
 			return true;
 		},
-		loginOTP: async (username, password) => {
-			const response = await loginOTP(username, password);
-			return response !== "change-password";
-		},
+		loginOTP,
 		confirmOTP: async (otp) => {
 			await confirmOTP(otp);
 			set({ user: resetUser(true) });
