@@ -164,23 +164,6 @@ export function normalizeAuditFilters(
 	return normalized;
 }
 
-const EXACT_FILTER_COLUMNS: Record<
-	Exclude<keyof AuditTrailFilters, "from" | "to">,
-	AuditEventColumn
-> = {
-	eventType: "EVENT_TYPE",
-	category: "CATEGORY",
-	status: "STATUS",
-	severity: "SEVERITY",
-	actorId: "ACTOR_USER_ID",
-	subjectId: "SUBJECT_USER_ID",
-	targetType: "TARGET_TYPE",
-	targetId: "TARGET_ID",
-	projectId: "PROJECT_ID",
-	engineId: "ENGINE_ID",
-	insightId: "INSIGHT_ID",
-};
-
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Validate actual UTC calendar dates, not just their shape. */
@@ -201,38 +184,6 @@ function validateDates(filters: AuditTrailFilters): void {
 	if (filters.to) auditDate(filters.to, "end");
 	if (filters.from && filters.to && filters.from > filters.to)
 		throw new Error("Invalid audit date range.");
-}
-
-/** Build the `| Filter(...)` clause shared by paging and export reads. */
-export function buildAuditFilterClause(filters: AuditTrailFilters): string {
-	validateDates(filters);
-	const clauses: string[] = [];
-	for (const [key, column] of Object.entries(EXACT_FILTER_COLUMNS) as [
-		keyof typeof EXACT_FILTER_COLUMNS,
-		AuditEventColumn,
-	][]) {
-		const value = filters[key].trim();
-		if (value) {
-			clauses.push(
-				`USER_AUDIT_EVENTS__${column} == ${auditPixelLiteral(value)}`,
-			);
-		}
-	}
-	const from = filters.from.trim();
-	const to = filters.to.trim();
-	if (from) {
-		clauses.push(
-			`USER_AUDIT_EVENTS__EVENT_TIME >= ${auditPixelLiteral(`${from} 00:00:00`)}`,
-		);
-	}
-	if (to) {
-		const nextDay = auditDate(to, "end");
-		nextDay.setUTCDate(nextDay.getUTCDate() + 1);
-		clauses.push(
-			`USER_AUDIT_EVENTS__EVENT_TIME < ${auditPixelLiteral(`${nextDay.toISOString().slice(0, 10)} 00:00:00`)}`,
-		);
-	}
-	return clauses.length ? ` | Filter(${clauses.join(", ")})` : "";
 }
 
 /** Build a bounded read, requesting one extra row to determine the next page. */
