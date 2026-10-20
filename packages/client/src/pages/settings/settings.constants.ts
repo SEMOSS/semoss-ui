@@ -310,7 +310,7 @@ export const SETTINGS_ROUTES: {
 		title: "Enterprise Usage & Activity",
 		path: "enterprise-usage",
 		description:
-			"Explore Platform-Wide Model Usage, Adoption, Performance, Activity, And Access And Limit Changes.",
+			"Explore Platform-Wide Model Usage, Adoption, Performance, Activity, And Access, Setting And Limit Changes.",
 		icon: mdiChartTimelineVariant,
 		history: ["settings/"],
 		admin: true,

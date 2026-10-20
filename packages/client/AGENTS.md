@@ -300,8 +300,59 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   status color beside the word). `audit-labels.ts` holds the words for the backend's event types,
   statuses, severities, categories and target types (`AuditEventType` and its siblings in SEMOSS);
   a value it does not know is shown in words. The details sheet (`audit-event-details.tsx`) shows
-  only the fields an event recorded, JSON as a tree. Enterprise Usage's Access & Limits tab uses
-  the same pieces.
+  only the fields an event recorded, JSON as a tree. Enterprise Usage's Access, Settings & Limits
+  tab uses the same pieces, and counts app and engine setting changes
+  (`AuditEventType.SETTING_CHANGES`) beside access and usage limit changes.
+
+### Database Workbench
+
+- **`components/workbench/engine/database/`** is a database's query workbench: query panels,
+  their paired results panels and the columns panel, over the store in
+  `stores/workbench/database/`, which builds each query's pixel (`buildQueryPixel`). The mode comes from
+  the engine's category: SPARQL for RDF, SQL otherwise; the admin query page pins ADMIN_SQL for
+  system databases.
+- A SQL script runs one statement at a time, each committing on its own, and a script of several
+  statements comes back as one tab per statement. On a relational database (category `SQL`)
+  everyone who can query it, read-only users included, gets a Commit control in the editor's
+  toolbar (`database-transaction-options.tsx`, with the fields checked by
+  `database-run-options.ts`): Each statement, or One transaction, where every statement runs in
+  one transaction that commits once, with an optional timeout in seconds for the whole script
+  (`SqlQuery(..., transaction=[true], timeout=[N])`). Each statement still needs the access it
+  needs on its own, which the backend checks. SPARQL and admin SQL never offer it. The chosen
+  segment says which way the script runs, and each one's tooltip says what it means. Ctrl+Enter
+  submits the same run options form as Run.
+- A script run in one transaction (`parseTransactionResult`) marks its results with an icon to
+  the left of the results title (`database-transaction-outcome-icon.tsx`, drawn by
+  `database-results-header.tsx`), colored by the outcome. Hovering it reads Single transaction
+  and the backend's message, such as how many statements were committed together, or that it was
+  rolled back with no changes kept, or that the commit did not report back. The header can sit
+  in a dock tab or a border bar, so the icon is not a control of its own; its label gives screen
+  readers the same words. Each statement's tab panel shows its status, rows changed and, when it
+  failed, its SQLState. A statement that returns rows shows them as a table, up to the
+  query's limit, with "First N rows shown" when more were left out; a table from a statement
+  that was then rolled back says its rows were read inside the rolled back transaction. Its
+  tables have no CSV export, since export runs a statement again on its own, outside the
+  transaction.
+
+### SQL Query Policy Guardrail
+
+- **`components/import/guardrail/sql-query-guardrail-form.tsx`** creates an `EMBEDDED_SQL_QUERY`
+  guardrail. Each policy is a list of rules, a key and the access it requires
+  (`sql-query-policy.ts`), edited by `sql-policy-rules-field.tsx` one row at a time
+  (`sql-policy-rule-row.tsx`, with `sql-operation-select.tsx` for operation rules), and saved as
+  the JSON object the guardrail reads.
+- The five identifier lists start with the chosen dialect's built-in rules, read through
+  `use-sql-policy-built-ins.ts` (`GetSqlQueryPolicyDefaults`, from `api/guardrails.ts`, the same
+  lists the guardrail applies). A built-in rule shows its name, fixed, and its access can be
+  changed; a removed one shows as a chip to add back. Changing the dialect swaps the built-in
+  rules (`mergeBuiltInRules`): one both dialects have keeps its access, and stays out when it was
+  removed, and the user's own rules stay. A save while the rules load is refused inline.
+- `PROTECT_UNMATCHED_IDENTIFIERS` is always written as `true`, so the guardrail applies its
+  built-in rules itself, below the configured ones. `toPolicyJson` therefore writes only a
+  built-in rule whose access changed, and writes a removed one as an exemption
+  (`"NAME":"FOLLOW_ENGINE_PERMISSIONS"`); built-in rules added in later releases still apply.
+- The identifier lists start folded away, with a count of their rules and Expand all. A submit
+  with problems opens every list that has one, and a folded list with problems says so.
 
 ## State Management
 
