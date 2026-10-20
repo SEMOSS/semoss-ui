@@ -17,6 +17,8 @@ import {
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
+import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
+import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
 import { useAssistantStore, useProject, useSession } from "@/hooks";
 import type { BuildRun } from "@/stores/assistant";
 import { APP_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
@@ -172,6 +174,7 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 		{ name: "Audit Trail", component: "audit", restrict: ["OWNER"] },
 		{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 	]),
+	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 

@@ -182,6 +182,9 @@ describe("workbench agent selection", () => {
 				}),
 		);
 		const pending = store.getState().submit("Inspect the database");
+		await vi.waitFor(() =>
+			expect(requests.updateRoomOptions).toHaveBeenCalled(),
+		);
 		expect(requests.updateRoomOptions).toHaveBeenCalledWith(
 			"insight-1",
 			"room-1",

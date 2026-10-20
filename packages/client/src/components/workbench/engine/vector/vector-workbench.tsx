@@ -17,6 +17,8 @@ import {
 import { makeEngineRoomMcp } from "@/api/rooms";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
+import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
+import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
 import { useAssistantStore, useEngine, useSession } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
@@ -104,6 +106,7 @@ export const VECTOR_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]:
 		createEngineSettingsPanel(ENGINE_SETTINGS_TABS),
+	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 

@@ -20,6 +20,8 @@ import { makeEngineRoomMcp } from "@/api/rooms";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
 import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
+import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
+import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
 import { useAssistantStore, useEngine, useSession } from "@/hooks";
 import { DATABASE_EXPLORER_AGENT } from "@/stores/assistant/assistant-agents";
 import {
@@ -136,6 +138,7 @@ export const DATABASE_WORKBENCH_COMPONENTS: Record<
 			4,
 		),
 	),
+	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
