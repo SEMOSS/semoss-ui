@@ -44,5 +44,59 @@ describe("SQL query guardrail SMSS configuration", () => {
 			PARSER_FAILURE_POLICY: "DENY",
 		});
 		expect(details).not.toHaveProperty("MODEL_NAME");
+		// a policy with no rules is an empty JSON object
+		expect(details.OPERATION_POLICY).toBe("{}");
+	});
+
+	it("writes each policy's rules as the JSON object the guardrail reads", () => {
+		const details = toSqlQueryGuardrailDetails({
+			...SQL_QUERY_GUARDRAIL_DEFAULTS,
+			MODEL_NAME: "Database policy",
+			OPERATION_POLICY: [
+				{ key: "SELECT", requirement: "FOLLOW_ENGINE_PERMISSIONS" },
+				{ key: "*", requirement: "DENY" },
+			],
+			RELATION_POLICY: [{ key: " pg_catalog.* ", requirement: "OWNER" }],
+		});
+
+		expect(JSON.parse(details.OPERATION_POLICY)).toEqual({
+			SELECT: "FOLLOW_ENGINE_PERMISSIONS",
+			"*": "DENY",
+		});
+		// names go as entered, trimmed; the guardrail reads them without regard to case
+		expect(JSON.parse(details.RELATION_POLICY)).toEqual({
+			"pg_catalog.*": "OWNER",
+		});
+	});
+
+	it("keeps the built-in rules on, writes the changed ones and exempts the removed ones", () => {
+		const details = toSqlQueryGuardrailDetails(
+			{
+				...SQL_QUERY_GUARDRAIL_DEFAULTS,
+				MODEL_NAME: "Database policy",
+				FUNCTION_POLICY: [
+					{ key: "PG_SLEEP*", requirement: "DENY", builtIn: true },
+					{
+						key: "CURRENT_USER",
+						requirement: "OWNER",
+						builtIn: true,
+					},
+				],
+			},
+			{
+				FUNCTION_POLICY: [
+					{ key: "PG_SLEEP*", requirement: "DENY", builtIn: true },
+					{ key: "CURRENT_USER", requirement: "DENY", builtIn: true },
+					{ key: "VERSION", requirement: "DENY", builtIn: true },
+				],
+			},
+		);
+
+		expect(details.PROTECT_UNMATCHED_IDENTIFIERS).toBe("true");
+		// PG_SLEEP* is left to the guardrail's own built-in rule
+		expect(JSON.parse(details.FUNCTION_POLICY)).toEqual({
+			CURRENT_USER: "OWNER",
+			VERSION: "FOLLOW_ENGINE_PERMISSIONS",
+		});
 	});
 });

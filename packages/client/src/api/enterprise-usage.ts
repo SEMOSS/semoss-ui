@@ -47,7 +47,13 @@ export function parseUsageFilterOptions(output: unknown): UsageFilterOptions {
 function requiredUsageFields(query: UsageQuery): string[] {
 	if (query.source === "audit")
 		return query.view === "summary"
-			? ["EVENTS", "USAGE_LIMIT_CHANGES", "ACCESS_CHANGES", "DENIALS"]
+			? [
+					"EVENTS",
+					"USAGE_LIMIT_CHANGES",
+					"ACCESS_CHANGES",
+					"SETTING_CHANGES",
+					"DENIALS",
+				]
 			: ["EVENT_ID"];
 	if (query.view === "summary")
 		return query.source === "model"
