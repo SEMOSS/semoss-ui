@@ -16,8 +16,11 @@ const ROUTES: [string, string][] = [
 	["/work/analysis.ipynb", FILE_PANEL_TYPES.FILE_NOTEBOOK_EDITOR],
 	["/assets/logo.png", FILE_PANEL_TYPES.FILE_IMAGE_VIEWER],
 	["/docs/Amtrak RVR to ALX.pdf", FILE_PANEL_TYPES.FILE_PDF_VIEWER],
+	["/docs/report.docx", FILE_PANEL_TYPES.FILE_DOCX_VIEWER],
 	["/docs/deck.pptx", FILE_PANEL_TYPES.FILE_PPTX_VIEWER],
-	["/docs/report.xlsx", FILE_PANEL_TYPES.FILE_DOWNLOAD],
+	["/docs/report.xlsx", FILE_PANEL_TYPES.FILE_XLSX_VIEWER],
+	["/docs/network.vsdx", FILE_PANEL_TYPES.FILE_VISIO_VIEWER],
+	["/docs/report.doc", FILE_PANEL_TYPES.FILE_DOWNLOAD],
 	["/LICENSE", FILE_PANEL_TYPES.FILE_CODE_EDITOR],
 ];
 

@@ -1,4 +1,3 @@
-import { getFileEditorKind } from "@semoss/shared";
 import {
 	type CodeEditorMenuItem,
 	DEFAULT_CODE_EDITOR_MENU_ITEMS,
@@ -32,6 +31,29 @@ const CODE_EDITOR_LANGUAGES: Record<string, string> = {
 const READ_ONLY_CODE_EDITOR_MENU_ITEMS = DEFAULT_CODE_EDITOR_MENU_ITEMS.filter(
 	(item) => item.id === "copy" || item.id === "find",
 );
+
+const IMAGE_EXTENSIONS = new Set([
+	"bmp",
+	"gif",
+	"jpeg",
+	"jpg",
+	"png",
+	"svg",
+	"webp",
+]);
+
+const DOWNLOAD_ONLY_EXTENSIONS = new Set(["doc", "ppt", "xls"]);
+
+const FILE_PANEL_TYPES_BY_EXTENSION: Record<string, string> = {
+	docx: FILE_PANEL_TYPES.FILE_DOCX_VIEWER,
+	ipynb: FILE_PANEL_TYPES.FILE_NOTEBOOK_EDITOR,
+	markdown: FILE_PANEL_TYPES.FILE_MARKDOWN_EDITOR,
+	md: FILE_PANEL_TYPES.FILE_MARKDOWN_EDITOR,
+	pdf: FILE_PANEL_TYPES.FILE_PDF_VIEWER,
+	pptx: FILE_PANEL_TYPES.FILE_PPTX_VIEWER,
+	vsdx: FILE_PANEL_TYPES.FILE_VISIO_VIEWER,
+	xlsx: FILE_PANEL_TYPES.FILE_XLSX_VIEWER,
+};
 
 interface GetFileCodeEditorMenuItemsOptions {
 	canSave: boolean;
@@ -104,20 +126,18 @@ export const getImageMimeType = (path: string): string => {
 
 /** Resolve a file path to its unified workbench panel type. */
 export const getFilePanelType = (path: string): string => {
-	switch (getFileEditorKind(path)) {
-		case "download":
-			return FILE_PANEL_TYPES.FILE_DOWNLOAD;
-		case "image":
-			return FILE_PANEL_TYPES.FILE_IMAGE_VIEWER;
-		case "markdown":
-			return FILE_PANEL_TYPES.FILE_MARKDOWN_EDITOR;
-		case "notebook":
-			return FILE_PANEL_TYPES.FILE_NOTEBOOK_EDITOR;
-		case "pdf":
-			return FILE_PANEL_TYPES.FILE_PDF_VIEWER;
-		case "pptx":
-			return FILE_PANEL_TYPES.FILE_PPTX_VIEWER;
-		default:
-			return FILE_PANEL_TYPES.FILE_CODE_EDITOR;
+	const extension = path.split(".").pop()?.toLowerCase() ?? "";
+
+	if (DOWNLOAD_ONLY_EXTENSIONS.has(extension)) {
+		return FILE_PANEL_TYPES.FILE_DOWNLOAD;
 	}
+
+	if (IMAGE_EXTENSIONS.has(extension)) {
+		return FILE_PANEL_TYPES.FILE_IMAGE_VIEWER;
+	}
+
+	return (
+		FILE_PANEL_TYPES_BY_EXTENSION[extension] ??
+		FILE_PANEL_TYPES.FILE_CODE_EDITOR
+	);
 };

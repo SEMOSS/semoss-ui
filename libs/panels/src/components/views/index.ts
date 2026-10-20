@@ -4,4 +4,3 @@ export { FileImageView } from "./file-image-view";
 export { FileMarkdownView } from "./file-markdown-view";
 export { FileNotebookView } from "./file-notebook-view";
 export { FilePdfView } from "./file-pdf-view";
-export { FilePptxView } from "./file-pptx-view";

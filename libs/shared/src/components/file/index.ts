@@ -1,5 +1,4 @@
 export * from "./file.types";
-export * from "./file-editor-kind";
 export * from "./file-editor-path-events";
 export * from "./file-explorer";
 export * from "./file-explorer.adapters";
