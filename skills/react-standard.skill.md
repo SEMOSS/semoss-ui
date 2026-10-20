@@ -65,10 +65,8 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
 
 - Use single responsibilities, early returns, and the simplest adequate design.
   Never move ordinary hook calls below conditional returns; obey hook ordering.
-- Extract complex business workflows, data orchestration, and state machines
-  into custom hooks. Simple local UI state and handlers can stay in components.
-  Pure calculations and transformations belong in ordinary functions, not hooks
-  created just to give them a `use` prefix.
+- Prefer the [Hooks Pattern](#hooks-pattern) for reusable stateful logic and
+  React orchestration; keep simple local UI state and handlers in components.
 - React props and state are immutable. Use a pure functional state updater when
   the next value depends on previous state; direct replacements from arguments
   are fine. Preserve sanctioned MobX/store actions rather than rewriting stores
@@ -83,6 +81,47 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
   primitives, not raw `fetch`. Prefer existing SDK hooks and `usePixel` for reads.
   Return parsed data, validate boundary payloads, and surface failures and missing
   required data explicitly. Do not report success for failed required operations.
+
+### Hooks Pattern
+
+- Prefer focused custom hooks to share non-visual, stateful logic between
+  components. For new logic reuse, favor hooks over higher-order components,
+  render props, or container components introduced solely to inject that logic.
+  Keep component composition for reusable UI and preserve existing public APIs;
+  this is not a mandate to rewrite established patterns.
+- Extract repeated stateful behavior, complex React workflows, data orchestration,
+  and state-machine coordination into hooks named for their purpose. A single
+  consumer can justify extraction when it makes a cohesive workflow easier to
+  understand and test. Do not extract every state variable or event handler, or
+  create a catch-all hook merely to shorten a component.
+- Search existing SDK, shared, and feature hooks before adding one. Compose
+  focused hooks rather than duplicating subscriptions or request orchestration.
+  Colocate feature-specific hooks with their feature; promote genuinely shared
+  hooks only to an appropriate owner within existing dependency boundaries.
+  Pure calculations, transformations, and reducers remain ordinary functions,
+  not hooks created just to give them a `use` prefix.
+- Give hooks explicit typed inputs and return contracts exposing the state and
+  actions consumers need. Name them for the behavior they provide, not lifecycle
+  timing. Avoid generic `useMount`/`useEffectOnce` wrappers or custom effect
+  wrappers accepting caller-managed dependency arrays that obscure dependencies
+  and prevent lint tooling from checking them.
+- Call ordinary hooks only at the top level of function components or custom
+  hooks, before conditional returns; never in loops, conditions, event handlers,
+  effect callbacks, or ordinary utility functions. Keep hook calls explicit and
+  static rather than passing hooks as props or dynamically selecting them.
+- Hooks share logic, not local state: each invocation owns its own state and
+  effects. To share state, lift it to a common owner or use the established
+  context/store/query abstraction. Extraction alone does not deduplicate requests
+  or subscriptions, isolate rerenders, or improve performance.
+- Treat a hook's render-time code as part of its consumer's render: keep it pure
+  and accept current reactive inputs explicitly. Apply the effect, cleanup,
+  stale-result, SDK transport, and error-handling rules above inside hooks too.
+  Extraction must not hide missing dependencies or turn user actions into effects.
+- Test observable behavior with the existing test setup, through a consumer or
+  a hook harness as appropriate. Cover changed inputs, returned actions, independent
+  local state across consumers, and relevant loading/error states. For hooks owning
+  resources, verify cleanup on input changes/unmount and safe setup/cleanup under
+  Strict Mode; test stale async results where applicable.
 
 ## Types and Naming
 
@@ -298,7 +337,8 @@ working-tree check does not validate them. Do not stage another person's changes
 2. In implementation mode, fix in-scope violations and preserve compatibility.
    In review-only mode, report findings with locations and risks without edits.
     Do not expand into unrelated migrations to satisfy full-file review.
-3. Check hook/state semantics, error/loading/empty states, SDK boundaries, naming,
+3. Check hook/state semantics and applicable [Hooks Pattern](#hooks-pattern)
+   boundaries, error/loading/empty states, SDK boundaries, naming,
    exports, explicit returns, suppression reasons, and deprecated usage. For UI,
    check accessible names, keyboard operation, visible focus, overlay focus
    management, and meaningful status announcements without redundant ARIA.
