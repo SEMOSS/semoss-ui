@@ -41,8 +41,8 @@ const healthSchema = z.object({
 	filedThreads: z.number().int().nonnegative(),
 	automaticallyFiledThreads: z.number().int().nonnegative(),
 	unfiledThreads: z.number().int().nonnegative(),
-	filedPercent: z.number().min(0).max(100).nullable(),
-	automaticPercent: z.number().min(0).max(100).nullable(),
+	filedPercent: z.number().min(0).max(100).nullable().default(null),
+	automaticPercent: z.number().min(0).max(100).nullable().default(null),
 	decisionsAnswered: z.number().int().nonnegative(),
 	questionsWaiting: z.number().int().nonnegative(),
 	questionsByKind: z.record(z.string(), z.number().int().nonnegative()),
@@ -68,7 +68,7 @@ const overviewSchema = z.object({
 		total: z.number().int().nonnegative(),
 	}),
 	topics: z.array(z.object({ id: z.string().min(1), name: z.string() })),
-	job: jobSchema.nullable(),
+	job: jobSchema.nullable().default(null),
 });
 const decisionsSchema = z.object({
 	items: z.array(
