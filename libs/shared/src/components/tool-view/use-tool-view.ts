@@ -23,12 +23,15 @@ export const useToolView = (
 ): ResolvedToolView | null => {
 	const libraries = useContext(ToolViewContext);
 	const parsed = parseToolViewUri(uri);
-	if (!parsed || !Object.hasOwn(libraries, parsed.library)) {
+	if (!parsed) {
 		return null;
 	}
-	const library = libraries[parsed.library];
-	if (!Object.hasOwn(library, parsed.view)) {
-		return null;
+	let component: ToolViewComponent | undefined;
+	for (const library of Object.values(libraries)) {
+		if (!Object.hasOwn(library, parsed.componentName)) continue;
+		// Ambiguous registrations must not depend on library insertion order.
+		if (component) return null;
+		component = library[parsed.componentName];
 	}
-	return { component: library[parsed.view], params: parsed.params };
+	return component ? { component, params: parsed.params } : null;
 };

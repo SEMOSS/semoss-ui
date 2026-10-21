@@ -15,7 +15,7 @@ function sendTool(status: ConversationTool["status"]): ConversationTool {
 		title: "Send Email",
 		arguments: { openEmailId: "open" },
 		status,
-		metadata: { SMSS_MCP_UI: { component: "email-send" } },
+		metadata: { SMSS_MCP_UI: { resourceURI: "component://email-send" } },
 	};
 }
 

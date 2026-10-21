@@ -2,50 +2,82 @@ import { describe, expect, it } from "vitest";
 import { isToolViewUri, parseToolViewUri } from "./tool-view-uri";
 
 describe("parseToolViewUri", () => {
-	it("reads the library, the view, and the parameters", () => {
+	it("reads a flat name and decoded configuration independently of call arguments", () => {
 		expect(
 			parseToolViewUri(
-				"component://mail/compose?intent=reply&provider=google",
+				"component://mail-compose?intent=reply&provider=google",
 			),
 		).toEqual({
-			library: "mail",
-			view: "compose",
+			componentName: "mail-compose",
 			params: { intent: "reply", provider: "google" },
 		});
-		expect(parseToolViewUri("component://calendar/event-edit")).toEqual({
-			library: "calendar",
-			view: "event-edit",
+		expect(
+			parseToolViewUri(
+				"component://email-compose?param1=a%26b%3Dc&empty=&text=Hello+%E2%9C%93&param1=last%20value",
+			),
+		).toEqual({
+			componentName: "email-compose",
+			params: { param1: "last value", empty: "", text: "Hello ✓" },
+		});
+	});
+	it("accepts optional parameters and normalizes names, but preserves parameter case", () => {
+		expect(
+			parseToolViewUri(" COMPONENT://Mail-List?provider=Google "),
+		).toEqual({
+			componentName: "mail-list",
+			params: { provider: "Google" },
+		});
+		expect(parseToolViewUri("component://calendar-event-edit")).toEqual({
+			componentName: "calendar-event-edit",
+			params: {},
+		});
+		expect(parseToolViewUri("component://memory?")).toEqual({
+			componentName: "memory",
 			params: {},
 		});
 	});
-
-	it("reads names in any case, and a trailing slash", () => {
-		expect(parseToolViewUri(" component://Mail/List/ ")).toMatchObject({
-			library: "mail",
-			view: "list",
-		});
-	});
-
-	it("refuses anything that is not a library and a view", () => {
-		for (const uri of [
-			undefined,
-			"",
-			"system://automation/",
-			"/portals/index.html",
-			"component://mail",
-			"component://mail/",
-			"component://mail/list/extra",
-			"component://../list",
-		]) {
-			expect(parseToolViewUri(uri)).toBeNull();
-		}
+	it.each([
+		undefined,
+		null,
+		42,
+		{},
+		[],
+		true,
+		"",
+		"component:/mail-compose",
+		"component:mail-compose",
+		"system://automation/",
+		"/portals/index.html",
+		"https://example.test/view",
+		"component://",
+		"component://mail/compose",
+		"component://mail-compose/",
+		"component://mail-compose/extra",
+		"component://../list",
+		"component://mail-compose#fragment",
+		"component://mail-compose?intent=send#fragment",
+		"component://user@host",
+		"component://view:123",
+		"component://mail%2Dcompose",
+	])("refuses invalid or legacy URI %s", (uri) => {
+		expect(parseToolViewUri(uri)).toBeNull();
 	});
 });
-
 describe("isToolViewUri", () => {
-	it("tells a component view from a page", () => {
-		expect(isToolViewUri("component://mail/list")).toBe(true);
-		expect(isToolViewUri("COMPONENT://unknown")).toBe(true);
+	it.each([
+		"component://mail-list",
+		" COMPONENT://unknown ",
+		"component://mail/list",
+		"component://",
+		"component:/mail-compose",
+		"component:mail-compose",
+	])(
+		"keeps even unsupported component resources out of frames: %s",
+		(uri) => {
+			expect(isToolViewUri(uri)).toBe(true);
+		},
+	);
+	it("distinguishes pages", () => {
 		expect(isToolViewUri("system://automation/")).toBe(false);
 		expect(isToolViewUri(undefined)).toBe(false);
 	});

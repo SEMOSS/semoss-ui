@@ -290,7 +290,7 @@ export interface PixelMessageToolCallPart {
 			SMSS_MCP_UI?: {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";
-				// The call's view: `component://<library>/<view>?<params>` for one
+				// The call's view: `component://<componentName>?<params>` for one
 				// the playground draws itself (features/tool-views),
 				// `system://<package>/<path>` for an app that ships with the web
 				// app, or a path in the project's portal.

@@ -9,6 +9,7 @@ import {
 } from "@/features/collaboration/state/collaboration-session.context";
 import type { ConversationTool } from "@/features/messages/types/message";
 import { MemoryToolCard, parseMemoryResult } from "./memory-tool-card";
+import { ToolCallCard } from "./tool-call-card";
 
 const run = vi.fn();
 vi.mock("@semoss/sdk/react", () => ({
@@ -76,6 +77,26 @@ function renderCard(card: ConversationTool, isLive: boolean) {
 }
 
 describe("MemoryToolCard", () => {
+	it("renders a renamed completed tool as memory from its flat resource URI", () => {
+		const card = {
+			...tool("uri-save", { status: "saved", memory: saved }),
+			name: "renamed",
+			metadata: {
+				SMSS_MCP_UI: { resourceURI: "component://memory?param1=abcd" },
+			},
+		};
+		render(
+			<MemoryRouter>
+				<CollaborationSessionProvider
+					initialState={createInitialCollaborationState()}
+				>
+					<ToolCallCard tool={card} />
+				</CollaborationSessionProvider>
+			</MemoryRouter>,
+		);
+		expect(screen.getByText("Saved to memory")).toBeVisible();
+		expect(screen.getByText(saved.text)).toBeVisible();
+	});
 	it("reads only the memory tools' results", () => {
 		expect(
 			parseMemoryResult(

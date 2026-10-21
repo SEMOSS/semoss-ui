@@ -128,22 +128,23 @@ code may import from `core/` and `components/`; those two never import from them
 
 ## Tool views
 
-The mail and calendar reactors declare `component://mail/<view>` and
-`component://calendar/<view>` as their calls' view, with the account as `provider`. The views
+The mail and calendar reactors declare flat `component://mail-<view>` and
+`component://calendar-<view>` URIs, with the account as `provider`. The `mail` and `calendar`
+library groups remain internal organization; they are not URI path segments. The views
 implement `@semoss/shared`'s `ToolViewProps`, and each mailbox or calendar shares them:
 
 | URI | Call | While it waits | Once it ran |
 |-----|------|----------------|-------------|
-| `mail/list` | `ListMail` | | The emails found, each opening in place |
-| `mail/message` | `GetMail` | | The email, with its attachments |
-| `mail/message?intent=move`, `intent=delete` | `MoveMail`, `DeleteMail` | The email, and for a move its folder, editable | What was done |
-| `mail/compose?intent=send`, `draft`, `reply`, `forward` | `SendMail`, `SaveDraft`, `ReplyMail`, `ForwardMail` | The email as a form, every field editable | The email as sent or saved |
-| `mail/compose?intent=send` | `SendDraft` | The saved draft, as it is | The email as sent |
-| `calendar/agenda` | `ListEvents` | | The events found, each opening in place |
-| `calendar/event` | `GetEvent` | | The event |
-| `calendar/event?intent=respond`, `intent=delete` | `RespondToEvent`, `DeleteEvent` | The event, and for an answer the answer, message, and whether the organizer is told, editable | What was done |
-| `calendar/event-edit?intent=create`, `intent=update` | `CreateEvent`, `UpdateEvent` | The event as a form, every field editable | The event as the calendar left it |
-| `calendar/availability` | `GetSchedule` | | Each person's busy times |
+| `component://mail-list` | `ListMail` | | The emails found, each opening in place |
+| `component://mail-message` | `GetMail` | | The email, with its attachments |
+| `component://mail-message?intent=move`, `intent=delete` | `MoveMail`, `DeleteMail` | The email, and for a move its folder, editable | What was done |
+| `component://mail-compose?intent=send`, `draft`, `reply`, `forward` | `SendMail`, `SaveDraft`, `ReplyMail`, `ForwardMail` | The email as a form, every field editable | The email as sent or saved |
+| `component://mail-compose?intent=send` | `SendDraft` | The saved draft, as it is | The email as sent |
+| `component://calendar-agenda` | `ListEvents` | | The events found, each opening in place |
+| `component://calendar-event` | `GetEvent` | | The event |
+| `component://calendar-event?intent=respond`, `intent=delete` | `RespondToEvent`, `DeleteEvent` | The event, and for an answer the answer, message, and whether the organizer is told, editable | What was done |
+| `component://calendar-event-edit?intent=create`, `intent=update` | `CreateEvent`, `UpdateEvent` | The event as a form, every field editable | The event as the calendar left it |
+| `component://calendar-availability` | `GetSchedule` | | Each person's busy times |
 
 - **Every field starts from the model and can be changed.** Approving runs the call with the
   edited arguments; arguments a form does not show, such as attachments or a reminder, are kept

@@ -102,8 +102,8 @@ export type ToolViewComponent =
 	| ComponentType<ToolViewProps>
 	| LazyExoticComponent<ComponentType<ToolViewProps>>;
 
-/** One library's views by name: the `<view>` of `component://<library>/<view>`. */
+/** One library's views keyed by complete, globally unique component names. */
 export type ToolViewLibrary = Readonly<Record<string, ToolViewComponent>>;
 
-/** The libraries a host renders by name: the `<library>` of `component://<library>/<view>`. */
+/** Host-selected collections of views. Collection names are not part of the URI. */
 export type ToolViewLibraries = Readonly<Record<string, ToolViewLibrary>>;

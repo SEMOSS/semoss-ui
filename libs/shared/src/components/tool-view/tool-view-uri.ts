@@ -4,47 +4,42 @@
  */
 export const TOOL_VIEW_URI_SCHEME = "component://";
 
-/** A `component://<library>/<view>?<params>` URI, read. */
+/** A `component://<componentName>?<params>` URI, read. */
 export interface ToolViewUri {
-	/** The library, such as `mail`, lowercased. */
-	library: string;
-	/** The view in it, such as `compose`, lowercased. */
-	view: string;
+	/** The complete registered component name, such as `mail-compose`, lowercased. */
+	componentName: string;
 	/** The query parameters, such as `{ intent: "reply", provider: "google" }`. */
 	params: Readonly<Record<string, string>>;
 }
 
-/** A library and a view name, each letters, digits, and dashes. */
-const TOOL_VIEW_URI =
-	/^component:\/\/([a-z0-9][a-z0-9-]*)\/([a-z0-9][a-z0-9-]*)\/?(?:\?(.*))?$/i;
+/** One flat name of letters, digits, and dashes; paths and fragments are not views. */
+const TOOL_VIEW_URI = /^component:\/\/([a-z0-9][a-z0-9-]*)(?:\?([^#\r\n]*))?$/i;
 
 /**
  * Whether a tool's `resourceURI` names a host component. Such a URI is never
  * a page: a host that cannot draw the view shows its generic view instead.
  *
  * @param uri - The tool's `SMSS_MCP_UI.resourceURI`.
- * @return Whether it is a `component://` URI.
+ * @return Whether it uses the component scheme, even if its syntax is invalid.
  */
-export const isToolViewUri = (uri: string | undefined): boolean =>
-	uri?.trim().toLowerCase().startsWith(TOOL_VIEW_URI_SCHEME) ?? false;
+export const isToolViewUri = (uri: unknown): boolean =>
+	typeof uri === "string" && /^component:/i.test(uri.trim());
 
 /**
- * Read a `component://<library>/<view>?<params>` URI.
+ * Read a `component://<componentName>?<params>` URI.
  *
  * @param uri - The tool's `SMSS_MCP_UI.resourceURI`.
- * @return The library, view, and parameters, or null when it is not one.
+ * @return The component name and parameters, or null when it is not one.
  */
-export const parseToolViewUri = (
-	uri: string | undefined,
-): ToolViewUri | null => {
-	const match = uri ? TOOL_VIEW_URI.exec(uri.trim()) : null;
+export const parseToolViewUri = (uri: unknown): ToolViewUri | null => {
+	const match =
+		typeof uri === "string" ? TOOL_VIEW_URI.exec(uri.trim()) : null;
 	if (!match) {
 		return null;
 	}
-	const [, library, view, query = ""] = match;
+	const [, componentName, query = ""] = match;
 	return {
-		library: library.toLowerCase(),
-		view: view.toLowerCase(),
+		componentName: componentName.toLowerCase(),
 		params: Object.fromEntries(new URLSearchParams(query)),
 	};
 };

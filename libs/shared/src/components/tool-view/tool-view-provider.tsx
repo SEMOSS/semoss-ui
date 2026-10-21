@@ -6,7 +6,9 @@ import type { ToolViewLibraries } from "./tool-view.types";
 export interface ToolViewProviderProps {
 	/**
 	 * The libraries the host renders, by name, such as
-	 * `{ mail: MAIL_TOOL_VIEWS }`. Keep it at module scope: a new object
+	 * `{ mail: MAIL_TOOL_VIEWS }`. Their views have complete flat names,
+	 * such as `mail-compose`; the grouping does not affect URI lookup.
+	 * Keep it at module scope: a new object
 	 * renders every tool view again.
 	 */
 	libraries: ToolViewLibraries;
