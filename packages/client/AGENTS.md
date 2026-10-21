@@ -3,21 +3,22 @@
 This document provides context for AI coding assistants working with the SEMOSS client — the
 main web application.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md).
 
 ## Overview
 
-`@semoss/client` is the primary SEMOSS web application. It depends on every workspace lib
-(`@semoss/renderer`, `@semoss/sdk`, `@semoss/shared`, `@semoss/ui`, `@semoss/i18n`,
-`@semoss/terminal`) — reuse those before adding local code.
+`@semoss/client` is the primary SEMOSS web application. Its workspace runtime dependencies
+are `@semoss/automation`, `@semoss/i18n`, `@semoss/panels`, `@semoss/renderer`, `@semoss/sdk`,
+`@semoss/shared`, `@semoss/terminal`, `@semoss/utility`, `@semoss/ui`, and `@semoss/workbench`.
+Reuse their supported public APIs before adding local code.
 
 ## Build System
 
-- **Bundler**: Vite 7
+- **Bundler**: Vite 8
 - **Framework**: React 19 + TypeScript
-- **State**: MobX (`mobx` + `mobx-react-lite`)
-- **Routing**: `react-router` 7
+- **State**: MobX and Zustand; preserve the owning store's contract
+- **Routing**: `react-router` 8
 - **Styling**: Tailwind CSS v4
 - **Testing**: Vitest
 
@@ -34,13 +35,17 @@ main web application.
 | `pnpm test:watch` | Tests in watch mode |
 | `pnpm test:coverage` | Coverage report |
 
+Run these from `packages/client`, or use `pnpm --filter @semoss/client <command>`.
+
 ### Path Alias
 
-- `@/` → `./src/` (e.g. `import { useRootStore } from "@/hooks"`)
+- `@/` → `./src/` (e.g. `import { useSession } from "@/hooks/use-session"`)
 
 ## Structure
 
-An application, so it uses the full `src/` layout from the root AGENTS.md including `pages/`:
+The existing layout is below. Follow the React skill's
+[architecture policy](../../skills/react-standard.skill.md#architecture-and-exports) for new
+application features; this inventory does not require moving existing features.
 
 | Folder / file | Purpose |
 |---------------|---------|
@@ -48,12 +53,20 @@ An application, so it uses the full `src/` layout from the root AGENTS.md includ
 | `assets/` | Images and static files |
 | `components/` | Components grouped by feature area (`project/`, `engine/`, `settings/`, …) |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
+| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `my-model-usage/`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree (see below) |
-| `stores/` | MobX stores, one folder per store (`root/`, `config/`, `monolith/`, `workspace/`, …) |
+| `stores/` | State owners (`assistant/`, `config/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
 | `types/` | TypeScript types (`<name>.types.ts`) |
-| `utility/` | Utility functions grouped by type |
+| `utility/` | Client-specific adapters and compatibility exports; generic helpers live in `@semoss/utility` |
 | `main.tsx`, `App.tsx`, `index.css` | App entry files |
+
+Client `api/` modules contain application-specific requests. LinOTP login/OTP
+confirmation, file upload/download, engine-member listing, logout, and bulk
+permission changes use the owning `@semoss/sdk` APIs; logout is exposed through
+the session store. Reuse those APIs instead of restoring duplicate client wrappers.
+Database catalogs use paginated `MyEngines`/`AdminMyEngines` reactors. Audit reads
+and exports use the audit API builders backed by `AdminUserAuditEvents`.
 
 ### Routing (`pages/`)
 
@@ -65,23 +78,291 @@ An application, so it uses the full `src/` layout from the root AGENTS.md includ
 - `<name>.page.tsx` — a page component.
 - Feature areas live in subfolders (`pages/project/`, `pages/engine/`, `pages/settings/`, …).
 
-> Older route files use the legacy dash form (`login-page.tsx`, `authenticated-layout.tsx`).
-> Migrate to the dot role-suffix (`login.page.tsx`, `authenticated.layout.tsx`) as you touch
-> them — do not mass-rename.
+> Older route files may use legacy naming. Follow the React skill's
+> [naming policy](../../skills/react-standard.skill.md#types-and-naming); do not turn an
+> unrelated edit into a route-file migration.
+
+### Bulk Access Management
+
+Bulk Access Management makes many access changes in the client, then has the server validate
+and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/api/access.ts)
+(`/api/auth/permissionBatch`).
+
+- **Permission batches.** A `PermissionBatch` is one target (a project, engine, insight or
+  custom team) and its `ADD`, `CHANGE` and `REMOVE` changes. A target can be in only one batch,
+  so the changes to a resource go together. A change sets the whole access: leaving out the end
+  date or a model limit clears it, so a level change carries the current grant forward.
+  `validatePermissionBatches` checks batches against the user's permissions and the current
+  access; `savePermissionBatches` saves all of them in one transaction or none.
+  `getResourcePermissions` reads who has access and what the user may change
+  (`allowedPermissionChanges`).
+- **`features/bulk-access-management/`** is Bulk Access Management for a project or an engine,
+  at `<app or engine path>/:id/access-control/bulk-access-management`, opened from the card on
+  the Access Control tab. The tab's page (`ProjectAccessControl`, `EngineSettingsPage`) takes a
+  `view`: Bulk Access Management and Effective Permissions replace the members under Member
+  Permissions while the access settings above stay put. Their links come from
+  `getAccessControlPath`, so a copy of the page shown elsewhere, such as a workbench panel,
+  offers neither. `permission-batch.ts` holds the pure model (entries, edits, changes, copying
+  and conflicts) and `use-permission-batch.ts` the state; the people search runs the existing
+  users and the directory at the same time. Copying from an app or engine copies the people
+  given access directly, with end dates and model limits; copying from a team gives each member
+  their own access at one level. A copied person whose access differs is a conflict the user
+  settles before the review: keep the change already staged for them, or use the copied access.
+  Admins can make a custom team from the people in the batch: the team is made right away, and
+  its members and its access join the changes (the members as a second batch on the team), so
+  they are saved, or left out, with the rest. `permission-batch-review-dialog.tsx` is shared
+  with the team view.
+- **How Usage Limits Work.** Every place a usage limit is set or shown has the shared
+  `UsageLimitGuideButton` beside it, opening the guide at the section that matters there: the
+  Model Usage Limits card, the Teams table and Give a Team Access (Team Limits), the members
+  dialogs (No Limit Defined, Unlimited and Rules), Effective Permissions, Bulk Access Management
+  (Who Sets Each Limit), a person's path sheet, the admin limit cards and the User's Total Model
+  Limit fields, and My Profile's Model Usage (the person's own view). Each host passes what the
+  viewer can set when it knows it.
+- **Model usage limits.** Only a model's owners, and admins in admin mode, set or change any
+  usage limit on it: a person's, a team's, the public use limit and the model total. The backend
+  sends editors an empty `allowedPermissionChanges.limitLevels` and `canChangeModelLimits` false;
+  `canSetUsageLimits` and `canSetPersonLimitAt` in `permission-batch.ts` read them. Editors still
+  add people and change the levels of Read-Only and Editor people. On a model, each person's and
+  team's staged Usage Limit cell is a `usage-limit-edit-button.tsx` (the summary with a pencil,
+  named by its visible text after screen-reader-only context, so a "Was ..." line is read too)
+  that opens `usage-limit-dialog.tsx` with the shared `ModelUsageLimitEditor`: a person's own
+  rules, or a team's shared and for each member rules. `getLimitBlockReason` keeps a cell
+  read-only for everyone else, with the shared `OWNERS_ONLY_LIMIT_REASON` ("Only owners can set
+  usage limits"). A change sets the whole access, so a level change by an editor carries the
+  limit forward as it is now. For owners, Add With has a usage limit button, so people added,
+  and a team's members copied in, get that limit; an editor's Add With limit is disabled, people
+  they add get none, and anyone who has access keeps their own. Only owners take away the access
+  of someone with a usage limit (`getRemoveBlockReason`): for anyone else, that row's Remove
+  Access button stays focusable but does nothing, and its tooltip gives
+  `OWNERS_END_LIMITED_ACCESS_REASON`. Owners can pick rows and give
+  them one limit with Set Usage Limit; the selection is cleared after the changes are applied.
+  The Model Total and Public Use Limit rows are pinned at the top of the list and staged as
+  `MODEL` and `PUBLIC` changes, by owners only; the Public Use Limit reads "Applies while this
+  model is public" on a model that is not. Copying from another app or engine keeps limits
+  between models; on a model without known prices, copied cost rules are left out and the
+  people they belonged to are conflicts to settle. A copy by someone who cannot set limits
+  (`CopyOptions.canSetLimits` false) copies levels and end dates only: each person keeps the
+  limit they have now. The review lists both a level change and a limit change. Give a Team
+  Access (`features/group-access/`) shows the team limit below the access level on a model for
+  owners (`GroupAccessModel.canChangeLimit`), starting at No Limit Defined, and sends it for the
+  team added; anyone else adds the team with no limit and sees why.
+- **`features/team-usage-limit/`** is a team's usage limit in the Teams table
+  (`components/settings/teams-table.tsx`) on a model's Access Control tab. On a model the table
+  has a Usage Limit column (`team-usage-limit-cell.tsx`) with each team's summary, read with
+  `getResourcePermissions` and matched to the teams by type and name (`use-team-usage-limits.ts`,
+  in admin mode when the table's `admin` is set), which also gives `canChangeModelLimits` and
+  `costLimitsAvailable`. For the model's owners the cell is the same `usage-limit-edit-button.tsx`
+  and opens `usage-limit-dialog.tsx` with the
+  team's shared and for each member rules, and Save Limit saves at once: one permission batch on
+  the engine with one `CHANGE` for the team (`toTeamLimitBatch`), carrying its level and end date
+  as they are, through `savePermissionBatches`. A refused save shows the backend's reason in the
+  dialog, which stays open; a saved one reads the limits again. Everyone else sees the summary
+  with "Only owners can set usage limits". The table's Give a Team Access gives a team limit only
+  when `canChangeModelLimits` says the user can. A level change from the table sends
+  no limit, since the backend keeps it, and reads the grants again so the next limit change
+  carries the new level. `team-usage-limit.ts` also holds the team limit words Bulk Access
+  Management and Give a Team Access use.
+- **`features/model-usage-limits/`** is a model's total and its public use limit on the model's
+  Access Control tab, for its editors and owners (`model-usage-limits-card.tsx`, side by side on
+  wide screens and stacked on narrow ones), read with
+  `getResourcePermissions` (`use-model-usage-limits.ts`). For the model's owners each summary is
+  the same `usage-limit-edit-button.tsx` and opens `usage-limit-dialog.tsx`, and Save Limit saves
+  at once: one permission batch on the engine with one `MODEL` or `PUBLIC` change
+  (`toModelLimitBatch`). A refused save shows the backend's reason in the dialog; a saved one reads
+  the limits again. Editors see both read-only, with "Only owners can set usage limits".
+  `model-usage-limits.ts` also holds the names (`MODEL_LIMIT_NAMES`) and descriptions Bulk Access
+  Management uses for the same two limits.
+- **Nothing is lost by accident.** Load Latest Access reads the access again and keeps the
+  staged changes. Both views ask before Discard Changes drops them, and
+  `use-unsaved-changes-guard.ts` warns before leaving the page with changes that are not saved
+  (the browser's warning on closing or reloading, and `discard-changes-dialog.tsx` for a move
+  within the app). After a save, the lists are cleared until the access is read again, so the
+  access from before the save is never shown.
+- **Admin mode.** Outside admin mode an admin has only their own permissions, since an admin can
+  also act as an ordinary user. The Access Control tab, My Teams and their Bulk Access
+  Management views call `/auth/permissionBatch` with the user's permissions. Admin mode calls
+  `/auth/admin/permissionBatch` (each SDK call takes `admin`): Team Permissions' Bulk Access
+  Management, and the Bulk Access Management and Effective Permissions opened from an app's or
+  engine's settings page in admin mode, at
+  `settings/<app or engine type>/:id/bulk-access-management` and `.../effective-permissions`
+  (`ADMIN_ACCESS_SETTINGS_PAGES` in `settings.constants.ts`). Making a team from the people in
+  the batch is admin mode only.
+- **Layout.** Both views and Effective Permissions open with `access-view-header.tsx` (a back
+  button beside the title). Both views list the people on the left and put
+  `add-people-card.tsx` on the right: the app's people, listed from the start and paged as they
+  scroll, the directory search, and the Bring In Access menu (`bring-in-access-menu.tsx`), which
+  holds the copy flows and, in the project and engine view, Add Team and (in admin mode) Make a
+  Team From These People. The list's column stretches to the card's height, so the two end
+  together, and the card stays in view while a longer list scrolls. In the project and engine
+  view's table (`permission-batch-list.tsx`), each row's change (Added, Changed, Removed) sits
+  beside its remove or undo button in one narrow last column.
+- **`features/team-access-management/`** is Bulk Access Management for a custom team's members
+  and managers, at `settings/managed-teams/:id/bulk-access-management` and
+  `settings/team-permissions/:type/:id/bulk-access-management`, for its managers and admins. A
+  Members and a Managers tab each show their list (`team-role-list.tsx`, worded by
+  `team-role-copy.ts`) beside the Add People card; Copy People From a Team (`copy-team-people-dialog.tsx`) lists every team the user can copy from, this one included, and then shows the chosen team's members and managers as cards (`copy-source-option.tsx`, read by `use-team-people-to-copy.ts`) with how many people each holds and how many are new; a card is disabled when its list is empty, everyone in it is already there, it cannot be read, or it is the list being changed. So managers added by mistake can be copied into the members in one step, then removed from the managers.
+  `team-changes.ts` turns the edits into a batch for each list that changes (`TEAM` and
+  `TEAM_MANAGERS` targets), saved together after one review, and keys people by login type and
+  id (`getTeamPersonKey`), since a team keeps each person's login. Outside admin mode, a manager
+  who stages removing themselves is warned that they lose the team once the changes are
+  applied.
+- **People.** Every list of people in the client shows each person with the shared
+  `PersonIdentity` (see [libs/shared/AGENTS.md](../../libs/shared/AGENTS.md)): their avatar with
+  their login's logo on a round badge, starred for the signed in login, their name, and their id
+  and email. `access-identity.tsx` hands people to it and draws a team with its type's icon in a
+  circle of the same size, so people and teams line up. The Members settings list, Effective
+  Permissions, the directory search, Add User and the service accounts table use it too; tables
+  that need it also keep a Login Type column.
+- **`features/effective-permissions/`** is the Effective Permissions view of a project or an
+  engine, at `<app or engine path>/:id/access-control/effective-permissions`, opened from the
+  button beside Member Permissions: one row per person with the most access they have and every
+  source of it, direct or through a custom team (`getEffectivePermissions`), filtered by where
+  the access comes from (Everyone, Direct Only, Teams Only, Both). Its Refresh reads the access
+  again. Members of teams that mirror a login provider's groups are not in the database, so each
+  such team shows as one row of its own. On a model it adds Limit Applied By and Usage Limit
+  columns (`effective-usage.ts`), filters for the limit applied and for people nothing caps, the
+  Model Total and Public Use Limit rows at the top, and each provider team's limit, each limit one rule per
+  line (the shared `ModelUsageLimitRules`); a person's row opens how every limit applies to them
+  (`features/usage-limit-path/`). The sheet keeps the person last opened while it closes, so its
+  title does not change during the animation.
+- **`features/usage-limit-path/`** shows how usage limits apply to one person on a model in a side
+  sheet, with the shared `UsageLimitPathView`: someone on the model, from Effective Permissions
+  (`getUsageLimitPath`, in admin mode as an admin), or the signed in person's own, from Your Usage
+  Limit in a model's page header (`getMyUsageLimitPath`). A read that fails shows its
+  error. `usage-limit-path-panel.tsx` is the sheet's body (Refresh with How Usage Limits Work beside
+  it, the read's state and the view). `features/my-model-usage/` is My Profile's Model Usage dashboard: every model the signed
+  in person can use, read in one call (`getMyUsageLimitPaths`), the most urgent first, each with
+  the limit applied, its most used rule (or a ceiling's) as a bar, and a standing (Used Up, Almost
+  Reached, Within Limit, Use Not Known, Unlimited, No Limit); `my-model-usage.ts` works these out.
+  The percent used comes from the shared `getUsedPercent`, which rounds a rule not used up down, so
+  it never reads 100%. The line under the bar names a ceiling or the Team Total the rule belongs
+  to (`describeTightestDetail`). Almost Reached starts at the shared `ALMOST_REACHED_SHARE`, and
+  the Used Up and Almost Reached words are the shared `USAGE_SHARE_STATUS_LABELS`, so the
+  dashboard and the rule meter in the path view say the same. Models with no limit are listed on
+  request, and a model's name opens the same sheet as Your Usage Limit, which keeps the
+  model last opened while it closes. A rule's bar says Almost Reached or Used Up near or at its
+  amount, and nothing before. Someone else's User's Total Model Limit and General Platform Limit
+  steps can come without their rules outside admin mode (`rulesHidden`); the path view says only
+  admins can see them.
+- **Limits that belong to no grant.** `components/settings/usage-limit-settings-card.tsx` and
+  `use-stored-usage-limit.ts` edit one stored limit with Reset and Save: the General Platform Limit
+  card (`features/platform-default-limit/`) on the admin Model Settings page, each person's own rules
+  across all models, and the admin-only Team Total card (`features/team-details/team-total-card.tsx`)
+  on a team's admin page, shared rules across all models. The SDK's set calls resolve with the
+  limit the backend saved, which the card shows and its editor starts again from. Save stays
+  enabled except while saving; Reset is enabled once something changed. A member's User's Total
+  Model Limit is edited with the same editor in `member-profile-form.tsx` and Add User
+  (`user-add-overlay.tsx`). These, `usage-limit-dialog.tsx`
+  and Give a Team Access keep Save enabled for a limit that is not complete: pressing it saves
+  nothing, shows the editor's problems from then on and moves focus to the first one (see
+  [libs/shared/AGENTS.md](../../libs/shared/AGENTS.md)), so nothing is red before the first try.
+  Each passes the editor `disabled` while it saves. A refused save still shows the backend's
+  reason.
+- **Model prices.** `components/engine/engine-model-prices.tsx`, on a model's Model Settings page,
+  shows the prices cost limits count calls at. Only owners change them: they add prices for any provider, as many rows as they
+  like before saving, and remove any row but the one cost limits use; a rate that has a value
+  cannot be cleared. Editors see them read-only. Cost limits use the entry for the model's
+  serving provider (`effectiveServingProvider` from `GetModelMetadata`: the Serving Provider in
+  Model Settings, else the engine's smss PROVIDER or MODEL_TYPE), else the model maker's, else
+  the first, which the card marks Used for Cost Limits (`costPriceEntry`). A note says which
+  price applies, that it stands in for the serving provider's (`costPriceForServingProvider`
+  false), or that there is none. Owners can add prices for any serving provider (Add Prices,
+  the serving provider first), since a model can be moved to another provider later. Problems show once Save is
+  pressed: the prices that stop it are marked invalid, described by the problem, and the first
+  one gets focus; Save reads "Saving..." with a spinner while it runs. The card reads its own
+  `GetModelMetadata`, so `engine-model-settings-page.tsx` gives it a new key after each Model
+  Settings save, a catalog entry applied included: it reads the prices again, and edits made to
+  the prices read before are dropped rather than saved over the new ones.
+- **`features/team-people/`** is the read only side panel the Teams table opens on a custom team:
+  its managers and members, read through the resource with `getTeamUsers` and
+  `getGroupManagers` given the project or engine, for the resource's owners and editors.
+  `TeamPeopleManagers` and `TeamPeopleMembers` are also shown in Give a Team Access
+  (`features/group-access/`): before authorizing, See Managers and Members shows a custom team's
+  managers and members in place of the team list, and the All Teams breadcrumb goes back to the
+  list with its search and scroll kept. A resource's owners may read them even before the team
+  has access to it (its editors only once it does). In admin mode they are read as an admin.
+
+### Audit Trail
+
+- **`features/audit-trail/`** is the audit trail: the admin Audit Trail at `settings/audit-trail`
+  (`audit-trail.tsx`, read with `AdminAuditEvents`), and a project's or engine's Audit tab for its
+  owners (`resource-audit-trail.tsx`), both through `api/audit-trail.ts` and
+  `api/resource-audit-trail.ts`. Each row names the event (`AuditEventSummary`: its label, what a
+  denied request tried, and the stored type the Event type filter matches), shows the actor and the
+  affected user with `AuditIdentity` (the shared `PersonIdentity`, or a cog for SEMOSS itself and a
+  robot for an agent in a circle of the same size), what it was on with `AuditTarget` (a user as a
+  person, an engine's logo with `EngineSubtypeIcon`, an app's image with `AppCatalogAvatar`, each
+  with its kind and id under its name, named as the catalog has
+  it now: the backend adds `TARGET_DISPLAY_NAME`, `TARGET_ENGINE_TYPE` and `TARGET_ENGINE_SUBTYPE`
+  to each event it returns, see `AUDIT_TARGET_CATALOG_COLUMNS`), and the
+  outcome and severity as `AuditStatusBadge` and `AuditSeverityBadge` (an icon or a dot in the
+  status color beside the word). `audit-labels.ts` holds the words for the backend's event types,
+  statuses, severities, categories and target types (`AuditEventType` and its siblings in SEMOSS);
+  a value it does not know is shown in words. The details sheet (`audit-event-details.tsx`) shows
+  only the fields an event recorded, JSON as a tree. Enterprise Usage's Access, Settings & Limits
+  tab uses the same pieces, and counts app and engine setting changes
+  (`AuditEventType.SETTING_CHANGES`) beside access and usage limit changes.
+
+### Database Workbench
+
+- **`components/workbench/engine/database/`** is a database's query workbench: query panels,
+  their paired results panels and the columns panel, over the store in
+  `stores/workbench/database/`, which builds each query's pixel (`buildQueryPixel`). The mode comes from
+  the engine's category: SPARQL for RDF, SQL otherwise; the admin query page pins ADMIN_SQL for
+  system databases.
+- A SQL script runs one statement at a time, each committing on its own, and a script of several
+  statements comes back as one tab per statement. On a relational database (category `SQL`)
+  everyone who can query it, read-only users included, gets a Commit control in the editor's
+  toolbar (`database-transaction-options.tsx`, with the fields checked by
+  `database-run-options.ts`): Each statement, or One transaction, where every statement runs in
+  one transaction that commits once, with an optional timeout in seconds for the whole script
+  (`SqlQuery(..., transaction=[true], timeout=[N])`). Each statement still needs the access it
+  needs on its own, which the backend checks. SPARQL and admin SQL never offer it. The chosen
+  segment says which way the script runs, and each one's tooltip says what it means. Ctrl+Enter
+  submits the same run options form as Run.
+- A script run in one transaction (`parseTransactionResult`) marks its results with an icon to
+  the left of the results title (`database-transaction-outcome-icon.tsx`, drawn by
+  `database-results-header.tsx`), colored by the outcome. Hovering it reads Single transaction
+  and the backend's message, such as how many statements were committed together, or that it was
+  rolled back with no changes kept, or that the commit did not report back. The header can sit
+  in a dock tab or a border bar, so the icon is not a control of its own; its label gives screen
+  readers the same words. Each statement's tab panel shows its status, rows changed and, when it
+  failed, its SQLState. A statement that returns rows shows them as a table, up to the
+  query's limit, with "First N rows shown" when more were left out; a table from a statement
+  that was then rolled back says its rows were read inside the rolled back transaction. Its
+  tables have no CSV export, since export runs a statement again on its own, outside the
+  transaction.
+
+### SQL Query Policy Guardrail
+
+- **`components/import/guardrail/sql-query-guardrail-form.tsx`** creates an `EMBEDDED_SQL_QUERY`
+  guardrail. Each policy is a list of rules, a key and the access it requires
+  (`sql-query-policy.ts`), edited by `sql-policy-rules-field.tsx` one row at a time
+  (`sql-policy-rule-row.tsx`, with `sql-operation-select.tsx` for operation rules), and saved as
+  the JSON object the guardrail reads.
+- The five identifier lists start with the chosen dialect's built-in rules, read through
+  `use-sql-policy-built-ins.ts` (`GetSqlQueryPolicyDefaults`, from `api/guardrails.ts`, the same
+  lists the guardrail applies). A built-in rule shows its name, fixed, and its access can be
+  changed; a removed one shows as a chip to add back. Changing the dialect swaps the built-in
+  rules (`mergeBuiltInRules`): one both dialects have keeps its access, and stays out when it was
+  removed, and the user's own rules stay. A save while the rules load is refused inline.
+- `PROTECT_UNMATCHED_IDENTIFIERS` is always written as `true`, so the guardrail applies its
+  built-in rules itself, below the configured ones. `toPolicyJson` therefore writes only a
+  built-in rule whose access changed, and writes a removed one as an exemption
+  (`"NAME":"FOLLOW_ENGINE_PERMISSIONS"`); built-in rules added in later releases still apply.
+- The identifier lists start folded away, with a count of their rules and Expand all. A submit
+  with problems opens every list that has one, and a folded list with problems says so.
 
 ## State Management
 
-- **Application state — MobX central store.** A single root store composes the others
-  (`configStore`, `monolithStore`, …). Access it with the `useRootStore` hook:
-  ```typescript
-  import { useRootStore } from "@/hooks";
-
-  const { configStore, monolithStore } = useRootStore();
-  ```
-  Wrap components that read observable state in `observer` from `mobx-react-lite`.
-- **Feature state — React context + hook.** Each feature encapsulates its state in a context
-  (`<feature>.context.tsx`) exposed through a custom hook (e.g. `EngineContext` → `useEngine`,
-  `WorkspaceContext` → `useWorkspace`), keeping feature state isolated from the global store.
+- **Application state** is split among the existing stores, including session and config.
+  Use their owning hooks, such as `hooks/use-session.ts` and `hooks/use-config.ts`; there is
+  no `stores/root`, `stores/monolith`, or `useRootStore` entry to extend.
+- **Domain state** uses its existing context/store contract. See the
+  [client workbench components](./src/components/workbench/) and
+  [domain stores](./src/stores/workbench/) for their owning implementations. General local-state and orchestration rules
+  belong to the [React skill](../../skills/react-standard.skill.md#logic-state-and-effects).
 
 ## Styling
 
@@ -96,11 +377,7 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
   `components/engine/engine-metadata-display.tsx` (`BADGE_TONES`),
   `pages/app/app-detail-tabs/commits-tab.tsx`, `pages/project/agent/agent-run-graph.tsx`.
   Use `Badge` variants + `destructive`/`success`/`warning`/`chart-*` tokens instead.
-- **Overlays**: 9 hand-rolled `fixed inset-0` modals exist with divergent backdrops
-  (`bg-black/50|/40|/30`, `bg-background/50`) and z-hacks (`z-[100]`, `z-[1300]`, `z-[1501]`).
-  Never add a tenth — use `Dialog`/`Sheet`; replace hand-rolled ones when touched.
-- **ECharts carve-out**: chart option objects need literal colors — take them from the
-  `chart-1`…`chart-5` token values via one shared constants map, never per-file hex.
+- Overlay migration and the ECharts exception follow [DESIGN.md](../../DESIGN.md).
 - **Scoped reference**: `src/components/ui/section/section.tsx` demonstrates a small local
   composite using `cn()` and token classes. Do not treat an entire application file as a
   blanket design exemplar; audit the specific pattern before reusing it.
@@ -110,16 +387,15 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
 ### Be Cautious With
 
 - **`vite.config.ts`** — dev server, build, and test configuration.
-- **`stores/root`** — the root store wires everything together.
+- **`stores/session/`** — shared session state and permission ownership affect multiple surfaces.
 
 ### Known Gotchas
 
-- **Biome forbids TypeScript non-null assertions** (`!`) — guard nullable values explicitly.
-- **No explicit `any`** — Biome errors on it.
+- TypeScript and lint rules follow the [React standard](../../skills/react-standard.skill.md).
 - `usePixel` results expose `error` and `refresh`, but **not** `isError` / `isLoading` or
   iterator methods like `reset`.
-- The package currently has many **pre-existing `tsc` errors** in unrelated files. After a
-  change, grep the type-check output for *your* files rather than assuming a clean baseline:
+- Record the actual type-check result and distinguish introduced failures from unrelated
+  baseline errors; filtering to touched paths alone can miss broken consumers:
   ```bash
   pnpm --filter @semoss/client type-check
   ```

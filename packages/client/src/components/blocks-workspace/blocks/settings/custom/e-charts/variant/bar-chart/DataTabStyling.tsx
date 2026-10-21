@@ -303,7 +303,7 @@ export const DataTabStyling = observer(
 
 		return (
 			<div className="mt-px h-full w-full">
-				<span className="relative pl-4 text-[#808080] text-sm">
+				<span className="relative pl-4 text-muted-foreground text-sm">
 					Selected Frame
 				</span>
 				<div className="mt-1 flex w-full justify-center p-2">
@@ -326,7 +326,7 @@ export const DataTabStyling = observer(
 						))}
 					</select>
 				</div>
-				<span className="relative pl-4 text-[#808080] text-sm">
+				<span className="relative pl-4 text-muted-foreground text-sm">
 					Selected Visual
 				</span>
 				<button
@@ -372,17 +372,17 @@ export const DataTabStyling = observer(
 							<span className="relative pl-4 text-sm">
 								Select {item.name}
 							</span>
-							<Info className="mt-1 ml-2 h-4 w-4 cursor-pointer text-[#888]" />
+							<Info className="mt-1 ml-2 h-4 w-4 cursor-pointer text-muted-foreground" />
 						</div>
 						<Droppable droppableId={`data-tab-drop-area-${index}`}>
 							{(provided) => (
 								<div
 									ref={provided.innerRef}
 									{...provided.droppableProps}
-									className="mt-2 ml-3 flex min-h-[50px] w-[95%] items-center justify-center rounded-[10px] border border-[#ccc] border-dashed p-2"
+									className="mt-2 ml-3 flex min-h-[50px] w-[95%] items-center justify-center rounded-[10px] border border-border border-dashed p-2"
 								>
 									<span
-										className="text-left text-[#aaa] text-sm"
+										className="text-left text-muted-foreground text-sm"
 										style={{
 											paddingRight: !item.multiLabel
 												? "28%"
@@ -395,7 +395,7 @@ export const DataTabStyling = observer(
 									</span>
 									{item.multiLabel && (
 										<Plus
-											className="ml-2 h-4 w-4 cursor-pointer text-[#888]"
+											className="ml-2 h-4 w-4 cursor-pointer text-muted-foreground"
 											onClick={() => {
 												isAdd(
 													!isAddIcon,
@@ -431,7 +431,7 @@ export const DataTabStyling = observer(
 									<div
 										key={`${key}-${column}`}
 										id={refId}
-										className="mx-3 mt-2 flex items-center justify-between rounded-[34px] bg-[#f0f0f0] px-4 py-2 text-sm"
+										className="mx-3 mt-2 flex items-center justify-between rounded-[34px] bg-muted px-4 py-2 text-sm"
 									>
 										<span>
 											{displayColumnName.length > 20 ? (
@@ -448,7 +448,7 @@ export const DataTabStyling = observer(
 										<div className="flex items-center gap-1">
 											{item.aggregate && (
 												<ChevronDown
-													className="h-4 w-4 cursor-pointer text-[#888]"
+													className="h-4 w-4 cursor-pointer text-muted-foreground"
 													onClick={() => {
 														setAggregateMenuAnchorEl(
 															document.getElementById(
@@ -464,7 +464,7 @@ export const DataTabStyling = observer(
 												/>
 											)}
 											<X
-												className="h-4 w-4 cursor-pointer text-[#888]"
+												className="h-4 w-4 cursor-pointer text-muted-foreground"
 												onClick={() => {
 													setSelectedColumns(
 														(prevColumns) => {
@@ -527,7 +527,7 @@ export const DataTabStyling = observer(
 							setCheckedInstruction(checked)
 						}
 					/>
-					<span className="relative mt-1 text-[#808080] text-sm">
+					<span className="relative mt-1 text-muted-foreground text-sm">
 						Show All Instruction
 					</span>
 				</div>
@@ -538,7 +538,7 @@ export const DataTabStyling = observer(
 							setCheckedVisual(checked)
 						}
 					/>
-					<span className="relative mt-1 text-[#808080] text-sm">
+					<span className="relative mt-1 text-muted-foreground text-sm">
 						Auto Visualize
 					</span>
 				</div>

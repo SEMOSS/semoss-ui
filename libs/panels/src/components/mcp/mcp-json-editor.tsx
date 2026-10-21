@@ -15,6 +15,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { useMCPEditor } from "../../hooks/use-mcp-editor";
 import type {
 	MCPEditorMode,
@@ -266,9 +267,7 @@ export const MCPJsonEditor = ({
 			setMode("form");
 			toast.success("Reloaded from disk");
 		} catch (e) {
-			toast.error(
-				e instanceof Error ? e.message : "Could not reload the file",
-			);
+			toast.error(getErrorMessage(e, "Could not reload the file"));
 		} finally {
 			setIsRefreshing(false);
 		}

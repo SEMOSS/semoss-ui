@@ -48,7 +48,7 @@ export const AssistantUsage = () => {
 		: [];
 
 	return (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<span className="flex items-center gap-1 text-muted-foreground text-xs tabular-nums">
 					{isLoadingUsage ? <Spinner className="size-3" /> : null}

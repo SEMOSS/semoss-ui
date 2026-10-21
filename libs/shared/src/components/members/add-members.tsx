@@ -1,4 +1,4 @@
-import { ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import {
 	type ChangeEvent,
 	type KeyboardEvent,
@@ -18,12 +18,12 @@ import {
 	getProjectUsersNoCredentials,
 	getUserEnginePermission,
 	getUserProjectPermission,
+	type ModelUsageLimit,
 	type PostUser,
+	type Role,
 } from "@semoss/sdk";
 import { useIteratorApi } from "@semoss/sdk/react";
 import {
-	Avatar,
-	AvatarFallback,
 	Button,
 	cn,
 	Dialog,
@@ -41,24 +41,77 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { returnAccessType } from "./common";
-import { ModelRestrictionFields } from "./model-restriction-fields";
+import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
+import { findModelUsageLimitProblem } from "../model-usage-limit/model-usage-limit-checks";
+import {
+	ModelUsageLimitEditor,
+	type ModelUsageLimitEditorHandle,
+} from "../model-usage-limit/model-usage-limit-editor";
+import { UsageLimitGuideButton } from "../model-usage-limit/usage-limit-guide-button";
+import { OWNERS_ONLY_LIMIT_REASON } from "../model-usage-limit/usage-limit-labels";
+import { PersonIdentity } from "./person-identity";
+import { type UserSource, UserSourceToggle } from "./user-source-toggle";
 
-interface AddPopupSearchResult {
-	email: string;
+/** A person the dialog lists and can add */
+export interface AddMembersCandidate {
+	/** User id */
 	id: string;
-	name: string;
+	/** Login type */
 	type: string;
-	username: string;
+	/** Display name */
+	name: string | null;
+	/** Email address */
+	email: string | null;
+	/** Login name */
+	username: string | null;
 }
 
-interface UserSelected extends AddPopupSearchResult {
+/**
+ * Where the dialog finds people and how it adds them, for a host that adds
+ * people to something other than a project or engine, such as a team. Make it
+ * with useMemo so the list does not reload on every render.
+ */
+export interface AddMembersPeopleSource {
+	/** Loads a page of people who can be added */
+	load: (
+		searchTerm: string,
+		limit: number,
+		offset: number,
+		msGraphLookup: boolean | undefined,
+	) => Promise<AddMembersCandidate[]>;
+	/**
+	 * Adds the people picked, rejecting with a message when any fail. The dialog
+	 * then stays open with the people still picked, and the host's list reloads
+	 * when it closes.
+	 */
+	add: (people: AddMembersCandidate[]) => Promise<void>;
+	/** Why a listed person cannot be picked, or null when they can be */
+	getUnavailableReason?: (person: AddMembersCandidate) => string | null;
+	/** The dialog's title, in place of "Add Members" */
+	title?: string;
+	/** The line under the title */
+	description?: string;
+	/** The message shown after the people are added */
+	successMessage?: string;
+}
+
+interface UserSelected extends AddMembersCandidate {
 	permission: string;
 }
 
-interface AddMembersOverlayProps {
-	id: string;
-	type:
+/** The access level each choice in the dialog gives */
+const ACCESS_LEVELS: Readonly<Record<string, Role>> = {
+	Viewer: "READ_ONLY",
+	Editor: "EDIT",
+	Owner: "OWNER",
+};
+
+/** Props for {@link AddMembersOverlay}. */
+export interface AddMembersOverlayProps {
+	/** Id of the project or engine members are added to; unused with `people` */
+	id?: string;
+	/** Kind of resource; projects and workspaces use the project endpoints. Unused with `people`. */
+	type?:
 		| "PROJECT"
 		| "ENGINE"
 		| "DATABASE"
@@ -68,41 +121,108 @@ interface AddMembersOverlayProps {
 		| "FUNCTION"
 		| "WORKSPACE"
 		| "GUARDRAIL";
+	/** Whether the dialog is open */
 	open: boolean;
+	/** Called when the dialog closes, with true after members were added */
 	onClose: (success?: boolean) => void;
+	/** Classes for the dialog */
 	className?: string;
+	/** Whether to use the admin endpoints */
 	adminMode?: boolean;
+	/**
+	 * Whether the server can search the organization's Microsoft directory.
+	 * When true, the dialog offers a choice between existing users and the
+	 * whole organization, starting on the existing users.
+	 */
+	isDirectoryAvailable?: boolean;
+	/**
+	 * Lists and adds people through the host instead of a project's or engine's
+	 * endpoints. The dialog then picks people without access levels.
+	 */
+	people?: AddMembersPeopleSource;
+	/**
+	 * On a model, whether it has known prices, so the usage limit can have cost
+	 * rules. Cost is offered when this is left out, and the backend checks it.
+	 */
+	isCostAvailable?: boolean;
 }
+
+/** The text a person is shown and matched by: name, then email, then id */
+const getDisplayName = (user: AddMembersCandidate): string =>
+	user.name || user.email || user.id;
 
 // Shared row style so the search-results list and the selected-users list read as one system
 const MEMBER_ROW_CLASS =
 	"flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2";
 
+/**
+ * The dialog for adding people: to a project or engine with an access level
+ * each, or, with `people`, to whatever the host's source adds them to.
+ */
 export const AddMembersOverlay = ({
 	id,
 	type,
 	open,
 	onClose,
+	className,
 	adminMode = false,
+	isDirectoryAvailable = false,
+	people,
+	isCostAvailable = true,
 }: AddMembersOverlayProps) => {
 	const { t } = useTranslation("members");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [searchKey, setSearchKey] = useState<string>("");
 	const debouncedSearchKey = useDebouncedValue(searchKey, 300);
+	const isCurrentLogin = useIsCurrentLogin();
 	const [selectedUsers, setSelectedUsers] = useState<UserSelected[]>([]);
-	const [restriction, setRestriction] = useState<string>("null");
-	const [maxTokens, setMaxTokens] = useState<string>("");
-	const [maxTime, setMaxTime] = useState<string>("");
-	const [frequency, setFrequency] = useState<string>("DAY");
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	// whether an add through the host ran, so its list reloads when the dialog closes
+	const [hasAttemptedAdd, setHasAttemptedAdd] = useState(false);
+	// the limit every person added to a model gets; a new key starts the editor again
+	const [usageLimit, setUsageLimit] = useState<ModelUsageLimit | null>(null);
+	const [limitKey, setLimitKey] = useState(0);
+	// the limit's problems show from the first add they stop
+	const [shouldShowLimitProblems, setShouldShowLimitProblems] =
+		useState(false);
+	const limitEditorRef = useRef<ModelUsageLimitEditorHandle>(null);
 	const [userPermission, setUserPermission] = useState<string>("");
+	// with both available, people already in the app are searched first
+	const [source, setSource] = useState<UserSource>("existing");
+	// Without the directory, leave the choice to the backend
+	const msGraphLookup = isDirectoryAvailable
+		? source === "directory"
+		: undefined;
 	const isProject = type === "PROJECT" || type === "WORKSPACE";
 	const isOwner = adminMode || userPermission === "OWNER";
+	// a host's people are added without project or engine access levels
+	const hasAccessLevels = !people;
 	// Debounce hasn't caught up to the latest keystroke yet
 	const isDebouncePending = searchKey !== debouncedSearchKey;
+	const isModel = hasAccessLevels && type === "MODEL";
+	// only owners, and admins in admin mode, set usage limits
+	const canGiveLimit = isModel && isOwner;
+	const limitProblem = canGiveLimit
+		? findModelUsageLimitProblem(usageLimit, {
+				source: "DIRECT",
+				isCostAvailable,
+			})
+		: null;
 
-	const usersIterator = useIteratorApi<AddPopupSearchResult>(
+	const usersIterator = useIteratorApi<AddMembersCandidate>(
 		async (limit, offset) => {
 			try {
+				if (people) {
+					return await people.load(
+						debouncedSearchKey,
+						limit,
+						offset,
+						msGraphLookup,
+					);
+				}
+				if (!id) {
+					return [];
+				}
 				const users = isProject
 					? await getProjectUsersNoCredentials(
 							id,
@@ -110,6 +230,7 @@ export const AddMembersOverlay = ({
 							debouncedSearchKey,
 							limit,
 							offset,
+							msGraphLookup,
 						)
 					: await getEngineUsersNoCredentials(
 							id,
@@ -117,8 +238,9 @@ export const AddMembersOverlay = ({
 							debouncedSearchKey,
 							limit,
 							offset,
+							msGraphLookup,
 						);
-				return users as unknown as AddPopupSearchResult[];
+				return users as unknown as AddMembersCandidate[];
 			} catch (error) {
 				toast.error(
 					error instanceof Error
@@ -130,12 +252,12 @@ export const AddMembersOverlay = ({
 		},
 		{ enabled: open, limit: PAGE_SIZE },
 		// adminMode intentionally excluded to avoid refetch on prop change
-		[debouncedSearchKey, id, isProject],
+		[debouncedSearchKey, id, isProject, msGraphLookup, people],
 	);
 	const isLoadingResults = isDebouncePending || usersIterator.isLoading;
 	// Latches true the first time a fetch completes and never resets, so the
 	// empty-results placeholder can settle on "No users found" for good after
-	// that — otherwise every keystroke that still matches nothing flips the
+	// that; otherwise every keystroke that still matches nothing flips the
 	// text back and forth between that and "Searching...".
 	const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 	useEffect(() => {
@@ -159,7 +281,7 @@ export const AddMembersOverlay = ({
 
 	// Fetch the current user's permission for this resource when the dialog opens
 	useEffect(() => {
-		if (!open) return;
+		if (!open || !hasAccessLevels || !id) return;
 		const fetchMyPermission = async () => {
 			try {
 				const perm = isProject
@@ -171,33 +293,55 @@ export const AddMembersOverlay = ({
 			}
 		};
 		fetchMyPermission();
-	}, [open, id, isProject]);
+	}, [open, id, isProject, hasAccessLevels]);
 
 	const addNewMembers = async () => {
-		if (selectedUsers.length === 0) return;
+		if (selectedUsers.length === 0 || isSubmitting) return;
+		if (limitProblem) {
+			setShouldShowLimitProblems(true);
+			limitEditorRef.current?.focusFirstProblem();
+			return;
+		}
+		setIsSubmitting(true);
+		try {
+			await submitMembers();
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
 
-		const userpermissions = selectedUsers.map((m) => {
-			const base = {
+	const submitMembers = async () => {
+		if (people) {
+			// some may have been added even when the call fails
+			setHasAttemptedAdd(true);
+			try {
+				await people.add(selectedUsers);
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: t("errors.addMembersFailed"),
+				);
+				return;
+			}
+			toast.success(people.successMessage ?? t("success.membersAdded"));
+			resetState();
+			onClose(true);
+			return;
+		}
+		if (!id) return;
+
+		const userpermissions = selectedUsers.map((m): PostUser => {
+			const permission = ACCESS_LEVELS[m.permission] ?? "READ_ONLY";
+			return {
 				userid: m.id,
-				permission: returnAccessType(m.permission, true),
+				permission,
 				email: m.email,
 				name: m.name,
 				type: m.type,
 				username: m.username,
-			};
-			if (type !== "MODEL") return base;
-			return {
-				...base,
-				...(restriction !== "null" && {
-					usageRestriction: restriction,
-				}),
-				...(restriction === "token" && {
-					maxTokens: Number(maxTokens),
-				}),
-				...(restriction === "compute" && {
-					maxResponseTime: Number(maxTime),
-				}),
-				...(restriction !== "null" && { usageFrequency: frequency }),
+				// people added with no limit have no limit defined
+				...(canGiveLimit && usageLimit ? { usageLimit } : {}),
 			};
 		});
 
@@ -205,12 +349,12 @@ export const AddMembersOverlay = ({
 			const success = isProject
 				? await addProjectUserPermissions(
 						id,
-						userpermissions as unknown as PostUser[],
+						userpermissions,
 						adminMode,
 					)
 				: await addEngineUserPermissions(
 						id,
-						userpermissions as unknown as PostUser[],
+						userpermissions,
 						adminMode,
 					);
 			if (success) {
@@ -230,14 +374,15 @@ export const AddMembersOverlay = ({
 	};
 
 	const resetState = () => {
+		setHasAttemptedAdd(false);
 		setSelectedUsers([]);
 		setSearchKey("");
 		usersIterator.reset();
-		setRestriction("null");
-		setMaxTokens("");
-		setMaxTime("");
-		setFrequency("DAY");
+		setUsageLimit(null);
+		setLimitKey((key) => key + 1);
+		setShouldShowLimitProblems(false);
 		setUserPermission("");
+		setSource("existing");
 	};
 
 	const permissionLabel = (permission: string): string => {
@@ -253,7 +398,7 @@ export const AddMembersOverlay = ({
 		}
 	};
 
-	const toggleUserSelected = (user: AddPopupSearchResult) => {
+	const toggleUserSelected = (user: AddMembersCandidate) => {
 		setSelectedUsers((prev) =>
 			prev.find((u) => u.id === user.id)
 				? prev.filter((u) => u.id !== user.id)
@@ -269,10 +414,13 @@ export const AddMembersOverlay = ({
 				? usersIterator.data[0]
 				: usersIterator.data.find(
 						(r) =>
-							r.email.toLowerCase() === trimmed ||
-							r.name.toLowerCase() === trimmed,
+							r.email?.toLowerCase() === trimmed ||
+							r.name?.toLowerCase() === trimmed,
 					);
-		if (match) toggleUserSelected(match);
+		// Enter cannot pick someone the dialog shows as unavailable
+		if (match && !people?.getUnavailableReason?.(match)) {
+			toggleUserSelected(match);
+		}
 	};
 
 	const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -292,22 +440,40 @@ export const AddMembersOverlay = ({
 		<Dialog
 			open={open}
 			onOpenChange={() => {
+				if (isSubmitting) return;
+				const shouldReload = hasAttemptedAdd;
 				resetState();
-				onClose();
+				onClose(shouldReload);
 			}}
 		>
-			<DialogContent className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden">
+			<DialogContent
+				className={cn(
+					"flex max-h-[90vh] w-full flex-col gap-4 overflow-hidden sm:max-w-2xl",
+					className,
+				)}
+			>
 				<DialogHeader>
-					<DialogTitle>{t("dialog.title")}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						{people?.title ?? t("dialog.title")}
+					</DialogTitle>
 					<DialogDescription>
-						{t("dialog.description")}
+						{people?.description ?? t("dialog.description")}
 					</DialogDescription>
 				</DialogHeader>
+
+				{isDirectoryAvailable && (
+					<UserSourceToggle
+						className="shrink-0"
+						value={source}
+						onValueChange={setSource}
+					/>
+				)}
 
 				{/* Search input */}
 				<Input
 					ref={inputRef}
 					className="shrink-0"
+					aria-label={t("search.placeholder")}
 					placeholder={t("search.placeholder")}
 					value={searchKey}
 					autoComplete="off"
@@ -339,41 +505,47 @@ export const AddMembersOverlay = ({
 										const isAdded = selectedUsers.some(
 											(u) => u.id === item.id,
 										);
+										const unavailableReason =
+											people?.getUnavailableReason?.(
+												item,
+											) ?? null;
 										return (
 											<button
 												key={`${item.type}-${item.id}`}
 												type="button"
+												disabled={
+													unavailableReason !== null
+												}
 												className={cn(
 													MEMBER_ROW_CLASS,
-													"w-full text-start hover:bg-accent",
+													"w-full text-start hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-muted/40",
 												)}
 												onClick={() =>
 													toggleUserSelected(item)
 												}
 											>
-												<span className="flex items-center gap-2">
-													<Avatar className="h-8 w-8">
-														<AvatarFallback className="text-muted-foreground text-sm">
-															{item.name
-																.charAt(0)
-																.toUpperCase()}
-														</AvatarFallback>
-													</Avatar>
-													<span className="flex flex-col">
-														<span className="font-medium text-sm">
-															{item.name}
-														</span>
-														<span className="text-muted-foreground text-xs">
-															id: {item.id}
-														</span>
-														<span className="text-muted-foreground text-xs">
-															email: {item.email}
-														</span>
+												<PersonIdentity
+													name={getDisplayName(item)}
+													type={item.type}
+													id={item.id}
+													email={item.email}
+													isCurrentLogin={isCurrentLogin(
+														item.type,
+														item.id,
+													)}
+												/>
+												{unavailableReason ? (
+													<span className="shrink-0 text-muted-foreground text-xs">
+														{unavailableReason}
 													</span>
-												</span>
+												) : null}
 												{isAdded && (
-													<span className="font-medium text-primary text-xs">
-														{t("search.added")} ✓
+													<span className="flex shrink-0 items-center gap-1 font-medium text-primary text-xs">
+														{t("search.added")}
+														<Check
+															className="size-3"
+															aria-hidden
+														/>
 													</span>
 												)}
 											</button>
@@ -383,13 +555,15 @@ export const AddMembersOverlay = ({
 									<div className="px-3 py-4 text-center text-muted-foreground text-sm">
 										{!hasLoadedOnce && isLoadingResults
 											? t("search.searching")
-											: t("search.empty")}
+											: msGraphLookup
+												? t("search.emptyDirectory")
+												: t("search.empty")}
 									</div>
 								)}
 							</div>
 						</ScrollArea>
 
-						{/* Selected users — always shown at a fixed height so adding
+						{/* Selected users: always shown at a fixed height so adding
 					    the first person never resizes the dialog either */}
 						<div className="flex h-48 shrink-0 flex-col gap-2">
 							<span className="font-medium text-muted-foreground text-sm">
@@ -405,29 +579,27 @@ export const AddMembersOverlay = ({
 												key={`${u.type}-${u.id}`}
 												className={MEMBER_ROW_CLASS}
 											>
-												<span className="flex items-center gap-2">
-													<Avatar className="h-8 w-8">
-														<AvatarFallback className="text-muted-foreground text-sm">
-															{u.name
-																.charAt(0)
-																.toUpperCase()}
-														</AvatarFallback>
-													</Avatar>
-													<span className="flex flex-col">
-														<span className="font-medium text-sm">
-															{u.name}
-														</span>
-														<span className="text-muted-foreground text-xs">
-															id: {u.id}
-														</span>
-														<span className="text-muted-foreground text-xs">
-															email: {u.email}
-														</span>
-													</span>
-												</span>
+												<PersonIdentity
+													name={getDisplayName(u)}
+													type={u.type}
+													id={u.id}
+													email={u.email}
+													isCurrentLogin={isCurrentLogin(
+														u.type,
+														u.id,
+													)}
+												/>
 												<div className="flex flex-col items-end gap-1.5">
 													<button
 														type="button"
+														aria-label={t(
+															"selected.remove",
+															{
+																name: getDisplayName(
+																	u,
+																),
+															},
+														)}
 														className="text-muted-foreground hover:text-destructive"
 														onClick={() =>
 															toggleUserSelected(
@@ -435,90 +607,31 @@ export const AddMembersOverlay = ({
 															)
 														}
 													>
-														<X className="h-4 w-4" />
+														<X
+															className="size-4"
+															aria-hidden
+														/>
 													</button>
-													<DropdownMenu>
-														<DropdownMenuTrigger
-															asChild
-														>
-															<Button
-																variant="outline"
-																className="shrink-0"
+													{hasAccessLevels ? (
+														<DropdownMenu>
+															<DropdownMenuTrigger
+																asChild
 															>
-																{permissionLabel(
-																	u.permission,
-																)}
-																<ChevronDown className="ms-1 h-4 w-4" />
-															</Button>
-														</DropdownMenuTrigger>
-														<DropdownMenuContent>
-															<DropdownMenuCheckboxItem
-																checked={
-																	u.permission ===
-																	"Viewer"
-																}
-																onCheckedChange={() =>
-																	setSelectedUsers(
-																		(
-																			prev,
-																		) =>
-																			prev.map(
-																				(
-																					s,
-																					idx,
-																				) =>
-																					idx ===
-																					i
-																						? {
-																								...s,
-																								permission:
-																									"Viewer",
-																							}
-																						: s,
-																			),
-																	)
-																}
-															>
-																{t(
-																	"permission.viewer",
-																)}
-															</DropdownMenuCheckboxItem>
-															<DropdownMenuCheckboxItem
-																checked={
-																	u.permission ===
-																	"Editor"
-																}
-																onCheckedChange={() =>
-																	setSelectedUsers(
-																		(
-																			prev,
-																		) =>
-																			prev.map(
-																				(
-																					s,
-																					idx,
-																				) =>
-																					idx ===
-																					i
-																						? {
-																								...s,
-																								permission:
-																									"Editor",
-																							}
-																						: s,
-																			),
-																	)
-																}
-															>
-																{t(
-																	"permission.editor",
-																)}
-															</DropdownMenuCheckboxItem>
-															{isOwner && (
+																<Button
+																	variant="outline"
+																	className="shrink-0"
+																>
+																	{permissionLabel(
+																		u.permission,
+																	)}
+																	<ChevronDown className="ms-1 h-4 w-4" />
+																</Button>
+															</DropdownMenuTrigger>
+															<DropdownMenuContent>
 																<DropdownMenuCheckboxItem
 																	checked={
 																		u.permission ===
-																		"Owner"
+																		"Viewer"
 																	}
 																	onCheckedChange={() =>
 																		setSelectedUsers(
@@ -535,7 +648,7 @@ export const AddMembersOverlay = ({
 																							? {
 																									...s,
 																									permission:
-																										"Owner",
+																										"Viewer",
 																								}
 																							: s,
 																				),
@@ -543,12 +656,76 @@ export const AddMembersOverlay = ({
 																	}
 																>
 																	{t(
-																		"permission.owner",
+																		"permission.viewer",
 																	)}
 																</DropdownMenuCheckboxItem>
-															)}
-														</DropdownMenuContent>
-													</DropdownMenu>
+																<DropdownMenuCheckboxItem
+																	checked={
+																		u.permission ===
+																		"Editor"
+																	}
+																	onCheckedChange={() =>
+																		setSelectedUsers(
+																			(
+																				prev,
+																			) =>
+																				prev.map(
+																					(
+																						s,
+																						idx,
+																					) =>
+																						idx ===
+																						i
+																							? {
+																									...s,
+																									permission:
+																										"Editor",
+																								}
+																							: s,
+																				),
+																		)
+																	}
+																>
+																	{t(
+																		"permission.editor",
+																	)}
+																</DropdownMenuCheckboxItem>
+																{isOwner && (
+																	<DropdownMenuCheckboxItem
+																		checked={
+																			u.permission ===
+																			"Owner"
+																		}
+																		onCheckedChange={() =>
+																			setSelectedUsers(
+																				(
+																					prev,
+																				) =>
+																					prev.map(
+																						(
+																							s,
+																							idx,
+																						) =>
+																							idx ===
+																							i
+																								? {
+																										...s,
+																										permission:
+																											"Owner",
+																									}
+																								: s,
+																					),
+																			)
+																		}
+																	>
+																		{t(
+																			"permission.owner",
+																		)}
+																	</DropdownMenuCheckboxItem>
+																)}
+															</DropdownMenuContent>
+														</DropdownMenu>
+													) : null}
 												</div>
 											</div>
 										))}
@@ -562,27 +739,51 @@ export const AddMembersOverlay = ({
 						</div>
 					</div>
 
-					{/* MODEL restriction fields */}
-					{type === "MODEL" && (
-						<ModelRestrictionFields
-							restriction={restriction}
-							setRestriction={setRestriction}
-							maxTokens={maxTokens}
-							setMaxTokens={setMaxTokens}
-							maxTime={maxTime}
-							setMaxTime={setMaxTime}
-							frequency={frequency}
-							setFrequency={setFrequency}
-						/>
-					)}
+					{/* a model's usage limit, for everyone added */}
+					{isModel ? (
+						<div className="flex flex-col gap-2 rounded-md border border-border p-3">
+							<ModelUsageLimitEditor
+								key={limitKey}
+								ref={limitEditorRef}
+								defaultValue={null}
+								onChange={setUsageLimit}
+								source="DIRECT"
+								isCostAvailable={isCostAvailable}
+								label={t("usageLimit.titleForSelected")}
+								readOnlyReason={
+									canGiveLimit
+										? null
+										: OWNERS_ONLY_LIMIT_REASON
+								}
+								shouldShowProblems={shouldShowLimitProblems}
+								disabled={isSubmitting}
+							/>
+							<UsageLimitGuideButton
+								className="self-start"
+								section="modes"
+								viewer={{
+									canSetModelLimits: canGiveLimit,
+									isAdminMode: adminMode,
+								}}
+							/>
+						</div>
+					) : null}
 				</div>
 				{/* end scrollable middle section */}
 
 				{/* Footer: permission selector + invite */}
 				<div className="flex items-center justify-end border-t pt-3">
+					{shouldShowLimitProblems &&
+					limitProblem &&
+					selectedUsers.length > 0 ? (
+						<span className="me-3 text-destructive text-xs">
+							{limitProblem}
+						</span>
+					) : null}
 					<Button
 						onClick={addNewMembers}
-						disabled={selectedUsers.length === 0}
+						disabled={selectedUsers.length === 0 || isSubmitting}
+						aria-busy={isSubmitting}
 					>
 						{selectedUsers.length > 0
 							? t("footer.addWithCount", {

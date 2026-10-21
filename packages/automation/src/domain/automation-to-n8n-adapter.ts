@@ -1,13 +1,13 @@
+import { downloadBlob } from "@semoss/utility/browser";
 /**
  * Best-effort converter from our `AutomationWorkflowDocument` + node sources into an
  * n8n-importable workflow JSON — the inverse of `n8n-import-adapter.ts`.
  *
  * Only `trigger.start`, `control.wait`, `control.if`, and `developer.python` steps whose
  * source matches our own generated `scope["x"] = ...` shape have a clean n8n equivalent
- * (`manualTrigger`, `wait`, `if`, `set`). Everything else (arbitrary Python, `model.chat`,
- * database/storage/vector/model/function/agent/app steps) has no n8n node type to match,
- * so it's exported as an `n8n-nodes-base.code` node running the original Python (or a
- * `NotImplementedError` stub describing the step) — callers should surface `warnings`.
+ * (`manualTrigger`, `wait`, `if`, `set`). Explicit developer Python remains a Code node.
+ * Unsupported typed nodes become no-op placeholders with their immutable type/config
+ * descriptor; they never synthesize Python — callers should surface `warnings`.
  * A node with two or more incoming control edges (our merge-into-one-node support) gets a
  * synthesized `n8n-nodes-base.merge` node inserted ahead of it, since n8n has no other way
  * to represent that.
@@ -291,20 +291,17 @@ function mapNode(
 			};
 		}
 		default: {
+			const { pythonSource: _pythonSource, ...typedConfig } = node.config;
 			warnings.push(
-				`"${node.label}" (${node.type}) has no n8n equivalent — exported as a Code node stub, reimplement it manually in n8n.`,
+				`"${node.label}" (${node.type}) has no n8n equivalent — exported as a disabled no-op placeholder; reimplement it explicitly in n8n.`,
 			);
-			const pythonSource =
-				nodeSources[node.id] ??
-				(typeof node.config.pythonSource === "string"
-					? node.config.pythonSource
-					: `def run(scope):\n    raise NotImplementedError(${JSON.stringify(
-							`Reimplement SEMOSS step "${node.label}" (${node.type})`,
-						)})\n`);
 			return {
-				type: "n8n-nodes-base.code",
-				typeVersion: 2,
-				parameters: codeNodeParameters(pythonSource),
+				type: "n8n-nodes-base.noOp",
+				typeVersion: 1,
+				parameters: {
+					semossNodeType: node.type,
+					semossConfig: typedConfig,
+				},
 			};
 		}
 	}
@@ -436,6 +433,14 @@ export function automationDocumentToN8nWorkflow(
 			name,
 			nodes: exportedNodes,
 			connections,
+			nodeGroups: (workflowDocument.nodeGroups ?? [])
+				.map((group) => ({
+					...group,
+					nodeIds: group.nodeIds.filter((nodeId) =>
+						exportedNodes.some((node) => node.id === nodeId),
+					),
+				}))
+				.filter((group) => group.nodeIds.length > 0),
 			pinData: {},
 			active: false,
 			settings: { executionOrder: "v1" },
@@ -457,11 +462,6 @@ export function downloadN8nExport(
 	const blob = new Blob([JSON.stringify(workflow, null, 2)], {
 		type: "application/json",
 	});
-	const url = URL.createObjectURL(blob);
-	const anchor = document.createElement("a");
-	anchor.href = url;
-	anchor.download = `${fileNameBase || "automation"}.n8n.json`;
-	anchor.click();
-	URL.revokeObjectURL(url);
+	downloadBlob(blob, `${fileNameBase || "automation"}.n8n.json`);
 	return warnings;
 }

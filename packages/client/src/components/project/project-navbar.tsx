@@ -1,4 +1,4 @@
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, ExternalLink } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { Link } from "react-router";
@@ -9,9 +9,15 @@ import {
 	BreadcrumbList,
 	BreadcrumbPage,
 	BreadcrumbSeparator,
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useProject } from "@/hooks";
-import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
+import { useProject } from "@/hooks/use-project";
+import { NavbarHeader } from "../shared/navbar-header";
+import { NavbarLeft } from "../shared/navbar-left";
+import { NavbarRight } from "../shared/navbar-right";
 
 interface ProjectNavbarProps {
 	/** Actions to render on the right side of the navbar */
@@ -20,7 +26,8 @@ interface ProjectNavbarProps {
 
 export const ProjectNavbar: React.FC<ProjectNavbarProps> = observer(
 	({ actions }) => {
-		const { catalog, project } = useProject();
+		const { catalog, project, type } = useProject();
+		const isApp = type === "BLOCKS" || type === "CODE";
 
 		return (
 			<>
@@ -57,7 +64,39 @@ export const ProjectNavbar: React.FC<ProjectNavbarProps> = observer(
 						</BreadcrumbList>
 					</Breadcrumb>
 				</NavbarLeft>
-				<NavbarRight>{actions}</NavbarRight>
+				<NavbarRight>
+					{actions}
+					{isApp && (
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<Button
+									aria-label={
+										"Open app in view mode (new tab)"
+									}
+									variant="outline"
+									size="sm"
+									asChild
+								>
+									<Link
+										to={`${catalog.path}/${encodeURIComponent(project.project_id)}/view`}
+										target="_blank"
+										rel="noopener noreferrer"
+										aria-label="Open app in view mode (opens in a new tab)"
+									>
+										<ExternalLink
+											className="size-4"
+											aria-hidden="true"
+										/>
+										Open
+									</Link>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								Open app in view mode (new tab)
+							</TooltipContent>
+						</Tooltip>
+					)}
+				</NavbarRight>
 			</>
 		);
 	},

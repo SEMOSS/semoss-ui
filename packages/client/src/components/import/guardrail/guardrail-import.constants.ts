@@ -1,7 +1,7 @@
 import Brain from "@/assets/img/BRAIN.png";
-import Database from "@/assets/img/DATABASE.svg";
 import Gliner from "@/assets/img/HUGGINGFACE_COLOR.svg";
 import Python from "@/assets/img/PYTHON.svg";
+import SqlQueryPolicy from "@/assets/img/SQL_QUERY_POLICY.svg";
 export const GUARDRAIL_CONNECTION = {
 	description: {
 		General:
@@ -15,7 +15,7 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "SQL Query Policy",
 			disable: false,
-			icon: Database,
+			icon: SqlQueryPolicy,
 			form: "sql-query-policy",
 			description:
 				"Parse SQL into an AST and enforce database-aware policies for operations, identifiers, and risky query structures.",

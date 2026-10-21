@@ -17,6 +17,8 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
 import { AutomationActionIndicator } from "./components/AutomationActionIndicator";
 import { AutomationControls } from "./components/AutomationControls";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
@@ -112,10 +114,6 @@ type PendingTextSelection = {
 	clientX: number;
 	clientY: number;
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 export default function App() {
 	const { insightId } = useInsight();
@@ -537,11 +535,7 @@ export default function App() {
 					requestId: crypto.randomUUID(),
 				});
 			} catch (error) {
-				setSnackError(
-					error instanceof Error
-						? error.message
-						: "Browser action failed",
-				);
+				setSnackError(getErrorMessage(error, "Browser action failed"));
 			} finally {
 				if (isNavigation) {
 					setPendingNavigationCount((count) =>
@@ -911,10 +905,10 @@ export default function App() {
 			);
 		})().catch((error) => {
 			if (cancelled) return;
-			const message =
-				error instanceof Error
-					? error.message
-					: "Failed to resolve Playwright recording";
+			const message = getErrorMessage(
+				error,
+				"Failed to resolve Playwright recording",
+			);
 			setSnackError(message);
 			if (!autoPlaybackErrorSentRef.current && toolContextRef.current) {
 				autoPlaybackErrorSentRef.current = true;
@@ -1004,7 +998,7 @@ export default function App() {
 			} catch (error) {
 				if (textSelectionRequestRef.current !== request) return;
 				setPendingTextSelection(null);
-				const message = error instanceof Error ? error.message : "";
+				const message = getErrorMessage(error, "");
 				// Ordinary drags (sliders, maps, canvases) are not text selections.
 				// Keep those interactions quiet; surface only transport/server failures.
 				if (!message.includes("No visible DOM text")) {
@@ -1042,10 +1036,10 @@ export default function App() {
 						activeBrowserTabIdRef.current,
 					);
 				} catch (error) {
-					recordingError =
-						error instanceof Error
-							? error.message
-							: "Could not record the context extraction step";
+					recordingError = getErrorMessage(
+						error,
+						"Could not record the context extraction step",
+					);
 				}
 			}
 			storeSelectedTextContext(captured);
@@ -1220,9 +1214,7 @@ export default function App() {
 					setCurrentUrl(tab.url === "about:blank" ? "" : tab.url);
 			} catch (error) {
 				setSnackError(
-					error instanceof Error
-						? error.message
-						: "Could not switch browser tab",
+					getErrorMessage(error, "Could not switch browser tab"),
 				);
 			}
 		},
@@ -1240,9 +1232,7 @@ export default function App() {
 			});
 		} catch (error) {
 			setSnackError(
-				error instanceof Error
-					? error.message
-					: "Could not open a new browser tab",
+				getErrorMessage(error, "Could not open a new browser tab"),
 			);
 		}
 	}, [playback, sendTabControlEvent]);
@@ -1259,9 +1249,7 @@ export default function App() {
 				});
 			} catch (error) {
 				setSnackError(
-					error instanceof Error
-						? error.message
-						: "Could not close browser tab",
+					getErrorMessage(error, "Could not close browser tab"),
 				);
 			}
 		},
@@ -1559,10 +1547,7 @@ export default function App() {
 					// Preserve the original save error below.
 				}
 			}
-			const message =
-				error instanceof Error
-					? error.message
-					: "Failed to save recording";
+			const message = getErrorMessage(error, "Failed to save recording");
 			setSnackError(message);
 		} finally {
 			setIsSavingRecording(false);
@@ -1678,10 +1663,10 @@ export default function App() {
 					// Report the Return to Playground failure below.
 				}
 			}
-			const message =
-				error instanceof Error
-					? error.message
-					: "Failed to return recording to Playground";
+			const message = getErrorMessage(
+				error,
+				"Failed to return recording to Playground",
+			);
 			setSnackError(message);
 			try {
 				sendMcpResponseToRoom(
@@ -1775,10 +1760,10 @@ export default function App() {
 					toolContext.parameters,
 				);
 			} catch (error) {
-				const message =
-					error instanceof Error
-						? error.message
-						: "Failed to play recording";
+				const message = getErrorMessage(
+					error,
+					"Failed to play recording",
+				);
 				setSnackError(message);
 				try {
 					sendMcpResponseToRoom(
@@ -1837,9 +1822,10 @@ export default function App() {
 				}
 			} catch (error) {
 				setAutomationGoalGenerationError(
-					error instanceof Error
-						? error.message
-						: "Could not generate an automation goal.",
+					getErrorMessage(
+						error,
+						"Could not generate an automation goal.",
+					),
 				);
 			} finally {
 				setIsAutomationGoalGenerating(false);
@@ -1980,11 +1966,7 @@ export default function App() {
 				toast("Filled the selected field from Playground context.");
 				setAutomationMode(false);
 			} catch (error) {
-				toast(
-					error instanceof Error
-						? error.message
-						: "Automation generation failed.",
-				);
+				toast(getErrorMessage(error, "Automation generation failed."));
 			} finally {
 				setIsAutomationGenerating(false);
 				setAutomationClickPos(null);
@@ -2019,9 +2001,10 @@ export default function App() {
 				await generateAndFillSelectedField(remoteX, remoteY);
 			} catch (error) {
 				toast(
-					error instanceof Error
-						? error.message
-						: "Could not click the selected browser position.",
+					getErrorMessage(
+						error,
+						"Could not click the selected browser position.",
+					),
 				);
 				setAutomationClickPos(null);
 			}
@@ -2085,7 +2068,7 @@ export default function App() {
 				`Filled ${completed} field${completed !== 1 ? "s" : ""} from Playground context.`,
 			);
 		} catch (error) {
-			toast(error instanceof Error ? error.message : "Page fill failed.");
+			toast(getErrorMessage(error, "Page fill failed."));
 		} finally {
 			setIsAutomationGenerating(false);
 		}
@@ -2322,11 +2305,7 @@ export default function App() {
 			}
 		} catch (error) {
 			if (automationRunTokenRef.current === runToken) {
-				toast(
-					error instanceof Error
-						? error.message
-						: "Browser automation failed.",
-				);
+				toast(getErrorMessage(error, "Browser automation failed."));
 			}
 		} finally {
 			if (automationRunTokenRef.current === runToken) {

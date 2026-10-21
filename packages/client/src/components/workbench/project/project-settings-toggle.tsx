@@ -9,7 +9,7 @@ import {
 } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useWorkbench, WORKBENCH_STYLES } from "@semoss/workbench";
-import { ProjectDetailTabs } from "@/components/project";
+import { ProjectDetailTabs } from "@/components/project/project-detail-tabs";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 
 /** The tabs every project workbench shows. Notebook and skill use it as-is. */
@@ -23,6 +23,11 @@ export const PROJECT_SETTINGS_TABS: ComponentProps<
 		restrict: ["OWNER", "EDIT", "READ_ONLY"],
 	},
 	{
+		name: "Activity Log",
+		component: "activity",
+		restrict: ["OWNER", "EDIT", "READ_ONLY"],
+	},
+	{
 		name: "GitHub",
 		component: "github",
 		restrict: ["OWNER"],
@@ -30,6 +35,16 @@ export const PROJECT_SETTINGS_TABS: ComponentProps<
 	{
 		name: "Access Control",
 		component: "access-control",
+		restrict: ["OWNER", "EDIT"],
+	},
+	{
+		name: "Audit Trail",
+		component: "audit",
+		restrict: ["OWNER"],
+	},
+	{
+		name: "Settings",
+		component: "settings",
 		restrict: ["OWNER", "EDIT"],
 	},
 	{
@@ -53,7 +68,9 @@ export const createProjectSettingsPanel = (
 ): WorkbenchPanelConfig => ({
 	name: "Settings",
 	helpText: "Settings",
-	icon: ({ className }) => <SettingsIcon className={className} />,
+	icon: ({ className }) => (
+		<SettingsIcon aria-hidden="true" className={className} />
+	),
 	canClose: true,
 	canRename: false,
 	mount: "keepAlive",
@@ -83,7 +100,7 @@ export const ProjectSettingsToggle: React.FC = () => {
 	);
 
 	return (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<Button
 					variant="ghost"
@@ -105,7 +122,10 @@ export const ProjectSettingsToggle: React.FC = () => {
 							: WORKBENCH_STYLES.chromeButtonInactive,
 					)}
 				>
-					<SettingsIcon className={WORKBENCH_STYLES.chromeIcon} />
+					<SettingsIcon
+						aria-hidden="true"
+						className={WORKBENCH_STYLES.chromeIcon}
+					/>
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">Settings</TooltipContent>

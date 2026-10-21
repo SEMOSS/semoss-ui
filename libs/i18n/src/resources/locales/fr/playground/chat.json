@@ -1,5 +1,6 @@
 {
 	"messages": {
+		"actions": "Actions du message",
 		"placeholder": "Tapez un message...",
 		"sending": "Envoi en cours...",
 		"error": "Échec de l'envoi du message"

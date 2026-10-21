@@ -15,7 +15,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { locateJsonError } from "../../utility/mcp-json-utils";
+import { locateJsonError } from "@semoss/utility/json";
 
 export interface MCPJsonFieldProps {
 	/** Current raw text. Not required to be valid JSON while the user types. */

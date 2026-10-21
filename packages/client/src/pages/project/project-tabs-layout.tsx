@@ -1,4 +1,8 @@
-import { ChevronRightIcon, SquareArrowOutUpRight } from "lucide-react";
+import {
+	ChevronRightIcon,
+	PencilIcon,
+	SquareArrowOutUpRight,
+} from "lucide-react";
 import { useMemo } from "react";
 import { Link, matchPath, Outlet, useLocation } from "react-router";
 import type { Role } from "@semoss/sdk";
@@ -15,9 +19,10 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { setProjectDisplayName } from "@/api/projects";
 import { ProjectAccessRequestButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useProject } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 interface ProjectTabsLayoutProps {
@@ -33,7 +38,10 @@ interface ProjectTabsLayoutProps {
  * Wrap the project routes and render the catalog header + tab navigation
  */
 export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
-	const { catalog, project, permission, refresh, type } = useProject();
+	const { catalog, project, permission, refresh, type, update } =
+		useProject();
+	const insightID = useSession((state) => state.insightID);
+	const isAdmin = useSession((state) => state.user.admin);
 
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
@@ -42,6 +50,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
 		return tabs.filter((tab) => {
+			if (tab.path === "audit" && isAdmin) return true;
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -50,7 +59,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 			}
 			return tab.restrict.includes(permission);
 		});
-	}, [tabs, permission]);
+	}, [tabs, permission, isAdmin]);
 
 	// the current active tab index based on the current pathname
 	const activeTabIdx = useMemo(() => {
@@ -74,6 +83,14 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 		type === "AUTOMATION"
 			? `${catalog.path}/${project.project_id}/edit`
 			: `${catalog.path}/${project.project_id}/view`;
+
+	/**
+	 * Save the project's new display name and show it in place
+	 */
+	const handleRename = async (name: string) => {
+		await setProjectDisplayName(insightID, project.project_id, name);
+		update({ project_display_name: name });
+	};
 
 	return (
 		<div className="w-full">
@@ -110,6 +127,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 					<EntityHeader
 						icon={
 							<AppCatalogAvatar
+								projectId={project.project_id}
 								name={
 									project.project_display_name ||
 									project.project_name ||
@@ -126,6 +144,10 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 						id={project.project_id}
 						copyLabel="Copy ID"
 						idTestId="appDetail-id"
+						onRename={
+							permission === "OWNER" ? handleRename : undefined
+						}
+						renameLabel={`Rename ${catalog.name}`}
 						actions={
 							<>
 								{permission !== "OWNER" && (
@@ -137,19 +159,38 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 										}}
 									/>
 								)}
-								{permission !== "DISCOVERABLE" && (
-									<Button
-										asChild
-										variant="default"
-										className="gap-2"
-										data-testid="appDetail-open-btn"
-									>
-										<Link to={openProjectPath}>
-											<SquareArrowOutUpRight className="size-4" />
-											Open {catalog.name}
-										</Link>
-									</Button>
-								)}
+								{type === "WORKSPACE"
+									? // Agents land on a read-only overview, so the
+										// header offers editing to those who can edit
+										(permission === "OWNER" ||
+											permission === "EDIT") && (
+											<Button
+												asChild
+												variant="default"
+												className="gap-2"
+												data-testid="appDetail-edit-btn"
+											>
+												<Link
+													to={`${catalog.path}/${project.project_id}/edit`}
+												>
+													<PencilIcon className="size-4" />
+													Edit
+												</Link>
+											</Button>
+										)
+									: permission !== "DISCOVERABLE" && (
+											<Button
+												asChild
+												variant="default"
+												className="gap-2"
+												data-testid="appDetail-open-btn"
+											>
+												<Link to={openProjectPath}>
+													<SquareArrowOutUpRight className="size-4" />
+													Open {catalog.name}
+												</Link>
+											</Button>
+										)}
 							</>
 						}
 					/>

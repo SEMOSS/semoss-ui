@@ -10,6 +10,7 @@ export {
 	AutomationInspectorPanel,
 	AutomationTracePanel,
 	AutomationWorkbenchContext,
+	useAutomationWorkbenchContext,
 } from "./components/automation-workbench-panels";
 export type {
 	AutomationCanvasHandle,
@@ -23,6 +24,7 @@ export type {
 	AutomationNode,
 	AutomationNodeTrace,
 	AutomationRunDetail,
+	AutomationRunSummary,
 	AutomationToolContext,
 } from "./domain/automation.types";
 export type {
@@ -30,6 +32,8 @@ export type {
 	AutomationImportResult,
 } from "./domain/automation-import-export";
 export {
+	buildAutomationImportSaveAggregate,
+	downloadAutomationExport,
 	parseAutomationImportFile,
 	parseAutomationImportFileAsync,
 } from "./domain/automation-import-export";
@@ -37,9 +41,18 @@ export type {
 	AutomationInspectorAction,
 	AutomationInspectorSnapshot,
 } from "./domain/automation-inspector";
+export { downloadN8nExport } from "./domain/automation-to-n8n-adapter";
+export type {
+	AutomationNodeGroup,
+	AutomationWorkflowDocument,
+} from "./domain/automation-workflow.types";
+export type { AutomationNodeSources } from "./domain/automation-workflow-adapter";
 export type {
 	N8nImportConversion,
 	N8nImportConversionInput,
 	N8nImportConversionModel,
 	N8nImportConversionResult,
 } from "./domain/n8n-import-adapter";
+export type { AutomationFlow } from "./features/flow-preview/automation-flow.types";
+export type { AutomationFlowPreviewProps } from "./features/flow-preview/automation-flow-preview";
+export { AutomationFlowPreview } from "./features/flow-preview/automation-flow-preview";

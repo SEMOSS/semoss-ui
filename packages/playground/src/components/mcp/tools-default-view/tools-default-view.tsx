@@ -1,9 +1,8 @@
 import { AlertCircle, Loader2 } from "lucide-react";
-import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { usePixel } from "@semoss/sdk/react";
+import { runMcpTool, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -12,24 +11,14 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Label,
-	Tabs,
-	TabsContent,
-	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
+import { ToolInspector } from "@/features/tool-inspector/tool-inspector";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
+import { ResponseMessageStore } from "@/stores/message/response-message.store";
+import type { RoomStore } from "@/stores/room/room.store";
+import type { ToolStore } from "@/stores/tool/tool.store";
 import { getToolEngineId, isAskExecutionMode } from "@/utility/mcp-utils";
-import {
-	TOOL_CARD_TAB_CONTENT_CLASS,
-	ToolCardHeader,
-	ToolCardTabsList,
-	ToolDescriptionTabContent,
-	ToolOutputDialog,
-	ToolOutputText,
-	ToolTabScrollArea,
-} from "../tool-card-tabs";
 import { ToolField } from "./tool-field";
 
 export interface ToolsDefaultViewProps {
@@ -70,9 +59,11 @@ export const ToolsDefaultView = observer(
 		const getMCP = usePixel<{
 			tools: {
 				name: string;
+				title?: string;
+				description?: string;
 				inputSchema: {
-					properties: Record<string, FieldSchema>;
-					required: string[];
+					properties?: Record<string, FieldSchema>;
+					required?: string[];
 				};
 			}[];
 		}>(`GetMCPTools(project=["${app}"]);`, {
@@ -97,22 +88,6 @@ export const ToolsDefaultView = observer(
 		);
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
-		const [required, setRequired] = useState<string[]>([]);
-		const [tab, setTab] = useState<string>("inputs");
-		const [showOutputDialog, setShowOutputDialog] = useState(false);
-
-		const formattedResponse = useMemo(() => {
-			if (!tool.response) return "";
-			try {
-				return JSON.stringify(JSON.parse(tool.response), null, 2);
-			} catch {
-				return tool.response;
-			}
-		}, [tool.response]);
-
-		const [properties, setProperties] = useState<
-			Record<string, FieldSchema>
-		>({});
 		const [showExtensionDialog, setShowExtensionDialog] =
 			useState<boolean>(false);
 		const [extensionCheckRetrying, setExtensionCheckRetrying] =
@@ -151,14 +126,27 @@ export const ToolsDefaultView = observer(
 		const showResponse = tool.status === "SUCCESS";
 		const toolFailed =
 			tool.status === "ERROR" || tool.status === "CANCELLED";
+		const metadataOriginalName = tool.json._meta?.SMSS_ORIGINAL_TOOL_NAME as
+			| string
+			| undefined;
+		const foundTool =
+			getMCP.status === "SUCCESS"
+				? getMCP.data.tools.find(
+						(candidate) =>
+							candidate.name === metadataOriginalName ||
+							candidate.name === tool.json.original_name ||
+							(Boolean(tool.json.title) &&
+								candidate.title === tool.json.title),
+					)
+				: undefined;
+		const properties = foundTool?.inputSchema.properties ?? {};
+		const required = foundTool?.inputSchema.required ?? [];
 		const requiredFields = Object.entries(properties).filter(
 			([fieldName]) => required.includes(fieldName),
 		);
 		const optionalFields = Object.entries(properties).filter(
 			([fieldName]) => !required.includes(fieldName),
 		);
-		const title = tool?.displayName || "";
-		const description = tool?.json.description || "";
 		const isAutoExecuting =
 			!isAskExecutionMode(tool?.json._meta?.SMSS_MCP_EXECUTION) &&
 			tool.status !== "SUCCESS";
@@ -166,24 +154,6 @@ export const ToolsDefaultView = observer(
 		// The call is over (succeeded or not), so the form is no longer actionable
 		// and the arguments it ran with become part of the record to display.
 		const hasExecuted = showResponse || toolFailed;
-		const executedParameters = toJS(tool.parameters || {});
-		const executedParameterKeys = Object.keys(executedParameters);
-		// Prefer the declared schema so each argument keeps its type and
-		// description; fall back to raw JSON when the schema is missing or the
-		// call carried keys the schema never declared.
-		const schemaCoversParameters =
-			executedParameterKeys.length > 0 &&
-			executedParameterKeys.every((key) => key in properties);
-		// Only the keys the call actually carried, so a declared-but-unused
-		// optional field is not shown as an empty input that was "used".
-		const executedParameterFields = Object.entries(properties).filter(
-			([fieldName]) => fieldName in executedParameters,
-		);
-		const executedParametersJson = JSON.stringify(
-			executedParameters,
-			null,
-			2,
-		);
 
 		/*
 		 * Functions
@@ -313,18 +283,15 @@ export const ToolsDefaultView = observer(
 					success = true;
 				} else {
 					// Normal MCP tool execution for non-Playwright tools
-					const response = await room.runRoomPixel<[unknown]>(
-						`RunMCPTool(project = [ "${getToolEngineId(tool.json._meta) || app}" ], roomId=${JSON.stringify(room.roomId)}, function=[ "${
-							tool?.json.name
-						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-						false,
-						false,
+					output = await runMcpTool(
+						{
+							project: getToolEngineId(tool.json._meta) || app,
+							roomId: room.roomId,
+							name: tool.json.name,
+							paramValues: data,
+						},
+						room.insightId,
 					);
-					const rawOutput = response.pixelReturn[0].output;
-					output =
-						typeof rawOutput === "string"
-							? rawOutput
-							: JSON.stringify(rawOutput);
 					success = true;
 				}
 			} catch (error) {
@@ -347,12 +314,10 @@ export const ToolsDefaultView = observer(
 			setIsSubmitting(false);
 		};
 
-		// Render a group of fields. `values` overrides the editable form state so
-		// an executed call can render the arguments it actually ran with.
+		// Completed calls use the inspector's read-only payload view.
 		const renderFields = (
 			fields: [string, FieldSchema][],
 			required: boolean,
-			values?: Record<string, unknown>,
 		) =>
 			fields.map(([fieldName, fieldSchema]) => (
 				<ToolField
@@ -360,258 +325,150 @@ export const ToolsDefaultView = observer(
 					fieldName={fieldName}
 					fieldSchema={fieldSchema}
 					required={required && !showResponse && !isAutoExecuting}
-					disabled={showResponse || !!isAutoExecuting || !!values}
-					value={(values ?? data)[fieldName] ?? ""}
+					disabled={showResponse || !!isAutoExecuting}
+					value={data[fieldName] ?? ""}
 					onChange={(val) => handleChange(fieldName, val)}
 				/>
 			));
 
-		/*
-		 * Effects
-		 */
-
-		// Load tool schema
-		useEffect(() => {
-			if (getMCP.status === "SUCCESS" && tool?.json.original_name) {
-				const foundTool = getMCP.data.tools.find(
-					(t) => t.name === tool?.json.original_name,
-				);
-				if (foundTool) {
-					setProperties(foundTool.inputSchema.properties);
-					setRequired(foundTool.inputSchema.required);
-				}
-			}
-		}, [getMCP, tool?.json.original_name]);
-
-		// Switch to output tab when execution completes
-		useEffect(() => {
-			if (
-				tool.status === "SUCCESS" ||
-				tool.status === "ERROR" ||
-				tool.status === "CANCELLED"
-			) {
-				setTab("output");
-			}
-		}, [tool.status]);
-
 		return (
-			<div className="flex h-full w-full flex-col overflow-hidden text-foreground">
-				<ToolCardHeader title={title} />
-
-				<Tabs
-					value={tab}
-					onValueChange={setTab}
-					className="flex min-h-0 flex-1 flex-col"
-				>
-					<ToolCardTabsList />
-
-					<ToolDescriptionTabContent description={description} />
-
-					{/* Inputs tab */}
-					<TabsContent
-						value="inputs"
-						className={TOOL_CARD_TAB_CONTENT_CLASS}
-					>
-						<ToolTabScrollArea>
-							{hasExecuted ? (
-								/* Executed — show read-only parameters */
-								<div className="flex flex-col space-y-2">
-									{executedParameterKeys.length === 0 ? (
-										<p className="py-8 text-center text-muted-foreground text-sm">
-											{t("form.noParameters")}
+			<>
+				<ToolInspector
+					tool={tool}
+					description={foundTool?.description}
+					inputSchema={foundTool?.inputSchema}
+					inputContent={
+						!hasExecuted ? (
+							<div className="h-full overflow-auto px-1 pb-2">
+								{getMCP.status === "ERROR" ||
+								(getMCP.status === "SUCCESS" && !foundTool) ? (
+									<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+										<p className="font-semibold text-destructive text-lg">
+											{t("form.schemaLoadFailed")}
 										</p>
-									) : schemaCoversParameters ? (
-										<div className="space-y-4">
-											{renderFields(
-												executedParameterFields,
-												false,
-												executedParameters,
+										<p className="text-muted-foreground text-sm">
+											{t(
+												"form.schemaLoadFailedDescription",
 											)}
-										</div>
-									) : (
-										<Textarea
-											readOnly
-											className="w-full resize-none font-mono text-sm"
-											rows={Math.min(
-												12,
-												Math.max(
-													3,
-													executedParametersJson.split(
-														"\n",
-													).length,
-												),
-											)}
-											value={executedParametersJson}
-										/>
-									)}
-								</div>
-							) : getMCP.status === "ERROR" ? (
-								<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-									<p className="font-semibold text-destructive text-lg">
-										{t("form.schemaLoadFailed")}
-									</p>
-									<p className="text-muted-foreground text-sm">
-										{t("form.schemaLoadFailedDescription")}
-									</p>
-								</div>
-							) : getMCP.status === "SUCCESS" ? (
-								<div className="flex flex-1 flex-col">
-									<form
-										className="flex-1 space-y-4"
-										onSubmit={handleSubmit}
-									>
-										{Object.keys(properties).length === 0 &&
-											!scriptForBrowserAutomation && (
-												<p className="py-8 text-center text-muted-foreground text-sm">
-													{t("form.noParameters")}
-												</p>
-											)}
+										</p>
+									</div>
+								) : getMCP.status === "SUCCESS" ? (
+									<div className="flex flex-1 flex-col">
+										<form
+											className="flex-1 space-y-4"
+											onSubmit={handleSubmit}
+										>
+											{Object.keys(properties).length ===
+												0 &&
+												!scriptForBrowserAutomation && (
+													<p className="py-8 text-center text-muted-foreground text-sm">
+														{t("form.noParameters")}
+													</p>
+												)}
 
-										{renderFields(requiredFields, true)}
+											{renderFields(requiredFields, true)}
 
-										{scriptForBrowserAutomation && (
-											<div className="space-y-3 rounded-md border bg-muted/50 p-4">
-												<h3 className="font-semibold text-base">
-													{t("playwright.details")}
-												</h3>
-												<div className="space-y-2 text-sm">
-													<div>
-														<span className="font-medium">
-															{t(
-																"playwright.projectId",
-															)}
-															:
-														</span>
-														<span className="ms-2 text-muted-foreground">
-															{app}
-														</span>
-													</div>
-													<div>
-														<span className="font-medium">
-															{t(
-																"playwright.recordedFile",
-															)}
-															:
-														</span>
-														<span className="ms-2 text-muted-foreground">
-															{
-																scriptForBrowserAutomation
-															}
-														</span>
+											{scriptForBrowserAutomation && (
+												<div className="space-y-3 rounded-md border bg-muted/50 p-4">
+													<h3 className="font-semibold text-base">
+														{t(
+															"playwright.details",
+														)}
+													</h3>
+													<div className="space-y-2 text-sm">
+														<div>
+															<span className="font-medium">
+																{t(
+																	"playwright.projectId",
+																)}
+																:
+															</span>
+															<span className="ms-2 text-muted-foreground">
+																{app}
+															</span>
+														</div>
+														<div>
+															<span className="font-medium">
+																{t(
+																	"playwright.recordedFile",
+																)}
+																:
+															</span>
+															<span className="ms-2 text-muted-foreground">
+																{
+																	scriptForBrowserAutomation
+																}
+															</span>
+														</div>
 													</div>
 												</div>
-											</div>
-										)}
+											)}
 
-										{optionalFields.length > 0 && (
-											<>
+											{optionalFields.length > 0 && (
+												<>
+													<Button
+														type="button"
+														variant="outline"
+														size="sm"
+														onClick={() =>
+															setShowOptional(
+																!showOptional,
+															)
+														}
+														className="w-full"
+													>
+														{t(
+															showOptional
+																? "form.hideOptionalFields"
+																: "form.showOptionalFields",
+															{
+																count: optionalFields.length,
+															},
+														)}
+													</Button>
+													{showOptional &&
+														renderFields(
+															optionalFields,
+															false,
+														)}
+												</>
+											)}
+										</form>
+
+										{!isAutoExecuting && (
+											<div className="shrink-0 pt-4">
 												<Button
 													type="button"
-													variant="outline"
-													size="sm"
-													onClick={() =>
-														setShowOptional(
-															!showOptional,
-														)
-													}
 													className="w-full"
+													size="lg"
+													onClick={handleSubmit}
+													disabled={isSubmitting}
 												>
-													{t(
-														showOptional
-															? "form.hideOptionalFields"
-															: "form.showOptionalFields",
-														{
-															count: optionalFields.length,
-														},
+													{isSubmitting ? (
+														<>
+															<Loader2 className="animate-spin" />
+															{t(
+																"form.executing",
+															)}
+														</>
+													) : (
+														t("form.execute")
 													)}
 												</Button>
-												{showOptional &&
-													renderFields(
-														optionalFields,
-														false,
-													)}
-											</>
+											</div>
 										)}
-									</form>
-
-									{!isAutoExecuting && (
-										<div className="shrink-0 pt-4">
-											<Button
-												type="button"
-												className="w-full"
-												size="lg"
-												onClick={handleSubmit}
-												disabled={isSubmitting}
-											>
-												{isSubmitting ? (
-													<>
-														<Loader2 className="animate-spin" />
-														{t("form.executing")}
-													</>
-												) : (
-													t("form.execute")
-												)}
-											</Button>
-										</div>
-									)}
-								</div>
-							) : (
-								<div className="flex flex-col items-center justify-center gap-2 py-12">
-									<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-									<p className="text-muted-foreground text-sm">
-										{t("form.schemaLoading")}
-									</p>
-								</div>
-							)}
-						</ToolTabScrollArea>
-					</TabsContent>
-
-					{/* Output tab */}
-					<TabsContent
-						value="output"
-						className={TOOL_CARD_TAB_CONTENT_CLASS}
-					>
-						<ToolTabScrollArea>
-							{showResponse && (
-								<ToolOutputText
-									text={formattedResponse}
-									onExpand={() => setShowOutputDialog(true)}
-								/>
-							)}
-							{toolFailed && tool.response && (
-								<div className="flex flex-col space-y-2">
-									<Label className="shrink-0 font-semibold text-destructive">
-										{t(
-											`status.${
-												tool.status === "ERROR"
-													? "failed"
-													: "cancelled"
-											}`,
-										)}
-									</Label>
-									<ToolOutputText
-										text={formattedResponse}
-										destructive
-										onExpand={() =>
-											setShowOutputDialog(true)
-										}
-									/>
-								</div>
-							)}
-							{!showResponse && !toolFailed && (
-								<p className="py-8 text-center text-muted-foreground text-sm">
-									{t("form.noOutput")}
-								</p>
-							)}
-						</ToolTabScrollArea>
-					</TabsContent>
-				</Tabs>
-
-				<ToolOutputDialog
-					title={title}
-					text={formattedResponse}
-					open={showOutputDialog}
-					onOpenChange={setShowOutputDialog}
+									</div>
+								) : (
+									<div className="flex flex-col items-center justify-center gap-2 py-12">
+										<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+										<p className="text-muted-foreground text-sm">
+											{t("form.schemaLoading")}
+										</p>
+									</div>
+								)}
+							</div>
+						) : undefined
+					}
 				/>
 
 				{/* Extension Not Available Dialog */}
@@ -680,7 +537,7 @@ export const ToolsDefaultView = observer(
 						</DialogFooter>
 					</DialogContent>
 				</Dialog>
-			</div>
+			</>
 		);
 	},
 );

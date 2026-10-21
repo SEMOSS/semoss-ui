@@ -1,6 +1,13 @@
 import { Env } from "../env";
-import type { PostUser, Role, User, UserAccessRequest } from "../types";
+import type {
+	PostUser,
+	Role,
+	User,
+	UserAccessRequest,
+	UserSearchResult,
+} from "../types";
 import { get, post } from "../utility";
+import { readModelUsageLimit } from "./access";
 
 /**
  * Get the current user's permission for a project
@@ -104,7 +111,8 @@ export const getProjectUsers = async (
 };
 
 /**
- * Get users with access to an engine
+ * Get users with access to an engine. A model's members carry their usage
+ * limit as `usage_limit`.
  * @param engineId - The engine ID
  * @param admin - Whether to use admin endpoint
  * @param userId - Optional user ID to filter by
@@ -147,7 +155,18 @@ export const getEngineUsers = async (
 		throw Error("No Response to get users associated with engine");
 	}
 
-	return response.data;
+	// a model's members carry their usage limit, read here into its one shape
+	return {
+		...response.data,
+		members: (response.data.members ?? []).map((member) =>
+			"usage_limit" in member
+				? {
+						...member,
+						usage_limit: readModelUsageLimit(member.usage_limit),
+					}
+				: member,
+		),
+	};
 };
 
 /**
@@ -183,7 +202,9 @@ export const editProjectUserPermissions = async (
 /**
  * Edit user permissions for an engine
  * @param engineId - The engine ID
- * @param users - Array of users with their updated permissions
+ * @param users - Array of users with their updated permissions; on a model,
+ * each with its `usageLimit`, since a change without one keeps the limit the
+ * person has
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
  */
@@ -331,25 +352,19 @@ export const denyProjectUserAccessRequest = async (
 };
 
 /**
- * Propagate user permissions to project dependencies
+ * Propagate user permissions to project dependencies. The backend gives each
+ * person the access the signed-in user can give on each dependency, and asks
+ * the dependency's owners for the rest. There is no admin version.
  * @param projectId - The project ID
  * @param users - Array of users with their permissions to propagate
- * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
  */
 export const propagateUserPermissions = async (
 	projectId: string,
 	users: PostUser[],
-	admin = false,
 ): Promise<boolean> => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/propagateProjectDependencyPermissions";
-
 	const response = await post<{ success: boolean }>(
-		url,
+		`${Env.MODULE}/api/auth/project/propagateProjectDependencyPermissions`,
 		{
 			projectId,
 			userpermissions: users,
@@ -367,6 +382,9 @@ export const propagateUserPermissions = async (
  * @param searchTerm - Optional search term to filter users by
  * @param limit - Optional limit for pagination
  * @param offset - Optional offset for pagination
+ * @param msGraphLookup - Optional choice of where to search: `true` for the
+ * Microsoft directory, `false` for existing users. Without it the backend
+ * searches the directory whenever the directory is available.
  * @returns Array of users without project credentials
  */
 export const getProjectUsersNoCredentials = async (
@@ -375,6 +393,7 @@ export const getProjectUsersNoCredentials = async (
 	searchTerm?: string,
 	limit?: number,
 	offset?: number,
+	msGraphLookup?: boolean,
 ): Promise<User[]> => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
@@ -386,6 +405,7 @@ export const getProjectUsersNoCredentials = async (
 	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
 	url += limit !== undefined ? `&limit=${limit}` : "";
 	url += offset !== undefined ? `&offset=${offset}` : "";
+	url += msGraphLookup !== undefined ? `&msGraphLookup=${msGraphLookup}` : "";
 
 	const response = await get<User[]>(url).catch((error) => {
 		throw Error(error);
@@ -405,6 +425,9 @@ export const getProjectUsersNoCredentials = async (
  * @param searchTerm - Optional search term to filter users by
  * @param limit - Optional limit for pagination
  * @param offset - Optional offset for pagination
+ * @param msGraphLookup - Optional choice of where to search: `true` for the
+ * Microsoft directory, `false` for existing users. Without it the backend
+ * searches the directory whenever the directory is available.
  * @returns Array of users without engine credentials
  */
 export const getEngineUsersNoCredentials = async (
@@ -413,6 +436,7 @@ export const getEngineUsersNoCredentials = async (
 	searchTerm?: string,
 	limit?: number,
 	offset?: number,
+	msGraphLookup?: boolean,
 ): Promise<User[]> => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
@@ -424,6 +448,7 @@ export const getEngineUsersNoCredentials = async (
 	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
 	url += limit !== undefined ? `&limit=${limit}` : "";
 	url += offset !== undefined ? `&offset=${offset}` : "";
+	url += msGraphLookup !== undefined ? `&msGraphLookup=${msGraphLookup}` : "";
 
 	const response = await get<User[]>(url).catch((error) => {
 		throw Error(error);
@@ -469,7 +494,8 @@ export const addProjectUserPermissions = async (
 /**
  * Add user permissions to an engine
  * @param engineId - The engine ID
- * @param users - Array of users with their permissions to add
+ * @param users - Array of users with their permissions to add; on a model,
+ * each can carry its `usageLimit`
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
  */
@@ -494,4 +520,66 @@ export const addEngineUserPermissions = async (
 	);
 
 	return response.data.success;
+};
+
+/**
+ * Search for people by name or email
+ * @param searchTerm - Text to search for
+ * @param options - Paging, and `msGraphLookup` to choose where to search:
+ * `true` for the Microsoft directory, `false` for existing users. Without it
+ * the backend searches the directory whenever the directory is available.
+ * @returns The people found. Entries without an id are left out.
+ */
+export const searchForUser = async (
+	searchTerm: string,
+	options: { limit?: number; offset?: number; msGraphLookup?: boolean } = {},
+): Promise<UserSearchResult[]> => {
+	const params = new URLSearchParams({ searchTerm });
+	if (options.limit !== undefined) {
+		params.set("limit", String(options.limit));
+	}
+	if (options.offset !== undefined) {
+		params.set("offset", String(options.offset));
+	}
+	if (options.msGraphLookup !== undefined) {
+		params.set("msGraphLookup", String(options.msGraphLookup));
+	}
+
+	const response = await get<unknown>(
+		`${Env.MODULE}/api/authorization/searchForUser?${params.toString()}`,
+	);
+
+	if (!response || !Array.isArray(response.data)) {
+		throw Error("No Response to search for users");
+	}
+
+	return response.data.flatMap(toUserSearchResult);
+};
+
+/** Reads a non-blank string, or null */
+const readText = (value: unknown): string | null =>
+	typeof value === "string" && value.trim() !== "" ? value : null;
+
+/** Validates one search result, returning it in a list, or an empty list when it has no id */
+const toUserSearchResult = (value: unknown): UserSearchResult[] => {
+	if (typeof value !== "object" || value === null) {
+		return [];
+	}
+	const record = value as Record<string, unknown>;
+	const id = readText(record.id);
+	if (!id) {
+		return [];
+	}
+	return [
+		{
+			id,
+			name: readText(record.name),
+			email: readText(record.email),
+			username: readText(record.username),
+			type: readText(record.type),
+			...(typeof record.hasAccount === "boolean" && {
+				hasAccount: record.hasAccount,
+			}),
+		},
+	];
 };

@@ -31,6 +31,9 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useNavigate } from "@/hooks/useNavigate";
 import { copyTextToClipboard, getTagBadgeStyle } from "@/utility";
@@ -185,27 +188,45 @@ export const JobsTable = (props: {
 											<TableRow>
 												<TableCell>
 													<div className="-mx-1 flex items-center">
-														<Button
-															type="button"
-															size="icon-sm"
-															variant="ghost"
-															onClick={() =>
-																onToggleExpanded(
-																	job.id,
-																)
-															}
-															title={
-																isExpanded
-																	? "Collapse"
-																	: "Expand pixel"
+														<Tooltip
+															disableHoverableContent={
+																false
 															}
 														>
-															{isExpanded ? (
-																<ChevronUp className="size-3.5" />
-															) : (
-																<ChevronDown className="size-3.5" />
-															)}
-														</Button>
+															<TooltipTrigger
+																asChild
+															>
+																<Button
+																	aria-label={
+																		isExpanded
+																			? "Collapse"
+																			: "Expand pixel"
+																	}
+																	type="button"
+																	size="icon-sm"
+																	variant="ghost"
+																	onClick={() =>
+																		onToggleExpanded(
+																			job.id,
+																		)
+																	}
+																>
+																	{isExpanded ? (
+																		<ChevronUp className="size-3.5" />
+																	) : (
+																		<ChevronDown className="size-3.5" />
+																	)}
+																</Button>
+															</TooltipTrigger>
+															<TooltipContent
+																sideOffset={4}
+																className="max-w-xs break-words"
+															>
+																{isExpanded
+																	? "Collapse"
+																	: "Expand pixel"}
+															</TooltipContent>
+														</Tooltip>
 														<input
 															type="checkbox"
 															checked={rowSelectionModel.includes(
@@ -245,22 +266,43 @@ export const JobsTable = (props: {
 																<span className="truncate">
 																	{job.name}
 																</span>
-																<button
-																	type="button"
-																	onClick={(
-																		e,
-																	) => {
-																		e.stopPropagation();
-																		copyTextToClipboard(
-																			job.name,
-																		);
-																	}}
-																	className="shrink-0 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-																	title="Copy name"
-																	aria-label="Copy name"
+																<Tooltip
+																	disableHoverableContent={
+																		false
+																	}
 																>
-																	<Copy className="size-3 text-muted-foreground" />
-																</button>
+																	<TooltipTrigger
+																		asChild
+																	>
+																		<Button
+																			variant="ghost"
+																			size="icon-sm"
+																			type="button"
+																			onClick={(
+																				e,
+																			) => {
+																				e.stopPropagation();
+																				copyTextToClipboard(
+																					job.name,
+																				);
+																			}}
+																			className="shrink-0 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+																			aria-label="Copy name"
+																		>
+																			<Copy className="size-3 text-muted-foreground" />
+																		</Button>
+																	</TooltipTrigger>
+																	<TooltipContent
+																		sideOffset={
+																			4
+																		}
+																		className="max-w-xs break-words"
+																	>
+																		{
+																			"Copy name"
+																		}
+																	</TooltipContent>
+																</Tooltip>
 															</div>
 															<div className="group flex min-w-0 items-center gap-1">
 																<span
@@ -272,22 +314,43 @@ export const JobsTable = (props: {
 																	jobId:{" "}
 																	{job.id}
 																</span>
-																<button
-																	type="button"
-																	onClick={(
-																		e,
-																	) => {
-																		e.stopPropagation();
-																		copyTextToClipboard(
-																			job.id,
-																		);
-																	}}
-																	className="shrink-0 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-																	title="Copy job ID"
-																	aria-label="Copy job ID"
+																<Tooltip
+																	disableHoverableContent={
+																		false
+																	}
 																>
-																	<Copy className="size-3 text-muted-foreground" />
-																</button>
+																	<TooltipTrigger
+																		asChild
+																	>
+																		<Button
+																			variant="ghost"
+																			size="icon-sm"
+																			type="button"
+																			onClick={(
+																				e,
+																			) => {
+																				e.stopPropagation();
+																				copyTextToClipboard(
+																					job.id,
+																				);
+																			}}
+																			className="shrink-0 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+																			aria-label="Copy job ID"
+																		>
+																			<Copy className="size-3 text-muted-foreground" />
+																		</Button>
+																	</TooltipTrigger>
+																	<TooltipContent
+																		sideOffset={
+																			4
+																		}
+																		className="max-w-xs break-words"
+																	>
+																		{
+																			"Copy job ID"
+																		}
+																	</TooltipContent>
+																</Tooltip>
 															</div>
 														</div>
 													</div>
@@ -343,69 +406,164 @@ export const JobsTable = (props: {
 
 												<TableCell>
 													<div className="-mx-1 flex items-center">
-														<Button
-															size="icon-sm"
-															variant="ghost"
-															disabled={isRunning}
-															title="Run now"
-															onClick={() => {
-																job &&
-																	runJob(job);
-															}}
-														>
-															{isRunning ? (
-																<Spinner className="size-3.5" />
-															) : (
-																<Play className="size-3.5" />
-															)}
-														</Button>
-
-														<Button
-															size="icon-sm"
-															variant="ghost"
-															disabled={isRunning}
-															title="Edit"
-															onClick={() => {
-																navigate(
-																	`/settings/jobs/edit-job/${job?.id}`,
-																	{
-																		state: {
-																			initialState:
-																				{
-																					formType:
-																						"edit",
-																					id: job.id,
-																					name: job.name,
-																					pixel: job.pixel,
-																					tags: job.tags,
-																					cronExpression:
-																						job.cronExpression,
-																					cronTz: job.timeZone,
-																					triggerOnLoad:
-																						job.triggerOnLoad,
-																				},
-																		},
-																	},
-																);
-															}}
-														>
-															<Pencil className="size-3.5" />
-														</Button>
-
-														<Button
-															size="icon-sm"
-															variant="ghost"
-															className="text-destructive hover:text-destructive"
-															disabled={isRunning}
-															title="Delete"
-															onClick={() =>
-																showDeleteJobModal(
-																	job,
-																)
+														<Tooltip
+															disableHoverableContent={
+																false
 															}
 														>
-															<Trash2 className="size-3.5" />
-														</Button>
+															<TooltipTrigger
+																asChild
+															>
+																<span
+																	className="inline-flex"
+																	tabIndex={
+																		isRunning
+																			? 0
+																			: undefined
+																	}
+																>
+																	<Button
+																		aria-label={
+																			"Run now"
+																		}
+																		size="icon-sm"
+																		variant="ghost"
+																		disabled={
+																			isRunning
+																		}
+																		onClick={() => {
+																			job &&
+																				runJob(
+																					job,
+																				);
+																		}}
+																	>
+																		{isRunning ? (
+																			<Spinner className="size-3.5" />
+																		) : (
+																			<Play className="size-3.5" />
+																		)}
+																	</Button>
+																</span>
+															</TooltipTrigger>
+															<TooltipContent
+																sideOffset={4}
+																className="max-w-xs break-words"
+															>
+																{isRunning
+																	? "Wait for the running job to finish"
+																	: "Run now"}
+															</TooltipContent>
+														</Tooltip>
+
+														<Tooltip
+															disableHoverableContent={
+																false
+															}
+														>
+															<TooltipTrigger
+																asChild
+															>
+																<span
+																	className="inline-flex"
+																	tabIndex={
+																		isRunning
+																			? 0
+																			: undefined
+																	}
+																>
+																	<Button
+																		aria-label={
+																			"Edit"
+																		}
+																		size="icon-sm"
+																		variant="ghost"
+																		disabled={
+																			isRunning
+																		}
+																		onClick={() => {
+																			navigate(
+																				`/settings/jobs/edit-job/${job?.id}`,
+																				{
+																					state: {
+																						initialState:
+																							{
+																								formType:
+																									"edit",
+																								id: job.id,
+																								name: job.name,
+																								pixel: job.pixel,
+																								tags: job.tags,
+																								cronExpression:
+																									job.cronExpression,
+																								cronTz: job.timeZone,
+																								triggerOnLoad:
+																									job.triggerOnLoad,
+																							},
+																					},
+																				},
+																			);
+																		}}
+																	>
+																		<Pencil className="size-3.5" />
+																	</Button>
+																</span>
+															</TooltipTrigger>
+															<TooltipContent
+																sideOffset={4}
+																className="max-w-xs break-words"
+															>
+																{isRunning
+																	? "Wait for the running job to finish"
+																	: "Edit"}
+															</TooltipContent>
+														</Tooltip>
+
+														<Tooltip
+															disableHoverableContent={
+																false
+															}
+														>
+															<TooltipTrigger
+																asChild
+															>
+																<span
+																	className="inline-flex"
+																	tabIndex={
+																		isRunning
+																			? 0
+																			: undefined
+																	}
+																>
+																	<Button
+																		aria-label={
+																			"Delete"
+																		}
+																		size="icon-sm"
+																		variant="ghost"
+																		className="text-destructive hover:text-destructive"
+																		disabled={
+																			isRunning
+																		}
+																		onClick={() =>
+																			showDeleteJobModal(
+																				job,
+																			)
+																		}
+																	>
+																		<Trash2 className="size-3.5" />
+																	</Button>
+																</span>
+															</TooltipTrigger>
+															<TooltipContent
+																sideOffset={4}
+																className="max-w-xs break-words"
+															>
+																{isRunning
+																	? "Wait for the running job to finish"
+																	: "Delete"}
+															</TooltipContent>
+														</Tooltip>
 													</div>
 												</TableCell>
 											</TableRow>
@@ -422,21 +580,40 @@ export const JobsTable = (props: {
 																	Pixel recipe
 																</span>
 																<div className="flex items-center gap-1">
-																	<Button
-																		type="button"
-																		variant="ghost"
-																		size="sm"
-																		className="h-7 px-2 text-muted-foreground text-xs"
-																		onClick={() =>
-																			setViewPixelJob(
-																				job,
-																			)
+																	<Tooltip
+																		disableHoverableContent={
+																			false
 																		}
-																		title="Expand"
 																	>
-																		<Maximize2 className="size-3" />{" "}
-																		Expand
-																	</Button>
+																		<TooltipTrigger
+																			asChild
+																		>
+																			<Button
+																				type="button"
+																				variant="ghost"
+																				size="sm"
+																				className="h-7 px-2 text-muted-foreground text-xs"
+																				onClick={() =>
+																					setViewPixelJob(
+																						job,
+																					)
+																				}
+																			>
+																				<Maximize2 className="size-3" />{" "}
+																				Expand
+																			</Button>
+																		</TooltipTrigger>
+																		<TooltipContent
+																			sideOffset={
+																				4
+																			}
+																			className="max-w-xs break-words"
+																		>
+																			{
+																				"Expand"
+																			}
+																		</TooltipContent>
+																	</Tooltip>
 																	<Button
 																		type="button"
 																		variant="ghost"
@@ -475,9 +652,12 @@ export const JobsTable = (props: {
 				open={viewPixelJob !== null}
 				onOpenChange={(open) => !open && setViewPixelJob(null)}
 			>
-				<DialogContent className="flex h-[85vh] w-[90vw] max-w-[90vw] flex-col gap-3 p-6 sm:max-w-[90vw]">
+				<DialogContent
+					aria-describedby={undefined}
+					className="flex h-[85vh] w-[90vw] max-w-[90vw] flex-col gap-3 p-6 sm:max-w-[90vw]"
+				>
 					<DialogHeader className="shrink-0">
-						<DialogTitle className="flex items-center gap-2 pr-8">
+						<DialogTitle className="flex items-center gap-2 pr-8 font-medium text-base leading-6">
 							<span className="truncate">
 								{viewPixelJob?.name}
 							</span>

@@ -36,7 +36,7 @@ export function RunBanner({
 	return (
 		<div
 			ref={containerRef}
-			className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2 text-xs ${
+			className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-xs ${
 				isSuccess
 					? "border-success/40 bg-success/10"
 					: isWaiting
@@ -44,9 +44,9 @@ export function RunBanner({
 						: "border-destructive/30 bg-destructive/5"
 			}`}
 		>
-			<div className="flex flex-1 items-start gap-2">
+			<div className="flex flex-1 items-center gap-2">
 				{generatingAiSummary && !aiSummary && (
-					<Loader2 className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
+					<Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
 				)}
 				<span
 					className={`font-medium ${isSuccess ? "text-success" : isWaiting ? "text-warning" : "text-destructive"}`}

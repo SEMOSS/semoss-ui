@@ -21,9 +21,12 @@ import {
 	Label,
 	P,
 	Separator,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { Metamodel } from "@/components/metamodel";
-import CreateConnection from "@/components/metamodel/create-connection";
+import { CreateConnection } from "@/components/metamodel/create-connection";
 import { Section } from "@/components/ui";
 import type {
 	Edge,
@@ -477,16 +480,30 @@ export const MetaModelConnections = observer(
 										open={anchorNodesMenu}
 										onOpenChange={setAnchorNodesMenu}
 									>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon"
-												title="Select tables"
-												data-testid="select-tables-dropdown"
+										<Tooltip
+											disableHoverableContent={false}
+										>
+											<TooltipTrigger asChild>
+												<DropdownMenuTrigger asChild>
+													<Button
+														aria-label={
+															"Select tables"
+														}
+														variant="ghost"
+														size="icon"
+														data-testid="select-tables-dropdown"
+													>
+														<TableIcon className="size-4" />
+													</Button>
+												</DropdownMenuTrigger>
+											</TooltipTrigger>
+											<TooltipContent
+												sideOffset={4}
+												className="max-w-xs break-words"
 											>
-												<TableIcon className="size-4" />
-											</Button>
-										</DropdownMenuTrigger>
+												{"Select tables"}
+											</TooltipContent>
+										</Tooltip>
 										<DropdownMenuContent
 											align="end"
 											className="w-64"

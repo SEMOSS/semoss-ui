@@ -14,10 +14,13 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
+import { readNonBlankString } from "@semoss/utility/text";
 import type { BuiltinToolSelection } from "@/api/engines";
 import {
 	getOptionLabels,
 	MODEL_PROVIDER_OPTIONS,
+	type ModelMetadataOption,
 	SERVING_PROVIDER_OPTIONS,
 } from "@/model-metadata.constants";
 
@@ -35,6 +38,18 @@ export type ModelMetadata = {
 	modelProvider?: string | null;
 	/** Platform serving the model, e.g. AWS_BEDROCK. */
 	servingProvider?: string | null;
+	/**
+	 * Who serves the model as a lowercase catalog key, such as google: the
+	 * serving provider, or what the engine's settings say when it is blank
+	 */
+	effectiveServingProvider?: string | null;
+	/**
+	 * The price entry cost limits count calls at: the serving provider's, else
+	 * the model maker's, else the first; null when the model has no known prices
+	 */
+	costPriceEntry?: ModelPricing | null;
+	/** Whether that entry is the serving provider's own, and not one used in its place */
+	costPriceForServingProvider?: boolean | null;
 	capability?: string | null;
 	inputModalities?: string[] | null;
 	outputModalities?: string[] | null;
@@ -181,6 +196,82 @@ export const formatPricingProviderLabel = (value: string) => {
 		MODEL_PROVIDER_LABELS[normalized] ||
 		formatEnumLabel(normalized)
 	);
+};
+
+/**
+ * A provider as prices are matched on, the way the backend reads it
+ * (`StaticBuiltinToolsCatalog.normalizeProviderKey`): lowercase, with spaces and
+ * hyphens as underscores, and the names one provider goes by read as one, so
+ * `GOOGLE_VERTEX`, `google-vertex` and `vertex` are all `google`.
+ *
+ * @param value - a provider, from a price entry or the serving provider list
+ * @returns the key
+ */
+export const toPricingProviderKey = (value: string): string => {
+	const key = value
+		.trim()
+		.toLowerCase()
+		.replace(/[\s-]+/g, "_");
+	switch (key) {
+		case "open_ai":
+			return "openai";
+		case "azure_open_ai":
+		case "azure_openai":
+			return "azure";
+		case "vertex":
+		case "vertex_ai":
+		case "google_vertex":
+			return "google";
+		case "aws_bedrock":
+		case "amazon_bedrock":
+			return "bedrock";
+		default:
+			return key;
+	}
+};
+
+/**
+ * The providers a model can get prices for: every serving provider it has no
+ * price for yet, its own first, since that is the price cost limits use. A
+ * model can be moved to another provider, so any of them can be priced ahead
+ * of time.
+ *
+ * @param entries - the model's price entries
+ * @param servingProvider - the provider serving the model now, or null
+ * @returns the providers, as the value to store and its label
+ */
+export const getAddablePricingProviders = (
+	entries: readonly Record<string, unknown>[],
+	servingProvider: string | null,
+): ModelMetadataOption[] => {
+	const priced = new Set(
+		entries.flatMap((entry) =>
+			typeof entry.servingProvider === "string"
+				? [toPricingProviderKey(entry.servingProvider)]
+				: [],
+		),
+	);
+	const own = servingProvider ? toPricingProviderKey(servingProvider) : null;
+	const options: ModelMetadataOption[] = [...SERVING_PROVIDER_OPTIONS];
+	// a serving provider the list does not have can still be priced
+	if (
+		servingProvider &&
+		!options.some((option) => toPricingProviderKey(option.value) === own)
+	) {
+		options.push({
+			value: servingProvider,
+			label: formatPricingProviderLabel(servingProvider),
+		});
+	}
+	const addable = options.filter(
+		(option) => !priced.has(toPricingProviderKey(option.value)),
+	);
+	const ownOption = addable.find(
+		(option) => toPricingProviderKey(option.value) === own,
+	);
+	return ownOption
+		? [ownOption, ...addable.filter((option) => option !== ownOption)]
+		: addable;
 };
 
 /**
@@ -436,7 +527,7 @@ export interface ReasoningConfig {
 
 /** The stored config, or null when the column is empty. */
 export const toReasoningConfig = (value: unknown): ReasoningConfig | null => {
-	if (!value || typeof value !== "object" || Array.isArray(value)) {
+	if (!isRecord(value)) {
 		return null;
 	}
 
@@ -598,18 +689,13 @@ const normalizeBenchmarks = (value: unknown): ModelBenchmark[] => {
 		return [];
 	}
 
-	const optionalText = (raw: unknown) => {
-		const text = typeof raw === "string" ? raw.trim() : "";
-		return text !== "" ? text : undefined;
-	};
-
 	return value.flatMap((entry) => {
 		if (!entry || typeof entry !== "object") {
 			return [];
 		}
 
 		const record = entry as Record<string, unknown>;
-		const name = optionalText(record.name);
+		const name = readNonBlankString(record.name)?.trim();
 		const score = Number(record.score);
 
 		if (!name || !Number.isFinite(score)) {
@@ -620,11 +706,11 @@ const normalizeBenchmarks = (value: unknown): ModelBenchmark[] => {
 			{
 				name,
 				score,
-				metric: optionalText(record.metric),
-				harness: optionalText(record.harness),
-				variant: optionalText(record.variant),
-				version: optionalText(record.version),
-				dataset: optionalText(record.dataset),
+				metric: readNonBlankString(record.metric)?.trim(),
+				harness: readNonBlankString(record.harness)?.trim(),
+				variant: readNonBlankString(record.variant)?.trim(),
+				version: readNonBlankString(record.version)?.trim(),
+				dataset: readNonBlankString(record.dataset)?.trim(),
 			},
 		];
 	});
@@ -656,18 +742,15 @@ export const normalizePricing = (value: unknown): ModelPricing[] => {
 		return undefined;
 	};
 
-	const optionalText = (raw: unknown) => {
-		const text = typeof raw === "string" ? raw.trim() : "";
-		return text !== "" ? text : undefined;
-	};
-
 	return value.flatMap((entry) => {
-		if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+		if (!isRecord(entry)) {
 			return [];
 		}
 
 		const record = entry as Record<string, unknown>;
-		const servingProvider = optionalText(record.servingProvider);
+		const servingProvider = readNonBlankString(
+			record.servingProvider,
+		)?.trim();
 		const input = optionalRate(record.input);
 		const output = optionalRate(record.output);
 		const cacheRead = optionalRate(record.cache_read);
@@ -686,7 +769,7 @@ export const normalizePricing = (value: unknown): ModelPricing[] => {
 		return [
 			{
 				servingProvider,
-				modelId: optionalText(record.modelId),
+				modelId: readNonBlankString(record.modelId)?.trim(),
 				input,
 				output,
 				cache_read: cacheRead,

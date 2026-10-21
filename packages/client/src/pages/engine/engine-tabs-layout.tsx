@@ -15,9 +15,14 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { EngineAccessButton, EngineExportButton } from "@/components/engine";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useEngine } from "@/hooks";
+import { setEngineDisplayName } from "@/api/engines";
+import { EngineAccessButton } from "@/components/engine/engine-access-button";
+import { EngineExportButton } from "@/components/engine/engine-export-button";
+import { NavbarHeader } from "@/components/shared/navbar-header";
+import { NavbarLeft } from "@/components/shared/navbar-left";
+import { MyUsageLimitButton } from "@/features/usage-limit-path/my-usage-limit-button";
+import { useSession } from "@/hooks/use-session";
+import { useEngine } from "@/hooks/useEngine";
 import { useNavigate } from "@/hooks/useNavigate";
 
 interface EngineTabsLayoutProps {
@@ -39,13 +44,16 @@ interface EngineTabsLayoutProps {
 export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
-	const { catalog, engine, permission, type } = useEngine();
+	const { catalog, engine, permission, type, update } = useEngine();
+	const insightID = useSession((state) => state.insightID);
+	const isAdmin = useSession((state) => state.user.admin);
 	const enginePath = `${catalog.path}/${engine.engine_id}`;
 
 	// get the visible tabs based on permission
 	const visibleTabs = useMemo(() => {
 		// get the routes based on permission
 		return tabs.filter((tab) => {
+			if (tab.path === "audit" && isAdmin) return true;
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -54,7 +62,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 			}
 			return tab.restrict.includes(permission);
 		});
-	}, [tabs, permission]);
+	}, [tabs, permission, isAdmin]);
 
 	/**
 	 * Gets active tab
@@ -81,6 +89,14 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 
 		return -1;
 	}, [visibleTabs, enginePath, pathname]);
+
+	/**
+	 * Save the engine's new display name and show it in place
+	 */
+	const handleRename = async (name: string) => {
+		await setEngineDisplayName(insightID, engine.engine_id, name);
+		update({ engine_display_name: name });
+	};
 
 	if (activeTabIdx === -1 && visibleTabs.length > 0) {
 		const firstTabPath = visibleTabs[0].path;
@@ -129,21 +145,36 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 							<EngineSubtypeIcon
 								engineType={type}
 								engineSubtype={engine.engine_subtype}
-								alt={catalog.name}
-								className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
+								alt=""
+								className="size-full object-contain"
 							/>
 						}
 						name={engine.engine_display_name || engine.engine_name}
 						id={engine.engine_id}
-						copyLabel={`Copy ${name} ID`}
+						copyLabel={`Copy ${catalog.name} ID`}
 						nameTestId="Title"
-						idTestId={`engineHeader-${name}-id`}
-						copyTestId={`engineHeader-copy-${name}-id-btn`}
+						idTestId={`engineHeader-${catalog.name}-id`}
+						copyTestId={`engineHeader-copy-${catalog.name}-id-btn`}
+						onRename={
+							permission === "OWNER" ? handleRename : undefined
+						}
+						renameLabel={`Rename ${catalog.name}`}
 						actions={
 							<>
 								<EngineAccessButton />
 
 								<EngineExportButton />
+								{/* anyone who can use a model can see their own limit on it */}
+								{type === "MODEL" &&
+								permission !== "DISCOVERABLE" ? (
+									<MyUsageLimitButton
+										engineId={engine.engine_id}
+										modelName={
+											engine.engine_display_name ||
+											engine.engine_name
+										}
+									/>
+								) : null}
 								{(permission === "OWNER" ||
 									permission === "EDIT" ||
 									permission === "READ_ONLY") && (
@@ -162,7 +193,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 						}
 					/>
 				</div>
-				<div className="flex flex-col rounded-lg bg-(--muted)">
+				<div className="flex flex-col rounded-lg bg-muted">
 					{visibleTabs.length > 0 && (
 						<div>
 							<Tabs
@@ -173,7 +204,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 								}
 								className="gap-0 bg-transparent"
 							>
-								<div className="w-full overflow-x-auto md:w-[80%]">
+								<div className="w-full overflow-x-auto md:w-4/5">
 									<TabsList className="w-max flex-nowrap gap-2">
 										{visibleTabs.map((t) => (
 											<TabsTrigger
@@ -196,7 +227,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 							</Tabs>
 						</div>
 					)}
-					<div className="w-full bg-(--card) p-4">
+					<div className="w-full bg-card p-4">
 						<Outlet />
 					</div>
 				</div>

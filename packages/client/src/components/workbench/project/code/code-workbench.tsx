@@ -17,8 +17,11 @@ import {
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
+import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
+import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
 import { useAssistantStore, useProject, useSession } from "@/hooks";
 import type { BuildRun } from "@/stores/assistant";
+import { APP_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_EVENTS,
@@ -149,6 +152,11 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 			restrict: ["OWNER", "EDIT", "READ_ONLY"],
 		},
 		{
+			name: "Activity Log",
+			component: "activity",
+			restrict: ["OWNER", "EDIT", "READ_ONLY"],
+		},
+		{
 			name: "GitHub",
 			component: "github",
 			restrict: ["OWNER"],
@@ -163,12 +171,10 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 			component: "access-control",
 			restrict: ["OWNER", "EDIT"],
 		},
-		{
-			name: "SMSS",
-			component: "smss",
-			restrict: ["OWNER"],
-		},
+		{ name: "Audit Trail", component: "audit", restrict: ["OWNER"] },
+		{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 	]),
+	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
@@ -267,6 +273,7 @@ export const CodeWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
+			defaultAgent: APP_BUILDER_AGENT,
 			systemPrompt: `You are the assistant for the ${name} code workbench (${project.project_id}). Your role is to help the user build and run this app and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
 			mcp: [
 				{

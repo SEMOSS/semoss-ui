@@ -1,10 +1,10 @@
 @import "@semoss/ui/globals.css";
 @import "@semoss/shared/globals.css";
+@import "@semoss/renderer/globals.css";
 @import "@semoss/workbench/globals.css";
 @import "@semoss/panels/globals.css";
-@import "../../../libs/shared/src/components/flex-layout/flexlayout.css";
+@import "@semoss/shared/flexlayout.css";
 
 @source "./**/*.{ts,tsx}";
-@source "../../../libs/shared/src/**/*.{ts,tsx}";
 @source "../../terminal/src/**/*.{ts,tsx}";
 @source "../../automation/src/**/*.{ts,tsx}";

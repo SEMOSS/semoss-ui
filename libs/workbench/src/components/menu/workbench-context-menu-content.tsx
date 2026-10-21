@@ -123,7 +123,7 @@ export const WorkbenchPanelMenuContent: FC<{ pid: WorkbenchPanelId }> = ({
 				<ContextMenuItem
 					onSelect={() => actions.toggleBorderPanel(side, pid)}
 				>
-					{open ? "Collapse to rail" : "Open"}
+					{open ? "Collapse to Rail" : "Open"}
 				</ContextMenuItem>
 			</ContextMenuGroup>
 		);

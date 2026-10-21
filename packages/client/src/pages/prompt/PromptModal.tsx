@@ -137,7 +137,9 @@ export const PromptModal = (props: PromptModalProps) => {
 		>
 			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
-					<DialogTitle>{mode} Prompt</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						{mode} Prompt
+					</DialogTitle>
 					{mode === "Edit" && initialData?.version != null && (
 						<DialogDescription>
 							Editing version {initialData.version + 1}. Saving
@@ -215,7 +217,7 @@ export const PromptModal = (props: PromptModalProps) => {
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
 							<Label htmlFor={`${id}-global`}>Global</Label>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Info className="size-4 cursor-help text-muted-foreground" />
 								</TooltipTrigger>

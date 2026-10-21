@@ -1,6 +1,5 @@
 import {
 	AlertCircle,
-	CheckIcon,
 	ImageIcon,
 	SquareArrowOutUpRightIcon,
 	TriangleAlert,
@@ -11,6 +10,7 @@ import {
 	Button,
 	Card,
 	CardContent,
+	Checkbox,
 	cn,
 	Tooltip,
 	TooltipContent,
@@ -118,7 +118,12 @@ export const MCPCard = ({
 				fromWorkspace && "cursor-not-allowed",
 				selected && "border-primary",
 			)}
-			onClick={effectiveOnClick}
+			onClick={(event) => {
+				// Radix's hidden form input emits clicks on controlled updates
+				// too. Removing a chip must not toggle its card back on.
+				if (event.target instanceof HTMLInputElement) return;
+				effectiveOnClick?.();
+			}}
 		>
 			<CardContent className="flex flex-col gap-2 p-3">
 				{/* Row 1: external link + warning icons + permission name on
@@ -126,7 +131,7 @@ export const MCPCard = ({
 				<div className="flex items-center gap-2">
 					<div className="flex min-w-0 flex-1 items-center gap-1.5">
 						{platformUrl ? (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<a
 										target="_blank"
@@ -149,7 +154,7 @@ export const MCPCard = ({
 						) : null}
 
 						{effectivePermission === "FULLY_PRIVATE" ? (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<AlertCircle className="size-4 cursor-help text-destructive" />
 								</TooltipTrigger>
@@ -163,7 +168,7 @@ export const MCPCard = ({
 
 						{(missingSubDependencies || accessMissing) &&
 						effectivePermission !== "FULLY_PRIVATE" ? (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<TriangleAlert
 										className={cn(
@@ -215,21 +220,13 @@ export const MCPCard = ({
 								{t("common:badges.fromAgent")}
 							</Badge>
 						) : selected !== undefined ? (
-							<div
-								className={cn(
-									"flex size-4 items-center justify-center rounded border transition-colors",
-									selected
-										? "border-primary bg-primary text-primary-foreground"
-										: "border-muted-foreground/40",
-								)}
-							>
-								{selected ? (
-									<CheckIcon
-										className="size-3"
-										strokeWidth={3}
-									/>
-								) : null}
-							</div>
+							<Checkbox
+								aria-label={m.name}
+								checked={selected}
+								disabled={!effectiveOnClick}
+								onCheckedChange={() => effectiveOnClick?.()}
+								onClick={(event) => event.stopPropagation()}
+							/>
 						) : null}
 					</div>
 				</div>
@@ -244,6 +241,7 @@ export const MCPCard = ({
 						</div>
 					) : m.type === "PROJECT" ? (
 						<AppCatalogAvatar
+							projectId={m.id}
 							name={m.name}
 							className="size-10 shrink-0 rounded-md text-sm"
 						/>

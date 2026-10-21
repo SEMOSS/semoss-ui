@@ -13,9 +13,9 @@
 		"cancel": "Cancel",
 		"expand": "Expand",
 		"collapse": "Collapse",
-		"openInSidebar": "Open in sidebar",
-		"closeInSidebar": "Close sidebar",
-		"openInline": "Open in-line"
+		"openInSidebar": "Open in Sidebar",
+		"closeInSidebar": "Close Sidebar",
+		"openInline": "Open In-Line"
 	},
 	"tabs": {
 		"output": "Output",
@@ -70,5 +70,42 @@
 		"cancel": "Cancel",
 		"retry": "Retry",
 		"checking": "Checking..."
+	},
+	"activity": {
+		"steps": "Tool activity ({{count}})",
+		"needsInput": "Your input is needed",
+		"cancelError": "Unable to cancel this tool.",
+		"actions": "Tool actions"
+	},
+	"inspector": {
+		"input": "Input",
+		"info": "Info",
+		"tabsLabel": "Tool details",
+		"find": "Find",
+		"copy": "Copy",
+		"copied": "Copied to clipboard",
+		"copyFailed": "Could not copy to clipboard",
+		"wrap": "Wrap lines",
+		"foldAll": "Collapse all",
+		"unfoldAll": "Expand all",
+		"text": "Text",
+		"expandedDescription": "Read-only payload. Search, copy, or collapse sections to explore the data.",
+		"toolName": "Tool name",
+		"callId": "Call ID",
+		"source": "Source",
+		"execution": "Execution mode",
+		"inputSchema": "Input schema",
+		"metadata": "Metadata",
+		"emptyOutput": "This tool returned no output.",
+		"runningOutput": "The tool is running. Output will appear here.",
+		"inputView": "Input view",
+		"pretty": "Pretty",
+		"raw": "Raw",
+		"emptyString": "Empty string",
+		"itemCount": "Items: {{total}}",
+		"fieldCount": "Fields: {{total}}",
+		"showMore": "Show more ({{remaining}} remaining)",
+		"showLess": "Show less",
+		"showFullValue": "Show full value"
 	}
 }

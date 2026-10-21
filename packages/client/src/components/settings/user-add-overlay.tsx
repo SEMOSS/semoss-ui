@@ -1,6 +1,15 @@
 import { Download, Shield, Upload } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import type { ModelUsageLimit, UserSearchResult } from "@semoss/sdk";
+import {
+	findModelUsageLimitProblem,
+	ModelUsageLimitEditor,
+	type ModelUsageLimitEditorHandle,
+	PersonIdentity,
+	toExplicitUsageLimit,
+	UsageLimitGuideButton,
+} from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -9,6 +18,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Input,
+	Item,
+	ItemActions,
+	ItemContent,
 	Label,
 	Select,
 	SelectContent,
@@ -16,9 +28,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Switch,
+	ToggleGroup,
+	ToggleGroupItem,
 	toast,
 } from "@semoss/ui/next";
 import { createUser, editMemberInfo } from "@/api";
+import {
+	DirectoryPersonSearch,
+	getPersonLabel,
+} from "@/features/directory-person-search/directory-person-search";
 import { useConfig, useSettings } from "@/hooks";
 import type { ApiResponse } from "@/types";
 
@@ -33,11 +51,8 @@ interface User {
 	phone?: string;
 	phoneextension?: string;
 	username?: string;
-	model_usage_restriction?: string;
-	model_usage_frequency?: string;
-	model_max_tokens?: number;
-	model_max_response_time?: number;
-	unit?: string;
+	/** The person's default for all models, or null for no limit defined */
+	model_usage_limit?: ModelUsageLimit | null;
 }
 
 interface EditUserForm {
@@ -56,11 +71,6 @@ interface EditUserForm {
 	exporter: boolean;
 	publisher: boolean;
 	type: string;
-	model_usage_restriction?: string;
-	model_usage_frequency?: string;
-	model_max_tokens?: number;
-	model_max_response_time?: number;
-	unit?: string;
 }
 
 const passwordValidate = (password: string) => {
@@ -111,6 +121,19 @@ const emailValidate = (email: string) => {
 	return emailRegex.test(email);
 };
 
+/** How a new member's details are entered */
+type EntryMode = "directory" | "manual";
+
+/** Narrows a toggle value to an entry mode */
+const isEntryMode = (value: string): value is EntryMode =>
+	value === "directory" || value === "manual";
+
+/** Values the form starts from for a new member */
+const NEW_USER_VALUES: Partial<EditUserForm> = {};
+
+/** Lets a toggle label wrap instead of overflowing a narrow dialog */
+const ENTRY_MODE_ITEM_CLASS = "h-auto min-h-9 flex-1 whitespace-normal py-1.5";
+
 interface UserAddOverlayProps {
 	/**
 	 * Track if the model is open or close
@@ -139,13 +162,38 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 	const { adminMode } = useSettings();
 
 	const isNewUser = user === null;
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config.msGraphLookup === true,
+	);
+	const [entryMode, setEntryMode] = useState<EntryMode>("directory");
+	const [selectedPerson, setSelectedPerson] =
+		useState<UserSearchResult | null>(null);
+	const entryModeLabelId = useId();
+	const entryModeHintId = useId();
+	// a new member can be found in the organization's directory instead of typed in
+	const canFindInDirectory = isNewUser && isDirectoryAvailable;
+	const isFindingInDirectory =
+		canFindInDirectory && entryMode === "directory";
+	// the default for all models, kept beside the form; a new key starts its editor again
+	const [usageLimit, setUsageLimit] = useState<ModelUsageLimit | null>(
+		user?.model_usage_limit ?? null,
+	);
+	const [limitKey, setLimitKey] = useState(0);
+	const limitProblem = findModelUsageLimitProblem(usageLimit, {
+		source: "ALL_MODELS",
+		isCostAvailable: true,
+	});
+	// the limit's problems show from the first save they stop
+	const [shouldShowLimitProblems, setShouldShowLimitProblems] =
+		useState(false);
+	const limitEditorRef = useRef<ModelUsageLimitEditorHandle>(null);
 
 	const {
 		control,
 		reset,
 		handleSubmit,
 		watch,
-		formState: { errors },
+		formState: { errors, isSubmitting },
 	} = useForm<EditUserForm>({
 		defaultValues: {
 			id: user?.id,
@@ -158,49 +206,85 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 			exporter: user?.exporter,
 			publisher: user?.exporter,
 			type: user?.type,
-			model_usage_restriction: user?.model_usage_restriction
-				? user?.model_usage_restriction
-				: "null",
-			model_usage_frequency: user?.model_usage_frequency,
-			model_max_tokens: user?.model_max_tokens,
-			model_max_response_time: user?.model_max_response_time,
 		},
 	});
 
 	useEffect(() => {
 		// reset on open or close
-		reset({
-			...(user || {}),
-			model_usage_restriction: user?.model_usage_restriction ?? "null", // always set default for new user
-		});
+		reset({ ...(user || {}) });
+		setUsageLimit(user?.model_usage_limit ?? null);
+		setLimitKey((key) => key + 1);
+		setShouldShowLimitProblems(false);
 	}, [user, reset]);
 
 	const type = watch("type", "");
-	const limitType = watch("model_usage_restriction", "");
 	const email = watch("email");
 	const userId = watch("id", "");
 	const userName = watch("name", "");
-	const isSaveDisabled = !userId?.trim() || !userName?.trim();
+	const isSaveDisabled =
+		!userId?.trim() ||
+		!userName?.trim() ||
+		(isFindingInDirectory && !selectedPerson) ||
+		isSubmitting;
 
-	const usageRestritctionTypes: Record<string, string> = {
-		null: "None",
-		token: "Token",
-		compute: "Compute time",
+	/**
+	 * Closes the overlay, clearing the directory choice and, for a new member,
+	 * the entered values
+	 */
+	const handleClose = (success: boolean) => {
+		setEntryMode("directory");
+		setSelectedPerson(null);
+		setShouldShowLimitProblems(false);
+		if (isNewUser) {
+			reset(NEW_USER_VALUES);
+			setUsageLimit(null);
+			setLimitKey((key) => key + 1);
+		}
+		onClose(success);
 	};
-	const frequencyTypes: Record<string, string> = {
-		DAY: "Daily",
-		WEEK: "Weekly",
-		MONTH: "Monthly",
-		YEAR: "Yearly",
-		ALL_TIME: "All time",
+
+	/** Fills the form from the person picked in the directory */
+	const handleSelectPerson = (person: UserSearchResult) => {
+		setSelectedPerson(person);
+		reset({
+			...NEW_USER_VALUES,
+			type: person.type ?? "MICROSOFT",
+			id: person.id,
+			name: person.name ?? "",
+			email: person.email ?? "",
+			username: person.username ?? "",
+		});
 	};
-	const unitTypes: string[] = ["milliseconds"];
+
+	/** Starts the directory search over */
+	const handleClearPerson = () => {
+		setSelectedPerson(null);
+		reset(NEW_USER_VALUES);
+	};
+
+	const handleEntryModeChange = (value: string) => {
+		// a single toggle group sends "" when the active item is pressed again
+		if (!isEntryMode(value)) {
+			return;
+		}
+		setEntryMode(value);
+		// typing details keeps whoever was picked; searching starts over
+		if (value === "directory") {
+			handleClearPerson();
+		}
+	};
 
 	/**
 	 * Create / edit the user
 	 */
 	const editUser = handleSubmit(
 		async (data: EditUserForm) => {
+			// a limit that cannot be saved stops the save and shows why
+			if (limitProblem) {
+				setShouldShowLimitProblems(true);
+				limitEditorRef.current?.focusFirstProblem();
+				return;
+			}
 			if (email !== user?.email) {
 				data.newEmail = email;
 			}
@@ -215,24 +299,11 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 					  }
 					| null = null;
 
-				if (data.model_usage_restriction === "token") {
-					data.model_max_response_time = null;
-				}
-				if (data.model_usage_restriction === "compute") {
-					data.model_max_tokens = null;
-				}
-				if (data.model_usage_restriction === "null") {
-					data.model_usage_restriction = null;
-					data.model_max_response_time = null;
-					data.model_max_tokens = null;
-					data.model_usage_frequency = null;
-				}
-
 				if (isNewUser) {
-					response = await createUser(
-						adminMode,
-						data as unknown as Record<string, unknown>,
-					);
+					response = await createUser(adminMode, {
+						...data,
+						model_usage_limit: usageLimit,
+					});
 				} else {
 					if (
 						data.exporter === undefined ||
@@ -247,7 +318,13 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 							data.exporter = false;
 						}
 					}
-					response = await editMemberInfo(adminMode, data);
+					response = await editMemberInfo(adminMode, {
+						...data,
+						exporter: data.exporter,
+						publisher: data.publisher,
+						// an empty limit says no limit defined, which clears a limit the member has
+						model_usage_limit: toExplicitUsageLimit(usageLimit),
+					});
 				}
 
 				if (!response) {
@@ -272,11 +349,15 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 				toast.error(String(e));
 			} finally {
 				// close the overlay
-				onClose(success);
+				handleClose(success);
 			}
 		},
 		(e) => {
 			console.warn(e);
+			// the limit's problems show beside the fields' errors
+			if (limitProblem) {
+				setShouldShowLimitProblems(true);
+			}
 
 			const errorMessages = [];
 			for (const error in e) {
@@ -300,16 +381,97 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 	return (
 		<Dialog
 			open={open}
-			onOpenChange={(isOpen) => !isOpen && onClose(false)}
+			onOpenChange={(isOpen) => !isOpen && handleClose(false)}
 		>
-			<DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+			<DialogContent
+				aria-describedby={undefined}
+				className="max-h-[85vh] max-w-3xl overflow-y-auto"
+			>
 				<DialogHeader>
-					<DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
 						{isNewUser ? "Add Member" : "Edit Member"}
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={editUser} className="space-y-6">
-					<section className="space-y-3">
+					{canFindInDirectory ? (
+						<section className="space-y-3">
+							<p
+								id={entryModeLabelId}
+								className="font-medium text-sm"
+							>
+								How do you want to add this person?
+							</p>
+							<ToggleGroup
+								type="single"
+								variant="outline"
+								value={entryMode}
+								onValueChange={handleEntryModeChange}
+								aria-labelledby={entryModeLabelId}
+								aria-describedby={entryModeHintId}
+								className="w-full"
+							>
+								<ToggleGroupItem
+									value="directory"
+									className={ENTRY_MODE_ITEM_CLASS}
+								>
+									Find in Your Organization
+								</ToggleGroupItem>
+								<ToggleGroupItem
+									value="manual"
+									className={ENTRY_MODE_ITEM_CLASS}
+								>
+									Enter Details Myself
+								</ToggleGroupItem>
+							</ToggleGroup>
+							<p
+								id={entryModeHintId}
+								className="text-muted-foreground text-xs"
+							>
+								{entryMode === "directory"
+									? "Search by name and their details are filled in for you. They sign in with their Microsoft account."
+									: "Type in the person's sign in details yourself."}
+							</p>
+						</section>
+					) : null}
+
+					{isFindingInDirectory ? (
+						<section className="space-y-3">
+							<p className="font-medium text-sm">Person</p>
+							{selectedPerson ? (
+								<Item variant="outline" size="sm">
+									<ItemContent className="min-w-0">
+										<PersonIdentity
+											name={getPersonLabel(
+												selectedPerson,
+											)}
+											type={selectedPerson.type ?? ""}
+											id={selectedPerson.id}
+											email={selectedPerson.email}
+										/>
+									</ItemContent>
+									<ItemActions>
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											onClick={handleClearPerson}
+										>
+											Choose Someone Else
+										</Button>
+									</ItemActions>
+								</Item>
+							) : (
+								<DirectoryPersonSearch
+									onSelect={handleSelectPerson}
+								/>
+							)}
+						</section>
+					) : null}
+
+					<section
+						className="space-y-3"
+						hidden={isFindingInDirectory}
+					>
 						<p className="font-medium text-sm">Credentials</p>
 						<div className="grid gap-4">
 							<Controller
@@ -482,7 +644,10 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 						)}
 					</section>
 
-					<section className="space-y-3">
+					<section
+						className="space-y-3"
+						hidden={isFindingInDirectory}
+					>
 						<p className="font-medium text-sm">Details</p>
 						<div className="grid gap-4">
 							<Controller
@@ -623,212 +788,36 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 						</div>
 					</section>
 
-					<section className="space-y-3">
+					<section
+						className="space-y-3"
+						hidden={isFindingInDirectory && !selectedPerson}
+					>
 						<p className="font-medium text-sm">
-							Model Limit Restrictions
+							User's Total Model Limit
 						</p>
-						<div className="grid gap-4">
-							<Controller
-								name="model_usage_restriction"
-								defaultValue={"null"}
-								control={control}
-								rules={{ required: true }}
-								render={({ field }) => {
-									return (
-										<div className="grid gap-1.5">
-											<Label>Limit Type</Label>
-											<Select
-												value={
-													field.value
-														? field.value
-														: ""
-												}
-												onValueChange={(value) => {
-													field.onChange(value);
-												}}
-												data-testid="model-usage-restriction"
-											>
-												<SelectTrigger>
-													<SelectValue placeholder="Select limit type" />
-												</SelectTrigger>
-												<SelectContent>
-													{Object.entries(
-														usageRestritctionTypes,
-													).map((option, _i) => {
-														return (
-															<SelectItem
-																value={
-																	option[0]
-																}
-																key={`LimitType-${option[0]}`}
-															>
-																{option[1]}
-															</SelectItem>
-														);
-													})}
-												</SelectContent>
-											</Select>
-										</div>
-									);
-								}}
-							/>
-							{limitType === "token" && (
-								<Controller
-									name="model_max_tokens"
-									control={control}
-									rules={{ required: true }}
-									render={({ field }) => {
-										return (
-											<div className="grid gap-1.5">
-												<Label>Max Tokens</Label>
-												<Input
-													type="number"
-													value={
-														field.value
-															? field.value
-															: ""
-													}
-													onChange={(e) => {
-														field.onChange(
-															Number(
-																e.target.value,
-															),
-														);
-													}}
-													data-testid="model-max-tokens"
-												/>
-											</div>
-										);
-									}}
-								/>
-							)}
-							{limitType === "compute" && (
-								<div className="grid gap-4 md:grid-cols-[2fr_1fr]">
-									<Controller
-										name="model_max_response_time"
-										control={control}
-										rules={{ required: true }}
-										render={({ field }) => {
-											return (
-												<div className="grid gap-1.5">
-													<Label>
-														Max Response Time
-													</Label>
-													<Input
-														type="number"
-														value={
-															field.value
-																? field.value
-																: ""
-														}
-														onChange={(e) => {
-															field.onChange(
-																Number(
-																	e.target
-																		.value,
-																),
-															);
-														}}
-														data-testid="model-max-response-time"
-													/>
-												</div>
-											);
-										}}
-									/>
-									<Controller
-										name="unit"
-										control={control}
-										rules={{}}
-										render={() => {
-											return (
-												<div className="grid gap-1.5">
-													<Label>Unit</Label>
-													<Select
-														value={unitTypes[0]}
-														data-testid="unit-select"
-													>
-														<SelectTrigger>
-															<SelectValue />
-														</SelectTrigger>
-														<SelectContent>
-															{unitTypes.map(
-																(
-																	option,
-																	_i,
-																) => {
-																	return (
-																		<SelectItem
-																			value={
-																				option
-																			}
-																			key={`UnitType-${option}`}
-																			data-testid={`unit-select-${option}`}
-																		>
-																			{
-																				option
-																			}
-																		</SelectItem>
-																	);
-																},
-															)}
-														</SelectContent>
-													</Select>
-												</div>
-											);
-										}}
-									/>
-								</div>
-							)}
-							{limitType !== "null" && (
-								<Controller
-									name="model_usage_frequency"
-									control={control}
-									rules={{}}
-									render={({ field }) => {
-										return (
-											<div className="grid gap-1.5">
-												<Label>Frequency</Label>
-												<Select
-													value={
-														field.value
-															? field.value
-															: ""
-													}
-													onValueChange={(value) => {
-														field.onChange(value);
-													}}
-													data-testid="model-usage-frequency"
-												>
-													<SelectTrigger>
-														<SelectValue placeholder="Select frequency" />
-													</SelectTrigger>
-													<SelectContent>
-														{Object.entries(
-															frequencyTypes,
-														).map((option, _i) => {
-															return (
-																<SelectItem
-																	value={
-																		option[0]
-																	}
-																	key={`FrequencyType-${option[0]}`}
-																	data-testid={`frequency-select-${option[0]}`}
-																>
-																	{option[1]}
-																</SelectItem>
-															);
-														})}
-													</SelectContent>
-												</Select>
-											</div>
-										);
-									}}
-								/>
-							)}
-						</div>
+						<p className="text-muted-foreground text-xs">
+							This member's limit on any model where nothing more
+							specific applies: a Direct Limit, a Team Limit or
+							the Public Use Limit. Cost rules do not count models
+							without known prices.
+						</p>
+						<ModelUsageLimitEditor
+							key={limitKey}
+							ref={limitEditorRef}
+							defaultValue={usageLimit}
+							onChange={setUsageLimit}
+							source="ALL_MODELS"
+							label="Usage Limit"
+							shouldShowProblems={shouldShowLimitProblems}
+							disabled={isSubmitting}
+						/>
+						<UsageLimitGuideButton viewer={{ isAdminMode: true }} />
 					</section>
 
-					<section className="space-y-3">
+					<section
+						className="space-y-3"
+						hidden={isFindingInDirectory && !selectedPerson}
+					>
 						<p className="font-medium text-sm">Permissions</p>
 						<div className="space-y-2">
 							<div className="flex items-start justify-between gap-4 rounded-md border border-border/60 p-3">
@@ -924,7 +913,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 						<Button
 							variant="outline"
 							type="button"
-							onClick={() => onClose(false)}
+							onClick={() => handleClose(false)}
 						>
 							Cancel
 						</Button>

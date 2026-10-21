@@ -49,6 +49,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "PERPLEXITY", icon: "PERPLEXITY.svg" },
 		{ name: "TEXT_EMBEDDINGS", icon: "HUGGINGFACE_COLOR.svg" },
 		{ name: "TEXT_GENERATION", icon: "HUGGINGFACE_COLOR.svg" },
+		{ name: "TYPESAFE", icon: "TYPESAFE.png" },
 		{ name: "VERTEX", icon: "GEMINI_COLOR.svg" },
 		// Self-hosted / long-tail brand keys (keep alphabetical)
 		{ name: "FALCON", icon: "FALCON_AI.png" },
@@ -106,7 +107,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "EMBEDDED_PERSPECTIVE_API", icon: "BRAIN.png" },
 		{ name: "EMBEDDED_PROMPTGUARD_META", icon: "META_COLOR.svg" },
 		{ name: "EMBEDDED_REBUFF", icon: "BRAIN.png" },
-		{ name: "EMBEDDED_SQL_QUERY", icon: "DATABASE.svg" },
+		{ name: "EMBEDDED_SQL_QUERY", icon: "SQL_QUERY_POLICY.svg" },
 		{ name: "GLINER", icon: "HUGGINGFACE_COLOR.svg" },
 		{ name: "LOCAL_PYTHON", icon: "PYTHON.svg" },
 	],

@@ -1,121 +1,94 @@
-import { MonitorXIcon, TvMinimalIcon, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
-	Button,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
+	type FileExplorerHost,
+	FileExplorerHostProvider,
+} from "@semoss/panels";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
-import { RoomProvider } from "@/contexts";
-import { ROOM_SIDEBAR_LAYOUT, type RoomStore } from "@/stores";
+import { RoomProvider } from "@/contexts/room.context";
+import { normalizeFolderPath } from "@/features/chat-tools/folders/folder-path";
+import { useNextMessageRoom } from "@/features/conversation/next-message-room.context";
+import { RoomWorkbenchMenus } from "@/features/workbench/room-workbench-menus";
+import type { WorkspaceMenuItemsProps } from "@/features/workbench/workspace-menu-items";
+import type { RoomStore } from "@/stores/room/room.store";
+import { RoomSidebarActions } from "./room-sidebar-actions";
 
 interface RoomSidebarProps {
-	/** Room to render */
+	/** The room owns the dock, including while this view is hidden. */
 	room: RoomStore;
+	/** Use the new-chat draft's settings before its first submission. */
+	onOpenSettings?: () => void;
+	/** Draft-specific destinations, including lazy preparation for Files. */
+	workspaceActions?: Omit<WorkspaceMenuItemsProps, "onNavigate">;
+	/** Publishing becomes available once the draft has prepared a room. */
+	canPublish?: boolean;
 }
 
-/**
- * The room's right-hand panel: a workbench dock holding tools, subagents, the
- * room's configuration and activity log, and the shared file panels.
- *
- * Close and maximize sit in the dock's top rail rather than in a panel's tab
- * strip — they act on the sidebar container, not on any panel. The one
- * control that genuinely belongs to a panel, "open inline", is registered by
- * the tool panel itself.
- *
- * The dock store belongs to the room, not to this component: panels are opened
- * while the sidebar is closed, and this whole subtree unmounts when it is.
- */
-export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
-	const { t } = useTranslation("sidebar");
-	const isMaximized = room.sidebar.isMaximized;
-
-	return (
-		<div className="relative h-full w-full overflow-hidden">
-			<div
-				className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${
-					isMaximized
-						? "pointer-events-auto opacity-100"
-						: "pointer-events-none hidden opacity-0"
-				}`}
-			/>
-			<div
-				className={`flex flex-col overflow-hidden transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50 rounded-lg border border-border bg-background shadow-sm" : "h-full w-full"}`}
-			>
+/** A contextual work area whose editors stay mounted through view changes. */
+export const RoomSidebar = observer(
+	({
+		room,
+		onOpenSettings,
+		workspaceActions,
+		canPublish = true,
+	}: RoomSidebarProps) => {
+		const { t } = useTranslation("connectors");
+		const nextMessageRoom = useNextMessageRoom() ?? room;
+		const explorerHost = useMemo<FileExplorerHost>(
+			() => ({
+				secondaryActions: (item) =>
+					item.type === "directory"
+						? []
+						: [
+								{
+									name: t("actions.addToContext"),
+									placement: "end",
+									action: async () => {
+										nextMessageRoom.contextItems.add({
+											path: normalizeFolderPath(
+												item.path,
+											),
+											name: item.name,
+										});
+									},
+								},
+							],
+			}),
+			[nextMessageRoom, t],
+		);
+		return (
+			// The workbench's absolute shell must stay inside this pane.
+			<div className="relative h-full min-h-0 w-full bg-background">
 				<RoomProvider room={room}>
 					<WorkbenchProvider store={room.workbench}>
-						<Workbench
-							snapshot={ROOM_SIDEBAR_LAYOUT}
-							borderSlots={{
-								top: {
-									after: (
-										<>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														className="flex-none text-muted-foreground"
-														aria-label={
-															isMaximized
-																? t(
-																		"actions.minimize",
-																	)
-																: t(
-																		"actions.maximize",
-																	)
-														}
-														onClick={() =>
-															room.setSidebarMaximized(
-																!isMaximized,
-															)
-														}
-													>
-														{isMaximized ? (
-															<MonitorXIcon className="size-3.5" />
-														) : (
-															<TvMinimalIcon className="size-3.5" />
-														)}
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{isMaximized
-														? t("actions.minimize")
-														: t("actions.maximize")}
-												</TooltipContent>
-											</Tooltip>
-											{isMaximized ? null : (
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Button
-															variant="ghost"
-															size="icon-sm"
-															className="flex-none text-muted-foreground"
-															aria-label={t(
-																"actions.close",
-															)}
-															onClick={() =>
-																room.closeSidebar()
-															}
-														>
-															<XIcon className="size-3.5" />
-														</Button>
-													</TooltipTrigger>
-													<TooltipContent>
-														{t("actions.close")}
-													</TooltipContent>
-												</Tooltip>
-											)}
-										</>
-									),
-								},
-							}}
-						/>
+						<FileExplorerHostProvider host={explorerHost}>
+							<Workbench
+								snapshot={room.sidebarSnapshot}
+								borderSlots={{
+									top: {
+										before: ({ onNavigate }) => (
+											<RoomWorkbenchMenus
+												onNavigate={onNavigate}
+												onOpenSettings={onOpenSettings}
+												workspaceActions={
+													workspaceActions
+												}
+											/>
+										),
+										after: (
+											<RoomSidebarActions
+												room={room}
+												canPublish={canPublish}
+											/>
+										),
+									},
+								}}
+							/>
+						</FileExplorerHostProvider>
 					</WorkbenchProvider>
 				</RoomProvider>
 			</div>
-		</div>
-	);
-});
+		);
+	},
+);

@@ -1,7 +1,7 @@
 import { action, computed, makeObservable, observable } from "mobx";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { RoomStore } from "@/stores";
 import type { AbstractPixelMessage, PixelMessage } from "@/types";
-import { normalizeTimestamp } from "@/utility";
 
 /**
  * Abstract Message Store
@@ -72,14 +72,13 @@ export abstract class AbstractMessageStore {
 	 */
 	modelType: string;
 
+	/** Durable agent-run attribution for this message. */
+	agentRun?: AbstractPixelMessage["agentRun"];
+
 	/**
 	 * Ornaments for the message, used for extra properties that are not essential
 	 */
-	ornaments: {
-		modelName?: string;
-		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
-		agentRunId?: string;
-	};
+	ornaments: AbstractPixelMessage["ornaments"];
 
 	/**
 	 * Date the message was created
@@ -102,9 +101,17 @@ export abstract class AbstractMessageStore {
 		this.tokens = message.tokens;
 		this.modelId = message.modelId;
 		this.modelType = message.modelType;
+		this.agentRun =
+			message.agentRun ??
+			(message.ornaments?.agentRunId
+				? {
+						runId: message.ornaments.agentRunId,
+						role: message.ornaments.agentRunRole,
+					}
+				: undefined);
 		this.ornaments = {
 			modelName: message.ornaments?.modelName,
-			agentRunId: message.ornaments?.agentRunId,
+			routing: message.ornaments?.routing,
 		};
 
 		makeObservable(this, {
@@ -117,6 +124,7 @@ export abstract class AbstractMessageStore {
 			tokens: observable,
 			modelId: observable,
 			modelType: observable,
+			agentRun: observable,
 			ornaments: observable,
 			siblings: computed,
 			previousSibling: computed,
@@ -194,7 +202,21 @@ export abstract class AbstractMessageStore {
 	 * Sync store properties from the pixel message
 	 */
 	sync(message: PixelMessage) {
-		this.dateCreated = normalizeTimestamp(message.dateCreated).toDate();
+		this.dateCreated = parseTimestampWithUtcDefault(
+			message.dateCreated,
+		).toDate();
+		this.agentRun =
+			message.agentRun ??
+			(message.ornaments?.agentRunId
+				? {
+						runId: message.ornaments.agentRunId,
+						role: message.ornaments.agentRunRole,
+					}
+				: undefined);
+		this.ornaments = {
+			modelName: message.ornaments?.modelName,
+			routing: message.ornaments?.routing,
+		};
 	}
 
 	/**

@@ -41,6 +41,28 @@ export const runTreeTools = (
 };
 
 /**
+ * Harness tools that run code in the working directory. Their names say
+ * nothing about files, but the code can write them: the notebook agent saves
+ * notebook JSON from Python, and BashCommand allows cp, mv, touch and python.
+ */
+const CODE_EXECUTION_TOOLS: ReadonlySet<string> = new Set([
+	"BashCommand",
+	"ExecuteNodeCode",
+	"ExecutePythonCode",
+]);
+
+/**
+ * Whether a tool call may have changed files: an edit-family tool, or one
+ * that runs code.
+ *
+ * @name mayChangeFiles
+ * @param tool - A tool from the run tree.
+ * @return True when the panels in scope should re-read.
+ */
+const mayChangeFiles = (tool: BuildTool): boolean =>
+	toolFamily(tool) === "edit" || CODE_EXECUTION_TOOLS.has(tool.name);
+
+/**
  * The `onRunCompleted` a workbench wires so an agent's edits reach its panels.
  *
  * The assistant writes files behind every open panel's back and tells nobody:
@@ -63,7 +85,7 @@ export const useAssistantFilesChanged = (
 
 	return useCallback(
 		(run: BuildRun, runs: Record<string, BuildRun>) => {
-			if (runTreeTools(run, runs).some((t) => toolFamily(t) === "edit")) {
+			if (runTreeTools(run, runs).some(mayChangeFiles)) {
 				emit(FILE_PANEL_EVENTS.FILES_CHANGED, { scope });
 			}
 		},

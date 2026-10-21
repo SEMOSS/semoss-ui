@@ -1,4 +1,10 @@
+import { ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import { useState } from "react";
 import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+	Button,
 	FieldLegend,
 	FieldSet,
 	Form,
@@ -6,8 +12,6 @@ import {
 	FormInput,
 	FormSelect,
 	FormSelectItem,
-	FormSwitch,
-	FormTextarea,
 	H4,
 	Muted,
 	Separator,
@@ -16,183 +20,57 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { createGuardrailEngine } from "@/api";
-import { useSession } from "@/hooks";
-import { EngineFormHeader } from "../shared/engine-form-header";
+import { getErrorMessage } from "@semoss/utility/error";
+import { createGuardrailEngine } from "@/api/guardrails";
+import { EngineFormHeader } from "@/components/import/shared/engine-form-header";
+import { useSession } from "@/hooks/use-session";
+import { SqlPolicyRulesField } from "./sql-policy-rules-field";
+import {
+	type BuiltInRules,
+	IDENTIFIER_POLICY_FIELDS,
+	mergeBuiltInRules,
+	type PolicyField,
+	type PolicyRule,
+	policyRulesSchema,
+	REQUIREMENT_OPTIONS,
+	REQUIREMENT_VALUES,
+	toPolicyJson,
+} from "./sql-query-policy";
+import { useSqlPolicyBuiltIns } from "./use-sql-policy-built-ins";
 
-const REQUIREMENT_VALUES = [
-	"FOLLOW_ENGINE_PERMISSIONS",
-	"READ_ONLY",
-	"EDIT",
-	"OWNER",
-	"DENY",
+/** The query structure policies: each SMSS property, its label and what it controls. */
+const QUERY_STRUCTURE_POLICIES = [
+	[
+		"DELETE_WITHOUT_WHERE_POLICY",
+		"DELETE without WHERE",
+		"Controls unbounded DELETE statements.",
+	],
+	[
+		"UPDATE_WITHOUT_WHERE_POLICY",
+		"UPDATE without WHERE",
+		"Controls unbounded UPDATE statements.",
+	],
+	[
+		"SELECT_STAR_POLICY",
+		"SELECT star",
+		"Controls wildcard column selection.",
+	],
+	[
+		"CARTESIAN_JOIN_POLICY",
+		"Cartesian joins",
+		"Controls CROSS JOIN and joins without a condition.",
+	],
+	[
+		"RECURSIVE_CTE_POLICY",
+		"Recursive CTE",
+		"Controls recursive common table expressions.",
+	],
+	[
+		"JOIN_LIMIT_POLICY",
+		"Join limit exceeded",
+		"Applied when a query exceeds the configured join limit.",
+	],
 ] as const;
-
-const REQUIREMENT_OPTIONS = [
-	{
-		value: "FOLLOW_ENGINE_PERMISSIONS",
-		label: "Follow engine permissions",
-	},
-	{ value: "READ_ONLY", label: "Require view access" },
-	{ value: "EDIT", label: "Require edit access" },
-	{ value: "OWNER", label: "Require database ownership" },
-	{ value: "DENY", label: "Always deny" },
-] as const;
-
-const OPERATION_GROUPS = [
-	{
-		name: "DDL",
-		operations: [
-			"ALTER_TABLE",
-			"ALTER_VIEW",
-			"COMMENT",
-			"CREATE_INDEX",
-			"CREATE_TABLE",
-			"CREATE_VIEW",
-			"DROP",
-			"SELECT_INTO",
-			"TRUNCATE",
-		],
-	},
-	{ name: "LOCK", operations: ["SELECT_FOR_UPDATE"] },
-	{ name: "METADATA", operations: ["DESCRIBE", "SHOW"] },
-	{ name: "READ", operations: ["EXPLAIN", "SELECT", "VALUES"] },
-	{ name: "ROUTINE", operations: ["BLOCK", "EXECUTE"] },
-	{ name: "SESSION", operations: ["DECLARE", "SET", "USE"] },
-	{ name: "TRANSACTION", operations: ["COMMIT"] },
-	{ name: "UNKNOWN", operations: ["UNKNOWN"] },
-	{
-		name: "WRITE",
-		operations: [
-			"DELETE",
-			"INSERT",
-			"MERGE",
-			"REPLACE",
-			"UPDATE",
-			"UPSERT",
-		],
-	},
-] as const;
-
-const EXACT_OPERATIONS = OPERATION_GROUPS.flatMap((group) => group.operations);
-
-const PolicyExample = ({ value }: { value: string }) => (
-	<span className="block min-w-0">
-		<span className="mb-1 block">Example</span>
-		<code className="block whitespace-pre-wrap break-words rounded-md border border-border/70 bg-muted/40 px-2 py-1.5 font-mono text-foreground text-xs leading-relaxed">
-			{value}
-		</code>
-	</span>
-);
-
-const OperationPolicyReference = () => (
-	<div className="space-y-2 rounded-md border border-border bg-muted/30 p-3 text-sm">
-		<p>
-			Use <code>*</code> for every operation, a group name for all
-			operations in that group, or an exact operation name. Precedence is
-			exact operation, then group, then <code>*</code>.
-		</p>
-		<p className="text-muted-foreground text-xs leading-relaxed">
-			If no rule matches, the operation follows normal engine permissions.
-			Use <code>FOLLOW_ENGINE_PERMISSIONS</code> as an exact exception to
-			a more general group or <code>*</code> restriction. Platform
-			permissions always apply: reads require view access and mutating or
-			control operations require edit access.
-		</p>
-		<div className="grid gap-x-4 gap-y-1 sm:grid-cols-[max-content_1fr]">
-			{OPERATION_GROUPS.map((group) => (
-				<div className="contents" key={group.name}>
-					<code className="font-semibold text-foreground text-xs">
-						{group.name}
-					</code>
-					<code className="whitespace-normal break-words text-xs">
-						{group.operations.join(", ")}
-					</code>
-				</div>
-			))}
-		</div>
-		<div className="border-border border-t pt-2">
-			<span className="font-medium text-foreground">Access values: </span>
-			<code className="whitespace-normal break-words text-xs">
-				FOLLOW_ENGINE_PERMISSIONS, READ_ONLY, EDIT, OWNER, DENY
-			</code>
-			<p className="mt-1 text-muted-foreground text-xs leading-relaxed">
-				FOLLOW_ENGINE_PERMISSIONS leaves the database engine's normal
-				authorization in control. READ_ONLY requires existing view
-				access, EDIT requires existing edit access, OWNER requires
-				existing ownership, and DENY blocks everyone. No value grants or
-				upgrades access.
-			</p>
-		</div>
-		<div className="space-y-1 border-border border-t pt-2 text-xs leading-relaxed">
-			<p className="font-medium text-foreground">Examples</p>
-			<p className="text-muted-foreground">
-				<code>
-					{'{"SELECT":"FOLLOW_ENGINE_PERMISSIONS","*":"DENY"}'}
-				</code>{" "}
-				leaves normally authorized selects unchanged and denies every
-				other operation, even for owners.
-			</p>
-			<p className="text-muted-foreground">
-				<code>
-					{'{"DDL":"DENY","TRUNCATE":"FOLLOW_ENGINE_PERMISSIONS"}'}
-				</code>{" "}
-				denies DDL generally but returns TRUNCATE to normal engine
-				permissions. Viewers remain blocked; edit access is still
-				required.
-			</p>
-		</div>
-	</div>
-);
-
-const policyMapSchema = z
-	.string()
-	.trim()
-	.min(1, "Enter a JSON policy object")
-	.refine((value) => {
-		try {
-			const parsed = JSON.parse(value) as unknown;
-			if (
-				typeof parsed !== "object" ||
-				parsed === null ||
-				Array.isArray(parsed)
-			) {
-				return false;
-			}
-
-			return Object.entries(parsed).every(([key, requirement]) => {
-				if (
-					key.trim().length === 0 ||
-					typeof requirement !== "string"
-				) {
-					return false;
-				}
-				const normalized = requirement.trim().toUpperCase();
-				return REQUIREMENT_VALUES.some(
-					(allowed) => allowed === normalized,
-				);
-			});
-		} catch {
-			return false;
-		}
-	}, "Use a JSON object whose values are FOLLOW_ENGINE_PERMISSIONS, READ_ONLY, EDIT, OWNER, or DENY");
-
-const operationPolicyKeys = new Set<string>([
-	"*",
-	...OPERATION_GROUPS.map((group) => group.name),
-	...EXACT_OPERATIONS,
-]);
-
-const operationPolicyMapSchema = policyMapSchema.refine((value) => {
-	try {
-		const policy = JSON.parse(value) as Record<string, unknown>;
-		return Object.keys(policy).every((key) =>
-			operationPolicyKeys.has(key.trim().toUpperCase()),
-		);
-	} catch {
-		return false;
-	}
-}, "Use *, an operation group, or an exact operation listed above");
 
 const nonNegativeIntegerSchema = z
 	.string()
@@ -220,13 +98,12 @@ const sqlQueryGuardrailSchema = z.object({
 	SQUARE_BRACKET_QUOTATION: z.enum(["AUTO", "ENABLED", "DISABLED"]),
 	PARSER_FAILURE_POLICY: z.enum(REQUIREMENT_VALUES),
 	MULTI_STATEMENT_POLICY: z.enum(REQUIREMENT_VALUES),
-	OPERATION_POLICY: operationPolicyMapSchema,
-	FUNCTION_POLICY: policyMapSchema,
-	VARIABLE_POLICY: policyMapSchema,
-	KEYWORD_POLICY: policyMapSchema,
-	RELATION_POLICY: policyMapSchema,
-	ROUTINE_POLICY: policyMapSchema,
-	PROTECT_UNMATCHED_IDENTIFIERS: z.boolean(),
+	OPERATION_POLICY: policyRulesSchema,
+	FUNCTION_POLICY: policyRulesSchema,
+	VARIABLE_POLICY: policyRulesSchema,
+	KEYWORD_POLICY: policyRulesSchema,
+	RELATION_POLICY: policyRulesSchema,
+	ROUTINE_POLICY: policyRulesSchema,
 	DELETE_WITHOUT_WHERE_POLICY: z.enum(REQUIREMENT_VALUES),
 	UPDATE_WITHOUT_WHERE_POLICY: z.enum(REQUIREMENT_VALUES),
 	SELECT_STAR_POLICY: z.enum(REQUIREMENT_VALUES),
@@ -245,13 +122,12 @@ export const SQL_QUERY_GUARDRAIL_DEFAULTS: SqlQueryGuardrailFormValues = {
 	SQUARE_BRACKET_QUOTATION: "AUTO",
 	PARSER_FAILURE_POLICY: "DENY",
 	MULTI_STATEMENT_POLICY: "DENY",
-	OPERATION_POLICY: "{}",
-	FUNCTION_POLICY: "{}",
-	VARIABLE_POLICY: "{}",
-	KEYWORD_POLICY: "{}",
-	RELATION_POLICY: "{}",
-	ROUTINE_POLICY: "{}",
-	PROTECT_UNMATCHED_IDENTIFIERS: true,
+	OPERATION_POLICY: [],
+	FUNCTION_POLICY: [],
+	VARIABLE_POLICY: [],
+	KEYWORD_POLICY: [],
+	RELATION_POLICY: [],
+	ROUTINE_POLICY: [],
 	DELETE_WITHOUT_WHERE_POLICY: "DENY",
 	UPDATE_WITHOUT_WHERE_POLICY: "DENY",
 	SELECT_STAR_POLICY: "FOLLOW_ENGINE_PERMISSIONS",
@@ -264,34 +140,49 @@ export const SQL_QUERY_GUARDRAIL_DEFAULTS: SqlQueryGuardrailFormValues = {
 
 /**
  * Converts validated form values into the string-valued properties written to
- * the guardrail SMSS file.
+ * the guardrail SMSS file. Each policy's rules become the JSON object the
+ * guardrail reads, such as {"SELECT":"FOLLOW_ENGINE_PERMISSIONS","*":"DENY"}.
+ * The guardrail keeps applying its built-in rules, which the identifier lists
+ * start with, so only a built-in rule whose access changed is written, and one
+ * the user removed is written as an exemption.
  *
  * @param values - Validated SQL guardrail configuration.
+ * @param builtIns - The chosen dialect's built-in rules, by identifier policy.
  * @returns Every SQL guardrail SMSS property, including its engine type.
  */
 export const toSqlQueryGuardrailDetails = (
 	values: SqlQueryGuardrailFormValues,
+	builtIns: BuiltInRules = {},
 ): Record<string, string> => {
 	const { MODEL_NAME: _modelName, ...configuration } = values;
+	const policyBuiltIns: Partial<Record<string, readonly PolicyRule[]>> =
+		builtIns;
 	return {
 		GUARDRAIL_TYPE: "EMBEDDED_SQL_QUERY",
+		PROTECT_UNMATCHED_IDENTIFIERS: "true",
 		...Object.fromEntries(
 			Object.entries(configuration).map(([key, value]) => [
 				key,
-				String(value),
+				Array.isArray(value)
+					? toPolicyJson(value, policyBuiltIns[key])
+					: String(value),
 			]),
 		),
 	};
 };
 
-interface SqlQueryGuardrailFormProps {
+/** Props for {@link SqlQueryGuardrailForm}. */
+export interface SqlQueryGuardrailFormProps {
+	/** The guardrail type's logo, shown beside the form's title. */
 	icon?: string;
+	/** Called with the new guardrail's id once it is created, or with none on cancel. */
 	onSubmit: (id?: string) => void;
 }
 
 /**
  * Creates an AST-based SQL authorization guardrail with a complete SMSS-backed
- * policy configuration.
+ * policy configuration. The identifier lists start with the chosen dialect's
+ * built-in rules; a failed create shows its reason above the form's actions.
  */
 export const SqlQueryGuardrailForm = ({
 	icon,
@@ -301,34 +192,109 @@ export const SqlQueryGuardrailForm = ({
 	const form = useForm<SqlQueryGuardrailFormValues>({
 		resolver: zodResolver(sqlQueryGuardrailSchema),
 		defaultValues: SQL_QUERY_GUARDRAIL_DEFAULTS,
-		mode: "onChange",
 	});
 
-	const isSubmitting = form.formState.isSubmitting;
+	const { errors, isSubmitting } = form.formState;
+	const dialect = form.watch("SQL_DIALECT");
+	// each identifier list starts with the chosen dialect's built-in rules, which
+	// take the place of the previous dialect's; the user's own rules stay
+	const policyBuiltIns = useSqlPolicyBuiltIns({
+		dialect,
+		insightId: insightID,
+		onChange: (next, previous) => {
+			for (const field of IDENTIFIER_POLICY_FIELDS) {
+				form.setValue(
+					field,
+					mergeBuiltInRules(
+						form.getValues(field),
+						previous[field] ?? [],
+						next[field] ?? [],
+					),
+					// rows that moved are checked again once a submit showed problems
+					{ shouldValidate: form.formState.isSubmitted },
+				);
+			}
+		},
+	});
+	const builtIns = policyBuiltIns.builtIns;
+	const areBuiltInsLoading = policyBuiltIns.status === "LOADING";
+	// the identifier lists start folded away, as their built-in rules are long
+	const [openPolicies, setOpenPolicies] = useState<readonly PolicyField[]>(
+		[],
+	);
+	const isEveryPolicyOpen = IDENTIFIER_POLICY_FIELDS.every((field) =>
+		openPolicies.includes(field),
+	);
 
-	const handleSubmit = async (values: SqlQueryGuardrailFormValues) => {
+	/**
+	 * Shows or folds away one identifier list.
+	 *
+	 * @param field - The list's policy.
+	 * @returns The handler for the list's label.
+	 */
+	const handlePolicyOpenChange = (field: PolicyField) => (open: boolean) =>
+		setOpenPolicies((previous) =>
+			open
+				? [...previous, field]
+				: previous.filter((openField) => openField !== field),
+		);
+
+	const handleEveryPolicyToggle = () =>
+		setOpenPolicies(isEveryPolicyOpen ? [] : IDENTIFIER_POLICY_FIELDS);
+
+	// a submit that fails shows every identifier list with a problem
+	const handleInvalid = (
+		errors: Partial<Record<keyof SqlQueryGuardrailFormValues, unknown>>,
+	) =>
+		setOpenPolicies((previous) => [
+			...previous,
+			...IDENTIFIER_POLICY_FIELDS.filter(
+				(field) => errors[field] && !previous.includes(field),
+			),
+		]);
+
+	const handleSubmit = async (
+		values: SqlQueryGuardrailFormValues,
+	): Promise<void> => {
+		// the lists hold the previous dialect's built-in rules until the chosen
+		// dialect's are read
+		if (areBuiltInsLoading) {
+			form.setError("root.server", {
+				type: "server",
+				message:
+					"The built-in rules for the chosen SQL dialect are still loading. Create the guardrail once they are listed.",
+			});
+			return;
+		}
+
+		let engineId: string;
 		try {
-			const engineId = await createGuardrailEngine(
+			engineId = await createGuardrailEngine(
 				insightID,
 				values.MODEL_NAME,
-				toSqlQueryGuardrailDetails(values),
+				toSqlQueryGuardrailDetails(values, builtIns),
 			);
-			toast.success("Successfully added SQL query guardrail to catalog");
-			onSubmit(engineId);
-		} catch (error) {
-			console.error(error);
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to create the SQL query guardrail",
-			);
+		} catch (error: unknown) {
+			form.setError("root.server", {
+				type: "server",
+				message: getErrorMessage(
+					error,
+					"Unable to create the SQL query guardrail",
+				),
+			});
+			return;
 		}
+		toast.success("Successfully added SQL query guardrail to catalog");
+		onSubmit(engineId);
 	};
 
 	return (
 		<Form
 			form={form}
 			onSubmit={handleSubmit}
+			onError={handleInvalid}
+			noValidate
+			aria-busy={isSubmitting}
 			className="my-4"
 			data-testid="sql-query-guardrail-form"
 		>
@@ -463,104 +429,162 @@ export const SqlQueryGuardrailForm = ({
 
 							<Separator />
 
-							<FieldSet>
-								<FieldLegend>Operation access</FieldLegend>
-								<Muted>
-									Add restrictions on top of platform
-									permissions. Within your configured map,
-									exact operations override groups, and groups
-									override the catch-all.
-								</Muted>
-								<OperationPolicyReference />
-								<FormTextarea
-									name="OPERATION_POLICY"
-									label="Operation policy JSON"
-									description={
-										<PolicyExample value='{"SELECT":"FOLLOW_ENGINE_PERMISSIONS","*":"DENY"}' />
-									}
-									placeholder='{"DELETE":"OWNER","TRUNCATE":"DENY","WRITE":"EDIT"}'
-									rows={5}
-									spellCheck={false}
-									disabled={isSubmitting}
-								/>
-							</FieldSet>
+							<SqlPolicyRulesField
+								name="OPERATION_POLICY"
+								matchKind="operation"
+								label="Operation access"
+								description="Restrictions on top of platform permissions. A rule applies to every operation, a group of operations, or one operation, and the most specific rule wins: one operation, then its group, then every operation. With no rule, an operation follows normal engine permissions; give one operation Follow engine permissions to exempt it from a broader rule. No access level grants or upgrades access: reads still need view access, and changes still need edit access."
+								disabled={isSubmitting}
+							/>
 
 							<Separator />
 
 							<FieldSet>
 								<FieldLegend>Identifier policies</FieldLegend>
 								<Muted>
-									Each JSON map controls one identifier
-									category extracted from the SQL AST. Use{" "}
-									<code>{'{"*":"DENY"}'}</code> as a catch-all
-									for that category. Exact names and
-									more-specific wildcards take precedence. If
-									no configured rule matches, SEMOSS uses its
-									built-in safety rule for that identifier. A
-									configured catch-all decides the entire
-									category, so no identifier is unmentioned.
+									Rules for the names the SQL uses, one list
+									for each kind. Each list starts with the
+									guardrail's built-in rules for the chosen
+									SQL dialect: remove one to stop applying it,
+									change its access, or add your own. A name
+									can end in * to cover everything it starts
+									with, and a rule of * alone decides every
+									name of its kind. Exact names win over
+									patterns, and longer patterns over shorter
+									ones.
 								</Muted>
-								<FormSwitch
-									name="PROTECT_UNMATCHED_IDENTIFIERS"
-									label="Protect identifiers not listed"
-									description="Apply built-in DENY policies to the guardrail's known sensitive functions, variables, keywords, and routines, and OWNER policies to known system-catalog relations. A matching custom policy below takes precedence over the built-in restriction."
-									disabled={isSubmitting}
-								/>
-								<div className="grid gap-4 md:grid-cols-2">
-									<FormTextarea
+								{/* always there, so the loading message is announced */}
+								<output className="block text-muted-foreground text-sm empty:hidden">
+									{areBuiltInsLoading
+										? "Loading the built-in rules for this dialect..."
+										: ""}
+								</output>
+								{policyBuiltIns.status === "ERROR" && (
+									<Alert variant="destructive">
+										<AlertTitle>
+											Built-in rules not listed
+										</AlertTitle>
+										<AlertDescription>
+											The built-in rules for this dialect
+											could not be read. The guardrail
+											still applies them.
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={policyBuiltIns.refresh}
+											>
+												Try again
+											</Button>
+										</AlertDescription>
+									</Alert>
+								)}
+								<div className="flex flex-col gap-6">
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="-ml-2 self-start"
+										onClick={handleEveryPolicyToggle}
+										aria-label={
+											isEveryPolicyOpen
+												? "Collapse all identifier policies"
+												: "Expand all identifier policies"
+										}
+									>
+										{isEveryPolicyOpen ? (
+											<ChevronsDownUp aria-hidden />
+										) : (
+											<ChevronsUpDown aria-hidden />
+										)}
+										{isEveryPolicyOpen
+											? "Collapse all"
+											: "Expand all"}
+									</Button>
+									<SqlPolicyRulesField
 										name="FUNCTION_POLICY"
-										label="Function policy JSON"
-										description={
-											<PolicyExample value='{"CURRENT_DATABASE":"OWNER","PG_SLEEP":"DENY"}' />
+										matchKind="name"
+										builtIns={builtIns.FUNCTION_POLICY}
+										open={openPolicies.includes(
+											"FUNCTION_POLICY",
+										)}
+										onOpenChange={handlePolicyOpenChange(
+											"FUNCTION_POLICY",
+										)}
+										label="Functions"
+										description="Functions the SQL calls, such as PG_SLEEP or CURRENT_DATABASE."
+										placeholder="PG_SLEEP*"
+										disabled={
+											isSubmitting || areBuiltInsLoading
 										}
-										placeholder='{"PG_SLEEP*":"DENY","CURRENT_DATABASE":"OWNER"}'
-										rows={4}
-										spellCheck={false}
-										disabled={isSubmitting}
 									/>
-									<FormTextarea
+									<SqlPolicyRulesField
 										name="VARIABLE_POLICY"
-										label="Variable policy JSON"
-										description={
-											<PolicyExample value='{"@@*":"DENY","@*":"EDIT"}' />
+										matchKind="name"
+										builtIns={builtIns.VARIABLE_POLICY}
+										open={openPolicies.includes(
+											"VARIABLE_POLICY",
+										)}
+										onOpenChange={handlePolicyOpenChange(
+											"VARIABLE_POLICY",
+										)}
+										label="Variables"
+										description="Session and system variables, such as @@VERSION; @@* covers every system variable."
+										placeholder="@@*"
+										disabled={
+											isSubmitting || areBuiltInsLoading
 										}
-										placeholder='{"@@*":"DENY"}'
-										rows={4}
-										spellCheck={false}
-										disabled={isSubmitting}
 									/>
-									<FormTextarea
+									<SqlPolicyRulesField
 										name="KEYWORD_POLICY"
-										label="Keyword policy JSON"
-										description={
-											<PolicyExample value='{"CURRENT_USER":"OWNER"}' />
+										matchKind="name"
+										builtIns={builtIns.KEYWORD_POLICY}
+										open={openPolicies.includes(
+											"KEYWORD_POLICY",
+										)}
+										onOpenChange={handlePolicyOpenChange(
+											"KEYWORD_POLICY",
+										)}
+										label="Keywords"
+										description="Keywords that read the session, such as CURRENT_USER."
+										placeholder="CURRENT_USER"
+										disabled={
+											isSubmitting || areBuiltInsLoading
 										}
-										placeholder='{"CURRENT_USER":"DENY"}'
-										rows={4}
-										spellCheck={false}
-										disabled={isSubmitting}
 									/>
-									<FormTextarea
+									<SqlPolicyRulesField
 										name="RELATION_POLICY"
-										label="Relation policy JSON"
-										description={
-											<PolicyExample value='{"PG_CATALOG.*":"OWNER","INFORMATION_SCHEMA.*":"READ_ONLY"}' />
+										matchKind="name"
+										builtIns={builtIns.RELATION_POLICY}
+										open={openPolicies.includes(
+											"RELATION_POLICY",
+										)}
+										onOpenChange={handlePolicyOpenChange(
+											"RELATION_POLICY",
+										)}
+										label="Tables and views"
+										description="Tables and views as SCHEMA.NAME; INFORMATION_SCHEMA.* covers every table in that schema."
+										placeholder="PG_CATALOG.*"
+										disabled={
+											isSubmitting || areBuiltInsLoading
 										}
-										placeholder='{"PG_CATALOG.*":"OWNER","INFORMATION_SCHEMA.*":"READ_ONLY"}'
-										rows={4}
-										spellCheck={false}
-										disabled={isSubmitting}
 									/>
-									<FormTextarea
+									<SqlPolicyRulesField
 										name="ROUTINE_POLICY"
-										label="Routine policy JSON"
-										description={
-											<PolicyExample value='{"XP_*":"DENY","APP.*":"OWNER"}' />
+										matchKind="name"
+										builtIns={builtIns.ROUTINE_POLICY}
+										open={openPolicies.includes(
+											"ROUTINE_POLICY",
+										)}
+										onOpenChange={handlePolicyOpenChange(
+											"ROUTINE_POLICY",
+										)}
+										label="Routines"
+										description="Procedures the SQL calls, such as XP_CMDSHELL; APP.* covers a schema's routines."
+										placeholder="XP_*"
+										disabled={
+											isSubmitting || areBuiltInsLoading
 										}
-										placeholder='{"XP_*":"DENY","APP.*":"OWNER"}'
-										rows={4}
-										spellCheck={false}
-										disabled={isSubmitting}
 									/>
 								</div>
 							</FieldSet>
@@ -574,59 +598,28 @@ export const SqlQueryGuardrailForm = ({
 									or potentially expensive AST structures.
 								</Muted>
 								<div className="grid gap-4 md:grid-cols-2">
-									{(
-										[
-											[
-												"DELETE_WITHOUT_WHERE_POLICY",
-												"DELETE without WHERE",
-												"Controls unbounded DELETE statements.",
-											],
-											[
-												"UPDATE_WITHOUT_WHERE_POLICY",
-												"UPDATE without WHERE",
-												"Controls unbounded UPDATE statements.",
-											],
-											[
-												"SELECT_STAR_POLICY",
-												"SELECT star",
-												"Controls wildcard column selection.",
-											],
-											[
-												"CARTESIAN_JOIN_POLICY",
-												"Cartesian joins",
-												"Controls CROSS JOIN and joins without a condition.",
-											],
-											[
-												"RECURSIVE_CTE_POLICY",
-												"Recursive CTE",
-												"Controls recursive common table expressions.",
-											],
-											[
-												"JOIN_LIMIT_POLICY",
-												"Join limit exceeded",
-												"Applied when a query exceeds the configured join limit.",
-											],
-										] as const
-									).map(([name, label, description]) => (
-										<FormSelect
-											key={name}
-											name={name}
-											label={label}
-											description={description}
-											disabled={isSubmitting}
-										>
-											{REQUIREMENT_OPTIONS.map(
-												(option) => (
-													<FormSelectItem
-														key={option.value}
-														value={option.value}
-													>
-														{option.label}
-													</FormSelectItem>
-												),
-											)}
-										</FormSelect>
-									))}
+									{QUERY_STRUCTURE_POLICIES.map(
+										([name, label, description]) => (
+											<FormSelect
+												key={name}
+												name={name}
+												label={label}
+												description={description}
+												disabled={isSubmitting}
+											>
+												{REQUIREMENT_OPTIONS.map(
+													(option) => (
+														<FormSelectItem
+															key={option.value}
+															value={option.value}
+														>
+															{option.label}
+														</FormSelectItem>
+													),
+												)}
+											</FormSelect>
+										),
+									)}
 									<FormInput
 										name="MAX_JOINS"
 										type="number"
@@ -653,6 +646,13 @@ export const SqlQueryGuardrailForm = ({
 					<Separator />
 				</div>
 
+				{errors.root?.server?.message && (
+					<Alert variant="destructive" className="mt-4">
+						<AlertDescription>
+							{errors.root.server.message}
+						</AlertDescription>
+					</Alert>
+				)}
 				<FormActions
 					className="mt-4"
 					isSubmitting={isSubmitting}

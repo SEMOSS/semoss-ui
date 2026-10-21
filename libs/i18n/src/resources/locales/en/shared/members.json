@@ -3,38 +3,100 @@
 		"title": "Add Members",
 		"description": "Search for users and invite them to this resource."
 	},
+	"source": {
+		"label": "Search in",
+		"existing": "Existing Users",
+		"directory": "Your Organization",
+		"existingHint": "People who already have an account here.",
+		"directoryHint": "Anyone in your organization, even if they have never signed in. They get an account when you add them."
+	},
 	"search": {
 		"placeholder": "Search by name or email...",
 		"searching": "Searching for users...",
 		"empty": "No users found",
+		"emptyDirectory": "No one in your organization matches that search",
 		"added": "Added"
 	},
 	"selected": {
 		"count_one": "{{count}} user selected",
 		"count_other": "{{count}} users selected",
-		"empty": "No users selected"
+		"empty": "No users selected",
+		"remove": "Remove {{name}}"
 	},
 	"permission": {
-		"viewer": "Viewer",
+		"viewer": "Read-Only",
 		"editor": "Editor",
-		"owner": "Owner"
+		"owner": "Author"
 	},
-	"restrictions": {
-		"title": "Model Limit Restrictions (for all selected users)",
-		"usageLimitType": "Usage Limit Type",
-		"none": "None",
-		"token": "Token",
-		"computeTime": "Compute time",
-		"maxTokens": "Max Tokens",
-		"maxResponseTime": "Max Response Time",
-		"unit": "Unit",
-		"milliseconds": "milliseconds",
-		"frequency": "Frequency",
-		"daily": "Daily",
-		"weekly": "Weekly",
-		"monthly": "Monthly",
-		"yearly": "Yearly",
-		"allTime": "All time"
+	"usageLimit": {
+		"title": "Usage Limit",
+		"titleForSelected": "Usage Limit (for all selected people)",
+		"modes": {
+			"label": "Limit",
+			"notDefined": "No Limit Defined",
+			"unlimited": "Unlimited",
+			"rules": "Rules"
+		},
+		"notDefinedHint": {
+			"DIRECT": "Uses the person's Team Limits, the Public Use Limit or their User's Total Model Limit, whichever applies first.",
+			"TEAM": "Members use their other Team Limits, the Public Use Limit or their User's Total Model Limit.",
+			"PUBLIC": "People using this model because it is public use their User's Total Model Limit or the General Platform Limit.",
+			"MODEL_TOTAL": "There is no total for everyone together.",
+			"ALL_MODELS": "Uses the General Platform Limit.",
+			"PLATFORM": "People with no other limit have no limit.",
+			"TEAM_TOTAL": "There is no total across all models for this team."
+		},
+		"unlimitedHint": {
+			"DIRECT": "No cap for this person on this model, whatever their Team Limits or the Public Use Limit allow. The model total still applies.",
+			"TEAM": "No cap on the calls this team's limit applies to. Unlimited Team Limits apply before Team Limits with rules.",
+			"PUBLIC": "No cap on public use. The model total still applies.",
+			"ALL_MODELS": "Exempts the person from the General Platform Limit."
+		},
+		"addRule": "Add Rule",
+		"noRules": "Add a rule to cap use. A call must pass every rule.",
+		"allRulesApply": "Every rule applies. A call must be within all of them, so the first rule used up stops it.",
+		"ruleJoiner": "and",
+		"rule": {
+			"amount": "Amount of rule {{number}}",
+			"metric": "What rule {{number}} counts",
+			"window": "How often rule {{number}} starts again",
+			"windowLength": "Window length of rule {{number}}",
+			"every": "Every",
+			"windowUnits": {
+				"MINUTE_one": "Minute",
+				"MINUTE_other": "Minutes",
+				"HOUR_one": "Hour",
+				"HOUR_other": "Hours"
+			},
+			"counts": "Whose use rule {{number}} counts",
+			"remove": "Remove rule {{number}}",
+			"computeHint": "Compute Time is the time the model spends answering, in milliseconds. It is the measure for self-hosted models, whose GPUs are already paid for.",
+			"computeEquals": "= {{time}}"
+		},
+		"metrics": {
+			"TOKENS": "Tokens",
+			"COST": "Cost (US dollars)",
+			"COMPUTE_TIME": "Compute Time"
+		},
+		"noKnownPrices": "This model has no known prices",
+		"windows": {
+			"MINUTE": "Per Minute",
+			"HOUR": "Per Hour",
+			"DAY": "Per Day",
+			"WEEK": "Per Week",
+			"MONTH": "Per Month",
+			"YEAR": "Per Year"
+		},
+		"counts": {
+			"teamShared": "Shared by the Team",
+			"teamEach": "For Each Member",
+			"publicShared": "Shared by All Public Use",
+			"publicEach": "For Each Person"
+		},
+		"eachMemberNote": "For each member rules count only the calls this team's limit applies to.",
+		"costAcrossModelsNote": "Models without known prices are not counted by cost rules. Add a token rule to cover them.",
+		"teamTotalTokensNote": "Cost is the natural measure for a total across models, since tokens from different models are not alike.",
+		"windowsNote": "Minute and hour rules slide. Day, week, month and year rules start again at the start of each calendar day, week, month or year in UTC."
 	},
 	"footer": {
 		"add": "Add",

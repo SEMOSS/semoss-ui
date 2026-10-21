@@ -78,6 +78,7 @@ describe("useFileBuffer", () => {
 
 		expect(rename).toHaveBeenLastCalledWith("a.ipynb*");
 		expect(result.current.content).toBe("hello");
+		expect(result.current.isDirty).toBe(true);
 	});
 
 	it("saves what getContent returns, not the buffer", async () => {
@@ -147,4 +148,35 @@ describe("useFileBuffer", () => {
 		expect(save).toHaveBeenCalledWith("changed");
 		expect(rename).toHaveBeenLastCalledWith("b.py");
 	});
+});
+
+it("retains edits made while a save is in flight", async () => {
+	let finish: (success: boolean) => void = () => undefined;
+	const save = vi.fn(
+		() =>
+			new Promise<boolean>((resolve) => {
+				finish = resolve;
+			}),
+	);
+	const rename = vi.fn();
+	const { result } = renderHook(() =>
+		useFileBuffer({
+			panel: stubPanel("initial", save),
+			name: "note.md",
+			rename,
+		}),
+	);
+	act(() => result.current.setContent("first edit"));
+	let pending: Promise<void>;
+	act(() => {
+		pending = result.current.save();
+	});
+	act(() => result.current.setContent("later edit"));
+	await act(async () => {
+		finish(true);
+		await pending;
+	});
+	expect(result.current.isDirty).toBe(true);
+	expect(rename).toHaveBeenLastCalledWith("note.md*");
+	expect(result.current.content).toBe("later edit");
 });

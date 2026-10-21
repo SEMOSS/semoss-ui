@@ -13,6 +13,7 @@
     "preview": "vite preview --configLoader runner"
   },
   "dependencies": {
+    "@semoss/utility": "workspace:*",
     "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
     "lucide-react": "^0.545.0",

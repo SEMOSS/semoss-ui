@@ -6,7 +6,12 @@
 		"noToolboxesFound": "No toolboxes found",
 		"noKnowledgeFound": "No knowledge found",
 		"noAgentsFound": "No agents found",
-		"noSkillsFound": "Aucune compétence trouvée"
+		"noSkillsFound": "Aucune compétence trouvée",
+		"fromRoom": "De cette discussion",
+		"loadError": "Impossible de charger le catalogue.",
+		"retry": "Réessayer",
+		"added": "Ajoutés",
+		"available": "Disponibles"
 	},
 	"permission": {
 		"owner": "Owner",

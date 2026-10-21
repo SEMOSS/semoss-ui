@@ -197,11 +197,13 @@ const DatabaseQueryResultsPanel: WorkbenchComponent = ({ id }) => {
 							<TabsContent
 								key={statementResult.statement}
 								value={`statement-${statementResult.statement}`}
-								className="min-h-0 overflow-hidden"
+								className="min-h-0 overflow-auto"
 							>
 								<DatabaseStatementResultView
 									result={statementResult}
-									canExport={canExport}
+									// export runs the statement again on its own, outside the
+									// transaction, so it could return other rows
+									canExport={canExport && !result.transaction}
 									isExporting={
 										exportingStatement ===
 										statementResult.statement
@@ -225,30 +227,41 @@ const DatabaseQueryResultsPanel: WorkbenchComponent = ({ id }) => {
 				data-testid="query-results-footer"
 			>
 				{result && result.type === "TABLE" && canExport && (
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
-							<Button
-								disabled={exportingStatement !== null}
-								variant="outline"
-								size="icon-sm"
-								onClick={() =>
-									handleExportToCsvClick(
-										result.query,
-										result.raw,
-										0,
-									)
+							<span
+								className="inline-flex"
+								tabIndex={
+									exportingStatement !== null ? 0 : undefined
 								}
-								aria-label="Export query results"
-								data-testid="query-results-export-btn"
 							>
-								{exportingStatement === 0 ? (
-									<Spinner />
-								) : (
-									<Download aria-hidden />
-								)}
-							</Button>
+								<Button
+									disabled={exportingStatement !== null}
+									variant="outline"
+									size="icon-sm"
+									onClick={() =>
+										handleExportToCsvClick(
+											result.query,
+											result.raw,
+											0,
+										)
+									}
+									aria-label="Export query results"
+									data-testid="query-results-export-btn"
+								>
+									{exportingStatement === 0 ? (
+										<Spinner />
+									) : (
+										<Download aria-hidden />
+									)}
+								</Button>
+							</span>
 						</TooltipTrigger>
-						<TooltipContent>Export Results</TooltipContent>
+						<TooltipContent>
+							{exportingStatement !== null
+								? "Exporting results…"
+								: "Export Results"}
+						</TooltipContent>
 					</Tooltip>
 				)}
 				<div className="flex flex-1">&nbsp;</div>

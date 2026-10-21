@@ -21,8 +21,13 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
-import { formatDateToLocal, formatDateToRelative } from "@/utility/date";
+import { copyTextToClipboard } from "@semoss/utility/clipboard";
+import {
+	formatDateToRelative,
+	formatLocalDateTime,
+} from "@semoss/utility/date";
+import { formatToDataTestId, hashString } from "@semoss/utility/text";
+import { getTagBadgeStyle } from "@/utility";
 
 export interface CatalogGridItemProps
 	extends React.ComponentProps<typeof Card> {
@@ -62,24 +67,6 @@ export interface CatalogGridItemProps
 	}[];
 }
 
-const copyToClipboard = (text: string) => {
-	try {
-		navigator.clipboard.writeText(text);
-		toast.success("Copied to clipboard");
-	} catch {
-		toast.error("Failed to copy");
-	}
-};
-
-const hashString = (str: string): number => {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
-	}
-	return Math.abs(h);
-};
-
 const generateGradient = (name: string): string => {
 	const base = hashString(name) % 360;
 	return `hsl(${base}, 22%, 72%)`;
@@ -108,8 +95,8 @@ export const CatalogGridItem = ({
 	const cardClassName = `${className ?? ""}`.trim();
 
 	if (variant === "LIST") {
-		const formattedDateCreated = formatDateToLocal(dateCreated);
-		const formattedDateLastEdited = formatDateToLocal(dateLastEdited);
+		const formattedDateCreated = formatLocalDateTime(dateCreated);
+		const formattedDateLastEdited = formatLocalDateTime(dateLastEdited);
 		const showHoverCard = Boolean(
 			description || formattedDateCreated || formattedDateLastEdited,
 		);
@@ -146,16 +133,33 @@ export const CatalogGridItem = ({
 											<span className="truncate">
 												{id}
 											</span>
-											<Tooltip>
+											<Tooltip
+												disableHoverableContent={false}
+											>
 												<TooltipTrigger asChild>
 													<Button
+														aria-label={"Copy ID"}
 														variant="ghost"
 														size="icon-sm"
 														className="h-5 w-5"
 														onClick={(event) => {
 															event.preventDefault();
 															event.stopPropagation();
-															copyToClipboard(id);
+															void copyTextToClipboard(
+																id,
+																{
+																	onSuccess:
+																		() =>
+																			toast.success(
+																				"Copied to clipboard",
+																			),
+																	onError:
+																		() =>
+																			toast.error(
+																				"Failed to copy",
+																			),
+																},
+															);
 														}}
 													>
 														<Copy className="size-3.5" />
@@ -188,7 +192,11 @@ export const CatalogGridItem = ({
 												</Badge>
 											))}
 											{tags.length > 3 && (
-												<Tooltip>
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
 													<TooltipTrigger asChild>
 														<Badge
 															variant="outline"
@@ -218,19 +226,37 @@ export const CatalogGridItem = ({
 								<div className="flex items-center gap-1">
 									{actions}
 									{menuItems.length > 0 && (
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-													}}
-												>
-													<MoreVertical className="size-4" />
-												</Button>
-											</DropdownMenuTrigger>
+										<DropdownMenu
+											open={menuOpen}
+											onOpenChange={setMenuOpen}
+										>
+											<Tooltip
+												disableHoverableContent={false}
+											>
+												<TooltipTrigger asChild>
+													<DropdownMenuTrigger
+														asChild
+													>
+														<Button
+															aria-label={`Actions for ${name}`}
+															variant="ghost"
+															size="icon-sm"
+															onClick={(
+																event,
+															) => {
+																event.preventDefault();
+																event.stopPropagation();
+															}}
+														>
+															<MoreVertical className="size-4" />
+														</Button>
+													</DropdownMenuTrigger>
+												</TooltipTrigger>
+												<TooltipContent
+													sideOffset={4}
+													className="max-w-xs break-words"
+												>{`Actions for ${name}`}</TooltipContent>
+											</Tooltip>
 											<DropdownMenuContent align="end">
 												{menuItems.map((item) => {
 													return (
@@ -244,6 +270,9 @@ export const CatalogGridItem = ({
 															) => {
 																event.preventDefault();
 																event.stopPropagation();
+																setMenuOpen(
+																	false,
+																);
 																item.onClick();
 															}}
 														>
@@ -355,7 +384,7 @@ export const CatalogGridItem = ({
 									</Badge>
 								))}
 								{tags.length > 2 && (
-									<Tooltip>
+									<Tooltip disableHoverableContent={false}>
 										<TooltipTrigger asChild>
 											<Badge
 												variant="outline"
@@ -389,18 +418,27 @@ export const CatalogGridItem = ({
 								open={menuOpen}
 								onOpenChange={setMenuOpen}
 							>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
-										}}
-									>
-										<MoreVertical className="size-4" />
-									</Button>
-								</DropdownMenuTrigger>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<DropdownMenuTrigger asChild>
+											<Button
+												aria-label={`Actions for ${name}`}
+												variant="ghost"
+												size="icon-sm"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+												}}
+											>
+												<MoreVertical className="size-4" />
+											</Button>
+										</DropdownMenuTrigger>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={4}
+										className="max-w-xs break-words"
+									>{`Actions for ${name}`}</TooltipContent>
+								</Tooltip>
 								<DropdownMenuContent align="end">
 									{menuItems.map((item) => {
 										return (

@@ -1,21 +1,25 @@
-import { FileIcon, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { type Engine, EngineSelect, NewEngineInput } from "@semoss/shared";
 import {
-	Button,
+	Alert,
+	AlertDescription,
 	Field,
+	FieldError,
 	FieldGroup,
 	FieldLabel,
+	Form,
+	FormField,
+	FormTextarea,
 	Input,
-	Textarea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
+	useForm,
+	z,
+	zodResolver,
 } from "@semoss/ui/next";
+import { FilePreviewGrid } from "@/components/common/file-preview-grid";
 import { useRoot } from "@/hooks";
 import type { MCPConfig } from "@/types";
 
@@ -58,9 +62,23 @@ export const NewKnowledgeFormBody = observer(
 		const defaultEmbedderId = root.theme.defaultEmbedderId ?? "";
 		const runMCP = root.theme.featureFlags?.enableKnowledgeMCP;
 
-		const [isLoading, setIsLoading] = useState(false);
-		const [name, setName] = useState("");
-		const [description, setDescription] = useState("");
+		const id = useId();
+		const form = useForm({
+			resolver: zodResolver(
+				z.object({
+					name: z
+						.string()
+						.trim()
+						.min(1, t("validation:nameRequired")),
+					description: z
+						.string()
+						.trim()
+						.min(1, t("validation:descriptionRequired")),
+				}),
+			),
+			defaultValues: { name: "", description: "" },
+		});
+		const isLoading = form.formState.isSubmitting;
 		const [embeddingEngine, setEmbeddingEngine] = useState<Engine | null>(
 			null,
 		);
@@ -70,13 +88,16 @@ export const NewKnowledgeFormBody = observer(
 			onLoadingChange?.(isLoading);
 		}, [isLoading, onLoadingChange]);
 
-		const submitForm = async () => {
+		const submitForm = async ({
+			name,
+			description,
+		}: {
+			name: string;
+			description: string;
+		}) => {
+			form.clearErrors("root.server");
+			let engineId: string;
 			try {
-				if (!name.trim()) {
-					toast.error(t("validation:nameRequired"));
-					return;
-				}
-
 				let embedderId = showEmbeddingOptions
 					? embeddingEngine?.engine_id
 					: defaultEmbedderId;
@@ -87,21 +108,18 @@ export const NewKnowledgeFormBody = observer(
 					embedderId = res.pixelReturn[0].output[0]?.engine_id;
 				}
 				if (!embedderId) {
-					toast.error(t("validation:embeddingRequired"));
+					form.setError("root.server", {
+						message: t("validation:embeddingRequired"),
+					});
 					return;
 				}
 
 				if (files.length === 0) {
-					toast.error(t("validation:filesRequired"));
+					form.setError("root.server", {
+						message: t("validation:filesRequired"),
+					});
 					return;
 				}
-
-				if (!description) {
-					toast.error(t("validation:descriptionRequired"));
-					return;
-				}
-
-				setIsLoading(true);
 
 				const createVectorEngine = await actions.run<
 					[{ engine_id: string }]
@@ -110,8 +128,7 @@ export const NewKnowledgeFormBody = observer(
 				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embedderId}","DESCRIPTION":"${description}","TAGS":""}]
 			);`);
 
-				const engineId =
-					createVectorEngine.pixelReturn[0].output.engine_id;
+				engineId = createVectorEngine.pixelReturn[0].output.engine_id;
 				if (!engineId) {
 					throw new Error(t("notifications:knowledge.createError"));
 				}
@@ -134,66 +151,82 @@ export const NewKnowledgeFormBody = observer(
 						`MakeEngineMCP("${engineId}");`,
 					);
 				}
-
-				toast.success(
-					t("notifications:knowledge.createSuccess", { name }),
-				);
-
-				onSuccess({
-					type: "VECTOR",
-					id: engineId,
-					name: name,
-				});
 			} catch (e) {
-				toast.error(
-					e instanceof Error
-						? e.message
-						: t("notifications:knowledge.createError"),
-				);
-			} finally {
-				setIsLoading(false);
+				form.setError("root.server", {
+					message:
+						e instanceof Error
+							? e.message
+							: t("notifications:knowledge.createError"),
+				});
+				return;
 			}
+			toast.success(t("notifications:knowledge.createSuccess", { name }));
+			onSuccess({ type: "VECTOR", id: engineId, name });
 		};
 
 		return (
-			<form
+			<Form
+				form={form}
 				id={formId}
-				onSubmit={(e) => {
-					e.preventDefault();
-					submitForm();
-				}}
+				onSubmit={submitForm}
+				noValidate
+				aria-busy={isLoading}
 			>
+				{form.formState.errors.root?.server?.message && (
+					<Alert variant="destructive">
+						<AlertDescription>
+							{form.formState.errors.root.server.message}
+						</AlertDescription>
+					</Alert>
+				)}
 				<FieldGroup>
-					<Field>
-						<FieldLabel>{t("knowledge:form.nameLabel")}</FieldLabel>
-						<NewEngineInput
-							value={name}
-							onChange={(v) => setName(v)}
-							disabled={isLoading}
-							required
-						/>
-					</Field>
-					<Field>
-						<FieldLabel>
-							{t("knowledge:form.descriptionLabel")}
-						</FieldLabel>
-						<Textarea
-							placeholder={t(
-								"knowledge:form.descriptionPlaceholder",
-							)}
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							disabled={isLoading}
-							required
-						/>
-					</Field>
-
+					<FormField
+						control={form.control}
+						name="name"
+						render={({ field, fieldState }) => (
+							<Field data-invalid={!!fieldState.error}>
+								<FieldLabel htmlFor={`${id}-name`}>
+									{t("knowledge:form.nameLabel")}
+								</FieldLabel>
+								<NewEngineInput
+									value={field.value}
+									onChange={field.onChange}
+									inputProps={{
+										id: `${id}-name`,
+										ref: field.ref,
+										onBlur: field.onBlur,
+										name: field.name,
+										"aria-invalid": !!fieldState.error,
+										"aria-describedby": fieldState.error
+											? `${id}-name-error`
+											: undefined,
+									}}
+									disabled={isLoading}
+									required
+								/>
+								{fieldState.error?.message && (
+									<FieldError id={`${id}-name-error`}>
+										{fieldState.error.message}
+									</FieldError>
+								)}
+							</Field>
+						)}
+					/>
+					<FormTextarea
+						name="description"
+						label={t("knowledge:form.descriptionLabel")}
+						placeholder={t("knowledge:form.descriptionPlaceholder")}
+						disabled={isLoading}
+						required
+					/>
 					{showEmbeddingOptions && (
 						<Field>
-							<FieldLabel>
+							<FieldLabel htmlFor={`${id}-embedding`}>
 								{t("knowledge:form.embeddingLabel")}
 							</FieldLabel>
 							<EngineSelect
+								id={`${id}-embedding`}
+								disabled={isLoading}
 								name={
 									embeddingEngine?.engine_display_name ||
 									embeddingEngine?.engine_name ||
@@ -212,10 +245,11 @@ export const NewKnowledgeFormBody = observer(
 					)}
 
 					<Field>
-						<FieldLabel>
+						<FieldLabel htmlFor={`${id}-files`}>
 							{t("knowledge:form.filesLabel")}
 						</FieldLabel>
 						<Input
+							id={`${id}-files`}
 							placeholder={t("common:placeholders.uploadFiles")}
 							type="file"
 							multiple
@@ -229,47 +263,18 @@ export const NewKnowledgeFormBody = observer(
 							disabled={isLoading}
 							required
 						/>
-						{files.length > 0 ? (
-							<div className="flex flex-row items-center gap-2 pt-4">
-								{files.map((f, fIdx) => {
-									const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
-									return (
-										<Tooltip key={fileKey}>
-											<TooltipTrigger asChild>
-												<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
-													<FileIcon className="size-6 text-muted-foreground" />
-													<div className="absolute end-0 top-0 z-10 hidden group-hover:inline-flex">
-														<Button
-															variant="ghost"
-															size="icon-sm"
-															onClick={() => {
-																const updated =
-																	[...files];
-																updated.splice(
-																	fIdx,
-																	1,
-																);
-																setFiles(
-																	updated,
-																);
-															}}
-														>
-															<XIcon />
-														</Button>
-													</div>
-												</div>
-											</TooltipTrigger>
-											<TooltipContent>
-												{f.name}
-											</TooltipContent>
-										</Tooltip>
+						<FilePreviewGrid
+							files={files}
+							onRemoveFile={(index) => {
+								if (!isLoading)
+									setFiles((current) =>
+										current.filter((_, i) => i !== index),
 									);
-								})}
-							</div>
-						) : null}
+							}}
+						/>
 					</Field>
 				</FieldGroup>
-			</form>
+			</Form>
 		);
 	},
 );

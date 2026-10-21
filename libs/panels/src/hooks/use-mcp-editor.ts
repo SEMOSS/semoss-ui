@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { uniqueName } from "@semoss/utility/identifier";
 import type {
 	EditorTool,
 	MCPJsonData,
@@ -18,7 +19,6 @@ import {
 	snapshotOf,
 	toEditorTools,
 	toSavedTools,
-	uniqueName,
 } from "../utility/mcp-json-utils";
 
 const withProperty = (

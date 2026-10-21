@@ -1,4 +1,4 @@
-import { SlidersHorizontal } from "lucide-react";
+import { Blocks, SlidersHorizontal } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
@@ -10,6 +10,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	H3,
 	Popover,
 	PopoverTrigger,
 	Separator,
@@ -17,6 +18,9 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { AddBlocksMenuCard } from "@/components/designer";
@@ -29,15 +33,13 @@ import type {
 	FilterCategory,
 } from "../menus/menu-types";
 import { BlocksMenuPanelFilterMenu } from "./BlocksMenuPanelFilterMenu";
+import { PanelEmptyState } from "./panel-empty-state";
 import { PanelSearch } from "./panel-search";
 
 type MODE = "COMMUNITY" | "SYSTEM";
 type CommunityBlockItem = DesignerMenuItem & { id?: string };
 
 export interface AddBlocksMenuProps {
-	/** Title to render in the menu */
-	title: string;
-
 	/** Items to add to show in the menu.  */
 	items: DesignerMenuItem[];
 
@@ -50,7 +52,7 @@ const defaultSection = "Miscellaneous";
  * Add Blocks to the UI
  */
 export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
-	const { title, items } = props;
+	const { items } = props;
 	const [search, setSearch] = useState("");
 	const [communityBlock, setCommunityBlock] = useState<CommunityBlockItem[]>(
 		[],
@@ -257,12 +259,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	return (
 		<Panel
 			actions={
-				<div className="flex w-full flex-col bg-background p-0 text-foreground">
-					<div className="flex min-h-12 items-center justify-between px-3 pt-3 pb-2">
-						<p className="m-0 font-semibold text-foreground text-sm">
-							{title}
-						</p>
-					</div>
+				<div className="flex w-full flex-col gap-2 px-2 py-2">
 					<PanelSearch
 						value={search}
 						onChange={setSearch}
@@ -271,23 +268,35 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 								open={filterMenuOpen}
 								onOpenChange={setFilterMenuOpen}
 							>
-								<PopoverTrigger asChild>
-									<button
-										type="button"
-										className="rounded p-1 hover:bg-accent"
-									>
-										<Badge
-											variant={
-												anyEnabledFilter
-													? "default"
-													: "outline"
-											}
-											className="p-0.5"
-										>
-											<SlidersHorizontal className="size-4" />
-										</Badge>
-									</button>
-								</PopoverTrigger>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<PopoverTrigger asChild>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon-sm"
+												aria-label="Filter blocks"
+											>
+												<Badge
+													variant={
+														anyEnabledFilter
+															? "default"
+															: "outline"
+													}
+													className="p-0.5"
+												>
+													<SlidersHorizontal
+														className="size-4"
+														aria-hidden="true"
+													/>
+												</Badge>
+											</Button>
+										</PopoverTrigger>
+									</TooltipTrigger>
+									<TooltipContent>
+										Filter blocks
+									</TooltipContent>
+								</Tooltip>
 								<BlocksMenuPanelFilterMenu
 									categoryMap={filterCategoryMap}
 									setCategoryMap={setFilterCategoryMap}
@@ -296,43 +305,41 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 							</Popover>
 						}
 					/>
-					<div className="px-3 pb-2">
-						<Tabs
-							value={mode}
-							onValueChange={(val) => {
-								setMode(val as MODE);
-								if (val === "COMMUNITY") {
-									getClientBlocks();
-								}
-							}}
-							className="w-full"
-						>
-							<TabsList className="grid w-full grid-cols-2 gap-0.5">
-								<TabsTrigger
-									value="SYSTEM"
-									className="w-full min-w-0 max-w-full flex-none px-1 text-xs"
+					<Tabs
+						value={mode}
+						onValueChange={(val) => {
+							setMode(val as MODE);
+							if (val === "COMMUNITY") {
+								getClientBlocks();
+							}
+						}}
+						className="w-full"
+					>
+						<TabsList className="grid w-full grid-cols-2 gap-0.5">
+							<TabsTrigger
+								value="SYSTEM"
+								className="w-full min-w-0 max-w-full flex-none px-1 text-xs"
+							>
+								<span
+									className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-center"
+									title="System Blocks"
 								>
-									<span
-										className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-center"
-										title="System Blocks"
-									>
-										System Blocks
-									</span>
-								</TabsTrigger>
-								<TabsTrigger
-									value="COMMUNITY"
-									className="w-full min-w-0 max-w-full flex-none px-1 text-xs"
+									System Blocks
+								</span>
+							</TabsTrigger>
+							<TabsTrigger
+								value="COMMUNITY"
+								className="w-full min-w-0 max-w-full flex-none px-1 text-xs"
+							>
+								<span
+									className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-center"
+									title="Community Blocks"
 								>
-									<span
-										className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-center"
-										title="Community Blocks"
-									>
-										Community Blocks
-									</span>
-								</TabsTrigger>
-							</TabsList>
-						</Tabs>
-					</div>
+									Community Blocks
+								</span>
+							</TabsTrigger>
+						</TabsList>
+					</Tabs>
 				</div>
 			}
 		>
@@ -356,13 +363,13 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 									<Separator />
 								</div>
 							)}
-							<div className="px-3 pt-2 pb-1.5">
-								<p className="m-0 select-none font-semibold text-muted-foreground text-xs uppercase tracking-[0.05em]">
+							<div className="px-2 pt-2 pb-1.5">
+								<H3 className="font-bold text-foreground text-xs leading-4">
 									{sectionItems[0].section ?? defaultSection}
-								</p>
+								</H3>
 							</div>
 							<div className="w-full">
-								<div className="grid w-full grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2 px-3">
+								<div className="grid w-full grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2 px-2">
 									{sectionItems.map((block) => (
 										<div key={block.name}>
 											<AddBlocksMenuCard
@@ -384,18 +391,23 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 				) : (
 					<div className="p-4">
 						{loading ? (
-							<div className="flex w-full flex-wrap gap-4">
+							<div className="grid w-full grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2 px-2">
 								{[1, 2, 3].map((n) => (
 									<Skeleton
 										key={n}
-										className="h-[133px] w-[133px]"
+										className="aspect-square w-full"
 									/>
 								))}
 							</div>
 						) : (
-							<p className="text-muted-foreground text-sm">
-								No items found
-							</p>
+							<PanelEmptyState
+								icon={Blocks}
+								message={
+									search
+										? "No blocks match your search"
+										: "No blocks available"
+								}
+							/>
 						)}
 					</div>
 				)}
@@ -409,9 +421,11 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 					}
 				}}
 			>
-				<DialogContent>
+				<DialogContent aria-describedby={undefined}>
 					<DialogHeader>
-						<DialogTitle>Delete Selected Block?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete Selected Block?
+						</DialogTitle>
 					</DialogHeader>
 					<div className="px-2 py-2">
 						<p className="text-muted-foreground text-sm">

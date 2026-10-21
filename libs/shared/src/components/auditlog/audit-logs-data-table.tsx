@@ -25,6 +25,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
+import { describeLoggedBilledTo } from "../model-usage-limit/usage-limit-labels";
 import { AuditLogsDetailDrawer } from "./audit-logs-detail-drawer";
 import type { EventData } from "./common";
 import { TimeDateFormatter } from "./common";
@@ -46,7 +47,7 @@ const GROUP_MODE_LABEL_KEYS: Record<RowGroupMode, string> = {
 	span: "table.grouping.span",
 	request: "table.grouping.request",
 };
-const TABLE_COLUMN_COUNT = 16;
+const TABLE_COLUMN_COUNT = 17;
 //Matches the timeline: success is truthy and not the string "false".
 const isSuccess = (status: EventData["status"]) =>
 	Boolean(status) && status !== "false";
@@ -82,8 +83,8 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		if (groupMode === "none") return null;
 		const keyOf = (event: EventData) =>
 			groupMode === "request"
-				? event.requestId || "—"
-				: event.spanId || "—";
+				? event.requestId || "-"
+				: event.spanId || "-";
 		const order: string[] = [];
 		const byKey = new Map<string, EventData[]>();
 		for (const event of logs) {
@@ -189,6 +190,15 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				<span className="text-sm">{event.engineName}</span>
 			</TableCell>
 			<TableCell>
+				<span className="text-sm">
+					{describeLoggedBilledTo(
+						event.billedSourceType,
+						event.billedSubjectId,
+						event.billedSubjectType,
+					) ?? "-"}
+				</span>
+			</TableCell>
+			<TableCell>
 				<span className="text-sm">{event.latency}ms</span>
 			</TableCell>
 			<TableCell>
@@ -223,7 +233,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						})}
 					</Badge>
 				) : (
-					<span className="text-gray-400 text-sm">—</span>
+					<span className="text-muted-foreground text-sm">-</span>
 				)}
 			</TableCell>
 			<TableCell className="text-center">
@@ -324,6 +334,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 										{t("table.columns.engineName")}
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										{t("table.columns.billedTo")}
 									</span>
 								</TableHead>
 								<TableHead>
@@ -530,8 +545,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			{/** sheet open/close when user clicks on the row in auditlog table */}
 			<Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
 				<SheetContent
+					aria-describedby={undefined}
 					side="right"
-					className="min-w-[500px] transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
+					className="w-full min-w-0 sm:max-w-xl"
 				>
 					<SheetTitle className="sr-only">
 						{t("detail.title")}

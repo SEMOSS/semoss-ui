@@ -51,4 +51,10 @@ export type FileItem = {
 	 * Last modified date
 	 */
 	lastModified?: string;
+
+	/**
+	 * What a custom adapter knows about the item beyond its path, such as a
+	 * drive item's ids, for the host's row actions to read back.
+	 */
+	data?: unknown;
 };

@@ -10,7 +10,14 @@ import { Play } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { type JSX, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { Button, Spinner } from "@semoss/ui/next";
+import {
+	Button,
+	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
+import { NotebookAddCell } from "./notebook-add-cell";
 import { NotebookCell } from "./notebook-cell";
 
 interface NotebookProps {
@@ -109,30 +116,43 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 
 	return (
 		<div className="flex h-full w-full flex-1 flex-col overflow-hidden bg-background">
-			<div className="flex items-center justify-between px-6 py-2.5">
-				<span>&nbsp;</span>
-				<div className="flex items-center gap-2">
-					<Button
-						title="Run all cells"
-						size="sm"
-						disabled={notebook.isLoading}
-						onClick={() =>
-							state.dispatch({
-								message: ActionMessages.RUN_NOTEBOOK,
-								payload: {
-									queryId: id,
-								},
-							})
-						}
-					>
-						{notebook.isLoading ? (
-							<Spinner className="size-3" />
-						) : (
-							<Play className="size-3" />
-						)}
-						Run All
-					</Button>
-				</div>
+			<div className="flex shrink-0 items-center justify-end gap-2 border-border border-b px-2 py-1">
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<span
+							className="inline-flex"
+							tabIndex={notebook.isLoading ? 0 : undefined}
+						>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								aria-label="Run all cells"
+								disabled={notebook.isLoading}
+								onClick={() =>
+									state.dispatch({
+										message: ActionMessages.RUN_NOTEBOOK,
+										payload: {
+											queryId: id,
+										},
+									})
+								}
+							>
+								{notebook.isLoading ? (
+									<Spinner className="size-3" />
+								) : (
+									<Play aria-hidden className="size-3" />
+								)}
+								Run All
+							</Button>
+						</span>
+					</TooltipTrigger>
+					<TooltipContent>
+						{notebook.isLoading
+							? "Wait for the notebook to finish its current operation"
+							: "Run all cells"}
+					</TooltipContent>
+				</Tooltip>
 			</div>
 			<DndContext
 				collisionDetection={closestCenter}
@@ -144,6 +164,9 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 					strategy={verticalListSortingStrategy}
 				>
 					<div className="flex h-full w-full flex-1 flex-col overflow-auto px-3 py-2">
+						{notebook.list.length === 0 ? (
+							<NotebookAddCell query={notebook} alwaysVisible />
+						) : null}
 						{notebook.list.map((cellId) => (
 							<SortableItems key={cellId} id={cellId}>
 								<NotebookCell

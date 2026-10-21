@@ -1,5 +1,3 @@
-import { useMemo } from "react";
-import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Badge,
 	Card,
@@ -10,7 +8,8 @@ import {
 	HoverCardTrigger,
 	P,
 } from "@semoss/ui/next";
-import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
+import { formatToDataTestId } from "@semoss/utility/text";
+import { SystemAppImage } from "@/features/catalog-images/system-app-image";
 
 export interface SystemAppGridItemProps {
 	/** test id of the app */
@@ -29,20 +28,6 @@ export interface SystemAppGridItemProps {
 	gridStyle: "LIST" | "CARD";
 }
 
-const hashString = (str: string): number => {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
-	}
-	return Math.abs(h);
-};
-
-const generateGradient = (name: string): string => {
-	const base = hashString(name) % 360;
-	return `hsl(${base}, 22%, 72%)`;
-};
-
 /**
  * Card component for system apps (Playground, BI, Terminal).
  * Simplified variant with no favorites, info, or menu items. Opens the
@@ -57,14 +42,7 @@ export const SystemAppGridItem: React.FC<SystemAppGridItemProps> = ({
 }) => {
 	const tag = "SYSTEM";
 
-	const icon = (
-		<AppCatalogAvatar
-			name={name}
-			className="h-full w-full rounded text-lg"
-		/>
-	);
-
-	const gradient = useMemo(() => generateGradient(name || "Item"), [name]);
+	const icon = <SystemAppImage id={id} name={name} />;
 
 	if (gridStyle === "LIST") {
 		return (
@@ -103,9 +81,9 @@ export const SystemAppGridItem: React.FC<SystemAppGridItemProps> = ({
 									<Badge
 										variant="outline"
 										title={tag}
-										style={getTagBadgeStyle(tag)}
+										className="border-primary/20 bg-primary/10 text-primary"
 									>
-										<span className="max-w-[18ch] truncate px-2 font-semibold text-xs">
+										<span className="px-2 font-medium text-xs">
 											{tag}
 										</span>
 									</Badge>
@@ -121,7 +99,7 @@ export const SystemAppGridItem: React.FC<SystemAppGridItemProps> = ({
 						sideOffset={8}
 					>
 						<div className="flex flex-col gap-2">
-							<P className="font-semibold">{name}</P>
+							<P className="font-medium">{name}</P>
 							<P className="text-muted-foreground text-sm leading-relaxed">
 								{description}
 							</P>
@@ -141,10 +119,7 @@ export const SystemAppGridItem: React.FC<SystemAppGridItemProps> = ({
 			data-testid={formatToDataTestId(`catalogGridItem-${id}`)}
 		>
 			<Card className="flex h-full cursor-pointer flex-col gap-0 overflow-hidden p-0 hover:shadow-md group-focus:ring group-focus:ring-ring/50 group-focus:ring-inset">
-				<CardHeader
-					className="relative flex h-18 w-full items-center justify-center pt-4"
-					style={{ backgroundColor: gradient }}
-				>
+				<CardHeader className="relative flex h-18 w-full items-center justify-center bg-muted pt-4">
 					<div className="flex h-full w-full items-center justify-center">
 						{icon}
 					</div>
@@ -156,7 +131,7 @@ export const SystemAppGridItem: React.FC<SystemAppGridItemProps> = ({
 					</P>
 
 					{description ? (
-						<P className="line-clamp-2 min-h-[40px] text-muted-foreground text-sm">
+						<P className="line-clamp-2 min-h-10 text-muted-foreground text-sm">
 							{description}
 						</P>
 					) : null}
@@ -166,9 +141,9 @@ export const SystemAppGridItem: React.FC<SystemAppGridItemProps> = ({
 							<Badge
 								variant="outline"
 								title={tag}
-								style={getTagBadgeStyle(tag)}
+								className="border-primary/20 bg-primary/10 text-primary"
 							>
-								<span className="max-w-[18ch] truncate px-2 font-semibold text-xs">
+								<span className="px-2 font-medium text-xs">
 									{tag}
 								</span>
 							</Badge>

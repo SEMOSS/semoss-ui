@@ -23,12 +23,26 @@ export type RoomMcpEntry = {
 	[key: string]: unknown;
 };
 
+/** Native skill project reference consumed by RunAgent. */
+export interface RoomSkillReference {
+	/** Accessible skill project id. */
+	skill_id: string;
+	/** Optional display name retained for settings. */
+	name?: string;
+	/** Preserve an existing native pin without exposing version controls. */
+	pinned_version?: string;
+}
+
 /** Free-form options map persisted for a room via UpdateRoomOptions. */
 export type RoomOptionsMap = {
 	/** System prompt applied to the room's agent runs. */
 	instructions?: string;
+	/** False appends instructions to the agent prompt; true or omitted replaces it. */
+	overrideSystemPrompt?: boolean;
 	/** MCP servers exposed to the room's agent runs. */
 	mcp?: RoomMcpEntry[];
+	/** Native room skill additions. */
+	skills?: RoomSkillReference[];
 	/** Suggested prompts surfaced in the room's UI. */
 	predefinedPrompts?: unknown[];
 	/** Engine id of the model persisted for the room. */
@@ -65,6 +79,8 @@ export type PlaygroundMessagePart = {
 	uiText?: string;
 	/** Reasoning content for THINKING parts. */
 	thinking?: string;
+	/** Provider field that supplied a THINKING part, when needed for replay. */
+	source?: string;
 	/** Attached file details for MEDIA parts. */
 	mediaInfo?: {
 		fileName: string;
@@ -116,10 +132,21 @@ export type PlaygroundMessage = {
 	thinkingTokens?: number;
 	/** When the message was persisted. */
 	dateCreated?: string;
+	/** Durable agent-run attribution for this message. */
+	agentRun?: {
+		runId: string;
+		role?: string;
+		originatingRunId?: string;
+		childRunId?: string;
+		completionMode?: "WAIT" | "POST" | "POST_AND_CONTINUE" | string;
+		childStatus?: string;
+	};
 	/** Auxiliary metadata attached to the message. */
 	ornaments?: {
 		modelName?: string;
+		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
+		agentRunRole?: string;
 	};
 	/** Ordered content parts of the message. */
 	parts?: PlaygroundMessagePart[];

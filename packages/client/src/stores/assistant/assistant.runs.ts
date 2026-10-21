@@ -129,6 +129,8 @@ export interface BuildMessage {
 
 /** Tool invocation entry on a run's feed. */
 export interface BuildTool {
+	/** Message which originally requested this invocation. */
+	messageId?: string;
 	/** Tool call id shared by the call and its result. */
 	id: string;
 	/** Name of the invoked tool. */
@@ -477,6 +479,7 @@ const upsertTool = (
 	const existing = run.tools.find((tool) => tool.id === item.id);
 	const next: BuildTool = {
 		id: item.id,
+		messageId: existing?.messageId,
 		name: item.name ?? existing?.name ?? "Tool",
 		title: existing?.title,
 		description: existing?.description,
@@ -827,8 +830,15 @@ const mergeLoadedTools = (
 			merged.push({ ...tool });
 			continue;
 		}
+		// Durable calls can supply identity/metadata while the stream already has a result.
+		existing.messageId = tool.messageId ?? existing.messageId;
+		existing.metadata = { ...existing.metadata, ...tool.metadata };
 		if (toolStatusRank(tool.status) >= toolStatusRank(existing.status)) {
-			Object.assign(existing, tool);
+			Object.assign(existing, {
+				...tool,
+				messageId: existing.messageId,
+				metadata: existing.metadata,
+			});
 		}
 	}
 	return merged;
@@ -936,7 +946,7 @@ const upsertDurableTool = (tools: BuildTool[], next: BuildTool): void => {
  *
  * @name attachDurableMessages
  * @param runs - Run projections keyed by run id; parts are attached to the
- * run tagged in each message's ornaments (or inferred via tool call ids).
+ * run tagged in each message's agentRun context (or inferred via tool call ids).
  * @param messages - Durable playground messages to project.
  */
 export const attachDurableMessages = (
@@ -946,7 +956,8 @@ export const attachDurableMessages = (
 	for (const message of messages) {
 		const timestamp = normalizeTimestamp(message.dateCreated);
 		for (const [partIndex, part] of (message.parts ?? []).entries()) {
-			const taggedRunId = message.ornaments?.agentRunId;
+			const taggedRunId =
+				message.agentRun?.runId ?? message.ornaments?.agentRunId;
 			const inferredRun =
 				part.type === "TOOL_RESULT" && part.toolResult?.toolCallId
 					? Object.values(runs).find((candidate) =>
@@ -1033,6 +1044,8 @@ export const attachDurableMessages = (
 					title: part.toolCall.title,
 					description: part.toolCall.description,
 					arguments: part.toolCall.arguments,
+					metadata: part.toolCall._meta,
+					messageId: message.messageId,
 					status: "QUEUED",
 					timestamp,
 				});

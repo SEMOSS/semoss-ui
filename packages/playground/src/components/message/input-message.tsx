@@ -26,10 +26,15 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import type { InputMessageStore, RoomStore } from "@/stores";
+import { getErrorMessage } from "@semoss/utility/error";
+import { getFileExtension } from "@semoss/utility/file";
+import { getImageMimeType } from "@semoss/utility/image";
+import { MessageActions } from "@/features/conversation/message-actions";
+import type { InputMessageStore } from "@/stores/message/input-message.store";
+import type { RoomStore } from "@/stores/room/room.store";
 
 const getExtIcon = (fileName: string) => {
-	const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+	const ext = getFileExtension(fileName);
 	if (["xls", "xlsx", "csv"].includes(ext))
 		return { Icon: FileSpreadsheetIcon, ext };
 	if (
@@ -95,7 +100,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 
 		return (
 			<>
-				<div className="group ms-auto flex max-w-[750px] flex-col items-end">
+				<div className="group/message relative ms-auto flex max-w-full flex-col items-end">
 					<div className="items-start self-stretch rounded-lg bg-accent px-4 py-3 leading-normal">
 						{mediaParts.length > 0 && (
 							<div className="mb-2 flex flex-row gap-2 overflow-x-auto pb-1">
@@ -226,7 +231,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 														)) ? (
 														<img
 															className="h-full w-full object-cover"
-															src={`data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : ({ jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp" } as Record<string, string>)[p.mediaInfo.fileName?.split(".").pop()?.toLowerCase() ?? ""] || "image/png"};base64,${p.mediaInfo.base64Data}`}
+															src={`data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : getImageMimeType(getFileExtension(p.mediaInfo.fileName))};base64,${p.mediaInfo.base64Data}`}
 															alt={
 																p.mediaInfo
 																	.fileName
@@ -240,7 +245,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 																	1.25
 																}
 															/>
-															<span className="max-w-16 truncate font-medium text-[10px] text-muted-foreground uppercase">
+															<span className="max-w-16 truncate font-medium text-muted-foreground text-xs uppercase">
 																{ext}
 															</span>
 														</>
@@ -261,7 +266,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 							<span
 								key={`${message.id}-text-${i}`}
 								dir="auto"
-								className="whitespace-pre-wrap text-foreground text-small"
+								className="whitespace-pre-wrap text-base text-foreground"
 							>
 								{p.uiText && p.uiText !== p.text
 									? p.uiText
@@ -269,26 +274,18 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 							</span>
 						))}
 					</div>
-					<div className="flex flex-row items-center gap-0.5 pt-2">
-						<span className="px-2 text-muted-foreground text-xs">
-							<time dateTime={message.dateCreated.toISOString()}>
-								{message.dateCreated.toLocaleString(undefined, {
-									month: "numeric",
-									day: "numeric",
-									year: "numeric",
-									hour: "numeric",
-									minute: "2-digit",
-									hour12: true,
-								})}
-							</time>
-						</span>
-						<Tooltip>
+					<MessageActions
+						align="end"
+						dateCreated={message.dateCreated}
+					>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<Button
 									variant="ghost"
 									size="icon"
+									aria-label={t("input.copyMessage")}
 									disabled={message.parts.length === 0}
-									onClick={() => {
+									onClick={async () => {
 										const text = message.parts
 											.map((part) => {
 												if (part.type === "TEXT") {
@@ -317,28 +314,26 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 										}
 
 										try {
-											navigator.clipboard.writeText(text);
+											await navigator.clipboard.writeText(
+												text,
+											);
 
 											toast.success(
 												t("notifications.copySuccess"),
 											);
 										} catch (e) {
-											toast.error(
-												e instanceof Error
-													? e.message
-													: String(e),
-											);
+											toast.error(getErrorMessage(e));
 										}
 									}}
 								>
-									<CopyIcon />
+									<CopyIcon aria-hidden="true" />
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
 								{t("input.copyMessage")}
 							</TooltipContent>
 						</Tooltip>
-					</div>
+					</MessageActions>
 				</div>
 
 				<Dialog

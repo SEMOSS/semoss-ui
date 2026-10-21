@@ -3,10 +3,16 @@ export { FILE_PANEL_COMPONENTS } from "./components/file-panel.components";
 export {
 	FILE_PANEL_EVENTS,
 	FILE_PANEL_TYPES,
+	type FileSavedEvent,
 	type FilesChangedEvent,
 	isFilePanelType,
 } from "./constants/file-panel.constants";
 export { AccessStoreProvider } from "./contexts/access.context";
+export {
+	type FileExplorerHost,
+	FileExplorerHostProvider,
+	type FileExplorerHostProviderProps,
+} from "./contexts/file-explorer-host.context";
 export { useAccess } from "./hooks/use-access";
 export { type FileBuffer, useFileBuffer } from "./hooks/use-file-buffer";
 export {
@@ -25,6 +31,11 @@ export {
 	type FilePanelMode,
 	getFilePanelScope,
 } from "./types/file-panel.types";
+export type {
+	FileViewControls,
+	FileViewMode,
+	FileViewProps,
+} from "./types/file-view.types";
 export {
 	getCodeEditorLanguage,
 	getFileCodeEditorMenuItems,

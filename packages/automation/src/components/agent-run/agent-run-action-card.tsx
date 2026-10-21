@@ -12,6 +12,8 @@ import {
 	CodeContainer,
 	Textarea,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
 import { agentToolLabel, formatAgentActionArguments } from "./agent-run.utils";
 
 export type AgentRunActionDecision = "approve" | "edit" | "reject" | "respond";
@@ -72,9 +74,7 @@ export function AgentRunActionCard({
 			await onResolve(action, decision, paramValues);
 		} catch (error) {
 			setResolutionError(
-				error instanceof Error
-					? error.message
-					: "Unable to submit this action.",
+				getErrorMessage(error, "Unable to submit this action."),
 			);
 		}
 	};
@@ -83,19 +83,13 @@ export function AgentRunActionCard({
 		let paramValues: Record<string, unknown>;
 		try {
 			const parsed: unknown = JSON.parse(argumentDraft);
-			if (
-				!parsed ||
-				typeof parsed !== "object" ||
-				Array.isArray(parsed)
-			) {
+			if (!isRecord(parsed)) {
 				throw new Error("Tool arguments must be a JSON object.");
 			}
 			paramValues = parsed as Record<string, unknown>;
 		} catch (error) {
 			setArgumentError(
-				error instanceof Error
-					? error.message
-					: "Tool arguments must be valid JSON.",
+				getErrorMessage(error, "Tool arguments must be valid JSON."),
 			);
 			return;
 		}

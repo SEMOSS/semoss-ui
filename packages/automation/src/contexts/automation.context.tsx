@@ -9,9 +9,12 @@ export interface AutomationContextValue {
 	readOnly: boolean;
 	viewingHistory: boolean;
 	running: boolean;
-	openNode: (nodeId: string) => void;
+	openNode: (nodeId: string, bodyNodeId?: string) => void;
+	openLoopEditor: (nodeId: string) => void;
 	deleteNode: (nodeId: string) => void;
+	deleteNodeAndDownstream: (nodeId: string) => void;
 	addNodeAfter: (nodeId: string, sourceHandle?: string) => void;
+	updateNode: (node: AutomationNode) => void;
 	viewAgentRun: (trace: AutomationNodeTrace) => void;
 }
 

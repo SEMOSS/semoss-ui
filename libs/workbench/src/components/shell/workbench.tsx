@@ -1,6 +1,7 @@
 import { type FC, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Spinner, useIsMobile } from "@semoss/ui/next";
-import { useWorkbench, useWorkbenchLifeCycle } from "../../hooks";
+import { useWorkbench } from "../../hooks/use-workbench";
+import { useWorkbenchLifeCycle } from "../../hooks/use-workbench-life-cycle";
 import type {
 	WorkbenchBorderSlotCtx,
 	WorkbenchBorderSlots,
@@ -62,9 +63,14 @@ interface WorkbenchProps {
 	/**
 	 * Rail add-ons per side (before/after the icon list). A rail carrying slot
 	 * content renders even with no panels docked to it. The mobile layout has
-	 * no rails, so `left.after` and `top.after` surface in the actions drawer.
+	 * no rails: by default `left.after` and both top slots surface in the actions drawer.
+	 * With `mobileTopBorder="toolbar"`, both top slots stay above the mobile tabs.
 	 */
 	borderSlots?: WorkbenchBorderSlots;
+	/** Keep top slots above the mobile tabs, or use the existing actions drawer. */
+	mobileTopBorder?: "toolbar" | "drawer";
+	/** Hosts may use the compact tab layout when their container is narrow. */
+	layoutMode?: "auto" | "compact";
 
 	/** Fired when a panel becomes docked somewhere. */
 	onPanelOpen?: (pid: WorkbenchPanelId) => void;
@@ -89,6 +95,8 @@ export const Workbench: FC<WorkbenchProps> = ({
 	snapshot,
 	onChange,
 	borderSlots,
+	mobileTopBorder = "drawer",
+	layoutMode = "auto",
 	onPanelOpen,
 	onPanelClose,
 	onSelectionChange,
@@ -99,7 +107,8 @@ export const Workbench: FC<WorkbenchProps> = ({
 	const isMobileLayout = useWorkbench((s) => s.layout.isMobileLayout);
 	// a boolean, so the shell re-renders only when maximize actually flips
 	const maximized = useWorkbench((s) => Boolean(s.layout.maximizedTabsetId));
-	const isMobile = useIsMobile();
+	const isSmallViewport = useIsMobile();
+	const isMobile = layoutMode === "compact" || isSmallViewport;
 
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const stageRef = useRef<HTMLDivElement | null>(null);
@@ -168,15 +177,21 @@ export const Workbench: FC<WorkbenchProps> = ({
 
 	const mobileActionsSlot = useMemo(() => {
 		const leftAfter = borderSlots?.left?.after;
+		const topBefore = borderSlots?.top?.before;
 		const topAfter = borderSlots?.top?.after;
 
-		if (!topAfter) {
+		if (mobileTopBorder === "toolbar" || (!topBefore && !topAfter)) {
 			return leftAfter;
 		}
 
 		return (ctx: WorkbenchBorderSlotCtx) => (
 			<>
 				{resolveBorderSlot(leftAfter, ctx)}
+				{resolveBorderSlot(topBefore, {
+					...ctx,
+					side: "top",
+					vertical: false,
+				})}
 				{resolveBorderSlot(topAfter, {
 					...ctx,
 					side: "top",
@@ -184,7 +199,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 				})}
 			</>
 		);
-	}, [borderSlots]);
+	}, [borderSlots, mobileTopBorder]);
 
 	return (
 		<>
@@ -199,7 +214,14 @@ export const Workbench: FC<WorkbenchProps> = ({
 						<Spinner />
 					</div>
 				) : isMobileLayout ? (
-					<WorkbenchMobile actionsSlot={mobileActionsSlot} />
+					<WorkbenchMobile
+						actionsSlot={mobileActionsSlot}
+						topSlots={
+							mobileTopBorder === "toolbar"
+								? borderSlots?.top
+								: undefined
+						}
+					/>
 				) : (
 					<div className="relative flex h-full w-full flex-row gap-2 p-2">
 						<WorkbenchBorder
@@ -234,7 +256,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 				    a scrim below them covers nothing while a panel is
 				    maximized — which is exactly when it has to be seen. */}
 				{isLoading ? (
-					<div className="pointer-events-none absolute inset-0 z-60 flex items-center justify-center bg-black/50">
+					<div className="pointer-events-none absolute inset-0 z-60 flex items-center justify-center bg-background/80">
 						<Spinner />
 					</div>
 				) : null}

@@ -57,7 +57,10 @@ export const StorageTitleCard: React.FC<StorageTileCardProps> = ({
 
 			<div className="flex w-full flex-col gap-1">
 				<TooltipProvider>
-					<Tooltip delayDuration={300}>
+					<Tooltip
+						disableHoverableContent={false}
+						delayDuration={300}
+					>
 						<TooltipTrigger asChild>
 							<p
 								ref={textRef}

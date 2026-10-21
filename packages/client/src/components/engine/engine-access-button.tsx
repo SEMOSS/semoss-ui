@@ -1,6 +1,6 @@
 import { Eye, LockKeyhole, Pencil, Plus, User } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import {
 	Button,
@@ -67,10 +67,14 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 	const [open, setOpen] = useState(false);
 	const [requestedRole, setRequestedRole] = useState<Role>("READ_ONLY");
 	const [comment, setComment] = useState<string>("");
+	const previousEngineId = useRef(engine.engine_id);
 
 	// close when the id changes
 	useEffect(() => {
-		setOpen(false);
+		if (previousEngineId.current !== engine.engine_id) {
+			previousEngineId.current = engine.engine_id;
+			setOpen(false);
+		}
 	}, [engine.engine_id]);
 
 	const handleOpen = () => {
@@ -144,9 +148,12 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 					setOpen(isOpen);
 				}}
 			>
-				<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
+				<DialogContent
+					aria-describedby={undefined}
+					className="max-h-[90vh] overflow-auto sm:max-w-2xl"
+				>
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
 							{permission === "DISCOVERABLE"
 								? "Request Access"
 								: "Change Access"}

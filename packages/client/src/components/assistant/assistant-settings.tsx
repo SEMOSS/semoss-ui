@@ -1,6 +1,7 @@
-import { BotIcon, ChevronDownIcon, TriangleAlertIcon } from "lucide-react";
+import { ChevronDownIcon, TriangleAlertIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { EngineSelect } from "@semoss/shared";
+import { usePixel } from "@semoss/sdk/react";
+import { EngineSelect, ProjectSelect } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
@@ -21,12 +22,16 @@ import {
 	SelectValue,
 	Separator,
 	Spinner,
+	z,
 } from "@semoss/ui/next";
+import { agentResourcesQuery } from "@/api/assistant-tools";
+import { AssistantSettingSkills } from "@/features/assistant-tools/assistant-setting-skills";
+import { AssistantSettingTools } from "@/features/assistant-tools/assistant-setting-tools";
 import { useAssistant } from "@/hooks/use-assistant";
 import type {
 	AssistantEffort,
 	AssistantPermissionMode,
-} from "@/stores/assistant";
+} from "@/stores/assistant/assistant.store";
 
 const DEFAULT_MAX_TURNS = 30;
 
@@ -52,6 +57,21 @@ const EFFORT_OPTIONS: { value: AssistantEffort; label: string }[] = [
 	{ value: "max", label: "Max" },
 ];
 
+const agentResourcesSchema = z.object({
+	mcp: z
+		.array(
+			z.object({
+				id: z.string(),
+				name: z.string().nullish(),
+				display_name: z.string().nullish(),
+			}),
+		)
+		.nullish(),
+	skills: z
+		.array(z.object({ id: z.string(), name: z.string().nullish() }))
+		.nullish(),
+});
+
 /**
  * Assistant settings view: model picker, conversation compaction, and advanced
  * controls (max turns). The compact action is disabled while a run is active.
@@ -62,6 +82,7 @@ const EFFORT_OPTIONS: { value: AssistantEffort; label: string }[] = [
 export const AssistantSettings = () => {
 	const model = useAssistant((state) => state.model);
 	const agent = useAssistant((state) => state.agent);
+	const defaultAgent = useAssistant((state) => state.defaultAgent);
 	const roomId = useAssistant((state) => state.roomId);
 	const activeRunId = useAssistant((state) => state.activeRunId);
 	const compact = useAssistant((state) => state.compact);
@@ -70,12 +91,15 @@ export const AssistantSettings = () => {
 	const effort = useAssistant((state) => state.effort);
 	const thinking = useAssistant((state) => state.thinking);
 	const setModel = useAssistant((state) => state.setModel);
+	const setAgent = useAssistant((state) => state.setAgent);
 	const setMaxTurns = useAssistant((state) => state.setMaxTurns);
 	const setPermissionMode = useAssistant((state) => state.setPermissionMode);
 	const setEffort = useAssistant((state) => state.setEffort);
 	const setThinking = useAssistant((state) => state.setThinking);
 
 	const fieldId = useId();
+	const agentId = `${fieldId}-agent`;
+	const agentDescriptionId = `${fieldId}-agent-description`;
 	const maxTurnsId = `${fieldId}-max-turns`;
 	const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 	const [isCompacting, setIsCompacting] = useState(false);
@@ -100,28 +124,54 @@ export const AssistantSettings = () => {
 
 	const modelName =
 		model?.engine_display_name || model?.engine_name || "Select model";
-	// The host workbench binds the agent, so this is read-only for now. It is
-	// shown because which agent answers changes the tools and skills available,
-	// and that is otherwise invisible from the conversation.
-	const agentName = agent?.name || agent?.workspace_id || "Default assistant";
+	const selectedAgent = agent ?? defaultAgent;
+	const agentName = selectedAgent.name || selectedAgent.workspace_id;
+	const insightId = useAssistant((state) => state.insightId);
+	const workspace = usePixel<unknown>(
+		insightId ? agentResourcesQuery(selectedAgent.workspace_id) : "",
+		{ data: null },
+		insightId ?? undefined,
+	);
+	const resources =
+		workspace.status === "SUCCESS"
+			? agentResourcesSchema.safeParse(workspace.data)
+			: null;
 
 	return (
-		<ScrollArea className="min-h-0 flex-1">
-			<div className="flex flex-col gap-4 p-3">
+		<ScrollArea className="[&_[data-slot=scroll-area-viewport]>div]:block! min-h-0 flex-1">
+			<div className="flex min-w-0 flex-col gap-4 p-3">
 				<Field>
-					<FieldLabel>Agent</FieldLabel>
-					<div className="flex h-9 items-center gap-2 rounded-md border border-input px-3 shadow-xs">
-						<BotIcon
-							className="size-4 shrink-0 text-muted-foreground"
-							aria-hidden
-						/>
-						<span className="truncate text-sm">{agentName}</span>
+					<div className="flex min-h-7 items-center justify-between gap-2">
+						<FieldLabel htmlFor={agentId}>Agent</FieldLabel>
+						{agent && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="h-7 px-2 text-xs"
+								onClick={() => setAgent(null)}
+							>
+								Use default
+							</Button>
+						)}
 					</div>
-					<FieldDescription className="text-xs">
-						{agent
-							? "Set by this workbench. Its skills and tools define what the assistant can do here."
-							: "No agent is bound, so this room uses the default assistant."}
-					</FieldDescription>
+					<ProjectSelect
+						id={agentId}
+						aria-describedby={agentDescriptionId}
+						className="h-9 shadow-xs"
+						name={agentName}
+						value={selectedAgent.workspace_id}
+						projectTypes={["WORKSPACE"]}
+						onChange={(nextAgent) =>
+							setAgent({
+								workspace_id: nextAgent.project_id,
+								name:
+									nextAgent.project_display_name ||
+									nextAgent.project_name,
+							})
+						}
+						popoverContentProps={{ align: "start" }}
+					/>
 				</Field>
 
 				<Field>
@@ -138,12 +188,52 @@ export const AssistantSettings = () => {
 							className: "w-72 max-w-72",
 						}}
 					/>
-					<FieldDescription className="text-xs">
-						Model used for every assistant run in this room.
-					</FieldDescription>
 				</Field>
 
-				<Field orientation="horizontal">
+				{insightId &&
+					(workspace.status === "INITIAL" ||
+						workspace.status === "LOADING") && (
+						<output className="text-muted-foreground text-xs">
+							Loading agent tools and skills…
+						</output>
+					)}
+				{(workspace.status === "ERROR" ||
+					resources?.success === false) && (
+					<Alert variant="destructive">
+						<AlertDescription>
+							{workspace.error?.message ||
+								"Unable to load this agent’s tools and skills."}
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={workspace.refresh}
+							>
+								Retry agent resources
+							</Button>
+						</AlertDescription>
+					</Alert>
+				)}
+				<AssistantSettingTools
+					key={`tools:${roomId}`}
+					agentName={agentName}
+					agentTools={(resources?.data?.mcp ?? []).map((tool) => ({
+						id: tool.id,
+						name: tool.display_name || tool.name || tool.id,
+					}))}
+				/>
+				<AssistantSettingSkills
+					key={`skills:${roomId}`}
+					agentName={agentName}
+					agentSkills={(resources?.data?.skills ?? []).map(
+						(skill) => ({
+							id: skill.id,
+							name: skill.name || skill.id,
+						}),
+					)}
+				/>
+
+				<Field>
 					<div>
 						<FieldLabel>Context</FieldLabel>
 						<FieldDescription className="text-xs">

@@ -34,8 +34,8 @@ import {
 	SidebarProvider,
 	SidebarSeparator,
 } from "@semoss/ui/next";
+import { formatToDataTestId } from "@semoss/utility/text";
 import { useConfig, usePage, useSession } from "@/hooks";
-import { formatToDataTestId } from "@/utility";
 import { LogoutPopover } from "./LogoutPopover";
 
 const CATALOG_ROUTES = [
@@ -318,7 +318,7 @@ export const Sidebar: React.FC = () => {
 								onOpenChange={setIsLogoutPopoverOpen}
 							>
 								<SidebarMenuButton
-									aria-label="Login"
+									aria-label="Account options"
 									className={NAV_BUTTON_CLASS}
 									data-testid={formatToDataTestId(
 										"sidebar-login-btn",
@@ -362,6 +362,7 @@ export const Sidebar: React.FC = () => {
 			}}
 		>
 			<SheetContent
+				aria-describedby={undefined}
 				side="left"
 				className="w-72 max-w-none gap-0 bg-sidebar p-0 [&>button]:hidden"
 				data-testid="sidebar-overlay"

@@ -18,8 +18,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import { useChat } from "@/hooks";
-import { normalizeTimestamp } from "@/utility";
 
 export interface RoomItem {
 	ROOM_ID: string;
@@ -93,7 +93,7 @@ export const ChatRow = ({
 		}
 	};
 
-	const d = normalizeTimestamp(room.DATE_CREATED);
+	const d = parseTimestampWithUtcDefault(room.DATE_CREATED);
 	const relative = d.isValid() ? d.fromNow() : room.DATE_CREATED;
 	const absolute = d.isValid()
 		? d.format("MMM D, YYYY h:mm A")

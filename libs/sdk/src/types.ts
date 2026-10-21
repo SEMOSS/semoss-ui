@@ -1,3 +1,5 @@
+import type { ModelUsageLimit } from "./api/access";
+
 /**
  * Script object
  */
@@ -21,11 +23,52 @@ export interface User {
 	id: string;
 	type?: string;
 	email?: string;
+	/**
+	 * On a model engine, the person's usage limit on their own grant, or null
+	 * for no limit defined
+	 */
+	usage_limit?: ModelUsageLimit | null;
 }
 
+/** A person's access to add or change through the project and engine user endpoints */
 export interface PostUser {
+	/** User id */
 	userid: string;
+	/** The access level */
 	permission: Role;
+	/** Login type, for a person picked from the directory */
+	type?: string | null;
+	/** Display name, for a person picked from the directory */
+	name?: string | null;
+	/** Email address, for a person picked from the directory */
+	email?: string | null;
+	/** Login name, for a person picked from the directory */
+	username?: string | null;
+	/**
+	 * On a model engine, the person's usage limit. A limit with no rules that is
+	 * not Unlimited means no limit defined; an edit that leaves it out keeps the
+	 * limit the person has.
+	 */
+	usageLimit?: ModelUsageLimit | null;
+}
+
+/**
+ * A person found by a user search, either among existing users or in the
+ * Microsoft directory
+ */
+export interface UserSearchResult {
+	/** User id. A directory person's id is their Microsoft id. */
+	id: string;
+	/** Display name */
+	name: string | null;
+	/** Email address */
+	email: string | null;
+	/** Login name, such as a Microsoft user principal name */
+	username: string | null;
+	/** Login provider, such as NATIVE or MICROSOFT */
+	type: string | null;
+	/** Whether the person already has an account. Only directory results carry it. */
+	hasAccount?: boolean;
 }
 
 export interface UserAccessRequest {
@@ -124,6 +167,11 @@ export interface RoomOptions {
 	predefinedPrompts: PredefinedPrompt[];
 	/** System-level instructions / persona injected into every conversation */
 	instructions: string;
+	/**
+	 * False appends nonempty instructions to the agent prompt. True or omitted
+	 * preserves the legacy replacement behavior. Requires backend support.
+	 */
+	overrideSystemPrompt?: boolean;
 	/** MCP tool and knowledge-source entries enabled for the room */
 	mcp: MCPToolConfig[];
 	/** Agent workspace linked to the room, if any */
@@ -336,37 +384,8 @@ export interface PendingAgentAction {
 	status: string;
 }
 
-/** Measured activity for one agent; child runs expose their own measurements. */
-export interface AgentRunProgress {
-	phase: string;
-	activity: "idle" | "model" | "tool";
-	currentTool: string | null;
-	maxTurns: number;
-	turnsCompleted: number;
-	turnsRemaining: number;
-	modelCalls: number;
-	/** Model requests only, excluding tool execution. */
-	modelTimeMs: number;
-	/** Sum of tool durations; parallel tool durations may overlap. */
-	toolTimeMs: number;
-	/** Wall time spent in tool batches, counting overlapping tools once. */
-	toolWallTimeMs: number;
-	/** Active execution time, excluding time paused for human input. */
-	elapsedMs: number;
-	toolCalls: number;
-	toolFailures: number;
-	repeatedFailures: {
-		tool: string;
-		target: string;
-		count: number;
-		error: string;
-	}[];
-}
-
 /** Durable, current state of an agent run — never inferred from stream events. */
 export interface AgentRunSnapshot {
-	/** Available on instrumented runs, including failures. */
-	progress?: AgentRunProgress;
 	/** The run's own id — also its jobId, the model-facing handle. */
 	runId: string;
 	/** The room this run's messages are written to. */
@@ -390,7 +409,6 @@ export interface AgentRunSnapshot {
  * in AgentRunItemEvent.
  */
 export type AgentRunItem =
-	| (AgentRunProgress & { id: string; kind: "progress" })
 	| {
 			/** Unique within the run. */
 			id: string;

@@ -58,9 +58,9 @@ export const PlatformMessages: React.FC = () => {
 		<>
 			{!acceptedTerms && terms.header && terms.text && (
 				<Dialog open={true}>
-					<DialogContent>
+					<DialogContent aria-describedby={undefined}>
 						<DialogHeader>
-							<DialogTitle>
+							<DialogTitle className="font-medium text-base leading-6">
 								<RawHtml html={terms.header} />
 							</DialogTitle>
 						</DialogHeader>

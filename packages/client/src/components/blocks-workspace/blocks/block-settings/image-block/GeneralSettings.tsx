@@ -1,13 +1,13 @@
 import { useParams } from "react-router";
 import { useBlock } from "@semoss/renderer";
 import { useSession } from "@/hooks";
-import TabsComponent from "./SelectionTabs";
+import { TabsComponent } from "./SelectionTabs";
 
 interface GeneralSettingsProps {
 	id: string;
 }
 
-const GeneralSettings: React.FC<GeneralSettingsProps> = ({ id }) => {
+export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ id }) => {
 	const { data, setData } = useBlock(id);
 	const insightID = useSession((state) => state.insightID);
 	const { appId } = useParams();
@@ -26,5 +26,3 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({ id }) => {
 		</div>
 	);
 };
-
-export default GeneralSettings;

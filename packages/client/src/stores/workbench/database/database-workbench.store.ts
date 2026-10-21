@@ -1,6 +1,8 @@
 import { createStore, type StoreApi } from "zustand";
 import type { ColumnInterface } from "@semoss/sdk";
 import { runPixel } from "@semoss/sdk/react";
+import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
 import type { WorkbenchPanelRecord, WorkbenchState } from "@semoss/workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
@@ -59,17 +61,47 @@ type DatabaseQueryResult =
 			raw: boolean;
 			sourcePanel: string;
 			results: DatabaseStatementResult[];
+			/** What the script left in the database, when it ran in one transaction. */
+			transaction?: DatabaseTransactionSummary;
 			timeToRun: number;
 	  };
+
+/** Each outcome a SQL script run in one transaction can have. */
+const TRANSACTION_OUTCOMES = ["COMMITTED", "ROLLED_BACK", "UNKNOWN"] as const;
+
+/**
+ * What a SQL script run in one transaction left in the database: COMMITTED
+ * kept every change, ROLLED_BACK kept none, and UNKNOWN means the commit did
+ * not report back, so the database has to be checked.
+ */
+export type DatabaseTransactionOutcome = (typeof TRANSACTION_OUTCOMES)[number];
+
+/** The whole-script part of a SQL script run in one transaction. */
+export interface DatabaseTransactionSummary {
+	/** What the transaction left in the database. */
+	outcome: DatabaseTransactionOutcome;
+	/** The backend's sentence about the outcome, naming a failed statement. */
+	message: string;
+}
 
 interface DatabaseStatementResultBase {
 	statement: number;
 	query: string;
 	route: string;
 	timeToRun: number;
+	/** Rows the statement changed, as the driver reported it, in one transaction. */
+	updateCount?: number;
+	/** The SQLState of the statement's error, when the driver gave one, in one transaction. */
+	sqlState?: string;
+	/** Whether rows were left out of a table kept in one transaction, past the limit. */
+	hasMoreRows?: boolean;
 }
 
-/** One eagerly collected statement result from a multi-statement SQL query. */
+/**
+ * One eagerly collected statement result from a multi-statement SQL query, or
+ * from a script run in one transaction, where a table can belong to a statement
+ * that was then rolled back.
+ */
 export type DatabaseStatementResult = DatabaseStatementResultBase &
 	(
 		| {
@@ -78,8 +110,18 @@ export type DatabaseStatementResult = DatabaseStatementResultBase &
 				output: { headers: string[]; values: unknown[][] };
 		  }
 		| {
+				type: "TABLE";
+				status: "ROLLED_BACK";
+				output: { headers: string[]; values: unknown[][] };
+		  }
+		| {
 				type: "MESSAGE";
 				status: "SUCCESS";
+				message: string;
+		  }
+		| {
+				type: "MESSAGE";
+				status: "ROLLED_BACK";
 				message: string;
 		  }
 		| {
@@ -136,11 +178,17 @@ export interface DatabaseWorkbenchState {
 	/** Adds a new query editor panel to the main tabset. */
 	addQueryPanel: (initialQuery: string, name?: string) => void;
 
-	/** Runs a query and opens/reuses its paired results panel. */
+	/**
+	 * Runs a query and opens/reuses its paired results panel. In SQL mode a
+	 * script can run in one transaction that commits once, with a timeout for
+	 * the whole script; other modes ignore both.
+	 */
 	onQuery: (params: {
 		panelId: string;
 		query: string;
 		raw?: boolean;
+		transaction?: boolean;
+		timeout?: number;
 	}) => Promise<void>;
 
 	/**
@@ -232,9 +280,98 @@ const parseAdminSchemaRows = (rows: unknown): DatabaseTableStructure[] => {
 	}));
 };
 
-/** Narrows an unknown value to a property-bearing object. */
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
+/** Parses one statement's entry, or returns null when the item is not one. */
+const parseStatementResult = (
+	item: unknown,
+): DatabaseStatementResult | null => {
+	if (!isRecord(item)) {
+		return null;
+	}
+
+	const statement = item.statement;
+	const query = item.query;
+	const route = item.route;
+	const type = item.type;
+	const status = item.status;
+	const timeToRun = item.timeToRun;
+	if (
+		typeof statement !== "number" ||
+		typeof query !== "string" ||
+		typeof route !== "string" ||
+		typeof type !== "string" ||
+		typeof status !== "string" ||
+		typeof timeToRun !== "number"
+	) {
+		return null;
+	}
+
+	const base: DatabaseStatementResultBase = {
+		statement,
+		query,
+		route,
+		timeToRun,
+	};
+	if (typeof item.updateCount === "number") {
+		base.updateCount = item.updateCount;
+	}
+	if (typeof item.sqlState === "string") {
+		base.sqlState = item.sqlState;
+	}
+	if (typeof item.hasMoreRows === "boolean") {
+		base.hasMoreRows = item.hasMoreRows;
+	}
+
+	if (type === "TABLE" && isRecord(item.output)) {
+		const headers = item.output.headers;
+		const values = item.output.values;
+		if (
+			Array.isArray(headers) &&
+			headers.every((header) => typeof header === "string") &&
+			Array.isArray(values) &&
+			values.every((row) => Array.isArray(row))
+		) {
+			const output = { headers, values: values as unknown[][] };
+			if (status === "SUCCESS") {
+				return { ...base, type, status, output };
+			}
+			if (status === "ROLLED_BACK") {
+				return { ...base, type, status, output };
+			}
+		}
+	}
+
+	if (typeof item.message === "string") {
+		if (type === "MESSAGE" && status === "SUCCESS") {
+			return { ...base, type, status, message: item.message };
+		}
+		if (type === "MESSAGE" && status === "ROLLED_BACK") {
+			return { ...base, type, status, message: item.message };
+		}
+		if (type === "ERROR" && status === "ERROR") {
+			return { ...base, type, status, message: item.message };
+		}
+		if (type === "SKIPPED" && status === "SKIPPED") {
+			return { ...base, type, status, message: item.message };
+		}
+	}
+
+	return null;
+};
+
+/** Parses every entry, or returns null when any item is not a statement's entry. */
+const parseStatementList = (
+	items: unknown[],
+): DatabaseStatementResult[] | null => {
+	const results: DatabaseStatementResult[] = [];
+	for (const item of items) {
+		const result = parseStatementResult(item);
+		if (!result) {
+			return null;
+		}
+		results.push(result);
+	}
+	return results;
+};
 
 /** Parses the stable SQL batch payload returned by AbstractSqlQueryReactor. */
 export const parseStatementResults = (
@@ -243,72 +380,82 @@ export const parseStatementResults = (
 	if (!Array.isArray(output) || output.length < 2) {
 		return null;
 	}
+	return parseStatementList(output);
+};
 
-	const results: DatabaseStatementResult[] = [];
-	for (const item of output) {
-		if (!isRecord(item)) {
-			return null;
-		}
-
-		const statement = item.statement;
-		const query = item.query;
-		const route = item.route;
-		const type = item.type;
-		const status = item.status;
-		const timeToRun = item.timeToRun;
-		if (
-			typeof statement !== "number" ||
-			typeof query !== "string" ||
-			typeof route !== "string" ||
-			typeof type !== "string" ||
-			typeof status !== "string" ||
-			typeof timeToRun !== "number"
-		) {
-			return null;
-		}
-
-		const base = { statement, query, route, timeToRun };
-		if (type === "TABLE" && status === "SUCCESS" && isRecord(item.output)) {
-			const headers = item.output.headers;
-			const values = item.output.values;
-			if (
-				Array.isArray(headers) &&
-				headers.every((header) => typeof header === "string") &&
-				Array.isArray(values) &&
-				values.every((row) => Array.isArray(row))
-			) {
-				results.push({
-					...base,
-					type,
-					status,
-					output: {
-						headers,
-						values: values as unknown[][],
-					},
-				});
-				continue;
-			}
-		}
-
-		if (typeof item.message === "string") {
-			if (type === "MESSAGE" && status === "SUCCESS") {
-				results.push({ ...base, type, status, message: item.message });
-				continue;
-			}
-			if (type === "ERROR" && status === "ERROR") {
-				results.push({ ...base, type, status, message: item.message });
-				continue;
-			}
-			if (type === "SKIPPED" && status === "SKIPPED") {
-				results.push({ ...base, type, status, message: item.message });
-				continue;
-			}
-		}
-
+/**
+ * Parses the payload of a SQL script run in one transaction: its outcome, the
+ * backend's message about it, and one entry per statement, a script of one
+ * statement included.
+ */
+export const parseTransactionResult = (
+	output: unknown,
+): {
+	transaction: DatabaseTransactionSummary;
+	results: DatabaseStatementResult[];
+} | null => {
+	if (!isRecord(output)) {
 		return null;
 	}
 
-	return results;
+	const outcome = TRANSACTION_OUTCOMES.find(
+		(candidate) => candidate === output.outcome,
+	);
+	const message = output.message;
+	const statements = output.statements;
+	if (
+		!outcome ||
+		typeof message !== "string" ||
+		!Array.isArray(statements) ||
+		statements.length === 0
+	) {
+		return null;
+	}
+
+	const results = parseStatementList(statements);
+	return results ? { transaction: { outcome, message }, results } : null;
+};
+
+/** What one run of a query panel sends. */
+export interface DatabaseQueryRequest {
+	/** The workbench mode, which picks the pixel. */
+	mode: DatabaseWorkbenchMode;
+	/** The database the query runs on. */
+	engineId: string;
+	/** The query or script, as typed. */
+	query: string;
+	/** SPARQL only: whether the rows come back raw. */
+	raw: boolean;
+	/** SQL only: whether every statement runs in one transaction that commits once. */
+	transaction: boolean;
+	/** SQL in one transaction only: the seconds the whole script may run. */
+	timeout?: number;
+}
+
+/**
+ * The pixel for one run. Only SQL mode runs a script in one transaction, since
+ * AdminSqlQuery and SparqlQuery take no transaction.
+ */
+export const buildQueryPixel = ({
+	mode,
+	engineId,
+	query,
+	raw,
+	transaction,
+	timeout,
+}: DatabaseQueryRequest): string => {
+	const target = `database=["${engineId}"], query=["<encode>${query}</encode>"]`;
+	if (mode === "ADMIN_SQL") {
+		return `AdminSqlQuery(${target}, commit=[true]);`;
+	}
+	if (mode === "SPARQL") {
+		return `SparqlQuery(${target}, raw=[${raw}], commit=[true]);`;
+	}
+	if (!transaction) {
+		return `SqlQuery(${target}, commit=[true]);`;
+	}
+	const limit = timeout === undefined ? "" : `, timeout=[${timeout}]`;
+	return `SqlQuery(${target}, commit=[true], transaction=[true]${limit});`;
 };
 
 /** The next query number, derived from the records so it survives a reload. */
@@ -429,8 +576,7 @@ export const createDatabaseWorkbenchStore = (
 						return;
 					}
 
-					const message =
-						err instanceof Error ? err.message : "Unknown error";
+					const message = getErrorMessage(err, "Unknown error");
 
 					set((state) => ({
 						structure: {
@@ -500,8 +646,7 @@ export const createDatabaseWorkbenchStore = (
 						return;
 					}
 
-					const message =
-						err instanceof Error ? err.message : "Unknown error";
+					const message = getErrorMessage(err, "Unknown error");
 
 					set((state) => ({
 						category: {
@@ -538,7 +683,13 @@ export const createDatabaseWorkbenchStore = (
 				);
 		},
 
-		onQuery: async ({ panelId, query, raw = true }) => {
+		onQuery: async ({
+			panelId,
+			query,
+			raw = true,
+			transaction = false,
+			timeout,
+		}) => {
 			const engineId = get().engineId;
 			if (!engineId) {
 				return;
@@ -582,14 +733,15 @@ export const createDatabaseWorkbenchStore = (
 
 			try {
 				const mode = get().mode;
-				let pixel: string;
-				if (mode === "ADMIN_SQL") {
-					pixel = `AdminSqlQuery(database=["${engineId}"], query=["<encode>${q}</encode>"], commit=[true]);`;
-				} else if (mode === "SPARQL") {
-					pixel = `SparqlQuery(database=["${engineId}"], query=["<encode>${q}</encode>"], raw=[${raw}], commit=[true]);`;
-				} else {
-					pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${q}</encode>"], commit=[true]);`;
-				}
+				const isOneTransaction = transaction && mode === "SQL";
+				const pixel = buildQueryPixel({
+					mode,
+					engineId,
+					query: q,
+					raw,
+					transaction: isOneTransaction,
+					timeout,
+				});
 
 				const response = await runPixel(pixel);
 				if (get().engineId !== engineId) {
@@ -601,6 +753,10 @@ export const createDatabaseWorkbenchStore = (
 				const firstReturn = response.pixelReturn[0];
 				const output = firstReturn?.output;
 				const timeToRun = firstReturn?.timeToRun ?? 0;
+				// a reply that is not a transaction result reads as any other reply
+				const transactionResult = isOneTransaction
+					? parseTransactionResult(output)
+					: null;
 
 				if (response.errors.length > 0) {
 					nextResult = {
@@ -609,6 +765,16 @@ export const createDatabaseWorkbenchStore = (
 						raw,
 						sourcePanel: panelId,
 						message: response.errors.join("\n"),
+						timeToRun,
+					};
+				} else if (transactionResult) {
+					nextResult = {
+						type: "BATCH",
+						query: q,
+						raw,
+						sourcePanel: panelId,
+						results: transactionResult.results,
+						transaction: transactionResult.transaction,
 						timeToRun,
 					};
 				} else if (
@@ -679,8 +845,7 @@ export const createDatabaseWorkbenchStore = (
 					return;
 				}
 
-				const message =
-					err instanceof Error ? err.message : "Unknown error";
+				const message = getErrorMessage(err, "Unknown error");
 
 				set((state) => ({
 					results: {

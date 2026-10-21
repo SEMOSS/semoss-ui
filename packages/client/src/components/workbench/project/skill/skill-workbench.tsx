@@ -16,6 +16,8 @@ import {
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
+import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
+import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
 import { useAssistantStore, useProject, useSession } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
@@ -126,6 +128,7 @@ export const SKILL_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel(
 		PROJECT_SETTINGS_TABS,
 	),
+	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 

@@ -1,14 +1,20 @@
+import { isRecord } from "@semoss/utility/object";
 import type {
 	AutomationEdge,
 	AutomationNode,
 	AutomationNodeType,
+	JevDecisionConfig,
 	NodeConfig,
 } from "./automation.types";
 import { getAutomationNodeDefinition } from "./automation-node-catalog";
 import type {
 	AutomationBranchClause,
+	AutomationJevQuestion,
+	AutomationJevRoute,
+	AutomationJevRouteCondition,
 	AutomationJsonValue,
 	AutomationNodeDefinition,
+	AutomationNodeGroup,
 	AutomationWorkflowDocument,
 	AutomationWorkflowEdge,
 	AutomationWorkflowNode,
@@ -22,19 +28,13 @@ export interface CanvasWorkflowDocument {
 	triggerBindings: TriggerBinding[];
 	steps: AutomationNode[];
 	edges: AutomationEdge[];
+	nodeGroups?: AutomationNodeGroup[];
 }
 
 export type AutomationNodeSources = Record<string, string>;
 
 const MANUAL_TRIGGER: TriggerBinding = { id: "manual", type: "manual" };
 const PYTHON_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
-
-/** DatabaseEngine method per write node. Reads go through execQuery instead. */
-const DATABASE_WRITE_METHODS: Record<string, string | undefined> = {
-	"database.insert": "insertData",
-	"database.update": "updateData",
-	"database.delete": "removeData",
-};
 
 // Drops unfinished "Add input" rows so a blank name never reaches the backend save validator.
 function sanitizeTriggerGlobals(value: unknown): AutomationJsonValue {
@@ -76,7 +76,7 @@ function stringValue(value: unknown): string {
 
 function jsonObjectValue(value: unknown): string {
 	if (typeof value === "string") return value;
-	if (value && typeof value === "object" && !Array.isArray(value)) {
+	if (isRecord(value)) {
 		return JSON.stringify(value);
 	}
 	return "";
@@ -85,6 +85,20 @@ function jsonObjectValue(value: unknown): string {
 function jsonArrayValue(value: unknown): string {
 	if (typeof value === "string") return value;
 	return Array.isArray(value) ? JSON.stringify(value) : "";
+}
+
+function jsonValueText(value: unknown): string {
+	if (typeof value === "string") return value;
+	return value === undefined || value === null ? "" : JSON.stringify(value);
+}
+
+function jsonValueOrString(value: string): AutomationJsonValue {
+	const parsed = parsedJsonValue(value);
+	return parsed === undefined ? value : parsed;
+}
+
+function fallbackValue(value: string): AutomationJsonValue {
+	return value.trim() ? jsonValueOrString(value) : null;
 }
 
 function isAutomationJsonValue(value: unknown): value is AutomationJsonValue {
@@ -119,10 +133,6 @@ function numberValue(value: unknown, fallback: number): number {
 		: fallback;
 }
 
-function pythonLiteral(value: unknown): string {
-	return JSON.stringify(value ?? "");
-}
-
 function branchClauses(value: unknown): AutomationBranchClause[] {
 	if (!Array.isArray(value)) return [];
 	return value.flatMap((clause) => {
@@ -135,142 +145,213 @@ function branchClauses(value: unknown): AutomationBranchClause[] {
 	});
 }
 
-/**
- * Shows the direct SDK implementation before the server has persisted its canonical copy.
- * Saving a generated node always replaces this preview with the authoritative backend renderer.
- */
-export function getGeneratedPythonPreview(step: AutomationNode): string {
-	const type = step.workflowType;
-	const config = type
-		? mergeCanvasConfig(type, step.config, step.workflowConfig ?? {})
-		: {};
-	const category = type
-		? getWorkflowNodeDefinition(type)?.category
-		: undefined;
-	// Byte-for-byte the server's AutomationSourceRenderer.triggerSource. The save path
-	// compares the persisted trigger source against that template to decide whether the
-	// node is still generated, so drift here would mark every untouched trigger custom.
-	if (type === "trigger.start") {
-		return `# Declare globals in trigger.start config.globals.
-# Define optional setup here; return a map only for additional runtime values.
-def run(scope):
-    return {}
-`;
-	}
-	if (category === "database") {
-		// execQuery only runs reads. Each write operation has its own method, the same
-		// mapping AutomationSourceRenderer.databaseWriteSource applies server side.
-		const writeMethod = DATABASE_WRITE_METHODS[type ?? ""];
-		if (writeMethod) {
-			return `from ai_server import DatabaseEngine
-
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-QUERY = ${pythonLiteral(config.query)}
-
-def run(scope):
-    database = DatabaseEngine(engine_id=scope.resolve(ENGINE_ID))
-    return database.${writeMethod}(query=scope.resolve(QUERY))
-`;
+function jevQuestions(value: unknown): AutomationJevQuestion[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap<AutomationJevQuestion>((question) => {
+		if (!isRecord(question)) return [];
+		const key = question.key;
+		const type = question.type;
+		const instructions = question.instructions;
+		if (
+			typeof key !== "string" ||
+			(type !== "choice" && type !== "score" && type !== "noul") ||
+			typeof instructions !== "string"
+		) {
+			return [];
 		}
-		return `from ai_server import DatabaseEngine
+		if (type === "choice") {
+			const criteria = isRecord(question.criteria)
+				? Object.fromEntries(
+						Object.entries(question.criteria).filter(
+							(entry): entry is [string, string] =>
+								typeof entry[1] === "string",
+						),
+					)
+				: {};
+			return [{ key, type, instructions, criteria }];
+		}
+		if (type === "score") {
+			const criteria = Array.isArray(question.criteria)
+				? question.criteria.filter(
+						(level): level is string => typeof level === "string",
+					)
+				: [];
+			return [{ key, type, instructions, criteria }];
+		}
+		const criteria = isRecord(question.criteria)
+			? Object.fromEntries(
+					Object.entries(question.criteria).filter(
+						(entry): entry is [string, string] =>
+							(entry[0] === "true" || entry[0] === "false") &&
+							typeof entry[1] === "string",
+					),
+				)
+			: undefined;
+		return [
+			{
+				key,
+				type,
+				instructions,
+				...(criteria ? { criteria } : {}),
+			},
+		];
+	});
+}
 
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-QUERY = ${pythonLiteral(config.query)}
+function jevRouteConditions(value: unknown): AutomationJevRouteCondition[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((condition) => {
+		if (!isRecord(condition)) return [];
+		const {
+			questionKey,
+			field,
+			operator,
+			value: expected,
+			option,
+		} = condition;
+		if (
+			typeof questionKey !== "string" ||
+			!["choice", "score", "noul", "confidence", "probability"].includes(
+				String(field),
+			) ||
+			![
+				"equals",
+				"notEquals",
+				"greaterThan",
+				"greaterThanOrEqual",
+				"lessThan",
+				"lessThanOrEqual",
+			].includes(String(operator)) ||
+			(typeof expected !== "string" && typeof expected !== "number")
+		) {
+			return [];
+		}
+		return [
+			{
+				questionKey,
+				field: field as AutomationJevRouteCondition["field"],
+				operator: operator as AutomationJevRouteCondition["operator"],
+				value: expected,
+				...(typeof option === "string" ? { option } : {}),
+			},
+		];
+	});
+}
 
-def run(scope):
-    database = DatabaseEngine(engine_id=scope.resolve(ENGINE_ID))
-    return database.execQuery(query=scope.resolve(QUERY), return_pandas=False)
-`;
-	}
-	if (category === "model") {
-		return `from ai_server import ModelEngine
+function jevRoutes(value: unknown): AutomationJevRoute[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((route) => {
+		if (!isRecord(route)) return [];
+		return typeof route.id === "string" &&
+			typeof route.description === "string"
+			? [
+					{
+						id: route.id,
+						description: route.description,
+						...(route.match === "any"
+							? { match: "any" as const }
+							: route.match === "all"
+								? { match: "all" as const }
+								: {}),
+						...(Array.isArray(route.conditions)
+							? {
+									conditions: jevRouteConditions(
+										route.conditions,
+									),
+								}
+							: {}),
+						...(typeof route.answer === "boolean"
+							? { answer: route.answer }
+							: {}),
+					},
+				]
+			: [];
+	});
+}
 
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-PROMPT = ${pythonLiteral(config.prompt ?? config.text)}
+function legacyJevQuestions(
+	config: AutomationWorkflowNodeConfig,
+): AutomationJevQuestion[] {
+	const type = config.questionType === "noul" ? "noul" : "choice";
+	const routes = jevRoutes(config.clauses);
+	return [
+		{
+			key: "route",
+			type,
+			instructions: stringValue(config.question),
+			...(type === "choice"
+				? {
+						criteria: Object.fromEntries(
+							routes.map((route) => [
+								route.id,
+								route.description,
+							]),
+						),
+					}
+				: {}),
+		},
+	];
+}
 
-def run(scope):
-    model = ModelEngine(engine_id=scope.resolve(ENGINE_ID))
-    return model.ask(command=scope.resolve(PROMPT))
-`;
-	}
-	if (category === "storage") {
-		return `from ai_server import StorageEngine
+function legacyJevRoutes(
+	config: AutomationWorkflowNodeConfig,
+): AutomationJevRoute[] {
+	const type = config.questionType === "noul" ? "noul" : "choice";
+	const threshold = numberValue(
+		config.confidenceThreshold,
+		type === "noul" ? 0.5 : 0,
+	);
+	return jevRoutes(config.clauses).map((route) => {
+		if (type === "choice") {
+			return {
+				id: route.id,
+				description: route.description,
+				match: "all",
+				conditions: [
+					{
+						questionKey: "route",
+						field: "choice",
+						operator: "equals",
+						value: route.id,
+					},
+					...(threshold > 0
+						? [
+								{
+									questionKey: "route",
+									field: "confidence" as const,
+									operator: "greaterThanOrEqual" as const,
+									value: threshold,
+								},
+							]
+						: []),
+				],
+			};
+		}
+		const isYes = route.answer === true;
+		return {
+			id: route.id,
+			description: route.description,
+			match: "all",
+			conditions: [
+				{
+					questionKey: "route",
+					field: "noul",
+					operator: isYes ? "greaterThanOrEqual" : "lessThan",
+					value: 0.5,
+				},
+				{
+					questionKey: "route",
+					field: "noul",
+					operator: isYes ? "greaterThanOrEqual" : "lessThanOrEqual",
+					value: isYes ? threshold : 1 - threshold,
+				},
+			],
+		};
+	});
+}
 
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-STORAGE_PATH = ${pythonLiteral(config.path)}
-
-def run(scope):
-    storage = StorageEngine(engine_id=scope.resolve(ENGINE_ID))
-    return storage.list(scope.resolve(STORAGE_PATH))
-`;
-	}
-	if (category === "vector") {
-		return `from ai_server import VectorEngine
-
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-QUERY = ${pythonLiteral(config.value)}
-
-def run(scope):
-    vector = VectorEngine(engine_id=scope.resolve(ENGINE_ID))
-    return vector.nearestNeighbor(search_statement=scope.resolve(QUERY), limit=5)
-`;
-	}
-	if (type === "function.execute") {
-		return `from ai_server import FunctionEngine
-import json
-
-ENGINE_ID = ${pythonLiteral(config.engineId)}
-ARGUMENTS = ${pythonLiteral(config.arguments)}
-
-def run(scope):
-    function = FunctionEngine(engine_id=scope.resolve(ENGINE_ID))
-    return function.execute(parameterMap=json.loads(scope.resolve(ARGUMENTS)))
-`;
-	}
-	if (type === "app.pixel") {
-		return `from semoss import Insight
-import json
-
-APP_ID = ${pythonLiteral(config.appId)}
-PIXEL = ${pythonLiteral(config.pixel)}
-
-def run(scope):
-    app_id = scope.resolve(APP_ID)
-    pixel = scope.resolve(PIXEL)
-    if app_id:
-        pixel = "LoadApp(project=" + json.dumps(app_id) + "); " + pixel
-    return Insight().run_pixel(pixel, raw=False)
-`;
-	}
-	if (type === "control.wait") {
-		return `import time
-
-SECONDS = ${pythonLiteral(config.durationSeconds)}
-
-def run(scope):
-    seconds = float(SECONDS)
-    time.sleep(seconds)
-    return {"waitedSeconds": seconds}
-`;
-	}
-	if (type === "control.if") {
-		const clauses = branchClauses(config.clauses);
-		return `CLAUSES = ${pythonLiteral(clauses)}
-
-def run(scope):
-	for clause in CLAUSES:
-		if bool(eval(scope.resolve(clause["condition"]))):
-			return {"branch": "case:" + clause["id"], "value": True}
-	return {"branch": "else", "value": False}
-`;
-	}
-	return `# Write arbitrary Python for this automation node here.
-# scope is a read-only, run-local mapping: inputs, globals, metadata, and prior outputs by outputVar.
-# Read required values with scope["outputVar"] and optional values with scope.get("outputVar").
-# Return a JSON-shaped value to pass data to the next node.
-def run(scope):
-    return {}
-`;
+function isRoutingWorkflowType(type: AutomationWorkflowNodeType): boolean {
+	return type === "control.if" || type === "control.jev";
 }
 
 /**
@@ -296,10 +377,12 @@ function canvasTypeForWorkflow(
 	if (category === "database") return "database-engine";
 	if (category === "model") return "model-engine";
 	if (category === "storage") return "storage-engine";
+	if (category === "data") return "data";
 	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
-	if (type === "control.if") return "branch";
+	if (type === "control.loop") return "loop";
+	if (isRoutingWorkflowType(type)) return "branch";
 	return "app";
 }
 
@@ -315,6 +398,7 @@ function defaultCanvasConfig(
 			engineId,
 			operation: type === "database.query" ? "query" : "write",
 			expression: stringValue(config.query),
+			parameters: jsonArrayValue(config.parameters),
 			limit: numberValue(config.limit, 50),
 			commit: config.commit !== false,
 		};
@@ -336,11 +420,20 @@ function defaultCanvasConfig(
 			paramValues: jsonObjectValue(config.paramValues),
 			values: stringValue(config.text),
 			image: stringValue(config.image),
+			urls: jsonArrayValue(config.urls),
 			prompt: stringValue(config.prompt),
 			entities: jsonArrayValue(config.entities),
+			maskEntities: jsonArrayValue(config.maskEntities),
 		};
 	}
 	if (category === "storage") {
+		const fileTypes = Array.isArray(config.extensions)
+			? config.extensions
+					.filter(
+						(value): value is string => typeof value === "string",
+					)
+					.join(", ")
+			: stringValue(config.extensions);
 		const operation =
 			type === "storage.read"
 				? "read-base64"
@@ -355,8 +448,24 @@ function defaultCanvasConfig(
 			engineId,
 			operation,
 			storagePath: stringValue(config.path),
+			fileTypes,
 			filePath: stringValue(config.destination),
-			metadata: "",
+			metadata: jsonObjectValue(config.metadata),
+			convertToPdf: config.convertToPdf === true,
+			version: stringValue(config.version),
+			leaveFolderStructure: config.leaveFolderStructure === true,
+		};
+	}
+	if (category === "data") {
+		return {
+			source: jsonValueText(config.source),
+			path: stringValue(config.path),
+			format:
+				config.format === "json" || config.format === "xml"
+					? config.format
+					: "auto",
+			missingValue: jsonValueText(config.missingValue),
+			nullValue: jsonValueText(config.nullValue),
 		};
 	}
 	if (category === "vector") {
@@ -375,13 +484,13 @@ function defaultCanvasConfig(
 			operation,
 			command: operation === "search" ? value : "",
 			limit: numberValue(config.limit, 5),
-			filters: stringValue(config.filters),
+			filters: jsonObjectValue(config.filters),
 			metaFilters: "",
 			filePath: operation === "add-file" ? value : "",
-			source: stringValue(config.source),
-			space: stringValue(config.collection),
+			source: "",
+			space: stringValue(config.space),
 			filePaths: "",
-			paramValues: stringValue(config.paramValues),
+			paramValues: jsonObjectValue(config.paramValues),
 			fileNames: operation === "delete" ? value : "",
 		};
 	}
@@ -402,8 +511,58 @@ function defaultCanvasConfig(
 	if (type === "control.wait") {
 		return { seconds: String(numberValue(config.durationSeconds, 5)) };
 	}
+	if (type === "control.loop") {
+		const mode =
+			config.mode === "repeat" || config.mode === "while"
+				? config.mode
+				: "forEach";
+		const maxIterations = numberValue(config.maxIterations, 100);
+		if (mode === "repeat") {
+			return {
+				mode,
+				count: numberValue(config.count, 1),
+				maxIterations,
+			};
+		}
+		if (mode === "while") {
+			return {
+				mode,
+				condition: stringValue(config.condition),
+				maxIterations,
+			};
+		}
+		const items = config.items;
+		return {
+			mode,
+			items:
+				typeof items === "string"
+					? items
+					: JSON.stringify(
+							Array.isArray(items) ? items : [],
+							null,
+							2,
+						),
+			batchSize: numberValue(config.batchSize, 1),
+			maxIterations,
+		};
+	}
 	if (type === "control.if") {
 		return { clauses: branchClauses(config.clauses) };
+	}
+	if (type === "control.jev") {
+		const questions = jevQuestions(config.questions);
+		const routes = jevRoutes(config.clauses);
+		const hasRuleRoutes = routes.some(
+			(route) => (route.conditions?.length ?? 0) > 0,
+		);
+		return {
+			engineId,
+			state: stringValue(config.state),
+			questions:
+				questions.length > 0 ? questions : legacyJevQuestions(config),
+			clauses: hasRuleRoutes ? routes : legacyJevRoutes(config),
+			paramValues: jsonObjectValue(config.paramValues),
+		};
 	}
 	return {
 		pixel: stringValue(config.pixel),
@@ -411,11 +570,25 @@ function defaultCanvasConfig(
 	};
 }
 
+/**
+ * Projects both current and legacy persisted JEV configuration into the canvas contract.
+ * Kept public because local drafts created before the multi-question editor may bypass the
+ * workflow-document adapter when the editor restores them.
+ */
+export function normalizeJevDecisionConfig(
+	config: AutomationWorkflowNodeConfig,
+): JevDecisionConfig {
+	return defaultCanvasConfig("control.jev", config) as JevDecisionConfig;
+}
+
 function withPythonSource(
 	type: AutomationWorkflowNodeType,
 	config: AutomationWorkflowNodeConfig,
 ): AutomationWorkflowNodeConfig {
-	if (type === "trigger.start") return config;
+	if (type !== "developer.python") {
+		const { pythonSource: _pythonSource, ...typedConfig } = config;
+		return typedConfig;
+	}
 	const pythonSource = stringValue(config.pythonSource);
 	return pythonSource ? { ...config, pythonSource } : config;
 }
@@ -423,9 +596,7 @@ function withPythonSource(
 function normalizeWorkflowConfig(
 	config: unknown,
 ): AutomationWorkflowNodeConfig {
-	return config && typeof config === "object" && !Array.isArray(config)
-		? (config as AutomationWorkflowNodeConfig)
-		: {};
+	return isRecord(config) ? (config as AutomationWorkflowNodeConfig) : {};
 }
 
 function canvasTypeToWorkflow(
@@ -438,6 +609,8 @@ function canvasTypeToWorkflow(
 			return "database.query";
 		case "storage-engine":
 			return "storage.list";
+		case "data":
+			return "data.extract";
 		case "vector-engine":
 			return "vector.search";
 		case "model-engine":
@@ -446,6 +619,8 @@ function canvasTypeToWorkflow(
 			return "function.execute";
 		case "wait":
 			return "control.wait";
+		case "loop":
+			return "control.loop";
 		case "branch":
 			return "control.if";
 		case "app":
@@ -477,17 +652,27 @@ function mergeCanvasConfig(
 
 	if (category === "database") {
 		const expression = getConfigValue(config, "expression");
+		const parameters = getConfigValue(config, "parameters");
 		const limit = getConfigValue(config, "limit");
 		if (typeof expression === "string") next.query = expression;
-		if (typeof limit === "number") next.limit = limit;
+		if (typeof parameters === "string") {
+			next.parameters = parameters.trim()
+				? (parsedJsonValue(parameters) ?? parameters)
+				: [];
+		}
+		if (type === "database.query") {
+			if (typeof limit === "number") next.limit = limit;
+		}
 	}
 	if (category === "model") {
 		const command = getConfigValue(config, "command");
 		const context = getConfigValue(config, "context");
 		const values = getConfigValue(config, "values");
 		const image = getConfigValue(config, "image");
+		const urls = getConfigValue(config, "urls");
 		const paramValues = getConfigValue(config, "paramValues");
 		const entities = getConfigValue(config, "entities");
+		const maskEntities = getConfigValue(config, "maskEntities");
 		if (typeof command === "string") {
 			if (type === "model.embeddings") next.text = command;
 			else next.prompt = command;
@@ -497,7 +682,10 @@ function mergeCanvasConfig(
 			next.text = values;
 		}
 		if (typeof image === "string") next.image = image;
-		if (type === "model.chat" && typeof paramValues === "string") {
+		if (type === "model.vision" && typeof urls === "string") {
+			next.urls = urls.trim() ? (parsedJsonValue(urls) ?? urls) : [];
+		}
+		if (typeof paramValues === "string") {
 			if (paramValues.trim()) {
 				next.paramValues = parsedJsonValue(paramValues) ?? paramValues;
 			} else {
@@ -507,12 +695,64 @@ function mergeCanvasConfig(
 		if (type === "model.ner" && typeof entities === "string") {
 			next.entities = parsedJsonValue(entities) ?? entities;
 		}
+		if (type === "model.ner" && typeof maskEntities === "string") {
+			next.maskEntities = maskEntities.trim()
+				? (parsedJsonValue(maskEntities) ?? maskEntities)
+				: [];
+		}
 	}
 	if (category === "storage") {
 		const storagePath = getConfigValue(config, "storagePath");
+		const fileTypes = getConfigValue(config, "fileTypes");
 		const filePath = getConfigValue(config, "filePath");
+		const metadata = getConfigValue(config, "metadata");
+		const convertToPdf = getConfigValue(config, "convertToPdf");
+		const version = getConfigValue(config, "version");
+		const leaveFolderStructure = getConfigValue(
+			config,
+			"leaveFolderStructure",
+		);
 		if (typeof storagePath === "string") next.path = storagePath;
+		if (typeof fileTypes === "string") {
+			const trimmedFileTypes = fileTypes.trim();
+			next.extensions = trimmedFileTypes.startsWith("${")
+				? trimmedFileTypes
+				: trimmedFileTypes
+						.split(",")
+						.map((value) => value.trim())
+						.filter(Boolean);
+		}
 		if (typeof filePath === "string") next.destination = filePath;
+		if (typeof metadata === "string") {
+			next.metadata = metadata.trim()
+				? (parsedJsonValue(metadata) ?? metadata)
+				: {};
+		}
+		if (typeof convertToPdf === "boolean") {
+			next.convertToPdf = convertToPdf;
+		}
+		if (typeof version === "string") next.version = version;
+		if (typeof leaveFolderStructure === "boolean") {
+			next.leaveFolderStructure = leaveFolderStructure;
+		}
+	}
+	if (category === "data") {
+		const source = getConfigValue(config, "source");
+		const path = getConfigValue(config, "path");
+		const format = getConfigValue(config, "format");
+		const missingValue = getConfigValue(config, "missingValue");
+		const nullValue = getConfigValue(config, "nullValue");
+		if (typeof source === "string") next.source = jsonValueOrString(source);
+		if (typeof path === "string") next.path = path;
+		if (format === "auto" || format === "json" || format === "xml") {
+			next.format = format;
+		}
+		if (typeof missingValue === "string") {
+			next.missingValue = fallbackValue(missingValue);
+		}
+		if (typeof nullValue === "string") {
+			next.nullValue = fallbackValue(nullValue);
+		}
 	}
 	if (category === "vector") {
 		const operation = getConfigValue(config, "operation");
@@ -520,8 +760,7 @@ function mergeCanvasConfig(
 		const filePath = getConfigValue(config, "filePath");
 		const filePaths = getConfigValue(config, "filePaths");
 		const fileNames = getConfigValue(config, "fileNames");
-		const collection = getConfigValue(config, "space");
-		const source = getConfigValue(config, "source");
+		const space = getConfigValue(config, "space");
 		const filters = getConfigValue(config, "filters");
 		const paramValues = getConfigValue(config, "paramValues");
 		const limit = getConfigValue(config, "limit");
@@ -537,10 +776,17 @@ function mergeCanvasConfig(
 						? fileNames
 						: command;
 		if (typeof value === "string") next.value = value;
-		if (typeof collection === "string") next.collection = collection;
-		if (typeof source === "string") next.source = source;
-		if (typeof filters === "string") next.filters = filters;
-		if (typeof paramValues === "string") next.paramValues = paramValues;
+		if (typeof space === "string") next.space = space;
+		if (typeof filters === "string") {
+			next.filters = filters.trim()
+				? (parsedJsonValue(filters) ?? filters)
+				: {};
+		}
+		if (typeof paramValues === "string") {
+			next.paramValues = paramValues.trim()
+				? (parsedJsonValue(paramValues) ?? paramValues)
+				: {};
+		}
 		if (typeof limit === "number") next.limit = limit;
 	}
 	if (type === "function.execute") {
@@ -569,10 +815,58 @@ function mergeCanvasConfig(
 			if (Number.isFinite(duration)) next.durationSeconds = duration;
 		}
 	}
+	if (type === "control.loop") {
+		delete next.items;
+		delete next.batchSize;
+		delete next.count;
+		delete next.condition;
+		const mode = getConfigValue(config, "mode");
+		const maxIterations = getConfigValue(config, "maxIterations");
+		next.mode = mode === "repeat" || mode === "while" ? mode : "forEach";
+		if (typeof maxIterations === "number") {
+			next.maxIterations = maxIterations;
+		}
+		if (next.mode === "forEach") {
+			const items = getConfigValue(config, "items");
+			const batchSize = getConfigValue(config, "batchSize");
+			if (typeof items === "string") {
+				const trimmedItems = items.trim();
+				next.items = trimmedItems.startsWith("${")
+					? trimmedItems
+					: (parsedJsonValue(trimmedItems) ?? trimmedItems);
+			}
+			if (typeof batchSize === "number") next.batchSize = batchSize;
+		} else if (next.mode === "repeat") {
+			const count = getConfigValue(config, "count");
+			if (typeof count === "number") next.count = count;
+		} else {
+			const condition = getConfigValue(config, "condition");
+			if (typeof condition === "string") next.condition = condition;
+		}
+	}
 	if (type === "control.if") {
 		next.clauses = (
 			config as Extract<NodeConfig, { clauses: unknown }>
 		).clauses;
+	}
+	if (type === "control.jev") {
+		const state = getConfigValue(config, "state");
+		const paramValues = getConfigValue(config, "paramValues");
+		if (typeof state === "string") next.state = state;
+		if (typeof paramValues === "string") {
+			next.paramValues = paramValues.trim()
+				? (parsedJsonValue(paramValues) ?? paramValues)
+				: {};
+		}
+		const jevConfig = config as Extract<
+			NodeConfig,
+			{ questions: unknown; clauses: unknown }
+		>;
+		next.questions = jevConfig.questions;
+		next.clauses = jevConfig.clauses;
+		delete next.question;
+		delete next.questionType;
+		delete next.confidenceThreshold;
 	}
 	return next;
 }
@@ -603,6 +897,7 @@ export function createCanvasWorkflowNode(
 		workflowType: type,
 		workflowConfig,
 		workflowCodeMode: definition.defaultCodeMode,
+		...(type === "control.loop" ? { body: { nodes: [], edges: [] } } : {}),
 	};
 }
 
@@ -615,7 +910,7 @@ function canvasNodeFromWorkflow(
 		structuredClone(normalizeWorkflowConfig(node.config)),
 	);
 	const workflowConfig =
-		node.type === "trigger.start" ||
+		node.type !== "developer.python" ||
 		typeof nodeSources[node.id] !== "string"
 			? persistedConfig
 			: { ...persistedConfig, pythonSource: nodeSources[node.id] };
@@ -631,6 +926,38 @@ function canvasNodeFromWorkflow(
 		workflowType: node.type,
 		workflowConfig,
 		workflowCodeMode: node.codeMode,
+		...(node.body
+			? {
+					body: {
+						nodes: node.body.nodes.map((bodyNode) =>
+							canvasNodeFromWorkflow(bodyNode, nodeSources),
+						),
+						edges: node.body.edges.map(workflowEdgeToCanvasEdge),
+					},
+				}
+			: {}),
+	};
+}
+
+function workflowEdgeToCanvasEdge(
+	edge: AutomationWorkflowEdge,
+): AutomationEdge {
+	return {
+		id: edge.id,
+		source: edge.source,
+		target: edge.target,
+		sourceHandle:
+			edge.sourcePort === "out"
+				? `out-${edge.source}`
+				: edge.sourcePort.startsWith("case:")
+					? `case-${edge.source}-${edge.sourcePort.slice(5)}`
+					: edge.sourcePort === "else"
+						? `else-${edge.source}`
+						: edge.sourcePort,
+		targetHandle:
+			edge.targetPort === "in" ? `in-${edge.target}` : edge.targetPort,
+		kind: edge.kind,
+		...(edge.kind === "data" ? { dataType: edge.dataType } : {}),
 	};
 }
 
@@ -641,7 +968,51 @@ export function createInitialCanvasWorkflowDocument(): CanvasWorkflowDocument {
 		triggerBindings: [MANUAL_TRIGGER],
 		steps: [trigger],
 		edges: [],
+		nodeGroups: [],
 	};
+}
+
+function normalizeNodeGroups(
+	value: unknown,
+	availableNodeIds: Set<string>,
+): AutomationNodeGroup[] {
+	if (!Array.isArray(value)) return [];
+	const assignedNodeIds = new Set<string>();
+	return value.flatMap((candidate) => {
+		if (
+			!isRecord(candidate) ||
+			typeof candidate.id !== "string" ||
+			typeof candidate.name !== "string" ||
+			!Array.isArray(candidate.nodeIds)
+		) {
+			return [];
+		}
+		const groupNodeIds = new Set<string>();
+		const nodeIds = candidate.nodeIds.filter((nodeId): nodeId is string => {
+			if (
+				typeof nodeId !== "string" ||
+				!availableNodeIds.has(nodeId) ||
+				assignedNodeIds.has(nodeId) ||
+				groupNodeIds.has(nodeId)
+			) {
+				return false;
+			}
+			groupNodeIds.add(nodeId);
+			return true;
+		});
+		if (nodeIds.length === 0) return [];
+		for (const nodeId of nodeIds) assignedNodeIds.add(nodeId);
+		return [
+			{
+				id: candidate.id,
+				name: candidate.name,
+				nodeIds,
+				...(typeof candidate.description === "string"
+					? { description: candidate.description }
+					: {}),
+			},
+		];
+	});
 }
 
 export function canvasDocumentFromWorkflow(
@@ -661,25 +1032,11 @@ export function canvasDocumentFromWorkflow(
 				? document.triggerBindings
 				: [MANUAL_TRIGGER],
 		steps,
-		edges: document.graph.edges.map((edge) => ({
-			id: edge.id,
-			source: edge.source,
-			target: edge.target,
-			sourceHandle:
-				edge.sourcePort === "out"
-					? `out-${edge.source}`
-					: edge.sourcePort.startsWith("case:")
-						? `case-${edge.source}-${edge.sourcePort.slice(5)}`
-						: edge.sourcePort === "else"
-							? `else-${edge.source}`
-							: edge.sourcePort,
-			targetHandle:
-				edge.targetPort === "in"
-					? `in-${edge.target}`
-					: edge.targetPort,
-			kind: edge.kind,
-			...(edge.kind === "data" ? { dataType: edge.dataType } : {}),
-		})),
+		edges: document.graph.edges.map(workflowEdgeToCanvasEdge),
+		nodeGroups: normalizeNodeGroups(
+			document.nodeGroups,
+			new Set(steps.map((step) => step.id)),
+		),
 	};
 }
 
@@ -688,21 +1045,105 @@ export function getCanvasNodeSources(
 ): AutomationNodeSources {
 	return Object.fromEntries(
 		steps.flatMap((step) => {
+			const bodySources = step.body
+				? Object.entries(getCanvasNodeSources(step.body.nodes))
+				: [];
 			const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
-			if (
-				type === "trigger.start" ||
-				type === "control.if" ||
-				step.workflowCodeMode !== "custom"
-			) {
-				return [];
+			if (type !== "developer.python") {
+				return bodySources;
 			}
 			const source = step.workflowConfig?.pythonSource;
 			if (typeof source !== "string" || source.trim() === "") {
-				return [];
+				return bodySources;
 			}
-			return [[step.id, source]];
+			return [[step.id, source], ...bodySources];
 		}),
 	);
+}
+
+function canvasNodeToWorkflow(step: AutomationNode): AutomationWorkflowNode {
+	const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) throw new Error(`Unknown automation node type: ${type}`);
+	const config = mergeCanvasConfig(
+		type,
+		step.config,
+		step.workflowConfig ?? structuredClone(definition.defaultConfig),
+	);
+	// Explicit Python is persisted as its own file under automation-nodes/.
+	const persistedConfig = { ...config };
+	delete persistedConfig.pythonSource;
+	if (type === "trigger.start") {
+		persistedConfig.globals = sanitizeTriggerGlobals(
+			persistedConfig.globals,
+		);
+	}
+	return {
+		id: step.id,
+		type,
+		label: step.label || definition.label,
+		...(type === "trigger.start" || isRoutingWorkflowType(type)
+			? {}
+			: { outputVar: step.outputVar }),
+		position: step.position,
+		config: persistedConfig,
+		codeMode: type === "developer.python" ? "custom" : "generated",
+		...(step.body
+			? {
+					body: canvasGraphToWorkflow(
+						step.body.nodes,
+						step.body.edges,
+					),
+				}
+			: {}),
+	};
+}
+
+function canvasEdgeToWorkflow(edge: AutomationEdge): AutomationWorkflowEdge {
+	return edge.kind === "data"
+		? {
+				id: edge.id,
+				kind: "data",
+				dataType: edge.dataType ?? "unknown",
+				source: edge.source,
+				sourcePort: edge.sourceHandle?.startsWith("out-")
+					? "out"
+					: (edge.sourceHandle ?? "result"),
+				target: edge.target,
+				targetPort: edge.targetHandle?.startsWith("in-")
+					? "in"
+					: (edge.targetHandle ?? "in"),
+			}
+		: {
+				id: edge.id,
+				kind: "control",
+				source: edge.source,
+				sourcePort: edge.sourceHandle?.startsWith("out-")
+					? "out"
+					: edge.sourceHandle?.startsWith("case-")
+						? `case:${edge.sourceHandle.slice(
+								`case-${edge.source}-`.length,
+							)}`
+						: edge.sourceHandle?.startsWith("else-")
+							? "else"
+							: (edge.sourceHandle ?? "out"),
+				target: edge.target,
+				targetPort: edge.targetHandle?.startsWith("in-")
+					? "in"
+					: (edge.targetHandle ?? "in"),
+			};
+}
+
+function canvasGraphToWorkflow(
+	steps: AutomationNode[],
+	edges: AutomationEdge[],
+): AutomationWorkflowDocument["graph"] {
+	const nodes = steps.map(canvasNodeToWorkflow);
+	const nodeIds = new Set(nodes.map((node) => node.id));
+	const graphEdges: AutomationWorkflowEdge[] = edges
+		.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+		.map(canvasEdgeToWorkflow);
+	return { nodes, edges: graphEdges };
 }
 
 export function canvasDocumentToWorkflow({
@@ -710,91 +1151,15 @@ export function canvasDocumentToWorkflow({
 	triggerBindings,
 	steps,
 	edges,
+	nodeGroups,
 }: CanvasWorkflowDocument): AutomationWorkflowDocument {
-	const nodes = steps.map((step): AutomationWorkflowNode => {
-		const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
-		const definition = getWorkflowNodeDefinition(type);
-		if (!definition)
-			throw new Error(`Unknown automation node type: ${type}`);
-		const config = mergeCanvasConfig(
-			type,
-			step.config,
-			step.workflowConfig ?? structuredClone(definition.defaultConfig),
-		);
-		// Every other node's Python is persisted as its own file under automation-nodes/,
-		// so carrying a copy in the config would duplicate it. The trigger has no such
-		// file: AutomationRuntime.triggerSource reads its optional setup source straight
-		// out of this config, making this the only place it can live.
-		const { pythonSource, ...persistedConfig } = config;
-		if (type === "trigger.start") {
-			persistedConfig.globals = sanitizeTriggerGlobals(
-				persistedConfig.globals,
-			);
-			if (
-				typeof pythonSource === "string" &&
-				pythonSource.trim() !== ""
-			) {
-				persistedConfig.pythonSource = pythonSource;
-			}
-		}
-		return {
-			id: step.id,
-			type,
-			label: step.label || definition.label,
-			...(type === "trigger.start" || type === "control.if"
-				? {}
-				: { outputVar: step.outputVar }),
-			position: step.position,
-			config: persistedConfig,
-			codeMode:
-				type === "control.if"
-					? "generated"
-					: (step.workflowCodeMode ?? definition.defaultCodeMode),
-		};
-	});
-	const nodeIds = new Set(nodes.map((node) => node.id));
-	const graphEdges: AutomationWorkflowEdge[] = edges
-		.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
-		.map((edge) =>
-			edge.kind === "data"
-				? {
-						id: edge.id,
-						kind: "data",
-						dataType: edge.dataType ?? "unknown",
-						source: edge.source,
-						sourcePort: edge.sourceHandle?.startsWith("out-")
-							? "out"
-							: (edge.sourceHandle ?? "result"),
-						target: edge.target,
-						targetPort: edge.targetHandle?.startsWith("in-")
-							? "in"
-							: (edge.targetHandle ?? "in"),
-					}
-				: {
-						id: edge.id,
-						kind: "control",
-						source: edge.source,
-						sourcePort: edge.sourceHandle?.startsWith("out-")
-							? "out"
-							: edge.sourceHandle?.startsWith("case-")
-								? `case:${edge.sourceHandle.slice(
-										`case-${edge.source}-`.length,
-									)}`
-								: edge.sourceHandle?.startsWith("else-")
-									? "else"
-									: (edge.sourceHandle ?? "out"),
-						target: edge.target,
-						targetPort: edge.targetHandle?.startsWith("in-")
-							? "in"
-							: (edge.targetHandle ?? "in"),
-					},
-		);
 	return {
 		formatVersion: 2,
 		...(description.trim() ? { description: description.trim() } : {}),
 		triggerBindings:
 			triggerBindings.length > 0 ? triggerBindings : [MANUAL_TRIGGER],
-		graph: { nodes, edges: graphEdges },
+		graph: canvasGraphToWorkflow(steps, edges),
+		...(nodeGroups?.length ? { nodeGroups } : {}),
 	};
 }
 
@@ -828,10 +1193,19 @@ export function validateCanvasWorkflowNode(
 			) {
 				return [`${schema.label} must be at least ${schema.minimum}`];
 			}
+			if (
+				!missing &&
+				schema.maximum !== undefined &&
+				(typeof value !== "number" ||
+					!Number.isFinite(value) ||
+					value > schema.maximum)
+			) {
+				return [`${schema.label} must be at most ${schema.maximum}`];
+			}
 			return [];
 		},
 	);
-	if (type !== "trigger.start" && type !== "control.if") {
+	if (type !== "trigger.start" && !isRoutingWorkflowType(type)) {
 		const outputVariableError = validateAutomationOutputVariable(
 			node.outputVar,
 		);
@@ -854,13 +1228,17 @@ export function validateCanvasWorkflowNode(
 			errors.push("JSON arguments must be valid JSON");
 		}
 	}
-	// Source is only rejected once written: an untouched node saves with no source and the
-	// server persists its generated scaffold instead.
-	if (
-		type !== "trigger.start" &&
-		type !== "control.if" &&
-		node.workflowCodeMode === "custom"
-	) {
+	if (type === "model.vision") {
+		const image = stringValue(config.image).trim();
+		const urls = config.urls;
+		const hasUrls =
+			(Array.isArray(urls) && urls.length > 0) ||
+			(typeof urls === "string" && urls.trim() !== "");
+		if (!image && !hasUrls) {
+			errors.push("A media path or media URL is required");
+		}
+	}
+	if (type === "developer.python") {
 		const source = stringValue(config.pythonSource);
 		if (source.trim() !== "" && !definesRunEntryPoint(source)) {
 			errors.push("a top-level run(scope) function");
@@ -874,5 +1252,266 @@ export function validateCanvasWorkflowNode(
 			errors.push("Each condition is required");
 		}
 	}
+	if (type === "control.jev") {
+		const questions = jevQuestions(config.questions);
+		const routes = jevRoutes(config.clauses);
+		const questionKeys = new Set<string>();
+		const questionsByKey = new Map<string, AutomationJevQuestion>();
+		if (questions.length === 0) {
+			errors.push("At least one Jev question is required");
+		}
+		for (const question of questions) {
+			if (!PYTHON_IDENTIFIER_PATTERN.test(question.key)) {
+				errors.push(
+					"Each Jev response key must start with a letter or underscore and contain only letters, numbers, and underscores",
+				);
+			}
+			if (questionKeys.has(question.key)) {
+				errors.push("Jev response keys must be unique");
+			}
+			questionKeys.add(question.key);
+			questionsByKey.set(question.key, question);
+			if (!question.instructions.trim()) {
+				errors.push(`Question "${question.key}" needs instructions`);
+			}
+			if (
+				question.type === "choice" &&
+				(!question.criteria ||
+					Array.isArray(question.criteria) ||
+					Object.keys(question.criteria).length === 0)
+			) {
+				errors.push(
+					`Question "${question.key}" needs at least one choice`,
+				);
+			} else if (
+				question.type === "choice" &&
+				question.criteria &&
+				!Array.isArray(question.criteria) &&
+				Object.entries(question.criteria).some(
+					([key, description]) =>
+						key.trim() === "" || description.trim() === "",
+				)
+			) {
+				errors.push(
+					`Question "${question.key}" needs a key and description for every choice`,
+				);
+			}
+			if (
+				question.type === "score" &&
+				(!Array.isArray(question.criteria) ||
+					question.criteria.length < 2)
+			) {
+				errors.push(
+					`Question "${question.key}" needs at least two rubric levels`,
+				);
+			} else if (
+				question.type === "score" &&
+				Array.isArray(question.criteria) &&
+				question.criteria.some((level) => level.trim() === "")
+			) {
+				errors.push(
+					`Question "${question.key}" needs a description for every rubric level`,
+				);
+			}
+			if (
+				question.type === "noul" &&
+				(!question.criteria ||
+					Array.isArray(question.criteria) ||
+					Object.keys(question.criteria).length !== 2 ||
+					!("true" in question.criteria) ||
+					!("false" in question.criteria) ||
+					question.criteria.true.trim() === "" ||
+					question.criteria.false.trim() === "")
+			) {
+				errors.push(
+					`Question "${question.key}" needs descriptions for Yes and No`,
+				);
+			}
+		}
+		if (routes.length === 0) {
+			errors.push("At least one route is required");
+		} else if (routes.some((route) => route.description.trim() === "")) {
+			errors.push("Each route description is required");
+		}
+		for (const route of routes) {
+			if (!route.conditions?.length) {
+				errors.push(
+					`Route "${route.description || route.id}" needs a rule`,
+				);
+				continue;
+			}
+			for (const condition of route.conditions) {
+				const question = questionsByKey.get(condition.questionKey);
+				if (!question) {
+					errors.push(
+						`Route "${route.description || route.id}" references an unknown question`,
+					);
+					continue;
+				}
+				const fields =
+					question.type === "choice"
+						? ["choice", "confidence", "probability"]
+						: question.type === "score"
+							? ["score", "confidence", "probability"]
+							: ["noul"];
+				if (!fields.includes(condition.field)) {
+					errors.push(
+						`Route "${route.description || route.id}" uses an answer measure that does not match question "${question.key}"`,
+					);
+				}
+				if (
+					condition.field === "choice" &&
+					(question.type !== "choice" ||
+						!question.criteria ||
+						Array.isArray(question.criteria) ||
+						!(String(condition.value) in question.criteria))
+				) {
+					errors.push(
+						`Route "${route.description || route.id}" must use a configured choice`,
+					);
+				}
+				if (condition.field === "probability") {
+					const validOptions =
+						question.type === "choice" &&
+						question.criteria &&
+						!Array.isArray(question.criteria)
+							? Object.keys(question.criteria)
+							: question.type === "score" &&
+									Array.isArray(question.criteria)
+								? question.criteria.map((_, index) =>
+										String(index),
+									)
+								: [];
+					if (
+						!condition.option ||
+						!validOptions.includes(condition.option)
+					) {
+						errors.push(
+							`Route "${route.description || route.id}" must use a configured probability option`,
+						);
+					}
+				}
+				if (
+					typeof condition.value === "number" &&
+					(condition.value < 0 || condition.value > 1)
+				) {
+					errors.push("Jev thresholds must be from 0 through 1");
+				}
+			}
+		}
+	}
+	if (type === "control.loop") {
+		const maxIterations = config.maxIterations;
+		if (config.mode === "forEach") {
+			const items = config.items;
+			const validReference =
+				typeof items === "string" &&
+				/^\$\{[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*|\.[0-9]+)*}$/.test(
+					items.trim(),
+				);
+			let validArray = Array.isArray(items);
+			if (!validArray && typeof items === "string" && !validReference) {
+				try {
+					validArray = Array.isArray(JSON.parse(items));
+				} catch {
+					validArray = false;
+				}
+			}
+			if (!validReference && !validArray) {
+				errors.push(
+					"Items must be a JSON array or an exact variable reference",
+				);
+			}
+		} else if (config.mode === "repeat") {
+			if (
+				typeof config.count !== "number" ||
+				!Number.isInteger(config.count) ||
+				config.count < 1 ||
+				typeof maxIterations !== "number" ||
+				config.count > maxIterations
+			) {
+				errors.push(
+					"Number of times must be a whole number no greater than the safety limit",
+				);
+			}
+		} else if (config.mode === "while") {
+			if (
+				typeof config.condition !== "string" ||
+				!config.condition.trim()
+			) {
+				errors.push("Continue while condition is required");
+			}
+		} else {
+			errors.push("Choose how the loop should repeat");
+		}
+		if (
+			typeof maxIterations !== "number" ||
+			!Number.isInteger(maxIterations) ||
+			maxIterations < 1 ||
+			maxIterations > 10_000
+		) {
+			errors.push(
+				"Safety limit must be a whole number from 1 through 10000",
+			);
+		}
+		if (!node.body || node.body.nodes.length === 0) {
+			errors.push("Add at least one step inside the loop");
+		} else {
+			const bodyValidationNodes = [...allNodes, ...node.body.nodes];
+			for (const bodyNode of node.body.nodes) {
+				const bodyErrors = [
+					...validateCanvasWorkflowNode(
+						bodyNode,
+						bodyValidationNodes,
+					),
+					...validateCanvasWorkflowConnections(
+						bodyNode,
+						node.body.edges,
+					),
+				];
+				errors.push(
+					...bodyErrors.map(
+						(error) => `Inside "${bodyNode.label}": ${error}`,
+					),
+				);
+			}
+		}
+	}
 	return errors;
+}
+
+/** Validates the control edges required before a routing node can execute. */
+export function validateCanvasWorkflowConnections(
+	node: AutomationNode,
+	edges: AutomationEdge[],
+): string[] {
+	const type = node.workflowType ?? canvasTypeToWorkflow(node.type);
+	if (!isRoutingWorkflowType(type)) return [];
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) return [];
+	const config = mergeCanvasConfig(
+		type,
+		node.config,
+		node.workflowConfig ?? definition.defaultConfig,
+	);
+	const clauses =
+		type === "control.jev"
+			? jevRoutes(config.clauses)
+			: branchClauses(config.clauses);
+	const connectedHandles = new Set(
+		edges
+			.filter((edge) => edge.source === node.id)
+			.map((edge) => edge.sourceHandle),
+	);
+	const hasEveryRoute = clauses.every((clause) =>
+		connectedHandles.has(`case-${node.id}-${clause.id}`),
+	);
+	const hasFallback = connectedHandles.has(`else-${node.id}`);
+	return hasEveryRoute && hasFallback
+		? []
+		: [
+				type === "control.jev"
+					? "Every route and the fallback path must be connected"
+					: "Every condition and the Else path must be connected",
+			];
 }

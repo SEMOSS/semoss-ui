@@ -1,306 +1,240 @@
-import { Plus } from "lucide-react";
+import { Notebook, Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { FlexLayout } from "@semoss/shared";
-import { Button, Dialog, DialogContent, toast } from "@semoss/ui/next";
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
+import { useWorkbench, writeSpawnDragSpec } from "@semoss/workbench";
 import { NewNotebookDialog } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
-import { useWorkspace } from "@/hooks";
+import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { NotebookExplorerItem } from "./notebook-explorer-panel-item";
+import { PanelEmptyState } from "./panel-empty-state";
 import { PanelSearch } from "./panel-search";
 
-interface NotebookExplorerPanelProps {
-	title: string;
-	/** Current layoutobject */
-	layout: FlexLayout.Layout;
-}
+export const NotebookExplorerPanel: React.FC = observer(() => {
+	const layoutActions = useWorkbench((s) => s.layout.actions);
+	const { state, notebook } = useBlocks();
 
-export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
-	observer((props) => {
-		const { title, layout } = props;
+	// files to add
+	const [selected, setSelected] = useState<string>("");
 
-		const { workspace } = useWorkspace();
-		const { state, notebook } = useBlocks();
+	// temporary fix for dead refresh button should be removed
+	const [counter, setCounter] = useState(0);
 
-		// files to add
-		const [selected, setSelected] = useState<string>("");
+	// filter word for the search
+	const [filterWord, setFilterWord] = useState<string>("");
+	const [newNotebookDialogOpen, setNewNotebookDialogOpen] = useState(false);
 
-		// temporary fix for dead refresh button should be removed
-		const [counter, setCounter] = useState(0);
+	/**
+	 * Refresh the notebooks
+	 */
+	const refreshNotebooks = () => {
+		setCounter(counter + 1);
+	};
 
-		// filter word for the search
-		const [filterWord, setFilterWord] = useState<string>("");
-		const [newNotebookDialogOpen, setNewNotebookDialogOpen] =
-			useState(false);
+	/**
+	 * Open the add modal
+	 */
+	const handleOpenCreateNotebook = () => {
+		setNewNotebookDialogOpen(true);
+	};
 
-		/**
-		 * Refresh the notebooks
-		 */
-		const refreshNotebooks = () => {
-			setCounter(counter + 1);
-		};
+	/**
+	 * Select a panel and create one if it doesn't exist
+	 */
+	const handleOnSelect = (id: string) => {
+		const IsSelected = selectPanel(id);
+		if (!IsSelected) {
+			createPanel(id);
+		}
+		setSelected(id);
+	};
 
-		/**
-		 * Open the add modal
-		 */
-		const handleOpenCreateNotebook = () => {
-			setNewNotebookDialogOpen(true);
-		};
+	/**
+	 * Filter the notebooks based on the filter word
+	 */
+	const filteredNotebooks = useMemo(() => {
+		const queries = notebook.queriesList;
+		return queries.filter((query) => {
+			return query.id.toLowerCase().includes(filterWord.toLowerCase());
+		});
+	}, [notebook.queriesList, filterWord]);
 
-		/**
-		 * Select a panel and create one if it doesn't exist
-		 */
-		const handleOnSelect = (id: string) => {
-			const IsSelected = selectPanel(id);
-			if (!IsSelected) {
-				createPanel(id);
-			}
-			setSelected(id);
-		};
-
-		/**
-		 * Filter the notebooks based on the filter word
-		 */
-		const filteredNotebooks = useMemo(() => {
-			const queries = notebook.queriesList;
-			return queries.filter((query) => {
-				return query.id
-					.toLowerCase()
-					.includes(filterWord.toLowerCase());
+	/**
+	 * Delete a notebook and remove its panel
+	 */
+	const handleOnTrashClick = (deletedNotebookId: string) => {
+		try {
+			state.dispatch({
+				message: ActionMessages.DELETE_NOTEBOOK,
+				payload: {
+					queryId: deletedNotebookId,
+				},
 			});
-		}, [notebook.queriesList, filterWord]);
+			removePanel(deletedNotebookId);
+			refreshNotebooks();
+		} catch (e) {
+			console.error(e);
+		}
+	};
 
-		/**
-		 * Delete a notebook and remove its panel
-		 */
-		const handleOnTrashClick = (deletedNotebookId: string) => {
-			try {
-				state.dispatch({
-					message: ActionMessages.DELETE_NOTEBOOK,
-					payload: {
-						queryId: deletedNotebookId,
-					},
-				});
-				removePanel(deletedNotebookId);
-				refreshNotebooks();
-			} catch (e) {
-				console.error(e);
+	/**
+	 * Copy a notebook
+	 */
+	const handleOnCopyClick = (id: string, newName: string) => {
+		try {
+			const nb = state.getNotebook(id);
+			if (!nb) {
+				toast.error(`Cannot find notebook ${id}`);
+				return;
 			}
-		};
 
-		/**
-		 * Copy a notebook
-		 */
-		const handleOnCopyClick = (id: string, newName: string) => {
-			try {
-				const nb = state.getNotebook(id);
-				if (!nb) {
-					toast.error(`Cannot find notebook ${id}`);
-					return;
-				}
+			const json = nb.toJSON();
 
-				const json = nb.toJSON();
-
-				let finalId = newName;
-				let count = 1;
-				while (state.getNotebook(finalId)) {
-					finalId = `${newName} (${count})`;
-					count++;
-				}
-
-				state.dispatch({
-					message: ActionMessages.NEW_NOTEBOOK,
-					payload: {
-						queryId: finalId,
-						config: {
-							cells: json.cells,
-						},
-					},
-				});
-
-				selectPanel(finalId);
-			} catch (e) {
-				console.error(e);
-				toast.error(e.message);
+			let finalId = newName;
+			let count = 1;
+			while (state.getNotebook(finalId)) {
+				finalId = `${newName} (${count})`;
+				count++;
 			}
-		};
 
-		/**
-		 * Handle dragging of an item
-		 */
-		const handleOnDragStart = (event: React.MouseEvent, id: string) => {
-			try {
-				const model = workspace.model;
-				if (!model) {
-					throw new Error("Missing model");
-				}
-
-				if (!event.altKey) {
-					return;
-				}
-
-				const name = id.split("/").pop();
-
-				layout.addTabWithDragAndDrop(event as unknown as DragEvent, {
-					type: "tab",
-					name: name,
-					component: "notebook-viewer",
+			state.dispatch({
+				message: ActionMessages.NEW_NOTEBOOK,
+				payload: {
+					queryId: finalId,
 					config: {
-						id: id,
+						cells: json.cells,
 					},
-					enableClose: true,
-				});
-			} catch (e) {
-				toast.error(e.message ?? e);
+				},
+			});
+
+			selectPanel(finalId);
+		} catch (e) {
+			console.error(e);
+			toast.error(e.message);
+		}
+	};
+
+	/**
+	 * Handle dragging of an item
+	 */
+	const handleOnDragStart = (
+		event: React.DragEvent<HTMLLIElement>,
+		id: string,
+	) => {
+		try {
+			if (!event.altKey) {
+				return;
 			}
-		};
 
-		/**
-		 * Create a new panel and highlight it
-		 */
-		const createPanel = (id: string): boolean => {
-			try {
-				if (!id) {
-					return false;
-				}
+			writeSpawnDragSpec(event.dataTransfer, {
+				type: WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_VIEWER,
+				config: { id: id },
+				name: id.split("/").pop() ?? id,
+			});
+		} catch (e) {
+			toast.error(e.message ?? e);
+		}
+	};
 
-				const model = workspace.model;
-				if (!model) {
-					throw new Error("Missing model");
-				}
-
-				const addId =
-					model.getActiveTabset()?.getId() ||
-					model.getRoot().getChildren()[0]?.getId() ||
-					"";
-
-				model.doAction(
-					FlexLayout.Actions.addNode(
-						{
-							type: "tab",
-							name: id,
-							component: "notebook-viewer",
-							config: {
-								id: id,
-							},
-							enableClose: true,
-						},
-						addId,
-						FlexLayout.DockLocation.CENTER,
-						-1,
-						true,
-					),
-				);
-			} catch (e) {
-				toast.error(e.message ?? e);
+	/**
+	 * Create a new panel and highlight it
+	 */
+	const createPanel = (id: string): boolean => {
+		try {
+			if (!id) {
 				return false;
 			}
 
-			return true;
-		};
+			layoutActions.selectPanel(
+				WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_VIEWER,
+				{ id: id },
+				{ name: id },
+			);
+		} catch (e) {
+			toast.error(e.message ?? e);
+			return false;
+		}
 
-		/**
-		 * Select a panel if it exists
-		 */
-		const selectPanel = (id: string): boolean => {
-			try {
-				if (!id) {
-					return false;
-				}
+		return true;
+	};
 
-				let selectedNode: FlexLayout.TabNode | null = null;
-
-				const model = workspace.model;
-				if (!model) {
-					throw new Error("Missing model");
-				}
-
-				model.visitNodes((node) => {
-					if (node instanceof FlexLayout.TabNode) {
-						const component = node.getComponent();
-						if (component !== "notebook-viewer") {
-							return;
-						}
-
-						const config = node.getConfig();
-						if (config.id !== id) {
-							return;
-						}
-
-						selectedNode = node;
-					}
-				});
-
-				if (!selectedNode) {
-					return false;
-				}
-
-				const selectedNodeId = selectedNode.getId();
-				model.doAction(FlexLayout.Actions.selectTab(selectedNodeId));
-			} catch (e) {
-				toast.error(e.message ?? e);
+	/**
+	 * Select a panel if it exists
+	 */
+	const selectPanel = (id: string): boolean => {
+		try {
+			if (!id) {
 				return false;
 			}
 
-			return true;
-		};
-
-		/**
-		 * Remove a panel
-		 */
-		const removePanel = (id: string): boolean => {
-			try {
-				if (!id) {
-					return false;
-				}
-
-				const nodesToBeRemoved: FlexLayout.TabNode[] = [];
-
-				const model = workspace.model;
-				if (!model) {
-					throw new Error("Missing model");
-				}
-
-				model.visitNodes((node) => {
-					if (node instanceof FlexLayout.TabNode) {
-						const component = node.getComponent();
-						if (component !== "notebook-viewer") {
-							return;
-						}
-
-						const config = node.getConfig();
-						if (config.id !== id) {
-							return;
-						}
-
-						nodesToBeRemoved.push(node);
-					}
-				});
-
-				for (const n of nodesToBeRemoved) {
-					const nodeId = n.getId();
-					model.doAction(FlexLayout.Actions.deleteTab(nodeId));
-				}
-			} catch (e) {
-				toast.error(e.message ?? e);
+			// `selectPanel` would spawn one when there is none, and the
+			// caller's contract is "reveal it only if it is already open"
+			if (
+				!layoutActions.matchPanels(
+					WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_VIEWER,
+					{ id: id },
+				).length
+			) {
 				return false;
 			}
 
-			return true;
-		};
+			layoutActions.selectPanel(
+				WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_VIEWER,
+				{ id: id },
+				{ name: id },
+			);
+		} catch (e) {
+			toast.error(e.message ?? e);
+			return false;
+		}
 
-		return (
-			<Panel
-				actions={
-					<div className="flex w-full flex-col bg-background p-0 text-foreground">
-						<div className="flex min-h-12 items-center justify-between px-3 pt-3 pb-2">
-							<p className="m-0 font-semibold text-sm">{title}</p>
+		return true;
+	};
+
+	/**
+	 * Remove a panel
+	 */
+	const removePanel = (id: string): boolean => {
+		try {
+			if (!id) {
+				return false;
+			}
+
+			for (const record of layoutActions.matchPanels(
+				WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_VIEWER,
+				{ id: id },
+			)) {
+				layoutActions.closePanel(record.id);
+			}
+		} catch (e) {
+			toast.error(e.message ?? e);
+			return false;
+		}
+
+		return true;
+	};
+
+	return (
+		<Panel
+			actions={
+				<div className="flex w-full items-center gap-1 px-2 py-2">
+					<PanelSearch value={filterWord} onChange={setFilterWord} />
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
 								size="icon-sm"
-								title="Create new notebook"
+								aria-label="Create new notebook"
 								onClick={(e) => {
 									e.stopPropagation();
 									handleOpenCreateNotebook();
@@ -308,54 +242,62 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 							>
 								<Plus className="size-4" />
 							</Button>
-						</div>
-						<PanelSearch
-							value={filterWord}
-							onChange={setFilterWord}
-						/>
-					</div>
-				}
-			>
-				<div
-					key={counter}
-					className="flex h-full flex-col overflow-auto bg-background"
-				>
-					{filteredNotebooks.map((q) => {
-						return (
-							<NotebookExplorerItem
-								key={q.id}
-								id={q.id}
-								isSelected={selected === q.id}
-								onClick={() => handleOnSelect(q.id)}
-								onTrashClick={() => {
-									handleOnTrashClick(q.id);
-								}}
-								onCopyClick={(newName) => {
-									handleOnCopyClick(q.id, newName);
-								}}
-								onDragStart={(e) => handleOnDragStart(e, q.id)}
-							/>
-						);
-					})}
+						</TooltipTrigger>
+						<TooltipContent>Create new notebook</TooltipContent>
+					</Tooltip>
 				</div>
-				<Dialog
-					open={newNotebookDialogOpen}
-					onOpenChange={(open) => {
-						setNewNotebookDialogOpen(open);
-					}}
-				>
-					<DialogContent className="max-w-sm p-0">
-						<NewNotebookDialog
-							onClose={(newQueryId?: string) => {
-								if (newQueryId) {
-									createPanel(newQueryId);
-									refreshNotebooks();
-								}
-								setNewNotebookDialogOpen(false);
+			}
+		>
+			<div
+				key={counter}
+				className="flex h-full flex-col overflow-auto bg-background"
+			>
+				{filteredNotebooks.length === 0 ? (
+					<PanelEmptyState
+						icon={Notebook}
+						message={
+							filterWord
+								? "No notebooks match your search"
+								: "No notebooks yet"
+						}
+					/>
+				) : null}
+				{filteredNotebooks.map((q) => {
+					return (
+						<NotebookExplorerItem
+							key={q.id}
+							id={q.id}
+							isSelected={selected === q.id}
+							onClick={() => handleOnSelect(q.id)}
+							onTrashClick={() => {
+								handleOnTrashClick(q.id);
 							}}
+							onCopyClick={(newName) => {
+								handleOnCopyClick(q.id, newName);
+							}}
+							onDragStart={(e) => handleOnDragStart(e, q.id)}
 						/>
-					</DialogContent>
-				</Dialog>
-			</Panel>
-		);
-	});
+					);
+				})}
+			</div>
+			<Dialog
+				open={newNotebookDialogOpen}
+				onOpenChange={(open) => {
+					setNewNotebookDialogOpen(open);
+				}}
+			>
+				<DialogContent className="max-w-sm p-0">
+					<NewNotebookDialog
+						onClose={(newQueryId?: string) => {
+							if (newQueryId) {
+								createPanel(newQueryId);
+								refreshNotebooks();
+							}
+							setNewNotebookDialogOpen(false);
+						}}
+					/>
+				</DialogContent>
+			</Dialog>
+		</Panel>
+	);
+});

@@ -1,5 +1,18 @@
 import { FILE_PANEL_COMPONENTS, FILE_PANEL_TYPES } from "@semoss/panels";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
+import { CHAT_TOOLS_PANEL } from "@/features/chat-tools/components/chat-tools-panel";
+import {
+	GMAIL_PANEL,
+	GOOGLE_CALENDAR_PANEL,
+	GOOGLE_DOCS_PANEL,
+	GOOGLE_DRIVE_PANEL,
+	ONEDRIVE_PANEL,
+	OUTLOOK_CALENDAR_PANEL,
+	OUTLOOK_MAIL_PANEL,
+	TEAMS_CHANNELS_PANEL,
+	TEAMS_CHATS_PANEL,
+	TEAMS_FILES_PANEL,
+} from "@/features/connectors/components/connector-viewer-panels";
 import { ROOM_PANEL_TYPES } from "@/stores";
 import { ROOM_AUDIT_LOG_PANEL } from "./room-audit-log-panel";
 import { ROOM_CONFIGURATION_PANEL } from "./room-configuration-panel";
@@ -7,8 +20,9 @@ import { ROOM_SUBAGENT_PANEL } from "./room-subagent-panel";
 import { ROOM_TOOL_PANEL } from "./room-tool-panel";
 
 /**
- * Every panel the room sidebar can open: the room's own four, plus the shared
- * file explorer and editors.
+ * Every panel the room sidebar can open: the room's own, "Chat Tools", the
+ * Microsoft 365 and Google Workspace viewers, plus the shared file explorer
+ * and editors.
  *
  * Module scope matters — blueprint identity churn remounts panels.
  */
@@ -24,4 +38,15 @@ export const ROOM_PANEL_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[ROOM_PANEL_TYPES.SUBAGENT]: ROOM_SUBAGENT_PANEL,
 	[ROOM_PANEL_TYPES.CONFIGURATION]: ROOM_CONFIGURATION_PANEL,
 	[ROOM_PANEL_TYPES.AUDIT_LOG]: ROOM_AUDIT_LOG_PANEL,
+	[ROOM_PANEL_TYPES.CHAT_TOOLS]: CHAT_TOOLS_PANEL,
+	[ROOM_PANEL_TYPES.ONEDRIVE]: ONEDRIVE_PANEL,
+	[ROOM_PANEL_TYPES.OUTLOOK_MAIL]: OUTLOOK_MAIL_PANEL,
+	[ROOM_PANEL_TYPES.OUTLOOK_CALENDAR]: OUTLOOK_CALENDAR_PANEL,
+	[ROOM_PANEL_TYPES.TEAMS_CHANNELS]: TEAMS_CHANNELS_PANEL,
+	[ROOM_PANEL_TYPES.TEAMS_FILES]: TEAMS_FILES_PANEL,
+	[ROOM_PANEL_TYPES.TEAMS_CHATS]: TEAMS_CHATS_PANEL,
+	[ROOM_PANEL_TYPES.GOOGLE_DRIVE]: GOOGLE_DRIVE_PANEL,
+	[ROOM_PANEL_TYPES.GMAIL]: GMAIL_PANEL,
+	[ROOM_PANEL_TYPES.GOOGLE_CALENDAR]: GOOGLE_CALENDAR_PANEL,
+	[ROOM_PANEL_TYPES.GOOGLE_DOCS]: GOOGLE_DOCS_PANEL,
 };

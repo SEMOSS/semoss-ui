@@ -1,9 +1,29 @@
 import { Env } from "../env";
-import { UnauthorizedError } from "./error";
+import { HttpError, UnauthorizedError } from "./error";
 
 export const CSRF = {
 	isEnabled: false,
 	token: "",
+	cookie: "", // only tracked when Env.HEADLESS is set
+};
+
+// Node has no cookie jar, so a headless caller has to resend Set-Cookie itself.
+const captureHeadlessCookie = (response: Response) => {
+	if (!Env.HEADLESS) {
+		return;
+	}
+
+	const getSetCookie = response.headers.getSetCookie;
+	if (typeof getSetCookie !== "function") {
+		return;
+	}
+
+	const setCookieHeaders = getSetCookie.call(response.headers);
+	if (setCookieHeaders.length === 0) {
+		return;
+	}
+
+	CSRF.cookie = setCookieHeaders.map((c) => c.split(";")[0]).join("; ");
 };
 
 const getAbsoluteUrl = (url: string): string | null => {
@@ -87,11 +107,15 @@ const interceptors: {
 			};
 		}
 
-		// Basic auth isn't cookie-based, so it isn't CSRF-forgeable — skip the handshake.
-		const usingBasicAuth = Boolean(Env.ACCESS_KEY && Env.SECRET_KEY);
+		if (Env.HEADLESS && CSRF.cookie) {
+			options.headers = {
+				...options.headers,
+				cookie: CSRF.cookie,
+			};
+		}
 
 		// only set if enabled
-		if (!usingBasicAuth && (CSRF.isEnabled || Env.CSRF)) {
+		if (CSRF.isEnabled || Env.CSRF) {
 			if (options.method === "POST") {
 				// use the token if it is there otherwise fetch it
 				if (!CSRF.token) {
@@ -100,6 +124,9 @@ const interceptors: {
 						{
 							headers: {
 								"X-CSRF-Token": "fetch",
+								...(Env.HEADLESS && CSRF.cookie
+									? { cookie: CSRF.cookie }
+									: {}),
 							},
 						},
 					);
@@ -109,6 +136,16 @@ const interceptors: {
 						response.headers.get("X-CSRF-Token") ||
 						response.headers.get("x-csrf-token") ||
 						"";
+
+					captureHeadlessCookie(response);
+
+					// resend in case this call is what just set the cookie
+					if (Env.HEADLESS && CSRF.cookie) {
+						options.headers = {
+							...options.headers,
+							cookie: CSRF.cookie,
+						};
+					}
 				}
 
 				// add the token
@@ -124,6 +161,8 @@ const interceptors: {
 		return options;
 	},
 	response: async ({ response }) => {
+		captureHeadlessCookie(response);
+
 		if (handleHeaderRedirect(response)) {
 			throw new UnauthorizedError(
 				"Redirecting from header direct value",
@@ -193,21 +232,14 @@ export const post = async <O>(
 ) => {
 	const isFormData = body instanceof FormData;
 
-	// create a new headers object or use the option
-	let headers: HeadersInit = {};
-	if (options.headers) {
-		headers = options.headers;
-	}
-
-	// add headers if not a form
+	// Normalize names without mutating the caller's headers.
+	const headers = new Headers(options.headers);
 	if (!isFormData) {
-		(headers as Record<string, string>)["Content-Type"] =
-			"application/x-www-form-urlencoded";
+		headers.set("Content-Type", "application/x-www-form-urlencoded");
 	}
 
 	options = {
 		method: "POST",
-		headers: headers,
 		body: isFormData
 			? body
 			: Object.keys(body)
@@ -223,6 +255,7 @@ export const post = async <O>(
 					})
 					.join("&"),
 		...options,
+		headers: Object.fromEntries(headers),
 	};
 
 	// intercept
@@ -241,18 +274,22 @@ export const post = async <O>(
 	}
 
 	if (!response.ok) {
-		let errorData: Record<string, string> = {};
+		let errorData: unknown = null;
 		try {
 			errorData = await response.json();
 		} catch {
-			errorData = {};
+			errorData = null;
 		}
+		const details =
+			typeof errorData === "object" && errorData !== null
+				? (errorData as Record<string, unknown>)
+				: {};
 		const errorMessage =
-			errorData.message ||
-			errorData.error ||
-			errorData.errorMessage ||
+			details.message ||
+			details.error ||
+			details.errorMessage ||
 			`Request failed with status ${response.status}`;
-		throw new Error(errorMessage);
+		throw new HttpError(String(errorMessage), response.status, errorData);
 	}
 
 	// get the data

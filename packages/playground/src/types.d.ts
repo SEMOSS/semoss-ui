@@ -43,7 +43,18 @@ export interface App {
 	description?: string;
 	project_date_created: string;
 	project_type: string;
+	/** The user's own grant; null when only a group grants access. */
 	user_permission: number;
+	/**
+	 * The effective permission: the better of the user's own grant and their
+	 * groups' grant. Null for a global project the user holds no grant on, and
+	 * for discoverable projects the user cannot access yet.
+	 */
+	permission?: number | null;
+	/** Whether everyone on the server can use the project. */
+	project_global?: boolean;
+	/** When the project was last edited. */
+	project_date_last_edited?: string;
 }
 
 export interface Workspace {
@@ -101,6 +112,46 @@ export type {
  */
 export type PixelMessage = InputPixelMessage | ResponsePixelMessage;
 
+export interface AgentRunMessageContext {
+	runId: string;
+	role?: string;
+	originatingRunId?: string;
+	childRunId?: string;
+	completionMode?: "WAIT" | "POST" | "POST_AND_CONTINUE" | string;
+	childStatus?: string;
+}
+
+/** Request-local routing evidence returned by the backend, without credentials. */
+export interface RoutingTrace {
+	trace_id?: string;
+	routing_mode?: string;
+	selection_source?: string;
+	classifier_status?: string;
+	classifier_engine_id?: string;
+	classifier_engine_name?: string;
+	classifier_kind?: string;
+	classifier_model?: string;
+	classifier_choice?: string;
+	classifier_duration_ms?: number;
+	classifier_error?: string;
+	classifier_request?: unknown;
+	classifier_response?: unknown;
+	selected_engine_id?: string;
+	selected_route_name?: string;
+	fallback_used?: boolean;
+	attempts?: { engine_id: string; engine_name?: string; status: string }[];
+	downstream?: RoutingTrace;
+}
+
+/** Per-response attribution supplied by the model router after a successful call. */
+export interface ModelRouting {
+	router_engine_id?: string;
+	routed_engine_id: string;
+	routed_engine_name?: string;
+	routed_route_name?: string;
+	trace?: RoutingTrace;
+}
+
 export interface AbstractPixelMessage {
 	io: "INPUT" | "OUTPUT";
 	messageId: string;
@@ -120,10 +171,14 @@ export interface AbstractPixelMessage {
 		| PixelMessageSubagentPart
 	)[];
 	tokens: number;
+	agentRun?: AgentRunMessageContext;
 	ornaments: {
 		modelName?: string;
-		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		/** Successful destination, separate from the selected router modelId. */
+		routing?: ModelRouting;
+		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
+		agentRunRole?: string;
 	};
 	pruneToolsAbove: boolean;
 }
@@ -150,8 +205,11 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 	)[];
 	ornaments: {
 		modelName?: string;
-		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		/** Successful destination, separate from the selected router modelId. */
+		routing?: ModelRouting;
+		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
+		agentRunRole?: string;
 	};
 	feedback?: {
 		rating: boolean;
@@ -223,9 +281,19 @@ export interface PixelMessageToolCallPart {
 			// reversible (short engine-id prefix plus truncation), so this is the
 			// only way back to the real name.
 			SMSS_ORIGINAL_TOOL_NAME?: string;
+			// The reactor a pixel tool runs, set by MakePixelMCP and
+			// MakeRoomPixelMCP. Identifies the connector tools in a room.
+			SMSS_FUNCTION_NAME?: string;
+			// Set on the work folder tools, which the browser runs itself
+			// rather than the backend. See features/chat-tools.
+			SMSS_CLIENT_TOOL?: boolean;
 			SMSS_MCP_UI?: {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";
+				// The call's view: `component://<library>/<view>?<params>` for one
+				// the playground draws itself (features/tool-views),
+				// `system://<package>/<path>` for an app that ships with the web
+				// app, or a path in the project's portal.
 				resourceURI?: string;
 				autoOpen?: boolean;
 			};
@@ -291,6 +359,7 @@ export interface MCPTool {
 		generated_on: string;
 		SMSS_MCP_UI?: {
 			loadingMessage?: string;
+			// `component://`, `system://`, or a portal path, as on a tool call.
 			resourceURI?: string;
 			displayLocation?: "inline" | "sidebar" | "hidden";
 			autoOpen?: boolean;

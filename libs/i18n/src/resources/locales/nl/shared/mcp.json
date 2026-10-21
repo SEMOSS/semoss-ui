@@ -6,7 +6,12 @@
 		"noToolboxesFound": "Geen toolboxen gevonden",
 		"noKnowledgeFound": "Geen kennis gevonden",
 		"noAgentsFound": "Geen agenten gevonden",
-		"noSkillsFound": "Geen vaardigheden gevonden"
+		"noSkillsFound": "Geen vaardigheden gevonden",
+		"fromRoom": "Uit deze chat",
+		"loadError": "De catalogus kon niet worden geladen.",
+		"retry": "Opnieuw proberen",
+		"added": "Toegevoegd",
+		"available": "Beschikbaar"
 	},
 	"permission": {
 		"owner": "Eigenaar",

@@ -79,7 +79,7 @@ export const GanttDisplayValueLabels = observer(
 			}, 300);
 		}
 		return (
-			<div className="border-[#E6E6E6] border-b p-2">
+			<div className="border-border border-b p-2">
 				<Switch
 					id={displayValueLabelsId}
 					checked={displayValueLabelsData}

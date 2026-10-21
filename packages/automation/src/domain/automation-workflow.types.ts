@@ -13,6 +13,7 @@ export type AutomationWorkflowNodeType =
 	| "storage.upload"
 	| "storage.download"
 	| "storage.delete"
+	| "data.extract"
 	| "vector.search"
 	| "vector.add"
 	| "vector.delete"
@@ -21,6 +22,8 @@ export type AutomationWorkflowNodeType =
 	| "app.pixel"
 	| "control.wait"
 	| "control.if"
+	| "control.jev"
+	| "control.loop"
 	| "developer.python";
 
 export type AutomationPortKind = "control" | "data";
@@ -51,6 +54,7 @@ export type AutomationNodeCategory =
 	| "model"
 	| "agent"
 	| "storage"
+	| "data"
 	| "vector"
 	| "function"
 	| "app"
@@ -68,6 +72,8 @@ export interface AutomationWorkflowNodeConfig
 		string,
 		| AutomationJsonValue
 		| AutomationBranchClause[]
+		| AutomationJevQuestion[]
+		| AutomationJevRoute[]
 		| AutomationGlobalVariable[]
 		| undefined
 	> {
@@ -90,6 +96,50 @@ export interface AutomationBranchClause {
 	condition: string;
 }
 
+export type AutomationJevQuestionType = "choice" | "score" | "noul";
+
+/** One named typed question evaluated within a `control.jev` request. */
+export interface AutomationJevQuestion {
+	key: string;
+	type: AutomationJevQuestionType;
+	instructions: string;
+	criteria?: Record<string, string> | string[];
+}
+
+export type AutomationJevRouteMatch = "all" | "any";
+export type AutomationJevRouteField =
+	| "choice"
+	| "score"
+	| "noul"
+	| "confidence"
+	| "probability";
+export type AutomationJevRouteOperator =
+	| "equals"
+	| "notEquals"
+	| "greaterThan"
+	| "greaterThanOrEqual"
+	| "lessThan"
+	| "lessThanOrEqual";
+
+/** One threshold or value comparison used by a JEV route. */
+export interface AutomationJevRouteCondition {
+	questionKey: string;
+	field: AutomationJevRouteField;
+	operator: AutomationJevRouteOperator;
+	value: string | number;
+	option?: string;
+}
+
+/** A named ordered route exposed by a `control.jev` decision node. */
+export interface AutomationJevRoute {
+	id: string;
+	description: string;
+	match?: AutomationJevRouteMatch;
+	conditions?: AutomationJevRouteCondition[];
+	/** Explicit outcome represented by this route for a Noul Yes/No question. */
+	answer?: boolean;
+}
+
 /** A trigger-owned input available to every downstream node at runtime. */
 export interface AutomationGlobalVariable {
 	name: string;
@@ -107,6 +157,8 @@ export interface AutomationWorkflowNode<
 	position: { x: number; y: number };
 	config: AutomationWorkflowNodeConfig;
 	codeMode: AutomationNodeCodeMode;
+	/** Nested acyclic graph executed by a container node such as control.loop. */
+	body?: AutomationWorkflowGraph;
 }
 
 export type AutomationWorkflowGraphNode = AutomationWorkflowNode;
@@ -137,11 +189,20 @@ export interface AutomationWorkflowGraph {
 	edges: AutomationWorkflowEdge[];
 }
 
+/** Visual-only canvas grouping, compatible with the n8n nodeGroups convention. */
+export interface AutomationNodeGroup {
+	id: string;
+	name: string;
+	nodeIds: string[];
+	description?: string;
+}
+
 export interface AutomationWorkflowDocument {
 	formatVersion: 2;
 	description?: string;
 	triggerBindings: TriggerBinding[];
 	graph: AutomationWorkflowGraph;
+	nodeGroups?: AutomationNodeGroup[];
 }
 
 export type ConfigFieldType =
@@ -168,6 +229,22 @@ export interface ConfigFieldSchema {
 	engineType?: string;
 }
 
+export type AutomationOutputFieldType =
+	| "boolean"
+	| "number"
+	| "object"
+	| "object[]"
+	| "string"
+	| "string[]";
+
+/** One known field in a node's successful structured result. */
+export interface AutomationOutputFieldSchema {
+	type: AutomationOutputFieldType;
+	label: string;
+	description: string;
+	required: boolean;
+}
+
 export interface AutomationNodeDefinition {
 	type: AutomationWorkflowNodeType;
 	label: string;
@@ -175,6 +252,7 @@ export interface AutomationNodeDefinition {
 	category: AutomationNodeCategory;
 	defaultConfig: AutomationWorkflowNodeConfig;
 	configSchema: Record<string, ConfigFieldSchema>;
+	outputSchema: Record<string, AutomationOutputFieldSchema>;
 	inputs: readonly AutomationPort[];
 	outputs: readonly AutomationPort[];
 	defaultCodeMode: AutomationNodeCodeMode;
