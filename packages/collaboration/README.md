@@ -72,7 +72,7 @@ for marking items handled and reopening them. `/work` lists topics with their
 status, description, and selector-derived open/waiting counts. `/work/all` starts
 with Needs you and provides Open, Waiting, Handled, and Snoozed filters; legacy
 waiting/handled links remain valid. Every topic entry opens `/topics/:topicId`,
-with Actions, Threads, and Sessions alongside editable goals, people, notes, and
+with Actions, Threads, Chats, and Sources alongside editable goals, people, notes, and
 filing signals. Existing Work and Brain topic links redirect to that workspace.
 Thread rows retain source details, calendar timing, and thread controls.
 
@@ -84,6 +84,23 @@ topic details, search its emails, and read source threads through the existing
 collaboration tools. A failed link retains the draft and room for retry.
 Archived and suggested topics must be set to Active or Dormant before starting
 a chat.
+
+Sources are explicit references for a topic's linked chats. The Sources tab accepts
+document uploads, reference notes, links with optional reference text, saved copies
+from an owned chat, and existing sources from other topics. Documents are limited
+to 10 MB and extracted text to 120,000 characters; shortened text is identified.
+URL-only links are not fetched. Microsoft 365 files already downloaded into a chat
+can be imported as copies; copies do not follow upstream edits or permission changes.
+Sources are separate from optional Brain memory.
+
+Editing or replacing a source creates a new version and affects all topics linked
+to it. Remove unlinks only this topic; the source remains available in Link existing.
+Archived topics retain sources with writes disabled. Confirm suggested topics before
+adding sources. Start from Ask assistant or add the topic through the chat header;
+mentioning its name alone does not establish scope. Answer citations are restored
+from `ornaments.topicSources`, rendered inline and under Sources cited, and inspect
+the exact saved version through a newly authorized read. Invalid citation markers
+never create source links. Backend #3089 is required for these operations.
 
 On each turn the assistant receives open goals, including their IDs, from the
 chat's topics and the confirmed topics of its included threads. When current

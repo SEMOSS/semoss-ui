@@ -1,4 +1,5 @@
 import type { AgentRun } from "@/features/rooms/api/agent-run-api";
+import type { TopicSourceCitation } from "@/features/topic-sources/topic-sources.api";
 
 /** Whether one streaming message part can still receive chunks. */
 type ConversationPartState = "active" | "complete";
@@ -118,6 +119,8 @@ export interface ConversationMessage {
 	visible?: boolean;
 	delegationReply?: DelegationReply;
 	delegationRequest?: DelegationRequest;
+	/** Versioned source evidence actually cited in this saved answer. */
+	topicSources?: TopicSourceCitation[];
 	live?: {
 		phase: PlaygroundTurnPhase;
 		hasObservationIssue: boolean;

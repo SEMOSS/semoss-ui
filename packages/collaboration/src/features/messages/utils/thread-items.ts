@@ -1,6 +1,8 @@
+import { z } from "@semoss/ui/next";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { resolveToolUiUrl } from "@/features/tools/utils/tool-metadata";
+import { topicSourceCitationSchema } from "@/features/topic-sources/topic-sources.api";
 import {
 	delegationReplySchema,
 	delegationRequestSchema,
@@ -194,6 +196,9 @@ function conversationMessageFromPersisted(
 		visible: message.visible ?? true,
 		delegationReply: delegationReply(message),
 		delegationRequest: delegationRequest(message),
+		topicSources: z
+			.object({ topicSources: z.array(topicSourceCitationSchema) })
+			.safeParse(message.ornaments).data?.topicSources,
 	};
 }
 

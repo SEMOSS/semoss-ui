@@ -1,5 +1,9 @@
-import { type ComponentProps, memo } from "react";
+import { type ComponentProps, memo, useContext } from "react";
 import { cn, Markdown } from "@semoss/ui/next";
+import {
+	formatTopicSourceCitations,
+	TopicSourceCitationsContext,
+} from "@/features/topic-sources/topic-source-citations.context";
 import { useStreamingText } from "../hooks/use-streaming-text";
 import { StreamingMarkdownContext } from "../streaming-markdown.context";
 import { messageMarkdownUrlTransform } from "../utils/room-file-link";
@@ -25,6 +29,7 @@ export const MessageMarkdown = memo(function MessageMarkdown({
 	isStreaming: boolean;
 	shouldFlush?: boolean;
 }) {
+	const evidence = useContext(TopicSourceCitationsContext);
 	const { displayedText, isRevealing } = useStreamingText({
 		text,
 		isStreaming,
@@ -43,7 +48,12 @@ export const MessageMarkdown = memo(function MessageMarkdown({
 				urlTransform={messageMarkdownUrlTransform}
 				className={cn("min-w-0 max-w-prose", MESSAGE_PROSE_CLASS_NAME)}
 			>
-				{displayedText}
+				{evidence
+					? formatTopicSourceCitations(
+							displayedText,
+							evidence.citations,
+						)
+					: displayedText}
 			</Markdown>
 		</StreamingMarkdownContext.Provider>
 	);

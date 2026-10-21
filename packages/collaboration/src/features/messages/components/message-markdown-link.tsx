@@ -1,6 +1,7 @@
 import { type ComponentProps, useContext, useId } from "react";
 import { Button, cn } from "@semoss/ui/next";
 import { ToolWorkbenchContext } from "@/features/tools/tool-workbench.context";
+import { TopicSourceCitationsContext } from "@/features/topic-sources/topic-source-citations.context";
 import { parseRoomFileLink } from "../utils/room-file-link";
 
 const LINK_CLASS_NAME =
@@ -15,8 +16,31 @@ export function MessageMarkdownLink({
 	...props
 }: ComponentProps<"a"> & { node?: unknown }) {
 	const workbench = useContext(ToolWorkbenchContext);
+	const evidence = useContext(TopicSourceCitationsContext);
 	const id = useId();
 	const file = href ? parseRoomFileLink(href) : null;
+	if (href?.startsWith("#topic-source-")) {
+		const citation = evidence?.citations.find(
+			(item) =>
+				href === `#topic-source-${encodeURIComponent(item.citationId)}`,
+		);
+		return citation ? (
+			<Button
+				type="button"
+				variant="link"
+				className={LINK_CLASS_NAME}
+				aria-label={`Source ${(evidence?.citations.indexOf(citation) ?? 0) + 1}: ${citation.title}, version ${citation.version}`}
+				onClick={() => evidence?.onOpen(citation)}
+			>
+				{children}
+				<span className="sr-only">
+					: {citation.title}, version {citation.version}
+				</span>
+			</Button>
+		) : (
+			<span>{children}</span>
+		);
+	}
 
 	if (file) {
 		if (!workbench) return <span>{children}</span>;
