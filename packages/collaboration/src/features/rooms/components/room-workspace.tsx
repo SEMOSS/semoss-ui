@@ -44,6 +44,7 @@ import { RoomConversation } from "./room-conversation";
 import { RoomRunStatus } from "./room-run-status";
 import { ROOM_SETTINGS_PANEL_TYPE } from "./room-settings-panel";
 import { RoomTopics } from "./room-topics";
+import { sourceStarterPrompts } from "./source-starter-prompts";
 
 const ROOM_WORKSPACE_LAYOUT_ID = "collaboration-room-workspace-v1";
 const CONVERSATION_PANEL_ID = "collaboration-room-conversation";
@@ -327,6 +328,22 @@ export function RoomWorkspace({
 								}
 								actionsTriggerId={actionsTriggerId}
 								hideSettingsAction={showToolWorkbench}
+								hideEmptyOptimization
+								starterPrompts={
+									thread.length === 0 &&
+									!isLoadingHistory &&
+									roomSnapshot?.source &&
+									roomSnapshot.contextFiles.some(
+										(file) =>
+											file.fileLocation ===
+											roomSnapshot.source?.file
+												.fileLocation,
+									)
+										? sourceStarterPrompts(
+												roomSnapshot.source,
+											)
+										: undefined
+								}
 								panelActions={
 									showToolWorkbench
 										? [
@@ -409,6 +426,7 @@ export function RoomWorkspace({
 									roomSnapshot && roomSession ? (
 										<RoomContextFiles
 											files={roomSnapshot.contextFiles}
+											source={roomSnapshot.source}
 											onRemove={
 												roomSession.removeContextFile
 											}

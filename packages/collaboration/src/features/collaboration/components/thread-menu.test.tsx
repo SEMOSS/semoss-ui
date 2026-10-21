@@ -174,7 +174,7 @@ describe("thread menus", () => {
 		async (path) => {
 			const { user, router, open } = setup({
 				path,
-				sidebarTitle: "Brain overview",
+				sidebarTitle: "Overview",
 			});
 			fireEvent.contextMenu(screen.getByRole("article"), {
 				clientX: 20,
@@ -184,7 +184,7 @@ describe("thread menus", () => {
 				(item) => item.textContent,
 			);
 			expect(contextActions).toContain(
-				path === "/work" ? "Open in room" : "Open Brain overview",
+				path === "/work" ? "Open in room" : "Open Overview",
 			);
 			for (const removed of [
 				"Open in Work",
@@ -318,7 +318,7 @@ describe("thread menus", () => {
 		await open();
 		expect(getMenuActions().map((item) => item.textContent)).toEqual([
 			"Open in room",
-			"View in Brain",
+			"Filing details",
 			"Copy link",
 			"Ignore thread",
 		]);
@@ -351,16 +351,16 @@ describe("thread menus", () => {
 		const { user, router } = setup({
 			state,
 			path: "/brain/threads",
-			sidebarTitle: "Brain overview",
+			sidebarTitle: "Overview",
 		});
 		const trigger = screen.getAllByRole("button", {
 			name: /^(Thread|Email) actions for/,
 		})[0];
 		await user.click(trigger);
 		expect(queryMenuAction({ name: "Close room" })).not.toBeInTheDocument();
-		await user.click(getMenuAction({ name: "Open Brain overview" }));
+		await user.click(getMenuAction({ name: "Open Overview" }));
 		expect(
-			await screen.findByRole("dialog", { name: "Brain overview" }),
+			await screen.findByRole("dialog", { name: "Overview" }),
 		).toBeVisible();
 		expect(router.state.location.pathname).toBe("/brain/threads");
 	});
@@ -404,7 +404,7 @@ describe("thread menus", () => {
 		expect(
 			queryMenuAction({ name: "Open in Work" }),
 		).not.toBeInTheDocument();
-		await user.click(getMenuAction({ name: "View in Brain" }));
+		await user.click(getMenuAction({ name: "Filing details" }));
 		expect(router.state.location.pathname).toBe(
 			`/brain/threads/${threadId}`,
 		);

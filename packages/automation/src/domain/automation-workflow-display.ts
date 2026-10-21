@@ -15,8 +15,10 @@ import {
 	Sparkles,
 	Variable,
 } from "lucide-react";
-import { getAutomationNodeDefinition } from "./automation-node-catalog";
-import type { AutomationWorkflowNodeType } from "./automation-workflow.types";
+import {
+	getAutomationNodeDefinition,
+	hasAutomationNodeDefinitions,
+} from "./automation-node-catalog";
 
 /** Visual metadata shared by workflow-node pickers and canvas cards. */
 export interface AutomationWorkflowNodeDisplay {
@@ -25,47 +27,50 @@ export interface AutomationWorkflowNodeDisplay {
 }
 
 export function getWorkflowNodeDisplay(
-	type: AutomationWorkflowNodeType,
+	type: string,
 ): AutomationWorkflowNodeDisplay {
-	const category = getAutomationNodeDefinition(type)?.category;
+	const category =
+		(hasAutomationNodeDefinitions()
+			? getAutomationNodeDefinition(type)?.category
+			: undefined) ?? type.split(".")[0];
 	if (type === "trigger.start") {
-		return { icon: Braces, color: "text-emerald-600" };
+		return { icon: Braces, color: "text-chart-2" };
 	}
 	if (category === "database") {
-		return { icon: Database, color: "text-blue-600" };
+		return { icon: Database, color: "text-primary" };
 	}
 	if (category === "model") {
-		return { icon: Sparkles, color: "text-purple-600" };
+		return { icon: Sparkles, color: "text-chart-4" };
 	}
 	if (category === "agent") {
-		return { icon: Bot, color: "text-indigo-600" };
+		return { icon: Bot, color: "text-primary" };
 	}
 	if (category === "storage") {
-		return { icon: FolderOpen, color: "text-emerald-600" };
+		return { icon: FolderOpen, color: "text-chart-2" };
 	}
 	if (category === "data") {
-		return { icon: ListTree, color: "text-teal-600" };
+		return { icon: ListTree, color: "text-chart-2" };
 	}
 	if (category === "clean") {
 		return { icon: BrushCleaning, color: "text-primary" };
 	}
 	if (category === "vector") {
-		return { icon: Network, color: "text-amber-600" };
+		return { icon: Network, color: "text-chart-5" };
 	}
 	if (category === "function") {
-		return { icon: FunctionSquare, color: "text-cyan-600" };
+		return { icon: FunctionSquare, color: "text-chart-3" };
 	}
 	if (category === "app") {
-		return { icon: Variable, color: "text-slate-600" };
+		return { icon: Variable, color: "text-muted-foreground" };
 	}
 	if (type === "control.wait") {
-		return { icon: SlidersHorizontal, color: "text-sky-600" };
+		return { icon: SlidersHorizontal, color: "text-primary" };
 	}
 	if (type === "control.if") {
-		return { icon: GitBranch, color: "text-orange-600" };
+		return { icon: GitBranch, color: "text-chart-1" };
 	}
 	if (type === "control.jev") {
-		return { icon: BrainCircuit, color: "text-violet-600" };
+		return { icon: BrainCircuit, color: "text-chart-4" };
 	}
 	if (type === "control.loop") {
 		return { icon: Repeat2, color: "text-primary" };

@@ -83,6 +83,7 @@ const auditSummary = {
 	EVENTS: 2,
 	USAGE_LIMIT_CHANGES: 1,
 	ACCESS_CHANGES: 0,
+	SETTING_CHANGES: 3,
 	DENIALS: 1,
 	ACTORS: 1,
 	PEOPLE_DENIED: 1,
@@ -438,16 +439,139 @@ describe("enterprise usage interactions", () => {
 			);
 		},
 	);
-	it("lists access and usage limit changes and denied requests with their people, and reads an event only once opened", async () => {
+	it("shows each consumer's share of all tokens and cost in the period, so the shares add up to at most 100%", async () => {
+		const answer = mocks.usePixel.getMockImplementation();
+		mocks.usePixel.mockImplementation((pixel: string) => {
+			if (pixel.includes('view=["ranking"]'))
+				return {
+					status: "SUCCESS",
+					refresh: mocks.refresh,
+					data: {
+						rows: [
+							{
+								ENTITY_ID: "model-1",
+								ENTITY_NAME: "Model One",
+								REQUESTS: 1,
+								TOKENS: 250,
+								COST_MICROS: 1_000_000,
+							},
+							{
+								ENTITY_ID: "model-2",
+								ENTITY_NAME: "Model Two",
+								REQUESTS: 3,
+								TOKENS: 500,
+								COST_MICROS: 3_000_000,
+							},
+						],
+					},
+				};
+			// everyone's usage, more than the two consumers listed
+			if (
+				pixel.includes('view=["summary"]') &&
+				pixel.includes('source=["model"]')
+			)
+				return {
+					status: "SUCCESS",
+					refresh: mocks.refresh,
+					data: dataset({
+						REQUESTS: 8,
+						TOKENS: 1000,
+						MESSAGE_ROWS: 16,
+						COST_MICROS: 8_000_000,
+					}),
+				};
+			return answer?.(pixel);
+		});
 		render(<EnterpriseUsage />);
 		fireEvent.mouseDown(
-			screen.getByRole("tab", { name: "Access & Limits" }),
+			screen.getByRole("tab", { name: "Users, Apps & Models" }),
+			{ button: 0, ctrlKey: false },
+		);
+		expect(
+			await screen.findByRole("progressbar", {
+				name: "Model One Share Of Cost",
+			}),
+		).toHaveAttribute("aria-valuetext", "12.5% Of All Cost In The Period");
+		expect(
+			screen.getByRole("progressbar", {
+				name: "Model Two Share Of Cost",
+			}),
+		).toHaveAttribute("aria-valuenow", "37.5");
+		expect(
+			screen.getByRole("progressbar", {
+				name: "Model One Share Of Tokens",
+			}),
+		).toHaveAttribute("aria-valuenow", "25");
+	});
+
+	it("says a share is of the listed consumers when the period's total cannot be read", async () => {
+		const answer = mocks.usePixel.getMockImplementation();
+		mocks.usePixel.mockImplementation((pixel: string) => {
+			if (pixel.includes('view=["ranking"]'))
+				return {
+					status: "SUCCESS",
+					refresh: mocks.refresh,
+					data: {
+						rows: [
+							{
+								ENTITY_ID: "model-1",
+								ENTITY_NAME: "Model One",
+								REQUESTS: 1,
+								TOKENS: 250,
+								COST_MICROS: 1_000_000,
+							},
+							{
+								ENTITY_ID: "model-2",
+								ENTITY_NAME: "Model Two",
+								REQUESTS: 3,
+								TOKENS: 750,
+								COST_MICROS: 3_000_000,
+							},
+						],
+					},
+				};
+			if (
+				pixel.includes('view=["summary"]') &&
+				pixel.includes('source=["model"]')
+			)
+				return {
+					status: "ERROR",
+					error: new Error("Logging disabled"),
+					refresh: mocks.refresh,
+				};
+			return answer?.(pixel);
+		});
+		render(<EnterpriseUsage />);
+		fireEvent.mouseDown(
+			screen.getByRole("tab", { name: "Users, Apps & Models" }),
+			{ button: 0, ctrlKey: false },
+		);
+		expect(
+			await screen.findByRole("progressbar", {
+				name: "Model One Share Of Cost",
+			}),
+		).toHaveAttribute(
+			"aria-valuetext",
+			"25% Of The Listed Consumers' Cost",
+		);
+		expect(
+			screen.getByRole("progressbar", {
+				name: "Model Two Share Of Tokens",
+			}),
+		).toHaveAttribute("aria-valuenow", "75");
+	});
+
+	it("lists access, setting and usage limit changes and denied requests with their people, and reads an event only once opened", async () => {
+		render(<EnterpriseUsage />);
+		fireEvent.mouseDown(
+			screen.getByRole("tab", { name: "Access, Settings & Limits" }),
 			{ button: 0, ctrlKey: false },
 		);
 		expect(
 			await screen.findByText("Usage Limit Changed"),
 		).toBeInTheDocument();
 		expect(screen.getByText("People Affected")).toBeInTheDocument();
+		expect(screen.getByText("Setting Changes")).toBeInTheDocument();
 		expect(screen.getByText("Denied Requests")).toBeInTheDocument();
 		expect(screen.getByText("Access Denied")).toBeInTheDocument();
 		expect(screen.getByText("Tried SetEngineGlobal")).toBeInTheDocument();

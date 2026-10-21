@@ -75,6 +75,7 @@ export {
 } from "./model-usage-limit/usage-limit-guide-sheet";
 export {
 	describeBilledTo,
+	describeLoggedBilledTo,
 	getUsageSourceLabel,
 	getUsageStepReasonLabel,
 	getUsageStepStateLabel,

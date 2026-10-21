@@ -21,7 +21,7 @@ export const RootLayout = () => {
 					<ErrorPage />
 				) : (
 					<div className="flex h-full w-full items-center justify-center py-4">
-						<Spinner aria-label="Loading collaboration workspace" />
+						<Spinner aria-label="Loading Collaboration" />
 					</div>
 				)}
 			</div>

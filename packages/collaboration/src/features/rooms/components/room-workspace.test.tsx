@@ -100,10 +100,14 @@ vi.mock("./room-composer", () => ({
 		attachmentSummary,
 		panelActions,
 		extraCommands,
+		starterPrompts,
 		onSend,
 	}: ComponentProps<typeof import("./room-composer")["RoomComposer"]>) => (
 		<div className={className}>
 			Composer{attachmentSummary}
+			{starterPrompts?.map((prompt) => (
+				<span key={prompt.id}>{prompt.title}</span>
+			))}
 			{panelActions?.map((action) => (
 				<button key={action.id} type="button" onClick={action.onSelect}>
 					{action.label}
@@ -186,6 +190,78 @@ const panelSizes = (container: HTMLElement): number[] =>
 			'[data-slot="resizable-panel"]',
 		),
 	).map((panel) => Number(panel.style.flexGrow));
+
+it("offers source starting points only before the first turn with the source still queued", () => {
+	const owner = new RoomSession("starter-test");
+	const file = { fileLocation: "source.md", fileName: "Source-email.md" };
+	const snapshot = {
+		...owner.getSnapshot(),
+		source: {
+			version: 1 as const,
+			threadId: "source",
+			title: "Source email",
+			channel: "email" as const,
+			kind: "brain" as const,
+			file,
+			messages: [],
+		},
+		contextFiles: [file],
+	};
+	const { rerender } = render(
+		<RoomWorkspace
+			{...defaultProps}
+			roomSession={owner}
+			roomSnapshot={snapshot}
+		/>,
+	);
+	expect(screen.getByText("Summarize")).toBeVisible();
+	expect(screen.getByText("Next steps")).toBeVisible();
+	expect(screen.getByText("Draft reply")).toBeVisible();
+	rerender(
+		<RoomWorkspace
+			{...defaultProps}
+			roomSession={owner}
+			roomSnapshot={{
+				...snapshot,
+				source: { ...snapshot.source, channel: "calendar" },
+			}}
+		/>,
+	);
+	expect(screen.queryByText("Draft reply")).toBeNull();
+	rerender(
+		<RoomWorkspace
+			{...defaultProps}
+			roomSession={owner}
+			roomSnapshot={{ ...snapshot, contextFiles: [] }}
+		/>,
+	);
+	expect(screen.queryByText("Summarize")).toBeNull();
+	rerender(
+		<RoomWorkspace
+			{...defaultProps}
+			roomSession={owner}
+			roomSnapshot={snapshot}
+			isLoadingHistory
+		/>,
+	);
+	expect(screen.queryByText("Summarize")).toBeNull();
+	rerender(
+		<RoomWorkspace
+			{...defaultProps}
+			roomSession={owner}
+			roomSnapshot={snapshot}
+			thread={[
+				{
+					id: "existing",
+					role: "user",
+					parts: [{ type: "text", text: "Existing question" }],
+				},
+			]}
+		/>,
+	);
+	expect(screen.queryByText("Summarize")).toBeNull();
+	owner.dispose();
+});
 
 describe("RoomWorkspace", () => {
 	beforeEach(() => {

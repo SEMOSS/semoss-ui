@@ -63,7 +63,8 @@
 			"cacheWrite": "Écriture de cache",
 			"timestamp": "Horodatage",
 			"status": "Statut",
-			"guardrailAction": "Garde-fou"
+			"guardrailAction": "Garde-fou",
+			"billedTo": "Facturé à"
 		},
 		"guardrailActions": {
 			"MASK": "Masqué",
@@ -133,7 +134,8 @@
 			"requestId": "ID de requête",
 			"spanId": "ID de span",
 			"request": "Requête",
-			"response": "Réponse"
+			"response": "Réponse",
+			"billedTo": "Facturé à"
 		}
 	},
 	"page": {

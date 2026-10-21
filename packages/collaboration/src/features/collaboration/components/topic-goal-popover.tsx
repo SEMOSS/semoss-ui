@@ -35,12 +35,12 @@ export function TopicGoalPopover({ topicId }: { topicId: string }) {
 		<Popover open={isOpen} onOpenChange={handleOpenChange}>
 			<PopoverTrigger asChild>
 				<Button
-					variant="outline"
-					size="sm"
-					className="pointer-coarse:min-h-11 shrink-0 shadow-none"
+					variant="ghost"
+					size="icon-sm"
+					aria-label="Add goal"
+					className="pointer-coarse:min-h-11 shrink-0 text-muted-foreground"
 				>
 					<Plus aria-hidden="true" />
-					Add goal
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent

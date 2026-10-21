@@ -41,6 +41,7 @@ import { useUsageQuery } from "./use-usage-query";
 /** How to read the tab. */
 const CHANGES_NOTES = [
 	"Access Given, Changed, Or Ended, And Access Requests Answered.",
+	"App And Engine Settings Changed: Renamed, Display Name Changed, Made Public Or Private, Discoverability Changed, Template Setting Changed, Or Metadata Edited.",
 	"Requests Denied For Lack Of Access.",
 	"Usage Limits Set, Changed, Or Removed.",
 	"Read From The Audit Trail; Times Are Shown In UTC.",
@@ -61,6 +62,12 @@ const SUMMARY_KPIS = [
 		key: "ACCESS_CHANGES",
 		label: "Access Changes",
 		description: "Access Given, Changed, Or Ended, And Requests Answered",
+	},
+	{
+		key: "SETTING_CHANGES",
+		label: "Setting Changes",
+		description:
+			"App And Engine Names, Public Access, Discoverability, Templates And Metadata",
 	},
 	{
 		key: "DENIALS",
@@ -89,7 +96,7 @@ export interface UsageChangesProps {
 	filters: UsageFilters;
 }
 
-/** The audit trail's access changes, denied requests and usage limit changes: counts, a server-paginated log, and each event on request. */
+/** The audit trail's access changes, app and engine setting changes, denied requests and usage limit changes: counts, a server-paginated log, and each event on request. */
 export function UsageChanges({ filters }: UsageChangesProps) {
 	const [page, setPage] = useState(0);
 	const [selection, setSelection] = useState<UsageSelection | null>(null);
@@ -106,9 +113,9 @@ export function UsageChanges({ filters }: UsageChangesProps) {
 		<div className="min-w-0 space-y-2">
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<div className="flex items-center gap-1">
-					<H3>Access And Usage Limits</H3>
+					<H3>Access, Settings And Usage Limits</H3>
 					<UsageNotes
-						title="Access And Usage Limits"
+						title="Access, Settings And Usage Limits"
 						notes={CHANGES_NOTES}
 					/>
 				</div>
@@ -135,8 +142,11 @@ export function UsageChanges({ filters }: UsageChangesProps) {
 					<AlertDescription>{exportError}</AlertDescription>
 				</Alert>
 			)}
-			<UsageState result={summary} label="Access And Limit Summary">
-				<div className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-6">
+			<UsageState
+				result={summary}
+				label="Access, Setting And Limit Summary"
+			>
+				<div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-7">
 					{SUMMARY_KPIS.map((kpi) => (
 						<Card key={kpi.key} className="gap-0 py-0 shadow-none">
 							<CardContent className="space-y-1 p-3">
@@ -152,15 +162,18 @@ export function UsageChanges({ filters }: UsageChangesProps) {
 					))}
 				</div>
 			</UsageState>
-			<UsageState result={result} label="Access And Limit Events">
+			<UsageState
+				result={result}
+				label="Access, Setting And Limit Events"
+			>
 				{result.rows.length === 0 ? (
 					<Muted>
-						No Access Or Usage Limit Events Match These Filters.
-						Widen The Date Range Or Reset The Filters.
+						No Access, Setting Or Usage Limit Events Match These
+						Filters. Widen The Date Range Or Reset The Filters.
 					</Muted>
 				) : (
 					<section
-						aria-label="Access And Usage Limit Events"
+						aria-label="Access, Setting And Usage Limit Events"
 						// biome-ignore lint/a11y/noNoninteractiveTabindex: keyboard scrolling of the bounded table requires a focus target.
 						tabIndex={0}
 						className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring"

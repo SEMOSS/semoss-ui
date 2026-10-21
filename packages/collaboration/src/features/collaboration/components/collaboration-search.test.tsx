@@ -63,7 +63,7 @@ function mount() {
 async function openSearch() {
 	await userEvent.click(
 		screen.getByRole("button", {
-			name: "Search your workspace",
+			name: "Search",
 		}),
 	);
 	return screen.getByRole("combobox", { name: "Search" });
@@ -152,7 +152,7 @@ describe("saved Collaboration search", () => {
 	it("distinguishes idle, loading, no results and recoverable errors", async () => {
 		mount();
 		const input = await openSearch();
-		expect(screen.getByText("For you")).toBeInTheDocument();
+		expect(screen.getByText("Today")).toBeInTheDocument();
 		expect(run).not.toHaveBeenCalled();
 		run.mockResolvedValueOnce(response({ items: [], total: 0 }));
 		fireEvent.change(input, { target: { value: "missing" } });
@@ -228,7 +228,7 @@ describe("saved Collaboration search", () => {
 	it("supports both shortcuts, focuses input, and restores trigger focus on Escape", async () => {
 		const router = mount();
 		const trigger = screen.getByRole("button", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		fireEvent.keyDown(window, { key: "K", ctrlKey: true });
 		const input = await screen.findByRole("combobox", { name: "Search" });

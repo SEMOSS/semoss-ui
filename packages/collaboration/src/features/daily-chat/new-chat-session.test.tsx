@@ -351,6 +351,9 @@ it("keeps a suggested prompt, files, and agent choice local before the first sen
 	fireEvent.change(screen.getByLabelText("Choose attachments"), {
 		target: { files: [file] },
 	});
+	fireEvent.click(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	);
 	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
 	await waitFor(() =>
 		expect(sessions[0].getSnapshot().settings.agentId).toBe("chosen-agent"),
@@ -511,6 +514,9 @@ it("applies requested agent and model once while preserving later local edits", 
 			modelId: "requested-model",
 		}),
 	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	);
 	await userEvent
 		.setup()
 		.click(screen.getByRole("button", { name: "Choose agent" }));
@@ -661,6 +667,9 @@ it("restores a landing draft through Back and Forward without navigation state",
 	fireEvent.change(screen.getByLabelText("Choose attachments"), {
 		target: { files: [file] },
 	});
+	fireEvent.click(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	);
 	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
 	await act(() => router.navigate(-1));
 	await act(() => router.navigate(1));
@@ -710,6 +719,9 @@ it("retains landing text, files, and settings when opening and closing Settings"
 	fireEvent.change(screen.getByLabelText("Choose attachments"), {
 		target: { files: [file] },
 	});
+	fireEvent.click(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	);
 	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
 	await user.click(
 		screen.getByRole("button", { name: "Open composer actions" }),
@@ -881,7 +893,9 @@ it("keeps a topic assistant local and links its room before the first unchanged 
 	expect(mocks.create).toHaveBeenCalledOnce();
 	expect(mocks.send).not.toHaveBeenCalled();
 	expect(router.state.location.pathname).toBe("/topics/topic-one");
-	expect(screen.getByRole("button", { name: "Choose agent" })).toBeDisabled();
+	expect(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	).toBeDisabled();
 	submit();
 	await act(async () => confirmLink?.());
 	await waitFor(() =>
@@ -1010,7 +1024,9 @@ it("keeps a pending topic link owned by its original draft after navigating away
 		);
 	await act(() => router.navigate(-1));
 	expect(draftIdentity()).toBe(id);
-	expect(screen.getByRole("button", { name: "Choose agent" })).toBeDisabled();
+	expect(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	).toBeDisabled();
 	submit();
 	await act(async () => confirmLink?.());
 	expect(router.state.location.pathname).toBe("/topics/topic-one");

@@ -58,7 +58,7 @@ const STAGES = [
 		key: "done",
 		label: "Done",
 		title: "Ready to file",
-		intro: "Brain files your recent mail and chats into these topics.",
+		intro: "The assistant files your recent mail and chats into these topics.",
 	},
 ] as const;
 export type TopicStage = (typeof STAGES)[number]["key"];
@@ -264,6 +264,7 @@ export function TopicFlow({
 				keep: true,
 				removedPeople: [],
 				addedPeople: [],
+				fileFromFolder: false,
 				...seed,
 			},
 			{ shouldFocus: false },

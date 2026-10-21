@@ -35,7 +35,7 @@ const MAX_CACHED_FILES = 50;
 async function readyScope(owner: DownloadOwner): Promise<DownloadScope> {
 	if (!owner.insightId)
 		throw new Error(
-			"Wait for the workspace to connect before downloading.",
+			"Still connecting. Try the download again in a moment.",
 		);
 	let scope = scopes.get(owner.actions);
 	if (!scope || scope.parentInsightId !== owner.insightId) {

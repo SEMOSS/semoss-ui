@@ -15,7 +15,7 @@ const NOTES: { title: string; items: string[] }[] = [
 		items: [
 			"Usage Reflects Retained Logs And Enabled Logging.",
 			"Model Usage Comes From The Inference Logs; Platform Activity Comes From The Separate Activity Database.",
-			"Access And Usage Limit Changes Come From The Audit Trail, Which Records Times In UTC.",
+			"Access, App And Engine Setting, And Usage Limit Changes Come From The Audit Trail, Which Records Times In UTC.",
 			"App Attribution Comes From The Room's Recorded App.",
 		],
 	},
@@ -25,6 +25,7 @@ const NOTES: { title: string; items: string[] }[] = [
 			"Model Requests Count INPUT Rows; Tokens Count INPUT And RESPONSE Rows At Their Logged Times.",
 			"Inference Records Include Chat, Embeddings, And Other Model Methods; Vector Nearest-Neighbor Logs Are Excluded.",
 			"Cache And Thinking Token Detail Depends On The Provider.",
+			"Cost Is What Each Call Recorded When It Was Billed, At Its Model's Prices Then; Calls Logged Before Costs Were Recorded Are Estimated At Current Base Rates.",
 			"Latency Measures The Whole Model Response, Not Time To First Token.",
 			"Feedback Describes Rated Responses Only.",
 		],
@@ -32,7 +33,8 @@ const NOTES: { title: string; items: string[] }[] = [
 	{
 		title: "What It Does Not Cover",
 		items: [
-			"Billed Spend, Reliable Per-Request Pricing, Or A Complete LLM Failure Rate.",
+			"A Provider's Invoice: Calls Of Models With No Known Prices Have No Cost, And Estimates Use Today's Prices.",
+			"A Complete LLM Failure Rate.",
 			"Engine Filters Apply To All Engine Types In Activity Logs And To The Matching Model In Inference Logs.",
 			"A Dash Means Unavailable.",
 		],

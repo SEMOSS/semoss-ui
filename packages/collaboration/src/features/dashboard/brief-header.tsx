@@ -1,23 +1,23 @@
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
 import {
 	Button,
 	cn,
 	H1,
+	P,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { checkTime } from "@/features/collaboration/live/work-refresh-status";
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
-import { selectWorkItems } from "@/features/collaboration/state/collaboration.selectors";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { useDashboard } from "./dashboard.context";
 import { dashboardTimeZone, eventStart } from "./dashboard-calendar";
 import { dayKey } from "./dashboard-selectors";
+import { selectToday } from "./today-selectors";
 
-/** A factual, live headline for the available work and next meeting. */
+/** One line: what is due today and when the next meeting starts. */
 export function BriefHeader() {
 	const { state } = useCollaborationSession();
 	const { calendar, refreshSources } = useDashboard();
@@ -44,11 +44,7 @@ export function BriefHeader() {
 			: hour < 18
 				? "Good afternoon"
 				: "Good evening";
-	const pending = selectWorkItems(state, { view: "needs_me" }).items;
-	const handled = selectWorkItems(state, {
-		view: "done_today",
-	}).total;
-	const waiting = selectWorkItems(state, { view: "waiting" }).total;
+	const { due } = selectToday(state, now);
 	const next = (calendar.data ?? [])
 		.flatMap((event) => {
 			const start = eventStart(event);
@@ -59,72 +55,42 @@ export function BriefHeader() {
 				: [];
 		})
 		.sort((a, b) => a.getTime() - b.getTime())[0];
-	const beforeMeeting = next
-		? pending.filter(
-				(item) =>
-					item.due &&
-					new Date(item.due) >= now &&
-					new Date(item.due) <= next,
-			).length
-		: 0;
 	// the same check as Work's Refresh: when Microsoft 365 was last read, not when this page re-read
 	const check = updates?.lastMailCheck ?? null;
 	const isChecking = Boolean(
 		updates?.isSyncing || check?.status === "running",
 	);
+	const at = next?.toLocaleTimeString(undefined, {
+		timeZone: zone,
+		hour: "numeric",
+		minute: "2-digit",
+	});
+	// facts first, said gently; the ask box below is the invitation
+	const dueLine =
+		due === 0
+			? "Nothing is due today."
+			: due === 1
+				? "One thing is due today."
+				: `${due} things are due today.`;
 	return (
-		<header className="mb-4 space-y-4">
-			<div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
-				<H1 className="min-w-0 max-w-3xl flex-1 font-medium text-2xl leading-snug tracking-tight 2xl:text-3xl">
-					{greeting}
-					{name ? `, ${name}` : ""}.{" "}
-					<span className="text-muted-foreground">
-						{pending.length}{" "}
-						{pending.length === 1 ? "thing needs" : "things need"}{" "}
-						you
-						{beforeMeeting > 0 && next
-							? `, ${beforeMeeting} before your ${next.toLocaleTimeString(undefined, { timeZone: zone, hour: "2-digit", minute: "2-digit", hour12: false })} meeting`
-							: ""}
-						.
-					</span>
-				</H1>
-			</div>
-			<div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-muted-foreground text-xs leading-5">
-				<Link
-					to="/work/all"
-					className="inline-flex min-h-6 pointer-coarse:min-h-11 items-center gap-2 rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-				>
-					<span
-						aria-hidden="true"
-						className="size-1.5 rounded-full bg-foreground"
-					/>
-					<span className="text-foreground">{pending.length}</span>{" "}
-					open
-				</Link>
-				<span aria-hidden="true">·</span>
-				<Link
-					to="/work/done"
-					className="inline-flex min-h-6 pointer-coarse:min-h-11 items-center gap-1 rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-				>
-					<span className="text-foreground">{handled}</span> handled
-				</Link>
-				<span aria-hidden="true">·</span>
-				<Link
-					to="/work/waiting"
-					className="inline-flex min-h-6 pointer-coarse:min-h-11 items-center gap-1 rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-				>
-					<span className="text-foreground">{waiting}</span> waiting
-					on others
-				</Link>
-				<span aria-hidden="true">·</span>
+		<header className="mb-6 flex flex-col items-center gap-2 text-center">
+			<H1 className="font-display font-medium text-3xl leading-tight sm:text-[2.5rem]">
+				{greeting}
+				{name ? `, ${name}` : ""}.
+			</H1>
+			<P className="text-base text-muted-foreground">
+				{dueLine}
+				{at ? ` Your next meeting is at ${at}.` : ""}
+			</P>
+			<div className="flex items-center gap-1 text-muted-foreground/80 text-xs">
 				<span>
 					{isChecking
-						? "checking…"
+						? "Checking\u2026"
 						: updates?.syncError || check?.status === "failed"
-							? "last check failed"
+							? "Last check failed"
 							: check?.at
-								? `checked ${checkTime(check.at)}`
-								: "from your available conversations"}
+								? `Updated ${checkTime(check.at)}`
+								: ""}
 				</span>
 				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
@@ -133,7 +99,7 @@ export function BriefHeader() {
 							size="icon-sm"
 							aria-label="Check for new mail"
 							disabled={!updates || isChecking}
-							className="-ml-2 pointer-coarse:size-11 size-7 text-muted-foreground"
+							className="pointer-coarse:size-11 size-7 text-muted-foreground"
 							onClick={() => {
 								updates?.syncMail();
 								refreshSources();

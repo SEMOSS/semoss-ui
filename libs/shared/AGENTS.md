@@ -201,7 +201,11 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   `UsageLimitPath`: the ceilings, then each source in order, each rule with a usage bar and when it
   resets in the browser's time zone. The step a call stops at is highlighted; the steps that do
   not apply are faded with the reason. `usage-limit-labels.ts` names the sources and states, and
-  `describeBilledTo` says which limit applies to a person's calls. The UI calls the source a call
+  `describeBilledTo` says which limit applies to a person's calls. `describeLoggedBilledTo` names
+  the source a call was billed to as the inference and activity logs record it
+  (`BILLED_SOURCE_TYPE`, where `USER` is the Direct Limit, with the subject id and type); the
+  activity table's Billed To column and drawer (`components/auditlog/`) and Enterprise Usage's
+  message log use it. The UI calls the source a call
   stops at "Limit Applied By", and names the sources Direct Limit, Team Limit (with the team's
   name, such as "Ops Team Limit"), Public Use Limit, User's Total Model Limit and General Platform
   Limit; the ceilings are the Model Total and the Team Total. A step with more than one rule says

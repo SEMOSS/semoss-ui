@@ -1,5 +1,5 @@
 import DOMPurify from "dompurify";
-import { FileText } from "lucide-react";
+import { Eye, FileText } from "lucide-react";
 import { useId } from "react";
 import { Link } from "react-router";
 import {
@@ -18,6 +18,7 @@ import {
 } from "@semoss/ui/next";
 import { EmailBody } from "@/features/email/email-body";
 import { MESSAGE_PROSE_CLASS_NAME } from "@/features/messages/components/message-prose.styles";
+import { roomPath } from "@/lib/workspace-paths";
 import { RoutineChatButton } from "./routine-chat-button";
 import type { RoutineId, RoutineStatus } from "./routine-schema";
 
@@ -44,13 +45,32 @@ interface RoutineResultProps {
 	};
 	/** The routine's own wording. */
 	copy: RoutineResultCopy;
+	/** Link the run's room; only an owner's own routine runs in a Collaboration routine room. */
+	canOpenRun?: boolean;
+}
+
+/** Opens the run's own room, where its steps show, live while it runs. */
+function OpenRunButton({ roomId, live }: { roomId: string; live?: boolean }) {
+	return (
+		<Button type="button" asChild variant="outline" size="sm">
+			<Link to={roomPath(roomId)}>
+				<Eye aria-hidden="true" data-icon="inline-start" />
+				{live ? "Watch it run" : "Open run"}
+			</Link>
+		</Button>
+	);
 }
 
 /** Displays the saved result, distinguishing first run, progress, and failures. */
-export function RoutineResult({ routine, copy }: RoutineResultProps) {
+export function RoutineResult({
+	routine,
+	copy,
+	canOpenRun = false,
+}: RoutineResultProps) {
 	const headingId = useId();
 	const run = routine.lastRun;
 	const html = run?.html?.trim();
+	const runRoomId = canOpenRun ? run?.roomId : null;
 	return (
 		<section
 			aria-labelledby={headingId}
@@ -77,13 +97,18 @@ export function RoutineResult({ routine, copy }: RoutineResultProps) {
 						</Small>
 					)}
 				</div>
-				{run?.status === "completed" && run.summary?.trim() && (
-					<RoutineChatButton
-						key={`${routine.id}:${run.startedAt}`}
-						routineId={routine.id}
-						startedAt={run.startedAt}
-					/>
-				)}
+				<div className="flex flex-wrap gap-2">
+					{runRoomId && run?.status !== "running" && (
+						<OpenRunButton roomId={runRoomId} />
+					)}
+					{run?.status === "completed" && run.summary?.trim() && (
+						<RoutineChatButton
+							key={`${routine.id}:${run.startedAt}`}
+							routineId={routine.id}
+							startedAt={run.startedAt}
+						/>
+					)}
+				</div>
 			</div>
 			<ScrollArea
 				scrollOrientation="both"
@@ -120,24 +145,31 @@ export function RoutineResult({ routine, copy }: RoutineResultProps) {
 									{run.error ||
 										"Check your inbox connection and assistant configuration before the next scheduled run."}
 									<div className="flex flex-wrap gap-2">
-										<Button
-											type="button"
-											asChild
-											variant="outline"
-											size="sm"
-										>
-											<Link to="/brain/sources">
-												Manage inbox connection
-											</Link>
-										</Button>
+										{/* the other causes open the run from the header */}
+										{(run.errorCause === "connection" ||
+											!run.errorCause) && (
+											<Button
+												type="button"
+												asChild
+												variant="outline"
+												size="sm"
+											>
+												<Link to="/brain/sources">
+													Manage inbox connection
+												</Link>
+											</Button>
+										)}
 									</div>
 								</AlertDescription>
 							</Alert>
 						</div>
 					) : run.status === "running" ? (
-						<div className="flex items-center gap-3 p-6">
+						<div className="flex flex-wrap items-center gap-3 p-6">
 							<Spinner />
 							<output className="text-sm">{copy.running}</output>
+							{runRoomId && (
+								<OpenRunButton roomId={runRoomId} live />
+							)}
 						</div>
 					) : (
 						<div className="flex min-w-0 flex-col">

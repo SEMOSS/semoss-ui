@@ -54,6 +54,8 @@ export interface Topic {
 	goals: TopicGoal[];
 	people: TopicPerson[];
 	calendarSeries: string[];
+	/** Outlook folders the topic stands for; mail in them is filed under it. */
+	folders?: { id: string; path: string; origin?: string | null }[];
 	stats: { threads: number; openItems: number; lastActivity: string };
 	isSample: boolean;
 }
@@ -232,6 +234,9 @@ export interface Settings {
 	sourcesJson: Record<string, boolean>;
 	/** Memory in the thread assistant, and suggestions from finished chats. */
 	memory: { use: boolean; learn: boolean };
+	/** The Outlook folder drafts are left in; blank means the mailbox's own Drafts. */
+	draftFolderId: string;
+	draftFolderName: string;
 	version: number;
 }
 

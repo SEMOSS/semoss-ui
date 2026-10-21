@@ -21,7 +21,10 @@ export function RoutineAvailability({
 					<Alert>
 						<AlertTitle>Setup needs attention</AlertTitle>
 						<AlertDescription>
-							{routine.availabilityMessage ||
+							{routine.availabilityMessage?.replace(
+								/\bBrain\b/g,
+								"Settings",
+							) ||
 								"Your inbox connection, scheduler, or assistant is unavailable. Check your connection or contact your administrator."}
 							{!routine.mailboxAvailable && (
 								<Button

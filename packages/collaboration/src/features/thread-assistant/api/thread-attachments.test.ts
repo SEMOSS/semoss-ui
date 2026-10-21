@@ -112,7 +112,7 @@ it("needs a ready insight and an email on the thread", async () => {
 	const { run, actions } = actionsReturning(() => ({}));
 	await expect(
 		stageThreadAttachment(actions, "", "thread-1", attachment, true),
-	).rejects.toThrow("A ready workspace is required");
+	).rejects.toThrow("Still connecting");
 	await expect(
 		stageThreadAttachment(
 			actions,

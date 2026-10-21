@@ -86,6 +86,10 @@ source. Deleting it is planned future work.
 - **Utilities & hooks**: `cn`, `useCacheState`, `useDebouncedCallback`, `useDebouncedValue`,
   `useInfiniteScroll`, `useIsMobile`
 
+`Progress` reports its value as the bar's `aria-valuenow`, kept between 0 and `max` (100 by
+default); with no value it is indeterminate. Give it an `aria-label`, and an `aria-valuetext`
+when a bare percentage does not say what it measures.
+
 ### Typography map
 
 There is **no** `<Typography variant="...">` component. Use the discrete components:

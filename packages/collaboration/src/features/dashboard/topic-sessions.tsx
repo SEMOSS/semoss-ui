@@ -25,8 +25,7 @@ export function TopicSessions({ topicId }: TopicSessionsProps) {
 	return (
 		<section aria-label="Topic sessions" className="space-y-4 p-4 md:p-6">
 			<P className="text-muted-foreground text-sm">
-				Topic chats and conversations opened from this topic's imported
-				threads.
+				Chats started here or from this topic’s threads.
 			</P>
 			{sessions.rooms.length > 0 && (
 				<ul className="divide-y divide-border">
@@ -129,7 +128,8 @@ export function TopicSessions({ topicId }: TopicSessionsProps) {
 				!history.error &&
 				!sessions.rooms.length && (
 					<P className="text-muted-foreground text-sm">
-						No linked sessions in loaded history.
+						No linked chats in the history loaded so far. Use Ask
+						assistant to start one.
 					</P>
 				)}
 			{sessions.checkedCount > 0 && (

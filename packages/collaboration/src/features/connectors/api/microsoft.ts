@@ -266,7 +266,7 @@ export async function stageMailAttachment(
 ): Promise<StagedSourceAttachment> {
 	if (!insightId)
 		throw new Error(
-			"A ready workspace is required to download an attachment.",
+			"Still connecting. Try the download again in a moment.",
 		);
 	const basename =
 		originalName

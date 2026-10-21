@@ -63,7 +63,8 @@
 			"cacheWrite": "कैश राइट",
 			"timestamp": "टाइमस्टैम्प",
 			"status": "स्थिति",
-			"guardrailAction": "गार्डरेल"
+			"guardrailAction": "गार्डरेल",
+			"billedTo": "बिल किसे गया"
 		},
 		"guardrailActions": {
 			"MASK": "मास्क किया गया",
@@ -133,7 +134,8 @@
 			"requestId": "अनुरोध आईडी",
 			"spanId": "स्पैन आईडी",
 			"request": "अनुरोध",
-			"response": "प्रतिक्रिया"
+			"response": "प्रतिक्रिया",
+			"billedTo": "बिल किसे गया"
 		}
 	},
 	"page": {

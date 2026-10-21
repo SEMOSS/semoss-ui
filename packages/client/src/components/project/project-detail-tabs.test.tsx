@@ -20,7 +20,7 @@ vi.mock("@/components/project", () => ({
 	ProjectAccessControl: () => null,
 }));
 vi.mock("@/pages/app/app-activity-page", () => ({
-	AppActivityPage: () => null,
+	AppActivityPage: () => <div>App activity log</div>,
 }));
 vi.mock("@/pages/app/app-github-page", () => ({ AppGithubPage: () => null }));
 vi.mock("@/pages/app/app-mcp-usage-page", () => ({
@@ -93,4 +93,28 @@ describe("workbench project audit tab", () => {
 			screen.queryByText("Automation audit history"),
 		).not.toBeInTheDocument();
 	});
+});
+
+describe("workbench project activity log tab", () => {
+	const activityTabs = [
+		{ name: "Overview", component: "project-overview" as const },
+		{
+			name: "Activity Log",
+			component: "activity" as const,
+			restrict: ["OWNER" as const, "EDIT" as const, "READ_ONLY" as const],
+		},
+	];
+
+	it.each(["OWNER", "EDIT", "READ_ONLY"])(
+		"shows the app's activity log to %s members once selected",
+		(permission) => {
+			mocks.permission = permission;
+			render(<ProjectDetailTabs tabs={activityTabs} />);
+			expect(
+				screen.queryByText("App activity log"),
+			).not.toBeInTheDocument();
+			fireEvent.click(screen.getByRole("tab", { name: "Activity Log" }));
+			expect(screen.getByText("App activity log")).toBeInTheDocument();
+		},
+	);
 });
