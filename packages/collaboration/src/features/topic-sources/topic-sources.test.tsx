@@ -1,4 +1,10 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useInsight, usePixel } from "@semoss/sdk/react";
@@ -13,6 +19,7 @@ import {
 	saveTopicSource,
 	type TopicSourceDetail,
 } from "./topic-sources.api";
+import { UploadTopicDocumentsDialog } from "./upload-topic-documents-dialog";
 
 vi.mock("@semoss/sdk/react", () => ({
 	useInsight: vi.fn(),
@@ -57,6 +64,16 @@ beforeEach(() => {
 	vi.mocked(linkTopicSource).mockResolvedValue(undefined);
 });
 afterEach(cleanup);
+
+/** Finds the native picker belonging to the shared dropzone. */
+function documentPicker(): HTMLInputElement {
+	const picker = screen
+		.getByRole("button", { name: "Click to browse or drop a file" })
+		.querySelector("input[type=file]");
+	if (!(picker instanceof HTMLInputElement))
+		throw new Error("Document picker missing");
+	return picker;
+}
 
 describe("topic Sources", () => {
 	it("blocks duplicate saves and dismissal while a source save is pending", async () => {
@@ -138,10 +155,12 @@ describe("topic Sources", () => {
 		const file = new File(["budget"], "Budget.pdf", {
 			type: "application/pdf",
 		});
-		await userEvent.upload(
-			screen.getByLabelText("Upload topic documents"),
-			file,
+		await userEvent.click(
+			screen.getByRole("button", { name: "Upload documents" }),
 		);
+		await userEvent.upload(documentPicker(), file);
+		expect(saveTopicDocument).not.toHaveBeenCalled();
+		await userEvent.click(screen.getByRole("button", { name: "Upload" }));
 		await waitFor(() =>
 			expect(saveTopicDocument).toHaveBeenCalledWith(
 				actions,
@@ -151,6 +170,139 @@ describe("topic Sources", () => {
 			),
 		);
 		expect(await screen.findByText("1 document added.")).toBeVisible();
+		expect(screen.queryByRole("dialog")).toBeNull();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Upload documents" }),
+			).toHaveFocus(),
+		);
+	});
+	it("cancels a selected upload without saving and clears the selection on reopen", async () => {
+		render(
+			<TopicSources
+				topicId="alpha"
+				isSample={false}
+				isArchived={false}
+			/>,
+		);
+		const user = userEvent.setup();
+		const trigger = screen.getByRole("button", {
+			name: "Upload documents",
+		});
+		await user.click(trigger);
+		expect(screen.getByRole("button", { name: "Upload" })).toBeDisabled();
+		await user.upload(documentPicker(), new File(["draft"], "Draft.txt"));
+		await user.click(screen.getByRole("button", { name: "Cancel" }));
+		await waitFor(() => expect(trigger).toHaveFocus());
+		expect(saveTopicDocument).not.toHaveBeenCalled();
+		await user.click(trigger);
+		expect(screen.queryByText("Draft.txt")).toBeNull();
+		await user.keyboard("{Escape}");
+		expect(screen.queryByRole("dialog")).toBeNull();
+	});
+	it("accepts dropped files, removes selections, and retries only unfinished documents", async () => {
+		const first = new File(["first"], "First.txt");
+		const second = new File(["second"], "Second.txt");
+		const removed = new File(["removed"], "Removed.txt");
+		vi.mocked(saveTopicDocument)
+			.mockResolvedValueOnce("source-1")
+			.mockRejectedValueOnce(new Error("Storage unavailable"));
+		const onUploaded = vi.fn();
+		const onSubmit = vi.fn();
+		render(
+			<UploadTopicDocumentsDialog
+				topicId="alpha"
+				onUploaded={onUploaded}
+				onSubmit={onSubmit}
+			/>,
+		);
+		fireEvent.drop(
+			screen.getByRole("button", {
+				name: "Click to browse or drop a file",
+			}),
+			{
+				dataTransfer: { files: [first, second, removed] },
+			},
+		);
+		const user = userEvent.setup();
+		await user.click(
+			screen.getByRole("button", { name: "Remove Removed.txt" }),
+		);
+		expect(screen.queryByText("Removed.txt")).toBeNull();
+		await user.click(screen.getByRole("button", { name: "Upload" }));
+		expect(
+			await screen.findByText(
+				/1 document\(s\) added. Storage unavailable/,
+			),
+		).toBeVisible();
+		expect(screen.queryByText("First.txt")).toBeNull();
+		expect(screen.getByText("Second.txt")).toBeVisible();
+		expect(onUploaded).toHaveBeenCalledWith(1);
+		expect(onSubmit).not.toHaveBeenCalled();
+		await user.click(screen.getByRole("button", { name: "Upload" }));
+		await waitFor(() => expect(onSubmit).toHaveBeenCalledWith("source-1"));
+		expect(saveTopicDocument).toHaveBeenCalledTimes(3);
+		expect(
+			vi.mocked(saveTopicDocument).mock.calls.map((call) => call[3]),
+		).toEqual([first, second, second]);
+	});
+	it("validates oversized documents before any write and retains the selection", async () => {
+		render(
+			<UploadTopicDocumentsDialog
+				topicId="alpha"
+				onUploaded={vi.fn()}
+				onSubmit={vi.fn()}
+			/>,
+		);
+		const oversized = new File(
+			[new Uint8Array(10 * 1024 * 1024 + 1)],
+			"Large.pdf",
+		);
+		await userEvent.upload(documentPicker(), oversized);
+		await userEvent.click(screen.getByRole("button", { name: "Upload" }));
+		expect(
+			await screen.findByText(
+				"Large.pdf is over the 10 MB source limit.",
+			),
+		).toBeVisible();
+		expect(screen.getByText("Large.pdf")).toBeVisible();
+		expect(saveTopicDocument).not.toHaveBeenCalled();
+	});
+	it("blocks duplicate uploads and every dismissal path while uploading", async () => {
+		let complete: ((id: string) => void) | undefined;
+		vi.mocked(saveTopicDocument).mockReturnValueOnce(
+			new Promise((resolve) => {
+				complete = resolve;
+			}),
+		);
+		const onSubmit = vi.fn();
+		render(
+			<UploadTopicDocumentsDialog
+				topicId="alpha"
+				onUploaded={vi.fn()}
+				onSubmit={onSubmit}
+			/>,
+		);
+		const user = userEvent.setup();
+		await user.upload(documentPicker(), new File(["budget"], "Budget.txt"));
+		await user.click(screen.getByRole("button", { name: "Upload" }));
+		expect(
+			screen.getByRole("button", { name: /Uploading…/ }),
+		).toBeDisabled();
+		expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+		expect(
+			screen.getByRole("button", {
+				name: "Click to browse or drop a file",
+			}),
+		).toBeDisabled();
+		expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
+		await user.keyboard("{Escape}");
+		fireEvent.pointerDown(document.body);
+		expect(screen.getByRole("dialog")).toBeVisible();
+		expect(onSubmit).not.toHaveBeenCalled();
+		expect(saveTopicDocument).toHaveBeenCalledOnce();
+		complete?.("source-1");
+		await waitFor(() => expect(onSubmit).toHaveBeenCalledWith("source-1"));
 	});
 	it("keeps entered notes and the dialog open after a failed save, then retries", async () => {
 		vi.mocked(saveTopicSource).mockRejectedValueOnce(

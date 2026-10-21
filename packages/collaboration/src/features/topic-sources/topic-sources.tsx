@@ -6,7 +6,6 @@ import {
 	AlertDescription,
 	Badge,
 	Button,
-	Input,
 	P,
 	Spinner,
 } from "@semoss/ui/next";
@@ -17,10 +16,10 @@ import { TopicSourceDetails } from "./topic-source-details";
 import { TopicSourceEditor } from "./topic-source-editor";
 import {
 	linkTopicSource,
-	saveTopicDocument,
 	type TopicSource,
 	topicSourceListSchema,
 } from "./topic-sources.api";
+import { UploadTopicDocumentsDialog } from "./upload-topic-documents-dialog";
 
 interface TopicSourcesProps {
 	topicId: string;
@@ -36,7 +35,7 @@ export function TopicSources({
 	isArchived,
 	isSuggested = false,
 }: TopicSourcesProps) {
-	const { actions, insightId } = useInsight();
+	const { actions } = useInsight();
 	const result = usePixel<unknown>(
 		isSample ? "" : pixel("BrainListTopicSources", { topicId }),
 	);
@@ -44,10 +43,10 @@ export function TopicSources({
 	const [selected, setSelected] = useState<TopicSource | null>(null);
 	const [isLinking, setIsLinking] = useState(false);
 	const [isImporting, setIsImporting] = useState(false);
+	const [isUploading, setIsUploading] = useState(false);
 	const [isBusy, setIsBusy] = useState(false);
 	const [error, setError] = useState("");
 	const [notice, setNotice] = useState("");
-	const fileInput = useRef<HTMLInputElement>(null);
 	const actionRef = useRef<HTMLButtonElement | null>(null);
 	const parsed = topicSourceListSchema.safeParse(result.data);
 	const list =
@@ -68,35 +67,12 @@ export function TopicSources({
 		setSelected(null);
 		setIsLinking(false);
 		setIsImporting(false);
+		setIsUploading(false);
 		if (id) {
 			result.refresh();
 			setNotice("Source saved.");
 		}
 		requestAnimationFrame(() => actionRef.current?.focus());
-	};
-	const handleUpload = async (files: File[]): Promise<void> => {
-		if (disabled || !files.length) return;
-		setIsBusy(true);
-		setError("");
-		setNotice("");
-		let saved = 0;
-		try {
-			for (const file of files) {
-				await saveTopicDocument(actions, insightId, topicId, file);
-				saved++;
-			}
-			setNotice(
-				`${saved} ${saved === 1 ? "document added" : "documents added"}.`,
-			);
-		} catch (cause) {
-			setError(
-				`${saved ? `${saved} document(s) added. ` : ""}${cause instanceof Error ? cause.message : "Could not add this document."}`,
-			);
-		} finally {
-			setIsBusy(false);
-			result.refresh();
-			if (fileInput.current) fileInput.current.value = "";
-		}
 	};
 	const handleRemove = async (sourceId: string): Promise<void> => {
 		setIsBusy(true);
@@ -172,25 +148,14 @@ export function TopicSources({
 						disabled={disabled}
 						onClick={(event) => {
 							actionRef.current = event.currentTarget;
-							fileInput.current?.click();
+							setError("");
+							setNotice("");
+							setIsUploading(true);
 						}}
 					>
 						<Upload aria-hidden="true" />
-						{isBusy ? "Saving…" : "Upload documents"}
+						Upload documents
 					</Button>
-					<Input
-						ref={fileInput}
-						type="file"
-						multiple
-						className="hidden"
-						aria-label="Upload topic documents"
-						disabled={disabled}
-						onChange={(event) =>
-							void handleUpload(
-								Array.from(event.target.files ?? []),
-							)
-						}
-					/>
 				</div>
 			</div>
 			{isSample && (
@@ -324,6 +289,18 @@ export function TopicSources({
 			)}
 			{isImporting && (
 				<ImportChatSourceDialog topicId={topicId} onSubmit={close} />
+			)}
+			{isUploading && (
+				<UploadTopicDocumentsDialog
+					topicId={topicId}
+					onUploaded={(count) => {
+						result.refresh();
+						setNotice(
+							`${count} ${count === 1 ? "document added" : "documents added"}.`,
+						);
+					}}
+					onSubmit={() => close()}
+				/>
 			)}
 		</section>
 	);
