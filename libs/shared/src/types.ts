@@ -98,6 +98,12 @@ export interface ThemeMap {
 
 		banner: string;
 
+		/** Background color of the banner. Defaults to the primary theme color. */
+		bannerBackgroundColor?: string;
+
+		/** Text color of the banner. Defaults to the primary foreground theme color. */
+		bannerTextColor?: string;
+
 		/** Description of the app */
 		description: string;
 
