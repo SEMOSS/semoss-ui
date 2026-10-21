@@ -1,0 +1,85 @@
+{
+	"backend": {
+		"version": "5.5.0-SNAPSHOT",
+		"released": false,
+		"monolith": {
+			"path": "../../../Monolith",
+			"ref": "dev"
+		},
+		"semoss": {
+			"path": "../../../Semoss",
+			"ref": "dev"
+		}
+	},
+	"targets": {
+		"api": {
+			"package": "libs/monolith",
+			"syncedAt": "2026-10-21",
+			"monolithCommit": "ea07d1752691d1cfabd14fcfc5ef002ccff28ae3",
+			"semossCommit": "70a0d682e258f01bffa51e4419513cf02d748018",
+			"ignore": [
+				{
+					"method": "*",
+					"path": "/saml/*",
+					"reason": "SAML servlets (SamlVerifierServlet, IdpSSOServlet, SPSSOServlet): browser redirect flow, not JAX-RS"
+				},
+				{
+					"method": "GET",
+					"path": "/api/auth/login/*",
+					"reason": "OAuth browser-redirect routes (one per provider; /login/ms is a @Deprecated alias of /login/microsoft; /login/producthunt has @Path but no HTTP verb)",
+					"replacement": "api/auth.loginUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/api/auth/login2/*",
+					"reason": "OAuth browser-redirect routes for connector credentials",
+					"replacement": "api/auth.login2Url"
+				},
+				{
+					"method": "GET",
+					"path": "/api/project-{projectId}/landing",
+					"reason": "HTML page the browser navigates to",
+					"replacement": "api/project.landingUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/github/install/app",
+					"reason": "Browser navigation: 303 redirect to GitHub's app install page",
+					"replacement": "github.appUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/github/user/authorize",
+					"reason": "Browser navigation: 303 redirect to GitHub OAuth",
+					"replacement": "github.authorizeUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/github/manifest/new",
+					"reason": "Browser navigation: auto-submitting HTML form",
+					"replacement": "github/manifest.newUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/github/*/callback",
+					"reason": "Redirect targets GitHub sends the browser to (install, OAuth, manifest); not called by clients"
+				},
+				{
+					"method": "POST",
+					"path": "/github/webhook",
+					"reason": "Webhook called by GitHub (X-Hub-Signature-256 HMAC)"
+				},
+				{
+					"method": "POST",
+					"path": "/msgraph/notifications/*",
+					"reason": "Webhooks called by Microsoft Graph (MicrosoftGraphNotificationService)"
+				},
+				{
+					"method": "GET",
+					"path": "/browserSocket/{sessionId}",
+					"reason": "WebSocket endpoint (RemoteBrowserSessionWebSocket)"
+				}
+			]
+		}
+	}
+}
