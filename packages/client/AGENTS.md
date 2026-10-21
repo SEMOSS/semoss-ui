@@ -354,6 +354,50 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
 - The identifier lists start folded away, with a count of their rules and Expand all. A submit
   with problems opens every list that has one, and a folded list with problems says so.
 
+### Jev Policy Guardrail
+
+- **`components/import/guardrail/jev-policy-guardrail-form.tsx`** creates an
+  `EMBEDDED_JEV_POLICY` guardrail: a Jev (TypeSafe) model answers a typed question about the text,
+  and the answer blocks or allows the call. The judge is picked with the shared `EngineSelect`
+  from the user's models whose subtype is `TYPESAFE` (its `engines`), each with its logo, name and
+  id.
+- `jev-policy-guardrail.ts` holds the schema and `toJevPolicyGuardrailDetails`. A yes or no
+  question (`NOUL`) writes `VIOLATION_DIRECTION`; a choice question writes its choices, edited by
+  `jev-policy-choices-field.tsx` one row at a time (`jev-policy-choice-row.tsx`), as
+  `QUESTION_CRITERIA` (each name to its meaning) and `VIOLATION_CHOICES` (the names marked
+  Blocks). A choice question needs a choice that blocks and one that allows. An empty timeout or
+  blocked message is left out, so the guardrail uses its own default.
+- A yes or no question asks for one number, the chance of a violation that blocks the call;
+  `toViolationChanceSettings` writes it as `CONFIDENCE_THRESHOLD` and `LOW_CONFIDENCE_VERDICT`
+  (at 50% or more, the chance as the threshold with `PASS`; under 50%, the threshold mirrored
+  with `BLOCK`). A choice question asks for the confidence needed and its strictness: Strict
+  (`BLOCK`) or Lenient (`PASS`) for a choice the judge is less sure of.
+- The guardrail's logo is `TYPESAFE.png`, on its import card and, through `ENGINE_IMAGES` in
+  `@semoss/shared`, on its catalog card.
+
+### Model Router
+
+- **`components/import/model/router-config-field.tsx`** edits a Model Router's `router.json`, in
+  the model import form and on the router's settings page (`engine-router-settings.tsx`).
+- Each route is a `features/model-router/router-route-card.tsx`: a header with its place, its
+  name, its share of traffic in weighted mode, and Move Up, Move Down and Remove, over its name,
+  destination model and the fields its routing method uses. A move that disables the pressed
+  button moves focus to the other move button; removing a route moves focus to the name of the
+  route that takes its place.
+- Every model picker in the router is `features/model-router/router-engine-select.tsx`: the
+  shared `EngineSelect` over the models the editor reads once (its `engines`), each with its
+  logo, name and id. The role decides the models offered: only `TYPESAFE` models decide, and they
+  never answer, classify by chat or embed.
+
+### Engine fields in the import forms
+
+- A field that picks another engine, such as a vector database's embeddings model or a
+  guardrail's judge model, has `type: "engine"` and an `engineRule` (`engineTypes`, optional
+  `metaFilters`) in its form's constants. The guardrail and vector forms render it with
+  `components/import/shared/import-engine-select.tsx`, the shared `EngineSelect` over the user's
+  engines of those types, each with its logo, name and id. The form keeps only the engine id;
+  the picker remembers the chosen engine to show its name and logo.
+
 ## State Management
 
 - **Application state** is split among the existing stores, including session and config.
