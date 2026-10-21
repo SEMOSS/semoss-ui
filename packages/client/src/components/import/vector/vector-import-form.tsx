@@ -33,6 +33,7 @@ import {
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
+import { ImportEngineSelect } from "../shared/import-engine-select";
 import { computeVisibility } from "../shared/import-form.utils";
 
 export const VectorForm = ({
@@ -464,6 +465,48 @@ export const VectorForm = ({
 										))}
 									</SelectContent>
 								</Select>
+								{error ? (
+									<FieldDescription className="text-destructive">
+										{error.message ||
+											(val.rules?.pattern?.message ??
+												val.helperText)}
+									</FieldDescription>
+								) : (
+									val.helperText && (
+										<FieldDescription>
+											{val.helperText}
+										</FieldDescription>
+									)
+								)}
+							</Field>
+						);
+
+					case "engine":
+						return (
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<ImportEngineSelect
+									ref={field.ref}
+									id={val.key}
+									value={field.value || ""}
+									onChange={field.onChange}
+									engineTypes={val.engineRule.engineTypes}
+									metaFilters={val.engineRule.metaFilters}
+									placeholder={`Select ${val.label}`}
+									disabled={val.disabled}
+									aria-invalid={!!error}
+								/>
 								{error ? (
 									<FieldDescription className="text-destructive">
 										{error.message ||
