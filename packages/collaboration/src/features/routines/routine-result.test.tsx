@@ -29,6 +29,7 @@ const completedRun = {
 /** Render the real email renderer and result panel, without a live service. */
 async function showResult(
 	lastRun: RoutineStatus["lastRun"] = completedRun,
+	canOpenRun = false,
 ): Promise<void> {
 	await act(async () => {
 		render(
@@ -41,6 +42,7 @@ async function showResult(
 						timezone: "UTC",
 						lastRun,
 					}}
+					canOpenRun={canOpenRun}
 				/>
 			</MemoryRouter>,
 		);
@@ -163,4 +165,42 @@ describe("RoutineResult email panel", () => {
 			).toBeNull();
 		},
 	);
+
+	it("links a running run to its room to watch, and a finished one to open", async () => {
+		await showResult({ ...completedRun, status: "running" }, true);
+		expect(
+			screen.getByRole("link", { name: "Watch it run" }),
+		).toHaveAttribute("href", "/thread/room%3Asource-room");
+		cleanup();
+		await showResult(completedRun, true);
+		expect(screen.getByRole("link", { name: "Open run" })).toHaveAttribute(
+			"href",
+			"/thread/room%3Asource-room",
+		);
+	});
+
+	it("does not link the room of a built-in routine's run", async () => {
+		await showResult();
+		expect(screen.queryByRole("link", { name: "Open run" })).toBeNull();
+	});
+
+	it("offers the inbox connection only when the connection failed", async () => {
+		await showResult({
+			...completedRun,
+			status: "failed",
+			errorCause: "agent",
+		});
+		expect(
+			screen.queryByRole("link", { name: "Manage inbox connection" }),
+		).toBeNull();
+		cleanup();
+		await showResult({
+			...completedRun,
+			status: "failed",
+			errorCause: "connection",
+		});
+		expect(
+			screen.getByRole("link", { name: "Manage inbox connection" }),
+		).toBeVisible();
+	});
 });

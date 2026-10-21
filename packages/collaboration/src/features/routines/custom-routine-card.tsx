@@ -34,7 +34,7 @@ const RESULT_COPY: RoutineResultCopy = {
 	emptyTitle: "The first result will appear here",
 	scheduledHint: "Your routine is scheduled. Run it now to see a result.",
 	disabledHint: "Turn the routine on, then run it now to see a result.",
-	running: "Your routine is running. Reopen Routines in a moment to read it.",
+	running: "Your routine is running. This updates when it finishes.",
 	failed: "The last run could not be completed",
 };
 
@@ -185,7 +185,11 @@ export function CustomRoutineCard({
 						<CustomRoutineFields skills={skills} />
 					</div>
 					<div className="min-w-0">
-						<RoutineResult routine={routine} copy={RESULT_COPY} />
+						<RoutineResult
+							routine={routine}
+							copy={RESULT_COPY}
+							canOpenRun
+						/>
 					</div>
 				</CardContent>
 				<RoutineAvailability

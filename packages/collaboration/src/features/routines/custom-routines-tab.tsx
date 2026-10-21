@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
-import { useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useEffect, useState } from "react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -9,6 +9,7 @@ import {
 	P,
 	Skeleton,
 } from "@semoss/ui/next";
+import { callPixel, pixel } from "@/lib/pixel";
 import { CustomRoutineCard } from "./custom-routine-card";
 import {
 	type CustomRoutine,
@@ -19,6 +20,9 @@ import {
 import { MySkillsCard } from "./my-skills-card";
 import { NewCustomRoutine } from "./new-custom-routine";
 
+// how often a running routine's card checks for its result
+const RUNNING_POLL_MS = 5000;
+
 /** The owner's own routines, a way to add one, and their skills. */
 export function CustomRoutinesTab() {
 	const routines = usePixel<unknown>("WorkListCustomRoutines();");
@@ -26,6 +30,29 @@ export function CustomRoutinesTab() {
 	const [isAdding, setIsAdding] = useState(false);
 	const parsedRoutines = customRoutineListSchema.safeParse(routines.data);
 	const parsedSkills = mySkillListSchema.safeParse(skills.data);
+	const { actions } = useInsight();
+	const { update } = routines;
+	const isRunning =
+		parsedRoutines.success &&
+		parsedRoutines.data.routines.some(
+			(routine) => routine.lastRun?.status === "running",
+		);
+	// update in place: a refresh would show the loading state and reset every card
+	useEffect(() => {
+		if (!isRunning) return;
+		const timer = window.setInterval(() => {
+			callPixel(
+				actions,
+				pixel("WorkListCustomRoutines"),
+				customRoutineListSchema,
+			)
+				.then(update)
+				.catch(() => {
+					// keep the last list; the next tick tries again
+				});
+		}, RUNNING_POLL_MS);
+		return () => window.clearInterval(timer);
+	}, [isRunning, actions, update]);
 	const isLoading = [routines.status, skills.status].some(
 		(status) => status === "INITIAL" || status === "LOADING",
 	);
