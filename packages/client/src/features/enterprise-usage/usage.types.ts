@@ -7,7 +7,8 @@ export interface UsageFilters {
 	engine: string;
 }
 
-export type UsageSource = "model" | "activity";
+/** Model inference logs, platform activity logs, or the audit trail's access, setting and usage limit changes. */
+export type UsageSource = "model" | "activity" | "audit";
 export type UsageFilterDimension = "user" | "app" | "engine";
 
 /** A selected span shared by all report tabs. */
@@ -59,7 +60,7 @@ export interface UsageResult {
 	refresh: () => void;
 }
 
-/** The metadata needed to retrieve a single message pair or activity event. */
+/** The metadata needed to retrieve a single message pair, activity event, or audit event's change. */
 export interface UsageSelection {
 	source: UsageSource;
 	row: UsageRow;

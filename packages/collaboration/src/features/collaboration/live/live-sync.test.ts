@@ -537,3 +537,38 @@ it("reports a missing created id before writing dependent rows", async () => {
 		"The saved record did not return an id.",
 	);
 });
+
+it("does not save hydrated records, even when a user edit settles in the same change", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = createInitialCollaborationState();
+	const loaded: CollaborationCommand = {
+		type: "records.loaded",
+		items: [],
+		memories: [],
+		topics: [
+			{
+				...previous.topics[0],
+				id: "saved-topic",
+				name: "Saved on server",
+			},
+		],
+		people: [],
+		threads: [],
+		workspaces: {},
+	};
+	const hydrated = collaborationReducer(previous, loaded, NOW);
+	sync({ previous, next: hydrated, commands: [loaded] });
+	await Promise.resolve();
+	expect(sent).toHaveLength(0);
+	const edit: CollaborationCommand = {
+		type: "topic.save",
+		topic: { id: "saved-topic", name: "User rename" },
+	};
+	const next = collaborationReducer(hydrated, edit, NOW);
+	sync({ previous, next, commands: [loaded, edit] });
+	await vi.waitFor(() => expect(sent).toHaveLength(1));
+	expect(sent[0]).toContain('"id":"saved-topic"');
+	expect(sent[0]).toContain('"name":"User rename"');
+	expect(sent[0]).not.toContain("Saved on server");
+});

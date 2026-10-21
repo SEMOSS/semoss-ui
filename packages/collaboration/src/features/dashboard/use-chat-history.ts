@@ -9,6 +9,9 @@ import type { RoomRow } from "@/features/rooms/api/room-schemas";
 
 export interface ChatHistory {
 	rooms: RoomRow[];
+	closedRoomIds: string[];
+	setRoomClosed: (roomId: string, isClosed: boolean) => boolean;
+	closeError: string;
 	isLoading: boolean;
 	error: string;
 	hasMore: boolean;
@@ -19,8 +22,34 @@ export interface ChatHistory {
 }
 
 /** Keep previously loaded pages and scroll position when the route changes. */
-export function useChatHistory(): ChatHistory {
+export function useChatHistory(
+	storageKey = "semoss:collaboration:closed-chats",
+): ChatHistory {
 	const { actions } = useInsight();
+	const [closedRoomIds, setClosedRoomIds] = useState(() =>
+		readClosedRoomIds(storageKey),
+	);
+	const [closeError, setCloseError] = useState("");
+	const setRoomClosed = (roomId: string, isClosed: boolean): boolean => {
+		const saved = readClosedRoomIds(storageKey);
+		const next = isClosed
+			? [...new Set([...saved, roomId])]
+			: saved.filter((id) => id !== roomId);
+		try {
+			localStorage.setItem(
+				storageKey,
+				JSON.stringify({ version: 1, roomIds: next }),
+			);
+			setClosedRoomIds(next);
+			setCloseError("");
+			return true;
+		} catch {
+			setCloseError(
+				"Could not save the chat list. Try again when browser storage is available.",
+			);
+			return false;
+		}
+	};
 	const [rooms, setRooms] = useState<RoomRow[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
@@ -130,6 +159,9 @@ export function useChatHistory(): ChatHistory {
 	}, [isLoading, refresh]);
 	return {
 		rooms,
+		closedRoomIds,
+		setRoomClosed,
+		closeError,
 		isLoading,
 		error,
 		hasMore,
@@ -142,4 +174,19 @@ export function useChatHistory(): ChatHistory {
 			if (hasMore) void read(false);
 		},
 	};
+}
+
+/** Closing stores identifiers only; chat messages and drafts stay in their existing stores. */
+function readClosedRoomIds(key: string): string[] {
+	try {
+		const parsed = z
+			.object({
+				version: z.literal(1),
+				roomIds: z.array(z.string().min(1)),
+			})
+			.safeParse(JSON.parse(localStorage.getItem(key) || "null"));
+		return parsed.success ? [...new Set(parsed.data.roomIds)] : [];
+	} catch {
+		return [];
+	}
 }

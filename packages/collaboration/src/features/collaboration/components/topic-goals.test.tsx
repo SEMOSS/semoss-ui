@@ -1,4 +1,10 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
@@ -43,6 +49,8 @@ function setup(goals: TopicGoal[]) {
 			<RouterProvider router={router} />
 		</CollaborationSessionProvider>,
 	);
+	if (!goals.length)
+		fireEvent.click(screen.getByRole("button", { name: "Context" }));
 	return {
 		goals: within(screen.getByRole("region", { name: "Goals" })),
 		onChange,
@@ -61,8 +69,9 @@ it("keeps the goal readable and names the AI accomplishment separately", () => {
 	expect(goals.getByText(completedGoal.text)).not.toHaveClass("line-through");
 	expect(goals.getByText("AI accomplishment")).toBeVisible();
 	expect(goals.getByText(completedGoal.resolution)).toBeVisible();
-	expect(goals.getByText("Completed")).toBeVisible();
-	expect(goals.getByText("Open")).toBeVisible();
+	expect(
+		goals.getByRole("checkbox", { name: openGoal.text }),
+	).not.toBeChecked();
 	expect(goals.getByRole("status")).toHaveTextContent("1 of 2 complete");
 	expect(
 		goals.getByRole("progressbar", { name: "Goals completed" }),
@@ -114,7 +123,6 @@ it("does not invent an accomplishment for a completed goal without one", () => {
 
 it("explains an empty goals section and preserves add-goal validation and focus", async () => {
 	const { goals, onChange, user } = setup([]);
-	expect(goals.getByText("Give this topic a direction")).toBeVisible();
 	expect(
 		goals.getByText(
 			"Add a goal for you and your assistant to work toward.",

@@ -24,6 +24,12 @@ export interface EventData {
 	cacheCreationTokens?: number;
 	promptTokens?: number;
 	responseTokens?: number;
+	/** The usage limit source a model call was billed to: USER, TEAM, PUBLIC, ALL_MODELS or PLATFORM */
+	billedSourceType?: string | null;
+	/** The person's login id or the team billed */
+	billedSubjectId?: string | null;
+	/** The matching login type or team type */
+	billedSubjectType?: string | null;
 }
 /**
  * Format an audit-log timestamp into separate date and time strings for display.

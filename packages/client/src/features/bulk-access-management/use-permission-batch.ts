@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	type AccessPerson,
 	getResourcePermissions,
+	type ModelUsageLimit,
 	type PermissionAllowedChanges,
 	type PermissionChange,
 	type PermissionGrant,
@@ -16,12 +17,23 @@ import {
 	type BatchEdit,
 	type BatchEntry,
 	buildEntries,
+	buildModelLimitEntries,
 	type CopyOptions,
+	getModelLimitKey,
 	getSubjectKey,
+	type ModelLimitCategory,
+	type ModelLimitEntry,
 	mergeCopiedAccess,
 	toChanges,
+	toModelLimitChanges,
 	withEdit,
 } from "./permission-batch";
+
+/** The kinds of model-wide limit, so a key can be told from a person's or a team's */
+const MODEL_LIMIT_CATEGORIES: readonly ModelLimitCategory[] = [
+	"MODEL",
+	"PUBLIC",
+];
 
 /** A person or team to add to a permission batch */
 export interface BatchAddition {
@@ -34,6 +46,12 @@ export interface BatchAddition {
 export interface UsePermissionBatchResult {
 	/** Everyone in the batch, with their access now and after it is saved */
 	entries: BatchEntry[];
+	/** On a model, its total and its public use limit, now and after the batch is saved */
+	modelLimitEntries: ModelLimitEntry[];
+	/** On a model, whether it is public, so its public use limit applies */
+	isPublic: boolean;
+	/** On a model, whether it has known prices, so its limits can have cost rules */
+	costLimitsAvailable: boolean;
 	/** What the signed in user may change, or null until the access loads */
 	allowedChanges: PermissionAllowedChanges | null;
 	/** Whether the current access is being read */
@@ -46,7 +64,17 @@ export interface UsePermissionBatchResult {
 	conflicts: BatchConflict[];
 	/** Sets an entry's access after the batch is saved; null takes it away */
 	setStaged: (entry: BatchEntry, staged: PermissionGrant | null) => void;
-	/** Puts an entry back the way it is now */
+	/** Gives several entries the same usage limit, keeping the rest of their access */
+	setUsageLimits: (
+		entries: BatchEntry[],
+		usageLimit: ModelUsageLimit | null,
+	) => void;
+	/** Sets a model's total or public use limit after the batch is saved */
+	setModelLimit: (
+		category: ModelLimitCategory,
+		usageLimit: ModelUsageLimit | null,
+	) => void;
+	/** Puts an entry, or a model's total or public use limit, back the way it is now */
 	restore: (key: string) => void;
 	/** Adds people or teams who are not in the batch yet; returns how many were added */
 	add: (
@@ -88,7 +116,7 @@ export const usePermissionBatch = (
 	target: PermissionTargetResource,
 	admin = false,
 ): UsePermissionBatchResult => {
-	const { kind, id } = target;
+	const { resourceType, id } = target;
 	const [access, setAccess] = useState<ResourcePermissions | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -96,6 +124,9 @@ export const usePermissionBatch = (
 		() => new Map(),
 	);
 	const [conflicts, setConflicts] = useState<BatchConflict[]>([]);
+	const [modelLimitEdits, setModelLimitEdits] = useState<
+		ReadonlyMap<ModelLimitCategory, ModelUsageLimit | null>
+	>(() => new Map());
 	const [refreshCount, setRefreshCount] = useState(0);
 
 	useEffect(() => {
@@ -106,7 +137,7 @@ export const usePermissionBatch = (
 		let isStale = false;
 		setIsLoading(true);
 		setError(null);
-		getResourcePermissions({ kind, id }, admin)
+		getResourcePermissions({ resourceType, id }, admin)
 			.then((next) => {
 				if (!isStale) {
 					setAccess(next);
@@ -125,10 +156,21 @@ export const usePermissionBatch = (
 		return () => {
 			isStale = true;
 		};
-	}, [kind, id, admin, refreshCount]);
+	}, [resourceType, id, admin, refreshCount]);
 
 	const entries = useMemo(() => buildEntries(access, edits), [access, edits]);
-	const changes = useMemo(() => toChanges(entries), [entries]);
+	const modelLimitEntries = useMemo(
+		() => buildModelLimitEntries(access, modelLimitEdits),
+		[access, modelLimitEdits],
+	);
+	// the model-wide limits go first, so they are reviewed before the people
+	const changes = useMemo(
+		() => [
+			...toModelLimitChanges(modelLimitEntries),
+			...toChanges(entries),
+		],
+		[modelLimitEntries, entries],
+	);
 
 	/** The access a key has now, or null */
 	const currentOf = (key: string): PermissionGrant | null =>
@@ -149,7 +191,52 @@ export const usePermissionBatch = (
 		);
 	};
 
+	const setUsageLimits = (
+		targets: BatchEntry[],
+		usageLimit: ModelUsageLimit | null,
+	) => {
+		setEdits((prev) =>
+			targets.reduce<ReadonlyMap<string, BatchEdit>>((next, entry) => {
+				const base = next.get(entry.key)?.staged ?? entry.staged;
+				return base
+					? withEdit(
+							next,
+							{
+								subject: entry.subject,
+								person: entry.person,
+								staged: { ...base, usageLimit },
+								note: entry.note,
+							},
+							entry.current,
+						)
+					: next;
+			}, prev),
+		);
+	};
+
+	const setModelLimit = (
+		category: ModelLimitCategory,
+		usageLimit: ModelUsageLimit | null,
+	) => {
+		setModelLimitEdits((prev) => {
+			const next = new Map(prev);
+			next.set(category, usageLimit);
+			return next;
+		});
+	};
+
 	const restore = (key: string) => {
+		const category = MODEL_LIMIT_CATEGORIES.find(
+			(candidate) => getModelLimitKey(candidate) === key,
+		);
+		if (category) {
+			setModelLimitEdits((prev) => {
+				const next = new Map(prev);
+				next.delete(category);
+				return next;
+			});
+			return;
+		}
 		setEdits((prev) => {
 			const next = new Map(prev);
 			next.delete(key);
@@ -248,6 +335,7 @@ export const usePermissionBatch = (
 
 	const discard = () => {
 		setEdits(new Map());
+		setModelLimitEdits(new Map());
 		setConflicts([]);
 	};
 
@@ -264,12 +352,17 @@ export const usePermissionBatch = (
 
 	return {
 		entries,
+		modelLimitEntries,
+		isPublic: access?.publicUse?.isPublic === true,
+		costLimitsAvailable: access?.costLimitsAvailable === true,
 		allowedChanges: access?.allowedPermissionChanges ?? null,
 		isLoading,
 		error,
 		changes,
 		conflicts,
 		setStaged,
+		setUsageLimits,
+		setModelLimit,
 		restore,
 		add,
 		copy,

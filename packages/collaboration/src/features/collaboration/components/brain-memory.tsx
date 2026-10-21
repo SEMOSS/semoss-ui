@@ -141,7 +141,7 @@ export function BrainMemory() {
 							/>
 						</div>
 						<Small className="block font-normal text-muted-foreground text-xs leading-5">
-							After a chat, Brain reads what you wrote and
+							After a chat, the assistant reads what you wrote and
 							suggests what to keep. Nothing is used until you
 							keep it.
 						</Small>

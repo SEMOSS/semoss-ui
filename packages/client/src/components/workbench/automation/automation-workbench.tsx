@@ -82,6 +82,8 @@ import { stripMcpToolAlias } from "@/components/assistant/assistant-tools";
 import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { AssistantStoreProvider, WorkbenchProvider } from "@/contexts";
+import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
+import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
 import { useAssistantStore, useProject, useSession } from "@/hooks";
 import type { BuildTool } from "@/stores/assistant";
 import { AUTOMATION_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
@@ -200,6 +202,11 @@ const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
 		component: "mcp-usage",
 		restrict: ["OWNER", "EDIT", "READ_ONLY"],
 	},
+	{
+		name: "Activity Log",
+		component: "activity",
+		restrict: ["OWNER", "EDIT", "READ_ONLY"],
+	},
 	{ name: "GitHub", component: "github", restrict: ["OWNER"] },
 	{ name: "Settings", component: "settings", restrict: ["OWNER"] },
 	{
@@ -207,6 +214,7 @@ const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
 		component: "access-control",
 		restrict: ["OWNER", "EDIT"],
 	},
+	{ name: "Audit Trail", component: "audit", restrict: ["OWNER"] },
 	{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 ];
 
@@ -512,6 +520,7 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		icon: ({ className }) => <SettingsIcon className={className} />,
 		content: AutomationSettingsPanel,
 	},
+	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
 	[WORKBENCH_COMPONENTS.ASSISTANT]: {
 		...ASSISTANT_PANEL,
 	},

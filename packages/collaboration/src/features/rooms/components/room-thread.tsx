@@ -12,7 +12,9 @@ import type {
 } from "@/features/messages/types/message";
 import { formatMessageDay } from "@/features/messages/utils/message-metadata";
 import { presentMessages } from "@/features/messages/utils/message-presentation";
+import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import { ToolWorkbenchContext } from "@/features/tools/tool-workbench.context";
+import { RoomSourceWelcome } from "./room-source-welcome";
 
 /** Scrollable Playground-style transcript with loading and empty states. */
 export function RoomThread({
@@ -37,6 +39,7 @@ export function RoomThread({
 }) {
 	const scroll = useFollowScroll({ resetKey: roomId, resumeSignal });
 	const workbench = useContext(ToolWorkbenchContext);
+	const source = useContext(RoomEmailContext)?.source;
 	const entries = presentMessages(thread, workbench?.tools);
 	const latestMessage = thread.at(-1);
 	const liveMessage = latestMessage?.live ? latestMessage : undefined;
@@ -79,22 +82,26 @@ export function RoomThread({
 							</Muted>
 						</output>
 					)}
-					{thread.length === 0 && !isLoadingHistory && (
-						<EmptyView
-							title={`A fresh start with ${agent.name}`}
-							action={
-								<Muted className="flex items-center gap-2 text-base">
-									<ShieldCheck
-										aria-hidden="true"
-										className="size-4"
-									/>
-									No previous conversation included
-								</Muted>
-							}
-						>
-							What would you like to work on?
-						</EmptyView>
-					)}
+					{thread.length === 0 &&
+						!isLoadingHistory &&
+						(source ? (
+							<RoomSourceWelcome source={source} />
+						) : (
+							<EmptyView
+								title={`A fresh start with ${agent.name}`}
+								action={
+									<Muted className="flex items-center gap-2 text-base">
+										<ShieldCheck
+											aria-hidden="true"
+											className="size-4"
+										/>
+										No previous conversation included
+									</Muted>
+								}
+							>
+								What would you like to work on?
+							</EmptyView>
+						))}
 					{entries.map(
 						({ message, parts, createdAt, dateSeparator }) => {
 							return (

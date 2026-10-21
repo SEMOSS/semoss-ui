@@ -150,6 +150,20 @@ export function TopicAreasStage({
 							? "Already saved"
 							: "No conversations yet")}
 				</P>
+				{value.keep && (evidence?.folderIds.length ?? 0) > 0 && (
+					<div className="pl-6">
+						<FormCheckbox
+							name={`topics.${index}.fileFromFolder`}
+							label={
+								<span className="text-muted-foreground text-xs">
+									File new mail from{" "}
+									{evidence?.folders.join(", ")} here
+								</span>
+							}
+							disabled={isBusy}
+						/>
+					</div>
+				)}
 				{form.formState.errors.topics?.[index]?.name && (
 					<P className="pl-6 text-destructive text-xs" role="alert">
 						Name this topic or turn off Keep.

@@ -122,7 +122,7 @@ describe("memory helpers", () => {
 					confirmed: false,
 				}),
 			),
-		).toBe("Brain suggestion");
+		).toBe("Assistant suggestion");
 	});
 
 	it("follows a topic merge and delete the way the server does", () => {

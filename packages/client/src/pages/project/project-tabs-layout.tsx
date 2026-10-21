@@ -41,6 +41,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	const { catalog, project, permission, refresh, type, update } =
 		useProject();
 	const insightID = useSession((state) => state.insightID);
+	const isAdmin = useSession((state) => state.user.admin);
 
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
@@ -49,6 +50,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
 		return tabs.filter((tab) => {
+			if (tab.path === "audit" && isAdmin) return true;
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -57,7 +59,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 			}
 			return tab.restrict.includes(permission);
 		});
-	}, [tabs, permission]);
+	}, [tabs, permission, isAdmin]);
 
 	// the current active tab index based on the current pathname
 	const activeTabIdx = useMemo(() => {

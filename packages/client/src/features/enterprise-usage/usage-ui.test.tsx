@@ -79,6 +79,56 @@ const logRow = {
 	LATENCY_MS: 1500,
 };
 
+const auditSummary = {
+	EVENTS: 2,
+	USAGE_LIMIT_CHANGES: 1,
+	ACCESS_CHANGES: 0,
+	SETTING_CHANGES: 3,
+	DENIALS: 1,
+	ACTORS: 1,
+	PEOPLE_DENIED: 1,
+	PEOPLE_AFFECTED: 1,
+};
+const auditRow = {
+	EVENT_ID: "limit-1",
+	EVENT_TIME: "2024-03-01T10:00:00Z",
+	EVENT_TYPE: "USAGE_LIMIT_UPDATE",
+	STATUS: "SUCCESS",
+	ACTOR_USER_ID: "owner-1",
+	ACTOR_USER_TYPE: "NATIVE",
+	ACTOR_USER_NAME: "Owner One",
+	SUBJECT_USER_ID: "u-1",
+	SUBJECT_USER_TYPE: "NATIVE",
+	SUBJECT_USER_NAME: "Person One",
+	TARGET_TYPE: "ENGINE",
+	TARGET_ID: "model-1",
+	ENGINE_ID: "model-1",
+};
+const deniedRow = {
+	EVENT_ID: "denied-1",
+	EVENT_TIME: "2024-03-02T10:00:00Z",
+	EVENT_TYPE: "AUTHORIZATION_DENIED",
+	ACTION: "SetEngineGlobal",
+	STATUS: "DENIED",
+	ACTOR_USER_ID: "u-3",
+	ACTOR_USER_TYPE: "NATIVE",
+	ACTOR_USER_NAME: "Person Three",
+	TARGET_TYPE: "ENGINE",
+	TARGET_ID: "model-1",
+	ENGINE_ID: "model-1",
+};
+const denial = {
+	EVENT_ID: "denied-1",
+	ERROR_CODE: "PERMISSION_DENIED",
+	ERROR_MESSAGE: "User does not have permission",
+};
+const auditChange = {
+	EVENT_ID: "limit-1",
+	OLD_VALUE: '{"usageLimit":null}',
+	NEW_VALUE: '{"usageLimit":{"unlimited":true,"rules":[]}}',
+	DETAILS: '{"limitType":"DIRECT"}',
+};
+
 function dataset(row: Record<string, unknown>): {
 	rows: Record<string, unknown>[];
 } {
@@ -119,6 +169,20 @@ beforeEach(() => {
 						},
 					],
 				},
+			};
+		if (pixel.includes('source=["audit"]'))
+			return {
+				status: "SUCCESS",
+				refresh: mocks.refresh,
+				data: pixel.includes("AdminGetEnterpriseUsageDetail")
+					? dataset(
+							pixel.includes('recordId=["denied-1"]')
+								? denial
+								: auditChange,
+						)
+					: pixel.includes('view=["logs"]')
+						? { rows: [deniedRow, auditRow] }
+						: dataset(auditSummary),
 			};
 		let row: Record<string, unknown> = summary;
 		if (pixel.includes('view=["latency"]')) row = { P95_MS: 2000 };
@@ -375,6 +439,187 @@ describe("enterprise usage interactions", () => {
 			);
 		},
 	);
+	it("shows each consumer's share of all tokens and cost in the period, so the shares add up to at most 100%", async () => {
+		const answer = mocks.usePixel.getMockImplementation();
+		mocks.usePixel.mockImplementation((pixel: string) => {
+			if (pixel.includes('view=["ranking"]'))
+				return {
+					status: "SUCCESS",
+					refresh: mocks.refresh,
+					data: {
+						rows: [
+							{
+								ENTITY_ID: "model-1",
+								ENTITY_NAME: "Model One",
+								REQUESTS: 1,
+								TOKENS: 250,
+								COST_MICROS: 1_000_000,
+							},
+							{
+								ENTITY_ID: "model-2",
+								ENTITY_NAME: "Model Two",
+								REQUESTS: 3,
+								TOKENS: 500,
+								COST_MICROS: 3_000_000,
+							},
+						],
+					},
+				};
+			// everyone's usage, more than the two consumers listed
+			if (
+				pixel.includes('view=["summary"]') &&
+				pixel.includes('source=["model"]')
+			)
+				return {
+					status: "SUCCESS",
+					refresh: mocks.refresh,
+					data: dataset({
+						REQUESTS: 8,
+						TOKENS: 1000,
+						MESSAGE_ROWS: 16,
+						COST_MICROS: 8_000_000,
+					}),
+				};
+			return answer?.(pixel);
+		});
+		render(<EnterpriseUsage />);
+		fireEvent.mouseDown(
+			screen.getByRole("tab", { name: "Users, Apps & Models" }),
+			{ button: 0, ctrlKey: false },
+		);
+		expect(
+			await screen.findByRole("progressbar", {
+				name: "Model One Share Of Cost",
+			}),
+		).toHaveAttribute("aria-valuetext", "12.5% Of All Cost In The Period");
+		expect(
+			screen.getByRole("progressbar", {
+				name: "Model Two Share Of Cost",
+			}),
+		).toHaveAttribute("aria-valuenow", "37.5");
+		expect(
+			screen.getByRole("progressbar", {
+				name: "Model One Share Of Tokens",
+			}),
+		).toHaveAttribute("aria-valuenow", "25");
+	});
+
+	it("says a share is of the listed consumers when the period's total cannot be read", async () => {
+		const answer = mocks.usePixel.getMockImplementation();
+		mocks.usePixel.mockImplementation((pixel: string) => {
+			if (pixel.includes('view=["ranking"]'))
+				return {
+					status: "SUCCESS",
+					refresh: mocks.refresh,
+					data: {
+						rows: [
+							{
+								ENTITY_ID: "model-1",
+								ENTITY_NAME: "Model One",
+								REQUESTS: 1,
+								TOKENS: 250,
+								COST_MICROS: 1_000_000,
+							},
+							{
+								ENTITY_ID: "model-2",
+								ENTITY_NAME: "Model Two",
+								REQUESTS: 3,
+								TOKENS: 750,
+								COST_MICROS: 3_000_000,
+							},
+						],
+					},
+				};
+			if (
+				pixel.includes('view=["summary"]') &&
+				pixel.includes('source=["model"]')
+			)
+				return {
+					status: "ERROR",
+					error: new Error("Logging disabled"),
+					refresh: mocks.refresh,
+				};
+			return answer?.(pixel);
+		});
+		render(<EnterpriseUsage />);
+		fireEvent.mouseDown(
+			screen.getByRole("tab", { name: "Users, Apps & Models" }),
+			{ button: 0, ctrlKey: false },
+		);
+		expect(
+			await screen.findByRole("progressbar", {
+				name: "Model One Share Of Cost",
+			}),
+		).toHaveAttribute(
+			"aria-valuetext",
+			"25% Of The Listed Consumers' Cost",
+		);
+		expect(
+			screen.getByRole("progressbar", {
+				name: "Model Two Share Of Tokens",
+			}),
+		).toHaveAttribute("aria-valuenow", "75");
+	});
+
+	it("lists access, setting and usage limit changes and denied requests with their people, and reads an event only once opened", async () => {
+		render(<EnterpriseUsage />);
+		fireEvent.mouseDown(
+			screen.getByRole("tab", { name: "Access, Settings & Limits" }),
+			{ button: 0, ctrlKey: false },
+		);
+		expect(
+			await screen.findByText("Usage Limit Changed"),
+		).toBeInTheDocument();
+		expect(screen.getByText("People Affected")).toBeInTheDocument();
+		expect(screen.getByText("Setting Changes")).toBeInTheDocument();
+		expect(screen.getByText("Denied Requests")).toBeInTheDocument();
+		expect(screen.getByText("Access Denied")).toBeInTheDocument();
+		expect(screen.getByText("Tried SetEngineGlobal")).toBeInTheDocument();
+		expect(screen.getByText("Denied")).toBeInTheDocument();
+		expect(screen.getAllByText("Owner One").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Person One").length).toBeGreaterThan(0);
+		expect(
+			mocks.usePixel.mock.calls.some(([pixel]) =>
+				String(pixel).includes("AdminGetEnterpriseUsageDetail"),
+			),
+		).toBe(false);
+		const inspect = screen.getByRole("button", {
+			name: "View Event Details: limit-1",
+		});
+		fireEvent.click(inspect);
+		expect(await screen.findByRole("dialog")).toHaveAccessibleName(
+			"Change Detail",
+		);
+		expect(
+			screen.getByRole("heading", { name: "Before" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "After" }),
+		).toBeInTheDocument();
+		expect(
+			mocks.usePixel.mock.calls.some(
+				([pixel]) =>
+					String(pixel).includes("AdminGetEnterpriseUsageDetail") &&
+					String(pixel).includes('recordId=["limit-1"]'),
+			),
+		).toBe(true);
+		fireEvent.click(screen.getByRole("button", { name: "Close" }));
+		await waitFor(() => expect(inspect).toHaveFocus());
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "View Event Details: denied-1",
+			}),
+		);
+		expect(await screen.findByRole("dialog")).toHaveAccessibleName(
+			"Denied Request Detail",
+		);
+		expect(
+			screen.getByRole("heading", { name: "Reason" }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("heading", { name: "Before" }),
+		).not.toBeInTheDocument();
+	});
 	it("keeps source errors visible and retryable instead of reporting zero KPIs", () => {
 		mocks.usePixel.mockReturnValue({
 			status: "ERROR",

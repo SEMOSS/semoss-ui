@@ -7,6 +7,7 @@ import { VectorImport } from "@/components/import/vector/vector-import";
 import { ImportLayout, ModelImportPage } from "../import";
 import { DatabaseWorkbenchPage } from "./database-workbench-page";
 import { EngineActivityPage } from "./engine-activity-page";
+import { EngineAuditPage } from "./engine-audit.page";
 import { EngineDescriptionSettingsPage } from "./engine-description-settings-page";
 import { EngineGuardrailSettingsPage } from "./engine-guardrail-settings-page";
 import { EngineImageSettingsPage } from "./engine-image-settings-page";
@@ -121,6 +122,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "Settings",
 										path: "settings",
 										restrict: ["OWNER", "EDIT"],
@@ -164,6 +170,7 @@ export const ENGINE_ROUTES: {
 								path: "settings",
 								element: <EngineImageSettingsPage />,
 							},
+							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
 						],
@@ -260,6 +267,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "Settings",
 										path: "settings",
 										restrict: ["EDIT", "OWNER"],
@@ -341,6 +353,7 @@ export const ENGINE_ROUTES: {
 									},
 								],
 							},
+							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
 						],
@@ -442,6 +455,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "Settings",
 										path: "settings",
 										restrict: ["OWNER", "EDIT"],
@@ -489,6 +507,7 @@ export const ENGINE_ROUTES: {
 								path: "settings",
 								element: <EngineImageSettingsPage />,
 							},
+							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
 						],
@@ -581,6 +600,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "Settings",
 										path: "settings",
 										restrict: ["OWNER", "EDIT"],
@@ -624,6 +648,7 @@ export const ENGINE_ROUTES: {
 								path: "settings",
 								element: <EngineImageSettingsPage />,
 							},
+							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
 						],
@@ -716,6 +741,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "Settings",
 										path: "settings",
 										restrict: ["OWNER", "EDIT"],
@@ -759,6 +789,7 @@ export const ENGINE_ROUTES: {
 								path: "settings",
 								element: <EngineImageSettingsPage />,
 							},
+							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
 						],
@@ -842,6 +873,11 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
+										name: "Audit Trail",
+										path: "audit",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "Settings",
 										path: "settings",
 										restrict: ["OWNER", "EDIT"],
@@ -881,6 +917,7 @@ export const ENGINE_ROUTES: {
 								path: "settings",
 								element: <EngineImageSettingsPage />,
 							},
+							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
 						],

@@ -65,7 +65,9 @@ export const CopyAccessDialog = ({
 	admin = false,
 }: CopyAccessDialogProps) => {
 	const pickerId = useId();
-	const [kind, setKind] = useState<"PROJECT" | "ENGINE">("PROJECT");
+	const [resourceType, setResourceType] = useState<"PROJECT" | "ENGINE">(
+		"PROJECT",
+	);
 	const [source, setSource] = useState<PickedSource | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +80,7 @@ export const CopyAccessDialog = ({
 		setError(null);
 		try {
 			const rows = await getPermissionsToCopy(
-				{ kind, id: source.id },
+				{ resourceType, id: source.id },
 				target,
 				admin,
 			);
@@ -107,7 +109,7 @@ export const CopyAccessDialog = ({
 						Copy From an App or Engine
 					</DialogTitle>
 					<DialogDescription>
-						{target.kind === "TEAM"
+						{target.resourceType === "TEAM"
 							? "Everyone given access to it directly becomes a member of this team. Its teams are not copied."
 							: "Copies the people given access to it directly, with their access level, end date and model limits. Its teams are not copied."}{" "}
 						Nothing is saved until you review and apply your
@@ -116,14 +118,14 @@ export const CopyAccessDialog = ({
 				</DialogHeader>
 
 				<div className="flex flex-col gap-2">
-					{/* one switch picks the kind; the picker under it is labelled for screen readers */}
+					{/* one switch picks the resource type; the picker under it is labelled for screen readers */}
 					<ToggleGroup
 						type="single"
 						variant="outline"
-						value={kind}
+						value={resourceType}
 						onValueChange={(value) => {
 							if (value === "PROJECT" || value === "ENGINE") {
-								setKind(value);
+								setResourceType(value);
 								setSource(null);
 								setError(null);
 							}
@@ -139,9 +141,9 @@ export const CopyAccessDialog = ({
 						</ToggleGroupItem>
 					</ToggleGroup>
 					<Label htmlFor={pickerId} className="sr-only">
-						{kind === "PROJECT" ? "App" : "Engine"}
+						{resourceType === "PROJECT" ? "App" : "Engine"}
 					</Label>
-					{kind === "PROJECT" ? (
+					{resourceType === "PROJECT" ? (
 						<ProjectSelect
 							id={pickerId}
 							name={source?.name ?? ""}

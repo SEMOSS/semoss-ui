@@ -20,7 +20,7 @@ export function RulesSettings() {
 				</header>
 				<RulesEditor />
 				<Button asChild variant="outline" className="self-start">
-					<Link to="/brain/sources">Open sources</Link>
+					<Link to="/brain/sources">Open connections</Link>
 				</Button>
 			</Card>
 		</section>

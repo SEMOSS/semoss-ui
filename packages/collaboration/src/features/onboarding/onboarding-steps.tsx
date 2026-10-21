@@ -581,6 +581,10 @@ export function KeepOutStep({
 // what the import is doing, in the owner's words; importing runs once for mail and once for Teams
 function importLabel(step: string, mailReady: boolean): string {
 	switch (step) {
+		case "reading folders":
+			return "Reading your Outlook folders";
+		case "reading mail":
+			return "Reading your mail";
 		case "reading inbox":
 			return "Reading your Inbox";
 		case "reading sentitems":
@@ -836,15 +840,26 @@ export function ImportStep({
 				<Failure error={startError || error || ""} />
 			)}
 			<StepActions
-				onBack={running ? undefined : onBack}
+				onBack={running || starting ? undefined : onBack}
 				note={
 					running && mailReady
 						? "Teams chats keep importing while you go on."
 						: undefined
 				}
 			>
+				{done && (
+					<Button
+						variant="outline"
+						size="lg"
+						onClick={start}
+						disabled={starting}
+					>
+						{starting ? "Starting import…" : "Import again"}
+					</Button>
+				)}
 				{(done || (running && mailReady)) && (
 					<Next
+						disabled={starting}
 						onClick={onNext}
 						variant={startedHere ? "default" : "outline"}
 					>

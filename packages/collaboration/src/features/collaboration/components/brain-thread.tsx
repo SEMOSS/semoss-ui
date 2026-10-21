@@ -50,7 +50,7 @@ export function BrainThread() {
 				</ThreadMenu>
 			}
 			aside={<BrainOverview />}
-			asideTitle="Brain overview"
+			asideTitle="Overview"
 		>
 			<div className="space-y-6 p-4 md:p-6">
 				<ThreadConversation thread={thread} />

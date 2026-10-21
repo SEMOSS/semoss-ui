@@ -85,11 +85,17 @@ type MetamodelNodeProps = NodeProps<
 const normalizeSearchValue = (value: string) =>
 	value.toLowerCase().replace(/[\s_]+/g, "");
 
-const toDisplayName = (value: string) =>
+/**
+ * The form a label is searched in: lower case, with spaces as underscores. It
+ * usually keeps the label's length, so a match found in it marks the same
+ * characters of the label as it is shown; the highlight checks for the few
+ * characters whose lower case is longer.
+ */
+const toSearchableLabel = (value: string) =>
 	value.toLowerCase().replaceAll(" ", "_");
 
-const toSearchToken = (value: string) =>
-	value.trim().toLowerCase().replaceAll(" ", "_");
+/** A search term in the form labels are searched in. */
+const toSearchToken = (value: string) => toSearchableLabel(value.trim());
 
 type SupportedDataType =
 	| "BOOLEAN"
@@ -144,24 +150,28 @@ const normalizeSupportedDataType = (
 	}
 };
 
+/**
+ * A table or column name exactly as the database reports it, since each one
+ * cases names its own way, with the part that matches the search highlighted.
+ */
 const renderHighlightedLabel = (
 	value: string,
 	searchToken: string,
 	normalizedSearchTerm: string,
 ) => {
-	const displayValue = toDisplayName(value);
 	if (!searchToken) {
-		return displayValue;
+		return value;
 	}
 
-	const matchIndex = displayValue.indexOf(searchToken);
+	const searchable = toSearchableLabel(value);
+	const matchIndex =
+		searchable.length === value.length
+			? searchable.indexOf(searchToken)
+			: -1;
 	if (matchIndex >= 0) {
-		const before = displayValue.slice(0, matchIndex);
-		const match = displayValue.slice(
-			matchIndex,
-			matchIndex + searchToken.length,
-		);
-		const after = displayValue.slice(matchIndex + searchToken.length);
+		const before = value.slice(0, matchIndex);
+		const match = value.slice(matchIndex, matchIndex + searchToken.length);
+		const after = value.slice(matchIndex + searchToken.length);
 
 		return (
 			<>
@@ -176,16 +186,16 @@ const renderHighlightedLabel = (
 
 	if (
 		normalizedSearchTerm.length > 0 &&
-		normalizeSearchValue(displayValue).includes(normalizedSearchTerm)
+		normalizeSearchValue(value).includes(normalizedSearchTerm)
 	) {
 		return (
 			<span className="rounded bg-primary/20 text-foreground">
-				{displayValue}
+				{value}
 			</span>
 		);
 	}
 
-	return displayValue;
+	return value;
 };
 
 const _MetamodelNode = (props: MetamodelNodeProps) => {

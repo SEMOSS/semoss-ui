@@ -41,18 +41,18 @@ export function BrainReview() {
 			header={
 				<CollaborationPageHeader
 					title="Review"
-					description="Suggestions to check before using them as confirmed context."
+					description="Check how mail is filed into topics. The assistant asks here instead of on Today."
 				/>
 			}
 			aside={
 				<>
 					<BrainOverview />
 					<Button asChild variant="outline">
-						<Link to="/brain/sources">Sources</Link>
+						<Link to="/brain/sources">Connections</Link>
 					</Button>
 				</>
 			}
-			asideTitle="Brain overview"
+			asideTitle="Overview"
 		>
 			<Tabs value={tab} onValueChange={setTab} className="gap-0">
 				<div className="border-b p-4 md:px-6">
@@ -85,7 +85,7 @@ export function BrainReview() {
 							</div>
 							<div className="min-w-0 flex-1">
 								<Small className="font-medium text-sm">
-									Memories Brain suggests
+									Suggested memories
 								</Small>
 								<P className="text-muted-foreground text-xs leading-5">
 									From your finished chats. The assistant does

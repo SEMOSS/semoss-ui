@@ -42,7 +42,23 @@ export function TopicThreadRow({
 		person?.name || participant?.name || participant?.email;
 	return (
 		<li>
-			<ThreadMenu thread={thread}>
+			<ThreadMenu
+				thread={thread}
+				additionalActions={[
+					{
+						id: "unlink-topic",
+						label: "Remove from this topic",
+						icon: Unlink,
+						onSelect: () =>
+							dispatch({
+								type: "thread.link",
+								threadId: thread.id,
+								topicId,
+								operation: "remove",
+							}),
+					},
+				]}
+			>
 				{(menu) => (
 					<div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3 hover:bg-muted/30">
 						<div className="flex w-full min-w-0 items-center gap-3 sm:w-auto sm:min-w-64 sm:flex-1">
@@ -83,7 +99,7 @@ export function TopicThreadRow({
 										{items.some(
 											(item) => item.status === "open",
 										)
-											? "For you"
+											? "Open action"
 											: "Waiting"}
 									</Badge>
 								)}
@@ -114,7 +130,7 @@ export function TopicThreadRow({
 										</Small>
 									)}
 								{thread.summary && (
-									<P className="w-full break-words text-muted-foreground text-sm leading-relaxed">
+									<P className="line-clamp-2 w-full break-words text-muted-foreground text-sm leading-relaxed">
 										{thread.summary}
 									</P>
 								)}
@@ -178,29 +194,6 @@ export function TopicThreadRow({
 									Resume thread
 								</Button>
 							)}
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										className="shrink-0 text-muted-foreground"
-										aria-label={`Remove ${thread.subject} from this topic`}
-										onClick={() =>
-											dispatch({
-												type: "thread.link",
-												threadId: thread.id,
-												topicId,
-												operation: "remove",
-											})
-										}
-									>
-										<Unlink aria-hidden="true" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									Remove from topic
-								</TooltipContent>
-							</Tooltip>
 							{menu}
 						</div>
 					</div>

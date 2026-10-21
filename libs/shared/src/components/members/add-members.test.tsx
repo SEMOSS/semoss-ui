@@ -24,6 +24,8 @@ const mocks = vi.hoisted(() => {
 	return {
 		toastError: vi.fn(),
 		toastSuccess: vi.fn(),
+		getEngineUsers: vi.fn(),
+		getUserEnginePermission: vi.fn(),
 		translate: (key: string, options: Record<string, unknown> = {}) =>
 			(messages[key] ?? key).replace(
 				/\{\{(\w+)\}\}/g,
@@ -35,6 +37,12 @@ const mocks = vi.hoisted(() => {
 vi.mock("@semoss/i18n", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/i18n")>()),
 	useTranslation: () => ({ t: mocks.translate, i18n: { language: "en" } }),
+}));
+
+vi.mock("@semoss/sdk", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk")>()),
+	getEngineUsersNoCredentials: mocks.getEngineUsers,
+	getUserEnginePermission: mocks.getUserEnginePermission,
 }));
 
 vi.mock("@semoss/ui/next", async (importOriginal) => {
@@ -239,5 +247,77 @@ describe("AddMembersOverlay with a host's people", () => {
 
 		expect(onClose).toHaveBeenCalledExactlyOnceWith(false);
 		expect(add).not.toHaveBeenCalled();
+	});
+});
+
+/** The model the dialog adds people to */
+const MODEL_ID = "m1";
+
+describe("AddMembersOverlay on a model", () => {
+	beforeEach(() => {
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				observe() {}
+				unobserve() {}
+				disconnect() {}
+			},
+		);
+		mocks.getEngineUsers.mockResolvedValue([]);
+	});
+
+	afterEach(() => {
+		cleanup();
+		vi.unstubAllGlobals();
+		mocks.getEngineUsers.mockReset();
+		mocks.getUserEnginePermission.mockReset();
+	});
+
+	it("shows the usage limit read-only to an editor, since only owners set limits", async () => {
+		mocks.getUserEnginePermission.mockResolvedValue("EDIT");
+		render(
+			<AddMembersOverlay
+				open
+				onClose={vi.fn()}
+				id={MODEL_ID}
+				type="MODEL"
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(mocks.getUserEnginePermission).toHaveBeenCalledWith(
+				MODEL_ID,
+			),
+		);
+		await act(async () => {});
+
+		expect(
+			screen.getByText("Only owners can set usage limits"),
+		).toBeTruthy();
+		// the editor's words are its translation keys here
+		expect(
+			screen.queryByRole("radio", { name: "usageLimit.modes.rules" }),
+		).toBeNull();
+	});
+
+	it("lets an owner set the usage limit of the people added", async () => {
+		mocks.getUserEnginePermission.mockResolvedValue("OWNER");
+		render(
+			<AddMembersOverlay
+				open
+				onClose={vi.fn()}
+				id={MODEL_ID}
+				type="MODEL"
+			/>,
+		);
+
+		expect(
+			await screen.findByRole("radio", {
+				name: "usageLimit.modes.rules",
+			}),
+		).toBeTruthy();
+		expect(
+			screen.queryByText("Only owners can set usage limits"),
+		).toBeNull();
 	});
 });

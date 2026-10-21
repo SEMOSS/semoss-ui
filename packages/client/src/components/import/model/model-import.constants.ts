@@ -262,7 +262,7 @@ export interface RouterRouteFormValue {
 	keywords: string;
 	/** Percent of traffic in weighted mode; the editor requires the routes to total 100. */
 	weight: number;
-	/** What the LLM classifier reads; required in llm mode. */
+	/** What the classifier reads; required in llm and typesafe modes. */
 	description: string;
 }
 
@@ -272,7 +272,7 @@ export interface RouterEngineRefFormValue {
 }
 
 export interface RouterConfigFormValue {
-	mode: "keyword" | "llm" | "weighted";
+	mode: "keyword" | "llm" | "typesafe" | "weighted";
 	sticky: boolean;
 	default_route: string;
 	classifier_engine: string;
@@ -303,7 +303,7 @@ export const createRouterEngineRef = (): RouterEngineRefFormValue => ({
 
 export const createDefaultRouterConfigValue = (): RouterConfigFormValue => ({
 	mode: "keyword",
-	sticky: true,
+	sticky: false,
 	default_route: "",
 	classifier_engine: "",
 	embeddings_engine: "",
@@ -1550,10 +1550,47 @@ export const IMPORTABLE_MODELS = {
 							key: "CHAT_TYPE",
 							label: "Completion Type",
 							type: "select",
-							options: ["chat-completion", "completion"],
+							options: [
+								"chat-completion",
+								"completions",
+								"responses",
+							],
 							required: true,
 							default: "chat-completion",
 							category: "General",
+							helperText:
+								"Choose an API supported by your model and deployment. The hosted NVIDIA API uses chat completions; Responses requires a compatible self-hosted NIM version.",
+						},
+						{
+							key: "CHAT_REASONING_MODE",
+							label: "Chat Reasoning Control",
+							type: "select",
+							required: false,
+							default: "reasoning_effort",
+							options: [
+								"reasoning_effort",
+								"chat_template",
+								"none",
+							],
+							optionLabels: {
+								reasoning_effort: "Reasoning effort",
+								chat_template:
+									"Chat template (enable_thinking)",
+								none: "No reasoning parameter",
+							},
+							category: "Settings",
+							helperText:
+								"For chat completions, use reasoning_effort if supported, chat template for enable_thinking models such as Laguna, or no parameter when the endpoint controls reasoning.",
+						},
+						{
+							key: "ENDPOINT",
+							label: "API Base URL",
+							type: "url",
+							required: true,
+							default: "https://integrate.api.nvidia.com/v1",
+							category: "Credentials",
+							helperText:
+								"Use the hosted NVIDIA endpoint or your self-hosted NIM base URL, including /v1.",
 						},
 						{
 							key: "OPEN_AI_KEY",
@@ -1561,6 +1598,8 @@ export const IMPORTABLE_MODELS = {
 							type: "password",
 							required: true,
 							category: "Credentials",
+							helperText:
+								"Use your NVIDIA API key for the hosted service. For a self-hosted endpoint without authentication, enter EMPTY.",
 						},
 						{
 							key: "MAX_TOKENS",
@@ -1631,7 +1670,7 @@ export const IMPORTABLE_MODELS = {
 							type: "text",
 							category: "Settings",
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"}, template_name='mixtral.default.nocontext')",
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = '${ENDPOINT}', model_name='${MODEL}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', preserve_reasoning_content=True, chat_reasoning_mode='${CHAT_REASONING_MODE}')",
 							required: true,
 							disabled: true,
 						},
@@ -3132,7 +3171,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			embedding: false,
 			link: "https://build.nvidia.com/models",
 			description:
-				"Configure any NVIDIA NIM model not listed above by entering the model name and updating init script parameters.",
+				"Connect a text-generation model through the hosted NVIDIA API or a self-hosted NIM endpoint.",
 			formConfig: OTHER_MODEL_FORM_CONFIG_BY_PROVIDER["NVIDIA NIM"],
 		},
 	],

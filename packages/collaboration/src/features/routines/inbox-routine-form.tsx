@@ -1,71 +1,67 @@
-import { CalendarClock, Check, Inbox, LockKeyhole } from "lucide-react";
+import { Inbox } from "lucide-react";
 import { useId } from "react";
-import { Link } from "react-router";
 import {
-	Alert,
-	AlertDescription,
-	AlertTitle,
-	Badge,
-	Button,
 	Card,
 	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
 	Form,
-	FormActions,
 	FormField,
 	FormInput,
+	FormSelect,
 	FormSwitch,
-	H2,
-	H3,
-	P,
+	SelectItem,
 	Separator,
-	Small,
 	ToggleGroup,
 	ToggleGroupItem,
-	toast,
 	useForm,
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
 import {
-	INBOX_ROUTINE_DAYS,
 	type InboxRoutine,
 	type InboxRoutineSettings,
 	inboxRoutineSettingsSchema,
 } from "./inbox-routine-schema";
+import { RoutineAvailability } from "./routine-availability";
+import { RoutineCardHeader } from "./routine-card-header";
+import { INBOX_RESULT_COPY } from "./routine-copy";
+import { RoutineFlowSection } from "./routine-flow-section";
+import { RoutineNextRun } from "./routine-next-run";
+import { RoutineResult } from "./routine-result";
+import { RoutineSaveStatus } from "./routine-save-status";
+import { ROUTINE_DAY_NAMES, ROUTINE_DAYS } from "./routine-schema";
+import { RoutineTimeFields } from "./routine-time-fields";
+import { useRoutineAutosave } from "./use-routine-autosave";
 
 const formSchema = inboxRoutineSettingsSchema
-	.omit({ emailCount: true })
+	.omit({ lookbackHours: true })
 	.extend({
-		emailCount: z
-			.string()
-			.regex(/^\d+$/, "Choose a whole number of threads.")
-			.refine(
-				(value) => Number(value) >= 1 && Number(value) <= 100,
-				"Choose between 1 and 100 threads.",
-			),
+		lookbackAmount: z.string().regex(/^\d+$/, "Choose a whole number."),
+		lookbackUnit: z.enum(["hours", "days"]),
+	})
+	.superRefine(({ lookbackAmount, lookbackUnit }, context) => {
+		if (!/^\d+$/.test(lookbackAmount)) return;
+		const max = lookbackUnit === "days" ? 30 : 720;
+		if (Number(lookbackAmount) < 1 || Number(lookbackAmount) > max) {
+			context.addIssue({
+				code: "custom",
+				path: ["lookbackAmount"],
+				message: `Choose between 1 and ${max} ${lookbackUnit}.`,
+			});
+		}
 	});
 type RoutineFormValues = z.infer<typeof formSchema>;
 
-const dayNames = {
-	MON: "Monday",
-	TUE: "Tuesday",
-	WED: "Wednesday",
-	THU: "Thursday",
-	FRI: "Friday",
-	SAT: "Saturday",
-	SUN: "Sunday",
-};
-
 /** Keeps input strings at the form boundary and uses the local zone for first setup. */
-function formValues(routine: InboxRoutine): RoutineFormValues {
+function formValues(
+	routine: InboxRoutine,
+	preferredUnit?: RoutineFormValues["lookbackUnit"],
+): RoutineFormValues {
+	const lookbackUnit =
+		preferredUnit ?? (routine.lookbackHours % 24 === 0 ? "days" : "hours");
 	return {
 		enabled: routine.enabled,
 		time: routine.time,
@@ -73,7 +69,10 @@ function formValues(routine: InboxRoutine): RoutineFormValues {
 		timezone: routine.configured
 			? routine.timezone
 			: Intl.DateTimeFormat().resolvedOptions().timeZone,
-		emailCount: String(routine.emailCount),
+		lookbackAmount: String(
+			routine.lookbackHours / (lookbackUnit === "days" ? 24 : 1),
+		),
+		lookbackUnit,
 	};
 }
 
@@ -90,140 +89,114 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 	const form = useForm<RoutineFormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: formValues(routine),
+		shouldFocusError: false,
 	});
-	const { errors, isSubmitting, isDirty } = form.formState;
-	const enabled = form.watch("enabled");
+	const { errors, isSubmitting } = form.formState;
+	const lookbackUnit = form.watch("lookbackUnit");
 	const isAvailable =
 		routine.schedulerAvailable &&
 		routine.assistantAvailable &&
 		routine.mailboxAvailable;
-	const status = routine.enabled
-		? "Scheduled"
-		: routine.configured
-			? "Paused"
-			: "Not enabled";
-	const nextRun = routine.nextRunAt
-		? new Intl.DateTimeFormat(undefined, {
-				dateStyle: "medium",
-				timeStyle: "short",
-				timeZone: routine.timezone,
-			}).format(new Date(routine.nextRunAt))
-		: null;
-	const timezones = Array.from(
-		new Set([
-			form.getValues("timezone"),
-			"UTC",
-			...Intl.supportedValuesOf("timeZone"),
-		]),
-	);
 
-	async function handleSubmit(values: RoutineFormValues): Promise<void> {
-		if (values.enabled && !isAvailable) {
-			form.setError("root.server", {
-				message:
-					routine.availabilityMessage ||
-					"Connect your inbox and check service availability before enabling this routine.",
+	const { status, handleSubmit, retry } = useRoutineAutosave({
+		form,
+		onSave: async (values) => {
+			if (values.enabled && !isAvailable) {
+				throw new Error(
+					routine.availabilityMessage?.replace(
+						/\bBrain\b/g,
+						"Settings",
+					) ||
+						"Connect your inbox and check service availability before enabling this routine.",
+				);
+			}
+			const { lookbackAmount, lookbackUnit, ...settings } = values;
+			const saved = await onSave({
+				...settings,
+				lookbackHours:
+					Number(lookbackAmount) * (lookbackUnit === "days" ? 24 : 1),
 			});
-			return;
-		}
-		let saved: InboxRoutine;
-		try {
-			saved = await onSave({
-				...values,
-				emailCount: Number(values.emailCount),
-			});
-		} catch (error: unknown) {
-			form.setError("root.server", {
-				message:
-					error instanceof Error
-						? error.message
-						: "Your routine could not be saved. Please try again.",
-			});
-			return;
-		}
-		form.reset(formValues(saved));
-		toast.success(
-			saved.enabled
-				? "Inbox daily brief scheduled"
-				: "Inbox daily brief paused",
-		);
-	}
+			return formValues(saved, lookbackUnit);
+		},
+	});
 
 	return (
-		<Card className="gap-0 overflow-hidden py-0 shadow-none">
-			<CardHeader className="gap-3 border-b py-6">
-				<div className="flex flex-wrap items-start justify-between gap-3">
-					<div className="flex min-w-0 items-center gap-3">
-						<Inbox
-							className="size-5 shrink-0 text-muted-foreground"
-							aria-hidden="true"
-						/>
-						<CardTitle>
-							<H2 className="text-xl">Inbox daily brief</H2>
-						</CardTitle>
-					</div>
-					<Badge variant={routine.enabled ? "outline" : "secondary"}>
-						{routine.enabled && <Check aria-hidden="true" />}
-						{status}
-					</Badge>
-				</div>
-				<CardDescription>
-					Start your day with a clear summary of your recent work
-					conversations, what needs a reply, and upcoming deadlines.
-				</CardDescription>
-			</CardHeader>
-			<Form
-				form={form}
-				onSubmit={handleSubmit}
-				noValidate
-				aria-busy={isSubmitting}
-			>
-				<CardContent className="grid min-w-0 gap-8 py-6 lg:grid-cols-5">
-					<FieldGroup className="min-w-0 lg:col-span-3">
-						<FormSwitch
-							name="enabled"
-							label="Enable daily brief"
-							disabled={isSubmitting}
-							aria-describedby={`${id}-opt-in`}
-							description={
-								<span id={`${id}-opt-in`}>
-									Runs automatically after you enable it and
-									save your schedule.
-								</span>
-							}
-						/>
-						<Separator />
-						<FormField
-							control={form.control}
-							name="days"
-							render={({ field, fieldState }) => (
-								<Field data-invalid={Boolean(fieldState.error)}>
-									<FieldLabel id={`${id}-days-label`}>
-										Run on (required)
-									</FieldLabel>
-									<ToggleGroup
-										type="multiple"
-										variant="outline"
-										spacing={1}
-										className="flex-wrap"
-										value={field.value}
-										onValueChange={field.onChange}
-										onBlur={field.onBlur}
-										aria-labelledby={`${id}-days-label`}
-										aria-describedby={
-											fieldState.error
-												? `${id}-days-error`
-												: undefined
-										}
-										aria-invalid={Boolean(fieldState.error)}
-										disabled={isSubmitting}
+		<div className="flex min-w-0 flex-col gap-3">
+			<Card className="gap-0 overflow-hidden py-0 shadow-none">
+				<Form
+					form={form}
+					onSubmit={handleSubmit}
+					noValidate
+					aria-busy={isSubmitting}
+				>
+					<RoutineCardHeader
+						icon={Inbox}
+						title="Inbox daily brief"
+						description="Your inbox, priorities, and upcoming deadlines."
+						routine={routine}
+						saveStatus={
+							<RoutineSaveStatus
+								status={status}
+								error={errors.root?.server?.message}
+								onRetry={retry}
+							/>
+						}
+					/>
+					<CardContent className="grid min-w-0 gap-8 py-6 lg:grid-cols-2">
+						<FieldGroup className="min-w-0">
+							<FormSwitch
+								name="enabled"
+								label="Enable daily brief"
+								aria-describedby={`${id}-opt-in`}
+								description={
+									<span
+										id={`${id}-opt-in`}
+										className="flex flex-col gap-2"
 									>
-										{INBOX_ROUTINE_DAYS.map(
-											(day, index) => (
+										<RoutineNextRun routine={routine} />
+										<span>
+											Changes save automatically. Briefs
+											are emailed only to you.
+										</span>
+									</span>
+								}
+							/>
+							<Separator />
+							<FormField
+								control={form.control}
+								name="days"
+								render={({ field, fieldState }) => (
+									<Field
+										data-invalid={Boolean(fieldState.error)}
+									>
+										<FieldLabel id={`${id}-days-label`}>
+											Run on (required)
+										</FieldLabel>
+										<ToggleGroup
+											type="multiple"
+											variant="outline"
+											spacing={1}
+											className="flex-wrap"
+											value={field.value}
+											onValueChange={field.onChange}
+											onBlur={field.onBlur}
+											aria-labelledby={`${id}-days-label`}
+											aria-describedby={
+												fieldState.error
+													? `${id}-days-error`
+													: undefined
+											}
+											aria-invalid={Boolean(
+												fieldState.error,
+											)}
+										>
+											{ROUTINE_DAYS.map((day, index) => (
 												<ToggleGroupItem
 													key={day}
 													value={day}
-													aria-label={dayNames[day]}
+													aria-label={
+														ROUTINE_DAY_NAMES[day]
+													}
 													ref={
 														index === 0
 															? field.ref
@@ -231,163 +204,56 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 													}
 													className="min-h-11 min-w-11"
 												>
-													{dayNames[day].slice(0, 3)}
+													{ROUTINE_DAY_NAMES[
+														day
+													].slice(0, 3)}
 												</ToggleGroupItem>
-											),
+											))}
+										</ToggleGroup>
+										{fieldState.error && (
+											<FieldError id={`${id}-days-error`}>
+												{fieldState.error.message}
+											</FieldError>
 										)}
-									</ToggleGroup>
-									{fieldState.error && (
-										<FieldError id={`${id}-days-error`}>
-											{fieldState.error.message}
-										</FieldError>
-									)}
-								</Field>
-							)}
-						/>
-						<FieldGroup className="grid min-w-0 gap-4 sm:grid-cols-2">
-							<FormInput
-								name="time"
-								label="Run time (required)"
-								type="time"
-								required
-								disabled={isSubmitting}
-							/>
-							<FormInput
-								name="timezone"
-								label="Time zone (required)"
-								list={`${id}-timezones`}
-								required
-								disabled={isSubmitting}
-								description="Keeps your chosen local time as daylight saving changes."
-							/>
-						</FieldGroup>
-						<datalist id={`${id}-timezones`}>
-							{timezones.map((zone) => (
-								<option key={zone} value={zone} />
-							))}
-						</datalist>
-						<FormInput
-							name="emailCount"
-							label="Recent threads to include (required)"
-							type="number"
-							min={1}
-							max={100}
-							step={1}
-							required
-							disabled={isSubmitting}
-							description="The brief covers this many of your most recent Brain threads, plus your active topics. Brain syncs your mail first, and the finished brief is also emailed to you."
-							className="max-w-md"
-						/>
-					</FieldGroup>
-					<aside
-						aria-label="About this routine"
-						className="flex min-w-0 flex-col gap-6 border-t pt-6 lg:col-span-2 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8"
-					>
-						<div className="flex flex-col gap-3">
-							<H3 className="text-base">
-								A brief you can act on
-							</H3>
-							<ul className="flex flex-col gap-3 text-muted-foreground text-sm leading-relaxed">
-								<li>
-									A quick overview of recent conversations
-								</li>
-								<li>
-									Requests and messages that need your
-									attention
-								</li>
-								<li>Dates, decisions, and useful next steps</li>
-							</ul>
-						</div>
-						<Separator />
-						<div className="flex flex-col gap-2">
-							<H3 className="flex items-center gap-2 text-base">
-								<CalendarClock
-									className="size-4"
-									aria-hidden="true"
-								/>
-								Next brief
-							</H3>
-							<P className="text-sm">
-								{nextRun ??
-									(routine.enabled
-										? "Waiting for the scheduler."
-										: "Choose your schedule to get started.")}
-							</P>
-							{nextRun && (
-								<Small className="break-words text-muted-foreground">
-									{routine.timezone.replaceAll("_", " ")}
-								</Small>
-							)}
-						</div>
-						<div className="flex items-start gap-2 text-muted-foreground">
-							<LockKeyhole
-								className="mt-0.5 size-4 shrink-0"
-								aria-hidden="true"
-							/>
-							<Small className="leading-relaxed">
-								Your brief stays here in Routines and is emailed
-								only to you. This routine reads your inbox
-								through Brain; it does not send other emails or
-								change your mail.
-							</Small>
-						</div>
-					</aside>
-				</CardContent>
-				{!isAvailable && (
-					<div className="px-6 pb-6">
-						<Alert>
-							<AlertTitle>Setup needs attention</AlertTitle>
-							<AlertDescription>
-								{routine.availabilityMessage ||
-									"Your inbox connection, scheduler, or assistant is unavailable. Check your connection or contact your administrator."}
-								{!routine.mailboxAvailable && (
-									<Button
-										asChild
-										variant="link"
-										className="h-auto self-start p-0"
-									>
-										<Link to="/brain/sources">
-											Manage inbox connection
-										</Link>
-									</Button>
+									</Field>
 								)}
-							</AlertDescription>
-						</Alert>
-					</div>
-				)}
-				{errors.root?.server?.message && (
-					<div className="px-6 pb-6">
-						<Alert variant="destructive">
-							<AlertDescription>
-								{errors.root.server.message}
-							</AlertDescription>
-						</Alert>
-					</div>
-				)}
-				<CardFooter className="flex-wrap justify-between gap-4 border-t py-4">
-					<Small className="text-muted-foreground">
-						<output>
-							{isDirty
-								? "You have unsaved changes."
-								: routine.enabled
-									? "Your schedule is saved."
-									: "Off until you choose to enable it."}
-						</output>
-					</Small>
-					<FormActions
-						isSubmitting={isSubmitting}
-						onCancel={() => form.reset(formValues(routine))}
-						submitLabel={
-							isSubmitting
-								? "Saving…"
-								: enabled
-									? "Save schedule"
-									: "Save preferences"
-						}
-						className="w-full sm:w-auto"
+							/>
+							<RoutineTimeFields />
+							<FieldGroup className="grid min-w-0 gap-4 sm:grid-cols-2">
+								<FormInput
+									name="lookbackAmount"
+									label="Email lookback (required)"
+									description="Review emails received within this period before each run."
+									type="number"
+									min={1}
+									max={lookbackUnit === "days" ? 30 : 720}
+									step={1}
+									required
+								/>
+								<FormSelect
+									name="lookbackUnit"
+									label="Lookback unit (required)"
+									required
+								>
+									<SelectItem value="hours">Hours</SelectItem>
+									<SelectItem value="days">Days</SelectItem>
+								</FormSelect>
+							</FieldGroup>
+						</FieldGroup>
+						<div className="min-w-0">
+							<RoutineResult
+								routine={routine}
+								copy={INBOX_RESULT_COPY}
+							/>
+						</div>
+					</CardContent>
+					<RoutineAvailability
+						routine={routine}
+						isAvailable={isAvailable}
 					/>
-				</CardFooter>
-			</Form>
-		</Card>
+				</Form>
+			</Card>
+			<RoutineFlowSection title="Inbox daily brief" flow={routine.flow} />
+		</div>
 	);
 }

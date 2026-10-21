@@ -16,6 +16,8 @@ import {
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
+import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
+import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
 import { useAssistantStore, useProject, useSession } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
@@ -107,10 +109,13 @@ export const AGENT_WORKBENCH_COMPONENTS: Record<
 				component: "agent-activity",
 				restrict: ["OWNER", "EDIT", "READ_ONLY"],
 			},
-			// before Access Control
-			3,
+			// before Access Control, wherever the shared list puts it
+			PROJECT_SETTINGS_TABS.findIndex(
+				(tab) => tab.component === "access-control",
+			),
 		),
 	),
+	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
