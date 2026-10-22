@@ -38,6 +38,7 @@ import {
 	TabsTrigger,
 } from "@semoss/ui/next";
 import { TopicSessions } from "@/features/dashboard/topic-sessions";
+import { TopicFileList } from "@/features/topic-files/components/topic-file-list";
 import { lexicon } from "@/lib/lexicon";
 import { givenFirst } from "@/lib/person-name";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
@@ -320,6 +321,14 @@ export function TopicDetail() {
 									>
 										{lexicon.chats}
 									</TabsTrigger>
+									<TabsTrigger
+										value="files"
+										className={
+											collaborationTabsStyles.trigger
+										}
+									>
+										Files
+									</TabsTrigger>
 								</TabsList>
 								{tab === "actions" && (
 									<div className="ml-auto flex flex-wrap items-center justify-end gap-3">
@@ -328,6 +337,17 @@ export function TopicDetail() {
 									</div>
 								)}
 							</div>
+							<TabsContent value="files" className="mt-0">
+								<TopicFileList
+									key={topic.id}
+									topicId={topic.id}
+									isSample={topic.isSample}
+									isWritable={
+										topic.status === "active" ||
+										topic.status === "dormant"
+									}
+								/>
+							</TabsContent>
 							<TabsContent value="actions" className="mt-0">
 								<WorkItemsList feed={feed} />
 							</TabsContent>

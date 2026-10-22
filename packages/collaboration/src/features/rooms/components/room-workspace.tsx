@@ -35,6 +35,7 @@ import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { openToolWorkbenchFiles } from "@/features/tools/open-tool-workbench-files";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
+import { RoomTopicFiles } from "@/features/topic-files/components/room-topic-files";
 import type { Session } from "@/types/session";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { RoomComposer } from "./room-composer";
@@ -268,10 +269,21 @@ export function RoomWorkspace({
 						title={session.title}
 						conversationId={session.id}
 						headerTopics={
-							<RoomTopics
-								roomId={session.id}
-								isRunning={isRunning}
-							/>
+							<div className="flex min-w-0 flex-wrap items-center gap-2">
+								<RoomTopics
+									roomId={session.id}
+									isRunning={isRunning}
+								/>
+								{roomSession && (
+									<RoomTopicFiles
+										roomId={session.id}
+										isDisabled={isSending || isRunning}
+										onAttach={(file) =>
+											roomSession.addContextFile(file)
+										}
+									/>
+								)}
+							</div>
 						}
 						thread={thread}
 						isLoadingHistory={isLoadingHistory}
@@ -425,6 +437,7 @@ export function RoomWorkspace({
 								attachmentSummary={
 									roomSnapshot && roomSession ? (
 										<RoomContextFiles
+											roomId={session.id}
 											files={roomSnapshot.contextFiles}
 											source={roomSnapshot.source}
 											onRemove={

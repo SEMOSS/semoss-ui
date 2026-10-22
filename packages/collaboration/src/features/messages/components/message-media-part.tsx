@@ -1,7 +1,8 @@
 import { FileText } from "lucide-react";
 import { useContext } from "react";
-import { cn, Muted } from "@semoss/ui/next";
+import { Button, cn, Muted } from "@semoss/ui/next";
 import { ToolWorkbenchContext } from "@/features/tools/tool-workbench.context";
+import { SaveTopicFileButton } from "@/features/topic-files/components/save-topic-file-button";
 
 const CARD_CLASS =
 	"flex items-start gap-3 rounded-xl border border-border/50 bg-muted/20 p-3";
@@ -38,16 +39,24 @@ export function MessageMediaPart({
 	if (!workbench || !fileLocation)
 		return <div className={CARD_CLASS}>{content}</div>;
 	return (
-		<button
-			type="button"
-			className={cn(
-				CARD_CLASS,
-				"w-full text-left hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring",
-			)}
-			aria-label={`Open ${fileName}`}
-			onClick={() => workbench.openFile(fileLocation, fileName)}
-		>
-			{content}
-		</button>
+		<div className="min-w-0 space-y-2">
+			<Button
+				variant="ghost"
+				type="button"
+				className={cn(
+					CARD_CLASS,
+					"h-auto min-h-11 w-full justify-start whitespace-normal text-left hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring",
+				)}
+				aria-label={`Open ${fileName}`}
+				onClick={() => workbench.openFile(fileLocation, fileName)}
+			>
+				{content}
+			</Button>
+			<SaveTopicFileButton
+				roomId={workbench.roomId}
+				fileName={fileName}
+				filePath={fileLocation}
+			/>
+		</div>
 	);
 }

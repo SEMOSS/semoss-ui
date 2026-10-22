@@ -19,6 +19,12 @@ import { RoomSession } from "../room-session";
 import { RoomWorkspace } from "./room-workspace";
 
 // what the mocked composer sends
+// Attachment actions use the insight; these existing layout/open-file tests do not submit them.
+vi.mock("@semoss/sdk/react", async (original) => ({
+	...(await original<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => ({ actions: { run: vi.fn() }, insightId: "insight-1" }),
+}));
+
 const composerText = vi.hoisted(() => ({ value: "" }));
 
 vi.mock("@semoss/i18n", async (original) => ({
