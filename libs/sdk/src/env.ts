@@ -1,3 +1,4 @@
+import { ApiClient } from "@semoss/monolith";
 import type { MCPToolRequest } from "./types";
 
 /**
@@ -160,6 +161,8 @@ export const Env = {
 	 */
 	update(updated: Partial<typeof envStore>) {
 		Object.assign(envStore, updated);
+		// The routes at @semoss/sdk/monolith/<route> use the same backend and credentials
+		ApiClient.configure({ basePath: envStore.MODULE, auth: readAuth() });
 	},
 
 	/**
@@ -182,6 +185,36 @@ export const Env = {
 		this.update(readDocumentEnv());
 	},
 };
+
+/** The routes' credentials: an embed host's bearer token, else the access key pair. */
+const readAuth = (): Parameters<typeof ApiClient.configure>[0]["auth"] => {
+	if (envStore.BEARER_TOKEN) {
+		return {
+			type: "bearer",
+			token: envStore.BEARER_TOKEN,
+			...(envStore.BEARER_PROVIDER && {
+				provider: envStore.BEARER_PROVIDER,
+			}),
+		};
+	}
+	if (envStore.ACCESS_KEY && envStore.SECRET_KEY) {
+		return {
+			type: "basic",
+			accessKey: envStore.ACCESS_KEY,
+			secretKey: envStore.SECRET_KEY,
+		};
+	}
+	return null;
+};
+
+// An expired session on a route goes to the host's REDIRECT_URL when it set one, as the
+// SDK's own requests do.
+if (typeof window !== "undefined") {
+	ApiClient.configure({
+		onRedirect: (url) =>
+			window.location.replace(envStore.REDIRECT_URL || url),
+	});
+}
 
 // Configure from the page as soon as the SDK is loaded. See refreshFromDocument.
 Env.refreshFromDocument();

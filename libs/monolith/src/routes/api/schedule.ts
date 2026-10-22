@@ -10,9 +10,9 @@
  * Called by the SEMOSS scheduler when a job fires, not by end users.
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Runs a scheduled job's pixel as the job's users. `SchedulerFilter` first
@@ -30,7 +30,7 @@ import { path } from "@/utility/url";
  * @param params.-jobGroup - The job group the execution id belongs to.
  * @param params.-userAccess - Comma-separated `PROVIDER:id` pairs to run as, e.g. `"NATIVE:admin"`.
  * @param options - Per-call overrides (signal, headers).
- * @returns The pixel run: the new insight id and one entry per pixel step. An invalid execution id yields an empty 200 body (`undefined`).
+ * @returns The pixel run, shaped like `runPixel` in `api/engine`: the new insight id and one entry per pixel step, then one per delayed message. An invalid execution id yields an empty 200 body (`undefined`).
  * @throws {ApiError} 400 if `pixel` is empty; 500 if the run fails.
  */
 export function executePixel(
@@ -42,17 +42,24 @@ export function executePixel(
 		"-userAccess": string;
 	},
 	options?: RequestOptions,
-): Promise<{
-	insightID: string;
-	pixelReturn: Array<{
-		pixelId: string;
-		pixelExpression: string;
-		isMeta: boolean;
-		timeToRun: number;
-		output: unknown;
-		operationType: string[];
-		additionalOutput?: unknown[];
-	}>;
-}> {
+): Promise<
+	| {
+			insightID: string;
+			pixelReturn: Array<{
+				pixelId: string;
+				pixelExpression?: string;
+				isMeta: boolean;
+				timeToRun: number;
+				output: unknown;
+				operationType: string[];
+				additionalOutput?: Array<{
+					output: unknown;
+					operationType: string[];
+					additionalOutput?: unknown[];
+				}>;
+			}>;
+	  }
+	| undefined
+> {
 	return post(path`/api/schedule/executePixel`, params, options);
 }

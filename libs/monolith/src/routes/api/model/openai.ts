@@ -22,9 +22,9 @@
  * without the prefix.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { get, post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Runs a chat completion against a SEMOSS model in the OpenAI Chat Completions

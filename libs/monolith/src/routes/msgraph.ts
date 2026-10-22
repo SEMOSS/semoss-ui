@@ -14,9 +14,9 @@
  * read `ApiError.data`).
  */
 
-import type { RequestOptions } from "@/types";
-import { del, get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../types";
+import { del, get, post } from "../utility/http";
+import { path } from "../utility/url";
 
 /**
  * Preflight for a subscription screen: whether the user has a Microsoft login,
@@ -72,10 +72,13 @@ export function subscribe(
 	status: "ok";
 	subscriptionId: string;
 	resource: string;
-	changeType: string;
-	notificationUrl: string;
-	userId: string;
-	userProvider: string;
+	/** The record's columns are read back as non-blank strings, so each of these may be left out. */
+	changeType?: string;
+	notificationUrl?: string;
+	/** The subscriber's Microsoft login id. */
+	userId?: string;
+	/** Always `MICROSOFT` when recorded here. */
+	userProvider?: string;
 	/** ISO instant; absent when Graph did not say. */
 	expirationDateTime?: string;
 }> {
@@ -103,10 +106,10 @@ export function renew(
 	status: "ok";
 	subscriptionId: string;
 	resource: string;
-	changeType: string;
-	notificationUrl: string;
-	userId: string;
-	userProvider: string;
+	changeType?: string;
+	notificationUrl?: string;
+	userId?: string;
+	userProvider?: string;
 	expirationDateTime?: string;
 }> {
 	return post(path`/msgraph/renew`, params, options);
@@ -149,15 +152,17 @@ export function subscriptions(
 	options?: RequestOptions,
 ): Promise<{
 	status: "ok";
+	/** `Subscription.describe()` of each record, as {@link subscribe} returns it. */
 	recorded: Array<{
 		subscriptionId: string;
 		resource: string;
-		changeType: string;
-		notificationUrl: string;
-		userId: string;
-		userProvider: string;
+		changeType?: string;
+		notificationUrl?: string;
+		userId?: string;
+		userProvider?: string;
 		expirationDateTime?: string;
 	}>;
+	/** Graph's subscription objects as Microsoft returns them, or `"unavailable: <reason>"`. */
 	atMicrosoft: Array<Record<string, unknown>> | string;
 }> {
 	return get(path`/msgraph/subscriptions`, params, options);

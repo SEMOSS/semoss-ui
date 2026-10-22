@@ -12,9 +12,9 @@
  * returns the same token.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../types";
+import { get, post } from "../utility/http";
+import { path } from "../utility/url";
 
 /**
  * Gets (or creates) the token for the caller's IP. Only allowed when the
@@ -36,8 +36,8 @@ export function getToken(
 ): Promise<{
 	token: string;
 	/** Issue time (UTC). In a cluster this field holds the IP address instead (backend bug). */
-	dateAdded: string | null;
-	clientId: string | null;
+	dateAdded?: string;
+	clientId?: string;
 }> {
 	return get(path`/token/getToken`, params, options);
 }
@@ -62,8 +62,8 @@ export function getTokenPost(
 ): Promise<{
 	token: string;
 	/** Issue time (UTC). In a cluster this field holds the IP address instead (backend bug). */
-	dateAdded: string | null;
-	clientId: string | null;
+	dateAdded?: string;
+	clientId?: string;
 }> {
 	return post(path`/token/getToken`, params, options);
 }

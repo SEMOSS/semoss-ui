@@ -9,9 +9,9 @@
  * Errors are `{ errorMessage }` maps (surfaced as `ApiError`).
  */
 
-import type { RequestOptions } from "@/types";
-import { get } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { get } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Searches users by name, email, id or username. Uses the Microsoft Graph
@@ -44,9 +44,9 @@ export function searchForUser(
 	Array<{
 		id: string;
 		type: string;
-		username: string | null;
-		name: string | null;
-		email: string | null;
+		username?: string;
+		name?: string;
+		email?: string;
 		/** Directory searches only: whether the user already exists in SEMOSS. */
 		hasAccount?: boolean;
 		[graphField: string]: unknown;

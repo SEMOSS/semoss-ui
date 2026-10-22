@@ -1,11 +1,12 @@
 /**
- * PUBLIC: the error type thrown by every endpoint function, re-exported from
- * `@semoss/monolith`.
+ * PUBLIC: the error types thrown by every endpoint function, exported from
+ * `@semoss/sdk/monolith` (the `@semoss/sdk` root has its own, unrelated `UnauthorizedError`).
  */
 
 /**
- * Thrown for any non-2xx response, or when the server redirects the client.
- * Network failures and aborts surface as the native `fetch` errors instead.
+ * Thrown for any non-2xx response. A redirect throws its subclass
+ * {@link UnauthorizedError}. Network failures and aborts surface as the native
+ * `fetch` errors instead.
  *
  * @name ApiError
  * @example
@@ -43,5 +44,39 @@ export class ApiError extends Error {
 		this.status = status;
 		this.data = data;
 		this.endpoint = endpoint;
+	}
+}
+
+/**
+ * Thrown when the server redirects the client instead of answering, usually
+ * because the session expired. The redirect is handed to `onRedirect` first.
+ * Network failures and aborts are not this error.
+ *
+ * @name UnauthorizedError
+ * @example
+ * try {
+ *     await getProjects();
+ * } catch (error) {
+ *     if (error instanceof UnauthorizedError) {
+ *         // the session is gone; the page is already navigating away
+ *     }
+ * }
+ */
+export class UnauthorizedError extends ApiError {
+	/**
+	 * @name constructor
+	 * @param message - Human-readable message.
+	 * @param status - HTTP status code of the redirecting response.
+	 * @param data - `{ redirect }`, the URL the server sent the client to.
+	 * @param endpoint - The failed request, as `"<METHOD> <path>"`.
+	 */
+	constructor(
+		message: string,
+		status: number,
+		data: { redirect: string },
+		endpoint: string,
+	) {
+		super(message, status, data, endpoint);
+		this.name = "UnauthorizedError";
 	}
 }

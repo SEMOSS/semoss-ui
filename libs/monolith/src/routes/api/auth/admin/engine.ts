@@ -16,9 +16,9 @@
  * `amount` is tokens, millionths of a US dollar or milliseconds, by `metric`.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post, repeat } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../../types";
+import { get, post, repeat } from "../../../../utility/http";
+import { path } from "../../../../utility/url";
 
 /**
  * Lists every engine on the server for the admin console (runs
@@ -65,16 +65,16 @@ export function getEngines(
 	Array<{
 		engine_id: string;
 		engine_name: string;
-		engine_display_name: string | null;
+		engine_display_name?: string;
 		engine_type: string;
-		engine_subtype: string | null;
-		engine_cost: string | null;
+		engine_subtype?: string;
+		engine_cost?: string;
 		engine_discoverable: boolean;
 		engine_global: boolean;
-		engine_tool_app: boolean | null;
-		engine_created_by: string | null;
-		engine_created_by_type: string | null;
-		engine_date_created: string | null;
+		engine_tool_app?: boolean;
+		engine_created_by?: string;
+		engine_created_by_type?: string;
+		engine_date_created?: string;
 		low_engine_name: string;
 		/** Legacy alias of `engine_id`. */
 		database_id: string;
@@ -187,14 +187,14 @@ export function getAllUserEngines(
 		user_id: string;
 		engine_id: string;
 		engine_name: string;
-		engine_display_name: string | null;
+		engine_display_name?: string;
 		engine_type: string;
-		engine_subtype: string | null;
+		engine_subtype?: string;
 		/** Permission name: `"OWNER"`, `"EDIT"` or `"READ_ONLY"`. */
 		engine_permission: string;
 		app_id: string;
 		app_name: string;
-		app_display_name: string | null;
+		app_display_name?: string;
 		/** Selected twice in the query (id and name); the name normally wins. */
 		app_permission: string | number;
 		low_engine_name: string;
@@ -232,9 +232,9 @@ export function getUserEnginesNoCredentials(
 	Array<{
 		engine_id: string;
 		engine_name: string;
-		engine_display_name: string | null;
+		engine_display_name?: string;
 		engine_type: string;
-		engine_subtype: string | null;
+		engine_subtype?: string;
 		low_engine_name: string;
 	}>
 > {
@@ -331,23 +331,23 @@ export function getEngineUsers(
 	members: Array<{
 		id: string;
 		type: string;
-		name: string | null;
-		email: string | null;
+		name?: string;
+		email?: string;
 		permission: "OWNER" | "EDIT" | "READ_ONLY";
-		end_date: string | null;
-		permission_granted_by: string | null;
-		permission_granted_by_type: string | null;
-		date_added: string | null;
+		end_date?: string;
+		permission_granted_by?: string;
+		permission_granted_by_type?: string;
+		date_added?: string;
 		usage_limit?: {
 			unlimited: boolean;
 			rules: Array<{
 				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 				amount: number;
 				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-				windowLength?: number | null;
+				windowLength?: number;
 				counts: "EACH_PERSON" | "SHARED";
 			}>;
-		} | null;
+		};
 	}>;
 }> {
 	return get(path`/api/auth/admin/engine/getEngineUsers`, params, options);
@@ -703,9 +703,9 @@ export function getEngineUsersNoCredentials(
 	Array<{
 		id: string;
 		type: string;
-		username?: string | null;
-		name: string | null;
-		email: string | null;
+		username?: string;
+		name?: string;
+		email?: string;
 		[key: string]: unknown;
 	}>
 > {

@@ -7,13 +7,13 @@
  * set through `ApiClient`). Failures throw `ApiError`.
  */
 
-import { ApiError } from "@/lib/api-error";
-import { ApiSettings } from "@/lib/api-settings";
-import type { QueryParams, RequestOptions, RequestShape } from "@/types";
-import { encodeBody, readBody } from "@/utility/body";
-import { url } from "@/utility/url";
+import { ApiError, UnauthorizedError } from "../lib/api-error";
+import { ApiSettings } from "../lib/api-settings";
+import type { QueryParams, RequestOptions, RequestShape } from "../types";
+import { encodeBody, readBody } from "./body";
+import { url } from "./url";
 
-export { repeat } from "@/utility/body";
+export { repeat } from "./body";
 
 /** The header Tomcat's CSRF filter reads on requests and sets on responses. */
 const CSRF_HEADER = "X-CSRF-Token";
@@ -102,6 +102,58 @@ const csrfToken = async (): Promise<string> => {
 };
 
 /**
+ * Where the server sent the client instead of answering, usually the login
+ * page after the session expired: a `redirect` or `location` header, or a
+ * redirect `fetch` already followed to an HTML page.
+ *
+ * @name redirectOf
+ * @param response - Any response.
+ * @returns The URL, or `null` when the response answers the request.
+ */
+const redirectOf = (response: Response): string | null => {
+	const header =
+		response.headers.get("redirect") || response.headers.get("location");
+	if (header) {
+		return header;
+	}
+	const isHtml = (response.headers.get("content-type") ?? "")
+		.toLowerCase()
+		.includes("text/html");
+	return response.redirected && response.url && isHtml ? response.url : null;
+};
+
+/**
+ * The message of a failed response: the backend's `errorMessage`, or the
+ * `message` or `error` some resources send instead, or a bare string body.
+ * An HTML page (a proxy's or Tomcat's error page) is not a message.
+ *
+ * @name errorMessageOf
+ * @param response - The failed response.
+ * @param data - Its parsed body.
+ * @returns The message.
+ */
+const errorMessageOf = (response: Response, data: unknown): string => {
+	const fallback = `Request failed with status ${response.status}`;
+	if (typeof data === "string") {
+		const isHtml = (response.headers.get("content-type") ?? "")
+			.toLowerCase()
+			.includes("text/html");
+		return data && !isHtml && !data.trimStart().startsWith("<")
+			? data
+			: fallback;
+	}
+	if (typeof data === "object" && data !== null) {
+		const body = data as Record<string, unknown>;
+		for (const key of ["errorMessage", "message", "error"]) {
+			if (typeof body[key] === "string" && body[key]) {
+				return body[key];
+			}
+		}
+	}
+	return fallback;
+};
+
+/**
  * Send a request with the current settings, CSRF token and cookies.
  *
  * @name request
@@ -112,7 +164,8 @@ const csrfToken = async (): Promise<string> => {
  * @param options - Per-call options (signal, headers).
  * @param shape - Body type and response type, when not the defaults.
  * @returns The response, read as `shape.responseType` (JSON by default).
- * @throws {ApiError} For a non-2xx response, or when the server redirects the client.
+ * @throws {ApiError} For a non-2xx response.
+ * @throws {UnauthorizedError} When the server redirects the client and `onRedirect` is set.
  */
 export const request = async <R>(
 	method: "GET" | "POST" | "PUT" | "DELETE",
@@ -160,11 +213,10 @@ export const request = async <R>(
 		response = await send();
 	}
 
-	const redirect =
-		response.headers.get("redirect") || response.headers.get("location");
+	const redirect = redirectOf(response);
 	if (redirect && s.onRedirect) {
 		s.onRedirect(redirect);
-		throw new ApiError(
+		throw new UnauthorizedError(
 			"Redirected",
 			response.status,
 			{ redirect },
@@ -174,12 +226,12 @@ export const request = async <R>(
 
 	if (!response.ok) {
 		const data = await readBody(response);
-		const message =
-			typeof data === "string"
-				? data
-				: ((data as { errorMessage?: string })?.errorMessage ??
-					`Request failed with status ${response.status}`);
-		throw new ApiError(message, response.status, data, endpoint);
+		throw new ApiError(
+			errorMessageOf(response, data),
+			response.status,
+			data,
+			endpoint,
+		);
 	}
 
 	switch (shape.responseType) {

@@ -3,7 +3,7 @@
  * `ApiClient.request` uses them.
  */
 
-import type { RequestShape } from "@/types";
+import type { RequestShape } from "../types";
 
 /**
  * Marks an array sent as repeated form keys (`id=a&id=b`) instead of JSON.

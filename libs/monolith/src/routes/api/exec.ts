@@ -14,9 +14,9 @@
  * `{ errorMessage }` body.
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Re-runs the saved insight, then returns all rows of its frame and the frame
@@ -30,8 +30,7 @@ import { path } from "@/utility/url";
  * @param params.projectId - The project id or alias (the path segment is `a-`).
  * @param params.rdbmsId - The saved insight id.
  * @param options - Per-call overrides (signal, headers).
- * @returns A pixel return with the collected data, the frame headers and the `DropInsight` step.
- * @remarks Unverified response shape of `output`.
+ * @returns A pixel return with one step per pixel, whose `output` is one of: the `Collect` task (`data.values` rows, `data.headers` aliases, `data.rawHeaders`, plus the task id and task meta such as `headerInfo`), the `FrameHeaders` map (`{}` when the insight has no frame) and `true` from `DropInsight`. A failed step, and any delayed message after the steps, has a message string as its `output`.
  * @throws {ApiError} 401 if the session is invalid or the caller cannot view the insight; 400 without a session.
  */
 export function getTableData(
@@ -44,12 +43,45 @@ export function getTableData(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output:
+			| {
+					data: {
+						values: unknown[][];
+						headers: string[];
+						rawHeaders: string[];
+					};
+					taskId: string;
+					numCollected: number;
+					[key: string]: unknown;
+			  }
+			| {
+					name?: string;
+					type?: string;
+					headerInfo?: {
+						headers: Array<{
+							alias: string;
+							displayName: string;
+							header: string;
+							dataType: string;
+							adtlType: string;
+							qsName: unknown;
+							isFiltered: boolean;
+							[key: string]: unknown;
+						}>;
+						joins: Array<{
+							fromNode: string;
+							toNode: string;
+							joinType: string;
+						}>;
+					};
+			  }
+			| true
+			| string;
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;
 			operationType: string[];
-			[key: string]: unknown;
+			additionalOutput?: unknown[];
 		}>;
 	}>;
 }> {
@@ -91,7 +123,7 @@ export function getInsightState(
 		additionalOutput?: Array<{
 			output: unknown;
 			operationType: string[];
-			[key: string]: unknown;
+			additionalOutput?: unknown[];
 		}>;
 	}>;
 }> {

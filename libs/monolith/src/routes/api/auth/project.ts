@@ -13,9 +13,9 @@
  * as `ApiError`).
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post, repeat } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { get, post, repeat } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Lists the projects the caller can access (directly, through a group, or
@@ -54,33 +54,33 @@ export function getProjects(
 	Array<{
 		project_id: string;
 		project_name: string;
-		project_display_name: string | null;
+		project_display_name?: string;
 		project_type: string;
-		project_cost: string | null;
+		project_cost?: string;
 		project_global: boolean;
 		project_discoverable: boolean;
 		project_is_template: boolean;
-		project_catalog_name: string | null;
-		project_created_by: string | null;
-		project_created_by_type: string | null;
-		project_date_created: string | null;
-		project_date_last_edited: string | null;
-		project_portal_published_date: string | null;
-		project_published_user: string | null;
-		project_published_user_type: string | null;
-		project_reactors_compiled_date: string | null;
-		project_reactors_compiled_user: string | null;
-		project_reactors_compiled_user_type: string | null;
+		project_catalog_name?: string;
+		project_created_by?: string;
+		project_created_by_type?: string;
+		project_date_created?: string;
+		project_date_last_edited?: string;
+		project_portal_published_date?: string;
+		project_published_user?: string;
+		project_published_user_type?: string;
+		project_reactors_compiled_date?: string;
+		project_reactors_compiled_user?: string;
+		project_reactors_compiled_user_type?: string;
 		low_project_name: string;
 		/** The caller's favorite flag, coalesced to `0` when unset. */
 		project_favorite: boolean | number;
 		/** The caller's direct permission id (1 = owner, 2 = edit, 3 = read only). */
-		user_permission: 1 | 2 | 3 | null;
+		user_permission?: 1 | 2 | 3;
 		/** The best permission id the caller has through a group. */
-		group_permission: 1 | 2 | 3 | null;
+		group_permission?: 1 | 2 | 3;
 		/** The best of `user_permission` and `group_permission`. */
-		permission: 1 | 2 | 3 | null;
-		project_description: string | null;
+		permission?: 1 | 2 | 3;
+		project_description?: string;
 		[metaKey: string]: unknown;
 	}>
 > {
@@ -196,13 +196,13 @@ export function getProjectUsers(
 	members: Array<{
 		id: string;
 		type: string;
-		name: string | null;
-		email: string | null;
+		name?: string;
+		email?: string;
 		permission: "OWNER" | "EDIT" | "READ_ONLY";
-		end_date: string | null;
-		permission_granted_by: string | null;
-		permission_granted_by_type: string | null;
-		date_added: string | null;
+		end_date?: string;
+		permission_granted_by?: string;
+		permission_granted_by_type?: string;
+		date_added?: string;
 	}>;
 }> {
 	return get(path`/api/auth/project/getProjectUsers`, params, options);
@@ -567,7 +567,7 @@ export function setProjectFavorite(
  * @param params.searchTerm - Search on user id, name, username or email.
  * @param params.limit - Page size (`0` or omitted for no limit).
  * @param params.offset - Rows to skip. For directory lookups, `0` starts a new search and any other value continues it (paging state is kept in the session).
- * @param params.msGraphLookup - `"false"` to search the security database even when the directory is enabled. Defaults to the directory when it is enabled (`MicrosoftGraphUserLookup.LOOKUP_PARAM`).
+ * @param params.msGraphLookup - `false` to search the security database even when the directory is enabled. Defaults to the directory when it is enabled (`MicrosoftGraphUserLookup.LOOKUP_PARAM`).
  * @param options - Per-call overrides (signal, headers).
  * @returns Matching users.
  * @remarks Unverified response shape for directory lookups.
@@ -579,16 +579,16 @@ export function getProjectUsersNoCredentials(
 		searchTerm?: string;
 		limit?: number;
 		offset?: number;
-		msGraphLookup?: string;
+		msGraphLookup?: boolean;
 	},
 	options?: RequestOptions,
 ): Promise<
 	Array<{
 		id: string;
 		type: string;
-		username?: string | null;
-		name: string | null;
-		email: string | null;
+		username?: string;
+		name?: string;
+		email?: string;
 		[key: string]: unknown;
 	}>
 > {

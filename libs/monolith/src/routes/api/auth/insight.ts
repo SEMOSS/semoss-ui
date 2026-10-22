@@ -13,9 +13,9 @@
  * as `ApiError`).
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { get, post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Searches the insights the caller can open, across all their projects or in
@@ -52,30 +52,30 @@ export function getInsights(
 		project_id: string;
 		project_name: string;
 		project_global: boolean;
-		project_catalog_name: string | null;
+		project_catalog_name?: string;
 		project_insight_id: string;
 		name: string;
-		view_count: number | null;
-		layout: string | null;
-		created_on: string | null;
-		last_modified_on: string | null;
-		cacheable: boolean | null;
-		cacheMinutes: number | null;
-		cacheCron: string | null;
-		cachedOn: string | null;
-		cacheEncrypt: boolean | null;
+		view_count?: number;
+		layout?: string;
+		created_on?: string;
+		last_modified_on?: string;
+		cacheable?: boolean;
+		cacheMinutes?: number;
+		cacheCron?: string;
+		cachedOn?: string;
+		cacheEncrypt?: boolean;
 		insight_global: boolean;
-		insight_schema_name: string | null;
+		insight_schema_name?: string;
 		low_name: string;
 		/** Permission ids (1 = owner, 2 = edit, 3 = read only), or `null` when none. */
-		insight_permission: 1 | 2 | 3 | null;
-		project_permission: 1 | 2 | 3 | null;
-		insight_group_permission: 1 | 2 | 3 | null;
-		project_group_permission: 1 | 2 | 3 | null;
+		insight_permission?: 1 | 2 | 3;
+		project_permission?: 1 | 2 | 3;
+		insight_group_permission?: 1 | 2 | 3;
+		project_group_permission?: 1 | 2 | 3;
 		/** The caller's favorite flag, coalesced to `0` when unset. */
 		insight_favorite: boolean | number;
 		/** The effective permission id: owner when the caller owns the project, else the best insight permission. */
-		permission: 1 | 2 | 3 | null;
+		permission?: 1 | 2 | 3;
 	}>
 > {
 	return get(path`/api/auth/insight/getInsights`, params, options);
@@ -105,10 +105,10 @@ export function getProjectInsights(
 		project_insight_id: string;
 		name: string;
 		insight_global: boolean;
-		exec_count: number | null;
-		created_on: string | null;
-		last_modified_on: string | null;
-		cacheable: boolean | null;
+		exec_count?: number;
+		created_on?: string;
+		last_modified_on?: string;
+		cacheable?: boolean;
 		/** The caller's insight permission; set only for project editors. */
 		permission?: "OWNER" | "EDIT";
 		/** Set instead of `permission` for project owners (an unaliased constant selector). */
@@ -175,9 +175,9 @@ export function getInsightUsers(
 	totalMembers: number;
 	members: Array<{
 		id: string;
-		name: string | null;
+		name?: string;
 		permission: "OWNER" | "EDIT" | "READ_ONLY";
-		email: string | null;
+		email?: string;
 	}>;
 }> {
 	return get(path`/api/auth/insight/getInsightUsers`, params, options);
@@ -400,9 +400,9 @@ export function getInsightUsersNoCredentials(
 ): Promise<
 	Array<{
 		id: string;
-		username: string | null;
-		name: string | null;
-		email: string | null;
+		username?: string;
+		name?: string;
+		email?: string;
 	}>
 > {
 	return get(

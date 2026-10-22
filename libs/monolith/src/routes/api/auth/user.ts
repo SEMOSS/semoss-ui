@@ -15,9 +15,9 @@
  * noted on each function.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { get, post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Updates the caller's display name and email, and refreshes the session's
@@ -83,8 +83,8 @@ export function createUserAccessKey(
 ): Promise<{
 	ACCESSKEY: string;
 	SECRETKEY: string;
-	TOKENNAME: string | null;
-	TOKENDESCRIPTION: string | null;
+	TOKENNAME?: string;
+	TOKENDESCRIPTION?: string;
 }> {
 	return post(path`/api/auth/user/createUserAccessKey`, params, options);
 }
@@ -125,11 +125,11 @@ export function getUserAccessKeys(
 	options?: RequestOptions,
 ): Promise<
 	Array<{
-		TOKENNAME: string | null;
-		TOKENDESCRIPTION: string | null;
+		TOKENNAME?: string;
+		TOKENDESCRIPTION?: string;
 		ACCESSKEY: string;
-		DATECREATED: string | null;
-		LASTUSED: string | null;
+		DATECREATED?: string;
+		LASTUSED?: string;
 	}>
 > {
 	return get(path`/api/auth/user/getUserAccessKeys`, params, options);

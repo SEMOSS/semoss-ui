@@ -2,7 +2,7 @@
  * INTERNAL: the connection store. Not exported from the package.
  *
  * - `ApiClient` (public) writes it: `configure`, `clear`, `reset`.
- * - `@/utility/http` and `@/utility/url` read it to send requests.
+ * - `utility/http` and `utility/url` read it to send requests.
  */
 
 /**

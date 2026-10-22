@@ -14,9 +14,9 @@
  * the reason is in `ApiError.data.error`.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path, url } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { get, post } from "../../utility/http";
+import { path, url } from "../../utility/url";
 
 /**
  * Replaces the project's SMSS file. Only the project owner (or an admin) may

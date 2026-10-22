@@ -12,9 +12,9 @@
  * `ApiError.data`).
  */
 
-import type { RequestOptions } from "@/types";
-import { del, get } from "@/utility/http";
-import { path, url } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { del, get } from "../../utility/http";
+import { path, url } from "../../utility/url";
 
 /**
  * Builds the URL the admin's browser navigates to to create this server's
@@ -63,8 +63,8 @@ export function apps(
 		htmlUrl: string;
 		webhookUrl: string;
 		clientId: string;
-		createdOn: string | null;
-		updatedOn: string | null;
+		createdOn?: string;
+		updatedOn?: string;
 	}>;
 }> {
 	return get(path`/github/manifest/apps`, params, options);
@@ -92,9 +92,9 @@ export function projects(
 		repoId: number;
 		repoFullName: string;
 		branch: string;
-		subdir: string | null;
-		createdOn: string | null;
-		updatedOn: string | null;
+		subdir?: string;
+		createdOn?: string;
+		updatedOn?: string;
 	}>;
 }> {
 	return get(path`/github/manifest/projects`, params, options);

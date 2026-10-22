@@ -10,9 +10,9 @@
  * `{ errorMessage }`), so the reason is in `ApiError.data.error`.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { get, post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Returns the engine's catalog type. Requires view access, or the engine being

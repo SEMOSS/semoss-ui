@@ -52,8 +52,9 @@ and the owning guides define the exact public entry points and architectural bou
 Libraries (`libs/*`, publishable):
 - `@semoss/utility` → Generic text, date, object, JSON, file, encoding, browser, and other functional helpers
 - `@semoss/monolith` → Typed client for every Monolith REST endpoint (no internal dependencies;
-  versioned with SEMOSS releases, private until then)
-- `@semoss/sdk` → Core SDK (no internal dependencies)
+  source only, never built or published on its own: the SDK bundles it)
+- `@semoss/sdk` → Core SDK (bundles monolith: routes at `@semoss/sdk/monolith/<route>`, `ApiClient`
+  and errors at `@semoss/sdk/monolith`; no other internal dependencies)
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
 - `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui, utility)
@@ -93,7 +94,7 @@ the `connectors` i18n namespace. See
 semoss/
 ├── libs/           # Shared libraries (publishable)
 │   ├── utility/    # Generic cross-package utility functions
-│   ├── monolith/   # @semoss/monolith - Typed Monolith REST client
+│   ├── monolith/   # @semoss/monolith - Typed Monolith REST client (bundled into the SDK)
 │   ├── sdk/        # @semoss/sdk - Core SDK
 │   ├── ui/         # @semoss/ui - Component library
 │   ├── i18n/       # @semoss/i18n - Internationalization library

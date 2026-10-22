@@ -11,9 +11,9 @@
  * All endpoints are public; they work with or without a signed-in user.
  */
 
-import type { RequestOptions } from "@/types";
-import { get } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { get } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Reads the server configuration the UI boots from: feature flags, admin-only
@@ -50,18 +50,21 @@ export function getConfig(
 	cacheInsightByDefault: boolean;
 	cacheInsightMinutes: number;
 	cacheInsightEncrypt: boolean;
-	cacheCron: string | null;
+	cacheCron?: string;
 	showWelcomeBanner: boolean;
 	/** Permission name to id, e.g. `{ OWNER: 1, EDIT: 2, READ_ONLY: 3 }`. */
 	permissionMappingString: Record<string, number>;
 	/** Permission id to name. */
 	permissionMappingInteger: Record<string, string>;
-	pipelineLandingFilter: unknown;
-	pipelineSourceFilter: unknown;
-	widgetTabShareExportList: unknown;
+	/** `PIPELINE_LANDING_FILTER` split on commas; left out when not set. */
+	pipelineLandingFilter?: string[];
+	/** `PIPELINE_SOURCE_FILTER` split on commas; left out when not set. */
+	pipelineSourceFilter?: string[];
+	/** `WIDGET_TAB_SHARE_EXPORT_LIST` split on commas; left out when not set. */
+	widgetTabShareExportList?: string[];
 	adminOnlyViewMenuBarFlag: boolean;
 	adminOnlyNonAprrovedFlag: boolean;
-	applicationUrl: string | null;
+	applicationUrl?: string;
 	/** Session timeout in minutes. */
 	timeout: number;
 	loginsAllowed: Record<string, boolean>;
@@ -85,59 +88,70 @@ export function getConfig(
 		passReuseCount: number;
 		daysToLock: number;
 		daysToLockEmail: number;
-		[key: string]: unknown;
 	};
 	/** Display name per signed-in provider, keyed by upper-case provider. */
 	logins: Record<string, string>;
-	/** Id and name per signed-in provider. */
-	loginDetails: Record<string, { id: string; name: string; san?: unknown }>;
+	/** Id and name per signed-in provider (`ANONYMOUS` for an anonymous session), with any subject alternative names. */
+	loginDetails: Record<
+		string,
+		{ id: string; name: string; san?: Record<string, string> }
+	>;
 	/** The provider the session belongs to, upper-case. */
 	primaryLogin?: string;
 	/** Signed-in users only: whether each connector app can work, by provider label then app. */
 	connectorAccess?: Record<string, Record<string, boolean>>;
-	/** The active admin theme row, or `{}`. */
-	theme: Record<string, unknown>;
+	/** The active admin theme row (`AdminThemeUtils.getActiveAdminTheme`), or `{}` when none is active. */
+	theme:
+		| {
+				ID: string;
+				THEME_NAME: string;
+				/** The theme as a JSON string. */
+				THEME_MAP: string;
+				IS_ACTIVE: boolean;
+		  }
+		| Record<string, never>;
 	csrf: boolean;
 	databaseMetaKeys: Array<{
 		metakey: string;
 		single_multi: string;
 		display_order: number;
-		display_options: string | null;
-		display_values: string | null;
+		display_options?: string;
+		display_values?: string;
 	}>;
 	engineMetaKeys: Array<{
 		metakey: string;
 		single_multi: string;
 		display_order: number;
-		display_options: string | null;
-		display_values: string | null;
+		display_options?: string;
+		display_values?: string;
 	}>;
 	projectMetaKeys: Array<{
 		metakey: string;
 		single_multi: string;
 		display_order: number;
-		display_options: string | null;
-		display_values: string | null;
+		display_options?: string;
+		display_values?: string;
 	}>;
 	insightMetaKeys: Array<{
 		metakey: string;
 		single_multi: string;
 		display_order: number;
-		display_options: string | null;
-		display_values: string | null;
+		display_options?: string;
+		display_values?: string;
 	}>;
 	userMetaKeys: Array<{
 		metakey: string;
 		single_multi: string;
 		display_order: number;
-		display_options: string | null;
-		display_values: string | null;
+		display_options?: string;
+		display_values?: string;
 	}>;
 	notificationEnabled: boolean;
 	auditLogEnabled: boolean;
 	/** Current server time (UTC). */
 	systemDate: string;
-	[adminOnlyFlag: string]: unknown;
+	/** Every other `adminOnly*` flag (project, workspace, skill, database, model, storage, vector, function and insight actions). */
+	[adminOnlyFlag: `adminOnly${string}`]: boolean;
 }> {
 	return get(path`/api/config`, params, options);
 }
@@ -145,14 +159,15 @@ export function getConfig(
 /**
  * Creates the session so the CSRF filter can issue a token. The token comes
  * back in the `X-CSRF-Token` response header when the request sends
- * `X-CSRF-Token: Fetch`; the transport already does this on the first write,
- * so call it directly only to warm the session.
+ * `X-CSRF-Token: Fetch`. The transport already sends that request itself
+ * before the first write and keeps the token, and it strips `X-CSRF-Token`
+ * from per-call headers, so calling this only warms the session.
  *
  * @name fetchCsrf
  * @endpoint GET /api/config/fetchCsrf
  * @source Monolith/src/prerna/semoss/web/services/config/ServerConfigurationResource.java#fetchCsrf
  * @param params - No parameters.
- * @param options - Per-call overrides (signal, headers), e.g. `{ headers: { "X-CSRF-Token": "Fetch" } }`.
+ * @param options - Per-call overrides (signal, headers).
  * @returns `true`.
  * @throws {ApiError} On an unexpected server failure.
  */

@@ -2,17 +2,25 @@
     "name": "@semoss/sdk",
     "version": "1.0.0-beta.48",
     "type": "module",
-    "main": "./dist/index.mjs",
-    "module": "./dist/index.mjs",
-    "types": "./dist/types/index.d.ts",
+    "main": "./dist/sdk/src/index.mjs",
+    "module": "./dist/sdk/src/index.mjs",
+    "types": "./dist/types/sdk/src/index.d.ts",
     "exports": {
         ".": {
-            "types": "./dist/types/index.d.ts",
-            "default": "./dist/index.mjs"
+            "types": "./dist/types/sdk/src/index.d.ts",
+            "default": "./dist/sdk/src/index.mjs"
         },
         "./react": {
-            "types": "./dist/types/js-frameworks/react/index.d.ts",
-            "default": "./dist/js-frameworks/react/index.mjs"
+            "types": "./dist/types/sdk/src/js-frameworks/react/index.d.ts",
+            "default": "./dist/sdk/src/js-frameworks/react/index.mjs"
+        },
+        "./monolith": {
+            "types": "./dist/types/monolith/src/index.d.ts",
+            "default": "./dist/monolith/src/index.mjs"
+        },
+        "./monolith/*": {
+            "types": "./dist/types/monolith/src/routes/*.d.ts",
+            "default": "./dist/monolith/src/routes/*.mjs"
         }
     },
     "files": [
@@ -38,6 +46,7 @@
     "license": "ISC",
     "devDependencies": {
         "@semoss/config": "workspace:*",
+        "@semoss/monolith": "workspace:*",
         "@testing-library/jest-dom": "^6.6.3",
         "@types/react": "^19.0.0",
         "@vitest/coverage-v8": "^4.1.11",

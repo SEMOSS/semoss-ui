@@ -15,9 +15,9 @@
  * `ApiError.message` is the generic status text; read `ApiError.data`).
  */
 
-import type { RequestOptions } from "@/types";
-import { del, get, post } from "@/utility/http";
-import { path, url } from "@/utility/url";
+import type { RequestOptions } from "../types";
+import { del, get, post } from "../utility/http";
+import { path, url } from "../utility/url";
 
 /**
  * Reports whether this server has a GitHub App configured, so the connect UI
@@ -209,9 +209,9 @@ export function link(
 			repoId: number;
 			repoFullName: string;
 			branch: string;
-			subdir: string | null;
-			createdOn: string | null;
-			updatedOn: string | null;
+			subdir?: string;
+			createdOn?: string;
+			updatedOn?: string;
 	  }
 > {
 	return get(path`/github/project/link`, params, options);

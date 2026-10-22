@@ -158,9 +158,6 @@ importers:
       typescript:
         specifier: ~6.0.0
         version: 6.0.3
-      vite:
-        specifier: ^8.2.1
-        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
 
   libs/panels:
     dependencies:
@@ -340,6 +337,9 @@ importers:
       '@semoss/config':
         specifier: workspace:*
         version: link:../config
+      '@semoss/monolith':
+        specifier: workspace:*
+        version: link:../monolith
       '@testing-library/jest-dom':
         specifier: ^6.6.3
         version: 6.9.1

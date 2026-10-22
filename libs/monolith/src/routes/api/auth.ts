@@ -18,10 +18,10 @@
  * ({@link loginUrl}, {@link login2Url}) rather than fetch calls.
  */
 
-import { ApiClient } from "@/lib/api-client";
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path, url } from "@/utility/url";
+import { ApiClient } from "../../lib/api-client";
+import type { RequestOptions } from "../../types";
+import { get, post } from "../../utility/http";
+import { path, url } from "../../utility/url";
 
 /**
  * Lists the providers the current session is signed in with. When nobody is
@@ -57,7 +57,7 @@ export function logins(
  * @source Monolith/src/prerna/semoss/web/services/local/UserResource.java#logout
  * @param params - Path and query parameters.
  * @param params.provider - The provider to sign out of (e.g. `"NATIVE"`, `"MS"`), or `"ALL"`.
- * @param params.disableRedirect - Answer 200 JSON instead of a 302 redirect when the session ends.
+ * @param params.disableRedirect - Answer 200 JSON instead of a 302 redirect when the session ends. Defaults to `true`, since a script cannot follow the redirect; pass `false` for the server's redirect.
  * @param options - Per-call overrides (signal, headers).
  * @returns `success` is `true` when a login was removed.
  * @throws {ApiError} 400 if nobody is signed in; 302 (redirect) when the session ends without `disableRedirect`; 500 for an unknown provider.
@@ -69,7 +69,7 @@ export function logout(
 	const { provider, ...query } = params;
 	return get<{ success: boolean }>(
 		path`/api/auth/logout/${provider}`,
-		query,
+		{ disableRedirect: true, ...query },
 		options,
 	).finally(() => {
 		if (provider.toUpperCase() === "ALL") {
@@ -103,9 +103,9 @@ export function userinfo(
 			username: string;
 			email: string;
 			meta?: Record<string, string[]>;
-			san: Record<string, string> | null;
-			groupInfo: { groupType: string | null; groups: string[] | null };
-			userEpoch?: string | null;
+			san?: Record<string, string>;
+			groupInfo: { groupType?: string; groups?: string[] };
+			userEpoch?: string;
 	  }
 	| { errorMessage: string }
 > {
@@ -176,9 +176,9 @@ export function login2Url(params: {
  * @param params.username - The username.
  * @param params.password - The password.
  * @param params.redirect - Where the server should redirect after login (ignored with `disableRedirect`).
- * @param params.disableRedirect - Answer the JSON body instead of a 302 redirect. Set it for API use.
+ * @param params.disableRedirect - Answer the JSON body instead of a 302 redirect. Defaults to `true`, since a script cannot follow the redirect; pass `false` for the server's redirect.
  * @param options - Per-call overrides (signal, headers).
- * @returns The signed-in user (only with `disableRedirect: true`; otherwise the server redirects).
+ * @returns The signed-in user (unless `disableRedirect` is `false`, when the server redirects).
  * @throws {ApiError} 400 if native login is disabled; 401 for empty or invalid credentials; 500 on failure.
  */
 export function login(
@@ -192,10 +192,14 @@ export function login(
 ): Promise<{
 	success: "true";
 	username: string;
-	name: string | null;
-	email: string | null;
+	name?: string;
+	email?: string;
 }> {
-	return post(path`/api/auth/login`, params, options);
+	return post(
+		path`/api/auth/login`,
+		{ disableRedirect: true, ...params },
+		options,
+	);
 }
 
 /**
@@ -208,16 +212,20 @@ export function login(
  * @param params - Form fields.
  * @param params.username - The LDAP username.
  * @param params.password - The LDAP password.
- * @param params.disableRedirect - Answer the JSON body instead of a 302 redirect. Set it for API use.
+ * @param params.disableRedirect - Answer the JSON body instead of a 302 redirect. Defaults to `true`, since a script cannot follow the redirect; pass `false` for the server's redirect.
  * @param options - Per-call overrides (signal, headers).
- * @returns The signed-in username (only with `disableRedirect: true`).
+ * @returns The signed-in username (unless `disableRedirect` is `false`).
  * @throws {ApiError} 400 if LDAP login is disabled; 401 for empty credentials, or with `data.requirePwdChange: true` when the password must be changed first (see {@link changeADPassword}); 500 for bad credentials or other failures.
  */
 export function loginLDAP(
 	params: { username: string; password: string; disableRedirect?: boolean },
 	options?: RequestOptions,
 ): Promise<{ success: "true"; username: string }> {
-	return post(path`/api/auth/loginLDAP`, params, options);
+	return post(
+		path`/api/auth/loginLDAP`,
+		{ disableRedirect: true, ...params },
+		options,
+	);
 }
 
 /**
@@ -252,33 +260,28 @@ export function changeADPassword(
  * @name loginLinOTP
  * @endpoint POST /api/auth/loginLinOTP
  * @source Monolith/src/prerna/semoss/web/services/local/UserResource.java#loginLinOTP
- * @param params - Form fields.
+ * @param params - Form fields: either `username` + `pin` (first step) or `otp` (second step; the username comes from the session).
  * @param params.username - The username (first step).
  * @param params.pin - The PIN / password (first step).
  * @param params.otp - The one-time passcode (second step).
  * @param params.redirect - Where the server should redirect after login (ignored with `disableRedirect`).
- * @param params.disableRedirect - Answer the JSON body instead of a 302 redirect. Set it for API use.
+ * @param params.disableRedirect - Answer the JSON body instead of a 302 redirect. Defaults to `true`, since a script cannot follow the redirect; pass `false` for the server's redirect.
  * @param options - Per-call overrides (signal, headers).
- * @returns `{ OTP }` when a passcode is still needed, or `{ success, username }` once signed in.
+ * @returns `{ OTP: "Please get OTP code." }` when the PIN was accepted and a passcode is still needed, or `{ success: "true", username }` once signed in (`LinOTPUtil.login`).
  * @throws {ApiError} 400 if LinOTP login is disabled; 401 for missing or invalid credentials (`data.requirePwdChange` when the AD password must change); 500 on failure.
- * @remarks Unverified response shape.
  */
 export function loginLinOTP(
-	params: {
-		username?: string;
-		pin?: string;
-		otp?: string;
+	params: ({ username: string; pin: string } | { otp: string }) & {
 		redirect?: string;
 		disableRedirect?: boolean;
 	},
 	options?: RequestOptions,
-): Promise<{
-	success?: "true";
-	username?: string;
-	OTP?: string;
-	[key: string]: unknown;
-}> {
-	return post(path`/api/auth/loginLinOTP`, params, options);
+): Promise<{ success: "true"; username: string } | { OTP: string }> {
+	return post(
+		path`/api/auth/loginLinOTP`,
+		{ disableRedirect: true, ...params },
+		options,
+	);
 }
 
 /**

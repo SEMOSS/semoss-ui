@@ -18,12 +18,16 @@
  * A resource type is `PROJECT`, `ENGINE`, `INSIGHT`, `TEAM` (a custom group's
  * members) or `TEAM_MANAGERS` (its managers), with the group's name as the id.
  * A model usage limit is `{ unlimited, rules: [{ metric, amount, window,
- * windowLength?, counts }] }`. End dates are ISO date-times in UTC.
+ * windowLength?, counts }] }` (`ModelUsageLimit`, Semoss/src/prerna/auth/access):
+ * `amount` is tokens, millionths of a US dollar or milliseconds, and
+ * `windowLength` (minutes or hours of a `MINUTE` / `HOUR` window) is left out
+ * for 1. A limit left out means no limit defined. End dates are ISO date-times
+ * in UTC.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../../types";
+import { get, post } from "../../../../utility/http";
+import { path } from "../../../../utility/url";
 
 /**
  * Validates permission batches without saving anything: for each batch, which
@@ -64,6 +68,7 @@ export function validatePermissionBatches(
 				to?: {
 					level?: "OWNER" | "EDIT" | "READ_ONLY";
 					endDate?: string | null;
+					/** On a model: the limit, or `null` for no limit defined. */
 					usageLimit?: {
 						unlimited: boolean;
 						rules: Array<{
@@ -76,7 +81,7 @@ export function validatePermissionBatches(
 								| "WEEK"
 								| "MONTH"
 								| "YEAR";
-							windowLength?: number | null;
+							windowLength?: number;
 							counts: "EACH_PERSON" | "SHARED";
 						}>;
 					} | null;
@@ -98,11 +103,7 @@ export function validatePermissionBatches(
 			projectId?: string;
 		};
 		reason?: string;
-		changes: Array<{
-			index: number;
-			allowed: boolean;
-			reason?: string | null;
-		}>;
+		changes: Array<{ index: number; allowed: boolean; reason?: string }>;
 	}>
 > {
 	return post(
@@ -160,7 +161,7 @@ export function savePermissionBatches(
 								| "WEEK"
 								| "MONTH"
 								| "YEAR";
-							windowLength?: number | null;
+							windowLength?: number;
 							counts: "EACH_PERSON" | "SHARED";
 						}>;
 					} | null;
@@ -190,8 +191,7 @@ export function savePermissionBatches(
  * @param params.resourceType - `PROJECT`, `ENGINE`, `TEAM` or `TEAM_MANAGERS`.
  * @param params.id - The project, engine or group id.
  * @param options - Per-call overrides (signal, headers).
- * @returns `people` (each with `subject` and `access`, `null` for a group), `teams` (none for a group), `allowedPermissionChanges`, and on a model `publicUse`, `modelTotal`, `costLimitsAvailable` and `price`.
- * @remarks Unverified response shape for `price` (`ModelUsageCost.priceEntry`).
+ * @returns `people` (each with `subject` and `access`, left out for a group), `teams` (none for a group), `allowedPermissionChanges`, and on a model `publicUse`, `modelTotal`, `costLimitsAvailable` and `price`.
  * @throws {ApiError} 403 if the caller is not an admin; 400 if the resource type is missing or unknown.
  */
 export function getPermissions(
@@ -206,13 +206,13 @@ export function getPermissions(
 			category: "USER";
 			id: string;
 			type: string;
-			name: string | null;
-			email: string | null;
+			name?: string;
+			email?: string;
 		};
-		access: {
+		access?: {
 			level: "OWNER" | "EDIT" | "READ_ONLY";
-			endDate: string | null;
-			/** On an engine. */
+			endDate?: string;
+			/** On a model, when the grant has a limit defined. */
 			usageLimit?: {
 				unlimited: boolean;
 				rules: Array<{
@@ -225,17 +225,17 @@ export function getPermissions(
 						| "WEEK"
 						| "MONTH"
 						| "YEAR";
-					windowLength?: number | null;
+					windowLength?: number;
 					counts: "EACH_PERSON" | "SHARED";
 				}>;
-			} | null;
-		} | null;
+			};
+		};
 	}>;
 	teams: Array<{
 		subject: { category: "TEAM"; id: string; type: string };
 		access: {
 			level: "OWNER" | "EDIT" | "READ_ONLY";
-			endDate: string | null;
+			endDate?: string;
 			usageLimit?: {
 				unlimited: boolean;
 				rules: Array<{
@@ -248,10 +248,10 @@ export function getPermissions(
 						| "WEEK"
 						| "MONTH"
 						| "YEAR";
-					windowLength?: number | null;
+					windowLength?: number;
 					counts: "EACH_PERSON" | "SHARED";
 				}>;
-			} | null;
+			};
 		};
 	}>;
 	allowedPermissionChanges: {
@@ -259,9 +259,9 @@ export function getPermissions(
 		canGiveAuthorAccess: boolean;
 		canChangeTeams: boolean;
 		addsAreAdminOnly: boolean;
-		/** On a model: the levels whose usage limits may be changed. */
-		limitLevels?: string[];
-		/** On a model. */
+		/** On a model: the levels whose usage limits may be changed (every level in admin mode). */
+		limitLevels?: Array<"OWNER" | "EDIT" | "READ_ONLY">;
+		/** On a model: whether team, public use and total limits may be changed. */
 		canChangeModelLimits?: boolean;
 	};
 	publicUse?: {
@@ -272,10 +272,10 @@ export function getPermissions(
 				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 				amount: number;
 				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-				windowLength?: number | null;
+				windowLength?: number;
 				counts: "EACH_PERSON" | "SHARED";
 			}>;
-		} | null;
+		};
 	};
 	modelTotal?: {
 		usageLimit?: {
@@ -284,13 +284,28 @@ export function getPermissions(
 				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 				amount: number;
 				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-				windowLength?: number | null;
+				windowLength?: number;
 				counts: "EACH_PERSON" | "SHARED";
 			}>;
-		} | null;
+		};
 	};
 	costLimitsAvailable?: boolean;
-	price?: Record<string, unknown> | null;
+	/**
+	 * On a model with known prices: the `MODELMETADATA.PRICING` entry cost is
+	 * worked out with (`ModelUsageCost.priceEntry`), in US dollars per million
+	 * tokens. The entry is passed through, so it may carry more keys (`tiers`,
+	 * `context_over_200k`, `input_audio`, `output_audio`).
+	 */
+	price?: {
+		servingProvider?: string;
+		modelId?: string;
+		input: number;
+		output: number;
+		cache_read?: number;
+		cache_write?: number;
+		reasoning?: number;
+		[key: string]: unknown;
+	};
 }> {
 	return get(
 		path`/api/auth/admin/permissionBatch/getPermissions`,
@@ -314,7 +329,7 @@ export function getPermissions(
  * @param params.targetResourceType - `PROJECT`, `ENGINE`, `TEAM` or `TEAM_MANAGERS`.
  * @param params.targetId - The target's id.
  * @param options - Per-call overrides (signal, headers).
- * @returns One row per person. `source` is `null` for a group's members; `target` is `null` when they are not in the target or it is a group. On an engine each access carries its `usageLimit`.
+ * @returns One row per person. `source` is left out for a group's members; `target` when they are not in the target or it is a group. On an engine each access carries its `usageLimit`.
  * @throws {ApiError} 403 if the caller is not an admin; 400 if a resource type is missing or unknown.
  */
 export function getPermissionsToCopy(
@@ -331,19 +346,49 @@ export function getPermissionsToCopy(
 			category: "USER";
 			id: string;
 			type: string;
-			name: string | null;
-			email: string | null;
+			name?: string;
+			email?: string;
 		};
-		source: {
+		source?: {
 			level: "OWNER" | "EDIT" | "READ_ONLY";
-			endDate: string | null;
-			usageLimit?: Record<string, unknown> | null;
-		} | null;
-		target: {
+			endDate?: string;
+			usageLimit?: {
+				unlimited: boolean;
+				rules: Array<{
+					metric: "TOKENS" | "COST" | "COMPUTE_TIME";
+					amount: number;
+					window:
+						| "MINUTE"
+						| "HOUR"
+						| "DAY"
+						| "WEEK"
+						| "MONTH"
+						| "YEAR";
+					windowLength?: number;
+					counts: "EACH_PERSON" | "SHARED";
+				}>;
+			};
+		};
+		target?: {
 			level: "OWNER" | "EDIT" | "READ_ONLY";
-			endDate: string | null;
-			usageLimit?: Record<string, unknown> | null;
-		} | null;
+			endDate?: string;
+			usageLimit?: {
+				unlimited: boolean;
+				rules: Array<{
+					metric: "TOKENS" | "COST" | "COMPUTE_TIME";
+					amount: number;
+					window:
+						| "MINUTE"
+						| "HOUR"
+						| "DAY"
+						| "WEEK"
+						| "MONTH"
+						| "YEAR";
+					windowLength?: number;
+					counts: "EACH_PERSON" | "SHARED";
+				}>;
+			};
+		};
 		inTarget: boolean;
 	}>
 > {
@@ -367,7 +412,6 @@ export function getPermissionsToCopy(
  * @param params.id - The project or engine id.
  * @param options - Per-call overrides (signal, headers).
  * @returns `people` and `unlistedTeams` (groups whose members come from a login provider); on a model also `publicUse` and `ceilings`.
- * @remarks Unverified nested shape of `usage` (`EffectivePermissionUtils.usageOf`); typed from its Javadoc.
  * @throws {ApiError} 403 if the caller is not an admin; 400 if the resource type is not a project or engine.
  */
 export function getEffectivePermissions(
@@ -379,37 +423,82 @@ export function getEffectivePermissions(
 			category: "USER";
 			id: string;
 			type: string;
-			name: string | null;
-			email: string | null;
+			name?: string;
+			email?: string;
 		};
+		/** The most access any source gives. */
 		level: "OWNER" | "EDIT" | "READ_ONLY";
-		sources: Array<{
-			sourceType: "DIRECT" | "TEAM";
-			/** The group, for a `TEAM` source. */
-			id?: string;
-			type?: string;
-			level: "OWNER" | "EDIT" | "READ_ONLY";
-			endDate: string | null;
-		}>;
+		/** Most access first. */
+		sources: Array<
+			| {
+					sourceType: "DIRECT";
+					level: "OWNER" | "EDIT" | "READ_ONLY";
+					endDate?: string;
+			  }
+			| {
+					sourceType: "TEAM";
+					/** The group's name. */
+					id: string;
+					/** The group's type. */
+					type: string;
+					level: "OWNER" | "EDIT" | "READ_ONLY";
+					endDate?: string;
+			  }
+		>;
 		/** On a model. */
 		usage?: {
-			billedTo: {
-				limitType: string;
-				id: string | null;
-				type: string | null;
-			} | null;
+			/** The source the person's calls are billed to; left out when no limit applies. */
+			billedTo?: {
+				limitType:
+					| "DIRECT"
+					| "TEAM"
+					| "PUBLIC"
+					| "ALL_MODELS"
+					| "PLATFORM";
+				/** The person's id (`DIRECT`, `ALL_MODELS`) or the team's name (`TEAM`). */
+				id?: string;
+				/** The person's login type or the team's type. */
+				type?: string;
+			};
+			/** Whether the billed source is Unlimited. */
 			unlimited: boolean;
-			rules: Array<Record<string, unknown>>;
+			/** The billed source's rules. */
+			rules: Array<{
+				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
+				amount: number;
+				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
+				windowLength?: number;
+				counts: "EACH_PERSON" | "SHARED";
+			}>;
+			/** When a team is billed: the other teams calls move on to, in billing order. */
 			nextTeams: Array<{
 				id: string;
 				type: string;
 				unlimited: boolean;
-				rules: Array<Record<string, unknown>>;
+				rules: Array<{
+					metric: "TOKENS" | "COST" | "COMPUTE_TIME";
+					amount: number;
+					window:
+						| "MINUTE"
+						| "HOUR"
+						| "DAY"
+						| "WEEK"
+						| "MONTH"
+						| "YEAR";
+					windowLength?: number;
+					counts: "EACH_PERSON" | "SHARED";
+				}>;
 			}>;
+			/** Limits defined for the person that do not apply, and why. */
 			notApplied: Array<{
-				limitType: string;
-				id: string | null;
-				type: string | null;
+				limitType:
+					| "DIRECT"
+					| "TEAM"
+					| "PUBLIC"
+					| "ALL_MODELS"
+					| "PLATFORM";
+				id?: string;
+				type?: string;
 				reason:
 					| "DIRECT_WINS"
 					| "TEAM_WINS"
@@ -424,16 +513,45 @@ export function getEffectivePermissions(
 		id: string;
 		type: string;
 		level: "OWNER" | "EDIT" | "READ_ONLY";
-		/** On a model. */
-		usageLimit?: Record<string, unknown> | null;
+		/** On a model, when the team has a limit defined. */
+		usageLimit?: {
+			unlimited: boolean;
+			rules: Array<{
+				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
+				amount: number;
+				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
+				windowLength?: number;
+				counts: "EACH_PERSON" | "SHARED";
+			}>;
+		};
 	}>;
+	/** On a model. */
 	publicUse?: {
 		isPublic: boolean;
-		usageLimit?: Record<string, unknown> | null;
+		usageLimit?: {
+			unlimited: boolean;
+			rules: Array<{
+				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
+				amount: number;
+				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
+				windowLength?: number;
+				counts: "EACH_PERSON" | "SHARED";
+			}>;
+		};
 	};
+	/** On a model: the model's total, checked on every call. */
 	ceilings?: Array<{
 		limitType: "MODEL_TOTAL";
-		usageLimit?: Record<string, unknown> | null;
+		usageLimit?: {
+			unlimited: boolean;
+			rules: Array<{
+				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
+				amount: number;
+				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
+				windowLength?: number;
+				counts: "EACH_PERSON" | "SHARED";
+			}>;
+		};
 	}>;
 }> {
 	return get(
@@ -457,7 +575,7 @@ export function getEffectivePermissions(
  * @param params.userId - The person's user id.
  * @param params.userType - The person's login type (required).
  * @param options - Per-call overrides (signal, headers).
- * @returns The path.
+ * @returns The path. Step `id` / `type` are the person's (`DIRECT`, `ALL_MODELS`) or the team's (`TEAM`), and left out otherwise.
  * @throws {ApiError} 403 if the caller is not an admin; 400 if the engine does not exist or is not a model, or a field is missing.
  */
 export function getUsageLimitPath(
@@ -466,14 +584,8 @@ export function getUsageLimitPath(
 ): Promise<{
 	engineId: string;
 	person: { id: string; type: string };
-	billedLimitType:
-		| "MODEL_TOTAL"
-		| "DIRECT"
-		| "TEAM"
-		| "PUBLIC"
-		| "ALL_MODELS"
-		| "PLATFORM"
-		| null;
+	/** Left out when no limit applies. */
+	billedLimitType?: "DIRECT" | "TEAM" | "PUBLIC" | "ALL_MODELS" | "PLATFORM";
 	ceilings: Array<{
 		layer: "CEILING" | "BILLED";
 		limitType:
@@ -483,8 +595,8 @@ export function getUsageLimitPath(
 			| "PUBLIC"
 			| "ALL_MODELS"
 			| "PLATFORM";
-		id: string | null;
-		type: string | null;
+		id?: string;
+		type?: string;
 		state:
 			| "DEFINED"
 			| "NOT_DEFINED"
@@ -493,20 +605,22 @@ export function getUsageLimitPath(
 			| "CHECKED"
 			| "BILLED"
 			| "NEXT"
-			| "REACHED"
-			| null;
-		reason: "NOT_PUBLIC" | "NO_GRANT" | null;
-		accessSince: string | null;
+			| "REACHED";
+		/** Why a `SKIPPED` step is skipped. */
+		reason?: "NOT_PUBLIC" | "NO_GRANT";
+		/** Team steps: when the person got access through the team (ISO UTC). */
+		accessSince?: string;
 		unlimited: boolean;
-		rulesHidden?: true;
-		rules?: Array<{
+		rules: Array<{
 			metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 			amount: number;
 			window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-			windowLength: number | null;
+			windowLength?: number;
 			counts: "EACH_PERSON" | "SHARED";
-			used: number | null;
-			resetsAt: string | null;
+			/** Used in the current window; left out when not read. */
+			used?: number;
+			/** When the window starts again (ISO UTC); left out when not read. */
+			resetsAt?: string;
 		}>;
 		teamTotal?: {
 			unlimited: boolean;
@@ -514,12 +628,12 @@ export function getUsageLimitPath(
 				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 				amount: number;
 				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-				windowLength: number | null;
+				windowLength?: number;
 				counts: "EACH_PERSON" | "SHARED";
-				used: number | null;
-				resetsAt: string | null;
+				used?: number;
+				resetsAt?: string;
 			}>;
-		} | null;
+		};
 	}>;
 	/** Same shape as `ceilings`. */
 	steps: Array<{
@@ -531,26 +645,41 @@ export function getUsageLimitPath(
 			| "PUBLIC"
 			| "ALL_MODELS"
 			| "PLATFORM";
-		id: string | null;
-		type: string | null;
-		state: string | null;
-		reason: "NOT_PUBLIC" | "NO_GRANT" | null;
-		accessSince: string | null;
+		id?: string;
+		type?: string;
+		state:
+			| "DEFINED"
+			| "NOT_DEFINED"
+			| "SKIPPED"
+			| "NOT_REACHED"
+			| "CHECKED"
+			| "BILLED"
+			| "NEXT"
+			| "REACHED";
+		reason?: "NOT_PUBLIC" | "NO_GRANT";
+		accessSince?: string;
 		unlimited: boolean;
-		rulesHidden?: true;
-		rules?: Array<{
+		rules: Array<{
 			metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 			amount: number;
 			window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-			windowLength: number | null;
+			windowLength?: number;
 			counts: "EACH_PERSON" | "SHARED";
-			used: number | null;
-			resetsAt: string | null;
+			used?: number;
+			resetsAt?: string;
 		}>;
 		teamTotal?: {
 			unlimited: boolean;
-			rules: Array<Record<string, unknown>>;
-		} | null;
+			rules: Array<{
+				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
+				amount: number;
+				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
+				windowLength?: number;
+				counts: "EACH_PERSON" | "SHARED";
+				used?: number;
+				resetsAt?: string;
+			}>;
+		};
 	}>;
 }> {
 	return get(

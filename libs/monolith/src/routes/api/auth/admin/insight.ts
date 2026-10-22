@@ -14,9 +14,9 @@
  * An insight is identified by its project and its id.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../../types";
+import { get, post } from "../../../../utility/http";
+import { path } from "../../../../utility/url";
 
 /**
  * Lists every insight on the server (or in one project), paged, with the
@@ -52,24 +52,24 @@ export function getInsights(
 		project_global: boolean;
 		project_insight_id: string;
 		name: string;
-		view_count: number | null;
-		layout: string | null;
-		created_on: string | null;
-		last_modified_on: string | null;
-		cacheable: boolean | null;
-		cacheMinutes: number | null;
-		cacheCron: string | null;
-		cachedOn: string | null;
-		cacheEncrypt: boolean | null;
+		view_count?: number;
+		layout?: string;
+		created_on?: string;
+		last_modified_on?: string;
+		cacheable?: boolean;
+		cacheMinutes?: number;
+		cacheCron?: string;
+		cachedOn?: string;
+		cacheEncrypt?: boolean;
 		insight_global: boolean;
 		low_name: string;
 		/** The caller's permission ids (1 = owner, 2 = edit, 3 = read only), or `null`. */
-		insight_permission: number | null;
-		project_permission: number | null;
-		insight_group_permission: number | null;
-		project_group_permission: number | null;
+		insight_permission?: number;
+		project_permission?: number;
+		insight_group_permission?: number;
+		project_group_permission?: number;
 		/** The caller's effective permission id on the insight. */
-		permission: number | null;
+		permission?: number;
 		/** `1` when the caller marked it a favorite, otherwise `0`. */
 		insight_favorite: number;
 	}>
@@ -99,10 +99,10 @@ export function getProjectInsights(
 		project_insight_id: string;
 		name: string;
 		insight_global: boolean;
-		exec_count: number | null;
-		created_on: string | null;
-		last_modified_on: string | null;
-		cacheable: boolean | null;
+		exec_count?: number;
+		created_on?: string;
+		last_modified_on?: string;
+		cacheable?: boolean;
 	}>
 > {
 	return get(
@@ -136,8 +136,8 @@ export function getAllProjectInsightUsers(
 		insight_public: boolean;
 		project_id: string;
 		/** Permission name: `"OWNER"`, `"EDIT"` or `"READ_ONLY"`, or `null`. */
-		insight_permission: string | null;
-		user_id: string | null;
+		insight_permission?: string;
+		user_id?: string;
 	}>
 > {
 	return post(
@@ -202,8 +202,8 @@ export function getInsightUsers(
 	totalMembers: number;
 	members: Array<{
 		id: string;
-		name: string | null;
-		email: string | null;
+		name?: string;
+		email?: string;
 		permission: "OWNER" | "EDIT" | "READ_ONLY";
 	}>;
 }> {
@@ -496,9 +496,9 @@ export function getInsightUsersNoCredentials(
 ): Promise<
 	Array<{
 		id: string;
-		username: string | null;
-		name: string | null;
-		email: string | null;
+		username?: string;
+		name?: string;
+		email?: string;
 	}>
 > {
 	return get(

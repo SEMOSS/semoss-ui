@@ -13,9 +13,9 @@
  * return. Access is enforced by the reactor the endpoint runs.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { get, post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Returns the database's type and its engine subtype. Requires view access,
@@ -35,7 +35,7 @@ export function type(
 	options?: RequestOptions,
 ): Promise<{
 	engineId: string;
-	databaseType:
+	databaseType?:
 		| "JENA"
 		| "JENA_TDB"
 		| "SESAME"
@@ -50,9 +50,8 @@ export function type(
 		| "JSON"
 		| "JSON2"
 		| "WEB"
-		| "IMPALA"
-		| null;
-	subtype: string | null;
+		| "IMPALA";
+	subtype?: string;
 }> {
 	return get(
 		path`/api/database-${params.databaseId}/type`,
@@ -62,7 +61,8 @@ export function type(
 }
 
 /**
- * Closes and reopens the database (`ReloadDatabase`).
+ * Closes and reopens the database (`ReloadDatabase`). Requires edit access to
+ * the database, or an admin.
  *
  * @name reload
  * @endpoint POST /api/database-{databaseId}/reload
@@ -70,9 +70,8 @@ export function type(
  * @param params - Path parameter.
  * @param params.databaseId - The database.
  * @param options - Per-call overrides (signal, headers).
- * @returns A pixel return with one `ReloadDatabase` step.
- * @remarks Unverified response shape of `output`.
- * @throws {ApiError} 401 if the session is invalid; 400 if the pixel fails (for example without permission).
+ * @returns A pixel return with one `ReloadDatabase` step whose `output` is `true`.
+ * @throws {ApiError} 401 if the session is invalid; 400 if the pixel fails (for example without permission, or if the database cannot be reopened).
  */
 export function reload(
 	params: { databaseId: string },
@@ -84,7 +83,7 @@ export function reload(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: true;
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;
@@ -101,8 +100,9 @@ export function reload(
 }
 
 /**
- * Runs a raw query against the database
- * (`Database(database=…) | Query(query=…)`).
+ * Builds a raw query against the database
+ * (`Database(database=…) | Query(query=…)`). Requires view access to the
+ * database.
  *
  * @name query
  * @endpoint POST /api/database-{databaseId}/query
@@ -111,9 +111,13 @@ export function reload(
  * @param params.databaseId - The database.
  * @param params.query - The query, in the engine's native language (SQL, SPARQL, …).
  * @param options - Per-call overrides (signal, headers).
- * @returns A pixel return with one step holding the query result.
- * @remarks Unverified response shape of `output`.
+ * @returns A pixel return with one step whose `output` is the serialized query
+ * struct (`HardSelectQueryStructAdapter`), not result rows.
  * @throws {ApiError} 401 if the session is invalid; 400 if `query` is empty or the pixel fails.
+ * @remarks The backend pixel ends at `Query(...)` with no `Collect`, so the
+ * query is never run: the step only echoes the query struct back. Use
+ * `runPixel` with `Database(database=…) | Query(query=…) | Collect(…)` to get
+ * rows.
  */
 export function query(
 	params: { databaseId: string; query: string },
@@ -125,7 +129,11 @@ export function query(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: {
+			qsType: "RAW_ENGINE_QUERY";
+			engineName: string;
+			query: string;
+		};
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;

@@ -13,12 +13,13 @@
  * by the reactor the endpoint runs.
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Runs a similarity search against the vector database (`VectorDatabaseQuery`).
+ * Requires view access to the vector database and to its embeddings model.
  *
  * @name query
  * @endpoint POST /api/vector-{vectorId}/query
@@ -26,12 +27,20 @@ import { path } from "@/utility/url";
  * @param params - Path parameter and JSON body.
  * @param params.vectorId - The vector database.
  * @param params.command - The search text.
- * @param params.limit - Maximum number of matches.
- * @param params.paramValues - Engine-specific options (for example filters).
+ * @param params.limit - Maximum number of matches (default 5).
+ * @param params.paramValues - Engine-specific search options, for example `returnThreshold`, `columnsToReturn` or `useHybridSearch` (FAISS).
  * @param options - Per-call overrides (signal, headers).
  * @returns A pixel return with one step whose `output` is the list of matches.
- * @remarks Unverified response shape of `output`.
+ * Each match carries its chunk's `Source` (document), `Content`,
+ * `Divider` (page or row), `Part`, `Modality` and `Tokens`, plus its `Score`.
+ * Engines vary: FAISS adds `indexClass` (and returns only `Score` plus the
+ * `columnsToReturn` when given), Chroma returns no `Score`, Weaviate adds
+ * `Distance` and Pinecone adds `Id`.
  * @throws {ApiError} 401 if the session is invalid; 400 if `command` is empty or the pixel fails.
+ * @remarks Only `command`, `limit` and `paramValues` are forwarded. The
+ * reactor's `filters` and `metaFilters` (pixel query filters) cannot be sent
+ * through this route, and a `filters` key inside `paramValues` is not a
+ * substitute for them.
  */
 export function query(
 	params: {
@@ -48,7 +57,16 @@ export function query(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: Array<{
+			Score?: number;
+			Source?: string;
+			Content?: string;
+			Divider?: string | number;
+			Part?: string | number;
+			Modality?: string;
+			Tokens?: number;
+			[key: string]: unknown;
+		}>;
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;
@@ -65,17 +83,20 @@ export function query(
 
 /**
  * Lists the documents indexed in the vector database
- * (`ListDocumentsInVectorDatabase`).
+ * (`ListDocumentsInVectorDatabase`). Requires view access to the vector
+ * database.
  *
  * @name listDocuments
  * @endpoint POST /api/vector-{vectorId}/listDocuments
  * @source Monolith/src/prerna/semoss/web/services/local/VectorEngineResource.java#listDocuments
  * @param params - Path parameter and JSON body.
  * @param params.vectorId - The vector database.
- * @param params.paramValues - Engine-specific options.
+ * @param params.paramValues - Engine-specific options, for example `indexClass`.
  * @param options - Per-call overrides (signal, headers).
  * @returns A pixel return with one step whose `output` is the document list.
- * @remarks Unverified response shape of `output`.
+ * `fileSize` (bytes / 1024) and `lastModified` (`yyyy-MM-dd HH:mm:ss`, server
+ * time) are present only when the source file is still in the engine's
+ * documents folder.
  * @throws {ApiError} 401 if the session is invalid; 400 if the pixel fails.
  */
 export function listDocuments(
@@ -88,7 +109,11 @@ export function listDocuments(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: Array<{
+			fileName: string;
+			fileSize?: number;
+			lastModified?: string;
+		}>;
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;
@@ -105,7 +130,8 @@ export function listDocuments(
 
 /**
  * Removes documents from the vector database
- * (`RemoveDocumentFromVectorDatabase`).
+ * (`RemoveDocumentFromVectorDatabase`). Requires edit access to the vector
+ * database.
  *
  * @name removeDocument
  * @endpoint POST /api/vector-{vectorId}/removeDocument
@@ -115,9 +141,8 @@ export function listDocuments(
  * @param params.fileNames - The document file name(s) to remove.
  * @param params.paramValues - Engine-specific options.
  * @param options - Per-call overrides (signal, headers).
- * @returns A pixel return with one `RemoveDocumentFromVectorDatabase` step.
- * @remarks Unverified response shape of `output`.
- * @throws {ApiError} 401 if the session is invalid; 400 if `fileNames` is missing or the pixel fails.
+ * @returns A pixel return with one `RemoveDocumentFromVectorDatabase` step whose `output` is `true`.
+ * @throws {ApiError} 401 if the session is invalid; 400 if `fileNames` is missing, the caller cannot edit the database, or the removal fails.
  */
 export function removeDocument(
 	params: {
@@ -133,7 +158,7 @@ export function removeDocument(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: true;
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;

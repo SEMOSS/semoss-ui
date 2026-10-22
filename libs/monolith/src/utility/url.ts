@@ -3,8 +3,8 @@
  * full URLs.
  */
 
-import { ApiSettings } from "@/lib/api-settings";
-import type { QueryParams } from "@/types";
+import { ApiSettings } from "../lib/api-settings";
+import type { QueryParams } from "../types";
 
 /**
  * Tagged template for paths with parameters. Each interpolated value is

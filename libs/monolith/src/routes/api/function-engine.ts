@@ -13,13 +13,14 @@
  * by the reactor the endpoint runs.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { get, post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Executes the function engine with the given inputs (`ExecuteFunctionEngine`).
- * The server reads `map`, falling back to `inputs`.
+ * Requires view access to the function. The server reads `map`, falling back
+ * to `inputs`.
  *
  * @name execute
  * @endpoint POST /api/function-{functionId}/execute
@@ -30,8 +31,9 @@ import { path } from "@/utility/url";
  * @param params.inputs - Alias of `map`, used only when `map` is absent.
  * @param options - Per-call overrides (signal, headers).
  * @returns A pixel return with one step whose `output` is the function result.
- * @remarks Unverified response shape of `output`.
  * @throws {ApiError} 401 if the session is invalid; 400 if the pixel fails.
+ * @remarks `output` is whatever the function engine's `execute` returns (a Java
+ * `Object` that differs per engine), so it stays `unknown`.
  */
 export function execute(
 	params: {
@@ -64,7 +66,8 @@ export function execute(
 
 /**
  * Returns the function engine's definition: its name, description and
- * parameters (`GetFunctionEngineDefintion`).
+ * parameters (`GetFunctionEngineDefinition`), in the JSON-schema form used for
+ * tool calling. Requires view access to the function.
  *
  * @name definition
  * @endpoint GET /api/function-{functionId}/definition
@@ -73,8 +76,14 @@ export function execute(
  * @param params.functionId - The function engine.
  * @param options - Per-call overrides (signal, headers).
  * @returns A pixel return with one step whose `output` is the definition.
- * @remarks Unverified response shape of `output`.
+ * `parameters` is `{}` when the function has none, and `required` is either
+ * empty or holds one nested list of the required parameter names.
  * @throws {ApiError} 401 if the session is invalid; 400 if the pixel fails.
+ * @remarks The route currently always fails with a 400: the backend runs the
+ * misspelled reactor `GetFunctionEngineDefintion`, but only
+ * `GetFunctionEngineDefinitionReactor` exists, so the pixel errors with
+ * "Cannot find reactor". The `output` type describes what the correctly
+ * spelled reactor returns.
  */
 export function definition(
 	params: { functionId: string },
@@ -86,7 +95,18 @@ export function definition(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: {
+			name: string;
+			description?: string;
+			parameters: {
+				type?: "object";
+				properties?: Record<
+					string,
+					{ type: string; description?: string }
+				>;
+			};
+			required: [] | [string[]];
+		};
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;

@@ -64,6 +64,38 @@ parsed response `data` (`unknown`; `null` when the response is not valid JSON).
 Error messages still use the backend's message when available, otherwise the
 HTTP status. A JSON `null` error response also uses the status fallback.
 
+## REST Endpoints
+
+Every Monolith REST endpoint has a typed, documented function at
+`@semoss/sdk/monolith/<route>`, one subpath per backend resource, named after its URL
+(`/api/auth/admin/project/*` is `api/auth/admin/project`; each file's header lists its
+endpoints). Import only what you use; the rest is not bundled.
+
+```ts
+import { Env } from "@semoss/sdk";
+import { ApiError } from "@semoss/sdk/monolith";
+import { getProjects } from "@semoss/sdk/monolith/api/auth/admin/project";
+
+Env.update({ MODULE: "/Monolith" }); // also configures the routes
+
+try {
+    const projects = await getProjects({ filterWord: "sales", limit: 20 });
+} catch (error) {
+    if (error instanceof ApiError && error.status === 403) {
+        // not an admin
+    }
+}
+```
+
+Each is `(params, options?) => Promise<body>`; `options` is `{ signal?, headers? }`.
+They use the base path and credentials `Env.update` set, fetch and send the CSRF
+token on writes, and keep the session cookie in Node. A failed call throws
+`ApiError` (`status`, the parsed error body as `data`, `endpoint`); in the browser,
+a session redirect navigates and throws `UnauthorizedError`, an `ApiError`. Both come from
+`@semoss/sdk/monolith`, with `ApiClient` for settings `Env` doesn't cover (extra
+headers, credentials, `onRedirect`). In Node, use `ACCESS_KEY` / `SECRET_KEY`: the
+routes don't share the session of the SDK's own `login()` yet.
+
 ## LinOTP Authentication
 
 Use the SDK's `loginOTP(username, pin)` and `confirmOTP(otp)` functions rather

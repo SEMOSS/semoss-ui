@@ -10,18 +10,34 @@ This document provides context for AI coding assistants working with the SEMOSS 
 `@semoss/sdk` is the core client SDK for talking to a SEMOSS backend (pixel/API calls, insight
 state, environment config). It has framework-independent stores and optional **React**
 bindings on a subpath; this is not a blanket Node/SSR compatibility guarantee.
-It has **no internal runtime workspace dependencies**. Treat its published public
-surface as stable and versioned.
+Its one internal dependency is [`@semoss/monolith`](../monolith/AGENTS.md), the typed
+REST client, which it compiles from source and bundles (a `devDependency`, never external),
+so the published SDK carries it and every other package reaches it through the SDK. Treat
+its published public surface as stable and versioned.
 
 ## Build System
 
-- **Bundler**: Vite 8 library mode (Rolldown) → ES modules (`dist/index.mjs`) with types in `dist/types/` (via unplugin-dts).
-- Two entry points via `exports`:
+- **Bundler**: Vite 8 library mode (Rolldown) → ES modules with types in `dist/types/` (via unplugin-dts).
+  One file per module, at its path below `libs/` (`tsconfig.json` `rootDir` is `..`):
+  `dist/sdk/src/…`, `dist/monolith/src/…`, and the same under `dist/types/`.
+- Entry points via `exports`:
 
 | Import | Source entry | Published JavaScript |
 |--------|--------------|----------------------|
-| `@semoss/sdk` | `src/index.ts` | `dist/index.mjs` |
-| `@semoss/sdk/react` | `src/js-frameworks/react/index.ts` | `dist/js-frameworks/react/index.mjs` |
+| `@semoss/sdk` | `src/index.ts` | `dist/sdk/src/index.mjs` |
+| `@semoss/sdk/react` | `src/js-frameworks/react/index.ts` | `dist/sdk/src/js-frameworks/react/index.mjs` |
+| `@semoss/sdk/monolith` | `../monolith/src/index.ts` (`ApiClient`, `ApiError`, `UnauthorizedError`, `RequestOptions`) | `dist/monolith/src/index.mjs` |
+| `@semoss/sdk/monolith/<route>` | `../monolith/src/routes/<route>.ts`, one entry per file | `dist/monolith/src/routes/<route>.mjs` |
+
+- **Monolith is bundled.** It is a `devDependency`, never external, and has no build of its
+  own, so every entry shares one `ApiClient`. Never import `@semoss/monolith` from another
+  package: a second copy would be a second, unconfigured `ApiClient`. If an SDK declaration
+  ever references `@semoss/monolith`, map it in `tsconfig.json` `paths` so unplugin-dts
+  rewrites it to a relative path (that package is not published).
+- **Tree-shaking.** One file per module lets a consumer's bundler keep only what it imports
+  (one route is about 5 KB). `package.json` has **no `sideEffects` field** on purpose: with
+  one, rolldown dropped `env.mjs` and `listener.mjs` (the SDK's only import-time effects) from
+  consumer bundles. Keep every other module's top level to declarations.
 
 The package also ships `skills/` via `files` and `npmSkills.publish.source` in
 [package.json](./package.json). Keep [the SDK chat guide](./skills/sdk-chat/SKILL.md)
@@ -68,14 +84,14 @@ router):
 - **`src/index.ts` and `src/js-frameworks/react`** — the public API. This package is published
   and consumed by every other package; breaking changes ripple everywhere.
 - **`env.ts` / `listener.ts`** — environment wiring and the side-effect import in `index.ts`.
-- **`vite.config.ts`** — build configuration and the two entry points.
+- **`vite.config.ts`** — build configuration and the entries (root, `react`, and monolith's index and route files).
 
 ### When Adding to the SDK
 
 1. Keep framework-agnostic logic out of `js-frameworks/` — React-only code belongs under
    `js-frameworks/react`.
 2. Export new public API from `src/index.ts` (core) or the React entry as appropriate.
-3. Verify both entries build:
+3. Verify every entry builds:
    ```bash
    pnpm --filter @semoss/sdk build
    ```
@@ -94,6 +110,27 @@ and examples against source exports/types. Run focused tests for lifecycle claim
 do not present those checks as backend integration verification. Follow the
 [repository validation guidance](../../skills/react-standard.skill.md#validation),
 with [biome.json](../../biome.json) as lint/formatting authority.
+
+## Monolith Routes and the Env Bridge
+
+The SDK bundles [`@semoss/monolith`](../monolith/AGENTS.md); apps call its typed route
+functions from `@semoss/sdk/monolith/<route>` and import `ApiClient`, `ApiError` and
+`UnauthorizedError` from `@semoss/sdk/monolith` (the SDK root keeps its own
+`UnauthorizedError` and `HttpError`). The SDK's own functions still use its own transport
+(`utility/fetch.ts`); moving them onto the routes is the next step of the
+[integration guide](../monolith/AGENTS.md#integrating-into-the-sdk-and-the-apps).
+
+- Every `Env.update` (including the one at load) sets `ApiClient`'s `basePath` to `MODULE`
+  (empty is the page origin) and its `auth` to `BEARER_TOKEN` (+ `BEARER_PROVIDER`), else
+  `ACCESS_KEY` + `SECRET_KEY`, else `null`. `configure` keeps the routes' CSRF token and
+  cookies unless those values change. In the browser, the SDK sets `onRedirect` when it loads,
+  so an auth redirect goes to `Env.REDIRECT_URL` when set; an app's own `onRedirect` must be
+  configured after `@semoss/sdk` is imported. `Env.CSRF` does not apply: the routes always
+  handle CSRF.
+- `ApiClient` is an escape hatch for what `Env` doesn't cover (extra headers, credentials,
+  `onRedirect`).
+- In Node, the routes keep their own cookie jar, so a session from the SDK's own `login()`
+  is not shared with them; use `ACCESS_KEY` / `SECRET_KEY`. Browsers share cookies.
 
 ## Chat and Agent Ownership
 

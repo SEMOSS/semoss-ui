@@ -12,9 +12,9 @@
  * `{ errorMessage }` body (surfaced as `ApiError`).
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post, repeat } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../../types";
+import { get, post, repeat } from "../../../../utility/http";
+import { path } from "../../../../utility/url";
 
 /**
  * Lists every project on the server for the admin console, optionally filtered,
@@ -58,23 +58,23 @@ export function getProjects(
 	Array<{
 		project_id: string;
 		project_name: string;
-		project_display_name: string | null;
+		project_display_name?: string;
 		project_type: string;
-		project_cost: string | null;
+		project_cost?: string;
 		project_global: boolean;
 		project_discoverable: boolean;
 		project_is_template: boolean;
-		project_catalog_name: string | null;
-		project_created_by: string | null;
-		project_created_by_type: string | null;
-		project_date_created: string | null;
-		project_date_last_edited: string | null;
-		project_portal_published_date: string | null;
-		project_published_user: string | null;
-		project_published_user_type: string | null;
-		project_reactors_compiled_date: string | null;
-		project_reactors_compiled_user: string | null;
-		project_reactors_compiled_user_type: string | null;
+		project_catalog_name?: string;
+		project_created_by?: string;
+		project_created_by_type?: string;
+		project_date_created?: string;
+		project_date_last_edited?: string;
+		project_portal_published_date?: string;
+		project_published_user?: string;
+		project_published_user_type?: string;
+		project_reactors_compiled_date?: string;
+		project_reactors_compiled_user?: string;
+		project_reactors_compiled_user_type?: string;
 		low_project_name: string;
 		[metaKey: string]: unknown;
 	}>
@@ -158,7 +158,7 @@ export function getAllUserProjects(
 		user_id: string;
 		project_id: string;
 		project_name: string;
-		project_display_name: string | null;
+		project_display_name?: string;
 		project_type: string;
 		/** Permission name: `"OWNER"`, `"EDIT"` or `"READ_ONLY"`. */
 		project_permission: string;
@@ -184,8 +184,7 @@ export function getAllUserProjects(
  * @param params.limit - Page size.
  * @param params.offset - Rows to skip.
  * @param options - Per-call overrides (signal, headers).
- * @returns Project rows.
- * @remarks Unverified response shape.
+ * @returns One row per project the user has no permission on, ordered by lower-cased display name.
  * @throws {ApiError} 403 if the caller is not an admin.
  */
 export function getUserProjectsNoCredentials(
@@ -198,7 +197,14 @@ export function getUserProjectsNoCredentials(
 	},
 	options?: RequestOptions,
 ): Promise<
-	Array<{ project_id: string; project_name: string; [key: string]: unknown }>
+	Array<{
+		project_id: string;
+		project_name: string;
+		project_display_name?: string;
+		project_type: string;
+		/** The display name, lower-cased (the sort key); left out when there is none. */
+		low_project_name?: string;
+	}>
 > {
 	return get(
 		path`/api/auth/admin/project/getUserProjectsNoCredentials`,
@@ -292,13 +298,13 @@ export function getProjectUsers(
 	members: Array<{
 		id: string;
 		type: string;
-		name: string | null;
-		email: string | null;
+		name?: string;
+		email?: string;
 		permission: "OWNER" | "EDIT" | "READ_ONLY";
-		end_date: string | null;
-		permission_granted_by: string | null;
-		permission_granted_by_type: string | null;
-		date_added: string | null;
+		end_date?: string;
+		permission_granted_by?: string;
+		permission_granted_by_type?: string;
+		date_added?: string;
 	}>;
 }> {
 	return get(path`/api/auth/admin/project/getProjectUsers`, params, options);
@@ -613,16 +619,16 @@ export function getProjectUsersNoCredentials(
 		searchTerm?: string;
 		limit?: number;
 		offset?: number;
-		msGraphLookup?: string;
+		msGraphLookup?: boolean;
 	},
 	options?: RequestOptions,
 ): Promise<
 	Array<{
 		id: string;
 		type: string;
-		username?: string | null;
-		name: string | null;
-		email: string | null;
+		username?: string;
+		name?: string;
+		email?: string;
 		[key: string]: unknown;
 	}>
 > {
@@ -641,10 +647,9 @@ export function getProjectUsersNoCredentials(
  * @source Monolith/src/prerna/semoss/web/services/local/auth/AdminProjectAuthorizationResource.java#approveProjectUserAccessRequest
  * @param params - Form fields.
  * @param params.projectId - The project.
- * @param params.requests - The requests to approve. Requesters are notified (and emailed when configured).
+ * @param params.requests - The requests to approve, each the request's id, the requester's user id and the permission to grant (`PermissionBatchUtils.approvalChanges` / `markApproved`). Requesters are notified (and emailed when configured).
  * @param options - Per-call overrides (signal, headers).
  * @returns `{ success: true }`.
- * @remarks Unverified request shape (map keys read in `SecurityProjectUtils.approveProjectUserAccessRequests`).
  * @throws {ApiError} 403 if the caller is not an admin.
  */
 export function approveProjectUserAccessRequest(
@@ -653,7 +658,6 @@ export function approveProjectUserAccessRequest(
 		requests: Array<{
 			requestid: string;
 			userid: string;
-			type: string;
 			permission: "OWNER" | "EDIT" | "READ_ONLY";
 		}>;
 	},

@@ -10,9 +10,9 @@
  * Each authorization key (or session) gets its own cached insight.
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Sends one MCP JSON-RPC message over the streamable-HTTP transport

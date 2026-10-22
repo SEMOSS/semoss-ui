@@ -12,9 +12,9 @@
  * `ApiClient.configure({ auth })`).
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { get, post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Returns the workspace's A2A agent card: its name and description (from the

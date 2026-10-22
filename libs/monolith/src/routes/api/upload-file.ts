@@ -16,9 +16,9 @@
  * (surfaced as `ApiError`).
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Checks proposed column headers for reserved words, the illegal characters

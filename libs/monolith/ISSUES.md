@@ -1,235 +1,109 @@
-# Backend issues
+# Outstanding frontend tasks
 
-These were found while syncing `@semoss/monolith` with Monolith. Each line names the
-endpoint. The [sync skill](../../skills/semoss-sync.skill.md) adds new findings
-here and removes ones that have been fixed. Response shapes marked
-`@remarks Unverified response shape.` in the code are listed under each resource.
+Front-end work still open for `@semoss/monolith`. Route files are under
+`src/routes/`. Other paths start at the repo root. Tick an item off by deleting it.
 
-## `/api/auth/project`, `/api/auth/engine`, `/api/auth/insight`
+## Integrate into the SDK and the apps
 
-- **Unverified shape:** `getProjectUsersNoCredentials` and `getEngineUsersNoCredentials` in Microsoft-directory mode (`MsGraphUtility.nextPage`).
-  - Directory lookup is on by default when it's enabled.
-  - A non-zero `offset` continues a search whose paging state is kept in the session.
-- **GET and POST duplicates:** `getProjects` / `getProjectsPost` and `getEngines` / `getEnginesPost`.
-  - Only the POST reads `metaFilters`; the GET parameter is commented out.
-  - Neither one passes `effectivePermissions`, `createdBy`, `createdByMe`, the type sort or `onlyTemplates`, even though the reactors support them.
-  - The project POST ignores `onlyFavorites`.
-- `GET /api/auth/insight/getProjectInsights`:
-  - Owner rows use the key `CONSTANT_OWNER` instead of `permission`, because of an unaliased `QueryConstantSelector`.
-  - It returns `[]` with no error when the caller has read-only access or none.
-- `POST /api/auth/engine/setEngineDiscoverable` checks `adminOnlyEngineSetPublic` and returns 403 with the message "User session is invalid".
-- `POST /api/auth/insight/setInsightFavorite` declares an extra unannotated `String appId` entity parameter next to the form. Two entity parameters is invalid or fragile in JAX-RS. The parameter is unused.
-- **Unused query parameters:** `searchTerm` on `getUserProjectPermission` and on `getProjectInsights`.
-- `GET /api/auth/insight/getInsightUsers`:
-  - `userId` is really a search term (it matches id, name, username and email).
-  - Member rows have no `type` or `end_date`, unlike project and engine members.
-- **Inconsistent field names:** project deny uses `requestids`; engine and insight deny use `requestIds`.
-- **Inconsistent `endDate`:**
-  - Project endpoints read a top-level `endDate`.
-  - Engine and insight endpoints hard-code it to `null`, except the engine bulk add and edit, which read `endDate` on each row.
-- `POST /api/auth/insight/addInsightUserPermissions` returns 400 instead of 403 when the caller has no permission.
-- The single-user insight add, edit and remove endpoints skip the `adminOnlyInsightAddAccess` check that the bulk insight endpoints apply.
-- `POST /api/auth/insight/addInsightUserPermission` silently adds the target user to the project as READ_ONLY.
-- **Inconsistent success bodies:**
-  - `propagateProjectDependencyPermission` returns `{ "Successfully processed permission propagation": true }`.
-  - The `set*Visibility`, `setProjectFavorite` and `setEngineFavorite` endpoints return a bare `true`.
-  - `setInsightFavorite` returns `{ success: true }`.
-- **Approval batches ignore each request's `type`:** `approvalChanges` passes a null type. Notifications still use the type.
-- `GET /api/auth/insight/getInsights` takes `limit` and `offset` as strings, with no numeric validation.
-- **Legacy duplicate keys:**
-  - Engine rows repeat `app_*` and `database_*` aliases.
-  - Insight rows repeat `app_id`, `app_name` and `app_insight_id`; the backend has a TODO to remove them.
-- **`userT` is a no-op on project lists:** the vote code is commented out.
-- **Loose favorite types:** `*_favorite` columns come from a coalesce to 0, so they are typed `boolean | number`.
+Steps 1 (bundled into the SDK as `@semoss/sdk/monolith` and `@semoss/sdk/monolith/<route>`)
+and 2 (the `Env` → `ApiClient` bridge) are done. Do the rest in order, each as its own
+change; the details and the gotchas are in [AGENTS.md](./AGENTS.md#integrating-into-the-sdk-and-the-apps).
 
-## `/api/auth` (UserResource), config, session, themes, form, health, token, adminconfig
+- [ ] 3. Move the SDK's own calls (`libs/sdk/src/api/*`, the stores) onto the routes, keeping public signatures.
+- [ ] 4. Add `useApi` to `@semoss/sdk/react` and replace the client's string-keyed `useAPI`.
+- [ ] 5. Move the apps off `get` / `post` / raw `fetch` one module at a time, then delete `packages/client/src/api/` and `packages/automation/src/api/`.
+- [ ] 6. Remove the SDK's `get` / `post` / `CSRF` / `HttpError`, the unused `partial` and `propagateUserPermissions`, and the thin wrappers; set the SDK version to the backend's.
 
-- **Security, `/api/form/*`:** `throwErrorIfNotAdmin` and `throwErrorIfNotSysAdmin` throw inside their own `try/catch(Exception)`, so the admin checks never fail. Any CAC or SAML user can call `modifyUserAccess`, `renameInstance` and `certifyInstance`.
-- **Security, `GET /token/getToken`:** hands out an IP-bound token with no credentials when API-user token checking is off.
-- **Security, `GET /api/auth/loginProperties` and `getAllLoginProperties`:** return `social.properties`, including OAuth client secrets, to admins.
-- **Security:** `FormResource` queries and `AdminThemeUtils.setActiveTheme` build SQL by string concatenation, relying only on escaping.
-- **Bug, `/token/getToken`:** in cluster mode `dateAdded` actually holds the IP address. `SecurityTokenUtils` returns `{ val, ipaddr, clientid }`.
-- **Bug, `GET /api/themes/getAdminThemes`:** `Integer` limit and offset are unboxed to `int`, so leaving either out throws a NullPointerException (500). The wrapper makes both required.
-- **Bug, `AdminStartupFilter`:** calls `sendError(302/404)` but doesn't return, so the filter chain still runs.
-- **Bug, `SchedulerFilter`:** an invalid `-execId` returns an empty 200.
-- **Bug, `GET /api/auth/login/producthunt`:** has `@Path` but no HTTP verb, so it acts as a sub-resource locator and the route is broken.
-- **Errors returned with a 200:** `POST /adminconfig/setInitialAdmins` without `ids` returns 200 with `{ errorMessage }`. `GET /api/auth/userinfo/{provider}` also returns 200 with `{ errorMessage }` on failure.
-- **`POST /api/form/modifyUserAccess`:** throws a NullPointerException when `addOrRemove` is missing.
-- **`GET /api/form/getUserInstanceAuth`:** has the typo `@Produces("applicaiton/json")`.
-- **Error bodies don't use `{ errorMessage }`:**
-  - `/api/form/*` returns a bare JSON string.
-  - `/api/themes/*` returns `{ error }`, or `false` with a 400.
-  - `/api/session/*` returns `{ output: "Invalid session" }`.
-  - The `/api/auth` login-property routes return a bare string with a 400, or a 401 for "not admin".
-- **Logins redirect by default:** `login`, `loginLDAP`, `loginLinOTP` and `logout` redirect unless `disableRedirect=true`. A native login then follows a 302 to an HTML page instead of returning JSON. Callers should pass `disableRedirect: true`.
-- **`POST /api/session/invalidateSession`:** always answers 302, so the promise always rejects. The wrapper clears the session in `.finally`.
-- **Input mangling:** passwords (`login`, `loginLDAP`, `createUser`, `changeADPassword`) and theme `json` go through `inputSQLSanitizer`, which doubles `'`.
-- **Unverified or loose shapes:**
-  - `loginLinOTP` is unverified.
-  - Loosely typed: `getConfig` pipeline and widget filters, `/api/schedule/executePixel` `output`, and the extra Microsoft Graph fields in `/api/authorization/searchForUser`.
-- **GET and POST duplicates:** `/token/getToken` (`getToken` / `getTokenPost`).
-- **Odd parameters:**
-  - The scheduler form keys have a leading dash (`-execId`, `-jobId`, `-jobGroup`, `-userAccess`).
-  - The `login2/*` routes take `connectionId` as a query parameter.
-- **`/api/session/cleanSession`:** blocks for 10 seconds by design.
-- **Health probes:** a 503 from `/health/ready` or `/health/details` surfaces as `ApiError`, with the body in `data`.
+## Trace unverified response shapes
 
-## `/api/auth/group*`, `/api/auth/permissionBatch`, `/api/auth/user`
+Each of these has `@remarks Unverified …`. Trace the shape from the Java, tighten
+the type and remove the remark.
 
-- **Security, `POST /api/auth/user/setupResetPassword`:** needs no session and uses the caller's `url` for the link in the reset email. An attacker can send a genuine reset email whose link delivers the token to a host they control, so the account can be taken over.
-- **Security, `GET /api/auth/group/{engine,project,insight}/getGroup*Permission`:** uses `respondAllowingAnonymous` and never checks the caller. Any session, anonymous included, can read any group's permission on any resource.
-- **`GET /api/auth/user/getUserAccessKeys`:** allows anonymous sessions.
-- **`POST /api/auth/user/deleteUser`:** is a stub. It returns a null `Response` and deletes nothing.
-- **`POST /api/auth/user/editUser`:** always overwrites both EMAIL and NAME, so a missing field is saved as `""`.
-- **Passwords are altered:** `resetPassword` and `changePassword` run `inputSQLSanitizer` on the password.
-- **`POST /api/auth/user/changePassword`:**
-  - Answers 401 for every failure, including bad input.
-  - Wrong-password errors return `{ success: false, userId, message }` with no `errorMessage`.
-- **401 for most failures:** `setupResetPassword` and `resetPassword` return 401 for most errors, including an invalid token.
-- **`POST /api/auth/user/deleteUserAccessKey`:** returns 400 with `{ success: false }` when the delete fails.
-- **`GET /api/auth/group/getNonGroupMembers`:** `msGraphLookup` defaults to true, so it searches Microsoft Graph when the directory is enabled. Directory fields are unverified.
-- **Parameter naming:** the group engine endpoints mix `engineId` (add) with `appId` (get, edit, remove).
-- **Key casing:** `getGroupsWithAccessTo{Engine,Project,Insight}` use upper-case keys (`ID`, `TYPE`, `PERMISSION` as a 1/2/3 id, `DATEADDED`, `ENDDATE`). The other group lists use lower case, and the insight version has no `ENDDATE`.
-- **Inconsistent anonymous access:** `getGroupsWithAccessToInsight` and `getAvailableGroupsForInsight` reject anonymous sessions, but the engine and project versions allow them.
-- **`getGroup*Permission`:** returns `{}` when the group has no access (Gson drops null values).
-- **Unverified shapes, permission batches:**
-  - `getPermissions`: price and usage limits.
-  - `getPermissionsToCopy`: usage limits.
-  - `getEffectivePermissions`: the model `usage` fields.
-  - `getUsageLimitPath`: step enums.
-  - `getMyUsageLimitPath(s)`: steps.
-- **Target types:** `getEffectivePermissions` accepts only `PROJECT` or `ENGINE`, and `getPermissions` rejects `INSIGHT`, although the shared `toTarget` parser accepts every target type.
+- [ ] Microsoft directory rows: `getProjectUsersNoCredentials` (`api/auth/project.ts`, `api/auth/admin/project.ts`), `getEngineUsersNoCredentials` (`api/auth/engine.ts`, `api/auth/admin/engine.ts`), `getNonGroupMembers` (`api/auth/group.ts`, `api/auth/admin/group.ts`)
+- [ ] `api/engine.ts`: `getPipeline` (`idMapping`, `pixelParsing`), `all` (keys beyond the typed ones), `agentRunStreaming` (`artifacts` items, `reviewOutcome`, `progress.workflow`)
+- [ ] `api/engine/insight.ts`: `doMethod`
+- [ ] `api/exec.ts` and `api/share.ts`: `getInsightState` `output`
+- [ ] `api/project.ts`: `jdbc` (binary FST), `jdbcJson`, `jdbcJsonPost`
+- [ ] `api/model.ts`: `llmStreaming` chunks
+- [ ] `api/ext/mcp.ts`: `comms`. `api/ext/a2a.ts`: `agentCard`, `rpc`
+- [ ] `api/auth/user.ts`: `deleteUser` (empty body today)
+- [ ] `api/engine/legacy-engine.ts`: `insight`, `output`, `getAuditLogForEngine` (deprecated, low priority)
 
-## `/api/engine` (NameServer), `/api/project-{id}`, engine-type routes, exec, share
+## Fix frontend types that disagree with the Java
 
-**Deprecated:**
-- `POST /api/engine/partial` is `@Deprecated`. Use `pixelJobStreaming`.
-- These sit under NameServer's "Legacy code that isn't really used anymore" section:
-  - `GET /api/engine/mediawiki/tags`
-  - `GET /api/engine/all`
-  - `GET /api/engine/add` (its body is commented out, so it does nothing)
-  - `GET /api/engine/central/context/getAutoCompleteResults`
-  - `POST /api/engine/central/context/getSearchInsightsResults`
-- `OldEngineResource` (`/api/engine/e-{engine}/*`: `insight`, `output`, `commitFormData`, `getAuditLogForEngine`) is `@Deprecated`. Use `runPixel`.
+- [ ] `libs/shared/src/types.ts` `Project`: `project_global` is a boolean and `group_permission` is a permission id (1, 2 or 3), not strings.
+- [ ] `libs/sdk/src/api/permissions.ts` `getProjectUsersNoCredentials` / `getEngineUsersNoCredentials`: typed `User[]`, but the rows are `{ id, type, name?, email?, username? }`. Then drop the second cast in `libs/shared/src/components/members/add-members.tsx:243`.
+- [ ] `libs/sdk/src/types.ts` agent-run types:
+  - `PendingAgentAction`: the `T | null` fields arrive missing, not null.
+  - `AgentRunSnapshot`: `roomId` is missing for runs delegated to a person, and `progress`, `artifacts`, `reviewOutcome` and `warnings` are not typed.
+  - Tool item `name` and `arguments`: absent on Claude Code tool events.
+  - Decide whether `AgentRunItem` gets a `progress` kind. The `agentRunStreaming` route sends `progress` items, so moving `AgentStore.watch` onto it (integration step 3) has to either type them or drop them.
+- [ ] `packages/collaboration/src/features/rooms/api/agent-run-api.ts:86-89` (likely runtime bug): the zod tool item requires `name` and `arguments`, so `pollSchema.parse` (line 181) throws on a completed Claude Code tool call and breaks the poll.
+- [ ] `libs/sdk/src/stores/insight/insight.store.ts`:
+  - `askModel`, and `packages/playground/src/components/prompt/PromptOptimizer.tsx`, type `response` as a `string`. It is a tool-call list for `TOOL` and a map for `IMAGE` / `TTS`.
+  - `queryDatabase` types the `Collect` output as a tuple. It is one object: `{ data: { values, headers, rawHeaders }, numCollected, taskId }`.
+- [ ] `libs/sdk/src/api/access.ts`: `UsageNotApplied.limitType` should be `UsageBilledLimitType`. `UsageBilledTo` and `UsageLimitPathStep` say `id` / `type` are the team's, but for `DIRECT` and `ALL_MODELS` they are the person's.
+- [ ] `packages/client/src/stores/config/config.store.ts` `RootConfig`: `availableProviders[].label` and `msGraphLookup` are always present, `version` can be missing, and `MetaKey.display_options` is nullable.
+- [ ] `packages/client/src/api/ms-graph.ts` `MsGraphAvailability`: `notificationBaseUrl` is always present.
+- [ ] Playground vector `listDocuments`:
+  - `packages/playground/src/pages/knowledge-page.tsx` types `fileSize` as a `string`. It is a number, and `fileSize` / `lastModified` can be missing.
+  - **Display bug:** `knowledge-detail-page.tsx` `parseSizeBytes` reads the KiB value as bytes, so sizes show 1024× too small. `packages/client/src/components/settings/file-table.tsx` gets this right.
 
-**Findings:**
-- **Security: the polling endpoints don't check job ownership.** `console`, `error`, `partial`, `pixelJobStreaming` and `terminate` take any jobId and never check the session, so any user can read another job's output or cancel it. Only `status` and `result` check.
-- **Security, `POST /api/project-{id}/runReactor/{name}`:** runs any custom reactor with only view access.
-  - Its error message mentions updating the SMSS.
-  - The not-found message prints `null` instead of the reactor name.
-- **No access checks in the engine-type resources themselves:** database, storage, vector, function and model routes rely on the reactor to enforce access. `database-{id}/reload` has no pre-check.
-- **Locators return error `Response`s instead of throwing:** the NameServer `i-` and `e-` locators, `exec` and `share`. The intended 400/401 may never be sent.
-- **`GET /api/model-{id}/llmStreaming`:** loops until `PROGRESS_COMPLETE`, so a job that ends as ERROR or CANCELED never ends the SSE loop and holds a thread.
-- **`GET /api/project-{id}/downloadProjectAsset/{relPath}`:**
-  - `{relPath}` matches a single segment, and Tomcat rejects `%2F`, so nested asset paths can't be reached.
-  - It reads files as UTF-8 strings, which corrupts binary assets.
-- **`GET /api/project-{id}/embedLogo`:** reads the image into a `String`, which corrupts it. Its `insightId` is unused.
-- **`POST /api/engine/e-{engine}/getAuditLogForEngine`:** double-encodes its JSON, and its errors too.
-- **Error envelopes:** ProjectResource and EngineRouteResource send many 401s as `{ error }` instead of `{ errorMessage }`.
-- **Errors returned with a 200:**
-  - `do-{method}` on a non-legacy insight
-  - `getSearchInsightsResults` with a bad filter
-  - `jdbc_json` and `jdbc_csv` failures; these also leak server stack frames
-- **`POST /api/engine/runReactorMCP` isn't proper JSON-RPC:**
-  - The response has no `jsonrpc` or `id`.
-  - `method` is never checked.
-  - An unknown reactor fails outside the `try` block (500).
-- **Insight leaks:**
-  - `exec/.../getInsightState` stores and re-runs the insight but never drops it.
-  - OldEngine `output` creates an insight on every call.
-- **Wrong alias helper:** `exec` resolves the project alias with the engine helper `SecurityQueryUtils.testUserEngineIdForAlias`.
-- **NPE with no session:** `getAutoCompleteResults` and `getSearchInsightsResults`.
-  - `getSearchInsightsResults` also runs its `filterData` JSON through `inputSQLSanitizer` and ignores `tags`.
-- **Unused parameters:**
-  - `runPixelAsync`: `dropLogging`
-  - the `i-` locator: `dataFrameType`
-  - the `e-` locator: `api`
-  - `add`: `api` and `database`
-- **Duplicate routes:**
-  - `image/upload` is an alias of `projectImage/upload`.
-  - `jdbc_json` and `jdbc_csv` are each both GET and POST, with identical parameters.
-- **`jdbc_csv` with a single frame:** calls `query` instead of `queryCSV`, then treats the result as a file path.
-- **SQL bodies:** `jdbc*` can read SQL from a raw request body, but the wrappers send `sql` in the query string, so long SQL is limited by URL length.
-- **`result` and `status`:** return the bare string `"NULL"` with a 200 when there is nothing.
-- **`centralNameServer` locator:** leads to `CentralNameServer`, whose HTTP methods are all commented out.
-- **Unverified shapes:**
-  - pixel step `output` values from the engine-type routes, exec and share
-  - `getPipeline` `idMapping` and `pixelParsing`
-  - agent-run events, `pendingActions` and `progress`
-  - `pixelJobStreaming` chunks and `partial` keys
-  - `all` and `getSearchInsightsResults` (only key columns are typed)
-  - `do-{method}`, the legacy `insight` and `output` returns, the `jdbc*` outputs and the audit log
+## Add missing URL builders
 
-## `/api/auth/admin/*`
+- [ ] `api/project.ts` / `api/engine-route.ts`: add `projectImageDownloadUrl` / `imageDownloadUrl`. Then use them in `libs/shared/src/hooks/use-catalog-image.ts` and `packages/collaboration/src/features/agents/api/agent-image.ts`, which build the URL by hand. `agent-image.ts` also sends `fallback=false`, which Java ignores.
+- [ ] `api/ext/mcp.ts`: add a `commsUrl` builder. `packages/client/src/components/shared/mcp-usage.tsx` builds the MCP URL by hand.
 
-- **401 instead of 403 for non-admins:** the engine, insight and user admin resources use the old `performAdminCheck`. The group, project, model-usage and permission-batch resources use `respondAsAdmin`, which answers 403.
-- **`POST /api/auth/admin/user/registerUser`:**
-  - Its status codes are inverted: 400 for a non-admin, 401 for an invalid email, phone or password.
-  - It runs the password through `inputSQLSanitizer`.
-- **`POST /api/auth/admin/user/editUser`:**
-  - Rewrites the whole row: missing fields are cleared, and admin, publisher and exporter become false.
-  - A missing `id` or `type` throws an uncaught NullPointerException (500).
-- **`POST /api/auth/admin/insight/deleteProjectInsights`:** answers 401 when the delete fails, and its Javadoc is copy-pasted.
-- **Security:** `SecurityAdminUtils.getAllUserInsightAccess` (behind `getAllProjectInsightUsers`) builds raw SQL with `projectId` and `userId`. Only `inputSQLSanitizer` protects it.
-- **`GET /api/auth/admin/engine/getAllUserEngines`:** selects the alias `app_permission` twice (the id, then the name).
-- **Unused parameter:** `GET /api/auth/admin/insight/getProjectInsights` accepts `searchTerm` but never uses it.
-- **Unsanitized input:** `getNumUsers` and `getNumAPIUsers` don't sanitize `filterWord`, unlike their list endpoints.
-- **Wrong Javadoc:** `AdminModelUsageResource` says non-admins get 401; it actually answers 403.
-- **Group resource naming:**
-  - Write endpoints take `type`, while read endpoints take `groupType`.
-  - `deleteGroupMember` vs `removeGroupManager`.
-  - Engine deny takes `requestIds`, while insight deny takes `requestids`.
-  - The Java method behind `updateInsightUserPermissions` is named `updateAppUserPermissions`.
-- **Permission formats:** engine, insight and project grants take names (`OWNER`, `EDIT`, `READ_ONLY`), but group grants take ids (1, 2, 3).
-- **Hard-coded `endDate = null`:** end dates are silently unsupported on the engine and insight admin grants.
-- **Directory lookup by default:** `msGraphLookup` defaults to true when the directory is enabled. Send `false` to search the security database.
-- **Unverified shapes:**
-  - the Microsoft directory lookups (`getEngineUsersNoCredentials`, `getNonGroupMembers`)
-  - `price` in `getPermissions`
-  - the `usage` rows in `getEffectivePermissions`
-  - `engine_tool_app`
+## Revisit wrappers that work around the backend
 
-## All resources
+These wrappers work around backend behaviour. Change them when the backend changes.
 
-- **Nulls are dropped:** Gson isn't configured with `serializeNulls`, so null values are left out of response maps. Fields typed `X | null` may actually be missing.
+- [ ] `api/auth.ts` `login`, `loginLDAP`, `loginLinOTP`, `logout`: these send `disableRedirect: true` by default, because otherwise the backend redirects to an HTML page.
+- [ ] `api/session.ts` `invalidateSession`: always rejects (the backend always answers 302), and it clears the session in `.finally`.
+- [ ] `api/themes.ts` `getAdminThemes`: `limit` and `offset` are required, because the backend throws without them.
+- [ ] `api/ext/a2a.ts` `rpc`, `api/ext/mcp.ts` `comms`: these set `Accept` to choose which Java method runs.
+- [ ] `api/function-engine.ts` `definition`: always fails with a 400 (misspelled reactor), and `required` is typed as the nested `[] | [string[]]`.
+- [ ] `api/database.ts` `query`: returns the query struct, not rows. Callers use `runPixel` with `Collect`.
+- [ ] `api/vector.ts` `query` (no `filters` / `metaFilters`) and `api/storage.ts` `deleteFromStorage` (no `leaveFolderStructure`): use pixels until the REST routes forward them.
+- [ ] `api/engine.ts` `pixelJobStreaming`: the `stream_type` union lists only the known chunk types, because the backend has no contract for them.
+- [ ] `api/project.ts` `jdbc*`: send `sql` in the request body of the POST variants, not in the query string, so long SQL isn't limited by URL length.
 
-## `/api/model/*`, `/api/ext/*`, uploads, images, browser sessions, `/github`, `/msgraph`
+## Other follow-ups
 
-**Deprecated:**
-- `POST /api/images/databaseImage/upload` is `@Deprecated`. Use `uploadEngineImage` (`/api/images/engine/upload`).
-  - It also sets `message` twice, so the old text wins.
-- `POST /api/images/databaseImage/delete` is `@Deprecated`. Use `deleteEngineImage`.
+- [ ] `packages/automation/src/components/canvas-editor/tabs/run-node-value-viewer.tsx`: imports `getAutomationRunNodeValue` from `src/api`, which never existed, and nothing imports the viewer. Implement it or delete it.
+- [ ] `libs/sdk/src/api/chat.ts` `addRoomToolExecution` and `getUserRooms`: nothing in the repo uses them, but `libs/sdk/skills/sdk-chat/SKILL.md` documents them. Decide whether to remove them.
+- [ ] `libs/sdk/skills/sdk-chat/SKILL.md` (~line 310): says `runAgent` has no `agentParams` parameter, but it now has one.
+- [ ] `src/routes/api/project.ts` header (lines 12-14): says `{ error }` 401s leave `ApiError.message` as the status text. It now carries the `error` text.
+- [ ] `libs/panels/src/types/access.types.ts:58`: the comment says N panels "cost one pixel", but the lookup is a REST call.
+- [ ] `libs/sdk/src/js-frameworks/react/contexts/Insight.context.tsx:8`: imports the package root barrel (`"../../.."`). Import from the defining files instead.
+- [ ] Endless polling:
+  - `libs/shared/src/components/notebook/notebook.tsx` stops polling the job's console only on `ProgressComplete`, `Streaming` or `Complete`. A job that ends `Error`, `Canceled` or `UnknownJob` is polled every second until the user interrupts.
+  - `packages/automation/src/components/canvas-editor/automation-canvas.tsx` polls job streaming forever while it returns `UnknownJob`.
+- [ ] `automation-canvas.tsx` `AutomationNodeStreamData`: once it reads `pixelJobStreaming` (integration step 5), derive it from the route's `automation` chunk type instead of listing the fields by hand.
+- [ ] `packages/cli`:
+  - Run a real `deploy` against a SEMOSS server. So far only a local upload smoke test has been run.
+  - `package.json` `exports` points at `./lib/index.js`, which doesn't exist.
 
-**Findings:**
-- **Security, `POST /api/browser-sessions/{id}/recording/save`:**
-  - Writes into any `project`'s assets folder with no permission check and no sanitizing.
-  - Its response leaks the absolute server path.
-- **Security, MCP:**
-  - `access_key` is declared as a query parameter but never read, which invites putting secrets in URLs.
-  - `initSession` dereferences a null `user` (NPE).
-- **Security, `GET /github/install/app`:** stores `projectId` with no owner check; the check only happens later, in the callback.
-- **A2A `agentCard`:** no auth check, which is probably intended for discovery. It reveals workspace names and descriptions.
-- **Content negotiation picks the method:** `POST /api/ext/a2a/workspace/{id}/rpc` and `POST /api/ext/mcp/{toolbox_id}/comms` are each two Java methods, chosen only by `Accept`. The wrappers set `Accept`.
-- **OpenAI-compatible routes:**
-  - `chat/completions` casts `append_full_prompt` to `String`, so a boolean throws a 500.
-  - `embeddings` requires `input` to be a list; a single string fails.
-  - `/completions`:
-    - requires a string `prompt`
-    - has no `/v1` alias
-    - always returns `finish_reason: "length"`
-    - fakes streaming by sending the whole answer as one chunk
-  - The GET `/models` routes declare `@Consumes("application/json")`.
-  - `responses` doesn't add `insight_id` to the session hash.
-- **Error bodies don't use `errorMessage`:**
-  - Anthropic returns `{ type: "error", error }`.
-  - `browser-sessions` returns `{ error }`.
-  - GitHub and msgraph return `{ status, reason }`.
-  - A2A returns a JSON-RPC `error`.
-- **Wrong status codes:**
-  - A2A returns an unsupported JSON-RPC method (-32601) with HTTP 200.
-  - FileUploader and ImageUploader return 400 for auth and permission failures.
-- **msgraph `subscribe` and `renew`:** read `getParameter`. The Javadoc shows query parameters, but form bodies also work.
-- **Unverified shapes:**
-  - A2A `agentCard` and `rpc` (Gson reflection over a2a-java-sdk classes)
-  - MCP `comms`
-  - `browser-sessions` `recording` steps
+## Consolidate helpers
+
+- [ ] Collaboration `features/settings/draft-folder-api.ts` and `features/onboarding/onboarding-api.ts`: `str` duplicates utility `asString`. `features/collaboration/live/live-state.ts` has a close variant.
+
+## Test, type and lint debt (fails on HEAD too)
+
+- [ ] Failing tests:
+  - client: `assistant-settings.test.tsx`, `team-resource-access-panel.test.tsx`
+  - shared: `audit-logs-data-table.test.tsx`, `entity-header.test.tsx`, `file-explorer-item.test.tsx`
+  - collaboration: `email-draft-dialog.test.tsx`
+  - playground:
+    - `workspace-edit.test.tsx`: no `InsightProvider` or `useInsight` mock.
+    - `room-attachments.test.ts`: calls the removed `room.teamwork`.
+- [ ] `packages/client/src/features/audit-trail/audit-trail.test.tsx`: unhandled `ResizeObserver is not defined`. Stub it in the test setup.
+- [ ] `libs/shared/src/components/notebook/notebook-markdown-cell.spec.tsx`: failed once in a full run but passes on its own. Probably flaky.
+- [ ] Existing type errors in client, automation, collaboration, terminal, connectors, playground, renderer and chrome-extension (run `tsc --noEmit -p .` in each). Take a per-package baseline before each integration step.
+- [ ] Biome `useExhaustiveDependencies`: `libs/renderer/src/hooks/useBlock.tsx` (13), `packages/terminal/src/components/terminal-console/terminal-console.tsx` (6), `packages/terminal/src/components/terminal/upload-modal.tsx` (3), `packages/browser-automation/src/App.tsx` (2, plus `noDefaultExport`). Fixes change hook identities, so give each one its own change.
+- [ ] `packages/cli/src/commands/init.ts`: `noUnusedVariables`, `useOptionalChain`. Keep the default export, because oclif needs it.
+- [ ] `packages/terminal/src/components/terminal/upload-modal.tsx`: replace the hand-rolled `fixed inset-0` overlay with `Dialog` + `Button`, and drop `z-[100]` / `min-w-[420px]`.
+- [ ] Client block settings:
+  - `image-block/SelectionTabs/App.tsx`: untyped props and `usePixel<{ data: any }>`.
+  - The other `SelectionTabs` files use default exports.
+  - `settings/shared/PDFViewerSettings.tsx`: several components in one file, arbitrary-value classes, and a file-level `useExhaustiveDependencies` suppression.

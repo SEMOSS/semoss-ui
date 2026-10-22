@@ -13,12 +13,14 @@
  * by the reactor the endpoint runs.
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
- * Sends a prompt to the model and waits for the full answer (`LLM`).
+ * Sends a prompt to the model and waits for the full answer (`LLM`). Requires
+ * view access to the model. A model-side error (an `ERROR` answer) fails the
+ * pixel, so it surfaces as a 400.
  *
  * @name llm
  * @endpoint POST /api/model-{modelId}/llm
@@ -27,14 +29,15 @@ import { path } from "@/utility/url";
  * @param params.modelId - The model engine.
  * @param params.command - The prompt.
  * @param params.context - System context for the model.
- * @param params.useHistory - Include the room's earlier messages.
- * @param params.paramValues - Model options (for example `temperature`, `max_new_tokens`).
+ * @param params.useHistory - Include the room's earlier messages (default `true`).
+ * @param params.paramValues - Model options, for example `{ temperature: 0.2, max_tokens: 500 }` or `max_completion_tokens`.
  * @param params.roomId - The room whose history to use and record to.
- * @param params.image - An image location or encoding to send with the prompt.
- * @param params.url - A URL to send with the prompt.
+ * @param params.image - A media file already uploaded to the insight, or a base64 data URI (the reactor's legacy alias of `media`).
+ * @param params.url - A media URL whose contents are sent with the prompt.
  * @param options - Per-call overrides (signal, headers).
- * @returns A pixel return with one step whose `output` is the model response.
- * @remarks Unverified response shape of `output`.
+ * @returns A pixel return with one step whose `output` is the model response
+ * (`AskModelEngineResponse.toMap`): `response` is the text for `CHAT`, the tool
+ * calls for `TOOL`, and an image or speech map for `IMAGE` / `TTS`.
  * @throws {ApiError} 401 if the session is invalid; 400 if `command` is empty or the pixel fails.
  */
 export function llm(
@@ -56,7 +59,55 @@ export function llm(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: {
+			numberOfTokensInPrompt: number;
+			numberOfTokensInResponse: number;
+			numberOfCacheReadTokens?: number;
+			numberOfCacheCreationTokens?: number;
+			numberOfThinkingTokens?: number;
+			/** The usage rule closest to its limit, when one applies. */
+			usageRestriction?: {
+				restrictedBy: "token" | "cost" | "compute";
+				currentValue: number;
+				maxValue: number;
+			};
+			/** The usage limits the call was billed under, when any apply. */
+			usageLimits?: Record<string, unknown>;
+			messageId: string;
+			roomId: string;
+			schemaVersion?: number;
+			io?: "INPUT" | "OUTPUT";
+			parts?: Array<{
+				type:
+					| "TEXT"
+					| "MEDIA"
+					| "TOOL_CALL"
+					| "TOOL_RESULT"
+					| "THINKING"
+					| "SYSTEM"
+					| "UNKNOWN";
+				text?: string;
+				[key: string]: unknown;
+			}>;
+			thinking?: string;
+			metadata?: Record<string, unknown>;
+		} & (
+			| { messageType: "CHAT"; response: string }
+			| {
+					messageType: "TOOL";
+					response: Array<{
+						id?: string;
+						type?: string;
+						name?: string;
+						arguments?: string | Record<string, unknown>;
+						[key: string]: unknown;
+					}>;
+			  }
+			| {
+					messageType: "IMAGE" | "TTS";
+					response: Record<string, unknown>;
+			  }
+		);
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;
@@ -75,7 +126,7 @@ export function llm(
  * Sends a prompt to the model and streams the answer as Server-Sent Events.
  * `paramValues.stream` is forced to `true`. Each event is `data: <chunk JSON>`
  * (the raw map the model engine pushed, no OpenAI translation), and the stream
- * ends with `data: [DONE]`.
+ * ends with `data: [DONE]`. The final {@link llm} response map is not sent.
  *
  * @name llmStreaming
  * @endpoint POST /api/model-{modelId}/llmStreaming
@@ -84,15 +135,15 @@ export function llm(
  * @param params.modelId - The model engine.
  * @param params.command - The prompt.
  * @param params.context - System context for the model.
- * @param params.useHistory - Include the room's earlier messages.
- * @param params.paramValues - Model options; `stream` is always set to `true`.
+ * @param params.useHistory - Include the room's earlier messages (default `true`).
+ * @param params.paramValues - Model options, for example `{ temperature: 0.2, max_tokens: 500 }`; `stream` is always set to `true`.
  * @param params.roomId - The room whose history to use and record to.
- * @param params.image - An image location or encoding to send with the prompt.
- * @param params.url - A URL to send with the prompt.
+ * @param params.image - A media file already uploaded to the insight, or a base64 data URI (the reactor's legacy alias of `media`).
+ * @param params.url - A media URL whose contents are sent with the prompt.
  * @param options - Per-call overrides (signal, headers). Pass a `signal` to stop reading.
  * @returns The raw `text/event-stream` body.
- * @remarks Unverified chunk shape.
  * @throws {ApiError} 401 if the session is invalid; 400 if `command` is empty.
+ * @remarks Unverified chunk shape: each chunk is the map the model's Python client pushed to the job's stream.
  */
 export function llmStreaming(
 	params: {
@@ -115,7 +166,8 @@ export function llmStreaming(
 }
 
 /**
- * Embeds one or more inputs with the model (`Embeddings`).
+ * Embeds one or more inputs with the model (`Embeddings`). Requires view
+ * access to the model.
  *
  * @name embeddings
  * @endpoint POST /api/model-{modelId}/embeddings
@@ -125,8 +177,8 @@ export function llmStreaming(
  * @param params.values - The text(s) to embed.
  * @param params.paramValues - Model options.
  * @param options - Per-call overrides (signal, headers).
- * @returns A pixel return with one step whose `output` holds the embeddings.
- * @remarks Unverified response shape of `output`.
+ * @returns A pixel return with one step whose `output` is the
+ * `EmbeddingsModelEngineResponse` map: one vector per input, in input order.
  * @throws {ApiError} 401 if the session is invalid; 400 if `values` is missing or the pixel fails.
  */
 export function embeddings(
@@ -143,7 +195,20 @@ export function embeddings(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: {
+			response: number[][];
+			numberOfTokensInPrompt: number;
+			numberOfTokensInResponse: number;
+			/** The usage rule closest to its limit, when one applies. */
+			usageRestriction?: {
+				restrictedBy: "token" | "cost" | "compute";
+				currentValue: number;
+				maxValue: number;
+			};
+			/** The usage limits the call was billed under, when any apply. */
+			usageLimits?: Record<string, unknown>;
+			metadata?: Record<string, unknown>;
+		};
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;
@@ -159,7 +224,9 @@ export function embeddings(
 }
 
 /**
- * Asks the model about an image (`Vision`).
+ * Asks the model about an image (`Vision`). Requires view access to the
+ * model. A model-side error (an `ERROR` answer) fails the pixel, so it
+ * surfaces as a 400.
  *
  * @name vision
  * @endpoint POST /api/model-{modelId}/vision
@@ -167,11 +234,11 @@ export function embeddings(
  * @param params - Path parameter and JSON body.
  * @param params.modelId - The model engine.
  * @param params.command - The prompt.
- * @param params.image - The image location or encoding.
- * @param params.paramValues - Model options.
+ * @param params.image - The image URL or base64 encoding, sent as `paramValues.image_url`.
+ * @param params.paramValues - Model options, for example `{ max_tokens: 500 }`.
  * @param options - Per-call overrides (signal, headers).
- * @returns A pixel return with one step whose `output` is the model response.
- * @remarks Unverified response shape of `output`.
+ * @returns A pixel return with one step whose `output` is the model response
+ * (`AskModelEngineResponse.toMap`), the same map {@link llm} returns.
  * @throws {ApiError} 401 if the session is invalid; 400 if `command` or `image` is empty or the pixel fails.
  */
 export function vision(
@@ -189,7 +256,55 @@ export function vision(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: {
+			numberOfTokensInPrompt: number;
+			numberOfTokensInResponse: number;
+			numberOfCacheReadTokens?: number;
+			numberOfCacheCreationTokens?: number;
+			numberOfThinkingTokens?: number;
+			/** The usage rule closest to its limit, when one applies. */
+			usageRestriction?: {
+				restrictedBy: "token" | "cost" | "compute";
+				currentValue: number;
+				maxValue: number;
+			};
+			/** The usage limits the call was billed under, when any apply. */
+			usageLimits?: Record<string, unknown>;
+			messageId: string;
+			roomId: string;
+			schemaVersion?: number;
+			io?: "INPUT" | "OUTPUT";
+			parts?: Array<{
+				type:
+					| "TEXT"
+					| "MEDIA"
+					| "TOOL_CALL"
+					| "TOOL_RESULT"
+					| "THINKING"
+					| "SYSTEM"
+					| "UNKNOWN";
+				text?: string;
+				[key: string]: unknown;
+			}>;
+			thinking?: string;
+			metadata?: Record<string, unknown>;
+		} & (
+			| { messageType: "CHAT"; response: string }
+			| {
+					messageType: "TOOL";
+					response: Array<{
+						id?: string;
+						type?: string;
+						name?: string;
+						arguments?: string | Record<string, unknown>;
+						[key: string]: unknown;
+					}>;
+			  }
+			| {
+					messageType: "IMAGE" | "TTS";
+					response: Record<string, unknown>;
+			  }
+		);
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;

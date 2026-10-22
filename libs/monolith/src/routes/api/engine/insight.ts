@@ -11,9 +11,9 @@
  * `{ errorMessage }` and status 400 by the locator.
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Calls a method on the playsheet of a legacy (`OldInsight`) insight. Any other

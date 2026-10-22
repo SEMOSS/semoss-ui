@@ -9,14 +9,14 @@
  * which this package does not wrap.
  *
  * A session can only be read or closed by the user who created it. Errors are
- * `{ error }` bodies (no `errorMessage`, so `ApiError.message` is the generic
- * status text; read `ApiError.data`): 401 invalid session, 403 not the owner,
+ * `{ error }` bodies, so `ApiError.message` is the server's `error` text and
+ * `ApiError.data` keeps the raw body: 401 invalid session, 403 not the owner,
  * 404 unknown session, 400 bad input, 429 too many sessions, 500 failure.
  */
 
-import type { RequestOptions } from "@/types";
-import { del, get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { del, get, post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Starts a new isolated browser session for the caller and navigates it to
@@ -99,9 +99,11 @@ export function steps(
  * @param params - Path parameters.
  * @param params.sessionId - The browser session.
  * @param options - Per-call overrides (signal, headers).
- * @returns The `StepsEnvelope`: `version`, `meta`, and `steps` keyed by tab, each a list of step groups.
+ * @returns The `StepsEnvelope` (`version` `"1.0"`), its `meta`, and `steps`
+ * keyed by recording tab id (`tab-1`, …), each a list of pages of
+ * `PlaywrightStep`s. Step ids count up across tabs; `timestamp` is epoch
+ * milliseconds and `coords` are relative to `viewport`.
  * @throws {ApiError} 401 if the session is invalid, 403 if the caller does not own it, 404 if it does not exist, 500 if it cannot be serialized.
- * @remarks Unverified response shape. Steps are `PlaywrightStep` records serialized by `PlaywrightUtility.GSON`; only their common fields are typed.
  */
 export function recording(
 	params: { sessionId: string },
@@ -109,21 +111,55 @@ export function recording(
 ): Promise<{
 	version: string;
 	meta: {
-		id: string | null;
-		title: string | null;
-		description: string | null;
-		createdAt: number | null;
-		updatedAt: number | null;
-		intent: string | null;
+		id?: string;
+		title?: string;
+		description?: string;
+		createdAt?: number;
+		updatedAt?: number;
+		intent?: string;
 	};
 	steps: Record<
 		string,
 		Array<
 			Array<{
 				id: number;
-				type: string;
+				type:
+					| "NAVIGATE"
+					| "CLICK"
+					| "TYPE"
+					| "SCROLL"
+					| "WAIT"
+					| "CONTEXT"
+					| "HOVER";
 				url?: string;
-				[key: string]: unknown;
+				coords?: { x: number; y: number };
+				multiCoords?: Array<{ x: number; y: number }>;
+				prompt?: string;
+				text?: string;
+				pressEnter?: boolean;
+				deltaY?: number;
+				waitUntil?: string;
+				waitAfterMs?: number;
+				viewport?: {
+					width: number;
+					height: number;
+					deviceScaleFactor: number;
+				};
+				timestamp: number;
+				label?: string;
+				description?: string;
+				isPassword: boolean;
+				storeValue: boolean;
+				selector?: {
+					strategy: string;
+					value: string;
+					frameSelector?: string;
+				};
+				isTriggerNewTab?: { isTrue: boolean; tabId?: string };
+				shouldRun?: boolean;
+				required?: boolean;
+				sendToPlayground?: boolean;
+				tag?: string;
 			}>
 		>
 	>;

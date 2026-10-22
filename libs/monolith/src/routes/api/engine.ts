@@ -20,9 +20,9 @@
  * `pixelReturn[i].operationType` for `"ERROR"`.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { get, post } from "../../utility/http";
+import { path, url } from "../../utility/url";
 
 /**
  * Lists the legacy playsheet names and the Java class behind each one.
@@ -67,6 +67,25 @@ export function downloadFile(
 }
 
 /**
+ * URL of {@link downloadFile}, for a browser download link: the browser
+ * fetches it with the session cookie and saves the attachment itself.
+ *
+ * @name downloadFileUrl
+ * @endpoint GET /api/engine/downloadFile
+ * @source Monolith/src/prerna/semoss/web/services/local/NameServer.java#downloadFile
+ * @param params - Query parameters.
+ * @param params.insightId - The insight that produced the export.
+ * @param params.fileKey - The export's file key, from the pixel output.
+ * @returns The absolute or base-relative URL.
+ */
+export function downloadFileUrl(params: {
+	insightId: string;
+	fileKey: string;
+}): string {
+	return url(path`/api/engine/downloadFile`, params);
+}
+
+/**
  * Runs a pixel expression synchronously and returns every pixel's result.
  * Without an `insightId` (or with `"new"`) a new insight is created and
  * registered to the session; otherwise the expression runs in that insight.
@@ -75,16 +94,17 @@ export function downloadFile(
  * @name runPixel
  * @endpoint POST /api/engine/runPixel
  * @source Monolith/src/prerna/semoss/web/services/local/NameServer.java#runPixelSync
+ * @typeParam O - The expected step outputs, in order, as in the SDK's `runPixel`. Each step's `output` is typed as their union (`O[number]`); defaults to `unknown`. Not checked at runtime: a failed step's `output` is its error message.
  * @param params - Form fields.
  * @param params.expression - The pixel to run.
  * @param params.insightId - The insight to run in; omit or `"new"` for a new one.
  * @param params.tz - IANA time zone. Defaults to the caller's time zone; invalid values fall back to the server default.
  * @param params.dropLogging - Clear the job's console logging after the run. Defaults to `true`; pass `false` when another `runPixel` on the same insight still needs it.
  * @param options - Per-call overrides (signal, headers).
- * @returns The insight id and one entry per pixel step, plus any delayed messages.
+ * @returns The insight id and one entry per pixel step, then one per delayed message. `pixelId` is the recipe id, `"meta_unstored"` for META pixels and syntax errors, or `"thread_execution_…"` for a delayed message. `pixelExpression` is missing when the step has no expression. `additionalOutput` holds extra returns (for example the frame headers after a header change), each `{ output, operationType }` and nested the same way.
  * @throws {ApiError} 401 if the session is invalid; 400 if `expression` is empty or the insight is unknown; 500 if the response cannot be built.
  */
-export function runPixel(
+export function runPixel<O extends unknown[] = unknown[]>(
 	params: {
 		expression: string;
 		insightId?: string;
@@ -99,7 +119,7 @@ export function runPixel(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: O[number];
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;
@@ -125,6 +145,7 @@ export function runPixel(
  * @name runPython
  * @endpoint POST /api/engine/runPython
  * @source Monolith/src/prerna/semoss/web/services/local/NameServer.java#runPython
+ * @typeParam O - The expected step outputs, as for {@link runPixel}; defaults to `unknown`.
  * @param params - Form fields.
  * @param params.code - The Python source to run.
  * @param params.insightId - The insight to run in; omit or `"new"` for a new one.
@@ -134,7 +155,7 @@ export function runPixel(
  * @returns The same pixel return as {@link runPixel}, with one step for the `Py` call.
  * @throws {ApiError} 401 if the session is invalid; 400 if `code` is empty or the insight is unknown.
  */
-export function runPython(
+export function runPython<O extends unknown[] = unknown[]>(
 	params: {
 		code: string;
 		insightId?: string;
@@ -149,12 +170,12 @@ export function runPython(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output: O[number];
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;
 			operationType: string[];
-			[key: string]: unknown;
+			additionalOutput?: unknown[];
 		}>;
 	}>;
 }> {
@@ -270,13 +291,14 @@ export function runPixelAsync(
  * @name result
  * @endpoint POST /api/engine/result
  * @source Monolith/src/prerna/semoss/web/services/local/NameServer.java#result
+ * @typeParam O - The expected step outputs, as for {@link runPixel}; defaults to `unknown`.
  * @param params - Form fields.
  * @param params.jobId - The job id.
  * @param options - Per-call overrides (signal, headers).
  * @returns The same pixel return as {@link runPixel}, or the string `"NULL"` if the job is not in this session (or was already read).
  * @throws {ApiError} 401 if the session is invalid.
  */
-export function result(
+export function result<O extends unknown[] = unknown[]>(
 	params: { jobId: string },
 	options?: RequestOptions,
 ): Promise<
@@ -287,12 +309,12 @@ export function result(
 				pixelExpression?: string;
 				isMeta: boolean;
 				timeToRun: number;
-				output: unknown;
+				output: O[number];
 				operationType: string[];
 				additionalOutput?: Array<{
 					output: unknown;
 					operationType: string[];
-					[key: string]: unknown;
+					additionalOutput?: unknown[];
 				}>;
 			}>;
 	  }
@@ -407,8 +429,7 @@ export function error(
  * @param params - Form fields.
  * @param params.jobId - The job id.
  * @param options - Per-call overrides (signal, headers).
- * @returns The job status and the partial-output map from `PixelJobManager.getPartial`.
- * @remarks Unverified keys of `message`.
+ * @returns The job status and the text buffer: `total` (everything streamed so far) and `new` (the text since the last call). Both are missing when the job never wrote to the buffer.
  * @throws {ApiError} 401 if the session is invalid.
  * @deprecated Marked `@Deprecated` in the backend. Use {@link pixelJobStreaming} instead.
  */
@@ -427,7 +448,7 @@ export function partial(
 		| "Paused"
 		| "Error"
 		| "UnknownJob";
-	message: Record<string, string>;
+	message: { new?: string; total?: string };
 }> {
 	return post(path`/api/engine/partial`, params, options);
 }
@@ -443,8 +464,7 @@ export function partial(
  * @param params - Form fields.
  * @param params.jobId - The job id.
  * @param options - Per-call overrides (signal, headers).
- * @returns The job status and the new chunks (each chunk is whatever map the reactor pushed).
- * @remarks Unverified chunk shape.
+ * @returns The job status and the chunks pushed since the last call, by `stream_type`: `content`, `thinking`, `tool`, `usage` and `media` chunks from the Python model clients (`content` is also a raw response line, a string, from a streaming REST function engine, and `{ kind: "job-cancelled" }` once the job is stopped); `automation` run and node progress; and `subagent-spawned` / `subagent-completed` when the parent job is not an agent run. A Python reactor can push its own `stream_type` through `smss_stream`. Chunks for a job registered as an agent run go to {@link agentRunStreaming} instead.
  * @throws {ApiError} 401 if the session is invalid.
  */
 export function pixelJobStreaming(
@@ -462,7 +482,120 @@ export function pixelJobStreaming(
 		| "Paused"
 		| "Error"
 		| "UnknownJob";
-	message: Array<Record<string, unknown>>;
+	message: Array<
+		| {
+				stream_type: "content";
+				data:
+					| {
+							content?: string;
+							finish_reason?: string;
+							kind?: "job-cancelled";
+							reason?: string;
+							timestamp?: string;
+					  }
+					| string;
+		  }
+		| {
+				stream_type: "tool";
+				data: {
+					index?: number;
+					id?: string;
+					type?: string;
+					function?: { name?: string; arguments?: string };
+					thought_signature?: string;
+					finish_reason?: string;
+				};
+		  }
+		| {
+				stream_type: "thinking";
+				data: { thinking?: string; finish_reason?: string };
+		  }
+		| {
+				stream_type: "usage";
+				data: {
+					input_tokens?: number;
+					output_tokens?: number;
+					cache_read_input_tokens?: number;
+					cache_creation_input_tokens?: number;
+					reasoning_tokens?: number;
+				};
+		  }
+		| {
+				stream_type: "media";
+				data: {
+					media_info: {
+						fileName: string;
+						base64Data: string;
+						fileFormat: string;
+						mimeType: string;
+						mediaInputType: string;
+					};
+					partial_image_index?: number;
+				};
+		  }
+		| {
+				stream_type: "automation";
+				data: {
+					kind: "run-start" | "node-status";
+					RUN_ID: string;
+					DEFINITION_VERSION?: number;
+					DEFINITION_HASH?: string;
+					DEFINITION_SNAPSHOT?: string;
+					NODE_ID?: string;
+					NODE_LABEL?: string;
+					STATUS?:
+						| "RUNNING"
+						| "SUCCESS"
+						| "FAILED"
+						| "WAITING_FOR_INPUT"
+						| "CANCELLED";
+					SOURCE_NODE_ID?: string;
+					PARENT_NODE_ID?: string;
+					ITERATION_INDEX?: number;
+					DURATION_MS?: number;
+					OUTPUT_PREVIEW?: string;
+					ERROR_MESSAGE?: string;
+					trace?: {
+						roomId?: string;
+						workspaceId?: string;
+						modelMessageId?: string;
+						agentRunId?: string;
+						nodeId?: string;
+						agentStatus?: string;
+					};
+				};
+		  }
+		| {
+				stream_type: "subagent-spawned";
+				data: {
+					kind: "subagent-spawned";
+					jobId: string;
+					runId: string;
+					alias?: string;
+					workspaceId?: string;
+					roomId?: string;
+					spawnedAt: number;
+					status?:
+						| "SUBMITTED"
+						| "RUNNING"
+						| "INPUT_REQUIRED"
+						| "COMPLETED"
+						| "FAILED"
+						| "CANCELLED";
+				};
+		  }
+		| {
+				stream_type: "subagent-completed";
+				data: {
+					kind: "subagent-completed";
+					jobId: string;
+					childJobId: string;
+					parentJobId: string;
+					status: "succeeded";
+					result?: string;
+				};
+		  }
+	>;
 }> {
 	return post(path`/api/engine/pixelJobStreaming`, params, options);
 }
@@ -478,8 +611,8 @@ export function pixelJobStreaming(
  * @param params - Form fields.
  * @param params.runId - The agent run id.
  * @param options - Per-call overrides (signal, headers).
- * @returns The run snapshot (`AgentRunService.getRunSnapshot`), the drained events and how many events were dropped because the buffer overflowed.
- * @remarks Unverified event shape and `progress` / `artifacts` / `reviewOutcome` / `warnings` / `pendingActions` item shapes.
+ * @returns The durable run snapshot (`AgentRunService.getRunSnapshot`), the drained item events and how many events were dropped because the buffer overflowed. `roomId` is missing for a run delegated to a person. `progress` is the live (or last saved) `AgentRunProgress` snapshot. `pendingActions` is filled only while the run is `INPUT_REQUIRED`. Events are sorted by `sequence`; `item.updated` carries a text `delta` (message, reasoning) or a `patch` (tool, subagent), and a `progress` item is only ever sent as `item.completed`. A tool item completed by the Claude Code harness has no `name` or `arguments`.
+ * @remarks Unverified keys of the `artifacts` items, `reviewOutcome` and `progress.workflow` (built by the PPTX workflow).
  * @throws {ApiError} 400 if `runId` is missing; 401 for an anonymous or missing user; 404 if the run does not exist or belongs to someone else.
  */
 export function agentRunStreaming(
@@ -488,7 +621,7 @@ export function agentRunStreaming(
 ): Promise<{
 	run: {
 		runId: string;
-		roomId: string | null;
+		roomId?: string;
 		status:
 			| "SUBMITTED"
 			| "RUNNING"
@@ -496,17 +629,145 @@ export function agentRunStreaming(
 			| "COMPLETED"
 			| "FAILED"
 			| "CANCELLED";
-		inputMessageId: string | null;
-		finalOutputMessageId: string | null;
-		finalText: string | null;
-		errorMessage: string | null;
-		progress?: unknown;
-		artifacts?: unknown;
-		reviewOutcome?: unknown;
-		warnings?: unknown;
-		pendingActions: Array<Record<string, unknown>>;
+		inputMessageId?: string;
+		finalOutputMessageId?: string;
+		finalText?: string;
+		errorMessage?: string;
+		progress?: {
+			phase: string;
+			workflow?: Record<string, unknown>;
+			activity: "idle" | "model" | "tool";
+			currentTool?: string;
+			maxTurns: number;
+			turnsCompleted: number;
+			turnsRemaining: number;
+			modelCalls: number;
+			modelTimeMs: number;
+			toolTimeMs: number;
+			toolWallTimeMs: number;
+			elapsedMs: number;
+			toolCalls: number;
+			toolFailures: number;
+			repeatedFailures: Array<{
+				tool: string;
+				target: string;
+				count: number;
+				error: string;
+			}>;
+		};
+		artifacts: Array<Record<string, unknown>>;
+		reviewOutcome?: Record<string, unknown>;
+		warnings?: string[];
+		pendingActions: Array<{
+			actionId: string;
+			runId: string;
+			roomId?: string;
+			parentMessageId?: string;
+			toolCallId?: string;
+			toolName?: string;
+			toolArgs?: Record<string, unknown>;
+			editedArgs?: Record<string, unknown>;
+			toolMeta?: Record<string, unknown>;
+			hasUi: boolean;
+			uiUrl?: string;
+			status: "PENDING";
+			result?: string;
+			toolStatus?: string;
+			dateCreated?: string;
+			decidedAt?: string;
+			userId?: string;
+		}>;
 	};
-	events: Array<Record<string, unknown>>;
+	events: Array<
+		{
+			version: 1;
+			eventId: string;
+			sequence: number;
+			runId: string;
+			timestamp: string;
+		} & (
+			| {
+					type: "item.started" | "item.completed";
+					item:
+						| {
+								id: string;
+								kind: "message";
+								role: "assistant";
+								text: string;
+								messageId?: string;
+						  }
+						| { id: string; kind: "reasoning"; summary: string }
+						| {
+								id: string;
+								kind: "tool";
+								name?: string;
+								title?: string;
+								description?: string;
+								arguments?: Record<string, unknown>;
+								metadata?: Record<string, unknown>;
+								status:
+									| "QUEUED"
+									| "RUNNING"
+									| "INPUT_REQUIRED"
+									| "COMPLETED"
+									| "FAILED"
+									| "REJECTED"
+									| "CANCELLED";
+								output?: string;
+								error?: string;
+								durationMs?: number;
+						  }
+						| {
+								id: string;
+								kind: "subagent";
+								childRunId: string;
+								alias?: string;
+								roomId: string;
+								workspaceId?: string;
+								status:
+									| "SUBMITTED"
+									| "RUNNING"
+									| "INPUT_REQUIRED"
+									| "COMPLETED"
+									| "FAILED"
+									| "CANCELLED";
+								error?: string;
+								resultPreview?: string;
+						  }
+						| {
+								id: string;
+								kind: "progress";
+								phase: string;
+								workflow?: Record<string, unknown>;
+								activity: "idle" | "model" | "tool";
+								currentTool?: string;
+								maxTurns: number;
+								turnsCompleted: number;
+								turnsRemaining: number;
+								modelCalls: number;
+								modelTimeMs: number;
+								toolTimeMs: number;
+								toolWallTimeMs: number;
+								elapsedMs: number;
+								toolCalls: number;
+								toolFailures: number;
+								repeatedFailures: Array<{
+									tool: string;
+									target: string;
+									count: number;
+									error: string;
+								}>;
+						  };
+			  }
+			| {
+					type: "item.updated";
+					itemId: string;
+					kind: "message" | "reasoning" | "tool" | "subagent";
+					delta?: string;
+					patch?: Record<string, unknown>;
+			  }
+		)
+	>;
 	droppedEvents: number;
 }> {
 	return post(path`/api/engine/agentRunStreaming`, params, options);
@@ -574,9 +835,9 @@ export function all(
 	| Array<{
 			engine_id: string;
 			engine_name: string;
-			engine_display_name: string | null;
+			engine_display_name?: string;
 			engine_type: string;
-			engine_subtype: string | null;
+			engine_subtype?: string;
 			[key: string]: unknown;
 	  }>
 	| "Not properly authenticated"
@@ -664,12 +925,12 @@ export function getSearchInsightsResults(
 			project_name: string;
 			project_insight_id: string;
 			name: string;
-			layout: string | null;
-			created_on: string | null;
-			last_modified_on: string | null;
-			view_count: number | null;
-			cacheable: boolean | null;
-			insight_global: boolean | null;
+			layout?: string;
+			created_on?: string;
+			last_modified_on?: string;
+			view_count?: number;
+			cacheable?: boolean;
+			insight_global?: boolean;
 			[key: string]: unknown;
 	  }>
 	| { errorMessage: string }

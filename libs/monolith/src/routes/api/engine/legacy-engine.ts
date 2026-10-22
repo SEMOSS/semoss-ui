@@ -11,9 +11,9 @@
  * `{ errorMessage }` with status 400.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { get, post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Returns the parameters of a saved legacy insight in this database, by

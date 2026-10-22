@@ -15,9 +15,9 @@
  * `ApiError`).
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { get, post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Lists the custom groups the caller manages, with when they became a manager
@@ -42,12 +42,12 @@ export function getGroups(
 		id: string;
 		/** Always `"CUSTOM"`. */
 		type: string;
-		description: string | null;
-		created_by_userid: string | null;
-		created_by_useridtype: string | null;
-		dateadded: string | null;
+		description?: string;
+		created_by_userid?: string;
+		created_by_useridtype?: string;
+		dateadded?: string;
 		/** When the caller first became a manager (earliest of their logins). */
-		manager_since: string | null;
+		manager_since?: string;
 		member_count: number;
 	}>
 > {
@@ -91,10 +91,10 @@ export function getGroupDetails(
 ): Promise<{
 	id: string;
 	type: string;
-	description: string | null;
-	created_by_userid: string | null;
-	created_by_useridtype: string | null;
-	dateadded: string | null;
+	description?: string;
+	created_by_userid?: string;
+	created_by_useridtype?: string;
+	dateadded?: string;
 }> {
 	return get(path`/api/auth/group/getGroupDetails`, params, options);
 }
@@ -122,10 +122,10 @@ export function getGroupManagers(
 	Array<{
 		userid: string;
 		type: string;
-		dateadded: string | null;
-		name: string | null;
-		username: string | null;
-		email: string | null;
+		dateadded?: string;
+		name?: string;
+		username?: string;
+		email?: string;
 	}>
 > {
 	return get(path`/api/auth/group/getGroupManagers`, params, options);
@@ -165,10 +165,10 @@ export function getGroupMembers(
 	Array<{
 		userid: string;
 		type: string;
-		dateadded: string | null;
-		name: string | null;
-		username: string | null;
-		email: string | null;
+		dateadded?: string;
+		name?: string;
+		username?: string;
+		email?: string;
 	}>
 > {
 	return get(path`/api/auth/group/getGroupMembers`, params, options);
@@ -233,9 +233,9 @@ export function getNonGroupMembers(
 	Array<{
 		id: string;
 		type: string;
-		name: string | null;
-		username: string | null;
-		email: string | null;
+		name?: string;
+		username?: string;
+		email?: string;
 		[key: string]: unknown;
 	}>
 > {
@@ -277,24 +277,24 @@ export function getProjectsForGroup(
 		projectid: string;
 		/** Permission id: 1 = owner, 2 = edit, 3 = read only. */
 		permission: 1 | 2 | 3;
-		enddate: string | null;
+		enddate?: string;
 		project_id: string;
 		project_name: string;
 		project_type: string;
-		project_cost: string | null;
+		project_cost?: string;
 		project_global: boolean;
 		project_discoverable: boolean;
-		project_catalog_name: string | null;
-		project_created_by: string | null;
-		project_created_by_type: string | null;
-		project_date_created: string | null;
-		project_date_last_edited: string | null;
-		project_portal_published_date: string | null;
-		project_published_user: string | null;
-		project_published_user_type: string | null;
-		project_reactors_compiled_date: string | null;
-		project_reactors_compiled_user: string | null;
-		project_reactors_compiled_user_type: string | null;
+		project_catalog_name?: string;
+		project_created_by?: string;
+		project_created_by_type?: string;
+		project_date_created?: string;
+		project_date_last_edited?: string;
+		project_portal_published_date?: string;
+		project_published_user?: string;
+		project_published_user_type?: string;
+		project_reactors_compiled_date?: string;
+		project_reactors_compiled_user?: string;
+		project_reactors_compiled_user_type?: string;
 		low_project_name: string;
 	}>
 > {
@@ -356,17 +356,17 @@ export function getEnginesForGroup(
 		engineid: string;
 		/** Permission id: 1 = owner, 2 = edit, 3 = read only. */
 		permission: 1 | 2 | 3;
-		enddate: string | null;
+		enddate?: string;
 		engine_id: string;
 		engine_name: string;
 		engine_type: string;
-		engine_subtype: string | null;
-		engine_cost: string | null;
+		engine_subtype?: string;
+		engine_cost?: string;
 		engine_discoverable: boolean;
 		engine_global: boolean;
-		engine_created_by: string | null;
-		engine_created_by_type: string | null;
-		engine_date_created: string | null;
+		engine_created_by?: string;
+		engine_created_by_type?: string;
+		engine_date_created?: string;
 		low_engine_name: string;
 	}>
 > {

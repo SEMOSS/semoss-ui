@@ -13,9 +13,9 @@
  * an `{ errorMessage }` body (surfaced as `ApiError`).
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../../types";
+import { get, post } from "../../../../utility/http";
+import { path } from "../../../../utility/url";
 
 /**
  * Reads one group's permission on a project. Any session may call it,
@@ -159,8 +159,8 @@ export function getGroupsWithAccessToProject(
 		TYPE: string;
 		/** Permission id: 1 = owner, 2 = edit, 3 = read only. */
 		PERMISSION: 1 | 2 | 3;
-		DATEADDED: string | null;
-		ENDDATE: string | null;
+		DATEADDED?: string;
+		ENDDATE?: string;
 	}>;
 }> {
 	return get(
@@ -194,7 +194,7 @@ export function getAvailableGroupsForProject(
 		offset?: number;
 	},
 	options?: RequestOptions,
-): Promise<Array<{ id: string; type: string; description: string | null }>> {
+): Promise<Array<{ id: string; type: string; description?: string }>> {
 	return get(
 		path`/api/auth/group/project/getAvailableGroupsForProject`,
 		params,

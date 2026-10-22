@@ -13,9 +13,9 @@
  * `ApiError`.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { get, post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Reads the active admin theme. Any caller may read it (it is also embedded in

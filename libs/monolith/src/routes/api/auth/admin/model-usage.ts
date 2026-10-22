@@ -16,9 +16,9 @@
  * unexpected failures, each with an `{ errorMessage }` body (surfaced as `ApiError`).
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../../types";
+import { get, post } from "../../../../utility/http";
+import { path } from "../../../../utility/url";
 
 /**
  * Reads the General Platform Limit.
@@ -43,10 +43,10 @@ export function getPlatformDefault(
 			amount: number;
 			window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
 			/** Minutes or hours a minute or hour window spans; absent for 1. */
-			windowLength?: number | null;
+			windowLength?: number;
 			counts: "EACH_PERSON" | "SHARED";
 		}>;
-	} | null;
+	};
 }> {
 	return get(
 		path`/api/auth/admin/modelUsage/getPlatformDefault`,
@@ -89,10 +89,10 @@ export function setPlatformDefault(
 			metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 			amount: number;
 			window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-			windowLength?: number | null;
+			windowLength?: number;
 			counts: "EACH_PERSON" | "SHARED";
 		}>;
-	} | null;
+	};
 }> {
 	return post(
 		path`/api/auth/admin/modelUsage/setPlatformDefault`,
@@ -124,10 +124,10 @@ export function getTeamTotal(
 			metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 			amount: number;
 			window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-			windowLength?: number | null;
+			windowLength?: number;
 			counts: "EACH_PERSON" | "SHARED";
 		}>;
-	} | null;
+	};
 }> {
 	return get(path`/api/auth/admin/modelUsage/getTeamTotal`, params, options);
 }
@@ -169,10 +169,10 @@ export function setTeamTotal(
 			metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 			amount: number;
 			window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-			windowLength?: number | null;
+			windowLength?: number;
 			counts: "EACH_PERSON" | "SHARED";
 		}>;
-	} | null;
+	};
 }> {
 	return post(path`/api/auth/admin/modelUsage/setTeamTotal`, params, options);
 }

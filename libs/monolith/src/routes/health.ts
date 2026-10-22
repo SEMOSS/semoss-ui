@@ -8,9 +8,9 @@
  * even when startup failed.
  */
 
-import type { RequestOptions } from "@/types";
-import { get } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../types";
+import { get } from "../utility/http";
+import { path } from "../utility/url";
 
 /**
  * Liveness: the servlet container is serving requests. Always `UP` when

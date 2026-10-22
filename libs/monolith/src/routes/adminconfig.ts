@@ -7,9 +7,9 @@
  * `AdminStartupFilter`.
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../types";
+import { post } from "../utility/http";
+import { path } from "../utility/url";
 
 /**
  * Registers the first admin users of a fresh install. Unauthenticated, and
@@ -28,8 +28,6 @@ import { path } from "@/utility/url";
 export function setInitialAdmins(
 	params: { ids: string[] },
 	options?: RequestOptions,
-): Promise<
-	{ success: true; redirectUrl: string | null } | { errorMessage: string }
-> {
+): Promise<{ success: true; redirectUrl?: string } | { errorMessage: string }> {
 	return post(path`/adminconfig/setInitialAdmins`, params, options);
 }

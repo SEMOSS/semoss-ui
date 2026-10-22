@@ -1,20 +1,19 @@
 /**
- * PUBLIC: configure the connection, re-exported from `@semoss/monolith`.
+ * PUBLIC: configure the connection, exported from `@semoss/sdk/monolith`.
  *
  * `ApiClient` only writes the internal `ApiSettings` store; endpoint
- * functions read it through `@/utility/http`.
+ * functions read it through `utility/http`.
  *
  * @example
- * import { ApiClient } from "@semoss/monolith";
+ * import { Env } from "@semoss/sdk";
+ * import { ApiClient } from "@semoss/sdk/monolith";
  *
- * ApiClient.configure({ basePath: "/Monolith" }); // browser
- * ApiClient.configure({ // Node
- *     basePath: "http://localhost:8080/Monolith",
- *     auth: { type: "basic", accessKey, secretKey },
- * });
+ * // basePath and auth come from Env: every Env.update sets them
+ * Env.update({ MODULE: "http://localhost:8080/Monolith", ACCESS_KEY, SECRET_KEY });
+ * ApiClient.configure({ headers: { "X-Example": "1" } }); // what Env doesn't cover
  */
 
-import { ApiSettings } from "@/lib/api-settings";
+import { ApiSettings } from "./api-settings";
 
 /**
  * Configures the connection every endpoint function uses.
@@ -34,18 +33,24 @@ export class ApiClient {
 
 	/**
 	 * Merge connection settings (like the SDK's `Env.update`). Changing
-	 * `basePath` or `auth` also clears the CSRF token and cookies, since they
-	 * belong to the previous server or user.
+	 * `basePath` or `auth` to a new value also clears the CSRF token and
+	 * cookies, since they belong to the previous server or user; passing the
+	 * same values again keeps them.
 	 *
 	 * @name configure
 	 * @param settings - The settings to change; omitted keys keep their value.
 	 * @returns Nothing.
 	 */
 	static configure(settings: Partial<ApiSettings>): void {
-		if ("basePath" in settings || "auth" in settings) {
+		const { basePath, auth } = ApiSettings.current;
+		Object.assign(ApiSettings.current, settings);
+		const next = ApiSettings.current;
+		if (
+			next.basePath !== basePath ||
+			JSON.stringify(next.auth) !== JSON.stringify(auth)
+		) {
 			ApiSettings.clear();
 		}
-		Object.assign(ApiSettings.current, settings);
 	}
 
 	/**
@@ -63,7 +68,7 @@ export class ApiClient {
 
 	/**
 	 * Forget the CSRF token and cookies, keeping the settings (e.g. after
-	 * switching users). Logging out through `@semoss/monolith/api/auth` does this.
+	 * switching users). Logging out through `@semoss/sdk/monolith/api/auth` does this.
 	 *
 	 * @name clear
 	 * @returns Nothing.

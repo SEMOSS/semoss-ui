@@ -1,6 +1,6 @@
 ---
 name: semoss-sync
-description: "Use when syncing @semoss/monolith with the SEMOSS backend: adding, updating, removing or deprecating endpoint wrappers after Monolith/Semoss changes, refreshing their JSDoc, flagging backend issues, maintaining the ignore list in scripts/semoss-sync.json, or preparing a release when SEMOSS publishes."
+description: "Use when syncing @semoss/monolith with the SEMOSS backend: adding, updating, removing or deprecating endpoint wrappers after Monolith/Semoss changes, refreshing their JSDoc, recording the front-end tasks a sync leaves in libs/monolith/ISSUES.md, maintaining the ignore list in scripts/semoss-sync.json, or preparing a release when SEMOSS publishes."
 ---
 
 # SEMOSS Sync
@@ -62,15 +62,14 @@ If a path is wrong for this machine, ask the user for theirs. Don't guess.
    - it's served by a legacy resource such as `OldEngineResource`
 
    Remove the tag if the backend un-deprecates the endpoint.
-6. **Flag issues** in `libs/monolith/ISSUES.md`, one line each with the endpoint:
-   - unverified response shapes
-   - GET/POST duplicates
-   - inconsistent naming or parameters
-   - endpoints missing from `/api/config/endpoints`
-   - CSRF-excluded writes
-   - security concerns
+6. **Record front-end tasks.** `libs/monolith/ISSUES.md` tracks outstanding front-end tasks only. When the sync leaves front-end work, add a `- [ ]` item under the matching group, naming the file or endpoint:
+   - unverified response shapes (`@remarks Unverified response shape.`)
+   - front-end types or callers that no longer match the wrapper
+   - wrappers that work around backend behavior, to revisit when the backend changes
+   - deprecated endpoints that front-end code still calls
+   - missing URL builders or wrappers that the UI needs
 
-   Remove issues that have been fixed.
+   Don't log backend bugs, security findings or inconsistencies there. List them in your report for the backend team. Delete tasks that are done.
 7. **Maintain the ignore list.** Each entry is `{ method, path, reason, replacement? }`, where `path` is the full path (e.g. `/api/...` or `/msgraph/...`) and may use `*` globs.
    - Add an entry for every endpoint that is deliberately not wrapped: webhooks, SAML servlets, WebSockets.
    - Also add one for every endpoint exposed only as a URL builder, with `replacement` set to the builder name.
@@ -82,24 +81,25 @@ If a path is wrong for this machine, ask the user for theirs. Don't guess.
 9. **Validate:**
    ```bash
    pnpm --filter @semoss/monolith exec tsc --noEmit -p .
-   pnpm --filter @semoss/monolith build
    pnpm exec biome check libs/monolith
+   pnpm --filter @semoss/sdk build    # compiles libs/monolith into libs/sdk/dist/monolith/src
+   pnpm --filter @semoss/sdk test
    ```
-10. **Record the sync.** Set `targets.api.monolithCommit` and `semossCommit` (`git rev-parse HEAD` in each checkout) and `syncedAt` (today). Update `backend.version` from Monolith's `vars.VERSION` / latest tag if it moved.
+10. **Record the sync.** Set `targets.api.monolithCommit` and `semossCommit` (`git rev-parse HEAD` in each checkout) and `syncedAt` (today). Update `backend.version` from Monolith's `vars.VERSION` / latest tag if it moved, and keep the `version` of `libs/monolith/package.json` matching it (lowercase `-snapshot`).
 11. **Report to the user:**
     - what was added, changed, removed and deprecated
     - the breaking changes
-    - new issues
+    - the front-end tasks added to or removed from `ISSUES.md`
+    - backend problems found, for the backend team
     - any changes to the ignore list
 
 ## Release (only when SEMOSS publishes a release)
 
-`@semoss/monolith` is published only together with a SEMOSS release.
+`@semoss/monolith` is never published on its own: it ships inside `@semoss/sdk`
+(as `@semoss/sdk/monolith/*`), so a release is an SDK release built from a synced
+checkout.
 
 1. **Set the version.** In `scripts/semoss-sync.json`, set `backend.version` to the release tag (e.g. `5.5.0`) and `released` to `true`.
 2. **Sync against the tag.** Run the steps above with the Monolith and Semoss checkouts at that tag.
-3. **Update `libs/monolith/package.json`.** Set `version` to the same tag and remove `"private": true`.
-4. **Add the package to `.github/workflows/publish-github-packages.yml`:**
-   - add `"monolith"` to `packageDirs`
-   - add `libs/monolith` to the build list and the import-rewrite map
-5. **Publish** through that workflow. After the release, move `backend.version` to the next `-SNAPSHOT`, and the package `version` to the matching lowercase `-snapshot`, with `private` restored.
+3. **Update `libs/monolith/package.json`.** Set `version` to the same tag. It stays `private`.
+4. **Publish the SDK** through `.github/workflows/publish-github-packages.yml`; its build bundles this source. After the release, move `backend.version` to the next `-SNAPSHOT`, and the monolith package `version` to the matching lowercase `-snapshot`.

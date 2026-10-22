@@ -17,9 +17,9 @@
  * windowLength?, counts }] }`.
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../../types";
+import { get, post } from "../../../../utility/http";
+import { path } from "../../../../utility/url";
 
 /**
  * Checks whether the signed-in user is an admin. Any signed-in user may call it.
@@ -228,26 +228,26 @@ export function getAllUsers(
 	Array<{
 		id: string;
 		type: string;
-		name: string | null;
-		username: string | null;
-		email: string | null;
+		name?: string;
+		username?: string;
+		email?: string;
 		admin: boolean;
 		publisher: boolean;
 		exporter: boolean;
-		phone: string | null;
-		phoneextension: string | null;
-		countrycode: string | null;
-		locked: boolean | null;
+		phone?: string;
+		phoneextension?: string;
+		countrycode?: string;
+		locked?: boolean;
 		model_usage_limit?: {
 			unlimited: boolean;
 			rules: Array<{
 				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 				amount: number;
 				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-				windowLength?: number | null;
+				windowLength?: number;
 				counts: "EACH_PERSON" | "SHARED";
 			}>;
-		} | null;
+		};
 	}>
 > {
 	return get(path`/api/auth/admin/user/getAllUsers`, params, options);
@@ -294,26 +294,26 @@ export function getAllAPIUsers(
 	Array<{
 		id: string;
 		type: string;
-		name: string | null;
-		username: string | null;
-		email: string | null;
+		name?: string;
+		username?: string;
+		email?: string;
 		admin: boolean;
 		publisher: boolean;
 		exporter: boolean;
-		phone: string | null;
-		phoneextension: string | null;
-		countrycode: string | null;
-		date_created: string | null;
+		phone?: string;
+		phoneextension?: string;
+		countrycode?: string;
+		date_created?: string;
 		model_usage_limit?: {
 			unlimited: boolean;
 			rules: Array<{
 				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 				amount: number;
 				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-				windowLength?: number | null;
+				windowLength?: number;
 				counts: "EACH_PERSON" | "SHARED";
 			}>;
-		} | null;
+		};
 	}>
 > {
 	return get(path`/api/auth/admin/user/getAllAPIUsers`, params, options);

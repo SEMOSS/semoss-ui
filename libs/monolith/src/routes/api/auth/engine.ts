@@ -13,9 +13,9 @@
  * as `ApiError`).
  */
 
-import type { RequestOptions } from "@/types";
-import { get, post, repeat } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { get, post, repeat } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Lists the engines (databases, models, storages, vectors, functions…) the
@@ -56,21 +56,21 @@ export function getEngines(
 	Array<{
 		engine_id: string;
 		engine_name: string;
-		engine_display_name: string | null;
+		engine_display_name?: string;
 		engine_type: string;
-		engine_subtype: string | null;
-		engine_cost: string | null;
+		engine_subtype?: string;
+		engine_cost?: string;
 		engine_discoverable: boolean;
 		engine_global: boolean;
-		engine_tool_app: boolean | null;
-		engine_created_by: string | null;
-		engine_created_by_type: string | null;
-		engine_date_created: string | null;
+		engine_tool_app?: boolean;
+		engine_created_by?: string;
+		engine_created_by_type?: string;
+		engine_date_created?: string;
 		low_engine_name: string;
 		/** The caller's direct permission id (1 = owner, 2 = edit, 3 = read only). */
-		engine_user_permission: 1 | 2 | 3 | null;
+		engine_user_permission?: 1 | 2 | 3;
 		/** The best permission id the caller has through a group. */
-		engine_group_permission: 1 | 2 | 3 | null;
+		engine_group_permission?: 1 | 2 | 3;
 		/** The caller's favorite flag, coalesced to `0` when unset. */
 		engine_favorite: boolean | number;
 		/** Legacy alias of `engine_id`. */
@@ -80,9 +80,9 @@ export function getEngines(
 		/** Legacy alias of `engine_type`. */
 		app_type: string;
 		/** Legacy alias of `engine_subtype`. */
-		app_subtype: string | null;
+		app_subtype?: string;
 		/** Legacy alias of `engine_cost`. */
-		app_cost: string | null;
+		app_cost?: string;
 		/** Legacy alias of `engine_id`. */
 		database_id: string;
 		/** Legacy alias of `engine_name`. */
@@ -91,9 +91,9 @@ export function getEngines(
 		database_type: string;
 		/** Legacy alias of `engine_discoverable`. */
 		database_discoverable: boolean;
-		engine_description: string | null;
+		engine_description?: string;
 		/** The best of `engine_user_permission` and `engine_group_permission`. */
-		permission: 1 | 2 | 3 | null;
+		permission?: 1 | 2 | 3;
 		/** Model capabilities (`SecurityModelMetadataUtils.toCapabilities`), on model rows only. */
 		capabilities?: Record<string, unknown>;
 		/** Vote total, with `userT` and user tracking enabled. */
@@ -220,24 +220,24 @@ export function getEngineUsers(
 	members: Array<{
 		id: string;
 		type: string;
-		name: string | null;
-		email: string | null;
+		name?: string;
+		email?: string;
 		permission: "OWNER" | "EDIT" | "READ_ONLY";
-		end_date: string | null;
-		permission_granted_by: string | null;
-		permission_granted_by_type: string | null;
-		date_added: string | null;
+		end_date?: string;
+		permission_granted_by?: string;
+		permission_granted_by_type?: string;
+		date_added?: string;
 		/** The member's own usage limit on this model, or `null` for none (always `null` on non-models). */
-		usage_limit: {
+		usage_limit?: {
 			unlimited: boolean;
-			rules: Array<{
+			rules?: Array<{
 				metric: "TOKENS" | "COST" | "COMPUTE_TIME";
 				amount: number;
 				window: "MINUTE" | "HOUR" | "DAY" | "WEEK" | "MONTH" | "YEAR";
-				windowLength?: number | null;
+				windowLength?: number;
 				counts: "EACH_PERSON" | "SHARED";
-			}> | null;
-		} | null;
+			}>;
+		};
 	}>;
 }> {
 	return get(path`/api/auth/engine/getEngineUsers`, params, options);
@@ -569,7 +569,7 @@ export function setEngineFavorite(
  * @param params.searchTerm - Search on user id, name, username or email.
  * @param params.limit - Page size (`0` or omitted for no limit).
  * @param params.offset - Rows to skip. For directory lookups, `0` starts a new search and any other value continues it (paging state is kept in the session).
- * @param params.msGraphLookup - `"false"` to search the security database even when the directory is enabled. Defaults to the directory when it is enabled (`MicrosoftGraphUserLookup.LOOKUP_PARAM`).
+ * @param params.msGraphLookup - `false` to search the security database even when the directory is enabled. Defaults to the directory when it is enabled (`MicrosoftGraphUserLookup.LOOKUP_PARAM`).
  * @param options - Per-call overrides (signal, headers).
  * @returns Matching users.
  * @remarks Unverified response shape for directory lookups.
@@ -581,16 +581,16 @@ export function getEngineUsersNoCredentials(
 		searchTerm?: string;
 		limit?: number;
 		offset?: number;
-		msGraphLookup?: string;
+		msGraphLookup?: boolean;
 	},
 	options?: RequestOptions,
 ): Promise<
 	Array<{
 		id: string;
 		type: string;
-		username?: string | null;
-		name: string | null;
-		email: string | null;
+		username?: string;
+		name?: string;
+		email?: string;
 		[key: string]: unknown;
 	}>
 > {

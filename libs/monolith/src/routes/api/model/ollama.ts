@@ -21,9 +21,9 @@
  * without the prefix.
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Runs a chat turn in the Ollama `/api/chat` format. Streams NDJSON chunks

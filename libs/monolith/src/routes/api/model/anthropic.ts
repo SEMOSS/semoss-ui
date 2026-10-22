@@ -17,9 +17,9 @@
  * session is a 401 `{ errorMessage }`.
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../../types";
+import { post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Sends a Messages API request to a SEMOSS model. `thinking.budget_tokens` is

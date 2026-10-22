@@ -12,9 +12,9 @@
  * otherwise it answers 400 with `{ errorMessage }`.
  */
 
-import type { RequestOptions } from "@/types";
-import { post } from "@/utility/http";
-import { path } from "@/utility/url";
+import type { RequestOptions } from "../../types";
+import { post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Returns all rows of the open insight's frame and the frame headers
@@ -26,8 +26,7 @@ import { path } from "@/utility/url";
  * @param params - Path parameter.
  * @param params.insightId - The open insight's id.
  * @param options - Per-call overrides (signal, headers).
- * @returns A pixel return with the collected data and the frame headers.
- * @remarks Unverified response shape of `output`.
+ * @returns A pixel return with one step per pixel, whose `output` is one of: the `Collect` task (`data.values` rows, `data.headers` aliases, `data.rawHeaders`, plus the task id and task meta such as `headerInfo`) and the `FrameHeaders` map (`{}` when the insight has no frame). A failed step, and any delayed message after the steps, has a message string as its `output`.
  * @throws {ApiError} 400 without a session, or if the insight is unknown or not in this session.
  */
 export function getTableData(
@@ -40,12 +39,44 @@ export function getTableData(
 		pixelExpression?: string;
 		isMeta: boolean;
 		timeToRun: number;
-		output: unknown;
+		output:
+			| {
+					data: {
+						values: unknown[][];
+						headers: string[];
+						rawHeaders: string[];
+					};
+					taskId: string;
+					numCollected: number;
+					[key: string]: unknown;
+			  }
+			| {
+					name?: string;
+					type?: string;
+					headerInfo?: {
+						headers: Array<{
+							alias: string;
+							displayName: string;
+							header: string;
+							dataType: string;
+							adtlType: string;
+							qsName: unknown;
+							isFiltered: boolean;
+							[key: string]: unknown;
+						}>;
+						joins: Array<{
+							fromNode: string;
+							toNode: string;
+							joinType: string;
+						}>;
+					};
+			  }
+			| string;
 		operationType: string[];
 		additionalOutput?: Array<{
 			output: unknown;
 			operationType: string[];
-			[key: string]: unknown;
+			additionalOutput?: unknown[];
 		}>;
 	}>;
 }> {
@@ -85,7 +116,7 @@ export function getInsightState(
 		additionalOutput?: Array<{
 			output: unknown;
 			operationType: string[];
-			[key: string]: unknown;
+			additionalOutput?: unknown[];
 		}>;
 	}>;
 }> {

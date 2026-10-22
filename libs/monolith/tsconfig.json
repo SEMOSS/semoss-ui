@@ -2,15 +2,8 @@
 	"extends": "@semoss/config/tsconfig.base.json",
 	"compilerOptions": {
 		"types": ["node"],
-		"rootDir": "./src",
-		"declaration": true,
-		"outDir": "./dist",
-		"declarationDir": "./dist/types",
-		"emitDeclarationOnly": true,
-		"paths": {
-			"@/*": ["./src/*"]
-		}
+		"noEmit": true
 	},
 	"include": ["src"],
-	"exclude": ["dist", "node_modules"]
+	"exclude": ["node_modules"]
 }

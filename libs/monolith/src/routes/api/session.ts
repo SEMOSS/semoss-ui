@@ -8,10 +8,10 @@
  * `{ errorMessage }`, surfaced as `ApiError`.
  */
 
-import { ApiClient } from "@/lib/api-client";
-import type { RequestOptions } from "@/types";
-import { get, post } from "@/utility/http";
-import { path } from "@/utility/url";
+import { ApiClient } from "../../lib/api-client";
+import type { RequestOptions } from "../../types";
+import { get, post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Counts the active sessions on this Tomcat node (excluding the one this call

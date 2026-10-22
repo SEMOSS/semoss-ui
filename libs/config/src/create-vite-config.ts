@@ -186,7 +186,7 @@ export function createViteLibConfig(options: {
 	enableTailwind?: boolean;
 	/** Base name for the extracted CSS file (e.g. `"index"` -> `dist/index.css`). */
 	cssFileName?: string;
-	/** Emit `.d.ts` to `dist/types` via unplugin-dts. Defaults to `true`. */
+	/** Emit `.d.ts` to `dist/types` via unplugin-dts, laid out below the tsconfig's `rootDir`. Defaults to `true`. */
 	enableDts?: boolean;
 	/** tsconfig used for declaration emit. Defaults to `"tsconfig.json"`. */
 	tsconfigPath?: string;
@@ -217,9 +217,7 @@ export function createViteLibConfig(options: {
 			plugins.push(react({ include: /\.(js|jsx|ts|tsx)$/ }));
 		}
 		if (enableDts) {
-			plugins.push(
-				dts({ tsconfigPath, outDirs: "dist/types", entryRoot: "src" }),
-			);
+			plugins.push(dts({ tsconfigPath, outDirs: "dist/types" }));
 		}
 
 		const lib: LibraryOptions = {
