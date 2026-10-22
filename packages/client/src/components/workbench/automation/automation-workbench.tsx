@@ -513,6 +513,7 @@ export const AutomationWorkbench = observer(
 		);
 		const assistantStore = useAssistantStore(workbenchId);
 		const syncPermission = useSession((state) => state.syncPermission);
+		const isAdmin = useSession((state) => state.user.admin);
 		const refreshPermission = useSession(
 			(state) => state.refreshPermission,
 		);
@@ -796,6 +797,7 @@ export const AutomationWorkbench = observer(
 			() => ({
 				appId,
 				readOnly,
+				isAdmin,
 				conversionModel,
 				canvasRef,
 				agentRunAutomationUpdate,
@@ -836,6 +838,7 @@ export const AutomationWorkbench = observer(
 				historyRefreshToken,
 				inspectorSnapshot,
 				isPythonFileOpen,
+				isAdmin,
 				activeRuns,
 				followedRunId,
 				readOnly,
