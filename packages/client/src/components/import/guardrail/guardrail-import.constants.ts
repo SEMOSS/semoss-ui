@@ -1,7 +1,11 @@
-import Brain from "@/assets/img/BRAIN.png";
+import AggressiveSelfHarm from "@/assets/img/AGGRESSIVE_SELF_HARM.svg";
+import Detoxify from "@/assets/img/DETOXIFY.svg";
 import Gliner from "@/assets/img/HUGGINGFACE_COLOR.svg";
+import OnTopic from "@/assets/img/ON_TOPIC.svg";
+import PolicyCompliance from "@/assets/img/POLICY_COMPLIANCE.svg";
 import Python from "@/assets/img/PYTHON.svg";
 import SqlQueryPolicy from "@/assets/img/SQL_QUERY_POLICY.svg";
+import TypeSafe from "@/assets/img/TYPESAFE.png";
 export const GUARDRAIL_CONNECTION = {
 	description: {
 		General:
@@ -19,6 +23,16 @@ export const GUARDRAIL_CONNECTION = {
 			form: "sql-query-policy",
 			description:
 				"Parse SQL into an AST and enforce database-aware policies for operations, identifiers, and risky query structures.",
+			fields: [],
+			advanced: [],
+		},
+		{
+			name: "Jev Policy",
+			disable: false,
+			icon: TypeSafe,
+			form: "jev-policy",
+			description:
+				"Have a Jev model by TypeSafe answer a typed yes or no or choice question about the text, and block or allow the call by its answer.",
 			fields: [],
 			advanced: [],
 		},
@@ -83,7 +97,7 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "Detoxify",
 			disable: false,
-			icon: Python,
+			icon: Detoxify,
 			description:
 				"Utilize Detoxify to enhance your AI systems with robust content moderation capabilities, ensuring safe and responsible interactions by filtering harmful or inappropriate content effectively.",
 			fields: [
@@ -132,7 +146,7 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "On Topic",
 			disable: false,
-			icon: Python,
+			icon: OnTopic,
 			description:
 				"Checks whether a prompt is on-topic by performing a similarity search against a pre-loaded vector database of example on-topic content. Prompts whose best similarity score falls below the configured threshold are rejected.",
 			fields: [
@@ -161,13 +175,8 @@ export const GUARDRAIL_CONNECTION = {
 					key: "VECTOR_ENGINE_ID",
 					label: "Vector Database",
 					value: "",
-					type: "select",
-					options: [],
-					optionRule: {
-						pixel: `MyEngines(engineTypes=['VECTOR']);`,
-						optionDisplay: "engine_name",
-						optionValue: "engine_id",
-					},
+					type: "engine",
+					engineRule: { engineTypes: ["VECTOR"] },
 					disabled: false,
 					required: true,
 					category: "Settings",
@@ -226,7 +235,7 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "Aggressive / Self-Harm",
 			disable: false,
-			icon: Brain,
+			icon: AggressiveSelfHarm,
 			description:
 				"Detects aggressive, violent, or self-harm content in user prompts by routing the check through a configured LLM.",
 			fields: [
@@ -255,13 +264,8 @@ export const GUARDRAIL_CONNECTION = {
 					key: "MODEL_ENGINE_ID",
 					label: "Model Engine",
 					value: "",
-					type: "select",
-					options: [],
-					optionRule: {
-						pixel: `MyEngines(engineTypes=['MODEL']);`,
-						optionDisplay: "engine_name",
-						optionValue: "engine_id",
-					},
+					type: "engine",
+					engineRule: { engineTypes: ["MODEL"] },
 					disabled: false,
 					required: true,
 					category: "Settings",
@@ -291,13 +295,13 @@ export const GUARDRAIL_CONNECTION = {
 						"Optional message returned when a pipeline is configured to respond on guardrail failure. Leave empty to use the built-in crisis response.",
 				},
 				{
-					key: "FAIL_OPEN",
-					label: "On Judge Error",
-					value: "false",
+					key: "JUDGE_ERROR_VERDICT",
+					label: "When the Judge Fails",
+					value: "BLOCK",
 					type: "select",
 					options: [
-						{ value: "false", display: "Block the call" },
-						{ value: "true", display: "Allow the call" },
+						{ value: "BLOCK", display: "Block the call" },
+						{ value: "PASS", display: "Allow the call" },
 					],
 					disabled: false,
 					required: true,
@@ -320,7 +324,7 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "Policy Compliance",
 			disable: false,
-			icon: Brain,
+			icon: PolicyCompliance,
 			description:
 				"Uses an LLM judge to classify prompts, responses, or function data against a configurable policy.",
 			fields: [
@@ -349,13 +353,8 @@ export const GUARDRAIL_CONNECTION = {
 					key: "MODEL_ENGINE_ID",
 					label: "Model Engine",
 					value: "",
-					type: "select",
-					options: [],
-					optionRule: {
-						pixel: `MyEngines(engineTypes=['MODEL']);`,
-						optionDisplay: "engine_name",
-						optionValue: "engine_id",
-					},
+					type: "engine",
+					engineRule: { engineTypes: ["MODEL"] },
 					disabled: false,
 					required: true,
 					category: "Settings",
@@ -395,13 +394,13 @@ export const GUARDRAIL_CONNECTION = {
 						"Optional message returned when an input pipeline responds instead of throwing on a policy failure.",
 				},
 				{
-					key: "FAIL_OPEN",
-					label: "On Judge Error",
-					value: "false",
+					key: "JUDGE_ERROR_VERDICT",
+					label: "When the Judge Fails",
+					value: "BLOCK",
 					type: "select",
 					options: [
-						{ value: "false", display: "Block the call" },
-						{ value: "true", display: "Allow the call" },
+						{ value: "BLOCK", display: "Block the call" },
+						{ value: "PASS", display: "Allow the call" },
 					],
 					disabled: false,
 					required: true,

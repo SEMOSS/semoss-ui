@@ -47,6 +47,7 @@ import { createGuardrailEngine } from "@/api";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
+import { ImportEngineSelect } from "../shared/import-engine-select";
 import { computeVisibility } from "../shared/import-form.utils";
 
 const LOCAL_PYTHON_GUARDRAIL_RETURN_STRUCTURE = `{
@@ -296,7 +297,7 @@ export const GuardrailForm = ({
 
 	const checkFieldParamsAndExecutePixel = (f) => {
 		let pixel = f.pixel;
-		let optionsPixel = f.options.pixel;
+		let optionsPixel = f.options?.pixel;
 
 		if (pixel) {
 			if (hasParameterizedValue(pixel)) {
@@ -840,6 +841,47 @@ export const GuardrailForm = ({
 										))}
 									</SelectContent>
 								</Select>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
+						);
+
+					case "engine":
+						return (
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<ImportEngineSelect
+									ref={field.ref}
+									id={val.key}
+									value={field.value || ""}
+									onChange={field.onChange}
+									engineTypes={val.engineRule.engineTypes}
+									metaFilters={val.engineRule.metaFilters}
+									placeholder={`Select ${val.label}`}
+									disabled={val.disabled}
+									aria-invalid={!!error}
+								/>
 								{error && (
 									<FieldDescription className="text-destructive">
 										{getHelperText(error, val)}
