@@ -2,7 +2,7 @@
 	"extends": "@semoss/config/tsconfig.base.json",
 	"compilerOptions": {
 		"types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
-		"rootDir": "./src",
+		"rootDir": "..",
 		"declaration": true,
 		"outDir": "./dist",
 		"declarationDir": "./dist/types",
@@ -11,6 +11,6 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src"],
+	"include": ["src", "../monolith/src"],
 	"exclude": ["dist", "node_modules", "**/*.spec.ts"]
 }

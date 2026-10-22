@@ -13,6 +13,14 @@
         "./react": {
             "types": "./dist/types/js-frameworks/react/index.d.ts",
             "default": "./dist/js-frameworks/react/index.mjs"
+        },
+        "./monolith": {
+            "types": "./dist/types/monolith/index.d.ts",
+            "default": "./dist/monolith/index.mjs"
+        },
+        "./monolith/*": {
+            "types": "./dist/types/monolith/routes/*.d.ts",
+            "default": "./dist/monolith/routes/*.mjs"
         }
     },
     "files": [

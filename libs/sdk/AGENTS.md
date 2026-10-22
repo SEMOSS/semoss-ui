@@ -18,26 +18,33 @@ its published public surface as stable and versioned.
 ## Build System
 
 - **Bundler**: Vite 8 library mode (Rolldown) → ES modules with types in `dist/types/` (via unplugin-dts).
-  One file per module, at its path below `libs/` (`tsconfig.json` `rootDir` is `..`):
-  `dist/sdk/src/…`, `dist/monolith/src/…`, and the same under `dist/types/`.
+  Multi-entry bundling shares internal chunks across the SDK, React, and Monolith entries.
+  Route entries are discovered recursively, preserving nested paths; internal source
+  modules do not each receive a public JavaScript output file.
 - Entry points via `exports`:
 
-| Import | Source entry | Published JavaScript |
-|--------|--------------|----------------------|
-| `@semoss/sdk` | `src/index.ts` | `dist/sdk/src/index.mjs` |
-| `@semoss/sdk/react` | `src/js-frameworks/react/index.ts` | `dist/sdk/src/js-frameworks/react/index.mjs` |
-| `@semoss/sdk/monolith` | `../monolith/src/index.ts` (`ApiClient`, `ApiError`, `UnauthorizedError`, `RequestOptions`) | `dist/monolith/src/index.mjs` |
-| `@semoss/sdk/monolith/<route>` | `../monolith/src/routes/<route>.ts`, one entry per file | `dist/monolith/src/routes/<route>.mjs` |
+| Import | Source entry | Published JavaScript | Published types |
+|--------|--------------|----------------------|-----------------|
+| `@semoss/sdk` | `src/index.ts` | `dist/index.mjs` | `dist/types/index.d.ts` |
+| `@semoss/sdk/react` | `src/js-frameworks/react/index.ts` | `dist/js-frameworks/react/index.mjs` | `dist/types/js-frameworks/react/index.d.ts` |
+| `@semoss/sdk/monolith` | `../monolith/src/index.ts` (`ApiClient`, `ApiError`, `UnauthorizedError`, `RequestOptions`) | `dist/monolith/index.mjs` | `dist/types/monolith/index.d.ts` |
+| `@semoss/sdk/monolith/<route>` | `../monolith/src/routes/<route>.ts`, one entry per file | `dist/monolith/routes/<route>.mjs` | `dist/types/monolith/routes/<route>.d.ts` |
+
+- **Declarations.** `tsconfig.json` uses `rootDir: ".."` and includes both SDK and
+  Monolith sources. The SDK passes `dtsOptions` to the shared build helper, with
+  `entryRoot: ".."` and a path-only `beforeWriteFile` remap: `sdk/src/*` becomes
+  `dist/types/*`, and `monolith/src/*` becomes `dist/types/monolith/*`. Keep declaration
+  contents and supporting internal declarations intact so relative type imports resolve.
 
 - **Monolith is bundled.** It is a `devDependency`, never external, and has no build of its
   own, so every entry shares one `ApiClient`. Never import `@semoss/monolith` from another
-  package: a second copy would be a second, unconfigured `ApiClient`. If an SDK declaration
-  ever references `@semoss/monolith`, map it in `tsconfig.json` `paths` so unplugin-dts
-  rewrites it to a relative path (that package is not published).
-- **Tree-shaking.** One file per module lets a consumer's bundler keep only what it imports
-  (one route is about 5 KB). `package.json` has **no `sideEffects` field** on purpose: with
-  one, rolldown dropped `env.mjs` and `listener.mjs` (the SDK's only import-time effects) from
-  consumer bundles. Keep every other module's top level to declarations.
+  package: a second copy would be a second, unconfigured `ApiClient`. Emitted imports
+  between SDK and Monolith declarations must resolve within the packaged `dist/types/`
+  after path remapping and must never reference the private `@semoss/monolith` package.
+- **Tree-shaking.** Route subpaths let consumers import individual resources while sharing
+  the bundled transport. `package.json` has **no `sideEffects` field** on purpose: the
+  SDK's `env.ts` and `listener.ts` initialization must survive consumer bundling. Keep
+  every other module's top level to declarations; do not mark the SDK side-effect-free.
 
 The package also ships `skills/` via `files` and `npmSkills.publish.source` in
 [package.json](./package.json). Keep [the SDK chat guide](./skills/sdk-chat/SKILL.md)

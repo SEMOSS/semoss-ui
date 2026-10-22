@@ -10,6 +10,12 @@ and publishes it: every route file as `@semoss/sdk/monolith/<route>` (e.g.
 Every other package imports it through the SDK, so a page has one `ApiClient`,
 which `Env.update` configures.
 
+The SDK discovers route files recursively and uses multi-entry bundling with shared
+internal chunks. Its outputs are `dist/monolith/index.mjs` and
+`dist/monolith/routes/<route>.mjs`, with declarations under `dist/types/monolith/`
+(including internal supporting types). See the [SDK build guide](../sdk/AGENTS.md#build-system)
+for the full export map and declaration path mapping.
+
 > **Status: bundled into the SDK; nothing migrated yet.** The routes can be
 > called from any app. The SDK's own functions still use its own transport
 > (`libs/sdk/src/utility/fetch.ts`), and the apps still call `get`/`post` with
@@ -139,7 +145,7 @@ export function getProjectUsers(
 |---|---|
 | `pnpm --filter @semoss/monolith exec tsc --noEmit -p .` | Type-check |
 | `pnpm exec biome check libs/monolith` | Lint and format |
-| `pnpm --filter @semoss/sdk build` | Build the SDK, which compiles this source and its `.d.ts` into `libs/sdk/dist/monolith/src` and `libs/sdk/dist/types/monolith/src` |
+| `pnpm --filter @semoss/sdk build` | Build the SDK, which publishes this package's entries under `libs/sdk/dist/monolith` and declarations under `libs/sdk/dist/types/monolith` |
 | `pnpm --filter @semoss/sdk test` | The SDK tests, which run requests through this transport |
 
 ## Integrating into the SDK and the apps
@@ -248,4 +254,3 @@ Only once nothing in the repo uses them. Set the SDK version to the backend's
   `packages/terminal/src/components/terminal/upload-modal.tsx` or
   `packages/browser-automation/src/App.tsx` surfaces their existing
   `useExhaustiveDependencies` errors. Fix or justify those in their own change.
-
