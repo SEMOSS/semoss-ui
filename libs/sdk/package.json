@@ -2,25 +2,17 @@
     "name": "@semoss/sdk",
     "version": "1.0.0-beta.48",
     "type": "module",
-    "main": "./dist/sdk/src/index.mjs",
-    "module": "./dist/sdk/src/index.mjs",
-    "types": "./dist/types/sdk/src/index.d.ts",
+    "main": "./dist/index.mjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/types/index.d.ts",
     "exports": {
         ".": {
-            "types": "./dist/types/sdk/src/index.d.ts",
-            "default": "./dist/sdk/src/index.mjs"
+            "types": "./dist/types/index.d.ts",
+            "default": "./dist/index.mjs"
         },
         "./react": {
-            "types": "./dist/types/sdk/src/js-frameworks/react/index.d.ts",
-            "default": "./dist/sdk/src/js-frameworks/react/index.mjs"
-        },
-        "./monolith": {
-            "types": "./dist/types/monolith/src/index.d.ts",
-            "default": "./dist/monolith/src/index.mjs"
-        },
-        "./monolith/*": {
-            "types": "./dist/types/monolith/src/routes/*.d.ts",
-            "default": "./dist/monolith/src/routes/*.mjs"
+            "types": "./dist/types/js-frameworks/react/index.d.ts",
+            "default": "./dist/js-frameworks/react/index.mjs"
         }
     },
     "files": [
