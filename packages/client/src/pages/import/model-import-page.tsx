@@ -4,6 +4,7 @@
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
+import { usePixel } from "@semoss/sdk/react";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -162,6 +163,14 @@ interface StaticModelMetadata {
 	supported_parameters?: string[] | null;
 	reasoning_config?: Record<string, unknown> | null;
 	benchmarks?: Record<string, unknown>[] | null;
+}
+
+/** One model the signed-in user's GitHub Copilot account offers (ListGitHubCopilotModels). */
+interface CopilotModelOption {
+	id: string;
+	name: string;
+	policy: string | null;
+	multiplier: number | null;
 }
 
 interface StaticModelMetadataLookup {
@@ -753,6 +762,17 @@ export const ModelImportPage: React.FC = () => {
 		});
 	// the Model ID as typed on an "other-" card, debounced by the form
 	const [typedModelId, setTypedModelId] = useState("");
+	// the GitHub Copilot card lists the model ids the signed-in user's own
+	// Copilot account offers; every other provider skips the call
+	const copilotModels = usePixel<CopilotModelOption[]>(
+		selectedProvider === "GitHub Copilot"
+			? "ListGitHubCopilotModels();"
+			: "",
+	);
+	const isFetchingCopilotModels =
+		selectedProvider === "GitHub Copilot" &&
+		(copilotModels.status === "INITIAL" ||
+			copilotModels.status === "LOADING");
 	const [catalogMatch, setCatalogMatch] = useState<CatalogMatchState | null>(
 		null,
 	);
@@ -1320,6 +1340,62 @@ export const ModelImportPage: React.FC = () => {
 							}
 						}
 
+						if (
+							selectedProvider === "GitHub Copilot" &&
+							modelFieldIndex !== -1
+						) {
+							// every model comes through with its policy state, so a model an
+							// admin still has to enable is visible rather than silently missing
+							const usableCopilotModels =
+								copilotModels.status === "SUCCESS"
+									? (copilotModels.data ?? [])
+									: [];
+							if (usableCopilotModels.length > 0) {
+								fields[modelFieldIndex] = {
+									...fields[modelFieldIndex],
+									type: "select",
+									options: usableCopilotModels.map(
+										(model) => model.id,
+									),
+									optionLabels: Object.fromEntries(
+										usableCopilotModels.map((model) => [
+											model.id,
+											[
+												`${model.id} - ${model.name}`,
+												typeof model.multiplier ===
+												"number"
+													? `(${model.multiplier}x)`
+													: "",
+												model.policy &&
+												model.policy !== "enabled"
+													? `[${model.policy}]`
+													: "",
+											]
+												.filter(Boolean)
+												.join(" "),
+										]),
+									),
+								};
+							} else {
+								let copilotHelperText =
+									"Loading the models your Copilot account offers...";
+								if (copilotModels.status === "ERROR") {
+									copilotHelperText =
+										copilotModels.error?.message ??
+										"Could not list your Copilot models; type a model id.";
+								} else if (copilotModels.status === "SUCCESS") {
+									copilotHelperText =
+										"Copilot accepted your GitHub login but lists no models for it; type a model id.";
+								}
+								fields[modelFieldIndex] = {
+									...fields[modelFieldIndex],
+									// locked while fetching so a typed id is not lost when the list arrives
+									disabled: isFetchingCopilotModels,
+									helperText: copilotHelperText,
+								};
+							}
+						}
+
 						const existingIndex = fields.findIndex(
 							(field) => field.key === "MODEL_BRAND",
 						);
@@ -1372,18 +1448,27 @@ export const ModelImportPage: React.FC = () => {
 				}
 
 				return (
-					<ModelImportDetailsPage
-						fields={fields}
-						advanced={advanced}
-						selectedProvider={selectedProvider}
-						importableModelsCategory={importableModelsCategory}
-						onModelIdChange={
-							isTypedModelId ? setTypedModelId : undefined
-						}
-						catalogMatch={catalogMatch}
-						pickedCatalogKey={pickedCatalogKey}
-						onPickCatalogKey={setPickedCatalogKey}
-					/>
+					<>
+						{isFetchingCopilotModels && (
+							<output className="mb-4 flex items-center gap-2 text-muted-foreground text-sm">
+								<Spinner />
+								Fetching the models your GitHub Copilot account
+								offers...
+							</output>
+						)}
+						<ModelImportDetailsPage
+							fields={fields}
+							advanced={advanced}
+							selectedProvider={selectedProvider}
+							importableModelsCategory={importableModelsCategory}
+							onModelIdChange={
+								isTypedModelId ? setTypedModelId : undefined
+							}
+							catalogMatch={catalogMatch}
+							pickedCatalogKey={pickedCatalogKey}
+							onPickCatalogKey={setPickedCatalogKey}
+						/>
+					</>
 				);
 			}
 		}
@@ -1401,6 +1486,10 @@ export const ModelImportPage: React.FC = () => {
 		isTypedModelId,
 		catalogMatch,
 		pickedCatalogKey,
+		copilotModels.status,
+		copilotModels.data,
+		copilotModels.error,
+		isFetchingCopilotModels,
 	]);
 
 	return (
