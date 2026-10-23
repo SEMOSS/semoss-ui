@@ -17,6 +17,8 @@ import "@xyflow/react/dist/style.css";
 import {
 	CheckCircle,
 	Code2,
+	Download,
+	GitBranch,
 	Layers3,
 	Loader2,
 	Lock,
@@ -24,12 +26,16 @@ import {
 	RefreshCw,
 	Save,
 	Scan,
+	Upload,
 	Workflow,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
 import {
+	type ChangeEvent,
 	forwardRef,
+	lazy,
+	Suspense,
 	useCallback,
 	useEffect,
 	useImperativeHandle,
@@ -98,6 +104,8 @@ import {
 	validateCanvasWorkflowConnections,
 	validateCanvasWorkflowNode,
 } from "../../domain/automation-workflow-adapter";
+import type { BpmnEditorHandle } from "../../features/bpmn-viewer/automation-bpmn-viewer";
+import type { BpmnImportResult } from "../../features/bpmn-viewer/bpmn-import-adapter";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
@@ -124,6 +132,12 @@ import { TriggerNode } from "./nodes/trigger-node";
 import { RunInputDialog } from "./run-input-dialog";
 import type { AutomationTraceSnapshot } from "./tabs/runs-tab";
 import { UndoBanner } from "./undo-banner";
+
+const AutomationBpmnViewer = lazy(() =>
+	import("../../features/bpmn-viewer/automation-bpmn-viewer").then(
+		(module) => ({ default: module.AutomationBpmnViewer }),
+	),
+);
 
 const nodeTypes = {
 	trigger: TriggerNode,
@@ -641,8 +655,41 @@ export const AutomationCanvasContent = forwardRef<
 		string | null
 	>(null);
 	const [description, setDescription] = useState("");
-	const [devMode, setDevMode] = useState(
-		() => localStorage.getItem(`automation-devmode-${appId}`) === "true",
+	const [canvasMode, setCanvasMode] = useState<"design" | "dev" | "bpmn">(
+		() => {
+			const savedMode = localStorage.getItem(
+				`automation-viewmode-${appId}`,
+			);
+			if (
+				savedMode === "design" ||
+				savedMode === "dev" ||
+				savedMode === "bpmn"
+			) {
+				return savedMode;
+			}
+			return localStorage.getItem(`automation-devmode-${appId}`) ===
+				"true"
+				? "dev"
+				: "design";
+		},
+	);
+	const devMode = canvasMode === "dev";
+	const bpmnMode = canvasMode === "bpmn";
+	const [bpmnSource, setBpmnSource] = useState<{
+		xml: string;
+		fileName: string;
+	} | null>(null);
+	const [pendingBpmnConversion, setPendingBpmnConversion] =
+		useState<BpmnImportResult | null>(null);
+	const [isConvertingBpmn, setIsConvertingBpmn] = useState(false);
+	const [isBpmnDirty, setIsBpmnDirty] = useState(false);
+	const [pendingModeSwitch, setPendingModeSwitch] = useState<
+		"design" | "dev" | null
+	>(null);
+	const bpmnFileInputRef = useRef<HTMLInputElement>(null);
+	const bpmnEditorRef = useRef<BpmnEditorHandle>(null);
+	const canvasModeBeforeBpmnImportRef = useRef<"design" | "dev" | "bpmn">(
+		"design",
 	);
 	const [activeDockTab, setActiveDockTab] = useState<
 		"inspector" | "validation"
@@ -1737,14 +1784,137 @@ export const AutomationCanvasContent = forwardRef<
 	}, [activeDockTab, incompleteCount]);
 
 	// ---- Callbacks ----
-	const handleDevModeChange = useCallback(
-		(value: boolean) => {
-			if (readOnly || viewingHistory) return;
-			setDevMode(value);
-			localStorage.setItem(`automation-devmode-${appId}`, String(value));
+	const applyCanvasModeChange = useCallback(
+		(mode: "design" | "dev" | "bpmn") => {
+			if (mode === "dev" && (readOnly || viewingHistory)) return;
+			setCanvasMode(mode);
+			localStorage.setItem(`automation-viewmode-${appId}`, mode);
+			if (mode !== "bpmn") {
+				localStorage.setItem(
+					`automation-devmode-${appId}`,
+					String(mode === "dev"),
+				);
+			}
 		},
 		[appId, readOnly, viewingHistory],
 	);
+	const handleCanvasModeChange = useCallback(
+		(mode: "design" | "dev" | "bpmn") => {
+			// Guard: show confirmation before leaving the BPMN editor with unsaved edits.
+			// Skip the guard during import-preview flows (bpmnSource is set) — those have
+			// their own Cancel / Convert buttons.
+			if (
+				bpmnMode &&
+				mode !== "bpmn" &&
+				isBpmnDirty &&
+				bpmnSource === null
+			) {
+				setPendingModeSwitch(mode);
+				return;
+			}
+			applyCanvasModeChange(mode);
+		},
+		[applyCanvasModeChange, bpmnMode, bpmnSource, isBpmnDirty],
+	);
+	const handleDevModeChange = useCallback(
+		(value: boolean) => {
+			if (readOnly || viewingHistory) return;
+			handleCanvasModeChange(value ? "dev" : "design");
+		},
+		[handleCanvasModeChange, readOnly, viewingHistory],
+	);
+	const handleBpmnFileSelected = useCallback(
+		async (event: ChangeEvent<HTMLInputElement>) => {
+			const input = event.currentTarget;
+			const file = input.files?.[0];
+			input.value = "";
+			if (!file) return;
+			if (!/\.(bpmn|xml)$/i.test(file.name)) {
+				toast.error("Choose a BPMN .bpmn or .xml file.");
+				return;
+			}
+			try {
+				const xml = await file.text();
+				if (!xml.trimStart().startsWith("<")) {
+					throw new Error("The selected file is not BPMN XML.");
+				}
+				canvasModeBeforeBpmnImportRef.current =
+					canvasMode === "bpmn" ? "design" : canvasMode;
+				setPendingBpmnConversion(null);
+				setBpmnSource({ xml, fileName: file.name });
+				handleCanvasModeChange("bpmn");
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Could not read the selected BPMN file.",
+				);
+			}
+		},
+		[canvasMode, handleCanvasModeChange],
+	);
+	const handleCancelBpmnImport = useCallback(() => {
+		setBpmnSource(null);
+		setPendingBpmnConversion(null);
+		const restoredMode =
+			canvasModeBeforeBpmnImportRef.current === "bpmn"
+				? "design"
+				: canvasModeBeforeBpmnImportRef.current;
+		handleCanvasModeChange(restoredMode);
+	}, [handleCanvasModeChange]);
+	const handleRequestBpmnConversion = useCallback(
+		async (xml: string) => {
+			if (!bpmnSource || isConvertingBpmn) return;
+			setIsConvertingBpmn(true);
+			try {
+				const { bpmnXmlToAutomationDocument } = await import(
+					"../../features/bpmn-viewer/bpmn-import-adapter"
+				);
+				const result = await bpmnXmlToAutomationDocument(
+					xml,
+					bpmnSource.fileName,
+				);
+				setPendingBpmnConversion(result);
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Could not convert the BPMN document.",
+				);
+			} finally {
+				setIsConvertingBpmn(false);
+			}
+		},
+		[bpmnSource, isConvertingBpmn],
+	);
+	const handleApplyBpmnConversion = useCallback(() => {
+		if (!pendingBpmnConversion) return;
+		const converted = canvasDocumentFromWorkflow(
+			pendingBpmnConversion.document,
+			pendingBpmnConversion.nodeSources,
+		);
+		setDescription(converted.description);
+		setTriggerBindings(converted.triggerBindings);
+		// Reset the layout guard so layoutFlowNodes runs on the converted steps,
+		// producing a clean left-to-right layout instead of raw BPMN coordinates.
+		initialLayoutAppliedRef.current = false;
+		setSteps(converted.steps);
+		setGraphEdges(converted.edges);
+		setNodeGroups(converted.nodeGroups ?? []);
+		setCollapsedNodeGroupIds(new Set());
+		setExpandedLoopIds(new Set());
+		setEditingStepId(null);
+		setSelectedBodyNodeId(undefined);
+		setSelectedNodeGroupId(null);
+		setUndoSnapshot(null);
+		setBpmnSource(null);
+		setPendingBpmnConversion(null);
+		handleCanvasModeChange("design");
+		setIsDirty(true);
+		toast.success(
+			"BPMN converted. Review the workflow and save when ready.",
+		);
+	}, [handleCanvasModeChange, pendingBpmnConversion]);
 
 	const fitWorkflow = useCallback(() => {
 		reactFlowInstanceRef.current?.fitView({
@@ -4346,7 +4516,9 @@ export const AutomationCanvasContent = forwardRef<
 										proOptions={{
 											hideAttribution: true,
 										}}
-										className="h-full"
+										className={`${bpmnMode ? "pointer-events-none invisible" : ""} h-full`}
+										aria-hidden={bpmnMode}
+										inert={bpmnMode}
 										onInit={(instance) => {
 											reactFlowInstanceRef.current =
 												instance;
@@ -4466,10 +4638,137 @@ export const AutomationCanvasContent = forwardRef<
 											color={dotColor}
 										/>
 									</ReactFlow>
+									{bpmnMode && (
+										<Suspense
+											fallback={
+												<output className="absolute inset-0 z-0 flex items-center justify-center bg-background text-muted-foreground text-sm">
+													Loading BPMN view...
+												</output>
+											}
+										>
+											<AutomationBpmnViewer
+												ref={bpmnEditorRef}
+												nodes={displaySteps}
+												edges={displayEdges}
+												processName={
+													description ||
+													"Automation workflow"
+												}
+												sourceXml={bpmnSource?.xml}
+												sourceName={
+													bpmnSource?.fileName
+												}
+												onConvertToAutomation={
+													handleRequestBpmnConversion
+												}
+												onCancelImport={
+													handleCancelBpmnImport
+												}
+												isConverting={isConvertingBpmn}
+												onDirtyChange={setIsBpmnDirty}
+											/>
+										</Suspense>
+									)}
+
+									{/* BPMN-mode toolbar: Import + Export + Convert/Cancel */}
+									{bpmnMode && !viewingHistory && (
+										<div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+											<input
+												ref={bpmnFileInputRef}
+												type="file"
+												accept=".bpmn,.xml,application/xml,text/xml"
+												className="hidden"
+												onChange={
+													handleBpmnFileSelected
+												}
+											/>
+											{bpmnSource !== null && (
+												<>
+													<Button
+														size="sm"
+														variant="outline"
+														className="bg-background shadow-sm"
+														onClick={
+															handleCancelBpmnImport
+														}
+													>
+														Cancel
+													</Button>
+													<Button
+														size="sm"
+														className="shadow-sm"
+														disabled={
+															isConvertingBpmn
+														}
+														onClick={async () => {
+															const xml =
+																await bpmnEditorRef.current?.getXml();
+															if (xml)
+																handleRequestBpmnConversion(
+																	xml,
+																);
+														}}
+													>
+														{isConvertingBpmn
+															? "Converting…"
+															: "Convert to Automation"}
+													</Button>
+												</>
+											)}
+											{bpmnSource === null &&
+												!readOnly &&
+												mcpMode !== "trigger" && (
+													<Button
+														size="sm"
+														variant="outline"
+														className="bg-background shadow-sm"
+														onClick={() =>
+															bpmnFileInputRef.current?.click()
+														}
+													>
+														<Upload
+															className="mr-1.5 size-3.5"
+															aria-hidden
+														/>
+														Import BPMN
+													</Button>
+												)}
+											<Button
+												size="sm"
+												variant="outline"
+												className="bg-background shadow-sm"
+												onClick={() =>
+													bpmnEditorRef.current?.exportBpmn()
+												}
+											>
+												<Download
+													className="mr-1.5 size-3.5"
+													aria-hidden
+												/>
+												Export
+											</Button>
+										</div>
+									)}
 
 									<div
-										className={`absolute top-4 right-4 z-30 items-center gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory ? "hidden" : "flex"}`}
+										className={`absolute top-4 right-4 z-30 items-center gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory || bpmnMode || bpmnSource !== null ? "hidden" : "flex"}`}
 									>
+										{!readOnly && mcpMode !== "trigger" && (
+											<Button
+												size="sm"
+												variant="outline"
+												className="bg-background shadow-sm"
+												onClick={() =>
+													bpmnFileInputRef.current?.click()
+												}
+											>
+												<Upload
+													className="mr-1.5 size-3.5"
+													aria-hidden
+												/>
+												Import BPMN
+											</Button>
+										)}
 										{mcpMode !== "trigger" && (
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -4493,7 +4792,7 @@ export const AutomationCanvasContent = forwardRef<
 												</TooltipContent>
 											</Tooltip>
 										)}
-										{!readOnly && (
+										{!readOnly && canvasMode !== "bpmn" && (
 											<Tooltip>
 												<TooltipTrigger asChild>
 													<span
@@ -4538,63 +4837,67 @@ export const AutomationCanvasContent = forwardRef<
 												</TooltipContent>
 											</Tooltip>
 										)}
-										{mcpMode !== "trigger" && (
-											<div
-												className="relative"
-												data-tour="save"
-											>
-												<Button
-													size="sm"
-													variant="outline"
-													className="bg-background shadow-sm"
-													onClick={() =>
-														void (mcpMode &&
-														mcpContext
-															? handleDoneReturnToChat()
-															: save())
-													}
-													disabled={saving}
+										{mcpMode !== "trigger" &&
+											canvasMode !== "bpmn" && (
+												<div
+													className="relative"
+													data-tour="save"
 												>
-													<span className="relative mr-1.5">
-														{saving ? (
-															<Loader2 className="h-3.5 w-3.5 animate-spin" />
-														) : (
-															<Save className="h-3.5 w-3.5" />
-														)}
-														{isDirty && !saving && (
-															<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-warning ring-1 ring-background" />
-														)}
-													</span>
-													{mcpMode && mcpContext
-														? "Save — Return to Chat"
-														: "Save"}
-												</Button>
-											</div>
-										)}
-										<Button
-											data-tour="run"
-											size="sm"
-											className="shadow-sm"
-											onClick={run}
-											disabled={
-												running || !hasRunnableSteps
-											}
-											title={
-												!hasRunnableSteps
-													? "Add at least one step before running"
-													: undefined
-											}
-										>
-											{running ? (
-												<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-											) : (
-												<Play className="mr-1.5 h-3.5 w-3.5" />
+													<Button
+														size="sm"
+														variant="outline"
+														className="bg-background shadow-sm"
+														onClick={() =>
+															void (mcpMode &&
+															mcpContext
+																? handleDoneReturnToChat()
+																: save())
+														}
+														disabled={saving}
+													>
+														<span className="relative mr-1.5">
+															{saving ? (
+																<Loader2 className="h-3.5 w-3.5 animate-spin" />
+															) : (
+																<Save className="h-3.5 w-3.5" />
+															)}
+															{isDirty &&
+																!saving && (
+																	<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-warning ring-1 ring-background" />
+																)}
+														</span>
+														{mcpMode && mcpContext
+															? "Save — Return to Chat"
+															: "Save"}
+													</Button>
+												</div>
 											)}
-											Run
-										</Button>
+										{canvasMode !== "bpmn" && (
+											<Button
+												data-tour="run"
+												size="sm"
+												className="shadow-sm"
+												onClick={run}
+												disabled={
+													running || !hasRunnableSteps
+												}
+												title={
+													!hasRunnableSteps
+														? "Add at least one step before running"
+														: undefined
+												}
+											>
+												{running ? (
+													<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+												) : (
+													<Play className="mr-1.5 h-3.5 w-3.5" />
+												)}
+												Run
+											</Button>
+										)}
 									</div>
 
-									{!readOnly && (
+									{!readOnly && !bpmnMode && (
 										<div className="absolute right-4 bottom-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -4665,15 +4968,16 @@ export const AutomationCanvasContent = forwardRef<
 										</div>
 									)}
 
-									{!readOnly && (
-										<div className="absolute bottom-4 left-4 z-10 flex items-center gap-1 rounded-lg border bg-background p-1 shadow-sm">
+									<div className="absolute bottom-4 left-4 z-10 flex items-center gap-1 rounded-lg border bg-background p-1 shadow-sm">
+										{!readOnly && (
 											<Tooltip>
 												<TooltipTrigger asChild>
 													<button
 														type="button"
 														aria-label="Clean up node layout"
+														disabled={bpmnMode}
 														onClick={cleanUpLayout}
-														className="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted"
+														className="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
 													>
 														<RefreshCw className="h-4 w-4" />
 													</button>
@@ -4682,56 +4986,98 @@ export const AutomationCanvasContent = forwardRef<
 													Clean up layout
 												</TooltipContent>
 											</Tooltip>
-
-											<div className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5">
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<button
-															type="button"
-															aria-pressed={
-																!devMode
-															}
-															aria-label="Design mode"
-															onClick={() =>
-																handleDevModeChange(
-																	false,
-																)
-															}
-															className={`flex items-center justify-center rounded p-1.5 transition-colors ${!devMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-														>
-															<Workflow className="h-4 w-4" />
-														</button>
-													</TooltipTrigger>
-													<TooltipContent side="top">
-														Design mode
-													</TooltipContent>
-												</Tooltip>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<button
-															type="button"
-															aria-pressed={
-																devMode
-															}
-															aria-label="Dev mode"
-															onClick={() =>
-																handleDevModeChange(
-																	true,
-																)
-															}
-															className={`flex items-center justify-center rounded p-1.5 transition-colors ${devMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-														>
-															<Code2 className="h-4 w-4" />
-														</button>
-													</TooltipTrigger>
-													<TooltipContent side="top">
-														Dev mode — Python source
-														editors
-													</TooltipContent>
-												</Tooltip>
-											</div>
-										</div>
-									)}
+										)}
+										<fieldset className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5">
+											<legend className="sr-only">
+												Workflow view mode
+											</legend>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-pressed={
+															canvasMode ===
+															"design"
+														}
+														aria-label="Design mode"
+														disabled={
+															readOnly ||
+															viewingHistory ||
+															bpmnSource !== null
+														}
+														onClick={() =>
+															handleCanvasModeChange(
+																"design",
+															)
+														}
+														className={`flex items-center justify-center rounded p-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${canvasMode === "design" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+													>
+														<Workflow
+															className="h-4 w-4"
+															aria-hidden
+														/>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Design mode
+												</TooltipContent>
+											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-pressed={
+															canvasMode === "dev"
+														}
+														aria-label="Dev mode"
+														disabled={
+															readOnly ||
+															viewingHistory ||
+															bpmnSource !== null
+														}
+														onClick={() =>
+															handleCanvasModeChange(
+																"dev",
+															)
+														}
+														className={`flex items-center justify-center rounded p-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${canvasMode === "dev" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+													>
+														<Code2
+															className="h-4 w-4"
+															aria-hidden
+														/>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Dev mode — Python source
+													editors
+												</TooltipContent>
+											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-pressed={bpmnMode}
+														aria-label="BPMN mode"
+														onClick={() =>
+															handleCanvasModeChange(
+																"bpmn",
+															)
+														}
+														className={`flex items-center justify-center rounded p-1.5 transition-colors ${bpmnMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+													>
+														<GitBranch
+															className="h-4 w-4"
+															aria-hidden
+														/>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													BPMN view
+												</TooltipContent>
+											</Tooltip>
+										</fieldset>
+									</div>
 								</div>
 							}
 						/>
@@ -4745,6 +5091,56 @@ export const AutomationCanvasContent = forwardRef<
 				onCancel={() => setIsRunInputDialogOpen(false)}
 				onRun={handleRunWithInputs}
 			/>
+			<Dialog
+				open={pendingBpmnConversion !== null}
+				onOpenChange={(open) => {
+					if (!open) setPendingBpmnConversion(null);
+				}}
+			>
+				<DialogContent className="max-w-xl">
+					<DialogHeader>
+						<DialogTitle>Convert BPMN to Automation?</DialogTitle>
+						<DialogDescription>
+							This replaces the current canvas with the converted
+							workflow. The result remains unsaved until you
+							choose Save.
+							{isDirty &&
+								" Your existing unsaved canvas edits will be replaced."}
+						</DialogDescription>
+					</DialogHeader>
+					{pendingBpmnConversion?.warnings.length ? (
+						<div className="max-h-64 overflow-y-auto rounded-md border p-3">
+							<p className="mb-2 font-medium text-sm">
+								Import notes
+							</p>
+							<ul className="list-disc space-y-1 pl-5 text-muted-foreground text-sm">
+								{pendingBpmnConversion.warnings.map(
+									(warning, index) => (
+										<li key={`${index}-${warning}`}>
+											{warning}
+										</li>
+									),
+								)}
+							</ul>
+						</div>
+					) : (
+						<p className="text-muted-foreground text-sm">
+							No conversion warnings were reported.
+						</p>
+					)}
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setPendingBpmnConversion(null)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleApplyBpmnConversion}>
+							Replace workflow
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 			<Dialog open={confirmReload} onOpenChange={setConfirmReload}>
 				<DialogContent className="max-w-md">
 					<DialogHeader>
@@ -4775,6 +5171,46 @@ export const AutomationCanvasContent = forwardRef<
 							}}
 						>
 							Discard and reload
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+			<Dialog
+				open={pendingModeSwitch !== null}
+				onOpenChange={(open) => {
+					if (!open) setPendingModeSwitch(null);
+				}}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Unsaved BPMN changes</DialogTitle>
+						<DialogDescription>
+							You&apos;ve made edits in the BPMN editor that
+							won&apos;t be applied to the automation canvas. Use
+							the <strong>Export</strong> button in the editor
+							toolbar to download your work before switching
+							modes.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setPendingModeSwitch(null)}
+						>
+							Stay in editor
+						</Button>
+						<Button
+							variant="destructive"
+							size="sm"
+							onClick={() => {
+								const mode = pendingModeSwitch;
+								setPendingModeSwitch(null);
+								setIsBpmnDirty(false);
+								if (mode) applyCanvasModeChange(mode);
+							}}
+						>
+							Switch anyway
 						</Button>
 					</DialogFooter>
 				</DialogContent>
