@@ -88,6 +88,7 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	"NVIDIA NIM": "NEMO",
 	"Self Hosted": "HUGGINGFACE",
 	Perplexity: "PERPLEXITY",
+	"GitHub Copilot": "GITHUB_COPILOT",
 	Embedded: "BRAIN",
 	"Model Router": "MODEL_ROUTER",
 };

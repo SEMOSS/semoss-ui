@@ -378,6 +378,14 @@ export const IMPORTABLE_MODELS = {
 			Credentials:
 				"Enter your Perplexity API key and verify the fixed endpoint for secure access to Perplexity models.",
 		},
+		"GitHub Copilot": {
+			General:
+				"Use GitHub Copilot chat models through each user's own GitHub Copilot subscription.",
+			Settings:
+				"Set the Copilot model id, token limits, and init configuration.",
+			Credentials:
+				"No API key is needed: each request uses the asking user's GitHub login and is billed to their GitHub Copilot subscription. Users connect GitHub under Settings > My Profile.",
+		},
 		"Model Router": {
 			General:
 				"Create a single catalog entry that routes each request to one of your existing model engines.",
@@ -2360,6 +2368,132 @@ export const IMPORTABLE_MODELS = {
 			],
 		},
 		{
+			name: "GitHub Copilot",
+			types: [
+				{
+					model_types: ["llm"],
+					fields: [
+						{
+							key: "NAME",
+							label: "Catalog Name",
+							type: "text",
+							required: true,
+							category: "General",
+							rules: {
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom_rules: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
+						},
+						{
+							key: "MODEL_TYPE",
+							label: "Model Type",
+							type: "hidden",
+							disabled: true,
+							required: true,
+							default: "GITHUB_COPILOT",
+							category: "General",
+						},
+						{
+							key: "MODEL_BRAND",
+							label: "Model Brand",
+							type: "hidden",
+							disabled: true,
+							required: true,
+							default: "GITHUB_COPILOT",
+							category: "General",
+						},
+						{
+							key: "MODEL",
+							label: "Model ID",
+							type: "text",
+							disabled: false,
+							required: true,
+							helperText:
+								"A model id your Copilot plan offers, for example gpt-4.1.",
+							category: "General",
+						},
+						{
+							key: "VAR_NAME",
+							label: "Variable Name",
+							type: "hidden",
+							required: true,
+							disabled: true,
+							value: "myModel",
+							category: "General",
+						},
+						{
+							key: "MAX_TOKENS",
+							label: "Max Completion Tokens",
+							type: "number",
+							required: true,
+							default: 16400,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message:
+										"Max Token must be a positive integer",
+								},
+							},
+							category: "Settings",
+						},
+						{
+							key: "CONTEXT_WINDOW",
+							label: "Context Window",
+							type: "number",
+							required: true,
+							default: 128000,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message:
+										"Context Window must be a positive integer",
+								},
+							},
+							category: "Settings",
+						},
+						{
+							key: "KEEP_INPUT_OUTPUT",
+							label: "Record Questions and Responses",
+							type: "select",
+							options: ["true", "false"],
+							required: true,
+							default: "true",
+							category: "Settings",
+						},
+						{
+							key: "KEEP_CONVERSATION_HISTORY",
+							label: "Keep Conversation History",
+							type: "select",
+							options: ["true", "false"],
+							required: true,
+							default: "true",
+							category: "Settings",
+						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: true,
+							disabled: true,
+							helperText:
+								"Note: the signed-in user's GitHub token is added to every call by the engine.",
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.GitHubCopilotModelClient(model_name='${MODEL}')",
+							category: "Settings",
+						},
+					],
+				},
+			],
+		},
+		{
 			name: "Model Router",
 			types: [
 				{
@@ -3500,6 +3634,19 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			description:
 				"Configure any Perplexity model not listed above with a custom model ID while keeping the fixed Perplexity endpoint.",
 			formConfig: OTHER_MODEL_FORM_CONFIG_BY_PROVIDER.Perplexity,
+		},
+	],
+	"GitHub Copilot": [
+		{
+			name: "github-copilot",
+			display: "GitHub Copilot",
+			icon: "/src/assets/img/GITHUB.svg",
+			modelBrand: "GITHUB_COPILOT",
+			embedding: false,
+			skipCatalogMetadata: true,
+			link: "https://docs.github.com/en/copilot/reference/ai-models/supported-models",
+			description:
+				"Chat models from the signed-in user's GitHub Copilot subscription. Enter any model id your Copilot plan offers.",
 		},
 	],
 };

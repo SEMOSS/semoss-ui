@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { Logins } from "@semoss/sdk";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
@@ -77,6 +78,10 @@ export const MyProfilePage = () => {
 	);
 	const logins = useConfig((state) => state.config.logins);
 	const loginDetails = useConfig((state) => state.config.loginDetails);
+	const availableProviders = useConfig(
+		(state) => state.config.availableProviders,
+	);
+	const initializeConfig = useConfig((state) => state.initialize);
 	const defaultTextGenerationModel = useSession(
 		(state) => state.defaultTextGenerationModel,
 	);
@@ -116,6 +121,12 @@ export const MyProfilePage = () => {
 	// sign that somebody has a Microsoft login to subscribe with
 	const microsoftLogin = (logins as unknown as { MICROSOFT?: string })
 		?.MICROSOFT;
+	// GitHub can be linked here only when it is an enabled login provider
+	const canConnectGithub = availableProviders.some(
+		(provider) => provider.provider.toLowerCase() === "github",
+	);
+	const githubLogin = (logins as unknown as { GITHUB?: string } | undefined)
+		?.GITHUB;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({
@@ -297,6 +308,26 @@ export const MyProfilePage = () => {
 		setIsPySdkOpen(false);
 	};
 
+	const handleConnectGithub = async () => {
+		try {
+			// the popup opens inside this click, before anything is awaited
+			const isConnected = await Logins.connect("GITHUB");
+			if (!isConnected) {
+				toast.error("GitHub sign-in did not finish");
+				return;
+			}
+			// the config read refreshes the session's logins shown on this page
+			await initializeConfig();
+			toast.success("GitHub connected");
+		} catch (error) {
+			toast.error(
+				error instanceof Error && error.name === "PopupBlockedError"
+					? "Allow popups for this site to connect GitHub"
+					: "Unable to connect GitHub",
+			);
+		}
+	};
+
 	const copy = async (text: string) => {
 		try {
 			await navigator.clipboard.writeText(text);
@@ -371,6 +402,28 @@ export const MyProfilePage = () => {
 									</span>
 								)}
 							</div>
+							{canConnectGithub && (
+								<div className="flex flex-col gap-1">
+									<Label className="text-muted-foreground text-xs">
+										GitHub
+									</Label>
+									{githubLogin ? (
+										<span className="text-sm">
+											Connected ({githubLogin})
+										</span>
+									) : (
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											className="w-fit"
+											onClick={handleConnectGithub}
+										>
+											Connect GitHub
+										</Button>
+									)}
+								</div>
+							)}
 						</div>
 					</div>
 					{/* Right: edit form */}

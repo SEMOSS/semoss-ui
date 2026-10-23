@@ -41,6 +41,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "BRAIN", icon: "BRAIN.png" },
 		{ name: "CLAUDE", icon: "CLAUDE_AI.svg" },
 		{ name: "GEMINI", icon: "GEMINI_COLOR.svg" },
+		{ name: "GITHUB_COPILOT", icon: "GITHUB.svg" },
 		{ name: "HUGGINGFACE", icon: "HUGGINGFACE_COLOR.svg" },
 		{ name: "META", icon: "META_COLOR.svg" },
 		{ name: "MODEL_ROUTER", icon: "model_routing.svg" },
