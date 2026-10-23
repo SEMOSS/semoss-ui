@@ -8,14 +8,29 @@ import {
 	SPARQL_THEME_DARK,
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
-import { Button, Spinner, useTheme } from "@semoss/ui/next";
+import {
+	Button,
+	Form,
+	Spinner,
+	useForm,
+	useTheme,
+	zodResolver,
+} from "@semoss/ui/next";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
 import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
-import { useDatabaseWorkbench } from "@/hooks";
+import { useDatabaseWorkbench } from "@/hooks/use-database-workbench";
+import { useEngine } from "@/hooks/useEngine";
 import { DatabaseNewQueryControl } from "./database-new-query-control";
+import {
+	DATABASE_RUN_OPTIONS_DEFAULTS,
+	DATABASE_RUN_OPTIONS_SCHEMA,
+	type DatabaseRunOptions,
+	type DatabaseRunOptionsInput,
+} from "./database-run-options";
+import { DatabaseTransactionOptions } from "./database-transaction-options";
 
 const SQL_KEYWORDS = [
 	"SELECT",
@@ -59,24 +74,38 @@ export interface DatabaseQueryConfig {
 
 /**
  * A self-contained query editor bound to a single workbench panel. Each panel
- * owns its own query text and (for SPARQL) raw toggle, seeded from its
- * config, so multiple panels can coexist without sharing editor state.
+ * owns its own query text, seeded from its config, and its run options: the
+ * SPARQL raw toggle, or, on a relational database, whether the script runs in
+ * one transaction. So multiple panels can coexist without sharing editor state.
  */
 const DatabaseQueryPanel: WorkbenchComponent = ({ id }) => {
 	const { config } = useWorkbenchPanel<DatabaseQueryConfig>(id);
+	const { permission } = useEngine();
 
 	const mode = useDatabaseWorkbench((state) => state.mode);
+	const category = useDatabaseWorkbench((state) => state.category.data);
 	const structure = useDatabaseWorkbench((state) => state.structure.data);
 	const onQuery = useDatabaseWorkbench((state) => state.onQuery);
 	const isRunning = useDatabaseWorkbench(
 		(state) => state.runningPanels[id] ?? false,
 	);
-	const onRun = useCallback(
-		(query: string, panelId: string, raw?: boolean) => {
-			onQuery({ panelId, query, raw });
-		},
-		[onQuery],
-	);
+
+	// only a relational database runs a script in one transaction, offered to
+	// anyone who can query it; each statement still needs the access it needs
+	const offersTransaction =
+		mode === "SQL" &&
+		category === "SQL" &&
+		(permission === "OWNER" ||
+			permission === "EDIT" ||
+			permission === "READ_ONLY");
+
+	const form = useForm<DatabaseRunOptionsInput, unknown, DatabaseRunOptions>({
+		resolver: zodResolver(DATABASE_RUN_OPTIONS_SCHEMA),
+		defaultValues: DATABASE_RUN_OPTIONS_DEFAULTS,
+		// a hidden option takes its default, so it never blocks a run
+		shouldUnregister: true,
+	});
+	const formRef = useRef<HTMLFormElement | null>(null);
 
 	useWorkbenchControl(id, DatabaseNewQueryControl);
 
@@ -97,6 +126,24 @@ const DatabaseQueryPanel: WorkbenchComponent = ({ id }) => {
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<typeof monaco | null>(null);
 	const completionProviderRef = useRef<monaco.IDisposable | null>(null);
+
+	/** Runs the editor's query with the checked run options. */
+	const handleSubmit = ({
+		isOneTransaction,
+		timeoutSeconds,
+	}: DatabaseRunOptions) => {
+		if (isRunning) {
+			return;
+		}
+		const isTransaction = offersTransaction && isOneTransaction;
+		onQuery({
+			panelId,
+			query: editorRef.current?.getValue() ?? query,
+			raw: mode === "SPARQL" ? sparqlRaw : undefined,
+			transaction: isTransaction,
+			timeout: isTransaction ? timeoutSeconds : undefined,
+		});
+	};
 
 	const registerCompletionProvider = useCallback(() => {
 		if (!monacoRef.current) {
@@ -216,12 +263,10 @@ const DatabaseQueryPanel: WorkbenchComponent = ({ id }) => {
 				id: `run-query-${panelId}`,
 				label: "Run Query",
 				keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+				// submits the run options form, which reads the options when the
+				// shortcut is pressed
 				run: () => {
-					onRun(
-						editor.getValue(),
-						panelId,
-						mode === "SPARQL" ? sparqlRaw : undefined,
-					);
+					formRef.current?.requestSubmit();
 				},
 			});
 
@@ -305,9 +350,15 @@ const DatabaseQueryPanel: WorkbenchComponent = ({ id }) => {
 				</Suspense>
 			</div>
 
-			<div className="flex shrink-0 items-center justify-between border-border border-t p-2">
+			<Form
+				ref={formRef}
+				form={form}
+				onSubmit={handleSubmit}
+				className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-border border-t p-2"
+			>
 				{mode === "SPARQL" ? (
 					<Button
+						type="button"
 						variant={sparqlRaw ? "default" : "outline"}
 						size="sm"
 						onClick={() => setSparqlRaw((current) => !current)}
@@ -315,32 +366,28 @@ const DatabaseQueryPanel: WorkbenchComponent = ({ id }) => {
 					>
 						{sparqlRaw ? "Raw: On" : "Raw: Off"}
 					</Button>
+				) : offersTransaction ? (
+					<DatabaseTransactionOptions disabled={isRunning} />
 				) : (
 					<div />
 				)}
 				<Button
+					type="submit"
 					variant="default"
 					size="sm"
-					onClick={() => {
-						onRun(
-							query,
-							panelId,
-							mode === "SPARQL" ? sparqlRaw : undefined,
-						);
-					}}
 					disabled={isRunning || !query.trim()}
 					data-testid="query-run-btn"
 				>
 					{isRunning ? <Spinner /> : "Run"}
 				</Button>
-			</div>
+			</Form>
 		</div>
 	);
 };
 
 /**
  * Blueprint for query editor instances — the only user-renamable panel type.
- * keepAlive: unsent query text and the raw toggle survive tab switches.
+ * keepAlive: unsent query text and the run options survive tab switches.
  */
 export const DATABASE_QUERY_PANEL: WorkbenchPanelConfig<DatabaseQueryConfig> = {
 	name: "Query",

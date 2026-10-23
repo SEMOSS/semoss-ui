@@ -23,6 +23,16 @@ export type RoomMcpEntry = {
 	[key: string]: unknown;
 };
 
+/** Native skill project reference consumed by RunAgent. */
+export interface RoomSkillReference {
+	/** Accessible skill project id. */
+	skill_id: string;
+	/** Optional display name retained for settings. */
+	name?: string;
+	/** Preserve an existing native pin without exposing version controls. */
+	pinned_version?: string;
+}
+
 /** Free-form options map persisted for a room via UpdateRoomOptions. */
 export type RoomOptionsMap = {
 	/** System prompt applied to the room's agent runs. */
@@ -31,6 +41,8 @@ export type RoomOptionsMap = {
 	overrideSystemPrompt?: boolean;
 	/** MCP servers exposed to the room's agent runs. */
 	mcp?: RoomMcpEntry[];
+	/** Native room skill additions. */
+	skills?: RoomSkillReference[];
 	/** Suggested prompts surfaced in the room's UI. */
 	predefinedPrompts?: unknown[];
 	/** Engine id of the model persisted for the room. */

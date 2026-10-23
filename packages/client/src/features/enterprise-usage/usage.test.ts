@@ -182,12 +182,19 @@ describe("usage data and KPI semantics", () => {
 			EVENTS: 2,
 			USAGE_LIMIT_CHANGES: 1,
 			ACCESS_CHANGES: 1,
+			SETTING_CHANGES: 0,
 			DENIALS: 1,
 			ACTORS: 1,
 			PEOPLE_DENIED: 1,
 			PEOPLE_AFFECTED: 2,
 		};
 		expect(parseUsageRows({ rows: [counts] }, summary)).toEqual([counts]);
+		const withoutSettingChanges = Object.fromEntries(
+			Object.entries(counts).filter(([key]) => key !== "SETTING_CHANGES"),
+		);
+		expect(() =>
+			parseUsageRows({ rows: [withoutSettingChanges] }, summary),
+		).toThrow();
 		expect(() =>
 			parseUsageRows({ rows: [{ EVENTS: 2, FAILED: 0 }] }, summary),
 		).toThrow();

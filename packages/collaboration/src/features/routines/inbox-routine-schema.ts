@@ -1,4 +1,5 @@
 import { z } from "@semoss/ui/next";
+import { routineFlowSchema } from "./routine-flow-schema";
 import {
 	routineDaySchema,
 	routineScheduleSchema,
@@ -20,17 +21,20 @@ export const inboxRoutineSettingsSchema = z.object({
 			"Choose each day only once.",
 		),
 	timezone,
-	emailCount: z
+	lookbackHours: z
 		.number()
-		.int("Choose a whole number of emails.")
-		.min(1, "Scan at least 1 email.")
-		.max(100, "Scan up to 100 emails per brief."),
+		.int("Choose a whole number of hours.")
+		.min(1, "Look back at least 1 hour.")
+		.max(720, "Look back up to 30 days (720 hours)."),
 });
 
 /** Validate server availability and the latest durable run before rendering. */
 export const inboxRoutineSchema = inboxRoutineSettingsSchema
 	.extend(routineStatusSchema.shape)
-	.extend({ id: z.literal("inbox-daily-brief") });
+	.extend({
+		id: z.literal("inbox-daily-brief"),
+		flow: routineFlowSchema.optional(),
+	});
 
 export type InboxRoutineSettings = z.infer<typeof inboxRoutineSettingsSchema>;
 export type InboxRoutine = z.infer<typeof inboxRoutineSchema>;

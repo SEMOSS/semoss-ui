@@ -83,6 +83,7 @@ const auditSummary = {
 	EVENTS: 2,
 	USAGE_LIMIT_CHANGES: 1,
 	ACCESS_CHANGES: 0,
+	SETTING_CHANGES: 3,
 	DENIALS: 1,
 	ACTORS: 1,
 	PEOPLE_DENIED: 1,
@@ -560,16 +561,17 @@ describe("enterprise usage interactions", () => {
 		).toHaveAttribute("aria-valuenow", "75");
 	});
 
-	it("lists access and usage limit changes and denied requests with their people, and reads an event only once opened", async () => {
+	it("lists access, setting and usage limit changes and denied requests with their people, and reads an event only once opened", async () => {
 		render(<EnterpriseUsage />);
 		fireEvent.mouseDown(
-			screen.getByRole("tab", { name: "Access & Limits" }),
+			screen.getByRole("tab", { name: "Access, Settings & Limits" }),
 			{ button: 0, ctrlKey: false },
 		);
 		expect(
 			await screen.findByText("Usage Limit Changed"),
 		).toBeInTheDocument();
 		expect(screen.getByText("People Affected")).toBeInTheDocument();
+		expect(screen.getByText("Setting Changes")).toBeInTheDocument();
 		expect(screen.getByText("Denied Requests")).toBeInTheDocument();
 		expect(screen.getByText("Access Denied")).toBeInTheDocument();
 		expect(screen.getByText("Tried SetEngineGlobal")).toBeInTheDocument();

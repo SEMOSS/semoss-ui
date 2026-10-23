@@ -46,7 +46,7 @@ const routine: InboxRoutine = {
 	time: "08:00",
 	days: ["MON", "TUE", "WED", "THU", "FRI"],
 	timezone: "America/New_York",
-	emailCount: 25,
+	lookbackHours: 24,
 	nextRunAt: null,
 	schedulerAvailable: true,
 	assistantAvailable: true,
@@ -97,6 +97,16 @@ afterEach(cleanup);
 describe("InboxRoutineForm", () => {
 	it("starts off without saving and autosaves after enabling the brief", async () => {
 		const { user, onSave } = renderForm();
+		const lookback = screen.getByRole("spinbutton", {
+			name: "Email lookback (required)",
+		});
+		expect(lookback).toHaveValue(1);
+		expect(lookback).toHaveAccessibleDescription(
+			"Review emails received within this period before each run.",
+		);
+		expect(
+			screen.getByRole("combobox", { name: "Lookback unit (required)" }),
+		).toHaveTextContent("Days");
 		const toggle = screen.getByRole("switch", {
 			name: "Enable daily brief",
 		});
@@ -118,7 +128,7 @@ describe("InboxRoutineForm", () => {
 		await autosave();
 		expect(onSave).toHaveBeenCalledOnce();
 		expect(onSave).toHaveBeenCalledWith(
-			expect.objectContaining({ enabled: true, emailCount: 25 }),
+			expect.objectContaining({ enabled: true, lookbackHours: 24 }),
 		);
 		expect(screen.getByRole("status", { name: "Save status" })).toBe(
 			status,
@@ -126,7 +136,7 @@ describe("InboxRoutineForm", () => {
 		expect(status).toHaveTextContent("Saved");
 	});
 
-	it("saves selected days, time zone, time, and the numeric email limit", async () => {
+	it("saves selected run days, time zone, time, and converts lookback days to hours", async () => {
 		const { user, onSave } = renderForm({ ...routine, configured: true });
 		await user.click(
 			screen.getByRole("switch", { name: "Enable daily brief" }),
@@ -145,35 +155,81 @@ describe("InboxRoutineForm", () => {
 		await user.click(
 			screen.getByRole("option", { name: "America/Chicago" }),
 		);
-		const count = screen.getByRole("spinbutton", {
-			name: "Emails to review for replies (required)",
+		const lookback = screen.getByRole("spinbutton", {
+			name: "Email lookback (required)",
 		});
-		await user.clear(count);
-		await user.type(count, "40");
+		await user.clear(lookback);
+		await user.type(lookback, "4");
 		await autosave();
 		expect(onSave).toHaveBeenCalledExactlyOnceWith({
 			enabled: true,
 			time: "09:15",
 			days: ["TUE", "THU"],
 			timezone: "America/Chicago",
-			emailCount: 40,
+			lookbackHours: 96,
 		});
 		expect(
 			screen.getByRole("status", { name: "Save status" }),
 		).toHaveTextContent("Saved");
 	});
 
+	it.each([1, 6, 25, 719])(
+		"loads a saved %i-hour lookback without rounding it to days",
+		(lookbackHours) => {
+			const { onSave } = renderForm({
+				...routine,
+				configured: true,
+				lookbackHours,
+			});
+			expect(
+				screen.getByLabelText("Email lookback (required)"),
+			).toHaveValue(lookbackHours);
+			expect(
+				screen.getByRole("combobox", {
+					name: "Lookback unit (required)",
+				}),
+			).toHaveTextContent("Hours");
+			expect(onSave).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each([6, 24, 720])(
+		"saves %i hours and preserves the selected Hours unit after saving",
+		async (lookbackHours) => {
+			const { user, onSave } = renderForm({
+				...routine,
+				configured: true,
+			});
+			const unit = screen.getByRole("combobox", {
+				name: "Lookback unit (required)",
+			});
+			unit.focus();
+			await user.keyboard("{Enter}");
+			await user.click(screen.getByRole("option", { name: "Hours" }));
+			const lookback = screen.getByLabelText("Email lookback (required)");
+			await user.clear(lookback);
+			await user.type(lookback, String(lookbackHours));
+			await autosave();
+			expect(onSave).toHaveBeenCalledExactlyOnceWith({
+				enabled: false,
+				time: "08:00",
+				days: ["MON", "TUE", "WED", "THU", "FRI"],
+				timezone: "America/New_York",
+				lookbackHours,
+			});
+			expect(lookback).toHaveValue(lookbackHours);
+			expect(unit).toHaveTextContent("Hours");
+			expect(
+				screen.getByRole("status", { name: "Save status" }),
+			).toHaveTextContent("Saved");
+		},
+	);
+
 	it.each([
-		[
-			"Emails to review for replies (required)",
-			"101",
-			"Choose between 1 and 100 emails.",
-		],
-		[
-			"Emails to review for replies (required)",
-			"",
-			"Choose a whole number of emails.",
-		],
+		["Email lookback (required)", "0", "Choose between 1 and 30 days."],
+		["Email lookback (required)", "31", "Choose between 1 and 30 days."],
+		["Email lookback (required)", "", "Choose a whole number."],
+		["Email lookback (required)", "1.5", "Choose a whole number."],
 		["Run time (required)", "", "Choose a valid run time."],
 	])(
 		"associates the invalid %s value %s with its correction",
@@ -195,6 +251,24 @@ describe("InboxRoutineForm", () => {
 			expect(
 				screen.getByRole("status", { name: "Save status" }),
 			).toHaveTextContent("Check fields");
+			expect(onSave).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["0", "721"])(
+		"does not save the out-of-range hour value %s",
+		async (value) => {
+			const { onSave } = renderForm({ ...routine, lookbackHours: 6 });
+			const lookback = screen.getByLabelText("Email lookback (required)");
+			fireEvent.change(lookback, { target: { value } });
+			await autosave();
+			expect(screen.getByRole("alert")).toHaveTextContent(
+				"Choose between 1 and 720 hours.",
+			);
+			expect(lookback).toHaveAttribute("aria-invalid", "true");
+			expect(lookback).toHaveAccessibleDescription(
+				expect.stringContaining("Choose between 1 and 720 hours."),
+			);
 			expect(onSave).not.toHaveBeenCalled();
 		},
 	);
@@ -226,16 +300,16 @@ describe("InboxRoutineForm", () => {
 		onSave.mockRejectedValueOnce(
 			new Error("Scheduler could not save this schedule"),
 		);
-		const count = screen.getByRole("spinbutton", {
-			name: "Emails to review for replies (required)",
+		const lookback = screen.getByRole("spinbutton", {
+			name: "Email lookback (required)",
 		});
-		await user.clear(count);
-		await user.type(count, "60");
+		await user.clear(lookback);
+		await user.type(lookback, "6");
 		await autosave();
 		expect(
 			screen.getByRole("status", { name: "Save status" }),
 		).toHaveTextContent("Scheduler could not save this schedule");
-		expect(count).toHaveValue(60);
+		expect(lookback).toHaveValue(6);
 		expect(
 			screen.getByRole("status", { name: "Save status" }),
 		).toHaveTextContent("Not saved");
@@ -243,7 +317,7 @@ describe("InboxRoutineForm", () => {
 		await autosave(0);
 		expect(onSave).toHaveBeenCalledTimes(2);
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-		expect(count).toHaveValue(60);
+		expect(lookback).toHaveValue(6);
 		expect(
 			screen.getByRole("status", { name: "Save status" }),
 		).toHaveTextContent("Saved");
@@ -258,11 +332,9 @@ describe("InboxRoutineForm", () => {
 					completeSave = resolve;
 				}),
 		);
-		const count = screen.getByLabelText(
-			"Emails to review for replies (required)",
-		);
-		await user.clear(count);
-		await user.type(count, "30");
+		const lookback = screen.getByLabelText("Email lookback (required)");
+		await user.clear(lookback);
+		await user.type(lookback, "3");
 		await autosave();
 		expect(onSave).toHaveBeenCalledOnce();
 		expect(
@@ -274,9 +346,9 @@ describe("InboxRoutineForm", () => {
 		expect(screen.getByRole("button", { name: "Monday" })).toBeEnabled();
 		expect(screen.getByLabelText("Run time (required)")).toBeEnabled();
 		expect(screen.getByLabelText("Time zone (required)")).toBeEnabled();
-		expect(count).toBeEnabled();
-		await user.clear(count);
-		await user.type(count, "40");
+		expect(lookback).toBeEnabled();
+		await user.clear(lookback);
+		await user.type(lookback, "4");
 		await autosave();
 		expect(onSave).toHaveBeenCalledOnce();
 		await act(async () =>
@@ -286,15 +358,15 @@ describe("InboxRoutineForm", () => {
 				configured: true,
 			}),
 		);
-		expect(count).toHaveValue(40);
+		expect(lookback).toHaveValue(4);
 		await autosave();
 		expect(onSave).toHaveBeenCalledTimes(2);
 		expect(onSave).toHaveBeenNthCalledWith(
 			1,
-			expect.objectContaining({ emailCount: 30 }),
+			expect.objectContaining({ lookbackHours: 72 }),
 		);
 		expect(onSave).toHaveBeenLastCalledWith(
-			expect.objectContaining({ emailCount: 40 }),
+			expect.objectContaining({ lookbackHours: 96 }),
 		);
 		expect(
 			screen.getByRole("status", { name: "Save status" }),
@@ -477,26 +549,24 @@ describe("RoutinesWorkspace", () => {
 				<RoutinesWorkspace />
 			</MemoryRouter>,
 		);
-		const count = screen.getByLabelText(
-			"Emails to review for replies (required)",
-		);
-		await user.clear(count);
-		await user.type(count, "45");
+		const lookback = screen.getByLabelText("Email lookback (required)");
+		await user.clear(lookback);
+		await user.type(lookback, "5");
 		await user.click(
 			screen.getByRole("tab", { name: "Weekly meeting agendas" }),
 		);
 		expect(service.save).not.toHaveBeenCalled();
 		await autosave();
 		expect(service.save).toHaveBeenCalledExactlyOnceWith(
-			expect.objectContaining({ emailCount: 45 }),
+			expect.objectContaining({ lookbackHours: 120 }),
 		);
 		await user.click(
 			screen.getByRole("tab", { name: "Inbox daily brief" }),
 		);
-		expect(
-			screen.getByLabelText("Emails to review for replies (required)"),
-		).toBe(count);
-		expect(count).toHaveValue(45);
+		expect(screen.getByLabelText("Email lookback (required)")).toBe(
+			lookback,
+		);
+		expect(lookback).toHaveValue(5);
 		expect(
 			screen.getByRole("status", { name: "Save status" }),
 		).toHaveTextContent("Saved");

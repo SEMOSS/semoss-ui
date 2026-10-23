@@ -1,16 +1,24 @@
 ---
 name: react-standard
-description: "Use when creating, editing, refactoring, or reviewing React components, hooks, TypeScript source, and full staged files in SEMOSS. Covers architecture exceptions, type safety, performance, and validation."
+description: "Mandatory for all React work anywhere in the SEMOSS repository: creating, editing, refactoring, debugging, investigating, planning changes to, or reviewing components, hooks, contexts, providers, and React tests, stories, or examples. Also provides applicable TypeScript guidance for non-React source."
 ---
 
 # SEMOSS React Standard
 
-Apply this standard when implementing or reviewing `.ts`, `.tsx`, `.js`, and `.jsx`
-files under `libs/*/src/` and `packages/*/src/`, including nested directories and
-tests. Non-React code follows applicable TypeScript rules, not React-only architecture.
+Read this entire standard before every task involving React files, regardless of
+provider, agent role, directory, or task size. Follow the
+[root loading and delegation requirements](../AGENTS.md#required-skill-routing-all-agents).
+This includes `.tsx` and `.jsx` files, React components/hooks/context/providers
+in `.ts` or `.js` files, and React tests, stories, and examples anywhere in the
+repository, including outside `libs/*/src/` and `packages/*/src/`.
 
 ## Authorities and Scope
 
+- Loading this standard is mandatory for React work; apply each rule to the work
+  it governs. Non-React source follows applicable JavaScript/TypeScript rules
+  without introducing React architecture. Unrelated documentation, configuration,
+  scripts, and CI tasks do not require this skill solely because they are in the
+  repository.
 - Preserve the dependency boundaries and package conventions in
   [AGENTS.md](../AGENTS.md) and the owning package's guide.
 - [DESIGN.md](../DESIGN.md) governs UI composition, semantic tokens, primitives,
@@ -45,7 +53,7 @@ tests. Non-React code follows applicable TypeScript rules, not React-only archit
 - Put new application features in `src/features/<feature>/`, colocating their
   components, hooks, and helpers as needed. Keep routing under `pages/`, with
   thin route pages composing features. Existing features remain where they are
-  unless migration is explicitly scoped; libraries retain their package layout.
+  unless migration is explicitly scoped; `@semoss/ui`, `@semoss/sdk` and non-react libraries retain their package layout.
 - Reuse existing shared types/utilities without violating dependency boundaries.
   Keep single-use types near their owner; extract shared types only when useful.
 - Document functions with TSDoc and component props on their type/interface;
@@ -57,10 +65,8 @@ tests. Non-React code follows applicable TypeScript rules, not React-only archit
 
 - Use single responsibilities, early returns, and the simplest adequate design.
   Never move ordinary hook calls below conditional returns; obey hook ordering.
-- Extract complex business workflows, data orchestration, and state machines
-  into custom hooks. Simple local UI state and handlers can stay in components.
-  Pure calculations and transformations belong in ordinary functions, not hooks
-  created just to give them a `use` prefix.
+- Prefer the [Hooks Pattern](#hooks-pattern) for reusable stateful logic and
+  React orchestration; keep simple local UI state and handlers in components.
 - React props and state are immutable. Use a pure functional state updater when
   the next value depends on previous state; direct replacements from arguments
   are fine. Preserve sanctioned MobX/store actions rather than rewriting stores
@@ -75,6 +81,47 @@ tests. Non-React code follows applicable TypeScript rules, not React-only archit
   primitives, not raw `fetch`. Prefer existing SDK hooks and `usePixel` for reads.
   Return parsed data, validate boundary payloads, and surface failures and missing
   required data explicitly. Do not report success for failed required operations.
+
+### Hooks Pattern
+
+- Prefer focused custom hooks to share non-visual, stateful logic between
+  components. For new logic reuse, favor hooks over higher-order components,
+  render props, or container components introduced solely to inject that logic.
+  Keep component composition for reusable UI and preserve existing public APIs;
+  this is not a mandate to rewrite established patterns.
+- Extract repeated stateful behavior, complex React workflows, data orchestration,
+  and state-machine coordination into hooks named for their purpose. A single
+  consumer can justify extraction when it makes a cohesive workflow easier to
+  understand and test. Do not extract every state variable or event handler, or
+  create a catch-all hook merely to shorten a component.
+- Search existing SDK, shared, and feature hooks before adding one. Compose
+  focused hooks rather than duplicating subscriptions or request orchestration.
+  Colocate feature-specific hooks with their feature; promote genuinely shared
+  hooks only to an appropriate owner within existing dependency boundaries.
+  Pure calculations, transformations, and reducers remain ordinary functions,
+  not hooks created just to give them a `use` prefix.
+- Give hooks explicit typed inputs and return contracts exposing the state and
+  actions consumers need. Name them for the behavior they provide, not lifecycle
+  timing. Avoid generic `useMount`/`useEffectOnce` wrappers or custom effect
+  wrappers accepting caller-managed dependency arrays that obscure dependencies
+  and prevent lint tooling from checking them.
+- Call ordinary hooks only at the top level of function components or custom
+  hooks, before conditional returns; never in loops, conditions, event handlers,
+  effect callbacks, or ordinary utility functions. Keep hook calls explicit and
+  static rather than passing hooks as props or dynamically selecting them.
+- Hooks share logic, not local state: each invocation owns its own state and
+  effects. To share state, lift it to a common owner or use the established
+  context/store/query abstraction. Extraction alone does not deduplicate requests
+  or subscriptions, isolate rerenders, or improve performance.
+- Treat a hook's render-time code as part of its consumer's render: keep it pure
+  and accept current reactive inputs explicitly. Apply the effect, cleanup,
+  stale-result, SDK transport, and error-handling rules above inside hooks too.
+  Extraction must not hide missing dependencies or turn user actions into effects.
+- Test observable behavior with the existing test setup, through a consumer or
+  a hook harness as appropriate. Cover changed inputs, returned actions, independent
+  local state across consumers, and relevant loading/error states. For hooks owning
+  resources, verify cleanup on input changes/unmount and safe setup/cleanup under
+  Strict Mode; test stale async results where applicable.
 
 ## Types and Naming
 
@@ -290,7 +337,8 @@ working-tree check does not validate them. Do not stage another person's changes
 2. In implementation mode, fix in-scope violations and preserve compatibility.
    In review-only mode, report findings with locations and risks without edits.
     Do not expand into unrelated migrations to satisfy full-file review.
-3. Check hook/state semantics, error/loading/empty states, SDK boundaries, naming,
+3. Check hook/state semantics and applicable [Hooks Pattern](#hooks-pattern)
+   boundaries, error/loading/empty states, SDK boundaries, naming,
    exports, explicit returns, suppression reasons, and deprecated usage. For UI,
    check accessible names, keyboard operation, visible focus, overlay focus
    management, and meaningful status announcements without redundant ARIA.
