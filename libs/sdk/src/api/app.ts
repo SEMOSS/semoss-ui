@@ -1,5 +1,5 @@
-import { url as apiUrl } from "../lib/url";
-import { post } from "../utility/fetch";
+import { post } from "../lib/fetch";
+import { url as apiUrl } from "../utility/url";
 
 /**
  * Upload file(s) to an app

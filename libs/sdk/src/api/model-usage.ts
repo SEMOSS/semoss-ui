@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { get, post } from "../utility";
+import { get, post } from "../lib/fetch";
 import { type ModelUsageLimit, readModelUsageLimit } from "./access";
 
 /** The base URL of the admin model usage calls */

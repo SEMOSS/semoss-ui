@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../env";
+import { ApiError, UnauthorizedError } from "../lib/api-error";
 import {
 	HttpError,
 	UnauthorizedError as LegacyUnauthorizedError,
-} from "../utility/error";
-import { get as legacyGet, post as legacyPost } from "../utility/fetch";
-import { CSRF, clearSession } from "../utility/session";
-import { ApiError, UnauthorizedError } from "./api-error";
-import { del, get, post, put, repeat } from "./http";
+} from "../lib/error";
+import { CSRF, get as legacyGet, post as legacyPost } from "../lib/fetch";
+import { repeat } from "./body";
+import { del, get, post, put } from "./http";
+import { clearSession } from "./session";
 import { path } from "./url";
 
 /** A response that can carry multiple Set-Cookie headers in Node. */

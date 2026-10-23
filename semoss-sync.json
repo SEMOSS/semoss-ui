@@ -1,0 +1,247 @@
+{
+	"backend": {
+		"version": "5.5.0-SNAPSHOT",
+		"released": false,
+		"monolith": {
+			"path": "../../../Monolith",
+			"ref": "dev"
+		},
+		"semoss": {
+			"path": "../../../Semoss",
+			"ref": "dev"
+		}
+	},
+	"targets": {
+		"api": {
+			"package": "libs/sdk",
+			"syncedAt": "2026-10-23",
+			"monolithCommit": "6fabb05737d5686ae763172559b992f16f7d37d9",
+			"semossCommit": "12781b2478eb97e2a27a911e9bdbc94b6f34ee88",
+			"ignore": [
+				{
+					"method": "POST",
+					"path": "/saml/config/fedletapplication",
+					"reason": "SAML assertion callback handled by SamlVerifierServlet; the identity provider submits this browser form"
+				},
+				{
+					"method": "GET",
+					"path": "/IdpSSOServlet",
+					"reason": "Browser navigation for identity-provider-initiated SAML",
+					"replacement": "monolith/auth.samlIdpUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/SPSSOServlet",
+					"reason": "Browser navigation for service-provider-initiated SAML",
+					"replacement": "monolith/auth.samlSpUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/api/auth/login/*",
+					"reason": "OAuth browser-redirect routes (one per provider; /login/ms is a @Deprecated alias of /login/microsoft; /login/producthunt has @Path but no HTTP verb)",
+					"replacement": "monolith/auth.loginUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/api/auth/login2/*",
+					"reason": "OAuth browser-redirect routes for connector credentials",
+					"replacement": "monolith/auth.login2Url"
+				},
+				{
+					"method": "GET",
+					"path": "/api/project-{projectId}/landing",
+					"reason": "HTML page the browser navigates to",
+					"replacement": "monolith/project.landingUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/github/install/app",
+					"reason": "Browser navigation: 303 redirect to GitHub's app install page",
+					"replacement": "github.appUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/github/user/authorize",
+					"reason": "Browser navigation: 303 redirect to GitHub OAuth",
+					"replacement": "github.authorizeUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/github/manifest/new",
+					"reason": "Browser navigation: auto-submitting HTML form",
+					"replacement": "github/manifest.newUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/github/*/callback",
+					"reason": "Redirect targets GitHub sends the browser to (install, OAuth, manifest); not called by clients"
+				},
+				{
+					"method": "POST",
+					"path": "/github/webhook",
+					"reason": "Webhook called by GitHub (X-Hub-Signature-256 HMAC)"
+				},
+				{
+					"method": "POST",
+					"path": "/msgraph/notifications/*",
+					"reason": "Webhooks called by Microsoft Graph (MicrosoftGraphNotificationService)"
+				},
+				{
+					"method": "GET",
+					"path": "/browserSocket/{sessionId}",
+					"reason": "WebSocket upgrade (RemoteBrowserSessionWebSocket); use a WebSocket client",
+					"replacement": "monolith/browser-sessions.browserSocketUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/insightSocket",
+					"reason": "WebSocket upgrade (InsightWebsocket); requires an authenticated session and insightId query parameter",
+					"replacement": "monolith/session.insightSocketUrl"
+				}
+			],
+			"auditNotes": [
+				"Audited local Monolith and Semoss source trees, including backend working-tree changes. Existing backend edits were preserved; no backend files were modified.",
+				"Monolith web.xml had local deployment/filter changes; registered resource mappings were checked in that working tree.",
+				"Coverage starts at web.xml and every REST application registration, follows reachable subresource locators, and traces response serializers, reactors, query aliases, and streaming implementations. SDK @source and @endpoint tags provide operation-level mappings.",
+				"RunInsight has two POST methods mounted under both /exec and /share. NameServer dataframe and legacy-engine locators are included. CentralNameServer historical HTTP methods are commented out.",
+				"OAuth loginUrl and login2Url cover 18 navigation declarations. JSON/SSE producers and download wrappers/builders can share method/path patterns."
+			],
+			"coverage": {
+				"registeredRestApplications": 6,
+				"resourceModules": 49,
+				"activeHttpMethodDeclarations": 397,
+				"requestImplementations": 369,
+				"navigationImplementations": 22,
+				"inboundOnlyImplementations": 6,
+				"requestWrappers": 371,
+				"urlBuilders": 15,
+				"endpointAnnotations": 386,
+				"distinctMethodPathPatterns": 379,
+				"unaccountedOperations": 0,
+				"obsoleteRequestWrappers": 0,
+				"declarationsByApplication": {
+					"/api": 366,
+					"/health": 3,
+					"/adminconfig": 1,
+					"/token": 2,
+					"/github": 18,
+					"/msgraph": 7
+				},
+				"declarationsByResourceGroup": {
+					"Auth/admin/group/access resources and AuthorizationResource": 210,
+					"UserResource": 34,
+					"NameServer": 20,
+					"DataframeResource": 1,
+					"OldEngineResource": 4,
+					"RunInsight": 2,
+					"SessionResource": 5,
+					"EngineRouteResource": 4,
+					"ProjectResource": 14,
+					"Database engine": 3,
+					"Storage engine": 3,
+					"Model engine": 4,
+					"Vector engine": 3,
+					"Function engine": 2,
+					"FileUploader": 5,
+					"ImageUploader": 8,
+					"Scheduler": 1,
+					"Admin themes": 7,
+					"Server configuration": 3,
+					"Forms": 4,
+					"OpenAI": 13,
+					"Anthropic": 1,
+					"Ollama": 5,
+					"MCP": 2,
+					"A2A": 3,
+					"RemoteBrowserSessionController": 5,
+					"Health": 3,
+					"Adminconfig": 1,
+					"Token": 2,
+					"GitHubService": 13,
+					"AdminGitHubService": 5,
+					"MicrosoftGraphSubscriptionService": 5,
+					"Microsoft Graph notification service": 2
+				},
+				"urlBuildersByPurpose": {
+					"navigation": 6,
+					"fetchConvenience": 5,
+					"samlAndWebSocket": 4
+				}
+			},
+			"backendFindings": [
+				{
+					"finding": "Single-frame JDBC CSV uses the JSON query producer",
+					"sourceEvidence": "Monolith ProjectResource.java, jdbcCSV single-frame branch around line 1224",
+					"consequence": "Treats a result map as a filename and fails; multi-frame CSV uses its CSV producer."
+				},
+				{
+					"finding": "Model SSE only terminates on progress-complete",
+					"sourceEvidence": "Monolith ModelEngineResource.java, streaming loop around line 210",
+					"consequence": "Failed/cancelled/unknown jobs may leave the stream open; callers need cancellation/deadlines."
+				},
+				{
+					"finding": "Legacy playsheet-parameter reactor has no insight",
+					"sourceEvidence": "Monolith OldEngineResource.java:105; Semoss GetPlaysheetParamsReactor.java:91",
+					"consequence": "The reactor dereferences this.insight, so the deprecated endpoint can fail before producing a result."
+				},
+				{
+					"finding": "Misspelled function definition reactor",
+					"sourceEvidence": "Monolith FunctionEngineResource.java:97 invokes GetFunctionEngineDefintion",
+					"consequence": "The definition endpoint fails instead of invoking GetFunctionEngineDefinition."
+				},
+				{
+					"finding": "Legacy form permission checks swallow denial",
+					"sourceEvidence": "Monolith FormResource.java:305 and :334 catch the IllegalAccessException they throw",
+					"consequence": "A missing permission row is logged without reliably stopping the protected operation. Backend remediation is needed."
+				},
+				{
+					"finding": "Misspelled legacy form response media type",
+					"sourceEvidence": "Monolith FormResource.java:221 produces applicaiton/json",
+					"consequence": "Incorrect content type on the legacy read endpoint."
+				},
+				{
+					"finding": "User deletion is a placeholder",
+					"sourceEvidence": "Monolith UserAuthorizationResource.java, deleteUser",
+					"consequence": "Returns a null Response/204 for a valid session without deleting the account. The wrapper now describes this behavior."
+				},
+				{
+					"finding": "Cluster token response mislabels IP as date",
+					"sourceEvidence": "Monolith TrustedTokenService.java:91\u201393; Semoss SecurityTokenUtils.java:110",
+					"consequence": "The cluster array's IP slot is exposed as dateAdded; local token creation stores a timestamp in that slot."
+				},
+				{
+					"finding": "Endpoint discovery is incomplete",
+					"sourceEvidence": "Monolith ServerConfigurationResource.java, reflection loop around line 414",
+					"consequence": "Direct singleton reflection does not traverse reachable locators and reports only one verb per method; it cannot serve as the sole coverage inventory."
+				}
+			],
+			"validation": {
+				"scope": "Recorded local source audit, mocked tests, builds, and type checks; no live backend integration or browser visual/keyboard verification.",
+				"nodeVersion": "24.4.0",
+				"pnpmVersion": "10.13.1",
+				"baselineUnitTestsPassed": 204,
+				"unitTestsPassed": 262,
+				"unitTestFiles": 22,
+				"buildIntegrationTestsPassed": 5,
+				"typeCheck": "passed",
+				"productionBuild": "passed",
+				"focusedBiome": "passed",
+				"publicJavaScriptAndTypeEntries": 52,
+				"deprecatedRootWrappers": 18,
+				"consumerBundles": "Route-only imports exclude unused functions, React, stores, and the root listener while initializing document Env. Root imports retain the functional message listener.",
+				"consumerRegressions": "Sharing candidates, automation progress, and partial tool events passed.",
+				"consumerTypeChecks": {
+					"introducedDiagnostics": 0,
+					"existingDiagnostics": {
+						"client": 289,
+						"playground": 2,
+						"automation": 28,
+						"collaboration": 13,
+						"cli": 0
+					},
+					"notes": "Compared each consumer configuration against starting-HEAD declarations. Shared has no diagnostics in client/playground configurations; its 12 strict audit-log diagnostics are included in the automation count."
+				}
+			}
+		}
+	}
+}

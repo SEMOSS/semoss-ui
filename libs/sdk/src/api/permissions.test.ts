@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { get } from "../utility/fetch";
+import { get } from "../lib/fetch";
 import {
 	getEngineUsers,
 	getEngineUsersNoCredentials,
@@ -9,8 +9,8 @@ import {
 	searchForUser,
 } from "./permissions";
 
-vi.mock("../utility/fetch", async (importOriginal) => ({
-	...(await importOriginal<typeof import("../utility/fetch")>()),
+vi.mock("../lib/fetch", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../lib/fetch")>()),
 	get: vi.fn(),
 }));
 

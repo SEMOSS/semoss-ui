@@ -12,8 +12,8 @@
  */
 
 import type { RequestOptions } from "../../../lib/api-types";
-import { post } from "../../../lib/http";
-import { path } from "../../../lib/url";
+import { post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Calls a method on the playsheet of a legacy (`OldInsight`) insight. Any other

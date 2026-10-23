@@ -9,10 +9,10 @@ interface CsrfState {
 }
 
 /**
- * The existing mutable CSRF facade. Cookie tracking is used only in headless
- * mode; assigning `cookie` replaces the manually managed cookie jar.
+ * Internal state behind the public CSRF facade. Cookie tracking is used only in
+ * headless mode; assigning `cookie` replaces the manually managed cookie jar.
  */
-export const CSRF: CsrfState = {
+export const csrfState: CsrfState = {
 	isEnabled: false,
 	token: "",
 	get cookie(): string {
@@ -37,7 +37,7 @@ export const CSRF: CsrfState = {
 /** Forget credentials issued by the server without changing CSRF configuration. */
 export const clearSession = (): void => {
 	generation += 1;
-	CSRF.token = "";
+	csrfState.token = "";
 	cookies.clear();
 };
 
@@ -86,6 +86,6 @@ export const rememberSession = (
 	}
 	const token = response.headers.get("X-CSRF-Token");
 	if (token && token.toLowerCase() !== "required") {
-		CSRF.token = token;
+		csrfState.token = token;
 	}
 };

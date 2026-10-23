@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-	CSRF,
-	clearSession,
-	getSessionGeneration,
-	rememberSession,
-} from "./session";
+import { CSRF } from "../lib/fetch";
+import { clearSession, getSessionGeneration, rememberSession } from "./session";
 
 beforeEach(() => {
 	clearSession();

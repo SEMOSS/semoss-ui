@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { get, post } from "../utility/fetch";
+import { get, post } from "../lib/fetch";
 import {
 	getEffectivePermissions,
 	getMyUsageLimitPath,
@@ -14,8 +14,8 @@ import {
 	validatePermissionBatches,
 } from "./access";
 
-vi.mock("../utility/fetch", async (importOriginal) => ({
-	...(await importOriginal<typeof import("../utility/fetch")>()),
+vi.mock("../lib/fetch", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../lib/fetch")>()),
 	get: vi.fn(),
 	post: vi.fn(),
 }));

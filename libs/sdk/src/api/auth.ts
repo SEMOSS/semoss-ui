@@ -1,6 +1,6 @@
 import { Env } from "../env";
-import { HttpError } from "../utility/error";
-import { get, post } from "../utility/fetch";
+import { HttpError } from "../lib/error";
+import { get, post } from "../lib/fetch";
 import { clearSession } from "../utility/session";
 
 /**

@@ -9,8 +9,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { get } from "../../lib/http";
-import { path } from "../../lib/url";
+import { get } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Liveness: the servlet container is serving requests. Always `UP` when

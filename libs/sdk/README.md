@@ -98,13 +98,18 @@ route `UnauthorizedError` after browser redirect handling. Both are exported fro
 `@semoss/sdk/api`. Root `get`/`post` still return `{ response, data }`, use their
 existing encoding/error contracts, and export mutable `CSRF`.
 
+Within the SDK source, `lib/` owns public helper implementations and route contracts;
+`utility/` owns internal transport support. Consumers continue to use the documented
+root, React, and API imports.
+
 ### Upgrading
 
 The standalone `@semoss/monolith` package, `ApiClient`, `ApiSettings`, and the old
 `@semoss/sdk/monolith` exports have been removed. Use `Env.update` for configuration
 and replace `@semoss/sdk/monolith/api/<resource>` with
 `@semoss/sdk/api/monolith/<resource>`. Other servlets move from
-`@semoss/sdk/monolith/<servlet>` to `@semoss/sdk/api/<servlet>`.
+`@semoss/sdk/monolith/<servlet>` to `@semoss/sdk/api/<servlet>`. These are breaking
+import and configuration changes.
 
 `runPixel` remains a root export with the same positional arguments, generic tuple,
 and normalized result. Its implementation is `src/lib/pixel.ts`. Thin legacy REST
@@ -122,7 +127,31 @@ wrappers remain callable with declaration deprecations:
 
 Routes take object parameters and return raw backend bodies. Higher-level configuration,
 normalization, authentication orchestration, chat, stores, and hooks remain supported.
-See [API_SYNC.md](./API_SYNC.md) for corrected contracts and backend findings.
+
+#### Corrected resource contracts
+
+The following corrections can require request or type changes when migrating from
+the old REST package. Raw resources leave fields absent when the backend's Gson
+serializer omits them; legacy helpers normalize only their established SDK results.
+
+| Area | Consumer impact |
+| --- | --- |
+| JDBC POST | JSON/CSV endpoints send raw SQL text with `insightId` in the query. JSON frames return `columns` and `data`, or R `dataArray`; Python SELECT may include `index`. An HTTP 200 response can contain an error string. Binary JDBC returns an opaque FST blob. |
+| GitHub installations | `account`, `accountType`, and `repositorySelection` are optional when database metadata is null. Installation id and suspension remain present. |
+| Directory lookup | Microsoft Graph configuration can omit fields or change their types, so configurable raw fields remain `unknown`. Legacy permission candidates validate id/type and optional display fields without assigning a permission. |
+| Engine catalog | `engine_tool_app` is an optional project-id string, not a boolean. Favorites, permissions, and nullable fields follow the backend response shape. |
+| Pipeline | Pipeline and parsing results use structured types. Noun values, custom options, frame metadata, and layout positions remain dynamic. |
+| Agent runs | Handle progress events, optional room ids, partial tool fields, and workflow/artifact/review evidence. Raw approval fields can be omitted; legacy poll/get/stop helpers normalize nullable fields and the pending-action array. |
+| Usage limits | Limit types and billing sources use finite unions; `DIRECT` and `ALL_MODELS` refer to user id/type. Model usage can contain optional billing sources, rules, model-total ceilings, capped status, and reset times. An omitted limit update differs from an explicit null limit. |
+| A2A | Null response ids are omitted; state and role enums retain the backend's Java names. JSON and SSE calls negotiate the corresponding response producer. |
+| Authentication | Credential login/logout routes default `disableRedirect` to `true`. Access-token provider maps represent null profile values as the string `"null"`. |
+| Microsoft Graph | Omitted or nonpositive subscription minutes use the resource maximum; positive values are clamped between 45 minutes and that maximum. Recorded database fields may be omitted; upstream payload extensions remain dynamic. |
+| Upload compatibility | Legacy wrappers encode ids and paths and omit a null insight id. `upload` returns records directly; the other upload helpers retain `{ response, data }`. |
+| Legacy routes | Form and old-engine functions and the legacy MCP SSE variant carry deprecations. The legacy permission helpers retain their admin argument for compatibility but use the ordinary permission routes because no admin variant exists. |
+
+Pixel outputs, playsheet/function results, provider mappings, tool arguments and
+metadata, model protocol extensions, and MCP method-specific results can remain
+dynamic. Check each resource's documented contract before narrowing those values.
 
 ## LinOTP Authentication
 
@@ -269,12 +298,13 @@ when `Env.TOOL` is present. It is not the agent approval API; use the
 
 ## Testing
 
-This package uses [Vitest](https://vitest.dev/) for unit tests.
+This package uses [Vitest](https://vitest.dev/) for source unit tests and a separate
+build integration suite.
 
 ### Running Tests
 
 ```sh
-# run all SDK tests once from this monorepo
+# run SDK source unit tests once from this monorepo
 pnpm --filter @semoss/sdk test
 
 # run in watch mode
@@ -282,7 +312,16 @@ pnpm --filter @semoss/sdk test:watch
 
 # run with coverage
 pnpm --filter @semoss/sdk test:coverage
+
+# build the production SDK and run build integration tests
+pnpm --filter @semoss/sdk test:integration
 ```
+
+The ordinary test, watch, and coverage commands include only source unit tests.
+`test:integration` first builds the production SDK, then runs the separate suite
+under `tests/integration/`. It creates temporary consumer bundles to verify public
+exports, declarations, tree shaking, and initialization, and cleans them up after
+the run. These checks use local build artifacts and do not call a live backend.
 
 ### What's Tested
 
@@ -292,17 +331,22 @@ pnpm --filter @semoss/sdk test:coverage
 | Agent state | [agent.store.test.ts](./src/stores/agent/agent.store.test.ts) | Item accumulation, ordering, reconciliation, failure caps, and local abort |
 | Insight state | [insight.store.test.ts](./src/stores/insight/insight.store.test.ts) | Initialization and room binding |
 | Environment | [env.test.ts](./src/env.test.ts) | Environment configuration |
+| Build integration | `tests/integration/exports.test.ts` (monorepo) | Public exports, declarations, consumer tree shaking, and initialization |
 
 These are local mocked tests, not proof of deployed backend compatibility.
 
 ### Writing Tests
 
-Name SDK tests `*.test.ts` and place them next to the source file they cover, e.g.:
+Name SDK tests `*.test.ts`. Place source unit tests next to the source file they
+cover, e.g.:
 
 ```
-src/utility/fetch.ts
-src/utility/fetch.test.ts
+src/lib/fetch.ts
+src/lib/fetch.test.ts
 ```
+
+Build integration tests belong under `tests/integration/` and run through
+`vitest.integration.config.ts` after the production build.
 
 ## 🔄 Migration Guide
 

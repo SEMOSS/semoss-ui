@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { post } from "../utility/fetch";
+import { post } from "../lib/fetch";
 
 /** Maximum encoded file size accepted by catalog image upload endpoints. */
 export const CATALOG_IMAGE_MAX_BYTES = 10 * 1024 * 1024;

@@ -10,8 +10,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { get } from "../../lib/http";
-import { path } from "../../lib/url";
+import { get } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Searches users by name, email, id or username. Uses the Microsoft Graph

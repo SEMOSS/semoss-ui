@@ -18,8 +18,8 @@
  */
 
 import type { RequestOptions } from "../../../lib/api-types";
-import { post } from "../../../lib/http";
-import { path } from "../../../lib/url";
+import { post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Sends a Messages API request to a SEMOSS model. `thinking.budget_tokens` is

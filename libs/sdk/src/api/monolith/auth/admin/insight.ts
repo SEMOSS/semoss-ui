@@ -15,8 +15,8 @@
  */
 
 import type { RequestOptions } from "../../../../lib/api-types";
-import { get, post } from "../../../../lib/http";
-import { path } from "../../../../lib/url";
+import { get, post } from "../../../../utility/http";
+import { path } from "../../../../utility/url";
 
 /**
  * Lists every insight on the server (or in one project), paged, with the

@@ -1,4 +1,5 @@
 import { Env } from "../env";
+import { post } from "../lib/fetch";
 import { runPixel } from "../lib/pixel";
 import type {
 	AgentRunItemEvent,
@@ -8,7 +9,6 @@ import type {
 	PendingAgentAction,
 	SubagentRunSummary,
 } from "../types";
-import { post } from "../utility/fetch";
 import type { agentRunStreaming } from "./monolith/engine";
 
 type NullableActionField =

@@ -123,7 +123,7 @@ describe("Env", () => {
 			async (module) => {
 				stubEnvTag(null);
 				const Env = await loadEnv();
-				const { url } = await import("./lib/url");
+				const { url } = await import("./utility/url");
 				const { getUserProjectPermission } = await import(
 					"./api/monolith/auth/project"
 				);
@@ -162,7 +162,7 @@ describe("Env", () => {
 		it("keeps the shared token across updates that do not change the connection", async () => {
 			stubEnvTag(null);
 			const Env = await loadEnv();
-			const { CSRF } = await import("./utility/session");
+			const { CSRF } = await import("./lib/fetch");
 			const { runPixel } = await import("./api/monolith/engine");
 			const fetchMock = vi.fn<typeof fetch>(async (input) =>
 				String(input).endsWith("/api/config/fetchCsrf")
@@ -231,7 +231,7 @@ describe("Env", () => {
 		it("clears the session when the backend, effective identity, or headless mode changes", async () => {
 			stubEnvTag(null);
 			const Env = await loadEnv();
-			const { CSRF } = await import("./utility/session");
+			const { CSRF } = await import("./lib/fetch");
 			for (const update of [
 				{ MODULE: "/other" },
 				{ ACCESS_KEY: "a", SECRET_KEY: "s" },

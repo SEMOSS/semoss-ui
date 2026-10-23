@@ -3,7 +3,7 @@
  * The typed route helpers use them.
  */
 
-import type { RequestShape } from "./api-types";
+import type { RequestShape } from "./request-types";
 
 /**
  * Marks an array sent as repeated form keys (`id=a&id=b`) instead of JSON.

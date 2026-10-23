@@ -52,9 +52,10 @@ second API reference.
 | `pnpm dev` | Watch mode (`vite build --watch`) |
 | `pnpm build` | Production build |
 | `pnpm build:dev` | Development build |
-| `pnpm test` | Run tests once (Vitest) |
-| `pnpm test:watch` | Tests in watch mode |
-| `pnpm test:coverage` | Coverage report |
+| `pnpm test` | Run source unit tests once (Vitest) |
+| `pnpm test:watch` | Source unit tests in watch mode |
+| `pnpm test:coverage` | Source unit test coverage report |
+| `pnpm test:integration` | Build the production SDK, then run build integration tests |
 
 ## Structure
 
@@ -65,14 +66,25 @@ router):
 |---------------|---------|
 | `api/` | API / pixel call implementations |
 | `stores/` | State (e.g. `InsightStore`, exported as `Insight`) |
-| `utility/` | SDK helpers and shared HTTP session state |
-| `lib/` | Route transport and canonical positional `runPixel` (`pixel.ts`) |
+| `utility/` | Internal request transport, encoding, URLs, request types, and session state |
+| `lib/` | Public helper implementations and route contracts |
 | `js-frameworks/react/` | React binding (published as `@semoss/sdk/react`) |
 | `constants.ts` | Shared constants |
 | `env.ts` | Environment configuration |
 | `listener.ts` | Side-effect listener imported at the top of `index.ts` |
 | `types.ts` | Shared TypeScript types |
 | `index.ts` | Main barrel |
+
+`lib/` owns `pixel.ts` (`runPixel`), `fetch.ts` (`get`, `post`, `CSRF`), `error.ts`,
+and `embed-auth.ts`. Route contracts live in `api.ts`, `api-error.ts`, and
+`api-types.ts`; the last contains only public `RequestOptions`.
+The root exports public helpers directly from their defining files. Consumers keep
+using the existing root, React, and API imports.
+
+`utility/` owns internal `http.ts`, `body.ts`, `url.ts`, `request.ts` (shared sender
+and redirects), `request-types.ts` (`QueryParams` and `RequestShape`), and
+`session.ts`. Import these defining files internally; keep utility modules out of
+public exports and do not add a utility barrel.
 
 ## Agent Guardrails
 
@@ -99,14 +111,21 @@ router):
 
 ### Testing Changes
 
-Name SDK test files `*.test.ts` and place them next to the source they cover.
+Name SDK test files `*.test.ts`. Place source unit tests next to the source they
+cover; put build integration tests under `tests/integration/`.
 
 For SDK source changes, run the relevant tests first, then the package gates:
 
 ```bash
 pnpm --filter @semoss/sdk test
-pnpm --filter @semoss/sdk build
+pnpm --filter @semoss/sdk test:integration
 ```
+
+The ordinary test, watch, and coverage commands run only source unit tests.
+`test:integration` builds the production SDK first, then runs the separate Vitest
+suite configured by `vitest.integration.config.ts`. The suite creates temporary
+consumer bundles to check published exports, declarations, tree shaking, and
+initialization, and cleans them up after the run.
 
 For documentation-only edits, check local links, skill metadata, package inclusion,
 and examples against source exports/types. Run focused tests for lifecycle claims;
@@ -123,8 +142,9 @@ the document's `semoss-env` tag without importing stores, React, or the root lis
 take precedence over access/secret credentials, which take precedence over caller
 Authorization headers. `REDIRECT_URL` overrides browser authentication redirects.
 
-The route adapter (`lib/http.ts`) and public `get`/`post` helpers
-(`utility/fetch.ts`) share one sender and session (`utility/session.ts`). CSRF is
+The route adapter (`utility/http.ts`) and public `get`/`post` helpers
+(`lib/fetch.ts`) share one sender (`utility/request.ts`) and session
+(`utility/session.ts`). CSRF is
 opt-in via `Env.CSRF` or the existing mutable `CSRF.isEnabled`; cookie tracking is
 opt-in via `Env.HEADLESS`. A full logout or effective connection change clears both
 cookies and token. Unrelated Env updates preserve them. Late responses from a cleared
@@ -137,8 +157,8 @@ callable with declaration deprecations; higher-level normalization, configuratio
 authentication orchestration, chat, stores, and hooks remain supported. Do not remove
 `get`, `post`, `CSRF`, or the deprecated wrappers as part of routine sync work.
 
-After a production build, run `pnpm --filter @semoss/sdk test:exports` to verify
-public JavaScript and declaration paths, route-only tree shaking, and initialization.
+Run `pnpm --filter @semoss/sdk test:integration` to build and verify public
+JavaScript and declaration paths, route-only tree shaking, and initialization.
 
 ## Chat and Agent Ownership
 

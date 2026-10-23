@@ -1,8 +1,5 @@
 import { Env } from "../env";
-import { HttpError, UnauthorizedError } from "./error";
-import { CSRF, getSessionGeneration, rememberSession } from "./session";
-
-export { CSRF } from "./session";
+import { csrfState, getSessionGeneration, rememberSession } from "./session";
 
 const CSRF_HEADER = "X-CSRF-Token";
 
@@ -61,8 +58,8 @@ const requestHeaders = (
 	if (Env.BEARER_PROVIDER) {
 		headers.set("Bearer-Provider", Env.BEARER_PROVIDER);
 	}
-	if (Env.HEADLESS && CSRF.cookie) {
-		headers.set("cookie", CSRF.cookie);
+	if (Env.HEADLESS && csrfState.cookie) {
+		headers.set("cookie", csrfState.cookie);
 	}
 	const result = Object.fromEntries(headers);
 	// Preserve the public helpers' header representation for existing callers.
@@ -101,7 +98,7 @@ export const sendRequest = async (
 	const generation = getSessionGeneration();
 	const method = (options.method ?? "GET").toUpperCase();
 	const needsCsrf =
-		(CSRF.isEnabled || Env.CSRF) &&
+		(csrfState.isEnabled || Env.CSRF) &&
 		["POST", "PUT", "DELETE"].includes(method);
 	const replayable =
 		typeof ReadableStream === "undefined" ||
@@ -109,7 +106,7 @@ export const sendRequest = async (
 
 	for (let attempt = 0; ; attempt += 1) {
 		checkRequest(options.signal, generation);
-		if (needsCsrf && !CSRF.token) {
+		if (needsCsrf && !csrfState.token) {
 			const headers = requestHeaders(options.headers);
 			delete headers["x-csrf-token"];
 			headers[CSRF_HEADER] = "fetch";
@@ -131,9 +128,9 @@ export const sendRequest = async (
 
 		// The bootstrap may have issued the cookie needed by this very first write.
 		const headers = requestHeaders(options.headers);
-		if (needsCsrf && CSRF.token) {
+		if (needsCsrf && csrfState.token) {
 			delete headers["x-csrf-token"];
-			headers[CSRF_HEADER] = CSRF.token;
+			headers[CSRF_HEADER] = csrfState.token;
 		}
 		const response = await fetch(path, { ...options, headers });
 		checkRequest(options.signal, generation);
@@ -145,104 +142,9 @@ export const sendRequest = async (
 			response.status === 403 &&
 			response.headers.get(CSRF_HEADER)?.toLowerCase() === "required"
 		) {
-			CSRF.token = "";
+			csrfState.token = "";
 			continue;
 		}
 		return response;
 	}
-};
-
-/** Preserve the legacy redirect error independently of typed route errors. */
-const handleLegacyRedirect = (response: Response): void => {
-	if (followResponseRedirect(response)) {
-		throw new UnauthorizedError(
-			"Redirecting from header direct value",
-			302,
-		);
-	}
-};
-
-/**
- * Make a get call to the backend.
- * @param path - The complete request URL.
- * @param options - Options to pass into Fetch.
- * @returns The response and parsed JSON data.
- */
-export const get = async <O>(path: string, options: RequestInit = {}) => {
-	const response = await sendRequest(path, { method: "GET", ...options });
-	handleLegacyRedirect(response);
-	if (!response.ok) {
-		const errorData: unknown = await response.json();
-		const details =
-			typeof errorData === "object" && errorData !== null
-				? (errorData as Record<string, unknown>)
-				: {};
-		const errorMessage =
-			details.message ||
-			details.error ||
-			details.errorMessage ||
-			`Request failed with status ${response.status}`;
-		throw new Error(String(errorMessage));
-	}
-	const data: unknown = await response.json();
-	return { response, data: data as O };
-};
-
-/**
- * Make a post call to the backend.
- * @param path - The complete request URL.
- * @param body - Form fields or a multipart body.
- * @param options - Options to pass into Fetch.
- * @returns The response and parsed JSON data.
- */
-export const post = async <O>(
-	path: string,
-	body: FormData | Record<string, unknown>,
-	options: RequestInit = {},
-) => {
-	const isFormData = body instanceof FormData;
-	const headers = new Headers(options.headers);
-	if (!isFormData) {
-		headers.set("Content-Type", "application/x-www-form-urlencoded");
-	}
-	const response = await sendRequest(path, {
-		method: "POST",
-		body: isFormData
-			? body
-			: Object.keys(body)
-					.map((key) => {
-						const value =
-							typeof body[key] === "string"
-								? body[key]
-								: JSON.stringify(body[key]);
-						return `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
-					})
-					.join("&"),
-		...options,
-		headers: Object.fromEntries(headers),
-	});
-	handleLegacyRedirect(response);
-	if (!response.ok) {
-		let errorData: unknown = null;
-		try {
-			errorData = await response.json();
-		} catch (error) {
-			options.signal?.throwIfAborted();
-			if (error instanceof DOMException && error.name === "AbortError") {
-				throw error;
-			}
-		}
-		const details =
-			typeof errorData === "object" && errorData !== null
-				? (errorData as Record<string, unknown>)
-				: {};
-		const errorMessage =
-			details.message ||
-			details.error ||
-			details.errorMessage ||
-			`Request failed with status ${response.status}`;
-		throw new HttpError(String(errorMessage), response.status, errorData);
-	}
-	const data: unknown = await response.json();
-	return { response, data: data as O };
 };

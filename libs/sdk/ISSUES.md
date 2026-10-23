@@ -2,7 +2,9 @@
 
 Frontend work still open after the SDK API consolidation. Resource paths below are
 relative to `libs/sdk/src/api/monolith/`; other paths start at the repo root.
-Backend findings are recorded separately in [API_SYNC.md](./API_SYNC.md).
+Backend findings, audit coverage, and validation are recorded separately under
+`targets.api` in the root [semoss-sync.json](../../semoss-sync.json). Follow the
+[sync skill](../../skills/semoss-sync.skill.md) for the audit workflow.
 Delete completed tasks rather than keeping checked items.
 
 ## Incremental application migration

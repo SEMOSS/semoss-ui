@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { CSRF, get, post } from "../utility/fetch";
+import { CSRF, get, post } from "../lib/fetch";
 /**
  * Get the System's configuration information
  */

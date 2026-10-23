@@ -15,8 +15,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { del, get, post } from "../../lib/http";
-import { path, url } from "../../lib/url";
+import { del, get, post } from "../../utility/http";
+import { path, url } from "../../utility/url";
 
 /**
  * Builds the live-view WebSocket URL for an existing browser session.

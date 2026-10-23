@@ -16,8 +16,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { del, get, post } from "../../lib/http";
-import { path, url } from "../../lib/url";
+import { del, get, post } from "../../utility/http";
+import { path, url } from "../../utility/url";
 
 /**
  * Reports whether this server has a GitHub App configured, so the connect UI

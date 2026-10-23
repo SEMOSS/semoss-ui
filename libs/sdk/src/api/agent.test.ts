@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../env";
+import { HttpError } from "../lib/error";
 import { runPixel } from "../lib/pixel";
-import { HttpError } from "../utility/error";
 import { clearSession } from "../utility/session";
 import { getAgentRun, pollAgentRun, runAgent, stopAgentRun } from "./agent";
 import type { agentRunStreaming } from "./monolith/engine";

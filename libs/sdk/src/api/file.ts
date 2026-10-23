@@ -1,5 +1,6 @@
-import { url as apiUrl } from "../lib/url";
-import { post, sendRequest } from "../utility/fetch";
+import { post } from "../lib/fetch";
+import { sendRequest } from "../utility/request";
+import { url as apiUrl } from "../utility/url";
 
 /**
  * Upload file(s) to the backend

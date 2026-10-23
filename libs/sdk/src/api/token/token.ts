@@ -13,8 +13,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { get, post } from "../../lib/http";
-import { path } from "../../lib/url";
+import { get, post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Gets (or creates) the token for the caller's IP. Only allowed when the

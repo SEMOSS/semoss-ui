@@ -1,4 +1,5 @@
 import { Env } from "../env";
+import { get, post } from "../lib/fetch";
 import type {
 	PostUser,
 	Role,
@@ -6,7 +7,6 @@ import type {
 	UserAccessRequest,
 	UserSearchResult,
 } from "../types";
-import { get, post } from "../utility/fetch";
 import { readModelUsageLimit } from "./access";
 
 /** A validated person who can be added to a project or engine. No permission is assigned yet. */

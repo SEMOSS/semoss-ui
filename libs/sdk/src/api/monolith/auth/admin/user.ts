@@ -18,8 +18,8 @@
  */
 
 import type { RequestOptions } from "../../../../lib/api-types";
-import { get, post } from "../../../../lib/http";
-import { path } from "../../../../lib/url";
+import { get, post } from "../../../../utility/http";
+import { path } from "../../../../utility/url";
 
 /**
  * Checks whether the signed-in user is an admin. Any signed-in user may call it.

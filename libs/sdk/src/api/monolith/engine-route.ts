@@ -11,8 +11,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { get, post } from "../../lib/http";
-import { path, url } from "../../lib/url";
+import { get, post } from "../../utility/http";
+import { path, url } from "../../utility/url";
 
 /**
  * Returns the engine's catalog type. Requires view access, or the engine being

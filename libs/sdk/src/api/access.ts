@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { get, post } from "../utility/fetch";
+import { get, post } from "../lib/fetch";
 
 /**
  * What a permission batch changes: a project, an engine, an insight, a custom

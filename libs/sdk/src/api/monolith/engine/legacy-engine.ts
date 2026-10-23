@@ -12,8 +12,8 @@
  */
 
 import type { RequestOptions } from "../../../lib/api-types";
-import { get, post } from "../../../lib/http";
-import { path } from "../../../lib/url";
+import { get, post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Returns the parameters of a saved legacy insight in this database, by

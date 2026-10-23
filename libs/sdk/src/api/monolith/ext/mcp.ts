@@ -11,8 +11,8 @@
  */
 
 import type { RequestOptions } from "../../../lib/api-types";
-import { post } from "../../../lib/http";
-import { path, url } from "../../../lib/url";
+import { post } from "../../../utility/http";
+import { path, url } from "../../../utility/url";
 
 /**
  * Builds the MCP transport endpoint for a protocol client that owns its requests.

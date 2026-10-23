@@ -17,8 +17,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { post } from "../../lib/http";
-import { path } from "../../lib/url";
+import { post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Replaces an engine's image (any catalog type: database, model, storage, …).

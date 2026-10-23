@@ -13,8 +13,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { del, get } from "../../lib/http";
-import { path, url } from "../../lib/url";
+import { del, get } from "../../utility/http";
+import { path, url } from "../../utility/url";
 
 /**
  * Builds the URL the admin's browser navigates to to create this server's

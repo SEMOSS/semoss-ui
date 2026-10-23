@@ -18,9 +18,9 @@ import {
 	uploadUser,
 } from "../../api";
 import { Env } from "../../env";
+import { UnauthorizedError } from "../../lib/error";
 import { runPixel } from "../../lib/pixel";
 import type { MCPToolResponse, Script } from "../../types";
-import { UnauthorizedError } from "../../utility";
 import { Logins } from "../logins";
 import { createRoom, RoomStore } from "../room";
 

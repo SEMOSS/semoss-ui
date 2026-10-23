@@ -50,8 +50,7 @@
     "files": [
         "src",
         "dist",
-        "skills",
-        "API_SYNC.md"
+        "skills"
     ],
     "npmSkills": {
         "publish": {
@@ -63,7 +62,7 @@
         "build": "vite build --configLoader runner",
         "build:dev": "vite build --mode development --configLoader runner",
         "test": "vitest run --configLoader runner",
-        "test:exports": "node scripts/check-exports.mjs",
+        "test:integration": "pnpm build && vitest run --config vitest.integration.config.ts --configLoader runner",
         "test:watch": "vitest --watch --configLoader runner",
         "test:coverage": "vitest --coverage --watch=false --configLoader runner"
     },

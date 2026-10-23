@@ -12,8 +12,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { get } from "../../lib/http";
-import { path } from "../../lib/url";
+import { get } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Reads the server configuration the UI boots from: feature flags, admin-only

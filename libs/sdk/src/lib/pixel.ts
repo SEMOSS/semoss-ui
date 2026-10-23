@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { post } from "../utility/fetch";
+import { post } from "./fetch";
 
 /**
  * Run a pixel string

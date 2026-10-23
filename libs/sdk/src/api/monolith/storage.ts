@@ -14,8 +14,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { post } from "../../lib/http";
-import { path } from "../../lib/url";
+import { post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Lists the entries at a path in the storage (`ListStoragePath`). Requires

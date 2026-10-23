@@ -11,6 +11,9 @@ export {
 } from "./api/image";
 export * from "./constants";
 export * from "./env";
+export { waitForEmbedAuth } from "./lib/embed-auth";
+export { HttpError, UnauthorizedError } from "./lib/error";
+export { CSRF, get, post } from "./lib/fetch";
 export { runPixel } from "./lib/pixel";
 export {
 	AgentStore,
@@ -28,4 +31,3 @@ export {
 	type UserInputRequest,
 } from "./stores";
 export * from "./types";
-export * from "./utility";

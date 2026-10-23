@@ -6,13 +6,12 @@
  * They share the SDK sender and its Env configuration. Failures throw `ApiError`.
  */
 
-import { followResponseRedirect, sendRequest } from "../utility/fetch";
-import { ApiError, UnauthorizedError } from "./api-error";
-import type { QueryParams, RequestOptions, RequestShape } from "./api-types";
+import { ApiError, UnauthorizedError } from "../lib/api-error";
+import type { RequestOptions } from "../lib/api-types";
 import { encodeBody, readBody } from "./body";
+import { followResponseRedirect, sendRequest } from "./request";
+import type { QueryParams, RequestShape } from "./request-types";
 import { url } from "./url";
-
-export { repeat } from "./body";
 
 /**
  * The message of a failed response: the backend's `errorMessage`, or the

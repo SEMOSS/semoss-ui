@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { get, post } from "../utility";
+import { get, post } from "../lib/fetch";
 import type { ModelUsageLimit } from "./access";
 import {
 	getPlatformDefaultLimit,
@@ -8,8 +8,8 @@ import {
 	setTeamTotalLimit,
 } from "./model-usage";
 
-vi.mock("../utility", async (importOriginal) => ({
-	...(await importOriginal<typeof import("../utility")>()),
+vi.mock("../lib/fetch", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../lib/fetch")>()),
 	get: vi.fn(),
 	post: vi.fn(),
 }));

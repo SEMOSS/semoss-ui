@@ -9,9 +9,9 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { get, post } from "../../lib/http";
-import { path, url } from "../../lib/url";
+import { get, post } from "../../utility/http";
 import { clearSession } from "../../utility/session";
+import { path, url } from "../../utility/url";
 
 /**
  * Counts the active sessions on this Tomcat node (excluding the one this call

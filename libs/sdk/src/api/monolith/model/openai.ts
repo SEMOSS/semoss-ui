@@ -23,8 +23,8 @@
  */
 
 import type { RequestOptions } from "../../../lib/api-types";
-import { get, post } from "../../../lib/http";
-import { path } from "../../../lib/url";
+import { get, post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Runs a chat completion against a SEMOSS model in the OpenAI Chat Completions

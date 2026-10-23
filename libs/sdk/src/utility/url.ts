@@ -4,7 +4,7 @@
  */
 
 import { Env } from "../env";
-import type { QueryParams } from "./api-types";
+import type { QueryParams } from "./request-types";
 
 /**
  * Tagged template for paths with parameters. Each interpolated value is

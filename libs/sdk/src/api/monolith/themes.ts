@@ -14,8 +14,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { get, post } from "../../lib/http";
-import { path } from "../../lib/url";
+import { get, post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Reads the active admin theme. Any caller may read it (it is also embedded in

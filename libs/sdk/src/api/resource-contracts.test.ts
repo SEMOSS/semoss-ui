@@ -8,7 +8,8 @@ import {
 	vi,
 } from "vitest";
 import { Env } from "../env";
-import { CSRF, clearSession } from "../utility/session";
+import { CSRF } from "../lib/fetch";
+import { clearSession } from "../utility/session";
 import { setInitialAdmins } from "./adminconfig/adminconfig";
 import { uploadApp } from "./app";
 import { uploadEngine } from "./engine";

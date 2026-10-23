@@ -5,6 +5,7 @@ export default createViteConfig({
 	enableReact: false,
 	enableTailwind: false,
 	test: {
+		include: ["src/**/*.test.{ts,tsx}"],
 		environment: "node",
 		pool: "forks",
 		coverage: {

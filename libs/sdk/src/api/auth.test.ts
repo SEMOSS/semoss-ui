@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../env";
-import { UnauthorizedError } from "../utility/error";
-import { get } from "../utility/fetch";
-import { CSRF, clearSession } from "../utility/session";
+import { UnauthorizedError } from "../lib/error";
+import { CSRF, get } from "../lib/fetch";
+import { clearSession } from "../utility/session";
 import {
 	confirmOTP,
 	connectLogin,
@@ -12,8 +12,8 @@ import {
 	parseLogins,
 } from "./auth";
 
-vi.mock("../utility/fetch", async (importOriginal) => ({
-	...(await importOriginal<typeof import("../utility/fetch")>()),
+vi.mock("../lib/fetch", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../lib/fetch")>()),
 	get: vi.fn(),
 }));
 

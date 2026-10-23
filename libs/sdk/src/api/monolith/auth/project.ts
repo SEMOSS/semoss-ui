@@ -14,8 +14,9 @@
  */
 
 import type { RequestOptions } from "../../../lib/api-types";
-import { get, post, repeat } from "../../../lib/http";
-import { path } from "../../../lib/url";
+import { repeat } from "../../../utility/body";
+import { get, post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Lists the projects the caller can access (directly, through a group, or

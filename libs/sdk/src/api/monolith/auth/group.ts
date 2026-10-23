@@ -16,8 +16,8 @@
  */
 
 import type { RequestOptions } from "../../../lib/api-types";
-import { get, post } from "../../../lib/http";
-import { path } from "../../../lib/url";
+import { get, post } from "../../../utility/http";
+import { path } from "../../../utility/url";
 
 /**
  * Lists the custom groups the caller manages, with when they became a manager

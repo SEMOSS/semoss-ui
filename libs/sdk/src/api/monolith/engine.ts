@@ -21,8 +21,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { get, post } from "../../lib/http";
-import { path, url } from "../../lib/url";
+import { get, post } from "../../utility/http";
+import { path, url } from "../../utility/url";
 
 /** Package-preservation evidence from `PptxEditSession.verify`. */
 export interface AgentArtifactEditAssessment {

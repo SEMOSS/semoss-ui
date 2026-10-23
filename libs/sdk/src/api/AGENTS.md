@@ -3,7 +3,8 @@
 Inherits [the SDK guide](../../AGENTS.md) and the repository standards. Read
 [the sync skill](../../../../skills/semoss-sync.skill.md) for backend audits.
 These resources are framework independent. React work elsewhere still requires the
-full React standard. [API_SYNC.md](../../API_SYNC.md) records the completed audit;
+full React standard. The root [semoss-sync.json](../../../../semoss-sync.json)
+records sync state, audit coverage, backend findings, and validation under `targets.api`;
 [ISSUES.md](../../ISSUES.md) tracks frontend follow-ups, not backend defects.
 
 ## Layout and exports
@@ -21,8 +22,13 @@ full React standard. [API_SYNC.md](../../API_SYNC.md) records the completed audi
 - Keep no per-folder index barrels. Curated common route contracts are exported by
   `src/lib/api.ts` as `@semoss/sdk/api`. `ApiClient` and `ApiSettings` do not exist;
   all settings come from the existing `Env` object.
-- Use relative defining-file imports for `lib/http`, `lib/url`, `lib/api-types` and
-  `utility/session`. Do not import the SDK root, stores, or React from resources.
+- Public route errors and `RequestOptions` belong in `lib/api-error.ts` and
+  `lib/api-types.ts`. Keep `QueryParams` and `RequestShape` internal in
+  `utility/request-types.ts`.
+- Use relative defining-file imports for `utility/http`, `utility/body`,
+  `utility/url`, `utility/session`, and public `lib/api-types`. Do not import the
+  SDK root, stores, or React from resources. Utility modules have no public export
+  or barrel.
 - Resource exports are endpoint functions, URL builders, and types shared by
   repeated request/response shapes. Prefer inline types for small one-off shapes.
   Use a shared named type for complex repeated producer shapes rather than copies.
@@ -50,8 +56,9 @@ broad. Truly unverified shapes need a remark and a frontend follow-up.
 
 ## Transport
 
-- Use `lib/http` helpers; they share `utility/fetch`'s sender and session. The public
-  root helpers keep `{ response, data }`, historical errors, and encoding.
+- Use `utility/http` helpers. They and the public helpers in `lib/fetch` share the
+  sender/redirect handling in `utility/request` and state in `utility/session`.
+  The public root helpers keep `{ response, data }`, historical errors, and encoding.
 - Pass full context-root-relative paths with the `path` template tag; interpolated
   path values are URL-encoded. GET query arrays repeat keys; null/undefined omit.
 - Default POST forms JSON-stringify non-string values. `repeat()` is only for Java
@@ -67,13 +74,16 @@ broad. Truly unverified shapes need a remark and a frontend follow-up.
 - Default `tz` to the browser timezone and `disableRedirect` to `true` on credential
   login/logout wrappers. Explicit false retains the backend redirect behavior.
 - Browser navigation, SAML, and WebSockets use URL builders, with exclusions in
-  `scripts/semoss-sync.json` identifying them as builder-only. Third-party callbacks
+  the root `semoss-sync.json` identifying them as builder-only. Third-party callbacks
   and webhooks are excluded, with reasons. Downloads may expose both a fetch wrapper
   and a URL builder; that is one covered operation and needs no exclusion.
 
 ## Validation
 
-Run focused contract tests, SDK tests, `tsc --noEmit`, production build, and
-`test:exports` under Node 24. Run Biome on changed SDK files. Compare affected
+Run focused contract tests, SDK source unit tests, `tsc --noEmit`, and
+`pnpm --filter @semoss/sdk test:integration` under Node 24. The integration command
+builds the production SDK, then runs the separate build integration suite, creating
+and cleaning temporary consumer bundles. Ordinary test, watch, and coverage commands
+run only source unit tests. Run Biome on changed SDK files. Compare affected
 consumer type checks with their existing baseline; do not turn a route sync into a
 wholesale application migration. Record backend commits/date only after the audit.

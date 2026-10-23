@@ -17,8 +17,9 @@
  */
 
 import type { RequestOptions } from "../../../../lib/api-types";
-import { get, post, repeat } from "../../../../lib/http";
-import { path } from "../../../../lib/url";
+import { repeat } from "../../../../utility/body";
+import { get, post } from "../../../../utility/http";
+import { path } from "../../../../utility/url";
 
 /**
  * Lists every engine on the server for the admin console (runs

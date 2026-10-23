@@ -15,8 +15,8 @@
  */
 
 import type { RequestOptions } from "../../lib/api-types";
-import { del, get, post } from "../../lib/http";
-import { path } from "../../lib/url";
+import { del, get, post } from "../../utility/http";
+import { path } from "../../utility/url";
 
 /**
  * Preflight for a subscription screen: whether the user has a Microsoft login,

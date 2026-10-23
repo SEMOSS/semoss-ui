@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../../env";
-import { UnauthorizedError } from "../../utility";
+import { UnauthorizedError } from "../../lib/error";
 
 const {
 	mockConfirmOTP,
