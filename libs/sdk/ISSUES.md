@@ -1,11 +1,28 @@
 # Outstanding frontend tasks
 
-Frontend work still open after the SDK API consolidation. Resource paths below are
+Frontend work still open after the SDK API and reactor syncs. Resource paths below are
 relative to `libs/sdk/src/api/monolith/`; other paths start at the repo root.
 Backend findings, audit coverage, and validation are recorded separately under
-`targets.api` in the root [semoss-sync.json](../../semoss-sync.json). Follow the
+`targets.api` and `targets.reactors` in the root [semoss-sync.json](../../semoss-sync.json). Follow the
 [sync skill](../../skills/semoss-sync.skill.md) for the audit workflow.
 Delete completed tasks rather than keeping checked items.
+
+## Complete reactor contract audits
+
+The built-in name inventory is complete for the recorded backend snapshot. Name
+coverage does not establish every nested payload shape or contextual input rule.
+The internal [contract gap manifest](./src/lib/reactors/contract-gaps.json) lists
+the affected names; [source evidence](./src/lib/reactors/source-contracts.json)
+records what is already proven. The catalog deliberately uses `unknown` for
+unresolved payloads instead of inferring DTO fields from Java container types.
+Implementation output audits now follow concrete helper calls, SQL row mappers,
+DTOs, and special serializers. Their evidence is recorded separately in the
+internal `*-output-evidence.json` files; known envelopes stay typed when individual
+values come from runtime data or still need a nested-field audit.
+
+- [ ] Audit the remaining parameter value types and execution-specific requiredness in the gap manifest. Trace inherited helpers, aliases, conditional reads, positional ordering, and each frame variant; replace conservative signatures only with verified contracts.
+- [ ] Audit the remaining output shapes in the gap manifest through their utility producers and Gson adapters. Preserve verified envelope fields, distinguish dynamic content from unverified fields, and resolve omission/nullability before narrowing maps or lists.
+- [ ] Extend the positional `Select`, `Filter`, and `Join` contracts to inherited named `qs` merging only after modeling query-subtype-dependent outputs (`AbstractQueryStructReactor.mergeQueryStruct` can preserve `UpdateQueryStruct`). This form remains available through ordinary Pixel strings.
 
 ## Incremental application migration
 
@@ -15,6 +32,7 @@ Delete completed tasks rather than keeping checked items.
 
 ## Fix frontend types that disagree with the Java
 
+- [ ] `auth/engine.ts`, `auth/admin/engine.ts`, `auth/project.ts`, and `auth/admin/project.ts`: `getEngines` / `getEnginesPost` and `getProjects` / `getProjectsPost` use the same list reactors as Pixel. Unreserved metadata keys can collide with base fields such as ids and permission and promote scalar values into lists. Reconcile the REST response types with these producer collisions and nullable SQL cells; the internal Pixel output contracts already preserve them.
 - [ ] `libs/shared/src/types.ts` `Project`: `project_global` is a boolean and `group_permission` is a permission id (1, 2 or 3), not strings.
 - [ ] `packages/collaboration/src/features/rooms/api/agent-run-api.ts:86-89` (likely runtime bug): the zod tool item requires `name` and `arguments`, so `pollSchema.parse` (line 181) throws on a completed Claude Code tool call and breaks the poll.
 - [ ] `libs/sdk/src/stores/insight/insight.store.ts`:

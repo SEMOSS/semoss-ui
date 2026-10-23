@@ -1,14 +1,20 @@
 import { Env } from "../env";
 import { post } from "./fetch";
+import type { ResolvePixelOutput } from "./pixel-types";
 
 /**
- * Run a pixel string
+ * Run a Pixel string, inferring successful output types for buildPixel results.
+ * Explicit output generics retain their existing override behavior. These types
+ * do not validate backend responses; error and delayed entries remain unchanged.
  *
  * @param pixel - pixel
  * @param insightId - id of the insight to run
  */
-export const runPixel = async <O extends unknown[] | []>(
-	pixel: string,
+export const runPixel = async <
+	O extends unknown[] | [],
+	P extends string = string,
+>(
+	pixel: P,
 	insightId?: string,
 ) => {
 	if (!pixel) {
@@ -33,7 +39,7 @@ export const runPixel = async <O extends unknown[] | []>(
 		pixelReturn: {
 			isMeta: boolean;
 			operationType: string[];
-			output: O[number];
+			output: ResolvePixelOutput<P, O[number]>;
 			pixelExpression: string;
 			pixelId: string;
 			additionalOutput?: unknown;

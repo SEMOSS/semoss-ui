@@ -7,6 +7,7 @@ import {
 	useState,
 } from "react";
 import { runPixel } from "../../../lib/pixel";
+import type { ResolvePixelOutput } from "../../../lib/pixel-types";
 import { InsightContext } from "../contexts/Insight.context";
 
 interface PixelState<D> {
@@ -32,7 +33,7 @@ export interface PixelConfig<D> {
 	onFinal: () => void;
 }
 
-interface usePixel<D> extends PixelState<D> {
+interface UsePixelResult<D> extends PixelState<D> {
 	/** Refresh and reexecute the pixel */
 	refresh: () => void;
 	/** Update the data with new information */
@@ -40,17 +41,24 @@ interface usePixel<D> extends PixelState<D> {
 }
 
 /**
- * Send a command to the backend and recieve a response. This is intended to be used by a single pixel statement (nothing seperated by ;)
+ * Execute one Pixel statement and track its response.
  *
- * @param pixel - pixel string to call
+ * Strings from `buildPixel` infer the reactor's output. Explicit data type
+ * arguments and ordinary strings retain the existing caller-defined contract.
+ * Data can be unavailable before success when no initial data is supplied.
  *
+ * @param pixel - Pixel string to call, or an empty string to disable the request
+ * @param config - Initial data and lifecycle callbacks
+ * @param insightId - Insight override, falling back to the current context
  * @returns Information about the pixel response
  */
-export function usePixel<D>(
-	pixel: string,
-	config?: Partial<PixelConfig<D>>,
+export function usePixel<D, P extends string = string>(
+	pixel: P,
+	config?: Partial<PixelConfig<ResolvePixelOutput<P, D>>>,
 	insightId?: string,
-): usePixel<D> {
+): UsePixelResult<ResolvePixelOutput<P, D>> {
+	type Data = ResolvePixelOutput<P, D>;
+
 	const context = useContext(InsightContext);
 	const resolvedInsightId = insightId ?? context?.insightId;
 
@@ -62,9 +70,9 @@ export function usePixel<D>(
 
 	// track the call backs in a config
 	const callbacksRef = useRef<{
-		onSuccess: PixelConfig<D>["onSuccess"];
-		onError: PixelConfig<D>["onError"];
-		onFinal: PixelConfig<D>["onFinal"];
+		onSuccess: PixelConfig<Data>["onSuccess"];
+		onError: PixelConfig<Data>["onError"];
+		onFinal: PixelConfig<Data>["onFinal"];
 	}>({
 		onSuccess: () => null,
 		onError: () => null,
@@ -81,7 +89,7 @@ export function usePixel<D>(
 
 	// store the state
 	const [count, setCount] = useState(0);
-	const [state, setState] = useState<PixelState<D>>({
+	const [state, setState] = useState<PixelState<Data>>({
 		status: "INITIAL",
 		data: config?.data,
 	});
@@ -96,7 +104,7 @@ export function usePixel<D>(
 	/**
 	 * Update the state with new data
 	 */
-	const update = useCallback((data: D, error?: Error) => {
+	const update = useCallback((data: Data, error?: Error) => {
 		setState((prev) => ({
 			...prev,
 			data: data,
@@ -124,7 +132,7 @@ export function usePixel<D>(
 			data: initialData,
 		});
 
-		runPixel<[D]>(pixel, resolvedInsightId)
+		runPixel<[Data]>(pixel, resolvedInsightId)
 			.then((response) => {
 				// ignore if its cancelled
 				if (isCancelled) {

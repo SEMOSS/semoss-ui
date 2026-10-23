@@ -153,6 +153,147 @@ Pixel outputs, playsheet/function results, provider mappings, tool arguments and
 metadata, model protocol extensions, and MCP method-specific results can remain
 dynamic. Check each resource's documented contract before narrowing those values.
 
+## Typed Pixel calls
+
+`buildPixel` builds one built-in reactor call as a primitive string. Reactor names,
+parameters, and audited successful outputs come from the synced backend catalog.
+The string works with both `runPixel` and `usePixel` without a separate transport:
+
+```ts
+import { buildPixel, runPixel } from "@semoss/sdk";
+
+const result = await runPixel(buildPixel("GetProjectList"), "insight-id");
+const projects = result.pixelReturn[0]?.output;
+// projects is an array of project records, or undefined when there is no entry.
+
+const total = await runPixel(buildPixel("SUM", [10, 20, 30]));
+// total.pixelReturn[0].output is a number on success.
+
+const checkout = await runPixel(buildPixel("EngineGitCheckout", {
+    engine: "engine-id",
+    branch: "main",
+}));
+const changedFiles = checkout.pixelReturn[0].output.status.staged;
+// changedFiles contains { path: string; status: string } records.
+```
+
+Named parameters use objects; positional parameters use arrays. Required fields
+are required by the contract. Known parameter keys offer autocomplete; unknown
+names and excess object-literal properties are type errors. The builder also
+rejects unknown reactor names and invalid identifiers at runtime, but does not
+perform backend permission checks or full runtime parameter-schema validation.
+Source-derived contracts require an explicit parameter object or array until
+omission has been verified; their remaining field-level gaps are recorded below.
+
+```ts
+buildPixel("FrameHeaderExists", { column: "revenue" });
+buildPixel("GetProjectMetadata", {
+    project: "project-id",
+    metaKeys: ["description", "tag"],
+});
+buildPixel("LLM", {
+    engine: "model-id",
+    command: "Summarize this report",
+    paramValues: { temperature: 0.3 },
+});
+```
+
+Frame operations require the appropriate frame in the insight. Some operations
+have different implementations for different frame types; their contract notes
+describe supported argument forms. Source-derived contracts whose execution or
+wire shapes still need verification are explicitly marked in their declarations
+and the internal [contract audit gaps](./src/lib/reactors/contract-gaps.json). Dynamic
+or unverified outputs remain `unknown`; a catalog entry is not a guarantee that
+the deployment enables the corresponding backend capability. Types describe
+top-level built-in calls. Project overrides can replace those implementations;
+nesting expressions inside a query can also select different reactor behavior.
+
+Output inference follows each implementation through its helper methods and wire
+serializers. For example, `WorkListItems` exposes `items`, `total`, `fyiCount`, and
+`automatedSkippedCount`; `BrainGetSettings` exposes `memory.use` and
+`assistantSkills`; and `Select` exposes typed selector and filter records. Nullable
+database results remain nullable, and fields omitted by Gson remain optional.
+The private `*-output-evidence.json` files record the concrete producers and
+remaining dynamic or unverified leaves independently of parameter audit status.
+
+Strings are always literal data. Use `rawPixel` for trusted column references,
+comparisons, relationships, and nested operations:
+
+```ts
+import { buildPixel, rawPixel } from "@semoss/sdk";
+
+buildPixel("Select", [rawPixel("department"), rawPixel("Sum(cost)")]);
+// Select(department,Sum(cost));
+
+buildPixel("Filter", [rawPixel('status == "active"')]);
+buildPixel("Join", [rawPixel("(a, inner.join, b)")]);
+```
+
+These three query builders expose positional forms. Their inherited named `qs`
+merging can return other query-struct subtypes; use an ordinary Pixel string for
+that form until its input-dependent output contract is audited.
+
+Raw values contain one expression fragment without a statement terminator.
+`rawPixel` checks for nonempty text but does not sanitize it or parse its grammar.
+Use ordinary strings for user-provided text. Named scalar values become noun
+arrays; named arrays supply multiple noun values. The serializer preserves empty
+values and null, omits undefined map fields, and rejects cycles, sparse arrays,
+undefined array entries, unsupported objects, and nonfinite numbers. It escapes
+strings for Pixel's lexer and encoding preprocessor and expands exponent notation.
+Whole numbers outside the signed 32-bit range use decimal literals to avoid
+backend integer truncation; negative zero is emitted as `-0.0`.
+Arrays supplied as individual values use `Vector(...)`, because brackets outside
+maps otherwise flatten their contents into the current argument row. Arrays inside
+maps remain JSON-style arrays; empty and singleton vectors keep their identity.
+
+In React, inferred output types flow into `data`, initial values, callbacks, and
+`update`. Empty strings retain the hook's existing disable behavior:
+
+```tsx
+import { buildPixel } from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
+
+function useProjects(isEnabled: boolean, insightId?: string) {
+    return usePixel(
+        isEnabled ? buildPixel("GetProjectList") : "",
+        {
+            data: [],
+            onSuccess(projects) {
+                console.log(projects.map((project) => project.project_id));
+            },
+        },
+        insightId,
+    );
+}
+
+function useWorkItems(insightId?: string) {
+    return usePixel(buildPixel("WorkListItems", {}), {
+        data: { items: [], total: 0, fyiCount: 0, automatedSkippedCount: 0 },
+        onSuccess(page) {
+            console.log(page.total, page.items.map((item) => item.title));
+        },
+    }, insightId);
+}
+```
+
+`usePixel` retains its first-result selection, status, refresh, local update,
+callback, and insight-context behavior. Rebuilding the same string during render
+does not itself refetch. Initial data can be unavailable before success when it
+is omitted, as before; read status before using the result. Use hooks for reads
+and execute mutations from event handlers.
+
+Existing `runPixel<[MyOutput]>(pixel)` and `usePixel<MyOutput>(pixel)` calls remain
+supported and override inferred output types. Inference describes expected
+successful output, not runtime response validation: `runPixel` still collects
+Pixel errors and retains all entries, including delayed messages. Converting a
+built string to a plain `string`, interpolating it, or joining multiple statements
+loses its type metadata. Custom reactors and complete Pixel programs continue to
+work through ordinary string calls. Only `buildPixel` and `rawPixel` are new
+public exports; catalog and support types stay internal.
+
+Contributors maintain the catalog through the `reactors` target in the root
+`semoss-sync.json` and the [sync skill](../../skills/semoss-sync.skill.md).
+
 ## React API Requests
 
 `useAPI` from `@semoss/sdk/react` runs a typed API function and exposes the same

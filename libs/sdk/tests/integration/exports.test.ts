@@ -35,6 +35,8 @@ const routeGroups = [
 	"token",
 ];
 const publicRootHelpers = [
+	"buildPixel",
+	"rawPixel",
 	"runPixel",
 	"get",
 	"post",
@@ -62,6 +64,24 @@ const internalExports = [
 	"RequestShape",
 	"CsrfState",
 	"Repeated",
+	"BuiltPixel",
+	"BuildPixelArguments",
+	"ResolvePixelOutput",
+	"UsePixelResult",
+	"ReactorName",
+	"ReactorCatalog",
+	"VerifiedReactorCatalog",
+	"CollaborationOutputTypes",
+	"ImplementationOutputTypes",
+	"QueryOutputTypes",
+	"ResourceOutputTypes",
+	"ReactorContract",
+	"RawPixel",
+	"PixelValue",
+	"PixelArgument",
+	"pixelReactor",
+	"rawPixelMarker",
+	"reactorNames",
 ];
 const privateSubpaths = [
 	"utility",
@@ -75,6 +95,20 @@ const privateSubpaths = [
 	"utility/api-types",
 	"utility/error",
 	"utility/embed-auth",
+	"lib/build-pixel",
+	"lib/raw-pixel",
+	"lib/pixel-types",
+	"lib/reactors/catalog",
+	"lib/reactors/inventory",
+	"lib/reactors/value-types",
+	"lib/reactors/collaboration-output-types",
+	"lib/reactors/implementation-output-types",
+	"lib/reactors/query-output-types",
+	"lib/reactors/resource-output-types",
+	"reactors",
+	"reactors/catalog",
+	"reactors/inventory",
+	"reactors/value-types",
 ];
 
 for (const group of routeGroups) {
@@ -197,6 +231,173 @@ const options: RequestOptions = { signal: AbortSignal.timeout(1000), headers: { 
 export {};
 `;
 
+const pixelFixture = `
+import { buildPixel, rawPixel } from "@semoss/sdk";
+import { buildPixel as buildReactPixel, rawPixel as rawReactPixel, usePixel } from "@semoss/sdk/react";
+const framePixel = buildPixel("FrameType");
+const reactFramePixel = buildReactPixel("FrameType");
+buildReactPixel("Select", [rawReactPixel("name")]);
+const plainBuiltPixel: string = framePixel;
+const projectPixel = buildPixel("GetProjectList");
+const headerPixel = buildPixel("FrameHeaderExists", { column: "name" });
+const sumPixel = buildPixel("SUM", [1, 2, 3]);
+const selectPixel = buildPixel("Select", [rawPixel("name"), rawPixel("age")]);
+const modelPixel = buildPixel("LLM", { engine: "model-id", command: "Hello" });
+const workPixel = buildPixel("WorkListItems", {});
+const gitPixel = buildPixel("EngineGitCheckout", { engine: "engine-id", branch: "main" });
+buildPixel("UUID");
+buildPixel("CreateProject", { project: "project-name" });
+// @ts-expect-error Omission is not allowed until the source contract proves it safe.
+buildPixel("CreateProject");
+buildPixel("FrameHeaderExists", ["name", rawPixel("frame")]);
+buildPixel("FrameHeaderExists", [rawPixel("frame"), "name"]);
+const readonlyNumbers = [1, 2, 3] as const;
+buildPixel("SUM", readonlyNumbers);
+declare const reactorChoice: "FrameHeaderExists" | "LLM";
+// @ts-expect-error A union reactor name must be narrowed to match its parameters.
+buildPixel(reactorChoice, { column: "name" });
+declare const correlatedCall:
+    | readonly ["FrameHeaderExists", { column: string }]
+    | readonly ["LLM", { engine: string; command: string }];
+const correlatedPixel = buildPixel(...correlatedCall);
+buildPixel("EngineGitCheckout", { engine: "engine-id", branch: "main" });
+buildPixel("EngineGitCheckout", ["engine-id", "main"]);
+// @ts-expect-error Inherited required engine and branch arguments are enforced.
+buildPixel("EngineGitCheckout", { branch: "main" });
+// @ts-expect-error Positional calls must supply all inherited required arguments.
+buildPixel("EngineGitCheckout", ["engine-id"]);
+// @ts-expect-error Reactor names must belong to the synchronized catalog.
+buildPixel("NoSuchReactorInTheCatalog");
+// @ts-expect-error Required LLM arguments cannot be omitted.
+buildPixel("LLM");
+// @ts-expect-error LLM requires both engine and command.
+buildPixel("LLM", { engine: "model-id" });
+// @ts-expect-error Verified parameter values retain their type.
+buildPixel("FrameHeaderExists", { column: 42 });
+// @ts-expect-error Unknown parameter keys are rejected.
+buildPixel("FrameHeaderExists", { column: "name", typo: true });
+// @ts-expect-error Positional parameters retain their verified types.
+buildPixel("FrameHeaderExists", [42]);
+// @ts-expect-error SUM reads positional values, not named numericValues.
+buildPixel("SUM", { numericValues: [1, 2] });
+
+async function pixelOutputContracts(): Promise<void> {
+    const correlated: boolean | { response?: unknown } = (await runPixel(correlatedPixel)).pixelReturn[0].output;
+    const reactFrame: string = (await runPixel(reactFramePixel)).pixelReturn[0].output;
+    const frame: "GRID" | "GRAPH" | "R" | "PY" | "NATIVE" | "IGRAPH" = (await runPixel(framePixel)).pixelReturn[0].output;
+    const exists: boolean = (await runPixel(headerPixel)).pixelReturn[0].output;
+    const sum: number = (await runPixel(sumPixel)).pixelReturn[0].output;
+    const projects: { project_id?: string; project_name?: string; project_favorite: number }[] = (await runPixel(projectPixel)).pixelReturn[0].output;
+    const query: { qsType: string; isDistinct: boolean; limit: number } = (await runPixel(selectPixel)).pixelReturn[0].output;
+    const selector = (await runPixel(selectPixel)).pixelReturn[0].output.selectors?.[0];
+    if (selector?.type === "COLUMN") {
+        const column: string | undefined = selector.content.column;
+        // @ts-expect-error Selector discriminants retain the adapter's field types.
+        const wrongColumn: number = selector.content.column;
+    }
+    const work = (await runPixel(workPixel)).pixelReturn[0].output;
+    const workCount: number = work.total;
+    const itemTitle: string | undefined = work.items[0]?.title;
+    const fyiCount: number = work.fyiCount;
+    // @ts-expect-error Concrete helper output fields retain their scalar types.
+    const wrongCount: string = work.total;
+    const git = (await runPixel(gitPixel)).pixelReturn[0].output;
+    const changedPath: string | undefined = git.status.staged[0]?.path;
+    const clean: boolean = git.status.clean;
+    const settings = (await runPixel(buildPixel("BrainGetSettings", {}))).pixelReturn[0].output;
+    const memoryEnabled: boolean = settings.memory.use;
+    const profile = (await runPixel(buildPixel("BrainGetProfile", {}))).pixelReturn[0].output;
+    const styleConfirmed: boolean | undefined = profile?.style.confirmed;
+    // @ts-expect-error Nullable SQL reads must be narrowed before reading fields.
+    const unguardedProfile: boolean = profile.style.confirmed;
+    const model = (await runPixel(modelPixel)).pixelReturn[0].output;
+    const modelResponse: unknown = model.response;
+    const modelMessageType: string | undefined = model.messageType;
+    // @ts-expect-error A model response can contain structured or media output.
+    const modelText: string = model.response;
+    // @ts-expect-error The inferred FrameType result is a string.
+    const invalid: number = (await runPixel(framePixel)).pixelReturn[0].output;
+    const override: { id: number } = (await runPixel<[{ id: number }]>(framePixel)).pixelReturn[0].output;
+    const arrayOverride: string = (await runPixel<[string]>(buildPixel("LIST", [1, 2]))).pixelReturn[0].output;
+    const legacy: string | number = (await runPixel<[string, number]>("Raw();")).pixelReturn[0].output;
+    const unknownOutput: unknown = (await runPixel("Raw();")).pixelReturn[0].output;
+    // @ts-expect-error Raw strings without an explicit type keep unknown output.
+    const invalidRaw: string = (await runPixel("Raw();")).pixelReturn[0].output;
+    const instantiated = runPixel<[string, number]>;
+    const instantiatedOutput: string | number = (await instantiated(framePixel)).pixelReturn[0].output;
+}
+
+function useBuiltPixelContract(isEnabled: boolean): void {
+    const reactFrame: string = usePixel(reactFramePixel).data;
+    const frame = usePixel(isEnabled ? framePixel : "", {
+        data: "GRID",
+        onSuccess(data) { const value: string = data; },
+        onError(data, error) { const initial: string = data; const message: string = error.message; },
+    }, "insight-id");
+    const data: string = frame.data;
+    const update: (data: typeof frame.data) => void = frame.update;
+    // @ts-expect-error Built results retain their inferred data type.
+    const wrongData: number = frame.data;
+    // @ts-expect-error Local updates must match the reactor output.
+    frame.update(42);
+    const header = usePixel(headerPixel, { data: false, onSuccess(data) { const value: boolean = data; } });
+    const exists: boolean = header.data;
+    const numeric = usePixel(sumPixel);
+    const sum: number = numeric.data;
+    const union = usePixel(isEnabled ? framePixel : headerPixel);
+    const unionData: string | boolean = union.data;
+    const mixed = usePixel(isEnabled ? framePixel : "Raw();");
+    const mixedData: unknown = mixed.data;
+    // @ts-expect-error A nonempty raw alternative cannot claim the branded output.
+    const invalidMixed: string = mixed.data;
+    const defaulted = usePixel(framePixel);
+    const defaultedData: string = defaulted.data;
+    // @ts-expect-error Initial data must match the inferred reactor output.
+    usePixel(framePixel, { data: 42 });
+    // @ts-expect-error Success callbacks must accept the inferred reactor output.
+    usePixel(framePixel, { onSuccess: (data: number) => {} });
+    // @ts-expect-error Error callbacks must accept the initial data type.
+    usePixel(framePixel, { onError: (data: number, error: Error) => {} });
+    const work = usePixel(isEnabled ? workPixel : "", {
+        data: { items: [], total: 0, fyiCount: 0, automatedSkippedCount: 0 },
+        onSuccess(data) { const title: string | undefined = data.items[0]?.title; },
+        onError(data, error) { const count: number = data.total; },
+    });
+    const count: number = work.data.total;
+    work.update({ items: [], total: 1, fyiCount: 0, automatedSkippedCount: 0 });
+    // @ts-expect-error Updates need the implementation's full page envelope.
+    work.update({ items: [] });
+    // @ts-expect-error Initial values must use the helper's numeric count.
+    usePixel(workPixel, { data: { items: [], total: "0", fyiCount: 0, automatedSkippedCount: 0 } });
+    // @ts-expect-error Callbacks cannot substitute an incompatible wire shape.
+    usePixel(workPixel, { onSuccess(data: { total: string }) {} });
+}
+
+function useLegacyPixelContracts(): void {
+    const explicit = usePixel<{ id: number }>(framePixel, {
+        data: { id: 1 },
+        onSuccess(data) { const id: number = data.id; },
+    });
+    const explicitId: number = explicit.data.id;
+    explicit.update({ id: 2 });
+    const configInferred = usePixel("Raw();", {
+        data: { id: 1 },
+        onSuccess(data) { const id: number = data.id; },
+    });
+    const configId: number = configInferred.data.id;
+    const callbackInferred = usePixel("Raw();", { onSuccess(data: { id: number }) {} });
+    const callbackId: number = callbackInferred.data.id;
+    const disabled = usePixel("", { data: "initial" });
+    const initial: string = disabled.data;
+    const raw = usePixel("Raw();");
+    const rawData: unknown = raw.data;
+    // @ts-expect-error Raw statements without config or generics cannot infer a result.
+    const invalidRaw: string = raw.data;
+}
+declare const instantiatedHook: ReturnType<typeof usePixel<{ id: number }>>;
+const instantiatedHookId: number = instantiatedHook.data.id;
+`;
+
 // Executed only in a child Node process. Browser globals cannot leak into Vitest
 // or influence native ESM loading of the production consumer bundles.
 const browserFixture = `
@@ -281,7 +482,10 @@ describe("built SDK exports", () => {
 			const specifier = `${manifest.name}${publicPath === "." ? "" : publicPath.slice(1)}`;
 			return `import type * as Entry${index} from ${JSON.stringify(specifier)};`;
 		});
-		await writeFile(typeFixture, typeImports.join("\n") + helperFixture);
+		await writeFile(
+			typeFixture,
+			typeImports.join("\n") + helperFixture + pixelFixture,
+		);
 		program = ts.createProgram([typeFixture], compilerOptions);
 	});
 
@@ -290,6 +494,18 @@ describe("built SDK exports", () => {
 	});
 
 	it("resolves public entries and helpers while keeping utility subpaths private", async () => {
+		expect(Object.keys(exports).sort()).toEqual([
+			".",
+			"./api",
+			"./api/adminconfig",
+			"./api/github",
+			"./api/github/*",
+			"./api/health",
+			"./api/monolith/*",
+			"./api/msgraph",
+			"./api/token",
+			"./react",
+		]);
 		expect(
 			Object.keys(exports).some((path) => path.startsWith("./monolith")),
 		).toBe(false);
@@ -341,8 +557,13 @@ for (const name of ${JSON.stringify(publicRootHelpers)}) {
 }
 assert.equal(typeof sdk.CSRF, "object");
 assert.notEqual(sdk.CSRF, null);
+assert.equal(sdk.buildPixel("FrameType"), "FrameType();");
+assert.equal(typeof sdk.buildPixel("GetProjectList"), "string");
 const react = await import("@semoss/sdk/react");
+assert.equal(react.buildPixel, sdk.buildPixel, "both entries share the same builder");
+assert.equal(react.rawPixel, sdk.rawPixel, "both entries share the same expression marker helper");
 assert.equal(typeof react.useAPI, "function", "useAPI is exported from the React entry");
+assert.equal(typeof react.usePixel, "function", "usePixel remains exported from the React entry");
 assert.equal(Object.hasOwn(sdk, "useAPI"), false, "the core entry stays framework-independent");
 for (const specifier of ${JSON.stringify(specifiers)}) {
     const entry = await import(specifier);

@@ -242,6 +242,339 @@
 					"notes": "Compared each consumer configuration against starting-HEAD declarations. Shared has no diagnostics in client/playground configurations; its 12 strict audit-log diagnostics are included in the automation count."
 				}
 			}
+		},
+		"reactors": {
+			"package": "libs/sdk",
+			"syncedAt": "2026-10-23",
+			"monolithCommit": "6fabb05737d5686ae763172559b992f16f7d37d9",
+			"semossCommit": "12781b2478eb97e2a27a911e9bdbc94b6f34ee88",
+			"status": "complete-name-coverage-with-contract-gaps",
+			"inventory": "libs/sdk/src/lib/reactors/inventory.json",
+			"sourceContracts": "libs/sdk/src/lib/reactors/source-contracts.json",
+			"contractGaps": "libs/sdk/src/lib/reactors/contract-gaps.json",
+			"auditNotes": [
+				"Full built-in name and dispatch audit of tracked Semoss/src/prerna, active ReactorFactory registrations, expression aliases, and frame variants. Concrete discovery includes classes outside reactor/ and classes without a Reactor suffix.",
+				"Read constructors, inherited and parameterized/varargs constructors, aliases, reachable noun-store/positional readers, execute return producers, PixelStreamUtility, and relevant Gson adapters. Constructor key lists and MCP default schemas were not treated as sufficient contracts.",
+				"Source-base contracts preserve finite keys, proven required groups, positional minimums, and proven outer output shapes. Semantic input values and nested/opaque output shapes remain explicit follow-ups, not fully verified contracts. Only separately proven source omission is allowed; optional fields alone do not make parameters optional.",
+				"The 104 audited name contracts cover the documented common reactors and expression aliases. Select/Filter/Join intentionally expose positional forms; inherited named qs merging remains a subtype-sensitive frontend follow-up.",
+				"ClassGraph 4.8.184 registration order was verified from bytecode and actual factory maps. Effective collision winners and shadowed implementations are recorded in the inventory.",
+				"Existing Semoss configuration, project assets, and tests and Monolith web.xml deployment changes were preserved. No built-in Semoss src files were locally modified, and this sync made no backend edits.",
+				"Top-level built-in expected-success typing preserves current envelopes, nullability, errors, and delayed entries. Project overrides and query-parent expression dispatch can differ from these top-level contracts.",
+				"The repository already stores sync state at root semoss-sync.json; added this independent target there and preserved targets.api unchanged.",
+				"Follow-up output audit traced inherited wrappers into concrete helper implementations, SQL row mappers, DTOs, provider normalization, and Gson/Pixel wire adapters. Output-only refinements preserve the existing input contracts and public surface; runtime-dependent values and remaining unverified nested fields are tracked separately."
+			],
+			"coverage": {
+				"auditedNames": 104,
+				"sourceContractNames": 1438,
+				"namesWithEnforcedRequiredInputs": 395,
+				"baseNamesWithSourceOutputShape": 1072,
+				"namesWithUnverifiedInputValues": 1438,
+				"unverifiedNamesWithUnknownOutput": 0,
+				"unverifiedNamesWithNestedOutput": 21,
+				"namesWithUnresolvedKeyReads": 93,
+				"sourceNamesWithProvenParameterOmission": 1,
+				"sourceNamesRequiringParameterArgument": 1437,
+				"baseNamesWithUnknownOutput": 470,
+				"auditedNamesWithDynamicOutput": 4,
+				"auditedNamesOverridingBaseUnknownOutput": 15,
+				"finalNamesWithUnknownOutput": 20,
+				"finalNamesWithKnownOuterOutput": 1522,
+				"implementationOutputNames": 988,
+				"implementationOutputAudits": {
+					"collaboration": {
+						"contracts": "collaboration-output-types.ts",
+						"evidence": "collaboration-output-evidence.json",
+						"overrides": 110,
+						"evidenceEntries": 110
+					},
+					"implementation": {
+						"contracts": "implementation-output-types.ts",
+						"evidence": "implementation-output-evidence.json",
+						"overrides": 493,
+						"evidenceEntries": 493
+					},
+					"query": {
+						"contracts": "query-output-types.ts",
+						"evidence": "query-output-evidence.json",
+						"overrides": 136,
+						"evidenceEntries": 136
+					},
+					"resource": {
+						"contracts": "resource-output-types.ts",
+						"evidence": "resource-output-evidence.json",
+						"overrides": 249,
+						"evidenceEntries": 249
+					}
+				},
+				"finalNamesWithoutSuccessfulOutput": 1,
+				"implementationRefinementsResolvingUnverifiedWholeOutput": 440,
+				"finalWholeUnknownReduction": 439
+			},
+			"coverageSemantics": "Base source-output counts retain the constructor/execution inventory baseline. Final counts resolve audited input contracts plus output-only implementation refinements. Known outer output includes the never type of a reactor with no successful return. Runtime-dependent payloads are separate from remaining unverified nested shapes; output audits do not imply verified input values.",
+			"exclusions": [
+				{
+					"scope": "metadata-only frame prefixes",
+					"patterns": ["r_*", "py_*", "rdbms_*", "tinker_*", "graph_*"],
+					"source": "src/prerna/reactor/ReactorFactory.java:537",
+					"reason": "Prefix names enter metadata/reactors maps only; dispatch uses the unprefixed frame maps."
+				},
+				{
+					"scope": "inactive registrations",
+					"source": "src/prerna/reactor/ReactorFactory.java:426",
+					"reason": "Calls to populateRFrameHash, populatePandasFrameHash, populateH2FrameHash, populateTinkerFrameHash, and populateNativeFrameHash are commented out. Commented historical general registrations are also excluded unless discovered independently."
+				},
+				{
+					"scope": "arbitrary query functions",
+					"source": "src/prerna/reactor/ReactorFactory.java:1332",
+					"reason": "GenericSelectorFunctionReactor accepts arbitrary function names under query-struct/selector parents; this is not a finite built-in registry."
+				},
+				{
+					"scope": "project and deployment extensions",
+					"sources": [
+						"src/prerna/reactor/ReactorFactory.java:439",
+						"src/prerna/reactor/ReactorFactory.java:1231"
+					],
+					"reason": "Configured extra classpath packages and insight/project reactor overrides depend on deployment/project state and are outside the tracked prerna built-in snapshot."
+				},
+				{
+					"scope": "additional expression case spellings",
+					"source": "src/prerna/reactor/ReactorFactory.java:1267",
+					"reason": "Expression dispatch is case-insensitive. The finite catalog lists registered uppercase keys, conventional spellings, and concrete class names; arbitrary case permutations are not separate contracts."
+				}
+			],
+			"auditedLimitations": {
+				"Select": {
+					"supported": "Positional selector/filter/join arguments.",
+					"unverifiedVariant": "Inherited named qs merging may return UpdateQueryStruct; use raw Pixel pending a subtype-aware audit."
+				},
+				"Filter": {
+					"supported": "Positional selector/filter/join arguments.",
+					"unverifiedVariant": "Inherited named qs merging may return UpdateQueryStruct; use raw Pixel pending a subtype-aware audit."
+				},
+				"Join": {
+					"supported": "Positional selector/filter/join arguments.",
+					"unverifiedVariant": "Inherited named qs merging may return UpdateQueryStruct; use raw Pixel pending a subtype-aware audit."
+				}
+			},
+			"frontendFollowUps": "libs/sdk/ISSUES.md#complete-reactor-contract-audits",
+			"backendFindings": [
+				{
+					"finding": "Integer noun consumers truncate literals outside the signed 32-bit range",
+					"sourceEvidence": "Semoss/src/prerna/reactor/expression/OpBasicMath.java:108 uses Number.intValue(); negative-literal paths also coerce integer nouns.",
+					"consequence": "Raw SUM(2147483648) returns -2147483648 and SUM(4294967295) returns -1. The builder emits decimal literals for whole numbers outside the signed 32-bit range; backend probes verify the corrected values."
+				},
+				{
+					"finding": "Integer-only arithmetic results can overflow even when every operand fits in 32 bits",
+					"sourceEvidence": "Semoss/src/prerna/reactor/expression/OpBasicMath.java:87 casts integral all-integer results to int.",
+					"consequence": "SUM(2147483647,1) returns 2147483647. A decimal operand avoids that path, but preserving ordinary integer noun semantics means a generic builder cannot repair every reactor arithmetic operation. Backend remediation is needed."
+				},
+				{
+					"finding": "write emits a root string FUNCTION followed by an object; a direct default-Gson probe produced \"FUNCTION\"{}, invalid JSON.",
+					"sourceEvidence": "Semoss/src/prerna/util/gson/FunctionQueryFilterAdapter.java:70",
+					"consequence": "Function filters can invalidate query JSON serialization. QueryFilterWireOutput describes the valid SIMPLE/AND/OR variants."
+				},
+				{
+					"finding": "JsonWriter.value receives a Java char and selects its numeric overload; comma serializes as 44.",
+					"sourceEvidence": "Semoss/src/prerna/util/gson/CsvQueryStructAdapter.java:204",
+					"consequence": "The output delimiter type is number, matching the actual serializer."
+				},
+				{
+					"finding": "getMetamodel relation query selects two columns but later reads row[2].",
+					"sourceEvidence": "Semoss/src/prerna/ds/OwlTemporalEngineMeta.java:1881",
+					"consequence": "Exception is caught; edges can be empty despite frame relationships. Envelope remains stable."
+				},
+				{
+					"finding": "Combined engine/project search passes noMeta as favoritesOnly",
+					"sourceEvidence": "Semoss/src/prerna/reactor/MyEngineProjectReactor.java#getEngines and src/prerna/auth/utils/SecurityEngineUtils.java:1857",
+					"consequence": "The combined search forwards noMeta to the favorite filter argument. noMeta=true restricts engine results to favorites; metadata suppression is not applied by this helper."
+				},
+				{
+					"finding": "Excel range metadata reads an unprocessed sheet helper",
+					"sourceEvidence": "Semoss/src/prerna/reactor/database/upload/PredictExcelRangeMetadataReactor.java:82-85 and src/prerna/poi/main/helper/excel/ExcelSheetPreProcessor.java:98-100",
+					"consequence": "getCleanedRangeHeaders calls getRangeHeaders before determineSheetRanges, which throws. The catalog records the constructed expected-success envelope and this implementation defect; no successful live execution is claimed."
+				},
+				{
+					"finding": "Insight metamodel omits its constructed nodes",
+					"sourceEvidence": "Semoss/src/prerna/reactor/insights/GetInsightMetamodelReactor.java#buildResponsePerFrame",
+					"consequence": "The wire envelope exposes propSet and edges rather than the constructed nodes list. Output types follow the returned map."
+				}
+			],
+			"validation": {
+				"scope": "Local source audit, compiled registry inspection, actual local parser/translation/wire probes, mocked SDK transport/hook tests, declarations, and production consumer builds. No authenticated database/model/service integration or browser UI verification.",
+				"nodeVersion": "24.4.0",
+				"pnpmVersion": "10.13.1",
+				"independentDiscovery": {
+					"sourceDiscovery": {
+						"method": "Independent second JDK TreeScanner hierarchy traversal, separate from the catalog contract audit.",
+						"javaSources": 3449,
+						"namedJavaTypes": 3845,
+						"concreteReactorClasses": 1539,
+						"missingInventoryClasses": 0,
+						"extraInventoryClasses": 0,
+						"parseDiagnostics": 0
+					},
+					"compiledFactoryMaps": {
+						"method": "Read ReactorFactory public registry maps through a URLClassLoader using the local compiled Semoss classes and deployed Monolith libraries; no reactors executed.",
+						"purpose": "Independent validation of names, aliases, dispatch contexts, and effective collision winners; does not claim full execution-contract equivalence.",
+						"contexts": {
+							"GENERAL": {
+								"sourceEntries": 1405,
+								"compiledEntries": 1405,
+								"missing": 0,
+								"extra": 0,
+								"different": 0
+							},
+							"EXPRESSION": {
+								"sourceEntries": 32,
+								"compiledEntries": 32,
+								"missing": 0,
+								"extra": 0,
+								"different": 0
+							},
+							"R": {
+								"sourceEntries": 75,
+								"compiledEntries": 75,
+								"missing": 0,
+								"extra": 0,
+								"different": 0
+							},
+							"PYTHON": {
+								"sourceEntries": 52,
+								"compiledEntries": 52,
+								"missing": 0,
+								"extra": 0,
+								"different": 0
+							},
+							"H2": {
+								"sourceEntries": 18,
+								"compiledEntries": 18,
+								"missing": 0,
+								"extra": 0,
+								"different": 0
+							},
+							"TINKER": {
+								"sourceEntries": 8,
+								"compiledEntries": 8,
+								"missing": 0,
+								"extra": 0,
+								"different": 0
+							},
+							"NATIVE": {
+								"sourceEntries": 0,
+								"compiledEntries": 0,
+								"missing": 0,
+								"extra": 0,
+								"different": 0
+							}
+						}
+					}
+				},
+				"catalogCoverageTestsPassed": 8,
+				"serializerTestsPassed": 39,
+				"hookBehaviorTestsPassed": 13,
+				"unitTestsPassed": 345,
+				"unitTestFiles": 26,
+				"buildIntegrationTestsPassed": 5,
+				"typeCheck": "passed",
+				"productionBuild": "passed",
+				"changedFileBiome": "passed, including large inventory/source evidence JSON with a 10000000-byte per-file limit",
+				"diffCheck": "passed",
+				"addedMarkdownLinks": "all resolve",
+				"publishedContractChecks": "Root and React imports, correlated name/parameter unions, required parameters, omission proofs, nested implementation-derived results, SQL nullability/omission, explicit overrides, generic instantiation expressions, conditional empty-string disabling, ordinary-string/config inference, private support types, unchanged package subpaths, tree shaking, and initialization passed.",
+				"rootExports": {
+					"before": 186,
+					"after": 188,
+					"added": ["buildPixel", "rawPixel"],
+					"removed": [],
+					"method": "TypeScript source module export-symbol comparison with starting HEAD index; runtime helper/private-export checks passed on published builds."
+				},
+				"backendExecution": {
+					"productionGeneratedExpressionsPassed": 32,
+					"method": "Local compiled Semoss Insight.runPixel followed by PixelStreamUtility.processNounMetadata; asserted production buildPixel strings and actual wire outputs.",
+					"cases": [
+						"Unicode/control/NUL/emoji/encoding-tag/trailing-backslash strings and map keys",
+						"empty/singleton/nested vectors and map arrays",
+						"null, false, zero and empty strings",
+						"negative zero, signed32 boundaries, exponent expansion, minimum/maximum finite numbers",
+						"SUM, SUMPRODUCT, MATCH and SUMIFS",
+						"Select, Filter, Join, AND and OR"
+					],
+					"separateNumericDefectProbes": "Confirmed large integer truncation and integer-only aggregate overflow; decimal literals preserve the probed large values."
+				},
+				"implementationOutputTypes": {
+					"method": "TypeScript checker resolves ReactorCatalog[Name][output] for every name after all overlays; output-only type contracts are checked against the matching per-family producer evidence.",
+					"names": 1542,
+					"diagnostics": 0,
+					"duplicateOverrides": 0
+				},
+				"implementationOutputEvidence": {
+					"sourceFilesValidated": 1392,
+					"missingSourcesOrInvalidLines": 0,
+					"method": "Resolved every recorded implementation/helper source path and source line, and checked query helper hashes against the local source snapshot."
+				},
+				"implementationWireProbes": {
+					"collaboration": {
+						"compiledProducerProbes": [
+							"BrainProfileUtils.mapProfile",
+							"WorkItemUtils.mapItem",
+							"WorkWorkspaceUtils.mapStep",
+							"CollaborationJobUtils.map"
+						],
+						"wireProbe": "GsonUtility.getDefaultGson: omitted nullable map fields, retained null array elements",
+						"result": "passed; no database, mail, or mutation reactors executed"
+					},
+					"queries": {
+						"method": "Direct constructor/default-Gson probes against compiled backend; no external services or frame mutations.",
+						"observed": [
+							"SelectQueryStruct default envelope",
+							"CsvQueryStruct delimiter 44 and header/type maps",
+							"ExcelQueryStruct and ParquetQueryStruct envelopes",
+							"HardSelectQueryStruct default envelope",
+							"ConfigSelectQueryStruct reflective fields",
+							"FunctionQueryFilter malformed JSON",
+							"UpdateQueryStruct default envelope with updateValues array",
+							"TemporalEngineHardQueryStruct default envelope",
+							"Column/typed-column/constant/opaque selector adapters",
+							"AND/OR filter array envelopes"
+						],
+						"limitations": [
+							"R/Python analytics require configured runtimes and data and were traced statically rather than executed.",
+							"Source types describe expected-success output; transport/runtime error typing remains unchanged.",
+							"Default QueryFunctionSelector has no function and throws during serialization; valid functions are typed from QueryFunctionSelectorAdapter and concrete selector constructors, not the invalid default instance."
+						],
+						"frontendChecks": [
+							"Focused Biome check --write on both owned files passed.",
+							"pnpm --filter @semoss/sdk exec tsc --noEmit -p . passed with the first output overlay."
+						]
+					}
+				}
+			},
+			"outputAuditFiles": {
+				"collaboration": {
+					"contracts": "collaboration-output-types.ts",
+					"evidence": "collaboration-output-evidence.json",
+					"overrides": 110,
+					"evidenceEntries": 110
+				},
+				"implementation": {
+					"contracts": "implementation-output-types.ts",
+					"evidence": "implementation-output-evidence.json",
+					"overrides": 493,
+					"evidenceEntries": 493
+				},
+				"query": {
+					"contracts": "query-output-types.ts",
+					"evidence": "query-output-evidence.json",
+					"overrides": 136,
+					"evidenceEntries": 136
+				},
+				"resource": {
+					"contracts": "resource-output-types.ts",
+					"evidence": "resource-output-evidence.json",
+					"overrides": 249,
+					"evidenceEntries": 249
+				}
+			}
 		}
 	}
 }

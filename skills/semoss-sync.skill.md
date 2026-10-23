@@ -1,19 +1,20 @@
 ---
 name: semoss-sync
-description: "Use when syncing SDK REST resources with the SEMOSS backend: adding, updating, removing or deprecating endpoint wrappers after Monolith/Semoss changes, refreshing their JSDoc, recording the front-end tasks a sync leaves in libs/sdk/ISSUES.md, maintaining the root semoss-sync.json state and ignore list, or preparing a release when SEMOSS publishes."
+description: "Use when syncing SDK REST resources or Pixel reactor contracts with the SEMOSS backend: adding, updating, removing or deprecating endpoints and reactors after Monolith/Semoss changes, refreshing source-bound contracts, recording frontend follow-ups in libs/sdk/ISSUES.md, maintaining root semoss-sync.json state and coverage, or preparing an authorized release."
 ---
 
 # SEMOSS Sync
 
-This skill keeps SDK REST resources in line with the Java backend. It uses
-no scripts: you read the backend source with git, `rg` and the files
-themselves. This skill owns the workflow; state lives in
+This skill keeps SDK REST resources and Pixel reactor contracts in line with the
+Java backend. There is no installed sync command: read the source with git, `rg`,
+source inspection tools, and the files themselves. This skill owns the workflow; state lives in
 [`semoss-sync.json`](../semoss-sync.json) at the repository root. Keep migration
 guidance in the SDK README and frontend follow-ups in `libs/sdk/ISSUES.md`.
 
-There is one target today: **`api`** ([`libs/sdk`](../libs/sdk/src/api/AGENTS.md)). A
-**`reactors`** target (Pixel reactors) will be added later. Give it its own
-entry under `targets` and its own section below.
+There are two independent targets: **`api`**
+([REST resources](../libs/sdk/src/api/AGENTS.md)) and **`reactors`**
+([Pixel contracts](../libs/sdk/src/lib/reactors/catalog.ts)). Each has its own
+commits, coverage, findings, and validation under `targets`.
 
 Before editing SDK REST resources, read [libs/sdk/src/api/AGENTS.md](../libs/sdk/src/api/AGENTS.md).
 It holds the layout, naming and JSDoc template that every change must follow.
@@ -25,6 +26,7 @@ It holds the layout, naming and JSDoc template that every change must follow.
   - `targets.api`: the last synced commits, `syncedAt` and the `ignore` list
   - `targets.api.auditNotes`, `coverage`, and `validation`: the recorded audit scope and results
   - `targets.api.backendFindings`: backend defects, with source evidence and consequences, kept separate from frontend tasks
+  - `targets.reactors`: independent reactor commits, coverage, exclusions, contract verification gaps, backend findings, and validation
 - **Monolith** (`backend.monolith.path`): the REST resources. They live in:
   - `src/prerna/semoss/web/**` (most of them)
   - `src/prerna/upload/**`
@@ -123,6 +125,81 @@ If a path is wrong for this machine, ask the user for theirs. Don't guess.
     - the front-end tasks added to or removed from `ISSUES.md`
     - backend problems found, for the backend team
     - any changes to the ignore list
+
+## Run: target `reactors`
+
+1. **Read the owning guide and establish the snapshot.** Read
+   [libs/sdk/AGENTS.md](../libs/sdk/AGENTS.md). React changes, including `usePixel`
+   and its tests, require the full React standard first. Compare all Semoss
+   `src/` changes, including working-tree and untracked source, with
+   `targets.reactors.semossCommit`. Inspect relevant Monolith runPixel changes
+   against its recorded commit. Preserve local changes; a first/full sync covers
+   every built-in class and alias.
+2. **Inventory actual dispatch.** Trace `ReactorFactory`'s concrete `IReactor`
+   discovery throughout `prerna`, active registrations, expression aliases,
+   frame routing, ordering, and duplicate-name overrides. Do not limit scans to
+   `*Reactor.java` or `src/prerna/reactor`. Ignore commented registrations and
+   inactive frame-population methods. Preserve all variant/alias provenance and
+   identify shadowed implementations. Metadata prefixes such as `r_Foo` are not
+   dispatched Pixel names. Project/deployment extensions are outside this source
+   catalog and remain usable through ordinary string calls.
+3. **Trace inputs and outputs.** Inspect constructors, inherited helpers, aliases,
+   direct noun-store reads, positional inputs, and execution paths. MCP default
+   types/requiredness and `keysToGet` are hints, not complete contracts. Trace
+   values through utilities, `PixelStreamUtility`, and Gson adapters; Java frames
+   and tasks have different wire shapes. Record context-dependent variants.
+   Preserve verified fields in dynamic envelopes. Do not infer object DTOs from
+   Java `Map`, operation tags, or return-class names alone.
+   When a reactor returns an inherited `Object`/map wrapper, follow the argument
+   into the concrete helper, SQL row mapper, DTO fields, or provider implementation.
+   Keep callback/lambda returns separate from the enclosing method's returns.
+   Inspect `putAll`, conditional fields, and metadata collisions before claiming
+   required fields or fixed value types. Verify null map omission separately from
+   null array entries and top-level null results with the selected Gson adapter.
+4. **Maintain internal contracts and evidence.** Update per-domain contracts,
+   audited overrides, runtime names, and `lib/reactors/inventory.json` together.
+   Keep source paths, implementation context, registration aliases, deprecations,
+   and verification status. Maintain `source-contracts.json` for source-derived
+   evidence and `contract-gaps.json` for unresolved contracts. Unknown value contracts must explicitly say why;
+   unverified contracts need frontend follow-ups, not fabricated precision.
+   Output-only refinements live in the internal `*-output-types.ts` files with
+   matching `*-output-evidence.json` provenance. Compose them without changing
+   parameter contracts or omission proofs. Reconcile every override with a known
+   callable name, and update output coverage independently of input verification.
+   Required fields and positional tuples must reflect execution behavior.
+   For source contracts, explicitly permit parameter omission only when the execution
+   path proves it safe; optional inventoried keys alone are insufficient evidence.
+   For shared names, preserve the variants without pretending the SDK knows the
+   active backend frame. Renamed/removed names and narrowed inputs are breaking
+   type changes and must be reported.
+5. **Preserve the builder contract.** Export only `buildPixel` and `rawPixel`.
+   Keep reactor declarations and support types internal. Preserve explicit
+   `runPixel`/`usePixel` generics, config inference, empty-string disabling, and
+   runtime behavior. `Select`, `Filter`, and `Join` need positional expressions;
+   wrapping them as named nouns changes their parent reactor. Expressions whose
+   uppercase aliases collide with lexer tokens (`AND`/`OR`) need valid emitted
+   spellings. Ordinary strings remain literal data.
+   Serialize vector values with `Vector(...)`, noun rows with brackets, and arrays
+   inside maps with JSON-style brackets. Preserve escaped string contents through
+   Pixel's lexer/preprocessor. Integer literals outside the signed 32-bit range
+   need decimal notation because numeric reactors call Java `intValue()`.
+6. **Check coverage and validation.** Every effective built-in registration and
+   accepted alias must have a contract and inventory entry, or a reasoned
+   exclusion. Check runtime names and type keys agree and that all referenced
+   source files exist. Reconcile the inventory independently with backend source
+   discovery, not only a snapshot of itself. Run focused serializer, runner,
+   hook, and declaration tests, then SDK TypeScript, changed-file Biome, the SDK
+   unit suite and `test:integration` under Node 24. Use the backend parser and
+   translation when checking literal/expression semantics; syntax acceptance
+   alone does not prove correct noun values. Do not require a backend checkout
+   for ordinary SDK unit tests or consumer builds.
+7. **Record and report.** After coverage and checks complete, update only
+   `targets.reactors` with commits/date, audited working-tree scope, counts,
+   exclusions, verification gaps, backend findings, and checks actually run.
+   Keep frontend follow-ups in `libs/sdk/ISSUES.md` and backend findings in the
+   JSON/report. Report added/changed/removed/deprecated contracts and breaking
+   changes, distinguish complete name coverage from verified shape coverage,
+   and do not claim live backend validation from mocked tests or parsing alone.
 
 ## Release (only when explicitly requested)
 

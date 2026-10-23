@@ -157,6 +157,23 @@ callable with declaration deprecations; higher-level normalization, configuratio
 authentication orchestration, chat, stores, and hooks remain supported. Do not remove
 `get`, `post`, `CSRF`, or the deprecated wrappers as part of routine sync work.
 
+`buildPixel` (`lib/build-pixel.ts`) returns a primitive string with a private
+reactor type brand. `rawPixel` (`lib/raw-pixel.ts`) returns an opaque marker for
+trusted expressions; ordinary strings are always literals. Only these two helper
+functions are public additions. Keep the catalog, value types, brands, inventory,
+and `ResolvePixelOutput` private to defining-file imports. The internal catalog
+lives in `lib/reactors/`; source provenance and verification gaps live in its
+`inventory.json`. Follow the sync skill's `reactors` workflow and root
+`semoss-sync.json` state, independently of REST resource sync.
+
+Both `runPixel` and `usePixel` retain their original first generic and add a
+defaulted input-string generic for inference. Explicit generics override builder
+inference. The shared resolver ignores only the empty-string disable sentinel;
+arbitrary unbranded strings use the legacy fallback. Preserve these contracts,
+including generic instantiation expressions, hook initial-data behavior, and
+unchecked expected-success output typing. A builder result does not introduce
+new transport, runtime response validation, or a different hook lifecycle.
+
 Run `pnpm --filter @semoss/sdk test:integration` to build and verify public
 JavaScript and declaration paths, route-only tree shaking, and initialization.
 
