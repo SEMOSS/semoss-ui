@@ -9,7 +9,10 @@ import { url as apiUrl } from "../utility/url";
  * @param projectId
  * @param path
  * @returns
- * @deprecated Use `baseUpload` from `@semoss/sdk/api/monolith/upload-file` with object parameters.
+ *
+ * @deprecated Use `baseUpload({ file: files, insightId, projectId, path })` from
+ * `@semoss/sdk/api/monolith/upload-file`. Supply a non-null active insightId and omit a null
+ * projectId. The route returns upload records directly.
  */
 export const upload = async (
 	files: File | File[],
@@ -53,6 +56,11 @@ export const upload = async (
  *
  * @param insightId - insightId to download the file
  * @param fileKey - id for the file to download
+ *
+ * @deprecated Use `downloadFileUrl({ insightId, fileKey })` from
+ * `@semoss/sdk/api/monolith/engine` for a browser download link, or `downloadFile({ insightId,
+ * fileKey })` for a Blob. Call `blob.arrayBuffer()` if an ArrayBuffer is required; the
+ * resource does not click a link for you.
  */
 export const download = async (insightId: string, fileKey: string) => {
 	if (!insightId) {

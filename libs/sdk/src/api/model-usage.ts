@@ -35,6 +35,10 @@ const toLimitField = (usageLimit: ModelUsageLimit | null): string =>
  * limit from their own grant, a team, public use or an all-models default of
  * their own. Admins only.
  * @returns The limit, or null for no limit defined
+ *
+ * @deprecated Use `getPlatformDefault()` from
+ * `@semoss/sdk/api/monolith/auth/admin/model-usage`. Read `.usageLimit ?? null`; the raw route
+ * leaves absent limits omitted and does not run legacy rule normalization.
  */
 export const getPlatformDefaultLimit =
 	async (): Promise<ModelUsageLimit | null> => {
@@ -50,6 +54,11 @@ export const getPlatformDefaultLimit =
  * @param usageLimit - The limit, or null to remove it
  * @returns The limit as saved, or null for no limit defined
  * @throws When the save fails or its response is not an object
+ *
+ * @deprecated Use `setPlatformDefault({ usageLimit })` from
+ * `@semoss/sdk/api/monolith/auth/admin/model-usage`. Read `.usageLimit ?? null`; the raw route
+ * leaves absent limits omitted and does not run legacy rule normalization. Supply numeric rule
+ * amounts and pass null to remove a limit; do not serialize null as an empty string.
  */
 export const setPlatformDefaultLimit = async (
 	usageLimit: ModelUsageLimit | null,
@@ -68,6 +77,10 @@ export const setPlatformDefaultLimit = async (
  * @param groupId - The team's name
  * @param type - The team's type, such as CUSTOM
  * @returns The limit, or null for no limit defined
+ *
+ * @deprecated Use `getTeamTotal({ groupId, type })` from
+ * `@semoss/sdk/api/monolith/auth/admin/model-usage`. Read `.usageLimit ?? null`; the raw route
+ * leaves absent limits omitted and does not run legacy rule normalization.
  */
 export const getTeamTotalLimit = async (
 	groupId: string,
@@ -88,6 +101,11 @@ export const getTeamTotalLimit = async (
  * @param usageLimit - The limit, or null to remove it
  * @returns The limit as saved, or null for no limit defined
  * @throws When the save fails or its response is not an object
+ *
+ * @deprecated Use `setTeamTotal({ groupId, type, usageLimit })` from
+ * `@semoss/sdk/api/monolith/auth/admin/model-usage`. Read `.usageLimit ?? null`; the raw route
+ * leaves absent limits omitted and does not run legacy rule normalization. Supply numeric rule
+ * amounts and pass null to remove a limit; do not serialize null as an empty string.
  */
 export const setTeamTotalLimit = async (
 	groupId: string,

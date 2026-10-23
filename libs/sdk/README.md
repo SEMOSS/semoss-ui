@@ -69,7 +69,7 @@ HTTP status. A JSON `null` error response also uses the status fallback.
 Typed resources are exported directly from the SDK, with servlet-relative subpaths:
 
 ```ts
-import { Env, runPixel } from "@semoss/sdk";
+import { buildPixel, Env, runPixel } from "@semoss/sdk";
 import { ApiError, type RequestOptions } from "@semoss/sdk/api";
 import { getProjects } from "@semoss/sdk/api/monolith/auth/admin/project";
 import { installations } from "@semoss/sdk/api/github";
@@ -77,7 +77,7 @@ import { apps } from "@semoss/sdk/api/github/manifest";
 
 Env.update({ MODULE: "/Monolith" });
 const projects = await getProjects({ filterWord: "sales", limit: 20 });
-const result = await runPixel<[string]>("SomePixel();", "insight-id");
+const result = await runPixel(buildPixel("GetProjectList"), "insight-id");
 ```
 
 Other servlet entries are `/api/msgraph`, `/api/adminconfig`, `/api/health`, and
@@ -111,22 +111,124 @@ and replace `@semoss/sdk/monolith/api/<resource>` with
 `@semoss/sdk/monolith/<servlet>` to `@semoss/sdk/api/<servlet>`. These are breaking
 import and configuration changes.
 
-`runPixel` remains a root export with the same positional arguments, generic tuple,
-and normalized result. Its implementation is `src/lib/pixel.ts`. Thin legacy REST
-wrappers remain callable with declaration deprecations:
+`runPixel` remains a supported root export with the same positional arguments,
+generic tuple, and normalized result. Its implementation is `src/lib/pixel.ts`.
+All 72 standalone legacy functions directly under `src/api/`, plus
+`InsightWebSocket` and its public members, now carry declaration-level
+`@deprecated` comments. Existing implementations, signatures and exports remain
+intact. Types, constants, error classes, stores, React hooks, `get`, `post`, and
+`CSRF` remain supported.
 
-| Legacy root export | Replacement resource function |
+New REST code imports the typed resource functions. Build built-in Pixel calls
+with `buildPixel` and use `rawPixel` only for trusted expression fragments.
+Each legacy declaration provides its specific migration instructions; resources
+return raw backend bodies and do not supply legacy normalization or orchestration.
+
+| Legacy root export / family | Replacement (paths below are relative to `@semoss/sdk`) |
 | --- | --- |
-| `runPixelAsync`, `console`, `getPixelJobStreaming`, `partial` | `runPixelAsync`, `console`, `pixelJobStreaming` from `/api/monolith/engine` (`partial` also uses `pixelJobStreaming`) |
-| `pollAgentRun` | `agentRunStreaming` from `/api/monolith/engine` |
-| `login`, `loginLDAP`, `confirmOTP` | `login`, `loginLDAP`, `loginLinOTP` from `/api/monolith/auth` |
-| `logout`, `logoutProvider` | `logout({ provider })` from `/api/monolith/auth` (`"ALL"` for full logout) |
-| `getUserProjectPermission`, `getUserEnginePermission` | Same named function from `/api/monolith/auth/project` or `/engine` |
-| `propagateUserPermissions` | `propagateProjectDependencyPermissions` from `/api/monolith/auth/project` |
-| `upload`, `uploadInsight`, `uploadApp`, `uploadEngine`, `uploadUser` | `baseUpload`, `baseUpload`, `projectAssetsUpload`, `engineAssetsUpload`, `userAssetsUpload` from `/api/monolith/upload-file` |
+| `getSystemConfig` | `getConfig` from `/api/monolith/config`; configure CSRF explicitly with `Env.update({ CSRF: config.csrf })` when needed |
+| `runPixelAsync`, `getPixelAsyncResult`, `console`, `getPixelJobStreaming`, `partial` | `runPixelAsync`, `result`, `console`, `pixelJobStreaming` from `/api/monolith/engine`; `partial` also migrates to `pixelJobStreaming` |
+| `pollAgentRun` | `agentRunStreaming({ runId })` from `/api/monolith/engine`; raw optional approval fields stay omitted |
+| `login`, `loginLDAP`, `loginOTP`, `confirmOTP`, `logout`, `logoutProvider`, `getLogins` | `login`, `loginLDAP`, `loginLinOTP`, `logout`, `logins` from `/api/monolith/auth`; handle response bodies and route `ApiError` |
+| `oauth`, `connectLogin` | Compose `/api/monolith/auth` `loginUrl`, `userinfo`, `logins`, and `logout`; own popup handling, timeout, cleanup, provider renewal and primary-login protection |
+| `parseLogins` | Read typed `logins` or `getConfig` results; validate arbitrary input and normalize provider keys in caller code when required |
+| Project/engine permission helpers | Corresponding `/api/monolith/auth/project` or `/engine` functions; use `/api/monolith/auth/admin/project` or `/engine` for admin mode where available |
+| `propagateUserPermissions`, `searchForUser` | `propagateProjectDependencyPermissions` from `/api/monolith/auth/project`; `searchForUser` from `/api/monolith/authorization` |
+| Access and usage-path helpers | `/api/monolith/auth/permission-batch` and its admin counterpart; `getResourcePermissions` and `getTeamPeople` both use `getPermissions` |
+| Model usage helpers | `getPlatformDefault`, `setPlatformDefault`, `getTeamTotal`, `setTeamTotal` from `/api/monolith/auth/admin/model-usage`; read `.usageLimit ?? null` and send null to remove |
+| `readModelUsageLimit` | Use typed resource usage-limit fields; caller-owned parsing/validation is needed for arbitrary JSON and legacy normalization |
+| `upload`, `uploadInsight`, `uploadApp`, `uploadEngine`, `uploadUser` | `baseUpload`, `baseUpload`, `projectAssetsUpload`, `engineAssetsUpload`, `userAssetsUpload` from `/api/monolith/upload-file`; pass `file` and a non-null active `insightId`; records are returned directly |
+| `download` | `/api/monolith/engine` `downloadFileUrl` for browser links or `downloadFile` for a Blob (`blob.arrayBuffer()` when needed) |
+| `uploadEngineImage`, `uploadProjectImage` | `imageUpload` from `/api/monolith/engine-route` or `/api/monolith/project`; caller owns local validation and response-ID checks |
+| `getCatalogImageValidationError` | Caller-owned file-picker checks using `CATALOG_IMAGE_ACCEPT` / `CATALOG_IMAGE_MAX_BYTES`; server upload validation remains authoritative |
+| Room, agent and MCP Pixel wrappers | `buildPixel` plus root `runPixel`; async chat submissions use resource `runPixelAsync` |
+| `InsightWebSocket` and its members | Native `WebSocket` with `insightSocketUrl` from `/api/monolith/session`; caller owns reconnects, message envelopes and cleanup |
 
-Routes take object parameters and return raw backend bodies. Higher-level configuration,
-normalization, authentication orchestration, chat, stores, and hooks remain supported.
+No direct managed replacement exists for popup workflows, WebSocket lifecycle,
+or the parsing/validation helpers. Their comments identify the primitives and
+caller responsibilities. Existing stores and hooks may continue using the
+compatibility implementations internally; their public APIs remain supported.
+
+#### Migrating legacy helpers
+
+A synchronous room read uses the builder and checks Pixel errors before consuming
+its output. The builder's output contract can differ from a legacy wrapper's type:
+
+```ts
+import { buildPixel, runPixel } from "@semoss/sdk";
+
+const response = await runPixel(
+    buildPixel("GetRoomMessages", { roomId: "room-id" }),
+    "insight-id",
+);
+if (response.errors.length) throw new Error(response.errors.join(", "));
+const messages = response.pixelReturn[0]?.output;
+```
+
+For an async chat submission, pass literal text and parameter maps directly:
+
+```ts
+import { buildPixel } from "@semoss/sdk";
+import { runPixelAsync } from "@semoss/sdk/api/monolith/engine";
+
+const expression = buildPixel("AskRoom", {
+    engine: "model-id",
+    roomId: "room-id",
+    command: "Summarize this report",
+    parentMessageId: "ROOT_PLACEHOLDER_ID",
+    media: [],
+    paramValues: {},
+});
+const { jobId } = await runPixelAsync({ expression, insightId: "insight-id" });
+```
+
+Poll `pixelJobStreaming({ jobId })` with one consumer, a bounded wait and cleanup.
+After `Complete` or `ProgressComplete`, call `result({ jobId })` once: it consumes
+the job and returns a raw `insightID`/`pixelReturn` envelope or `"NULL"`. Inspect
+`operationType` for `ERROR`; a job ID or completed poll alone does not prove Pixel
+success. These functions all come from `@semoss/sdk/api/monolith/engine`.
+
+Current AskRoom uses `media`, not the legacy `image`, and a parameter map instead
+of the legacy array. Persist instructions through `UpdateRoomOptions` while
+preserving the room's other settings; `context` is not a current AskRoom argument.
+Do not add `<encode>` markers or JSON-stringify builder values. For tool results,
+build `AddToolExecution`, not `AddRoomToolExecution`. To replace `getUserRooms`,
+build `GetUserConversationRooms` (without `Reactor`) and prepend `"META | "` to
+preserve its META behavior. That string composition loses output inference;
+validate its raw `ROOM_ID`/`ROOM_NAME` rows before adapting them.
+
+An agent submission stays synchronous at the transport level, with `wait: false`
+in the reactor. It returns a durable run handle, not a chat job handle:
+
+```ts
+import { buildPixel, runPixel } from "@semoss/sdk";
+
+const agentId = "agent-id";
+const urls = ["https://example.com/report"];
+const subdir = "reports";
+const response = await runPixel(buildPixel("RunAgent", {
+    roomId: "room-id",
+    command: "Summarize the report",
+    wait: false,
+    workspaceId: agentId,
+    url: urls,
+    space: "USER",
+    paramValues: { subdir },
+}), "insight-id");
+if (response.errors.length) throw new Error(response.errors.join(", "));
+const submission = response.pixelReturn[0]?.output;
+```
+
+Map `agentId` to `workspaceId`, `urls` to `url`, and `subdir` into `paramValues`,
+overriding an existing `paramValues.subdir` as the legacy helper does. Forward
+other supported options explicitly. Observe the returned run ID with
+`agentRunStreaming({ runId })`; reconcile with a built `GetAgentRun` call.
+Handle optional `pendingActions` and nullable approval fields explicitly.
+
+These examples follow the current catalog, not every deployed backend version.
+See the [chat guide](./skills/sdk-chat/SKILL.md) for lifecycle and compatibility
+limits. Use ordinary builder values for literals, and `rawPixel` only for trusted
+expression fragments as shown in [Typed Pixel calls](#typed-pixel-calls).
 
 #### Corrected resource contracts
 
@@ -138,6 +240,7 @@ serializer omits them; legacy helpers normalize only their established SDK resul
 | --- | --- |
 | JDBC POST | JSON/CSV endpoints send raw SQL text with `insightId` in the query. JSON frames return `columns` and `data`, or R `dataArray`; Python SELECT may include `index`. An HTTP 200 response can contain an error string. Binary JDBC returns an opaque FST blob. |
 | GitHub installations | `account`, `accountType`, and `repositorySelection` are optional when database metadata is null. Installation id and suspension remain present. |
+| Permission inputs | Narrow legacy `Role` values to `OWNER`, `EDIT` or `READ_ONLY`; omit null login types and use numeric usage-limit rule amounts. Ordinary project-access approval requires each request's `type`; its admin route does not. |
 | Directory lookup | Microsoft Graph configuration can omit fields or change their types, so configurable raw fields remain `unknown`. Legacy permission candidates validate id/type and optional display fields without assigning a permission. |
 | Engine catalog | `engine_tool_app` is an optional project-id string, not a boolean. Favorites, permissions, and nullable fields follow the backend response shape. |
 | Pipeline | Pipeline and parsing results use structured types. Noun values, custom options, frame metadata, and layout positions remain dynamic. |
@@ -342,20 +445,35 @@ transport is not aborted.
 
 ## LinOTP Authentication
 
-Use the SDK's `loginOTP(username, pin)` orchestration to start a challenge. The
-legacy `confirmOTP(otp)` remains callable but is deprecated in favor of
-`loginLinOTP({ otp })` from `@semoss/sdk/api/monolith/auth`.
+Use `loginLinOTP` from `@semoss/sdk/api/monolith/auth` for both challenge steps:
 
-`loginOTP` starts the challenge without creating a signed-in session. It returns
-`true` when the challenge is accepted, or `false` only when HTTP 401 reports the
-boolean flag `requirePwdChange: true`. A string-valued flag or a flag on a server
-error does not produce a password-change outcome; those failures reject with
-`HttpError`. Handle `false` by requesting a password change, not by showing the
-OTP entry field.
+```ts
+import { ApiError } from "@semoss/sdk/api";
+import { loginLinOTP } from "@semoss/sdk/api/monolith/auth";
 
-`confirmOTP` submits the code and returns `true` on success; an invalid code
-rejects with the backend's error message. Refresh the application's session
-configuration after successful confirmation, not after starting the challenge.
+async function startChallenge(username: string, pin: string) {
+    try {
+        return await loginLinOTP({ username, pin });
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 401 &&
+            typeof error.data === "object" && error.data !== null &&
+            "requirePwdChange" in error.data && error.data.requirePwdChange === true) {
+            return { requirePwdChange: true };
+        }
+        throw error;
+    }
+}
+
+async function confirmChallenge(otp: string) {
+    return loginLinOTP({ otp });
+}
+```
+
+An `OTP` challenge is not a signed-in session. Show password-change UI for the
+explicit `requirePwdChange` outcome and OTP entry only for a challenge. Refresh
+session configuration after successful confirmation. The deprecated `loginOTP`
+and `confirmOTP` remain callable with their historical boolean and `HttpError`
+contracts; the resource returns backend bodies and throws `ApiError`.
 
 ## Common Actions
 
@@ -755,23 +873,32 @@ your assistant's knowledge current.
 
 ## Catalog images
 
-Use the server-assigned engine or project ID after the resource has been created:
+Use the resource upload with the server-assigned ID after creation:
 
 ```ts
-import { uploadEngineImage, uploadProjectImage } from "@semoss/sdk";
+import { imageUpload as uploadEngineImage } from "@semoss/sdk/api/monolith/engine-route";
+import { imageUpload as uploadProjectImage } from "@semoss/sdk/api/monolith/project";
 
-const image = await uploadProjectImage(projectId, file); // agents, skills, apps
-// image.imageUrl is a download path on the backend origin.
-await uploadEngineImage(engineId, file);
+async function replaceProjectImage(projectId: string, file: File) {
+    const image = await uploadProjectImage({ projectId, file });
+    // image.imageUrl is a download path on the backend origin.
+    return image;
+}
+
+async function replaceEngineImage(engineId: string, file: File) {
+    return uploadEngineImage({ engineId, file });
+}
 ```
 
-Both functions send one multipart `file` through the SDK's auth/CSRF transport and
-return `CatalogImageUploadResult` (`id`, `name`, `message`, `imageUrl`, `contentType`).
-They use `/api/project-{id}/image/upload` and `/api/e-{id}/image/upload`; the backend
-must provide these routes and the caller must have edit permission.
+Both resources send one multipart `file` through the SDK's auth/CSRF transport and
+return the typed backend confirmation (`id`, `name`, `message`, `imageUrl`,
+`contentType`). They require edit permission and the corresponding image route.
+Unlike the deprecated root upload helpers, they do not check file-picker metadata
+or compare the response ID to the requested ID; own those checks if required.
 
-`CATALOG_IMAGE_ACCEPT`, `CATALOG_IMAGE_MAX_BYTES`, and
-`getCatalogImageValidationError(file)` support client-side file pickers. PNG, JPEG,
-and GIF files up to 10 MiB are accepted. The backend also verifies image bytes and
-limits decoded images to 25 million pixels. Upload failures reject the promise;
-retain the created ID and retry the upload without creating another resource.
+`CATALOG_IMAGE_ACCEPT` and `CATALOG_IMAGE_MAX_BYTES` remain supported constants for
+caller-owned validation. Reject empty files and files over 10 MiB; check PNG,
+JPEG or GIF MIME types, with a filename-extension fallback when MIME is absent.
+`getCatalogImageValidationError` is deprecated with no direct validator replacement.
+The backend validates image bytes and limits decoded images to 25 million pixels.
+On failure, retain the created resource ID and retry its upload.

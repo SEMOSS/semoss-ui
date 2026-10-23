@@ -64,7 +64,7 @@ router):
 
 | Folder / file | Purpose |
 |---------------|---------|
-| `api/` | API / pixel call implementations |
+| `api/` | Typed REST resources and deprecated compatibility helpers |
 | `stores/` | State (e.g. `InsightStore`, exported as `Insight`) |
 | `utility/` | Internal request transport, encoding, URLs, request types, and session state |
 | `lib/` | Public helper implementations and route contracts |
@@ -152,10 +152,21 @@ session cannot restore its state. Route errors come from `@semoss/sdk/api`; root
 `HttpError` and `UnauthorizedError` retain their existing helper contracts.
 
 `runPixel` is implemented in `src/lib/pixel.ts` and remains a positional, generic
-root export. Internal callers import that defining file. Thin REST wrappers remain
-callable with declaration deprecations; higher-level normalization, configuration,
-authentication orchestration, chat, stores, and hooks remain supported. Do not remove
-`get`, `post`, `CSRF`, or the deprecated wrappers as part of routine sync work.
+root export. Internal callers import that defining file. All standalone functions
+directly under `src/api/`, and `InsightWebSocket` with its public members, are
+deprecated compatibility APIs. This includes configuration, normalization,
+authentication orchestration, image validation/uploads, chat and agent wrappers.
+Their declaration comments name the resource or Pixel-builder migration and any
+behavior the caller must supply. Keep their implementations, signatures and export
+chains intact during documentation-only deprecation work; do not migrate consumers
+or relocate files as part of that work.
+
+New REST calls use the resource subpaths. New built-in Pixel calls use `buildPixel`
+and, only for trusted expressions, `rawPixel`; execute with root `runPixel`, React
+`usePixel`, or resource `runPixelAsync` for async jobs. Stores and React bindings,
+`get`, `post`, `CSRF`, types, constants and error classes remain supported. Do not
+remove deprecated helpers as part of routine sync work. The legacy behavior notes
+below describe retained implementations, not recommendations for new direct calls.
 
 `buildPixel` (`lib/build-pixel.ts`) returns a primitive string with a private
 reactor type brand. `rawPixel` (`lib/raw-pixel.ts`) returns an opaque marker for
@@ -224,7 +235,8 @@ The SDK owns what the session is signed in to, so an app never tracks or caches 
   be another app or origin (a dev server's popup lands on the deployed client), where the popup
   cannot be read. So besides watching the popup close or come back, it reads the login every two
   seconds and closes the popup once it is there. `oauth` rejects when the popup ends without the
-  login rather than leaving the sign in waiting. Apps call the SDK's `oauth`; none keeps a copy.
+  login rather than leaving the sign in waiting. Existing stores retain this behavior;
+  new direct callers follow the deprecated helper's resource migration guidance.
 
 ## Permission Batches
 

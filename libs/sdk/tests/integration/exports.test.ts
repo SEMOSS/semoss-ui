@@ -44,6 +44,99 @@ const publicRootHelpers = [
 	"UnauthorizedError",
 	"waitForEmbedAuth",
 ];
+// Explicit compatibility inventory: every legacy callable must survive publishing.
+const legacyApiFunctions = [
+	"readModelUsageLimit",
+	"getResourcePermissions",
+	"getTeamPeople",
+	"validatePermissionBatches",
+	"savePermissionBatches",
+	"getPermissionsToCopy",
+	"getEffectivePermissions",
+	"getUsageLimitPath",
+	"getMyUsageLimitPath",
+	"getMyUsageLimitPaths",
+	"runAgent",
+	"pollAgentRun",
+	"getAgentRun",
+	"stopAgentRun",
+	"decideAgentRunAction",
+	"getSubagentRuns",
+	"uploadApp",
+	"login",
+	"loginLDAP",
+	"loginOTP",
+	"confirmOTP",
+	"logout",
+	"parseLogins",
+	"getLogins",
+	"logoutProvider",
+	"connectLogin",
+	"oauth",
+	"getSystemConfig",
+	"runPixelAsync",
+	"getPixelAsyncResult",
+	"partial",
+	"console",
+	"getPixelJobStreaming",
+	"createRoomRecord",
+	"getRoomMessages",
+	"getRoomOptions",
+	"setRoomForInsight",
+	"getRoomForInsight",
+	"updateRoomOptions",
+	"askRoom",
+	"addRoomToolExecution",
+	"getUserRooms",
+	"uploadEngine",
+	"upload",
+	"download",
+	"getCatalogImageValidationError",
+	"uploadEngineImage",
+	"uploadProjectImage",
+	"uploadInsight",
+	"makeUserPixelMcp",
+	"runMcpTool",
+	"getPlatformDefaultLimit",
+	"setPlatformDefaultLimit",
+	"getTeamTotalLimit",
+	"setTeamTotalLimit",
+	"getUserProjectPermission",
+	"getUserEnginePermission",
+	"getProjectUsers",
+	"getEngineUsers",
+	"editProjectUserPermissions",
+	"editEngineUserPermissions",
+	"removeProjectUserPermissions",
+	"removeEngineUserPermissions",
+	"approveProjectUserAccessRequest",
+	"denyProjectUserAccessRequest",
+	"propagateUserPermissions",
+	"getProjectUsersNoCredentials",
+	"getEngineUsersNoCredentials",
+	"addProjectUserPermissions",
+	"addEngineUserPermissions",
+	"searchForUser",
+	"uploadUser",
+];
+const legacyPixelReactors: Record<string, string> = {
+	createRoomRecord: "CreateRoom",
+	getRoomMessages: "GetRoomMessages",
+	getRoomOptions: "GetRoomOptions",
+	setRoomForInsight: "SetRoomForInsight",
+	getRoomForInsight: "GetRoomForInsight",
+	updateRoomOptions: "UpdateRoomOptions",
+	askRoom: "AskRoom",
+	addRoomToolExecution: "AddToolExecution",
+	getUserRooms: "GetUserConversationRooms",
+	runAgent: "RunAgent",
+	getAgentRun: "GetAgentRun",
+	stopAgentRun: "StopAgentRun",
+	decideAgentRunAction: "RunMCPTool",
+	getSubagentRuns: "GetSubagentRuns",
+	makeUserPixelMcp: "MakeUserPixelMCP",
+	runMcpTool: "RunMCPTool",
+};
 const internalExports = [
 	"sendRequest",
 	"getResponseRedirect",
@@ -398,6 +491,70 @@ declare const instantiatedHook: ReturnType<typeof usePixel<{ id: number }>>;
 const instantiatedHookId: number = instantiatedHook.data.id;
 `;
 
+/** Extract complete TypeScript examples from selected migration documentation. */
+function migrationExamples(): string[] {
+	const examples: string[] = [];
+	const appendExamples = (text: string): void => {
+		for (const match of text.matchAll(/```ts\r?\n([\s\S]*?)```/g)) {
+			examples.push(match[1]);
+		}
+	};
+	for (const file of globSync("dist/types/api/*.d.ts", {
+		cwd: packageRoot,
+	})) {
+		const source = readFileSync(join(packageRoot, file), "utf8");
+		for (const comment of source.matchAll(/\/\*\*([\s\S]*?)\*\//g)) {
+			const text = comment[1].replace(/^\s*\* ?/gm, "");
+			const exampleStart = text.indexOf("@example");
+			if (exampleStart !== -1) appendExamples(text.slice(exampleStart));
+		}
+	}
+	for (const [file, start, end] of [
+		[
+			"README.md",
+			"#### Migrating legacy helpers",
+			"#### Corrected resource contracts",
+		],
+		["README.md", "## LinOTP Authentication", "## Common Actions"],
+		["README.md", "## Catalog images", undefined],
+		[
+			"skills/sdk-chat/SKILL.md",
+			"## Supported calls and legacy helpers",
+			"## Agent Profile Images",
+		],
+	]) {
+		assert(file && start, "documentation section is configured");
+		const text = readFileSync(join(packageRoot, file), "utf8");
+		const from = text.indexOf(start);
+		const to = end === undefined ? text.length : text.indexOf(end, from);
+		assert(from >= 0 && to > from, `${file}: migration section exists`);
+		appendExamples(text.slice(from, to));
+	}
+	return examples;
+}
+
+/** Resolve the symbol consumers see, including compatibility re-export chains. */
+function publicSymbol(
+	program: ts.Program,
+	publicPath: string,
+	name: string,
+): ts.Symbol {
+	const checker = program.getTypeChecker();
+	const declaration = program.getSourceFile(
+		resolve(packageRoot, targetsFor(publicPath).types),
+	);
+	assert(declaration, `${publicPath}: declarations were loaded`);
+	const module = checker.getSymbolAtLocation(declaration);
+	assert(module, `${publicPath}: declarations define a module`);
+	let symbol = checker
+		.getExportsOfModule(module)
+		.find((entry) => entry.name === name);
+	assert(symbol, `${publicPath}: ${name} remains exported`);
+	if (symbol.flags & ts.SymbolFlags.Alias)
+		symbol = checker.getAliasedSymbol(symbol);
+	return symbol;
+}
+
 // Executed only in a child Node process. Browser globals cannot leak into Vitest
 // or influence native ESM loading of the production consumer bundles.
 const browserFixture = `
@@ -486,7 +643,18 @@ describe("built SDK exports", () => {
 			typeFixture,
 			typeImports.join("\n") + helperFixture + pixelFixture,
 		);
-		program = ts.createProgram([typeFixture], compilerOptions);
+		const examplePaths: string[] = [];
+		const examples = migrationExamples();
+		expect(examples.length).toBeGreaterThanOrEqual(11);
+		for (const [index, example] of examples.entries()) {
+			const examplePath = join(temporary, `migration-${index}.ts`);
+			await writeFile(examplePath, `${example}\nexport {};\n`);
+			examplePaths.push(examplePath);
+		}
+		program = ts.createProgram(
+			[typeFixture, ...examplePaths],
+			compilerOptions,
+		);
 	});
 
 	afterAll(async () => {
@@ -615,49 +783,173 @@ for (const path of ${JSON.stringify(privateSubpaths)}) {
 		}
 	});
 
-	it("retains all deprecated root wrappers and their replacement annotations", () => {
+	it("retains all legacy callables with actionable public deprecations", async () => {
 		const checker = program.getTypeChecker();
-		const rootDeclaration = program.getSourceFile(
-			resolve(packageRoot, exports["."].types),
-		);
-		assert(rootDeclaration, "root declarations were loaded");
-		const rootSymbol = checker.getSymbolAtLocation(rootDeclaration);
-		assert(rootSymbol, "root declarations define a module");
-		const rootExports = checker.getExportsOfModule(rootSymbol);
-		for (const name of [
-			"runPixelAsync",
-			"console",
-			"getPixelJobStreaming",
-			"partial",
-			"pollAgentRun",
-			"login",
-			"loginLDAP",
-			"confirmOTP",
-			"logout",
-			"logoutProvider",
-			"getUserProjectPermission",
-			"getUserEnginePermission",
-			"propagateUserPermissions",
-			"upload",
-			"uploadInsight",
-			"uploadApp",
-			"uploadEngine",
-			"uploadUser",
-		]) {
-			let symbol = rootExports.find((entry) => entry.name === name);
-			assert(symbol, `${name} remains a public root export`);
-			if (symbol.flags & ts.SymbolFlags.Alias)
-				symbol = checker.getAliasedSymbol(symbol);
-			const deprecation = symbol
-				.getJsDocTags(checker)
-				.find((tag) => tag.name === "deprecated");
-			assert(deprecation, `${name} has a declaration-level deprecation`);
+		const assertDeprecation = (symbol: ts.Symbol, name: string): string => {
+			const tags = symbol.getJsDocTags(checker);
 			expect(
-				deprecation.text?.some((part) =>
-					part.text.includes("@semoss/sdk/api/monolith/"),
-				),
-				`${name} names its replacement resource`,
-			).toBe(true);
+				tags.some((entry) => entry.name === "semoss"),
+				`${name}: package paths must stay inside the deprecation text`,
+			).toBe(false);
+			const tag = tags.find((entry) => entry.name === "deprecated");
+			assert(tag, `${name} has a declaration-level deprecation`);
+			const guidance = ts.displayPartsToString(tag.text);
+			const replacements = guidance.match(
+				/@semoss\/sdk(?:\/[a-z][a-z0-9/-]*)?/g,
+			);
+			assert(
+				replacements?.length,
+				`${name} names a public replacement import`,
+			);
+			for (const specifier of replacements) {
+				expect(
+					ts.resolveModuleName(
+						specifier,
+						typeFixture,
+						compilerOptions,
+						ts.sys,
+					).resolvedModule,
+					`${name}: replacement ${specifier} is public`,
+				).toBeDefined();
+			}
+			return guidance;
+		};
+		expect(new Set(legacyApiFunctions).size).toBe(72);
+		for (const name of legacyApiFunctions) {
+			const guidance = assertDeprecation(
+				publicSymbol(program, ".", name),
+				name,
+			);
+			if (legacyPixelReactors[name]) {
+				expect(guidance).toContain(
+					`buildPixel("${legacyPixelReactors[name]}"`,
+				);
+				expect(guidance).toContain("runPixel");
+			} else {
+				expect(guidance).toContain("@semoss/sdk/api/monolith/");
+			}
+		}
+		const socket = publicSymbol(program, ".", "InsightWebSocket");
+		assertDeprecation(socket, "InsightWebSocket");
+		const instance = checker.getDeclaredTypeOfSymbol(socket);
+		for (const name of [
+			"connect",
+			"send",
+			"watch",
+			"unwatch",
+			"sendRaw",
+			"close",
+			"isConnected",
+		]) {
+			const member = instance.getProperty(name);
+			assert(member, `InsightWebSocket.${name} remains available`);
+			expect(
+				assertDeprecation(member, `InsightWebSocket.${name}`),
+			).toContain("insightSocketUrl");
+		}
+		const declaration = socket.valueDeclaration;
+		assert(
+			declaration && ts.isClassDeclaration(declaration),
+			"socket class is declared",
+		);
+		const socketConstructor = declaration.members.find(
+			ts.isConstructorDeclaration,
+		);
+		assert(socketConstructor, "socket constructor remains available");
+		expect(ts.getJSDocDeprecatedTag(socketConstructor)).toBeDefined();
+		await runConsumer(`
+const sdk = await import("@semoss/sdk");
+for (const name of ${JSON.stringify([...legacyApiFunctions, "InsightWebSocket"])}) {
+    assert.equal(typeof sdk[name], "function", name + " remains callable");
+}
+`);
+	});
+
+	it("keeps supported helpers, stores, hooks and replacement resources undeprecated", () => {
+		const checker = program.getTypeChecker();
+		const supported: Record<string, string[]> = {
+			".": [
+				...publicRootHelpers,
+				"CSRF",
+				"Env",
+				"Insight",
+				"Logins",
+				"LoginsStore",
+				"AgentStore",
+				"RoomStore",
+				"createRoom",
+				"PopupBlockedError",
+				"SessionLoginDisconnectError",
+				"CATALOG_IMAGE_ACCEPT",
+				"CATALOG_IMAGE_MAX_BYTES",
+				"CatalogImageUploadResult",
+				"RoomRecord",
+			],
+			"./react": [
+				"buildPixel",
+				"rawPixel",
+				"usePixel",
+				"useAPI",
+				"useInsight",
+				"useLogins",
+				"useWebSocket",
+			],
+			"./api": ["ApiError", "UnauthorizedError", "RequestOptions"],
+			"./api/monolith/engine": [
+				"runPixel",
+				"runPixelAsync",
+				"result",
+				"pixelJobStreaming",
+				"agentRunStreaming",
+				"console",
+				"downloadFile",
+				"downloadFileUrl",
+			],
+			"./api/monolith/auth": [
+				"login",
+				"loginLDAP",
+				"loginLinOTP",
+				"logout",
+				"logins",
+				"userinfo",
+				"loginUrl",
+			],
+			"./api/monolith/config": ["getConfig"],
+			"./api/monolith/upload-file": [
+				"baseUpload",
+				"projectAssetsUpload",
+				"engineAssetsUpload",
+				"userAssetsUpload",
+			],
+			"./api/monolith/project": ["imageUpload"],
+			"./api/monolith/engine-route": ["imageUpload"],
+			"./api/monolith/session": ["insightSocketUrl"],
+		};
+		for (const path of publicPaths) {
+			if (
+				!path.startsWith("./api/monolith/auth/") &&
+				path !== "./api/monolith/authorization"
+			)
+				continue;
+			const declaration = program.getSourceFile(
+				resolve(packageRoot, targetsFor(path).types),
+			);
+			assert(declaration, `${path}: resource declarations exist`);
+			const symbol = checker.getSymbolAtLocation(declaration);
+			assert(symbol, `${path}: resource module exists`);
+			supported[path] = checker
+				.getExportsOfModule(symbol)
+				.map((entry) => entry.name);
+		}
+		for (const [path, names] of Object.entries(supported)) {
+			for (const name of names) {
+				expect(
+					publicSymbol(program, path, name)
+						.getJsDocTags(checker)
+						.some((tag) => tag.name === "deprecated"),
+					`${path}: ${name} remains supported`,
+				).toBe(false);
+			}
 		}
 	});
 

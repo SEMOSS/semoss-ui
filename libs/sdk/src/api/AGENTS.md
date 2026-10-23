@@ -9,6 +9,15 @@ records sync state, audit coverage, backend findings, and validation under `targ
 
 ## Layout and exports
 
+- This directory's supported APIs are the typed REST resources and their URL
+  builders. Top-level standalone functions and `InsightWebSocket` are deprecated
+  compatibility APIs, including Pixel wrappers and higher-level workflows. Keep
+  declaration-level `@deprecated` comments with exact public replacements and
+  migration differences. Do not add new Pixel builders or orchestration here.
+- Build built-in Pixels with `buildPixel` from `@semoss/sdk` and use `rawPixel`
+  only for trusted expressions. Root `runPixel`, React hooks and stores remain
+  supported. A resource migration does not automatically preserve a legacy
+  helper's normalization, validation, popup lifecycle or reconnect behavior.
 - `/api` backend resources live under `src/api/monolith/`, exported as
   `@semoss/sdk/api/monolith/<resource>`.
 - Other registered servlet groups live directly under `src/api/github/`, `msgraph/`,

@@ -8,7 +8,10 @@ import { url as apiUrl } from "../utility/url";
  * @param files
  * @param insightId
  * @returns
- * @deprecated Use `projectAssetsUpload` from `@semoss/sdk/api/monolith/upload-file` with object parameters.
+ *
+ * @deprecated Use `projectAssetsUpload({ file: files, insightId, projectId: appId, path })`
+ * from `@semoss/sdk/api/monolith/upload-file`. Supply a non-null active insightId. The route
+ * returns upload records directly, not { response, data }.
  */
 export const uploadApp = async (
 	appId: string,

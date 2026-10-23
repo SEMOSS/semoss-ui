@@ -24,7 +24,10 @@ export interface PermissionCandidate {
  * @param projectId - The project ID
  * @param _admin - Retained for compatibility; this endpoint has no admin variant.
  * @returns The user's permission level
- * @deprecated Use `getUserProjectPermission` from `@semoss/sdk/api/monolith/auth/project`.
+ *
+ * @deprecated Use `getUserProjectPermission({ projectId })` from
+ * `@semoss/sdk/api/monolith/auth/project` and read `.permission`. There is no admin variant;
+ * the legacy admin argument is ignored.
  */
 export const getUserProjectPermission = async (
 	projectId: string,
@@ -49,7 +52,10 @@ export const getUserProjectPermission = async (
  * @param engineId - The engine ID
  * @param _admin - Retained for compatibility; this endpoint has no admin variant.
  * @returns The user's permission level
- * @deprecated Use `getUserEnginePermission` from `@semoss/sdk/api/monolith/auth/engine`.
+ *
+ * @deprecated Use `getUserEnginePermission({ engineId })` from
+ * `@semoss/sdk/api/monolith/auth/engine` and read `.permission`. There is no admin variant;
+ * the legacy admin argument is ignored.
  */
 export const getUserEnginePermission = async (
 	engineId: string,
@@ -78,6 +84,13 @@ export const getUserEnginePermission = async (
  * @param limit - Optional limit for pagination
  * @param offset - Optional offset for pagination
  * @returns Object containing members array and total count
+ *
+ * @deprecated Use `getProjectUsers` from `@semoss/sdk/api/monolith/auth/project`, or
+ * `@semoss/sdk/api/monolith/auth/admin/project` when admin=true. Pass object parameters
+ * including projectId, userId, permission, limit and offset. Read the raw members/totalMembers
+ * body; optional backend fields remain omitted.
+ * Narrow permission to OWNER, EDIT or READ_ONLY; arbitrary strings and DISCOVERABLE are not
+ * accepted by the resource.
  */
 export const getProjectUsers = async (
 	projectId: string,
@@ -126,6 +139,13 @@ export const getProjectUsers = async (
  * @param limit - Optional limit for pagination
  * @param offset - Optional offset for pagination
  * @returns Object containing members array and total count
+ *
+ * @deprecated Use `getEngineUsers` from `@semoss/sdk/api/monolith/auth/engine`, or
+ * `@semoss/sdk/api/monolith/auth/admin/engine` when admin=true. Pass object parameters
+ * including engineId, searchTerm: userId, permission, limit and offset. Read the raw
+ * members/totalMembers body; the resource leaves usage_limit unnormalized.
+ * Narrow permission to OWNER, EDIT or READ_ONLY; arbitrary strings and DISCOVERABLE are not
+ * accepted by the resource.
  */
 export const getEngineUsers = async (
 	engineId: string,
@@ -181,6 +201,13 @@ export const getEngineUsers = async (
  * @param users - Array of users with their updated permissions
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
+ *
+ * @deprecated Use `editProjectUserPermissions({ projectId, userpermissions: users })` from
+ * `@semoss/sdk/api/monolith/auth/project`, or `@semoss/sdk/api/monolith/auth/admin/project`
+ * when admin=true. Read the returned `.success` field rather than treating the body as a
+ * boolean.
+ * Adapt legacy PostUser entries to the route input: permission must be OWNER, EDIT or
+ * READ_ONLY, and an absent type must be omitted rather than null.
  */
 export const editProjectUserPermissions = async (
 	projectId: string,
@@ -213,6 +240,13 @@ export const editProjectUserPermissions = async (
  * person has
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
+ *
+ * @deprecated Use `editEngineUserPermissions({ engineId, userpermissions: users })` from
+ * `@semoss/sdk/api/monolith/auth/engine`, or `@semoss/sdk/api/monolith/auth/admin/engine` when
+ * admin=true. Read the returned `.success` field rather than treating the body as a boolean.
+ * Preserve omitted versus null usageLimit values on model grants.
+ * Adapt legacy PostUser entries to the route input: permission must be OWNER, EDIT or
+ * READ_ONLY, type cannot be null, and usage-limit rule amounts must be numbers.
  */
 export const editEngineUserPermissions = async (
 	engineId: string,
@@ -243,6 +277,11 @@ export const editEngineUserPermissions = async (
  * @param userIds - Array of user IDs to remove
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
+ *
+ * @deprecated Use `removeProjectUserPermissions({ projectId, ids: userIds })` from
+ * `@semoss/sdk/api/monolith/auth/project`, or `@semoss/sdk/api/monolith/auth/admin/project`
+ * when admin=true. Read the returned `.success` field rather than treating the body as a
+ * boolean.
  */
 export const removeProjectUserPermissions = async (
 	projectId: string,
@@ -273,6 +312,10 @@ export const removeProjectUserPermissions = async (
  * @param userIds - Array of user IDs to remove
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
+ *
+ * @deprecated Use `removeEngineUserPermissions({ engineId, ids: userIds })` from
+ * `@semoss/sdk/api/monolith/auth/engine`, or `@semoss/sdk/api/monolith/auth/admin/engine` when
+ * admin=true. Read the returned `.success` field rather than treating the body as a boolean.
  */
 export const removeEngineUserPermissions = async (
 	engineId: string,
@@ -303,6 +346,12 @@ export const removeEngineUserPermissions = async (
  * @param requests - Array of access requests to approve
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
+ *
+ * @deprecated Use `approveProjectUserAccessRequest({ projectId, requests })` from
+ * `@semoss/sdk/api/monolith/auth/project`, or `@semoss/sdk/api/monolith/auth/admin/project`
+ * when admin=true. Read the returned `.success` field.
+ * Narrow request permissions to OWNER, EDIT or READ_ONLY. The ordinary resource also requires
+ * each request's type; the admin resource does not.
  */
 export const approveProjectUserAccessRequest = async (
 	projectId: string,
@@ -333,6 +382,10 @@ export const approveProjectUserAccessRequest = async (
  * @param userIds - Array of user IDs to deny
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
+ *
+ * @deprecated Use `denyProjectUserAccessRequest({ projectId, requestids: userIds })` from
+ * `@semoss/sdk/api/monolith/auth/project`, or `@semoss/sdk/api/monolith/auth/admin/project`
+ * when admin=true. Read the returned `.success` field.
  */
 export const denyProjectUserAccessRequest = async (
 	projectId: string,
@@ -364,7 +417,12 @@ export const denyProjectUserAccessRequest = async (
  * @param projectId - The project ID
  * @param users - Array of users with their permissions to propagate
  * @returns Whether the operation was successful
- * @deprecated Use `propagateProjectDependencyPermissions` from `@semoss/sdk/api/monolith/auth/project`.
+ *
+ * @deprecated Use `propagateProjectDependencyPermissions({ projectId, userpermissions: users
+ * })` from `@semoss/sdk/api/monolith/auth/project` and read `.success`. There is no admin
+ * variant.
+ * Adapt legacy PostUser entries to OWNER, EDIT or READ_ONLY permissions, omit null type values
+ * and supply numeric usage-limit rule amounts.
  */
 export const propagateUserPermissions = async (
 	projectId: string,
@@ -393,6 +451,12 @@ export const propagateUserPermissions = async (
  * Microsoft directory, `false` for existing users. Without it the backend
  * searches the directory whenever the directory is available.
  * @returns Array of users without project credentials
+ *
+ * @deprecated Use `getProjectUsersNoCredentials` from `@semoss/sdk/api/monolith/auth/project`,
+ * or `@semoss/sdk/api/monolith/auth/admin/project` when admin=true. Pass { projectId,
+ * searchTerm, limit, offset, msGraphLookup }. The raw directory rows are not filtered or
+ * normalized into PermissionCandidate objects; validate required id/type and optional display
+ * fields in caller-owned code.
  */
 export const getProjectUsersNoCredentials = async (
 	projectId: string,
@@ -436,6 +500,12 @@ export const getProjectUsersNoCredentials = async (
  * Microsoft directory, `false` for existing users. Without it the backend
  * searches the directory whenever the directory is available.
  * @returns Array of users without engine credentials
+ *
+ * @deprecated Use `getEngineUsersNoCredentials` from `@semoss/sdk/api/monolith/auth/engine`,
+ * or `@semoss/sdk/api/monolith/auth/admin/engine` when admin=true. Pass { engineId,
+ * searchTerm, limit, offset, msGraphLookup }. The raw directory rows are not filtered or
+ * normalized into PermissionCandidate objects; validate required id/type and optional display
+ * fields in caller-owned code.
  */
 export const getEngineUsersNoCredentials = async (
 	engineId: string,
@@ -474,6 +544,13 @@ export const getEngineUsersNoCredentials = async (
  * @param users - Array of users with their permissions to add
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
+ *
+ * @deprecated Use `addProjectUserPermissions({ projectId, userpermissions: users })` from
+ * `@semoss/sdk/api/monolith/auth/project`, or `@semoss/sdk/api/monolith/auth/admin/project`
+ * when admin=true. Read the returned `.success` field rather than treating the body as a
+ * boolean.
+ * Adapt legacy PostUser entries to the route input: permission must be OWNER, EDIT or
+ * READ_ONLY, and an absent type must be omitted rather than null.
  */
 export const addProjectUserPermissions = async (
 	projectId: string,
@@ -505,6 +582,13 @@ export const addProjectUserPermissions = async (
  * each can carry its `usageLimit`
  * @param admin - Whether to use admin endpoint
  * @returns Whether the operation was successful
+ *
+ * @deprecated Use `addEngineUserPermissions({ engineId, userpermissions: users })` from
+ * `@semoss/sdk/api/monolith/auth/engine`, or `@semoss/sdk/api/monolith/auth/admin/engine` when
+ * admin=true. Read the returned `.success` field rather than treating the body as a boolean.
+ * Preserve omitted versus null usageLimit values on model grants.
+ * Adapt legacy PostUser entries to the route input: permission must be OWNER, EDIT or
+ * READ_ONLY, type cannot be null, and usage-limit rule amounts must be numbers.
  */
 export const addEngineUserPermissions = async (
 	engineId: string,
@@ -536,6 +620,11 @@ export const addEngineUserPermissions = async (
  * `true` for the Microsoft directory, `false` for existing users. Without it
  * the backend searches the directory whenever the directory is available.
  * @returns The people found. Entries without an id are left out.
+ *
+ * @deprecated Use `searchForUser({ searchTerm, ...options })` from
+ * `@semoss/sdk/api/monolith/authorization`. Raw directory rows can have provider-defined
+ * fields; validate IDs and optional display fields yourself instead of relying on this
+ * helper's filtering and null defaults.
  */
 export const searchForUser = async (
 	searchTerm: string,

@@ -9,7 +9,10 @@ import { clearSession } from "../utility/session";
  * @param username - username to login with
  * @param password - password to login with
  * @returns true if successful
- * @deprecated Use `login({ username, password })` from `@semoss/sdk/api/monolith/auth`.
+ *
+ * @deprecated Use `login({ username, password })` from `@semoss/sdk/api/monolith/auth`. The
+ * route returns the backend login body rather than a boolean and throws `ApiError` from
+ * `@semoss/sdk/api`.
  */
 export const login = async (
 	username: string,
@@ -30,7 +33,10 @@ export const login = async (
  * @param username - username to login with
  * @param password - password to login with
  * @returns true if successful
+ *
  * @deprecated Use `loginLDAP({ username, password })` from `@semoss/sdk/api/monolith/auth`.
+ * The route returns the backend login body rather than a boolean and throws `ApiError` from
+ * `@semoss/sdk/api`.
  */
 export const loginLDAP = async (
 	username: string,
@@ -54,6 +60,11 @@ export const loginLDAP = async (
  * @param username - username to login with
  * @param pin - pin to login with
  * @returns True if the challenge was accepted, or false when a password change is required.
+ *
+ * @deprecated Use `loginLinOTP({ username, pin })` from `@semoss/sdk/api/monolith/auth`.
+ * Handle the challenge body and `ApiError` from `@semoss/sdk/api`; HTTP 401 with
+ * data.requirePwdChange === true replaces the legacy false result. Complete the challenge with
+ * loginLinOTP({ otp }).
  */
 export const loginOTP = async (
 	username: string,
@@ -86,7 +97,9 @@ export const loginOTP = async (
  *
  * @param otp - otp to login with
  * @returns true if successful
- * @deprecated Use `loginLinOTP({ otp })` from `@semoss/sdk/api/monolith/auth`.
+ *
+ * @deprecated Use `loginLinOTP({ otp })` from `@semoss/sdk/api/monolith/auth`. Read the
+ * backend confirmation body rather than a boolean, then refresh session configuration.
  */
 export const confirmOTP = async (otp: string): Promise<boolean> => {
 	await post(`${Env.MODULE}/api/auth/loginLinOTP`, {
@@ -102,7 +115,9 @@ export const confirmOTP = async (otp: string): Promise<boolean> => {
  * or the backend redirects the browser.
  *
  * @returns true if successful
- * @deprecated Use `logout({ provider: "ALL" })` from `@semoss/sdk/api/monolith/auth`.
+ *
+ * @deprecated Use `logout({ provider: "ALL" })` from `@semoss/sdk/api/monolith/auth`. Read the
+ * returned success field. The route clears shared session state even when the request fails.
  */
 export const logout = async (): Promise<boolean> => {
 	// we need to disableRedirect because fetch.ts doesn't allow a 302
@@ -172,6 +187,10 @@ export class SessionLoginDisconnectError extends Error {
  *
  * @param value - The backend's login map.
  * @returns The logins; none for anything that is not a map.
+ *
+ * @deprecated Use `logins()` from `@semoss/sdk/api/monolith/auth`. For config data use
+ * `getConfig` from `@semoss/sdk/api/monolith/config`. No direct parsing replacement exists;
+ * validate arbitrary input and normalize provider keys in caller-owned code if needed.
  */
 export const parseLogins = (value: unknown): Record<string, string> => {
 	const logins: Record<string, string> = {};
@@ -191,6 +210,9 @@ export const parseLogins = (value: unknown): Record<string, string> => {
  * in upper case (`NATIVE`, `MICROSOFT`, `GOOGLE`, ...).
  *
  * @returns The session's logins.
+ *
+ * @deprecated Use `logins()` from `@semoss/sdk/api/monolith/auth`. The route returns the typed
+ * backend provider map without this helper's filtering or upper-case normalization.
  */
 export const getLogins = async (): Promise<Record<string, string>> => {
 	const { data } = await get<unknown>(`${Env.MODULE}/api/auth/logins`);
@@ -201,7 +223,9 @@ export const getLogins = async (): Promise<Record<string, string>> => {
  * Sign the session out of one provider, keeping its other logins.
  *
  * @param provider - The provider's login key, such as `MICROSOFT`.
- * @deprecated Use `logout({ provider })` from `@semoss/sdk/api/monolith/auth`.
+ *
+ * @deprecated Use `logout({ provider })` from `@semoss/sdk/api/monolith/auth`. Read the
+ * returned success field; other provider logins remain in the session.
  */
 export const logoutProvider = async (provider: string): Promise<void> => {
 	await get(`${Env.MODULE}/api/auth/logout/${provider}?disableRedirect=true`);
@@ -311,6 +335,12 @@ const waitForSignInPopup = (
  * @returns Whether the session holds the provider's login once the popup is
  * done.
  * @throws PopupBlockedError when the popup could not open.
+ *
+ * @deprecated Use `loginUrl({ provider: loginPath, disableRedirect: true })` from
+ * `@semoss/sdk/api/monolith/auth`. No direct workflow replacement exists. Compose logins() and
+ * logout({ provider }) from the same resource; open a popup synchronously from a user gesture,
+ * protect the primary login (including when unknown), and own stale-provider renewal, polling,
+ * timeout, popup-blocked handling and cleanup.
  */
 export const connectLogin = ({
 	provider,
@@ -375,6 +405,12 @@ export const connectLogin = ({
  * @throws PopupBlockedError when the browser blocks the popup.
  * @throws Error when the sign in ends without the login, or when only
  * checking and there is none.
+ *
+ * @deprecated Use `loginUrl({ provider, disableRedirect: true })` from
+ * `@semoss/sdk/api/monolith/auth`. No direct workflow replacement exists. Use userinfo({
+ * provider }) or logins() from the same resource to check completion, including cross-origin
+ * redirects; handle profile errorMessage and the literal "null" name. Own popup creation,
+ * timeout, errors and cleanup. For isPopup=true, only check the login.
  */
 export const oauth = async (
 	provider: string,

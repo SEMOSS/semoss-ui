@@ -24,6 +24,12 @@ export interface CatalogImageUploadResult {
 /**
  * Check file-picker metadata before uploading. The server additionally validates
  * the actual bytes and limits decoded images to 25 million pixels.
+ *
+ * @deprecated No direct validation replacement exists. Validate file-picker metadata in
+ * caller-owned code using `CATALOG_IMAGE_ACCEPT` and `CATALOG_IMAGE_MAX_BYTES` from
+ * `@semoss/sdk`, then call `imageUpload` from `@semoss/sdk/api/monolith/engine-route` or
+ * `@semoss/sdk/api/monolith/project`. Reject empty files; preserve the MIME check and filename
+ * fallback when MIME is absent. Server byte validation remains authoritative.
  */
 export function getCatalogImageValidationError(file: File): string | null {
 	if (file.size === 0) return "Choose an image that is not empty.";
@@ -82,7 +88,14 @@ async function uploadCatalogImage(
 	return data;
 }
 
-/** Replace an engine's image. Requires a saved engine ID and edit permission. */
+/**
+ * Replace an engine's image. Requires a saved engine ID and edit permission.
+ *
+ * @deprecated Use `imageUpload({ engineId, file })` from
+ * `@semoss/sdk/api/monolith/engine-route`. The route returns the typed backend confirmation
+ * but does not perform this helper's local file checks or verify the response ID. Keep any
+ * required validation in caller-owned code.
+ */
 export function uploadEngineImage(
 	engineId: string,
 	file: File,
@@ -93,6 +106,10 @@ export function uploadEngineImage(
 /**
  * Replace a project's image, including agent workspaces, skills, notebooks, and
  * apps. Create the project first, then pass its server-assigned ID.
+ *
+ * @deprecated Use `imageUpload({ projectId, file })` from `@semoss/sdk/api/monolith/project`.
+ * The route returns the typed backend confirmation but does not perform this helper's local
+ * file checks or verify the response ID. Keep any required validation in caller-owned code.
  */
 export function uploadProjectImage(
 	projectId: string,
