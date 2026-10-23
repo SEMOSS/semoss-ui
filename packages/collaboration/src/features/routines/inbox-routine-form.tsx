@@ -240,7 +240,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 								</FormSelect>
 							</FieldGroup>
 						</FieldGroup>
-						<div className="min-w-0">
+						<div className="flex min-w-0 flex-col">
 							<RoutineResult
 								routine={routine}
 								copy={INBOX_RESULT_COPY}
