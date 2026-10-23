@@ -153,6 +153,52 @@ Pixel outputs, playsheet/function results, provider mappings, tool arguments and
 metadata, model protocol extensions, and MCP method-specific results can remain
 dynamic. Check each resource's documented contract before narrowing those values.
 
+## React API Requests
+
+`useAPI` from `@semoss/sdk/react` runs a typed API function and exposes the same
+`status`, `data`, `error`, `refresh`, and `update` structure as the client's hook.
+Pass the method followed by its arguments in one tuple, just like the client:
+`useAPI([method, arg1, arg2], config)`. Both the arguments and response are typed
+from the method, without needing a `useCallback` wrapper:
+
+```ts
+import { getProjects } from "@semoss/sdk/api/monolith/auth/admin/project";
+import { useAPI, type UseAPIResult } from "@semoss/sdk/react";
+
+function useProjectSearch(
+    filterWord: string,
+    isEnabled: boolean,
+): UseAPIResult<Awaited<ReturnType<typeof getProjects>>> {
+    return useAPI(
+        isEnabled ? [getProjects, { filterWord, limit: 20 }] : null,
+    );
+}
+```
+
+The response type is inferred from the function. Status is `INITIAL`, `LOADING`,
+`SUCCESS`, or `ERROR`; `data` is optional and `error` is an `Error` on failure.
+Passing `null` skips the request and resets to `INITIAL`. Use this hook for reads;
+call mutations from event handlers.
+
+The optional second argument accepts `data`, `onSuccess(data)`,
+`onError(initialData, error)`, and `onFinal()`. Initial `data` is captured on mount
+and restored when disabled; loading and error states clear it, matching the
+client hook. Callback changes use the latest callbacks without refetching.
+`refresh()` reruns the current request; `update(data)` replaces local data and
+clears the error without fetching or changing status.
+
+Changing the method or argument values starts a new request. Inline arrays and
+plain objects are compared by value; other objects (such as `AbortSignal`,
+`FormData`, and `File`) and functions are compared by identity. Arguments are
+passed through unchanged. Treat them as immutable and keep object instances
+such as signals stable across renders.
+
+No-argument methods also support `useAPI(method, config)`. Existing memoized
+callbacks remain supported; an inline function creates a new request on every
+render. Each invocation owns its own state without shared caching. Results and
+callbacks from superseded or unmounted requests are ignored; the underlying
+transport is not aborted.
+
 ## LinOTP Authentication
 
 Use the SDK's `loginOTP(username, pin)` orchestration to start a challenge. The

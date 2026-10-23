@@ -9,7 +9,7 @@ Delete completed tasks rather than keeping checked items.
 
 ## Incremental application migration
 
-- [ ] Add a typed `useApi` hook to `@semoss/sdk/react` and replace the client's string-keyed `useAPI` in a separate change.
+- [ ] Replace the client's string-keyed `useAPI` with the typed `useAPI` from `@semoss/sdk/react` in a separate change.
 - [ ] Migrate application REST calls to `@semoss/sdk/api/*` one module at a time. Preserve the supported root `get`, `post`, `CSRF`, and higher-level SDK APIs.
 - [ ] Move callers of deprecated legacy REST wrappers to the declaration-documented replacements. The wrappers remain callable for compatibility.
 

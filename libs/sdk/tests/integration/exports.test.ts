@@ -122,6 +122,60 @@ const compilerOptions: ts.CompilerOptions = {
 const helperFixture = `
 import { runPixel, get, post, CSRF, HttpError, UnauthorizedError as RootUnauthorizedError, waitForEmbedAuth } from "@semoss/sdk";
 import { ApiError, UnauthorizedError, type RequestOptions } from "@semoss/sdk/api";
+import { useCallback } from "react";
+import { useAPI, type APIConfig, type APIState, type UseAPIResult } from "@semoss/sdk/react";
+import { getProjects } from "@semoss/sdk/api/monolith/auth/admin/project";
+function useAPIContract(filterWord: string, isEnabled: boolean): UseAPIResult<Awaited<ReturnType<typeof getProjects>>> {
+    const projects = useAPI(isEnabled ? [getProjects, { filterWord, limit: 20 }] : null);
+    const data: Awaited<ReturnType<typeof getProjects>> | undefined = projects.data;
+    const refresh: () => void = projects.refresh;
+    const update: (data: typeof projects.data) => void = projects.update;
+    return projects;
+}
+function useTypedAPIContract(): UseAPIResult<{ id: number }> {
+    const request = useCallback(async () => ({ id: 42 }), []);
+    const config: APIConfig<{ id: number }> = {
+        onSuccess(data) { const id: number = data.id; },
+        onError(data, error) { const id: number | undefined = data?.id; const message: string = error.message; },
+    };
+    const result = useAPI(request, config);
+    const state: APIState<{ id: number }> = result;
+    const id: number | undefined = result.data?.id;
+    // @ts-expect-error API result fields retain their inferred types.
+    const invalidId: string = result.data?.id;
+    // @ts-expect-error Local updates must match the API response.
+    const invalidUpdate: Parameters<typeof result.update>[0] = { id: "invalid" };
+    return result;
+}
+declare const readItem: (id: string, limit: number, include?: boolean) => Promise<{ id: string; limit: number }>;
+declare const readMany: (prefix: string, ...ids: number[]) => Promise<number[]>;
+function useAPIArgumentsContract(id: string): UseAPIResult<{ id: string; limit: number }> {
+    const result = useAPI([readItem, id, 20], {
+        onSuccess(data) {
+            const id: string = data.id;
+            // @ts-expect-error Callback data is inferred from the method's return type.
+            const invalid: number = data.id;
+        },
+    });
+    const readonlyCall = [readItem, id, 20, true] as const;
+    const readonlyResult: UseAPIResult<{ id: string; limit: number }> = useAPI(readonlyCall);
+    const restResult: UseAPIResult<number[]> = useAPI([readMany, "prefix", 1, 2]);
+    // @ts-expect-error Required method arguments must be supplied.
+    useAPI([readItem, id]);
+    // @ts-expect-error Method argument types are checked positionally.
+    useAPI([readItem, id, "invalid"]);
+    // @ts-expect-error Optional arguments retain their declared types.
+    useAPI([readItem, id, 20, "invalid"]);
+    // @ts-expect-error Extra arguments are rejected for non-variadic methods.
+    useAPI([readItem, id, 20, true, "extra"]);
+    // @ts-expect-error Empty tuples have no callable method.
+    useAPI([]);
+    // @ts-expect-error A method requiring arguments cannot use the direct no-argument form.
+    useAPI(readItem);
+    // @ts-expect-error Initial data must match the method's response type.
+    useAPI([readItem, id, 20], { data: { id, limit: "invalid" } });
+    return result;
+}
 declare const pixel: Awaited<ReturnType<typeof runPixel<[string, number]>>>;
 const output: string | number = pixel.pixelReturn[0].output;
 const insightId: string = pixel.insightId;
@@ -287,6 +341,9 @@ for (const name of ${JSON.stringify(publicRootHelpers)}) {
 }
 assert.equal(typeof sdk.CSRF, "object");
 assert.notEqual(sdk.CSRF, null);
+const react = await import("@semoss/sdk/react");
+assert.equal(typeof react.useAPI, "function", "useAPI is exported from the React entry");
+assert.equal(Object.hasOwn(sdk, "useAPI"), false, "the core entry stays framework-independent");
 for (const specifier of ${JSON.stringify(specifiers)}) {
     const entry = await import(specifier);
     for (const name of ${JSON.stringify(internalExports)}) {
