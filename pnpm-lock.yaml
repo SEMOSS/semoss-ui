@@ -150,8 +150,8 @@ importers:
   libs/panels:
     dependencies:
       '@christophervr/xlsx-react-viewer':
-        specifier: ^0.6.0
-        version: 0.6.0(react@19.2.8)(three@0.186.1)
+        specifier: ^1.0.0
+        version: 1.0.0(react@19.2.8)(three@0.186.1)
       '@semoss/i18n':
         specifier: workspace:*
         version: link:../i18n
@@ -171,8 +171,8 @@ importers:
         specifier: workspace:*
         version: link:../workbench
       docx-react-viewer:
-        specifier: ^0.5.0
-        version: 0.5.0(react@19.2.8)(three@0.186.1)
+        specifier: ^1.0.0
+        version: 1.0.0(react@19.2.8)(three@0.186.1)
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.8)
@@ -180,8 +180,8 @@ importers:
         specifier: ^8.5.6
         version: 8.5.26
       pptx-react-viewer:
-        specifier: ^4.42.0
-        version: 4.42.0(fast-xml-parser@5.11.2)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@25.10.10(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@0.545.0(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@16.6.6(i18next@25.10.10(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(yjs@13.6.33)
+        specifier: ^4.45.0
+        version: 4.45.0(fast-xml-parser@5.11.2)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@25.10.10(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@0.545.0(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@16.6.6(i18next@25.10.10(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(yjs@13.6.33)
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -189,8 +189,8 @@ importers:
         specifier: ^19.0.0
         version: 19.2.8(react@19.2.8)
       visio-react-viewer:
-        specifier: ^0.7.2
-        version: 0.7.2(react@19.2.8)(three@0.186.1)
+        specifier: ^1.0.0
+        version: 1.0.0(react@19.2.8)(three@0.186.1)
       zustand:
         specifier: ^5.0.0
         version: 5.0.15(@types/react@19.2.18)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
@@ -1662,11 +1662,11 @@ packages:
   '@chevrotain/types@11.1.2':
     resolution: {integrity: sha512-U+HFai5+zmJCkK86QsaJtoITlboZHBqrVketcO2ROv865xfCMSFpELQoz1GkX5GzME8pTa+3kbKrZHQtI0gdbw==}
 
-  '@christophervr/xlsx-core@0.2.10':
-    resolution: {integrity: sha512-8lvAWmYdmUxMNZ0h23W+iaNYYnR/b3pfnAP7kqJWfDgBX0NHWrBWlqmtPoWFmPYQiIlrCr7u0iRFDoKRmstLkA==}
+  '@christophervr/xlsx-core@0.3.0':
+    resolution: {integrity: sha512-WhM7rTDZVbcOkoU8cXlByjjVrQLMAX7zqrgQClIofaKiGDZDbzdTxXCAkJxrAlWZIfghw5fyxGFAiaORderkYw==}
 
-  '@christophervr/xlsx-react-viewer@0.6.0':
-    resolution: {integrity: sha512-Lj+BSL6sCe5dvkebeEuKycIxYx94gQ8+Fl43MKKZrrKRfnkz+W2B/xWAMyn+/bnaRIF5Iq+YIdiGCjteKzx2ng==}
+  '@christophervr/xlsx-react-viewer@1.0.0':
+    resolution: {integrity: sha512-PS6vG6H9/FBt6rmbWPxhUSqm+rwOKlLzJwXtarkF8wvLB/G8jRaiIOr3xOLGL9oiNmLzAaf8JYHPxXyrfAx6xg==}
     peerDependencies:
       react: '>=18'
 
@@ -5065,11 +5065,11 @@ packages:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
 
-  docx-core@0.1.13:
-    resolution: {integrity: sha512-kdQOfhWop+1GU+LN4YFM36XxqZWl9CWXRrYiJktaGBPW22e+tD411+7zv9Fj9BzZrsOdgexjAejpJXBOuUgPtA==}
+  docx-core@0.3.0:
+    resolution: {integrity: sha512-HIRRGF8bngPEC7M8ZrhLkGFWoFqy+rrsG5GaGOF1G9EBsuNJ6VtxWjrfmt03yFRlrztjvyBBsT7FRBT6GC7oZw==}
 
-  docx-react-viewer@0.5.0:
-    resolution: {integrity: sha512-EauEQbIwZ6ceLOQ6sOuyG4Nkm6o6n5xFY3EwFV45J1ceUxFIebEIgvvrzD+gbcaehiiMm1qZJpu9qG0gUqlv0g==}
+  docx-react-viewer@1.0.0:
+    resolution: {integrity: sha512-OLc7dKL1Wra+uw9tjSjf0+8DH3k8Z7dvvco7a7bGgiWfjh66xYzxsAdBsB1JyCLip7Dywr3rxkkgrQL3XnMVEg==}
     peerDependencies:
       react: '>=18'
 
@@ -5149,14 +5149,6 @@ packages:
   elegant-spinner@1.0.1:
     resolution: {integrity: sha512-B+ZM+RXvRqQaAmkMlO/oSe5nMUOaUnyfGYCEHoR8wrXsZR2mA0XVibsxV1bvTwxdRWah1PkQqso2EzhILGHtEQ==}
     engines: {node: '>=0.10.0'}
-
-  emf-converter@4.18.1:
-    resolution: {integrity: sha512-e/H8eBnj/QO8sWL2Yav02n58wWVo3GWYqFM2SqJh2bk9Prc2rgexPUSs8VV42GL5l/x49GaK/kPueCDW+j+6Sg==}
-    peerDependencies:
-      '@napi-rs/canvas': ^1.0.9
-    peerDependenciesMeta:
-      '@napi-rs/canvas':
-        optional: true
 
   emf-converter@4.21.0:
     resolution: {integrity: sha512-Lwk6hNye0g0j9osMa7+WuIMUllcAsANWTBtRNoK2LLUhlMhKzBjkofXDuB33p8ZCBqTFZBnvBqiHYcYKeOt0KQ==}
@@ -6213,11 +6205,6 @@ packages:
   lexical@0.39.0:
     resolution: {integrity: sha512-lpLv7MEJH5QDujEDlYqettL3ATVtNYjqyimzqgrm0RvCm3AO9WXSdsgTxuN7IAZRu88xkxCDeYubeUf4mNZVdg==}
 
-  lib0@0.2.117:
-    resolution: {integrity: sha512-DeXj9X5xDCjgKLU/7RR+/HQEVzuuEUiwldwOGsHK/sfAfELGWEyTcf0x+uOvCvK3O2zPmZePXWL85vtia6GyZw==}
-    engines: {node: '>=16'}
-    hasBin: true
-
   lib0@0.2.119:
     resolution: {integrity: sha512-vh+TiejVy8Xm+hCdnRfn9BthGNvNUZdEXltNjVZL3TzRIKP3s1lnQh8pWd/Q0wCgY0FPAGVVjFF4ZiHUV3LFgA==}
     engines: {node: '>=16'}
@@ -6897,8 +6884,8 @@ packages:
   oniguruma-to-es@4.3.4:
     resolution: {integrity: sha512-3VhUGN3w2eYxnTzHn+ikMI+fp/96KoRSVK9/kMTcFqj1NRDh2IhQCKvYxDnWePKRXY/AqH+Fuiyb7VHSzBjHfA==}
 
-  ooxml-core@1.19.0:
-    resolution: {integrity: sha512-a7GGzpYLvv4vs6k+wws8jQLd0GGwbCC0v20XM13Zna8U3OpWx+EfgVwPf8pzCA91e+s589MxSmf2uhawiqkGVg==}
+  ooxml-core@1.22.0:
+    resolution: {integrity: sha512-KZVuUvSlulJvjT60N8kpPafU9xEu/UgmXTXFgU3QBIxbb2wnjHr/ExsMX04+k3WFYQY6ZymvN5rjsVGmfOHyBg==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -6913,8 +6900,8 @@ packages:
       xml-crypto:
         optional: true
 
-  ooxml-ui@1.18.1:
-    resolution: {integrity: sha512-bIhbfp1XX4UVVWlBvHlQtdsL8FcDyTgOusPSzhu7QtujuVE9FJHpJ0we235D1rdkZCDBlW9g0axEu+97B35rJg==}
+  ooxml-ui@1.21.0:
+    resolution: {integrity: sha512-24/N4msVk9/QkGdeMiRhQIsQyb1ifLO1EL0Z5fh89hP26vORBE5h4dVhw7A5gfUNb2n4oczCvQeOE5sRrtv6yA==}
     engines: {node: '>=22'}
     peerDependencies:
       ai: '>=6.0.0 <8'
@@ -7090,8 +7077,8 @@ packages:
     resolution: {integrity: sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==}
     engines: {node: ^10 || ^12 || >=14}
 
-  pptx-react-viewer@4.42.0:
-    resolution: {integrity: sha512-Uwrtf/CymP3xAswktpi6+mwFodoxEZ1S0HTvq7FjwoLWNb8g6QMGn6+OUdRp38WyqmA/ck+08F9vEW2Q1w2F5g==}
+  pptx-react-viewer@4.45.0:
+    resolution: {integrity: sha512-2/QWUevw8xwGMpHbZl9qExfRU7U+8I1NHuSbW+p4wCVAuyE7veCHYqpHOcXtlvO979l4gB+uZ4n/zLPtkd57tg==}
     peerDependencies:
       '@ai-sdk/react': ^4.0.76
       ai: '>=6 <8'
@@ -8199,11 +8186,11 @@ packages:
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
 
-  visio-core@0.4.1:
-    resolution: {integrity: sha512-5HFCEz6Xd1t1CzKWBkyo+8GmwiWMYd3d2Y7U39F/RzVejA6oLHkK1HAtZleUJyrFGPhVBENF16YqPh+kPKVgIg==}
+  visio-core@1.0.0:
+    resolution: {integrity: sha512-CjhMJoYaAJ9Tbk7EB7j5flDwIE237aRJYfAgJWBX2q2vWTSSqzWbGLuVmCQ/4o2xgSVt97+wXVf527Bs60yxtA==}
 
-  visio-react-viewer@0.7.2:
-    resolution: {integrity: sha512-XKmbB35JTNXZ5NTrJGjE8DF2AwTcogNVoIorZsTKnvhjbhHo0fN5t0Lf+1DnpgrFZLEhz8ptvgwdSPf6oow0Hg==}
+  visio-react-viewer@1.0.0:
+    resolution: {integrity: sha512-U4HdEBcIPAPv5cAxw7QkbBngig1GppFLKhX8HVr8J53DnftfpBmOvvmHswU8MXaW5FUwjDGoJNS+66FrWp93iw==}
     peerDependencies:
       react: '>=18'
 
@@ -8527,6 +8514,9 @@ packages:
 
   zod@4.6.5:
     resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
+
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
   zrender@5.6.1:
     resolution: {integrity: sha512-OFXkDJKcrlx5su2XbzJvj/34Q3m6PvyCZkVPHGYpcCJ52ek4U/ymZyfuV1nKE23AyBJ51E/6Yr0mhZ7xGTO4ag==}
@@ -8896,19 +8886,19 @@ snapshots:
 
   '@chevrotain/types@11.1.2': {}
 
-  '@christophervr/xlsx-core@0.2.10':
+  '@christophervr/xlsx-core@0.3.0':
     dependencies:
-      ooxml-core: 1.19.0
+      ooxml-core: 1.22.0
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - node-forge
       - xml-crypto
 
-  '@christophervr/xlsx-react-viewer@0.6.0(react@19.2.8)(three@0.186.1)':
+  '@christophervr/xlsx-react-viewer@1.0.0(react@19.2.8)(three@0.186.1)':
     dependencies:
-      '@christophervr/xlsx-core': 0.2.10
-      ooxml-core: 1.19.0
-      ooxml-ui: 1.18.1(three@0.186.1)
+      '@christophervr/xlsx-core': 0.3.0
+      ooxml-core: 1.22.0
+      ooxml-ui: 1.21.0(three@0.186.1)
       react: 19.2.8
     transitivePeerDependencies:
       - '@napi-rs/canvas'
@@ -12529,19 +12519,19 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
-  docx-core@0.1.13:
+  docx-core@0.3.0:
     dependencies:
-      ooxml-core: 1.19.0
+      ooxml-core: 1.22.0
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - node-forge
       - xml-crypto
 
-  docx-react-viewer@0.5.0(react@19.2.8)(three@0.186.1):
+  docx-react-viewer@1.0.0(react@19.2.8)(three@0.186.1):
     dependencies:
-      docx-core: 0.1.13
-      ooxml-core: 1.19.0
-      ooxml-ui: 1.18.1(three@0.186.1)
+      docx-core: 0.3.0
+      ooxml-core: 1.22.0
+      ooxml-ui: 1.21.0(three@0.186.1)
       react: 19.2.8
     transitivePeerDependencies:
       - '@napi-rs/canvas'
@@ -12628,8 +12618,6 @@ snapshots:
   electron-to-chromium@1.5.364: {}
 
   elegant-spinner@1.0.1: {}
-
-  emf-converter@4.18.1: {}
 
   emf-converter@4.21.0: {}
 
@@ -13985,10 +13973,6 @@ snapshots:
 
   lexical@0.39.0: {}
 
-  lib0@0.2.117:
-    dependencies:
-      isomorphic.js: 0.2.5
-
   lib0@0.2.119:
     dependencies:
       isomorphic.js: 0.2.5
@@ -14785,7 +14769,7 @@ snapshots:
       regex: 6.0.1
       regex-recursion: 6.0.2
 
-  ooxml-core@1.19.0:
+  ooxml-core@1.22.0:
     dependencies:
       '@xmldom/xmldom': 0.9.12
       emf-converter: 4.21.0
@@ -14807,12 +14791,12 @@ snapshots:
       y-protocols: 1.0.7(yjs@13.6.33)
       yjs: 13.6.33
 
-  ooxml-ui@1.18.1(three@0.186.1):
+  ooxml-ui@1.21.0(three@0.186.1):
     dependencies:
       dompurify: 3.4.17
-      emf-converter: 4.18.1
+      emf-converter: 4.21.0
       lit: 3.3.3
-      ooxml-core: 1.19.0
+      ooxml-core: 1.22.0
       opentype.js: 2.0.0
       prosemirror-collab: 1.3.1
       prosemirror-commands: 1.7.2
@@ -14823,7 +14807,7 @@ snapshots:
       prosemirror-transform: 1.12.2
       prosemirror-view: 1.42.6
       yjs: 13.6.33
-      zod: 4.6.5
+      zod: 4.6.7
     optionalDependencies:
       three: 0.186.1
     transitivePeerDependencies:
@@ -14986,7 +14970,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  pptx-react-viewer@4.42.0(fast-xml-parser@5.11.2)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@25.10.10(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@0.545.0(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@16.6.6(i18next@25.10.10(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(yjs@13.6.33):
+  pptx-react-viewer@4.45.0(fast-xml-parser@5.11.2)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@25.10.10(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@0.545.0(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@16.6.6(i18next@25.10.10(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(yjs@13.6.33):
     dependencies:
       clsx: 2.1.1
       dompurify: 3.4.17
@@ -14997,8 +14981,8 @@ snapshots:
       jspdf: 4.2.1
       jszip: 3.10.2
       lucide-react: 0.545.0(react@19.2.8)
-      ooxml-core: 1.19.0
-      ooxml-ui: 1.18.1(three@0.186.1)
+      ooxml-core: 1.22.0
+      ooxml-ui: 1.21.0(three@0.186.1)
       opentype.js: 2.0.0
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
@@ -16410,21 +16394,21 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  visio-core@0.4.1:
+  visio-core@1.0.0:
     dependencies:
-      ooxml-core: 1.19.0
+      ooxml-core: 1.22.0
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - node-forge
       - xml-crypto
 
-  visio-react-viewer@0.7.2(react@19.2.8)(three@0.186.1):
+  visio-react-viewer@1.0.0(react@19.2.8)(three@0.186.1):
     dependencies:
-      emf-converter: 4.18.1
-      ooxml-core: 1.19.0
-      ooxml-ui: 1.18.1(three@0.186.1)
+      emf-converter: 4.21.0
+      ooxml-core: 1.22.0
+      ooxml-ui: 1.21.0(three@0.186.1)
       react: 19.2.8
-      visio-core: 0.4.1
+      visio-core: 1.0.0
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - ai
@@ -16644,12 +16628,12 @@ snapshots:
 
   y-protocols@1.0.7(yjs@13.6.33):
     dependencies:
-      lib0: 0.2.117
+      lib0: 0.2.119
       yjs: 13.6.33
 
   y-webrtc@10.3.0(yjs@13.6.33):
     dependencies:
-      lib0: 0.2.117
+      lib0: 0.2.119
       simple-peer: 9.11.1
       y-protocols: 1.0.7(yjs@13.6.33)
       yjs: 13.6.33
@@ -16663,7 +16647,7 @@ snapshots:
 
   y-websocket@3.1.0(yjs@13.6.33):
     dependencies:
-      lib0: 0.2.117
+      lib0: 0.2.119
       y-protocols: 1.0.7(yjs@13.6.33)
       yjs: 13.6.33
     optional: true
@@ -16714,6 +16698,8 @@ snapshots:
   yocto-queue@1.2.2: {}
 
   zod@4.6.5: {}
+
+  zod@4.6.7: {}
 
   zrender@5.6.1:
     dependencies:

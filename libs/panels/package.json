@@ -12,20 +12,20 @@
 		"check-types": "tsc --pretty --noEmit"
 	},
 	"dependencies": {
-		"@christophervr/xlsx-react-viewer": "^0.6.0",
+		"@christophervr/xlsx-react-viewer": "^1.0.0",
 		"@semoss/i18n": "workspace:*",
 		"@semoss/sdk": "workspace:*",
 		"@semoss/shared": "workspace:*",
 		"@semoss/ui": "workspace:*",
 		"@semoss/utility": "workspace:*",
 		"@semoss/workbench": "workspace:*",
-		"docx-react-viewer": "^0.5.0",
+		"docx-react-viewer": "^1.0.0",
 		"lucide-react": "^0.545.0",
 		"postcss": "^8.5.6",
-		"pptx-react-viewer": "^4.42.0",
+		"pptx-react-viewer": "^4.45.0",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
-		"visio-react-viewer": "^0.7.2"
+		"visio-react-viewer": "^1.0.0"
 	},
 	"devDependencies": {
 		"@semoss/config": "workspace:*",

@@ -2,168 +2,115 @@ import {
 	type EditorHandle,
 	SpreadsheetEditor,
 } from "@christophervr/xlsx-react-viewer";
-import { DownloadIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-	decodeBase64Asset,
-	getFileOperationErrorMessage,
-} from "@semoss/shared";
-import { Button, Muted, toast } from "@semoss/ui/next";
-import { encodeBytesToBase64 } from "@semoss/utility/encoding";
+import { useEffect, useMemo, useState } from "react";
+import { decodeBase64Asset } from "@semoss/shared";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
+import { useOfficeEditorSession } from "../../hooks/use-office-editor-session";
+import { useOfficeFileCommands } from "../../hooks/use-office-file-commands";
+import { getFilePanelScope } from "../../types/file-panel.types";
 import type { FileViewProps } from "../../types/file-view.types";
-
-const getFileCommand = (event: Event): string | null => {
-	if (!(event instanceof CustomEvent) || typeof event.detail !== "object") {
-		return null;
-	}
-	if (
-		event.detail === null ||
-		!("command" in event.detail) ||
-		typeof event.detail.command !== "string"
-	) {
-		return null;
-	}
-	return event.detail.command;
-};
+import { OfficeViewerError } from "./office/office-viewer-error";
+import { OfficeViewerFrame } from "./office/office-viewer-frame";
+import { XLSX_HIDDEN_ACTIONS } from "./office/xlsx-viewer-policy";
 
 /** Preview and edit an Excel workbook from a project, engine, or user resource. */
 export const FileXlsxView = ({ config, onControls }: FileViewProps) => {
 	const panel = useFilePanel(config, { base64: true });
 	const [handle, setHandle] = useState<EditorHandle | null>(null);
-	const [editorError, setEditorError] = useState<Error | null>(null);
-	const [isDirty, setIsDirty] = useState(false);
-	const [isSerializing, setIsSerializing] = useState(false);
-	const serializingRef = useRef(false);
+	const element = handle?.element ?? null;
 	const content = useMemo(
 		() => decodeBase64Asset(panel.read.data),
 		[panel.read.data],
 	);
+	const editor = useOfficeEditorSession({
+		element,
+		content,
+		fileName: config.name,
+		readRevision: panel.read.revision,
+		readStatus: panel.read.status,
+		resourceScope: getFilePanelScope(config.mode),
+		readOnly: panel.readOnly,
+		changeEvent: "workbook-change",
+		onSave: panel.save,
+		saveErrorMessage: "Failed to save Excel workbook",
+	});
 
 	useEffect(() => {
-		if (panel.read.status === "SUCCESS" && panel.read.revision > 0) {
-			setEditorError(null);
-			setIsDirty(false);
-		}
-	}, [panel.read.revision, panel.read.status]);
-
-	useEffect(() => {
-		if (!handle || !content) return;
-		let isCurrent = true;
-		void handle.load(content, config.name).catch((error: unknown) => {
-			if (isCurrent) {
-				setEditorError(
-					error instanceof Error ? error : new Error(String(error)),
-				);
-			}
-		});
-		return () => {
-			isCurrent = false;
+		if (!element) return;
+		const enforcePermission = () => {
+			if (panel.readOnly) element.readOnly = true;
 		};
-	}, [config.name, content, handle]);
+		const enforcePolicy = () => {
+			element.hiddenActions = XLSX_HIDDEN_ACTIONS;
+		};
+		element.readOnly = panel.readOnly;
+		enforcePolicy();
+		element.addEventListener("readonly-change", enforcePermission);
+		element.addEventListener("ribbon-customize", enforcePolicy);
+		return () => {
+			element.removeEventListener("readonly-change", enforcePermission);
+			element.removeEventListener("ribbon-customize", enforcePolicy);
+		};
+	}, [element, panel.readOnly]);
 
-	const save = useCallback(async () => {
-		if (!handle || serializingRef.current) return;
-		serializingRef.current = true;
-		setIsSerializing(true);
-		try {
-			if (
-				await panel.save(encodeBytesToBase64(await handle.saveBytes()))
-			) {
-				handle.markClean();
-				setIsDirty(false);
-			}
-		} catch (error) {
-			const normalized =
-				error instanceof Error ? error : new Error(String(error));
-			toast.error(
-				getFileOperationErrorMessage(
-					"Failed to save Excel workbook",
-					normalized,
-				),
-			);
-			console.error(normalized);
-		} finally {
-			serializingRef.current = false;
-			setIsSerializing(false);
-		}
-	}, [handle, panel.save]);
-
-	const requestSave = useCallback(() => void save(), [save]);
-	const handleFileCommand = useCallback(
-		(event: Event) => {
-			const command = getFileCommand(event);
-			if (!command || command === "print") return;
-			event.preventDefault();
-			if (command === "save") requestSave();
-		},
-		[requestSave],
-	);
-
-	useEffect(() => {
-		if (!handle) return;
-		handle.element.addEventListener("file-command", handleFileCommand);
-		return () =>
-			handle.element.removeEventListener(
-				"file-command",
-				handleFileCommand,
-			);
-	}, [handle, handleFileCommand]);
-
+	useOfficeFileCommands(element, editor.save);
 	useFileViewControls(onControls, {
 		canDownload: panel.access.status === "ready",
 		download: panel.download,
 		canSave:
 			!panel.readOnly &&
-			isDirty &&
+			editor.isDirty &&
+			!editor.isLoading &&
+			!editor.error &&
 			panel.read.status === "SUCCESS" &&
-			handle !== null,
-		isDirty,
+			element !== null,
+		isDirty: editor.isDirty,
 		isBusy:
-			panel.isBusy || panel.access.status === "loading" || isSerializing,
+			panel.isBusy ||
+			panel.access.status === "loading" ||
+			editor.isLoading ||
+			editor.isSaving,
 		canRefresh: panel.access.status === "ready",
 		refresh: panel.read.refresh,
-		save: requestSave,
+		save: editor.save,
 	});
 
 	if (panel.gate) return panel.gate;
 	if (
 		panel.read.status === "ERROR" ||
 		(panel.read.data && !content) ||
-		editorError
+		editor.error
 	) {
 		return (
-			<div className="flex size-full flex-col items-center justify-center gap-4 p-4">
-				<Muted className="text-destructive" role="alert">
-					{panel.read.error?.message ||
-						editorError?.message ||
-						"Failed to load Excel workbook"}
-				</Muted>
-				<Button
-					type="button"
-					onClick={() => void panel.download()}
-					disabled={panel.isDownloading}
-				>
-					<DownloadIcon aria-hidden className="size-4" />
-					{panel.isDownloading ? "Downloading" : "Download file"}
-				</Button>
-			</div>
+			<OfficeViewerError
+				message={
+					panel.read.error?.message ||
+					editor.error?.message ||
+					"Failed to load Excel workbook"
+				}
+				isDownloading={panel.isDownloading}
+				onDownload={() => void panel.download()}
+			/>
 		);
 	}
 	if (panel.readGate) return panel.readGate;
 	if (!content) return null;
 
 	return (
-		<div className="relative size-full">
+		<OfficeViewerFrame
+			label={`Excel workbook: ${config.name}`}
+			className="semoss-xlsx-viewer"
+		>
 			<SpreadsheetEditor
 				ref={setHandle}
 				className="size-full"
 				fileName={config.name}
 				readOnly={panel.readOnly}
-				onDirtyChange={setIsDirty}
-				onWorkbookError={setEditorError}
+				showToolbar
+				showFormulaBar
+				hiddenActions={XLSX_HIDDEN_ACTIONS}
 			/>
-		</div>
+		</OfficeViewerFrame>
 	);
 };
