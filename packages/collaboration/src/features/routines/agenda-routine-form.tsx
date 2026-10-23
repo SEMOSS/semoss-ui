@@ -205,7 +205,7 @@ export function AgendaRoutineForm({ routine, onSave }: AgendaRoutineFormProps) {
 								)}
 							/>
 						</FieldGroup>
-						<div className="min-w-0">
+						<div className="flex min-w-0 flex-col">
 							<RoutineResult
 								routine={routine}
 								copy={AGENDA_RESULT_COPY}
