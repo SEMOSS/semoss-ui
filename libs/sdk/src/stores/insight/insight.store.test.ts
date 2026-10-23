@@ -36,6 +36,8 @@ const {
 	mockUploadUser: vi.fn(),
 }));
 
+vi.mock("../../lib/pixel", () => ({ runPixel: mockRunPixel }));
+
 vi.mock("../../api", () => ({
 	confirmOTP: mockConfirmOTP,
 	download: mockDownload,
@@ -45,7 +47,6 @@ vi.mock("../../api", () => ({
 	loginOTP: mockLoginOTP,
 	logout: mockLogout,
 	oauth: mockOAuth,
-	runPixel: mockRunPixel,
 	runPixelAsync: mockRunPixelAsync,
 	upload: mockUpload,
 	uploadApp: mockUploadApp,
@@ -330,7 +331,6 @@ describe("InsightStore", () => {
 				login: vi.fn(),
 				logout: vi.fn(),
 				oauth: vi.fn(),
-				runPixel: vi.fn(),
 				runPixelAsync: vi.fn(),
 				upload: vi.fn(),
 				uploadApp: vi.fn(),
@@ -362,7 +362,6 @@ describe("InsightStore", () => {
 				login: vi.fn(),
 				logout: vi.fn(),
 				oauth: vi.fn(),
-				runPixel: vi.fn().mockResolvedValue(pixelResult()),
 				runPixelAsync: vi.fn(),
 				upload: vi.fn(),
 				uploadApp: vi.fn(),
@@ -381,6 +380,7 @@ describe("InsightStore", () => {
 				"./insight.store"
 			);
 			const store = new FreshStore();
+			mockRunPixel.mockResolvedValueOnce(pixelResult());
 			await store.initialize();
 			expect(store.isAuthorized).toBe(true);
 		});

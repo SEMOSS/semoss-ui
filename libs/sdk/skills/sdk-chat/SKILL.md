@@ -35,7 +35,7 @@ uploads to the same agent. Do not pass a temporary form ID or an agent run ID.
 
 | Operation | Submission | Progress | Settled result |
 |---|---|---|---|
-| Chat | `askRoom(insightId, params)` or `addRoomToolExecution(insightId, params)` returns `Promise<{ jobId: string }>` | `getPixelJobStreaming(jobId)` | `getPixelAsyncResult(jobId)` |
+| Chat | `askRoom(insightId, params)` or `addRoomToolExecution(insightId, params)` returns `Promise<{ jobId: string }>` | Legacy `getPixelJobStreaming(jobId)` (deprecated; resource replacement: `pixelJobStreaming({ jobId })` from `@semoss/sdk/api/monolith/engine`) | `getPixelAsyncResult(jobId)` |
 | Agent harness | `runAgent(params, insightId?)` returns `Promise<{ runId: string; roomId: string; status: AgentRunStatusValue }>` | `pollAgentRun(runId)` or `AgentStore.watch(...)` | `getAgentRun(runId, options?, insightId?)` |
 
 The function you call chooses the protocol. `runAgent` sends `wait=false`; it does
@@ -200,7 +200,10 @@ escaping. See the backend compatibility notes below.
 This example consumes an already submitted job, spaces polls by 500 ms, and
 handles every declared status without treating cancellation or errors as success.
 Submit with `await askRoom(insightId, params)` using a complete `AskRoomParams`,
-then pass its `jobId` to this function.
+then pass its `jobId` to this function. It preserves the legacy normalized
+`PixelStreamMessage` contract through the deprecated, callable helper. New resource
+consumers use `pixelJobStreaming({ jobId })` from `@semoss/sdk/api/monolith/engine`
+and handle its raw backend chunk union explicitly.
 
 ```ts
 import { getPixelAsyncResult, getPixelJobStreaming } from "@semoss/sdk";
@@ -307,7 +310,8 @@ validate objects too. A string alone does not prove another tool should run.
 fields are `engine`, `harnessType`, `agentId`, `space`, `subdir` (strings),
 `maxTurns` and `maxReflections` (numbers), `media` and `urls` (`string[]`), and
 `paramValues` (`Record<string, unknown>`, not the chat array form).
-There is no `images` or separate `agentParams` parameter in this version.
+`agentParams` is a separate `Record<string, unknown>` for agent-only run values,
+including `userText`; it is not sent to the model. There is no `images` parameter.
 
 `space` picks where the run works: `INSIGHT` (the room's folder, and what a run
 without `space` uses), `USER` (the user's file space), or an editable project
@@ -318,14 +322,14 @@ id. `subdir` narrows that to a folder inside it. The backend refuses
 The wrapper JSON-serializes raw command text, maps `agentId` to `workspaceId`,
 `urls` to `url`, and `media` to `media`; `space` is sent as its own argument
 and `subdir` as `paramValues.subdir`, replacing one already there. Nonempty
-`paramValues` is sent as a one-element array. It does not URL-encode commands
+`paramValues` and `agentParams` are each sent as a one-element array. It does not URL-encode commands
 or inject a harness default.
 The returned status is typed as `AgentRunStatusValue`, not guaranteed by local
 validation to equal `"SUBMITTED"`.
 
 | Call | Result |
 |---|---|
-| `pollAgentRun(runId)` | `{ run: AgentRunSnapshot; events: AgentRunItemEvent[]; droppedEvents: number }` |
+| `pollAgentRun(runId)` (deprecated; use `/api/monolith/engine` `agentRunStreaming`) | `{ run: AgentRunSnapshot; events: AgentRunItemEvent[]; droppedEvents: number }` |
 | `getAgentRun(runId, { includeMessages?: boolean }, insightId?)` | Snapshot with optional `messages`; the options argument itself defaults to `{}` |
 | `stopAgentRun(runId, insightId?)` | `Promise<AgentRunSnapshot>` from the StopAgentRun reactor |
 | `getSubagentRuns(runId, insightId?)` | `Promise<SubagentRunSummary[]>` |
@@ -334,13 +338,15 @@ validation to equal `"SUBMITTED"`.
 | `agent.getSnapshot(options?)` | Durable fetch with this store's insight ID; return type is `Promise<AgentRunSnapshot>` |
 | `agent.cancel()` | Calls `stopAgentRun`; unlike `agent.stop()`, requests backend cancellation |
 
-`AgentRunSnapshot` requires `runId`, `roomId`, `status`, and `pendingActions`;
-optional fields are `inputMessageId`, `finalOutputMessageId`, `finalText`,
-and `errorMessage`. Status values are `SUBMITTED`, `RUNNING`,
+`AgentRunSnapshot` requires `runId`, `status`, and `pendingActions`;
+`roomId` can be absent, including for runs delegated to a person. Other optional fields include
+`inputMessageId`, `finalOutputMessageId`, `finalText`, `errorMessage`, and delivery,
+artifact, review, or workflow evidence. Status values are `SUBMITTED`, `RUNNING`,
 `INPUT_REQUIRED`, `COMPLETED`, `FAILED`, and `CANCELLED`. `INPUT_REQUIRED` is a
 pause, not a terminal success. Do not infer durable success from streamed text.
-`getAgentRun` and `stopAgentRun` normalize missing `pendingActions` to `[]`;
-`pollAgentRun` returns the endpoint payload without that normalization.
+`getAgentRun`, `stopAgentRun`, and the deprecated `pollAgentRun` normalize missing
+`pendingActions` to `[]` and omitted nullable approval fields to `null`. The resource
+`agentRunStreaming` keeps the backend's omitted fields unchanged.
 
 ### Watch Lifecycle
 
@@ -354,7 +360,9 @@ subscription promise, or a resolved `null` before any watch.
 - Events are sorted by `sequence` per poll and deduplicated by `eventId`.
     `onEvent(event, items)` receives accumulated state. Render that state so full
     text arriving on `item.started` or `item.completed` is not lost. Kinds include
-    `message`, `reasoning`, `tool`, and `subagent`.
+    `message`, `reasoning`, `tool`, `subagent`, and `progress`. Tool `name` and
+    `arguments` may be omitted in partial/completion events; retain earlier details
+    when merging them. Progress carries phase, activity, and completed-turn counts.
 - Treat agent streaming as a destructive drain without replay: keep exactly one
     live watcher per run ID, including across separate store instances. Use durable
     reads to reconcile `droppedEvents`; the store reports gaps but does not itself

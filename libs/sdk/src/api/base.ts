@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { CSRF, get, post } from "../utility";
+import { CSRF, get, post } from "../utility/fetch";
 /**
  * Get the System's configuration information
  */
@@ -39,70 +39,11 @@ export const getSystemConfig = async (): Promise<{
 };
 
 /**
- * Run a pixel string
- *
- * @param pixel - pixel
- * @param insightId - id of the insight to run
- */
-export const runPixel = async <O extends unknown[] | []>(
-	pixel: string,
-	insightId?: string,
-) => {
-	if (!pixel) {
-		throw new Error("Missing Pixel");
-	}
-
-	const body: Record<string, unknown> = {
-		expression: pixel,
-	};
-
-	if (insightId) {
-		body.insightId = insightId;
-	}
-
-	// try to add the timezone
-	try {
-		body.tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-	} catch {}
-
-	const response = await post<{
-		insightID: string;
-		pixelReturn: {
-			isMeta: boolean;
-			operationType: string[];
-			output: O[number];
-			pixelExpression: string;
-			pixelId: string;
-			additionalOutput?: unknown;
-			timeToRun: number;
-		}[];
-	}>(`${Env.MODULE}/api/engine/runPixel`, body, {});
-
-	// collect the errors
-	const errors: string[] = [];
-	for (const p of response.data.pixelReturn) {
-		const { output, operationType } = p;
-
-		if (operationType.indexOf("ERROR") > -1) {
-			// output isn't always a string - avoid "[object Object]"
-			errors.push(
-				typeof output === "string" ? output : JSON.stringify(output),
-			);
-		}
-	}
-
-	return {
-		errors: errors,
-		insightId: response.data.insightID,
-		pixelReturn: response.data.pixelReturn,
-	};
-};
-
-/**
  * Asyncronously run a pixel string
  *
  * @param pixel - pixel
  * @param insightId - id of the insight to run
+ * @deprecated Use `runPixelAsync` from `@semoss/sdk/api/monolith/engine` with object parameters.
  */
 export const runPixelAsync = async (pixel: string, insightId?: string) => {
 	if (!pixel) {
@@ -180,9 +121,9 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
 };
 
 /**
- * @deprecated use getPixelJobStreaming
  * Get a partial result from the insight
  * @param insightId - id of the insight to run
+ * @deprecated Use `pixelJobStreaming` from `@semoss/sdk/api/monolith/engine` with object parameters.
  */
 export const partial = async (insightId: string) => {
 	const response = await post<{
@@ -201,6 +142,7 @@ export const partial = async (insightId: string) => {
 /**
  * Get the console message from an insight
  * @param insightId - id of the insight to run
+ * @deprecated Use `console` from `@semoss/sdk/api/monolith/engine` with object parameters.
  */
 export const console = async (insightId: string) => {
 	const response = await post<{
@@ -280,6 +222,7 @@ export type PixelJobStreamingStatus =
  * For a managed polling loop use {@link streamPixelJob} instead.
  *
  * @param jobId - The job ID returned from runPixelAsync
+ * @deprecated Use `pixelJobStreaming` from `@semoss/sdk/api/monolith/engine` with object parameters.
  */
 export const getPixelJobStreaming = async (jobId: string) => {
 	if (!jobId) {

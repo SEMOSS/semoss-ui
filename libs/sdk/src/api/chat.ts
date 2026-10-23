@@ -1,3 +1,4 @@
+import { runPixel } from "../lib/pixel";
 import type {
 	AddRoomToolExecutionParams,
 	AskRoomParams,
@@ -5,7 +6,7 @@ import type {
 	RoomOptions,
 	RoomRecord,
 } from "../types";
-import { runPixel, runPixelAsync } from "./base";
+import { runPixelAsync } from "./base";
 
 // -------------------------------------------------------------------------------------------------
 // API FUNCTIONS

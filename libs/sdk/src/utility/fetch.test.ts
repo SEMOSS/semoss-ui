@@ -50,6 +50,8 @@ describe("fetch utility", () => {
 			BEARER_PROVIDER: "",
 			CSRF: false,
 			MODULE: "",
+			HEADLESS: false,
+			REDIRECT_URL: "",
 		});
 
 		CSRF.isEnabled = false;
@@ -255,6 +257,10 @@ describe("fetch utility", () => {
 	});
 
 	it("throws UnauthorizedError when backend responds with redirect header", async () => {
+		const replace = vi.fn();
+		vi.stubGlobal("window", {
+			location: { origin: "https://semoss.example", replace },
+		});
 		const fetchMock = vi.mocked(fetch);
 		fetchMock.mockResolvedValueOnce(
 			createJsonResponse(
@@ -270,5 +276,6 @@ describe("fetch utility", () => {
 		await expect(get("/api/private")).rejects.toBeInstanceOf(
 			UnauthorizedError,
 		);
+		expect(replace).toHaveBeenCalledWith("https://semoss.example/login");
 	});
 });

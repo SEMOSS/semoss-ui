@@ -9,7 +9,6 @@ import {
 	loginOTP,
 	logout,
 	oauth,
-	runPixel,
 	runPixelAsync,
 	setRoomForInsight,
 	upload,
@@ -19,6 +18,7 @@ import {
 	uploadUser,
 } from "../../api";
 import { Env } from "../../env";
+import { runPixel } from "../../lib/pixel";
 import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
 import { Logins } from "../logins";

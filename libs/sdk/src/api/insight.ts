@@ -1,5 +1,5 @@
-import { Env } from "../env";
-import { post } from "../utility";
+import { url as apiUrl } from "../lib/url";
+import { post } from "../utility/fetch";
 
 /**
  * Upload file(s) to an insight
@@ -7,6 +7,7 @@ import { post } from "../utility";
  * @param path
  * @param files
  * @returns
+ * @deprecated Use `baseUpload` from `@semoss/sdk/api/monolith/upload-file` with object parameters.
  */
 export const uploadInsight = async (
 	insightId: string | null,
@@ -29,7 +30,11 @@ export const uploadInsight = async (
 			fileLocation: string;
 		}[]
 	>(
-		`${Env.MODULE}/api/uploadFile/baseUpload?insightId=${insightId}&path=${encodeURIComponent(path)}&userSpace=false`,
+		apiUrl("/api/uploadFile/baseUpload", {
+			insightId,
+			path,
+			userSpace: false,
+		}),
 		fd,
 		{},
 	);

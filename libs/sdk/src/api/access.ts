@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { get, post } from "../utility";
+import { get, post } from "../utility/fetch";
 
 /**
  * What a permission batch changes: a project, an engine, an insight, a custom
@@ -328,9 +328,9 @@ export type UsageBilledLimitType =
 export interface UsageBilledTo {
 	/** Which source: the type of limit billed */
 	limitType: UsageBilledLimitType;
-	/** The team's name, for a team */
+	/** The person's id for DIRECT/ALL_MODELS, or the team's id for TEAM. */
 	id: string | null;
-	/** The team's type, for a team */
+	/** The person's login type for DIRECT/ALL_MODELS, or the team's type for TEAM. */
 	type: string | null;
 }
 
@@ -349,10 +349,10 @@ export interface UsageNextTeam {
 /** A limit that exists for a person but is replaced by another */
 export interface UsageNotApplied {
 	/** Which source, such as TEAM */
-	limitType: string;
-	/** The team's name, for a team */
+	limitType: UsageBilledLimitType;
+	/** The person's id for DIRECT/ALL_MODELS, or the team's id for TEAM. */
 	id: string | null;
-	/** The team's type, for a team */
+	/** The person's login type for DIRECT/ALL_MODELS, or the team's type for TEAM. */
 	type: string | null;
 	/**
 	 * Why it does not apply: DIRECT_WINS, TEAM_WINS, UNLIMITED_TEAM_WINS,
@@ -458,9 +458,9 @@ export interface UsageLimitPathStep {
 	layer: "CEILING" | "BILLED";
 	/** Which ceiling or source the step checks */
 	limitType: UsageLimitType;
-	/** The team's name, for a team */
+	/** The person's id for DIRECT/ALL_MODELS, or the team's id for TEAM. */
 	id: string | null;
-	/** The team's type, for a team */
+	/** The person's login type for DIRECT/ALL_MODELS, or the team's type for TEAM. */
 	type: string | null;
 	/** Where the call stands at this step */
 	state: UsageLimitStepState;
@@ -1049,14 +1049,12 @@ const readEffectiveUsage = (value: unknown): EffectiveUsage | null => {
 			if (!isObject(item)) {
 				return [];
 			}
-			const limitType = readText(item.limitType);
+			const source = readBilledTo(item);
 			const reason = readText(item.reason);
-			return limitType && reason
+			return source && reason
 				? [
 						{
-							limitType,
-							id: readText(item.id),
-							type: readText(item.type),
+							...source,
 							reason,
 						},
 					]

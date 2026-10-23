@@ -66,41 +66,69 @@ HTTP status. A JSON `null` error response also uses the status fallback.
 
 ## REST Endpoints
 
-Every Monolith REST endpoint has a typed, documented function at
-`@semoss/sdk/monolith/<route>`, one subpath per backend resource, named after its URL
-(`/api/auth/admin/project/*` is `api/auth/admin/project`; each file's header lists its
-endpoints). Import only what you use; the rest is not bundled.
+Typed resources are exported directly from the SDK, with servlet-relative subpaths:
 
 ```ts
-import { Env } from "@semoss/sdk";
-import { ApiError } from "@semoss/sdk/monolith";
-import { getProjects } from "@semoss/sdk/monolith/api/auth/admin/project";
+import { Env, runPixel } from "@semoss/sdk";
+import { ApiError, type RequestOptions } from "@semoss/sdk/api";
+import { getProjects } from "@semoss/sdk/api/monolith/auth/admin/project";
+import { installations } from "@semoss/sdk/api/github";
+import { apps } from "@semoss/sdk/api/github/manifest";
 
-Env.update({ MODULE: "/Monolith" }); // also configures the routes
-
-try {
-    const projects = await getProjects({ filterWord: "sales", limit: 20 });
-} catch (error) {
-    if (error instanceof ApiError && error.status === 403) {
-        // not an admin
-    }
-}
+Env.update({ MODULE: "/Monolith" });
+const projects = await getProjects({ filterWord: "sales", limit: 20 });
+const result = await runPixel<[string]>("SomePixel();", "insight-id");
 ```
 
-Each is `(params, options?) => Promise<body>`; `options` is `{ signal?, headers? }`.
-They use the base path and credentials `Env.update` set, fetch and send the CSRF
-token on writes, and keep the session cookie in Node. A failed call throws
-`ApiError` (`status`, the parsed error body as `data`, `endpoint`); in the browser,
-a session redirect navigates and throws `UnauthorizedError`, an `ApiError`. Both come from
-`@semoss/sdk/monolith`, with `ApiClient` for settings `Env` doesn't cover (extra
-headers, credentials, `onRedirect`). In Node, use `ACCESS_KEY` / `SECRET_KEY`: the
-routes don't share the session of the SDK's own `login()` yet.
+Other servlet entries are `/api/msgraph`, `/api/adminconfig`, `/api/health`, and
+`/api/token`. Each resource function is `(params, options?) => Promise<body>`;
+`RequestOptions` provides `signal` and `headers`. Route-only imports read the document's
+`semoss-env` tag, share the transport, and exclude unrelated routes, stores, React,
+and the root listener from consumer bundles.
+
+All settings come from `Env`. CSRF handling remains opt-in with `Env.CSRF` or
+`CSRF.isEnabled`; Node cookie tracking remains opt-in with `Env.HEADLESS`. Typed
+routes and root HTTP helpers share login cookies and CSRF tokens. Bearer credentials
+win over access/secret credentials and caller Authorization headers. Effective
+connection changes and full logout clear session state; unrelated updates preserve it.
+Browser authentication redirects honor `Env.REDIRECT_URL`.
+
+Failed route calls throw `ApiError` (`status`, parsed `data`, `endpoint`), or the
+route `UnauthorizedError` after browser redirect handling. Both are exported from
+`@semoss/sdk/api`. Root `get`/`post` still return `{ response, data }`, use their
+existing encoding/error contracts, and export mutable `CSRF`.
+
+### Upgrading
+
+The standalone `@semoss/monolith` package, `ApiClient`, `ApiSettings`, and the old
+`@semoss/sdk/monolith` exports have been removed. Use `Env.update` for configuration
+and replace `@semoss/sdk/monolith/api/<resource>` with
+`@semoss/sdk/api/monolith/<resource>`. Other servlets move from
+`@semoss/sdk/monolith/<servlet>` to `@semoss/sdk/api/<servlet>`.
+
+`runPixel` remains a root export with the same positional arguments, generic tuple,
+and normalized result. Its implementation is `src/lib/pixel.ts`. Thin legacy REST
+wrappers remain callable with declaration deprecations:
+
+| Legacy root export | Replacement resource function |
+| --- | --- |
+| `runPixelAsync`, `console`, `getPixelJobStreaming`, `partial` | `runPixelAsync`, `console`, `pixelJobStreaming` from `/api/monolith/engine` (`partial` also uses `pixelJobStreaming`) |
+| `pollAgentRun` | `agentRunStreaming` from `/api/monolith/engine` |
+| `login`, `loginLDAP`, `confirmOTP` | `login`, `loginLDAP`, `loginLinOTP` from `/api/monolith/auth` |
+| `logout`, `logoutProvider` | `logout({ provider })` from `/api/monolith/auth` (`"ALL"` for full logout) |
+| `getUserProjectPermission`, `getUserEnginePermission` | Same named function from `/api/monolith/auth/project` or `/engine` |
+| `propagateUserPermissions` | `propagateProjectDependencyPermissions` from `/api/monolith/auth/project` |
+| `upload`, `uploadInsight`, `uploadApp`, `uploadEngine`, `uploadUser` | `baseUpload`, `baseUpload`, `projectAssetsUpload`, `engineAssetsUpload`, `userAssetsUpload` from `/api/monolith/upload-file` |
+
+Routes take object parameters and return raw backend bodies. Higher-level configuration,
+normalization, authentication orchestration, chat, stores, and hooks remain supported.
+See [API_SYNC.md](./API_SYNC.md) for corrected contracts and backend findings.
 
 ## LinOTP Authentication
 
-Use the SDK's `loginOTP(username, pin)` and `confirmOTP(otp)` functions rather
-than implementing the LinOTP requests in an application. Both are exported from
-`@semoss/sdk` and `@semoss/sdk/react`.
+Use the SDK's `loginOTP(username, pin)` orchestration to start a challenge. The
+legacy `confirmOTP(otp)` remains callable but is deprecated in favor of
+`loginLinOTP({ otp })` from `@semoss/sdk/api/monolith/auth`.
 
 `loginOTP` starts the challenge without creating a signed-in session. It returns
 `true` when the challenge is accepted, or `false` only when HTTP 401 reports the
@@ -260,8 +288,8 @@ pnpm --filter @semoss/sdk test:coverage
 
 | Area | Files | Notes |
 |---|---|---|
-| Transport | [base.spec.ts](./src/api/base.spec.ts) | Pixel job submission, polling, and result handling |
-| Agent state | [agent.store.spec.ts](./src/stores/agent/agent.store.spec.ts) | Item accumulation, ordering, reconciliation, failure caps, and local abort |
+| Transport | [base.test.ts](./src/api/base.test.ts) | Pixel job submission, polling, and result handling |
+| Agent state | [agent.store.test.ts](./src/stores/agent/agent.store.test.ts) | Item accumulation, ordering, reconciliation, failure caps, and local abort |
 | Insight state | [insight.store.test.ts](./src/stores/insight/insight.store.test.ts) | Initialization and room binding |
 | Environment | [env.test.ts](./src/env.test.ts) | Environment configuration |
 
@@ -269,7 +297,7 @@ These are local mocked tests, not proof of deployed backend compatibility.
 
 ### Writing Tests
 
-Place test files next to the source file they cover, e.g.:
+Name SDK tests `*.test.ts` and place them next to the source file they cover, e.g.:
 
 ```
 src/utility/fetch.ts

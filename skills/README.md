@@ -16,7 +16,7 @@ on automatic discovery.
 | [Mobile development](./mobile-development.skill.md) | Working on responsive layouts, small screens, touch interaction, viewport handling, or mobile navigation |
 | [React form builder](./react-form-builder.skill.md) | Creating or touching forms, including fields, validation, submission, and modal form behavior |
 | [SDK chat](./sdk-chat.skill.md) | Rooms, AskRoom/RunAgent messages, tool approvals, streaming/polling lifecycle, and room configuration |
-| [SEMOSS sync](./semoss-sync.skill.md) | Syncing `@semoss/monolith` with the Monolith REST endpoints: added, changed, removed or deprecated endpoints, and releases |
+| [SEMOSS sync](./semoss-sync.skill.md) | Syncing SDK REST resources with the Monolith REST endpoints: added, changed, removed or deprecated endpoints, and releases |
 
 Loading the React standard is mandatory for React work; apply individual rules
 to the work they govern, including applicable TypeScript rules for non-React

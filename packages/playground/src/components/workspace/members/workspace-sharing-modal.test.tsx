@@ -5,6 +5,7 @@ import { WorkspaceSharingModal } from "./workspace-sharing-modal";
 
 const mocks = vi.hoisted(() => ({
 	add: vi.fn(),
+	search: vi.fn(),
 	translate: (key: string) => key,
 }));
 vi.mock("@semoss/i18n", () => ({
@@ -13,18 +14,41 @@ vi.mock("@semoss/i18n", () => ({
 vi.mock("@semoss/sdk", () => ({
 	addProjectUserPermissions: mocks.add,
 	getProjectUsers: vi.fn().mockResolvedValue({ members: [] }),
-	getProjectUsersNoCredentials: vi.fn().mockResolvedValue([
-		{
-			id: "user-1",
-			name: "Alex",
-			email: "alex@example.test",
-			permission: "READ_ONLY",
-		},
-	]),
+	getProjectUsersNoCredentials: mocks.search,
 }));
 beforeEach(() => {
 	vi.clearAllMocks();
+	mocks.search.mockResolvedValue([
+		{
+			id: "user-1",
+			type: "NATIVE",
+			name: "Alex",
+			email: "alex@example.test",
+		},
+	]);
 	Element.prototype.scrollIntoView = vi.fn();
+});
+
+test("shows an identity when a directory candidate has no mapped display name", async () => {
+	mocks.search.mockResolvedValueOnce([
+		{ id: "directory-person", type: "MICROSOFT", username: "ada" },
+	]);
+	render(
+		<WorkspaceSharingModal
+			workspaceId="workspace-1"
+			open
+			onClose={vi.fn()}
+			activeUserPermission="OWNER"
+		/>,
+	);
+	fireEvent.click(
+		screen.getByRole("combobox", {
+			name: "workspace:sharing.searchPlaceholder",
+		}),
+	);
+	fireEvent.click(await screen.findByRole("option", { name: "ada" }));
+	expect(screen.getByText("ada")).toBeInTheDocument();
+	expect(mocks.add).not.toHaveBeenCalled();
 });
 
 test("preserves read-only and owner permission guards", () => {

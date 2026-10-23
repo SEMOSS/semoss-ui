@@ -10,15 +10,13 @@ This document provides context for AI coding assistants working with the SEMOSS 
 `@semoss/sdk` is the core client SDK for talking to a SEMOSS backend (pixel/API calls, insight
 state, environment config). It has framework-independent stores and optional **React**
 bindings on a subpath; this is not a blanket Node/SSR compatibility guarantee.
-Its one internal dependency is [`@semoss/monolith`](../monolith/AGENTS.md), the typed
-REST client, which it compiles from source and bundles (a `devDependency`, never external),
-so the published SDK carries it and every other package reaches it through the SDK. Treat
-its published public surface as stable and versioned.
+Typed REST resources live in this package under `src/api/`. The SDK has no runtime
+workspace dependencies. Treat its published public surface as stable and versioned.
 
 ## Build System
 
 - **Bundler**: Vite 8 library mode (Rolldown) → ES modules with types in `dist/types/` (via unplugin-dts).
-  Multi-entry bundling shares internal chunks across the SDK, React, and Monolith entries.
+  Multi-entry bundling shares internal chunks across the SDK, React, and API entries.
   Route entries are discovered recursively, preserving nested paths; internal source
   modules do not each receive a public JavaScript output file.
 - Entry points via `exports`:
@@ -27,20 +25,15 @@ its published public surface as stable and versioned.
 |--------|--------------|----------------------|-----------------|
 | `@semoss/sdk` | `src/index.ts` | `dist/index.mjs` | `dist/types/index.d.ts` |
 | `@semoss/sdk/react` | `src/js-frameworks/react/index.ts` | `dist/js-frameworks/react/index.mjs` | `dist/types/js-frameworks/react/index.d.ts` |
-| `@semoss/sdk/monolith` | `../monolith/src/index.ts` (`ApiClient`, `ApiError`, `UnauthorizedError`, `RequestOptions`) | `dist/monolith/index.mjs` | `dist/types/monolith/index.d.ts` |
-| `@semoss/sdk/monolith/<route>` | `../monolith/src/routes/<route>.ts`, one entry per file | `dist/monolith/routes/<route>.mjs` | `dist/types/monolith/routes/<route>.d.ts` |
+| `@semoss/sdk/api` | `src/lib/api.ts` (route errors and `RequestOptions`) | `dist/api/index.mjs` | `dist/types/lib/api.d.ts` |
+| `@semoss/sdk/api/monolith/<resource>` | `src/api/monolith/<resource>.ts` | `dist/api/monolith/<resource>.mjs` | `dist/types/api/monolith/<resource>.d.ts` |
+| `@semoss/sdk/api/<servlet>` | `src/api/<servlet>/<servlet>.ts` | `dist/api/<servlet>.mjs` | `dist/types/api/<servlet>/<servlet>.d.ts` |
+| `@semoss/sdk/api/github/manifest` | `src/api/github/manifest.ts` | `dist/api/github/manifest.mjs` | `dist/types/api/github/manifest.d.ts` |
 
-- **Declarations.** `tsconfig.json` uses `rootDir: ".."` and includes both SDK and
-  Monolith sources. The SDK passes `dtsOptions` to the shared build helper, with
-  `entryRoot: ".."` and a path-only `beforeWriteFile` remap: `sdk/src/*` becomes
-  `dist/types/*`, and `monolith/src/*` becomes `dist/types/monolith/*`. Keep declaration
-  contents and supporting internal declarations intact so relative type imports resolve.
+Servlet entries are `github`, `msgraph`, `adminconfig`, `health`, and `token`.
+Declarations use `rootDir: "src"` and preserve supporting relative imports under
+`dist/types/`. There is no separate REST package or declaration path remapping.
 
-- **Monolith is bundled.** It is a `devDependency`, never external, and has no build of its
-  own, so every entry shares one `ApiClient`. Never import `@semoss/monolith` from another
-  package: a second copy would be a second, unconfigured `ApiClient`. Emitted imports
-  between SDK and Monolith declarations must resolve within the packaged `dist/types/`
-  after path remapping and must never reference the private `@semoss/monolith` package.
 - **Tree-shaking.** Route subpaths let consumers import individual resources while sharing
   the bundled transport. `package.json` has **no `sideEffects` field** on purpose: the
   SDK's `env.ts` and `listener.ts` initialization must survive consumer bundling. Keep
@@ -72,7 +65,8 @@ router):
 |---------------|---------|
 | `api/` | API / pixel call implementations |
 | `stores/` | State (e.g. `InsightStore`, exported as `Insight`) |
-| `utility/` | Utility functions |
+| `utility/` | SDK helpers and shared HTTP session state |
+| `lib/` | Route transport and canonical positional `runPixel` (`pixel.ts`) |
 | `js-frameworks/react/` | React binding (published as `@semoss/sdk/react`) |
 | `constants.ts` | Shared constants |
 | `env.ts` | Environment configuration |
@@ -91,7 +85,7 @@ router):
 - **`src/index.ts` and `src/js-frameworks/react`** — the public API. This package is published
   and consumed by every other package; breaking changes ripple everywhere.
 - **`env.ts` / `listener.ts`** — environment wiring and the side-effect import in `index.ts`.
-- **`vite.config.ts`** — build configuration and the entries (root, `react`, and monolith's index and route files).
+- **`vite.config.ts`** — build configuration and the entries (root, `react`, and API resource entries).
 
 ### When Adding to the SDK
 
@@ -104,6 +98,8 @@ router):
    ```
 
 ### Testing Changes
+
+Name SDK test files `*.test.ts` and place them next to the source they cover.
 
 For SDK source changes, run the relevant tests first, then the package gates:
 
@@ -118,26 +114,31 @@ do not present those checks as backend integration verification. Follow the
 [repository validation guidance](../../skills/react-standard.skill.md#validation),
 with [biome.json](../../biome.json) as lint/formatting authority.
 
-## Monolith Routes and the Env Bridge
+## Typed routes and Env
 
-The SDK bundles [`@semoss/monolith`](../monolith/AGENTS.md); apps call its typed route
-functions from `@semoss/sdk/monolith/<route>` and import `ApiClient`, `ApiError` and
-`UnauthorizedError` from `@semoss/sdk/monolith` (the SDK root keeps its own
-`UnauthorizedError` and `HttpError`). The SDK's own functions still use its own transport
-(`utility/fetch.ts`); moving them onto the routes is the next step of the
-[integration guide](../monolith/AGENTS.md#integrating-into-the-sdk-and-the-apps).
+Read [the route guide](./src/api/AGENTS.md) for backend contracts, encoding, and sync
+rules. Routes import `Env` through their transport, so importing a route alone reads
+the document's `semoss-env` tag without importing stores, React, or the root listener.
+`Env.update` controls the module path and effective authentication. Bearer credentials
+take precedence over access/secret credentials, which take precedence over caller
+Authorization headers. `REDIRECT_URL` overrides browser authentication redirects.
 
-- Every `Env.update` (including the one at load) sets `ApiClient`'s `basePath` to `MODULE`
-  (empty is the page origin) and its `auth` to `BEARER_TOKEN` (+ `BEARER_PROVIDER`), else
-  `ACCESS_KEY` + `SECRET_KEY`, else `null`. `configure` keeps the routes' CSRF token and
-  cookies unless those values change. In the browser, the SDK sets `onRedirect` when it loads,
-  so an auth redirect goes to `Env.REDIRECT_URL` when set; an app's own `onRedirect` must be
-  configured after `@semoss/sdk` is imported. `Env.CSRF` does not apply: the routes always
-  handle CSRF.
-- `ApiClient` is an escape hatch for what `Env` doesn't cover (extra headers, credentials,
-  `onRedirect`).
-- In Node, the routes keep their own cookie jar, so a session from the SDK's own `login()`
-  is not shared with them; use `ACCESS_KEY` / `SECRET_KEY`. Browsers share cookies.
+The route adapter (`lib/http.ts`) and public `get`/`post` helpers
+(`utility/fetch.ts`) share one sender and session (`utility/session.ts`). CSRF is
+opt-in via `Env.CSRF` or the existing mutable `CSRF.isEnabled`; cookie tracking is
+opt-in via `Env.HEADLESS`. A full logout or effective connection change clears both
+cookies and token. Unrelated Env updates preserve them. Late responses from a cleared
+session cannot restore its state. Route errors come from `@semoss/sdk/api`; root
+`HttpError` and `UnauthorizedError` retain their existing helper contracts.
+
+`runPixel` is implemented in `src/lib/pixel.ts` and remains a positional, generic
+root export. Internal callers import that defining file. Thin REST wrappers remain
+callable with declaration deprecations; higher-level normalization, configuration,
+authentication orchestration, chat, stores, and hooks remain supported. Do not remove
+`get`, `post`, `CSRF`, or the deprecated wrappers as part of routine sync work.
+
+After a production build, run `pnpm --filter @semoss/sdk test:exports` to verify
+public JavaScript and declaration paths, route-only tree shaking, and initialization.
 
 ## Chat and Agent Ownership
 
@@ -147,7 +148,7 @@ there instead of repeating them in AGENTS files.
 
 When changing an API, inspect its owning implementation and adjacent tests:
 
-- [Chat wrappers](./src/api/chat.ts) and [pixel transport](./src/api/base.ts).
+- [Chat wrappers](./src/api/chat.ts) and [pixel helper](./src/lib/pixel.ts).
 - [Agent wrappers](./src/api/agent.ts) and [AgentStore](./src/stores/agent/agent.store.ts).
 - [MCP wrappers](./src/api/mcp.ts): `runMcpTool` and `makeUserPixelMcp`.
 - [RoomStore](./src/stores/room/room.store.ts) and [shared types](./src/types.ts).

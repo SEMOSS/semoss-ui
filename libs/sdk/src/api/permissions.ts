@@ -6,24 +6,32 @@ import type {
 	UserAccessRequest,
 	UserSearchResult,
 } from "../types";
-import { get, post } from "../utility";
+import { get, post } from "../utility/fetch";
 import { readModelUsageLimit } from "./access";
+
+/** A validated person who can be added to a project or engine. No permission is assigned yet. */
+export interface PermissionCandidate {
+	id: string;
+	type: string;
+	name?: string;
+	email?: string;
+	username?: string;
+	[key: string]: unknown;
+}
 
 /**
  * Get the current user's permission for a project
  * @param projectId - The project ID
- * @param admin - Whether to use admin endpoint
+ * @param _admin - Retained for compatibility; this endpoint has no admin variant.
  * @returns The user's permission level
+ * @deprecated Use `getUserProjectPermission` from `@semoss/sdk/api/monolith/auth/project`.
  */
 export const getUserProjectPermission = async (
 	projectId: string,
-	admin = false,
+	_admin = false,
 ): Promise<Role> => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-	url += `project/getUserProjectPermission?projectId=${projectId}`;
+	// This endpoint reads the caller's own permission; there is no admin variant.
+	const url = `${Env.MODULE}/api/auth/project/getUserProjectPermission?${new URLSearchParams({ projectId })}`;
 
 	const response = await get<{ permission: Role }>(url).catch((error) => {
 		throw Error(error);
@@ -39,18 +47,16 @@ export const getUserProjectPermission = async (
 /**
  * Get the current user's permission for an engine
  * @param engineId - The engine ID
- * @param admin - Whether to use admin endpoint
+ * @param _admin - Retained for compatibility; this endpoint has no admin variant.
  * @returns The user's permission level
+ * @deprecated Use `getUserEnginePermission` from `@semoss/sdk/api/monolith/auth/engine`.
  */
 export const getUserEnginePermission = async (
 	engineId: string,
-	admin = false,
+	_admin = false,
 ): Promise<Role> => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-	url += `engine/getUserEnginePermission?engineId=${engineId}`;
+	// This endpoint reads the caller's own permission; there is no admin variant.
+	const url = `${Env.MODULE}/api/auth/engine/getUserEnginePermission?${new URLSearchParams({ engineId })}`;
 
 	const response = await get<{ permission: Role }>(url).catch((error) => {
 		throw Error(error);
@@ -358,6 +364,7 @@ export const denyProjectUserAccessRequest = async (
  * @param projectId - The project ID
  * @param users - Array of users with their permissions to propagate
  * @returns Whether the operation was successful
+ * @deprecated Use `propagateProjectDependencyPermissions` from `@semoss/sdk/api/monolith/auth/project`.
  */
 export const propagateUserPermissions = async (
 	projectId: string,
@@ -394,7 +401,7 @@ export const getProjectUsersNoCredentials = async (
 	limit?: number,
 	offset?: number,
 	msGraphLookup?: boolean,
-): Promise<User[]> => {
+): Promise<PermissionCandidate[]> => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
 		url += "admin/";
@@ -407,7 +414,7 @@ export const getProjectUsersNoCredentials = async (
 	url += offset !== undefined ? `&offset=${offset}` : "";
 	url += msGraphLookup !== undefined ? `&msGraphLookup=${msGraphLookup}` : "";
 
-	const response = await get<User[]>(url).catch((error) => {
+	const response = await get<unknown>(url).catch((error) => {
 		throw Error(error);
 	});
 
@@ -415,7 +422,7 @@ export const getProjectUsersNoCredentials = async (
 		throw Error("No Response to get non credentialed users");
 	}
 
-	return response.data;
+	return readPermissionCandidates(response.data);
 };
 
 /**
@@ -437,7 +444,7 @@ export const getEngineUsersNoCredentials = async (
 	limit?: number,
 	offset?: number,
 	msGraphLookup?: boolean,
-): Promise<User[]> => {
+): Promise<PermissionCandidate[]> => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
 		url += "admin/";
@@ -450,7 +457,7 @@ export const getEngineUsersNoCredentials = async (
 	url += offset !== undefined ? `&offset=${offset}` : "";
 	url += msGraphLookup !== undefined ? `&msGraphLookup=${msGraphLookup}` : "";
 
-	const response = await get<User[]>(url).catch((error) => {
+	const response = await get<unknown>(url).catch((error) => {
 		throw Error(error);
 	});
 
@@ -458,7 +465,7 @@ export const getEngineUsersNoCredentials = async (
 		throw Error("No Response to get non credentialed users");
 	}
 
-	return response.data;
+	return readPermissionCandidates(response.data);
 };
 
 /**
@@ -559,6 +566,34 @@ export const searchForUser = async (
 /** Reads a non-blank string, or null */
 const readText = (value: unknown): string | null =>
 	typeof value === "string" && value.trim() !== "" ? value : null;
+
+/** Validate directory mappings and database rows without inventing existing permissions. */
+const readPermissionCandidates = (value: unknown): PermissionCandidate[] => {
+	if (!Array.isArray(value)) {
+		throw new Error("No Response to get non credentialed users");
+	}
+	return value.flatMap((row: unknown): PermissionCandidate[] => {
+		if (typeof row !== "object" || row === null || Array.isArray(row))
+			return [];
+		const { id, type, name, email, username, ...details } = row as Record<
+			string,
+			unknown
+		>;
+		const personId = readText(id);
+		const loginType = readText(type);
+		if (!personId || !loginType) return [];
+		return [
+			{
+				...details,
+				id: personId,
+				type: loginType,
+				...(typeof name === "string" ? { name } : {}),
+				...(typeof email === "string" ? { email } : {}),
+				...(typeof username === "string" ? { username } : {}),
+			},
+		];
+	});
+};
 
 /** Validates one search result, returning it in a list, or an empty list when it has no id */
 const toUserSearchResult = (value: unknown): UserSearchResult[] => {

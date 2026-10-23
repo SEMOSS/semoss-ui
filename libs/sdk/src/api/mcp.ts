@@ -1,4 +1,4 @@
-import { runPixel } from "./base";
+import { runPixel } from "../lib/pixel";
 
 /** One tool {@link makeUserPixelMcp} writes: the reactor it runs and its MCP metadata. */
 export interface UserPixelMcpTool {

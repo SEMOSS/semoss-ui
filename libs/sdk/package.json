@@ -14,19 +14,44 @@
             "types": "./dist/types/js-frameworks/react/index.d.ts",
             "default": "./dist/js-frameworks/react/index.mjs"
         },
-        "./monolith": {
-            "types": "./dist/types/monolith/index.d.ts",
-            "default": "./dist/monolith/index.mjs"
+        "./api": {
+            "types": "./dist/types/lib/api.d.ts",
+            "default": "./dist/api/index.mjs"
         },
-        "./monolith/*": {
-            "types": "./dist/types/monolith/routes/*.d.ts",
-            "default": "./dist/monolith/routes/*.mjs"
+        "./api/github": {
+            "types": "./dist/types/api/github/github.d.ts",
+            "default": "./dist/api/github.mjs"
+        },
+        "./api/msgraph": {
+            "types": "./dist/types/api/msgraph/msgraph.d.ts",
+            "default": "./dist/api/msgraph.mjs"
+        },
+        "./api/adminconfig": {
+            "types": "./dist/types/api/adminconfig/adminconfig.d.ts",
+            "default": "./dist/api/adminconfig.mjs"
+        },
+        "./api/health": {
+            "types": "./dist/types/api/health/health.d.ts",
+            "default": "./dist/api/health.mjs"
+        },
+        "./api/token": {
+            "types": "./dist/types/api/token/token.d.ts",
+            "default": "./dist/api/token.mjs"
+        },
+        "./api/monolith/*": {
+            "types": "./dist/types/api/monolith/*.d.ts",
+            "default": "./dist/api/monolith/*.mjs"
+        },
+        "./api/github/*": {
+            "types": "./dist/types/api/github/*.d.ts",
+            "default": "./dist/api/github/*.mjs"
         }
     },
     "files": [
         "src",
         "dist",
-        "skills"
+        "skills",
+        "API_SYNC.md"
     ],
     "npmSkills": {
         "publish": {
@@ -38,6 +63,7 @@
         "build": "vite build --configLoader runner",
         "build:dev": "vite build --mode development --configLoader runner",
         "test": "vitest run --configLoader runner",
+        "test:exports": "node scripts/check-exports.mjs",
         "test:watch": "vitest --watch --configLoader runner",
         "test:coverage": "vitest --coverage --watch=false --configLoader runner"
     },
@@ -46,7 +72,6 @@
     "license": "ISC",
     "devDependencies": {
         "@semoss/config": "workspace:*",
-        "@semoss/monolith": "workspace:*",
         "@testing-library/jest-dom": "^6.6.3",
         "@types/react": "^19.0.0",
         "@vitest/coverage-v8": "^4.1.11",

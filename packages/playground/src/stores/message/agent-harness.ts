@@ -1,5 +1,6 @@
 import { runInAction } from "mobx";
 import type {
+	AgentRunItem,
 	AgentRunItemEvent,
 	AgentRunItemsState,
 	AgentRunSnapshot,
@@ -94,31 +95,30 @@ const toAgentExecutionMode = (originalExecution: unknown): string =>
 		: MCP_EXECUTION_AGENT_AUTO;
 
 /**
- * Agent-run tool items arrive fully parsed (no placeholder phase like the
- * OpenAI-delta tool stream in tool-stream.ts). `item.metadata` is the tool's
+ * Agent-run tool arguments arrive parsed when present; some harness events
+ * omit the name and arguments. Normalize those fields only when creating a
+ * display part, preserving earlier details when completion omits them.
+ * `item.metadata` is the tool's
  * real `_meta` block, passed through as-is. `item.name` is the raw,
  * engine-id-prefixed LLM-facing name — never display it directly; prefer
  * `item.title` or `metadata.SMSS_ORIGINAL_TOOL_NAME`.
  */
-const buildToolCallPart = (item: {
-	id: string;
-	name: string;
-	title?: string;
-	arguments: Record<string, unknown>;
-	metadata?: Record<string, unknown>;
-}): PixelMessageToolCallPart => {
+const buildToolCallPart = (
+	item: Extract<AgentRunItem, { kind: "tool" }>,
+): PixelMessageToolCallPart => {
 	const originalName =
 		(item.metadata?.SMSS_ORIGINAL_TOOL_NAME as string | undefined) ||
-		item.name;
+		item.name ||
+		"";
 	const displayName = item.title || originalName;
 	return {
 		type: "TOOL_CALL",
 		toolCall: {
 			id: item.id,
 			type: "function",
-			name: item.name,
+			name: item.name ?? "",
 			title: displayName,
-			arguments: item.arguments,
+			arguments: item.arguments ?? {},
 			_tool_found: true,
 			original_name: originalName,
 			description: "",

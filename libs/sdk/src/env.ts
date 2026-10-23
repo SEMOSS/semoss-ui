@@ -1,5 +1,5 @@
-import { ApiClient } from "@semoss/monolith";
 import type { MCPToolRequest } from "./types";
+import { clearSession } from "./utility/session";
 
 /**
  * Reads the `semoss-env` tag the platform injects into a published portal's
@@ -58,7 +58,7 @@ const readDocumentEnv = (): Partial<{ APP: string; MODULE: string }> => {
 /**
  * Singleton object holding environment information
  */
-const envStore: {
+interface Environment {
 	APP: string;
 	MODULE: string;
 	ACCESS_KEY: string;
@@ -69,7 +69,9 @@ const envStore: {
 	HEADLESS: boolean;
 	REDIRECT_URL: string;
 	TOOL: MCPToolRequest | null;
-} = {
+}
+
+const envStore: Environment = {
 	APP: "",
 	MODULE: "",
 	ACCESS_KEY: "",
@@ -126,7 +128,7 @@ export const Env = {
 	},
 
 	/**
-	 * CSRF token for the current session
+	 * Enable CSRF token handling for writes
 	 */
 	get CSRF() {
 		return envStore.CSRF;
@@ -160,9 +162,11 @@ export const Env = {
 	 * @param updated - updated variables
 	 */
 	update(updated: Partial<typeof envStore>) {
+		const connection = readConnection();
 		Object.assign(envStore, updated);
-		// The routes at @semoss/sdk/monolith/<route> use the same backend and credentials
-		ApiClient.configure({ basePath: envStore.MODULE, auth: readAuth() });
+		if (connection !== readConnection()) {
+			clearSession();
+		}
 	},
 
 	/**
@@ -186,35 +190,18 @@ export const Env = {
 	},
 };
 
-/** The routes' credentials: an embed host's bearer token, else the access key pair. */
-const readAuth = (): Parameters<typeof ApiClient.configure>[0]["auth"] => {
-	if (envStore.BEARER_TOKEN) {
-		return {
-			type: "bearer",
-			token: envStore.BEARER_TOKEN,
-			...(envStore.BEARER_PROVIDER && {
-				provider: envStore.BEARER_PROVIDER,
-			}),
-		};
-	}
-	if (envStore.ACCESS_KEY && envStore.SECRET_KEY) {
-		return {
-			type: "basic",
-			accessKey: envStore.ACCESS_KEY,
-			secretKey: envStore.SECRET_KEY,
-		};
-	}
-	return null;
-};
-
-// An expired session on a route goes to the host's REDIRECT_URL when it set one, as the
-// SDK's own requests do.
-if (typeof window !== "undefined") {
-	ApiClient.configure({
-		onRedirect: (url) =>
-			window.location.replace(envStore.REDIRECT_URL || url),
-	});
-}
+/** Compare only settings that change the backend or the effective identity. */
+const readConnection = (): string =>
+	JSON.stringify([
+		envStore.MODULE,
+		envStore.HEADLESS,
+		envStore.BEARER_PROVIDER,
+		envStore.BEARER_TOKEN
+			? ["bearer", envStore.BEARER_TOKEN]
+			: envStore.ACCESS_KEY && envStore.SECRET_KEY
+				? ["basic", envStore.ACCESS_KEY, envStore.SECRET_KEY]
+				: null,
+	]);
 
 // Configure from the page as soon as the SDK is loaded. See refreshFromDocument.
 Env.refreshFromDocument();

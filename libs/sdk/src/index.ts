@@ -11,6 +11,7 @@ export {
 } from "./api/image";
 export * from "./constants";
 export * from "./env";
+export { runPixel } from "./lib/pixel";
 export {
 	AgentStore,
 	createRoom,

@@ -1,6 +1,7 @@
 import { Env } from "../env";
-import { CSRF, get, post } from "../utility";
 import { HttpError } from "../utility/error";
+import { get, post } from "../utility/fetch";
+import { clearSession } from "../utility/session";
 
 /**
  * Allow the user to login
@@ -8,6 +9,7 @@ import { HttpError } from "../utility/error";
  * @param username - username to login with
  * @param password - password to login with
  * @returns true if successful
+ * @deprecated Use `login({ username, password })` from `@semoss/sdk/api/monolith/auth`.
  */
 export const login = async (
 	username: string,
@@ -28,6 +30,7 @@ export const login = async (
  * @param username - username to login with
  * @param password - password to login with
  * @returns true if successful
+ * @deprecated Use `loginLDAP({ username, password })` from `@semoss/sdk/api/monolith/auth`.
  */
 export const loginLDAP = async (
 	username: string,
@@ -83,6 +86,7 @@ export const loginOTP = async (
  *
  * @param otp - otp to login with
  * @returns true if successful
+ * @deprecated Use `loginLinOTP({ otp })` from `@semoss/sdk/api/monolith/auth`.
  */
 export const confirmOTP = async (otp: string): Promise<boolean> => {
 	await post(`${Env.MODULE}/api/auth/loginLinOTP`, {
@@ -94,17 +98,22 @@ export const confirmOTP = async (otp: string): Promise<boolean> => {
 };
 
 /**
- * Allow the user to logout
+ * Allow the user to logout. Clear local session state even when the request fails
+ * or the backend redirects the browser.
  *
  * @returns true if successful
+ * @deprecated Use `logout({ provider: "ALL" })` from `@semoss/sdk/api/monolith/auth`.
  */
 export const logout = async (): Promise<boolean> => {
 	// we need to disableRedirect because fetch.ts doesn't allow a 302
 	// and even if we bypass the 302 for logout then it requires the payload
 	// to always be valid json
-	await get(`${Env.MODULE}/api/auth/logout/all?disableRedirect=true`);
-	CSRF.token = "";
-	return true;
+	try {
+		await get(`${Env.MODULE}/api/auth/logout/all?disableRedirect=true`);
+		return true;
+	} finally {
+		clearSession();
+	}
 };
 
 /** How often a sign in popup is checked for having closed or come back. */
@@ -192,6 +201,7 @@ export const getLogins = async (): Promise<Record<string, string>> => {
  * Sign the session out of one provider, keeping its other logins.
  *
  * @param provider - The provider's login key, such as `MICROSOFT`.
+ * @deprecated Use `logout({ provider })` from `@semoss/sdk/api/monolith/auth`.
  */
 export const logoutProvider = async (provider: string): Promise<void> => {
 	await get(`${Env.MODULE}/api/auth/logout/${provider}?disableRedirect=true`);

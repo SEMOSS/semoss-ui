@@ -20,13 +20,6 @@ const loadEnv = async () => {
 	return Env;
 };
 
-/** Imports fresh copies of env.ts and the ApiClient the monolith routes use. */
-const loadConnection = async () => {
-	const Env = await loadEnv();
-	const { ApiClient } = await import("@semoss/monolith");
-	return { Env, ApiClient };
-};
-
 afterEach(() => {
 	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
@@ -124,118 +117,137 @@ describe("Env", () => {
 		});
 	});
 
-	describe("configuring the monolith routes' ApiClient", () => {
-		it("sends routes to MODULE from the start, the page origin until one is set", async () => {
-			stubEnvTag(null);
-			const { Env, ApiClient } = await loadConnection();
-			expect(ApiClient.settings.basePath).toBe("");
+	describe("configuring typed routes directly", () => {
+		it.each(["", "/Monolith/", "https://backend.example/Monolith/"])(
+			"uses MODULE %s for route calls and URL builders",
+			async (module) => {
+				stubEnvTag(null);
+				const Env = await loadEnv();
+				const { url } = await import("./lib/url");
+				const { getUserProjectPermission } = await import(
+					"./api/monolith/auth/project"
+				);
+				const fetchMock = vi.fn<typeof fetch>(async () =>
+					Response.json({ permission: "OWNER" }),
+				);
+				vi.stubGlobal("fetch", fetchMock);
+				Env.update({ MODULE: module });
+				const base = module.replace(/\/+$/, "");
+				expect(url("/api/config")).toBe(`${base}/api/config`);
+				await getUserProjectPermission({ projectId: "p 1" });
+				expect(fetchMock.mock.calls[0][0]).toBe(
+					`${base}/api/auth/project/getUserProjectPermission?projectId=p+1`,
+				);
+			},
+		);
 
-			Env.update({ MODULE: "/Monolith" });
-			expect(ApiClient.settings.basePath).toBe("/Monolith");
+		it("loads semoss-env when a route is imported without the SDK root", async () => {
+			stubEnvTag(
+				JSON.stringify({ APP: "app", MODULE: "/from-document" }),
+			);
+			vi.resetModules();
+			const fetchMock = vi.fn<typeof fetch>(async () =>
+				Response.json({ permission: "OWNER" }),
+			);
+			vi.stubGlobal("fetch", fetchMock);
+			const { getUserProjectPermission } = await import(
+				"./api/monolith/auth/project"
+			);
+			await getUserProjectPermission({ projectId: "project" });
+			expect(fetchMock.mock.calls[0][0]).toBe(
+				"/from-document/api/auth/project/getUserProjectPermission?projectId=project",
+			);
 		});
 
-		it("follows the semoss-env tag read at load", async () => {
-			stubEnvTag(JSON.stringify({ APP: "app", MODULE: "/Monolith" }));
-			const { ApiClient } = await loadConnection();
-			expect(ApiClient.settings.basePath).toBe("/Monolith");
-		});
-
-		it("keeps the routes' CSRF token across updates that change no connection setting", async () => {
+		it("keeps the shared token across updates that do not change the connection", async () => {
 			stubEnvTag(null);
-			const fetchMock = vi.fn(async (url: string) =>
-				url.endsWith("/api/config/fetchCsrf")
+			const Env = await loadEnv();
+			const { CSRF } = await import("./utility/session");
+			const { runPixel } = await import("./api/monolith/engine");
+			const fetchMock = vi.fn<typeof fetch>(async (input) =>
+				String(input).endsWith("/api/config/fetchCsrf")
 					? new Response(null, {
 							headers: { "X-CSRF-Token": "token" },
 						})
-					: new Response(
-							JSON.stringify({ insightID: "i", pixelReturn: [] }),
-							{
-								headers: { "content-type": "application/json" },
-							},
-						),
+					: Response.json({ insightID: "i", pixelReturn: [] }),
 			);
 			vi.stubGlobal("fetch", fetchMock);
-			const Env = await loadEnv();
-			const { runPixel } = await import("@semoss/monolith/api/engine");
 			Env.update({
 				MODULE: "/Monolith",
 				ACCESS_KEY: "a",
 				SECRET_KEY: "s",
+				CSRF: true,
 			});
-
 			await runPixel({ expression: "1+1;" });
-			// the semoss-env tag again on initialize, a tool message, a repeated key
-			Env.update({ MODULE: "/Monolith" });
-			Env.update({ TOOL: null });
-			Env.update({ ACCESS_KEY: "a" });
+			CSRF.cookie = "JSESSIONID=session";
+			Env.update({ MODULE: "/Monolith", ACCESS_KEY: "a", TOOL: null });
 			await runPixel({ expression: "1+1;" });
-
-			const csrfFetches = fetchMock.mock.calls.filter(([url]) =>
-				url.endsWith("/api/config/fetchCsrf"),
-			);
-			expect(csrfFetches).toHaveLength(1);
+			expect(
+				fetchMock.mock.calls.filter(([input]) =>
+					String(input).endsWith("/api/config/fetchCsrf"),
+				),
+			).toHaveLength(1);
+			expect(CSRF.cookie).toBe("JSESSIONID=session");
 		});
 
-		it("sends a key pair as basic auth, and an embed host's bearer token over it", async () => {
+		it("uses basic credentials, prefers bearer, and removes cleared credentials", async () => {
 			stubEnvTag(null);
-			const { Env, ApiClient } = await loadConnection();
-
+			const Env = await loadEnv();
+			const { getUserProjectPermission } = await import(
+				"./api/monolith/auth/project"
+			);
+			const fetchMock = vi.fn<typeof fetch>(async () =>
+				Response.json({ permission: "OWNER" }),
+			);
+			vi.stubGlobal("fetch", fetchMock);
 			Env.update({ ACCESS_KEY: "abc", SECRET_KEY: "xyz" });
-			expect(ApiClient.settings.auth).toEqual({
-				type: "basic",
-				accessKey: "abc",
-				secretKey: "xyz",
-			});
-
+			await getUserProjectPermission({ projectId: "p" });
+			expect(
+				new Headers(fetchMock.mock.calls[0][1]?.headers).get(
+					"Authorization",
+				),
+			).toBe(`Basic ${btoa("abc:xyz")}`);
 			Env.update({ BEARER_TOKEN: "token", BEARER_PROVIDER: "ms" });
-			expect(ApiClient.settings.auth).toEqual({
-				type: "bearer",
-				token: "token",
-				provider: "ms",
-			});
-
+			await getUserProjectPermission({ projectId: "p" });
+			const bearerHeaders = new Headers(
+				fetchMock.mock.calls[1][1]?.headers,
+			);
+			expect(bearerHeaders.get("Authorization")).toBe("Bearer token");
+			expect(bearerHeaders.get("Bearer-Provider")).toBe("ms");
 			Env.update({
 				ACCESS_KEY: "",
 				SECRET_KEY: "",
 				BEARER_TOKEN: "",
 				BEARER_PROVIDER: "",
 			});
-			expect(ApiClient.settings.auth).toBeNull();
+			await getUserProjectPermission({ projectId: "p" });
+			expect(
+				new Headers(fetchMock.mock.calls[2][1]?.headers).has(
+					"Authorization",
+				),
+			).toBe(false);
 		});
 
-		it("calls a route at MODULE with the environment's credentials", async () => {
+		it("clears the session when the backend, effective identity, or headless mode changes", async () => {
 			stubEnvTag(null);
-			const fetchMock = vi.fn(
-				async () =>
-					new Response(JSON.stringify({ permission: "OWNER" }), {
-						headers: { "content-type": "application/json" },
-					}),
-			);
-			vi.stubGlobal("fetch", fetchMock);
 			const Env = await loadEnv();
-			const { getUserProjectPermission } = await import(
-				"@semoss/monolith/api/auth/project"
-			);
-			Env.update({
-				MODULE: "/Monolith",
-				ACCESS_KEY: "abc",
-				SECRET_KEY: "xyz",
-			});
-
-			await expect(
-				getUserProjectPermission({ projectId: "p 1" }),
-			).resolves.toEqual({ permission: "OWNER" });
-
-			const [url, init] = fetchMock.mock.calls[0] as unknown as [
-				string,
-				RequestInit,
-			];
-			expect(url).toBe(
-				"/Monolith/api/auth/project/getUserProjectPermission?projectId=p+1",
-			);
-			expect(new Headers(init.headers).get("Authorization")).toBe(
-				`Basic ${btoa("abc:xyz")}`,
-			);
+			const { CSRF } = await import("./utility/session");
+			for (const update of [
+				{ MODULE: "/other" },
+				{ ACCESS_KEY: "a", SECRET_KEY: "s" },
+				{ BEARER_TOKEN: "token" },
+				{ BEARER_PROVIDER: "ms" },
+				{ HEADLESS: true },
+			]) {
+				CSRF.token = "old-token";
+				CSRF.cookie = "JSESSIONID=old-session";
+				Env.update(update);
+				expect(CSRF.token).toBe("");
+				expect(CSRF.cookie).toBe("");
+			}
+			CSRF.token = "bearer-session";
+			Env.update({ ACCESS_KEY: "ignored-while-bearer-is-set" });
+			expect(CSRF.token).toBe("bearer-session");
 		});
 	});
 });

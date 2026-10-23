@@ -1,13 +1,55 @@
 import { Env } from "../env";
+import { runPixel } from "../lib/pixel";
 import type {
 	AgentRunItemEvent,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
 	AgentToolDecision,
+	PendingAgentAction,
 	SubagentRunSummary,
 } from "../types";
-import { post } from "../utility";
-import { runPixel } from "./base";
+import { post } from "../utility/fetch";
+import type { agentRunStreaming } from "./monolith/engine";
+
+type NullableActionField =
+	| "parentMessageId"
+	| "toolCallId"
+	| "toolName"
+	| "toolArgs"
+	| "editedArgs"
+	| "toolMeta"
+	| "uiUrl";
+
+type AgentSnapshotResponse = Omit<AgentRunSnapshot, "pendingActions"> & {
+	pendingActions?: Array<
+		Omit<PendingAgentAction, NullableActionField> &
+			Partial<Pick<PendingAgentAction, NullableActionField>>
+	>;
+};
+
+/**
+ * Restores nullable approval fields omitted by the backend's Gson serializer.
+ *
+ * @param snapshot - The raw durable snapshot or poll snapshot.
+ * @returns The snapshot with a stable pending-actions array and nullable fields.
+ */
+function normalizeAgentSnapshot<T extends AgentSnapshotResponse>(
+	snapshot: T,
+): Omit<T, "pendingActions"> & AgentRunSnapshot {
+	return {
+		...snapshot,
+		pendingActions: (snapshot.pendingActions ?? []).map((action) => ({
+			...action,
+			parentMessageId: action.parentMessageId ?? null,
+			toolCallId: action.toolCallId ?? null,
+			toolName: action.toolName ?? null,
+			toolArgs: action.toolArgs ?? null,
+			editedArgs: action.editedArgs ?? null,
+			toolMeta: action.toolMeta ?? null,
+			uiUrl: action.uiUrl ?? null,
+		})),
+	};
+}
 
 /**
  * Submit a durable agent run without waiting for it to finish (RunAgent with
@@ -130,6 +172,7 @@ export const runAgent = async (
  * @returns `run` — the current durable snapshot; `events` — new item events
  * since the last drain, unordered; `droppedEvents` — events evicted by the
  * backend's bounded buffer before this drain could collect them.
+ * @deprecated Use `agentRunStreaming` from `@semoss/sdk/api/monolith/engine` with object parameters.
  */
 export const pollAgentRun = async (
 	runId: string,
@@ -142,13 +185,11 @@ export const pollAgentRun = async (
 		throw new Error("Missing runId");
 	}
 
-	const response = await post<{
-		run: AgentRunSnapshot;
-		events: AgentRunItemEvent[];
-		droppedEvents: number;
-	}>(`${Env.MODULE}/api/engine/agentRunStreaming`, { runId });
-
-	return response.data;
+	const response = await post<Awaited<ReturnType<typeof agentRunStreaming>>>(
+		`${Env.MODULE}/api/engine/agentRunStreaming`,
+		{ runId },
+	);
+	return { ...response.data, run: normalizeAgentSnapshot(response.data.run) };
 };
 
 /**
@@ -177,10 +218,9 @@ export const getAgentRun = async <
 		options.includeMessages ? "includeMessages=true" : null,
 	].filter((clause): clause is string => clause !== null);
 
-	const response = await runPixel<[AgentRunSnapshot & { messages?: M[] }]>(
-		`GetAgentRun(${clauses.join(",\n")});`,
-		insightId,
-	);
+	const response = await runPixel<
+		[AgentSnapshotResponse & { messages?: M[] }]
+	>(`GetAgentRun(${clauses.join(",\n")});`, insightId);
 
 	if (response.errors.length > 0) {
 		throw new Error(response.errors.join(""));
@@ -188,9 +228,7 @@ export const getAgentRun = async <
 
 	const output = response.pixelReturn[0].output;
 
-	// The backend only sets pendingActions while INPUT_REQUIRED — normalize it
-	// here so this always matches AgentRunSnapshot's contract for every caller.
-	return { ...output, pendingActions: output.pendingActions ?? [] };
+	return normalizeAgentSnapshot(output);
 };
 
 /**
@@ -211,7 +249,7 @@ export const stopAgentRun = async (
 		throw new Error("Missing runId");
 	}
 
-	const response = await runPixel<[AgentRunSnapshot]>(
+	const response = await runPixel<[AgentSnapshotResponse]>(
 		`StopAgentRun(runId=${JSON.stringify([runId])});`,
 		insightId,
 	);
@@ -222,9 +260,7 @@ export const stopAgentRun = async (
 
 	const output = response.pixelReturn[0].output;
 
-	// Same normalization as getAgentRun — the backend omits pendingActions
-	// unless the run is INPUT_REQUIRED.
-	return { ...output, pendingActions: output.pendingActions ?? [] };
+	return normalizeAgentSnapshot(output);
 };
 
 /**

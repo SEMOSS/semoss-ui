@@ -6,8 +6,8 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { runPixel } from "../../../api";
-import { InsightContext } from "../contexts";
+import { runPixel } from "../../../lib/pixel";
+import { InsightContext } from "../contexts/Insight.context";
 
 interface PixelState<D> {
 	/** Status of the pixel call */

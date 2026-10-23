@@ -13,33 +13,45 @@
 	},
 	"targets": {
 		"api": {
-			"package": "libs/monolith",
-			"syncedAt": "2026-10-21",
-			"monolithCommit": "ea07d1752691d1cfabd14fcfc5ef002ccff28ae3",
-			"semossCommit": "70a0d682e258f01bffa51e4419513cf02d748018",
+			"package": "libs/sdk",
+			"syncedAt": "2026-10-23",
+			"monolithCommit": "6fabb05737d5686ae763172559b992f16f7d37d9",
+			"semossCommit": "12781b2478eb97e2a27a911e9bdbc94b6f34ee88",
 			"ignore": [
 				{
-					"method": "*",
-					"path": "/saml/*",
-					"reason": "SAML servlets (SamlVerifierServlet, IdpSSOServlet, SPSSOServlet): browser redirect flow, not JAX-RS"
+					"method": "POST",
+					"path": "/saml/config/fedletapplication",
+					"reason": "SAML assertion callback handled by SamlVerifierServlet; the identity provider submits this browser form"
+				},
+				{
+					"method": "GET",
+					"path": "/IdpSSOServlet",
+					"reason": "Browser navigation for identity-provider-initiated SAML",
+					"replacement": "monolith/auth.samlIdpUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/SPSSOServlet",
+					"reason": "Browser navigation for service-provider-initiated SAML",
+					"replacement": "monolith/auth.samlSpUrl"
 				},
 				{
 					"method": "GET",
 					"path": "/api/auth/login/*",
 					"reason": "OAuth browser-redirect routes (one per provider; /login/ms is a @Deprecated alias of /login/microsoft; /login/producthunt has @Path but no HTTP verb)",
-					"replacement": "api/auth.loginUrl"
+					"replacement": "monolith/auth.loginUrl"
 				},
 				{
 					"method": "GET",
 					"path": "/api/auth/login2/*",
 					"reason": "OAuth browser-redirect routes for connector credentials",
-					"replacement": "api/auth.login2Url"
+					"replacement": "monolith/auth.login2Url"
 				},
 				{
 					"method": "GET",
 					"path": "/api/project-{projectId}/landing",
 					"reason": "HTML page the browser navigates to",
-					"replacement": "api/project.landingUrl"
+					"replacement": "monolith/project.landingUrl"
 				},
 				{
 					"method": "GET",
@@ -77,7 +89,14 @@
 				{
 					"method": "GET",
 					"path": "/browserSocket/{sessionId}",
-					"reason": "WebSocket endpoint (RemoteBrowserSessionWebSocket)"
+					"reason": "WebSocket upgrade (RemoteBrowserSessionWebSocket); use a WebSocket client",
+					"replacement": "monolith/browser-sessions.browserSocketUrl"
+				},
+				{
+					"method": "GET",
+					"path": "/insightSocket",
+					"reason": "WebSocket upgrade (InsightWebsocket); requires an authenticated session and insightId query parameter",
+					"replacement": "monolith/session.insightSocketUrl"
 				}
 			]
 		}

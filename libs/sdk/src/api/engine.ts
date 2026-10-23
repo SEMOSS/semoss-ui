@@ -1,5 +1,5 @@
-import { Env } from "../env";
-import { post } from "../utility";
+import { url as apiUrl } from "../lib/url";
+import { post } from "../utility/fetch";
 
 /**
  * Upload file(s) to an engine
@@ -8,6 +8,7 @@ import { post } from "../utility";
  * @param files
  * @param insightId
  * @returns
+ * @deprecated Use `engineAssetsUpload` from `@semoss/sdk/api/monolith/upload-file` with object parameters.
  */
 export const uploadEngine = async (
 	engineId: string,
@@ -31,7 +32,11 @@ export const uploadEngine = async (
 			fileLocation: string;
 		}[]
 	>(
-		`${Env.MODULE}/api/uploadFile/engineAssetsUpload?insightId=${insightId}&engineId=${engineId}&path=${encodeURIComponent(path)}`,
+		apiUrl("/api/uploadFile/engineAssetsUpload", {
+			insightId,
+			engineId,
+			path,
+		}),
 		fd,
 		{},
 	);

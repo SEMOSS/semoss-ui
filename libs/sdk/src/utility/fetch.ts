@@ -1,229 +1,199 @@
 import { Env } from "../env";
 import { HttpError, UnauthorizedError } from "./error";
+import { CSRF, getSessionGeneration, rememberSession } from "./session";
 
-export const CSRF = {
-	isEnabled: false,
-	token: "",
-	cookie: "", // only tracked when Env.HEADLESS is set
+export { CSRF } from "./session";
+
+const CSRF_HEADER = "X-CSRF-Token";
+
+/** Read an explicit redirect or an HTML login page that Fetch already followed. */
+export const getResponseRedirect = (response: Response): string | null => {
+	const header =
+		response.headers.get("redirect") || response.headers.get("location");
+	if (header) {
+		return header;
+	}
+	const isHtml = (response.headers.get("content-type") ?? "")
+		.toLowerCase()
+		.includes("text/html");
+	return response.redirected && response.url && isHtml ? response.url : null;
 };
 
-// Node has no cookie jar, so a headless caller has to resend Set-Cookie itself.
-const captureHeadlessCookie = (response: Response) => {
-	if (!Env.HEADLESS) {
-		return;
-	}
-
-	const getSetCookie = response.headers.getSetCookie;
-	if (typeof getSetCookie !== "function") {
-		return;
-	}
-
-	const setCookieHeaders = getSetCookie.call(response.headers);
-	if (setCookieHeaders.length === 0) {
-		return;
-	}
-
-	CSRF.cookie = setCookieHeaders.map((c) => c.split(";")[0]).join("; ");
-};
-
-const getAbsoluteUrl = (url: string): string | null => {
+/**
+ * Follow an authentication redirect in a browser, honoring the host override.
+ * @returns The server's redirect when navigation starts, otherwise null.
+ */
+export const followResponseRedirect = (response: Response): string | null => {
 	if (typeof window === "undefined") {
 		return null;
 	}
-
+	const redirect = getResponseRedirect(response);
+	if (!redirect) {
+		return null;
+	}
+	let target: string;
 	try {
-		const parsed = new URL(url, window.location.origin);
-		return parsed.toString();
+		target = new URL(
+			Env.REDIRECT_URL || redirect,
+			window.location.origin,
+		).toString();
 	} catch {
 		return null;
 	}
+	window.location.replace(target);
+	return redirect;
 };
 
-const isHtmlResponse = (response: Response): boolean => {
-	const contentType = response.headers.get("content-type") || "";
-	return contentType.toLowerCase().includes("text/html");
+/** Merge caller headers with the current environment and session credentials. */
+const requestHeaders = (
+	input: HeadersInit | undefined,
+): Record<string, string> => {
+	const headers = new Headers(input);
+	if (Env.ACCESS_KEY && Env.SECRET_KEY) {
+		headers.set(
+			"authorization",
+			`Basic ${btoa(`${Env.ACCESS_KEY}:${Env.SECRET_KEY}`)}`,
+		);
+	}
+	if (Env.BEARER_TOKEN) {
+		headers.set("authorization", `Bearer ${Env.BEARER_TOKEN}`);
+	}
+	if (Env.BEARER_PROVIDER) {
+		headers.set("Bearer-Provider", Env.BEARER_PROVIDER);
+	}
+	if (Env.HEADLESS && CSRF.cookie) {
+		headers.set("cookie", CSRF.cookie);
+	}
+	const result = Object.fromEntries(headers);
+	// Preserve the public helpers' header representation for existing callers.
+	if (Env.BEARER_PROVIDER) {
+		delete result["bearer-provider"];
+		result["Bearer-Provider"] = Env.BEARER_PROVIDER;
+	}
+	return result;
 };
 
-const handleHeaderRedirect = (response: Response): boolean => {
-	if (typeof window === "undefined") {
-		return false;
+/** Stop a cancelled request or a request whose session was cleared while awaiting I/O. */
+const checkRequest = (
+	signal: AbortSignal | null | undefined,
+	generation: number,
+): void => {
+	signal?.throwIfAborted();
+	if (generation !== getSessionGeneration()) {
+		throw new DOMException(
+			"The SDK session changed during the request",
+			"AbortError",
+		);
 	}
-
-	// backend behavior (also used in legacy) can send redirect info on API error responses.
-	const redirectHeader =
-		response.headers.get("redirect") || response.headers.get("location");
-
-	if (redirectHeader) {
-		const redirectUrl = getAbsoluteUrl(redirectHeader);
-		if (redirectUrl) {
-			window.location.replace(Env.REDIRECT_URL || redirectUrl);
-			return true;
-		}
-	}
-
-	// fetch follows redirects for API calls; this catches a final redirected HTML page.
-	if (response.redirected && response.url && isHtmlResponse(response)) {
-		window.location.replace(response.url);
-		return true;
-	}
-
-	return false;
 };
 
 /**
- * Store the interceptors to modify any fetch command
+ * Internal sender shared by legacy helpers and typed routes. It preserves the
+ * response body for the caller and leaves HTTP error types to that adapter.
+ * @param path - The complete request URL, including the backend context root.
+ * @param options - Fetch options, including the already encoded body.
+ * @returns The unparsed response, or a failed CSRF bootstrap response.
  */
-const interceptors: {
-	request: ((options: RequestInit) => Promise<RequestInit>) | null;
-	response: ((output: { response: Response }) => Promise<void>) | null;
-} = {
-	request: async (options) => {
-		// create the headers if it doesn't exist
-		if (!options.headers) {
-			options.headers = {};
-		}
+export const sendRequest = async (
+	path: string,
+	options: RequestInit,
+): Promise<Response> => {
+	const generation = getSessionGeneration();
+	const method = (options.method ?? "GET").toUpperCase();
+	const needsCsrf =
+		(CSRF.isEnabled || Env.CSRF) &&
+		["POST", "PUT", "DELETE"].includes(method);
+	const replayable =
+		typeof ReadableStream === "undefined" ||
+		!(options.body instanceof ReadableStream);
 
-		if (Env.ACCESS_KEY && Env.SECRET_KEY) {
-			// add the authorization tokens
-			options.headers = {
-				...options.headers,
-				authorization: `Basic ${btoa(
-					`${Env.ACCESS_KEY}:${Env.SECRET_KEY}`,
-				)}`,
-			};
-		}
-
-		if (Env.BEARER_TOKEN) {
-			options.headers = {
-				...options.headers,
-				authorization: `Bearer ${Env.BEARER_TOKEN}`,
-			};
-		}
-
-		if (Env.BEARER_PROVIDER) {
-			options.headers = {
-				...options.headers,
-				"Bearer-Provider": Env.BEARER_PROVIDER,
-			};
-		}
-
-		if (Env.HEADLESS && CSRF.cookie) {
-			options.headers = {
-				...options.headers,
-				cookie: CSRF.cookie,
-			};
-		}
-
-		// only set if enabled
-		if (CSRF.isEnabled || Env.CSRF) {
-			if (options.method === "POST") {
-				// use the token if it is there otherwise fetch it
-				if (!CSRF.token) {
-					const response = await fetch(
-						`${Env.MODULE}/api/config/fetchCsrf`,
-						{
-							headers: {
-								"X-CSRF-Token": "fetch",
-								...(Env.HEADLESS && CSRF.cookie
-									? { cookie: CSRF.cookie }
-									: {}),
-							},
-						},
-					);
-
-					// not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
-					CSRF.token =
-						response.headers.get("X-CSRF-Token") ||
-						response.headers.get("x-csrf-token") ||
-						"";
-
-					captureHeadlessCookie(response);
-
-					// resend in case this call is what just set the cookie
-					if (Env.HEADLESS && CSRF.cookie) {
-						options.headers = {
-							...options.headers,
-							cookie: CSRF.cookie,
-						};
-					}
-				}
-
-				// add the token
-				if (CSRF.token) {
-					options.headers = {
-						...options.headers,
-						"X-CSRF-Token": CSRF.token,
-					};
-				}
+	for (let attempt = 0; ; attempt += 1) {
+		checkRequest(options.signal, generation);
+		if (needsCsrf && !CSRF.token) {
+			const headers = requestHeaders(options.headers);
+			delete headers["x-csrf-token"];
+			headers[CSRF_HEADER] = "fetch";
+			const bootstrap = await fetch(
+				`${Env.MODULE.replace(/\/+$/, "")}/api/config/fetchCsrf`,
+				{
+					method: "GET",
+					headers,
+					credentials: options.credentials,
+					signal: options.signal,
+				},
+			);
+			checkRequest(options.signal, generation);
+			rememberSession(bootstrap, generation, Env.HEADLESS);
+			if (!bootstrap.ok || getResponseRedirect(bootstrap)) {
+				return bootstrap;
 			}
 		}
 
-		return options;
-	},
-	response: async ({ response }) => {
-		captureHeadlessCookie(response);
-
-		if (handleHeaderRedirect(response)) {
-			throw new UnauthorizedError(
-				"Redirecting from header direct value",
-				302,
-			);
+		// The bootstrap may have issued the cookie needed by this very first write.
+		const headers = requestHeaders(options.headers);
+		if (needsCsrf && CSRF.token) {
+			delete headers["x-csrf-token"];
+			headers[CSRF_HEADER] = CSRF.token;
 		}
-	},
+		const response = await fetch(path, { ...options, headers });
+		checkRequest(options.signal, generation);
+		rememberSession(response, generation, Env.HEADLESS);
+		if (
+			attempt === 0 &&
+			needsCsrf &&
+			replayable &&
+			response.status === 403 &&
+			response.headers.get(CSRF_HEADER)?.toLowerCase() === "required"
+		) {
+			CSRF.token = "";
+			continue;
+		}
+		return response;
+	}
+};
+
+/** Preserve the legacy redirect error independently of typed route errors. */
+const handleLegacyRedirect = (response: Response): void => {
+	if (followResponseRedirect(response)) {
+		throw new UnauthorizedError(
+			"Redirecting from header direct value",
+			302,
+		);
+	}
 };
 
 /**
- * Make a get call to the backend
- * @param path - path
- * @param options - options to pass into the fetch
+ * Make a get call to the backend.
+ * @param path - The complete request URL.
+ * @param options - Options to pass into Fetch.
+ * @returns The response and parsed JSON data.
  */
 export const get = async <O>(path: string, options: RequestInit = {}) => {
-	options = {
-		method: "GET",
-
-		...options,
-	};
-
-	// intercept
-	if (interceptors.request) {
-		options = await interceptors.request(options);
-	}
-
-	// get the data
-	const response = await fetch(`${path}`, options);
-
-	// handle the response
-	if (interceptors.response) {
-		await interceptors.response({
-			response: response,
-		});
-	}
-
+	const response = await sendRequest(path, { method: "GET", ...options });
+	handleLegacyRedirect(response);
 	if (!response.ok) {
-		const errorData = await response.json();
+		const errorData: unknown = await response.json();
+		const details =
+			typeof errorData === "object" && errorData !== null
+				? (errorData as Record<string, unknown>)
+				: {};
 		const errorMessage =
-			errorData.message ||
-			errorData.error ||
-			errorData.errorMessage ||
+			details.message ||
+			details.error ||
+			details.errorMessage ||
 			`Request failed with status ${response.status}`;
-		throw new Error(errorMessage);
+		throw new Error(String(errorMessage));
 	}
-
-	// get the data
-	const data = await response.json();
-
-	// return the json
-	return {
-		response: response,
-		data: data as O,
-	};
+	const data: unknown = await response.json();
+	return { response, data: data as O };
 };
 
 /**
- * Make a post call to the backend
- * @param path - path
- * @param body - body to pass in
- * @param options - options to pass into the fetch
+ * Make a post call to the backend.
+ * @param path - The complete request URL.
+ * @param body - Form fields or a multipart body.
+ * @param options - Options to pass into Fetch.
+ * @returns The response and parsed JSON data.
  */
 export const post = async <O>(
 	path: string,
@@ -231,54 +201,36 @@ export const post = async <O>(
 	options: RequestInit = {},
 ) => {
 	const isFormData = body instanceof FormData;
-
-	// Normalize names without mutating the caller's headers.
 	const headers = new Headers(options.headers);
 	if (!isFormData) {
 		headers.set("Content-Type", "application/x-www-form-urlencoded");
 	}
-
-	options = {
+	const response = await sendRequest(path, {
 		method: "POST",
 		body: isFormData
 			? body
 			: Object.keys(body)
-					.map((k) => {
-						let val = body[k];
-						if (typeof val !== "string") {
-							val = JSON.stringify(body[k]);
-						}
-
-						return `${encodeURIComponent(k)}=${encodeURIComponent(
-							val as string,
-						)}`;
+					.map((key) => {
+						const value =
+							typeof body[key] === "string"
+								? body[key]
+								: JSON.stringify(body[key]);
+						return `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
 					})
 					.join("&"),
 		...options,
 		headers: Object.fromEntries(headers),
-	};
-
-	// intercept
-	if (interceptors.request) {
-		options = await interceptors.request(options);
-	}
-
-	// get the data
-	const response = await fetch(`${path}`, options);
-
-	// handle the response
-	if (interceptors.response) {
-		await interceptors.response({
-			response: response,
-		});
-	}
-
+	});
+	handleLegacyRedirect(response);
 	if (!response.ok) {
 		let errorData: unknown = null;
 		try {
 			errorData = await response.json();
-		} catch {
-			errorData = null;
+		} catch (error) {
+			options.signal?.throwIfAborted();
+			if (error instanceof DOMException && error.name === "AbortError") {
+				throw error;
+			}
 		}
 		const details =
 			typeof errorData === "object" && errorData !== null
@@ -291,13 +243,6 @@ export const post = async <O>(
 			`Request failed with status ${response.status}`;
 		throw new HttpError(String(errorMessage), response.status, errorData);
 	}
-
-	// get the data
-	const data = await response.json();
-
-	// return the json
-	return {
-		response: response,
-		data: data as O,
-	};
+	const data: unknown = await response.json();
+	return { response, data: data as O };
 };

@@ -1,5 +1,5 @@
-import { Env } from "../env";
-import { post } from "../utility";
+import { url as apiUrl } from "../lib/url";
+import { post } from "../utility/fetch";
 
 /**
  * Upload file(s) to the current user's user space
@@ -7,6 +7,7 @@ import { post } from "../utility";
  * @param files
  * @param insightId
  * @returns
+ * @deprecated Use `userAssetsUpload` from `@semoss/sdk/api/monolith/upload-file` with object parameters.
  */
 export const uploadUser = async (
 	path: string,
@@ -28,9 +29,5 @@ export const uploadUser = async (
 			fileName: string;
 			fileLocation: string;
 		}[]
-	>(
-		`${Env.MODULE}/api/uploadFile/userAssetsUpload?insightId=${insightId}&path=${encodeURIComponent(path)}`,
-		fd,
-		{},
-	);
+	>(apiUrl("/api/uploadFile/userAssetsUpload", { insightId, path }), fd, {});
 };
