@@ -18,7 +18,7 @@ export interface InsightWebSocketOptions {
 /**
  * WebSocket client for communicating with the Monolith insightSocket endpoint.
  *
- * Usage:
+ * Legacy usage (retained for compatibility):
  * ```ts
  * const ws = new InsightWebSocket("my-insight-id", {
  *   onMessage: (data) => console.log("Received:", data),
@@ -27,6 +27,26 @@ export interface InsightWebSocketOptions {
  * ws.connect();
  * ws.send("GetSystemConfig();");
  * ws.close();
+ * ```
+ *
+ * @deprecated Use native `WebSocket` with `insightSocketUrl({ insightId })`
+ * from `@semoss/sdk/api/monolith/session`. No managed replacement exists:
+ * own connection status, JSON messages, errors, reconnection, timers and cleanup.
+ * Preserve the pixel/watch/unwatch message envelopes below. Construct built-in
+ * Pixel expressions with `buildPixel` from `@semoss/sdk`; use `rawPixel` only
+ * for trusted expression fragments, never for user-provided literal text.
+ * @example
+ * ```ts
+ * import { buildPixel } from "@semoss/sdk";
+ * import { insightSocketUrl } from "@semoss/sdk/api/monolith/session";
+ * const insightId = "insight-id";
+ * const socket = new WebSocket(insightSocketUrl({ insightId }));
+ * socket.addEventListener("open", () => {
+ *     socket.send(JSON.stringify({
+ *         action: "pixel", insightId, pixel: buildPixel("GetProjectList"),
+ *     }));
+ * });
+ * // Register message/error/close handlers and call socket.close() on teardown.
  * ```
  */
 export class InsightWebSocket {
@@ -37,6 +57,11 @@ export class InsightWebSocket {
 	private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	private closed = false;
 
+	/**
+	 * @deprecated Use `new WebSocket(insightSocketUrl({ insightId }))` with
+	 * `insightSocketUrl` from `@semoss/sdk/api/monolith/session`. Native construction
+	 * opens immediately; the caller owns event handlers, reconnect policy and cleanup.
+	 */
 	constructor(insightId: string, options: InsightWebSocketOptions = {}) {
 		this.insightId = insightId;
 		this.options = {
@@ -55,7 +80,11 @@ export class InsightWebSocket {
 		return `${protocol}//${host}${Env.MODULE}/insightSocket?insightId=${encodeURIComponent(this.insightId)}`;
 	}
 
-	/** Open the WebSocket connection */
+	/**
+	 * Open the WebSocket connection.
+	 * @deprecated Construct native `WebSocket` using `insightSocketUrl` from
+	 * `@semoss/sdk/api/monolith/session`; wait for its open event before sending.
+	 */
 	connect(): void {
 		this.closed = false;
 		this.reconnectAttempts = 0;
@@ -120,7 +149,13 @@ export class InsightWebSocket {
 		}, delay);
 	}
 
-	/** Send a pixel expression over the WebSocket */
+	/**
+	 * Send a pixel expression over the WebSocket.
+	 * @deprecated Use native `WebSocket.send(JSON.stringify({ action: "pixel",
+	 * insightId, pixel }))` on a socket created with `insightSocketUrl` from
+	 * `@semoss/sdk/api/monolith/session`. Build pixel with `buildPixel` from
+	 * `@semoss/sdk` and wait for WebSocket.OPEN before sending.
+	 */
 	send(pixel: string): void {
 		this.sendRaw({
 			action: "pixel",
@@ -135,17 +170,30 @@ export class InsightWebSocket {
 	 *
 	 * @param type   - registered streamer type (e.g. "claude_code")
 	 * @param params - additional params passed to the streamer factory
+	 * @deprecated Use native `WebSocket.send(JSON.stringify({ action: "watch",
+	 * type, ...params }))` on a socket created with `insightSocketUrl` from
+	 * `@semoss/sdk/api/monolith/session`. Own message handling and subscription cleanup.
 	 */
 	watch(type: string, params: Record<string, unknown> = {}): void {
 		this.sendRaw({ action: "watch", type, ...params });
 	}
 
-	/** Stop a streamer by type and params (must match what was passed to watch). */
+	/**
+	 * Stop a streamer by type and params (must match what was passed to watch).
+	 * @deprecated Use native `WebSocket.send(JSON.stringify({ action: "unwatch",
+	 * type, ...params }))` on a socket created with `insightSocketUrl` from
+	 * `@semoss/sdk/api/monolith/session`; match the original watch type and params.
+	 */
 	unwatch(type: string, params: Record<string, unknown> = {}): void {
 		this.sendRaw({ action: "unwatch", type, ...params });
 	}
 
-	/** Send a raw JSON message over the WebSocket */
+	/**
+	 * Send a raw JSON message over the WebSocket.
+	 * @deprecated Use native `WebSocket.send(JSON.stringify(data))` on a socket
+	 * created with `insightSocketUrl` from `@semoss/sdk/api/monolith/session`.
+	 * Check WebSocket.OPEN before sending and retain the backend message envelope.
+	 */
 	sendRaw(data: Record<string, unknown>): void {
 		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
 			throw new Error(
@@ -156,7 +204,12 @@ export class InsightWebSocket {
 		this.ws.send(JSON.stringify(data));
 	}
 
-	/** Close the WebSocket connection */
+	/**
+	 * Close the WebSocket connection.
+	 * @deprecated Use native `WebSocket.close()` for a socket created with
+	 * `insightSocketUrl` from `@semoss/sdk/api/monolith/session`; also cancel any
+	 * caller-owned reconnect timers and detach event handlers during teardown.
+	 */
 	close(): void {
 		this.closed = true;
 
@@ -171,7 +224,11 @@ export class InsightWebSocket {
 		}
 	}
 
-	/** Whether the socket is currently open */
+	/**
+	 * Whether the socket is currently open.
+	 * @deprecated Read native `socket.readyState === WebSocket.OPEN` for a socket
+	 * created with `insightSocketUrl` from `@semoss/sdk/api/monolith/session`.
+	 */
 	get isConnected(): boolean {
 		return this.ws?.readyState === WebSocket.OPEN;
 	}

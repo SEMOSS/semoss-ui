@@ -1,4 +1,9 @@
 import type { ModelUsageLimit } from "./api/access";
+import type {
+	AgentRunProgress,
+	AgentWorkflowArtifact,
+	AgentWorkflowReviewOutcome,
+} from "./api/monolith/engine";
 
 /**
  * Script object
@@ -356,8 +361,8 @@ export type AgentRunStatusValue =
 /**
  * A paused tool call awaiting a human decision, persisted as an
  * AGENT_RUN_ACTION row. `toolArgs` / `editedArgs` / `toolMeta` are stored as
- * JSON strings on the backend; the durable-snapshot endpoint normalizes them
- * into objects (or `null` if malformed) before they reach here.
+ * JSON strings on the backend. The SDK snapshot helpers restore omitted
+ * nullable fields as `null` after the backend parses valid objects.
  */
 export interface PendingAgentAction {
 	/** Unique id for this paused call — pass back to decideAgentRunAction. */
@@ -388,8 +393,8 @@ export interface PendingAgentAction {
 export interface AgentRunSnapshot {
 	/** The run's own id — also its jobId, the model-facing handle. */
 	runId: string;
-	/** The room this run's messages are written to. */
-	roomId: string;
+	/** The room this run's messages are written to; absent for runs delegated to a person. */
+	roomId?: string;
 	status: AgentRunStatusValue;
 	/** The persisted user message this run started from, once written. */
 	inputMessageId?: string;
@@ -399,6 +404,14 @@ export interface AgentRunSnapshot {
 	finalText?: string;
 	/** Set when status is FAILED. */
 	errorMessage?: string;
+	/** Live or last persisted measurements, including optional PPTX workflow evidence. */
+	progress?: AgentRunProgress;
+	/** Available deliverables, independent of whether execution completed successfully. */
+	artifacts?: Array<AgentWorkflowArtifact & { status: "available" }>;
+	/** Review evidence for the last workflow artifact. */
+	reviewOutcome?: AgentWorkflowReviewOutcome;
+	/** Delivery warnings reported by the workflow. */
+	warnings?: string[];
 	/** Non-empty only while status is INPUT_REQUIRED. */
 	pendingActions: PendingAgentAction[];
 }
@@ -430,12 +443,14 @@ export type AgentRunItem =
 			/** The tool call id. */
 			id: string;
 			kind: "tool";
-			/** The tool's name, as called by the model. */
-			name: string;
+			/** The tool's name, absent on some completed Claude Code items. */
+			name?: string;
 			/** Human-readable display name, if the backend already resolved one. Falls back to `metadata.SMSS_ORIGINAL_TOOL_NAME` or `name`. */
 			title?: string;
-			/** The arguments the model called it with. */
-			arguments: Record<string, unknown>;
+			/** Tool description supplied by the harness, when available. */
+			description?: string;
+			/** The arguments the model called it with, when supplied by the harness. */
+			arguments?: Record<string, unknown>;
 			/** The tool definition's `_meta`, if it has one. */
 			metadata?: Record<string, unknown>;
 			status:
@@ -470,7 +485,12 @@ export type AgentRunItem =
 			error?: string;
 			/** Set once status is COMPLETED. */
 			resultPreview?: string;
-	  };
+	  }
+	| (AgentRunProgress & {
+			/** Stable progress item id, replaced by each completed progress event. */
+			id: string;
+			kind: "progress";
+	  });
 
 /**
  * One canonical, provider-neutral stream event. `delta` (message/reasoning)

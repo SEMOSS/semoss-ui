@@ -190,6 +190,8 @@ export function createViteLibConfig(options: {
 	enableDts?: boolean;
 	/** tsconfig used for declaration emit. Defaults to `"tsconfig.json"`. */
 	tsconfigPath?: string;
+	/** Package-specific declaration options, merged over the shared defaults. */
+	dtsOptions?: Parameters<typeof dts>[0];
 }): (env: ConfigEnv) => ViteUserConfig {
 	const {
 		rootDir,
@@ -200,6 +202,7 @@ export function createViteLibConfig(options: {
 		cssFileName,
 		enableDts = true,
 		tsconfigPath = "tsconfig.json",
+		dtsOptions,
 	} = options;
 
 	return ({ mode }) => {
@@ -213,12 +216,19 @@ export function createViteLibConfig(options: {
 		if (enableTailwind) {
 			plugins.push(tailwindcss());
 		}
+
 		if (enableReact) {
 			plugins.push(react({ include: /\.(js|jsx|ts|tsx)$/ }));
 		}
+
 		if (enableDts) {
 			plugins.push(
-				dts({ tsconfigPath, outDirs: "dist/types", entryRoot: "src" }),
+				dts({
+					tsconfigPath,
+					outDirs: "dist/types",
+					entryRoot: "src",
+					...dtsOptions,
+				}),
 			);
 		}
 

@@ -13,6 +13,38 @@
         "./react": {
             "types": "./dist/types/js-frameworks/react/index.d.ts",
             "default": "./dist/js-frameworks/react/index.mjs"
+        },
+        "./api": {
+            "types": "./dist/types/lib/api.d.ts",
+            "default": "./dist/api/index.mjs"
+        },
+        "./api/github": {
+            "types": "./dist/types/api/github/github.d.ts",
+            "default": "./dist/api/github.mjs"
+        },
+        "./api/msgraph": {
+            "types": "./dist/types/api/msgraph/msgraph.d.ts",
+            "default": "./dist/api/msgraph.mjs"
+        },
+        "./api/adminconfig": {
+            "types": "./dist/types/api/adminconfig/adminconfig.d.ts",
+            "default": "./dist/api/adminconfig.mjs"
+        },
+        "./api/health": {
+            "types": "./dist/types/api/health/health.d.ts",
+            "default": "./dist/api/health.mjs"
+        },
+        "./api/token": {
+            "types": "./dist/types/api/token/token.d.ts",
+            "default": "./dist/api/token.mjs"
+        },
+        "./api/monolith/*": {
+            "types": "./dist/types/api/monolith/*.d.ts",
+            "default": "./dist/api/monolith/*.mjs"
+        },
+        "./api/github/*": {
+            "types": "./dist/types/api/github/*.d.ts",
+            "default": "./dist/api/github/*.mjs"
         }
     },
     "files": [
@@ -30,6 +62,7 @@
         "build": "vite build --configLoader runner",
         "build:dev": "vite build --mode development --configLoader runner",
         "test": "vitest run --configLoader runner",
+        "test:integration": "pnpm build && vitest run --config vitest.integration.config.ts --configLoader runner",
         "test:watch": "vitest --watch --configLoader runner",
         "test:coverage": "vitest --coverage --watch=false --configLoader runner"
     },
@@ -39,9 +72,11 @@
     "devDependencies": {
         "@semoss/config": "workspace:*",
         "@testing-library/jest-dom": "^6.6.3",
+        "@testing-library/react": "^16.3.0",
         "@types/react": "^19.0.0",
         "@vitest/coverage-v8": "^4.1.11",
         "react": "^19.0.0",
+        "react-dom": "^19.0.0",
         "typescript": "~6.0.0",
         "vite": "^8.2.1",
         "vitest": "^4.1.11"

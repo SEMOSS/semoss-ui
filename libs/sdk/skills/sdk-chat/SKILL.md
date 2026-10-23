@@ -15,27 +15,113 @@ React hooks/providers such as `useInsight` and `InsightProvider` live under
 `@semoss/sdk/react`. There is no core export named `Room`. Framework-independent
 state does not imply that all SDK entry points are safe in Node or SSR environments.
 
+## Supported calls and legacy helpers
+
+All standalone room, agent, MCP, authentication and image helpers implemented
+directly under SDK `src/api/` are deprecated, as are `InsightWebSocket` and its
+public members. They remain exported with unchanged behavior for compatibility.
+The wrapper signatures, examples and lifecycle caveats below are **legacy
+reference** wherever they name these helpers. `RoomStore`, `AgentStore`,
+`createRoom`, other stores, React hooks, root `runPixel`, `buildPixel`, `rawPixel`,
+types, constants and error classes remain supported.
+
+For new direct calls, build built-in reactors with `buildPixel` from `@semoss/sdk`.
+Execute synchronous calls with root `runPixel`; it returns `errors` and
+`pixelReturn`, so check errors before reading output. Give the builder ordinary
+strings, maps and arrays without JSON.stringify or `<encode>` markers. Use
+`rawPixel` only for trusted expression fragments, not user-provided text.
+
+```ts
+import { buildPixel, runPixel } from "@semoss/sdk";
+
+const response = await runPixel(
+    buildPixel("GetRoomMessages", { roomId: "room-id" }),
+    "insight-id",
+);
+if (response.errors.length) throw new Error(response.errors.join(", "));
+const messages = response.pixelReturn[0]?.output;
+```
+
+Use the corresponding reactor for room reads/updates and agent operations.
+`CreateRoom` currently returns `{ roomId }`, `GetRoomForInsight` returns a room ID
+or null, and `GetRoomOptions` returns optional `OPTIONS` / `ROOM_NAME` fields.
+These are not the legacy wrapper types. Build `GetUserConversationRooms`, without
+the `Reactor` suffix, and execute `"META | " + expression` to retain META behavior.
+That composition loses builder inference; validate raw `ROOM_ID` / `ROOM_NAME`
+rows rather than casting them to `RoomRecord`.
+
+Async chat uses resource submission:
+
+```ts
+import { buildPixel } from "@semoss/sdk";
+import { runPixelAsync } from "@semoss/sdk/api/monolith/engine";
+
+const expression = buildPixel("AskRoom", {
+    engine: "model-id", roomId: "room-id", command: "Hello",
+    parentMessageId: "ROOT_PLACEHOLDER_ID", media: [], paramValues: {},
+});
+const { jobId } = await runPixelAsync({ expression, insightId: "insight-id" });
+```
+
+Poll `pixelJobStreaming({ jobId })` from the same resource with a bounded wait,
+one consumer per job, cancellation and cleanup. Handle its raw chunk union. After
+`Complete` or `ProgressComplete`, call `result({ jobId })` once. It consumes the
+job, returns `"NULL"` when unavailable, otherwise supplies `insightID` and
+`pixelReturn`; inspect `operationType` for `ERROR` instead of expecting the legacy
+`errors` / `results` fields. A submitted job is not a successful model turn.
+
+Current AskRoom uses `media`, not the wrapper's `image`, and a parameter map
+instead of its array. Persist instructions via `UpdateRoomOptions`, preserving
+other room settings; `context` is not a current AskRoom input. Submit tool results
+by building `AddToolExecution`, not `AddRoomToolExecution`, through the same async
+route. Use plain parameter maps and text. Its settled output can be a string or
+a room exchange, so narrow it before reading message fields.
+
+For direct agent submission, build `RunAgent` with `wait: false` and execute it
+with root `runPixel`. Map `agentId` to `workspaceId`, `urls` to `url`, and `subdir`
+to `paramValues.subdir`, overriding the previous subdir. Forward the other
+supported run options explicitly. Poll the durable run ID with
+`agentRunStreaming({ runId })` from `@semoss/sdk/api/monolith/engine`; reconcile
+with a built `GetAgentRun` and cancel with `StopAgentRun`. Do not send run IDs to
+chat job routes. Raw snapshots do not supply the legacy defaults for
+`pendingActions` or omitted nullable approval fields.
+
+For tools, build `RunMCPTool` with `function: name` for the room-tool path, or
+`actionId` / `decision` for the pending-action path. Send `paramValues` only for
+an edit and `mcpToolResult` only for a response on the latter path. Read and
+validate the raw output; the old `runMcpTool` text conversion is not automatic.
+For `MakeUserPixelMCP`, derive parallel `reactor` and `mcpMetadata` arrays from
+tools and omit both when clearing a generator's tools.
+
+These migrations follow the current catalog. Retain the deployment checks and
+managed-store limitations below; changing the caller does not verify a backend
+version's encodings, approval behavior or cancellation semantics.
+
 ## Agent Profile Images
 
-Agent workspaces and skills use project catalog images. After creation returns a
-project ID, call `uploadProjectImage(projectId, file)` from `@semoss/sdk`.
-`uploadEngineImage(engineId, file)` handles engine catalog images. Both return
-`Promise<CatalogImageUploadResult>` with `id`, `name`, `message`, `imageUrl`, and
-`contentType`. `imageUrl` is a path on the backend origin, not necessarily the
-frontend origin. These calls require edit access and the resource-scoped image
-upload routes on Monolith.
+After creation returns a project ID, use `imageUpload({ projectId, file })` from
+`@semoss/sdk/api/monolith/project`. Use `imageUpload({ engineId, file })` from
+`@semoss/sdk/api/monolith/engine-route` for engine catalog images. These return
+the backend confirmation with `id`, `name`, `message`, `imageUrl` and `contentType`.
+The URL is relative to the backend origin. Edit permission and the corresponding
+resource image route are required; never pass a temporary form or agent-run ID.
 
-Use `CATALOG_IMAGE_ACCEPT`, `CATALOG_IMAGE_MAX_BYTES`, and
-`getCatalogImageValidationError(file)` for file-picker validation. Supported files
-are PNG, JPEG, and GIF up to 10 MiB. The server validates the bytes and enforces a
-25-million-pixel limit. A failure rejects; preserve the new project ID so a retry
-uploads to the same agent. Do not pass a temporary form ID or an agent run ID.
+`uploadProjectImage`, `uploadEngineImage` and `getCatalogImageValidationError`
+from the root are deprecated. No direct validator replacement exists. Use the
+supported `CATALOG_IMAGE_ACCEPT` / `CATALOG_IMAGE_MAX_BYTES` constants for
+caller-owned picker validation: nonempty PNG/JPEG/GIF, at most 10 MiB, MIME check
+with a filename fallback when MIME is absent. Resource calls do not reproduce
+those checks or the old response-ID validation. The server validates bytes and
+limits decoded images to 25 million pixels. Keep the saved ID when retrying.
 
 ## Choose the Transport Explicitly
 
+This table describes retained legacy wrappers; use the builder/resource calls
+above for new direct integrations.
+
 | Operation | Submission | Progress | Settled result |
 |---|---|---|---|
-| Chat | `askRoom(insightId, params)` or `addRoomToolExecution(insightId, params)` returns `Promise<{ jobId: string }>` | `getPixelJobStreaming(jobId)` | `getPixelAsyncResult(jobId)` |
+| Chat | `askRoom(insightId, params)` or `addRoomToolExecution(insightId, params)` returns `Promise<{ jobId: string }>` | Legacy `getPixelJobStreaming(jobId)` (deprecated; resource replacement: `pixelJobStreaming({ jobId })` from `@semoss/sdk/api/monolith/engine`) | `getPixelAsyncResult(jobId)` |
 | Agent harness | `runAgent(params, insightId?)` returns `Promise<{ runId: string; roomId: string; status: AgentRunStatusValue }>` | `pollAgentRun(runId)` or `AgentStore.watch(...)` | `getAgentRun(runId, options?, insightId?)` |
 
 The function you call chooses the protocol. `runAgent` sends `wait=false`; it does
@@ -45,13 +131,14 @@ even when a subagent summary also labels that identifier `jobId`.
 `RoomOptions.harnessType?: string` is persisted configuration, not an enforced
 creation-time switch. `room.ask()` always uses AskRoom; `room.askAgent()` always
 uses RunAgent. The current `room.createAgent()` does not forward the room's
-`harnessType`. Use `runAgent` or `AgentStore.start` to select a harness explicitly.
+`harnessType`. Use a built `RunAgent` call or `AgentStore.start` to select a harness explicitly.
 Omitted `engine` or `harnessType` values are omitted on the wire, not defaulted by
 the SDK; server defaults must be checked against the deployed backend.
 
-## Room Records and Options
+## Legacy Room Records and Options
 
-All functions in this table are exported from `@semoss/sdk`.
+All functions in this table are exported from `@semoss/sdk`. Standalone wrappers
+are deprecated; `createRoom` remains a supported store factory.
 
 | Call | Return type / behavior |
 |---|---|
@@ -188,6 +275,10 @@ not establish that backend execution was cancelled.
 
 ## Chat Jobs
 
+The parameters and observation example in this section describe deprecated
+wrappers retained for compatibility. New direct integrations use the resource
+submission, polling and result sequence above.
+
 `AskRoomParams` requires `engine`, `roomId`, `command`, `context`, and
 `parentMessageId`, all strings. Use `"ROOT_PLACEHOLDER_ID"` for a new thread.
 Optional `image: string[]` defaults to `[]`; optional
@@ -200,7 +291,10 @@ escaping. See the backend compatibility notes below.
 This example consumes an already submitted job, spaces polls by 500 ms, and
 handles every declared status without treating cancellation or errors as success.
 Submit with `await askRoom(insightId, params)` using a complete `AskRoomParams`,
-then pass its `jobId` to this function.
+then pass its `jobId` to this function. It preserves the legacy normalized
+`PixelStreamMessage` contract through the deprecated, callable helper. New resource
+consumers use `pixelJobStreaming({ jobId })` from `@semoss/sdk/api/monolith/engine`
+and handle its raw backend chunk union explicitly.
 
 ```ts
 import { getPixelAsyncResult, getPixelJobStreaming } from "@semoss/sdk";
@@ -264,6 +358,9 @@ receipt of a job handle, not a successful model turn.
 
 ## Chat Tool Results
 
+This section documents the legacy `addRoomToolExecution`, `runMcpTool` and
+`makeUserPixelMcp` contracts. Their builder migrations are described above.
+
 `addRoomToolExecution(insightId, params)` returns `Promise<{ jobId: string }>`.
 Observe that job with the same bounded chat lifecycle. Required
 `AddRoomToolExecutionParams` fields are:
@@ -284,8 +381,8 @@ It wraps tool output in `<encode>` markers and does not URL-encode it.
 To run a chat tool call itself, `runMcpTool({ project, roomId, name, paramValues }, insightId?)`
 calls RunMCPTool and returns `Promise<string>`: the tool's text, JSON for output
 that is not text, or `""` for none. It rejects when the pixel fails or answers
-with no statement; submit that failure with `mcpToolStatus: "error"`. Use
-`decideAgentRunAction` instead for a paused agent run's tool.
+with no statement; submit that failure with `mcpToolStatus: "error"`. For new paused-agent calls, use a built `RunMCPTool` action decision or
+`AgentStore.decide`; the legacy equivalent is `decideAgentRunAction`.
 `makeUserPixelMcp({ filePath, generator, tools })` writes a generator's tools
 into a pixel MCP file in the user's own assets.
 
@@ -303,11 +400,16 @@ validate objects too. A string alone does not prove another tool should run.
 
 ## Agent Runs
 
+Standalone functions in this section are deprecated compatibility wrappers;
+`AgentStore` and its methods remain supported. Use the builder/resource sequence
+above for new direct integrations.
+
 `runAgent(params, insightId?)` requires `roomId` and `command` strings. Optional
 fields are `engine`, `harnessType`, `agentId`, `space`, `subdir` (strings),
 `maxTurns` and `maxReflections` (numbers), `media` and `urls` (`string[]`), and
 `paramValues` (`Record<string, unknown>`, not the chat array form).
-There is no `images` or separate `agentParams` parameter in this version.
+`agentParams` is a separate `Record<string, unknown>` for agent-only run values,
+including `userText`; it is not sent to the model. There is no `images` parameter.
 
 `space` picks where the run works: `INSIGHT` (the room's folder, and what a run
 without `space` uses), `USER` (the user's file space), or an editable project
@@ -318,14 +420,14 @@ id. `subdir` narrows that to a folder inside it. The backend refuses
 The wrapper JSON-serializes raw command text, maps `agentId` to `workspaceId`,
 `urls` to `url`, and `media` to `media`; `space` is sent as its own argument
 and `subdir` as `paramValues.subdir`, replacing one already there. Nonempty
-`paramValues` is sent as a one-element array. It does not URL-encode commands
+`paramValues` and `agentParams` are each sent as a one-element array. It does not URL-encode commands
 or inject a harness default.
 The returned status is typed as `AgentRunStatusValue`, not guaranteed by local
 validation to equal `"SUBMITTED"`.
 
 | Call | Result |
 |---|---|
-| `pollAgentRun(runId)` | `{ run: AgentRunSnapshot; events: AgentRunItemEvent[]; droppedEvents: number }` |
+| `pollAgentRun(runId)` (deprecated; use `/api/monolith/engine` `agentRunStreaming`) | `{ run: AgentRunSnapshot; events: AgentRunItemEvent[]; droppedEvents: number }` |
 | `getAgentRun(runId, { includeMessages?: boolean }, insightId?)` | Snapshot with optional `messages`; the options argument itself defaults to `{}` |
 | `stopAgentRun(runId, insightId?)` | `Promise<AgentRunSnapshot>` from the StopAgentRun reactor |
 | `getSubagentRuns(runId, insightId?)` | `Promise<SubagentRunSummary[]>` |
@@ -334,13 +436,15 @@ validation to equal `"SUBMITTED"`.
 | `agent.getSnapshot(options?)` | Durable fetch with this store's insight ID; return type is `Promise<AgentRunSnapshot>` |
 | `agent.cancel()` | Calls `stopAgentRun`; unlike `agent.stop()`, requests backend cancellation |
 
-`AgentRunSnapshot` requires `runId`, `roomId`, `status`, and `pendingActions`;
-optional fields are `inputMessageId`, `finalOutputMessageId`, `finalText`,
-and `errorMessage`. Status values are `SUBMITTED`, `RUNNING`,
+`AgentRunSnapshot` requires `runId`, `status`, and `pendingActions`;
+`roomId` can be absent, including for runs delegated to a person. Other optional fields include
+`inputMessageId`, `finalOutputMessageId`, `finalText`, `errorMessage`, and delivery,
+artifact, review, or workflow evidence. Status values are `SUBMITTED`, `RUNNING`,
 `INPUT_REQUIRED`, `COMPLETED`, `FAILED`, and `CANCELLED`. `INPUT_REQUIRED` is a
 pause, not a terminal success. Do not infer durable success from streamed text.
-`getAgentRun` and `stopAgentRun` normalize missing `pendingActions` to `[]`;
-`pollAgentRun` returns the endpoint payload without that normalization.
+`getAgentRun`, `stopAgentRun`, and the deprecated `pollAgentRun` normalize missing
+`pendingActions` to `[]` and omitted nullable approval fields to `null`. The resource
+`agentRunStreaming` keeps the backend's omitted fields unchanged.
 
 ### Watch Lifecycle
 
@@ -354,7 +458,9 @@ subscription promise, or a resolved `null` before any watch.
 - Events are sorted by `sequence` per poll and deduplicated by `eventId`.
     `onEvent(event, items)` receives accumulated state. Render that state so full
     text arriving on `item.started` or `item.completed` is not lost. Kinds include
-    `message`, `reasoning`, `tool`, and `subagent`.
+    `message`, `reasoning`, `tool`, `subagent`, and `progress`. Tool `name` and
+    `arguments` may be omitted in partial/completion events; retain earlier details
+    when merging them. Progress carries phase, activity, and completed-turn counts.
 - Treat agent streaming as a destructive drain without replay: keep exactly one
     live watcher per run ID, including across separate store instances. Use durable
     reads to reconcile `droppedEvents`; the store reports gaps but does not itself

@@ -1,4 +1,5 @@
 import type { MCPToolRequest } from "./types";
+import { clearSession } from "./utility/session";
 
 /**
  * Reads the `semoss-env` tag the platform injects into a published portal's
@@ -57,7 +58,7 @@ const readDocumentEnv = (): Partial<{ APP: string; MODULE: string }> => {
 /**
  * Singleton object holding environment information
  */
-const envStore: {
+interface Environment {
 	APP: string;
 	MODULE: string;
 	ACCESS_KEY: string;
@@ -68,7 +69,9 @@ const envStore: {
 	HEADLESS: boolean;
 	REDIRECT_URL: string;
 	TOOL: MCPToolRequest | null;
-} = {
+}
+
+const envStore: Environment = {
 	APP: "",
 	MODULE: "",
 	ACCESS_KEY: "",
@@ -125,7 +128,7 @@ export const Env = {
 	},
 
 	/**
-	 * CSRF token for the current session
+	 * Enable CSRF token handling for writes
 	 */
 	get CSRF() {
 		return envStore.CSRF;
@@ -159,7 +162,11 @@ export const Env = {
 	 * @param updated - updated variables
 	 */
 	update(updated: Partial<typeof envStore>) {
+		const connection = readConnection();
 		Object.assign(envStore, updated);
+		if (connection !== readConnection()) {
+			clearSession();
+		}
 	},
 
 	/**
@@ -182,6 +189,19 @@ export const Env = {
 		this.update(readDocumentEnv());
 	},
 };
+
+/** Compare only settings that change the backend or the effective identity. */
+const readConnection = (): string =>
+	JSON.stringify([
+		envStore.MODULE,
+		envStore.HEADLESS,
+		envStore.BEARER_PROVIDER,
+		envStore.BEARER_TOKEN
+			? ["bearer", envStore.BEARER_TOKEN]
+			: envStore.ACCESS_KEY && envStore.SECRET_KEY
+				? ["basic", envStore.ACCESS_KEY, envStore.SECRET_KEY]
+				: null,
+	]);
 
 // Configure from the page as soon as the SDK is loaded. See refreshFromDocument.
 Env.refreshFromDocument();

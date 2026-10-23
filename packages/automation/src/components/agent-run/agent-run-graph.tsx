@@ -246,6 +246,16 @@ const activityFromItem = (item: AgentRunItem): AutomationAgentRunActivity => {
 			text: item.summary,
 		};
 	}
+	if (item.kind === "progress") {
+		return {
+			id: `progress-${item.id}`,
+			kind: "progress",
+			label: compactLabel(
+				item.phase.replace(/_/g, " ") || "Run progress",
+			),
+			text: `${item.turnsCompleted} of ${item.maxTurns} turns completed.`,
+		};
+	}
 	if (item.kind === "tool") {
 		return {
 			id: `tool-${item.id}`,
@@ -359,7 +369,7 @@ export function AgentRunGraph({
 			id: "room",
 			type: "agent-run",
 			position: { x: 0, y: 0 },
-			data: { kind: "room", label: snapshot.roomId },
+			data: { kind: "room", label: snapshot.roomId || "Not available" },
 			selected: selectedId === "room",
 		};
 		const run: AgentRunFlowNode = {

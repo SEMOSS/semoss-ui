@@ -1,13 +1,55 @@
 import { Env } from "../env";
+import { post } from "../lib/fetch";
+import { runPixel } from "../lib/pixel";
 import type {
 	AgentRunItemEvent,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
 	AgentToolDecision,
+	PendingAgentAction,
 	SubagentRunSummary,
 } from "../types";
-import { post } from "../utility";
-import { runPixel } from "./base";
+import type { agentRunStreaming } from "./monolith/engine";
+
+type NullableActionField =
+	| "parentMessageId"
+	| "toolCallId"
+	| "toolName"
+	| "toolArgs"
+	| "editedArgs"
+	| "toolMeta"
+	| "uiUrl";
+
+type AgentSnapshotResponse = Omit<AgentRunSnapshot, "pendingActions"> & {
+	pendingActions?: Array<
+		Omit<PendingAgentAction, NullableActionField> &
+			Partial<Pick<PendingAgentAction, NullableActionField>>
+	>;
+};
+
+/**
+ * Restores nullable approval fields omitted by the backend's Gson serializer.
+ *
+ * @param snapshot - The raw durable snapshot or poll snapshot.
+ * @returns The snapshot with a stable pending-actions array and nullable fields.
+ */
+function normalizeAgentSnapshot<T extends AgentSnapshotResponse>(
+	snapshot: T,
+): Omit<T, "pendingActions"> & AgentRunSnapshot {
+	return {
+		...snapshot,
+		pendingActions: (snapshot.pendingActions ?? []).map((action) => ({
+			...action,
+			parentMessageId: action.parentMessageId ?? null,
+			toolCallId: action.toolCallId ?? null,
+			toolName: action.toolName ?? null,
+			toolArgs: action.toolArgs ?? null,
+			editedArgs: action.editedArgs ?? null,
+			toolMeta: action.toolMeta ?? null,
+			uiUrl: action.uiUrl ?? null,
+		})),
+	};
+}
 
 /**
  * Submit a durable agent run without waiting for it to finish (RunAgent with
@@ -48,6 +90,29 @@ import { runPixel } from "./base";
  * @param insightId - Insight to run the pixel against.
  * @returns The submitted run's id, room id, and initial status (always
  * "SUBMITTED") — not a full snapshot.
+ *
+ * @deprecated Use `runPixel(buildPixel("RunAgent", { roomId, command, wait: false,
+ * workspaceId: agentId, url: urls, paramValues }), insightId)` with `buildPixel` and
+ * `runPixel` from `@semoss/sdk`. Check `errors` before reading `pixelReturn[0]?.output`; raw
+ * reactor output may differ from this helper's declared or normalized result. Map subdir into
+ * paramValues.subdir (overriding any prior value); forward engine, harnessType, space,
+ * maxTurns, maxReflections, media and agentParams when present. Use literal values, not
+ * pre-serialized clauses. Observe the returned runId through `agentRunStreaming` from
+ * `@semoss/sdk/api/monolith/engine`; it is not a chat job ID.
+ * @example
+ * ```ts
+ * import { buildPixel, runPixel } from "@semoss/sdk";
+ * const agentId = "agent-id";
+ * const urls = ["https://example.com/report"];
+ * const subdir = "reports";
+ * const response = await runPixel(buildPixel("RunAgent", {
+ *     roomId: "room-id", command: "Summarize the report", wait: false,
+ *     workspaceId: agentId, url: urls, space: "USER",
+ *     paramValues: { subdir },
+ * }), "insight-id");
+ * if (response.errors.length) throw new Error(response.errors.join(", "));
+ * const submission = response.pixelReturn[0]?.output;
+ * ```
  */
 export const runAgent = async (
 	params: {
@@ -130,6 +195,10 @@ export const runAgent = async (
  * @returns `run` — the current durable snapshot; `events` — new item events
  * since the last drain, unordered; `droppedEvents` — events evicted by the
  * backend's bounded buffer before this drain could collect them.
+ *
+ * @deprecated Use `agentRunStreaming({ runId })` from `@semoss/sdk/api/monolith/engine`. The
+ * raw snapshot does not default pendingActions to [] or missing approval fields to null. Each
+ * call drains events; keep one consumer and handle droppedEvents explicitly.
  */
 export const pollAgentRun = async (
 	runId: string,
@@ -142,13 +211,11 @@ export const pollAgentRun = async (
 		throw new Error("Missing runId");
 	}
 
-	const response = await post<{
-		run: AgentRunSnapshot;
-		events: AgentRunItemEvent[];
-		droppedEvents: number;
-	}>(`${Env.MODULE}/api/engine/agentRunStreaming`, { runId });
-
-	return response.data;
+	const response = await post<Awaited<ReturnType<typeof agentRunStreaming>>>(
+		`${Env.MODULE}/api/engine/agentRunStreaming`,
+		{ runId },
+	);
+	return { ...response.data, run: normalizeAgentSnapshot(response.data.run) };
 };
 
 /**
@@ -160,6 +227,12 @@ export const pollAgentRun = async (
  * @param insightId - Insight to run the pixel against.
  * @returns The durable snapshot; `messages` is only populated when
  * `includeMessages` is true.
+ *
+ * @deprecated Use `runPixel(buildPixel("GetAgentRun", { runId, includeMessages:
+ * options.includeMessages }), insightId)` with `buildPixel` and `runPixel` from `@semoss/sdk`.
+ * Check `errors` before reading `pixelReturn[0]?.output`; raw reactor output may differ from
+ * this helper's declared or normalized result. The raw snapshot does not default
+ * pendingActions to [] or missing approval fields to null.
  */
 export const getAgentRun = async <
 	M extends Record<string, unknown> = Record<string, unknown>,
@@ -177,10 +250,9 @@ export const getAgentRun = async <
 		options.includeMessages ? "includeMessages=true" : null,
 	].filter((clause): clause is string => clause !== null);
 
-	const response = await runPixel<[AgentRunSnapshot & { messages?: M[] }]>(
-		`GetAgentRun(${clauses.join(",\n")});`,
-		insightId,
-	);
+	const response = await runPixel<
+		[AgentSnapshotResponse & { messages?: M[] }]
+	>(`GetAgentRun(${clauses.join(",\n")});`, insightId);
 
 	if (response.errors.length > 0) {
 		throw new Error(response.errors.join(""));
@@ -188,9 +260,7 @@ export const getAgentRun = async <
 
 	const output = response.pixelReturn[0].output;
 
-	// The backend only sets pendingActions while INPUT_REQUIRED — normalize it
-	// here so this always matches AgentRunSnapshot's contract for every caller.
-	return { ...output, pendingActions: output.pendingActions ?? [] };
+	return normalizeAgentSnapshot(output);
 };
 
 /**
@@ -202,6 +272,12 @@ export const getAgentRun = async <
  * @param runId - The run to cancel.
  * @param insightId - Insight to run the pixel against.
  * @returns The run's durable snapshot after the stop was applied.
+ *
+ * @deprecated Use `runPixel(buildPixel("StopAgentRun", { runId }), insightId)` with
+ * `buildPixel` and `runPixel` from `@semoss/sdk`. Check `errors` before reading
+ * `pixelReturn[0]?.output`; raw reactor output may differ from this helper's declared or
+ * normalized result. The raw snapshot does not default pendingActions to [] or missing
+ * approval fields to null; inspect its status to confirm cancellation.
  */
 export const stopAgentRun = async (
 	runId: string,
@@ -211,7 +287,7 @@ export const stopAgentRun = async (
 		throw new Error("Missing runId");
 	}
 
-	const response = await runPixel<[AgentRunSnapshot]>(
+	const response = await runPixel<[AgentSnapshotResponse]>(
 		`StopAgentRun(runId=${JSON.stringify([runId])});`,
 		insightId,
 	);
@@ -222,9 +298,7 @@ export const stopAgentRun = async (
 
 	const output = response.pixelReturn[0].output;
 
-	// Same normalization as getAgentRun — the backend omits pendingActions
-	// unless the run is INPUT_REQUIRED.
-	return { ...output, pendingActions: output.pendingActions ?? [] };
+	return normalizeAgentSnapshot(output);
 };
 
 /**
@@ -239,6 +313,13 @@ export const stopAgentRun = async (
  * @param params.mcpToolResult - Required for "respond" (the string the tool "returned", e.g. JSON-stringified answers); ignored otherwise.
  * @param insightId - Insight to run the pixel against.
  * @returns The tool-result string the decision produced.
+ *
+ * @deprecated Use `runPixel(buildPixel("RunMCPTool", { actionId, decision, paramValues,
+ * mcpToolResult }), insightId)` with `buildPixel` and `runPixel` from `@semoss/sdk`. Check
+ * `errors` before reading `pixelReturn[0]?.output`; raw reactor output may differ from this
+ * helper's declared or normalized result. Send paramValues only for edit and mcpToolResult
+ * only for respond. Preserve the legacy {} / empty-string defaults when required. This is the
+ * pending-action path, not a room tool call.
  */
 export const decideAgentRunAction = async (
 	params: {
@@ -283,6 +364,11 @@ export const decideAgentRunAction = async (
  * @param runId - The parent run whose direct subagent runs should be returned.
  * @param insightId - Insight to run the pixel against.
  * @returns Every direct child run, newest first.
+ *
+ * @deprecated Use `runPixel(buildPixel("GetSubagentRuns", { runId }), insightId)` with
+ * `buildPixel` and `runPixel` from `@semoss/sdk`. Check `errors` before reading
+ * `pixelReturn[0]?.output`; raw reactor output may differ from this helper's declared or
+ * normalized result. Use the current reactor result contract for child summaries.
  */
 export const getSubagentRuns = async (
 	runId: string,

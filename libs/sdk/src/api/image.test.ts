@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../env";
-import { CSRF } from "../utility/fetch";
+import { CSRF } from "../lib/fetch";
 import {
 	CATALOG_IMAGE_MAX_BYTES,
 	getCatalogImageValidationError,

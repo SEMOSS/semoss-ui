@@ -5,6 +5,7 @@ import {
 	addProjectUserPermissions,
 	getProjectUsers,
 	getProjectUsersNoCredentials,
+	type PermissionCandidate,
 	type PostUser,
 	type Role,
 	type User,
@@ -37,6 +38,15 @@ import {
 	PermissionDropdown,
 } from "./permission-dropdown";
 import { WorkspaceMemberRow } from "./workspace-member-row";
+
+/** Search results contain both existing members and people without a grant. */
+type SharingCandidate = Pick<
+	PermissionCandidate,
+	"id" | "name" | "email" | "username"
+> & {
+	type?: string;
+	inAgent?: boolean;
+};
 
 export interface WorkspaceSharingModalProps {
 	/** Id of the workspace */
@@ -72,11 +82,9 @@ export const WorkspaceSharingModal = ({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [popoverOpen, setPopoverOpen] = useState(false);
 
-	const [usersInDropdown, setUsersInDropdown] = useState<
-		(User & {
-			inAgent?: boolean;
-		})[]
-	>([]);
+	const [usersInDropdown, setUsersInDropdown] = useState<SharingCandidate[]>(
+		[],
+	);
 	const [isLoadingDropdownUsers, setIsLoadingDropdownUsers] = useState(false);
 
 	/**
@@ -128,7 +136,7 @@ export const WorkspaceSharingModal = ({
 	/**
 	 * Add a user to the pending list
 	 */
-	const handleAddUser = (user: User) => {
+	const handleAddUser = (user: SharingCandidate) => {
 		// Check if user is already in the list
 		if (pendingUsers[user.id]) {
 			toast.error(t("workspace:messages.userAlreadyAdded"));
@@ -139,6 +147,7 @@ export const WorkspaceSharingModal = ({
 			...prev,
 			[user.id]: {
 				...user,
+				name: user.name || user.username || user.email || user.id,
 				permission: selectedPermission,
 			},
 		}));
@@ -337,7 +346,10 @@ export const WorkspaceSharingModal = ({
 														>
 															<div className="flex flex-1 flex-col truncate">
 																<span className="truncate">
-																	{user.name}
+																	{user.name ||
+																		user.username ||
+																		user.email ||
+																		user.id}
 																</span>
 																{user.email && (
 																	<span className="truncate text-muted-foreground text-xs">

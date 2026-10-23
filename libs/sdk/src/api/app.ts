@@ -1,5 +1,5 @@
-import { Env } from "../env";
-import { post } from "../utility";
+import { post } from "../lib/fetch";
+import { url as apiUrl } from "../utility/url";
 
 /**
  * Upload file(s) to an app
@@ -8,6 +8,10 @@ import { post } from "../utility";
  * @param files
  * @param insightId
  * @returns
+ *
+ * @deprecated Use `projectAssetsUpload({ file: files, insightId, projectId: appId, path })`
+ * from `@semoss/sdk/api/monolith/upload-file`. Supply a non-null active insightId. The route
+ * returns upload records directly, not { response, data }.
  */
 export const uploadApp = async (
 	appId: string,
@@ -31,7 +35,11 @@ export const uploadApp = async (
 			fileLocation: string;
 		}[]
 	>(
-		`${Env.MODULE}/api/uploadFile/projectAssetsUpload?insightId=${insightId}&projectId=${appId}&path=${encodeURIComponent(path)}`,
+		apiUrl("/api/uploadFile/projectAssetsUpload", {
+			insightId,
+			projectId: appId,
+			path,
+		}),
 		fd,
 		{},
 	);

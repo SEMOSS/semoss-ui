@@ -1,5 +1,6 @@
-import { Env } from "../env";
-import { post } from "../utility";
+import { post } from "../lib/fetch";
+import { sendRequest } from "../utility/request";
+import { url as apiUrl } from "../utility/url";
 
 /**
  * Upload file(s) to the backend
@@ -8,6 +9,10 @@ import { post } from "../utility";
  * @param projectId
  * @param path
  * @returns
+ *
+ * @deprecated Use `baseUpload({ file: files, insightId, projectId, path })` from
+ * `@semoss/sdk/api/monolith/upload-file`. Supply a non-null active insightId and omit a null
+ * projectId. The route returns upload records directly.
  */
 export const upload = async (
 	files: File | File[],
@@ -20,35 +25,11 @@ export const upload = async (
 		fileLocation: string;
 	}[]
 > => {
-	let param = "";
-
-	path = path || "";
-	if (insightId || projectId || path) {
-		if (insightId) {
-			if (param.length > 0) {
-				param += "&";
-			}
-			param += `insightId=${insightId}`;
-		}
-
-		if (projectId) {
-			if (param.length > 0) {
-				param += "&";
-			}
-			param += `projectId=${projectId}`;
-		}
-
-		if (path) {
-			if (param.length > 0) {
-				param += "&";
-			}
-			param += `path=${path}`;
-		}
-
-		param = `?${param}`;
-	}
-
-	const url = `${Env.MODULE}/api/uploadFile/baseUpload${param}`;
+	const url = apiUrl("/api/uploadFile/baseUpload", {
+		insightId: insightId || undefined,
+		projectId: projectId || undefined,
+		path: path || undefined,
+	});
 
 	const fd: FormData = new FormData();
 	if (Array.isArray(files)) {
@@ -75,6 +56,11 @@ export const upload = async (
  *
  * @param insightId - insightId to download the file
  * @param fileKey - id for the file to download
+ *
+ * @deprecated Use `downloadFileUrl({ insightId, fileKey })` from
+ * `@semoss/sdk/api/monolith/engine` for a browser download link, or `downloadFile({ insightId,
+ * fileKey })` for a Blob. Call `blob.arrayBuffer()` if an ArrayBuffer is required; the
+ * resource does not click a link for you.
  */
 export const download = async (insightId: string, fileKey: string) => {
 	if (!insightId) {
@@ -82,11 +68,7 @@ export const download = async (insightId: string, fileKey: string) => {
 	}
 
 	// create the download url
-	const url = `${
-		Env.MODULE
-	}/api/engine/downloadFile?insightId=${insightId}&fileKey=${encodeURIComponent(
-		fileKey,
-	)}`;
+	const url = apiUrl("/api/engine/downloadFile", { insightId, fileKey });
 
 	// only works in browser
 	if (typeof window !== "undefined" && typeof document !== "undefined") {
@@ -105,7 +87,7 @@ export const download = async (insightId: string, fileKey: string) => {
 			resolve();
 		});
 	} else {
-		const response = await fetch(url);
+		const response = await sendRequest(url, { method: "GET" });
 		if (!response.ok) {
 			const errorData = await response.json();
 			const errorMessage =

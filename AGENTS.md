@@ -35,6 +35,7 @@ skills supplement the standard; they do not waive reading it for React work.
 - [Mobile development](./skills/mobile-development.skill.md): responsive and touch interfaces.
 - [React form builder](./skills/react-form-builder.skill.md): form fields, validation, and submission.
 - [SDK chat](./skills/sdk-chat.skill.md): rooms, messages, agent runs, approvals, and polling lifecycle.
+- [SEMOSS sync](./skills/semoss-sync.skill.md): sync the SDK REST resources with the Monolith REST endpoints.
 - [Design rulebook](./DESIGN.md): UI composition and styling.
 
 Lint and formatting configuration lives in [biome.json](./biome.json).
@@ -50,7 +51,8 @@ and the owning guides define the exact public entry points and architectural bou
 
 Libraries (`libs/*`, publishable):
 - `@semoss/utility` → Generic text, date, object, JSON, file, encoding, browser, and other functional helpers
-- `@semoss/sdk` → Core SDK (no internal dependencies)
+- `@semoss/sdk` → Core SDK and typed REST resources (`@semoss/sdk/api/monolith/<resource>`;
+  other servlets at `@semoss/sdk/api/<servlet>`; shared Env/transport; no internal dependencies)
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
 - `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui, utility)
@@ -186,6 +188,7 @@ For validation and handoff, follow the React skill's
 
 **Libraries** (`libs/*`):
 - [libs/utility/AGENTS.md](./libs/utility/AGENTS.md) - Generic utility ownership and public categories
+- [libs/sdk/src/api/AGENTS.md](./libs/sdk/src/api/AGENTS.md) - Typed REST resources
 - [libs/sdk/AGENTS.md](./libs/sdk/AGENTS.md) - Core SDK specifics
 - [libs/ui/AGENTS.md](./libs/ui/AGENTS.md) - Component library specifics
 - [libs/shared/AGENTS.md](./libs/shared/AGENTS.md) - Shared utilities/components specifics

@@ -10,18 +10,34 @@ This document provides context for AI coding assistants working with the SEMOSS 
 `@semoss/sdk` is the core client SDK for talking to a SEMOSS backend (pixel/API calls, insight
 state, environment config). It has framework-independent stores and optional **React**
 bindings on a subpath; this is not a blanket Node/SSR compatibility guarantee.
-It has **no internal runtime workspace dependencies**. Treat its published public
-surface as stable and versioned.
+Typed REST resources live in this package under `src/api/`. The SDK has no runtime
+workspace dependencies. Treat its published public surface as stable and versioned.
 
 ## Build System
 
-- **Bundler**: Vite 8 library mode (Rolldown) → ES modules (`dist/index.mjs`) with types in `dist/types/` (via unplugin-dts).
-- Two entry points via `exports`:
+- **Bundler**: Vite 8 library mode (Rolldown) → ES modules with types in `dist/types/` (via unplugin-dts).
+  Multi-entry bundling shares internal chunks across the SDK, React, and API entries.
+  Route entries are discovered recursively, preserving nested paths; internal source
+  modules do not each receive a public JavaScript output file.
+- Entry points via `exports`:
 
-| Import | Source entry | Published JavaScript |
-|--------|--------------|----------------------|
-| `@semoss/sdk` | `src/index.ts` | `dist/index.mjs` |
-| `@semoss/sdk/react` | `src/js-frameworks/react/index.ts` | `dist/js-frameworks/react/index.mjs` |
+| Import | Source entry | Published JavaScript | Published types |
+|--------|--------------|----------------------|-----------------|
+| `@semoss/sdk` | `src/index.ts` | `dist/index.mjs` | `dist/types/index.d.ts` |
+| `@semoss/sdk/react` | `src/js-frameworks/react/index.ts` | `dist/js-frameworks/react/index.mjs` | `dist/types/js-frameworks/react/index.d.ts` |
+| `@semoss/sdk/api` | `src/lib/api.ts` (route errors and `RequestOptions`) | `dist/api/index.mjs` | `dist/types/lib/api.d.ts` |
+| `@semoss/sdk/api/monolith/<resource>` | `src/api/monolith/<resource>.ts` | `dist/api/monolith/<resource>.mjs` | `dist/types/api/monolith/<resource>.d.ts` |
+| `@semoss/sdk/api/<servlet>` | `src/api/<servlet>/<servlet>.ts` | `dist/api/<servlet>.mjs` | `dist/types/api/<servlet>/<servlet>.d.ts` |
+| `@semoss/sdk/api/github/manifest` | `src/api/github/manifest.ts` | `dist/api/github/manifest.mjs` | `dist/types/api/github/manifest.d.ts` |
+
+Servlet entries are `github`, `msgraph`, `adminconfig`, `health`, and `token`.
+Declarations use `rootDir: "src"` and preserve supporting relative imports under
+`dist/types/`. There is no separate REST package or declaration path remapping.
+
+- **Tree-shaking.** Route subpaths let consumers import individual resources while sharing
+  the bundled transport. `package.json` has **no `sideEffects` field** on purpose: the
+  SDK's `env.ts` and `listener.ts` initialization must survive consumer bundling. Keep
+  every other module's top level to declarations; do not mark the SDK side-effect-free.
 
 The package also ships `skills/` via `files` and `npmSkills.publish.source` in
 [package.json](./package.json). Keep [the SDK chat guide](./skills/sdk-chat/SKILL.md)
@@ -36,9 +52,10 @@ second API reference.
 | `pnpm dev` | Watch mode (`vite build --watch`) |
 | `pnpm build` | Production build |
 | `pnpm build:dev` | Development build |
-| `pnpm test` | Run tests once (Vitest) |
-| `pnpm test:watch` | Tests in watch mode |
-| `pnpm test:coverage` | Coverage report |
+| `pnpm test` | Run source unit tests once (Vitest) |
+| `pnpm test:watch` | Source unit tests in watch mode |
+| `pnpm test:coverage` | Source unit test coverage report |
+| `pnpm test:integration` | Build the production SDK, then run build integration tests |
 
 ## Structure
 
@@ -47,15 +64,27 @@ router):
 
 | Folder / file | Purpose |
 |---------------|---------|
-| `api/` | API / pixel call implementations |
+| `api/` | Typed REST resources and deprecated compatibility helpers |
 | `stores/` | State (e.g. `InsightStore`, exported as `Insight`) |
-| `utility/` | Utility functions |
+| `utility/` | Internal request transport, encoding, URLs, request types, and session state |
+| `lib/` | Public helper implementations and route contracts |
 | `js-frameworks/react/` | React binding (published as `@semoss/sdk/react`) |
 | `constants.ts` | Shared constants |
 | `env.ts` | Environment configuration |
 | `listener.ts` | Side-effect listener imported at the top of `index.ts` |
 | `types.ts` | Shared TypeScript types |
 | `index.ts` | Main barrel |
+
+`lib/` owns `pixel.ts` (`runPixel`), `fetch.ts` (`get`, `post`, `CSRF`), `error.ts`,
+and `embed-auth.ts`. Route contracts live in `api.ts`, `api-error.ts`, and
+`api-types.ts`; the last contains only public `RequestOptions`.
+The root exports public helpers directly from their defining files. Consumers keep
+using the existing root, React, and API imports.
+
+`utility/` owns internal `http.ts`, `body.ts`, `url.ts`, `request.ts` (shared sender
+and redirects), `request-types.ts` (`QueryParams` and `RequestShape`), and
+`session.ts`. Import these defining files internally; keep utility modules out of
+public exports and do not add a utility barrel.
 
 ## Agent Guardrails
 
@@ -68,32 +97,96 @@ router):
 - **`src/index.ts` and `src/js-frameworks/react`** — the public API. This package is published
   and consumed by every other package; breaking changes ripple everywhere.
 - **`env.ts` / `listener.ts`** — environment wiring and the side-effect import in `index.ts`.
-- **`vite.config.ts`** — build configuration and the two entry points.
+- **`vite.config.ts`** — build configuration and the entries (root, `react`, and API resource entries).
 
 ### When Adding to the SDK
 
 1. Keep framework-agnostic logic out of `js-frameworks/` — React-only code belongs under
    `js-frameworks/react`.
 2. Export new public API from `src/index.ts` (core) or the React entry as appropriate.
-3. Verify both entries build:
+3. Verify every entry builds:
    ```bash
    pnpm --filter @semoss/sdk build
    ```
 
 ### Testing Changes
 
+Name SDK test files `*.test.ts`. Place source unit tests next to the source they
+cover; put build integration tests under `tests/integration/`.
+
 For SDK source changes, run the relevant tests first, then the package gates:
 
 ```bash
 pnpm --filter @semoss/sdk test
-pnpm --filter @semoss/sdk build
+pnpm --filter @semoss/sdk test:integration
 ```
+
+The ordinary test, watch, and coverage commands run only source unit tests.
+`test:integration` builds the production SDK first, then runs the separate Vitest
+suite configured by `vitest.integration.config.ts`. The suite creates temporary
+consumer bundles to check published exports, declarations, tree shaking, and
+initialization, and cleans them up after the run.
 
 For documentation-only edits, check local links, skill metadata, package inclusion,
 and examples against source exports/types. Run focused tests for lifecycle claims;
 do not present those checks as backend integration verification. Follow the
 [repository validation guidance](../../skills/react-standard.skill.md#validation),
 with [biome.json](../../biome.json) as lint/formatting authority.
+
+## Typed routes and Env
+
+Read [the route guide](./src/api/AGENTS.md) for backend contracts, encoding, and sync
+rules. Routes import `Env` through their transport, so importing a route alone reads
+the document's `semoss-env` tag without importing stores, React, or the root listener.
+`Env.update` controls the module path and effective authentication. Bearer credentials
+take precedence over access/secret credentials, which take precedence over caller
+Authorization headers. `REDIRECT_URL` overrides browser authentication redirects.
+
+The route adapter (`utility/http.ts`) and public `get`/`post` helpers
+(`lib/fetch.ts`) share one sender (`utility/request.ts`) and session
+(`utility/session.ts`). CSRF is
+opt-in via `Env.CSRF` or the existing mutable `CSRF.isEnabled`; cookie tracking is
+opt-in via `Env.HEADLESS`. A full logout or effective connection change clears both
+cookies and token. Unrelated Env updates preserve them. Late responses from a cleared
+session cannot restore its state. Route errors come from `@semoss/sdk/api`; root
+`HttpError` and `UnauthorizedError` retain their existing helper contracts.
+
+`runPixel` is implemented in `src/lib/pixel.ts` and remains a positional, generic
+root export. Internal callers import that defining file. All standalone functions
+directly under `src/api/`, and `InsightWebSocket` with its public members, are
+deprecated compatibility APIs. This includes configuration, normalization,
+authentication orchestration, image validation/uploads, chat and agent wrappers.
+Their declaration comments name the resource or Pixel-builder migration and any
+behavior the caller must supply. Keep their implementations, signatures and export
+chains intact during documentation-only deprecation work; do not migrate consumers
+or relocate files as part of that work.
+
+New REST calls use the resource subpaths. New built-in Pixel calls use `buildPixel`
+and, only for trusted expressions, `rawPixel`; execute with root `runPixel`, React
+`usePixel`, or resource `runPixelAsync` for async jobs. Stores and React bindings,
+`get`, `post`, `CSRF`, types, constants and error classes remain supported. Do not
+remove deprecated helpers as part of routine sync work. The legacy behavior notes
+below describe retained implementations, not recommendations for new direct calls.
+
+`buildPixel` (`lib/build-pixel.ts`) returns a primitive string with a private
+reactor type brand. `rawPixel` (`lib/raw-pixel.ts`) returns an opaque marker for
+trusted expressions; ordinary strings are always literals. Only these two helper
+functions are public additions. Keep the catalog, value types, brands, inventory,
+and `ResolvePixelOutput` private to defining-file imports. The internal catalog
+lives in `lib/reactors/`; source provenance and verification gaps live in its
+`inventory.json`. Follow the sync skill's `reactors` workflow and root
+`semoss-sync.json` state, independently of REST resource sync.
+
+Both `runPixel` and `usePixel` retain their original first generic and add a
+defaulted input-string generic for inference. Explicit generics override builder
+inference. The shared resolver ignores only the empty-string disable sentinel;
+arbitrary unbranded strings use the legacy fallback. Preserve these contracts,
+including generic instantiation expressions, hook initial-data behavior, and
+unchecked expected-success output typing. A builder result does not introduce
+new transport, runtime response validation, or a different hook lifecycle.
+
+Run `pnpm --filter @semoss/sdk test:integration` to build and verify public
+JavaScript and declaration paths, route-only tree shaking, and initialization.
 
 ## Chat and Agent Ownership
 
@@ -103,7 +196,7 @@ there instead of repeating them in AGENTS files.
 
 When changing an API, inspect its owning implementation and adjacent tests:
 
-- [Chat wrappers](./src/api/chat.ts) and [pixel transport](./src/api/base.ts).
+- [Chat wrappers](./src/api/chat.ts) and [pixel helper](./src/lib/pixel.ts).
 - [Agent wrappers](./src/api/agent.ts) and [AgentStore](./src/stores/agent/agent.store.ts).
 - [MCP wrappers](./src/api/mcp.ts): `runMcpTool` and `makeUserPixelMcp`.
 - [RoomStore](./src/stores/room/room.store.ts) and [shared types](./src/types.ts).
@@ -142,7 +235,8 @@ The SDK owns what the session is signed in to, so an app never tracks or caches 
   be another app or origin (a dev server's popup lands on the deployed client), where the popup
   cannot be read. So besides watching the popup close or come back, it reads the login every two
   seconds and closes the popup once it is there. `oauth` rejects when the popup ends without the
-  login rather than leaving the sign in waiting. Apps call the SDK's `oauth`; none keeps a copy.
+  login rather than leaving the sign in waiting. Existing stores retain this behavior;
+  new direct callers follow the deprecated helper's resource migration guidance.
 
 ## Permission Batches
 
