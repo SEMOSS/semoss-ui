@@ -17,7 +17,9 @@ export function composeEmailPart(
 			name: "ComposeEmail",
 			title: "Compose Email",
 			arguments: args,
-			metadata: { SMSS_MCP_UI: { component: "email-compose" } },
+			metadata: {
+				SMSS_MCP_UI: { resourceURI: "component://email-compose" },
+			},
 			status,
 			...(output ? { output: JSON.stringify(output) } : {}),
 		},

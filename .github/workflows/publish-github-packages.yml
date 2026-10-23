@@ -60,7 +60,7 @@ jobs:
                   const fs = require("fs");
                   const path = require("path");
 
-                  const packageDirs = ["i18n", "sdk", "ui", "shared", "renderer", "chat"];
+                  const packageDirs = ["i18n", "sdk", "ui", "shared", "renderer"];
                   const ownerScope = `@${(process.env.GITHUB_OWNER || "").toLowerCase()}`;
                   const sanitize = (value) =>
                       value
@@ -125,7 +125,6 @@ jobs:
                       "@semoss/ui": `${ownerScope}/ui`,
                       "@semoss/shared": `${ownerScope}/shared`,
                       "@semoss/renderer": `${ownerScope}/renderer`,
-                      "@semoss/chat": `${ownerScope}/chat`,
                   };
 
                   const rewriteImportsInDir = (dirPath) => {
@@ -202,7 +201,7 @@ jobs:
 
             - name: Build packages that emit dist output
               run: |
-                  for package_dir in libs/sdk libs/ui libs/renderer libs/chat; do
+                  for package_dir in libs/sdk libs/ui libs/renderer; do
                       echo "Building ${package_dir}"
                       cd "${package_dir}"
                       pnpm run --if-present build
@@ -211,7 +210,7 @@ jobs:
 
             - name: Publish packages to GitHub Packages
               run: |
-                  for package_dir in libs/i18n libs/sdk libs/ui libs/shared libs/renderer libs/chat; do
+                  for package_dir in libs/i18n libs/sdk libs/ui libs/shared libs/renderer; do
                       echo "Publishing ${package_dir}"
                       cd "${package_dir}"
                       pnpm publish --no-git-checks --tag "${PUBLISH_CHANNEL}"

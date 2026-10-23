@@ -15,6 +15,10 @@ import {
 	isSourcedProposal,
 	readDraftProposal,
 } from "@/features/thread-assistant/thread-draft-proposal";
+import {
+	getToolComponent,
+	TOOL_COMPONENTS,
+} from "@/features/tools/utils/tool-components";
 import { getEditorSendId } from "./room-email-tools";
 
 /** A paused send may review only completed compose calls for the editor it names. */
@@ -120,7 +124,9 @@ export function useRoomEmailProposals({
 			if (message.role !== "assistant") return [message];
 			const calls = message.parts.filter(
 				(part) =>
-					part.type === "tool" && part.tool.name === "ComposeEmail",
+					part.type === "tool" &&
+					getToolComponent(part.tool) ===
+						TOOL_COMPONENTS.emailCompose,
 			);
 			return calls.length
 				? calls.map((part) => ({ ...message, parts: [part] }))

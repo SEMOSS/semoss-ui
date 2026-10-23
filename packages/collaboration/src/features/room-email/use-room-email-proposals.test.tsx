@@ -178,6 +178,48 @@ it("restores history and background results without reopening the workbench", ()
 	expect(composer.openEmailContext()).toBeUndefined();
 });
 
+it("restores every renamed compose URI in one message and ignores legacy name matches", () => {
+	const { completed, composer } = setup();
+	const parts = ["first", "second", "legacy"].map((id) => {
+		const part = composeEmailPart(
+			{ subject: id, message: `Draft ${id}` },
+			id,
+		);
+		if (part.type !== "tool") throw new Error("Expected a tool fixture");
+		return {
+			...part,
+			tool: {
+				...part.tool,
+				name: id === "legacy" ? "ComposeEmail" : "RenamedTool",
+				metadata: {
+					SMSS_MCP_UI:
+						id === "legacy"
+							? { component: "email-compose" }
+							: {
+									resourceURI:
+										"component://email-compose?param1=abcd",
+								},
+				},
+			},
+		};
+	});
+	renderHook(useRoomEmailProposals, {
+		initialProps: {
+			...completed,
+			snapshot: {
+				turn: {
+					...completed.snapshot.turn,
+					messages: [{ id: "answer", role: "assistant", parts }],
+				},
+			},
+		},
+	});
+	expect(
+		composer.getSnapshot().emailDrafts.map((draft) => draft.seed.id),
+	).toEqual([composeDraftId("first"), composeDraftId("second")]);
+	expect(composer.openEmailContext()).toBeUndefined();
+});
+
 it("does not create a proposal for an excluded source", () => {
 	const { completed, composer } = setup();
 	renderHook(useRoomEmailProposals, {
@@ -983,7 +1025,9 @@ it("reviews a completed revision before a paused send, without hydrating unrelat
 			title: "Send email",
 			status: "INPUT_REQUIRED",
 			arguments: { openEmailId: draftId },
-			metadata: { SMSS_MCP_UI: { component: "email-send" } },
+			metadata: {
+				SMSS_MCP_UI: { resourceURI: "component://email-send" },
+			},
 		},
 	});
 	const turn = {

@@ -1,6 +1,6 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { isRequestUserInputAction, parseUserInputRequest } from "@semoss/sdk";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { isToolViewUri, useToolView } from "@semoss/shared";
@@ -12,8 +12,8 @@ import {
 	isFolderToolCall,
 } from "@/features/chat-tools/tools/chat-tool-kind";
 import { ComponentToolView } from "@/features/tool-views/component-tool-view";
-import type { RoomStore } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
+import type { RoomStore } from "@/stores/room/room.store";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { ToolsDefaultView } from "./tools-default-view";
 import { ToolsServerView } from "./tools-server-view";
@@ -71,8 +71,6 @@ export const ToolsView = observer(
 		 */
 		const iframeRef = useRef<HTMLIFrameElement>(null);
 		const iframeReadyRef = useRef(false);
-		const [isLoading, setIsLoading] = useState<boolean>(true);
-		const [url, setUrl] = useState("");
 
 		/**
 		 * Library Hooks
@@ -80,13 +78,22 @@ export const ToolsView = observer(
 
 		// A system app UI is resolved entirely from _meta, so skip the metadata
 		// lookup below: there may be no project or engine behind the tool at all.
-		const resourceURI = tool?._meta?.SMSS_MCP_UI?.resourceURI;
+		const declaredResource = tool?._meta?.SMSS_MCP_UI?.resourceURI;
+		const resourceURI =
+			typeof declaredResource === "string"
+				? declaredResource.trim()
+				: undefined;
 		const systemAppUrl = resolveSystemAppUrl(resourceURI);
 
 		// A component:// view is drawn in the page from the call itself, so it
 		// needs no lookup either, and is never loaded in a frame.
 		const toolView = useToolView(resourceURI);
 		const isComponentView = isToolViewUri(resourceURI);
+		const canShowPage =
+			Boolean(resourceURI) &&
+			!isComponentView &&
+			(isAskExecutionMode(tool?._meta?.SMSS_MCP_EXECUTION) ||
+				Boolean(toolResponse));
 
 		// get the metadata — PROJECT-hosted tools use ProjectInfo, every other
 		// engine type (VECTOR, STORAGE, DATABASE, MODEL, FUNCTION, ...) uses
@@ -96,7 +103,7 @@ export const ToolsView = observer(
 		const getAppInfo = usePixel<{
 			project_type?: "BLOCKS" | "CODE" | "INSIGHT" | "";
 		}>(
-			app && !systemAppUrl && !isComponentView
+			app && canShowPage && !systemAppUrl
 				? isProjectType
 					? `ProjectInfo(project=["${app}"]);`
 					: `EngineInfo(engine=["${app}"]);`
@@ -107,6 +114,29 @@ export const ToolsView = observer(
 				},
 			},
 		);
+
+		const isLoading =
+			canShowPage &&
+			!systemAppUrl &&
+			Boolean(app) &&
+			(getAppInfo.status === "INITIAL" ||
+				getAppInfo.status === "LOADING");
+		let url = "";
+		if (canShowPage) {
+			if (systemAppUrl) {
+				url = systemAppUrl;
+			} else if (
+				resourceURI &&
+				app &&
+				getAppInfo.status === "SUCCESS" &&
+				!resourceURI.startsWith("system://")
+			) {
+				url =
+					getAppInfo.data.project_type === "BLOCKS"
+						? `${PLATFORM_URL}/#/s/${app}${resourceURI}`
+						: `${Env.MODULE}/public_home/${app}/portals${resourceURI}`;
+			}
+		}
 
 		/**
 		 * Functions
@@ -149,134 +179,6 @@ export const ToolsView = observer(
 		/**
 		 * Effects
 		 */
-
-		useEffect(() => {
-			const chooseUrl = async () => {
-				// Ignore if no tool
-				if (!tool) {
-					setUrl("");
-					setIsLoading(false);
-					return;
-				}
-
-				// A component:// view is drawn below, or the generic view when
-				// the playground has no such view; neither is a page.
-				if (isComponentView) {
-					setUrl("");
-					setIsLoading(false);
-					return;
-				}
-
-				// Auto-executing tool that hasn't completed yet — show default view
-				if (
-					!isAskExecutionMode(tool._meta?.SMSS_MCP_EXECUTION) &&
-					!toolResponse
-				) {
-					setUrl("");
-					setIsLoading(false);
-					return;
-				}
-
-				// System app UI. Resolved before any metadata gate because no
-				// ProjectInfo/EngineInfo pixel is issued for these tools, so
-				// getAppInfo never leaves INITIAL.
-				if (systemAppUrl) {
-					setUrl(systemAppUrl);
-					setIsLoading(false);
-					return;
-				}
-
-				// No app to resolve (e.g. platform-synthesized tools like the
-				// subagent control tools, which aren't backed by any MCP
-				// project/engine) -- usePixel never leaves "INITIAL" for an
-				// empty pixel string, so this must be checked before the
-				// loading gate below or it waits forever.
-				if (!app) {
-					setUrl("");
-					setIsLoading(false);
-					return;
-				}
-
-				// Finish loading
-				if (
-					getAppInfo.status === "INITIAL" ||
-					getAppInfo.status === "LOADING"
-				) {
-					return;
-				}
-
-				// Ignore if the app metadata could not be resolved
-				if (getAppInfo.status === "ERROR") {
-					setUrl("");
-					setIsLoading(false);
-					return;
-				}
-
-				setIsLoading(true);
-
-				if (!tool._meta?.SMSS_MCP_UI) {
-					// Legacy, check for portals
-
-					if (getAppInfo.data.project_type === "BLOCKS") {
-						// Low code app
-						setUrl(`${PLATFORM_URL}/#/s/${app}/`);
-					}
-
-					// Check if portals exists
-					let foundApp = false;
-					try {
-						const response = await fetch(
-							`${Env.MODULE}/public_home/${app}/portals/`,
-							{ method: "GET" },
-						);
-						const text = await response.text();
-						//FixMe: Always returns a 200 so currently checking against default text returned
-						foundApp =
-							response.status === 200 &&
-							Boolean(text) &&
-							text !==
-								"Publish is not enabled on this project or there was an error publishing this project";
-					} catch (_e) {}
-
-					// Portals view else use default view off tool JSON
-					setUrl(
-						foundApp
-							? `${Env.MODULE}/public_home/${app}/portals/`
-							: "",
-					);
-				} else {
-					// Modern
-					const resourceURI = tool._meta?.SMSS_MCP_UI?.resourceURI;
-					if (!resourceURI) {
-						// No UI defined, show form
-						setUrl("");
-					} else if (resourceURI.startsWith("system://")) {
-						// Malformed system URI. Fall back to the form rather than
-						// building a public_home path out of the scheme.
-						setUrl("");
-					} else if (getAppInfo.data.project_type === "BLOCKS") {
-						// Low code app
-						setUrl(`${PLATFORM_URL}/#/s/${app}${resourceURI}`);
-					} else {
-						setUrl(
-							`${Env.MODULE}/public_home/${app}/portals${resourceURI}`,
-						);
-					}
-				}
-
-				setIsLoading(false);
-			};
-
-			chooseUrl();
-		}, [
-			app,
-			tool,
-			toolResponse,
-			systemAppUrl,
-			isComponentView,
-			getAppInfo.status,
-			getAppInfo.data,
-		]);
 
 		useEffect(() => {
 			if (iframeReadyRef.current) {

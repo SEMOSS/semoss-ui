@@ -70,7 +70,7 @@ it("shows each ask on one line and decides plain calls in place", async () => {
 it("routes editor email sends to review without a generic approval shortcut", async () => {
 	const approval = ask("send", { arguments: { openEmailId: "draft" } });
 	workbench.tools.send.metadata = {
-		SMSS_MCP_UI: { component: "email-send" },
+		SMSS_MCP_UI: { resourceURI: "component://email-send" },
 	};
 	render(
 		<RoomRunStatus
@@ -94,7 +94,7 @@ it("keeps editor send review reachable on mobile", async () => {
 		arguments: { openEmailId: "draft" },
 	});
 	workbench.tools["send-mobile"].metadata = {
-		SMSS_MCP_UI: { component: "email-send" },
+		SMSS_MCP_UI: { resourceURI: "component://email-send" },
 	};
 	render(
 		<RoomRunStatus

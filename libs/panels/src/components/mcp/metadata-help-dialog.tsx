@@ -52,7 +52,7 @@ const META_UI_KEYS: MetaKeyDoc[] = [
 	{
 		key: "resourceURI",
 		type: "string",
-		desc: 'The tool\'s UI: a page of the project\'s portal, e.g. "/my-portal/page"; an app that ships with the web app, "system://<package>/<path>"; or one of the chat\'s own views, "component://<library>/<view>?<params>", such as "component://mail/compose?intent=send&provider=google" or "component://calendar/agenda?provider=microsoft". The mail views are list, message, and compose; the calendar views are agenda, event, event-edit, and availability. Requires displayLocation other than hidden.',
+		desc: 'The tool\'s UI: a project portal path such as "/my-portal/page", an HTTP URL, a bundled app at "system://<package>/<path>", or a native view at "component://<componentName>?<params>". Examples: "component://email-compose?param1=abcd", "component://mail-compose?intent=send&provider=google", and "component://calendar-agenda?provider=microsoft". Names are flat and must be supported by the host. Query parameters configure the view separately from tool arguments. Legacy component fields, tool names, and path-style component URIs do not select native views. Requires displayLocation other than hidden.',
 	},
 	{
 		key: "autoOpen",

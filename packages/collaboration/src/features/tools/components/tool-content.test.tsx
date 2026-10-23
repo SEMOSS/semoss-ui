@@ -70,7 +70,7 @@ it("blocks generic approval for an editor send even when its editor has not rest
 		title: "Send Email",
 		arguments: { openEmailId: "missing" },
 		status: "INPUT_REQUIRED",
-		metadata: { SMSS_MCP_UI: { component: "email-send" } },
+		metadata: { SMSS_MCP_UI: { resourceURI: "component://email-send" } },
 	};
 	workbench.tools = { send: tool };
 	workbench.pendingApprovals = [

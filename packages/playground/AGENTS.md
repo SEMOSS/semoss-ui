@@ -224,16 +224,22 @@ affects only the current room instance.
 ## Tool views
 
 `src/features/tool-views/` draws tool calls whose `SMSS_MCP_UI.resourceURI` is
-`component://<library>/<view>`, with the views `@semoss/connectors` provides
+`component://<componentName>?<params>`, with flat names such as `mail-compose` and
+`calendar-event-edit` from `@semoss/connectors`
 (`TOOL_VIEW_LIBRARIES`: `mail` and `calendar`), in the page and never in a frame. The room page
 mounts `ToolViewProvider` around the conversation workspace, so the conversation and the sidebar
-both find them.
+both find them. Library names group registrations internally; they never form URI paths.
+Legacy path-style URIs and `component` fields use the generic view. After a coordinated
+frontend/backend release, regenerate existing MCP catalogs; for Playground's generated user
+connector catalog, save the connector tool settings again and sync the room's tools.
 
 - **Routing.** `ToolsView` and `ResponseMessageTool` give a call, in order: work folder calls
   their `ChatToolCard`; a `component://` view the playground draws, `ComponentToolView`; then
   `system://` apps, portal pages, and the default form. A `component://` URI is never turned into
   a portal URL, and its project or engine is not looked up. A call whose view the playground does
   not draw, or whose view fails, shows the card it would have without one.
+  Missing or invalid resource values also use that generic card; a portal page must be
+  declared explicitly through `resourceURI` rather than discovered from the tool's project.
 - **Where.** In the conversation an approval sizes to its form and a result is kept to a bounded
   height; in the sidebar the view fills its tab. Once a decision is made the view shows the result,
   even before an agent run's next update, so a call is not decided twice. The room page provides

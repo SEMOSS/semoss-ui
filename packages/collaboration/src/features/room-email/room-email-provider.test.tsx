@@ -302,7 +302,9 @@ it("requires an explicit Send action and never approves before the editor saves"
 			title: "Send email",
 			arguments: approval.arguments,
 			status: "INPUT_REQUIRED",
-			metadata: { SMSS_MCP_UI: { component: "email-send" } },
+			metadata: {
+				SMSS_MCP_UI: { resourceURI: "component://email-send" },
+			},
 		},
 	};
 	render(

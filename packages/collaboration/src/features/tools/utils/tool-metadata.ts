@@ -1,4 +1,9 @@
 import { Env } from "@semoss/sdk";
+import {
+	isToolViewUri,
+	parseToolViewUri,
+	type ToolViewUri,
+} from "@semoss/shared";
 import type { ConversationTool } from "@/features/messages/types/message";
 
 const SYSTEM_APP_URI = /^system:\/\/([a-zA-Z0-9._-]+)(\/.*)?$/;
@@ -9,7 +14,6 @@ interface ToolUiMetadata {
 	displayLocation?: unknown;
 	resourceURI?: unknown;
 	autoOpen?: unknown;
-	component?: unknown;
 }
 
 function uiMetadata(tool: ConversationTool): ToolUiMetadata | undefined {
@@ -31,14 +35,19 @@ export function getToolDisplayLocation(
 		: "sidebar";
 }
 
-/** The native component the tool declares for its content (SMSS_MCP_UI.component), if any. */
-export function getDeclaredToolComponent(
-	tool: ConversationTool,
-): string | undefined {
-	const component = uiMetadata(tool)?.component;
-	return typeof component === "string" && component.trim()
-		? component.trim()
+/** The declared UI resource, independent of whether this host can render it. */
+export function getToolResourceUri(tool: ConversationTool): string | undefined {
+	const resource = uiMetadata(tool)?.resourceURI;
+	return typeof resource === "string" && resource.trim()
+		? resource.trim()
 		: undefined;
+}
+
+/** The native view and its configuration, never inferred from tool names or arguments. */
+export function getDeclaredToolView(
+	tool: ConversationTool,
+): ToolViewUri | null {
+	return parseToolViewUri(getToolResourceUri(tool));
 }
 
 export function shouldAutoOpenTool(tool: ConversationTool): boolean {
@@ -57,8 +66,8 @@ export function resolveToolUiUrl(
 	tool: ConversationTool,
 	isBlocks = false,
 ): string | undefined {
-	const resource = uiMetadata(tool)?.resourceURI;
-	if (typeof resource !== "string" || !resource) return undefined;
+	const resource = getToolResourceUri(tool);
+	if (!resource || isToolViewUri(resource)) return undefined;
 
 	const system = SYSTEM_APP_URI.exec(resource);
 	if (system) return `../../${system[1]}/dist${system[2] ?? "/"}`;

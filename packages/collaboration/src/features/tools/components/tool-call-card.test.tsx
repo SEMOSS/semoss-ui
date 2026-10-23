@@ -4,12 +4,13 @@ import type { ContextType } from "react";
 import type { ConversationTool } from "@/features/messages/types/message";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import { RoomEmailStore } from "@/features/room-email/room-email-store";
+import type { PendingToolApproval } from "@/features/rooms/types/room";
 import type { InsightActions } from "@/lib/pixel";
 import { ToolCallCard } from "./tool-call-card";
 
 const workbench = vi.hoisted(() => ({
 	tools: {} as Record<string, ConversationTool>,
-	pendingApprovals: [],
+	pendingApprovals: [] as PendingToolApproval[],
 	isOpen: false,
 	activeToolId: null,
 	getToolDisplayMode: vi.fn(() => "hidden"),
@@ -17,11 +18,19 @@ const workbench = vi.hoisted(() => ({
 	openWorkbench: vi.fn(),
 	openInline: vi.fn(),
 	closeTool: vi.fn(),
+	onApproveTool: vi.fn().mockResolvedValue(undefined),
+	onRejectTool: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("../tool-workbench.context", () => ({
 	useToolWorkbench: () => workbench,
 }));
 vi.mock("../api/use-tool-ui-url", () => ({ useToolUiUrl: () => undefined }));
+vi.mock("@/features/delegations/components/attach-room-file", () => ({
+	AttachRoomFile: () => null,
+}));
+vi.mock("@/features/delegations/components/person-picker", () => ({
+	PersonPicker: () => null,
+}));
 
 const composeTool: ConversationTool = {
 	id: "compose",
@@ -35,7 +44,7 @@ const composeTool: ConversationTool = {
 	},
 	status: "COMPLETED",
 	output: JSON.stringify({ shown: true }),
-	metadata: { SMSS_MCP_UI: { component: "email-compose" } },
+	metadata: { SMSS_MCP_UI: { resourceURI: "component://email-compose" } },
 };
 
 function setup(tool = composeTool, store = new RoomEmailStore()) {
@@ -83,6 +92,7 @@ beforeEach(() => {
 		})),
 	);
 	workbench.isToolInline.mockReturnValue(false);
+	workbench.pendingApprovals = [];
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -143,7 +153,7 @@ it("keeps failed compose details and their full error accessible inline", async 
 		error: failure,
 		metadata: {
 			SMSS_MCP_UI: {
-				component: "email-compose",
+				resourceURI: "component://email-compose",
 				displayLocation: "inline",
 			},
 		},
@@ -198,3 +208,96 @@ it("inspects a failed revision while preserving the existing editor", async () =
 	expect(draft.getSnapshot()).toBe(before);
 	expect(store.getSnapshot().emailDrafts).toEqual([draft]);
 });
+
+it("selects a renamed delegation submit by URI and approves the edited answer with the keyboard", async () => {
+	const tool: ConversationTool = {
+		...composeTool,
+		name: "renamed",
+		status: "INPUT_REQUIRED",
+		arguments: { response: "Original answer" },
+		metadata: {
+			SMSS_DELEGATION_REQUESTER: "Dana",
+			SMSS_MCP_UI: {
+				resourceURI:
+					"component://delegation-submit?response=configuration",
+			},
+		},
+	};
+	const action: PendingToolApproval = {
+		toolId: tool.id,
+		parentMessageId: tool.parentMessageId,
+		toolName: tool.name,
+		arguments: tool.arguments,
+	};
+	workbench.pendingApprovals = [action];
+	workbench.isToolInline.mockReturnValue(true);
+	const view = setup(tool);
+	const answer = screen.getByRole("textbox", { name: "Answer to send" });
+	expect(answer).toHaveValue("Original answer");
+	await userEvent.clear(answer);
+	await userEvent.type(answer, "My reviewed answer");
+	view.rerender(view.content());
+	expect(answer).toHaveFocus();
+	expect(answer).toHaveValue("My reviewed answer");
+	await userEvent.tab();
+	expect(screen.getByRole("button", { name: "Keep working" })).toHaveFocus();
+	await userEvent.tab();
+	expect(screen.getByRole("button", { name: "Send answer" })).toHaveFocus();
+	await userEvent.keyboard("{Enter}");
+	expect(workbench.onApproveTool).toHaveBeenCalledWith(action, {
+		response: "My reviewed answer",
+		files: [],
+	});
+	expect(workbench.closeTool).toHaveBeenCalledWith(tool.id);
+});
+
+it("selects delegation request approval by URI without a workflow kind and preserves rejection", async () => {
+	const tool: ConversationTool = {
+		...composeTool,
+		name: "renamed",
+		status: "INPUT_REQUIRED",
+		arguments: { assignee: "Dana", question: "Review this" },
+		metadata: {
+			SMSS_MCP_UI: { resourceURI: "component://delegation-request" },
+		},
+	};
+	const action: PendingToolApproval = {
+		toolId: tool.id,
+		parentMessageId: tool.parentMessageId,
+		toolName: tool.name,
+		arguments: tool.arguments,
+	};
+	workbench.pendingApprovals = [action];
+	workbench.isToolInline.mockReturnValue(true);
+	setup(tool);
+	expect(screen.getByRole("textbox", { name: "Request" })).toHaveValue(
+		"Review this",
+	);
+	await userEvent.click(screen.getByRole("button", { name: "Don't send" }));
+	expect(workbench.onRejectTool).toHaveBeenCalledWith(action);
+	expect(workbench.onApproveTool).not.toHaveBeenCalled();
+});
+
+it.each([
+	{
+		SMSS_TOOL_KIND: "semoss_submit_delegation",
+		SMSS_MCP_UI: { component: "delegation-submit" },
+	},
+	{ SMSS_MCP_UI: { component: "email-compose" } },
+	{ SMSS_MCP_UI: { resourceURI: "component://email/compose" } },
+])(
+	"uses a generic card for legacy metadata and familiar names: %j",
+	async (metadata) => {
+		setup({ ...composeTool, metadata });
+		expect(
+			screen.queryByRole("textbox", { name: "Answer to send" }),
+		).not.toBeInTheDocument();
+		expect(screen.queryByText("Draft unavailable")).not.toBeInTheDocument();
+		await userEvent.click(
+			screen.getByRole("button", {
+				name: "Compose email details in workbench",
+			}),
+		);
+		expect(workbench.openWorkbench).toHaveBeenCalledWith("compose");
+	},
+);

@@ -59,7 +59,7 @@ chevron included, through `TreeViewItem`'s `rowClassName`.
 ### Tool views (`components/tool-view/`)
 
 A tool names the view a call is drawn with in `_meta.SMSS_MCP_UI.resourceURI`. A
-`component://<library>/<view>?<params>` URI names a React component the host draws in the page,
+`component://<componentName>?<params>` URI names a React component the host draws in the page,
 never in a frame; `system://` and portal paths stay pages. This folder is the contract between
 the libraries that provide views and the hosts that draw them, and knows nothing about any one
 library:
@@ -70,9 +70,13 @@ library:
   decisions (`onApprove` with edited arguments, `onDecline`, and `onRespond`, which resolves the
   call with what the user did instead, without running it), and the `host`'s offers (sign in,
   save, add to context).
-- A library exports a `ToolViewLibrary`, a plain map of views by name, usually lazy. A host passes
+- A library exports a `ToolViewLibrary`, a plain map keyed by complete flat names such as
+  `mail-compose`, usually lazy. Library groups are internal organization, never URI paths.
+  A host passes
   the libraries it draws to `ToolViewProvider`, at module scope, and finds a call's view with
-  `useToolView(uri)`, which returns null for a URI it does not draw.
+  `useToolView(uri)`, which returns null for a URI it does not draw or an ambiguous registration.
+  `parseToolViewUri` returns `{ componentName, params }`. Old path-style URIs, legacy `component`
+  fields, and tool names do not select a view.
 - `ToolViewRenderer` draws a found view with a placeholder while its code loads and the host's
   fallback if it fails (`ToolViewBoundary`). A host shows its generic view for a `component://`
   URI it cannot draw (`isToolViewUri`).
