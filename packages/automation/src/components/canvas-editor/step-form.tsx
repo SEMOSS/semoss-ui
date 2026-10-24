@@ -3,12 +3,14 @@ import type {
 	AppConfig,
 	AutomationNode,
 	BranchConfig,
+	CleanConfig,
 	DatabaseEngineConfig,
 	DataExtractConfig,
 	FunctionEngineConfig,
 	LoopConfig,
 	ModelEngineConfig,
 	StorageEngineConfig,
+	TransformConfig,
 	VectorEngineConfig,
 	WaitConfig,
 } from "../../domain/automation.types";
@@ -17,6 +19,7 @@ import { normalizeJevDecisionConfig } from "../../domain/automation-workflow-ada
 import { AgentRunForm } from "./forms/agent-run-form";
 import { AppEngineForm } from "./forms/app-engine-form";
 import { BranchConditionBuilder } from "./forms/branch-condition-builder";
+import { CleanForm } from "./forms/clean-form";
 import { DataExtractForm } from "./forms/data-extract-form";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
@@ -25,6 +28,7 @@ import { LoopForm } from "./forms/loop-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
 import { PillInput } from "./forms/pill-input";
 import { StorageEngineForm } from "./forms/storage-engine-form";
+import { TransformForm } from "./forms/transform-form";
 import { VectorEngineForm } from "./forms/vector-engine-form";
 
 interface StepFormProps {
@@ -86,9 +90,30 @@ export function StepForm({
 				/>
 			);
 		case "data":
+			if (step.workflowType === "data.transform") {
+				return (
+					<TransformForm
+						appId={appId}
+						config={step.config as TransformConfig}
+						upstreamVars={upstreamVars}
+						onChange={update}
+						readOnly={readOnly}
+					/>
+				);
+			}
 			return (
 				<DataExtractForm
 					config={step.config as DataExtractConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					readOnly={readOnly}
+				/>
+			);
+		case "clean":
+			return (
+				<CleanForm
+					appId={appId}
+					config={step.config as CleanConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
 					readOnly={readOnly}
