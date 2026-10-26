@@ -159,10 +159,10 @@ describe("Automation history API validation", () => {
 			pixelResponse({ saved: true, revision: "new-revision" }),
 		);
 		await expect(
-			rollbackAutomation("app-1", "abc123"),
+			rollbackAutomation("app-1", "abc123", "current-revision"),
 		).resolves.toBeUndefined();
 		expect(runPixel).toHaveBeenCalledWith(
-			'RollbackAutomation(project=["app-1"], revision=["abc123"]);',
+			'RollbackAutomation(project=["app-1"], revision=["abc123"], expectedRevision=["current-revision"]);',
 		);
 	});
 
@@ -173,9 +173,9 @@ describe("Automation history API validation", () => {
 		{ saved: true, revision: "" },
 	])("rejects unsuccessful rollback %j", async (output) => {
 		vi.mocked(runPixel).mockResolvedValue(pixelResponse(output));
-		await expect(rollbackAutomation("app-1", "abc123")).rejects.toThrow(
-			"not confirmed",
-		);
+		await expect(
+			rollbackAutomation("app-1", "abc123", "current-revision"),
+		).rejects.toThrow("not confirmed");
 	});
 
 	it("surfaces permission errors for version listing and restoration", async () => {
@@ -185,9 +185,9 @@ describe("Automation history API validation", () => {
 		await expect(listAutomationVersions("app-1")).rejects.toThrow(
 			"Access denied",
 		);
-		await expect(rollbackAutomation("app-1", "abc123")).rejects.toThrow(
-			"Access denied",
-		);
+		await expect(
+			rollbackAutomation("app-1", "abc123", "current-revision"),
+		).rejects.toThrow("Access denied");
 	});
 
 	it("surfaces Pixel errors instead of treating failed history as empty", async () => {

@@ -11,6 +11,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
+	InlineCode,
+	Muted,
+	Small,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -35,8 +38,30 @@ interface AutomationVersionHistoryProps {
 	isDirty: boolean;
 	/** Whether the current user and canvas state allow restoring. */
 	canRestore: boolean;
+	/** Current definition revision used to reject a stale restore. */
+	currentRevision: string | null;
 	/** Prevents opening history while the canvas is busy. */
 	disabled: boolean;
+	/** Whether advanced developer controls are visible. */
+	isDeveloperMode: boolean;
+}
+
+const RESTORE_MESSAGE_PREFIX = "Restore automation definition from ";
+
+function formatRevision(revision: string): string {
+	return revision.length > 12 ? revision.slice(0, 12) : revision;
+}
+
+function formatVersionMessage(message: string): string {
+	if (!message.startsWith(RESTORE_MESSAGE_PREFIX)) {
+		return message || "Saved automation";
+	}
+	const restoredRevision = message
+		.slice(RESTORE_MESSAGE_PREFIX.length)
+		.trim();
+	return restoredRevision
+		? `Restored from ${formatRevision(restoredRevision)}`
+		: "Restored automation";
 }
 
 /** Lists saved versions and confirms restoration before replacing the canvas draft. */
@@ -47,7 +72,9 @@ export function AutomationVersionHistory({
 	onRestored,
 	isDirty,
 	canRestore,
+	currentRevision,
 	disabled,
+	isDeveloperMode,
 }: AutomationVersionHistoryProps) {
 	const [versions, setVersions] = useState<AutomationVersion[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
@@ -59,6 +86,7 @@ export function AutomationVersionHistory({
 	const restorePending = useRef(false);
 	const backButton = useRef<HTMLButtonElement>(null);
 	const selectedButton = useRef<HTMLButtonElement | null>(null);
+	const isOpen = isDeveloperMode && open;
 
 	const loadVersions = useCallback(() => {
 		const generation = ++requestGeneration.current;
@@ -87,22 +115,23 @@ export function AutomationVersionHistory({
 	}, [appId]);
 
 	useEffect(() => {
-		if (open) loadVersions();
+		if (isOpen) loadVersions();
 		return () => {
 			requestGeneration.current += 1;
 		};
-	}, [loadVersions, open]);
+	}, [isOpen, loadVersions]);
 
 	useEffect(() => {
-		if (!open) return;
+		if (!isOpen) return;
 		if (selectedVersion) backButton.current?.focus();
 		else selectedButton.current?.focus();
-	}, [open, selectedVersion]);
+	}, [isOpen, selectedVersion]);
 
 	const handleRestore = async (): Promise<void> => {
 		if (
 			!selectedVersion ||
 			!canRestore ||
+			!currentRevision ||
 			disabled ||
 			restorePending.current
 		)
@@ -112,7 +141,11 @@ export function AutomationVersionHistory({
 		setIsRestoring(true);
 		setError(null);
 		try {
-			await rollbackAutomation(appId, selectedVersion.id);
+			await rollbackAutomation(
+				appId,
+				selectedVersion.id,
+				currentRevision,
+			);
 		} catch (reason: unknown) {
 			if (requestGeneration.current === generation) {
 				setError(
@@ -133,30 +166,38 @@ export function AutomationVersionHistory({
 
 	return (
 		<Dialog
-			open={open}
+			open={isOpen}
 			onOpenChange={(nextOpen) => {
-				if (!restorePending.current) onOpenChange(nextOpen);
+				if (isDeveloperMode && !restorePending.current)
+					onOpenChange(nextOpen);
 			}}
 		>
-			<Tooltip disableHoverableContent={false}>
-				<TooltipTrigger asChild>
-					<DialogTrigger asChild>
-						<Button
-							type="button"
-							size="sm"
-							variant="outline"
-							className="bg-background shadow-sm"
-							disabled={disabled}
-							aria-label="Version history"
-						>
-							<History className="size-3.5" aria-hidden="true" />
-						</Button>
-					</DialogTrigger>
-				</TooltipTrigger>
-				<TooltipContent side="bottom">Version history</TooltipContent>
-			</Tooltip>
+			{isDeveloperMode && (
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<DialogTrigger asChild>
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="bg-background shadow-sm"
+								disabled={disabled}
+								aria-label="Version history"
+							>
+								<History
+									className="size-3.5"
+									aria-hidden="true"
+								/>
+							</Button>
+						</DialogTrigger>
+					</TooltipTrigger>
+					<TooltipContent side="bottom">
+						Version history
+					</TooltipContent>
+				</Tooltip>
+			)}
 			<DialogContent
-				className="sm:max-w-xl"
+				className="sm:max-w-lg"
 				showCloseButton={!isRestoring}
 				onEscapeKeyDown={(event) => {
 					if (restorePending.current) event.preventDefault();
@@ -168,7 +209,7 @@ export function AutomationVersionHistory({
 				<DialogHeader>
 					<DialogTitle>
 						{selectedVersion
-							? `Restore version ${selectedVersion.id}?`
+							? `Restore version ${formatRevision(selectedVersion.id)}?`
 							: "Version history"}
 					</DialogTitle>
 					<DialogDescription>
@@ -201,32 +242,49 @@ export function AutomationVersionHistory({
 						</output>
 					) : (
 						<ul
-							className="max-h-80 divide-y overflow-y-auto"
+							className="max-h-80 divide-y overflow-y-auto pr-2"
 							aria-label="Saved versions"
 						>
 							{versions.map((version) => (
 								<li
 									key={version.id}
-									className="flex min-w-0 flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+									className="flex min-w-0 flex-col gap-3 px-1 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
 								>
-									<div className="min-w-0 space-y-1 text-sm">
-										<p className="break-words font-medium">
-											{version.message ||
-												"Saved automation"}
-										</p>
-										<p className="break-words text-muted-foreground">
-											{version.user} | {version.date}
-										</p>
-										<p className="break-all font-mono text-muted-foreground text-xs">
-											{version.id}
-										</p>
+									<div className="min-w-0 space-y-2">
+										<Small
+											className="break-words text-foreground"
+											title={version.message}
+										>
+											{formatVersionMessage(
+												version.message,
+											)}
+										</Small>
+										<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+											<Muted>{version.user}</Muted>
+											<span
+												className="text-muted-foreground"
+												aria-hidden="true"
+											>
+												•
+											</span>
+											<Muted>{version.date}</Muted>
+										</div>
+										<InlineCode
+											title={`Revision ${version.id}`}
+										>
+											{formatRevision(version.id)}
+										</InlineCode>
 									</div>
 									<Button
 										type="button"
 										size="sm"
 										variant="outline"
 										className="shrink-0"
-										disabled={!canRestore || disabled}
+										disabled={
+											!canRestore ||
+											!currentRevision ||
+											disabled
+										}
 										aria-label={`Restore version ${version.id}`}
 										onClick={(event) => {
 											selectedButton.current =
@@ -248,13 +306,25 @@ export function AutomationVersionHistory({
 				</div>
 				{selectedVersion && (
 					<>
-						<div className="space-y-1 break-words text-sm">
-							<p className="font-medium">
-								{selectedVersion.message || "Saved automation"}
-							</p>
-							<p className="text-muted-foreground">
-								{selectedVersion.user} | {selectedVersion.date}
-							</p>
+						<div className="space-y-2 break-words">
+							<Small className="text-foreground">
+								{formatVersionMessage(selectedVersion.message)}
+							</Small>
+							<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+								<Muted>{selectedVersion.user}</Muted>
+								<span
+									className="text-muted-foreground"
+									aria-hidden="true"
+								>
+									•
+								</span>
+								<Muted>{selectedVersion.date}</Muted>
+							</div>
+							<InlineCode
+								title={`Revision ${selectedVersion.id}`}
+							>
+								{formatRevision(selectedVersion.id)}
+							</InlineCode>
 						</div>
 						<DialogFooter>
 							<Button
@@ -272,7 +342,10 @@ export function AutomationVersionHistory({
 							<Button
 								type="button"
 								disabled={
-									isRestoring || !canRestore || disabled
+									isRestoring ||
+									!canRestore ||
+									!currentRevision ||
+									disabled
 								}
 								onClick={() => void handleRestore()}
 							>

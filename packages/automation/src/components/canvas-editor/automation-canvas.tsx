@@ -1742,6 +1742,7 @@ export const AutomationCanvasContent = forwardRef<
 	const handleDevModeChange = useCallback(
 		(value: boolean) => {
 			if (readOnly || viewingHistory) return;
+			if (!value) setIsVersionHistoryOpen(false);
 			setDevMode(value);
 			localStorage.setItem(`automation-devmode-${appId}`, String(value));
 		},
@@ -4472,10 +4473,36 @@ export const AutomationCanvasContent = forwardRef<
 										/>
 									</ReactFlow>
 
+									{readOnly &&
+										mcpMode !== "trigger" &&
+										!viewingHistory && (
+											<div className="absolute top-4 right-4 z-30">
+												<AutomationVersionHistory
+													key={appId}
+													appId={appId}
+													open={isVersionHistoryOpen}
+													onOpenChange={
+														setIsVersionHistoryOpen
+													}
+													onRestored={() => undefined}
+													isDirty={false}
+													canRestore={false}
+													currentRevision={
+														definitionRevisionRef.current
+													}
+													disabled={
+														!workflowLoaded ||
+														isRunInputDialogOpen
+													}
+													isDeveloperMode={devMode}
+												/>
+											</div>
+										)}
+
 									<div
 										className={`absolute top-4 right-4 left-4 z-30 flex-wrap items-center justify-end gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory ? "hidden" : "flex"}`}
 									>
-										{mcpMode !== "trigger" && devMode && (
+										{!readOnly && mcpMode !== "trigger" && (
 											<AutomationVersionHistory
 												key={appId}
 												appId={appId}
@@ -4487,6 +4514,9 @@ export const AutomationCanvasContent = forwardRef<
 												canRestore={
 													!readOnly && !viewingHistory
 												}
+												currentRevision={
+													definitionRevisionRef.current
+												}
 												disabled={
 													saving ||
 													running ||
@@ -4495,6 +4525,7 @@ export const AutomationCanvasContent = forwardRef<
 													activeRun?.STATUS ===
 														"WAITING_FOR_INPUT"
 												}
+												isDeveloperMode={devMode}
 												onRestored={() => {
 													loadedRef.current = false;
 													setWorkflowLoaded(false);

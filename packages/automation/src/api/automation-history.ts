@@ -48,9 +48,10 @@ export async function listAutomationVersions(
 export async function rollbackAutomation(
 	appId: string,
 	revision: string,
+	expectedRevision: string,
 ): Promise<void> {
 	const response = await runPixel(
-		`RollbackAutomation(project=${JSON.stringify([appId])}, revision=${JSON.stringify([revision])});`,
+		`RollbackAutomation(project=${JSON.stringify([appId])}, revision=${JSON.stringify([revision])}, expectedRevision=${JSON.stringify([expectedRevision])});`,
 	);
 	throwPixelErrors(response.errors);
 	const output = response.pixelReturn?.[0]?.output;

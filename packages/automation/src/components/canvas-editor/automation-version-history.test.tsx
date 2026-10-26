@@ -34,7 +34,9 @@ async function renderHistory(overrides = {}) {
 				onRestored={onRestored}
 				isDirty={false}
 				canRestore
+				currentRevision="current-revision"
 				disabled={false}
+				isDeveloperMode
 				{...overrides}
 			/>,
 		),
@@ -92,6 +94,36 @@ describe("Automation version history", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(true);
 	});
 
+	it("hides version history outside developer mode", async () => {
+		await renderHistory({ isDeveloperMode: false });
+		expect(
+			container.querySelector('button[aria-label="Version history"]'),
+		).toBeNull();
+		expect(document.body.textContent).not.toContain("Version history");
+		expect(listAutomationVersions).not.toHaveBeenCalled();
+	});
+
+	it("shows compact revision details", async () => {
+		const revision = "b".repeat(40);
+		const restoredRevision = "a".repeat(40);
+		vi.mocked(listAutomationVersions).mockResolvedValue([
+			{
+				...version,
+				id: revision,
+				message: `Restore automation definition from ${restoredRevision}`,
+			},
+		]);
+		await renderHistory();
+		expect(document.body.textContent).toContain(
+			`Restored from ${restoredRevision.slice(0, 12)}`,
+		);
+		expect(document.body.textContent).toContain(revision.slice(0, 12));
+		expect(document.body.textContent).not.toContain(restoredRevision);
+		expect(
+			document.querySelector(`[title="Revision ${revision}"]`),
+		).not.toBeNull();
+	});
+
 	it("requires confirmation before discarding a draft and restoring", async () => {
 		await renderHistory({ isDirty: true });
 		await clickButton("Restore version abc123");
@@ -103,6 +135,7 @@ describe("Automation version history", () => {
 		expect(rollbackAutomation).toHaveBeenCalledExactlyOnceWith(
 			"app-1",
 			"abc123",
+			"current-revision",
 		);
 		expect(onRestored).toHaveBeenCalledOnce();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -150,6 +183,13 @@ describe("Automation version history", () => {
 
 	it("prevents restoration without edit permission", async () => {
 		await renderHistory({ canRestore: false });
+		await clickButton("Restore version abc123");
+		expect(rollbackAutomation).not.toHaveBeenCalled();
+		expect(document.body.textContent).not.toContain("Confirm restore");
+	});
+
+	it("prevents restoration without a current definition revision", async () => {
+		await renderHistory({ currentRevision: null });
 		await clickButton("Restore version abc123");
 		expect(rollbackAutomation).not.toHaveBeenCalled();
 		expect(document.body.textContent).not.toContain("Confirm restore");
