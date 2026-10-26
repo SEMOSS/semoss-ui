@@ -1,9 +1,11 @@
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
-import { cn } from "@semoss/ui/next";
+import type { FileExplorerApi } from "@semoss/shared";
+import { Button, cn } from "@semoss/ui/next";
 import {
 	createWorkbenchStore,
+	useWorkbenchPanel,
 	Workbench,
 	WorkbenchChromeButton,
 	type WorkbenchLayout,
@@ -57,6 +59,29 @@ function createLayout(path: string): WorkbenchLayout {
 }
 
 /**
+ * Opens the explorer's upload form for the folder. The explorer's own New
+ * control sits on its panel tab, which the compact shell draws without
+ * controls, so the dock offers upload itself, in a toolbar both layouts show.
+ */
+function UploadDocumentsButton() {
+	const { value } = useWorkbenchPanel<unknown, FileExplorerApi>(
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+	);
+	if (!value?.capabilities.upload) return null;
+	return (
+		<Button
+			type="button"
+			variant="outline"
+			size="sm"
+			onClick={() => value.commands.openNewFile(undefined, "upload")}
+		>
+			<Upload aria-hidden="true" data-icon="inline-start" />
+			Upload documents
+		</Button>
+	);
+}
+
+/**
  * A file dock over one routine's documents folder: sized to the card, or to
  * the viewport when maximized. The shell fills its nearest positioned
  * ancestor, so the frame around it is always positioned.
@@ -107,7 +132,9 @@ export function RoutineDocumentsDock({
 				<Workbench
 					snapshot={snapshot}
 					layoutMode={isCompact ? "compact" : "auto"}
+					mobileTopBorder="toolbar"
 					borderSlots={{
+						top: { before: <UploadDocumentsButton /> },
 						left: {
 							after: (
 								<WorkbenchChromeButton

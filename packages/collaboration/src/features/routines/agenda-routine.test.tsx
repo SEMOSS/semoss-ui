@@ -31,6 +31,7 @@ const routine: AgendaRoutine = {
 	timezone: "America/New_York",
 	meetings: ["Board review"],
 	ignored: [],
+	preferences: "",
 	nextRunAt: null,
 	schedulerAvailable: true,
 	assistantAvailable: true,
@@ -145,6 +146,7 @@ describe("agendaRoutineSettingsSchema", () => {
 		timezone: "UTC",
 		meetings: ["Ops"],
 		ignored: [],
+		preferences: "",
 	};
 
 	it.each([

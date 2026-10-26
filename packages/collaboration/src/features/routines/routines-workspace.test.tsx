@@ -47,6 +47,10 @@ const routine: InboxRoutine = {
 	days: ["MON", "TUE", "WED", "THU", "FRI"],
 	timezone: "America/New_York",
 	lookbackHours: 24,
+	preferences: "",
+	sections: ["priorities", "replies", "meetings", "actions"],
+	priorityCount: 5,
+	writeDrafts: true,
 	nextRunAt: null,
 	schedulerAvailable: true,
 	assistantAvailable: true,
@@ -167,6 +171,10 @@ describe("InboxRoutineForm", () => {
 			days: ["TUE", "THU"],
 			timezone: "America/Chicago",
 			lookbackHours: 96,
+			preferences: "",
+			sections: ["priorities", "replies", "meetings", "actions"],
+			priorityCount: 5,
+			writeDrafts: true,
 		});
 		expect(
 			screen.getByRole("status", { name: "Save status" }),
@@ -216,6 +224,10 @@ describe("InboxRoutineForm", () => {
 				days: ["MON", "TUE", "WED", "THU", "FRI"],
 				timezone: "America/New_York",
 				lookbackHours,
+				preferences: "",
+				sections: ["priorities", "replies", "meetings", "actions"],
+				priorityCount: 5,
+				writeDrafts: true,
 			});
 			expect(lookback).toHaveValue(lookbackHours);
 			expect(unit).toHaveTextContent("Hours");

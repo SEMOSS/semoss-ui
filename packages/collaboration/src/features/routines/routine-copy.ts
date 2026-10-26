@@ -13,6 +13,19 @@ export const INBOX_RESULT_COPY: RoutineResultCopy = {
 	failed: "The last brief could not be completed",
 };
 
+/** How the expense review's result view names its output. */
+export const EXPENSE_RESULT_COPY: RoutineResultCopy = {
+	title: "Latest review",
+	emptyTitle: "Your first review will appear here",
+	scheduledHint:
+		"Your routine is on. The next approval request in your inbox gets a suggested decision here and by email.",
+	disabledHint:
+		"Add your guideline documents and enable the routine. Each approval request then gets a suggested decision here.",
+	running:
+		"Your review is being prepared. Reopen Routines in a moment to read it.",
+	failed: "The last review could not be completed",
+};
+
 /** How the weekly agendas' result view names its output. */
 export const AGENDA_RESULT_COPY: RoutineResultCopy = {
 	title: "Latest agendas",
