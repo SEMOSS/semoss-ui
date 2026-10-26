@@ -2,13 +2,7 @@ import { ProjectOverview } from "@/components/project";
 import { useProject } from "@/hooks";
 
 export const ProjectOverviewPage = () => {
-	const { project, permission, refresh } = useProject();
+	const { project } = useProject();
 
-	return (
-		<ProjectOverview
-			project={project}
-			permission={permission}
-			refresh={refresh}
-		/>
-	);
+	return <ProjectOverview project={project} />;
 };
