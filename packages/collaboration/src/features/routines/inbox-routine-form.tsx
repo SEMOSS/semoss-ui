@@ -8,10 +8,12 @@ import {
 	FieldGroup,
 	FieldLabel,
 	Form,
+	FormCheckbox,
 	FormField,
 	FormInput,
 	FormSelect,
 	FormSwitch,
+	FormTextarea,
 	SelectItem,
 	Separator,
 	ToggleGroup,
@@ -21,6 +23,9 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import {
+	INBOX_PRIORITY_LIMIT,
+	INBOX_SECTION_LABELS,
+	INBOX_SECTIONS,
 	type InboxRoutine,
 	type InboxRoutineSettings,
 	inboxRoutineSettingsSchema,
@@ -32,27 +37,63 @@ import { RoutineFlowSection } from "./routine-flow-section";
 import { RoutineNextRun } from "./routine-next-run";
 import { RoutineResult } from "./routine-result";
 import { RoutineSaveStatus } from "./routine-save-status";
-import { ROUTINE_DAY_NAMES, ROUTINE_DAYS } from "./routine-schema";
+import {
+	ROUTINE_DAY_NAMES,
+	ROUTINE_DAYS,
+	ROUTINE_PREFERENCES_LIMIT,
+} from "./routine-schema";
 import { RoutineTimeFields } from "./routine-time-fields";
 import { useRoutineAutosave } from "./use-routine-autosave";
 
 const formSchema = inboxRoutineSettingsSchema
-	.omit({ lookbackHours: true })
+	.omit({ lookbackHours: true, sections: true, priorityCount: true })
 	.extend({
 		lookbackAmount: z.string().regex(/^\d+$/, "Choose a whole number."),
 		lookbackUnit: z.enum(["hours", "days"]),
+		priorityAmount: z.string().regex(/^\d+$/, "Choose a whole number."),
+		// one checkbox per section; saved as the ordered sections list
+		shown: z.object({
+			priorities: z.boolean(),
+			replies: z.boolean(),
+			meetings: z.boolean(),
+			actions: z.boolean(),
+		}),
 	})
-	.superRefine(({ lookbackAmount, lookbackUnit }, context) => {
-		if (!/^\d+$/.test(lookbackAmount)) return;
-		const max = lookbackUnit === "days" ? 30 : 720;
-		if (Number(lookbackAmount) < 1 || Number(lookbackAmount) > max) {
-			context.addIssue({
-				code: "custom",
-				path: ["lookbackAmount"],
-				message: `Choose between 1 and ${max} ${lookbackUnit}.`,
-			});
-		}
-	});
+	.superRefine(
+		({ lookbackAmount, lookbackUnit, priorityAmount, shown }, context) => {
+			if (/^\d+$/.test(lookbackAmount)) {
+				const max = lookbackUnit === "days" ? 30 : 720;
+				if (
+					Number(lookbackAmount) < 1 ||
+					Number(lookbackAmount) > max
+				) {
+					context.addIssue({
+						code: "custom",
+						path: ["lookbackAmount"],
+						message: `Choose between 1 and ${max} ${lookbackUnit}.`,
+					});
+				}
+			}
+			if (
+				/^\d+$/.test(priorityAmount) &&
+				(Number(priorityAmount) < 1 ||
+					Number(priorityAmount) > INBOX_PRIORITY_LIMIT)
+			) {
+				context.addIssue({
+					code: "custom",
+					path: ["priorityAmount"],
+					message: `Choose between 1 and ${INBOX_PRIORITY_LIMIT} priorities.`,
+				});
+			}
+			if (!INBOX_SECTIONS.some((section) => shown[section])) {
+				context.addIssue({
+					code: "custom",
+					path: ["shown", "priorities"],
+					message: "Keep at least one section.",
+				});
+			}
+		},
+	);
 type RoutineFormValues = z.infer<typeof formSchema>;
 
 /** Keeps input strings at the form boundary and uses the local zone for first setup. */
@@ -73,6 +114,15 @@ function formValues(
 			routine.lookbackHours / (lookbackUnit === "days" ? 24 : 1),
 		),
 		lookbackUnit,
+		preferences: routine.preferences,
+		priorityAmount: String(routine.priorityCount),
+		shown: {
+			priorities: routine.sections.includes("priorities"),
+			replies: routine.sections.includes("replies"),
+			meetings: routine.sections.includes("meetings"),
+			actions: routine.sections.includes("actions"),
+		},
+		writeDrafts: routine.writeDrafts,
 	};
 }
 
@@ -110,11 +160,19 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 						"Connect your inbox and check service availability before enabling this routine.",
 				);
 			}
-			const { lookbackAmount, lookbackUnit, ...settings } = values;
+			const {
+				lookbackAmount,
+				lookbackUnit,
+				priorityAmount,
+				shown,
+				...settings
+			} = values;
 			const saved = await onSave({
 				...settings,
 				lookbackHours:
 					Number(lookbackAmount) * (lookbackUnit === "days" ? 24 : 1),
+				priorityCount: Number(priorityAmount),
+				sections: INBOX_SECTIONS.filter((section) => shown[section]),
 			});
 			return formValues(saved, lookbackUnit);
 		},
@@ -239,6 +297,41 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 									<SelectItem value="days">Days</SelectItem>
 								</FormSelect>
 							</FieldGroup>
+							<Separator />
+							<FormSwitch
+								name="writeDrafts"
+								label="Write reply drafts"
+								description="Saves a draft for each email that needs your reply, under Drafts > Teamwork drafts. Drafts are never sent."
+							/>
+							<fieldset className="flex min-w-0 flex-col gap-3">
+								<legend className="mb-3 font-medium text-sm">
+									Sections
+								</legend>
+								{INBOX_SECTIONS.map((section) => (
+									<FormCheckbox
+										key={section}
+										name={`shown.${section}`}
+										label={INBOX_SECTION_LABELS[section]}
+									/>
+								))}
+							</fieldset>
+							<FormInput
+								name="priorityAmount"
+								label="Suggested priorities (required)"
+								description="How many items the brief picks out at the top."
+								type="number"
+								min={1}
+								max={INBOX_PRIORITY_LIMIT}
+								step={1}
+								required
+							/>
+							<FormTextarea
+								name="preferences"
+								label="Preferences (optional)"
+								description="How you like reply drafts and meeting notes written, such as: keep drafts to three sentences, sign off with my first name, skip newsletters."
+								rows={3}
+								maxLength={ROUTINE_PREFERENCES_LIMIT}
+							/>
 						</FieldGroup>
 						<div className="flex min-w-0 flex-col">
 							<RoutineResult
