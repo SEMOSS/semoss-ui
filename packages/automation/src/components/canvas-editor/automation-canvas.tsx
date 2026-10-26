@@ -26,7 +26,7 @@ import {
 	RefreshCw,
 	Save,
 	Scan,
-	Upload,
+	// Upload,
 	Workflow,
 	ZoomIn,
 	ZoomOut,
@@ -88,6 +88,7 @@ import {
 import { getAutomationNodeDefinition } from "../../domain/automation-node-catalog";
 import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 import type {
+	AutomationBranchClause,
 	AutomationGlobalVariable,
 	AutomationNodeGroup,
 	AutomationWorkflowDocument,
@@ -708,6 +709,12 @@ export const AutomationCanvasContent = forwardRef<
 		() => createInitialCanvasWorkflowDocument().steps,
 	);
 	const [graphEdges, setGraphEdges] = useState<AutomationEdge[]>([]);
+	// Stable refs used by BPMN bridge callbacks to read current state without
+	// capturing stale closures (bpmn-js fires outside React's event system).
+	const stepsRef = useRef<AutomationNode[]>([]);
+	const graphEdgesRef = useRef<AutomationEdge[]>([]);
+	stepsRef.current = steps;
+	graphEdgesRef.current = graphEdges;
 	const [nodeGroups, setNodeGroups] = useState<AutomationNodeGroup[]>([]);
 	const [collapsedNodeGroupIds, setCollapsedNodeGroupIds] = useState<
 		Set<string>
@@ -1915,6 +1922,277 @@ export const AutomationCanvasContent = forwardRef<
 			"BPMN converted. Review the workflow and save when ready.",
 		);
 	}, [handleCanvasModeChange, pendingBpmnConversion]);
+
+	const handleBpmnNodeAdded = useCallback((node: AutomationNode) => {
+		setSteps((prev) => [...prev, node]);
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnNodeRemoved = useCallback((nodeId: string) => {
+		setSteps((prev) => prev.filter((s) => s.id !== nodeId));
+		setGraphEdges((prev) =>
+			prev.filter((e) => e.source !== nodeId && e.target !== nodeId),
+		);
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnEdgeAdded = useCallback((edge: AutomationEdge) => {
+		// Stable ID generated once; the updater may run multiple times in
+		// concurrent mode but always uses this same value.
+		const newClauseId = crypto.randomUUID();
+
+		setGraphEdges((prev) => {
+			const sourceNode = stepsRef.current.find(
+				(s) => s.id === edge.source,
+			);
+			if (sourceNode?.type !== "branch") {
+				return [
+					...prev,
+					{
+						...edge,
+						sourceHandle: `out-${edge.source}`,
+						targetHandle: `in-${edge.target}`,
+					},
+				];
+			}
+			// Read COMMITTED prev to avoid stale-ref issues when delete+add fire
+			// before React re-renders.
+			const outgoing = prev.filter(
+				(e) => e.source === edge.source && e.kind !== "data",
+			);
+			const hasElse = outgoing.some((e) =>
+				e.sourceHandle?.startsWith("else-"),
+			);
+			const sourceHandle =
+				outgoing.length === 0 || !hasElse
+					? `else-${edge.source}`
+					: `case-${edge.source}-${newClauseId}`;
+			return [
+				...prev,
+				{ ...edge, sourceHandle, targetHandle: `in-${edge.target}` },
+			];
+		});
+
+		// Mirror the same logic to add the clause to the node config when needed.
+		// Reads graphEdgesRef for the condition check; guarded with an id check so
+		// it is idempotent if the updater runs more than once.
+		setSteps((prev) => {
+			const sourceNode = prev.find((s) => s.id === edge.source);
+			if (sourceNode?.type !== "branch") return prev;
+			const outgoing = graphEdgesRef.current.filter(
+				(e) => e.source === edge.source && e.kind !== "data",
+			);
+			const hasElse = outgoing.some((e) =>
+				e.sourceHandle?.startsWith("else-"),
+			);
+			// If there's no else yet or no outgoing, the new edge is the else — no clause.
+			if (outgoing.length === 0 || !hasElse) return prev;
+			const existing: AutomationBranchClause[] =
+				(sourceNode.workflowConfig
+					?.clauses as AutomationBranchClause[]) ?? [];
+			if (existing.some((c) => c.id === newClauseId)) return prev;
+			const updated = [...existing, { id: newClauseId, condition: "" }];
+			return prev.map((s) =>
+				s.id !== edge.source
+					? s
+					: {
+							...s,
+							config: { ...(s.config ?? {}), clauses: updated },
+							workflowConfig: {
+								...(s.workflowConfig ?? {}),
+								clauses: updated,
+							},
+						},
+			);
+		});
+
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnEdgeRemoved = useCallback((edgeId: string) => {
+		// Find the removed edge inside the updater so we always read committed state.
+		let removedEdge: AutomationEdge | undefined;
+		setGraphEdges((prev) => {
+			removedEdge = prev.find((e) => e.id === edgeId);
+			return prev.filter((e) => e.id !== edgeId);
+		});
+
+		// Clean up the matching clause when a case edge is removed.
+		if (removedEdge?.sourceHandle?.startsWith("case-")) {
+			const match = removedEdge.sourceHandle.match(/^case-[^-]+-(.+)$/);
+			const clauseId = match?.[1];
+			if (clauseId && removedEdge.source) {
+				const srcId = removedEdge.source;
+				setSteps((prev) =>
+					prev.map((s) => {
+						if (s.id !== srcId) return s;
+						const existing: AutomationBranchClause[] =
+							(s.workflowConfig
+								?.clauses as AutomationBranchClause[]) ?? [];
+						const updated = existing.filter(
+							(c) => c.id !== clauseId,
+						);
+						return {
+							...s,
+							config: { ...(s.config ?? {}), clauses: updated },
+							workflowConfig: {
+								...(s.workflowConfig ?? {}),
+								clauses: updated,
+							},
+						};
+					}),
+				);
+			}
+		}
+
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnNodeLabelChanged = useCallback(
+		(nodeId: string, label: string) => {
+			setSteps((prev) =>
+				prev.map((s) => (s.id === nodeId ? { ...s, label } : s)),
+			);
+			setIsDirty(true);
+		},
+		[],
+	);
+
+	const handleBpmnGroupAdded = useCallback((group: AutomationNodeGroup) => {
+		setNodeGroups((prev) => {
+			const exists = prev.some((g) => g.id === group.id);
+			return exists
+				? prev.map((g) =>
+						g.id === group.id ? { ...g, name: group.name } : g,
+					)
+				: [...prev, group];
+		});
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnGroupRemoved = useCallback((groupId: string) => {
+		setNodeGroups((prev) => prev.filter((g) => g.id !== groupId));
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnNodeMoved = useCallback(
+		(nodeId: string, position: { x: number; y: number }) => {
+			setSteps((prev) =>
+				prev.map((s) => (s.id === nodeId ? { ...s, position } : s)),
+			);
+		},
+		[],
+	);
+
+	const handleBpmnBodyNodeAdded = useCallback(
+		(loopId: string, node: AutomationNode) => {
+			setSteps((prev) =>
+				prev.map((s) => {
+					if (s.id !== loopId) return s;
+					const existing = s.body?.nodes ?? [];
+					if (existing.some((n) => n.id === node.id)) return s;
+					return {
+						...s,
+						body: {
+							nodes: [...existing, node],
+							edges: s.body?.edges ?? [],
+						},
+					};
+				}),
+			);
+			setIsDirty(true);
+		},
+		[],
+	);
+
+	const handleBpmnBodyNodeRemoved = useCallback(
+		(loopId: string, nodeId: string) => {
+			setSteps((prev) =>
+				prev.map((s) => {
+					if (s.id !== loopId || !s.body) return s;
+					return {
+						...s,
+						body: {
+							nodes: s.body.nodes.filter((n) => n.id !== nodeId),
+							edges: s.body.edges.filter(
+								(e) =>
+									e.source !== nodeId && e.target !== nodeId,
+							),
+						},
+					};
+				}),
+			);
+			setIsDirty(true);
+		},
+		[],
+	);
+
+	const handleBpmnBodyEdgeAdded = useCallback(
+		(loopId: string, edge: AutomationEdge) => {
+			setSteps((prev) =>
+				prev.map((s) => {
+					if (s.id !== loopId) return s;
+					const existing = s.body?.edges ?? [];
+					if (existing.some((e) => e.id === edge.id)) return s;
+					return {
+						...s,
+						body: {
+							nodes: s.body?.nodes ?? [],
+							edges: [
+								...existing,
+								{
+									...edge,
+									sourceHandle: `out-${edge.source}`,
+									targetHandle: `in-${edge.target}`,
+								},
+							],
+						},
+					};
+				}),
+			);
+			setIsDirty(true);
+		},
+		[],
+	);
+
+	const handleBpmnBodyEdgeRemoved = useCallback(
+		(loopId: string, edgeId: string) => {
+			setSteps((prev) =>
+				prev.map((s) => {
+					if (s.id !== loopId || !s.body) return s;
+					return {
+						...s,
+						body: {
+							nodes: s.body.nodes,
+							edges: s.body.edges.filter((e) => e.id !== edgeId),
+						},
+					};
+				}),
+			);
+			setIsDirty(true);
+		},
+		[],
+	);
+
+	const handleBpmnNodeSelected = useCallback((nodeId: string | null) => {
+		if (!nodeId) return;
+		// Check if it's a top-level step.
+		const isTopLevel = stepsRef.current.some((s) => s.id === nodeId);
+		if (isTopLevel) {
+			setEditingStepId(nodeId);
+			setSelectedBodyNodeId(undefined);
+		} else {
+			// Search loop body nodes to find the parent loop.
+			const loopNode = stepsRef.current.find((s) =>
+				s.body?.nodes.some((n) => n.id === nodeId),
+			);
+			if (loopNode) {
+				setEditingStepId(loopNode.id);
+				setSelectedBodyNodeId(nodeId);
+			}
+		}
+		setActiveDockTab("inspector");
+	}, []);
 
 	const fitWorkflow = useCallback(() => {
 		reactFlowInstanceRef.current?.fitView({
@@ -4666,6 +4944,45 @@ export const AutomationCanvasContent = forwardRef<
 												}
 												isConverting={isConvertingBpmn}
 												onDirtyChange={setIsBpmnDirty}
+												onNodeAdded={
+													handleBpmnNodeAdded
+												}
+												onNodeRemoved={
+													handleBpmnNodeRemoved
+												}
+												onEdgeAdded={
+													handleBpmnEdgeAdded
+												}
+												onEdgeRemoved={
+													handleBpmnEdgeRemoved
+												}
+												onNodeLabelChanged={
+													handleBpmnNodeLabelChanged
+												}
+												onGroupAdded={
+													handleBpmnGroupAdded
+												}
+												onGroupRemoved={
+													handleBpmnGroupRemoved
+												}
+												onNodeMoved={
+													handleBpmnNodeMoved
+												}
+												onBodyNodeAdded={
+													handleBpmnBodyNodeAdded
+												}
+												onBodyNodeRemoved={
+													handleBpmnBodyNodeRemoved
+												}
+												onBodyEdgeAdded={
+													handleBpmnBodyEdgeAdded
+												}
+												onBodyEdgeRemoved={
+													handleBpmnBodyEdgeRemoved
+												}
+												onNodeSelected={
+													handleBpmnNodeSelected
+												}
 											/>
 										</Suspense>
 									)}
@@ -4715,7 +5032,7 @@ export const AutomationCanvasContent = forwardRef<
 													</Button>
 												</>
 											)}
-											{bpmnSource === null &&
+											{/* {bpmnSource === null &&
 												!readOnly &&
 												mcpMode !== "trigger" && (
 													<Button
@@ -4732,7 +5049,7 @@ export const AutomationCanvasContent = forwardRef<
 														/>
 														Import BPMN
 													</Button>
-												)}
+												)} */}
 											<Button
 												size="sm"
 												variant="outline"
@@ -4753,7 +5070,7 @@ export const AutomationCanvasContent = forwardRef<
 									<div
 										className={`absolute top-4 right-4 z-30 items-center gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory || bpmnMode || bpmnSource !== null ? "hidden" : "flex"}`}
 									>
-										{!readOnly && mcpMode !== "trigger" && (
+										{/* {!readOnly && mcpMode !== "trigger" && (
 											<Button
 												size="sm"
 												variant="outline"
@@ -4768,7 +5085,7 @@ export const AutomationCanvasContent = forwardRef<
 												/>
 												Import BPMN
 											</Button>
-										)}
+										)} */}
 										{mcpMode !== "trigger" && (
 											<Tooltip>
 												<TooltipTrigger asChild>

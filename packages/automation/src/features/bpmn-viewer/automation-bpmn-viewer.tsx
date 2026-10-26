@@ -16,7 +16,10 @@ import type {
 	AutomationEdge,
 	AutomationNode,
 } from "../../domain/automation.types";
-import { automationToBpmnXml } from "./automation-to-bpmn";
+import type { AutomationNodeGroup } from "../../domain/automation-workflow.types";
+import { createCanvasWorkflowNode } from "../../domain/automation-workflow-adapter";
+import { automationToBpmnXml, computeBpmnOffsets } from "./automation-to-bpmn";
+import { AUTOMATION_NODE_TYPE_BY_BPMN } from "./bpmn-node-mapping";
 
 /** Imperative handle exposed to the parent via ref. */
 export interface BpmnEditorHandle {
@@ -38,7 +41,241 @@ interface AutomationBpmnEditorProps {
 	isConverting?: boolean;
 	/** Fires true when the diagram is first edited, false when a fresh diagram loads. */
 	onDirtyChange?: (isDirty: boolean) => void;
+	/** Event bridge: fires when the user adds/removes nodes, edges, or groups in the BPMN editor. */
+	onNodeAdded?: (node: AutomationNode) => void;
+	onNodeRemoved?: (nodeId: string) => void;
+	onEdgeAdded?: (edge: AutomationEdge) => void;
+	onEdgeRemoved?: (edgeId: string) => void;
+	onNodeLabelChanged?: (nodeId: string, label: string) => void;
+	/** Lane added/removed → automation node group added/removed. */
+	onGroupAdded?: (group: AutomationNodeGroup) => void;
+	onGroupRemoved?: (groupId: string) => void;
+	/** Fires when a node is moved in the BPMN editor with updated automation-space position. */
+	onNodeMoved?: (nodeId: string, position: { x: number; y: number }) => void;
+	/** SubProcess body bridge — fires when children of a loop SubProcess are added/removed. */
+	onBodyNodeAdded?: (loopId: string, node: AutomationNode) => void;
+	onBodyNodeRemoved?: (loopId: string, nodeId: string) => void;
+	onBodyEdgeAdded?: (loopId: string, edge: AutomationEdge) => void;
+	onBodyEdgeRemoved?: (loopId: string, edgeId: string) => void;
+	/** Fired when the user selects or deselects a BPMN element. nodeId is null on deselect. */
+	onNodeSelected?: (nodeId: string | null) => void;
 	ref?: Ref<BpmnEditorHandle>;
+}
+
+/** Loose shape/connection type as exposed by bpmn-js internal events. */
+interface BpmnShape {
+	id: string;
+	type: string;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	businessObject?: { name?: string };
+	/** Parent element — bpmn-js always sets this at runtime. */
+	parent?: { type?: string; id?: string };
+}
+
+interface BpmnConnection {
+	id: string;
+	type: string;
+	source: { id: string; parent?: { type?: string; id?: string } };
+	target: { id: string };
+	parent?: { type?: string; id?: string };
+}
+
+type EventCallbackRefs = {
+	onNodeAdded: { current: ((node: AutomationNode) => void) | undefined };
+	onNodeRemoved: { current: ((id: string) => void) | undefined };
+	onEdgeAdded: { current: ((edge: AutomationEdge) => void) | undefined };
+	onEdgeRemoved: { current: ((id: string) => void) | undefined };
+	onNodeLabelChanged: {
+		current: ((id: string, label: string) => void) | undefined;
+	};
+	onGroupAdded: {
+		current: ((group: AutomationNodeGroup) => void) | undefined;
+	};
+	onGroupRemoved: { current: ((groupId: string) => void) | undefined };
+	onNodeMoved: {
+		current:
+			| ((id: string, position: { x: number; y: number }) => void)
+			| undefined;
+	};
+	onBodyNodeAdded: {
+		current: ((loopId: string, node: AutomationNode) => void) | undefined;
+	};
+	onBodyNodeRemoved: {
+		current: ((loopId: string, nodeId: string) => void) | undefined;
+	};
+	onBodyEdgeAdded: {
+		current: ((loopId: string, edge: AutomationEdge) => void) | undefined;
+	};
+	onBodyEdgeRemoved: {
+		current: ((loopId: string, edgeId: string) => void) | undefined;
+	};
+	onNodeSelected: { current: ((nodeId: string | null) => void) | undefined };
+	offsetX: { current: number };
+	offsetY: { current: number };
+};
+
+// Lane is handled separately as a node group, not skipped.
+const SKIP_SHAPE_TYPES = new Set([
+	"bpmn:EndEvent",
+	"label",
+	"bpmn:Participant",
+	"bpmn:DataStoreReference",
+	"bpmn:DataObjectReference",
+	"bpmn:DataObject",
+]);
+
+function shapeToAutomationNode(element: BpmnShape): AutomationNode {
+	const workflowType =
+		AUTOMATION_NODE_TYPE_BY_BPMN[element.type] ?? "developer.python";
+	const node = createCanvasWorkflowNode(workflowType, 0);
+	node.id = element.id;
+	node.label =
+		element.businessObject?.name?.trim() ||
+		element.type.replace("bpmn:", "");
+	node.position = { x: element.x, y: element.y };
+	return node;
+}
+
+// bpmn-js types its event listeners as () => void but the runtime always
+// passes an event object — cast the `on` method to bypass the incorrect typing.
+type BpmnListener = (event: unknown) => void;
+type BpmnOn = (event: string, listener: BpmnListener) => void;
+
+function wireEventBridge(modeler: BpmnModeler, refs: EventCallbackRefs): void {
+	const on = modeler.on.bind(modeler) as BpmnOn;
+	on("shape.added", (({ element }: { element: BpmnShape }) => {
+		// bpmn-js auto-inserts a StartEvent (and sometimes EndEvent) inside every
+		// new SubProcess as internal structure — skip those, but allow any other
+		// shapes the user manually places inside a SubProcess to flow through.
+		if (
+			element.parent?.type === "bpmn:SubProcess" &&
+			(element.type === "bpmn:StartEvent" ||
+				element.type === "bpmn:EndEvent")
+		)
+			return;
+		if (element.type === "bpmn:Lane") {
+			const group: AutomationNodeGroup = {
+				id: element.id,
+				name:
+					element.businessObject?.name?.trim() ||
+					element.type.replace("bpmn:", ""),
+				nodeIds: [],
+			};
+			refs.onGroupAdded.current?.(group);
+			return;
+		}
+		if (SKIP_SHAPE_TYPES.has(element.type)) return;
+		// Route children of a SubProcess (loop) to the body callbacks.
+		if (element.parent?.type === "bpmn:SubProcess" && element.parent.id) {
+			refs.onBodyNodeAdded.current?.(
+				element.parent.id,
+				shapeToAutomationNode(element),
+			);
+			return;
+		}
+		refs.onNodeAdded.current?.(shapeToAutomationNode(element));
+	}) as BpmnListener);
+
+	on("shape.removed", (({ element }: { element: BpmnShape }) => {
+		if (
+			element.parent?.type === "bpmn:SubProcess" &&
+			(element.type === "bpmn:StartEvent" ||
+				element.type === "bpmn:EndEvent")
+		)
+			return;
+		if (element.type === "bpmn:Lane") {
+			refs.onGroupRemoved.current?.(element.id);
+			return;
+		}
+		if (SKIP_SHAPE_TYPES.has(element.type)) return;
+		if (element.parent?.type === "bpmn:SubProcess" && element.parent.id) {
+			refs.onBodyNodeRemoved.current?.(element.parent.id, element.id);
+			return;
+		}
+		refs.onNodeRemoved.current?.(element.id);
+	}) as BpmnListener);
+
+	on("connection.added", (({ element }: { element: BpmnConnection }) => {
+		if (element.type !== "bpmn:SequenceFlow") return;
+		const edge: AutomationEdge = {
+			id: element.id,
+			source: element.source.id,
+			target: element.target.id,
+			kind: "control",
+		};
+		// Route connections inside a SubProcess to body edge callbacks.
+		const parentId =
+			element.parent?.type === "bpmn:SubProcess"
+				? element.parent.id
+				: element.source.parent?.type === "bpmn:SubProcess"
+					? element.source.parent.id
+					: undefined;
+		if (parentId) {
+			refs.onBodyEdgeAdded.current?.(parentId, edge);
+			return;
+		}
+		refs.onEdgeAdded.current?.(edge);
+	}) as BpmnListener);
+
+	on("connection.removed", (({ element }: { element: BpmnConnection }) => {
+		if (element.type !== "bpmn:SequenceFlow") return;
+		const parentId =
+			element.parent?.type === "bpmn:SubProcess"
+				? element.parent.id
+				: element.source.parent?.type === "bpmn:SubProcess"
+					? element.source.parent.id
+					: undefined;
+		if (parentId) {
+			refs.onBodyEdgeRemoved.current?.(parentId, element.id);
+			return;
+		}
+		refs.onEdgeRemoved.current?.(element.id);
+	}) as BpmnListener);
+
+	on("shape.move.end", (({ context }: { context: { shape: BpmnShape } }) => {
+		const element = context.shape;
+		if (SKIP_SHAPE_TYPES.has(element.type) || element.type === "bpmn:Lane")
+			return;
+		// Reverse the nodeBounds centering + global offset to get automation coords.
+		const position = {
+			x: element.x - (280 - element.width) / 2 - refs.offsetX.current,
+			y: element.y - (120 - element.height) / 2 - refs.offsetY.current,
+		};
+		refs.onNodeMoved.current?.(element.id, position);
+	}) as BpmnListener);
+
+	on("element.changed", (({ element }: { element: BpmnShape }) => {
+		const label = element.businessObject?.name?.trim() ?? "";
+		if (!label) return;
+		if (element.type === "bpmn:Lane") {
+			// Rename the group by re-adding with the updated name; the canvas
+			// handler merges by id so this is effectively an update.
+			refs.onGroupAdded.current?.({
+				id: element.id,
+				name: label,
+				nodeIds: [],
+			});
+			return;
+		}
+		if (SKIP_SHAPE_TYPES.has(element.type)) return;
+		refs.onNodeLabelChanged.current?.(element.id, label);
+	}) as BpmnListener);
+
+	on("selection.changed", (({
+		newSelection,
+	}: {
+		newSelection: BpmnShape[];
+	}) => {
+		const first = newSelection?.[0];
+		if (!first || SKIP_SHAPE_TYPES.has(first.type)) {
+			refs.onNodeSelected.current?.(null);
+			return;
+		}
+		refs.onNodeSelected.current?.(first.id);
+	}) as BpmnListener);
 }
 
 function fitDiagram(modeler: BpmnModeler): void {
@@ -70,6 +307,19 @@ export function AutomationBpmnEditor({
 	sourceXml,
 	sourceName,
 	onDirtyChange,
+	onNodeAdded,
+	onNodeRemoved,
+	onEdgeAdded,
+	onEdgeRemoved,
+	onNodeLabelChanged,
+	onGroupAdded,
+	onGroupRemoved,
+	onNodeMoved,
+	onBodyNodeAdded,
+	onBodyNodeRemoved,
+	onBodyEdgeAdded,
+	onBodyEdgeRemoved,
+	onNodeSelected,
 	ref,
 }: AutomationBpmnEditorProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -77,10 +327,45 @@ export function AutomationBpmnEditor({
 	const [error, setError] = useState<string | null>(null);
 	const [isExporting, setIsExporting] = useState(false);
 
-	// Stable ref so the effect doesn't re-run when the callback identity changes.
+	// Snapshot nodes/edges/processName at mount so the modeler effect doesn't
+	// re-run when the event bridge writes back into the parent's node list.
+	// The BPMN modeler owns its own canvas state once initialized.
+	const initNodesRef = useRef(nodes);
+	const initEdgesRef = useRef(edges);
+	const initProcessNameRef = useRef(processName);
+
+	// Stable refs so effects don't re-run when callback identities change.
 	const onDirtyChangeRef = useRef(onDirtyChange);
+	const onNodeAddedRef = useRef(onNodeAdded);
+	const onNodeRemovedRef = useRef(onNodeRemoved);
+	const onEdgeAddedRef = useRef(onEdgeAdded);
+	const onEdgeRemovedRef = useRef(onEdgeRemoved);
+	const onNodeLabelChangedRef = useRef(onNodeLabelChanged);
+	const onGroupAddedRef = useRef(onGroupAdded);
+	const onGroupRemovedRef = useRef(onGroupRemoved);
+	const onNodeMovedRef = useRef(onNodeMoved);
+	const onBodyNodeAddedRef = useRef(onBodyNodeAdded);
+	const onBodyNodeRemovedRef = useRef(onBodyNodeRemoved);
+	const onBodyEdgeAddedRef = useRef(onBodyEdgeAdded);
+	const onBodyEdgeRemovedRef = useRef(onBodyEdgeRemoved);
+	const onNodeSelectedRef = useRef(onNodeSelected);
+	const offsetXRef = useRef(80);
+	const offsetYRef = useRef(80);
 	useEffect(() => {
 		onDirtyChangeRef.current = onDirtyChange;
+		onNodeAddedRef.current = onNodeAdded;
+		onNodeRemovedRef.current = onNodeRemoved;
+		onEdgeAddedRef.current = onEdgeAdded;
+		onEdgeRemovedRef.current = onEdgeRemoved;
+		onNodeLabelChangedRef.current = onNodeLabelChanged;
+		onGroupAddedRef.current = onGroupAdded;
+		onGroupRemovedRef.current = onGroupRemoved;
+		onNodeMovedRef.current = onNodeMoved;
+		onBodyNodeAddedRef.current = onBodyNodeAdded;
+		onBodyNodeRemovedRef.current = onBodyNodeRemoved;
+		onBodyEdgeAddedRef.current = onBodyEdgeAdded;
+		onBodyEdgeRemovedRef.current = onBodyEdgeRemoved;
+		onNodeSelectedRef.current = onNodeSelected;
 	});
 
 	useImperativeHandle(ref, () => ({
@@ -123,22 +408,59 @@ export function AutomationBpmnEditor({
 		let isDisposed = false;
 		setError(null);
 
+		// Compute the BPMN coordinate offset once and store for move reverse-calc.
+		if (!sourceXml) {
+			const { offsetX, offsetY } = computeBpmnOffsets(
+				initNodesRef.current,
+			);
+			offsetXRef.current = offsetX;
+			offsetYRef.current = offsetY;
+		}
+
 		const diagramXml = sourceXml
 			? Promise.resolve(sourceXml)
-			: automationToBpmnXml(nodes, edges, processName);
+			: automationToBpmnXml(
+					initNodesRef.current,
+					initEdgesRef.current,
+					initProcessNameRef.current,
+				);
 
-		const onCommandStackChanged = () => onDirtyChangeRef.current?.(true);
+		// Only track dirty state when viewing an imported BPMN file — in live
+		// editing mode the automation model is the source of truth, so there's
+		// nothing to "lose" on a view switch.
+		const onCommandStackChanged = sourceXml
+			? () => onDirtyChangeRef.current?.(true)
+			: undefined;
 
 		void diagramXml
 			.then((xml) => modeler.importXML(xml))
 			.then(() => {
-				if (!isDisposed) {
-					// Subscribe after import so the import itself doesn't mark dirty.
+				if (isDisposed) return;
+				// Subscribe after import so the import itself doesn't mark dirty
+				// and the event bridge doesn't replay existing shapes.
+				if (onCommandStackChanged) {
 					modeler.on("commandStack.changed", onCommandStackChanged);
-					window.requestAnimationFrame(() => {
-						if (!isDisposed) fitDiagram(modeler);
-					});
 				}
+				wireEventBridge(modeler, {
+					onNodeAdded: onNodeAddedRef,
+					onNodeRemoved: onNodeRemovedRef,
+					onEdgeAdded: onEdgeAddedRef,
+					onEdgeRemoved: onEdgeRemovedRef,
+					onNodeLabelChanged: onNodeLabelChangedRef,
+					onGroupAdded: onGroupAddedRef,
+					onGroupRemoved: onGroupRemovedRef,
+					onNodeMoved: onNodeMovedRef,
+					onBodyNodeAdded: onBodyNodeAddedRef,
+					onBodyNodeRemoved: onBodyNodeRemovedRef,
+					onBodyEdgeAdded: onBodyEdgeAddedRef,
+					onBodyEdgeRemoved: onBodyEdgeRemovedRef,
+					onNodeSelected: onNodeSelectedRef,
+					offsetX: offsetXRef,
+					offsetY: offsetYRef,
+				});
+				window.requestAnimationFrame(() => {
+					if (!isDisposed) fitDiagram(modeler);
+				});
 			})
 			.catch((importError: unknown) => {
 				if (!isDisposed) {
@@ -155,7 +477,7 @@ export function AutomationBpmnEditor({
 			modelerRef.current = null;
 			modeler.destroy();
 		};
-	}, [edges, nodes, processName, sourceXml]);
+	}, [sourceXml]);
 
 	return (
 		<section

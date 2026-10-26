@@ -4,6 +4,7 @@ import type {
 	AutomationNode,
 	RoutingConfig,
 } from "../../domain/automation.types";
+import { BPMN_ELEMENT_TYPE, SEMOSS_BPMN_NAMESPACE } from "./bpmn-node-mapping";
 
 interface DiagramBounds {
 	x: number;
@@ -55,12 +56,16 @@ function nodeDimensions(
 	node: AutomationNode,
 ): Pick<DiagramBounds, "width" | "height"> {
 	if (node.type === "trigger") return { width: 36, height: 36 };
+	if (node.type === "wait") return { width: 36, height: 36 };
 	if (node.type === "branch") return { width: 52, height: 52 };
 	if (node.type === "loop") return { width: 180, height: 100 };
 	return { width: 156, height: 80 };
 }
 
 function nodeBpmnType(node: AutomationNode): string {
+	if (node.workflowType && node.workflowType in BPMN_ELEMENT_TYPE) {
+		return BPMN_ELEMENT_TYPE[node.workflowType];
+	}
 	if (node.type === "trigger") return "bpmn:StartEvent";
 	if (node.type === "branch") return "bpmn:ExclusiveGateway";
 	if (node.type === "loop") return "bpmn:SubProcess";
@@ -231,11 +236,14 @@ function addShape(
 	element: ModdleElement,
 	bounds: DiagramBounds,
 	usedIds: Set<string>,
+	expanded?: boolean,
 ): void {
 	const shape = moddle.create("bpmndi:BPMNShape", {
 		id: createBpmnId("Shape", String(element.get("id")), usedIds),
 		bpmnElement: element,
-		...(element.$type === "bpmn:SubProcess" ? { isExpanded: false } : {}),
+		...(element.$type === "bpmn:SubProcess"
+			? { isExpanded: expanded ?? false }
+			: {}),
 	});
 	shape.set(
 		"bounds",
@@ -268,7 +276,34 @@ function addEdge(
 	collection(plane, "planeElement").push(edge);
 }
 
-/** Builds a read-only BPMN diagram projection of the current Automation canvas. */
+const BPMN_CONTAINER_W = 280;
+const BPMN_CONTAINER_H = 120;
+
+/**
+ * Returns the x/y offset applied when generating BPMN from automation nodes.
+ * Used by the viewer to reverse-convert BPMN shape positions back to
+ * automation node positions after a move.
+ */
+export function computeBpmnOffsets(nodes: AutomationNode[]): {
+	offsetX: number;
+	offsetY: number;
+} {
+	if (nodes.length === 0) return { offsetX: 80, offsetY: 80 };
+	const xs = nodes.map((n) => {
+		const { width } = nodeDimensions(n);
+		return n.position.x + (BPMN_CONTAINER_W - width) / 2;
+	});
+	const ys = nodes.map((n) => {
+		const { height } = nodeDimensions(n);
+		return n.position.y + (BPMN_CONTAINER_H - height) / 2;
+	});
+	return {
+		offsetX: 80 - Math.min(0, ...xs),
+		offsetY: 80 - Math.min(0, ...ys),
+	};
+}
+
+/** Builds a BPMN diagram projection of the current Automation canvas. */
 export async function automationToBpmnXml(
 	nodes: AutomationNode[],
 	edges: AutomationEdge[],
@@ -279,7 +314,7 @@ export async function automationToBpmnXml(
 	const name = processName.trim() || "Automation workflow";
 	const definitions = moddle.create("bpmn:Definitions", {
 		id: "Definitions_Automation",
-		targetNamespace: "https://semoss.org/automation",
+		targetNamespace: SEMOSS_BPMN_NAMESPACE,
 	});
 	const process = moddle.create("bpmn:Process", {
 		id: createBpmnId("Process", name, usedIds),
@@ -291,7 +326,6 @@ export async function automationToBpmnXml(
 	const elementByNodeId = new Map<string, ModdleElement>();
 	const boundsByElement = new Map<ModdleElement, DiagramBounds>();
 	const diagramConnections: DiagramConnection[] = [];
-	const endEventByNodeId = new Map<string, ModdleElement>();
 	const nodeById = new Map(nodes.map((node) => [node.id, node]));
 	const rawBounds = new Map(nodes.map((node) => [node.id, nodeBounds(node)]));
 	const minimumX = Math.min(
@@ -305,24 +339,115 @@ export async function automationToBpmnXml(
 	const offsetX = 80 - minimumX;
 	const offsetY = 80 - minimumY;
 
+	const SUBPROCESS_PADDING = 50;
+
 	for (const node of nodes) {
+		// Use the automation node ID directly as the BPMN element ID.
+		// Automation IDs (step-<uuid>) are valid XML NCNames, and the import
+		// adapter uses the SEMOSS_BPMN_NAMESPACE to detect our BPMN and
+		// preserve these IDs on round-trips.
+		usedIds.add(node.id);
 		const element = moddle.create(nodeBpmnType(node), {
-			id: createBpmnId("Node", node.id, usedIds),
+			id: node.id,
 			name: node.label || node.type,
 			...(node.type === "branch"
 				? { gatewayDirection: "Diverging" }
 				: {}),
 		});
+
+		const rawBound = rawBounds.get(node.id);
+		let nodeBoundsAbsolute: DiagramBounds = rawBound
+			? {
+					x: rawBound.x + offsetX,
+					y: rawBound.y + offsetY,
+					width: rawBound.width,
+					height: rawBound.height,
+				}
+			: { x: offsetX, y: offsetY, width: 100, height: 80 };
+
+		// Serialize loop body nodes as SubProcess flowElements.
+		// Body node positions are relative to the loop canvas, so we translate
+		// them to absolute BPMN coordinates inside the (expanded) SubProcess.
+		if (node.type === "loop" && node.body?.nodes?.length) {
+			const bodyNodeData = node.body.nodes.map((bodyNode) => ({
+				bodyNode,
+				rawB: nodeBounds(bodyNode),
+			}));
+			const minBodyX = Math.min(...bodyNodeData.map((d) => d.rawB.x));
+			const minBodyY = Math.min(...bodyNodeData.map((d) => d.rawB.y));
+			const maxBodyRight = Math.max(
+				...bodyNodeData.map((d) => d.rawB.x + d.rawB.width),
+			);
+			const maxBodyBottom = Math.max(
+				...bodyNodeData.map((d) => d.rawB.y + d.rawB.height),
+			);
+
+			// Expand the SubProcess to contain its children.
+			nodeBoundsAbsolute = {
+				...nodeBoundsAbsolute,
+				width: Math.max(
+					nodeBoundsAbsolute.width,
+					maxBodyRight - minBodyX + 2 * SUBPROCESS_PADDING,
+				),
+				height: Math.max(
+					nodeBoundsAbsolute.height,
+					maxBodyBottom - minBodyY + 2 * SUBPROCESS_PADDING,
+				),
+			};
+
+			for (const { bodyNode, rawB } of bodyNodeData) {
+				usedIds.add(bodyNode.id);
+				const bodyElement = moddle.create(nodeBpmnType(bodyNode), {
+					id: bodyNode.id,
+					name: bodyNode.label || bodyNode.type,
+					...(bodyNode.type === "branch"
+						? { gatewayDirection: "Diverging" }
+						: {}),
+				});
+				collection(element, "flowElements").push(bodyElement);
+				elementByNodeId.set(bodyNode.id, bodyElement);
+				// Place body node at an absolute position inside the SubProcess.
+				boundsByElement.set(bodyElement, {
+					x:
+						nodeBoundsAbsolute.x +
+						SUBPROCESS_PADDING +
+						(rawB.x - minBodyX),
+					y:
+						nodeBoundsAbsolute.y +
+						SUBPROCESS_PADDING +
+						(rawB.y - minBodyY),
+					width: rawB.width,
+					height: rawB.height,
+				});
+			}
+			for (const bodyEdge of node.body.edges ?? []) {
+				const bodySrc = elementByNodeId.get(bodyEdge.source);
+				const bodyTgt = elementByNodeId.get(bodyEdge.target);
+				if (!bodySrc || !bodyTgt) continue;
+				usedIds.add(bodyEdge.id);
+				const bodyFlow = moddle.create("bpmn:SequenceFlow", {
+					id: bodyEdge.id,
+					sourceRef: bodySrc,
+					targetRef: bodyTgt,
+				});
+				collection(element, "flowElements").push(bodyFlow);
+				const srcBounds = boundsByElement.get(bodySrc);
+				const tgtBounds = boundsByElement.get(bodyTgt);
+				if (srcBounds && tgtBounds) {
+					diagramConnections.push({
+						element: bodyFlow,
+						waypoints: directConnectionWaypoints(
+							srcBounds,
+							tgtBounds,
+						),
+					});
+				}
+			}
+		}
+
 		collection(process, "flowElements").push(element);
 		elementByNodeId.set(node.id, element);
-		const bounds = rawBounds.get(node.id);
-		if (bounds) {
-			boundsByElement.set(element, {
-				...bounds,
-				x: bounds.x + offsetX,
-				y: bounds.y + offsetY,
-			});
-		}
+		boundsByElement.set(element, nodeBoundsAbsolute);
 	}
 
 	for (const edge of edges) {
@@ -333,11 +458,13 @@ export async function automationToBpmnXml(
 		const targetBounds = target ? boundsByElement.get(target) : undefined;
 		if (!source || !target || !sourceNode || !sourceBounds || !targetBounds)
 			continue;
-		const id = createBpmnId(
-			edge.kind === "data" ? "Association" : "Flow",
-			edge.id,
-			usedIds,
-		);
+		// Use automation edge ID directly so connection.removed in the live bridge
+		// can match it back without a lookup table.
+		usedIds.add(edge.id);
+		const id =
+			edge.kind === "data"
+				? createBpmnId("Association", edge.id, usedIds)
+				: edge.id;
 		if (edge.kind === "data") {
 			const association = moddle.create("bpmn:Association", {
 				id,
@@ -397,46 +524,6 @@ export async function automationToBpmnXml(
 		}
 	}
 
-	const controlEdges = edges.filter((edge) => edge.kind !== "data");
-	const terminalNodes = nodes.filter(
-		(node) => !controlEdges.some((edge) => edge.source === node.id),
-	);
-	for (const node of terminalNodes) {
-		const source = elementByNodeId.get(node.id);
-		const sourceBounds = source ? boundsByElement.get(source) : undefined;
-		if (!source || !sourceBounds) continue;
-		const endEvent = moddle.create("bpmn:EndEvent", {
-			id: createBpmnId("End", node.id, usedIds),
-			name: "End",
-		});
-		const endBounds = {
-			x: sourceBounds.x + sourceBounds.width + 100,
-			y: sourceBounds.y + (sourceBounds.height - 36) / 2,
-			width: 36,
-			height: 36,
-		};
-		collection(process, "flowElements").push(endEvent);
-		boundsByElement.set(endEvent, endBounds);
-		endEventByNodeId.set(node.id, endEvent);
-		const flowId = createBpmnId("CompletionFlow", node.id, usedIds);
-		const sequenceFlow = moddle.create("bpmn:SequenceFlow", {
-			id: flowId,
-			sourceRef: source,
-			targetRef: endEvent,
-		});
-		collection(process, "flowElements").push(sequenceFlow);
-		diagramConnections.push({
-			element: sequenceFlow,
-			waypoints: [
-				{
-					x: sourceBounds.x + sourceBounds.width,
-					y: sourceBounds.y + sourceBounds.height / 2,
-				},
-				{ x: endBounds.x, y: endBounds.y + endBounds.height / 2 },
-			],
-		});
-	}
-
 	const diagram = moddle.create("bpmndi:BPMNDiagram", {
 		id: "Diagram_Automation",
 	});
@@ -450,14 +537,22 @@ export async function automationToBpmnXml(
 	for (const node of nodes) {
 		const element = elementByNodeId.get(node.id);
 		const bounds = element ? boundsByElement.get(element) : undefined;
-		if (element && bounds)
-			addShape(moddle, plane, element, bounds, usedIds);
-	}
-	for (const node of terminalNodes) {
-		const endEvent = endEventByNodeId.get(node.id);
-		const bounds = endEvent ? boundsByElement.get(endEvent) : undefined;
-		if (endEvent && bounds)
-			addShape(moddle, plane, endEvent, bounds, usedIds);
+		if (element && bounds) {
+			const hasBody =
+				node.type === "loop" && (node.body?.nodes?.length ?? 0) > 0;
+			addShape(moddle, plane, element, bounds, usedIds, hasBody);
+		}
+		// Emit diagram shapes for body nodes (SubProcess children).
+		if (node.type === "loop" && node.body?.nodes?.length) {
+			for (const bodyNode of node.body.nodes) {
+				const bodyElement = elementByNodeId.get(bodyNode.id);
+				const bodyBounds = bodyElement
+					? boundsByElement.get(bodyElement)
+					: undefined;
+				if (bodyElement && bodyBounds)
+					addShape(moddle, plane, bodyElement, bodyBounds, usedIds);
+			}
+		}
 	}
 	for (const connection of diagramConnections) {
 		addEdge(moddle, plane, connection, usedIds);
