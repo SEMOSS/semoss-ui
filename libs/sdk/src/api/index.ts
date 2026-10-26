@@ -10,5 +10,6 @@ export * from "./insight";
 export * from "./mcp";
 export * from "./model-usage";
 export * from "./permissions";
+export * from "./pixel-messages";
 export * from "./user";
 export * from "./websocket";

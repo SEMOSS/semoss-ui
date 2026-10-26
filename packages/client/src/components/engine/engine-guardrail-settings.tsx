@@ -1,11 +1,17 @@
-import { Copy, Plus, Save, Trash2, Undo2 } from "lucide-react";
+import { Copy, Plus, Trash2 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import {
+	Alert,
+	AlertDescription,
 	Badge,
 	Button,
 	Card,
+	CardAction,
+	CardDescription,
+	CardHeader,
+	CardTitle,
 	cn,
 	Dialog,
 	DialogClose,
@@ -342,10 +348,12 @@ export const EngineGuardrailSettings = ({
 
 	if (getConfig.status === "ERROR") {
 		return (
-			<p className="text-destructive text-sm">
-				{getConfig.error?.message ||
-					"Unable to load the guardrail configuration."}
-			</p>
+			<Alert variant="destructive">
+				<AlertDescription>
+					{getConfig.error?.message ||
+						"Unable to load the guardrail configuration."}
+				</AlertDescription>
+			</Alert>
 		);
 	}
 
@@ -367,40 +375,30 @@ export const EngineGuardrailSettings = ({
 
 			<GuardrailIssueList issues={issues} onSelect={revealIssue} />
 
-			<Card className="gap-0 py-0">
+			<Card>
 				<Form
 					form={form}
 					onSubmit={handleSubmit}
 					onError={handleInvalid}
-					className="flex flex-col"
+					className="flex flex-col gap-6"
 				>
-					<div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-						<div className="min-w-0 space-y-1">
-							<div className="flex flex-wrap items-center gap-2">
-								<h2 className="font-semibold text-base">
-									Guardrails
-								</h2>
-								<Badge variant="outline">
-									{pipelines.length}{" "}
-									{pipelines.length === 1 ? "rule" : "rules"}
-								</Badge>
-								<Badge variant="outline">
-									{totalChecks}{" "}
-									{totalChecks === 1 ? "check" : "checks"}
-								</Badge>
-								{isDirty && (
-									<Badge variant="secondary">
-										Unsaved changes
-									</Badge>
-								)}
-							</div>
-							<p className="text-muted-foreground text-sm">
-								Screen model requests and responses. Saved
-								changes apply to the running engine immediately.
-							</p>
-						</div>
-
-						<div className="flex flex-wrap items-center gap-2">
+					<CardHeader className="border-b">
+						<CardTitle className="flex flex-wrap items-center gap-2">
+							Guardrails
+							<Badge variant="outline">
+								{pipelines.length}{" "}
+								{pipelines.length === 1 ? "rule" : "rules"}
+							</Badge>
+							<Badge variant="outline">
+								{totalChecks}{" "}
+								{totalChecks === 1 ? "check" : "checks"}
+							</Badge>
+						</CardTitle>
+						<CardDescription>
+							Screen model requests and responses. Saved changes
+							apply to the running engine immediately.
+						</CardDescription>
+						<CardAction className="flex flex-wrap items-center justify-end gap-2 self-center">
 							<Tabs
 								value={mode}
 								onValueChange={(value) =>
@@ -412,42 +410,36 @@ export const EngineGuardrailSettings = ({
 									<TabsTrigger value="json">JSON</TabsTrigger>
 								</TabsList>
 							</Tabs>
-							{isEditable && (
+							{isEditable && isDirty && (
 								<>
 									<Button
 										type="button"
 										variant="outline"
 										size="sm"
 										onClick={handleDiscard}
-										disabled={!isDirty || isSubmitting}
+										disabled={isSubmitting}
 										data-testid="engine-guardrail-settings--cancel-btn"
 									>
-										<Undo2 className="size-4" aria-hidden />
 										Discard
 									</Button>
 									<Button
 										type="submit"
 										size="sm"
-										disabled={!isDirty || isSubmitting}
+										disabled={isSubmitting}
 										data-testid="engine-guardrail-settings--save-btn"
 									>
 										{isSubmitting ? (
 											<Spinner className="size-4" />
-										) : (
-											<Save
-												className="size-4"
-												aria-hidden
-											/>
-										)}
-										Save
+										) : null}
+										{isSubmitting ? "Saving..." : "Save"}
 									</Button>
 								</>
 							)}
-						</div>
-					</div>
+						</CardAction>
+					</CardHeader>
 
 					{mode === "json" ? (
-						<div className="space-y-2 p-4">
+						<div className="space-y-2 px-6">
 							<div className="flex flex-wrap items-center justify-between gap-2">
 								<p className="text-muted-foreground text-xs">
 									{isDirty
@@ -473,7 +465,7 @@ export const EngineGuardrailSettings = ({
 							</pre>
 						</div>
 					) : (
-						<div className="space-y-4 p-4">
+						<div className="space-y-4 px-6">
 							<div className="flex flex-wrap items-end gap-2">
 								<Field className="min-w-56 flex-1">
 									<FieldLabel htmlFor={ruleSelectId}>

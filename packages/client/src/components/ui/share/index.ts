@@ -1,1 +1,1 @@
-export * from "./share-overlay";
+export * from "./share-app-dialog";

@@ -418,7 +418,7 @@ test("holds blocking problems back until a save is attempted", async () => {
 
 test("reports a stored rule's problems without waiting for a save", async () => {
 	// a configuration saved with a problem, or an engine deleted since, is not an
-	// unfinished edit, and Save is disabled while nothing is dirty
+	// unfinished edit, and Save shows only once something changes
 	renderSettings({
 		pipelines: {
 			askRoom: {
@@ -440,8 +440,8 @@ test("reports a stored rule's problems without waiting for a save", async () => 
 		await screen.findByTestId("engine-guardrail-settings--errors"),
 	).toHaveTextContent("needs a guardrail engine");
 	expect(
-		screen.getByTestId("engine-guardrail-settings--save-btn"),
-	).toBeDisabled();
+		screen.queryByTestId("engine-guardrail-settings--save-btn"),
+	).not.toBeInTheDocument();
 });
 
 test("counts a rule's problems in the list, not on the closed control", async () => {
