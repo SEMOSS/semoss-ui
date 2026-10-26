@@ -357,7 +357,6 @@ const AUTOMATION_NODE_TYPES: readonly AutomationWorkflowNodeType[] = [
 	"model.chat",
 	"model.embeddings",
 	"model.vision",
-	"model.ner",
 	"storage.list",
 	"storage.read",
 	"storage.upload",
