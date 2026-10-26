@@ -1257,14 +1257,13 @@ export class RoomStore {
 	};
 
 	/**
-	 * Whether the room takes a file of this name as an attachment. The theme
-	 * may limit attachments to some extensions; without a limit, every file
-	 * is taken, and with one, a file needs an allowed extension.
+	 * Whether a file goes to the model with the message. The theme may limit
+	 * this to some extensions; other files stay in the room for tools.
 	 *
 	 * @param fileName - The file's name.
-	 * @return True when the file may be attached.
+	 * @return True when the file is sent to the model.
 	 */
-	acceptsAttachment = (fileName: string): boolean => {
+	shouldAttachToModel = (fileName: string): boolean => {
 		const allowed = this._theme.allowedFileTypes;
 		if (!allowed || allowed.length === 0) {
 			return true;
@@ -1298,15 +1297,6 @@ export class RoomStore {
 
 		if (!prompt) {
 			throw new Error("Prompt is required");
-		}
-
-		const blockedFiles = files.filter(
-			(file) => !this.acceptsAttachment(file.name),
-		);
-		if (blockedFiles.length > 0) {
-			throw new Error(
-				`Attachments disabled by this Playground's file policy: ${blockedFiles.map((file) => file.name).join(", ")}.`,
-			);
 		}
 
 		this.setIsLoading(true);
@@ -1410,30 +1400,25 @@ export class RoomStore {
 					fileLocation: item.path,
 				})),
 			];
-			const blockedInputs = mediaInputs.filter(
-				(file) => !this.acceptsAttachment(file.fileName),
-			);
-			if (blockedInputs.length > 0) {
-				throw new Error(
-					`Attachments disabled by this Playground's file policy: ${blockedInputs.map((file) => file.fileName).join(", ")}.`,
-				);
-			}
 
-			// Append media parts to the already-visible input message
+			// Append media parts to the already-visible input message; files
+			// outside the theme's list stay in the room for tools
 			runInAction(() => {
-				mediaInputs.forEach((file) => {
-					inputMessage.parts.push({
-						type: "MEDIA",
-						mediaInfo: {
-							base64Data: "",
-							fileFormat: "",
-							fileName: file.fileName,
-							fileLocation: file.fileLocation,
-							mediaInputType: "FILE",
-							mimeType: "",
-						},
+				mediaInputs
+					.filter((file) => this.shouldAttachToModel(file.fileName))
+					.forEach((file) => {
+						inputMessage.parts.push({
+							type: "MEDIA",
+							mediaInfo: {
+								base64Data: "",
+								fileFormat: "",
+								fileName: file.fileName,
+								fileLocation: file.fileLocation,
+								mediaInputType: "FILE",
+								mimeType: "",
+							},
+						});
 					});
-				});
 			});
 		} catch (e) {
 			// the queued files were not sent, so they wait for the next try
