@@ -279,7 +279,7 @@ export function ApiRequestForm({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="flex items-end gap-2">
+			<div className="flex items-end justify-between gap-2">
 				<div className="flex w-32 flex-col gap-1">
 					<Small className="font-medium">Method</Small>
 					<Select
@@ -307,21 +307,6 @@ export function ApiRequestForm({
 						</SelectContent>
 					</Select>
 				</div>
-				<div className="min-w-0 flex-1">
-					<PillInput
-						label="URL"
-						required
-						value={config.url}
-						placeholder={
-							config.connectionId
-								? "/path/${id}"
-								: "https://api.example.com/items/${id}"
-						}
-						onChange={(url) => onChange({ ...config, url })}
-						upstreamVars={upstreamVars}
-						readOnly={readOnly}
-					/>
-				</div>
 				<Button
 					type="button"
 					disabled={sendDisabled}
@@ -329,6 +314,21 @@ export function ApiRequestForm({
 				>
 					<Send className="size-4" /> {sending ? "Sending…" : "Send"}
 				</Button>
+			</div>
+			<div className="min-w-0">
+				<PillInput
+					label="URL"
+					required
+					value={config.url}
+					placeholder={
+						config.connectionId
+							? "/path/${id}"
+							: "https://api.example.com/items/${id}"
+					}
+					onChange={(url) => onChange({ ...config, url })}
+					upstreamVars={upstreamVars}
+					readOnly={readOnly}
+				/>
 			</div>
 
 			{confirming && (
