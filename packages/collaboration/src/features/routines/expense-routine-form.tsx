@@ -5,6 +5,7 @@ import {
 	CardContent,
 	FieldGroup,
 	Form,
+	FormInput,
 	FormSwitch,
 	P,
 	Separator,
@@ -13,10 +14,13 @@ import {
 	TabsList,
 	TabsTrigger,
 	useForm,
+	z,
 	zodResolver,
 } from "@semoss/ui/next";
 import { collaborationTabsStyles } from "@/features/collaboration/components/collaboration-tabs.styles";
+import { parseAddresses } from "@/features/connectors/api/microsoft";
 import {
+	EXPENSE_RECIPIENT_LIMIT,
 	type ExpenseRoutine,
 	type ExpenseRoutineSettings,
 	expenseRoutineSettingsSchema,
@@ -30,13 +34,42 @@ import { RoutineResult } from "./routine-result";
 import { RoutineSaveStatus } from "./routine-save-status";
 import { useRoutineAutosave } from "./use-routine-autosave";
 
+// the copies are typed as one line of addresses and saved as a list
+const formSchema = expenseRoutineSettingsSchema
+	.omit({ recipients: true })
+	.extend({ recipientsText: z.string() })
+	.superRefine(({ recipientsText }, context) => {
+		try {
+			if (
+				parseAddresses(recipientsText).length > EXPENSE_RECIPIENT_LIMIT
+			) {
+				context.addIssue({
+					code: "custom",
+					path: ["recipientsText"],
+					message: `Copy each review to at most ${EXPENSE_RECIPIENT_LIMIT} addresses.`,
+				});
+			}
+		} catch (error: unknown) {
+			context.addIssue({
+				code: "custom",
+				path: ["recipientsText"],
+				message:
+					error instanceof Error
+						? error.message
+						: "Enter email addresses separated by commas.",
+			});
+		}
+	});
+type ExpenseFormValues = z.infer<typeof formSchema>;
+
 /** Uses the local zone for first setup; reviews are dated in it. */
-function formValues(routine: ExpenseRoutine): ExpenseRoutineSettings {
+function formValues(routine: ExpenseRoutine): ExpenseFormValues {
 	return {
 		enabled: routine.enabled,
 		timezone: routine.configured
 			? routine.timezone
 			: Intl.DateTimeFormat().resolvedOptions().timeZone,
+		recipientsText: routine.recipients.join(", "),
 	};
 }
 
@@ -53,8 +86,8 @@ export function ExpenseRoutineForm({
 	onSave,
 }: ExpenseRoutineFormProps) {
 	const id = useId();
-	const form = useForm<ExpenseRoutineSettings>({
-		resolver: zodResolver(expenseRoutineSettingsSchema),
+	const form = useForm<ExpenseFormValues>({
+		resolver: zodResolver(formSchema),
 		defaultValues: formValues(routine),
 		shouldFocusError: false,
 	});
@@ -73,7 +106,13 @@ export function ExpenseRoutineForm({
 						"Connect your inbox and check service availability before enabling this routine.",
 				);
 			}
-			return formValues(await onSave(values));
+			const { recipientsText, ...settings } = values;
+			const recipients = parseAddresses(recipientsText);
+			const saved = formValues(await onSave({ ...settings, recipients }));
+			// a save mid-typing must not strip a trailing comma the owner is about to type after
+			return saved.recipientsText === recipients.join(", ")
+				? { ...saved, recipientsText }
+				: saved;
 		},
 	});
 	const subjects = routine.subjects
@@ -118,10 +157,18 @@ export function ExpenseRoutineForm({
 											Runs when your inbox syncs an email
 											whose subject starts with {subjects}
 											. Changes save automatically.
-											Reviews are emailed only to you.
+											Reviews are emailed to you and
+											copied to anyone you add below.
 										</span>
 									</span>
 								}
+							/>
+							<FormInput
+								name="recipientsText"
+								label="Also send to (optional)"
+								description={`Up to ${EXPENSE_RECIPIENT_LIMIT} email addresses, separated by commas, that get a copy of each review.`}
+								inputMode="email"
+								spellCheck={false}
 							/>
 							<Separator />
 							<div className="flex flex-col gap-2">
@@ -143,12 +190,13 @@ export function ExpenseRoutineForm({
 									</li>
 									<li>
 										You get an email with a suggested
-										decision, the questions to ask, and the
-										request summary. Unless it is a plain
-										approval, a reply to the approver waits
-										in your Outlook drafts. You still
+										decision that names only what is out of
+										compliance, the questions to ask, and
+										the request summary. Unless it is a
+										plain approval, a reply to the approver
+										waits in your Outlook drafts. You still
 										respond in MES yourself; nothing is
-										approved or sent for you.
+										approved, and no reply is sent for you.
 									</li>
 								</ol>
 							</div>
