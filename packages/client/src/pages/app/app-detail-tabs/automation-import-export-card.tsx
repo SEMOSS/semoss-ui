@@ -4,8 +4,11 @@ import {
 	type AutomationWorkflowDocument,
 	buildAutomationImportSaveAggregate,
 	downloadAutomationExport,
+	downloadBpmnExport,
 	downloadN8nExport,
+	isBpmnImportText,
 	parseAutomationImportFileAsync,
+	parseBpmnImportFile,
 } from "@semoss/automation";
 import { usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
@@ -138,7 +141,7 @@ export const AutomationImportExportCard = ({
 		return output;
 	};
 
-	const exportAutomation = async (format: "native" | "n8n") => {
+	const exportAutomation = async (format: "native" | "n8n" | "bpmn") => {
 		try {
 			setIsExporting(true);
 			const automation = await loadAutomation();
@@ -147,6 +150,11 @@ export const AutomationImportExportCard = ({
 			if (format === "native") {
 				downloadAutomationExport(name, automation, nodeSources);
 				toast.success("Automation exported");
+				return;
+			}
+			if (format === "bpmn") {
+				await downloadBpmnExport(name, automation, nodeSources);
+				toast.success("Automation exported to BPMN");
 				return;
 			}
 			const warnings = downloadN8nExport(name, automation, nodeSources);
@@ -166,9 +174,10 @@ export const AutomationImportExportCard = ({
 	const selectImportFile = async (file: File) => {
 		try {
 			setIsImporting(true);
-			const parsed = await parseAutomationImportFileAsync(
-				await file.text(),
-			);
+			const raw = await file.text();
+			const parsed = isBpmnImportText(raw)
+				? await parseBpmnImportFile(raw, file.name)
+				: await parseAutomationImportFileAsync(raw);
 			setDatabaseEngineMappings({});
 			setPendingImport(parsed);
 		} catch (error) {
@@ -313,7 +322,7 @@ export const AutomationImportExportCard = ({
 					<input
 						ref={fileInputRef}
 						type="file"
-						accept=".json,application/json"
+						accept=".json,.bpmn,.xml,application/json,application/xml,text/xml"
 						className="sr-only"
 						onChange={(event) => {
 							const file = event.target.files?.[0];
@@ -352,6 +361,14 @@ export const AutomationImportExportCard = ({
 					>
 						<DownloadIcon className="size-4" />
 						Export n8n
+					</Button>
+					<Button
+						variant="outline"
+						disabled={isImporting || isExporting}
+						onClick={() => void exportAutomation("bpmn")}
+					>
+						<DownloadIcon className="size-4" />
+						Export BPMN
 					</Button>
 				</CardContent>
 			</Card>

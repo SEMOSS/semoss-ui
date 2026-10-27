@@ -1,4 +1,5 @@
 import type { AutomationWorkflowNodeType } from "../../domain/automation-workflow.types";
+import type { DataStoreEngineType } from "./bpmn-engine-match";
 
 /**
  * BPMN targetNamespace written by our generator.
@@ -86,9 +87,11 @@ export const AUTOMATION_NODE_TYPE_BY_BPMN: Partial<
  *   → The DataStoreReference NAME is the database engine parameter on the
  *     task. The cylinder represents the store itself; the connected task is
  *     the operation against it.
- *   → On import: read the DataStoreReference name → set config.engineName on
- *     the connected node (config.engineId stays empty; user confirms in the
- *     inspector since we don't have the system ID from the BPMN file).
+ *   → On import: match the DataStoreReference name against the engines the
+ *     user can access. A match sets engineId on the connected task, whose node
+ *     type follows the engine type (see DATA_STORE_NODE_TYPES). No match leaves
+ *     engineId empty with a warning, and the user picks the engine in the
+ *     inspector. Workflow JSON persists engineId only, never the name.
  *       DataInputAssociation  (store → task) → read op  (database.query, storage.read, …)
  *       DataOutputAssociation (task → store) → write op (database.insert, storage.upload, …)
  *   → On export: use config.engineName ?? config.engineId as the
@@ -129,3 +132,17 @@ export const DATA_STORE_WRITE_TYPES: AutomationWorkflowNodeType[] = [
 	"vector.add",
 	"vector.delete",
 ];
+
+/**
+ * Node type an imported task becomes when it is wired to a data store, by the
+ * kind of engine the store names. A store that matches no engine is treated as
+ * a database, the usual meaning of a BPMN data store.
+ */
+export const DATA_STORE_NODE_TYPES: Record<
+	DataStoreEngineType,
+	{ read: AutomationWorkflowNodeType; write: AutomationWorkflowNodeType }
+> = {
+	DATABASE: { read: "database.query", write: "database.insert" },
+	STORAGE: { read: "storage.read", write: "storage.upload" },
+	VECTOR: { read: "vector.search", write: "vector.add" },
+};

@@ -7,6 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { CANVAS_GRID_SIZE } from "../canvas-helper-lines/helper-lines";
 
 import "bpmn-js/dist/assets/diagram-js.css";
 import "bpmn-js/dist/assets/bpmn-js.css";
@@ -16,8 +17,16 @@ import type {
 	AutomationEdge,
 	AutomationNode,
 } from "../../domain/automation.types";
-import type { AutomationNodeGroup } from "../../domain/automation-workflow.types";
+import { getAutomationNodeDefinition } from "../../domain/automation-node-catalog";
+import type {
+	AutomationNodeGroup,
+	AutomationWorkflowNodeType,
+} from "../../domain/automation-workflow.types";
 import { createCanvasWorkflowNode } from "../../domain/automation-workflow-adapter";
+import {
+	automationPaletteModule,
+	PALETTE_RESERVED_HEIGHT,
+} from "./automation-palette-provider";
 import { automationToBpmnXml, computeBpmnOffsets } from "./automation-to-bpmn";
 import { AUTOMATION_NODE_TYPE_BY_BPMN } from "./bpmn-node-mapping";
 
@@ -71,6 +80,8 @@ interface BpmnShape {
 	width: number;
 	height: number;
 	businessObject?: { name?: string };
+	/** Automation node type set by the palette on shapes it creates. */
+	semossType?: string;
 	/** Parent element — bpmn-js always sets this at runtime. */
 	parent?: { type?: string; id?: string };
 }
@@ -128,8 +139,15 @@ const SKIP_SHAPE_TYPES = new Set([
 ]);
 
 function shapeToAutomationNode(element: BpmnShape): AutomationNode {
+	// Shapes from the automation palette carry their exact node type; anything
+	// else (stock bpmn-js shapes, replaced elements) falls back to a guess from
+	// the BPMN element type.
 	const workflowType =
-		AUTOMATION_NODE_TYPE_BY_BPMN[element.type] ?? "developer.python";
+		(element.semossType && getAutomationNodeDefinition(element.semossType)
+			? (element.semossType as AutomationWorkflowNodeType)
+			: undefined) ??
+		AUTOMATION_NODE_TYPE_BY_BPMN[element.type] ??
+		"developer.python";
 	const node = createCanvasWorkflowNode(workflowType, 0);
 	node.id = element.id;
 	node.label =
@@ -143,6 +161,16 @@ function shapeToAutomationNode(element: BpmnShape): AutomationNode {
 // passes an event object — cast the `on` method to bypass the incorrect typing.
 type BpmnListener = (event: unknown) => void;
 type BpmnOn = (event: string, listener: BpmnListener) => void;
+
+/** Id of the SubProcess (loop) a connection lives in, if any. */
+function getSubProcessParentId(connection: BpmnConnection): string | undefined {
+	if (connection.parent?.type === "bpmn:SubProcess") {
+		return connection.parent.id;
+	}
+	return connection.source.parent?.type === "bpmn:SubProcess"
+		? connection.source.parent.id
+		: undefined;
+}
 
 function wireEventBridge(modeler: BpmnModeler, refs: EventCallbackRefs): void {
 	const on = modeler.on.bind(modeler) as BpmnOn;
@@ -207,12 +235,7 @@ function wireEventBridge(modeler: BpmnModeler, refs: EventCallbackRefs): void {
 			kind: "control",
 		};
 		// Route connections inside a SubProcess to body edge callbacks.
-		const parentId =
-			element.parent?.type === "bpmn:SubProcess"
-				? element.parent.id
-				: element.source.parent?.type === "bpmn:SubProcess"
-					? element.source.parent.id
-					: undefined;
+		const parentId = getSubProcessParentId(element);
 		if (parentId) {
 			refs.onBodyEdgeAdded.current?.(parentId, edge);
 			return;
@@ -222,17 +245,40 @@ function wireEventBridge(modeler: BpmnModeler, refs: EventCallbackRefs): void {
 
 	on("connection.removed", (({ element }: { element: BpmnConnection }) => {
 		if (element.type !== "bpmn:SequenceFlow") return;
-		const parentId =
-			element.parent?.type === "bpmn:SubProcess"
-				? element.parent.id
-				: element.source.parent?.type === "bpmn:SubProcess"
-					? element.source.parent.id
-					: undefined;
+		const parentId = getSubProcessParentId(element);
 		if (parentId) {
 			refs.onBodyEdgeRemoved.current?.(parentId, element.id);
 			return;
 		}
 		refs.onEdgeRemoved.current?.(element.id);
+	}) as BpmnListener);
+
+	// Reconnecting mutates a connection in place, so no connection.added or
+	// connection.removed fires. This covers dragging an endpoint and the
+	// "change element" replace, which re-points existing flows at the new shape
+	// before the old shape (and its edges) is removed. Re-sync the edge so it
+	// follows the new endpoint instead of being dropped with the old node.
+	on("commandStack.connection.reconnect.postExecuted", (({
+		context,
+	}: {
+		context: { connection: BpmnConnection };
+	}) => {
+		const { connection } = context;
+		if (connection.type !== "bpmn:SequenceFlow") return;
+		const edge: AutomationEdge = {
+			id: connection.id,
+			source: connection.source.id,
+			target: connection.target.id,
+			kind: "control",
+		};
+		const parentId = getSubProcessParentId(connection);
+		if (parentId) {
+			refs.onBodyEdgeRemoved.current?.(parentId, edge.id);
+			refs.onBodyEdgeAdded.current?.(parentId, edge);
+			return;
+		}
+		refs.onEdgeRemoved.current?.(edge.id);
+		refs.onEdgeAdded.current?.(edge);
 	}) as BpmnListener);
 
 	on("shape.move.end", (({ context }: { context: { shape: BpmnShape } }) => {
@@ -285,6 +331,30 @@ function fitDiagram(modeler: BpmnModeler): void {
 		x: outer.width / 2,
 		y: outer.height / 2,
 	});
+}
+
+interface GridViewbox {
+	x: number;
+	y: number;
+	scale: number;
+}
+
+/**
+ * Paints a dotted grid on the canvas container that pans and zooms with the
+ * diagram. bpmn-js has no background grid of its own, so the dots are a CSS
+ * gradient re-aligned to the viewbox whenever it changes.
+ */
+function syncGridBackground(
+	container: HTMLElement,
+	viewbox: GridViewbox,
+): void {
+	const tile = CANVAS_GRID_SIZE * viewbox.scale;
+	container.style.backgroundImage =
+		"radial-gradient(circle, color-mix(in srgb, currentColor 35%, transparent) 1px, transparent 1px)";
+	container.style.backgroundSize = `${tile}px ${tile}px`;
+	// The dot sits at the tile centre, so shift by half a tile to put one on
+	// the diagram origin.
+	container.style.backgroundPosition = `${-viewbox.x * viewbox.scale - tile / 2}px ${-viewbox.y * viewbox.scale - tile / 2}px`;
 }
 
 function triggerDownload(xml: string, fileName: string): void {
@@ -403,8 +473,21 @@ export function AutomationBpmnEditor({
 
 		onDirtyChangeRef.current?.(false);
 
-		const modeler = new BpmnModeler({ container });
+		const modeler = new BpmnModeler({
+			container,
+			gridSnapping: { active: true },
+			additionalModules: [automationPaletteModule],
+		});
 		modelerRef.current = modeler;
+		syncGridBackground(
+			container,
+			modeler.get("canvas").viewbox() as unknown as GridViewbox,
+		);
+		(modeler.on.bind(modeler) as BpmnOn)(
+			"canvas.viewbox.changed",
+			((event: { viewbox: GridViewbox }) =>
+				syncGridBackground(container, event.viewbox)) as BpmnListener,
+		);
 		let isDisposed = false;
 		setError(null);
 
@@ -484,9 +567,21 @@ export function AutomationBpmnEditor({
 			aria-label="BPMN workflow editor"
 			className="absolute inset-0 z-0 bg-background"
 		>
-			{/* Hide the "create group" palette entry — not useful in this context. */}
-			<style>{`[data-action="create.group"] { display: none !important; }`}</style>
-			<div ref={containerRef} className="absolute inset-0" />
+			{/* Hide the group and data object palette entries: groups are not useful here,
+			    and data objects have no automation node, so they would not be saved. */}
+			{/* On short screens the palette outgrows the canvas, so let it scroll
+			    and leave room for the view switcher at the bottom left. The
+			    widths add the scrollbar's share to bpmn-js's 94px/47px so the
+			    scrollbar does not squeeze the entries into one column. */}
+			<style>{`[data-action="create.group"] { display: none !important; }
+[data-action="create.data-object"], [data-action="create.data-store"] { display: none !important; }
+.djs-palette { max-height: calc(100% - ${PALETTE_RESERVED_HEIGHT}px); overflow-y: auto; scrollbar-width: thin; }
+.djs-palette.two-column.open { width: 108px; }
+.djs-palette:not(.two-column).open { width: 62px; }`}</style>
+			<div
+				ref={containerRef}
+				className="absolute inset-0 text-muted-foreground"
+			/>
 			<div className="absolute right-28 bottom-4 z-20 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
 				<Tooltip>
 					<TooltipTrigger asChild>

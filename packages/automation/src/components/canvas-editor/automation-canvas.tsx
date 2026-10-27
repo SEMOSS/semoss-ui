@@ -26,7 +26,7 @@ import {
 	RefreshCw,
 	Save,
 	Scan,
-	// Upload,
+	Upload,
 	Workflow,
 	ZoomIn,
 	ZoomOut,
@@ -64,7 +64,11 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
-import { getAutomationRun, listAutomationRuns } from "../../api";
+import {
+	getAutomationRun,
+	listAutomationRuns,
+	listDataStoreEngines,
+} from "../../api";
 import { AutomationContext } from "../../contexts/automation.context";
 import type {
 	AutomationEdge,
@@ -107,6 +111,9 @@ import {
 } from "../../domain/automation-workflow-adapter";
 import type { BpmnEditorHandle } from "../../features/bpmn-viewer/automation-bpmn-viewer";
 import type { BpmnImportResult } from "../../features/bpmn-viewer/bpmn-import-adapter";
+import { CANVAS_GRID_SIZE } from "../../features/canvas-helper-lines/helper-lines";
+import { HelperLinesOverlay } from "../../features/canvas-helper-lines/helper-lines-overlay";
+import { useHelperLines } from "../../features/canvas-helper-lines/use-helper-lines";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
@@ -729,6 +736,9 @@ export const AutomationCanvasContent = forwardRef<
 		() => createInitialCanvasWorkflowDocument().triggerBindings,
 	);
 	const [workflowRefreshToken, setWorkflowRefreshToken] = useState(0);
+	// Bumped each time the workflow finishes loading, so the BPMN view (which
+	// builds its diagram once on mount) redraws from the loaded workflow.
+	const [bpmnViewKey, setBpmnViewKey] = useState(0);
 	// Transient highlight applied to node cards right after an Assistant tool changes the
 	// automation — cleared automatically a few seconds later (or replaced by the next change).
 	const [changeHighlight, setChangeHighlight] =
@@ -1041,9 +1051,15 @@ export const AutomationCanvasContent = forwardRef<
 	const [groupSelectionIds, setGroupSelectionIds] = useState<Set<string>>(
 		() => new Set(),
 	);
+	const {
+		lines: helperLines,
+		applyHelperLines,
+		clearHelperLines,
+	} = useHelperLines();
 	const handleRfNodesChange = useCallback(
 		(changes: Parameters<typeof onRfNodesChange>[0]) => {
-			onRfNodesChange(changes);
+			const flowNodes = reactFlowInstanceRef.current?.getNodes() ?? [];
+			onRfNodesChange(applyHelperLines(changes, flowNodes));
 			for (const change of changes) {
 				if (change.type !== "select") continue;
 				if (change.id.startsWith("node-group-")) continue;
@@ -1054,7 +1070,7 @@ export const AutomationCanvasContent = forwardRef<
 				}
 			}
 		},
-		[onRfNodesChange],
+		[onRfNodesChange, applyHelperLines],
 	);
 	const canvasContainerRef = useRef<HTMLDivElement>(null);
 	const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
@@ -1682,6 +1698,7 @@ export const AutomationCanvasContent = forwardRef<
 				if (!cancelled) {
 					loadedRef.current = true;
 					setWorkflowLoaded(true);
+					setBpmnViewKey((key) => key + 1);
 				}
 			});
 		return () => {
@@ -1877,11 +1894,37 @@ export const AutomationCanvasContent = forwardRef<
 				const { bpmnXmlToAutomationDocument } = await import(
 					"../../features/bpmn-viewer/bpmn-import-adapter"
 				);
+				// Only look the engines up when the file has data stores to match.
+				let engines: Awaited<ReturnType<typeof listDataStoreEngines>> =
+					[];
+				let engineLookupWarning: string | undefined;
+				if (/dataStoreReference/i.test(xml)) {
+					try {
+						engines = await listDataStoreEngines();
+					} catch (error) {
+						engineLookupWarning = `Could not load your engines to match the BPMN data stores: ${
+							error instanceof Error
+								? error.message
+								: "unknown error"
+						}`;
+					}
+				}
 				const result = await bpmnXmlToAutomationDocument(
 					xml,
 					bpmnSource.fileName,
+					{ engines },
 				);
-				setPendingBpmnConversion(result);
+				setPendingBpmnConversion(
+					engineLookupWarning
+						? {
+								...result,
+								warnings: [
+									engineLookupWarning,
+									...result.warnings,
+								],
+							}
+						: result,
+				);
 			} catch (error) {
 				toast.error(
 					error instanceof Error
@@ -4369,6 +4412,7 @@ export const AutomationCanvasContent = forwardRef<
 	// ---- Persist canvas positions ----
 	const onNodeDragStop = useCallback(
 		(_event: React.MouseEvent, draggedNode: Node) => {
+			clearHelperLines();
 			if (readOnly || viewingHistory) return;
 			const containingLoop = steps.find((step) =>
 				step.body?.nodes.some((node) => node.id === draggedNode.id),
@@ -4534,6 +4578,7 @@ export const AutomationCanvasContent = forwardRef<
 			layoutNodes,
 			readOnly,
 			viewingHistory,
+			clearHelperLines,
 		],
 	);
 
@@ -4777,6 +4822,11 @@ export const AutomationCanvasContent = forwardRef<
 											!viewingHistory &&
 											!running
 										}
+										snapToGrid
+										snapGrid={[
+											CANVAS_GRID_SIZE,
+											CANVAS_GRID_SIZE,
+										]}
 										panOnDrag
 										panOnScroll
 										selectionOnDrag
@@ -4911,9 +4961,12 @@ export const AutomationCanvasContent = forwardRef<
 									>
 										<Background
 											variant={BackgroundVariant.Dots}
-											gap={20}
+											gap={CANVAS_GRID_SIZE}
 											size={1}
 											color={dotColor}
+										/>
+										<HelperLinesOverlay
+											lines={helperLines}
 										/>
 									</ReactFlow>
 									{bpmnMode && (
@@ -4925,6 +4978,7 @@ export const AutomationCanvasContent = forwardRef<
 											}
 										>
 											<AutomationBpmnViewer
+												key={bpmnViewKey}
 												ref={bpmnEditorRef}
 												nodes={displaySteps}
 												edges={displayEdges}
@@ -4987,9 +5041,10 @@ export const AutomationCanvasContent = forwardRef<
 										</Suspense>
 									)}
 
-									{/* BPMN-mode toolbar: Import + Export + Convert/Cancel */}
-									{bpmnMode && !viewingHistory && (
-										<div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+									<div
+										className={`absolute top-4 right-4 z-30 items-center gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory ? "hidden" : "flex"}`}
+									>
+										{bpmnMode && (
 											<input
 												ref={bpmnFileInputRef}
 												type="file"
@@ -4999,218 +5054,211 @@ export const AutomationCanvasContent = forwardRef<
 													handleBpmnFileSelected
 												}
 											/>
-											{bpmnSource !== null && (
-												<>
-													<Button
-														size="sm"
-														variant="outline"
-														className="bg-background shadow-sm"
-														onClick={
-															handleCancelBpmnImport
-														}
-													>
-														Cancel
-													</Button>
-													<Button
-														size="sm"
-														className="shadow-sm"
-														disabled={
-															isConvertingBpmn
-														}
-														onClick={async () => {
-															const xml =
-																await bpmnEditorRef.current?.getXml();
-															if (xml)
-																handleRequestBpmnConversion(
-																	xml,
-																);
-														}}
-													>
-														{isConvertingBpmn
-															? "Converting…"
-															: "Convert to Automation"}
-													</Button>
-												</>
-											)}
-											{/* {bpmnSource === null &&
-												!readOnly &&
-												mcpMode !== "trigger" && (
-													<Button
-														size="sm"
-														variant="outline"
-														className="bg-background shadow-sm"
-														onClick={() =>
-															bpmnFileInputRef.current?.click()
-														}
-													>
-														<Upload
-															className="mr-1.5 size-3.5"
-															aria-hidden
-														/>
-														Import BPMN
-													</Button>
-												)} */}
-											<Button
-												size="sm"
-												variant="outline"
-												className="bg-background shadow-sm"
-												onClick={() =>
-													bpmnEditorRef.current?.exportBpmn()
-												}
-											>
-												<Download
-													className="mr-1.5 size-3.5"
-													aria-hidden
-												/>
-												Export
-											</Button>
-										</div>
-									)}
-
-									<div
-										className={`absolute top-4 right-4 z-30 items-center gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory || bpmnMode || bpmnSource !== null ? "hidden" : "flex"}`}
-									>
-										{/* {!readOnly && mcpMode !== "trigger" && (
-											<Button
-												size="sm"
-												variant="outline"
-												className="bg-background shadow-sm"
-												onClick={() =>
-													bpmnFileInputRef.current?.click()
-												}
-											>
-												<Upload
-													className="mr-1.5 size-3.5"
-													aria-hidden
-												/>
-												Import BPMN
-											</Button>
-										)} */}
-										{mcpMode !== "trigger" && (
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														size="sm"
-														variant="outline"
-														className="bg-background shadow-sm"
-														onClick={
-															reloadFromServer
-														}
-														disabled={
-															saving || running
-														}
-														aria-label="Reload workflow"
-													>
-														<RefreshCw className="h-3.5 w-3.5" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent side="bottom">
-													Reload the saved workflow
-												</TooltipContent>
-											</Tooltip>
 										)}
-										{!readOnly && canvasMode !== "bpmn" && (
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<span
-														tabIndex={
-															selectedCanvasNodeIds.length <
-															2
-																? 0
-																: -1
-														}
-														className="inline-flex"
+										{bpmnSource !== null ? (
+											<>
+												<Button
+													size="sm"
+													variant="outline"
+													className="bg-background shadow-sm"
+													onClick={
+														handleCancelBpmnImport
+													}
+												>
+													Cancel
+												</Button>
+												<Button
+													size="sm"
+													className="shadow-sm"
+													disabled={isConvertingBpmn}
+													onClick={async () => {
+														const xml =
+															await bpmnEditorRef.current?.getXml();
+														if (xml)
+															handleRequestBpmnConversion(
+																xml,
+															);
+													}}
+												>
+													{isConvertingBpmn
+														? "Converting…"
+														: "Convert to Automation"}
+												</Button>
+											</>
+										) : (
+											<>
+												{bpmnMode && (
+													<>
+														{!readOnly &&
+															mcpMode !==
+																"trigger" && (
+																<Button
+																	size="sm"
+																	variant="outline"
+																	className="bg-background shadow-sm"
+																	onClick={() =>
+																		bpmnFileInputRef.current?.click()
+																	}
+																>
+																	<Upload
+																		className="mr-1.5 size-3.5"
+																		aria-hidden
+																	/>
+																	Import BPMN
+																</Button>
+															)}
+														<Button
+															size="sm"
+															variant="outline"
+															className="bg-background shadow-sm"
+															onClick={() =>
+																bpmnEditorRef.current?.exportBpmn()
+															}
+														>
+															<Download
+																className="mr-1.5 size-3.5"
+																aria-hidden
+															/>
+															Export
+														</Button>
+													</>
+												)}
+												{mcpMode !== "trigger" && (
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																size="sm"
+																variant="outline"
+																className="bg-background shadow-sm"
+																onClick={
+																	reloadFromServer
+																}
+																disabled={
+																	saving ||
+																	running
+																}
+																aria-label="Reload workflow"
+															>
+																<RefreshCw className="h-3.5 w-3.5" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent side="bottom">
+															Reload the saved
+															workflow
+														</TooltipContent>
+													</Tooltip>
+												)}
+												{!readOnly &&
+													canvasMode !== "bpmn" && (
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<span
+																	tabIndex={
+																		selectedCanvasNodeIds.length <
+																		2
+																			? 0
+																			: -1
+																	}
+																	className="inline-flex"
+																>
+																	<Button
+																		size="sm"
+																		variant="outline"
+																		className="bg-background shadow-sm"
+																		disabled={
+																			selectedCanvasNodeIds.length <
+																			2
+																		}
+																		onClick={() =>
+																			openNodeGroupDialog()
+																		}
+																	>
+																		<Layers3
+																			className="mr-1.5 size-3.5"
+																			aria-hidden
+																		/>
+																		Create
+																		Group
+																	</Button>
+																</span>
+															</TooltipTrigger>
+															<TooltipContent side="bottom">
+																<span className="block">
+																	Shift-click
+																	nodes or
+																	Shift-drag a
+																	selection
+																	box.
+																</span>
+																<span className="block">
+																	Select at
+																	least two to
+																	create a
+																	group.
+																</span>
+															</TooltipContent>
+														</Tooltip>
+													)}
+												{mcpMode !== "trigger" && (
+													<div
+														className="relative"
+														data-tour="save"
 													>
 														<Button
 															size="sm"
 															variant="outline"
 															className="bg-background shadow-sm"
-															disabled={
-																selectedCanvasNodeIds.length <
-																2
-															}
 															onClick={() =>
-																openNodeGroupDialog()
+																void (mcpMode &&
+																mcpContext
+																	? handleDoneReturnToChat()
+																	: save())
 															}
+															disabled={saving}
 														>
-															<Layers3
-																className="mr-1.5 size-3.5"
-																aria-hidden
-															/>
-															Create Group
-														</Button>
-													</span>
-												</TooltipTrigger>
-												<TooltipContent side="bottom">
-													<span className="block">
-														Shift-click nodes or
-														Shift-drag a selection
-														box.
-													</span>
-													<span className="block">
-														Select at least two to
-														create a group.
-													</span>
-												</TooltipContent>
-											</Tooltip>
-										)}
-										{mcpMode !== "trigger" &&
-											canvasMode !== "bpmn" && (
-												<div
-													className="relative"
-													data-tour="save"
-												>
-													<Button
-														size="sm"
-														variant="outline"
-														className="bg-background shadow-sm"
-														onClick={() =>
-															void (mcpMode &&
-															mcpContext
-																? handleDoneReturnToChat()
-																: save())
-														}
-														disabled={saving}
-													>
-														<span className="relative mr-1.5">
-															{saving ? (
-																<Loader2 className="h-3.5 w-3.5 animate-spin" />
-															) : (
-																<Save className="h-3.5 w-3.5" />
-															)}
-															{isDirty &&
-																!saving && (
-																	<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-warning ring-1 ring-background" />
+															<span className="relative mr-1.5">
+																{saving ? (
+																	<Loader2 className="h-3.5 w-3.5 animate-spin" />
+																) : (
+																	<Save className="h-3.5 w-3.5" />
 																)}
-														</span>
-														{mcpMode && mcpContext
-															? "Save — Return to Chat"
-															: "Save"}
-													</Button>
-												</div>
-											)}
-										{canvasMode !== "bpmn" && (
-											<Button
-												data-tour="run"
-												size="sm"
-												className="shadow-sm"
-												onClick={run}
-												disabled={
-													running || !hasRunnableSteps
-												}
-												title={
-													!hasRunnableSteps
-														? "Add at least one step before running"
-														: undefined
-												}
-											>
-												{running ? (
-													<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-												) : (
-													<Play className="mr-1.5 h-3.5 w-3.5" />
+																{isDirty &&
+																	!saving && (
+																		<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-warning ring-1 ring-background" />
+																	)}
+															</span>
+															{mcpMode &&
+															mcpContext
+																? "Save — Return to Chat"
+																: "Save"}
+														</Button>
+													</div>
 												)}
-												Run
-											</Button>
+												<Button
+													data-tour="run"
+													size="sm"
+													className="shadow-sm"
+													onClick={run}
+													disabled={
+														running ||
+														!hasRunnableSteps
+													}
+													title={
+														!hasRunnableSteps
+															? "Add at least one step before running"
+															: undefined
+													}
+												>
+													{running ? (
+														<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+													) : (
+														<Play className="mr-1.5 h-3.5 w-3.5" />
+													)}
+													Run
+												</Button>
+											</>
 										)}
 									</div>
 

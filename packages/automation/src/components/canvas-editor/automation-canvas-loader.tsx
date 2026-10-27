@@ -2,31 +2,13 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle, Button } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { fetchAutomationNodeDefinitions } from "../../api";
-import {
-	hasAutomationNodeDefinitions,
-	setAutomationNodeDefinitions,
-} from "../../domain/automation-node-catalog";
+import { ensureAutomationNodeDefinitions } from "../../api";
+import { hasAutomationNodeDefinitions } from "../../domain/automation-node-catalog";
 import {
 	AutomationCanvasContent,
 	type AutomationCanvasHandle,
 	type AutomationCanvasProps,
 } from "./automation-canvas";
-
-let catalogLoadPromise: Promise<void> | null = null;
-
-function loadNodeCatalog(): Promise<void> {
-	if (hasAutomationNodeDefinitions()) return Promise.resolve();
-	if (!catalogLoadPromise) {
-		catalogLoadPromise = fetchAutomationNodeDefinitions()
-			.then((catalog) => setAutomationNodeDefinitions(catalog.nodes))
-			.catch((error: unknown) => {
-				catalogLoadPromise = null;
-				throw error;
-			});
-	}
-	return catalogLoadPromise;
-}
 
 function errorMessage(error: unknown): string {
 	return getErrorMessage(
@@ -53,7 +35,7 @@ export const AutomationCanvas = forwardRef<
 
 		setReady(false);
 		setError(null);
-		void loadNodeCatalog()
+		void ensureAutomationNodeDefinitions()
 			.then(() => {
 				if (mountedRef.current) setReady(true);
 			})
