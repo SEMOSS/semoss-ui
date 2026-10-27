@@ -47,7 +47,7 @@ interface ExpenseRoutineFormProps {
 	onSave: (values: ExpenseRoutineSettings) => Promise<ExpenseRoutine>;
 }
 
-/** The expense review opt-in, its guideline documents, and the latest review. */
+/** The expense review opt-in, its guideline documents and example threads, and the latest review. */
 export function ExpenseRoutineForm({
 	routine,
 	onSave,
@@ -135,14 +135,20 @@ export function ExpenseRoutineForm({
 									</li>
 									<li>
 										Your assistant checks it against the
-										guideline documents you keep here.
+										guideline documents you keep here, and
+										follows any example email threads you
+										add (.eml or .msg) where an approver
+										pushed back, set conditions, or
+										declined.
 									</li>
 									<li>
-										You get an email with the request
-										summary, the guideline check, and a
-										suggested decision. You still respond in
-										MES yourself; nothing is approved or
-										sent for you.
+										You get an email with a suggested
+										decision, the questions to ask, and the
+										request summary. Unless it is a plain
+										approval, a reply to the approver waits
+										in your Outlook drafts. You still
+										respond in MES yourself; nothing is
+										approved or sent for you.
 									</li>
 								</ol>
 							</div>
@@ -163,7 +169,7 @@ export function ExpenseRoutineForm({
 									value="documents"
 									className={collaborationTabsStyles.trigger}
 								>
-									Guideline documents
+									Guidelines & examples
 								</TabsTrigger>
 							</TabsList>
 							<TabsContent
