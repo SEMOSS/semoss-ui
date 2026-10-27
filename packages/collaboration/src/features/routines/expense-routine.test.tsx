@@ -112,29 +112,46 @@ describe("expense review settings", () => {
 });
 
 describe("ExpenseRoutineForm", () => {
-	it("saves typed addresses as a list and keeps the text as typed", async () => {
+	it("shows each address as a chip and saves the chips as a list", async () => {
 		const { user, onSave, input } = renderForm();
-		expect(input).toHaveValue("jbell@deloitte.com");
-		await user.type(input, "; LHughes@deloitte.com, ");
+		expect(
+			screen.getByRole("button", { name: "Edit jbell@deloitte.com" }),
+		).toBeVisible();
+		expect(input).toHaveValue("");
+		await user.type(input, "LHughes@deloitte.com{Enter}");
+		expect(
+			screen.getByRole("button", { name: "Edit LHughes@deloitte.com" }),
+		).toBeVisible();
+		expect(input).toHaveValue("");
 		await autosave();
 		expect(onSave).toHaveBeenLastCalledWith({
 			enabled: true,
 			timezone: "America/New_York",
 			recipients: ["jbell@deloitte.com", "LHughes@deloitte.com"],
 		});
-		// the owner may be about to type the next address after the comma
-		expect(input).toHaveValue("jbell@deloitte.com; LHughes@deloitte.com, ");
+		await user.click(
+			screen.getByRole("button", { name: "Remove jbell@deloitte.com" }),
+		);
+		await autosave();
+		expect(onSave).toHaveBeenLastCalledWith({
+			enabled: true,
+			timezone: "America/New_York",
+			recipients: ["LHughes@deloitte.com"],
+		});
 	});
 
-	it("explains an entry that is not an email address and does not save it", async () => {
+	it("marks an entry that is not an email address and does not save it", async () => {
 		const { user, onSave, input } = renderForm();
-		await user.clear(input);
-		await user.type(input, "Jen Bell");
+		// addresses hold no spaces, so a chip takes one word
+		await user.type(input, "Lauren{Enter}");
 		await autosave();
 		expect(onSave).not.toHaveBeenCalled();
 		expect(
-			screen.getByText("Enter email addresses separated by commas."),
+			screen.getByRole("button", {
+				name: "Edit Lauren, not an email address",
+			}),
 		).toBeVisible();
+		expect(screen.getByText("Not an email address: Lauren")).toBeVisible();
 		expect(input).toHaveAttribute("aria-invalid", "true");
 	});
 });

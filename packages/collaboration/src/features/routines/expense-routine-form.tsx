@@ -5,7 +5,6 @@ import {
 	CardContent,
 	FieldGroup,
 	Form,
-	FormInput,
 	FormSwitch,
 	P,
 	Separator,
@@ -19,6 +18,7 @@ import {
 } from "@semoss/ui/next";
 import { collaborationTabsStyles } from "@/features/collaboration/components/collaboration-tabs.styles";
 import { parseAddresses } from "@/features/connectors/api/microsoft";
+import { EmailRecipientField } from "@/features/connectors/components/email-recipient-field";
 import {
 	EXPENSE_RECIPIENT_LIMIT,
 	type ExpenseRoutine,
@@ -34,29 +34,28 @@ import { RoutineResult } from "./routine-result";
 import { RoutineSaveStatus } from "./routine-save-status";
 import { useRoutineAutosave } from "./use-routine-autosave";
 
-// the copies are typed as one line of addresses and saved as a list
+// the copies are chips over one comma-separated string, saved as a list
 const formSchema = expenseRoutineSettingsSchema
 	.omit({ recipients: true })
 	.extend({ recipientsText: z.string() })
 	.superRefine(({ recipientsText }, context) => {
-		try {
-			if (
-				parseAddresses(recipientsText).length > EXPENSE_RECIPIENT_LIMIT
-			) {
-				context.addIssue({
-					code: "custom",
-					path: ["recipientsText"],
-					message: `Copy each review to at most ${EXPENSE_RECIPIENT_LIMIT} addresses.`,
-				});
-			}
-		} catch (error: unknown) {
+		const entries = recipientsText
+			.split(/[,;\n]/)
+			.map((entry) => entry.trim())
+			.filter(Boolean);
+		const invalid = entries.filter(
+			(entry) => !z.email().safeParse(entry).success,
+		);
+		const message = invalid.length
+			? `Not an email address: ${invalid.join(", ")}`
+			: new Set(entries).size > EXPENSE_RECIPIENT_LIMIT
+				? `Copy each review to at most ${EXPENSE_RECIPIENT_LIMIT} addresses.`
+				: null;
+		if (message) {
 			context.addIssue({
 				code: "custom",
 				path: ["recipientsText"],
-				message:
-					error instanceof Error
-						? error.message
-						: "Enter email addresses separated by commas.",
+				message,
 			});
 		}
 	});
@@ -107,12 +106,12 @@ export function ExpenseRoutineForm({
 				);
 			}
 			const { recipientsText, ...settings } = values;
-			const recipients = parseAddresses(recipientsText);
-			const saved = formValues(await onSave({ ...settings, recipients }));
-			// a save mid-typing must not strip a trailing comma the owner is about to type after
-			return saved.recipientsText === recipients.join(", ")
-				? { ...saved, recipientsText }
-				: saved;
+			return formValues(
+				await onSave({
+					...settings,
+					recipients: parseAddresses(recipientsText),
+				}),
+			);
 		},
 	});
 	const subjects = routine.subjects
@@ -163,12 +162,11 @@ export function ExpenseRoutineForm({
 									</span>
 								}
 							/>
-							<FormInput
+							<EmailRecipientField
 								name="recipientsText"
 								label="Also send to (optional)"
-								description={`Up to ${EXPENSE_RECIPIENT_LIMIT} email addresses, separated by commas, that get a copy of each review.`}
-								inputMode="email"
-								spellCheck={false}
+								layout="field"
+								description={`Up to ${EXPENSE_RECIPIENT_LIMIT} email addresses that get a copy of each review. Press Enter or type a comma after each one.`}
 							/>
 							<Separator />
 							<div className="flex flex-col gap-2">

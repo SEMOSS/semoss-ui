@@ -8,23 +8,38 @@ import {
 } from "react";
 import {
 	Button,
+	cn,
 	Field,
+	FieldDescription,
 	FieldError,
 	FieldLabel,
 	FormField,
 	Input,
+	InputGroup,
+	InputGroupInput,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	useFormContext,
+	z,
 } from "@semoss/ui/next";
-import type { EmailDraftValues } from "../api/email-draft-values";
+
+// the same check parseAddresses applies when the form validates
+const emailAddress = z.email();
 
 interface EmailRecipientFieldProps {
-	name: "to" | "cc" | "bcc";
+	/** A form field holding the recipients as one comma-separated string. */
+	name: string;
 	label: string;
-	disabled: boolean;
+	disabled?: boolean;
 	required?: boolean;
+	/**
+	 * `envelope` puts the label beside the chips in an email's address row;
+	 * `field` is a settings field, labeled above its box like the other inputs.
+	 */
+	layout?: "envelope" | "field";
+	/** Hint under a `field` layout's box. */
+	description?: ReactNode;
 	/** Optional recipient disclosure actions in the same envelope row. */
 	actions?: ReactNode;
 }
@@ -33,11 +48,16 @@ interface EmailRecipientFieldProps {
 export function EmailRecipientField({
 	name,
 	label,
-	disabled,
+	disabled = false,
 	required,
+	layout = "envelope",
+	description,
 	actions,
 }: EmailRecipientFieldProps) {
-	const { control } = useFormContext<EmailDraftValues>();
+	const { control } = useFormContext();
+	const isField = layout === "field";
+	// the field layout's box shows its focus ring and error border through its control slot
+	const TextInput = isField ? InputGroupInput : Input;
 	const id = useId();
 	// Only the active token's index is local; recipient text always belongs to RHF.
 	const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -55,7 +75,9 @@ export function EmailRecipientField({
 			control={control}
 			name={name}
 			render={({ field, fieldState }) => {
-				const recipients = field.value
+				const recipients = (
+					typeof field.value === "string" ? field.value : ""
+				)
 					.split(/[,;\n]/)
 					.map((value) => value.trim())
 					.filter(Boolean);
@@ -65,6 +87,203 @@ export function EmailRecipientField({
 						: null;
 				const activeValue =
 					activeIndex === null ? "" : recipients[activeIndex];
+				const chips = recipients.map((recipient, index) => {
+					if (index === activeIndex) return null;
+					const isAddress = emailAddress.safeParse(recipient).success;
+					// a settings field holds one list; an envelope names its row, since To, Cc and Bcc sit together
+					const editName = isField
+						? `Edit ${recipient}`
+						: `Edit ${label} recipient ${recipient}`;
+					return (
+						<span
+							key={`${index}:${recipient}`}
+							// its own color, so an invalid field turns only the wrong chip red
+							className={cn(
+								"inline-flex max-w-full items-center rounded-md border bg-muted/50 text-base text-foreground",
+								!isAddress &&
+									"border-destructive/40 bg-destructive/10 text-destructive",
+							)}
+						>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<Button
+										type="button"
+										variant="ghost"
+										className={cn(
+											"h-auto min-h-8 pointer-coarse:min-h-11 min-w-0 shrink whitespace-normal break-all rounded-r-none px-2 py-1 text-left font-normal",
+											isField && "min-h-7",
+										)}
+										disabled={disabled}
+										aria-label={
+											isAddress
+												? editName
+												: `${editName}, not an email address`
+										}
+										onClick={() => {
+											shouldSelect.current = true;
+											setEditingIndex(index);
+										}}
+									>
+										<span className="min-w-0 truncate">
+											{recipient}
+										</span>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent className="max-w-64 break-all">
+									{recipient} ·{" "}
+									{isAddress
+										? "click to edit"
+										: "not an email address, click to edit"}
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon-sm"
+										className={cn(
+											"pointer-coarse:size-11 size-8 shrink-0 rounded-l-none",
+											isField && "size-7",
+										)}
+										disabled={disabled}
+										aria-label={
+											isField
+												? `Remove ${recipient}`
+												: `Remove ${recipient} from ${label}`
+										}
+										onClick={() => {
+											field.onChange(
+												recipients
+													.filter(
+														(_, position) =>
+															position !== index,
+													)
+													.join(", "),
+											);
+											setEditingIndex(
+												activeIndex === null
+													? null
+													: activeIndex > index
+														? activeIndex - 1
+														: activeIndex,
+											);
+											input.current?.focus();
+										}}
+									>
+										<X
+											className="size-3"
+											aria-hidden="true"
+										/>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									Remove recipient
+								</TooltipContent>
+							</Tooltip>
+						</span>
+					);
+				});
+				const textInput = (
+					<TextInput
+						id={id}
+						name={field.name}
+						ref={(element) => {
+							field.ref(element);
+							input.current = element;
+						}}
+						value={activeValue}
+						placeholder={
+							recipients.length ? "Add another" : "Add recipients"
+						}
+						disabled={disabled}
+						aria-required={required}
+						aria-invalid={fieldState.invalid}
+						aria-describedby={
+							[
+								isField && description
+									? `${id}-description`
+									: undefined,
+								fieldState.error ? `${id}-error` : undefined,
+							]
+								.filter(Boolean)
+								.join(" ") || undefined
+						}
+						autoComplete="off"
+						autoCapitalize="none"
+						spellCheck={false}
+						inputMode="email"
+						className={cn(
+							"h-9 pointer-coarse:min-h-11 w-24 min-w-20 flex-1 rounded-none border-0 bg-transparent px-2 shadow-none focus-visible:ring-0 dark:bg-transparent",
+							isField && "h-7",
+						)}
+						onChange={(event) => {
+							const text = event.target.value;
+							const next = [...recipients];
+							const index = activeIndex ?? next.length;
+							if (text) next[index] = text;
+							else next.splice(index, 1);
+							field.onChange(next.join(", "));
+							setEditingIndex(
+								!text || /[,;\n]/.test(text) ? null : index,
+							);
+						}}
+						onBlur={() => {
+							setEditingIndex(null);
+							field.onBlur();
+						}}
+						onKeyDown={(event) => {
+							if (
+								event.nativeEvent.isComposing ||
+								event.ctrlKey ||
+								event.metaKey ||
+								event.altKey
+							)
+								return;
+							if (["Enter", ",", ";"].includes(event.key)) {
+								event.preventDefault();
+								event.stopPropagation();
+								setEditingIndex(null);
+							} else if (
+								event.key === "Backspace" &&
+								!activeValue &&
+								recipients.length
+							) {
+								event.preventDefault();
+								shouldSelect.current = true;
+								setEditingIndex(recipients.length - 1);
+							}
+						}}
+					/>
+				);
+				const error = fieldState.error && (
+					<FieldError id={`${id}-error`}>
+						{fieldState.error.message}
+					</FieldError>
+				);
+				if (isField) {
+					return (
+						<Field data-invalid={fieldState.invalid}>
+							<FieldLabel id={`${id}-label`} htmlFor={id}>
+								{label}
+							</FieldLabel>
+							{/* sized like the form's other inputs while it holds one row of chips */}
+							<InputGroup
+								aria-labelledby={`${id}-label`}
+								className="h-auto min-h-9 flex-wrap gap-1 p-0.5"
+							>
+								{chips}
+								{textInput}
+							</InputGroup>
+							{description && (
+								<FieldDescription id={`${id}-description`}>
+									{description}
+								</FieldDescription>
+							)}
+							{error}
+						</Field>
+					);
+				}
 				return (
 					<Field
 						data-invalid={fieldState.invalid}
@@ -78,161 +297,8 @@ export function EmailRecipientField({
 								{label}
 							</FieldLabel>
 							<div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 rounded-md focus-within:ring-2 focus-within:ring-ring/50">
-								{recipients.map((recipient, index) =>
-									index === activeIndex ? null : (
-										<span
-											key={`${index}:${recipient}`}
-											className="inline-flex max-w-full items-center rounded-md bg-muted/50 text-base"
-										>
-											<Tooltip
-												disableHoverableContent={false}
-											>
-												<TooltipTrigger asChild>
-													<Button
-														type="button"
-														variant="ghost"
-														className="h-auto min-h-8 pointer-coarse:min-h-11 min-w-0 shrink whitespace-normal break-all rounded-r-none px-2 py-1 text-left font-normal"
-														disabled={disabled}
-														aria-label={`Edit ${label} recipient ${recipient}`}
-														onClick={() => {
-															shouldSelect.current = true;
-															setEditingIndex(
-																index,
-															);
-														}}
-													>
-														<span className="min-w-0 truncate">
-															{recipient}
-														</span>
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent className="max-w-64 break-all">
-													{recipient} · click to edit
-												</TooltipContent>
-											</Tooltip>
-											<Tooltip
-												disableHoverableContent={false}
-											>
-												<TooltipTrigger asChild>
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon-sm"
-														className="pointer-coarse:size-11 size-8 shrink-0 rounded-l-none"
-														disabled={disabled}
-														aria-label={`Remove ${recipient} from ${label}`}
-														onClick={() => {
-															field.onChange(
-																recipients
-																	.filter(
-																		(
-																			_,
-																			position,
-																		) =>
-																			position !==
-																			index,
-																	)
-																	.join(", "),
-															);
-															setEditingIndex(
-																activeIndex ===
-																	null
-																	? null
-																	: activeIndex >
-																			index
-																		? activeIndex -
-																			1
-																		: activeIndex,
-															);
-															input.current?.focus();
-														}}
-													>
-														<X
-															className="size-3"
-															aria-hidden="true"
-														/>
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													Remove recipient
-												</TooltipContent>
-											</Tooltip>
-										</span>
-									),
-								)}
-								<Input
-									id={id}
-									name={field.name}
-									ref={(element) => {
-										field.ref(element);
-										input.current = element;
-									}}
-									value={activeValue}
-									placeholder={
-										recipients.length
-											? "Add another"
-											: "Add recipients"
-									}
-									disabled={disabled}
-									aria-required={required}
-									aria-invalid={fieldState.invalid}
-									aria-describedby={
-										fieldState.error
-											? `${id}-error`
-											: undefined
-									}
-									autoComplete="off"
-									autoCapitalize="none"
-									spellCheck={false}
-									inputMode="email"
-									className="h-9 pointer-coarse:min-h-11 w-24 min-w-20 flex-1 rounded-none border-0 bg-transparent px-2 shadow-none focus-visible:ring-0 dark:bg-transparent"
-									onChange={(event) => {
-										const text = event.target.value;
-										const next = [...recipients];
-										const index =
-											activeIndex ?? next.length;
-										if (text) next[index] = text;
-										else next.splice(index, 1);
-										field.onChange(next.join(", "));
-										setEditingIndex(
-											!text || /[,;\n]/.test(text)
-												? null
-												: index,
-										);
-									}}
-									onBlur={() => {
-										setEditingIndex(null);
-										field.onBlur();
-									}}
-									onKeyDown={(event) => {
-										if (
-											event.nativeEvent.isComposing ||
-											event.ctrlKey ||
-											event.metaKey ||
-											event.altKey
-										)
-											return;
-										if (
-											["Enter", ",", ";"].includes(
-												event.key,
-											)
-										) {
-											event.preventDefault();
-											event.stopPropagation();
-											setEditingIndex(null);
-										} else if (
-											event.key === "Backspace" &&
-											!activeValue &&
-											recipients.length
-										) {
-											event.preventDefault();
-											shouldSelect.current = true;
-											setEditingIndex(
-												recipients.length - 1,
-											);
-										}
-									}}
-								/>
+								{chips}
+								{textInput}
 								{actions && (
 									<div className="ml-auto flex shrink-0 items-center gap-1">
 										{actions}
@@ -240,11 +306,7 @@ export function EmailRecipientField({
 								)}
 							</div>
 						</div>
-						{fieldState.error && (
-							<FieldError id={`${id}-error`}>
-								{fieldState.error.message}
-							</FieldError>
-						)}
+						{error}
 					</Field>
 				);
 			}}
