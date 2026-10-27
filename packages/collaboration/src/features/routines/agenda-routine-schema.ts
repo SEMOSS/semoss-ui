@@ -2,6 +2,7 @@ import { z } from "@semoss/ui/next";
 import { routineFlowSchema } from "./routine-flow-schema";
 import {
 	routineDaySchema,
+	routinePreferencesSchema,
 	routineScheduleSchema,
 	routineStatusSchema,
 } from "./routine-schema";
@@ -45,6 +46,7 @@ export const agendaRoutineSettingsSchema = z
 				AGENDA_IGNORED_LIMIT,
 				`Ignore up to ${AGENDA_IGNORED_LIMIT} meetings.`,
 			),
+		preferences: routinePreferencesSchema,
 	})
 	.refine((settings) => !settings.enabled || settings.meetings.length > 0, {
 		message: "Choose at least one meeting to prepare.",
@@ -58,6 +60,8 @@ export const agendaRoutineSchema = routineScheduleSchema
 		meetings: z.array(z.string()),
 		// Settings saved before the ignore list existed have none.
 		ignored: z.array(z.string()).default([]),
+		// Servers before preferences return none.
+		preferences: routinePreferencesSchema.default(""),
 	})
 	.extend(routineStatusSchema.shape)
 	.extend({
