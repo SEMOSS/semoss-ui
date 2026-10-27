@@ -3,6 +3,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Database,
+	FolderClock,
 	Search,
 	Workflow,
 } from "lucide-react";
@@ -23,18 +24,30 @@ import { formatDurationMs } from "@semoss/utility/date";
 import type {
 	AutomationNodeResult,
 	AutomationRunDetail,
+	AutomationSavedResultReference,
 } from "../../../domain/automation.types";
 import { StatusBadge } from "../../status-badge";
 import { buildRunDataItems, runtimeNodeId } from "./run-data-browser-data";
 import { RunNodeDataViewer } from "./run-node-data-viewer";
+import {
+	findSavedResultForOccurrence,
+	getRunNodeDataSource,
+} from "./run-node-view-state";
 
 interface RunDataBrowserProps {
 	appId: string;
 	run: AutomationRunDetail;
 	onOutputPopout: (output: string) => void;
+	onOpenRunFiles?: () => void;
 }
 
-type DataTab = "input" | "output" | "variables" | "metadata" | "errors";
+type DataTab =
+	| "input"
+	| "output"
+	| "variables"
+	| "metadata"
+	| "files"
+	| "errors";
 
 const ITEM_PAGE_SIZE = 50;
 
@@ -46,6 +59,7 @@ export function RunDataBrowser({
 	appId,
 	run,
 	onOutputPopout,
+	onOpenRunFiles,
 }: RunDataBrowserProps) {
 	const [query, setQuery] = useState("");
 	const [pageIndex, setPageIndex] = useState(0);
@@ -76,6 +90,26 @@ export function RunDataBrowser({
 				(result) => runtimeNodeId(result) === selectedNodeKey,
 			) ?? lastRelevantResult(selectedItem.results))
 		: null;
+	const selectedSavedResult = selectedResult
+		? findSavedResultForOccurrence(
+				run.savedResults ?? [],
+				selectedResult.NODE_ID,
+				selectedItem?.loopNodeId !== undefined &&
+					selectedItem.iterationIndex !== undefined
+					? {
+							parentNodeId: selectedItem.loopNodeId,
+							iterationIndex: selectedItem.iterationIndex,
+						}
+					: null,
+			)
+		: undefined;
+	const selectedDataSource = selectedResult
+		? getRunNodeDataSource(
+				selectedSavedResult,
+				run.executionInsightId,
+				selectedResult.OUTPUT_FRAME,
+			)
+		: { kind: "preview" as const };
 
 	const handleSelectItem = (itemKey: string) => {
 		setSelectedItemKey(itemKey);
@@ -246,7 +280,7 @@ export function RunDataBrowser({
 												result.NODE_ID}
 										</span>
 										<span className="block truncate text-muted-foreground text-xs">
-											{result.outputVariable ||
+											{result.OUTPUT_VAR_NAME ||
 												"No output variable"}{" "}
 											·{" "}
 											{formatDurationMs(
@@ -275,7 +309,7 @@ export function RunDataBrowser({
 					</div>
 					<Muted>
 						{selectedResult
-							? `${selectedItem?.label ?? "Run"} · ${selectedResult.outputVariable || "No output variable"}`
+							? `${selectedItem?.label ?? "Run"} · ${selectedResult.OUTPUT_VAR_NAME || "No output variable"}`
 							: "Select an executed step to inspect its retained data."}
 					</Muted>
 				</div>
@@ -292,6 +326,7 @@ export function RunDataBrowser({
 						<TabsTrigger value="output">Output</TabsTrigger>
 						<TabsTrigger value="variables">Variables</TabsTrigger>
 						<TabsTrigger value="metadata">Metadata</TabsTrigger>
+						<TabsTrigger value="files">Files</TabsTrigger>
 						<TabsTrigger value="errors">Errors</TabsTrigger>
 					</TabsList>
 
@@ -314,14 +349,48 @@ export function RunDataBrowser({
 					</TabsContent>
 
 					<TabsContent
+						value="files"
+						className="min-h-0 flex-1 overflow-y-auto p-3"
+					>
+						<div className="space-y-3 rounded-lg border p-4">
+							<div className="flex items-start gap-3">
+								<FolderClock
+									className="mt-0.5 size-5 text-muted-foreground"
+									aria-hidden="true"
+								/>
+								<div className="space-y-1">
+									<Small>Live run files</Small>
+									<Muted>
+										Files are not retained in Automation
+										history. They can be opened only while
+										this run&apos;s execution workspace is
+										still available.
+									</Muted>
+								</div>
+							</div>
+							<Button
+								type="button"
+								variant="outline"
+								disabled={!onOpenRunFiles}
+								onClick={onOpenRunFiles}
+							>
+								<FolderClock aria-hidden="true" />
+								Open Run files
+							</Button>
+						</div>
+					</TabsContent>
+
+					<TabsContent
 						value="output"
 						className="min-h-0 flex-1 overflow-y-auto p-3"
 					>
-						{selectedResult?.outputDataAvailable ? (
+						{selectedResult &&
+						selectedDataSource.kind !== "preview" ? (
 							<RunNodeDataViewer
 								appId={appId}
-								runId={run.RUN_ID}
-								nodeId={runtimeNodeId(selectedResult)}
+								insightId={run.executionInsightId}
+								frame={selectedResult.OUTPUT_FRAME}
+								savedResult={selectedSavedResult}
 								outputPreview={displayValue(selectedResult)}
 								onOutputPopout={onOutputPopout}
 							/>
@@ -349,10 +418,10 @@ export function RunDataBrowser({
 					>
 						<div className="space-y-2">
 							{selectedItem?.results.filter(
-								(result) => result.outputVariable,
+								(result) => result.OUTPUT_VAR_NAME,
 							).length ? (
 								selectedItem.results
-									.filter((result) => result.outputVariable)
+									.filter((result) => result.OUTPUT_VAR_NAME)
 									.map((result) => (
 										<button
 											key={runtimeNodeId(result)}
@@ -364,7 +433,7 @@ export function RunDataBrowser({
 										>
 											<span className="min-w-0">
 												<span className="block truncate font-medium text-sm">
-													{result.outputVariable}
+													{result.OUTPUT_VAR_NAME}
 												</span>
 												<span className="block truncate text-muted-foreground text-xs">
 													{result.NODE_LABEL ||
@@ -392,21 +461,22 @@ export function RunDataBrowser({
 						className="min-h-0 flex-1 overflow-y-auto p-3"
 					>
 						<dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-							{metadataRows(selectedResult).map(
-								([label, value]) => (
-									<div
-										key={label}
-										className="min-w-0 border-b pb-2"
-									>
-										<dt className="text-muted-foreground text-xs">
-											{label}
-										</dt>
-										<dd className="break-words text-sm">
-											{value}
-										</dd>
-									</div>
-								),
-							)}
+							{metadataRows(
+								selectedResult,
+								selectedSavedResult,
+							).map(([label, value]) => (
+								<div
+									key={label}
+									className="min-w-0 border-b pb-2"
+								>
+									<dt className="text-muted-foreground text-xs">
+										{label}
+									</dt>
+									<dd className="break-words text-sm">
+										{value}
+									</dd>
+								</div>
+							))}
 						</dl>
 					</TabsContent>
 
@@ -434,9 +504,14 @@ export function RunDataBrowser({
 }
 
 function isDataTab(value: string): value is DataTab {
-	return ["input", "output", "variables", "metadata", "errors"].includes(
-		value,
-	);
+	return [
+		"input",
+		"output",
+		"variables",
+		"metadata",
+		"files",
+		"errors",
+	].includes(value);
 }
 
 function lastRelevantResult(
@@ -464,6 +539,7 @@ function displayValue(result: AutomationNodeResult): string {
 
 function metadataRows(
 	result: AutomationNodeResult | null,
+	savedResult: AutomationSavedResultReference | undefined,
 ): Array<[string, string]> {
 	if (!result) return [["Selection", "No step is selected."]];
 	return [
@@ -471,15 +547,15 @@ function metadataRows(
 		["Duration", formatDurationMs(result.DURATION_MS)],
 		["Node", result.NODE_LABEL || result.NODE_ID],
 		["Node ID", result.NODE_ID],
-		["Output variable", result.outputVariable || "None"],
+		["Output variable", result.OUTPUT_VAR_NAME || "None"],
 		[
 			"Durable data",
-			result.outputDataAvailable ? "Available" : "Not available",
+			savedResult
+				? `${savedResult.RESULT_KIND} retained until ${savedResult.RETAIN_UNTIL}`
+				: result.OUTPUT_FRAME
+					? "Live frame available"
+					: "Not available",
 		],
-		["Rows", result.outputDataRowCount?.toLocaleString() ?? "Not tabular"],
-		[
-			"Columns",
-			result.outputDataColumnCount?.toLocaleString() ?? "Not tabular",
-		],
+		["Rows", savedResult?.ROW_COUNT?.toLocaleString() ?? "Not tabular"],
 	];
 }

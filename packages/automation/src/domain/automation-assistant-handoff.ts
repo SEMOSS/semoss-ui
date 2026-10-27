@@ -54,6 +54,7 @@ function truncatePrompt(value: string, maxLength: number): string {
 }
 
 const STATUS_TEXT: Record<RunStatus, string> = {
+	SUBMITTED: "is queued to run",
 	RUNNING: "still running",
 	WAITING_FOR_INPUT: "is waiting for user input",
 	SUCCESS: "completed successfully",

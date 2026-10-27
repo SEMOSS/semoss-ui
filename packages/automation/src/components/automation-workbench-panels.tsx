@@ -6,6 +6,7 @@ import type {
 } from "../domain/automation.types";
 import type { AutomationInspectorSnapshot } from "../domain/automation-inspector";
 import type { N8nImportConversionModel } from "../domain/n8n-import-adapter";
+import { SourceExplorerPanel } from "../features/source-explorer/source-explorer-panel";
 import type { AutomationCanvasHandle } from "./canvas-editor/automation-canvas";
 import { AutomationCanvas } from "./canvas-editor/automation-canvas-loader";
 import { InspectorTab } from "./canvas-editor/tabs/inspector-tab";
@@ -34,6 +35,9 @@ export interface AutomationWorkbenchContextValue {
 	onExitHistoricalView: () => void;
 	historyRefreshToken: number;
 	onOpenOutput: (output: string) => void;
+	onOpenSourceExplorerFull: () => void;
+	onOpenRunFiles: () => void;
+	onSourceRunSelected: (run: AutomationRunDetail) => void;
 	onAskAssistant: (prompt: string) => void;
 	onOpenPythonEditor: (nodeId: string, source: string) => void;
 	/** Whether a node's compiled Python source is currently open in a real file editor tab. */
@@ -169,6 +173,29 @@ export const AutomationTracePanel = () => {
 			onExitHistoricalView={context.onExitHistoricalView}
 			focusNodeId={context.runDetailsFocusNodeId}
 			focusToken={context.runDetailsFocusToken}
+		/>
+	);
+};
+
+interface AutomationSourceExplorerPanelProps {
+	/** Hides the dock-only action when the explorer already occupies a full workbench tab. */
+	fullView?: boolean;
+}
+
+/** Renders searchable durable run history independently of the editable canvas. */
+export const AutomationSourceExplorerPanel = ({
+	fullView = false,
+}: AutomationSourceExplorerPanelProps) => {
+	const context = useAutomationWorkbenchContext();
+	return (
+		<SourceExplorerPanel
+			appId={context.appId}
+			onOpenOutput={context.onOpenOutput}
+			onOpenFullView={
+				fullView ? undefined : context.onOpenSourceExplorerFull
+			}
+			onOpenRunFiles={context.onOpenRunFiles}
+			onRunSelected={context.onSourceRunSelected}
 		/>
 	);
 };
