@@ -19,11 +19,6 @@ import { runPixelAsync } from "./base";
  * @param workspaceId - The ID of the workspace to create the room in.
  * @returns The newly created room.
  *
- * @deprecated Use `runPixel(buildPixel("CreateRoom", { workspaceId }), insightId)` with
- * `buildPixel` and `runPixel` from `@semoss/sdk`. Check `errors` before reading
- * `pixelReturn[0]?.output`; raw reactor output may differ from this helper's declared or
- * normalized result. The current reactor returns { roomId }, not a complete RoomRecord. Omit
- * workspaceId when absent.
  */
 export const createRoomRecord = async (
 	insightId: string,
@@ -56,21 +51,6 @@ export const createRoomRecord = async (
  * @param roomId - The ID of the room to fetch messages for.
  * @returns The list of messages in the room.
  *
- * @deprecated Use `runPixel(buildPixel("GetRoomMessages", { roomId }), insightId)` with
- * `buildPixel` and `runPixel` from `@semoss/sdk`. Check `errors` before reading
- * `pixelReturn[0]?.output`; raw reactor output may differ from this helper's declared or
- * normalized result. Read the current reactor message shape rather than casting it to
- * RoomMessage.
- * @example
- * ```ts
- * import { buildPixel, runPixel } from "@semoss/sdk";
- * const response = await runPixel(
- *     buildPixel("GetRoomMessages", { roomId: "room-id" }),
- *     "insight-id",
- * );
- * if (response.errors.length) throw new Error(response.errors.join(", "));
- * const messages = response.pixelReturn[0]?.output;
- * ```
  */
 export const getRoomMessages = async (
 	insightId: string,
@@ -101,11 +81,6 @@ export const getRoomMessages = async (
  * @param roomId - The ID of the room to get options for.
  * @returns The room's configuration options.
  *
- * @deprecated Use `runPixel(buildPixel("GetRoomOptions", { roomId }), insightId)` with
- * `buildPixel` and `runPixel` from `@semoss/sdk`. Check `errors` before reading
- * `pixelReturn[0]?.output`; raw reactor output may differ from this helper's declared or
- * normalized result. The current output wraps configuration in OPTIONS and ROOM_NAME; handle
- * omitted keys.
  */
 export const getRoomOptions = async (
 	insightId: string,
@@ -135,10 +110,6 @@ export const getRoomOptions = async (
  * @param insightId - The active SEMOSS insight ID.
  * @param roomId - The ID of the room to bind to the insight.
  *
- * @deprecated Use `runPixel(buildPixel("SetRoomForInsight", { roomId }), insightId)` with
- * `buildPixel` and `runPixel` from `@semoss/sdk`. Check `errors` before reading
- * `pixelReturn[0]?.output`; raw reactor output may differ from this helper's declared or
- * normalized result. The reactor returns a boolean; this helper discards successful output.
  */
 export const setRoomForInsight = async (
 	insightId: string,
@@ -158,11 +129,6 @@ export const setRoomForInsight = async (
  * @param insightId - The active SEMOSS insight ID.
  * @returns The bound room, or `null` if the insight has no bound room.
  *
- * @deprecated Use `runPixel(buildPixel("GetRoomForInsight", {}), insightId)` with `buildPixel`
- * and `runPixel` from `@semoss/sdk`. Check `errors` before reading `pixelReturn[0]?.output`;
- * raw reactor output may differ from this helper's declared or normalized result. The current
- * reactor returns a room ID or null, not a RoomRecord. Handle a missing result separately from
- * a null output.
  */
 export const getRoomForInsight = async (
 	insightId: string,
@@ -187,11 +153,6 @@ export const getRoomForInsight = async (
  * @param roomId - The ID of the room to update.
  * @param roomOptions - Array of room option objects to apply.
  *
- * @deprecated Use `runPixel(buildPixel("UpdateRoomOptions", { roomId, roomOptions }),
- * insightId)` with `buildPixel` and `runPixel` from `@semoss/sdk`. Check `errors` before
- * reading `pixelReturn[0]?.output`; raw reactor output may differ from this helper's declared
- * or normalized result. Pass option objects directly without JSON.stringify; the reactor
- * returns a boolean. Preserve existing settings when assembling the update.
  */
 export const updateRoomOptions = async (
 	insightId: string,
@@ -216,23 +177,6 @@ export const updateRoomOptions = async (
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
  * @see sdk-chat skill for the full streaming loop and chat-vs-agent guide.
  *
- * @deprecated Use `buildPixel("AskRoom", { engine, roomId, command, parentMessageId, media,
- * paramValues })` from `@semoss/sdk`, then `runPixelAsync({ expression, insightId })` from
- * `@semoss/sdk/api/monolith/engine`. Use media instead of image, pass a model-parameter map
- * instead of the legacy array, and persist instructions with UpdateRoomOptions; context is not
- * a current AskRoom argument. Pass literal text without manual encode tags. Poll
- * pixelJobStreaming and read result from the same resource; submission only returns a job ID.
- * @example
- * ```ts
- * import { buildPixel } from "@semoss/sdk";
- * import { runPixelAsync } from "@semoss/sdk/api/monolith/engine";
- * const expression = buildPixel("AskRoom", {
- *     engine: "model-id", roomId: "room-id", command: "Hello",
- *     parentMessageId: "ROOT_PLACEHOLDER_ID", media: [], paramValues: {},
- * });
- * const { jobId } = await runPixelAsync({ expression, insightId: "insight-id" });
- * // Poll pixelJobStreaming({ jobId }); on success, read result({ jobId }) once.
- * ```
  */
 export const askRoom = async (
 	insightId: string,
@@ -262,13 +206,6 @@ export const askRoom = async (
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
  * @see sdk-chat skill for the full tool-execution call stack.
  *
- * @deprecated Use `buildPixel("AddToolExecution", { engine, roomId, parentMessageId, toolId,
- * toolName, toolExecutionResponse, mcpToolStatus, toolParameterValues, paramValues })` from
- * `@semoss/sdk`, then `runPixelAsync({ expression, insightId })` from
- * `@semoss/sdk/api/monolith/engine`. The catalog name is AddToolExecution, not
- * AddRoomToolExecution. Supply literal text and parameter maps without encode tags or
- * JSON.stringify. Poll pixelJobStreaming, then read result from the same resource; settled
- * output can be a string or room exchange.
  */
 export const addRoomToolExecution = async (
 	insightId: string,
@@ -314,11 +251,6 @@ export const addRoomToolExecution = async (
  * @param options.sort - Sort direction for the returned rooms.
  * @returns The list of rooms.
  *
- * @deprecated Use `buildPixel("GetUserConversationRooms", { pinned, sort })` and `runPixel`
- * from `@semoss/sdk`. Execute `runPixel("META | " + expression, insightId)` to preserve the
- * META prefix. The catalog name has no Reactor suffix. String composition loses builder output
- * inference; validate the raw ROOM_ID/ROOM_NAME-style rows and inspect errors before adapting
- * them to RoomRecord values.
  */
 export const getUserRooms = async (
 	insightId: string,

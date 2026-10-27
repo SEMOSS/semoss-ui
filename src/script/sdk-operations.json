@@ -1,0 +1,11 @@
+{
+	"rest": [
+		{
+			"application": "prerna.semoss.web.app.HealthApplication",
+			"resource": "prerna.semoss.web.services.config.HealthResource",
+			"method": "readiness",
+			"parameterTypes": []
+		}
+	],
+	"pixels": ["prerna.reactor.StopPixelExecutionReactor"]
+}

@@ -2,7 +2,7 @@ import type { ReactorCatalog } from "./reactors/catalog";
 
 declare const pixelReactor: unique symbol;
 
-/** Supported source-audited built-in names; not a public SDK export. */
+/** Names generated from selected backend contracts; not a public SDK export. */
 export type ReactorName = keyof ReactorCatalog;
 
 /** Runtime primitive string whose type remembers the reactor that built it. */

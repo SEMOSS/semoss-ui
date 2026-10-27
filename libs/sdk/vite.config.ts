@@ -3,14 +3,7 @@ import { resolve } from "node:path";
 import { createViteLibConfig } from "@semoss/config";
 
 const apiRoot = resolve(import.meta.dirname, "src/api");
-const groups = [
-	"monolith",
-	"github",
-	"msgraph",
-	"adminconfig",
-	"health",
-	"token",
-];
+const groups = ["health"];
 
 export default createViteLibConfig({
 	rootDir: import.meta.dirname,

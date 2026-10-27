@@ -1,0 +1,5 @@
+[
+	"libs/sdk/src/api/health/health.ts",
+	"libs/sdk/src/lib/reactors/catalog.ts",
+	"libs/sdk/src/lib/reactors/inventory.ts"
+]

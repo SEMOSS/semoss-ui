@@ -633,11 +633,6 @@ const readRule = (value: unknown): ModelUsageLimitRule | null => {
  * @param value - The limit the backend sent, as an object or a JSON string
  * @returns The limit, or null for no limit defined
  *
- * @deprecated No direct parsing replacement exists. Read typed usage-limit fields from
- * `getPermissions` in `@semoss/sdk/api/monolith/auth/permission-batch` or `getPlatformDefault`
- * in `@semoss/sdk/api/monolith/auth/admin/model-usage`. Handle omitted fields explicitly; keep
- * JSON parsing, invalid-rule filtering, null defaults and windowLength normalization in
- * caller-owned code when ingesting arbitrary values.
  */
 export const readModelUsageLimit = (value: unknown): ModelUsageLimit | null => {
 	let parsed = value;
@@ -741,12 +736,6 @@ const readList = (value: unknown, what: string): unknown[] => {
  * @returns The people, the teams and the changes the user may make. Rows without a known
  * level, id or type are left out.
  *
- * @deprecated Use `getPermissions({ resourceType: target.resourceType, id: target.id })` from
- * `@semoss/sdk/api/monolith/auth/permission-batch`, or
- * `@semoss/sdk/api/monolith/auth/admin/permission-batch` when admin=true. Narrow resourceType
- * to the route's supported targets (INSIGHT is rejected). The raw response retains optional
- * fields and unfiltered rows; apply required permission and usage-limit normalization in
- * caller-owned code.
  */
 export const getResourcePermissions = async (
 	target: PermissionTargetResource,
@@ -818,12 +807,6 @@ export interface TeamPeople {
  * @returns The people and whether the user can change them. Rows without an
  * id or login type are left out.
  *
- * @deprecated Use `getPermissions({ resourceType, id: groupId })` from
- * `@semoss/sdk/api/monolith/auth/permission-batch`, or
- * `@semoss/sdk/api/monolith/auth/admin/permission-batch` when admin=true. Use
- * resourceType="TEAM_MANAGERS" for MANAGERS, otherwise "TEAM". Map people[].subject and
- * allowedPermissionChanges.canChangePeople yourself; the route does not return { people,
- * canChange }.
  */
 export const getTeamPeople = async (
 	groupId: string,
@@ -899,11 +882,6 @@ const readBatchValidation = (row: unknown): PermissionBatchValidation => {
  * @returns What validating each batch found, one result per batch in the order sent
  * @throws When the response does not have one well formed result per batch
  *
- * @deprecated Use `validatePermissionBatches({ batches })` from
- * `@semoss/sdk/api/monolith/auth/permission-batch`, or
- * `@semoss/sdk/api/monolith/auth/admin/permission-batch` when admin=true. Use the route's
- * input contract, including numeric rule amounts. The raw response is not checked for matching
- * batch counts or normalized reasons; preserve index-based validation yourself.
  */
 export const validatePermissionBatches = async (
 	batches: PermissionBatch[],
@@ -932,11 +910,6 @@ export const validatePermissionBatches = async (
  * @returns How many targets and changes were saved
  * @throws When any change cannot be made, with the reasons
  *
- * @deprecated Use `savePermissionBatches({ batches })` from
- * `@semoss/sdk/api/monolith/auth/permission-batch`, or
- * `@semoss/sdk/api/monolith/auth/admin/permission-batch` when admin=true. Use the route's
- * input contract, including numeric rule amounts. The raw targets/changes response does not
- * receive this helper's numeric fallbacks.
  */
 export const savePermissionBatches = async (
 	batches: PermissionBatch[],
@@ -968,12 +941,6 @@ export const savePermissionBatches = async (
  * @param admin - Whether to use admin mode; outside it an admin has only their own permissions
  * @returns The people. Rows without an id or login type are left out.
  *
- * @deprecated Use `getPermissionsToCopy({ sourceResourceType: source.resourceType, sourceId:
- * source.id, targetResourceType: target.resourceType, targetId: target.id })` from
- * `@semoss/sdk/api/monolith/auth/permission-batch`, or
- * `@semoss/sdk/api/monolith/auth/admin/permission-batch` when admin=true. Narrow resource
- * types to the route's accepted targets. The route returns unfiltered people and optional
- * grant fields without null/default normalization.
  */
 export const getPermissionsToCopy = async (
 	source: PermissionTargetResource,
@@ -1114,11 +1081,6 @@ const readEffectiveUsage = (value: unknown): EffectiveUsage | null => {
  * @returns The people, and the teams whose members come from a login provider.
  * Rows without an id, login type, known level or source are left out.
  *
- * @deprecated Use `getEffectivePermissions({ resourceType: target.resourceType, id: target.id
- * })` from `@semoss/sdk/api/monolith/auth/permission-batch`, or
- * `@semoss/sdk/api/monolith/auth/admin/permission-batch` when admin=true. Narrow resourceType
- * to PROJECT or ENGINE. The raw people, sources and usage-limit fields are not filtered or
- * normalized; handle omitted fields explicitly.
  */
 export const getEffectivePermissions = async (
 	target: PermissionTargetResource,
@@ -1292,11 +1254,6 @@ const readUsageLimitPath = (data: unknown, what: string): UsageLimitPath => {
  * @returns The path
  * @throws When the response is not a path
  *
- * @deprecated Use `getUsageLimitPath({ engineId, userId: person.id, userType: person.type })`
- * from `@semoss/sdk/api/monolith/auth/permission-batch`, or
- * `@semoss/sdk/api/monolith/auth/admin/permission-batch` when admin=true. The route returns
- * raw optional path fields without this helper's null, false and empty-array defaults or rule
- * filtering.
  */
 export const getUsageLimitPath = async (
 	engineId: string,
@@ -1322,9 +1279,6 @@ export const getUsageLimitPath = async (
  * @returns The path
  * @throws When the response is not a path
  *
- * @deprecated Use `getMyUsageLimitPath({ engineId })` from
- * `@semoss/sdk/api/monolith/auth/permission-batch`. Handle optional raw path fields; the route
- * does not apply null, false or empty-array defaults.
  */
 export const getMyUsageLimitPath = async (
 	engineId: string,
@@ -1355,10 +1309,6 @@ export interface MyModelUsagePath {
  * @returns The models, each with its path
  * @throws When the response has no list of models
  *
- * @deprecated Use `getMyUsageLimitPaths()` from
- * `@semoss/sdk/api/monolith/auth/permission-batch`. Read the returned `.models` array; this
- * helper instead returns an array directly, supplies name/subtype defaults, normalizes paths
- * and omits malformed models. Perform any needed adaptation yourself.
  */
 export const getMyUsageLimitPaths = async (): Promise<MyModelUsagePath[]> => {
 	const response = await get<unknown>(

@@ -134,7 +134,7 @@ function serializeValue(
 }
 
 /**
- * Build one typed built-in reactor call for runPixel or usePixel.
+ * Build one typed reactor call from the generated backend contracts.
  *
  * Named scalar values become one-element noun arrays; named arrays are noun
  * lists. A top-level argument array supplies positional arguments. Ordinary
@@ -143,13 +143,14 @@ function serializeValue(
  * @param args - Reactor name and its optional or required parameter object/tuple.
  * @returns A semicolon-terminated primitive string carrying its output type.
  * @throws {TypeError} For unknown names, invalid identifiers or unrepresentable values.
- * @example buildPixel("GetProjectList", {})
- * @example buildPixel("Select", [rawPixel("department"), rawPixel("Sum(cost)")])
+ * @example buildPixel("StopPixelExecution", { id: "job-id" })
+ * @example buildPixel("StopPixelExecution", ["job-id"])
  */
 export function buildPixel<const N extends ReactorName>(
 	...args: BuildPixelArguments<N>
 ): BuiltPixel<N> {
-	const [reactor, parameters] = args;
+	// Widen only serialization inputs; preserve the reactor's output type on return.
+	const [reactor, parameters]: [string, unknown?] = args;
 	if (
 		typeof reactor !== "string" ||
 		!(reactorNames as readonly string[]).includes(reactor)

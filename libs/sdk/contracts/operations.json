@@ -1,0 +1,178 @@
+{
+	"operations": [
+		{
+			"applicationPath": null,
+			"contract": {
+				"definitions": {},
+				"deprecation": {
+					"deprecated": false,
+					"forRemoval": false,
+					"reason": "",
+					"replacement": "",
+					"since": ""
+				},
+				"description": "Stop the current execution of a pixel job",
+				"diagnostics": [],
+				"inputs": [
+					{
+						"aliases": [],
+						"binding": "NOUN",
+						"defaultValue": null,
+						"description": "The id for the job. If running the pixel synchronously, the job id will be the same as the insight id.",
+						"encoding": "DEFAULT",
+						"name": "id",
+						"requirement": "REQUIRED",
+						"type": {
+							"description": "",
+							"format": "",
+							"knowledge": "VERIFIED",
+							"nullable": false,
+							"reason": "",
+							"shape": {
+								"kind": "STRING",
+								"type": "scalar",
+								"values": []
+							}
+						}
+					}
+				],
+				"invocation": {
+					"canOmitParameters": false,
+					"mode": "BOTH",
+					"order": ["id"],
+					"variadic": ""
+				},
+				"kind": "PIXEL",
+				"outputs": [
+					{
+						"description": "A message describing the cancellation outcome. The caller must own an existing job or be an administrator.",
+						"mediaType": "",
+						"status": -1,
+						"type": {
+							"description": "Stop the current execution of a pixel job",
+							"format": "",
+							"knowledge": "VERIFIED",
+							"nullable": false,
+							"reason": "",
+							"shape": {
+								"kind": "STRING",
+								"type": "scalar",
+								"values": []
+							}
+						}
+					}
+				],
+				"policy": {
+					"ignoreReasons": [],
+					"internalReasons": []
+				},
+				"rest": null,
+				"source": "prerna.reactor.StopPixelExecutionReactor"
+			},
+			"name": "StopPixelExecution"
+		},
+		{
+			"applicationPath": "/health",
+			"contract": {
+				"definitions": {
+					"public jakarta.ws.rs.core.Response prerna.semoss.web.services.config.HealthResource.readiness()#returns([200, 503];)": {
+						"id": "public jakarta.ws.rs.core.Response prerna.semoss.web.services.config.HealthResource.readiness()#returns([200, 503];)",
+						"properties": [
+							{
+								"name": "startupComplete",
+								"required": true,
+								"type": {
+									"description": "Whether startup completed successfully.",
+									"format": "",
+									"knowledge": "VERIFIED",
+									"nullable": false,
+									"reason": "",
+									"shape": {
+										"kind": "BOOLEAN",
+										"type": "scalar",
+										"values": []
+									}
+								}
+							},
+							{
+								"name": "status",
+								"required": true,
+								"type": {
+									"description": "Current readiness state.",
+									"format": "",
+									"knowledge": "VERIFIED",
+									"nullable": false,
+									"reason": "",
+									"shape": {
+										"kind": "STRING",
+										"type": "scalar",
+										"values": ["NOT_READY", "READY"]
+									}
+								}
+							}
+						]
+					}
+				},
+				"deprecation": {
+					"deprecated": false,
+					"forRemoval": false,
+					"reason": "",
+					"replacement": "",
+					"since": ""
+				},
+				"description": "Reports whether backend startup has completed.",
+				"diagnostics": [],
+				"inputs": [],
+				"invocation": null,
+				"kind": "REST",
+				"outputs": [
+					{
+						"description": "HTTP 200 when startup is complete; HTTP 503 while the backend is not ready.",
+						"mediaType": "",
+						"status": 200,
+						"type": {
+							"description": "Reports whether backend startup has completed.",
+							"format": "",
+							"knowledge": "VERIFIED",
+							"nullable": false,
+							"reason": "",
+							"shape": {
+								"id": "public jakarta.ws.rs.core.Response prerna.semoss.web.services.config.HealthResource.readiness()#returns([200, 503];)",
+								"type": "reference"
+							}
+						}
+					},
+					{
+						"description": "HTTP 200 when startup is complete; HTTP 503 while the backend is not ready.",
+						"mediaType": "",
+						"status": 503,
+						"type": {
+							"description": "Reports whether backend startup has completed.",
+							"format": "",
+							"knowledge": "VERIFIED",
+							"nullable": false,
+							"reason": "",
+							"shape": {
+								"id": "public jakarta.ws.rs.core.Response prerna.semoss.web.services.config.HealthResource.readiness()#returns([200, 503];)",
+								"type": "reference"
+							}
+						}
+					}
+				],
+				"policy": {
+					"ignoreReasons": [],
+					"internalReasons": []
+				},
+				"rest": {
+					"consumes": [],
+					"method": "GET",
+					"path": "/ready",
+					"produces": ["application/json"]
+				},
+				"source": "public jakarta.ws.rs.core.Response prerna.semoss.web.services.config.HealthResource.readiness()"
+			},
+			"name": "readiness"
+		}
+	],
+	"schemaVersion": 1
+}

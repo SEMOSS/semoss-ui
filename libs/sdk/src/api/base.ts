@@ -3,9 +3,6 @@ import { CSRF, get, post } from "../lib/fetch";
 /**
  * Get the System's configuration information
  *
- * @deprecated Use `getConfig()` from `@semoss/sdk/api/monolith/config`. It returns the raw
- * typed config without enabling CSRF. Configure `Env.update({ CSRF: config.csrf })` from
- * `@semoss/sdk` when needed; the shared transport obtains and retains the token.
  */
 export const getSystemConfig = async (): Promise<{
 	logins: { [key: string]: unknown };
@@ -48,10 +45,6 @@ export const getSystemConfig = async (): Promise<{
  * @param pixel - pixel
  * @param insightId - id of the insight to run
  *
- * @deprecated Use `runPixelAsync({ expression, insightId })` from
- * `@semoss/sdk/api/monolith/engine`. Construct built-in expressions with `buildPixel` from
- * `@semoss/sdk`; the route returns `{ jobId }`. Poll `pixelJobStreaming({ jobId })`, then read
- * `result({ jobId })` from the same resource.
  */
 export const runPixelAsync = async (pixel: string, insightId?: string) => {
 	if (!pixel) {
@@ -84,10 +77,6 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
  * @name getPixelAsyncResult
  * @description Gets results for async pixel calls
  *
- * @deprecated Use `result({ jobId })` from `@semoss/sdk/api/monolith/engine`. Handle the
- * `"NULL"` sentinel; the raw body uses `insightID` and `pixelReturn`, not `insightId`,
- * `results` or an `errors` array. Inspect each entry's operationType for ERROR. Result
- * retrieval consumes the job; do not read it twice.
  */
 export const getPixelAsyncResult = async <O extends unknown[] | []>(
 	jobId: string,
@@ -137,9 +126,6 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
  * Get a partial result from the insight
  * @param insightId - id of the insight to run
  *
- * @deprecated Use `pixelJobStreaming({ jobId })` from `@semoss/sdk/api/monolith/engine`. Pass
- * the async job ID, not an insight ID. Adapt to the raw stream chunk union; it is not the
- * legacy new/total message shape.
  */
 export const partial = async (insightId: string) => {
 	const response = await post<{
@@ -159,8 +145,6 @@ export const partial = async (insightId: string) => {
  * Get the console message from an insight
  * @param insightId - id of the insight to run
  *
- * @deprecated Use `console({ jobId })` from `@semoss/sdk/api/monolith/engine`. Pass the async
- * job ID; the legacy argument name insightId is misleading.
  */
 export const console = async (insightId: string) => {
 	const response = await post<{
@@ -241,9 +225,6 @@ export type PixelJobStreamingStatus =
  *
  * @param jobId - The job ID returned from runPixelAsync
  *
- * @deprecated Use `pixelJobStreaming({ jobId })` from `@semoss/sdk/api/monolith/engine`.
- * Handle the raw backend chunk union and terminal statuses. Keep one stream consumer per job
- * and fetch result({ jobId }) only after successful completion.
  */
 export const getPixelJobStreaming = async (jobId: string) => {
 	if (!jobId) {

@@ -3,7 +3,7 @@ import type {
 	AgentRunProgress,
 	AgentWorkflowArtifact,
 	AgentWorkflowReviewOutcome,
-} from "./api/monolith/engine";
+} from "./lib/agent-types";
 
 /**
  * Script object

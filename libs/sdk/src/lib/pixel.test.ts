@@ -21,8 +21,8 @@ describe("runPixel helper compatibility", () => {
 	it("runs a built primitive string through the unchanged transport and result envelope", async () => {
 		const returned = [
 			{
-				operationType: ["PROJECT_LIST"],
-				output: [{ project_id: "project-1" }],
+				operationType: ["CONST_STRING"],
+				output: "Cancellation requested",
 			},
 			{
 				operationType: ["ERROR"],
@@ -33,14 +33,16 @@ describe("runPixel helper compatibility", () => {
 			Response.json({ insightID: "insight-1", pixelReturn: returned }),
 		);
 		const result = await runPixel(
-			buildPixel("GetProjectList"),
+			buildPixel("StopPixelExecution", { id: "job" }),
 			"insight-1",
 		);
 		const call = fetchMock.mock.calls[0];
 		expect(call?.[0]).toBe("/Monolith/api/engine/runPixel");
 		expect(typeof call?.[1]?.body).toBe("string");
 		const fields = new URLSearchParams(String(call?.[1]?.body));
-		expect(fields.get("expression")).toBe("GetProjectList();");
+		expect(fields.get("expression")).toBe(
+			'StopPixelExecution(id=["job"]);',
+		);
 		expect(fields.get("insightId")).toBe("insight-1");
 		expect(fields.get("tz")).toBe(
 			Intl.DateTimeFormat().resolvedOptions().timeZone,

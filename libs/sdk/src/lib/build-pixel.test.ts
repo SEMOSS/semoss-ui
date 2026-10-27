@@ -1,15 +1,33 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildPixel } from "./build-pixel";
 import { rawPixel } from "./raw-pixel";
+
+// Serializer fixtures exercise grammar independently of the selected SDK catalog.
+vi.mock("./reactors/inventory", () => ({
+	reactorNames: [
+		"GetProjectList",
+		"FrameType",
+		"LLM",
+		"SUM",
+		"SetInsightConfig",
+		"Select",
+		"Filter",
+		"Join",
+		"Import",
+		"SUMPRODUCT",
+		"AND",
+		"OR",
+	],
+}));
 
 // Exercise the runtime boundary that JavaScript callers and external data reach.
 const build = buildPixel as (reactor: string, parameters?: unknown) => string;
 
 describe("Pixel builder", () => {
 	it("builds primitive strings with one terminator", () => {
-		expect(buildPixel("GetProjectList")).toBe("GetProjectList();");
-		expect(buildPixel("GetProjectList", {})).toBe("GetProjectList();");
-		expect(typeof buildPixel("FrameType")).toBe("string");
+		expect(build("GetProjectList")).toBe("GetProjectList();");
+		expect(build("GetProjectList", {})).toBe("GetProjectList();");
+		expect(typeof build("FrameType")).toBe("string");
 	});
 
 	it("preserves scalar, list, map and empty named values", () => {
@@ -29,7 +47,7 @@ describe("Pixel builder", () => {
 	});
 
 	it("keeps positional arguments and nested arrays at the supplied depth", () => {
-		expect(buildPixel("SUM", [1, 2, 3])).toBe("SUM(1,2,3);");
+		expect(build("SUM", [1, 2, 3])).toBe("SUM(1,2,3);");
 		expect(
 			build("SetInsightConfig", [[[], [1, 2]], null, false, 0, ""]),
 		).toBe(
@@ -39,15 +57,12 @@ describe("Pixel builder", () => {
 
 	it("uses raw values only when explicitly marked, preserving expression context", () => {
 		expect(
-			buildPixel("Select", [
-				rawPixel("department"),
-				rawPixel("Sum(cost)"),
-			]),
+			build("Select", [rawPixel("department"), rawPixel("Sum(cost)")]),
 		).toBe("Select(department,Sum(cost));");
-		expect(buildPixel("Filter", [rawPixel('status == "active"')])).toBe(
+		expect(build("Filter", [rawPixel('status == "active"')])).toBe(
 			'Filter(status == "active");',
 		);
-		expect(buildPixel("Join", [rawPixel("(a, inner.join, b)")])).toBe(
+		expect(build("Join", [rawPixel("(a, inner.join, b)")])).toBe(
 			"Join((a, inner.join, b));",
 		);
 		expect(
@@ -152,7 +167,7 @@ describe("Pixel builder", () => {
 
 	it("preserves vectors while keeping noun lists and map arrays distinct", () => {
 		expect(
-			buildPixel("SUMPRODUCT", [
+			build("SUMPRODUCT", [
 				[1, 2],
 				[3, 4],
 			]),

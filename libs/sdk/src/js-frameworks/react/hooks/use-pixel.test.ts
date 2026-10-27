@@ -39,7 +39,7 @@ function pixelResponse(
 				isMeta: false,
 				operationType,
 				output,
-				pixelExpression: "FrameType();",
+				pixelExpression: 'StopPixelExecution(id=["job"]);',
 				pixelId: "0",
 				timeToRun: 1,
 			},
@@ -71,11 +71,13 @@ describe("usePixel with built statements", () => {
 	it("passes the built string unchanged and keeps equal rebuilt strings stable", async () => {
 		const onSuccess = vi.fn();
 		const { result, rerender } = renderHook(() =>
-			usePixel(buildPixel("FrameType"), { onSuccess }),
+			usePixel(buildPixel("StopPixelExecution", { id: "job" }), {
+				onSuccess,
+			}),
 		);
 		await waitFor(() => expect(result.current.status).toBe("SUCCESS"));
 		expect(runPixel).toHaveBeenCalledExactlyOnceWith(
-			"FrameType();",
+			'StopPixelExecution(id=["job"]);',
 			undefined,
 		);
 		expect(result.current.data).toBe("R");
@@ -89,11 +91,16 @@ describe("usePixel with built statements", () => {
 		const onFinal = vi.fn();
 		const { result, rerender } = renderHook(
 			({ isEnabled }) =>
-				usePixel(isEnabled ? buildPixel("FrameType") : "", {
-					data: "GRID",
-					onSuccess,
-					onFinal,
-				}),
+				usePixel(
+					isEnabled
+						? buildPixel("StopPixelExecution", { id: "job" })
+						: "",
+					{
+						data: "GRID",
+						onSuccess,
+						onFinal,
+					},
+				),
 			{ initialProps: { isEnabled: false } },
 		);
 		expect(result.current).toMatchObject({
@@ -124,7 +131,10 @@ describe("usePixel with built statements", () => {
 		const onSuccess = vi.fn();
 		const onFinal = vi.fn();
 		const { result } = renderHook(() =>
-			usePixel(buildPixel("FrameType"), { onSuccess, onFinal }),
+			usePixel(buildPixel("StopPixelExecution", { id: "job" }), {
+				onSuccess,
+				onFinal,
+			}),
 		);
 		expect(result.current.status).toBe("LOADING");
 		expect(result.current.data).toBeUndefined();
@@ -148,7 +158,11 @@ describe("usePixel with built statements", () => {
 	it("uses the context insight and gives the explicit argument precedence", async () => {
 		const { result, rerender } = renderHook(
 			({ insightId }: { insightId: string | undefined }) =>
-				usePixel(buildPixel("FrameType"), undefined, insightId),
+				usePixel(
+					buildPixel("StopPixelExecution", { id: "job" }),
+					undefined,
+					insightId,
+				),
 			{
 				initialProps: { insightId: undefined },
 				wrapper: InsightWrapper,
@@ -156,13 +170,13 @@ describe("usePixel with built statements", () => {
 		);
 		await waitFor(() => expect(result.current.status).toBe("SUCCESS"));
 		expect(runPixel).toHaveBeenLastCalledWith(
-			"FrameType();",
+			'StopPixelExecution(id=["job"]);',
 			"context-insight",
 		);
 		rerender({ insightId: "explicit-insight" });
 		await waitFor(() => expect(result.current.status).toBe("SUCCESS"));
 		expect(runPixel).toHaveBeenLastCalledWith(
-			"FrameType();",
+			'StopPixelExecution(id=["job"]);',
 			"explicit-insight",
 		);
 	});
@@ -177,7 +191,7 @@ describe("usePixel with built statements", () => {
 			const onSuccess = vi.fn();
 			const onFinal = vi.fn();
 			const { result } = renderHook(() =>
-				usePixel(buildPixel("FrameType"), {
+				usePixel(buildPixel("StopPixelExecution", { id: "job" }), {
 					data: "GRID",
 					onError,
 					onSuccess,
@@ -203,7 +217,10 @@ describe("usePixel with built statements", () => {
 		vi.mocked(runPixel).mockRejectedValueOnce(error);
 		const onError = vi.fn();
 		const { result } = renderHook(() =>
-			usePixel(buildPixel("FrameType"), { data: "GRID", onError }),
+			usePixel(buildPixel("StopPixelExecution", { id: "job" }), {
+				data: "GRID",
+				onError,
+			}),
 		);
 		await waitFor(() => expect(result.current.error).toBe(error));
 		expect(onError).toHaveBeenCalledExactlyOnceWith("GRID", error);
@@ -222,7 +239,7 @@ describe("usePixel with built statements", () => {
 		const onFinal = vi.fn();
 		const { result, rerender } = renderHook(
 			({ column }) =>
-				usePixel(buildPixel("FrameHeaderExists", { column }), {
+				usePixel(buildPixel("StopPixelExecution", { id: column }), {
 					onSuccess,
 					onFinal,
 				}),
@@ -233,10 +250,10 @@ describe("usePixel with built statements", () => {
 		expect(vi.mocked(runPixel).mock.calls[0][0]).not.toBe(
 			vi.mocked(runPixel).mock.calls[1][0],
 		);
-		await act(async () => newer.resolve(pixelResponse(true)));
-		await act(async () => older.resolve(pixelResponse(false)));
-		expect(result.current.data).toBe(true);
-		expect(onSuccess).toHaveBeenCalledExactlyOnceWith(true);
+		await act(async () => newer.resolve(pixelResponse("new message")));
+		await act(async () => older.resolve(pixelResponse("old message")));
+		expect(result.current.data).toBe("new message");
+		expect(onSuccess).toHaveBeenCalledExactlyOnceWith("new message");
 		expect(onFinal).toHaveBeenCalledOnce();
 	});
 
@@ -249,7 +266,10 @@ describe("usePixel with built statements", () => {
 		const onError = vi.fn();
 		const onFinal = vi.fn();
 		const { result } = renderHook(() =>
-			usePixel(buildPixel("FrameType"), { onError, onFinal }),
+			usePixel(buildPixel("StopPixelExecution", { id: "job" }), {
+				onError,
+				onFinal,
+			}),
 		);
 		act(() => result.current.refresh());
 		await act(async () => older.reject(new Error("stale failure")));
@@ -270,10 +290,15 @@ describe("usePixel with built statements", () => {
 			const onFinal = vi.fn();
 			const { result, rerender, unmount } = renderHook(
 				({ isEnabled }) =>
-					usePixel(isEnabled ? buildPixel("FrameType") : "", {
-						onSuccess,
-						onFinal,
-					}),
+					usePixel(
+						isEnabled
+							? buildPixel("StopPixelExecution", { id: "job" })
+							: "",
+						{
+							onSuccess,
+							onFinal,
+						},
+					),
 				{ initialProps: { isEnabled: true } },
 			);
 			if (transition === "disabled") rerender({ isEnabled: false });
@@ -288,8 +313,8 @@ describe("usePixel with built statements", () => {
 
 	it("keeps hook instances independent", async () => {
 		const { result } = renderHook(() => ({
-			first: usePixel(buildPixel("FrameType")),
-			second: usePixel(buildPixel("FrameType")),
+			first: usePixel(buildPixel("StopPixelExecution", { id: "job" })),
+			second: usePixel(buildPixel("StopPixelExecution", { id: "job" })),
 		}));
 		await waitFor(() =>
 			expect(result.current.second.status).toBe("SUCCESS"),
@@ -309,7 +334,11 @@ describe("usePixel with built statements", () => {
 		const onSuccess = vi.fn();
 		const onFinal = vi.fn();
 		const { result } = renderHook(
-			() => usePixel(buildPixel("FrameType"), { onSuccess, onFinal }),
+			() =>
+				usePixel(buildPixel("StopPixelExecution", { id: "job" }), {
+					onSuccess,
+					onFinal,
+				}),
 			{ wrapper: StrictMode },
 		);
 		expect(runPixel).toHaveBeenCalledTimes(2);

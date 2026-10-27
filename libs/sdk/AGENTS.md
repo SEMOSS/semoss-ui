@@ -26,11 +26,10 @@ workspace dependencies. Treat its published public surface as stable and version
 | `@semoss/sdk` | `src/index.ts` | `dist/index.mjs` | `dist/types/index.d.ts` |
 | `@semoss/sdk/react` | `src/js-frameworks/react/index.ts` | `dist/js-frameworks/react/index.mjs` | `dist/types/js-frameworks/react/index.d.ts` |
 | `@semoss/sdk/api` | `src/lib/api.ts` (route errors and `RequestOptions`) | `dist/api/index.mjs` | `dist/types/lib/api.d.ts` |
-| `@semoss/sdk/api/monolith/<resource>` | `src/api/monolith/<resource>.ts` | `dist/api/monolith/<resource>.mjs` | `dist/types/api/monolith/<resource>.d.ts` |
-| `@semoss/sdk/api/<servlet>` | `src/api/<servlet>/<servlet>.ts` | `dist/api/<servlet>.mjs` | `dist/types/api/<servlet>/<servlet>.d.ts` |
-| `@semoss/sdk/api/github/manifest` | `src/api/github/manifest.ts` | `dist/api/github/manifest.mjs` | `dist/types/api/github/manifest.d.ts` |
+| `@semoss/sdk/api/health` | `src/api/health/health.ts` | `dist/api/health.mjs` | `dist/types/api/health/health.d.ts` |
 
-Servlet entries are `github`, `msgraph`, `adminconfig`, `health`, and `token`.
+`health` is the first generated resource group. Adding a group also requires a
+curated package export and build entry. The prior manual resource catalog is removed.
 Declarations use `rootDir: "src"` and preserve supporting relative imports under
 `dist/types/`. There is no separate REST package or declaration path remapping.
 
@@ -64,7 +63,7 @@ router):
 
 | Folder / file | Purpose |
 |---------------|---------|
-| `api/` | Typed REST resources and deprecated compatibility helpers |
+| `api/` | Generated REST resources and existing root helpers |
 | `stores/` | State (e.g. `InsightStore`, exported as `Insight`) |
 | `utility/` | Internal request transport, encoding, URLs, request types, and session state |
 | `lib/` | Public helper implementations and route contracts |
@@ -152,30 +151,23 @@ session cannot restore its state. Route errors come from `@semoss/sdk/api`; root
 `HttpError` and `UnauthorizedError` retain their existing helper contracts.
 
 `runPixel` is implemented in `src/lib/pixel.ts` and remains a positional, generic
-root export. Internal callers import that defining file. All standalone functions
-directly under `src/api/`, and `InsightWebSocket` with its public members, are
-deprecated compatibility APIs. This includes configuration, normalization,
-authentication orchestration, image validation/uploads, chat and agent wrappers.
-Their declaration comments name the resource or Pixel-builder migration and any
-behavior the caller must supply. Keep their implementations, signatures and export
-chains intact during documentation-only deprecation work; do not migrate consumers
-or relocate files as part of that work.
+root export. Internal callers import that defining file. Existing root helpers,
+including room/agent, auth, images and WebSockets, remain supported; do not mark
+them deprecated merely because generated examples exist.
 
-New REST calls use the resource subpaths. New built-in Pixel calls use `buildPixel`
-and, only for trusted expressions, `rawPixel`; execute with root `runPixel`, React
-`usePixel`, or resource `runPixelAsync` for async jobs. Stores and React bindings,
-`get`, `post`, `CSRF`, types, constants and error classes remain supported. Do not
-remove deprecated helpers as part of routine sync work. The legacy behavior notes
-below describe retained implementations, not recommendations for new direct calls.
+`buildPixel` returns a primitive string with a private reactor type brand.
+`rawPixel` marks trusted expressions; ordinary strings are literals. The private
+catalog and inventory under `lib/reactors/` are generated from backend annotations.
+Only `StopPixelExecution` is selected initially. Keep brands, graph definitions,
+and `ResolvePixelOutput` private to defining-file imports.
 
-`buildPixel` (`lib/build-pixel.ts`) returns a primitive string with a private
-reactor type brand. `rawPixel` (`lib/raw-pixel.ts`) returns an opaque marker for
-trusted expressions; ordinary strings are always literals. Only these two helper
-functions are public additions. Keep the catalog, value types, brands, inventory,
-and `ResolvePixelOutput` private to defining-file imports. The internal catalog
-lives in `lib/reactors/`; source provenance and verification gaps live in its
-`inventory.json`. Follow the sync skill's `reactors` workflow and root
-`semoss-sync.json` state, independently of REST resource sync.
+Read [the generator guide](../../src/script/README.md) and
+[the sync skill](../../skills/semoss-sync.skill.md) before changing generated
+contracts. `src/script/sdk-operations.json` selects operations;
+`contracts/operations.json` stores the exported graph. Do not maintain parallel
+source-derived types or restore the removed manual catalogs. Change backend
+annotations, regenerate, and commit JSON and TypeScript together. Source/build
+tests must run without a backend checkout; live drift checks are explicit.
 
 Both `runPixel` and `usePixel` retain their original first generic and add a
 defaulted input-string generic for inference. Explicit generics override builder
@@ -236,7 +228,7 @@ The SDK owns what the session is signed in to, so an app never tracks or caches 
   cannot be read. So besides watching the popup close or come back, it reads the login every two
   seconds and closes the popup once it is there. `oauth` rejects when the popup ends without the
   login rather than leaving the sign in waiting. Existing stores retain this behavior;
-  new direct callers follow the deprecated helper's resource migration guidance.
+  direct callers retain the same popup lifecycle.
 
 ## Permission Batches
 

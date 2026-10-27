@@ -18,38 +18,15 @@
             "types": "./dist/types/lib/api.d.ts",
             "default": "./dist/api/index.mjs"
         },
-        "./api/github": {
-            "types": "./dist/types/api/github/github.d.ts",
-            "default": "./dist/api/github.mjs"
-        },
-        "./api/msgraph": {
-            "types": "./dist/types/api/msgraph/msgraph.d.ts",
-            "default": "./dist/api/msgraph.mjs"
-        },
-        "./api/adminconfig": {
-            "types": "./dist/types/api/adminconfig/adminconfig.d.ts",
-            "default": "./dist/api/adminconfig.mjs"
-        },
         "./api/health": {
             "types": "./dist/types/api/health/health.d.ts",
             "default": "./dist/api/health.mjs"
-        },
-        "./api/token": {
-            "types": "./dist/types/api/token/token.d.ts",
-            "default": "./dist/api/token.mjs"
-        },
-        "./api/monolith/*": {
-            "types": "./dist/types/api/monolith/*.d.ts",
-            "default": "./dist/api/monolith/*.mjs"
-        },
-        "./api/github/*": {
-            "types": "./dist/types/api/github/*.d.ts",
-            "default": "./dist/api/github/*.mjs"
         }
     },
     "files": [
         "src",
         "dist",
+        "contracts",
         "skills"
     ],
     "npmSkills": {
@@ -58,6 +35,9 @@
         }
     },
     "scripts": {
+        "generate": "node ../../src/script/generate-sdk.ts",
+        "generate:check": "node ../../src/script/generate-sdk.ts --check",
+        "test:generator": "node --test ../../src/script/sdk-generator/*.test.ts",
         "dev": "vite build --watch --mode development --configLoader runner",
         "build": "vite build --configLoader runner",
         "build:dev": "vite build --mode development --configLoader runner",

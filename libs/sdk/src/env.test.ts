@@ -124,20 +124,16 @@ describe("Env", () => {
 				stubEnvTag(null);
 				const Env = await loadEnv();
 				const { url } = await import("./utility/url");
-				const { getUserProjectPermission } = await import(
-					"./api/monolith/auth/project"
-				);
+				const { ready } = await import("./api/health/health");
 				const fetchMock = vi.fn<typeof fetch>(async () =>
-					Response.json({ permission: "OWNER" }),
+					Response.json({ status: "READY", startupComplete: true }),
 				);
 				vi.stubGlobal("fetch", fetchMock);
 				Env.update({ MODULE: module });
 				const base = module.replace(/\/+$/, "");
 				expect(url("/api/config")).toBe(`${base}/api/config`);
-				await getUserProjectPermission({ projectId: "p 1" });
-				expect(fetchMock.mock.calls[0][0]).toBe(
-					`${base}/api/auth/project/getUserProjectPermission?projectId=p+1`,
-				);
+				await ready();
+				expect(fetchMock.mock.calls[0][0]).toBe(`${base}/health/ready`);
 			},
 		);
 
@@ -147,15 +143,13 @@ describe("Env", () => {
 			);
 			vi.resetModules();
 			const fetchMock = vi.fn<typeof fetch>(async () =>
-				Response.json({ permission: "OWNER" }),
+				Response.json({ status: "READY", startupComplete: true }),
 			);
 			vi.stubGlobal("fetch", fetchMock);
-			const { getUserProjectPermission } = await import(
-				"./api/monolith/auth/project"
-			);
-			await getUserProjectPermission({ projectId: "project" });
+			const { ready } = await import("./api/health/health");
+			await ready();
 			expect(fetchMock.mock.calls[0][0]).toBe(
-				"/from-document/api/auth/project/getUserProjectPermission?projectId=project",
+				"/from-document/health/ready",
 			);
 		});
 
@@ -163,7 +157,7 @@ describe("Env", () => {
 			stubEnvTag(null);
 			const Env = await loadEnv();
 			const { CSRF } = await import("./lib/fetch");
-			const { runPixel } = await import("./api/monolith/engine");
+			const { runPixel } = await import("./lib/pixel");
 			const fetchMock = vi.fn<typeof fetch>(async (input) =>
 				String(input).endsWith("/api/config/fetchCsrf")
 					? new Response(null, {
@@ -178,10 +172,10 @@ describe("Env", () => {
 				SECRET_KEY: "s",
 				CSRF: true,
 			});
-			await runPixel({ expression: "1+1;" });
+			await runPixel("1+1;");
 			CSRF.cookie = "JSESSIONID=session";
 			Env.update({ MODULE: "/Monolith", ACCESS_KEY: "a", TOOL: null });
-			await runPixel({ expression: "1+1;" });
+			await runPixel("1+1;");
 			expect(
 				fetchMock.mock.calls.filter(([input]) =>
 					String(input).endsWith("/api/config/fetchCsrf"),
@@ -193,22 +187,20 @@ describe("Env", () => {
 		it("uses basic credentials, prefers bearer, and removes cleared credentials", async () => {
 			stubEnvTag(null);
 			const Env = await loadEnv();
-			const { getUserProjectPermission } = await import(
-				"./api/monolith/auth/project"
-			);
+			const { ready } = await import("./api/health/health");
 			const fetchMock = vi.fn<typeof fetch>(async () =>
-				Response.json({ permission: "OWNER" }),
+				Response.json({ status: "READY", startupComplete: true }),
 			);
 			vi.stubGlobal("fetch", fetchMock);
 			Env.update({ ACCESS_KEY: "abc", SECRET_KEY: "xyz" });
-			await getUserProjectPermission({ projectId: "p" });
+			await ready();
 			expect(
 				new Headers(fetchMock.mock.calls[0][1]?.headers).get(
 					"Authorization",
 				),
 			).toBe(`Basic ${btoa("abc:xyz")}`);
 			Env.update({ BEARER_TOKEN: "token", BEARER_PROVIDER: "ms" });
-			await getUserProjectPermission({ projectId: "p" });
+			await ready();
 			const bearerHeaders = new Headers(
 				fetchMock.mock.calls[1][1]?.headers,
 			);
@@ -220,7 +212,7 @@ describe("Env", () => {
 				BEARER_TOKEN: "",
 				BEARER_PROVIDER: "",
 			});
-			await getUserProjectPermission({ projectId: "p" });
+			await ready();
 			expect(
 				new Headers(fetchMock.mock.calls[2][1]?.headers).has(
 					"Authorization",

@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../env";
+import type { AgentStreamResponse } from "../lib/agent-types";
 import { HttpError } from "../lib/error";
 import { runPixel } from "../lib/pixel";
 import { clearSession } from "../utility/session";
 import { getAgentRun, pollAgentRun, runAgent, stopAgentRun } from "./agent";
-import type { agentRunStreaming } from "./monolith/engine";
 
 vi.mock("../lib/pixel", () => ({
 	runPixel: vi.fn(),
@@ -129,7 +129,7 @@ describe("agent snapshot compatibility", () => {
 				},
 			],
 			droppedEvents: 3,
-		} satisfies Awaited<ReturnType<typeof agentRunStreaming>>;
+		} satisfies AgentStreamResponse;
 		fetchMock.mockResolvedValueOnce(Response.json(payload));
 		const result = await pollAgentRun("run&1");
 		expect(result.events).toEqual(payload.events);
@@ -198,7 +198,7 @@ describe("agent snapshot compatibility", () => {
 			},
 			events: [],
 			droppedEvents: 0,
-		} satisfies Awaited<ReturnType<typeof agentRunStreaming>>;
+		} satisfies AgentStreamResponse;
 		fetchMock.mockResolvedValueOnce(Response.json(payload));
 		await expect(pollAgentRun("run")).resolves.toEqual(payload);
 	});

@@ -20,11 +20,6 @@ export interface UserPixelMcpTool {
  * @returns The file as the backend wrote it.
  * @throws Error when the backend refuses the write.
  *
- * @deprecated Use `runPixel(buildPixel("MakeUserPixelMCP", { filePath, generator, reactor,
- * mcpMetadata }))` with `buildPixel` and `runPixel` from `@semoss/sdk`. Derive reactor and
- * mcpMetadata as parallel arrays from tools; omit both when tools is empty to clear that
- * generator's tools. Pass plain values without JSON.stringify, check errors, then read
- * pixelReturn[0]?.output.
  */
 export const makeUserPixelMcp = async (params: {
 	filePath: string;
@@ -61,12 +56,6 @@ export const makeUserPixelMcp = async (params: {
  * JSON, and no output as an empty string.
  * @throws Error when the tool fails or answers with nothing.
  *
- * @deprecated Use `runPixel(buildPixel("RunMCPTool", { project, roomId, function: name,
- * paramValues }), insightId)` with `buildPixel` and `runPixel` from `@semoss/sdk`. Check
- * `errors` before reading `pixelReturn[0]?.output`; raw reactor output may differ from this
- * helper's declared or normalized result. Pass the parameter object directly. The raw output
- * is unknown; preserve string output, JSON-stringify non-string output and default absent
- * output to an empty string only if your caller needs the old text contract.
  */
 export const runMcpTool = async (
 	params: {
