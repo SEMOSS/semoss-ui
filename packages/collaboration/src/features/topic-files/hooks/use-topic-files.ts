@@ -1,9 +1,14 @@
 import { usePixel } from "@semoss/sdk/react";
 import { pixel } from "@/lib/pixel";
-import { type TopicFile, topicFilesPageSchema } from "../api/topic-files";
+import {
+	type TopicFile,
+	type TopicLink,
+	topicFilesPageSchema,
+} from "../api/topic-files";
 
 interface TopicFilesResult {
 	files: TopicFile[];
+	links: TopicLink[];
 	total: number;
 	maxBytes: number | null;
 	isLoading: boolean;
@@ -27,6 +32,7 @@ export function useTopicFiles(
 			: null;
 	return {
 		files: parsed?.success ? parsed.data.files : [],
+		links: parsed?.success ? parsed.data.links : [],
 		total: parsed?.success ? parsed.data.total : 0,
 		maxBytes: parsed?.success ? parsed.data.maxBytes : null,
 		isLoading:

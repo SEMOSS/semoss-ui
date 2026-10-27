@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
+	Badge,
 	Button,
 	Dialog,
 	DialogContent,
@@ -11,18 +12,34 @@ import {
 	DialogHeader,
 	DialogTitle,
 	P,
+	Small,
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
 import type { UploadedRoomFile } from "@/features/rooms/api/upload-room-files";
 import {
 	copyTopicFile,
+	copyTopicLink,
 	deleteTopicFile,
 	downloadTopicFile,
+	refreshTopicLinks,
 	type TopicFile,
+	type TopicLink,
+	unlinkTopicFile,
 } from "../api/topic-files";
 import { useTopicFiles } from "../hooks/use-topic-files";
+import { LinkTopicFilesDialog } from "./link-topic-files-dialog";
 import { UploadTopicFilesDialog } from "./upload-topic-files-dialog";
+
+const SOURCE_LABELS: Record<string, string> = {
+	onedrive: "OneDrive",
+	sharepoint: "SharePoint",
+};
+const STATUS_LABELS: Record<TopicLink["status"], string | null> = {
+	ok: null,
+	missing: "Moved or deleted",
+	no_access: "No access",
+};
 
 interface TopicFileListProps {
 	/** Owner topic page, or a linked room's complete file scope. */
@@ -59,7 +76,69 @@ export function TopicFileList({
 	const [pending, setPending] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [deleting, setDeleting] = useState<TopicFile | null>(null);
+	const [linkNotice, setLinkNotice] = useState<string | null>(null);
+	const [isRefreshing, setIsRefreshing] = useState(false);
 	const listRef = useRef<HTMLElement>(null);
+	const { refresh: reloadList } = query;
+
+	// Linked files are re-read from Microsoft 365 whenever the list opens.
+	const refreshAll = useCallback(async (): Promise<void> => {
+		setIsRefreshing(true);
+		try {
+			const result = await refreshTopicLinks(
+				actions,
+				roomId ? { roomId } : { topicId },
+			);
+			if (isMounted.current) setLinkNotice(result.error ?? null);
+		} catch (failure: unknown) {
+			if (isMounted.current)
+				setLinkNotice(
+					failure instanceof Error
+						? failure.message
+						: "Linked files could not be refreshed.",
+				);
+		} finally {
+			if (isMounted.current) {
+				setIsRefreshing(false);
+				reloadList();
+			}
+		}
+	}, [actions, roomId, topicId, reloadList]);
+	const hasRefreshed = useRef(false);
+	useEffect(() => {
+		if (isSample || hasRefreshed.current) return;
+		hasRefreshed.current = true;
+		void refreshAll();
+	}, [isSample, refreshAll]);
+
+	const handleLinkAction = async (
+		link: TopicLink,
+		action: "attach" | "unlink",
+	): Promise<void> => {
+		if (pending) return;
+		setPending(link.linkId);
+		setError(null);
+		try {
+			if (action === "attach" && roomId && onAttach) {
+				const copied = await copyTopicLink(actions, roomId, link);
+				if (!isMounted.current) return;
+				onAttach(copied);
+				toast.success("File added to the next message");
+			} else if (action === "unlink") {
+				await unlinkTopicFile(actions, link);
+				query.refresh();
+				toast.success("File unlinked");
+			}
+		} catch (failure: unknown) {
+			setError(
+				failure instanceof Error
+					? failure.message
+					: "File operation failed.",
+			);
+		} finally {
+			setPending(null);
+		}
+	};
 
 	const handleAction = async (
 		file: TopicFile,
@@ -116,9 +195,12 @@ export function TopicFileList({
 					<Button
 						type="button"
 						variant="outline"
-						disabled={query.isLoading || pending !== null}
-						onClick={query.refresh}
+						disabled={
+							query.isLoading || isRefreshing || pending !== null
+						}
+						onClick={() => void refreshAll()}
 					>
+						{isRefreshing && <Spinner />}
 						Refresh files
 					</Button>
 					{isWritable && topicId && (
@@ -126,6 +208,13 @@ export function TopicFileList({
 							topicId={topicId}
 							maxBytes={query.maxBytes}
 							onUploaded={query.refresh}
+						/>
+					)}
+					{isWritable && topicId && (
+						<LinkTopicFilesDialog
+							topicId={topicId}
+							links={query.links}
+							onLinked={query.refresh}
 						/>
 					)}
 				</div>
@@ -141,9 +230,12 @@ export function TopicFileList({
 					Loading files…
 				</output>
 			)}
-			{!query.isLoading && !query.error && query.files.length === 0 && (
-				<P className="text-muted-foreground">No topic files yet.</P>
-			)}
+			{!query.isLoading &&
+				!query.error &&
+				query.files.length === 0 &&
+				query.links.length === 0 && (
+					<P className="text-muted-foreground">No topic files yet.</P>
+				)}
 			<ul className="divide-y divide-border">
 				{query.files.map((file) => (
 					<li
@@ -203,6 +295,114 @@ export function TopicFileList({
 					</li>
 				))}
 			</ul>
+			{query.links.length > 0 && (
+				<div className="space-y-2">
+					<P className="font-medium">Linked from Microsoft 365</P>
+					{linkNotice && (
+						<Small className="block text-muted-foreground">
+							{linkNotice}. Showing the last known details.
+						</Small>
+					)}
+					<ul className="divide-y divide-border">
+						{query.links.map((link) => {
+							const statusLabel = STATUS_LABELS[link.status];
+							const webUrl = link.webUrl?.startsWith("https://")
+								? link.webUrl
+								: null;
+							return (
+								<li
+									key={link.linkId}
+									className="flex min-w-0 flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+								>
+									<div className="min-w-0">
+										<div className="flex flex-wrap items-center gap-2">
+											<P className="break-all font-medium">
+												{link.name}
+											</P>
+											<Badge variant="outline">
+												{SOURCE_LABELS[link.source] ??
+													"Microsoft 365"}
+											</Badge>
+											{statusLabel && (
+												<Badge variant="destructive">
+													{statusLabel}
+												</Badge>
+											)}
+										</div>
+										<P className="break-all text-muted-foreground text-sm">
+											{[
+												link.location,
+												link.size != null &&
+													`${Math.ceil(link.size / 1024)} KB`,
+												link.modifiedAt &&
+													`Modified ${new Date(link.modifiedAt).toLocaleDateString()}`,
+											]
+												.filter(Boolean)
+												.join(" · ")}
+										</P>
+									</div>
+									<div className="flex shrink-0 flex-wrap gap-2">
+										{webUrl && (
+											<Button
+												asChild
+												size="sm"
+												variant="outline"
+											>
+												<a
+													href={webUrl}
+													target="_blank"
+													rel="noopener noreferrer"
+													aria-label={`Open ${link.name} in Microsoft 365`}
+												>
+													Open
+												</a>
+											</Button>
+										)}
+										{onAttach && (
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												disabled={
+													isDisabled ||
+													pending !== null ||
+													link.status !== "ok"
+												}
+												aria-label={`Add ${link.name} to next message`}
+												onClick={() =>
+													void handleLinkAction(
+														link,
+														"attach",
+													)
+												}
+											>
+												Add to next message
+											</Button>
+										)}
+										{isWritable && (
+											<Button
+												type="button"
+												size="sm"
+												variant="ghost"
+												disabled={pending !== null}
+												aria-label={`Unlink ${link.name}`}
+												onClick={() =>
+													void handleLinkAction(
+														link,
+														"unlink",
+													)
+												}
+											>
+												Unlink
+											</Button>
+										)}
+									</div>
+								</li>
+							);
+						})}
+					</ul>
+				</div>
+			)}
 			{query.total > 50 && (
 				<div className="flex flex-wrap items-center gap-2">
 					<Button
