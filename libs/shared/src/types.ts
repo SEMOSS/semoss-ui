@@ -55,6 +55,8 @@ export interface Project {
 		| "AUTOMATION";
 	project_cost?: string;
 	project_global?: string;
+	/** Whether the project is a template, which anyone who can see it can clone */
+	project_is_template?: boolean;
 	project_created_by?: string;
 	project_created_by_type?: string;
 	project_date_created?: string;

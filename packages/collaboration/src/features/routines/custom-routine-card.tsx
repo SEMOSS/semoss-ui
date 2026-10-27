@@ -10,9 +10,14 @@ import {
 	Form,
 	FormSwitch,
 	Separator,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
 	useForm,
 	zodResolver,
 } from "@semoss/ui/next";
+import { collaborationTabsStyles } from "@/features/collaboration/components/collaboration-tabs.styles";
 import { manageCustomRoutine, saveCustomRoutine } from "./custom-routine-api";
 import { CustomRoutineFields } from "./custom-routine-fields";
 import {
@@ -24,6 +29,7 @@ import {
 } from "./custom-routine-schema";
 import { RoutineAvailability } from "./routine-availability";
 import { RoutineCardHeader } from "./routine-card-header";
+import { RoutineDocuments } from "./routine-documents";
 import { RoutineNextRun } from "./routine-next-run";
 import { RoutineResult, type RoutineResultCopy } from "./routine-result";
 import { RoutineSaveStatus } from "./routine-save-status";
@@ -184,13 +190,43 @@ export function CustomRoutineCard({
 						<Separator />
 						<CustomRoutineFields skills={skills} />
 					</div>
-					<div className="min-w-0">
-						<RoutineResult
-							routine={routine}
-							copy={RESULT_COPY}
-							canOpenRun
-						/>
-					</div>
+					{/* a grid item, so as tall as the settings column; the open panel fills what the tab list leaves */}
+					<Tabs
+						defaultValue="result"
+						className="min-h-0 min-w-0 gap-3"
+					>
+						<TabsList className={collaborationTabsStyles.list}>
+							<TabsTrigger
+								value="result"
+								className={collaborationTabsStyles.trigger}
+							>
+								Latest result
+							</TabsTrigger>
+							<TabsTrigger
+								value="documents"
+								className={collaborationTabsStyles.trigger}
+							>
+								Reference documents
+							</TabsTrigger>
+						</TabsList>
+						<TabsContent
+							value="result"
+							className="mt-0 flex min-h-0 flex-1 flex-col"
+						>
+							<RoutineResult
+								routine={routine}
+								copy={RESULT_COPY}
+								canOpenRun
+								showTitle={false}
+							/>
+						</TabsContent>
+						<TabsContent
+							value="documents"
+							className="mt-0 flex min-h-0 flex-1 flex-col"
+						>
+							<RoutineDocuments routineId={routine.id} />
+						</TabsContent>
+					</Tabs>
 				</CardContent>
 				<RoutineAvailability
 					routine={routine}

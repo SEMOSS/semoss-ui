@@ -8,6 +8,9 @@ import { saveAgendaRoutine } from "./agenda-routine-api";
 import { AgendaRoutineForm } from "./agenda-routine-form";
 import { agendaRoutineSchema } from "./agenda-routine-schema";
 import { CustomRoutinesTab } from "./custom-routines-tab";
+import { saveExpenseRoutine } from "./expense-routine-api";
+import { ExpenseRoutineForm } from "./expense-routine-form";
+import { expenseRoutineSchema } from "./expense-routine-schema";
 import { saveInboxRoutine } from "./inbox-routine-api";
 import { InboxRoutineForm } from "./inbox-routine-form";
 import { inboxRoutineSchema } from "./inbox-routine-schema";
@@ -17,6 +20,7 @@ import { RoutineLoader } from "./routine-loader";
 export function RoutinesWorkspace() {
 	const { actions } = useInsight();
 	const [hasOpenedAgendas, setHasOpenedAgendas] = useState(false);
+	const [hasOpenedExpenses, setHasOpenedExpenses] = useState(false);
 	const [hasOpenedMine, setHasOpenedMine] = useState(false);
 	return (
 		<CollaborationPage>
@@ -26,6 +30,7 @@ export function RoutinesWorkspace() {
 					className="gap-6"
 					onValueChange={(value) => {
 						if (value === "agendas") setHasOpenedAgendas(true);
+						if (value === "expenses") setHasOpenedExpenses(true);
 						if (value === "mine") setHasOpenedMine(true);
 					}}
 				>
@@ -49,6 +54,9 @@ export function RoutinesWorkspace() {
 							</TabsTrigger>
 							<TabsTrigger value="agendas">
 								Weekly meeting agendas
+							</TabsTrigger>
+							<TabsTrigger value="expenses">
+								Expense review
 							</TabsTrigger>
 							<TabsTrigger value="mine">My routines</TabsTrigger>
 						</TabsList>
@@ -93,6 +101,33 @@ export function RoutinesWorkspace() {
 										onSave={async (values) => {
 											const saved =
 												await saveAgendaRoutine(
+													actions,
+													values,
+												);
+											update(saved);
+											return saved;
+										}}
+									/>
+								)}
+							</RoutineLoader>
+						)}
+					</TabsContent>
+					<TabsContent
+						value="expenses"
+						forceMount
+						className="flex flex-col gap-6 data-[state=inactive]:hidden"
+					>
+						{hasOpenedExpenses && (
+							<RoutineLoader
+								pixel="WorkGetExpenseRoutine();"
+								schema={expenseRoutineSchema}
+							>
+								{(routine, update) => (
+									<ExpenseRoutineForm
+										routine={routine}
+										onSave={async (values) => {
+											const saved =
+												await saveExpenseRoutine(
 													actions,
 													values,
 												);
