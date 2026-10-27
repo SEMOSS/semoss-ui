@@ -19,15 +19,18 @@ import {
 } from "./custom-routine-schema";
 import { MySkillsCard } from "./my-skills-card";
 import { NewCustomRoutine } from "./new-custom-routine";
+import { RoutineDetail } from "./routine-detail";
+import { RoutineNav } from "./routine-nav";
 
 // how often a running routine's card checks for its result
 const RUNNING_POLL_MS = 5000;
 
-/** The owner's own routines, a way to add one, and their skills. */
+/** The owner's own routines in a list beside the chosen one, a way to add one, and their skills. */
 export function CustomRoutinesTab() {
 	const routines = usePixel<unknown>("WorkListCustomRoutines();");
 	const skills = usePixel<unknown>("WorkListMySkills();");
 	const [isAdding, setIsAdding] = useState(false);
+	const [selected, setSelected] = useState("");
 	const parsedRoutines = customRoutineListSchema.safeParse(routines.data);
 	const parsedSkills = mySkillListSchema.safeParse(skills.data);
 	const { actions } = useInsight();
@@ -91,52 +94,88 @@ export function CustomRoutinesTab() {
 	const setList = (next: CustomRoutine[]) =>
 		routines.update({ routines: next });
 	const setSkills = (next: MySkill[]) => skills.update({ skills: next });
+	// the first routine until the owner picks one; a deleted pick falls back to it
+	const current = list.find((routine) => routine.id === selected) ?? list[0];
 	return (
 		<div className="flex flex-col gap-6">
-			{list.length === 0 && !isAdding && (
-				<P className="text-muted-foreground text-sm">
-					Ask your assistant for something on a schedule, such as
-					"Every weekday at 8, summarize what my clients asked for and
-					email it to me", or add one here. Results go only to you.
-				</P>
-			)}
-			{list.map((routine) => (
-				<CustomRoutineCard
-					key={routine.id}
-					routine={routine}
-					skills={mySkills}
-					onChange={(saved) =>
-						setList(
-							saved
-								? list.map((item) =>
-										item.id === saved.id ? saved : item,
-									)
-								: list.filter((item) => item.id !== routine.id),
-						)
-					}
-					onRefresh={routines.refresh}
-				/>
-			))}
-			{isAdding ? (
-				<NewCustomRoutine
-					skills={mySkills}
-					onCreated={(created) => {
-						setList([...list, created]);
+			<div className="grid min-w-0 gap-6 md:grid-cols-[16rem_minmax(0,1fr)]">
+				<RoutineNav
+					label="My routines"
+					entries={list.map((routine) => ({
+						id: routine.id,
+						name: routine.name,
+						enabled: routine.enabled,
+						lastStatus: routine.lastRun?.status ?? null,
+					}))}
+					selected={isAdding ? "" : (current?.id ?? "")}
+					onSelect={(id) => {
+						setSelected(id);
 						setIsAdding(false);
 					}}
-					onCancel={() => setIsAdding(false)}
+					footer={
+						!isAdding && (
+							<Button
+								type="button"
+								variant="outline"
+								className="self-start"
+								onClick={() => setIsAdding(true)}
+							>
+								<Plus
+									aria-hidden="true"
+									data-icon="inline-start"
+								/>
+								New routine
+							</Button>
+						)
+					}
 				/>
-			) : (
-				<Button
-					type="button"
-					variant="outline"
-					className="self-start"
-					onClick={() => setIsAdding(true)}
-				>
-					<Plus aria-hidden="true" data-icon="inline-start" />
-					New routine
-				</Button>
-			)}
+				<div className="min-w-0">
+					{isAdding ? (
+						<NewCustomRoutine
+							skills={mySkills}
+							onCreated={(created) => {
+								setList([...list, created]);
+								setSelected(created.id);
+								setIsAdding(false);
+							}}
+							onCancel={() => setIsAdding(false)}
+						/>
+					) : current ? (
+						<RoutineDetail
+							key={current.id}
+							routineId={current.id}
+							timezone={current.timezone}
+						>
+							<CustomRoutineCard
+								routine={current}
+								skills={mySkills}
+								onChange={(saved) =>
+									setList(
+										saved
+											? list.map((item) =>
+													item.id === saved.id
+														? saved
+														: item,
+												)
+											: list.filter(
+													(item) =>
+														item.id !== current.id,
+												),
+									)
+								}
+								onRefresh={routines.refresh}
+							/>
+						</RoutineDetail>
+					) : (
+						<P className="text-muted-foreground text-sm">
+							Ask your assistant for something on a schedule, such
+							as "Every weekday at 8, summarize what my clients
+							asked for and email it to me", or add one here.
+							Results go only to you.
+						</P>
+					)}
+				</div>
+			</div>
 			<MySkillsCard skills={mySkills} onChange={setSkills} />
 		</div>
 	);

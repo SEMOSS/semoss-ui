@@ -554,7 +554,7 @@ describe("RoutinesWorkspace", () => {
 		);
 	});
 
-	it("keeps a pending inbox autosave when switching routine tabs", async () => {
+	it("keeps a pending inbox autosave when picking another routine", async () => {
 		const user = userEvent.setup();
 		render(
 			<MemoryRouter>
@@ -565,7 +565,7 @@ describe("RoutinesWorkspace", () => {
 		await user.clear(lookback);
 		await user.type(lookback, "5");
 		await user.click(
-			screen.getByRole("tab", { name: "Weekly meeting agendas" }),
+			screen.getByRole("button", { name: "Weekly meeting agendas" }),
 		);
 		expect(service.save).not.toHaveBeenCalled();
 		await autosave();
@@ -573,7 +573,7 @@ describe("RoutinesWorkspace", () => {
 			expect.objectContaining({ lookbackHours: 120 }),
 		);
 		await user.click(
-			screen.getByRole("tab", { name: "Inbox daily brief" }),
+			screen.getByRole("button", { name: "Inbox daily brief" }),
 		);
 		expect(screen.getByLabelText("Email lookback (required)")).toBe(
 			lookback,
