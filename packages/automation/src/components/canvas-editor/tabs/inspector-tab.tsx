@@ -39,6 +39,8 @@ interface InspectorTabProps {
 	/** When true, the trigger/node panels render view-only and all mutating controls
 	 * (including delete and raw Python editing) are disabled. */
 	readOnly?: boolean;
+	/** Administrator status supplied by the host session. */
+	isAdmin?: boolean;
 }
 
 export function InspectorTab({
@@ -62,6 +64,7 @@ export function InspectorTab({
 	onViewRunDetails,
 	pythonFileOpen = false,
 	readOnly = false,
+	isAdmin = false,
 }: InspectorTabProps) {
 	const groupLabelId = useId();
 	if (editingNodeGroup) {
@@ -110,6 +113,7 @@ export function InspectorTab({
 		return (
 			<TriggerEditPanel
 				appId={appId}
+				isAdmin={isAdmin}
 				description={description}
 				onDescriptionChange={onDescriptionChange}
 				onClose={onClose}

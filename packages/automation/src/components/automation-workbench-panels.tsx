@@ -17,6 +17,8 @@ import {
 export interface AutomationWorkbenchContextValue {
 	appId: string;
 	readOnly: boolean;
+	/** Administrator status from the host's authenticated session. */
+	isAdmin: boolean;
 	conversionModel?: N8nImportConversionModel;
 	canvasRef: React.RefObject<AutomationCanvasHandle | null>;
 	agentRunAutomationUpdate: AutomationRunDetail | null;
@@ -82,6 +84,7 @@ export const AutomationInspectorPanel = () => {
 	return (
 		<InspectorTab
 			appId={context.appId}
+			isAdmin={context.isAdmin}
 			description={snapshot?.description ?? ""}
 			devMode={snapshot?.devMode ?? false}
 			editingStep={snapshot?.editingStep ?? null}
