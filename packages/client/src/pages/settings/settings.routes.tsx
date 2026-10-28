@@ -18,6 +18,7 @@ import { LLMFeedbackPage } from "./llm-feedback-page";
 import { ManagedTeamDetailPage } from "./managed-team-detail-page";
 import { ManagedTeamsPage } from "./managed-teams-page";
 import { MemberSettingsPage } from "./member-settings-page";
+import { ModelServingPage } from "./model-serving.page";
 import { MyFilesPage } from "./my-files-page";
 import { MyProfilePage } from "./my-profile-page";
 import { ProjectSettingsDetailsPage } from "./project-settings-details-page";
@@ -44,6 +45,7 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"admin-query": AdminQueryPage,
 	"audit-trail": AuditTrailPage,
 	"enterprise-usage": EnterpriseUsagePage,
+	"model-serving": ModelServingPage,
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
 	"my-files": MyFilesPage,
