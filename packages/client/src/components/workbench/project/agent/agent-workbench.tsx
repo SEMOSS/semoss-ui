@@ -27,6 +27,7 @@ import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
 import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 	withTab,
@@ -36,12 +37,14 @@ import {
 	PROJECT_SETTINGS_TABS,
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
+import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
 import { AGENT_EDITOR_PANEL } from "./agent-editor-panel";
 
 /**
- * The default arrangement: the agent editor front and centre, files and the
- * insight explorer on a collapsed left rail so they don't take space away
- * from the editor on first load.
+ * The default arrangement: the agent editor front and centre, files (and, for
+ * editors, version control) on a collapsed left rail and the terminal on a
+ * collapsed bottom rail, so they don't take space away from the editor on
+ * first load.
  */
 const createAgentWorkbenchLayout = (
 	projectId: string,
@@ -73,6 +76,8 @@ const createAgentWorkbenchLayout = (
 						},
 					}
 				: {}),
+			[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
+				WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
 		},
 		borders: {
 			left: {
@@ -82,6 +87,11 @@ const createAgentWorkbenchLayout = (
 				],
 				activeId: null,
 				size: 400,
+			},
+			bottom: {
+				panelIds: [WORKBENCH_COMPONENTS.PROJECT_TERMINAL],
+				activeId: null,
+				size: 300,
 			},
 			right: {
 				panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
@@ -101,6 +111,7 @@ export const AGENT_WORKBENCH_COMPONENTS: Record<
 	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel(
 		withTab(
 			PROJECT_SETTINGS_TABS,
@@ -122,12 +133,7 @@ export const AGENT_WORKBENCH_COMPONENTS: Record<
 /**
  * Agent workbench — the editable surface for a WORKSPACE project. Opens the
  * agent configuration editor in the main tabset alongside the project file
- * explorer and the shared assistant panel.
- *
- * No terminal, unlike the code, notebook and skill workbenches: this one seeds
- * no terminal record, has no bottom border to put one in, and registers no
- * command to open one. It used to register the blueprint anyway, which only
- * meant a panel nothing could reach.
+ * explorer, a Pixel terminal, and the shared assistant panel.
  */
 export const AgentWorkbench: React.FC = () => {
 	const { project, permission } = useProject();
@@ -146,7 +152,7 @@ export const AgentWorkbench: React.FC = () => {
 		: project.project_id;
 
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		`workbench-layout--${workbenchId}--1`,
+		`workbench-layout--${workbenchId}--2`,
 		workbenchLayout,
 	);
 
@@ -200,6 +206,12 @@ export const AgentWorkbench: React.FC = () => {
 			label: "Open Agent Editor",
 			type: WORKBENCH_COMPONENTS.AGENT_EDITOR,
 		}),
+		createOpenPanelCommand({
+			id: "workbench.project-terminal.open",
+			label: "Open Terminal",
+			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.PROJECT_TERMINAL),
 	]);
 
 	return (

@@ -33,9 +33,11 @@ import {
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { TERMINAL_PANEL } from "../../terminal/terminal-panel";
 import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 	withTab,
@@ -53,8 +55,8 @@ import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";
 const INITIAL_QUERY_PANEL_ID = "database-query-1";
 
 /**
- * The default arrangement: columns + files on the left, an empty bottom
- * border kept as the docking target for query results, and the assistant on
+ * The default arrangement: columns + files on the left, the terminal in the
+ * bottom border, where query results dock ahead of it, and the assistant on
  * the right.
  */
 const createDatabaseWorkbenchLayout = (
@@ -92,6 +94,8 @@ const createDatabaseWorkbenchLayout = (
 						},
 					}
 				: {}),
+			[WORKBENCH_PANEL_RECORDS.TERMINAL.id]:
+				WORKBENCH_PANEL_RECORDS.TERMINAL,
 			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
 				WORKBENCH_PANEL_RECORDS.ASSISTANT,
 		},
@@ -105,7 +109,11 @@ const createDatabaseWorkbenchLayout = (
 				activeId: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
 				size: 300,
 			},
-			bottom: { panelIds: [], activeId: null, size: 300 },
+			bottom: {
+				panelIds: [WORKBENCH_COMPONENTS.TERMINAL],
+				activeId: null,
+				size: 300,
+			},
 			right: {
 				panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
 				activeId: null,
@@ -126,6 +134,7 @@ export const DATABASE_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.DATABASE_COLUMNS]: DATABASE_COLUMNS_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_QUERY]: DATABASE_QUERY_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: DATABASE_RESULTS_PANEL,
+	[WORKBENCH_COMPONENTS.TERMINAL]: TERMINAL_PANEL,
 	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel(
 		withTab(
 			ENGINE_SETTINGS_TABS,
@@ -169,7 +178,7 @@ export const DatabaseWorkbench: React.FC = () => {
 		: engine.engine_id;
 
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		`workbench-layout--${workbenchId}--1`,
+		`workbench-layout--${workbenchId}--2`,
 		workbenchLayout,
 	);
 
@@ -250,6 +259,12 @@ export const DatabaseWorkbench: React.FC = () => {
 			},
 			visible: !readOnly,
 		}),
+		createOpenPanelCommand({
+			id: "workbench.terminal.open",
+			label: "Open Terminal",
+			type: WORKBENCH_COMPONENTS.TERMINAL,
+		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.TERMINAL),
 		createOpenPanelCommand({
 			id: "workbench.settings.open",
 			label: "Open Settings",

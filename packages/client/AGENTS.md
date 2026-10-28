@@ -304,6 +304,29 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   tab uses the same pieces, and counts app and engine setting changes
   (`AuditEventType.SETTING_CHANGES`) beside access and usage limit changes.
 
+### Workbench Terminal
+
+- Every workbench in `components/workbench/` has a Pixel terminal in its bottom border, and
+  Open Terminal and New Terminal in its command palette. The one exception is the notebook
+  view on the share page, which shows only the notebook and its files.
+- `components/workbench/terminal/terminal-panel.tsx` is the shared panel: each tab is its own
+  REPL session (`TerminalConsolePanel` from `@semoss/terminal`), kept alive, and its value is
+  the session's insight id. Project workbenches register `PROJECT_TERMINAL_PANEL`
+  (`project/project-terminal-panel.tsx`, type `project-terminal`), whose insight opens in the
+  project and whose console suggests the project's reactors; the Insight file explorer follows
+  these. Engine workbenches, the admin query workbench and My Files register `TERMINAL_PANEL`
+  (type `terminal`), which runs in a plain insight.
+- `spawn-terminal.ts` opens another terminal of the same type, numbered after the open ones, in
+  the tabset or border the one it starts from sits in. The tab's New terminal button
+  (`terminal-new-control.tsx`) and the New Terminal command (`createNewTerminalCommand` in
+  `workbench.presets.ts`) both go through it; the command is how a phone opens one, since the
+  mobile shell draws no panel controls.
+- In the database and admin query workbenches, query results dock in the bottom border ahead
+  of the terminal, in run order, so the border opens on them.
+- A workbench's cached layout replaces its default. A change to a default layout bumps the
+  version at the end of that workbench's cache name (`workbench-layout--<id>--<version>`), or
+  people who already opened it never see the change.
+
 ### Database Workbench
 
 - **`components/workbench/engine/database/`** is a database's query workbench: query panels,
