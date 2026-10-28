@@ -182,7 +182,6 @@ vi.mock("@/components/room/room-options-form", () => ({
 	RoomOptionsForm: ({
 		options,
 		onOptionsChange,
-		onAgentModeSelected,
 	}: ComponentProps<typeof RoomOptionsForm>) => (
 		<>
 			<input
@@ -194,12 +193,11 @@ vi.mock("@/components/room/room-options-form", () => ({
 			/>
 			<button
 				type="button"
-				onClick={() => {
+				onClick={() =>
 					onOptionsChange({
 						workspace: { workspace_id: "alpha", name: "Alpha" },
-					});
-					onAgentModeSelected?.();
-				}}
+					})
+				}
 			>
 				Save Alpha in Settings
 			</button>

@@ -141,7 +141,6 @@ vi.mock("@/components/mcp/mcp-overlay", () => ({
 						onClose({
 							mcp: values,
 							workspace: { workspace_id: "alpha", name: "Alpha" },
-							agentModeSelected: true,
 						})
 					}
 				>
