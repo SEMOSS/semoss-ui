@@ -24,7 +24,22 @@ export const useOfficeFileCommands = (
 			if (detail.command === "save") onSave();
 		};
 		element.addEventListener("file-command", handleFileCommand);
-		return () =>
+		const handleSaveShortcut = (event: KeyboardEvent) => {
+			if (
+				(event.ctrlKey || event.metaKey) &&
+				!event.altKey &&
+				!event.shiftKey &&
+				event.key.toLowerCase() === "s"
+			) {
+				event.preventDefault();
+				event.stopPropagation();
+				onSave();
+			}
+		};
+		element.addEventListener("keydown", handleSaveShortcut, true);
+		return () => {
 			element.removeEventListener("file-command", handleFileCommand);
+			element.removeEventListener("keydown", handleSaveShortcut, true);
+		};
 	}, [element, onSave]);
 };

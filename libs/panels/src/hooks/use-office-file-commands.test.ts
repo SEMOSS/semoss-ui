@@ -3,6 +3,45 @@ import { describe, expect, it, vi } from "vitest";
 import { useOfficeFileCommands } from "./use-office-file-commands";
 
 describe("useOfficeFileCommands", () => {
+	it("captures Save shortcuts once and keeps unrelated keyboard actions available", () => {
+		const element = document.createElement("div");
+		const input = document.createElement("input");
+		element.append(input);
+		const onSave = vi.fn();
+		const vendorSave = vi.fn();
+		input.addEventListener("keydown", vendorSave);
+		const { unmount } = renderHook(() =>
+			useOfficeFileCommands(element, onSave),
+		);
+		for (const modifier of [{ ctrlKey: true }, { metaKey: true }]) {
+			const event = new KeyboardEvent("keydown", {
+				key: "s",
+				...modifier,
+				bubbles: true,
+				cancelable: true,
+			});
+			input.dispatchEvent(event);
+			expect(event.defaultPrevented).toBe(true);
+		}
+		expect(onSave).toHaveBeenCalledTimes(2);
+		expect(vendorSave).not.toHaveBeenCalled();
+		const other = new KeyboardEvent("keydown", {
+			key: "s",
+			bubbles: true,
+			cancelable: true,
+		});
+		input.dispatchEvent(other);
+		expect(other.defaultPrevented).toBe(false);
+		unmount();
+		const save = new KeyboardEvent("keydown", {
+			key: "s",
+			ctrlKey: true,
+			bubbles: true,
+			cancelable: true,
+		});
+		input.dispatchEvent(save);
+		expect(save.defaultPrevented).toBe(false);
+	});
 	it("routes Save to the host and cancels vendor file lifecycle actions", () => {
 		const element = document.createElement("div");
 		const onSave = vi.fn();

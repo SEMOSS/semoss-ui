@@ -10,6 +10,14 @@ overrides:
   archiver-utils>lodash: 4.18.1
   mocha>serialize-javascript: 7.0.5
 
+patchedDependencies:
+  ooxml-ui@1.21.0:
+    hash: ef39edbc0d80b8f2b246a25c5244fd480c2b00e3bfe5a85c8137ac01c43fa090
+    path: patches/ooxml-ui@1.21.0.patch
+  pptx-react-viewer@4.45.0:
+    hash: cc2dcd16e6f9446e5c77b73c15fd51d7ee0f0b6b62332da448363a2452c7e41d
+    path: patches/pptx-react-viewer@4.45.0.patch
+
 importers:
 
   .:
@@ -181,7 +189,7 @@ importers:
         version: 8.5.26
       pptx-react-viewer:
         specifier: ^4.45.0
-        version: 4.45.0(fast-xml-parser@5.11.2)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@25.10.10(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@0.545.0(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@16.6.6(i18next@25.10.10(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(yjs@13.6.33)
+        version: 4.45.0(patch_hash=cc2dcd16e6f9446e5c77b73c15fd51d7ee0f0b6b62332da448363a2452c7e41d)(fast-xml-parser@5.11.2)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@25.10.10(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@0.545.0(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@16.6.6(i18next@25.10.10(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(yjs@13.6.33)
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -8901,7 +8909,7 @@ snapshots:
     dependencies:
       '@christophervr/xlsx-core': 0.3.0
       ooxml-core: 1.22.0
-      ooxml-ui: 1.21.0(three@0.186.1)
+      ooxml-ui: 1.21.0(patch_hash=ef39edbc0d80b8f2b246a25c5244fd480c2b00e3bfe5a85c8137ac01c43fa090)(three@0.186.1)
       react: 19.2.8
     transitivePeerDependencies:
       - '@napi-rs/canvas'
@@ -11644,7 +11652,7 @@ snapshots:
       obug: 2.1.2
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -11698,7 +11706,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   '@vitest/utils@4.1.11':
     dependencies:
@@ -12534,7 +12542,7 @@ snapshots:
     dependencies:
       docx-core: 0.3.0
       ooxml-core: 1.22.0
-      ooxml-ui: 1.21.0(three@0.186.1)
+      ooxml-ui: 1.21.0(patch_hash=ef39edbc0d80b8f2b246a25c5244fd480c2b00e3bfe5a85c8137ac01c43fa090)(three@0.186.1)
       react: 19.2.8
     transitivePeerDependencies:
       - '@napi-rs/canvas'
@@ -14794,7 +14802,7 @@ snapshots:
       y-protocols: 1.0.7(yjs@13.6.33)
       yjs: 13.6.33
 
-  ooxml-ui@1.21.0(three@0.186.1):
+  ooxml-ui@1.21.0(patch_hash=ef39edbc0d80b8f2b246a25c5244fd480c2b00e3bfe5a85c8137ac01c43fa090)(three@0.186.1):
     dependencies:
       dompurify: 3.4.17
       emf-converter: 4.21.0
@@ -14973,7 +14981,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  pptx-react-viewer@4.45.0(fast-xml-parser@5.11.2)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@25.10.10(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@0.545.0(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@16.6.6(i18next@25.10.10(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(yjs@13.6.33):
+  pptx-react-viewer@4.45.0(patch_hash=cc2dcd16e6f9446e5c77b73c15fd51d7ee0f0b6b62332da448363a2452c7e41d)(fast-xml-parser@5.11.2)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@25.10.10(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@0.545.0(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@16.6.6(i18next@25.10.10(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(yjs@13.6.33):
     dependencies:
       clsx: 2.1.1
       dompurify: 3.4.17
@@ -14985,7 +14993,7 @@ snapshots:
       jszip: 3.10.2
       lucide-react: 0.545.0(react@19.2.8)
       ooxml-core: 1.22.0
-      ooxml-ui: 1.21.0(three@0.186.1)
+      ooxml-ui: 1.21.0(patch_hash=ef39edbc0d80b8f2b246a25c5244fd480c2b00e3bfe5a85c8137ac01c43fa090)(three@0.186.1)
       opentype.js: 2.0.0
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
@@ -16409,7 +16417,7 @@ snapshots:
     dependencies:
       emf-converter: 4.21.0
       ooxml-core: 1.22.0
-      ooxml-ui: 1.21.0(three@0.186.1)
+      ooxml-ui: 1.21.0(patch_hash=ef39edbc0d80b8f2b246a25c5244fd480c2b00e3bfe5a85c8137ac01c43fa090)(three@0.186.1)
       react: 19.2.8
       visio-core: 1.0.0
     transitivePeerDependencies:

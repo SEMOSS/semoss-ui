@@ -3,7 +3,14 @@ import {
 	type PowerPointViewerHandle,
 } from "pptx-react-viewer";
 import { translationsEn } from "pptx-react-viewer/i18n";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { getI18n, useTranslation } from "@semoss/i18n";
 import {
 	decodeBase64Asset,
@@ -13,6 +20,8 @@ import { toast } from "@semoss/ui/next";
 import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
+import { useOfficeFileCommands } from "../../hooks/use-office-file-commands";
+import { getFilePanelScope } from "../../types/file-panel.types";
 import type { FileViewProps } from "../../types/file-view.types";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
@@ -34,13 +43,41 @@ const registerViewerCopy = (i18n: ReturnType<typeof getI18n>) => {
 
 registerViewerCopy(getI18n());
 
+interface PresentationSession {
+	scope: string;
+	path: string;
+	readRevision: number;
+	data: string;
+}
+
 /** Preview and edit a PowerPoint file from a project, engine, or user resource. */
 export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 	const { i18n } = useTranslation();
 	const panel = useFilePanel(config, { base64: true });
 	const panelRef = useRef(panel);
-	panelRef.current = panel;
+	useLayoutEffect(() => {
+		panelRef.current = panel;
+	}, [panel]);
 	const viewerRef = useRef<PowerPointViewerHandle>(null);
+	const [commandTarget, setCommandTarget] = useState<HTMLDivElement | null>(
+		null,
+	);
+	const sessionRef = useRef<PresentationSession | null>(null);
+	const scope = getFilePanelScope(config.mode);
+	useLayoutEffect(() => {
+		// Vendor handles change on ordinary renders; only a source change or
+		// unmount invalidates serialization for this mounted document.
+		const session = {
+			scope,
+			path: config.path,
+			readRevision: panel.read.revision,
+			data: panel.read.data,
+		};
+		sessionRef.current = session;
+		return () => {
+			if (sessionRef.current === session) sessionRef.current = null;
+		};
+	}, [scope, config.path, panel.read.revision, panel.read.data]);
 	const serializingRef = useRef(false);
 	const [editorError, setEditorError] = useState<Error | null>(null);
 	const [isDirty, setIsDirty] = useState(false);
@@ -66,9 +103,11 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 
 	const save = useCallback(async () => {
 		const handle = viewerRef.current;
+		const session = sessionRef.current;
 		const currentPanel = panelRef.current;
 		if (
 			!handle ||
+			!session ||
 			currentPanel.readOnly ||
 			currentPanel.read.status !== "SUCCESS" ||
 			serializingRef.current
@@ -82,7 +121,7 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 			const bytes = await handle.getContent();
 			const latestPanel = panelRef.current;
 			if (
-				viewerRef.current !== handle ||
+				sessionRef.current !== session ||
 				latestPanel.readOnly ||
 				latestPanel.read.status !== "SUCCESS" ||
 				latestPanel.read.revision !== sourceRevision ||
@@ -97,6 +136,7 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 			// Keep its dirty state after persistence so later edits stay saveable
 			// without reloading the document and discarding its undo history.
 		} catch (error) {
+			if (sessionRef.current !== session) return;
 			const normalized =
 				error instanceof Error ? error : new Error(String(error));
 			toast.error(
@@ -113,6 +153,7 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 	}, []);
 
 	const requestSave = useCallback(() => void save(), [save]);
+	useOfficeFileCommands(commandTarget, requestSave);
 	useFileViewControls(onControls, {
 		canDownload: panel.access.status === "ready",
 		download: panel.download,
@@ -152,7 +193,10 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 
 	return (
 		<OfficeViewerFrame label={`Presentation: ${config.name}`}>
-			<div className="pptx-viewer-scope size-full min-h-0 min-w-0">
+			<div
+				ref={setCommandTarget}
+				className="pptx-viewer-scope size-full min-h-0 min-w-0"
+			>
 				<PowerPointViewer
 					key={panel.read.revision}
 					ref={viewerRef}

@@ -12,6 +12,7 @@ import { toast } from "@semoss/ui/next";
 import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
+import { useOfficeFileCommands } from "../../hooks/use-office-file-commands";
 import type { FileViewProps } from "../../types/file-view.types";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
@@ -110,6 +111,7 @@ export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 	}, [handle, panel.readOnly, panel.save]);
 
 	const requestSave = useCallback(() => void save(), [save]);
+	useOfficeFileCommands(handle?.element ?? null, requestSave);
 	const events = useMemo<ViewerCallbacks>(
 		() => ({
 			"document-change": (detail) => setIsDirty(detail.dirty),

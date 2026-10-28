@@ -30,13 +30,7 @@ export const PPTX_VIEWER_CUSTOMIZATION = {
 			"view.window.macros",
 		],
 	},
-	hiddenPanels: [
-		"titleBar",
-		"quickAccessToolbar",
-		"notes",
-		"accessibilityPane",
-		"comparePane",
-	],
+	hiddenPanels: ["notes", "accessibilityPane", "comparePane"],
 	disabledFeatures: ["ai", "collaboration", "comments"],
 	hiddenDialogs: [
 		"options",

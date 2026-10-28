@@ -35,6 +35,7 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ i18n: undefined }),
 }));
 vi.mock("@semoss/shared", () => ({
+	getFileEditorPathScope: () => "resource",
 	decodeBase64Asset: (value: string) =>
 		value ? new Uint8Array([1, 2]) : null,
 	getFileOperationErrorMessage: (message: string, error: Error) =>
@@ -64,8 +65,8 @@ vi.mock("pptx-react-viewer", async () => {
 			useImperativeHandle(ref, () => {
 				if (!harness.pptxHandle)
 					throw new Error("Missing presentation handle");
-				return harness.pptxHandle;
-			}, []);
+				return { ...harness.pptxHandle };
+			});
 			return createElement("div", {
 				"data-testid": "pptx",
 				"data-can-edit": props.canEdit,
@@ -148,7 +149,7 @@ beforeEach(() => {
 			diagnostics: [],
 			dirty: true,
 		})),
-		element: {},
+		element: window.document.createElement("div"),
 		controller: {
 			state: { document },
 			documentGeneration: 1,
@@ -164,6 +165,69 @@ beforeEach(() => {
 });
 
 describe("retained Office viewer integration", () => {
+	it.each(["pptx", "visio"] as const)(
+		"persists native %s Save without substituting a download",
+		async (kind) => {
+			const View = kind === "pptx" ? FilePptxView : FileVisioView;
+			render(
+				<View
+					config={config}
+					rename={vi.fn()}
+					onControls={onControls}
+				/>,
+			);
+			const element =
+				kind === "pptx"
+					? screen.getByTestId("pptx")
+					: harness.visioHandle?.element;
+			if (!element) throw new Error("Missing mounted viewer");
+			const command = new CustomEvent("file-command", {
+				detail: { command: "save" },
+				bubbles: true,
+				composed: true,
+				cancelable: true,
+			});
+			act(() => {
+				element.dispatchEvent(command);
+			});
+			await waitFor(() =>
+				expect(harness.panel?.save).toHaveBeenCalledWith("AwQ="),
+			);
+			expect(command.defaultPrevented).toBe(true);
+			expect(harness.panel?.download).not.toHaveBeenCalled();
+		},
+	);
+	it.each(["pptx", "visio"] as const)(
+		"blocks native %s Save for read-only SEMOSS access",
+		async (kind) => {
+			if (!harness.panel) throw new Error("Missing panel");
+			harness.panel.readOnly = true;
+			const View = kind === "pptx" ? FilePptxView : FileVisioView;
+			render(
+				<View
+					config={config}
+					rename={vi.fn()}
+					onControls={onControls}
+				/>,
+			);
+			const element =
+				kind === "pptx"
+					? screen.getByTestId("pptx")
+					: harness.visioHandle?.element;
+			if (!element) throw new Error("Missing mounted viewer");
+			const command = new CustomEvent("file-command", {
+				detail: { command: "save" },
+				bubbles: true,
+				cancelable: true,
+			});
+			await act(async () => {
+				element.dispatchEvent(command);
+			});
+			expect(command.defaultPrevented).toBe(true);
+			expect(harness.panel.save).not.toHaveBeenCalled();
+			expect(harness.panel.download).not.toHaveBeenCalled();
+		},
+	);
 	it("keeps presentation editing and native menus while removing ancillary entry points", () => {
 		render(
 			<FilePptxView

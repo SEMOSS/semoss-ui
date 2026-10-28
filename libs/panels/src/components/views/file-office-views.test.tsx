@@ -52,6 +52,9 @@ vi.mock("@semoss/shared", () => ({
 	getFileOperationErrorMessage: (message: string) => message,
 }));
 vi.mock("@semoss/ui/next", () => ({ toast: { error: vi.fn() } }));
+vi.mock("./office/xlsx-file-access-notice", () => ({
+	XlsxFileAccessNotice: () => <div>Workbook opened read-only</div>,
+}));
 vi.mock("./office/office-viewer-frame", () => ({
 	OfficeViewerFrame: ({
 		children,
@@ -84,6 +87,10 @@ const createEditor = () =>
 beforeEach(() => {
 	harness.docx = createEditor();
 	harness.xlsx = createEditor();
+	Object.assign(harness.xlsx, { workbook: {} });
+	harness.xlsx.load.mockImplementation(async () => {
+		harness.xlsx?.dispatchEvent(new Event("workbook-change"));
+	});
 	harness.panel = {
 		access: {
 			status: "ready",

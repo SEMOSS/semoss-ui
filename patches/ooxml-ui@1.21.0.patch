@@ -1,0 +1,35 @@
+diff --git a/dist/visio/viewer-backstage.d.ts b/dist/visio/viewer-backstage.d.ts
+index 21c77be42ed981091b7c0d20d78958d87945d0bc..24ccd0b51bc59bd009c276fa407b899d67e4010e 100644
+--- a/dist/visio/viewer-backstage.d.ts
++++ b/dist/visio/viewer-backstage.d.ts
+@@ -3,6 +3,8 @@ import type { VsdxSource } from 'ooxml-core/visio/ui';
+ import { type BackstagePage } from './backstage.js';
+ /** What the backstage needs from the element; every action delegates to existing APIs. */
+ export interface BackstageHost {
++    /** Cancel the native copy download when an embedding host persists Save. */
++    save?(): boolean;
+     root: ShadowRoot;
+     viewport: HTMLElement;
+     fileName(): string;
+diff --git a/dist/visio.js b/dist/visio.js
+index eea74915c81dcf22deccb68814488e60f11cda60..95dd60df5c9fac7768aedeb3c85cee6521ee76b8 100644
+--- a/dist/visio.js
++++ b/dist/visio.js
+@@ -12564,6 +12564,7 @@ var ViewerBackstage = class {
+     this.#download();
+   }
+   #download() {
++    if (this.host.save && !this.host.save()) { this.hide(); return; }
+     if (!this.#state?.edit.sourceAvailable) return;
+     try {
+       const result = this.host.exportVsdx();
+@@ -25035,6 +25036,9 @@ var VisioViewerElement = class extends BaseElement {
+       new CustomEvent("document-error", { detail: error, bubbles: true, composed: true })
+     );
+     this.#backstage = new ViewerBackstage({
++      save: () => this.dispatchEvent(new CustomEvent("file-command", {
++        detail: { command: "save" }, bubbles: true, composed: true, cancelable: true
++      })),
+       root: this.#root,
+       viewport: this.#viewport,
+       fileName: () => this.#fileName,
