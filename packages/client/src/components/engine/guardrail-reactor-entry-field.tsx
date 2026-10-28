@@ -1,4 +1,5 @@
 import { AlertTriangle, Info, MoveDown, MoveUp, X } from "lucide-react";
+import type { Ref } from "react";
 import {
 	AccordionContent,
 	AccordionItem,
@@ -83,6 +84,9 @@ export interface GuardrailReactorEntryFieldProps {
 
 	/** React Hook Form path for this check. */
 	namePrefix: string;
+
+	/** The check's outer element, for bringing a check just added into view. */
+	ref?: Ref<HTMLDivElement>;
 }
 
 const FAILURE_ACTION_OPTIONS: Array<{
@@ -166,6 +170,7 @@ export const GuardrailReactorEntryField = ({
 	idPrefix,
 	testIdPrefix,
 	namePrefix,
+	ref,
 }: GuardrailReactorEntryFieldProps) => {
 	const update = (partial: Partial<GuardrailReactorFormValue>) =>
 		onChange({ ...value, ...partial });
@@ -187,8 +192,10 @@ export const GuardrailReactorEntryField = ({
 
 	return (
 		<AccordionItem
+			ref={ref}
 			value={value.id}
-			className="overflow-hidden rounded-lg border bg-card last:border-b"
+			// room above and below when it is scrolled into view
+			className="scroll-my-4 overflow-hidden rounded-lg border bg-card last:border-b"
 			data-testid={testIdPrefix}
 		>
 			<div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3">

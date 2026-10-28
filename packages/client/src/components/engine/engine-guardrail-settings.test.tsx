@@ -198,6 +198,13 @@ const renderSettings = (overrides: Record<string, unknown> = {}) => {
 	);
 };
 
+/** Opens a saved check, which starts collapsed, and returns it. */
+const expandCheck = async (testId: string) => {
+	const entry = await screen.findByTestId(testId);
+	fireEvent.click(within(entry).getByRole("button", { expanded: false }));
+	return entry;
+};
+
 test("separates request and response checks into tabs", async () => {
 	renderSettings();
 
@@ -322,6 +329,106 @@ test("keeps the selected phase when switching rules", async () => {
 		"data-state",
 		"active",
 	);
+});
+
+test("opens with the saved checks collapsed", async () => {
+	renderSettings();
+
+	for (const testId of [
+		"engine-guardrail-settings--pipeline-0-input-entry-0",
+		"engine-guardrail-settings--pipeline-0-input-entry-1",
+	]) {
+		const entry = await screen.findByTestId(testId);
+		expect(
+			within(entry).getByRole("button", { expanded: false }),
+		).toBeInTheDocument();
+	}
+	expect(screen.queryByText("Inputs")).not.toBeInTheDocument();
+});
+
+test("opens a check added since the last save", async () => {
+	renderSettings();
+
+	fireEvent.click(
+		await screen.findByTestId(
+			"engine-guardrail-settings--pipeline-0-input-add",
+		),
+	);
+
+	// the new check is open to be filled in, and the saved ones stay closed
+	const added = screen.getByTestId(
+		"engine-guardrail-settings--pipeline-0-input-entry-2",
+	);
+	expect(
+		within(added).getByRole("button", { expanded: true }),
+	).toBeInTheDocument();
+	expect(
+		within(
+			screen.getByTestId(
+				"engine-guardrail-settings--pipeline-0-input-entry-0",
+			),
+		).getByRole("button", { expanded: false }),
+	).toBeInTheDocument();
+});
+
+test("brings a new check into view with its engine picker focused", async () => {
+	renderSettings();
+	const scrollIntoView = vi.mocked(HTMLElement.prototype.scrollIntoView);
+	scrollIntoView.mockClear();
+
+	fireEvent.click(
+		await screen.findByTestId(
+			"engine-guardrail-settings--pipeline-0-input-add",
+		),
+	);
+
+	const added = screen.getByTestId(
+		"engine-guardrail-settings--pipeline-0-input-entry-2",
+	);
+	expect(within(added).getByLabelText("Check with")).toHaveFocus();
+	// the check itself is scrolled to, from its top, not a field further down
+	expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
+	expect(scrollIntoView.mock.contexts).toContain(added);
+});
+
+test("offers Save after removing a check", async () => {
+	renderSettings();
+
+	expect(
+		screen.queryByTestId("engine-guardrail-settings--save-btn"),
+	).not.toBeInTheDocument();
+	fireEvent.click(
+		await screen.findByTestId(
+			"engine-guardrail-settings--pipeline-0-input-entry-1-remove",
+		),
+	);
+
+	expect(
+		screen.getByTestId("engine-guardrail-settings--save-btn"),
+	).toBeInTheDocument();
+});
+
+test("offers Save after removing the only rule", async () => {
+	renderSettings();
+
+	fireEvent.click(
+		await screen.findByTestId(
+			"engine-guardrail-settings--remove-pipeline-btn",
+		),
+	);
+	fireEvent.click(
+		await screen.findByTestId(
+			"engine-guardrail-settings--remove-pipeline-confirm",
+		),
+	);
+
+	// an empty rule list is still a change from the saved one
+	expect(
+		screen.getByTestId("engine-guardrail-settings--empty-state"),
+	).toBeInTheDocument();
+	expect(
+		screen.getByTestId("engine-guardrail-settings--save-btn"),
+	).toBeInTheDocument();
 });
 
 test("confirms before removing a rule", async () => {
@@ -560,6 +667,7 @@ test("offers the engine's reported methods instead of free text", async () => {
 
 test("offers the selected method's arguments for a mapping row", async () => {
 	renderSettings();
+	await expandCheck("engine-guardrail-settings--pipeline-0-input-entry-0");
 
 	const argumentPicker = await screen.findByTestId(
 		"engine-guardrail-settings--pipeline-0-input-entry-0-mapping-0-args",
@@ -581,6 +689,8 @@ test("exposes every failure option and reveals the block settings", async () => 
 	expect(
 		await screen.findByRole("tab", { name: /Request/ }),
 	).toBeInTheDocument();
+	await expandCheck("engine-guardrail-settings--pipeline-0-input-entry-0");
+	await expandCheck("engine-guardrail-settings--pipeline-0-input-entry-1");
 	expect(screen.getAllByLabelText(/^Block/)).toHaveLength(2);
 	expect(screen.getAllByLabelText(/^Mask and continue/)).toHaveLength(2);
 	expect(screen.getAllByLabelText(/^Return guardrail message/)).toHaveLength(
@@ -609,7 +719,7 @@ test("exposes every failure option and reveals the block settings", async () => 
 test("keeps tool results screened until a check opts out", async () => {
 	renderSettings();
 
-	const entry = await screen.findByTestId(
+	const entry = await expandCheck(
 		"engine-guardrail-settings--pipeline-0-input-entry-0",
 	);
 	expect(within(entry).getByLabelText(/^Screen every turn/)).toBeChecked();
@@ -639,7 +749,7 @@ test("offers no tool-result setting on a call that carries none", async () => {
 		},
 	});
 
-	const entry = await screen.findByTestId(
+	const entry = await expandCheck(
 		"engine-guardrail-settings--pipeline-0-input-entry-0",
 	);
 	expect(
@@ -650,7 +760,7 @@ test("offers no tool-result setting on a call that carries none", async () => {
 test("shows the parameter wiring without an extra disclosure step", async () => {
 	renderSettings();
 
-	const responseEntry = await screen.findByTestId(
+	const responseEntry = await expandCheck(
 		"engine-guardrail-settings--pipeline-0-input-entry-0",
 	);
 	expect(
@@ -747,8 +857,9 @@ test("flags a guardrail engine that no longer exists", async () => {
 		},
 	});
 
+	await expandCheck("engine-guardrail-settings--pipeline-0-input-entry-0");
 	expect(
-		await screen.findByTestId(
+		screen.getByTestId(
 			"engine-guardrail-settings--pipeline-0-input-entry-0-engine-missing",
 		),
 	).toHaveTextContent("This guardrail engine no longer exists");
@@ -882,7 +993,7 @@ test("lets a viewer inspect the wiring without editing it", async () => {
 		<EngineGuardrailSettings engineId="model-1" permission="READ_ONLY" />,
 	);
 
-	const responseEntry = await screen.findByTestId(
+	const responseEntry = await expandCheck(
 		"engine-guardrail-settings--pipeline-0-input-entry-0",
 	);
 	expect(within(responseEntry).getByText("Inputs")).toBeInTheDocument();
