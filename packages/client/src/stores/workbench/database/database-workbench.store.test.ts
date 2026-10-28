@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createWorkbenchStore } from "@semoss/workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+import {
+	WORKBENCH_COMPONENTS,
+	WORKBENCH_PANEL_RECORDS,
+} from "../workbench.constants";
 import {
 	buildQueryPixel,
 	createDatabaseWorkbenchStore,
@@ -349,5 +352,63 @@ describe("database query runs", () => {
 		expect(store.getState().results["query-1"]).toMatchObject({
 			type: "MESSAGE",
 		});
+	});
+});
+
+describe("database results placement", () => {
+	beforeEach(() => {
+		pixel.run.mockReset();
+		pixel.run.mockResolvedValue({ errors: [], pixelReturn: [] });
+	});
+
+	it("docks results in run order ahead of the terminal", async () => {
+		const workbench = createWorkbenchStore({
+			components: {
+				[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: {
+					name: "Results",
+					content: () => null,
+				},
+				[WORKBENCH_COMPONENTS.TERMINAL]: {
+					name: "Terminal",
+					content: () => null,
+				},
+			},
+		});
+		workbench.getState().layout.actions.loadSnapshot({
+			tree: {
+				type: "tabset",
+				id: "main",
+				size: 1,
+				panelIds: [],
+				activeId: null,
+			},
+			panels: {
+				[WORKBENCH_PANEL_RECORDS.TERMINAL.id]:
+					WORKBENCH_PANEL_RECORDS.TERMINAL,
+			},
+			borders: {
+				bottom: {
+					panelIds: [WORKBENCH_COMPONENTS.TERMINAL],
+					activeId: null,
+					size: 300,
+				},
+			},
+		});
+		const store = createDatabaseWorkbenchStore({ workbench });
+		store.setState({ engineId: "engine-1", mode: "SQL" });
+
+		await store
+			.getState()
+			.onQuery({ panelId: "query-1", query: "SELECT 1" });
+		await store
+			.getState()
+			.onQuery({ panelId: "query-2", query: "SELECT 2" });
+
+		const { borders, panels } = workbench.getState().layout;
+		expect(
+			borders.bottom.panelIds.map(
+				(pid) => panels[pid]?.config?.sourcePanel ?? panels[pid]?.type,
+			),
+		).toEqual(["query-1", "query-2", WORKBENCH_COMPONENTS.TERMINAL]);
 	});
 });

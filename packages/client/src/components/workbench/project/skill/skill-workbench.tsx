@@ -27,6 +27,7 @@ import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
 import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../../workbench.presets";
@@ -221,6 +222,7 @@ export const SkillWorkbench: React.FC = () => {
 			label: "Open Terminal",
 			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
 		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.PROJECT_TERMINAL),
 		createOpenPanelCommand({
 			id: "workbench.project-settings.open",
 			label: "Open Settings",
