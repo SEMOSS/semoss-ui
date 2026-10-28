@@ -1,5 +1,6 @@
 import { FoldVertical, Plus, UnfoldVertical } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
 	Accordion,
 	Badge,
@@ -35,6 +36,10 @@ export interface GuardrailRevealTarget {
 export interface GuardrailPipelineFieldProps {
 	/** The rule being edited. */
 	value: GuardrailPipelineFormValue;
+
+	/** Ids of this rule's checks as last saved. Those open collapsed; a check
+	 * added since opens expanded so it can be filled in. */
+	savedEntryIds: ReadonlySet<string>;
 
 	/** Phase whose checks are shown, held by the caller so switching rules
 	 * keeps the reader on the same side of the call. */
@@ -81,9 +86,6 @@ export interface GuardrailPipelineFieldProps {
 	namePrefix: `pipelines.${number}`;
 }
 
-/** Checks expanded by default, above which the list opens collapsed. */
-const AUTO_EXPAND_LIMIT = 2;
-
 const PHASES: Array<{
 	phase: GuardrailPhase;
 	label: string;
@@ -115,6 +117,7 @@ const PHASES: Array<{
  */
 export const GuardrailPipelineField = ({
 	value,
+	savedEntryIds,
 	activePhase,
 	onPhaseChange,
 	engineDetails,
@@ -130,7 +133,7 @@ export const GuardrailPipelineField = ({
 	testIdPrefix,
 	namePrefix,
 }: GuardrailPipelineFieldProps) => {
-	const { control } = useFormContext<GuardrailConfigFormValue>();
+	const { control, setFocus } = useFormContext<GuardrailConfigFormValue>();
 	const inputEntries = useFieldArray({
 		control,
 		name: `${namePrefix}.input`,
@@ -141,17 +144,18 @@ export const GuardrailPipelineField = ({
 		name: `${namePrefix}.output`,
 		keyName: "fieldArrayId",
 	});
+	// saved checks open collapsed, so the rule reads as a list first; one added
+	// since the last save stays open until it is filled in
 	const [expandedEntries, setExpandedEntries] = useState<
 		Record<GuardrailPhase, string[]>
-	>(() => {
-		const total = value.input.length + value.output.length;
-		return total > AUTO_EXPAND_LIMIT
-			? { input: [], output: [] }
-			: {
-					input: value.input.map((entry) => entry.id),
-					output: value.output.map((entry) => entry.id),
-				};
-	});
+	>(() => ({
+		input: value.input
+			.filter((entry) => !savedEntryIds.has(entry.id))
+			.map((entry) => entry.id),
+		output: value.output
+			.filter((entry) => !savedEntryIds.has(entry.id))
+			.map((entry) => entry.id),
+	}));
 
 	// a problem selected from the summary has to open the check it belongs to,
 	// including switching to the phase that check runs in
@@ -178,17 +182,33 @@ export const GuardrailPipelineField = ({
 		);
 	}, [revealTarget, value.input, value.output, onPhaseChange]);
 
+	// each check's outer element, keyed by check id
+	const entryElements = useRef(new Map<string, HTMLDivElement>());
+
 	const addEntry = (phase: GuardrailPhase) => {
 		const entry = createGuardrailReactor(phase);
-		if (phase === "input") {
-			inputEntries.append(entry);
-		} else {
-			outputEntries.append(entry);
-		}
-		setExpandedEntries((current) => ({
-			...current,
-			[phase]: [...current[phase], entry.id],
-		}));
+		const index = value[phase].length;
+		// Rendered now rather than on the next commit, so this click can bring
+		// the new check into view. The form's own focus is off: it lands on the
+		// first field that takes focus, which sits further down the check and
+		// would scroll its top out of view.
+		flushSync(() => {
+			if (phase === "input") {
+				inputEntries.append(entry, { shouldFocus: false });
+			} else {
+				outputEntries.append(entry, { shouldFocus: false });
+			}
+			setExpandedEntries((current) => ({
+				...current,
+				[phase]: [...current[phase], entry.id],
+			}));
+		});
+		// the engine picker is the first thing a new check needs; the scroll
+		// after it keeps the check's top showing, or all of it when it fits
+		setFocus(`${namePrefix}.${phase}.${index}.guardrailEngineId`);
+		entryElements.current
+			.get(entry.id)
+			?.scrollIntoView({ block: "nearest" });
 	};
 
 	const updateEntry = (
@@ -359,6 +379,20 @@ export const GuardrailPipelineField = ({
 												// keeping the slot mounted prevents stale registrations.
 												// biome-ignore lint/suspicious/noArrayIndexKey: The index identifies the form slot, not the guardrail entity.
 												key={`${phase}-${index}`}
+												ref={(element) => {
+													if (!element) {
+														return;
+													}
+													entryElements.current.set(
+														entry.id,
+														element,
+													);
+													return () => {
+														entryElements.current.delete(
+															entry.id,
+														);
+													};
+												}}
 												value={entry}
 												onChange={(next) =>
 													updateEntry(
