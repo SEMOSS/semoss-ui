@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	type ViewerCallbacks,
 	type ViewerHandle,
@@ -13,9 +20,12 @@ import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
 import { useOfficeFileCommands } from "../../hooks/use-office-file-commands";
+import { useVisioTextRecovery } from "../../hooks/use-visio-text-recovery";
+import { getFilePanelScope } from "../../types/file-panel.types";
 import type { FileViewProps } from "../../types/file-view.types";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
+import { VisioTextEditNotice } from "./office/visio-text-edit-notice";
 import {
 	getVisioSaveSnapshot,
 	isVisioSaveSnapshotCurrent,
@@ -25,7 +35,15 @@ import {
 /** Preview and edit a Visio drawing from a project, engine, or user resource. */
 export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 	const panel = useFilePanel(config, { base64: true });
+	const panelRef = useRef(panel);
+	useLayoutEffect(() => {
+		panelRef.current = panel;
+	}, [panel]);
 	const [handle, setHandle] = useState<ViewerHandle | null>(null);
+	const recovery = useVisioTextRecovery(
+		handle?.element ?? null,
+		JSON.stringify([getFilePanelScope(config.mode), panel.read.revision]),
+	);
 	const handleRef = useRef<ViewerHandle | null>(null);
 	const [editorError, setEditorError] = useState<Error | null>(null);
 	const [isDirty, setIsDirty] = useState(false);
@@ -76,13 +94,27 @@ export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 		serializingRef.current = true;
 		setIsSerializing(true);
 		try {
-			const snapshot = getVisioSaveSnapshot(handle.controller);
+			const controller = handle.controller;
 			const sourceRevision = sourceRevisionRef.current;
+			const sourceGeneration = controller.sourceGeneration;
+			// Inline text is a draft until the viewer commits it. Exporting first
+			// would persist the previous text even though the draft is visible.
+			if (!(await handle.element.commitTextEdit())) return;
+			if (
+				handleRef.current !== handle ||
+				sourceRevisionRef.current !== sourceRevision ||
+				controller.sourceGeneration !== sourceGeneration ||
+				panelRef.current.readOnly
+			)
+				return;
+			const snapshot = getVisioSaveSnapshot(controller);
 			const result = handle.exportVsdx();
 			// Diagnostics describe compatibility limits of accepted edits. The
 			// viewer rejects unsupported edits and throws on export failures.
 			if (
-				(await panel.save(encodeBytesToBase64(result.bytes))) &&
+				(await panelRef.current.save(
+					encodeBytesToBase64(result.bytes),
+				)) &&
 				handleRef.current === handle &&
 				sourceRevisionRef.current === sourceRevision &&
 				isVisioSaveSnapshotCurrent(handle.controller, snapshot)
@@ -103,7 +135,7 @@ export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 			serializingRef.current = false;
 			setIsSerializing(false);
 		}
-	}, [handle, panel.readOnly, panel.save]);
+	}, [handle, panel.readOnly]);
 
 	const requestSave = useCallback(() => void save(), [save]);
 	useOfficeFileCommands(handle?.element ?? null, requestSave);
@@ -166,12 +198,27 @@ export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 	return (
 		<OfficeViewerFrame
 			label={`${panel.readOnly ? "Read-only " : ""}Visio diagram: ${config.name}`}
+			className="flex flex-col"
 		>
+			{recovery.failures.length > 0 && (
+				<div className="max-h-64 shrink-0 space-y-2 overflow-auto p-2">
+					{recovery.failures.map((failure) => (
+						<VisioTextEditNotice
+							key={JSON.stringify([
+								failure.pageId,
+								failure.shapeId,
+							])}
+							failure={failure}
+							onDismiss={() => recovery.dismiss(failure)}
+						/>
+					))}
+				</div>
+			)}
 			<VisioViewer
 				key={panel.read.revision}
 				{...VISIO_VIEWER_POLICY}
 				ref={handleViewerRef}
-				className="size-full"
+				className="min-h-0 w-full flex-1"
 				canEdit={!panel.readOnly}
 				events={events}
 				aria-label={config.name}

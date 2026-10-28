@@ -149,10 +149,13 @@ beforeEach(() => {
 			diagnostics: [],
 			dirty: true,
 		})),
-		element: window.document.createElement("div"),
+		element: Object.assign(window.document.createElement("div"), {
+			commitTextEdit: vi.fn().mockResolvedValue(true),
+		}),
 		controller: {
 			state: { document },
 			documentGeneration: 1,
+			sourceGeneration: 1,
 			markClean: vi.fn(() =>
 				harness.visioProps?.events?.["document-change"]?.({
 					document,
@@ -162,6 +165,9 @@ beforeEach(() => {
 			),
 		},
 	} as unknown as ViewerHandle;
+	Object.assign(harness.visioHandle.element, {
+		controller: harness.visioHandle.controller,
+	});
 });
 
 describe("retained Office viewer integration", () => {
@@ -587,6 +593,93 @@ describe("retained Office viewer integration", () => {
 		}
 	});
 
+	it("does not export or overwrite a Visio file when its text draft is refused", async () => {
+		if (!harness.visioHandle) throw new Error("Missing viewer");
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => undefined);
+		try {
+			harness.visioHandle.element.commitTextEdit = vi
+				.fn()
+				.mockRejectedValue(new Error("Unsupported text dependency"));
+			render(
+				<FileVisioView
+					config={config}
+					rename={vi.fn()}
+					onControls={onControls}
+				/>,
+			);
+			act(() =>
+				harness.visioProps?.events?.["document-change"]?.({
+					document,
+					dirty: true,
+					kind: "edit",
+				}),
+			);
+			await act(async () => getControls().save?.());
+			expect(harness.visioHandle.exportVsdx).not.toHaveBeenCalled();
+			expect(harness.panel?.save).not.toHaveBeenCalled();
+			expect(
+				harness.visioHandle.controller.markClean,
+			).not.toHaveBeenCalled();
+			expect(harness.toastError).toHaveBeenCalledWith(
+				"Failed to save Visio diagram: Unsupported text dependency",
+			);
+			expect(getControls().isDirty).toBe(true);
+			expect(getControls().isBusy).toBe(false);
+		} finally {
+			consoleError.mockRestore();
+		}
+	});
+
+	it.each(["permission", "refresh", "source", "unmount"] as const)(
+		"does not upload a Visio draft after %s invalidates its commit",
+		async (change) => {
+			if (!harness.visioHandle || !harness.panel)
+				throw new Error("Missing viewer");
+			let finishCommit: () => void = () => {
+				throw new Error("Commit not started");
+			};
+			harness.visioHandle.element.commitTextEdit = vi.fn(
+				() =>
+					new Promise<boolean>((resolve) => {
+						finishCommit = () => resolve(true);
+					}),
+			);
+			const view = render(
+				<FileVisioView
+					config={config}
+					rename={vi.fn()}
+					onControls={onControls}
+				/>,
+			);
+			act(() => getControls().save?.());
+			if (change === "unmount") {
+				view.unmount();
+			} else {
+				if (change === "permission") harness.panel.readOnly = true;
+				if (change === "refresh") harness.panel.read.revision = 2;
+				if (change === "source")
+					Object.assign(harness.visioHandle.controller, {
+						sourceGeneration: 2,
+					});
+				view.rerender(
+					<FileVisioView
+						config={config}
+						rename={vi.fn()}
+						onControls={onControls}
+					/>,
+				);
+			}
+			await act(async () => finishCommit());
+			expect(harness.visioHandle.exportVsdx).not.toHaveBeenCalled();
+			expect(harness.panel.save).not.toHaveBeenCalled();
+			expect(
+				harness.visioHandle.controller.markClean,
+			).not.toHaveBeenCalled();
+		},
+	);
+
 	it("does not mark a later Visio edit clean when an earlier save completes", async () => {
 		let resolveSave: (success: boolean) => void = () => {
 			throw new Error("Save not started");
@@ -614,6 +707,7 @@ describe("retained Office viewer integration", () => {
 			}),
 		);
 		act(() => getControls().save?.());
+		await waitFor(() => expect(harness.panel?.save).toHaveBeenCalledOnce());
 		const changed = { ...document };
 		Object.assign(harness.visioHandle.controller, {
 			state: { document: changed },
@@ -658,6 +752,7 @@ describe("retained Office viewer integration", () => {
 			}),
 		);
 		act(() => getControls().save?.());
+		await waitFor(() => expect(harness.panel?.save).toHaveBeenCalledOnce());
 		view.unmount();
 		await act(async () => resolveSave(true));
 		expect(harness.visioHandle.controller.markClean).not.toHaveBeenCalled();
