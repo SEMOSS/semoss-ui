@@ -70,6 +70,25 @@ it("commits, edits and removes recipient chips while keeping native form submiss
 	);
 });
 
+it("marks a committed entry that is not an email address", async () => {
+	const user = userEvent.setup();
+	render(<RecipientForm onSave={vi.fn()} />);
+	await user.type(
+		screen.getByRole("textbox", { name: "To" }),
+		"Lauren{Enter}",
+	);
+	expect(
+		screen.getByRole("button", {
+			name: "Edit To recipient Lauren, not an email address",
+		}),
+	).toBeVisible();
+	expect(
+		screen.getByRole("button", {
+			name: "Edit To recipient alex@example.com",
+		}),
+	).toBeVisible();
+});
+
 it("retains pasted lists and uncommitted typing, and lets Backspace reopen the last chip", async () => {
 	const user = userEvent.setup();
 	const onSave = vi.fn();
