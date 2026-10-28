@@ -12,6 +12,7 @@ import {
 	mdiFolder,
 	mdiGithub,
 	mdiPalette,
+	mdiServer,
 	mdiTabletCellphone,
 } from "@mdi/js";
 
@@ -216,6 +217,15 @@ export const SETTINGS_ROUTES: {
 			"View member permissions, pending requests, and all other viewable settings pertaining to the vector database",
 		icon: mdiDatabase,
 		history: ["vector", "vector/<id>"],
+	},
+	{
+		title: "Model Serving",
+		path: "model-serving",
+		description:
+			"Start, stop, and watch the models SEMOSS serves on KServe, and serve new ones from the approved catalog.",
+		icon: mdiServer,
+		history: ["settings/"],
+		admin: true,
 	},
 	{
 		title: "Jobs",

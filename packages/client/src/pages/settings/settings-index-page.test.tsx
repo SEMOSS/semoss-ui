@@ -50,6 +50,20 @@ describe("SettingsIndexPage merged navigation", () => {
 		).toBeInTheDocument();
 	});
 
+	it("offers Model Serving to admins only", () => {
+		renderSettings();
+		expect(
+			screen.queryByRole("link", { name: /Model Serving/ }),
+		).toBeNull();
+		cleanup();
+
+		settings.adminMode = true;
+		renderSettings();
+		expect(
+			screen.getByRole("link", { name: /Model Serving/ }),
+		).toHaveAttribute("href", "/settings/model-serving");
+	});
+
 	it("filters and clears the search without losing the merged links", () => {
 		settings.adminMode = true;
 		renderSettings();

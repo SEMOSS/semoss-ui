@@ -304,6 +304,76 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   tab uses the same pieces, and counts app and engine setting changes
   (`AuditEventType.SETTING_CHANGES`) beside access and usage limit changes.
 
+### Model Serving
+
+- **`features/model-serving/`** is the admin Model Serving page at `settings/model-serving`: the
+  models SEMOSS serves on KServe, through `api/model-serving.ts` and the admin-only serving
+  reactors (`ListServedModels`, `GetServingCapacity`, `StartServedModel`, `StopServedModel`,
+  `RemoveServedModel`, `ListServingCatalog`, `DefineServedModel`, `CreateServedModelEngine`,
+  `GetServedModelStatus`, `GetServedModelLogs`, `ListServedModelEngines`,
+  `LinkServedModelEngine`, `UnlinkServedModelEngine`, `GetServingGpuStatus`). Every payload is validated there, and a state,
+  phase or failure cause the client does not know is shown in words (`model-serving-labels.ts`).
+- **Reads.** `use-polled-read.ts` reads again after a delay and keeps the last answer while it
+  does, unlike `usePixel`, so the table does not empty itself: every 5 s while a model is
+  starting, waiting for the GPU, stopping or being removed, and every 30 s otherwise. A failed
+  read keeps the last answer and says it is stale.
+- **Models tab.** The GPU and memory budget the models share (`serving-capacity-summary.tsx`),
+  then a row per model (`served-models-table.tsx`): its state as an icon and words, a start's
+  progress, step and time left, a failure's cause and hint, the endpoint SEMOSS calls and the LAN
+  port, its engines, and who changed it last. The row's button is the change its state calls for
+  (Start, Restart or Stop); the menu has Details, Logs, Engines, Copy Endpoint, Create SEMOSS
+  Engine, Link an Engine and Remove, which only models SEMOSS defined offer (`managed`).
+- **GPU status.** Between the budget and the table, `serving-gpu-card.tsx` shows what the GPUs
+  are doing, from `GetServingGpuStatus` (the GPU Operator's DCGM exporter and node-exporter,
+  through Prometheus), read every 15 s by `use-serving-gpu-status.ts`, while the Models tab is open.
+  For each GPU (`serving-gpu-panel.tsx`): its product, node, driver, CUDA and sharing, the pods
+  using it (a served model by name), stat tiles for utilization, power, temperature and SM clock
+  (`gpu-stat-tile.tsx`), each with a sparkline of the last hour (`sparkline.tsx`: the line in the
+  muted ink, the latest point in `primary`, a readout of the point under the pointer), and its
+  node's memory in use, which a GB10 shares with the CPU. Table View
+  (`serving-gpu-history-table.tsx`) lists every point, for keyboard and screen reader users;
+  Open in Grafana opens NVIDIA's DCGM dashboard on port 3000 of the host the page came from,
+  unless the backend names Grafana's address. Without Prometheus the card still names each GPU
+  from its node labels and shows why there are no metrics. Units, axes and words are in
+  `serving-gpu-format.ts`.
+- **Engines.** A served model's engines are the SEMOSS model engines whose smss links them to it
+  (`KSERVE_SERVED_MODEL` and `KSERVE_NAMESPACE`, which `CreateServedModelEngine` writes and
+  which make the engine of a stopped model say so), and those that call it without the link: by
+  their `MODEL` (the served model's name) or their `ENDPOINT`, like an engine made by hand.
+  `ListServedModelEngines` reads them from the smss files without loading the engines, and
+  `use-served-model-engines.ts` groups them by model (`groupEngines`) and reads them again after
+  each change. The Engines column links each linked engine to its settings
+  (`/settings/model/:id`) and counts the unlinked ones; the details sheet's Engines tab
+  (`served-model-engines-panel.tsx`) unlinks and links them, and
+  `link-served-model-engine-dialog.tsx` offers the unlinked ones, or says how to make an engine
+  call the model when none does. Linking changes nothing an engine calls and needs no restart.
+  Create SEMOSS Engine warns when the model already has an engine and becomes Create Another
+  Engine, since each engine is a catalog entry of its own.
+- **Models gone from the cluster.** The Models tab lists the InferenceServices the cluster has,
+  so one deleted outside SEMOSS (`kubectl delete`) leaves it, while its engines stay linked to
+  its name. `findMissingModels` finds such names, and `missing-served-model-row.tsx` shows each
+  as a Not in the cluster row with its engines and Define Again, which opens the definition form
+  under that name, without a new engine (`initialName`, `linkedEngines`). A model of that name,
+  defined again or applied from its manifest again, brings its engines back. The tab's text says
+  to stop a model rather than delete it.
+- **Changes that interrupt someone are confirmed** (`served-model-change-dialog.tsx`): Stop,
+  Remove, and a Start that does not fit. `GetServingCapacity` names, for each stopped model, the
+  models a start with `replace=[true]` would stop (`blocking`) and whether it can (`canReplace`),
+  so the dialog names them; a start refused because the capacity changed since the last read
+  reads it again and asks. A refused change shows its reason in the dialog, which stays open.
+- **Catalog tab and Define.** The approved entries with their licence, origin and approver, the
+  models in the cluster that serve each (defined from it, or with its `storageUri`), and the
+  entries SEMOSS left out (`serving-catalog-table.tsx`). The catalog is the list SEMOSS may
+  define models from, read live from its ConfigMap, not the list of models in the cluster; the
+  tab says so, and that an edited catalog file shows once it is applied. `define-served-model-dialog.tsx`
+  defines a model from an entry, under the name the entry suggests unless another is typed, and
+  can start it, create its SEMOSS engine and publish it for the LAN; the memory share and context
+  length override the entry's.
+- **Details.** `served-model-details-sheet.tsx` shows the full status (failure with its log tail,
+  warnings, endpoints, setup, the last start step by step, recent events, KServe conditions), the
+  engines, and the log (`served-model-logs.tsx`: the model server's or the weight download's, the
+  previous instance, per-request lines, and Follow), reading only while open.
+
 ### Database Workbench
 
 - **`components/workbench/engine/database/`** is a database's query workbench: query panels,

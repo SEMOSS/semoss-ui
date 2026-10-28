@@ -16,6 +16,7 @@ import {
 	Palette,
 	ScrollText,
 	SearchIcon,
+	Server,
 	Settings,
 	ShieldCheck,
 	ShieldUser,
@@ -85,6 +86,10 @@ const CardMapper: Record<string, CardConfig> = {
 	"Guardrail Settings": {
 		icon: <ShieldCheck className={ICON_CLASS} />,
 		className: "bg-primary/10 text-primary",
+	},
+	"Model Serving": {
+		icon: <Server className={ICON_CLASS} />,
+		className: "bg-chart-1/10 text-chart-1",
 	},
 	"Member Settings": {
 		icon: <Users2 className={ICON_CLASS} />,
