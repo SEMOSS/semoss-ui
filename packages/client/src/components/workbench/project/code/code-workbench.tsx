@@ -162,16 +162,16 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 			restrict: ["OWNER"],
 		},
 		{
-			name: "Settings",
-			component: "settings",
-			restrict: ["OWNER"],
-		},
-		{
 			name: "Access Control",
 			component: "access-control",
 			restrict: ["OWNER", "EDIT"],
 		},
 		{ name: "Audit Trail", component: "audit", restrict: ["OWNER"] },
+		{
+			name: "Settings",
+			component: "settings",
+			restrict: ["OWNER", "EDIT"],
+		},
 		{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 	]),
 	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,

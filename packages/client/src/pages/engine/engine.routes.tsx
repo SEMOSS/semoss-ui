@@ -8,20 +8,16 @@ import { ImportLayout, ModelImportPage } from "../import";
 import { DatabaseWorkbenchPage } from "./database-workbench-page";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineAuditPage } from "./engine-audit.page";
-import { EngineDescriptionSettingsPage } from "./engine-description-settings-page";
-import { EngineGuardrailSettingsPage } from "./engine-guardrail-settings-page";
-import { EngineImageSettingsPage } from "./engine-image-settings-page";
 import { EngineIndexPage } from "./engine-index-page";
 import { EngineLayout } from "./engine-layout";
 import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
 import { EngineMetadataPage } from "./engine-metadata-page";
-import { EngineModelSettingsPage } from "./engine-model-settings-page";
 import { EngineOverviewPage } from "./engine-overview-page";
 import { EngineSettingsLayout } from "./engine-settings-layout";
 import { EngineSettingsPage } from "./engine-settings-page";
+import { ENGINE_SETTINGS_SECTIONS } from "./engine-settings-sections";
 import { EngineSmssPage } from "./engine-smss-page";
 import { EngineTabsLayout } from "./engine-tabs-layout";
-import { EngineTagsSettingsPage } from "./engine-tags-settings-page";
 import { EngineUsagePage } from "./engine-usage-page";
 import { FunctionWorkbenchPage } from "./function-workbench-page";
 import { GuardrailWorkbenchPage } from "./guardrail-workbench-page";
@@ -29,7 +25,8 @@ import { ModelWorkbenchPage } from "./model-workbench-page";
 import { StorageWorkbenchPage } from "./storage-workbench-page";
 import { VectorWorkbenchPage } from "./vector-workbench-page";
 
-export const ENGINE_ROUTES: {
+/** One engine route. */
+interface EngineRoute {
 	/** Name of the specific path (omitted for pathless layout routes) */
 	path: string;
 
@@ -37,8 +34,29 @@ export const ENGINE_ROUTES: {
 	element: React.ReactNode;
 
 	/** Child routes */
-	children?: (typeof ENGINE_ROUTES)[number][];
-}[] = [
+	children?: EngineRoute[];
+}
+
+/**
+ * The Settings tab every engine type shares: each section at its own path, in
+ * the left-menu layout, which shows the sections the viewer has on the engine
+ * and sends any other path, the tab's own included, to the first of them.
+ *
+ * @returns The route.
+ */
+const buildEngineSettingsRoute = (): EngineRoute => ({
+	path: "settings",
+	element: <EngineSettingsLayout />,
+	children: [
+		...ENGINE_SETTINGS_SECTIONS.map(({ path, element }) => ({
+			path,
+			element,
+		})),
+		{ path: "*", element: null },
+	],
+});
+
+export const ENGINE_ROUTES: EngineRoute[] = [
 	// FUNCTION
 	{
 		path: "function",
@@ -166,10 +184,7 @@ export const ENGINE_ROUTES: {
 									<EngineSettingsPage view="EFFECTIVE" />
 								),
 							},
-							{
-								path: "settings",
-								element: <EngineImageSettingsPage />,
-							},
+							buildEngineSettingsRoute(),
 							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
@@ -311,48 +326,7 @@ export const ENGINE_ROUTES: {
 									<EngineSettingsPage view="EFFECTIVE" />
 								),
 							},
-							{
-								path: "settings",
-								element: <EngineSettingsLayout />,
-								children: [
-									{
-										path: "",
-										element: (
-											<Navigate to="model" replace />
-										),
-									},
-									{
-										path: "image",
-										element: <EngineImageSettingsPage />,
-									},
-									{
-										path: "model",
-										element: <EngineModelSettingsPage />,
-									},
-									{
-										path: "tags",
-										element: <EngineTagsSettingsPage />,
-									},
-									{
-										path: "description",
-										element: (
-											<EngineDescriptionSettingsPage />
-										),
-									},
-									{
-										path: "guardrails",
-										element: (
-											<EngineGuardrailSettingsPage />
-										),
-									},
-									{
-										path: "*",
-										element: (
-											<Navigate to="model" replace />
-										),
-									},
-								],
-							},
+							buildEngineSettingsRoute(),
 							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
@@ -503,10 +477,7 @@ export const ENGINE_ROUTES: {
 									<EngineSettingsPage view="EFFECTIVE" />
 								),
 							},
-							{
-								path: "settings",
-								element: <EngineImageSettingsPage />,
-							},
+							buildEngineSettingsRoute(),
 							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
@@ -644,10 +615,7 @@ export const ENGINE_ROUTES: {
 									<EngineSettingsPage view="EFFECTIVE" />
 								),
 							},
-							{
-								path: "settings",
-								element: <EngineImageSettingsPage />,
-							},
+							buildEngineSettingsRoute(),
 							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
@@ -785,10 +753,7 @@ export const ENGINE_ROUTES: {
 									<EngineSettingsPage view="EFFECTIVE" />
 								),
 							},
-							{
-								path: "settings",
-								element: <EngineImageSettingsPage />,
-							},
+							buildEngineSettingsRoute(),
 							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
@@ -913,10 +878,7 @@ export const ENGINE_ROUTES: {
 									<EngineSettingsPage view="EFFECTIVE" />
 								),
 							},
-							{
-								path: "settings",
-								element: <EngineImageSettingsPage />,
-							},
+							buildEngineSettingsRoute(),
 							{ path: "audit", element: <EngineAuditPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },

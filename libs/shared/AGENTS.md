@@ -149,6 +149,17 @@ the login's logo or icon (`LoginTypeIcon`; a person for native logins, a key for
 its name from `getLoginTypeName`. Show a login's name that way rather than the stored label, such
 as `API_USER`.
 
+### Engine pickers (`components/engine/`)
+
+`EngineSelect` is the one engine picker. It reads its own pages of `MyEngines` (filtered by
+`engineTypes` and `metaFilters`, searched on the server), or, given `engines`, lists just those and
+searches their names and ids itself, for a picker the server cannot filter, such as one subtype.
+`noneOption` adds a choice of no engine first in the list, and `unavailable` keeps a chosen engine
+the list does not offer, disabled, with a note. Each engine in the list is an `EngineOption`: its
+logo (`EngineSubtypeIcon`), its name and, under it, its id (`showEngineId`) or its description,
+with a check on the chosen one; the host passes the chosen engine's logo as `triggerIcon`. Pickers
+that choose an engine pass `showEngineId`, so every engine list shows logo, name and id.
+
 ### Model usage limits (`components/model-usage-limit/`)
 
 Every place a model usage limit is set or shown uses these, so limits read the same everywhere:

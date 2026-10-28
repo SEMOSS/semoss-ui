@@ -354,6 +354,139 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
 - The identifier lists start folded away, with a count of their rules and Expand all. A submit
   with problems opens every list that has one, and a folded list with problems says so.
 
+### Jev Policy Guardrail
+
+- **`components/import/guardrail/jev-policy-guardrail-form.tsx`** creates an
+  `EMBEDDED_JEV_POLICY` guardrail: a Jev (TypeSafe) model answers a typed question about the text,
+  and the answer blocks or allows the call. The judge is picked with the shared `EngineSelect`
+  from the user's models whose subtype is `TYPESAFE` (its `engines`), each with its logo, name and
+  id.
+- `jev-policy-guardrail.ts` holds the schema and `toJevPolicyGuardrailDetails`. A yes or no
+  question (`NOUL`) writes `VIOLATION_DIRECTION`; a choice question writes its choices, edited by
+  `jev-policy-choices-field.tsx` one row at a time (`jev-policy-choice-row.tsx`), as
+  `QUESTION_CRITERIA` (each name to its meaning) and `VIOLATION_CHOICES` (the names marked
+  Blocks). A choice question needs a choice that blocks and one that allows. An empty timeout or
+  blocked message is left out, so the guardrail uses its own default.
+- A yes or no question asks for one number, the chance of a violation that blocks the call;
+  `toViolationChanceSettings` writes it as `CONFIDENCE_THRESHOLD` and `LOW_CONFIDENCE_VERDICT`
+  (at 50% or more, the chance as the threshold with `PASS`; under 50%, the threshold mirrored
+  with `BLOCK`). A choice question asks for the confidence needed and its strictness: Strict
+  (`BLOCK`) or Lenient (`PASS`) for a choice the judge is less sure of.
+- The guardrail's logo is `TYPESAFE.png`, on its import card and, through `ENGINE_IMAGES` in
+  `@semoss/shared`, on its catalog card.
+
+### Model Router
+
+- **`components/import/model/router-config-field.tsx`** edits a Model Router's `router.json`, in
+  the model import form and on the router's settings page (`engine-router-settings.tsx`).
+- Each route is a `features/model-router/router-route-card.tsx`: a header with its place, its
+  name, its share of traffic in weighted mode, and Move Up, Move Down and Remove, over its name,
+  destination model and the fields its routing method uses. A move that disables the pressed
+  button moves focus to the other move button; removing a route moves focus to the name of the
+  route that takes its place.
+- Every model picker in the router is `features/model-router/router-engine-select.tsx`: the
+  shared `EngineSelect` over the models the editor reads once (its `engines`), each with its
+  logo, name and id. The role decides the models offered: only `TYPESAFE` models decide, and they
+  never answer, classify by chat or embed.
+
+### Engine fields in the import forms
+
+- A field that picks another engine, such as a vector database's embeddings model or a
+  guardrail's judge model, has `type: "engine"` and an `engineRule` (`engineTypes`, optional
+  `metaFilters`) in its form's constants. The guardrail and vector forms render it with
+  `components/import/shared/import-engine-select.tsx`, the shared `EngineSelect` over the user's
+  engines of those types, each with its logo, name and id. The form keeps only the engine id;
+  the picker remembers the chosen engine to show its name and logo.
+
+### Engine Actions, Restart and Reload
+
+The engine actions and the app reload call the SDK's `cloneEngine`, `restartEngine`
+(`libs/sdk/src/api/engine.ts`) and `reloadApp` (`libs/sdk/src/api/app.ts`). The backend runs
+restart and reload on every server in a cluster.
+
+- **Actions menus.** `components/shared/actions-menu.tsx` is the header's Actions dropdown: it
+  takes the actions the viewer has and is not shown when there are none. It opens when the mouse
+  hovers over it, and on a click or from the keyboard; a click on a menu the hover opened keeps it
+  open. A menu the hover opened leaves focus where it is, when it opens and when it closes; one a
+  click or a key opened moves focus into it, and back to the button when it closes. Each menu
+  lists its actions with the roles the backend lets run them:
+  - `features/engine-actions/engine-actions-menu.tsx`, in the engine header
+    (`engine-tabs-layout.tsx`): Clone, Export and Restart, all for owners.
+  - `features/project-actions/project-actions-menu.tsx`, in the project header
+    (`project-tabs-layout.tsx`): Clone for the project's owners and for anyone who can
+    see a template (`project_is_template`), the backend's `userCanCloneProject`, and Export
+    for the owners of an app type (`APP_SETTINGS_TYPES`), an agent or a skill, through
+    `features/app-export/use-app-export.ts`, which the Import and Export section uses too.
+- **`features/engine-export/`** exports an engine (`ExportEngine`) and downloads the zip
+  (`use-engine-export.ts`), from the menu and from the Export section of Settings. An H2
+  database asks whether to include its data: `export-engine-dialog.tsx` from the menu, a switch
+  in the Settings section.
+- **`features/engine-clone/`** is `clone-engine-dialog.tsx`: it asks for the clone's name,
+  starting from the engine's name followed by "Copy", and clones it (`CloneEngine`) into a private
+  engine the user owns, with a copy of its files, settings, metadata and image. Its access is not
+  copied. A failed clone stays in the dialog; a clone opens the clone's page. The menu gives the
+  dialog a new key each time it opens, so the name starts over.
+- **`features/engine-restart/`** is `restart-engine-dialog.tsx`: it confirms, then closes the
+  engine (`CloseEngine`), which stops the python process it owns, so its next use starts it with
+  its current files.
+- **`features/app-python-reload/`** is the Python card in the Python and Reactors section of an
+  app's Settings (`pages/app/app-python-reactors-settings-page.tsx`). Reload Python Files
+  (`ReloadProject`) clears the app modules python has cached, so the next run imports the current
+  .py files without restarting python.
+
+### Settings Tabs
+
+Every engine and project Settings tab has the same view: a left menu of sections with the open
+section beside it, in `components/catalog/catalog-settings-frame.tsx`. The frame sizes to its own
+width (a container query), so on a narrow page or panel the menu becomes a scrolling row above the
+section. Each kind lists its sections once, and the routes, the menu and the workbench panel all
+read that list:
+
+- Each list is written in the order the menu shows it: alphabetical by name, with Dangerous
+  always last. Nothing sorts it at runtime, so a new section goes in its place by name, before
+  Dangerous. The section tests check the order.
+- **Engines** (`pages/engine/engine-settings-sections.tsx`): Description, Image and Tags for every
+  type, Guardrails and Model Settings for a model, and Export and Dangerous for owners. Each
+  section's `isAvailable` decides who has it. `buildEngineSettingsRoute` in `engine.routes.tsx`
+  declares every section; `EngineSettingsLayout` shows the ones the viewer has on the engine.
+- **Projects** (`pages/project/project-settings-sections.tsx`): Description, Image and Tags for
+  every project type, agents, skills and notebooks included, Import and Export, Portal, and
+  Python and Reactors for the owners of an app (`CODE`, `BLOCKS`, `AUTOMATION`, `INSIGHT`), and
+  Dangerous for the owners of any project. `buildProjectSettingsRoute` declares every section;
+  `ProjectSettingsLayout` shows the ones the viewer has and supplies the `SettingsContext` the
+  app sections read.
+- **Dangerous** holds the delete, `features/resource-delete/delete-resource-card.tsx`, which
+  confirms with `DeleteEntityDialog` and goes back to the catalog after; the Access Control tab
+  has no delete. `use-delete-resource.ts` picks the pixel from the type
+  (`delete-request.ts`) and is shared with `SettingsTiles`, whose delete tile stays on the admin
+  settings pages.
+- **Every section card looks the same.** A `Card` whose `CardHeader` holds a plain `CardTitle`
+  (no heading element inside it), a `CardDescription` and the card's actions in a `CardAction`
+  with `self-center`. The header has `border-b` when the card has a `CardContent` below it, and
+  none when the header is the whole card. Actions are `size="sm"` buttons with Title Case
+  labels:
+  - **Edits** (Description, Tags, Image, Model Settings, Prices, Guardrails, Routing): Discard
+    (`outline`) and Save (`default`), shown only once there is something to save. While saving,
+    both are disabled and Save shows a `Spinner` and "Saving...". An edit that spans the card,
+    such as the image or guardrail form, makes the `Form` wrap the whole card, so the header's
+    Save submits it.
+  - **One-off actions** (Publish, Reload Python Files, Compile and Deploy, Update, Export, the
+    automation import and exports): a leading icon that the `Spinner` replaces while it runs,
+    with the label in its "...ing" form. A section has at most one `default` button; the rest
+    are `outline`. Delete is the one `destructive` button, in Dangerous.
+  - A failed read or save shows a destructive `Alert`, a read in progress a centered `Spinner`.
+    Cards stacked in one section are `gap-4` apart.
+- **App sections:** Portal shows
+  the app's share link in this platform (`getAppShareUrl`, the link the Share dialog gives) and,
+  once published, the portal Monolith serves, each a `components/settings/settings-link-field.tsx`
+  with Copy and Open buttons. Python and Reactors has the Python card, then the app's reactors
+  with Compile and Deploy, which compiles them on every server and reads the list again.
+- On a page, `CatalogSettingsLayout` puts each section at its own path and opens the first one the
+  viewer has; a path to any other section, or none, goes there, and a path below a section goes
+  to the section. In a workbench panel, which has no routes, `CatalogSettingsPanel` keeps the open
+  section in state (`ProjectSettingsPanel`, the Settings tab of `ProjectDetailTabs`).
+- A new section goes in its kind's list, with the page that renders it.
+
 ## State Management
 
 - **Application state** is split among the existing stores, including session and config.

@@ -20,6 +20,8 @@ interface RoutineCardHeaderProps {
 	routine: Pick<RoutineStatus, "enabled" | "configured">;
 	/** A stable save indicator supplied by the routine form. */
 	saveStatus?: ReactNode;
+	/** The badge of an enabled routine; a routine that runs on mail is "On", not "Scheduled". */
+	enabledLabel?: string;
 }
 
 /** A routine card's title, saved-state badge, and summary. */
@@ -29,9 +31,10 @@ export function RoutineCardHeader({
 	description,
 	routine,
 	saveStatus,
+	enabledLabel = "Scheduled",
 }: RoutineCardHeaderProps) {
 	const status = routine.enabled
-		? "Scheduled"
+		? enabledLabel
 		: routine.configured
 			? "Paused"
 			: "Not enabled";

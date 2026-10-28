@@ -10,6 +10,7 @@ import {
 	Form,
 	FormField,
 	FormSwitch,
+	FormTextarea,
 	Separator,
 	ToggleGroup,
 	ToggleGroupItem,
@@ -29,7 +30,11 @@ import { RoutineFlowSection } from "./routine-flow-section";
 import { RoutineNextRun } from "./routine-next-run";
 import { RoutineResult } from "./routine-result";
 import { RoutineSaveStatus } from "./routine-save-status";
-import { ROUTINE_DAY_NAMES, ROUTINE_DAYS } from "./routine-schema";
+import {
+	ROUTINE_DAY_NAMES,
+	ROUTINE_DAYS,
+	ROUTINE_PREFERENCES_LIMIT,
+} from "./routine-schema";
 import { RoutineTimeFields } from "./routine-time-fields";
 import { useRoutineAutosave } from "./use-routine-autosave";
 
@@ -44,6 +49,7 @@ function formValues(routine: AgendaRoutine): AgendaRoutineSettings {
 			: Intl.DateTimeFormat().resolvedOptions().timeZone,
 		meetings: routine.meetings,
 		ignored: routine.ignored,
+		preferences: routine.preferences,
 	};
 }
 
@@ -204,8 +210,15 @@ export function AgendaRoutineForm({ routine, onSave }: AgendaRoutineFormProps) {
 									/>
 								)}
 							/>
+							<FormTextarea
+								name="preferences"
+								label="Preferences (optional)"
+								description="What the agendas should emphasize or skip, such as: open every sitting with a safety moment, keep topics to 15 minutes, write in Spanish."
+								rows={3}
+								maxLength={ROUTINE_PREFERENCES_LIMIT}
+							/>
 						</FieldGroup>
-						<div className="min-w-0">
+						<div className="flex min-w-0 flex-col">
 							<RoutineResult
 								routine={routine}
 								copy={AGENDA_RESULT_COPY}

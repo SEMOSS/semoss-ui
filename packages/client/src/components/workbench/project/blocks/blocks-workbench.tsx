@@ -170,13 +170,17 @@ export const BLOCKS_WORKBENCH_COMPONENTS: Record<
 			restrict: ["OWNER", "EDIT", "READ_ONLY"],
 		},
 		{ name: "GitHub", component: "github", restrict: ["OWNER"] },
-		{ name: "Settings", component: "settings", restrict: ["OWNER"] },
 		{
 			name: "Access Control",
 			component: "access-control",
 			restrict: ["OWNER", "EDIT"],
 		},
 		{ name: "Audit Trail", component: "audit", restrict: ["OWNER"] },
+		{
+			name: "Settings",
+			component: "settings",
+			restrict: ["OWNER", "EDIT"],
+		},
 		{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 	]),
 };

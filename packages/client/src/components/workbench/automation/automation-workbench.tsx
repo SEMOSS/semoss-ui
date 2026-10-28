@@ -79,7 +79,7 @@ import {
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { stripMcpToolAlias } from "@/components/assistant/assistant-tools";
 import { ProjectDetailTabs } from "@/components/project";
-import { ShareOverlay } from "@/components/ui";
+import { ShareAppDialog } from "@/components/ui/share/share-app-dialog";
 import { AssistantStoreProvider, WorkbenchProvider } from "@/contexts";
 import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
 import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
@@ -200,13 +200,17 @@ const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
 		restrict: ["OWNER", "EDIT", "READ_ONLY"],
 	},
 	{ name: "GitHub", component: "github", restrict: ["OWNER"] },
-	{ name: "Settings", component: "settings", restrict: ["OWNER"] },
 	{
 		name: "Access Control",
 		component: "access-control",
 		restrict: ["OWNER", "EDIT"],
 	},
 	{ name: "Audit Trail", component: "audit", restrict: ["OWNER"] },
+	{
+		name: "Settings",
+		component: "settings",
+		restrict: ["OWNER", "EDIT"],
+	},
 	{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 ];
 
@@ -1059,17 +1063,11 @@ export const AutomationWorkbenchPage = observer(() => {
 					catalogPath={catalog?.path}
 					onShare={() => setShareOpen(true)}
 				/>
-				<Dialog
+				<ShareAppDialog
+					appId={project.project_id}
 					open={shareOpen}
-					onOpenChange={(open) => !open && setShareOpen(false)}
-				>
-					<DialogContent className="max-w-lg p-0">
-						<ShareOverlay
-							appId={project.project_id}
-							onClose={() => setShareOpen(false)}
-						/>
-					</DialogContent>
-				</Dialog>
+					onOpenChange={setShareOpen}
+				/>
 			</WorkbenchProvider>
 		</InsightProvider>
 	);

@@ -416,9 +416,7 @@ function defaultCanvasConfig(
 				? "embeddings"
 				: type === "model.vision"
 					? "vision"
-					: type === "model.ner"
-						? "ner"
-						: "llm";
+					: "llm";
 		return {
 			engineId,
 			operation,
@@ -429,8 +427,6 @@ function defaultCanvasConfig(
 			image: stringValue(config.image),
 			urls: jsonArrayValue(config.urls),
 			prompt: stringValue(config.prompt),
-			entities: jsonArrayValue(config.entities),
-			maskEntities: jsonArrayValue(config.maskEntities),
 		};
 	}
 	if (category === "storage") {
@@ -764,8 +760,6 @@ function mergeCanvasConfig(
 		const image = getConfigValue(config, "image");
 		const urls = getConfigValue(config, "urls");
 		const paramValues = getConfigValue(config, "paramValues");
-		const entities = getConfigValue(config, "entities");
-		const maskEntities = getConfigValue(config, "maskEntities");
 		if (typeof command === "string") {
 			if (type === "model.embeddings") next.text = command;
 			else next.prompt = command;
@@ -784,14 +778,6 @@ function mergeCanvasConfig(
 			} else {
 				delete next.paramValues;
 			}
-		}
-		if (type === "model.ner" && typeof entities === "string") {
-			next.entities = parsedJsonValue(entities) ?? entities;
-		}
-		if (type === "model.ner" && typeof maskEntities === "string") {
-			next.maskEntities = maskEntities.trim()
-				? (parsedJsonValue(maskEntities) ?? maskEntities)
-				: [];
 		}
 	}
 	if (category === "storage") {

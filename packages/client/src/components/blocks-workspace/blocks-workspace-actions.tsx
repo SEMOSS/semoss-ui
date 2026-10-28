@@ -13,7 +13,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { ShareOverlay } from "@/components/ui";
+import { ShareAppDialog } from "@/components/ui/share/share-app-dialog";
 import { PreviewDialog } from "@/components/workspace";
 import { useProject, useSession, useWorkspace } from "@/hooks";
 import { LLMSelectDialog } from "../llms";
@@ -258,18 +258,12 @@ export const BlocksWorkspaceActions = observer(() => {
 				<TooltipContent>Save App (ctrl/command + s)</TooltipContent>
 			</Tooltip>
 
-			<Dialog
+			<ShareAppDialog
+				appId={project.project_id}
 				open={shareOpen}
-				onOpenChange={(o) => !o && setShareOpen(false)}
-			>
-				<DialogContent className="max-w-lg p-0">
-					<ShareOverlay
-						appId={project.project_id}
-						diffs={shareDiffs}
-						onClose={() => setShareOpen(false)}
-					/>
-				</DialogContent>
-			</Dialog>
+				onOpenChange={setShareOpen}
+				hasUnsavedChanges={shareDiffs}
+			/>
 
 			<Dialog
 				open={modelDialogOpen}
