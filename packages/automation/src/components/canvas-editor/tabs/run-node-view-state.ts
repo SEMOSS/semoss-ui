@@ -25,6 +25,45 @@ export type RunNodeDataSource =
 export type AsyncViewerState = "loading" | "error" | "empty" | "ready";
 export type RunNodeContentView = "output" | "source";
 
+/**
+ * Chooses the live result shown without overriding a user's explicit node
+ * selection. Automatic selection follows the running node, then settles on the
+ * failed node or final successful node when execution ends.
+ */
+export function resolveLiveRunNodeId(
+	results: AutomationNodeResult[],
+	selectedNodeId: string | null,
+	preserveExplicitSelection: boolean,
+	runStatus: string | null | undefined,
+): string | null {
+	if (
+		preserveExplicitSelection &&
+		selectedNodeId &&
+		results.some((result) => result.NODE_ID === selectedNodeId)
+	) {
+		return selectedNodeId;
+	}
+
+	const running = results.find(
+		(result) =>
+			result.STATUS === "RUNNING" ||
+			result.STATUS === "WAITING_FOR_INPUT",
+	);
+	if (running) return running.NODE_ID;
+
+	if (runStatus === "FAILED") {
+		const failed = [...results]
+			.reverse()
+			.find((result) => result.STATUS === "FAILED");
+		if (failed) return failed.NODE_ID;
+	}
+
+	const successful = [...results]
+		.reverse()
+		.find((result) => result.STATUS === "SUCCESS");
+	return successful?.NODE_ID ?? results[results.length - 1]?.NODE_ID ?? null;
+}
+
 export const RUN_NODE_VIEW_LABELS = {
 	navigation: "Run nodes",
 	detailView: "Run node detail view",

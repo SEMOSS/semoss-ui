@@ -5,6 +5,8 @@ import type {
 	AutomationRunImplementationView,
 	AutomationRunSummary,
 	AutomationSavedResultPage,
+	AutomationSavedResultReference,
+	AutomationSavedTableColumn,
 } from "../domain/automation.types";
 
 const RUN_DATA_PAGE_SIZE = 50;
@@ -15,6 +17,86 @@ export interface AutomationRunFramePage {
 	total: number;
 	nextOffset?: number;
 	hasMore?: boolean;
+}
+
+/** Bounded historical table data used to inspect an upstream authoring input. */
+export interface AutomationInputTablePreview {
+	runId: string;
+	startedAt: string;
+	columns: AutomationSavedTableColumn[];
+	insightId?: string;
+	frame?: AutomationNodeResult["OUTPUT_FRAME"];
+	savedResult?: AutomationSavedResultReference;
+	outputPreview: string;
+}
+
+/** Finds the newest retained successful table output without executing any nodes. */
+export async function loadAutomationInputTablePreview(
+	appId: string,
+	nodeId: string,
+): Promise<AutomationInputTablePreview | null> {
+	const runs = await listAutomationRuns(appId, 20);
+	for (const summary of runs) {
+		const run = await getAutomationRun(appId, summary.RUN_ID);
+		const result = run.nodeResults.find(
+			(node) => node.NODE_ID === nodeId && node.STATUS === "SUCCESS",
+		);
+		if (!result) continue;
+
+		const savedResult = run.savedResults?.find(
+			(saved) =>
+				saved.NODE_ID === nodeId &&
+				saved.RESULT_KIND === "TABLE" &&
+				!saved.PARENT_NODE_ID &&
+				saved.ITERATION_INDEX == null &&
+				saved.CAPTURE_STATE === "RETAINED",
+		);
+		if (savedResult) {
+			const saved = await getAutomationResult(
+				appId,
+				savedResult.RESULT_ID,
+				0,
+			);
+			if (
+				saved.NODE_ID !== nodeId ||
+				saved.RESULT_KIND !== "TABLE" ||
+				!saved.schema ||
+				!saved.rows ||
+				saved.rows.some((row) => row.length !== saved.schema?.length)
+			) {
+				throw new Error(
+					"The upstream table returned an invalid retained result.",
+				);
+			}
+			return {
+				runId: run.RUN_ID,
+				startedAt: run.STARTED_AT,
+				columns: saved.schema,
+				savedResult,
+				outputPreview: result.OUTPUT_PREVIEW ?? "",
+			};
+		}
+
+		if (run.executionInsightId && result.OUTPUT_FRAME) {
+			const page = await getAutomationRunFramePage(
+				run.executionInsightId,
+				result.OUTPUT_FRAME,
+				0,
+			);
+			return {
+				runId: run.RUN_ID,
+				startedAt: run.STARTED_AT,
+				columns: page.headers.map((name) => ({
+					name,
+					type: "UNKNOWN",
+				})),
+				insightId: run.executionInsightId,
+				frame: result.OUTPUT_FRAME,
+				outputPreview: result.OUTPUT_PREVIEW ?? "",
+			};
+		}
+	}
+	return null;
 }
 
 /** Returns the most recent persisted runs for an automation project. */

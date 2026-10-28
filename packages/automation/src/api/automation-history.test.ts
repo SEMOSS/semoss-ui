@@ -4,6 +4,7 @@ import {
 	getAutomationResult,
 	getAutomationRunSource,
 	listAutomationRuns,
+	loadAutomationInputTablePreview,
 } from "./automation-history";
 
 vi.mock("@semoss/sdk", () => ({ runPixel: vi.fn() }));
@@ -36,6 +37,96 @@ describe("Automation history API validation", () => {
 		await expect(listAutomationRuns("app-1")).rejects.toThrow(
 			"History denied",
 		);
+	});
+
+	it("loads the newest retained successful upstream table without executing nodes", async () => {
+		const reference = {
+			RESULT_ID: "result-1",
+			NODE_ID: "query-1",
+			RESULT_KIND: "TABLE",
+			ROW_COUNT: 2,
+			BYTE_COUNT: 100,
+			CHECKSUM: "checksum",
+			RETAIN_UNTIL: "2026-10-20T00:00:00Z",
+			CAPTURE_STATE: "RETAINED",
+		};
+		vi.mocked(runPixel)
+			.mockResolvedValueOnce(
+				pixelResponse([
+					{
+						RUN_ID: "run-1",
+						PROJECT_ID: "app-1",
+						STATUS: "SUCCESS",
+					},
+				]),
+			)
+			.mockResolvedValueOnce(
+				pixelResponse({
+					RUN_ID: "run-1",
+					PROJECT_ID: "app-1",
+					STARTED_AT: "2026-10-19T12:00:00Z",
+					STATUS: "SUCCESS",
+					nodeResults: [
+						{
+							NODE_ID: "query-1",
+							STATUS: "SUCCESS",
+							OUTPUT_PREVIEW: "2 rows",
+						},
+					],
+					savedResults: [reference],
+				}),
+			)
+			.mockResolvedValueOnce(
+				pixelResponse({
+					...reference,
+					schema: [{ name: "STATUS", type: "STRING" }],
+					rows: [["active"], ["inactive"]],
+					offset: 0,
+					nextOffset: 2,
+					hasMore: false,
+				}),
+			);
+
+		await expect(
+			loadAutomationInputTablePreview("app-1", "query-1"),
+		).resolves.toMatchObject({
+			runId: "run-1",
+			columns: [{ name: "STATUS", type: "STRING" }],
+			savedResult: reference,
+		});
+		expect(
+			vi
+				.mocked(runPixel)
+				.mock.calls.map(([expression]) => expression)
+				.join(" "),
+		).not.toMatch(/TriggerAutomation|RunAutomationDefinition|SqlQuery/);
+	});
+
+	it("ignores unsuccessful upstream nodes while inspecting retained input", async () => {
+		vi.mocked(runPixel)
+			.mockResolvedValueOnce(
+				pixelResponse([
+					{
+						RUN_ID: "run-1",
+						PROJECT_ID: "app-1",
+						STATUS: "FAILED",
+					},
+				]),
+			)
+			.mockResolvedValueOnce(
+				pixelResponse({
+					RUN_ID: "run-1",
+					PROJECT_ID: "app-1",
+					STARTED_AT: "2026-10-19T12:00:00Z",
+					STATUS: "FAILED",
+					nodeResults: [{ NODE_ID: "query-1", STATUS: "FAILED" }],
+					savedResults: [],
+				}),
+			);
+
+		await expect(
+			loadAutomationInputTablePreview("app-1", "query-1"),
+		).resolves.toBeNull();
 	});
 
 	it("accepts a complete retained table page", async () => {

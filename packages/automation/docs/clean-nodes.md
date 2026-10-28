@@ -1,0 +1,129 @@
+# Clean Nodes
+
+Clean and Transform nodes reuse the existing SEMOSS BI reactors. The backend
+catalog owns their definitions; the frontend provides a Clean group and a
+Transform node in DATA.
+
+The canvas exposes one **Clean data** node. Select an operation in its inspector
+to show that operation's configuration. New nodes are saved as `clean.process`
+with an `operation` value (`purge`, `trim`, `replace`, `removeDuplicates`,
+`filterEmpty`, or `imputeNulls`).
+
+Change Type, Drop columns, and Rename column are available on the separate
+**Transform data** node in the DATA category. Transform nodes are saved as
+`data.transform`; their `operation` value selects the transform configuration.
+
+| Operation | Database frame | R frame | Python frame |
+| --- | --- | --- | --- |
+| Drop rows (Purge) | Yes | No | Yes |
+| Trim | No | No | Yes |
+| Replace | No | No | Yes |
+| Remove duplicate rows | No | No | Yes |
+| Filter empty values | No | No | Yes |
+| Impute null values | No | No | Yes |
+
+| Transform operation | Database frame | R frame | Python frame |
+| --- | --- | --- | --- |
+| Change column type | No | No | Yes |
+| Drop columns | No | No | Yes |
+| Rename column | No | No | Yes |
+| Add column | No | No | Yes |
+| Duplicate column | No | No | Yes |
+| Concatenate columns | No | No | Yes |
+| Pivot | No | No | Yes |
+| Lower case | No | No | Yes |
+| Proper case | No | No | Yes |
+| Split columns | No | No | Yes |
+| Split and unpivot | No | No | Yes |
+| Add timestamp data | No | No | Yes |
+| Convert to percent | No | No | Yes |
+| Transpose | No | No | Yes |
+| Unpivot | No | No | Yes |
+| Upper case | No | No | Yes |
+| Join tables | Same database | No | Yes |
+
+Both node types reuse the existing SEMOSS BI reactors. Compatibility follows the
+actual frame type, not the upstream node label.
+Automation database queries currently materialize their bounded results as
+Python frames. Those results are therefore compatible with Python cleaning.
+Native frames are deferred database-backed queries: data stays in its source
+database instead of being materialized into a Python/R frame.
+Among Clean operations, an actual database-backed frame supports only Drop rows
+(Purge). Other Clean and Transform operations require Python frames; R frames are
+not supported by Automation. Standard Join works with Python tables and native
+tables from the same database. These nodes never silently convert a frame to
+another runtime.
+
+## Input and Output
+
+`source` must be an exact reference, such as `${query_result}`, to a live table
+from this run. JSON arrays, table previews, and historical summaries are not
+accepted as executable frames.
+
+Single-frame operations copy the input into a separate frame of the same runtime
+before invoking the BI routine. The original input remains unchanged. Copying
+preserves duplicate rows and the input's visible filters. Inputs and outputs are
+bounded by the backend's saved-table row limit. Joins use the selected left and
+right table references and are subject to the same output limit.
+
+The resulting table is available under the node's output variable, with normal
+table paging and durable run-history capture. Root graphs and loop bodies use
+the same execution path.
+
+After a Python transform changes the schema, Automation refreshes the frame's
+query selectors before publishing or capturing its output. Newly added columns
+remain available to downstream nodes, and saved column names, types, and row
+values stay aligned. Pivot supports missing-value replacement across multiple
+generated columns, including when no columns are selected to keep.
+
+## Drop Rows (Purge)
+
+Purge removes whole rows matching all configured filters from the local working
+dataset. Select a column, comparator, and value to identify the rows to remove.
+It does not drop columns, clear individual cells, or delete records from the
+source database. Use the **Builder** to add or remove filters and choose each
+column, comparator, value type, and value. The selected value type controls manual
+entry. Use **JSON** to edit or paste the equivalent array directly. Switching
+modes preserves text, numeric, and boolean values. Invalid JSON remains editable
+and cannot be switched into the builder until corrected. The node accepts up to
+100 filter objects:
+
+```json
+[
+  { "column": "STATUS", "operator": "==", "value": "inactive" },
+  { "column": "AGE", "operator": ">=", "value": 18 }
+]
+```
+
+Supported operators are `==`, `!=`, `>`, `>=`, `<`, and `<=`. Values may be
+strings, finite numbers, booleans, or exact references to scalar run values.
+
+The example removes inactive rows whose age is at least 18. Other rows remain.
+
+## Existing BI Limitations
+
+- Impute Nulls reuses BI defaults: numeric mean, string mode or `Unknown`, and
+  date/timestamp forward fill.
+- Transform's Change Column Type currently offers `STRING`, `FACTOR`, `DOUBLE`, and `DATE`,
+  the targets the existing BI reactor actually converts. Although the legacy
+  reactor accepts names such as `INT`, `BOOLEAN`, and `TIMESTAMP`, it currently
+  updates metadata without converting values for those targets, so Automation
+  does not expose them.
+- Drop Column and Rename Column update only the copied working frame, never the
+  source database. Rename targets must be simple identifiers and cannot collide
+  with another existing column.
+- Remove duplicates compares entire rows; it does not accept a subset of columns.
+- Filter empty values removes rows with null or empty values in any selected column.
+- Join requires a second live upstream table and key columns. It supports inner, left outer,
+  and right outer joins. Fuzzy Join is not exposed because the existing fuzzy-match reactors
+  are R-only.
+- Column names must exist and use letters, digits, and underscores, beginning
+  with a letter or underscore. This avoids passing executable syntax to legacy
+  R/Python routines.
+- Replace currently rejects double quotes, backslashes, and control characters
+  because the legacy reactors interpolate literals into scripts. Numeric
+  replacements must be numeric or a supported null marker. Python text-null
+  replacement is rejected because the existing reactor does not safely quote it.
+
+Deploy the matching Semoss backend changes and restart/reload the backend before
+using these nodes. An older backend catalog will not offer the Clean group.

@@ -1,6 +1,7 @@
 import {
 	Bot,
 	Braces,
+	BrushCleaning,
 	Database,
 	FolderOpen,
 	FunctionSquare,
@@ -35,6 +36,7 @@ const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
 	"agent",
 	"storage",
 	"data",
+	"clean",
 	"vector",
 	"function",
 	"app",
@@ -64,6 +66,7 @@ const CATEGORY_META: Record<
 	agent: { label: "Agents", icon: Bot },
 	storage: { label: "Storage", icon: FolderOpen },
 	data: { label: "Data", icon: ListTree },
+	clean: { label: "Clean", icon: BrushCleaning },
 	vector: { label: "Vector", icon: Network },
 	function: { label: "Functions", icon: FunctionSquare },
 	app: { label: "Apps", icon: Variable },

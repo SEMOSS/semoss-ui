@@ -3,9 +3,14 @@ import type {
 	AutomationEdge,
 	AutomationNode,
 	AutomationNodeType,
+	CleanConfig,
+	CleanOperation,
 	JevDecisionConfig,
 	NodeConfig,
+	TransformConfig,
+	TransformOperation,
 } from "./automation.types";
+import { CLEAN_OPERATIONS, TRANSFORM_OPERATIONS } from "./automation.types";
 import { getAutomationNodeDefinition } from "./automation-node-catalog";
 import type {
 	AutomationBranchClause,
@@ -22,6 +27,7 @@ import type {
 	AutomationWorkflowNodeType,
 	TriggerBinding,
 } from "./automation-workflow.types";
+import { parsePurgeFilters } from "./purge-filters";
 
 export interface CanvasWorkflowDocument {
 	description: string;
@@ -378,6 +384,7 @@ function canvasTypeForWorkflow(
 	if (category === "model") return "model-engine";
 	if (category === "storage") return "storage-engine";
 	if (category === "data") return "data";
+	if (category === "clean") return "clean";
 	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
@@ -452,6 +459,37 @@ function defaultCanvasConfig(
 			leaveFolderStructure: config.leaveFolderStructure === true,
 		};
 	}
+	if (type === "data.transform") {
+		return {
+			source: stringValue(config.source),
+			operation: transformOperationFor(config),
+			columns: Array.isArray(config.columns)
+				? config.columns.filter(
+						(column): column is string =>
+							typeof column === "string",
+					)
+				: [],
+			column: stringValue(config.column),
+			newColumn: stringValue(config.newColumn),
+			dataType: stringValue(config.dataType) || "STRING",
+			delimiter: stringValue(config.delimiter) || " ",
+			pivotColumn: stringValue(config.pivotColumn),
+			valueColumn: stringValue(config.valueColumn),
+			maintainColumns: Array.isArray(config.maintainColumns)
+				? config.maintainColumns.filter(
+						(column): column is string =>
+							typeof column === "string",
+					)
+				: [],
+			aggregateFunction: stringValue(config.aggregateFunction),
+			includeTime: config.includeTime === true,
+			sigDigits: numberValue(config.sigDigits, 2),
+			by100: config.by100 === true,
+			rightSource: stringValue(config.rightSource),
+			rightColumn: stringValue(config.rightColumn),
+			joinType: stringValue(config.joinType) || "inner.join",
+		};
+	}
 	if (category === "data") {
 		return {
 			source: jsonValueText(config.source),
@@ -462,6 +500,21 @@ function defaultCanvasConfig(
 					: "auto",
 			missingValue: jsonValueText(config.missingValue),
 			nullValue: jsonValueText(config.nullValue),
+		};
+	}
+	if (category === "clean") {
+		return {
+			source: stringValue(config.source),
+			operation: cleanOperationFor(type, config),
+			columns: Array.isArray(config.columns)
+				? config.columns.filter(
+						(column): column is string =>
+							typeof column === "string",
+					)
+				: [],
+			value: stringValue(config.value),
+			newValue: stringValue(config.newValue),
+			filters: jsonArrayValue(config.filters) || "[]",
 		};
 	}
 	if (category === "vector") {
@@ -607,6 +660,8 @@ function canvasTypeToWorkflow(
 			return "storage.list";
 		case "data":
 			return "data.extract";
+		case "clean":
+			return "clean.process";
 		case "vector-engine":
 			return "vector.search";
 		case "model-engine":
@@ -624,16 +679,54 @@ function canvasTypeToWorkflow(
 	}
 }
 
-function getConfigValue(
-	config: NodeConfig,
-	key: string,
-): string | number | boolean | undefined {
-	const value = (config as unknown as Record<string, unknown>)[key];
-	return typeof value === "string" ||
-		typeof value === "number" ||
-		typeof value === "boolean"
-		? value
-		: undefined;
+function getConfigValue(config: NodeConfig, key: string): unknown {
+	return (config as unknown as Record<string, unknown>)[key];
+}
+
+function cleanOperationValue(
+	type: AutomationWorkflowNodeType,
+	config: AutomationWorkflowNodeConfig,
+): string {
+	return type === "clean.process" ? stringValue(config.operation) : "";
+}
+
+function isCleanOperation(value: string): value is CleanOperation {
+	return CLEAN_OPERATIONS.some((operation) => operation === value);
+}
+
+function cleanOperationFor(
+	type: AutomationWorkflowNodeType,
+	config: AutomationWorkflowNodeConfig,
+): CleanOperation {
+	const value = cleanOperationValue(type, config);
+	return isCleanOperation(value) ? value : "purge";
+}
+
+function isTransformOperation(value: string): value is TransformOperation {
+	return TRANSFORM_OPERATIONS.some((operation) => operation === value);
+}
+
+function hasUnsafeTransformLiteral(value: string): boolean {
+	return (
+		value.includes("'") ||
+		value.includes('"') ||
+		value.includes("\\") ||
+		value.split("").some((character) => {
+			const code = character.charCodeAt(0);
+			return code < 32 || code === 127;
+		})
+	);
+}
+
+function isFrameColumnIdentifier(value: unknown): value is string {
+	return typeof value === "string" && /^[A-Za-z_][A-Za-z0-9_]*$/.test(value);
+}
+
+function transformOperationFor(
+	config: AutomationWorkflowNodeConfig,
+): TransformOperation {
+	const value = stringValue(config.operation);
+	return isTransformOperation(value) ? value : "changeType";
 }
 
 function mergeCanvasConfig(
@@ -723,21 +816,92 @@ function mergeCanvasConfig(
 		}
 	}
 	if (category === "data") {
-		const source = getConfigValue(config, "source");
-		const path = getConfigValue(config, "path");
-		const format = getConfigValue(config, "format");
-		const missingValue = getConfigValue(config, "missingValue");
-		const nullValue = getConfigValue(config, "nullValue");
-		if (typeof source === "string") next.source = jsonValueOrString(source);
-		if (typeof path === "string") next.path = path;
-		if (format === "auto" || format === "json" || format === "xml") {
-			next.format = format;
+		if (type === "data.transform") {
+			const transformConfig = config as TransformConfig;
+			const operation = getConfigValue(transformConfig, "operation");
+			if (typeof transformConfig.source === "string") {
+				next.source = transformConfig.source;
+			}
+			if (typeof operation === "string") next.operation = operation;
+			if (Array.isArray(transformConfig.columns)) {
+				next.columns = transformConfig.columns;
+			}
+			const column = getConfigValue(transformConfig, "column");
+			const newColumn = getConfigValue(transformConfig, "newColumn");
+			const dataType = getConfigValue(transformConfig, "dataType");
+			const delimiter = getConfigValue(transformConfig, "delimiter");
+			const pivotColumn = getConfigValue(transformConfig, "pivotColumn");
+			const valueColumn = getConfigValue(transformConfig, "valueColumn");
+			const aggregateFunction = getConfigValue(
+				transformConfig,
+				"aggregateFunction",
+			);
+			const includeTime = getConfigValue(transformConfig, "includeTime");
+			const sigDigits = getConfigValue(transformConfig, "sigDigits");
+			const by100 = getConfigValue(transformConfig, "by100");
+			const rightSource = getConfigValue(transformConfig, "rightSource");
+			const rightColumn = getConfigValue(transformConfig, "rightColumn");
+			const joinType = getConfigValue(transformConfig, "joinType");
+			if (typeof column === "string") next.column = column;
+			if (typeof newColumn === "string") next.newColumn = newColumn;
+			if (typeof dataType === "string") next.dataType = dataType;
+			if (typeof delimiter === "string") next.delimiter = delimiter;
+			if (typeof pivotColumn === "string") next.pivotColumn = pivotColumn;
+			if (typeof valueColumn === "string") next.valueColumn = valueColumn;
+			if (Array.isArray(transformConfig.maintainColumns)) {
+				next.maintainColumns = transformConfig.maintainColumns;
+			}
+			if (typeof aggregateFunction === "string")
+				next.aggregateFunction = aggregateFunction;
+			if (typeof includeTime === "boolean")
+				next.includeTime = includeTime;
+			if (typeof sigDigits === "number") next.sigDigits = sigDigits;
+			if (typeof by100 === "boolean") next.by100 = by100;
+			if (typeof rightSource === "string") next.rightSource = rightSource;
+			if (typeof rightColumn === "string") next.rightColumn = rightColumn;
+			if (typeof joinType === "string") next.joinType = joinType;
+		} else {
+			const source = getConfigValue(config, "source");
+			const path = getConfigValue(config, "path");
+			const format = getConfigValue(config, "format");
+			const missingValue = getConfigValue(config, "missingValue");
+			const nullValue = getConfigValue(config, "nullValue");
+			if (typeof source === "string")
+				next.source = jsonValueOrString(source);
+			if (typeof path === "string") next.path = path;
+			if (format === "auto" || format === "json" || format === "xml") {
+				next.format = format;
+			}
+			if (typeof missingValue === "string") {
+				next.missingValue = fallbackValue(missingValue);
+			}
+			if (typeof nullValue === "string") {
+				next.nullValue = fallbackValue(nullValue);
+			}
 		}
-		if (typeof missingValue === "string") {
-			next.missingValue = fallbackValue(missingValue);
+	}
+	if (category === "clean") {
+		const cleanConfig = config as CleanConfig;
+		const configuredOperation = getConfigValue(cleanConfig, "operation");
+		const operation =
+			type === "clean.process" && typeof configuredOperation === "string"
+				? configuredOperation
+				: cleanOperationFor(type, workflowConfig);
+		if (type === "clean.process") next.operation = operation;
+		next.source = cleanConfig.source;
+		if (operation === "purge") {
+			next.filters =
+				parsedJsonValue(cleanConfig.filters) ?? cleanConfig.filters;
+		} else if (
+			["trim", "replace", "filterEmpty", "imputeNulls"].includes(
+				operation,
+			)
+		) {
+			next.columns = cleanConfig.columns;
 		}
-		if (typeof nullValue === "string") {
-			next.nullValue = fallbackValue(nullValue);
+		if (operation === "replace") {
+			next.value = cleanConfig.value;
+			next.newValue = cleanConfig.newValue;
 		}
 	}
 	if (category === "vector") {
@@ -1205,6 +1369,207 @@ export function validateCanvasWorkflowNode(
 			)
 		) {
 			errors.push("Output variable must be unique");
+		}
+	}
+	if (type === "data.transform") {
+		const operationValue = stringValue(config.operation);
+		const operation = isTransformOperation(operationValue)
+			? operationValue
+			: undefined;
+		if (!operation) errors.push("Select a supported Transform operation");
+		if (!/^\$\{[^{}]+\}$/.test(stringValue(config.source).trim())) {
+			errors.push(
+				"Input table must be an exact upstream table reference",
+			);
+		}
+		const validateColumns = (value: unknown, required = true) => {
+			if (
+				!Array.isArray(value) ||
+				(required && value.length === 0) ||
+				value.some((column) => !isFrameColumnIdentifier(column))
+			) {
+				errors.push(
+					"Select columns using letters, digits, and underscores only",
+				);
+			}
+		};
+		const validateColumn = (value: unknown, label = "Column") => {
+			if (!isFrameColumnIdentifier(value)) {
+				errors.push(
+					`${label} must use letters, digits, and underscores only`,
+				);
+			}
+		};
+		const validateNewColumn = () => {
+			if (
+				!/^[A-Za-z_][A-Za-z0-9_]*$/.test(stringValue(config.newColumn))
+			) {
+				errors.push("Use a valid new column name");
+			}
+		};
+		const validateDelimiter = () => {
+			const delimiter = stringValue(config.delimiter);
+			if (
+				delimiter.length === 0 ||
+				delimiter.length > 100 ||
+				hasUnsafeTransformLiteral(delimiter)
+			) {
+				errors.push(
+					"Delimiter must be 1 to 100 characters without quotes or control characters",
+				);
+			}
+		};
+		if (
+			[
+				"dropColumn",
+				"lowerCase",
+				"properCase",
+				"upperCase",
+				"unpivot",
+			].includes(operation ?? "")
+		) {
+			validateColumns(config.columns);
+		}
+		if (operation === "changeType") {
+			validateColumn(config.column);
+			if (
+				!["STRING", "FACTOR", "DOUBLE", "DATE"].includes(
+					stringValue(config.dataType),
+				)
+			) {
+				errors.push("Select a supported target type");
+			}
+		}
+		if (operation === "renameColumn") {
+			validateColumn(config.column);
+			validateNewColumn();
+		}
+		if (
+			operation === "addColumn" ||
+			operation === "duplicateColumn" ||
+			operation === "concatenate" ||
+			operation === "timestampData" ||
+			operation === "toPercent"
+		) {
+			validateNewColumn();
+		}
+		if (
+			operation === "addColumn" &&
+			!["STRING", "FACTOR", "DOUBLE", "DATE"].includes(
+				stringValue(config.dataType),
+			)
+		) {
+			errors.push("Select a supported new column type");
+		}
+		if (operation === "duplicateColumn" || operation === "toPercent") {
+			validateColumn(config.column);
+		}
+		if (operation === "concatenate") {
+			validateColumns(config.columns);
+			validateDelimiter();
+		}
+		if (operation === "split" || operation === "splitUnpivot") {
+			validateColumns(config.columns);
+			validateDelimiter();
+		}
+		if (operation === "pivot") {
+			validateColumn(config.pivotColumn, "Pivot column");
+			validateColumn(config.valueColumn, "Value column");
+			validateColumns(config.maintainColumns, false);
+			if (
+				!["", "sum", "mean", "median"].includes(
+					stringValue(config.aggregateFunction).toLowerCase(),
+				)
+			) {
+				errors.push("Select a supported aggregate function");
+			}
+		}
+		if (
+			operation === "timestampData" &&
+			typeof config.includeTime !== "boolean"
+		) {
+			errors.push("Choose whether to include time");
+		}
+		if (operation === "toPercent") {
+			const sigDigits = config.sigDigits;
+			if (
+				typeof sigDigits !== "number" ||
+				!Number.isInteger(sigDigits) ||
+				sigDigits < 0 ||
+				sigDigits > 20
+			) {
+				errors.push("Significant digits must be between 0 and 20");
+			}
+			if (typeof config.by100 !== "boolean")
+				errors.push("Choose whether to multiply by 100");
+		}
+		if (operation === "join") {
+			if (
+				!/^\$\{[^{}]+\}$/.test(stringValue(config.rightSource).trim())
+			) {
+				errors.push(
+					"Right table must be an exact upstream table reference",
+				);
+			}
+			if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(stringValue(config.column))) {
+				errors.push("Use a valid left join column");
+			}
+			if (
+				!/^[A-Za-z_][A-Za-z0-9_]*$/.test(
+					stringValue(config.rightColumn),
+				)
+			) {
+				errors.push("Use a valid right join column");
+			}
+			if (
+				!["inner.join", "left.outer.join", "right.outer.join"].includes(
+					stringValue(config.joinType),
+				)
+			) {
+				errors.push("Select a supported join type");
+			}
+		}
+	}
+	if (definition.category === "clean") {
+		const operationValue = cleanOperationValue(type, config);
+		const operationValid = isCleanOperation(operationValue);
+		if (!/^\$\{[^{}]+\}$/.test(stringValue(config.source).trim())) {
+			errors.push(
+				"Input table must be an exact upstream table reference",
+			);
+		}
+		if (type === "clean.process" && !operationValid) {
+			errors.push("Select a supported Clean operation");
+		}
+		const operation = operationValid ? operationValue : "";
+		if (operation === "purge") {
+			const purgeFilters = parsePurgeFilters(
+				JSON.stringify(config.filters ?? null),
+			);
+			if (
+				!purgeFilters.filters ||
+				purgeFilters.filters.length === 0 ||
+				purgeFilters.filters.some(
+					(filter) => filter.column.trim() === "",
+				)
+			) {
+				errors.push(
+					"Rows to remove must contain 1 to 100 valid JSON filters",
+				);
+			}
+		} else if (
+			["trim", "replace", "filterEmpty", "imputeNulls"].includes(
+				operation,
+			) &&
+			(!Array.isArray(config.columns) ||
+				config.columns.length === 0 ||
+				config.columns.some(
+					(column) => !isFrameColumnIdentifier(column),
+				))
+		) {
+			errors.push(
+				"Select columns using letters, digits, and underscores only",
+			);
 		}
 	}
 	if (type === "function.execute" && typeof config.arguments === "string") {
