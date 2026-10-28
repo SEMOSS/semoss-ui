@@ -154,7 +154,6 @@ export const ResponseMessageTool = observer(
 					isLarge && "border",
 					isActive &&
 						"bg-accent hover:bg-accent dark:bg-accent/70 dark:hover:bg-accent/70",
-					failed && "border border-destructive/30",
 				)}
 			>
 				<div className="flex min-w-0 items-center gap-0.5 px-1">
@@ -171,7 +170,7 @@ export const ResponseMessageTool = observer(
 							className={cn(
 								"shrink-0 text-muted-foreground",
 								succeeded && "text-success",
-								failed && "text-destructive",
+								failed && "text-destructive/60",
 							)}
 						>
 							{running ? (
@@ -188,12 +187,7 @@ export const ResponseMessageTool = observer(
 							<span className="min-w-0 max-w-full break-words text-sm">
 								{tool.displayName}
 							</span>
-							<span
-								className={cn(
-									"min-w-0 max-w-full break-words font-normal text-muted-foreground text-xs",
-									failed && "text-destructive",
-								)}
-							>
+							<span className="min-w-0 max-w-full break-words font-normal text-muted-foreground text-xs">
 								{status}
 							</span>
 						</span>
