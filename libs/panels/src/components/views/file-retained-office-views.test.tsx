@@ -500,6 +500,93 @@ describe("retained Office viewer integration", () => {
 		expect(getControls().canSave).toBe(false);
 	});
 
+	it.each([
+		{
+			code: "edit-caches-not-recalculated",
+			message:
+				"Plain text changed; affected or unknown formula dependencies were refused. Untouched caches were preserved. Native fidelity is limited to tested cases.",
+		},
+		{
+			code: "edit-geometry-experimental",
+			message:
+				"Supported affected geometry caches were recalculated. Native Visio reopen and rendering fidelity remain unverified.",
+		},
+		{
+			code: "edit-formatting-experimental",
+			message:
+				"Text and solid shape formatting was changed without recalculating text layout. Native Visio reopen and rendering fidelity remain unverified.",
+		},
+	])("persists Visio edits with a $code diagnostic", async (diagnostic) => {
+		if (!harness.visioHandle) throw new Error("Missing viewer");
+		harness.visioHandle.exportVsdx = vi.fn(() => ({
+			bytes: new Uint8Array([3, 4]),
+			diagnostics: [diagnostic],
+			dirty: true,
+		}));
+		render(
+			<FileVisioView
+				config={config}
+				rename={vi.fn()}
+				onControls={onControls}
+			/>,
+		);
+		act(() =>
+			harness.visioProps?.events?.["document-change"]?.({
+				document,
+				dirty: true,
+				kind: "edit",
+			}),
+		);
+		await act(async () => getControls().save?.());
+		expect(harness.panel?.save).toHaveBeenCalledExactlyOnceWith("AwQ=");
+		expect(harness.visioHandle.controller.markClean).toHaveBeenCalledOnce();
+		expect(harness.toastError).not.toHaveBeenCalled();
+		expect(getControls().isDirty).toBe(false);
+		expect(getControls().canSave).toBe(false);
+	});
+
+	it("preserves unsaved Visio edits when export throws", async () => {
+		if (!harness.visioHandle) throw new Error("Missing viewer");
+		const error = new Error(
+			"Wait for the current document operation before downloading.",
+		);
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => undefined);
+		try {
+			harness.visioHandle.exportVsdx = vi.fn(() => {
+				throw error;
+			});
+			render(
+				<FileVisioView
+					config={config}
+					rename={vi.fn()}
+					onControls={onControls}
+				/>,
+			);
+			act(() =>
+				harness.visioProps?.events?.["document-change"]?.({
+					document,
+					dirty: true,
+					kind: "edit",
+				}),
+			);
+			await act(async () => getControls().save?.());
+			expect(harness.panel?.save).not.toHaveBeenCalled();
+			expect(
+				harness.visioHandle.controller.markClean,
+			).not.toHaveBeenCalled();
+			expect(harness.toastError).toHaveBeenCalledWith(
+				`Failed to save Visio diagram: ${error.message}`,
+			);
+			expect(getControls().isDirty).toBe(true);
+			expect(getControls().canSave).toBe(true);
+			expect(getControls().isBusy).toBe(false);
+		} finally {
+			consoleError.mockRestore();
+		}
+	});
+
 	it("does not mark a later Visio edit clean when an earlier save completes", async () => {
 		let resolveSave: (success: boolean) => void = () => {
 			throw new Error("Save not started");
@@ -577,8 +664,19 @@ describe("retained Office viewer integration", () => {
 	});
 
 	it("preserves Visio dirty state after failed persistence", async () => {
-		if (!harness.panel) throw new Error("Missing panel");
+		if (!harness.panel || !harness.visioHandle)
+			throw new Error("Missing viewer");
 		harness.panel.save = vi.fn().mockResolvedValue(false);
+		harness.visioHandle.exportVsdx = vi.fn(() => ({
+			bytes: new Uint8Array([3, 4]),
+			diagnostics: [
+				{
+					code: "edit-caches-not-recalculated",
+					message: "Plain text changed.",
+				},
+			],
+			dirty: true,
+		}));
 		render(
 			<FileVisioView
 				config={config}
@@ -595,6 +693,7 @@ describe("retained Office viewer integration", () => {
 		);
 		act(() => getControls().save?.());
 		await waitFor(() => expect(getControls().isBusy).toBe(false));
+		expect(harness.panel.save).toHaveBeenCalledExactlyOnceWith("AwQ=");
 		expect(
 			harness.visioHandle?.controller.markClean,
 		).not.toHaveBeenCalled();

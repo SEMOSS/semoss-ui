@@ -79,13 +79,8 @@ export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 			const snapshot = getVisioSaveSnapshot(handle.controller);
 			const sourceRevision = sourceRevisionRef.current;
 			const result = handle.exportVsdx();
-			if (result.diagnostics.length > 0) {
-				throw new Error(
-					result.diagnostics
-						.map((diagnostic) => diagnostic.message)
-						.join("; "),
-				);
-			}
+			// Diagnostics describe compatibility limits of accepted edits. The
+			// viewer rejects unsupported edits and throws on export failures.
 			if (
 				(await panel.save(encodeBytesToBase64(result.bytes))) &&
 				handleRef.current === handle &&
