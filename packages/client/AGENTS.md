@@ -453,6 +453,37 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
 - The guardrail's logo is `TYPESAFE.png`, on its import card and, through `ENGINE_IMAGES` in
   `@semoss/shared`, on its catalog card.
 
+### Engine Guardrails
+
+- **`components/engine/engine-guardrail-settings.tsx`** is an engine's Settings > Guardrails
+  section, for every engine type but a guardrail. It reads and saves the engine's pipeline.json
+  with `GetEngineGuardrailConfig` and `UpdateEngineGuardrailConfig`: the rules (a method and its
+  request and response checks) and the hit limits.
+- **Checks are named for hit limits by their `checkId`.** Each check keeps one in its params.
+  A new check, or one loaded without one, gets the next id in order (`check0`, `check1`, ...),
+  and a new limit the next `limit0`, `limit1`, ..., each one past the highest in the
+  configuration (`nextOrderedId`), so no id is handed out twice.
+- **The hit limit files:**
+  - `guardrail-hit-limit.ts` holds the limit schema and its load, save and validation helpers.
+  - `guardrail-hit-limits-field.tsx` and `guardrail-hit-limit-field.tsx` edit the limits.
+  - `guardrail-duration-field.tsx` takes a window or a lock as a number and a unit, in a box of
+    its own with its title and hint.
+  - A limit reads in order: the checks it counts, what happens when it is reached, then one
+    row of boxes (the hits, and for a user lock the window and the lock), each box holding its
+    own title and controls. Under the row, `describeGuardrailHitLimit` says what the limit does
+    in one sentence, such as "Locks the user out for 1 hour once they reach 3 hits within 1 day."
+  - The limits start folded away under their count, as the SQL policy lists do, with Add Limit
+    under the last one. A save attempt that finds a problem in one opens them. Folded with
+    problems, the header says Needs changes.
+- **What a method offers comes from the backend's interceptable methods.** Return guardrail
+  message is offered only where a model response comes back (`guardrailCanRespond`). A response
+  check is warned about from `resultGuardable`.
+- **Limit errors wait for a save attempt** while there are unsaved edits, as a new rule's do.
+- **`guardrail-locked-users.tsx`** lists the users locked out of the engine
+  (`GetEngineGuardrailLocks`, from `api/guardrails.ts`), each with PersonIdentity and, for
+  editors, an Unlock (`ClearEngineGuardrailLock`). It shows once the saved configuration has a
+  user limit, since only those lock anyone out.
+
 ### Model Router
 
 - **`components/import/model/router-config-field.tsx`** edits a Model Router's `router.json`, in
@@ -524,7 +555,8 @@ read that list:
   always last. Nothing sorts it at runtime, so a new section goes in its place by name, before
   Dangerous. The section tests check the order.
 - **Engines** (`pages/engine/engine-settings-sections.tsx`): Description, Image and Tags for every
-  type, Guardrails and Model Settings for a model, and Export and Dangerous for owners. Each
+  type, Guardrails for every type but a guardrail, Model Settings for a model, and Export and
+  Dangerous for owners. Each
   section's `isAvailable` decides who has it. `buildEngineSettingsRoute` in `engine.routes.tsx`
   declares every section; `EngineSettingsLayout` shows the ones the viewer has on the engine.
 - **Projects** (`pages/project/project-settings-sections.tsx`): Description, Image and Tags for
