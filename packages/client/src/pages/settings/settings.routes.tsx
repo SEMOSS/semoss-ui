@@ -8,6 +8,7 @@ import { AdminQueryPage } from "./admin-query-page";
 import { AdminTeamDetailPage } from "./admin-team-detail-page";
 import { AdminTeamsPage } from "./admin-teams-page";
 import { AdminThemePage } from "./admin-theme-page";
+import { AgentRunsPage } from "./agent-runs.page";
 import { AuditTrailPage } from "./audit-trail.page";
 import { ConfigurationsPage } from "./configurations-page";
 import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
@@ -43,6 +44,7 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"github-app": GitHubAppPage,
 	"admin-query": AdminQueryPage,
 	"audit-trail": AuditTrailPage,
+	"agent-runs": AgentRunsPage,
 	"enterprise-usage": EnterpriseUsagePage,
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,

@@ -49,6 +49,7 @@ export const AUDIT_EVENT_LABELS: Readonly<Record<string, string>> = {
 	WORKSPACE_CREATE: "Workspace Created",
 	WORKSPACE_UPDATE: "Workspace Updated",
 	WORKSPACE_DELETE: "Workspace Deleted",
+	AGENT_ROOM_CLOSE: "Agent Room Closed",
 	ENGINE_CREATE: "Engine Created",
 	ENGINE_UPDATE: "Engine Updated",
 	ENGINE_RENAME: "Engine Renamed",
