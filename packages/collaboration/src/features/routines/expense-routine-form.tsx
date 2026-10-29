@@ -24,7 +24,7 @@ import {
 	type ExpenseRoutineSettings,
 	expenseRoutineSettingsSchema,
 } from "./expense-routine-schema";
-import { ExpenseAgentIcon } from "./routine-agent-icons";
+import { RoutineAgentAvatar } from "./routine-agent-avatar";
 import { RoutineAvailability } from "./routine-availability";
 import { RoutineCardHeader } from "./routine-card-header";
 import { EXPENSE_RESULT_COPY } from "./routine-copy";
@@ -128,8 +128,9 @@ export function ExpenseRoutineForm({
 					aria-busy={isSubmitting}
 				>
 					<RoutineCardHeader
-						icon={ExpenseAgentIcon}
-						isAvatar
+						avatar={
+							<RoutineAgentAvatar routineId="expense-review" />
+						}
 						title="Expense review agent"
 						description="A suggested decision on each meeting or business approval request that reaches your inbox, checked against your guideline documents."
 						routine={routine}

@@ -16,17 +16,24 @@ import {
 } from "@semoss/ui/next";
 
 /** One routine in the list: its name, whether it is on, and how its last run went. */
-export interface RoutineNavEntry {
+export type RoutineNavEntry = {
 	id: string;
 	name: string;
-	/** The icon on the routine's card, so the list and the open routine match. */
-	icon: LucideIcon;
-	/** Shows the icon as a 40px avatar, for icons that paint their own colored tile. */
-	isAvatar?: boolean;
 	/** Unknown until the routine has loaded. */
 	enabled?: boolean;
 	lastStatus?: "running" | "completed" | "failed" | null;
-}
+} & (
+	| {
+			/** The icon on the routine's card, so the list and the open routine match. */
+			icon: LucideIcon;
+			avatar?: never;
+	  }
+	| {
+			/** A 40px avatar in place of the icon; the routine's card shows the same one. */
+			avatar: ReactNode;
+			icon?: never;
+	  }
+);
 
 /** On or off, then a run in progress or a failed last run; a completed run is left to the detail. */
 function EntryStatus({ entry }: { entry: RoutineNavEntry }) {
@@ -113,14 +120,7 @@ export function RoutineNav({
 										onClick={() => onSelect(entry.id)}
 										className="w-full cursor-pointer text-start"
 									>
-										{entry.isAvatar ? (
-											<ItemMedia variant="image">
-												<Icon
-													aria-hidden="true"
-													className="size-full"
-												/>
-											</ItemMedia>
-										) : (
+										{Icon ? (
 											<ItemMedia
 												variant="icon"
 												className={cn(
@@ -130,6 +130,10 @@ export function RoutineNav({
 												)}
 											>
 												<Icon aria-hidden="true" />
+											</ItemMedia>
+										) : (
+											<ItemMedia variant="image">
+												{entry.avatar}
 											</ItemMedia>
 										)}
 										<ItemContent className="min-w-0">

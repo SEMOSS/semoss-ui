@@ -29,7 +29,7 @@ import {
 	type InboxRoutineSettings,
 	inboxRoutineSettingsSchema,
 } from "./inbox-routine-schema";
-import { InboxAgentIcon } from "./routine-agent-icons";
+import { RoutineAgentAvatar } from "./routine-agent-avatar";
 import { RoutineAvailability } from "./routine-availability";
 import { RoutineCardHeader } from "./routine-card-header";
 import { INBOX_RESULT_COPY } from "./routine-copy";
@@ -188,8 +188,9 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 					aria-busy={isSubmitting}
 				>
 					<RoutineCardHeader
-						icon={InboxAgentIcon}
-						isAvatar
+						avatar={
+							<RoutineAgentAvatar routineId="inbox-daily-brief" />
+						}
 						title="Inbox daily brief agent"
 						description="Your inbox, priorities, and upcoming deadlines."
 						routine={routine}

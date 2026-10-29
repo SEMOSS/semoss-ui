@@ -9,11 +9,7 @@ import {
 } from "@semoss/ui/next";
 import type { RoutineStatus } from "./routine-schema";
 
-interface RoutineCardHeaderProps {
-	/** Decorative icon shown before the title. */
-	icon: LucideIcon;
-	/** Shows the icon as a 40px avatar, for icons that paint their own colored tile. */
-	isAvatar?: boolean;
+type RoutineCardHeaderProps = {
 	/** The routine's name, rendered as the card's level-2 heading. */
 	title: string;
 	/** One sentence on what the routine produces. */
@@ -24,12 +20,23 @@ interface RoutineCardHeaderProps {
 	saveStatus?: ReactNode;
 	/** The badge of an enabled routine; a routine that runs on mail is "On", not "Scheduled". */
 	enabledLabel?: string;
-}
+} & (
+	| {
+			/** Decorative icon shown before the title. */
+			icon: LucideIcon;
+			avatar?: never;
+	  }
+	| {
+			/** A 40px avatar shown before the title, in place of the icon. */
+			avatar: ReactNode;
+			icon?: never;
+	  }
+);
 
 /** A routine card's title, saved-state badge, and summary. */
 export function RoutineCardHeader({
 	icon: Icon,
-	isAvatar = false,
+	avatar,
 	title,
 	description,
 	routine,
@@ -45,14 +52,14 @@ export function RoutineCardHeader({
 		<CardHeader className="gap-3 border-b py-6">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div className="flex min-w-0 items-center gap-3">
-					<Icon
-						className={
-							isAvatar
-								? "size-10 shrink-0"
-								: "size-5 shrink-0 text-muted-foreground"
-						}
-						aria-hidden="true"
-					/>
+					{Icon ? (
+						<Icon
+							className="size-5 shrink-0 text-muted-foreground"
+							aria-hidden="true"
+						/>
+					) : (
+						<div className="size-10 shrink-0">{avatar}</div>
+					)}
 					<CardTitle>
 						<H2 className="font-medium text-xl">{title}</H2>
 					</CardTitle>

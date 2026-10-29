@@ -22,7 +22,7 @@ import {
 	type AgendaRoutineSettings,
 	agendaRoutineSettingsSchema,
 } from "./agenda-routine-schema";
-import { AgendaAgentIcon } from "./routine-agent-icons";
+import { RoutineAgentAvatar } from "./routine-agent-avatar";
 import { RoutineAvailability } from "./routine-availability";
 import { RoutineCardHeader } from "./routine-card-header";
 import { AGENDA_RESULT_COPY } from "./routine-copy";
@@ -98,8 +98,9 @@ export function AgendaRoutineForm({ routine, onSave }: AgendaRoutineFormProps) {
 					aria-busy={isSubmitting}
 				>
 					<RoutineCardHeader
-						icon={AgendaAgentIcon}
-						isAvatar
+						avatar={
+							<RoutineAgentAvatar routineId="weekly-meeting-agendas" />
+						}
 						title="Weekly meeting agendas agent"
 						description="Proposed agendas for your selected meetings."
 						routine={routine}

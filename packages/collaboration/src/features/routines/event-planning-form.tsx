@@ -26,7 +26,7 @@ import {
 	type EventPlanningSettings,
 	eventPlanningSettingsSchema,
 } from "./event-planning-schema";
-import { EventPlanningAgentIcon } from "./routine-agent-icons";
+import { RoutineAgentAvatar } from "./routine-agent-avatar";
 import { RoutineAvailability } from "./routine-availability";
 import { RoutineCardHeader } from "./routine-card-header";
 import { EVENT_PLANNING_RESULT_COPY } from "./routine-copy";
@@ -126,8 +126,9 @@ export function EventPlanningForm({
 					aria-busy={isSubmitting}
 				>
 					<RoutineCardHeader
-						icon={EventPlanningAgentIcon}
-						isAvatar
+						avatar={
+							<RoutineAgentAvatar routineId="event-planning" />
+						}
 						title="Event planning agent"
 						description="Who presents what, for how long, and who has confirmed, kept in a sheet emailed to you."
 						routine={routine}

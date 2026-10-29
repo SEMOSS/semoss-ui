@@ -20,12 +20,7 @@ import { expenseRoutineSchema } from "./expense-routine-schema";
 import { saveInboxRoutine } from "./inbox-routine-api";
 import { InboxRoutineForm } from "./inbox-routine-form";
 import { inboxRoutineSchema } from "./inbox-routine-schema";
-import {
-	AgendaAgentIcon,
-	EventPlanningAgentIcon,
-	ExpenseAgentIcon,
-	InboxAgentIcon,
-} from "./routine-agent-icons";
+import { RoutineAgentAvatar } from "./routine-agent-avatar";
 import { RoutineDetail } from "./routine-detail";
 import { RoutineLoader } from "./routine-loader";
 import { RoutineNav, type RoutineNavEntry } from "./routine-nav";
@@ -80,25 +75,21 @@ const SYSTEM_ROUTINES = [
 	{
 		id: "inbox-daily-brief",
 		name: "Inbox daily brief agent",
-		icon: InboxAgentIcon,
 		pixel: "WorkGetInboxRoutine();",
 	},
 	{
 		id: "weekly-meeting-agendas",
 		name: "Weekly meeting agendas agent",
-		icon: AgendaAgentIcon,
 		pixel: "WorkGetAgendaRoutine();",
 	},
 	{
 		id: "event-planning",
 		name: "Event planning agent",
-		icon: EventPlanningAgentIcon,
 		pixel: "WorkGetEventPlanningRoutine();",
 	},
 	{
 		id: "expense-review",
 		name: "Expense review agent",
-		icon: ExpenseAgentIcon,
 		pixel: "WorkGetExpenseRoutine();",
 	},
 ] as const;
@@ -317,8 +308,11 @@ export function RoutinesWorkspace() {
 								entries={SYSTEM_ROUTINES.map((routine) => ({
 									id: routine.id,
 									name: routine.name,
-									icon: routine.icon,
-									isAvatar: true,
+									avatar: (
+										<RoutineAgentAvatar
+											routineId={routine.id}
+										/>
+									),
 									...summaries[routine.id],
 								}))}
 								selected={selected}
