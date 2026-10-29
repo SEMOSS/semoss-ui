@@ -304,6 +304,84 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   tab uses the same pieces, and counts app and engine setting changes
   (`AuditEventType.SETTING_CHANGES`) beside access and usage limit changes.
 
+### Agent Runs
+
+- **`features/agent-activity/`** holds the room list and room view that an agent's Activity tab
+  (`pages/project/agent/agent-activity-page.tsx`, the user's own rooms) and the admin Agent Runs
+  page (`features/agent-runs/`, every user's) share. Each page keeps the list's state
+  (`use-agent-room-query.ts`: the room search, applied once typing pauses, the Status filter and
+  the page) and reads its page of rooms with `use-agent-rooms.ts`, which keeps the last rooms
+  shown while it reads again, so the list keeps its height and scroll. Nothing updates on its
+  own; Refresh reads again.
+- **The list** (`agent-room-list.tsx`) has a toolbar with the room search by name or id, the
+  page's own filters, Status (All, In progress, Failed), Clear filters and Refresh, then the
+  rooms (`agent-room-table.tsx`), or why there are none, and the pages. A row shows the room with
+  its id under its name (`agent-room-detail-line.tsx`, the muted line every id and date under a
+  name uses), the page's own columns (`AgentRoomColumn`), how many runs it holds, how they stand
+  and whether it is closed (`agent-room-status.tsx`), and its last activity. While another page
+  is read, the footer reads "Loading rooms..." rather than counting the rooms still shown.
+- **The room** (`agent-room-detail.tsx`, given the page's `AgentRoomSource`: its reads and its
+  close) shows in place of the list (`use-open-agent-room.ts`): it opens from the top of the page
+  with focus on its name, and Back returns to the list where it was scrolled, with focus on that
+  room. Over the graph of its runs, subagents and tool calls (`agent-room-view.tsx`,
+  `agent-run-graph.tsx`) is its summary (`agent-room-summary.tsx`: the page's own facts, then
+  how its runs stand, counted from the runs as last read, and its last activity). A room whose
+  runs cannot be read shows why, with Retry. `use-agent-room-runs.ts` loads the runs, subagent
+  trees and Claude Code transcripts; only the latest load shows its runs.
+- **Export** downloads the room as Markdown (`agent-room-markdown.ts`), for someone
+  investigating it: the room and the page's header lines, then each run with its facts, error,
+  input, every message between the user, the agent and its tools (tool calls, tool results and
+  thinking included, hidden ones marked), and its final output, each subagent run under the run
+  that spawned it (Run 1.1). The file is named by the room's name and id.
+- **Close Room** (`close-agent-room-action.tsx`, the button, and `close-agent-room-dialog.tsx`,
+  its confirmation) stops every run still going in the room and its subagents' rooms and closes
+  them, so no agent runs in them again; the user no longer sees them. The room then reads Closed
+  here and in the list, and Close Room stays focusable with a tooltip saying the room is closed.
+  Closing records `AGENT_ROOM_CLOSE`; viewing records no audit event.
+- **The Activity tab** lists the user's own rooms with the agent (`GetAgentRunRooms`), rooms it
+  ran in as another agent's subagent included, and opens one with the user's own reads
+  (`GetAllAgentRunsForRoom`, the SDK's `getAgentRun` and `getSubagentRuns`,
+  `GetClaudeCodeTranscriptHistory`, and `GetEngineMetadata` for model names), with the Analyze
+  tab, and closes it with `CloseRoom`. A link with `roomId`, and `runId` for one run, opens that
+  room. A room that cannot be opened, such as a link to a run or a room of another agent, goes
+  back to the list with a toast saying why (`onLoadFailed`), so its runs are never shown under
+  this agent; the admin page shows the error with Retry instead.
+- **The admin Agent Runs page** at `settings/agent-runs` (`pages/settings/agent-runs.page.tsx`,
+  admin mode only) lists one row per room and user (`AdminGetAgentRunRooms`), adds Agent and User
+  filters (`agent-run-filter-select.tsx`, a searchable list read from `AdminGetAgentRunAgents`
+  and `AdminGetAgentRunUsers` through `use-agent-run-filter-options.ts`; a user is their id and
+  login type together, `userId` with `userType`) and the Agent and User columns
+  (`agent-run-room-columns.tsx`: the agent with its id under its name, the user with the shared
+  `PersonIdentity`). A room opens read only (`isReadOnly`, so no Analyze tab) through the admin
+  reads, with its user and agent in its summary (`agent-run-room-summary-items.tsx`) and its
+  export's header (`agent-run-room-labels.ts`), and closes with `AdminCloseRoom`.
+- `api/agent-runs.ts` builds and reads the agent runs reactors: the user's own and the admin ones
+  (`Admin...`), which refuse anyone who is not an admin. The admin runs carry their model's
+  `modelName`, so the admin page reads no engine metadata.
+
+### Workbench Terminal
+
+- Every workbench in `components/workbench/` has a Pixel terminal in its bottom border, and
+  Open Terminal and New Terminal in its command palette. The one exception is the notebook
+  view on the share page, which shows only the notebook and its files.
+- `components/workbench/terminal/terminal-panel.tsx` is the shared panel: each tab is its own
+  REPL session (`TerminalConsolePanel` from `@semoss/terminal`), kept alive, and its value is
+  the session's insight id. Project workbenches register `PROJECT_TERMINAL_PANEL`
+  (`project/project-terminal-panel.tsx`, type `project-terminal`), whose insight opens in the
+  project and whose console suggests the project's reactors; the Insight file explorer follows
+  these. Engine workbenches, the admin query workbench and My Files register `TERMINAL_PANEL`
+  (type `terminal`), which runs in a plain insight.
+- `spawn-terminal.ts` opens another terminal of the same type, numbered after the open ones, in
+  the tabset or border the one it starts from sits in. The tab's New terminal button
+  (`terminal-new-control.tsx`) and the New Terminal command (`createNewTerminalCommand` in
+  `workbench.presets.ts`) both go through it; the command is how a phone opens one, since the
+  mobile shell draws no panel controls.
+- In the database and admin query workbenches, query results dock in the bottom border ahead
+  of the terminal, in run order, so the border opens on them.
+- A workbench's cached layout replaces its default. A change to a default layout bumps the
+  version at the end of that workbench's cache name (`workbench-layout--<id>--<version>`), or
+  people who already opened it never see the change.
+
 ### Database Workbench
 
 - **`components/workbench/engine/database/`** is a database's query workbench: query panels,
@@ -508,7 +586,7 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
   arbitrary sizes).
 - **Ad-hoc status color maps to fold into tokens when touched**:
   `components/engine/engine-metadata-display.tsx` (`BADGE_TONES`),
-  `pages/app/app-detail-tabs/commits-tab.tsx`, `pages/project/agent/agent-run-graph.tsx`.
+  `pages/app/app-detail-tabs/commits-tab.tsx`, `features/agent-activity/agent-run-graph.tsx`.
   Use `Badge` variants + `destructive`/`success`/`warning`/`chart-*` tokens instead.
 - Overlay migration and the ECharts exception follow [DESIGN.md](../../DESIGN.md).
 - **Scoped reference**: `src/components/ui/section/section.tsx` demonstrates a small local

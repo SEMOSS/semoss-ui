@@ -33,6 +33,7 @@ import {
 	TabsList,
 	TabsTrigger,
 	toast,
+	useFieldArray,
 	useForm,
 	zodResolver,
 } from "@semoss/ui/next";
@@ -96,6 +97,14 @@ export const EngineGuardrailSettings = ({
 	const form = useForm<GuardrailConfigFormValue>({
 		resolver: zodResolver(guardrailConfigSchema),
 		defaultValues: { pipelines: [] },
+	});
+	// Rules are added and removed through a field array, as their checks are.
+	// A setValue of the whole list reports no change when the list it leaves is
+	// empty, so removing the last rule would leave Save hidden.
+	const { append: appendPipeline, remove: removePipelineAt } = useFieldArray({
+		control: form.control,
+		name: "pipelines",
+		keyName: "fieldArrayId",
 	});
 	const [mode, setMode] = useState<GuardrailEditorMode>("form");
 	const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(
@@ -181,6 +190,16 @@ export const EngineGuardrailSettings = ({
 			})
 			.map((pipeline) => pipeline.id),
 	);
+	// the open rule's checks as last saved, which its editor opens collapsed
+	const savedSelectedPipeline = savedPipelines.find(
+		(candidate) => candidate.id === selectedPipeline?.id,
+	);
+	const savedEntryIds = new Set(
+		[
+			...(savedSelectedPipeline?.input ?? []),
+			...(savedSelectedPipeline?.output ?? []),
+		].flatMap((entry) => (entry?.id ? [entry.id] : [])),
+	);
 	const allIssues = collectGuardrailConfigIssues(
 		{ pipelines },
 		{ methods: interceptableMethods, resultArgumentName },
@@ -227,13 +246,6 @@ export const EngineGuardrailSettings = ({
 		[mode, pipelines],
 	);
 
-	const updatePipelines = (next: GuardrailConfigFormValue["pipelines"]) => {
-		form.setValue("pipelines", next, {
-			shouldDirty: true,
-			shouldTouch: true,
-		});
-	};
-
 	const addPipeline = () => {
 		// start the rule on a call no other rule covers, so it does not open
 		// already reporting a duplicate
@@ -246,7 +258,8 @@ export const EngineGuardrailSettings = ({
 					(candidate) => !claimed.has(candidate.name),
 				)?.name ?? "");
 		const pipeline = createGuardrailPipeline(method);
-		updatePipelines([...pipelines, pipeline]);
+		// focus stays on Add Rule rather than moving into the new rule
+		appendPipeline(pipeline, { shouldFocus: false });
 		setSelectedPipelineId(pipeline.id);
 		setMode("form");
 	};
@@ -255,8 +268,11 @@ export const EngineGuardrailSettings = ({
 		const index = pipelines.findIndex(
 			(pipeline) => pipeline.id === pipelineId,
 		);
+		if (index < 0) {
+			return;
+		}
 		const next = pipelines.filter((pipeline) => pipeline.id !== pipelineId);
-		updatePipelines(next);
+		removePipelineAt(index);
 		if (selectedPipelineId === pipelineId) {
 			setSelectedPipelineId(
 				next[Math.min(Math.max(index, 0), next.length - 1)]?.id || null,
@@ -589,6 +605,7 @@ export const EngineGuardrailSettings = ({
 								<GuardrailPipelineField
 									key={selectedPipeline.id}
 									value={selectedPipeline}
+									savedEntryIds={savedEntryIds}
 									activePhase={activePhase}
 									onPhaseChange={setActivePhase}
 									engineDetails={engineDetails}

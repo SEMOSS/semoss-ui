@@ -12,6 +12,7 @@ import {
 	mdiFolder,
 	mdiGithub,
 	mdiPalette,
+	mdiRobotOutline,
 	mdiTabletCellphone,
 } from "@mdi/js";
 
@@ -321,6 +322,15 @@ export const SETTINGS_ROUTES: {
 		description:
 			"Review sign-ins, permissions, and resource changes across the platform.",
 		icon: mdiClipboardTextOutline,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "Agent Runs",
+		path: "agent-runs",
+		description:
+			"Review every user's conversations with agents and how each run went.",
+		icon: mdiRobotOutline,
 		history: ["settings/"],
 		admin: true,
 	},

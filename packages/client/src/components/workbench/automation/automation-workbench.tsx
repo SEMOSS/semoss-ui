@@ -86,13 +86,16 @@ import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-
 import { useAssistantStore, useProject, useSession } from "@/hooks";
 import type { BuildTool } from "@/stores/assistant";
 import { AUTOMATION_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
+import { createAutomationWorkbenchStore } from "@/stores/workbench/automation/automation-workbench.store";
 import {
-	createAutomationWorkbenchStore,
 	WORKBENCH_COMPONENTS,
-} from "@/stores/workbench";
+	WORKBENCH_PANEL_RECORDS,
+} from "@/stores/workbench/workbench.constants";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../shared";
+import { PROJECT_TERMINAL_PANEL } from "../project/project-terminal-panel";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../workbench.presets";
@@ -137,6 +140,7 @@ const FILES = WORKBENCH_COMPONENTS.FILE_EXPLORER;
 const FILE_EDITOR = WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
 const MCP_EDITOR = WORKBENCH_COMPONENTS.FILE_MCP_EDITOR;
 const SETTINGS = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
+const PROJECT_TERMINAL = WORKBENCH_COMPONENTS.PROJECT_TERMINAL;
 // Backend writes each custom-Python node's compiled source here as a real
 // project asset (see SaveAutomation) — this is the same file the workflow
 // executes from.
@@ -256,6 +260,7 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 			name: "Run files",
 			canClose: false,
 		},
+		[PROJECT_TERMINAL]: WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
 		[SETTINGS]: {
 			id: SETTINGS,
 			type: SETTINGS,
@@ -277,7 +282,11 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 	},
 	borders: {
 		left: { panelIds: [FILES, RUN_FILES], activeId: null, size: 320 },
-		bottom: { panelIds: [TRACE], activeId: null, size: 300 },
+		bottom: {
+			panelIds: [TRACE, PROJECT_TERMINAL],
+			activeId: null,
+			size: 300,
+		},
 		right: {
 			panelIds: [INSPECTOR, WORKBENCH_COMPONENTS.ASSISTANT],
 			activeId: WORKBENCH_COMPONENTS.ASSISTANT,
@@ -427,6 +436,7 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		content: AutomationTracePanel,
 	},
 	[RUN_FILES]: AUTOMATION_RUN_FILES_PANEL,
+	[PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
 	[SETTINGS]: {
 		name: "Settings",
 		canRename: false,
@@ -485,7 +495,7 @@ export const AutomationWorkbench = observer(
 		const workbenchId = readOnly ? `${appId}--read-only` : appId;
 		const [workbenchSnapshot, onWorkbenchSnapshotChange] =
 			useCacheData<WorkbenchSnapshot>(
-				`workbench-layout--${workbenchId}--1`,
+				`workbench-layout--${workbenchId}--2`,
 				workbenchLayout,
 			);
 		const [automationStore] = useState(() =>
@@ -550,6 +560,12 @@ export const AutomationWorkbench = observer(
 				label: "Open Inspector",
 				type: INSPECTOR,
 			}),
+			createOpenPanelCommand({
+				id: "workbench.project-terminal.open",
+				label: "Open Terminal",
+				type: PROJECT_TERMINAL,
+			}),
+			createNewTerminalCommand(PROJECT_TERMINAL),
 			createOpenPanelCommand({
 				id: "workbench.automation-settings.open",
 				label: "Open Settings",

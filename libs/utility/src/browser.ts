@@ -51,3 +51,34 @@ export const downloadBlob = (blob: Blob, fileName: string): void => {
 		URL.revokeObjectURL(url);
 	}
 };
+
+/**
+ * Scroll an element's ancestors, the page included, back to the top, such as
+ * when one view replaces another in place.
+ *
+ * @param element - The element whose ancestors are scrolled.
+ * @returns Puts each ancestor back where it was, including one scrolled only
+ * after this call, such as when the first view comes back.
+ */
+export const scrollAncestorsToTop = (element: Element | null): (() => void) => {
+	const ancestors: { node: Element; top: number }[] = [];
+	for (
+		let node = element?.parentElement ?? null;
+		node;
+		node = node.parentElement
+	) {
+		ancestors.push({ node, top: node.scrollTop });
+	}
+	for (const { node, top } of ancestors) {
+		if (top > 0) {
+			node.scrollTop = 0;
+		}
+	}
+	return () => {
+		for (const { node, top } of ancestors) {
+			if (node.scrollTop !== top) {
+				node.scrollTop = top;
+			}
+		}
+	};
+};
