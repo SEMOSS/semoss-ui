@@ -78,6 +78,20 @@ export const ResponseMessageToolGroup = observer(
 				/>
 			);
 		}
+		// every call is waiting on the user, so there is no activity to summarize
+		if (!activity.length) {
+			return (
+				<div className="flex min-w-0 flex-col gap-2">
+					{pending.map((tool) => (
+						<ResponseMessageTool
+							key={tool.id}
+							tool={tool}
+							isLarge
+						/>
+					))}
+				</div>
+			);
+		}
 		return (
 			<div className="flex min-w-0 flex-col gap-2">
 				<Collapsible

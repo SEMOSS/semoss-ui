@@ -1,9 +1,4 @@
-import {
-	MoreHorizontalIcon,
-	PanelRightCloseIcon,
-	PanelRightOpenIcon,
-	XCircleIcon,
-} from "lucide-react";
+import { MoreHorizontalIcon, XCircleIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -11,7 +6,6 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 	toast,
 } from "@semoss/ui/next";
@@ -35,7 +29,6 @@ export const ResponseMessageToolMenu = ({
 	showCancelInMenu,
 }: ResponseMessageToolMenuProps) => {
 	const { t } = useTranslation("tool");
-	const isOpenInSidebar = tool.isOpen && tool.display === "sidebar";
 	const cancellingRef = useRef(false);
 	const [isCancelling, setIsCancelling] = useState(false);
 
@@ -83,61 +76,40 @@ export const ResponseMessageToolMenu = ({
 				)}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
-				<DropdownMenuItem
-					onClick={() => {
-						tool.openTool(isOpenInSidebar ? "inline" : "sidebar");
-					}}
-				>
-					{isOpenInSidebar ? (
-						<PanelRightOpenIcon aria-hidden="true" />
-					) : (
-						<PanelRightCloseIcon aria-hidden="true" />
-					)}
-					{isOpenInSidebar
-						? t("actions.openInline")
-						: t("actions.openInSidebar")}
-				</DropdownMenuItem>
-
 				{showCancelInMenu && (
-					<>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							variant="destructive"
-							disabled={isCancelling}
-							onClick={async () => {
-								if (cancellingRef.current) return;
-								cancellingRef.current = true;
-								setIsCancelling(true);
-								try {
-									if (tool.pendingAction)
-										await decideAgentToolAction(
-											tool,
-											"reject",
-										);
-									else
-										await message.saveToolExecution(
-											tool,
-											"",
-											"cancelled",
-											{},
-										);
-									tool.closeTool();
-								} catch (error) {
-									toast.error(
-										error instanceof Error
-											? error.message
-											: t("activity.cancelError"),
+					<DropdownMenuItem
+						variant="destructive"
+						disabled={isCancelling}
+						onClick={async () => {
+							if (cancellingRef.current) return;
+							cancellingRef.current = true;
+							setIsCancelling(true);
+							try {
+								if (tool.pendingAction)
+									await decideAgentToolAction(tool, "reject");
+								else
+									await message.saveToolExecution(
+										tool,
+										"",
+										"cancelled",
+										{},
 									);
-								} finally {
-									cancellingRef.current = false;
-									setIsCancelling(false);
-								}
-							}}
-						>
-							<XCircleIcon />
-							{t("actions.cancel")}
-						</DropdownMenuItem>
-					</>
+								tool.closeTool();
+							} catch (error) {
+								toast.error(
+									error instanceof Error
+										? error.message
+										: t("activity.cancelError"),
+								);
+							} finally {
+								cancellingRef.current = false;
+								setIsCancelling(false);
+							}
+						}}
+					>
+						<XCircleIcon />
+						{t("actions.cancel")}
+					</DropdownMenuItem>
 				)}
 			</DropdownMenuContent>
 		</DropdownMenu>
