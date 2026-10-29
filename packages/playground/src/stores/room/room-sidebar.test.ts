@@ -1,6 +1,8 @@
+import { runInAction } from "mobx";
 import { beforeEach, expect, test, vi } from "vitest";
 import type { ThemeMap } from "@semoss/shared";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
+import { ToolStore } from "@/stores/tool/tool.store";
 import { RoomStore } from "./room.store";
 import { ROOM_PANEL_TYPES, ROOM_SIDEBAR_LAYOUT } from "./room-sidebar";
 
@@ -97,20 +99,73 @@ test("opening an empty sidebar defaults to Room settings", () => {
 	expect(panels[0]?.type).toBe(ROOM_PANEL_TYPES.CONFIGURATION);
 });
 
-test("closing a tool's panel marks the tool closed", () => {
+test("closing a tool's tab returns it inline", () => {
 	const room = createRoom("room-tool-close");
-	const setIsOpen = vi.fn();
-	// stand in for the ToolStore the room would have built from a stream
-	room.tools.t1 = { setIsOpen: setIsOpen } as never;
+	const tool = new ToolStore(room, "t1");
+	room.tools.t1 = tool;
+	tool.openTool("sidebar");
 
 	const pid = room.openSidebarPanel(
 		ROOM_PANEL_TYPES.TOOL,
-		{ toolId: "t1", app: "", message: "m1" },
+		tool.panelConfig,
 		"Tool",
 	);
 	room.workbench.getState().layout.actions.closePanel(pid);
 
-	expect(setIsOpen).toHaveBeenCalledWith(false);
+	expect(tool.isOpen).toBe(true);
+	expect(tool.display).toBe("inline");
+	expect(room.sidebar.isOpen).toBe(false);
+	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(0);
+});
+
+test("closing Workspace returns all its tools inline and retains file panels", async () => {
+	const room = createRoom("room-tools-return-inline");
+	const tools = ["t1", "t2", "t3"].map((id) => {
+		const tool = new ToolStore(room, id);
+		room.tools[id] = tool;
+		tool.openTool("sidebar");
+		return tool;
+	});
+	const filePanel = room.openFileSidebarPanel("/draft.md");
+
+	await room.closeSidebar();
+
+	for (const tool of tools) {
+		expect(tool.isOpen).toBe(true);
+		expect(tool.display).toBe("inline");
+	}
+	expect(room.sidebar.isOpen).toBe(false);
+	expect(room.workbench.getState().layout.openPanelIds).toEqual([filePanel]);
+});
+
+test("moving the last sidebar tool inline leaves it open once", () => {
+	const room = createRoom("room-last-tool-inline");
+	const tool = new ToolStore(room, "t1");
+	room.tools.t1 = tool;
+	tool.openTool("sidebar");
+
+	tool.openTool("inline");
+
+	expect(tool.isOpen).toBe(true);
+	expect(tool.display).toBe("inline");
+	expect(room.sidebar.isOpen).toBe(false);
+	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(0);
+});
+
+test("explicitly closing a cancelled tool does not reopen it inline", () => {
+	const room = createRoom("room-cancelled-tool-close");
+	const tool = new ToolStore(room, "t1");
+	room.tools.t1 = tool;
+	tool.openTool("sidebar");
+	runInAction(() => {
+		tool.status = "CANCELLED";
+	});
+
+	tool.closeTool();
+
+	expect(tool.isOpen).toBe(false);
+	expect(room.sidebar.isOpen).toBe(false);
+	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(0);
 });
 
 test("the sidebar's default arrangement survives its last panel closing", () => {

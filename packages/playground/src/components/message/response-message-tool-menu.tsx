@@ -1,6 +1,4 @@
 import {
-	ChevronsLeftRightIcon,
-	ChevronsRightLeftIcon,
 	MoreHorizontalIcon,
 	PanelRightCloseIcon,
 	PanelRightOpenIcon,
@@ -16,7 +14,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 	toast,
-	useIsMobile,
 } from "@semoss/ui/next";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { ResponseMessageStore } from "@/stores/message/response-message.store";
@@ -37,8 +34,8 @@ export const ResponseMessageToolMenu = ({
 	label,
 	showCancelInMenu,
 }: ResponseMessageToolMenuProps) => {
-	const isMobile = useIsMobile();
 	const { t } = useTranslation("tool");
+	const isOpenInSidebar = tool.isOpen && tool.display === "sidebar";
 	const cancellingRef = useRef(false);
 	const [isCancelling, setIsCancelling] = useState(false);
 
@@ -88,42 +85,18 @@ export const ResponseMessageToolMenu = ({
 			<DropdownMenuContent align="end">
 				<DropdownMenuItem
 					onClick={() => {
-						if (tool.isOpen && tool.display === "inline") {
-							tool.closeTool();
-						} else {
-							tool.openTool("inline");
-						}
+						tool.openTool(isOpenInSidebar ? "inline" : "sidebar");
 					}}
 				>
-					{tool.isOpen && tool.display === "inline" ? (
-						<ChevronsRightLeftIcon />
+					{isOpenInSidebar ? (
+						<PanelRightOpenIcon aria-hidden="true" />
 					) : (
-						<ChevronsLeftRightIcon />
+						<PanelRightCloseIcon aria-hidden="true" />
 					)}
-					{tool.isOpen && tool.display === "inline"
-						? t("actions.collapse")
-						: t("actions.openInline")}
+					{isOpenInSidebar
+						? t("actions.openInline")
+						: t("actions.openInSidebar")}
 				</DropdownMenuItem>
-				{(!isMobile || (tool.isOpen && tool.display === "sidebar")) && (
-					<DropdownMenuItem
-						onClick={() => {
-							if (tool.isOpen && tool.display === "sidebar") {
-								tool.closeTool();
-							} else {
-								tool.openTool("sidebar");
-							}
-						}}
-					>
-						{tool.isOpen && tool.display === "sidebar" ? (
-							<PanelRightOpenIcon />
-						) : (
-							<PanelRightCloseIcon />
-						)}
-						{tool.isOpen && tool.display === "sidebar"
-							? t("actions.closeInSidebar")
-							: t("actions.openInSidebar")}
-					</DropdownMenuItem>
-				)}
 
 				{showCancelInMenu && (
 					<>

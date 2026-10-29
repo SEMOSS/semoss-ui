@@ -1,7 +1,5 @@
 import {
 	CheckIcon,
-	ChevronsLeftRightIcon,
-	ChevronsRightLeftIcon,
 	HammerIcon,
 	PanelRightCloseIcon,
 	PanelRightOpenIcon,
@@ -32,7 +30,7 @@ import { ResponseMessageToolStreaming } from "./response-message-tool-streaming"
 export interface ResponseMessageToolProps {
 	/** Tool activity to display and open. */
 	tool: ToolStore;
-	/** Show pending decisions in a framed, inline view. */
+	/** Frame pending decisions when they are shown inline. */
 	isLarge?: boolean;
 }
 
@@ -81,14 +79,16 @@ export const ResponseMessageTool = observer(
 			Boolean(tool.pendingAction) ||
 			(tool.status === "INITIAL" &&
 				isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION));
+		const isOpenInSidebar = tool.isOpen && tool.display === "sidebar";
+		// Keep pending decisions inline until their tool is opened in the sidebar.
+		const shouldShowInlineDecision =
+			isLarge && needsDecision && !isOpenInSidebar;
 		const failed = tool.status === "ERROR";
 		const cancelled = tool.status === "CANCELLED";
 		const running = tool.status === "LOADING";
 		const succeeded = tool.status === "SUCCESS";
-		const opensInline = isMobile || tool.display === "inline";
-		const isActive = opensInline
-			? tool.isOpen && tool.display === "inline"
-			: isSidebarActive;
+		const isActive =
+			tool.display === "inline" ? tool.isOpen : isSidebarActive;
 		// Agent runs own their cancellation lifecycle. Never write a legacy tool result into an active run.
 		const canCancel =
 			!succeeded &&
@@ -106,13 +106,9 @@ export const ResponseMessageTool = observer(
 						: running
 							? loadingMessage || t("status.running")
 							: t("status.queued");
-		const openAction = opensInline
-			? isActive
-				? t("actions.collapse")
-				: t("actions.openInline")
-			: isActive
-				? t("actions.closeInSidebar")
-				: t("actions.openInSidebar");
+		const openAction = isOpenInSidebar
+			? t("actions.openInline")
+			: t("actions.openInSidebar");
 		const handleCancel = async () => {
 			if (isCancelling) return;
 			setIsCancelling(true);
@@ -132,8 +128,7 @@ export const ResponseMessageTool = observer(
 			}
 		};
 		const handleOpen = () => {
-			if (isActive) tool.closeTool();
-			else tool.openTool(isMobile ? "inline" : undefined);
+			tool.openTool(isOpenInSidebar ? "inline" : "sidebar");
 		};
 		// a call that names a component:// view the playground draws shows it
 		// in place of its card; work folder calls keep theirs
@@ -162,7 +157,7 @@ export const ResponseMessageTool = observer(
 						size="sm"
 						onClick={handleOpen}
 						className="h-auto min-h-8 min-w-0 flex-1 justify-start gap-2 whitespace-normal px-2 py-1 text-start hover:bg-transparent dark:hover:bg-transparent"
-						aria-expanded={isActive}
+						title={openAction}
 						aria-label={`${tool.displayName}: ${status}. ${openAction}`}
 					>
 						<span
@@ -191,19 +186,7 @@ export const ResponseMessageTool = observer(
 								{status}
 							</span>
 						</span>
-						{opensInline ? (
-							isActive ? (
-								<ChevronsRightLeftIcon
-									aria-hidden="true"
-									className="size-4 shrink-0 text-muted-foreground"
-								/>
-							) : (
-								<ChevronsLeftRightIcon
-									aria-hidden="true"
-									className="size-4 shrink-0 text-muted-foreground"
-								/>
-							)
-						) : isActive ? (
+						{isOpenInSidebar ? (
 							<PanelRightOpenIcon
 								aria-hidden="true"
 								className="size-4 shrink-0 text-muted-foreground"
@@ -231,7 +214,7 @@ export const ResponseMessageTool = observer(
 						showCancelInMenu={needsDecision && canCancel}
 					/>
 				</div>
-				{isLarge && needsDecision ? (
+				{shouldShowInlineDecision ? (
 					componentView ? (
 						<div className="min-w-0 border-t p-2">
 							<ComponentToolView
