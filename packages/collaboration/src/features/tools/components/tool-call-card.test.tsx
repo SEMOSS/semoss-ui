@@ -61,6 +61,7 @@ function setup(tool = composeTool, store = new RoomEmailStore()) {
 		selectSourceMessage: vi.fn(),
 		replyToSource: vi.fn(),
 		openDraft: vi.fn(),
+		openThread: vi.fn(),
 		requestSend: vi.fn(),
 	};
 	workbench.tools = { [tool.id]: tool };
@@ -197,4 +198,35 @@ it("inspects a failed revision while preserving the existing editor", async () =
 	expect(room.openDraft).not.toHaveBeenCalled();
 	expect(draft.getSnapshot()).toBe(before);
 	expect(store.getSnapshot().emailDrafts).toEqual([draft]);
+});
+
+it("opens the thread a finished ReadThread read and keeps a failed read's details", async () => {
+	const readTool: ConversationTool = {
+		id: "read",
+		parentMessageId: "answer",
+		name: "ReadThread",
+		title: "ReadThread",
+		arguments: { threadId: " thread-1 " },
+		status: "COMPLETED",
+		output: JSON.stringify({ threadId: "thread-1", messages: [] }),
+	};
+	const read = setup(readTool);
+	await userEvent.click(
+		screen.getByRole("button", { name: "Open email: ReadThread" }),
+	);
+	expect(read.room.openThread).toHaveBeenCalledWith("thread-1");
+	expect(workbench.openWorkbench).not.toHaveBeenCalled();
+	read.unmount();
+	const failed = setup({
+		...readTool,
+		status: "FAILED",
+		error: "Thread not found.",
+	});
+	await userEvent.click(
+		screen.getByRole("button", {
+			name: "ReadThread details in workbench - failed",
+		}),
+	);
+	expect(workbench.openWorkbench).toHaveBeenCalledWith("read");
+	expect(failed.room.openThread).not.toHaveBeenCalled();
 });

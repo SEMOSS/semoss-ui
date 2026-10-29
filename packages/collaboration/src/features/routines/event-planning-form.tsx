@@ -1,4 +1,4 @@
-import { CalendarCheck, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import { useId, useState } from "react";
 import {
 	Alert,
@@ -26,6 +26,7 @@ import {
 	type EventPlanningSettings,
 	eventPlanningSettingsSchema,
 } from "./event-planning-schema";
+import { EventPlanningAgentIcon } from "./routine-agent-icons";
 import { RoutineAvailability } from "./routine-availability";
 import { RoutineCardHeader } from "./routine-card-header";
 import { EVENT_PLANNING_RESULT_COPY } from "./routine-copy";
@@ -125,8 +126,9 @@ export function EventPlanningForm({
 					aria-busy={isSubmitting}
 				>
 					<RoutineCardHeader
-						icon={CalendarCheck}
-						title="Event planning"
+						icon={EventPlanningAgentIcon}
+						isAvatar
+						title="Event planning agent"
 						description="Who presents what, for how long, and who has confirmed, kept in a sheet emailed to you."
 						routine={routine}
 						saveStatus={
@@ -286,7 +288,10 @@ export function EventPlanningForm({
 					/>
 				</Form>
 			</Card>
-			<RoutineFlowSection title="Event planning" flow={routine.flow} />
+			<RoutineFlowSection
+				title="Event planning agent"
+				flow={routine.flow}
+			/>
 		</div>
 	);
 }

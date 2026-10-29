@@ -14,7 +14,7 @@ import { ToolWorkbenchContext } from "@/features/tools/tool-workbench.context";
 import { useRoomEmail } from "./room-email.context";
 
 interface RoomSourceAttachmentsProps {
-	source: RoomSource;
+	source: Pick<RoomSource, "threadId" | "kind">;
 	message: WorkspaceMessage;
 	attachments: SourceAttachment[];
 }

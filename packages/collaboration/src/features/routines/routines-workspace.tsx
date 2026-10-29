@@ -1,4 +1,3 @@
-import { CalendarCheck, CalendarRange, Inbox, Receipt } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger, z } from "@semoss/ui/next";
@@ -21,6 +20,12 @@ import { expenseRoutineSchema } from "./expense-routine-schema";
 import { saveInboxRoutine } from "./inbox-routine-api";
 import { InboxRoutineForm } from "./inbox-routine-form";
 import { inboxRoutineSchema } from "./inbox-routine-schema";
+import {
+	AgendaAgentIcon,
+	EventPlanningAgentIcon,
+	ExpenseAgentIcon,
+	InboxAgentIcon,
+} from "./routine-agent-icons";
 import { RoutineDetail } from "./routine-detail";
 import { RoutineLoader } from "./routine-loader";
 import { RoutineNav, type RoutineNavEntry } from "./routine-nav";
@@ -74,26 +79,26 @@ function SummaryProbe({
 const SYSTEM_ROUTINES = [
 	{
 		id: "inbox-daily-brief",
-		name: "Inbox daily brief",
-		icon: Inbox,
+		name: "Inbox daily brief agent",
+		icon: InboxAgentIcon,
 		pixel: "WorkGetInboxRoutine();",
 	},
 	{
 		id: "weekly-meeting-agendas",
-		name: "Weekly meeting agendas",
-		icon: CalendarRange,
+		name: "Weekly meeting agendas agent",
+		icon: AgendaAgentIcon,
 		pixel: "WorkGetAgendaRoutine();",
 	},
 	{
 		id: "event-planning",
-		name: "Event planning",
-		icon: CalendarCheck,
+		name: "Event planning agent",
+		icon: EventPlanningAgentIcon,
 		pixel: "WorkGetEventPlanningRoutine();",
 	},
 	{
 		id: "expense-review",
-		name: "Expense review",
-		icon: Receipt,
+		name: "Expense review agent",
+		icon: ExpenseAgentIcon,
 		pixel: "WorkGetExpenseRoutine();",
 	},
 ] as const;
@@ -313,6 +318,7 @@ export function RoutinesWorkspace() {
 									id: routine.id,
 									name: routine.name,
 									icon: routine.icon,
+									isAvatar: true,
 									...summaries[routine.id],
 								}))}
 								selected={selected}

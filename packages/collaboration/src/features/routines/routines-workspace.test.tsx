@@ -565,7 +565,9 @@ describe("RoutinesWorkspace", () => {
 		await user.clear(lookback);
 		await user.type(lookback, "5");
 		await user.click(
-			screen.getByRole("button", { name: "Weekly meeting agendas" }),
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
 		);
 		expect(service.save).not.toHaveBeenCalled();
 		await autosave();
@@ -573,7 +575,7 @@ describe("RoutinesWorkspace", () => {
 			expect.objectContaining({ lookbackHours: 120 }),
 		);
 		await user.click(
-			screen.getByRole("button", { name: "Inbox daily brief" }),
+			screen.getByRole("button", { name: "Inbox daily brief agent" }),
 		);
 		expect(screen.getByLabelText("Email lookback (required)")).toBe(
 			lookback,

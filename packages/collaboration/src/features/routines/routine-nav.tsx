@@ -21,6 +21,8 @@ export interface RoutineNavEntry {
 	name: string;
 	/** The icon on the routine's card, so the list and the open routine match. */
 	icon: LucideIcon;
+	/** Shows the icon as a 40px avatar, for icons that paint their own colored tile. */
+	isAvatar?: boolean;
 	/** Unknown until the routine has loaded. */
 	enabled?: boolean;
 	lastStatus?: "running" | "completed" | "failed" | null;
@@ -111,16 +113,25 @@ export function RoutineNav({
 										onClick={() => onSelect(entry.id)}
 										className="w-full cursor-pointer text-start"
 									>
-										<ItemMedia
-											variant="icon"
-											className={cn(
-												"text-muted-foreground",
-												isSelected &&
-													"border-primary/20 bg-primary/10 text-primary",
-											)}
-										>
-											<Icon aria-hidden="true" />
-										</ItemMedia>
+										{entry.isAvatar ? (
+											<ItemMedia variant="image">
+												<Icon
+													aria-hidden="true"
+													className="size-full"
+												/>
+											</ItemMedia>
+										) : (
+											<ItemMedia
+												variant="icon"
+												className={cn(
+													"text-muted-foreground",
+													isSelected &&
+														"border-primary/20 bg-primary/10 text-primary",
+												)}
+											>
+												<Icon aria-hidden="true" />
+											</ItemMedia>
+										)}
 										<ItemContent className="min-w-0">
 											<ItemTitle>{entry.name}</ItemTitle>
 											{/* the status describes the button rather than names it */}

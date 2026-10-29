@@ -1,6 +1,10 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ConversationTool } from "@/features/messages/types/message";
+import type {
+	ConversationMessagePart,
+	ConversationTool,
+} from "@/features/messages/types/message";
+import type { AgentTurnSnapshot } from "@/features/rooms/api/agent-turn-controller";
 import { roomWorkbenchTriggerId } from "@/features/rooms/room-workbench-trigger-id";
 import type { RoomSource } from "@/features/rooms/source-import/room-source";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
@@ -38,6 +42,9 @@ vi.mock("./room-email-panel", () => ({
 }));
 vi.mock("./room-email-source-panel", () => ({
 	ROOM_EMAIL_SOURCE_PANEL_TYPE: "collaboration-email-source",
+}));
+vi.mock("./room-thread-email-panel", () => ({
+	ROOM_THREAD_EMAIL_PANEL_TYPE: "collaboration-thread-email",
 }));
 const loadEmails = vi.hoisted(() => vi.fn());
 vi.mock("./load-room-source-emails", () => ({
@@ -377,15 +384,7 @@ it("matches ordinary-room context when guarding edits made during a revision", (
 				parts: [
 					{
 						type: "text" as const,
-						text: threadCommand(
-							{
-								threadId: "room",
-								contextRevision: "",
-								context: { threadId: "room", revision: "" },
-								openEmail,
-							},
-							"Rewrite it",
-						),
+						text: threadCommand({ openEmail }, "Rewrite it"),
 					},
 				],
 			},
@@ -414,4 +413,96 @@ it("matches ordinary-room context when guarding edits made during a revision", (
 	);
 	expect(draft.getSnapshot().values.body).toBe("<p>My later edits</p>");
 	expect(screen.getByRole("alert")).toHaveTextContent("your edits were kept");
+});
+
+it("shows the thread a finished run read, unless a draft followed or it is the room's own", async () => {
+	const owner = session();
+	const readThread = (threadId: string): ConversationMessagePart => ({
+		type: "tool",
+		tool: {
+			id: `read-${threadId}`,
+			parentMessageId: "answer",
+			name: "ReadThread",
+			title: "Read Thread",
+			arguments: { threadId },
+			status: "COMPLETED",
+			output: "{}",
+		},
+	});
+	const running = (settlementVersion: number): AgentTurnSnapshot => ({
+		...idleEmailTurn(),
+		isRunning: true,
+		phase: "streaming",
+		settlementVersion,
+	});
+	const finished = (
+		settlementVersion: number,
+		parts: ConversationMessagePart[],
+	): AgentTurnSnapshot => ({
+		...idleEmailTurn(),
+		phase: "completed",
+		settlementVersion,
+		messages: [
+			{
+				id: "ask",
+				role: "user",
+				parts: [{ type: "text", text: "Find the NVIDIA email" }],
+			},
+			{ id: "answer", role: "assistant", parts },
+		],
+	});
+	const content = (
+		turn: AgentTurnSnapshot,
+		roomSource: RoomSource | null = null,
+	) => (
+		<RoomEmailProvider
+			session={owner}
+			roomId="room"
+			source={roomSource}
+			turn={turn}
+			isReady
+		>
+			<span />
+		</RoomEmailProvider>
+	);
+	const threadOpens = () =>
+		workbench.selectPanel.mock.calls.filter(
+			([type]) => type === "collaboration-thread-email",
+		);
+	// restored history opens nothing
+	const view = render(content(finished(1, [readThread("history")])));
+	expect(threadOpens()).toEqual([]);
+	view.rerender(content(running(1)));
+	view.rerender(
+		content(finished(2, [readThread("first"), readThread("nvidia")])),
+	);
+	expect(threadOpens()).toEqual([
+		[
+			"collaboration-thread-email",
+			{ threadId: "nvidia" },
+			{ name: "Email" },
+		],
+	]);
+	expect(workbench.openWorkbench).toHaveBeenCalledOnce();
+	// the draft written after the read opens instead
+	view.rerender(content(running(2)));
+	view.rerender(
+		content(
+			finished(3, [
+				readThread("nvidia"),
+				composeEmailPart({ subject: "Registered", message: "Done." }),
+			]),
+		),
+	);
+	expect(workbench.selectPanel).toHaveBeenLastCalledWith(
+		"collaboration-email-editor",
+		expect.anything(),
+		{ name: "Email draft" },
+	);
+	expect(threadOpens()).toHaveLength(1);
+	// the room's own thread is already in its source reader
+	view.rerender(content(running(3), source));
+	view.rerender(content(finished(4, [readThread("source")]), source));
+	expect(threadOpens()).toHaveLength(1);
+	await act(async () => undefined);
 });

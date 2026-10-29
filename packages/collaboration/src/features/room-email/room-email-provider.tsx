@@ -18,6 +18,8 @@ import { ROOM_EMAIL_PANEL_TYPE } from "./room-email-panel";
 import { ROOM_EMAIL_SOURCE_PANEL_TYPE } from "./room-email-source-panel";
 import { getRoomEmailStore } from "./room-email-store";
 import { ROOM_TEAMS_SOURCE_PANEL_TYPE } from "./room-teams-source-panel";
+import { ROOM_THREAD_EMAIL_PANEL_TYPE } from "./room-thread-email-panel";
+import { useAssistantReadThread } from "./use-assistant-read-thread";
 import { useEmailSendApprovals } from "./use-email-send-approvals";
 import { useRoomEmailProposals } from "./use-room-email-proposals";
 import { useRoomSourceEmails } from "./use-room-source-emails";
@@ -170,6 +172,25 @@ export function RoomEmailProvider({
 		[openWorkbench, store, workbench.store],
 	);
 	openDraftRef.current = openDraft;
+	const openThread = useCallback(
+		(threadId: string): void => {
+			workbench.store
+				.getState()
+				.layout.actions.selectPanel(
+					ROOM_THREAD_EMAIL_PANEL_TYPE,
+					{ threadId },
+					{ name: "Email" },
+				);
+			openWorkbench();
+		},
+		[openWorkbench, workbench.store],
+	);
+	useAssistantReadThread({
+		turn,
+		isReady,
+		sourceThreadId: source?.threadId,
+		onOpen: openThread,
+	});
 	const selectSourceMessage = useCallback(
 		(messageId: string): void => {
 			if (
@@ -243,6 +264,7 @@ export function RoomEmailProvider({
 				selectSourceMessage,
 				replyToSource,
 				openDraft,
+				openThread,
 				requestSend: (draft) => {
 					openDraft(draft.seed.id);
 					draft.requestSubmit();

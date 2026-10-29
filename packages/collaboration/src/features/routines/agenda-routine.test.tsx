@@ -419,16 +419,22 @@ describe("RoutinesWorkspace", () => {
 		);
 		// the list reads every routine's on/off state, but the agenda form waits until it is picked
 		expect(
-			screen.queryByRole("heading", { name: "Weekly meeting agendas" }),
+			screen.queryByRole("heading", {
+				name: "Weekly meeting agendas agent",
+			}),
 		).not.toBeInTheDocument();
 		await user.click(
-			screen.getByRole("button", { name: "Weekly meeting agendas" }),
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
 		);
 		expect(service.usePixel).toHaveBeenCalledWith(
 			"WorkGetAgendaRoutine();",
 		);
 		expect(
-			screen.getByRole("heading", { name: "Weekly meeting agendas" }),
+			screen.getByRole("heading", {
+				name: "Weekly meeting agendas agent",
+			}),
 		).toBeVisible();
 		expect(
 			screen.getByRole("heading", { name: "Latest agendas" }),
@@ -454,12 +460,14 @@ describe("RoutinesWorkspace", () => {
 			</MemoryRouter>,
 		);
 		await user.click(
-			screen.getByRole("button", { name: "Weekly meeting agendas" }),
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
 		);
 		const thursday = screen.getByRole("radio", { name: "Thursday" });
 		await user.click(thursday);
 		await user.click(
-			screen.getByRole("button", { name: "Inbox daily brief" }),
+			screen.getByRole("button", { name: "Inbox daily brief agent" }),
 		);
 		expect(service.actions.run).not.toHaveBeenCalled();
 		await autosave();
@@ -468,7 +476,9 @@ describe("RoutinesWorkspace", () => {
 			expect.stringContaining('"days":["THU"]'),
 		);
 		await user.click(
-			screen.getByRole("button", { name: "Weekly meeting agendas" }),
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
 		);
 		expect(screen.getByRole("radio", { name: "Thursday" })).toBe(thursday);
 		expect(thursday).toBeChecked();

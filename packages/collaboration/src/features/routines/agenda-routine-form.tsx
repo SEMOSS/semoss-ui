@@ -1,4 +1,3 @@
-import { CalendarRange } from "lucide-react";
 import { useId } from "react";
 import {
 	Card,
@@ -23,6 +22,7 @@ import {
 	type AgendaRoutineSettings,
 	agendaRoutineSettingsSchema,
 } from "./agenda-routine-schema";
+import { AgendaAgentIcon } from "./routine-agent-icons";
 import { RoutineAvailability } from "./routine-availability";
 import { RoutineCardHeader } from "./routine-card-header";
 import { AGENDA_RESULT_COPY } from "./routine-copy";
@@ -98,8 +98,9 @@ export function AgendaRoutineForm({ routine, onSave }: AgendaRoutineFormProps) {
 					aria-busy={isSubmitting}
 				>
 					<RoutineCardHeader
-						icon={CalendarRange}
-						title="Weekly meeting agendas"
+						icon={AgendaAgentIcon}
+						isAvatar
+						title="Weekly meeting agendas agent"
 						description="Proposed agendas for your selected meetings."
 						routine={routine}
 						saveStatus={
@@ -232,7 +233,7 @@ export function AgendaRoutineForm({ routine, onSave }: AgendaRoutineFormProps) {
 				</Form>
 			</Card>
 			<RoutineFlowSection
-				title="Weekly meeting agendas"
+				title="Weekly meeting agendas agent"
 				flow={routine.flow}
 			/>
 		</div>

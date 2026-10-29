@@ -183,6 +183,14 @@ function GenericToolCallCard({
 	// ComposeEmail retains a room-local editor; only this action opens its panel.
 	const isEmailCompose = component === TOOL_COMPONENTS.emailCompose;
 	const isRoomCompose = isEmailCompose && Boolean(roomEmail);
+	// a finished ReadThread opens the thread it read beside the chat
+	const readThreadId =
+		roomEmail &&
+		tool.name === "ReadThread" &&
+		tool.status === "COMPLETED" &&
+		!tool.error
+			? asString(tool.arguments.threadId).trim()
+			: "";
 	// SendEmail on the open email waits for Send in that editor or on this card
 	const sendDraft =
 		isEmailSend && roomEmail
@@ -259,7 +267,8 @@ function GenericToolCallCard({
 		isRequest && !approval && tool.status === "INPUT_REQUIRED"
 			? resultField(tool.output, "runId")
 			: undefined;
-	const Icon = isEditorDraft || sendDraft ? Mail : details.icon;
+	const Icon =
+		isEditorDraft || sendDraft || readThreadId ? Mail : details.icon;
 	const isInline = isToolInline(tool.id);
 	const isInWorkbench = isOpen && activeToolId === tool.id;
 	const isActive = isInline || isInWorkbench;
@@ -325,20 +334,30 @@ function GenericToolCallCard({
 								roomEmail.openDraft(editorId);
 								return;
 							}
+							if (readThreadId) {
+								roomEmail?.openThread(readThreadId);
+								return;
+							}
 							if (isInline) closeTool(tool.id);
 							else if (opensInline) openInline(tool.id);
 							else openWorkbench(tool.id);
 						}}
 						aria-expanded={
-							!isEditorDraft && opensInline ? isInline : undefined
+							!isEditorDraft && !readThreadId && opensInline
+								? isInline
+								: undefined
 						}
 						aria-controls={
-							!isEditorDraft && isInline ? detailId : undefined
+							!isEditorDraft && !readThreadId && isInline
+								? detailId
+								: undefined
 						}
 						aria-label={
 							isEditorDraft || sendDraft
 								? `Open email draft: ${heading || draftLabel}`
-								: `${heading} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
+								: readThreadId
+									? `Open email: ${heading}`
+									: `${heading} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
 						}
 						{...(tool.status !== "FAILED"
 							? { "aria-describedby": statusId }
@@ -399,7 +418,7 @@ function GenericToolCallCard({
 								{status}
 							</Muted>
 						</span>
-						{isEditorDraft ? (
+						{isEditorDraft || readThreadId ? (
 							<ArrowUpRight
 								aria-hidden="true"
 								className="size-4 shrink-0 text-muted-foreground"

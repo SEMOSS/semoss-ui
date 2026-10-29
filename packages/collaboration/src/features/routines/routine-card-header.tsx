@@ -12,6 +12,8 @@ import type { RoutineStatus } from "./routine-schema";
 interface RoutineCardHeaderProps {
 	/** Decorative icon shown before the title. */
 	icon: LucideIcon;
+	/** Shows the icon as a 40px avatar, for icons that paint their own colored tile. */
+	isAvatar?: boolean;
 	/** The routine's name, rendered as the card's level-2 heading. */
 	title: string;
 	/** One sentence on what the routine produces. */
@@ -27,6 +29,7 @@ interface RoutineCardHeaderProps {
 /** A routine card's title, saved-state badge, and summary. */
 export function RoutineCardHeader({
 	icon: Icon,
+	isAvatar = false,
 	title,
 	description,
 	routine,
@@ -43,7 +46,11 @@ export function RoutineCardHeader({
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div className="flex min-w-0 items-center gap-3">
 					<Icon
-						className="size-5 shrink-0 text-muted-foreground"
+						className={
+							isAvatar
+								? "size-10 shrink-0"
+								: "size-5 shrink-0 text-muted-foreground"
+						}
 						aria-hidden="true"
 					/>
 					<CardTitle>

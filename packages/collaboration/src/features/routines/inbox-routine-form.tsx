@@ -1,4 +1,3 @@
-import { Inbox } from "lucide-react";
 import { useId } from "react";
 import {
 	Card,
@@ -30,6 +29,7 @@ import {
 	type InboxRoutineSettings,
 	inboxRoutineSettingsSchema,
 } from "./inbox-routine-schema";
+import { InboxAgentIcon } from "./routine-agent-icons";
 import { RoutineAvailability } from "./routine-availability";
 import { RoutineCardHeader } from "./routine-card-header";
 import { INBOX_RESULT_COPY } from "./routine-copy";
@@ -188,8 +188,9 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 					aria-busy={isSubmitting}
 				>
 					<RoutineCardHeader
-						icon={Inbox}
-						title="Inbox daily brief"
+						icon={InboxAgentIcon}
+						isAvatar
+						title="Inbox daily brief agent"
 						description="Your inbox, priorities, and upcoming deadlines."
 						routine={routine}
 						saveStatus={
@@ -346,7 +347,10 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 					/>
 				</Form>
 			</Card>
-			<RoutineFlowSection title="Inbox daily brief" flow={routine.flow} />
+			<RoutineFlowSection
+				title="Inbox daily brief agent"
+				flow={routine.flow}
+			/>
 		</div>
 	);
 }

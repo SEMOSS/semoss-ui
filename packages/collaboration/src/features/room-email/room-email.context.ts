@@ -30,6 +30,8 @@ interface RoomEmailContextValue {
 	selectSourceMessage: (messageId: string) => void;
 	replyToSource: (messageId: string) => void;
 	openDraft: (draftId: string) => void;
+	/** Show a Brain thread the assistant read, read-only, beside the chat. */
+	openThread: (threadId: string) => void;
 	requestSend: (draft: EmailDraftEditor) => void;
 }
 
