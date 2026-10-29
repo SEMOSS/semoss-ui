@@ -1,5 +1,6 @@
 import { z } from "@semoss/ui/next";
 import type { ThreadContext } from "@/features/collaboration/state/collaboration.types";
+import { agreedStyle } from "@/features/collaboration/state/profile-style";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS } from "./thread-draft-proposal";
@@ -148,7 +149,7 @@ export function submittedThreadContext(
 						),
 					),
 					...(role.value.trim() ? { role } : {}),
-					...(style.confirmed ? { style } : {}),
+					...(style.confirmed ? { style: agreedStyle(style) } : {}),
 					...(vips.length ? { vips } : {}),
 				};
 			})()

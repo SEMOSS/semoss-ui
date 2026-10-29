@@ -25,6 +25,14 @@ vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
 	useInsight: () => ({ actions: {} }),
 }));
+vi.mock("@/features/collaboration/live/use-style-learning", () => ({
+	useStyleLearning: () => ({
+		isLearning: false,
+		step: "",
+		error: null,
+		start: vi.fn(),
+	}),
+}));
 vi.mock("@/features/onboarding/onboarding-api", () => ({
 	resetMyData: vi.fn(),
 }));

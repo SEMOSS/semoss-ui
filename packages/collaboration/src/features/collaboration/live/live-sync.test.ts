@@ -572,3 +572,101 @@ it("does not save hydrated records, even when a user edit settles in the same ch
 	expect(sent[0]).toContain('"name":"User rename"');
 	expect(sent[0]).not.toContain("Saved on server");
 });
+
+function withProposal() {
+	const base = createInitialCollaborationState();
+	const profile = {
+		...base.profile,
+		id: "me",
+		style: {
+			summary: "",
+			source: "learned" as const,
+			confirmed: false,
+			examples: [],
+			variants: {},
+			pending: {
+				summary: "Short and friendly.",
+				examples: ["Thanks, will do."],
+				variants: {},
+			},
+		},
+	};
+	return { ...base, liveProfile: profile };
+}
+
+it("confirming a proposal saves the agreed style and clears the proposal", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = withProposal();
+	const command: CollaborationCommand = {
+		type: "profile.save",
+		target: "live",
+		changes: {
+			style: {
+				...previous.liveProfile.style,
+				summary: "Short and friendly.",
+				source: "learned",
+				confirmed: true,
+				examples: ["Thanks, will do."],
+				pending: null,
+			},
+		},
+	};
+	const next = collaborationReducer(previous, command, NOW);
+	sync({ previous, next, commands: [command] });
+	await sync.settled();
+	expect(sent).toHaveLength(1);
+	const style = JSON.parse(
+		sent[0]
+			.replace(/^BrainSaveProfile\(profile=\[/, "")
+			.replace(/\]\);$/, ""),
+	).style;
+	expect(style).toEqual({
+		summary: "Short and friendly.",
+		source: "learned",
+		confirmed: true,
+		examples: ["Thanks, will do."],
+		pending: null,
+	});
+});
+
+it("discarding a proposal sends only the clearing of the proposal", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = withProposal();
+	const command: CollaborationCommand = {
+		type: "profile.save",
+		target: "live",
+		changes: { style: { ...previous.liveProfile.style, pending: null } },
+	};
+	const next = collaborationReducer(previous, command, NOW);
+	sync({ previous, next, commands: [command] });
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainSaveProfile(profile=[{"style":{"pending":null}}]);',
+	]);
+});
+
+it("a proposal read from the server is not written back", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const base = createInitialCollaborationState();
+	const previous = {
+		...base,
+		liveProfile: {
+			...withProposal().liveProfile,
+			style: { ...withProposal().liveProfile.style, pending: null },
+		},
+	};
+	const command: CollaborationCommand = {
+		type: "profile.style.server",
+		style: withProposal().liveProfile.style,
+	};
+	const next = collaborationReducer(previous, command, NOW);
+	sync({ previous, next, commands: [command] });
+	await Promise.resolve();
+	expect(sent).toHaveLength(0);
+	expect(next.liveProfile?.style.pending?.summary).toBe(
+		"Short and friendly.",
+	);
+});

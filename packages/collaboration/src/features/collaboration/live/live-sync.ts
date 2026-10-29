@@ -5,6 +5,8 @@ import type {
 	CollaborationCommand,
 	CollaborationState,
 	Memory,
+	Profile,
+	ProfileStyle,
 	Rule,
 	Topic,
 	TopicGoal,
@@ -26,6 +28,7 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"source.import",
 	"source.status",
 	"live-profile.set",
+	"profile.style.server",
 	"snooze.expire",
 	"memory.server",
 	"topic.goal.server",
@@ -657,6 +660,34 @@ const SETTINGS_FIELDS = [
 	"draftFolderName",
 ] as const;
 
+/**
+ * Only the style fields that changed leave the browser, because the server treats a `summary` as the owner's own
+ * words. The proposal is written by the server alone; a reviewed one goes out as `pending: null`, which clears it.
+ */
+function serverProfileChanges(
+	changes: Partial<Profile>,
+	old: ProfileStyle,
+): Record<string, unknown> {
+	const next = changes.style;
+	if (!next) return changes;
+	const style: Record<string, unknown> = {};
+	for (const field of [
+		"summary",
+		"source",
+		"confirmed",
+		"examples",
+		"variants",
+	] as const)
+		if (!same(old[field], next[field])) style[field] = next[field];
+	if (old.pending && !next.pending) style.pending = null;
+	// the server reads who agreed to the style together with the summary or confirmation that changed
+	if ("summary" in style || "confirmed" in style) {
+		style.source = next.source;
+		style.confirmed = next.confirmed;
+	}
+	return { ...changes, style };
+}
+
 function planProfile(
 	plan: Plan,
 	prev: CollaborationState,
@@ -670,7 +701,12 @@ function planProfile(
 		);
 		if (changed.length)
 			plan.statements.push(
-				pixel("BrainSaveProfile", { profile: pick(profile, changed) }),
+				pixel("BrainSaveProfile", {
+					profile: serverProfileChanges(
+						pick(profile, changed),
+						old.style,
+					),
+				}),
 			);
 	}
 	const changed = SETTINGS_FIELDS.filter(

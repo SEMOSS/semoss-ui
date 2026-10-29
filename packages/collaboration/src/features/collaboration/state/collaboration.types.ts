@@ -219,12 +219,36 @@ export interface Profile {
 	timezone: string;
 	workingHours: string;
 	vips: string[];
-	style: {
-		summary: string;
-		source: "learned" | "you";
-		confirmed: boolean;
-		examples: string[];
-	};
+	style: ProfileStyle;
+}
+
+/** Who a writing-style variant is for: everyone addressed is in the owner's organisation, or someone is outside it. */
+export type StyleAudience = "internal" | "external";
+
+export interface StyleVariant {
+	summary: string;
+	examples: string[];
+}
+
+/** A style the owner has not agreed to yet. The server never uses it when drafting. */
+export interface StyleProposal {
+	summary: string;
+	examples: string[];
+	variants: Partial<Record<StyleAudience, StyleVariant>>;
+	learnedAt?: string;
+	sample?: { emails: number; chats: number; windowDays: number };
+}
+
+export interface ProfileStyle {
+	summary: string;
+	source: "learned" | "you";
+	confirmed: boolean;
+	examples: string[];
+	/** Agreed audience-specific styles; absent on profiles saved before variants existed. */
+	variants?: Partial<Record<StyleAudience, StyleVariant>>;
+	/** The learned proposal waiting for the owner's review. */
+	pending?: StyleProposal | null;
+	learnedAt?: string;
 }
 
 export interface Settings {
@@ -560,6 +584,11 @@ export type CollaborationCommand =
 	  }
 	| { type: "source.status"; source: SourceStatus }
 	| { type: "live-profile.set"; profile: Profile | null }
+	| {
+			/** The style as the server holds it after learning, which the saver must not write back. */
+			type: "profile.style.server";
+			style: ProfileStyle;
+	  }
 	| { type: "snooze.expire" };
 
 export interface ThreadContext {

@@ -146,6 +146,24 @@ it("retains confirmed owner guidance while omitting an unavailable profile", () 
 	).not.toHaveProperty("profile");
 });
 
+it("never submits a style proposal the owner has not confirmed", () => {
+	const source = sourceContext();
+	if (!source.profile) throw new Error("Expected owner profile");
+	source.profile.style = {
+		summary: "Keep replies brief",
+		source: "you",
+		confirmed: true,
+		examples: [],
+		variants: {
+			external: { summary: "Formal", examples: ["Kind regards"] },
+		},
+		pending: { summary: "Proposed only", examples: [], variants: {} },
+	};
+	const text = JSON.stringify(submittedThreadContext(source).context);
+	expect(text).toContain("Formal");
+	expect(text).not.toContain("Proposed only");
+});
+
 it("rejects structured snapshots from a different thread or revision", () => {
 	for (const context of [
 		undefined,

@@ -284,6 +284,26 @@ Source readers retain explicit attachment downloads through the existing
 Microsoft APIs. Source snapshot imports include attachment names only. Files
 chosen for a room's composer use the room's ordinary upload and submission flow.
 
+## Writing style
+
+Settings → About you holds **How you write**. Drafts use only the style the owner has confirmed; an
+unconfirmed or still-pending style never reaches the assistant, the frontend context, or the server prompt.
+
+- **Learn from my writing** starts the `BrainLearnStyle` job (followed with `BrainGetJob(kind="style")`). It samples up
+  to 50 emails from the Sent folder and the owner's own chat messages from the last 30 days, skips forwards and anything
+  the owner's Brain rules keep out, and asks the classifier model (`COLLAB_CLASSIFIER_ENGINE_ID`) to keep only messages
+  written by a person. The text model (`COLLAB_LLM_ENGINE_ID`) then returns a summary, short excerpts and internal and
+  external variants. Excerpts must be found in the named sample, and a variant needs at least three samples.
+- The result is stored as a **pending proposal** (`style.pending`). The owner edits the summary, examples, and variants,
+  then confirms it (saved with `source: "learned"`) or discards it. Only the agreed content is retained.
+- **Audience variants** follow the recipients: an email is internal when every recipient belongs to the owner's
+  organisation (`BrainOrgDomains`) and external when any recipient is outside it. The confirmed style prompt carries both
+  variants and the organisation domains so the assistant picks the matching one.
+- **Re-learning** is manual. Learning again replaces only the pending proposal and never overwrites the confirmed style.
+- Profile writes send only the style fields that changed. The proposal is written by the server alone; reviewing it
+  clears it with `pending: null`. `profile.style.server` places a proposal read from the server into the session
+  without saving it back.
+
 ## Routes and ownership
 
 | Routes | Feature |
