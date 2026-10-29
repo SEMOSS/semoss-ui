@@ -1,5 +1,6 @@
 import { ChevronDownIcon, TriangleAlertIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
 import { EngineSelect, ProjectSelect } from "@semoss/shared";
 import {
 	Alert,
@@ -21,12 +22,16 @@ import {
 	SelectValue,
 	Separator,
 	Spinner,
+	z,
 } from "@semoss/ui/next";
+import { agentResourcesQuery } from "@/api/assistant-tools";
+import { AssistantSettingSkills } from "@/features/assistant-tools/assistant-setting-skills";
+import { AssistantSettingTools } from "@/features/assistant-tools/assistant-setting-tools";
 import { useAssistant } from "@/hooks/use-assistant";
 import type {
 	AssistantEffort,
 	AssistantPermissionMode,
-} from "@/stores/assistant";
+} from "@/stores/assistant/assistant.store";
 
 const DEFAULT_MAX_TURNS = 30;
 
@@ -51,6 +56,21 @@ const EFFORT_OPTIONS: { value: AssistantEffort; label: string }[] = [
 	{ value: "high", label: "High" },
 	{ value: "max", label: "Max" },
 ];
+
+const agentResourcesSchema = z.object({
+	mcp: z
+		.array(
+			z.object({
+				id: z.string(),
+				name: z.string().nullish(),
+				display_name: z.string().nullish(),
+			}),
+		)
+		.nullish(),
+	skills: z
+		.array(z.object({ id: z.string(), name: z.string().nullish() }))
+		.nullish(),
+});
 
 /**
  * Assistant settings view: model picker, conversation compaction, and advanced
@@ -106,10 +126,20 @@ export const AssistantSettings = () => {
 		model?.engine_display_name || model?.engine_name || "Select model";
 	const selectedAgent = agent ?? defaultAgent;
 	const agentName = selectedAgent.name || selectedAgent.workspace_id;
+	const insightId = useAssistant((state) => state.insightId);
+	const workspace = usePixel<unknown>(
+		insightId ? agentResourcesQuery(selectedAgent.workspace_id) : "",
+		{ data: null },
+		insightId ?? undefined,
+	);
+	const resources =
+		workspace.status === "SUCCESS"
+			? agentResourcesSchema.safeParse(workspace.data)
+			: null;
 
 	return (
-		<ScrollArea className="min-h-0 flex-1">
-			<div className="flex flex-col gap-4 p-3">
+		<ScrollArea className="[&_[data-slot=scroll-area-viewport]>div]:block! min-h-0 flex-1">
+			<div className="flex min-w-0 flex-col gap-4 p-3">
 				<Field>
 					<div className="flex min-h-7 items-center justify-between gap-2">
 						<FieldLabel htmlFor={agentId}>Agent</FieldLabel>
@@ -142,14 +172,6 @@ export const AssistantSettings = () => {
 						}
 						popoverContentProps={{ align: "start" }}
 					/>
-					<FieldDescription
-						id={agentDescriptionId}
-						className="text-xs"
-					>
-						Default:{" "}
-						{defaultAgent.name || defaultAgent.workspace_id}.
-						Changes apply to your next message.
-					</FieldDescription>
 				</Field>
 
 				<Field>
@@ -166,12 +188,52 @@ export const AssistantSettings = () => {
 							className: "w-72 max-w-72",
 						}}
 					/>
-					<FieldDescription className="text-xs">
-						Model used for every assistant run in this room.
-					</FieldDescription>
 				</Field>
 
-				<Field orientation="horizontal">
+				{insightId &&
+					(workspace.status === "INITIAL" ||
+						workspace.status === "LOADING") && (
+						<output className="text-muted-foreground text-xs">
+							Loading agent tools and skills…
+						</output>
+					)}
+				{(workspace.status === "ERROR" ||
+					resources?.success === false) && (
+					<Alert variant="destructive">
+						<AlertDescription>
+							{workspace.error?.message ||
+								"Unable to load this agent’s tools and skills."}
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={workspace.refresh}
+							>
+								Retry agent resources
+							</Button>
+						</AlertDescription>
+					</Alert>
+				)}
+				<AssistantSettingTools
+					key={`tools:${roomId}`}
+					agentName={agentName}
+					agentTools={(resources?.data?.mcp ?? []).map((tool) => ({
+						id: tool.id,
+						name: tool.display_name || tool.name || tool.id,
+					}))}
+				/>
+				<AssistantSettingSkills
+					key={`skills:${roomId}`}
+					agentName={agentName}
+					agentSkills={(resources?.data?.skills ?? []).map(
+						(skill) => ({
+							id: skill.id,
+							name: skill.name || skill.id,
+						}),
+					)}
+				/>
+
+				<Field>
 					<div>
 						<FieldLabel>Context</FieldLabel>
 						<FieldDescription className="text-xs">

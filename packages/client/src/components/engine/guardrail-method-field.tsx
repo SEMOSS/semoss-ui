@@ -75,7 +75,7 @@ export const GuardrailMethodField = ({
 				name={name}
 				label="Applies to"
 				placeholder="Method name, or * for all calls"
-				description="Enter the Java method name, such as askRoom, or * to apply this rule to every call."
+				description="Enter the Java method name, such as askRoom or execQuery, or * to apply this rule to every call."
 				disabled={disabled}
 				data-testid={`${testIdPrefix}-method`}
 			/>
@@ -185,7 +185,7 @@ export const GuardrailMethodField = ({
 									field.onChange(event.target.value)
 								}
 								onBlur={field.onBlur}
-								placeholder="Java method name, such as askRoom"
+								placeholder="Java method name, such as askRoom or execQuery"
 								aria-label="Method name"
 								disabled={disabled}
 								aria-invalid={!!fieldState.error}

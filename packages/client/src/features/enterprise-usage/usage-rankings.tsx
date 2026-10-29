@@ -5,7 +5,6 @@ import {
 	Button,
 	H3,
 	Muted,
-	Progress,
 	Table,
 	TableBody,
 	TableCell,
@@ -16,16 +15,24 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 } from "@semoss/ui/next";
-import { rankingQuery } from "@/api/enterprise-usage-requests";
-import type { UsageDimension, UsageFilters } from "./usage.types";
-import { formatMetric, numeric } from "./usage-metrics";
+import { rankingQuery, summaryQuery } from "@/api/enterprise-usage-requests";
+import type { UsageDimension, UsageFilters, UsageRow } from "./usage.types";
+import { formatCost, formatMetric, numeric } from "./usage-metrics";
+import { UsageNotes } from "./usage-notes";
+import { UsageShareBar } from "./usage-share-bar";
 import { UsageState } from "./usage-state";
 import { useUsageExport } from "./use-usage-export";
 import { useUsageQuery } from "./use-usage-query";
+
+/** How to read the rankings. */
+const RANKING_NOTES = [
+	"Top 20 By Recorded Tokens In The Selected Period.",
+	"Token Share And Cost Share Are Each Consumer's Part Of All Tokens And Cost In The Selected Period, So The Bars Add Up To At Most 100%.",
+	"Cost Is What The Calls Recorded, With Calls Logged Before Costs Were Recorded At Current Prices.",
+	"Select A Name To Inspect Its Messages.",
+	"Search By Name Or ID In The Filters To Find Any Other Entity.",
+] as const;
 
 interface UsageRankingsProps {
 	/** Shared applied report filters. */
@@ -34,20 +41,69 @@ interface UsageRankingsProps {
 	onDrill: (dimension: UsageDimension, id: string) => void;
 }
 
+/** What a share bar's total is, and what it is called */
+interface ShareTotal {
+	/** The amount every consumer's share is of */
+	total: number;
+	/** What the total is, as the bar's tooltip says it */
+	label: string;
+}
+
+/**
+ * The total a consumer's share is of: everyone's amount in the period, from
+ * the summary, or the listed consumers' together until the summary is read or
+ * when it cannot be, named so the tooltip says which.
+ *
+ * @param measure - what is added up, such as "Tokens" or "Cost"
+ */
+function shareTotal(
+	summary: UsageRow | undefined,
+	ranked: UsageRow[],
+	key: string,
+	measure: string,
+): ShareTotal {
+	const period = numeric(summary, key);
+	if (period !== null)
+		return { total: period, label: `All ${measure} In The Period` };
+	return {
+		total: ranked.reduce((sum, row) => sum + (numeric(row, key) ?? 0), 0),
+		label: `The Listed Consumers' ${measure}`,
+	};
+}
+
+/** A ranked consumer's name, or its id when it has none. */
+function entityName(row: UsageRow): string {
+	return String(row.ENTITY_NAME || row.ENTITY_ID || "Unattributed");
+}
+
 /** Top consumers by token volume, with identity-preserving drill-down. */
 export function UsageRankings({ filters, onDrill }: UsageRankingsProps) {
 	const [dimension, setDimension] = useState<UsageDimension>("model");
 	const { isExporting, exportError, exportStatus, exportReport } =
 		useUsageExport();
 	const result = useUsageQuery(rankingQuery(filters, dimension));
-	const maxTokens = Math.max(
-		1,
-		...result.rows.map((row) => numeric(row, "TOKENS") ?? 0),
+	// everyone's tokens and cost in the period, not only the consumers ranked,
+	// so each bar is a consumer's share and the bars add up to at most 100%
+	const summary = useUsageQuery(summaryQuery("model", filters));
+	const tokenShare = shareTotal(
+		summary.rows[0],
+		result.rows,
+		"TOKENS",
+		"Tokens",
+	);
+	const costShare = shareTotal(
+		summary.rows[0],
+		result.rows,
+		"COST_MICROS",
+		"Cost",
 	);
 	return (
 		<section className="min-w-0 space-y-2">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<H3>Top Consumers</H3>
+				<div className="flex items-center gap-1">
+					<H3>Top Consumers</H3>
+					<UsageNotes title="Top Consumers" notes={RANKING_NOTES} />
+				</div>
 				<Button
 					variant="outline"
 					disabled={
@@ -83,12 +139,6 @@ export function UsageRankings({ filters, onDrill }: UsageRankingsProps) {
 					<AlertDescription>{exportError}</AlertDescription>
 				</Alert>
 			)}
-			<Muted>
-				Top 20 By Recorded Tokens In The Selected Period. Bars Are
-				Relative To The Largest Consumer. Select A Name To Inspect Its
-				Messages. Search By Name Or ID In The Filters To Find Any Other
-				Entity.
-			</Muted>
 			<Tabs
 				value={dimension}
 				onValueChange={(value) => {
@@ -126,9 +176,11 @@ export function UsageRankings({ filters, onDrill }: UsageRankingsProps) {
 												"Name / ID",
 												"Requests",
 												"Total Tokens",
-												"Relative Volume",
+												"Token Share",
 												"Input Tokens",
 												"Output Tokens",
+												"Cost",
+												"Cost Share",
 												"Avg. Latency (s)",
 												"Users",
 											].map((label) => (
@@ -197,68 +249,28 @@ export function UsageRankings({ filters, onDrill }: UsageRankingsProps) {
 													null ? (
 														"-"
 													) : (
-														<Tooltip>
-															<TooltipTrigger
-																asChild
-															>
-																<Progress
-																	value={
-																		((numeric(
-																			row,
-																			"TOKENS",
-																		) ??
-																			0) /
-																			maxTokens) *
-																		100
-																	}
-																	aria-label={`${row.ENTITY_NAME || row.ENTITY_ID || "Unattributed"} Relative Token Volume`}
-																	className="w-24 focus-visible:outline-2 focus-visible:outline-ring"
-																	tabIndex={0}
-																/>
-															</TooltipTrigger>
-															<TooltipContent>
-																<div>
-																	{String(
-																		row.ENTITY_NAME ||
-																			row.ENTITY_ID ||
-																			"Unattributed",
-																	)}
-																</div>
-																<div>
-																	Total
-																	Tokens:{" "}
-																	{formatMetric(
-																		numeric(
-																			row,
-																			"TOKENS",
-																		),
-																	)}
-																</div>
-																<div>
-																	Requests:{" "}
-																	{formatMetric(
-																		numeric(
-																			row,
-																			"REQUESTS",
-																		),
-																	)}
-																</div>
-																<div>
-																	{formatMetric(
-																		(Number(
-																			row.TOKENS,
-																		) /
-																			maxTokens) *
-																			100,
-																		1,
-																	)}
-																	% Of The
-																	Largest
-																	Consumer's
-																	Tokens
-																</div>
-															</TooltipContent>
-														</Tooltip>
+														<UsageShareBar
+															name={entityName(
+																row,
+															)}
+															measure="Tokens"
+															value={
+																numeric(
+																	row,
+																	"TOKENS",
+																) ?? 0
+															}
+															total={
+																tokenShare.total
+															}
+															totalLabel={
+																tokenShare.label
+															}
+															details={[
+																`Total Tokens: ${formatMetric(numeric(row, "TOKENS"))}`,
+																`Requests: ${formatMetric(numeric(row, "REQUESTS"))}`,
+															]}
+														/>
 													)}
 												</TableCell>
 												<TableCell>
@@ -275,6 +287,45 @@ export function UsageRankings({ filters, onDrill }: UsageRankingsProps) {
 															row,
 															"OUTPUT_TOKENS",
 														),
+													)}
+												</TableCell>
+												<TableCell className="tabular-nums">
+													{formatCost(
+														numeric(
+															row,
+															"COST_MICROS",
+														),
+													)}
+												</TableCell>
+												<TableCell>
+													{numeric(
+														row,
+														"COST_MICROS",
+													) === null ? (
+														"-"
+													) : (
+														<UsageShareBar
+															name={entityName(
+																row,
+															)}
+															measure="Cost"
+															value={
+																numeric(
+																	row,
+																	"COST_MICROS",
+																) ?? 0
+															}
+															total={
+																costShare.total
+															}
+															totalLabel={
+																costShare.label
+															}
+															details={[
+																`Cost: ${formatCost(numeric(row, "COST_MICROS"))}`,
+																`Priced Requests: ${formatMetric(numeric(row, "PRICED_REQUESTS"))} Of ${formatMetric(numeric(row, "REQUESTS"))}`,
+															]}
+														/>
 													)}
 												</TableCell>
 												<TableCell>

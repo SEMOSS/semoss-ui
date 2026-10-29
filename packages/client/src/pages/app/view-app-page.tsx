@@ -19,8 +19,6 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
-	Dialog,
-	DialogContent,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -28,7 +26,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { setProjectFavorite } from "@/api";
-import { ShareOverlay } from "@/components/ui";
+import { ShareAppDialog } from "@/components/ui/share/share-app-dialog";
 import { useNavigate } from "@/hooks/useNavigate";
 
 const Renderer = lazy(() =>
@@ -204,17 +202,11 @@ export const ViewAppPage = observer(() => {
 				</Suspense>
 			</div>
 
-			<Dialog
+			<ShareAppDialog
+				appId={project.project_id}
 				open={isShareOpen}
-				onOpenChange={(o) => !o && setIsShareOpen(false)}
-			>
-				<DialogContent className="max-w-lg p-0">
-					<ShareOverlay
-						appId={project.project_id}
-						onClose={() => setIsShareOpen(false)}
-					/>
-				</DialogContent>
-			</Dialog>
+				onOpenChange={setIsShareOpen}
+			/>
 		</>
 	);
 });

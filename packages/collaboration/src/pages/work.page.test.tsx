@@ -1,5 +1,13 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
@@ -24,6 +32,7 @@ vi.mock("@/features/dashboard/topic-sessions", () => ({
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
+	vi.restoreAllMocks();
 });
 
 /** Mixed status/source fixture exposes accidental global scope and stale stored totals. */
@@ -287,10 +296,9 @@ it("combines scoped work with editable goals, people, and notes in one topic", a
 	expect(
 		screen.queryByRole("heading", { name: "Brain wants to check" }),
 	).not.toBeInTheDocument();
-	expect(screen.getByRole("tab", { name: "Open 3" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
+	expect(
+		screen.getByRole("button", { name: "Filter work: Open 3" }),
+	).toBeVisible();
 	expect(
 		screen.queryByRole("link", { name: "Action beta-open" }),
 	).not.toBeInTheDocument();
@@ -313,7 +321,7 @@ it("shows a goal resolution as plain text and keeps it when reopening and comple
 	expect(resolution).toBeVisible();
 	expect(resolution.querySelector("b")).toBeNull();
 	expect(resolution.closest(".line-through")).toBeNull();
-	expect(screen.getByText(goal.text)).toHaveClass("line-through");
+	expect(screen.getByText(goal.text)).not.toHaveClass("line-through");
 	await user.click(checkbox);
 	expect(checkbox).not.toBeChecked();
 	expect(screen.getByText(goal.resolution)).toBeVisible();
@@ -324,9 +332,9 @@ it("shows a goal resolution as plain text and keeps it when reopening and comple
 
 it("combines topic status and source filters, keeps multi-topic work, and sorts scoped rows", async () => {
 	const { user } = renderWork("/topics/alpha");
-	await user.click(
-		screen.getByRole("button", { name: "Filter by source: All sources" }),
-	);
+	const openFilter = () =>
+		user.click(screen.getByRole("button", { name: /^Filter work:/ }));
+	await openFilter();
 	expect(
 		screen.getByRole("menuitemradio", { name: "All sources 3" }),
 	).toBeVisible();
@@ -334,7 +342,7 @@ it("combines topic status and source filters, keeps multi-topic work, and sorts 
 		screen.getByRole("menuitemradio", { name: "Teams 1" }),
 	).toBeVisible();
 	await user.click(screen.getByRole("menuitemradio", { name: "Email 2" }));
-	const actions = screen.getByRole("tabpanel", { name: "Open 3" });
+	const actions = screen.getByRole("region", { name: "Open 2, Email" });
 	expect(within(actions).getAllByRole("article")).toHaveLength(2);
 	expect(within(actions).getAllByRole("article")[0]).toHaveTextContent(
 		"Action alpha-email",
@@ -342,32 +350,41 @@ it("combines topic status and source filters, keeps multi-topic work, and sorts 
 	expect(
 		within(actions).getByRole("link", { name: "Action shared" }),
 	).toHaveAttribute("href", "/thread/shared");
-	await user.click(screen.getByRole("radio", { name: "Latest" }));
-	expect(within(actions).getAllByRole("article")[0]).toHaveTextContent(
-		"Action shared",
-	);
-	await user.click(screen.getByRole("tab", { name: "Waiting 1" }));
+	await openFilter();
+	await user.click(screen.getByRole("menuitemradio", { name: "Latest" }));
+	expect(
+		within(
+			screen.getByRole("region", { name: "Open 2, Latest, Email" }),
+		).getAllByRole("article")[0],
+	).toHaveTextContent("Action shared");
+	await openFilter();
+	await user.click(screen.getByRole("menuitemradio", { name: "Waiting 1" }));
 	expect(
 		screen.getByRole("link", { name: "Action alpha-wait" }),
 	).toBeVisible();
 	expect(
 		screen.queryByRole("link", { name: "Action alpha-email" }),
 	).not.toBeInTheDocument();
-	await user.click(screen.getByRole("tab", { name: "Handled 1" }));
-	const handled = screen.getByRole("tabpanel", { name: "Handled 1" });
+	await openFilter();
+	await user.click(screen.getByRole("menuitemradio", { name: "Handled 1" }));
+	const handled = screen.getByRole("region", { name: /^Handled 1/ });
 	await user.click(
 		within(handled).getByRole("button", { name: "Move back" }),
 	);
-	expect(screen.getByRole("tab", { name: "Handled 0" })).toBeVisible();
-	await user.click(screen.getByRole("tab", { name: "Open 4" }));
-	await user.click(screen.getByRole("button", { name: /Filter by source:/ }));
+	await openFilter();
+	expect(
+		screen.getByRole("menuitemradio", { name: "Handled 0" }),
+	).toBeVisible();
+	await user.click(screen.getByRole("menuitemradio", { name: "Open 4" }));
+	await openFilter();
 	await user.click(
 		screen.getByRole("menuitemradio", { name: "All sources 4" }),
 	);
 	expect(
 		screen.getByRole("link", { name: "Action alpha-done" }),
 	).toBeVisible();
-	await user.click(screen.getByRole("tab", { name: "Snoozed 1" }));
+	await openFilter();
+	await user.click(screen.getByRole("menuitemradio", { name: "Snoozed 1" }));
 	expect(
 		screen.getByRole("link", { name: "Action alpha-snooze" }),
 	).toBeVisible();
@@ -375,14 +392,14 @@ it("combines topic status and source filters, keeps multi-topic work, and sorts 
 
 it("defaults All work to Needs you while preserving Open and direct legacy statuses", async () => {
 	const { router, user } = renderWork("/work/all");
-	expect(screen.getByRole("tab", { name: "Needs you 3" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
+	expect(
+		screen.getByRole("button", { name: "Filter work: Needs you 3" }),
+	).toBeVisible();
 	expect(
 		screen.queryByRole("link", { name: "Action alpha-fyi" }),
 	).not.toBeInTheDocument();
-	await user.click(screen.getByRole("tab", { name: "Open 4" }));
+	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
+	await user.click(screen.getByRole("menuitemradio", { name: "Open 4" }));
 	expect(
 		screen.getByRole("link", { name: "Action alpha-fyi" }),
 	).toBeVisible();
@@ -393,15 +410,13 @@ it("defaults All work to Needs you while preserving Open and direct legacy statu
 		screen.queryByRole("link", { name: "Action alpha-auto" }),
 	).not.toBeInTheDocument();
 	await act(() => router.navigate("/work/waiting"));
-	expect(screen.getByRole("tab", { name: "Waiting 1" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
+	expect(
+		screen.getByRole("button", { name: "Filter work: Waiting 1" }),
+	).toBeVisible();
 	await act(() => router.navigate("/work/done"));
-	expect(screen.getByRole("tab", { name: "Handled 1" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
+	expect(
+		screen.getByRole("button", { name: "Filter work: Handled 1" }),
+	).toBeVisible();
 });
 
 it("opens source threads by their canonical import route and reads sessions only on selection", async () => {
@@ -419,19 +434,18 @@ it("opens source threads by their canonical import route and reads sessions only
 			name: "Thread actions for Source alpha-email",
 		}),
 	).toBeVisible();
-	await user.click(screen.getByRole("tab", { name: "Sessions" }));
+	await user.click(screen.getByRole("tab", { name: "Chats" }));
 	expect(sessions.mounted).toHaveBeenCalledWith("alpha");
-	await user.click(screen.getByRole("tab", { name: "Actions" }));
+	await user.click(screen.getByRole("tab", { name: /^Actions/ }));
 	expect(screen.queryByText("Sessions for alpha")).not.toBeInTheDocument();
 	await act(() => router.navigate("/topics/beta"));
-	expect(screen.getByRole("tab", { name: "Actions" })).toHaveAttribute(
+	expect(screen.getByRole("tab", { name: /^Actions/ })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
-	expect(screen.getByRole("tab", { name: "Open 2" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
+	expect(
+		screen.getByRole("button", { name: "Filter work: Open 2" }),
+	).toBeVisible();
 	expect(
 		screen.queryByRole("link", { name: "Action alpha-email" }),
 	).not.toBeInTheDocument();
@@ -449,3 +463,158 @@ it("never falls back to global work for an unknown topic", () => {
 	expect(screen.queryByRole("article")).not.toBeInTheDocument();
 	expect(screen.queryByRole("tab")).not.toBeInTheDocument();
 });
+
+it("keeps empty-topic setup optional and preserves context when toggled", async () => {
+	const { user } = renderWork("/topics/beta");
+	const toggle = screen.getByRole("button", { name: "Context" });
+	expect(toggle).toHaveAttribute("aria-expanded", "false");
+	expect(
+		screen.queryByRole("complementary", { name: "Topic context" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.getByRole("link", { name: "Action beta-open" }),
+	).toBeVisible();
+	await user.click(toggle);
+	expect(
+		screen.getByRole("heading", { name: "Topic settings" }),
+	).toBeVisible();
+	expect(
+		screen.getByRole("combobox", { name: "Topic status" }),
+	).toBeVisible();
+	await user.click(
+		screen.getByRole("button", { name: "Notes for the assistant" }),
+	);
+	await user.click(toggle);
+	expect(
+		screen.queryByRole("button", { name: "Add keyword" }),
+	).not.toBeInTheDocument();
+	await user.click(toggle);
+	expect(
+		screen.getByRole("button", { name: "Notes for the assistant" }),
+	).toHaveAttribute("aria-expanded", "true");
+	expect(toggle).toHaveFocus();
+});
+
+it("finds work within status and source, clears an empty search, and restores keyboard focus", async () => {
+	const { user } = renderWork("/work/all");
+	const search = screen.getByRole("searchbox", { name: "Find work" });
+	await user.type(search, " ALPHA email ");
+	expect(
+		screen.getByRole("link", { name: "Action alpha-email" }),
+	).toBeVisible();
+	expect(screen.getByRole("link", { name: "Action shared" })).toBeVisible();
+	expect(
+		screen.queryByRole("link", { name: "Action beta-open" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.queryByRole("link", { name: "Action alpha-fyi" }),
+	).not.toBeInTheDocument();
+	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
+	await user.click(screen.getByRole("menuitemradio", { name: "Waiting 1" }));
+	await waitFor(() =>
+		expect(screen.queryByRole("menu")).not.toBeInTheDocument(),
+	);
+	expect(
+		screen.getByRole("link", { name: "Action alpha-wait" }),
+	).toBeVisible();
+	await user.clear(search);
+	await user.type(search, "no matching work");
+	expect(
+		screen.getByText("No work matches your search in this view."),
+	).toBeVisible();
+	await user.click(
+		within(screen.getByRole("region", { name: "Waiting 0" })).getByRole(
+			"button",
+			{ name: "Clear search" },
+		),
+	);
+	expect(search).toHaveValue("");
+	expect(search).toHaveFocus();
+	expect(
+		screen.getByRole("link", { name: "Action alpha-wait" }),
+	).toBeVisible();
+	await user.type(search, "alpha");
+	await user.keyboard("{Escape}");
+	expect(search).toHaveValue("");
+	expect(search).toHaveFocus();
+});
+
+it("searches summaries and people while retaining the selected source", async () => {
+	const state = workState();
+	const email = state.threads.find((thread) => thread.id === "alpha-email");
+	const fyi = state.threads.find((thread) => thread.id === "alpha-fyi");
+	if (!email || !fyi) throw new Error("Missing search fixtures");
+	email.summary = "Confirm the rollout schedule";
+	fyi.summary = "Rollout notes";
+	const { user } = renderWork("/work/all", state);
+	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
+	await user.click(screen.getByRole("menuitemradio", { name: "Open 4" }));
+	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
+	await user.click(screen.getByRole("menuitemradio", { name: "Teams 1" }));
+	const search = screen.getByRole("searchbox", { name: "Find work" });
+	await user.type(search, "rollout");
+	expect(
+		screen.getByRole("link", { name: "Action alpha-fyi" }),
+	).toBeVisible();
+	expect(
+		screen.queryByRole("link", { name: "Action alpha-email" }),
+	).not.toBeInTheDocument();
+	await user.clear(search);
+	await user.type(search, state.people[0].name);
+	expect(
+		screen.getByRole("link", { name: "Action alpha-fyi" }),
+	).toBeVisible();
+});
+
+it("keeps urgency visible and classification reasons under row details", async () => {
+	const state = workState();
+	const item = state.items.find((item) => item.id === "alpha-email");
+	if (!item) throw new Error("Missing details fixture");
+	item.reasons = ["Asks you to act", "From a VIP", "Urgency: Today"];
+	const thread = state.threads.find((thread) => thread.id === item.threadId);
+	if (!thread) throw new Error("Missing details thread");
+	thread.participants = [
+		{ personId: state.people[0].id, role: "Participant", included: false },
+	];
+	const { user } = renderWork("/work/all", state);
+	expect(screen.getByText("Today")).toBeVisible();
+	expect(screen.getByText("1 participant excluded")).toBeVisible();
+	expect(screen.getByText("From a VIP")).not.toBeVisible();
+	await user.click(
+		screen.getByRole("button", {
+			name: "Thread actions for Source alpha-email",
+		}),
+	);
+	await user.click(screen.getByRole("button", { name: "Show details" }));
+	expect(screen.getByText("From a VIP")).toBeVisible();
+	expect(
+		screen.getByRole("list", { name: "Why this is in your work list" }),
+	).toHaveTextContent("Asks you to act");
+	expect(
+		screen.getByRole("button", {
+			name: "Thread actions for Source alpha-email",
+		}),
+	).toHaveFocus();
+});
+
+it("takes focus to context below the viewport and returns to the work on close", async () => {
+	const { user } = renderWork("/topics/beta");
+	const context = screen.getByRole("complementary", { hidden: true });
+	vi.spyOn(context, "getBoundingClientRect").mockReturnValue(
+		new DOMRect(0, 1200, 320, 800),
+	);
+	const toggle = screen.getByRole("button", { name: "Context" });
+	await user.click(toggle);
+	await waitFor(() => expect(context).toHaveFocus());
+	await user.click(
+		screen.getByRole("button", { name: "Close topic context" }),
+	);
+	expect(toggle).toHaveFocus();
+	expect(toggle).toHaveAttribute("aria-expanded", "false");
+	expect(context).not.toBeVisible();
+});
+
+// Route composition is exercised with isolated child views; hydration has its own integration coverage.
+vi.mock("@/features/collaboration/components/saved-record-boundary", () => ({
+	SavedRecordBoundary: ({ children }: { children: ReactNode }) => children,
+}));

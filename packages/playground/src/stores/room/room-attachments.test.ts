@@ -1,5 +1,5 @@
 import { beforeEach, expect, test, vi } from "vitest";
-import { runPixel, uploadInsight } from "@semoss/sdk/react";
+import { runPixel, runPixelAsync, uploadInsight } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
 import { RoomStore } from "./room.store";
 
@@ -11,12 +11,10 @@ vi.mock("@semoss/sdk/react", () => ({
 	uploadInsight: vi.fn(),
 }));
 
-vi.mock("@/features/teamwork/connectors/connectors.api", () => ({
-	getSessionLogins: vi.fn().mockResolvedValue({}),
-	readSessionLoginConfig: vi.fn().mockResolvedValue({
-		connectorAccess: null,
-		availableProviders: null,
-	}),
+vi.mock("@/features/connectors/connector-tools", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@/features/connectors/connector-tools")
+	>()),
 	readUserConnectorTools: vi.fn().mockResolvedValue(null),
 }));
 
@@ -49,43 +47,82 @@ const createRoom = async (allowedFileTypes: string[]) => {
 	return room;
 };
 
+/** Sends a message and returns the media paths its model request carried. */
+const sentMedia = async (room: RoomStore, files: File[] = []) => {
+	// option saves and other room pixels succeed
+	vi.mocked(runPixel).mockResolvedValue({
+		errors: [],
+		insightId: "insight-test",
+		pixelReturn: [
+			{
+				output: true,
+				isMeta: false,
+				operationType: [],
+				pixelExpression: "",
+				pixelId: "",
+				timeToRun: 0,
+			},
+		],
+	});
+	// the model request is recorded and stopped there
+	let pixel = "";
+	const stopped = new Error("stopped at the model request");
+	vi.mocked(runPixelAsync).mockImplementation(async (expression) => {
+		pixel = expression;
+		throw stopped;
+	});
+	await expect(room.askMessage("Look at these", files)).rejects.toBe(stopped);
+	const media = pixel.match(/media=(\[[^\]]*\])/);
+	expect(media).not.toBeNull();
+	return JSON.parse(media?.[1] ?? "[]") as string[];
+};
+
+const uploads = (...names: string[]) =>
+	vi.mocked(uploadInsight).mockResolvedValueOnce({
+		data: names.map((name) => ({ fileName: name, fileLocation: name })),
+	} as Awaited<ReturnType<typeof uploadInsight>>);
+
 beforeEach(() => {
 	vi.clearAllMocks();
+	// an upload left unused by a failed test must not reach the next one
+	vi.mocked(uploadInsight).mockReset();
 	localStorage.clear();
 });
 
-test("a blocked file rejects the whole submission before upload", async () => {
-	const room = await createRoom(["pdf"]);
-	await expect(
-		room.askMessage("Read both files", [
-			new File(["pdf"], "report.pdf"),
-			new File(["pptx"], "deck.pptx"),
-		]),
-	).rejects.toThrow("file policy: deck.pptx");
-	expect(uploadInsight).not.toHaveBeenCalled();
-	expect(room.isLoading).toBe(false);
-});
-
-test("document uploads are allowed for a text model when policy permits them", async () => {
-	const room = await createRoom([".PDF", "pptx", "csv"]);
-	const uploadFailure = new Error("fixture upload stopped");
-	vi.mocked(uploadInsight).mockRejectedValueOnce(uploadFailure);
-	const files = [new File(["pptx"], "deck.PPTX")];
-	await expect(room.askMessage("Read this deck", files)).rejects.toBe(
-		uploadFailure,
-	);
+test("files outside the list are uploaded but not sent to the model", async () => {
+	const room = await createRoom(["png", "jpg", "jpeg", "svg"]);
+	uploads("photo.png", "report.pdf");
+	const files = [
+		new File(["png"], "photo.png"),
+		new File(["pdf"], "report.pdf"),
+	];
+	expect(await sentMedia(room, files)).toEqual(["photo.png"]);
 	expect(uploadInsight).toHaveBeenCalledWith("insight-test", "", files);
-	expect(room.isLoading).toBe(false);
 });
 
-test("blocked queued files remain queued after submission fails", async () => {
-	const room = await createRoom(["pdf"]);
-	room.teamwork.addContextItem({ name: "deck.pptx", path: "deck.pptx" });
-	await expect(room.askMessage("Read the queued deck")).rejects.toThrow(
-		"file policy: deck.pptx",
-	);
-	expect(room.teamwork.contextItems.map((item) => item.path)).toEqual([
-		"deck.pptx",
-	]);
-	expect(room.isLoading).toBe(false);
+test("queued files outside the list stay in the room without failing", async () => {
+	const room = await createRoom(["png"]);
+	room.contextItems.add({ name: "deck.pptx", path: "deck.pptx" });
+	room.contextItems.add({ name: "chart.png", path: "chart.png" });
+	expect(await sentMedia(room)).toEqual(["chart.png"]);
+	expect(uploadInsight).not.toHaveBeenCalled();
+});
+
+test("without a list every file is sent to the model", async () => {
+	const room = await createRoom([]);
+	uploads("deck.pptx", "photo.png");
+	expect(
+		await sentMedia(room, [
+			new File(["pptx"], "deck.pptx"),
+			new File(["png"], "photo.png"),
+		]),
+	).toEqual(["deck.pptx", "photo.png"]);
+});
+
+test("list matching ignores case, spaces, and a leading dot", async () => {
+	const room = await createRoom([" .PDF ", "pptx"]);
+	expect(room.shouldAttachToModel("deck.PPTX")).toBe(true);
+	expect(room.shouldAttachToModel("report.pdf")).toBe(true);
+	expect(room.shouldAttachToModel("notes.txt")).toBe(false);
+	expect(room.shouldAttachToModel("README")).toBe(false);
 });

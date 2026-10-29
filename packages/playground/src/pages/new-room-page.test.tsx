@@ -195,6 +195,16 @@ vi.mock("@/components/room/room-options-form", () => ({
 				type="button"
 				onClick={() =>
 					onOptionsChange({
+						workspace: { workspace_id: "alpha", name: "Alpha" },
+					})
+				}
+			>
+				Save Alpha in Settings
+			</button>
+			<button
+				type="button"
+				onClick={() =>
+					onOptionsChange({
 						mcp: options.mcp.filter((item) => item.id !== "local"),
 					})
 				}
@@ -212,6 +222,7 @@ vi.mock("@/components/room/room-input", () => ({
 			onMcpChange,
 			onWorkspaceChange,
 			onExitAgentHarness,
+			onSwitchToAgentHarness,
 			onPrompt,
 			onOpenSource,
 		}: ComponentProps<typeof RoomInput>) => (
@@ -247,19 +258,19 @@ vi.mock("@/components/room/room-input", () => ({
 				<button
 					type="button"
 					onClick={() =>
-						onWorkspaceChange?.(
-							{ workspace_id: "alpha", name: "Alpha" },
-							true,
-						)
+						onWorkspaceChange?.({
+							workspace_id: "alpha",
+							name: "Alpha",
+						})
 					}
 				>
 					Save Alpha
 				</button>
-				<button
-					type="button"
-					onClick={() => onWorkspaceChange?.(null, true)}
-				>
+				<button type="button" onClick={() => onWorkspaceChange?.(null)}>
 					Save default
+				</button>
+				<button type="button" onClick={onSwitchToAgentHarness}>
+					Agent
 				</button>
 				<button type="button" onClick={onExitAgentHarness}>
 					Chat
@@ -320,40 +331,85 @@ function createPreparedRoom(): RoomStore {
 	});
 }
 
-test("committing an agent and switching back to Chat preserves manual context and the composer draft", async () => {
+test("selecting an agent and changing modes preserves its settings and the composer draft", async () => {
 	renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Add local" }));
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 	await waitFor(() =>
-		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+		expect(screen.getByLabelText("Instructions")).toHaveValue(
+			"Agent instructions",
+		),
 	);
-	expect(screen.getByLabelText("Instructions")).toHaveValue(
-		"Agent instructions",
-	);
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
 	expect(screen.getByLabelText("Resources")).toHaveTextContent(
 		"agent-tool,local",
+	);
+	fireEvent.change(screen.getByLabelText("Instructions"), {
+		target: { value: "Edited instructions" },
+	});
+	fireEvent.change(screen.getByLabelText("Message draft"), {
+		target: { value: "Keep my typed draft" },
+	});
+	mocks.selectModelById.mockClear();
+	fireEvent.click(screen.getByRole("button", { name: "Agent" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Chat" }));
 	await waitFor(() =>
 		expect(screen.getByLabelText("Mode")).toHaveTextContent("chat"),
 	);
+	expect(screen.getByLabelText("Selected agent")).toHaveTextContent("Alpha");
+	expect(screen.getByLabelText("Resources")).toHaveTextContent(
+		"agent-tool,local",
+	);
+	expect(screen.getByLabelText("Instructions")).toHaveValue(
+		"Edited instructions",
+	);
+	expect(screen.getByLabelText("Message draft")).toHaveValue(
+		"Keep my typed draft",
+	);
+	expect(mocks.selectModelById).not.toHaveBeenCalled();
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"chat",
+			"Hello",
+			[],
+			expect.objectContaining({
+				workspace: { workspace_id: "alpha", name: "Alpha" },
+				instructions: "Edited instructions",
+				harnessType: undefined,
+				mcp: expect.arrayContaining([
+					expect.objectContaining({ id: "agent-tool" }),
+					expect.objectContaining({ id: "local" }),
+				]),
+			}),
+			"alpha",
+			undefined,
+			expect.any(Function),
+		),
+	);
+});
+
+test("Agent mode survives selecting and removing a saved agent", async () => {
+	renderWorkspace();
+	fireEvent.click(screen.getByRole("button", { name: "Add local" }));
+	fireEvent.click(screen.getByRole("button", { name: "Agent" }));
+	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Instructions")).toHaveValue(
+			"Agent instructions",
+		),
+	);
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
+	fireEvent.click(screen.getByRole("button", { name: "Save default" }));
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
 	expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
 		"Default",
 	);
 	expect(screen.getByLabelText("Resources")).toHaveTextContent(/^local$/);
 	expect(screen.getByLabelText("Instructions")).toHaveValue("");
-	expect(screen.getByLabelText("Message draft")).toHaveValue(
-		"Keep this draft",
-	);
-	expect(mocks.selectModelById).toHaveBeenCalledWith("default-model");
-});
-
-test("default Agent works without a saved agent and normal submission uses current options", async () => {
-	renderWorkspace();
-	fireEvent.click(screen.getByRole("button", { name: "Save default" }));
-	await waitFor(() =>
-		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
-	);
 	fireEvent.change(screen.getByLabelText("Instructions"), {
 		target: { value: "Current instructions" },
 	});
@@ -366,6 +422,7 @@ test("default Agent works without a saved agent and normal submission uses curre
 			expect.objectContaining({
 				instructions: "Current instructions",
 				harnessType: "semoss",
+				workspace: undefined,
 			}),
 			undefined,
 			undefined,
@@ -374,62 +431,102 @@ test("default Agent works without a saved agent and normal submission uses curre
 	);
 });
 
-test("a prepared room keeps Settings docked and submits the latest draft options", async () => {
-	const room = createPreparedRoom();
-	const updateRoomOptions = vi
-		.fn<RoomStore["updateRoomOptions"]>()
-		.mockResolvedValue();
-	runInAction(() => {
-		room.updateRoomOptions = updateRoomOptions;
-		room.askMessage = vi.fn<RoomStore["askMessage"]>().mockResolvedValue();
-	});
-	mocks.createEmptyRoom.mockResolvedValue(room);
-	renderWorkspace();
-	fireEvent.click(screen.getByRole("button", { name: "Add local" }));
-	fireEvent.change(screen.getByLabelText("Instructions"), {
-		target: { value: "Before opening files" },
-	});
-	selectWorkspaceItem("menuFileExplorer.open");
-	await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
-	expect(screen.getAllByRole("tab")).toHaveLength(2);
-	selectWorkspaceItem("settings.edit");
-	expect(screen.getByLabelText("Instructions")).toHaveValue(
-		"Before opening files",
-	);
-	fireEvent.change(screen.getByLabelText("Instructions"), {
-		target: { value: "After opening files" },
-	});
-	fireEvent.click(screen.getByRole("button", { name: "Remove local" }));
-	fireEvent.click(screen.getByRole("button", { name: "Send" }));
-	await waitFor(() =>
-		expect(updateRoomOptions).toHaveBeenCalledWith(
-			expect.objectContaining({
-				instructions: "After opening files",
-				mcp: [],
-			}),
-		),
-	);
-	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
-	expect(mocks.createRoom).not.toHaveBeenCalled();
-});
+test.each(["chat", "agent"] as const)(
+	"a prepared %s room keeps the selected agent and submits the latest draft options",
+	async (mode) => {
+		const room = createPreparedRoom();
+		const updateRoomOptions = vi
+			.fn<RoomStore["updateRoomOptions"]>()
+			.mockResolvedValue();
+		runInAction(() => {
+			room.updateRoomOptions = updateRoomOptions;
+			room.askMessage = vi
+				.fn<RoomStore["askMessage"]>()
+				.mockResolvedValue();
+		});
+		mocks.createEmptyRoom.mockResolvedValue(room);
+		renderWorkspace();
+		fireEvent.click(screen.getByRole("button", { name: "Add local" }));
+		fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
+		await waitFor(() =>
+			expect(screen.getByLabelText("Instructions")).toHaveValue(
+				"Agent instructions",
+			),
+		);
+		if (mode === "agent")
+			fireEvent.click(screen.getByRole("button", { name: "Agent" }));
+		fireEvent.change(screen.getByLabelText("Instructions"), {
+			target: { value: "Before opening files" },
+		});
+		selectWorkspaceItem("menuFileExplorer.open");
+		await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
+		expect(screen.getAllByRole("tab")).toHaveLength(2);
+		selectWorkspaceItem("settings.edit");
+		expect(screen.getByLabelText("Instructions")).toHaveValue(
+			"Before opening files",
+		);
+		fireEvent.change(screen.getByLabelText("Instructions"), {
+			target: { value: "After opening files" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Remove local" }));
+		fireEvent.click(screen.getByRole("button", { name: "Send" }));
+		await waitFor(() =>
+			expect(updateRoomOptions).toHaveBeenCalledWith(
+				expect.objectContaining({
+					instructions: "After opening files",
+					workspace: { workspace_id: "alpha", name: "Alpha" },
+					harnessType: mode === "agent" ? "semoss" : undefined,
+					mcp: [expect.objectContaining({ id: "agent-tool" })],
+				}),
+			),
+		);
+		expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
+		expect(mocks.createRoom).not.toHaveBeenCalled();
+		expect(room.mode).toBe(mode);
+	},
+);
 
-test("a pending agent cannot send, and switching to Chat ignores its late response", async () => {
+test("a pending agent stays selected in Chat, and removing it ignores its late response", async () => {
 	mocks.workspaceStatus = "LOADING";
 	const { rerender } = renderWorkspace();
+	fireEvent.click(screen.getByRole("button", { name: "Agent" }));
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
+	fireEvent.click(screen.getByRole("button", { name: "Chat" }));
+	expect(screen.getByLabelText("Selected agent")).toHaveTextContent("Alpha");
 	fireEvent.click(screen.getByRole("button", { name: "Send" }));
 	expect(mocks.createRoom).not.toHaveBeenCalled();
 	mocks.workspaceStatus = "ERROR";
 	fireEvent.click(screen.getByRole("button", { name: "Add local" }));
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
 	expect(mocks.refreshWorkspace).toHaveBeenCalledTimes(1);
-	fireEvent.click(screen.getByRole("button", { name: "Chat" }));
+	fireEvent.click(screen.getByRole("button", { name: "Save default" }));
 	mocks.workspaceStatus = "SUCCESS";
 	rerender(<NewRoomPage />);
 	expect(screen.getByLabelText("Instructions")).toHaveValue("");
 	expect(screen.getByLabelText("Resources")).toHaveTextContent(/^local$/);
 	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
 });
+
+test.each(["chat", "agent"] as const)(
+	"selecting an agent in Settings preserves %s mode",
+	async (mode) => {
+		renderWorkspace();
+		if (mode === "agent")
+			fireEvent.click(screen.getByRole("button", { name: "Agent" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Save Alpha in Settings" }),
+		);
+		await waitFor(() =>
+			expect(screen.getByLabelText("Instructions")).toHaveValue(
+				"Agent instructions",
+			),
+		);
+		expect(screen.getByLabelText("Mode")).toHaveTextContent(mode);
+		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+			"Alpha",
+		);
+	},
+);
 
 test("without the harness flag saved agents retain chat behavior", async () => {
 	root.theme.featureFlags.enableAgentHarness = false;

@@ -35,6 +35,7 @@ Tokens are raw values on `:root` (light) and `.dark` (dark), mapped to Tailwind 
 | `card` / `card-foreground` | `bg-card`, `text-card-foreground` | Card surfaces |
 | `popover` / `popover-foreground` | `bg-popover` | Popovers, dropdowns, menus |
 | `primary` / `primary-foreground` | `bg-primary`, `text-primary` | Brand blue; primary actions, links |
+| `assistant` / `assistant-foreground` | `Button variant="assistant"` | Purple assistant actions, such as Ask Assistant |
 | `muted` / `muted-foreground` | `bg-muted`, `text-muted-foreground` | De-emphasized text/surfaces |
 | `accent` / `accent-foreground` | `hover:bg-accent` | Hover/active tints |
 | `destructive` / `destructive-foreground` | `text-destructive`, `bg-destructive/10` | Errors, dangerous actions |
@@ -84,6 +85,10 @@ source. Deleting it is planned future work.
 - **Theming**: `ThemeProvider`, `useTheme` (`"dark" | "light" | "system"`)
 - **Utilities & hooks**: `cn`, `useCacheState`, `useDebouncedCallback`, `useDebouncedValue`,
   `useInfiniteScroll`, `useIsMobile`
+
+`Progress` reports its value as the bar's `aria-valuenow`, kept between 0 and `max` (100 by
+default); with no value it is indeterminate. Give it an `aria-label`, and an `aria-valuetext`
+when a bare percentage does not say what it measures.
 
 ### Typography map
 

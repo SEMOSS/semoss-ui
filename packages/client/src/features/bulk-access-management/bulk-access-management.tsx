@@ -1,12 +1,19 @@
-import { Copy, Plus, RefreshCw, Users, UsersRound } from "lucide-react";
+import { Copy, Gauge, Plus, RefreshCw, Users, UsersRound } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import type {
 	AccessLevel,
 	AccessPerson,
+	ModelUsageLimit,
 	PermissionBatch,
 	PermissionTargetResource,
 } from "@semoss/sdk";
-import { useIsCurrentLogin } from "@semoss/shared";
+import {
+	describeModelUsageLimit,
+	isSameModelUsageLimit,
+	OWNERS_ONLY_LIMIT_REASON,
+	UsageLimitGuideButton,
+	useIsCurrentLogin,
+} from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
@@ -23,21 +30,45 @@ import {
 import type { TeamSummary } from "@/api/teams";
 import { AddGroupAccessDialog } from "@/features/group-access/add-group-access-dialog";
 import { GROUP_ACCESS_LEVELS } from "@/features/group-access/group-access-levels";
+import {
+	MODEL_LIMIT_NAMES,
+	MODEL_TOTAL_DESCRIPTION,
+	PUBLIC_USE_DESCRIPTION,
+	PUBLIC_USE_NOT_PUBLIC_DESCRIPTION,
+} from "@/features/model-usage-limits/model-usage-limits";
 import { TeamFormDialog } from "@/features/team-form/team-form-dialog";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
+import {
+	PUBLIC_TEAM_HINT,
+	TEAM_LIMIT_DESCRIPTION,
+} from "@/features/team-usage-limit/team-usage-limit";
 import { AccessViewHeader } from "./access-view-header";
 import { AddPeopleCard } from "./add-people-card";
 import type { BringInAccessItem } from "./bring-in-access-menu";
 import { CopyAccessDialog } from "./copy-access-dialog";
 import { CopyTeamPeopleDialog } from "./copy-team-people-dialog";
 import { DiscardChangesDialog } from "./discard-changes-dialog";
-import { describeChangeDetail, getSubjectKey } from "./permission-batch";
+import {
+	type BatchEntry,
+	canSetPersonLimitAt,
+	canSetUsageLimits,
+	describeChangeDetail,
+	describeModelLimitChange,
+	getLevelLabel,
+	getLimitBlockReason,
+	getSubjectKey,
+	type ModelLimitEntry,
+} from "./permission-batch";
 import { PermissionBatchConflicts } from "./permission-batch-conflicts";
 import { PermissionBatchList } from "./permission-batch-list";
 import {
 	PermissionBatchReviewDialog,
 	type ReviewItem,
 } from "./permission-batch-review-dialog";
+import {
+	UsageLimitDialog,
+	type UsageLimitDialogProps,
+} from "./usage-limit-dialog";
 import { usePermissionBatch } from "./use-permission-batch";
 import { useUnsavedChangesGuard } from "./use-unsaved-changes-guard";
 
@@ -54,9 +85,17 @@ type BulkAccessDialog =
 	| "COPY_TEAM"
 	| "ADD_TEAM"
 	| "MAKE_TEAM"
+	| "LIMIT"
 	| "REVIEW"
 	| "DISCARD"
 	| null;
+
+/** Which usage limit the limit dialog edits */
+type LimitEditing =
+	| { mode: "ENTRY"; entry: BatchEntry }
+	| { mode: "MANY"; entries: BatchEntry[] }
+	| { mode: "ADD" }
+	| { mode: "MODEL_LIMIT"; entry: ModelLimitEntry };
 
 /** The people to add to a team made from the batch, saved with the batch */
 interface NewTeamMembers {
@@ -114,9 +153,15 @@ export const BulkAccessManagement = ({
 	// a new key each time a dialog opens starts it empty
 	const [dialogKey, setDialogKey] = useState(0);
 	const [addLevel, setAddLevel] = useState<AccessLevel>("READ_ONLY");
+	// on a model, the limit people are added with
+	const [addLimit, setAddLimit] = useState<ModelUsageLimit | null>(null);
+	const [limitEditing, setLimitEditing] = useState<LimitEditing | null>(null);
+	const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(
+		() => new Set(),
+	);
 	const [newTeamMembers, setNewTeamMembers] = useState<NewTeamMembers[]>([]);
-	const { kind, id } = target;
-	const isEngine = kind === "ENGINE";
+	const { resourceType, id } = target;
+	const isEngine = resourceType === "ENGINE";
 	const allowedChanges = batch.allowedChanges;
 	const canAddPeople =
 		allowedChanges?.canChangePeople === true &&
@@ -124,6 +169,18 @@ export const BulkAccessManagement = ({
 	const levels = allowedChanges?.canGiveAuthorAccess
 		? GROUP_ACCESS_LEVELS
 		: GROUP_ACCESS_LEVELS.filter((option) => option.value !== "OWNER");
+	// on a model, only its owners, and admins in admin mode, set usage limits
+	const canSetLimits =
+		isModel && allowedChanges !== null && canSetUsageLimits(allowedChanges);
+	/** Whether the user can give the people they add at a level a limit */
+	const canGiveLimitAt = (level: AccessLevel): boolean =>
+		isModel &&
+		allowedChanges !== null &&
+		canSetPersonLimitAt(allowedChanges, level);
+	/** The limit people added at a level get; none from a user who cannot set limits */
+	const getAddLimitFor = (level: AccessLevel): ModelUsageLimit | null =>
+		canGiveLimitAt(level) ? addLimit : null;
+	const canGiveAddLimit = canGiveLimitAt(addLevel);
 
 	const stagedKeys = useMemo(
 		() =>
@@ -139,16 +196,16 @@ export const BulkAccessManagement = ({
 	const batches = useMemo<PermissionBatch[]>(
 		() => [
 			{
-				target: { kind, id },
+				target: { resourceType, id },
 				changes: batch.changes.map((c) => c.change),
 			},
 			...newTeamMembers.map(
 				(team): PermissionBatch => ({
-					target: { kind: "TEAM", id: team.teamId },
+					target: { resourceType: "TEAM", id: team.teamId },
 					changes: team.people.map((person) => ({
 						action: "ADD",
 						subject: {
-							kind: "USER",
+							category: "USER",
 							id: person.id,
 							type: person.type,
 						},
@@ -156,13 +213,32 @@ export const BulkAccessManagement = ({
 				}),
 			),
 		],
-		[kind, id, batch.changes, newTeamMembers],
+		[resourceType, id, batch.changes, newTeamMembers],
 	);
 	const entriesByKey = new Map(
 		batch.entries.map((entry) => [entry.key, entry]),
 	);
+	const modelLimitsByKey = new Map(
+		batch.modelLimitEntries.map((entry) => [entry.key, entry]),
+	);
 	const reviewItems: ReviewItem[] = batch.changes.flatMap(
 		(item, changeIndex) => {
+			const modelLimit = modelLimitsByKey.get(item.key);
+			if (modelLimit) {
+				return [
+					{
+						batchIndex: 0,
+						changeIndex,
+						key: item.key,
+						where: name,
+						action: item.change.action,
+						name: MODEL_LIMIT_NAMES[modelLimit.category],
+						category: modelLimit.category,
+						type: "",
+						detail: describeModelLimitChange(modelLimit),
+					},
+				];
+			}
 			const entry = entriesByKey.get(item.key);
 			return entry
 				? [
@@ -173,15 +249,15 @@ export const BulkAccessManagement = ({
 							where: name,
 							action: item.change.action,
 							name:
-								entry.subject.kind === "TEAM"
+								entry.subject.category === "TEAM"
 									? entry.subject.id
 									: entry.person?.name ||
 										entry.person?.email ||
 										entry.subject.id,
-							kind: entry.subject.kind,
+							category: entry.subject.category,
 							type: entry.subject.type,
 							id:
-								entry.subject.kind === "USER"
+								entry.subject.category === "USER"
 									? entry.subject.id
 									: undefined,
 							email: entry.person?.email,
@@ -190,6 +266,9 @@ export const BulkAccessManagement = ({
 								item.change.action === "REMOVE"
 									? null
 									: entry.staged,
+								entry.subject.category === "TEAM"
+									? "TEAM"
+									: "DIRECT",
 							),
 						},
 					]
@@ -206,7 +285,7 @@ export const BulkAccessManagement = ({
 					where: `${team.teamId} team members`,
 					action: "ADD",
 					name: person.name || person.email || person.id,
-					kind: "USER",
+					category: "USER",
 					type: person.type,
 					id: person.id,
 					email: person.email,
@@ -217,13 +296,13 @@ export const BulkAccessManagement = ({
 	// teams already in the batch are left out of Add Team
 	const teamsInBatch = new Set(
 		batch.entries
-			.filter((entry) => entry.subject.kind === "TEAM")
+			.filter((entry) => entry.subject.category === "TEAM")
 			.map((entry) => `${entry.subject.type}:${entry.subject.id}`),
 	);
 	const customTeamsWithAccess = batch.entries
 		.filter(
 			(entry) =>
-				entry.subject.kind === "TEAM" &&
+				entry.subject.category === "TEAM" &&
 				entry.subject.type === CUSTOM_TEAM_TYPE &&
 				entry.current,
 		)
@@ -240,7 +319,7 @@ export const BulkAccessManagement = ({
 			const entry = entriesByKey.get(item.key);
 			if (
 				!entry ||
-				entry.subject.kind !== "USER" ||
+				entry.subject.category !== "USER" ||
 				!isCurrentLogin(entry.subject.type, entry.subject.id)
 			) {
 				return false;
@@ -297,7 +376,76 @@ export const BulkAccessManagement = ({
 	];
 
 	const handleAddPerson = (person: AccessPerson) => {
-		batch.add([{ subject: person, person }], { level: addLevel });
+		// someone who has access now keeps their limit when the user cannot set it
+		const currentLimit =
+			entriesByKey.get(getSubjectKey(person))?.current?.usageLimit ??
+			null;
+		batch.add(
+			[{ subject: person, person }],
+			isModel
+				? {
+						level: addLevel,
+						usageLimit: canGiveAddLimit ? addLimit : currentLimit,
+					}
+				: { level: addLevel },
+		);
+	};
+
+	const openLimit = (editing: LimitEditing) => {
+		setLimitEditing(editing);
+		openDialog("LIMIT");
+	};
+
+	/**
+	 * A new level for an entry. A change sets the whole access, so the limit is
+	 * carried with it: the one staged when the user can set the limit at the new
+	 * level, and otherwise the one it has now, since only owners set limits.
+	 */
+	const handleLevelChange = (entry: BatchEntry, level: AccessLevel) => {
+		const base = entry.staged ?? entry.current;
+		if (!base) {
+			return;
+		}
+		const next = { ...base, level };
+		const keepsStagedLimit =
+			!isModel ||
+			(allowedChanges !== null &&
+				getLimitBlockReason(
+					{ ...entry, staged: next },
+					allowedChanges,
+				) === null);
+		batch.setStaged(
+			entry,
+			keepsStagedLimit
+				? next
+				: { ...next, usageLimit: entry.current?.usageLimit ?? null },
+		);
+	};
+
+	const handleSaveLimit = (usageLimit: ModelUsageLimit | null) => {
+		const editing = limitEditing;
+		setDialog(null);
+		setLimitEditing(null);
+		if (!editing) {
+			return;
+		}
+		if (editing.mode === "ADD") {
+			setAddLimit(usageLimit);
+			return;
+		}
+		if (editing.mode === "MODEL_LIMIT") {
+			batch.setModelLimit(editing.entry.category, usageLimit);
+			return;
+		}
+		if (editing.mode === "MANY") {
+			batch.setUsageLimits(editing.entries, usageLimit);
+			setSelectedKeys(new Set());
+			return;
+		}
+		const base = editing.entry.staged;
+		if (base) {
+			batch.setStaged(editing.entry, { ...base, usageLimit });
+		}
 	};
 
 	const handleCopied = (
@@ -346,11 +494,13 @@ export const BulkAccessManagement = ({
 		batch.add(
 			[
 				{
-					subject: { kind: "TEAM", id: team.id, type: team.type },
+					subject: { category: "TEAM", id: team.id, type: team.type },
 					person: null,
 				},
 			],
-			{ level: "READ_ONLY" },
+			isModel
+				? { level: "READ_ONLY", usageLimit: null }
+				: { level: "READ_ONLY" },
 			members.length > 0
 				? `New team, with ${memberCount} to add`
 				: "New team",
@@ -362,9 +512,96 @@ export const BulkAccessManagement = ({
 		);
 	};
 
+	/**
+	 * @param editing - which usage limit the dialog edits
+	 * @returns what the dialog says and starts from
+	 */
+	const getLimitDialogProps = (
+		editing: LimitEditing,
+	): Pick<
+		UsageLimitDialogProps,
+		| "title"
+		| "description"
+		| "source"
+		| "defaultValue"
+		| "notDefinedHint"
+		| "readOnlyReason"
+		| "saveLabel"
+	> => {
+		if (editing.mode === "ADD") {
+			return {
+				title: "Usage Limit for the People You Add",
+				description:
+					"Everyone you add from here, or copy from a team, gets this limit on the model.",
+				source: "DIRECT",
+				defaultValue: addLimit,
+			};
+		}
+		if (editing.mode === "MODEL_LIMIT") {
+			const isTotal = editing.entry.category === "MODEL";
+			return {
+				title: isTotal ? "Model Total" : "Public Use Limit",
+				description: isTotal
+					? MODEL_TOTAL_DESCRIPTION
+					: batch.isPublic
+						? PUBLIC_USE_DESCRIPTION
+						: PUBLIC_USE_NOT_PUBLIC_DESCRIPTION,
+				source: isTotal ? "MODEL_TOTAL" : "PUBLIC",
+				defaultValue: editing.entry.staged,
+				readOnlyReason: canSetLimits ? null : OWNERS_ONLY_LIMIT_REASON,
+				saveLabel: "Use This Limit",
+			};
+		}
+		if (editing.mode === "MANY") {
+			const isAllTeams = editing.entries.every(
+				(entry) => entry.subject.category === "TEAM",
+			);
+			const [first, ...rest] = editing.entries;
+			const firstLimit = first?.staged?.usageLimit ?? null;
+			// several rows start from their limit when they all have the same one
+			const isSame = rest.every((entry) =>
+				isSameModelUsageLimit(entry.staged?.usageLimit, firstLimit),
+			);
+			const count = editing.entries.length;
+			return {
+				title:
+					count === 1
+						? "Set Usage Limit for 1 Row"
+						: `Set Usage Limit for ${count.toLocaleString()} Rows`,
+				description: isAllTeams
+					? "Each team selected gets this team limit. Their access levels stay as they are."
+					: "Each person selected gets this limit, and each team gets it for each member. Their access levels stay as they are.",
+				source: isAllTeams ? "TEAM" : "DIRECT",
+				defaultValue: isSame ? firstLimit : null,
+				notDefinedHint:
+					isAllTeams && batch.isPublic ? PUBLIC_TEAM_HINT : undefined,
+				saveLabel: "Set Usage Limit",
+			};
+		}
+		const { entry } = editing;
+		const isTeam = entry.subject.category === "TEAM";
+		const label = isTeam
+			? entry.subject.id
+			: entry.person?.name || entry.person?.email || entry.subject.id;
+		return {
+			title: `Usage Limit for ${label}`,
+			description: isTeam
+				? TEAM_LIMIT_DESCRIPTION
+				: "This person's own limit on this model. It replaces any team limit for them.",
+			source: isTeam ? "TEAM" : "DIRECT",
+			defaultValue: (entry.staged ?? entry.current)?.usageLimit ?? null,
+			notDefinedHint:
+				isTeam && batch.isPublic ? PUBLIC_TEAM_HINT : undefined,
+			readOnlyReason: allowedChanges
+				? getLimitBlockReason(entry, allowedChanges)
+				: null,
+		};
+	};
+
 	const handleDiscard = () => {
 		batch.discard();
 		setNewTeamMembers([]);
+		setSelectedKeys(new Set());
 		setDialog(null);
 	};
 
@@ -383,6 +620,15 @@ export const BulkAccessManagement = ({
 				backLabel="Back to Members"
 				actions={
 					<>
+						{isModel ? (
+							<UsageLimitGuideButton
+								section="who"
+								viewer={{
+									canSetModelLimits: canSetLimits,
+									isAdminMode: admin,
+								}}
+							/>
+						) : null}
 						<Button
 							type="button"
 							variant="outline"
@@ -473,14 +719,25 @@ export const BulkAccessManagement = ({
 							entries={batch.entries}
 							allowedChanges={allowedChanges}
 							showModelLimits={isModel}
-							onLevelChange={(entry, level) => {
-								const base = entry.staged ?? entry.current;
-								if (base) {
-									batch.setStaged(entry, { ...base, level });
-								}
-							}}
+							modelLimitEntries={batch.modelLimitEntries}
+							isPublic={batch.isPublic}
+							selectedKeys={selectedKeys}
+							onSelectedKeysChange={setSelectedKeys}
+							onLevelChange={handleLevelChange}
 							onRemove={(entry) => batch.setStaged(entry, null)}
 							onRestore={(entry) => batch.restore(entry.key)}
+							onEditLimit={(entry) =>
+								openLimit({ mode: "ENTRY", entry })
+							}
+							onEditModelLimit={(entry) =>
+								openLimit({ mode: "MODEL_LIMIT", entry })
+							}
+							onRestoreModelLimit={(entry) =>
+								batch.restore(entry.key)
+							}
+							onSetUsageLimits={(entries) =>
+								openLimit({ mode: "MANY", entries })
+							}
 						/>
 					</div>
 
@@ -519,7 +776,9 @@ export const BulkAccessManagement = ({
 									id={addLevelId}
 									className="w-full"
 								>
-									<SelectValue />
+									<SelectValue>
+										{getLevelLabel(addLevel)}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{levels.map((option) => (
@@ -532,6 +791,47 @@ export const BulkAccessManagement = ({
 									))}
 								</SelectContent>
 							</Select>
+							{isModel ? (
+								<>
+									<Button
+										type="button"
+										variant="outline"
+										className="h-auto w-full justify-start whitespace-normal py-2 text-start"
+										disabled={
+											!canAddPeople || !canGiveAddLimit
+										}
+										onClick={() =>
+											openLimit({ mode: "ADD" })
+										}
+									>
+										<Gauge
+											className="size-4 shrink-0"
+											aria-hidden
+										/>
+										<span className="sr-only">
+											Usage limit for the people you add:{" "}
+										</span>
+										<span
+											className={
+												getAddLimitFor(addLevel)
+													? undefined
+													: "text-muted-foreground"
+											}
+										>
+											{describeModelUsageLimit(
+												getAddLimitFor(addLevel),
+											)}
+										</span>
+									</Button>
+									{canGiveAddLimit || !canAddPeople ? null : (
+										<p className="text-muted-foreground text-xs">
+											{OWNERS_ONLY_LIMIT_REASON}. People
+											you add get no limit, and anyone who
+											has access keeps their own.
+										</p>
+									)}
+								</>
+							) : null}
 						</div>
 					</AddPeopleCard>
 				</div>
@@ -548,6 +848,8 @@ export const BulkAccessManagement = ({
 						batch.copy(rows, {
 							note: `Copied from ${from}`,
 							keepModelLimits: isModel,
+							canSetLimits,
+							costLimitsAvailable: batch.costLimitsAvailable,
 						}),
 						from,
 					)
@@ -567,7 +869,15 @@ export const BulkAccessManagement = ({
 						batch.copy(rows, {
 							note: `Copied from the ${team} team`,
 							level,
-							keepModelLimits: false,
+							// a team's members get the Add With limit from a user who
+							// can set it; otherwise each keeps the limit they have now
+							...(isModel && level
+								? { usageLimit: getAddLimitFor(level) }
+								: {}),
+							keepModelLimits: isModel,
+							canSetLimits:
+								level !== undefined && canGiveLimitAt(level),
+							costLimitsAvailable: batch.costLimitsAvailable,
 						}),
 						`the ${team} team`,
 					)
@@ -582,7 +892,16 @@ export const BulkAccessManagement = ({
 					resourceId={id}
 					admin={admin}
 					excludedTeams={teamsInBatch}
-					onStage={(team, level) => {
+					model={
+						isModel
+							? {
+									isPublic: batch.isPublic,
+									isCostAvailable: batch.costLimitsAvailable,
+									canChangeLimit: canSetLimits,
+								}
+							: undefined
+					}
+					onStage={(team, level, usageLimit) => {
 						if (level === "DISCOVERABLE") {
 							return;
 						}
@@ -590,14 +909,14 @@ export const BulkAccessManagement = ({
 							[
 								{
 									subject: {
-										kind: "TEAM",
+										category: "TEAM",
 										id: team.id,
 										type: team.type,
 									},
 									person: null,
 								},
 							],
-							{ level },
+							isModel ? { level, usageLimit } : { level },
 						);
 					}}
 					onClose={() => setDialog(null)}
@@ -611,6 +930,19 @@ export const BulkAccessManagement = ({
 					onClose={handleTeamMade}
 				/>
 			) : null}
+			{limitEditing ? (
+				<UsageLimitDialog
+					key={`limit-${dialogKey}`}
+					open={dialog === "LIMIT"}
+					{...getLimitDialogProps(limitEditing)}
+					isCostAvailable={batch.costLimitsAvailable}
+					onSave={handleSaveLimit}
+					onClose={() => {
+						setDialog(null);
+						setLimitEditing(null);
+					}}
+				/>
+			) : null}
 			<PermissionBatchReviewDialog
 				admin={admin}
 				key={`review-${dialogKey}`}
@@ -621,6 +953,8 @@ export const BulkAccessManagement = ({
 					setDialog(null);
 					batch.finishApply();
 					setNewTeamMembers([]);
+					// the rows picked are gone from the list until the access is read again
+					setSelectedKeys(new Set());
 					toast.success(
 						result.changes === 1
 							? "1 change was saved"

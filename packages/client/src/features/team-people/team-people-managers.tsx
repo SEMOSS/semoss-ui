@@ -51,7 +51,7 @@ export const TeamPeopleManagers = ({
 					className="px-3 py-2"
 				>
 					<AccessIdentity
-						kind="USER"
+						category="USER"
 						type={manager.type}
 						name={manager.name || manager.email || manager.userid}
 						id={manager.userid}

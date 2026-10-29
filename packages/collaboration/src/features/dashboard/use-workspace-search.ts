@@ -13,6 +13,7 @@ export interface WorkspaceSearchResult {
 	label: string;
 	detail: string;
 	group:
+		| "Threads"
 		| "Chats"
 		| "Actions"
 		| "People"
@@ -31,6 +32,7 @@ export interface WorkspaceSearchResult {
 export function searchWorkspaceRecords(
 	state: CollaborationState,
 	query: string,
+	includeSaved = true,
 ): WorkspaceSearchResult[] {
 	const term = query.trim().toLocaleLowerCase();
 	if (!term) return [];
@@ -48,33 +50,39 @@ export function searchWorkspaceRecords(
 					path: threadPath(item.threadId),
 				}),
 			),
-		...state.people.map(
-			(person): WorkspaceSearchResult => ({
-				id: `person:${person.id}`,
-				label: person.name,
-				detail: person.email || "Person",
-				group: "People",
-				path: `/brain/people/${encodeURIComponent(person.id)}`,
-			}),
-		),
-		...state.topics.map(
-			(topic): WorkspaceSearchResult => ({
-				id: `topic:${topic.id}`,
-				label: topic.name,
-				detail: topic.description || "Topic",
-				group: "Topics",
-				path: topicPath(topic.id),
-			}),
-		),
-		...state.threads.map(
-			(thread): WorkspaceSearchResult => ({
-				id: `thread:${thread.id}`,
-				label: thread.subject,
-				detail: thread.summary || "Connected conversation",
-				group: thread.channel === "email" ? "Email" : "Chats",
-				path: threadPath(thread.id),
-			}),
-		),
+		...state.people
+			.filter((row) => includeSaved || row.isSample)
+			.map(
+				(person): WorkspaceSearchResult => ({
+					id: `person:${person.id}`,
+					label: person.name,
+					detail: person.email || "Person",
+					group: "People",
+					path: `/brain/people/${encodeURIComponent(person.id)}`,
+				}),
+			),
+		...state.topics
+			.filter((row) => includeSaved || row.isSample)
+			.map(
+				(topic): WorkspaceSearchResult => ({
+					id: `topic:${topic.id}`,
+					label: topic.name,
+					detail: topic.description || "Topic",
+					group: "Topics",
+					path: topicPath(topic.id),
+				}),
+			),
+		...state.threads
+			.filter((row) => includeSaved || row.isSample)
+			.map(
+				(thread): WorkspaceSearchResult => ({
+					id: `thread:${thread.id}`,
+					label: thread.subject,
+					detail: thread.summary || "Connected conversation",
+					group: thread.channel === "email" ? "Email" : "Chats",
+					path: threadPath(thread.id),
+				}),
+			),
 	].filter((entry) =>
 		`${entry.label} ${entry.detail}`.toLocaleLowerCase().includes(term),
 	);

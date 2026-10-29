@@ -3,7 +3,9 @@ import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
-import { useEngine } from "@/hooks";
+import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail";
+import { useSession } from "@/hooks/use-session";
+import { useEngine } from "@/hooks/useEngine";
 import { EngineActivityPage } from "@/pages/engine/engine-activity-page";
 import { EngineMcpUsagePage } from "@/pages/engine/engine-mcp-usage-page";
 import { EngineMetadataPage } from "@/pages/engine/engine-metadata-page";
@@ -26,6 +28,7 @@ export interface EngineSettingsPanelProps {
 			| "activity"
 			| "metadata"
 			| "access-control"
+			| "audit"
 			| "smss";
 
 		/** Restrict the tab to certain roles */
@@ -35,13 +38,14 @@ export interface EngineSettingsPanelProps {
 
 /**
  * Renders the engine settings surfaces (overview, usage, MCP, activity,
- * metadata, access control, SMSS) inside a workbench bottom panel. The set of
+ * metadata, access control, audit trail, SMSS) inside a workbench bottom panel. The set of
  * tabs differs by engine type. Loads the engine metadata and the user's role,
  * then provides the EngineContext so the embedded pages behave the same as
  * their standalone route counterparts.
  */
 const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
-	const { permission } = useEngine();
+	const { engine, permission } = useEngine();
+	const isAdmin = useSession((state) => state.user.admin);
 
 	const [selectedComponent, setSelectedComponent] =
 		useState<EngineSettingsPanelProps["tabs"][number]["component"]>(
@@ -51,6 +55,8 @@ const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 	// filter the tabs to the ones the user is allowed to see
 	const visibleTabs = useMemo(() => {
 		return tabs.filter((tab) => {
+			if (tab.component === "audit")
+				return permission === "OWNER" || isAdmin;
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -59,7 +65,7 @@ const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 			}
 			return tab.restrict.includes(permission);
 		});
-	}, [tabs, permission]);
+	}, [tabs, permission, isAdmin]);
 
 	// the active tab, falling back to the first visible tab
 	const activeTab = useMemo(() => {
@@ -91,7 +97,7 @@ const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 					</div>
 				</Tabs>
 			)}
-			<div className="w-full flex-1 overflow-auto bg-(--card) p-2">
+			<div className="w-full flex-1 overflow-auto bg-card p-2">
 				{activeTab?.component === "overview" && <EngineOverviewPage />}
 				{activeTab?.component === "usage" && <EngineUsagePage />}
 				{activeTab?.component === "mcp-usage" && <EngineMcpUsagePage />}
@@ -101,6 +107,14 @@ const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 					<EngineSettingsPage />
 				)}
 				{activeTab?.component === "smss" && <EngineSmssPage />}
+				{activeTab?.component === "audit" &&
+					(permission === "OWNER" || isAdmin) && (
+						<ResourceAuditTrail
+							key={engine.engine_id}
+							scope="ENGINE"
+							resourceId={engine.engine_id}
+						/>
+					)}
 			</div>
 		</div>
 	);
@@ -138,11 +152,8 @@ export const ENGINE_SETTINGS_TABS: EngineSettingsPanelProps["tabs"] = [
 		component: "access-control",
 		restrict: ["EDIT", "OWNER"],
 	},
-	{
-		name: "SMSS",
-		component: "smss",
-		restrict: ["OWNER"],
-	},
+	{ name: "Audit Trail", component: "audit", restrict: ["OWNER"] },
+	{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 ];
 
 /**

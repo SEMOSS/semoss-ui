@@ -1,11 +1,7 @@
-import { AlertCircleIcon } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
-	Alert,
-	AlertDescription,
-	AlertTitle,
 	Button,
 	Checkbox,
 	Dialog,
@@ -111,15 +107,11 @@ export const SyncExternalDatabaseOverlay: React.FC<
 
 	return (
 		<Dialog open={open} onOpenChange={() => onClose(false)}>
-			<DialogContent
-				aria-describedby="sync database changes to the metamodel"
-				className="sm:max-w-2xl"
-			>
+			<DialogContent className="sm:max-w-2xl">
 				{/* Header */}
 
 				<DialogHeader>
 					<DialogTitle className="font-medium text-base leading-6">
-						{" "}
 						Sync Changes
 					</DialogTitle>
 					<DialogDescription>
@@ -127,16 +119,6 @@ export const SyncExternalDatabaseOverlay: React.FC<
 						database changes.
 					</DialogDescription>
 				</DialogHeader>
-
-				<Alert className="flex items-start gap-3 text-left">
-					<AlertCircleIcon className="mt-0.5 shrink-0" />
-					<div className="flex flex-col gap-0.5">
-						<AlertTitle>Note</AlertTitle>
-						<AlertDescription>
-							Local changes will be overwritten by sync.
-						</AlertDescription>
-					</div>
-				</Alert>
 
 				<div className="grid grid-cols-2 gap-6">
 					{/* Tables Section */}

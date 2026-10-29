@@ -119,6 +119,8 @@ function mapSettings(row: Row): Settings {
 			use: (row.memory as Row | undefined)?.use !== false,
 			learn: (row.memory as Row | undefined)?.learn !== false,
 		},
+		draftFolderId: str(row.draftFolderId),
+		draftFolderName: str(row.draftFolderName),
 		version: Number(row.version ?? 0),
 	};
 }
@@ -206,7 +208,7 @@ function mapSources(settings: Settings): SourceStatus[] {
 	}));
 }
 
-function mapTopic(row: Row): Topic {
+export function mapTopic(row: Row): Topic {
 	const stats = (row.stats ?? {}) as Row;
 	return {
 		id: str(row.id),
@@ -233,6 +235,11 @@ function mapTopic(row: Row): Topic {
 			reason: opt(person.reason),
 		})),
 		calendarSeries: list<string>(row.calendarSeries),
+		folders: list<Row>(row.folders).map((folder) => ({
+			id: str(folder.id),
+			path: str(folder.path),
+			origin: opt(folder.origin),
+		})),
 		stats: {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),
@@ -242,7 +249,7 @@ function mapTopic(row: Row): Topic {
 	};
 }
 
-function mapPerson(row: Row): Person {
+export function mapPerson(row: Row): Person {
 	const channels = (row.channels ?? {}) as Row;
 	const name = str(row.name, str(row.email, "Unknown"));
 	return {
@@ -284,7 +291,7 @@ const SOURCE_KINDS: Record<string, NonNullable<Thread["source"]>["kind"]> = {
 	calendar: "calendar",
 };
 
-function mapThread(row: Row): Thread {
+export function mapThread(row: Row): Thread {
 	const channel = (row.channel as Thread["channel"]) ?? "email";
 	// Brain ids are internal ids. Only expose a source target when the server supplies its native id.
 	const nativeId =
@@ -344,7 +351,7 @@ function mapThread(row: Row): Thread {
 	};
 }
 
-function mapItem(row: Row): WorkItem {
+export function mapItem(row: Row): WorkItem {
 	return {
 		id: str(row.id),
 		threadId: str(row.threadId),
@@ -514,7 +521,7 @@ function mapStep(step: Row): WorkspaceStep {
 }
 
 // saved goal and steps; messages load when the thread opens, and a thread's facts are memories
-function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
+export function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 	return Object.fromEntries(
 		page.items.map((row) => [
 			str(row.threadId),

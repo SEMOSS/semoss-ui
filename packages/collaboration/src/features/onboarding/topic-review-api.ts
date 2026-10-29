@@ -18,6 +18,8 @@ export const topicDraftSchema = z.object({
 	keep: z.boolean(),
 	removedPeople: z.array(z.string()),
 	addedPeople: z.array(z.string()),
+	// file new mail from the topic's Outlook folder here; offered only for a project folder
+	fileFromFolder: z.boolean().optional(),
 });
 
 export const topicReviewDraftSchema = z.object({
@@ -66,6 +68,9 @@ const reviewTopicSchema = topicDraftSchema.extend({
 	sampleSubjects: z.array(z.string()).default([]),
 	people: z.array(z.object({ id: z.string(), name: z.string() })).default([]),
 	domains: z.array(z.string()).default([]),
+	// the Outlook folder most of this topic's mail is in, as a clue; folderIds only when filing from it is offered
+	folders: z.array(z.string()).default([]),
+	folderIds: z.array(z.string()).default([]),
 	area: z
 		.string()
 		.nullish()

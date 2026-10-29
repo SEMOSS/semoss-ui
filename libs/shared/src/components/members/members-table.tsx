@@ -1,11 +1,13 @@
 import { Plus, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	editEngineUserPermissions,
 	editProjectUserPermissions,
 	getUserEnginePermission,
 	getUserProjectPermission,
+	type ModelUsageLimit,
 	type PostUser,
+	type Role,
 	runPixel,
 } from "@semoss/sdk";
 import {
@@ -15,7 +17,6 @@ import {
 	DialogDescription,
 	DialogFooter,
 	DialogTitle,
-	Input,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -28,10 +29,19 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
+import { useCostLimitsAvailable } from "../../hooks/use-cost-limits-available";
 import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
-import { AddMembersOverlay, type AddMembersPeopleSource } from "./add-members";
-import { formatNum, parseNum } from "./common";
+import { findModelUsageLimitProblem } from "../model-usage-limit/model-usage-limit-checks";
 import {
+	ModelUsageLimitEditor,
+	type ModelUsageLimitEditorHandle,
+} from "../model-usage-limit/model-usage-limit-editor";
+import { toExplicitUsageLimit } from "../model-usage-limit/model-usage-limit-format";
+import { UsageLimitGuideButton } from "../model-usage-limit/usage-limit-guide-button";
+import { OWNERS_ONLY_LIMIT_REASON } from "../model-usage-limit/usage-limit-labels";
+import { AddMembersOverlay, type AddMembersPeopleSource } from "./add-members";
+import {
+	getAccessLevelLabel,
 	MembersList,
 	type MembersListSource,
 	type MemberUser,
@@ -94,9 +104,13 @@ export interface MembersTableProps {
 	source?: MembersSource;
 }
 
+/** The access levels the edit dialog offers */
+const ACCESS_LEVELS: readonly Role[] = ["READ_ONLY", "EDIT", "OWNER"];
+
 /**
  * A searchable table of a project's or engine's members, or of a host's
- * `source`, with buttons to add, edit and remove them as the viewer may.
+ * `source`, with buttons to add, edit and remove them as the viewer may. On a
+ * model, the edit dialog and the add dialog set each person's usage limit.
  */
 export const MembersTable = ({
 	id,
@@ -120,6 +134,11 @@ export const MembersTable = ({
 	const effectiveIsOwner = isOwner || myPermission === "OWNER";
 	const effectiveCurrentUserId = currentUserId ?? myUserId;
 	const isCurrentLogin = useIsCurrentLogin();
+	const isModel = !source && type === "MODEL";
+	const isCostAvailable = useCostLimitsAvailable(
+		isModel && id ? id : null,
+		adminMode,
+	);
 
 	useEffect(() => {
 		runPixel<[Record<string, { id: string; name: string; email: string }>]>(
@@ -150,60 +169,61 @@ export const MembersTable = ({
 
 	// Edit dialog state
 	const [editUser, setEditUser] = useState<MemberUser | null>(null);
-	const [editPermission, setEditPermission] = useState<string>("READ_ONLY");
-	const [editRestriction, setEditRestriction] = useState<string>("null");
-	const [editMaxTokens, setEditMaxTokens] = useState<string>("");
-	const [editMaxTime, setEditMaxTime] = useState<string>("");
-	const [editFrequency, setEditFrequency] = useState<string>("DAY");
+	const [editPermission, setEditPermission] = useState<Role>("READ_ONLY");
+	const [editLimit, setEditLimit] = useState<ModelUsageLimit | null>(null);
+	// the limit's problems show from the first save they stop
+	const [shouldShowLimitProblems, setShouldShowLimitProblems] =
+		useState(false);
+	const [isSavingEdit, setIsSavingEdit] = useState(false);
+	const limitEditorRef = useRef<ModelUsageLimitEditorHandle>(null);
+	// only owners, and admins in admin mode, set usage limits; an editor still
+	// changes levels, and the limit is sent back as it is
+	const canChangeEditLimit = adminMode || effectiveIsOwner;
+	const editLimitProblem =
+		isModel && canChangeEditLimit
+			? findModelUsageLimitProblem(editLimit, {
+					source: "DIRECT",
+					isCostAvailable,
+				})
+			: null;
 
 	const openEditDialog = (user: MemberUser) => {
 		setEditUser(user);
-		setEditPermission(user.permission ?? "READ_ONLY");
-		setEditRestriction(user.usage_restriction?.toLowerCase() ?? "null");
-		setEditMaxTokens(user.max_tokens?.toString() ?? "");
-		setEditMaxTime(user.max_response_time?.toString() ?? "");
-		setEditFrequency(user.usage_frequency ?? "DAY");
+		setEditPermission(
+			ACCESS_LEVELS.find((level) => level === user.permission) ??
+				"READ_ONLY",
+		);
+		setEditLimit(user.usage_limit ?? null);
+		setShouldShowLimitProblems(false);
 	};
 
 	const saveUserEdit = async () => {
 		if (!editUser || !id) return;
+		if (editLimitProblem) {
+			setShouldShowLimitProblems(true);
+			limitEditorRef.current?.focusFirstProblem();
+			return;
+		}
 		const isProject = type === "PROJECT" || type === "WORKSPACE";
-
-		const payload: Record<string, unknown> = {
+		// a limit the viewer may not change is sent back as it was
+		const limit = canChangeEditLimit
+			? editLimit
+			: (editUser.usage_limit ?? null);
+		const payload: PostUser = {
 			userid: editUser.id,
 			permission: editPermission,
+			...(isModel ? { usageLimit: toExplicitUsageLimit(limit) } : {}),
 		};
 
-		if (type === "MODEL") {
-			if (editRestriction !== "null") {
-				payload.usageRestriction = editRestriction;
-			}
-			if (editRestriction === "token") {
-				payload.maxTokens = Number(editMaxTokens);
-			}
-			if (editRestriction === "compute") {
-				payload.maxResponseTime = Number(editMaxTime);
-			}
-			if (editRestriction !== "null") {
-				payload.usageFrequency = editFrequency;
-			}
-		}
-
+		setIsSavingEdit(true);
 		const success = await (isProject
-			? editProjectUserPermissions(
-					id,
-					[payload] as unknown as PostUser[],
-					adminMode,
-				)
-			: editEngineUserPermissions(
-					id,
-					[payload] as unknown as PostUser[],
-					adminMode,
-				)
+			? editProjectUserPermissions(id, [payload], adminMode)
+			: editEngineUserPermissions(id, [payload], adminMode)
 		).catch((error: Error) => {
 			toast.error(error?.message || "Error updating user.");
 			return false;
 		});
+		setIsSavingEdit(false);
 
 		if (success) {
 			toast.success("User updated successfully.");
@@ -289,18 +309,20 @@ export const MembersTable = ({
 				adminMode={adminMode}
 				isDirectoryAvailable={isDirectoryAvailable}
 				people={source?.people}
+				isCostAvailable={isCostAvailable}
 			/>
 
 			{/* Edit member dialog: rendered here, outside the table */}
 			{editUser && (
 				<Dialog open onOpenChange={() => setEditUser(null)}>
-					<DialogContent>
+					<DialogContent className="sm:max-w-2xl">
 						<DialogTitle className="font-medium text-base leading-6">
 							Edit Member
 						</DialogTitle>
 						<DialogDescription>
-							Update this member's permission level for the
-							resource.
+							{isModel
+								? "Update this member's permission level and usage limit for the model."
+								: "Update this member's permission level for the resource."}
 						</DialogDescription>
 						<div className="flex flex-col gap-4 py-2">
 							{/* User card */}
@@ -321,10 +343,21 @@ export const MembersTable = ({
 								<Label>Permission</Label>
 								<Select
 									value={editPermission}
-									onValueChange={setEditPermission}
+									onValueChange={(value) => {
+										const level = ACCESS_LEVELS.find(
+											(option) => option === value,
+										);
+										if (level) {
+											setEditPermission(level);
+										}
+									}}
 								>
 									<SelectTrigger className="w-full">
-										<SelectValue />
+										<SelectValue>
+											{getAccessLevelLabel(
+												editPermission,
+											)}
+										</SelectValue>
 									</SelectTrigger>
 									<SelectContent className="w-full">
 										<SelectItem value="READ_ONLY">
@@ -342,114 +375,38 @@ export const MembersTable = ({
 								</Select>
 							</div>
 
-							{type === "MODEL" && (
-								<>
-									<div className="flex flex-col gap-1.5">
-										<Label>Usage Limit Type</Label>
-										<Select
-											value={editRestriction}
-											onValueChange={(val) => {
-												setEditRestriction(val);
-												setEditMaxTokens("");
-												setEditMaxTime("");
-											}}
-										>
-											<SelectTrigger className="w-full">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="null">
-													None
-												</SelectItem>
-												<SelectItem value="token">
-													Token
-												</SelectItem>
-												<SelectItem value="compute">
-													Compute time
-												</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
-
-									{editRestriction === "token" && (
-										<div className="flex flex-col gap-1.5">
-											<Label>Max Tokens</Label>
-											<Input
-												type="text"
-												inputMode="numeric"
-												value={formatNum(editMaxTokens)}
-												onChange={(e) =>
-													setEditMaxTokens(
-														parseNum(
-															e.target.value,
-														),
-													)
-												}
-											/>
-										</div>
-									)}
-
-									{editRestriction === "compute" && (
-										<div className="flex gap-3">
-											<div className="flex flex-1 flex-col gap-1.5">
-												<Label>Max Response Time</Label>
-												<Input
-													type="text"
-													inputMode="numeric"
-													value={formatNum(
-														editMaxTime,
-													)}
-													onChange={(e) =>
-														setEditMaxTime(
-															parseNum(
-																e.target.value,
-															),
-														)
-													}
-												/>
-											</div>
-											<div className="flex w-36 flex-col gap-1.5">
-												<Label>Unit</Label>
-												<Input
-													value="milliseconds"
-													readOnly
-												/>
-											</div>
-										</div>
-									)}
-
-									{editRestriction !== "null" && (
-										<div className="flex flex-col gap-1.5">
-											<Label>Frequency</Label>
-											<Select
-												value={editFrequency}
-												onValueChange={setEditFrequency}
-											>
-												<SelectTrigger className="w-full">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="DAY">
-														Daily
-													</SelectItem>
-													<SelectItem value="WEEK">
-														Weekly
-													</SelectItem>
-													<SelectItem value="MONTH">
-														Monthly
-													</SelectItem>
-													<SelectItem value="YEAR">
-														Yearly
-													</SelectItem>
-													<SelectItem value="ALL_TIME">
-														All time
-													</SelectItem>
-												</SelectContent>
-											</Select>
-										</div>
-									)}
-								</>
-							)}
+							{isModel ? (
+								<div className="flex flex-col gap-1">
+									<ModelUsageLimitEditor
+										key={editUser.id}
+										ref={limitEditorRef}
+										defaultValue={
+											editUser.usage_limit ?? null
+										}
+										onChange={setEditLimit}
+										source="DIRECT"
+										isCostAvailable={isCostAvailable}
+										readOnlyReason={
+											canChangeEditLimit
+												? null
+												: OWNERS_ONLY_LIMIT_REASON
+										}
+										shouldShowProblems={
+											shouldShowLimitProblems
+										}
+										disabled={isSavingEdit}
+									/>
+									<UsageLimitGuideButton
+										className="self-start"
+										section="modes"
+										viewer={{
+											canSetModelLimits:
+												canChangeEditLimit,
+											isAdminMode: adminMode,
+										}}
+									/>
+								</div>
+							) : null}
 						</div>
 						<DialogFooter>
 							<Button
@@ -458,7 +415,12 @@ export const MembersTable = ({
 							>
 								Cancel
 							</Button>
-							<Button onClick={saveUserEdit}>Save</Button>
+							<Button
+								onClick={saveUserEdit}
+								disabled={isSavingEdit}
+							>
+								{isSavingEdit ? "Saving..." : "Save"}
+							</Button>
 						</DialogFooter>
 					</DialogContent>
 				</Dialog>

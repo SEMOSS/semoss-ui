@@ -63,7 +63,8 @@
 			"cacheWrite": "Cache geschreven",
 			"timestamp": "Tijdstempel",
 			"status": "Status",
-			"guardrailAction": "Guardrail"
+			"guardrailAction": "Guardrail",
+			"billedTo": "Gefactureerd aan"
 		},
 		"guardrailActions": {
 			"MASK": "Gemaskeerd",
@@ -133,7 +134,8 @@
 			"requestId": "Verzoek-ID",
 			"spanId": "Span-ID",
 			"request": "Verzoek",
-			"response": "Antwoord"
+			"response": "Antwoord",
+			"billedTo": "Gefactureerd aan"
 		}
 	},
 	"page": {

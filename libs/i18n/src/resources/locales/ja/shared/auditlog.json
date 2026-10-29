@@ -63,7 +63,8 @@
 			"cacheWrite": "キャッシュ作成",
 			"timestamp": "タイムスタンプ",
 			"status": "ステータス",
-			"guardrailAction": "ガードレール"
+			"guardrailAction": "ガードレール",
+			"billedTo": "請求先"
 		},
 		"guardrailActions": {
 			"MASK": "マスク済み",
@@ -133,7 +134,8 @@
 			"requestId": "リクエストID",
 			"spanId": "スパンID",
 			"request": "リクエスト",
-			"response": "レスポンス"
+			"response": "レスポンス",
+			"billedTo": "請求先"
 		}
 	},
 	"page": {

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
 import { saveInboxRoutine } from "./inbox-routine-api";
 import {
+	INBOX_SECTIONS,
 	type InboxRoutine,
 	type InboxRoutineSettings,
 	inboxRoutineSchema,
@@ -13,7 +14,11 @@ const settings: InboxRoutineSettings = {
 	time: "08:00",
 	days: ["MON", "TUE", "WED", "THU", "FRI"],
 	timezone: "America/New_York",
-	emailCount: 25,
+	lookbackHours: 24,
+	preferences: "",
+	sections: ["priorities", "replies", "meetings", "actions"],
+	priorityCount: 5,
+	writeDrafts: true,
 };
 
 const routine: InboxRoutine = {
@@ -77,10 +82,12 @@ describe("inbox routine settings", () => {
 		{ days: ["Monday"] },
 		{ timezone: "" },
 		{ timezone: "Unknown/Zone" },
-		{ emailCount: 0 },
-		{ emailCount: 101 },
-		{ emailCount: 1.5 },
-		{ emailCount: "25" },
+		{ lookbackHours: undefined },
+		{ lookbackHours: null },
+		{ lookbackHours: 0 },
+		{ lookbackHours: 721 },
+		{ lookbackHours: 1.5 },
+		{ lookbackHours: "24" },
 		{ enabled: "true" },
 	])("rejects invalid schedule settings %j", (changes) => {
 		expect(
@@ -89,14 +96,57 @@ describe("inbox routine settings", () => {
 		).toBe(false);
 	});
 
-	it.each([1, 100])("accepts the email scan boundary %i", (emailCount) => {
+	it.each([1, 720])(
+		"accepts the lookback boundary %i hours",
+		(lookbackHours) => {
+			expect(
+				inboxRoutineSettingsSchema.parse({
+					...settings,
+					lookbackHours,
+					timezone: "UTC",
+				}),
+			).toEqual({ ...settings, lookbackHours, timezone: "UTC" });
+		},
+	);
+
+	it("trims preferences and rejects more than 2000 characters", () => {
 		expect(
 			inboxRoutineSettingsSchema.parse({
 				...settings,
-				emailCount,
-				timezone: "UTC",
+				preferences: "  Keep drafts short.  ",
+			}).preferences,
+		).toBe("Keep drafts short.");
+		expect(
+			inboxRoutineSettingsSchema.safeParse({
+				...settings,
+				preferences: "x".repeat(2001),
+			}).success,
+		).toBe(false);
+	});
+
+	it("keeps at least one section, bounds the priority count, and defaults the knobs", () => {
+		expect(
+			inboxRoutineSettingsSchema.safeParse({ ...settings, sections: [] })
+				.success,
+		).toBe(false);
+		expect(
+			inboxRoutineSettingsSchema.safeParse({
+				...settings,
+				priorityCount: 11,
+			}).success,
+		).toBe(false);
+		expect(
+			inboxRoutineSchema.parse({
+				...routine,
+				sections: undefined,
+				priorityCount: undefined,
+				writeDrafts: undefined,
 			}),
-		).toEqual({ ...settings, emailCount, timezone: "UTC" });
+		).toMatchObject({
+			sections: [...INBOX_SECTIONS],
+			priorityCount: 5,
+			writeDrafts: true,
+		});
 	});
 
 	it("accepts a running brief without a result and a paused schedule without a next run", () => {
@@ -130,8 +180,8 @@ describe("saving an inbox routine", () => {
 	it("does not send invalid settings to the scheduler", async () => {
 		const { actions, run } = transport(routine);
 		await expect(
-			saveInboxRoutine(actions, { ...settings, emailCount: 0 }),
-		).rejects.toThrow("Scan at least 1 email");
+			saveInboxRoutine(actions, { ...settings, lookbackHours: 0 }),
+		).rejects.toThrow("Look back at least 1 hour");
 		expect(run).not.toHaveBeenCalled();
 	});
 

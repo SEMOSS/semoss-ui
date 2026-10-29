@@ -176,8 +176,8 @@ export function TopicReachLine({
 				</div>
 			)}
 			<P className="text-muted-foreground text-xs">
-				Brain also uses the name, description and clues, so not all of
-				these will be filed here.
+				The assistant also uses the name, description and clues, so not
+				all of these will be filed here.
 			</P>
 		</div>
 	);

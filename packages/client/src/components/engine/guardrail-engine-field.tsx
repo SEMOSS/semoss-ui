@@ -53,6 +53,9 @@ export const GuardrailEngineField = ({
 				>
 					<FieldLabel htmlFor={fieldId}>Check with</FieldLabel>
 					<EngineSelect
+						ref={field.ref}
+						id={fieldId}
+						aria-invalid={!!fieldState.error}
 						className="h-9 w-full max-w-none justify-start border border-input px-3 shadow-xs"
 						name={engineName}
 						value={String(field.value ?? "")}

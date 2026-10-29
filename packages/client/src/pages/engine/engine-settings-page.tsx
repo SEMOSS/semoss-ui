@@ -12,8 +12,8 @@ import {
 import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-access-management";
 import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
+import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
 import { useConfig, useEngine } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
 
 export interface EngineSettingsPageProps {
 	/**
@@ -34,7 +34,6 @@ export const EngineSettingsPage = ({
 	// bulk access management, effective permissions and teams go by the user's own access:
 	// an admin uses them in admin mode, from the settings pages
 	const canEditAccess = permission === "OWNER" || permission === "EDIT";
-	const navigate = useNavigate();
 	const isDirectoryAvailable = useConfig(
 		(state) => state.config.msGraphLookup === true,
 	);
@@ -43,7 +42,7 @@ export const EngineSettingsPage = ({
 	const { pathname } = useLocation();
 	const accessControlPath = getAccessControlPath(pathname);
 	const canOpenViews = canEditAccess && accessControlPath !== null;
-	const target = { kind: "ENGINE" as const, id: engine.engine_id };
+	const target = { resourceType: "ENGINE" as const, id: engine.engine_id };
 	const name =
 		engine.engine_display_name || engine.engine_name || engine.engine_id;
 
@@ -63,9 +62,6 @@ export const EngineSettingsPage = ({
 						id={engine.engine_id}
 						name={catalog.name}
 						direction="row"
-						onDelete={() => {
-							navigate(catalog.path);
-						}}
 					/>
 				</section>
 				<section className="w-full">
@@ -96,7 +92,7 @@ export const EngineSettingsPage = ({
 					) : view === "BULK_ACCESS_MANAGEMENT" ? (
 						<BulkAccessManagement
 							// a new target starts from its own access, never the last one's staged changes
-							key={`${target.kind}:${target.id}`}
+							key={`${target.resourceType}:${target.id}`}
 							target={target}
 							name={name}
 							noun="engine"
@@ -109,11 +105,12 @@ export const EngineSettingsPage = ({
 					) : view === "EFFECTIVE" ? (
 						<EffectivePermissions
 							// a new target reads its own access afresh
-							key={`${target.kind}:${target.id}`}
+							key={`${target.resourceType}:${target.id}`}
 							target={target}
 							name={name}
 							backTo=".."
 							headingLevel={3}
+							isModel={type === "MODEL"}
 						/>
 					) : (
 						<div className="flex flex-col gap-4">
@@ -121,6 +118,13 @@ export const EngineSettingsPage = ({
 								<BulkAccessManagementCard
 									to={`${accessControlPath}/bulk-access-management`}
 									noun="engine"
+								/>
+							) : null}
+							{type === "MODEL" && canEditAccess ? (
+								<ModelUsageLimitsCard
+									// a new model reads its own limits afresh
+									key={engine.engine_id}
+									engineId={engine.engine_id}
 								/>
 							) : null}
 							<PendingMembersTable
@@ -138,6 +142,15 @@ export const EngineSettingsPage = ({
 									id={engine.engine_id}
 									canManage={permission === "OWNER"}
 									canViewPeople={canEditAccess}
+									model={
+										type === "MODEL"
+											? {
+													isPublic:
+														engine.engine_global ===
+														true,
+												}
+											: undefined
+									}
 								/>
 							</div>
 						</div>

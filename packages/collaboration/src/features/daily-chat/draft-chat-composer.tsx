@@ -12,6 +12,7 @@ import type {
 	RoomSettings,
 } from "@/features/rooms/types/room";
 import { ThreadAgentSelect } from "@/features/work-thread/thread-agent-select";
+import { DraftChatOptions } from "./draft-chat-options";
 
 export interface DraftChatComposerProps {
 	/** Stable draft identity prevents a submitted editor from leaking into a fresh draft. */
@@ -105,6 +106,10 @@ export function DraftChatComposer({
 				isCancelling={snapshot.turn.isCancelling}
 				modelId={snapshot.modelId}
 				modelName={snapshot.modelName}
+				showModelSelector={!isCompact}
+				showPromptOptimization={
+					!isCompact || Boolean(snapshot.composerDraft.text.trim())
+				}
 				isModelSaving={
 					snapshot.isSavingSettings || snapshot.isLoadingModel
 				}
@@ -141,19 +146,27 @@ export function DraftChatComposer({
 				onSend={onSend}
 				onStop={session.cancel}
 			>
-				<div className="@md/composer:w-36 w-28 min-w-0 shrink-0">
-					<ThreadAgentSelect
-						compact
-						value={snapshot.settings.agentId}
-						name={snapshot.agent?.name ?? "Assistant"}
-						disabled={
-							!snapshot.isReady ||
-							isBusy ||
-							snapshot.isSavingSettings
-						}
-						onChange={(agentId) => void onSelectAgent(agentId)}
+				{isCompact ? (
+					<DraftChatOptions
+						session={session}
+						snapshot={snapshot}
+						onSelectAgent={onSelectAgent}
 					/>
-				</div>
+				) : (
+					<div className="@md/composer:w-36 w-28 min-w-0 shrink-0">
+						<ThreadAgentSelect
+							compact
+							value={snapshot.settings.agentId}
+							name={snapshot.agent?.name ?? "Assistant"}
+							disabled={
+								!snapshot.isReady ||
+								isBusy ||
+								snapshot.isSavingSettings
+							}
+							onChange={(agentId) => void onSelectAgent(agentId)}
+						/>
+					</div>
+				)}
 			</RoomComposer>
 		</>
 	);

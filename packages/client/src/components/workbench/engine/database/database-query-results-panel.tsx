@@ -197,11 +197,13 @@ const DatabaseQueryResultsPanel: WorkbenchComponent = ({ id }) => {
 							<TabsContent
 								key={statementResult.statement}
 								value={`statement-${statementResult.statement}`}
-								className="min-h-0 overflow-hidden"
+								className="min-h-0 overflow-auto"
 							>
 								<DatabaseStatementResultView
 									result={statementResult}
-									canExport={canExport}
+									// export runs the statement again on its own, outside the
+									// transaction, so it could return other rows
+									canExport={canExport && !result.transaction}
 									isExporting={
 										exportingStatement ===
 										statementResult.statement

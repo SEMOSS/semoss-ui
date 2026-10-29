@@ -16,6 +16,8 @@ import {
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
+import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
+import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
 import { useAssistantStore, useProject, useSession } from "@/hooks";
 import { NOTEBOOK_ANALYST_AGENT } from "@/stores/assistant/assistant-agents";
 import {
@@ -26,6 +28,7 @@ import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
 import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../../workbench.presets";
@@ -127,6 +130,7 @@ export const NOTEBOOK_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel(
 		PROJECT_SETTINGS_TABS,
 	),
+	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
@@ -215,6 +219,7 @@ export const NotebookWorkbench: React.FC = () => {
 			label: "Open Terminal",
 			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
 		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.PROJECT_TERMINAL),
 		createOpenPanelCommand({
 			id: "workbench.project-settings.open",
 			label: "Open Settings",

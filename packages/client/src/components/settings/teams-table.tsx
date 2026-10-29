@@ -1,6 +1,15 @@
 import { Info, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { Role } from "@semoss/sdk";
+import {
+	type ModelUsageLimit,
+	type PermissionGrant,
+	type Role,
+	savePermissionBatches,
+} from "@semoss/sdk";
+import {
+	OWNERS_ONLY_LIMIT_REASON,
+	UsageLimitGuideButton,
+} from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
@@ -39,7 +48,11 @@ import {
 	removeGroupResourceAccess,
 } from "@/api/teams";
 import { TablePagination } from "@/components/ui/table-pagination/table-pagination";
-import { AddGroupAccessDialog } from "@/features/group-access/add-group-access-dialog";
+import { UsageLimitDialog } from "@/features/bulk-access-management/usage-limit-dialog";
+import {
+	AddGroupAccessDialog,
+	type GroupAccessModel,
+} from "@/features/group-access/add-group-access-dialog";
 import {
 	GROUP_ACCESS_LEVELS,
 	getGroupAccessLevel,
@@ -48,6 +61,14 @@ import { TeamPeopleSheet } from "@/features/team-people/team-people-sheet";
 import { TEAM_RESOURCE_NOUNS } from "@/features/team-resource-access/team-resource-nouns";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 import { TeamTypeBadge } from "@/features/team-type/team-type-badge";
+import {
+	getTeamLimitKey,
+	PUBLIC_TEAM_HINT,
+	TEAM_LIMIT_DESCRIPTION,
+	toTeamLimitBatch,
+} from "@/features/team-usage-limit/team-usage-limit";
+import { TeamUsageLimitCell } from "@/features/team-usage-limit/team-usage-limit-cell";
+import { useTeamUsageLimits } from "@/features/team-usage-limit/use-team-usage-limits";
 import { useServerPagination } from "@/hooks";
 
 interface RawTeam {
@@ -70,6 +91,14 @@ interface TeamRow {
 	permissionLabel: string;
 	/** When the access was given */
 	dateAdded: string;
+}
+
+/** The team whose usage limit is open, with its access when it was opened */
+interface LimitEditing {
+	/** The team */
+	team: TeamRow;
+	/** Its access on the model, which the change carries forward */
+	grant: PermissionGrant;
 }
 
 const parseGroupsResponse = (result: unknown) => {
@@ -112,18 +141,34 @@ export interface TeamsTableProps {
 	 * owners and editors
 	 */
 	canViewPeople?: boolean;
+	/**
+	 * On a model, what giving a team access needs to give it a team limit too.
+	 * The table then has a Usage Limit column, read from the model's
+	 * permissions, which the model's owners can open to change a team's limit.
+	 */
+	model?: GroupAccessModel;
+	/**
+	 * Whether the teams' usage limits are read and saved in admin mode, where an
+	 * admin can change any team's limit. The list of teams, their levels and Add
+	 * Team use the owners' endpoints either way.
+	 */
+	admin?: boolean;
 }
 
 /**
  * Lists the teams that have access to a project or engine. Its owners and
  * editors can see who is in each custom team, and its owners can give more
- * teams access, change a team's access level, and take access away.
+ * teams access, change a team's access level, and take access away. On a
+ * model, it shows each team's usage limit, which its owners can change; a
+ * level change keeps the limit as it is.
  */
 export const TeamsTable = ({
 	type,
 	id,
 	canManage = false,
 	canViewPeople = false,
+	model,
+	admin = false,
 }: TeamsTableProps) => {
 	const [teams, setTeams] = useState<TeamRow[]>([]);
 	const [totalTeams, setTotalTeams] = useState(0);
@@ -138,9 +183,27 @@ export const TeamsTable = ({
 	const [removeTarget, setRemoveTarget] = useState<TeamRow | null>(null);
 	const [peopleTeam, setPeopleTeam] = useState<TeamRow | null>(null);
 	const [isChanging, setIsChanging] = useState(false);
+	const [limitEditing, setLimitEditing] = useState<LimitEditing | null>(null);
+	// a new key each time the limit dialog opens starts it from the team's limit
+	const [limitDialogKey, setLimitDialogKey] = useState(0);
 	const noun = TEAM_RESOURCE_NOUNS[type].singular;
 	const hasActions = canManage || canViewPeople;
-	const columnCount = hasActions ? 5 : 4;
+	const hasLimits = model !== undefined && type === "ENGINE";
+	const teamLimits = useTeamUsageLimits(hasLimits ? id : null, admin);
+	const columnCount = 4 + (hasLimits ? 1 : 0) + (hasActions ? 1 : 0);
+	// the table's read says whether the model has known prices, so the add
+	// dialog need not read it again, and whether the user is one of the
+	// model's owners, who alone give a team a limit
+	const addDialogModel =
+		model && hasLimits
+			? {
+					...model,
+					isCostAvailable:
+						model.isCostAvailable ?? teamLimits.costLimitsAvailable,
+					canChangeLimit:
+						model.canChangeLimit ?? teamLimits.canChangeModelLimits,
+				}
+			: model;
 	const {
 		page,
 		rowsPerPage,
@@ -229,6 +292,41 @@ export const TeamsTable = ({
 		? teams
 		: teams.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+	/** Reads the teams again, and on a model their limits */
+	const reloadTeams = () => {
+		setRefreshCount((count) => count + 1);
+		if (hasLimits) {
+			teamLimits.refresh();
+		}
+	};
+
+	/** The team's access on the model, with its limit, or null when it is not known */
+	const getTeamGrant = (team: TeamRow): PermissionGrant | null =>
+		teamLimits.grants?.get(getTeamLimitKey(team)) ?? null;
+
+	const handleOpenLimit = (team: TeamRow) => {
+		const grant = getTeamGrant(team);
+		if (grant) {
+			setLimitDialogKey((key) => key + 1);
+			setLimitEditing({ team, grant });
+		}
+	};
+
+	const handleSaveLimit = async (usageLimit: ModelUsageLimit | null) => {
+		if (!limitEditing) {
+			return;
+		}
+		const { team, grant } = limitEditing;
+		// a refused change rejects, and the dialog shows the backend's reason
+		await savePermissionBatches(
+			[toTeamLimitBatch(id, team, grant, usageLimit)],
+			admin,
+		);
+		setLimitEditing(null);
+		toast.success(`The usage limit for ${team.id} was saved`);
+		teamLimits.refresh();
+	};
+
 	const handleLevelChange = async (team: TeamRow, value: string) => {
 		const level = GROUP_ACCESS_LEVELS.find(
 			(option) => option.value === value,
@@ -248,7 +346,8 @@ export const TeamsTable = ({
 		}
 		setIsChanging(false);
 		toast.success(`${team.id} now has ${level.label} access`);
-		setRefreshCount((count) => count + 1);
+		// the team keeps its limit; its grant is read again for the next change
+		reloadTeams();
 	};
 
 	const handleRemove = async () => {
@@ -268,7 +367,7 @@ export const TeamsTable = ({
 		setIsChanging(false);
 		toast.success(`${removeTarget.id} no longer has access`);
 		setRemoveTarget(null);
-		setRefreshCount((count) => count + 1);
+		reloadTeams();
 	};
 
 	return (
@@ -281,9 +380,26 @@ export const TeamsTable = ({
 							type="button"
 							variant="outline"
 							size="sm"
-							onClick={() =>
-								setRefreshCount((count) => count + 1)
-							}
+							onClick={reloadTeams}
+						>
+							Try Again
+						</Button>
+					</AlertDescription>
+				</Alert>
+			) : null}
+			{hasLimits && teamLimits.error ? (
+				<Alert variant="destructive">
+					<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+						<span>
+							Could not read the teams' usage limits.{" "}
+							{teamLimits.error}
+						</span>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={teamLimits.isLoading}
+							onClick={teamLimits.refresh}
 						>
 							Try Again
 						</Button>
@@ -292,7 +408,19 @@ export const TeamsTable = ({
 			) : null}
 			<div className="rounded-xl border border-border">
 				<div className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl border-border border-b bg-background px-6 py-3">
-					<H4>Teams</H4>
+					<div className="flex flex-wrap items-center gap-2">
+						<H4>Teams</H4>
+						{hasLimits ? (
+							<UsageLimitGuideButton
+								section="teams"
+								viewer={{
+									canSetModelLimits:
+										teamLimits.canChangeModelLimits,
+									isAdminMode: admin,
+								}}
+							/>
+						) : null}
+					</div>
 					{canManage ? (
 						<Button
 							size="sm"
@@ -323,12 +451,17 @@ export const TeamsTable = ({
 										Permission
 									</div>
 								</TableHead>
+								{hasLimits ? (
+									<TableHead className="px-4">
+										Usage Limit
+									</TableHead>
+								) : null}
 								<TableHead className="px-4">
 									Permission Date
 								</TableHead>
 								{hasActions ? (
-									<TableHead className="px-4">
-										<span className="sr-only">Actions</span>
+									<TableHead className="w-px whitespace-nowrap px-4 text-center">
+										Actions
 									</TableHead>
 								) : null}
 							</TableRow>
@@ -385,12 +518,35 @@ export const TeamsTable = ({
 												team.permissionLabel
 											)}
 										</TableCell>
+										{hasLimits ? (
+											<TableCell className="px-4 text-sm">
+												<TeamUsageLimitCell
+													teamName={team.id}
+													grant={getTeamGrant(team)}
+													isLoading={
+														teamLimits.isLoading
+													}
+													readOnlyReason={
+														teamLimits.canChangeModelLimits
+															? null
+															: OWNERS_ONLY_LIMIT_REASON
+													}
+													disabled={
+														isChanging ||
+														teamLimits.isLoading
+													}
+													onEdit={() =>
+														handleOpenLimit(team)
+													}
+												/>
+											</TableCell>
+										) : null}
 										<TableCell className="px-4">
 											{team.dateAdded}
 										</TableCell>
 										{hasActions ? (
 											<TableCell className="px-4">
-												<div className="flex items-center justify-end gap-1">
+												<div className="flex items-center justify-center gap-1">
 													{canViewPeople &&
 													team.type ===
 														CUSTOM_TEAM_TYPE ? (
@@ -529,12 +685,31 @@ export const TeamsTable = ({
 					open={isAddOpen}
 					resource={type}
 					resourceId={id}
+					model={addDialogModel}
 					onClose={(added) => {
 						setIsAddOpen(false);
 						if (added) {
-							setRefreshCount((count) => count + 1);
+							reloadTeams();
 						}
 					}}
+				/>
+			) : null}
+
+			{limitEditing ? (
+				<UsageLimitDialog
+					key={`limit-${limitDialogKey}`}
+					open
+					title={`Usage Limit for ${limitEditing.team.id}`}
+					description={TEAM_LIMIT_DESCRIPTION}
+					source="TEAM"
+					defaultValue={limitEditing.grant.usageLimit ?? null}
+					isCostAvailable={teamLimits.costLimitsAvailable}
+					notDefinedHint={
+						model?.isPublic ? PUBLIC_TEAM_HINT : undefined
+					}
+					saveLabel="Save Limit"
+					onSave={handleSaveLimit}
+					onClose={() => setLimitEditing(null)}
 				/>
 			) : null}
 
