@@ -1,3 +1,4 @@
+import { CalendarCheck, CalendarRange, Inbox, Receipt } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger, z } from "@semoss/ui/next";
@@ -74,21 +75,25 @@ const SYSTEM_ROUTINES = [
 	{
 		id: "inbox-daily-brief",
 		name: "Inbox daily brief",
+		icon: Inbox,
 		pixel: "WorkGetInboxRoutine();",
 	},
 	{
 		id: "weekly-meeting-agendas",
 		name: "Weekly meeting agendas",
+		icon: CalendarRange,
 		pixel: "WorkGetAgendaRoutine();",
 	},
 	{
 		id: "event-planning",
 		name: "Event planning",
+		icon: CalendarCheck,
 		pixel: "WorkGetEventPlanningRoutine();",
 	},
 	{
 		id: "expense-review",
 		name: "Expense review",
+		icon: Receipt,
 		pixel: "WorkGetExpenseRoutine();",
 	},
 ] as const;
@@ -307,6 +312,7 @@ export function RoutinesWorkspace() {
 								entries={SYSTEM_ROUTINES.map((routine) => ({
 									id: routine.id,
 									name: routine.name,
+									icon: routine.icon,
 									...summaries[routine.id],
 								}))}
 								selected={selected}

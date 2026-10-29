@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, Repeat } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
@@ -104,6 +104,7 @@ export function CustomRoutinesTab() {
 					entries={list.map((routine) => ({
 						id: routine.id,
 						name: routine.name,
+						icon: Repeat,
 						enabled: routine.enabled,
 						lastStatus: routine.lastRun?.status ?? null,
 					}))}
