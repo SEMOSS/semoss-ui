@@ -6,6 +6,7 @@ import type {
 	WorkbenchPanelType,
 } from "@semoss/workbench";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
+import { spawnTerminal } from "./terminal/spawn-terminal";
 
 /**
  * The shared pieces a domain workbench composes: its palette commands, and the
@@ -168,6 +169,36 @@ export const createOpenPanelCommand = ({
 	visible: visible,
 	handler: (get) => {
 		get().layout.actions.selectPanel(type, config);
+	},
+});
+
+/**
+ * Open another terminal beside the workbench's terminal. Verbatim in every
+ * domain workbench but for which terminal type it registers.
+ *
+ * The terminal tab's New terminal button does the same, but the mobile shell
+ * draws no panel controls, so this is how a phone opens a second terminal. It
+ * opens beside the selected terminal, or else the first one open.
+ *
+ * @param type - The terminal panel type the workbench registers.
+ * @return One command.
+ */
+export const createNewTerminalCommand = (
+	type: WorkbenchPanelType,
+): WorkbenchCommand => ({
+	id: "workbench.terminal.new",
+	category: "View",
+	label: "New Terminal",
+	handler: (get) => {
+		const { layout } = get();
+		const selectedId = layout.selection.panel;
+		const nearId =
+			selectedId && layout.panels[selectedId]?.type === type
+				? selectedId
+				: layout.actions.findPanels((panel) => panel.type === type)[0]
+						?.id;
+
+		spawnTerminal(layout, type, nearId);
 	},
 });
 

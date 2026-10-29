@@ -25,9 +25,11 @@ import {
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { TERMINAL_PANEL } from "../../terminal/terminal-panel";
 import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../../workbench.presets";
@@ -40,8 +42,8 @@ import { VECTOR_DOCUMENTS_PANEL } from "./vector-documents-panel";
 
 /**
  * The default arrangement: assistant + documents in the main dock, files on
- * the left. The assistant lives in the main tabset here (not a border), so
- * its record carries no border min-width.
+ * the left, the terminal below. The assistant lives in the main tabset here
+ * (not a border), so its record carries no border min-width.
  */
 const createVectorWorkbenchLayout = (
 	engineId: string,
@@ -81,6 +83,8 @@ const createVectorWorkbenchLayout = (
 						},
 					}
 				: {}),
+			[WORKBENCH_PANEL_RECORDS.TERMINAL.id]:
+				WORKBENCH_PANEL_RECORDS.TERMINAL,
 		},
 		borders: {
 			left: {
@@ -89,6 +93,11 @@ const createVectorWorkbenchLayout = (
 					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
 				],
 				activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				size: 300,
+			},
+			bottom: {
+				panelIds: [WORKBENCH_COMPONENTS.TERMINAL],
+				activeId: null,
 				size: 300,
 			},
 		},
@@ -104,6 +113,7 @@ export const VECTOR_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS]: VECTOR_DOCUMENTS_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
+	[WORKBENCH_COMPONENTS.TERMINAL]: TERMINAL_PANEL,
 	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]:
 		createEngineSettingsPanel(ENGINE_SETTINGS_TABS),
 	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
@@ -132,7 +142,7 @@ export const VectorWorkbench: React.FC = () => {
 		: engine.engine_id;
 
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		`workbench-layout--${workbenchId}--1`,
+		`workbench-layout--${workbenchId}--2`,
 		workbenchLayout,
 	);
 
@@ -188,6 +198,12 @@ export const VectorWorkbench: React.FC = () => {
 			config: { type: "ENGINE", id: engine.engine_id },
 			visible: !readOnly,
 		}),
+		createOpenPanelCommand({
+			id: "workbench.terminal.open",
+			label: "Open Terminal",
+			type: WORKBENCH_COMPONENTS.TERMINAL,
+		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.TERMINAL),
 		createOpenPanelCommand({
 			id: "workbench.settings.open",
 			label: "Open Settings",

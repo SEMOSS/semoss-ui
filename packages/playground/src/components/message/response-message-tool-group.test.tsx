@@ -66,6 +66,31 @@ test("keeps pending decisions outside collapsed activity", () => {
 	).toBeNull();
 });
 
+test("does not call a group failed or force it open when only some steps failed", () => {
+	render(
+		<ResponseMessageToolGroup
+			tools={[tool("ok", "SUCCESS"), tool("bad", "ERROR")]}
+		/>,
+	);
+	const trigger = screen.getByRole("button", { name: /group.labelClosed/ });
+	expect(trigger).toHaveAttribute("aria-expanded", "false");
+	expect(trigger).toHaveTextContent(
+		"group.summaryCompleted, group.summaryError",
+	);
+	expect(trigger).not.toHaveTextContent("status.failed");
+});
+
+test("marks a group failed and open when every step failed", () => {
+	render(
+		<ResponseMessageToolGroup
+			tools={[tool("a", "ERROR"), tool("b", "ERROR")]}
+		/>,
+	);
+	const trigger = screen.getByRole("button", { name: /activity.steps/ });
+	expect(trigger).toHaveAttribute("aria-expanded", "true");
+	expect(trigger).toHaveTextContent("status.failed");
+});
+
 test.each(["INITIAL", "LOADING", "SUCCESS", "ERROR", "CANCELLED"])(
 	"shows a single %s tool without a group toggle",
 	(status) => {

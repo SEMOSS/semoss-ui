@@ -24,8 +24,10 @@ import {
 import type { ModelChatStoreInterface } from "@/stores/workbench/model";
 import { createModelChatStore } from "@/stores/workbench/model";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { TERMINAL_PANEL } from "../../terminal/terminal-panel";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../../workbench.presets";
@@ -40,15 +42,13 @@ import { MODEL_CHAT_SETTINGS_PANEL } from "./model-chat-settings";
 
 /**
  * The default arrangement: the chat fills the main tabset, files on the left
- * (collapsed), model settings and conversation history on the right
- * (collapsed). Both borders start closed so the chat opens full width; their
- * rails carry the toggles.
+ * (collapsed), the terminal below (collapsed), model settings and
+ * conversation history on the right (collapsed). Every border starts closed
+ * so the chat opens full width; their rails carry the toggles.
  *
  * A cached layout shadows the default forever, so changing this arrangement
- * needs the cache retired. That is `LAYOUT_STORAGE_VERSION` in the dock's
- * layout slice, which busts every host's cache at once — not a per-workbench
- * version, which is what an earlier note here described and nothing ever
- * implemented.
+ * needs the cache retired: bump the version at the end of the cache name in
+ * `ModelWorkbench`.
  */
 const createModelWorkbenchLayout = (
 	engineId: string,
@@ -82,6 +82,8 @@ const createModelWorkbenchLayout = (
 				WORKBENCH_PANEL_RECORDS.MODEL_CHAT_SETTINGS,
 			[WORKBENCH_PANEL_RECORDS.MODEL_CHAT_HISTORY.id]:
 				WORKBENCH_PANEL_RECORDS.MODEL_CHAT_HISTORY,
+			[WORKBENCH_PANEL_RECORDS.TERMINAL.id]:
+				WORKBENCH_PANEL_RECORDS.TERMINAL,
 		},
 		borders: {
 			left: {
@@ -89,6 +91,11 @@ const createModelWorkbenchLayout = (
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
 					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
 				],
+				activeId: null,
+				size: 300,
+			},
+			bottom: {
+				panelIds: [WORKBENCH_COMPONENTS.TERMINAL],
 				activeId: null,
 				size: 300,
 			},
@@ -115,6 +122,7 @@ export const MODEL_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY]: MODEL_CHAT_HISTORY_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
+	[WORKBENCH_COMPONENTS.TERMINAL]: TERMINAL_PANEL,
 	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]:
 		createEngineSettingsPanel(ENGINE_SETTINGS_TABS),
 };
@@ -142,7 +150,7 @@ export const ModelWorkbench: React.FC = () => {
 		: engine.engine_id;
 
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		`workbench-layout--${workbenchId}--1`,
+		`workbench-layout--${workbenchId}--2`,
 		workbenchLayout,
 	);
 	const syncPermission = useSession((state) => state.syncPermission);
@@ -189,6 +197,12 @@ export const ModelWorkbench: React.FC = () => {
 			config: { type: "ENGINE", id: engine.engine_id },
 			visible: !readOnly,
 		}),
+		createOpenPanelCommand({
+			id: "workbench.terminal.open",
+			label: "Open Terminal",
+			type: WORKBENCH_COMPONENTS.TERMINAL,
+		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.TERMINAL),
 		createOpenPanelCommand({
 			id: "workbench.settings.open",
 			label: "Open Settings",

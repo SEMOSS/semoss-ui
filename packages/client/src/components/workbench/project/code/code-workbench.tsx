@@ -34,6 +34,7 @@ import {
 } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../../workbench.presets";
@@ -326,6 +327,7 @@ export const CodeWorkbench: React.FC = () => {
 			label: "Open Terminal",
 			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
 		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.PROJECT_TERMINAL),
 		createOpenPanelCommand({
 			id: "workbench.project-engines.open",
 			label: "Open Available Engines",
