@@ -50,11 +50,20 @@ const excluded: WorkspaceMessage = {
 	excluded: true,
 };
 
-function page(messages: WorkspaceMessage[]) {
-	return { messages, hasMore: false, hiddenCount: 0, unavailableCount: 0 };
+function page(
+	messages: WorkspaceMessage[],
+	extra: Partial<Awaited<ReturnType<typeof readThreadMessagesPage>>> = {},
+) {
+	return {
+		messages,
+		hasMore: false,
+		hiddenCount: 0,
+		unavailableCount: 0,
+		...extra,
+	};
 }
 
-function setup() {
+function setup(config: Record<string, string> = {}) {
 	const actions = { run: vi.fn() } as unknown as InsightActions;
 	const room: NonNullable<ContextType<typeof RoomEmailContext>> = {
 		store: new RoomEmailStore(),
@@ -75,7 +84,7 @@ function setup() {
 		selectSourceMessage: vi.fn(),
 		replyToSource: vi.fn(),
 		openDraft: vi.fn(),
-		openThread: vi.fn(),
+		openItem: vi.fn(),
 		requestSend: vi.fn(),
 	};
 	const store = createWorkbenchStore({
@@ -85,7 +94,7 @@ function setup() {
 		.getState()
 		.layout.actions.selectPanel(
 			ROOM_THREAD_EMAIL_PANEL_TYPE,
-			{ threadId: "thread-1" },
+			{ threadId: "thread-1", ...config },
 			{ name: "Email" },
 		);
 	const state = createInitialCollaborationState();
@@ -140,4 +149,83 @@ it("keeps a failed read recoverable", async () => {
 		await screen.findByRole("heading", { name: nomination.subject }),
 	).toBeVisible();
 	expect(readPage).toHaveBeenCalledTimes(2);
+});
+
+it("opens the exact email asked for, and says so when it is not there instead of quietly showing another", async () => {
+	readPage.mockResolvedValue(page([nomination, ownReply]));
+	setup({ messageId: "own-reply" });
+	expect(await screen.findByText(ownReply.text)).toBeVisible();
+	expect(screen.queryByText(nomination.text)).not.toBeInTheDocument();
+	expect(
+		screen.queryByText(/not among the emails you can read/),
+	).not.toBeInTheDocument();
+});
+
+it("tells the owner when the email asked for is gone", async () => {
+	readPage.mockResolvedValue(page([nomination]));
+	setup({ messageId: "deleted-email" });
+	expect(
+		await screen.findByText(
+			"That email is not among the emails you can read in this thread.",
+		),
+	).toBeVisible();
+	expect(screen.getByRole("status")).toHaveTextContent(
+		"not among the emails you can read",
+	);
+	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+
+it("reads a Brain Teams thread as a chat with its Teams link", async () => {
+	readPage.mockResolvedValue(
+		page(
+			[
+				{
+					id: "m2",
+					fromId: "raj",
+					fromName: "Raj Patel",
+					at: "2026-10-21T12:00:00Z",
+					text: "Second message",
+					webLink: "https://teams.microsoft.com/l/message/2",
+				},
+				{
+					id: "m1",
+					fromId: "dana",
+					fromName: "Dana Lee",
+					at: "2026-10-20T12:00:00Z",
+					text: "First message",
+				},
+			],
+			{ source: "teams" },
+		),
+	);
+	setup({ source: "teams" });
+	expect(screen.getByRole("status")).toHaveTextContent("Loading chat...");
+	const chat = await screen.findByRole("region", { name: "Teams chat" });
+	expect(chat).toHaveTextContent("Dana Lee, Raj Patel");
+	const [first, second] = [
+		screen.getByText("First message"),
+		screen.getByText("Second message"),
+	];
+	expect(
+		first.compareDocumentPosition(second) &
+			Node.DOCUMENT_POSITION_FOLLOWING,
+	).toBeTruthy();
+	// the header opens the newest message in Teams; that message also has its own link
+	const links = screen.getAllByRole("link", { name: "Open in Teams" });
+	expect(links).toHaveLength(2);
+	for (const link of links)
+		expect(link).toHaveAttribute(
+			"href",
+			"https://teams.microsoft.com/l/message/2",
+		);
+});
+
+it("says why a thread shows nothing", async () => {
+	readPage.mockResolvedValue(page([], { unavailableCount: 2 }));
+	setup();
+	expect(
+		await screen.findByText(
+			"This thread's messages were deleted or moved.",
+		),
+	).toBeVisible();
 });

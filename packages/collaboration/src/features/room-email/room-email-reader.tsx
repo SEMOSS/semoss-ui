@@ -30,6 +30,8 @@ interface RoomEmailReaderProps {
 	isLoading: boolean;
 	error: string | null;
 	onRetry: () => void;
+	/** A line above the email, such as why the email asked for is not the one shown. */
+	notice?: string;
 	/** Shown when nothing failed and there is no email to read. */
 	emptyText: string;
 	/** Absent where the owner only reads the thread. */
@@ -68,6 +70,7 @@ export function RoomEmailReader({
 	isLoading,
 	error,
 	onRetry,
+	notice,
 	emptyText,
 	onReply,
 }: RoomEmailReaderProps) {
@@ -100,6 +103,12 @@ export function RoomEmailReader({
 						</SelectContent>
 					</Select>
 				</div>
+			)}
+			{/* a note about what is shown, not an error, so it is announced politely */}
+			{notice && (
+				<output className="text-muted-foreground text-sm">
+					{notice}
+				</output>
 			)}
 			{isLoading && <output>Loading email…</output>}
 			{error && (

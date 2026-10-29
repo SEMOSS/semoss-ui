@@ -658,6 +658,7 @@ const SETTINGS_FIELDS = [
 	"memory",
 	"draftFolderId",
 	"draftFolderName",
+	"syncEveryMinutes",
 ] as const;
 
 function planProfile(

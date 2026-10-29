@@ -233,6 +233,10 @@ export function WorkUpdatesProvider({
 		},
 		[sync],
 	);
+	const localId = useCallback(
+		(id: string): string => sync?.localId(id) ?? id,
+		[sync],
+	);
 	/** The Refresh button: pull new mail from Microsoft 365 first, then reload Brain and Work. */
 	const syncNow = useCallback(() => {
 		if (syncing.current) return;
@@ -381,6 +385,7 @@ export function WorkUpdatesProvider({
 				refreshTopicGoal,
 				syncMail: syncNow,
 				serverId,
+				localId,
 			}}
 		>
 			{children}

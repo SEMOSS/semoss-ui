@@ -10,6 +10,10 @@ import { useContext, useSyncExternalStore } from "react";
 import { createMemoryRouter, useParams } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { TooltipProvider } from "@semoss/ui/next";
+import {
+	WorkUpdatesContext,
+	type WorkUpdatesStatus,
+} from "@/features/collaboration/live/work-updates.context";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
 import { linkRoomTopic } from "@/features/rooms/api/room-topics";
@@ -252,7 +256,12 @@ function TopicComposer() {
 	const { topicId } = useParams();
 	return <LandingChatComposer key={topicId} topicId={topicId} />;
 }
-function setup(navigationState?: unknown, search = "", pathname = "/") {
+function setup(
+	navigationState?: unknown,
+	search = "",
+	pathname = "/",
+	updates: WorkUpdatesStatus | null = null,
+) {
 	const router = createMemoryRouter(
 		[
 			{ path: "/", Component: LandingChatComposer },
@@ -272,9 +281,11 @@ function setup(navigationState?: unknown, search = "", pathname = "/") {
 		<CollaborationSessionProvider
 			initialState={createInitialCollaborationState()}
 		>
-			<TooltipProvider>
-				<RouterProvider router={router} />
-			</TooltipProvider>
+			<WorkUpdatesContext.Provider value={updates}>
+				<TooltipProvider>
+					<RouterProvider router={router} />
+				</TooltipProvider>
+			</WorkUpdatesContext.Provider>
 		</CollaborationSessionProvider>,
 	);
 	return router;
@@ -1038,4 +1049,31 @@ it("keeps a pending topic link owned by its original draft after navigating away
 		text: "Original topic request",
 		files: [],
 	});
+});
+
+it("links a topic assistant's chat for a topic made on this page by its server id", async () => {
+	const updates: WorkUpdatesStatus = {
+		isRefreshing: false,
+		lastUpdated: null,
+		error: "",
+		lastMailCheck: null,
+		refresh: vi.fn(),
+		refreshTopicGoal: vi.fn(),
+		isSyncing: false,
+		lastSync: null,
+		syncError: "",
+		syncMail: vi.fn(),
+		// the page made the topic, so it keeps the local id the route shows
+		serverId: async (id) => (id === "local-topic-1" ? "server-topic" : id),
+		localId: (id) => (id === "server-topic" ? "local-topic-1" : id),
+	};
+	setup(undefined, "", "/topics/local-topic-1", updates);
+	await enterText("Did I miss the deadline to register?");
+	submit();
+	await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
+	expect(linkRoomTopic).toHaveBeenCalledExactlyOnceWith(
+		sessions[0].insight.actions,
+		"actual-room",
+		"server-topic",
+	);
 });

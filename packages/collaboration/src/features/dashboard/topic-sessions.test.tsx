@@ -1,6 +1,10 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
+import {
+	WorkUpdatesContext,
+	type WorkUpdatesStatus,
+} from "@/features/collaboration/live/work-updates.context";
 import { readRoomSourceAssociation } from "@/features/rooms/api/read-room-source-association";
 import type { RoomRow } from "@/features/rooms/api/room-schemas";
 import { listRoomTopics } from "@/features/rooms/api/room-topics";
@@ -263,7 +267,7 @@ it("keeps partial results visible and retries only failed metadata without a fal
 	);
 	expect(
 		screen.queryByText(
-			"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+			"No linked chats in the history loaded so far. Ask the assistant above to start one.",
 		),
 	).not.toBeInTheDocument();
 	read.mockResolvedValue({ threadId: "source-one", isDelegation: false });
@@ -299,7 +303,7 @@ it("revalidates associations on a new tab activation without relying on room tim
 	read.mockResolvedValue({ threadId: null, isDelegation: false });
 	const view = render(content());
 	await screen.findByText(
-		"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+		"No linked chats in the history loaded so far. Ask the assistant above to start one.",
 	);
 	view.rerender(content(false));
 	read.mockResolvedValue({ threadId: "source-one", isDelegation: false });
@@ -326,7 +330,7 @@ it("discards pending results when the account/insight owner changes", async () =
 	await waitFor(() => expect(read).toHaveBeenCalledOnce());
 	view.rerender(content(true, "account-two"));
 	await screen.findByText(
-		"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+		"No linked chats in the history loaded so far. Ask the assistant above to start one.",
 	);
 	await act(async () =>
 		resolveOld?.({ threadId: "source-one", isDelegation: false }),
@@ -353,7 +357,7 @@ it("discards pending topic links when the account/insight owner changes", async 
 	await waitFor(() => expect(readTopics).toHaveBeenCalledOnce());
 	view.rerender(content(true, "account-two"));
 	await screen.findByText(
-		"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+		"No linked chats in the history loaded so far. Ask the assistant above to start one.",
 	);
 	await act(async () =>
 		resolveOld?.([{ topicId: "topic-one", state: "linked" }]),
@@ -367,7 +371,7 @@ it("keeps history failure distinct from an empty linked-session result", () => {
 	expect(screen.getByRole("alert")).toHaveTextContent(mocks.error);
 	expect(
 		screen.queryByText(
-			"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+			"No linked chats in the history loaded so far. Ask the assistant above to start one.",
 		),
 	).not.toBeInTheDocument();
 	expect(
@@ -407,7 +411,7 @@ it("keeps verified associations through revalidation and failure until a success
 		.setup()
 		.click(screen.getByRole("button", { name: "Retry session links" }));
 	await screen.findByText(
-		"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+		"No linked chats in the history loaded so far. Ask the assistant above to start one.",
 	);
 	expect(
 		screen.queryByRole("link", { name: /^Verified conversation/ }),
@@ -469,8 +473,39 @@ it("keeps cached topic links visible through failed refreshes and retries them",
 		.setup()
 		.click(screen.getByRole("button", { name: "Retry session links" }));
 	await screen.findByText(
-		"No linked chats in the history loaded so far. Use Ask assistant to start one.",
+		"No linked chats in the history loaded so far. Ask the assistant above to start one.",
 	);
 	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	expect(readTopics).toHaveBeenCalledTimes(3);
+});
+
+it("lists a chat linked to a topic made on this page, which the chat knows by its server id", async () => {
+	mocks.rooms = [
+		{ roomId: "new-topic-chat", roomName: "Registration deadline" },
+	];
+	readTopics.mockResolvedValue([
+		{ topicId: "server-topic", state: "linked" },
+	]);
+	const updates: WorkUpdatesStatus = {
+		isRefreshing: false,
+		lastUpdated: null,
+		error: "",
+		lastMailCheck: null,
+		refresh: vi.fn(),
+		refreshTopicGoal: vi.fn(),
+		isSyncing: false,
+		lastSync: null,
+		syncError: "",
+		syncMail: vi.fn(),
+		serverId: async (id) => (id === "local-topic-1" ? "server-topic" : id),
+		localId: (id) => (id === "server-topic" ? "local-topic-1" : id),
+	};
+	render(
+		<WorkUpdatesContext.Provider value={updates}>
+			{content(true, "account-one", "local-topic-1")}
+		</WorkUpdatesContext.Provider>,
+	);
+	expect(
+		await screen.findByRole("link", { name: /^Registration deadline/ }),
+	).toBeVisible();
 });

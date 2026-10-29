@@ -24,6 +24,10 @@ import {
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
 
+// the topic page opens its assistant by default; these tests are not about it
+vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
+	LandingChatComposer: () => null,
+}));
 vi.mock("../api/use-collaboration-search", () => ({
 	useCollaborationSearch: () => ({
 		entries: [],

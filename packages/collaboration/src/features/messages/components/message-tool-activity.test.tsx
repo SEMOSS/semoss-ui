@@ -1,5 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ContextType } from "react";
+import { RoomEmailContext } from "@/features/room-email/room-email.context";
+import { RoomEmailStore } from "@/features/room-email/room-email-store";
 import type { ConversationMessage, ConversationTool } from "../types/message";
 import { ownedMessageParts } from "../utils/message-presentation";
 import { MessageToolActivity } from "./message-tool-activity";
@@ -301,6 +304,54 @@ it("opens the display menu independently and preserves its destination choices",
 		screen.getByRole("menuitem", { name: "Open in workbench" }),
 	);
 	expect(workbench.openWorkbench).toHaveBeenCalledWith("tool-0");
+});
+
+it("keeps a result that can open what it found outside the folded steps, in a room only", () => {
+	const step = (id: string, name: string, output?: unknown) => ({
+		type: "tool" as const,
+		tool: {
+			id,
+			parentMessageId: "source",
+			name,
+			title: name,
+			arguments: {},
+			status: "COMPLETED" as const,
+			...(output ? { output: JSON.stringify(output) } : {}),
+		},
+	});
+	const items = ownedMessageParts({
+		id: "source",
+		role: "assistant",
+		parts: [
+			step("topics", "ListTopics"),
+			step("search", "SearchMail"),
+			step("read", "ReadThread", {
+				threadId: "th-1",
+				source: "email",
+				messages: [{ subject: "GTC DC" }],
+			}),
+		],
+	});
+	const room = {
+		store: new RoomEmailStore(),
+		openItem: vi.fn(),
+	} as unknown as NonNullable<ContextType<typeof RoomEmailContext>>;
+	const view = render(
+		<RoomEmailContext.Provider value={room}>
+			<MessageToolActivity items={items} />
+		</RoomEmailContext.Provider>,
+	);
+	expect(
+		screen.getByRole("button", { name: "2 tools completed View steps" }),
+	).toBeVisible();
+	expect(
+		screen.getByRole("button", { name: "Open email: ReadThread · GTC DC" }),
+	).toBeVisible();
+	view.unmount();
+	render(<MessageToolActivity items={items} />);
+	expect(
+		screen.getByRole("button", { name: "3 tools completed View steps" }),
+	).toBeVisible();
 });
 
 it("keeps a sidebar tool inline on mobile", async () => {

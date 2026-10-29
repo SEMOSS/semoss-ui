@@ -420,6 +420,8 @@ it("keeps a failed empty work refresh distinct from being caught up and offers r
 						lastSync: null,
 						syncError: "",
 						syncMail: vi.fn(),
+						serverId: async (id: string) => id,
+						localId: (id: string) => id,
 					}}
 				>
 					<BriefNeeds />

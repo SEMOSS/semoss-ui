@@ -3,6 +3,7 @@ import type { WorkspaceMessage } from "@/features/collaboration/state/collaborat
 import type { AgentEmailAttachment } from "@/features/connectors/api/agent-email-attachments";
 import type { EmailDraftEditor } from "@/features/connectors/api/email-draft-editor";
 import type { RoomSource } from "@/features/rooms/source-import/room-source";
+import type { ShownItem } from "@/features/tools/utils/shown-item";
 import type { InsightActions } from "@/lib/pixel";
 import type { RoomEmailStore } from "./room-email-store";
 
@@ -30,8 +31,8 @@ interface RoomEmailContextValue {
 	selectSourceMessage: (messageId: string) => void;
 	replyToSource: (messageId: string) => void;
 	openDraft: (draftId: string) => void;
-	/** Show a Brain thread the assistant read, read-only, beside the chat. */
-	openThread: (threadId: string) => void;
+	/** Show what the assistant found (a thread, Teams chat, or room file) read-only beside the chat. */
+	openItem: (item: ShownItem) => void;
 	requestSend: (draft: EmailDraftEditor) => void;
 }
 

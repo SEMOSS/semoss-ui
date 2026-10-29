@@ -18,12 +18,49 @@ const IMAGE_EXTENSIONS = new Set([
 	"webp",
 ]);
 
-const DOWNLOAD_ONLY_EXTENSIONS = new Set(["doc", "docx", "ppt", "xls", "xlsx"]);
+// Office files and binaries no panel previews; the code panel would show them as garbage
+const DOWNLOAD_ONLY_EXTENSIONS = new Set([
+	"7z",
+	"avi",
+	"dmg",
+	"doc",
+	"docm",
+	"docx",
+	"exe",
+	"gz",
+	"heic",
+	"iso",
+	"jar",
+	"m4a",
+	"mov",
+	"mp3",
+	"mp4",
+	"msg",
+	"odp",
+	"ods",
+	"odt",
+	"ppt",
+	"pptm",
+	"psd",
+	"rar",
+	"tar",
+	"tgz",
+	"tif",
+	"tiff",
+	"vsdx",
+	"wav",
+	"webm",
+	"xls",
+	"xlsb",
+	"xlsm",
+	"xlsx",
+	"zip",
+]);
 
 /**
  * Resolve the dedicated workbench panel kind for a file path.
  *
- * HTML and unsupported extensions intentionally use the code panel.
+ * HTML and other text extensions intentionally use the code panel.
  *
  * @param path - File path to classify.
  * @returns The file's workbench editor kind.

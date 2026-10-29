@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type {
 	ConversationMessagePart,
 	ConversationTool,
+	ConversationToolStatus,
 } from "@/features/messages/types/message";
 import type { AgentTurnSnapshot } from "@/features/rooms/api/agent-turn-controller";
 import { roomWorkbenchTriggerId } from "@/features/rooms/room-workbench-trigger-id";
@@ -18,16 +19,19 @@ import { RoomEmailProvider } from "./room-email-provider";
 import { getRoomEmailContext, getRoomEmailStore } from "./room-email-store";
 
 const workbench = vi.hoisted(() => {
-	const selectPanel = vi.fn();
+	const selectPanel = vi.fn<(...args: unknown[]) => string>(() => "panel-1");
+	const updatePanel = vi.fn();
 	return {
 		selectPanel,
+		updatePanel,
 		store: {
 			getState: () => ({
-				layout: { actions: { selectPanel } },
+				layout: { actions: { selectPanel, updatePanel } },
 				events: { actions: { emit: vi.fn() } },
 			}),
 		},
 		openWorkbench: vi.fn(),
+		openFile: vi.fn(),
 		tools: {} as Record<string, ConversationTool>,
 		pendingApprovals: [] as PendingToolApproval[],
 		onApproveTool: vi.fn(async () => undefined),
@@ -45,6 +49,9 @@ vi.mock("./room-email-source-panel", () => ({
 }));
 vi.mock("./room-thread-email-panel", () => ({
 	ROOM_THREAD_EMAIL_PANEL_TYPE: "collaboration-thread-email",
+}));
+vi.mock("./room-teams-chat-panel", () => ({
+	ROOM_TEAMS_CHAT_PANEL_TYPE: "collaboration-teams-chat",
 }));
 const loadEmails = vi.hoisted(() => vi.fn());
 vi.mock("./load-room-source-emails", () => ({
@@ -472,9 +479,15 @@ it("shows the thread a finished run read, unless a draft followed or it is the r
 	// restored history opens nothing
 	const view = render(content(finished(1, [readThread("history")])));
 	expect(threadOpens()).toEqual([]);
+	// two different threads read: the turn did not single one out
 	view.rerender(content(running(1)));
 	view.rerender(
 		content(finished(2, [readThread("first"), readThread("nvidia")])),
+	);
+	expect(threadOpens()).toEqual([]);
+	view.rerender(content(running(2)));
+	view.rerender(
+		content(finished(3, [readThread("nvidia"), readThread("nvidia")])),
 	);
 	expect(threadOpens()).toEqual([
 		[
@@ -483,12 +496,15 @@ it("shows the thread a finished run read, unless a draft followed or it is the r
 			{ name: "Email" },
 		],
 	]);
+	expect(workbench.updatePanel).toHaveBeenLastCalledWith("panel-1", {
+		config: { threadId: "nvidia", messageId: undefined, source: "email" },
+	});
 	expect(workbench.openWorkbench).toHaveBeenCalledOnce();
 	// the draft written after the read opens instead
-	view.rerender(content(running(2)));
+	view.rerender(content(running(3)));
 	view.rerender(
 		content(
-			finished(3, [
+			finished(4, [
 				readThread("nvidia"),
 				composeEmailPart({ subject: "Registered", message: "Done." }),
 			]),
@@ -501,8 +517,125 @@ it("shows the thread a finished run read, unless a draft followed or it is the r
 	);
 	expect(threadOpens()).toHaveLength(1);
 	// the room's own thread is already in its source reader
-	view.rerender(content(running(3), source));
-	view.rerender(content(finished(4, [readThread("source")]), source));
+	view.rerender(content(running(4), source));
+	view.rerender(content(finished(5, [readThread("source")]), source));
 	expect(threadOpens()).toHaveLength(1);
 	await act(async () => undefined);
+});
+
+it("opens exactly what ShowItem showed, by its returned ids, and nothing a failed call named", () => {
+	const owner = session();
+	const show = (
+		id: string,
+		output: Record<string, unknown>,
+		status: ConversationToolStatus = "COMPLETED",
+	): ConversationMessagePart => ({
+		type: "tool",
+		tool: {
+			id,
+			parentMessageId: "answer",
+			name: "ShowItem",
+			title: "Show Item",
+			arguments: {},
+			status,
+			output: JSON.stringify(output),
+		},
+	});
+	const parts = [
+		{
+			type: "tool" as const,
+			tool: {
+				id: "read-other",
+				parentMessageId: "answer",
+				name: "ReadThread",
+				title: "Read Thread",
+				arguments: { threadId: "other" },
+				status: "COMPLETED" as const,
+				output: "{}",
+			},
+		},
+		show("s-email", {
+			shown: true,
+			kind: "thread",
+			threadId: "nvidia",
+			source: "email",
+			title: "NVIDIA GTC DC",
+			messageId: "graph-exact",
+		}),
+		show("s-file", { shown: true, kind: "file", path: "/docs/report.pdf" }),
+		show("s-chat", {
+			shown: true,
+			kind: "chat",
+			chatId: "19:chat@thread.v2",
+			title: "Dana Lee",
+		}),
+		show(
+			"s-gone",
+			{ shown: true, kind: "file", path: "/gone.pdf" },
+			"FAILED",
+		),
+	];
+	const turn = (
+		settlementVersion: number,
+		isRunning: boolean,
+	): AgentTurnSnapshot => ({
+		...idleEmailTurn(),
+		isRunning,
+		phase: isRunning ? "streaming" : "completed",
+		settlementVersion,
+		messages: isRunning
+			? []
+			: [
+					{
+						id: "ask",
+						role: "user",
+						parts: [{ type: "text", text: "bring that up" }],
+					},
+					{ id: "answer", role: "assistant", parts },
+				],
+	});
+	const content = (value: AgentTurnSnapshot) => (
+		<RoomEmailProvider
+			session={owner}
+			roomId="room"
+			source={null}
+			turn={value}
+			isReady
+		>
+			<span />
+		</RoomEmailProvider>
+	);
+	// the same results restored from history open nothing
+	const view = render(content(turn(1, false)));
+	expect(workbench.selectPanel).not.toHaveBeenCalled();
+	expect(workbench.openFile).not.toHaveBeenCalled();
+	view.rerender(content(turn(1, true)));
+	view.rerender(content(turn(2, false)));
+	expect(workbench.selectPanel).toHaveBeenCalledWith(
+		"collaboration-thread-email",
+		{ threadId: "nvidia" },
+		{ name: "Email" },
+	);
+	expect(workbench.updatePanel).toHaveBeenCalledWith("panel-1", {
+		config: {
+			threadId: "nvidia",
+			messageId: "graph-exact",
+			source: "email",
+		},
+	});
+	expect(workbench.openFile).toHaveBeenCalledExactlyOnceWith(
+		"/docs/report.pdf",
+		"report.pdf",
+	);
+	expect(workbench.selectPanel).toHaveBeenCalledWith(
+		"collaboration-teams-chat",
+		{ chatId: "19:chat@thread.v2", title: "Dana Lee", webLink: undefined },
+		{ name: "Dana Lee" },
+	);
+	expect(workbench.selectPanel).not.toHaveBeenCalledWith(
+		"collaboration-thread-email",
+		{ threadId: "other" },
+		expect.anything(),
+	);
+	expect(workbench.selectPanel).toHaveBeenCalledTimes(2);
 });

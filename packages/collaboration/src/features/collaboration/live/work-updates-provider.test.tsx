@@ -81,6 +81,7 @@ it("refreshes an approved goal after queued saves while preserving other goals a
 			.mockReturnValueOnce(saving.promise)
 			.mockResolvedValue(undefined),
 		localId: (id: string) => (id === "server-goal" ? "local-goal" : id),
+		serverId: (id: string) => id,
 	});
 	vi.mocked(readTopicGoals).mockReset().mockReturnValueOnce(read.promise);
 	const { result, unmount } = renderHook(
@@ -241,6 +242,7 @@ it("deduplicates server echoes, ignores removed actions during a refresh, and re
 	const sync: LiveSync = Object.assign(vi.fn(), {
 		settled: async () => undefined,
 		localId: (id: string) => (id === "server-step" ? "local-step-1" : id),
+		serverId: (id: string) => id,
 	});
 	vi.mocked(readWorkUpdates).mockResolvedValueOnce(updates);
 	const view = render(
@@ -525,3 +527,69 @@ it.each(["sample", "off"])(
 		}
 	},
 );
+
+it("gives a topic made on this page its server id after queued saves, and keeps its own id when a refresh echoes it", async () => {
+	const state = createInitialCollaborationState();
+	const [thread] = state.threads;
+	const [item] = state.items;
+	const saving = deferred<void>();
+	const sync: LiveSync = Object.assign(vi.fn(), {
+		settled: () => saving.promise,
+		localId: (id: string) => (id === "server-topic" ? "local-topic-9" : id),
+		serverId: (id: string) =>
+			id === "local-topic-9" ? "server-topic" : id,
+	});
+	const link = {
+		source: "you" as const,
+		confidence: 100,
+		primary: true,
+	};
+	vi.mocked(readWorkUpdates).mockResolvedValueOnce({
+		threads: [
+			{ ...thread, topicLinks: [{ ...link, topicId: "server-topic" }] },
+		],
+		items: [{ ...item, topicIds: ["server-topic"] }],
+		workspaces: {},
+		memories: [],
+		lastMailCheck: null,
+	});
+	const { result } = renderHook(
+		() => ({
+			...useCollaborationSession(),
+			updates: useWorkUpdates(),
+		}),
+		{
+			wrapper: ({ children }) => (
+				<CollaborationSessionProvider initialState={state}>
+					<WorkUpdatesProvider
+						actions={{} as InsightActions}
+						sync={sync}
+					>
+						{children}
+					</WorkUpdatesProvider>
+				</CollaborationSessionProvider>
+			),
+		},
+	);
+	let serverId: string | undefined;
+	act(() => {
+		void result.current.updates?.serverId("local-topic-9").then((id) => {
+			serverId = id;
+		});
+	});
+	expect(serverId).toBeUndefined();
+	await act(async () => saving.resolve());
+	expect(serverId).toBe("server-topic");
+
+	act(() => result.current.updates?.refresh());
+	await waitFor(() =>
+		expect(
+			result.current.state.threads.find((entry) => entry.id === thread.id)
+				?.topicLinks,
+		).toEqual([{ ...link, topicId: "local-topic-9" }]),
+	);
+	expect(
+		result.current.state.items.find((entry) => entry.id === item.id)
+			?.topicIds,
+	).toEqual(["local-topic-9"]);
+});

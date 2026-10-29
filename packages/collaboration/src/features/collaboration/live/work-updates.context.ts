@@ -22,10 +22,30 @@ export interface WorkUpdatesStatus {
 	syncMail: () => void;
 	/** The id the server knows a record by, after this page's queued saves (a topic made here starts local). */
 	serverId: (id: string) => Promise<string>;
+	/** The id this page knows a record by, for an id the server sent; the reverse of `serverId`. */
+	localId: (serverId: string) => string;
 }
 export const WorkUpdatesContext = createContext<WorkUpdatesStatus | null>(null);
 
 /** Isolated/sample surfaces have no background connection. */
 export function useWorkUpdates(): WorkUpdatesStatus | null {
 	return useContext(WorkUpdatesContext);
+}
+
+const sameId = (id: string): string => id;
+const sameServerId = async (id: string): Promise<string> => id;
+
+/**
+ * Both directions between the ids this page keeps (a record made here keeps its local id for the session) and
+ * the ids the server knows; without a live connection every id is the same on both sides.
+ */
+export function useRecordIds(): Pick<
+	WorkUpdatesStatus,
+	"serverId" | "localId"
+> {
+	const updates = useWorkUpdates();
+	return {
+		serverId: updates?.serverId ?? sameServerId,
+		localId: updates?.localId ?? sameId,
+	};
 }

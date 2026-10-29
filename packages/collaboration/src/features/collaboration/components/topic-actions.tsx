@@ -26,13 +26,16 @@ import { topicPath } from "@/lib/workspace-paths";
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 
-/** Confirm merging this topic into another one or deleting it. */
+/** Confirm merging this topic into another one or deleting it, or open its conversation review. */
 export function TopicActions({
 	topic,
 	threadCount,
+	onFindConversations,
 }: {
 	topic: Topic;
 	threadCount: number;
+	/** Opens the review of existing conversations that fit; absent where no server can check them. */
+	onFindConversations?: () => void;
 }) {
 	const { state, dispatch } = useCollaborationSession();
 	const navigate = useNavigate();
@@ -62,6 +65,11 @@ export function TopicActions({
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end">
+					{onFindConversations && (
+						<DropdownMenuItem onSelect={onFindConversations}>
+							Find conversations...
+						</DropdownMenuItem>
+					)}
 					<DropdownMenuItem
 						disabled={!targets.length}
 						onSelect={() => setDialog("merge")}

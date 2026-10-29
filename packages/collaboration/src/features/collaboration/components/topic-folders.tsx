@@ -94,9 +94,10 @@ function LiveTopicFolders({ topicId, folders, isSample }: TopicFoldersProps) {
 		setError("");
 		setNote("");
 		try {
+			// a topic made on this page is known to the server by another id
 			const result = await linkTopicFolder(
 				actions,
-				topicId,
+				updates ? await updates.serverId(topicId) : topicId,
 				folderId,
 				remove,
 			);

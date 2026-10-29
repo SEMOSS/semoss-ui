@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
+import { useRecordIds } from "@/features/collaboration/live/work-updates.context";
 import { linkRoomTopic } from "@/features/rooms/api/room-topics";
 import type {
 	RoomSession,
@@ -54,6 +55,7 @@ export function useNewChatController(
 			? request.prompt
 			: "";
 	const { insightId: scope } = useInsight();
+	const { serverId } = useRecordIds();
 	const location = useLocation();
 	const navigate = useNavigate();
 	// Allocation can finish after returning to this same history entry. Observe the
@@ -111,15 +113,17 @@ export function useNewChatController(
 		const sending = (async () => {
 			const roomId = await session.create("New chat");
 			if (topicId) {
+				// a topic made on this page is known to the server by another id
+				const serverTopicId = await serverId(topicId);
 				const topics = await linkRoomTopic(
 					session.insight.actions,
 					roomId,
-					topicId,
+					serverTopicId,
 				);
 				if (
 					!topics.some(
 						(topic) =>
-							topic.topicId === topicId &&
+							topic.topicId === serverTopicId &&
 							topic.state === "linked",
 					)
 				)

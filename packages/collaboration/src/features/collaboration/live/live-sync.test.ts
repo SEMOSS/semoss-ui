@@ -56,6 +56,16 @@ it("a merge sends one BrainMergeTopics operation", async () => {
 	expect(onError).not.toHaveBeenCalled();
 });
 
+it("a background sync choice saves only that setting", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync(step({ type: "settings.save", changes: { syncEveryMinutes: 60 } }));
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainSaveSettings(settings=[{"syncEveryMinutes":60}]);',
+	]);
+});
+
 it("a rename saves the changed topic name", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());

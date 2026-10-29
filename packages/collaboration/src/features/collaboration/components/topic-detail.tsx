@@ -2,9 +2,9 @@ import {
 	Bot,
 	ChevronDown,
 	LockKeyhole,
-	MessageSquare,
 	PanelRightOpen,
 	Plus,
+	Search,
 	X,
 } from "lucide-react";
 import { lazy, Suspense, useId, useRef, useState } from "react";
@@ -41,6 +41,7 @@ import { TopicSessions } from "@/features/dashboard/topic-sessions";
 import { lexicon } from "@/lib/lexicon";
 import { givenFirst } from "@/lib/person-name";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
+import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
 import { topicTone } from "../topic-tone";
@@ -55,6 +56,7 @@ import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
 import { TopicFolders } from "./topic-folders";
 import { TopicGoalPopover } from "./topic-goal-popover";
+import { TopicMatchesDialog } from "./topic-matches-dialog";
 import { TopicThreadRow } from "./topic-thread-row";
 import { useWorkFeed, WorkFilterMenu, WorkItemsList } from "./work-items-feed";
 
@@ -93,14 +95,18 @@ export function TopicDetail() {
 	const { state, dispatch } = useCollaborationSession();
 	const [isEditing, setIsEditing] = useState(false);
 	const [tab, setTab] = useState("actions");
-	const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-	const [hasOpenedAssistant, setHasOpenedAssistant] = useState(false);
+	const [isMatchReviewOpen, setIsMatchReviewOpen] = useState(false);
+	const updates = useWorkUpdates();
 	const editButtonRef = useRef<HTMLButtonElement>(null);
+	// the button that opened the review, for focus on close; a click does not focus it in Safari
+	const matchTriggerRef = useRef<HTMLElement | null>(null);
 	const contextButtonRef = useRef<HTMLButtonElement>(null);
 	const contextRef = useRef<HTMLElement>(null);
 	const [personToAdd, setPersonToAdd] = useState("");
 	const [showAllSuggested, setShowAllSuggested] = useState(false);
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
+	const canStartAssistant =
+		topic?.status === "active" || topic?.status === "dormant";
 	const topicMemories = memoriesAbout(state.memories, {
 		type: "topic",
 		id: topicId ?? "",
@@ -150,8 +156,14 @@ export function TopicDetail() {
 	const doneGoals = topic.goals.filter((goal) => goal.status === "done");
 	const feedThreadCount = new Set(workItems.map((item) => item.threadId))
 		.size;
-	const canStartAssistant =
-		topic.status === "active" || topic.status === "dormant";
+	// the server scores active and dormant topics; samples and isolated pages have no server to ask
+	const canFindConversations =
+		Boolean(updates) && !topic.isSample && canStartAssistant;
+	// the menu returns focus to its own trigger; a button passes itself
+	const openMatchReview = (trigger?: HTMLElement) => {
+		matchTriggerRef.current = trigger ?? null;
+		setIsMatchReviewOpen(true);
+	};
 
 	return (
 		<CollaborationPage>
@@ -218,24 +230,14 @@ export function TopicDetail() {
 							<PanelRightOpen aria-hidden="true" />
 							Context
 						</Button>
-						<Button
-							variant="outline"
-							className="pointer-coarse:min-h-11"
-							aria-expanded={isAssistantOpen}
-							aria-controls={`${fieldId}-assistant`}
-							onClick={() => {
-								setHasOpenedAssistant(true);
-								setIsAssistantOpen((open) => !open);
-							}}
-						>
-							<MessageSquare aria-hidden="true" />
-							{isAssistantOpen
-								? "Hide assistant"
-								: "Ask assistant"}
-						</Button>
 						<TopicActions
 							topic={topic}
 							threadCount={threads.length}
+							onFindConversations={
+								canFindConversations
+									? () => openMatchReview()
+									: undefined
+							}
 						/>
 					</>
 				}
@@ -253,18 +255,13 @@ export function TopicDetail() {
 					</div>
 				)}
 			</CollaborationPageHeader>
-			<section
-				id={`${fieldId}-assistant`}
-				aria-label="Topic assistant"
-				hidden={!isAssistantOpen}
-				className="mb-8 space-y-3"
-			>
+			<section aria-label="Topic assistant" className="mb-8 space-y-3">
 				<P className="text-muted-foreground text-sm">
 					{canStartAssistant
 						? "Ask about this topic’s goals, people, and emails."
 						: "Set this topic to Active or Dormant to start a chat."}
 				</P>
-				{hasOpenedAssistant && canStartAssistant && (
+				{canStartAssistant && (
 					<Suspense fallback={<output>Loading assistant…</output>}>
 						<LandingChatComposer topicId={topic.id} />
 					</Suspense>
@@ -327,6 +324,24 @@ export function TopicDetail() {
 										<WorkFilterMenu feed={feed} />
 									</div>
 								)}
+								{tab === "threads" &&
+									canFindConversations &&
+									threads.length > 0 && (
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											className="ml-auto pointer-coarse:min-h-11"
+											onClick={(event) =>
+												openMatchReview(
+													event.currentTarget,
+												)
+											}
+										>
+											<Search aria-hidden="true" />
+											Find conversations
+										</Button>
+									)}
 							</div>
 							<TabsContent value="actions" className="mt-0">
 								<WorkItemsList feed={feed} />
@@ -368,6 +383,28 @@ export function TopicDetail() {
 											/>
 										))}
 									</ul>
+								) : canFindConversations ? (
+									<div className="flex flex-col items-start gap-3 px-5 py-4">
+										<P className="text-muted-foreground text-sm">
+											No threads in this topic yet. Find
+											conversations that fit it, or add it
+											from a thread's details.
+										</P>
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											className="pointer-coarse:min-h-11"
+											onClick={(event) =>
+												openMatchReview(
+													event.currentTarget,
+												)
+											}
+										>
+											<Search aria-hidden="true" />
+											Find conversations
+										</Button>
+									</div>
 								) : (
 									<P className="px-5 py-4 text-muted-foreground text-sm">
 										No threads in this topic yet. Add it
@@ -1023,6 +1060,22 @@ export function TopicDetail() {
 					returnFocusRef={editButtonRef}
 					topic={topic}
 					onClose={() => setIsEditing(false)}
+					onFindConversations={
+						canFindConversations
+							? () => openMatchReview()
+							: undefined
+					}
+				/>
+			)}
+			{updates && canFindConversations && (
+				<TopicMatchesDialog
+					// an edit to what Brain matches on starts the review over
+					key={`${topic.name}\n${topic.description}\n${topic.accountId ?? ""}`}
+					topic={topic}
+					updates={updates}
+					open={isMatchReviewOpen}
+					onOpenChange={setIsMatchReviewOpen}
+					returnFocusRef={matchTriggerRef}
 				/>
 			)}
 		</CollaborationPage>

@@ -13,13 +13,15 @@ import type { AgentTurnSnapshot } from "@/features/rooms/api/agent-turn-controll
 import { roomWorkbenchTriggerId } from "@/features/rooms/room-workbench-trigger-id";
 import type { RoomSource } from "@/features/rooms/source-import/room-source";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
+import type { ShownItem } from "@/features/tools/utils/shown-item";
 import { RoomEmailContext, type RoomEmailSession } from "./room-email.context";
 import { ROOM_EMAIL_PANEL_TYPE } from "./room-email-panel";
 import { ROOM_EMAIL_SOURCE_PANEL_TYPE } from "./room-email-source-panel";
 import { getRoomEmailStore } from "./room-email-store";
+import { ROOM_TEAMS_CHAT_PANEL_TYPE } from "./room-teams-chat-panel";
 import { ROOM_TEAMS_SOURCE_PANEL_TYPE } from "./room-teams-source-panel";
 import { ROOM_THREAD_EMAIL_PANEL_TYPE } from "./room-thread-email-panel";
-import { useAssistantReadThread } from "./use-assistant-read-thread";
+import { useAssistantShownItems } from "./use-assistant-shown-items";
 import { useEmailSendApprovals } from "./use-email-send-approvals";
 import { useRoomEmailProposals } from "./use-room-email-proposals";
 import { useRoomSourceEmails } from "./use-room-source-emails";
@@ -51,7 +53,7 @@ export function RoomEmailProvider({
 		store.getSnapshot,
 	);
 	const workbench = useToolWorkbench();
-	const { openWorkbench } = workbench;
+	const { openWorkbench, openFile } = workbench;
 	const handleFileUpdated = useCallback(
 		(path: string) => {
 			workbench.store
@@ -172,24 +174,48 @@ export function RoomEmailProvider({
 		[openWorkbench, store, workbench.store],
 	);
 	openDraftRef.current = openDraft;
-	const openThread = useCallback(
-		(threadId: string): void => {
-			workbench.store
-				.getState()
-				.layout.actions.selectPanel(
-					ROOM_THREAD_EMAIL_PANEL_TYPE,
-					{ threadId },
-					{ name: "Email" },
+	const openItem = useCallback(
+		(item: ShownItem): void => {
+			if (item.kind === "file") {
+				openFile(item.path, item.name);
+				return;
+			}
+			const { actions } = workbench.store.getState().layout;
+			if (item.kind === "chat") {
+				actions.selectPanel(
+					ROOM_TEAMS_CHAT_PANEL_TYPE,
+					{
+						chatId: item.chatId,
+						title: item.title,
+						webLink: item.webLink,
+					},
+					{ name: item.title || "Teams chat" },
 				);
+			} else {
+				const panelId = actions.selectPanel(
+					ROOM_THREAD_EMAIL_PANEL_TYPE,
+					{ threadId: item.threadId },
+					{ name: item.source === "teams" ? "Teams chat" : "Email" },
+				);
+				// an open tab keeps its config, so each open names its email, or none for the default
+				actions.updatePanel(panelId, {
+					config: {
+						threadId: item.threadId,
+						messageId: item.messageId,
+						source: item.source,
+					},
+				});
+			}
 			openWorkbench();
 		},
-		[openWorkbench, workbench.store],
+		[openFile, openWorkbench, workbench.store],
 	);
-	useAssistantReadThread({
+	useAssistantShownItems({
 		turn,
 		isReady,
+		roomId,
 		sourceThreadId: source?.threadId,
-		onOpen: openThread,
+		onOpen: openItem,
 	});
 	const selectSourceMessage = useCallback(
 		(messageId: string): void => {
@@ -264,7 +290,7 @@ export function RoomEmailProvider({
 				selectSourceMessage,
 				replyToSource,
 				openDraft,
-				openThread,
+				openItem,
 				requestSend: (draft) => {
 					openDraft(draft.seed.id);
 					draft.requestSubmit();
