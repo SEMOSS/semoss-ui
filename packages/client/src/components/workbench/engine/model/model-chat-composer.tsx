@@ -1,4 +1,4 @@
-import { PaperclipIcon, SendIcon, SquareIcon } from "lucide-react";
+import { PaperclipIcon, SendIcon, SquareIcon, XIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import {
 	Alert,
@@ -102,15 +102,20 @@ export const ModelChatComposer = () => {
 			{error && (
 				<Alert variant="destructive">
 					<AlertDescription>
-						<div className="flex items-start justify-between gap-2">
-							<span className="wrap-break-word">{error}</span>
+						{/* the description is a grid that sizes its children to their
+						    content, so the row stretches to put the button at the edge */}
+						<div className="flex w-full items-center justify-between gap-2">
+							<span className="wrap-break-word min-w-0">
+								{error}
+							</span>
 							<Button
 								variant="ghost"
 								size="icon-sm"
+								className="shrink-0"
 								aria-label="Dismiss error"
 								onClick={dismissError}
 							>
-								<span aria-hidden>×</span>
+								<XIcon className="size-4" aria-hidden />
 							</Button>
 						</div>
 					</AlertDescription>

@@ -468,6 +468,23 @@ const nextQueryNumber = (workbench: StoreApi<WorkbenchState>): number => {
 };
 
 /**
+ * Where a new results panel goes in the bottom border: right after the last
+ * results panel there, or first when there is none. Results stay in run order
+ * ahead of the terminal and anything else docked there, so the border opens
+ * on them.
+ */
+const nextResultsIndex = (workbench: StoreApi<WorkbenchState>): number => {
+	const { borders, panels } = workbench.getState().layout;
+	let index = 0;
+	borders.bottom.panelIds.forEach((pid, position) => {
+		if (panels[pid]?.type === WORKBENCH_COMPONENTS.DATABASE_RESULTS) {
+			index = position + 1;
+		}
+	});
+	return index;
+};
+
+/**
  * Creates the dedicated store for one database workbench. Structure, results,
  * and query execution live here so the columns/query/results panels can share
  * them; panels are driven through the injected workbench store's actions.
@@ -726,7 +743,11 @@ export const createDatabaseWorkbenchStore = (
 						config: { sourcePanel: panelId },
 						canClose: true,
 						canRename: false,
-						target: { kind: "border", side: "bottom" },
+						target: {
+							kind: "border",
+							side: "bottom",
+							index: nextResultsIndex(deps.workbench),
+						},
 					},
 				);
 			}
