@@ -57,6 +57,8 @@ export type LiveSync = ((change: CollaborationChange) => void) & {
 	settled: () => Promise<void>;
 	/** Keep session identities stable when a created row returns in a refresh. */
 	localId: (serverId: string) => string;
+	/** The server id of a row this page created, once `settled`; any other id as is. */
+	serverId: (localId: string) => string;
 };
 
 /** Queue-backed saver: changes go out one at a time and in order. */
@@ -117,6 +119,7 @@ export function createLiveSync(
 		settled: () => queue,
 		localId: (serverId: string): string =>
 			[...ids].find(([, value]) => value === serverId)?.[0] ?? serverId,
+		serverId: id,
 	});
 }
 

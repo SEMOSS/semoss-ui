@@ -29,7 +29,11 @@ import {
 	rememberCommand,
 } from "@/features/collaboration/state/memory";
 import { roomFileLinks } from "@/features/messages/utils/room-file-link";
-import { connectorPanelActions } from "@/features/room-connectors/connector-panel-actions";
+import {
+	connectorPanelActions,
+	OUTLOOK_TONE,
+	TEAMS_TONE,
+} from "@/features/room-connectors/connector-panel-actions";
 import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import {
@@ -364,6 +368,10 @@ export function RoomWorkspace({
 																icon: roomEmail.hasSourceEmail
 																	? Mail
 																	: MessagesSquare,
+																iconClassName:
+																	roomEmail.hasSourceEmail
+																		? OUTLOOK_TONE
+																		: TEAMS_TONE,
 																onSelect: () =>
 																	roomEmail.openSource(
 																		actionsTriggerId,

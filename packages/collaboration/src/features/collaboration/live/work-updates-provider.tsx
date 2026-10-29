@@ -158,9 +158,18 @@ export function WorkUpdatesProvider({
 					updates: {
 						...updates,
 						workspaces,
+						// links to a topic made on this page come back with its server id
+						threads: updates.threads.map((thread) => ({
+							...thread,
+							topicLinks: thread.topicLinks.map((link) => ({
+								...link,
+								topicId: localId(link.topicId),
+							})),
+						})),
 						items: updates.items.map((item) => ({
 							...item,
 							id: localId(item.id),
+							topicIds: item.topicIds.map(localId),
 						})),
 						memories: updates.memories.map((memory) => ({
 							...memory,
@@ -217,6 +226,13 @@ export function WorkUpdatesProvider({
 	}, [actions, dispatch, sync]);
 	const refreshRef = useRef(refresh);
 	refreshRef.current = refresh;
+	const serverId = useCallback(
+		async (id: string): Promise<string> => {
+			await sync?.settled();
+			return sync?.serverId(id) ?? id;
+		},
+		[sync],
+	);
 	/** The Refresh button: pull new mail from Microsoft 365 first, then reload Brain and Work. */
 	const syncNow = useCallback(() => {
 		if (syncing.current) return;
@@ -364,6 +380,7 @@ export function WorkUpdatesProvider({
 				refresh,
 				refreshTopicGoal,
 				syncMail: syncNow,
+				serverId,
 			}}
 		>
 			{children}

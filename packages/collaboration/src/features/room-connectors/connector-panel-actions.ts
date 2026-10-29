@@ -13,13 +13,23 @@ import type {
 	RoomConnectorsContextValue,
 } from "./room-connectors.types";
 
-const BROWSER_ACTIONS: readonly [ConnectorBrowser, string, LucideIcon][] = [
-	["mail", "Open Emails", Mail],
-	["calendar", "Open Calendar", CalendarDays],
-	["onedrive", "Open OneDrive", Cloud],
-	["teams-chats", "Open Teams Chats", MessagesSquare],
-	["teams-channels", "Open Teams Channels", Hash],
-	["teams-files", "Open Teams Files", Files],
+// each app's own color, so its entries read at a glance
+export const OUTLOOK_TONE = "text-blue-600 dark:text-blue-400";
+export const TEAMS_TONE = "text-violet-600 dark:text-violet-400";
+const ONEDRIVE_TONE = "text-sky-500 dark:text-sky-400";
+
+const BROWSER_ACTIONS: readonly [
+	ConnectorBrowser,
+	string,
+	LucideIcon,
+	string,
+][] = [
+	["mail", "Open Emails", Mail, OUTLOOK_TONE],
+	["calendar", "Open Calendar", CalendarDays, OUTLOOK_TONE],
+	["onedrive", "Open OneDrive", Cloud, ONEDRIVE_TONE],
+	["teams-chats", "Open Teams Chats", MessagesSquare, TEAMS_TONE],
+	["teams-channels", "Open Teams Channels", Hash, TEAMS_TONE],
+	["teams-files", "Open Teams Files", Files, TEAMS_TONE],
 ];
 
 /**
@@ -34,10 +44,11 @@ export function connectorPanelActions(
 	returnToBrowser: RoomConnectorsContextValue["returnToBrowser"],
 	returnFocusId: string,
 ): ComposerPanelAction[] {
-	return BROWSER_ACTIONS.map(([browser, label, icon]) => ({
+	return BROWSER_ACTIONS.map(([browser, label, icon, iconClassName]) => ({
 		id: browser,
 		label,
 		icon,
+		iconClassName,
 		onSelect: () =>
 			returnToBrowser(browser, "microsoft", undefined, returnFocusId),
 	}));

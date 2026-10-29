@@ -20,6 +20,8 @@ export interface WorkUpdatesStatus {
 	syncError: string;
 	/** Pull new mail from Microsoft 365, then reload. */
 	syncMail: () => void;
+	/** The id the server knows a record by, after this page's queued saves (a topic made here starts local). */
+	serverId: (id: string) => Promise<string>;
 }
 export const WorkUpdatesContext = createContext<WorkUpdatesStatus | null>(null);
 
