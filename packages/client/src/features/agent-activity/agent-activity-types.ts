@@ -14,12 +14,18 @@ export interface TreeNodeSpec {
 export interface AgentActivityRun {
 	roomId: string;
 	roomName?: string;
+	/** Whether the run's room is closed, so no agent runs in it again */
+	isRoomClosed?: boolean;
 	runId: string;
 	parentRunId?: string;
 	jobId: string;
 	workspaceId: string;
 	userId: string;
+	/** The login type of `userId`, such as NATIVE; null when the run stores none */
+	userType?: string | null;
 	modelId: string;
+	/** The model's name, when the read that returned the run includes it */
+	modelName?: string | null;
 	harnessType: string;
 	status: string;
 	input: string;
@@ -30,16 +36,6 @@ export interface AgentActivityRun {
 	inputMessageId?: string;
 	finalOutputMessageId?: string;
 	artifacts: unknown[];
-}
-
-export type AgentActivityLogResponse = Record<string, AgentActivityRun[]>;
-
-export interface RoomSummary {
-	roomId: string;
-	roomName: string | null;
-	runCount: number;
-	mostRecentCompletedAt: string | null;
-	sortMs: number;
 }
 
 export interface TranscriptToolCall {
@@ -97,6 +93,8 @@ export interface SubagentRun {
 	roomId: string;
 	workspaceId: string;
 	modelId: string;
+	/** The model's name, when the read that returned the run includes it */
+	modelName?: string | null;
 	harnessType: string;
 	jobId: string;
 	status: string;
@@ -107,6 +105,8 @@ export interface SubagentRun {
 	startedAt?: string;
 	completedAt?: string;
 	userId: string;
+	/** The login type of `userId`, such as NATIVE; null when the run stores none */
+	userType?: string | null;
 	artifacts: unknown[];
 }
 
@@ -117,9 +117,13 @@ export interface AgentRunDetail {
 	roomId: string;
 	roomName?: string;
 	userId: string;
+	/** The login type of `userId`, such as NATIVE; null when the run stores none */
+	userType?: string | null;
 	workspaceId: string;
 	harnessType: string;
 	modelId: string;
+	/** The model's name, when the read that returned the run includes it */
+	modelName?: string | null;
 	status: string;
 	input: string;
 	finalText?: string;
