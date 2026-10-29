@@ -1,6 +1,8 @@
+import { MessageSquarePlus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { Alert, AlertDescription, Button, P, Small } from "@semoss/ui/next";
+import { useAddToCurrentChat } from "@/features/rooms/current-chat";
 import { readThreadMessagesPage } from "../live/live-state";
 import type { Thread, WorkspaceMessage } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -131,6 +133,7 @@ function ConversationView({
 	onLoadOlder?: () => void;
 }) {
 	const { state } = useCollaborationSession();
+	const addToChat = useAddToCurrentChat();
 	const [isExpanded, setIsExpanded] = useState(false);
 	const { messages } = page;
 	const hidden = isExpanded
@@ -187,22 +190,47 @@ function ConversationView({
 							{hidden === 1 ? "" : "s"}
 						</Button>
 					)}
-					{messages.slice(hidden).map((message) => (
-						<ThreadMessage
-							key={message.id}
-							message={message}
-							name={
-								message.fromName ||
-								names.get(message.fromId) ||
-								message.fromAddress ||
-								"Participant"
-							}
-							channel={thread.channel}
-							isIncluded={!message.excluded}
-							isEmpty={!message.text.trim()}
-							isFlat
-						/>
-					))}
+					{messages.slice(hidden).map((message) => {
+						const name =
+							message.fromName ||
+							names.get(message.fromId) ||
+							message.fromAddress ||
+							"Participant";
+						return (
+							<ThreadMessage
+								key={message.id}
+								message={message}
+								name={name}
+								channel={thread.channel}
+								isIncluded={!message.excluded}
+								isEmpty={!message.text.trim()}
+								isFlat
+								action={
+									// excluded mail never reaches the assistant, and a session thread has no source to read
+									addToChat &&
+									!message.excluded &&
+									!thread.id.startsWith("session:") && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											className="h-7 pointer-coarse:min-h-11 px-2 text-muted-foreground text-xs"
+											aria-label={`${addToChat.label}: ${thread.channel === "teams" ? "message" : "email"} from ${name}`}
+											onClick={() =>
+												addToChat.add(
+													thread.id,
+													message.id,
+												)
+											}
+										>
+											<MessageSquarePlus aria-hidden="true" />
+											Add to chat
+										</Button>
+									)
+								}
+							/>
+						);
+					})}
 				</div>
 			) : page.isLoading ? (
 				<output className="text-muted-foreground text-sm">

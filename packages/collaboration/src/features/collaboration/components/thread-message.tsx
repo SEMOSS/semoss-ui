@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
 import { hasDisplayContent } from "@/features/email/email-html";
 import { SourceMessageBody } from "@/features/email/source-message-body";
@@ -18,6 +18,7 @@ export function ThreadMessage({
 	isIncluded,
 	isEmpty,
 	isFlat = false,
+	action,
 }: {
 	message: WorkspaceMessage;
 	name: string;
@@ -27,6 +28,8 @@ export function ThreadMessage({
 	isEmpty: boolean;
 	/** Align source messages with the unframed Work timeline. */
 	isFlat?: boolean;
+	/** An action on this one message, at the end of its header. */
+	action?: ReactNode;
 }) {
 	const bodyId = useId();
 	const [isExpanded, setIsExpanded] = useState(false);
@@ -77,21 +80,26 @@ export function ThreadMessage({
 							Includes earlier mail
 						</Badge>
 					)}
-					{message.webLink && (
-						<a
-							href={message.webLink}
-							target="_blank"
-							rel="noreferrer"
-							className="ml-auto inline-flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
-						>
-							<ExternalLink
-								aria-hidden="true"
-								className="size-3"
-							/>
-							{channel === "teams"
-								? "Open in Teams"
-								: "Open in Outlook"}
-						</a>
+					{(message.webLink || action) && (
+						<span className="ml-auto inline-flex items-center gap-3">
+							{message.webLink && (
+								<a
+									href={message.webLink}
+									target="_blank"
+									rel="noreferrer"
+									className="inline-flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
+								>
+									<ExternalLink
+										aria-hidden="true"
+										className="size-3"
+									/>
+									{channel === "teams"
+										? "Open in Teams"
+										: "Open in Outlook"}
+								</a>
+							)}
+							{action}
+						</span>
 					)}
 				</div>
 				{recipients.length > 0 && (

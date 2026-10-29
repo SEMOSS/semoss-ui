@@ -334,7 +334,7 @@ describe("RoomWorkspace", () => {
 		expect(workbenchState.openWorkbench).toHaveBeenCalledWith();
 	});
 
-	it("opens Settings, Files, Emails, and Calendar from the composer", () => {
+	it("opens Settings, Files, and the Microsoft 365 browsers from the composer", () => {
 		workbenchState.isOpen = false;
 		render(<RoomWorkspace {...defaultProps} />);
 		fireEvent.click(screen.getByRole("button", { name: "Settings" }));
@@ -364,6 +364,10 @@ describe("RoomWorkspace", () => {
 		for (const [label, browser] of [
 			["Open Emails", "mail"],
 			["Open Calendar", "calendar"],
+			["Open OneDrive", "onedrive"],
+			["Open Teams Chats", "teams-chats"],
+			["Open Teams Channels", "teams-channels"],
+			["Open Teams Files", "teams-files"],
 		]) {
 			fireEvent.click(screen.getByRole("button", { name: label }));
 			expect(workbenchState.returnToBrowser).toHaveBeenLastCalledWith(

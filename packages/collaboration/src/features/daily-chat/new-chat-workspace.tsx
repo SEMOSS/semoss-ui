@@ -1,14 +1,10 @@
-import {
-	CalendarDays,
-	FolderOpen,
-	Mail,
-	PanelRightClose,
-	Settings2,
-} from "lucide-react";
+import { FolderOpen, PanelRightClose, Settings2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, Button } from "@semoss/ui/next";
+import { connectorPanelActions } from "@/features/room-connectors/connector-panel-actions";
 import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
 import { ROOM_SETTINGS_PANEL_TYPE } from "@/features/rooms/components/room-settings-panel";
+import { useShowCurrentChat } from "@/features/rooms/current-chat";
 import type {
 	RoomSession,
 	RoomSessionSnapshot,
@@ -46,6 +42,7 @@ export function NewChatWorkspace({
 	onSaveSettings,
 	onSelectAgent,
 }: NewChatWorkspaceProps) {
+	useShowCurrentChat(session);
 	const workbench = useToolWorkbench();
 	const { isOpen, openWorkbench, closeWorkbench, store } = workbench;
 	const { returnToBrowser } = useRoomConnectors();
@@ -126,30 +123,7 @@ export function NewChatWorkspace({
 							void openRequestedFiles();
 						},
 					},
-					{
-						id: "emails",
-						label: "Open Emails",
-						icon: Mail,
-						onSelect: () =>
-							returnToBrowser(
-								"mail",
-								"microsoft",
-								undefined,
-								actionsTriggerId,
-							),
-					},
-					{
-						id: "calendar",
-						label: "Open Calendar",
-						icon: CalendarDays,
-						onSelect: () =>
-							returnToBrowser(
-								"calendar",
-								"microsoft",
-								undefined,
-								actionsTriggerId,
-							),
-					},
+					...connectorPanelActions(returnToBrowser, actionsTriggerId),
 					// The landing composer has no separate desktop workbench toggle.
 					...(isOpen
 						? [

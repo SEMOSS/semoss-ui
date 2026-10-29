@@ -4,14 +4,53 @@ import { FILE_PANEL_EVENTS, getFilePanelScope } from "@semoss/panels";
 import { Alert, AlertDescription, P, Small } from "@semoss/ui/next";
 import type { WorkspaceMessage } from "@/features/collaboration/state/collaboration.types";
 import { stageMailAttachment } from "@/features/connectors/api/microsoft";
-import type { SourceAttachment } from "@/features/connectors/types";
+import type {
+	SourceAttachment,
+	StagedSourceAttachment,
+} from "@/features/connectors/types";
 import type { RoomSource } from "@/features/rooms/source-import/room-source";
 import {
 	sendsAsText,
 	stageThreadAttachment,
 } from "@/features/thread-assistant/api/thread-attachments";
 import { ToolWorkbenchContext } from "@/features/tools/tool-workbench.context";
-import { useRoomEmail } from "./room-email.context";
+import { type RoomEmailSession, useRoomEmail } from "./room-email.context";
+
+/**
+ * Copy one of the source email's files into the room's folder.
+ *
+ * @param session - The room.
+ * @param threadId - The room's source thread.
+ * @param messageId - The email the file is on.
+ * @param attachment - The file.
+ * @param includeText - Also write a text copy of an Office or mail file; Brain mail only.
+ * @returns The staged file.
+ */
+export function stageSourceAttachment(
+	session: RoomEmailSession,
+	threadId: string,
+	messageId: string,
+	attachment: SourceAttachment,
+	includeText: boolean,
+): Promise<StagedSourceAttachment> {
+	const { actions, insightId } = session.insight;
+	// Brain mail is read under the thread's rules; imported mail through Outlook
+	return attachment.messageId
+		? stageThreadAttachment(
+				actions,
+				insightId,
+				threadId,
+				attachment,
+				includeText,
+			)
+		: stageMailAttachment(
+				actions,
+				insightId,
+				messageId,
+				attachment.id,
+				attachment.name,
+			);
+}
 
 interface RoomSourceAttachmentsProps {
 	source: Pick<RoomSource, "threadId" | "kind">;
@@ -42,23 +81,13 @@ export function RoomSourceAttachments({
 		if (!path) {
 			setPending(attachment.id);
 			try {
-				const { actions, insightId } = session.insight;
-				// Brain mail is read under the thread's rules; imported mail through Outlook
-				const file = attachment.messageId
-					? await stageThreadAttachment(
-							actions,
-							insightId,
-							source.threadId,
-							attachment,
-							sendsAsText(attachment.name),
-						)
-					: await stageMailAttachment(
-							actions,
-							insightId,
-							message.id,
-							attachment.id,
-							attachment.name,
-						);
+				const file = await stageSourceAttachment(
+					session,
+					source.threadId,
+					message.id,
+					attachment,
+					sendsAsText(attachment.name),
+				);
 				path = `/${file.filePath}`;
 				staged.current.set(key, path);
 				workbench.store
@@ -66,7 +95,7 @@ export function RoomSourceAttachments({
 					.events.actions.emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
 						scope: getFilePanelScope({
 							type: "INSIGHT",
-							insightId,
+							insightId: session.insight.insightId,
 						}),
 						paths: [path],
 					});
