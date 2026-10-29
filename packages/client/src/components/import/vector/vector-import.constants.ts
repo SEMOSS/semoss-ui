@@ -17,7 +17,7 @@ export const VECTOR_CONNECTIONS = {
 		Credentials:
 			"Provide your vector database API key or connection details to securely enable indexing and search operations.",
 		"Searchable Fields":
-			"Searchable fields can be used by Azure AI Search queries. Limiting searchability to fields users actually query reduces index size and can improve indexing and query performance. Source, Content, and Embeddings are always searchable.",
+			"Choose which text fields support keyword search and full-text filters. Limiting searchable fields can reduce index size and improve indexing performance. These settings apply when creating a new Azure AI Search index.",
 	},
 	Connections: [
 		{
@@ -141,7 +141,6 @@ export const VECTOR_CONNECTIONS = {
 						{
 							display: "Content",
 							value: "Content",
-							disabled: true,
 						},
 						{
 							display: "Embeddings",
@@ -152,7 +151,7 @@ export const VECTOR_CONNECTIONS = {
 					disabled: false,
 					required: true,
 					helperText:
-						"Choose the fields available to search. Source, Content, and Embeddings are required. Source is used to find documents for deletion.",
+						"Source and Embeddings are required. Source supports document deletion. Content is selected by default; deselecting it excludes document text from keyword matching, including in hybrid search, and full-text filters. Stored content and vector search remain available.",
 					category: "Searchable Fields",
 				},
 				{
