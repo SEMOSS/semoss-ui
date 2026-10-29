@@ -819,8 +819,10 @@ export class RoomStore {
 					.output as Workspace;
 
 				// Store workspace name for display
-				if (workspaceOutput?.name && newOptions.workspace) {
-					newOptions.workspace.name = workspaceOutput.name;
+				const workspaceName =
+					workspaceOutput?.display_name || workspaceOutput?.name;
+				if (workspaceName && newOptions.workspace) {
+					newOptions.workspace.name = workspaceName;
 				}
 
 				agentDefaultModelId =

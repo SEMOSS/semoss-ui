@@ -468,7 +468,7 @@ export const NewRoomPage = observer(() => {
 			mcp: Array.from(mcpMap.values()),
 			workspace: {
 				workspace_id: getWorkspace.data.workspace_id,
-				name: getWorkspace.data.name,
+				name: getWorkspace.data.display_name || getWorkspace.data.name,
 			},
 		});
 	}, [
@@ -508,7 +508,7 @@ export const NewRoomPage = observer(() => {
 
 		void startAgentGreetingRoom(
 			selectedWorkspaceId,
-			getWorkspace.data.name,
+			getWorkspace.data.display_name || getWorkspace.data.name,
 		);
 	}, [
 		isWorkspaceFromUrl,
