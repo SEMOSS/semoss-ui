@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+	clearEngineGuardrailLockPixel,
+	engineGuardrailLocksQuery,
+	parseEngineGuardrailLocks,
 	parseSqlQueryPolicyDefaults,
 	sqlQueryPolicyDefaultsQuery,
 } from "./guardrails";
@@ -37,5 +40,49 @@ describe("SQL query policy defaults", () => {
 				"The built-in SQL query policy rules were not returned",
 			);
 		}
+	});
+});
+
+describe("engine guardrail locks", () => {
+	it("reads and clears a user's lock by id and login type", () => {
+		expect(engineGuardrailLocksQuery("model-1")).toBe(
+			'GetEngineGuardrailLocks(engine=["model-1"]);',
+		);
+		expect(
+			clearEngineGuardrailLockPixel("model-1", "alice", "NATIVE"),
+		).toBe(
+			'ClearEngineGuardrailLock(engine=["model-1"], userId=["alice"], userType=["NATIVE"]);',
+		);
+	});
+
+	it("keeps each lock that names its user and when it ends", () => {
+		expect(
+			parseEngineGuardrailLocks([
+				{
+					userId: "alice",
+					userType: "NATIVE",
+					name: "Alice",
+					email: null,
+					limitId: "lock",
+					lockedAt: "2026-10-29T11:00:00Z",
+					lockedUntil: "2026-10-29T13:00:00Z",
+				},
+				// no login type, so not a lock this page can unlock
+				{ userId: "bob", lockedUntil: "2026-10-29T13:00:00Z" },
+			]),
+		).toEqual([
+			{
+				userId: "alice",
+				userType: "NATIVE",
+				name: "Alice",
+				email: null,
+				limitId: "lock",
+				lockedAt: "2026-10-29T11:00:00Z",
+				lockedUntil: "2026-10-29T13:00:00Z",
+			},
+		]);
+		expect(() => parseEngineGuardrailLocks(null)).toThrow(
+			"The locked users were not returned",
+		);
 	});
 });

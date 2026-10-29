@@ -8,7 +8,6 @@ import {
 	Button,
 	FormInput,
 	FormRadioGroup,
-	FormSwitch,
 	Label,
 	Muted,
 	RadioGroupItem,
@@ -69,6 +68,12 @@ export interface GuardrailReactorEntryFieldProps {
 	/** The argument that can hold tool results, when the rule's method carries
 	 * them at all. Undefined hides the tool-result setting. */
 	toolResultArgument?: InterceptableMethodArgument;
+
+	/** Whether the rule's method returns a model response, which the
+	 * guardrail's message can stand in for. When false, Return guardrail
+	 * message is offered only to a check that already has it, so its issue can
+	 * be fixed. */
+	canRespond: boolean;
 
 	/** Problems that belong to this check. */
 	issues: GuardrailConfigIssue[];
@@ -165,6 +170,7 @@ export const GuardrailReactorEntryField = ({
 	onEngineResolved,
 	argumentOptions,
 	toolResultArgument,
+	canRespond,
 	issues,
 	disabled,
 	idPrefix,
@@ -189,6 +195,12 @@ export const GuardrailReactorEntryField = ({
 	const errors = issues.filter((issue) => issue.severity === "error");
 	const warnings = issues.filter((issue) => issue.severity === "warning");
 	const mapping = primaryMapping(value);
+	const failureActionOptions = FAILURE_ACTION_OPTIONS.filter(
+		(option) =>
+			option.value !== "respond" ||
+			canRespond ||
+			value.failureAction === "respond",
+	);
 
 	return (
 		<AccordionItem
@@ -352,7 +364,7 @@ export const GuardrailReactorEntryField = ({
 								disabled={disabled}
 							>
 								<div className="grid gap-3">
-									{FAILURE_ACTION_OPTIONS.map((option) => {
+									{failureActionOptions.map((option) => {
 										const optionId = `${idPrefix}-failure-${option.value}`;
 										return (
 											<Label
@@ -384,24 +396,16 @@ export const GuardrailReactorEntryField = ({
 									If flagged, block the response
 								</h4>
 								<Muted>
-									A response check runs after the model and
-									stops a flagged response from reaching the
+									A response check runs after the engine call
+									and stops a flagged result from reaching the
 									caller. Blocking is the only outcome
-									available after the model has answered.
+									available once the call has run.
 								</Muted>
 							</div>
 						)}
 
 						{value.failureAction === "block" && (
 							<div className="space-y-3">
-								<FormSwitch
-									name={`${namePrefix}.closeRoomOnBlock`}
-									label="Close room after block"
-									description="Close the room after this guardrail blocks the call."
-									disabled={disabled}
-									className="rounded-md border p-3"
-									data-testid={`${testIdPrefix}-close-room`}
-								/>
 								<FormInput
 									name={`${namePrefix}.blockErrorMessage`}
 									label="Custom block message"

@@ -42,6 +42,10 @@ const isEverySection = (): boolean => true;
 /** A section only a model has */
 const isModelSection = (type: ENGINE_TYPES): boolean => type === "MODEL";
 
+/** A section every engine but a guardrail has, since a guardrail engine
+ * guarding its own calls would run itself */
+const isGuardedSection = (type: ENGINE_TYPES): boolean => type !== "GUARDRAIL";
+
 /** A section only the engine's owners have */
 const isOwnerSection = (_type: ENGINE_TYPES, permission: Role): boolean =>
 	permission === "OWNER";
@@ -75,7 +79,7 @@ export const ENGINE_SETTINGS_SECTIONS: EngineSettingsSection[] = [
 		path: "guardrails",
 		icon: ShieldCheckIcon,
 		description: "Input and output guardrail pipelines",
-		isAvailable: isModelSection,
+		isAvailable: isGuardedSection,
 		element: <EngineGuardrailSettingsPage />,
 	},
 	{
