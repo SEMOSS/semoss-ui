@@ -20,7 +20,6 @@ import {
 	CatalogTabs,
 } from "@/components/catalog";
 import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
-import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useConfig, useSession } from "@/hooks";
 import {
@@ -703,7 +702,6 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 						)}
 					</CatalogGrid>
 				)}
-				<Help />
 			</CatalogLayout>
 
 			{/* Clone Dialog */}
