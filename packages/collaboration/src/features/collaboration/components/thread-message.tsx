@@ -50,6 +50,7 @@ export function ThreadMessage({
 				<PersonAvatar
 					name={name}
 					initials={initials}
+					email={message.fromAddress}
 					className={isFlat ? "size-8" : undefined}
 				/>
 				{!isFlat && (

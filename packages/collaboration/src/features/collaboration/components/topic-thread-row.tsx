@@ -144,6 +144,7 @@ export function TopicThreadRow({
 								>
 									<PersonAvatar
 										name={participantName}
+										email={participant?.email}
 										className="size-6"
 									/>
 									<span className="sr-only">
@@ -162,6 +163,7 @@ export function TopicThreadRow({
 											<PersonAvatar
 												name={person.name}
 												initials={person.initials}
+												email={person.email}
 												className="size-6"
 											/>
 										</Link>

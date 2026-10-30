@@ -726,6 +726,9 @@ export function TopicDetail() {
 																			initials={
 																				person.initials
 																			}
+																			email={
+																				person.email
+																			}
 																		/>
 																		<div className="min-w-0 flex-1">
 																			<Link

@@ -1,18 +1,25 @@
+import { useState } from "react";
 import { Avatar, AvatarFallback, cn } from "@semoss/ui/next";
+import { personPhotoUrl } from "../api/person-photo";
 
-/** Initials provide a stable identity without importing fictional profile photos. */
+/** Initials, covered by the person's Microsoft photo when the server has one for their address. */
 export function PersonAvatar({
 	name,
 	initials,
+	email,
 	className,
 	tone,
 }: {
 	name: string;
 	initials?: string;
+	/** The person's address; without one the avatar keeps its initials. */
+	email?: string | null;
 	className?: string;
 	/** Replaces the color picked from the name. */
 	tone?: string;
 }) {
+	const [failedPhoto, setFailedPhoto] = useState("");
+	const photo = email ? personPhotoUrl(email) : "";
 	const tones = [
 		"bg-chart-1/10 text-chart-1",
 		"bg-chart-2/10 text-chart-2",
@@ -46,6 +53,16 @@ export function PersonAvatar({
 						.join("")
 						.toUpperCase()}
 			</AvatarFallback>
+			{photo && failedPhoto !== photo && (
+				// a plain img over the initials: AvatarImage preloads at once, this waits until it scrolls into view
+				<img
+					src={photo}
+					alt=""
+					loading="lazy"
+					onError={() => setFailedPhoto(photo)}
+					className="absolute inset-0 size-full object-cover"
+				/>
+			)}
 		</Avatar>
 	);
 }

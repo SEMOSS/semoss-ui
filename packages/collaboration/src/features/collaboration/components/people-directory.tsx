@@ -70,7 +70,11 @@ export function PeopleDirectory() {
 			key={person.id}
 			className="flex flex-wrap items-center gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/30 md:px-6"
 		>
-			<PersonAvatar name={person.name} initials={person.initials} />
+			<PersonAvatar
+				name={person.name}
+				initials={person.initials}
+				email={person.email}
+			/>
 			<div className="min-w-0 flex-1">
 				<Link
 					className="break-words font-medium text-sm hover:underline"

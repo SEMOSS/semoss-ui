@@ -78,6 +78,7 @@ export function PersonDetail() {
 							<PersonAvatar
 								name={person.name}
 								initials={person.initials}
+								email={person.email}
 							/>
 							<span className="min-w-0 break-words">
 								{person.name}

@@ -79,7 +79,10 @@ export function RoomSourceEmail({
 				subject={subject}
 				name={name}
 				avatar={
-					<PersonAvatar name={name || address || "Participant"} />
+					<PersonAvatar
+						name={name || address || "Participant"}
+						email={address}
+					/>
 				}
 				address={address}
 				at={message.at || metadata?.at}
