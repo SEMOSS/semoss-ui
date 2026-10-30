@@ -687,7 +687,15 @@ export const NewRoomPage = observer(() => {
 			{root.theme.banner ? (
 				<div
 					ref={bannerRef}
-					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-primary-foreground text-sm [&_a]:underline"
+					className="w-full shrink-0 px-4 py-2 text-center text-sm [&_a]:underline"
+					style={{
+						backgroundColor:
+							root.theme.bannerBackgroundColor ||
+							"var(--primary)",
+						color:
+							root.theme.bannerTextColor ||
+							"var(--primary-foreground)",
+					}}
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
 				/>
