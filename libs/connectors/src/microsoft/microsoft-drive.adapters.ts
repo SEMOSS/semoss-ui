@@ -187,7 +187,7 @@ export const createOneDriveAdapter = (): FileExplorerAdapter => ({
 		readItems(raw, parseOneDriveFolder).map((item) =>
 			toFileItem(
 				item,
-				item.path ? `/${item.path}` : joinPath(path, item.name),
+				joinPath(item.path ? `/${item.path}` : path, item.name),
 			),
 		),
 });
