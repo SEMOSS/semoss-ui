@@ -136,7 +136,9 @@ export const AgentRoomSummary = ({
 					<dt className="text-muted-foreground text-xs">
 						{item.label}
 					</dt>
-					<dd className="min-w-0">{item.value}</dd>
+					<dd className="flex min-w-0 flex-1 flex-col justify-center">
+						{item.value}
+					</dd>
 				</div>
 			))}
 		</dl>
