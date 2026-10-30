@@ -1,4 +1,4 @@
-import { getFileEditorKind } from "@semoss/shared";
+import { type FileEditorKind, getFileEditorKind } from "@semoss/shared";
 import {
 	type CodeEditorMenuItem,
 	DEFAULT_CODE_EDITOR_MENU_ITEMS,
@@ -32,6 +32,22 @@ const CODE_EDITOR_LANGUAGES: Record<string, string> = {
 const READ_ONLY_CODE_EDITOR_MENU_ITEMS = DEFAULT_CODE_EDITOR_MENU_ITEMS.filter(
 	(item) => item.id === "copy" || item.id === "find",
 );
+
+const OFFICE_FILE_PANEL_TYPES_BY_EXTENSION: Record<string, string> = {
+	docx: FILE_PANEL_TYPES.FILE_DOCX_VIEWER,
+	vsdx: FILE_PANEL_TYPES.FILE_VISIO_VIEWER,
+	xlsx: FILE_PANEL_TYPES.FILE_XLSX_VIEWER,
+};
+
+const FILE_PANEL_TYPES_BY_KIND: Record<FileEditorKind, string> = {
+	code: FILE_PANEL_TYPES.FILE_CODE_EDITOR,
+	download: FILE_PANEL_TYPES.FILE_DOWNLOAD,
+	image: FILE_PANEL_TYPES.FILE_IMAGE_VIEWER,
+	markdown: FILE_PANEL_TYPES.FILE_MARKDOWN_EDITOR,
+	notebook: FILE_PANEL_TYPES.FILE_NOTEBOOK_EDITOR,
+	pdf: FILE_PANEL_TYPES.FILE_PDF_VIEWER,
+	pptx: FILE_PANEL_TYPES.FILE_PPTX_VIEWER,
+};
 
 interface GetFileCodeEditorMenuItemsOptions {
 	canSave: boolean;
@@ -104,20 +120,10 @@ export const getImageMimeType = (path: string): string => {
 
 /** Resolve a file path to its unified workbench panel type. */
 export const getFilePanelType = (path: string): string => {
-	switch (getFileEditorKind(path)) {
-		case "download":
-			return FILE_PANEL_TYPES.FILE_DOWNLOAD;
-		case "image":
-			return FILE_PANEL_TYPES.FILE_IMAGE_VIEWER;
-		case "markdown":
-			return FILE_PANEL_TYPES.FILE_MARKDOWN_EDITOR;
-		case "notebook":
-			return FILE_PANEL_TYPES.FILE_NOTEBOOK_EDITOR;
-		case "pdf":
-			return FILE_PANEL_TYPES.FILE_PDF_VIEWER;
-		case "pptx":
-			return FILE_PANEL_TYPES.FILE_PPTX_VIEWER;
-		default:
-			return FILE_PANEL_TYPES.FILE_CODE_EDITOR;
-	}
+	const extension = path.split(".").pop()?.toLowerCase() ?? "";
+
+	return (
+		OFFICE_FILE_PANEL_TYPES_BY_EXTENSION[extension] ??
+		FILE_PANEL_TYPES_BY_KIND[getFileEditorKind(path)]
+	);
 };

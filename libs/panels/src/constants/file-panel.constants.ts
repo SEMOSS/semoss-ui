@@ -11,12 +11,15 @@
 export const FILE_PANEL_TYPES = {
 	FILE_EXPLORER: "file-explorer",
 	FILE_CODE_EDITOR: "file-code-editor",
+	FILE_DOCX_VIEWER: "file-docx-viewer",
 	FILE_DOWNLOAD: "file-download",
 	FILE_IMAGE_VIEWER: "file-image-viewer",
 	FILE_MARKDOWN_EDITOR: "file-markdown-editor",
 	FILE_NOTEBOOK_EDITOR: "file-notebook-editor",
 	FILE_PDF_VIEWER: "file-pdf-viewer",
 	FILE_PPTX_VIEWER: "file-pptx-viewer",
+	FILE_VISIO_VIEWER: "file-visio-viewer",
+	FILE_XLSX_VIEWER: "file-xlsx-viewer",
 	FILE_MCP_EDITOR: "file-mcp-editor",
 } as const;
 

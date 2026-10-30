@@ -35,7 +35,6 @@
         "lucide-react": "^0.545.0",
         "mobx": "6.3.7",
         "mobx-react-lite": "^4.0.0",
-        "pptx-react-viewer": "^3.9.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-hook-form": "^7.55.0",

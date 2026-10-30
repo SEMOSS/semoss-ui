@@ -38,7 +38,7 @@ export interface FilePanelParams {
 
 interface UseFilePanelOptions {
 	/**
-	 * Read *and* write through the `*Base64` reactors — images, PDFs, pptx.
+	 * Read *and* write through the `*Base64` reactors — images, PDFs, OOXML files.
 	 * The panel's encoding, declared once, rather than per call.
 	 */
 	base64?: boolean;

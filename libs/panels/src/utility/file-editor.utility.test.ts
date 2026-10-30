@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getImageMimeType } from "./file-editor.utility";
+import { FILE_PANEL_TYPES } from "../constants/file-panel.constants";
+import { getFilePanelType, getImageMimeType } from "./file-editor.utility";
 
 describe("legacy panel image MIME adapter", () => {
 	it.each([
@@ -11,5 +12,61 @@ describe("legacy panel image MIME adapter", () => {
 		["unknown", "image/png"],
 	])("preserves the path policy for %s", (path, expected) => {
 		expect(getImageMimeType(path)).toBe(expected);
+	});
+
+	describe("getFilePanelType", () => {
+		it.each([
+			["/docs/report.docx", FILE_PANEL_TYPES.FILE_DOCX_VIEWER],
+			["/docs/workbook.XLSX", FILE_PANEL_TYPES.FILE_XLSX_VIEWER],
+			["/docs/deck.pptx", FILE_PANEL_TYPES.FILE_PPTX_VIEWER],
+			["/docs/diagram.VSDX", FILE_PANEL_TYPES.FILE_VISIO_VIEWER],
+		])("routes %s to %s", (path, panelType) => {
+			expect(getFilePanelType(path)).toBe(panelType);
+		});
+
+		it.each(["/docs/report.doc", "/docs/workbook.xls", "/docs/deck.ppt"])(
+			"keeps legacy Office file %s download-only",
+			(path) => {
+				expect(getFilePanelType(path)).toBe(
+					FILE_PANEL_TYPES.FILE_DOWNLOAD,
+				);
+			},
+		);
+
+		it.each([
+			"7z",
+			"avi",
+			"dmg",
+			"docm",
+			"exe",
+			"gz",
+			"heic",
+			"iso",
+			"jar",
+			"m4a",
+			"mov",
+			"mp3",
+			"mp4",
+			"msg",
+			"odp",
+			"ods",
+			"odt",
+			"pptm",
+			"psd",
+			"rar",
+			"tar",
+			"tgz",
+			"tif",
+			"tiff",
+			"wav",
+			"webm",
+			"xlsb",
+			"xlsm",
+			"zip",
+		])("preserves dev's download routing for .%s files", (extension) => {
+			expect(
+				getFilePanelType(`/files/sample.${extension.toUpperCase()}`),
+			).toBe(FILE_PANEL_TYPES.FILE_DOWNLOAD);
+		});
 	});
 });

@@ -1,117 +1,215 @@
-import { DownloadIcon } from "lucide-react";
-import type { PowerPointViewerHandle } from "pptx-react-viewer";
 import {
-	lazy,
-	Suspense,
+	PowerPointViewer,
+	type PowerPointViewerHandle,
+} from "pptx-react-viewer";
+import { translationsEn } from "pptx-react-viewer/i18n";
+import {
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
-import { decodeBase64Asset } from "@semoss/shared";
-import { Button, Muted, Spinner } from "@semoss/ui/next";
+import { getI18n, useTranslation } from "@semoss/i18n";
+import {
+	decodeBase64Asset,
+	getFileOperationErrorMessage,
+} from "@semoss/shared";
+import { toast } from "@semoss/ui/next";
 import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
+import { useOfficeFileCommands } from "../../hooks/use-office-file-commands";
+import { getFilePanelScope } from "../../types/file-panel.types";
 import type { FileViewProps } from "../../types/file-view.types";
+import { OfficeViewerError } from "./office/office-viewer-error";
+import { OfficeViewerFrame } from "./office/office-viewer-frame";
+import {
+	PPTX_VIEWER_CUSTOMIZATION,
+	PPTX_VIEWER_THEME,
+} from "./office/pptx-viewer-policy";
+import "pptx-react-viewer/styles";
 
-const FilePptxViewContent = lazy(() =>
-	import("./file-pptx-view-content").then((m) => ({
-		default: m.FilePptxViewContent,
-	})),
-);
+let registered = false;
+const registerViewerCopy = (i18n: ReturnType<typeof getI18n>) => {
+	if (registered || !i18n) return;
+	const ns = Array.isArray(i18n.options.defaultNS)
+		? i18n.options.defaultNS[0]
+		: (i18n.options.defaultNS ?? "translation");
+	i18n.addResourceBundle("en", ns, translationsEn, true, false);
+	registered = true;
+};
+
+registerViewerCopy(getI18n());
+
+interface PresentationSession {
+	scope: string;
+	path: string;
+	readRevision: number;
+	data: string;
+}
 
 /** Preview and edit a PowerPoint file from a project, engine, or user resource. */
 export const FilePptxView = ({ config, onControls }: FileViewProps) => {
+	const { i18n } = useTranslation();
 	const panel = useFilePanel(config, { base64: true });
+	const panelRef = useRef(panel);
+	useLayoutEffect(() => {
+		panelRef.current = panel;
+	}, [panel]);
 	const viewerRef = useRef<PowerPointViewerHandle>(null);
+	const [commandTarget, setCommandTarget] = useState<HTMLDivElement | null>(
+		null,
+	);
+	const sessionRef = useRef<PresentationSession | null>(null);
+	const scope = getFilePanelScope(config.mode);
+	useLayoutEffect(() => {
+		// Vendor handles change on ordinary renders; only a source change or
+		// unmount invalidates serialization for this mounted document.
+		const session = {
+			scope,
+			path: config.path,
+			readRevision: panel.read.revision,
+			data: panel.read.data,
+		};
+		sessionRef.current = session;
+		return () => {
+			if (sessionRef.current === session) sessionRef.current = null;
+		};
+	}, [scope, config.path, panel.read.revision, panel.read.data]);
+	const serializingRef = useRef(false);
+	const [editorError, setEditorError] = useState<Error | null>(null);
 	const [isDirty, setIsDirty] = useState(false);
-	useEffect(() => {
-		if (panel.read.status === "SUCCESS" && panel.read.revision > 0)
-			setIsDirty(false);
-	}, [panel.read.revision, panel.read.status]);
+	const [isSerializing, setIsSerializing] = useState(false);
 	const content = useMemo(
 		() => decodeBase64Asset(panel.read.data),
 		[panel.read.data],
 	);
 
-	// The deck is edited in the viewer's own memory, so the bytes only exist
-	// once it is asked for them — unlike the text editors, where the view
-	// holds the buffer and the save just posts it.
-	const save = useCallback(async () => {
-		const handle = viewerRef.current;
-		if (!handle) return;
-
-		const bytes = await handle.getContent();
-		const saved = await panel.save(encodeBytesToBase64(bytes));
-		if (saved) {
+	useEffect(() => registerViewerCopy(i18n), [i18n]);
+	useEffect(() => {
+		if (panel.read.status === "SUCCESS" && panel.read.revision > 0) {
+			setEditorError(null);
 			setIsDirty(false);
 		}
-	}, [panel.save]);
+	}, [panel.read.revision, panel.read.status]);
+
+	const handleDirtyChange = useCallback((dirty: boolean) => {
+		// Vendor "clean" means its original load, not the last host save. An
+		// undo to that load can still differ from what SEMOSS has persisted.
+		if (dirty) setIsDirty(true);
+	}, []);
+
+	const save = useCallback(async () => {
+		const handle = viewerRef.current;
+		const session = sessionRef.current;
+		const currentPanel = panelRef.current;
+		if (
+			!handle ||
+			!session ||
+			currentPanel.readOnly ||
+			currentPanel.read.status !== "SUCCESS" ||
+			serializingRef.current
+		)
+			return;
+		const sourceRevision = currentPanel.read.revision;
+		const sourceData = currentPanel.read.data;
+		serializingRef.current = true;
+		setIsSerializing(true);
+		try {
+			const bytes = await handle.getContent();
+			const latestPanel = panelRef.current;
+			if (
+				sessionRef.current !== session ||
+				latestPanel.readOnly ||
+				latestPanel.read.status !== "SUCCESS" ||
+				latestPanel.read.revision !== sourceRevision ||
+				latestPanel.read.data !== sourceData
+			)
+				return;
+			if (bytes.byteLength === 0) {
+				throw new Error("Presentation content is not ready to save");
+			}
+			await latestPanel.save(encodeBytesToBase64(bytes));
+			// The public viewer has no markClean or per-edit revision callback.
+			// Keep its dirty state after persistence so later edits stay saveable
+			// without reloading the document and discarding its undo history.
+		} catch (error) {
+			if (sessionRef.current !== session) return;
+			const normalized =
+				error instanceof Error ? error : new Error(String(error));
+			toast.error(
+				getFileOperationErrorMessage(
+					"Failed to save presentation",
+					normalized,
+				),
+			);
+			console.error(normalized);
+		} finally {
+			serializingRef.current = false;
+			setIsSerializing(false);
+		}
+	}, []);
 
 	const requestSave = useCallback(() => void save(), [save]);
-
+	useOfficeFileCommands(commandTarget, requestSave);
 	useFileViewControls(onControls, {
 		canDownload: panel.access.status === "ready",
 		download: panel.download,
-		// gated on the deck being dirty, not just writable: the bytes come
-		// back re-serialised every time, so an idle save would rewrite the
-		// file with a byte-different copy of what is already there
-		canSave: !panel.readOnly && isDirty && panel.read.status === "SUCCESS",
+		canSave:
+			!panel.readOnly &&
+			isDirty &&
+			panel.read.status === "SUCCESS" &&
+			viewerRef.current !== null,
 		isDirty,
-		isBusy: panel.isBusy || panel.access.status === "loading",
+		isBusy:
+			panel.isBusy || panel.access.status === "loading" || isSerializing,
 		canRefresh: panel.access.status === "ready",
 		refresh: panel.read.refresh,
 		save: requestSave,
 	});
 
 	if (panel.gate) return panel.gate;
-
-	// checked before the shared read gate: a decode failure is not a read
-	// failure, and both offer the download as the way out
-	if (panel.read.status === "ERROR" || (panel.read.data && !content)) {
+	if (
+		panel.read.status === "ERROR" ||
+		(panel.read.data && !content) ||
+		editorError
+	) {
 		return (
-			<div className="flex size-full flex-col items-center justify-center gap-4 p-4">
-				<Muted className="text-destructive" role="alert">
-					{panel.read.error?.message ||
-						"Failed to load the presentation"}
-				</Muted>
-				<Button
-					type="button"
-					onClick={() => void panel.download()}
-					disabled={panel.isDownloading}
-				>
-					<DownloadIcon aria-hidden className="size-4" />
-					{panel.isDownloading ? "Downloading" : "Download file"}
-				</Button>
-			</div>
+			<OfficeViewerError
+				message={
+					panel.read.error?.message ||
+					editorError?.message ||
+					"Failed to load presentation"
+				}
+				isDownloading={panel.isDownloading}
+				onDownload={() => void panel.download()}
+			/>
 		);
 	}
-
 	if (panel.readGate) return panel.readGate;
 	if (!content) return null;
 
 	return (
-		<div className="relative size-full">
-			<Suspense
-				fallback={
-					<output
-						className="flex size-full items-center justify-center"
-						aria-label="Loading presentation viewer"
-					>
-						<Spinner />
-					</output>
-				}
+		<OfficeViewerFrame label={`Presentation: ${config.name}`}>
+			<div
+				ref={setCommandTarget}
+				className="pptx-viewer-scope size-full min-h-0 min-w-0"
 			>
-				<FilePptxViewContent
+				<PowerPointViewer
+					key={panel.read.revision}
 					ref={viewerRef}
 					content={content}
 					fileName={config.name}
+					theme={PPTX_VIEWER_THEME}
+					customization={PPTX_VIEWER_CUSTOMIZATION}
 					canEdit={!panel.readOnly}
-					onDirtyChange={setIsDirty}
+					autosave={false}
+					onDirtyChange={handleDirtyChange}
+					onError={(message) => setEditorError(new Error(message))}
 				/>
-			</Suspense>
-		</div>
+			</div>
+		</OfficeViewerFrame>
 	);
 };

@@ -1,0 +1,116 @@
+diff --git a/dist/visio/viewer-backstage.d.ts b/dist/visio/viewer-backstage.d.ts
+index 21c77be42ed981091b7c0d20d78958d87945d0bc..24ccd0b51bc59bd009c276fa407b899d67e4010e 100644
+--- a/dist/visio/viewer-backstage.d.ts
++++ b/dist/visio/viewer-backstage.d.ts
+@@ -3,6 +3,8 @@ import type { VsdxSource } from 'ooxml-core/visio/ui';
+ import { type BackstagePage } from './backstage.js';
+ /** What the backstage needs from the element; every action delegates to existing APIs. */
+ export interface BackstageHost {
++    /** Cancel the native copy download when an embedding host persists Save. */
++    save?(): boolean;
+     root: ShadowRoot;
+     viewport: HTMLElement;
+     fileName(): string;
+diff --git a/dist/visio/viewer-element.d.ts b/dist/visio/viewer-element.d.ts
+index 1a9841d7ea08dce7406b7463bba0083bad15d616..0dd3ebc8b24d2019896d9ece66fd8f48256707a5 100644
+--- a/dist/visio/viewer-element.d.ts
++++ b/dist/visio/viewer-element.d.ts
+@@ -72,6 +72,8 @@ export declare class VisioViewerElement extends BaseElement {
+     undo(): Promise<void>;
+     redo(): Promise<void>;
+     cancelEdit(): void;
++    /** Commit the inline draft; false means a refused draft was reported for recovery. */
++    commitTextEdit(): Promise<boolean>;
+     exportVsdx(): ReturnType<ViewerController['exportVsdx']>;
+     /** Start Visio's Presentation Mode on the current foreground page (F5). */
+     startPresentation(): void;
+diff --git a/dist/visio.js b/dist/visio.js
+index eea74915c81dcf22deccb68814488e60f11cda60..8e7e4b777501fef12e8cf59c2549a3089fa30026 100644
+--- a/dist/visio.js
++++ b/dist/visio.js
+@@ -3986,7 +3986,7 @@ var ViewerInlineText = class {
+     return true;
+   }
+   /** Save the draft as one edit; `focusCanvas` returns keyboard focus to the drawing. */
+-  async commit(focusCanvas) {
++  async commit(focusCanvas, throwOnError = false) {
+     const session = this.#session;
+     if (!session) return;
+     if (!this.controller.canEdit) {
+@@ -4005,12 +4005,38 @@ var ViewerInlineText = class {
+       const shape = visioTextShape(page3, session.shapeId);
+       const rich = !!shape && shape.masterId === void 0 && shape.text.runs.length > 1;
+       const edit = visioTextDraftEdit(page3, session.shapeId, draft, rich ? { ranges: true } : {});
+-      if (edit) await this.controller.applyEdits([edit]);
++      if (edit) {
++        try {
++          await this.controller.applyEdits([edit]);
++        } catch (error) {
++          // A single parsed run can still contain native formatting markers.
++          // Let the range editor validate/preserve those markers; do not retry
++          // formula, protection, cancellation or other transaction failures.
++          if (edit.type !== "replace-plain-text" || error?.code !== "UNSUPPORTED_TEXT_EDIT") throw error;
++          const rangeEdit = visioTextDraftEdit(page3, session.shapeId, draft, { ranges: true });
++          if (rangeEdit) await this.controller.applyEdits([rangeEdit]);
++        }
++      }
++      if (request === this.#request && this.viewport.isConnected && this.controller.sourceGeneration === session.generation)
++        this.#reportTextEdit("applied", session, draft);
+     } catch (error) {
+-      if (request === this.#request && !isEditCancellation(error))
++      if (request === this.#request && !isEditCancellation(error) && this.viewport.isConnected && this.controller.sourceGeneration === session.generation) {
+         this.announce(editErrorMessage(error));
++        this.#reportTextEdit("rejected", session, draft, error);
++      }
++      if (throwOnError) throw error;
+     }
+   }
++  #reportTextEdit(status, session, text, error) {
++    this.viewport.dispatchEvent(new CustomEvent("visio-text-edit", {
++      detail: {
++        status, pageId: session.pageId, shapeId: session.shapeId, text,
++        sourceGeneration: session.generation,
++        ...(error ? { message: editErrorMessage(error) } : {})
++      },
++      bubbles: true, composed: true
++    }));
++  }
+   /**
+    * Selecting something else or changing page saves; another edit to the same drawing (formatting,
+    * a move, undo) keeps the draft on the redrawn shape; a different file discards it.
+@@ -12564,6 +12590,7 @@ var ViewerBackstage = class {
+     this.#download();
+   }
+   #download() {
++    if (this.host.save && !this.host.save()) { this.hide(); return; }
+     if (!this.#state?.edit.sourceAvailable) return;
+     try {
+       const result = this.host.exportVsdx();
+@@ -25035,6 +25062,9 @@ var VisioViewerElement = class extends BaseElement {
+       new CustomEvent("document-error", { detail: error, bubbles: true, composed: true })
+     );
+     this.#backstage = new ViewerBackstage({
++      save: () => this.dispatchEvent(new CustomEvent("file-command", {
++        detail: { command: "save" }, bubbles: true, composed: true, cancelable: true
++      })),
+       root: this.#root,
+       viewport: this.#viewport,
+       fileName: () => this.#fileName,
+@@ -25265,6 +25295,17 @@ var VisioViewerElement = class extends BaseElement {
+     else if (panel === "notes") this.#backstage.show("info");
+     else this.#chrome.reveal(panel);
+   }
++  async commitTextEdit() {
++    this.#assertAlive();
++    try {
++      await this.#edit.commit(false, true);
++      return true;
++    } catch (error) {
++      if (isEditCancellation(error)) throw error;
++      // The recovery event and native status already report this refusal.
++      return false;
++    }
++  }
+   exportVsdx() {
+     this.#assertAlive();
+     return this.controller.exportVsdx();
