@@ -317,6 +317,50 @@ describe("Clean nodes", () => {
 		});
 	});
 
+	it.each([
+		{ draft: ["REGION", "", "TEAM", "  "], saved: ["REGION", "TEAM"] },
+		{ draft: ["", "  "], saved: [] },
+	])(
+		"normalizes optional Pivot placeholders only when saving: $draft",
+		({ draft, saved }) => {
+			const step = node("data.transform");
+			const config: TransformConfig = {
+				...(step.config as TransformConfig),
+				operation: "pivot",
+				source: `\${table}`,
+				pivotColumn: "STATUS",
+				valueColumn: "AMOUNT",
+				maintainColumns: draft,
+			};
+			const edited = { ...step, config };
+			expect(validateCanvasWorkflowNode(edited)).toEqual([]);
+			const document = documentOf([edited]);
+			const reloaded = canvasDocumentFromWorkflow(
+				document,
+				{},
+			).steps.find(
+				(candidate) => candidate.workflowType === "data.transform",
+			);
+			expect(reloaded?.config).toMatchObject({ maintainColumns: saved });
+			expect(config.maintainColumns).toEqual(draft);
+		},
+	);
+
+	it("does not discard an invalid nonblank Pivot column during validation", () => {
+		const step = node("data.transform");
+		const config: TransformConfig = {
+			...(step.config as TransformConfig),
+			operation: "pivot",
+			source: `\${table}`,
+			pivotColumn: "STATUS",
+			valueColumn: "AMOUNT",
+			maintainColumns: ["REGION", "bad column", ""],
+		};
+		expect(validateCanvasWorkflowNode({ ...step, config })).toContain(
+			"Select columns using letters, digits, and underscores only",
+		);
+	});
+
 	it("round trips both table inputs for Join", () => {
 		const step = node("data.transform");
 		const config: TransformConfig = {

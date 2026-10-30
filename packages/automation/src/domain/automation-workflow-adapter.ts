@@ -849,7 +849,11 @@ function mergeCanvasConfig(
 			if (typeof pivotColumn === "string") next.pivotColumn = pivotColumn;
 			if (typeof valueColumn === "string") next.valueColumn = valueColumn;
 			if (Array.isArray(transformConfig.maintainColumns)) {
-				next.maintainColumns = transformConfig.maintainColumns;
+				// Keep optional draft rows editable; omit them only at the save/validation boundary.
+				next.maintainColumns = transformConfig.maintainColumns.filter(
+					(column) =>
+						typeof column !== "string" || column.trim() !== "",
+				);
 			}
 			if (typeof aggregateFunction === "string")
 				next.aggregateFunction = aggregateFunction;

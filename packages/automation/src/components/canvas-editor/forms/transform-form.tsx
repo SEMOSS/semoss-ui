@@ -262,9 +262,7 @@ export function TransformForm({
 							onChange={(maintainColumns) =>
 								onChange({
 									...config,
-									maintainColumns: maintainColumns.filter(
-										(column) => column.trim(),
-									),
+									maintainColumns,
 								})
 							}
 							upstreamVars={[]}
