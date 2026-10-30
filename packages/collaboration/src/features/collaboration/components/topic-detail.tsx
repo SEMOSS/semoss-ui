@@ -42,7 +42,6 @@ import { lexicon } from "@/lib/lexicon";
 import { givenFirst } from "@/lib/person-name";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { useWorkUpdates } from "../live/work-updates.context";
-import { selectTopicIgnores } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
 import { topicTone } from "../topic-tone";
@@ -52,6 +51,7 @@ import { CollaborationSurface } from "./collaboration-surface";
 import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { MemoryList } from "./memory-list";
 import { PersonAvatar } from "./person-avatar";
+import { PersonGlobalBadges } from "./person-global-badges";
 import { TextEntryForm } from "./text-entry-form";
 import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
@@ -59,6 +59,7 @@ import { TopicFolders } from "./topic-folders";
 import { TopicGoalPopover } from "./topic-goal-popover";
 import { TopicIgnoredPeople } from "./topic-ignored-people";
 import { TopicMatchesDialog } from "./topic-matches-dialog";
+import { TopicPeoplePopover } from "./topic-people-popover";
 import { TopicPersonMenu } from "./topic-person-menu";
 import { TopicThreadRow } from "./topic-thread-row";
 import { useWorkFeed, WorkFilterMenu, WorkItemsList } from "./work-items-feed";
@@ -108,7 +109,6 @@ export function TopicDetail() {
 	const matchTriggerRef = useRef<HTMLElement | null>(null);
 	const contextButtonRef = useRef<HTMLButtonElement>(null);
 	const contextRef = useRef<HTMLElement>(null);
-	const [personToAdd, setPersonToAdd] = useState("");
 	const [showAllSuggested, setShowAllSuggested] = useState(false);
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
 	const canStartAssistant =
@@ -140,21 +140,7 @@ export function TopicDetail() {
 	const threads = state.threads.filter((thread) =>
 		thread.topicLinks.some((link) => link.topicId === topic.id),
 	);
-	const availablePeople = state.people.filter(
-		(person) =>
-			person.isSample === topic.isSample &&
-			!topic.people.some(
-				(member) =>
-					member.personId === person.id && member.state === "member",
-			),
-	);
 	const members = topic.people.filter((person) => person.state === "member");
-	const ignoredIds = new Set(
-		selectTopicIgnores(state.rules, topic.id).map((rule) => rule.personId),
-	);
-	const canPickPerson = availablePeople.some(
-		(person) => person.id === personToAdd,
-	);
 	const workItems = state.items.filter(
 		(item) =>
 			(item.status === "open" || item.status === "waiting") &&
@@ -577,107 +563,7 @@ export function TopicDetail() {
 										{members.length}
 									</Small>
 								</div>
-								<Popover>
-									<PopoverTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											aria-label="Add people"
-											className="text-muted-foreground"
-										>
-											<Plus aria-hidden="true" />
-										</Button>
-									</PopoverTrigger>
-									<PopoverContent
-										align="end"
-										aria-label="Add people"
-										className="space-y-3"
-									>
-										<div className="flex flex-wrap items-center gap-2">
-											<Label
-												htmlFor={`${fieldId}-topic-person`}
-												className="sr-only"
-											>
-												Add someone
-											</Label>
-											<Select
-												value={personToAdd}
-												onValueChange={setPersonToAdd}
-											>
-												<SelectTrigger
-													id={`${fieldId}-topic-person`}
-													className="h-9 w-full"
-												>
-													<SelectValue placeholder="Add someone to this topic" />
-												</SelectTrigger>
-												<SelectContent>
-													{availablePeople.map(
-														(person) => (
-															<SelectItem
-																key={person.id}
-																value={
-																	person.id
-																}
-															>
-																{givenFirst(
-																	person.name,
-																)}
-															</SelectItem>
-														),
-													)}
-												</SelectContent>
-											</Select>
-											<Button
-												variant="outline"
-												size="sm"
-												disabled={!canPickPerson}
-												onClick={() => {
-													dispatch({
-														type: "topic.person",
-														topicId: topic.id,
-														personId: personToAdd,
-														state: "member",
-													});
-													setPersonToAdd("");
-												}}
-											>
-												Add person
-											</Button>
-											<Button
-												variant="ghost"
-												size="sm"
-												disabled={
-													!canPickPerson ||
-													ignoredIds.has(personToAdd)
-												}
-												onClick={() => {
-													dispatch({
-														type: "rule.add",
-														rule: {
-															kind: "exclude_topic",
-															value: "",
-															topicId: topic.id,
-															personId:
-																personToAdd,
-															isSample:
-																topic.isSample,
-														},
-													});
-													setPersonToAdd("");
-												}}
-											>
-												Ignore here
-											</Button>
-										</div>
-										<Small className={hintClassName}>
-											Membership is separate from
-											including a person's messages in
-											assistant context. Ignore here
-											leaves their messages in this
-											topic's threads unused.
-										</Small>
-									</PopoverContent>
-								</Popover>
+								<TopicPeoplePopover topic={topic} />
 							</div>
 							<div className="space-y-4">
 								{MEMBERSHIPS.map(
@@ -781,6 +667,11 @@ export function TopicDetail() {
 																					VIP
 																				</Badge>
 																			)}
+																			<PersonGlobalBadges
+																				person={
+																					person
+																				}
+																			/>
 																			<Small className="block font-normal text-muted-foreground text-xs leading-5">
 																				{(membership ===
 																					"suggested" &&

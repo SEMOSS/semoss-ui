@@ -14,6 +14,7 @@ import {
 } from "@semoss/ui/next";
 import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
+import { selectTopicIgnores } from "../state/collaboration.selectors";
 import { isFollowed } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
@@ -47,6 +48,17 @@ export function PersonDetail() {
 		topic.people.some(
 			(member) =>
 				member.personId === person.id && member.state === "member",
+		),
+	);
+	// set on each topic's People; a VIP there is always a member
+	const vipTopics = topics.filter((topic) =>
+		topic.people.some(
+			(member) => member.personId === person.id && member.vip === true,
+		),
+	);
+	const ignoredTopics = state.topics.filter((topic) =>
+		selectTopicIgnores(state.rules, topic.id).some(
+			(rule) => rule.personId === person.id,
 		),
 	);
 	const available = state.topics.filter(
@@ -293,6 +305,26 @@ export function PersonDetail() {
 							/>
 						))}
 					</div>
+					{vipTopics.length > 0 && (
+						<div className="flex flex-wrap items-center gap-2">
+							<Small className="font-normal text-muted-foreground text-xs">
+								VIP in
+							</Small>
+							{vipTopics.map((topic) => (
+								<TopicChip key={topic.id} topic={topic} />
+							))}
+						</div>
+					)}
+					{ignoredTopics.length > 0 && (
+						<div className="flex flex-wrap items-center gap-2">
+							<Small className="font-normal text-muted-foreground text-xs">
+								Ignored in
+							</Small>
+							{ignoredTopics.map((topic) => (
+								<TopicChip key={topic.id} topic={topic} />
+							))}
+						</div>
+					)}
 					{available.length > 0 && (
 						<div className="flex flex-wrap items-center gap-2">
 							<Label

@@ -138,7 +138,21 @@ export function PeopleDirectory() {
 				<CollaborationPageHeader
 					title="People"
 					description="The people you follow, VIPs first. Search to find anyone else."
-				/>
+				>
+					<div className="max-w-prose space-y-1 text-muted-foreground text-sm leading-relaxed">
+						<P className="text-sm leading-relaxed">
+							VIP ranks someone's mail higher everywhere; a VIP in
+							a topic, set on that topic's People, ranks it higher
+							in that topic's threads only.
+						</P>
+						<P className="text-sm leading-relaxed">
+							Excluded keeps someone's messages out everywhere and
+							wins over every other setting; ignoring someone in a
+							topic keeps their messages out of that topic's
+							threads only.
+						</P>
+					</div>
+				</CollaborationPageHeader>
 			}
 			aside={<BrainOverview />}
 			asideTitle="Overview"

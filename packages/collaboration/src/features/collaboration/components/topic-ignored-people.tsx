@@ -5,6 +5,7 @@ import { selectTopicIgnores } from "../state/collaboration.selectors";
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { PersonAvatar } from "./person-avatar";
+import { PersonGlobalBadges } from "./person-global-badges";
 
 /** The topic's ignore list: people whose messages in its threads are not used; elsewhere they still are. */
 export function TopicIgnoredPeople({ topic }: { topic: Topic }) {
@@ -32,12 +33,15 @@ export function TopicIgnoredPeople({ topic }: { topic: Topic }) {
 							/>
 							<div className="min-w-0 flex-1">
 								{person ? (
-									<Link
-										className="break-words font-medium text-sm hover:underline"
-										to={`/brain/people/${encodeURIComponent(person.id)}`}
-									>
-										{name}
-									</Link>
+									<>
+										<Link
+											className="break-words font-medium text-sm hover:underline"
+											to={`/brain/people/${encodeURIComponent(person.id)}`}
+										>
+											{name}
+										</Link>
+										<PersonGlobalBadges person={person} />
+									</>
 								) : (
 									<span className="font-medium text-sm">
 										{name}
