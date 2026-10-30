@@ -21,3 +21,17 @@ export async function readServerStyle(
 	const [profile] = await runBatch(actions, [pixel("BrainGetProfile")]);
 	return mapStyle(((profile as Row | undefined)?.style ?? {}) as Row);
 }
+
+/** BrainSaveProfile with only the style, returning the style the server now holds. */
+export async function saveStyleNow(
+	actions: InsightActions,
+	style: Record<string, unknown>,
+): Promise<ProfileStyle> {
+	const [profile] = await runBatch(actions, [
+		pixel("BrainSaveProfile", { profile: { style } }),
+	]);
+	const saved = (profile as Row | undefined)?.style;
+	if (!saved || typeof saved !== "object")
+		throw new Error("The server did not confirm the saved style.");
+	return mapStyle(saved as Row);
+}

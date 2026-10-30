@@ -24,7 +24,6 @@ export const styleFormSchema = z
 		summary: z
 			.string()
 			.trim()
-			.min(1, "Describe how you write")
 			.max(MAX_SUMMARY, `Keep this under ${MAX_SUMMARY} characters`),
 		examples: z.array(exampleSchema).max(MAX_STYLE_EXAMPLES),
 		internal: variantSchema,
@@ -89,4 +88,13 @@ export function fromStyleFormValues(values: StyleFormValues): StyleDraft {
 		examples: toExamples(values.examples),
 		variants,
 	};
+}
+
+/** A draft with nothing in it: saving it removes the style instead of confirming an empty one. */
+export function isEmptyStyleDraft(draft: StyleDraft): boolean {
+	return (
+		!draft.summary.trim() &&
+		draft.examples.length === 0 &&
+		Object.keys(draft.variants).length === 0
+	);
 }

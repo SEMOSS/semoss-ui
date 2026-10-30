@@ -69,14 +69,13 @@ export function StyleForm({
 			<FieldSet>
 				<FieldLegend variant="label">General style</FieldLegend>
 				<FieldDescription>
-					Used for every draft unless a more specific style below
-					applies.
+					Optional. Used for every draft unless a more specific style
+					below applies.
 				</FieldDescription>
 				<FormTextarea
 					name="summary"
-					label="How you write (required)"
+					label="How you write"
 					rows={4}
-					required
 					disabled={isSubmitting}
 				/>
 				<StyleExamplesField

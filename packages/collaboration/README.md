@@ -300,9 +300,16 @@ unconfirmed or still-pending style never reaches the assistant, the frontend con
   organisation (`BrainOrgDomains`) and external when any recipient is outside it. The confirmed style prompt carries both
   variants and the organisation domains so the assistant picks the matching one.
 - **Re-learning** is manual. Learning again replaces only the pending proposal and never overwrites the confirmed style.
-- Profile writes send only the style fields that changed. The proposal is written by the server alone; reviewing it
-  clears it with `pending: null`. `profile.style.server` places a proposal read from the server into the session
-  without saving it back.
+- The general summary is optional. Saving a style with no summary, examples, or variants, or pressing **Reset style**
+  (with a confirmation), removes the whole style and any proposal; drafts then use no style.
+- Style changes are saved directly and awaited (`useStyleSave`), not through the background saver. Each save sends the
+  whole style, the session takes the style the server returns (`profile.style.server`), a success toast confirms it,
+  and a failure stays visible in the form with the owner's entries kept. The proposal is written by the server alone;
+  reviewing it clears it with `pending: null`.
+- The assistant's instructions tell it to write every composed email in the confirmed style, using the internal style
+  only when every recipient is in the owner's organisation. A style changed in the middle of a chat applies from the
+  next message, but earlier drafts in that chat can still pull the model toward the old wording; start a new chat to
+  be sure.
 
 ## Routes and ownership
 
