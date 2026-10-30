@@ -1080,7 +1080,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													</Label>
 													<EngineSelect
 														id={modelSelectId}
-														className="h-8 w-auto max-w-32 gap-1 rounded-full border-none bg-transparent px-2 text-xs shadow-none hover:bg-accent"
+														className="h-8 w-auto max-w-44 gap-1 rounded-full border-none bg-transparent px-2 text-[11px] shadow-none hover:bg-accent"
 														name={modelName}
 														value={
 															model?.app_id || ""
