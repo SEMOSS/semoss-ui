@@ -159,7 +159,7 @@ export function StyleSettings({ profile }: { profile: Profile }) {
 						{describeProposal(proposal)}
 					</Small>
 					<StyleForm
-						key={`proposal-${proposal.learnedAt ?? proposal.summary}`}
+						key={`proposal-${JSON.stringify([proposal.learnedAt, proposal.summary, proposal.examples, proposal.variants])}`}
 						draft={proposal}
 						submitLabel="Confirm this style"
 						onSubmit={confirmProposal}
@@ -182,7 +182,7 @@ export function StyleSettings({ profile }: { profile: Profile }) {
 							: "Not confirmed yet. Drafts do not use a style."}
 					</Small>
 					<StyleForm
-						key={`style-${style.learnedAt ?? ""}-${style.confirmed}`}
+						key={`style-${JSON.stringify([style.summary, style.examples, style.variants, style.confirmed, style.learnedAt])}`}
 						draft={{
 							summary: style.summary,
 							examples: style.examples,

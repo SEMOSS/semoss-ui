@@ -322,4 +322,37 @@ describe("StyleSettings", () => {
 			"Short and friendly.",
 		);
 	});
+
+	it("clears the form after a reset even when the server still reports it as confirmed", async () => {
+		const user = userEvent.setup();
+		saveStyleNow.mockImplementation(
+			async (_actions: unknown, style: Record<string, unknown>) => ({
+				...style,
+				confirmed: true,
+				pending: null,
+			}),
+		);
+		const state = confirmedState();
+		if (!state.liveProfile) throw new Error("Expected a live profile");
+		state.liveProfile.style.examples = ["Thanks, will do."];
+		renderSettings(state);
+		expect(screen.getByRole("textbox", { name: "Example 1" })).toBeTruthy();
+		await user.click(screen.getByRole("button", { name: "Reset style" }));
+		const dialog = await screen.findByRole("dialog");
+		await user.click(
+			within(dialog).getByRole("button", { name: "Reset style" }),
+		);
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("textbox", { name: "Example 1" }),
+			).toBeNull(),
+		);
+		expect(
+			(
+				screen.getByRole("textbox", {
+					name: "How you write",
+				}) as HTMLTextAreaElement
+			).value,
+		).toBe("");
+	});
 });
