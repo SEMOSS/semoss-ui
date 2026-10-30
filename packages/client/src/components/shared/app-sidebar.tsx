@@ -35,6 +35,7 @@ import {
 	SidebarSeparator,
 } from "@semoss/ui/next";
 import { formatToDataTestId } from "@semoss/utility/text";
+import { Help } from "@/components/help/help";
 import { useConfig, usePage, useSession } from "@/hooks";
 import { LogoutPopover } from "./LogoutPopover";
 
@@ -113,6 +114,8 @@ export const Sidebar: React.FC = () => {
 
 	const [viewSidebar, setViewSidebar] = useState(false);
 	const [isLogoutPopoverOpen, setIsLogoutPopoverOpen] = useState(false);
+	const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
+	const isMenuOpen = isLogoutPopoverOpen || isHelpMenuOpen;
 
 	useEffect(() => {
 		if (isAdmin) {
@@ -123,7 +126,7 @@ export const Sidebar: React.FC = () => {
 	}, [isAdmin, adminOnlyViewMenuBarFlag]);
 
 	function closeSidebar() {
-		if (page.sidebar.pinned || isLogoutPopoverOpen) {
+		if (page.sidebar.pinned || isMenuOpen) {
 			return;
 		}
 		page.closeSidebar();
@@ -307,12 +310,16 @@ export const Sidebar: React.FC = () => {
 
 				<SidebarSeparator className="mx-0" />
 
-				{/* Footer: User / Logout */}
+				{/* Footer: Help / User / Logout */}
 				<ShadcnSidebarFooter
 					className="p-0"
 					data-testid="sidebar-footer"
 				>
 					<SidebarMenu className="gap-0" aria-label="user navigation">
+						<Help
+							className={NAV_BUTTON_CLASS}
+							onOpenChange={setIsHelpMenuOpen}
+						/>
 						<SidebarMenuItem>
 							<LogoutPopover
 								onOpenChange={setIsLogoutPopoverOpen}
@@ -325,9 +332,9 @@ export const Sidebar: React.FC = () => {
 									)}
 								>
 									<span className="flex w-7 min-w-0 shrink-0 items-center">
-										<CircleUserRound className="size-6" />
+										<CircleUserRound className="size-4" />
 									</span>
-									<span className="max-w-full flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left">
+									<span className="flex-1 truncate text-left">
 										{userName || ""}
 									</span>
 								</SidebarMenuButton>
@@ -356,7 +363,7 @@ export const Sidebar: React.FC = () => {
 		<Sheet
 			open={page.sidebar.open}
 			onOpenChange={(open) => {
-				if (!open && !isLogoutPopoverOpen) {
+				if (!open && !isMenuOpen) {
 					closeSidebar();
 				}
 			}}

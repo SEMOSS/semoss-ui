@@ -33,6 +33,8 @@ export interface RoomComposerMenuProps {
 	onOpenWorkspace: () => void;
 	/** Present only while creating a chat. */
 	onSelectChat?: () => void;
+	/** Changes execution mode while keeping the selected saved agent. */
+	onSelectAgent?: () => void;
 	mode?: "chat" | "agent" | "workspace";
 	agentEditable?: boolean;
 	enableAgentHarness?: boolean;
@@ -48,6 +50,7 @@ export function RoomComposerMenu({
 	disabled,
 	onOpenWorkspace,
 	onSelectChat,
+	onSelectAgent,
 	mode,
 	agentEditable,
 	enableAgentHarness,
@@ -59,15 +62,11 @@ export function RoomComposerMenu({
 		onOpenMcpOverlay(tab);
 		close();
 	};
-	const agentLabel =
-		mode === "agent" || options.workspace
-			? t("modes.selectedAgent", {
-					name:
-						options.workspace?.name ||
-						options.workspace?.workspace_id ||
-						t("modes.defaultAgent"),
-				})
-			: t("modes.agent");
+	const agentLabel = options.workspace
+		? t("modes.selectedAgent", {
+				name: options.workspace.name || options.workspace.workspace_id,
+			})
+		: t("menuWorkspace.selectAgent");
 	return (
 		<>
 			<RoomInputMenuUpload disabled={disabled} onSelect={close} />
@@ -100,8 +99,9 @@ export function RoomComposerMenu({
 			{agentEditable && (
 				<>
 					<DropdownMenuSeparator />
-					{enableAgentHarness ? (
+					{enableAgentHarness && (
 						<DropdownMenuRadioGroup
+							aria-label={`${t("modes.ask")} / ${t("modes.agent")}`}
 							value={mode === "agent" ? "agent" : "chat"}
 						>
 							<DropdownMenuRadioItem
@@ -118,23 +118,26 @@ export function RoomComposerMenu({
 							<DropdownMenuRadioItem
 								value="agent"
 								disabled={disabled}
-								onSelect={() => openPicker("AGENT")}
+								onSelect={() => {
+									onSelectAgent?.();
+									close();
+								}}
 							>
 								<BotIcon aria-hidden="true" />
-								<span className="min-w-0 whitespace-normal break-words">
-									{agentLabel}
-								</span>
+								{t("modes.agent")}
 							</DropdownMenuRadioItem>
 						</DropdownMenuRadioGroup>
-					) : (
-						<DropdownMenuItem
-							disabled={disabled}
-							onSelect={() => openPicker("AGENT")}
-						>
-							<BotIcon aria-hidden="true" />
-							{agentLabel}
-						</DropdownMenuItem>
 					)}
+					{enableAgentHarness && <DropdownMenuSeparator />}
+					<DropdownMenuItem
+						disabled={disabled}
+						onSelect={() => openPicker("AGENT")}
+					>
+						<BotIcon aria-hidden="true" />
+						<span className="min-w-0 whitespace-normal break-words">
+							{agentLabel}
+						</span>
+					</DropdownMenuItem>
 				</>
 			)}
 			<DropdownMenuSeparator />

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
+import type { MCPOverlay } from "@/components/mcp/mcp-overlay";
 import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
 import type { RoomStore } from "@/stores/room/room.store";
 import { RoomInput } from "./room-input";
@@ -127,15 +128,23 @@ vi.mock("@/components/mcp/mcp-overlay", () => ({
 		open,
 		defaultTab,
 		onClose,
-	}: {
-		open: boolean;
-		defaultTab: string;
-		onClose: () => void;
-	}) =>
+		values,
+	}: React.ComponentProps<typeof MCPOverlay>) =>
 		open ? (
 			<div role="dialog" aria-label={defaultTab}>
 				<button type="button" onClick={() => onClose()}>
 					Close picker
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						onClose({
+							mcp: values,
+							workspace: { workspace_id: "alpha", name: "Alpha" },
+						})
+					}
+				>
+					Save agent
 				</button>
 			</div>
 		) : null,
@@ -567,32 +576,94 @@ test("Connectors opens the settings dialog on its Connectors page", async () => 
 	expect(openSettings).toHaveBeenCalledWith("connectors");
 });
 
-test("new-chat Agent opens the picker without changing mode on cancel", async () => {
+test("new chats choose execution mode separately from the saved agent", async () => {
 	featureFlags.enableAgentHarness = true;
 	const user = userEvent.setup();
 	const onWorkspaceChange = vi.fn();
-	render(
+	const onSwitchToAgentHarness = vi.fn();
+	const onExitAgentHarness = vi.fn();
+	const props = {
+		...defaultProps,
+		MenuComponent: undefined,
+		onMcpChange: vi.fn(),
+		onWorkspaceChange,
+		onSwitchToAgentHarness,
+		onExitAgentHarness,
+	};
+	const { rerender } = render(
 		<RoomInput
-			{...defaultProps}
-			MenuComponent={undefined}
+			{...props}
 			room={{ ...defaultProps.room, mode: "chat" } as RoomStore}
-			onMcpChange={vi.fn()}
-			onWorkspaceChange={onWorkspaceChange}
 		/>,
 	);
-	await user.click(
-		screen.getByRole("button", { name: "input.openSettings" }),
-	);
+	setEditorText("Keep composed text");
+	const add = screen.getByRole("button", { name: "input.openSettings" });
+	await user.click(add);
 	expect(
-		screen.queryByRole("menuitem", { name: "menuWorkspace.selectAgent" }),
-	).toBeNull();
+		screen.getByRole("menuitemradio", { name: "modes.ask" }),
+	).toHaveAttribute("aria-checked", "true");
 	await user.click(
 		screen.getByRole("menuitemradio", { name: "modes.agent" }),
+	);
+	expect(onSwitchToAgentHarness).toHaveBeenCalledTimes(1);
+	expect(onWorkspaceChange).not.toHaveBeenCalled();
+	expect(screen.queryByRole("dialog")).toBeNull();
+	expect(add).toHaveFocus();
+	rerender(<RoomInput {...props} room={defaultProps.room} />);
+	await user.click(add);
+	expect(
+		screen.getByRole("menuitemradio", { name: "modes.agent" }),
+	).toHaveAttribute("aria-checked", "true");
+	await user.click(screen.getByRole("menuitemradio", { name: "modes.ask" }));
+	expect(onExitAgentHarness).toHaveBeenCalledTimes(1);
+	await user.click(add);
+	await user.click(
+		screen.getByRole("menuitem", { name: "menuWorkspace.selectAgent" }),
 	);
 	expect(screen.getByRole("dialog", { name: "AGENT" })).toBeVisible();
 	await user.click(screen.getByRole("button", { name: "Close picker" }));
 	expect(onWorkspaceChange).not.toHaveBeenCalled();
+	expect(onSwitchToAgentHarness).toHaveBeenCalledTimes(1);
+	expect(onExitAgentHarness).toHaveBeenCalledTimes(1);
+	expect(fakeEditorText).toBe("Keep composed text");
 });
+
+test.each([true, false])(
+	"saving an agent only changes its profile with the harness flag %s",
+	async (enableAgentHarness) => {
+		featureFlags.enableAgentHarness = enableAgentHarness;
+		const user = userEvent.setup();
+		const onWorkspaceChange = vi.fn();
+		const onSwitchToAgentHarness = vi.fn();
+		const onExitAgentHarness = vi.fn();
+		render(
+			<RoomInput
+				{...defaultProps}
+				MenuComponent={undefined}
+				onMcpChange={vi.fn()}
+				onWorkspaceChange={onWorkspaceChange}
+				onSwitchToAgentHarness={onSwitchToAgentHarness}
+				onExitAgentHarness={onExitAgentHarness}
+			/>,
+		);
+		await user.click(
+			screen.getByRole("button", { name: "input.openSettings" }),
+		);
+		expect(screen.queryAllByRole("menuitemradio")).toHaveLength(
+			enableAgentHarness ? 2 : 0,
+		);
+		await user.click(
+			screen.getByRole("menuitem", { name: "menuWorkspace.selectAgent" }),
+		);
+		await user.click(screen.getByRole("button", { name: "Save agent" }));
+		expect(onWorkspaceChange).toHaveBeenCalledExactlyOnceWith({
+			workspace_id: "alpha",
+			name: "Alpha",
+		});
+		expect(onSwitchToAgentHarness).not.toHaveBeenCalled();
+		expect(onExitAgentHarness).not.toHaveBeenCalled();
+	},
+);
 
 test("connector attachments stay visible and removable without an uploaded file", () => {
 	const remove = vi.fn();
