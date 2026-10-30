@@ -14,12 +14,12 @@ import {
 	P,
 	ScrollArea,
 	Small,
-	Spinner,
 } from "@semoss/ui/next";
 import { EmailBody } from "@/features/email/email-body";
 import { MESSAGE_PROSE_CLASS_NAME } from "@/features/messages/components/message-prose.styles";
 import { roomPath } from "@/lib/workspace-paths";
 import { RoutineChatButton } from "./routine-chat-button";
+import { RoutineRunning } from "./routine-running";
 import type { RoutineId, RoutineStatus } from "./routine-schema";
 
 /** The words a routine's result view uses for its own output. */
@@ -47,12 +47,22 @@ interface RoutineResultProps {
 	copy: RoutineResultCopy;
 	/** Link the run's room; only an owner's own routine runs in a Collaboration routine room. */
 	canOpenRun?: boolean;
+	/** Hide the heading when something else already names the section, such as a tab. */
+	showTitle?: boolean;
 }
 
 /** Opens the run's own room, where its steps show, live while it runs. */
-function OpenRunButton({ roomId, live }: { roomId: string; live?: boolean }) {
+function OpenRunButton({
+	roomId,
+	live,
+	variant = "outline",
+}: {
+	roomId: string;
+	live?: boolean;
+	variant?: "outline" | "default";
+}) {
 	return (
-		<Button type="button" asChild variant="outline" size="sm">
+		<Button type="button" asChild variant={variant} size="sm">
 			<Link to={roomPath(roomId)}>
 				<Eye aria-hidden="true" data-icon="inline-start" />
 				{live ? "Watch it run" : "Open run"}
@@ -66,6 +76,7 @@ export function RoutineResult({
 	routine,
 	copy,
 	canOpenRun = false,
+	showTitle = true,
 }: RoutineResultProps) {
 	const headingId = useId();
 	const run = routine.lastRun;
@@ -73,15 +84,21 @@ export function RoutineResult({
 	const runRoomId = canOpenRun ? run?.roomId : null;
 	return (
 		<section
-			aria-labelledby={headingId}
-			className="flex min-w-0 flex-col gap-3"
+			aria-labelledby={showTitle ? headingId : undefined}
+			aria-label={showTitle ? undefined : copy.title}
+			className="flex min-h-0 min-w-0 flex-1 flex-col gap-3"
 		>
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div className="flex min-w-0 flex-col gap-1">
 					<div className="flex flex-wrap items-center gap-2">
-						<H3 id={headingId} className="font-medium text-base">
-							{copy.title}
-						</H3>
+						{showTitle && (
+							<H3
+								id={headingId}
+								className="font-medium text-base"
+							>
+								{copy.title}
+							</H3>
+						)}
 						{run?.status === "completed" && (
 							<Badge variant="secondary">Completed</Badge>
 						)}
@@ -110,116 +127,141 @@ export function RoutineResult({
 					)}
 				</div>
 			</div>
-			<ScrollArea
-				scrollOrientation="both"
-				className="h-128 min-w-0 rounded-lg border focus-within:ring-2 focus-within:ring-ring"
-			>
-				<article
-					// biome-ignore lint/a11y/noNoninteractiveTabindex: Focusing the content lets keyboard users scroll its containing viewport.
-					tabIndex={0}
-					aria-label={`${copy.title} content`}
-					className="min-w-0 outline-none"
-				>
-					{!run ? (
-						<div className="flex items-start gap-3 p-6">
-							<FileText
-								className="mt-0.5 size-5 shrink-0 text-muted-foreground"
-								aria-hidden="true"
+			{/* The frame grows to the bottom of a column beside taller settings and is never shorter than before.
+			    The scroll box sits in an out-of-flow wrapper (the scroll area root pins its own position inline),
+			    so a long result scrolls inside it instead of stretching the row. */}
+			<div className="relative min-h-128 min-w-0 flex-1">
+				<div className="absolute inset-0">
+					{run?.status === "running" ? (
+						<div className="size-full rounded-lg border">
+							<RoutineRunning
+								message={copy.running}
+								startedAt={run.startedAt}
+								action={
+									runRoomId ? (
+										<OpenRunButton
+											roomId={runRoomId}
+											live
+											variant="default"
+										/>
+									) : null
+								}
 							/>
-							<div className="flex flex-col gap-1">
-								<P className="font-medium text-sm">
-									{copy.emptyTitle}
-								</P>
-								<P className="text-muted-foreground text-sm">
-									{routine.enabled
-										? copy.scheduledHint
-										: copy.disabledHint}
-								</P>
-							</div>
-						</div>
-					) : run.status === "failed" ? (
-						<div className="p-4">
-							<Alert variant="destructive">
-								<AlertTitle>{copy.failed}</AlertTitle>
-								<AlertDescription>
-									{run.error ||
-										"Check your inbox connection and assistant configuration before the next scheduled run."}
-									<div className="flex flex-wrap gap-2">
-										{/* the other causes open the run from the header */}
-										{(run.errorCause === "connection" ||
-											!run.errorCause) && (
-											<Button
-												type="button"
-												asChild
-												variant="outline"
-												size="sm"
-											>
-												<Link to="/brain/sources">
-													Manage inbox connection
-												</Link>
-											</Button>
-										)}
-									</div>
-								</AlertDescription>
-							</Alert>
-						</div>
-					) : run.status === "running" ? (
-						<div className="flex flex-wrap items-center gap-3 p-6">
-							<Spinner />
-							<output className="text-sm">{copy.running}</output>
-							{runRoomId && (
-								<OpenRunButton roomId={runRoomId} live />
-							)}
 						</div>
 					) : (
-						<div className="flex min-w-0 flex-col">
-							{run.error && (
-								<div className="p-4">
-									<Alert>
-										<AlertDescription>
-											{run.error}
-										</AlertDescription>
-									</Alert>
-								</div>
-							)}
-							{html ? (
-								<div
-									className={cn(
-										"min-w-0",
-										routine.id ===
-											"weekly-meeting-agendas" &&
-											"min-w-lg",
-									)}
-								>
-									<EmailBody
-										key={`${routine.id}:${run.startedAt}`}
-										html={html}
-										title={`${copy.title} email`}
-										presentation="reader"
-									/>
-								</div>
-							) : run.summary?.trim() ? (
-								<Markdown
-									className={cn(
-										"min-w-0 p-4",
-										MESSAGE_PROSE_CLASS_NAME,
-									)}
-									components={{ img: () => null }}
-								>
-									{DOMPurify.sanitize(run.summary, {
-										ALLOWED_TAGS: [],
-										ALLOWED_ATTR: [],
-									})}
-								</Markdown>
-							) : (
-								<P className="p-4 text-muted-foreground text-sm">
-									The run finished without a summary.
-								</P>
-							)}
-						</div>
+						<ScrollArea
+							scrollOrientation="both"
+							className="size-full rounded-lg border focus-within:ring-2 focus-within:ring-ring"
+						>
+							<article
+								// biome-ignore lint/a11y/noNoninteractiveTabindex: Focusing the content lets keyboard users scroll its containing viewport.
+								tabIndex={0}
+								aria-label={`${copy.title} content`}
+								className="min-w-0 outline-none"
+							>
+								{!run ? (
+									<div className="flex items-start gap-3 p-6">
+										<FileText
+											className="mt-0.5 size-5 shrink-0 text-muted-foreground"
+											aria-hidden="true"
+										/>
+										<div className="flex flex-col gap-1">
+											<P className="font-medium text-sm">
+												{copy.emptyTitle}
+											</P>
+											<P className="text-muted-foreground text-sm">
+												{routine.enabled
+													? copy.scheduledHint
+													: copy.disabledHint}
+											</P>
+										</div>
+									</div>
+								) : run.status === "failed" ? (
+									<div className="p-4">
+										<Alert variant="destructive">
+											<AlertTitle>
+												{copy.failed}
+											</AlertTitle>
+											<AlertDescription>
+												{run.error ||
+													"Check your inbox connection and assistant configuration before the next scheduled run."}
+												<div className="flex flex-wrap gap-2">
+													{/* the other causes open the run from the header */}
+													{(run.errorCause ===
+														"connection" ||
+														!run.errorCause) && (
+														<Button
+															type="button"
+															asChild
+															variant="outline"
+															size="sm"
+														>
+															<Link to="/brain/sources">
+																Manage inbox
+																connection
+															</Link>
+														</Button>
+													)}
+												</div>
+											</AlertDescription>
+										</Alert>
+									</div>
+								) : (
+									<div className="flex min-w-0 flex-col">
+										{run.error && (
+											<div className="p-4">
+												<Alert>
+													<AlertDescription>
+														{run.error}
+													</AlertDescription>
+												</Alert>
+											</div>
+										)}
+										{html ? (
+											<div
+												className={cn(
+													"min-w-0",
+													routine.id ===
+														"weekly-meeting-agendas" &&
+														"min-w-lg",
+												)}
+											>
+												<EmailBody
+													key={`${routine.id}:${run.startedAt}`}
+													html={html}
+													title={`${copy.title} email`}
+													presentation="reader"
+												/>
+											</div>
+										) : run.summary?.trim() ? (
+											<Markdown
+												className={cn(
+													"min-w-0 p-4",
+													MESSAGE_PROSE_CLASS_NAME,
+												)}
+												components={{ img: () => null }}
+											>
+												{DOMPurify.sanitize(
+													run.summary,
+													{
+														ALLOWED_TAGS: [],
+														ALLOWED_ATTR: [],
+													},
+												)}
+											</Markdown>
+										) : (
+											<P className="p-4 text-muted-foreground text-sm">
+												The run finished without a
+												summary.
+											</P>
+										)}
+									</div>
+								)}
+							</article>
+						</ScrollArea>
 					)}
-				</article>
-			</ScrollArea>
+				</div>
+			</div>
 		</section>
 	);
 }

@@ -1,6 +1,5 @@
 import {
 	Brain,
-	CalendarDays,
 	FolderOpen,
 	Mail,
 	MessagesSquare,
@@ -30,12 +29,22 @@ import {
 	rememberCommand,
 } from "@/features/collaboration/state/memory";
 import { roomFileLinks } from "@/features/messages/utils/room-file-link";
+import {
+	connectorPanelActions,
+	OUTLOOK_TONE,
+	TEAMS_TONE,
+} from "@/features/room-connectors/connector-panel-actions";
 import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
+import {
+	RoomSourceAttachmentChoices,
+	sourceFileAttachments,
+} from "@/features/room-email/room-source-attachment-choices";
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { openToolWorkbenchFiles } from "@/features/tools/open-tool-workbench-files";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { Session } from "@/types/session";
+import { useShowCurrentChat } from "../current-chat";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { RoomComposer } from "./room-composer";
 import type { RoomSlashCommand } from "./room-composer-slash-plugin";
@@ -125,6 +134,7 @@ export function RoomWorkspace({
 	onReconnect,
 }: RoomWorkspaceProps) {
 	const roomEmail = useContext(RoomEmailContext);
+	useShowCurrentChat(roomSession);
 	// /remember saves a memory as the owner's own, with no model call
 	const memorySession = useOptionalCollaborationSession();
 	const workbench = useToolWorkbench();
@@ -358,6 +368,10 @@ export function RoomWorkspace({
 																icon: roomEmail.hasSourceEmail
 																	? Mail
 																	: MessagesSquare,
+																iconClassName:
+																	roomEmail.hasSourceEmail
+																		? OUTLOOK_TONE
+																		: TEAMS_TONE,
 																onSelect: () =>
 																	roomEmail.openSource(
 																		actionsTriggerId,
@@ -385,30 +399,10 @@ export function RoomWorkspace({
 														);
 													},
 												},
-												{
-													id: "emails",
-													label: "Open Emails",
-													icon: Mail,
-													onSelect: () =>
-														returnToBrowser(
-															"mail",
-															"microsoft",
-															undefined,
-															actionsTriggerId,
-														),
-												},
-												{
-													id: "calendar",
-													label: "Open Calendar",
-													icon: CalendarDays,
-													onSelect: () =>
-														returnToBrowser(
-															"calendar",
-															"microsoft",
-															undefined,
-															actionsTriggerId,
-														),
-												},
+												...connectorPanelActions(
+													returnToBrowser,
+													actionsTriggerId,
+												),
 											]
 										: undefined
 								}
@@ -422,6 +416,20 @@ export function RoomWorkspace({
 										roomSnapshot?.settingsError ||
 										roomSnapshot?.modelError,
 								)}
+								attachmentContent={
+									roomSession &&
+									roomEmail?.hasSourceEmail &&
+									sourceFileAttachments(
+										roomEmail.sourceMessages,
+									).length > 0 ? (
+										<RoomSourceAttachmentChoices
+											queued={
+												roomSnapshot?.contextFiles ?? []
+											}
+											onAdd={roomSession.addContextFile}
+										/>
+									) : undefined
+								}
 								attachmentSummary={
 									roomSnapshot && roomSession ? (
 										<RoomContextFiles

@@ -21,6 +21,12 @@ const ROUTES: [string, string][] = [
 	["/docs/report.xlsx", FILE_PANEL_TYPES.FILE_XLSX_VIEWER],
 	["/docs/network.vsdx", FILE_PANEL_TYPES.FILE_VISIO_VIEWER],
 	["/docs/report.doc", FILE_PANEL_TYPES.FILE_DOWNLOAD],
+	["/files/archive.zip", FILE_PANEL_TYPES.FILE_DOWNLOAD],
+	["/files/video.MP4", FILE_PANEL_TYPES.FILE_DOWNLOAD],
+	["/files/email.msg", FILE_PANEL_TYPES.FILE_DOWNLOAD],
+	["/files/scan.tiff", FILE_PANEL_TYPES.FILE_DOWNLOAD],
+	["/files/workbook.xlsm", FILE_PANEL_TYPES.FILE_DOWNLOAD],
+	["/files/report.docm", FILE_PANEL_TYPES.FILE_DOWNLOAD],
 	["/LICENSE", FILE_PANEL_TYPES.FILE_CODE_EDITOR],
 ];
 

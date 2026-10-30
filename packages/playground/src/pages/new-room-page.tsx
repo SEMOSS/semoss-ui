@@ -468,7 +468,7 @@ export const NewRoomPage = observer(() => {
 			mcp: Array.from(mcpMap.values()),
 			workspace: {
 				workspace_id: getWorkspace.data.workspace_id,
-				name: getWorkspace.data.name,
+				name: getWorkspace.data.display_name || getWorkspace.data.name,
 			},
 		});
 	}, [
@@ -508,7 +508,7 @@ export const NewRoomPage = observer(() => {
 
 		void startAgentGreetingRoom(
 			selectedWorkspaceId,
-			getWorkspace.data.name,
+			getWorkspace.data.display_name || getWorkspace.data.name,
 		);
 	}, [
 		isWorkspaceFromUrl,
@@ -595,7 +595,6 @@ export const NewRoomPage = observer(() => {
 
 	const handleAgentChange = (
 		next: RoomStore["options"]["workspace"] | null,
-		activateAgentMode = false,
 	) => {
 		if (isLoading || isPreparing) return;
 		if (
@@ -618,11 +617,8 @@ export const NewRoomPage = observer(() => {
 			});
 		}
 		setSelectedWorkspaceId(next?.workspace_id ?? "");
-		if (activateAgentMode && root.theme.featureFlags?.enableAgentHarness)
-			setMode("agent");
 	};
 	const handleSelectChat = () => {
-		handleAgentChange(null);
 		setMode("chat");
 	};
 	const handleOpenSettings = () => {
@@ -711,13 +707,6 @@ export const NewRoomPage = observer(() => {
 								options: tempRoomStore.options,
 								onModelChange: (model) => {
 									if (model) chat.setSelectedModel(model);
-								},
-								onAgentModeSelected: () => {
-									if (
-										root.theme.featureFlags
-											?.enableAgentHarness
-									)
-										setMode("agent");
 								},
 								agentEditable: true,
 								isAgentMode: mode === "agent",

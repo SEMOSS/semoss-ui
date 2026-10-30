@@ -87,3 +87,83 @@ export const parseSqlQueryPolicyDefaults = (
 	}
 	return defaults;
 };
+
+/** A user locked out of an engine after their guardrail hits reached a limit */
+export interface EngineGuardrailLock {
+	/** The user's id */
+	userId: string;
+	/** The user's login type, such as NATIVE */
+	userType: string;
+	/** The user's name, or null when the platform has none */
+	name: string | null;
+	/** The user's email, or null when the platform has none */
+	email: string | null;
+	/** The hit limit that locked them out */
+	limitId: string;
+	/** When the lock started, as UTC ISO text */
+	lockedAt: string;
+	/** When the lock ends, as UTC ISO text */
+	lockedUntil: string;
+}
+
+/**
+ * The pixel that reads the users locked out of an engine. Read it with
+ * usePixel and {@link parseEngineGuardrailLocks}.
+ *
+ * @param engineId - The engine.
+ * @returns The pixel.
+ */
+export const engineGuardrailLocksQuery = (engineId: string): string =>
+	`GetEngineGuardrailLocks(engine=[${JSON.stringify(engineId)}]);`;
+
+/**
+ * The locks GetEngineGuardrailLocks returned, keeping each row that names a
+ * user and when the lock ends.
+ *
+ * @param output - The pixel's output.
+ * @returns The locks, ending soonest first.
+ * @throws When the output is not a list.
+ */
+export const parseEngineGuardrailLocks = (
+	output: unknown,
+): EngineGuardrailLock[] => {
+	if (!Array.isArray(output)) {
+		throw Error("The locked users were not returned");
+	}
+	return output.flatMap((row) => {
+		if (
+			!isRecord(row) ||
+			typeof row.userId !== "string" ||
+			typeof row.userType !== "string" ||
+			typeof row.lockedUntil !== "string"
+		) {
+			return [];
+		}
+		return [
+			{
+				userId: row.userId,
+				userType: row.userType,
+				name: typeof row.name === "string" ? row.name : null,
+				email: typeof row.email === "string" ? row.email : null,
+				limitId: typeof row.limitId === "string" ? row.limitId : "",
+				lockedAt: typeof row.lockedAt === "string" ? row.lockedAt : "",
+				lockedUntil: row.lockedUntil,
+			},
+		];
+	});
+};
+
+/**
+ * The pixel that ends a user's guardrail lock on an engine early.
+ *
+ * @param engineId - The engine.
+ * @param userId - The locked user's id.
+ * @param userType - The locked user's login type.
+ * @returns The pixel.
+ */
+export const clearEngineGuardrailLockPixel = (
+	engineId: string,
+	userId: string,
+	userType: string,
+): string =>
+	`ClearEngineGuardrailLock(engine=[${JSON.stringify(engineId)}], userId=[${JSON.stringify(userId)}], userType=[${JSON.stringify(userType)}]);`;

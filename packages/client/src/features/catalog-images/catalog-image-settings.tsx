@@ -12,7 +12,9 @@ import {
 	Avatar,
 	AvatarFallback,
 	AvatarImage,
+	Button,
 	Card,
+	CardAction,
 	CardContent,
 	CardDescription,
 	CardHeader,
@@ -22,10 +24,10 @@ import {
 	FieldError,
 	FieldLabel,
 	Form,
-	FormActions,
 	FormField,
 	Input,
 	Muted,
+	Spinner,
 	toast,
 	useForm,
 	z,
@@ -119,13 +121,37 @@ export function CatalogImageSettings({
 		toast.success("Catalog image updated");
 	};
 
-	return (
+	const handleDiscard = (): void => {
+		resetSelection();
+		inputRef.current?.focus();
+	};
+
+	const card = (
 		<Card>
-			<CardHeader>
+			<CardHeader className="border-b">
 				<CardTitle>Image</CardTitle>
 				<CardDescription className="break-words">
 					Update the image shown for {name} in the catalog.
 				</CardDescription>
+				{canEdit && (selectedImage || isSubmitting) ? (
+					<CardAction className="flex gap-2 self-center">
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={isSubmitting}
+							onClick={handleDiscard}
+						>
+							Discard
+						</Button>
+						<Button type="submit" size="sm" disabled={isSubmitting}>
+							{isSubmitting ? (
+								<Spinner className="size-4" />
+							) : null}
+							{isSubmitting ? "Saving..." : "Save"}
+						</Button>
+					</CardAction>
+				) : null}
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<Avatar aria-hidden="true" className="size-24 rounded-lg">
@@ -142,20 +168,7 @@ export function CatalogImageSettings({
 					</AvatarFallback>
 				</Avatar>
 				{canEdit ? (
-					<Form
-						form={form}
-						onSubmit={handleSubmit}
-						noValidate
-						aria-label="Catalog image"
-						aria-busy={isSubmitting}
-						onSubmitCapture={(event) => {
-							if (uploadPending.current) {
-								event.preventDefault();
-								event.stopPropagation();
-							}
-						}}
-						className="space-y-4"
-					>
+					<>
 						<FormField
 							control={form.control}
 							name="image"
@@ -187,7 +200,7 @@ export function CatalogImageSettings({
 									/>
 									<FieldDescription id={`${inputId}-hint`}>
 										PNG, JPEG, or GIF, up to 10 MiB. Choose
-										a file, then upload to save it.
+										a file, then save to upload it.
 									</FieldDescription>
 									{fieldState.error?.message && (
 										<FieldError id={`${inputId}-error`}>
@@ -204,20 +217,7 @@ export function CatalogImageSettings({
 								</AlertDescription>
 							</Alert>
 						)}
-						<FormActions
-							isSubmitting={isSubmitting}
-							submitLabel={
-								isSubmitting
-									? "Uploading image…"
-									: "Upload image"
-							}
-							onCancel={() => {
-								resetSelection();
-								inputRef.current?.focus();
-							}}
-							className="flex-col items-stretch sm:flex-row sm:items-center [&_button]:min-h-11"
-						/>
-					</Form>
+					</>
 				) : (
 					<Muted>
 						You need edit permission to change this image.
@@ -225,5 +225,28 @@ export function CatalogImageSettings({
 				)}
 			</CardContent>
 		</Card>
+	);
+
+	if (!canEdit) {
+		return card;
+	}
+
+	// the whole card is the form, so the header's Save submits it
+	return (
+		<Form
+			form={form}
+			onSubmit={handleSubmit}
+			noValidate
+			aria-label="Catalog image"
+			aria-busy={isSubmitting}
+			onSubmitCapture={(event) => {
+				if (uploadPending.current) {
+					event.preventDefault();
+					event.stopPropagation();
+				}
+			}}
+		>
+			{card}
+		</Form>
 	);
 }

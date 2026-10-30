@@ -112,6 +112,18 @@ When changing an API, inspect its owning implementation and adjacent tests:
 Update the packaged guide with signature/behavior changes. Comments and mocked
 tests are not backend authority; retain its compatibility caveats until verified.
 
+## Engine and App Actions
+
+- [`api/engine.ts`](./src/api/engine.ts): `cloneEngine` (`CloneEngine`) clones an engine into a
+  private engine the user owns and returns the clone's id, name and type, throwing when the
+  backend returns no engine id. `restartEngine` (`CloseEngine`) closes an engine so its next use
+  starts it with its current files.
+- [`api/app.ts`](./src/api/app.ts): `reloadApp` (`ReloadProject`) clears the app modules python
+  has cached, so the next run imports the current .py files.
+- These return the success and warning messages the reactor adds beside its output, read by
+  `readPixelMessages` in [`api/pixel-messages.ts`](./src/api/pixel-messages.ts). A warning means
+  the action ran here but the other servers in a cluster could not be told, for example.
+
 ## Session Logins
 
 The SDK owns what the session is signed in to, so an app never tracks or caches it:

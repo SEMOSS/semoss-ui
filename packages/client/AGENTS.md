@@ -304,6 +304,84 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   tab uses the same pieces, and counts app and engine setting changes
   (`AuditEventType.SETTING_CHANGES`) beside access and usage limit changes.
 
+### Agent Runs
+
+- **`features/agent-activity/`** holds the room list and room view that an agent's Activity tab
+  (`pages/project/agent/agent-activity-page.tsx`, the user's own rooms) and the admin Agent Runs
+  page (`features/agent-runs/`, every user's) share. Each page keeps the list's state
+  (`use-agent-room-query.ts`: the room search, applied once typing pauses, the Status filter and
+  the page) and reads its page of rooms with `use-agent-rooms.ts`, which keeps the last rooms
+  shown while it reads again, so the list keeps its height and scroll. Nothing updates on its
+  own; Refresh reads again.
+- **The list** (`agent-room-list.tsx`) has a toolbar with the room search by name or id, the
+  page's own filters, Status (All, In progress, Failed), Clear filters and Refresh, then the
+  rooms (`agent-room-table.tsx`), or why there are none, and the pages. A row shows the room with
+  its id under its name (`agent-room-detail-line.tsx`, the muted line every id and date under a
+  name uses), the page's own columns (`AgentRoomColumn`), how many runs it holds, how they stand
+  and whether it is closed (`agent-room-status.tsx`), and its last activity. While another page
+  is read, the footer reads "Loading rooms..." rather than counting the rooms still shown.
+- **The room** (`agent-room-detail.tsx`, given the page's `AgentRoomSource`: its reads and its
+  close) shows in place of the list (`use-open-agent-room.ts`): it opens from the top of the page
+  with focus on its name, and Back returns to the list where it was scrolled, with focus on that
+  room. Over the graph of its runs, subagents and tool calls (`agent-room-view.tsx`,
+  `agent-run-graph.tsx`) is its summary (`agent-room-summary.tsx`: the page's own facts, then
+  how its runs stand, counted from the runs as last read, and its last activity). A room whose
+  runs cannot be read shows why, with Retry. `use-agent-room-runs.ts` loads the runs, subagent
+  trees and Claude Code transcripts; only the latest load shows its runs.
+- **Export** downloads the room as Markdown (`agent-room-markdown.ts`), for someone
+  investigating it: the room and the page's header lines, then each run with its facts, error,
+  input, every message between the user, the agent and its tools (tool calls, tool results and
+  thinking included, hidden ones marked), and its final output, each subagent run under the run
+  that spawned it (Run 1.1). The file is named by the room's name and id.
+- **Close Room** (`close-agent-room-action.tsx`, the button, and `close-agent-room-dialog.tsx`,
+  its confirmation) stops every run still going in the room and its subagents' rooms and closes
+  them, so no agent runs in them again; the user no longer sees them. The room then reads Closed
+  here and in the list, and Close Room stays focusable with a tooltip saying the room is closed.
+  Closing records `AGENT_ROOM_CLOSE`; viewing records no audit event.
+- **The Activity tab** lists the user's own rooms with the agent (`GetAgentRunRooms`), rooms it
+  ran in as another agent's subagent included, and opens one with the user's own reads
+  (`GetAllAgentRunsForRoom`, the SDK's `getAgentRun` and `getSubagentRuns`,
+  `GetClaudeCodeTranscriptHistory`, and `GetEngineMetadata` for model names), with the Analyze
+  tab, and closes it with `CloseRoom`. A link with `roomId`, and `runId` for one run, opens that
+  room. A room that cannot be opened, such as a link to a run or a room of another agent, goes
+  back to the list with a toast saying why (`onLoadFailed`), so its runs are never shown under
+  this agent; the admin page shows the error with Retry instead.
+- **The admin Agent Runs page** at `settings/agent-runs` (`pages/settings/agent-runs.page.tsx`,
+  admin mode only) lists one row per room and user (`AdminGetAgentRunRooms`), adds Agent and User
+  filters (`agent-run-filter-select.tsx`, a searchable list read from `AdminGetAgentRunAgents`
+  and `AdminGetAgentRunUsers` through `use-agent-run-filter-options.ts`; a user is their id and
+  login type together, `userId` with `userType`) and the Agent and User columns
+  (`agent-run-room-columns.tsx`: the agent with its id under its name, the user with the shared
+  `PersonIdentity`). A room opens read only (`isReadOnly`, so no Analyze tab) through the admin
+  reads, with its user and agent in its summary (`agent-run-room-summary-items.tsx`) and its
+  export's header (`agent-run-room-labels.ts`), and closes with `AdminCloseRoom`.
+- `api/agent-runs.ts` builds and reads the agent runs reactors: the user's own and the admin ones
+  (`Admin...`), which refuse anyone who is not an admin. The admin runs carry their model's
+  `modelName`, so the admin page reads no engine metadata.
+
+### Workbench Terminal
+
+- Every workbench in `components/workbench/` has a Pixel terminal in its bottom border, and
+  Open Terminal and New Terminal in its command palette. The one exception is the notebook
+  view on the share page, which shows only the notebook and its files.
+- `components/workbench/terminal/terminal-panel.tsx` is the shared panel: each tab is its own
+  REPL session (`TerminalConsolePanel` from `@semoss/terminal`), kept alive, and its value is
+  the session's insight id. Project workbenches register `PROJECT_TERMINAL_PANEL`
+  (`project/project-terminal-panel.tsx`, type `project-terminal`), whose insight opens in the
+  project and whose console suggests the project's reactors; the Insight file explorer follows
+  these. Engine workbenches, the admin query workbench and My Files register `TERMINAL_PANEL`
+  (type `terminal`), which runs in a plain insight.
+- `spawn-terminal.ts` opens another terminal of the same type, numbered after the open ones, in
+  the tabset or border the one it starts from sits in. The tab's New terminal button
+  (`terminal-new-control.tsx`) and the New Terminal command (`createNewTerminalCommand` in
+  `workbench.presets.ts`) both go through it; the command is how a phone opens one, since the
+  mobile shell draws no panel controls.
+- In the database and admin query workbenches, query results dock in the bottom border ahead
+  of the terminal, in run order, so the border opens on them.
+- A workbench's cached layout replaces its default. A change to a default layout bumps the
+  version at the end of that workbench's cache name (`workbench-layout--<id>--<version>`), or
+  people who already opened it never see the change.
+
 ### Database Workbench
 
 - **`components/workbench/engine/database/`** is a database's query workbench: query panels,
@@ -375,6 +453,37 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
 - The guardrail's logo is `TYPESAFE.png`, on its import card and, through `ENGINE_IMAGES` in
   `@semoss/shared`, on its catalog card.
 
+### Engine Guardrails
+
+- **`components/engine/engine-guardrail-settings.tsx`** is an engine's Settings > Guardrails
+  section, for every engine type but a guardrail. It reads and saves the engine's pipeline.json
+  with `GetEngineGuardrailConfig` and `UpdateEngineGuardrailConfig`: the rules (a method and its
+  request and response checks) and the hit limits.
+- **Checks are named for hit limits by their `checkId`.** Each check keeps one in its params.
+  A new check, or one loaded without one, gets the next id in order (`check0`, `check1`, ...),
+  and a new limit the next `limit0`, `limit1`, ..., each one past the highest in the
+  configuration (`nextOrderedId`), so no id is handed out twice.
+- **The hit limit files:**
+  - `guardrail-hit-limit.ts` holds the limit schema and its load, save and validation helpers.
+  - `guardrail-hit-limits-field.tsx` and `guardrail-hit-limit-field.tsx` edit the limits.
+  - `guardrail-duration-field.tsx` takes a window or a lock as a number and a unit, in a box of
+    its own with its title and hint.
+  - A limit reads in order: the checks it counts, what happens when it is reached, then one
+    row of boxes (the hits, and for a user lock the window and the lock), each box holding its
+    own title and controls. Under the row, `describeGuardrailHitLimit` says what the limit does
+    in one sentence, such as "Locks the user out for 1 hour once they reach 3 hits within 1 day."
+  - The limits start folded away under their count, as the SQL policy lists do, with Add Limit
+    under the last one. A save attempt that finds a problem in one opens them. Folded with
+    problems, the header says Needs changes.
+- **What a method offers comes from the backend's interceptable methods.** Return guardrail
+  message is offered only where a model response comes back (`guardrailCanRespond`). A response
+  check is warned about from `resultGuardable`.
+- **Limit errors wait for a save attempt** while there are unsaved edits, as a new rule's do.
+- **`guardrail-locked-users.tsx`** lists the users locked out of the engine
+  (`GetEngineGuardrailLocks`, from `api/guardrails.ts`), each with PersonIdentity and, for
+  editors, an Unlock (`ClearEngineGuardrailLock`). It shows once the saved configuration has a
+  user limit, since only those lock anyone out.
+
 ### Model Router
 
 - **`components/import/model/router-config-field.tsx`** edits a Model Router's `router.json`, in
@@ -398,6 +507,96 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   engines of those types, each with its logo, name and id. The form keeps only the engine id;
   the picker remembers the chosen engine to show its name and logo.
 
+### Engine Actions, Restart and Reload
+
+The engine actions and the app reload call the SDK's `cloneEngine`, `restartEngine`
+(`libs/sdk/src/api/engine.ts`) and `reloadApp` (`libs/sdk/src/api/app.ts`). The backend runs
+restart and reload on every server in a cluster.
+
+- **Actions menus.** `components/shared/actions-menu.tsx` is the header's Actions dropdown: it
+  takes the actions the viewer has and is not shown when there are none. It opens when the mouse
+  hovers over it, and on a click or from the keyboard; a click on a menu the hover opened keeps it
+  open. A menu the hover opened leaves focus where it is, when it opens and when it closes; one a
+  click or a key opened moves focus into it, and back to the button when it closes. Each menu
+  lists its actions with the roles the backend lets run them:
+  - `features/engine-actions/engine-actions-menu.tsx`, in the engine header
+    (`engine-tabs-layout.tsx`): Clone, Export and Restart, all for owners.
+  - `features/project-actions/project-actions-menu.tsx`, in the project header
+    (`project-tabs-layout.tsx`): Clone for the project's owners and for anyone who can
+    see a template (`project_is_template`), the backend's `userCanCloneProject`, and Export
+    for the owners of an app type (`APP_SETTINGS_TYPES`), an agent or a skill, through
+    `features/app-export/use-app-export.ts`, which the Import and Export section uses too.
+- **`features/engine-export/`** exports an engine (`ExportEngine`) and downloads the zip
+  (`use-engine-export.ts`), from the menu and from the Export section of Settings. An H2
+  database asks whether to include its data: `export-engine-dialog.tsx` from the menu, a switch
+  in the Settings section.
+- **`features/engine-clone/`** is `clone-engine-dialog.tsx`: it asks for the clone's name,
+  starting from the engine's name followed by "Copy", and clones it (`CloneEngine`) into a private
+  engine the user owns, with a copy of its files, settings, metadata and image. Its access is not
+  copied. A failed clone stays in the dialog; a clone opens the clone's page. The menu gives the
+  dialog a new key each time it opens, so the name starts over.
+- **`features/engine-restart/`** is `restart-engine-dialog.tsx`: it confirms, then closes the
+  engine (`CloseEngine`), which stops the python process it owns, so its next use starts it with
+  its current files.
+- **`features/app-python-reload/`** is the Python card in the Python and Reactors section of an
+  app's Settings (`pages/app/app-python-reactors-settings-page.tsx`). Reload Python Files
+  (`ReloadProject`) clears the app modules python has cached, so the next run imports the current
+  .py files without restarting python.
+
+### Settings Tabs
+
+Every engine and project Settings tab has the same view: a left menu of sections with the open
+section beside it, in `components/catalog/catalog-settings-frame.tsx`. The frame sizes to its own
+width (a container query), so on a narrow page or panel the menu becomes a scrolling row above the
+section. Each kind lists its sections once, and the routes, the menu and the workbench panel all
+read that list:
+
+- Each list is written in the order the menu shows it: alphabetical by name, with Dangerous
+  always last. Nothing sorts it at runtime, so a new section goes in its place by name, before
+  Dangerous. The section tests check the order.
+- **Engines** (`pages/engine/engine-settings-sections.tsx`): Description, Image and Tags for every
+  type, Guardrails for every type but a guardrail, Model Settings for a model, and Export and
+  Dangerous for owners. Each
+  section's `isAvailable` decides who has it. `buildEngineSettingsRoute` in `engine.routes.tsx`
+  declares every section; `EngineSettingsLayout` shows the ones the viewer has on the engine.
+- **Projects** (`pages/project/project-settings-sections.tsx`): Description, Image and Tags for
+  every project type, agents, skills and notebooks included, Import and Export, Portal, and
+  Python and Reactors for the owners of an app (`CODE`, `BLOCKS`, `AUTOMATION`, `INSIGHT`), and
+  Dangerous for the owners of any project. `buildProjectSettingsRoute` declares every section;
+  `ProjectSettingsLayout` shows the ones the viewer has and supplies the `SettingsContext` the
+  app sections read.
+- **Dangerous** holds the delete, `features/resource-delete/delete-resource-card.tsx`, which
+  confirms with `DeleteEntityDialog` and goes back to the catalog after; the Access Control tab
+  has no delete. `use-delete-resource.ts` picks the pixel from the type
+  (`delete-request.ts`) and is shared with `SettingsTiles`, whose delete tile stays on the admin
+  settings pages.
+- **Every section card looks the same.** A `Card` whose `CardHeader` holds a plain `CardTitle`
+  (no heading element inside it), a `CardDescription` and the card's actions in a `CardAction`
+  with `self-center`. The header has `border-b` when the card has a `CardContent` below it, and
+  none when the header is the whole card. Actions are `size="sm"` buttons with Title Case
+  labels:
+  - **Edits** (Description, Tags, Image, Model Settings, Prices, Guardrails, Routing): Discard
+    (`outline`) and Save (`default`), shown only once there is something to save. While saving,
+    both are disabled and Save shows a `Spinner` and "Saving...". An edit that spans the card,
+    such as the image or guardrail form, makes the `Form` wrap the whole card, so the header's
+    Save submits it.
+  - **One-off actions** (Publish, Reload Python Files, Compile and Deploy, Update, Export, the
+    automation import and exports): a leading icon that the `Spinner` replaces while it runs,
+    with the label in its "...ing" form. A section has at most one `default` button; the rest
+    are `outline`. Delete is the one `destructive` button, in Dangerous.
+  - A failed read or save shows a destructive `Alert`, a read in progress a centered `Spinner`.
+    Cards stacked in one section are `gap-4` apart.
+- **App sections:** Portal shows
+  the app's share link in this platform (`getAppShareUrl`, the link the Share dialog gives) and,
+  once published, the portal Monolith serves, each a `components/settings/settings-link-field.tsx`
+  with Copy and Open buttons. Python and Reactors has the Python card, then the app's reactors
+  with Compile and Deploy, which compiles them on every server and reads the list again.
+- On a page, `CatalogSettingsLayout` puts each section at its own path and opens the first one the
+  viewer has; a path to any other section, or none, goes there, and a path below a section goes
+  to the section. In a workbench panel, which has no routes, `CatalogSettingsPanel` keeps the open
+  section in state (`ProjectSettingsPanel`, the Settings tab of `ProjectDetailTabs`).
+- A new section goes in its kind's list, with the page that renders it.
+
 ## State Management
 
 - **Application state** is split among the existing stores, including session and config.
@@ -419,7 +618,7 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
   arbitrary sizes).
 - **Ad-hoc status color maps to fold into tokens when touched**:
   `components/engine/engine-metadata-display.tsx` (`BADGE_TONES`),
-  `pages/app/app-detail-tabs/commits-tab.tsx`, `pages/project/agent/agent-run-graph.tsx`.
+  `pages/app/app-detail-tabs/commits-tab.tsx`, `features/agent-activity/agent-run-graph.tsx`.
   Use `Badge` variants + `destructive`/`success`/`warning`/`chart-*` tokens instead.
 - Overlay migration and the ECharts exception follow [DESIGN.md](../../DESIGN.md).
 - **Scoped reference**: `src/components/ui/section/section.tsx` demonstrates a small local

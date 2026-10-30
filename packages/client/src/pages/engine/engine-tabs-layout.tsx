@@ -17,9 +17,9 @@ import {
 } from "@semoss/ui/next";
 import { setEngineDisplayName } from "@/api/engines";
 import { EngineAccessButton } from "@/components/engine/engine-access-button";
-import { EngineExportButton } from "@/components/engine/engine-export-button";
 import { NavbarHeader } from "@/components/shared/navbar-header";
 import { NavbarLeft } from "@/components/shared/navbar-left";
+import { EngineActionsMenu } from "@/features/engine-actions/engine-actions-menu";
 import { MyUsageLimitButton } from "@/features/usage-limit-path/my-usage-limit-button";
 import { useSession } from "@/hooks/use-session";
 import { useEngine } from "@/hooks/useEngine";
@@ -163,7 +163,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 							<>
 								<EngineAccessButton />
 
-								<EngineExportButton />
+								<EngineActionsMenu />
 								{/* anyone who can use a model can see their own limit on it */}
 								{type === "MODEL" &&
 								permission !== "DISCOVERABLE" ? (

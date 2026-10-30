@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { downloadBlob, safeHttpsUrl, setFavicon } from "./browser";
+import {
+	downloadBlob,
+	safeHttpsUrl,
+	scrollAncestorsToTop,
+	setFavicon,
+} from "./browser";
 
 afterEach(() => {
 	vi.restoreAllMocks();
@@ -75,5 +80,42 @@ describe("browser resources", () => {
 		const icon = document.querySelector('link[rel="icon"]');
 		expect(icon?.getAttribute("href")).toBe("data:image/svg+xml,<svg/>");
 		expect(icon?.getAttribute("type")).toBe("image/svg+xml");
+	});
+});
+
+describe("scrollAncestorsToTop", () => {
+	it("scrolls each scrolled ancestor to the top, and puts them back", () => {
+		document.body.innerHTML =
+			'<div id="outer"><div id="inner"><div id="untouched"><p id="view"></p></div></div></div>';
+		const outer = document.getElementById("outer") as HTMLElement;
+		const inner = document.getElementById("inner") as HTMLElement;
+		const untouched = document.getElementById("untouched") as HTMLElement;
+		outer.scrollTop = 120;
+		inner.scrollTop = 40;
+
+		const restore = scrollAncestorsToTop(document.getElementById("view"));
+
+		expect(outer.scrollTop).toBe(0);
+		expect(inner.scrollTop).toBe(0);
+		expect(untouched.scrollTop).toBe(0);
+		restore();
+		expect(outer.scrollTop).toBe(120);
+		expect(inner.scrollTop).toBe(40);
+		expect(untouched.scrollTop).toBe(0);
+	});
+
+	it("puts back an ancestor scrolled only after the call", () => {
+		document.body.innerHTML = '<div id="outer"><p id="view"></p></div>';
+		const outer = document.getElementById("outer") as HTMLElement;
+
+		const restore = scrollAncestorsToTop(document.getElementById("view"));
+		outer.scrollTop = 250;
+		restore();
+
+		expect(outer.scrollTop).toBe(0);
+	});
+
+	it("does nothing for no element", () => {
+		expect(() => scrollAncestorsToTop(null)()).not.toThrow();
 	});
 });

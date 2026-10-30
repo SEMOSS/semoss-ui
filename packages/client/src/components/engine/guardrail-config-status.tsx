@@ -74,7 +74,7 @@ export const GuardrailConfigStatus = ({
 						Guardrails are not enabled yet.
 					</span>{" "}
 					This engine has no pipeline file, so every request and
-					response reaches the model unchecked. {savingHint}
+					response reaches it unchecked. {savingHint}
 				</GuardrailNotice>
 			)}
 

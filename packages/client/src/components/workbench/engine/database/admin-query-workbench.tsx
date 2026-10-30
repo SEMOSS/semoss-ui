@@ -32,6 +32,11 @@ import {
 	createDatabaseWorkbenchStore,
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
+import { TERMINAL_PANEL } from "../../terminal/terminal-panel";
+import {
+	createNewTerminalCommand,
+	createOpenPanelCommand,
+} from "../../workbench.presets";
 import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";
 import { DATABASE_QUERY_PANEL } from "./database-query-panel";
 import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";
@@ -40,10 +45,10 @@ import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";
 const INITIAL_QUERY_PANEL_ID = "database-query-1";
 
 /**
- * The default arrangement: columns on the left and an empty bottom border kept
- * as the docking target for query results. No file/settings/assistant panels —
- * system databases have no engine asset space or engine settings, and a
- * privileged-SQL assistant is a separate decision.
+ * The default arrangement: columns on the left and the terminal in the bottom
+ * border, where query results dock ahead of it. No file/settings/assistant
+ * panels: system databases have no engine asset space or engine settings, and
+ * a privileged-SQL assistant is a separate decision.
  */
 const ADMIN_QUERY_LAYOUT: WorkbenchLayout = {
 	tree: {
@@ -63,6 +68,7 @@ const ADMIN_QUERY_LAYOUT: WorkbenchLayout = {
 		},
 		[WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS.id]:
 			WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS,
+		[WORKBENCH_PANEL_RECORDS.TERMINAL.id]: WORKBENCH_PANEL_RECORDS.TERMINAL,
 	},
 	borders: {
 		left: {
@@ -70,7 +76,11 @@ const ADMIN_QUERY_LAYOUT: WorkbenchLayout = {
 			activeId: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
 			size: 300,
 		},
-		bottom: { panelIds: [], activeId: null, size: 300 },
+		bottom: {
+			panelIds: [WORKBENCH_COMPONENTS.TERMINAL],
+			activeId: null,
+			size: 300,
+		},
 	},
 };
 
@@ -79,6 +89,7 @@ export const ADMIN_QUERY_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.DATABASE_COLUMNS]: DATABASE_COLUMNS_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_QUERY]: DATABASE_QUERY_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: DATABASE_RESULTS_PANEL,
+	[WORKBENCH_COMPONENTS.TERMINAL]: TERMINAL_PANEL,
 };
 
 /**
@@ -96,7 +107,7 @@ export const AdminQueryWorkbench: React.FC = () => {
 	// One arrangement per system database. `engine.engine_id` is the selected
 	// database — the page builds this context from it.
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		`workbench-layout--admin-query--${engine.engine_id}--1`,
+		`workbench-layout--admin-query--${engine.engine_id}--2`,
 		ADMIN_QUERY_LAYOUT,
 	);
 	const [isMaximized, setIsMaximized] = useState(false);
@@ -131,6 +142,12 @@ export const AdminQueryWorkbench: React.FC = () => {
 				);
 			},
 		},
+		createOpenPanelCommand({
+			id: "workbench.terminal.open",
+			label: "Open Terminal",
+			type: WORKBENCH_COMPONENTS.TERMINAL,
+		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.TERMINAL),
 		{
 			id: "workbench.database-query.open",
 			category: "Database",

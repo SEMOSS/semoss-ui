@@ -72,7 +72,7 @@ export const useRoomConnectorHost = (
 	const onAddToContext = useCallback(
 		(file: RoomSavedFile) => {
 			room.refreshSidebarFileExplorer();
-			if (!nextMessageRoom.acceptsAttachment(file.name)) {
+			if (!nextMessageRoom.shouldAttachToModel(file.name)) {
 				toast.error(
 					t("sources.notAccepted", {
 						name: file.name,

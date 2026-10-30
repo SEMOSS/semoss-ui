@@ -309,12 +309,7 @@ it.each([
 				{
 					type: "text",
 					text: threadCommand(
-						{
-							threadId: completed.thread.id,
-							contextRevision: "revision",
-							contextText: "sources",
-							selectedSourceMessageId: "email",
-						},
+						{ selectedSourceMessageId: "email" },
 						"Draft a response to the selected email.",
 					),
 				},
@@ -567,12 +562,7 @@ it.each([undefined, { id: "email", subject: "Meeting" }])(
 				{
 					type: "text",
 					text: threadCommand(
-						{
-							threadId: completed.thread.id,
-							contextRevision: "revision",
-							contextText: "sources",
-							selectedSourceMessageId: "different-email",
-						},
+						{ selectedSourceMessageId: "different-email" },
 						"Draft a reply to this email using the thread context.",
 					),
 				},
@@ -618,7 +608,6 @@ it.each([undefined, { id: "email", subject: "Meeting" }])(
 
 // a session: compose an email, then ask in chat to change the open one
 function revisionTurn(
-	thread: ReturnType<typeof setup>["base"]["thread"],
 	openEmail: SubmittedThreadContext["openEmail"],
 ): ConversationMessage[] {
 	return [
@@ -642,15 +631,7 @@ function revisionTurn(
 			parts: [
 				{
 					type: "text",
-					text: threadCommand(
-						{
-							threadId: thread.id,
-							contextRevision: "1",
-							contextText: "{}",
-							openEmail,
-						},
-						"make it friendlier",
-					),
+					text: threadCommand({ openEmail }, "make it friendlier"),
 				},
 			],
 		},
@@ -675,7 +656,7 @@ function revisionTurn(
 it("updates the open editor in place when the assistant changes it", () => {
 	const { completed, composer } = setup();
 	const thread = { ...completed.thread, source: undefined };
-	const messages = revisionTurn(thread, {
+	const messages = revisionTurn({
 		id: composeDraftId("first-call"),
 		to: "ryan@example.com",
 		cc: "",
@@ -842,7 +823,7 @@ it("keeps the owner's edits when they typed while the assistant was writing", ()
 		thread,
 		allowedSources: new Set<string>(),
 	};
-	const first = revisionTurn(thread, undefined).slice(0, 1);
+	const first = revisionTurn(undefined).slice(0, 1);
 	const view = renderHook(useRoomEmailProposals, {
 		initialProps: {
 			...props,
@@ -859,7 +840,7 @@ it("keeps the owner's edits when they typed while the assistant was writing", ()
 		...draft.getSnapshot().values,
 		body: "<p>My own words</p>",
 	});
-	const messages = revisionTurn(thread, {
+	const messages = revisionTurn({
 		id: draft.seed.id,
 		to: "ryan@example.com",
 		cc: "",
@@ -901,7 +882,7 @@ it("preserves edits when a revision finishes after leaving the room and never re
 		mode: "new",
 		body: "Hi Ryan",
 	});
-	const messages = revisionTurn(thread, {
+	const messages = revisionTurn({
 		id: draft.seed.id,
 		to: "ryan@example.com",
 		cc: "",
@@ -958,7 +939,7 @@ it("reviews a completed revision before a paused send, without hydrating unrelat
 	const { completed, composer } = setup();
 	const thread = { ...completed.thread, source: undefined };
 	const draftId = composeDraftId("first-call");
-	const messages = revisionTurn(thread, {
+	const messages = revisionTurn({
 		id: draftId,
 		to: "ryan@example.com",
 		cc: "",

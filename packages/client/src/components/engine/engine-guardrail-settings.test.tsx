@@ -20,6 +20,7 @@ const INTERCEPTABLE_METHODS = vi.hoisted(() => [
 		deprecated: false,
 		returnType: "AskModelEngineResponse",
 		returnsModelResponse: true,
+		resultGuardable: true,
 		arguments: [
 			{
 				name: "arg0",
@@ -44,6 +45,7 @@ const INTERCEPTABLE_METHODS = vi.hoisted(() => [
 		deprecated: true,
 		returnType: "AskModelEngineResponse",
 		returnsModelResponse: true,
+		resultGuardable: true,
 		arguments: [
 			{
 				name: "arg0",
@@ -56,7 +58,7 @@ const INTERCEPTABLE_METHODS = vi.hoisted(() => [
 	},
 ]);
 
-/** Builds a GetModelGuardrailConfig response with the given overrides. */
+/** Builds a GetEngineGuardrailConfig response with the given overrides. */
 const buildConfig = (overrides: Record<string, unknown> = {}) => ({
 	engineId: "model-1",
 	configured: true,
@@ -74,7 +76,6 @@ const buildConfig = (overrides: Record<string, unknown> = {}) => ({
 						blockOnGuardrailFailure: false,
 						maskOnGuardrailFailure: false,
 						respondWithGuardrailMessage: true,
-						closeRoomOnBlock: false,
 						inputMapping: { prompt: "arg0" },
 					},
 				},
@@ -112,13 +113,22 @@ const buildConfig = (overrides: Record<string, unknown> = {}) => ({
 });
 
 const CONFIG = vi.hoisted(() => ({ current: null as unknown }));
+const LOCKS = vi.hoisted(() => ({ current: [] as unknown[] }));
 
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: (pixel: string) => {
-		if (pixel.startsWith("GetModelGuardrailConfig")) {
+		if (pixel.startsWith("GetEngineGuardrailConfig")) {
 			return {
 				status: "SUCCESS",
 				data: CONFIG.current,
+				error: undefined,
+				refresh: () => {},
+			};
+		}
+		if (pixel.startsWith("GetEngineGuardrailLocks")) {
+			return {
+				status: "SUCCESS",
+				data: LOCKS.current,
 				error: undefined,
 				refresh: () => {},
 			};
@@ -196,6 +206,13 @@ const renderSettings = (overrides: Record<string, unknown> = {}) => {
 	return render(
 		<EngineGuardrailSettings engineId="model-1" permission="OWNER" />,
 	);
+};
+
+/** Opens a saved check, which starts collapsed, and returns it. */
+const expandCheck = async (testId: string) => {
+	const entry = await screen.findByTestId(testId);
+	fireEvent.click(within(entry).getByRole("button", { expanded: false }));
+	return entry;
 };
 
 test("separates request and response checks into tabs", async () => {
@@ -324,6 +341,106 @@ test("keeps the selected phase when switching rules", async () => {
 	);
 });
 
+test("opens with the saved checks collapsed", async () => {
+	renderSettings();
+
+	for (const testId of [
+		"engine-guardrail-settings--pipeline-0-input-entry-0",
+		"engine-guardrail-settings--pipeline-0-input-entry-1",
+	]) {
+		const entry = await screen.findByTestId(testId);
+		expect(
+			within(entry).getByRole("button", { expanded: false }),
+		).toBeInTheDocument();
+	}
+	expect(screen.queryByText("Inputs")).not.toBeInTheDocument();
+});
+
+test("opens a check added since the last save", async () => {
+	renderSettings();
+
+	fireEvent.click(
+		await screen.findByTestId(
+			"engine-guardrail-settings--pipeline-0-input-add",
+		),
+	);
+
+	// the new check is open to be filled in, and the saved ones stay closed
+	const added = screen.getByTestId(
+		"engine-guardrail-settings--pipeline-0-input-entry-2",
+	);
+	expect(
+		within(added).getByRole("button", { expanded: true }),
+	).toBeInTheDocument();
+	expect(
+		within(
+			screen.getByTestId(
+				"engine-guardrail-settings--pipeline-0-input-entry-0",
+			),
+		).getByRole("button", { expanded: false }),
+	).toBeInTheDocument();
+});
+
+test("brings a new check into view with its engine picker focused", async () => {
+	renderSettings();
+	const scrollIntoView = vi.mocked(HTMLElement.prototype.scrollIntoView);
+	scrollIntoView.mockClear();
+
+	fireEvent.click(
+		await screen.findByTestId(
+			"engine-guardrail-settings--pipeline-0-input-add",
+		),
+	);
+
+	const added = screen.getByTestId(
+		"engine-guardrail-settings--pipeline-0-input-entry-2",
+	);
+	expect(within(added).getByLabelText("Check with")).toHaveFocus();
+	// the check itself is scrolled to, from its top, not a field further down
+	expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
+	expect(scrollIntoView.mock.contexts).toContain(added);
+});
+
+test("offers Save after removing a check", async () => {
+	renderSettings();
+
+	expect(
+		screen.queryByTestId("engine-guardrail-settings--save-btn"),
+	).not.toBeInTheDocument();
+	fireEvent.click(
+		await screen.findByTestId(
+			"engine-guardrail-settings--pipeline-0-input-entry-1-remove",
+		),
+	);
+
+	expect(
+		screen.getByTestId("engine-guardrail-settings--save-btn"),
+	).toBeInTheDocument();
+});
+
+test("offers Save after removing the only rule", async () => {
+	renderSettings();
+
+	fireEvent.click(
+		await screen.findByTestId(
+			"engine-guardrail-settings--remove-pipeline-btn",
+		),
+	);
+	fireEvent.click(
+		await screen.findByTestId(
+			"engine-guardrail-settings--remove-pipeline-confirm",
+		),
+	);
+
+	// an empty rule list is still a change from the saved one
+	expect(
+		screen.getByTestId("engine-guardrail-settings--empty-state"),
+	).toBeInTheDocument();
+	expect(
+		screen.getByTestId("engine-guardrail-settings--save-btn"),
+	).toBeInTheDocument();
+});
+
 test("confirms before removing a rule", async () => {
 	renderSettings();
 
@@ -418,7 +535,7 @@ test("holds blocking problems back until a save is attempted", async () => {
 
 test("reports a stored rule's problems without waiting for a save", async () => {
 	// a configuration saved with a problem, or an engine deleted since, is not an
-	// unfinished edit, and Save is disabled while nothing is dirty
+	// unfinished edit, and Save shows only once something changes
 	renderSettings({
 		pipelines: {
 			askRoom: {
@@ -440,8 +557,8 @@ test("reports a stored rule's problems without waiting for a save", async () => 
 		await screen.findByTestId("engine-guardrail-settings--errors"),
 	).toHaveTextContent("needs a guardrail engine");
 	expect(
-		screen.getByTestId("engine-guardrail-settings--save-btn"),
-	).toBeDisabled();
+		screen.queryByTestId("engine-guardrail-settings--save-btn"),
+	).not.toBeInTheDocument();
 });
 
 test("counts a rule's problems in the list, not on the closed control", async () => {
@@ -560,6 +677,7 @@ test("offers the engine's reported methods instead of free text", async () => {
 
 test("offers the selected method's arguments for a mapping row", async () => {
 	renderSettings();
+	await expandCheck("engine-guardrail-settings--pipeline-0-input-entry-0");
 
 	const argumentPicker = await screen.findByTestId(
 		"engine-guardrail-settings--pipeline-0-input-entry-0-mapping-0-args",
@@ -581,6 +699,8 @@ test("exposes every failure option and reveals the block settings", async () => 
 	expect(
 		await screen.findByRole("tab", { name: /Request/ }),
 	).toBeInTheDocument();
+	await expandCheck("engine-guardrail-settings--pipeline-0-input-entry-0");
+	await expandCheck("engine-guardrail-settings--pipeline-0-input-entry-1");
 	expect(screen.getAllByLabelText(/^Block/)).toHaveLength(2);
 	expect(screen.getAllByLabelText(/^Mask and continue/)).toHaveLength(2);
 	expect(screen.getAllByLabelText(/^Return guardrail message/)).toHaveLength(
@@ -594,13 +714,10 @@ test("exposes every failure option and reveals the block settings", async () => 
 		"engine-guardrail-settings--pipeline-0-input-entry-0",
 	);
 	expect(
-		within(responseEntry).queryByText("Close room after block"),
+		within(responseEntry).queryByLabelText("Custom block message"),
 	).not.toBeInTheDocument();
 
 	fireEvent.click(within(responseEntry).getByLabelText(/^Block/));
-	expect(
-		within(responseEntry).getByText("Close room after block"),
-	).toBeInTheDocument();
 	expect(
 		within(responseEntry).getByLabelText("Custom block message"),
 	).toBeInTheDocument();
@@ -609,7 +726,7 @@ test("exposes every failure option and reveals the block settings", async () => 
 test("keeps tool results screened until a check opts out", async () => {
 	renderSettings();
 
-	const entry = await screen.findByTestId(
+	const entry = await expandCheck(
 		"engine-guardrail-settings--pipeline-0-input-entry-0",
 	);
 	expect(within(entry).getByLabelText(/^Screen every turn/)).toBeChecked();
@@ -639,7 +756,7 @@ test("offers no tool-result setting on a call that carries none", async () => {
 		},
 	});
 
-	const entry = await screen.findByTestId(
+	const entry = await expandCheck(
 		"engine-guardrail-settings--pipeline-0-input-entry-0",
 	);
 	expect(
@@ -650,7 +767,7 @@ test("offers no tool-result setting on a call that carries none", async () => {
 test("shows the parameter wiring without an extra disclosure step", async () => {
 	renderSettings();
 
-	const responseEntry = await screen.findByTestId(
+	const responseEntry = await expandCheck(
 		"engine-guardrail-settings--pipeline-0-input-entry-0",
 	);
 	expect(
@@ -747,8 +864,9 @@ test("flags a guardrail engine that no longer exists", async () => {
 		},
 	});
 
+	await expandCheck("engine-guardrail-settings--pipeline-0-input-entry-0");
 	expect(
-		await screen.findByTestId(
+		screen.getByTestId(
 			"engine-guardrail-settings--pipeline-0-input-entry-0-engine-missing",
 		),
 	).toHaveTextContent("This guardrail engine no longer exists");
@@ -840,7 +958,7 @@ test("accepts a response check reading result and serializes the output reactor"
 	).toHaveTextContent("GenericGuardrailOutputReactor");
 });
 
-test("warns when the intercepted call returns no model response", async () => {
+test("warns when the intercepted call returns nothing a guardrail can screen", async () => {
 	renderSettings({
 		pipelines: {
 			listBatches: {
@@ -864,6 +982,7 @@ test("warns when the intercepted call returns no model response", async () => {
 				deprecated: false,
 				returnType: "BatchListResponse",
 				returnsModelResponse: false,
+				resultGuardable: false,
 				arguments: [],
 			},
 		],
@@ -872,7 +991,7 @@ test("warns when the intercepted call returns no model response", async () => {
 	expect(
 		await screen.findByTestId("engine-guardrail-settings--warnings"),
 	).toHaveTextContent(
-		"listBatches returns BatchListResponse rather than a model response",
+		"listBatches returns BatchListResponse, which carries no text a guardrail can screen",
 	);
 });
 
@@ -882,7 +1001,7 @@ test("lets a viewer inspect the wiring without editing it", async () => {
 		<EngineGuardrailSettings engineId="model-1" permission="READ_ONLY" />,
 	);
 
-	const responseEntry = await screen.findByTestId(
+	const responseEntry = await expandCheck(
 		"engine-guardrail-settings--pipeline-0-input-entry-0",
 	);
 	expect(within(responseEntry).getByText("Inputs")).toBeInTheDocument();
@@ -892,4 +1011,73 @@ test("lets a viewer inspect the wiring without editing it", async () => {
 	expect(
 		screen.queryByTestId("engine-guardrail-settings--add-pipeline-btn"),
 	).not.toBeInTheDocument();
+});
+
+test("shows the saved hit limits with the checks they count, and who is locked out", async () => {
+	LOCKS.current = [
+		{
+			userId: "alice",
+			userType: "NATIVE",
+			name: "Alice",
+			email: "alice@example.com",
+			limitId: "lock",
+			lockedAt: "2026-10-29T11:00:00Z",
+			lockedUntil: "2026-10-29T13:00:00Z",
+		},
+	];
+	renderSettings({
+		pipelines: {
+			askRoom: {
+				input: [
+					{
+						reactorClass: INPUT_REACTOR,
+						params: {
+							checkId: "toxicity",
+							guardrailEngineId: "guardrail-1",
+							blockOnGuardrailFailure: true,
+							inputMapping: { prompt: "arg0" },
+						},
+					},
+				],
+			},
+		},
+		hitLimits: [
+			{
+				limitId: "lock",
+				checks: ["toxicity"],
+				hits: 5,
+				scope: "USER",
+				windowMinutes: 1440,
+				lockMinutes: 60,
+			},
+		],
+	});
+
+	// the limits start folded away under their count
+	const toggle = await screen.findByRole("button", {
+		name: /^Hit Limits 1 limit/,
+	});
+	expect(
+		screen.queryByTestId("engine-guardrail-settings--hit-limits-0"),
+	).not.toBeInTheDocument();
+	fireEvent.click(toggle);
+
+	const limit = await screen.findByTestId(
+		"engine-guardrail-settings--hit-limits-0",
+	);
+	expect(within(limit).getByText("Locks the user out")).toBeInTheDocument();
+	expect(within(limit).getByLabelText(/Policy guardrail/)).toBeChecked();
+	expect(
+		within(limit).getByTestId(
+			"engine-guardrail-settings--hit-limits-0-summary",
+		),
+	).toHaveTextContent(
+		"Locks the user out for 1 hour once they reach 5 hits within 1 day.",
+	);
+	expect(within(limit).getByLabelText("Lock unit")).toHaveTextContent(
+		"Hours",
+	);
+	expect(await screen.findByText("Alice")).toBeInTheDocument();
+	expect(screen.getByRole("button", { name: /Unlock/ })).toBeInTheDocument();
+	LOCKS.current = [];
 });

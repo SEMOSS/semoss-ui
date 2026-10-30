@@ -1,4 +1,5 @@
 export * from "./file.types";
+export { type FileEditorKind, getFileEditorKind } from "./file-editor-kind";
 export * from "./file-editor-path-events";
 export * from "./file-explorer";
 export * from "./file-explorer.adapters";

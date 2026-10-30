@@ -103,6 +103,7 @@ function setup(overrides: Partial<EmailContext> = {}, messageId?: string) {
 		selectSourceMessage: vi.fn(),
 		replyToSource: vi.fn(),
 		openDraft: vi.fn(),
+		openItem: vi.fn(),
 		requestSend: vi.fn(),
 		...overrides,
 	};

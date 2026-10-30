@@ -1,11 +1,17 @@
-import { Copy, Plus, Save, Trash2, Undo2 } from "lucide-react";
+import { Copy, Plus, Trash2 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import {
+	Alert,
+	AlertDescription,
 	Badge,
 	Button,
 	Card,
+	CardAction,
+	CardDescription,
+	CardHeader,
+	CardTitle,
 	cn,
 	Dialog,
 	DialogClose,
@@ -22,11 +28,13 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Separator,
 	Spinner,
 	Tabs,
 	TabsList,
 	TabsTrigger,
 	toast,
+	useFieldArray,
 	useForm,
 	zodResolver,
 } from "@semoss/ui/next";
@@ -39,7 +47,7 @@ import {
 	extractGuardrailFileStatus,
 	extractInterceptableMethods,
 	extractResultArgumentName,
-	type GetModelGuardrailConfigResponse,
+	type GetEngineGuardrailConfigResponse,
 	GUARDRAIL_ALL_METHODS,
 	type GuardrailConfigFormValue,
 	type GuardrailConfigIssue,
@@ -50,14 +58,17 @@ import {
 	validateGuardrailConfig,
 } from "./engine-guardrail-settings.constants";
 import { GuardrailConfigStatus } from "./guardrail-config-status";
+import { guardrailHitLimitChecks } from "./guardrail-hit-limit";
+import { GuardrailHitLimitsField } from "./guardrail-hit-limits-field";
 import { GuardrailIssueList } from "./guardrail-issue-list";
+import { GuardrailLockedUsers } from "./guardrail-locked-users";
 import {
 	GuardrailPipelineField,
 	type GuardrailRevealTarget,
 } from "./guardrail-pipeline-field";
 
 export interface EngineGuardrailSettingsProps {
-	/** Id of the model engine */
+	/** Id of the engine, of any type but a guardrail */
 	engineId: string;
 
 	/** User's permission for the engine */
@@ -70,7 +81,7 @@ export interface EngineGuardrailSettingsProps {
 type GuardrailEditorMode = "form" | "json";
 
 /**
- * Model guardrail editor. One rule is edited at a time, chosen from a selector
+ * An engine's guardrail editor. One rule is edited at a time, chosen from a selector
  * above the editor so the full width goes to the rule's checks.
  */
 export const EngineGuardrailSettings = ({
@@ -83,13 +94,21 @@ export const EngineGuardrailSettings = ({
 	const ruleSelectId = useId();
 	const isEditable = permission === "OWNER" || permission === "EDIT";
 
-	const getConfig = usePixel<GetModelGuardrailConfigResponse>(
-		engineId ? `GetModelGuardrailConfig(engine=["${engineId}"]);` : "",
+	const getConfig = usePixel<GetEngineGuardrailConfigResponse>(
+		engineId ? `GetEngineGuardrailConfig(engine=["${engineId}"]);` : "",
 	);
 
 	const form = useForm<GuardrailConfigFormValue>({
 		resolver: zodResolver(guardrailConfigSchema),
-		defaultValues: { pipelines: [] },
+		defaultValues: { pipelines: [], hitLimits: [] },
+	});
+	// Rules are added and removed through a field array, as their checks are.
+	// A setValue of the whole list reports no change when the list it leaves is
+	// empty, so removing the last rule would leave Save hidden.
+	const { append: appendPipeline, remove: removePipelineAt } = useFieldArray({
+		control: form.control,
+		name: "pipelines",
+		keyName: "fieldArrayId",
 	});
 	const [mode, setMode] = useState<GuardrailEditorMode>("form");
 	const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(
@@ -108,6 +127,7 @@ export const EngineGuardrailSettings = ({
 		Record<string, string>
 	>({});
 	const pipelines = form.watch("pipelines");
+	const hitLimits = form.watch("hitLimits");
 	const isDirty = form.formState.isDirty;
 	const isSubmitting = form.formState.isSubmitting;
 	const hasUnsavedChangesRef = useRef(false);
@@ -175,8 +195,18 @@ export const EngineGuardrailSettings = ({
 			})
 			.map((pipeline) => pipeline.id),
 	);
+	// the open rule's checks as last saved, which its editor opens collapsed
+	const savedSelectedPipeline = savedPipelines.find(
+		(candidate) => candidate.id === selectedPipeline?.id,
+	);
+	const savedEntryIds = new Set(
+		[
+			...(savedSelectedPipeline?.input ?? []),
+			...(savedSelectedPipeline?.output ?? []),
+		].flatMap((entry) => (entry?.id ? [entry.id] : [])),
+	);
 	const allIssues = collectGuardrailConfigIssues(
-		{ pipelines },
+		{ pipelines, hitLimits },
 		{ methods: interceptableMethods, resultArgumentName },
 	);
 	// A rule that was just added has no guardrail engine picked yet, so faulting
@@ -187,13 +217,27 @@ export const EngineGuardrailSettings = ({
 	// rather than an unfinished edit, and Save is disabled while nothing is
 	// dirty so there would be no way to ask for them. Advisory warnings always
 	// show; they describe the configuration rather than fault the reader.
+	// A limit's problems wait for a save attempt the same way while there are
+	// unsaved edits, since adding a limit or removing a check it counts is
+	// unfinished work rather than a fault.
 	const issues = allIssues.filter(
 		(issue) =>
 			issue.severity !== "error" ||
 			form.formState.isSubmitted ||
-			!issue.pipelineId ||
-			!dirtyPipelineIds.has(issue.pipelineId),
+			(issue.limitId
+				? !isDirty
+				: !issue.pipelineId || !dirtyPipelineIds.has(issue.pipelineId)),
 	);
+	const limitChecks = guardrailHitLimitChecks(
+		pipelines,
+		(engineId) =>
+			pickedEngineNames[engineId] ||
+			engineDetails[engineId]?.name ||
+			undefined,
+	);
+	const hasSavedUserLimit = (
+		form.formState.defaultValues?.hitLimits ?? []
+	).some((limit) => limit?.scope === "USER");
 	const errorCountByPipeline = new Map<string, number>();
 	for (const issue of issues) {
 		if (issue.severity !== "error" || !issue.pipelineId) {
@@ -213,20 +257,15 @@ export const EngineGuardrailSettings = ({
 		() =>
 			mode === "json"
 				? JSON.stringify(
-						JSON.parse(guardrailConfigToJson({ pipelines })),
+						JSON.parse(
+							guardrailConfigToJson({ pipelines, hitLimits }),
+						),
 						null,
 						2,
 					)
 				: "",
-		[mode, pipelines],
+		[mode, pipelines, hitLimits],
 	);
-
-	const updatePipelines = (next: GuardrailConfigFormValue["pipelines"]) => {
-		form.setValue("pipelines", next, {
-			shouldDirty: true,
-			shouldTouch: true,
-		});
-	};
 
 	const addPipeline = () => {
 		// start the rule on a call no other rule covers, so it does not open
@@ -239,8 +278,9 @@ export const EngineGuardrailSettings = ({
 			: (interceptableMethods.find(
 					(candidate) => !claimed.has(candidate.name),
 				)?.name ?? "");
-		const pipeline = createGuardrailPipeline(method);
-		updatePipelines([...pipelines, pipeline]);
+		const pipeline = createGuardrailPipeline(method, pipelines);
+		// focus stays on Add Rule rather than moving into the new rule
+		appendPipeline(pipeline, { shouldFocus: false });
 		setSelectedPipelineId(pipeline.id);
 		setMode("form");
 	};
@@ -249,8 +289,11 @@ export const EngineGuardrailSettings = ({
 		const index = pipelines.findIndex(
 			(pipeline) => pipeline.id === pipelineId,
 		);
+		if (index < 0) {
+			return;
+		}
 		const next = pipelines.filter((pipeline) => pipeline.id !== pipelineId);
-		updatePipelines(next);
+		removePipelineAt(index);
 		if (selectedPipelineId === pipelineId) {
 			setSelectedPipelineId(
 				next[Math.min(Math.max(index, 0), next.length - 1)]?.id || null,
@@ -301,7 +344,7 @@ export const EngineGuardrailSettings = ({
 	const handleSubmit = async (values: GuardrailConfigFormValue) => {
 		try {
 			const response = await runPixel(
-				`UpdateModelGuardrailConfig(engine=["${engineId}"], map=[${guardrailConfigToJson(values)}]);`,
+				`UpdateEngineGuardrailConfig(engine=["${engineId}"], map=[${guardrailConfigToJson(values)}]);`,
 			);
 			const result = response.pixelReturn?.[0];
 			if (
@@ -342,10 +385,12 @@ export const EngineGuardrailSettings = ({
 
 	if (getConfig.status === "ERROR") {
 		return (
-			<p className="text-destructive text-sm">
-				{getConfig.error?.message ||
-					"Unable to load the guardrail configuration."}
-			</p>
+			<Alert variant="destructive">
+				<AlertDescription>
+					{getConfig.error?.message ||
+						"Unable to load the guardrail configuration."}
+				</AlertDescription>
+			</Alert>
 		);
 	}
 
@@ -367,40 +412,30 @@ export const EngineGuardrailSettings = ({
 
 			<GuardrailIssueList issues={issues} onSelect={revealIssue} />
 
-			<Card className="gap-0 py-0">
+			<Card>
 				<Form
 					form={form}
 					onSubmit={handleSubmit}
 					onError={handleInvalid}
-					className="flex flex-col"
+					className="flex flex-col gap-6"
 				>
-					<div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-						<div className="min-w-0 space-y-1">
-							<div className="flex flex-wrap items-center gap-2">
-								<h2 className="font-semibold text-base">
-									Guardrails
-								</h2>
-								<Badge variant="outline">
-									{pipelines.length}{" "}
-									{pipelines.length === 1 ? "rule" : "rules"}
-								</Badge>
-								<Badge variant="outline">
-									{totalChecks}{" "}
-									{totalChecks === 1 ? "check" : "checks"}
-								</Badge>
-								{isDirty && (
-									<Badge variant="secondary">
-										Unsaved changes
-									</Badge>
-								)}
-							</div>
-							<p className="text-muted-foreground text-sm">
-								Screen model requests and responses. Saved
-								changes apply to the running engine immediately.
-							</p>
-						</div>
-
-						<div className="flex flex-wrap items-center gap-2">
+					<CardHeader className="border-b">
+						<CardTitle className="flex flex-wrap items-center gap-2">
+							Guardrails
+							<Badge variant="outline">
+								{pipelines.length}{" "}
+								{pipelines.length === 1 ? "rule" : "rules"}
+							</Badge>
+							<Badge variant="outline">
+								{totalChecks}{" "}
+								{totalChecks === 1 ? "check" : "checks"}
+							</Badge>
+						</CardTitle>
+						<CardDescription>
+							Screen this engine's requests and responses. Saved
+							changes apply to the running engine immediately.
+						</CardDescription>
+						<CardAction className="flex flex-wrap items-center justify-end gap-2 self-center">
 							<Tabs
 								value={mode}
 								onValueChange={(value) =>
@@ -412,42 +447,36 @@ export const EngineGuardrailSettings = ({
 									<TabsTrigger value="json">JSON</TabsTrigger>
 								</TabsList>
 							</Tabs>
-							{isEditable && (
+							{isEditable && isDirty && (
 								<>
 									<Button
 										type="button"
 										variant="outline"
 										size="sm"
 										onClick={handleDiscard}
-										disabled={!isDirty || isSubmitting}
+										disabled={isSubmitting}
 										data-testid="engine-guardrail-settings--cancel-btn"
 									>
-										<Undo2 className="size-4" aria-hidden />
 										Discard
 									</Button>
 									<Button
 										type="submit"
 										size="sm"
-										disabled={!isDirty || isSubmitting}
+										disabled={isSubmitting}
 										data-testid="engine-guardrail-settings--save-btn"
 									>
 										{isSubmitting ? (
 											<Spinner className="size-4" />
-										) : (
-											<Save
-												className="size-4"
-												aria-hidden
-											/>
-										)}
-										Save
+										) : null}
+										{isSubmitting ? "Saving..." : "Save"}
 									</Button>
 								</>
 							)}
-						</div>
-					</div>
+						</CardAction>
+					</CardHeader>
 
 					{mode === "json" ? (
-						<div className="space-y-2 p-4">
+						<div className="space-y-2 px-6">
 							<div className="flex flex-wrap items-center justify-between gap-2">
 								<p className="text-muted-foreground text-xs">
 									{isDirty
@@ -473,7 +502,7 @@ export const EngineGuardrailSettings = ({
 							</pre>
 						</div>
 					) : (
-						<div className="space-y-4 p-4">
+						<div className="space-y-4 px-6">
 							<div className="flex flex-wrap items-end gap-2">
 								<Field className="min-w-56 flex-1">
 									<FieldLabel htmlFor={ruleSelectId}>
@@ -597,6 +626,7 @@ export const EngineGuardrailSettings = ({
 								<GuardrailPipelineField
 									key={selectedPipeline.id}
 									value={selectedPipeline}
+									savedEntryIds={savedEntryIds}
 									activePhase={activePhase}
 									onPhaseChange={setActivePhase}
 									engineDetails={engineDetails}
@@ -656,10 +686,28 @@ export const EngineGuardrailSettings = ({
 									)}
 								</div>
 							)}
+
+							<Separator />
+
+							<GuardrailHitLimitsField
+								value={hitLimits}
+								checks={limitChecks}
+								issues={issues.filter((issue) => issue.limitId)}
+								disabled={!isEditable || isSubmitting}
+								idPrefix={`${fieldId}-hit-limit`}
+								testIdPrefix="engine-guardrail-settings--hit-limits"
+							/>
 						</div>
 					)}
 				</Form>
 			</Card>
+
+			{hasSavedUserLimit && (
+				<GuardrailLockedUsers
+					engineId={engineId}
+					isEditable={isEditable}
+				/>
+			)}
 
 			<Dialog
 				open={!!confirmRemoveId}

@@ -3,13 +3,11 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
 	Button,
-	Dialog,
-	DialogContent,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { ShareOverlay } from "@/components/ui";
+import { ShareAppDialog } from "@/components/ui/share/share-app-dialog";
 import { useProject } from "@/hooks";
 
 export const ProjectShareButton = observer(() => {
@@ -32,17 +30,11 @@ export const ProjectShareButton = observer(() => {
 				<TooltipContent>Share App</TooltipContent>
 			</Tooltip>
 
-			<Dialog
+			<ShareAppDialog
+				appId={project.project_id}
 				open={shareOpen}
-				onOpenChange={(o) => !o && setShareOpen(false)}
-			>
-				<DialogContent className="max-w-lg p-0">
-					<ShareOverlay
-						appId={project.project_id}
-						onClose={() => setShareOpen(false)}
-					/>
-				</DialogContent>
-			</Dialog>
+				onOpenChange={setShareOpen}
+			/>
 		</div>
 	);
 });

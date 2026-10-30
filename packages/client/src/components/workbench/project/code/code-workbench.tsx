@@ -34,6 +34,7 @@ import {
 } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../../workbench.presets";
@@ -162,16 +163,16 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 			restrict: ["OWNER"],
 		},
 		{
-			name: "Settings",
-			component: "settings",
-			restrict: ["OWNER"],
-		},
-		{
 			name: "Access Control",
 			component: "access-control",
 			restrict: ["OWNER", "EDIT"],
 		},
 		{ name: "Audit Trail", component: "audit", restrict: ["OWNER"] },
+		{
+			name: "Settings",
+			component: "settings",
+			restrict: ["OWNER", "EDIT"],
+		},
 		{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 	]),
 	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
@@ -326,6 +327,7 @@ export const CodeWorkbench: React.FC = () => {
 			label: "Open Terminal",
 			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
 		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.PROJECT_TERMINAL),
 		createOpenPanelCommand({
 			id: "workbench.project-engines.open",
 			label: "Open Available Engines",

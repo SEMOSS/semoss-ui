@@ -1,5 +1,3 @@
-import { Help } from "@/components/help";
-
 interface CatalogLayoutProps {
 	/** Main title for the catalog page */
 	title: React.ReactNode;
@@ -60,7 +58,6 @@ export const CatalogLayout = ({
 					{children}
 				</div>
 			</div>
-			<Help />
 		</div>
 	);
 };

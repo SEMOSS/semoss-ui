@@ -32,5 +32,41 @@ describe("legacy panel image MIME adapter", () => {
 				);
 			},
 		);
+
+		it.each([
+			"7z",
+			"avi",
+			"dmg",
+			"docm",
+			"exe",
+			"gz",
+			"heic",
+			"iso",
+			"jar",
+			"m4a",
+			"mov",
+			"mp3",
+			"mp4",
+			"msg",
+			"odp",
+			"ods",
+			"odt",
+			"pptm",
+			"psd",
+			"rar",
+			"tar",
+			"tgz",
+			"tif",
+			"tiff",
+			"wav",
+			"webm",
+			"xlsb",
+			"xlsm",
+			"zip",
+		])("preserves dev's download routing for .%s files", (extension) => {
+			expect(
+				getFilePanelType(`/files/sample.${extension.toUpperCase()}`),
+			).toBe(FILE_PANEL_TYPES.FILE_DOWNLOAD);
+		});
 	});
 });

@@ -1,7 +1,9 @@
-import { Fragment, useId, useState } from "react";
+import { Fragment, useContext, useId, useState } from "react";
 import { cn } from "@semoss/ui/next";
+import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import { ToolCallCard } from "@/features/tools/components/tool-call-card";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
+import { isOpenableTool } from "@/features/tools/utils/shown-item";
 import {
 	completedToolGroups,
 	type OwnedMessagePart,
@@ -11,6 +13,8 @@ import { MessageToolSummary } from "./message-tool-summary";
 /** Finished tool summaries keep each keyed row mounted, preserving UI and focus. */
 export function MessageToolActivity({ items }: { items: OwnedMessagePart[] }) {
 	const workbench = useToolWorkbench();
+	// a room can open what a result found, so that result's Open stays out of the fold
+	const canOpenResults = Boolean(useContext(RoomEmailContext));
 	const regionId = useId();
 	const [expandedTools, setExpandedTools] = useState<Set<string>>(
 		() => new Set(),
@@ -36,6 +40,7 @@ export function MessageToolActivity({ items }: { items: OwnedMessagePart[] }) {
 		if (part.type !== "tool") continue;
 		const displayMode = workbench.getToolDisplayMode(part.tool.id);
 		if (
+			(canOpenResults && isOpenableTool(part.tool)) ||
 			displayMode === "inline" ||
 			(displayMode === "workbench" && workbench.isOpen) ||
 			(!expandedTools.has(part.tool.id) &&

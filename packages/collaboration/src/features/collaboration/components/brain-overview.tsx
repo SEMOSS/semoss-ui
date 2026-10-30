@@ -116,6 +116,7 @@ export function BrainOverview() {
 							<PersonAvatar
 								name={person.name}
 								initials={person.initials}
+								email={person.email}
 							/>
 							<div className="min-w-0">
 								<Link

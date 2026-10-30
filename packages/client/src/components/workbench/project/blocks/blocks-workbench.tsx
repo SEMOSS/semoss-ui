@@ -36,6 +36,7 @@ import {
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import {
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../../workbench.presets";
@@ -170,13 +171,17 @@ export const BLOCKS_WORKBENCH_COMPONENTS: Record<
 			restrict: ["OWNER", "EDIT", "READ_ONLY"],
 		},
 		{ name: "GitHub", component: "github", restrict: ["OWNER"] },
-		{ name: "Settings", component: "settings", restrict: ["OWNER"] },
 		{
 			name: "Access Control",
 			component: "access-control",
 			restrict: ["OWNER", "EDIT"],
 		},
 		{ name: "Audit Trail", component: "audit", restrict: ["OWNER"] },
+		{
+			name: "Settings",
+			component: "settings",
+			restrict: ["OWNER", "EDIT"],
+		},
 		{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 	]),
 };
@@ -307,6 +312,7 @@ const BlocksWorkbenchDock = ({
 			label: "Open Terminal",
 			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
 		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.PROJECT_TERMINAL),
 		createOpenPanelCommand({
 			id: "workbench.project-settings.open",
 			label: "Open Settings",

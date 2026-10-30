@@ -12,7 +12,9 @@ import { RoomConnectorsProvider } from "@/features/room-connectors/room-connecto
 import { ROOM_EMAIL_PANEL_COMPONENTS } from "@/features/room-email/room-email-panel";
 import { RoomEmailProvider } from "@/features/room-email/room-email-provider";
 import { ROOM_EMAIL_SOURCE_PANEL_COMPONENTS } from "@/features/room-email/room-email-source-panel";
+import { ROOM_TEAMS_CHAT_PANEL_COMPONENTS } from "@/features/room-email/room-teams-chat-panel";
 import { ROOM_TEAMS_SOURCE_PANEL_COMPONENTS } from "@/features/room-email/room-teams-source-panel";
+import { ROOM_THREAD_EMAIL_PANEL_COMPONENTS } from "@/features/room-email/room-thread-email-panel";
 import type { RoomViewProps } from "@/features/rooms/types/room";
 import { ToolWorkbenchProvider } from "@/features/tools/components/tool-workbench-provider";
 import { TOOL_WORKBENCH_COMPONENTS } from "@/features/tools/tool-workbench.components";
@@ -26,6 +28,8 @@ const ROOM_COMPONENTS = {
 	...ROOM_EMAIL_PANEL_COMPONENTS,
 	...ROOM_EMAIL_SOURCE_PANEL_COMPONENTS,
 	...ROOM_TEAMS_SOURCE_PANEL_COMPONENTS,
+	...ROOM_TEAMS_CHAT_PANEL_COMPONENTS,
+	...ROOM_THREAD_EMAIL_PANEL_COMPONENTS,
 	...ROOM_SETTINGS_PANEL_COMPONENTS,
 };
 
@@ -77,25 +81,27 @@ export function RoomView({
 		parameters,
 	) => {
 		await onApproveTool(approval, parameters);
-		if (
-			approval.toolName !== "EditTopic" ||
-			typeof parameters.completeGoalId !== "string"
-		)
-			return;
-		const goalId = parameters.completeGoalId.trim();
-		if (!goalId) return;
+		if (approval.toolName !== "EditTopic") return;
 		const topicId =
-			typeof parameters.topicId === "string"
+			typeof parameters.topicId === "string" && parameters.topicId.trim()
 				? parameters.topicId
 				: undefined;
+		// a rename or a new topic goes by its new name
 		const topic =
 			typeof parameters.name === "string" && parameters.name.trim()
 				? parameters.name
-				: typeof parameters.topic === "string"
+				: typeof parameters.topic === "string" &&
+						parameters.topic.trim()
 					? parameters.topic
 					: undefined;
-		if (topicId || topic)
-			updates?.refreshTopicGoal({ topicId, topic }, goalId);
+		if (!topicId && !topic) return;
+		const goalId =
+			typeof parameters.completeGoalId === "string"
+				? parameters.completeGoalId.trim()
+				: "";
+		if (goalId) updates?.refreshTopicGoal({ topicId, topic }, goalId);
+		// a topic the assistant made, and emails it put in one, show without a reload
+		updates?.refreshTopic({ topicId, topic });
 	};
 	const session = sessions.find((candidate) => candidate.id === sessionId);
 	const { tools, toolCreatedAt } = useMemo(

@@ -923,7 +923,12 @@ export function RoomComposer({
 														setIsActionsOpen(false);
 													}}
 												>
-													<action.icon aria-hidden="true" />
+													<action.icon
+														aria-hidden="true"
+														className={
+															action.iconClassName
+														}
+													/>
 													{action.label}
 												</DropdownMenuItem>
 											))}

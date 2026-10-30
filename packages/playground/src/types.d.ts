@@ -60,6 +60,8 @@ export interface App {
 export interface Workspace {
 	workspace_id: string;
 	name: string;
+	/** Catalog display name for user-facing labels, when available. */
+	display_name?: string;
 	date_created: string; // ISO string
 	description: string;
 	system_prompt: string;

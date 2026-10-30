@@ -1,3 +1,4 @@
+import { type FileEditorKind, getFileEditorKind } from "@semoss/shared";
 import {
 	type CodeEditorMenuItem,
 	DEFAULT_CODE_EDITOR_MENU_ITEMS,
@@ -32,27 +33,20 @@ const READ_ONLY_CODE_EDITOR_MENU_ITEMS = DEFAULT_CODE_EDITOR_MENU_ITEMS.filter(
 	(item) => item.id === "copy" || item.id === "find",
 );
 
-const IMAGE_EXTENSIONS = new Set([
-	"bmp",
-	"gif",
-	"jpeg",
-	"jpg",
-	"png",
-	"svg",
-	"webp",
-]);
-
-const DOWNLOAD_ONLY_EXTENSIONS = new Set(["doc", "ppt", "xls"]);
-
-const FILE_PANEL_TYPES_BY_EXTENSION: Record<string, string> = {
+const OFFICE_FILE_PANEL_TYPES_BY_EXTENSION: Record<string, string> = {
 	docx: FILE_PANEL_TYPES.FILE_DOCX_VIEWER,
-	ipynb: FILE_PANEL_TYPES.FILE_NOTEBOOK_EDITOR,
-	markdown: FILE_PANEL_TYPES.FILE_MARKDOWN_EDITOR,
-	md: FILE_PANEL_TYPES.FILE_MARKDOWN_EDITOR,
-	pdf: FILE_PANEL_TYPES.FILE_PDF_VIEWER,
-	pptx: FILE_PANEL_TYPES.FILE_PPTX_VIEWER,
 	vsdx: FILE_PANEL_TYPES.FILE_VISIO_VIEWER,
 	xlsx: FILE_PANEL_TYPES.FILE_XLSX_VIEWER,
+};
+
+const FILE_PANEL_TYPES_BY_KIND: Record<FileEditorKind, string> = {
+	code: FILE_PANEL_TYPES.FILE_CODE_EDITOR,
+	download: FILE_PANEL_TYPES.FILE_DOWNLOAD,
+	image: FILE_PANEL_TYPES.FILE_IMAGE_VIEWER,
+	markdown: FILE_PANEL_TYPES.FILE_MARKDOWN_EDITOR,
+	notebook: FILE_PANEL_TYPES.FILE_NOTEBOOK_EDITOR,
+	pdf: FILE_PANEL_TYPES.FILE_PDF_VIEWER,
+	pptx: FILE_PANEL_TYPES.FILE_PPTX_VIEWER,
 };
 
 interface GetFileCodeEditorMenuItemsOptions {
@@ -128,16 +122,8 @@ export const getImageMimeType = (path: string): string => {
 export const getFilePanelType = (path: string): string => {
 	const extension = path.split(".").pop()?.toLowerCase() ?? "";
 
-	if (DOWNLOAD_ONLY_EXTENSIONS.has(extension)) {
-		return FILE_PANEL_TYPES.FILE_DOWNLOAD;
-	}
-
-	if (IMAGE_EXTENSIONS.has(extension)) {
-		return FILE_PANEL_TYPES.FILE_IMAGE_VIEWER;
-	}
-
 	return (
-		FILE_PANEL_TYPES_BY_EXTENSION[extension] ??
-		FILE_PANEL_TYPES.FILE_CODE_EDITOR
+		OFFICE_FILE_PANEL_TYPES_BY_EXTENSION[extension] ??
+		FILE_PANEL_TYPES_BY_KIND[getFileEditorKind(path)]
 	);
 };

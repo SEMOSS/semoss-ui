@@ -9,6 +9,62 @@ import type {
 
 const RUN_DATA_PAGE_SIZE = 50;
 
+export interface AutomationVersion {
+	id: string;
+	user: string;
+	date: string;
+	message: string;
+}
+
+/** Returns up to the backend maximum of 100 saved automation versions. */
+export async function listAutomationVersions(
+	appId: string,
+): Promise<AutomationVersion[]> {
+	const response = await runPixel(
+		`ListAutomationVersions(project=${JSON.stringify([appId])}, limit=["100"]);`,
+	);
+	throwPixelErrors(response.errors);
+	const output = response.pixelReturn?.[0]?.output;
+	if (
+		!Array.isArray(output) ||
+		!output.every(
+			(version): version is AutomationVersion =>
+				isRecord(version) &&
+				typeof version.id === "string" &&
+				version.id.length > 0 &&
+				typeof version.user === "string" &&
+				typeof version.date === "string" &&
+				typeof version.message === "string",
+		)
+	) {
+		throw new Error(
+			"Automation version history returned an invalid response.",
+		);
+	}
+	return output;
+}
+
+/** Restores a saved revision as a new version; callers must reload the definition. */
+export async function rollbackAutomation(
+	appId: string,
+	revision: string,
+	expectedRevision: string,
+): Promise<void> {
+	const response = await runPixel(
+		`RollbackAutomation(project=${JSON.stringify([appId])}, revision=${JSON.stringify([revision])}, expectedRevision=${JSON.stringify([expectedRevision])});`,
+	);
+	throwPixelErrors(response.errors);
+	const output = response.pixelReturn?.[0]?.output;
+	if (
+		!isRecord(output) ||
+		output.saved !== true ||
+		typeof output.revision !== "string" ||
+		output.revision.length === 0
+	) {
+		throw new Error("Automation rollback was not confirmed by the server.");
+	}
+}
+
 export interface AutomationRunFramePage {
 	headers: string[];
 	rows: unknown[][];

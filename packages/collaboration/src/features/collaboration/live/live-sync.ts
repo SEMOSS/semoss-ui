@@ -29,6 +29,14 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"snooze.expire",
 	"memory.server",
 	"topic.goal.server",
+	"topic.server",
+]);
+
+// what the server already holds when they land, even beside a user edit: a new topic with a server id would
+// otherwise be saved again as an accepted suggestion
+const SERVER_RECORDS = new Set<CollaborationCommand["type"]>([
+	"records.loaded",
+	"topic.server",
 ]);
 
 // a create returns the server id for the local one
@@ -57,6 +65,8 @@ export type LiveSync = ((change: CollaborationChange) => void) & {
 	settled: () => Promise<void>;
 	/** Keep session identities stable when a created row returns in a refresh. */
 	localId: (serverId: string) => string;
+	/** The server id of a row this page created, once `settled`; any other id as is. */
+	serverId: (localId: string) => string;
 };
 
 /** Queue-backed saver: changes go out one at a time and in order. */
@@ -76,7 +86,7 @@ export function createLiveSync(
 		// Hydration is already saved; diff a simultaneous user edit against the loaded records.
 		const previous = settled.commands.reduce(
 			(state, command) =>
-				command.type === "records.loaded"
+				SERVER_RECORDS.has(command.type)
 					? collaborationReducer(
 							state,
 							command,
@@ -117,6 +127,7 @@ export function createLiveSync(
 		settled: () => queue,
 		localId: (serverId: string): string =>
 			[...ids].find(([, value]) => value === serverId)?.[0] ?? serverId,
+		serverId: id,
 	});
 }
 
@@ -291,7 +302,12 @@ function planTopicParts(
 	);
 	for (const person of topic.people) {
 		const was = members.get(person.personId);
-		if (was && was.state === person.state && was.role === person.role)
+		if (
+			was &&
+			was.state === person.state &&
+			was.role === person.role &&
+			Boolean(was.vip) === Boolean(person.vip)
+		)
 			continue;
 		plan.statements.push(
 			pixel("BrainSetTopicPerson", {
@@ -299,6 +315,7 @@ function planTopicParts(
 				personId: person.personId,
 				state: person.state,
 				role: person.role || undefined,
+				vip: person.vip,
 			}),
 		);
 	}
@@ -655,6 +672,7 @@ const SETTINGS_FIELDS = [
 	"memory",
 	"draftFolderId",
 	"draftFolderName",
+	"syncEveryMinutes",
 ] as const;
 
 function planProfile(

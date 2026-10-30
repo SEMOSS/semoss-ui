@@ -14,7 +14,6 @@ import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
 import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
 import { useConfig, useEngine } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
 
 export interface EngineSettingsPageProps {
 	/**
@@ -35,7 +34,6 @@ export const EngineSettingsPage = ({
 	// bulk access management, effective permissions and teams go by the user's own access:
 	// an admin uses them in admin mode, from the settings pages
 	const canEditAccess = permission === "OWNER" || permission === "EDIT";
-	const navigate = useNavigate();
 	const isDirectoryAvailable = useConfig(
 		(state) => state.config.msGraphLookup === true,
 	);
@@ -64,9 +62,6 @@ export const EngineSettingsPage = ({
 						id={engine.engine_id}
 						name={catalog.name}
 						direction="row"
-						onDelete={() => {
-							navigate(catalog.path);
-						}}
 					/>
 				</section>
 				<section className="w-full">

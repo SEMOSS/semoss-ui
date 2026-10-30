@@ -2,10 +2,7 @@ import { getAgent } from "@/features/agents/api/get-agent";
 import { getHistoryChatDraft } from "@/features/daily-chat/new-chat-drafts";
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import { resolveThreadModel } from "@/features/thread-assistant/api/thread-model";
-import {
-	readThreadCommand,
-	setThreadAgent,
-} from "@/features/thread-assistant/thread-context";
+import { setThreadAgent } from "@/features/thread-assistant/thread-context";
 import * as runApi from "./api/agent-run-api";
 import { uploadRoomFiles } from "./api/upload-room-files";
 import {
@@ -303,11 +300,10 @@ it("keeps a pending upload and agent run bound to its room while another room in
 			media: [source.file.fileLocation],
 		}),
 	);
-	const request = vi.mocked(runApi.startAgentRun).mock.calls[0][1];
-	expect(readThreadCommand(request.command)?.context.context).toMatchObject({
-		sourceFile: source.file.fileLocation,
-		messages: source.messages,
-	});
+	// the thread reaches the model as the room file; no email is selected
+	expect(vi.mocked(runApi.startAgentRun).mock.calls[0][1].command).toBe(
+		"Summarize",
+	);
 	expect(first.getSnapshot().contextFiles).toEqual([]);
 	expect(second.getSnapshot().turn.messages).toEqual([]);
 });
@@ -800,7 +796,7 @@ it("does not mistake an earlier identical message for a newly uncertain submissi
 	await expect(
 		session.send({ text: "Check again", files: [] }),
 	).rejects.toThrow("Disconnected again");
-	expect(vi.mocked(runApi.startAgentRun).mock.calls[1][1].command).not.toBe(
+	expect(vi.mocked(runApi.startAgentRun).mock.calls[1][1].command).toBe(
 		previousCommand,
 	);
 	await session.reconnect();

@@ -171,6 +171,7 @@ export function MailboxStep({
 					<div className="flex items-center gap-4">
 						<PersonAvatar
 							name={overview.name || overview.address}
+							email={overview.address}
 							className="size-14 text-base ring-4 ring-primary/10"
 						/>
 						<div className="min-w-0">
@@ -302,6 +303,7 @@ export function MailboxStep({
 									>
 										<PersonAvatar
 											name={s.name || s.address}
+											email={s.address}
 											className="size-7"
 										/>
 										<span className="min-w-0 flex-1 truncate text-sm">
@@ -931,6 +933,7 @@ function PersonCard({
 		>
 			<PersonAvatar
 				name={person.name}
+				email={person.email}
 				className={featured ? "size-14 text-base" : "size-9"}
 			/>
 			<div className={cn("min-w-0", featured ? "w-full" : "flex-1")}>
@@ -1269,6 +1272,7 @@ export function PeopleStep({
 							>
 								<PersonAvatar
 									name={p.name}
+									email={p.email}
 									className="size-9"
 								/>
 								<div className="min-w-0 flex-1">
@@ -1323,6 +1327,7 @@ export function PeopleStep({
 								>
 									<PersonAvatar
 										name={p.name}
+										email={p.email}
 										className="size-9"
 									/>
 									<div className="min-w-0 flex-1">
@@ -1555,6 +1560,7 @@ export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 							>
 								<PersonAvatar
 									name={c.name}
+									email={c.email}
 									className="size-10"
 								/>
 								<span className="min-w-0">

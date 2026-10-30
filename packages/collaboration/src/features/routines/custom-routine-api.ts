@@ -5,6 +5,7 @@ import {
 	type CustomRoutineSettings,
 	customRoutineSchema,
 	customRoutineSettingsSchema,
+	routineDocumentsSchema,
 } from "./custom-routine-schema";
 
 /** Create (no routineId) or save one of the owner's routines. */
@@ -33,6 +34,21 @@ export async function manageCustomRoutine(
 		actions,
 		pixel("WorkManageCustomRoutine", { routineId, action }),
 		z.unknown(),
+	);
+}
+
+/**
+ * Open the routine's reference documents folder in the owner's user assets, creating it when missing.
+ * Its path roots the user-assets file explorer, which does the uploading, editing and deleting.
+ */
+export function openRoutineDocuments(
+	actions: InsightActions,
+	routineId: string,
+) {
+	return callPixel(
+		actions,
+		pixel("WorkRoutineDocuments", { routineId }),
+		routineDocumentsSchema,
 	);
 }
 

@@ -1,10 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
 	Button,
+	Card,
+	CardAction,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
@@ -51,12 +57,30 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState("");
 
+	// the routing as saved, which Discard goes back to
+	const savedValue = useMemo(
+		() =>
+			getConfig.status === "SUCCESS"
+				? routerConfigFromJson(getConfig.data)
+				: null,
+		[getConfig.status, getConfig.data],
+	);
+	const isDirty =
+		value !== null &&
+		savedValue !== null &&
+		routerConfigToJson(value) !== routerConfigToJson(savedValue);
+
 	useEffect(() => {
-		if (getConfig.status !== "SUCCESS") {
+		if (savedValue === null) {
 			return;
 		}
-		setValue(routerConfigFromJson(getConfig.data));
-	}, [getConfig.status, getConfig.data]);
+		setValue(savedValue);
+	}, [savedValue]);
+
+	const handleDiscard = () => {
+		setSaveError("");
+		setValue(savedValue);
+	};
 
 	const save = async () => {
 		setSaveError("");
@@ -101,60 +125,82 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 		}
 	};
 
-	if (
+	const isLoading =
 		getConfig.status === "INITIAL" ||
 		getConfig.status === "LOADING" ||
-		(getConfig.status === "SUCCESS" && value === null)
-	) {
-		return (
-			<div className="flex w-full items-center justify-center py-8">
-				<Spinner />
-			</div>
-		);
-	}
-
-	if (getConfig.status === "ERROR") {
-		return (
-			<Alert variant="destructive">
-				<AlertDescription>
-					{getConfig.error?.message ||
-						"Failed to load the routing configuration."}
-					<Button
-						type="button"
-						size="sm"
-						variant="outline"
-						onClick={() => getConfig.refresh()}
-					>
-						Retry
-					</Button>
-				</AlertDescription>
-			</Alert>
-		);
-	}
+		(getConfig.status === "SUCCESS" && value === null);
 
 	return (
-		<div className="flex w-full flex-col gap-4">
-			<RouterConfigField
-				value={value}
-				onChange={(next) => setValue(next)}
-				disabled={!isEditable || saving}
-				excludeEngineId={engineId}
-			/>
-			{saveError && (
-				<Alert variant="destructive">
-					<AlertDescription>{saveError}</AlertDescription>
-				</Alert>
-			)}
-			<div className="flex w-full justify-end">
-				<Button
-					size="sm"
-					onClick={() => save()}
-					disabled={!isEditable || saving}
-				>
-					{saving && <Spinner />}
-					{saving ? "Saving..." : "Save routing"}
-				</Button>
-			</div>
-		</div>
+		<Card>
+			<CardHeader className="border-b">
+				<CardTitle>Routing</CardTitle>
+				<CardDescription>
+					This engine is a model router. Context window, token limits,
+					reasoning and built-in tools come from the engines it routes
+					to. Changes to the routing apply to the running engine
+					immediately.
+				</CardDescription>
+				{isEditable && isDirty && (
+					<CardAction className="flex gap-2 self-center">
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={handleDiscard}
+							disabled={saving}
+							data-testid="engine-router-settings--cancel-btn"
+						>
+							Discard
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							onClick={() => save()}
+							disabled={saving}
+							data-testid="engine-router-settings--save-btn"
+						>
+							{saving ? <Spinner className="size-4" /> : null}
+							{saving ? "Saving..." : "Save"}
+						</Button>
+					</CardAction>
+				)}
+			</CardHeader>
+			<CardContent className="flex flex-col gap-4">
+				{getConfig.status === "ERROR" ? (
+					<Alert variant="destructive">
+						<AlertDescription className="flex flex-col items-start gap-2">
+							{getConfig.error?.message ||
+								"Failed to load the routing configuration."}
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								onClick={() => getConfig.refresh()}
+							>
+								Retry
+							</Button>
+						</AlertDescription>
+					</Alert>
+				) : isLoading || value === null ? (
+					<div className="flex justify-center py-4">
+						<Spinner />
+					</div>
+				) : (
+					<>
+						<RouterConfigField
+							value={value}
+							onChange={(next) => setValue(next)}
+							disabled={!isEditable || saving}
+							excludeEngineId={engineId}
+						/>
+						{saveError && (
+							<Alert variant="destructive">
+								<AlertDescription>{saveError}</AlertDescription>
+							</Alert>
+						)}
+					</>
+				)}
+			</CardContent>
+		</Card>
 	);
 };
