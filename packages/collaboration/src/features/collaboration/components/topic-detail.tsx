@@ -42,6 +42,7 @@ import { lexicon } from "@/lib/lexicon";
 import { givenFirst } from "@/lib/person-name";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { useWorkUpdates } from "../live/work-updates.context";
+import { selectTopicIgnores } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
 import { topicTone } from "../topic-tone";
@@ -56,7 +57,9 @@ import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
 import { TopicFolders } from "./topic-folders";
 import { TopicGoalPopover } from "./topic-goal-popover";
+import { TopicIgnoredPeople } from "./topic-ignored-people";
 import { TopicMatchesDialog } from "./topic-matches-dialog";
+import { TopicPersonMenu } from "./topic-person-menu";
 import { TopicThreadRow } from "./topic-thread-row";
 import { useWorkFeed, WorkFilterMenu, WorkItemsList } from "./work-items-feed";
 
@@ -87,6 +90,9 @@ const contextHeadingClassName = "font-display font-semibold text-base";
 const SUGGESTED_PREVIEW = 3;
 const hintClassName =
 	"block font-normal text-muted-foreground text-xs leading-5";
+// a member row's controls stay out of the way until the row is hovered or focused
+const memberControlClassName =
+	"text-muted-foreground pointer-fine:opacity-0 pointer-fine:group-focus-within/person:opacity-100 pointer-fine:group-hover/person:opacity-100";
 
 /** One topic workspace for actions, threads, sessions, and editable context. */
 export function TopicDetail() {
@@ -143,6 +149,12 @@ export function TopicDetail() {
 			),
 	);
 	const members = topic.people.filter((person) => person.state === "member");
+	const ignoredIds = new Set(
+		selectTopicIgnores(state.rules, topic.id).map((rule) => rule.personId),
+	);
+	const canPickPerson = availablePeople.some(
+		(person) => person.id === personToAdd,
+	);
 	const workItems = state.items.filter(
 		(item) =>
 			(item.status === "open" || item.status === "waiting") &&
@@ -618,13 +630,7 @@ export function TopicDetail() {
 											<Button
 												variant="outline"
 												size="sm"
-												disabled={
-													!availablePeople.some(
-														(person) =>
-															person.id ===
-															personToAdd,
-													)
-												}
+												disabled={!canPickPerson}
 												onClick={() => {
 													dispatch({
 														type: "topic.person",
@@ -637,11 +643,38 @@ export function TopicDetail() {
 											>
 												Add person
 											</Button>
+											<Button
+												variant="ghost"
+												size="sm"
+												disabled={
+													!canPickPerson ||
+													ignoredIds.has(personToAdd)
+												}
+												onClick={() => {
+													dispatch({
+														type: "rule.add",
+														rule: {
+															kind: "exclude_topic",
+															value: "",
+															topicId: topic.id,
+															personId:
+																personToAdd,
+															isSample:
+																topic.isSample,
+														},
+													});
+													setPersonToAdd("");
+												}}
+											>
+												Ignore here
+											</Button>
 										</div>
 										<Small className={hintClassName}>
 											Membership is separate from
 											including a person's messages in
-											assistant context.
+											assistant context. Ignore here
+											leaves their messages in this
+											topic's threads unused.
 										</Small>
 									</PopoverContent>
 								</Popover>
@@ -739,6 +772,15 @@ export function TopicDetail() {
 																					person.name,
 																				)}
 																			</Link>
+																			{member.vip && (
+																				<Badge
+																					variant="secondary"
+																					className="ml-2"
+																				>
+																					Topic
+																					VIP
+																				</Badge>
+																			)}
 																			<Small className="block font-normal text-muted-foreground text-xs leading-5">
 																				{(membership ===
 																					"suggested" &&
@@ -751,6 +793,24 @@ export function TopicDetail() {
 																				</span>
 																			</Small>
 																		</div>
+																		{membership ===
+																			"member" && (
+																			<TopicPersonMenu
+																				topic={
+																					topic
+																				}
+																				personId={
+																					person.id
+																				}
+																				name={givenFirst(
+																					person.name,
+																				)}
+																				className={cn(
+																					memberControlClassName,
+																					"pointer-fine:data-[state=open]:opacity-100",
+																				)}
+																			/>
+																		)}
 																		<Button
 																			variant="ghost"
 																			size="sm"
@@ -759,7 +819,7 @@ export function TopicDetail() {
 																				// Remove stays out of the way until the row is hovered; Add and Restore are the decision
 																				membership ===
 																					"member" &&
-																					"text-muted-foreground pointer-fine:opacity-0 pointer-fine:group-focus-within/person:opacity-100 pointer-fine:group-hover/person:opacity-100",
+																					memberControlClassName,
 																			)}
 																			onClick={() =>
 																				dispatch(
@@ -806,6 +866,7 @@ export function TopicDetail() {
 										);
 									},
 								)}
+								<TopicIgnoredPeople topic={topic} />
 							</div>
 						</div>
 					</section>

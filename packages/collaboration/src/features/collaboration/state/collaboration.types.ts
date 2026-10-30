@@ -39,6 +39,8 @@ interface TopicPerson {
 	state: PersonState;
 	origin: "you" | "brain" | "assistant";
 	reason?: string;
+	/** VIP in this topic only: their mail here ranks higher and files here more readily. Members only. */
+	vip?: boolean;
 }
 
 export interface Topic {
@@ -466,6 +468,8 @@ export type CollaborationCommand =
 			personId: string;
 			state: PersonState;
 			role?: string;
+			/** Omitted keeps a member's topic VIP; any state but member clears it. */
+			vip?: boolean;
 	  }
 	| {
 			/** A topic goal; topic notes are memories about the topic. */

@@ -461,6 +461,47 @@ describe("collaboration Work and Brain integration", () => {
 		await waitFor(() => expect(peopleTrigger).toHaveFocus());
 	});
 
+	it("makes a member a VIP in the topic and ignores them there until stopped", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const topic = state.topics.find(
+			(candidate) => candidate.id === "t-geng",
+		);
+		if (!topic) throw new Error("Missing sample topic");
+		// without goals the Context panel starts closed
+		topic.goals = [];
+		renderSession("/topics/t-geng", state);
+		await user.click(screen.getByRole("button", { name: "Context" }));
+		const settings = () =>
+			within(sectionFor("In this topic")).getByRole("button", {
+				name: "Settings for Ava Reed in this topic",
+			});
+		await user.click(settings());
+		await user.click(
+			screen.getByRole("menuitemcheckbox", { name: "VIP in this topic" }),
+		);
+		expect(
+			within(sectionFor("In this topic")).getByText("Topic VIP"),
+		).toBeInTheDocument();
+
+		await user.click(settings());
+		await user.click(
+			screen.getByRole("menuitem", { name: "Ignore in this topic" }),
+		);
+		const ignored = sectionFor("Ignored here");
+		expect(
+			within(ignored).getByRole("link", { name: "Ava Reed" }),
+		).toBeInTheDocument();
+		await user.click(
+			within(ignored).getByRole("button", {
+				name: "Stop ignoring Ava Reed in this topic",
+			}),
+		);
+		expect(
+			screen.queryByRole("heading", { name: "Ignored here" }),
+		).not.toBeInTheDocument();
+	});
+
 	it("counts each active feed thread once and distinguishes open, waiting, and muted threads", async () => {
 		const user = userEvent.setup();
 		const state = createInitialCollaborationState();

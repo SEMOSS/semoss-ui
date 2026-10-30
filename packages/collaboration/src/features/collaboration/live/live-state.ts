@@ -235,6 +235,7 @@ export function mapTopic(row: Row): Topic {
 			origin:
 				(person.origin as Topic["people"][number]["origin"]) ?? "brain",
 			reason: opt(person.reason),
+			vip: person.vip === true,
 		})),
 		calendarSeries: list<string>(row.calendarSeries),
 		folders: list<Row>(row.folders).map((folder) => ({

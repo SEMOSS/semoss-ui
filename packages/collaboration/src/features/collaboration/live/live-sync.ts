@@ -294,7 +294,12 @@ function planTopicParts(
 	);
 	for (const person of topic.people) {
 		const was = members.get(person.personId);
-		if (was && was.state === person.state && was.role === person.role)
+		if (
+			was &&
+			was.state === person.state &&
+			was.role === person.role &&
+			Boolean(was.vip) === Boolean(person.vip)
+		)
 			continue;
 		plan.statements.push(
 			pixel("BrainSetTopicPerson", {
@@ -302,6 +307,7 @@ function planTopicParts(
 				personId: person.personId,
 				state: person.state,
 				role: person.role || undefined,
+				vip: person.vip,
 			}),
 		);
 	}

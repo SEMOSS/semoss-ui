@@ -23,7 +23,9 @@ function fakeActions() {
 							? { noteId: "server-note" }
 							: /^BrainSaveMemory\(/.test(statement)
 								? { id: "server-memory" }
-								: true,
+								: /^BrainSaveRule\(/.test(statement)
+									? { id: "server-rule" }
+									: true,
 			})),
 		};
 	});
@@ -78,6 +80,47 @@ it("a rename saves the changed topic name", async () => {
 	expect(sent).toEqual([
 		'BrainSaveTopic(topic=[{"id":"t-geng","name":"Renamed"}]);',
 	]);
+});
+
+it("a topic VIP saves on the person's membership", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync(
+		step({
+			type: "topic.person",
+			topicId: "t-geng",
+			personId: "p-ava",
+			state: "member",
+			vip: true,
+		}),
+	);
+	await sync.settled();
+	expect(sent).toHaveLength(1);
+	expect(sent[0]).toMatch(
+		/^BrainSetTopicPerson\(topicId=\["t-geng"\], personId=\["p-ava"\], state=\["member"\], .*vip=\[true\]\);$/,
+	);
+});
+
+it("ignoring someone in a topic saves that topic's exclude_topic rule", async () => {
+	const { actions, sent } = fakeActions();
+	const onError = vi.fn();
+	const sync = createLiveSync(actions, onError);
+	sync(
+		step({
+			type: "rule.add",
+			rule: {
+				kind: "exclude_topic",
+				value: "",
+				topicId: "t-geng",
+				personId: "p-ava",
+			},
+		}),
+	);
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainSaveRule(rule=[{"kind":"exclude_topic","value":"","topicId":"t-geng","personId":"p-ava"}]);',
+	]);
+	expect(onError).not.toHaveBeenCalled();
 });
 
 it("a delete sends one BrainDeleteTopic operation", async () => {
