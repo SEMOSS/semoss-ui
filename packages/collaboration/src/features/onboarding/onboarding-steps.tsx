@@ -856,7 +856,7 @@ export function ImportStep({
 						onClick={start}
 						disabled={starting}
 					>
-						{starting ? "Starting import…" : "Import again"}
+						{starting ? "Starting import..." : "Import again"}
 					</Button>
 				)}
 				{(done || (running && mailReady)) && (
@@ -1664,12 +1664,9 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	const running = job?.status === "running";
 	// the sort itself, not the topic filing that may come after it
 	const failures = Number(job?.counts.errors ?? 0);
+	// a few threads that failed to sort do not hold up onboarding; they can be retried here
 	const done =
-		!error &&
-		!isLoading &&
-		job?.status === "done" &&
-		job.mode !== "topics" &&
-		failures === 0;
+		!error && !isLoading && job?.status === "done" && job.mode !== "topics";
 	const summary = useMemo(() => {
 		const counts = job?.counts ?? {};
 		return {
@@ -1775,7 +1772,7 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 			)}
 			{job?.status === "done" && failures > 0 && (
 				<Failure
-					error={`${failures} threads could not be sorted. Retry to finish sorting them.`}
+					error={`${formatCount(failures)} ${failures === 1 ? "thread" : "threads"} could not be sorted. You can continue, or retry ${failures === 1 ? "it" : "them"}.`}
 					onRetry={starting ? undefined : start}
 				/>
 			)}
