@@ -105,6 +105,7 @@ vi.mock("./room-composer", () => ({
 	}: ComponentProps<typeof import("./room-composer")["RoomComposer"]>) => (
 		<div className={className}>
 			Composer{attachmentSummary}
+			<input aria-label="Message draft" defaultValue="" />
 			{starterPrompts?.map((prompt) => (
 				<span key={prompt.id}>{prompt.title}</span>
 			))}
@@ -334,7 +335,7 @@ describe("RoomWorkspace", () => {
 		expect(workbenchState.openWorkbench).toHaveBeenCalledWith();
 	});
 
-	it("opens Settings, Files, Emails, and Calendar from the composer", () => {
+	it("opens Settings, Files, and the Microsoft 365 browsers from the composer", () => {
 		workbenchState.isOpen = false;
 		render(<RoomWorkspace {...defaultProps} />);
 		fireEvent.click(screen.getByRole("button", { name: "Settings" }));
@@ -364,6 +365,10 @@ describe("RoomWorkspace", () => {
 		for (const [label, browser] of [
 			["Open Emails", "mail"],
 			["Open Calendar", "calendar"],
+			["Open OneDrive", "onedrive"],
+			["Open Teams Chats", "teams-chats"],
+			["Open Teams Channels", "teams-channels"],
+			["Open Teams Files", "teams-files"],
 		]) {
 			fireEvent.click(screen.getByRole("button", { name: label }));
 			expect(workbenchState.returnToBrowser).toHaveBeenLastCalledWith(
@@ -393,6 +398,25 @@ describe("RoomWorkspace", () => {
 		expect(
 			screen.getByRole("textbox", { name: "Panel draft" }),
 		).toHaveValue("Keep these settings");
+	});
+
+	it("keeps the chat and its unsent message while a viewer opens and closes", () => {
+		workbenchState.isOpen = false;
+		const { rerender } = render(<RoomWorkspace {...defaultProps} />);
+		const draft = screen.getByRole("textbox", { name: "Message draft" });
+		fireEvent.change(draft, { target: { value: "Thanks Amanda, I will" } });
+		const thread = screen.getByText("Thread");
+		workbenchState.isOpen = true;
+		rerender(<RoomWorkspace {...defaultProps} />);
+		workbenchState.isOpen = false;
+		rerender(<RoomWorkspace {...defaultProps} />);
+		// the same nodes: nothing remounted, so typed text and scroll position stay
+		expect(screen.getByRole("textbox", { name: "Message draft" })).toBe(
+			draft,
+		);
+		expect(draft).toHaveValue("Thanks Amanda, I will");
+		expect(screen.getByText("Thread")).toBe(thread);
+		workbenchState.isOpen = true;
 	});
 
 	it("aligns the composer with the message column", () => {

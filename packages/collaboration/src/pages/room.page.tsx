@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { useParams } from "react-router";
 import { InsightContext, useInsight } from "@semoss/sdk/react";
-import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
+import { Alert, AlertDescription, Button } from "@semoss/ui/next";
+import { RoomLoading } from "@/features/rooms/components/room-loading";
 import { RoomSessionView } from "@/features/rooms/components/room-session-view";
 import { getRoomSession } from "@/features/rooms/room-session";
 import { NotFoundPage } from "./not-found.page";
@@ -28,28 +29,22 @@ export function RoomPage({ roomId: suppliedRoomId }: { roomId?: string } = {}) {
 	}, [roomId, session]);
 	if (!roomId) return <NotFoundPage />;
 	if (!snapshot.isReady)
-		return (
+		return snapshot.isLoading ? (
+			<RoomLoading />
+		) : (
 			<div className="p-6">
-				{snapshot.isLoading ? (
-					<output className="flex items-center gap-2">
-						<Spinner aria-hidden="true" />
-						Opening room…
-					</output>
-				) : (
-					<Alert variant="destructive">
-						<AlertDescription>
-							{snapshot.error?.message ??
-								"The room is unavailable."}
-						</AlertDescription>
-						<Button
-							className="mt-3"
-							variant="outline"
-							onClick={() => void session.initialize()}
-						>
-							Retry connection
-						</Button>
-					</Alert>
-				)}
+				<Alert variant="destructive">
+					<AlertDescription>
+						{snapshot.error?.message ?? "The room is unavailable."}
+					</AlertDescription>
+					<Button
+						className="mt-3"
+						variant="outline"
+						onClick={() => void session.initialize()}
+					>
+						Retry connection
+					</Button>
+				</Alert>
 			</div>
 		);
 	const insight = session.insight;

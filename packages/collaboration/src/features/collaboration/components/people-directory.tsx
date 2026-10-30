@@ -70,7 +70,11 @@ export function PeopleDirectory() {
 			key={person.id}
 			className="flex flex-wrap items-center gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/30 md:px-6"
 		>
-			<PersonAvatar name={person.name} initials={person.initials} />
+			<PersonAvatar
+				name={person.name}
+				initials={person.initials}
+				email={person.email}
+			/>
 			<div className="min-w-0 flex-1">
 				<Link
 					className="break-words font-medium text-sm hover:underline"
@@ -134,7 +138,21 @@ export function PeopleDirectory() {
 				<CollaborationPageHeader
 					title="People"
 					description="The people you follow, VIPs first. Search to find anyone else."
-				/>
+				>
+					<div className="max-w-prose space-y-1 text-muted-foreground text-sm leading-relaxed">
+						<P className="text-sm leading-relaxed">
+							VIP ranks someone's mail higher everywhere; a VIP in
+							a topic, set on that topic's People, ranks it higher
+							in that topic's threads only.
+						</P>
+						<P className="text-sm leading-relaxed">
+							Excluded keeps someone's messages out everywhere and
+							wins over every other setting; ignoring someone in a
+							topic keeps their messages out of that topic's
+							threads only.
+						</P>
+					</div>
+				</CollaborationPageHeader>
 			}
 			aside={<BrainOverview />}
 			asideTitle="Overview"

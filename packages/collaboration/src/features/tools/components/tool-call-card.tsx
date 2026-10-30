@@ -3,8 +3,10 @@ import {
 	Check,
 	ChevronDown,
 	CircleX,
+	FileText,
 	Hourglass,
 	Mail,
+	MessagesSquare,
 } from "lucide-react";
 import { useContext, useId, useMemo, useRef, useState } from "react";
 import {
@@ -34,6 +36,7 @@ import { composeDraftId } from "@/features/thread-assistant/thread-draft-proposa
 import { toolCardTriggerId } from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
 import { emailDraftToolPreview } from "../utils/email-draft-tool";
+import { type ShownItem, shownItem } from "../utils/shown-item";
 import { getToolComponent, TOOL_COMPONENTS } from "../utils/tool-components";
 import {
 	getToolDisplayLocation,
@@ -106,6 +109,18 @@ const SUBMIT_LABELS: Partial<Record<ConversationTool["status"], string>> = {
 	REJECTED: "Not sent",
 };
 
+/** What a found item is called and drawn as on its card. */
+const SHOWN_KINDS = {
+	email: { label: "email", icon: Mail },
+	chat: { label: "Teams chat", icon: MessagesSquare },
+	file: { label: "file", icon: FileText },
+} as const;
+
+function shownKind(item: ShownItem): keyof typeof SHOWN_KINDS {
+	if (item.kind === "file") return "file";
+	return item.kind === "chat" || item.source === "teams" ? "chat" : "email";
+}
+
 /** One string field of a JSON tool result, if present. */
 function resultField(
 	output: string | undefined,
@@ -165,6 +180,7 @@ function GenericToolCallCard({
 	const statusId = useId();
 	const isMobile = useIsMobile();
 	const {
+		roomId,
 		openInline,
 		openWorkbench,
 		closeTool,
@@ -183,6 +199,12 @@ function GenericToolCallCard({
 	// ComposeEmail retains a room-local editor; only this action opens its panel.
 	const isEmailCompose = component === TOOL_COMPONENTS.emailCompose;
 	const isRoomCompose = isEmailCompose && Boolean(roomEmail);
+	// a finished call that found an email, thread, Teams chat, or file opens it beside the chat
+	const shown = useMemo(
+		() => (roomEmail ? shownItem(tool, roomId) : null),
+		[roomEmail, roomId, tool],
+	);
+	const shownTitle = shown?.kind === "file" ? shown.name : shown?.title;
 	// SendEmail on the open email waits for Send in that editor or on this card
 	const sendDraft =
 		isEmailSend && roomEmail
@@ -240,11 +262,14 @@ function GenericToolCallCard({
 			: draftPreview
 				? (editorEmail?.subject ?? draftPreview.subject)
 				: tool.title;
+	// names what it found, so results with similar subjects or file names stay apart
 	const heading = isRoomCompose
 		? title
 			? `${draftLabel} \u00b7 ${title}`
 			: draftLabel
-		: title;
+		: shownTitle
+			? `${title} \u00b7 ${shownTitle}`
+			: title;
 	// Delegation tools return a plain-language summary of what happened; their
 	// description is written for the model, so it is never shown.
 	const outcome =
@@ -259,7 +284,9 @@ function GenericToolCallCard({
 		isRequest && !approval && tool.status === "INPUT_REQUIRED"
 			? resultField(tool.output, "runId")
 			: undefined;
-	const Icon = isEditorDraft || sendDraft ? Mail : details.icon;
+	const shownAs = shown ? SHOWN_KINDS[shownKind(shown)] : null;
+	const Icon =
+		shownAs?.icon ?? (isEditorDraft || sendDraft ? Mail : details.icon);
 	const isInline = isToolInline(tool.id);
 	const isInWorkbench = isOpen && activeToolId === tool.id;
 	const isActive = isInline || isInWorkbench;
@@ -325,20 +352,30 @@ function GenericToolCallCard({
 								roomEmail.openDraft(editorId);
 								return;
 							}
+							if (shown) {
+								roomEmail?.openItem(shown);
+								return;
+							}
 							if (isInline) closeTool(tool.id);
 							else if (opensInline) openInline(tool.id);
 							else openWorkbench(tool.id);
 						}}
 						aria-expanded={
-							!isEditorDraft && opensInline ? isInline : undefined
+							!isEditorDraft && !shown && opensInline
+								? isInline
+								: undefined
 						}
 						aria-controls={
-							!isEditorDraft && isInline ? detailId : undefined
+							!isEditorDraft && !shown && isInline
+								? detailId
+								: undefined
 						}
 						aria-label={
 							isEditorDraft || sendDraft
 								? `Open email draft: ${heading || draftLabel}`
-								: `${heading} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
+								: shownAs
+									? `Open ${shownAs.label}: ${heading}`
+									: `${heading} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
 						}
 						{...(tool.status !== "FAILED"
 							? { "aria-describedby": statusId }
@@ -404,6 +441,8 @@ function GenericToolCallCard({
 								aria-hidden="true"
 								className="size-4 shrink-0 text-muted-foreground"
 							/>
+						) : shown ? (
+							<Muted className="shrink-0 text-xs">Open</Muted>
 						) : opensInline ? (
 							<ChevronDown
 								aria-hidden="true"

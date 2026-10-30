@@ -1534,6 +1534,7 @@ const SAMPLE_STATE: CollaborationState = {
 		memory: { use: true, learn: true },
 		draftFolderId: "",
 		draftFolderName: "",
+		syncEveryMinutes: 15,
 		version: 1,
 	},
 	rules: [

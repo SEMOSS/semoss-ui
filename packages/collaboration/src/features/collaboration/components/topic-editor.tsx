@@ -12,6 +12,7 @@ import {
 	FormSelect,
 	FormTextarea,
 	SelectItem,
+	toast,
 	useForm,
 	z,
 	zodResolver,
@@ -32,10 +33,13 @@ export function TopicEditor({
 	topic,
 	onClose,
 	returnFocusRef,
+	onFindConversations,
 }: {
 	topic?: Topic;
 	onClose: () => void;
 	returnFocusRef: RefObject<HTMLButtonElement | null>;
+	/** Offered after an edit that changes what Brain matches conversations on. */
+	onFindConversations?: () => void;
 }) {
 	const { state, dispatch } = useCollaborationSession();
 	const form = useForm<z.infer<typeof schema>>({
@@ -75,19 +79,35 @@ export function TopicEditor({
 					form={form}
 					className="space-y-4"
 					onSubmit={(values) => {
+						const accountId =
+							values.accountId === "none"
+								? null
+								: values.accountId;
 						dispatch({
 							type: "topic.save",
 							topic: {
 								...values,
 								id: topic?.id,
-								accountId:
-									values.accountId === "none"
-										? null
-										: values.accountId,
+								accountId,
 								isSample: topic?.isSample ?? false,
 							},
 						});
 						onClose();
+						if (
+							topic &&
+							onFindConversations &&
+							(values.name !== topic.name ||
+								values.description !== topic.description ||
+								accountId !== topic.accountId)
+						)
+							toast.success("Topic saved", {
+								description:
+									"Other conversations may fit it now.",
+								action: {
+									label: "Find conversations",
+									onClick: onFindConversations,
+								},
+							});
 					}}
 				>
 					<FormInput

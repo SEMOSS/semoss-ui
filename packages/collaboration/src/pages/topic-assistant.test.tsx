@@ -22,13 +22,13 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 
-it("opens the current topic's assistant on demand and preserves a hidden draft", async () => {
+it("shows the current topic's assistant without a toggle and starts each topic fresh", async () => {
 	const user = userEvent.setup();
 	const state = createInitialCollaborationState();
 	const [first, second] = state.topics;
 	if (!first || !second) throw new Error("Missing topic fixtures");
 	first.status = "active";
-	second.status = "active";
+	second.status = "dormant";
 	const router = createMemoryRouter(
 		[{ path: "/topics/:topicId", element: <TopicPage /> }],
 		{ initialEntries: [`/topics/${first.id}`] },
@@ -38,29 +38,23 @@ it("opens the current topic's assistant on demand and preserves a hidden draft",
 			<RouterProvider router={router} />
 		</CollaborationSessionProvider>,
 	);
-	expect(assistant.mounted).not.toHaveBeenCalled();
-	const trigger = screen.getByRole("button", { name: "Ask assistant" });
-	expect(trigger).toHaveAttribute("aria-expanded", "false");
-	await user.click(trigger);
 	const input = await screen.findByRole("textbox", {
 		name: `Ask about ${first.id}`,
 	});
 	expect(assistant.mounted).toHaveBeenCalledWith(first.id);
-	expect(trigger).toHaveAttribute("aria-expanded", "true");
-	await user.type(input, "Which emails need my attention?");
-	await user.click(screen.getByRole("button", { name: "Hide assistant" }));
-	expect(input).not.toBeVisible();
-	await user.keyboard("{Enter}");
-	expect(input).toBeVisible();
-	expect(input).toHaveValue("Which emails need my attention?");
-	await act(async () => router.navigate(`/topics/${second.id}`));
+	// shown on load without taking focus from the page
+	expect(input).not.toHaveFocus();
 	expect(
-		screen.queryByRole("textbox", { name: /^Ask about/ }),
+		screen.queryByRole("button", { name: /^(Ask|Hide) assistant$/ }),
 	).not.toBeInTheDocument();
-	await user.click(screen.getByRole("button", { name: "Ask assistant" }));
+	await user.type(input, "Which emails need my attention?");
+	await act(async () => router.navigate(`/topics/${second.id}`));
 	expect(
 		await screen.findByRole("textbox", { name: `Ask about ${second.id}` }),
 	).toHaveValue("");
+	expect(
+		screen.queryByRole("textbox", { name: `Ask about ${first.id}` }),
+	).not.toBeInTheDocument();
 });
 
 it.each(["archived", "suggested"] as const)(
@@ -79,9 +73,6 @@ it.each(["archived", "suggested"] as const)(
 				<RouterProvider router={router} />
 			</CollaborationSessionProvider>,
 		);
-		await userEvent
-			.setup()
-			.click(screen.getByRole("button", { name: "Ask assistant" }));
 		expect(
 			screen.getByText(
 				"Set this topic to Active or Dormant to start a chat.",

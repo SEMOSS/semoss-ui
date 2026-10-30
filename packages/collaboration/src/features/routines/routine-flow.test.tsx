@@ -138,8 +138,8 @@ describe("routine flow sections", () => {
 		expect(screen.queryByRole("menu")).not.toBeInTheDocument();
 
 		for (const [title, expectedFlow] of [
-			["Inbox daily brief", flow],
-			["Weekly meeting agendas", agendaFlow],
+			["Inbox daily brief agent", flow],
+			["Weekly meeting agendas agent", agendaFlow],
 		] as const) {
 			service.preview.mockClear();
 			const trigger = screen.getByRole("button", {

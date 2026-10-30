@@ -128,8 +128,8 @@ export function TopicSessions({ topicId }: TopicSessionsProps) {
 				!history.error &&
 				!sessions.rooms.length && (
 					<P className="text-muted-foreground text-sm">
-						No linked chats in the history loaded so far. Use Ask
-						assistant to start one.
+						No linked chats in the history loaded so far. Ask the
+						assistant above to start one.
 					</P>
 				)}
 			{sessions.checkedCount > 0 && (

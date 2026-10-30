@@ -16,13 +16,26 @@ import { SourceMessageBody } from "@/features/email/source-message-body";
 import type { RoomSource } from "@/features/rooms/source-import/room-source";
 import { RoomSourceAttachments } from "./room-source-attachments";
 
+/** What the reader shows of a source; a thread the room only reads lists no envelopes. */
+export type EmailReaderSource = Pick<
+	RoomSource,
+	| "threadId"
+	| "title"
+	| "channel"
+	| "kind"
+	| "nativeId"
+	| "webLink"
+	| "messages"
+>;
+
 interface RoomSourceEmailProps {
 	/** The room's imported envelope metadata and permitted source identities. */
-	source: RoomSource;
+	source: EmailReaderSource;
 	/** A currently permitted source message, loaded through its source API. */
 	message: WorkspaceMessage;
 	isLoading: boolean;
-	onReply: (messageId: string) => void;
+	/** Absent where the owner only reads the email. */
+	onReply?: (messageId: string) => void;
 }
 
 /** The existing Work source-email reader, with its data and actions owned by a room. */
@@ -52,6 +65,7 @@ export function RoomSourceEmail({
 		? []
 		: (message.displayBody?.attachments ?? []);
 	const canReply =
+		Boolean(onReply) &&
 		source.channel === "email" &&
 		source.kind !== "sample" &&
 		Boolean(metadata) &&
@@ -65,7 +79,10 @@ export function RoomSourceEmail({
 				subject={subject}
 				name={name}
 				avatar={
-					<PersonAvatar name={name || address || "Participant"} />
+					<PersonAvatar
+						name={name || address || "Participant"}
+						email={address}
+					/>
 				}
 				address={address}
 				at={message.at || metadata?.at}
@@ -83,7 +100,7 @@ export function RoomSourceEmail({
 										className="pointer-coarse:size-11"
 										aria-label="Reply"
 										disabled={isLoading}
-										onClick={() => onReply(message.id)}
+										onClick={() => onReply?.(message.id)}
 									>
 										<Reply aria-hidden="true" />
 									</Button>

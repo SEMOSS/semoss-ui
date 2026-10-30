@@ -85,6 +85,7 @@ describe("RoutineChatButton", () => {
 				service.actions,
 				routineId,
 				startedAt,
+				undefined,
 			);
 			expect(service.navigate).not.toHaveBeenCalled();
 			expect(historyChanged).not.toHaveBeenCalled();
@@ -125,6 +126,7 @@ describe("RoutineChatButton", () => {
 			service.actions,
 			"inbox-daily-brief",
 			startedAt,
+			undefined,
 		);
 		expect(historyChanged).toHaveBeenCalledOnce();
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -180,6 +182,7 @@ describe("RoutineResult chat availability", () => {
 				service.actions,
 				id,
 				startedAt,
+				undefined,
 			);
 		},
 	);

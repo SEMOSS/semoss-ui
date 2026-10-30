@@ -7,6 +7,11 @@ export const CALENDAR_BROWSER_PANEL = "collaboration-calendar";
 export const MAIL_DETAIL_PANEL = "collaboration-mail-detail";
 export const EVENT_DETAIL_PANEL = "collaboration-event-detail";
 export const FULL_CALENDAR_PANEL = "collaboration-full-calendar";
+// opened on demand from the composer's + menu, so they are not in the starting layout
+export const ONEDRIVE_BROWSER_PANEL = "collaboration-onedrive";
+export const TEAMS_CHATS_PANEL = "collaboration-teams-chats";
+export const TEAMS_CHANNELS_PANEL = "collaboration-teams-channels";
+export const TEAMS_FILES_PANEL = "collaboration-teams-files";
 
 /** Retain collapsed browsers, deferring draft file space until explicitly needed. */
 export function createRoomConnectorLayout(
