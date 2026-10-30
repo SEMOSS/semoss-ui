@@ -383,7 +383,13 @@ it("edits native formatted text and fields while retaining refused formula/field
 	);
 	installEditWorker();
 	let savedCount = 0;
-	for (const name of ["single-run", "stencil-local", "multi-run", "field"]) {
+	for (const name of [
+		"single-run",
+		"stencil-local",
+		"multi-run",
+		"field",
+		"text-dependencies",
+	]) {
 		await act(async () => {
 			await element.load(fixture(name));
 		});

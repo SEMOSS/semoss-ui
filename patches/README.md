@@ -14,6 +14,14 @@ applies them; do not edit installed packages by hand.
 - `pptx-react-viewer@4.45.0.patch`: native PPTX Save dispatches the same event from
   the mounted canvas, for ESM and CommonJS entry points. A cancelled command skips
   both the download and the viewer's success feedback/recovery acknowledgement.
+- `ooxml-core@1.22.0.patch`: the Visio dependency index and formatting scan both
+  recognize exact implicit/explicit self-event triggers in validated top-level
+  connector cells. Package master scanning also admits known master-local text
+  measurement and native text-visibility formulas; those read the master's own
+  text, not an independent page label. Original formulas/caches are preserved.
+  Unknown functions, dynamic lookups, cross-shape dependencies and protection
+  remain checked. The fix covers Visio, Visio UI and automation bundles in both
+  ESM and CommonJS; retain that coverage when upgrading the dependency.
 
 The event has `{ command: "save" }` detail and bubbles across component boundaries.
 `useOfficeFileCommands` cancels it and invokes guarded SEMOSS persistence. An
