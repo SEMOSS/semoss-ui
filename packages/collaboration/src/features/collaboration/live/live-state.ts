@@ -785,6 +785,20 @@ export function readTopicGoals(
 	);
 }
 
+/** Read one topic in full after an assistant creates or changes it, by id or by a name that picks one. */
+export async function readTopic(
+	actions: InsightActions,
+	topic: { topicId?: string; topic?: string },
+): Promise<Topic> {
+	return mapTopic(
+		await callPixel(
+			actions,
+			pixel("BrainListTopics", topic),
+			z.object({ id: z.string().min(1) }).passthrough(),
+		),
+	);
+}
+
 /** What the thread's assistant gets from memory: BrainRecallMemories. */
 export interface ThreadRecall {
 	enabled: boolean;

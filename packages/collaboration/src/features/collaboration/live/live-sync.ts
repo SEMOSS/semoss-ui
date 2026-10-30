@@ -29,6 +29,14 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"snooze.expire",
 	"memory.server",
 	"topic.goal.server",
+	"topic.server",
+]);
+
+// what the server already holds when they land, even beside a user edit: a new topic with a server id would
+// otherwise be saved again as an accepted suggestion
+const SERVER_RECORDS = new Set<CollaborationCommand["type"]>([
+	"records.loaded",
+	"topic.server",
 ]);
 
 // a create returns the server id for the local one
@@ -78,7 +86,7 @@ export function createLiveSync(
 		// Hydration is already saved; diff a simultaneous user edit against the loaded records.
 		const previous = settled.commands.reduce(
 			(state, command) =>
-				command.type === "records.loaded"
+				SERVER_RECORDS.has(command.type)
 					? collaborationReducer(
 							state,
 							command,

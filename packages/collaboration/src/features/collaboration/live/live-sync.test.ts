@@ -625,3 +625,40 @@ it("does not save hydrated records, even when a user edit settles in the same ch
 	expect(sent[0]).toContain('"name":"User rename"');
 	expect(sent[0]).not.toContain("Saved on server");
 });
+
+it("does not save a topic the assistant made again, even beside an owner edit", async () => {
+	const { actions, sent } = fakeActions();
+	const onError = vi.fn();
+	const sync = createLiveSync(actions, onError);
+	const previous = createInitialCollaborationState();
+	const [, other] = previous.topics;
+	const made: CollaborationCommand = {
+		type: "topic.server",
+		topic: {
+			...previous.topics[0],
+			id: "server-topic",
+			name: "Uber Trip Receipts",
+			isSample: false,
+		},
+	};
+	const edit: CollaborationCommand = {
+		type: "topic.save",
+		topic: { id: other.id, description: "Edited by the owner" },
+	};
+	sync({
+		previous,
+		next: collaborationReducer(previous, made, NOW),
+		commands: [made],
+	});
+	const next = [made, edit].reduce(
+		(state, command) => collaborationReducer(state, command, NOW),
+		previous,
+	);
+	sync({ previous, next, commands: [made, edit] });
+	await sync.settled();
+	expect(next.topics.some((topic) => topic.id === "server-topic")).toBe(true);
+	expect(sent).toEqual([
+		`BrainSaveTopic(topic=[{"id":"${other.id}","description":"Edited by the owner"}]);`,
+	]);
+	expect(onError).not.toHaveBeenCalled();
+});

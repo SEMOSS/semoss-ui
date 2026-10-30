@@ -12,12 +12,14 @@ import { MAIL_SENT_EVENT } from "@/features/connectors/api/microsoft";
 import { deferred } from "@/features/onboarding/topic-review.test-fixtures";
 import type { InsightActions } from "@/lib/pixel";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
+import type { Topic } from "../state/collaboration.types";
 import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
 import {
 	readMailCheck,
+	readTopic,
 	readTopicGoals,
 	readWorkUpdates,
 	syncMail,
@@ -29,6 +31,7 @@ import { WorkUpdatesProvider } from "./work-updates-provider";
 
 vi.mock("./live-state", () => ({
 	readMailCheck: vi.fn().mockResolvedValue(null),
+	readTopic: vi.fn(),
 	readTopicGoals: vi.fn(),
 	readWorkUpdates: vi.fn(),
 	syncMail: vi.fn(),
@@ -592,4 +595,102 @@ it("gives a topic made on this page its server id after queued saves, and keeps 
 		result.current.state.items.find((entry) => entry.id === item.id)
 			?.topicIds,
 	).toEqual(["local-topic-9"]);
+});
+
+function renderUpdates(
+	state: ReturnType<typeof createInitialCollaborationState>,
+) {
+	return renderHook(
+		() => ({
+			...useCollaborationSession(),
+			updates: useWorkUpdates(),
+		}),
+		{
+			wrapper: ({ children }) => (
+				<CollaborationSessionProvider initialState={state}>
+					<WorkUpdatesProvider actions={{} as InsightActions}>
+						{children}
+					</WorkUpdatesProvider>
+				</CollaborationSessionProvider>
+			),
+		},
+	);
+}
+
+it("adds a topic the assistant made once, then reloads threads for the emails it filed", async () => {
+	const state = createInitialCollaborationState();
+	const [own] = state.topics;
+	const made: Topic = {
+		...own,
+		id: "server-topic",
+		name: "Uber Trip Receipts",
+		short: "Uber Trip Receipts",
+		goals: [],
+		people: [],
+		isSample: false,
+	};
+	vi.mocked(readWorkUpdates).mockReset().mockResolvedValue({
+		threads: state.threads,
+		items: [],
+		workspaces: {},
+		memories: [],
+		lastMailCheck: null,
+	});
+	vi.mocked(readTopic)
+		.mockReset()
+		.mockResolvedValueOnce(made)
+		.mockResolvedValueOnce({ ...own, name: "Renamed by the assistant" })
+		.mockRejectedValueOnce(new Error("No topic is named Lyft"));
+	const { result } = renderUpdates(state);
+
+	await act(async () =>
+		result.current.updates?.refreshTopic({ topic: "Uber Trip Receipts" }),
+	);
+	expect(readTopic).toHaveBeenCalledWith({}, { topic: "Uber Trip Receipts" });
+	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(1));
+	// the page counts a topic's threads and items from its own links
+	expect(
+		result.current.state.topics.filter((topic) => topic.id === made.id),
+	).toEqual([{ ...made, stats: expect.any(Object) }]);
+
+	// the page's own copy stays as the owner left it, and a call that made no topic shows no error
+	await act(async () =>
+		result.current.updates?.refreshTopic({ topicId: own.id }),
+	);
+	await act(async () =>
+		result.current.updates?.refreshTopic({ topic: "Lyft" }),
+	);
+	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(3));
+	expect(
+		result.current.state.topics.find((topic) => topic.id === own.id)?.name,
+	).toBe(own.name);
+	expect(result.current.state.topics).toHaveLength(state.topics.length + 1);
+	expect(result.current.updates?.error).toBe("");
+});
+
+it("reloads threads again when a reload was already running before the assistant's change", async () => {
+	const state = createInitialCollaborationState();
+	const updates = {
+		threads: state.threads,
+		items: [],
+		workspaces: {},
+		memories: [],
+		lastMailCheck: null,
+	};
+	const running = deferred<typeof updates>();
+	vi.mocked(readWorkUpdates)
+		.mockReset()
+		.mockReturnValueOnce(running.promise)
+		.mockResolvedValue(updates);
+	vi.mocked(readTopic).mockReset().mockResolvedValue(state.topics[0]);
+	const { result } = renderUpdates(state);
+
+	act(() => result.current.updates?.refresh());
+	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(1));
+	await act(async () =>
+		result.current.updates?.refreshTopic({ topicId: state.topics[0].id }),
+	);
+	expect(readWorkUpdates).toHaveBeenCalledTimes(1);
+	await act(async () => running.resolve(updates));
+	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(2));
 });

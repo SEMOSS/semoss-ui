@@ -400,6 +400,11 @@ export function collaborationReducer(
 				state.topics.push(newTopic(state, command.topic, now));
 			break;
 		}
+		case "topic.server":
+			// the page's own copy wins, so open editors keep what the owner typed
+			if (!state.topics.some((topic) => topic.id === command.topic.id))
+				state.topics.push(command.topic);
+			break;
 		case "topic.goal.server": {
 			const topic = state.topics.find(
 				(entry) => entry.id === command.topicId,

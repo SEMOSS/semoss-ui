@@ -1059,6 +1059,7 @@ it("links a topic assistant's chat for a topic made on this page by its server i
 		lastMailCheck: null,
 		refresh: vi.fn(),
 		refreshTopicGoal: vi.fn(),
+		refreshTopic: vi.fn(),
 		isSyncing: false,
 		lastSync: null,
 		syncError: "",

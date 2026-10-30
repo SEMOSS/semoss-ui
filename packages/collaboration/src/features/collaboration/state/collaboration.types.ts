@@ -454,6 +454,11 @@ export type CollaborationCommand =
 	| { type: "session.create"; sessionId: string }
 	| { type: "topic.save"; topic: Partial<Topic> & { name?: string } }
 	| {
+			type: "topic.server";
+			/** A topic made outside this page, such as by the assistant; added only when the page lacks it. */
+			topic: Topic;
+	  }
+	| {
 			type: "topic.goal.server";
 			topicId: string;
 			/** Goal before the read; newer local changes take precedence over its result. */

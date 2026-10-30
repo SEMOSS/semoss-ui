@@ -14,6 +14,8 @@ export interface WorkUpdatesStatus {
 		topic: { topicId?: string; topic?: string },
 		noteId: string,
 	) => void;
+	/** After an assistant topic change: add the topic when this page lacks it, then re-read threads for its emails. */
+	refreshTopic: (topic: { topicId?: string; topic?: string }) => void;
 	isSyncing: boolean;
 	/** Counts from the last finished mail sync in this page. */
 	lastSync: MailSyncResult | null;
