@@ -359,6 +359,17 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   (`Admin...`), which refuse anyone who is not an admin. The admin runs carry their model's
   `modelName`, so the admin page reads no engine metadata.
 
+### Default Models
+
+- **`features/default-models/`** is My Profile's default models card (`default-models-card.tsx`):
+  the text and code generation models the user's requests use, kept in their metadata as
+  `text-generation-model` and `code-generation-model`. Each is a `default-model-field.tsx`, the
+  shared `EngineSelect` over the models `getEngines` lists (without the EMBEDDED subtype), with No
+  default first. A pick saves at once through `setUserDefaultModel` in `api/auth.ts`
+  (`SetUserMetadata`); No default sends an empty list, which deletes the key, so a removed default
+  is gone rather than blank. A default the list no longer offers stays shown, marked unavailable,
+  so it can be removed.
+
 ### Workbench Terminal
 
 - Every workbench in `components/workbench/` has a Pixel terminal in its bottom border, and
