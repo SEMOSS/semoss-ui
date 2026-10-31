@@ -316,9 +316,8 @@ export class RoomStore {
 	}
 
 	/**
-	 * Mirror the dock's two facts the rest of the room cares about: a tool whose
-	 * panel was closed is no longer open, and a sidebar with nothing left in it
-	 * closes itself.
+	 * Return tools inline when their tabs close, and close the sidebar when
+	 * it has no panels left.
 	 *
 	 * This is the replacement for the FlexLayout change listener, and the reason
 	 * the room store holds the dock: both reactions have to fire whether the
@@ -344,7 +343,9 @@ export class RoomStore {
 				}
 				const toolId = (record.config as { toolId?: string })?.toolId;
 				const tool = toolId ? this.getTool(toolId) : null;
-				tool?.setIsOpen(false);
+				if (tool?.isOpen && tool.display === "sidebar") {
+					tool.openTool("inline");
+				}
 			}
 
 			if (
@@ -1239,10 +1240,16 @@ export class RoomStore {
 	};
 
 	/**
-	 * Close the sidebar
+	 * Close the sidebar and return its open tools inline. Other panels retain
+	 * their arrangement for the next time the workspace opens.
 	 */
 	closeSidebar = async (): Promise<void> => {
 		this._store.sidebar.isOpen = false;
+		for (const tool of Object.values(this.tools)) {
+			if (tool.isOpen && tool.display === "sidebar") {
+				tool.openTool("inline");
+			}
+		}
 	};
 
 	/**
