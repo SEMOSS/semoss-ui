@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
 import { selectToday } from "@/features/dashboard/today-selectors";
+import { RoutineRecentRuns } from "@/features/routines/routine-recent-runs";
 import { lexicon } from "@/lib/lexicon";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import {
@@ -65,7 +66,7 @@ export function CollaborationNavigation({
 			</div>
 			<nav
 				aria-label="Main"
-				className="flex shrink-0 flex-col gap-0.5 px-2 py-2 pr-3"
+				className="flex shrink-0 flex-col gap-0.5 px-2 pt-2 pr-3 pb-0.5"
 			>
 				{links.map(({ to, label, icon: Icon, count, isActive }) => (
 					<Tooltip key={to} disableHoverableContent={false}>
@@ -110,10 +111,12 @@ export function CollaborationNavigation({
 			<div className="flex min-h-0 flex-1 flex-col pr-1">
 				<div
 					className={cn(
-						"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
+						"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pt-1.5",
 						isCollapsed && "hidden",
 					)}
 				>
+					{/* under Routines, the last link, but scrolling with Chats so a long list never pushes Settings off screen */}
+					<RoutineRecentRuns onNavigate={onNavigate} />
 					<ChatHistoryList
 						isOpen={isSessionsOpen}
 						onOpenChange={onSessionsOpenChange}

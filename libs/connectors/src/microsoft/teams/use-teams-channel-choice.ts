@@ -21,6 +21,8 @@ export interface TeamsChannelChoice {
 	chooseTeam: (teamId: string) => void;
 	/** Pick a channel of the chosen team. */
 	chooseChannel: (channelId: string) => void;
+	/** Open a team and channel together after browsing the picker. */
+	chooseLocation: (teamId: string, channelId: string) => void;
 }
 
 /**
@@ -66,6 +68,10 @@ export const useTeamsChannelChoice = (): TeamsChannelChoice => {
 		team: team,
 		channel: channel,
 		chooseTeam: setPickedTeamId,
+		chooseLocation: (teamId, channelId) => {
+			setPickedTeamId(teamId);
+			setPickedChannel({ teamId, channelId });
+		},
 		chooseChannel: (channelId) => {
 			if (team) {
 				setPickedChannel({ teamId: team.id, channelId: channelId });

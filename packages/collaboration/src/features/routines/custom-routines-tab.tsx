@@ -25,12 +25,23 @@ import { RoutineNav } from "./routine-nav";
 // how often a running routine's card checks for its result
 const RUNNING_POLL_MS = 5000;
 
+interface CustomRoutinesTabProps {
+	/** A routine a link asked to open; a new `key` (the navigation's) opens it again after the owner picked another. */
+	request?: { id: string; key: string };
+}
+
 /** The owner's own routines in a list beside the chosen one, a way to add one, and their skills. */
-export function CustomRoutinesTab() {
+export function CustomRoutinesTab({ request }: CustomRoutinesTabProps) {
 	const routines = usePixel<unknown>("WorkListCustomRoutines();");
 	const skills = usePixel<unknown>("WorkListMySkills();");
 	const [isAdding, setIsAdding] = useState(false);
 	const [selected, setSelected] = useState("");
+	const [shownRequest, setShownRequest] = useState<string | null>(null);
+	if (request && shownRequest !== request.key) {
+		setShownRequest(request.key);
+		setSelected(request.id);
+		setIsAdding(false);
+	}
 	const parsedRoutines = customRoutineListSchema.safeParse(routines.data);
 	const parsedSkills = mySkillListSchema.safeParse(skills.data);
 	const { actions } = useInsight();

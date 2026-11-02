@@ -250,14 +250,14 @@ export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
 					<div className="flex items-center gap-2 border-border border-b bg-muted/10 px-3 py-2">
 						<div className="min-w-0 flex-1">
 							<TeamsChannelPicker
+								onSignIn={onSignIn}
 								choice={{
 									...choice,
-									chooseTeam: (teamId) => {
-										choice.chooseTeam(teamId);
-										setLimit(PAGE_SIZE);
-									},
-									chooseChannel: (channelId) => {
-										choice.chooseChannel(channelId);
+									chooseLocation: (teamId, channelId) => {
+										choice.chooseLocation(
+											teamId,
+											channelId,
+										);
 										setLimit(PAGE_SIZE);
 									},
 								}}

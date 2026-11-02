@@ -23,6 +23,23 @@ vi.mock("@/features/tools/tool-workbench.context", () => ({
 
 const agent = { name: "Assistant" } as AgentConfiguration;
 
+it("opens dedicated tool approvals in their review view", async () => {
+	const approval = ask("EditTopic");
+	render(
+		<RoomRunStatus
+			agent={agent}
+			turnError={null}
+			transportError={null}
+			pendingApprovals={[approval]}
+		/>,
+	);
+	expect(
+		screen.queryByRole("button", { name: "Approve" }),
+	).not.toBeInTheDocument();
+	await userEvent.click(screen.getByRole("button", { name: "Review" }));
+	expect(workbench.openWorkbench).toHaveBeenCalledWith("EditTopic");
+});
+
 function ask(id: string, extra: Partial<PendingToolApproval> = {}) {
 	workbench.tools[id] = {
 		id,
