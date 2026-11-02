@@ -194,7 +194,13 @@
 		"openUnreadChat": "فتح المحادثة {{title}}، تحتوي على رسائل غير مقروءة",
 		"backToChats": "العودة إلى المحادثات",
 		"latestMessages_one": "يتم عرض أحدث رسالة.",
-		"latestMessages_other": "يتم عرض أحدث {{count}} رسالة."
+		"latestMessages_other": "يتم عرض أحدث {{count}} رسالة.",
+		"searchTeams": "البحث عن فرق",
+		"searchChannels": "البحث عن قنوات",
+		"allTeams": "جميع الفرق",
+		"current": "التحديد الحالي",
+		"showingResults": "عرض {{shown}} من {{total}}",
+		"changeLocation": "تغيير الفريق أو القناة: {{team}}، {{channel}}"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

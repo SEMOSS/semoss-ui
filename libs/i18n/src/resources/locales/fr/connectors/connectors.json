@@ -190,7 +190,13 @@
 		"openUnreadChat": "Ouvrir la conversation {{title}}, messages non lus",
 		"backToChats": "Retour aux conversations",
 		"latestMessages_one": "Affichage du message le plus récent.",
-		"latestMessages_other": "Affichage des {{count}} messages les plus récents."
+		"latestMessages_other": "Affichage des {{count}} messages les plus récents.",
+		"searchTeams": "Rechercher des équipes",
+		"searchChannels": "Rechercher des canaux",
+		"allTeams": "Toutes les équipes",
+		"current": "Sélection actuelle",
+		"showingResults": "{{shown}} sur {{total}} affichés",
+		"changeLocation": "Changer d’équipe ou de canal : {{team}}, {{channel}}"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

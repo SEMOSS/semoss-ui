@@ -190,7 +190,13 @@
 		"openUnreadChat": "चैट {{title}} खोलें, इसमें अपठित संदेश हैं",
 		"backToChats": "चैट पर वापस जाएं",
 		"latestMessages_one": "सबसे नया संदेश दिखाया जा रहा है।",
-		"latestMessages_other": "सबसे नए {{count}} संदेश दिखाए जा रहे हैं।"
+		"latestMessages_other": "सबसे नए {{count}} संदेश दिखाए जा रहे हैं।",
+		"searchTeams": "टीमें खोजें",
+		"searchChannels": "चैनल खोजें",
+		"allTeams": "सभी टीमें",
+		"current": "वर्तमान चयन",
+		"showingResults": "{{total}} में से {{shown}} दिखाए जा रहे हैं",
+		"changeLocation": "टीम या चैनल बदलें: {{team}}, {{channel}}"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

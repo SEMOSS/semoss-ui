@@ -1,5 +1,6 @@
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
+import { ROUTINE_RUNS_CHANGED } from "./api/list-recent-routine-runs";
 import {
 	type EventPlanningRoutine,
 	type EventPlanningSettings,
@@ -32,6 +33,7 @@ export async function runEventPlanningNow(
 		pixel("WorkRunEventPlanningRoutine", { now: true }),
 		startedSchema,
 	);
+	window.dispatchEvent(new Event(ROUTINE_RUNS_CHANGED));
 	return callPixel(
 		actions,
 		"WorkGetEventPlanningRoutine();",

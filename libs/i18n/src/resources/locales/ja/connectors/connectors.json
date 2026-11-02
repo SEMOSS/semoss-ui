@@ -190,7 +190,13 @@
 		"openUnreadChat": "チャット {{title}} を開く、未読メッセージあり",
 		"backToChats": "チャットに戻る",
 		"latestMessages_one": "最新の {{count}} 件のメッセージを表示しています。",
-		"latestMessages_other": "最新の {{count}} 件のメッセージを表示しています。"
+		"latestMessages_other": "最新の {{count}} 件のメッセージを表示しています。",
+		"searchTeams": "チームを検索",
+		"searchChannels": "チャネルを検索",
+		"allTeams": "すべてのチーム",
+		"current": "現在の選択",
+		"showingResults": "{{total}} 件中 {{shown}} 件を表示",
+		"changeLocation": "チームまたはチャネルを変更: {{team}}、{{channel}}"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",
