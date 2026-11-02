@@ -32,6 +32,7 @@ import {
 	Square,
 	Undo,
 	WandSparkles,
+	X,
 } from "lucide-react";
 import {
 	type ReactNode,
@@ -632,6 +633,8 @@ export function RoomComposer({
 
 	const alert =
 		fileError || retainedError || submissionError || modelError?.message;
+	// closing hides this text only; a new error shows again
+	const [dismissedAlert, setDismissedAlert] = useState("");
 	const sendDisabled =
 		!draft.trim() ||
 		draft.length > MAX_CHARACTERS ||
@@ -1215,10 +1218,21 @@ export function RoomComposer({
 				onOpenChange={setIsSettingsOpen}
 				onSave={onSaveRoomSettings}
 			/>
-			{alert && (
-				<P className="mt-1.5 text-destructive text-xs" role="alert">
-					{alert}
-				</P>
+			{alert && alert !== dismissedAlert && (
+				<div className="mt-1.5 flex items-start gap-1" role="alert">
+					<P className="min-w-0 flex-1 text-destructive text-xs">
+						{alert}
+					</P>
+					<Button
+						type="button"
+						size="icon-sm"
+						variant="ghost"
+						aria-label="Dismiss error"
+						onClick={() => setDismissedAlert(alert)}
+					>
+						<X aria-hidden="true" className="size-3.5" />
+					</Button>
+				</div>
 			)}
 		</div>
 	);
