@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useState } from "react";
+import { useLocation, useSearchParams } from "react-router";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger, z } from "@semoss/ui/next";
 import officeImage from "@/assets/img/routines-office.webp";
@@ -24,6 +25,11 @@ import { RoutineAgentAvatar } from "./routine-agent-avatar";
 import { RoutineDetail } from "./routine-detail";
 import { RoutineLoader } from "./routine-loader";
 import { RoutineNav, type RoutineNavEntry } from "./routine-nav";
+import {
+	findSystemRoutine,
+	SYSTEM_ROUTINES,
+	type SystemRoutineId,
+} from "./system-routines";
 
 type RoutineSummary = Pick<RoutineNavEntry, "enabled" | "lastStatus">;
 
@@ -70,35 +76,16 @@ function SummaryProbe({
 	return <ReportSummary id={id} value={data} onReport={onReport} />;
 }
 
-/** The prebuilt routines every owner can turn on, in list order. */
-const SYSTEM_ROUTINES = [
-	{
-		id: "inbox-daily-brief",
-		name: "Inbox daily brief agent",
-		pixel: "WorkGetInboxRoutine();",
-	},
-	{
-		id: "weekly-meeting-agendas",
-		name: "Weekly meeting agendas agent",
-		pixel: "WorkGetAgendaRoutine();",
-	},
-	{
-		id: "event-planning",
-		name: "Event planning agent",
-		pixel: "WorkGetEventPlanningRoutine();",
-	},
-	{
-		id: "expense-review",
-		name: "Expense review agent",
-		pixel: "WorkGetExpenseRoutine();",
-	},
-] as const;
-
-type SystemRoutineId = (typeof SYSTEM_ROUTINES)[number]["id"];
-
-/** System routines and the owner's own, each as a list beside the chosen routine; a routine loads when opened. */
+/**
+ * System routines and the owner's own, each as a list beside the chosen routine; a routine loads when opened.
+ * A link with `?routine=<id>`, such as a sidebar run, opens that routine.
+ */
 export function RoutinesWorkspace() {
 	const { actions } = useInsight();
+	const { key: locationKey } = useLocation();
+	const [searchParams] = useSearchParams();
+	const requested = searchParams.get("routine");
+	const [tab, setTab] = useState("system");
 	const [selected, setSelected] =
 		useState<SystemRoutineId>("inbox-daily-brief");
 	const [opened, setOpened] = useState<Set<SystemRoutineId>>(
@@ -108,17 +95,30 @@ export function RoutinesWorkspace() {
 		{},
 	);
 	const [hasOpenedMine, setHasOpenedMine] = useState(false);
+	const [shownLocation, setShownLocation] = useState<string | null>(null);
 	// stable, so the reporters' effects only rerun when a summary changes
 	const [report] = useState(
 		() => (id: string, summary: RoutineSummary) =>
 			setSummaries((current) => ({ ...current, [id]: summary })),
 	);
 	const select = (id: string) => {
-		const routine = SYSTEM_ROUTINES.find((item) => item.id === id);
+		const routine = findSystemRoutine(id);
 		if (!routine) return;
 		setSelected(routine.id);
 		setOpened((current) => new Set(current).add(routine.id));
 	};
+	// every navigation here, even to the routine already in the address, opens what it names
+	if (shownLocation !== locationKey) {
+		setShownLocation(locationKey);
+		const system = findSystemRoutine(requested);
+		if (system) {
+			select(system.id);
+			setTab("system");
+		} else if (requested) {
+			setTab("mine");
+			setHasOpenedMine(true);
+		}
+	}
 
 	const detail = (id: SystemRoutineId): ReactNode => {
 		switch (id) {
@@ -260,9 +260,10 @@ export function RoutinesWorkspace() {
 		<CollaborationPage>
 			<div className="flex min-w-0 flex-col gap-6">
 				<Tabs
-					defaultValue="system"
+					value={tab}
 					className="gap-6"
 					onValueChange={(value) => {
+						setTab(value);
 						if (value === "mine") setHasOpenedMine(true);
 					}}
 				>
@@ -337,7 +338,15 @@ export function RoutinesWorkspace() {
 						forceMount
 						className="flex flex-col gap-6 data-[state=inactive]:hidden"
 					>
-						{hasOpenedMine && <CustomRoutinesTab />}
+						{hasOpenedMine && (
+							<CustomRoutinesTab
+								request={
+									requested && !findSystemRoutine(requested)
+										? { id: requested, key: locationKey }
+										: undefined
+								}
+							/>
+						)}
 					</TabsContent>
 				</Tabs>
 			</div>

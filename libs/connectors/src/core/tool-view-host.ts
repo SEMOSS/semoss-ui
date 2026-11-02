@@ -10,8 +10,10 @@ import type { ConnectorViewerProps } from "./connector.types";
  * @return The viewer host props.
  */
 export const toViewerHost = (host: ToolViewHost): ConnectorViewerProps => {
-	const { saveTargetName, onSaved, onAddToContext, onSignIn } = host;
+	const { prepareSave, saveTargetName, onSaved, onAddToContext, onSignIn } =
+		host;
 	return {
+		prepareSave,
 		saveTargetName: saveTargetName,
 		onSignIn: onSignIn,
 		onSaved: onSaved

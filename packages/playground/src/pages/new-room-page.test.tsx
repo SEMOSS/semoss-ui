@@ -313,9 +313,9 @@ function renderWorkspace() {
 	return result;
 }
 
-/** Select a destination from the real workbench File menu. */
+/** Select a place from the real workbench View menu. */
 function selectWorkspaceItem(name: string) {
-	fireEvent.keyDown(screen.getByRole("button", { name: "workbench.file" }), {
+	fireEvent.keyDown(screen.getByRole("button", { name: "workbench.view" }), {
 		key: "Enter",
 	});
 	fireEvent.click(screen.getByRole("menuitem", { name }));
@@ -458,10 +458,10 @@ test.each(["chat", "agent"] as const)(
 		fireEvent.change(screen.getByLabelText("Instructions"), {
 			target: { value: "Before opening files" },
 		});
-		selectWorkspaceItem("menuFileExplorer.open");
+		selectWorkspaceItem("workspacePlaces.files");
 		await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
 		expect(screen.getAllByRole("tab")).toHaveLength(2);
-		selectWorkspaceItem("settings.edit");
+		selectWorkspaceItem("workspacePlaces.settings");
 		expect(screen.getByLabelText("Instructions")).toHaveValue(
 			"Before opening files",
 		);
@@ -552,7 +552,7 @@ test("Settings opens locally, deduplicates, and returns when the workspace is em
 	expect(
 		screen.queryByRole("button", { name: "Publish" }),
 	).not.toBeInTheDocument();
-	selectWorkspaceItem("settings.edit");
+	selectWorkspaceItem("workspacePlaces.settings");
 	expect(screen.getAllByRole("tab")).toHaveLength(1);
 	expect(screen.getByRole("tab", { name: "room:settings.panelTitle" })).toBe(
 		settings,
@@ -571,13 +571,13 @@ test("reopening restores Files and tab changes preserve both the form and editor
 	const room = createPreparedRoom();
 	mocks.createEmptyRoom.mockResolvedValue(room);
 	renderWorkspace();
-	selectWorkspaceItem("menuFileExplorer.open");
+	selectWorkspaceItem("workspacePlaces.files");
 	const files = await screen.findByRole("tab", {
 		name: "room:menuFileExplorer.name",
 	});
 	const editor = screen.getByLabelText("File draft");
 	fireEvent.change(editor, { target: { value: "Keep file edits" } });
-	selectWorkspaceItem("settings.edit");
+	selectWorkspaceItem("workspacePlaces.settings");
 	const instructions = screen.getByLabelText("Instructions");
 	fireEvent.change(instructions, { target: { value: "Keep settings" } });
 	fireEvent.keyDown(files, { key: "Enter" });
@@ -588,7 +588,7 @@ test("reopening restores Files and tab changes preserve both the form and editor
 	expect(files).toHaveAttribute("aria-selected", "true");
 	expect(screen.getByLabelText("File draft")).toBe(editor);
 	expect(editor).toHaveValue("Keep file edits");
-	selectWorkspaceItem("settings.edit");
+	selectWorkspaceItem("workspacePlaces.settings");
 	expect(screen.getByLabelText("Instructions")).toBe(instructions);
 	expect(instructions).toHaveValue("Keep settings");
 	expect(screen.getByLabelText("Message draft")).toHaveValue(
@@ -603,7 +603,7 @@ test("failed file preparation keeps draft settings usable and supports retry", a
 		.mockRejectedValueOnce(new Error("Offline"))
 		.mockResolvedValueOnce(room);
 	renderWorkspace();
-	selectWorkspaceItem("menuFileExplorer.open");
+	selectWorkspaceItem("workspacePlaces.files");
 	await screen.findByRole("alert");
 	fireEvent.change(screen.getByLabelText("Instructions"), {
 		target: { value: "Keep after retry" },
@@ -611,7 +611,7 @@ test("failed file preparation keeps draft settings usable and supports retry", a
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
 	await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
 	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-	selectWorkspaceItem("settings.edit");
+	selectWorkspaceItem("workspacePlaces.settings");
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
 		"Keep after retry",
 	);
@@ -651,10 +651,10 @@ test("connector viewers share the prepared room and transfer draft context befor
 		"email.md",
 	);
 	expect(room.contextItems.items).toHaveLength(0);
-	selectWorkspaceItem("menuFileExplorer.open");
+	selectWorkspaceItem("workspacePlaces.files");
 	await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
-	selectWorkspaceItem("settings.edit");
+	selectWorkspaceItem("workspacePlaces.settings");
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
 		"Keep draft settings",
 	);

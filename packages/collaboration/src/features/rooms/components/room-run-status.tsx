@@ -4,6 +4,7 @@ import { Alert, Button, P, useIsMobile } from "@semoss/ui/next";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { getEditorSendId } from "@/features/room-email/room-email-tools";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
+import { collaborationToolViewUri } from "@/features/tools/views/collaboration-tool-catalog";
 import type { PendingToolApproval } from "../types/room";
 import { turnErrorSummary } from "../utils/turn-error";
 
@@ -131,6 +132,7 @@ export function RoomRunStatus({
 						const canDecideHere =
 							!approval.requiresResponse &&
 							!approval.uiUrl &&
+							!(tool && collaborationToolViewUri(tool)) &&
 							!editorSendId;
 						const isDisabled = !tool || approval.isDeciding;
 						return (
