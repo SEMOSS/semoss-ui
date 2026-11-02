@@ -5,8 +5,8 @@
 		"outlookMail": "Outlook मेल",
 		"outlookCalendar": "Outlook कैलेंडर",
 		"teams": "Teams",
-		"teamsChannels": "Teams चैनल",
-		"teamsFiles": "Teams फ़ाइलें",
+		"teamsChannels": "Teams चैनल पोस्ट",
+		"teamsFiles": "Teams चैनल फ़ाइलें",
 		"teamsChats": "Teams चैट",
 		"googleDrive": "Google Drive",
 		"gmail": "Gmail",
@@ -196,7 +196,10 @@
 		"allTeams": "सभी टीमें",
 		"current": "वर्तमान चयन",
 		"showingResults": "{{total}} में से {{shown}} दिखाए जा रहे हैं",
-		"changeLocation": "टीम या चैनल बदलें: {{team}}, {{channel}}"
+		"changeLocation": "टीम या चैनल बदलें: {{team}}, {{channel}}",
+		"postsLabel": "पोस्ट",
+		"filesLabel": "फ़ाइलें",
+		"chatsLabel": "आपकी चैट"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

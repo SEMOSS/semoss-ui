@@ -141,3 +141,75 @@ describe("Workbench-wide navigation", () => {
 		expect(store.getState().layout).toBe(before);
 	});
 });
+
+/** A dock whose only group is kept when emptied, holding three tabs. */
+function setupKeptDock() {
+	const store = createWorkbenchStore({
+		components: { editor: { name: "Editor" } },
+	});
+	const { actions } = store.getState().layout;
+	actions.loadSnapshot({
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: ["a", "b", "c"],
+			activeId: "a",
+			enableDeleteWhenEmpty: false,
+		},
+		panels: {
+			a: { id: "a", type: "editor", name: "A" },
+			b: { id: "b", type: "editor", name: "B" },
+			c: { id: "c", type: "editor", name: "C" },
+		},
+	});
+	return { store, actions };
+}
+
+describe("split groups", () => {
+	it("close with their last tab, and the dock keeps its last group", () => {
+		const { store, actions } = setupKeptDock();
+		actions.arrangePanels("columns");
+		expect(
+			store
+				.getState()
+				.layout.tabsets.map(
+					(tabset) => tabset.enableDeleteWhenEmpty === false,
+				),
+		).toEqual([true, false]);
+
+		actions.closePanel("c");
+		expect(
+			store.getState().layout.tabsets.map((tabset) => tabset.panelIds),
+		).toEqual([["a", "b"]]);
+
+		actions.arrangePanels("rows");
+		actions.closePanel("a");
+		const [last] = store.getState().layout.tabsets;
+		expect(store.getState().layout.tabsets).toHaveLength(1);
+		expect(last?.panelIds).toEqual(["b"]);
+		expect(last?.enableDeleteWhenEmpty).toBe(false);
+
+		actions.closePanel("b");
+		expect(
+			store.getState().layout.tabsets.map((tabset) => tabset.panelIds),
+		).toEqual([[]]);
+	});
+
+	it("close when their last tab moves to another group", () => {
+		const { store, actions } = setupKeptDock();
+		actions.arrangePanels("columns");
+		const [first, second] = store.getState().layout.tabsets;
+		if (!first || !second) throw new Error("expected two groups");
+		actions.movePanel("a", { kind: "join", tabsetId: second.id });
+		actions.movePanel("b", { kind: "join", tabsetId: second.id });
+
+		const { tabsets } = store.getState().layout;
+		expect(tabsets).toHaveLength(1);
+		expect(tabsets[0]?.id).toBe(second.id);
+		expect(tabsets[0]?.panelIds).toEqual(
+			expect.arrayContaining(["a", "b", "c"]),
+		);
+		expect(tabsets[0]?.enableDeleteWhenEmpty).toBe(false);
+	});
+});

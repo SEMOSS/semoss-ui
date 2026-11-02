@@ -142,8 +142,8 @@ afterEach(async () => {
 });
 
 it.each([
-	["Teams Files", TeamsFilesViewer],
-	["Teams Channels", TeamsChannelViewer],
+	["Teams Channel Files", TeamsFilesViewer],
+	["Teams Channel Posts", TeamsChannelViewer],
 ])(
 	"starts %s at all teams without loading an arbitrary channel",
 	async (_, Viewer) => {

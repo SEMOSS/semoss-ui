@@ -1,8 +1,8 @@
 import {
 	ArrowLeftIcon,
 	CheckIcon,
+	ChevronDownIcon,
 	ChevronRightIcon,
-	ChevronsUpDownIcon,
 	HashIcon,
 	UsersIcon,
 } from "lucide-react";
@@ -20,6 +20,9 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { ConnectorViewerStatus } from "../../components/connector-viewer-status";
 import { useConnectorQuery } from "../../core/use-connector-query";
@@ -69,6 +72,10 @@ export const TeamsChannelPicker = ({
 	const searchLabel = t(
 		browsedTeam ? "teams.searchChannels" : "teams.searchTeams",
 	);
+	// the count only helps when there is more to show or a search to clear
+	const showFooter =
+		query.status === "ready" &&
+		(matches.length > limit || search.length > 0);
 
 	const handleBrowseTeam = (team: TeamsTeam | null) => {
 		setBrowsedTeam(team);
@@ -87,8 +94,9 @@ export const TeamsChannelPicker = ({
 			<PopoverTrigger asChild>
 				<Button
 					type="button"
-					variant="ghost"
-					className="h-auto min-h-11 w-full min-w-0 justify-start px-2 py-1.5"
+					variant="outline"
+					size="sm"
+					className="w-fit min-w-0 max-w-full justify-start gap-1.5 bg-background font-normal shadow-none max-md:min-h-11"
 					aria-label={
 						choice.team
 							? t("teams.changeLocation", {
@@ -101,32 +109,40 @@ export const TeamsChannelPicker = ({
 					}
 				>
 					{choice.team ? (
-						<HashIcon aria-hidden data-icon="inline-start" />
-					) : (
-						<UsersIcon aria-hidden data-icon="inline-start" />
-					)}
-					{choice.team ? (
-						<span className="flex min-w-0 flex-1 flex-col items-start text-start">
-							<span className="w-full truncate font-normal text-muted-foreground text-xs">
+						<>
+							<span className="min-w-0 shrink-2 truncate text-muted-foreground">
 								{choice.team.displayName}
 							</span>
-							<span className="w-full truncate">
+							<HashIcon
+								aria-hidden
+								className="text-muted-foreground"
+							/>
+							<span className="min-w-0 truncate font-medium">
 								{choice.channel?.displayName ??
 									t("teams.chooseChannel")}
 							</span>
-						</span>
+						</>
 					) : (
-						<span className="flex-1 text-start">
-							{t("teams.chooseTeam")}
-						</span>
+						<>
+							<UsersIcon
+								aria-hidden
+								className="text-muted-foreground"
+							/>
+							<span className="min-w-0 truncate text-muted-foreground">
+								{t("teams.chooseTeam")}
+							</span>
+						</>
 					)}
-					<ChevronsUpDownIcon aria-hidden data-icon="inline-end" />
+					<ChevronDownIcon
+						aria-hidden
+						className="ms-1 text-muted-foreground"
+					/>
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
 				align="start"
 				collisionPadding={12}
-				className="flex max-h-(--radix-popover-content-available-height) w-96 max-w-(--radix-popover-content-available-width) flex-col overflow-hidden p-0"
+				className="flex max-h-(--radix-popover-content-available-height) w-80 max-w-(--radix-popover-content-available-width) flex-col overflow-hidden p-0"
 				aria-label={t(
 					browsedTeam ? "teams.chooseChannel" : "teams.chooseTeam",
 				)}
@@ -135,32 +151,32 @@ export const TeamsChannelPicker = ({
 					inputRef.current?.focus();
 				}}
 			>
-				<div className="flex shrink-0 flex-col gap-1 border-border border-b p-3">
-					{browsedTeam ? (
-						<>
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								className="-ms-2 self-start"
-								onClick={() => handleBrowseTeam(null)}
-							>
-								<ArrowLeftIcon
-									aria-hidden
-									data-icon="inline-start"
-								/>
+				{browsedTeam ? (
+					<div className="flex shrink-0 items-center gap-1 border-border border-b p-1">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									aria-label={t("teams.allTeams")}
+									onClick={() => handleBrowseTeam(null)}
+								>
+									<ArrowLeftIcon
+										aria-hidden
+										className="rtl:-scale-x-100"
+									/>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
 								{t("teams.allTeams")}
-							</Button>
-							<span className="wrap-anywhere font-medium text-sm">
-								{browsedTeam.displayName}
-							</span>
-						</>
-					) : (
-						<span className="font-medium text-sm">
-							{t("teams.chooseTeam")}
+							</TooltipContent>
+						</Tooltip>
+						<span className="min-w-0 flex-1 truncate font-medium text-sm">
+							{browsedTeam.displayName}
 						</span>
-					)}
-				</div>
+					</div>
+				) : null}
 				<Command
 					key={browsedTeam?.id ?? "teams"}
 					shouldFilter={false}
@@ -207,7 +223,8 @@ export const TeamsChannelPicker = ({
 											<CommandItem
 												key={item.id}
 												value={item.id}
-												className="min-h-11 items-start py-2"
+												title={item.displayName}
+												className="min-h-9"
 												onSelect={() => {
 													if (browsedTeam) {
 														choice.chooseLocation(
@@ -224,12 +241,12 @@ export const TeamsChannelPicker = ({
 												) : (
 													<UsersIcon aria-hidden />
 												)}
-												<span className="flex min-w-0 flex-1 flex-col gap-1">
-													<span className="wrap-anywhere">
+												<span className="flex min-w-0 flex-1 flex-col">
+													<span className="truncate">
 														{item.displayName}
 													</span>
 													{item.description ? (
-														<span className="line-clamp-2 text-muted-foreground text-xs">
+														<span className="truncate text-muted-foreground text-xs">
 															{item.description}
 														</span>
 													) : null}
@@ -247,6 +264,7 @@ export const TeamsChannelPicker = ({
 												{!browsedTeam ? (
 													<ChevronRightIcon
 														aria-hidden
+														className="rtl:-scale-x-100 text-muted-foreground"
 													/>
 												) : null}
 											</CommandItem>
@@ -271,8 +289,8 @@ export const TeamsChannelPicker = ({
 						)}
 					</CommandList>
 				</Command>
-				{query.status === "ready" ? (
-					<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-border border-t px-3 py-2">
+				{showFooter ? (
+					<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-border border-t px-3 py-1.5">
 						<Muted className="text-xs">
 							{t("teams.showingResults", {
 								shown: Math.min(limit, matches.length),

@@ -10,29 +10,22 @@ import { RoomProvider } from "@/contexts/room.context";
 import { normalizeFolderPath } from "@/features/chat-tools/folders/folder-path";
 import { useNextMessageRoom } from "@/features/conversation/next-message-room.context";
 import { RoomWorkbenchMenus } from "@/features/workbench/room-workbench-menus";
-import type { WorkspaceMenuItemsProps } from "@/features/workbench/workspace-menu-items";
+import type { DraftWorkspacePlaces } from "@/features/workbench/use-workspace-places";
 import type { RoomStore } from "@/stores/room/room.store";
 import { RoomSidebarActions } from "./room-sidebar-actions";
 
 interface RoomSidebarProps {
 	/** The room owns the dock, including while this view is hidden. */
 	room: RoomStore;
-	/** Use the new-chat draft's settings before its first submission. */
-	onOpenSettings?: () => void;
-	/** Draft-specific destinations, including lazy preparation for Files. */
-	workspaceActions?: Omit<WorkspaceMenuItemsProps, "onNavigate">;
+	/** A new chat's own actions, including lazy preparation for Files. */
+	draft?: DraftWorkspacePlaces;
 	/** Publishing becomes available once the draft has prepared a room. */
 	canPublish?: boolean;
 }
 
 /** A contextual work area whose editors stay mounted through view changes. */
 export const RoomSidebar = observer(
-	({
-		room,
-		onOpenSettings,
-		workspaceActions,
-		canPublish = true,
-	}: RoomSidebarProps) => {
+	({ room, draft, canPublish = true }: RoomSidebarProps) => {
 		const { t } = useTranslation("connectors");
 		const nextMessageRoom = useNextMessageRoom() ?? room;
 		const explorerHost = useMemo<FileExplorerHost>(
@@ -70,10 +63,7 @@ export const RoomSidebar = observer(
 										before: ({ onNavigate }) => (
 											<RoomWorkbenchMenus
 												onNavigate={onNavigate}
-												onOpenSettings={onOpenSettings}
-												workspaceActions={
-													workspaceActions
-												}
+												draft={draft}
 											/>
 										),
 										after: (

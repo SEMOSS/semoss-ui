@@ -119,7 +119,7 @@ test("top border orders actions and publishes the latest room configuration", as
 					button.getAttribute("aria-label") ?? button.textContent,
 			),
 	).toEqual([
-		"workbench.file",
+		"workbench.view",
 		"workspace.publishTooltip",
 		"studio.closeWorkspace",
 	]);
@@ -214,14 +214,14 @@ test("mobile top menus navigate and dismiss the drawer without closing the work 
 	);
 	const drawer = await screen.findByRole("dialog");
 	fireEvent.keyDown(
-		within(drawer).getByRole("button", { name: "workbench.file" }),
+		within(drawer).getByRole("button", { name: "workbench.view" }),
 		{ key: "Enter" },
 	);
 	expect(
 		screen.queryByRole("menuitem", { name: "workbench.navigate" }),
 	).not.toBeInTheDocument();
 	await user.click(
-		await screen.findByRole("menuitem", { name: "menuFileExplorer.open" }),
+		await screen.findByRole("menuitem", { name: "workspacePlaces.files" }),
 	);
 	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(
 		before + 1,
@@ -243,7 +243,7 @@ test("mobile command palette opens above the actions drawer", async () => {
 	);
 	const drawer = await screen.findByRole("dialog");
 	fireEvent.keyDown(
-		within(drawer).getByRole("button", { name: "workbench.file" }),
+		within(drawer).getByRole("button", { name: "workbench.view" }),
 		{ key: "Enter" },
 	);
 	fireEvent.click(

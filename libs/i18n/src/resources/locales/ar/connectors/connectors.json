@@ -5,8 +5,8 @@
 		"outlookMail": "بريد Outlook",
 		"outlookCalendar": "تقويم Outlook",
 		"teams": "Teams",
-		"teamsChannels": "قنوات Teams",
-		"teamsFiles": "ملفات Teams",
+		"teamsChannels": "منشورات قنوات Teams",
+		"teamsFiles": "ملفات قنوات Teams",
 		"teamsChats": "محادثات Teams",
 		"googleDrive": "Google Drive",
 		"gmail": "Gmail",
@@ -200,7 +200,10 @@
 		"allTeams": "جميع الفرق",
 		"current": "التحديد الحالي",
 		"showingResults": "عرض {{shown}} من {{total}}",
-		"changeLocation": "تغيير الفريق أو القناة: {{team}}، {{channel}}"
+		"changeLocation": "تغيير الفريق أو القناة: {{team}}، {{channel}}",
+		"postsLabel": "المنشورات",
+		"filesLabel": "الملفات",
+		"chatsLabel": "محادثاتك"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

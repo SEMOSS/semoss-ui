@@ -26,6 +26,9 @@ import { DropHighlight } from "@/features/conversation/drop-highlight";
 import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
 import { usePreparedRoom } from "@/features/conversation/use-prepared-room";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
+import type { DraftWorkspacePlaces } from "@/features/workbench/use-workspace-places";
+import { WorkspaceMenuItems } from "@/features/workbench/workspace-menu-items";
+import { WorkspaceRail } from "@/features/workbench/workspace-rail";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { RoomStore } from "@/stores/room/room.store";
@@ -667,18 +670,20 @@ export const NewRoomPage = observer(() => {
 		workspaceRoom.openSidebar();
 	};
 
+	const draftPlaces: DraftWorkspacePlaces = {
+		onOpenFiles: () => void handleOpenFiles(),
+		onOpenSettings: handleOpenSettings,
+		onOpenActivity: handleOpenActivity,
+		onOpenSource: (service) => void handleOpenSource(service),
+		isPreparing: isPreparing || isLoading,
+		connectors: tempRoomStore.connectors,
+	};
+
 	const workbench = (
 		<RoomSidebar
 			room={workspaceRoom}
 			canPublish={Boolean(preCreatedRoom)}
-			workspaceActions={{
-				onOpenFiles: () => void handleOpenFiles(),
-				onOpenSettings: handleOpenSettings,
-				onOpenActivity: handleOpenActivity,
-				isPreparing: isPreparing || isLoading,
-				showActivityLog:
-					root.theme.featureFlags?.showActivityLog !== false,
-			}}
+			draft={draftPlaces}
 		/>
 	);
 
@@ -696,6 +701,18 @@ export const NewRoomPage = observer(() => {
 				<ConversationWorkspace
 					isOpen={workspaceRoom.sidebar.isOpen}
 					onOpenWorkArea={handleOpenWorkArea}
+					rail={
+						<WorkspaceRail
+							room={workspaceRoom}
+							draft={draftPlaces}
+						/>
+					}
+					railMenuItems={
+						<WorkspaceMenuItems
+							room={workspaceRoom}
+							draft={draftPlaces}
+						/>
+					}
 					panel={
 						<DraftSettingsContext.Provider
 							value={{

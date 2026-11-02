@@ -5,8 +5,8 @@
 		"outlookMail": "Correo de Outlook",
 		"outlookCalendar": "Calendario de Outlook",
 		"teams": "Teams",
-		"teamsChannels": "Canales de Teams",
-		"teamsFiles": "Archivos de Teams",
+		"teamsChannels": "Publicaciones de canales de Teams",
+		"teamsFiles": "Archivos de canales de Teams",
 		"teamsChats": "Chats de Teams",
 		"googleDrive": "Google Drive",
 		"gmail": "Gmail",
@@ -196,7 +196,10 @@
 		"allTeams": "Todos los equipos",
 		"current": "Selección actual",
 		"showingResults": "Mostrando {{shown}} de {{total}}",
-		"changeLocation": "Cambiar equipo o canal: {{team}}, {{channel}}"
+		"changeLocation": "Cambiar equipo o canal: {{team}}, {{channel}}",
+		"postsLabel": "Publicaciones",
+		"filesLabel": "Archivos",
+		"chatsLabel": "Tus chats"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",
