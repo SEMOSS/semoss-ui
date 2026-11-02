@@ -4,10 +4,30 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import strings from "../../../../i18n/src/resources/locales/en/connectors/connectors.json";
 import { runConnectorPixel } from "../../core/connector-pixel";
 import { TeamsChannelPicker } from "./teams-channel-picker";
+import { TeamsChannelViewer } from "./teams-channel-viewer";
+import { TeamsFilesViewer } from "./teams-files-viewer";
 import { useTeamsChannelChoice } from "./use-teams-channel-choice";
+
+const files = vi.hoisted(() => ({
+	root: { files: [{ id: "folder", name: "Demo Docs", isFolder: true }] },
+	folder: {
+		files: [{ id: "report", name: "Report.pdf", driveId: "team-drive" }],
+	},
+	empty: [],
+	refresh: vi.fn(),
+}));
 
 vi.mock("@semoss/sdk/react", () => ({
 	useInsight: () => ({ insightId: "origin" }),
+	usePixel: (pixel: string) => ({
+		status: "SUCCESS",
+		data: !pixel
+			? files.empty
+			: pixel.includes("folderPath")
+				? files.folder
+				: files.root,
+		refresh: files.refresh,
+	}),
 }));
 vi.mock("../../core/connector-pixel", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../../core/connector-pixel")>()),
@@ -15,6 +35,7 @@ vi.mock("../../core/connector-pixel", async (importOriginal) => ({
 }));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({
+		i18n: { language: "en" },
 		t: (key: string, values?: Record<string, unknown>) => {
 			const template = key
 				.split(".")
@@ -93,8 +114,7 @@ const search = async (value: string) => {
 	return input;
 };
 const openTeams = async () => {
-	await click(button("Change team or channel"));
-	await click(button("All teams"));
+	await click(button("Choose a team"));
 };
 
 beforeEach(() => {
@@ -121,6 +141,49 @@ afterEach(async () => {
 	vi.unstubAllGlobals();
 });
 
+it.each([
+	["Teams Files", TeamsFilesViewer],
+	["Teams Channels", TeamsChannelViewer],
+])(
+	"starts %s at all teams without loading an arbitrary channel",
+	async (_, Viewer) => {
+		await act(async () => root.render(<Viewer showHeader={false} />));
+		expect(button("Choose a team").textContent).toBe("Choose a team");
+		expect(document.body.textContent).not.toContain(
+			"You are not in any teams",
+		);
+		expect(read.mock.calls.map(([pixel]) => pixel)).toEqual([
+			"MicrosoftTeamsListTeams();",
+		]);
+		await openTeams();
+		expect(document.activeElement?.getAttribute("aria-label")).toBe(
+			"Search teams",
+		);
+		expect(option("Alpha team")).toBeTruthy();
+		expect(
+			document.querySelector('[role="dialog"]')?.textContent,
+		).not.toContain("All teams");
+		await click(option("Alpha team"));
+		expect(button("Choose a team").textContent).toBe("Choose a team");
+		expect(read.mock.calls.map(([pixel]) => pixel)).toEqual([
+			"MicrosoftTeamsListTeams();",
+			'MicrosoftTeamsListChannels(teamId=["alpha"]);',
+		]);
+		await act(async () =>
+			document.activeElement?.dispatchEvent(
+				new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+			),
+		);
+		await vi.waitFor(() =>
+			expect(document.activeElement).toBe(button("Choose a team")),
+		);
+		await openTeams();
+		expect(document.activeElement?.getAttribute("aria-label")).toBe(
+			"Search teams",
+		);
+	},
+);
+
 it("searches the whole directory, pages results, and commits a team/channel together with the keyboard", async () => {
 	await render();
 	await openTeams();
@@ -130,9 +193,7 @@ it("searches the whole directory, pages results, and commits a team/channel toge
 	await search("  RESEARCH  zulu ");
 	expect(document.querySelectorAll('[role="option"]')).toHaveLength(1);
 	await click(option("Zulu team"));
-	expect(button("Change team or channel").textContent).toContain(
-		"Alpha team",
-	);
+	expect(button("Choose a team").textContent).toBe("Choose a team");
 	const input = await search("milestones");
 	expect(document.activeElement).toBe(input);
 	expect(document.querySelectorAll('[role="option"]')).toHaveLength(1);
@@ -152,6 +213,13 @@ it("searches the whole directory, pages results, and commits a team/channel toge
 	);
 	await new Promise((resolve) => setTimeout(resolve, 0));
 	expect(document.activeElement).toBe(button("Change team or channel"));
+	await click(button("Change team or channel"));
+	expect(document.activeElement?.getAttribute("aria-label")).toBe(
+		"Search channels",
+	);
+	expect(document.querySelector('[role="dialog"]')?.textContent).toContain(
+		"Zulu team",
+	);
 });
 
 it("keeps the location on Escape and ignores channels arriving after leaving a team", async () => {
@@ -166,6 +234,10 @@ it("keeps the location on Escape and ignores channels arriving after leaving a t
 	});
 	await render();
 	await openTeams();
+	await click(option("Alpha team"));
+	await click(option("General"));
+	await click(button("Change team or channel"));
+	await click(button("All teams"));
 	await search("Zulu");
 	await click(option("Zulu team"));
 	expect(document.querySelector("output")?.textContent).toBe("Loading");
@@ -206,9 +278,7 @@ it("clears an unmatched search and distinguishes a team with no channels", async
 	expect(document.body.textContent).toContain(
 		"This team has no channels you can see",
 	);
-	expect(button("Change team or channel").textContent).toContain(
-		"Alpha teamGeneral",
-	);
+	expect(button("Choose a team").textContent).toBe("Choose a team");
 });
 
 it("retries a failed channel read within the picker", async () => {
@@ -231,4 +301,57 @@ it("retries a failed channel read within the picker", async () => {
 	expect(button("Change team or channel").textContent).toContain(
 		"Zulu teamPlanning",
 	);
+});
+
+it("opens a clicked Teams file after fetching it, while folder selection only browses", async () => {
+	let finishDownload: (value: unknown) => void = () => undefined;
+	read.mockImplementation(async (pixel) => {
+		if (pixel.includes("ListTeams")) return teams;
+		if (pixel.includes("ListChannels")) return channels;
+		if (pixel.includes("BrowseInsightAssets")) return [];
+		if (pixel.includes("DownloadFile")) {
+			return new Promise((resolve) => {
+				finishDownload = resolve;
+			});
+		}
+		throw new Error(`Unexpected pixel: ${pixel}`);
+	});
+	const onOpenFile = vi.fn();
+	const onAddToContext = vi.fn();
+	const onSaved = vi.fn();
+	await act(async () =>
+		root.render(
+			<TeamsFilesViewer
+				onOpenFile={onOpenFile}
+				onAddToContext={onAddToContext}
+				onSaved={onSaved}
+			/>,
+		),
+	);
+	await openTeams();
+	await click(option("Alpha team"));
+	await click(option("General"));
+	await click(button("Demo Docs"));
+	expect(
+		read.mock.calls.some(([pixel]) => pixel.includes("DownloadFile")),
+	).toBe(false);
+	await click(button("Report.pdf"));
+	await click(button("Report.pdf"));
+	const downloads = read.mock.calls.filter(([pixel]) =>
+		pixel.includes("DownloadFile"),
+	);
+	expect(downloads).toHaveLength(1);
+	expect(downloads[0]).toEqual([
+		'MicrosoftTeamsDownloadFile(id=["report"], driveId=["team-drive"], fileName=["<encode>Report.pdf</encode>"]);',
+		"origin",
+	]);
+	expect(onOpenFile).not.toHaveBeenCalled();
+	await act(async () => finishDownload({ filePath: "Report.pdf" }));
+	expect(onOpenFile).toHaveBeenCalledExactlyOnceWith({
+		path: "Report.pdf",
+		name: "Report.pdf",
+		service: "teams-files",
+	});
+	expect(onAddToContext).not.toHaveBeenCalled();
+	expect(onSaved).not.toHaveBeenCalled();
 });

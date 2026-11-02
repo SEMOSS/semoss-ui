@@ -97,7 +97,7 @@ export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
 			);
 		}
 		if (!team) {
-			return (
+			return choice.teamsQuery.data?.length ? null : (
 				<div className="px-4 py-8 text-center">
 					<Muted>{t("teams.noTeams")}</Muted>
 				</div>
@@ -118,7 +118,13 @@ export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
 		if (choice.channelsQuery.status === "ready" && !channel) {
 			return (
 				<div className="px-4 py-8 text-center">
-					<Muted>{t("teams.noChannels")}</Muted>
+					<Muted>
+						{t(
+							choice.channelsQuery.data?.length
+								? "teams.chooseChannel"
+								: "teams.noChannels",
+						)}
+					</Muted>
 				</div>
 			);
 		}
@@ -246,7 +252,8 @@ export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
 						{refreshButton}
 					</ConnectorViewerHeader>
 				) : null}
-				{choice.teamsQuery.status === "ready" && team ? (
+				{choice.teamsQuery.status === "ready" &&
+				(choice.teamsQuery.data?.length ?? 0) > 0 ? (
 					<div className="flex items-center gap-2 border-border border-b bg-muted/10 px-3 py-2">
 						<div className="min-w-0 flex-1">
 							<TeamsChannelPicker

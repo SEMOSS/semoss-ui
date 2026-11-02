@@ -89,23 +89,37 @@ export const TeamsChannelPicker = ({
 					type="button"
 					variant="ghost"
 					className="h-auto min-h-11 w-full min-w-0 justify-start px-2 py-1.5"
-					aria-label={t("teams.changeLocation", {
-						team: choice.team?.displayName ?? t("teams.chooseTeam"),
-						channel:
-							choice.channel?.displayName ??
-							t("teams.chooseChannel"),
-					})}
+					aria-label={
+						choice.team
+							? t("teams.changeLocation", {
+									team: choice.team.displayName,
+									channel:
+										choice.channel?.displayName ??
+										t("teams.chooseChannel"),
+								})
+							: undefined
+					}
 				>
-					<HashIcon aria-hidden data-icon="inline-start" />
-					<span className="flex min-w-0 flex-1 flex-col items-start text-start">
-						<span className="w-full truncate font-normal text-muted-foreground text-xs">
-							{choice.team?.displayName ?? t("teams.chooseTeam")}
+					{choice.team ? (
+						<HashIcon aria-hidden data-icon="inline-start" />
+					) : (
+						<UsersIcon aria-hidden data-icon="inline-start" />
+					)}
+					{choice.team ? (
+						<span className="flex min-w-0 flex-1 flex-col items-start text-start">
+							<span className="w-full truncate font-normal text-muted-foreground text-xs">
+								{choice.team.displayName}
+							</span>
+							<span className="w-full truncate">
+								{choice.channel?.displayName ??
+									t("teams.chooseChannel")}
+							</span>
 						</span>
-						<span className="w-full truncate">
-							{choice.channel?.displayName ??
-								t("teams.chooseChannel")}
+					) : (
+						<span className="flex-1 text-start">
+							{t("teams.chooseTeam")}
 						</span>
-					</span>
+					)}
 					<ChevronsUpDownIcon aria-hidden data-icon="inline-end" />
 				</Button>
 			</PopoverTrigger>
@@ -113,7 +127,9 @@ export const TeamsChannelPicker = ({
 				align="start"
 				collisionPadding={12}
 				className="flex max-h-(--radix-popover-content-available-height) w-96 max-w-(--radix-popover-content-available-width) flex-col overflow-hidden p-0"
-				aria-label={t("teams.chooseChannel")}
+				aria-label={t(
+					browsedTeam ? "teams.chooseChannel" : "teams.chooseTeam",
+				)}
 				onOpenAutoFocus={(event) => {
 					event.preventDefault();
 					inputRef.current?.focus();

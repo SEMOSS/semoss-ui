@@ -16,8 +16,8 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
-import { useWorkbench } from "../../hooks";
-import { measure } from "../../stores";
+import { useWorkbench } from "../../hooks/use-workbench";
+import { measure } from "../../stores/slices/workbench-layout.tree";
 import type {
 	WorkbenchPanelId,
 	WorkbenchPanelRecord,
@@ -87,6 +87,8 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 		[node.id],
 	);
 	const showMaximize = node.enableMaximize !== false && activeCanMaximize;
+	// Empty docks keep their drop slot, but have no visible panel chrome.
+	const hasPanels = node.panelIds.length > 0;
 	// with no strip the slot reaches the card's top edge too
 	const capped = node.enableTabStrip === false;
 	const maximizeLabel = maximized ? "Minimize" : "Maximize";
@@ -112,11 +114,12 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 						: { flexGrow: node.size, flexBasis: 0, ...limits }
 				}
 				className={cn(
-					"flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card",
+					"flex min-h-0 min-w-0 flex-col overflow-hidden",
+					hasPanels && "rounded-lg border border-border bg-card",
 					maximized && "fixed inset-4 z-50 shadow-lg",
 				)}
 			>
-				{node.enableTabStrip === false ? null : (
+				{!hasPanels || node.enableTabStrip === false ? null : (
 					<div
 						data-tabstrip={node.id}
 						role="tablist"
@@ -258,13 +261,7 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 							bl: true,
 						})}
 						className="relative min-h-0 flex-1"
-					>
-						{!node.activeId && (
-							<div className="flex h-full items-center justify-center p-6 text-center text-muted-foreground text-sm">
-								No panel here.
-							</div>
-						)}
-					</div>
+					/>
 				)}
 			</div>
 		</>
