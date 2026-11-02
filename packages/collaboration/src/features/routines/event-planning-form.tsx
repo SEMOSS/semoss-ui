@@ -20,11 +20,14 @@ import {
 	useForm,
 	zodResolver,
 } from "@semoss/ui/next";
-import { EventPlanningPicker } from "./event-planning-picker";
+import { EventPlanningCalendar } from "./event-planning-calendar";
+import { EventPlanningMeetingEditor } from "./event-planning-meeting-editor";
 import {
 	type EventPlanningRoutine,
 	type EventPlanningSettings,
 	eventPlanningSettingsSchema,
+	type MeetingPin,
+	pinKey,
 } from "./event-planning-schema";
 import { RoutineAgentAvatar } from "./routine-agent-avatar";
 import { RoutineAvailability } from "./routine-availability";
@@ -82,6 +85,38 @@ export function EventPlanningForm({
 	});
 	const { errors, isSubmitting } = form.formState;
 	const ignored = form.watch("ignored");
+	const meetings = form.watch("meetings");
+	const [selectedKey, setSelectedKey] = useState(
+		routine.meetings[0] ? pinKey(routine.meetings[0]) : "",
+	);
+	const selectedIndex = meetings.findIndex(
+		(meeting) => pinKey(meeting) === selectedKey,
+	);
+
+	// a new meeting is added and opened; a chosen one just opens
+	const choose = (pin: MeetingPin) => {
+		const key = pinKey(pin);
+		if (!meetings.some((meeting) => pinKey(meeting) === key)) {
+			form.setValue(
+				"ignored",
+				ignored.filter((other) => pinKey(other) !== key),
+				{ shouldDirty: true },
+			);
+			form.setValue("meetings", [...meetings, pin], {
+				shouldDirty: true,
+				shouldValidate: true,
+			});
+		}
+		setSelectedKey(key);
+	};
+	const remove = (key: string) => {
+		const next = meetings.filter((meeting) => pinKey(meeting) !== key);
+		form.setValue("meetings", next, {
+			shouldDirty: true,
+			shouldValidate: true,
+		});
+		if (key === selectedKey) setSelectedKey(next[0] ? pinKey(next[0]) : "");
+	};
 	const isAvailable =
 		routine.schedulerAvailable &&
 		routine.assistantAvailable &&
@@ -248,26 +283,6 @@ export function EventPlanningForm({
 								)}
 							/>
 							<RoutineTimeFields />
-							<FormField
-								control={form.control}
-								name="meetings"
-								render={({ field, fieldState }) => (
-									<EventPlanningPicker
-										meetings={field.value}
-										ignored={ignored}
-										onMeetingsChange={field.onChange}
-										onIgnoredChange={(next) =>
-											form.setValue("ignored", next, {
-												shouldDirty: true,
-											})
-										}
-										onBlur={field.onBlur}
-										inputRef={field.ref}
-										saved={routine.meetings}
-										error={fieldState.error?.message}
-									/>
-								)}
-							/>
 							<FormTextarea
 								name="preferences"
 								label="Preferences (optional)"
@@ -283,6 +298,66 @@ export function EventPlanningForm({
 							/>
 						</div>
 					</CardContent>
+					<Separator />
+					<section
+						aria-label="Meetings to plan"
+						className="flex min-w-0 flex-col gap-4 py-6"
+					>
+						<div className="flex flex-wrap items-center gap-2 px-6">
+							<h3 className="mr-2 font-medium text-sm">
+								Meetings to plan
+							</h3>
+							{meetings.map((meeting) => (
+								<Button
+									key={pinKey(meeting)}
+									type="button"
+									size="sm"
+									variant={
+										pinKey(meeting) === selectedKey
+											? "default"
+											: "outline"
+									}
+									onClick={() =>
+										setSelectedKey(pinKey(meeting))
+									}
+								>
+									{meeting.title}
+								</Button>
+							))}
+							{meetings.length === 0 && (
+								<span className="text-muted-foreground text-sm">
+									Pick a meeting on your calendar to start.
+								</span>
+							)}
+						</div>
+						<div className="grid min-w-0 gap-6 px-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+							<EventPlanningCalendar
+								meetings={meetings}
+								selectedKey={selectedKey}
+								onChoose={choose}
+								error={
+									errors.meetings?.message ??
+									errors.meetings?.root?.message
+								}
+							/>
+							<aside className="min-w-0 rounded-lg border p-4">
+								{selectedIndex >= 0 ? (
+									<EventPlanningMeetingEditor
+										key={selectedKey}
+										index={selectedIndex}
+										pin={meetings[selectedIndex]}
+										onRemove={() => remove(selectedKey)}
+									/>
+								) : (
+									<p className="text-muted-foreground text-sm">
+										Click a meeting on the calendar to plan
+										it. You can then say what it is for and
+										which topics it covers.
+									</p>
+								)}
+							</aside>
+						</div>
+					</section>
 					<RoutineAvailability
 						routine={routine}
 						isAvailable={isAvailable}

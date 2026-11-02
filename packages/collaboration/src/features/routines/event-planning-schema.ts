@@ -21,6 +21,16 @@ export const meetingPinSchema = z.object({
 		.trim()
 		.min(1, "A meeting needs a title.")
 		.max(120, "Meeting titles are at most 120 characters."),
+	/** What the owner wants the meeting to achieve; planning works toward it. */
+	brief: z
+		.string()
+		.max(2000, "Keep the goal under 2000 characters.")
+		.optional(),
+	/** Topics the owner says this meeting covers; planning draws topics from them first. */
+	topicIds: z
+		.array(z.string().min(1))
+		.max(5, "Link up to 5 topics.")
+		.optional(),
 });
 
 /** The identity of a pin, the same for a pin and the calendar option it came from. */

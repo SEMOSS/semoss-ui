@@ -5,8 +5,8 @@ import { callPixel, pixel } from "@/lib/pixel";
 
 /** The calendar answers at most 100 events a call. */
 const PAGE = 100;
-/** Pages read before stopping; recurring sittings fill pages fast on a busy calendar. */
-const MAX_PAGES = 6;
+/** Pages read before stopping; a page can end well short of 100 once its output budget is used. */
+const MAX_PAGES = 15;
 
 const pageSchema = z.object({
 	hasMore: z.boolean().nullish(),
@@ -19,8 +19,8 @@ export interface CalendarWindow {
 	listing: { events: unknown[]; hasMore: boolean } | null;
 }
 
-/** The owner's events over the next days, read page by page so the whole window is covered. */
-export function useCalendarWindow(days: number): CalendarWindow {
+/** The owner's events over the next days (from startDay days after today), read page by page. */
+export function useCalendarWindow(days: number, startDay = 0): CalendarWindow {
 	const { actions } = useInsight();
 	const [state, setState] = useState<CalendarWindow>({
 		status: "LOADING",
@@ -28,21 +28,31 @@ export function useCalendarWindow(days: number): CalendarWindow {
 	});
 	useEffect(() => {
 		let cancelled = false;
+		setState({ status: "LOADING", listing: null });
+		const start = new Date();
+		start.setHours(0, 0, 0, 0);
+		start.setDate(start.getDate() + startDay);
+		const end = new Date(start);
+		end.setDate(end.getDate() + days);
 		(async () => {
 			const events: unknown[] = [];
 			let hasMore = true;
+			let offset = 0;
 			for (let page = 0; page < MAX_PAGES && hasMore; page++) {
 				const result = await callPixel(
 					actions,
 					pixel("MicrosoftCalendarListEvents", {
-						days,
+						start: start.toISOString(),
+						end: end.toISOString(),
 						limit: PAGE,
-						offset: page * PAGE,
+						offset,
 					}),
 					pageSchema,
 				);
 				events.push(...result.events);
-				hasMore = result.hasMore === true;
+				// the next page starts after what came back, never a full page further on
+				offset += result.events.length;
+				hasMore = result.hasMore === true && result.events.length > 0;
 			}
 			if (!cancelled) {
 				setState({ status: "SUCCESS", listing: { events, hasMore } });
@@ -53,6 +63,6 @@ export function useCalendarWindow(days: number): CalendarWindow {
 		return () => {
 			cancelled = true;
 		};
-	}, [actions, days]);
+	}, [actions, days, startDay]);
 	return state;
 }
