@@ -5,7 +5,9 @@ import {
 	type ModelUsageLimit,
 	post,
 	readModelUsageLimit,
+	runPixel,
 } from "@semoss/sdk/react";
+import { auditPixelLiteral } from "./audit-pixel";
 
 export const config = async () => {
 	// get the response
@@ -663,20 +665,28 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 	return response.data;
 };
 
+/** A default model kept in the user's metadata. */
+export type UserDefaultModelKey =
+	| "text-generation-model"
+	| "code-generation-model";
+
+/**
+ * Sets or removes one of the user's default models. An empty list for the key
+ * deletes its stored value, so a removed default is gone rather than blank.
+ *
+ * @param metaKey - Which default.
+ * @param engineId - The model's engine id, or empty to remove the default.
+ * @throws When the backend refuses the change.
+ */
 export const setUserDefaultModel = async (
-	metaKey: string,
-	metaValue: string,
-) => {
-	const url = `${Env.MODULE}/api/auth/user/setUserMetadata`;
-	const response = await post<boolean>(
-		url,
-		{
-			metaKey,
-			metaValue,
-		},
-		{},
-	).catch((e) => {
-		throw Error(e);
-	});
-	return response;
+	metaKey: UserDefaultModelKey,
+	engineId: string,
+): Promise<void> => {
+	const value = engineId ? auditPixelLiteral(engineId) : "";
+	const response = await runPixel(
+		`SetUserMetadata(meta=[{${auditPixelLiteral(metaKey)}:[${value}]}]);`,
+	);
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
 };
