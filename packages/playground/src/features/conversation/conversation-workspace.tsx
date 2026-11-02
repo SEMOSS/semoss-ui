@@ -1,4 +1,3 @@
-import { PanelRightOpenIcon } from "lucide-react";
 import {
 	type ReactNode,
 	useCallback,
@@ -10,7 +9,6 @@ import {
 } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
-	Button,
 	cn,
 	ResizableHandle,
 	ResizablePanel,
@@ -19,12 +17,11 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	useIsMobile,
 } from "@semoss/ui/next";
 import { ConversationWorkspaceActionsContext } from "./conversation-workspace-actions.context";
+import { ConversationWorkspaceRailContext } from "./conversation-workspace-rail.context";
+import { OpenWorkspaceButton } from "./open-workspace-button";
 import { WorkspaceNavigationContext } from "./workspace-navigation.context";
 
 interface ConversationWorkspaceProps {
@@ -36,6 +33,10 @@ interface ConversationWorkspaceProps {
 	isOpen: boolean;
 	/** Opens the contextual work area, restoring its prior contents when possible. */
 	onOpenWorkArea: () => void;
+	/** The Workspace's places, beside the work area on wide screens. */
+	rail?: ReactNode;
+	/** The same places as menu items, behind the open button on narrow screens. */
+	railMenuItems?: ReactNode;
 }
 
 /** One stable pair of panes across desktop and narrow views. */
@@ -44,6 +45,8 @@ export function ConversationWorkspace({
 	panel,
 	isOpen,
 	onOpenWorkArea,
+	rail,
+	railMenuItems,
 }: ConversationWorkspaceProps) {
 	const { t } = useTranslation("room");
 	const isMobile = useIsMobile();
@@ -52,6 +55,7 @@ export function ConversationWorkspace({
 	const containerRef = useRef<HTMLDivElement>(null);
 	const chatRef = useRef<HTMLDivElement>(null);
 	const workRef = useRef<HTMLDivElement>(null);
+	const railRef = useRef<HTMLDivElement>(null);
 	const openWorkAreaRef = useRef<HTMLButtonElement>(null);
 	const lastChatFocus = useRef<HTMLElement | null>(null);
 	const openedFromTrigger = useRef(false);
@@ -61,7 +65,6 @@ export function ConversationWorkspace({
 	const [focusRequest, setFocusRequest] = useState(0);
 	const [view, setView] = useState("chat");
 	const [hasOpened, setHasOpened] = useState(isOpen);
-	const openWorkAreaLabel = t("studio.openWorkArea");
 
 	const handleOpenWorkArea = useCallback(() => {
 		openedFromTrigger.current = true;
@@ -70,6 +73,14 @@ export function ConversationWorkspace({
 		setFocusRequest((request) => request + 1);
 		onOpenWorkArea();
 	}, [onOpenWorkArea]);
+
+	// Choosing a place in the menu opens the Workspace the way the button does,
+	// so focus moves into it and returns to the button when it closes.
+	const handleRailMenuOpenChange = (isMenuOpen: boolean) => {
+		if (!isMenuOpen) return;
+		openedFromTrigger.current = true;
+		setFocusRequest((request) => request + 1);
+	};
 
 	useEffect(() => {
 		setWorkAreaOpen?.(isOpen);
@@ -97,6 +108,7 @@ export function ConversationWorkspace({
 	const showChat = !isOpen || !isNarrow || activeView === "chat";
 	const showPanel = isOpen && (!isNarrow || activeView === "work");
 	const hasTabs = isNarrow && isOpen;
+	const showRail = Boolean(rail) && !isNarrow && !isMobile;
 
 	useEffect(() => {
 		const active = document.activeElement;
@@ -113,6 +125,8 @@ export function ConversationWorkspace({
 		}
 		if (hasClosed || (!showPanel && workRef.current?.contains(active))) {
 			pendingWorkAreaFocus.current = false;
+			// a place on the rail keeps focus when it closes the Workspace
+			if (railRef.current?.contains(active)) return;
 			// Mobile actions live in a portal, outside workRef. Wait for its
 			// drawer to release focus before restoring the conversation.
 			const frame = requestAnimationFrame(() => {
@@ -132,138 +146,128 @@ export function ConversationWorkspace({
 		}
 	}, [isOpen, showChat, showPanel, focusRequest]);
 
-	const openWorkAreaButton = !isOpen ? (
-		<Button
-			ref={openWorkAreaRef}
-			type="button"
-			variant="ghost"
-			size={isMobile ? "icon-lg" : "icon-sm"}
-			className={cn(
-				"z-10",
-				isMobile
-					? "fixed end-2 top-1 min-h-11 min-w-11"
-					: "absolute end-2 top-2",
-			)}
-			aria-label={openWorkAreaLabel}
-			aria-expanded={false}
-			aria-controls={`${id}-work-panel`}
-			onClick={handleOpenWorkArea}
-		>
-			<PanelRightOpenIcon
-				aria-hidden="true"
-				className="rtl:-scale-x-100"
-			/>
-		</Button>
-	) : null;
-
 	return (
 		<ConversationWorkspaceActionsContext.Provider
 			value={handleOpenWorkArea}
 		>
-			<div ref={containerRef} className="relative h-full min-h-0 min-w-0">
-				{isMobile ? (
-					openWorkAreaButton
-				) : openWorkAreaButton ? (
-					<Tooltip disableHoverableContent={false}>
-						<TooltipTrigger asChild>
-							{openWorkAreaButton}
-						</TooltipTrigger>
-						<TooltipContent>{openWorkAreaLabel}</TooltipContent>
-					</Tooltip>
-				) : null}
-				<Tabs
-					value={activeView}
-					onValueChange={setView}
-					className="h-full gap-0"
+			<ConversationWorkspaceRailContext.Provider value={showRail}>
+				<div
+					ref={containerRef}
+					className="relative flex h-full min-h-0 min-w-0"
 				>
-					{hasTabs && (
-						<div className="shrink-0 border-b bg-sidebar px-4 py-2">
-							<TabsList
-								className="w-full"
-								aria-label={t("studio.views")}
+					{!isOpen && !showRail && (
+						<OpenWorkspaceButton
+							ref={openWorkAreaRef}
+							menuItems={railMenuItems}
+							onOpen={handleOpenWorkArea}
+							onMenuOpenChange={handleRailMenuOpenChange}
+							controlsId={`${id}-work-panel`}
+						/>
+					)}
+					<Tabs
+						value={activeView}
+						onValueChange={setView}
+						className="h-full min-w-0 flex-1 gap-0"
+					>
+						{hasTabs && (
+							<div className="shrink-0 border-b bg-sidebar px-4 py-2">
+								<TabsList
+									className="w-full"
+									aria-label={t("studio.views")}
+								>
+									<TabsTrigger
+										value="chat"
+										id={`${id}-chat-tab`}
+										aria-controls={`${id}-chat-panel`}
+									>
+										{t("studio.chat")}
+									</TabsTrigger>
+									<TabsTrigger
+										value="work"
+										id={`${id}-work-tab`}
+										aria-controls={`${id}-work-panel`}
+									>
+										{t("studio.workArea")}
+									</TabsTrigger>
+								</TabsList>
+							</div>
+						)}
+						<ResizablePanelGroup
+							direction="horizontal"
+							className="min-h-0 flex-1"
+						>
+							<ResizablePanel
+								id={`${id}-conversation`}
+								order={1}
+								defaultSize={35}
+								minSize={25}
+								className={cn("min-w-0", !showChat && "hidden")}
 							>
-								<TabsTrigger
+								<TabsContent
+									ref={chatRef}
+									id={`${id}-chat-panel`}
+									onFocusCapture={(event) => {
+										// Tabs may focus the region itself when its value changes.
+										// Preserve the last control the user was editing.
+										if (
+											event.target !== event.currentTarget
+										) {
+											lastChatFocus.current =
+												event.target;
+										}
+									}}
+									forceMount
 									value="chat"
-									id={`${id}-chat-tab`}
-									aria-controls={`${id}-chat-panel`}
+									className="h-full min-h-0"
+									role={hasTabs ? "tabpanel" : "region"}
+									aria-label={t("studio.chat")}
+									aria-labelledby={
+										hasTabs ? `${id}-chat-tab` : ""
+									}
 								>
-									{t("studio.chat")}
-								</TabsTrigger>
-								<TabsTrigger
+									{children}
+								</TabsContent>
+							</ResizablePanel>
+							<ResizableHandle
+								withHandle
+								className={cn(
+									(!isOpen || isNarrow) && "hidden",
+								)}
+							/>
+							<ResizablePanel
+								id={`${id}-work-area`}
+								order={2}
+								defaultSize={65}
+								minSize={25}
+								className={cn(
+									"min-w-0 bg-muted/30",
+									!showPanel && "hidden",
+								)}
+							>
+								<TabsContent
+									ref={workRef}
+									id={`${id}-work-panel`}
+									forceMount
 									value="work"
-									id={`${id}-work-tab`}
-									aria-controls={`${id}-work-panel`}
+									className="h-full min-h-0"
+									role={hasTabs ? "tabpanel" : "region"}
+									aria-label={t("studio.workArea")}
+									aria-labelledby={
+										hasTabs ? `${id}-work-tab` : ""
+									}
 								>
-									{t("studio.workArea")}
-								</TabsTrigger>
-							</TabsList>
+									{(hasOpened || isOpen) && panel}
+								</TabsContent>
+							</ResizablePanel>
+						</ResizablePanelGroup>
+					</Tabs>
+					{showRail && (
+						<div ref={railRef} className="flex h-full shrink-0">
+							{rail}
 						</div>
 					)}
-					<ResizablePanelGroup
-						direction="horizontal"
-						className="min-h-0 flex-1"
-					>
-						<ResizablePanel
-							id={`${id}-conversation`}
-							order={1}
-							defaultSize={35}
-							minSize={25}
-							className={cn("min-w-0", !showChat && "hidden")}
-						>
-							<TabsContent
-								ref={chatRef}
-								id={`${id}-chat-panel`}
-								onFocusCapture={(event) => {
-									// Tabs may focus the region itself when its value changes.
-									// Preserve the last control the user was editing.
-									if (event.target !== event.currentTarget) {
-										lastChatFocus.current = event.target;
-									}
-								}}
-								forceMount
-								value="chat"
-								className="h-full min-h-0"
-								role={hasTabs ? "tabpanel" : "region"}
-								aria-label={t("studio.chat")}
-								aria-labelledby={
-									hasTabs ? `${id}-chat-tab` : ""
-								}
-							>
-								{children}
-							</TabsContent>
-						</ResizablePanel>
-						<ResizableHandle
-							withHandle
-							className={cn((!isOpen || isNarrow) && "hidden")}
-						/>
-						<ResizablePanel
-							id={`${id}-work-area`}
-							order={2}
-							defaultSize={65}
-							minSize={25}
-							className={cn(
-								"min-w-0 bg-muted/30",
-								!showPanel && "hidden",
-							)}
-						>
-							<TabsContent
-								ref={workRef}
-								id={`${id}-work-panel`}
-								forceMount
-								value="work"
-								className="h-full min-h-0"
-								role={hasTabs ? "tabpanel" : "region"}
-								aria-label={t("studio.workArea")}
-								aria-labelledby={
-									hasTabs ? `${id}-work-tab` : ""
-								}
-							>
-								{(hasOpened || isOpen) && panel}
-							</TabsContent>
-						</ResizablePanel>
-					</ResizablePanelGroup>
-				</Tabs>
-			</div>
+				</div>
+			</ConversationWorkspaceRailContext.Provider>
 		</ConversationWorkspaceActionsContext.Provider>
 	);
 }

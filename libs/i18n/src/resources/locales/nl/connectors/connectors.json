@@ -5,8 +5,8 @@
 		"outlookMail": "Outlook-mail",
 		"outlookCalendar": "Outlook-agenda",
 		"teams": "Teams",
-		"teamsChannels": "Teams-kanalen",
-		"teamsFiles": "Teams-bestanden",
+		"teamsChannels": "Teams-kanaalberichten",
+		"teamsFiles": "Teams-kanaalbestanden",
 		"teamsChats": "Teams-chats",
 		"googleDrive": "Google Drive",
 		"gmail": "Gmail",
@@ -196,7 +196,10 @@
 		"allTeams": "Alle teams",
 		"current": "Huidige selectie",
 		"showingResults": "{{shown}} van {{total}} weergegeven",
-		"changeLocation": "Team of kanaal wijzigen: {{team}}, {{channel}}"
+		"changeLocation": "Team of kanaal wijzigen: {{team}}, {{channel}}",
+		"postsLabel": "Berichten",
+		"filesLabel": "Bestanden",
+		"chatsLabel": "Je chats"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

@@ -30,6 +30,7 @@ import { MICROSOFT_PIXELS } from "../microsoft.pixels";
 import type { TeamsMessage } from "../microsoft.types";
 import { TeamsChannelPicker } from "./teams-channel-picker";
 import { TeamsThreadDetail } from "./teams-thread-detail";
+import { TeamsViewLabel } from "./teams-view-label";
 import { useTeamsChannelChoice } from "./use-teams-channel-choice";
 
 /** How many threads a channel reads at first, and how many more each time. */
@@ -237,7 +238,7 @@ export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
 			>
 				{showHeader ? (
 					<ConnectorViewerHeader
-						brand="teams"
+						brand="teams-channels"
 						icon={MessagesSquareIcon}
 						title={serviceName}
 						description={
@@ -255,6 +256,7 @@ export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
 				{choice.teamsQuery.status === "ready" &&
 				(choice.teamsQuery.data?.length ?? 0) > 0 ? (
 					<div className="flex items-center gap-2 border-border border-b bg-muted/10 px-3 py-2">
+						<TeamsViewLabel label={t("teams.postsLabel")} />
 						<div className="min-w-0 flex-1">
 							<TeamsChannelPicker
 								onSignIn={onSignIn}

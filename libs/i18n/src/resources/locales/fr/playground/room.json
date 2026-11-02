@@ -8,7 +8,6 @@
 		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
 		"open": "Ouvrir les paramètres de la salle",
 		"close": "Fermer les paramètres de la salle",
-		"edit": "Modifier les paramètres de la salle",
 		"compact": "Compacter la conversation",
 		"compactSuccess": "Conversation compactée avec succès",
 		"compactSkipped": "Rien à compacter — la conversation est déjà concise",
@@ -170,8 +169,13 @@
 		"preparingWorkspace": "Préparation de l’espace de travail…",
 		"activityLog": "Journal d’activité",
 		"prepareError": "Impossible de préparer l’espace de travail. Votre brouillon est conservé.",
-		"retry": "Réessayer",
-		"viewActivityLog": "Afficher le journal d’activité"
+		"retry": "Réessayer"
+	},
+	"workspacePlaces": {
+		"files": "Fichiers",
+		"tools": "Outils",
+		"activity": "Activité",
+		"settings": "Paramètres"
 	},
 	"optimizer": {
 		"optimize": "Optimiser le message",
