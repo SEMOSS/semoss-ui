@@ -6,6 +6,7 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import type { ComponentProps } from "react";
+import { createWorkbenchStore } from "@semoss/workbench";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { CollaborationHeaderLayoutContext } from "@/features/collaboration/components/collaboration-header.context";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
@@ -43,6 +44,10 @@ const workbenchState = vi.hoisted(() => ({
 	returnToBrowser: vi.fn(),
 }));
 
+const layoutStore = createWorkbenchStore({
+	components: { preview: { name: "Preview" }, files: { name: "Files" } },
+});
+
 vi.mock("@/features/room-connectors/room-connectors.context", () => ({
 	useRoomConnectors: () => ({
 		returnToBrowser: workbenchState.returnToBrowser,
@@ -53,8 +58,10 @@ vi.mock("@/features/tools/tool-workbench.context", () => ({
 	useToolWorkbench: () => ({
 		...workbenchState,
 		store: {
+			subscribe: layoutStore.subscribe,
 			getState: () => ({
 				layout: {
+					...layoutStore.getState().layout,
 					actions: {
 						selectPanel: workbenchState.selectPanel,
 						updatePanel: workbenchState.updatePanel,
@@ -178,6 +185,23 @@ const defaultProps: ComponentProps<typeof RoomWorkspace> = {
 
 // jsdom has no matchMedia; useIsMobile reads it to keep auto-opened decks off phones
 beforeEach(() => {
+	layoutStore.getState().layout.actions.loadSnapshot({
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: ["preview"],
+			activeId: "preview",
+			enableDeleteWhenEmpty: false,
+		},
+		panels: {
+			preview: { id: "preview", type: "preview", name: "Preview" },
+			files: { id: "files", type: "files", name: "Files" },
+		},
+		borders: {
+			left: { panelIds: ["files"], activeId: "files", size: 300 },
+		},
+	});
 	vi.stubGlobal("matchMedia", () => ({
 		matches: false,
 		addEventListener: () => undefined,
@@ -459,6 +483,36 @@ describe("RoomWorkspace", () => {
 		rerender(<RoomWorkspace {...defaultProps} />);
 
 		expect(panelSizes(container)).toEqual([30, 70]);
+	});
+
+	it("fits the browser when the preview closes and restores the saved split without remounting drafts", () => {
+		const { container } = render(<RoomWorkspace {...defaultProps} />);
+		fireEvent.keyDown(
+			screen.getByRole("separator", { name: "Resize tool workbench" }),
+			{ key: "ArrowLeft" },
+		);
+		const draft = screen.getByRole("textbox", { name: "Panel draft" });
+		fireEvent.change(draft, {
+			target: { value: "Keep the browser state" },
+		});
+		const dock = container.querySelector<HTMLElement>(
+			'[data-panel-id="collaboration-room-tool-workbench"]',
+		);
+		const actions = layoutStore.getState().layout.actions;
+		act(() => actions.closePanel("preview"));
+		expect(dock).toHaveStyle({ flexGrow: "0", flexBasis: "364px" });
+		expect(
+			screen.getByRole("separator", { name: "Resize tool workbench" }),
+		).toHaveAttribute("data-panel-resize-handle-enabled", "false");
+		act(() => actions.resizeBorder("left", 400));
+		expect(dock).toHaveStyle({ flexBasis: "464px" });
+		act(() => actions.selectPanel("preview"));
+		expect(panelSizes(container)).toEqual([30, 70]);
+		expect(dock).toHaveStyle({ flexBasis: "0px" });
+		expect(screen.getByRole("textbox", { name: "Panel draft" })).toBe(
+			draft,
+		);
+		expect(draft).toHaveValue("Keep the browser state");
 	});
 
 	it("keeps room controls wide enough as the shared workspace resizes without losing a panel draft", () => {

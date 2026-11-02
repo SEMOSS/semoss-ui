@@ -70,7 +70,7 @@ export const TeamsFilesViewer = (props: TeamsFilesViewerProps) => {
 			);
 		}
 		if (!team) {
-			return (
+			return choice.teamsQuery.data?.length ? null : (
 				<div className="px-4 py-8 text-center">
 					<Muted>{t("teams.noTeams")}</Muted>
 				</div>
@@ -91,7 +91,13 @@ export const TeamsFilesViewer = (props: TeamsFilesViewerProps) => {
 		if (choice.channelsQuery.status === "ready" && !channel) {
 			return (
 				<div className="px-4 py-8 text-center">
-					<Muted>{t("teams.noChannels")}</Muted>
+					<Muted>
+						{t(
+							choice.channelsQuery.data?.length
+								? "teams.chooseChannel"
+								: "teams.noChannels",
+						)}
+					</Muted>
 				</div>
 			);
 		}
@@ -117,9 +123,10 @@ export const TeamsFilesViewer = (props: TeamsFilesViewerProps) => {
 
 	return (
 		<div className="@container flex h-full min-h-0 flex-col">
-			{choice.teamsQuery.status === "ready" && team ? (
+			{choice.teamsQuery.status === "ready" &&
+			(choice.teamsQuery.data?.length ?? 0) > 0 ? (
 				<div className="shrink-0 border-border border-b bg-muted/20 px-3 py-2">
-					<TeamsChannelPicker choice={choice} />
+					<TeamsChannelPicker choice={choice} onSignIn={onSignIn} />
 				</div>
 			) : null}
 			{renderBody()}
