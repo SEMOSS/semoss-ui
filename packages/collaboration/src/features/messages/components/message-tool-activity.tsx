@@ -52,10 +52,11 @@ export function MessageToolActivity({
 		)
 			pinnedIds.add(part.tool.id);
 	}
-	// steps stay in view while the turn works; they fold once the answer streams or the turn ends
-	const groups = isWorking(items)
-		? []
-		: completedToolGroups(tools, pinnedIds);
+	// while the turn works, the latest steps stay in view and the earlier ones fold
+	const groups = completedToolGroups(
+		isWorking(items) ? tools.slice(0, -LIVE_STEPS) : tools,
+		pinnedIds,
+	);
 	const groupByKey = new Map(
 		groups.flatMap((group) =>
 			group.map((item) => [item.key, group] as const),
@@ -170,6 +171,8 @@ export function MessageToolActivity({
 		</div>
 	);
 }
+
+const LIVE_STEPS = 2;
 
 const SETTLED = new Set(["completed", "failed", "cancelled"]);
 
