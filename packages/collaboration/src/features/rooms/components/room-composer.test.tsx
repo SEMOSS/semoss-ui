@@ -941,6 +941,52 @@ describe("RoomComposer", () => {
 		);
 	});
 
+	it("keeps a table paste notice when an error is dismissed and sends the rich draft", async () => {
+		const user = userEvent.setup();
+		const onSend = vi.fn(async () => undefined);
+		renderComposer({ submissionError: "Previous send failed", onSend });
+		const editor = screen.getByRole("textbox", {
+			name: "Message Research agent",
+		});
+		await user.click(editor);
+		fireEvent.paste(editor, {
+			clipboardData: {
+				items: [],
+				types: ["text/html", "text/plain"],
+				getData: (type: string) =>
+					type === "text/html"
+						? '<table><tr><td>Quarter</td><td>100 + %20</td></tr></table><img src="preview.png">'
+						: "Quarter\t100 + %20",
+			},
+		});
+		await waitFor(() =>
+			expect(screen.getByRole("cell", { name: "Quarter" })).toBeVisible(),
+		);
+		const notice = screen.getByText(
+			/Pasted the table; embedded images and resources were omitted/,
+		);
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"Previous send failed",
+		);
+		await user.click(screen.getByRole("button", { name: "Dismiss error" }));
+		expect(screen.queryByRole("alert")).toBeNull();
+		expect(notice).toBeVisible();
+		expect(screen.getByRole("cell", { name: "100 + %20" })).toBeVisible();
+		await user.click(
+			screen.getByRole("button", {
+				name: "Send message to Research agent",
+			}),
+		);
+		await waitFor(() => expect(onSend).toHaveBeenCalledOnce());
+		expect(onSend).toHaveBeenCalledWith(
+			expect.objectContaining({
+				userContentFormat: "html-v1",
+				userContent: expect.stringContaining("<table>"),
+				files: [],
+			}),
+		);
+	});
+
 	it("requires text, prevents duplicate submissions, and restores a failed draft", async () => {
 		const user = userEvent.setup();
 		let rejectSend: (cause: Error) => void = () => undefined;
@@ -1154,15 +1200,17 @@ describe("RoomComposer", () => {
 			await screen.findByRole("button", { name: "Remove notes.pdf" }),
 		).toBeInTheDocument();
 
+		const clipboard = new File(["clipboard"], "clipboard.txt", {
+			type: "text/plain",
+		});
 		fireEvent.paste(editor, {
 			clipboardData: {
+				types: ["Files"],
+				files: [clipboard],
 				items: [
 					{
 						kind: "file",
-						getAsFile: () =>
-							new File(["clipboard"], "clipboard.txt", {
-								type: "text/plain",
-							}),
+						getAsFile: () => clipboard,
 					},
 				],
 				getData: () => "",

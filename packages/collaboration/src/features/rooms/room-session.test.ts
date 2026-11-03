@@ -2,7 +2,10 @@ import { getAgent } from "@/features/agents/api/get-agent";
 import { getHistoryChatDraft } from "@/features/daily-chat/new-chat-drafts";
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import { resolveThreadModel } from "@/features/thread-assistant/api/thread-model";
-import { setThreadAgent } from "@/features/thread-assistant/thread-context";
+import {
+	setThreadAgent,
+	threadCommand,
+} from "@/features/thread-assistant/thread-context";
 import * as runApi from "./api/agent-run-api";
 import { uploadRoomFiles } from "./api/upload-room-files";
 import {
@@ -761,49 +764,74 @@ it("keeps later draft edits when reconnect confirms an earlier uncertain request
 	});
 });
 
-it("does not mistake an earlier identical message for a newly uncertain submission", async () => {
-	const session = draft();
-	await session.create("Repeated requests");
-	session.setComposerDraft({
-		document: null,
-		text: "Check again",
-		files: [],
-	});
-	vi.mocked(runApi.startAgentRun).mockRejectedValueOnce(
-		new Error("Disconnected"),
-	);
-	await expect(
-		session.send({ text: "Check again", files: [] }),
-	).rejects.toThrow("Disconnected");
-	const previousCommand = vi.mocked(runApi.startAgentRun).mock.calls[0][1]
-		.command;
-	vi.mocked(getRoomMessages).mockResolvedValue([
-		{
-			messageId: "previous-request",
-			type: "INPUT_TEXT",
-			parts: [{ type: "TEXT", text: previousCommand }],
-		},
-	]);
-	await session.reconnect();
-	session.setComposerDraft({
-		document: null,
-		text: "Check again",
-		files: [],
-	});
-	vi.mocked(runApi.startAgentRun).mockRejectedValueOnce(
-		new Error("Disconnected again"),
-	);
-	await expect(
-		session.send({ text: "Check again", files: [] }),
-	).rejects.toThrow("Disconnected again");
-	expect(vi.mocked(runApi.startAgentRun).mock.calls[1][1].command).toBe(
-		previousCommand,
-	);
-	await session.reconnect();
-	expect(session.getSnapshot()).toMatchObject({
-		hasUnconfirmedSubmission: false,
-		composerDraft: { text: "Check again" },
-		submissionNotice:
-			"Your last message was not found. You can try sending it again.",
-	});
-});
+it.each([false, true])(
+	"does not mistake an earlier identical message for a newly uncertain submission (rich: %s)",
+	async (isRich) => {
+		const html =
+			"<table><tbody><tr><td>Check again</td></tr></tbody></table>";
+		const submission = {
+			text: "Check again",
+			files: [],
+			...(isRich
+				? { userContent: html, userContentFormat: "html-v1" as const }
+				: {}),
+		};
+		const context = { selectedSourceMessageId: "selected-email" };
+		const session = draft();
+		await session.create("Repeated requests");
+		session.setComposerDraft({
+			document: null,
+			text: "Check again",
+			files: [],
+		});
+		vi.mocked(runApi.startAgentRun).mockRejectedValueOnce(
+			new Error("Disconnected"),
+		);
+		await expect(session.send(submission, context)).rejects.toThrow(
+			"Disconnected",
+		);
+		const previousCommand = vi.mocked(runApi.startAgentRun).mock.calls[0][1]
+			.command;
+		expect(previousCommand).toBe(
+			threadCommand(context, isRich ? html : "Check again"),
+		);
+		if (isRich)
+			expect(runApi.startAgentRun).toHaveBeenLastCalledWith(
+				session.insight.insightId,
+				expect.objectContaining({
+					userText: html,
+					userContent: html,
+					userContentFormat: "html-v1",
+				}),
+			);
+		vi.mocked(getRoomMessages).mockResolvedValue([
+			{
+				messageId: "previous-request",
+				type: "INPUT_TEXT",
+				parts: [{ type: "TEXT", text: previousCommand }],
+			},
+		]);
+		await session.reconnect();
+		session.setComposerDraft({
+			document: null,
+			text: "Check again",
+			files: [],
+		});
+		vi.mocked(runApi.startAgentRun).mockRejectedValueOnce(
+			new Error("Disconnected again"),
+		);
+		await expect(session.send(submission, context)).rejects.toThrow(
+			"Disconnected again",
+		);
+		expect(vi.mocked(runApi.startAgentRun).mock.calls[1][1].command).toBe(
+			previousCommand,
+		);
+		await session.reconnect();
+		expect(session.getSnapshot()).toMatchObject({
+			hasUnconfirmedSubmission: false,
+			composerDraft: { text: "Check again" },
+			submissionNotice:
+				"Your last message was not found. You can try sending it again.",
+		});
+	},
+);

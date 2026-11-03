@@ -230,7 +230,9 @@ export class AgentTurnController {
 				"An attachment belongs to a different conversation. Attach it again before sending.",
 			);
 		const command =
-			submission.text.trim() ||
+			(submission.userContentFormat === "html-v1" && !submission.userText
+				? submission.userContent
+				: submission.text.trim()) ||
 			(submission.files.length || existingMedia.length
 				? "Please review the attached files."
 				: "");
@@ -253,7 +255,11 @@ export class AgentTurnController {
 		this.lastChildrenRead = 0;
 		this.cancelRequested = false;
 		this.terminalReconciled = false;
-		this.optimistic = optimisticUserMessage(command, submission.files);
+		this.optimistic = optimisticUserMessage(
+			submission.userText ?? submission.userContent ?? command,
+			submission.files,
+			submission.userContentFormat,
+		);
 		this.optimistic.parts.push(
 			...existingMedia.map((file) => ({
 				type: "media" as const,
@@ -291,7 +297,9 @@ export class AgentTurnController {
 				agentId: config.agentId,
 				engine: config.engine,
 				command,
-				userText: submission.userText,
+				userText: submission.userText ?? submission.userContent,
+				userContent: submission.userContent,
+				userContentFormat: submission.userContentFormat,
 				media: [
 					...files.map((file) => file.fileLocation),
 					...existingMedia.map((file) => file.fileLocation),

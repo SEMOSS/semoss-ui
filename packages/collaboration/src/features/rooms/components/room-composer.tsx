@@ -9,9 +9,9 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
+import { TableCellNode } from "@lexical/table";
 import {
 	$createLineBreakNode,
 	$createParagraphNode,
@@ -72,6 +72,19 @@ import { EmailEditorPlugin } from "@/features/email/email-editor-plugin";
 import { EmailFormatToolbar } from "@/features/email/email-format-toolbar";
 import { emailLink } from "@/features/email/email-html";
 import type { ComposerSubmission, RoomSettings } from "../types/room";
+import {
+	$hasChatTable,
+	CHAT_HTML_FORMAT,
+	exportChatHtml,
+} from "./chat-rich-content";
+import {
+	CHAT_TABLE_CELL_REPLACEMENT,
+	ChatTableCellNode,
+} from "./chat-table-cell-node";
+import {
+	ChatTablePastePlugin,
+	handledChatTablePastes,
+} from "./chat-table-paste-plugin";
 import {
 	COMPOSER_MAX_CHARACTERS,
 	type ComposerActionControls,
@@ -205,12 +218,25 @@ const MAX_CHARACTERS = COMPOSER_MAX_CHARACTERS;
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
+const CHAT_THEME = {
+	...EMAIL_THEME,
+	table: "my-2 w-max border-collapse",
+	tableScrollableWrapper: "max-h-48 max-w-full overflow-auto",
+	tableCell:
+		"max-w-xs wrap-anywhere border border-border p-1 whitespace-pre-wrap align-top [&_p]:m-0",
+};
+
 const initialConfig = {
 	namespace: "CollaborationRoomComposer",
 	theme: {
 		paragraph: "m-0",
 	},
-	nodes: [OverflowNode, ...EMAIL_NODES],
+	nodes: [
+		OverflowNode,
+		...EMAIL_NODES.filter((node) => node !== TableCellNode),
+		ChatTableCellNode,
+		CHAT_TABLE_CELL_REPLACEMENT,
+	],
 	html: EMAIL_HTML_CONFIG,
 	onError(error: Error) {
 		throw error;
@@ -313,7 +339,7 @@ export function RoomComposer({
 	onStop,
 	onSent,
 }: RoomComposerProps) {
-	const ContentPlugin = emailMode ? RichTextPlugin : PlainTextPlugin;
+	const ContentPlugin = RichTextPlugin;
 	const isEmail = Boolean(emailMode && emailMode !== "assistant");
 	const editorRef = useRef<LexicalEditor | null>(null);
 	const scrollViewportRef = useRef<HTMLDivElement | null>(null);
@@ -324,6 +350,8 @@ export function RoomComposer({
 	const initial = useRef(initialDraft);
 	const documentRef = useRef(initialDraft?.document ?? null);
 	const draftRef = useRef(initialDraft?.text ?? "");
+	const [hasTable, setHasTable] = useState(false);
+	const [pasteNotice, setPasteNotice] = useState("");
 	const [draft, setDraft] = useState(initialDraft?.text ?? "");
 	const [files, setFiles] = useState<File[]>(initialDraft?.files ?? []);
 	const [fileError, setFileError] = useState("");
@@ -422,12 +450,29 @@ export function RoomComposer({
 				text: previousDraft,
 				files: [...submittedFiles],
 			};
+			let richHtml: string | undefined;
+			try {
+				richHtml =
+					!isEmail && editorRef.current
+						? exportChatHtml(editorRef.current)
+						: undefined;
+			} catch (cause) {
+				setSubmissionError(errorMessage(cause));
+				submittingRef.current = false;
+				return;
+			}
 			const html =
 				isEmail && editorRef.current
 					? exportEmailHtml(editorRef.current)
 					: undefined;
 			const previousFiles = files;
-			if (clearDraft && clearOnSent && !isEmail && !retainUntilSent) {
+			if (
+				clearDraft &&
+				clearOnSent &&
+				!isEmail &&
+				!retainUntilSent &&
+				richHtml === undefined
+			) {
 				setEditorText("");
 				setFiles([]);
 				setOriginalDraft(null);
@@ -438,8 +483,18 @@ export function RoomComposer({
 					text: trimmed,
 					files: submittedFiles,
 					...(html !== undefined ? { html } : {}),
+					...(richHtml !== undefined
+						? {
+								userContent: richHtml,
+								userContentFormat: CHAT_HTML_FORMAT,
+							}
+						: {}),
 				});
-				if (clearDraft && clearOnSent && (isEmail || retainUntilSent)) {
+				if (
+					clearDraft &&
+					clearOnSent &&
+					(isEmail || retainUntilSent || richHtml !== undefined)
+				) {
 					if (
 						isSubmittedComposerContent(
 							{
@@ -463,7 +518,13 @@ export function RoomComposer({
 				}
 				onSent?.();
 			} catch (cause) {
-				if (clearDraft && clearOnSent && !isEmail && !retainUntilSent) {
+				if (
+					clearDraft &&
+					clearOnSent &&
+					!isEmail &&
+					!retainUntilSent &&
+					richHtml === undefined
+				) {
 					if (previousEditorState && editorRef.current) {
 						editorRef.current.setEditorState(previousEditorState);
 						draftRef.current = previousDraft;
@@ -500,6 +561,15 @@ export function RoomComposer({
 		async (source = draftRef.current) => {
 			const current = source.trim();
 			if (!current || !modelId || isOptimizing || isRunning) return;
+			if (editorRef.current?.getEditorState().read($hasChatTable)) {
+				setPasteNotice(
+					"Prompt optimization is unavailable while the draft contains a table.",
+				);
+				return;
+			}
+			const capturedDocument = JSON.stringify(
+				editorRef.current?.getEditorState().toJSON(),
+			);
 			setIsOptimizing(true);
 			setSubmissionError("");
 			try {
@@ -507,6 +577,12 @@ export function RoomComposer({
 					current,
 					roomInstructions,
 				);
+				if (
+					JSON.stringify(
+						editorRef.current?.getEditorState().toJSON(),
+					) !== capturedDocument
+				)
+					return;
 				setOriginalDraft(source);
 				setEditorText(optimized);
 				focusEditor();
@@ -529,7 +605,11 @@ export function RoomComposer({
 	);
 
 	const revertOptimization = useCallback(() => {
-		if (originalDraft === null) return;
+		if (
+			originalDraft === null ||
+			editorRef.current?.getEditorState().read($hasChatTable)
+		)
+			return;
 		setEditorText(originalDraft);
 		setOriginalDraft(null);
 		focusEditor();
@@ -560,7 +640,15 @@ export function RoomComposer({
 			if (!transcript.trim()) return;
 			const current = draftRef.current;
 			const separator = current && !current.endsWith(" ") ? " " : "";
-			setEditorText(`${current}${separator}${transcript.trim()}`);
+			if (editorRef.current?.getEditorState().read($hasChatTable)) {
+				editorRef.current.update(() => {
+					$getRoot().append(
+						$createParagraphNode().append(
+							$createTextNode(transcript.trim()),
+						),
+					);
+				});
+			} else setEditorText(`${current}${separator}${transcript.trim()}`);
 		};
 		recognition.onerror = (event) => {
 			setIsListening(false);
@@ -624,11 +712,19 @@ export function RoomComposer({
 				label: "/optimize",
 				description: "Improve the current prompt",
 				icon: WandSparkles,
-				disabled: !draft.trim() || !modelId || isOptimizing,
+				disabled: hasTable || !draft.trim() || !modelId || isOptimizing,
 				onSelect: (text) => void optimize(text),
 			},
 		],
-		[draft, modelId, isOptimizing, openFilePicker, optimize, extraCommands],
+		[
+			hasTable,
+			draft,
+			modelId,
+			isOptimizing,
+			openFilePicker,
+			optimize,
+			extraCommands,
+		],
 	);
 
 	const alert =
@@ -745,7 +841,7 @@ export function RoomComposer({
 											initial.current?.text ?? "",
 										)
 								: undefined,
-						theme: emailMode ? EMAIL_THEME : initialConfig.theme,
+						theme: isEmail ? EMAIL_THEME : CHAT_THEME,
 					}}
 				>
 					{emailMode && (
@@ -768,6 +864,15 @@ export function RoomComposer({
 							/>
 						</>
 					)}
+					{!emailMode && (
+						<ChatTablePastePlugin onNotice={setPasteNotice} />
+					)}
+					{!emailMode && (
+						<TablePlugin
+							hasHorizontalScroll
+							hasTabHandler={false}
+						/>
+					)}
 					<div
 						className="relative max-h-64 overflow-auto"
 						ref={(element) => {
@@ -783,6 +888,12 @@ export function RoomComposer({
 										inputClassName,
 									)}
 									onPaste={(event) => {
+										if (
+											handledChatTablePastes.has(
+												event.nativeEvent,
+											)
+										)
+											return;
 										const pastedFiles = Array.from(
 											event.clipboardData.items,
 										)
@@ -1023,7 +1134,9 @@ export function RoomComposer({
 													className="pointer-coarse:size-11 rounded-full text-muted-foreground"
 													aria-label="Revert optimized prompt"
 													disabled={
-														isEmail || isSubmitting
+														hasTable ||
+														isEmail ||
+														isSubmitting
 													}
 													onClick={revertOptimization}
 												>
@@ -1039,6 +1152,7 @@ export function RoomComposer({
 													className="pointer-coarse:size-11 rounded-full text-muted-foreground"
 													aria-label="Optimize prompt"
 													disabled={
+														hasTable ||
 														isEmail ||
 														isSubmitting ||
 														!draft.trim() ||
@@ -1118,8 +1232,11 @@ export function RoomComposer({
 						onChange={(editorState) => {
 							editorState.read(() => {
 								const text = $getRoot().getTextContent();
+								const table = $hasChatTable();
+								setHasTable(table);
 								if (
 									!emailMode &&
+									!table &&
 									text.length > MAX_CHARACTERS
 								) {
 									setEditorText(
@@ -1145,22 +1262,24 @@ export function RoomComposer({
 						isReadOnly={retainUntilSent ? isSubmitting : undefined}
 					/>
 					<EditorRefPlugin editorRef={editorRef} />
-					<CharacterLimitPlugin
-						charset="UTF-16"
-						maxLength={MAX_CHARACTERS}
-						renderer={({ remainingCharacters }) => (
-							<output
-								className={cn(
-									"absolute right-3 bottom-12 text-muted-foreground text-xs",
-									remainingCharacters > 500 && "sr-only",
-									remainingCharacters < 0 &&
-										"text-destructive",
-								)}
-							>
-								{remainingCharacters} characters remaining
-							</output>
-						)}
-					/>
+					{!hasTable && (
+						<CharacterLimitPlugin
+							charset="UTF-16"
+							maxLength={MAX_CHARACTERS}
+							renderer={({ remainingCharacters }) => (
+								<output
+									className={cn(
+										"absolute right-3 bottom-12 text-muted-foreground text-xs",
+										remainingCharacters > 500 && "sr-only",
+										remainingCharacters < 0 &&
+											"text-destructive",
+									)}
+								>
+									{remainingCharacters} characters remaining
+								</output>
+							)}
+						/>
+					)}
 					<RoomComposerEnterPlugin
 						submitOnEnter={submitOnEnter}
 						isKeyboardSubmitDisabled={emailMode === "send"}
@@ -1199,7 +1318,17 @@ export function RoomComposer({
 				prompts={prompts}
 				returnFocusRef={actionsTriggerRef}
 				onSelect={(text) => {
-					setEditorText(text);
+					if (
+						editorRef.current?.getEditorState().read($hasChatTable)
+					) {
+						editorRef.current.update(() => {
+							$getRoot().append(
+								$createParagraphNode().append(
+									$createTextNode(text),
+								),
+							);
+						});
+					} else setEditorText(text);
 					focusEditor();
 				}}
 			/>
@@ -1218,6 +1347,17 @@ export function RoomComposer({
 				onOpenChange={setIsSettingsOpen}
 				onSave={onSaveRoomSettings}
 			/>
+			{hasTable && draft.length > MAX_CHARACTERS && (
+				<output className="mt-1.5 block text-destructive text-xs">
+					This table exceeds the message limit. Reduce it or attach
+					the source document.
+				</output>
+			)}
+			{pasteNotice && (
+				<output className="mt-1.5 block text-muted-foreground text-xs">
+					{pasteNotice}
+				</output>
+			)}
 			{alert && alert !== dismissedAlert && (
 				<div className="mt-1.5 flex items-start gap-1" role="alert">
 					<P className="min-w-0 flex-1 text-destructive text-xs">

@@ -688,7 +688,9 @@ export class RoomSession {
 					"Check room settings.",
 			);
 		const userText =
-			submission.text.trim() || "Please review the attached files.";
+			submission.userContentFormat === "html-v1" && submission.userContent
+				? submission.userContent
+				: submission.text.trim() || "Please review the attached files.";
 		const command = threadCommand(context, userText);
 		// an identical earlier message must not confirm this one after a lost response
 		const matchesBefore = this.countSent(command);

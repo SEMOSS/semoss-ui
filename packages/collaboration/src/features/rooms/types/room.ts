@@ -12,6 +12,9 @@ import type { RoomSession, RoomSessionSnapshot } from "../room-session";
 export interface ComposerSubmission {
 	/** Sanitized email HTML, emitted only for email destinations. */
 	html?: string;
+	/** Edited, restricted rich user fragment supplied to model and durable history. */
+	userContent?: string;
+	userContentFormat?: "html-v1";
 	text: string;
 	/** What the user typed, when text wraps it in thread context. */
 	userText?: string;

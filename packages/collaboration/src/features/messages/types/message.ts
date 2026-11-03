@@ -60,6 +60,7 @@ export type ConversationMessagePart = {
 } & (
 	| {
 			type: "text";
+			contentFormat?: "html-v1";
 			text: string;
 			/** What the model received, when it differs from what the user typed. */
 			command?: string;

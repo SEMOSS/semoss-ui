@@ -176,6 +176,16 @@ function conversationMessageFromPersisted(
 			message.messageId,
 			toolResults,
 		);
+		if (converted?.type === "text" && isUserMessage(message)) {
+			const ornaments = message.ornaments;
+			if (
+				typeof ornaments === "object" &&
+				ornaments !== null &&
+				"userContentFormat" in ornaments &&
+				ornaments.userContentFormat === "html-v1"
+			)
+				converted.contentFormat = "html-v1";
+		}
 		return converted ? [converted] : [];
 	});
 	const fallback = (
@@ -225,12 +235,13 @@ export function threadFromMessages(
 export function optimisticUserMessage(
 	text: string,
 	files: File[] = [],
+	contentFormat?: "html-v1",
 ): ConversationMessage {
 	return {
 		id: `pending-user-${Date.now()}`,
 		role: "user",
 		parts: [
-			{ type: "text", text },
+			{ type: "text", text, ...(contentFormat ? { contentFormat } : {}) },
 			...files.map((file) => ({
 				type: "media" as const,
 				fileName: file.name,

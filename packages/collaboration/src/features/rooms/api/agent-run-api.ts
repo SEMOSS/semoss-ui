@@ -155,19 +155,29 @@ export async function startAgentRun(
 		engine: string;
 		command: string;
 		userText?: string;
+		userContent?: string;
+		userContentFormat?: "html-v1";
 		media: string[];
 		maxTurns: number;
 		maxReflections?: number;
 	},
 ): Promise<AgentRun> {
-	const { userText, ...rest } = params;
+	const { userText, userContent, userContentFormat, ...rest } = params;
 	// sent as typed, as Playground does
 	return agentRunSchema.parse(
 		await runAgent(
 			{
 				...rest,
 				harnessType: "semoss",
-				agentParams: userText ? { userText } : undefined,
+				agentParams:
+					userText || userContentFormat
+						? {
+								userText,
+								...(userContentFormat
+									? { userContent, userContentFormat }
+									: {}),
+							}
+						: undefined,
 			},
 			insightId,
 		),
