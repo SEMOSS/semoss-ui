@@ -127,28 +127,64 @@ it("does not save after preparation fails", async () => {
 	expect(current().isBusy("mail")).toBe(false);
 });
 
-it("finishes against the origin after navigation and unmount", async () => {
-	const preparing = deferred<() => void>();
-	const release = vi.fn();
+it.each(["context", "open"] as const)(
+	"finishes %s against the origin after navigation and unmount",
+	async (intent) => {
+		const preparing = deferred<() => void>();
+		const release = vi.fn();
+		const onAddToContext = vi.fn();
+		const nextCallback = vi.fn();
+		const callback = intent === "open" ? "onOpenFile" : "onAddToContext";
+		await render({
+			prepareSave: () => preparing.promise,
+			[callback]: onAddToContext,
+		});
+		await act(async () => {
+			if (intent === "open") current().open?.(request);
+			else current().addToContext?.(request);
+		});
+		mocks.insightId = "next";
+		await render({ [callback]: nextCallback });
+		await act(async () => root.unmount());
+		isUnmounted = true;
+		await act(async () => preparing.resolve(release));
+		expect(save).toHaveBeenCalledWith(
+			"origin",
+			"outlook-mail",
+			request.source,
+		);
+		expect(onAddToContext).toHaveBeenCalledWith(file);
+		expect(nextCallback).not.toHaveBeenCalled();
+		expect(release).toHaveBeenCalledOnce();
+	},
+);
+
+it("reports failed preview downloads and allows retry without adding context", async () => {
+	const onOpenFile = vi.fn();
 	const onAddToContext = vi.fn();
-	const nextCallback = vi.fn();
-	await render({ prepareSave: () => preparing.promise, onAddToContext });
-	await act(async () => current().addToContext?.(request));
-	mocks.insightId = "next";
-	await render({ onAddToContext: nextCallback });
-	await act(async () => root.unmount());
-	isUnmounted = true;
-	await act(async () => preparing.resolve(release));
-	expect(save).toHaveBeenCalledWith("origin", "outlook-mail", request.source);
-	expect(onAddToContext).toHaveBeenCalledWith(file);
-	expect(nextCallback).not.toHaveBeenCalled();
+	const release = vi.fn();
+	save.mockRejectedValueOnce(new Error("Download failed"));
+	await render({
+		onOpenFile,
+		onAddToContext,
+		prepareSave: async () => release,
+	});
+	await act(async () => current().open?.(request));
+	expect(onOpenFile).not.toHaveBeenCalled();
+	expect(mocks.error).toHaveBeenCalledOnce();
 	expect(release).toHaveBeenCalledOnce();
+	expect(current().isBusy(request.key)).toBe(false);
+	await act(async () => current().open?.(request));
+	expect(onOpenFile).toHaveBeenCalledExactlyOnceWith(file);
+	expect(onAddToContext).not.toHaveBeenCalled();
+	expect(release).toHaveBeenCalledTimes(2);
 });
 
 it("preserves saves when preparation is omitted or returns void", async () => {
 	await render({ prepareSave: async () => undefined });
 	await act(async () => current().save(request));
 	await render({});
+	expect(current().open).toBeUndefined();
 	await act(async () => current().save(request));
 	expect(save).toHaveBeenCalledTimes(2);
 });

@@ -14,6 +14,25 @@ import {
 } from "@/features/rooms/source-import/room-source";
 import type { InsightActions } from "@/lib/pixel";
 
+/** A live Teams page as workspace messages without deleted ones; a message without its own link gets the chat's. */
+export function liveTeamsMessages(
+	page: Awaited<ReturnType<typeof getTeamsMessages>>,
+	chatLink?: string,
+): WorkspaceMessage[] {
+	return page.messages
+		.filter((message) => !message.isDeleted)
+		.map((message) => ({
+			id: message.id,
+			fromId: message.fromId ?? "",
+			fromName: message.fromName,
+			at: message.createdDateTime ?? "",
+			text: message.body,
+			displayBody: message.displayBody,
+			webLink: safeSourceUrl(message.webUrl ?? chatLink),
+			isTruncated: message.bodyTruncated,
+		}));
+}
+
 /** Reload only this room's included messages, preserving native identities and source order. */
 export async function loadRoomSourceEmails(
 	actions: InsightActions,
@@ -48,23 +67,10 @@ export async function loadRoomSourceEmails(
 		if (!source.nativeId) return [];
 		const page = await getTeamsMessages(actions, source.nativeId);
 		const live = new Map(
-			page.messages
-				.filter((message) => !message.isDeleted)
-				.map((message): [string, WorkspaceMessage] => [
-					message.id,
-					{
-						id: message.id,
-						fromId: message.fromId ?? "",
-						fromName: message.fromName,
-						at: message.createdDateTime ?? "",
-						text: message.body,
-						displayBody: message.displayBody,
-						webLink: safeSourceUrl(
-							message.webUrl ?? source.webLink,
-						),
-						isTruncated: message.bodyTruncated,
-					},
-				]),
+			liveTeamsMessages(page, source.webLink).map((message) => [
+				message.id,
+				message,
+			]),
 		);
 		return envelopes.flatMap((envelope) => {
 			const message = live.get(envelope.id);

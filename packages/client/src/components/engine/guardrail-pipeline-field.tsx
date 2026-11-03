@@ -22,8 +22,10 @@ import {
 	type GuardrailPipelineFormValue,
 	type GuardrailReactorFormValue,
 	guardrailArgumentOptions,
+	guardrailCanRespond,
 	guardrailToolResultArgument,
 	type InterceptableMethod,
+	nextGuardrailCheckId,
 } from "./engine-guardrail-settings.constants";
 import { GuardrailMethodField } from "./guardrail-method-field";
 import { GuardrailReactorEntryField } from "./guardrail-reactor-entry-field";
@@ -133,7 +135,8 @@ export const GuardrailPipelineField = ({
 	testIdPrefix,
 	namePrefix,
 }: GuardrailPipelineFieldProps) => {
-	const { control, setFocus } = useFormContext<GuardrailConfigFormValue>();
+	const { control, getValues, setFocus } =
+		useFormContext<GuardrailConfigFormValue>();
 	const inputEntries = useFieldArray({
 		control,
 		name: `${namePrefix}.input`,
@@ -186,7 +189,10 @@ export const GuardrailPipelineField = ({
 	const entryElements = useRef(new Map<string, HTMLDivElement>());
 
 	const addEntry = (phase: GuardrailPhase) => {
-		const entry = createGuardrailReactor(phase);
+		const entry = createGuardrailReactor(
+			phase,
+			nextGuardrailCheckId(getValues("pipelines")),
+		);
 		const index = value[phase].length;
 		// Rendered now rather than on the next commit, so this click can bring
 		// the new check into view. The form's own focus is off: it lands on the
@@ -314,6 +320,10 @@ export const GuardrailPipelineField = ({
 							method: value.method,
 							methods,
 						});
+						const canRespond = guardrailCanRespond({
+							method: value.method,
+							methods,
+						});
 
 						return (
 							<TabsContent
@@ -425,6 +435,7 @@ export const GuardrailPipelineField = ({
 												toolResultArgument={
 													toolResultArgument
 												}
+												canRespond={canRespond}
 												argumentOptions={
 													argumentOptions
 												}

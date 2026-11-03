@@ -112,7 +112,7 @@ code may import from `core/` and `components/`; those two never import from them
   takes no context), and offers all of them on a right-click (`ConnectorItemMenu`, the Radix
   context menu, which a long press or the context menu key also opens). There is no row menu
   button; the drives' explorer rows offer the same entries on their own right-click.
-- **Drives are the shared file explorer.** OneDrive and Teams Files render `@semoss/shared`'s
+- **Drives are the shared file explorer.** OneDrive and Teams Channel Files render `@semoss/shared`'s
   `FileExplorer` through `ConnectorFileExplorer` (`components/`), so they browse, search, and
   refresh like every other file tree. `microsoft/microsoft-drive.adapters.ts` supplies the files:
   My Files and a channel's files are browsed by path, while Shared with Me reaches each folder by
@@ -173,7 +173,7 @@ Use the compact shared header, tabs, rows, and action bar across providers. Tabs
 width, detail actions remain above the scrolling body, and all surfaces use semantic theme
 colors. A host that already names the viewer, such as in a tab, passes `showHeader={false}`;
 the refresh then sits at the end of the viewer's toolbar row (the calendars' `actions`), and
-Teams Chats, which has no toolbar, keeps a slim row for it. Keep the existing shared file explorer for OneDrive and Teams Files.
+Teams Chats, which has no toolbar, keeps a slim row for it. Each Teams view starts its toolbar row with `TeamsViewLabel`, naming what it lists (Posts, Files, Your chats), since the three share the Teams logo. Keep the existing shared file explorer for OneDrive and Teams Channel Files.
 
 Hosts can opt into retained browsing without depending on a particular dock. `MailboxView`
 accepts `presentation="compact"`, `onOpenItem(MailSelection)`, and a `focusItem` request

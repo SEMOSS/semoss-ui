@@ -6,6 +6,7 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import type { ComponentProps } from "react";
+import { createWorkbenchStore } from "@semoss/workbench";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { CollaborationHeaderLayoutContext } from "@/features/collaboration/components/collaboration-header.context";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
@@ -43,6 +44,10 @@ const workbenchState = vi.hoisted(() => ({
 	returnToBrowser: vi.fn(),
 }));
 
+const layoutStore = createWorkbenchStore({
+	components: { preview: { name: "Preview" }, files: { name: "Files" } },
+});
+
 vi.mock("@/features/room-connectors/room-connectors.context", () => ({
 	useRoomConnectors: () => ({
 		returnToBrowser: workbenchState.returnToBrowser,
@@ -53,8 +58,10 @@ vi.mock("@/features/tools/tool-workbench.context", () => ({
 	useToolWorkbench: () => ({
 		...workbenchState,
 		store: {
+			subscribe: layoutStore.subscribe,
 			getState: () => ({
 				layout: {
+					...layoutStore.getState().layout,
 					actions: {
 						selectPanel: workbenchState.selectPanel,
 						updatePanel: workbenchState.updatePanel,
@@ -105,6 +112,7 @@ vi.mock("./room-composer", () => ({
 	}: ComponentProps<typeof import("./room-composer")["RoomComposer"]>) => (
 		<div className={className}>
 			Composer{attachmentSummary}
+			<input aria-label="Message draft" defaultValue="" />
 			{starterPrompts?.map((prompt) => (
 				<span key={prompt.id}>{prompt.title}</span>
 			))}
@@ -177,6 +185,23 @@ const defaultProps: ComponentProps<typeof RoomWorkspace> = {
 
 // jsdom has no matchMedia; useIsMobile reads it to keep auto-opened decks off phones
 beforeEach(() => {
+	layoutStore.getState().layout.actions.loadSnapshot({
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: ["preview"],
+			activeId: "preview",
+			enableDeleteWhenEmpty: false,
+		},
+		panels: {
+			preview: { id: "preview", type: "preview", name: "Preview" },
+			files: { id: "files", type: "files", name: "Files" },
+		},
+		borders: {
+			left: { panelIds: ["files"], activeId: "files", size: 300 },
+		},
+	});
 	vi.stubGlobal("matchMedia", () => ({
 		matches: false,
 		addEventListener: () => undefined,
@@ -334,7 +359,7 @@ describe("RoomWorkspace", () => {
 		expect(workbenchState.openWorkbench).toHaveBeenCalledWith();
 	});
 
-	it("opens Settings, Files, Emails, and Calendar from the composer", () => {
+	it("opens Settings, Files, and the Microsoft 365 browsers from the composer", () => {
 		workbenchState.isOpen = false;
 		render(<RoomWorkspace {...defaultProps} />);
 		fireEvent.click(screen.getByRole("button", { name: "Settings" }));
@@ -364,6 +389,10 @@ describe("RoomWorkspace", () => {
 		for (const [label, browser] of [
 			["Open Emails", "mail"],
 			["Open Calendar", "calendar"],
+			["Open OneDrive", "onedrive"],
+			["Open Teams Chats", "teams-chats"],
+			["Open Teams Channels", "teams-channels"],
+			["Open Teams Files", "teams-files"],
 		]) {
 			fireEvent.click(screen.getByRole("button", { name: label }));
 			expect(workbenchState.returnToBrowser).toHaveBeenLastCalledWith(
@@ -393,6 +422,25 @@ describe("RoomWorkspace", () => {
 		expect(
 			screen.getByRole("textbox", { name: "Panel draft" }),
 		).toHaveValue("Keep these settings");
+	});
+
+	it("keeps the chat and its unsent message while a viewer opens and closes", () => {
+		workbenchState.isOpen = false;
+		const { rerender } = render(<RoomWorkspace {...defaultProps} />);
+		const draft = screen.getByRole("textbox", { name: "Message draft" });
+		fireEvent.change(draft, { target: { value: "Thanks Amanda, I will" } });
+		const thread = screen.getByText("Thread");
+		workbenchState.isOpen = true;
+		rerender(<RoomWorkspace {...defaultProps} />);
+		workbenchState.isOpen = false;
+		rerender(<RoomWorkspace {...defaultProps} />);
+		// the same nodes: nothing remounted, so typed text and scroll position stay
+		expect(screen.getByRole("textbox", { name: "Message draft" })).toBe(
+			draft,
+		);
+		expect(draft).toHaveValue("Thanks Amanda, I will");
+		expect(screen.getByText("Thread")).toBe(thread);
+		workbenchState.isOpen = true;
 	});
 
 	it("aligns the composer with the message column", () => {
@@ -435,6 +483,36 @@ describe("RoomWorkspace", () => {
 		rerender(<RoomWorkspace {...defaultProps} />);
 
 		expect(panelSizes(container)).toEqual([30, 70]);
+	});
+
+	it("fits the browser when the preview closes and restores the saved split without remounting drafts", () => {
+		const { container } = render(<RoomWorkspace {...defaultProps} />);
+		fireEvent.keyDown(
+			screen.getByRole("separator", { name: "Resize tool workbench" }),
+			{ key: "ArrowLeft" },
+		);
+		const draft = screen.getByRole("textbox", { name: "Panel draft" });
+		fireEvent.change(draft, {
+			target: { value: "Keep the browser state" },
+		});
+		const dock = container.querySelector<HTMLElement>(
+			'[data-panel-id="collaboration-room-tool-workbench"]',
+		);
+		const actions = layoutStore.getState().layout.actions;
+		act(() => actions.closePanel("preview"));
+		expect(dock).toHaveStyle({ flexGrow: "0", flexBasis: "364px" });
+		expect(
+			screen.getByRole("separator", { name: "Resize tool workbench" }),
+		).toHaveAttribute("data-panel-resize-handle-enabled", "false");
+		act(() => actions.resizeBorder("left", 400));
+		expect(dock).toHaveStyle({ flexBasis: "464px" });
+		act(() => actions.selectPanel("preview"));
+		expect(panelSizes(container)).toEqual([30, 70]);
+		expect(dock).toHaveStyle({ flexBasis: "0px" });
+		expect(screen.getByRole("textbox", { name: "Panel draft" })).toBe(
+			draft,
+		);
+		expect(draft).toHaveValue("Keep the browser state");
 	});
 
 	it("keeps room controls wide enough as the shared workspace resizes without losing a panel draft", () => {

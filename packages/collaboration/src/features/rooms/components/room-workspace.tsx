@@ -1,6 +1,5 @@
 import {
 	Brain,
-	CalendarDays,
 	FolderOpen,
 	Mail,
 	MessagesSquare,
@@ -13,6 +12,7 @@ import {
 	useLayoutEffect,
 	useRef,
 	useState,
+	useSyncExternalStore,
 } from "react";
 import {
 	Button,
@@ -30,12 +30,22 @@ import {
 	rememberCommand,
 } from "@/features/collaboration/state/memory";
 import { roomFileLinks } from "@/features/messages/utils/room-file-link";
+import {
+	connectorPanelActions,
+	OUTLOOK_TONE,
+	TEAMS_TONE,
+} from "@/features/room-connectors/connector-panel-actions";
 import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
+import {
+	RoomSourceAttachmentChoices,
+	sourceFileAttachments,
+} from "@/features/room-email/room-source-attachment-choices";
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { openToolWorkbenchFiles } from "@/features/tools/open-tool-workbench-files";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { Session } from "@/types/session";
+import { useShowCurrentChat } from "../current-chat";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { RoomComposer } from "./room-composer";
 import type { RoomSlashCommand } from "./room-composer-slash-plugin";
@@ -125,6 +135,7 @@ export function RoomWorkspace({
 	onReconnect,
 }: RoomWorkspaceProps) {
 	const roomEmail = useContext(RoomEmailContext);
+	useShowCurrentChat(roomSession);
 	// /remember saves a memory as the owner's own, with no model call
 	const memorySession = useOptionalCollaborationSession();
 	const workbench = useToolWorkbench();
@@ -137,20 +148,44 @@ export function RoomWorkspace({
 		openFile,
 	} = workbench;
 	const isMobile = useIsMobile();
+	const sidebarWidth = useSyncExternalStore(
+		store.subscribe,
+		() => {
+			const { stacks, borders } = store.getState().layout;
+			const hasContentOutsideSidebar = stacks.some(
+				(stack) =>
+					stack.panelIds.length > 0 &&
+					(stack.kind !== "border" || stack.id !== "left"),
+			);
+			return hasContentOutsideSidebar
+				? null
+				: borders.left.activeId
+					? borders.left.size
+					: 0;
+		},
+		() => null,
+	);
 	const hasSharedHeader =
 		useContext(CollaborationHeaderLayoutContext) !== undefined;
 	const workspaceRef = useRef<HTMLDivElement>(null);
 	const [workspaceWidth, setWorkspaceWidth] = useState(0);
 	useLayoutEffect(() => {
 		const element = workspaceRef.current;
-		if (!hasSharedHeader || !element) return;
+		if (!element) return;
 		const measure = () =>
 			setWorkspaceWidth(element.getBoundingClientRect().width);
 		measure();
 		const observer = new ResizeObserver(measure);
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, [hasSharedHeader]);
+	}, []);
+	// The dock adds a 40px rail, 16px padding, and one 8px gap to the browser.
+	const sidebarDockWidth = sidebarWidth === null ? null : sidebarWidth + 64;
+	const isSidebarOnly =
+		!isMobile &&
+		sidebarDockWidth !== null &&
+		(workspaceWidth === 0 ||
+			workspaceWidth >= sidebarDockWidth + MIN_CONVERSATION_WIDTH);
 	const minConversationSize =
 		hasSharedHeader && !isMobile && workspaceWidth > 0
 			? Math.max(
@@ -358,6 +393,10 @@ export function RoomWorkspace({
 																icon: roomEmail.hasSourceEmail
 																	? Mail
 																	: MessagesSquare,
+																iconClassName:
+																	roomEmail.hasSourceEmail
+																		? OUTLOOK_TONE
+																		: TEAMS_TONE,
 																onSelect: () =>
 																	roomEmail.openSource(
 																		actionsTriggerId,
@@ -385,30 +424,10 @@ export function RoomWorkspace({
 														);
 													},
 												},
-												{
-													id: "emails",
-													label: "Open Emails",
-													icon: Mail,
-													onSelect: () =>
-														returnToBrowser(
-															"mail",
-															"microsoft",
-															undefined,
-															actionsTriggerId,
-														),
-												},
-												{
-													id: "calendar",
-													label: "Open Calendar",
-													icon: CalendarDays,
-													onSelect: () =>
-														returnToBrowser(
-															"calendar",
-															"microsoft",
-															undefined,
-															actionsTriggerId,
-														),
-												},
+												...connectorPanelActions(
+													returnToBrowser,
+													actionsTriggerId,
+												),
 											]
 										: undefined
 								}
@@ -422,6 +441,20 @@ export function RoomWorkspace({
 										roomSnapshot?.settingsError ||
 										roomSnapshot?.modelError,
 								)}
+								attachmentContent={
+									roomSession &&
+									roomEmail?.hasSourceEmail &&
+									sourceFileAttachments(
+										roomEmail.sourceMessages,
+									).length > 0 ? (
+										<RoomSourceAttachmentChoices
+											queued={
+												roomSnapshot?.contextFiles ?? []
+											}
+											onAdd={roomSession.addContextFile}
+										/>
+									) : undefined
+								}
 								attachmentSummary={
 									roomSnapshot && roomSession ? (
 										<RoomContextFiles
@@ -463,9 +496,12 @@ export function RoomWorkspace({
 						<>
 							<ResizableHandle
 								aria-label="Resize tool workbench"
+								disabled={isSidebarOnly}
 								className={cn(
 									"hidden bg-transparent transition-colors focus-visible:bg-border data-[resize-handle-state=drag]:bg-border data-[resize-handle-state=hover]:bg-border",
-									isToolWorkbenchOpen && "md:flex",
+									isToolWorkbenchOpen &&
+										!isSidebarOnly &&
+										"md:flex",
 								)}
 							/>
 							<ResizablePanel
@@ -474,6 +510,16 @@ export function RoomWorkspace({
 								defaultSize={65}
 								minSize={20}
 								maxSize={100 - minConversationSize}
+								// Fit browsing without overwriting the user's saved preview split.
+								style={
+									isSidebarOnly
+										? {
+												flexGrow: 0,
+												flexShrink: 0,
+												flexBasis: sidebarDockWidth,
+											}
+										: undefined
+								}
 								className={cn(
 									"min-h-0 min-w-0",
 									!isToolWorkbenchOpen && "hidden",
@@ -484,7 +530,9 @@ export function RoomWorkspace({
 									aria-label="Tool workbench"
 									className="relative size-full min-h-0 bg-background"
 								>
-									<ToolWorkbench />
+									<ToolWorkbench
+										isSidebarOnly={isSidebarOnly}
+									/>
 								</aside>
 							</ResizablePanel>
 						</>

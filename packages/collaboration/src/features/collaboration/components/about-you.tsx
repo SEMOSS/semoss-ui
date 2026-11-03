@@ -32,6 +32,7 @@ export function AboutYou() {
 							<PersonAvatar
 								name={profile.name}
 								initials={profile.initials}
+								email={profile.email}
 							/>
 							<div className="min-w-0 space-y-1">
 								<P className="break-words font-medium text-base">
@@ -68,6 +69,7 @@ export function AboutYou() {
 									<PersonAvatar
 										name={person.name}
 										initials={person.initials}
+										email={person.email}
 									/>
 									<div className="min-w-0 flex-1">
 										<Link

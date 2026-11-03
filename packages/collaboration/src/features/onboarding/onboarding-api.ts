@@ -143,7 +143,12 @@ export function mapJob(out: Row): Job {
 	};
 }
 
-export type JobKind = "import" | "classify" | "topic_map" | "style";
+export type JobKind =
+	| "import"
+	| "classify"
+	| "topic_map"
+	| "topic_match"
+	| "style";
 
 export async function getJob(
 	actions: InsightActions,

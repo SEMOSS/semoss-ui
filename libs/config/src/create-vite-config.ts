@@ -213,9 +213,11 @@ export function createViteLibConfig(options: {
 		if (enableTailwind) {
 			plugins.push(tailwindcss());
 		}
+
 		if (enableReact) {
 			plugins.push(react({ include: /\.(js|jsx|ts|tsx)$/ }));
 		}
+
 		if (enableDts) {
 			plugins.push(
 				dts({ tsconfigPath, outDirs: "dist/types", entryRoot: "src" }),

@@ -20,6 +20,7 @@ const INTERCEPTABLE_METHODS = vi.hoisted(() => [
 		deprecated: false,
 		returnType: "AskModelEngineResponse",
 		returnsModelResponse: true,
+		resultGuardable: true,
 		arguments: [
 			{
 				name: "arg0",
@@ -44,6 +45,7 @@ const INTERCEPTABLE_METHODS = vi.hoisted(() => [
 		deprecated: true,
 		returnType: "AskModelEngineResponse",
 		returnsModelResponse: true,
+		resultGuardable: true,
 		arguments: [
 			{
 				name: "arg0",
@@ -56,7 +58,7 @@ const INTERCEPTABLE_METHODS = vi.hoisted(() => [
 	},
 ]);
 
-/** Builds a GetModelGuardrailConfig response with the given overrides. */
+/** Builds a GetEngineGuardrailConfig response with the given overrides. */
 const buildConfig = (overrides: Record<string, unknown> = {}) => ({
 	engineId: "model-1",
 	configured: true,
@@ -74,7 +76,6 @@ const buildConfig = (overrides: Record<string, unknown> = {}) => ({
 						blockOnGuardrailFailure: false,
 						maskOnGuardrailFailure: false,
 						respondWithGuardrailMessage: true,
-						closeRoomOnBlock: false,
 						inputMapping: { prompt: "arg0" },
 					},
 				},
@@ -112,13 +113,22 @@ const buildConfig = (overrides: Record<string, unknown> = {}) => ({
 });
 
 const CONFIG = vi.hoisted(() => ({ current: null as unknown }));
+const LOCKS = vi.hoisted(() => ({ current: [] as unknown[] }));
 
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: (pixel: string) => {
-		if (pixel.startsWith("GetModelGuardrailConfig")) {
+		if (pixel.startsWith("GetEngineGuardrailConfig")) {
 			return {
 				status: "SUCCESS",
 				data: CONFIG.current,
+				error: undefined,
+				refresh: () => {},
+			};
+		}
+		if (pixel.startsWith("GetEngineGuardrailLocks")) {
+			return {
+				status: "SUCCESS",
+				data: LOCKS.current,
 				error: undefined,
 				refresh: () => {},
 			};
@@ -704,13 +714,10 @@ test("exposes every failure option and reveals the block settings", async () => 
 		"engine-guardrail-settings--pipeline-0-input-entry-0",
 	);
 	expect(
-		within(responseEntry).queryByText("Close room after block"),
+		within(responseEntry).queryByLabelText("Custom block message"),
 	).not.toBeInTheDocument();
 
 	fireEvent.click(within(responseEntry).getByLabelText(/^Block/));
-	expect(
-		within(responseEntry).getByText("Close room after block"),
-	).toBeInTheDocument();
 	expect(
 		within(responseEntry).getByLabelText("Custom block message"),
 	).toBeInTheDocument();
@@ -951,7 +958,7 @@ test("accepts a response check reading result and serializes the output reactor"
 	).toHaveTextContent("GenericGuardrailOutputReactor");
 });
 
-test("warns when the intercepted call returns no model response", async () => {
+test("warns when the intercepted call returns nothing a guardrail can screen", async () => {
 	renderSettings({
 		pipelines: {
 			listBatches: {
@@ -975,6 +982,7 @@ test("warns when the intercepted call returns no model response", async () => {
 				deprecated: false,
 				returnType: "BatchListResponse",
 				returnsModelResponse: false,
+				resultGuardable: false,
 				arguments: [],
 			},
 		],
@@ -983,7 +991,7 @@ test("warns when the intercepted call returns no model response", async () => {
 	expect(
 		await screen.findByTestId("engine-guardrail-settings--warnings"),
 	).toHaveTextContent(
-		"listBatches returns BatchListResponse rather than a model response",
+		"listBatches returns BatchListResponse, which carries no text a guardrail can screen",
 	);
 });
 
@@ -1003,4 +1011,73 @@ test("lets a viewer inspect the wiring without editing it", async () => {
 	expect(
 		screen.queryByTestId("engine-guardrail-settings--add-pipeline-btn"),
 	).not.toBeInTheDocument();
+});
+
+test("shows the saved hit limits with the checks they count, and who is locked out", async () => {
+	LOCKS.current = [
+		{
+			userId: "alice",
+			userType: "NATIVE",
+			name: "Alice",
+			email: "alice@example.com",
+			limitId: "lock",
+			lockedAt: "2026-10-29T11:00:00Z",
+			lockedUntil: "2026-10-29T13:00:00Z",
+		},
+	];
+	renderSettings({
+		pipelines: {
+			askRoom: {
+				input: [
+					{
+						reactorClass: INPUT_REACTOR,
+						params: {
+							checkId: "toxicity",
+							guardrailEngineId: "guardrail-1",
+							blockOnGuardrailFailure: true,
+							inputMapping: { prompt: "arg0" },
+						},
+					},
+				],
+			},
+		},
+		hitLimits: [
+			{
+				limitId: "lock",
+				checks: ["toxicity"],
+				hits: 5,
+				scope: "USER",
+				windowMinutes: 1440,
+				lockMinutes: 60,
+			},
+		],
+	});
+
+	// the limits start folded away under their count
+	const toggle = await screen.findByRole("button", {
+		name: /^Hit Limits 1 limit/,
+	});
+	expect(
+		screen.queryByTestId("engine-guardrail-settings--hit-limits-0"),
+	).not.toBeInTheDocument();
+	fireEvent.click(toggle);
+
+	const limit = await screen.findByTestId(
+		"engine-guardrail-settings--hit-limits-0",
+	);
+	expect(within(limit).getByText("Locks the user out")).toBeInTheDocument();
+	expect(within(limit).getByLabelText(/Policy guardrail/)).toBeChecked();
+	expect(
+		within(limit).getByTestId(
+			"engine-guardrail-settings--hit-limits-0-summary",
+		),
+	).toHaveTextContent(
+		"Locks the user out for 1 hour once they reach 5 hits within 1 day.",
+	);
+	expect(within(limit).getByLabelText("Lock unit")).toHaveTextContent(
+		"Hours",
+	);
+	expect(await screen.findByText("Alice")).toBeInTheDocument();
+	expect(screen.getByRole("button", { name: /Unlock/ })).toBeInTheDocument();
+	LOCKS.current = [];
 });

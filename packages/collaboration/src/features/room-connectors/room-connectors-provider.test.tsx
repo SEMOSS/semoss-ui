@@ -15,6 +15,10 @@ import {
 	EVENT_DETAIL_PANEL,
 	FULL_CALENDAR_PANEL,
 	MAIL_DETAIL_PANEL,
+	ONEDRIVE_BROWSER_PANEL,
+	TEAMS_CHANNELS_PANEL,
+	TEAMS_CHATS_PANEL,
+	TEAMS_FILES_PANEL,
 } from "./room-connectors.constants";
 import { useRoomConnectors } from "./room-connectors.context";
 import type {
@@ -128,6 +132,32 @@ it("starts collapsed with 300px browsers and inserts deferred Files first", () =
 	expect(layout.panels[layout.borders.left.panelIds[0]]).toMatchObject({
 		minWidth: 300,
 	});
+});
+
+it("opens OneDrive and Teams browsers in the left rail on demand, once each", () => {
+	setup(false);
+	for (const [browser, type, name] of [
+		["onedrive", ONEDRIVE_BROWSER_PANEL, "services.onedrive"],
+		["teams-chats", TEAMS_CHATS_PANEL, "services.teamsChats"],
+		["teams-channels", TEAMS_CHANNELS_PANEL, "services.teamsChannels"],
+		["teams-files", TEAMS_FILES_PANEL, "services.teamsFiles"],
+	] as const) {
+		act(() => navigation.returnToBrowser(browser, "microsoft"));
+		act(() => navigation.returnToBrowser(browser, "microsoft"));
+		const layout = workbench.store.getState().layout;
+		const panels = layout.actions.findPanels(
+			(panel) => panel.type === type,
+		);
+		expect(panels).toHaveLength(1);
+		expect(panels[0]).toMatchObject({
+			name,
+			config: { provider: "microsoft" },
+		});
+		expect(layout.borders.left.activeId).toBe(panels[0].id);
+	}
+	expect(
+		workbench.store.getState().layout.borders.left.panelIds,
+	).toHaveLength(6);
 });
 
 it("reuses mail tabs per provider and identity without replacing controls or original selection", () => {

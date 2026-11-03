@@ -16,6 +16,10 @@ import {
 } from "../state/collaboration-session.context";
 import { TopicDetail } from "./topic-detail";
 
+// the topic page opens its assistant by default; these tests are not about it
+vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
+	LandingChatComposer: () => null,
+}));
 vi.mock("@/features/dashboard/topic-sessions", () => ({
 	TopicSessions: () => null,
 }));

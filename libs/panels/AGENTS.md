@@ -1,6 +1,6 @@
 # AGENTS.md - @semoss/panels
 
-The SEMOSS file panels: seven file *views*, the blueprints that mount them in a dock, three
+The SEMOSS file panels: file *views*, the blueprints that mount them in a dock, three
 explorer variants, the MCP toolbox editor, and the resource-permission cache they read.
 
 > **Inherits from:** [../../AGENTS.md](../../AGENTS.md) (root).
@@ -118,14 +118,15 @@ dock can mount one by supplying its own chrome and skipping `useFilesChanged`.
   imports nothing, which is what keeps an event name safe to import from anywhere — the same
   cycle rule as `isFilePanelType`. The hook that subscribes is an ordinary hook in `hooks/`.
 - **An event with no subscriber does not belong here.** `useFilesChanged` earns its place because
-  four explorers and eight file panels consume it; an event added "for later" is surface with no
+  the explorers and file panels consume it; an event added "for later" is surface with no
   consumer, and the dock's own panel-lifecycle events were deleted for exactly that reason.
 - **Never dereference `a.mode.type` in a blueprint `matches`.** It runs inside `selectPanel`, a
   store action outside any error boundary; a config it cannot read must return false, not throw.
   Use `matchesFilePanel`.
-- **Keep PPTX viewer content lazy-loaded internally.** The manifest exposes only the root,
-  `globals.css`, and `vite` entry points, not a `file-pptx-view-content` public subpath.
-  Do not turn the heavy viewer into an eager public-barrel import.
+- **Keep each OOXML viewer lazy-loaded at the file-panel registry.** DOCX, PPTX, VSDX, and XLSX
+  packages are intentionally absent from the views barrel so opening one format never eagerly
+  loads the other Office editors. The manifest exposes only the root, `globals.css`, and `vite`
+  entry points; do not add viewer implementation subpaths.
 - **Monaco needs the `monaco-editor` alias.** Every host that renders a file panel aliases the bare
   specifier at `libs/shared/node_modules/...`; `vite.config.ts` here does the same so the tests run.
 - Everything else about panels — blueprints, mount policy, chrome controls, the dirty `*` marker —

@@ -297,8 +297,9 @@ unconfirmed or still-pending style never reaches the assistant, the frontend con
 - The result is stored as a **pending proposal** (`style.pending`). The owner edits the summary, examples, and variants,
   then confirms it (saved with `source: "learned"`) or discards it. Only the agreed content is retained.
 - **Audience variants** follow the recipients: an email is internal when every recipient belongs to the owner's
-  organisation (`BrainOrgDomains`) and external when any recipient is outside it. The confirmed style prompt carries both
-  variants and the organisation domains so the assistant picks the matching one.
+  organisation (`BrainOrgDomains`) and external when any recipient is outside it. Before composing an email, the assistant
+  calls `GetWritingStyle` with the recipients and uses the returned confirmed style for that audience. Pending proposals
+  are excluded; the frontend does not inject a profile/style snapshot into each request.
 - **Re-learning** is manual. Learning again replaces only the pending proposal and never overwrites the confirmed style.
 - The general summary is optional. Saving a style with no summary, examples, or variants, or pressing **Reset style**
   (with a confirmation), removes the whole style and any proposal; drafts then use no style.
@@ -306,10 +307,9 @@ unconfirmed or still-pending style never reaches the assistant, the frontend con
   whole style, the session takes the style the server returns (`profile.style.server`), a success toast confirms it,
   and a failure stays visible in the form with the owner's entries kept. The proposal is written by the server alone;
   reviewing it clears it with `pending: null`.
-- The assistant's instructions tell it to write every composed email in the confirmed style, using the internal style
-  only when every recipient is in the owner's organisation. A style changed in the middle of a chat applies from the
-  next message, but earlier drafts in that chat can still pull the model toward the old wording; start a new chat to
-  be sure.
+- The assistant reads `GetWritingStyle` before generating an email and calling `ComposeEmail`. Generic messages,
+  Teams chats, summaries, and factual lookups do not trigger email-style retrieval. A newly saved style is available
+  on the next tool call; existing drafts retain their text until edited or regenerated.
 
 ## Routes and ownership
 

@@ -9,8 +9,13 @@ import {
 import { useToolWorkbench } from "../tool-workbench.context";
 import { ToolWorkbenchFocusContext } from "../tool-workbench-focus.context";
 
+interface ToolWorkbenchProps {
+	/** Keep desktop rail navigation when the host fits the dock to its browser. */
+	isSidebarOnly?: boolean;
+}
+
 /** Room dock with panel navigation and a command palette shortcut. */
-export function ToolWorkbench() {
+export function ToolWorkbench({ isSidebarOnly = false }: ToolWorkbenchProps) {
 	const workbench = useToolWorkbench();
 	const { snapshot, store, closeWorkbench, isOpen } = workbench;
 	const backButton = useRef<HTMLButtonElement>(null);
@@ -18,7 +23,9 @@ export function ToolWorkbench() {
 	const focusWorkbench = useCallback(() => dock.current?.focus(), []);
 	const isMobile = useIsMobile();
 	const [containerWidth, setContainerWidth] = useState<number | null>(null);
-	const isCompact = containerWidth === null ? isMobile : containerWidth < 768;
+	const isCompact =
+		isMobile ||
+		(!isSidebarOnly && containerWidth !== null && containerWidth < 768);
 	useEffect(() => {
 		if (!isOpen || !dock.current) return;
 		const element = dock.current;

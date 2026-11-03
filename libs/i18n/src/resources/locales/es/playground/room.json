@@ -8,7 +8,6 @@
 		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",
 		"open": "Abrir Configuración",
 		"close": "Cerrar",
-		"edit": "Editar configuración",
 		"compact": "Compactar mensajes de herramientas",
 		"compactSuccess": "Mensajes de herramientas compactados correctamente",
 		"compactError": "Error al compactar los mensajes de herramientas",
@@ -166,8 +165,13 @@
 		"preparingWorkspace": "Preparando espacio de trabajo…",
 		"activityLog": "Registro de actividad",
 		"prepareError": "No se pudo preparar el espacio de trabajo. Se conserva tu borrador.",
-		"retry": "Intentar de nuevo",
-		"viewActivityLog": "Ver registro de actividad"
+		"retry": "Intentar de nuevo"
+	},
+	"workspacePlaces": {
+		"files": "Archivos",
+		"tools": "Herramientas",
+		"activity": "Actividad",
+		"settings": "Configuración"
 	},
 	"optimizer": {
 		"optimize": "Optimizar mensaje",

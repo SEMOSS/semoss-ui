@@ -11,6 +11,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { TopicChip } from "@/features/collaboration/components/topic-chip";
+import { useRecordIds } from "@/features/collaboration/live/work-updates.context";
 import type { Topic } from "@/features/collaboration/state/collaboration.types";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
@@ -25,6 +26,7 @@ const AFTER_TURN_READS_MS = [6000, 15000, 30000];
 /** The chat's topics, read again after each turn so Brain's tags show up as the owner chats. */
 export function useRoomTopics(roomId: string, isRunning: boolean) {
 	const { actions } = useInsight();
+	const { serverId } = useRecordIds();
 	const [topics, setTopics] = useState<RoomTopic[] | null>(null);
 	const wasRunning = useRef(isRunning);
 
@@ -55,9 +57,16 @@ export function useRoomTopics(roomId: string, isRunning: boolean) {
 	const change = useCallback(
 		async (topicId: string, remove: boolean) => {
 			if (!actions) return;
-			setTopics(await linkRoomTopic(actions, roomId, topicId, remove));
+			setTopics(
+				await linkRoomTopic(
+					actions,
+					roomId,
+					await serverId(topicId),
+					remove,
+				),
+			);
 		},
-		[actions, roomId],
+		[actions, roomId, serverId],
 	);
 
 	return { topics, change };
@@ -73,17 +82,21 @@ export function RoomTopics({
 }) {
 	const session = useOptionalCollaborationSession();
 	const { topics, change } = useRoomTopics(roomId, isRunning);
+	const { localId } = useRecordIds();
 	const [open, setOpen] = useState(false);
 	if (!topics || !session) return null;
 
+	// the page knows a topic made here by its own id; the chat's links carry the server's
 	const byId = new Map<string, Topic>(
 		session.state.topics.map((topic) => [topic.id, topic]),
 	);
 	const shown = topics.filter(
-		(t) => t.state !== "dismissed" && byId.has(t.topicId),
+		(t) => t.state !== "dismissed" && byId.has(localId(t.topicId)),
 	);
 	const onChat = new Set(
-		topics.filter((t) => t.state !== "dismissed").map((t) => t.topicId),
+		topics
+			.filter((t) => t.state !== "dismissed")
+			.map((t) => localId(t.topicId)),
 	);
 	const choices = session.state.topics.filter(
 		(topic) =>
@@ -97,7 +110,7 @@ export function RoomTopics({
 			aria-label="Chat topics"
 		>
 			{shown.map((t) => {
-				const topic = byId.get(t.topicId) as Topic;
+				const topic = byId.get(localId(t.topicId)) as Topic;
 				const suggested = t.state === "suggested";
 				const byBrain = t.origin === "brain" || t.origin === "agent";
 				return (

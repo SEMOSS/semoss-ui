@@ -171,6 +171,7 @@ export function MailboxStep({
 					<div className="flex items-center gap-4">
 						<PersonAvatar
 							name={overview.name || overview.address}
+							email={overview.address}
 							className="size-14 text-base ring-4 ring-primary/10"
 						/>
 						<div className="min-w-0">
@@ -302,6 +303,7 @@ export function MailboxStep({
 									>
 										<PersonAvatar
 											name={s.name || s.address}
+											email={s.address}
 											className="size-7"
 										/>
 										<span className="min-w-0 flex-1 truncate text-sm">
@@ -854,7 +856,7 @@ export function ImportStep({
 						onClick={start}
 						disabled={starting}
 					>
-						{starting ? "Starting import…" : "Import again"}
+						{starting ? "Starting import..." : "Import again"}
 					</Button>
 				)}
 				{(done || (running && mailReady)) && (
@@ -931,6 +933,7 @@ function PersonCard({
 		>
 			<PersonAvatar
 				name={person.name}
+				email={person.email}
 				className={featured ? "size-14 text-base" : "size-9"}
 			/>
 			<div className={cn("min-w-0", featured ? "w-full" : "flex-1")}>
@@ -1269,6 +1272,7 @@ export function PeopleStep({
 							>
 								<PersonAvatar
 									name={p.name}
+									email={p.email}
 									className="size-9"
 								/>
 								<div className="min-w-0 flex-1">
@@ -1323,6 +1327,7 @@ export function PeopleStep({
 								>
 									<PersonAvatar
 										name={p.name}
+										email={p.email}
 										className="size-9"
 									/>
 									<div className="min-w-0 flex-1">
@@ -1555,6 +1560,7 @@ export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 							>
 								<PersonAvatar
 									name={c.name}
+									email={c.email}
 									className="size-10"
 								/>
 								<span className="min-w-0">
@@ -1658,12 +1664,9 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	const running = job?.status === "running";
 	// the sort itself, not the topic filing that may come after it
 	const failures = Number(job?.counts.errors ?? 0);
+	// a few threads that failed to sort do not hold up onboarding; they can be retried here
 	const done =
-		!error &&
-		!isLoading &&
-		job?.status === "done" &&
-		job.mode !== "topics" &&
-		failures === 0;
+		!error && !isLoading && job?.status === "done" && job.mode !== "topics";
 	const summary = useMemo(() => {
 		const counts = job?.counts ?? {};
 		return {
@@ -1769,7 +1772,7 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 			)}
 			{job?.status === "done" && failures > 0 && (
 				<Failure
-					error={`${failures} threads could not be sorted. Retry to finish sorting them.`}
+					error={`${formatCount(failures)} ${failures === 1 ? "thread" : "threads"} could not be sorted. You can continue, or retry ${failures === 1 ? "it" : "them"}.`}
 					onRetry={starting ? undefined : start}
 				/>
 			)}

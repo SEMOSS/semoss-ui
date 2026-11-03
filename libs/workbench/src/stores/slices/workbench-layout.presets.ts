@@ -18,6 +18,9 @@ export function arrangeWorkbenchTree(
 ): WorkbenchLayoutNode {
 	const tabsets = flatten(tree);
 	const ids = tabsets.flatMap((tabset) => tabset.panelIds);
+	const keepsLastContainer = tabsets.some(
+		(tabset) => tabset.enableDeleteWhenEmpty === false,
+	);
 	const count = preset === "single" ? 1 : 2;
 	const midpoint = Math.ceil(ids.length / count);
 	const groups: WorkbenchTabset[] = Array.from(
@@ -44,6 +47,10 @@ export function arrangeWorkbenchTree(
 						? selected
 						: (previousActive ?? panelIds[0] ?? null),
 				split: undefined,
+				// one group keeps the dock's last container; the rest close
+				// when their last tab does
+				enableDeleteWhenEmpty:
+					index === 0 && keepsLastContainer ? false : undefined,
 			};
 		},
 	);
