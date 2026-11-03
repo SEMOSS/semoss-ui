@@ -14,6 +14,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Small,
+	Switch,
 } from "@semoss/ui/next";
 import { WorkRefreshStatus } from "@/features/collaboration/live/work-refresh-status";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
@@ -58,6 +59,22 @@ function folderDetail(folders: NonNullable<Connection["folders"]>): string {
 
 // pilot sources the Brain actually reads today
 const SHOWN_SOURCES = new Set(["email", "calendar", "teams"]);
+
+// what each switch does, on and off; mail and Teams feed threads, topics and work, calendar is read live (no last item)
+const SOURCE_DETAIL: Record<string, { on: string; off: string }> = {
+	email: {
+		on: "New mail feeds your threads, topics and work.",
+		off: "Paused. New mail and Teams chats are not read; what is already here stays. Turn on to catch up.",
+	},
+	calendar: {
+		on: "Read live from Outlook; meetings show on Today and in search.",
+		off: "Off. Today and search do not show meetings.",
+	},
+	teams: {
+		on: "1:1 and group chats feed your threads, topics and work.",
+		off: "Off. Turn on to bring your Teams chats into your work, starting with the chats from your import window.",
+	},
+};
 
 // how often the server checks mail while the app is closed; the server accepts only these minutes
 const SYNC_CHOICES = [
@@ -141,12 +158,27 @@ export function ConnectionsView() {
 	const sources =
 		connection?.sources.filter((source) => SHOWN_SOURCES.has(source.id)) ??
 		[];
-	const needsSignIn =
-		!microsoft?.signedIn ||
-		sources.some((source) => source.status === "needs_permission");
 	const hasBackgroundAccess =
 		background?.saved === true && background.renewable;
 	const syncEveryMinutes = state.settings.syncEveryMinutes;
+	const enabled = state.settings.sourcesJson;
+
+	function toggleSource(id: string, on: boolean) {
+		if (
+			id === "email" &&
+			!on &&
+			!window.confirm(
+				"Pause mail? New mail and Teams chats stop coming in until you turn it on again. Nothing already here is removed.",
+			)
+		)
+			return;
+		dispatch({
+			type: "settings.save",
+			changes: { sourcesJson: { ...enabled, [id]: on } },
+		});
+		// the server starts a catch-up read when mail or Teams turns on; show its result once it lands
+		if (on && id !== "calendar") setTimeout(() => void load(), 4000);
+	}
 
 	return (
 		<div className="flex min-w-0 flex-col gap-6">
@@ -173,18 +205,19 @@ export function ConnectionsView() {
 							</P>
 						)}
 					</div>
-					<Button
-						type="button"
-						variant={needsSignIn ? "default" : "outline"}
-						disabled={busy !== null}
-						onClick={() => void run("connect", connectMicrosoft)}
-					>
-						{busy === "connect"
-							? "Connecting..."
-							: microsoft?.signedIn
-								? "Reconnect"
+					{connection && !microsoft?.signedIn && (
+						<Button
+							type="button"
+							disabled={busy !== null}
+							onClick={() =>
+								void run("connect", connectMicrosoft)
+							}
+						>
+							{busy === "connect"
+								? "Connecting..."
 								: "Connect Microsoft"}
-					</Button>
+						</Button>
+					)}
 				</header>
 				<div className="divide-y">
 					{connection?.folders?.known && (
@@ -199,20 +232,62 @@ export function ConnectionsView() {
 						/>
 					)}
 					{sources.map((source) => {
-						const status = SOURCE_STATUS[source.status];
+						const on = enabled[source.id] === true;
+						// a switch once the import has run; before that the import turns sources on
+						const canToggle = connection?.imported === true;
+						// Teams is read by the mail sync, so it waits while mail is paused
+						const waitsOnMail =
+							source.id === "teams" &&
+							on &&
+							enabled.email !== true;
+						const status =
+							SOURCE_STATUS[
+								canToggle && !on
+									? "off"
+									: source.status === "off" && on
+										? "connected"
+										: source.status
+							];
+						const words = SOURCE_DETAIL[source.id];
+						const detail = waitsOnMail
+							? "Paused while mail is paused."
+							: [
+									words && canToggle
+										? on
+											? words.on
+											: words.off
+										: "",
+									on &&
+									source.id !== "calendar" &&
+									source.lastSync
+										? `Last new item ${when(source.lastSync)}.`
+										: "",
+								]
+									.filter(Boolean)
+									.join(" ") || undefined;
+						const titleId = `${syncTitleId}-${source.id}`;
 						return (
 							<Row
 								key={source.id}
 								title={source.label}
-								detail={
-									source.lastSync
-										? `Last new item ${when(source.lastSync)}`
-										: undefined
-								}
+								titleId={titleId}
+								detail={detail}
 								state={
 									<Badge variant={status.variant}>
-										{status.label}
+										{waitsOnMail ? "Paused" : status.label}
 									</Badge>
+								}
+								action={
+									canToggle && (
+										<Switch
+											aria-labelledby={titleId}
+											checked={on}
+											disabled={busy !== null}
+											onCheckedChange={(next) =>
+												toggleSource(source.id, next)
+											}
+										/>
+									)
 								}
 							/>
 						);
@@ -239,13 +314,13 @@ export function ConnectionsView() {
 						detail={
 							background?.saved
 								? background.renewable
-									? `Saved for ${background.account ?? "your account"}. Routines and updates keep working with the app closed. Microsoft renews it; if it stops, reconnect.`
-									: "Saved, but it can no longer be renewed. Reconnect, then turn it on again."
+									? `Saved for ${background.account ?? "your account"}. Routines and updates keep working with the app closed. Microsoft renews it; if it stops, press Update.`
+									: "Saved, but it can no longer be renewed. Sign out, sign back in with Microsoft, then press Update."
 								: background?.otherAccount
-									? "You are signed in to a different Microsoft account than the one your mail is read from. Reconnect with that account to turn this on."
+									? "You are signed in to a different Microsoft account than the one your mail is read from. Sign out and sign in with that account to turn this on."
 									: background?.canSave
 										? "Off. Turn on to let routines and updates read your mail when the app is closed."
-										: "Off. Reconnect Microsoft first so a renewable sign-in can be saved."
+										: "Off. Sign out and sign back in with Microsoft so a renewable sign-in can be saved."
 						}
 						state={
 							<Badge
