@@ -1,5 +1,4 @@
 import { ChevronRightIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { type ComponentProps, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -17,9 +16,6 @@ import {
 	Separator,
 	Spinner,
 } from "@semoss/ui/next";
-import type { ChunkStatus } from "@/hooks/use-active-index";
-import type { ResponseMessageStore } from "@/stores/message/response-message.store";
-import type { PixelMessageThinkingPart } from "@/types";
 
 type MarkdownComponents = NonNullable<
 	ComponentProps<typeof Markdown>["components"]
@@ -110,48 +106,41 @@ const THINKING_MARKDOWN_COMPONENTS: MarkdownComponents = {
 	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
 };
 
-interface ResponseMessageThinkingProps {
-	/** Owning response, retained for compatibility with existing callers. */
-	message: ResponseMessageStore;
-	/** Reasoning supplied by the backend. */
-	part: PixelMessageThinkingPart;
-	/** Position in the transcript reveal queue. */
-	status: ChunkStatus;
-	/** Whether this is the initial streamed view. */
-	isFirstView: boolean;
+export interface ChatReasoningProps {
+	/** The reasoning the model wrote, as Markdown. */
+	thinking: string;
+	/** Whether the model is still reasoning, which shows a spinner beside the label. */
+	isStreaming: boolean;
 }
 
-/** Reasoning is available on demand without displacing the conversation. */
-export const ResponseMessageThinking = observer(
-	({ part, status }: ResponseMessageThinkingProps) => {
-		const { t } = useTranslation("room");
-		const [isOpen, setIsOpen] = useState(false);
-		if (status === "not_started") return null;
-		return (
-			<Collapsible open={isOpen} onOpenChange={setIsOpen}>
-				<CollapsibleTrigger asChild>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="gap-2 text-muted-foreground"
-					>
-						<ChevronRightIcon
-							aria-hidden="true"
-							className={cn("size-4", isOpen && "rotate-90")}
-						/>
-						{t("studio.thinking")}
-						{status === "active" && <Spinner />}
-					</Button>
-				</CollapsibleTrigger>
-				<CollapsibleContent className="max-h-64 overflow-auto border-s-2 ps-4 text-muted-foreground">
-					<Markdown
-						dir="auto"
-						components={THINKING_MARKDOWN_COMPONENTS}
-					>
-						{part.thinking}
-					</Markdown>
-				</CollapsibleContent>
-			</Collapsible>
-		);
-	},
-);
+/** A reply's reasoning, collapsed under its label so it never displaces the answer. */
+export const ChatReasoning = ({
+	thinking,
+	isStreaming,
+}: ChatReasoningProps) => {
+	const { t } = useTranslation("transcript");
+	const [isOpen, setIsOpen] = useState(false);
+	return (
+		<Collapsible open={isOpen} onOpenChange={setIsOpen}>
+			<CollapsibleTrigger asChild>
+				<Button
+					variant="ghost"
+					size="sm"
+					className="gap-2 text-muted-foreground"
+				>
+					<ChevronRightIcon
+						aria-hidden="true"
+						className={cn("size-4", isOpen && "rotate-90")}
+					/>
+					{t("reasoning")}
+					{isStreaming && <Spinner />}
+				</Button>
+			</CollapsibleTrigger>
+			<CollapsibleContent className="max-h-64 overflow-auto border-s-2 ps-4 text-muted-foreground">
+				<Markdown dir="auto" components={THINKING_MARKDOWN_COMPONENTS}>
+					{thinking}
+				</Markdown>
+			</CollapsibleContent>
+		</Collapsible>
+	);
+};

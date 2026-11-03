@@ -157,7 +157,6 @@
 		"moreActions": "その他の操作",
 		"prompts": "プロンプト",
 		"removeFile": "{{name}} を削除",
-		"thinking": "推論",
 		"errorTitle": "問題が発生しました",
 		"errorDescription": "ページを更新するか、ホームに戻ってもう一度お試しください。",
 		"backHome": "ホームに戻る",

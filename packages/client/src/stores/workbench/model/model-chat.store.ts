@@ -1,4 +1,5 @@
 import { createStore, type StoreApi } from "zustand";
+import { readPixelStreamChunk } from "@semoss/sdk";
 import { uploadInsight } from "@semoss/sdk/react";
 import { getErrorMessage as toErrorMessage } from "@semoss/utility/error";
 import type { BuiltinToolSelection, ModelBuiltinTools } from "@/api/engines";
@@ -179,10 +180,12 @@ const emptyStream = (): ModelChatStream => ({
 });
 
 /**
- * Fold one streamed chunk into the accumulator. Tool deltas are keyed by their
- * stream `index`: the opening chunk carries the id and name, which is all a
- * streaming tool call renders. The argument fragments that follow are dropped
- * — they arrive as partial JSON that cannot be parsed until the turn settles,
+ * Fold one streamed chunk into the accumulator. The SDK decides what kind each
+ * chunk is, the same way the playground reads its streams. Tool deltas are
+ * keyed by their stream `index`, and a closing chunk, which has none, adds
+ * nothing: the opening chunk carries the id and name, which is all a streaming
+ * tool call renders. The argument fragments that follow are dropped, since
+ * they arrive as partial JSON that cannot be parsed until the turn settles,
  * and the durable message carries the parsed arguments anyway.
  *
  * @name applyStreamChunk
@@ -193,22 +196,22 @@ const applyStreamChunk = (
 	stream: ModelChatStream,
 	chunk: RoomStreamChunk,
 ): void => {
-	if (chunk.stream_type === "content") {
-		stream.text += chunk.data.content ?? "";
-		return;
-	}
-
-	if (chunk.stream_type === "thinking") {
-		stream.thinking += chunk.data.thinking ?? "";
-		return;
-	}
-
-	const index = chunk.data.index ?? 0;
-	const existing = stream.toolCalls[index];
-	stream.toolCalls[index] = {
-		id: chunk.data.id ?? existing?.id ?? `tool-${index}`,
-		name: chunk.data.function?.name ?? existing?.name ?? "Tool",
-	};
+	readPixelStreamChunk(chunk, {
+		onText: (text) => {
+			stream.text += text;
+		},
+		onThinking: (thinking) => {
+			stream.thinking += thinking;
+		},
+		onTool: (data) => {
+			if (data.index === undefined) return;
+			const existing = stream.toolCalls[data.index];
+			stream.toolCalls[data.index] = {
+				id: data.id ?? existing?.id ?? `tool-${data.index}`,
+				name: data.function?.name ?? existing?.name ?? "Tool",
+			};
+		},
+	});
 };
 
 /**

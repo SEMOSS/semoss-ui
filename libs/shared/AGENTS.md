@@ -149,6 +149,18 @@ the login's logo or icon (`LoginTypeIcon`; a person for native logins, a key for
 its name from `getLoginTypeName`. Show a login's name that way rather than the stored label, such
 as `API_USER`.
 
+### Chat replies (`components/chat/`)
+
+A reply reads the same in every chat, the playground's and the client's model chat alike:
+`ChatReasoning` shows the model's reasoning collapsed under Reasoning, with a spinner while it
+streams; `ChatToolCallRow` shows a tool call by name and status (running, completed, failed), for
+a chat that only displays its calls, since a chat that runs or approves tools draws its own row;
+and `ChatGeneratingIndicator` is the line that says the reply is on its way while nothing else
+shows it, with the rotating messages of `useLoadingMessage` (`hooks/use-loading-message.ts`).
+They take plain values, never a chat's own stores. Their words are in the `transcript`
+namespace, which every host that shows them loads. Each chat reads its stream with the SDK's
+`readPixelStreamChunk`, so the parts these show come from chunks read the same way.
+
 ### Engine pickers (`components/engine/`)
 
 `EngineSelect` is the one engine picker. It reads its own pages of `MyEngines` (filtered by

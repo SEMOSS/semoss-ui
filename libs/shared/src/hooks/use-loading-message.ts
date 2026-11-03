@@ -1,5 +1,18 @@
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
-import { LOADING_MESSAGES } from "@/constants";
+
+const LOADING_MESSAGES = [
+	"Thinking through it...",
+	"Working on that...",
+	"Processing your request...",
+	"Checking the details...",
+	"Gathering context...",
+	"Making progress...",
+	"Preparing the result...",
+	"Finalizing...",
+	"Almost done...",
+	"One moment...",
+	"Still working...",
+] as const;
 
 /**
  * A hook that cycles through loading messages with progressively longer delays to keep users engaged during long operations.
