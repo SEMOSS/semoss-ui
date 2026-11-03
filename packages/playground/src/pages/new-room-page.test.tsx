@@ -679,3 +679,18 @@ test("retrying failed source preparation reopens the requested viewer", async ()
 		screen.queryByRole("tab", { name: "room:menuFileExplorer.name" }),
 	).toBeNull();
 });
+
+test("Activity prepares the room and opens its log, and Retry after a failure opens it again", async () => {
+	mocks.createEmptyRoom
+		.mockRejectedValueOnce(new Error("Offline"))
+		.mockResolvedValueOnce(createPreparedRoom());
+	renderWorkspace();
+	selectWorkspaceItem("workspacePlaces.activity");
+	await screen.findByRole("alert");
+	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
+	await screen.findByRole("tab", { name: "room:studio.activityLog" });
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
+	expect(
+		screen.queryByRole("tab", { name: "room:menuFileExplorer.name" }),
+	).toBeNull();
+});

@@ -71,6 +71,7 @@ test("a draft has no Chat Tools, waits while preparing, and uses its own actions
 	const draft: DraftWorkspacePlaces = {
 		onOpenFiles: vi.fn(),
 		onOpenSettings: vi.fn(),
+		onOpenActivity: vi.fn(),
 		onOpenSource: vi.fn(),
 		isPreparing: true,
 		connectors: room.connectors,
@@ -79,26 +80,32 @@ test("a draft has no Chat Tools, waits while preparing, and uses its own actions
 
 	expect(getPlaceNames()).toEqual([
 		"workspacePlaces.files",
+		"workspacePlaces.activity",
 		"workspacePlaces.settings",
 		"connectors:services.onedrive",
 	]);
 	const files = screen.getByRole("button", { name: "workspacePlaces.files" });
 	expect(files).toBeDisabled();
 	expect(files).toHaveAttribute("aria-busy", "true");
+	expect(
+		screen.getByRole("button", { name: "workspacePlaces.activity" }),
+	).toBeDisabled();
 	fireEvent.click(
 		screen.getByRole("button", { name: "workspacePlaces.settings" }),
 	);
 	expect(draft.onOpenSettings).toHaveBeenCalledTimes(1);
 
-	const prepared = { ...draft, isPreparing: false, onOpenActivity: vi.fn() };
-	rerender(<WorkspaceRail room={room} draft={prepared} />);
-	expect(getPlaceNames()).toContain("workspacePlaces.activity");
-	fireEvent.click(
-		screen.getByRole("button", { name: "workspacePlaces.files" }),
+	rerender(
+		<WorkspaceRail room={room} draft={{ ...draft, isPreparing: false }} />,
 	);
-	fireEvent.click(
-		screen.getByRole("button", { name: "connectors:services.onedrive" }),
-	);
-	expect(prepared.onOpenFiles).toHaveBeenCalledTimes(1);
-	expect(prepared.onOpenSource).toHaveBeenCalledWith("onedrive");
+	for (const name of [
+		"workspacePlaces.files",
+		"workspacePlaces.activity",
+		"connectors:services.onedrive",
+	]) {
+		fireEvent.click(screen.getByRole("button", { name }));
+	}
+	expect(draft.onOpenFiles).toHaveBeenCalledTimes(1);
+	expect(draft.onOpenActivity).toHaveBeenCalledTimes(1);
+	expect(draft.onOpenSource).toHaveBeenCalledWith("onedrive");
 });
