@@ -4,9 +4,18 @@ import {
 	ChatReasoning,
 	ChatToolCallRow,
 } from "@semoss/shared";
-import { Button, Markdown, Muted } from "@semoss/ui/next";
+import { cn, Markdown, Muted } from "@semoss/ui/next";
 import { FeedbackButtons } from "@/components/engine/FeedbackButtons";
 import type { ModelChatMessage as ModelChatMessageModel } from "@/stores/workbench/model";
+import { ModelChatActionButton } from "./model-chat-action-button";
+
+/**
+ * A message's actions show while it is hovered or holds focus, and stay
+ * visible on touch screens, which cannot hover. They keep their space while
+ * hidden, so showing them never moves the transcript.
+ */
+const MESSAGE_ACTIONS_CLASS =
+	"flex flex-row flex-wrap items-center gap-0.5 transition-opacity [@media(hover:hover)_and_(pointer:fine)]:pointer-events-none [@media(hover:hover)_and_(pointer:fine)]:opacity-0 focus-within:pointer-events-auto focus-within:opacity-100 group-hover/message:pointer-events-auto group-hover/message:opacity-100";
 
 interface ModelChatMessageProps {
 	/** The turn to render. */
@@ -43,7 +52,7 @@ export const ModelChatMessage = ({
 	if (message.io === "INPUT") {
 		return (
 			<div
-				className="group ms-auto flex max-w-[750px] flex-col items-end"
+				className="group/message ms-auto flex max-w-full flex-col items-end"
 				data-testid={`model-chat-message-input-${message.id}`}
 			>
 				<div className="items-start self-stretch rounded-lg bg-accent px-4 py-3 leading-normal">
@@ -76,15 +85,12 @@ export const ModelChatMessage = ({
 						</div>
 					)}
 				</div>
-				<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						aria-label="Copy prompt"
+				<div className={cn(MESSAGE_ACTIONS_CLASS, "pt-2")}>
+					<ModelChatActionButton
+						label="Copy prompt"
+						icon={CopyIcon}
 						onClick={copy}
-					>
-						<CopyIcon className="size-3.5" aria-hidden />
-					</Button>
+					/>
 				</div>
 			</div>
 		);
@@ -94,7 +100,7 @@ export const ModelChatMessage = ({
 
 	return (
 		<div
-			className="group flex w-full flex-col gap-2 pe-3 sm:pe-10"
+			className="group/message flex w-full min-w-0 flex-col gap-2"
 			data-testid={`model-chat-message-output-${message.id}`}
 		>
 			{message.thinking && (
@@ -117,30 +123,24 @@ export const ModelChatMessage = ({
 			{isEmptyStream ? (
 				<ChatGeneratingIndicator active />
 			) : (
-				<Markdown dir="auto" className="wrap-anywhere">
+				<Markdown dir="auto" className="wrap-anywhere" copyableCode>
 					{message.text}
 				</Markdown>
 			)}
 
 			{!message.isStreaming && (
-				<div className="flex flex-row flex-wrap items-center gap-0.5">
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						aria-label="Copy response"
+				<div className={MESSAGE_ACTIONS_CLASS}>
+					<ModelChatActionButton
+						label="Copy response"
+						icon={CopyIcon}
 						onClick={copy}
-					>
-						<CopyIcon className="size-3.5" aria-hidden />
-					</Button>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						aria-label="Regenerate response"
+					/>
+					<ModelChatActionButton
+						label="Regenerate response"
+						icon={RefreshCwIcon}
 						disabled={isBusy}
 						onClick={() => onRewrite(message.id)}
-					>
-						<RefreshCwIcon className="size-3.5" aria-hidden />
-					</Button>
+					/>
 					<FeedbackButtons
 						messageId={message.id}
 						onFeedbackCall={onFeedback}
