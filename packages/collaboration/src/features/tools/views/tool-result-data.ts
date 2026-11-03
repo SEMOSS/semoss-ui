@@ -56,10 +56,7 @@ export function toolFieldLabel(key: string): string {
 		textPath: "Extracted text",
 		addPeople: "Add people",
 		removePeople: "Remove people",
-		addGoal: "Add a goal",
 		addNote: "Add a note",
-		completeGoalId: "Goal to complete",
-		goalResolution: "How the goal was completed",
 		deleteNoteId: "Note to delete",
 	};
 	if (labels[key]) return labels[key];

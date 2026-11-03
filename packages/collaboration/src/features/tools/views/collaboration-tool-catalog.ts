@@ -67,7 +67,6 @@ export const COLLABORATION_TOOL_VIEWS = {
 	},
 	EditTopic: { title: "Update a topic", family: "topics" },
 	EditThread: { title: "Organize a conversation", family: "topics" },
-	CompleteGoal: { title: "Complete a goal", family: "topics" },
 	TagTopic: { title: "Chat topic", family: "topics" },
 	ListM365Mail: { title: "Outlook mail", family: "mail", view: "mail/list" },
 	ComposeEmail: { title: "Email draft", family: "mail" },

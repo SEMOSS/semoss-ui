@@ -222,7 +222,6 @@ export function mapTopic(row: Row): Topic {
 		status: (row.status as Topic["status"]) ?? "active",
 		description: str(row.description),
 		keywords: list<string>(row.keywords),
-		goals: list(row.goals),
 		people: list<Row>(row.people).map((person) => ({
 			personId: str(person.personId),
 			role: str(person.role),
@@ -465,7 +464,7 @@ export async function loadLiveState(
 	const topicIds = [
 		...new Set(topicsPage.items.map((topic) => str(topic.id))),
 	];
-	// topic goals and people come from the detail call; topic notes are memories
+	// topic people come from the detail call; topic notes are memories
 	const topicRows = (await runBatch(
 		actions,
 		topicIds.map((topicId) => pixel("BrainGetTopic", { topicId })),
@@ -523,14 +522,13 @@ function mapStep(step: Row): WorkspaceStep {
 	};
 }
 
-// saved goal and steps; messages load when the thread opens, and a thread's facts are memories
+// saved steps; messages load when the thread opens, and a thread's facts are memories
 export function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 	return Object.fromEntries(
 		page.items.map((row) => [
 			str(row.threadId),
 			{
 				...createEmptyWorkspace(),
-				goal: str(row.goal),
 				steps: list<Row>(row.steps).map(mapStep),
 			},
 		]),
@@ -761,28 +759,6 @@ export async function readWorkUpdates(actions: InsightActions): Promise<
 		memories: schema.parse(outputs[4]).items.map(mapMemory),
 		lastMailCheck: mapMailCheck(outputs[3]),
 	};
-}
-
-/** Read the current goals after an assistant edits a topic, including calls that use its name. */
-export function readTopicGoals(
-	actions: InsightActions,
-	topic: { topicId?: string; topic?: string },
-): Promise<Pick<Topic, "id" | "goals">> {
-	return callPixel(
-		actions,
-		pixel("BrainListTopics", topic),
-		z.object({
-			id: z.string().min(1),
-			goals: z.array(
-				z.object({
-					noteId: z.string().min(1),
-					text: z.string(),
-					status: z.enum(["open", "done"]),
-					resolution: z.string().optional(),
-				}),
-			),
-		}),
-	);
 }
 
 /** Read one topic in full after an assistant creates or changes it, by id or by a name that picks one. */

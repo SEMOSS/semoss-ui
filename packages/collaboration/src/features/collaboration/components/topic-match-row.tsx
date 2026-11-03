@@ -69,7 +69,7 @@ export function TopicMatchRow({
 		>
 			<Checkbox
 				id={`${id}-pick`}
-				// a 16px box gets a 36px hit area, as the topic goals do
+				// a 16px box gets a 36px hit area, as other rows do
 				className="after:-inset-2.5 relative mt-0.5 after:absolute after:content-['']"
 				checked={isChecked}
 				disabled={disabled}

@@ -15,7 +15,6 @@ import { dropTopicMemories, moveTopicMemories } from "./memory";
 /** New workspaces contain no inferred source bodies or assistant history. */
 export function createEmptyWorkspace(): ThreadWorkspace {
 	return {
-		goal: "",
 		messages: [],
 		steps: [],
 		assets: [],
@@ -165,7 +164,6 @@ function newTopic(
 		status: "active",
 		description: "",
 		keywords: [],
-		goals: [],
 		people: [],
 		calendarSeries: [],
 		stats: { threads: 0, openItems: 0, lastActivity: now },
@@ -185,12 +183,6 @@ function mergeTopics(
 	const source = state.topics.find((topic) => topic.id === sourceId);
 	const target = state.topics.find((topic) => topic.id === targetId);
 	if (!source || !target || source.isSample !== target.isSample) return;
-	target.goals.push(
-		...source.goals.filter(
-			(goal) =>
-				!target.goals.some((other) => other.noteId === goal.noteId),
-		),
-	);
 	target.people.push(
 		...source.people.filter(
 			(person) =>
@@ -387,11 +379,7 @@ export function collaborationReducer(
 				(candidate) => candidate.id === command.topic.id,
 			);
 			if (topic) {
-				const {
-					goals: _goals,
-					people: _people,
-					...patch
-				} = command.topic;
+				const { people: _people, ...patch } = command.topic;
 				Object.assign(topic, patch, {
 					id: topic.id,
 					isSample: topic.isSample,
@@ -405,23 +393,6 @@ export function collaborationReducer(
 			if (!state.topics.some((topic) => topic.id === command.topic.id))
 				state.topics.push(command.topic);
 			break;
-		case "topic.goal.server": {
-			const topic = state.topics.find(
-				(entry) => entry.id === command.topicId,
-			);
-			if (!topic || topic.isSample) break;
-			const index = topic.goals.findIndex(
-				(goal) => goal.noteId === command.goal.noteId,
-			);
-			if (
-				JSON.stringify(topic.goals[index]) !==
-				JSON.stringify(command.before)
-			)
-				break;
-			if (index < 0) topic.goals.push(command.goal);
-			else topic.goals[index] = command.goal;
-			break;
-		}
 		case "topic.merge":
 			mergeTopics(state, command.sourceId, command.targetId);
 			break;
@@ -464,39 +435,6 @@ export function collaborationReducer(
 					origin: "you",
 					vip,
 				});
-			break;
-		}
-		case "topic.note": {
-			const topic = state.topics.find(
-				(candidate) => candidate.id === command.topicId,
-			);
-			if (!topic) break;
-			if (command.operation === "remove") {
-				topic.goals = topic.goals.filter(
-					(goal) => goal.noteId !== command.noteId,
-				);
-				break;
-			}
-			const existing = topic.goals.find(
-				(goal) => goal.noteId === command.noteId,
-			);
-			const text = (command.text ?? existing?.text)?.trim();
-			if (!text) break;
-			const noteId = command.noteId ?? `local-note-${state.sequence++}`;
-			const goal = {
-				...existing,
-				noteId,
-				text,
-				status:
-					(command.status ?? existing?.status) === "done"
-						? ("done" as const)
-						: ("open" as const),
-			};
-			topic.goals = existing
-				? topic.goals.map((item) =>
-						item.noteId === noteId ? goal : item,
-					)
-				: [...topic.goals, goal];
 			break;
 		}
 		case "thread.link": {
@@ -562,13 +500,6 @@ export function collaborationReducer(
 				(candidate) => candidate.id === command.threadId,
 			);
 			if (thread) thread.muted = command.muted;
-			break;
-		}
-		case "thread.goal": {
-			if (!state.threads.some((thread) => thread.id === command.threadId))
-				break;
-			state.workspaces[command.threadId] ??= createEmptyWorkspace();
-			state.workspaces[command.threadId].goal = command.goal;
 			break;
 		}
 		case "person.save": {
@@ -1129,7 +1060,6 @@ export function collaborationReducer(
 				).filter(
 					(message) => !state.deletedSourceIds?.includes(message.id),
 				),
-				goal: workspace.goal || command.workspace?.goal || "",
 				steps: workspace.steps,
 				drafts: workspace.drafts,
 			};

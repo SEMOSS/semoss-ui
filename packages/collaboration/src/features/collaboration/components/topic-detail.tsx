@@ -799,8 +799,8 @@ export function TopicDetail() {
 											isSample={topic.isSample}
 										/>
 										<Small className={hintClassName}>
-											Goals and notes are used in chats
-											and threads linked to this topic.
+											Notes are used in chats and threads
+											linked to this topic.
 										</Small>
 									</CollapsibleContent>
 								</Collapsible>

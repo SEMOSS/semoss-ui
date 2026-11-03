@@ -1,7 +1,6 @@
 import { Menu, Plus } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
-import { Button, z } from "@semoss/ui/next";
-import { tryParseJson } from "@semoss/utility/json";
+import { useMemo } from "react";
+import { Button } from "@semoss/ui/next";
 import { EmptyView } from "@/components/common/empty-view";
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { toolMessageTimestamps } from "@/features/messages/utils/message-metadata";
@@ -32,11 +31,6 @@ const ROOM_COMPONENTS = {
 	...ROOM_THREAD_EMAIL_PANEL_COMPONENTS,
 	...ROOM_SETTINGS_PANEL_COMPONENTS,
 };
-
-const completedGoalResultSchema = z.object({
-	changes: z.array(z.string()),
-	topic: z.object({ id: z.string().min(1) }),
-});
 
 export function RoomView({
 	roomSession,
@@ -95,11 +89,6 @@ export function RoomView({
 					? parameters.topic
 					: undefined;
 		if (!topicId && !topic) return;
-		const goalId =
-			typeof parameters.completeGoalId === "string"
-				? parameters.completeGoalId.trim()
-				: "";
-		if (goalId) updates?.refreshTopicGoal({ topicId, topic }, goalId);
 		// a topic the assistant made, and emails it put in one, show without a reload
 		updates?.refreshTopic({ topicId, topic });
 	};
@@ -111,35 +100,6 @@ export function RoomView({
 		}),
 		[thread, pendingApprovals, toolStates],
 	);
-	const refreshedGoals = useRef(new Set<string>());
-	const refreshTopicGoal = updates?.refreshTopicGoal;
-	useEffect(() => {
-		if (!refreshTopicGoal) return;
-		for (const tool of Object.values(tools)) {
-			const key = `${sessionId}:${tool.id}`;
-			if (
-				tool.name !== "CompleteGoal" ||
-				tool.status !== "COMPLETED" ||
-				tool.error ||
-				refreshedGoals.current.has(key)
-			)
-				continue;
-			const result = completedGoalResultSchema.safeParse(
-				tryParseJson(tool.output ?? ""),
-			);
-			const goalId = tool.arguments.goalId;
-			if (
-				!result.success ||
-				!result.data.changes.includes("goal completed") ||
-				typeof goalId !== "string" ||
-				!goalId.trim()
-			)
-				continue;
-			refreshedGoals.current.add(key);
-			refreshTopicGoal({ topicId: result.data.topic.id }, goalId.trim());
-		}
-	}, [refreshTopicGoal, sessionId, tools]);
-
 	const workspace = session ? (
 		<RoomWorkspace
 			roomSession={roomSession}
