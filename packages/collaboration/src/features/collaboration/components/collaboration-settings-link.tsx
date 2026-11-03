@@ -9,6 +9,7 @@ import {
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { suggestedMemories } from "../state/memory";
+import { openOnKeyboardFocusOnly, RAIL_TOOLTIP_CONTENT } from "./rail-tooltip";
 
 interface CollaborationSettingsLinkProps {
 	/** Compact navigation shows only the settings icon. */
@@ -32,7 +33,7 @@ export function CollaborationSettingsLink({
 		suggestedMemories(state.memories).length;
 	return (
 		<Tooltip disableHoverableContent={false}>
-			<TooltipTrigger asChild>
+			<TooltipTrigger asChild onFocus={openOnKeyboardFocusOnly}>
 				<Button
 					asChild
 					variant="ghost"
@@ -60,7 +61,9 @@ export function CollaborationSettingsLink({
 				</Button>
 			</TooltipTrigger>
 			{isCollapsed && (
-				<TooltipContent side="right">Settings</TooltipContent>
+				<TooltipContent side="right" className={RAIL_TOOLTIP_CONTENT}>
+					Settings
+				</TooltipContent>
 			)}
 		</Tooltip>
 	);
