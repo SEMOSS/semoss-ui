@@ -1,7 +1,6 @@
 import {
 	mdiAccountGroup,
 	// mdiTextBoxMultipleOutline,
-	mdiArchive,
 	mdiChartTimelineVariant,
 	// mdiClock,
 	mdiChatProcessingOutline,
@@ -13,50 +12,22 @@ import {
 	mdiGithub,
 	mdiPalette,
 	mdiRobotOutline,
+	mdiShieldAccountOutline,
 	mdiTabletCellphone,
 } from "@mdi/js";
 
-/**
- * The settings pages of apps and engines that open Bulk Access Management and
- * Effective Permissions in admin mode, by their path
- */
-export const ADMIN_ACCESS_SETTINGS_PAGES: {
-	/** The page's path, such as "app" or "model" */
-	root: string;
-	/** An app, or an engine */
-	kind: "PROJECT" | "ENGINE";
-	/** The engine's type, for an engine */
-	engineType?: string;
-	/** The page's icon */
-	icon: string;
+/** A heading the Settings page lists its tiles under. */
+export type SettingsGroup = "ACCOUNT" | "ACCESS" | "MONITORING" | "PLATFORM";
+
+/** The Settings page's headings, in the order it shows them. */
+export const SETTINGS_GROUPS: readonly {
+	value: SettingsGroup;
+	label: string;
 }[] = [
-	{ root: "app", kind: "PROJECT", icon: mdiClipboardTextOutline },
-	{
-		root: "database",
-		kind: "ENGINE",
-		engineType: "DATABASE",
-		icon: mdiDatabase,
-	},
-	{
-		root: "function",
-		kind: "ENGINE",
-		engineType: "FUNCTION",
-		icon: mdiDatabase,
-	},
-	{
-		root: "guardrail",
-		kind: "ENGINE",
-		engineType: "GUARDRAIL",
-		icon: mdiDatabase,
-	},
-	{ root: "model", kind: "ENGINE", engineType: "MODEL", icon: mdiDatabase },
-	{
-		root: "storage",
-		kind: "ENGINE",
-		engineType: "STORAGE",
-		icon: mdiArchive,
-	},
-	{ root: "vector", kind: "ENGINE", engineType: "VECTOR", icon: mdiDatabase },
+	{ value: "ACCOUNT", label: "Your Account" },
+	{ value: "ACCESS", label: "Resources & Access" },
+	{ value: "MONITORING", label: "Monitoring" },
+	{ value: "PLATFORM", label: "Platform" },
 ];
 
 export const SETTINGS_ROUTES: {
@@ -76,15 +47,19 @@ export const SETTINGS_ROUTES: {
 	/** Prior Links to nav to */
 	history?: string[];
 
+	/** The heading its tile is listed under on the Settings page; a page with no tile has none */
+	group?: SettingsGroup;
+
 	admin?: boolean;
 	hidden?: boolean;
 }[] = [
 	{
 		title: "Settings",
 		path: "",
-		description: "View and make changes to settings to engines and apps",
+		description:
+			"Manage your profile, your files, and the teams you manage.",
 		adminDescription:
-			"View and make changes to settings to engines and apps. As an admin, view and manage platform settings.",
+			"Manage your profile, your files, and the teams you manage. As an admin, manage resources, people, and the platform, and see how it is used.",
 		icon: mdiCog,
 		history: [],
 	},
@@ -94,6 +69,7 @@ export const SETTINGS_ROUTES: {
 		description: "Update settings related to your profile.",
 		icon: mdiDatabase,
 		history: ["settings/"],
+		group: "ACCOUNT",
 		admin: false,
 	},
 	{
@@ -102,6 +78,7 @@ export const SETTINGS_ROUTES: {
 		description: "Browse, upload, and manage the files in your user space.",
 		icon: mdiFolder,
 		history: ["settings/"],
+		group: "ACCOUNT",
 		admin: false,
 	},
 	{
@@ -111,120 +88,56 @@ export const SETTINGS_ROUTES: {
 			"Add and remove the members and managers of the teams you manage.",
 		icon: mdiAccountGroup,
 		history: ["managed-teams"],
+		group: "ACCOUNT",
 		admin: false,
 	},
 	{
-		title: "App, Agent, & Skill Settings",
-		path: "app",
-		description: "View and edit settings for apps, agents, and skills",
-		icon: mdiClipboardTextOutline,
-		history: ["app"],
+		title: "My Teams",
+		path: "managed-teams/:id",
+		description: "A team you manage",
+		icon: mdiAccountGroup,
+		history: ["managed-teams", "managed-teams/<id>"],
 	},
 	{
-		title: "App, Agent, & Skill Settings",
-		path: "app/:id",
+		title: "Bulk Access Management",
+		path: "managed-teams/:id/bulk-access-management",
+		description: "Change who is in a team and who manages it",
+		icon: mdiAccountGroup,
+		history: [
+			"managed-teams",
+			"managed-teams/<id>",
+			"managed-teams/<id>/bulk-access-management",
+		],
+	},
+	{
+		title: "Resource Governance",
+		path: "resources",
 		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the app",
-		icon: mdiClipboardTextOutline,
-		history: ["app", "app/<id>"],
-	},
-	{
-		title: "Database Settings",
-		path: "database",
-		description: "View and edit settings for databases",
-		icon: mdiDatabase,
-		history: ["database"],
-	},
-	{
-		title: "Database Settings",
-		path: "database/:id",
-		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the database",
-		icon: mdiDatabase,
-		history: ["database", "database/<id>"],
-	},
-	{
-		title: "Function Settings",
-		path: "function",
-		description: "View and edit settings for functions",
-		icon: mdiDatabase,
-		history: ["function"],
-	},
-	{
-		title: "Function Settings",
-		path: "function/:id",
-		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the function",
-		icon: mdiDatabase,
-		history: ["function", "function/<id>"],
-	},
-	{
-		title: "Guardrail Settings",
-		path: "guardrail",
-		description: "View and edit settings for guardrails",
-		icon: mdiDatabase,
-		history: ["guardrail"],
-	},
-	{
-		title: "Guardrail Settings",
-		path: "guardrail/:id",
-		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the guardrail",
-		icon: mdiDatabase,
-		history: ["guardrail", "guardrail/<id>"],
-	},
-	{
-		title: "Model Settings",
-		path: "model",
-		description: "View and edit settings for models",
-		icon: mdiDatabase,
-		history: ["model"],
-	},
-	{
-		title: "Model Settings",
-		path: "model/:id",
-		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the model",
-		icon: mdiDatabase,
-		history: ["model", "model/<id>"],
-	},
-	{
-		title: "Storage Settings",
-		path: "storage",
-		description: "View and edit settings for storages",
-		icon: mdiArchive,
-		history: ["storage"],
-	},
-	{
-		title: "Storage Settings",
-		path: "storage/:id",
-		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the storage",
-		icon: mdiArchive,
-		history: ["storage", "storage/<id>"],
-	},
-	{
-		title: "Vector Settings",
-		path: "vector",
-		description: "View and edit settings for vector databases",
-		icon: mdiDatabase,
-		history: ["vector"],
-	},
-	{
-		title: "Vector Settings",
-		path: "vector/:id",
-		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the vector database",
-		icon: mdiDatabase,
-		history: ["vector", "vector/<id>"],
-	},
-	{
-		title: "Jobs",
-		path: "jobs",
-		description: "Manage and schedule cron jobs for the platform",
-		icon: mdiTabletCellphone,
-		history: ["jobs"],
+			"Manage the access, visibility, and settings of every project and engine.",
+		icon: mdiShieldAccountOutline,
+		history: ["resources"],
+		group: "ACCESS",
 		admin: true,
+	},
+	{
+		title: "Resource Governance",
+		path: "resources/:type",
+		description:
+			"Manage the access, visibility, and settings of every project and engine.",
+		icon: mdiShieldAccountOutline,
+		history: ["resources"],
+		admin: true,
+		hidden: true,
+	},
+	{
+		title: "Resource Governance",
+		path: "resources/:type/:id",
+		description:
+			"Manage the access, visibility, and settings of every project and engine.",
+		icon: mdiShieldAccountOutline,
+		history: ["resources"],
+		admin: true,
+		hidden: true,
 	},
 	{
 		title: "Member Settings",
@@ -233,6 +146,7 @@ export const SETTINGS_ROUTES: {
 			"Add new members, reset passwords, and edit member-based permissions.",
 		icon: mdiAccountGroup,
 		history: ["settings/"],
+		group: "ACCESS",
 		admin: true,
 	},
 	{
@@ -242,14 +156,7 @@ export const SETTINGS_ROUTES: {
 			"Create teams, choose their members and managers, and give them access to projects and engines.",
 		icon: mdiDatabase,
 		history: ["team-permissions"],
-		admin: true,
-	},
-	{
-		title: "Service Accounts",
-		path: "service-accounts",
-		description: "Create and manage service accounts for system access.",
-		icon: mdiAccountGroup,
-		history: ["settings/"],
+		group: "ACCESS",
 		admin: true,
 	},
 	{
@@ -273,47 +180,22 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
-		title: "My Teams",
-		path: "managed-teams/:id",
-		description: "A team you manage",
+		title: "Service Accounts",
+		path: "service-accounts",
+		description: "Create and manage service accounts for system access.",
 		icon: mdiAccountGroup,
-		history: ["managed-teams", "managed-teams/<id>"],
-	},
-	{
-		title: "Bulk Access Management",
-		path: "managed-teams/:id/bulk-access-management",
-		description: "Change who is in a team and who manages it",
-		icon: mdiAccountGroup,
-		history: [
-			"managed-teams",
-			"managed-teams/<id>",
-			"managed-teams/<id>/bulk-access-management",
-		],
-	},
-	{
-		title: "Configuration",
-		path: "social-properties",
-		description: "Use this portal to change login configuration settings.",
-		icon: mdiTabletCellphone,
 		history: ["settings/"],
-		admin: true,
-	},
-	{
-		title: "GitHub App",
-		path: "github-app",
-		description:
-			"Create and manage the GitHub App used for project linking and webhooks.",
-		icon: mdiGithub,
-		history: ["settings/"],
+		group: "ACCESS",
 		admin: true,
 	},
 	{
 		title: "Enterprise Usage & Activity",
 		path: "enterprise-usage",
 		description:
-			"Explore Platform-Wide Model Usage, Adoption, Performance, Activity, And Access, Setting And Limit Changes.",
+			"Explore model usage, adoption, performance, and activity across the platform, and changes to access, settings, and limits.",
 		icon: mdiChartTimelineVariant,
 		history: ["settings/"],
+		group: "MONITORING",
 		admin: true,
 	},
 	{
@@ -323,6 +205,7 @@ export const SETTINGS_ROUTES: {
 			"Review sign-ins, permissions, and resource changes across the platform.",
 		icon: mdiClipboardTextOutline,
 		history: ["settings/"],
+		group: "MONITORING",
 		admin: true,
 	},
 	{
@@ -332,30 +215,7 @@ export const SETTINGS_ROUTES: {
 			"Review every user's conversations with agents and how each run went.",
 		icon: mdiRobotOutline,
 		history: ["settings/"],
-		admin: true,
-	},
-	{
-		title: "Admin Query",
-		path: "admin-query",
-		description: "Query the platform databases directly. Use with caution.",
-		icon: mdiDatabaseSearch,
-		history: ["settings/"],
-		admin: true,
-	},
-	{
-		title: "Admin Theme",
-		path: "admin-theme",
-		description: "Update theming for the instance",
-		icon: mdiPalette,
-		history: ["settings/"],
-		admin: true,
-	},
-	{
-		title: "View RDF Map",
-		path: "view-rdf-map",
-		description: "See configuration details in the RDF Map of the instance",
-		icon: mdiClipboardTextOutline,
-		history: ["settings/"],
+		group: "MONITORING",
 		admin: true,
 	},
 	{
@@ -364,6 +224,45 @@ export const SETTINGS_ROUTES: {
 		description: "Provide feedback on LLM's performance",
 		icon: mdiChatProcessingOutline,
 		history: ["settings/"],
+		group: "MONITORING",
+		admin: true,
+	},
+	{
+		title: "Configuration",
+		path: "social-properties",
+		description:
+			"Change the login configuration settings and the General Platform Limit.",
+		icon: mdiTabletCellphone,
+		history: ["settings/"],
+		group: "PLATFORM",
+		admin: true,
+	},
+	{
+		title: "Admin Theme",
+		path: "admin-theme",
+		description: "Update theming for the instance",
+		icon: mdiPalette,
+		history: ["settings/"],
+		group: "PLATFORM",
+		admin: true,
+	},
+	{
+		title: "GitHub App",
+		path: "github-app",
+		description:
+			"Create and manage the GitHub App used for project linking and webhooks.",
+		icon: mdiGithub,
+		history: ["settings/"],
+		group: "PLATFORM",
+		admin: true,
+	},
+	{
+		title: "Jobs",
+		path: "jobs",
+		description: "Manage and schedule cron jobs for the platform",
+		icon: mdiTabletCellphone,
+		history: ["jobs"],
+		group: "PLATFORM",
 		admin: true,
 	},
 	{
@@ -384,32 +283,22 @@ export const SETTINGS_ROUTES: {
 		history: ["jobs", "edit-job/:id"],
 		admin: true,
 	},
-	...ADMIN_ACCESS_SETTINGS_PAGES.flatMap(({ root, icon }) => [
-		{
-			title: "Bulk Access Management",
-			path: `${root}/:id/bulk-access-management`,
-			description:
-				"Admin mode: every change is allowed, whatever your own access.",
-			icon,
-			history: [
-				root,
-				`${root}/<id>`,
-				`${root}/<id>/bulk-access-management`,
-			],
-			admin: true,
-		},
-		{
-			title: "Effective Permissions",
-			path: `${root}/:id/effective-permissions`,
-			description:
-				"Admin mode: see everyone who can use it, whatever your own access.",
-			icon,
-			history: [
-				root,
-				`${root}/<id>`,
-				`${root}/<id>/effective-permissions`,
-			],
-			admin: true,
-		},
-	]),
+	{
+		title: "Admin Query",
+		path: "admin-query",
+		description: "Query the platform databases directly. Use with caution.",
+		icon: mdiDatabaseSearch,
+		history: ["settings/"],
+		group: "PLATFORM",
+		admin: true,
+	},
+	{
+		title: "View RDF Map",
+		path: "view-rdf-map",
+		description: "See configuration details in the RDF Map of the instance",
+		icon: mdiClipboardTextOutline,
+		history: ["settings/"],
+		group: "PLATFORM",
+		admin: true,
+	},
 ];
