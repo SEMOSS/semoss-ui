@@ -608,7 +608,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 				{showScrollup && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="absolute end-4 top-4 z-50">
+							<span className="absolute end-11 top-2 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
