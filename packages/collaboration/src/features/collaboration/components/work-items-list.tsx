@@ -10,6 +10,7 @@ import { useCollaborationSession } from "../state/collaboration-session.context"
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
 import { TopicChip as SharedTopicChip } from "./topic-chip";
+import { WorkBuildMenu } from "./work-build-menu";
 
 // The Work page: the outcomes the owner is driving (D25), in the owner's order.
 // Items Brain infers wait in review until the owner adds, merges or dismisses them.
@@ -585,6 +586,9 @@ export function WorkItems({
 }
 
 export function WorkItemsList({ review = false }: { review?: boolean }) {
+	// a finished build remounts the list so it loads the new items
+	const [version, setVersion] = useState(0);
+	const onBuilt = useCallback(() => setVersion((v) => v + 1), []);
 	return (
 		<CollaborationSurface
 			header={
@@ -601,15 +605,18 @@ export function WorkItemsList({ review = false }: { review?: boolean }) {
 								<Link to="/work">Back to Work</Link>
 							</Button>
 						) : (
-							<Button asChild variant="outline" size="sm">
-								<Link to="/work/topics">Topics</Link>
-							</Button>
+							<>
+								<WorkBuildMenu onDone={onBuilt} />
+								<Button asChild variant="outline" size="sm">
+									<Link to="/work/topics">Topics</Link>
+								</Button>
+							</>
 						)
 					}
 				/>
 			}
 		>
-			<WorkItems review={review} />
+			<WorkItems key={version} review={review} />
 		</CollaborationSurface>
 	);
 }
