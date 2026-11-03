@@ -25,13 +25,6 @@ export interface Account {
 	color: string;
 }
 
-export interface TopicGoal {
-	noteId: string;
-	text: string;
-	status: "open" | "done";
-	resolution?: string;
-}
-
 interface TopicPerson {
 	personId: string;
 	role: string;
@@ -53,7 +46,6 @@ export interface Topic {
 	status: TopicStatus;
 	description: string;
 	keywords: string[];
-	goals: TopicGoal[];
 	people: TopicPerson[];
 	calendarSeries: string[];
 	/** Outlook folders the topic stands for; mail in them is filed under it. */
@@ -374,7 +366,6 @@ interface WorkspaceDraft {
 }
 
 export interface ThreadWorkspace {
-	goal: string;
 	messages: WorkspaceMessage[];
 	steps: WorkspaceStep[];
 	assets: WorkspaceAsset[];
@@ -458,13 +449,6 @@ export type CollaborationCommand =
 			/** A topic made outside this page, such as by the assistant; added only when the page lacks it. */
 			topic: Topic;
 	  }
-	| {
-			type: "topic.goal.server";
-			topicId: string;
-			/** Goal before the read; newer local changes take precedence over its result. */
-			before?: TopicGoal;
-			goal: TopicGoal;
-	  }
 	| { type: "topic.merge"; sourceId: string; targetId: string }
 	| { type: "topic.delete"; topicId: string }
 	| {
@@ -475,16 +459,6 @@ export type CollaborationCommand =
 			role?: string;
 			/** Omitted keeps a member's topic VIP; any state but member clears it. */
 			vip?: boolean;
-	  }
-	| {
-			/** A topic goal; topic notes are memories about the topic. */
-			type: "topic.note";
-			topicId: string;
-			kind: "goal";
-			operation: "save" | "remove";
-			noteId?: string;
-			text?: string;
-			status?: "open" | "done";
 	  }
 	| {
 			type: "thread.link";
@@ -499,7 +473,6 @@ export type CollaborationCommand =
 			included: boolean;
 	  }
 	| { type: "thread.mute"; threadId: string; muted: boolean }
-	| { type: "thread.goal"; threadId: string; goal: string }
 	| {
 			type: "person.save";
 			personId: string;
@@ -578,13 +551,11 @@ export interface ThreadContext {
 	subject?: string;
 	channel?: Channel;
 	isSample: boolean;
-	goal: string;
 	profile: Profile | null;
 	topics: {
 		id: string;
 		name: string;
 		description: string;
-		goals: TopicGoal[];
 		/** The topic's account, for memories about the account. */
 		account?: { id: string; name: string };
 	}[];

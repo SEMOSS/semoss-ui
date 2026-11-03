@@ -94,8 +94,8 @@ export function TopicActions({
 					<DialogHeader>
 						<DialogTitle>Merge {topic.name}</DialogTitle>
 						<DialogDescription>
-							Its {threadCount} threads, people, goals, notes,
-							keywords, and rules move to the topic you pick, and{" "}
+							Its {threadCount} threads, people, notes, keywords,
+							and rules move to the topic you pick, and{" "}
 							{topic.name} is removed.
 						</DialogDescription>
 					</DialogHeader>
@@ -153,7 +153,7 @@ export function TopicActions({
 					<DialogHeader>
 						<DialogTitle>Delete {topic.name}?</DialogTitle>
 						<DialogDescription>
-							Its goals, notes, people, and rules are removed, and{" "}
+							Its notes, people, and rules are removed, and{" "}
 							{threadCount} threads lose this topic. The threads
 							themselves stay.
 						</DialogDescription>
@@ -175,7 +175,7 @@ export function TopicActions({
 								});
 								close();
 								toast.success(`Deleted ${topic.name}.`);
-								navigate("/work");
+								navigate("/work/topics");
 							}}
 						>
 							Delete topic

@@ -14,7 +14,6 @@ import {
 	type MailSyncResult,
 	readMailCheck,
 	readTopic,
-	readTopicGoals,
 	readWorkUpdates,
 	syncMail,
 } from "./live-state";
@@ -74,43 +73,6 @@ export function WorkUpdatesProvider({
 			!source.isSample,
 	);
 	const generation = useRef(0);
-	const refreshTopicGoal = useCallback(
-		(topic: { topicId?: string; topic?: string }, noteId: string) => {
-			const token = generation.current;
-			const before = latest.current.topics;
-			void (async () => {
-				await sync?.settled();
-				const incoming = await readTopicGoals(actions, topic);
-				await sync?.settled();
-				if (token !== generation.current) return;
-				const localId = sync?.localId ?? ((id: string) => id);
-				const topicId = localId(incoming.id);
-				const goal = incoming.goals.find(
-					(entry) => entry.noteId === noteId,
-				);
-				if (!goal) return;
-				const goalId = localId(goal.noteId);
-				dispatch({
-					type: "topic.goal.server",
-					topicId,
-					before: before
-						.find((entry) => entry.id === topicId)
-						?.goals.find((entry) => entry.noteId === goalId),
-					goal: { ...goal, noteId: goalId },
-				});
-			})().catch((cause: unknown) => {
-				if (token === generation.current)
-					setStatus((current) => ({
-						...current,
-						error:
-							cause instanceof Error
-								? cause.message
-								: "Topic goals could not be refreshed.",
-					}));
-			});
-		},
-		[actions, dispatch, sync],
-	);
 	const refresh = useCallback(() => {
 		if (pending.current) return;
 		const token = generation.current;
@@ -414,7 +376,6 @@ export function WorkUpdatesProvider({
 				...status,
 				...mail,
 				refresh,
-				refreshTopicGoal,
 				refreshTopic,
 				syncMail: syncNow,
 				serverId,

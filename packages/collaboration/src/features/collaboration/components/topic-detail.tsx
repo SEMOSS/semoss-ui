@@ -1,5 +1,4 @@
 import {
-	Bot,
 	ChevronDown,
 	LockKeyhole,
 	PanelRightOpen,
@@ -13,7 +12,6 @@ import {
 	Badge,
 	Button,
 	Card,
-	Checkbox,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
@@ -25,7 +23,6 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-	Progress,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -56,7 +53,6 @@ import { TextEntryForm } from "./text-entry-form";
 import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
 import { TopicFolders } from "./topic-folders";
-import { TopicGoalPopover } from "./topic-goal-popover";
 import { TopicIgnoredPeople } from "./topic-ignored-people";
 import { TopicMatchesDialog } from "./topic-matches-dialog";
 import { TopicPeoplePopover } from "./topic-people-popover";
@@ -117,9 +113,7 @@ export function TopicDetail() {
 		type: "topic",
 		id: topicId ?? "",
 	});
-	const [isContextOpen, setIsContextOpen] = useState(
-		Boolean(topic?.goals.length),
-	);
+	const [isContextOpen, setIsContextOpen] = useState(false);
 	const [areNotesOpen, setAreNotesOpen] = useState(topicMemories.length > 0);
 	const feed = useWorkFeed({ topicId: topicId ?? "", initialFilter: "open" });
 	if (!topic)
@@ -132,7 +126,7 @@ export function TopicDetail() {
 						This topic is not available.
 					</P>
 					<Button asChild variant="outline">
-						<Link to="/work">All topics</Link>
+						<Link to="/work/topics">All topics</Link>
 					</Button>
 				</div>
 			</CollaborationSurface>
@@ -151,7 +145,6 @@ export function TopicDetail() {
 	const accountName =
 		state.accounts.find((account) => account.id === topic.accountId)
 			?.name || "No account";
-	const doneGoals = topic.goals.filter((goal) => goal.status === "done");
 	const feedThreadCount = new Set(workItems.map((item) => item.threadId))
 		.size;
 	// the server scores active and dormant topics; samples and isolated pages have no server to ask
@@ -256,7 +249,7 @@ export function TopicDetail() {
 			<section aria-label="Topic assistant" className="mb-8 space-y-3">
 				<P className="text-muted-foreground text-sm">
 					{canStartAssistant
-						? "Ask about this topic’s goals, people, and emails."
+						? "Ask about this topic’s work, people, and emails."
 						: "Set this topic to Active or Dormant to start a chat."}
 				</P>
 				{canStartAssistant && (
@@ -444,111 +437,6 @@ export function TopicDetail() {
 							<X aria-hidden="true" />
 						</Button>
 					</div>
-					<section aria-labelledby={`${fieldId}-goals`}>
-						<div>
-							<div className={asideHeaderClassName}>
-								<div className="min-w-0 space-y-1.5">
-									<H2
-										id={`${fieldId}-goals`}
-										className="font-display font-semibold text-base"
-									>
-										Goals
-									</H2>
-									<div className="flex flex-wrap items-center gap-3">
-										{topic.goals.length > 0 && (
-											<Progress
-												aria-label="Goals completed"
-												aria-valuenow={
-													(doneGoals.length /
-														topic.goals.length) *
-													100
-												}
-												aria-valuetext={`${doneGoals.length} of ${topic.goals.length} complete`}
-												className={cn(
-													"h-1.5 w-16 bg-muted [&>div]:motion-reduce:transition-none",
-													doneGoals.length ===
-														topic.goals.length &&
-														"[&>div]:bg-success",
-												)}
-												value={
-													(doneGoals.length /
-														topic.goals.length) *
-													100
-												}
-											/>
-										)}
-										<Small className="font-normal text-muted-foreground text-xs tabular-nums">
-											<output>
-												{topic.goals.length
-													? `${doneGoals.length} of ${topic.goals.length} complete`
-													: "No goals yet"}
-											</output>
-										</Small>
-									</div>
-								</div>
-								<TopicGoalPopover topicId={topic.id} />
-							</div>
-							{topic.goals.length > 0 ? (
-								<ul
-									aria-label="Topic goals"
-									className="divide-y divide-border border-t"
-								>
-									{topic.goals.map((goal) => (
-										<li
-											key={goal.noteId}
-											className="flex items-start gap-3 py-2.5"
-										>
-											<Checkbox
-												id={`${fieldId}-${goal.noteId}`}
-												checked={goal.status === "done"}
-												className="after:-inset-2.5 relative size-5 rounded-full border-muted-foreground bg-background shadow-none after:absolute after:content-[''] data-[state=checked]:border-success data-[state=checked]:bg-success/10 data-[state=checked]:text-foreground dark:data-[state=checked]:bg-success/10"
-												onCheckedChange={(checked) =>
-													dispatch({
-														type: "topic.note",
-														topicId: topic.id,
-														kind: "goal",
-														operation: "save",
-														noteId: goal.noteId,
-														status:
-															checked === true
-																? "done"
-																: "open",
-													})
-												}
-											/>
-											<div className="min-w-0 flex-1 space-y-2">
-												<Label
-													htmlFor={`${fieldId}-${goal.noteId}`}
-													className="wrap-anywhere block min-w-0 cursor-pointer whitespace-pre-wrap font-normal text-foreground text-sm leading-5"
-												>
-													{goal.text}
-												</Label>
-												{goal.resolution && (
-													<div className="space-y-1.5 rounded-lg bg-muted/60 p-3">
-														<Small className="flex items-center gap-2 font-medium text-foreground text-xs leading-5">
-															<Bot
-																aria-hidden="true"
-																className="size-4 shrink-0 text-muted-foreground"
-															/>
-															AI accomplishment
-														</Small>
-														<P className="wrap-anywhere max-w-prose whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
-															{goal.resolution}
-														</P>
-													</div>
-												)}
-											</div>
-										</li>
-									))}
-								</ul>
-							) : (
-								<P className="text-muted-foreground text-sm">
-									Add a goal for you and your assistant to
-									work toward.
-								</P>
-							)}
-						</div>
-					</section>
 					<section aria-labelledby={`${fieldId}-people`}>
 						<div>
 							<div className={asideHeaderClassName}>
@@ -911,8 +799,8 @@ export function TopicDetail() {
 											isSample={topic.isSample}
 										/>
 										<Small className={hintClassName}>
-											Goals and notes are used in chats
-											and threads linked to this topic.
+											Notes are used in chats and threads
+											linked to this topic.
 										</Small>
 									</CollapsibleContent>
 								</Collapsible>

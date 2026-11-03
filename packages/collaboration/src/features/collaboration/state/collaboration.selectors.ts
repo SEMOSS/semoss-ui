@@ -274,7 +274,6 @@ export function selectThreadContext(
 							id: topic.id,
 							name: topic.name,
 							description: topic.description,
-							goals: topic.goals,
 							...(account
 								? {
 										account: {
@@ -314,7 +313,6 @@ export function selectThreadContext(
 				}
 			: {}),
 		isSample: thread.isSample,
-		goal: workspace?.goal ?? "",
 		profile: confirmedProfile,
 		topics,
 		participants,

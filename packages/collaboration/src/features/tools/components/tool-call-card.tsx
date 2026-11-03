@@ -224,8 +224,17 @@ function GenericToolCallCard({
 	);
 	const isEditorDraft =
 		isRoomCompose && Boolean(editorEmail) && tool.status === "COMPLETED";
+	// the editor opens when the run settles; until then the draft is being prepared, not missing
+	const isDraftPreparing =
+		isRoomCompose &&
+		!editorEmail &&
+		tool.status === "COMPLETED" &&
+		Boolean(roomEmail?.isDraftPending);
 	const isDraftUnavailable =
-		isRoomCompose && !editorEmail && tool.status === "COMPLETED";
+		isRoomCompose &&
+		!editorEmail &&
+		tool.status === "COMPLETED" &&
+		!isDraftPreparing;
 	const composeKind =
 		editorEmail?.mode ??
 		(asString(tool.arguments.replyTo)
@@ -252,7 +261,13 @@ function GenericToolCallCard({
 		(isSubmit || isRequest ? SUBMIT_LABELS[tool.status] : undefined) ??
 		(pendingApproval?.requiresResponse ? "Needs your input" : undefined);
 	const details = {
-		...statusDetails(isDraftUnavailable ? "FAILED" : tool.status),
+		...statusDetails(
+			isDraftUnavailable
+				? "FAILED"
+				: isDraftPreparing
+					? "RUNNING"
+					: tool.status,
+		),
 		...(statusLabel && { label: statusLabel }),
 	};
 	const title = isSubmit
@@ -304,6 +319,7 @@ function GenericToolCallCard({
 
 	const status =
 		(isDraftUnavailable ? "Draft unavailable" : undefined) ??
+		(isDraftPreparing ? "Preparing draft..." : undefined) ??
 		(sendDraft ? SEND_STATUS[tool.status] : undefined) ??
 		(isEmailCompose && draftPreview
 			? COMPOSE_STATUS[tool.status]
@@ -389,6 +405,7 @@ function GenericToolCallCard({
 								roomEmail &&
 									tool.status === "COMPLETED" &&
 									!isDraftUnavailable &&
+									!isDraftPreparing &&
 									"bg-success/10 text-success",
 								roomEmail &&
 									(tool.status === "FAILED" ||
@@ -425,6 +442,7 @@ function GenericToolCallCard({
 									roomEmail &&
 										tool.status === "COMPLETED" &&
 										!isDraftUnavailable &&
+										!isDraftPreparing &&
 										"text-success",
 									(tool.status === "FAILED" ||
 										isDraftUnavailable) &&

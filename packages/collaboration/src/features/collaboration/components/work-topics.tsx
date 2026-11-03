@@ -38,7 +38,7 @@ export function WorkTopics({
 								size="sm"
 								className="pointer-coarse:min-h-11"
 							>
-								<Link to="/work/all">All work</Link>
+								<Link to="/work">All work</Link>
 							</Button>
 							<Button
 								ref={createButtonRef}
