@@ -4,6 +4,7 @@ import {
 	fireEvent,
 	render,
 	screen,
+	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
@@ -554,7 +555,7 @@ describe("RoutinesWorkspace", () => {
 		);
 	});
 
-	it("keeps a pending inbox autosave when switching routine tabs", async () => {
+	it("keeps a pending inbox autosave when picking another routine", async () => {
 		const user = userEvent.setup();
 		render(
 			<MemoryRouter>
@@ -565,7 +566,9 @@ describe("RoutinesWorkspace", () => {
 		await user.clear(lookback);
 		await user.type(lookback, "5");
 		await user.click(
-			screen.getByRole("tab", { name: "Weekly meeting agendas" }),
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
 		);
 		expect(service.save).not.toHaveBeenCalled();
 		await autosave();
@@ -573,7 +576,7 @@ describe("RoutinesWorkspace", () => {
 			expect.objectContaining({ lookbackHours: 120 }),
 		);
 		await user.click(
-			screen.getByRole("tab", { name: "Inbox daily brief" }),
+			screen.getByRole("button", { name: "Inbox daily brief agent" }),
 		);
 		expect(screen.getByLabelText("Email lookback (required)")).toBe(
 			lookback,
@@ -582,6 +585,85 @@ describe("RoutinesWorkspace", () => {
 		expect(
 			screen.getByRole("status", { name: "Save status" }),
 		).toHaveTextContent("Saved");
+	});
+
+	it("opens the system routine a link names", () => {
+		render(
+			<MemoryRouter
+				initialEntries={["/routines?routine=weekly-meeting-agendas"]}
+			>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		expect(
+			screen.getByRole("tab", { name: "System routines" }),
+		).toHaveAttribute("aria-selected", "true");
+		expect(
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
+		).toHaveAttribute("aria-current", "true");
+		expect(
+			screen.getByRole("button", { name: "Inbox daily brief agent" }),
+		).not.toHaveAttribute("aria-current");
+	});
+
+	it("opens one of the owner's routines a link names on My routines", () => {
+		const custom = {
+			enabled: true,
+			prompt: "Summarize the week.",
+			time: "08:00",
+			days: ["MON"],
+			timezone: "America/New_York",
+			delivery: "email",
+			skills: [],
+			agentId: "",
+			configured: true,
+			nextRunAt: null,
+			schedulerAvailable: true,
+			assistantAvailable: true,
+			mailboxAvailable: true,
+			availabilityMessage: null,
+			lastRun: null,
+		};
+		service.usePixel.mockImplementation((statement: string) =>
+			statement === "WorkListCustomRoutines();"
+				? {
+						...service.result,
+						data: {
+							routines: [
+								{
+									...custom,
+									id: "custom-1",
+									name: "Client asks digest",
+								},
+								{
+									...custom,
+									id: "custom-2",
+									name: "Vendor invoice check",
+								},
+							],
+						},
+					}
+				: statement === "WorkListMySkills();"
+					? { ...service.result, data: { skills: [] } }
+					: service.result,
+		);
+		render(
+			<MemoryRouter initialEntries={["/routines?routine=custom-2"]}>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		expect(
+			screen.getByRole("tab", { name: "My routines" }),
+		).toHaveAttribute("aria-selected", "true");
+		const mine = screen.getByRole("navigation", { name: "My routines" });
+		expect(
+			within(mine).getByRole("button", { name: "Vendor invoice check" }),
+		).toHaveAttribute("aria-current", "true");
+		expect(
+			within(mine).getByRole("button", { name: "Client asks digest" }),
+		).not.toHaveAttribute("aria-current");
 	});
 
 	it.each(["running", "failed", "completed"] as const)(

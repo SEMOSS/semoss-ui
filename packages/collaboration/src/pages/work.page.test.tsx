@@ -22,6 +22,10 @@ import { TopicPage } from "./topic.page";
 import { WorkPage } from "./work.page";
 
 const sessions = vi.hoisted(() => ({ mounted: vi.fn() }));
+// the topic page opens its assistant by default; these tests are not about it
+vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
+	LandingChatComposer: () => null,
+}));
 vi.mock("@/features/dashboard/topic-sessions", () => ({
 	TopicSessions: ({ topicId }: { topicId: string }) => {
 		sessions.mounted(topicId);

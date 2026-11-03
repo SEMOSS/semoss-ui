@@ -38,3 +38,16 @@ export const AGENDA_RESULT_COPY: RoutineResultCopy = {
 		"Your agendas are being prepared. Reopen Routines in a moment to read them.",
 	failed: "The last agendas could not be completed",
 };
+
+/** How event planning's result view names its output. */
+export const EVENT_PLANNING_RESULT_COPY: RoutineResultCopy = {
+	title: "Latest plan",
+	emptyTitle: "Your first plan will appear here",
+	scheduledHint:
+		"Your routine is scheduled. Run it now, or come back after its next run to review the lineups.",
+	disabledHint:
+		"Pin your meetings and choose a schedule, then enable the routine. Each run updates their sheets and emails them to you.",
+	running:
+		"Your lineups are being planned. Reopen Routines in a moment to read the digest.",
+	failed: "The last plan could not be completed",
+};

@@ -8,8 +8,10 @@ import {
 import userEvent from "@testing-library/user-event";
 import { useContext, useState } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { DropdownMenuItem } from "@semoss/ui/next";
 import { ConversationWorkspace } from "./conversation-workspace";
 import { ConversationWorkspaceActionsContext } from "./conversation-workspace-actions.context";
+import { ConversationWorkspaceRailContext } from "./conversation-workspace-rail.context";
 
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
@@ -243,4 +245,82 @@ test("opening Workspace from the composer reactivates an already-open narrow pan
 	expect(
 		screen.getByRole("tabpanel", { name: "studio.workArea" }),
 	).toBeVisible();
+});
+
+/** Reports, from inside the work area, whether the rail is on screen. */
+function RailState() {
+	const hasRail = useContext(ConversationWorkspaceRailContext);
+	return <p>{hasRail ? "Rail shown" : "Rail hidden"}</p>;
+}
+
+function WorkspaceRailHarness() {
+	const [isOpen, setIsOpen] = useState(true);
+	return (
+		<ConversationWorkspace
+			isOpen={isOpen}
+			onOpenWorkArea={() => setIsOpen(true)}
+			rail={<nav aria-label="Places" />}
+			railMenuItems={
+				<DropdownMenuItem onSelect={() => setIsOpen(true)}>
+					Files
+				</DropdownMenuItem>
+			}
+			panel={
+				<>
+					<RailState />
+					<button type="button" onClick={() => setIsOpen(false)}>
+						Close work area
+					</button>
+				</>
+			}
+		>
+			<input aria-label="Draft" />
+		</ConversationWorkspace>
+	);
+}
+
+test("a wide view shows the rail instead of the opener, and a narrow one lists its places from the opener", async () => {
+	const callbacks: ResizeObserverCallback[] = [];
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			constructor(callback: ResizeObserverCallback) {
+				callbacks.push(callback);
+			}
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
+	const user = userEvent.setup();
+	render(<WorkspaceRailHarness />);
+	expect(screen.getByRole("navigation", { name: "Places" })).toBeVisible();
+	expect(screen.getByText("Rail shown")).toBeInTheDocument();
+
+	await user.click(screen.getByRole("button", { name: "Close work area" }));
+	expect(screen.getByRole("navigation", { name: "Places" })).toBeVisible();
+	expect(
+		screen.queryByRole("button", { name: "studio.openWorkArea" }),
+	).not.toBeInTheDocument();
+
+	act(() =>
+		callbacks[0]?.(
+			[{ contentRect: { width: 600 } } as ResizeObserverEntry],
+			{} as ResizeObserver,
+		),
+	);
+	expect(
+		screen.queryByRole("navigation", { name: "Places" }),
+	).not.toBeInTheDocument();
+	fireEvent.keyDown(
+		screen.getByRole("button", { name: "studio.openWorkArea" }),
+		{ key: "Enter" },
+	);
+	await user.click(await screen.findByRole("menuitem", { name: "Files" }));
+	await waitFor(() =>
+		expect(
+			screen.getByRole("tab", { name: "studio.workArea" }),
+		).toHaveAttribute("aria-selected", "true"),
+	);
+	expect(screen.getByText("Rail hidden")).toBeInTheDocument();
 });

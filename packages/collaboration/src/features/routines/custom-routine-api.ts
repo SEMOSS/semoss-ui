@@ -1,5 +1,6 @@
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
+import { ROUTINE_RUNS_CHANGED } from "./api/list-recent-routine-runs";
 import {
 	type CustomRoutine,
 	type CustomRoutineSettings,
@@ -14,7 +15,7 @@ export async function saveCustomRoutine(
 	settings: CustomRoutineSettings,
 	routineId?: string,
 ): Promise<CustomRoutine> {
-	return callPixel(
+	const saved = await callPixel(
 		actions,
 		pixel("WorkSaveCustomRoutine", {
 			...customRoutineSettingsSchema.parse(settings),
@@ -22,6 +23,9 @@ export async function saveCustomRoutine(
 		}),
 		customRoutineSchema,
 	);
+	// a new name shows in the sidebar's recent runs
+	window.dispatchEvent(new Event(ROUTINE_RUNS_CHANGED));
+	return saved;
 }
 
 /** Pause, resume, run now, or delete one of the owner's routines. */
@@ -35,6 +39,7 @@ export async function manageCustomRoutine(
 		pixel("WorkManageCustomRoutine", { routineId, action }),
 		z.unknown(),
 	);
+	window.dispatchEvent(new Event(ROUTINE_RUNS_CHANGED));
 }
 
 /**

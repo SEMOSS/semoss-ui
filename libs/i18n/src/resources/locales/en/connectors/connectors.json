@@ -5,8 +5,8 @@
 		"outlookMail": "Outlook Mail",
 		"outlookCalendar": "Outlook Calendar",
 		"teams": "Teams",
-		"teamsChannels": "Teams Channels",
-		"teamsFiles": "Teams Files",
+		"teamsChannels": "Teams Channel Posts",
+		"teamsFiles": "Teams Channel Files",
 		"teamsChats": "Teams Chats",
 		"googleDrive": "Google Drive",
 		"gmail": "Gmail",
@@ -190,7 +190,16 @@
 		"openUnreadChat": "Open chat {{title}}, has unread messages",
 		"backToChats": "Back to Chats",
 		"latestMessages_one": "Showing the newest message.",
-		"latestMessages_other": "Showing the newest {{count}} messages."
+		"latestMessages_other": "Showing the newest {{count}} messages.",
+		"searchTeams": "Search teams",
+		"searchChannels": "Search channels",
+		"allTeams": "All teams",
+		"current": "Current selection",
+		"showingResults": "Showing {{shown}} of {{total}}",
+		"changeLocation": "Change team or channel: {{team}}, {{channel}}",
+		"postsLabel": "Posts",
+		"filesLabel": "Files",
+		"chatsLabel": "Your chats"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

@@ -26,6 +26,9 @@ import { DropHighlight } from "@/features/conversation/drop-highlight";
 import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
 import { usePreparedRoom } from "@/features/conversation/use-prepared-room";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
+import type { DraftWorkspacePlaces } from "@/features/workbench/use-workspace-places";
+import { WorkspaceMenuItems } from "@/features/workbench/workspace-menu-items";
+import { WorkspaceRail } from "@/features/workbench/workspace-rail";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { RoomStore } from "@/stores/room/room.store";
@@ -131,7 +134,12 @@ export const NewRoomPage = observer(() => {
 		prepare,
 	} = usePreparedRoom(tempRoomStore, mode, submittedRef);
 	const workspaceRoom = preCreatedRoom ?? tempRoomStore;
-	const pendingSourceRef = useRef<ConnectorViewerService | null>(null);
+	// what Retry opens again after a failed preparation
+	const pendingPlaceRef = useRef<
+		| { kind: "files" }
+		| { kind: "activity" }
+		| { kind: "source"; service: ConnectorViewerService }
+	>({ kind: "files" });
 
 	// tempRoomStore is only created once (createRoom below builds the real,
 	// separate room), so RoomInput's agent-harness chip — keyed off
@@ -468,7 +476,7 @@ export const NewRoomPage = observer(() => {
 			mcp: Array.from(mcpMap.values()),
 			workspace: {
 				workspace_id: getWorkspace.data.workspace_id,
-				name: getWorkspace.data.name,
+				name: getWorkspace.data.display_name || getWorkspace.data.name,
 			},
 		});
 	}, [
@@ -508,7 +516,7 @@ export const NewRoomPage = observer(() => {
 
 		void startAgentGreetingRoom(
 			selectedWorkspaceId,
-			getWorkspace.data.name,
+			getWorkspace.data.display_name || getWorkspace.data.name,
 		);
 	}, [
 		isWorkspaceFromUrl,
@@ -595,7 +603,6 @@ export const NewRoomPage = observer(() => {
 
 	const handleAgentChange = (
 		next: RoomStore["options"]["workspace"] | null,
-		activateAgentMode = false,
 	) => {
 		if (isLoading || isPreparing) return;
 		if (
@@ -618,11 +625,8 @@ export const NewRoomPage = observer(() => {
 			});
 		}
 		setSelectedWorkspaceId(next?.workspace_id ?? "");
-		if (activateAgentMode && root.theme.featureFlags?.enableAgentHarness)
-			setMode("agent");
 	};
 	const handleSelectChat = () => {
-		handleAgentChange(null);
 		setMode("chat");
 	};
 	const handleOpenSettings = () => {
@@ -633,33 +637,42 @@ export const NewRoomPage = observer(() => {
 		);
 	};
 	const handleOpenFiles = async () => {
-		pendingSourceRef.current = null;
+		pendingPlaceRef.current = { kind: "files" };
 		const room = await prepare();
-		if (!room) return;
-		room.openSidebarFileExplorer(
-			undefined,
-			t("room:menuFileExplorer.name"),
-		);
+		if (room)
+			room.openSidebarFileExplorer(
+				undefined,
+				t("room:menuFileExplorer.name"),
+			);
+		else handleOpenWorkArea();
 	};
 	const handleOpenSource = async (
 		service: ConnectorViewerService,
 	): Promise<void> => {
 		if (isLoading) return;
-		pendingSourceRef.current = service;
-		// Sources and Files share preparation, layout transfer, and abandoned-draft cleanup.
+		pendingPlaceRef.current = { kind: "source", service };
+		// Sources, Files, and Activity share preparation, layout transfer, and abandoned-draft cleanup.
 		const room = await prepare();
 		if (room) room.connectors.openSourcePanel(service);
 		else handleOpenWorkArea();
 	};
-	const handleOpenActivity = preCreatedRoom
-		? () => {
-				preCreatedRoom.openSidebarPanel(
-					ROOM_PANEL_TYPES.AUDIT_LOG,
-					{},
-					t("room:studio.activityLog"),
-				);
-			}
-		: undefined;
+	const handleOpenActivity = async (): Promise<void> => {
+		pendingPlaceRef.current = { kind: "activity" };
+		const room = await prepare();
+		if (room)
+			room.openSidebarPanel(
+				ROOM_PANEL_TYPES.AUDIT_LOG,
+				{},
+				t("room:studio.activityLog"),
+			);
+		else handleOpenWorkArea();
+	};
+	const handleRetryPreparation = () => {
+		const pending = pendingPlaceRef.current;
+		if (pending.kind === "source") void handleOpenSource(pending.service);
+		else if (pending.kind === "activity") void handleOpenActivity();
+		else void handleOpenFiles();
+	};
 
 	const handleOpenWorkArea = () => {
 		if (
@@ -671,18 +684,20 @@ export const NewRoomPage = observer(() => {
 		workspaceRoom.openSidebar();
 	};
 
+	const draftPlaces: DraftWorkspacePlaces = {
+		onOpenFiles: () => void handleOpenFiles(),
+		onOpenSettings: handleOpenSettings,
+		onOpenActivity: () => void handleOpenActivity(),
+		onOpenSource: (service) => void handleOpenSource(service),
+		isPreparing: isPreparing || isLoading,
+		connectors: tempRoomStore.connectors,
+	};
+
 	const workbench = (
 		<RoomSidebar
 			room={workspaceRoom}
 			canPublish={Boolean(preCreatedRoom)}
-			workspaceActions={{
-				onOpenFiles: () => void handleOpenFiles(),
-				onOpenSettings: handleOpenSettings,
-				onOpenActivity: handleOpenActivity,
-				isPreparing: isPreparing || isLoading,
-				showActivityLog:
-					root.theme.featureFlags?.showActivityLog !== false,
-			}}
+			draft={draftPlaces}
 		/>
 	);
 
@@ -700,6 +715,18 @@ export const NewRoomPage = observer(() => {
 				<ConversationWorkspace
 					isOpen={workspaceRoom.sidebar.isOpen}
 					onOpenWorkArea={handleOpenWorkArea}
+					rail={
+						<WorkspaceRail
+							room={workspaceRoom}
+							draft={draftPlaces}
+						/>
+					}
+					railMenuItems={
+						<WorkspaceMenuItems
+							room={workspaceRoom}
+							draft={draftPlaces}
+						/>
+					}
 					panel={
 						<DraftSettingsContext.Provider
 							value={{
@@ -711,13 +738,6 @@ export const NewRoomPage = observer(() => {
 								options: tempRoomStore.options,
 								onModelChange: (model) => {
 									if (model) chat.setSelectedModel(model);
-								},
-								onAgentModeSelected: () => {
-									if (
-										root.theme.featureFlags
-											?.enableAgentHarness
-									)
-										setMode("agent");
 								},
 								agentEditable: true,
 								isAgentMode: mode === "agent",
@@ -745,13 +765,7 @@ export const NewRoomPage = observer(() => {
 												type="button"
 												variant="outline"
 												size="sm"
-												onClick={() =>
-													void (pendingSourceRef.current
-														? handleOpenSource(
-																pendingSourceRef.current,
-															)
-														: handleOpenFiles())
-												}
+												onClick={handleRetryPreparation}
 											>
 												{t("room:studio.retry")}
 											</Button>

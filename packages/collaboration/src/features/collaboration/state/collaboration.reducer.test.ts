@@ -7,6 +7,7 @@ import {
 } from "./collaboration.reducer";
 import {
 	selectThreadContext,
+	selectTopicIgnores,
 	selectWorkItems,
 } from "./collaboration.selectors";
 import type {
@@ -362,6 +363,59 @@ describe("shared collaboration session", () => {
 			state.threads.find((thread) => thread.id === "th-procurement")
 				?.topicLinks,
 		);
+	});
+
+	it("keeps a topic VIP on the membership and drops it when the person leaves", () => {
+		const vipOf = (state: CollaborationState) =>
+			state.topics
+				.find((topic) => topic.id === "t-geng")
+				?.people.find((person) => person.personId === "p-ava")?.vip;
+		const vip = apply(createInitialCollaborationState(), {
+			type: "topic.person",
+			topicId: "t-geng",
+			personId: "p-ava",
+			state: "member",
+			vip: true,
+		});
+		expect(vipOf(vip)).toBe(true);
+		// a role change alone keeps it
+		const renamed = apply(vip, {
+			type: "topic.person",
+			topicId: "t-geng",
+			personId: "p-ava",
+			state: "member",
+			role: "Lead",
+		});
+		expect(vipOf(renamed)).toBe(true);
+		const removed = apply(renamed, {
+			type: "topic.person",
+			topicId: "t-geng",
+			personId: "p-ava",
+			state: "removed",
+		});
+		expect(vipOf(removed)).toBe(false);
+	});
+
+	it("adds a topic ignore, which names a person and needs no value", () => {
+		const state = apply(createInitialCollaborationState(), {
+			type: "rule.add",
+			rule: {
+				kind: "exclude_topic",
+				value: "",
+				topicId: "t-geng",
+				personId: "p-ava",
+			},
+		});
+		expect(selectTopicIgnores(state.rules, "t-geng")).toMatchObject([
+			{ personId: "p-ava" },
+		]);
+		expect(selectTopicIgnores(state.rules, "t-gsales")).toEqual([]);
+		// a rule with neither a value nor a person is still ignored
+		const blank = apply(state, {
+			type: "rule.add",
+			rule: { kind: "never_sender", value: " " },
+		});
+		expect(blank.rules).toHaveLength(state.rules.length);
 	});
 
 	it("keeps a loaded live profile when the signed-in placeholder arrives", () => {

@@ -14,23 +14,6 @@ const SAMPLE_STATE: CollaborationState = {
 			status: "active",
 			description:
 				"Joint engineering work with Northwind Cloud AI: agent architecture review, sandbox access, integration pilot for two use cases.",
-			goals: [
-				{
-					text: "Present agent architecture at Northwind eng review (Oct 15)",
-					status: "open",
-					noteId: "t-geng-goal-1",
-				},
-				{
-					text: "Sandbox access for the pilot team",
-					status: "open",
-					noteId: "t-geng-goal-2",
-				},
-				{
-					text: "Mutual NDA signed",
-					status: "done",
-					noteId: "t-geng-goal-3",
-				},
-			],
 			keywords: [
 				"agent architecture",
 				"sandbox",
@@ -95,18 +78,6 @@ const SAMPLE_STATE: CollaborationState = {
 			status: "active",
 			description:
 				"Commercial track with Northwind partner sales: pricing, procurement, security questionnaire, joint GTM plan.",
-			goals: [
-				{
-					text: "Answer procurement pricing questions",
-					status: "open",
-					noteId: "t-gsales-goal-1",
-				},
-				{
-					text: "Agree joint GTM motion for Q1",
-					status: "open",
-					noteId: "t-gsales-goal-2",
-				},
-			],
 			keywords: [
 				"pricing",
 				"procurement",
@@ -163,23 +134,6 @@ const SAMPLE_STATE: CollaborationState = {
 			status: "active",
 			description:
 				"Logistics for the Seattle onsite: flights, hotel, happy hour with the Northwind sales team, client dinner for 6.",
-			goals: [
-				{
-					text: "Arrive Seattle evening of Oct 13",
-					status: "open",
-					noteId: "t-trip-goal-1",
-				},
-				{
-					text: "Host Northwind sales happy hour Oct 14, 5-6 PM",
-					status: "open",
-					noteId: "t-trip-goal-2",
-				},
-				{
-					text: "Client dinner for 6 on Oct 14",
-					status: "open",
-					noteId: "t-trip-goal-3",
-				},
-			],
 			keywords: [
 				"flight",
 				"hotel",
@@ -222,13 +176,6 @@ const SAMPLE_STATE: CollaborationState = {
 			status: "active",
 			description:
 				"Internal leadership forum (ELT). Current ask: build vs buy recommendation for the AI platform before Friday's session.",
-			goals: [
-				{
-					text: "Give Ian a build vs buy recommendation before Fri ELT",
-					status: "open",
-					noteId: "t-elt-goal-1",
-				},
-			],
 			keywords: ["ELT", "platform", "build vs buy", "investment"],
 			people: [
 				{
@@ -270,13 +217,6 @@ const SAMPLE_STATE: CollaborationState = {
 			color: "#c43d3d",
 			status: "active",
 			description: "Q4 board readout. Owner of the AI slide.",
-			goals: [
-				{
-					text: "Deliver AI slide to Jade by Mon Sep 28",
-					status: "open",
-					noteId: "t-board-goal-1",
-				},
-			],
 			keywords: ["board", "readout", "slide", "deck"],
 			people: [
 				{
@@ -312,13 +252,6 @@ const SAMPLE_STATE: CollaborationState = {
 			status: "active",
 			description:
 				"FY27 planning: tooling and platform line items owned by the AI engineering team.",
-			goals: [
-				{
-					text: "Approve tooling line items",
-					status: "open",
-					noteId: "t-budget-goal-1",
-				},
-			],
 			keywords: ["FY27", "budget", "line items", "tooling", "forecast"],
 			people: [
 				{
@@ -354,13 +287,6 @@ const SAMPLE_STATE: CollaborationState = {
 			status: "active",
 			description:
 				"GPU capacity reservation and alliance follow-ups with Fabrikam.",
-			goals: [
-				{
-					text: "Decide on Q1 capacity reservation",
-					status: "open",
-					noteId: "t-fabrikam-goal-1",
-				},
-			],
 			keywords: ["GPU", "capacity", "reservation", "DGX"],
 			people: [
 				{
@@ -1534,6 +1460,7 @@ const SAMPLE_STATE: CollaborationState = {
 		memory: { use: true, learn: true },
 		draftFolderId: "",
 		draftFolderName: "",
+		syncEveryMinutes: 15,
 		version: 1,
 	},
 	rules: [
@@ -1622,7 +1549,6 @@ const SAMPLE_STATE: CollaborationState = {
 	],
 	workspaces: {
 		"th-geng-review": {
-			goal: "Lock the Oct 15 review: 45-min slot, attendee list, pre-read to Ava by Oct 13.",
 			messages: [
 				{
 					id: "m1",
@@ -1799,7 +1725,6 @@ const SAMPLE_STATE: CollaborationState = {
 			],
 		},
 		"th-elt-chat": {
-			goal: "Give Ian a one-page build vs buy recommendation, numbers first, before Friday's ELT.",
 			messages: [
 				{
 					id: "o1",
@@ -1903,7 +1828,6 @@ const SAMPLE_STATE: CollaborationState = {
 			],
 		},
 		"th-leo-chat": {
-			goal: "Arrive Seattle Oct 13 evening; host the Northwind sales happy hour Oct 14 5-6 PM; dinner for 6 at 7:30 PM.",
 			messages: [
 				{
 					id: "j1",

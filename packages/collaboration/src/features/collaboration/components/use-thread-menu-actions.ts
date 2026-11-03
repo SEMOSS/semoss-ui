@@ -7,6 +7,7 @@ import {
 	ExternalLink,
 	Link2,
 	type LucideIcon,
+	MessageSquarePlus,
 	PanelRightOpen,
 	Plus,
 	RotateCcw,
@@ -18,6 +19,7 @@ import { useLocation, useNavigate } from "react-router";
 import { toast } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility";
 import { safeSourceUrl } from "@/features/connectors/api/microsoft";
+import { useAddToCurrentChat } from "@/features/rooms/current-chat";
 import { threadPath } from "@/lib/workspace-paths";
 import type { Thread, WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -66,6 +68,7 @@ export function useThreadMenuActions({
 	const isBrain = pathname === "/brain" || pathname.startsWith("/brain/");
 	const navigate = useNavigate();
 	const sidebar = useContext(CollaborationSidebarContext)?.sidebar;
+	const addToChat = useAddToCurrentChat();
 	const workPath = threadPath(thread.id);
 	const brainPath = `/brain/threads/${encodeURIComponent(thread.id)}`;
 	const go = (path: string) => {
@@ -83,6 +86,17 @@ export function useThreadMenuActions({
 					movesFocus: true,
 					onSelect: () => go(workPath),
 				},
+				// a session thread has no saved source to read
+				...(addToChat && !thread.id.startsWith("session:")
+					? [
+							{
+								id: "add-to-chat",
+								label: addToChat.label,
+								icon: MessageSquarePlus,
+								onSelect: () => addToChat.add(thread.id),
+							},
+						]
+					: []),
 			],
 		},
 		{

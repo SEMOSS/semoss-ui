@@ -195,6 +195,53 @@ export function removePanel(
 }
 
 /**
+ * Let go of emptied tabsets kept with `enableDeleteWhenEmpty: false` while
+ * other tabsets remain. The flag exists so a dock never loses its only
+ * container; beside other tabsets an empty one is pruned like any other, and
+ * the first tabset left takes the flag over.
+ *
+ * @param tree - Tree to tidy.
+ * @return The tree without empty kept tabsets, or the same tree when there
+ * is nothing to let go.
+ */
+export function releaseEmptyTabsets(
+	tree: WorkbenchLayoutNode,
+): WorkbenchLayoutNode {
+	const isEmptyKept = (tabset: WorkbenchTabset): boolean =>
+		tabset.panelIds.length === 0 && tabset.enableDeleteWhenEmpty === false;
+	const tabsets = flatten(tree);
+	if (tabsets.length < 2 || !tabsets.some(isEmptyKept)) {
+		return tree;
+	}
+	const drop = (node: WorkbenchLayoutNode): WorkbenchLayoutNode | null => {
+		if (isTabset(node)) {
+			return isEmptyKept(node) ? null : node;
+		}
+		const children = node.children
+			.map(drop)
+			.filter((child): child is WorkbenchLayoutNode => child !== null);
+		return children.length ? normalize({ ...node, children }) : null;
+	};
+	const pruned = drop(tree);
+	if (!pruned) {
+		return tree;
+	}
+	const [first, ...rest] = flatten(pruned);
+	if (
+		!first ||
+		[first, ...rest].some(
+			(tabset) => tabset.enableDeleteWhenEmpty === false,
+		)
+	) {
+		return pruned;
+	}
+	return updateTabset(pruned, first.id, (tabset) => ({
+		...tabset,
+		enableDeleteWhenEmpty: false,
+	}));
+}
+
+/**
  * Where a dropped tab lands, and whether the drop changes its pinned state.
  * `ids` and `index` are in post-removal coordinates.
  *
@@ -403,7 +450,7 @@ export function movePanelInTree(
 	} else {
 		next = dockToRoot(pruned, pid, target.dir);
 	}
-	return normalizeDeep(next);
+	return normalizeDeep(releaseEmptyTabsets(next));
 }
 
 /** Px constraints along one axis. */

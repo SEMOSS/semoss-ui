@@ -57,6 +57,8 @@ import {
 } from "@/features/group-access/group-access-levels";
 import { usePagedList } from "@/hooks/use-paged-list";
 import { AddTeamResourceAccessDialog } from "./add-team-resource-access-dialog";
+import { TeamResourceId } from "./team-resource-id";
+import { TeamResourceName } from "./team-resource-name";
 import { TEAM_RESOURCE_NOUNS } from "./team-resource-nouns";
 
 export interface TeamResourceAccessPanelProps {
@@ -363,13 +365,17 @@ export const TeamResourceAccessPanel = ({
 															/>
 														)}
 														<div className="min-w-0">
-															<p className="truncate font-medium">
-																{resource.name}
-															</p>
-															<p className="truncate text-muted-foreground text-xs">
-																id:{" "}
-																{resource.id}
-															</p>
+															<TeamResourceName
+																kind={kind}
+																resource={
+																	resource
+																}
+															/>
+															<TeamResourceId
+																resource={
+																	resource
+																}
+															/>
 														</div>
 													</div>
 												</TableCell>

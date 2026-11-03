@@ -46,3 +46,34 @@ it("uses JSON when a schema or arguments cannot be faithfully represented", () =
 		),
 	).toBe(false);
 });
+
+it("validates structured approval fields without accepting malformed array items", () => {
+	const structured: ToolInputSchema = {
+		properties: {
+			people: {
+				type: "array",
+				minItems: 1,
+				items: {
+					type: "object",
+					required: ["email"],
+					properties: { email: { type: "string", minLength: 1 } },
+				},
+			},
+		},
+		required: ["people"],
+	};
+	expect(validateToolArguments(structured, { people: [] })).toContain(
+		"number of items",
+	);
+	expect(
+		validateToolArguments(structured, { people: ["wrong shape"] }),
+	).toContain("must be an object");
+	expect(validateToolArguments(structured, { people: [{}] })).toContain(
+		"email is required",
+	);
+	expect(
+		validateToolArguments(structured, {
+			people: [{ email: "alex@example.com" }],
+		}),
+	).toBeNull();
+});

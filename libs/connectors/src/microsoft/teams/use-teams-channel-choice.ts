@@ -13,20 +13,21 @@ export interface TeamsChannelChoice {
 	teamsQuery: ConnectorQuery<TeamsTeam[]>;
 	/** The chosen team's channels. */
 	channelsQuery: ConnectorQuery<TeamsChannel[]>;
-	/** The chosen team: the one picked, or else the first. */
+	/** The explicitly chosen team, or null before selection. */
 	team: TeamsTeam | null;
-	/** The chosen channel: the one picked in this team, or else the first. */
+	/** The explicitly chosen channel in this team, or null before selection. */
 	channel: TeamsChannel | null;
-	/** Pick a team. Its first channel is chosen until another is picked. */
+	/** Pick a team without automatically choosing one of its channels. */
 	chooseTeam: (teamId: string) => void;
 	/** Pick a channel of the chosen team. */
 	chooseChannel: (channelId: string) => void;
+	/** Open a team and channel together after browsing the picker. */
+	chooseLocation: (teamId: string, channelId: string) => void;
 }
 
 /**
- * The team and channel a Teams viewer shows. Until the user picks, the first
- * team and its first channel are shown, so the viewer has something to show
- * as soon as it opens.
+ * The team and channel a Teams viewer shows. Start without a selection so
+ * opening a viewer never navigates into an arbitrary team's first channel.
  *
  * @return The choice and the reads behind it.
  */
@@ -43,9 +44,7 @@ export const useTeamsChannelChoice = (): TeamsChannelChoice => {
 
 	const teams = teamsQuery.data ?? [];
 	const team =
-		teams.find((candidate) => candidate.id === pickedTeamId) ??
-		teams[0] ??
-		null;
+		teams.find((candidate) => candidate.id === pickedTeamId) ?? null;
 
 	const channelsQuery = useConnectorQuery(
 		team ? MICROSOFT_PIXELS.teamsListChannels(team.id) : null,
@@ -58,7 +57,7 @@ export const useTeamsChannelChoice = (): TeamsChannelChoice => {
 					(candidate) => candidate.id === pickedChannel.channelId,
 				)
 			: undefined;
-	const channel = picked ?? channels[0] ?? null;
+	const channel = picked ?? null;
 
 	return {
 		teamsQuery: teamsQuery,
@@ -66,6 +65,10 @@ export const useTeamsChannelChoice = (): TeamsChannelChoice => {
 		team: team,
 		channel: channel,
 		chooseTeam: setPickedTeamId,
+		chooseLocation: (teamId, channelId) => {
+			setPickedTeamId(teamId);
+			setPickedChannel({ teamId, channelId });
+		},
 		chooseChannel: (channelId) => {
 			if (team) {
 				setPickedChannel({ teamId: team.id, channelId: channelId });

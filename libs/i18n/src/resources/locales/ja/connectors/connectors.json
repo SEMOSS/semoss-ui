@@ -5,8 +5,8 @@
 		"outlookMail": "Outlook メール",
 		"outlookCalendar": "Outlook 予定表",
 		"teams": "Teams",
-		"teamsChannels": "Teams チャネル",
-		"teamsFiles": "Teams ファイル",
+		"teamsChannels": "Teams チャネルの投稿",
+		"teamsFiles": "Teams チャネルのファイル",
 		"teamsChats": "Teams チャット",
 		"googleDrive": "Google ドライブ",
 		"gmail": "Gmail",
@@ -190,7 +190,16 @@
 		"openUnreadChat": "チャット {{title}} を開く、未読メッセージあり",
 		"backToChats": "チャットに戻る",
 		"latestMessages_one": "最新の {{count}} 件のメッセージを表示しています。",
-		"latestMessages_other": "最新の {{count}} 件のメッセージを表示しています。"
+		"latestMessages_other": "最新の {{count}} 件のメッセージを表示しています。",
+		"searchTeams": "チームを検索",
+		"searchChannels": "チャネルを検索",
+		"allTeams": "すべてのチーム",
+		"current": "現在の選択",
+		"showingResults": "{{total}} 件中 {{shown}} 件を表示",
+		"changeLocation": "チームまたはチャネルを変更: {{team}}、{{channel}}",
+		"postsLabel": "投稿",
+		"filesLabel": "ファイル",
+		"chatsLabel": "あなたのチャット"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

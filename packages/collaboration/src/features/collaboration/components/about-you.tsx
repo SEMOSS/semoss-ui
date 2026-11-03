@@ -4,6 +4,7 @@ import { Button, Card, H2, H3, P } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { PersonAvatar } from "./person-avatar";
 import { ProfileForm } from "./profile-form";
+import { StyleSettings } from "./style-settings";
 
 /** The signed-in person's profile and VIPs, composed inside Settings. */
 export function AboutYou() {
@@ -31,6 +32,7 @@ export function AboutYou() {
 							<PersonAvatar
 								name={profile.name}
 								initials={profile.initials}
+								email={profile.email}
 							/>
 							<div className="min-w-0 space-y-1">
 								<P className="break-words font-medium text-base">
@@ -47,6 +49,7 @@ export function AboutYou() {
 							profile={profile}
 							target="live"
 						/>
+						<StyleSettings profile={profile} />
 						<section
 							className="space-y-4 border-border border-t pt-5"
 							aria-label="VIPs"
@@ -66,6 +69,7 @@ export function AboutYou() {
 									<PersonAvatar
 										name={person.name}
 										initials={person.initials}
+										email={person.email}
 									/>
 									<div className="min-w-0 flex-1">
 										<Link

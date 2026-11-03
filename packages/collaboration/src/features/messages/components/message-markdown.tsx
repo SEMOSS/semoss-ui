@@ -41,7 +41,7 @@ export const MessageMarkdown = memo(function MessageMarkdown({
 				dir="auto"
 				components={MARKDOWN_COMPONENTS}
 				urlTransform={messageMarkdownUrlTransform}
-				className={cn("min-w-0 max-w-prose", MESSAGE_PROSE_CLASS_NAME)}
+				className={cn("min-w-0", MESSAGE_PROSE_CLASS_NAME)}
 			>
 				{displayedText}
 			</Markdown>

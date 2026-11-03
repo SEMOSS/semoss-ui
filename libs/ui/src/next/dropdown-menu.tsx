@@ -145,7 +145,8 @@ const DropdownMenuRadioItem = React.forwardRef<
 			)}
 			{...props}
 		>
-			<span className="pointer-events-none absolute start-2 flex size-3.5 items-center justify-center">
+			{/* the dot is small, so it centers in the whole start margin */}
+			<span className="pointer-events-none absolute inset-y-0 start-0 flex w-8 items-center justify-center">
 				<DropdownMenuPrimitive.ItemIndicator>
 					<CircleIcon className="size-2 fill-current" />
 				</DropdownMenuPrimitive.ItemIndicator>
