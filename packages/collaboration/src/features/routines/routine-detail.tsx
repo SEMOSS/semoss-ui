@@ -6,6 +6,8 @@ import type { RoutineId } from "./routine-schema";
 interface RoutineDetailProps {
 	/** The routine the history lists. */
 	routineId: RoutineId;
+	/** A custom routine's name; a system routine's comes from its id. */
+	routineName?: string;
 	/** The owner's time zone, for the run times. */
 	timezone: string;
 	/** The routine's settings and latest result. */
@@ -15,6 +17,7 @@ interface RoutineDetailProps {
 /** One routine's Settings and History; the settings stay mounted so a pending autosave survives a switch. */
 export function RoutineDetail({
 	routineId,
+	routineName,
 	timezone,
 	children,
 }: RoutineDetailProps) {
@@ -32,7 +35,11 @@ export function RoutineDetail({
 				{children}
 			</TabsContent>
 			<TabsContent value="history" className="min-w-0">
-				<RoutineHistory routineId={routineId} timezone={timezone} />
+				<RoutineHistory
+					routineId={routineId}
+					routineName={routineName}
+					timezone={timezone}
+				/>
 			</TabsContent>
 		</Tabs>
 	);

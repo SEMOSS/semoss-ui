@@ -1,5 +1,5 @@
 import { Plus, Repeat } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -10,6 +10,7 @@ import {
 	Skeleton,
 } from "@semoss/ui/next";
 import { callPixel, pixel } from "@/lib/pixel";
+import { ROUTINE_RUN_DELETED } from "./api/delete-routine-run";
 import { CustomRoutineCard } from "./custom-routine-card";
 import {
 	type CustomRoutine,
@@ -52,21 +53,27 @@ export function CustomRoutinesTab({ request }: CustomRoutinesTabProps) {
 			(routine) => routine.lastRun?.status === "running",
 		);
 	// update in place: a refresh would show the loading state and reset every card
+	const reread = useCallback(() => {
+		callPixel(
+			actions,
+			pixel("WorkListCustomRoutines"),
+			customRoutineListSchema,
+		)
+			.then(update)
+			.catch(() => {
+				// keep the last list; the next read tries again
+			});
+	}, [actions, update]);
 	useEffect(() => {
 		if (!isRunning) return;
-		const timer = window.setInterval(() => {
-			callPixel(
-				actions,
-				pixel("WorkListCustomRoutines"),
-				customRoutineListSchema,
-			)
-				.then(update)
-				.catch(() => {
-					// keep the last list; the next tick tries again
-				});
-		}, RUNNING_POLL_MS);
+		const timer = window.setInterval(reread, RUNNING_POLL_MS);
 		return () => window.clearInterval(timer);
-	}, [isRunning, actions, update]);
+	}, [isRunning, reread]);
+	// a deleted run can be a routine's latest, whose result then goes
+	useEffect(() => {
+		window.addEventListener(ROUTINE_RUN_DELETED, reread);
+		return () => window.removeEventListener(ROUTINE_RUN_DELETED, reread);
+	}, [reread]);
 	const isLoading = [routines.status, skills.status].some(
 		(status) => status === "INITIAL" || status === "LOADING",
 	);
@@ -156,6 +163,7 @@ export function CustomRoutinesTab({ request }: CustomRoutinesTabProps) {
 						<RoutineDetail
 							key={current.id}
 							routineId={current.id}
+							routineName={current.name}
 							timezone={current.timezone}
 						>
 							<CustomRoutineCard

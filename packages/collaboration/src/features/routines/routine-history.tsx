@@ -1,5 +1,6 @@
 import { RefreshCw } from "lucide-react";
-import { usePixel } from "@semoss/sdk/react";
+import { useEffect, useRef } from "react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -15,9 +16,12 @@ import {
 	TableRow,
 	z,
 } from "@semoss/ui/next";
-import { pixel } from "@/lib/pixel";
+import { callPixel, pixel } from "@/lib/pixel";
+import { ROUTINE_RUN_DELETED } from "./api/delete-routine-run";
 import { RoutineChatButton } from "./routine-chat-button";
+import { RoutineRunMenu } from "./routine-run-menu";
 import type { RoutineId } from "./routine-schema";
+import { findSystemRoutine } from "./system-routines";
 
 export const routineRunListSchema = z.object({
 	runs: z.array(
@@ -52,15 +56,39 @@ export function formatDuration(milliseconds: number | null): string {
 interface RoutineHistoryProps {
 	/** The routine whose past runs are listed. */
 	routineId: RoutineId;
+	/** A custom routine's name; a system routine's comes from its id. */
+	routineName?: string;
 	/** The owner's time zone, for the run times. */
 	timezone: string;
 }
 
-/** The routine's past runs, newest first; a run with output opens as a chat. */
-export function RoutineHistory({ routineId, timezone }: RoutineHistoryProps) {
-	const result = usePixel<unknown>(
-		pixel("WorkListRoutineRuns", { routineId }),
-	);
+/** The routine's past runs, newest first; a run with output opens as a chat, and a finished one can be deleted. */
+export function RoutineHistory({
+	routineId,
+	routineName,
+	timezone,
+}: RoutineHistoryProps) {
+	const { actions } = useInsight();
+	const statement = pixel("WorkListRoutineRuns", { routineId });
+	const result = usePixel<unknown>(statement);
+	const { update } = result;
+	// where focus goes when its run's row is deleted
+	const refreshButton = useRef<HTMLButtonElement>(null);
+	// in place: a refresh would show the loading state and drop focus
+	useEffect(() => {
+		const reread = () => {
+			callPixel(actions, statement, routineRunListSchema)
+				.then(update)
+				.catch(() => {
+					// keep the last list; Refresh tries again
+				});
+		};
+		window.addEventListener(ROUTINE_RUN_DELETED, reread);
+		return () => window.removeEventListener(ROUTINE_RUN_DELETED, reread);
+	}, [actions, statement, update]);
+	const name =
+		findSystemRoutine(routineId)?.name ??
+		(routineName || "Untitled routine");
 	const parsed = routineRunListSchema.safeParse(result.data);
 	if (result.status === "INITIAL" || result.status === "LOADING") {
 		return (
@@ -101,7 +129,12 @@ export function RoutineHistory({ routineId, timezone }: RoutineHistoryProps) {
 						? `The last ${runs.length} runs, newest first. Times are in ${timezone.replaceAll("_", " ")}.`
 						: "No runs yet. Runs appear here once the routine has run."}
 				</P>
-				<Button variant="outline" size="sm" onClick={result.refresh}>
+				<Button
+					ref={refreshButton}
+					variant="outline"
+					size="sm"
+					onClick={result.refresh}
+				>
 					<RefreshCw aria-hidden="true" data-icon="inline-start" />
 					Refresh
 				</Button>
@@ -120,45 +153,64 @@ export function RoutineHistory({ routineId, timezone }: RoutineHistoryProps) {
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{runs.map((run) => (
-							<TableRow key={run.runId}>
-								<TableCell>
-									{run.startedAt
-										? when.format(new Date(run.startedAt))
-										: "-"}
-								</TableCell>
-								<TableCell>
-									{run.trigger === "manual"
-										? "Run now"
-										: "Scheduled"}
-								</TableCell>
-								<TableCell>
-									<Badge
-										variant={
-											run.status === "failed"
-												? "destructive"
-												: run.status === "running"
-													? "outline"
-													: "secondary"
-										}
-									>
-										{STATUS_LABELS[run.status]}
-									</Badge>
-								</TableCell>
-								<TableCell>
-									{formatDuration(run.durationMs)}
-								</TableCell>
-								<TableCell className="text-right">
-									{run.hasOutput && (
-										<RoutineChatButton
-											routineId={routineId}
-											runId={run.runId}
-											label="Open chat"
-										/>
-									)}
-								</TableCell>
-							</TableRow>
-						))}
+						{runs.map((run) => {
+							const started = run.startedAt
+								? when.format(new Date(run.startedAt))
+								: null;
+							return (
+								<TableRow key={run.runId}>
+									<TableCell>{started ?? "-"}</TableCell>
+									<TableCell>
+										{run.trigger === "manual"
+											? "Run now"
+											: "Scheduled"}
+									</TableCell>
+									<TableCell>
+										<Badge
+											variant={
+												run.status === "failed"
+													? "destructive"
+													: run.status === "running"
+														? "outline"
+														: "secondary"
+											}
+										>
+											{STATUS_LABELS[run.status]}
+										</Badge>
+									</TableCell>
+									<TableCell>
+										{formatDuration(run.durationMs)}
+									</TableCell>
+									<TableCell>
+										<div className="flex items-start justify-end gap-1">
+											{run.hasOutput && (
+												<RoutineChatButton
+													routineId={routineId}
+													runId={run.runId}
+													label="Open chat"
+												/>
+											)}
+											{/* a run still going has nothing to delete yet */}
+											{run.status !== "running" && (
+												<RoutineRunMenu
+													routineId={routineId}
+													runId={run.runId}
+													routineName={name}
+													when={
+														started ??
+														"an unknown time"
+													}
+													onDeleted={() =>
+														refreshButton.current?.focus()
+													}
+													className="size-8"
+												/>
+											)}
+										</div>
+									</TableCell>
+								</TableRow>
+							);
+						})}
 					</TableBody>
 				</Table>
 			)}
