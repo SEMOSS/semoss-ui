@@ -1,4 +1,4 @@
-import { Check, GripVertical } from "lucide-react";
+import { Check, ChevronDown, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
@@ -6,8 +6,10 @@ import { Button, cn, P, Small } from "@semoss/ui/next";
 import { pixel } from "@/lib/pixel";
 import { roomPath, threadPath } from "@/lib/workspace-paths";
 import { runBatch } from "../live/live-state";
+import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
+import { TopicChip as SharedTopicChip } from "./topic-chip";
 
 // The Work page: the outcomes the owner is driving (D25), in the owner's order.
 // Items Brain infers wait in review until the owner adds, merges or dismisses them.
@@ -89,11 +91,15 @@ const sourceLabel = (source?: string) =>
 const errorText = (cause: unknown) =>
 	cause instanceof Error ? cause.message : String(cause);
 
-function TopicChip({ name }: { name?: string }) {
-	if (!name) return null;
+// the same topic chip Topics and threads use; a plain one if the topic is not loaded
+function TopicChip({ item }: { item: Item }) {
+	const { state } = useCollaborationSession();
+	const topic = state.topics.find((t) => t.id === item.topicId);
+	if (topic) return <SharedTopicChip topic={topic} />;
+	if (!item.topic) return null;
 	return (
-		<span className="whitespace-nowrap rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
-			{name}
+		<span className="whitespace-nowrap rounded-md bg-muted px-2 py-0.5 text-sm">
+			{item.topic}
 		</span>
 	);
 }
@@ -168,9 +174,19 @@ function nextStep(item: Item, isMine: (step: Step) => boolean) {
 	);
 }
 
+// page rows match the Topics list; Today's rows sit inside its card padding
+const rowPad = (compact?: boolean) => (compact ? "py-4" : "px-5 py-4 md:px-6");
+
+function openRoom(navigate: ReturnType<typeof useNavigate>, item: Item) {
+	void navigate(
+		item.roomId ? roomPath(item.roomId) : `/work/item/${item.id}`,
+	);
+}
+
 /** One row: drag to reorder, click to open its steps. */
 function ItemRow({
 	item,
+	compact,
 	isMine,
 	detail,
 	run,
@@ -180,6 +196,7 @@ function ItemRow({
 	onDrop,
 }: {
 	item: Item;
+	compact?: boolean;
 	isMine: (step: Step) => boolean;
 	detail: (taskId: string) => Promise<Detail>;
 	run: (statement: string) => Promise<void>;
@@ -220,63 +237,79 @@ function ItemRow({
 			}}
 			className="group"
 		>
-			<div className="flex items-center gap-3 px-3 py-3 hover:bg-muted/40">
+			<div
+				className={cn(
+					"flex min-w-0 items-center gap-3 transition-colors hover:bg-accent",
+					rowPad(compact),
+					compact && "-mx-5 px-5",
+				)}
+			>
 				{draggable ? (
 					<GripVertical
 						aria-hidden="true"
-						className="size-4 flex-none cursor-grab text-muted-foreground/50"
+						className="-ml-2 size-4 flex-none cursor-grab text-muted-foreground/40 group-hover:text-muted-foreground"
 					/>
 				) : null}
-				<button
-					type="button"
-					aria-expanded={open}
-					onClick={() => setOpen((v) => !v)}
-					className="min-w-0 flex-1 text-left"
-				>
-					<div className="font-medium">{item.title}</div>
-					<div className="truncate text-muted-foreground text-sm">
-						{next ? next.text : "No open steps"}
+				<div className="min-w-0 flex-1 space-y-1">
+					<div className="flex flex-wrap items-center gap-2">
+						<button
+							type="button"
+							aria-expanded={open}
+							onClick={() => setOpen((v) => !v)}
+							className="min-w-0 break-words text-left font-medium text-base focus-visible:outline-2 focus-visible:outline-ring"
+						>
+							{item.title}
+						</button>
+						<TopicChip item={item} />
 					</div>
-				</button>
-				<TopicChip name={item.topic} />
+					<P className="truncate text-muted-foreground text-sm">
+						{next ? next.text : "No open steps"}
+					</P>
+				</div>
+				{due ? (
+					<Small
+						className={cn(
+							"shrink-0 text-muted-foreground tabular-nums",
+							due.soon && "text-destructive",
+						)}
+					>
+						{due.text}
+					</Small>
+				) : null}
 				<Button
 					size="sm"
 					variant="outline"
-					className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
-					onClick={() =>
-						void navigate(
-							item.roomId
-								? roomPath(item.roomId)
-								: `/work/item/${item.id}`,
-						)
-					}
+					className="shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+					onClick={() => openRoom(navigate, item)}
 				>
 					Open room
 				</Button>
-				<Small
-					className={cn(
-						"w-12 text-right text-muted-foreground",
-						due?.soon && "text-destructive",
-					)}
+				<button
+					type="button"
+					aria-label={open ? "Hide steps" : "Show steps"}
+					onClick={() => setOpen((v) => !v)}
+					className="shrink-0 text-muted-foreground hover:text-foreground"
 				>
-					{due?.text ?? ""}
-				</Small>
+					<ChevronDown
+						aria-hidden="true"
+						className={cn(
+							"size-4 transition-transform",
+							open && "rotate-180",
+						)}
+					/>
+				</button>
 			</div>
 			{open ? (
-				<div className="pr-4 pb-4 pl-10">
+				<div className={cn("pb-4", compact ? "" : "px-5 md:px-6")}>
 					{info ? (
 						<>
-							<ul className="space-y-1">
+							<ul className="space-y-2">
 								{info.steps.map((step) => {
 									const done = step.status === "done";
 									return (
 										<li
 											key={step.id}
-											className={cn(
-												"flex items-start gap-2 text-sm",
-												done &&
-													"text-muted-foreground line-through",
-											)}
+											className="flex items-start gap-2.5 text-sm"
 										>
 											<button
 												type="button"
@@ -299,19 +332,25 @@ function ItemRow({
 													).then(refresh)
 												}
 												className={cn(
-													"mt-0.5 flex size-4 flex-none items-center justify-center rounded border border-muted-foreground/50",
+													"mt-0.5 flex size-4 flex-none items-center justify-center rounded-xs border border-input",
 													done &&
-														"bg-muted-foreground/50 text-background",
+														"border-foreground bg-foreground text-background",
 												)}
 											>
 												{done ? (
 													<Check className="size-3" />
 												) : null}
 											</button>
-											<span className="flex-1">
+											<span
+												className={cn(
+													"flex-1",
+													done &&
+														"text-muted-foreground line-through",
+												)}
+											>
 												{step.text}
 											</span>
-											<span className="text-muted-foreground text-xs">
+											<span className="shrink-0 text-muted-foreground">
 												{isMine(step)
 													? "You"
 													: (step.assigneeName ??
@@ -322,14 +361,14 @@ function ItemRow({
 								})}
 							</ul>
 							{info.threads.length ? (
-								<Small className="mt-2 block text-muted-foreground">
+								<Small className="mt-3 block text-muted-foreground">
 									From{" "}
 									{info.threads.map((t, n) => (
 										<span key={t.threadId}>
 											{n ? ", " : ""}
 											<Link
 												to={threadPath(t.threadId)}
-												className="underline-offset-2 hover:underline"
+												className="text-foreground underline-offset-2 hover:underline"
 											>
 												{t.subject}
 											</Link>{" "}
@@ -356,45 +395,55 @@ function ReviewList({
 	all,
 	isMine,
 	run,
-	onBack,
 }: {
 	items: Item[];
 	all: Item[];
 	isMine: (step: Step) => boolean;
 	run: (statement: string) => Promise<void>;
-	onBack: () => void;
 }) {
 	const [mergeFor, setMergeFor] = useState<string | null>(null);
+	if (!items.length) {
+		return (
+			<div className="space-y-2 p-6">
+				<P>Nothing new to review.</P>
+				<Link
+					to="/work"
+					className="text-muted-foreground text-sm hover:text-foreground"
+				>
+					Back to Work
+				</Link>
+			</div>
+		);
+	}
 	return (
-		<div className="max-w-3xl space-y-3">
-			{items.length ? null : (
-				<P className="text-muted-foreground text-sm">
-					Nothing new to review.
-				</P>
-			)}
+		<ul aria-label="New work items" className="divide-y divide-border">
 			{items.map((item) => {
 				const next = nextStep(item, isMine);
 				return (
-					<div
+					<li
 						key={item.id}
-						className="rounded-lg border bg-background p-4"
+						className="flex min-w-0 flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center md:px-6"
 					>
-						<div className="flex items-center gap-2">
-							<span className="font-medium">{item.title}</span>
-							<TopicChip name={item.topic} />
-						</div>
-						{next ? (
-							<div className="text-muted-foreground text-sm">
-								Next: {next.text}
+						<div className="min-w-0 flex-1 space-y-1">
+							<div className="flex flex-wrap items-center gap-2">
+								<Small className="break-words font-medium text-base">
+									{item.title}
+								</Small>
+								<TopicChip item={item} />
 							</div>
-						) : null}
-						<Small className="text-muted-foreground">
-							{item.openSteps.length} open step
-							{item.openSteps.length === 1 ? "" : "s"}
-							{item.mine ? "" : ", none assigned to you"}
-						</Small>
+							{next ? (
+								<P className="text-muted-foreground text-sm">
+									Next: {next.text}
+								</P>
+							) : null}
+							<Small className="block text-muted-foreground">
+								{item.openSteps.length} open step
+								{item.openSteps.length === 1 ? "" : "s"}
+								{item.mine ? "" : ", none assigned to you"}
+							</Small>
+						</div>
 						{mergeFor === item.id ? (
-							<div className="mt-3 flex flex-wrap items-center gap-2">
+							<div className="flex shrink-0 items-center gap-2">
 								<select
 									aria-label="Merge into"
 									defaultValue=""
@@ -409,7 +458,7 @@ function ReviewList({
 											}),
 										);
 									}}
-									className="h-8 max-w-md rounded-md border bg-background px-2 text-sm"
+									className="h-8 max-w-xs rounded-md border border-input bg-background px-2 text-sm"
 								>
 									<option value="">Merge into...</option>
 									{all
@@ -435,9 +484,10 @@ function ReviewList({
 								</Button>
 							</div>
 						) : (
-							<div className="mt-3 flex gap-2">
+							<div className="flex shrink-0 items-center gap-1">
 								<Button
 									size="sm"
+									variant="outline"
 									onClick={() =>
 										void run(
 											pixel("WorkSaveWork", {
@@ -451,14 +501,15 @@ function ReviewList({
 								</Button>
 								<Button
 									size="sm"
-									variant="outline"
+									variant="ghost"
 									onClick={() => setMergeFor(item.id)}
 								>
 									Merge into...
 								</Button>
 								<Button
 									size="sm"
-									variant="outline"
+									variant="ghost"
+									className="text-muted-foreground"
 									onClick={() =>
 										void run(
 											pixel("WorkSaveWork", {
@@ -472,50 +523,70 @@ function ReviewList({
 								</Button>
 							</div>
 						)}
-					</div>
+					</li>
 				);
 			})}
-			<Button size="sm" variant="outline" onClick={onBack}>
-				Back to Work
-			</Button>
-		</div>
+		</ul>
 	);
 }
 
-/** The owner's work items; with a limit, a short list for Today that links to Work. */
-export function WorkItems({ limit }: { limit?: number }) {
-	const { items, setItems, error, run, detail, isMine } = useWorkItems();
-	const [reviewing, setReviewing] = useState(false);
-	const [dragId, setDragId] = useState<string | null>(null);
-	const [showOthers, setShowOthers] = useState(false);
-
-	if (items === null) {
-		return error ? (
-			<P className="text-destructive text-sm">{error}</P>
-		) : (
-			<Small className="text-muted-foreground">Loading...</Small>
-		);
-	}
+function split(items: Item[]) {
 	const kept = items.filter((i) => !i.proposed);
 	const proposed = items.filter((i) => i.proposed);
-	// the owner's own first, then the rest someone else is driving
-	const review = [
-		...proposed.filter((i) => i.mine),
-		...proposed.filter((i) => !i.mine),
-	];
-	const mine = kept.filter((i) => i.mine);
-	const others = kept.filter((i) => !i.mine);
+	return {
+		// the owner's own first, then the rest someone else is driving
+		review: [
+			...proposed.filter((i) => i.mine),
+			...proposed.filter((i) => !i.mine),
+		],
+		proposed,
+		mine: kept.filter((i) => i.mine),
+		others: kept.filter((i) => !i.mine),
+	};
+}
+
+/** The owner's work items; compact is Today's short list that links to Work. */
+export function WorkItems({
+	limit,
+	review: reviewing,
+}: {
+	limit?: number;
+	review?: boolean;
+}) {
+	const { items, setItems, error, run, detail, isMine } = useWorkItems();
+	const [dragId, setDragId] = useState<string | null>(null);
+	const [showOthers, setShowOthers] = useState(false);
+	const compact = Boolean(limit);
+
+	if (items === null) {
+		return (
+			<div className={compact ? "py-4" : "p-6"}>
+				{error ? (
+					<P className="text-destructive text-sm">{error}</P>
+				) : (
+					<Small className="text-muted-foreground">Loading...</Small>
+				)}
+			</div>
+		);
+	}
+	const { review, proposed, mine, others } = split(items);
 	const shown = limit ? mine.slice(0, limit) : mine;
 
-	if (reviewing && !limit) {
+	if (reviewing) {
 		return (
-			<ReviewList
-				items={review}
-				all={items}
-				isMine={isMine}
-				run={run}
-				onBack={() => setReviewing(false)}
-			/>
+			<>
+				{error ? (
+					<P className="px-5 pt-4 text-destructive text-sm md:px-6">
+						{error}
+					</P>
+				) : null}
+				<ReviewList
+					items={review}
+					all={items}
+					isMine={isMine}
+					run={run}
+				/>
+			</>
 		);
 	}
 
@@ -535,83 +606,97 @@ export function WorkItems({ limit }: { limit?: number }) {
 	};
 
 	return (
-		<div className="max-w-3xl">
+		<>
 			{error ? (
-				<P className="mb-3 text-destructive text-sm">{error}</P>
+				<P
+					className={cn(
+						"text-destructive text-sm",
+						compact ? "pt-4" : "px-5 pt-4 md:px-6",
+					)}
+				>
+					{error}
+				</P>
 			) : null}
 			{review.length ? (
-				<div className="mb-5 flex items-center gap-3 rounded-lg border bg-background px-4 py-2.5">
-					<span
-						aria-hidden="true"
-						className="size-2 rounded-full bg-primary"
-					/>
-					<span className="flex-1 text-muted-foreground text-sm">
+				<div
+					className={cn(
+						"flex items-center gap-3 border-border border-b bg-muted/40 py-3 text-sm",
+						compact ? "-mx-5 -mt-1 px-5" : "px-5 md:px-6",
+					)}
+				>
+					<span className="flex-1 text-muted-foreground">
 						<span className="font-medium text-foreground">
 							{review.length} new work item
 							{review.length === 1 ? "" : "s"}
 						</span>{" "}
 						from your mail and chats
 					</span>
-					{limit ? (
-						<Button asChild size="sm">
-							<Link to="/work">Review</Link>
-						</Button>
-					) : (
-						<Button size="sm" onClick={() => setReviewing(true)}>
-							Review
-						</Button>
-					)}
+					<Button asChild size="sm" variant="outline">
+						<Link to="/work/review">Review</Link>
+					</Button>
 				</div>
 			) : null}
-			<ul
-				aria-label="Your work items"
-				className="divide-y divide-border rounded-lg border bg-background"
-			>
-				{shown.length ? (
-					shown.map((item) => (
+			{shown.length ? (
+				<ul
+					aria-label="Your work items"
+					className="divide-y divide-border"
+				>
+					{shown.map((item) => (
 						<ItemRow
 							key={item.id}
 							item={item}
+							compact={compact}
 							isMine={isMine}
 							detail={detail}
 							run={run}
-							draggable={!limit}
+							draggable={!compact}
 							onDragStart={() => setDragId(item.id)}
 							onDragOver={() => moveTo(item.id)}
 							onDrop={saveOrder}
 						/>
-					))
-				) : (
-					<li className="px-4 py-3 text-muted-foreground text-sm">
-						{review.length
-							? "Review the new items to start your list."
-							: "No work items yet. They come from your mail and chats, or ask in chat to add one."}
-					</li>
-				)}
-			</ul>
-			{limit && mine.length > shown.length ? (
+					))}
+				</ul>
+			) : (
+				<P
+					className={cn(
+						"text-muted-foreground text-sm",
+						compact ? "py-4" : "p-6",
+					)}
+				>
+					{review.length
+						? "Review the new items to start your list."
+						: "No work items yet. They come from your mail and chats, or ask in chat to add one."}
+				</P>
+			)}
+			{compact && mine.length > shown.length ? (
 				<Link
 					to="/work"
-					className="mt-3 inline-block text-muted-foreground text-sm hover:text-foreground"
+					className="-mx-5 block border-border border-t px-5 py-3 text-muted-foreground text-sm hover:text-foreground"
 				>
 					See all {mine.length}
 				</Link>
 			) : null}
-			{!limit && others.length ? (
-				<>
+			{!compact && others.length ? (
+				<div className="border-border border-t">
 					<button
 						type="button"
 						onClick={() => setShowOthers((v) => !v)}
-						className="mt-4 text-muted-foreground text-sm hover:text-foreground"
+						className="flex w-full items-center gap-2 px-5 py-3 text-left text-muted-foreground text-sm hover:bg-accent hover:text-foreground md:px-6"
 					>
-						{showOthers ? "Hide" : "Show"} {others.length} item
-						{others.length === 1 ? "" : "s"} other people are
-						driving
+						<ChevronDown
+							aria-hidden="true"
+							className={cn(
+								"size-4 transition-transform",
+								showOthers && "rotate-180",
+							)}
+						/>
+						{others.length} item{others.length === 1 ? "" : "s"}{" "}
+						other people are driving
 					</button>
 					{showOthers ? (
 						<ul
 							aria-label="Work other people are driving"
-							className="mt-2 divide-y divide-border rounded-lg border bg-background"
+							className="divide-y divide-border border-border border-t"
 						>
 							{others.map((item) => (
 								<ItemRow
@@ -624,28 +709,38 @@ export function WorkItems({ limit }: { limit?: number }) {
 							))}
 						</ul>
 					) : null}
-				</>
+				</div>
 			) : null}
-		</div>
+		</>
 	);
 }
 
-export function WorkItemsList() {
+export function WorkItemsList({ review = false }: { review?: boolean }) {
 	return (
 		<CollaborationSurface
 			header={
 				<CollaborationPageHeader
-					title="Work"
-					description="What you are working toward. Mail, chats and meetings keep it up to date."
+					title={review ? "New work items" : "Work"}
+					description={
+						review
+							? "Inferred from your mail and chats. Add the real ones to your work, merge duplicates, dismiss the rest."
+							: "What you are working toward, in your order. Drag to reorder."
+					}
 					actions={
-						<Button asChild variant="outline" size="sm">
-							<Link to="/work/topics">Topics</Link>
-						</Button>
+						review ? (
+							<Button asChild variant="outline" size="sm">
+								<Link to="/work">Back to Work</Link>
+							</Button>
+						) : (
+							<Button asChild variant="outline" size="sm">
+								<Link to="/work/topics">Topics</Link>
+							</Button>
+						)
 					}
 				/>
 			}
 		>
-			<WorkItems />
+			<WorkItems review={review} />
 		</CollaborationSurface>
 	);
 }

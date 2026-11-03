@@ -8,6 +8,7 @@ export function WorkPage() {
 	const { pathname } = useLocation();
 	const path = pathname.replace(/\/$/, "");
 	if (path === "/work") return <WorkItemsList />;
+	if (path === "/work/review") return <WorkItemsList review />;
 	if (path === "/work/topics") return <WorkTopics />;
 	const initialFilter = path.endsWith("/waiting")
 		? "waiting"
