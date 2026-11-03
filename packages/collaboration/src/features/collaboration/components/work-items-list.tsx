@@ -141,11 +141,16 @@ export function useWorkItems() {
 	return { items, setItems, error, run, isMine };
 }
 
-function nextStep(item: Item, isMine: (step: Step) => boolean) {
+// the owner's next step: theirs first, then one nobody was named for (a group ask on their item)
+function mineNext(item: Item, isMine: (step: Step) => boolean) {
 	return (
 		item.openSteps.find((s) => s.status === "open" && isMine(s)) ??
-		item.openSteps[0]
+		item.openSteps.find((s) => isMine(s))
 	);
+}
+
+function nextStep(item: Item, isMine: (step: Step) => boolean) {
+	return mineNext(item, isMine) ?? item.openSteps[0];
 }
 
 // page rows match the Topics list; Today's rows sit inside its card padding
@@ -182,9 +187,7 @@ function ItemRow({
 }) {
 	const navigate = useNavigate();
 	const due = dueLabel(item.due);
-	const mineNext = item.openSteps.find(
-		(s) => s.status === "open" && isMine(s),
-	);
+	const next = mineNext(item, isMine);
 	const waiting = waitingOn(item, isMine);
 
 	return (
@@ -223,10 +226,10 @@ function ItemRow({
 					</button>
 					<TopicChip item={item} />
 				</div>
-				{mineNext ? (
+				{next ? (
 					<P className="truncate text-sm">
 						<span className="text-muted-foreground">Next: </span>
-						{mineNext.text}
+						{next.text}
 					</P>
 				) : null}
 				{waiting ? (
@@ -235,7 +238,7 @@ function ItemRow({
 						{waiting.text}
 					</P>
 				) : null}
-				{!mineNext && !waiting ? (
+				{!next && !waiting ? (
 					<P className="text-muted-foreground text-sm">
 						No open steps
 					</P>
