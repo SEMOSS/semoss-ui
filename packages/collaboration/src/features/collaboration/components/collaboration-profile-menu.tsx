@@ -19,7 +19,6 @@ import {
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { PersonAvatar } from "./person-avatar";
-import { openOnKeyboardFocusOnly, RAIL_TOOLTIP_CONTENT } from "./rail-tooltip";
 
 interface CollaborationProfileMenuProps {
 	/** Closes mobile navigation after choosing a destination. */
@@ -62,7 +61,7 @@ export function CollaborationProfileMenu({
 	return (
 		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
 			<Tooltip disableHoverableContent={false}>
-				<TooltipTrigger asChild onFocus={openOnKeyboardFocusOnly}>
+				<TooltipTrigger asChild>
 					<DropdownMenuTrigger asChild>
 						<Button
 							type="button"
@@ -80,9 +79,7 @@ export function CollaborationProfileMenu({
 						</Button>
 					</DropdownMenuTrigger>
 				</TooltipTrigger>
-				<TooltipContent side="right" className={RAIL_TOOLTIP_CONTENT}>
-					Account
-				</TooltipContent>
+				<TooltipContent side="right">Account</TooltipContent>
 			</Tooltip>
 			<DropdownMenuContent
 				align="start"

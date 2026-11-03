@@ -10,7 +10,6 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import semossLogo from "@/assets/img/semoss-logo.svg";
-import { openOnKeyboardFocusOnly, RAIL_TOOLTIP_CONTENT } from "./rail-tooltip";
 
 /** The desktop shell's collapse button; mobile navigation has none. */
 export interface NavigationToggle {
@@ -69,7 +68,7 @@ export function CollaborationNavigationHeader({
 			</Link>
 			{toggle && (
 				<Tooltip disableHoverableContent={false}>
-					<TooltipTrigger asChild onFocus={openOnKeyboardFocusOnly}>
+					<TooltipTrigger asChild>
 						<Button
 							ref={toggle.ref}
 							type="button"
@@ -84,12 +83,7 @@ export function CollaborationNavigationHeader({
 							<ToggleIcon aria-hidden="true" />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent
-						side="right"
-						className={RAIL_TOOLTIP_CONTENT}
-					>
-						{toggleLabel}
-					</TooltipContent>
+					<TooltipContent side="right">{toggleLabel}</TooltipContent>
 				</Tooltip>
 			)}
 		</div>

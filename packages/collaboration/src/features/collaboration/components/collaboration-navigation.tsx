@@ -12,7 +12,6 @@ import {
 } from "./collaboration-navigation-header";
 import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationSettingsLink } from "./collaboration-settings-link";
-import { openOnKeyboardFocusOnly, RAIL_TOOLTIP_CONTENT } from "./rail-tooltip";
 
 interface CollaborationNavigationProps {
 	/** Renders a compact icon rail on desktop. */
@@ -78,10 +77,7 @@ export function CollaborationNavigation({
 			>
 				{links.map(({ to, label, icon: Icon, count, isActive }) => (
 					<Tooltip key={to} disableHoverableContent={false}>
-						<TooltipTrigger
-							asChild
-							onFocus={openOnKeyboardFocusOnly}
-						>
+						<TooltipTrigger asChild>
 							<Link
 								to={to}
 								aria-current={isActive ? "page" : undefined}
@@ -111,10 +107,7 @@ export function CollaborationNavigation({
 							</Link>
 						</TooltipTrigger>
 						{isCollapsed && (
-							<TooltipContent
-								side="right"
-								className={RAIL_TOOLTIP_CONTENT}
-							>
+							<TooltipContent side="right">
 								{label}
 								{count > 0 ? ` \u00b7 ${count}` : ""}
 							</TooltipContent>
