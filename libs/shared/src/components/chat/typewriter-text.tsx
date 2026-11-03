@@ -71,7 +71,7 @@ export const TypewriterText = ({
 		<span className={className}>
 			{displayed}
 			{isTyping && (
-				<span className="ml-0.5 inline-block h-[1em] w-px animate-pulse bg-current align-middle" />
+				<span className="ms-0.5 inline-block h-[1em] w-px animate-pulse bg-current align-middle" />
 			)}
 		</span>
 	);

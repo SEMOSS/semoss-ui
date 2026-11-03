@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
+import { ChatGeneratingIndicator } from "@semoss/shared";
 import {
 	Button,
 	cn,
@@ -29,7 +30,6 @@ import type { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
-import { RoomGeneratingIndicator } from "./room-generating-indicator";
 import { RoomGreeting } from "./room-greeting";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -415,7 +415,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 
 	// A response that's actively generating with nothing to show yet — no
 	// text, tool calls, media, or even real thinking content — renders as
-	// no entry at all; RoomGeneratingIndicator covers that window instead,
+	// no entry at all; ChatGeneratingIndicator covers that window instead,
 	// so it never mounts as its own block only to fold away again the
 	// moment it gets its first tool call. The instant any real content
 	// exists (including thinking) it gets its own entry immediately.
@@ -569,7 +569,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 								},
 							)}
 							<div className="-mt-4">
-								<RoomGeneratingIndicator
+								<ChatGeneratingIndicator
 									active={
 										(showLoadingState &&
 											!isStreamingContent) ||

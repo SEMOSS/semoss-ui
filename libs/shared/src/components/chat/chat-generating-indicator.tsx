@@ -1,23 +1,24 @@
 import { cn } from "@semoss/ui/next";
-import { useLoadingMessage } from "@/hooks";
-import { TypewriterText } from "../common/typewriter-text";
+import { useLoadingMessage } from "../../hooks/use-loading-message";
+import { TypewriterText } from "./typewriter-text";
 
-export interface RoomGeneratingIndicatorProps {
+export interface ChatGeneratingIndicatorProps {
 	/** Whether to show the label. The div always reserves its height, so
 	 * toggling this never changes the page height. */
 	active: boolean;
 
 	/**
-	 * Fixed text to show instead of the rotating loading messages — e.g.
-	 * prompting the user to complete a tool waiting on their input.
+	 * Fixed text to show instead of the rotating loading messages, such as a
+	 * prompt to complete a tool waiting on the user's input.
 	 */
 	overrideMessage?: string;
 }
 
-export const RoomGeneratingIndicator = ({
+/** The line under a chat that says the reply is on its way while nothing else shows it. */
+export const ChatGeneratingIndicator = ({
 	active,
 	overrideMessage,
-}: RoomGeneratingIndicatorProps) => {
+}: ChatGeneratingIndicatorProps) => {
 	const { loadingMessage } = useLoadingMessage(active && !overrideMessage);
 
 	return (

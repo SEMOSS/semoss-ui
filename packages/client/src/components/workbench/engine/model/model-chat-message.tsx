@@ -1,13 +1,12 @@
+import { CopyIcon, PaperclipIcon, RefreshCwIcon } from "lucide-react";
 import {
-	CopyIcon,
-	PaperclipIcon,
-	RefreshCwIcon,
-	WrenchIcon,
-} from "lucide-react";
-import { Badge, Button, Markdown, Muted, Spinner } from "@semoss/ui/next";
+	ChatGeneratingIndicator,
+	ChatReasoning,
+	ChatToolCallRow,
+} from "@semoss/shared";
+import { Button, Markdown, Muted } from "@semoss/ui/next";
 import { FeedbackButtons } from "@/components/engine/FeedbackButtons";
 import type { ModelChatMessage as ModelChatMessageModel } from "@/stores/workbench/model";
-import { ModelChatThinking } from "./model-chat-thinking";
 
 interface ModelChatMessageProps {
 	/** The turn to render. */
@@ -99,30 +98,24 @@ export const ModelChatMessage = ({
 			data-testid={`model-chat-message-output-${message.id}`}
 		>
 			{message.thinking && (
-				<ModelChatThinking
+				<ChatReasoning
 					thinking={message.thinking}
 					isStreaming={message.isStreaming ?? false}
 				/>
 			)}
 
 			{message.toolCalls?.map((toolCall) => (
-				<div
+				<ChatToolCallRow
 					key={toolCall.id}
-					className="flex w-fit items-center gap-2 rounded-lg border border-border bg-sidebar px-3 py-1.5 text-muted-foreground text-xs"
-				>
-					<WrenchIcon className="size-3.5 shrink-0" aria-hidden />
-					<span className="font-medium">{toolCall.name}</span>
-					<Badge variant="outline" className="font-mono text-xs">
-						{toolCall.output === undefined ? "running" : "done"}
-					</Badge>
-				</div>
+					name={toolCall.name}
+					status={
+						toolCall.output === undefined ? "running" : "completed"
+					}
+				/>
 			))}
 
 			{isEmptyStream ? (
-				<div className="flex items-center gap-2">
-					<Spinner className="size-4" />
-					<Muted className="text-sm">Generating response…</Muted>
-				</div>
+				<ChatGeneratingIndicator active />
 			) : (
 				<Markdown dir="auto" className="wrap-anywhere">
 					{message.text}
