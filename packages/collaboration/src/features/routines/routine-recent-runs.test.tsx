@@ -158,6 +158,25 @@ describe("RoutineRecentRuns", () => {
 		).toHaveAttribute("href", "/routines?routine=inbox-daily-brief");
 	});
 
+	it("offers the run menu on finished runs only", async () => {
+		renderRuns();
+		await screen.findByRole("list", { name: "Recent routines" });
+		expect(
+			screen.getAllByRole("button", { name: /^More actions for the / }),
+		).toHaveLength(3);
+		for (const name of [
+			"Vendor invoice check",
+			"Weekly meeting agendas agent",
+		])
+			expect(
+				screen.queryByRole("button", {
+					name: new RegExp(
+						`^More actions for the ${name} run from Today`,
+					),
+				}),
+			).toBeNull();
+	});
+
 	it("reads again when a routine is run, renamed or removed on this page", async () => {
 		renderRuns();
 		await screen.findByRole("link", { name: "Vendor invoice check" });
