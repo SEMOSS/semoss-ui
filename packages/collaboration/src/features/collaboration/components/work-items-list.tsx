@@ -2,13 +2,26 @@ import { ChevronDown, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
-import { Button, cn, P, Small } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+	P,
+	Small,
+} from "@semoss/ui/next";
 import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
 import { runBatch } from "../live/live-state";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
+import { TaskContextView, useTaskContext } from "./task-context";
 import { TopicChip as SharedTopicChip } from "./topic-chip";
 import { WorkBuildMenu } from "./work-build-menu";
 
@@ -21,6 +34,7 @@ interface Step {
 	id: string;
 	text: string;
 	status: string;
+	kind?: string;
 	assigneeId?: string;
 	assigneeName?: string;
 }
@@ -47,6 +61,7 @@ function toStep(row: Row): Step {
 		id: str(row.id),
 		text: str(row.text),
 		status: str(row.status),
+		kind: str(row.kind) || undefined,
 		assigneeId: str(row.assigneeId) || undefined,
 		assigneeName: str(row.assigneeName) || undefined,
 	};
@@ -134,7 +149,9 @@ export function useWorkItems() {
 	);
 
 	const isMine = useCallback(
-		(step: Step) => !step.assigneeId || step.assigneeId === selfId,
+		(step: Step) =>
+			step.kind !== "waiting_on" &&
+			(!step.assigneeId || step.assigneeId === selfId),
 		[selfId],
 	);
 
@@ -266,6 +283,33 @@ function ItemRow({
 	);
 }
 
+// loads only once a row is opened
+function ExpandedTask({ taskId, id }: { taskId: string; id: string }) {
+	const { task, loading, error } = useTaskContext({ taskId });
+	return (
+		<div
+			id={id}
+			className="mt-3 overflow-hidden rounded-lg border bg-muted/30 sm:ml-5.5"
+		>
+			{task ? (
+				<TaskContextView task={task} />
+			) : (
+				<P
+					role={error ? "alert" : undefined}
+					className={cn(
+						"px-4 py-3 text-sm",
+						error ? "text-destructive" : "text-muted-foreground",
+					)}
+				>
+					{loading
+						? "Loading details..."
+						: error || "No more detail for this item."}
+				</P>
+			)}
+		</div>
+	);
+}
+
 /** Review: each inferred item is added, merged into another, or dismissed. */
 function ReviewList({
 	items,
@@ -278,7 +322,7 @@ function ReviewList({
 	isMine: (step: Step) => boolean;
 	run: (statement: string) => Promise<void>;
 }) {
-	const [mergeFor, setMergeFor] = useState<string | null>(null);
+	const [expanded, setExpanded] = useState<string | null>(null);
 	if (!items.length) {
 		return (
 			<div className="space-y-2 p-6">
@@ -296,71 +340,65 @@ function ReviewList({
 		<ul aria-label="New work items" className="divide-y divide-border">
 			{items.map((item) => {
 				const next = nextStep(item, isMine);
+				const targets = all.filter((other) => other.id !== item.id);
+				// accepted work first; another new item is a second choice
+				const targetGroups = [
+					{
+						label: "Your work",
+						items: targets.filter((other) => !other.proposed),
+					},
+					{
+						label: "Also new",
+						items: targets.filter((other) => other.proposed),
+					},
+				];
 				return (
-					<li
-						key={item.id}
-						className="flex min-w-0 flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center md:px-6"
-					>
-						<div className="min-w-0 flex-1 space-y-1">
-							<div className="flex flex-wrap items-center gap-2">
-								<Small className="break-words font-medium text-base">
-									{item.title}
+					<li key={item.id} className="min-w-0 px-5 py-4 md:px-6">
+						<div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+							<div className="min-w-0 flex-1 space-y-1">
+								<div className="flex flex-wrap items-center gap-2">
+									<button
+										type="button"
+										aria-expanded={expanded === item.id}
+										aria-controls={`review-${item.id}-detail`}
+										onClick={() =>
+											setExpanded(
+												expanded === item.id
+													? null
+													: item.id,
+											)
+										}
+										className="flex min-w-0 items-center gap-1.5 break-words text-left font-medium text-base hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+									>
+										<ChevronDown
+											aria-hidden="true"
+											className={cn(
+												"size-4 shrink-0 text-muted-foreground transition-transform",
+												expanded !== item.id &&
+													"-rotate-90",
+											)}
+										/>
+										{item.title}
+									</button>
+									<TopicChip item={item} />
+								</div>
+								{next ? (
+									<P className="pl-5.5 text-sm">
+										<span className="text-muted-foreground">
+											Next:{" "}
+										</span>
+										{next.text}
+									</P>
+								) : null}
+								<Small className="block pl-5.5 text-muted-foreground">
+									{item.openSteps.length} open step
+									{item.openSteps.length === 1 ? "" : "s"}
+									{item.mine ? "" : ", none assigned to you"}
+									{expanded === item.id
+										? ""
+										: " \u00b7 expand for steps and threads"}
 								</Small>
-								<TopicChip item={item} />
 							</div>
-							{next ? (
-								<P className="text-muted-foreground text-sm">
-									Next: {next.text}
-								</P>
-							) : null}
-							<Small className="block text-muted-foreground">
-								{item.openSteps.length} open step
-								{item.openSteps.length === 1 ? "" : "s"}
-								{item.mine ? "" : ", none assigned to you"}
-							</Small>
-						</div>
-						{mergeFor === item.id ? (
-							<div className="flex shrink-0 items-center gap-2">
-								<select
-									aria-label="Merge into"
-									defaultValue=""
-									onChange={(event) => {
-										const into = event.target.value;
-										if (!into) return;
-										setMergeFor(null);
-										void run(
-											pixel("WorkMergeItems", {
-												taskId: item.id,
-												intoTaskId: into,
-											}),
-										);
-									}}
-									className="h-8 max-w-xs rounded-md border border-input bg-background px-2 text-sm"
-								>
-									<option value="">Merge into...</option>
-									{all
-										.filter((other) => other.id !== item.id)
-										.map((other) => (
-											<option
-												key={other.id}
-												value={other.id}
-											>
-												{other.title}
-												{other.topic
-													? ` (${other.topic})`
-													: ""}
-											</option>
-										))}
-								</select>
-								<Button
-									size="sm"
-									variant="ghost"
-									onClick={() => setMergeFor(null)}
-								>
-									Cancel
-								</Button>
-							</div>
-						) : (
 							<div className="flex shrink-0 items-center gap-1">
 								<Button
 									size="sm"
@@ -376,13 +414,72 @@ function ReviewList({
 								>
 									Add to my work
 								</Button>
-								<Button
-									size="sm"
-									variant="ghost"
-									onClick={() => setMergeFor(item.id)}
-								>
-									Merge into...
-								</Button>
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											size="sm"
+											variant="ghost"
+											disabled={!targets.length}
+										>
+											Merge into
+											<ChevronDown aria-hidden="true" />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent
+										align="end"
+										className="max-h-80 w-72 overflow-y-auto"
+									>
+										{targetGroups.map((group, index) =>
+											group.items.length ? (
+												<DropdownMenuGroup
+													key={group.label}
+												>
+													{index > 0 &&
+													targetGroups[0].items
+														.length ? (
+														<DropdownMenuSeparator />
+													) : null}
+													<DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
+														{group.label}
+													</DropdownMenuLabel>
+													{group.items.map(
+														(other) => (
+															<DropdownMenuItem
+																key={other.id}
+																className="flex-col items-start gap-0.5"
+																onSelect={() =>
+																	void run(
+																		pixel(
+																			"WorkMergeItems",
+																			{
+																				taskId: item.id,
+																				intoTaskId:
+																					other.id,
+																			},
+																		),
+																	)
+																}
+															>
+																<span className="line-clamp-2 break-words">
+																	{
+																		other.title
+																	}
+																</span>
+																{other.topic ? (
+																	<span className="text-muted-foreground text-xs">
+																		{
+																			other.topic
+																		}
+																	</span>
+																) : null}
+															</DropdownMenuItem>
+														),
+													)}
+												</DropdownMenuGroup>
+											) : null,
+										)}
+									</DropdownMenuContent>
+								</DropdownMenu>
 								<Button
 									size="sm"
 									variant="ghost"
@@ -399,7 +496,13 @@ function ReviewList({
 									Dismiss
 								</Button>
 							</div>
-						)}
+						</div>
+						{expanded === item.id ? (
+							<ExpandedTask
+								taskId={item.id}
+								id={`review-${item.id}-detail`}
+							/>
+						) : null}
 					</li>
 				);
 			})}
