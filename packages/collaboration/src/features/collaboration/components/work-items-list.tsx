@@ -1,10 +1,10 @@
-import { Check, ChevronDown, GripVertical } from "lucide-react";
+import { ChevronDown, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { Button, cn, P, Small } from "@semoss/ui/next";
 import { pixel } from "@/lib/pixel";
-import { roomPath, threadPath } from "@/lib/workspace-paths";
+import { roomPath } from "@/lib/workspace-paths";
 import { runBatch } from "../live/live-state";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationPageHeader } from "./collaboration-page-header";
@@ -34,11 +34,6 @@ export interface Item {
 	roomId?: string;
 	due?: string;
 	openSteps: Step[];
-}
-
-interface Detail {
-	steps: Step[];
-	threads: { threadId: string; subject: string; source?: string }[];
 }
 
 const str = (value: unknown): string =>
@@ -84,9 +79,6 @@ function dueLabel(due?: string): { text: string; soon: boolean } | null {
 		soon: (at.getTime() - Date.now()) / 86_400_000 < 2,
 	};
 }
-
-const sourceLabel = (source?: string) =>
-	source === "teams" ? "chat" : source === "meeting" ? "meeting" : "email";
 
 const errorText = (cause: unknown) =>
 	cause instanceof Error ? cause.message : String(cause);
@@ -140,31 +132,12 @@ export function useWorkItems() {
 		[actions, load],
 	);
 
-	const detail = useCallback(
-		async (taskId: string): Promise<Detail> => {
-			const [out] = (await runBatch(actions, [
-				pixel("WorkGetWork", { taskId }),
-			])) as Row[];
-			return {
-				steps: list(out?.steps)
-					.map(toStep)
-					.filter((s) => s.status !== "dropped"),
-				threads: list(out?.threads).map((t) => ({
-					threadId: str(t.threadId),
-					subject: str(t.subject) || "(no subject)",
-					source: str(t.source) || undefined,
-				})),
-			};
-		},
-		[actions],
-	);
-
 	const isMine = useCallback(
 		(step: Step) => !step.assigneeId || step.assigneeId === selfId,
 		[selfId],
 	);
 
-	return { items, setItems, error, run, detail, isMine };
+	return { items, setItems, error, run, isMine };
 }
 
 function nextStep(item: Item, isMine: (step: Step) => boolean) {
@@ -183,13 +156,16 @@ function openRoom(navigate: ReturnType<typeof useNavigate>, item: Item) {
 	);
 }
 
-/** One row: drag to reorder, click to open its steps. */
+// the first open step someone else owes the owner
+function waitingOn(item: Item, isMine: (step: Step) => boolean) {
+	return item.openSteps.find((s) => !isMine(s));
+}
+
+/** One row: the item, your next step and who you are waiting on; drag to reorder, Open room to work it. */
 function ItemRow({
 	item,
 	compact,
 	isMine,
-	detail,
-	run,
 	draggable,
 	onDragStart,
 	onDragOver,
@@ -198,29 +174,17 @@ function ItemRow({
 	item: Item;
 	compact?: boolean;
 	isMine: (step: Step) => boolean;
-	detail: (taskId: string) => Promise<Detail>;
-	run: (statement: string) => Promise<void>;
 	draggable?: boolean;
 	onDragStart?: () => void;
 	onDragOver?: () => void;
 	onDrop?: () => void;
 }) {
 	const navigate = useNavigate();
-	const [open, setOpen] = useState(false);
-	const [info, setInfo] = useState<Detail | null>(null);
 	const due = dueLabel(item.due);
-	const next = nextStep(item, isMine);
-
-	const refresh = useCallback(
-		() =>
-			detail(item.id)
-				.then(setInfo)
-				.catch(() => {}),
-		[detail, item.id],
+	const mineNext = item.openSteps.find(
+		(s) => s.status === "open" && isMine(s),
 	);
-	useEffect(() => {
-		if (open) void refresh();
-	}, [open, refresh]);
+	const waiting = waitingOn(item, isMine);
 
 	return (
 		<li
@@ -235,156 +199,65 @@ function ItemRow({
 				event.preventDefault();
 				onDrop?.();
 			}}
-			className="group"
+			className={cn(
+				"group flex min-w-0 items-center gap-3 transition-colors hover:bg-accent",
+				rowPad(compact),
+				compact && "-mx-5 px-5",
+			)}
 		>
-			<div
-				className={cn(
-					"flex min-w-0 items-center gap-3 transition-colors hover:bg-accent",
-					rowPad(compact),
-					compact && "-mx-5 px-5",
-				)}
-			>
-				{draggable ? (
-					<GripVertical
-						aria-hidden="true"
-						className="-ml-2 size-4 flex-none cursor-grab text-muted-foreground/40 group-hover:text-muted-foreground"
-					/>
-				) : null}
-				<div className="min-w-0 flex-1 space-y-1">
-					<div className="flex flex-wrap items-center gap-2">
-						<button
-							type="button"
-							aria-expanded={open}
-							onClick={() => setOpen((v) => !v)}
-							className="min-w-0 break-words text-left font-medium text-base focus-visible:outline-2 focus-visible:outline-ring"
-						>
-							{item.title}
-						</button>
-						<TopicChip item={item} />
-					</div>
-					<P className="truncate text-muted-foreground text-sm">
-						{next ? next.text : "No open steps"}
-					</P>
-				</div>
-				{due ? (
-					<Small
-						className={cn(
-							"shrink-0 text-muted-foreground tabular-nums",
-							due.soon && "text-destructive",
-						)}
-					>
-						{due.text}
-					</Small>
-				) : null}
-				<Button
-					size="sm"
-					variant="outline"
-					className="shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
-					onClick={() => openRoom(navigate, item)}
-				>
-					Open room
-				</Button>
-				<button
-					type="button"
-					aria-label={open ? "Hide steps" : "Show steps"}
-					onClick={() => setOpen((v) => !v)}
-					className="shrink-0 text-muted-foreground hover:text-foreground"
-				>
-					<ChevronDown
-						aria-hidden="true"
-						className={cn(
-							"size-4 transition-transform",
-							open && "rotate-180",
-						)}
-					/>
-				</button>
-			</div>
-			{open ? (
-				<div className={cn("pb-4", compact ? "" : "px-5 md:px-6")}>
-					{info ? (
-						<>
-							<ul className="space-y-2">
-								{info.steps.map((step) => {
-									const done = step.status === "done";
-									return (
-										<li
-											key={step.id}
-											className="flex items-start gap-2.5 text-sm"
-										>
-											<button
-												type="button"
-												aria-label={
-													done
-														? "Reopen step"
-														: "Mark step done"
-												}
-												onClick={() =>
-													void run(
-														pixel(
-															"WorkUpdateStep",
-															{
-																stepId: step.id,
-																status: done
-																	? "open"
-																	: "done",
-															},
-														),
-													).then(refresh)
-												}
-												className={cn(
-													"mt-0.5 flex size-4 flex-none items-center justify-center rounded-xs border border-input",
-													done &&
-														"border-foreground bg-foreground text-background",
-												)}
-											>
-												{done ? (
-													<Check className="size-3" />
-												) : null}
-											</button>
-											<span
-												className={cn(
-													"flex-1",
-													done &&
-														"text-muted-foreground line-through",
-												)}
-											>
-												{step.text}
-											</span>
-											<span className="shrink-0 text-muted-foreground">
-												{isMine(step)
-													? "You"
-													: (step.assigneeName ??
-														"Someone")}
-											</span>
-										</li>
-									);
-								})}
-							</ul>
-							{info.threads.length ? (
-								<Small className="mt-3 block text-muted-foreground">
-									From{" "}
-									{info.threads.map((t, n) => (
-										<span key={t.threadId}>
-											{n ? ", " : ""}
-											<Link
-												to={threadPath(t.threadId)}
-												className="text-foreground underline-offset-2 hover:underline"
-											>
-												{t.subject}
-											</Link>{" "}
-											({sourceLabel(t.source)})
-										</span>
-									))}
-								</Small>
-							) : null}
-						</>
-					) : (
-						<Small className="text-muted-foreground">
-							Loading...
-						</Small>
-					)}
-				</div>
+			{draggable ? (
+				<GripVertical
+					aria-hidden="true"
+					className="-ml-2 size-4 flex-none cursor-grab text-muted-foreground/40 group-hover:text-muted-foreground"
+				/>
 			) : null}
+			<div className="min-w-0 flex-1 space-y-1">
+				<div className="flex flex-wrap items-center gap-2">
+					<button
+						type="button"
+						onClick={() => openRoom(navigate, item)}
+						className="min-w-0 break-words text-left font-medium text-base hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+					>
+						{item.title}
+					</button>
+					<TopicChip item={item} />
+				</div>
+				{mineNext ? (
+					<P className="truncate text-sm">
+						<span className="text-muted-foreground">Next: </span>
+						{mineNext.text}
+					</P>
+				) : null}
+				{waiting ? (
+					<P className="truncate text-muted-foreground text-sm">
+						Waiting on {waiting.assigneeName ?? "someone"}:{" "}
+						{waiting.text}
+					</P>
+				) : null}
+				{!mineNext && !waiting ? (
+					<P className="text-muted-foreground text-sm">
+						No open steps
+					</P>
+				) : null}
+			</div>
+			{due ? (
+				<Small
+					className={cn(
+						"shrink-0 text-muted-foreground tabular-nums",
+						due.soon && "text-destructive",
+					)}
+				>
+					{due.text}
+				</Small>
+			) : null}
+			<Button
+				size="sm"
+				variant="outline"
+				className="shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+				onClick={() => openRoom(navigate, item)}
+			>
+				Open room
+			</Button>
 		</li>
 	);
 }
@@ -553,7 +426,7 @@ export function WorkItems({
 	limit?: number;
 	review?: boolean;
 }) {
-	const { items, setItems, error, run, detail, isMine } = useWorkItems();
+	const { items, setItems, error, run, isMine } = useWorkItems();
 	const [dragId, setDragId] = useState<string | null>(null);
 	const [showOthers, setShowOthers] = useState(false);
 	const compact = Boolean(limit);
@@ -647,8 +520,6 @@ export function WorkItems({
 							item={item}
 							compact={compact}
 							isMine={isMine}
-							detail={detail}
-							run={run}
 							draggable={!compact}
 							onDragStart={() => setDragId(item.id)}
 							onDragOver={() => moveTo(item.id)}
@@ -703,8 +574,6 @@ export function WorkItems({
 									key={item.id}
 									item={item}
 									isMine={isMine}
-									detail={detail}
-									run={run}
 								/>
 							))}
 						</ul>
