@@ -4,11 +4,13 @@ import {
 	fireEvent,
 	render,
 	screen,
+	waitFor,
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ROUTINE_RUN_DELETED } from "./api/delete-routine-run";
 import { InboxRoutineForm } from "./inbox-routine-form";
 import type {
 	InboxRoutine,
@@ -552,6 +554,44 @@ describe("RoutinesWorkspace", () => {
 		expect(service.result.update).toHaveBeenCalledOnce();
 		expect(service.result.update).toHaveBeenCalledWith(
 			expect.objectContaining({ configured: true, enabled: true }),
+		);
+	});
+
+	it("re-reads the routine in place after one of its runs is deleted", async () => {
+		service.result.data = {
+			...routine,
+			lastRun: {
+				status: "completed",
+				startedAt: "2026-10-15T12:00:00Z",
+				finishedAt: "2026-10-15T12:01:00Z",
+				roomId: "brief-room",
+				summary: "Reply to Dana before Thursday.",
+				error: null,
+			},
+		};
+		service.actions.run.mockResolvedValue({
+			pixelReturn: [
+				{
+					output: { ...routine, lastRun: null },
+					operationType: ["OPERATION"],
+				},
+			],
+		});
+		render(
+			<MemoryRouter>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		act(() => {
+			window.dispatchEvent(new Event(ROUTINE_RUN_DELETED));
+		});
+		await waitFor(() =>
+			expect(service.result.update).toHaveBeenCalledWith(
+				expect.objectContaining({ lastRun: null }),
+			),
+		);
+		expect(service.actions.run).toHaveBeenCalledWith(
+			"WorkGetInboxRoutine();",
 		);
 	});
 

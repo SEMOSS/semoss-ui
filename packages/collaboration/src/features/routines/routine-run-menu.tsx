@@ -1,5 +1,6 @@
 import { MoreHorizontal, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -20,7 +21,12 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { deleteRoutineRun } from "./api/delete-routine-run";
+import { ROOM_HISTORY_CHANGED } from "@/features/rooms/api/list-rooms";
+import { roomPath } from "@/lib/workspace-paths";
+import {
+	deleteRoutineRun,
+	ROUTINE_RUN_DELETED,
+} from "./api/delete-routine-run";
 import { ROUTINE_RUNS_CHANGED } from "./api/list-recent-routine-runs";
 
 interface RoutineRunMenuProps {
@@ -36,7 +42,7 @@ interface RoutineRunMenuProps {
 	className?: string;
 }
 
-/** A finished run's "..." menu in the sidebar, with Delete behind a confirmation. */
+/** A finished run's "..." menu, in the sidebar and History, with Delete behind a confirmation. */
 export function RoutineRunMenu({
 	routineId,
 	runId,
@@ -46,6 +52,8 @@ export function RoutineRunMenu({
 	className,
 }: RoutineRunMenuProps) {
 	const { actions } = useInsight();
+	const { pathname } = useLocation();
+	const navigate = useNavigate();
 	const [isConfirming, setIsConfirming] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [error, setError] = useState("");
@@ -54,8 +62,9 @@ export function RoutineRunMenu({
 	const handleDelete = async (): Promise<void> => {
 		setIsDeleting(true);
 		setError("");
+		let roomIds: string[] = [];
 		try {
-			await deleteRoutineRun(actions, routineId, runId);
+			roomIds = await deleteRoutineRun(actions, routineId, runId);
 		} catch (cause) {
 			setError(
 				cause instanceof Error
@@ -69,6 +78,10 @@ export function RoutineRunMenu({
 		wasDeleted.current = true;
 		setIsConfirming(false);
 		toast.success("Run deleted.");
+		// its chats leave the chat list, and one that is open closes, as a closed chat does
+		window.dispatchEvent(new Event(ROOM_HISTORY_CHANGED));
+		if (roomIds.some((roomId) => pathname === roomPath(roomId)))
+			void navigate("/");
 	};
 
 	return (
@@ -115,14 +128,15 @@ export function RoutineRunMenu({
 						wasDeleted.current = false;
 						onDeleted();
 						window.dispatchEvent(new Event(ROUTINE_RUNS_CHANGED));
+						window.dispatchEvent(new Event(ROUTINE_RUN_DELETED));
 					}}
 				>
 					<DialogHeader>
 						<DialogTitle>Delete this run?</DialogTitle>
 						<DialogDescription>
 							The {routineName} run from {when} is removed from
-							the routine's history. Chats you opened from it
-							stay.
+							the routine's history, with the chats opened from
+							it.
 						</DialogDescription>
 					</DialogHeader>
 					{error && (
