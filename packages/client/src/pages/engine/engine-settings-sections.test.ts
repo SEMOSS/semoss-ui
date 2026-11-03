@@ -57,14 +57,22 @@ describe("getEngineSettingsSections", () => {
 		]);
 	});
 
-	it.each([
-		"DATABASE",
-		"STORAGE",
-		"VECTOR",
-		"FUNCTION",
-		"GUARDRAIL",
-	] as const)("gives the owners of a %s the shared sections", (type) => {
-		expect(pathsFor(type, "OWNER")).toEqual([
+	it.each(["DATABASE", "STORAGE", "VECTOR", "FUNCTION"] as const)(
+		"gives the owners of a %s the shared sections and guardrails",
+		(type) => {
+			expect(pathsFor(type, "OWNER")).toEqual([
+				"description",
+				"export",
+				"guardrails",
+				"image",
+				"tags",
+				"dangerous",
+			]);
+		},
+	);
+
+	it("gives the owners of a guardrail no guardrails of its own", () => {
+		expect(pathsFor("GUARDRAIL", "OWNER")).toEqual([
 			"description",
 			"export",
 			"image",
@@ -83,6 +91,7 @@ describe("getEngineSettingsSections", () => {
 		]);
 		expect(pathsFor("DATABASE", "EDIT")).toEqual([
 			"description",
+			"guardrails",
 			"image",
 			"tags",
 		]);

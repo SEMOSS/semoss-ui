@@ -33,8 +33,6 @@ type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
 
 interface MCPOverlaySave {
-	/** Explicit selection remains meaningful when Default agent has no workspace id. */
-	agentModeSelected?: boolean;
 	mcp: MCPConfig[];
 	/** Only present when the overlay was opened with an `workspace` prop. */
 	workspace?: WorkspaceRef | null;
@@ -97,7 +95,6 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 		workspace ?? null,
 	);
 	const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
-	const [hasSelectedAgent, setHasSelectedAgent] = useState(false);
 
 	// Routed view inside the overlay. "list" shows tabs + selectors; "create"
 	// swaps the body for the create-knowledge form so we don't stack Dialogs.
@@ -124,7 +121,6 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 			setToolbox(next.toolbox);
 			setWorkspaceDraft(workspace ?? null);
 			setActiveTab(defaultTab);
-			setHasSelectedAgent(false);
 			setView("list");
 			mergedWorkspaceId.current = workspace?.workspace_id ?? null;
 		}
@@ -371,10 +367,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 											}
 											disabled={disabled}
 											value={workspaceDraft}
-											onChange={(next) => {
-												setHasSelectedAgent(true);
-												setWorkspaceDraft(next);
-											}}
+											onChange={setWorkspaceDraft}
 										/>
 									)}
 								</TabsContent>
@@ -467,11 +460,6 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 									!needsAgentLoad &&
 									onClose({
 										mcp: [...knowledge, ...toolbox],
-										...(agentEditable &&
-										(activeTab === "AGENT" ||
-											hasSelectedAgent)
-											? { agentModeSelected: true }
-											: {}),
 										workspace: workspaceDraft,
 									})
 								}

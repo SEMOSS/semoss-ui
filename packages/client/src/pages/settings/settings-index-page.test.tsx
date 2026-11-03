@@ -34,6 +34,7 @@ describe("SettingsIndexPage merged navigation", () => {
 		expect(
 			screen.queryByRole("link", { name: /Team Permissions/ }),
 		).toBeNull();
+		expect(screen.queryByRole("link", { name: /Agent Runs/ })).toBeNull();
 	});
 
 	it("preserves both audit and team administration links in admin mode", () => {
@@ -45,6 +46,9 @@ describe("SettingsIndexPage merged navigation", () => {
 		expect(
 			screen.getByRole("link", { name: /Team Permissions/ }),
 		).toHaveAttribute("href", "/settings/team-permissions");
+		expect(
+			screen.getByRole("link", { name: /Agent Runs/ }),
+		).toHaveAttribute("href", "/settings/agent-runs");
 		expect(
 			screen.getByRole("link", { name: /My Teams/ }),
 		).toBeInTheDocument();

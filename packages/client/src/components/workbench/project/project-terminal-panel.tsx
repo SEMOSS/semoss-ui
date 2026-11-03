@@ -1,83 +1,30 @@
-import { SquareTerminalIcon } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
-import { InsightProvider, useInsight } from "@semoss/sdk/react";
-import { TerminalConsole, TerminalProvider } from "@semoss/terminal";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
-import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import { useProject } from "@/hooks";
-import { ProjectNewTerminalControl } from "./project-new-terminal-control";
+import type { TerminalConfig } from "../terminal/terminal-panel";
+import {
+	TERMINAL_PANEL,
+	TerminalPanelContent,
+} from "../terminal/terminal-panel";
 
-/** The configuration used to retain the default Terminal N name. */
-export interface ProjectTerminalConfig {
-	terminalNumber?: number;
-}
-
-/**
- * Publishes this terminal panel's insight for the active terminal to adopt in
- * the Insight file explorer.
- */
-const ProjectTerminalInsightReporter = ({
-	onInsightChange,
-}: {
-	onInsightChange: (insightId: string | null) => void;
-}) => {
-	const { insightId } = useInsight();
-
-	useEffect(() => {
-		if (insightId) {
-			onInsightChange(insightId);
-		}
-	}, [insightId, onInsightChange]);
-	useEffect(() => () => onInsightChange(null), [onInsightChange]);
-
-	return null;
-};
-
-/** One Pixel REPL session, owned by a single workbench terminal panel. */
+/** A terminal whose insight opens in the workbench's project. */
 const ProjectTerminalPanelContent: WorkbenchComponent = ({ id }) => {
-	const { setValue } = useWorkbenchPanel<
-		ProjectTerminalConfig,
-		string | null
-	>(id);
-
 	const { project } = useProject();
-	const setValueRef = useRef(setValue);
-	setValueRef.current = setValue;
-	const onInsightChange = useCallback(
-		(insightId: string | null) => setValueRef.current(insightId),
-		[],
-	);
 
-	useWorkbenchControl(id, ProjectNewTerminalControl);
-
-	return (
-		<InsightProvider options={{ app: project.project_id }}>
-			<TerminalProvider location="panel">
-				<ProjectTerminalInsightReporter
-					onInsightChange={onInsightChange}
-				/>
-				<TerminalConsole projectId={project.project_id} />
-			</TerminalProvider>
-		</InsightProvider>
-	);
+	return <TerminalPanelContent id={id} projectId={project.project_id} />;
 };
 
 /**
- * Blueprint for each project terminal. keepAlive is required because every
- * workbench tab is an independent live REPL session.
+ * Blueprint for each project terminal: the shared terminal, run in the
+ * project. Project workbenches register it under `PROJECT_TERMINAL`, which is
+ * also the type the Insight file explorer follows.
  */
 export const PROJECT_TERMINAL_PANEL: WorkbenchPanelConfig<
-	ProjectTerminalConfig,
+	TerminalConfig,
 	string | null
 > = {
-	name: "Terminal",
-	helpText: "Terminal",
-	icon: ({ className }) => <SquareTerminalIcon className={className} />,
-	canClose: false,
-	canRename: false,
-	mount: "keepAlive",
+	...TERMINAL_PANEL,
 	content: ProjectTerminalPanelContent,
 };

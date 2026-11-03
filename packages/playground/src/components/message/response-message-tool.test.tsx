@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import type { ToolStore } from "@/stores";
+import type { ToolStore } from "@/stores/tool/tool.store";
 import { ResponseMessageTool } from "./response-message-tool";
 
 const mocks = vi.hoisted(() => ({
@@ -69,22 +69,15 @@ beforeEach(() => {
 	mocks.isSidebarActive = false;
 });
 
-test("uses inline expand and collapse actions for inline tools", () => {
+test("the card expands and collapses an inline tool in place", () => {
 	const closedTool = createTool("chat", false, { display: "inline" });
-	const { container, rerender } = render(
-		<ResponseMessageTool tool={closedTool} />,
-	);
+	const { rerender } = render(<ResponseMessageTool tool={closedTool} />);
 	const openButton = screen.getByRole("button", {
 		name: "Search: Running. actions.openInline",
 	});
-
 	expect(openButton).toHaveAttribute("aria-expanded", "false");
-	expect(
-		container.querySelector(".lucide-chevrons-left-right"),
-	).toBeInTheDocument();
 	fireEvent.click(openButton);
-	expect(closedTool.openTool).toHaveBeenCalledWith(undefined);
-	expect(closedTool.closeTool).not.toHaveBeenCalled();
+	expect(closedTool.openTool).toHaveBeenCalledWith("inline");
 
 	const openTool = createTool("chat", false, {
 		display: "inline",
@@ -94,74 +87,129 @@ test("uses inline expand and collapse actions for inline tools", () => {
 	const collapseButton = screen.getByRole("button", {
 		name: "Search: Running. actions.collapse",
 	});
-
 	expect(collapseButton).toHaveAttribute("aria-expanded", "true");
-	expect(
-		container.querySelector(".lucide-chevrons-right-left"),
-	).toBeInTheDocument();
 	fireEvent.click(collapseButton);
 	expect(openTool.closeTool).toHaveBeenCalledOnce();
 	expect(openTool.openTool).not.toHaveBeenCalled();
 });
 
-test("reveals an inactive sidebar tool and closes the visible sidebar tool", () => {
-	const retainedTool = createTool("chat", false, {
-		display: "sidebar",
-		isOpen: true,
-	});
-	const { container, rerender } = render(
-		<ResponseMessageTool tool={retainedTool} />,
+test("the arrow collapses and expands a pending decision without moving it", () => {
+	const tool = createTool("agent", true);
+	render(<ResponseMessageTool tool={tool} isLarge />);
+	expect(screen.getByLabelText("Approval parameters")).toBeInTheDocument();
+
+	fireEvent.click(
+		screen.getByRole("button", {
+			name: "Search: activity.needsInput. actions.collapse",
+		}),
 	);
-	const revealButton = screen.getByRole("button", {
-		name: "Search: Running. actions.openInSidebar",
-	});
+	expect(screen.queryByLabelText("Approval parameters")).toBeNull();
 
-	expect(revealButton).toHaveAttribute("aria-expanded", "false");
-	expect(
-		container.querySelector(".lucide-panel-right-close"),
-	).toBeInTheDocument();
-	fireEvent.click(revealButton);
-	expect(retainedTool.openTool).toHaveBeenCalledWith(undefined);
-	expect(retainedTool.closeTool).not.toHaveBeenCalled();
-
-	mocks.isSidebarActive = true;
-	const activeTool = createTool("chat", false, {
-		display: "sidebar",
-		isOpen: true,
-	});
-	rerender(<ResponseMessageTool tool={activeTool} />);
-	const closeButton = screen.getByRole("button", {
-		name: "Search: Running. actions.closeInSidebar",
-	});
-
-	expect(closeButton).toHaveAttribute("aria-expanded", "true");
-	expect(
-		container.querySelector(".lucide-panel-right-open"),
-	).toBeInTheDocument();
-	fireEvent.click(closeButton);
-	expect(activeTool.closeTool).toHaveBeenCalledOnce();
-	expect(activeTool.openTool).not.toHaveBeenCalled();
+	fireEvent.click(
+		screen.getByRole("button", {
+			name: "Search: activity.needsInput. actions.openInline",
+		}),
+	);
+	expect(screen.getByLabelText("Approval parameters")).toBeInTheDocument();
+	expect(tool.openTool).not.toHaveBeenCalled();
+	expect(tool.closeTool).not.toHaveBeenCalled();
 });
 
-test("opens sidebar-default tools inline on mobile", () => {
-	mocks.isMobile = true;
-	mocks.isSidebarActive = true;
+test("the sidebar button shows when the tool is in the sidebar", () => {
 	const tool = createTool("chat", false, {
 		display: "sidebar",
 		isOpen: true,
 	});
-	const { container } = render(<ResponseMessageTool tool={tool} />);
-	const openButton = screen.getByRole("button", {
-		name: "Search: Running. actions.openInline",
-	});
-
-	expect(openButton).toHaveAttribute("aria-expanded", "false");
+	const { rerender } = render(<ResponseMessageTool tool={tool} />);
 	expect(
-		container.querySelector(".lucide-chevrons-left-right"),
+		screen.getByRole("button", { name: "actions.openInline" }),
+	).toHaveAttribute("aria-pressed", "true");
+
+	rerender(<ResponseMessageTool tool={createTool("chat")} />);
+	expect(
+		screen.getByRole("button", { name: "actions.openInSidebar" }),
+	).toHaveAttribute("aria-pressed", "false");
+});
+
+test.each([
+	["inline", "actions.openInSidebar", "sidebar"],
+	["sidebar", "actions.openInline", "inline"],
+] as const)(
+	"the sidebar button takes an open %s tool to the other location",
+	(display, label, target) => {
+		const tool = createTool("chat", false, { display, isOpen: true });
+		render(<ResponseMessageTool tool={tool} />);
+		fireEvent.click(screen.getByRole("button", { name: label }));
+		expect(tool.openTool).toHaveBeenCalledWith(target);
+		expect(tool.closeTool).not.toHaveBeenCalled();
+	},
+);
+
+test("mobile opens tools inline and only offers moving out of the drawer", () => {
+	mocks.isMobile = true;
+	mocks.isSidebarActive = true;
+	const sidebarTool = createTool("chat", false, {
+		display: "sidebar",
+		isOpen: true,
+	});
+	const { rerender } = render(<ResponseMessageTool tool={sidebarTool} />);
+	fireEvent.click(
+		screen.getByRole("button", {
+			name: "Search: Running. actions.openInline",
+		}),
+	);
+	expect(sidebarTool.openTool).toHaveBeenCalledWith("inline");
+	expect(
+		screen.getByRole("button", { name: "actions.openInline" }),
 	).toBeInTheDocument();
-	fireEvent.click(openButton);
-	expect(tool.openTool).toHaveBeenCalledWith("inline");
-	expect(tool.closeTool).not.toHaveBeenCalled();
+
+	rerender(
+		<ResponseMessageTool
+			tool={createTool("chat", false, {
+				display: "inline",
+				isOpen: true,
+			})}
+		/>,
+	);
+	expect(
+		screen.queryByRole("button", { name: "actions.openInSidebar" }),
+	).toBeNull();
+});
+
+test("a pending decision shows inline once and steps aside for the sidebar", () => {
+	const inlineTool = createTool("agent", true, {
+		display: "inline",
+		isOpen: true,
+	});
+	const { rerender } = render(
+		<ResponseMessageTool tool={inlineTool} isLarge />,
+	);
+	expect(screen.getAllByLabelText("Approval parameters")).toHaveLength(1);
+
+	rerender(
+		<ResponseMessageTool
+			tool={createTool("agent", true, {
+				display: "sidebar",
+				isOpen: true,
+			})}
+			isLarge
+		/>,
+	);
+	expect(screen.queryByLabelText("Approval parameters")).toBeNull();
+});
+
+test("the actions menu only appears when a decision can be cancelled", () => {
+	const { rerender } = render(
+		<ResponseMessageTool tool={createTool("chat")} />,
+	);
+	expect(
+		screen.queryByRole("button", { name: "activity.actions" }),
+	).toBeNull();
+
+	rerender(<ResponseMessageTool tool={createTool("agent", true)} isLarge />);
+	expect(
+		screen.getByRole("button", { name: "activity.actions" }),
+	).toBeInTheDocument();
 });
 
 test("keeps cancellation on its owning lifecycle and retains a failed tool for retry", async () => {

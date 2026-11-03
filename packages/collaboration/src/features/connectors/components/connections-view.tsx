@@ -1,5 +1,4 @@
-import { Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -9,20 +8,19 @@ import {
 	Card,
 	H2,
 	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Small,
 } from "@semoss/ui/next";
 import { WorkRefreshStatus } from "@/features/collaboration/live/work-refresh-status";
-import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
+import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
 	type Connection,
 	forgetBackgroundAccess,
 	getConnection,
-	getNotificationAvailability,
-	listNotificationSubscriptions,
-	type NotificationAvailability,
-	type NotificationSubscription,
-	notificationLabel,
-	removeNotificationSubscription,
 	saveBackgroundAccess,
 } from "../api/connection";
 import { connectMicrosoft } from "../api/microsoft";
@@ -61,14 +59,26 @@ function folderDetail(folders: NonNullable<Connection["folders"]>): string {
 // pilot sources the Brain actually reads today
 const SHOWN_SOURCES = new Set(["email", "calendar", "teams"]);
 
+// how often the server checks mail while the app is closed; the server accepts only these minutes
+const SYNC_CHOICES = [
+	{ minutes: 15, label: "Every 15 minutes" },
+	{ minutes: 30, label: "Every 30 minutes" },
+	{ minutes: 60, label: "Every hour" },
+	{ minutes: 240, label: "Every 4 hours" },
+	{ minutes: 0, label: "Off" },
+] as const;
+
 /** One row: what it is, its state, and the one action that changes it. */
 function Row({
 	title,
+	titleId,
 	detail,
 	state,
 	action,
 }: {
 	title: string;
+	/** Id for the title, so a control in the row can be named by it. */
+	titleId?: string;
 	detail?: string;
 	state?: React.ReactNode;
 	action?: React.ReactNode;
@@ -76,7 +86,9 @@ function Row({
 	return (
 		<div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
 			<div className="min-w-0 flex-1">
-				<Small className="font-medium text-sm">{title}</Small>
+				<Small id={titleId} className="font-medium text-sm">
+					{title}
+				</Small>
 				{detail && (
 					<P className="text-muted-foreground text-sm leading-5">
 						{detail}
@@ -92,31 +104,16 @@ function Row({
 /** Microsoft 365 sign-in, background access and automatic updates, in that order. */
 export function ConnectionsView() {
 	const { actions } = useInsight();
-	const updates = useWorkUpdates();
+	const { state, dispatch } = useCollaborationSession();
+	const syncTitleId = useId();
 	const [connection, setConnection] = useState<Connection | null>(null);
-	const [availability, setAvailability] =
-		useState<NotificationAvailability | null>(null);
-	const [subscriptions, setSubscriptions] = useState<
-		NotificationSubscription[]
-	>([]);
 	const [busy, setBusy] = useState<string | null>(null);
 	const [error, setError] = useState("");
 
 	const load = useCallback(async () => {
 		setError("");
 		try {
-			const next = await getConnection(actions);
-			setConnection(next);
-			if (!next.microsoft.signedIn) {
-				setAvailability(null);
-				setSubscriptions([]);
-				return;
-			}
-			const state = await getNotificationAvailability();
-			setAvailability(state);
-			setSubscriptions(
-				await listNotificationSubscriptions().catch(() => []),
-			);
+			setConnection(await getConnection(actions));
 		} catch (cause: unknown) {
 			setError(message(cause, "Could not read your connection."));
 		}
@@ -147,6 +144,9 @@ export function ConnectionsView() {
 	const needsSignIn =
 		!microsoft?.signedIn ||
 		sources.some((source) => source.status === "needs_permission");
+	const hasBackgroundAccess =
+		background?.saved === true && background.renewable;
+	const syncEveryMinutes = state.settings.syncEveryMinutes;
 
 	return (
 		<div className="flex min-w-0 flex-col gap-6">
@@ -288,7 +288,7 @@ export function ConnectionsView() {
 										onClick={() => {
 											if (
 												window.confirm(
-													"Turn off background access? Scheduled routines stop until you turn it on again.",
+													"Turn off background access? Scheduled routines and checks while the app is closed stop until you turn it on again.",
 												)
 											)
 												void run("forget", () =>
@@ -319,90 +319,48 @@ export function ConnectionsView() {
 							)
 						}
 					/>
-					<div className="py-3">
-						<Row
-							title="Microsoft notifications"
-							detail={
-								!microsoft?.signedIn
-									? "Connect Microsoft to set these up."
-									: availability?.available
-										? "Microsoft tells the app when new mail arrives. Set up and renewed automatically."
-										: "Not available here, so the app checks while it is open instead."
-							}
-							action={
-								availability?.available && updates ? (
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										disabled={
-											busy !== null || updates.isSyncing
-										}
-										onClick={() => {
-											updates.syncMail();
-											// the sync creates missing subscriptions; read them after it starts
-											window.setTimeout(
-												() => void load(),
-												5000,
-											);
-										}}
-									>
-										{subscriptions.length
-											? "Check now"
-											: "Set up now"}
-									</Button>
-								) : undefined
-							}
-						/>
-						{availability &&
-							!availability.available &&
-							availability.reasons.length > 0 && (
-								<ul className="list-disc space-y-1 pl-5 text-muted-foreground text-sm">
-									{availability.reasons.map((reason) => (
-										<li key={reason}>{reason}</li>
-									))}
-								</ul>
-							)}
-						{subscriptions.length > 0 && (
-							<ul className="mt-1 divide-y rounded-lg border">
-								{subscriptions.map((subscription) => (
-									<li
-										key={subscription.subscriptionId}
-										className="flex items-center gap-3 px-3 py-2 text-sm"
-									>
-										<span className="min-w-0 flex-1">
-											{notificationLabel(
-												subscription.resource,
-											)}
-										</span>
-										<span className="text-muted-foreground">
-											{subscription.expirationDateTime
-												? `Renews before ${when(subscription.expirationDateTime)}`
-												: ""}
-										</span>
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon-sm"
-											aria-label={`Stop ${notificationLabel(subscription.resource)} notifications`}
-											disabled={busy !== null}
-											onClick={() =>
-												void run(
-													subscription.subscriptionId,
-													() =>
-														removeNotificationSubscription(
-															subscription.subscriptionId,
-														),
-												)
-											}
+					<Row
+						title="Check while the app is closed"
+						titleId={syncTitleId}
+						detail={
+							!hasBackgroundAccess
+								? "Turn on background access to check while the app is closed."
+								: syncEveryMinutes === 0
+									? "Off. New mail is filed when you next open the app."
+									: "New mail and Teams chats are filed while you are away."
+						}
+						action={
+							<Select
+								value={String(syncEveryMinutes)}
+								disabled={!hasBackgroundAccess}
+								onValueChange={(value) =>
+									dispatch({
+										type: "settings.save",
+										changes: {
+											syncEveryMinutes: Number(value),
+										},
+									})
+								}
+							>
+								<SelectTrigger
+									aria-labelledby={syncTitleId}
+									className="w-44"
+								>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{SYNC_CHOICES.map((choice) => (
+										<SelectItem
+											key={choice.minutes}
+											value={String(choice.minutes)}
 										>
-											<Trash2 aria-hidden="true" />
-										</Button>
-									</li>
-								))}
-							</ul>
-						)}
-					</div>
+											{choice.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						}
+					/>
 				</div>
 			</Card>
 		</div>

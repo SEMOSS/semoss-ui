@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import { FILE_PANEL_TYPES } from "../constants/file-panel.constants";
 import { FILE_EXPLORER_PANEL } from "./explorers";
@@ -10,12 +11,32 @@ import {
 	FileMarkdownView,
 	FileNotebookView,
 	FilePdfView,
-	FilePptxView,
 } from "./views";
+
+const FileDocxView = lazy(() =>
+	import("./views/file-docx-view").then(({ FileDocxView }) => ({
+		default: FileDocxView,
+	})),
+);
+const FilePptxView = lazy(() =>
+	import("./views/file-pptx-view").then(({ FilePptxView }) => ({
+		default: FilePptxView,
+	})),
+);
+const FileVisioView = lazy(() =>
+	import("./views/file-visio-view").then(({ FileVisioView }) => ({
+		default: FileVisioView,
+	})),
+);
+const FileXlsxView = lazy(() =>
+	import("./views/file-xlsx-view").then(({ FileXlsxView }) => ({
+		default: FileXlsxView,
+	})),
+);
 
 /**
  * Every file-backed panel, keyed by type. Spread into a domain workbench's
- * `COMPONENTS` map — each one registered the identical nine entries by hand,
+ * `COMPONENTS` map — each host used to register the same entries by hand,
  * so a new file panel type had nine places to be forgotten.
  *
  * It also defines what "a file panel" *is* at runtime: `useWorkbenchFilePanels`
@@ -30,6 +51,10 @@ export const FILE_PANEL_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[FILE_PANEL_TYPES.FILE_CODE_EDITOR]: createFileViewPanel({
 		name: "Editor",
 		view: FileCodeView,
+	}),
+	[FILE_PANEL_TYPES.FILE_DOCX_VIEWER]: createFileViewPanel({
+		name: "Word",
+		view: FileDocxView,
 	}),
 	[FILE_PANEL_TYPES.FILE_DOWNLOAD]: createFileViewPanel({
 		name: "Download",
@@ -54,6 +79,14 @@ export const FILE_PANEL_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[FILE_PANEL_TYPES.FILE_PPTX_VIEWER]: createFileViewPanel({
 		name: "PowerPoint",
 		view: FilePptxView,
+	}),
+	[FILE_PANEL_TYPES.FILE_VISIO_VIEWER]: createFileViewPanel({
+		name: "Visio",
+		view: FileVisioView,
+	}),
+	[FILE_PANEL_TYPES.FILE_XLSX_VIEWER]: createFileViewPanel({
+		name: "Excel",
+		view: FileXlsxView,
 	}),
 	[FILE_PANEL_TYPES.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
 };

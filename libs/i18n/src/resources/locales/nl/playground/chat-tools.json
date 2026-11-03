@@ -1,7 +1,4 @@
 {
-	"menu": {
-		"showTools": "Chattools tonen"
-	},
 	"panel": {
 		"title": "Chattools",
 		"description": "Wat de assistent in je volgende bericht kan gebruiken.",

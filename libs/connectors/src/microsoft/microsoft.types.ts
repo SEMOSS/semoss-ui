@@ -16,8 +16,8 @@ export interface MicrosoftDriveItem {
 	/** Opens the item in its own app. */
 	webUrl?: string;
 	/**
-	 * Where the item sits in its drive, relative to the drive's top, such as
-	 * `Reports/q3.xlsx`.
+	 * The folder holding the item, relative to the drive's top, such as
+	 * `Reports/2026`. Absent for an item at the top.
 	 */
 	path?: string;
 	lastModifiedDateTime?: string;

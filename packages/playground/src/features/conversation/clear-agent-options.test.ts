@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import type { RoomStore } from "@/stores/room/room.store";
 import { clearAgentOptions } from "./clear-agent-options";
 
-test("switching to Chat strips agent defaults while retaining local Knowledge and Tools", () => {
+test("removing a saved agent strips its defaults while retaining local Knowledge and Tools", () => {
 	const options: RoomStore["options"] = {
 		instructions: "Agent instructions",
 		predefinedPrompts: [

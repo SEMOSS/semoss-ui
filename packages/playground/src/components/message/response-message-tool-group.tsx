@@ -44,7 +44,16 @@ export const ResponseMessageToolGroup = observer(
 				tool.status === "LOADING" ||
 				tool.status === "INITIAL",
 		);
-		const hasError = visibleTools.some((tool) => tool.status === "ERROR");
+		const failedCount = activity.filter(
+			(tool) => tool.status === "ERROR",
+		).length;
+		const completedCount = activity.filter(
+			(tool) => tool.status === "SUCCESS",
+		).length;
+		// a failed step is routine in an agent run; only call the group failed
+		// when nothing in it worked
+		const hasError = failedCount > 0 && completedCount === 0;
+		const hasPartialError = failedCount > 0 && completedCount > 0;
 		const hasCancelled = visibleTools.some(
 			(tool) => tool.status === "CANCELLED",
 		);
@@ -67,6 +76,20 @@ export const ResponseMessageToolGroup = observer(
 					tool={firstTool}
 					isLarge={needsDecision(firstTool)}
 				/>
+			);
+		}
+		// every call is waiting on the user, so there is no activity to summarize
+		if (!activity.length) {
+			return (
+				<div className="flex min-w-0 flex-col gap-2">
+					{pending.map((tool) => (
+						<ResponseMessageTool
+							key={tool.id}
+							tool={tool}
+							isLarge
+						/>
+					))}
+				</div>
 			);
 		}
 		return (
@@ -112,7 +135,16 @@ export const ResponseMessageToolGroup = observer(
 										})}
 							</span>
 							<Muted className="whitespace-normal text-xs">
-								{t(`status.${status}`)}
+								{hasPartialError && status === "completed"
+									? [
+											t("group.summaryCompleted", {
+												count: completedCount,
+											}),
+											t("group.summaryError", {
+												count: failedCount,
+											}),
+										].join(", ")
+									: t(`status.${status}`)}
 							</Muted>
 							<ChevronDownIcon
 								aria-hidden="true"

@@ -400,6 +400,11 @@ export function collaborationReducer(
 				state.topics.push(newTopic(state, command.topic, now));
 			break;
 		}
+		case "topic.server":
+			// the page's own copy wins, so open editors keep what the owner typed
+			if (!state.topics.some((topic) => topic.id === command.topic.id))
+				state.topics.push(command.topic);
+			break;
 		case "topic.goal.server": {
 			const topic = state.topics.find(
 				(entry) => entry.id === command.topicId,
@@ -434,6 +439,10 @@ export function collaborationReducer(
 			const membership = topic.people.find(
 				(candidate) => candidate.personId === person.id,
 			);
+			// only a member is a VIP in the topic, as on the server
+			const vip =
+				command.state === "member" &&
+				(command.vip ?? membership?.vip ?? false);
 			if (membership) {
 				const origin =
 					membership.state === "suggested" &&
@@ -444,6 +453,7 @@ export function collaborationReducer(
 					state: command.state,
 					origin,
 					role: command.role ?? membership.role,
+					vip,
 				});
 			} else
 				topic.people.push({
@@ -452,6 +462,7 @@ export function collaborationReducer(
 					engagement: null,
 					state: command.state,
 					origin: "you",
+					vip,
 				});
 			break;
 		}
@@ -784,7 +795,8 @@ export function collaborationReducer(
 			break;
 		}
 		case "rule.add": {
-			if (!command.rule.value.trim()) break;
+			// a person rule, such as a topic ignore, needs no value
+			if (!command.rule.value.trim() && !command.rule.personId) break;
 			state.rules.push({
 				...command.rule,
 				value: command.rule.value.trim(),

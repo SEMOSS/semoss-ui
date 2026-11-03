@@ -121,6 +121,8 @@ function mapSettings(row: Row): Settings {
 		},
 		draftFolderId: str(row.draftFolderId),
 		draftFolderName: str(row.draftFolderName),
+		// older servers send none and sync every 15 minutes
+		syncEveryMinutes: Number(row.syncEveryMinutes ?? 15),
 		version: Number(row.version ?? 0),
 	};
 }
@@ -233,6 +235,7 @@ export function mapTopic(row: Row): Topic {
 			origin:
 				(person.origin as Topic["people"][number]["origin"]) ?? "brain",
 			reason: opt(person.reason),
+			vip: person.vip === true,
 		})),
 		calendarSeries: list<string>(row.calendarSeries),
 		folders: list<Row>(row.folders).map((folder) => ({
@@ -578,6 +581,7 @@ function recipientNames(value: unknown): string[] | undefined {
 
 const threadPageSchema = z.object({
 	threadId: z.string().optional(),
+	source: z.string().optional(),
 	messages: z.array(z.record(z.string(), z.unknown())),
 	hasMore: z.boolean().optional(),
 	nextCursor: z.string().min(1).optional(),
@@ -586,6 +590,8 @@ const threadPageSchema = z.object({
 });
 
 export interface ThreadMessagePage {
+	/** Where Brain got the thread: "email", "teams", or "calendar". */
+	source?: string;
 	messages: WorkspaceMessage[];
 	hasMore: boolean;
 	nextCursor?: string;
@@ -635,6 +641,7 @@ export async function readThreadMessagesPage(
 		attachments: mapAttachments(message.attachments, str(message.id)),
 	}));
 	return {
+		source: out.source,
 		messages,
 		hasMore: out.hasMore ?? false,
 		nextCursor: out.nextCursor,
@@ -775,6 +782,20 @@ export function readTopicGoals(
 				}),
 			),
 		}),
+	);
+}
+
+/** Read one topic in full after an assistant creates or changes it, by id or by a name that picks one. */
+export async function readTopic(
+	actions: InsightActions,
+	topic: { topicId?: string; topic?: string },
+): Promise<Topic> {
+	return mapTopic(
+		await callPixel(
+			actions,
+			pixel("BrainListTopics", topic),
+			z.object({ id: z.string().min(1) }).passthrough(),
+		),
 	);
 }
 

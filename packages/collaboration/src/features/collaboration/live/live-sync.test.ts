@@ -23,7 +23,9 @@ function fakeActions() {
 							? { noteId: "server-note" }
 							: /^BrainSaveMemory\(/.test(statement)
 								? { id: "server-memory" }
-								: true,
+								: /^BrainSaveRule\(/.test(statement)
+									? { id: "server-rule" }
+									: true,
 			})),
 		};
 	});
@@ -56,6 +58,16 @@ it("a merge sends one BrainMergeTopics operation", async () => {
 	expect(onError).not.toHaveBeenCalled();
 });
 
+it("a background sync choice saves only that setting", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync(step({ type: "settings.save", changes: { syncEveryMinutes: 60 } }));
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainSaveSettings(settings=[{"syncEveryMinutes":60}]);',
+	]);
+});
+
 it("a rename saves the changed topic name", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());
@@ -68,6 +80,47 @@ it("a rename saves the changed topic name", async () => {
 	expect(sent).toEqual([
 		'BrainSaveTopic(topic=[{"id":"t-geng","name":"Renamed"}]);',
 	]);
+});
+
+it("a topic VIP saves on the person's membership", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync(
+		step({
+			type: "topic.person",
+			topicId: "t-geng",
+			personId: "p-ava",
+			state: "member",
+			vip: true,
+		}),
+	);
+	await sync.settled();
+	expect(sent).toHaveLength(1);
+	expect(sent[0]).toMatch(
+		/^BrainSetTopicPerson\(topicId=\["t-geng"\], personId=\["p-ava"\], state=\["member"\], .*vip=\[true\]\);$/,
+	);
+});
+
+it("ignoring someone in a topic saves that topic's exclude_topic rule", async () => {
+	const { actions, sent } = fakeActions();
+	const onError = vi.fn();
+	const sync = createLiveSync(actions, onError);
+	sync(
+		step({
+			type: "rule.add",
+			rule: {
+				kind: "exclude_topic",
+				value: "",
+				topicId: "t-geng",
+				personId: "p-ava",
+			},
+		}),
+	);
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainSaveRule(rule=[{"kind":"exclude_topic","value":"","topicId":"t-geng","personId":"p-ava"}]);',
+	]);
+	expect(onError).not.toHaveBeenCalled();
 });
 
 it("a delete sends one BrainDeleteTopic operation", async () => {
@@ -571,4 +624,41 @@ it("does not save hydrated records, even when a user edit settles in the same ch
 	expect(sent[0]).toContain('"id":"saved-topic"');
 	expect(sent[0]).toContain('"name":"User rename"');
 	expect(sent[0]).not.toContain("Saved on server");
+});
+
+it("does not save a topic the assistant made again, even beside an owner edit", async () => {
+	const { actions, sent } = fakeActions();
+	const onError = vi.fn();
+	const sync = createLiveSync(actions, onError);
+	const previous = createInitialCollaborationState();
+	const [, other] = previous.topics;
+	const made: CollaborationCommand = {
+		type: "topic.server",
+		topic: {
+			...previous.topics[0],
+			id: "server-topic",
+			name: "Uber Trip Receipts",
+			isSample: false,
+		},
+	};
+	const edit: CollaborationCommand = {
+		type: "topic.save",
+		topic: { id: other.id, description: "Edited by the owner" },
+	};
+	sync({
+		previous,
+		next: collaborationReducer(previous, made, NOW),
+		commands: [made],
+	});
+	const next = [made, edit].reduce(
+		(state, command) => collaborationReducer(state, command, NOW),
+		previous,
+	);
+	sync({ previous, next, commands: [made, edit] });
+	await sync.settled();
+	expect(next.topics.some((topic) => topic.id === "server-topic")).toBe(true);
+	expect(sent).toEqual([
+		`BrainSaveTopic(topic=[{"id":"${other.id}","description":"Edited by the owner"}]);`,
+	]);
+	expect(onError).not.toHaveBeenCalled();
 });

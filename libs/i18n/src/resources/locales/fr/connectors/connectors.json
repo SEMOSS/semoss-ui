@@ -5,8 +5,8 @@
 		"outlookMail": "Courrier Outlook",
 		"outlookCalendar": "Calendrier Outlook",
 		"teams": "Teams",
-		"teamsChannels": "Canaux Teams",
-		"teamsFiles": "Fichiers Teams",
+		"teamsChannels": "Publications des canaux Teams",
+		"teamsFiles": "Fichiers des canaux Teams",
 		"teamsChats": "Conversations Teams",
 		"googleDrive": "Google Drive",
 		"gmail": "Gmail",
@@ -190,7 +190,16 @@
 		"openUnreadChat": "Ouvrir la conversation {{title}}, messages non lus",
 		"backToChats": "Retour aux conversations",
 		"latestMessages_one": "Affichage du message le plus récent.",
-		"latestMessages_other": "Affichage des {{count}} messages les plus récents."
+		"latestMessages_other": "Affichage des {{count}} messages les plus récents.",
+		"searchTeams": "Rechercher des équipes",
+		"searchChannels": "Rechercher des canaux",
+		"allTeams": "Toutes les équipes",
+		"current": "Sélection actuelle",
+		"showingResults": "{{shown}} sur {{total}} affichés",
+		"changeLocation": "Changer d’équipe ou de canal : {{team}}, {{channel}}",
+		"postsLabel": "Publications",
+		"filesLabel": "Fichiers",
+		"chatsLabel": "Vos conversations"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

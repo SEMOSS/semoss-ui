@@ -124,6 +124,8 @@ export class RoomSession {
 	private readonly isNewRoom: boolean;
 	private configurationRevision = 0;
 	private uncertainCommand: string | null = null;
+	/** Messages that already matched uncertainCommand when it was sent. */
+	private uncertainMatches = 0;
 	private uncertainDraft: RoomSubmissionSnapshot | null = null;
 	private optionQueue: Promise<void> = Promise.resolve();
 	private sourceQueue: Promise<void> = Promise.resolve();
@@ -647,36 +649,17 @@ export class RoomSession {
 			modelId,
 		});
 	};
-	/** Supply source identities and the current editor without repeating source bodies. */
-	private command(
-		text: string,
-		extra: Partial<SubmittedThreadContext>,
-	): string {
-		const source = this.snapshot.source;
-		const threadId = source?.threadId ?? this.snapshot.roomId;
-		const revision = source?.file.fileLocation ?? "";
-		return threadCommand(
-			{
-				...extra,
-				threadId,
-				contextRevision: revision,
-				context: {
-					threadId,
-					revision,
-					// Distinguish identical user text when reconciling a lost response.
-					requestId: crypto.randomUUID(),
-					...(source
-						? {
-								subject: source.title,
-								channel: source.channel,
-								sourceFile: source.file.fileLocation,
-								messages: source.messages,
-							}
-						: {}),
-				},
-			},
-			text,
-		);
+	/** User messages saved with this command first; the backend appends its runtime note after it. */
+	private countSent(command: string): number {
+		return this.snapshot.turn.messages.filter(
+			(message) =>
+				message.role === "user" &&
+				message.parts.some(
+					(part) =>
+						part.type === "text" &&
+						(part.command ?? part.text).startsWith(command),
+				),
+		).length;
 	}
 	/** Capture an attempt before room allocation or uploads can accept later edits. */
 	captureSubmission = (
@@ -706,7 +689,9 @@ export class RoomSession {
 			);
 		const userText =
 			submission.text.trim() || "Please review the attached files.";
-		const command = this.command(userText, context);
+		const command = threadCommand(context, userText);
+		// an identical earlier message must not confirm this one after a lost response
+		const matchesBefore = this.countSent(command);
 		const existingMedia = [...(submission.existingMedia ?? [])];
 		for (const file of submittedDraft.contextFiles) {
 			if (
@@ -742,6 +727,7 @@ export class RoomSession {
 			if (accepted) this.clearSubmittedDraft(submittedDraft);
 		} catch (cause) {
 			this.uncertainCommand = requested ? command : null;
+			this.uncertainMatches = matchesBefore;
 			this.uncertainDraft = requested ? submittedDraft : null;
 			this.update({
 				hasUnconfirmedSubmission: requested,
@@ -786,17 +772,9 @@ export class RoomSession {
 			if (this.snapshot.turn.transportError)
 				throw this.snapshot.turn.transportError;
 			if (this.uncertainCommand) {
-				const found = this.snapshot.turn.messages.some(
-					(message) =>
-						message.role === "user" &&
-						message.parts.some(
-							(part) =>
-								part.type === "text" &&
-								(part.command ?? part.text).startsWith(
-									this.uncertainCommand ?? "",
-								),
-						),
-				);
+				const found =
+					this.countSent(this.uncertainCommand) >
+					this.uncertainMatches;
 				if (found) this.clearSubmittedDraft(this.uncertainDraft);
 				this.update({
 					hasUnconfirmedSubmission: false,

@@ -29,6 +29,8 @@ interface ResponseMessageTextProps {
 	 * message queue can advance. Fires whenever the internal chunk queue's last
 	 * chunk catches up — the parent's guard decides whether to actually advance
 	 * (it holds while this is the last part and the message is still streaming).
+	 * It fires again when this callback changes, which the parent does when a
+	 * part lands below this one, so a caught up part releases the queue.
 	 */
 	onComplete: () => void;
 

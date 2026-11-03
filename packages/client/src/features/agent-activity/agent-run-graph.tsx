@@ -921,12 +921,20 @@ const LEGEND_ITEMS: { label: string; className: string }[] = [
 
 // COMPONENT
 
-interface AgentRunGraphProps {
+export interface AgentRunGraphProps {
+	/** The room the runs are in */
 	roomId: string;
+	/** The room's name, when it has one */
 	roomName?: string;
+	/** The room's runs, each with its transcript and subagent tree */
 	runs: RoomRunDetail[];
 	/** Model engine id -> display info resolved via GetEngineMetadata. */
 	engineInfo?: Record<string, EngineInfo>;
+	/**
+	 * Shows the runs without the Analyze tab, which runs a judge model on a run
+	 * and so only works for the run's owner
+	 */
+	isReadOnly?: boolean;
 }
 
 /** Subset of the MyEngines output the judge model select reads. */
@@ -947,6 +955,7 @@ export const AgentRunGraph = ({
 	roomName,
 	runs,
 	engineInfo = {},
+	isReadOnly = false,
 }: AgentRunGraphProps) => {
 	const { resolvedTheme } = useTheme();
 	const isDarkTheme = resolvedTheme === "dark";
@@ -985,6 +994,10 @@ export const AgentRunGraph = ({
 	}, [selection, runs]);
 
 	useEffect(() => {
+		// read only shows no Analyze tab, so there is no judge to pick
+		if (isReadOnly) {
+			return;
+		}
 		let cancelled = false;
 		runPixel<[ModelEngineOutput[]]>(
 			`MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
@@ -1016,7 +1029,7 @@ export const AgentRunGraph = ({
 		return () => {
 			cancelled = true;
 		};
-	}, []);
+	}, [isReadOnly]);
 
 	useEffect(() => {
 		if (!isFullscreen) {
@@ -1194,9 +1207,11 @@ export const AgentRunGraph = ({
 								<TabsTrigger value="inspect">
 									Inspect
 								</TabsTrigger>
-								<TabsTrigger value="analyze">
-									Analyze
-								</TabsTrigger>
+								{!isReadOnly && (
+									<TabsTrigger value="analyze">
+										Analyze
+									</TabsTrigger>
+								)}
 							</TabsList>
 						</div>
 						<TabsContent
@@ -1237,26 +1252,28 @@ export const AgentRunGraph = ({
 								/>
 							)}
 						</TabsContent>
-						<TabsContent
-							value="analyze"
-							className="min-h-0 flex-1 overflow-y-auto p-4"
-						>
-							{analyzeTarget ? (
-								<AnalyzeRunPanel
-									key={analyzeTarget.runId}
-									run={analyzeTarget}
-									engineInfo={engineInfo}
-									judgeModels={judgeModels}
-									state={assessments[analyzeTarget.runId]}
-									onAnalyze={startAssessment}
-								/>
-							) : (
-								<p className="text-muted-foreground text-sm">
-									Select an agent run or sub-agent node to
-									analyze it.
-								</p>
-							)}
-						</TabsContent>
+						{!isReadOnly && (
+							<TabsContent
+								value="analyze"
+								className="min-h-0 flex-1 overflow-y-auto p-4"
+							>
+								{analyzeTarget ? (
+									<AnalyzeRunPanel
+										key={analyzeTarget.runId}
+										run={analyzeTarget}
+										engineInfo={engineInfo}
+										judgeModels={judgeModels}
+										state={assessments[analyzeTarget.runId]}
+										onAnalyze={startAssessment}
+									/>
+								) : (
+									<p className="text-muted-foreground text-sm">
+										Select an agent run or sub-agent node to
+										analyze it.
+									</p>
+								)}
+							</TabsContent>
+						)}
 					</Tabs>
 				</div>
 			)}
