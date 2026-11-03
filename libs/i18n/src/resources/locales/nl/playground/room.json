@@ -1,11 +1,13 @@
 {
 	"welcome": "Welkom, {{name}}",
+	"suggestions": {
+		"title": "Voorgestelde vervolgberichten"
+	},
 	"settings": {
 		"title": "Kamerinstellingen",
 		"description": "Werk de kamerinstellingen bij en pas het gedrag van de chat aan",
 		"open": "Instellingen openen",
 		"close": "Sluiten",
-		"edit": "Instellingen bewerken",
 		"compact": "Gesprek comprimeren",
 		"compactSuccess": "Gesprek succesvol gecomprimeerd",
 		"compactSkipped": "Niets te comprimeren — het gesprek is al beknopt",
@@ -167,8 +169,13 @@
 		"preparingWorkspace": "Werkruimte voorbereiden…",
 		"activityLog": "Activiteitenlogboek",
 		"prepareError": "De werkruimte kon niet worden voorbereid. Je concept is bewaard.",
-		"retry": "Opnieuw proberen",
-		"viewActivityLog": "Activiteitenlog bekijken"
+		"retry": "Opnieuw proberen"
+	},
+	"workspacePlaces": {
+		"files": "Bestanden",
+		"tools": "Tools",
+		"activity": "Activiteit",
+		"settings": "Instellingen"
 	},
 	"optimizer": {
 		"optimize": "Prompt optimaliseren",

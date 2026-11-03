@@ -47,6 +47,7 @@ export function shouldAutoOpenTool(tool: ConversationTool): boolean {
 
 export function getToolLoadingMessage(tool: ConversationTool): string {
 	const message = uiMetadata(tool)?.loadingMessage;
+	if (tool.title === "Loading tool…") return tool.title;
 	if (tool.status === "QUEUED")
 		return `Waiting to run ${tool.title || tool.name}…`;
 	if (typeof message === "string" && message.trim()) return message.trim();

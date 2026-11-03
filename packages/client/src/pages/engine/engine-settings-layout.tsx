@@ -1,56 +1,20 @@
-import {
-	AlignLeftIcon,
-	ImageIcon,
-	ShieldCheckIcon,
-	SlidersHorizontalIcon,
-	TagsIcon,
-} from "lucide-react";
-import {
-	CatalogSettingsLayout,
-	type CatalogSettingsSection,
-} from "@/components/catalog";
-
-const SETTINGS_SECTIONS: CatalogSettingsSection[] = [
-	{
-		name: "Image",
-		path: "image",
-		icon: ImageIcon,
-		description: "Catalog image",
-	},
-	{
-		name: "Model Settings",
-		path: "model",
-		icon: SlidersHorizontalIcon,
-		description: "Capability, modalities, and limits",
-	},
-	{
-		name: "Tags",
-		path: "tags",
-		icon: TagsIcon,
-		description: "Tags, classification, and domain",
-	},
-	{
-		name: "Description",
-		path: "description",
-		icon: AlignLeftIcon,
-		description: "Summary and About content",
-	},
-	{
-		name: "Guardrails",
-		path: "guardrails",
-		icon: ShieldCheckIcon,
-		description: "Input and output guardrail pipelines",
-	},
-];
+import { CatalogSettingsLayout } from "@/components/catalog/catalog-settings-layout";
+import { useEngine } from "@/hooks/useEngine";
+import { getEngineSettingsSections } from "./engine-settings-sections";
 
 /**
- * Layout for the engine Settings tab: a small left sidebar that switches
- * between the settings sections, with the active section rendered beside it.
+ * Layout for every engine's Settings tab: a small left sidebar that switches
+ * between the sections the viewer has on the engine, with the active section
+ * rendered beside it.
  */
-export const EngineSettingsLayout = () => (
-	<CatalogSettingsLayout
-		sections={SETTINGS_SECTIONS}
-		ariaLabel="Engine settings sections"
-		testIdPrefix="engine-settings-layout"
-	/>
-);
+export const EngineSettingsLayout = () => {
+	const { catalog, type, permission } = useEngine();
+
+	return (
+		<CatalogSettingsLayout
+			sections={getEngineSettingsSections(type, permission, catalog.name)}
+			ariaLabel="Engine settings sections"
+			testIdPrefix="engine-settings-layout"
+		/>
+	);
+};

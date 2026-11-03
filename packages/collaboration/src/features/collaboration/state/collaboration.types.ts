@@ -39,6 +39,8 @@ interface TopicPerson {
 	state: PersonState;
 	origin: "you" | "brain" | "assistant";
 	reason?: string;
+	/** VIP in this topic only: their mail here ranks higher and files here more readily. Members only. */
+	vip?: boolean;
 }
 
 export interface Topic {
@@ -54,6 +56,8 @@ export interface Topic {
 	goals: TopicGoal[];
 	people: TopicPerson[];
 	calendarSeries: string[];
+	/** Outlook folders the topic stands for; mail in them is filed under it. */
+	folders?: { id: string; path: string; origin?: string | null }[];
 	stats: { threads: number; openItems: number; lastActivity: string };
 	isSample: boolean;
 }
@@ -232,6 +236,11 @@ export interface Settings {
 	sourcesJson: Record<string, boolean>;
 	/** Memory in the thread assistant, and suggestions from finished chats. */
 	memory: { use: boolean; learn: boolean };
+	/** The Outlook folder drafts are left in; blank means the mailbox's own Drafts. */
+	draftFolderId: string;
+	draftFolderName: string;
+	/** Minutes between background syncs while the app is closed; 0 turns them off. */
+	syncEveryMinutes: number;
 	version: number;
 }
 
@@ -406,6 +415,15 @@ export interface CollaborationState {
 /** Commands contain UI intent and updates received from the backend. */
 export type CollaborationCommand =
 	| {
+			type: "records.loaded";
+			items: WorkItem[];
+			topics: Topic[];
+			people: Person[];
+			threads: Thread[];
+			memories: Memory[];
+			workspaces: Record<string, ThreadWorkspace>;
+	  }
+	| {
 			type: "live.refresh";
 			updates: Pick<
 				CollaborationState,
@@ -436,6 +454,11 @@ export type CollaborationCommand =
 	| { type: "session.create"; sessionId: string }
 	| { type: "topic.save"; topic: Partial<Topic> & { name?: string } }
 	| {
+			type: "topic.server";
+			/** A topic made outside this page, such as by the assistant; added only when the page lacks it. */
+			topic: Topic;
+	  }
+	| {
 			type: "topic.goal.server";
 			topicId: string;
 			/** Goal before the read; newer local changes take precedence over its result. */
@@ -450,6 +473,8 @@ export type CollaborationCommand =
 			personId: string;
 			state: PersonState;
 			role?: string;
+			/** Omitted keeps a member's topic VIP; any state but member clears it. */
+			vip?: boolean;
 	  }
 	| {
 			/** A topic goal; topic notes are memories about the topic. */

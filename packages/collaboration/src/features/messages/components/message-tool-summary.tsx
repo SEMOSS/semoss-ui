@@ -3,7 +3,7 @@ import { Button, cn, Muted } from "@semoss/ui/next";
 import { ToolFailureTooltip } from "@/features/tools/components/tool-failure-tooltip";
 import type { OwnedMessagePart } from "../utils/message-presentation";
 
-/** One compact summary keeps failures visible without breaking up the group. */
+/** One quiet summary; a failed step the agent recovered from stays in the steps and tooltip. */
 export function MessageToolSummary({
 	items,
 	isExpanded,

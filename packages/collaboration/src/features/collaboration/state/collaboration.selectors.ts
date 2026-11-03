@@ -30,6 +30,17 @@ export function topicChoiceCandidates(
 				.map((link) => link.topicId);
 }
 
+/** A topic's ignore list: its active exclude_topic rules, one person each. */
+export function selectTopicIgnores(rules: Rule[], topicId: string): Rule[] {
+	return rules.filter(
+		(rule) =>
+			!rule.disabledAt &&
+			rule.kind === "exclude_topic" &&
+			Boolean(rule.personId) &&
+			(rule.topicId ?? rule.value) === topicId,
+	);
+}
+
 /** Work filters never mix sample and connected items implicitly. */
 export function selectWorkItems(
 	state: CollaborationState,

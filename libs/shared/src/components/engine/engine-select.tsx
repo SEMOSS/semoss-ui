@@ -19,7 +19,7 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import type { Engine } from "../../types";
-import { EngineSubtypeIcon } from "../engine-subtype-icon";
+import { EngineOption } from "./engine-option";
 
 // ============================================================================
 // TypeScript Interfaces
@@ -67,6 +67,38 @@ export interface EngineSelectProps {
 	 * scrolling it.
 	 */
 	modal?: boolean;
+
+	/**
+	 * Lists these engines instead of reading the user's engines page by page,
+	 * for a picker that offers only some of them, such as one subtype. The
+	 * search then matches their names and ids, and engineTypes and
+	 * metaFilters do not apply.
+	 */
+	engines?: Engine[];
+
+	/** Offers a choice of no engine, first in the list, with this label. */
+	noneOption?: {
+		/** The choice's label, such as "Use the first route". */
+		label: string;
+		/** Called when the choice is picked. */
+		onSelect: () => void;
+	};
+
+	/**
+	 * The chosen engine when the list does not offer it, such as one that no
+	 * longer fits the field: it shows first in the list, disabled, with the
+	 * note under its name.
+	 */
+	unavailable?: { engine: Engine; note: string };
+
+	/** Focuses the trigger, as a form does for a field with a problem. */
+	ref?: React.Ref<HTMLButtonElement>;
+
+	/** The ids of the elements that describe the field. */
+	"aria-describedby"?: string;
+
+	/** Whether the field has a problem, for assistive technology. */
+	"aria-invalid"?: boolean;
 }
 
 // ============================================================================
@@ -81,7 +113,8 @@ export interface EngineSelectProps {
  * - Real-time search with debouncing
  * - Infinite scroll for large datasets
  * - Filter by engine type and metadata
- * - Displays engine name and description
+ * - Displays engine name and description, or its id with showEngineId
+ * - Or lists a given set of engines (engines), searched by name and id
  */
 export const EngineSelect = ({
 	id,
@@ -97,6 +130,12 @@ export const EngineSelect = ({
 	showEngineIcon = true,
 	triggerIcon,
 	modal = false,
+	engines,
+	noneOption,
+	unavailable,
+	ref,
+	"aria-describedby": ariaDescribedBy,
+	"aria-invalid": ariaInvalid,
 }: EngineSelectProps) => {
 	// ========================================================================
 	// State & Hooks
@@ -121,11 +160,12 @@ export const EngineSelect = ({
 	 * - metaFilters: Additional metadata-based filtering
 	 * - limit/offset: Pagination parameters
 	 *
-	 * Only runs when popover is open to avoid unnecessary queries
+	 * Only runs when popover is open to avoid unnecessary queries, and never
+	 * when the caller gives the engines to list
 	 */
 	const getEngines = useIteratorPixel<Engine[], Engine>(
 		(limit, offset) =>
-			open
+			open && !engines
 				? `META | MyEngines(${
 						debouncedSearch
 							? `filterWord=${JSON.stringify(debouncedSearch)}, `
@@ -183,9 +223,25 @@ export const EngineSelect = ({
 	}, []);
 
 	const { setScroll } = useInfiniteScroll({
-		disabled: getEngines.isLoading || !getEngines.hasMore || !open,
+		disabled:
+			!!engines || getEngines.isLoading || !getEngines.hasMore || !open,
 		onNext: handleNext,
 	});
+
+	// a given list is searched here; the user's engines are searched by the pixel
+	const query = search.trim().toLowerCase();
+	const listedEngines = engines
+		? engines.filter(
+				(engine) =>
+					!query ||
+					[
+						engine.engine_display_name,
+						engine.engine_name,
+						engine.engine_id,
+					].some((text) => text?.toLowerCase().includes(query)),
+			)
+		: getEngines.data;
+	const isLoadingEngines = !engines && getEngines.isLoading;
 
 	const listRef = useCallback(
 		(node: HTMLDivElement | null) => {
@@ -202,11 +258,14 @@ export const EngineSelect = ({
 		<Popover open={open && !disabled} onOpenChange={setOpen} modal={modal}>
 			<PopoverTrigger asChild>
 				<Button
+					ref={ref}
 					id={id}
 					type="button"
 					variant="outline"
 					role="combobox"
 					aria-expanded={open && !disabled}
+					aria-describedby={ariaDescribedBy}
+					aria-invalid={ariaInvalid}
 					disabled={disabled}
 					className={cn(
 						"w-full min-w-0 justify-start overflow-hidden border-input bg-transparent px-3 py-2",
@@ -239,8 +298,7 @@ export const EngineSelect = ({
 					<CommandList ref={listRef}>
 						<CommandEmpty>
 							{/* Show spinner during initial load, otherwise "Not Found" */}
-							{getEngines.isLoading &&
-							getEngines.data.length === 0 ? (
+							{isLoadingEngines && listedEngines.length === 0 ? (
 								<div className="flex items-center justify-center py-4">
 									<Spinner />
 								</div>
@@ -249,7 +307,55 @@ export const EngineSelect = ({
 							)}
 						</CommandEmpty>
 						<CommandGroup>
-							{getEngines.data.map((engine) => {
+							{noneOption && !query && (
+								<CommandItem
+									value="__none__"
+									onSelect={() => {
+										noneOption.onSelect();
+										setOpen(false);
+									}}
+									className={cn(
+										!value &&
+											"bg-primary/10 data-[selected=true]:bg-primary/15",
+									)}
+								>
+									<span className="flex-1 truncate">
+										{noneOption.label}
+									</span>
+									{!value && (
+										<CheckIcon
+											aria-hidden
+											strokeWidth={3}
+											className="ms-2 size-4 shrink-0 text-primary"
+										/>
+									)}
+								</CommandItem>
+							)}
+							{unavailable &&
+								unavailable.engine.engine_id === value &&
+								!query && (
+									<CommandItem value={value} disabled>
+										<EngineOption
+											engineId={value}
+											name={
+												unavailable.engine
+													.engine_display_name ||
+												unavailable.engine.engine_name
+											}
+											engineType={
+												unavailable.engine.engine_type
+											}
+											engineSubtype={
+												unavailable.engine
+													.engine_subtype
+											}
+											description={unavailable.note}
+											showEngineIcon={showEngineIcon}
+											isSelected
+										/>
+									</CommandItem>
+								)}
+							{listedEngines.map((engine) => {
 								// Prefer display name over internal name
 								const displayName =
 									engine.engine_display_name ||
@@ -269,57 +375,27 @@ export const EngineSelect = ({
 												"bg-primary/10 data-[selected=true]:bg-primary/15",
 										)}
 									>
-										{showEngineIcon && (
-											<EngineSubtypeIcon
-												engineType={engine.engine_type}
-												engineSubtype={
-													engine.engine_subtype
-												}
-												alt={`${displayName} icon`}
-												className="me-2 size-6 shrink-0 object-contain"
-											/>
-										)}
-										<div className="flex flex-1 flex-col truncate">
-											<span className="truncate">
-												{displayName}
-											</span>
-											{showEngineId ? (
-												<span
-													title={engineId}
-													className="truncate text-muted-foreground text-xs"
-												>
-													id: {engineId}
-												</span>
-											) : (
-												engine.description && (
-													<span
-														title={
-															engine.description
-														}
-														className="truncate text-muted-foreground text-xs"
-													>
-														{engine.description}
-													</span>
-												)
-											)}
-										</div>
-										{/* Right-aligned check marks the selected engine without shifting the row's left content */}
-										{value === engineId && (
-											<CheckIcon
-												strokeWidth={3}
-												className="ms-2 size-4 shrink-0 text-primary"
-											/>
-										)}
+										<EngineOption
+											engineId={engineId}
+											name={displayName}
+											engineType={engine.engine_type}
+											engineSubtype={
+												engine.engine_subtype
+											}
+											description={engine.description}
+											showEngineId={showEngineId}
+											showEngineIcon={showEngineIcon}
+											isSelected={value === engineId}
+										/>
 									</CommandItem>
 								);
 							})}
 							{/* Loading spinner shown at bottom while fetching next page */}
-							{getEngines.isLoading &&
-								getEngines.data.length > 0 && (
-									<div className="flex items-center justify-center py-2">
-										<Spinner className="size-4" />
-									</div>
-								)}
+							{isLoadingEngines && listedEngines.length > 0 && (
+								<div className="flex items-center justify-center py-2">
+									<Spinner className="size-4" />
+								</div>
+							)}
 						</CommandGroup>
 					</CommandList>
 				</Command>

@@ -10,10 +10,16 @@ interface UsagePayloadProps {
 	label: string;
 	/** Raw retained data; null and undefined mean content was not retained. */
 	value: UsageCell | undefined;
+	/** Shown in place of the content when none was retained. */
+	missingText?: string;
 }
 
 /** Matches activity-log inspection with a JSON tree, copy controls, and a plain-text fallback. */
-export function UsagePayload({ label, value }: UsagePayloadProps) {
+export function UsagePayload({
+	label,
+	value,
+	missingText = "Content Was Not Retained.",
+}: UsagePayloadProps) {
 	const titleId = useId();
 	const [expansion, setExpansion] = useState({
 		isExpanded: false,
@@ -94,7 +100,7 @@ export function UsagePayload({ label, value }: UsagePayloadProps) {
 				className="max-h-96 min-w-0 overflow-auto rounded-md border bg-muted/30 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 			>
 				{!isRetained ? (
-					<Muted>Content Was Not Retained.</Muted>
+					<Muted>{missingText}</Muted>
 				) : parsed.isJson ? (
 					<JsonViewer
 						value={parsed.data}

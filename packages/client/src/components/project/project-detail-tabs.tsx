@@ -2,11 +2,13 @@ import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ProjectAccessControl, ProjectOverview } from "@/components/project";
-import { useProject } from "@/hooks";
+import { ProjectSettingsPanel } from "@/components/project/project-settings-panel";
+import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail";
+import { useProject } from "@/hooks/use-project";
+import { useSession } from "@/hooks/use-session";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
 import { AppGithubPage } from "@/pages/app/app-github-page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
-import { AppSettingsPage } from "@/pages/app/app-settings-page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
 import { AgentActivityPage } from "@/pages/project/agent/agent-activity-page";
 import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-page";
@@ -24,19 +26,23 @@ interface ProjectDetailTabsProps {
 			| "github"
 			| "settings"
 			| "access-control"
+			| "audit"
 			| "smss";
 		restrict?: Role[];
 	}[];
 }
 
 export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
-	const { project, type, permission, refresh } = useProject();
+	const { project, type, permission } = useProject();
+	const isAdmin = useSession((state) => state.user.admin);
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
 
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
 		return tabs.filter((tab) => {
+			if (tab.component === "audit")
+				return permission === "OWNER" || isAdmin;
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -45,7 +51,7 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 			}
 			return tab.restrict.includes(permission);
 		});
-	}, [tabs, permission]);
+	}, [tabs, permission, isAdmin]);
 
 	// the current active tab index based on the current pathname
 	const activeTabIdx = useMemo(() => {
@@ -82,11 +88,7 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 			<div className="w-full flex-1 overflow-auto bg-card p-2">
 				{/** TODO: should not be loading in Page. Load in the component directly */}
 				{activeTab?.component === "project-overview" && (
-					<ProjectOverview
-						project={project}
-						permission={permission}
-						refresh={refresh}
-					/>
+					<ProjectOverview project={project} />
 				)}
 				{activeTab?.component === "project-dependencies" && (
 					<ProjectDependenciesPage />
@@ -101,11 +103,21 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 					<AgentActivityPage />
 				)}
 				{activeTab?.component === "github" && <AppGithubPage />}
-				{activeTab?.component === "settings" && <AppSettingsPage />}
+				{activeTab?.component === "settings" && (
+					<ProjectSettingsPanel />
+				)}
 				{activeTab?.component === "access-control" && (
 					<ProjectAccessControl />
 				)}
 				{activeTab?.component === "smss" && <AppSmssPage />}
+				{activeTab?.component === "audit" &&
+					(permission === "OWNER" || isAdmin) && (
+						<ResourceAuditTrail
+							key={project.project_id}
+							scope="PROJECT"
+							resourceId={project.project_id}
+						/>
+					)}
 			</div>
 		</div>
 	);

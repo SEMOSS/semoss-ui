@@ -119,6 +119,10 @@ function mapSettings(row: Row): Settings {
 			use: (row.memory as Row | undefined)?.use !== false,
 			learn: (row.memory as Row | undefined)?.learn !== false,
 		},
+		draftFolderId: str(row.draftFolderId),
+		draftFolderName: str(row.draftFolderName),
+		// older servers send none and sync every 15 minutes
+		syncEveryMinutes: Number(row.syncEveryMinutes ?? 15),
 		version: Number(row.version ?? 0),
 	};
 }
@@ -206,7 +210,7 @@ function mapSources(settings: Settings): SourceStatus[] {
 	}));
 }
 
-function mapTopic(row: Row): Topic {
+export function mapTopic(row: Row): Topic {
 	const stats = (row.stats ?? {}) as Row;
 	return {
 		id: str(row.id),
@@ -231,8 +235,14 @@ function mapTopic(row: Row): Topic {
 			origin:
 				(person.origin as Topic["people"][number]["origin"]) ?? "brain",
 			reason: opt(person.reason),
+			vip: person.vip === true,
 		})),
 		calendarSeries: list<string>(row.calendarSeries),
+		folders: list<Row>(row.folders).map((folder) => ({
+			id: str(folder.id),
+			path: str(folder.path),
+			origin: opt(folder.origin),
+		})),
 		stats: {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),
@@ -242,7 +252,7 @@ function mapTopic(row: Row): Topic {
 	};
 }
 
-function mapPerson(row: Row): Person {
+export function mapPerson(row: Row): Person {
 	const channels = (row.channels ?? {}) as Row;
 	const name = str(row.name, str(row.email, "Unknown"));
 	return {
@@ -284,7 +294,7 @@ const SOURCE_KINDS: Record<string, NonNullable<Thread["source"]>["kind"]> = {
 	calendar: "calendar",
 };
 
-function mapThread(row: Row): Thread {
+export function mapThread(row: Row): Thread {
 	const channel = (row.channel as Thread["channel"]) ?? "email";
 	// Brain ids are internal ids. Only expose a source target when the server supplies its native id.
 	const nativeId =
@@ -344,7 +354,7 @@ function mapThread(row: Row): Thread {
 	};
 }
 
-function mapItem(row: Row): WorkItem {
+export function mapItem(row: Row): WorkItem {
 	return {
 		id: str(row.id),
 		threadId: str(row.threadId),
@@ -514,7 +524,7 @@ function mapStep(step: Row): WorkspaceStep {
 }
 
 // saved goal and steps; messages load when the thread opens, and a thread's facts are memories
-function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
+export function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 	return Object.fromEntries(
 		page.items.map((row) => [
 			str(row.threadId),
@@ -571,6 +581,7 @@ function recipientNames(value: unknown): string[] | undefined {
 
 const threadPageSchema = z.object({
 	threadId: z.string().optional(),
+	source: z.string().optional(),
 	messages: z.array(z.record(z.string(), z.unknown())),
 	hasMore: z.boolean().optional(),
 	nextCursor: z.string().min(1).optional(),
@@ -579,6 +590,8 @@ const threadPageSchema = z.object({
 });
 
 export interface ThreadMessagePage {
+	/** Where Brain got the thread: "email", "teams", or "calendar". */
+	source?: string;
 	messages: WorkspaceMessage[];
 	hasMore: boolean;
 	nextCursor?: string;
@@ -628,6 +641,7 @@ export async function readThreadMessagesPage(
 		attachments: mapAttachments(message.attachments, str(message.id)),
 	}));
 	return {
+		source: out.source,
 		messages,
 		hasMore: out.hasMore ?? false,
 		nextCursor: out.nextCursor,
@@ -768,6 +782,20 @@ export function readTopicGoals(
 				}),
 			),
 		}),
+	);
+}
+
+/** Read one topic in full after an assistant creates or changes it, by id or by a name that picks one. */
+export async function readTopic(
+	actions: InsightActions,
+	topic: { topicId?: string; topic?: string },
+): Promise<Topic> {
+	return mapTopic(
+		await callPixel(
+			actions,
+			pixel("BrainListTopics", topic),
+			z.object({ id: z.string().min(1) }).passthrough(),
+		),
 	);
 }
 

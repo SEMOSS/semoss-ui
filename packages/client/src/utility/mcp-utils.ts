@@ -4,7 +4,12 @@ import {
 	createPromptPlatformUrl,
 } from "@semoss/shared";
 
-const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL ?? "";
+/**
+ * These links open the client's own pages, so they are relative to the page
+ * they are on and keep whatever path the client is served under, such as a
+ * deployment's context path in front of /SemossWeb.
+ */
+const PLATFORM_URL = ".";
 
 export const mcpToPlatformUrl = createMcpPlatformUrl(PLATFORM_URL);
 export const promptToPlatformUrl = createPromptPlatformUrl(PLATFORM_URL);

@@ -277,6 +277,33 @@ it("reports failed theme storage without changing the selected theme", async () 
 	expect(screen.getByRole("radio", { name: "Light" })).toBeChecked();
 });
 
+it("switches between the calm and standard fonts and keeps the choice", async () => {
+	const user = userEvent.setup();
+	const { unmount } = renderSettings("/settings/appearance");
+	expect(screen.getByRole("radio", { name: "Calm" })).toBeChecked();
+	await user.click(screen.getByRole("radio", { name: "Standard" }));
+	expect(document.documentElement.dataset.typeface).toBe("standard");
+	expect(localStorage.getItem("collaboration.typeface")).toBe("standard");
+	unmount();
+	renderSettings("/settings/appearance");
+	expect(screen.getByRole("radio", { name: "Standard" })).toBeChecked();
+	await user.click(screen.getByRole("radio", { name: "Calm" }));
+	expect(document.documentElement.dataset.typeface).toBe("calm");
+});
+
+it("keeps the current font when it cannot be saved", async () => {
+	const user = userEvent.setup();
+	renderSettings("/settings/appearance");
+	vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+		throw new Error("Storage blocked");
+	});
+	await user.click(screen.getByRole("radio", { name: "Standard" }));
+	expect(screen.getByRole("alert")).toHaveTextContent(
+		"Your font could not be saved",
+	);
+	expect(screen.getByRole("radio", { name: "Calm" })).toBeChecked();
+});
+
 it("requires reset confirmation, prevents duplicate writes, and allows cancellation before submitting", async () => {
 	const user = userEvent.setup();
 	renderSettings("/settings/data");

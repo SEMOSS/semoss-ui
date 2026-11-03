@@ -1,6 +1,14 @@
-import { Sparkles } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router";
-import { Button, cn, H3, P } from "@semoss/ui/next";
+import {
+	Button,
+	Collapsible,
+	CollapsibleContent,
+	cn,
+	H3,
+	P,
+} from "@semoss/ui/next";
 import { ThreadMenu } from "@/features/collaboration/components/thread-menu";
 import type { WorkItem } from "@/features/collaboration/state/collaboration.types";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
@@ -8,17 +16,10 @@ import { topicTone } from "@/features/collaboration/topic-tone";
 import { threadPath } from "@/lib/workspace-paths";
 import { BriefDeadline } from "./brief-deadline";
 
-/** Prioritized work opens the existing thread review and approval flow. */
-export function BriefActionCard({
-	item,
-	featured = false,
-	compact = false,
-}: {
-	item: WorkItem;
-	featured?: boolean;
-	compact?: boolean;
-}) {
+/** One next action and Done, with a preview before opening the conversation. */
+export function BriefActionCard({ item }: { item: WorkItem }) {
 	const { state, dispatch } = useCollaborationSession();
+	const [isOpen, setIsOpen] = useState(false);
 	const thread = state.threads.find(
 		(candidate) => candidate.id === item.threadId,
 	);
@@ -30,108 +31,131 @@ export function BriefActionCard({
 		item.topicIds.includes(candidate.id),
 	);
 	const draft = state.workspaces[thread.id]?.drafts[0];
+	const preview = draft?.body || thread.summary;
+	const context = preview || item.reasons.join(" \u00b7 ");
 	const path = threadPath(thread.id);
 	return (
-		<ThreadMenu thread={thread} item={item}>
+		<ThreadMenu
+			thread={thread}
+			item={item}
+			additionalActions={
+				context
+					? [
+							{
+								id: "details",
+								label: isOpen ? "Hide details" : "Show details",
+								icon: ChevronDown,
+								onSelect: () => setIsOpen((open) => !open),
+							},
+						]
+					: []
+			}
+		>
 			{(menu) => (
-				<article
-					className={cn(
-						"min-w-0 space-y-3 rounded-xl border bg-card p-5",
-						featured && !compact && "shadow-sm",
-						compact &&
-							"rounded-none border-0 border-b p-4 last:border-b-0",
-					)}
-				>
-					{featured && !compact && (
-						<div className="flex flex-wrap items-center justify-between gap-2">
-							<span className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
-								Up next
-							</span>
-							<BriefDeadline
-								item={item}
-								timeZone={state.profile.timezone}
-							/>
-						</div>
-					)}
-					<div className="space-y-1.5">
-						<H3
-							className={cn(
-								"font-medium text-base leading-snug tracking-tight",
-								featured && !compact && "text-lg",
-							)}
-						>
-							<Link
-								to={path}
-								className="break-words hover:underline"
-							>
-								{item.title}
-							</Link>
-						</H3>
-						<P className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-muted-foreground text-sm">
-							{person?.name ?? "You"}
-							{topic && (
-								<>
-									<span aria-hidden="true">·</span>
-									<span
-										className={cn(
-											"ml-0.5 size-2 shrink-0 rounded-xs",
-											topicTone(topic.id),
-										)}
-										aria-hidden="true"
-									/>
-									<span>{topic.short || topic.name}</span>
-								</>
-							)}
-							{!compact && (
-								<>
-									<span aria-hidden="true">·</span>
-									<span>
-										{thread.channel === "email"
-											? "email"
-											: thread.channel === "teams"
-												? "teams"
-												: thread.channel}
-									</span>
-								</>
-							)}
-						</P>
-					</div>
-					{featured &&
-						!compact &&
-						(draft ||
-							thread.summary ||
-							item.reasons.length > 0) && (
-							<div className="rounded-lg border bg-muted/20 p-4">
-								<P className="mb-2 font-mono text-muted-foreground text-xs uppercase tracking-widest">
-									{draft ? "Draft reply" : "Context"}
+				<Collapsible open={isOpen} onOpenChange={setIsOpen} asChild>
+					<article className="min-w-0 border-b last:border-b-0">
+						<div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+							<div className="min-w-0 flex-1 basis-64 space-y-1">
+								<H3 className="font-medium text-sm leading-snug">
+									<Link
+										to={path}
+										className="break-words hover:underline"
+									>
+										{item.title}
+									</Link>
+								</H3>
+								<P className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-muted-foreground text-xs">
+									<span>{person?.name ?? "You"}</span>
+									{topic && (
+										<>
+											<span aria-hidden="true">
+												{"\u00b7"}
+											</span>
+											<span
+												className={cn(
+													"size-2 shrink-0 rounded-xs",
+													topicTone(topic.id),
+												)}
+												aria-hidden="true"
+											/>
+											<span>
+												{topic.short || topic.name}
+											</span>
+										</>
+									)}
+									{/* only real deadlines and urgent items; "high priority" on every row reads as pressure */}
+									{(item.due || item.priority === "P0") && (
+										<>
+											<span aria-hidden="true">
+												{"\u00b7"}
+											</span>
+											<BriefDeadline
+												item={item}
+												timeZone={
+													state.profile.timezone
+												}
+											/>
+										</>
+									)}
 								</P>
-								<P className="line-clamp-4 whitespace-pre-line text-sm leading-relaxed">
-									{draft?.body ||
-										thread.summary ||
-										item.reasons.join(" · ")}
-								</P>
+								{preview && (
+									<P className="line-clamp-1 text-muted-foreground text-xs leading-5">
+										{draft ? "Draft: " : ""}
+										{preview}
+									</P>
+								)}
 							</div>
-						)}
-					<div className="flex flex-wrap items-center gap-x-2 gap-y-3">
-						<Button
-							asChild
-							size="sm"
-							className="bg-foreground font-normal text-background hover:bg-foreground/90"
-						>
-							<Link to={path}>
-								{item.askType === "reply"
-									? "Review reply"
-									: item.askType === "approve"
-										? "Review decision"
-										: "Open thread"}
-							</Link>
-						</Button>
-						{compact ? (
+							<div className="flex shrink-0 items-center gap-1">
+								<Button
+									asChild
+									size="sm"
+									variant="outline"
+									className="font-normal"
+								>
+									<Link to={path}>
+										{item.askType === "reply"
+											? draft
+												? "Review reply"
+												: "Open"
+											: item.askType === "approve"
+												? "Review decision"
+												: "Open"}
+									</Link>
+								</Button>
+								<Button
+									size="sm"
+									variant="ghost"
+									className="font-normal text-muted-foreground"
+									onClick={() =>
+										dispatch({
+											type: "item.update",
+											itemId: item.id,
+											changes: { status: "done" },
+										})
+									}
+								>
+									Done
+								</Button>
+								{menu}
+							</div>
+						</div>
+						<CollapsibleContent className="space-y-3 px-4 pb-4">
+							{context && (
+								// plain text under the title; a box inside the list's box is one container too many
+								<div className="max-w-prose">
+									<P className="mb-1 text-muted-foreground text-xs">
+										{draft ? "Draft reply" : "Context"}
+									</P>
+									<P className="line-clamp-6 whitespace-pre-line text-sm leading-relaxed">
+										{context}
+									</P>
+								</div>
+							)}
 							<Button
 								asChild
 								size="sm"
-								variant="ghost"
-								className="px-1 font-normal text-muted-foreground"
+								variant="outline"
+								className="font-normal"
 							>
 								<Link
 									to={path}
@@ -144,49 +168,12 @@ export function BriefActionCard({
 										},
 									}}
 								>
-									<Sparkles
-										aria-hidden="true"
-										className="size-3"
-									/>
 									Ask about this
 								</Link>
 							</Button>
-						) : (
-							<Button
-								size="sm"
-								variant="ghost"
-								className="font-normal text-muted-foreground"
-								onClick={() =>
-									dispatch({
-										type: "item.update",
-										itemId: item.id,
-										changes: { status: "done" },
-									})
-								}
-							>
-								Mark handled
-							</Button>
-						)}
-						{(!featured || compact) && (
-							<span className="ml-auto">
-								<BriefDeadline
-									item={item}
-									timeZone={state.profile.timezone}
-								/>
-							</span>
-						)}
-						{!compact && (
-							<span
-								className={cn(
-									"shrink-0",
-									featured && "ml-auto",
-								)}
-							>
-								{menu}
-							</span>
-						)}
-					</div>
-				</article>
+						</CollapsibleContent>
+					</article>
+				</Collapsible>
 			)}
 		</ThreadMenu>
 	);

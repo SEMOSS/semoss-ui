@@ -14,11 +14,19 @@ const mocks = vi.hoisted(() => ({
 	logout: vi.fn(),
 }));
 
-vi.mock("@/api", () => ({ ...mocks, registerUser: vi.fn() }));
+vi.mock("@/api", () => ({
+	config: mocks.config,
+	login: mocks.login,
+	loginLDAP: mocks.loginLDAP,
+	isAdminUser: mocks.isAdminUser,
+	registerUser: vi.fn(),
+}));
 vi.mock("@semoss/sdk/react", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@semoss/sdk/react")>();
 	return {
 		...actual,
+		loginOTP: mocks.loginOTP,
+		confirmOTP: mocks.confirmOTP,
 		runPixel: mocks.runPixel,
 		logout: mocks.logout,
 		oauth: mocks.oauth,

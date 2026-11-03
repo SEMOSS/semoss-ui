@@ -56,7 +56,7 @@ const NO_RESULTS: DirectoryResults = { people: [], error: null };
 const toPerson = (result: UserSearchResult): AccessPerson | null =>
 	result.type
 		? {
-				kind: "USER",
+				category: "USER",
 				id: result.id,
 				type: result.type,
 				name: result.name,
@@ -179,7 +179,7 @@ export const AccessPersonSearch = ({
 				className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2"
 			>
 				<AccessIdentity
-					kind="USER"
+					category="USER"
 					type={person.type}
 					name={label}
 					id={person.id}

@@ -21,6 +21,8 @@ import {
 import type { UsageFilters } from "./usage.types";
 import {
 	fillUsageDays,
+	formatCost,
+	messageTokenParts,
 	modelKpis,
 	numeric,
 	percentage,
@@ -143,6 +145,21 @@ describe("enterprise usage reactor requests", () => {
 			'AdminGetEnterpriseUsageDetail(source=["model"], recordId=["input-1"]);',
 		);
 	});
+	it("reads an audit change by its event alone", () => {
+		const detail = detailQuery("audit", {
+			EVENT_ID: "limit-1",
+			EVENT_TYPE: "USAGE_LIMIT_UPDATE",
+			ACTOR_USER_ID: "owner-1",
+		});
+		expect(detail).toMatchObject({ source: "audit", limit: 1 });
+		expect(usagePixel(detail)).toBe(
+			'AdminGetEnterpriseUsageDetail(source=["audit"], recordId=["limit-1"]);',
+		);
+		expect(() => detailQuery("audit", { LOG_ID: "log-1" })).toThrow();
+		expect(usagePixel(logQuery("audit", filters, 1))).toContain(
+			'source=["audit"], view=["logs"]',
+		);
+	});
 });
 
 describe("usage data and KPI semantics", () => {
@@ -158,6 +175,36 @@ describe("usage data and KPI semantics", () => {
 			{ rows: [{ VALUE: {} }] },
 		])
 			expect(() => parseUsageRows(payload)).toThrow();
+	});
+	it("requires each audit view's own fields", () => {
+		const summary = summaryQuery("audit", filters);
+		const counts = {
+			EVENTS: 2,
+			USAGE_LIMIT_CHANGES: 1,
+			ACCESS_CHANGES: 1,
+			SETTING_CHANGES: 0,
+			DENIALS: 1,
+			ACTORS: 1,
+			PEOPLE_DENIED: 1,
+			PEOPLE_AFFECTED: 2,
+		};
+		expect(parseUsageRows({ rows: [counts] }, summary)).toEqual([counts]);
+		const withoutSettingChanges = Object.fromEntries(
+			Object.entries(counts).filter(([key]) => key !== "SETTING_CHANGES"),
+		);
+		expect(() =>
+			parseUsageRows({ rows: [withoutSettingChanges] }, summary),
+		).toThrow();
+		expect(() =>
+			parseUsageRows({ rows: [{ EVENTS: 2, FAILED: 0 }] }, summary),
+		).toThrow();
+		const logs = logQuery("audit", filters);
+		expect(
+			parseUsageRows({ rows: [{ EVENT_ID: "limit-1" }] }, logs),
+		).toEqual([{ EVENT_ID: "limit-1" }]);
+		expect(() =>
+			parseUsageRows({ rows: [{ LOG_ID: "log-1" }] }, logs),
+		).toThrow();
 	});
 	it("preserves missing telemetry and zero-denominator rates", () => {
 		expect(numeric({ TOKENS: null }, "TOKENS")).toBeNull();
@@ -205,6 +252,76 @@ describe("usage data and KPI semantics", () => {
 			LATENCY_MS: null,
 		});
 		expect(rows[1].REQUESTS).toBe(2);
+		// a quiet day cost nothing; a day only unpriced models used stays unknown
+		expect(rows[0].COST_MICROS).toBe(0);
+	});
+});
+
+describe("model cost and token parts", () => {
+	it("shows costs in dollars, keeping the first digits of a cost under a cent", () => {
+		expect(formatCost(null)).toBe("-");
+		expect(formatCost(0)).toBe("$0.00");
+		expect(formatCost(1_234_567_890)).toBe("$1,234.57");
+		expect(formatCost(2_500)).toBe("$0.0025");
+	});
+	it("reports what calls cost and how many requests a cost covers", () => {
+		const kpis = modelKpis(
+			{ REQUESTS: 4, COST_MICROS: 3_000_000, PRICED_REQUESTS: 3 },
+			{ REQUESTS: 4, COST_MICROS: 1_500_000 },
+		);
+		expect(kpis.find((kpi) => kpi.label === "Model Cost")).toMatchObject({
+			value: "$3.00",
+			description: "+100% Vs. Benchmark",
+		});
+		expect(kpis.find((kpi) => kpi.label === "Cost Coverage")?.value).toBe(
+			"75%",
+		);
+		expect(
+			modelKpis({ REQUESTS: 4 }).find((kpi) => kpi.label === "Model Cost")
+				?.value,
+		).toBe("-");
+	});
+	it("splits a prompt into uncached and cached tokens and a response into visible output and thinking", () => {
+		expect(
+			messageTokenParts({
+				MESSAGE_TYPE: "INPUT",
+				TOKENS: 1000,
+				CACHE_READ_TOKENS: 600,
+				CACHE_CREATION_TOKENS: 100,
+			}),
+		).toEqual([
+			{ label: "Uncached Input", tokens: 300 },
+			{ label: "Cache-Read", tokens: 600 },
+			{ label: "Cache-Creation", tokens: 100 },
+		]);
+		expect(
+			messageTokenParts({
+				MESSAGE_TYPE: "RESPONSE",
+				TOKENS: 300,
+				THINKING_TOKENS: 120,
+			}),
+		).toEqual([
+			{ label: "Visible Output", tokens: 180 },
+			{ label: "Thinking", tokens: 120 },
+		]);
+		// parts a provider reports beyond the total are capped by it
+		expect(
+			messageTokenParts({
+				MESSAGE_TYPE: "INPUT",
+				TOKENS: 100,
+				CACHE_READ_TOKENS: 150,
+			}),
+		).toEqual([{ label: "Cache-Read", tokens: 100 }]);
+		expect(
+			messageTokenParts({ MESSAGE_TYPE: "INPUT", TOKENS: 100 }),
+		).toEqual([]);
+		expect(
+			messageTokenParts({
+				MESSAGE_TYPE: "RESPONSE",
+				TOKENS: null,
+				THINKING_TOKENS: 5,
+			}),
+		).toEqual([]);
 	});
 });
 

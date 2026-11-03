@@ -26,7 +26,7 @@ export function BriefDeadline({
 				? "high priority"
 				: "no deadline";
 	return (
-		<span className="inline-flex shrink-0 items-center gap-2 font-mono text-muted-foreground text-xs">
+		<span className="inline-flex shrink-0 items-center gap-2 text-muted-foreground text-xs tabular-nums">
 			<span
 				aria-hidden="true"
 				className={cn(

@@ -136,21 +136,28 @@ export type MessagePartBlock =
 	| { type: "part"; key: string; item: OwnedMessagePart }
 	| { type: "tools"; key: string; items: OwnedMessagePart[] };
 
-/** Only adjacent tool parts share an activity section; prose never moves. */
+/** Adjacent tool parts share an activity section; prose never moves. */
 export function messagePartBlocks(
 	parts: OwnedMessagePart[],
 ): MessagePartBlock[] {
 	const blocks: MessagePartBlock[] = [];
-	for (const item of parts) {
+	parts.forEach((item, index) => {
 		const previous = blocks.at(-1);
-		if (item.part.type !== "tool") {
-			blocks.push({ type: "part", key: item.key, item });
-		} else if (previous?.type === "tools") {
+		if (item.part.type === "tool") {
+			if (previous?.type === "tools") previous.items.push(item);
+			else blocks.push({ type: "tools", key: item.key, items: [item] });
+		} else if (
+			item.part.type === "thinking" &&
+			previous?.type === "tools" &&
+			parts.slice(index + 1).find(({ part }) => part.type !== "thinking")
+				?.part.type === "tool"
+		) {
+			// thinking between tool calls stays with them, so a turn folds into one summary
 			previous.items.push(item);
 		} else {
-			blocks.push({ type: "tools", key: item.key, items: [item] });
+			blocks.push({ type: "part", key: item.key, item });
 		}
-	}
+	});
 	return blocks;
 }
 
@@ -162,15 +169,18 @@ export function completedToolGroups(
 	const groups: OwnedMessagePart[][] = [];
 	let current: OwnedMessagePart[] = [];
 	const flush = (): void => {
-		if (current.length > 1) groups.push(current);
+		if (current.filter(({ part }) => part.type === "tool").length > 1)
+			groups.push(current);
 		current = [];
 	};
 	for (const item of items) {
 		if (
-			item.part.type === "tool" &&
-			(item.part.tool.status === "COMPLETED" ||
-				item.part.tool.status === "FAILED") &&
-			!pinnedIds.has(item.part.tool.id)
+			// thinking between finished tools folds with them
+			item.part.type === "thinking" ||
+			(item.part.type === "tool" &&
+				(item.part.tool.status === "COMPLETED" ||
+					item.part.tool.status === "FAILED") &&
+				!pinnedIds.has(item.part.tool.id))
 		) {
 			current.push(item);
 		} else flush();

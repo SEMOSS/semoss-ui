@@ -63,7 +63,8 @@
 			"cacheWrite": "كتابة التخزين المؤقت",
 			"timestamp": "الطابع الزمني",
 			"status": "الحالة",
-			"guardrailAction": "حاجز الحماية"
+			"guardrailAction": "حاجز الحماية",
+			"billedTo": "جهة الفوترة"
 		},
 		"guardrailActions": {
 			"MASK": "مُقنّع",
@@ -133,7 +134,8 @@
 			"requestId": "معرّف الطلب",
 			"spanId": "معرّف النطاق",
 			"request": "الطلب",
-			"response": "الاستجابة"
+			"response": "الاستجابة",
+			"billedTo": "جهة الفوترة"
 		}
 	},
 	"page": {

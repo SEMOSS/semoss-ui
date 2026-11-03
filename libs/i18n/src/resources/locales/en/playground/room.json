@@ -1,11 +1,13 @@
 {
 	"welcome": "Welcome, {{name}}",
+	"suggestions": {
+		"title": "Suggested follow-ups"
+	},
 	"settings": {
 		"title": "Room Settings",
 		"description": "Update room settings and modify the behavior of the chat",
 		"open": "Open Settings",
 		"close": "Close",
-		"edit": "Edit Settings",
 		"compact": "Compact Conversation",
 		"compactSuccess": "Conversation compacted successfully",
 		"compactSkipped": "Nothing to compact — conversation is already concise",
@@ -167,8 +169,13 @@
 		"preparingWorkspace": "Preparing Workspace…",
 		"activityLog": "Activity Log",
 		"prepareError": "Could not prepare the Workspace. Your draft is preserved.",
-		"retry": "Try again",
-		"viewActivityLog": "View Activity Log"
+		"retry": "Try again"
+	},
+	"workspacePlaces": {
+		"files": "Files",
+		"tools": "Tools",
+		"activity": "Activity",
+		"settings": "Settings"
 	},
 	"optimizer": {
 		"optimize": "Optimize prompt",

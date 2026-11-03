@@ -65,7 +65,7 @@ describe("messageActivityLabel", () => {
 					],
 				}),
 			),
-		).toBe("Using Search documents…");
+		).toBe("Running Search documents…");
 	});
 
 	it("leaves recovery to the actionable notice and removes terminal activity", () => {
@@ -165,5 +165,102 @@ it.each(["completed", "cancelled", "failed", "awaiting_approval"] as const)(
 				liveMessage({ live: { phase, hasObservationIssue: false } }),
 			),
 		).toBeNull();
+	},
+);
+
+it("counts concurrent running and queued calls while ignoring hidden tools", () => {
+	const tool = {
+		id: "search-1",
+		parentMessageId: "response",
+		name: "SearchMail",
+		title: "Search Mail",
+		arguments: {},
+		status: "RUNNING" as const,
+	};
+	const message = liveMessage({
+		parts: [
+			{ type: "tool", tool },
+			{ type: "tool", tool: { ...tool, id: "search-2" } },
+			{
+				type: "tool",
+				tool: {
+					...tool,
+					id: "read-1",
+					name: "ReadThread",
+					status: "QUEUED",
+				},
+			},
+			{
+				type: "tool",
+				tool: {
+					...tool,
+					id: "hidden",
+					metadata: { SMSS_MCP_UI: { displayLocation: "hidden" } },
+				},
+			},
+		],
+	});
+	expect(messageActivityLabel(message)).toBe(
+		"Searching relevant emails… · 2 running · 1 queued",
+	);
+	expect(hasInlineActivity(message)).toBe(false);
+});
+
+it("prefers model progress over stale running tool events", () => {
+	const message = liveMessage({
+		live: {
+			phase: "streaming",
+			hasObservationIssue: false,
+			activity: "model",
+		},
+		parts: [
+			{
+				type: "tool",
+				tool: {
+					id: "stale",
+					parentMessageId: "response",
+					name: "SearchMail",
+					title: "Search Mail",
+					arguments: {},
+					status: "RUNNING",
+				},
+			},
+		],
+	});
+	expect(messageActivityLabel(message)).toBe("Preparing a response…");
+	expect(hasInlineActivity(message)).toBe(false);
+	expect(
+		messageActivityLabel({
+			...message,
+			parts: [
+				...message.parts,
+				{ type: "text", text: "Answer", state: "active" },
+			],
+		}),
+	).toBe("Writing response…");
+});
+
+it.each(["QUEUED", "RUNNING"] as const)(
+	"preserves dev's loading-tool label for a %s call",
+	(status) => {
+		expect(
+			messageActivityLabel(
+				liveMessage({
+					parts: [
+						{
+							type: "tool",
+							tool: {
+								id: "loading",
+								parentMessageId: "response",
+								name: "LoadTools",
+								title: "Loading tool…",
+								arguments: {},
+								status,
+							},
+						},
+					],
+				}),
+			),
+		).toBe("Loading tool…");
 	},
 );

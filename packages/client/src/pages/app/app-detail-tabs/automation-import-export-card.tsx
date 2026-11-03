@@ -12,7 +12,7 @@ import type { Project } from "@semoss/shared";
 import {
 	Button,
 	Card,
-	CardContent,
+	CardAction,
 	CardDescription,
 	CardHeader,
 	CardTitle,
@@ -22,7 +22,6 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	H3,
 	P,
 	Select,
 	SelectContent,
@@ -298,62 +297,68 @@ export const AutomationImportExportCard = ({
 
 	return (
 		<>
-			<Card className="gap-1 p-4">
-				<CardHeader className="px-0">
-					<CardTitle>
-						<H3>Automation Workflow</H3>
-					</CardTitle>
+			<Card>
+				<CardHeader>
+					<CardTitle>Automation Workflow</CardTitle>
 					<CardDescription>
 						Importing replaces the current workflow. Exporting here
 						only downloads the automation definition, not the full
 						project.
 					</CardDescription>
+					<CardAction className="flex flex-col gap-2 self-center sm:flex-row">
+						<input
+							ref={fileInputRef}
+							type="file"
+							accept=".json,application/json"
+							className="sr-only"
+							tabIndex={-1}
+							aria-hidden="true"
+							onChange={(event) => {
+								const file = event.target.files?.[0];
+								event.target.value = "";
+								if (file) void selectImportFile(file);
+							}}
+						/>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={isImporting || isExporting}
+							onClick={() => fileInputRef.current?.click()}
+						>
+							{isImporting ? (
+								<Spinner className="size-4" />
+							) : (
+								<UploadIcon aria-hidden />
+							)}
+							Import Workflow
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={isImporting || isExporting}
+							onClick={() => void exportAutomation("native")}
+						>
+							{isExporting ? (
+								<Spinner className="size-4" />
+							) : (
+								<DownloadIcon aria-hidden />
+							)}
+							Export SEMOSS
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={isImporting || isExporting}
+							onClick={() => void exportAutomation("n8n")}
+						>
+							<DownloadIcon aria-hidden />
+							Export n8n
+						</Button>
+					</CardAction>
 				</CardHeader>
-				<CardContent className="flex flex-wrap gap-2 px-0">
-					<input
-						ref={fileInputRef}
-						type="file"
-						accept=".json,application/json"
-						className="sr-only"
-						onChange={(event) => {
-							const file = event.target.files?.[0];
-							event.target.value = "";
-							if (file) void selectImportFile(file);
-						}}
-					/>
-					<Button
-						variant="outline"
-						disabled={isImporting || isExporting}
-						onClick={() => fileInputRef.current?.click()}
-					>
-						{isImporting ? (
-							<Spinner className="size-4" />
-						) : (
-							<UploadIcon className="size-4" />
-						)}
-						Import workflow
-					</Button>
-					<Button
-						variant="outline"
-						disabled={isImporting || isExporting}
-						onClick={() => void exportAutomation("native")}
-					>
-						{isExporting ? (
-							<Spinner className="size-4" />
-						) : (
-							<DownloadIcon className="size-4" />
-						)}
-						Export SEMOSS
-					</Button>
-					<Button
-						variant="outline"
-						disabled={isImporting || isExporting}
-						onClick={() => void exportAutomation("n8n")}
-					>
-						<DownloadIcon className="size-4" />
-						Export n8n
-					</Button>
-				</CardContent>
 			</Card>
 			<Dialog
 				open={pendingImport !== null}

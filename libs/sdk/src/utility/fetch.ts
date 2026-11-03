@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { UnauthorizedError } from "./error";
+import { HttpError, UnauthorizedError } from "./error";
 
 export const CSRF = {
 	isEnabled: false,
@@ -232,21 +232,14 @@ export const post = async <O>(
 ) => {
 	const isFormData = body instanceof FormData;
 
-	// create a new headers object or use the option
-	let headers: HeadersInit = {};
-	if (options.headers) {
-		headers = options.headers;
-	}
-
-	// add headers if not a form
+	// Normalize names without mutating the caller's headers.
+	const headers = new Headers(options.headers);
 	if (!isFormData) {
-		(headers as Record<string, string>)["Content-Type"] =
-			"application/x-www-form-urlencoded";
+		headers.set("Content-Type", "application/x-www-form-urlencoded");
 	}
 
 	options = {
 		method: "POST",
-		headers: headers,
 		body: isFormData
 			? body
 			: Object.keys(body)
@@ -262,6 +255,7 @@ export const post = async <O>(
 					})
 					.join("&"),
 		...options,
+		headers: Object.fromEntries(headers),
 	};
 
 	// intercept
@@ -280,18 +274,22 @@ export const post = async <O>(
 	}
 
 	if (!response.ok) {
-		let errorData: Record<string, string> = {};
+		let errorData: unknown = null;
 		try {
 			errorData = await response.json();
 		} catch {
-			errorData = {};
+			errorData = null;
 		}
+		const details =
+			typeof errorData === "object" && errorData !== null
+				? (errorData as Record<string, unknown>)
+				: {};
 		const errorMessage =
-			errorData.message ||
-			errorData.error ||
-			errorData.errorMessage ||
+			details.message ||
+			details.error ||
+			details.errorMessage ||
 			`Request failed with status ${response.status}`;
-		throw new Error(errorMessage);
+		throw new HttpError(String(errorMessage), response.status, errorData);
 	}
 
 	// get the data

@@ -19,25 +19,6 @@ const processThemeMap = (
 };
 
 /**
- * Get the active admin theme
- */
-export const getActiveAdminTheme = async () => {
-	const response = await get<{
-		ID: string;
-		IS_ACTIVE: boolean;
-		THEME_MAP: string;
-		THEME_NAME: string;
-	}>(`${Env.MODULE}/api/themes/getActiveAdminTheme`);
-
-	return {
-		ID: response.data.ID,
-		IS_ACTIVE: response.data.IS_ACTIVE,
-		THEME_NAME: response.data.THEME_NAME,
-		THEME_MAP: processThemeMap(response.data.THEME_MAP),
-	};
-};
-
-/**
  * Get all admin themes with pagination
  */
 export const getAdminThemes = async (offset: number, limit: number) => {
@@ -116,18 +97,6 @@ export const setActiveAdminTheme = async (id: string) => {
 		{
 			id: id,
 		},
-	);
-
-	return response.data;
-};
-
-/**
- * Set all admin themes to inactive
- */
-export const setAllAdminThemesInactive = async () => {
-	const response = await post(
-		`${Env.MODULE}/api/themes/setAllAdminThemesInactive`,
-		{},
 	);
 
 	return response.data;

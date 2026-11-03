@@ -172,9 +172,16 @@ export function logQuery(
 	return { ...request(source, "logs", filters, size), offset: page * size };
 }
 
-/** Only the selected record ID is sent; the server resolves its message pair. */
+/** The column that identifies a record of each source. */
+const RECORD_ID_COLUMNS: Record<UsageSource, string> = {
+	model: "MESSAGE_ID",
+	activity: "LOG_ID",
+	audit: "EVENT_ID",
+};
+
+/** Only the selected record ID is sent; the server resolves its message pair or the event's change. */
 export function detailQuery(source: UsageSource, row: UsageRow): UsageQuery {
-	const recordId = source === "model" ? row.MESSAGE_ID : row.LOG_ID;
+	const recordId = row[RECORD_ID_COLUMNS[source]];
 	if (typeof recordId !== "string" || !recordId)
 		throw new Error("Missing Record Identifier.");
 	return {

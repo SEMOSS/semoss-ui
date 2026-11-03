@@ -282,6 +282,115 @@ describe("AddGroupAccessDialog", () => {
 		expect(getGroupManagers).not.toHaveBeenCalled();
 	});
 
+	it("keeps Authorize enabled for an incomplete team limit, and shows why only when it is pressed", async () => {
+		vi.mocked(addGroupResourceAccess).mockResolvedValue({
+			response: {} as Response,
+			data: { success: true },
+		});
+		const onClose = vi.fn();
+		render(
+			<AddGroupAccessDialog
+				open
+				resource="ENGINE"
+				resourceId="model-1"
+				onClose={onClose}
+				model={{
+					isPublic: false,
+					isCostAvailable: true,
+					canChangeLimit: true,
+				}}
+			/>,
+		);
+
+		fireEvent.click(await findTeam("Engineering"));
+		// the editor's words are its translation keys here
+		fireEvent.click(
+			screen.getByRole("radio", { name: "usageLimit.modes.rules" }),
+		);
+
+		const amount = screen.getByRole("textbox", {
+			name: "usageLimit.rule.amount",
+		});
+		expect(amount).toHaveAttribute("aria-invalid", "false");
+		expect(
+			screen.queryByText("Enter an amount above 0"),
+		).not.toBeInTheDocument();
+		expect(getAuthorize()).toBeEnabled();
+
+		fireEvent.click(getAuthorize());
+
+		expect(addGroupResourceAccess).not.toHaveBeenCalled();
+		expect(amount).toHaveAttribute("aria-invalid", "true");
+		expect(amount).toHaveAccessibleDescription("Enter an amount above 0");
+		expect(amount).toHaveFocus();
+		expect(onClose).not.toHaveBeenCalled();
+
+		fireEvent.change(amount, { target: { value: "5000" } });
+
+		expect(amount).toHaveAttribute("aria-invalid", "false");
+		expect(
+			screen.queryByText("Enter an amount above 0"),
+		).not.toBeInTheDocument();
+
+		fireEvent.click(getAuthorize());
+
+		await waitFor(() => expect(onClose).toHaveBeenCalledWith(true));
+		expect(addGroupResourceAccess).toHaveBeenCalledExactlyOnceWith(
+			"ENGINE",
+			"model-1",
+			ENGINEERING,
+			"READ_ONLY",
+			{
+				unlimited: false,
+				rules: [
+					{
+						metric: "TOKENS",
+						amount: 5000,
+						window: "DAY",
+						counts: "SHARED",
+					},
+				],
+			},
+		);
+	});
+
+	it("gives a team no limit from a user who is not one of the model's owners", async () => {
+		vi.mocked(addGroupResourceAccess).mockResolvedValue({
+			response: {} as Response,
+			data: { success: true },
+		});
+		const onClose = vi.fn();
+		render(
+			<AddGroupAccessDialog
+				open
+				resource="ENGINE"
+				resourceId="model-1"
+				onClose={onClose}
+				model={{ isPublic: false, isCostAvailable: true }}
+			/>,
+		);
+
+		fireEvent.click(await findTeam("Engineering"));
+
+		expect(
+			screen.queryByRole("radio", { name: "usageLimit.modes.rules" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByText(/Only owners can set usage limits/),
+		).toBeInTheDocument();
+
+		fireEvent.click(getAuthorize());
+
+		await waitFor(() => expect(onClose).toHaveBeenCalledWith(true));
+		expect(addGroupResourceAccess).toHaveBeenCalledExactlyOnceWith(
+			"ENGINE",
+			"model-1",
+			ENGINEERING,
+			"READ_ONLY",
+			null,
+		);
+	});
+
 	it("shows why access was not given and stays open", async () => {
 		vi.mocked(addGroupResourceAccess).mockRejectedValue(
 			new Error("Only owners can share this project"),

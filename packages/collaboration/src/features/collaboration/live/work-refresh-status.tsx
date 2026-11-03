@@ -26,7 +26,7 @@ const OUTCOMES: { key: SyncOutcome; summary: string; label: string }[] = [
 		summary: "automated",
 		label: "Automated, kept out of Work",
 	},
-	{ key: "quiet", summary: "no action needed", label: "In Brain, no action" },
+	{ key: "quiet", summary: "no action needed", label: "Filed, no action" },
 ];
 
 // outcomes that have a Work item, so the thread opens in Work with its chat; the rest only exist in Brain
@@ -88,11 +88,8 @@ export function WorkRefreshStatus({ className }: { className?: string }) {
 					aria-hidden="true"
 					className={cn("text-primary", checking && "animate-spin")}
 				/>
-				{updates.isSyncing
-					? "Checking..."
-					: error
-						? "Try again"
-						: "Refresh"}
+				{/* the status next to it already says "Checking mail..." */}
+				{error && !updates.isSyncing ? "Try again" : "Refresh"}
 			</Button>
 			<output>
 				{checking

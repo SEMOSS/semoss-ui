@@ -97,7 +97,9 @@ export async function stageThreadAttachment(
 	includeText: boolean,
 ): Promise<StagedSourceAttachment> {
 	if (!insightId)
-		throw new Error("A ready workspace is required to open an attachment.");
+		throw new Error(
+			"Still connecting. Try opening the attachment again in a moment.",
+		);
 	if (!attachment.messageId)
 		throw new Error("This attachment is not on an email in this thread.");
 	const fileName = uniqueAttachmentName(attachment.name);

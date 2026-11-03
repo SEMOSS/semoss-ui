@@ -57,7 +57,7 @@ export function Section({
 						className={cn(
 							"flex items-center gap-2",
 							isCard
-								? "font-mono font-normal text-muted-foreground text-xs uppercase tracking-widest"
+								? "font-display font-semibold text-base"
 								: level === 3
 									? "font-medium text-sm"
 									: "font-medium text-base",

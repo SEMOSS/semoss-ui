@@ -8,7 +8,7 @@ import {
 import { X } from "lucide-react";
 
 export interface DeletableEdgeData extends Record<string, unknown> {
-	onDelete: (edgeId: string) => void;
+	onDelete?: (edgeId: string) => void;
 	readOnly?: boolean;
 	hovered?: boolean;
 	/** This edge's position among its source's other outgoing edges, so fanned-out
@@ -52,20 +52,22 @@ export function DeletableEdge({
 	return (
 		<>
 			<BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
-			<EdgeLabelRenderer>
-				<button
-					type="button"
-					className={`nodrag nopan pointer-events-auto absolute size-5 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-opacity hover:border-destructive/50 hover:text-destructive ${data?.readOnly ? "hidden" : "flex"}`}
-					style={{
-						transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-						opacity: data?.hovered ? 1 : 0,
-					}}
-					onClick={() => data?.onDelete(id)}
-					aria-label="Remove connection"
-				>
-					<X className="size-3" />
-				</button>
-			</EdgeLabelRenderer>
+			{!data?.readOnly && (
+				<EdgeLabelRenderer>
+					<button
+						type="button"
+						className="nodrag nopan pointer-events-auto absolute flex size-5 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-opacity hover:border-destructive/50 hover:text-destructive"
+						style={{
+							transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+							opacity: data?.hovered ? 1 : 0,
+						}}
+						onClick={() => data?.onDelete?.(id)}
+						aria-label="Remove connection"
+					>
+						<X className="size-3" aria-hidden />
+					</button>
+				</EdgeLabelRenderer>
+			)}
 		</>
 	);
 }

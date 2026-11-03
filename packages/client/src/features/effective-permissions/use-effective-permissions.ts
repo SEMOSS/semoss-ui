@@ -31,7 +31,7 @@ export const useEffectivePermissions = (
 	target: PermissionTargetResource,
 	admin = false,
 ): UseEffectivePermissionsResult => {
-	const { kind, id } = target;
+	const { resourceType, id } = target;
 	const [access, setAccess] = useState<EffectivePermissions | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export const useEffectivePermissions = (
 		let isStale = false;
 		setIsLoading(true);
 		setError(null);
-		getEffectivePermissions({ kind, id }, admin)
+		getEffectivePermissions({ resourceType, id }, admin)
 			.then((next) => {
 				if (!isStale) {
 					setAccess(next);
@@ -66,7 +66,7 @@ export const useEffectivePermissions = (
 		return () => {
 			isStale = true;
 		};
-	}, [kind, id, admin, refreshCount]);
+	}, [resourceType, id, admin, refreshCount]);
 
 	const refresh = useCallback(
 		() => setRefreshCount((count) => count + 1),

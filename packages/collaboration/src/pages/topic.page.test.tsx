@@ -1,5 +1,6 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import {
 	createMemoryRouter,
@@ -86,3 +87,8 @@ it("starts fresh topic-local state when changing the canonical topic", async () 
 		"",
 	);
 });
+
+// Route composition is exercised with isolated child views; hydration has its own integration coverage.
+vi.mock("@/features/collaboration/components/saved-record-boundary", () => ({
+	SavedRecordBoundary: ({ children }: { children: ReactNode }) => children,
+}));

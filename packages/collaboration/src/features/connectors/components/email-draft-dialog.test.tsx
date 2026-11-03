@@ -697,7 +697,7 @@ it("blocks saving while recipients load and provides an inline retry after failu
 	expect(saveEmailDraft).not.toHaveBeenCalled();
 });
 
-it.each([{}, { uid: "wrong", replyRecipients: { to: [], cc: [] } }])(
+it.each([{}, { id: "wrong", replyRecipients: { to: [], cc: [] } }])(
 	"blocks unverified recipient data: %s",
 	(data) => {
 		recipientRead.result = { status: "SUCCESS", data };
@@ -771,7 +771,7 @@ it("ignores stale recipient reads after switching to a different source email", 
 	recipientRead.result = {
 		status: "SUCCESS",
 		data: {
-			uid: "first",
+			id: "first",
 			replyRecipients: { to: ["stale@example.com"], cc: [] },
 		},
 	};
@@ -783,7 +783,7 @@ it("ignores stale recipient reads after switching to a different source email", 
 	recipientRead.result = {
 		status: "SUCCESS",
 		data: {
-			uid: "second",
+			id: "second",
 			replyRecipients: { to: ["second@example.com"], cc: [] },
 		},
 	};

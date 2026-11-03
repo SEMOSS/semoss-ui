@@ -1,5 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ContextType } from "react";
+import { RoomEmailContext } from "@/features/room-email/room-email.context";
+import { RoomEmailStore } from "@/features/room-email/room-email-store";
 import type { ConversationMessage, ConversationTool } from "../types/message";
 import { ownedMessageParts } from "../utils/message-presentation";
 import { MessageToolActivity } from "./message-tool-activity";
@@ -96,7 +99,7 @@ it("keeps tool nodes mounted while collapsing successful steps out of the access
 	).toBeNull();
 	expect(container.querySelectorAll("[inert]")).toHaveLength(2);
 	const summary = screen.getByRole("button", {
-		name: "2 tools completed View steps",
+		name: "2 tool calls 2 completed View steps",
 	});
 	expect(summary).toHaveAttribute("aria-expanded", "false");
 	fireEvent.click(summary);
@@ -112,7 +115,9 @@ it("preserves manually expanded groups when new completed tools arrive", () => {
 		<MessageToolActivity items={tools("COMPLETED", "COMPLETED")} />,
 	);
 	fireEvent.click(
-		screen.getByRole("button", { name: "2 tools completed View steps" }),
+		screen.getByRole("button", {
+			name: "2 tool calls 2 completed View steps",
+		}),
 	);
 	rerender(
 		<MessageToolActivity
@@ -120,7 +125,9 @@ it("preserves manually expanded groups when new completed tools arrive", () => {
 		/>,
 	);
 	expect(
-		screen.getByRole("button", { name: "3 tools completed Hide steps" }),
+		screen.getByRole("button", {
+			name: "3 tool calls 3 completed Hide steps",
+		}),
 	).toHaveAttribute("aria-expanded", "true");
 });
 
@@ -135,11 +142,15 @@ it("defers folding a focused tool until focus leaves and preserves the button id
 	rerender(<MessageToolActivity items={tools("COMPLETED", "COMPLETED")} />);
 	expect(button).toHaveFocus();
 	expect(
-		screen.queryByRole("button", { name: "2 tools completed View steps" }),
+		screen.queryByRole("button", {
+			name: "2 tool calls 2 completed View steps",
+		}),
 	).toBeNull();
 	act(() => button.blur());
 	expect(
-		screen.getByRole("button", { name: "2 tools completed View steps" }),
+		screen.getByRole("button", {
+			name: "2 tool calls 2 completed View steps",
+		}),
 	).toBeInTheDocument();
 	expect(button.isConnected).toBe(true);
 });
@@ -156,7 +167,9 @@ it("keeps inspected tools visible while grouping neighboring successes and failu
 	);
 	expect(screen.getByText("Open tool contents")).toBeVisible();
 	expect(
-		screen.getByRole("button", { name: "3 tools · 1 failed View steps" }),
+		screen.getByRole("button", {
+			name: "3 tool calls 2 completed · 1 unsuccessful View steps",
+		}),
 	).toBeInTheDocument();
 	expect(
 		screen.queryByRole("button", {
@@ -165,7 +178,7 @@ it("keeps inspected tools visible while grouping neighboring successes and failu
 	).toBeNull();
 });
 
-it("includes failures in the summary and reveals the specific errors on focus", async () => {
+it("keeps the summary neutral and reveals the specific errors on focus", async () => {
 	const items = tools("COMPLETED", "FAILED", "COMPLETED", "FAILED");
 	if (items[1].part.type !== "tool" || items[3].part.type !== "tool")
 		throw new Error("Expected tools");
@@ -173,7 +186,7 @@ it("includes failures in the summary and reveals the specific errors on focus", 
 	items[3].part.tool.output = "The subagent limit was reached.";
 	render(<MessageToolActivity items={items} />);
 	const summary = screen.getByRole("button", {
-		name: "4 tools · 2 failed View steps",
+		name: "4 tool calls 2 completed · 2 unsuccessful View steps",
 	});
 	expect(summary).toHaveAttribute("aria-expanded", "false");
 	act(() => summary.focus());
@@ -197,7 +210,7 @@ it("keeps the summary and expansion state stable when a finished tool reports a 
 		<MessageToolActivity items={tools("COMPLETED", "COMPLETED")} />,
 	);
 	const summary = screen.getByRole("button", {
-		name: "2 tools completed View steps",
+		name: "2 tool calls 2 completed View steps",
 	});
 	fireEvent.click(summary);
 	const row = screen.getByRole("button", {
@@ -205,7 +218,9 @@ it("keeps the summary and expansion state stable when a finished tool reports a 
 	});
 	rerender(<MessageToolActivity items={tools("COMPLETED", "FAILED")} />);
 	expect(
-		screen.getByRole("button", { name: "2 tools · 1 failed Hide steps" }),
+		screen.getByRole("button", {
+			name: "2 tool calls 1 completed · 1 unsuccessful Hide steps",
+		}),
 	).toBe(summary);
 	expect(summary).toHaveAttribute("aria-expanded", "true");
 	expect(
@@ -226,7 +241,9 @@ it("shows failure details for a single tool and keeps focused failures visible",
 	rerender(<MessageToolActivity items={tools("FAILED", "COMPLETED")} />);
 	expect(row).toHaveFocus();
 	expect(
-		screen.queryByRole("button", { name: "2 tools · 1 failed View steps" }),
+		screen.queryByRole("button", {
+			name: "2 tool calls 1 completed · 1 unsuccessful View steps",
+		}),
 	).toBeNull();
 	const tooltip = await screen.findByRole("tooltip");
 	expect(tooltip).toHaveTextContent("No error details were provided.");
@@ -242,7 +259,7 @@ it("shows a bounded preview on hover while keeping every failed step accessible 
 	}
 	render(<MessageToolActivity items={items} />);
 	const summary = screen.getByRole("button", {
-		name: "4 tools · 4 failed View steps",
+		name: "4 tool calls 0 completed · 4 unsuccessful View steps",
 	});
 	await user.hover(summary);
 	const tooltip = await screen.findByRole("tooltip");
@@ -301,6 +318,58 @@ it("opens the display menu independently and preserves its destination choices",
 		screen.getByRole("menuitem", { name: "Open in workbench" }),
 	);
 	expect(workbench.openWorkbench).toHaveBeenCalledWith("tool-0");
+});
+
+it("keeps a result that can open what it found outside the folded steps, in a room only", () => {
+	const step = (id: string, name: string, output?: unknown) => ({
+		type: "tool" as const,
+		tool: {
+			id,
+			parentMessageId: "source",
+			name,
+			title: name,
+			arguments: {},
+			status: "COMPLETED" as const,
+			...(output ? { output: JSON.stringify(output) } : {}),
+		},
+	});
+	const items = ownedMessageParts({
+		id: "source",
+		role: "assistant",
+		parts: [
+			step("topics", "ListTopics"),
+			step("search", "SearchMail"),
+			step("read", "ReadThread", {
+				threadId: "th-1",
+				source: "email",
+				messages: [{ subject: "GTC DC" }],
+			}),
+		],
+	});
+	const room = {
+		store: new RoomEmailStore(),
+		openItem: vi.fn(),
+	} as unknown as NonNullable<ContextType<typeof RoomEmailContext>>;
+	const view = render(
+		<RoomEmailContext.Provider value={room}>
+			<MessageToolActivity items={items} />
+		</RoomEmailContext.Provider>,
+	);
+	expect(
+		screen.getByRole("button", {
+			name: "2 tool calls 2 completed View steps",
+		}),
+	).toBeVisible();
+	expect(
+		screen.getByRole("button", { name: "Open email: ReadThread · GTC DC" }),
+	).toBeVisible();
+	view.unmount();
+	render(<MessageToolActivity items={items} />);
+	expect(
+		screen.getByRole("button", {
+			name: "3 tool calls 3 completed View steps",
+		}),
+	).toBeVisible();
 });
 
 it("keeps a sidebar tool inline on mobile", async () => {

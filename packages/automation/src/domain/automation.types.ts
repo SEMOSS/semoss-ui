@@ -45,6 +45,8 @@ export interface DatabaseEngineConfig {
 	engineName?: string;
 	operation: "query" | "write";
 	expression: string;
+	/** JSON array of values bound to positional query parameters. */
+	parameters: string;
 	limit: number;
 	commit: boolean;
 }
@@ -98,7 +100,7 @@ export interface ModelEngineConfig {
 	engineId: string;
 	engineName?: string;
 	engineSubtype?: string;
-	operation: "llm" | "embeddings" | "vision" | "ner";
+	operation: "llm" | "embeddings" | "vision";
 	command: string;
 	context: string;
 	paramValues: string;
@@ -106,8 +108,6 @@ export interface ModelEngineConfig {
 	image: string;
 	urls: string;
 	prompt: string;
-	entities: string;
-	maskEntities: string;
 }
 
 export interface FunctionEngineConfig {

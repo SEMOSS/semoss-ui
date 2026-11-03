@@ -102,7 +102,6 @@ test("cancel discards the agent draft and reopening restores committed values", 
 	expect(onClose).toHaveBeenLastCalledWith({
 		mcp: [local],
 		workspace: null,
-		agentModeSelected: true,
 	});
 });
 
@@ -149,7 +148,6 @@ test("waits for the current agent, rejects stale results, and exposes retry on f
 	fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
 	expect(onClose).toHaveBeenCalledWith({
 		workspace: { workspace_id: "beta", name: "Beta" },
-		agentModeSelected: true,
 		mcp: [
 			local,
 			{
@@ -188,7 +186,6 @@ test("Default agent removes inherited resources but retains local selections", (
 	expect(onClose).toHaveBeenCalledWith({
 		mcp: [local],
 		workspace: null,
-		agentModeSelected: true,
 	});
 });
 
@@ -258,6 +255,5 @@ test("choosing Default agent from another overlay tab explicitly commits Agent m
 	expect(onClose).toHaveBeenCalledWith({
 		mcp: [local],
 		workspace: null,
-		agentModeSelected: true,
 	});
 });

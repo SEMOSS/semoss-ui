@@ -248,8 +248,8 @@ export function TopicConversationsStage({
 				</P>
 			) : items.length === 0 ? (
 				<P className="rounded-lg border p-4 text-muted-foreground text-sm">
-					No conversations found for this topic yet. Brain will file
-					new ones as they arrive.
+					No conversations found for this topic yet. The assistant
+					will file new ones as they arrive.
 				</P>
 			) : (
 				<ul id={listId} className="divide-y rounded-lg border">

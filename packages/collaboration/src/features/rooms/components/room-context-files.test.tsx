@@ -25,6 +25,37 @@ vi.mock("@/features/work-thread/thread-agent-select", () => ({
 
 const file = { fileLocation: "email.md", fileName: "Project review email.md" };
 
+it("uses a readable source label while retaining the filename and removable saved path", () => {
+	const onRemove = vi.fn();
+	render(
+		<RoomContextFiles
+			files={[
+				file,
+				{ fileLocation: "notes.md", fileName: "My notes.md" },
+			]}
+			source={{
+				version: 1,
+				threadId: "source",
+				title: "Project review",
+				channel: "email",
+				kind: "brain",
+				file,
+				messages: [],
+			}}
+			onRemove={onRemove}
+		/>,
+	);
+	const label = screen.getByText("Email thread");
+	expect(label).toHaveAttribute("title", file.fileName);
+	expect(screen.getByText("My notes.md")).toBeVisible();
+	fireEvent.click(
+		screen.getByRole("button", {
+			name: `Remove ${file.fileName} from your next message`,
+		}),
+	);
+	expect(onRemove).toHaveBeenCalledExactlyOnceWith(file.fileLocation);
+});
+
 it("omits the attachment group for an empty queue", () => {
 	render(<RoomContextFiles files={[]} onRemove={vi.fn()} />);
 	expect(screen.queryByRole("list")).not.toBeInTheDocument();

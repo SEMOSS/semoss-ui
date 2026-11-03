@@ -1,5 +1,6 @@
 import type { InsightActions } from "@/lib/pixel";
 import { pixel } from "@/lib/pixel";
+import { collaborationReducer } from "../state/collaboration.reducer";
 import type {
 	CollaborationCommand,
 	CollaborationState,
@@ -17,6 +18,7 @@ import { runBatch } from "./live-state";
 // commands with no backend yet, or that carry what the server already holds; their effects stay in this
 // browser session
 const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
+	"records.loaded",
 	"thread.insights",
 	"source.deleted",
 	"session.create",
@@ -27,6 +29,14 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"snooze.expire",
 	"memory.server",
 	"topic.goal.server",
+	"topic.server",
+]);
+
+// what the server already holds when they land, even beside a user edit: a new topic with a server id would
+// otherwise be saved again as an accepted suggestion
+const SERVER_RECORDS = new Set<CollaborationCommand["type"]>([
+	"records.loaded",
+	"topic.server",
 ]);
 
 // a create returns the server id for the local one
@@ -55,6 +65,8 @@ export type LiveSync = ((change: CollaborationChange) => void) & {
 	settled: () => Promise<void>;
 	/** Keep session identities stable when a created row returns in a refresh. */
 	localId: (serverId: string) => string;
+	/** The server id of a row this page created, once `settled`; any other id as is. */
+	serverId: (localId: string) => string;
 };
 
 /** Queue-backed saver: changes go out one at a time and in order. */
@@ -70,7 +82,20 @@ export function createLiveSync(
 			ids.has(local) ? JSON.stringify(ids.get(local)) : match,
 		);
 
-	const sync = (change: CollaborationChange): void => {
+	const sync = (settled: CollaborationChange): void => {
+		// Hydration is already saved; diff a simultaneous user edit against the loaded records.
+		const previous = settled.commands.reduce(
+			(state, command) =>
+				SERVER_RECORDS.has(command.type)
+					? collaborationReducer(
+							state,
+							command,
+							new Date().toISOString(),
+						)
+					: state,
+			settled.previous,
+		);
+		const change = { ...settled, previous };
 		const unsaved = change.commands.filter((command) =>
 			SESSION_ONLY.has(command.type),
 		);
@@ -102,6 +127,7 @@ export function createLiveSync(
 		settled: () => queue,
 		localId: (serverId: string): string =>
 			[...ids].find(([, value]) => value === serverId)?.[0] ?? serverId,
+		serverId: id,
 	});
 }
 
@@ -276,7 +302,12 @@ function planTopicParts(
 	);
 	for (const person of topic.people) {
 		const was = members.get(person.personId);
-		if (was && was.state === person.state && was.role === person.role)
+		if (
+			was &&
+			was.state === person.state &&
+			was.role === person.role &&
+			Boolean(was.vip) === Boolean(person.vip)
+		)
 			continue;
 		plan.statements.push(
 			pixel("BrainSetTopicPerson", {
@@ -284,6 +315,7 @@ function planTopicParts(
 				personId: person.personId,
 				state: person.state,
 				role: person.role || undefined,
+				vip: person.vip,
 			}),
 		);
 	}
@@ -638,6 +670,9 @@ const SETTINGS_FIELDS = [
 	"askAt",
 	"sourcesJson",
 	"memory",
+	"draftFolderId",
+	"draftFolderName",
+	"syncEveryMinutes",
 ] as const;
 
 function planProfile(

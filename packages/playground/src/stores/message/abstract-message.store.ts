@@ -78,9 +78,7 @@ export abstract class AbstractMessageStore {
 	/**
 	 * Ornaments for the message, used for extra properties that are not essential
 	 */
-	ornaments: {
-		modelName?: string;
-	};
+	ornaments: AbstractPixelMessage["ornaments"];
 
 	/**
 	 * Date the message was created
@@ -113,6 +111,7 @@ export abstract class AbstractMessageStore {
 				: undefined);
 		this.ornaments = {
 			modelName: message.ornaments?.modelName,
+			routing: message.ornaments?.routing,
 		};
 
 		makeObservable(this, {
@@ -214,7 +213,10 @@ export abstract class AbstractMessageStore {
 						role: message.ornaments.agentRunRole,
 					}
 				: undefined);
-		this.ornaments = { modelName: message.ornaments?.modelName };
+		this.ornaments = {
+			modelName: message.ornaments?.modelName,
+			routing: message.ornaments?.routing,
+		};
 	}
 
 	/**

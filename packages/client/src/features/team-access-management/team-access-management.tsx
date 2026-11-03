@@ -76,7 +76,7 @@ export const TeamAccessManagement = ({
 	const copy = TEAM_ROLE_COPY[role];
 	const target = useMemo(
 		() => ({
-			kind:
+			resourceType:
 				role === "MANAGERS"
 					? ("TEAM_MANAGERS" as const)
 					: ("TEAM" as const),

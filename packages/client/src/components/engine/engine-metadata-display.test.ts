@@ -3,6 +3,7 @@ import {
 	buildReasoningConfigPayload,
 	formatPrice,
 	formatPricingProviderLabel,
+	getAddablePricingProviders,
 	getDefaultEffortWarning,
 	getEffortOptions,
 	getMandatoryReasoningWarning,
@@ -18,6 +19,7 @@ import {
 	pickNearestEffort,
 	sortEfforts,
 	toModelSettingsValues,
+	toPricingProviderKey,
 	toReasoningConfig,
 } from "./engine-metadata-display";
 
@@ -424,6 +426,45 @@ describe("formatPrice", () => {
 
 	it("groups large rates", () => {
 		expect(formatPrice(1234.5)).toBe("$1,234.50");
+	});
+});
+
+describe("toPricingProviderKey", () => {
+	it("reads the names one provider goes by as one key", () => {
+		expect(toPricingProviderKey("GOOGLE_VERTEX")).toBe("google");
+		expect(toPricingProviderKey("google-vertex")).toBe("google");
+		expect(toPricingProviderKey("vertex")).toBe("google");
+		expect(toPricingProviderKey("AWS_BEDROCK")).toBe("bedrock");
+		expect(toPricingProviderKey("amazon-bedrock")).toBe("bedrock");
+		expect(toPricingProviderKey("AZURE_OPENAI")).toBe("azure");
+		expect(toPricingProviderKey("OPENAI")).toBe("openai");
+		expect(toPricingProviderKey("anthropic")).toBe("anthropic");
+	});
+});
+
+describe("getAddablePricingProviders", () => {
+	it("offers every provider with no price yet, the serving provider first", () => {
+		const providers = getAddablePricingProviders(
+			[{ servingProvider: "anthropic", modelId: "claude-sonnet-4-6" }],
+			"google",
+		).map((provider) => provider.value);
+		expect(providers[0]).toBe("GOOGLE_VERTEX");
+		expect(providers).toContain("AWS_BEDROCK");
+		expect(providers).toContain("AZURE_OPENAI");
+		expect(providers).not.toContain("ANTHROPIC");
+	});
+
+	it("leaves out a provider priced under another of its names", () => {
+		const providers = getAddablePricingProviders(
+			[{ servingProvider: "amazon-bedrock", modelId: "claude" }],
+			null,
+		).map((provider) => provider.value);
+		expect(providers).not.toContain("AWS_BEDROCK");
+	});
+
+	it("offers a serving provider the list does not have", () => {
+		const providers = getAddablePricingProviders([], "groq");
+		expect(providers[0]).toEqual({ value: "groq", label: "Groq" });
 	});
 });
 

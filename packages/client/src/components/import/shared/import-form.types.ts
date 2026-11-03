@@ -1,8 +1,11 @@
+import type { Engine } from "@semoss/shared";
+
 type FieldType =
 	| "text"
 	| "password"
 	| "number"
 	| "select"
+	| "engine"
 	| "radio"
 	| "file-upload"
 	| "zip-upload"
@@ -36,6 +39,16 @@ export interface FormField {
 		options?: Array<{ display: string; value: string }>;
 		extensions?: string[];
 		pixel?: string;
+	};
+	/**
+	 * For an engine field, the engines it offers, read page by page with the
+	 * shared EngineSelect, which shows each one's logo, name and id.
+	 */
+	engineRule?: {
+		/** The engine types offered, such as MODEL. */
+		engineTypes: Engine["engine_type"][];
+		/** Metadata the offered engines must have, such as [{ tag: "embeddings" }]. */
+		metaFilters?: unknown[];
 	};
 	rules?: {
 		required?: { value: boolean; message: string };

@@ -38,7 +38,7 @@ export const AdminBulkAccessManagementPage = ({
 	return (
 		<BulkAccessManagement
 			key={id}
-			target={{ kind, id }}
+			target={{ resourceType: kind, id }}
 			name={name}
 			noun={kind === "PROJECT" ? "app" : "engine"}
 			backTo=".."

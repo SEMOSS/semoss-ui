@@ -43,6 +43,31 @@ export function parseUsageFilterOptions(output: unknown): UsageFilterOptions {
 	return { rows, hasMore: output.hasMore };
 }
 
+/** The fields every row of a response must have, by source and view. */
+function requiredUsageFields(query: UsageQuery): string[] {
+	if (query.source === "audit")
+		return query.view === "summary"
+			? [
+					"EVENTS",
+					"USAGE_LIMIT_CHANGES",
+					"ACCESS_CHANGES",
+					"SETTING_CHANGES",
+					"DENIALS",
+				]
+			: ["EVENT_ID"];
+	if (query.view === "summary")
+		return query.source === "model"
+			? ["REQUESTS", "TOKENS", "MESSAGE_ROWS"]
+			: ["EVENTS", "FAILED", "KNOWN_OUTCOMES"];
+	if (query.view === "trend") return ["DAY"];
+	if (query.view === "latency") return ["P95_MS"];
+	if (query.view === "feedback") return ["RATINGS", "POSITIVE"];
+	if (query.view === "ranking") return ["ENTITY_ID", "TOKENS", "REQUESTS"];
+	return query.source === "model"
+		? ["MESSAGE_ID", "MESSAGE_TYPE"]
+		: ["LOG_ID"];
+}
+
 /** Validates reactor payloads; malformed responses are errors, never empty reports. */
 export function parseUsageRows(
 	output: unknown,
@@ -82,22 +107,7 @@ export function parseUsageRows(
 		return result;
 	});
 	if (query) {
-		const required =
-			query.view === "summary"
-				? query.source === "model"
-					? ["REQUESTS", "TOKENS", "MESSAGE_ROWS"]
-					: ["EVENTS", "FAILED", "KNOWN_OUTCOMES"]
-				: query.view === "trend"
-					? ["DAY"]
-					: query.view === "latency"
-						? ["P95_MS"]
-						: query.view === "feedback"
-							? ["RATINGS", "POSITIVE"]
-							: query.view === "ranking"
-								? ["ENTITY_ID", "TOKENS", "REQUESTS"]
-								: query.source === "model"
-									? ["MESSAGE_ID", "MESSAGE_TYPE"]
-									: ["LOG_ID"];
+		const required = requiredUsageFields(query);
 		if (rows.some((row) => required.some((key) => !(key in row))))
 			throw new Error("The Usage Response Is Missing Required Fields.");
 		if (

@@ -48,6 +48,39 @@ reinitializes the instance. Await `insight.destroy()` when its owning applicatio
 lifecycle ends. Core stores do not require React, but this does not guarantee
 Node/SSR support for all browser-dependent SDK APIs.
 
+## HTTP Requests
+
+`post(path, body, options?)` form-encodes object payloads and sets a single
+`application/x-www-form-urlencoded` content type; callers do not need to set it.
+Request headers may be a record, a `Headers` instance, or a list of name/value
+pairs. POST header names are normalized case-insensitively without mutating the
+caller's headers, and authentication and CSRF headers are still applied.
+
+For a `FormData` body, omit `Content-Type` so Fetch can generate the multipart
+boundary. The SDK does not add a content type for `FormData`.
+
+Failed POST requests throw `HttpError`, an `Error` with the HTTP `status` and
+parsed response `data` (`unknown`; `null` when the response is not valid JSON).
+Error messages still use the backend's message when available, otherwise the
+HTTP status. A JSON `null` error response also uses the status fallback.
+
+## LinOTP Authentication
+
+Use the SDK's `loginOTP(username, pin)` and `confirmOTP(otp)` functions rather
+than implementing the LinOTP requests in an application. Both are exported from
+`@semoss/sdk` and `@semoss/sdk/react`.
+
+`loginOTP` starts the challenge without creating a signed-in session. It returns
+`true` when the challenge is accepted, or `false` only when HTTP 401 reports the
+boolean flag `requirePwdChange: true`. A string-valued flag or a flag on a server
+error does not produce a password-change outcome; those failures reject with
+`HttpError`. Handle `false` by requesting a password change, not by showing the
+OTP entry field.
+
+`confirmOTP` submits the code and returns `true` on success; an invalid code
+rejects with the backend's error message. Refresh the application's session
+configuration after successful confirmation, not after starting the challenge.
+
 ## Common Actions
 
 -   Login or Logout

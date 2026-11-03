@@ -10,6 +10,7 @@ import {
 import { CatalogGrid, CatalogSearchBar } from "@/components/catalog";
 import { EngineGridItem } from "@/components/engine";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
+import { PlatformDefaultCard } from "@/features/platform-default-limit/platform-default-card";
 import { useConfig, useSettings } from "@/hooks";
 import { getEngineLabel, isOwnerPermission } from "@/utility/catalog";
 
@@ -145,6 +146,8 @@ export const EngineSettingsIndexPage = (
 	return (
 		<>
 			<div className="flex w-full flex-col items-start gap-4">
+				{/* the limit of everyone with no other limit, on any model */}
+				{adminMode && type === "MODEL" ? <PlatformDefaultCard /> : null}
 				<CatalogSearchBar
 					search={search}
 					onSearchChange={setSearch}

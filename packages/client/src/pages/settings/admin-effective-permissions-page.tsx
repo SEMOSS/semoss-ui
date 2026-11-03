@@ -6,6 +6,8 @@ import { useSession } from "@/hooks/use-session";
 export interface AdminEffectivePermissionsPageProps {
 	/** An app or an engine */
 	kind: "PROJECT" | "ENGINE";
+	/** The engine's type, such as MODEL, for an engine */
+	engineType?: string;
 }
 
 /**
@@ -15,6 +17,7 @@ export interface AdminEffectivePermissionsPageProps {
  */
 export const AdminEffectivePermissionsPage = ({
 	kind,
+	engineType,
 }: AdminEffectivePermissionsPageProps) => {
 	// the signed in role, not the admin mode preference, decides who sees this page
 	const isAdmin = useSession((state) => state.user.admin);
@@ -31,10 +34,11 @@ export const AdminEffectivePermissionsPage = ({
 	return (
 		<EffectivePermissions
 			key={id}
-			target={{ kind, id }}
+			target={{ resourceType: kind, id }}
 			name={name}
 			backTo=".."
 			admin
+			isModel={engineType === "MODEL"}
 		/>
 	);
 };

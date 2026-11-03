@@ -72,7 +72,7 @@ export function ReviewCard({
 			>
 				{!compact && (
 					<div className="flex flex-wrap items-center gap-2 text-xs">
-						<span className="font-semibold">Brain</span>
+						<span className="font-semibold">Filing</span>
 						<span className="text-muted-foreground">
 							{review.status === "open"
 								? "· needs your review"

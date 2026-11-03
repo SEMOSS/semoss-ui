@@ -14,7 +14,7 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	useInsight: () => ({ actions: { run: mocks.run } }),
 }));
 vi.mock("./use-chat-history", () => ({
-	useChatHistory: () => ({ rooms: [] }),
+	useChatHistory: () => ({ rooms: [], setRoomClosed: vi.fn() }),
 }));
 vi.mock("./use-dashboard-layout", () => ({ useDashboardLayout: () => ({}) }));
 vi.mock("./use-visible-resource", () => ({

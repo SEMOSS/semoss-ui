@@ -25,6 +25,7 @@ import { parseChatMessages, parseChats } from "../microsoft.parsers";
 import { MICROSOFT_PIXELS } from "../microsoft.pixels";
 import type { TeamsChat } from "../microsoft.types";
 import { CHAT_MESSAGE_LIMIT, TeamsChatDetail } from "./teams-chat-detail";
+import { TeamsViewLabel } from "./teams-view-label";
 
 /** How many chats the list reads. */
 const CHAT_LIMIT = 50;
@@ -96,14 +97,15 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 			>
 				{showHeader ? (
 					<ConnectorViewerHeader
-						brand="teams"
+						brand="teams-chats"
 						icon={MessageCircleIcon}
 						title={serviceName}
 					>
 						{refreshButton}
 					</ConnectorViewerHeader>
 				) : (
-					<div className="flex shrink-0 justify-end border-border border-b bg-muted/10 px-3 py-1">
+					<div className="flex shrink-0 items-center justify-between gap-2 border-border border-b bg-muted/10 px-3 py-1">
+						<TeamsViewLabel label={t("teams.chatsLabel")} />
 						{refreshButton}
 					</div>
 				)}

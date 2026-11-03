@@ -25,6 +25,7 @@ import {
 	ToggleGroupItem,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import type { AccessIdentityCategory } from "./access-identity";
 import { ReviewChangeRow } from "./review-change-row";
 
 /** One change, as the review lists it */
@@ -41,8 +42,8 @@ export interface ReviewItem {
 	action: PermissionChange["action"];
 	/** The person's or team's name */
 	name: string;
-	/** A person or a team */
-	kind: "USER" | "TEAM";
+	/** A person, a team, a model's public use or its total */
+	category: AccessIdentityCategory;
 	/** The person's login type, or the team's type */
 	type: string;
 	/** The person's id */
@@ -336,7 +337,7 @@ export const PermissionBatchReviewDialog = ({
 											key={`${item.batchIndex}:${item.changeIndex}`}
 											action={item.action}
 											name={item.name}
-											kind={item.kind}
+											category={item.category}
 											type={item.type}
 											id={item.id}
 											email={item.email}

@@ -121,7 +121,7 @@ export const TeamPeopleMembers = ({
 							className="px-3 py-2"
 						>
 							<AccessIdentity
-								kind="USER"
+								category="USER"
 								type={member.type}
 								name={
 									member.name || member.email || member.userId

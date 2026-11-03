@@ -1,12 +1,22 @@
 import type {
 	AccessLevel,
 	AccessPerson,
+	ModelUsageLimit,
+	PermissionAllowedChanges,
 	PermissionChange,
 	PermissionGrant,
 	PermissionSubject,
 	PermissionsToCopy,
 	ResourcePermissions,
 } from "@semoss/sdk";
+import {
+	describeModelUsageLimit,
+	hasCostRule,
+	isSameModelUsageLimit,
+	type ModelUsageLimitSource,
+	OWNERS_END_LIMITED_ACCESS_REASON,
+	OWNERS_ONLY_LIMIT_REASON,
+} from "@semoss/shared";
 import { formatLocalDateTime } from "@semoss/utility/date";
 import { GROUP_ACCESS_LEVELS } from "@/features/group-access/group-access-levels";
 
@@ -44,8 +54,13 @@ export interface BatchConflict {
 	key: string;
 	/** The person */
 	person: AccessPerson;
-	/** What the batch gives them now, or null when the batch takes their access away */
+	/**
+	 * What the batch gives them now, or null when the batch takes their access
+	 * away or does not have them yet
+	 */
 	kept: PermissionGrant | null;
+	/** Whether the batch does not have them yet, so keeping means not adding them */
+	isNew: boolean;
 	/** What the source gives them */
 	incoming: PermissionGrant;
 	/** Where the incoming access came from */
@@ -61,8 +76,37 @@ export interface CopyOptions {
 	note: string;
 	/** Gives everyone this level, as copying a team's members does, in place of their own access */
 	level?: AccessLevel;
-	/** Whether model usage limits are kept; only an engine has them */
+	/** With `level`, the usage limit everyone gets on a model */
+	usageLimit?: ModelUsageLimit | null;
+	/** Whether model usage limits are kept; only a model has them */
 	keepModelLimits: boolean;
+	/**
+	 * Whether the user can set usage limits: on a model, its owners and admins
+	 * in admin mode. When false, the copy stages levels and end dates only:
+	 * each person keeps the limit they have now, and people new to the model
+	 * get none. True when not given.
+	 */
+	canSetLimits?: boolean;
+	/**
+	 * Whether the target model has known prices. Without them, copied cost rules
+	 * are left out, and the people they belonged to are conflicts to settle.
+	 */
+	costLimitsAvailable?: boolean;
+}
+
+/** A model-wide usage limit a batch can change: the public use limit, or the model total */
+export type ModelLimitCategory = "PUBLIC" | "MODEL";
+
+/** A model's public use limit or its total, with its limit now and after the batch is saved */
+export interface ModelLimitEntry {
+	/** Stable key; see {@link getModelLimitKey} */
+	key: string;
+	/** Which limit */
+	category: ModelLimitCategory;
+	/** The limit now, or null for no limit defined */
+	current: ModelUsageLimit | null;
+	/** The limit after the batch is saved, or null for no limit defined */
+	staged: ModelUsageLimit | null;
 }
 
 /** What copying found */
@@ -81,7 +125,7 @@ export interface CopyResult {
  * @returns the key
  */
 export const getSubjectKey = (subject: PermissionSubject): string =>
-	subject.kind === "TEAM"
+	subject.category === "TEAM"
 		? `TEAM:${subject.type}:${subject.id}`
 		: `USER:${subject.id}`;
 
@@ -94,7 +138,15 @@ export const getLevelLabel = (level: AccessLevel): string =>
 	level;
 
 /**
- * Whether two grants give the same access: level, end date and model limits
+ * @param category - the public use limit or the model total
+ * @returns its key, which no person or team has
+ */
+export const getModelLimitKey = (category: ModelLimitCategory): string =>
+	`MODEL_LIMIT:${category}`;
+
+/**
+ * Whether two grants give the same access: level, end date and model usage
+ * limit
  *
  * @param a - one grant
  * @param b - the other
@@ -103,14 +155,11 @@ export const getLevelLabel = (level: AccessLevel): string =>
 export const isSameGrant = (a: PermissionGrant, b: PermissionGrant): boolean =>
 	a.level === b.level &&
 	(a.endDate ?? null) === (b.endDate ?? null) &&
-	(a.usageRestriction ?? null) === (b.usageRestriction ?? null) &&
-	(a.usageFrequency ?? null) === (b.usageFrequency ?? null) &&
-	(a.maxTokens ?? null) === (b.maxTokens ?? null) &&
-	(a.maxResponseTime ?? null) === (b.maxResponseTime ?? null);
+	isSameModelUsageLimit(a.usageLimit, b.usageLimit);
 
 /**
  * @param grant - a grant
- * @returns the grant without model usage limits, for a target that has none
+ * @returns the grant without a model usage limit, for a target that has none
  */
 export const withoutModelLimits = (
 	grant: PermissionGrant,
@@ -118,6 +167,95 @@ export const withoutModelLimits = (
 	level: grant.level,
 	endDate: grant.endDate ?? null,
 });
+
+/**
+ * @param grant - a grant
+ * @returns the grant as a batch sends it: its level, end date and, on a model,
+ * its usage limit. A grant with no limit defined leaves the limit out, which
+ * the batch reads as no limit defined.
+ */
+export const toSentGrant = (grant: PermissionGrant): PermissionGrant => ({
+	level: grant.level,
+	endDate: grant.endDate ?? null,
+	...(grant.usageLimit ? { usageLimit: grant.usageLimit } : {}),
+});
+
+/**
+ * @param limit - a limit
+ * @returns the limit without its cost rules, or null when nothing is left
+ */
+const withoutCostRules = (
+	limit: ModelUsageLimit | null | undefined,
+): ModelUsageLimit | null => {
+	if (!limit || limit.unlimited) {
+		return limit ?? null;
+	}
+	const rules = limit.rules.filter((rule) => rule.metric !== "COST");
+	return rules.length > 0 ? { unlimited: false, rules } : null;
+};
+
+/**
+ * Whether the user can set usage limits on a model: its owners, and admins in
+ * admin mode. Editors can still add people and change levels, but never a
+ * limit.
+ *
+ * @param allowed - what the user may change
+ * @returns whether they can set a person's or team's limit, the public use
+ * limit and the model total
+ */
+export const canSetUsageLimits = (allowed: PermissionAllowedChanges): boolean =>
+	allowed.canChangeModelLimits;
+
+/**
+ * @param allowed - what the user may change
+ * @param level - the level a person has after the change
+ * @returns whether the user can set the limit of a person at that level
+ */
+export const canSetPersonLimitAt = (
+	allowed: PermissionAllowedChanges,
+	level: AccessLevel,
+): boolean => canSetUsageLimits(allowed) && allowed.limitLevels.includes(level);
+
+/**
+ * Why the user cannot change an entry's usage limit on a model: only owners
+ * set usage limits, so everyone else sees every limit read-only
+ *
+ * @param entry - an entry
+ * @param allowed - what the user may change
+ * @returns the reason, or null when they can change it
+ */
+export const getLimitBlockReason = (
+	entry: BatchEntry,
+	allowed: PermissionAllowedChanges,
+): string | null => {
+	if (!entry.staged) {
+		return "Their access is taken away in your changes";
+	}
+	const canSet =
+		entry.subject.category === "TEAM"
+			? canSetUsageLimits(allowed)
+			: canSetPersonLimitAt(allowed, entry.staged.level);
+	return canSet ? null : OWNERS_ONLY_LIMIT_REASON;
+};
+
+/**
+ * Why the user cannot take away a person's access on a model: only owners take
+ * away the access of someone with a usage limit, since the limit goes with it
+ * and they would fall through to another one
+ *
+ * @param entry - an entry
+ * @param allowed - what the user may change
+ * @returns the reason, or null when they can take it away
+ */
+export const getRemoveBlockReason = (
+	entry: BatchEntry,
+	allowed: PermissionAllowedChanges,
+): string | null =>
+	entry.subject.category !== "TEAM" &&
+	entry.current?.usageLimit &&
+	!canSetUsageLimits(allowed)
+		? OWNERS_END_LIMITED_ACCESS_REASON
+		: null;
 
 /**
  * @param entry - an entry
@@ -230,7 +368,7 @@ export const toChanges = (
 	entries.flatMap((entry) => {
 		const status = getEntryStatus(entry);
 		const subject: PermissionSubject = {
-			kind: entry.subject.kind,
+			category: entry.subject.category,
 			id: entry.subject.id,
 			type: entry.subject.type,
 		};
@@ -238,7 +376,11 @@ export const toChanges = (
 			return [
 				{
 					key: entry.key,
-					change: { action: "ADD", subject, to: entry.staged },
+					change: {
+						action: "ADD",
+						subject,
+						to: toSentGrant(entry.staged),
+					},
 				},
 			];
 		}
@@ -246,7 +388,11 @@ export const toChanges = (
 			return [
 				{
 					key: entry.key,
-					change: { action: "CHANGE", subject, to: entry.staged },
+					change: {
+						action: "CHANGE",
+						subject,
+						to: toSentGrant(entry.staged),
+					},
 				},
 			];
 		}
@@ -257,9 +403,75 @@ export const toChanges = (
 	});
 
 /**
+ * A model's total and its public use limit, with the user's edits applied.
+ * Anything but a model has neither.
+ *
+ * @param access - who has access now, or null before it loads
+ * @param edits - the limits the user staged, by category
+ * @returns the model total first, then the public use limit
+ */
+export const buildModelLimitEntries = (
+	access: ResourcePermissions | null,
+	edits: ReadonlyMap<ModelLimitCategory, ModelUsageLimit | null>,
+): ModelLimitEntry[] => {
+	const entries: ModelLimitEntry[] = [];
+	const add = (
+		category: ModelLimitCategory,
+		current: ModelUsageLimit | null,
+	) => {
+		entries.push({
+			key: getModelLimitKey(category),
+			category,
+			current,
+			staged: edits.has(category)
+				? (edits.get(category) ?? null)
+				: current,
+		});
+	};
+	if (access?.modelTotal) {
+		add("MODEL", access.modelTotal.usageLimit);
+	}
+	if (access?.publicUse) {
+		add("PUBLIC", access.publicUse.usageLimit);
+	}
+	return entries;
+};
+
+/**
+ * @param entry - a model's total or public use limit
+ * @returns whether the batch changes it
+ */
+export const isModelLimitChanged = (entry: ModelLimitEntry): boolean =>
+	!isSameModelUsageLimit(entry.current, entry.staged);
+
+/**
+ * The changes a batch makes to a model's total and public use limit
+ *
+ * @param entries - the model's total and public use limit
+ * @returns the changes, with the key of the entry each is for
+ */
+export const toModelLimitChanges = (
+	entries: ModelLimitEntry[],
+): { key: string; change: PermissionChange }[] =>
+	entries
+		.filter(isModelLimitChanged)
+		.map((entry): { key: string; change: PermissionChange } => ({
+			key: entry.key,
+			change: {
+				action: "CHANGE",
+				subject: { category: entry.category },
+				to: { usageLimit: entry.staged },
+			},
+		}));
+
+/**
  * Brings copied people into a batch. People new to the batch are added with the
  * copied access; people the batch already gives the same access are left as
- * they are; everyone else is a conflict for the user to settle.
+ * they are; everyone else is a conflict for the user to settle. On a model
+ * without known prices, copied cost rules are left out, and the people they
+ * belonged to are conflicts too, so the user sees the change before it is
+ * staged. A user who cannot set usage limits copies levels and end dates only:
+ * each person keeps the limit they have now.
  *
  * @param entries - the batch's entries
  * @param rows - the people copied from the source
@@ -274,19 +486,42 @@ export const mergeCopiedAccess = (
 	const byKey = new Map(entries.map((entry) => [entry.key, entry]));
 	const additions: BatchEdit[] = [];
 	const conflicts: BatchConflict[] = [];
+	const canSetLimits = options.canSetLimits ?? true;
 	for (const row of rows) {
 		const copied: PermissionGrant | null = options.level
-			? { level: options.level }
+			? {
+					level: options.level,
+					...(options.usageLimit !== undefined
+						? { usageLimit: options.usageLimit }
+						: {}),
+				}
 			: row.source;
 		if (!copied) {
 			continue;
 		}
-		const incoming = options.keepModelLimits
-			? copied
-			: withoutModelLimits(copied);
 		const key = getSubjectKey(row.subject);
 		const existing = byKey.get(key);
-		if (!existing || (!existing.current && !existing.staged)) {
+		const isNew = !existing || (!existing.current && !existing.staged);
+		// a user who cannot set limits copies levels and end dates only, so the
+		// limit each person has now is carried forward as it is
+		const currentLimit = existing?.current?.usageLimit ?? null;
+		const kept = !options.keepModelLimits
+			? withoutModelLimits(copied)
+			: canSetLimits
+				? copied
+				: {
+						...withoutModelLimits(copied),
+						...(currentLimit ? { usageLimit: currentLimit } : {}),
+					};
+		const isCostLeftOut =
+			options.keepModelLimits &&
+			canSetLimits &&
+			options.costLimitsAvailable === false &&
+			hasCostRule(kept.usageLimit ?? null);
+		const incoming = isCostLeftOut
+			? { ...kept, usageLimit: withoutCostRules(kept.usageLimit) }
+			: kept;
+		if (isNew && !isCostLeftOut) {
 			additions.push({
 				subject: row.subject,
 				person: row.subject,
@@ -295,15 +530,22 @@ export const mergeCopiedAccess = (
 			});
 			continue;
 		}
-		if (existing.staged && isSameGrant(existing.staged, incoming)) {
+		if (
+			!isCostLeftOut &&
+			existing?.staged &&
+			isSameGrant(existing.staged, incoming)
+		) {
 			continue;
 		}
 		conflicts.push({
 			key,
-			person: existing.person ?? row.subject,
-			kept: existing.staged,
+			person: existing?.person ?? row.subject,
+			kept: existing?.staged ?? null,
+			isNew,
 			incoming,
-			note: options.note,
+			note: isCostLeftOut
+				? `${options.note}, without its cost rules, since this model has no known prices`
+				: options.note,
 		});
 	}
 	return { additions, conflicts };
@@ -327,38 +569,6 @@ export const matchesSearch = (entry: BatchEntry, search: string): boolean =>
 		.filter((value): value is string => typeof value === "string")
 		.some((value) => value.toLowerCase().includes(search));
 
-/** How often a model's usage limit resets, as words after the amount */
-const LIMIT_PERIODS: Record<string, string> = {
-	DAY: " a day",
-	DAILY: " a day",
-	WEEK: " a week",
-	WEEKLY: " a week",
-	MONTH: " a month",
-	MONTHLY: " a month",
-	YEAR: " a year",
-	YEARLY: " a year",
-	ALL_TIME: " in total",
-};
-
-/**
- * A model engine's usage limit in words, such as "10,000 tokens a day"
- *
- * @param grant - the access, or null for none
- * @returns the limit, or "No limit"
- */
-export const describeModelLimit = (grant: PermissionGrant | null): string => {
-	const restriction = grant?.usageRestriction?.toUpperCase();
-	const period =
-		LIMIT_PERIODS[grant?.usageFrequency?.toUpperCase() ?? ""] ?? "";
-	if (restriction === "TOKEN" && grant?.maxTokens != null) {
-		return `${grant.maxTokens.toLocaleString()} tokens${period}`;
-	}
-	if (restriction === "COMPUTE" && grant?.maxResponseTime != null) {
-		return `${grant.maxResponseTime.toLocaleString()} ms${period}`;
-	}
-	return "No limit";
-};
-
 /**
  * @param endDate - when access ends, or null
  * @returns " until Dec 31, 2026", or nothing when it does not end
@@ -369,16 +579,34 @@ const describeUntil = (endDate: string | null | undefined): string => {
 };
 
 /**
- * What a change does to someone's access, in a few words for the review
+ * @param limit - a usage limit, or null for no limit defined
+ * @param source - where it is set
+ * @returns the limit as the review says it, such as "usage limit 10,000
+ *          tokens a day" or "no usage limit defined"
+ */
+const describeLimitPart = (
+	limit: ModelUsageLimit | null | undefined,
+	source: ModelUsageLimitSource,
+): string =>
+	limit
+		? `usage limit ${describeModelUsageLimit(limit, source)}`
+		: "no usage limit defined";
+
+/**
+ * What a change does to someone's access, in a few words for the review. A
+ * change to both the level and a model usage limit names both.
  *
  * @param current - their access now, or null
  * @param staged - their access after the batch is saved, or null when it is taken away
- * @returns such as "Editor until Dec 31, 2026", "Read-Only to Editor" or
+ * @param source - where a model limit is set: a person's grant or a team's
+ * @returns such as "Editor until Dec 31, 2026", "Read-Only to Editor",
+ *          "Read-Only to Editor, usage limit 10,000 tokens a day" or
  *          "Loses Author"
  */
 export const describeChangeDetail = (
 	current: PermissionGrant | null,
 	staged: PermissionGrant | null,
+	source: ModelUsageLimitSource = "DIRECT",
 ): string => {
 	if (!staged) {
 		return current ? `Loses ${getLevelLabel(current.level)}` : "";
@@ -386,16 +614,33 @@ export const describeChangeDetail = (
 	const level = getLevelLabel(staged.level);
 	const until = describeUntil(staged.endDate);
 	if (!current) {
-		return `${level}${until}`;
+		return staged.usageLimit
+			? `${level}${until}, ${describeLimitPart(staged.usageLimit, source)}`
+			: `${level}${until}`;
 	}
+	const parts: string[] = [];
 	if (current.level !== staged.level) {
-		return `${getLevelLabel(current.level)} to ${level}${until}`;
+		parts.push(`${getLevelLabel(current.level)} to ${level}${until}`);
+	} else if ((current.endDate ?? null) !== (staged.endDate ?? null)) {
+		parts.push(
+			staged.endDate ? `${level}, now${until}` : `${level}, no end date`,
+		);
+	} else {
+		parts.push(level);
 	}
-	if ((current.endDate ?? null) !== (staged.endDate ?? null)) {
-		return staged.endDate
-			? `${level}, now${until}`
-			: `${level}, no end date`;
+	if (!isSameModelUsageLimit(current.usageLimit, staged.usageLimit)) {
+		parts.push(describeLimitPart(staged.usageLimit, source));
 	}
-	const limit = describeModelLimit(staged);
-	return `${level}, ${limit === "No limit" ? "no usage limit" : limit}`;
+	return parts.join(", ");
+};
+
+/**
+ * What a change does to a model's total or public use limit, for the review
+ *
+ * @param entry - the model's total or public use limit
+ * @returns such as "$2,000 a month, was No Limit Defined"
+ */
+export const describeModelLimitChange = (entry: ModelLimitEntry): string => {
+	const source = entry.category === "MODEL" ? "MODEL_TOTAL" : "PUBLIC";
+	return `${describeModelUsageLimit(entry.staged, source)}, was ${describeModelUsageLimit(entry.current, source)}`;
 };

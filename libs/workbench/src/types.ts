@@ -58,8 +58,10 @@ export interface WorkbenchTabset {
 	enableTabStrip?: boolean;
 	enableMaximize?: boolean;
 	/**
-	 * When false the tabset survives its last panel close and renders an
-	 * empty placeholder instead of being pruned from the tree.
+	 * When false the tabset survives its last panel close while it is the
+	 * dock's only tabset, rendering an empty placeholder instead of being
+	 * pruned. Beside other tabsets it is pruned like any other, and the first
+	 * tabset left takes the flag over.
 	 */
 	enableDeleteWhenEmpty?: boolean;
 	/** Two viewports onto the active panel, inside this one dock. */

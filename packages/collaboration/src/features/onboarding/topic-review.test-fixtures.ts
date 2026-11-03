@@ -77,6 +77,8 @@ export function makeTopic(
 			{ id: "p-2", name: "Bo Chen" },
 		],
 		domains: ["northwind.example"],
+		folders: [],
+		folderIds: [],
 		area: null,
 		youWrote: 0,
 		vipThreads: 0,

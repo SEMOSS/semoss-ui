@@ -1,11 +1,10 @@
 import { useMemo } from "react";
-import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Badge, Markdown, Separator, Spinner } from "@semoss/ui/next";
 import { formatLocalDateTime } from "@semoss/utility/date";
 import { CatalogOverview } from "@/components/catalog";
-import { useConfig, useSession } from "@/hooks";
+import { useConfig } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
 import {
 	formatServingProviderLabel,
@@ -15,9 +14,8 @@ import {
 } from "./engine-metadata-display";
 
 interface EngineOverviewProps {
+	/** The engine to show */
 	engine: Engine;
-	permission: Role;
-	refresh: () => void;
 }
 
 const getModelOverviewDescription = (
@@ -33,29 +31,18 @@ const getModelOverviewDescription = (
 	return typeof staticDescription === "string" ? staticDescription : "";
 };
 
-export const EngineOverview = ({
-	engine,
-	permission,
-	refresh,
-}: EngineOverviewProps) => {
+/**
+ * The read-only overview of an engine. Its metadata is edited on the engine's
+ * Settings tab.
+ */
+export const EngineOverview = ({ engine }: EngineOverviewProps) => {
 	const databaseMetaKeys = useConfig(
 		(state) => state.config.databaseMetaKeys,
 	);
-	const runPixel = useSession((state) => state.runPixel);
 	const isModel = engine.engine_type === "MODEL";
 
-	// Only the editable (non-model) overview offers tag suggestions.
-	const getEngineMetaValues = usePixel<
-		{
-			METAKEY: string;
-			METAVALUE: string;
-			count: number;
-		}[]
-	>(!isModel ? `META | GetDatabaseMetaValues ( metaKeys = ['tag'] ) ;` : "");
-
-	// Models render a read-only overview; the metadata itself is edited on the
-	// Settings tab. This fetch also resolves the modelId that keys the static
-	// description fallback below.
+	// A model's overview also shows its model metadata. This fetch also resolves
+	// the modelId that keys the static description fallback below.
 	const getModelMetadata = usePixel<ModelMetadata>(
 		isModel && engine.engine_id
 			? `GetModelMetadata(engine=["${engine.engine_id}"]);`
@@ -81,21 +68,6 @@ export const EngineOverview = ({
 		}),
 		[engine, overviewDescription],
 	);
-
-	/**
-	 * Persist edited metadata to the backend and refresh project details.
-	 *
-	 * @returns Promise that resolves after save flow completes.
-	 */
-	const onSave = async (id: string, metadata: Record<string, unknown>) => {
-		await runPixel(
-			`SetEngineMetadata(engine=["${id}"], meta=[${JSON.stringify(
-				metadata,
-			)}])`,
-		);
-
-		refresh();
-	};
 
 	if (!engine) {
 		return <div className="text-muted-foreground">No details found</div>;
@@ -130,8 +102,8 @@ export const EngineOverview = ({
 				? getModelMetadata.data.servingProvider.trim()
 				: "";
 
-		// Read-only by design: description is edited on Settings > Description,
-		// tags on Settings > Tags, and model metadata on Settings > Model Settings.
+		// description is edited on Settings > Description, tags on Settings > Tags,
+		// and model metadata on Settings > Model Settings
 		return (
 			<div className="space-y-6">
 				{(overviewDescription.trim() !== "" ||
@@ -198,13 +170,7 @@ export const EngineOverview = ({
 	return (
 		<CatalogOverview
 			id={engine.engine_id}
-			permission={permission}
 			metaKeys={databaseMetaKeys}
-			metaValues={
-				getEngineMetaValues.status === "SUCCESS"
-					? getEngineMetaValues.data
-					: []
-			}
 			description={overviewDescription}
 			markdown={engine.markdown || ""}
 			markdownVariant="document"
@@ -218,7 +184,6 @@ export const EngineOverview = ({
 			metadata={overviewMetadata}
 			dateCreated={engine.engine_date_created || ""}
 			dateLastEdited={engine.engine_date_last_edited || ""}
-			onSave={onSave}
 		/>
 	);
 };

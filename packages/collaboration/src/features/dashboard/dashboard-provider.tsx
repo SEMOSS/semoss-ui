@@ -31,7 +31,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 			`${window.location.origin}${Env.MODULE}${window.location.pathname}`,
 		),
 	);
-	const history = useChatHistory();
+	const history = useChatHistory(
+		`semoss:collaboration:closed-chats:v1:${encodeURIComponent(`${window.location.origin}${Env.MODULE}${window.location.pathname}`)}:${encodeURIComponent(account)}`,
+	);
 	const [isSearchOpen, setSearchOpen] = useState(false);
 	const [source, selectSource] = useState<SourceSelection | null>(null);
 	const searchReturnFocus = useRef<HTMLElement | null>(null);
@@ -73,6 +75,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 		setRefreshRevision((value) => value + 1);
 	}
 	const openRoom = async (roomId: string): Promise<void> => {
+		history.setRoomClosed(roomId, false);
 		const token = ++opening.current;
 		setOpeningRoom(roomId);
 		try {

@@ -197,6 +197,9 @@ export function ThreadSettings({
 											participant.email ||
 											"Unknown participant"
 										}
+										email={
+											person?.email || participant.email
+										}
 									/>
 									<div className="min-w-0 flex-1">
 										<Link
@@ -269,8 +272,8 @@ export function ThreadSettings({
 						/>
 					</div>
 					<Small className="text-muted-foreground">
-						Ignored threads stay in Brain but get no Work items, and
-						their open items are hidden. Turn this off to resume the
+						Ignored threads stay filed but get no tasks, and their
+						open items are hidden. Turn this off to resume the
 						thread.
 					</Small>
 				</Section>
