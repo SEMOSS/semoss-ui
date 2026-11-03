@@ -493,7 +493,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-3xl flex-col gap-4 @md:px-6 px-4 py-6">
+						<div className="mx-auto box-content flex max-w-3xl flex-col gap-4 @md:px-6 px-4 py-6">
 							{room.agentGreeting && (
 								<RoomGreeting
 									room={room}
@@ -649,41 +649,43 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col @md:px-6 px-4 py-4">
-				<RoomInput
-					predefinedPrompts={room.options.predefinedPrompts}
-					className="max-h-72 min-h-24"
-					isLoading={showLoadingState}
-					model={room.model}
-					room={room}
-					setModel={(model) => {
-						room.setModel(model);
-						chat.setSelectedModel(model);
-					}}
-					options={room.options}
-					onMcpChange={(mcp) =>
-						room.setOptions({
-							...room.options,
-							mcp,
-						})
-					}
-					onPrompt={handlePrompt}
-					hasOutstandingTools={
-						room.latestResponseMessage.hasUnfinishedTools
-					}
-					sendState={sendState}
-					onStop={room.cancelActiveJob}
-					onCompact={handleCompactMessages}
-					onOpenSettings={handleOpenSettings}
-					excludeCommandIds={[
-						"agent",
-						"workspace",
-						// A room's mode is fixed at creation — never let an
-						// existing room switch into agent-harness mid-chat.
-						"agent-harness",
-						"harness",
-					]}
-				/>
+			<div className="flex w-full shrink-0 flex-col @md:px-6 px-4 py-4">
+				<div className="mx-auto flex w-full max-w-3xl flex-col">
+					<RoomInput
+						predefinedPrompts={room.options.predefinedPrompts}
+						className="max-h-72 min-h-24"
+						isLoading={showLoadingState}
+						model={room.model}
+						room={room}
+						setModel={(model) => {
+							room.setModel(model);
+							chat.setSelectedModel(model);
+						}}
+						options={room.options}
+						onMcpChange={(mcp) =>
+							room.setOptions({
+								...room.options,
+								mcp,
+							})
+						}
+						onPrompt={handlePrompt}
+						hasOutstandingTools={
+							room.latestResponseMessage.hasUnfinishedTools
+						}
+						sendState={sendState}
+						onStop={room.cancelActiveJob}
+						onCompact={handleCompactMessages}
+						onOpenSettings={handleOpenSettings}
+						excludeCommandIds={[
+							"agent",
+							"workspace",
+							// A room's mode is fixed at creation — never let an
+							// existing room switch into agent-harness mid-chat.
+							"agent-harness",
+							"harness",
+						]}
+					/>
+				</div>
 			</div>
 		</div>
 	);

@@ -1,6 +1,12 @@
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useState } from "react";
-import { Button, toast } from "@semoss/ui/next";
+import {
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 
 interface FeedbackButtonsProps {
 	messageId: string;
@@ -28,25 +34,39 @@ export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
 
 	return (
 		<div className="flex items-center">
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				onClick={() => handleFeedback("true")}
-				disabled={!!feedback}
-				className="opacity-70"
-			>
-				<ThumbsUp className="size-4" />
-			</Button>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						aria-label="Good response"
+						aria-pressed={feedback === "true"}
+						onClick={() => handleFeedback("true")}
+						disabled={!!feedback}
+						className="opacity-70"
+					>
+						<ThumbsUp className="size-4" aria-hidden />
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>Good response</TooltipContent>
+			</Tooltip>
 
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				onClick={() => handleFeedback("false")}
-				disabled={!!feedback}
-				className="opacity-70"
-			>
-				<ThumbsDown className="size-4" />
-			</Button>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						aria-label="Poor response"
+						aria-pressed={feedback === "false"}
+						onClick={() => handleFeedback("false")}
+						disabled={!!feedback}
+						className="opacity-70"
+					>
+						<ThumbsDown className="size-4" aria-hidden />
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>Poor response</TooltipContent>
+			</Tooltip>
 		</div>
 	);
 };
