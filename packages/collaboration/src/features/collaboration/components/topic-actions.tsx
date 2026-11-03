@@ -175,7 +175,7 @@ export function TopicActions({
 								});
 								close();
 								toast.success(`Deleted ${topic.name}.`);
-								navigate("/work");
+								navigate("/work/topics");
 							}}
 						>
 							Delete topic

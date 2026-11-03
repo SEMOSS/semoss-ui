@@ -25,7 +25,7 @@ export function WorkFeed({ initialFilter = "needs_me" }: WorkFeedProps) {
 							size="sm"
 							className="pointer-coarse:min-h-11"
 						>
-							<Link to="/work">Browse topics</Link>
+							<Link to="/work/topics">Browse topics</Link>
 						</Button>
 					}
 				/>
