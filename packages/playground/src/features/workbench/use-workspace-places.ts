@@ -45,8 +45,8 @@ export interface DraftWorkspacePlaces {
 	onOpenFiles: () => void;
 	/** Opens the draft's settings. */
 	onOpenSettings: () => void;
-	/** Opens the activity log; absent until the draft has prepared a room. */
-	onOpenActivity?: () => void;
+	/** Prepares the draft's room, then opens the activity log in it. */
+	onOpenActivity: () => void;
 	/** Prepares the draft's room, then opens a connector viewer in it. */
 	onOpenSource: (service: ConnectorViewerService) => void;
 	/** Whether the draft is preparing its room. */
@@ -59,7 +59,8 @@ export interface DraftWorkspacePlaces {
  * The places a room's Workspace opens: Chat Files, Chat Tools, the activity
  * log, and settings, then the connector viewers the chat can show. A draft has
  * no Chat Tools, since its tools are not settled until its first message, and
- * no activity log until it has a room. Call it from an observer: the viewers
+ * its Files, activity log, and viewers wait while it prepares its room. Call
+ * it from an observer: the viewers
  * are read from MobX. It does not read the session's logins itself; the
  * composer's sign in notice keeps them current.
  *
@@ -74,14 +75,14 @@ export const useWorkspacePlaces = (
 	const { t } = useTranslation(["room", "connectors"]);
 	const connectors = draft?.connectors ?? room.connectors;
 	const isPreparing = draft?.isPreparing ?? false;
-	const onOpenActivity = draft
-		? draft.onOpenActivity
-		: () =>
-				room.openSidebarPanel(
-					ROOM_PANEL_TYPES.AUDIT_LOG,
-					{},
-					t("studio.activityLog"),
-				);
+	const onOpenActivity =
+		draft?.onOpenActivity ??
+		(() =>
+			room.openSidebarPanel(
+				ROOM_PANEL_TYPES.AUDIT_LOG,
+				{},
+				t("studio.activityLog"),
+			));
 	const showActivityLog = room.theme.featureFlags?.showActivityLog !== false;
 
 	const places: WorkspacePlace[] = [
@@ -115,14 +116,14 @@ export const useWorkspacePlaces = (
 			onOpen: room.chatTools.openToolsPanel,
 		});
 	}
-	if (showActivityLog && onOpenActivity) {
+	if (showActivityLog) {
 		places.push({
 			kind: "room",
 			id: "activity",
 			label: t("workspacePlaces.activity"),
 			icon: ScrollTextIcon,
 			panelType: ROOM_PANEL_TYPES.AUDIT_LOG,
-			isDisabled: false,
+			isDisabled: isPreparing,
 			isLoading: false,
 			onOpen: onOpenActivity,
 		});

@@ -159,8 +159,8 @@ code and are easy to undo by accident:
   control — "open inline" — is registered by the tool panel with `useWorkbenchControl`.
 - **The rail lists the Workspace's places.** `features/workbench/workspace-rail.tsx` sits at the
   end of `ConversationWorkspace` whether the Workspace is open or closed: Files, Tools (rooms
-  only, since a draft's tools are not settled until its first message), Activity (once a draft
-  has a room), Settings, then the connector viewers the chat can show
+  only, since a draft's tools are not settled until its first message), Activity, Settings,
+  then the connector viewers the chat can show
   (`ConnectorsStore.availableSources`). A place opens the Workspace on its panel, and closes the
   Workspace when its panel is already in front. `useWorkspacePlaces` builds the list for a room,
   or from `DraftWorkspacePlaces` for a new chat. Below 64rem of content width, and on mobile, the
@@ -176,11 +176,11 @@ code and are easy to undo by accident:
 
 New chats keep draft settings in their temporary room store. Opening Workspace restores its
 last active tab, or opens a Settings tab when empty, without creating a server room. Settings
-uses the same workbench shell as Files. File Explorer and connector viewers share `usePreparedRoom` to prepare one room lazily
-and transfer the draft's arrangement before opening their panels. Connector viewers queue
+uses the same workbench shell as Files. File Explorer, the activity log, and connector viewers share `usePreparedRoom` to prepare one room lazily
+and transfer the draft's arrangement before opening their panels; a failed preparation opens the Workspace on its error, whose Retry opens the same place again. Connector viewers queue
 attachments on the draft through `NextMessageRoomProvider` until the first message. `DraftSettingsContext` keeps Settings and publishing
 bound to the current draft until submission, including after preparation. A draft's places
-(`DraftWorkspacePlaces`) leave out room-only places until preparation succeeds. Selecting Chat clears agent
+(`DraftWorkspacePlaces`) leave out Chat Tools until its first message. Selecting Chat clears agent
 inheritance but preserves locally added Knowledge and Tools.
 
 Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the room's own
