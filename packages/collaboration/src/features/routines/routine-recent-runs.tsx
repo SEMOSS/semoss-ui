@@ -1,5 +1,5 @@
 import { Repeat, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { Button, cn, Spinner, toast } from "@semoss/ui/next";
@@ -13,6 +13,7 @@ import {
 } from "./api/list-recent-routine-runs";
 import { openRoutineRoom } from "./api/open-routine-room";
 import { RoutineAgentAvatar } from "./routine-agent-avatar";
+import { RoutineRunMenu } from "./routine-run-menu";
 import { findSystemRoutine } from "./system-routines";
 
 // scheduled runs start and finish without anything on this page asking; runs started here re-read at once
@@ -22,9 +23,10 @@ const POLL_MS = 30_000;
 // the insets line it up with the links above
 const SIDEBAR_SPOT = "-mt-1.5 flex shrink-0 pe-2";
 
-// a run is a link or, when it opens a chat, a button; both look the same
+// a run is a link or, when it opens a chat, a button; both look the same, and the row stays lit while the pointer
+// is on its "..." menu
 const RUN_ROW =
-	"flex min-h-7 pointer-coarse:min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-lg px-2 text-start text-muted-foreground text-xs tabular-nums hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50";
+	"flex min-h-7 pointer-coarse:min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-lg px-2 text-start text-muted-foreground text-xs tabular-nums group-hover/run:bg-sidebar-accent group-hover/run:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50";
 
 interface RoutineRecentRunsProps {
 	/** Closes mobile navigation after a routine or run opens. */
@@ -42,6 +44,8 @@ export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
 	const recent = useVisibleResource(load, true, POLL_MS);
 	const { refresh } = recent;
 	const [openingRunId, setOpeningRunId] = useState<string | null>(null);
+	// each routine's link, where focus goes after one of its runs is deleted
+	const routineLinks = useRef(new Map<string, HTMLAnchorElement>());
 	useEffect(() => {
 		window.addEventListener(ROUTINE_RUNS_CHANGED, refresh);
 		return () => window.removeEventListener(ROUTINE_RUNS_CHANGED, refresh);
@@ -109,6 +113,17 @@ export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
 				return (
 					<li key={routine.routineId} className="flex flex-col">
 						<Link
+							ref={(element) => {
+								if (element)
+									routineLinks.current.set(
+										routine.routineId,
+										element,
+									);
+								else
+									routineLinks.current.delete(
+										routine.routineId,
+									);
+							}}
 							to={routinePath}
 							onClick={onNavigate}
 							title={name}
@@ -138,6 +153,8 @@ export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
 									run.startedAt,
 								);
 								const isOpening = openingRunId === run.runId;
+								// a run still going has nothing to delete yet
+								const canDelete = run.status !== "running";
 								const content = (
 									<>
 										<span className="min-w-0 truncate">
@@ -153,8 +170,9 @@ export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
 											</span>
 										)}
 										{run.status === "failed" && (
-											// red text drops under 4.5:1 on the hover fill, so the icon carries the color
-											<span className="flex shrink-0 items-center gap-1">
+											// red text drops under 4.5:1 on the hover fill, so the icon carries the color;
+											// with a mouse the "..." takes this spot while the row is hovered or focused
+											<span className="flex shrink-0 items-center gap-1 pointer-fine:group-focus-within/run:invisible pointer-fine:group-hover/run:invisible pointer-fine:group-has-[[data-state=open]]/run:invisible">
 												<TriangleAlert
 													aria-hidden="true"
 													className="size-3 text-destructive"
@@ -164,12 +182,24 @@ export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
 										)}
 									</>
 								);
-								if (run.status === "completed") {
-									const label = isOpening
-										? `Opening the chat for ${name} from ${when}`
-										: `Open the chat for ${name} from ${when}`;
-									return (
-										<li key={run.runId}>
+								// a touch screen shows the "..." all the time, so the row makes room for it
+								const rowClassName = cn(
+									RUN_ROW,
+									canDelete && "pointer-coarse:pe-12",
+								);
+								// a run without a chat opens where it can be followed: its room, else its routine
+								const label =
+									run.status === "completed"
+										? `${isOpening ? "Opening" : "Open"} the chat for ${name} from ${when}`
+										: run.status === "running"
+											? `${run.roomId ? "Watch" : "Open"} ${name}, running since ${when}`
+											: `Open ${name}, failed ${when}`;
+								return (
+									<li
+										key={run.runId}
+										className="group/run relative"
+									>
+										{run.status === "completed" ? (
 											<button
 												type="button"
 												title={label}
@@ -181,33 +211,39 @@ export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
 														run.runId,
 													)
 												}
-												className={RUN_ROW}
+												className={rowClassName}
 											>
 												{content}
 											</button>
-										</li>
-									);
-								}
-								// a run without a chat opens where it can be followed: its room, else its routine
-								const label =
-									run.status === "running"
-										? `${run.roomId ? "Watch" : "Open"} ${name}, running since ${when}`
-										: `Open ${name}, failed ${when}`;
-								return (
-									<li key={run.runId}>
-										<Link
-											to={
-												run.roomId
-													? roomPath(run.roomId)
-													: routinePath
-											}
-											onClick={onNavigate}
-											title={label}
-											aria-label={label}
-											className={RUN_ROW}
-										>
-											{content}
-										</Link>
+										) : (
+											<Link
+												to={
+													run.roomId
+														? roomPath(run.roomId)
+														: routinePath
+												}
+												onClick={onNavigate}
+												title={label}
+												aria-label={label}
+												className={rowClassName}
+											>
+												{content}
+											</Link>
+										)}
+										{canDelete && (
+											<RoutineRunMenu
+												routineId={routine.routineId}
+												runId={run.runId}
+												routineName={name}
+												when={when}
+												onDeleted={() =>
+													routineLinks.current
+														.get(routine.routineId)
+														?.focus()
+												}
+												className="absolute inset-y-0 end-0.5 my-auto opacity-0 pointer-coarse:opacity-100 group-focus-within/run:opacity-100 group-hover/run:opacity-100 data-[state=open]:opacity-100"
+											/>
+										)}
 									</li>
 								);
 							})}
