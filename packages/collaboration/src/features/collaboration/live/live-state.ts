@@ -16,10 +16,13 @@ import type {
 	MemoryRef,
 	Person,
 	Profile,
+	ProfileStyle,
 	ReviewEntry,
 	Rule,
 	Settings,
 	SourceStatus,
+	StyleAudience,
+	StyleVariant,
 	Thread,
 	ThreadWorkspace,
 	Topic,
@@ -100,12 +103,58 @@ function mapProfile(row: Row, selfId: string | undefined): Profile {
 					? `${str(hours.start)} - ${str(hours.end)}`
 					: "",
 		vips: list<string>(row.vips),
-		style: {
-			summary: str(style.summary),
-			source: style.source === "you" ? "you" : "learned",
-			confirmed: style.confirmed === true,
-			examples: list<string>(style.examples),
-		},
+		style: mapStyle(style),
+	};
+}
+
+const AUDIENCES: StyleAudience[] = ["internal", "external"];
+
+const strings = (value: unknown): string[] =>
+	list(value).filter((item): item is string => typeof item === "string");
+
+function mapVariants(
+	value: unknown,
+): Partial<Record<StyleAudience, StyleVariant>> {
+	const row = (value ?? {}) as Row;
+	const variants: Partial<Record<StyleAudience, StyleVariant>> = {};
+	for (const audience of AUDIENCES) {
+		const variant = row[audience] as Row | undefined;
+		if (variant && str(variant.summary).trim())
+			variants[audience] = {
+				summary: str(variant.summary),
+				examples: strings(variant.examples),
+			};
+	}
+	return variants;
+}
+
+/** The profile's writing style, with the agreed variants and any proposal still to review. */
+export function mapStyle(style: Row): ProfileStyle {
+	const pending = style.pending as Row | undefined;
+	const sample = pending?.sample as Row | undefined;
+	return {
+		summary: str(style.summary),
+		source: style.source === "you" ? "you" : "learned",
+		confirmed: style.confirmed === true,
+		examples: strings(style.examples),
+		variants: mapVariants(style.variants),
+		pending:
+			pending && str(pending.summary).trim()
+				? {
+						summary: str(pending.summary),
+						examples: strings(pending.examples),
+						variants: mapVariants(pending.variants),
+						learnedAt: opt(pending.learnedAt),
+						sample: sample
+							? {
+									emails: Number(sample.emails ?? 0),
+									chats: Number(sample.chats ?? 0),
+									windowDays: Number(sample.windowDays ?? 0),
+								}
+							: undefined,
+					}
+				: null,
+		learnedAt: opt(style.learnedAt),
 	};
 }
 

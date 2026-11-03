@@ -1,10 +1,11 @@
-import { expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import {
 	loadLiveState,
 	loadThreadMessages,
 	mapMemory,
+	mapStyle,
 	readThreadInsights,
 	readThreadMessagesPage,
 	readTopicGoals,
@@ -380,5 +381,47 @@ it("maps a server memory and drops links it does not know", () => {
 		kind: "fact",
 		state: "dismissed",
 		origin: "you",
+	});
+});
+
+describe("mapStyle", () => {
+	it("maps agreed variants and a pending proposal, and ignores malformed ones", () => {
+		const style = mapStyle({
+			summary: "Short",
+			source: "you",
+			confirmed: true,
+			examples: ["Hi", 3],
+			variants: {
+				internal: { summary: "Casual", examples: ["Hey"] },
+				external: { summary: "  " },
+			},
+			pending: {
+				summary: "Warm",
+				examples: ["Thanks"],
+				variants: { external: { summary: "Formal", examples: [] } },
+				learnedAt: "2026-10-29T10:00:00Z",
+				sample: { emails: 4, chats: 2, windowDays: 30 },
+			},
+		});
+		expect(style.examples).toEqual(["Hi"]);
+		expect(Object.keys(style.variants ?? {})).toEqual(["internal"]);
+		expect(style.pending?.variants.external?.summary).toBe("Formal");
+		expect(style.pending?.sample).toEqual({
+			emails: 4,
+			chats: 2,
+			windowDays: 30,
+		});
+	});
+
+	it("reads a profile saved before variants and proposals existed", () => {
+		const style = mapStyle({ summary: "Plain", confirmed: false });
+		expect(style).toMatchObject({
+			summary: "Plain",
+			source: "learned",
+			confirmed: false,
+			examples: [],
+			variants: {},
+			pending: null,
+		});
 	});
 });
