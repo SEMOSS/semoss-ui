@@ -107,12 +107,100 @@ describe("fetch utility", () => {
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		const [, requestInit] = fetchMock.mock.calls[0];
-		const headers = requestInit?.headers as Record<string, string>;
+		const headers = new Headers(requestInit?.headers);
 		expect(requestInit?.method).toBe("POST");
-		expect(headers["Content-Type"]).toBe(
+		expect(headers.get("Content-Type")).toBe(
 			"application/x-www-form-urlencoded",
 		);
 		expect(requestInit?.body).toBe("name=test%20user&count=2");
+	});
+
+	it.each<{ name: string; headers: HeadersInit }>([
+		{
+			name: "lowercase record",
+			headers: {
+				"content-type": "application/x-www-form-urlencoded",
+				"X-Request-ID": "request-1",
+			},
+		},
+		{
+			name: "mixed-case record",
+			headers: {
+				"content-type": "application/x-www-form-urlencoded",
+				"Content-Type": "application/x-www-form-urlencoded",
+				"X-Request-ID": "request-1",
+			},
+		},
+		{
+			name: "Headers instance",
+			headers: new Headers({
+				"Content-Type": "application/json",
+				"X-Request-ID": "request-1",
+			}),
+		},
+		{
+			name: "tuple list",
+			headers: [
+				["content-type", "application/json"],
+				["Content-Type", "application/x-www-form-urlencoded"],
+				["X-Request-ID", "request-1"],
+			],
+		},
+	])(
+		"normalizes POST headers from a $name without changing the input",
+		async ({ headers: callerHeaders }) => {
+			const originalHeaders = Array.from(new Headers(callerHeaders));
+			Env.update({ BEARER_TOKEN: "token-123" });
+			CSRF.isEnabled = true;
+			CSRF.token = "csrf-token-1";
+
+			const fetchMock = vi.mocked(fetch);
+			fetchMock.mockResolvedValueOnce(
+				createJsonResponse({ created: true }),
+			);
+
+			await post(
+				"/api/create",
+				{ name: "test user" },
+				{
+					headers: callerHeaders,
+				},
+			);
+
+			const request = new Request(
+				"https://semoss.example/api/create",
+				fetchMock.mock.calls[0][1],
+			);
+			expect(request.headers.get("Content-Type")).toBe(
+				"application/x-www-form-urlencoded",
+			);
+			expect(request.headers.get("X-Request-ID")).toBe("request-1");
+			expect(request.headers.get("Authorization")).toBe(
+				"Bearer token-123",
+			);
+			expect(request.headers.get("X-CSRF-Token")).toBe("csrf-token-1");
+			expect(Array.from(new Headers(callerHeaders))).toEqual(
+				originalHeaders,
+			);
+		},
+	);
+
+	it("lets Fetch generate the multipart boundary for FormData", async () => {
+		const form = new FormData();
+		form.append("name", "test user");
+		const fetchMock = vi.mocked(fetch);
+		fetchMock.mockResolvedValueOnce(createJsonResponse({ created: true }));
+
+		await post("/api/upload", form);
+
+		const request = new Request(
+			"https://semoss.example/api/upload",
+			fetchMock.mock.calls[0][1],
+		);
+		expect(request.headers.get("Content-Type")).toMatch(
+			/^multipart\/form-data; boundary=/,
+		);
+		expect((await request.formData()).get("name")).toBe("test user");
 	});
 
 	it("checks if interceptors are working properly in POST operation", async () => {

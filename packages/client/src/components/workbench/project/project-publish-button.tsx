@@ -19,11 +19,14 @@ import { useProject } from "@/hooks";
 import { WORKBENCH_EVENTS } from "@/stores/workbench";
 
 /**
- * Compiles and publishes the project, and registers the matching command so the
- * same action is reachable from the command palette. Shared by the CODE, SKILL
- * and AGENT workbenches — for CODE the app preview iframe loads the *published*
- * portal, so this is the step that makes edits visible there, which is why a
- * successful publish announces itself on the event bus.
+ * Compiles and publishes the project, and registers the matching commands so
+ * they are reachable from the command palette. Publish releases both the
+ * compiled reactors and the portal, so every server in a cluster picks them up;
+ * Compile builds the reactors on the server handling this session only. Shared
+ * by the CODE, SKILL and AGENT workbenches: for CODE the app preview iframe
+ * loads the *published* portal, so publishing is the step that makes edits
+ * visible there, which is why a successful publish announces itself on the
+ * event bus.
  */
 export const ProjectPublishButton: React.FC = () => {
 	const { project, permission } = useProject();
@@ -56,7 +59,7 @@ export const ProjectPublishButton: React.FC = () => {
 		}
 	}, [readOnly, insight.actions, project.project_id]);
 
-	/** Publish the project. */
+	/** Release the compiled reactors and the portal to every server. */
 	const publish = useCallback(async () => {
 		if (readOnly) {
 			return;
@@ -64,7 +67,11 @@ export const ProjectPublishButton: React.FC = () => {
 		try {
 			setIsLoading(true);
 
-			// publish
+			// the reactors go out first, so the portal is never released ahead of
+			// the reactors it calls
+			await insight.actions.run(
+				`CompileAppReactors(project='${project.project_id}', release=true);`,
+			);
 			await insight.actions.run(
 				`PublishProject(project='${project.project_id}', release=true);`,
 			);
@@ -126,11 +133,8 @@ export const ProjectPublishButton: React.FC = () => {
 							WORKBENCH_STYLES.chromeButton,
 						)}
 						disabled={isLoading}
-						onClick={async () => {
-							const compiled = await compile();
-							if (compiled) {
-								await publish();
-							}
+						onClick={() => {
+							void publish();
 						}}
 					>
 						{isLoading ? (

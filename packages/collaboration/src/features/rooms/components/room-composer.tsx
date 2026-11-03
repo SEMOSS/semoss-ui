@@ -32,6 +32,7 @@ import {
 	Square,
 	Undo,
 	WandSparkles,
+	X,
 } from "lucide-react";
 import {
 	type ReactNode,
@@ -130,6 +131,8 @@ interface RoomComposerProps {
 	extraCommands?: readonly RoomSlashCommand[];
 	/** Saved prompts already available to this conversation. */
 	prompts?: readonly ComposerPrompt[];
+	/** Starting points fill an empty editor for review; they never submit. */
+	starterPrompts?: readonly ComposerPrompt[];
 	/** Stable focus return target when closing a host panel. */
 	actionsTriggerId?: string;
 	/** Replaces the default + menu while retaining the composer's upload picker. */
@@ -177,6 +180,8 @@ interface RoomComposerProps {
 	showModelSelector?: boolean;
 	/** Whether the prompt optimization control appears in the toolbar. */
 	showPromptOptimization?: boolean;
+	/** Quiet room chrome until there is text to optimize. */
+	hideEmptyOptimization?: boolean;
 	/** Additional caller-owned reason that sending is unavailable. */
 	isSendDisabled?: boolean;
 	/** Model selection error displayed with the composer. */
@@ -294,6 +299,7 @@ export function RoomComposer({
 	attachmentSummary,
 	extraCommands = EMPTY_COMMANDS,
 	prompts = EMPTY_PROMPTS,
+	starterPrompts = EMPTY_PROMPTS,
 	actionsTriggerId,
 	renderActions,
 	children,
@@ -317,6 +323,7 @@ export function RoomComposer({
 	isModelLocked = false,
 	showModelSelector = true,
 	showPromptOptimization = true,
+	hideEmptyOptimization = false,
 	hideSettingsAction = false,
 	isSendDisabled = false,
 	modelError,
@@ -722,6 +729,8 @@ export function RoomComposer({
 
 	const alert =
 		fileError || retainedError || submissionError || modelError?.message;
+	// closing hides this text only; a new error shows again
+	const [dismissedAlert, setDismissedAlert] = useState("");
 	const sendDisabled =
 		!draft.trim() ||
 		draft.length > MAX_CHARACTERS ||
@@ -738,6 +747,36 @@ export function RoomComposer({
 				className,
 			)}
 		>
+			{!isEmail && !draft.trim() && starterPrompts.length > 0 && (
+				<fieldset
+					aria-label="Choose a starting point"
+					className="flex min-w-0 flex-wrap gap-2 border-0 p-0 pb-3"
+					disabled={
+						isSubmitting ||
+						isRunning ||
+						isSendDisabled ||
+						isOptimizing
+					}
+				>
+					{starterPrompts.map((prompt) => (
+						<Button
+							key={prompt.id}
+							type="button"
+							variant="outline"
+							size="sm"
+							className="pointer-coarse:min-h-11"
+							onClick={() => {
+								// A pending editor update must never overwrite the owner's words.
+								if (draftRef.current.trim()) return;
+								setEditorText(prompt.context);
+								focusEditor();
+							}}
+						>
+							{prompt.title}
+						</Button>
+					))}
+				</fieldset>
+			)}
 			<fieldset
 				aria-label="Message composer drop area"
 				disabled={retainUntilSent && isSubmitting}
@@ -998,7 +1037,12 @@ export function RoomComposer({
 														setIsActionsOpen(false);
 													}}
 												>
-													<action.icon aria-hidden="true" />
+													<action.icon
+														aria-hidden="true"
+														className={
+															action.iconClassName
+														}
+													/>
 													{action.label}
 												</DropdownMenuItem>
 											))}
@@ -1076,6 +1120,10 @@ export function RoomComposer({
 										: "Dictation is unavailable in this browser",
 								)}
 								{showPromptOptimization &&
+									(!hideEmptyOptimization ||
+										draft.trim() ||
+										originalDraft !== null ||
+										isOptimizing) &&
 									(originalDraft !== null
 										? tooltipButton(
 												"Revert optimized prompt",
@@ -1310,10 +1358,21 @@ export function RoomComposer({
 					{pasteNotice}
 				</output>
 			)}
-			{alert && (
-				<P className="mt-1.5 text-destructive text-xs" role="alert">
-					{alert}
-				</P>
+			{alert && alert !== dismissedAlert && (
+				<div className="mt-1.5 flex items-start gap-1" role="alert">
+					<P className="min-w-0 flex-1 text-destructive text-xs">
+						{alert}
+					</P>
+					<Button
+						type="button"
+						size="icon-sm"
+						variant="ghost"
+						aria-label="Dismiss error"
+						onClick={() => setDismissedAlert(alert)}
+					>
+						<X aria-hidden="true" className="size-3.5" />
+					</Button>
+				</div>
 			)}
 		</div>
 	);

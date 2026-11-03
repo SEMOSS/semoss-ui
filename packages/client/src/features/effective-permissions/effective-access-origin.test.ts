@@ -6,12 +6,12 @@ import {
 } from "./effective-access-origin";
 
 const DIRECT: PermissionSource = {
-	kind: "DIRECT",
+	sourceType: "DIRECT",
 	level: "READ_ONLY",
 	endDate: null,
 };
 const SALES: PermissionSource = {
-	kind: "TEAM",
+	sourceType: "TEAM",
 	id: "Sales",
 	type: "CUSTOM",
 	level: "EDIT",
@@ -20,7 +20,7 @@ const SALES: PermissionSource = {
 
 const row = (sources: PermissionSource[]): EffectivePermissionRow => ({
 	subject: {
-		kind: "USER",
+		category: "USER",
 		id: "ada",
 		type: "NATIVE",
 		name: "Ada Lovelace",
@@ -28,6 +28,7 @@ const row = (sources: PermissionSource[]): EffectivePermissionRow => ({
 	},
 	level: sources[0].level,
 	sources,
+	usage: null,
 });
 
 describe("getAccessOrigin", () => {

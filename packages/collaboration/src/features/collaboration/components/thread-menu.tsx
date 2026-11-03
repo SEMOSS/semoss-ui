@@ -26,6 +26,7 @@ export function ThreadMenu({
 	triggerId,
 	sourceMessageId,
 	isSourceIncluded,
+	additionalActions = [],
 }: {
 	thread: Thread;
 	item?: WorkItem;
@@ -37,11 +38,13 @@ export function ThreadMenu({
 	/** Email-card actions target that message, never another source. */
 	sourceMessageId?: string;
 	isSourceIncluded?: boolean;
+	/** Surface-specific context actions share the existing overflow and context menu. */
+	additionalActions?: ThreadMenuAction[];
 }) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const movesFocus = useRef(false);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-	const groups = useThreadMenuActions({
+	const baseGroups = useThreadMenuActions({
 		thread,
 		item,
 		triggerRef,
@@ -49,6 +52,9 @@ export function ThreadMenu({
 		sourceMessageId,
 		isSourceIncluded,
 	});
+	const groups = additionalActions.length
+		? [{ id: "context", actions: additionalActions }, ...baseGroups]
+		: baseGroups;
 	const handleSelect = (action: ThreadMenuAction) => {
 		movesFocus.current = Boolean(action.movesFocus);
 		setIsDropdownOpen(false);

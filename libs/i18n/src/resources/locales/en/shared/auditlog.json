@@ -63,7 +63,8 @@
 			"cacheWrite": "Cache Write",
 			"timestamp": "Timestamp",
 			"status": "Status",
-			"guardrailAction": "Guardrail"
+			"guardrailAction": "Guardrail",
+			"billedTo": "Billed To"
 		},
 		"guardrailActions": {
 			"MASK": "Masked",
@@ -133,7 +134,8 @@
 			"requestId": "Request Id",
 			"spanId": "Span Id",
 			"request": "Request",
-			"response": "Response"
+			"response": "Response",
+			"billedTo": "Billed To"
 		}
 	},
 	"page": {

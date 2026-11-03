@@ -110,7 +110,7 @@ export function RoomConversation({
 						: "px-4 pt-2 pb-4 sm:px-5 lg:px-7",
 				)}
 			>
-				<div className="mx-auto w-full max-w-3xl">{composer}</div>
+				<div className="mx-auto w-full max-w-4xl">{composer}</div>
 			</div>
 		</section>
 	);

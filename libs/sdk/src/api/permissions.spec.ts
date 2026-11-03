@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { get } from "../utility";
 import {
+	getEngineUsers,
 	getEngineUsersNoCredentials,
 	getProjectUsersNoCredentials,
 	searchForUser,
@@ -119,5 +120,92 @@ describe("searchForUser", () => {
 		await expect(searchForUser("ada")).rejects.toThrow(
 			"No Response to search for users",
 		);
+	});
+});
+
+describe("getEngineUsers", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("reads each model member's usage limit into its one shape", async () => {
+		mockGet.mockResolvedValue({
+			data: {
+				totalMembers: 2,
+				members: [
+					{
+						id: "ada",
+						name: "Ada",
+						permission: "READ_ONLY",
+						usage_limit: JSON.stringify({
+							unlimited: false,
+							rules: [
+								{
+									metric: "TOKENS",
+									amount: 1000,
+									window: "DAY",
+									counts: "EACH_PERSON",
+								},
+							],
+						}),
+					},
+					{ id: "grace", name: "Grace", permission: "EDIT" },
+				],
+			},
+		} as unknown as Awaited<ReturnType<typeof get>>);
+
+		const { members } = await getEngineUsers("m1");
+
+		expect(members[0].usage_limit).toEqual({
+			unlimited: false,
+			rules: [
+				{
+					metric: "TOKENS",
+					amount: 1000,
+					window: "DAY",
+					counts: "EACH_PERSON",
+				},
+			],
+		});
+		expect("usage_limit" in members[1]).toBe(false);
+	});
+
+	it("reads a usage limit the backend sends as an object", async () => {
+		const usageLimit = {
+			unlimited: false,
+			rules: [
+				{
+					metric: "COST",
+					amount: 5000000,
+					window: "HOUR",
+					windowLength: 6,
+					counts: "EACH_PERSON",
+				},
+			],
+		};
+		mockGet.mockResolvedValue({
+			data: {
+				totalMembers: 2,
+				members: [
+					{
+						id: "ada",
+						name: "Ada",
+						permission: "READ_ONLY",
+						usage_limit: usageLimit,
+					},
+					{
+						id: "grace",
+						name: "Grace",
+						permission: "OWNER",
+						usage_limit: { unlimited: true, rules: [] },
+					},
+				],
+			},
+		} as unknown as Awaited<ReturnType<typeof get>>);
+
+		const { members } = await getEngineUsers("m1");
+
+		expect(members[0].usage_limit).toEqual(usageLimit);
+		expect(members[1].usage_limit).toEqual({ unlimited: true, rules: [] });
 	});
 });

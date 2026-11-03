@@ -7,7 +7,6 @@ export type AutomationWorkflowNodeType =
 	| "model.chat"
 	| "model.embeddings"
 	| "model.vision"
-	| "model.ner"
 	| "storage.list"
 	| "storage.read"
 	| "storage.upload"

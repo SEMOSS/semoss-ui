@@ -4,3 +4,155 @@
  * copy of this file for why it lives here rather than in each host.
  */
 @source "../**/*.{ts,tsx}";
+
+/* Public Office theme tokens cross the editors' shadow boundaries. Resolve
+ * host aliases here, outside PowerPoint's CSS scope, to avoid token cycles.
+ * These style editor chrome only; page/cell/shape colors remain document data.
+ */
+.office-viewer-scope {
+	--semoss-office-background: var(--background);
+	--semoss-office-foreground: var(--foreground);
+	--semoss-office-card: var(--card);
+	--semoss-office-card-foreground: var(--card-foreground);
+	--semoss-office-popover: var(--popover);
+	--semoss-office-popover-foreground: var(--popover-foreground);
+	--semoss-office-primary: var(--primary);
+	--semoss-office-primary-foreground: var(--primary-foreground);
+	--semoss-office-secondary: var(--secondary);
+	--semoss-office-secondary-foreground: var(--secondary-foreground);
+	--semoss-office-muted: var(--muted);
+	--semoss-office-muted-foreground: var(--muted-foreground);
+	--semoss-office-accent: var(--accent);
+	--semoss-office-accent-foreground: var(--accent-foreground);
+	--semoss-office-destructive: var(--destructive);
+	--semoss-office-destructive-foreground: var(--destructive-foreground);
+	--semoss-office-border: var(--border);
+	--semoss-office-input: var(--input);
+	--semoss-office-ring: var(--ring);
+	--semoss-office-radius: var(--radius);
+	--semoss-office-font: var(--font-sans);
+
+	/* Legacy public product tokens keep explicit editor theme modes on the
+	 * same host palette instead of restoring vendor defaults at the boundary. */
+	--dve-background: var(--semoss-office-background);
+	--dve-foreground: var(--semoss-office-foreground);
+	--dve-card: var(--semoss-office-card);
+	--dve-card-foreground: var(--semoss-office-card-foreground);
+	--dve-popover: var(--semoss-office-popover);
+	--dve-popover-foreground: var(--semoss-office-popover-foreground);
+	--dve-primary: var(--semoss-office-primary);
+	--dve-primary-foreground: var(--semoss-office-primary-foreground);
+	--dve-secondary: var(--semoss-office-secondary);
+	--dve-secondary-foreground: var(--semoss-office-secondary-foreground);
+	--dve-muted: var(--semoss-office-muted);
+	--dve-muted-foreground: var(--semoss-office-muted-foreground);
+	--dve-accent: var(--semoss-office-accent);
+	--dve-accent-foreground: var(--semoss-office-accent-foreground);
+	--dve-destructive: var(--semoss-office-destructive);
+	--dve-destructive-foreground: var(--semoss-office-destructive-foreground);
+	--dve-border: var(--semoss-office-border);
+	--dve-input: var(--semoss-office-input);
+	--dve-ring: var(--semoss-office-ring);
+	--dve-radius: var(--semoss-office-radius);
+	--dve-font: var(--semoss-office-font);
+	--xve-background: var(--semoss-office-background);
+	--xve-foreground: var(--semoss-office-foreground);
+	--xve-card: var(--semoss-office-card);
+	--xve-card-foreground: var(--semoss-office-card-foreground);
+	--xve-popover: var(--semoss-office-popover);
+	--xve-popover-foreground: var(--semoss-office-popover-foreground);
+	--xve-primary: var(--semoss-office-primary);
+	--xve-primary-foreground: var(--semoss-office-primary-foreground);
+	--xve-secondary: var(--semoss-office-secondary);
+	--xve-secondary-foreground: var(--semoss-office-secondary-foreground);
+	--xve-muted: var(--semoss-office-muted);
+	--xve-muted-foreground: var(--semoss-office-muted-foreground);
+	--xve-accent: var(--semoss-office-accent);
+	--xve-accent-foreground: var(--semoss-office-accent-foreground);
+	--xve-destructive: var(--semoss-office-destructive);
+	--xve-destructive-foreground: var(--semoss-office-destructive-foreground);
+	--xve-border: var(--semoss-office-border);
+	--xve-input: var(--semoss-office-input);
+	--xve-ring: var(--semoss-office-ring);
+	--xve-radius: var(--semoss-office-radius);
+	--xve-font: var(--semoss-office-font);
+
+	--office-background: var(--background);
+	--office-foreground: var(--foreground);
+	--office-surface: var(--muted);
+	--office-muted-foreground: var(--muted-foreground);
+	--office-selected: var(--accent);
+	--office-border: var(--border);
+	--office-accent: var(--primary);
+	--office-accent-foreground: var(--primary-foreground);
+	--office-accent-hover: color-mix(in srgb, var(--primary) 90%, var(--foreground));
+	--office-ring: var(--ring);
+	--office-danger: var(--destructive);
+	--office-danger-foreground: var(--destructive-foreground);
+	--office-warning: var(--warning);
+	--office-warning-foreground: var(--warning-foreground);
+	--office-info: var(--primary);
+	--office-popover: var(--popover);
+	--office-popover-foreground: var(--popover-foreground);
+	--office-notice-background: color-mix(in srgb, var(--warning) 10%, var(--background));
+	--office-notice-foreground: var(--foreground);
+	--office-notice-border: var(--warning);
+	--office-notice-accent: var(--warning);
+	--office-keytip-background: var(--popover);
+	--office-keytip-foreground: var(--popover-foreground);
+	--office-keytip-border: var(--border);
+	--office-font: var(--font-sans);
+	--office-font-size: var(--text-sm);
+	--office-font-size-xs: var(--text-xs);
+	--office-font-size-sm: var(--text-xs);
+	--office-font-size-md: var(--text-sm);
+	--office-font-size-lg: var(--text-base);
+	--office-font-size-xl: var(--text-lg);
+	--office-font-size-touch: var(--text-base);
+	--office-font-weight-medium: var(--font-weight-medium);
+	--office-font-weight-bold: var(--font-weight-semibold);
+	--office-radius: var(--radius-md);
+	--office-radius-sm: var(--radius-sm);
+	--office-radius-md: var(--radius-md);
+	--office-radius-lg: var(--radius-lg);
+	--office-field-radius: var(--radius-md);
+	--office-field-border: var(--input);
+	--office-field-border-focus: var(--ring);
+	--office-field-background: var(--background);
+	--office-field-foreground: var(--foreground);
+	--office-field-placeholder: var(--muted-foreground);
+	--office-checkbox-border: var(--input);
+	--office-checkbox-background: var(--background);
+	--office-checkbox-accent: var(--primary);
+	--office-checkbox-accent-foreground: var(--primary-foreground);
+	--office-switch-border: var(--input);
+	--office-switch-track: var(--muted);
+	--office-switch-track-on: var(--primary);
+	--office-switch-thumb: var(--foreground);
+	--office-switch-thumb-on: var(--primary-foreground);
+	--office-command-active: var(--accent);
+	--office-ribbon-caption-size: var(--text-xs);
+}
+
+.office-viewer-scope[data-office-theme="light"] {
+	color-scheme: light;
+}
+
+.office-viewer-scope[data-office-theme="dark"] {
+	color-scheme: dark;
+}
+
+/* Preserve the user's high-contrast palette over the application bridge. */
+@media (forced-colors: active) {
+	.office-viewer-scope {
+		--office-background: Canvas;
+		--office-foreground: CanvasText;
+		--office-surface: Canvas;
+		--office-muted-foreground: GrayText;
+		--office-border: CanvasText;
+		--office-accent: Highlight;
+		--office-accent-foreground: HighlightText;
+		--office-selected: Highlight;
+		--office-ring: Highlight;
+	}
+}

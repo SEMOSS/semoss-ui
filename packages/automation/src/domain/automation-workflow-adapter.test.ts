@@ -63,6 +63,7 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 	definition("database.query", "database", "Query database", {
 		engineId: "",
 		query: "",
+		parameters: [],
 		limit: 50,
 	}),
 	definition("database.insert", "database", "Insert database rows", {
@@ -224,6 +225,36 @@ describe("database query limit", () => {
 		);
 		expect(reloadedQuery?.config).toMatchObject({
 			limit: 100,
+		});
+	});
+
+	it("preserves bound positional parameters", () => {
+		const step = node("database.query");
+		const parameterReference =
+			"$" + "{developer_python_8.appointmentBlockId}";
+		const saved = documentOf([
+			{
+				...step,
+				config: {
+					...(step.config as DatabaseEngineConfig),
+					engineId: "database-1",
+					expression:
+						"SELECT ExamSchedulingRequestId FROM ExampleSchedulingRequestId WHERE AppointmentBlockId = ?",
+					parameters: JSON.stringify([parameterReference]),
+				},
+			},
+		]);
+
+		expect(saved.graph.nodes[0]?.config.parameters).toEqual([
+			parameterReference,
+		]);
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedQuery = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "database.query",
+		);
+		expect(reloadedQuery?.config).toMatchObject({
+			parameters: JSON.stringify([parameterReference]),
 		});
 	});
 });

@@ -4,10 +4,33 @@ This document provides context for AI coding assistants working with the SEMOSS 
 
 ## Required Skill Routing (All Agents)
 
-Load the relevant skills before implementation or review. The
-[skill index](./skills/README.md) applies to all agents, regardless of provider:
+**Before any task involving React files, every agent must read the full
+[React standard](./skills/react-standard.skill.md).** This is mandatory for all
+providers and delegated agents when creating, editing, refactoring, debugging,
+investigating, planning changes to, or reviewing React code anywhere in the repo.
+It covers `.tsx` and `.jsx` files, React components/hooks/context/providers in
+`.ts` or `.js` files, and React tests, stories, and examples. Task size and location
+outside `src/` do not waive this requirement.
 
-- [React standard](./skills/react-standard.skill.md): React/TypeScript implementation and review.
+- Read the file itself; a link, skill listing, metadata, or summary is not a
+  substitute for its full contents. Do not rely on automatic skill discovery.
+- Apply its rules according to the work: React rules govern React code;
+  applicable language, architecture, compatibility, and validation rules govern
+  other work. Preserve documented exceptions and protected-file restrictions.
+- Unrelated documentation, configuration, scripts, and CI tasks do not require
+  this skill solely because they are in the repository.
+- After reading it, briefly identify `skills/react-standard.skill.md` in a
+  progress update; delegated agents must also identify it in their handoff.
+- Include this mandatory reading requirement in every delegated React task. Each
+  agent is responsible for loading the standard in its own context.
+- If context is compacted or lost, reload the standard before continuing unless
+  its full contents remain available. If the file cannot be read, report that
+  blocker before proceeding with React work.
+
+Read the owning package's `AGENTS.md` and use the [skill index](./skills/README.md)
+to load additional skills before the relevant work. Package guides and specialized
+skills supplement the standard; they do not waive reading it for React work.
+
 - [Accessibility](./skills/accessibility.skill.md): interactive UI and accessible behavior.
 - [Mobile development](./skills/mobile-development.skill.md): responsive and touch interfaces.
 - [React form builder](./skills/react-form-builder.skill.md): form fields, validation, and submission.

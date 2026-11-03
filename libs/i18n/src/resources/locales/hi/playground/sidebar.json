@@ -64,7 +64,7 @@
 		"roomDeletedSuccess": "रूम सफलतापूर्वक हटाया गया"
 	},
 	"workbench": {
-		"file": "फ़ाइल",
+		"view": "दृश्य",
 		"navigate": "नेविगेट करें",
 		"commandPalette": "कमांड पैलेट खोलें…",
 		"layout": "पैनल व्यवस्थित करें",

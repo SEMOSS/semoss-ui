@@ -1,9 +1,9 @@
-import { Check, ChevronDown, CircleX } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { Button, cn, Muted } from "@semoss/ui/next";
 import { ToolFailureTooltip } from "@/features/tools/components/tool-failure-tooltip";
 import type { OwnedMessagePart } from "../utils/message-presentation";
 
-/** One compact summary keeps failures visible without breaking up the group. */
+/** One quiet summary; a failed step the agent recovered from stays in the steps and tooltip. */
 export function MessageToolSummary({
 	items,
 	isExpanded,
@@ -21,7 +21,6 @@ export function MessageToolSummary({
 	const failureCount = tools.filter(
 		(tool) => tool.status === "FAILED",
 	).length;
-	const Icon = failureCount > 0 ? CircleX : Check;
 	return (
 		<ToolFailureTooltip tools={tools}>
 			<Button
@@ -32,24 +31,11 @@ export function MessageToolSummary({
 				aria-controls={controls}
 				onClick={onToggle}
 			>
-				<Icon
-					aria-hidden="true"
-					className={cn(
-						"size-4 shrink-0",
-						failureCount > 0 && "text-destructive",
-					)}
-				/>
+				<Check aria-hidden="true" className="size-4 shrink-0" />
 				<Muted className="wrap-anywhere min-w-0 text-sm">
-					{failureCount > 0 ? (
-						<>
-							{tools.length} tools ·{" "}
-							<span className="text-destructive">
-								{failureCount} failed
-							</span>
-						</>
-					) : (
-						`${tools.length} tools completed`
-					)}
+					{failureCount > 0
+						? `${tools.length} tools used`
+						: `${tools.length} tools completed`}
 				</Muted>
 				<Muted className="ms-auto shrink-0 text-xs">
 					{isExpanded ? "Hide steps" : "View steps"}

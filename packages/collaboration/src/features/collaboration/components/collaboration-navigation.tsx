@@ -1,67 +1,50 @@
-import {
-	Brain,
-	BriefcaseBusiness,
-	CalendarClock,
-	Inbox,
-	Mail,
-} from "lucide-react";
-import { useState } from "react";
+import { CalendarClock, Inbox } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
-import {
-	selectWorkItems,
-	threadNeedsTopic,
-} from "../state/collaboration.selectors";
+import { selectToday } from "@/features/dashboard/today-selectors";
+import { RoutineRecentRuns } from "@/features/routines/routine-recent-runs";
+import { lexicon } from "@/lib/lexicon";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { suggestedMemories } from "../state/memory";
-import { CollaborationNavigationHeader } from "./collaboration-navigation-header";
+import {
+	CollaborationNavigationHeader,
+	type NavigationToggle,
+} from "./collaboration-navigation-header";
 import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 import { CollaborationSettingsLink } from "./collaboration-settings-link";
-import { CollaborationTopicsNavigation } from "./collaboration-topics-navigation";
 
 interface CollaborationNavigationProps {
 	/** Renders a compact icon rail on desktop. */
 	isCollapsed?: boolean;
-	/** Controls the saved topic disclosure when rendered by the shell. */
-	isTopicsOpen?: boolean;
-	/** Saves the user's topic disclosure preference. */
-	onTopicsOpenChange?: (isOpen: boolean) => void;
 	/** Controls the saved session disclosure when rendered by the shell. */
 	isSessionsOpen?: boolean;
 	/** Saves the user's session disclosure preference. */
 	onSessionsOpenChange?: (isOpen: boolean) => void;
-	/** Opens the shell-owned topic editor independently of mobile navigation. */
-	onNewTopic?: (trigger: HTMLButtonElement) => void;
 	/** Closes mobile navigation after choosing a destination. */
 	onNavigate?: () => void;
+	/** The desktop collapse button, shown in the header. */
+	toggle?: NavigationToggle;
 }
 
-/** One quiet navigation follows the daily brief, topics, and conversations. */
+/** One quiet navigation follows the daily brief and conversations; topics live in Settings. */
 export function CollaborationNavigation({
 	isCollapsed = false,
-	isTopicsOpen,
-	onTopicsOpenChange,
 	isSessionsOpen,
 	onSessionsOpenChange,
-	onNewTopic,
 	onNavigate,
+	toggle,
 }: CollaborationNavigationProps) {
 	const { state } = useCollaborationSession();
-	const { pathname, search } = useLocation();
-	const isUnassigned =
-		pathname === "/brain/threads" &&
-		new URLSearchParams(search).get("filter") === "needs";
-	const [isLocalTopicsOpen, setIsLocalTopicsOpen] = useState(false);
-	const reviews =
-		state.reviews.filter((review) => review.status === "open").length +
-		suggestedMemories(state.memories).length;
+	const { pathname } = useLocation();
+	// Work, filing and setup stay reachable from Today, Settings and search;
+	// Routines stays here because it is the proactive part
 	const links = [
 		{
 			to: "/",
-			label: "For you",
+			label: lexicon.today,
 			icon: Inbox,
-			count: selectWorkItems(state, { view: "needs_me" }).total,
+			// only what is due today, so the badge stays meaningful
+			count: selectToday(state).due,
 			isActive: pathname === "/",
 		},
 		{
@@ -71,29 +54,6 @@ export function CollaborationNavigation({
 			count: 0,
 			isActive: pathname === "/routines",
 		},
-		{
-			to: "/work",
-			label: "Work",
-			icon: BriefcaseBusiness,
-			count: 0,
-			isActive: pathname === "/work" || pathname.startsWith("/work/"),
-		},
-		{
-			to: "/brain/threads?filter=needs",
-			label: "Unassigned",
-			icon: Mail,
-			count: state.threads.filter(threadNeedsTopic).length,
-			isActive: isUnassigned,
-		},
-		{
-			to: "/brain",
-			label: "Brain",
-			icon: Brain,
-			count: reviews,
-			isActive:
-				!isUnassigned &&
-				(pathname === "/brain" || pathname.startsWith("/brain/")),
-		},
 	];
 	return (
 		<div className="flex h-full min-h-0 flex-col">
@@ -101,11 +61,12 @@ export function CollaborationNavigation({
 				<CollaborationNavigationHeader
 					isCollapsed={isCollapsed}
 					onNavigate={onNavigate}
+					toggle={toggle}
 				/>
 			</div>
 			<nav
 				aria-label="Main"
-				className="flex shrink-0 flex-col gap-0.5 px-2 py-2 pr-3"
+				className="flex shrink-0 flex-col gap-0.5 px-2 pt-2 pr-3 pb-0.5"
 			>
 				{links.map(({ to, label, icon: Icon, count, isActive }) => (
 					<Tooltip key={to} disableHoverableContent={false}>
@@ -150,18 +111,12 @@ export function CollaborationNavigation({
 			<div className="flex min-h-0 flex-1 flex-col pr-1">
 				<div
 					className={cn(
-						"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
+						"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pt-1.5",
 						isCollapsed && "hidden",
 					)}
 				>
-					<CollaborationTopicsNavigation
-						isOpen={isTopicsOpen ?? isLocalTopicsOpen}
-						onOpenChange={
-							onTopicsOpenChange ?? setIsLocalTopicsOpen
-						}
-						onNavigate={onNavigate}
-						onNewTopic={onNewTopic}
-					/>
+					{/* under Routines, the last link, but scrolling with Chats so a long list never pushes Settings off screen */}
+					<RoutineRecentRuns onNavigate={onNavigate} />
 					<ChatHistoryList
 						isOpen={isSessionsOpen}
 						onOpenChange={onSessionsOpenChange}

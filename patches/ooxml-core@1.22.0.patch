@@ -1,0 +1,360 @@
+diff --git a/dist/automation/index.cjs b/dist/automation/index.cjs
+index 37e2498661de2d7e9ad024265cfdd0fc9f9a5d1d..a8913c7ceacddf42dcfcec5802ee5032c93180d9 100644
+--- a/dist/automation/index.cjs
++++ b/dist/automation/index.cjs
+@@ -71281,6 +71281,18 @@ function visioGlueSites(box5) {
+   ].map(([x, y]) => ({ x: a2 * x + c2 * y + e, y: b * x + d * y + f6 }));
+ }
+
++// A native connector may count its own transform events without naming Sheet.ID.
++// Admit only that exact self-reference, in a top-level connector's trigger cells.
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute3(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute3(shape, "Del") ?? "")) return false;
++  const id = attribute3(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children3(shape, "Cell").filter((cell) => attribute3(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
++
+ // visio/edit-recalculate-index.ts
+ var key = (cell) => JSON.stringify([cell.pageId, cell.shapeId, cell.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -71353,7 +71365,7 @@ function indexCells2(roots, options2) {
+           unit: cellUnit(cell, relative2)
+         };
+         const source2 = attribute3(node4, "F");
+-        if (executableCellFormula(source2) && !independentTextFieldFormula(node4, source2) && !inertDoubleClickFormula(cell, source2) && !(glue2 && isNativeGlueCell(cell, source2)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source2) && !independentTextFieldFormula(node4, source2) && !inertDoubleClickFormula(cell, source2) && !isSelfGlueTrigger(node4, source2) && !(glue2 && isNativeGlueCell(cell, source2)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell) && isNativeGlueCell(cell, source2))) {
+           try {
+@@ -72233,6 +72245,18 @@ function serializeEditedXml(root, limits, check4) {
+ }
+
+ // visio/edit-formatting-scope.ts
++// These native expressions read only their owning master shape's text/cells.
++// A master-local TheText is not the text of an independent page label.
++function isIndependentMasterTextFormula(root, node, source) {
++  if (root.localName !== "MasterContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.localName !== "Cell" || node.namespaceURI !== root.namespaceURI || node.hasAttribute("E")) return false;
++  let shape = node.parentNode;
++  while (shape && shape.localName !== "Shape") shape = shape.parentNode;
++  if (shape?.localName !== "Shape" || shape.parentNode?.parentNode !== root || shape.namespaceURI !== root.namespaceURI || !attribute3(shape, "ID")) return false;
++  const sized = textSizeFormula(source);
++  if (sized && sized.references.every((ref) => ref.shapeId === void 0)) return true;
++  return attribute3(node, "N") === "XCon" && /^\s*IF\(OR\(STRSAME\(SHAPETEXT\(TheText\),""\),HideText\),5,0\)\s*$/i.test(source);
++}
++
+ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shape2, changed, check4, instanceView2) {
+   indexCells2(roots, { check: check4 });
+   const shapeId2 = attribute3(shape2, "ID");
+@@ -72261,6 +72285,8 @@ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shap
+       if (independentTextFieldFormula(node4, source2)) continue;
+       if (attribute3(node4, "V") === "Themed" && isThemeLookupFormula(source2)) continue;
+       if (isConnectedGlueCell(node4, source2)) continue;
++      if (isSelfGlueTrigger(node4, source2)) continue;
++      if (named2 && sourcePageId === void 0 && isIndependentMasterTextFormula(root, node4, source2)) continue;
+       const owner = node4.parentNode;
+       if (jumpOnly && node4.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute3(node4, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source2) === attribute3(owner, "ID"))
+         continue;
+diff --git a/dist/automation/index.mjs b/dist/automation/index.mjs
+index 9bb05f6c5147c5bf0f7ef752eeb6c6dd514e6cdf..2a77f47cea15bf63cbd7b2e3805e4d1d0bbce377 100644
+--- a/dist/automation/index.mjs
++++ b/dist/automation/index.mjs
+@@ -71275,6 +71275,18 @@ function visioGlueSites(box5) {
+   ].map(([x, y]) => ({ x: a2 * x + c2 * y + e, y: b * x + d * y + f6 }));
+ }
+
++// A native connector may count its own transform events without naming Sheet.ID.
++// Admit only that exact self-reference, in a top-level connector's trigger cells.
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute3(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute3(shape, "Del") ?? "")) return false;
++  const id = attribute3(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children3(shape, "Cell").filter((cell) => attribute3(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
++
+ // visio/edit-recalculate-index.ts
+ var key = (cell) => JSON.stringify([cell.pageId, cell.shapeId, cell.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -71347,7 +71359,7 @@ function indexCells2(roots, options2) {
+           unit: cellUnit(cell, relative2)
+         };
+         const source2 = attribute3(node4, "F");
+-        if (executableCellFormula(source2) && !independentTextFieldFormula(node4, source2) && !inertDoubleClickFormula(cell, source2) && !(glue2 && isNativeGlueCell(cell, source2)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source2) && !independentTextFieldFormula(node4, source2) && !inertDoubleClickFormula(cell, source2) && !isSelfGlueTrigger(node4, source2) && !(glue2 && isNativeGlueCell(cell, source2)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell) && isNativeGlueCell(cell, source2))) {
+           try {
+@@ -72227,6 +72239,18 @@ function serializeEditedXml(root, limits, check4) {
+ }
+
+ // visio/edit-formatting-scope.ts
++// These native expressions read only their owning master shape's text/cells.
++// A master-local TheText is not the text of an independent page label.
++function isIndependentMasterTextFormula(root, node, source) {
++  if (root.localName !== "MasterContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.localName !== "Cell" || node.namespaceURI !== root.namespaceURI || node.hasAttribute("E")) return false;
++  let shape = node.parentNode;
++  while (shape && shape.localName !== "Shape") shape = shape.parentNode;
++  if (shape?.localName !== "Shape" || shape.parentNode?.parentNode !== root || shape.namespaceURI !== root.namespaceURI || !attribute3(shape, "ID")) return false;
++  const sized = textSizeFormula(source);
++  if (sized && sized.references.every((ref) => ref.shapeId === void 0)) return true;
++  return attribute3(node, "N") === "XCon" && /^\s*IF\(OR\(STRSAME\(SHAPETEXT\(TheText\),""\),HideText\),5,0\)\s*$/i.test(source);
++}
++
+ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shape2, changed, check4, instanceView2) {
+   indexCells2(roots, { check: check4 });
+   const shapeId2 = attribute3(shape2, "ID");
+@@ -72255,6 +72279,8 @@ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shap
+       if (independentTextFieldFormula(node4, source2)) continue;
+       if (attribute3(node4, "V") === "Themed" && isThemeLookupFormula(source2)) continue;
+       if (isConnectedGlueCell(node4, source2)) continue;
++      if (isSelfGlueTrigger(node4, source2)) continue;
++      if (named2 && sourcePageId === void 0 && isIndependentMasterTextFormula(root, node4, source2)) continue;
+       const owner = node4.parentNode;
+       if (jumpOnly && node4.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute3(node4, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source2) === attribute3(owner, "ID"))
+         continue;
+diff --git a/dist/visio/index.cjs b/dist/visio/index.cjs
+index 0b1c348ec7b04379ac979bd7489acd7e748138b7..495d13ffb6c86205f018afdb4ac050c7067a77a5 100644
+--- a/dist/visio/index.cjs
++++ b/dist/visio/index.cjs
+@@ -4267,6 +4267,18 @@ function visioGlueSites(box4) {
+   ].map(([x, y]) => ({ x: a2 * x + c2 * y + e, y: b * x + d * y + f }));
+ }
+
++// A native connector may count its own transform events without naming Sheet.ID.
++// Admit only that exact self-reference, in a top-level connector's trigger cells.
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute2(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute2(shape, "Del") ?? "")) return false;
++  const id = attribute2(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children2(shape, "Cell").filter((cell) => attribute2(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
++
+ // visio/edit-recalculate-index.ts
+ var key = (cell) => JSON.stringify([cell.pageId, cell.shapeId, cell.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -4339,7 +4351,7 @@ function indexCells(roots, options2) {
+           unit: cellUnit(cell, relative)
+         };
+         const source = attribute2(node3, "F");
+-        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell, source) && !(glue2 && isNativeGlueCell(cell, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell, source) && !isSelfGlueTrigger(node3, source) && !(glue2 && isNativeGlueCell(cell, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell) && isNativeGlueCell(cell, source))) {
+           try {
+@@ -33981,6 +33993,18 @@ function resolveVisioPageVisibility(page, options2 = {}) {
+ }
+
+ // visio/edit-formatting-scope.ts
++// These native expressions read only their owning master shape's text/cells.
++// A master-local TheText is not the text of an independent page label.
++function isIndependentMasterTextFormula(root, node, source) {
++  if (root.localName !== "MasterContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.localName !== "Cell" || node.namespaceURI !== root.namespaceURI || node.hasAttribute("E")) return false;
++  let shape = node.parentNode;
++  while (shape && shape.localName !== "Shape") shape = shape.parentNode;
++  if (shape?.localName !== "Shape" || shape.parentNode?.parentNode !== root || shape.namespaceURI !== root.namespaceURI || !attribute2(shape, "ID")) return false;
++  const sized = textSizeFormula(source);
++  if (sized && sized.references.every((ref) => ref.shapeId === void 0)) return true;
++  return attribute2(node, "N") === "XCon" && /^\s*IF\(OR\(STRSAME\(SHAPETEXT\(TheText\),""\),HideText\),5,0\)\s*$/i.test(source);
++}
++
+ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shape, changed, check, instanceView2) {
+   indexCells(roots, { check });
+   const shapeId2 = attribute2(shape, "ID");
+@@ -34009,6 +34033,8 @@ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shap
+       if (independentTextFieldFormula(node3, source)) continue;
+       if (attribute2(node3, "V") === "Themed" && isThemeLookupFormula(source)) continue;
+       if (isConnectedGlueCell(node3, source)) continue;
++      if (isSelfGlueTrigger(node3, source)) continue;
++      if (named2 && sourcePageId === void 0 && isIndependentMasterTextFormula(root2, node3, source)) continue;
+       const owner = node3.parentNode;
+       if (jumpOnly && node3.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute2(node3, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source) === attribute2(owner, "ID"))
+         continue;
+diff --git a/dist/visio/index.mjs b/dist/visio/index.mjs
+index ee66d4cf3eaa1215ffc2ae8732a320f01af39ca2..505503d9bab913bd3737bd86bce6c0de3bd49d65 100644
+--- a/dist/visio/index.mjs
++++ b/dist/visio/index.mjs
+@@ -4261,6 +4261,18 @@ function visioGlueSites(box4) {
+   ].map(([x, y]) => ({ x: a2 * x + c2 * y + e, y: b * x + d * y + f }));
+ }
+
++// A native connector may count its own transform events without naming Sheet.ID.
++// Admit only that exact self-reference, in a top-level connector's trigger cells.
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute2(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute2(shape, "Del") ?? "")) return false;
++  const id = attribute2(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children2(shape, "Cell").filter((cell) => attribute2(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
++
+ // visio/edit-recalculate-index.ts
+ var key = (cell) => JSON.stringify([cell.pageId, cell.shapeId, cell.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -4333,7 +4345,7 @@ function indexCells(roots, options2) {
+           unit: cellUnit(cell, relative)
+         };
+         const source = attribute2(node3, "F");
+-        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell, source) && !(glue2 && isNativeGlueCell(cell, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell, source) && !isSelfGlueTrigger(node3, source) && !(glue2 && isNativeGlueCell(cell, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell) && isNativeGlueCell(cell, source))) {
+           try {
+@@ -33975,6 +33987,18 @@ function resolveVisioPageVisibility(page, options2 = {}) {
+ }
+
+ // visio/edit-formatting-scope.ts
++// These native expressions read only their owning master shape's text/cells.
++// A master-local TheText is not the text of an independent page label.
++function isIndependentMasterTextFormula(root, node, source) {
++  if (root.localName !== "MasterContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.localName !== "Cell" || node.namespaceURI !== root.namespaceURI || node.hasAttribute("E")) return false;
++  let shape = node.parentNode;
++  while (shape && shape.localName !== "Shape") shape = shape.parentNode;
++  if (shape?.localName !== "Shape" || shape.parentNode?.parentNode !== root || shape.namespaceURI !== root.namespaceURI || !attribute2(shape, "ID")) return false;
++  const sized = textSizeFormula(source);
++  if (sized && sized.references.every((ref) => ref.shapeId === void 0)) return true;
++  return attribute2(node, "N") === "XCon" && /^\s*IF\(OR\(STRSAME\(SHAPETEXT\(TheText\),""\),HideText\),5,0\)\s*$/i.test(source);
++}
++
+ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shape, changed, check, instanceView2) {
+   indexCells(roots, { check });
+   const shapeId2 = attribute2(shape, "ID");
+@@ -34003,6 +34027,8 @@ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shap
+       if (independentTextFieldFormula(node3, source)) continue;
+       if (attribute2(node3, "V") === "Themed" && isThemeLookupFormula(source)) continue;
+       if (isConnectedGlueCell(node3, source)) continue;
++      if (isSelfGlueTrigger(node3, source)) continue;
++      if (named2 && sourcePageId === void 0 && isIndependentMasterTextFormula(root2, node3, source)) continue;
+       const owner = node3.parentNode;
+       if (jumpOnly && node3.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute2(node3, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source) === attribute2(owner, "ID"))
+         continue;
+diff --git a/dist/visio/ui/index.cjs b/dist/visio/ui/index.cjs
+index e0e419d6bc6e93a33a10453817f733ab96f7314f..e2de5ec32d9fd4de982b95571d9703c4fefac4ce 100644
+--- a/dist/visio/ui/index.cjs
++++ b/dist/visio/ui/index.cjs
+@@ -4755,6 +4755,18 @@ function visioGlueSites(box5) {
+   ].map(([x, y]) => ({ x: a2 * x + c2 * y + e, y: b * x + d * y + f }));
+ }
+
++// A native connector may count its own transform events without naming Sheet.ID.
++// Admit only that exact self-reference, in a top-level connector's trigger cells.
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute2(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute2(shape, "Del") ?? "")) return false;
++  const id = attribute2(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children2(shape, "Cell").filter((cell) => attribute2(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
++
+ // visio/edit-recalculate-index.ts
+ var key = (cell) => JSON.stringify([cell.pageId, cell.shapeId, cell.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -4827,7 +4839,7 @@ function indexCells(roots2, options2) {
+           unit: cellUnit(cell, relative)
+         };
+         const source = attribute2(node3, "F");
+-        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell, source) && !(glue2 && isNativeGlueCell(cell, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell, source) && !isSelfGlueTrigger(node3, source) && !(glue2 && isNativeGlueCell(cell, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell) && isNativeGlueCell(cell, source))) {
+           try {
+@@ -29705,6 +29717,18 @@ var VISIO_VISIBILITY_LIMITS = Object.freeze({
+ });
+
+ // visio/edit-formatting-scope.ts
++// These native expressions read only their owning master shape's text/cells.
++// A master-local TheText is not the text of an independent page label.
++function isIndependentMasterTextFormula(root, node, source) {
++  if (root.localName !== "MasterContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.localName !== "Cell" || node.namespaceURI !== root.namespaceURI || node.hasAttribute("E")) return false;
++  let shape = node.parentNode;
++  while (shape && shape.localName !== "Shape") shape = shape.parentNode;
++  if (shape?.localName !== "Shape" || shape.parentNode?.parentNode !== root || shape.namespaceURI !== root.namespaceURI || !attribute2(shape, "ID")) return false;
++  const sized = textSizeFormula(source);
++  if (sized && sized.references.every((ref) => ref.shapeId === void 0)) return true;
++  return attribute2(node, "N") === "XCon" && /^\s*IF\(OR\(STRSAME\(SHAPETEXT\(TheText\),""\),HideText\),5,0\)\s*$/i.test(source);
++}
++
+ async function assertFormattingDependencies(pkg, pagePaths, roots2, pageId2, shape, changed, check, instanceView2) {
+   indexCells(roots2, { check });
+   const shapeId2 = attribute2(shape, "ID");
+@@ -29733,6 +29757,8 @@ async function assertFormattingDependencies(pkg, pagePaths, roots2, pageId2, sha
+       if (independentTextFieldFormula(node3, source)) continue;
+       if (attribute2(node3, "V") === "Themed" && isThemeLookupFormula(source)) continue;
+       if (isConnectedGlueCell(node3, source)) continue;
++      if (isSelfGlueTrigger(node3, source)) continue;
++      if (named2 && sourcePageId === void 0 && isIndependentMasterTextFormula(root2, node3, source)) continue;
+       const owner = node3.parentNode;
+       if (jumpOnly && node3.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute2(node3, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source) === attribute2(owner, "ID"))
+         continue;
+diff --git a/dist/visio/ui/index.mjs b/dist/visio/ui/index.mjs
+index e8a08ae1f8c3102f68056d37f345d92e64fe3640..302adf581a1b98ba2ff29d5c52c906e807950380 100644
+--- a/dist/visio/ui/index.mjs
++++ b/dist/visio/ui/index.mjs
+@@ -4749,6 +4749,18 @@ function visioGlueSites(box5) {
+   ].map(([x, y]) => ({ x: a2 * x + c2 * y + e, y: b * x + d * y + f }));
+ }
+
++// A native connector may count its own transform events without naming Sheet.ID.
++// Admit only that exact self-reference, in a top-level connector's trigger cells.
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute2(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute2(shape, "Del") ?? "")) return false;
++  const id = attribute2(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children2(shape, "Cell").filter((cell) => attribute2(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
++
+ // visio/edit-recalculate-index.ts
+ var key = (cell) => JSON.stringify([cell.pageId, cell.shapeId, cell.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -4821,7 +4833,7 @@ function indexCells(roots2, options2) {
+           unit: cellUnit(cell, relative)
+         };
+         const source = attribute2(node3, "F");
+-        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell, source) && !(glue2 && isNativeGlueCell(cell, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell, source) && !isSelfGlueTrigger(node3, source) && !(glue2 && isNativeGlueCell(cell, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell) && isNativeGlueCell(cell, source))) {
+           try {
+@@ -29699,6 +29711,18 @@ var VISIO_VISIBILITY_LIMITS = Object.freeze({
+ });
+
+ // visio/edit-formatting-scope.ts
++// These native expressions read only their owning master shape's text/cells.
++// A master-local TheText is not the text of an independent page label.
++function isIndependentMasterTextFormula(root, node, source) {
++  if (root.localName !== "MasterContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.localName !== "Cell" || node.namespaceURI !== root.namespaceURI || node.hasAttribute("E")) return false;
++  let shape = node.parentNode;
++  while (shape && shape.localName !== "Shape") shape = shape.parentNode;
++  if (shape?.localName !== "Shape" || shape.parentNode?.parentNode !== root || shape.namespaceURI !== root.namespaceURI || !attribute2(shape, "ID")) return false;
++  const sized = textSizeFormula(source);
++  if (sized && sized.references.every((ref) => ref.shapeId === void 0)) return true;
++  return attribute2(node, "N") === "XCon" && /^\s*IF\(OR\(STRSAME\(SHAPETEXT\(TheText\),""\),HideText\),5,0\)\s*$/i.test(source);
++}
++
+ async function assertFormattingDependencies(pkg, pagePaths, roots2, pageId2, shape, changed, check, instanceView2) {
+   indexCells(roots2, { check });
+   const shapeId2 = attribute2(shape, "ID");
+@@ -29727,6 +29751,8 @@ async function assertFormattingDependencies(pkg, pagePaths, roots2, pageId2, sha
+       if (independentTextFieldFormula(node3, source)) continue;
+       if (attribute2(node3, "V") === "Themed" && isThemeLookupFormula(source)) continue;
+       if (isConnectedGlueCell(node3, source)) continue;
++      if (isSelfGlueTrigger(node3, source)) continue;
++      if (named2 && sourcePageId === void 0 && isIndependentMasterTextFormula(root2, node3, source)) continue;
+       const owner = node3.parentNode;
+       if (jumpOnly && node3.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute2(node3, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source) === attribute2(owner, "ID"))
+         continue;

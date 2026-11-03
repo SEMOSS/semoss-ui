@@ -33,6 +33,7 @@ import { useNavigate } from "@/hooks/useNavigate";
 import { GUARDRAIL_CONNECTION } from "./guardrail-import.constants";
 import { GuardrailForm } from "./guardrail-import-form";
 import { GuardrailTitleCard } from "./guardrail-title-card";
+import { JevPolicyGuardrailForm } from "./jev-policy-guardrail-form";
 import { SqlQueryGuardrailForm } from "./sql-query-guardrail-form";
 
 interface GuardrailOption {
@@ -42,7 +43,8 @@ interface GuardrailOption {
 	icon: string;
 	disable: boolean;
 	notice?: string;
-	form?: "sql-query-policy";
+	/** A guardrail type with a form of its own, instead of the generic one. */
+	form?: "sql-query-policy" | "jev-policy";
 }
 
 export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
@@ -234,6 +236,45 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 		setIsFileUploadModalOpen(flag);
 	};
 
+	// a form of its own opens the new guardrail, or goes back to the list on cancel
+	const handleGuardrailFormSubmit = (engineId?: string) => {
+		if (engineId) {
+			navigate(`/guardrail/${engineId}`);
+			return;
+		}
+		setSelectedDatabase(null);
+	};
+
+	const renderGuardrailForm = (option: GuardrailOption) => {
+		if (option.form === "sql-query-policy") {
+			return (
+				<SqlQueryGuardrailForm
+					icon={option.icon}
+					onSubmit={handleGuardrailFormSubmit}
+				/>
+			);
+		}
+		if (option.form === "jev-policy") {
+			return (
+				<JevPolicyGuardrailForm
+					icon={option.icon}
+					onSubmit={handleGuardrailFormSubmit}
+				/>
+			);
+		}
+		return (
+			<GuardrailForm
+				title={option.name}
+				description={`Fill out ${option.name} details in order to add guardrail to catalog`}
+				notice={option.notice}
+				icon={option.icon}
+				fields={option.fields}
+				advanced={option.advanced}
+				categoryDescription={CategoryDescription}
+			/>
+		);
+	};
+
 	if (loading) {
 		return (
 			<div className="flex min-h-screen items-center justify-center">
@@ -329,29 +370,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 			</Dialog>
 			{selectedDatabase ? (
 				<div data-testid="guardrail-form-wrapper">
-					{selectedDatabase.form === "sql-query-policy" ? (
-						<SqlQueryGuardrailForm
-							icon={selectedDatabase.icon}
-							onSubmit={(engineId) => {
-								if (engineId) {
-									navigate(`/guardrail/${engineId}`);
-									return;
-								}
-								setSelectedDatabase(null);
-							}}
-						/>
-					) : (
-						<GuardrailForm
-							//selectedTab={tabLabels[selectedTab]}
-							title={selectedDatabase.name}
-							description={`Fill out ${selectedDatabase.name} details in order to add guardrail to catalog`}
-							notice={selectedDatabase.notice}
-							icon={(selectedDatabase as { icon?: string }).icon}
-							fields={selectedDatabase.fields}
-							advanced={selectedDatabase.advanced}
-							categoryDescription={CategoryDescription}
-						/>
-					)}
+					{renderGuardrailForm(selectedDatabase)}
 				</div>
 			) : (
 				<div

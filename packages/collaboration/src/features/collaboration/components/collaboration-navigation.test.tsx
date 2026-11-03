@@ -4,7 +4,6 @@ import {
 	fireEvent,
 	render,
 	screen,
-	waitFor,
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -27,6 +26,9 @@ const dashboard = vi.hoisted(() => ({
 			{ roomId: "room-one", roomName: "Pricing conversation" },
 			{ roomId: "room-two", roomName: "Sprint conversation" },
 		],
+		closedRoomIds: [] as string[],
+		setRoomClosed: vi.fn(() => true),
+		closeError: "",
 		isLoading: false,
 		error: "",
 		hasMore: false,
@@ -40,15 +42,29 @@ const dashboard = vi.hoisted(() => ({
 vi.mock("@/features/dashboard/dashboard.context", () => ({
 	useDashboard: () => dashboard,
 }));
+// one actions object: the recent routine runs reader reruns whenever it changes
+const insight = vi.hoisted(() => ({
+	routines: [] as unknown[],
+	actions: {
+		logout: vi.fn(),
+		run: vi.fn(async () => ({
+			pixelReturn: [
+				{
+					output: { routines: insight.routines },
+					operationType: ["OPERATION"],
+				},
+			],
+		})),
+	},
+}));
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
-	useInsight: () => ({ actions: { logout: vi.fn() } }),
+	useInsight: () => insight,
 }));
 
 /** Exercise the controlled navigation contract without involving persistence. */
 function NavigationFixture({ onNavigate }: { onNavigate?: () => void }) {
 	const [isCollapsed, setIsCollapsed] = useState(false);
-	const [isTopicsOpen, setIsTopicsOpen] = useState(false);
 	return (
 		<>
 			<Button
@@ -59,8 +75,6 @@ function NavigationFixture({ onNavigate }: { onNavigate?: () => void }) {
 			</Button>
 			<CollaborationNavigation
 				isCollapsed={isCollapsed}
-				isTopicsOpen={isTopicsOpen}
-				onTopicsOpenChange={setIsTopicsOpen}
 				onNavigate={onNavigate}
 			/>
 		</>
@@ -92,6 +106,7 @@ function renderNavigation(
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	insight.routines = [];
 	dashboard.searchReturnFocus.current = null;
 	dashboard.history.scrollTop.current = 0;
 	dashboard.openRoom.mockResolvedValue(undefined);
@@ -99,7 +114,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("places Routines above Work and keeps folded Topics separate", () => {
+	it("keeps Today and Routines as the main destinations without Topics", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -121,76 +136,45 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["For you", "Routines", "Work", "Unassigned", "Brain"]);
+		).toEqual(["Today", "Routines"]);
 		expect(
-			within(main).getByRole("link", { name: "For you" }),
-		).toHaveTextContent(/^For you$/);
+			within(main).getByRole("link", { name: "Today" }),
+		).toHaveTextContent(/^Today$/);
+		for (const name of ["For you", "Work", "Unassigned", "Brain"]) {
+			expect(
+				screen.queryByRole("link", { name }),
+			).not.toBeInTheDocument();
+		}
+		// topics moved to Settings
 		expect(
-			within(main).getByRole("link", { name: "Brain" }),
-		).toHaveTextContent(/^Brain$/);
-		expect(screen.queryByText("Waiting on others")).not.toBeInTheDocument();
-		expect(screen.queryByText("Handled")).not.toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "Topics" })).toHaveAttribute(
-			"aria-expanded",
-			"false",
-		);
-		expect(screen.getByRole("button", { name: "New topic" })).toBeVisible();
-		expect(screen.getByRole("region", { name: "Sessions" })).toBeVisible();
+			screen.queryByRole("button", { name: "Topics" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "New topic" }),
+		).not.toBeInTheDocument();
+		expect(screen.getByRole("region", { name: "Chats" })).toBeVisible();
 	});
 
-	it("shows nonzero work and Brain review counts without introducing zero labels", () => {
+	it("shows a nonzero Today count without introducing zero labels", () => {
 		const state = createInitialCollaborationState();
 		state.items = state.items
 			.filter((item) => item.status === "open" && item.askType !== "fyi")
 			.slice(0, 2);
-		state.reviews = state.reviews.slice(0, 1);
 		state.topics = [];
 		state.memories = [];
 		renderNavigation("/", state);
 
 		expect(
-			within(screen.getByRole("link", { name: "For you" })).getByText(
-				"2",
-			),
-		).toBeVisible();
-		expect(
-			within(screen.getByRole("link", { name: "Brain" })).getByText(
-				/^1\b/,
-			),
+			within(screen.getByRole("link", { name: "Today" })).getByText("2"),
 		).toBeVisible();
 		expect(screen.queryByText(/^0(?: to check)?$/)).not.toBeInTheDocument();
 	});
 
-	it("selects For you only on the landing page", () => {
+	it("selects Today only on the landing page", () => {
 		renderNavigation("/");
-		expect(screen.getByRole("link", { name: "For you" })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: "Today" })).toHaveAttribute(
 			"aria-current",
 			"page",
-		);
-		expect(screen.getByRole("link", { name: "Work" })).not.toHaveAttribute(
-			"aria-current",
-		);
-	});
-
-	it("opens Unassigned by keyboard and counts conversations without requiring an action", async () => {
-		const state = createInitialCollaborationState();
-		state.items = [];
-		state.threads = state.threads.slice(0, 2).map((thread, index) => ({
-			...thread,
-			topicLinks: index === 0 ? [] : thread.topicLinks,
-			needsTopicChoice: false,
-		}));
-		const { user, router, onNavigate } = renderNavigation("/", state);
-		const unassigned = screen.getByRole("link", { name: "Unassigned" });
-		expect(unassigned).toHaveTextContent("Unassigned1");
-		act(() => unassigned.focus());
-		await user.keyboard("{Enter}");
-		expect(router.state.location.pathname).toBe("/brain/threads");
-		expect(router.state.location.search).toBe("?filter=needs");
-		expect(onNavigate).toHaveBeenCalledOnce();
-		expect(unassigned).toHaveAttribute("aria-current", "page");
-		expect(screen.getByRole("link", { name: "Brain" })).not.toHaveAttribute(
-			"aria-current",
 		);
 	});
 
@@ -202,89 +186,70 @@ describe("CollaborationNavigation", () => {
 		expect(router.state.location.pathname).toBe("/routines");
 		expect(onNavigate).toHaveBeenCalledOnce();
 		expect(routines).toHaveAttribute("aria-current", "page");
-		for (const name of ["For you", "Work", "Unassigned", "Brain"]) {
-			expect(screen.getByRole("link", { name })).not.toHaveAttribute(
-				"aria-current",
-			);
-		}
+		expect(screen.getByRole("link", { name: "Today" })).not.toHaveAttribute(
+			"aria-current",
+		);
 	});
 
-	it.each(["/work", "/work/all", "/work/waiting", "/work/done"])(
-		"selects Work on %s",
-		(path) => {
-			renderNavigation(path);
-			expect(screen.getByRole("link", { name: "Work" })).toHaveAttribute(
-				"aria-current",
-				"page",
-			);
-			expect(
-				screen.getByRole("link", { name: "For you" }),
-			).not.toHaveAttribute("aria-current");
-			expect(
-				screen.getByRole("link", { name: "Brain" }),
-			).not.toHaveAttribute("aria-current");
-		},
-	);
+	it("lists the routines that ran last under Routines and keeps them mounted in the collapsed rail", async () => {
+		insight.routines = [
+			{
+				routineId: "inbox-daily-brief",
+				name: null,
+				runs: [
+					{
+						runId: "inbox-1",
+						status: "completed",
+						startedAt: new Date().toISOString(),
+					},
+				],
+			},
+		];
+		const { user, router, onNavigate } = renderNavigation();
+		const recent = await screen.findByRole("list", {
+			name: "Recent routines",
+		});
+		// right after Routines, ahead of Chats, in the scroller they share
+		expect(
+			screen
+				.getByRole("link", { name: "Routines" })
+				.compareDocumentPosition(recent) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(recent.parentElement).toContainElement(
+			screen.getByRole("region", { name: "Chats" }),
+		);
+		await user.click(
+			within(recent).getByRole("link", {
+				name: "Inbox daily brief agent",
+			}),
+		);
+		expect(router.state.location.pathname).toBe("/routines");
+		expect(router.state.location.search).toBe("?routine=inbox-daily-brief");
+		expect(onNavigate).toHaveBeenCalledOnce();
+		const toggle = screen.getByRole("button", {
+			name: "Toggle navigation fixture",
+		});
+		await user.click(toggle);
+		expect(recent.closest(".hidden")).not.toBeNull();
+		await user.click(toggle);
+		expect(screen.getByRole("list", { name: "Recent routines" })).toBe(
+			recent,
+		);
+		expect(recent.closest(".hidden")).toBeNull();
+	});
 
 	it.each([
+		"/work",
+		"/work/all",
 		"/brain",
-		"/brain/people/p-ava",
-		"/brain/threads/th-geng-review",
-		"/brain/sources",
-	])("keeps Brain selected on %s", (path) => {
+		"/brain/threads",
+		"/settings/about-you",
+	])("leaves Today unselected on %s", (path) => {
 		renderNavigation(path);
-		expect(screen.getByRole("link", { name: "Brain" })).toHaveAttribute(
-			"aria-current",
-			"page",
-		);
-		expect(
-			screen.getByRole("link", { name: "For you" }),
-		).not.toHaveAttribute("aria-current");
-		expect(screen.getByRole("link", { name: "Work" })).not.toHaveAttribute(
+		expect(screen.getByRole("link", { name: "Today" })).not.toHaveAttribute(
 			"aria-current",
 		);
-	});
-
-	it("opens Topics by keyboard and selects only the shared topic workspace", async () => {
-		const { user, router, onNavigate } = renderNavigation("/topics/t-geng");
-		const disclosure = screen.getByRole("button", { name: "Topics" });
-		act(() => disclosure.focus());
-		await user.keyboard("{Enter}");
-		expect(disclosure).toHaveAttribute("aria-expanded", "true");
-		const topics = screen.getByRole("navigation", { name: "Topics" });
-		const selected = within(topics).getByRole("link", {
-			name: /^Northwind Eng\b/,
-		});
-		expect(selected).toHaveAttribute("aria-current", "page");
-		for (const name of ["For you", "Routines", "Work", "Brain"]) {
-			expect(screen.getByRole("link", { name })).not.toHaveAttribute(
-				"aria-current",
-			);
-		}
-		await user.click(selected);
-		expect(onNavigate).toHaveBeenCalledOnce();
-		for (const path of ["/brain", "/work", "/"]) {
-			await act(() => router.navigate(path));
-			expect(
-				within(
-					screen.getByRole("navigation", { name: "Topics" }),
-				).getByRole("link", { name: /^Northwind Eng\b/ }),
-			).toHaveAttribute("href", "/topics/t-geng");
-		}
-	});
-
-	it("opens New topic independently of the folded Topics disclosure and returns focus", async () => {
-		const { user } = renderNavigation();
-		const trigger = screen.getByRole("button", { name: "New topic" });
-		const disclosure = screen.getByRole("button", { name: "Topics" });
-		await user.click(trigger);
-		const dialog = screen.getByRole("dialog", { name: "New topic" });
-		expect(disclosure).toHaveAttribute("aria-expanded", "false");
-		await user.click(
-			within(dialog).getByRole("button", { name: "Cancel" }),
-		);
-		await waitFor(() => expect(trigger).toHaveFocus());
-		expect(disclosure).toHaveAttribute("aria-expanded", "false");
 	});
 
 	it("preserves the mounted session scroller, its position, and selection when collapsed", async () => {
@@ -292,7 +257,7 @@ describe("CollaborationNavigation", () => {
 		const session = screen.getByRole("button", {
 			name: "Pricing conversation",
 		});
-		const list = screen.getByRole("navigation", { name: "Sessions" });
+		const list = screen.getByRole("navigation", { name: "Chats" });
 		const scroller = list.parentElement;
 		if (!scroller) throw new Error("Sessions must have a scroll container");
 		scroller.scrollTop = 180;
@@ -312,7 +277,7 @@ describe("CollaborationNavigation", () => {
 		expect(
 			screen.getByRole("button", { name: "Pricing conversation" }),
 		).toBe(session);
-		expect(screen.getByRole("navigation", { name: "Sessions" })).toBe(list);
+		expect(screen.getByRole("navigation", { name: "Chats" })).toBe(list);
 		expect(scroller.scrollTop).toBe(180);
 		expect(session).toHaveAttribute("aria-current", "page");
 	});
@@ -323,11 +288,8 @@ describe("CollaborationNavigation", () => {
 			screen.getByRole("button", { name: "Toggle navigation fixture" }),
 		);
 		const controls = [
-			screen.getByRole("link", { name: "For you" }),
+			screen.getByRole("link", { name: "Today" }),
 			screen.getByRole("link", { name: "Routines" }),
-			screen.getByRole("link", { name: "Work" }),
-			screen.getByRole("link", { name: "Unassigned" }),
-			screen.getByRole("link", { name: "Brain" }),
 			screen.getByRole("link", { name: "Settings" }),
 			screen.getByRole("button", { name: /Account menu for/ }),
 		];
@@ -343,7 +305,7 @@ describe("CollaborationNavigation", () => {
 	it("keeps Settings and account in the sidebar while leaving Search in the header", async () => {
 		const { user, onNavigate, router } = renderNavigation();
 		expect(
-			screen.queryByRole("button", { name: "Search your workspace" }),
+			screen.queryByRole("button", { name: "Search" }),
 		).not.toBeInTheDocument();
 		const settings = screen.getByRole("link", { name: "Settings" });
 		expect(settings).toHaveTextContent("Settings");

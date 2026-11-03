@@ -1,5 +1,4 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
@@ -15,68 +14,47 @@ vi.mock("./dashboard.context", () => ({
 
 afterEach(cleanup);
 
-/** Header counts use real selectors; external source snapshots remain empty. */
-function renderHeader(withItems = false) {
+/** The headline counts only open work due today or overdue. */
+function renderHeader(dues: (string | null)[] = []) {
 	const state = createInitialCollaborationState();
 	const item = state.items[0];
 	if (!item) throw new Error("Missing sample item");
 	state.threads = [];
-	state.items = withItems
-		? [
-				{ ...item, id: "done", status: "done", topicIds: ["one"] },
-				{
-					...item,
-					id: "waiting",
-					status: "waiting",
-					topicIds: ["two"],
-				},
-			]
-		: [];
+	state.items = dues.map((due, index) => ({
+		...item,
+		id: `item-${index}`,
+		status: "open",
+		askType: "reply",
+		due,
+	}));
 	const router = createMemoryRouter([
-		{
-			path: "/",
-			element: <BriefHeader />,
-		},
-		{ path: "/work/all", element: <h1>All work</h1> },
-		{ path: "/work/done", element: <h1>Handled work</h1> },
-		{ path: "/work/waiting", element: <h1>Waiting work</h1> },
+		{ path: "/", element: <BriefHeader /> },
 	]);
 	render(
 		<CollaborationSessionProvider initialState={state}>
 			<RouterProvider router={router} />
 		</CollaborationSessionProvider>,
 	);
-	return router;
 }
 
-it.each([
-	["0 open", "/work/all", "All work"],
-	["0 handled", "/work/done", "Handled work"],
-	["0 waiting on others", "/work/waiting", "Waiting work"],
-])(
-	"keeps %s navigable when the queue is empty",
-	async (name, path, heading) => {
-		const user = userEvent.setup();
-		const router = renderHeader();
-		const link = screen.getByRole("link", { name });
-		expect(link).toHaveAttribute("href", path);
-		link.focus();
-		await user.keyboard("{Enter}");
-		expect(router.state.location.pathname).toBe(path);
-		expect(screen.getByRole("heading", { name: heading })).toBeVisible();
-	},
-);
+it("says nothing is due when the queue has no deadlines today", () => {
+	renderHeader([null, new Date(Date.now() + 3 * 86_400_000).toISOString()]);
+	expect(screen.getByText("Nothing is due today.")).toBeVisible();
+});
 
-it("counts all topics and links to the corresponding global work lists", () => {
-	renderHeader(true);
-	expect(screen.getByRole("link", { name: "1 handled" })).toHaveAttribute(
-		"href",
-		"/work/done",
-	);
+it("counts overdue and due-today work, not the whole queue", () => {
+	const now = Date.now();
+	renderHeader([
+		new Date(now - 86_400_000).toISOString(),
+		new Date(now).toISOString(),
+		null,
+		new Date(now + 3 * 86_400_000).toISOString(),
+	]);
+	expect(screen.getByText("2 things are due today.")).toBeVisible();
+	for (const name of [/open$/, /handled$/, /waiting on others$/]) {
+		expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
+	}
 	expect(
-		screen.getByRole("link", { name: "1 waiting on others" }),
-	).toHaveAttribute("href", "/work/waiting");
-	expect(
-		screen.queryByRole("combobox", { name: "Topic scope" }),
-	).not.toBeInTheDocument();
+		screen.getByRole("button", { name: "Check for new mail" }),
+	).toBeInTheDocument();
 });

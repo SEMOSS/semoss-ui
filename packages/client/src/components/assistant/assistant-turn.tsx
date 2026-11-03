@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { isRequestUserInputAction } from "@semoss/sdk";
 import {
 	Alert,
 	AlertDescription,
@@ -21,17 +22,21 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { AssistantToolActivity } from "@/features/assistant-tools/assistant-tool-activity";
+import {
+	getAssistantToolResource,
+	getAssistantToolUi,
+	getPresentedTools,
+	hasPendingToolUi,
+} from "@/features/assistant-tools/assistant-tool-ui";
 import { useAssistant } from "@/hooks/use-assistant";
 import type {
 	BuildAttachment,
 	BuildMessage,
 	BuildRun,
 	BuildTool,
-} from "@/stores/assistant";
-import {
-	isRequestUserInputAction,
-	isTerminalAgentRunStatus,
-} from "@/stores/assistant";
+} from "@/stores/assistant/assistant.runs";
+import { isTerminalAgentRunStatus } from "@/stores/assistant/assistant.runs";
 import { formatLongMs, formatTime, parseTime } from "./assistant-format";
 import { AssistantMarkdown } from "./assistant-markdown";
 import { AssistantPendingActions } from "./assistant-pending-actions";
@@ -53,6 +58,7 @@ type Activity =
 
 /** A feed item after consecutive tool calls are grouped into phases. */
 type FeedActivity =
+	| { kind: "tool"; timestamp: string; order: number; tool: BuildTool }
 	| {
 			kind: "message";
 			timestamp: string;
@@ -134,6 +140,8 @@ const ThinkingBlock = ({ message }: ThinkingBlockProps) => {
 interface RailRowProps {
 	/** Marker rendered on the timeline rail beside this row */
 	marker: ReactNode;
+	/** Aligns the marker with a padded header while expanded content grows below. */
+	markerClassName?: string;
 	/** Row content rendered to the right of the rail */
 	children: ReactNode;
 }
@@ -147,12 +155,18 @@ interface RailRowProps {
  * @param children - Row content rendered to the right of the rail.
  * @return The rail-aligned row.
  */
-const RailRow = ({ marker, children }: RailRowProps) => (
-	<div className="relative flex gap-3">
-		<span className="relative z-10 mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-background">
+const RailRow = ({ marker, markerClassName, children }: RailRowProps) => (
+	<div className="relative flex items-start gap-3">
+		<span
+			aria-hidden
+			className={cn(
+				"relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full bg-background",
+				markerClassName,
+			)}
+		>
 			{marker}
 		</span>
-		<div className="min-w-0 flex-1">{children}</div>
+		<div className="min-h-6 min-w-0 flex-1">{children}</div>
 	</div>
 );
 
@@ -198,7 +212,10 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 				message,
 			});
 		});
-		run.tools.forEach((tool, order) => {
+		const tools = getPresentedTools(run);
+		tools.forEach((tool, order) => {
+			if (getAssistantToolUi(tool.metadata)?.displayLocation === "hidden")
+				return;
 			// The pending action is authoritative while paused. After a page
 			// refresh, durable message reconstruction can label this tool as
 			// QUEUED even though its structured input card is already visible.
@@ -216,7 +233,7 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 			items.push({
 				kind: "child",
 				timestamp: runs[childRunId]?.dateCreated ?? "",
-				order: run.messages.length + run.tools.length + order,
+				order: run.messages.length + tools.length + order,
 				childRunId,
 			});
 		});
@@ -225,7 +242,7 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 				parseTime(a.timestamp) - parseTime(b.timestamp) ||
 				a.order - b.order,
 		);
-	}, [run.childRunIds, run.messages, run.pendingActions, run.tools, runs]);
+	}, [run, runs]);
 
 	const feedActivities = useMemo<FeedActivity[]>(() => {
 		const feed: FeedActivity[] = [];
@@ -247,6 +264,14 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 
 		for (const activity of activities) {
 			if (activity.kind === "tool") {
+				if (
+					getAssistantToolUi(activity.tool.metadata) ||
+					getAssistantToolResource(run, activity.tool)
+				) {
+					flushPhase();
+					feed.push(activity);
+					continue;
+				}
 				if (phaseTools.length === 0) {
 					phaseTimestamp = activity.timestamp;
 					phaseOrder = activity.order;
@@ -259,7 +284,7 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 		}
 		flushPhase();
 		return feed;
-	}, [activities]);
+	}, [activities, run]);
 
 	const inputRequired = run.status.toUpperCase() === "INPUT_REQUIRED";
 	const userInputActions = run.pendingActions.filter(
@@ -277,7 +302,9 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 				? activity.message.id
 				: activity.kind === "phase"
 					? activity.tools[0].id
-					: activity.childRunId
+					: activity.kind === "tool"
+						? activity.tool.id
+						: activity.childRunId
 		}`;
 
 	const activityMarker = (activity: FeedActivity): ReactNode => {
@@ -301,6 +328,8 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 					</AssistantMarkdown>
 				</div>
 			)
+		) : activity.kind === "tool" ? (
+			<AssistantToolActivity run={run} tool={activity.tool} />
 		) : activity.kind === "phase" ? (
 			<AssistantToolPhase tools={activity.tools} />
 		) : (
@@ -312,6 +341,13 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 
 	const pendingBlock = inputRequired ? (
 		<div className="flex flex-col gap-2">
+			{run.pendingActions.some((action) =>
+				hasPendingToolUi(run, action),
+			) && (
+				<output className="flex min-h-6 items-center text-muted-foreground text-sm">
+					Review the tool UI to continue.
+				</output>
+			)}
 			<AssistantPendingActions run={run} />
 			{userInputActions.map((action, index) => (
 				<AssistantUserInputCard
@@ -371,12 +407,27 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 		<div className="relative flex flex-col gap-3">
 			<span
 				aria-hidden
-				className="absolute top-2 bottom-2 left-3 w-px bg-border"
+				className="absolute top-3 bottom-3 left-3 w-px bg-border"
 			/>
 			{feedActivities.map((activity) => (
 				<RailRow
 					key={activityKey(activity)}
 					marker={activityMarker(activity)}
+					markerClassName={cn(
+						activity.kind === "tool" &&
+							(getAssistantToolUi(activity.tool.metadata)
+								?.displayLocation === "inline"
+								? "mt-3"
+								: "self-center"),
+						{
+							"mt-2":
+								activity.kind === "phase" ||
+								activity.kind === "child",
+							"mt-1":
+								activity.kind === "message" &&
+								activity.message.kind === "reasoning",
+						},
+					)}
 				>
 					{activityContent(activity)}
 				</RailRow>

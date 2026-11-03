@@ -93,8 +93,8 @@ export const CopyTeamPeopleDialog = ({
 	const teamId = useId();
 	const levelId = useId();
 	const optionId = useId();
-	const isManagers = target.kind === "TEAM_MANAGERS";
-	const isTeamTarget = target.kind === "TEAM" || isManagers;
+	const isManagers = target.resourceType === "TEAM_MANAGERS";
+	const isTeamTarget = target.resourceType === "TEAM" || isManagers;
 	const targetRole: TeamRole = isManagers ? "MANAGERS" : "MEMBERS";
 	// null until the user's teams are read
 	const [managedTeams, setManagedTeams] = useState<string[] | null>(null);

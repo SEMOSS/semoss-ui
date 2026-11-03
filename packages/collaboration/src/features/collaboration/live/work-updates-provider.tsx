@@ -7,11 +7,13 @@ import {
 } from "react";
 import { MAIL_SENT_EVENT } from "@/features/connectors/api/microsoft";
 import type { InsightActions } from "@/lib/pixel";
+import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import {
 	type MailCheck,
 	type MailSyncResult,
 	readMailCheck,
+	readTopic,
 	readTopicGoals,
 	readWorkUpdates,
 	syncMail,
@@ -61,7 +63,7 @@ export function WorkUpdatesProvider({
 		syncError: "",
 	});
 	const pending = useRef(false);
-	// a reload asked for while one is in flight (a finished sync) runs right after it
+	// a reload asked for while one is in flight (a finished sync, an assistant's topic change) runs right after it
 	const queued = useRef(false);
 	const syncing = useRef(false);
 	const lastMailAttempt = useRef(0);
@@ -158,9 +160,18 @@ export function WorkUpdatesProvider({
 					updates: {
 						...updates,
 						workspaces,
+						// links to a topic made on this page come back with its server id
+						threads: updates.threads.map((thread) => ({
+							...thread,
+							topicLinks: thread.topicLinks.map((link) => ({
+								...link,
+								topicId: localId(link.topicId),
+							})),
+						})),
 						items: updates.items.map((item) => ({
 							...item,
 							id: localId(item.id),
+							topicIds: item.topicIds.map(localId),
 						})),
 						memories: updates.memories.map((memory) => ({
 							...memory,
@@ -217,6 +228,47 @@ export function WorkUpdatesProvider({
 	}, [actions, dispatch, sync]);
 	const refreshRef = useRef(refresh);
 	refreshRef.current = refresh;
+	const refreshTopic = useCallback(
+		(topic: { topicId?: string; topic?: string }) => {
+			const token = generation.current;
+			const before = latest.current.topics;
+			void (async () => {
+				await sync?.settled();
+				const incoming = await readTopic(actions, topic);
+				await sync?.settled();
+				if (token !== generation.current) return;
+				const id = sync?.localId(incoming.id) ?? incoming.id;
+				// once: not over the page's copy, and not back after the owner deleted it during the read
+				const known = (topics: Topic[]) =>
+					topics.some((entry) => entry.id === id);
+				if (!known(before) && !known(latest.current.topics))
+					dispatch({
+						type: "topic.server",
+						topic: { ...incoming, id },
+					});
+			})()
+				// a call that failed left no topic to show
+				.catch(() => undefined)
+				.finally(() => {
+					if (token !== generation.current) return;
+					// its emails come back on the threads; a reload already running read them too early
+					if (pending.current) queued.current = true;
+					else refreshRef.current();
+				});
+		},
+		[actions, dispatch, sync],
+	);
+	const serverId = useCallback(
+		async (id: string): Promise<string> => {
+			await sync?.settled();
+			return sync?.serverId(id) ?? id;
+		},
+		[sync],
+	);
+	const localId = useCallback(
+		(id: string): string => sync?.localId(id) ?? id,
+		[sync],
+	);
 	/** The Refresh button: pull new mail from Microsoft 365 first, then reload Brain and Work. */
 	const syncNow = useCallback(() => {
 		if (syncing.current) return;
@@ -363,7 +415,10 @@ export function WorkUpdatesProvider({
 				...mail,
 				refresh,
 				refreshTopicGoal,
+				refreshTopic,
 				syncMail: syncNow,
+				serverId,
+				localId,
 			}}
 		>
 			{children}

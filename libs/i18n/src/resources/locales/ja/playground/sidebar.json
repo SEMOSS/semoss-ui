@@ -64,7 +64,7 @@
 		"roomDeletedSuccess": "ルームを正常に削除しました"
 	},
 	"workbench": {
-		"file": "ファイル",
+		"view": "表示",
 		"navigate": "移動",
 		"commandPalette": "コマンドパレットを開く…",
 		"layout": "パネルを配置",

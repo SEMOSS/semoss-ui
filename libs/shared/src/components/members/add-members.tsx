@@ -18,7 +18,9 @@ import {
 	getProjectUsersNoCredentials,
 	getUserEnginePermission,
 	getUserProjectPermission,
+	type ModelUsageLimit,
 	type PostUser,
+	type Role,
 } from "@semoss/sdk";
 import { useIteratorApi } from "@semoss/sdk/react";
 import {
@@ -40,8 +42,13 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
-import { returnAccessType } from "./common";
-import { ModelRestrictionFields } from "./model-restriction-fields";
+import { findModelUsageLimitProblem } from "../model-usage-limit/model-usage-limit-checks";
+import {
+	ModelUsageLimitEditor,
+	type ModelUsageLimitEditorHandle,
+} from "../model-usage-limit/model-usage-limit-editor";
+import { UsageLimitGuideButton } from "../model-usage-limit/usage-limit-guide-button";
+import { OWNERS_ONLY_LIMIT_REASON } from "../model-usage-limit/usage-limit-labels";
 import { PersonIdentity } from "./person-identity";
 import { type UserSource, UserSourceToggle } from "./user-source-toggle";
 
@@ -92,6 +99,13 @@ interface UserSelected extends AddMembersCandidate {
 	permission: string;
 }
 
+/** The access level each choice in the dialog gives */
+const ACCESS_LEVELS: Readonly<Record<string, Role>> = {
+	Viewer: "READ_ONLY",
+	Editor: "EDIT",
+	Owner: "OWNER",
+};
+
 /** Props for {@link AddMembersOverlay}. */
 export interface AddMembersOverlayProps {
 	/** Id of the project or engine members are added to; unused with `people` */
@@ -126,6 +140,11 @@ export interface AddMembersOverlayProps {
 	 * endpoints. The dialog then picks people without access levels.
 	 */
 	people?: AddMembersPeopleSource;
+	/**
+	 * On a model, whether it has known prices, so the usage limit can have cost
+	 * rules. Cost is offered when this is left out, and the backend checks it.
+	 */
+	isCostAvailable?: boolean;
 }
 
 /** The text a person is shown and matched by: name, then email, then id */
@@ -149,6 +168,7 @@ export const AddMembersOverlay = ({
 	adminMode = false,
 	isDirectoryAvailable = false,
 	people,
+	isCostAvailable = true,
 }: AddMembersOverlayProps) => {
 	const { t } = useTranslation("members");
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -159,10 +179,13 @@ export const AddMembersOverlay = ({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	// whether an add through the host ran, so its list reloads when the dialog closes
 	const [hasAttemptedAdd, setHasAttemptedAdd] = useState(false);
-	const [restriction, setRestriction] = useState<string>("null");
-	const [maxTokens, setMaxTokens] = useState<string>("");
-	const [maxTime, setMaxTime] = useState<string>("");
-	const [frequency, setFrequency] = useState<string>("DAY");
+	// the limit every person added to a model gets; a new key starts the editor again
+	const [usageLimit, setUsageLimit] = useState<ModelUsageLimit | null>(null);
+	const [limitKey, setLimitKey] = useState(0);
+	// the limit's problems show from the first add they stop
+	const [shouldShowLimitProblems, setShouldShowLimitProblems] =
+		useState(false);
+	const limitEditorRef = useRef<ModelUsageLimitEditorHandle>(null);
 	const [userPermission, setUserPermission] = useState<string>("");
 	// with both available, people already in the app are searched first
 	const [source, setSource] = useState<UserSource>("existing");
@@ -176,6 +199,15 @@ export const AddMembersOverlay = ({
 	const hasAccessLevels = !people;
 	// Debounce hasn't caught up to the latest keystroke yet
 	const isDebouncePending = searchKey !== debouncedSearchKey;
+	const isModel = hasAccessLevels && type === "MODEL";
+	// only owners, and admins in admin mode, set usage limits
+	const canGiveLimit = isModel && isOwner;
+	const limitProblem = canGiveLimit
+		? findModelUsageLimitProblem(usageLimit, {
+				source: "DIRECT",
+				isCostAvailable,
+			})
+		: null;
 
 	const usersIterator = useIteratorApi<AddMembersCandidate>(
 		async (limit, offset) => {
@@ -265,6 +297,11 @@ export const AddMembersOverlay = ({
 
 	const addNewMembers = async () => {
 		if (selectedUsers.length === 0 || isSubmitting) return;
+		if (limitProblem) {
+			setShouldShowLimitProblems(true);
+			limitEditorRef.current?.focusFirstProblem();
+			return;
+		}
 		setIsSubmitting(true);
 		try {
 			await submitMembers();
@@ -294,28 +331,17 @@ export const AddMembersOverlay = ({
 		}
 		if (!id) return;
 
-		const userpermissions = selectedUsers.map((m) => {
-			const base = {
+		const userpermissions = selectedUsers.map((m): PostUser => {
+			const permission = ACCESS_LEVELS[m.permission] ?? "READ_ONLY";
+			return {
 				userid: m.id,
-				permission: returnAccessType(m.permission, true),
+				permission,
 				email: m.email,
 				name: m.name,
 				type: m.type,
 				username: m.username,
-			};
-			if (type !== "MODEL") return base;
-			return {
-				...base,
-				...(restriction !== "null" && {
-					usageRestriction: restriction,
-				}),
-				...(restriction === "token" && {
-					maxTokens: Number(maxTokens),
-				}),
-				...(restriction === "compute" && {
-					maxResponseTime: Number(maxTime),
-				}),
-				...(restriction !== "null" && { usageFrequency: frequency }),
+				// people added with no limit have no limit defined
+				...(canGiveLimit && usageLimit ? { usageLimit } : {}),
 			};
 		});
 
@@ -323,12 +349,12 @@ export const AddMembersOverlay = ({
 			const success = isProject
 				? await addProjectUserPermissions(
 						id,
-						userpermissions as unknown as PostUser[],
+						userpermissions,
 						adminMode,
 					)
 				: await addEngineUserPermissions(
 						id,
-						userpermissions as unknown as PostUser[],
+						userpermissions,
 						adminMode,
 					);
 			if (success) {
@@ -352,10 +378,9 @@ export const AddMembersOverlay = ({
 		setSelectedUsers([]);
 		setSearchKey("");
 		usersIterator.reset();
-		setRestriction("null");
-		setMaxTokens("");
-		setMaxTime("");
-		setFrequency("DAY");
+		setUsageLimit(null);
+		setLimitKey((key) => key + 1);
+		setShouldShowLimitProblems(false);
 		setUserPermission("");
 		setSource("existing");
 	};
@@ -423,7 +448,7 @@ export const AddMembersOverlay = ({
 		>
 			<DialogContent
 				className={cn(
-					"flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden",
+					"flex max-h-[90vh] w-full flex-col gap-4 overflow-hidden sm:max-w-2xl",
 					className,
 				)}
 			>
@@ -714,24 +739,47 @@ export const AddMembersOverlay = ({
 						</div>
 					</div>
 
-					{/* MODEL restriction fields */}
-					{hasAccessLevels && type === "MODEL" && (
-						<ModelRestrictionFields
-							restriction={restriction}
-							setRestriction={setRestriction}
-							maxTokens={maxTokens}
-							setMaxTokens={setMaxTokens}
-							maxTime={maxTime}
-							setMaxTime={setMaxTime}
-							frequency={frequency}
-							setFrequency={setFrequency}
-						/>
-					)}
+					{/* a model's usage limit, for everyone added */}
+					{isModel ? (
+						<div className="flex flex-col gap-2 rounded-md border border-border p-3">
+							<ModelUsageLimitEditor
+								key={limitKey}
+								ref={limitEditorRef}
+								defaultValue={null}
+								onChange={setUsageLimit}
+								source="DIRECT"
+								isCostAvailable={isCostAvailable}
+								label={t("usageLimit.titleForSelected")}
+								readOnlyReason={
+									canGiveLimit
+										? null
+										: OWNERS_ONLY_LIMIT_REASON
+								}
+								shouldShowProblems={shouldShowLimitProblems}
+								disabled={isSubmitting}
+							/>
+							<UsageLimitGuideButton
+								className="self-start"
+								section="modes"
+								viewer={{
+									canSetModelLimits: canGiveLimit,
+									isAdminMode: adminMode,
+								}}
+							/>
+						</div>
+					) : null}
 				</div>
 				{/* end scrollable middle section */}
 
 				{/* Footer: permission selector + invite */}
 				<div className="flex items-center justify-end border-t pt-3">
+					{shouldShowLimitProblems &&
+					limitProblem &&
+					selectedUsers.length > 0 ? (
+						<span className="me-3 text-destructive text-xs">
+							{limitProblem}
+						</span>
+					) : null}
 					<Button
 						onClick={addNewMembers}
 						disabled={selectedUsers.length === 0 || isSubmitting}

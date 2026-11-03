@@ -112,6 +112,18 @@ When changing an API, inspect its owning implementation and adjacent tests:
 Update the packaged guide with signature/behavior changes. Comments and mocked
 tests are not backend authority; retain its compatibility caveats until verified.
 
+## Engine and App Actions
+
+- [`api/engine.ts`](./src/api/engine.ts): `cloneEngine` (`CloneEngine`) clones an engine into a
+  private engine the user owns and returns the clone's id, name and type, throwing when the
+  backend returns no engine id. `restartEngine` (`CloseEngine`) closes an engine so its next use
+  starts it with its current files.
+- [`api/app.ts`](./src/api/app.ts): `reloadApp` (`ReloadProject`) clears the app modules python
+  has cached, so the next run imports the current .py files.
+- These return the success and warning messages the reactor adds beside its output, read by
+  `readPixelMessages` in [`api/pixel-messages.ts`](./src/api/pixel-messages.ts). A warning means
+  the action ran here but the other servers in a cluster could not be told, for example.
+
 ## Session Logins
 
 The SDK owns what the session is signed in to, so an app never tracks or caches it:
@@ -164,3 +176,43 @@ a call's `admin` is true, where an admin can read and change anything:
 Each call checks the response's shape and throws when it is not what the call reads. Lists of
 people leave out rows without an id, login type or known level; validation results are never
 left out, since they are matched to the batches by position.
+
+## Model Usage Limits
+
+A model's usage limits share one shape, `ModelUsageLimit` (`unlimited`, and `rules` of
+`ModelUsageLimitRule`: `metric`, `amount`, `window`, `windowLength`, `counts`), defined in
+[`api/access.ts`](./src/api/access.ts). Null is no limit defined, everywhere. Every rule has an
+amount: cost amounts are millionths of a US dollar and compute time is milliseconds.
+`readModelUsageLimit` reads one from any response, as an object or a JSON string; the backend
+leaves out null fields, so a missing limit is null, a rule with no amount is left out, and a limit
+with no rules that is not Unlimited is null too.
+
+- **Window lengths.** `windowLength` is how many minutes (1 to 59) or hours (1 to 24) a `MINUTE`
+  or `HOUR` rule's window spans, such as every 10 minutes. Missing or null means 1, so every
+  reader of rules (limits, Effective Permissions' rules and the path's `UsageLimitRuleUsage`)
+  keeps it only when it is a whole number above 1 on a minute or hour window, and a rule sends it
+  only when it is more than 1.
+
+- **Grants.** `PermissionGrant.usageLimit` is a model grant's limit. A `ModelLimitChange` (`PUBLIC` or `MODEL`
+  subject, `CHANGE` only, `to: { usageLimit }`) changes a model's public use limit or its total.
+- **Reads.** `getResourcePermissions` adds a model's `publicUse`, `modelTotal`,
+  `costLimitsAvailable` and `price`, and `allowedPermissionChanges.limitLevels` and
+  `canChangeModelLimits`. Only a model's owners, and admins in admin mode, set usage limits: they
+  get every level in `limitLevels` and `canChangeModelLimits` true, and everyone else gets none
+  and false. `getEffectivePermissions` adds each person's `usage` (who their calls are
+  billed to), `publicUse`, `ceilings` and each provider team's `usageLimit`.
+- **How limits apply to one person.** `getUsageLimitPath(engineId, person, admin)` (the model's
+  editors and owners, or admins) and `getMyUsageLimitPath(engineId)` (the signed in person) read a
+  `UsageLimitPath`: the ceilings, then each source in order, as `UsageLimitPathStep`s whose rules
+  are `UsageLimitRuleUsage` with `used` and `resetsAt` in UTC. Outside admin mode the backend
+  hides the rules of someone else's `ALL_MODELS` and `PLATFORM` steps: such a step comes with no
+  rules and `rulesHidden` true (false when not sent), and a team step may come without its
+  `teamTotal`, read as null.
+- **Defaults and totals.** [`api/model-usage.ts`](./src/api/model-usage.ts) holds the admin-only
+  `getPlatformDefaultLimit`, `setPlatformDefaultLimit`, `getTeamTotalLimit` and
+  `setTeamTotalLimit` (`/api/auth/admin/modelUsage`). Setting null removes the limit. The set
+  calls resolve with the limit the backend saved, read from its `{ usageLimit }` answer, and
+  reject when the save fails.
+- **The engine user endpoints.** `PostUser.usageLimit` carries a model member's limit through
+  `addEngineUserPermissions` and `editEngineUserPermissions`, and `getEngineUsers` reads each
+  model member's `usage_limit`, sent as an object or a JSON string.

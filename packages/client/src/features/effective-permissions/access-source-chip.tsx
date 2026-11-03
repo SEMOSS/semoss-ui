@@ -24,7 +24,7 @@ export const AccessSourceChip = ({
 	isEffective,
 }: AccessSourceChipProps) => {
 	const teamTypeName = useTeamTypeName(
-		source.kind === "TEAM" ? source.type : CUSTOM_TEAM_TYPE,
+		source.sourceType === "TEAM" ? source.type : CUSTOM_TEAM_TYPE,
 	);
 	const endDate = formatLocalDateTime(
 		source.endDate ?? undefined,
@@ -40,7 +40,7 @@ export const AccessSourceChip = ({
 					: "border-border bg-muted/40 text-muted-foreground",
 			)}
 		>
-			{source.kind === "TEAM" ? (
+			{source.sourceType === "TEAM" ? (
 				<TeamTypeIcon
 					type={source.type}
 					name={teamTypeName}
@@ -50,7 +50,7 @@ export const AccessSourceChip = ({
 				<UserRound className="size-3.5 shrink-0" aria-hidden />
 			)}
 			<span className="truncate font-medium">
-				{source.kind === "TEAM" ? (
+				{source.sourceType === "TEAM" ? (
 					<>
 						{/* the icon alone shows the team's type, so it is read out here */}
 						<span className="sr-only">{teamTypeName} team </span>

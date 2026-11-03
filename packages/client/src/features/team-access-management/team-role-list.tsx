@@ -148,7 +148,7 @@ export const TeamRoleList = ({
 									className="flex items-center justify-between gap-3 px-3 py-2"
 								>
 									<AccessIdentity
-										kind="USER"
+										category="USER"
 										type={row.person.type}
 										name={name}
 										id={row.person.id}

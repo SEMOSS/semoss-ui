@@ -1,3 +1,5 @@
+import type { ModelUsageLimit } from "@semoss/sdk";
+
 export type SETTINGS_ROLE = "Author" | "Editor" | "Read-Only";
 
 /**
@@ -18,11 +20,12 @@ export interface SETTINGS_MEMBER {
 	phone?: string;
 	phoneextension?: string;
 	countrycode?: string;
-	model_usage_restriction?: string;
-	model_usage_frequency?: string;
-	model_max_tokens?: number;
-	model_max_response_time?: number;
-	unit?: string;
+	/**
+	 * The person's default for all models: their limit wherever nothing more
+	 * specific applies, Unlimited to exempt them from the platform default, or
+	 * null for no limit defined
+	 */
+	model_usage_limit?: ModelUsageLimit | null;
 }
 
 export type SETTINGS_PENDING_USER = {

@@ -1,11 +1,4 @@
-import {
-	ChevronsLeftRightIcon,
-	ChevronsRightLeftIcon,
-	MoreHorizontalIcon,
-	PanelRightCloseIcon,
-	PanelRightOpenIcon,
-	XCircleIcon,
-} from "lucide-react";
+import { MoreHorizontalIcon, XCircleIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -13,10 +6,8 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 	toast,
-	useIsMobile,
 } from "@semoss/ui/next";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { ResponseMessageStore } from "@/stores/message/response-message.store";
@@ -37,7 +28,6 @@ export const ResponseMessageToolMenu = ({
 	label,
 	showCancelInMenu,
 }: ResponseMessageToolMenuProps) => {
-	const isMobile = useIsMobile();
 	const { t } = useTranslation("tool");
 	const cancellingRef = useRef(false);
 	const [isCancelling, setIsCancelling] = useState(false);
@@ -86,85 +76,40 @@ export const ResponseMessageToolMenu = ({
 				)}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
-				<DropdownMenuItem
-					onClick={() => {
-						if (tool.isOpen && tool.display === "inline") {
-							tool.closeTool();
-						} else {
-							tool.openTool("inline");
-						}
-					}}
-				>
-					{tool.isOpen && tool.display === "inline" ? (
-						<ChevronsRightLeftIcon />
-					) : (
-						<ChevronsLeftRightIcon />
-					)}
-					{tool.isOpen && tool.display === "inline"
-						? t("actions.collapse")
-						: t("actions.openInline")}
-				</DropdownMenuItem>
-				{(!isMobile || (tool.isOpen && tool.display === "sidebar")) && (
+				{showCancelInMenu && (
 					<DropdownMenuItem
-						onClick={() => {
-							if (tool.isOpen && tool.display === "sidebar") {
+						variant="destructive"
+						disabled={isCancelling}
+						onClick={async () => {
+							if (cancellingRef.current) return;
+							cancellingRef.current = true;
+							setIsCancelling(true);
+							try {
+								if (tool.pendingAction)
+									await decideAgentToolAction(tool, "reject");
+								else
+									await message.saveToolExecution(
+										tool,
+										"",
+										"cancelled",
+										{},
+									);
 								tool.closeTool();
-							} else {
-								tool.openTool("sidebar");
+							} catch (error) {
+								toast.error(
+									error instanceof Error
+										? error.message
+										: t("activity.cancelError"),
+								);
+							} finally {
+								cancellingRef.current = false;
+								setIsCancelling(false);
 							}
 						}}
 					>
-						{tool.isOpen && tool.display === "sidebar" ? (
-							<PanelRightOpenIcon />
-						) : (
-							<PanelRightCloseIcon />
-						)}
-						{tool.isOpen && tool.display === "sidebar"
-							? t("actions.closeInSidebar")
-							: t("actions.openInSidebar")}
+						<XCircleIcon />
+						{t("actions.cancel")}
 					</DropdownMenuItem>
-				)}
-
-				{showCancelInMenu && (
-					<>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							variant="destructive"
-							disabled={isCancelling}
-							onClick={async () => {
-								if (cancellingRef.current) return;
-								cancellingRef.current = true;
-								setIsCancelling(true);
-								try {
-									if (tool.pendingAction)
-										await decideAgentToolAction(
-											tool,
-											"reject",
-										);
-									else
-										await message.saveToolExecution(
-											tool,
-											"",
-											"cancelled",
-											{},
-										);
-									tool.closeTool();
-								} catch (error) {
-									toast.error(
-										error instanceof Error
-											? error.message
-											: t("activity.cancelError"),
-									);
-								} finally {
-									cancellingRef.current = false;
-									setIsCancelling(false);
-								}
-							}}
-						>
-							<XCircleIcon />
-							{t("actions.cancel")}
-						</DropdownMenuItem>
-					</>
 				)}
 			</DropdownMenuContent>
 		</DropdownMenu>

@@ -10,13 +10,12 @@ afterEach(() => {
 	localStorage.clear();
 });
 
-it("defaults to expanded navigation and Sessions with folded Topics without writing storage", () => {
+it("defaults to expanded navigation and Sessions without writing storage", () => {
 	const write = vi.spyOn(Storage.prototype, "setItem");
 	const { result } = renderHook(() =>
 		useNavigationPreferences("one", "deployment-a"),
 	);
 	expect(result.current.isCollapsed).toBe(false);
-	expect(result.current.isTopicsOpen).toBe(false);
 	expect(result.current.isSessionsOpen).toBe(true);
 	expect(write).not.toHaveBeenCalled();
 });
@@ -27,18 +26,15 @@ it("restores all preferences after a remount, including batched changes and rese
 	);
 	act(() => {
 		result.current.setIsCollapsed(true);
-		result.current.setIsTopicsOpen(true);
 		result.current.setIsSessionsOpen(false);
 	});
 	expect(result.current.isCollapsed).toBe(true);
-	expect(result.current.isTopicsOpen).toBe(true);
 	expect(result.current.isSessionsOpen).toBe(false);
 	unmount();
 	const restored = renderHook(() =>
 		useNavigationPreferences("one", "deployment-a"),
 	);
 	expect(restored.result.current.isCollapsed).toBe(true);
-	expect(restored.result.current.isTopicsOpen).toBe(true);
 	expect(restored.result.current.isSessionsOpen).toBe(false);
 	act(() => {
 		restored.result.current.setIsCollapsed(false);
@@ -49,7 +45,6 @@ it("restores all preferences after a remount, including batched changes and rese
 		useNavigationPreferences("one", "deployment-a"),
 	);
 	expect(reset.result.current.isCollapsed).toBe(false);
-	expect(reset.result.current.isTopicsOpen).toBe(true);
 	expect(reset.result.current.isSessionsOpen).toBe(true);
 });
 
@@ -69,25 +64,20 @@ it("changes account and deployment without exposing or overwriting the previous 
 	});
 	rerender({ account: "two", deployment: "deployment-a" });
 	expect(result.current.isCollapsed).toBe(false);
-	expect(result.current.isTopicsOpen).toBe(false);
 	expect(result.current.isSessionsOpen).toBe(true);
 	expect(
 		rendered
 			.filter((entry) => entry.account === "two")
 			.every((entry) => !entry.isCollapsed),
 	).toBe(true);
-	act(() => result.current.setIsTopicsOpen(true));
 	rerender({ account: "one", deployment: "deployment-a" });
 	expect(result.current.isCollapsed).toBe(true);
-	expect(result.current.isTopicsOpen).toBe(false);
 	expect(result.current.isSessionsOpen).toBe(false);
 	rerender({ account: "one", deployment: "deployment-b" });
 	expect(result.current.isCollapsed).toBe(false);
-	expect(result.current.isTopicsOpen).toBe(false);
 	expect(result.current.isSessionsOpen).toBe(true);
 	rerender({ account: "two", deployment: "deployment-a" });
 	expect(result.current.isCollapsed).toBe(false);
-	expect(result.current.isTopicsOpen).toBe(true);
 });
 
 it("keeps deployment and account separators unambiguous", () => {
@@ -101,13 +91,11 @@ it.each(["{", '"true"', "1", "null", "{}", "[]", "TRUE"])(
 	(value) => {
 		const key = navigationStorageKey("one", "deployment-a");
 		localStorage.setItem(`${key}:isCollapsed`, value);
-		localStorage.setItem(`${key}:isTopicsOpen`, "true");
 		localStorage.setItem(`${key}:isSessionsOpen`, value);
 		const { result } = renderHook(() =>
 			useNavigationPreferences("one", "deployment-a"),
 		);
 		expect(result.current.isCollapsed).toBe(false);
-		expect(result.current.isTopicsOpen).toBe(true);
 		expect(result.current.isSessionsOpen).toBe(true);
 		act(() => result.current.setIsCollapsed(true));
 		expect(result.current.isCollapsed).toBe(true);
@@ -142,18 +130,14 @@ it("remains interactive and account-isolated when reads and writes are blocked",
 	);
 	act(() => {
 		result.current.setIsCollapsed(true);
-		result.current.setIsTopicsOpen(true);
 		result.current.setIsSessionsOpen(false);
 	});
 	expect(result.current.isCollapsed).toBe(true);
-	expect(result.current.isTopicsOpen).toBe(true);
 	expect(result.current.isSessionsOpen).toBe(false);
 	act(() => result.current.setIsCollapsed(false));
 	expect(result.current.isCollapsed).toBe(false);
-	expect(result.current.isTopicsOpen).toBe(true);
 	rerender({ account: "two" });
 	expect(result.current.isCollapsed).toBe(false);
-	expect(result.current.isTopicsOpen).toBe(false);
 	expect(result.current.isSessionsOpen).toBe(true);
 });
 
@@ -167,9 +151,7 @@ it("handles an unavailable localStorage property", () => {
 	expect(result.current.isCollapsed).toBe(false);
 	expect(result.current.isSessionsOpen).toBe(true);
 	act(() => {
-		result.current.setIsTopicsOpen(true);
 		result.current.setIsSessionsOpen(false);
 	});
-	expect(result.current.isTopicsOpen).toBe(true);
 	expect(result.current.isSessionsOpen).toBe(false);
 });

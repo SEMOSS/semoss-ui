@@ -64,7 +64,7 @@
 		"roomDeletedSuccess": "Ruimte succesvol verwijderd"
 	},
 	"workbench": {
-		"file": "Bestand",
+		"view": "Weergave",
 		"navigate": "Navigeren",
 		"commandPalette": "Opdrachtenpalet openen…",
 		"layout": "Panelen rangschikken",

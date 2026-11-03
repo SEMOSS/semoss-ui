@@ -55,6 +55,9 @@ export function topicSummary(
 		names.length
 			? `with ${names.slice(0, 3).join(", ")}${names.length > 3 ? ` and ${names.length - 3} more` : ""}`
 			: "",
+		evidence?.folders.length
+			? `mostly in your folder${evidence.folders.length > 1 ? "s" : ""} ${evidence.folders.join(", ")}`
+			: "",
 	]
 		.filter(Boolean)
 		.join(` ${DOT} `);

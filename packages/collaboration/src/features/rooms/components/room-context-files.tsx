@@ -7,6 +7,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { UploadedRoomFile } from "../api/upload-room-files";
+import type { RoomSource } from "../source-import/room-source";
 
 interface RoomContextFilesProps {
 	/** Session-owned files queued for the next message. */
@@ -15,6 +16,8 @@ interface RoomContextFilesProps {
 	onRemove: (path: string) => void;
 	/** Prevents changing the queue while the composer is unavailable. */
 	isDisabled?: boolean;
+	/** Give the imported conversation a readable label; retain the saved filename. */
+	source?: RoomSource | null;
 }
 
 /** The same removable saved-file queue in a draft and a saved conversation. */
@@ -22,6 +25,7 @@ export function RoomContextFiles({
 	files,
 	onRemove,
 	isDisabled = false,
+	source,
 }: RoomContextFilesProps) {
 	const { t } = useTranslation("room");
 	if (!files.length) return null;
@@ -39,7 +43,13 @@ export function RoomContextFiles({
 						className="min-w-0 flex-1 truncate"
 						title={file.fileName}
 					>
-						{file.fileName}
+						{source?.file.fileLocation === file.fileLocation
+							? source.channel === "email"
+								? "Email thread"
+								: source.channel === "teams"
+									? "Teams conversation"
+									: "Source conversation"
+							: file.fileName}
 					</span>
 					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>

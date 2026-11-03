@@ -1,6 +1,7 @@
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { resolveToolUiUrl } from "@/features/tools/utils/tool-metadata";
+import { readableToolTitle } from "@/features/tools/utils/tool-title";
 import {
 	delegationReplySchema,
 	delegationRequestSchema,
@@ -85,10 +86,10 @@ function persistedPartToConversationPart(
 					id: part.toolCall.id,
 					parentMessageId,
 					name: part.toolCall.name,
-					title:
-						part.toolCall.title ??
-						part.toolCall.original_name ??
+					title: readableToolTitle(
+						part.toolCall.title ?? part.toolCall.original_name,
 						part.toolCall.name,
+					),
 					description: part.toolCall.description ?? undefined,
 					arguments:
 						result?.toolParameterValues ??
@@ -325,12 +326,14 @@ function toolFromApproval(approval: PendingToolApproval): ConversationTool {
 		roomId: approval.roomId,
 		parentMessageId: approval.parentMessageId,
 		name: approval.toolName,
-		title:
+		title: readableToolTitle(
 			typeof title === "string"
 				? title
 				: typeof originalName === "string"
 					? originalName
-					: approval.toolName,
+					: undefined,
+			approval.toolName,
+		),
 		arguments: approval.arguments,
 		metadata: approval.metadata,
 		uiUrl: approval.uiUrl,

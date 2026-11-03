@@ -5,8 +5,8 @@
 		"outlookMail": "Outlook-mail",
 		"outlookCalendar": "Outlook-agenda",
 		"teams": "Teams",
-		"teamsChannels": "Teams-kanalen",
-		"teamsFiles": "Teams-bestanden",
+		"teamsChannels": "Teams-kanaalberichten",
+		"teamsFiles": "Teams-kanaalbestanden",
 		"teamsChats": "Teams-chats",
 		"googleDrive": "Google Drive",
 		"gmail": "Gmail",
@@ -190,7 +190,16 @@
 		"openUnreadChat": "Chat {{title}} openen, bevat ongelezen berichten",
 		"backToChats": "Terug naar chats",
 		"latestMessages_one": "Het nieuwste bericht wordt getoond.",
-		"latestMessages_other": "De {{count}} nieuwste berichten worden getoond."
+		"latestMessages_other": "De {{count}} nieuwste berichten worden getoond.",
+		"searchTeams": "Teams zoeken",
+		"searchChannels": "Kanalen zoeken",
+		"allTeams": "Alle teams",
+		"current": "Huidige selectie",
+		"showingResults": "{{shown}} van {{total}} weergegeven",
+		"changeLocation": "Team of kanaal wijzigen: {{team}}, {{channel}}",
+		"postsLabel": "Berichten",
+		"filesLabel": "Bestanden",
+		"chatsLabel": "Je chats"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

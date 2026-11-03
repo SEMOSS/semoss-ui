@@ -1,6 +1,6 @@
 import type { PermissionChange } from "@semoss/sdk";
 import { Badge, cn } from "@semoss/ui/next";
-import { AccessIdentity } from "./access-identity";
+import { AccessIdentity, type AccessIdentityCategory } from "./access-identity";
 
 /** What each action is called, and the token that colors it */
 const ACTION_STYLES: Record<
@@ -17,8 +17,8 @@ export interface ReviewChangeRowProps {
 	action: PermissionChange["action"];
 	/** The person's or team's name */
 	name: string;
-	/** A person or a team */
-	kind: "USER" | "TEAM";
+	/** A person, a team, a model's public use or its total */
+	category: AccessIdentityCategory;
 	/** The person's login type, or the team's type */
 	type: string;
 	/** The person's id */
@@ -41,7 +41,7 @@ export interface ReviewChangeRowProps {
 export const ReviewChangeRow = ({
 	action,
 	name,
-	kind,
+	category,
 	type,
 	id,
 	email,
@@ -61,7 +61,7 @@ export const ReviewChangeRow = ({
 		>
 			<div className="min-w-0 flex-1">
 				<AccessIdentity
-					kind={kind}
+					category={category}
 					type={type}
 					name={name}
 					id={id}

@@ -14,14 +14,28 @@ import { hasDisplayContent } from "@/features/email/email-html";
 import { EmailMessageHeader } from "@/features/email/email-message-header";
 import { SourceMessageBody } from "@/features/email/source-message-body";
 import type { RoomSource } from "@/features/rooms/source-import/room-source";
+import { RoomSourceAttachments } from "./room-source-attachments";
+
+/** What the reader shows of a source; a thread the room only reads lists no envelopes. */
+export type EmailReaderSource = Pick<
+	RoomSource,
+	| "threadId"
+	| "title"
+	| "channel"
+	| "kind"
+	| "nativeId"
+	| "webLink"
+	| "messages"
+>;
 
 interface RoomSourceEmailProps {
 	/** The room's imported envelope metadata and permitted source identities. */
-	source: RoomSource;
+	source: EmailReaderSource;
 	/** A currently permitted source message, loaded through its source API. */
 	message: WorkspaceMessage;
 	isLoading: boolean;
-	onReply: (messageId: string) => void;
+	/** Absent where the owner only reads the email. */
+	onReply?: (messageId: string) => void;
 }
 
 /** The existing Work source-email reader, with its data and actions owned by a room. */
@@ -45,10 +59,13 @@ export function RoomSourceEmail({
 		(message.displayBody.contentType === "html"
 			? hasDisplayContent(message.displayBody.content, "email")
 			: Boolean(message.displayBody.content.trim()));
-	const attachments = message.attachments?.length
-		? message.attachments
+	const fileAttachments = message.attachments ?? [];
+	// display-only names when the provider listed no native attachments
+	const attachmentNames = fileAttachments.length
+		? []
 		: (message.displayBody?.attachments ?? []);
 	const canReply =
+		Boolean(onReply) &&
 		source.channel === "email" &&
 		source.kind !== "sample" &&
 		Boolean(metadata) &&
@@ -62,7 +79,10 @@ export function RoomSourceEmail({
 				subject={subject}
 				name={name}
 				avatar={
-					<PersonAvatar name={name || address || "Participant"} />
+					<PersonAvatar
+						name={name || address || "Participant"}
+						email={address}
+					/>
 				}
 				address={address}
 				at={message.at || metadata?.at}
@@ -80,7 +100,7 @@ export function RoomSourceEmail({
 										className="pointer-coarse:size-11"
 										aria-label="Reply"
 										disabled={isLoading}
-										onClick={() => onReply(message.id)}
+										onClick={() => onReply?.(message.id)}
 									>
 										<Reply aria-hidden="true" />
 									</Button>
@@ -138,7 +158,12 @@ export function RoomSourceEmail({
 						{message.text || "No message text is available."}
 					</P>
 				)}
-				<EmailAttachmentReferences attachments={attachments} />
+				<RoomSourceAttachments
+					source={source}
+					message={message}
+					attachments={fileAttachments}
+				/>
+				<EmailAttachmentReferences attachments={attachmentNames} />
 				{message.isTruncated && !message.displayBody?.isTruncated && (
 					<P className="text-warning">
 						Source text was truncated. Open the original email in

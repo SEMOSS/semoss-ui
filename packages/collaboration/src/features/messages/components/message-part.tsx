@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { P } from "@semoss/ui/next";
+import { cn, P } from "@semoss/ui/next";
 import { AgentRunCard } from "@/features/runs/components/agent-run-card";
 import { ToolCallCard } from "@/features/tools/components/tool-call-card";
 import type {
@@ -35,7 +35,9 @@ export const MessagePart = memo(function MessagePart({
 	switch (part.type) {
 		case "text":
 			return (
-				<div className="min-w-0 max-w-prose">
+				<div
+					className={cn("min-w-0", role === "user" && "max-w-prose")}
+				>
 					{role === "user" && part.contentFormat === "html-v1" ? (
 						<MessageRichText html={part.text} />
 					) : role === "user" ? (

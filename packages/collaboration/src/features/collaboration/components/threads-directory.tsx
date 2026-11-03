@@ -61,7 +61,7 @@ export function ThreadsDirectory() {
 		<CollaborationSurface
 			header={
 				<CollaborationPageHeader
-					title={filter === "needs" ? "Unassigned" : "Threads"}
+					title={filter === "needs" ? "Unassigned" : "Conversations"}
 					description={
 						filter === "needs"
 							? "Imported conversations waiting for a topic, including mail with no action needed. Open a thread to read it or assign a topic."
@@ -72,7 +72,7 @@ export function ThreadsDirectory() {
 				</CollaborationPageHeader>
 			}
 			aside={<BrainOverview />}
-			asideTitle="Brain overview"
+			asideTitle="Overview"
 		>
 			<div className="flex flex-wrap items-center gap-2 border-b p-4 md:px-6">
 				<div className="w-full min-w-0 sm:w-auto sm:min-w-40 sm:flex-1">

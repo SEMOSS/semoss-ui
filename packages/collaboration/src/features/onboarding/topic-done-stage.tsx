@@ -44,7 +44,7 @@ export function TopicDoneStage({
 			)}
 			{keys.length === 0 ? (
 				<P className="rounded-lg border p-4 text-muted-foreground text-sm">
-					No topics are kept. You can add topics later from Brain.
+					No topics are kept. You can add topics later in Settings.
 				</P>
 			) : (
 				<ul className="divide-y rounded-lg border">

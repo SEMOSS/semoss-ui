@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { JEV_MODEL_VERSIONS } from "@/components/import/model/jev-model-import.constants";
-import type {
-	FieldDefinition,
-	ModelVersionDefinition,
+import {
+	type FieldDefinition,
+	IMPORTABLE_MODELS,
+	type ModelVersionDefinition,
 } from "@/components/import/model/model-import.constants";
 import {
 	buildModelMetadataFields,
@@ -193,4 +194,74 @@ describe("static model metadata defaults", () => {
 		);
 		expect(getField(fields, "DESCRIPTION").default).toBe("");
 	});
+
+	it.each([
+		["meta/llama-3.1-8b-instruct", "META"],
+		["nvidia/nemotron", "NVIDIA"],
+		["mistralai/mistral-small", "MISTRAL_AI"],
+		["poolside/laguna-xs-2.1", "OTHER"],
+		["other-nvidia-nim-model", "OTHER"],
+	])("keeps the NIM host separate from the maker of %s", (name, maker) => {
+		const fields = buildModelMetadataFields(
+			"NVIDIA NIM",
+			{ name, display: name, icon: "", modelBrand: "NEMO" },
+			null,
+		);
+
+		expect(getField(fields, "MODEL_PROVIDER").default).toBe(maker);
+		expect(getField(fields, "SERVING_PROVIDER").default).toBe("NVIDIA_NIM");
+		expect(getField(fields, "INPUT_MODALITIES").default).toEqual(["TEXT"]);
+		for (const key of ["REASONING", "TOOL_CALL", "STRUCTURED_OUTPUT"]) {
+			expect(fields.some((field) => field.key === key)).toBe(false);
+		}
+	});
+
+	it("uses individual NIM model capabilities without assuming OpenAI features", () => {
+		const reasoningConfig = { default_enabled: true, mandatory: false };
+		const fields = buildModelMetadataFields("NVIDIA NIM", null, {
+			input_modalities: ["text"],
+			output_modalities: ["text"],
+			reasoning: true,
+			tool_call: true,
+			structured_output: false,
+			temperature: false,
+			reasoning_config: reasoningConfig,
+			supported_parameters: ["tools", "chat_template_kwargs"],
+		});
+
+		expect(getField(fields, "REASONING").default).toBe(true);
+		expect(getField(fields, "TOOL_CALL").default).toBe(true);
+		expect(getField(fields, "STRUCTURED_OUTPUT").default).toBe(false);
+		expect(getField(fields, "TEMPERATURE").default).toBe(false);
+		expect(getField(fields, "REASONING_CONFIG").default).toBe(
+			JSON.stringify(reasoningConfig),
+		);
+		expect(getField(fields, "SUPPORTED_PARAMETERS").default).toBe(
+			JSON.stringify(["tools", "chat_template_kwargs"]),
+		);
+	});
+
+	it.each(["OpenAI", "Azure OpenAI"])(
+		"preserves %s connection defaults",
+		(providerName) => {
+			const provider = IMPORTABLE_MODELS.providers.find(
+				(candidate) => candidate.name === providerName,
+			);
+			const fields = provider?.types.find((type) =>
+				type.model_types.includes("llm"),
+			)?.fields as FieldDefinition[];
+
+			expect(getField(fields, "CHAT_TYPE").default).toBe("responses");
+			expect(getField(fields, "CHAT_TYPE").options).toEqual([
+				"chat-completion",
+				"responses",
+			]);
+			expect(getField(fields, "INIT_MODEL_ENGINE").default).not.toContain(
+				"preserve_reasoning_content",
+			);
+			expect(
+				fields.some((field) => field.key === "CHAT_REASONING_MODE"),
+			).toBe(false);
+		},
+	);
 });

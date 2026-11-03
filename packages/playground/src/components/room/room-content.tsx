@@ -6,6 +6,8 @@ import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
 	cn,
+	Muted,
+	P,
 	ScrollArea,
 	Separator,
 	Tooltip,
@@ -17,6 +19,7 @@ import { InputMessage } from "@/components/message/input-message";
 import { ResponseMessage } from "@/components/message/response-message";
 import { RoomInput, type SendButtonState } from "@/components/room/room-input";
 import { useFileDrag } from "@/contexts/file-drag-context";
+import { ModelRouterAttribution } from "@/features/conversation/model-router-attribution";
 import { useChat } from "@/hooks/use-chat";
 import { useGracefulErrors } from "@/hooks/use-graceful-errors";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
@@ -514,9 +517,9 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 										<React.Fragment key={m.key}>
 											{showModelName && (
 												<div className="relative mb-4 flex flex-col items-center justify-center">
-													<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
+													<Muted className="z-10 bg-background px-2 text-base leading-normal">
 														{m.ornaments.modelName}
-													</div>
+													</Muted>
 													<Separator className="absolute top-1/2" />
 												</div>
 											)}
@@ -534,6 +537,26 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 														subsequentTools
 													}
 												/>
+											)}
+
+											{m.type === "OUTPUT" && (
+												<ModelRouterAttribution
+													routing={
+														m.ornaments.routing
+													}
+												/>
+											)}
+											{subsequentTools.map(
+												(toolMessage) => (
+													<ModelRouterAttribution
+														key={toolMessage.key}
+														routing={
+															toolMessage
+																.ornaments
+																.routing
+														}
+													/>
+												),
 											)}
 
 											{m.type === "OUTPUT" && (
@@ -571,11 +594,12 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 						{room.error ? (
 							<div className="mx-auto flex w-full max-w-3xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
-									<TriangleAlertIcon className="h-6 w-6" />
+									<TriangleAlertIcon
+										aria-hidden="true"
+										className="size-6"
+									/>
 								</div>
-								<span>
-									{getGracefulErrorMessage(room.error)}
-								</span>
+								<P>{getGracefulErrorMessage(room.error)}</P>
 							</div>
 						) : null}
 					</div>
@@ -592,7 +616,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 									aria-label={t("content.scrollToTop")}
 									className="shadow-lg"
 								>
-									<MoveUpIcon />
+									<MoveUpIcon aria-hidden="true" />
 								</Button>
 							</span>
 						</TooltipTrigger>
@@ -615,7 +639,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 									aria-label={t("content.scrollToBottom")}
 									className="shadow-lg"
 								>
-									<MoveDownIcon />
+									<MoveDownIcon aria-hidden="true" />
 								</Button>
 							</span>
 						</TooltipTrigger>

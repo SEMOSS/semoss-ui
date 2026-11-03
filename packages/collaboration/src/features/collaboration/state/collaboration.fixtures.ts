@@ -1532,6 +1532,9 @@ const SAMPLE_STATE: CollaborationState = {
 			teams: false,
 		},
 		memory: { use: true, learn: true },
+		draftFolderId: "",
+		draftFolderName: "",
+		syncEveryMinutes: 15,
 		version: 1,
 	},
 	rules: [

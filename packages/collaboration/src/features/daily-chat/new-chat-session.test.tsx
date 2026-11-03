@@ -10,6 +10,10 @@ import { useContext, useSyncExternalStore } from "react";
 import { createMemoryRouter, useParams } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { TooltipProvider } from "@semoss/ui/next";
+import {
+	WorkUpdatesContext,
+	type WorkUpdatesStatus,
+} from "@/features/collaboration/live/work-updates.context";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
 import { linkRoomTopic } from "@/features/rooms/api/room-topics";
@@ -252,7 +256,12 @@ function TopicComposer() {
 	const { topicId } = useParams();
 	return <LandingChatComposer key={topicId} topicId={topicId} />;
 }
-function setup(navigationState?: unknown, search = "", pathname = "/") {
+function setup(
+	navigationState?: unknown,
+	search = "",
+	pathname = "/",
+	updates: WorkUpdatesStatus | null = null,
+) {
 	const router = createMemoryRouter(
 		[
 			{ path: "/", Component: LandingChatComposer },
@@ -272,9 +281,11 @@ function setup(navigationState?: unknown, search = "", pathname = "/") {
 		<CollaborationSessionProvider
 			initialState={createInitialCollaborationState()}
 		>
-			<TooltipProvider>
-				<RouterProvider router={router} />
-			</TooltipProvider>
+			<WorkUpdatesContext.Provider value={updates}>
+				<TooltipProvider>
+					<RouterProvider router={router} />
+				</TooltipProvider>
+			</WorkUpdatesContext.Provider>
 		</CollaborationSessionProvider>,
 	);
 	return router;
@@ -351,6 +362,9 @@ it("keeps a suggested prompt, files, and agent choice local before the first sen
 	fireEvent.change(screen.getByLabelText("Choose attachments"), {
 		target: { files: [file] },
 	});
+	fireEvent.click(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	);
 	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
 	await waitFor(() =>
 		expect(sessions[0].getSnapshot().settings.agentId).toBe("chosen-agent"),
@@ -511,6 +525,9 @@ it("applies requested agent and model once while preserving later local edits", 
 			modelId: "requested-model",
 		}),
 	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	);
 	await userEvent
 		.setup()
 		.click(screen.getByRole("button", { name: "Choose agent" }));
@@ -661,6 +678,9 @@ it("restores a landing draft through Back and Forward without navigation state",
 	fireEvent.change(screen.getByLabelText("Choose attachments"), {
 		target: { files: [file] },
 	});
+	fireEvent.click(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	);
 	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
 	await act(() => router.navigate(-1));
 	await act(() => router.navigate(1));
@@ -710,6 +730,9 @@ it("retains landing text, files, and settings when opening and closing Settings"
 	fireEvent.change(screen.getByLabelText("Choose attachments"), {
 		target: { files: [file] },
 	});
+	fireEvent.click(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	);
 	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
 	await user.click(
 		screen.getByRole("button", { name: "Open composer actions" }),
@@ -881,7 +904,9 @@ it("keeps a topic assistant local and links its room before the first unchanged 
 	expect(mocks.create).toHaveBeenCalledOnce();
 	expect(mocks.send).not.toHaveBeenCalled();
 	expect(router.state.location.pathname).toBe("/topics/topic-one");
-	expect(screen.getByRole("button", { name: "Choose agent" })).toBeDisabled();
+	expect(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	).toBeDisabled();
 	submit();
 	await act(async () => confirmLink?.());
 	await waitFor(() =>
@@ -1010,7 +1035,9 @@ it("keeps a pending topic link owned by its original draft after navigating away
 		);
 	await act(() => router.navigate(-1));
 	expect(draftIdentity()).toBe(id);
-	expect(screen.getByRole("button", { name: "Choose agent" })).toBeDisabled();
+	expect(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	).toBeDisabled();
 	submit();
 	await act(async () => confirmLink?.());
 	expect(router.state.location.pathname).toBe("/topics/topic-one");
@@ -1022,4 +1049,32 @@ it("keeps a pending topic link owned by its original draft after navigating away
 		text: "Original topic request",
 		files: [],
 	});
+});
+
+it("links a topic assistant's chat for a topic made on this page by its server id", async () => {
+	const updates: WorkUpdatesStatus = {
+		isRefreshing: false,
+		lastUpdated: null,
+		error: "",
+		lastMailCheck: null,
+		refresh: vi.fn(),
+		refreshTopicGoal: vi.fn(),
+		refreshTopic: vi.fn(),
+		isSyncing: false,
+		lastSync: null,
+		syncError: "",
+		syncMail: vi.fn(),
+		// the page made the topic, so it keeps the local id the route shows
+		serverId: async (id) => (id === "local-topic-1" ? "server-topic" : id),
+		localId: (id) => (id === "server-topic" ? "local-topic-1" : id),
+	};
+	setup(undefined, "", "/topics/local-topic-1", updates);
+	await enterText("Did I miss the deadline to register?");
+	submit();
+	await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
+	expect(linkRoomTopic).toHaveBeenCalledExactlyOnceWith(
+		sessions[0].insight.actions,
+		"actual-room",
+		"server-topic",
+	);
 });

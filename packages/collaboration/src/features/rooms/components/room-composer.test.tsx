@@ -221,6 +221,109 @@ describe("RoomComposer", () => {
 		).toBeInTheDocument();
 	});
 
+	it("fills an editable starting point, retains attachments, and waits for Send", async () => {
+		const onSend = vi.fn(async () => undefined);
+		const onDraftChange = vi.fn();
+		const file = new File(["notes"], "notes.txt");
+		renderComposer({
+			starterPrompts: [
+				{
+					id: "summary",
+					title: "Summarize",
+					context: "Summarize the included email thread.",
+				},
+			],
+			initialDraft: { text: "", document: null, files: [file] },
+			onSend,
+			onDraftChange,
+			hideEmptyOptimization: true,
+		});
+		expect(
+			screen.queryByRole("button", { name: "Optimize prompt" }),
+		).toBeNull();
+		await userEvent.click(
+			screen.getByRole("button", { name: "Summarize" }),
+		);
+		const editor = screen.getByRole("textbox", {
+			name: "Message Research agent",
+		});
+		await waitFor(() => expect(editor).toHaveFocus());
+		expect(editor).toHaveTextContent(
+			"Summarize the included email thread.",
+		);
+		expect(
+			screen.queryByRole("group", { name: "Choose a starting point" }),
+		).toBeNull();
+		expect(
+			screen.getByRole("button", { name: "Optimize prompt" }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "Remove notes.txt" }),
+		).toBeVisible();
+		await waitFor(() =>
+			expect(onDraftChange).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					text: "Summarize the included email thread.",
+					files: [file],
+				}),
+			),
+		);
+		expect(onSend).not.toHaveBeenCalled();
+		await userEvent.click(
+			screen.getByRole("button", {
+				name: "Send message to Research agent",
+			}),
+		);
+		await waitFor(() =>
+			expect(onSend).toHaveBeenCalledExactlyOnceWith({
+				text: "Summarize the included email thread.",
+				files: [file],
+			}),
+		);
+	});
+
+	it("keeps starting points out of the way of an existing draft", async () => {
+		renderComposer({
+			starterPrompts: [
+				{ id: "summary", title: "Summarize", context: "Replace this" },
+			],
+			initialDraft: {
+				text: "My own question",
+				document: null,
+				files: [],
+			},
+		});
+		await waitFor(() =>
+			expect(
+				screen.getByRole("textbox", { name: "Message Research agent" }),
+			).toHaveTextContent("My own question"),
+		);
+		expect(screen.queryByRole("button", { name: "Summarize" })).toBeNull();
+	});
+
+	it.each([
+		{ isSubmitting: true },
+		{ isRunning: true },
+		{ isSendDisabled: true },
+	])(
+		"disables starting points while the conversation is unavailable: %j",
+		(blocked) => {
+			renderComposer({
+				...blocked,
+				starterPrompts: [
+					{
+						id: "summary",
+						title: "Summarize",
+						context: "Summarize this",
+					},
+				],
+			});
+			expect(
+				screen.getByRole("button", { name: "Summarize" }),
+			).toBeDisabled();
+		},
+	);
+
 	it("connects host-owned actions to the retained attachment picker", async () => {
 		renderComposer({
 			actionsTriggerId: "chat-actions",
@@ -838,6 +941,52 @@ describe("RoomComposer", () => {
 		);
 	});
 
+	it("keeps a table paste notice when an error is dismissed and sends the rich draft", async () => {
+		const user = userEvent.setup();
+		const onSend = vi.fn(async () => undefined);
+		renderComposer({ submissionError: "Previous send failed", onSend });
+		const editor = screen.getByRole("textbox", {
+			name: "Message Research agent",
+		});
+		await user.click(editor);
+		fireEvent.paste(editor, {
+			clipboardData: {
+				items: [],
+				types: ["text/html", "text/plain"],
+				getData: (type: string) =>
+					type === "text/html"
+						? '<table><tr><td>Quarter</td><td>100 + %20</td></tr></table><img src="preview.png">'
+						: "Quarter\t100 + %20",
+			},
+		});
+		await waitFor(() =>
+			expect(screen.getByRole("cell", { name: "Quarter" })).toBeVisible(),
+		);
+		const notice = screen.getByText(
+			/Pasted the table; embedded images and resources were omitted/,
+		);
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"Previous send failed",
+		);
+		await user.click(screen.getByRole("button", { name: "Dismiss error" }));
+		expect(screen.queryByRole("alert")).toBeNull();
+		expect(notice).toBeVisible();
+		expect(screen.getByRole("cell", { name: "100 + %20" })).toBeVisible();
+		await user.click(
+			screen.getByRole("button", {
+				name: "Send message to Research agent",
+			}),
+		);
+		await waitFor(() => expect(onSend).toHaveBeenCalledOnce());
+		expect(onSend).toHaveBeenCalledWith(
+			expect.objectContaining({
+				userContentFormat: "html-v1",
+				userContent: expect.stringContaining("<table>"),
+				files: [],
+			}),
+		);
+	});
+
 	it("requires text, prevents duplicate submissions, and restores a failed draft", async () => {
 		const user = userEvent.setup();
 		let rejectSend: (cause: Error) => void = () => undefined;
@@ -1051,15 +1200,17 @@ describe("RoomComposer", () => {
 			await screen.findByRole("button", { name: "Remove notes.pdf" }),
 		).toBeInTheDocument();
 
+		const clipboard = new File(["clipboard"], "clipboard.txt", {
+			type: "text/plain",
+		});
 		fireEvent.paste(editor, {
 			clipboardData: {
+				types: ["Files"],
+				files: [clipboard],
 				items: [
 					{
 						kind: "file",
-						getAsFile: () =>
-							new File(["clipboard"], "clipboard.txt", {
-								type: "text/plain",
-							}),
+						getAsFile: () => clipboard,
 					},
 				],
 				getData: () => "",

@@ -23,6 +23,21 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
+
+// the topic page opens its assistant by default; these tests are not about it
+vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
+	LandingChatComposer: () => null,
+}));
+vi.mock("../api/use-collaboration-search", () => ({
+	useCollaborationSearch: () => ({
+		entries: [],
+		total: 0,
+		status: "idle",
+		error: null,
+		hasMore: false,
+	}),
+}));
+
 import { BrainMemory } from "./brain-memory";
 import { BrainReview } from "./brain-review";
 import { BrainThread } from "./brain-thread";
@@ -171,8 +186,13 @@ describe("collaboration Work and Brain integration", () => {
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
-				name: "No response needed",
+				name: /actions for/,
 			}),
+		);
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: /actions for/ }),
+			).getByRole("button", { name: "No response needed" }),
 		);
 		expect(
 			screen.queryByRole("link", { name: title }),
@@ -194,8 +214,13 @@ describe("collaboration Work and Brain integration", () => {
 		const router = renderSession("/work/all", state);
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
-				name: "Ignore thread",
+				name: /actions for/,
 			}),
+		);
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: /actions for/ }),
+			).getByRole("button", { name: "Ignore thread" }),
 		);
 		expect(
 			screen.queryByRole("link", { name: title }),
@@ -233,7 +258,7 @@ describe("collaboration Work and Brain integration", () => {
 			within(kept).queryByText("Not used until you keep it"),
 		).not.toBeInTheDocument();
 		expect(
-			within(kept).getByText(/Suggested by Brain/),
+			within(kept).getByText(/Suggested by the assistant/),
 		).toBeInTheDocument();
 	});
 
@@ -347,7 +372,7 @@ describe("collaboration Work and Brain integration", () => {
 			)?.status,
 		).toBe("done");
 		await user.click(screen.getByRole("tab", { name: "Threads" }));
-		await user.click(screen.getByRole("tab", { name: "Actions" }));
+		await user.click(screen.getByRole("tab", { name: /^Actions/ }));
 		expect(screen.getByRole("checkbox", { name: title })).toBeChecked();
 		expect(screen.getByText(title)).not.toHaveClass("line-through");
 	});
@@ -371,12 +396,16 @@ describe("collaboration Work and Brain integration", () => {
 			screen.queryByRole("textbox", { name: "Add keyword" }),
 		).not.toBeInTheDocument();
 		expect(
-			screen.queryByRole("combobox", { name: "Add someone" }),
+			screen.queryByRole("searchbox", {
+				name: "Search people by name or email",
+			}),
 		).not.toBeInTheDocument();
 		expect(
 			screen.queryByRole("textbox", { name: "New note" }),
 		).not.toBeInTheDocument();
 
+		// topic setup lives in the Context panel, which starts closed
+		await user.click(screen.getByRole("button", { name: "Context" }));
 		const goalTrigger = screen.getByRole("button", { name: "Add goal" });
 		await user.click(goalTrigger);
 		const goal = screen.getByLabelText("New goal");
@@ -414,17 +443,21 @@ describe("collaboration Work and Brain integration", () => {
 			name: "Add people",
 		});
 		await user.click(peopleTrigger);
-		act(() =>
-			screen.getByRole("combobox", { name: "Add someone" }).focus(),
+		const picker = screen.getByRole("dialog", { name: "Add people" });
+		const search = within(picker).getByRole("searchbox", {
+			name: "Search people by name or email",
+		});
+		await waitFor(() => expect(search).toHaveFocus());
+		await user.type(search, "ava");
+		await user.click(
+			within(picker).getByRole("button", {
+				name: "Add Ava Reed to this topic",
+			}),
 		);
-		await user.keyboard("{Enter}");
-		await waitFor(() =>
-			expect(
-				screen.getByRole("option", { name: "Ava Reed" }),
-			).toHaveFocus(),
+		expect(within(picker).getByRole("status")).toHaveTextContent(
+			"Added Ava Reed to this topic.",
 		);
-		await user.keyboard("{Enter}");
-		await user.click(screen.getByRole("button", { name: "Add person" }));
+		expect(search).toHaveFocus();
 		await user.keyboard("{Escape}");
 		expect(
 			within(sectionFor("In this topic")).getByRole("link", {
@@ -432,6 +465,185 @@ describe("collaboration Work and Brain integration", () => {
 			}),
 		).toBeInTheDocument();
 		await waitFor(() => expect(peopleTrigger).toHaveFocus());
+	});
+
+	it("finds people for a topic with the ones on its threads first, and adds or ignores them", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		// Mia is on two of the topic's threads, Dan on one; neither is a member
+		const extra = state.threads.find(
+			(thread) =>
+				thread.topicLinks.some((link) => link.topicId === "t-geng") &&
+				!thread.participants.some(
+					(participant) => participant.personId === "p-mia",
+				),
+		);
+		if (!extra) throw new Error("Missing sample thread");
+		extra.participants.push({
+			personId: "p-mia",
+			role: "cc",
+			included: true,
+		});
+		renderSession("/topics/t-geng", state);
+		await user.click(screen.getByRole("button", { name: "Add people" }));
+		const picker = screen.getByRole("dialog", { name: "Add people" });
+		const onThreads = within(picker).getByRole("list", {
+			name: "On its threads",
+		});
+		expect(
+			within(onThreads)
+				.getAllByRole("listitem")
+				.map((row) => row.textContent),
+		).toEqual([
+			expect.stringContaining("Mia Cole"),
+			expect.stringContaining("Dan Price"),
+		]);
+		expect(
+			within(onThreads).getByText("On 2 of its threads"),
+		).toBeInTheDocument();
+		const search = within(picker).getByRole("searchbox", {
+			name: "Search people by name or email",
+		});
+
+		await user.click(
+			within(picker).getByRole("button", {
+				name: "Ignore Dan Price in this topic",
+			}),
+		);
+		expect(within(picker).getByRole("status")).toHaveTextContent(
+			"Ignoring Dan Price in this topic.",
+		);
+		expect(search).toHaveFocus();
+		expect(within(onThreads).getByText("Ignored")).toBeInTheDocument();
+
+		await user.type(search, "zzz");
+		expect(
+			within(picker).getByText('No one matches "zzz".'),
+		).toBeInTheDocument();
+		await user.click(
+			within(picker).getByRole("button", { name: "Clear search" }),
+		);
+		expect(search).toHaveValue("");
+		expect(search).toHaveFocus();
+
+		await user.click(
+			within(picker).getByRole("button", {
+				name: "Add Mia Cole to this topic",
+			}),
+		);
+		expect(within(picker).getByRole("status")).toHaveTextContent(
+			"Added Mia Cole to this topic.",
+		);
+		await user.keyboard("{Escape}");
+		expect(
+			within(sectionFor("In this topic")).getByRole("link", {
+				name: "Mia Cole",
+			}),
+		).toBeInTheDocument();
+		expect(
+			within(sectionFor("Ignored here")).getByRole("link", {
+				name: "Dan Price",
+			}),
+		).toBeInTheDocument();
+	});
+
+	it("makes a member a VIP in the topic and ignores them there until stopped", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const topic = state.topics.find(
+			(candidate) => candidate.id === "t-geng",
+		);
+		if (!topic) throw new Error("Missing sample topic");
+		// without goals the Context panel starts closed
+		topic.goals = [];
+		renderSession("/topics/t-geng", state);
+		await user.click(screen.getByRole("button", { name: "Context" }));
+		const settings = () =>
+			within(sectionFor("In this topic")).getByRole("button", {
+				name: "Settings for Ava Reed in this topic",
+			});
+		await user.click(settings());
+		await user.click(
+			screen.getByRole("menuitemcheckbox", { name: "VIP in this topic" }),
+		);
+		expect(
+			within(sectionFor("In this topic")).getByText("Topic VIP"),
+		).toBeInTheDocument();
+
+		await user.click(settings());
+		await user.click(
+			screen.getByRole("menuitem", { name: "Ignore in this topic" }),
+		);
+		const ignored = sectionFor("Ignored here");
+		expect(
+			within(ignored).getByRole("link", { name: "Ava Reed" }),
+		).toBeInTheDocument();
+		await user.click(
+			within(ignored).getByRole("button", {
+				name: "Stop ignoring Ava Reed in this topic",
+			}),
+		);
+		expect(
+			screen.queryByRole("heading", { name: "Ignored here" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("lists every topic a person is a VIP in, or ignored in, on their page", () => {
+		const state = createInitialCollaborationState();
+		const vipIn = ["t-geng", "t-gsales"].map((id) => {
+			const topic = state.topics.find((candidate) => candidate.id === id);
+			if (!topic) throw new Error(`Missing sample topic ${id}`);
+			topic.people = [
+				...topic.people.filter((member) => member.personId !== "p-ava"),
+				{
+					personId: "p-ava",
+					role: "",
+					engagement: null,
+					state: "member",
+					origin: "you",
+					vip: true,
+				},
+			];
+			return topic.short;
+		});
+		state.rules.push({
+			id: "r-ignore",
+			kind: "exclude_topic",
+			value: "",
+			topicId: "t-board",
+			personId: "p-ava",
+			createdBy: "you",
+			createdAt: "2026-10-29T12:00:00.000Z",
+			isSample: true,
+		});
+		renderSession("/brain/people/p-ava", state);
+		const topics = sectionFor("Topics");
+		const row = (label: string) => {
+			const found = within(topics).getByText(label).parentElement;
+			if (!found) throw new Error(`No ${label} row`);
+			return within(found);
+		};
+		for (const short of vipIn)
+			expect(
+				row("VIP in").getByRole("link", { name: short }),
+			).toBeInTheDocument();
+		expect(
+			row("Ignored in").getByRole("link", { name: "Board" }),
+		).toBeInTheDocument();
+	});
+
+	it("marks a topic's people with the settings that hold everywhere", () => {
+		const state = createInitialCollaborationState();
+		const ava = state.people.find((person) => person.id === "p-ava");
+		if (!ava) throw new Error("Missing sample person");
+		ava.vip = true;
+		ava.neverIngest = true;
+		renderSession("/topics/t-geng", state);
+		const members = sectionFor("In this topic");
+		expect(within(members).getByText("VIP everywhere")).toBeInTheDocument();
+		expect(
+			within(members).getByText("Excluded everywhere"),
+		).toBeInTheDocument();
 	});
 
 	it("counts each active feed thread once and distinguishes open, waiting, and muted threads", async () => {
@@ -469,12 +681,14 @@ describe("collaboration Work and Brain integration", () => {
 			.closest("li");
 		if (!openRow || !waitingRow || !mutedRow)
 			throw new Error("Missing topic thread row");
-		expect(within(openRow).getByText("For you")).toBeInTheDocument();
+		expect(within(openRow).getByText("Open action")).toBeInTheDocument();
 		expect(within(waitingRow).getByText("Waiting")).toBeInTheDocument();
 		expect(
-			within(waitingRow).queryByText("For you"),
+			within(waitingRow).queryByText("Open action"),
 		).not.toBeInTheDocument();
-		expect(within(mutedRow).queryByText("For you")).not.toBeInTheDocument();
+		expect(
+			within(mutedRow).queryByText("Open action"),
+		).not.toBeInTheDocument();
 		expect(within(mutedRow).queryByText("Waiting")).not.toBeInTheDocument();
 	});
 
@@ -681,11 +895,11 @@ describe("collaboration Work and Brain integration", () => {
 		renderSession("/search");
 		await user.click(
 			screen.getByRole("button", {
-				name: "Search your workspace",
+				name: "Search",
 			}),
 		);
 		const dialog = screen.getByRole("dialog", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await user.type(
 			within(dialog).getByRole("combobox", {
@@ -707,7 +921,7 @@ describe("collaboration Work and Brain integration", () => {
 		const user = userEvent.setup();
 		renderSession("/search");
 		const trigger = screen.getByRole("button", {
-			name: "Search your workspace",
+			name: "Search",
 		});
 		await user.click(trigger);
 		await user.keyboard("{Escape}");

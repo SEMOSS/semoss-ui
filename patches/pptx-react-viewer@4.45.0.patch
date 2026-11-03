@@ -1,0 +1,74 @@
+diff --git a/dist/chunk-2YCROYR6.js b/dist/chunk-2YCROYR6.js
+index 9653aae507686bc570d1265ea15fbaec08220bbd..dfad110717b7f9d8b63482e5dd223c16f256776d 100644
+--- a/dist/chunk-2YCROYR6.js
++++ b/dist/chunk-2YCROYR6.js
+@@ -7564,6 +7564,11 @@ function useExportSaveAs(input) {
+     slideSizeEmu
+   } = input;
+   const handleSaveAsFormat = async (format) => {
++    // Let an embedding host persist Save instead of downloading a replacement copy.
++    const target = input.canvasStageRef?.current;
++    if (format === "pptx" && target && !target.dispatchEvent(new CustomEvent("file-command", {
++      detail: { command: "save" }, bubbles: true, composed: true, cancelable: true
++    }))) return false;
+     const downloadName = pptx.savedPresentationFileName(filePath, format);
+     try {
+       const data = await serializeSlides(format);
+@@ -8285,6 +8290,7 @@ function useExportHandlers(input) {
+     handleSaveAsPptm,
+     handleSaveAsPpt
+   } = useExportSaveAs({
++    canvasStageRef,
+     slides,
+     templateElementsBySlideId,
+     filePath,
+diff --git a/dist/chunk-66APV3YZ.mjs b/dist/chunk-66APV3YZ.mjs
+index eb5c2aa8d059faaa78e52c2425f30cad0452d9bb..075778ea905b63423fa09eb517738486132426e8 100644
+--- a/dist/chunk-66APV3YZ.mjs
++++ b/dist/chunk-66APV3YZ.mjs
+@@ -7559,6 +7559,11 @@ function useExportSaveAs(input) {
+     slideSizeEmu
+   } = input;
+   const handleSaveAsFormat = async (format) => {
++    // Let an embedding host persist Save instead of downloading a replacement copy.
++    const target = input.canvasStageRef?.current;
++    if (format === "pptx" && target && !target.dispatchEvent(new CustomEvent("file-command", {
++      detail: { command: "save" }, bubbles: true, composed: true, cancelable: true
++    }))) return false;
+     const downloadName = savedPresentationFileName(filePath, format);
+     try {
+       const data = await serializeSlides(format);
+@@ -8280,6 +8285,7 @@ function useExportHandlers(input) {
+     handleSaveAsPptm,
+     handleSaveAsPpt
+   } = useExportSaveAs({
++    canvasStageRef,
+     slides,
+     templateElementsBySlideId,
+     filePath,
+diff --git a/dist/chunk-KUQRWMIK.js b/dist/chunk-KUQRWMIK.js
+index ccefdb6370bf3cf214698f6aef2233a870b86a2f..0685b65776d4fcb43409de95f353ea8b30db92d5 100644
+--- a/dist/chunk-KUQRWMIK.js
++++ b/dist/chunk-KUQRWMIK.js
+@@ -35570,7 +35570,7 @@ ${url}`)
+         }
+       };
+       const handleSaveAsFormat = async (format) => {
+-        await rawExportHandlers.handleSaveAsFormat(format);
++        if (await rawExportHandlers.handleSaveAsFormat(format) === false) return;
+         afterSuccessfulSave(format);
+       };
+       return {
+diff --git a/dist/chunk-VUE3EPTJ.mjs b/dist/chunk-VUE3EPTJ.mjs
+index 625ec6a9a63acae7b908d1829ec3d3c788b553f8..882e5abe54cc947b880713250241b6d2e59e92d8 100644
+--- a/dist/chunk-VUE3EPTJ.mjs
++++ b/dist/chunk-VUE3EPTJ.mjs
+@@ -35565,7 +35565,7 @@ ${url}`)
+         }
+       };
+       const handleSaveAsFormat = async (format) => {
+-        await rawExportHandlers.handleSaveAsFormat(format);
++        if (await rawExportHandlers.handleSaveAsFormat(format) === false) return;
+         afterSuccessfulSave(format);
+       };
+       return {

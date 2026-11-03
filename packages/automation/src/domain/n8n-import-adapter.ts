@@ -357,7 +357,6 @@ const AUTOMATION_NODE_TYPES: readonly AutomationWorkflowNodeType[] = [
 	"model.chat",
 	"model.embeddings",
 	"model.vision",
-	"model.ner",
 	"storage.list",
 	"storage.read",
 	"storage.upload",
@@ -432,6 +431,15 @@ function sourcePortFor(n8nNode: N8nNode, outputIndex: number): string {
 	return "out";
 }
 
+/** Routing and trigger nodes direct execution but do not publish a scoped value. */
+function declaresOutputVariable(type: AutomationWorkflowNodeType): boolean {
+	return (
+		type !== "trigger.start" &&
+		type !== "control.if" &&
+		type !== "control.jev"
+	);
+}
+
 export function n8nWorkflowToAutomationDocument(
 	workflow: N8nWorkflow,
 ): N8nImportResult {
@@ -478,9 +486,9 @@ export function n8nWorkflowToAutomationDocument(
 			id: n8nNode.id,
 			type: mapped.type,
 			label: mapped.label ?? n8nNode.name,
-			...(mapped.type === "trigger.start"
-				? {}
-				: { outputVar: sanitizeVarName(n8nNode.name) }),
+			...(declaresOutputVariable(mapped.type)
+				? { outputVar: sanitizeVarName(n8nNode.name) }
+				: {}),
 			position: {
 				x: n8nNode.position?.[0] ?? 0,
 				y: n8nNode.position?.[1] ?? 0,
@@ -659,6 +667,9 @@ export async function n8nWorkflowToAutomationDocumentWithModel(
 					)
 				: (converted.label ?? node.name),
 		});
+		if (!declaresOutputVariable(converted.type)) {
+			delete importedNode.outputVar;
+		}
 		if (pythonSource) {
 			result.nodeSources[node.id] = pythonSource;
 		} else {

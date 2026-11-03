@@ -64,7 +64,7 @@
 		"roomDeletedSuccess": "Sala eliminada exitosamente"
 	},
 	"workbench": {
-		"file": "Archivo",
+		"view": "Ver",
 		"navigate": "Navegar",
 		"commandPalette": "Abrir paleta de comandos…",
 		"layout": "Organizar paneles",

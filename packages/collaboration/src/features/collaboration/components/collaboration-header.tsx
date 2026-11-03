@@ -39,7 +39,7 @@ export function CollaborationHeader({
 				<Button
 					type="button"
 					variant="outline"
-					aria-label="Search your workspace"
+					aria-label="Search"
 					className="size-11 @2xl/workspace-header:h-9 pointer-coarse:@2xl/workspace-header:min-h-11 @2xl/workspace-header:w-48 @4xl/workspace-header:w-64 shrink-0 @2xl/workspace-header:justify-start gap-2 @2xl/workspace-header:px-4 px-0 font-normal text-muted-foreground shadow-none"
 					onClick={(event) => {
 						searchReturnFocus.current = event.currentTarget;

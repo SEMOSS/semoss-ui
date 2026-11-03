@@ -13,7 +13,6 @@ import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-acc
 import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
 import { useConfig, useProject } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
 
 export interface ProjectAccessControlProps {
 	/**
@@ -32,7 +31,6 @@ export const ProjectAccessControl = ({
 }: ProjectAccessControlProps) => {
 	const { project, permission, refresh } = useProject();
 
-	const navigate = useNavigate();
 	// bulk access management, effective permissions and teams go by the user's own access:
 	// an admin uses them in admin mode, from the settings pages
 	const canEditAccess = permission === "OWNER" || permission === "EDIT";
@@ -44,7 +42,7 @@ export const ProjectAccessControl = ({
 	const { pathname } = useLocation();
 	const accessControlPath = getAccessControlPath(pathname);
 	const canOpenViews = canEditAccess && accessControlPath !== null;
-	const target = { kind: "PROJECT" as const, id: project.project_id };
+	const target = { resourceType: "PROJECT" as const, id: project.project_id };
 	const name =
 		project.project_display_name ||
 		project.project_name ||
@@ -71,9 +69,6 @@ export const ProjectAccessControl = ({
 								"app"
 							}
 							id={project.project_id}
-							onDelete={() => {
-								navigate("/app");
-							}}
 						/>
 					</section>
 				)}
@@ -106,7 +101,7 @@ export const ProjectAccessControl = ({
 					) : view === "BULK_ACCESS_MANAGEMENT" ? (
 						<BulkAccessManagement
 							// a new target starts from its own access, never the last one's staged changes
-							key={`${target.kind}:${target.id}`}
+							key={`${target.resourceType}:${target.id}`}
 							target={target}
 							name={name}
 							noun="app"
@@ -118,7 +113,7 @@ export const ProjectAccessControl = ({
 					) : view === "EFFECTIVE" ? (
 						<EffectivePermissions
 							// a new target reads its own access afresh
-							key={`${target.kind}:${target.id}`}
+							key={`${target.resourceType}:${target.id}`}
 							target={target}
 							name={name}
 							backTo=".."

@@ -1,8 +1,10 @@
-import { ShieldCheck, TriangleAlert } from "lucide-react";
+import { ShieldCheck, TriangleAlert, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Alert, Button, P, useIsMobile } from "@semoss/ui/next";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { getEditorSendId } from "@/features/room-email/room-email-tools";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
+import { collaborationToolViewUri } from "@/features/tools/views/collaboration-tool-catalog";
 import type { PendingToolApproval } from "../types/room";
 import { turnErrorSummary } from "../utils/turn-error";
 
@@ -30,10 +32,16 @@ export function RoomRunStatus({
 	const { tools, openInline, openWorkbench, onApproveTool, onRejectTool } =
 		useToolWorkbench();
 	const summary = turnError ? turnErrorSummary(turnError) : "";
+	// a closed error stays closed until the next turn clears or replaces it
+	const [dismissed, setDismissed] = useState<string | null>(null);
+	useEffect(() => {
+		if (!turnError) setDismissed(null);
+	}, [turnError]);
+	const showError = Boolean(turnError) && turnError !== dismissed;
 
 	return (
 		<>
-			{turnError && (
+			{showError && (
 				<Alert
 					variant="destructive"
 					className="flex shrink-0 items-start gap-3 rounded-none border-0 border-t bg-destructive/5 px-5 py-3"
@@ -48,6 +56,9 @@ export function RoomRunStatus({
 						</P>
 						<P className="text-muted-foreground text-sm">
 							{summary}
+						</P>
+						<P className="text-muted-foreground text-sm">
+							You can keep chatting here or close this message.
 						</P>
 						{summary !== turnError && (
 							<details className="mt-1 text-muted-foreground text-xs">
@@ -70,6 +81,15 @@ export function RoomRunStatus({
 							New conversation
 						</Button>
 					)}
+					<Button
+						type="button"
+						size="icon-sm"
+						variant="ghost"
+						aria-label="Dismiss error"
+						onClick={() => setDismissed(turnError)}
+					>
+						<X aria-hidden="true" className="size-4" />
+					</Button>
 				</Alert>
 			)}
 			{transportError && !turnError && (
@@ -112,6 +132,7 @@ export function RoomRunStatus({
 						const canDecideHere =
 							!approval.requiresResponse &&
 							!approval.uiUrl &&
+							!(tool && collaborationToolViewUri(tool)) &&
 							!editorSendId;
 						const isDisabled = !tool || approval.isDeciding;
 						return (

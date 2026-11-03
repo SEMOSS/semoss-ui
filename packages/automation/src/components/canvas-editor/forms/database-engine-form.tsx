@@ -164,6 +164,17 @@ export function DatabaseEngineForm({
 				readOnly={readOnly}
 			/>
 
+			<BoundInput
+				label="Parameters (JSON array, optional)"
+				value={config.parameters ?? ""}
+				onChange={(value) => onChange({ ...config, parameters: value })}
+				upstreamVars={upstreamVars}
+				placeholder={'["$' + '{loop.item.appointmentBlockId}"]'}
+				mono
+				minRows={3}
+				readOnly={readOnly}
+			/>
+
 			{config.operation === "query" && (
 				<Field>
 					<FieldLabel htmlFor={limitId}>Result limit</FieldLabel>

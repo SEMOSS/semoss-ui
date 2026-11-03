@@ -81,8 +81,8 @@ export function originLabel(memory: Memory): string {
 			? "Learned in chat, confirmed"
 			: "Learned in chat";
 	return memory.state === "suggested"
-		? "Brain suggestion"
-		: "Suggested by Brain";
+		? "Assistant suggestion"
+		: "Suggested by the assistant";
 }
 
 /** Mirrors BrainMergeTopics: memories about the source are about the target, one link each. */

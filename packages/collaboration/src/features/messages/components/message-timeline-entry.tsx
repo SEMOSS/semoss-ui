@@ -130,6 +130,7 @@ export function MessageTimelineEntry({
 								<MessageToolActivity
 									key={block.key}
 									items={block.items}
+									agentName={agent.name}
 								/>
 							) : (
 								<div

@@ -48,8 +48,10 @@ import {
 	findSavedResultForOccurrence,
 	getRunNodeDataSource,
 	getRunNodeOccurrenceKey,
+	getVisibleRunNodeContentView,
 	RUN_NODE_VIEW_LABELS,
 	RUN_RESULTS_LAYOUT_CLASSES,
+	type RunNodeContentView,
 } from "./run-node-view-state";
 
 export interface RunsTabSnapshot {
@@ -70,6 +72,8 @@ export interface AutomationTraceSnapshot extends RunsTabSnapshot {
 
 interface RunsTabProps extends AutomationTraceSnapshot {
 	appId: string;
+	/** Shows immutable implementation details only when the workbench is in Dev mode. */
+	devMode?: boolean;
 	refreshToken: number;
 	/** Active runs discovered by the shared workbench run store. */
 	activeRuns?: AutomationRunSummary[];
@@ -114,6 +118,7 @@ function getExecutedSteps(run: AutomationRunDetail | null): AutomationNode[] {
 
 export function RunsTab({
 	appId,
+	devMode = false,
 	refreshToken,
 	running,
 	latestRunStatus,
@@ -288,6 +293,7 @@ export function RunsTab({
 		return (
 			<LiveRunView
 				appId={appId}
+				devMode={devMode}
 				runId={activeRun?.RUN_ID ?? null}
 				executionInsightId={activeRun?.executionInsightId ?? null}
 				savedResults={activeRun?.savedResults ?? []}
@@ -327,6 +333,7 @@ export function RunsTab({
 				<HistoryRunView
 					key={selectedRun.RUN_ID}
 					appId={appId}
+					devMode={devMode}
 					run={selectedRun}
 					onBack={goBack}
 					onOutputPopout={handleOutputPopout}
@@ -496,6 +503,7 @@ function RunHistoryBreadcrumb({
 /** Live run detail with navigation back to the history list. */
 function LiveRunView({
 	appId,
+	devMode,
 	runId,
 	executionInsightId,
 	savedResults,
@@ -514,6 +522,7 @@ function LiveRunView({
 	onViewAgentRun,
 }: Omit<AutomationTraceSnapshot, "executedDefinition"> & {
 	appId: string;
+	devMode: boolean;
 	runId: string | null;
 	executionInsightId: string | null;
 	savedResults: AutomationSavedResultReference[];
@@ -605,6 +614,7 @@ function LiveRunView({
 			<ResultsPanel
 				key={executionInsightId ?? "live"}
 				appId={appId}
+				devMode={devMode}
 				runId={runId}
 				executionInsightId={executionInsightId}
 				savedResults={savedResults}
@@ -622,6 +632,7 @@ function LiveRunView({
 /** Historical run detail with back button and run metadata. */
 function HistoryRunView({
 	appId,
+	devMode,
 	run,
 	onBack,
 	onOutputPopout,
@@ -629,6 +640,7 @@ function HistoryRunView({
 	onViewAgentRun,
 }: {
 	appId: string;
+	devMode: boolean;
 	run: AutomationRunDetail;
 	onBack: () => void;
 	onOutputPopout: (output: string) => void;
@@ -691,6 +703,7 @@ function HistoryRunView({
 				<ResultsPanel
 					key={run.RUN_ID}
 					appId={appId}
+					devMode={devMode}
 					runId={run.RUN_ID}
 					executionInsightId={run.executionInsightId ?? null}
 					savedResults={run.savedResults ?? []}
@@ -709,6 +722,7 @@ function HistoryRunView({
 /** Shared results panel: left nav + right output. */
 function ResultsPanel({
 	appId,
+	devMode,
 	runId,
 	executionInsightId,
 	savedResults,
@@ -720,6 +734,7 @@ function ResultsPanel({
 	onViewAgentRun,
 }: {
 	appId: string;
+	devMode: boolean;
 	runId: string | null;
 	executionInsightId: string | null;
 	savedResults: AutomationSavedResultReference[];
@@ -738,8 +753,11 @@ function ResultsPanel({
 	const [expandedIterationKeys, setExpandedIterationKeys] = useState<
 		Set<string>
 	>(() => new Set());
-	const [contentView, setContentView] = useState<"output" | "source">(
-		"output",
+	const [contentView, setContentView] =
+		useState<RunNodeContentView>("output");
+	const visibleContentView = getVisibleRunNodeContentView(
+		contentView,
+		devMode,
 	);
 
 	const [selectedBodyKey, setSelectedBodyKey] = useState<{
@@ -1185,7 +1203,7 @@ function ResultsPanel({
 										"Loop step"}
 								</p>
 							)}
-							{runId && (
+							{runId && devMode && (
 								<fieldset className="flex w-fit max-w-full flex-wrap rounded-md border bg-muted/40 p-0.5">
 									<legend className="sr-only">
 										{RUN_NODE_VIEW_LABELS.detailView}
@@ -1218,7 +1236,7 @@ function ResultsPanel({
 									</Button>
 								</fieldset>
 							)}
-							{contentView === "source" && runId ? (
+							{visibleContentView === "source" && runId ? (
 								<RunNodeSourceViewer
 									key={occurrenceKey}
 									appId={appId}

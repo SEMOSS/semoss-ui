@@ -11,48 +11,58 @@ export interface SourcesViewProps {
 	/** Adds a selected, validated source to the shared session; no fixture substitution. */
 	onImport: (source: ImportedSource) => void;
 	onDraftReply?: (source: ImportedSource) => void;
+	/** Show the connect header; off where the page already owns connecting. */
+	showConnect?: boolean;
 }
 
 /** Load Microsoft sources on demand and preview them before importing into Work. */
-export function SourcesView({ onImport, onDraftReply }: SourcesViewProps) {
+export function SourcesView({
+	onImport,
+	onDraftReply,
+	showConnect = true,
+}: SourcesViewProps) {
 	const sources = useSources();
 	const collaboration = useOptionalCollaborationSession();
 	const [isNewDraftOpen, setIsNewDraftOpen] = useState(false);
 	return (
 		<div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-			<header className="flex flex-wrap items-start justify-between gap-4">
-				<div className="min-w-0">
-					<H2 className="font-semibold text-lg">
-						Connect your sources
-					</H2>
-					<P className="text-muted-foreground">
-						Choose what to read, then add the useful conversations
-						to Work.
-					</P>
-				</div>
-				<Button
-					type="button"
-					variant="outline"
-					disabled={sources.loads.connection.isLoading}
-					onClick={() => void sources.connect()}
-				>
-					{sources.loads.connection.isLoading
-						? "Connecting…"
-						: "Connect Microsoft"}
-				</Button>
-			</header>
-			{sources.loads.connection.error && (
-				<Alert variant="destructive">
-					<AlertDescription>
-						{sources.loads.connection.error}
-					</AlertDescription>
-				</Alert>
-			)}
-			{sources.loads.connection.hasLoaded && (
-				<output className="block text-muted-foreground">
-					Microsoft sign-in completed. Load a source to check its
-					permissions.
-				</output>
+			{showConnect && (
+				<>
+					<header className="flex flex-wrap items-start justify-between gap-4">
+						<div className="min-w-0">
+							<H2 className="font-semibold text-lg">
+								Connect your sources
+							</H2>
+							<P className="text-muted-foreground">
+								Choose what to read, then add the useful
+								conversations to Work.
+							</P>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							disabled={sources.loads.connection.isLoading}
+							onClick={() => void sources.connect()}
+						>
+							{sources.loads.connection.isLoading
+								? "Connecting…"
+								: "Connect Microsoft"}
+						</Button>
+					</header>
+					{sources.loads.connection.error && (
+						<Alert variant="destructive">
+							<AlertDescription>
+								{sources.loads.connection.error}
+							</AlertDescription>
+						</Alert>
+					)}
+					{sources.loads.connection.hasLoaded && (
+						<output className="block text-muted-foreground">
+							Microsoft sign-in completed. Load a source to check
+							its permissions.
+						</output>
+					)}
+				</>
 			)}
 			<section
 				className="rounded-lg border border-border bg-background p-4"
@@ -309,7 +319,7 @@ export function SourcesView({ onImport, onDraftReply }: SourcesViewProps) {
 				Imported sources stay in this session. Asking the assistant
 				about them stores the selected context in the backend
 				conversation. Source permissions and saved conversations are
-				separate from local Brain edits.
+				separate from local filing edits.
 			</P>
 			<EmailDraftDialog
 				isOpen={isNewDraftOpen}

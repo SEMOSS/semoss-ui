@@ -289,7 +289,13 @@ export const LoginPage = () => {
 			}
 			if (loginType === "linotp") {
 				await sessionLoginOTP(data.USERNAME, data.PASSWORD)
-					.then(() => {
+					.then((challengeAccepted) => {
+						if (!challengeAccepted) {
+							setError(
+								"Your password must be changed before you can sign in.",
+							);
+							return;
+						}
 						setShowOTPCodeField(true);
 					})
 					.catch((err) => {

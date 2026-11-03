@@ -1,7 +1,4 @@
-import type {
-	AutomationNodeDefinition,
-	AutomationWorkflowNodeType,
-} from "./automation-workflow.types";
+import type { AutomationNodeDefinition } from "./automation-workflow.types";
 
 let nodeDefinitions: readonly AutomationNodeDefinition[] | null = null;
 
@@ -27,7 +24,7 @@ export function getAutomationNodeDefinitions(): readonly AutomationNodeDefinitio
 
 /** Returns one backend-provided node definition by its stable type identifier. */
 export function getAutomationNodeDefinition(
-	type: AutomationWorkflowNodeType,
+	type: string,
 ): AutomationNodeDefinition | undefined {
 	return getAutomationNodeDefinitions().find(
 		(definition) => definition.type === type,

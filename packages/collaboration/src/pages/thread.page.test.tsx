@@ -1,5 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { createMemoryRouter, useParams } from "react-router";
 import { RouterProvider } from "react-router/dom";
@@ -98,3 +99,8 @@ it("rejects a direct-room namespace without an identity", () => {
 	expect(screen.getByText("Page not found")).toBeVisible();
 	expect(screen.queryByLabelText("Direct room")).not.toBeInTheDocument();
 });
+
+// Route composition is exercised with isolated child views; hydration has its own integration coverage.
+vi.mock("@/features/collaboration/components/saved-record-boundary", () => ({
+	SavedRecordBoundary: ({ children }: { children: ReactNode }) => children,
+}));

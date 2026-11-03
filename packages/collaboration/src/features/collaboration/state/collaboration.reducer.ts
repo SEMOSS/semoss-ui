@@ -360,6 +360,28 @@ export function collaborationReducer(
 ): CollaborationState {
 	const state = structuredClone(previous);
 	switch (command.type) {
+		case "records.loaded": {
+			for (const item of command.items)
+				if (!state.items.some((row) => row.id === item.id))
+					state.items.push(item);
+			for (const memory of command.memories)
+				if (!state.memories.some((row) => row.id === memory.id))
+					state.memories.push(memory);
+			// Append only missing records: a delayed read must not overwrite local edits.
+			for (const topic of command.topics)
+				if (!state.topics.some((row) => row.id === topic.id))
+					state.topics.push(topic);
+			for (const person of command.people)
+				if (!state.people.some((row) => row.id === person.id))
+					state.people.push(person);
+			for (const thread of command.threads)
+				if (!state.threads.some((row) => row.id === thread.id))
+					state.threads.push(thread);
+			for (const [id, workspace] of Object.entries(command.workspaces))
+				if (!state.workspaces[id]) state.workspaces[id] = workspace;
+			break;
+		}
+
 		case "topic.save": {
 			const topic = state.topics.find(
 				(candidate) => candidate.id === command.topic.id,
@@ -378,6 +400,11 @@ export function collaborationReducer(
 				state.topics.push(newTopic(state, command.topic, now));
 			break;
 		}
+		case "topic.server":
+			// the page's own copy wins, so open editors keep what the owner typed
+			if (!state.topics.some((topic) => topic.id === command.topic.id))
+				state.topics.push(command.topic);
+			break;
 		case "topic.goal.server": {
 			const topic = state.topics.find(
 				(entry) => entry.id === command.topicId,
@@ -412,6 +439,10 @@ export function collaborationReducer(
 			const membership = topic.people.find(
 				(candidate) => candidate.personId === person.id,
 			);
+			// only a member is a VIP in the topic, as on the server
+			const vip =
+				command.state === "member" &&
+				(command.vip ?? membership?.vip ?? false);
 			if (membership) {
 				const origin =
 					membership.state === "suggested" &&
@@ -422,6 +453,7 @@ export function collaborationReducer(
 					state: command.state,
 					origin,
 					role: command.role ?? membership.role,
+					vip,
 				});
 			} else
 				topic.people.push({
@@ -430,6 +462,7 @@ export function collaborationReducer(
 					engagement: null,
 					state: command.state,
 					origin: "you",
+					vip,
 				});
 			break;
 		}
@@ -762,7 +795,8 @@ export function collaborationReducer(
 			break;
 		}
 		case "rule.add": {
-			if (!command.rule.value.trim()) break;
+			// a person rule, such as a topic ignore, needs no value
+			if (!command.rule.value.trim() && !command.rule.personId) break;
 			state.rules.push({
 				...command.rule,
 				value: command.rule.value.trim(),

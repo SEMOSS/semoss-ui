@@ -16,6 +16,19 @@ import {
 	usageWindowDays,
 } from "@/api/enterprise-usage-requests";
 import type { UsageBenchmark as Benchmark, UsageFilters } from "./usage.types";
+import { UsageNotes } from "./usage-notes";
+
+/** How a benchmark of the same length as the current period is compared. */
+const EQUAL_LENGTH_NOTES = [
+	"Charts Align Each Period's First Day And Show Both Full Periods.",
+] as const;
+
+/** How a benchmark of another length than the current period is compared. */
+const UNEQUAL_LENGTH_NOTES = [
+	"Request, Token, And Event Changes Compare Daily Averages.",
+	"Distinct Counts Are Shown Without Percentage Changes.",
+	"Charts Align At Day 1 And Show Both Full Periods; Gaps Mark Days Outside A Period.",
+] as const;
 
 interface UsageBenchmarkProps {
 	/** Applied benchmark and current report scope. */
@@ -59,6 +72,9 @@ export function UsageBenchmark({
 	});
 	const isCustom = form.watch("mode") === "custom";
 	const applied = comparisonUsageFilters(filters, value);
+	const currentDays = usageWindowDays(filters);
+	const benchmarkDays = usageWindowDays(applied);
+	const isUnequal = currentDays !== benchmarkDays;
 	return (
 		<section
 			className="space-y-2 rounded-md border bg-muted/30 p-3"
@@ -105,17 +121,28 @@ export function UsageBenchmark({
 					Apply Comparison
 				</Button>
 			</Form>
-			<Muted className="text-xs">
-				Current: {filters.from} - {filters.to} (
-				{usageWindowDays(filters)} Days) | Benchmark: {applied.from} -{" "}
-				{applied.to} ({usageWindowDays(applied)} Days, Inclusive).{" "}
-				{value.mode === "previous-period"
-					? "The Immediately Preceding Window With The Same Number Of Days."
-					: "The Selected Calendar Window With The Same User, App, And Engine Filters."}{" "}
-				{usageWindowDays(filters) !== usageWindowDays(applied)
-					? "Unequal Lengths: Request, Token, And Event Changes Compare Daily Averages. Distinct Counts Are Shown Without Percentage Changes. Charts Align At Day 1 And Show Both Full Periods; Gaps Mark Days Outside A Period."
-					: "Charts Align Each Period's First Day And Show Both Full Periods."}
-			</Muted>
+			<div className="flex flex-wrap items-center gap-1">
+				<Muted className="text-xs">
+					Current: {filters.from} - {filters.to} ({currentDays} Days)
+					| Benchmark: {applied.from} - {applied.to} ({benchmarkDays}{" "}
+					Days)
+					{isUnequal
+						? " | Unequal Lengths, Compared As Daily Averages"
+						: ""}
+				</Muted>
+				<UsageNotes
+					title="Comparison Benchmark"
+					notes={[
+						value.mode === "previous-period"
+							? "The Benchmark Is The Immediately Preceding Window With The Same Number Of Days."
+							: "The Benchmark Is The Selected Calendar Window With The Same User, App, And Engine Filters.",
+						"Day Counts Include Both The Start And End Dates.",
+						...(isUnequal
+							? UNEQUAL_LENGTH_NOTES
+							: EQUAL_LENGTH_NOTES),
+					]}
+				/>
+			</div>
 		</section>
 	);
 }
