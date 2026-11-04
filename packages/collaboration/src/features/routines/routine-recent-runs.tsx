@@ -193,7 +193,9 @@ export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
 										? `${isOpening ? "Opening" : "Open"} the chat for ${name} from ${when}`
 										: run.status === "running"
 											? `${run.roomId ? "Watch" : "Open"} ${name}, running since ${when}`
-											: `Open ${name}, failed ${when}`;
+											: run.status === "stopped"
+												? `Open ${name}, stopped ${when}`
+												: `Open ${name}, failed ${when}`;
 								return (
 									<li
 										key={run.runId}

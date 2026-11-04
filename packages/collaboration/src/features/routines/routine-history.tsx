@@ -29,7 +29,7 @@ export const routineRunListSchema = z.object({
 			runId: z.string().min(1),
 			startedAt: z.iso.datetime().nullish().default(null),
 			finishedAt: z.iso.datetime().nullish().default(null),
-			status: z.enum(["running", "completed", "failed"]),
+			status: z.enum(["running", "completed", "failed", "stopped"]),
 			trigger: z.enum(["scheduled", "manual"]),
 			durationMs: z.number().nullish().default(null),
 			hasOutput: z.boolean(),
@@ -43,6 +43,7 @@ const STATUS_LABELS = {
 	running: "Running",
 	completed: "Completed",
 	failed: "Failed",
+	stopped: "Stopped",
 } as const;
 
 /** A run's length as minutes and seconds, such as "4m 12s". */

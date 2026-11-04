@@ -76,7 +76,12 @@ export function CollaborationNavigation({
 				className="flex shrink-0 flex-col gap-0.5 px-2 pt-2 pr-3 pb-0.5"
 			>
 				{links.map(({ to, label, icon: Icon, count, isActive }) => (
-					<Tooltip key={to} disableHoverableContent={false}>
+					// a fresh tooltip per rail state: hovered while expanded (no label drawn) it never closes, so collapsing would
+					// show every label hovered before
+					<Tooltip
+						key={`${to}:${isCollapsed}`}
+						disableHoverableContent={false}
+					>
 						<TooltipTrigger asChild>
 							<Link
 								to={to}

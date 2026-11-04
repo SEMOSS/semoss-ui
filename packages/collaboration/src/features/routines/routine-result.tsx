@@ -1,7 +1,8 @@
 import DOMPurify from "dompurify";
-import { Eye, FileText } from "lucide-react";
-import { useId } from "react";
+import { Eye, FileText, Square } from "lucide-react";
+import { useId, useState } from "react";
 import { Link } from "react-router";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -14,10 +15,15 @@ import {
 	P,
 	ScrollArea,
 	Small,
+	Spinner,
+	toast,
 } from "@semoss/ui/next";
 import { EmailBody } from "@/features/email/email-body";
 import { MESSAGE_PROSE_CLASS_NAME } from "@/features/messages/components/message-prose.styles";
 import { roomPath } from "@/lib/workspace-paths";
+import { ROUTINE_RUN_DELETED } from "./api/delete-routine-run";
+import { ROUTINE_RUNS_CHANGED } from "./api/list-recent-routine-runs";
+import { stopRoutineRun } from "./api/stop-routine-run";
 import { RoutineChatButton } from "./routine-chat-button";
 import { RoutineRunning } from "./routine-running";
 import type { RoutineId, RoutineStatus } from "./routine-schema";
@@ -67,6 +73,46 @@ function OpenRunButton({
 				<Eye aria-hidden="true" data-icon="inline-start" />
 				{live ? "Watch it run" : "Open run"}
 			</Link>
+		</Button>
+	);
+}
+
+/** Stops the running run; the routine then reads as stopped and Run now starts it again. */
+function StopRunButton({ routineId }: { routineId: string }) {
+	const { actions } = useInsight();
+	const [isStopping, setIsStopping] = useState(false);
+	const stop = async (): Promise<void> => {
+		setIsStopping(true);
+		try {
+			await stopRoutineRun(actions, routineId);
+			toast.success("Run stopped.");
+			// re-read as after a delete, so the result, History and the sidebar show the stop
+			window.dispatchEvent(new Event(ROUTINE_RUN_DELETED));
+			window.dispatchEvent(new Event(ROUTINE_RUNS_CHANGED));
+		} catch (cause) {
+			toast.error(
+				cause instanceof Error
+					? cause.message
+					: "The run could not be stopped. Try again.",
+			);
+		} finally {
+			setIsStopping(false);
+		}
+	};
+	return (
+		<Button
+			type="button"
+			variant="outline"
+			size="sm"
+			disabled={isStopping}
+			onClick={() => void stop()}
+		>
+			{isStopping ? (
+				<Spinner aria-hidden="true" data-icon="inline-start" />
+			) : (
+				<Square aria-hidden="true" data-icon="inline-start" />
+			)}
+			{isStopping ? "Stopping…" : "Stop run"}
 		</Button>
 	);
 }
@@ -138,13 +184,16 @@ export function RoutineResult({
 								message={copy.running}
 								startedAt={run.startedAt}
 								action={
-									runRoomId ? (
-										<OpenRunButton
-											roomId={runRoomId}
-											live
-											variant="default"
-										/>
-									) : null
+									<div className="flex flex-wrap justify-center gap-2">
+										{runRoomId && (
+											<OpenRunButton
+												roomId={runRoomId}
+												live
+												variant="default"
+											/>
+										)}
+										<StopRunButton routineId={routine.id} />
+									</div>
 								}
 							/>
 						</div>
@@ -175,6 +224,17 @@ export function RoutineResult({
 													: copy.disabledHint}
 											</P>
 										</div>
+									</div>
+								) : run.status === "failed" &&
+									run.errorCause === "cancelled" ? (
+									<div className="p-4">
+										<Alert>
+											<AlertTitle>Run stopped</AlertTitle>
+											<AlertDescription>
+												{run.error ||
+													"You stopped this run. Run it again when you are ready."}
+											</AlertDescription>
+										</Alert>
 									</div>
 								) : run.status === "failed" ? (
 									<div className="p-4">
