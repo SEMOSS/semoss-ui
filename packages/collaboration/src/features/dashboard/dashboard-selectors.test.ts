@@ -52,12 +52,18 @@ it("does not invent pending replies from unread flags or reintroduce ignored ema
 	const rows = relevantEmails(state, [
 		{
 			uid: "unread",
+			messageId: "<unread@example.com>",
 			from: "someone@example.com",
 			subject: "Hello",
 			unread: true,
 			hasAttachments: false,
 		},
-		{ uid: "ignored", unread: true, hasAttachments: false },
+		{
+			uid: "ignored",
+			messageId: "<ignored@example.com>",
+			unread: true,
+			hasAttachments: false,
+		},
 	]);
 	expect(rows.find((row) => row.id === "unread")?.reason).toBe(
 		"Unread in your inbox",
