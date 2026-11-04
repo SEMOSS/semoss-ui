@@ -12,10 +12,17 @@ import { Env, Insight, type MCPToolRequest } from "../../..";
  */
 export const InsightContext = createContext<
 	| {
+			/** @deprecated Use `useConfig((state) => state.status === "ready")`. */
 			isInitialized: Insight["isInitialized"];
+			/**
+			 * @deprecated Use `useSession((state) => state.status === "authenticated")`.
+			 * Insights do not hear about a sign in made through `Session` yet, so
+			 * move the sign in and this check together.
+			 */
 			isAuthorized: Insight["isAuthorized"];
 			isReady: Insight["isReady"];
 			error: Insight["error"];
+			/** @deprecated Use `useConfig((state) => state.config)`. */
 			system: Insight["system"];
 			actions: Insight["actions"];
 			insightId: Insight["insightId"];

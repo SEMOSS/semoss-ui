@@ -206,6 +206,10 @@ export class InsightStore {
 	}
 	/**
 	 * If the insight is initialied
+	 *
+	 * @deprecated This tracks the system config, not the insight. Use
+	 * `Config.getSnapshot().status === "ready"`, or
+	 * `useConfig((state) => state.status === "ready")` in React.
 	 */
 	get isInitialized() {
 		return this._store.isInitialized;
@@ -213,6 +217,12 @@ export class InsightStore {
 
 	/**
 	 * If the user is authorized
+	 *
+	 * @deprecated Use `Session.isAuthorized`, or
+	 * `useSession((state) => state.status === "authenticated")` in React.
+	 * Insights do not hear about a sign in or out made through `Session` yet,
+	 * so move the code that signs in and the code that checks for a signed in
+	 * user to `Session` together.
 	 */
 	get isAuthorized() {
 		return this._store.isAuthorized;
@@ -233,6 +243,10 @@ export class InsightStore {
 
 	/**
 	 * System information
+	 *
+	 * @deprecated Use `Config.getSnapshot().config`, or
+	 * `useConfig((state) => state.config)` in React. Its meta key lists come
+	 * sorted and its theme comes parsed as `theme`.
 	 */
 	get system() {
 		return this._store.system;
@@ -242,6 +256,8 @@ export class InsightStore {
 	 * Update user meta with a model selection
 	 * @param modelName - The model name (e.g., "text-generation-model", "code-generation-model")
 	 * @param modelId - The model ID to set
+	 * @deprecated Use `Session.setDefaultModel(modelName, modelId)`, which also
+	 * saves it to the backend.
 	 */
 	updateUserDefaultModel(modelName: string, modelId: string): void {
 		this._store.meta = {
@@ -252,6 +268,9 @@ export class InsightStore {
 
 	/**
 	 * Get the default Text Generation model ID (UUID) from user meta
+	 *
+	 * @deprecated Use `Session.getSnapshot().user?.defaultModels.textGeneration`,
+	 * or `useSession((state) => state.user?.defaultModels.textGeneration)`.
 	 */
 	get defaultTextGenerationModel(): string {
 		const meta = this._store.meta;
@@ -266,6 +285,9 @@ export class InsightStore {
 
 	/**
 	 * Get the default Code Generation model ID (UUID) from user meta
+	 *
+	 * @deprecated Use `Session.getSnapshot().user?.defaultModels.codeGeneration`,
+	 * or `useSession((state) => state.user?.defaultModels.codeGeneration)`.
 	 */
 	get defaultCodeGenerationModel(): string {
 		const meta = this._store.meta;
@@ -281,6 +303,9 @@ export class InsightStore {
 	/**
 	 * Set the user meta with a full meta record
 	 * @param meta - full meta record to store
+	 * @deprecated The session reads the user's meta itself, from
+	 * `GetUserInfo`; read `Session.getSnapshot().user?.meta`, and change a
+	 * default model with `Session.setDefaultModel`.
 	 */
 	setUserDefaultModel(meta: Record<string, unknown>): void {
 		this._store.meta = { ...meta };
@@ -676,6 +701,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * @param username - username to login with
 		 * @param pin - pin to login with
 		 * @returns true if the challenge was accepted
+		 * @deprecated Use `Session.requestOTP`, which throws when the backend
+		 * refuses the pin rather than returning false.
 		 */
 		requestOTP: async (username: string, pin: string): Promise<boolean> => {
 			try {
@@ -691,6 +718,11 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * Allow the user to login
 		 * @param credentials
 		 * @returns
+		 * @deprecated Use `Session.login`, which takes the same credentials and
+		 * throws when the sign in is refused rather than returning false.
+		 * Insights do not hear about a sign in or out made through `Session`
+		 * yet, so move the code that signs in and the code that checks for a
+		 * signed in user to `Session` together.
 		 */
 		login: async (
 			credentials:
@@ -772,6 +804,12 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		/**
 		 * Allow the user to logout
+		 *
+		 * @deprecated Use `Session.logout`, which also clears the user's logins
+		 * and permissions, and throws when the backend refuses rather than
+		 * returning false. Insights do not hear about a sign in or out made
+		 * through `Session` yet, so move the code that signs in and the code
+		 * that checks for a signed in user to `Session` together.
 		 */
 		logout: async (): Promise<boolean> => {
 			try {
@@ -1055,7 +1093,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * @deprecated use uploadInsight from sdk/api/insight
+		 * @deprecated Use `actions.uploadInsight`, or `uploadInsight` from
+		 * `@semoss/sdk`.
 		 * Upload a file to the project space
 		 *
 		 * @param files- file objects to upload

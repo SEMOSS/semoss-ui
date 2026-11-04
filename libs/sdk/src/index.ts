@@ -13,8 +13,13 @@ export * from "./constants";
 export * from "./env";
 export {
 	AgentStore,
+	Config,
+	ConfigStore,
 	createRoom,
+	getPermissionKey,
 	InsightStore as Insight,
+	isEditRole,
+	isOwnerRole,
 	isRequestUserInputAction,
 	Logins,
 	type LoginsSnapshot,
@@ -22,6 +27,9 @@ export {
 	normalizeUserInputQuestion,
 	parseUserInputRequest,
 	RoomStore,
+	Session,
+	SessionPermissionStore,
+	SessionStore,
 	type UserInputOption,
 	type UserInputQuestion,
 	type UserInputRequest,

@@ -10,7 +10,9 @@ This document provides context for AI coding assistants working with the SEMOSS 
 `@semoss/sdk` is the core client SDK for talking to a SEMOSS backend (pixel/API calls, insight
 state, environment config). It has framework-independent stores and optional **React**
 bindings on a subpath; this is not a blanket Node/SSR compatibility guarantee.
-It has **no internal runtime workspace dependencies**. Treat its published public
+It has **no runtime dependencies**: it imports `@semoss/utility` category subpaths as a
+devDependency, which the build bundles into `dist`. Its public types must not reference utility
+types, because declarations are emitted per file and not bundled. Treat its published public
 surface as stable and versioned.
 
 ## Build System
@@ -123,6 +125,48 @@ tests are not backend authority; retain its compatibility caveats until verified
 - These return the success and warning messages the reactor adds beside its output, read by
   `readPixelMessages` in [`api/pixel-messages.ts`](./src/api/pixel-messages.ts). A warning means
   the action ran here but the other servers in a cluster could not be told, for example.
+
+## Session, Config and Permissions
+
+Session state lives in three framework-free stores. Each holds a private `Observable` from
+`@semoss/utility/observable` (an immutable snapshot) and exposes typed `getSnapshot` and
+`subscribe`, read in React through `useSyncExternalStore`. They compose it rather than extend it,
+so their public types never name a utility type.
+
+- [`ConfigStore`](./src/stores/config/config.store.ts) (`Config`) reads `/api/config` once
+  per page and needs no session. `load({ force })` joins a read in flight and reuses a known
+  config; it sorts the meta keys, parses `theme.THEME_MAP` once, and sets `Env.CSRF`.
+  `isAdminOnly(resource, operation)` reads the `adminOnly{Resource}{Operation}` flags.
+- [`SessionStore`](./src/stores/session/session.store.ts) (`Session`) is the signed in
+  user. It owns `config`, `logins` (the `Logins` instance) and `permissions`. `initialize`
+  is single flight; `login(credentials)`, `logout`, and the 302 handler
+  (`onUnauthorized` in [`utility/fetch.ts`](./src/utility/fetch.ts)) start the session over,
+  clearing logins and permissions. The user comes from `META | GetUserInfo()`, described by
+  the config's `primaryLogin` (where the backend keeps user metadata), then SAML, NATIVE, or
+  the first login. The session keeps one insight, made with `META | init` when it has none,
+  and reuses it for every check, `run`, `runAsync`, `upload` (the backend refuses `"new"`) and
+  `download`; on `INSIGHT_NOT_FOUND` it makes a new one and retries once. The backend sets the
+  insight's user on every call and drops the session's insights on logout, so the insight
+  needs no explicit drop. `canPerform` combines `isAdmin` with the config's admin-only flags;
+  guardrails have no flags and are always admin-only.
+- [`SessionPermissionStore`](./src/stores/session/session-permissions.store.ts) caches the
+  user's permission per `TYPE:id`, sharing one read per resource and dropping reads that land
+  after a clear.
+- React: `useSession(selector)`, `useConfig(selector)`, `useLogins()` and
+  `useSessionPermissions(type, id)` (which also returns `refresh` and `sync`), under an optional
+  `SessionProvider`. Each finds its session through the internal `useSessionStore` in
+  `hooks/use-session.ts`: the nearest provider's, else `Session`. Selectors may build objects;
+  equal selections do not render. `useSessionStore`, `SessionContext` and the selector cache
+  (`js-frameworks/react/utility/store-selector.ts`) are not exported.
+- `InsightStore`'s auth and config members, the matching `InsightContext` fields and the
+  `Logins` export are `@deprecated` in favor of these stores, but unchanged. `InsightStore`
+  still keeps its own config cache until consumers move over.
+- Transport these use: `isAdminUser`, `registerUser` ([`api/auth.ts`](./src/api/auth.ts)),
+  `getUserInfo` and `setUserDefaultModel` ([`api/user.ts`](./src/api/user.ts)). The config's
+  shape is typed once, on `getSystemConfig` in [`api/base.ts`](./src/api/base.ts), and
+  checked against the backend's `ServerConfigurationResource`: null fields are left out of
+  responses, `logins` and `loginDetails` are always present (empty when signed out), and
+  there are no `adminOnlyGuardrail*` flags.
 
 ## Session Logins
 

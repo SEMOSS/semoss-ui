@@ -1,3 +1,4 @@
+import { Observable } from "@semoss/utility/observable";
 import {
 	connectLogin,
 	getLogins,
@@ -100,7 +101,11 @@ const keepHeldAccounts = (
  * when they show sign in state, sharing one read.
  */
 export class LoginsStore {
-	private snapshot: LoginsSnapshot = EMPTY_SNAPSHOT;
+	/**
+	 * The logins, held privately so the store's public types do not depend on
+	 * how they are kept.
+	 */
+	private readonly state = new Observable<LoginsSnapshot>(EMPTY_SNAPSHOT);
 
 	/** When the logins were last read, to reuse a recent read. */
 	private readAt = 0;
@@ -116,10 +121,8 @@ export class LoginsStore {
 	 */
 	private sessionVersion = 0;
 
-	private readonly listeners = new Set<() => void>();
-
 	/** The current logins. The same object until they change. */
-	getSnapshot = (): LoginsSnapshot => this.snapshot;
+	getSnapshot = (): LoginsSnapshot => this.state.getSnapshot();
 
 	/**
 	 * Hear about every change to the logins.
@@ -127,12 +130,8 @@ export class LoginsStore {
 	 * @param listener - Called after each change.
 	 * @returns Stops listening.
 	 */
-	subscribe = (listener: () => void): (() => void) => {
-		this.listeners.add(listener);
-		return () => {
-			this.listeners.delete(listener);
-		};
-	};
+	subscribe = (listener: () => void): (() => void) =>
+		this.state.subscribe(listener);
 
 	/**
 	 * Take what the system config says about the session. Its logins and their
@@ -159,10 +158,10 @@ export class LoginsStore {
 			connectorAccess: config.connectorAccess ?? null,
 			availableProviders: normalizeProviders(config.availableProviders),
 		};
-		if (this.snapshot.status === "loading") {
+		if (this.getSnapshot().status === "loading") {
 			const logins = parseLogins(config.logins);
 			this.readAt = Date.now();
-			this.set({
+			this.state.set({
 				...settings,
 				logins,
 				accountIds: keepHeldAccounts(
@@ -173,7 +172,7 @@ export class LoginsStore {
 			});
 			return;
 		}
-		const current = this.snapshot;
+		const current = this.getSnapshot();
 		// the config is the only place the account ids come from
 		const configLogins = parseLogins(config.logins);
 		const accountIds = { ...current.accountIds };
@@ -197,7 +196,7 @@ export class LoginsStore {
 				JSON.stringify(settings.availableProviders) ||
 			JSON.stringify(current.accountIds) !== JSON.stringify(accountIds)
 		) {
-			this.set({ ...current, ...settings, accountIds });
+			this.state.set({ ...current, ...settings, accountIds });
 		}
 	};
 
@@ -211,7 +210,7 @@ export class LoginsStore {
 		this.sessionVersion++;
 		this.request = null;
 		this.readAt = 0;
-		this.set(EMPTY_SNAPSHOT);
+		this.state.set(EMPTY_SNAPSHOT);
 	};
 
 	/**
@@ -228,10 +227,10 @@ export class LoginsStore {
 		maxAgeMs?: number;
 	} = {}): Promise<Record<string, string>> => {
 		if (
-			this.snapshot.status === "ready" &&
+			this.getSnapshot().status === "ready" &&
 			Date.now() - this.readAt < maxAgeMs
 		) {
-			return Promise.resolve(this.snapshot.logins);
+			return Promise.resolve(this.getSnapshot().logins);
 		}
 		if (!this.request) {
 			const sessionVersion = this.sessionVersion;
@@ -242,12 +241,12 @@ export class LoginsStore {
 							return logins;
 						}
 						this.readAt = Date.now();
-						this.set({
-							...this.snapshot,
+						this.state.set({
+							...this.getSnapshot(),
 							logins: logins,
 							// a login signed out of loses its account id
 							accountIds: keepHeldAccounts(
-								this.snapshot.accountIds,
+								this.getSnapshot().accountIds,
 								logins,
 							),
 							status: "ready",
@@ -256,7 +255,10 @@ export class LoginsStore {
 					},
 					(error: unknown) => {
 						if (sessionVersion === this.sessionVersion) {
-							this.set({ ...this.snapshot, status: "error" });
+							this.state.set({
+								...this.getSnapshot(),
+								status: "error",
+							});
 						}
 						throw error;
 					},
@@ -289,7 +291,7 @@ export class LoginsStore {
 		connectLogin({
 			provider: provider,
 			loginPath: loginPath,
-			primaryLogin: this.snapshot.primaryLogin,
+			primaryLogin: this.getSnapshot().primaryLogin,
 		}).finally(() => this.refresh({ maxAgeMs: 0 }).catch(() => undefined));
 
 	/**
@@ -305,7 +307,7 @@ export class LoginsStore {
 	disconnect = async (provider: string): Promise<void> => {
 		// the backend signs out by the upper case key, so compare it that way
 		const loginKey = provider.toUpperCase();
-		const { primaryLogin } = this.snapshot;
+		const { primaryLogin } = this.getSnapshot();
 		if (primaryLogin === null || primaryLogin === loginKey) {
 			throw new SessionLoginDisconnectError();
 		}
@@ -315,14 +317,11 @@ export class LoginsStore {
 			await this.refresh({ maxAgeMs: 0 }).catch(() => undefined);
 		}
 	};
-
-	private set = (next: LoginsSnapshot): void => {
-		this.snapshot = next;
-		for (const listener of this.listeners) {
-			listener();
-		}
-	};
 }
 
-/** The page's logins, shared by every insight and view. */
+/**
+ * The page's logins, shared by every insight and view.
+ *
+ * @deprecated Use `Session.logins`, the same store, or `useLogins` in React.
+ */
 export const Logins = new LoginsStore();

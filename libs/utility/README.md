@@ -9,7 +9,8 @@ Use the narrowest public category subpath. Hosts compile this source-only packag
 | `/identifier` | Identifier labels, slugs, validation, collision suffixes |
 | `/date` | Date/time and duration formatting, timestamp normalization, local-day calculations, relative date buckets |
 | `/array` | Ordered item-by-item array comparison |
-| `/object` | Date-preserving copying and non-null, non-array object detection |
+| `/object` | Date-preserving copying, non-null, non-array object detection, and shallow equality |
+| `/observable` | `Observable`, an immutable-snapshot state holder with subscribe, for vanilla stores |
 | `/json` | Strict and tolerant parsing, string-array parsing, formatting, key-sorted serialization, tabular detection, parse-error locations |
 | `/file` | File extensions and filename-stem sanitization |
 | `/encoding` | Byte/UTF-8 Base64 encoding and strict decoding |
