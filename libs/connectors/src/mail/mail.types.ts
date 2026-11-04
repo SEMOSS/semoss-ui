@@ -1,10 +1,21 @@
-/** A place mail is filed: an Outlook folder, or a Gmail label. */
+/**
+ * A place mail is filed: an Outlook folder, or a Gmail label. A listing puts
+ * each folder right after the one it sits in, so its `depth` is enough to show
+ * the mailbox's tree.
+ */
 export interface MailFolder {
 	/** What the mail reactors take as `folder`. */
 	id: string;
+	/** Its own name, without the folders it sits in. */
 	name: string;
 	/** `folder` in Outlook, and `label` or `system` in Gmail. */
 	kind?: string;
+	/** The folder it sits in, absent at the top of the mailbox. */
+	parentId?: string;
+	/** Its name after those of the folders it sits in, separated by `/`. */
+	path?: string;
+	/** How many folders it sits in, 0 at the top of the mailbox. */
+	depth: number;
 	totalCount?: number;
 	unreadCount?: number;
 }
@@ -24,6 +35,45 @@ export interface MailAttachment {
 	 * embedded; or `link`, a link to a file in a drive.
 	 */
 	kind: string;
+}
+
+/**
+ * An email's body as its mailbox sent it, for showing the way its mail app
+ * does. Only a read that asks for it reports it, and it is never saved.
+ */
+export interface MailDisplayBody {
+	/**
+	 * `html`, or `text` when the email has no HTML or its HTML was too large,
+	 * in which case the text is the email's plain text.
+	 */
+	contentType: "html" | "text";
+	content: string;
+	/** Whether the HTML was too large and the text stands in for it. */
+	isTruncated: boolean;
+	/**
+	 * The pictures the HTML shows by content id, when the read asked for
+	 * them, and absent otherwise.
+	 */
+	inlineImages?: MailInlineImage[];
+	/** How many pictures the HTML shows that were too large or could not be read. */
+	inlineImagesOmitted: number;
+}
+
+/** A picture an email's HTML shows by content id, as in `cid:logo@example`. */
+export interface MailInlineImage {
+	/** The content id, without angle brackets, in lower case. */
+	contentId: string;
+	/** Its media type, such as `image/png`. */
+	contentType: string;
+	/** Its bytes, as base64. */
+	data: string;
+}
+
+/** The pictures embedded in an email, as a read for them found them. */
+export interface MailEmbeddedImages {
+	images: MailInlineImage[];
+	/** How many the email shows that were too large or could not be read. */
+	omitted: number;
 }
 
 /** An email, the same whichever mailbox it was read from. */
@@ -59,6 +109,8 @@ export interface MailMessage {
 	isUniqueBodyTruncated?: boolean;
 	/** Only read when the message is opened. */
 	attachments: MailAttachment[];
+	/** The formatted body, when the read asked for it. */
+	displayBody?: MailDisplayBody;
 	/** Opens the email in its own app. */
 	webLink?: string;
 }

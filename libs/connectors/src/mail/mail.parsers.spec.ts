@@ -122,6 +122,14 @@ describe("mail", () => {
 						unreadCount: 2,
 					},
 					{ id: "Label_1", name: "Clients", kind: "label" },
+					{
+						id: "Label_2",
+						name: "Acme",
+						kind: "label",
+						parentId: "Label_1",
+						path: "Clients/Acme",
+						depth: 1,
+					},
 					{ name: "missing id" },
 				],
 			}),
@@ -130,6 +138,9 @@ describe("mail", () => {
 				id: "INBOX",
 				name: "Inbox",
 				kind: "system",
+				parentId: undefined,
+				path: undefined,
+				depth: 0,
 				totalCount: undefined,
 				unreadCount: 2,
 			},
@@ -137,10 +148,103 @@ describe("mail", () => {
 				id: "Label_1",
 				name: "Clients",
 				kind: "label",
+				parentId: undefined,
+				path: undefined,
+				depth: 0,
+				totalCount: undefined,
+				unreadCount: undefined,
+			},
+			{
+				id: "Label_2",
+				name: "Acme",
+				kind: "label",
+				parentId: "Label_1",
+				path: "Clients/Acme",
+				depth: 1,
 				totalCount: undefined,
 				unreadCount: undefined,
 			},
 		]);
+	});
+
+	it("reads the formatted body only when it is well formed", () => {
+		expect(
+			parseMailMessageDetail({
+				id: "m1",
+				displayBody: {
+					contentType: "html",
+					content: "<p>Hi</p>",
+					isTruncated: false,
+				},
+			}).displayBody,
+		).toEqual({
+			contentType: "html",
+			content: "<p>Hi</p>",
+			isTruncated: false,
+			inlineImagesOmitted: 0,
+		});
+		for (const displayBody of [
+			{ contentType: "rtf", content: "x" },
+			{ contentType: "html", content: "  " },
+			{ contentType: "html" },
+			"<p>Hi</p>",
+		]) {
+			expect(
+				parseMailMessageDetail({ id: "m1", displayBody: displayBody })
+					.displayBody,
+			).toBeUndefined();
+		}
+	});
+
+	it("reads only well formed embedded pictures, and how many were left out", () => {
+		const displayBody = parseMailMessageDetail({
+			id: "m1",
+			displayBody: {
+				contentType: "html",
+				content: '<img src="cid:logo">',
+				inlineImages: [
+					{
+						contentId: "logo",
+						contentType: "image/png",
+						data: "iVBORw==",
+					},
+					{
+						contentId: "sig",
+						contentType: "text/html",
+						data: "PGI+",
+					},
+					{
+						contentId: "bad",
+						contentType: "image/png",
+						data: "not base64!",
+					},
+					{ contentType: "image/png", data: "iVBORw==" },
+				],
+				inlineImagesOmitted: 2,
+			},
+		}).displayBody;
+		expect(displayBody?.inlineImages).toEqual([
+			{ contentId: "logo", contentType: "image/png", data: "iVBORw==" },
+		]);
+		expect(displayBody?.inlineImagesOmitted).toBe(2);
+		expect(
+			parseMailMessageDetail({
+				id: "m1",
+				displayBody: { contentType: "html", content: "<p>Hi</p>" },
+			}).displayBody?.inlineImages,
+		).toBeUndefined();
+	});
+
+	it("reads a malformed folder depth as the top of the mailbox", () => {
+		expect(
+			parseMailFolders({
+				folders: [
+					{ id: "a", name: "A", depth: -1 },
+					{ id: "b", name: "B", depth: 1.5 },
+					{ id: "c", name: "C", depth: "2" },
+				],
+			}).map((folder) => folder.depth),
+		).toEqual([0, 0, 0]);
 	});
 
 	it("reads where an attachment was saved", () => {

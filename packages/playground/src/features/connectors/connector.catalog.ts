@@ -177,6 +177,7 @@ export const CONNECTOR_SERVICES: readonly ConnectorService[] = [
 			auto("MicrosoftTeamsListChats"),
 			auto("MicrosoftTeamsGetChat"),
 			auto("MicrosoftTeamsListChatMessages"),
+			auto("MicrosoftTeamsSearchMessages"),
 			auto("MicrosoftTeamsGetChatMessage"),
 			auto("MicrosoftTeamsListChannelMessages"),
 			auto("MicrosoftTeamsGetChannelMessage"),

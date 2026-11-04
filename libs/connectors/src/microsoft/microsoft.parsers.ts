@@ -15,6 +15,8 @@ import type {
 	TeamsChannel,
 	TeamsChat,
 	TeamsMessage,
+	TeamsMessageSearchHit,
+	TeamsMessageSearchPage,
 	TeamsTeam,
 } from "./microsoft.types";
 
@@ -201,6 +203,17 @@ const sortOldestFirst = (messages: TeamsMessage[]): TeamsMessage[] =>
 		(a.createdDateTime ?? "").localeCompare(b.createdDateTime ?? ""),
 	);
 
+/**
+ * Newest first, by when each message was written.
+ *
+ * @param messages - Messages to sort; not mutated.
+ * @return A sorted copy.
+ */
+const sortNewestFirst = (messages: TeamsMessage[]): TeamsMessage[] =>
+	[...messages].sort((a, b) =>
+		(b.createdDateTime ?? "").localeCompare(a.createdDateTime ?? ""),
+	);
+
 const parseTeamsMessage = (entry: unknown): TeamsMessage | null => {
 	if (!isRecord(entry)) {
 		return null;
@@ -251,7 +264,7 @@ export interface TeamsMessagePage {
  * The messages of a Teams read, people's messages only.
  *
  * @param raw - The reactor's output, with its messages under `messages`.
- * @return The messages, oldest first, and how many were read.
+ * @return The messages, newest first, and how many were read.
  */
 const parseMessagePage = (raw: unknown): TeamsMessagePage => {
 	const read = parseEach(
@@ -259,7 +272,7 @@ const parseMessagePage = (raw: unknown): TeamsMessagePage => {
 		parseTeamsMessage,
 	);
 	return {
-		messages: sortOldestFirst(read.filter(isPersonMessage)),
+		messages: sortNewestFirst(read.filter(isPersonMessage)),
 		readCount: read.length,
 	};
 };
@@ -271,10 +284,8 @@ const parseMessagePage = (raw: unknown): TeamsMessagePage => {
  * @return The threads' first messages, newest first, each with its replies,
  * and how many were read.
  */
-export const parseChannelMessages = (raw: unknown): TeamsMessagePage => {
-	const page = parseMessagePage(raw);
-	return { ...page, messages: [...page.messages].reverse() };
-};
+export const parseChannelMessages = (raw: unknown): TeamsMessagePage =>
+	parseMessagePage(raw);
 
 const parseChat = (entry: unknown): TeamsChat | null => {
 	if (!isRecord(entry)) {
@@ -304,23 +315,100 @@ const parseChat = (entry: unknown): TeamsChat | null => {
 };
 
 /**
+ * When a chat last had something happen in it: its newest message, or, for a
+ * chat read without one, when it was renamed or its members changed.
+ *
+ * @param chat - The chat.
+ * @return The timestamp, or undefined when the chat has neither.
+ */
+export const teamsChatActivityDate = (chat: TeamsChat): string | undefined =>
+	chat.lastMessage?.createdDateTime ?? chat.lastUpdatedDateTime;
+
+/**
  * The user's chats, from `MicrosoftTeamsListChats`.
  *
  * @param raw - The reactor's output, `{ count, chats }`.
- * @return The chats, most recently active first.
+ * @return The chats, the one with the newest message first.
  */
 export const parseChats = (raw: unknown): TeamsChat[] =>
 	parseEach(requireList(raw, "chats", "any chats"), parseChat).sort((a, b) =>
-		(b.lastUpdatedDateTime ?? "").localeCompare(
-			a.lastUpdatedDateTime ?? "",
+		(teamsChatActivityDate(b) ?? "").localeCompare(
+			teamsChatActivityDate(a) ?? "",
 		),
 	);
+
+/**
+ * One chat, from `MicrosoftTeamsGetChat`.
+ *
+ * @param raw - The reactor's output, the chat itself.
+ * @return The chat.
+ * @throws Error when the response names no chat.
+ */
+export const parseChatDetail = (raw: unknown): TeamsChat => {
+	const chat = parseChat(requireRecord(raw, "the chat"));
+	if (!chat) {
+		throw new Error("The response did not include the chat.");
+	}
+	return chat;
+};
 
 /**
  * The messages of a chat, from `MicrosoftTeamsListChatMessages`.
  *
  * @param raw - The reactor's output, `{ chatId, count, messages }`.
- * @return The messages people wrote, oldest first, and how many were read.
+ * @return The messages people wrote, newest first, and how many were read.
  */
 export const parseChatMessages = (raw: unknown): TeamsMessagePage =>
 	parseMessagePage(raw);
+
+const parseSearchHit = (entry: unknown): TeamsMessageSearchHit | null => {
+	if (!isRecord(entry)) {
+		return null;
+	}
+	const id = readNonBlankString(entry.id);
+	const chatId = readNonBlankString(entry.chatId);
+	const teamId = readNonBlankString(entry.teamId);
+	const channelId = readNonBlankString(entry.channelId);
+	const kind = entry.kind === "channel" ? "channel" : "chat";
+	// a hit that cannot be opened where it was posted is of no use to a list
+	if (
+		!id ||
+		(kind === "chat" && !chatId) ||
+		(kind === "channel" && (!teamId || !channelId))
+	) {
+		return null;
+	}
+	return {
+		id: id,
+		kind: kind,
+		chatId: chatId,
+		teamId: teamId,
+		channelId: channelId,
+		fromName: readNonBlankString(entry.fromName),
+		fromEmail: readNonBlankString(entry.fromEmail),
+		createdDateTime: readNonBlankString(entry.createdDateTime),
+		subject: readNonBlankString(entry.subject),
+		summary: readNonBlankString(entry.summary) ?? "",
+		webUrl: readNonBlankString(entry.webUrl),
+	};
+};
+
+/**
+ * The messages a search found, from `MicrosoftTeamsSearchMessages`.
+ *
+ * @param raw - The reactor's output, `{ search, offset, count, hasMore,
+ * nextOffset, messages }`.
+ * @return The messages, newest first, and whether there are more.
+ */
+export const parseTeamsMessageSearch = (
+	raw: unknown,
+): TeamsMessageSearchPage => {
+	const record = requireRecord(raw, "the search results");
+	const hits = parseEach(
+		requireList(record, "messages", "any messages"),
+		parseSearchHit,
+	).sort((a, b) =>
+		(b.createdDateTime ?? "").localeCompare(a.createdDateTime ?? ""),
+	);
+	return { hits: hits, hasMore: record.hasMore === true };
+};

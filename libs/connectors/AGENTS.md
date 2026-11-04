@@ -24,7 +24,8 @@ else is shared, because the backend's mail and calendar reactors answer in one s
 account they read.
 
 It sits above `@semoss/shared`: it depends on `@semoss/i18n`, `@semoss/sdk`, `@semoss/shared`,
-`@semoss/ui`, and `@semoss/utility`, and nothing in those libraries depends on it.
+`@semoss/ui`, and `@semoss/utility`, and nothing in those libraries depends on it. Its one
+third-party library beyond React and the icons is DOMPurify, which sanitizes email HTML.
 Generic date, text, and object helpers come from utility category subpaths;
 provider parsing, calendar view rules, and presentation remain here.
 
@@ -34,7 +35,7 @@ provider parsing, calendar view rules, and presentation remain here.
 |--------|---------|
 | `core/` | What every provider shares: the host contract (`connector.types.ts`), running a reactor (`connector-pixel.ts`, `reactor-call.ts`), saving into the insight (`connector-files.ts`, `use-connector-saver.ts`), formatting, the text to Markdown conversion (`connector-rich-text.ts`), the helpers the saved files are written with (`connector-markdown.ts`), the list and focus hooks, and what the tool views share: reading a call (`tool-view-call.ts`), the tool view host as viewer props (`tool-view-host.ts`), and one decision at a time (`use-tool-decision.ts`) |
 | `components/` | The building blocks every viewer is made of: header, list, rows, detail view, status, text body, actions, and the file explorer the drives browse in; and those of the tool views: their card, the call's status, the decision row, and Back to the Agent |
-| `mail/` | Mail for both accounts: types, parsers, pixels (`mailPixels(prefix)`), threads, saved files, the views (`MailboxView`, its message, thread, and attachment views), and the mail tool views (`MAIL_TOOL_VIEWS`, `mail-compose.ts` for the compose form's rules) |
+| `mail/` | Mail for both accounts: types, parsers, pixels (`mailPixels(prefix)`), folders, threads, saved files, the formatted body (`mail-html.ts`, `MailHtmlBody`), the views (`MailboxView`, its message, thread, and attachment views), and the mail tool views (`MAIL_TOOL_VIEWS`, `mail-compose.ts` for the compose form's rules) |
 | `calendar/` | Calendars for both accounts: the same, with `CalendarAgendaView` and its event view, and the calendar tool views (`CALENDAR_TOOL_VIEWS`, `calendar-event-edit.ts` for the event form's rules) |
 | `microsoft/` | Microsoft 365 apps without a shared counterpart: their reactor output types, parsers, pixels, and saved files, with a folder per app (`onedrive/`, `teams/`) |
 | `google/` | Google Workspace: the same, with a folder per app (`docs/`, `drive/`) |
@@ -100,7 +101,50 @@ code may import from `core/` and `components/`; those two never import from them
   email's `uniqueBody`, its text without the history it quotes; `mail/mail.threads.ts` cuts
   quoted history itself when a body arrives without one, as every Gmail body does. Saving an
   email, from its row or its own view, saves its whole thread.
-- **Bodies are plain text, shown and saved as the same Markdown.** The Microsoft reactors ask
+- **Folders are a tree.** `<prefix>ListMailFolders` returns nested folders too, each right after
+  the folder it sits in, with `parentId`, `path` (`Inbox/Projects`), and `depth`: Outlook walks
+  Graph's `childFolders`, and Gmail nests a label under the label its name continues. The
+  picker (`MailFolderPicker`) reads up to 500 folders and shows them as the `TreeView` of
+  `@semoss/ui/next` in a popover: the inbox first under its well known name with the folders
+  inside it (`mail/mail.folders.ts` orders and nests them), open to start with, each folder
+  that holds others opening and closing with its chevron, and each with its unread count. A
+  chosen nested folder is named by its path on the closed picker and in the header.
+- **Search reads like the mailbox's own.** The search box sends what is typed whole as
+  `<prefix>ListMail(search=...)`, and the backend reads it once (`MailSearchParser`): words
+  match anywhere, `from:`, `to:`, `cc:`, `subject:`, and `body:` narrow the word or quoted
+  phrase after them, and each mailbox writes the terms in its own syntax, a clause per word.
+  Gmail has no `body:`, so its hint (`MailApp.searchHintKey`) says words match anywhere. The
+  results come newest first: Graph's `$search` answers by relevance, so the backend sorts what
+  it found before the page is cut.
+- **Emails show with their own formatting; everything saved is Markdown.** The message view and
+  an opened thread email read `<prefix>GetMail(includeDisplayBody=true)` and show the
+  `displayBody` HTML with `MailHtmlBody`; Outlook reads the body as written for it with a
+  read of its own, since every other read asks Graph for its text rendering. `mail/mail-html.ts`
+  sanitizes it with DOMPurify into a document of its own, with a policy that loads nothing, for
+  a frame that runs no script and is as tall as the email. Links open in a new tab, and the
+  history a reply quotes (Outlook's `divRplyFwdMsg`, Gmail's `gmail_quote`, and the like) waits
+  for Show Quoted Emails. The text body shows until the HTML arrives and stands in when an email
+  has none; `displayBody` is display only and is never saved or added to context.
+- **Pictures load only when the reader says.** While an email holds pictures back, or has news
+  of them, a bar above it offers Show Embedded Pictures and Show Web Pictures separately; once
+  they show, the bar goes. Embedded pictures, the ones the HTML names by `cid:` in an `img`, a
+  style's `url()`, or an old `background` attribute (moved into the style), are read from the
+  mailbox on demand (`useMailEmbeddedImagesReader`, which reads
+  `GetMail(includeDisplayBody=true, includeInlineImages=true)`): `displayBody.inlineImages`
+  carries each as base64, up to 3 MB each and 10 MB per email, and `inlineImagesOmitted` counts
+  the rest, which keep their placeholder. They show as `data:` addresses, which the frame's
+  policy allows only once they are shown; web pictures, backgrounds included, need `https:`.
+  `MailPicturesMenu` beside an email's date (under it, in a thread) keeps a choice of what
+  shows without asking (Ask Each Time, Always Show Embedded Pictures, Always Show All Pictures)
+  in `localStorage` under `semoss.connectors.mail.pictures.v1`
+  (`use-mail-picture-preference.ts`), shared by every email shown, and offered only on an email
+  with pictures (`hasMailHtmlPictures`); a change leaves what an email already shows, and
+  without storage every email asks.
+- **The frame fits the email.** The frame is measured from outside and grows with its body, so
+  the document has a doctype, and a style after every style the email has makes `html` and
+  `body` as tall as their content with no scrolling of their own. An email that sizes itself to
+  its window would otherwise leave a second scroll bar inside the panel's.
+- **Text bodies are shown and saved as the same Markdown.** The Microsoft reactors ask
   Graph for its text rendering of mail and event bodies, which keeps line breaks and writes a
   link after its text as `label<url>`; the Gmail reactors turn HTML into text the same way on
   the server, and the Docs and Drive viewers use `toPlainText` for Google HTML. `toMarkdownText` (`core/connector-rich-text.ts`) turns that text into Markdown
@@ -121,6 +165,24 @@ code may import from `core/` and `components/`; those two never import from them
   context, and the menu saves it to the chat's files or opens it in its app. A new drive, such
   as Google Drive, needs only an adapter and those two callbacks. Because the explorer is
   rendered, the tests alias `monaco-editor` the way every host that renders a file panel does.
+- **Teams chats read newest first, by when each message was sent.** `MicrosoftTeamsListChats`
+  answers each chat with its last message, and the chat list orders and dates chats by that
+  message (`teamsChatActivityDate`); a chat's `lastUpdatedDateTime` is when it was renamed or
+  its members changed, so it only stands in for a chat read without one.
+  `MicrosoftTeamsListChatMessages` asks Graph for `createdDateTime desc`, so an old message
+  somebody edited or reacted to stays where it was sent, and `TeamsChatDetail` shows the 50
+  newest with the newest at the top. Channel threads come newest first with their replies oldest first.
+  A saved chat (`teamsChatToMarkdown`) is always written oldest first, whatever order it is
+  given.
+- **Teams search finds messages, not chats.** Typing in Teams Chats' search field runs
+  `MicrosoftTeamsSearchMessages` with `chatsOnly` (`use-teams-message-search.ts`), the Microsoft
+  Search index over message text, senders, and attached files, which also takes KQL such as
+  `from:` and `sent>`. Channel posts are left out on the server, since the Channels viewer shows
+  them. Each hit carries a plain text `summary` around the match, not its body, and is named by
+  its chat from the chat list when the list holds it. Opening a hit opens its chat with
+  `matchedMessageId`: the message is marked and scrolled to when it is among the newest 50, and
+  the chat says so when it is older. A chat the list does not hold is opened by id and named
+  with `MicrosoftTeamsGetChat`. Show More raises the read by 25 up to the reactor's cap of 100.
 - **The Google reactors are thin.** Drive lists names only and reads no file contents, so only
   Google Docs, through `GoogleDocsRead`, can be brought in; `GoogleDriveDownload` writes to any
   server path and is never used. Opening an email in either mailbox leaves it unread; marking it
@@ -173,7 +235,7 @@ Use the compact shared header, tabs, rows, and action bar across providers. Tabs
 width, detail actions remain above the scrolling body, and all surfaces use semantic theme
 colors. A host that already names the viewer, such as in a tab, passes `showHeader={false}`;
 the refresh then sits at the end of the viewer's toolbar row (the calendars' `actions`), and
-Teams Chats, which has no toolbar, keeps a slim row for it. Each Teams view starts its toolbar row with `TeamsViewLabel`, naming what it lists (Posts, Files, Your chats), since the three share the Teams logo. Keep the existing shared file explorer for OneDrive and Teams Channel Files.
+Teams Chats keeps a slim row for it above its search field. Each Teams view starts its toolbar row with `TeamsViewLabel`, naming what it lists (Posts, Files, Your chats), since the three share the Teams logo. Keep the existing shared file explorer for OneDrive and Teams Channel Files.
 
 Hosts can opt into retained browsing without depending on a particular dock. `MailboxView`
 accepts `presentation="compact"`, `onOpenItem(MailSelection)`, and a `focusItem` request

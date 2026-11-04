@@ -36,6 +36,21 @@ describe("MICROSOFT_PIXELS", () => {
 		);
 	});
 
+	it("searches Teams messages with the typed text encoded", () => {
+		expect(
+			MICROSOFT_PIXELS.teamsSearchMessages({
+				search: 'budget "Q3"',
+				limit: 25,
+				chatsOnly: true,
+			}),
+		).toBe(
+			'MicrosoftTeamsSearchMessages(search=["<encode>budget "Q3"</encode>"], limit=[25], chatsOnly=[true]);',
+		);
+		expect(
+			MICROSOFT_PIXELS.teamsSearchMessages({ search: "x", limit: 10 }),
+		).not.toContain("chatsOnly");
+	});
+
 	it("names a reply only for a reply", () => {
 		const root = MICROSOFT_PIXELS.teamsDownloadAttachment({
 			teamId: "t",
