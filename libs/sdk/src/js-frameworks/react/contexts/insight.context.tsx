@@ -12,12 +12,11 @@ import { Env, Insight, type MCPToolRequest } from "../../..";
  */
 export const InsightContext = createContext<
 	| {
-			/** @deprecated Use `useConfig((state) => state.status === "ready")`. */
+			/** Whether the system config has been read for the insight. */
 			isInitialized: Insight["isInitialized"];
 			/**
-			 * @deprecated Use `useSession((state) => state.status === "authenticated")`.
-			 * Insights do not hear about a sign in made through `Session` yet, so
-			 * move the sign in and this check together.
+			 * Whether a user is signed in for the insight. It follows a sign in or
+			 * out made through `Session` too.
 			 */
 			isAuthorized: Insight["isAuthorized"];
 			isReady: Insight["isReady"];
@@ -99,6 +98,10 @@ export const InsightProvider = (props: InsightProviderProps) => {
 			{} as Insight["actions"],
 		);
 	}, [insight, insight.actions, syncInsight]);
+
+	// follow changes the insight makes on its own, as after a sign in or out
+	// made through `Session`
+	useEffect(() => insight.subscribe(syncInsight), [insight, syncInsight]);
 
 	// initialize the insight / destroy
 	// biome-ignore lint/correctness/useExhaustiveDependencies: options is checked in the string

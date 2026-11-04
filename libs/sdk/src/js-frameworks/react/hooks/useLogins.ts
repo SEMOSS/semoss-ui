@@ -21,7 +21,7 @@ export const useLogins = (): LoginsSnapshot & {
 	/** Sign out of one provider; see {@link LoginsStore.disconnect}. */
 	disconnect: LoginsStore["disconnect"];
 } => {
-	// the session's own logins: the page's `Logins` unless a provider gives another
+	// the session's own logins: `Session.logins` unless a provider gives another session
 	const { logins } = useSessionStore();
 
 	const snapshot = useSyncExternalStore(

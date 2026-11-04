@@ -1,8 +1,6 @@
 import { useCallback, useEffect } from "react";
 import {
 	getPermissionKey,
-	isEditRole,
-	isOwnerRole,
 	type SessionPermissionStore,
 } from "../../../stores/session/session-permissions.store";
 import type { Role } from "../../../types";
@@ -22,7 +20,7 @@ import { useSessionStore } from "./use-session";
  * @example
  * ```tsx
  * const { status, canEdit } = useSessionPermissions("PROJECT", projectId);
- * if (status === "loading") {
+ * if (status === "LOADING") {
  *     return <Spinner />;
  * }
  * return <Editor readOnly={!canEdit} />;
@@ -33,10 +31,10 @@ export const useSessionPermissions = (
 	id: string | null | undefined,
 ): {
 	/**
-	 * `idle` without an id, `loading` until a permission is known, `ready`
-	 * once one is, and `error` when none could be read.
+	 * `IDLE` without an id, `LOADING` until a permission is known, `READY`
+	 * once one is, and `ERROR` when none could be read.
 	 */
-	status: "idle" | "loading" | "ready" | "error";
+	status: "IDLE" | "LOADING" | "READY" | "ERROR";
 	/** The permission, or null until known. */
 	permission: Role | null;
 	/** Whether the user may change the resource. */
@@ -93,20 +91,21 @@ export const useSessionPermissions = (
 
 	// a known permission stays on screen while it is read again or after a failure
 	const permission = entry?.permission ?? null;
-	let status: "idle" | "loading" | "ready" | "error" = "loading";
+	let status: "IDLE" | "LOADING" | "READY" | "ERROR" = "LOADING";
 	if (!id) {
-		status = "idle";
+		status = "IDLE";
 	} else if (permission) {
-		status = "ready";
+		status = "READY";
 	} else if (entry?.status === "ERROR") {
-		status = "error";
+		status = "ERROR";
 	}
 
 	return {
 		status: status,
 		permission: permission,
-		canEdit: isEditRole(permission),
-		isOwner: isOwnerRole(permission),
+		// an owner or editor may change the resource
+		canEdit: permission === "OWNER" || permission === "EDIT",
+		isOwner: permission === "OWNER",
 		refreshing: entry?.status === "LOADING" && permission !== null,
 		error: entry?.error ?? null,
 		refresh: refresh,

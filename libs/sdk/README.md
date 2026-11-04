@@ -12,6 +12,56 @@ Install the SDK using a package manager:
 npm install @semoss/sdk
 ```
 
+### Session, Config and Insight
+
+Three stores cover an app, each with one job:
+
+| Store | What it is | React |
+| --- | --- | --- |
+| `Session` | The signed in user: sign in and out, who they are, their metadata, permissions and logins | `useSession`, `useSessionPermissions`, `useLogins` |
+| `Config` | The server's metadata: theme, version, flags, meta keys and sign in providers. Needs no session | `useConfig` |
+| `Insight` | A workspace the user works in, such as a workbench, room or terminal tab | `InsightProvider`, `useInsight` |
+
+Start the session once, at the app's entry point, then gate the UI on its status:
+
+```ts
+import { Env, Session } from "@semoss/sdk";
+
+Env.update({ MODULE: "/Monolith" });
+await Session.initialize(); // never rejects; read the status
+const { status, user } = Session.getSnapshot(); // "AUTHENTICATED", { name: "Ada", ... }
+```
+
+```tsx
+import { useConfig, useSession } from "@semoss/sdk/react";
+
+const status = useSession((state) => state.status); // "INITIALIZING" | "UNAUTHENTICATED" | "AUTHENTICATED" | "error"
+const name = useSession((state) => state.user?.name);
+const version = useConfig((state) => state.config?.version);
+```
+
+The user is read from two pixels in one request: `GetUserInfo` gives who they are
+on each login, and `GetUserMetadata` gives their metadata as the database holds it
+now (`user.meta`, `user.defaultModels`). `Session.reloadUser()` reads the user again
+without touching the config, logins or permissions.
+
+Where a pixel runs:
+
+- It needs no workspace: `runPixel(pixel)` or `usePixel(pixel)` with no insight id.
+  The backend makes a temporary insight for it.
+- It belongs to a workspace: that workspace's `useInsight().actions.run` or `usePixel`
+  inside its `InsightProvider`.
+- Several steps must share one insight but belong to no workspace, such as an upload
+  and then a pixel that reads the file: `Session.run`, `Session.upload` and
+  `Session.download`. `Session.run` returns `{ errors, pixelReturn }`; it does not
+  throw on pixel errors.
+
+Ask whether the user may act on a resource with `useSessionPermissions(type, id)`
+(`permission`, `canEdit`, `isOwner`, `refresh`, `sync`), and whether the config keeps
+an operation for admins with `Session.canPerform(resource, operation)`.
+
+### Insights
+
 An insight is a temporary backend workspace for interacting with models, storage,
 and databases. Configure the backend URL (or use the host's injected environment)
 and initialize an insight in your application's browser lifecycle:
@@ -29,9 +79,10 @@ await insight.initialize();
 It is declared to return a promise of `{ tool: MCPToolRequest | null }`, but the
 current implementation can catch setup failures and return `null`. Earlier setup
 work can also reject. Awaiting initialization alone does not prove readiness:
-inspect `insight.isReady`, `insight.isAuthorized`, and `insight.error`, and route to
-your login/error UI as appropriate. Use the public `insight.insightId` getter,
-not private store state.
+inspect `insight.isReady`, `insight.isAuthorized` and `insight.error`. The insight
+follows `Session`: a sign in through `Session` sets it up, and a sign out signs it
+out. Sign in through `Session` rather than the insight's deprecated `actions.login`.
+Use the public `insight.insightId` getter, not private store state.
 
 Before actions requiring a ready insight:
 
@@ -66,9 +117,11 @@ HTTP status. A JSON `null` error response also uses the status fallback.
 
 ## LinOTP Authentication
 
-Use the SDK's `loginOTP(username, pin)` and `confirmOTP(otp)` functions rather
-than implementing the LinOTP requests in an application. Both are exported from
-`@semoss/sdk` and `@semoss/sdk/react`.
+Sign in with LinOTP through the session: `Session.requestOTP(username, pin)` starts
+the challenge, then `Session.login({ type: "linotp", otp })` signs in and reads the
+new session. They wrap the `loginOTP(username, pin)` and `confirmOTP(otp)` functions,
+which are also exported from `@semoss/sdk` and `@semoss/sdk/react`; use them rather
+than implementing the LinOTP requests in an application.
 
 `loginOTP` starts the challenge without creating a signed-in session. It returns
 `true` when the challenge is accepted, or `false` only when HTTP 401 reports the
@@ -86,41 +139,37 @@ configuration after successful confirmation, not after starting the challenge.
 -   Login or Logout
 
 ```ts
-const login = async (username: string, password: string) => {
-    const success = await insight.actions.login({
-        type: "native",
-        username,
-        password,
-    });
-    return success && insight.isReady;
-};
+import { Session } from "@semoss/sdk";
 
-const loginWithOauth = async (provider: string) => {
-    const success = await insight.actions.login({ type: "oauth", provider });
-    return success && insight.isReady;
-};
+// each resolves to whether a user is signed in, and throws when refused
+await Session.login({ type: "native", username, password });
+await Session.login({ type: "ldap", username, password });
+await Session.login({ type: "oauth", provider }); // from a click: opens a popup
 
-const logout = async () => insight.actions.logout();
+await Session.logout(); // forgets the user, their logins and permissions
 ```
 
-Login and logout return booleans, not `{ output }`. Inspect failed results and
-`insight.error`; supported OAuth providers depend on the server configuration.
+`login` reads the new session, config included, once it succeeds, so
+`useSession((state) => state.status)` moves to `AUTHENTICATED` on its own. The
+providers to offer are `useConfig((state) => state.config?.availableProviders)`;
+they depend on the server configuration. `insight.actions.login` and
+`insight.actions.logout` still work, but are deprecated.
 
 -   Know what the session is signed in to
 
-`Logins` holds the session's logins for the whole page, so every insight and
-view sees the same answer. The insight fills it from the config when it loads
-and after each login, and resets it on logout. Read it again, sign in to one more provider,
-or sign one out with its actions; in React, `useLogins()` reads it again when a
-view mounts and whenever the window regains focus.
+`Session.logins` holds the session's logins, so every view sees the same answer.
+The session fills it from the config when it starts and after each login, and
+resets it on logout. Read it again, sign in to one more provider, or sign one out
+with its actions; in React, `useLogins()` reads it again when a view mounts and
+whenever the window regains focus.
 
 ```ts
-import { Logins } from "@semoss/sdk";
+import { Session } from "@semoss/sdk";
 
-const { logins, primaryLogin, status } = Logins.getSnapshot(); // logins: { NATIVE: "Ada" }
-await Logins.refresh(); // reuses a read younger than 30 seconds
-await Logins.connect("MICROSOFT"); // from a click: opens a fresh sign in popup
-await Logins.disconnect("MICROSOFT"); // never the session's own login
+const { logins, primaryLogin, status } = Session.logins.getSnapshot(); // logins: { NATIVE: "Ada" }
+await Session.logins.refresh(); // reuses a read younger than 30 seconds
+await Session.logins.connect("MICROSOFT"); // from a click: opens a fresh sign in popup
+await Session.logins.disconnect("MICROSOFT"); // never the session's own login
 ```
 
 `connect` throws `PopupBlockedError` when the browser blocks the popup, and
@@ -228,8 +277,8 @@ pnpm --filter @semoss/sdk test:coverage
 
 | Area | Files | Notes |
 |---|---|---|
-| Transport | [base.spec.ts](./src/api/base.spec.ts) | Pixel job submission, polling, and result handling |
-| Agent state | [agent.store.spec.ts](./src/stores/agent/agent.store.spec.ts) | Item accumulation, ordering, reconciliation, failure caps, and local abort |
+| Transport | [base.test.ts](./src/api/base.test.ts) | Pixel job submission, polling, and result handling |
+| Agent state | [agent.store.test.ts](./src/stores/agent/agent.store.test.ts) | Item accumulation, ordering, reconciliation, failure caps, and local abort |
 | Insight state | [insight.store.test.ts](./src/stores/insight/insight.store.test.ts) | Initialization and room binding |
 | Environment | [env.test.ts](./src/env.test.ts) | Environment configuration |
 
@@ -391,41 +440,48 @@ const hello = async (name: string) => {
 
 ## AI Coding Assistant Setup
 
-`@semoss/sdk` ships AI agent skills alongside its source code. These skills give your AI
-coding assistant (GitHub Copilot, Claude Code, Cursor, etc.) built-in knowledge of the SDK's
-APIs, including rooms, chat jobs, and agent runs, without you having to paste
-docs into chat.
+`@semoss/sdk` ships AI agent skills in its `skills/` folder. They give your coding
+assistant (GitHub Copilot, Claude Code, Cursor, etc.) the SDK's APIs without pasting docs
+into chat, and they are versioned with the SDK: upgrading the package upgrades them.
 
-The canonical [SDK chat guide](./skills/sdk-chat/SKILL.md) is bundled under
-`node_modules/@semoss/sdk/skills/sdk-chat/SKILL.md` and follows the
-[Agent Skills](https://agentskills.io/) open standard, making them compatible with
-[`npm-skills`](https://www.npmjs.com/package/npm-skills) and
-[`skills-npm`](https://github.com/antfu/skills-npm).
+### Where the skills are
 
-### One-time extraction
+| Skill | In this package | In an installed app | Covers |
+|-------|-----------------|---------------------|--------|
+| `sdk-session` | [`skills/session.skill.md`](./skills/session.skill.md) | `node_modules/@semoss/sdk/skills/session.skill.md` | `Session`, `Config` and permissions: sign in and out, the user and their metadata, `useSession`/`useConfig`/`useSessionPermissions`/`useLogins`, and which insight a pixel runs in |
+| `sdk-chat` | [`skills/sdk-chat/SKILL.md`](./skills/sdk-chat/SKILL.md) | `node_modules/@semoss/sdk/skills/sdk-chat/SKILL.md` | Room records and options, `RoomStore`, AskRoom jobs, RunAgent/`AgentStore` lifecycles, tool approvals, cancellation, and compatibility gaps |
 
-Run extraction into a provider-neutral skills directory after installing the SDK:
+Start with `sdk-session` for any app: it covers sign in and where pixels run, which the
+chat guide assumes.
+
+### Use them in your project
+
+The simplest setup is to route your agents to the files where they are installed. Agents
+do not discover `node_modules` on their own, so add the paths to your project's
+`AGENTS.md` (or `CLAUDE.md`):
+
+```md
+Before working with @semoss/sdk, read:
+- node_modules/@semoss/sdk/skills/session.skill.md (sign in, user, config, permissions)
+- node_modules/@semoss/sdk/skills/sdk-chat/SKILL.md (rooms, chat, agent runs)
+```
+
+To keep copies in your repository instead, extract them with
+[`npm-skills`](https://www.npmjs.com/package/npm-skills) (or
+[`skills-npm`](https://github.com/antfu/skills-npm)):
 
 ```sh
 npx npm-skills extract --output skills
 ```
 
-Root `skills/` is not automatically discovered by every agent. Explicitly route
-agents from your project's `AGENTS.md` to the extracted skill documents. Extraction
-does not imply a flat filename layout or automatic discovery by every provider.
+These tools follow the [Agent Skills](https://agentskills.io/) layout of one folder per
+skill with a `SKILL.md`, so they extract `sdk-chat`. `session.skill.md` is a single file at
+the top of `skills/`; copy it next to the extracted skills, or keep linking it from
+`node_modules` as above. Either way, route your agents to the extracted files from
+`AGENTS.md`, since not every agent discovers a root `skills/` folder.
 
-For contributors to this monorepo only: the maintained flat
-[SDK workflow skill](../../skills/sdk-chat.skill.md) routes to the packaged guide.
-Follow [the skill index](../../skills/README.md) and
-[root routing instructions](../../AGENTS.md#required-skill-routing-all-agents).
-External consumers do not need those repository-only documents.
-
-### Keep skills in sync automatically
-
-For consumer projects that treat extracted skills as generated files, add a
-`postinstall` script so skills update whenever you upgrade the SDK. The examples
-below overwrite matching skill files; do not run them over this repository's
-maintained root skills or locally customized guidance without reviewing changes.
+To refresh extracted copies on every install, run the extraction from `postinstall`. It
+overwrites matching files, so do not point it at skills you have edited:
 
 ```json
 {
@@ -438,29 +494,14 @@ maintained root skills or locally customized guidance without reviewing changes.
 }
 ```
 
-Or configure the output path once and just run `npm run skills:extract`:
+### In this monorepo
 
-```json
-{
-    "scripts": {
-        "skills:extract": "npm-skills extract --override"
-    },
-    "npmSkills": {
-        "consume": {
-            "output": "skills"
-        }
-    }
-}
-```
-
-### What gets installed
-
-| Skill | Covers |
-|-------|--------|
-| `sdk-chat` | Room records/options, managed RoomStore, AskRoom jobs, RunAgent/AgentStore lifecycles, tool approvals, cancellation, and compatibility gaps |
-
-Skills are versioned with the SDK — upgrading `@semoss/sdk` and re-running extraction keeps
-your assistant's knowledge current.
+Contributors read the skills in place: [`libs/sdk/skills/`](./skills/) is the source of
+truth. The SDK's [`AGENTS.md`](./AGENTS.md#skills) points agents to both, and the repository's
+[skill index](../../skills/README.md) links to them too. The flat
+[SDK chat workflow skill](../../skills/sdk-chat.skill.md) only routes to the packaged chat
+guide; follow the [root routing instructions](../../AGENTS.md#required-skill-routing-all-agents).
+External consumers do not need these repository-only documents.
 
 ## Catalog images
 

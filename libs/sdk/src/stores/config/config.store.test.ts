@@ -48,7 +48,7 @@ describe("ConfigStore", () => {
 
 		expect(second).toBe(first);
 		expect(mockGetSystemConfig).toHaveBeenCalledTimes(1);
-		expect(store.getSnapshot().status).toBe("ready");
+		expect(store.getSnapshot().status).toBe("READY");
 	});
 
 	it("reads again when forced", async () => {
@@ -113,12 +113,12 @@ describe("ConfigStore", () => {
 		const store = new ConfigStore();
 
 		await expect(store.load()).rejects.toThrow("down");
-		expect(store.getSnapshot().status).toBe("error");
+		expect(store.getSnapshot().status).toBe("ERROR");
 
 		await store.load();
 		await expect(store.load({ force: true })).rejects.toThrow("down again");
 		expect(store.getSnapshot()).toMatchObject({
-			status: "ready",
+			status: "READY",
 			error: new Error("down again"),
 		});
 		expect(store.getSnapshot().config).not.toBeNull();
@@ -140,7 +140,7 @@ describe("ConfigStore", () => {
 		await pending;
 
 		expect(store.getSnapshot()).toMatchObject({
-			status: "idle",
+			status: "IDLE",
 			config: null,
 		});
 	});

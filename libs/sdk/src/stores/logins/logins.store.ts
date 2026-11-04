@@ -36,8 +36,8 @@ export interface LoginsSnapshot {
 	connectorAccess: unknown;
 	/** The sign ins this server offers, as the config's `availableProviders` lists them. */
 	availableProviders: { provider: string; isOauth: boolean }[];
-	/** `loading` until the logins are known, `error` when the last read failed. */
-	status: "loading" | "ready" | "error";
+	/** `LOADING` until the logins are known, `ERROR` when the last read failed. */
+	status: "LOADING" | "READY" | "ERROR";
 }
 
 /** What is known before the session's config is read. */
@@ -47,7 +47,7 @@ const EMPTY_SNAPSHOT: LoginsSnapshot = {
 	primaryLogin: null,
 	connectorAccess: null,
 	availableProviders: [],
-	status: "loading",
+	status: "LOADING",
 };
 
 /** The config's offered sign ins, keeping only well formed entries. */
@@ -158,7 +158,7 @@ export class LoginsStore {
 			connectorAccess: config.connectorAccess ?? null,
 			availableProviders: normalizeProviders(config.availableProviders),
 		};
-		if (this.getSnapshot().status === "loading") {
+		if (this.getSnapshot().status === "LOADING") {
 			const logins = parseLogins(config.logins);
 			this.readAt = Date.now();
 			this.state.set({
@@ -168,7 +168,7 @@ export class LoginsStore {
 					parseAccountIds(config.loginDetails),
 					logins,
 				),
-				status: "ready",
+				status: "READY",
 			});
 			return;
 		}
@@ -227,7 +227,7 @@ export class LoginsStore {
 		maxAgeMs?: number;
 	} = {}): Promise<Record<string, string>> => {
 		if (
-			this.getSnapshot().status === "ready" &&
+			this.getSnapshot().status === "READY" &&
 			Date.now() - this.readAt < maxAgeMs
 		) {
 			return Promise.resolve(this.getSnapshot().logins);
@@ -249,7 +249,7 @@ export class LoginsStore {
 								this.getSnapshot().accountIds,
 								logins,
 							),
-							status: "ready",
+							status: "READY",
 						});
 						return logins;
 					},
@@ -257,7 +257,7 @@ export class LoginsStore {
 						if (sessionVersion === this.sessionVersion) {
 							this.state.set({
 								...this.getSnapshot(),
-								status: "error",
+								status: "ERROR",
 							});
 						}
 						throw error;
@@ -318,10 +318,3 @@ export class LoginsStore {
 		}
 	};
 }
-
-/**
- * The page's logins, shared by every insight and view.
- *
- * @deprecated Use `Session.logins`, the same store, or `useLogins` in React.
- */
-export const Logins = new LoginsStore();

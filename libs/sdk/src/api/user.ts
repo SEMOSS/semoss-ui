@@ -74,35 +74,56 @@ const parseLoginInfo = (
 };
 
 /**
- * Read the signed in user, as each of the session's logins describes them.
- * Running it in `"new"` creates an insight, which a session can keep as its
- * own. It runs as `META`, so it is not kept in the insight's recipe.
+ * Read the signed in user, as each of the session's logins describes them,
+ * and the primary login's metadata as the database holds it now. Both run in
+ * one request. Running it in `"new"` creates an insight, which a session can
+ * keep as its own. They run as `META`, so they are not kept in the insight's
+ * recipe.
+ *
+ * The two reads differ: `GetUserInfo` gives every login's identity, with the
+ * metadata its token loaded at sign in, which only the user's own changes
+ * refresh; `GetUserMetadata` gives just the primary login's metadata, read
+ * from the database each time, so it also has an admin's changes and those
+ * made through another server.
  *
  * @param insightId - The insight to run in. Defaults to a new one.
- * @returns The insight it ran in, and each login's user keyed by its upper
- * case provider, such as `NATIVE` or `MICROSOFT`. Empty when signed out.
- * @throws When the backend returns an error.
+ * @returns The insight it ran in; each login's user keyed by its upper case
+ * provider, such as `NATIVE` or `MICROSOFT`, empty when signed out; and the
+ * primary login's metadata, each value as one entry, or null when it could
+ * not be read.
+ * @throws When the backend cannot read the user.
  */
 export const getUserInfo = async (insightId = "new") => {
-	const response = await runPixel<[Record<string, unknown>]>(
-		"META | GetUserInfo();",
-		insightId,
-	);
-	if (response.errors.length > 0) {
-		throw new Error(response.errors.join(""));
+	const response = await runPixel<
+		[Record<string, unknown>, Record<string, unknown>]
+	>("META | GetUserInfo(); META | GetUserMetadata();", insightId);
+
+	// the request's errors cover both pixels, so each answer is judged by its own
+	// operation type: the user must be read, the metadata may fail on its own
+	const [info, metadata] = response.pixelReturn;
+	if (!info || info.operationType.includes("ERROR")) {
+		throw new Error(
+			response.errors.join("") || "The signed in user could not be read",
+		);
 	}
 
-	const output = response.pixelReturn[0]?.output;
 	const logins: Record<string, ReturnType<typeof parseLoginInfo>> = {};
-	if (isRecord(output)) {
-		for (const [provider, record] of Object.entries(output)) {
+	if (isRecord(info.output)) {
+		for (const [provider, record] of Object.entries(info.output)) {
 			// signed out, the backend answers `{"No User": "User is not logged in"}`
 			if (isRecord(record)) {
 				logins[provider] = parseLoginInfo(record);
 			}
 		}
 	}
-	return { insightId: response.insightId, logins: logins };
+
+	const meta =
+		metadata &&
+		!metadata.operationType.includes("ERROR") &&
+		isRecord(metadata.output)
+			? flattenMeta(metadata.output)
+			: null;
+	return { insightId: response.insightId, logins: logins, meta: meta };
 };
 
 /**

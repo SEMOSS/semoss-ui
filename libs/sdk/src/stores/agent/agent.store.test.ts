@@ -58,6 +58,10 @@ const deltaEvent = (
 	itemId: string,
 	delta: string,
 	runId = "run-1",
+	kind: Extract<
+		AgentRunItemEvent,
+		{ type: "item.updated" }
+	>["kind"] = "message",
 ): AgentRunItemEvent => ({
 	version: 1,
 	eventId: `evt-${sequence}`,
@@ -66,7 +70,7 @@ const deltaEvent = (
 	timestamp: "2026-01-01T00:00:00Z",
 	type: "item.updated",
 	itemId,
-	kind: "message",
+	kind,
 	delta,
 });
 
@@ -124,10 +128,10 @@ describe("applyAgentRunItemEvent", () => {
 			state,
 			startedEvent(1, { id: "r1", kind: "reasoning", summary: "Th" }),
 		);
-		state = applyAgentRunItemEvent(state, {
-			...deltaEvent(2, "r1", "inking"),
-			kind: "reasoning",
-		});
+		state = applyAgentRunItemEvent(
+			state,
+			deltaEvent(2, "r1", "inking", "run-1", "reasoning"),
+		);
 
 		expect(state.itemsById.r1).toMatchObject({ summary: "Thinking" });
 	});

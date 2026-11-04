@@ -4,11 +4,11 @@ import { createPermissionCache } from "@semoss/panels";
 import {
 	confirmOTP,
 	download,
-	Logins,
 	loginOTP,
 	logout,
 	oauth,
 	runPixel,
+	Session,
 	upload,
 } from "@semoss/sdk/react";
 import {
@@ -240,7 +240,7 @@ export const createSessionStore = (
 		logout: async () => {
 			await logout();
 			// the next session's logins and account ids come from its own config
-			Logins.reset();
+			Session.logins.reset();
 			get().clearPermissions();
 			set({
 				user: resetUser(false),

@@ -4,11 +4,7 @@ import {
 	getUserProjectPermission,
 } from "../../api/permissions";
 import type { Role } from "../../types";
-import {
-	isEditRole,
-	isOwnerRole,
-	SessionPermissionStore,
-} from "./session-permissions.store";
+import { SessionPermissionStore } from "./session-permissions.store";
 
 vi.mock("../../api/permissions", () => ({
 	getUserEnginePermission: vi.fn(),
@@ -104,14 +100,5 @@ describe("SessionPermissionStore", () => {
 		await pending;
 
 		expect(store.get("PROJECT", "p1")).toBeNull();
-	});
-
-	it("tells editors and owners apart", () => {
-		expect(isEditRole("OWNER")).toBe(true);
-		expect(isEditRole("EDIT")).toBe(true);
-		expect(isEditRole("READ_ONLY")).toBe(false);
-		expect(isEditRole(null)).toBe(false);
-		expect(isOwnerRole("OWNER")).toBe(true);
-		expect(isOwnerRole("EDIT")).toBe(false);
 	});
 });

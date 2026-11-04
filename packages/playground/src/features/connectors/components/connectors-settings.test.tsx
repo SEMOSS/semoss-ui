@@ -29,7 +29,7 @@ vi.mock("../use-user-connectors", () => ({
 const createConnections = (
 	connect: UseConnectionsResult["connect"],
 ): UseConnectionsResult => ({
-	status: "ready",
+	status: "READY",
 	connections: [
 		{
 			provider: getConnectorProvider("MICROSOFT"),

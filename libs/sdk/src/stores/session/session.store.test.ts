@@ -106,6 +106,7 @@ describe("SessionStore", () => {
 		});
 		mockGetUserInfo.mockResolvedValue({
 			insightId: "session-insight",
+			meta: null,
 			logins: { NATIVE: loginInfo("Ada") },
 		});
 	});
@@ -117,7 +118,7 @@ describe("SessionStore", () => {
 		await session.initialize();
 
 		expect(session.getSnapshot()).toMatchObject({
-			status: "unauthenticated",
+			status: "UNAUTHENTICATED",
 			user: null,
 		});
 		expect(session.isAuthorized).toBe(false);
@@ -129,6 +130,7 @@ describe("SessionStore", () => {
 		mockIsAdminUser.mockResolvedValue(true);
 		mockGetUserInfo.mockResolvedValue({
 			insightId: "session-insight",
+			meta: null,
 			logins: {
 				NATIVE: loginInfo("Ada", {
 					"text-generation-model": "model-1",
@@ -141,7 +143,7 @@ describe("SessionStore", () => {
 
 		expect(mockGetSystemConfig).toHaveBeenCalledTimes(1);
 		expect(session.getSnapshot()).toMatchObject({
-			status: "authenticated",
+			status: "AUTHENTICATED",
 			insightId: "session-insight",
 			user: {
 				name: "Ada",
@@ -157,12 +159,88 @@ describe("SessionStore", () => {
 		expect(logins.getSnapshot().logins).toEqual({ NATIVE: "Ada" });
 	});
 
+	it("takes the user's metadata from the database, else from their login", async () => {
+		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
+		mockGetUserInfo.mockResolvedValueOnce({
+			insightId: "session-insight",
+			meta: { "text-generation-model": "from-database" },
+			logins: {
+				NATIVE: loginInfo("Ada", {
+					"text-generation-model": "from-token",
+				}),
+			},
+		});
+		const { session } = createSession();
+
+		await session.initialize();
+
+		expect(session.getSnapshot().user).toMatchObject({
+			meta: { "text-generation-model": "from-database" },
+			defaultModels: { textGeneration: "from-database" },
+		});
+
+		// the database read failed, so the login's own copy is shown
+		mockGetUserInfo.mockResolvedValueOnce({
+			insightId: "session-insight",
+			meta: null,
+			logins: {
+				NATIVE: loginInfo("Ada", {
+					"text-generation-model": "from-token",
+				}),
+			},
+		});
+		await session.reloadUser();
+
+		expect(session.getSnapshot().user?.defaultModels.textGeneration).toBe(
+			"from-token",
+		);
+	});
+
+	it("reloads only the user, keeping the logins and permissions", async () => {
+		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
+		mockIsAdminUser.mockResolvedValue(true);
+		const { session, logins } = createSession();
+		await session.initialize();
+		await session.permissions.load("PROJECT", "project-1");
+		const loginsBefore = logins.getSnapshot();
+
+		mockGetUserInfo.mockResolvedValueOnce({
+			insightId: "session-insight",
+			meta: { "text-generation-model": "model-2" },
+			logins: { NATIVE: loginInfo("Ada") },
+		});
+		await session.reloadUser();
+
+		expect(session.getSnapshot().user).toMatchObject({
+			isAdmin: true,
+			defaultModels: { textGeneration: "model-2" },
+		});
+		expect(logins.getSnapshot()).toBe(loginsBefore);
+		expect(session.permissions.get("PROJECT", "project-1")).toMatchObject({
+			permission: "OWNER",
+		});
+		expect(mockGetSystemConfig).toHaveBeenCalledTimes(1);
+		expect(mockIsAdminUser).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not reload the user when signed out", async () => {
+		mockGetSystemConfig.mockResolvedValue(backendConfig());
+		const { session } = createSession();
+		await session.initialize();
+
+		await session.reloadUser();
+
+		expect(session.getSnapshot().user).toBeNull();
+		expect(mockGetUserInfo).not.toHaveBeenCalled();
+	});
+
 	it("describes the user by SAML, then NATIVE, then the first login", async () => {
 		mockGetSystemConfig.mockResolvedValue(
 			backendConfig({ MICROSOFT: "Ada", SAML: "Ada" }),
 		);
 		mockGetUserInfo.mockResolvedValue({
 			insightId: "session-insight",
+			meta: null,
 			logins: {
 				MICROSOFT: loginInfo("Microsoft"),
 				SAML: loginInfo("Saml"),
@@ -236,14 +314,14 @@ describe("SessionStore", () => {
 		await session.logout();
 
 		expect(session.getSnapshot()).toMatchObject({
-			status: "unauthenticated",
+			status: "UNAUTHENTICATED",
 			user: null,
 			insightId: "",
 		});
-		expect(logins.getSnapshot().status).toBe("loading");
+		expect(logins.getSnapshot().status).toBe("LOADING");
 		expect(session.permissions.get("PROJECT", "p1")).toBeNull();
 		expect(await session.initialize()).toMatchObject({
-			status: "unauthenticated",
+			status: "UNAUTHENTICATED",
 		});
 	});
 
@@ -257,7 +335,7 @@ describe("SessionStore", () => {
 		listener?.(new UnauthorizedError("Redirecting", 302));
 
 		expect(session.getSnapshot()).toMatchObject({
-			status: "unauthenticated",
+			status: "UNAUTHENTICATED",
 			user: null,
 		});
 	});
@@ -271,7 +349,7 @@ describe("SessionStore", () => {
 
 		await session.initialize();
 
-		expect(session.getSnapshot().status).toBe("unauthenticated");
+		expect(session.getSnapshot().status).toBe("UNAUTHENTICATED");
 	});
 
 	it("shows other failures as an error", async () => {
@@ -281,7 +359,7 @@ describe("SessionStore", () => {
 		await session.initialize();
 
 		expect(session.getSnapshot()).toMatchObject({
-			status: "error",
+			status: "ERROR",
 			error: new Error("down"),
 		});
 	});
@@ -402,6 +480,7 @@ describe("SessionStore", () => {
 		);
 		mockGetUserInfo.mockResolvedValue({
 			insightId: "session-insight",
+			meta: null,
 			logins: {
 				NATIVE: loginInfo("Native"),
 				MICROSOFT: loginInfo("Microsoft"),
@@ -442,10 +521,10 @@ describe("SessionStore", () => {
 		const { session } = createSession();
 
 		await session.initialize();
-		expect(session.getSnapshot().status).toBe("error");
+		expect(session.getSnapshot().status).toBe("ERROR");
 
 		await session.initialize();
-		expect(session.getSnapshot().status).toBe("authenticated");
+		expect(session.getSnapshot().status).toBe("AUTHENTICATED");
 	});
 
 	it("offers the signed out config's sign ins after logout", async () => {
@@ -472,7 +551,7 @@ describe("SessionStore", () => {
 
 		await session.logout();
 		await vi.waitFor(() =>
-			expect(logins.getSnapshot().status).toBe("ready"),
+			expect(logins.getSnapshot().status).toBe("READY"),
 		);
 
 		expect(logins.getSnapshot()).toMatchObject({
@@ -485,6 +564,7 @@ describe("SessionStore", () => {
 		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
 		mockGetUserInfo.mockResolvedValue({
 			insightId: "session-insight",
+			meta: null,
 			logins: {
 				NATIVE: loginInfo("Ada", {
 					"text-generation-model": "model-1",
@@ -521,6 +601,7 @@ describe("SessionStore", () => {
 		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
 		mockGetUserInfo.mockResolvedValue({
 			insightId: "session-insight",
+			meta: null,
 			logins: {
 				NATIVE: loginInfo("Ada", {
 					"code-generation-model": "model-1",

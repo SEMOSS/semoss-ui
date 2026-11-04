@@ -2,7 +2,7 @@ import { toError } from "@semoss/utility/error";
 import { tryParseJson } from "@semoss/utility/json";
 import { isRecord } from "@semoss/utility/object";
 import { Observable } from "@semoss/utility/observable";
-import { getSystemConfig } from "../../api/base";
+import { getSystemConfig } from "../../api";
 import { Env } from "../../env";
 
 /** The system config, as `/api/config` returns it. */
@@ -44,11 +44,11 @@ const ADMIN_ONLY_OPERATIONS = {
 /** What is known before the config is read, and after a reset. */
 const EMPTY_SNAPSHOT = {
 	/**
-	 * `idle` before the first read, `loading` during it, and `error` when no
-	 * config could be read. A later read keeps `ready` while it runs, and a
+	 * `IDLE` before the first read, `LOADING` during it, and `ERROR` when no
+	 * config could be read. A later read keeps `READY` while it runs, and a
 	 * failed one keeps the config it had.
 	 */
-	status: "idle" as "idle" | "loading" | "ready" | "error",
+	status: "IDLE" as "IDLE" | "LOADING" | "READY" | "ERROR",
 	/**
 	 * The config, or null until one is read. Its meta key lists are sorted by
 	 * `display_order`, and its lists are never missing.
@@ -200,7 +200,7 @@ export class ConfigStore {
 
 		// only the first read shows as loading; a later one keeps the config on screen
 		if (!config) {
-			this.state.update({ status: "loading", error: null });
+			this.state.update({ status: "LOADING", error: null });
 		}
 
 		const request = getSystemConfig()
@@ -212,11 +212,17 @@ export class ConfigStore {
 					return next;
 				}
 
-				// getSystemConfig keeps the token; the request interceptor also reads this flag
-				Env.update({ CSRF: next.csrf === true });
+				// getSystemConfig keeps the token; the request interceptor also reads
+				// this flag. It is only turned on, so a page that turned it on itself
+				// keeps it.
+				if (next.csrf === true) {
+					Env.update({ CSRF: true });
+				}
+
+				CONFIG_AS_SENT.set(this, data);
 
 				this.state.set({
-					status: "ready",
+					status: "READY",
 					config: next,
 					theme: parseTheme(next),
 					error: null,
@@ -228,7 +234,7 @@ export class ConfigStore {
 					// keep a config already read; only a first read can fail the store
 					const current = this.getSnapshot();
 					this.state.update({
-						status: current.config ? "ready" : "error",
+						status: current.config ? "READY" : "ERROR",
 						error: toError(error),
 					});
 				}
@@ -250,6 +256,7 @@ export class ConfigStore {
 	 * it lands.
 	 */
 	reset = (): void => {
+		CONFIG_AS_SENT.delete(this);
 		this.version++;
 		this.request = null;
 		this.state.set(EMPTY_SNAPSHOT);
@@ -280,3 +287,28 @@ export class ConfigStore {
 
 /** The page's system config, read by the page's {@link Session}. */
 export const Config = new ConfigStore();
+
+/**
+ * Each store's config exactly as the backend sent it, before the meta key
+ * lists are sorted and the lists defaulted.
+ */
+const CONFIG_AS_SENT = new WeakMap<ConfigStore, SystemConfig>();
+
+/**
+ * Read a store's config, through its one shared read, as the backend sent
+ * it. Internal, and not exported from the package: `InsightStore.system` has
+ * always shown the config unsorted, and keeps doing so while it shares the
+ * read with `Session`.
+ *
+ * @param store - The config store.
+ * @param force - Read it again, as after a sign in.
+ * @returns The config as sent.
+ * @throws When the config cannot be read.
+ */
+export const loadConfigAsSent = async (
+	store: ConfigStore,
+	force = false,
+): Promise<SystemConfig> => {
+	const config = await store.load({ force: force });
+	return CONFIG_AS_SENT.get(store) ?? config;
+};

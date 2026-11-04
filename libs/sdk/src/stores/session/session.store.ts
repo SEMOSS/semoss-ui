@@ -19,24 +19,24 @@ import { Env } from "../../env";
 import { HttpError, UnauthorizedError } from "../../utility/error";
 import { onUnauthorized } from "../../utility/fetch";
 import { Config, type ConfigStore } from "../config/config.store";
-import { Logins, type LoginsStore } from "../logins/logins.store";
+import { LoginsStore } from "../logins/logins.store";
 import { SessionPermissionStore } from "./session-permissions.store";
 
 /** What is known once the session is signed out, and the shape of every snapshot. */
 const SIGNED_OUT = {
 	/**
-	 * `initializing` until the first check finishes, then `authenticated` or
-	 * `unauthenticated`; `error` when the session could not be read.
+	 * `INITIALIZING` until the first check finishes, then `AUTHENTICATED` or
+	 * `UNAUTHENTICATED`; `ERROR` when the session could not be read.
 	 */
-	status: "unauthenticated" as
-		| "initializing"
-		| "unauthenticated"
-		| "authenticated"
-		| "error",
+	status: "UNAUTHENTICATED" as
+		| "INITIALIZING"
+		| "UNAUTHENTICATED"
+		| "AUTHENTICATED"
+		| "ERROR",
 	/**
-	 * The signed in user, as `GetUserInfo` describes their SAML login, else
-	 * their NATIVE login, else their first; null when signed out or not yet
-	 * known.
+	 * The signed in user, as `GetUserInfo` describes their primary login (see
+	 * `pickLogin`), with `meta` read from the database by `GetUserMetadata`;
+	 * null when signed out or not yet known.
 	 */
 	user: null as
 		| (Awaited<ReturnType<typeof getUserInfo>>["logins"][string] & {
@@ -102,6 +102,45 @@ const pickLogin = <L>(
 };
 
 /**
+ * Describe the signed in user from what `getUserInfo` read: who they are
+ * from their picked login, and their metadata from the database when it was
+ * read, else from that login's token.
+ *
+ * @param info - What `getUserInfo` read.
+ * @param primaryLogin - The config's primary login, if any.
+ * @param isAdmin - Whether the user is an admin.
+ * @returns The user.
+ */
+const toUser = (
+	info: Awaited<ReturnType<typeof getUserInfo>>,
+	primaryLogin: string | undefined,
+	isAdmin: boolean,
+): NonNullable<(typeof SIGNED_OUT)["user"]> => {
+	const [provider, record] = pickLogin(info.logins, primaryLogin) ?? [
+		"",
+		null,
+	];
+	const meta = info.meta ?? record?.meta ?? {};
+	return {
+		id: record?.id ?? "",
+		name: record?.name ?? "",
+		username: record?.username ?? "",
+		email: record?.email ?? "",
+		provider: provider,
+		isAdmin: isAdmin,
+		isNative: "NATIVE" in info.logins,
+		userEpoch: record?.userEpoch ?? "",
+		lastLogin: record?.lastLogin,
+		groupInfo: record?.groupInfo,
+		meta: meta,
+		defaultModels: {
+			textGeneration: asString(meta["text-generation-model"]),
+			codeGeneration: asString(meta["code-generation-model"]),
+		},
+	};
+};
+
+/**
  * Whether a request failed because the backend no longer has its insight, as
  * after the session that held it ended.
  *
@@ -139,12 +178,12 @@ const isInsightNotFound = (error: unknown): boolean =>
  */
 export class SessionStore {
 	/**
-	 * The session, `initializing` until its first check. Held privately so the
+	 * The session, `INITIALIZING` until its first check. Held privately so the
 	 * store's public types do not depend on how it is kept.
 	 */
 	private readonly state = new Observable<typeof SIGNED_OUT>({
 		...SIGNED_OUT,
-		status: "initializing",
+		status: "INITIALIZING",
 	});
 
 	/**
@@ -195,11 +234,11 @@ export class SessionStore {
 	 *
 	 * @param options - What the session reads.
 	 * @param options.config - The system config. Defaults to the page's {@link Config}.
-	 * @param options.logins - The logins store. Defaults to the page's {@link Logins}.
+	 * @param options.logins - The logins store. Defaults to a new one, so each session owns its logins.
 	 */
 	constructor({
 		config = Config,
-		logins = Logins,
+		logins = new LoginsStore(),
 	}: { config?: ConfigStore; logins?: LoginsStore } = {}) {
 		this.config = config;
 		this.logins = logins;
@@ -220,10 +259,10 @@ export class SessionStore {
 	/**
 	 * Whether a user is signed in.
 	 *
-	 * @returns True once the session is `authenticated`.
+	 * @returns True once the session is `AUTHENTICATED`.
 	 */
 	get isAuthorized(): boolean {
-		return this.getSnapshot().status === "authenticated";
+		return this.getSnapshot().status === "AUTHENTICATED";
 	}
 
 	/**
@@ -231,7 +270,7 @@ export class SessionStore {
 	 * caller shares one check, so it is safe to call from every view.
 	 *
 	 * @returns The session once known. It never rejects; a failure is the
-	 * `error` status, and the next call reads the session again.
+	 * `ERROR` status, and the next call reads the session again.
 	 */
 	initialize = (): Promise<typeof SIGNED_OUT> => {
 		if (!this.initializing) {
@@ -249,6 +288,35 @@ export class SessionStore {
 	refresh = (): Promise<typeof SIGNED_OUT> => {
 		this.initializing = this.check(true);
 		return this.initializing;
+	};
+
+	/**
+	 * Read the signed in user again, such as their metadata after it changed
+	 * in another tab or app. Unlike `refresh`, it keeps the config, logins
+	 * and permissions; only `user` changes. Does nothing when signed out.
+	 *
+	 * @returns The session once known.
+	 * @throws When the user cannot be read. The session is kept.
+	 */
+	reloadUser = async (): Promise<typeof SIGNED_OUT> => {
+		const version = this.version;
+		const current = this.getSnapshot().user;
+		if (!current) {
+			return this.getSnapshot();
+		}
+
+		const [config, info] = await Promise.all([
+			this.config.load(),
+			this.withInsight((insightId) => getUserInfo(insightId)),
+		]);
+
+		// a sign in, sign out or check since replaced the user
+		if (version === this.version && this.getSnapshot().user) {
+			this.state.update({
+				user: toUser(info, config.primaryLogin, current.isAdmin),
+			});
+		}
+		return this.getSnapshot();
 	};
 
 	/**
@@ -284,10 +352,10 @@ export class SessionStore {
 
 		// the config read while signed out names none of the new logins
 		const { status, error } = await this.refresh();
-		if (status === "error" && error) {
+		if (status === "ERROR" && error) {
 			throw error;
 		}
-		return status === "authenticated";
+		return status === "AUTHENTICATED";
 	};
 
 	/**
@@ -345,7 +413,7 @@ export class SessionStore {
 	 * calls it when it learns the session ended some other way.
 	 */
 	handleUnauthorized = (): void => {
-		if (this.getSnapshot().status !== "unauthenticated") {
+		if (this.getSnapshot().status !== "UNAUTHENTICATED") {
 			this.signOut();
 		}
 	};
@@ -486,32 +554,11 @@ export class SessionStore {
 				return this.getSnapshot();
 			}
 
-			const [provider, record] = pickLogin(
-				info.logins,
-				config.primaryLogin,
-			) ?? ["", null];
-			const meta = record?.meta ?? {};
 			this.state.set({
-				status: "authenticated",
+				status: "AUTHENTICATED",
 				insightId: info.insightId,
 				error: null,
-				user: {
-					id: record?.id ?? "",
-					name: record?.name ?? "",
-					username: record?.username ?? "",
-					email: record?.email ?? "",
-					provider: provider,
-					isAdmin: isAdmin,
-					isNative: "NATIVE" in info.logins,
-					userEpoch: record?.userEpoch ?? "",
-					lastLogin: record?.lastLogin,
-					groupInfo: record?.groupInfo,
-					meta: meta,
-					defaultModels: {
-						textGeneration: asString(meta["text-generation-model"]),
-						codeGeneration: asString(meta["code-generation-model"]),
-					},
-				},
+				user: toUser(info, config.primaryLogin, isAdmin),
 			});
 		} catch (error) {
 			if (version !== this.version) {
@@ -522,7 +569,7 @@ export class SessionStore {
 			if (error instanceof UnauthorizedError) {
 				this.signOut();
 			} else {
-				this.state.update({ status: "error", error: toError(error) });
+				this.state.update({ status: "ERROR", error: toError(error) });
 
 				// a failure, such as the network at start up, is not kept: the next
 				// `initialize` reads the session again

@@ -75,8 +75,8 @@ const load = async () => {
 		TOOL: null,
 	});
 	const { InsightStore } = await import("./insight.store");
-	const { Logins } = await import("../logins");
-	return { store: new InsightStore(), Logins: Logins };
+	const { Session } = await import("../session/session.store");
+	return { store: new InsightStore(), Logins: Session.logins };
 };
 
 beforeEach(() => {
@@ -108,7 +108,7 @@ describe("InsightStore and the page's logins", () => {
 			logins: { NATIVE: "Ada" },
 			primaryLogin: "NATIVE",
 			connectorAccess: SIGNED_IN.connectorAccess,
-			status: "ready",
+			status: "READY",
 		});
 	});
 
@@ -127,7 +127,7 @@ describe("InsightStore and the page's logins", () => {
 		expect(Logins.getSnapshot()).toMatchObject({
 			logins: { NATIVE: "Ada" },
 			primaryLogin: "NATIVE",
-			status: "ready",
+			status: "READY",
 		});
 		expect(store.system?.config.logins).toEqual({ NATIVE: "Ada" });
 	});
@@ -148,7 +148,7 @@ describe("InsightStore and the page's logins", () => {
 		);
 		expect(Logins.getSnapshot()).toMatchObject({
 			primaryLogin: null,
-			status: "ready",
+			status: "READY",
 		});
 	});
 
@@ -163,7 +163,7 @@ describe("InsightStore and the page's logins", () => {
 		expect(Logins.getSnapshot()).toMatchObject({
 			logins: {},
 			primaryLogin: null,
-			status: "loading",
+			status: "LOADING",
 		});
 		expect(mockGetSystemConfig).toHaveBeenCalledTimes(1);
 		expect(mockGetLogins).not.toHaveBeenCalled();

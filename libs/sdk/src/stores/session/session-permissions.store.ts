@@ -30,24 +30,6 @@ export const getPermissionKey = (
 ): string => `${type}:${id}`;
 
 /**
- * Whether a permission lets the user change the resource.
- *
- * @param role - The permission, or nothing when not known.
- * @returns True for an owner or editor.
- */
-export const isEditRole = (role: Role | null | undefined): boolean =>
-	role === "OWNER" || role === "EDIT";
-
-/**
- * Whether a permission makes the user the resource's owner.
- *
- * @param role - The permission, or nothing when not known.
- * @returns True for an owner.
- */
-export const isOwnerRole = (role: Role | null | undefined): boolean =>
-	role === "OWNER";
-
-/**
  * No permissions known, and the shape of every snapshot: each resource's
  * entry, keyed by {@link getPermissionKey}.
  */
@@ -76,7 +58,7 @@ const NO_PERMISSIONS: Record<
  * @example
  * ```ts
  * const role = await Session.permissions.load("PROJECT", projectId);
- * if (isEditRole(role)) {
+ * if (role === "OWNER" || role === "EDIT") {
  *     // show the editor
  * }
  * ```

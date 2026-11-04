@@ -22,7 +22,7 @@ const sessionLogins = vi.hoisted(() => ({
 	primaryLogin: null,
 	connectorAccess: null,
 	availableProviders: [],
-	status: "ready" as const,
+	status: "READY" as const,
 	refresh: vi.fn(),
 	connect: vi.fn(),
 	disconnect: vi.fn(),

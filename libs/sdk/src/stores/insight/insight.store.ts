@@ -3,7 +3,7 @@ import {
 	download,
 	getRoomForInsight,
 	getRoomOptions,
-	getSystemConfig,
+	type getSystemConfig,
 	login,
 	loginLDAP,
 	loginOTP,
@@ -21,36 +21,25 @@ import {
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
-import { Logins } from "../logins";
+import { Config, loadConfigAsSent } from "../config/config.store";
 import { createRoom, RoomStore } from "../room";
+import { Session } from "../session/session.store";
 
 /**
- * Module-level cache for the system config. It is static for a page session, so
- * multiple InsightProviders (e.g. the playground's app-level provider plus a
- * room-level provider that attaches to an existing insight) can share a single
- * `/api/config` fetch instead of each re-fetching it. The in-flight promise is
- * shared so concurrent initializations dedupe to one request.
+ * The system config, read once for the page through {@link Config}, so every
+ * insight and `Session` share one `/api/config` read: the playground's
+ * app-level provider plus a room-level provider that attaches to an existing
+ * insight, for example. Concurrent reads join the one in flight, and a failed
+ * read is tried again by the next caller. It is the config as the backend
+ * sent it, as `system` has always shown it.
+ *
+ * @param force - Read it again, as after a sign in.
+ * @returns The config as the backend sent it.
  */
-let cachedSystemConfig: Awaited<ReturnType<typeof getSystemConfig>> | null =
-	null;
-let cachedSystemConfigPromise: ReturnType<typeof getSystemConfig> | null = null;
-
-const loadSystemConfig = async () => {
-	if (cachedSystemConfig) {
-		return cachedSystemConfig;
-	}
-	if (!cachedSystemConfigPromise) {
-		cachedSystemConfigPromise = getSystemConfig();
-	}
-	try {
-		cachedSystemConfig = await cachedSystemConfigPromise;
-		return cachedSystemConfig;
-	} catch (e) {
-		// allow a retry on the next initialize if the fetch failed
-		cachedSystemConfigPromise = null;
-		throw e;
-	}
-};
+const loadSystemConfig = (
+	force = false,
+): Promise<Awaited<ReturnType<typeof getSystemConfig>>> =>
+	loadConfigAsSent(Config, force);
 
 /**
  * The system information from the config, over the defaults every app reads.
@@ -205,24 +194,17 @@ export class InsightStore {
 		return this._store.insightId;
 	}
 	/**
-	 * If the insight is initialied
-	 *
-	 * @deprecated This tracks the system config, not the insight. Use
-	 * `Config.getSnapshot().status === "ready"`, or
-	 * `useConfig((state) => state.status === "ready")` in React.
+	 * Whether the system config has been read for the insight. The config is
+	 * read once for the page, through `Config`.
 	 */
 	get isInitialized() {
 		return this._store.isInitialized;
 	}
 
 	/**
-	 * If the user is authorized
-	 *
-	 * @deprecated Use `Session.isAuthorized`, or
-	 * `useSession((state) => state.status === "authenticated")` in React.
-	 * Insights do not hear about a sign in or out made through `Session` yet,
-	 * so move the code that signs in and the code that checks for a signed in
-	 * user to `Session` together.
+	 * Whether a user is signed in for the insight. It follows a sign in or out
+	 * made through `Session` too: a sign in sets up an insight that was waiting
+	 * for one, and a sign out signs it out.
 	 */
 	get isAuthorized() {
 		return this._store.isAuthorized;
@@ -319,6 +301,115 @@ export class InsightStore {
 		tool: (typeof Env)["TOOL"] | null;
 	} | null> | null = null;
 
+	/** Told whenever the insight changes on its own, as when it follows the session. */
+	private readonly listeners = new Set<() => void>();
+
+	/** Stops following the session; set while the insight is initialized. */
+	private stopFollowingSession: (() => void) | null = null;
+
+	/** The session's status as this insight last saw it, so each change is acted on once. */
+	private sessionStatus = Session.getSnapshot().status;
+
+	/** Whether the insight is setting itself up after a sign in made through the session. */
+	private isJoiningSession = false;
+
+	/**
+	 * Hear whenever the insight changes on its own rather than through one of
+	 * its actions: when a sign in or out made through `Session` signs it in
+	 * or out. `InsightProvider` listens so its views follow.
+	 *
+	 * @param listener - Called after each such change.
+	 * @returns Stops listening.
+	 */
+	subscribe = (listener: () => void): (() => void) => {
+		this.listeners.add(listener);
+		return () => {
+			this.listeners.delete(listener);
+		};
+	};
+
+	/** Tell every listener the insight changed. */
+	private notify = (): void => {
+		for (const listener of this.listeners) {
+			listener();
+		}
+	};
+
+	/**
+	 * Follow a sign in or out made through `Session`. A sign in sets up an
+	 * insight that was waiting for one; a sign out signs the insight out, as
+	 * the backend drops the session's insights then. A page that never starts
+	 * `Session` changes nothing here.
+	 */
+	private followSession = (): void => {
+		const { status } = Session.getSnapshot();
+		const previous = this.sessionStatus;
+		this.sessionStatus = status;
+		if (status === previous) {
+			return;
+		}
+
+		if (status === "AUTHENTICATED") {
+			void this.joinSession();
+			return;
+		}
+
+		if (
+			status === "UNAUTHENTICATED" &&
+			previous === "AUTHENTICATED" &&
+			this._store.isAuthorized
+		) {
+			this._store.isAuthorized = false;
+			this._store.insightId = "";
+			this._store.isReady = false;
+			this._room = null;
+			this.notify();
+		}
+	};
+
+	/**
+	 * Set the insight up for the session's user, when the session is signed in
+	 * and the insight read the config while signed out. Nothing happens while
+	 * the insight initializes (it checks again when done), once it is signed
+	 * in, or while it is already setting up.
+	 */
+	private joinSession = async (): Promise<void> => {
+		if (
+			Session.getSnapshot().status !== "AUTHENTICATED" ||
+			!this._store.isInitialized ||
+			this._store.isAuthorized ||
+			this._initializing ||
+			this.isJoiningSession
+		) {
+			return;
+		}
+
+		this.isJoiningSession = true;
+		try {
+			// the session read the config again when it signed in
+			this._store.system = createSystem(await loadSystemConfig());
+			this._store.isAuthorized = true;
+			await this.setupInsight();
+		} catch (error) {
+			console.warn(error);
+			this._store.error = error as Error;
+		} finally {
+			this.isJoiningSession = false;
+			this.notify();
+		}
+	};
+
+	/**
+	 * After the insight's own sign in or out, have a page that also uses
+	 * `Session` read the session again, so its user follows. A page that
+	 * never started `Session` reads nothing.
+	 */
+	private tellSession = (): void => {
+		if (Session.getSnapshot().status !== "INITIALIZING") {
+			void Session.refresh();
+		}
+	};
+
 	/** Methods */
 	/**
 	 * Initialize the insight.
@@ -344,6 +435,10 @@ export class InsightStore {
 		if (this._initializing) {
 			return this._initializing;
 		}
+		if (!this.stopFollowingSession) {
+			this.sessionStatus = Session.getSnapshot().status;
+			this.stopFollowingSession = Session.subscribe(this.followSession);
+		}
 		this._initializing = this.runInitialize(options);
 		try {
 			return await this._initializing;
@@ -351,6 +446,9 @@ export class InsightStore {
 			// Cleared in a finally so a rejected or aborted attempt does not wedge
 			// every later call into returning the failed promise.
 			this._initializing = null;
+
+			// a sign in through the session while this read the signed out config
+			void this.joinSession();
 		}
 	};
 
@@ -467,6 +565,8 @@ export class InsightStore {
 	 * Destroy the insight
 	 */
 	destroy = async () => {
+		this.stopFollowingSession?.();
+		this.stopFollowingSession = null;
 		try {
 			// destroy the insight
 			await this.destroyInsight();
@@ -500,7 +600,7 @@ export class InsightStore {
 
 		this._store.system = createSystem(data);
 		if (data) {
-			Logins.seed(data);
+			Session.logins.seed(data);
 		}
 		if (this._store.system) {
 			this._store.isInitialized = true;
@@ -518,21 +618,19 @@ export class InsightStore {
 	 * next config read, such as when another insight loads.
 	 */
 	private refreshSystem = async (): Promise<void> => {
-		cachedSystemConfig = null;
-		cachedSystemConfigPromise = null;
 		try {
-			const data = await loadSystemConfig();
+			const data = await loadSystemConfig(true);
 			if (data) {
 				this._store.system = createSystem(data);
-				Logins.reset();
-				Logins.seed(data);
+				Session.logins.reset();
+				Session.logins.seed(data);
 				return;
 			}
 		} catch (error) {
 			console.warn(error);
 		}
-		Logins.reset();
-		void Logins.refresh({ maxAgeMs: 0 }).catch(() => undefined);
+		Session.logins.reset();
+		void Session.logins.refresh({ maxAgeMs: 0 }).catch(() => undefined);
 	};
 
 	/**
@@ -719,10 +817,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * @param credentials
 		 * @returns
 		 * @deprecated Use `Session.login`, which takes the same credentials and
-		 * throws when the sign in is refused rather than returning false.
-		 * Insights do not hear about a sign in or out made through `Session`
-		 * yet, so move the code that signs in and the code that checks for a
-		 * signed in user to `Session` together.
+		 * throws when the sign in is refused rather than returning false. A sign
+		 * in is for the whole page, not one insight: every insight follows it.
 		 */
 		login: async (
 			credentials:
@@ -788,6 +884,9 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 					// get the new insight with the new user
 					await this.setupInsight();
+
+					// a page that also uses `Session` reads the new user
+					this.tellSession();
 				} else {
 					// track that the user is unauthorized
 					this._store.isAuthorized = false;
@@ -807,9 +906,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 *
 		 * @deprecated Use `Session.logout`, which also clears the user's logins
 		 * and permissions, and throws when the backend refuses rather than
-		 * returning false. Insights do not hear about a sign in or out made
-		 * through `Session` yet, so move the code that signs in and the code
-		 * that checks for a signed in user to `Session` together.
+		 * returning false. A sign out is for the whole page: every insight and
+		 * room is signed out with it.
 		 */
 		logout: async (): Promise<boolean> => {
 			try {
@@ -830,9 +928,11 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				// session that ended: forget them, and the next login reads them
 				// again. Nothing is read now, so views still on screen show the
 				// logins as unknown rather than signed out.
-				cachedSystemConfig = null;
-				cachedSystemConfigPromise = null;
-				Logins.reset();
+				Config.reset();
+				Session.logins.reset();
+
+				// a page that also uses `Session` reads the signed out session
+				this.tellSession();
 
 				// success
 				return true;

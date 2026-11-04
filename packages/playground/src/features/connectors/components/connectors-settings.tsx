@@ -158,7 +158,7 @@ export const ConnectorsSettings = () => {
 		<div className="flex flex-col gap-6">
 			<Muted>{t("connections.appsDescription")}</Muted>
 
-			{connections.status === "error" ? (
+			{connections.status === "ERROR" ? (
 				<Alert variant="destructive">
 					<TriangleAlertIcon aria-hidden />
 					<AlertTitle>{t("providers.loadErrorTitle")}</AlertTitle>
@@ -192,7 +192,7 @@ export const ConnectorsSettings = () => {
 				</Alert>
 			) : null}
 
-			{connections.status === "loading"
+			{connections.status === "LOADING"
 				? SKELETON_SECTIONS.map((section) => (
 						<Skeleton
 							key={section}

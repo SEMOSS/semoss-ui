@@ -7,12 +7,14 @@ description: "Use when working with @semoss/sdk rooms, AskRoom chat jobs, RunAge
 
 This self-contained guide ships with the SDK. Its signatures and lifecycle notes
 describe this package's implementation, not a guarantee about every SEMOSS server.
-Use an authenticated, configured SDK environment and a ready insight. Pass actual
+Use a signed in session (`Session`; see the SDK's `session.skill.md`) and a ready
+insight for the room's workspace. Pass actual
 SEMOSS model engine IDs, not provider model names such as `gpt-4o`.
 
 Import core functions, `RoomStore`, `AgentStore`, and types from `@semoss/sdk`.
 React hooks/providers such as `useInsight` and `InsightProvider` live under
-`@semoss/sdk/react`. There is no core export named `Room`. Framework-independent
+`@semoss/sdk/react`. A room's `InsightProvider` is its workspace; sign in and the
+user come from `Session` and `useSession`, not from the room's insight. There is no core export named `Room`. Framework-independent
 state does not imply that all SDK entry points are safe in Node or SSR environments.
 
 ## Agent Profile Images

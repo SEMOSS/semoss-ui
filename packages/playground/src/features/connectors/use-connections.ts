@@ -39,7 +39,7 @@ export interface ProviderConnection {
 /** What {@link useConnections} returns. */
 export interface UseConnectionsResult {
 	/** Whether the session's logins have loaded. */
-	status: "loading" | "ready" | "error";
+	status: "LOADING" | "READY" | "ERROR";
 	/** Every provider, in display order. */
 	connections: ProviderConnection[];
 	/** The provider whose sign in popup is open, if any. */

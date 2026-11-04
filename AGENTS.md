@@ -35,6 +35,8 @@ skills supplement the standard; they do not waive reading it for React work.
 - [Mobile development](./skills/mobile-development.skill.md): responsive and touch interfaces.
 - [React form builder](./skills/react-form-builder.skill.md): form fields, validation, and submission.
 - [SDK chat](./skills/sdk-chat.skill.md): rooms, messages, agent runs, approvals, and polling lifecycle.
+- [SDK session](./libs/sdk/skills/session.skill.md): sign in, the user, config, permissions, and
+  which insight a pixel runs in.
 - [Design rulebook](./DESIGN.md): UI composition and styling.
 
 Lint and formatting configuration lives in [biome.json](./biome.json).
