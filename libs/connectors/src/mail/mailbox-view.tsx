@@ -17,7 +17,6 @@ import {
 	DropdownMenuTrigger,
 	Muted,
 	Toggle,
-	useDebouncedValue,
 } from "@semoss/ui/next";
 import { ConnectorIconButton } from "../components/connector-icon-button";
 import { ConnectorItemRow } from "../components/connector-item-row";
@@ -39,6 +38,7 @@ import {
 	type ConnectorSaveRequest,
 	useConnectorSaver,
 } from "../core/use-connector-saver";
+import { useConnectorSearch } from "../core/use-connector-search";
 import { useReturnFocus } from "../core/use-return-focus";
 import { getMailFolderLabel, INBOX, orderMailFolders } from "./mail.folders";
 import { mailMessageFileName, mailMessageToMarkdown } from "./mail.markdown";
@@ -115,14 +115,11 @@ export const MailboxView = (props: MailboxViewProps) => {
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver(app.service, props);
 	const [folder, setFolder] = useState(INBOX);
-	const [search, setSearch] = useState("");
+	const { text: search, setText: setSearch, searched } = useConnectorSearch();
 	const [isUnreadOnly, setIsUnreadOnly] = useState(false);
 	const [isGrouped, setIsGrouped] = useState(true);
 	const [openConversation, setOpenConversation] =
 		useState<MailConversation | null>(null);
-	const debouncedSearch = useDebouncedValue(search.trim());
-	// clearing the search takes effect at once rather than after the delay
-	const searched = search.trim() === "" ? "" : debouncedSearch;
 	const { listRef, rememberItem } = useReturnFocus(openConversation !== null);
 	const serviceName = t(app.nameKey);
 

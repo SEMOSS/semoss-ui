@@ -185,6 +185,7 @@
 		"openCalendar": "Abrir calendario"
 	},
 	"teams": {
+		"pageError": "No se pudieron cargar más mensajes.",
 		"team": "Equipo",
 		"channel": "Canal",
 		"chooseTeam": "Elige un equipo",

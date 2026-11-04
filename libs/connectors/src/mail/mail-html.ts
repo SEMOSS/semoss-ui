@@ -1,4 +1,4 @@
-import DOMPurify, { type Config } from "dompurify";
+import createDOMPurify, { type Config, type DOMPurify } from "dompurify";
 import type { MailDisplayBody, MailInlineImage } from "./mail.types";
 
 /** Elements an email body never keeps: active content, forms, and other documents. */
@@ -39,6 +39,57 @@ const SANITIZE_CONFIG: Config = {
 
 /** A CSS `url()`, its address with or without the quotes around it. */
 const CSS_URL = /url\(\s*(["']?)(.*?)\1\s*\)/gi;
+
+/**
+ * The sanitizer mail uses, made for mail alone, so the hooks other code adds
+ * to the shared one, as diagram rendering does, never change what an email
+ * keeps.
+ */
+let mailPurifier: DOMPurify | undefined;
+
+/**
+ * The sanitizer mail uses, made the first time an email is read.
+ *
+ * @return The sanitizer.
+ */
+const getMailPurifier = (): DOMPurify => {
+	mailPurifier ??= createDOMPurify(window);
+	return mailPurifier;
+};
+
+/** What a document shows when its policy cannot be put first: nothing. */
+const UNSHOWN_DOCUMENT: MailHtmlDocument = {
+	html: "",
+	hasContent: false,
+	hasRemoteImages: false,
+	hasEmbeddedImages: false,
+	hasQuotedHistory: false,
+};
+
+/**
+ * Take the comment markers out of an email's style elements. Outlook writes
+ * its CSS inside an HTML comment, for mail readers older than CSS, and the
+ * sanitizer reads a comment there as markup and drops the whole style with
+ * every rule in it. The email is read into an inert document for this, so no
+ * pattern has to find where a style ends.
+ *
+ * @param html - The email's HTML body.
+ * @return The HTML, its styles' comment markers taken out.
+ */
+const uncommentStyles = (html: string): string => {
+	if (!html.includes("<!--")) {
+		return html;
+	}
+	const doc = new DOMParser().parseFromString(html, "text/html");
+	const styles = doc.querySelectorAll("style");
+	if (styles.length === 0) {
+		return html;
+	}
+	for (const style of styles) {
+		style.textContent = (style.textContent ?? "").replace(/<!--|-->/g, "");
+	}
+	return doc.documentElement.outerHTML;
+};
 
 /**
  * Where the history an email quotes begins, in the markup each mail app writes
@@ -169,7 +220,7 @@ const readContentId = (src: string): string | undefined => {
  */
 const parseMailHtml = (html: string): Document => {
 	const doc = new DOMParser().parseFromString(
-		DOMPurify.sanitize(html, SANITIZE_CONFIG),
+		getMailPurifier().sanitize(uncommentStyles(html), SANITIZE_CONFIG),
 		"text/html",
 	);
 	for (const element of doc.querySelectorAll("[background]")) {
@@ -366,7 +417,9 @@ export const buildMailHtmlDocument = (
 			}
 		}
 	}
-	for (const link of doc.querySelectorAll("a")) {
+	// an image map's areas are links too, which would otherwise open inside the
+	// frame
+	for (const link of doc.querySelectorAll("a, area")) {
 		const href = getMailLink(link.getAttribute("href") ?? "");
 		if (href) {
 			link.setAttribute("href", href);
@@ -378,13 +431,16 @@ export const buildMailHtmlDocument = (
 	}
 
 	// the email's own styles come after these and override them, since the
-	// :where() rules carry no weight
+	// :where() rules carry no weight; Outlook writes every line as its own
+	// MsoNormal paragraph, which its CSS gives no margin, so one without that
+	// CSS is not spaced as a paragraph either
 	const baseStyle = doc.createElement("style");
 	baseStyle.textContent =
 		"html{color-scheme:light}" +
 		"body{margin:0;padding:12px;background:white;color:black;overflow-wrap:anywhere}" +
 		":where(body){font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.5}" +
 		":where(p){margin-block:0 1em}" +
+		":where(.MsoNormal){margin:0}" +
 		":where(blockquote){margin-inline:0;padding-inline-start:1em;border-inline-start:2px solid currentColor}" +
 		"img{max-width:100%;height:auto}" +
 		"table{max-width:100%}" +
@@ -393,38 +449,56 @@ export const buildMailHtmlDocument = (
 	// the frame is as tall as the email, measured from outside, so an email
 	// that sizes itself to its window, or scrolls on its own, would leave a
 	// second scroll bar inside the frame; this comes last, after every style
-	// the email has, and the body's own style has the last word over those
+	// the email has, and the body's own style has the last word over those.
+	// The body holds its floats and its children's margins, so its box is all
+	// there is to measure.
 	const fitStyle = doc.createElement("style");
 	fitStyle.textContent =
 		"html,body{height:auto!important;min-height:0!important;max-height:none!important}" +
 		"html{overflow-y:hidden!important;overflow-x:auto!important}" +
-		"body{overflow:visible!important}";
+		"body{overflow:visible!important;display:flow-root!important}";
 	doc.body.append(fitStyle);
 	doc.body.style.setProperty("height", "auto", "important");
 	doc.body.style.setProperty("min-height", "0", "important");
 	doc.body.style.setProperty("overflow", "visible", "important");
 
-	const clean = DOMPurify.sanitize(doc.documentElement.outerHTML, {
+	const clean = getMailPurifier().sanitize(doc.documentElement.outerHTML, {
 		...SANITIZE_CONFIG,
 		ADD_ATTR: ["target", "rel", "referrerpolicy"],
 	});
-	// the policy leads the head, so nothing the email declares can load before
-	// it, and pictures load only once the reader asks: its own as data, those
-	// on the web over https
+	// pictures load only once the reader asks: its own as data, those on the
+	// web over https
 	const imageSources = [
 		options.embeddedImages ? "data:" : undefined,
 		options.isRemoteImagesShown ? "https:" : undefined,
 	].filter((source) => source !== undefined);
-	const policy = `default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src ${
-		imageSources.length > 0 ? imageSources.join(" ") : "'none'"
-	}; base-uri 'none'; form-action 'none'`;
+	const page = new DOMParser().parseFromString(clean, "text/html");
+	const policy = page.createElement("meta");
+	policy.setAttribute("http-equiv", "Content-Security-Policy");
+	policy.setAttribute(
+		"content",
+		`default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src ${
+			imageSources.length > 0 ? imageSources.join(" ") : "'none'"
+		}; base-uri 'none'; form-action 'none'`,
+	);
+	const referrer = page.createElement("meta");
+	referrer.setAttribute("name", "referrer");
+	referrer.setAttribute("content", "no-referrer");
+	// the policy leads the head, so nothing the email declares can load before
+	// it; it is placed in the document rather than written into the markup, so
+	// nothing the email's own markup holds can move it, and an email it cannot
+	// lead is not shown at all
+	page.head.prepend(policy, referrer);
+	if (
+		page.head.firstElementChild !== policy ||
+		page.querySelectorAll("meta").length !== 2
+	) {
+		return UNSHOWN_DOCUMENT;
+	}
 	return {
 		// a doctype keeps the frame out of quirks mode, where the body is
 		// stretched to the window and cannot be measured
-		html: `<!DOCTYPE html>${clean.replace(
-			"<head>",
-			`<head><meta http-equiv="Content-Security-Policy" content="${policy}">`,
-		)}`,
+		html: `<!DOCTYPE html>${page.documentElement.outerHTML}`,
 		hasContent: hasContent,
 		hasRemoteImages: hasRemoteImages,
 		hasEmbeddedImages: hasEmbeddedImages,

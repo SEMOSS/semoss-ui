@@ -185,6 +185,7 @@
 		"openCalendar": "Open calendar"
 	},
 	"teams": {
+		"pageError": "Could not load more messages.",
 		"team": "Team",
 		"channel": "Channel",
 		"chooseTeam": "Choose a team",

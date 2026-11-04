@@ -185,6 +185,7 @@
 		"openCalendar": "カレンダーを開く"
 	},
 	"teams": {
+		"pageError": "追加のメッセージを読み込めませんでした。",
 		"team": "チーム",
 		"channel": "チャネル",
 		"chooseTeam": "チームを選択",

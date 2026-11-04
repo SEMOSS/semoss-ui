@@ -8,6 +8,9 @@ import {
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import {
 	parseMailPicturePreference,
@@ -25,17 +28,21 @@ export const MailPicturesMenu = () => {
 
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-7 shrink-0 text-muted-foreground"
-					aria-label={t("mail.pictureSettings")}
-					title={t("mail.pictureSettings")}
-				>
-					<ImageIcon aria-hidden className="size-4" />
-				</Button>
-			</DropdownMenuTrigger>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="size-7 shrink-0 text-muted-foreground"
+							aria-label={t("mail.pictureSettings")}
+						>
+							<ImageIcon aria-hidden className="size-4" />
+						</Button>
+					</DropdownMenuTrigger>
+				</TooltipTrigger>
+				<TooltipContent>{t("mail.pictureSettings")}</TooltipContent>
+			</Tooltip>
 			<DropdownMenuContent align="end">
 				<DropdownMenuLabel>
 					{t("mail.picturesInEmails")}

@@ -42,6 +42,7 @@ const parseMailFolder = (entry: unknown): MailFolder | null => {
 			depth !== undefined && Number.isSafeInteger(depth) && depth > 0
 				? depth
 				: 0,
+		wellKnownName: readNonBlankString(entry.wellKnownName)?.toLowerCase(),
 		totalCount: readNumber(entry.totalCount),
 		unreadCount: readNumber(entry.unreadCount),
 	};
@@ -77,9 +78,22 @@ const parseMailAttachment = (entry: unknown): MailAttachment | null => {
 /** A media type a browser shows as a picture, as the backend writes it. */
 const IMAGE_TYPE = /^image\/[a-z0-9.+-]+$/;
 
-/** Standard base64, padded, the way the backend encodes a picture. */
-const BASE64 =
-	/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+/**
+ * The letters of standard base64 with its padding. A picture runs to millions
+ * of them, so the check is one plain run, which no length can overflow, with
+ * the padded length checked apart.
+ */
+const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
+
+/**
+ * Whether text is standard padded base64, the way the backend encodes a
+ * picture.
+ *
+ * @param value - The text.
+ * @return True when it is.
+ */
+const isBase64 = (value: string): boolean =>
+	value.length % 4 === 0 && BASE64.test(value);
 
 const parseMailInlineImage = (entry: unknown): MailInlineImage | null => {
 	if (!isRecord(entry)) {
@@ -94,7 +108,7 @@ const parseMailInlineImage = (entry: unknown): MailInlineImage | null => {
 		!IMAGE_TYPE.test(contentType) ||
 		typeof data !== "string" ||
 		data === "" ||
-		!BASE64.test(data)
+		!isBase64(data)
 	) {
 		return null;
 	}

@@ -42,7 +42,12 @@ describe("mail folders", () => {
 			"sent",
 			"old",
 		]);
-		expect(ordered[0]).toEqual({ id: INBOX, name: "Inbox", depth: 0 });
+		expect(ordered[0]).toEqual({
+			id: INBOX,
+			name: "Inbox",
+			depth: 0,
+			wellKnownName: INBOX,
+		});
 	});
 
 	it("keeps a nested folder that happens to be called Inbox", () => {
@@ -62,7 +67,7 @@ describe("mail folders", () => {
 
 	it("offers the inbox even when the mailbox does not list it", () => {
 		expect(orderMailFolders([], "Inbox")).toEqual([
-			{ id: INBOX, name: "Inbox", depth: 0 },
+			{ id: INBOX, name: "Inbox", depth: 0, wellKnownName: INBOX },
 		]);
 	});
 
@@ -74,6 +79,46 @@ describe("mail folders", () => {
 			"Archive",
 		);
 		expect(getMailFolderLabel({ id: "x", name: "X", depth: 2 })).toBe("X");
+	});
+
+	it("finds the inbox by the name the mailbox knows it by, in any language", () => {
+		const ordered = orderMailFolders(
+			[
+				folder("archiv", "Archiv", 0),
+				{
+					...folder("inbox-id", "Posteingang", 0),
+					wellKnownName: INBOX,
+					unreadCount: 3,
+				},
+				folder("projekte", "Posteingang/Projekte", 1, "inbox-id"),
+				folder("gesendet", "Gesendete Elemente", 0),
+			],
+			"Inbox",
+		);
+		expect(ordered.map((entry) => entry.id)).toEqual([
+			INBOX,
+			"projekte",
+			"archiv",
+			"gesendet",
+		]);
+		expect(ordered[0].unreadCount).toBe(3);
+	});
+
+	it("prefers the folder the mailbox names over one called Inbox", () => {
+		const ordered = orderMailFolders(
+			[
+				folder("named-inbox", "Inbox", 0),
+				{
+					...folder("real", "Bandeja de entrada", 0),
+					wellKnownName: INBOX,
+				},
+			],
+			"Inbox",
+		);
+		expect(ordered.map((entry) => entry.id)).toEqual([
+			INBOX,
+			"named-inbox",
+		]);
 	});
 
 	it("keeps the inbox's counts under its well known name", () => {
@@ -91,6 +136,7 @@ describe("mail folders", () => {
 			id: INBOX,
 			name: "Inbox",
 			depth: 0,
+			wellKnownName: INBOX,
 			unreadCount: 4,
 			totalCount: 9,
 		});

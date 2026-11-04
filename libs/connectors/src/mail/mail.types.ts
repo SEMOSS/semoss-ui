@@ -16,6 +16,11 @@ export interface MailFolder {
 	path?: string;
 	/** How many folders it sits in, 0 at the top of the mailbox. */
 	depth: number;
+	/**
+	 * The name the mailbox itself knows the folder by, such as `inbox`, in
+	 * lower case, whatever the folder is called in the user's language.
+	 */
+	wellKnownName?: string;
 	totalCount?: number;
 	unreadCount?: number;
 }

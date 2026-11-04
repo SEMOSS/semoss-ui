@@ -51,6 +51,25 @@ describe("MICROSOFT_PIXELS", () => {
 		).not.toContain("chatsOnly");
 	});
 
+	it("reads a further page of a search from where the last one stopped", () => {
+		expect(
+			MICROSOFT_PIXELS.teamsSearchMessages({
+				search: "x",
+				limit: 25,
+				offset: 31,
+			}),
+		).toBe(
+			'MicrosoftTeamsSearchMessages(search=["<encode>x</encode>"], limit=[25], offset=[31]);',
+		);
+		expect(
+			MICROSOFT_PIXELS.teamsSearchMessages({
+				search: "x",
+				limit: 25,
+				offset: 0,
+			}),
+		).not.toContain("offset");
+	});
+
 	it("names a reply only for a reply", () => {
 		const root = MICROSOFT_PIXELS.teamsDownloadAttachment({
 			teamId: "t",

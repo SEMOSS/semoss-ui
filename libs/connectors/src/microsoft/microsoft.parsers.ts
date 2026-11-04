@@ -410,5 +410,15 @@ export const parseTeamsMessageSearch = (
 	).sort((a, b) =>
 		(b.createdDateTime ?? "").localeCompare(a.createdDateTime ?? ""),
 	);
-	return { hits: hits, hasMore: record.hasMore === true };
+	const nextOffset = readNumber(record.nextOffset);
+	return {
+		hits: hits,
+		hasMore: record.hasMore === true,
+		nextOffset:
+			nextOffset !== undefined &&
+			Number.isSafeInteger(nextOffset) &&
+			nextOffset >= 0
+				? nextOffset
+				: undefined,
+	};
 };

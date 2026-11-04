@@ -125,6 +125,7 @@ export const MailFolderPicker = ({
 			</PopoverTrigger>
 			<PopoverContent
 				align="start"
+				// design-lint-disable-next-line arbitrary-size -- the tree is as wide as its trigger, which only Radix measures, through this variable
 				className="max-h-96 w-[var(--radix-popover-trigger-width)] min-w-56 overflow-y-auto p-1"
 			>
 				<TreeView

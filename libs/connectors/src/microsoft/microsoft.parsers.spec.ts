@@ -217,6 +217,18 @@ describe("Teams message search", () => {
 		});
 		expect(page.hits[0].summary).toBe("");
 		expect(page.hasMore).toBe(true);
+		expect(page.nextOffset).toBe(25);
+	});
+
+	it("reads a missing or malformed next offset as unknown", () => {
+		for (const nextOffset of [undefined, -1, 2.5, "25"]) {
+			expect(
+				parseTeamsMessageSearch({
+					messages: [],
+					nextOffset: nextOffset,
+				}).nextOffset,
+			).toBeUndefined();
+		}
 	});
 
 	it("refuses a response without messages", () => {

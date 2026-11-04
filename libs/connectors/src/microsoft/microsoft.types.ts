@@ -120,10 +120,15 @@ export interface TeamsMessageSearchHit {
 	webUrl?: string;
 }
 
-/** One read of `MicrosoftTeamsSearchMessages`. */
+/** One read of `MicrosoftTeamsSearchMessages`, or the pages of one search so far. */
 export interface TeamsMessageSearchPage {
 	/** The messages found, newest first. */
 	hits: TeamsMessageSearchHit[];
 	/** Whether Microsoft holds more matches than were read. */
 	hasMore: boolean;
+	/**
+	 * Where the next page starts. The reactor counts every match it read,
+	 * channel posts it left out included, so it is not the number of hits.
+	 */
+	nextOffset?: number;
 }

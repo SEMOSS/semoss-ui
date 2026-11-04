@@ -2,7 +2,7 @@ import { MessageCircleIcon, RefreshCwIcon, UsersIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
-import { cn, useDebouncedValue } from "@semoss/ui/next";
+import { cn } from "@semoss/ui/next";
 import { ConnectorIconButton } from "../../components/connector-icon-button";
 import { ConnectorItemRow } from "../../components/connector-item-row";
 import { ConnectorList } from "../../components/connector-list";
@@ -16,6 +16,7 @@ import {
 	type ConnectorSaveRequest,
 	useConnectorSaver,
 } from "../../core/use-connector-saver";
+import { useConnectorSearch } from "../../core/use-connector-search";
 import { useReturnFocus } from "../../core/use-return-focus";
 import {
 	teamsChatFileName,
@@ -57,10 +58,11 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("teams-chats", props);
 	const [openChat, setOpenChat] = useState<OpenChat | null>(null);
-	const [search, setSearch] = useState("");
-	const debouncedSearch = useDebouncedValue(search.trim());
-	// clearing the search takes effect at once rather than after the delay
-	const activeSearch = search.trim() === "" ? "" : debouncedSearch;
+	const {
+		text: search,
+		setText: setSearch,
+		searched: activeSearch,
+	} = useConnectorSearch();
 	const { listRef, rememberItem } = useReturnFocus(openChat !== null);
 	const serviceName = t("services.teamsChats");
 
@@ -142,6 +144,7 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 						search={activeSearch}
 						query={messageSearch.query}
 						onShowMore={messageSearch.onShowMore}
+						pageError={messageSearch.pageError}
 						chats={query.data ?? []}
 						saver={saver}
 						getChatRequest={chatRequest}

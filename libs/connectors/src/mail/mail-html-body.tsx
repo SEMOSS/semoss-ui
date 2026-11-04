@@ -5,6 +5,7 @@ import {
 	useEffect,
 	useId,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -16,7 +17,10 @@ import { useMailPicturePreference } from "./use-mail-picture-preference";
 /** How tall the frame is before the email in it has been measured. */
 const MIN_FRAME_HEIGHT = 80;
 
-/** The tallest the frame grows, so a runaway email cannot take over the page. */
+/**
+ * The tallest the frame grows, so a runaway email cannot take over the page;
+ * past it, the rest of the email scrolls inside the frame.
+ */
 const MAX_FRAME_HEIGHT = 20_000;
 
 /** Where a read of the pictures an email embeds stands. */
@@ -80,6 +84,11 @@ export const MailHtmlBody = ({
 	const [attempt, setAttempt] = useState(0);
 	const [isQuotedHistoryShown, setIsQuotedHistoryShown] = useState(false);
 	const [height, setHeight] = useState(MIN_FRAME_HEIGHT);
+	// counts the picture actions taken, so focus can follow a button that
+	// goes away once what it showed is shown
+	const [pictureAction, setPictureAction] = useState(0);
+	const barRef = useRef<HTMLDivElement>(null);
+	const frameRef = useRef<HTMLIFrameElement | null>(null);
 	const frameId = useId();
 	const remoteImageLabel = t("mail.remoteImage");
 	const embeddedImageLabel = t("mail.embeddedImage");
@@ -120,6 +129,25 @@ export const MailHtmlBody = ({
 		embeddedRead.status === "loading" && !wantsEmbedded
 			? "idle"
 			: embeddedRead.status;
+	const isRemoteHidden = built.hasRemoteImages && !isRemoteImagesShown;
+	const isEmbeddedHidden =
+		built.hasEmbeddedImages && embeddedStatus !== "ready";
+	const omitted =
+		embeddedRead.status === "ready" ? embeddedRead.result.omitted : 0;
+	const hiddenText = isRemoteHidden
+		? t("mail.picturesHidden")
+		: isEmbeddedHidden
+			? t("mail.embeddedPicturesHidden")
+			: "";
+	const statusText =
+		embeddedStatus === "loading"
+			? t("mail.embeddedPicturesLoading")
+			: embeddedStatus === "error"
+				? t("mail.embeddedPicturesFailed")
+				: omitted > 0
+					? t("mail.embeddedPicturesOmitted", { count: omitted })
+					: "";
+	const hasPictureBar = hiddenText !== "" || statusText !== "";
 
 	// attempt is not read: a new value is the signal to read again
 	// biome-ignore lint/correctness/useExhaustiveDependencies: retry trigger
@@ -146,31 +174,64 @@ export const MailHtmlBody = ({
 		};
 	}, [wantsEmbedded, onLoadEmbeddedImages, attempt]);
 
+	// a picture button goes once what it showed is shown, which would drop
+	// keyboard focus on the page; it moves to the bar's next button, or to the
+	// email itself, unless the reader has already moved it somewhere else
+	useEffect(() => {
+		if (pictureAction === 0 || embeddedStatus === "loading") {
+			return;
+		}
+		const focused = document.activeElement;
+		if (focused && focused !== document.body) {
+			return;
+		}
+		const next = hasPictureBar
+			? barRef.current?.querySelector<HTMLElement>("button")
+			: frameRef.current;
+		next?.focus();
+	}, [pictureAction, embeddedStatus, hasPictureBar]);
+
 	// the frame runs no script, so it is measured from here each time its
-	// document loads and whenever its body changes size
+	// document loads and whenever it changes size
 	const measureFrame = useCallback((frame: HTMLIFrameElement | null) => {
+		frameRef.current = frame;
 		if (!frame) {
 			return;
 		}
 		let observer: ResizeObserver | undefined;
 		const measure = () => {
-			const frameBody = frame.contentDocument?.body;
-			if (frameBody) {
-				setHeight(
-					Math.max(
-						MIN_FRAME_HEIGHT,
-						Math.ceil(frameBody.getBoundingClientRect().height),
-					),
-				);
+			const frameWindow = frame.contentWindow;
+			const root = frame.contentDocument?.documentElement;
+			if (!frameWindow || !root) {
+				return;
 			}
+			// the page's own box holds the body with its margins, floats, and
+			// children; a scroll bar across a wide email sits below it, in the
+			// window
+			const scrollBar = Math.max(
+				0,
+				frameWindow.innerHeight - root.clientHeight,
+			);
+			const needed =
+				Math.ceil(root.getBoundingClientRect().height) + scrollBar;
+			// past the tallest the frame grows, the rest scrolls inside it, so
+			// none of the email is out of reach
+			root.style.setProperty(
+				"overflow-y",
+				needed > MAX_FRAME_HEIGHT ? "auto" : "hidden",
+				"important",
+			);
+			setHeight(Math.max(MIN_FRAME_HEIGHT, needed));
 		};
 		const handleLoad = () => {
 			observer?.disconnect();
+			const root = frame.contentDocument?.documentElement;
 			const frameBody = frame.contentDocument?.body;
-			if (!frameBody) {
+			if (!root || !frameBody) {
 				return;
 			}
 			observer = new ResizeObserver(measure);
+			observer.observe(root);
 			observer.observe(frameBody);
 			measure();
 		};
@@ -179,6 +240,7 @@ export const MailHtmlBody = ({
 		return () => {
 			frame.removeEventListener("load", handleLoad);
 			observer?.disconnect();
+			frameRef.current = null;
 		};
 	}, []);
 
@@ -186,24 +248,24 @@ export const MailHtmlBody = ({
 		return fallback;
 	}
 
-	const isRemoteHidden = built.hasRemoteImages && !isRemoteImagesShown;
-	const isEmbeddedHidden =
-		built.hasEmbeddedImages && embeddedStatus !== "ready";
-	const omitted =
-		embeddedRead.status === "ready" ? embeddedRead.result.omitted : 0;
-	const hiddenText = isRemoteHidden
-		? t("mail.picturesHidden")
-		: isEmbeddedHidden
-			? t("mail.embeddedPicturesHidden")
-			: "";
-	const statusText =
-		embeddedStatus === "loading"
-			? t("mail.embeddedPicturesLoading")
-			: embeddedStatus === "error"
-				? t("mail.embeddedPicturesFailed")
-				: omitted > 0
-					? t("mail.embeddedPicturesOmitted", { count: omitted })
-					: "";
+	/** Show the pictures the email embeds, or read them again after a failure. */
+	const handleEmbeddedAction = () => {
+		if (embeddedStatus === "loading") {
+			return;
+		}
+		if (embeddedStatus === "error") {
+			setAttempt((previous) => previous + 1);
+		} else {
+			setIsEmbeddedRequested(true);
+		}
+		setPictureAction((previous) => previous + 1);
+	};
+
+	/** Show the pictures the email has on the web. */
+	const handleRemoteAction = () => {
+		setIsRemoteRequested(true);
+		setPictureAction((previous) => previous + 1);
+	};
 
 	return (
 		<div className="flex min-w-0 flex-col gap-2">
@@ -213,8 +275,11 @@ export const MailHtmlBody = ({
 			) : null}
 			{/* only while something is held back or there is news of it, so
 			    an email showing all its pictures has no bar */}
-			{hiddenText !== "" || statusText !== "" ? (
-				<div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md border border-border bg-muted/30 px-3 py-1.5">
+			{hasPictureBar ? (
+				<div
+					ref={barRef}
+					className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md border border-border bg-muted/30 px-3 py-1.5"
+				>
 					{hiddenText ? (
 						<>
 							<ImageOffIcon
@@ -226,34 +291,28 @@ export const MailHtmlBody = ({
 							</Muted>
 						</>
 					) : null}
+					{/* one button through showing, loading, and trying again,
+					    so it keeps focus while its read runs */}
 					{isEmbeddedHidden && onLoadEmbeddedImages ? (
-						embeddedStatus === "error" ? (
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-7 text-xs"
-								aria-controls={frameId}
-								onClick={() =>
-									setAttempt((previous) => previous + 1)
-								}
-							>
-								{t("common.retry")}
-							</Button>
-						) : (
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-7 text-xs"
-								aria-controls={frameId}
-								aria-busy={embeddedStatus === "loading"}
-								disabled={embeddedStatus === "loading"}
-								onClick={() => setIsEmbeddedRequested(true)}
-							>
-								{embeddedStatus === "loading"
-									? t("mail.loadingPictures")
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-7 text-xs aria-disabled:opacity-50"
+							aria-controls={frameId}
+							aria-busy={
+								embeddedStatus === "loading" || undefined
+							}
+							aria-disabled={
+								embeddedStatus === "loading" || undefined
+							}
+							onClick={handleEmbeddedAction}
+						>
+							{embeddedStatus === "loading"
+								? t("mail.loadingPictures")
+								: embeddedStatus === "error"
+									? t("common.retry")
 									: t("mail.showEmbeddedPictures")}
-							</Button>
-						)
+						</Button>
 					) : null}
 					{isRemoteHidden ? (
 						<Button
@@ -261,7 +320,7 @@ export const MailHtmlBody = ({
 							size="sm"
 							className="h-7 text-xs"
 							aria-controls={frameId}
-							onClick={() => setIsRemoteRequested(true)}
+							onClick={handleRemoteAction}
 						>
 							{t("mail.showWebPictures")}
 						</Button>

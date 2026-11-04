@@ -235,6 +235,40 @@ describe("mail", () => {
 		).toBeUndefined();
 	});
 
+	it("checks a picture of millions of letters without overflowing", () => {
+		const large = `${"A".repeat(4_500_000)}AA==`;
+		const read = (data: string) =>
+			parseMailMessageDetail({
+				id: "m1",
+				displayBody: {
+					contentType: "html",
+					content: '<img src="cid:big">',
+					inlineImages: [
+						{
+							contentId: "big",
+							contentType: "image/png",
+							data: data,
+						},
+					],
+				},
+			}).displayBody?.inlineImages;
+		expect(read(large)).toHaveLength(1);
+		expect(read(`${"A".repeat(4_500_001)}`)).toEqual([]);
+		expect(read("AA=A")).toEqual([]);
+		expect(read("AAA===")).toEqual([]);
+	});
+
+	it("reads the name the mailbox knows a folder by, in lower case", () => {
+		const [inbox, other] = parseMailFolders({
+			folders: [
+				{ id: "AAMk1", name: "Posteingang", wellKnownName: "Inbox" },
+				{ id: "AAMk2", name: "Projekte", wellKnownName: "  " },
+			],
+		});
+		expect(inbox.wellKnownName).toBe("inbox");
+		expect(other.wellKnownName).toBeUndefined();
+	});
+
 	it("reads a malformed folder depth as the top of the mailbox", () => {
 		expect(
 			parseMailFolders({

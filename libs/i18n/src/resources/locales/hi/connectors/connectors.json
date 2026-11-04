@@ -185,6 +185,7 @@
 		"openCalendar": "कैलेंडर खोलें"
 	},
 	"teams": {
+		"pageError": "और संदेश लोड नहीं हो सके।",
 		"team": "टीम",
 		"channel": "चैनल",
 		"chooseTeam": "एक टीम चुनें",

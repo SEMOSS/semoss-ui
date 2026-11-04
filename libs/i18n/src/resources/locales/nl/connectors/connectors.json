@@ -185,6 +185,7 @@
 		"openCalendar": "Agenda openen"
 	},
 	"teams": {
+		"pageError": "Meer berichten konden niet worden geladen.",
 		"team": "Team",
 		"channel": "Kanaal",
 		"chooseTeam": "Kies een team",

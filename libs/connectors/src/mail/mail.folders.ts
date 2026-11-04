@@ -18,14 +18,24 @@ export const orderMailFolders = (
 ): MailFolder[] => {
 	// the inbox's own entry is replaced by the well known one, keeping its
 	// counts, so it is not listed twice, and the folders inside it move up
-	// with it
-	const start = folders.findIndex(
-		(folder) => folder.depth === 0 && folder.name.toLowerCase() === INBOX,
+	// with it; the mailbox names it, whatever it is called in the user's
+	// language, and a listing that does not is matched by its English name
+	const byWellKnownName = folders.findIndex(
+		(folder) => folder.wellKnownName === INBOX,
 	);
+	const start =
+		byWellKnownName >= 0
+			? byWellKnownName
+			: folders.findIndex(
+					(folder) =>
+						folder.depth === 0 &&
+						folder.name.toLowerCase() === INBOX,
+				);
 	const inbox: MailFolder = {
 		id: INBOX,
 		name: inboxName,
 		depth: 0,
+		wellKnownName: INBOX,
 		totalCount: folders[start]?.totalCount,
 		unreadCount: folders[start]?.unreadCount,
 	};
@@ -33,7 +43,7 @@ export const orderMailFolders = (
 		return [inbox, ...folders];
 	}
 	let end = start + 1;
-	while (end < folders.length && folders[end].depth > 0) {
+	while (end < folders.length && folders[end].depth > folders[start].depth) {
 		end++;
 	}
 	return [
