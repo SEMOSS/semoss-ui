@@ -97,7 +97,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	const isEngineOperationAvailable = useSession(
 		(state) => state.isEngineOperationAvailable,
 	);
-	const { adminMode, engineInfo: contextEngineInfo } = useSettings();
+	const { adminMode } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
 	const [discoverable, setDiscoverable] = useState(true);
@@ -112,25 +112,17 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		type === "VECTOR" ||
 		type === "GUARDRAIL" ||
 		type === "FUNCTION";
-	// Reuse the parent settings layout's EngineInfo result when available to
-	// avoid a duplicate pixel call.
-	const shouldFetchLocally = !(isEngineType && contextEngineInfo);
-
-	const localEngineInfo = usePixel(
-		shouldFetchLocally
-			? isEngineType
+	const engineInfo = usePixel(
+		isEngineType
+			? adminMode
+				? `AdminEngineInfo(engine='${id}');`
+				: `EngineInfo(engine='${id}');`
+			: type === "PROJECT"
 				? adminMode
-					? `AdminEngineInfo(engine='${id}');`
-					: `EngineInfo(engine='${id}');`
-				: type === "PROJECT"
-					? adminMode
-						? `AdminProjectInfo(project='${id}')`
-						: `ProjectInfo(project='${id}')`
-					: ""
-			: "",
+					? `AdminProjectInfo(project='${id}')`
+					: `ProjectInfo(project='${id}')`
+				: "",
 	);
-
-	const engineInfo = shouldFetchLocally ? localEngineInfo : contextEngineInfo;
 
 	useEffect(() => {
 		// pixel call to get pending members

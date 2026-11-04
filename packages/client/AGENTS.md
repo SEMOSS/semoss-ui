@@ -183,11 +183,8 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   also act as an ordinary user. The Access Control tab, My Teams and their Bulk Access
   Management views call `/auth/permissionBatch` with the user's permissions. Admin mode calls
   `/auth/admin/permissionBatch` (each SDK call takes `admin`): Team Permissions' Bulk Access
-  Management, and the Bulk Access Management and Effective Permissions opened from an app's or
-  engine's settings page in admin mode, at
-  `settings/<app or engine type>/:id/bulk-access-management` and `.../effective-permissions`
-  (`ADMIN_ACCESS_SETTINGS_PAGES` in `settings.constants.ts`). Making a team from the people in
-  the batch is admin mode only.
+  Management, and Resource Governance's Access and Effective Permissions tabs. Making a team
+  from the people in the batch is admin mode only.
 - **Layout.** Both views and Effective Permissions open with `access-view-header.tsx` (a back
   button beside the title). Both views list the people on the left and put
   `add-people-card.tsx` on the right: the app's people, listed from the start and paged as they
@@ -247,7 +244,8 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   admins can see them.
 - **Limits that belong to no grant.** `components/settings/usage-limit-settings-card.tsx` and
   `use-stored-usage-limit.ts` edit one stored limit with Reset and Save: the General Platform Limit
-  card (`features/platform-default-limit/`) on the admin Model Settings page, each person's own rules
+  card (`features/platform-default-limit/`) on the admin Configuration page's Usage Limits tab,
+  each person's own rules
   across all models, and the admin-only Team Total card (`features/team-details/team-total-card.tsx`)
   on a team's admin page, shared rules across all models. The SDK's set calls resolve with the
   limit the backend saved, which the card shows and its editor starts again from. Save stays
@@ -282,6 +280,47 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   managers and members in place of the team list, and the All Teams breadcrumb goes back to the
   list with its search and scroll kept. A resource's owners may read them even before the team
   has access to it (its editors only once it does). In admin mode they are read as an admin.
+
+### Settings Page
+
+- **`pages/settings/settings-index-page.tsx`** lists a tile for each page in `SETTINGS_ROUTES`
+  under its `group`'s heading (`SETTINGS_GROUPS`: Your Account, Resources & Access, Monitoring,
+  Platform), in route order. A heading with no tile for the viewer, or none matching the search,
+  is left out. Apps and engines are managed from their catalog pages; admins manage any of them
+  in Resource Governance.
+
+### Resource Governance
+
+- **`features/resource-governance/`** is Resource Governance at `settings/resources`, for admins
+  in admin mode. An admin chooses a project or engine type at the top of the list
+  (`governance-type-select.tsx`; `GOVERNANCE_TYPES`: every project type, insights included, then
+  every engine type, from `ALL_PROJECT_TYPES` and `ALL_ENGINE_TYPES` in `utility/catalog.ts`),
+  then sees that type's resources beside the one open, as Member Settings shows members. It opens
+  on the first type in the dropdown. The list
+  reads `AdminMyProjects` with `projectType` or `AdminMyEngines` with `engineTypes`, a page at a
+  time as it scrolls (`use-governance-resources.ts`). The type, the resource and the tab are in
+  the address: `settings/resources/:type/:id?tab=`. The page scrolls rather than the details: the
+  header scrolls away, the details take the page's height, and the list stays in view beside them
+  (`GOVERNANCE_PANEL_CLASS`, sticky below the navbar).
+- **Deleting many.** Each row has a checkbox beside it, and Select all shown checks every row read
+  so far. Delete (N) confirms with `delete-governance-resources-dialog.tsx`, which names each
+  one, then deletes them one after another with the pixel each type takes (`getDeleteRequest`,
+  through `use-delete-governance-resources.ts`), so one that fails does not stop the rest. The
+  ones that could not be deleted stay checked, with the reasons in a toast. The list reads again,
+  and the open resource closes when it was deleted.
+- **The details** (`governance-resource-details.tsx`) open with the resource's logo, name, id with
+  Copy ID (`components/shared/resource-id.tsx`), type, who created it and when, and Open, which
+  opens its own page in a new tab (`getResourcePagePath`). The tabs are Access (Bulk Access
+  Management, without its back button: add many people at one access level, change or remove
+  access, and apply everything after one review), Effective Permissions, Requests, Visibility (the
+  settings tiles, delete included), Audit Trail (the resource's audit trail, which admins can
+  read), SMSS, and Usage Limits for models.
+- **Staged access changes are applied or discarded before moving on.** Access stays mounted on every
+  tab, so its staged changes survive a look at another tab. Opening another resource or type is a
+  move to another address, which Bulk Access Management's unsaved changes guard asks about first.
+- Bulk Access Management and Effective Permissions take `backTo` only when they open from an access
+  page. Bulk Access Management's two columns follow its own width (container queries), so it fits
+  beside the list.
 
 ### Audit Trail
 
@@ -579,8 +618,8 @@ read that list:
 - **Dangerous** holds the delete, `features/resource-delete/delete-resource-card.tsx`, which
   confirms with `DeleteEntityDialog` and goes back to the catalog after; the Access Control tab
   has no delete. `use-delete-resource.ts` picks the pixel from the type
-  (`delete-request.ts`) and is shared with `SettingsTiles`, whose delete tile stays on the admin
-  settings pages.
+  (`delete-request.ts`) and is shared with `SettingsTiles`, whose delete tile is on Resource
+  Governance's Visibility tab.
 - **Every section card looks the same.** A `Card` whose `CardHeader` holds a plain `CardTitle`
   (no heading element inside it), a `CardDescription` and the card's actions in a `CardAction`
   with `self-center`. The header has `border-b` when the card has a `CardContent` below it, and
