@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -76,6 +76,7 @@ export const CatalogTagsSettings = ({
 	description,
 	testIdPrefix,
 }: CatalogTagsSettingsProps) => {
+	const fieldId = useId();
 	const [isSaving, setIsSaving] = useState(false);
 	const [form, setForm] = useState<TagsForm>(() => toForm(metadata));
 	const [initialForm, setInitialForm] = useState<TagsForm>(() =>
@@ -189,10 +190,13 @@ export const CatalogTagsSettings = ({
 			<CardContent>
 				{isEditable ? (
 					<FieldGroup>
-						{TAG_FIELDS.map((field) => (
+						{TAG_FIELDS.map((field, index) => (
 							<Field key={field.metakey}>
-								<FieldLabel>{field.label}</FieldLabel>
+								<FieldLabel htmlFor={`${fieldId}-${index}`}>
+									{field.label}
+								</FieldLabel>
 								<CatalogTagInput
+									id={`${fieldId}-${index}`}
 									value={form[field.metakey]}
 									onChange={(value) =>
 										setForm((prev) => ({
@@ -202,7 +206,6 @@ export const CatalogTagsSettings = ({
 									}
 									placeholder={`Press enter to add ${field.label.toLowerCase()}`}
 									testId={`${testIdPrefix}--${field.metakey}`}
-									listId={`${testIdPrefix}--${field.metakey}-list`}
 									options={filterOptions[field.metakey] || []}
 								/>
 							</Field>
