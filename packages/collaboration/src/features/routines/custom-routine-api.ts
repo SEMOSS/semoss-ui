@@ -62,16 +62,3 @@ export function openRoutineDocuments(
 		routineDocumentsSchema,
 	);
 }
-
-/** Turn one of the owner's skills on or off for their assistant. */
-export async function setSkillInAssistant(
-	actions: InsightActions,
-	skillId: string,
-	use: boolean,
-): Promise<void> {
-	await callPixel(
-		actions,
-		pixel("WorkUseSkillInAssistant", { skillId, use }),
-		z.unknown(),
-	);
-}

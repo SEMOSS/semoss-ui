@@ -66,15 +66,6 @@ export const customRoutineListSchema = z.object({
 	routines: z.array(customRoutineSchema),
 });
 
-export const mySkillSchema = z.object({
-	id: z.string().min(1),
-	name: z.string(),
-	description: z.string().nullish().default(null),
-	inAssistant: z.boolean(),
-});
-
-export const mySkillListSchema = z.object({ skills: z.array(mySkillSchema) });
-
 /** The owner's SEMOSS skill catalog (MyProjects), any of which a routine can load. */
 export const catalogSkillListSchema = z.array(
 	z
@@ -106,6 +97,5 @@ export const routineDocumentsSchema = z.object({
 
 export type CustomRoutineSettings = z.infer<typeof customRoutineSettingsSchema>;
 export type CustomRoutine = z.infer<typeof customRoutineSchema>;
-export type MySkill = z.infer<typeof mySkillSchema>;
 export type CatalogSkill = z.infer<typeof catalogSkillListSchema>[number];
 export type RoutineDocument = z.infer<typeof routineDocumentSchema>;

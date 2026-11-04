@@ -106,6 +106,7 @@ export function RoutineHistory({
 				<AlertDescription>
 					{result.error?.message || "Past runs could not be loaded."}
 					<Button
+						type="button"
 						variant="outline"
 						size="sm"
 						onClick={result.refresh}
@@ -132,6 +133,7 @@ export function RoutineHistory({
 				</P>
 				<Button
 					ref={refreshButton}
+					type="button"
 					variant="outline"
 					size="sm"
 					onClick={result.refresh}
