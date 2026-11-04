@@ -1,5 +1,12 @@
 import { ChevronDown, GripVertical } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import {
+	type Dispatch,
+	type SetStateAction,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { Link, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -18,6 +25,7 @@ import {
 import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
 import { runBatch } from "../live/live-state";
+import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
@@ -113,28 +121,43 @@ function TopicChip({ item }: { item: Item }) {
 }
 
 /** The work list data and the owner's actions on it. */
-export function useWorkItems() {
+export function useWorkItems(): {
+	items: Item[] | null;
+	setItems: Dispatch<SetStateAction<Item[] | null>>;
+	error: string;
+	run: (statement: string) => Promise<void>;
+	isMine: (step: Step) => boolean;
+} {
 	const { actions } = useInsight();
+	const updates = useWorkUpdates();
+	const lastUpdated = updates?.lastUpdated;
 	const [items, setItems] = useState<Item[] | null>(null);
 	const [selfId, setSelfId] = useState("");
 	const [error, setError] = useState("");
+	const requestVersion = useRef(0);
 
 	const load = useCallback(async () => {
+		const request = ++requestVersion.current;
 		try {
 			const [out] = (await runBatch(actions, [
 				pixel("WorkListMyWork"),
 			])) as Row[];
+			if (request !== requestVersion.current) return;
 			setItems(list(out?.workItems).map(toItem));
 			setSelfId(str(out?.selfId));
 			setError("");
 		} catch (cause) {
-			setError(errorText(cause));
+			if (request === requestVersion.current) setError(errorText(cause));
 		}
 	}, [actions]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: A completed workspace refresh invalidates the independently loaded task list.
 	useEffect(() => {
 		void load();
-	}, [load]);
+		return () => {
+			requestVersion.current += 1;
+		};
+	}, [load, lastUpdated]);
 
 	const run = useCallback(
 		async (statement: string) => {

@@ -1,7 +1,13 @@
 import { createContext, useContext } from "react";
 import type { MailCheck, MailSyncResult } from "./live-state";
+import type { TopicLifecycleChange } from "./topic-lifecycle-api";
 
 export interface WorkUpdatesStatus {
+	/** Writes lifecycle changes before updating the session; absent on isolated previews. */
+	changeTopic?: (
+		topicId: string,
+		change: TopicLifecycleChange,
+	) => Promise<void>;
 	isRefreshing: boolean;
 	lastUpdated: string | null;
 	error: string;

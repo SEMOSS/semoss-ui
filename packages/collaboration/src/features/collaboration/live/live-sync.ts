@@ -31,6 +31,8 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"snooze.expire",
 	"memory.server",
 	"topic.server",
+	"topic.status.server",
+	"topic.delete.server",
 ]);
 
 // what the server already holds when they land, even beside a user edit: a new topic with a server id would
@@ -38,6 +40,8 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 const SERVER_RECORDS = new Set<CollaborationCommand["type"]>([
 	"records.loaded",
 	"topic.server",
+	"topic.status.server",
+	"topic.delete.server",
 ]);
 
 // a create returns the server id for the local one

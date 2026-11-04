@@ -299,6 +299,9 @@ export function mapTopic(row: Row): Topic {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),
 			lastActivity: str(stats.lastActivity),
+			idle: stats.idle === true,
+			idleDays:
+				typeof stats.idleDays === "number" ? stats.idleDays : undefined,
 		},
 		isSample: false,
 	};
@@ -420,7 +423,19 @@ export function mapItem(row: Row): WorkItem {
 		due: opt(row.due) ?? null,
 		received: str(row.received),
 		status: (row.status as WorkItem["status"]) ?? "open",
-		topicIds: list<string>(row.topicIds),
+		topicIds: [
+			...new Set([
+				...list<string>(row.topicIds),
+				...(typeof row.linkTopicId === "string"
+					? [row.linkTopicId]
+					: []),
+			]),
+		],
+		linkTopicId: opt(row.linkTopicId),
+		attentionEligible:
+			typeof row.attentionEligible === "boolean"
+				? row.attentionEligible
+				: undefined,
 		suggested: row.suggested === true ? true : undefined,
 		completedAt: row.status === "done" ? opt(row.closedAt) : undefined,
 		closedReason: opt(row.closedReason),

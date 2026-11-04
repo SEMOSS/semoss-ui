@@ -2,6 +2,8 @@ import { MoreHorizontal } from "lucide-react";
 import { useId, useState } from "react";
 import { useNavigate } from "react-router";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Dialog,
 	DialogContent,
@@ -23,6 +25,8 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { topicPath } from "@/lib/workspace-paths";
+import type { TopicLifecycleChange } from "../live/topic-lifecycle-api";
+import { useWorkUpdates } from "../live/work-updates.context";
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 
@@ -40,6 +44,9 @@ export function TopicActions({
 	const { state, dispatch } = useCollaborationSession();
 	const navigate = useNavigate();
 	const fieldId = useId();
+	const updates = useWorkUpdates();
+	const [isPending, setIsPending] = useState(false);
+	const [error, setError] = useState("");
 	const [dialog, setDialog] = useState<"merge" | "delete" | null>(null);
 	const [targetId, setTargetId] = useState("");
 	// the reducer only merges records of the same kind (sample or live)
@@ -48,9 +55,56 @@ export function TopicActions({
 	);
 	const target = targets.find((other) => other.id === targetId);
 	const close = () => {
+		if (isPending) return;
 		setDialog(null);
 		setTargetId("");
 	};
+
+	async function changeLifecycle(
+		change: TopicLifecycleChange,
+	): Promise<void> {
+		if (isPending) return;
+		setIsPending(true);
+		setError("");
+		try {
+			if (topic.isSample || !updates) {
+				if (change.type === "delete")
+					dispatch({ type: "topic.delete", topicId: topic.id });
+				else
+					dispatch({
+						type: "topic.save",
+						topic: { id: topic.id, status: change.status },
+					});
+			} else {
+				if (!updates.changeTopic)
+					throw new Error(
+						"Topic actions are unavailable. Reload and try again.",
+					);
+				await updates.changeTopic(topic.id, change);
+			}
+			if (change.type === "delete") {
+				setDialog(null);
+				toast.success(`Deleted ${topic.name}.`);
+				void navigate("/work/topics");
+			} else {
+				toast.success(
+					change.status === "hibernated"
+						? `Hibernated ${topic.name}.`
+						: change.status === "archived"
+							? `Archived ${topic.name}.`
+							: `${topic.name} is active.`,
+				);
+			}
+		} catch (cause: unknown) {
+			setError(
+				cause instanceof Error
+					? cause.message
+					: "The topic could not be changed.",
+			);
+		} finally {
+			setIsPending(false);
+		}
+	}
 
 	return (
 		<>
@@ -60,11 +114,53 @@ export function TopicActions({
 						variant="outline"
 						size="icon-sm"
 						aria-label="More topic actions"
+						disabled={isPending}
 					>
 						<MoreHorizontal aria-hidden="true" />
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end">
+					{topic.status !== "suggested" &&
+						(topic.status === "archived" ? (
+							<DropdownMenuItem
+								onSelect={() =>
+									void changeLifecycle({
+										type: "status",
+										status: "active",
+									})
+								}
+							>
+								Restore topic
+							</DropdownMenuItem>
+						) : (
+							<>
+								<DropdownMenuItem
+									onSelect={() =>
+										void changeLifecycle({
+											type: "status",
+											status:
+												topic.status === "hibernated"
+													? "active"
+													: "hibernated",
+										})
+									}
+								>
+									{topic.status === "hibernated"
+										? "Wake topic"
+										: "Hibernate topic"}
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onSelect={() =>
+										void changeLifecycle({
+											type: "status",
+											status: "archived",
+										})
+									}
+								>
+									Archive topic
+								</DropdownMenuItem>
+							</>
+						))}
 					{onFindConversations && (
 						<DropdownMenuItem onSelect={onFindConversations}>
 							Find conversations...
@@ -84,6 +180,11 @@ export function TopicActions({
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
+			{error && dialog !== "delete" && (
+				<Alert variant="destructive">
+					<AlertDescription>{error}</AlertDescription>
+				</Alert>
+			)}
 			<Dialog
 				open={dialog === "merge"}
 				onOpenChange={(open) => {
@@ -114,9 +215,6 @@ export function TopicActions({
 							</SelectContent>
 						</Select>
 					</div>
-					<P className="text-muted-foreground text-sm">
-						This merge cannot be undone.
-					</P>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={close}>
 							Cancel
@@ -149,7 +247,14 @@ export function TopicActions({
 					if (!open) close();
 				}}
 			>
-				<DialogContent>
+				<DialogContent
+					onEscapeKeyDown={(event) => {
+						if (isPending) event.preventDefault();
+					}}
+					onInteractOutside={(event) => {
+						if (isPending) event.preventDefault();
+					}}
+				>
 					<DialogHeader>
 						<DialogTitle>Delete {topic.name}?</DialogTitle>
 						<DialogDescription>
@@ -161,24 +266,29 @@ export function TopicActions({
 					<P className="text-muted-foreground text-sm">
 						This deletion cannot be undone.
 					</P>
+					{error && (
+						<Alert variant="destructive">
+							<AlertDescription>{error}</AlertDescription>
+						</Alert>
+					)}
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={close}>
+						<Button
+							type="button"
+							variant="outline"
+							disabled={isPending}
+							onClick={close}
+						>
 							Cancel
 						</Button>
 						<Button
 							type="button"
 							variant="destructive"
-							onClick={() => {
-								dispatch({
-									type: "topic.delete",
-									topicId: topic.id,
-								});
-								close();
-								toast.success(`Deleted ${topic.name}.`);
-								navigate("/work/topics");
-							}}
+							disabled={isPending}
+							onClick={() =>
+								void changeLifecycle({ type: "delete" })
+							}
 						>
-							Delete topic
+							{isPending ? "Deleting..." : "Delete topic"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

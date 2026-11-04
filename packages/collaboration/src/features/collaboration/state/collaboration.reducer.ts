@@ -211,12 +211,14 @@ function mergeTopics(
 		else thread.topicLinks.push({ ...sourceLink, topicId: targetId });
 		thread.topicLinks = normalizeTopicLinks(thread.topicLinks);
 	}
-	for (const item of state.items)
+	for (const item of state.items) {
 		item.topicIds = [
 			...new Set(
 				item.topicIds.map((id) => (id === sourceId ? targetId : id)),
 			),
 		];
+		if (item.linkTopicId === sourceId) item.linkTopicId = targetId;
+	}
 	for (const rule of state.rules)
 		if (rule.topicId === sourceId) rule.topicId = targetId;
 	for (const review of state.reviews) {
@@ -246,8 +248,10 @@ function deleteTopic(
 			thread.topicLinks.filter((link) => link.topicId !== topicId),
 		);
 	}
-	for (const item of state.items)
+	for (const item of state.items) {
 		item.topicIds = item.topicIds.filter((id) => id !== topicId);
+		if (item.linkTopicId === topicId) item.linkTopicId = undefined;
+	}
 	state.rules = state.rules.filter((rule) => rule.topicId !== topicId);
 	for (const review of state.reviews)
 		if (review.refId === topicId && review.status === "open") {
@@ -396,6 +400,14 @@ export function collaborationReducer(
 		case "topic.merge":
 			mergeTopics(state, command.sourceId, command.targetId);
 			break;
+		case "topic.status.server": {
+			const topic = state.topics.find(
+				(row) => row.id === command.topicId,
+			);
+			if (topic) topic.status = command.status;
+			break;
+		}
+		case "topic.delete.server":
 		case "topic.delete":
 			deleteTopic(state, command.topicId, now);
 			break;

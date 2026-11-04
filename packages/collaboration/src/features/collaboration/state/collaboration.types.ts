@@ -4,7 +4,12 @@ import type { DisplayBody } from "@/features/email/message-body";
 /** Session-only collaboration records; imported identities retain nullable fields. */
 export type Channel = "email" | "teams" | "calendar" | "room" | "task";
 type TopicKind = "client" | "internal" | "event" | "personal";
-type TopicStatus = "suggested" | "active" | "dormant" | "archived";
+type TopicStatus =
+	| "suggested"
+	| "active"
+	| "dormant"
+	| "hibernated"
+	| "archived";
 type PersonState = "member" | "suggested" | "removed";
 type ItemStatus = "open" | "waiting" | "done" | "dismissed" | "snoozed";
 type AskType =
@@ -50,7 +55,13 @@ export interface Topic {
 	calendarSeries: string[];
 	/** Outlook folders the topic stands for; mail in them is filed under it. */
 	folders?: { id: string; path: string; origin?: string | null }[];
-	stats: { threads: number; openItems: number; lastActivity: string };
+	stats: {
+		threads: number;
+		openItems: number;
+		lastActivity: string;
+		idle?: boolean;
+		idleDays?: number;
+	};
 	isSample: boolean;
 }
 
@@ -140,6 +151,10 @@ export interface Thread {
 }
 
 export interface WorkItem {
+	/** Server eligibility fallback when topic metadata is not loaded yet. */
+	attentionEligible?: boolean;
+	/** Explicit work association, independent of the thread's suggested topic links. */
+	linkTopicId?: string;
 	id: string;
 	threadId: string;
 	channel: Channel;
@@ -480,6 +495,8 @@ export type CollaborationCommand =
 	  }
 	| { type: "topic.merge"; sourceId: string; targetId: string }
 	| { type: "topic.delete"; topicId: string }
+	| { type: "topic.delete.server"; topicId: string }
+	| { type: "topic.status.server"; topicId: string; status: TopicStatus }
 	| {
 			type: "topic.person";
 			topicId: string;

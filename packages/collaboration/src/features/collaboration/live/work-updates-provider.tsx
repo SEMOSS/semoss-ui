@@ -18,6 +18,10 @@ import {
 	syncMail,
 } from "./live-state";
 import type { LiveSync } from "./live-sync";
+import {
+	changeTopicLifecycle,
+	type TopicLifecycleChange,
+} from "./topic-lifecycle-api";
 import { WorkUpdatesContext } from "./work-updates.context";
 
 const SENT_SYNC_DELAY_MS = 5000;
@@ -370,6 +374,27 @@ export function WorkUpdatesProvider({
 		},
 		[actions],
 	);
+	const changeTopic = useCallback(
+		async (
+			topicId: string,
+			change: TopicLifecycleChange,
+		): Promise<void> => {
+			await sync?.settled();
+			const id = sync?.serverId(topicId) ?? topicId;
+			await changeTopicLifecycle(actions, id, change);
+			if (change.type === "delete")
+				dispatch({ type: "topic.delete.server", topicId });
+			else
+				dispatch({
+					type: "topic.status.server",
+					topicId,
+					status: change.status,
+				});
+			if (pending.current) queued.current = true;
+			else refresh();
+		},
+		[actions, dispatch, refresh, sync],
+	);
 	return (
 		<WorkUpdatesContext.Provider
 			value={{
@@ -377,6 +402,7 @@ export function WorkUpdatesProvider({
 				...mail,
 				refresh,
 				refreshTopic,
+				changeTopic,
 				syncMail: syncNow,
 				serverId,
 				localId,
