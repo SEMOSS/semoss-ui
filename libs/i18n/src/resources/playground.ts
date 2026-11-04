@@ -13,6 +13,7 @@ export const playgroundResources: LazyResources = {
 		"auditlog",
 		"members",
 		"agent",
+		"transcript",
 		"mcp",
 		"chat",
 		"knowledge",
@@ -36,6 +37,8 @@ export const playgroundResources: LazyResources = {
 		auditlog: (l) => import(`./locales/${l}/shared/auditlog.json`),
 		members: (l) => import(`./locales/${l}/shared/members.json`),
 		agent: (l) => import(`./locales/${l}/shared/agent.json`),
+		// how a chat reply's reasoning and tool calls read, in every chat
+		transcript: (l) => import(`./locales/${l}/shared/transcript.json`),
 		// connectors: the Microsoft 365 and Google Workspace viewers
 		connectors: (l) => import(`./locales/${l}/connectors/connectors.json`),
 		// playground (note: playground/mcp.json overrides shared/mcp.json)

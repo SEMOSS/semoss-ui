@@ -1,0 +1,8 @@
+{
+	"reasoning": "Reasoning",
+	"toolStatus": {
+		"running": "Running",
+		"completed": "Completed",
+		"failed": "Failed"
+	}
+}

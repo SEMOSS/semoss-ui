@@ -16,7 +16,8 @@ import { MAIL_APPS } from "./mail-apps";
 export interface MailPageOptions {
 	provider: ConnectorAccount;
 	folder: string;
-	subject: string;
+	/** A search as a person types it, empty when nothing is searched for. */
+	search: string;
 	unreadOnly: boolean;
 	isGrouped: boolean;
 }
@@ -47,14 +48,14 @@ interface PageRun {
 
 /** Read fixed-size pages; raw server counts advance the cursor independently of valid IDs. */
 export const useMailPages = (options: MailPageOptions): MailPages => {
-	const { provider, folder, subject, unreadOnly, isGrouped } = options;
+	const { provider, folder, search, unreadOnly, isGrouped } = options;
 	const { insightId } = useInsight();
 	const { t } = useTranslation("connectors");
 	const key = JSON.stringify([
 		insightId,
 		provider,
 		folder,
-		subject,
+		search,
 		unreadOnly,
 		isGrouped,
 	]);
@@ -84,7 +85,7 @@ export const useMailPages = (options: MailPageOptions): MailPages => {
 				const raw = await runConnectorPixel(
 					MAIL_APPS[provider].pixels.listMail({
 						folder,
-						subject,
+						search,
 						unreadOnly,
 						limit: 25,
 						offset,
@@ -128,7 +129,7 @@ export const useMailPages = (options: MailPageOptions): MailPages => {
 				run.isPending = false;
 			}
 		},
-		[insightId, provider, folder, subject, unreadOnly, emptyPageMessage],
+		[insightId, provider, folder, search, unreadOnly, emptyPageMessage],
 	);
 
 	// refreshId explicitly starts a new sequence even when its filters are unchanged.

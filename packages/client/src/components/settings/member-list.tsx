@@ -94,7 +94,7 @@ export const MemberList = ({
 	};
 
 	return (
-		<Card className="flex h-full min-h-0 flex-col border border-border/60">
+		<Card className="flex h-full min-h-0 flex-col gap-0 overflow-hidden border border-border/60 py-0">
 			<div className="flex flex-col gap-2 border-border/60 border-b p-3">
 				<div className="flex flex-wrap items-center justify-between gap-2">
 					<div className="flex items-center gap-2">

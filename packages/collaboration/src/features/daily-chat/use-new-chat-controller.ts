@@ -7,6 +7,8 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
+import { runBatch } from "@/features/collaboration/live/live-state";
+import { useRecordIds } from "@/features/collaboration/live/work-updates.context";
 import { linkRoomTopic } from "@/features/rooms/api/room-topics";
 import type {
 	RoomSession,
@@ -16,6 +18,7 @@ import type {
 	ComposerSubmission,
 	RoomSettings,
 } from "@/features/rooms/types/room";
+import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
 import {
 	getHistoryChatDraft,
@@ -40,6 +43,7 @@ export interface NewChatController {
 export function useNewChatController(
 	navigationState: unknown,
 	topicId?: string,
+	taskId?: string,
 ): NewChatController {
 	const request =
 		typeof navigationState === "object" && navigationState !== null
@@ -54,6 +58,7 @@ export function useNewChatController(
 			? request.prompt
 			: "";
 	const { insightId: scope } = useInsight();
+	const { serverId } = useRecordIds();
 	const location = useLocation();
 	const navigate = useNavigate();
 	// Allocation can finish after returning to this same history entry. Observe the
@@ -111,15 +116,17 @@ export function useNewChatController(
 		const sending = (async () => {
 			const roomId = await session.create("New chat");
 			if (topicId) {
+				// a topic made on this page is known to the server by another id
+				const serverTopicId = await serverId(topicId);
 				const topics = await linkRoomTopic(
 					session.insight.actions,
 					roomId,
-					topicId,
+					serverTopicId,
 				);
 				if (
 					!topics.some(
 						(topic) =>
-							topic.topicId === topicId &&
+							topic.topicId === serverTopicId &&
 							topic.state === "linked",
 					)
 				)
@@ -127,6 +134,11 @@ export function useNewChatController(
 						"Could not attach this chat to the topic. Try sending again.",
 					);
 			}
+			// a chat opened from a work item: its assistant sees the item every turn
+			if (taskId)
+				await runBatch(session.insight.actions, [
+					pixel("WorkLinkRoomItem", { taskId, roomId }),
+				]);
 			const submitted = session.send(submission, {}, submittedDraft);
 			if (active.current === entryToken) void navigate(roomPath(roomId));
 			markNewChatDraftStarted(scope, draft, roomId);

@@ -28,20 +28,15 @@ import {
 	type UserResourceAccess,
 } from "@/api";
 import { useAPI, useSettings } from "@/hooks";
+import {
+	ALL_ENGINE_TYPES,
+	ALL_PROJECT_TYPES,
+	getEngineLabel,
+	getProjectLabel,
+} from "@/utility/catalog";
 import type { GrantCandidate } from "./user-access-grant-overlay";
 import { UserAccessGrantOverlay } from "./user-access-grant-overlay";
 import { UserAccessTable } from "./user-access-table";
-
-const ENGINE_TYPE_OPTIONS = [
-	"DATABASE",
-	"MODEL",
-	"VECTOR",
-	"STORAGE",
-	"FUNCTION",
-	"GUARDRAIL",
-];
-
-const PROJECT_TYPE_OPTIONS = ["CODE", "BLOCKS", "SKILL", "WORKSPACE"];
 
 /** Page size for the infinite-scroll lists. */
 const PAGE_SIZE = 25;
@@ -60,9 +55,9 @@ export interface MemberResourceAccessProps {
 
 /**
  * A self-contained section that lists and edits a single user's access to one
- * kind of resource (apps, engines, or a project's insights).
+ * kind of resource (projects, engines, or a project's insights).
  *
- * Apps and engines are paginated + infinite-scrolled (server-side search and
+ * Projects and engines are paginated + infinite-scrolled (server-side search and
  * type filter) via useIteratorApi — the catalogs are large enough that
  * unbounded fetches were crashing the backend. Insights are project-scoped and
  * bounded, so they stay on the simpler useAPI path.
@@ -76,7 +71,16 @@ export const MemberResourceAccess = ({
 
 	const isInsight = kind === "INSIGHT";
 	const isEngine = kind === "ENGINE";
-	const typeOptions = isEngine ? ENGINE_TYPE_OPTIONS : PROJECT_TYPE_OPTIONS;
+	// every type, insights and notebooks included, named as the catalogs name them
+	const typeOptions: readonly { value: string; label: string }[] = isEngine
+		? ALL_ENGINE_TYPES.map((type) => ({
+				value: type,
+				label: getEngineLabel(type),
+			}))
+		: ALL_PROJECT_TYPES.map((type) => ({
+				value: type,
+				label: getProjectLabel(type),
+			}));
 
 	const [busy, setBusy] = useState(false);
 	const [grantOpen, setGrantOpen] = useState(false);
@@ -100,7 +104,7 @@ export const MemberResourceAccess = ({
 		],
 	);
 
-	// Current access (apps/engines) — paginated, type-filtered, infinite scroll.
+	// Current access (projects/engines): paginated, type-filtered, infinite scroll.
 	const tableIterator = useIteratorApi<UserResourceAccess>(
 		(limit, offset) => {
 			const options: UserAccessPageOptions = {
@@ -116,7 +120,7 @@ export const MemberResourceAccess = ({
 		[kind, adminMode, userId, tableType],
 	);
 
-	// Grant catalog (apps/engines the user lacks) — paginated, searchable.
+	// Grant catalog (projects/engines the user lacks): paginated, searchable.
 	const grantIterator = useIteratorApi<GrantCandidate>(
 		(limit, offset) => {
 			const options: UserAccessPageOptions = {
@@ -161,7 +165,7 @@ export const MemberResourceAccess = ({
 		onNext: handleGrantNext,
 	});
 
-	// Rows / candidates: insights come from useAPI, apps/engines from iterators.
+	// Rows / candidates: insights come from useAPI, projects/engines from iterators.
 	const insights = (insightsApi.data as UserInsightAccess[]) ?? [];
 	const insightsLoading =
 		insightsApi.status === "INITIAL" || insightsApi.status === "LOADING";
@@ -244,7 +248,7 @@ export const MemberResourceAccess = ({
 	};
 
 	// Patch a single loaded row in place after a confirmed mutation — no refetch,
-	// so the list does not jump back to the top. Insights live in useAPI; apps
+	// so the list does not jump back to the top. Insights live in useAPI; projects
 	// and engines live in the paginated iterator.
 	const patchRow = (
 		id: string,
@@ -340,7 +344,7 @@ export const MemberResourceAccess = ({
 		? "Grant Insight Access"
 		: isEngine
 			? "Grant Engine Access"
-			: "Grant App Access";
+			: "Grant Project Access";
 
 	const renderResourceIcon = (resource: {
 		id?: string;
@@ -374,9 +378,9 @@ export const MemberResourceAccess = ({
 			</SelectTrigger>
 			<SelectContent>
 				<SelectItem value="ALL">All types</SelectItem>
-				{typeOptions.map((type) => (
-					<SelectItem key={type} value={type}>
-						{type}
+				{typeOptions.map((option) => (
+					<SelectItem key={option.value} value={option.value}>
+						{option.label}
 					</SelectItem>
 				))}
 			</SelectContent>
@@ -409,7 +413,7 @@ export const MemberResourceAccess = ({
 				onRemove={handleRemove}
 				emptyMessage={
 					isInsight
-						? "This user has no insight access in the selected app"
+						? "This user has no insight access in the selected project"
 						: "This user has no access yet"
 				}
 			/>

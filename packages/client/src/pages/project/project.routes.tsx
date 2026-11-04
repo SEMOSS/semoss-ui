@@ -5,7 +5,6 @@ import {
 	AppGithubPage,
 	AppGithubSelectRepoPage,
 	AppMcpUsagePage,
-	AppSettingsPage,
 	AppSmssPage,
 	NewPromptBuilderAppPage,
 	ViewAppPage,
@@ -13,7 +12,6 @@ import {
 import { AppActivityPage } from "../app/app-activity-page";
 import { AgentActivityPage } from "./agent/agent-activity-page";
 import { AgentOverviewPage } from "./agent/agent-overview-page";
-import { AgentSettingsLayout } from "./agent/agent-settings-layout";
 import { CreateAgentPage } from "./agent/create-agent-page";
 import { EditAgentPage } from "./agent/edit-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
@@ -24,16 +22,17 @@ import { EditNotebookPage } from "./notebook/edit-notebook-page";
 import { ViewNotebookPage } from "./notebook/view-notebook-page";
 import { ProjectAuditPage } from "./project-audit.page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
-import { ProjectDescriptionSettingsPage } from "./project-description-settings-page";
 import { ProjectLayout } from "./project-layout";
 import { ProjectOverviewPage } from "./project-overview-page";
+import { ProjectSettingsLayout } from "./project-settings-layout";
+import { PROJECT_SETTINGS_SECTIONS } from "./project-settings-sections";
 import { ProjectTabsLayout } from "./project-tabs-layout";
-import { ProjectTagsSettingsPage } from "./project-tags-settings-page";
 import { CreateSkillPage } from "./skill/create-skill-page";
 import { EditSkillPage } from "./skill/edit-skill-page";
 import { ViewSkillPage } from "./skill/view-skill-page";
 
-export const PROJECT_ROUTES: {
+/** One project route. */
+interface ProjectRoute {
 	/** Name of the specific path */
 	path: string;
 
@@ -41,8 +40,29 @@ export const PROJECT_ROUTES: {
 	element: React.ReactNode;
 
 	/** Child routes */
-	children?: (typeof PROJECT_ROUTES)[number][];
-}[] = [
+	children?: ProjectRoute[];
+}
+
+/**
+ * The Settings tab every project type shares: each section at its own path,
+ * in the left-menu layout, which shows the sections the viewer has on the
+ * project and sends any other path to the first of them.
+ *
+ * @returns The route.
+ */
+const buildProjectSettingsRoute = (): ProjectRoute => ({
+	path: "settings",
+	element: <ProjectSettingsLayout />,
+	children: [
+		...PROJECT_SETTINGS_SECTIONS.map(({ path, element }) => ({
+			path,
+			element,
+		})),
+		{ path: "*", element: null },
+	],
+});
+
+export const PROJECT_ROUTES: ProjectRoute[] = [
 	{
 		path: "app",
 		element: <Outlet />,
@@ -110,11 +130,6 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER"],
 									},
 									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "Access Control",
 										path: "access-control",
 										restrict: ["OWNER", "EDIT"],
@@ -123,6 +138,11 @@ export const PROJECT_ROUTES: {
 										name: "Audit Trail",
 										path: "audit",
 										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "SMSS",
@@ -158,10 +178,7 @@ export const PROJECT_ROUTES: {
 								path: "github/select-repo",
 								element: <AppGithubSelectRepoPage />,
 							},
-							{
-								path: "settings",
-								element: <AppSettingsPage />,
-							},
+							buildProjectSettingsRoute(),
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
@@ -312,10 +329,7 @@ export const PROJECT_ROUTES: {
 									<ProjectAccessControl view="EFFECTIVE" />
 								),
 							},
-							{
-								path: "settings",
-								element: <AppSettingsPage />,
-							},
+							buildProjectSettingsRoute(),
 							{
 								path: "audit",
 								element: <ProjectAuditPage />,
@@ -431,10 +445,7 @@ export const PROJECT_ROUTES: {
 									<ProjectAccessControl view="EFFECTIVE" />
 								),
 							},
-							{
-								path: "settings",
-								element: <AppSettingsPage />,
-							},
+							buildProjectSettingsRoute(),
 							{
 								path: "audit",
 								element: <ProjectAuditPage />,
@@ -508,11 +519,6 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER"],
 									},
 									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["OWNER"],
-									},
-									{
 										name: "Access Control",
 										path: "access-control",
 										restrict: ["OWNER", "EDIT"],
@@ -521,6 +527,11 @@ export const PROJECT_ROUTES: {
 										name: "Audit Trail",
 										path: "audit",
 										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "SMSS",
@@ -556,10 +567,7 @@ export const PROJECT_ROUTES: {
 								path: "github/select-repo",
 								element: <AppGithubSelectRepoPage />,
 							},
-							{
-								path: "settings",
-								element: <AppSettingsPage />,
-							},
+							buildProjectSettingsRoute(),
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
@@ -677,30 +685,7 @@ export const PROJECT_ROUTES: {
 								path: "",
 								element: <AgentOverviewPage />,
 							},
-							{
-								path: "settings",
-								element: <AgentSettingsLayout />,
-								children: [
-									{
-										path: "",
-										element: <Navigate to="tags" replace />,
-									},
-									{
-										path: "image",
-										element: <AppSettingsPage />,
-									},
-									{
-										path: "tags",
-										element: <ProjectTagsSettingsPage />,
-									},
-									{
-										path: "description",
-										element: (
-											<ProjectDescriptionSettingsPage />
-										),
-									},
-								],
-							},
+							buildProjectSettingsRoute(),
 							{
 								path: "github",
 								element: <AppGithubPage />,

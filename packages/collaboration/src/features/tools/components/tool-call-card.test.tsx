@@ -8,6 +8,7 @@ import type { InsightActions } from "@/lib/pixel";
 import { ToolCallCard } from "./tool-call-card";
 
 const workbench = vi.hoisted(() => ({
+	roomId: "room",
 	tools: {} as Record<string, ConversationTool>,
 	pendingApprovals: [],
 	isOpen: false,
@@ -61,6 +62,7 @@ function setup(tool = composeTool, store = new RoomEmailStore()) {
 		selectSourceMessage: vi.fn(),
 		replyToSource: vi.fn(),
 		openDraft: vi.fn(),
+		openItem: vi.fn(),
 		requestSend: vi.fn(),
 	};
 	workbench.tools = { [tool.id]: tool };
@@ -197,4 +199,103 @@ it("inspects a failed revision while preserving the existing editor", async () =
 	expect(room.openDraft).not.toHaveBeenCalled();
 	expect(draft.getSnapshot()).toBe(before);
 	expect(store.getSnapshot().emailDrafts).toEqual([draft]);
+});
+
+it("opens the thread a finished ReadThread read and keeps a failed read's details", async () => {
+	const readTool: ConversationTool = {
+		id: "read",
+		parentMessageId: "answer",
+		name: "ReadThread",
+		title: "ReadThread",
+		arguments: { threadId: "thread-1" },
+		status: "COMPLETED",
+		output: JSON.stringify({
+			threadId: "thread-1",
+			source: "email",
+			messages: [{ subject: "Plan" }, { subject: "RE: Plan" }],
+		}),
+	};
+	const read = setup(readTool);
+	const open = screen.getByRole("button", {
+		name: "Open email: ReadThread · RE: Plan",
+	});
+	expect(open).toHaveTextContent("Open");
+	await userEvent.click(open);
+	expect(read.room.openItem).toHaveBeenCalledWith({
+		kind: "thread",
+		threadId: "thread-1",
+		source: "email",
+		title: "RE: Plan",
+	});
+	expect(workbench.openWorkbench).not.toHaveBeenCalled();
+	read.unmount();
+	const failed = setup({
+		...readTool,
+		status: "FAILED",
+		error: "Thread not found.",
+	});
+	await userEvent.click(
+		screen.getByRole("button", {
+			name: "ReadThread details in workbench - failed",
+		}),
+	);
+	expect(workbench.openWorkbench).toHaveBeenCalledWith("read");
+	expect(failed.room.openItem).not.toHaveBeenCalled();
+});
+
+it("names and opens a shown Teams chat or a downloaded file, but not another room's download", async () => {
+	const chat = setup({
+		id: "show-chat",
+		parentMessageId: "answer",
+		name: "ShowItem",
+		title: "ShowItem",
+		arguments: { chatId: "19:chat@thread.v2" },
+		status: "COMPLETED",
+		output: JSON.stringify({
+			shown: true,
+			kind: "chat",
+			chatId: "19:chat@thread.v2",
+			title: "Dana Lee",
+			webLink: "https://teams.microsoft.com/l/chat/1",
+		}),
+	});
+	await userEvent.click(
+		screen.getByRole("button", {
+			name: "Open Teams chat: ShowItem · Dana Lee",
+		}),
+	);
+	expect(chat.room.openItem).toHaveBeenCalledWith({
+		kind: "chat",
+		chatId: "19:chat@thread.v2",
+		title: "Dana Lee",
+		webLink: "https://teams.microsoft.com/l/chat/1",
+	});
+	chat.unmount();
+	const download: ConversationTool = {
+		id: "download",
+		parentMessageId: "answer",
+		name: "DownloadDriveFile",
+		title: "DownloadDriveFile",
+		arguments: {},
+		status: "COMPLETED",
+		output: JSON.stringify({ filePath: "docs/Q3 report.pdf" }),
+	};
+	const file = setup(download);
+	await userEvent.click(
+		screen.getByRole("button", {
+			name: "Open file: DownloadDriveFile · Q3 report.pdf",
+		}),
+	);
+	expect(file.room.openItem).toHaveBeenCalledWith({
+		kind: "file",
+		path: "/docs/Q3 report.pdf",
+		name: "Q3 report.pdf",
+	});
+	file.unmount();
+	setup({ ...download, roomId: "child-room" });
+	expect(
+		screen.getByRole("button", {
+			name: "DownloadDriveFile details in workbench",
+		}),
+	).toBeVisible();
 });

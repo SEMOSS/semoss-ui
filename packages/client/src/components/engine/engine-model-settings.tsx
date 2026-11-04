@@ -3,6 +3,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import {
+	Alert,
+	AlertDescription,
 	Badge,
 	Button,
 	Card,
@@ -723,9 +725,11 @@ export const EngineModelSettings = ({
 
 	if (getModelMetadata.status === "ERROR") {
 		return (
-			<p className="text-destructive text-sm">
-				Unable to load model settings.
-			</p>
+			<Alert variant="destructive">
+				<AlertDescription>
+					Unable to load model settings.
+				</AlertDescription>
+			</Alert>
 		);
 	}
 
@@ -778,9 +782,8 @@ export const EngineModelSettings = ({
 							>
 								{isSaving ? (
 									<Spinner className="size-4" />
-								) : (
-									"Save"
-								)}
+								) : null}
+								{isSaving ? "Saving..." : "Save"}
 							</Button>
 						</CardAction>
 					)}

@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { type ReactNode, useEffect } from "react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -7,7 +7,8 @@ import {
 	Button,
 	Skeleton,
 } from "@semoss/ui/next";
-import type { OutputSchema } from "@/lib/pixel";
+import { callPixel, type OutputSchema } from "@/lib/pixel";
+import { ROUTINE_RUN_DELETED } from "./api/delete-routine-run";
 
 interface RoutineLoaderProps<T> {
 	/** The Pixel that returns the owner's routine. */
@@ -24,7 +25,21 @@ export function RoutineLoader<T>({
 	schema,
 	children,
 }: RoutineLoaderProps<T>) {
+	const { actions } = useInsight();
 	const result = usePixel<unknown>(pixel);
+	const { update } = result;
+	// a deleted run can be the latest; re-read in place, since a refresh would reset the form
+	useEffect(() => {
+		const reread = () => {
+			callPixel(actions, pixel, schema)
+				.then(update)
+				.catch(() => {
+					// keep what is shown; the next visit reads it again
+				});
+		};
+		window.addEventListener(ROUTINE_RUN_DELETED, reread);
+		return () => window.removeEventListener(ROUTINE_RUN_DELETED, reread);
+	}, [actions, pixel, schema, update]);
 	const parsed = schema.safeParse(result.data);
 	const isLoading =
 		result.status === "INITIAL" || result.status === "LOADING";

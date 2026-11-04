@@ -33,6 +33,7 @@ import {
 	joinTabset,
 	movePanelInTree,
 	parseWorkbenchSnapshot,
+	releaseEmptyTabsets,
 	removePanel,
 	resizeChildren,
 	resolvePinDrop,
@@ -1100,7 +1101,9 @@ export const createWorkbenchLayoutSlice = (
 						delete values[pid];
 
 						return {
-							tree: removePanel(s.tree, pid) ?? emptyTabset(),
+							tree: releaseEmptyTabsets(
+								removePanel(s.tree, pid) ?? emptyTabset(),
+							),
 							borders: stripFromBorders(s.borders, pid),
 							panels: panels,
 							values: values,
@@ -1361,7 +1364,9 @@ export const createWorkbenchLayoutSlice = (
 											: pid,
 									},
 								},
-								tree: removePanel(s.tree, pid) ?? emptyTabset(),
+								tree: releaseEmptyTabsets(
+									removePanel(s.tree, pid) ?? emptyTabset(),
+								),
 							};
 						});
 						return;

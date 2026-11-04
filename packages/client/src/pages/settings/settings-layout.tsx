@@ -1,4 +1,4 @@
-import { ExternalLink, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import {
 	matchPath,
@@ -7,13 +7,7 @@ import {
 	useLocation,
 	useParams,
 } from "react-router";
-import { usePixel } from "@semoss/sdk/react";
-import {
-	AppCatalogAvatar,
-	EngineSubtypeIcon,
-	EntityHeader,
-	type Project,
-} from "@semoss/shared";
+import { EntityHeader } from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -23,13 +17,12 @@ import {
 	BreadcrumbSeparator,
 	Button,
 	P,
-	Spinner,
 } from "@semoss/ui/next";
 import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-preference-center-modal";
 import { SettingsContext } from "@/contexts";
 import { TeamHeader } from "@/features/team-details/team-header";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
-import { useAPI, useConfig, useSession } from "@/hooks";
+import { useConfig, useSession } from "@/hooks";
 import {
 	ADMIN_MODE_STORAGE_KEY,
 	getStoredAdminMode,
@@ -37,23 +30,11 @@ import {
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
-const ENGINE_CATALOG_SETTINGS_PATHS = new Set([
-	"app",
-	"agents",
-	"skills",
-	"database",
-	"function",
-	"guardrail",
-	"model",
-	"storage",
-	"vector",
-]);
-
 export const SettingsLayout = () => {
 	const themeConfig = useConfig((state) => state.theme);
 	const isAdmin = useSession((state) => state.user.admin);
 	const { id, type } = useParams();
-	const { pathname, search } = useLocation();
+	const { pathname } = useLocation();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
 
 	// track the active breadcrumbs
@@ -79,15 +60,6 @@ export const SettingsLayout = () => {
 		return null;
 	}, [pathname]);
 	const isSettingsIndexRoute = matchedRoute?.path === "";
-	const shouldPreserveEngineCatalogSearch = useMemo(() => {
-		if (!matchedRoute || !search) {
-			return false;
-		}
-
-		const routePathRoot = matchedRoute.path.split("/:")[0];
-		return ENGINE_CATALOG_SETTINGS_PATHS.has(routePathRoot);
-	}, [matchedRoute, search]);
-
 	const hasPrivacyCenterThemeContent = useMemo(() => {
 		const theme = themeConfig as unknown as Record<string, unknown>;
 		const order = Array.isArray(theme.cookiePolicyOrderReact)
@@ -121,146 +93,6 @@ export const SettingsLayout = () => {
 		isAdminTeamDetail ||
 		matchedRoute?.path === "managed-teams/:id" ||
 		matchedRoute?.path === "managed-teams/:id/bulk-access-management";
-
-	// an app's admin mode Bulk Access Management and effective permissions keep the app's header
-	const isAppDetail =
-		matchedRoute?.path === "app/:id" ||
-		matchedRoute?.path.startsWith("app/:id/") === true;
-
-	const engineDetailType = useMemo<
-		| "DATABASE"
-		| "MODEL"
-		| "STORAGE"
-		| "VECTOR"
-		| "FUNCTION"
-		| "GUARDRAIL"
-		| null
-	>(() => {
-		if (!matchedRoute || !id) return null;
-		const root = matchedRoute.path.split("/:")[0];
-		switch (root) {
-			case "database":
-				return "DATABASE";
-			case "model":
-				return "MODEL";
-			case "storage":
-				return "STORAGE";
-			case "vector":
-				return "VECTOR";
-			case "function":
-				return "FUNCTION";
-			case "guardrail":
-				return "GUARDRAIL";
-			default:
-				return null;
-		}
-	}, [matchedRoute, id]);
-
-	const engineInfoPixel = usePixel<Record<string, unknown>>(
-		engineDetailType && id
-			? adminMode
-				? `AdminEngineInfo(engine='${id}');`
-				: `EngineInfo(engine='${id}');`
-			: "",
-		{ data: {} },
-	);
-	const engineSubtype =
-		(engineInfoPixel.data?.engine_subtype as string | undefined) || "";
-	const engineInfoForContext = useMemo(
-		() => ({
-			status: engineInfoPixel.status,
-			data: engineInfoPixel.data,
-		}),
-		[engineInfoPixel.status, engineInfoPixel.data],
-	);
-
-	// User-scoped access check used to gate the "View In Catalog" button so admins
-	// who don't actually belong to the engine/app don't get a click-through that
-	// dead-ends at a permission-denied page.
-	// Only fire the permission lookup on the matching detail route; passing an
-	// empty tuple makes useAPI short-circuit (no request, INITIAL status).
-	const userEnginePermissionApi = useAPI(
-		(engineDetailType && id
-			? ["getUserEnginePermission", id]
-			: []) as unknown as ["getUserEnginePermission", string],
-	);
-	const userProjectPermissionApi = useAPI(
-		(isAppDetail && id
-			? ["getUserProjectPermission", id]
-			: []) as unknown as ["getUserProjectPermission", string],
-	);
-
-	const hasCatalogAccess = useMemo(() => {
-		if (engineDetailType && id) {
-			const permission = userEnginePermissionApi.data;
-			return userEnginePermissionApi.status === "SUCCESS" && !!permission;
-		}
-		if (isAppDetail && id) {
-			return (
-				userProjectPermissionApi.status === "SUCCESS" &&
-				!!userProjectPermissionApi.data
-			);
-		}
-		return false;
-	}, [
-		engineDetailType,
-		isAppDetail,
-		id,
-		userEnginePermissionApi.status,
-		userEnginePermissionApi.data,
-		userProjectPermissionApi.status,
-		userProjectPermissionApi.data,
-	]);
-
-	// Only fetch project info if we have catalog access (button will be shown)
-	const projectInfoPixel = usePixel<Project>(
-		isAppDetail && id && hasCatalogAccess
-			? adminMode
-				? `AdminProjectInfo(project='${id}');`
-				: `ProjectInfo(project='${id}');`
-			: "",
-		{ data: undefined },
-	);
-
-	const catalogUrl = useMemo(() => {
-		if (engineDetailType && id) {
-			return `/${engineDetailType.toLowerCase()}/${id}`;
-		}
-		if (isAppDetail && id) {
-			const projectType = projectInfoPixel.data?.project_type;
-			if (projectType === "WORKSPACE") {
-				return `/agent/${id}/edit`;
-			}
-			if (projectType === "SKILL") {
-				return `/skill/${id}/edit`;
-			}
-			if (projectType === "NOTEBOOK") {
-				return `/notebook/${id}/edit`;
-			}
-			if (projectType === "AUTOMATION") {
-				return `/automation/${id}/edit`;
-			}
-			return `/app/${id}`;
-		}
-		return null;
-	}, [
-		engineDetailType,
-		isAppDetail,
-		id,
-		projectInfoPixel.data?.project_type,
-	]);
-
-	// Resolve a friendly display name for the current engine/app detail page;
-	// used both as the breadcrumb label and the h1 (with raw id falling back below).
-	const detailDisplayName = engineDetailType
-		? (engineInfoPixel.data?.engine_display_name as string | undefined) ||
-			(engineInfoPixel.data?.engine_name as string | undefined)
-		: isAppDetail
-			? (projectInfoPixel.data?.project_display_name as
-					| string
-					| undefined) ||
-				(projectInfoPixel.data?.project_name as string | undefined)
-			: undefined;
 
 	// the router decodes the params
 	const teamId = id || undefined;
@@ -312,12 +144,9 @@ export const SettingsLayout = () => {
 			<SettingsContext.Provider
 				value={{
 					adminMode: adminMode,
-					engineInfo: engineDetailType
-						? engineInfoForContext
-						: undefined,
 				}}
 			>
-				<div className="flex flex-col gap-2">
+				<div className="flex flex-col gap-2 pb-8">
 					<div className="flex flex-col gap-2">
 						{matchedRoute.path && (
 							<NavbarLeft>
@@ -352,7 +181,7 @@ export const SettingsLayout = () => {
 											// a page under a detail page, such as a team's
 											// Bulk Access Management, is named by its own title
 											const label = link.endsWith("<id>")
-												? detailDisplayName || id
+												? id
 												: isLastItem
 													? matchedRoute.title
 													: linkRoute?.title || link;
@@ -370,17 +199,6 @@ export const SettingsLayout = () => {
 														id ?? "",
 													),
 												);
-											const toRoot = to.split("/")[0];
-											const breadcrumbTo =
-												shouldPreserveEngineCatalogSearch &&
-												ENGINE_CATALOG_SETTINGS_PATHS.has(
-													toRoot,
-												)
-													? {
-															pathname: to,
-															search,
-														}
-													: to;
 
 											return (
 												<Fragment key={idx + link}>
@@ -395,9 +213,7 @@ export const SettingsLayout = () => {
 																asChild
 															>
 																<RouterLink
-																	to={
-																		breadcrumbTo
-																	}
+																	to={to}
 																>
 																	{label}
 																</RouterLink>
@@ -427,20 +243,6 @@ export const SettingsLayout = () => {
 												}
 											>
 												Privacy Center
-											</Button>
-										)}
-										{catalogUrl && hasCatalogAccess && (
-											<Button
-												asChild
-												variant="outline"
-												size="sm"
-												className="gap-2"
-												data-testid="settingsLayout-view-in-catalog-btn"
-											>
-												<RouterLink to={catalogUrl}>
-													<ExternalLink className="size-4" />
-													View In Catalog
-												</RouterLink>
 											</Button>
 										)}
 										{isAdmin && (
@@ -478,79 +280,6 @@ export const SettingsLayout = () => {
 											id={teamId}
 											type={teamType}
 											admin={isAdminTeamDetail}
-											actions={headerActions}
-										/>
-									);
-								}
-
-								if (engineDetailType && id) {
-									if (
-										engineInfoPixel.status === "INITIAL" ||
-										engineInfoPixel.status === "LOADING"
-									) {
-										return (
-											<div className="flex items-center gap-2 py-2">
-												<Spinner className="size-5" />
-											</div>
-										);
-									}
-									return (
-										<EntityHeader
-											icon={
-												<EngineSubtypeIcon
-													engineType={
-														engineDetailType
-													}
-													engineSubtype={
-														engineSubtype
-													}
-													alt={
-														detailDisplayName || id
-													}
-													className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
-												/>
-											}
-											name={detailDisplayName || id}
-											id={id}
-											copyLabel="Copy Engine ID"
-											copyTestId="settingsLayout-copy-btn"
-											actions={headerActions}
-										/>
-									);
-								}
-
-								if (isAppDetail && id) {
-									const isAppLoading =
-										userProjectPermissionApi.status ===
-											"INITIAL" ||
-										userProjectPermissionApi.status ===
-											"LOADING" ||
-										(hasCatalogAccess &&
-											(projectInfoPixel.status ===
-												"INITIAL" ||
-												projectInfoPixel.status ===
-													"LOADING"));
-									if (isAppLoading) {
-										return (
-											<div className="flex items-center gap-2 py-2">
-												<Spinner className="size-5" />
-											</div>
-										);
-									}
-									const appName = detailDisplayName || id;
-									return (
-										<EntityHeader
-											icon={
-												<AppCatalogAvatar
-													projectId={id}
-													name={appName}
-													className="h-full w-full rounded-lg text-xl"
-												/>
-											}
-											name={appName}
-											id={id}
-											copyLabel="Copy App ID"
-											copyTestId="settingsLayout-copy-btn"
 											actions={headerActions}
 										/>
 									);

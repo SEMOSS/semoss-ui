@@ -1,10 +1,14 @@
 import type { ComponentType } from "react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
+import {
+	useWorkbenchControl,
+	useWorkbenchPanel,
+	WorkbenchPanelLoading,
+} from "@semoss/workbench";
 import type { FilePanelParams } from "../hooks/use-file-panel";
 import { useFilesChanged } from "../hooks/use-files-changed";
 import { matchesFilePanel } from "../types/file-panel.types";
@@ -65,7 +69,15 @@ export const createFileViewPanel = ({
 		});
 
 		return (
-			<View config={config} rename={rename} onControls={setControls} />
+			<Suspense
+				fallback={<WorkbenchPanelLoading label={`Loading ${name}`} />}
+			>
+				<View
+					config={config}
+					rename={rename}
+					onControls={setControls}
+				/>
+			</Suspense>
 		);
 	};
 

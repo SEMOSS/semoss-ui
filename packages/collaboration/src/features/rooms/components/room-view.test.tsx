@@ -7,8 +7,9 @@ import { pendingSession } from "../utils/session-from-room";
 import { RoomView } from "./room-view";
 
 const refreshTopicGoal = vi.fn();
+const refreshTopic = vi.fn();
 vi.mock("@/features/collaboration/live/work-updates.context", () => ({
-	useWorkUpdates: () => ({ refreshTopicGoal }),
+	useWorkUpdates: () => ({ refreshTopicGoal, refreshTopic }),
 }));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
@@ -52,6 +53,44 @@ vi.mock("./room-workspace", () => ({
 					}
 				>
 					Approve goal
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						void workbench.onApproveTool(
+							{
+								toolId: "new-topic",
+								parentMessageId: "assistant-message",
+								toolName: "EditTopic",
+								arguments: {},
+							},
+							// the model leaves the arguments it does not use blank
+							{
+								topicId: "",
+								topic: "",
+								name: "Uber Trip Receipts",
+								addEmails: ["AQMk-receipt"],
+							},
+						)
+					}
+				>
+					Approve new topic
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						void workbench.onApproveTool(
+							{
+								toolId: "send-email",
+								parentMessageId: "assistant-message",
+								toolName: "SendEmail",
+								arguments: {},
+							},
+							{ openEmailId: "draft-one", name: "Not a topic" },
+						)
+					}
+				>
+					Approve send
 				</button>
 			</>
 		);
@@ -128,6 +167,29 @@ it("rereads a completed goal only after its tool approval settles", async () => 
 		{ topicId: "topic-one", topic: undefined },
 		"goal-one",
 	);
+});
+
+it("shows a topic the assistant made once its approval settles, and nothing for other tools", async () => {
+	refreshTopic.mockClear();
+	refreshTopicGoal.mockClear();
+	const approval = deferred<void>();
+	const approve = vi.fn().mockReturnValue(approval.promise);
+	render(<RoomView {...props} onApproveTool={approve} />);
+	fireEvent.click(screen.getByRole("button", { name: "Approve new topic" }));
+	expect(refreshTopic).not.toHaveBeenCalled();
+	await act(async () => approval.resolve());
+	expect(refreshTopic).toHaveBeenCalledExactlyOnceWith({
+		topicId: undefined,
+		topic: "Uber Trip Receipts",
+	});
+	expect(refreshTopicGoal).not.toHaveBeenCalled();
+
+	approve.mockResolvedValue(undefined);
+	await act(async () => {
+		fireEvent.click(screen.getByRole("button", { name: "Approve send" }));
+	});
+	expect(approve).toHaveBeenCalledTimes(2);
+	expect(refreshTopic).toHaveBeenCalledTimes(1);
 });
 
 it("rereads an automatically completed goal once after its successful result arrives", () => {

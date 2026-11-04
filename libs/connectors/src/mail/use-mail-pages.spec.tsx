@@ -21,7 +21,7 @@ const read = vi.mocked(runConnectorPixel);
 const defaults: MailPageOptions = {
 	provider: "microsoft",
 	folder: "inbox",
-	subject: "",
+	search: "",
 	unreadOnly: false,
 	isGrouped: true,
 };
@@ -131,7 +131,7 @@ it("blocks concurrent pages and retains results for retry at the failed offset",
 
 it.each([
 	{ folder: "sent" },
-	{ subject: "hello" },
+	{ search: "from:ada hello" },
 	{ unreadOnly: true },
 	{ isGrouped: false },
 	{ provider: "google" as const },

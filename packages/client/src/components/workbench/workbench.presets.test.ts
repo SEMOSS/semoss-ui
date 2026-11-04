@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
-import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
+import { createWorkbenchStore } from "@semoss/workbench";
+import {
+	WORKBENCH_COMPONENTS,
+	WORKBENCH_PANEL_RECORDS,
+} from "@/stores/workbench/workbench.constants";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 	withTab,
@@ -163,6 +168,82 @@ describe("createReconnectCommand", () => {
 		expect(error).toHaveBeenCalled();
 		error.mockRestore();
 		logged.mockRestore();
+	});
+});
+
+describe("createNewTerminalCommand", () => {
+	const TERMINAL = WORKBENCH_COMPONENTS.PROJECT_TERMINAL;
+	const FILES = WORKBENCH_COMPONENTS.FILE_EXPLORER;
+
+	/** A dock with files on the left and the seeded terminal below. */
+	const makeStore = () => {
+		const store = createWorkbenchStore({
+			components: {
+				[TERMINAL]: { name: "Terminal", content: () => null },
+				[FILES]: { name: "Files", content: () => null },
+			},
+		});
+		store.getState().layout.actions.loadSnapshot({
+			tree: {
+				type: "tabset",
+				id: "main",
+				size: 1,
+				panelIds: [],
+				activeId: null,
+			},
+			panels: {
+				[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
+					WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
+				[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]:
+					WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+			},
+			borders: {
+				left: { panelIds: [FILES], activeId: FILES, size: 300 },
+				bottom: { panelIds: [TERMINAL], activeId: null, size: 300 },
+			},
+		});
+		return store;
+	};
+
+	it("is one View command with the same id in every workbench", () => {
+		expect(createNewTerminalCommand(TERMINAL)).toMatchObject({
+			id: "workbench.terminal.new",
+			category: "View",
+			label: "New Terminal",
+		});
+	});
+
+	it("opens beside the first terminal when another panel is selected", () => {
+		const store = makeStore();
+		store.getState().layout.actions.setSelectedPanel(FILES);
+
+		createNewTerminalCommand(TERMINAL).handler(store.getState);
+
+		const { borders, panels } = store.getState().layout;
+		expect(borders.left.panelIds).toEqual([FILES]);
+		expect(borders.bottom.panelIds).toHaveLength(2);
+		expect(panels[borders.bottom.panelIds[1]]).toMatchObject({
+			type: TERMINAL,
+			name: "Terminal 2",
+		});
+	});
+
+	it("opens beside the selected terminal", () => {
+		const store = makeStore();
+		const moved = store.getState().layout.actions.spawnPanel(TERMINAL, {
+			name: "Terminal 2",
+			config: { terminalNumber: 2 },
+			target: { kind: "join", tabsetId: "main" },
+		});
+		store.getState().layout.actions.setSelectedPanel(moved);
+
+		createNewTerminalCommand(TERMINAL).handler(store.getState);
+
+		const { borders, tabsets } = store.getState().layout;
+		expect(borders.bottom.panelIds).toEqual([TERMINAL]);
+		expect(
+			tabsets.find((tabset) => tabset.id === "main")?.panelIds,
+		).toHaveLength(2);
 	});
 });
 

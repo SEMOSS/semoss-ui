@@ -20,7 +20,7 @@ const components = {
 };
 let workbench: ToolWorkbenchContextValue;
 
-function Harness() {
+function Harness({ isSidebarOnly = false }: { isSidebarOnly?: boolean }) {
 	workbench = useToolWorkbench();
 	const triggerId = useId();
 	return (
@@ -36,13 +36,13 @@ function Harness() {
 				Close dock
 			</button>
 			<div hidden={!workbench.isOpen}>
-				<ToolWorkbench />
+				<ToolWorkbench isSidebarOnly={isSidebarOnly} />
 			</div>
 		</>
 	);
 }
 
-function setup() {
+function setup(isSidebarOnly = false) {
 	render(
 		<ToolWorkbenchProvider
 			roomId="room-1"
@@ -54,7 +54,7 @@ function setup() {
 			onApproveTool={vi.fn()}
 			onRejectTool={vi.fn()}
 		>
-			<Harness />
+			<Harness isSidebarOnly={isSidebarOnly} />
 		</ToolWorkbenchProvider>,
 	);
 	expect(
@@ -176,67 +176,74 @@ it("focuses the mobile back control after revealing a retained dock", async () =
 	}
 });
 
-it("uses compact navigation when its container is narrow on a desktop viewport", async () => {
-	const observers = new Map<Element, () => void>();
-	const originalObserver = Object.getOwnPropertyDescriptor(
-		globalThis,
-		"ResizeObserver",
-	);
-	class MeasuredObserver {
-		constructor(private callback: ResizeObserverCallback) {}
-		observe(element: Element) {
-			observers.set(element, () =>
-				this.callback([], this as unknown as ResizeObserver),
-			);
-		}
-		unobserve(element: Element) {
-			observers.delete(element);
-		}
-		disconnect() {}
-	}
-	Object.defineProperty(globalThis, "ResizeObserver", {
-		configurable: true,
-		value: MeasuredObserver,
-	});
-	try {
-		setup();
-		const dock = screen.getByLabelText("Workbench panels");
-		let width = 600;
-		vi.spyOn(dock, "getBoundingClientRect").mockImplementation(() => ({
-			width,
-			height: 500,
-			x: 0,
-			y: 0,
-			left: 0,
-			top: 0,
-			right: width,
-			bottom: 500,
-			toJSON: () => ({}),
-		}));
-		act(() => observers.get(dock)?.());
-		await waitFor(() =>
-			expect(workbench.store.getState().layout.isMobileLayout).toBe(true),
+it.each([false, true])(
+	"keeps the correct navigation in a narrow dock (sidebar: %s)",
+	async (isSidebarOnly) => {
+		const observers = new Map<Element, () => void>();
+		const originalObserver = Object.getOwnPropertyDescriptor(
+			globalThis,
+			"ResizeObserver",
 		);
-		expect(
-			screen.getByRole("button", { name: "Back to conversation" }),
-		).toBeVisible();
-		width = 800;
-		act(() => observers.get(dock)?.());
-		await waitFor(() =>
-			expect(workbench.store.getState().layout.isMobileLayout).toBe(
-				false,
-			),
-		);
-		expect(
-			screen.queryByRole("button", { name: "Back to conversation" }),
-		).not.toBeInTheDocument();
-	} finally {
-		if (originalObserver) {
-			Object.defineProperty(
-				globalThis,
-				"ResizeObserver",
-				originalObserver,
-			);
+		class MeasuredObserver {
+			constructor(private callback: ResizeObserverCallback) {}
+			observe(element: Element) {
+				observers.set(element, () =>
+					this.callback([], this as unknown as ResizeObserver),
+				);
+			}
+			unobserve(element: Element) {
+				observers.delete(element);
+			}
+			disconnect() {}
 		}
-	}
-});
+		Object.defineProperty(globalThis, "ResizeObserver", {
+			configurable: true,
+			value: MeasuredObserver,
+		});
+		try {
+			setup(isSidebarOnly);
+			const dock = screen.getByLabelText("Workbench panels");
+			let width = 600;
+			vi.spyOn(dock, "getBoundingClientRect").mockImplementation(() => ({
+				width,
+				height: 500,
+				x: 0,
+				y: 0,
+				left: 0,
+				top: 0,
+				right: width,
+				bottom: 500,
+				toJSON: () => ({}),
+			}));
+			act(() => observers.get(dock)?.());
+			await waitFor(() =>
+				expect(workbench.store.getState().layout.isMobileLayout).toBe(
+					!isSidebarOnly,
+				),
+			);
+			expect(
+				screen.queryByRole("button", {
+					name: "Back to conversation",
+				}) !== null,
+			).toBe(!isSidebarOnly);
+			width = 800;
+			act(() => observers.get(dock)?.());
+			await waitFor(() =>
+				expect(workbench.store.getState().layout.isMobileLayout).toBe(
+					false,
+				),
+			);
+			expect(
+				screen.queryByRole("button", { name: "Back to conversation" }),
+			).not.toBeInTheDocument();
+		} finally {
+			if (originalObserver) {
+				Object.defineProperty(
+					globalThis,
+					"ResizeObserver",
+					originalObserver,
+				);
+			}
+		}
+	},
+);

@@ -20,20 +20,6 @@ export const MCP_DISPLAY_HIDDEN = "hidden";
 
 export const STREAMING_PLACEHOLDER_ID = "STREAMING_PLACEHOLDER_ID";
 
-export const LOADING_MESSAGES = [
-	"Thinking through it...",
-	"Working on that...",
-	"Processing your request...",
-	"Checking the details...",
-	"Gathering context...",
-	"Making progress...",
-	"Preparing the result...",
-	"Finalizing...",
-	"Almost done...",
-	"One moment...",
-	"Still working...",
-] as const;
-
 export const TOOL_CANCELLATION_PROMPT = `The user cancelled this tool. It may or may not have already run, so its effect is uncertain and its result is unavailable. Guidance:
 1. Don't make a point of the cancellation on your own — just respond naturally to what the user says next. If they ask, keep it plain and everyday; don't explain whether or not it ran unless they want specifics.
 2. Internally, don't assume it either ran or did nothing; if the outcome matters for what comes next, check or ask rather than guessing.

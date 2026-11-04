@@ -31,6 +31,7 @@ const routine: AgendaRoutine = {
 	timezone: "America/New_York",
 	meetings: ["Board review"],
 	ignored: [],
+	preferences: "",
 	nextRunAt: null,
 	schedulerAvailable: true,
 	assistantAvailable: true,
@@ -145,6 +146,7 @@ describe("agendaRoutineSettingsSchema", () => {
 		timezone: "UTC",
 		meetings: ["Ops"],
 		ignored: [],
+		preferences: "",
 	};
 
 	it.each([
@@ -408,24 +410,31 @@ describe("AgendaRoutineForm", () => {
 });
 
 describe("RoutinesWorkspace", () => {
-	it("loads the weekly agendas when their tab is opened", async () => {
+	it("shows the weekly agendas when they are picked in the list", async () => {
 		const user = userEvent.setup();
 		render(
 			<MemoryRouter>
 				<RoutinesWorkspace />
 			</MemoryRouter>,
 		);
-		expect(service.usePixel).not.toHaveBeenCalledWith(
-			"WorkGetAgendaRoutine();",
-		);
+		// the list reads every routine's on/off state, but the agenda form waits until it is picked
+		expect(
+			screen.queryByRole("heading", {
+				name: "Weekly meeting agendas agent",
+			}),
+		).not.toBeInTheDocument();
 		await user.click(
-			screen.getByRole("tab", { name: "Weekly meeting agendas" }),
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
 		);
 		expect(service.usePixel).toHaveBeenCalledWith(
 			"WorkGetAgendaRoutine();",
 		);
 		expect(
-			screen.getByRole("heading", { name: "Weekly meeting agendas" }),
+			screen.getByRole("heading", {
+				name: "Weekly meeting agendas agent",
+			}),
 		).toBeVisible();
 		expect(
 			screen.getByRole("heading", { name: "Latest agendas" }),
@@ -435,7 +444,7 @@ describe("RoutinesWorkspace", () => {
 		).toBeVisible();
 	});
 
-	it("keeps a pending agenda autosave after leaving its visited tab", async () => {
+	it("keeps a pending agenda autosave after picking another routine", async () => {
 		const user = userEvent.setup();
 		service.actions.run.mockResolvedValue({
 			pixelReturn: [
@@ -451,12 +460,14 @@ describe("RoutinesWorkspace", () => {
 			</MemoryRouter>,
 		);
 		await user.click(
-			screen.getByRole("tab", { name: "Weekly meeting agendas" }),
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
 		);
 		const thursday = screen.getByRole("radio", { name: "Thursday" });
 		await user.click(thursday);
 		await user.click(
-			screen.getByRole("tab", { name: "Inbox daily brief" }),
+			screen.getByRole("button", { name: "Inbox daily brief agent" }),
 		);
 		expect(service.actions.run).not.toHaveBeenCalled();
 		await autosave();
@@ -465,7 +476,9 @@ describe("RoutinesWorkspace", () => {
 			expect.stringContaining('"days":["THU"]'),
 		);
 		await user.click(
-			screen.getByRole("tab", { name: "Weekly meeting agendas" }),
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
 		);
 		expect(screen.getByRole("radio", { name: "Thursday" })).toBe(thursday);
 		expect(thursday).toBeChecked();

@@ -1,11 +1,19 @@
 import { isRecord } from "@semoss/utility/object";
 /**
- * Types and pure helpers for the model engine Guardrails settings editor.
+ * Types and pure helpers for an engine's Guardrails settings editor.
  * The editor reads/writes the pipeline.json contract used by the backend
- * guardrail proxy via GetModelGuardrailConfig / UpdateModelGuardrailConfig.
+ * guardrail proxy via GetEngineGuardrailConfig / UpdateEngineGuardrailConfig.
  */
 
 import { z } from "@semoss/ui/next";
+import {
+	collectGuardrailHitLimitIssues,
+	type GuardrailHitLimitFormValue,
+	guardrailHitLimitSchema,
+	guardrailHitLimitsFromResponse,
+	guardrailHitLimitsToConfig,
+	nextOrderedId,
+} from "./guardrail-hit-limit";
 
 const GUARDRAIL_INPUT_REACTOR =
 	"prerna.reactor.interceptor.GenericGuardrailInputReactor";
@@ -80,7 +88,7 @@ export interface InterceptableMethodArgument {
 	carriesToolResults: boolean;
 }
 
-/** A model engine method a guardrail pipeline can intercept. */
+/** An engine method a guardrail pipeline can intercept. */
 export interface InterceptableMethod {
 	/** Java method name, used as the pipeline key. */
 	name: string;
@@ -91,15 +99,19 @@ export interface InterceptableMethod {
 	/** Readable return type. */
 	returnType: string;
 
-	/** Whether the return value is a model response object. */
+	/** Whether the return value is a model response object, the only kind a
+	 * check can answer in place of with the guardrail's message. */
 	returnsModelResponse: boolean;
+
+	/** Whether a response guardrail can screen the return value. */
+	resultGuardable: boolean;
 
 	/** Arguments in signature order. */
 	arguments: InterceptableMethodArgument[];
 }
 
-/** Response shape of GetModelGuardrailConfig. */
-export interface GetModelGuardrailConfigResponse {
+/** Response shape of GetEngineGuardrailConfig. */
+export interface GetEngineGuardrailConfigResponse {
 	engineId: string;
 	configured: boolean;
 	pipelineFileName: string | null;
@@ -107,6 +119,7 @@ export interface GetModelGuardrailConfigResponse {
 	parseError: string | null;
 	rawContent: string | null;
 	pipelines: Record<string, unknown>;
+	hitLimits: unknown[];
 	guardrailEngines: Record<string, GuardrailEngineDetails>;
 	allowedReactorClasses: { input: string[]; output: string[] };
 	interceptableMethods: InterceptableMethod[];
@@ -151,9 +164,10 @@ const guardrailToolContinuationSchema = z.enum(
 const guardrailReactorSchema = z
 	.object({
 		id: z.string(),
+		/** The check's id in pipeline.json, which hit limits name it by */
+		checkId: z.string(),
 		guardrailEngineId: z.string().min(1, "Select a guardrail engine."),
 		failureAction: guardrailFailureActionSchema,
-		closeRoomOnBlock: z.boolean(),
 		blockErrorMessage: z.string(),
 		toolContinuationSkip: guardrailToolContinuationSchema,
 		toolContinuationTools: z.string(),
@@ -196,7 +210,10 @@ const guardrailPipelineSchema = z.object({
 });
 
 export const guardrailConfigSchema = z
-	.object({ pipelines: z.array(guardrailPipelineSchema) })
+	.object({
+		pipelines: z.array(guardrailPipelineSchema),
+		hitLimits: z.array(guardrailHitLimitSchema),
+	})
 	.superRefine((value, context) => {
 		const validation = validateGuardrailConfig(value);
 		if (validation !== true) {
@@ -225,6 +242,12 @@ export type GuardrailPipelineFormValue = z.infer<
 >;
 export type GuardrailConfigFormValue = z.infer<typeof guardrailConfigSchema>;
 
+/** A configuration the helpers read: its pipelines, and its hit limits when it
+ * has any */
+type GuardrailConfigInput = Pick<GuardrailConfigFormValue, "pipelines"> & {
+	hitLimits?: GuardrailHitLimitFormValue[];
+};
+
 let guardrailFieldIdSeed = 0;
 const nextGuardrailFieldId = () => {
 	guardrailFieldIdSeed += 1;
@@ -248,13 +271,33 @@ export const createGuardrailDirectParam =
 		value: "",
 	});
 
+/**
+ * The next check id in order, check0, check1, ..., for a check added to the
+ * configuration.
+ *
+ * @param pipelines - The configuration's rules.
+ * @returns The id.
+ */
+export const nextGuardrailCheckId = (
+	pipelines: GuardrailPipelineFormValue[],
+): string =>
+	nextOrderedId(
+		"check",
+		pipelines.flatMap((pipeline) =>
+			[...pipeline.input, ...pipeline.output].map(
+				(entry) => entry.checkId,
+			),
+		),
+	);
+
 export const createGuardrailReactor = (
 	phase: GuardrailPhase,
+	checkId: string,
 ): GuardrailReactorFormValue => ({
 	id: nextGuardrailFieldId(),
+	checkId,
 	guardrailEngineId: "",
 	failureAction: "block",
-	closeRoomOnBlock: false,
 	blockErrorMessage: "",
 	// a new check screens tool-result turns like everything else
 	toolContinuationSkip: "none",
@@ -272,17 +315,27 @@ export const createGuardrailReactor = (
 	directParameters: [],
 });
 
+/**
+ * A new rule with one request check.
+ *
+ * @param method - The method it screens, or * for every call.
+ * @param others - The rules the configuration has, which its check's id
+ * follows.
+ * @returns The rule.
+ */
 export const createGuardrailPipeline = (
 	method = "*",
+	others: GuardrailPipelineFormValue[] = [],
 ): GuardrailPipelineFormValue => ({
 	id: nextGuardrailFieldId(),
 	method,
-	input: [createGuardrailReactor("input")],
+	input: [createGuardrailReactor("input", nextGuardrailCheckId(others))],
 	output: [],
 });
 
 const createDefaultGuardrailConfigValue = (): GuardrailConfigFormValue => ({
 	pipelines: [],
+	hitLimits: [],
 });
 
 const splitArgs = (args: string): string[] =>
@@ -347,11 +400,12 @@ const directParameterValueForForm = (
 	return value === null || value === undefined ? "" : String(value);
 };
 
+/** Reads one stored check, with its checkId when it has one. */
 const normalizeReactorEntry = (
 	entry: unknown,
 	phase: GuardrailPhase,
 ): GuardrailReactorFormValue => {
-	const base = createGuardrailReactor(phase);
+	const base = createGuardrailReactor(phase, "");
 	if (!entry || typeof entry !== "object") {
 		return base;
 	}
@@ -360,6 +414,9 @@ const normalizeReactorEntry = (
 		e.params && typeof e.params === "object"
 			? (e.params as Record<string, unknown>)
 			: {};
+	if (typeof params.checkId === "string" && params.checkId.trim()) {
+		base.checkId = params.checkId;
+	}
 	if (typeof params.guardrailEngineId === "string") {
 		base.guardrailEngineId = params.guardrailEngineId;
 	}
@@ -367,12 +424,6 @@ const normalizeReactorEntry = (
 		base.failureAction = "respond";
 	} else if (phase === "input" && params.maskOnGuardrailFailure === true) {
 		base.failureAction = "mask";
-	}
-	if (
-		base.failureAction === "block" &&
-		typeof params.closeRoomOnBlock === "boolean"
-	) {
-		base.closeRoomOnBlock = params.closeRoomOnBlock;
 	}
 	if (
 		base.failureAction === "block" &&
@@ -432,7 +483,7 @@ const normalizeReactorEntry = (
 	return base;
 };
 
-/** Parse the GetModelGuardrailConfig response (object, or a JSON string for
+/** Parse the GetEngineGuardrailConfig response (object, or a JSON string for
  * safety) into an editor value. Malformed nodes fall back to defaults. */
 export const guardrailConfigFromResponse = (
 	raw: unknown,
@@ -472,7 +523,20 @@ export const guardrailConfigFromResponse = (
 				: [],
 		};
 	});
-	return { pipelines };
+	// a check stored without an id takes the next one in order
+	for (const pipeline of pipelines) {
+		for (const entry of [...pipeline.input, ...pipeline.output]) {
+			if (!entry.checkId) {
+				entry.checkId = nextGuardrailCheckId(pipelines);
+			}
+		}
+	}
+	return {
+		pipelines,
+		hitLimits: guardrailHitLimitsFromResponse(
+			(parsed as Record<string, unknown>).hitLimits,
+		),
+	};
 };
 
 /** Pull the backend resolved details for every guardrail engine the config
@@ -536,6 +600,7 @@ export const extractInterceptableMethods = (
 				returnType:
 					typeof e.returnType === "string" ? e.returnType : "",
 				returnsModelResponse: e.returnsModelResponse === true,
+				resultGuardable: e.resultGuardable === true,
 				arguments: rawArguments.flatMap((argument, index) => {
 					if (!argument || typeof argument !== "object") {
 						return [];
@@ -563,7 +628,7 @@ export const extractInterceptableMethods = (
 	});
 };
 
-/** The argument name carrying the model's return value, which output
+/** The argument name carrying the call's return value, which output
  * guardrails map from. */
 export const extractResultArgumentName = (raw: unknown): string => {
 	if (raw && typeof raw === "object") {
@@ -628,14 +693,14 @@ export const guardrailArgumentOptions = ({
 		trimmed && trimmed !== GUARDRAIL_ALL_METHODS
 			? methods.find((candidate) => candidate.name === trimmed)
 			: undefined;
-	// a response guardrail reads the payload of a model response, so the value is
-	// screenable unless the call returns something that is not one
+	// a response guardrail reads the call's return value, so it is screenable
+	// unless the method returns something that carries no text
 	const resultArgument: InterceptableMethodArgument = {
 		name: resultArgumentName,
 		position: -1,
 		nameIsFromSource: true,
-		type: matched ? matched.returnType : "model response",
-		guardable: matched ? matched.returnsModelResponse : true,
+		type: matched ? matched.returnType : "call result",
+		guardable: matched ? matched.resultGuardable : true,
 		carriesToolResults: false,
 	};
 	if (!matched) {
@@ -673,6 +738,30 @@ export const guardrailToolResultArgument = ({
 		}
 	}
 	return undefined;
+};
+
+/**
+ * Whether a pipeline's checks can answer with the guardrail's message, which
+ * takes the place of a model response: the method returns one, or for a
+ * pipeline on every method, some method does. A method the backend did not
+ * report cannot be ruled out.
+ */
+export const guardrailCanRespond = ({
+	method,
+	methods,
+}: {
+	method: string;
+	methods: InterceptableMethod[];
+}): boolean => {
+	const trimmed = method.trim();
+	const candidates =
+		trimmed && trimmed !== GUARDRAIL_ALL_METHODS
+			? methods.filter((candidate) => candidate.name === trimmed)
+			: methods;
+	return (
+		candidates.length === 0 ||
+		candidates.some((candidate) => candidate.returnsModelResponse)
+	);
 };
 
 /** Whether a check has no input a masked value could be written back to. */
@@ -751,6 +840,9 @@ export interface GuardrailConfigIssue {
 
 	/** Guardrail entry the issue belongs to, when it can be pinpointed. */
 	entryId?: string;
+
+	/** Hit limit the issue belongs to, by its form key. */
+	limitId?: string;
 }
 
 /** Backend knowledge that lets validation flag method and argument names the
@@ -759,7 +851,7 @@ export interface GuardrailValidationContext {
 	/** Methods the engine can intercept. */
 	methods?: InterceptableMethod[];
 
-	/** Argument name carrying the model's return value. */
+	/** Argument name carrying the call's return value. */
 	resultArgumentName?: string;
 }
 
@@ -774,7 +866,7 @@ const argumentRoot = (argument: string): string =>
  * surfacing one per save attempt.
  */
 export const collectGuardrailConfigIssues = (
-	value: GuardrailConfigFormValue,
+	value: GuardrailConfigInput,
 	context: GuardrailValidationContext = {},
 ): GuardrailConfigIssue[] => {
 	const issues: GuardrailConfigIssue[] = [];
@@ -905,6 +997,16 @@ export const collectGuardrailConfigIssues = (
 						});
 					}
 				}
+				if (
+					entry.failureAction === "respond" &&
+					!guardrailCanRespond({ method, methods })
+				) {
+					issues.push({
+						message: `${method === GUARDRAIL_ALL_METHODS ? "No call of this engine returns" : `${method} does not return`} a model response, so this check cannot answer with the guardrail's message. Choose Block or Mask.`,
+						severity: "error",
+						...target,
+					});
+				}
 				if (entryHasMaskConflict(entry)) {
 					issues.push({
 						message: `Masking needs one input that reads a single argument and is not overridden by a fixed value, because the masked value is written back to that argument.`,
@@ -938,19 +1040,16 @@ export const collectGuardrailConfigIssues = (
 						if (root === resultArgumentName) {
 							if (phase === "input") {
 								issues.push({
-									message: `"${resultArgumentName}" only exists after the model runs, so an input guardrail receives nothing for "${key}".`,
+									message: `"${resultArgumentName}" only exists after the call runs, so an input guardrail receives nothing for "${key}".`,
 									severity: "warning",
 									...target,
 								});
 							} else if (
 								matchedMethod &&
-								!matchedMethod.returnsModelResponse
+								!matchedMethod.resultGuardable
 							) {
-								// a response guardrail is handed the payload of a
-								// model response; any other return value reaches it
-								// as the object itself
 								issues.push({
-									message: `${method} returns ${matchedMethod.returnType} rather than a model response, so "${key}" receives that object rather than screenable content.`,
+									message: `${method} returns ${matchedMethod.returnType}, which carries no text a guardrail can screen, so "${key}" receives that object rather than screenable content.`,
 									severity: "warning",
 									...target,
 								});
@@ -1014,12 +1113,22 @@ export const collectGuardrailConfigIssues = (
 			}
 		}
 	}
+	const checkIds = new Set(
+		value.pipelines.flatMap((pipeline) =>
+			[...pipeline.input, ...pipeline.output].map(
+				(entry) => entry.checkId,
+			),
+		),
+	);
+	issues.push(
+		...collectGuardrailHitLimitIssues(value.hitLimits ?? [], checkIds),
+	);
 	return issues;
 };
 
 /** true when the config is submittable, otherwise the message to surface. */
 export const validateGuardrailConfig = (
-	value: GuardrailConfigFormValue,
+	value: GuardrailConfigInput,
 ): true | string => {
 	const blocking = collectGuardrailConfigIssues(value).filter(
 		(issue) => issue.severity === "error",
@@ -1033,11 +1142,11 @@ const serializeReactorEntry = (
 ): Record<string, unknown> => {
 	const failureAction = phase === "output" ? "block" : entry.failureAction;
 	const params: Record<string, unknown> = {
+		checkId: entry.checkId,
 		guardrailEngineId: entry.guardrailEngineId,
 		blockOnGuardrailFailure: failureAction === "block",
 		maskOnGuardrailFailure: failureAction === "mask",
 		respondWithGuardrailMessage: failureAction === "respond",
-		closeRoomOnBlock: failureAction === "block" && entry.closeRoomOnBlock,
 	};
 	if (failureAction === "block" && entry.blockErrorMessage.trim()) {
 		params.blockErrorMessage = entry.blockErrorMessage.trim();
@@ -1093,10 +1202,8 @@ const serializeReactorEntry = (
 };
 
 /** Serialize the editor value to the pipeline.json contract expected by
- * UpdateModelGuardrailConfig's map parameter. */
-export const guardrailConfigToJson = (
-	value: GuardrailConfigFormValue,
-): string => {
+ * UpdateEngineGuardrailConfig's map parameter. */
+export const guardrailConfigToJson = (value: GuardrailConfigInput): string => {
 	const pipelines: Record<string, unknown> = {};
 	for (const pipeline of value.pipelines) {
 		const serialized: Record<string, unknown> = {};
@@ -1112,5 +1219,10 @@ export const guardrailConfigToJson = (
 		}
 		pipelines[pipeline.method.trim()] = serialized;
 	}
-	return JSON.stringify({ pipelines });
+	const hitLimits = value.hitLimits ?? [];
+	return JSON.stringify(
+		hitLimits.length > 0
+			? { pipelines, hitLimits: guardrailHitLimitsToConfig(hitLimits) }
+			: { pipelines },
+	);
 };

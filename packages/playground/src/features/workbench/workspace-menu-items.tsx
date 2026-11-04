@@ -1,88 +1,52 @@
-import {
-	FolderTreeIcon,
-	ScrollTextIcon,
-	Settings2Icon,
-	WrenchIcon,
-} from "lucide-react";
+import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
-import { DropdownMenuItem } from "@semoss/ui/next";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@semoss/ui/next";
+import type { RoomStore } from "@/stores/room/room.store";
+import {
+	type DraftWorkspacePlaces,
+	useWorkspacePlaces,
+	type WorkspacePlace,
+} from "./use-workspace-places";
+import { WorkspacePlaceIcon } from "./workspace-place-icon";
 
 export interface WorkspaceMenuItemsProps {
-	/** Opens or focuses the room's file explorer. */
-	onOpenFiles: () => void;
-	/**
-	 * Opens or focuses Chat Tools, every tool the assistant has. Absent for a
-	 * draft, whose tools are not settled until its first message.
-	 */
-	onOpenTools?: () => void;
-	/** Opens the current draft's settings. */
-	onOpenSettings: () => void;
-	/** Absent until a room has been prepared. */
-	onOpenActivity?: () => void;
-	/** Deployment-level activity log visibility. */
-	showActivityLog?: boolean;
-	/** Prevent duplicate room preparation while keeping Settings available. */
-	isPreparing?: boolean;
-	/** Dismiss the containing mobile drawer after selecting a destination. */
+	/** The room whose Workspace the places open in. */
+	room: RoomStore;
+	/** A new chat's own actions, until its first message. */
+	draft?: DraftWorkspacePlaces;
+	/** Dismiss the containing mobile drawer after selecting a place. */
 	onNavigate?: () => void;
 }
 
-/** The same flat destinations in draft and room Workspace menus. */
-export function WorkspaceMenuItems({
-	onOpenFiles,
-	onOpenTools,
-	onOpenSettings,
-	onOpenActivity,
-	showActivityLog = true,
-	isPreparing = false,
-	onNavigate,
-}: WorkspaceMenuItemsProps) {
-	const { t } = useTranslation("room");
-	const { t: tChatTools } = useTranslation("chatTools");
-	const select = (action: () => void) => {
-		action();
-		onNavigate?.();
-	};
-	return (
-		<>
+/** The rail's places as menu items, for screens too narrow for the rail. */
+export const WorkspaceMenuItems = observer(
+	({ room, draft, onNavigate }: WorkspaceMenuItemsProps) => {
+		const { t } = useTranslation("room");
+		const places = useWorkspacePlaces(room, draft);
+		const roomPlaces = places.filter((place) => place.kind === "room");
+		const connectorPlaces = places.filter(
+			(place) => place.kind === "connector",
+		);
+		const renderItem = (place: WorkspacePlace) => (
 			<DropdownMenuItem
+				key={place.id}
 				className="text-xs max-md:min-h-11"
-				disabled={isPreparing}
-				onSelect={() => select(onOpenFiles)}
+				disabled={place.isDisabled}
+				onSelect={() => {
+					place.onOpen();
+					onNavigate?.();
+				}}
 			>
-				<FolderTreeIcon aria-hidden="true" />
-				{t(
-					isPreparing
-						? "studio.preparingWorkspace"
-						: "menuFileExplorer.open",
-				)}
+				<WorkspacePlaceIcon place={place} className="size-4 shrink-0" />
+				{place.isLoading ? t("studio.preparingWorkspace") : place.label}
 			</DropdownMenuItem>
-			{onOpenTools && (
-				<DropdownMenuItem
-					className="text-xs max-md:min-h-11"
-					onSelect={() => select(onOpenTools)}
-				>
-					<WrenchIcon aria-hidden="true" />
-					{tChatTools("menu.showTools")}
-				</DropdownMenuItem>
-			)}
-			{showActivityLog && (
-				<DropdownMenuItem
-					className="text-xs max-md:min-h-11"
-					disabled={!onOpenActivity}
-					onSelect={() => onOpenActivity && select(onOpenActivity)}
-				>
-					<ScrollTextIcon aria-hidden="true" />
-					{t("studio.viewActivityLog")}
-				</DropdownMenuItem>
-			)}
-			<DropdownMenuItem
-				className="text-xs max-md:min-h-11"
-				onSelect={() => select(onOpenSettings)}
-			>
-				<Settings2Icon aria-hidden="true" />
-				{t("settings.edit")}
-			</DropdownMenuItem>
-		</>
-	);
-}
+		);
+		return (
+			<>
+				{roomPlaces.map(renderItem)}
+				{connectorPlaces.length > 0 && <DropdownMenuSeparator />}
+				{connectorPlaces.map(renderItem)}
+			</>
+		);
+	},
+);

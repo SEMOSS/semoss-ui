@@ -1,6 +1,7 @@
 import type { ConversationMessage } from "../types/message";
 import { messageHasVisiblePart } from "./message-presentation";
 import { findStreamingCodeFence } from "./streaming-code";
+import { thoughtHeading } from "./thought-heading";
 
 /** Describe the assistant's current activity without announcing every text update. */
 export function messageActivityLabel(
@@ -25,7 +26,8 @@ export function messageActivityLabel(
 			part.state === "active" &&
 			part.text.trim()
 		) {
-			return "Thinking…";
+			const heading = thoughtHeading(part.text);
+			return heading ? `${heading}\u2026` : "Thinking…";
 		}
 		if (
 			part.type === "text" &&
@@ -41,9 +43,18 @@ export function messageActivityLabel(
 			messageHasVisiblePart(part) &&
 			(part.tool.status === "QUEUED" || part.tool.status === "RUNNING")
 		) {
-			return part.tool.title === "Loading tool…"
-				? "Loading tool…"
-				: `Using ${part.tool.title}…`;
+			if (part.tool.title === "Loading tool…") return "Loading tool…";
+			// parallel calls of one tool read as one step with a count
+			const running = message.parts.filter(
+				(other) =>
+					other.type === "tool" &&
+					other.tool.title === part.tool.title &&
+					(other.tool.status === "QUEUED" ||
+						other.tool.status === "RUNNING"),
+			).length;
+			return running > 1
+				? `${part.tool.title} (${running} running)\u2026`
+				: `${part.tool.title}\u2026`;
 		}
 	}
 	return message.parts.some(messageHasVisiblePart) ||

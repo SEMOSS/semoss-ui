@@ -1,0 +1,8 @@
+{
+	"reasoning": "तर्क प्रक्रिया",
+	"toolStatus": {
+		"running": "चल रहा है",
+		"completed": "पूर्ण",
+		"failed": "विफल"
+	}
+}

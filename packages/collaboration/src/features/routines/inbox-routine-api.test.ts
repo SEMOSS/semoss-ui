@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
 import { saveInboxRoutine } from "./inbox-routine-api";
 import {
+	INBOX_SECTIONS,
 	type InboxRoutine,
 	type InboxRoutineSettings,
 	inboxRoutineSchema,
@@ -14,6 +15,10 @@ const settings: InboxRoutineSettings = {
 	days: ["MON", "TUE", "WED", "THU", "FRI"],
 	timezone: "America/New_York",
 	lookbackHours: 24,
+	preferences: "",
+	sections: ["priorities", "replies", "meetings", "actions"],
+	priorityCount: 5,
+	writeDrafts: true,
 };
 
 const routine: InboxRoutine = {
@@ -103,6 +108,46 @@ describe("inbox routine settings", () => {
 			).toEqual({ ...settings, lookbackHours, timezone: "UTC" });
 		},
 	);
+
+	it("trims preferences and rejects more than 2000 characters", () => {
+		expect(
+			inboxRoutineSettingsSchema.parse({
+				...settings,
+				preferences: "  Keep drafts short.  ",
+			}).preferences,
+		).toBe("Keep drafts short.");
+		expect(
+			inboxRoutineSettingsSchema.safeParse({
+				...settings,
+				preferences: "x".repeat(2001),
+			}).success,
+		).toBe(false);
+	});
+
+	it("keeps at least one section, bounds the priority count, and defaults the knobs", () => {
+		expect(
+			inboxRoutineSettingsSchema.safeParse({ ...settings, sections: [] })
+				.success,
+		).toBe(false);
+		expect(
+			inboxRoutineSettingsSchema.safeParse({
+				...settings,
+				priorityCount: 11,
+			}).success,
+		).toBe(false);
+		expect(
+			inboxRoutineSchema.parse({
+				...routine,
+				sections: undefined,
+				priorityCount: undefined,
+				writeDrafts: undefined,
+			}),
+		).toMatchObject({
+			sections: [...INBOX_SECTIONS],
+			priorityCount: 5,
+			writeDrafts: true,
+		});
+	});
 
 	it("accepts a running brief without a result and a paused schedule without a next run", () => {
 		expect(

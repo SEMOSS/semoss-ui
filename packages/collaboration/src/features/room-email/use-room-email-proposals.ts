@@ -79,7 +79,7 @@ export function useRoomEmailProposals({
 	loadAttachment,
 	onOpen,
 }: {
-	thread: Pick<Thread, "id" | "subject" | "source">;
+	thread: Pick<Thread, "subject" | "source">;
 	composer: EmailEditorStore;
 	snapshot: { turn: AgentTurnSnapshot };
 	allowedSources: Set<string>;
@@ -143,7 +143,7 @@ export function useRoomEmailProposals({
 						part.type === "text"
 							? readThreadCommand(part.command ?? part.text)
 							: null;
-					if (command?.context.threadId === thread.id) {
+					if (command) {
 						selectedSource =
 							command.context.selectedSourceMessageId;
 						openEmail = command.context.openEmail;
