@@ -154,48 +154,58 @@ code and are easy to undo by accident:
 - **A restored file panel is re-pointed at the room's live insight.** A room binds to a fresh
   insight on every load, and a file panel's `mode.insightId` is what its reads and saves run
   against. `_syncSidebarFileMode` rewrites them once, before anything mounts.
-- **Publish and close live in the workbench's top border end slot**, because they act on the work
-  area. On mobile, the workbench places these controls in its actions drawer. The per-panel
-  control — "open inline" — is registered by the tool panel with `useWorkbenchControl`.
-- **The rail lists the Workspace's places.** `features/workbench/workspace-rail.tsx` sits at the
-  end of `ConversationWorkspace` whether the Workspace is open or closed: Files, Tools (rooms
-  only, since a draft's tools are not settled until its first message), Activity, Settings,
-  then the connector viewers the chat can show
-  (`ConnectorsStore.availableSources`). A place opens the Workspace on its panel, and closes the
-  Workspace when its panel is already in front. `useWorkspacePlaces` builds the list for a room,
-  or from `DraftWorkspacePlaces` for a new chat. Below 64rem of content width, and on mobile, the
-  rail is not shown: the open button lists the same places in a menu (`WorkspaceMenuItems`).
-- **View lives in the top border start slot.** `features/workbench/room-workbench-menus.tsx`
-  translates the generic `WorkbenchMenus` labels from `sidebar.workbench` and uses
-  `textSize="xs"`. It holds the command palette and Arrange Panels, and lists the places too
-  whenever `ConversationWorkspaceRailContext` says the rail is not on screen. Playground disables
-  the generic Navigate submenu. Forward the slot's `onNavigate` callback for mobile drawer
-  dismissal.
+- **The Workspace has no top strip.** `RoomSidebar` passes the workbench no border slots, so its
+  tab row is its top edge. Close is the header's last icon while the Workspace is open
+  (`CloseWorkspaceButton`), and Close Workspace is in the Other menu and the slash menu; Publish
+  as Agent is in the Room section of the Other menu and the slash menu (`RoomTitleProvider`
+  renders a controlled `SaveWorkspaceDialog`), so a new chat publishes only once it is a room.
+  The per-panel control — "open inline" — is registered by the tool panel with
+  `useWorkbenchControl`.
+- **The room header holds the Workspace's places.** `features/room-header/room-header.tsx` is
+  one narrow row in `ConversationWorkspace`'s `header` slot. It floats over the top of the
+  conversation with no border, blurring what scrolls beneath it once the conversation reports
+  it has scrolled (`ChatScrollContext`), so an open Workspace takes the full height beside it;
+  on narrow screens with the Workspace open it sits above both panes. At its start a room's name (`RoomTitle`); its actions (Favorite, Rename, Publish,
+  Download, Delete, from `features/room-actions/`, which global-nav shares) end the header's Other menu
+  (`RoomActionMenuItems`). `RoomTitleProvider` shares them, so Rename edits the name in place
+  through `handleMenuCloseAutoFocus`; a new chat has
+  no title and no menu. On mobile it also holds the navigation button: it registers with
+  `PageHeaderContext`, so `MainLayout` drops its floating one and its top padding.
+- **Quick actions are the places, one click each.** `features/workbench/workspace-quick-actions.tsx`
+  ends the header: Files and Settings as icons, then Other in sections: Workspace (Activity and
+  the connector viewers the chat can show, `ConnectorsStore.availableSources`), Room, and
+  Settings (Connectors, the settings dialog's Connectors page). A place opens the Workspace on
+  its panel, and closes it when its panel is already in front and on screen; behind the narrow
+  Chat tab it brings the Workspace forward instead. `useWorkspacePlaces` builds the list for a
+  room, or from `DraftWorkspacePlaces` for a new chat, and every place's `onOpen` also calls
+  `ConversationWorkspaceActionsContext.revealWorkArea`. Each place has a short label, the same in
+  the header, its tab, and the slash menu, and a description shown on hover. There is no
+  generic "Open Workspace" action and no default panel.
 - **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
   so switching rooms cannot bleed panel state between room instances.
 
-New chats keep draft settings in their temporary room store. Opening Workspace restores its
-last active tab, or opens a Settings tab when empty, without creating a server room. Settings
-uses the same workbench shell as Files. File Explorer, the activity log, and connector viewers share `usePreparedRoom` to prepare one room lazily
+New chats keep draft settings in their temporary room store. Opening Settings shows them
+without creating a server room. Settings
+uses the same workbench shell as Files. Files, the activity log, and connector viewers share `usePreparedRoom` to prepare one room lazily
 and transfer the draft's arrangement before opening their panels; a failed preparation opens the Workspace on its error, whose Retry opens the same place again. Connector viewers queue
 attachments on the draft through `NextMessageRoomProvider` until the first message. `DraftSettingsContext` keeps Settings and publishing
-bound to the current draft until submission, including after preparation. A draft's places
-(`DraftWorkspacePlaces`) leave out Chat Tools until its first message. Selecting Chat clears agent
+bound to the current draft until submission, including after preparation. A draft's Settings
+leave out the room's own toolbox until its first message. Selecting Chat clears agent
 inheritance but preserves locally added Knowledge and Tools.
 
 Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the room's own
-blueprints live in `components/room/panels/`, and a feature's (Chat Tools, the connector viewers)
-live in its folder. `room-panel.components.ts` registers them all. Changing a panel type string
+blueprints live in `components/room/panels/`, and a feature's (the connector viewers) live in its
+folder. `room-panel.components.ts` registers them all. Changing a panel type string
 affects only the current room instance.
 
 ## Chat tools
 
-`src/features/chat-tools/` gives a chat its default file tools and the Chat Tools panel.
+`src/features/chat-tools/` gives a chat its default file tools and the Tools section of Settings.
 `RoomStore.chatTools` (`ChatToolsStore`) owns them per room. These details are easy to break:
 
 - **Chat Files is the only file space.** It is the room's own folder: uploads, connector
-  downloads, and everything the room's apps (MCP tools) and the default tools read and write. Show
-  Chat Files in the plus menu opens the file explorer on it. Its Add to Context action uses
+  downloads, and everything the room's apps (MCP tools) and the default tools read and write. Files in
+  the room header opens the file explorer on it. Its Add to Context action uses
   `FileExplorerHostProvider` and queues on `useNextMessageRoom() ?? room`, so files selected from
   a prepared draft room appear in the draft composer and transfer before its first message.
 - **A chat gets default tools; an agent brings its own.** In chat mode every message carries the
@@ -213,12 +223,12 @@ affects only the current room instance.
   only re-adds the room's own tools, so leaving them off drops them mid-task. The model's calls
   come back with no `_meta`; `ToolStore.json` gets it from `ChatToolsStore.decorateToolCall`, and
   `runToolExecution` hands folder calls to `ChatToolsStore.runChatTool` instead of `RunMCPTool`.
-- **Chat Tools shows what the assistant has.** The default tools are not in any toolbox, so
-  `ChatToolsPanel` (Tools on the Workspace rail) lists them from
-  `ChatToolsStore.chatToolDefinitions`, the exact definitions sent, or notes that an agent room's
-  runs bring their own, beside the room toolbox's tools read from `mcp/pixel_mcp.json` and the
-  toolboxes the user added. Each tool says whether it runs on its own or asks first, and opens to
-  show its description and arguments.
+- **Settings shows what the assistant has.** Its Tools section (`RoomOptionsForm`) sets each
+  default tool's mode, each row opening to the definition the model is told, or notes that an
+  agent room's runs bring their own; then a room's own toolbox (`RoomToolboxSection`, read from
+  `mcp/pixel_mcp.json`, by connector service, with sign in notices), and the toolboxes the user
+  added. `ChatToolsStore.openToolsPanel` opens Settings and scrolls to Tools through
+  `pendingSettingsSection`. There is no separate Chat Tools panel.
 - **Never send `DeleteInsightAssets` an empty path.** With no path it clears the whole space.
   `AssetFolderProvider` refuses to address its root for writes, moves, and deletes. The room
   folder also hides and refuses its `mcp` folder, where the room's tools are kept: rewriting it
@@ -230,6 +240,15 @@ affects only the current room instance.
   `ResponseMessageStore.runMcpToolCall`, the same run and save the tool loop uses for every MCP
   tool. In an agent room a connector call's Allow and every Deny go to `decideAgentToolAction`
   instead, since the paused run resumes on the decision.
+
+## Slash menu
+
+`/` in the composer lists every action (`features/conversation/use-room-slash-commands.tsx`), by
+group: Chat (attach, knowledge, tools, agent, mode, compact), Workspace (each of
+`useWorkspacePlaces`' places, its connector viewers, and Close Workspace), Room (Favorite,
+Rename, Publish, Download, Delete, from `RoomTitleProvider`, which wraps the room page), and Prompts (the room's predefined prompts). It
+matches the query against each command's id, label, and keywords, which keep the old command
+names. `excludeCommandIds` still removes commands by id, as the room page does for mode changes.
 
 ## Tool views
 
@@ -275,7 +294,7 @@ queue with `ContextItemsStore.adopt` before its first message.
 `src/features/connectors/` connects Microsoft 365 and Google Workspace.
 `RoomStore.connectors` (`ConnectorsStore`) owns the services switched on and the accounts they
 sign in with, per room. The Connectors page of the settings dialog
-(`features/settings/`, opened from the user menu, from Connectors in the composer's plus menu, or
+(`features/settings/`, opened from the user menu, from Connectors in the room header's Other menu, or
 anywhere with `useSettingsDialog().openSettings("connectors")`) connects accounts and switches the
 user's apps on or off for all their chats; it is the only place connectors are switched. An app switched on whose
 account is not connected shows its switch in gray with a warning mark. These details are easy to break:
@@ -310,14 +329,14 @@ account is not connected shows its switch in gray with a warning mark. These det
   viewers (`libs/connectors/`). The room mounts each as a sidebar panel
   (`components/connector-viewer-panels.tsx`) with `showHeader={false}`, since its tab already names
   it; the Outlook and Gmail panels both render `MailboxView`, and the two calendar panels
-  `CalendarAgendaView`, each with its `provider`. The tab, the plus menu, and context chips show the app's logo from the source's `brand`
+  `CalendarAgendaView`, each with its `provider`. The tab, the header's Other menu, and context chips show the app's logo from the source's `brand`
   (`sources/connector-sources.ts`); a panel opened with `{ brand }` in its config shows that logo
   instead and gets a tab of its own (`components/connector-panel-icon.tsx`), so one viewer can
   stand for more than one app. The room wires each viewer with
   `sources/use-room-connector-host.ts`: saves land at the top of chat files, and Add to context
   also queues the file in `RoomStore.contextItems`.
-- **A viewer shows once its connector is on.** The plus menu's Microsoft 365 and Google
-  Workspace submenus list `ConnectorsStore.availableSources`: a viewer needs its connector switched
+- **A viewer shows once its connector is on.** The room header's Other menu and the slash menu
+  list `ConnectorsStore.availableSources` with the Workspace's places (the plus menu does not): a viewer needs its connector switched
   on for the chat (`requires` in `sources/connector-sources.ts`) and its account signed in.
 - **A chat says when its connectors cannot run.** Inside the input box, `ConnectorSignInNotice`
   lists every account the chat's switched on connectors need but the session is not signed in to

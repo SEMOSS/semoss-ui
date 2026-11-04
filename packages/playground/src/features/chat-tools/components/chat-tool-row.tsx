@@ -5,10 +5,9 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
-	Muted,
-	Small,
 } from "@semoss/ui/next";
 import type { ChatToolInfo } from "../tools/chat-tool-info";
+import { ChatToolDetails } from "./chat-tool-details";
 
 /**
  * A row of a bordered tool list that opens. The ring is inset, since the list
@@ -33,7 +32,7 @@ export interface ChatToolRowProps {
 
 /**
  * One tool the assistant has: its title and whether it runs on its own or
- * asks first, in the Auto and Ask terms Room Settings uses. Opening it shows
+ * asks first, in the Auto and Ask terms Settings uses. Opening it shows
  * the name the model calls, what the model is told the tool does, and the
  * arguments it takes.
  */
@@ -62,53 +61,11 @@ export const ChatToolRow = ({ tool }: ChatToolRowProps) => {
 					</button>
 				</CollapsibleTrigger>
 				<CollapsibleContent>
-					{/* indented to line up with the title, past the chevron */}
-					<div className="flex flex-col gap-3 ps-10 pe-3 pb-3">
-						<code className="truncate text-muted-foreground text-xs">
-							{tool.name}
-						</code>
-						{tool.description ? (
-							<Muted className="font-normal">
-								{tool.description}
-							</Muted>
-						) : null}
-						<div className="flex flex-col gap-1.5">
-							<Small>{t("panel.parameters")}</Small>
-							{tool.parameters.length === 0 ? (
-								<Muted className="font-normal">
-									{t("panel.noParameters")}
-								</Muted>
-							) : (
-								<ul className="flex flex-col gap-1.5">
-									{tool.parameters.map((parameter) => (
-										<li
-											key={parameter.name}
-											className="flex min-w-0 flex-col gap-0.5"
-										>
-											<span className="flex min-w-0 items-center gap-2">
-												<code className="truncate text-xs">
-													{parameter.name}
-												</code>
-												{parameter.isRequired ? (
-													<Badge
-														variant="outline"
-														className="shrink-0"
-													>
-														{t("panel.required")}
-													</Badge>
-												) : null}
-											</span>
-											{parameter.description ? (
-												<Muted className="font-normal">
-													{parameter.description}
-												</Muted>
-											) : null}
-										</li>
-									))}
-								</ul>
-							)}
-						</div>
-					</div>
+					<ChatToolDetails
+						name={tool.name}
+						description={tool.description}
+						parameters={tool.parameters}
+					/>
 				</CollapsibleContent>
 			</Collapsible>
 		</li>

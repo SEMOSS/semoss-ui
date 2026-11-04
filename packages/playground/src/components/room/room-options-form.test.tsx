@@ -78,7 +78,9 @@ test("lists separate selected resources and removes only the chosen local select
 	const knowledge = screen.getByRole("region", {
 		name: "room:form.knowledgeLabel 2",
 	});
-	const tools = screen.getByRole("region", { name: "room:studio.tools 2" });
+	const tools = screen.getByRole("region", {
+		name: "room:form.toolboxLabel 2",
+	});
 	expect(within(knowledge).getByText("Handbook")).toBeVisible();
 	expect(within(tools).getByText("Calculator")).toBeVisible();
 	expect(

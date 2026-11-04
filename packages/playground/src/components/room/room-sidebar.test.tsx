@@ -1,11 +1,4 @@
-import {
-	act,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
@@ -13,6 +6,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { FileExplorerHost } from "@semoss/panels";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
 import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
+import { CloseWorkspaceButton } from "@/features/workbench/close-workspace-button";
 import { RoomStore } from "@/stores/room/room.store";
 import { RootStore } from "@/stores/root/root.store";
 import { RoomSidebar } from "./room-sidebar";
@@ -61,7 +55,7 @@ function NotesEditor() {
 const RoomWorkspaceTest = observer(({ room }: { room: RoomStore }) => (
 	<ConversationWorkspace
 		isOpen={room.sidebar.isOpen}
-		onOpenWorkArea={room.openSidebar}
+		header={<CloseWorkspaceButton room={room} />}
 		panel={<RoomSidebar room={room} />}
 	>
 		<input aria-label="Draft" defaultValue="Unsent draft" />
@@ -105,53 +99,13 @@ afterEach(() => {
 	}
 });
 
-test("top border orders actions and publishes the latest room configuration", async () => {
-	const user = userEvent.setup();
-	const room = createRoom();
-	mocks.addWorkspace.mockResolvedValue("saved-agent");
-	render(<RoomWorkspaceTest room={room} />);
-	const border = screen.getByTestId("workbench-border-top");
-	expect(
-		within(border)
-			.getAllByRole("button")
-			.map(
-				(button) =>
-					button.getAttribute("aria-label") ?? button.textContent,
-			),
-	).toEqual([
-		"workbench.view",
-		"workspace.publishTooltip",
-		"studio.closeWorkspace",
-	]);
-	act(() =>
-		room.setOptions({
-			instructions: "Updated instructions",
-			mcp: [{ id: "tool-1", type: "PROJECT", name: "Tool" }],
-		}),
-	);
-	await user.click(
-		within(border).getByRole("button", {
-			name: "workspace.publishTooltip",
-		}),
-	);
-	await user.type(
-		screen.getByLabelText("workspace.nameLabel"),
-		"Published agent",
-	);
-	await user.click(
-		screen.getByRole("button", { name: "workspace.publishButton" }),
-	);
-	await waitFor(() =>
-		expect(mocks.addWorkspace).toHaveBeenCalledWith(
-			expect.objectContaining({
-				system_prompt: "Updated instructions",
-				mcp: [{ id: "tool-1", type: "PROJECT", name: "Tool" }],
-			}),
-		),
-	);
+test("the work area has no strip above its tabs", () => {
+	render(<RoomWorkspaceTest room={createRoom()} />);
+	expect(screen.queryByTestId("workbench-border-top")).toBeNull();
+	expect(screen.queryByRole("button", { name: "workbench.view" })).toBeNull();
 });
 
-test("closing and reopening retain drafts and panels and restore conversation focus", async () => {
+test("closing from the header and reopening retain drafts and panels and restore conversation focus", async () => {
 	const user = userEvent.setup();
 	const room = createRoom();
 	render(<RoomWorkspaceTest room={room} />);
@@ -171,93 +125,6 @@ test("closing and reopening retain drafts and panels and restore conversation fo
 	expect(room.workbench.getState().layout.panels).toBe(originalPanels);
 	expect(screen.getByLabelText("Draft")).toBe(draft);
 	expect(draft).toHaveValue("Unsent draft");
-});
-
-test("mobile actions close both the drawer and work area and restore conversation focus", async () => {
-	vi.stubGlobal("innerWidth", 360);
-	const user = userEvent.setup();
-	const room = createRoom();
-	render(<RoomWorkspaceTest room={room} />);
-	const draft = screen.getByLabelText("Draft");
-	// jsdom has no pane geometry; the resize handle intercepts pointer focus.
-	act(() => draft.focus());
-	expect(draft).toHaveFocus();
-	await user.click(
-		screen.getByRole("button", { name: "Panels and actions" }),
-	);
-	const drawer = await screen.findByRole("dialog");
-	expect(
-		within(drawer).getByRole("button", {
-			name: "workspace.publishTooltip",
-		}),
-	).toBeInTheDocument();
-	await user.click(
-		within(drawer).getByRole("button", { name: "studio.closeWorkspace" }),
-	);
-	expect(room.sidebar.isOpen).toBe(false);
-	await waitFor(() => expect(drawer).toHaveAttribute("data-state", "closed"));
-	await waitFor(() => expect(draft).toHaveFocus());
-	act(() => {
-		room.openSidebarPanel("notes");
-	});
-	expect(drawer).toHaveAttribute("data-state", "closed");
-});
-
-test("mobile top menus navigate and dismiss the drawer without closing the work area", async () => {
-	vi.stubGlobal("innerWidth", 360);
-	const user = userEvent.setup();
-	const room = createRoom();
-	const before = room.workbench.getState().layout.openPanelIds.length;
-	render(<RoomSidebar room={room} />);
-	await user.click(
-		screen.getByRole("button", { name: "Panels and actions" }),
-	);
-	const drawer = await screen.findByRole("dialog");
-	fireEvent.keyDown(
-		within(drawer).getByRole("button", { name: "workbench.view" }),
-		{ key: "Enter" },
-	);
-	expect(
-		screen.queryByRole("menuitem", { name: "workbench.navigate" }),
-	).not.toBeInTheDocument();
-	await user.click(
-		await screen.findByRole("menuitem", { name: "workspacePlaces.files" }),
-	);
-	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(
-		before + 1,
-	);
-	expect(room.sidebar.isOpen).toBe(true);
-	await waitFor(() => expect(drawer).toHaveAttribute("data-state", "closed"));
-});
-
-test("mobile command palette opens above the actions drawer", async () => {
-	vi.stubGlobal("innerWidth", 360);
-	Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
-		configurable: true,
-		value: vi.fn(),
-	});
-	const user = userEvent.setup();
-	render(<RoomSidebar room={createRoom()} />);
-	await user.click(
-		screen.getByRole("button", { name: "Panels and actions" }),
-	);
-	const drawer = await screen.findByRole("dialog");
-	fireEvent.keyDown(
-		within(drawer).getByRole("button", { name: "workbench.view" }),
-		{ key: "Enter" },
-	);
-	fireEvent.click(
-		await screen.findByRole("menuitem", {
-			name: "workbench.commandPalette",
-		}),
-	);
-	expect(
-		await screen.findByRole("dialog", {
-			name: "Workbench Command Palette",
-		}),
-	).toBeInTheDocument();
-	await user.keyboard("{Escape}");
-	expect(drawer).toHaveAttribute("data-state", "open");
 });
 
 test.each([false, true])(

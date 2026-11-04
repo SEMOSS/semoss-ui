@@ -4,10 +4,7 @@
 		"title": "Suggestions pour poursuivre"
 	},
 	"settings": {
-		"title": "Paramètres de la salle",
-		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
-		"open": "Ouvrir les paramètres de la salle",
-		"close": "Fermer les paramètres de la salle",
+		"description": "Modèle, instructions, connaissances et outils de cette salle.",
 		"compact": "Compacter la conversation",
 		"compactSuccess": "Conversation compactée avec succès",
 		"compactSkipped": "Rien à compacter — la conversation est déjà concise",
@@ -28,13 +25,13 @@
 			"TOOL_PRUNE": "Supprime les résultats détaillés des appels d'outils de l'historique de la conversation. Idéal lorsque les sorties d'outils sont volumineuses et que les détails ne sont plus nécessaires.",
 			"AUTO": "Choisira le résumé ou l'élagage des outils selon la conversation en cours."
 		},
-		"panelTitle": "Paramètres",
 		"noKnowledge": "Aucune connaissance sélectionnée.",
 		"noTools": "Aucun outil sélectionné.",
 		"fromRoom": "De la conversation",
 		"inheritedSelection": "Les sélections héritées ne peuvent pas être retirées de ce chat.",
 		"removeSelection": "Retirer {{name}}",
-		"agentLoadError": "Impossible de charger l’agent. Réessayez ou sélectionnez-en un autre."
+		"agentLoadError": "Impossible de charger l’agent. Réessayez ou sélectionnez-en un autre.",
+		"toolsTitle": "Outils"
 	},
 	"form": {
 		"modelLabel": "Modèle",
@@ -71,7 +68,7 @@
 		"ariaPlaceholder": "Entrez du texte",
 		"thinking": "Réflexion...",
 		"menuPrompt": "Comment puis-je vous aider aujourd'hui ?",
-		"openSettings": "Ajouter à votre discussion",
+		"addToChat": "Ajouter à votre discussion",
 		"recordLabel": "Enregistrer le modèle",
 		"stopRecording": "Arrêter l'enregistrement",
 		"record": "Enregistrer",
@@ -120,9 +117,7 @@
 		"attachDocument": "Joindre des fichiers"
 	},
 	"menuFileExplorer": {
-		"name": "Fichiers du chat",
-		"open": "Afficher les fichiers du chat",
-		"close": "Masquer les fichiers du chat"
+		"name": "Fichiers de la salle"
 	},
 	"errors": {
 		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}",
@@ -146,14 +141,10 @@
 	"studio": {
 		"views": "Vues de la conversation",
 		"chat": "Discussion",
-		"openWorkArea": "Ouvrir l’espace de travail",
 		"workArea": "Espace de travail",
 		"toolsCount": "Outils, {{count}} sélectionnés",
-		"tools": "Outils",
 		"toolsLocked": "Les outils ne peuvent pas être modifiés pendant une réponse.",
 		"toolsHint": "Les sélections s’appliquent à votre prochain message.",
-		"toolsTitle": "Outils et connaissances",
-		"toolsDescription": "Choisissez les outils et les connaissances disponibles pour cette conversation.",
 		"moreActions": "Autres actions",
 		"prompts": "Prompts",
 		"removeFile": "Retirer {{name}}",
@@ -166,15 +157,19 @@
 		"exportPdf": "Exporter au format PDF",
 		"closeWorkspace": "Fermer l’espace de travail",
 		"preparingWorkspace": "Préparation de l’espace de travail…",
-		"activityLog": "Journal d’activité",
 		"prepareError": "Impossible de préparer l’espace de travail. Votre brouillon est conservé.",
 		"retry": "Réessayer"
 	},
 	"workspacePlaces": {
 		"files": "Fichiers",
-		"tools": "Outils",
 		"activity": "Activité",
-		"settings": "Paramètres"
+		"settings": "Paramètres",
+		"more": "Autres",
+		"descriptions": {
+			"files": "Les fichiers que vous envoyez ici et ce que créent les outils de la salle",
+			"settings": "Le modèle, les instructions, les connaissances et les outils de cette salle",
+			"activity": "Chaque appel d’outil et chaque modification dans cette salle"
+		}
 	},
 	"optimizer": {
 		"optimize": "Optimiser le message",
@@ -190,5 +185,78 @@
 	"contextItems": {
 		"label": "Ajouté à votre prochain message",
 		"remove": "Retirer {{name}} de votre prochain message"
+	},
+	"header": {
+		"untitled": "Salle sans titre",
+		"renameLabel": "Nom de la salle",
+		"roomSection": "Salle"
+	},
+	"slash": {
+		"empty": "Aucune commande trouvée",
+		"openPlace": "Ouvrir {{name}} dans l’espace de travail",
+		"groups": {
+			"chat": "Chat",
+			"workspace": "Espace de travail",
+			"room": "Salle",
+			"prompts": "Prompts"
+		},
+		"commands": {
+			"attach": {
+				"label": "Joindre des fichiers",
+				"description": "Ajoutez des fichiers à votre prochain message"
+			},
+			"knowledge": {
+				"label": "Ajouter des connaissances",
+				"description": "Laissez l’assistant chercher dans vos sources de connaissances"
+			},
+			"toolbox": {
+				"label": "Ajouter des outils",
+				"description": "Ajoutez des boîtes à outils que l’assistant peut utiliser"
+			},
+			"agent": {
+				"label": "Choisir un agent",
+				"description": "Choisissez l’agent qui exécute cette salle"
+			},
+			"agent-harness": {
+				"label": "Passer à l’agent",
+				"description": "Exécutez cette salle avec un agent"
+			},
+			"chat-mode": {
+				"label": "Passer au chat",
+				"description": "Exécutez cette salle sans agent"
+			},
+			"compact": {
+				"label": "Compacter",
+				"description": "Résumez la conversation pour libérer du contexte"
+			},
+			"close-workspace": {
+				"label": "Fermer l’espace de travail",
+				"description": "Masquez l’espace de travail en gardant ses onglets"
+			},
+			"favorite": {
+				"label": "Favori",
+				"description": "Épinglez cette salle en haut de votre liste"
+			},
+			"unfavorite": {
+				"label": "Retirer des favoris",
+				"description": "Désépinglez cette salle du haut de votre liste"
+			},
+			"rename": {
+				"label": "Renommer",
+				"description": "Changez le nom de cette salle"
+			},
+			"download": {
+				"label": "Télécharger",
+				"description": "Enregistrez cette conversation au format Word ou PDF"
+			},
+			"delete": {
+				"label": "Supprimer",
+				"description": "Supprimez cette salle et sa conversation"
+			},
+			"publish": {
+				"label": "Publier comme agent",
+				"description": "Enregistrez les instructions et les outils de cette salle comme agent"
+			}
+		}
 	}
 }

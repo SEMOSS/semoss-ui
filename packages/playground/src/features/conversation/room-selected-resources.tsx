@@ -5,6 +5,7 @@ import type { MCPConfig } from "@semoss/shared";
 import {
 	Badge,
 	Button,
+	cn,
 	H4,
 	Muted,
 	Tooltip,
@@ -19,6 +20,11 @@ interface RoomSelectedResourcesProps {
 	disabled: boolean;
 	onAdd: () => void;
 	onRemove: (item: MCPConfig) => void;
+	/**
+	 * Heading level: a section of its own, or part of a larger one such as
+	 * Settings' Tools. Defaults to a section of its own.
+	 */
+	level?: 4 | 5;
 }
 
 /** Visible selections with conversation-scoped removal and explicit ownership. */
@@ -28,20 +34,28 @@ export function RoomSelectedResources({
 	disabled,
 	onAdd,
 	onRemove,
+	level = 4,
 }: RoomSelectedResourcesProps) {
 	const { t } = useTranslation(["room", "common"]);
 	const id = useId();
+	const Heading = level === 4 ? H4 : "h5";
 	return (
 		<section aria-labelledby={id} className="flex min-w-0 flex-col gap-3">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<H4 id={id} className="flex items-center gap-2 text-base">
+				<Heading
+					id={id}
+					className={cn(
+						"flex items-center gap-2",
+						level === 4 ? "text-base" : "font-medium text-sm",
+					)}
+				>
 					{t(
 						type === "KNOWLEDGE"
 							? "room:form.knowledgeLabel"
-							: "room:studio.tools",
+							: "room:form.toolboxLabel",
 					)}
 					<Badge variant="secondary">{items.length}</Badge>
-				</H4>
+				</Heading>
 				<Button
 					type="button"
 					variant="outline"

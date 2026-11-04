@@ -3,8 +3,8 @@ import {
 	type LucideIcon,
 	ScrollTextIcon,
 	Settings2Icon,
-	WrenchIcon,
 } from "lucide-react";
+import { useContext } from "react";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
@@ -14,14 +14,17 @@ import type {
 	WorkbenchPanelType,
 } from "@semoss/workbench";
 import type { ConnectorsStore } from "@/features/connectors/connectors.store";
+import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
 import type { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 
 interface WorkspacePlaceBase {
 	/** Stable key. */
 	id: string;
-	/** Visible name. */
+	/** Visible name, short; the same in the header, tabs, and slash menu. */
 	label: string;
+	/** What the place holds, shown on hover. */
+	description?: string;
 	/** The panel the place shows, for telling whether it is in front. */
 	panelType: WorkbenchPanelType;
 	/** That panel's identity, matched as `selectPanel` matches it. */
@@ -30,8 +33,13 @@ interface WorkspacePlaceBase {
 	isDisabled: boolean;
 	/** Whether the place waits on a new chat preparing its room. */
 	isLoading: boolean;
-	/** Opens the Workspace on the place. */
-	onOpen: () => void;
+	/**
+	 * Opens the Workspace on the place.
+	 *
+	 * @param trigger - The control that opened it, which gets focus back when
+	 * the Workspace closes.
+	 */
+	onOpen: (trigger?: HTMLElement | null) => void;
 }
 
 /** A place the Workspace shows: one of the room's own, or a connector viewer. */
@@ -56,13 +64,12 @@ export interface DraftWorkspacePlaces {
 }
 
 /**
- * The places a room's Workspace opens: Chat Files, Chat Tools, the activity
- * log, and settings, then the connector viewers the chat can show. A draft has
- * no Chat Tools, since its tools are not settled until its first message, and
- * its Files, activity log, and viewers wait while it prepares its room. Call
- * it from an observer: the viewers
- * are read from MobX. It does not read the session's logins itself; the
- * composer's sign in notice keeps them current.
+ * The places a room's Workspace opens: Files, Settings, and the activity log,
+ * then the connector viewers the chat can show. A draft's Files, activity log,
+ * and viewers wait while it prepares its room. Opening a place also brings the
+ * work area into view, selecting its tab on narrow screens. Call it from an
+ * observer: the viewers are read from MobX. It does not read the session's
+ * logins itself; the composer's sign in notice keeps them current.
  *
  * @param room - The room whose Workspace shows the places.
  * @param draft - A new chat's own actions, until its first message.
@@ -73,6 +80,13 @@ export const useWorkspacePlaces = (
 	draft?: DraftWorkspacePlaces,
 ): WorkspacePlace[] => {
 	const { t } = useTranslation(["room", "connectors"]);
+	const workspace = useContext(ConversationWorkspaceActionsContext);
+	const reveal =
+		(open: () => void): WorkspacePlace["onOpen"] =>
+		(trigger) => {
+			open();
+			workspace?.revealWorkArea(trigger);
+		};
 	const connectors = draft?.connectors ?? room.connectors;
 	const isPreparing = draft?.isPreparing ?? false;
 	const onOpenActivity =
@@ -81,7 +95,7 @@ export const useWorkspacePlaces = (
 			room.openSidebarPanel(
 				ROOM_PANEL_TYPES.AUDIT_LOG,
 				{},
-				t("studio.activityLog"),
+				t("workspacePlaces.activity"),
 			));
 	const showActivityLog = room.theme.featureFlags?.showActivityLog !== false;
 
@@ -90,61 +104,48 @@ export const useWorkspacePlaces = (
 			kind: "room",
 			id: "files",
 			label: t("workspacePlaces.files"),
+			description: t("workspacePlaces.descriptions.files"),
 			icon: FolderTreeIcon,
 			panelType: FILE_PANEL_TYPES.FILE_EXPLORER,
 			panelConfig: { mode: room.fileMode },
 			isDisabled: isPreparing,
 			isLoading: isPreparing,
-			onOpen:
+			onOpen: reveal(
 				draft?.onOpenFiles ??
-				(() =>
-					room.openSidebarFileExplorer(
-						undefined,
-						t("menuFileExplorer.name"),
-					)),
+					(() =>
+						room.openSidebarFileExplorer(
+							undefined,
+							t("workspacePlaces.files"),
+						)),
+			),
 		},
-	];
-	if (!draft) {
-		places.push({
+		{
 			kind: "room",
-			id: "tools",
-			label: t("workspacePlaces.tools"),
-			icon: WrenchIcon,
-			panelType: ROOM_PANEL_TYPES.CHAT_TOOLS,
+			id: "settings",
+			label: t("workspacePlaces.settings"),
+			description: t("workspacePlaces.descriptions.settings"),
+			icon: Settings2Icon,
+			panelType: ROOM_PANEL_TYPES.CONFIGURATION,
 			isDisabled: false,
 			isLoading: false,
-			onOpen: room.chatTools.openToolsPanel,
-		});
-	}
+			onOpen: reveal(
+				draft?.onOpenSettings ?? room.chatTools.openRoomSettings,
+			),
+		},
+	];
 	if (showActivityLog) {
 		places.push({
 			kind: "room",
 			id: "activity",
 			label: t("workspacePlaces.activity"),
+			description: t("workspacePlaces.descriptions.activity"),
 			icon: ScrollTextIcon,
 			panelType: ROOM_PANEL_TYPES.AUDIT_LOG,
 			isDisabled: isPreparing,
 			isLoading: false,
-			onOpen: onOpenActivity,
+			onOpen: reveal(onOpenActivity),
 		});
 	}
-	places.push({
-		kind: "room",
-		id: "settings",
-		label: t("workspacePlaces.settings"),
-		icon: Settings2Icon,
-		panelType: ROOM_PANEL_TYPES.CONFIGURATION,
-		isDisabled: false,
-		isLoading: false,
-		onOpen:
-			draft?.onOpenSettings ??
-			(() =>
-				room.openSidebarPanel(
-					ROOM_PANEL_TYPES.CONFIGURATION,
-					{},
-					t("settings.panelTitle"),
-				)),
-	});
 	for (const source of connectors.availableSources) {
 		places.push({
 			kind: "connector",
@@ -155,10 +156,11 @@ export const useWorkspacePlaces = (
 			// a draft prepares its room first, so one preparation at a time
 			isDisabled: isPreparing,
 			isLoading: false,
-			onOpen: () =>
+			onOpen: reveal(() =>
 				draft
 					? draft.onOpenSource(source.service)
 					: connectors.openSourcePanel(source.service),
+			),
 		});
 	}
 	return places;

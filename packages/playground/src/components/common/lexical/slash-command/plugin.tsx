@@ -22,6 +22,10 @@ try {
 // MenuPortal
 // ============================================================================
 
+/** The menu's width (w-72) and its smallest distance from the window's edge. */
+const MENU_WIDTH = 288;
+const MENU_GUTTER = 8;
+
 /**
  * Renders the slash command menu into a portal and closes it when the user
  * clicks outside — without blocking the click from reaching its target.
@@ -49,18 +53,27 @@ const MenuPortal: React.FC<{
 		return () => document.removeEventListener("pointerdown", handler, true);
 	}, []);
 
+	// keep the whole menu on screen when the caret is near the right edge
+	const left = Math.max(
+		MENU_GUTTER,
+		Math.min(
+			menuPosition.left,
+			window.innerWidth - MENU_WIDTH - MENU_GUTTER,
+		),
+	);
+
 	return createPortal(
 		<div
 			ref={ref}
 			style={{
 				position: "fixed",
-				...(window.innerHeight - menuPosition.bottom < 300
+				...(window.innerHeight - menuPosition.bottom < 340
 					? { bottom: window.innerHeight - menuPosition.top + 4 }
 					: { top: menuPosition.bottom + 4 }),
-				left: menuPosition.left,
+				left,
 				zIndex: 50,
 			}}
-			className="w-64 overflow-hidden rounded-md border border-border bg-popover shadow-md"
+			className="w-72 overflow-hidden rounded-md border border-border bg-popover shadow-md"
 		>
 			{children}
 		</div>,

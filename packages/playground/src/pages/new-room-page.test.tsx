@@ -1,10 +1,4 @@
-import {
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentProps, ReactNode } from "react";
@@ -67,6 +61,9 @@ const chat = {
 	removeOptimisticRoom: vi.fn(),
 	keys: { roomCounter: 0 },
 };
+vi.mock("@/features/settings/settings-dialog.context", () => ({
+	useSettingsDialog: () => ({ openSettings: vi.fn() }),
+}));
 vi.mock("react-router", () => ({
 	useNavigate: () => mocks.navigate,
 	useSearchParams: () => [new URLSearchParams()],
@@ -162,18 +159,16 @@ vi.mock("@/features/conversation/conversation-workspace", () => ({
 		children,
 		panel,
 		isOpen,
-		onOpenWorkArea,
+		header,
 	}: {
 		children: ReactNode;
 		panel: ReactNode;
 		isOpen: boolean;
-		onOpenWorkArea: () => void;
+		header: ReactNode;
 	}) => (
 		<>
+			{header}
 			{children}
-			<button type="button" onClick={onOpenWorkArea}>
-				Open Workspace
-			</button>
 			<div hidden={!isOpen}>{panel}</div>
 		</>
 	),
@@ -309,15 +304,25 @@ afterEach(() => {
 /** Start the local workspace through its normal opener. */
 function renderWorkspace() {
 	const result = render(<NewRoomPage />);
-	fireEvent.click(screen.getByRole("button", { name: "Open Workspace" }));
+	fireEvent.click(
+		screen.getByRole("button", { name: "workspacePlaces.settings" }),
+	);
 	return result;
 }
 
-/** Select a place from the real workbench View menu. */
+/** The header's icons; every other place is under its More menu. */
+const HEADER_PLACES = ["workspacePlaces.files", "workspacePlaces.settings"];
+
+/** Select a place from the room header's quick actions. */
 function selectWorkspaceItem(name: string) {
-	fireEvent.keyDown(screen.getByRole("button", { name: "workbench.view" }), {
-		key: "Enter",
-	});
+	if (HEADER_PLACES.includes(name)) {
+		fireEvent.click(screen.getByRole("button", { name }));
+		return;
+	}
+	fireEvent.keyDown(
+		screen.getByRole("button", { name: "workspacePlaces.more" }),
+		{ key: "Enter" },
+	);
 	fireEvent.click(screen.getByRole("menuitem", { name }));
 }
 
@@ -459,7 +464,7 @@ test.each(["chat", "agent"] as const)(
 			target: { value: "Before opening files" },
 		});
 		selectWorkspaceItem("workspacePlaces.files");
-		await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
+		await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
 		expect(screen.getAllByRole("tab")).toHaveLength(2);
 		selectWorkspaceItem("workspacePlaces.settings");
 		expect(screen.getByLabelText("Instructions")).toHaveValue(
@@ -543,37 +548,50 @@ test("without the harness flag saved agents retain chat behavior", async () => {
 	);
 });
 
-test("Settings opens locally, deduplicates, and returns when the workspace is empty", () => {
+test("Settings opens locally, closes from its own icon, and reopens the same tab", () => {
 	renderWorkspace();
 	const settings = screen.getByRole("tab", {
-		name: "room:settings.panelTitle",
+		name: "room:workspacePlaces.settings",
 	});
 	expect(settings).toHaveAttribute("aria-selected", "true");
 	expect(
 		screen.queryByRole("button", { name: "Publish" }),
 	).not.toBeInTheDocument();
-	selectWorkspaceItem("workspacePlaces.settings");
-	expect(screen.getAllByRole("tab")).toHaveLength(1);
-	expect(screen.getByRole("tab", { name: "room:settings.panelTitle" })).toBe(
-		settings,
-	);
-	fireEvent.click(within(settings).getByRole("button", { name: /close/i }));
-	fireEvent.click(screen.getByRole("button", { name: "Open Workspace" }));
+	const settingsPlace = screen.getByRole("button", {
+		name: "workspacePlaces.settings",
+	});
+	expect(settingsPlace).toHaveAttribute("aria-pressed", "true");
+	fireEvent.click(settingsPlace);
+	expect(settingsPlace).toHaveAttribute("aria-pressed", "false");
+	fireEvent.click(settingsPlace);
 	expect(screen.getAllByRole("tab")).toHaveLength(1);
 	expect(
-		screen.getByRole("tab", { name: "room:settings.panelTitle" }),
-	).toHaveAttribute("aria-selected", "true");
+		screen.getByRole("tab", { name: "room:workspacePlaces.settings" }),
+	).toBe(settings);
+	expect(settings).toHaveAttribute("aria-selected", "true");
 	expect(mocks.createEmptyRoom).not.toHaveBeenCalled();
 	expect(mocks.createRoom).not.toHaveBeenCalled();
 });
 
-test("reopening restores Files and tab changes preserve both the form and editor", async () => {
+test("a new chat's header has its places but no title or room menu", () => {
+	render(<NewRoomPage />);
+	expect(screen.getByRole("banner")).not.toHaveTextContent("header.newChat");
+	expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+	expect(
+		screen.getByRole("navigation", { name: "studio.workArea" }),
+	).toBeVisible();
+	expect(
+		screen.queryByRole("menuitem", { name: "sidebar:actions.rename" }),
+	).toBeNull();
+});
+
+test("reopening keeps Files, and tab changes preserve both the form and editor", async () => {
 	const room = createPreparedRoom();
 	mocks.createEmptyRoom.mockResolvedValue(room);
 	renderWorkspace();
 	selectWorkspaceItem("workspacePlaces.files");
 	const files = await screen.findByRole("tab", {
-		name: "room:menuFileExplorer.name",
+		name: "room:workspacePlaces.files",
 	});
 	const editor = screen.getByLabelText("File draft");
 	fireEvent.change(editor, { target: { value: "Keep file edits" } });
@@ -584,13 +602,14 @@ test("reopening restores Files and tab changes preserve both the form and editor
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.closeWorkspace" }),
 	);
-	fireEvent.click(screen.getByRole("button", { name: "Open Workspace" }));
-	expect(files).toHaveAttribute("aria-selected", "true");
-	expect(screen.getByLabelText("File draft")).toBe(editor);
-	expect(editor).toHaveValue("Keep file edits");
+	// this test's Files blueprint has no matcher, so reopen through Settings
 	selectWorkspaceItem("workspacePlaces.settings");
 	expect(screen.getByLabelText("Instructions")).toBe(instructions);
 	expect(instructions).toHaveValue("Keep settings");
+	fireEvent.keyDown(files, { key: "Enter" });
+	expect(files).toHaveAttribute("aria-selected", "true");
+	expect(screen.getByLabelText("File draft")).toBe(editor);
+	expect(editor).toHaveValue("Keep file edits");
 	expect(screen.getByLabelText("Message draft")).toHaveValue(
 		"Keep this draft",
 	);
@@ -609,7 +628,7 @@ test("failed file preparation keeps draft settings usable and supports retry", a
 		target: { value: "Keep after retry" },
 	});
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
-	await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
+	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
 	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	selectWorkspaceItem("workspacePlaces.settings");
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
@@ -652,7 +671,7 @@ test("connector viewers share the prepared room and transfer draft context befor
 	);
 	expect(room.contextItems.items).toHaveLength(0);
 	selectWorkspaceItem("workspacePlaces.files");
-	await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
+	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
 	selectWorkspaceItem("workspacePlaces.settings");
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
@@ -676,7 +695,7 @@ test("retrying failed source preparation reopens the requested viewer", async ()
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
 	await screen.findByRole("tab", { name: "connectors:services.gmail" });
 	expect(
-		screen.queryByRole("tab", { name: "room:menuFileExplorer.name" }),
+		screen.queryByRole("tab", { name: "room:workspacePlaces.files" }),
 	).toBeNull();
 });
 
@@ -688,9 +707,9 @@ test("Activity prepares the room and opens its log, and Retry after a failure op
 	selectWorkspaceItem("workspacePlaces.activity");
 	await screen.findByRole("alert");
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
-	await screen.findByRole("tab", { name: "room:studio.activityLog" });
+	await screen.findByRole("tab", { name: "room:workspacePlaces.activity" });
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
 	expect(
-		screen.queryByRole("tab", { name: "room:menuFileExplorer.name" }),
+		screen.queryByRole("tab", { name: "room:workspacePlaces.files" }),
 	).toBeNull();
 });

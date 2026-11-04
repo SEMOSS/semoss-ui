@@ -25,7 +25,6 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import {
 	useCallback,
-	useContext,
 	useEffect,
 	useId,
 	useMemo,
@@ -70,7 +69,6 @@ import { useFileDrag } from "@/contexts/file-drag-context";
 import { ConnectorSignInNotice } from "@/features/connectors/components/connector-sign-in-notice";
 import { useUserConnectorsSync } from "@/features/connectors/use-user-connectors-sync";
 import { ContextItems } from "@/features/conversation/context-items";
-import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
 import {
 	getPromptHistory,
 	RESET_PROMPT_HISTORY_COMMAND,
@@ -80,6 +78,8 @@ import {
 	RoomComposerMenu,
 	type RoomComposerMenuProps,
 } from "@/features/conversation/room-composer-menu";
+import { useRoomSlashCommands } from "@/features/conversation/use-room-slash-commands";
+import type { DraftWorkspacePlaces } from "@/features/workbench/use-workspace-places";
 import { useGracefulErrors } from "@/hooks/use-graceful-errors";
 import { useRoot } from "@/hooks/use-root";
 import { AGENT_HARNESS_TYPE } from "@/stores/message/agent-harness";
@@ -101,8 +101,6 @@ try {
 // ============================================================================
 // Constants & Helper Functions
 // ============================================================================
-
-const noop = () => {};
 
 // ============================================================================
 // TypeScript Interfaces
@@ -185,8 +183,11 @@ interface RoomInputProps {
 	/** Command IDs to suppress from the slash menu */
 	excludeCommandIds?: string[];
 
-	/** Callback to open the room settings/configuration panel */
-	onOpenSettings?: () => void;
+	/**
+	 * Where the slash menu's Workspace places open: a new chat's prepared or
+	 * draft room and its own actions. Defaults to `room`.
+	 */
+	workspace?: { room: RoomStore; draft?: DraftWorkspacePlaces };
 
 	/**
 	 * Callback for the /agent-harness slash command. Defaults to switching
@@ -238,7 +239,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		room,
 		onCompact,
 		excludeCommandIds,
-		onOpenSettings,
+		workspace,
 		onSwitchToAgentHarness,
 		onExitAgentHarness,
 		onOpenSource,
@@ -259,14 +260,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const { root } = useRoot();
 		// connectors switched on or off in settings reach this chat at once
 		useUserConnectorsSync(room.connectors);
-		const openWorkspace =
-			useContext(ConversationWorkspaceActionsContext) ??
-			(() => room.openSidebar());
 		const afterMenuClose = useRef<(() => void) | null>(null);
-		const handleOpenWorkspace = () => {
-			afterMenuClose.current = openWorkspace;
-			setMenuOpen(false);
-		};
 		const handleOpenSource = (service: ConnectorViewerService) => {
 			afterMenuClose.current = () => {
 				if (onOpenSource) onOpenSource(service);
@@ -387,6 +381,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+		const slashCommands = useRoomSlashCommands({
+			room: room,
+			workspaceRoom: workspace?.room,
+			draft: workspace?.draft,
+			onOpenMcpOverlay: handleOpenMcpOverlay,
+			onAttachFiles: openFilePicker,
+			onCompact: onCompact ? () => onCompact() : undefined,
+			onSwitchToAgent: handleSwitchToAgentHarness,
+			onSwitchToChat: onExitAgentHarness,
+			canChooseAgent: Boolean(onWorkspaceChange),
+			prompts: predefinedPrompts,
+			onRunPrompt: (prompt) => void runPredefinedPrompt(prompt.context),
+		});
 
 		// Whether the latest response has unfinished tools — compaction can't
 		// touch a response until all tool calls have resolved
@@ -621,11 +629,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		return (
 			<div className="relative w-full" ref={ref} data-tour="tour-input">
 				<SlashCommandProvider
-					onOpenMcpOverlay={handleOpenMcpOverlay}
-					onCompact={onCompact ?? noop}
-					onAttachDocument={openFilePicker}
-					onOpenSettings={onOpenSettings ?? noop}
-					onSwitchToAgentHarness={handleSwitchToAgentHarness}
+					commands={slashCommands}
 					excludeCommandIds={excludeCommandIds}
 				>
 					<LexicalComposer
@@ -866,7 +870,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 															size="icon-sm"
 															className="shrink-0 rounded-full"
 															aria-label={t(
-																"input.openSettings",
+																"input.addToChat",
 															)}
 															data-tour="tour-input-menu"
 														>
@@ -875,7 +879,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													</DropdownMenuTrigger>
 												</TooltipTrigger>
 												<TooltipContent>
-													{t("input.openSettings")}
+													{t("input.addToChat")}
 												</TooltipContent>
 											</Tooltip>
 											<DropdownMenuContent
@@ -899,9 +903,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													isOpen={menuOpen}
 													options={options}
 													disabled={isBusy}
-													onOpenWorkspace={
-														handleOpenWorkspace
-													}
 													mode={room.mode}
 													onSelectChat={
 														onExitAgentHarness

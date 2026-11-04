@@ -8,10 +8,8 @@ import {
 import userEvent from "@testing-library/user-event";
 import { useContext, useState } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { DropdownMenuItem } from "@semoss/ui/next";
 import { ConversationWorkspace } from "./conversation-workspace";
 import { ConversationWorkspaceActionsContext } from "./conversation-workspace-actions.context";
-import { ConversationWorkspaceRailContext } from "./conversation-workspace-rail.context";
 
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
@@ -53,13 +51,8 @@ test("keeps conversation drafts and work editors mounted across width, tab, and 
 	const panel = (
 		<textarea aria-label="Editor" defaultValue="Unsaved document" />
 	);
-	const onOpenWorkArea = vi.fn();
 	const { rerender, container } = render(
-		<ConversationWorkspace
-			isOpen
-			onOpenWorkArea={onOpenWorkArea}
-			panel={panel}
-		>
+		<ConversationWorkspace isOpen panel={panel}>
 			{children}
 		</ConversationWorkspace>,
 	);
@@ -87,32 +80,20 @@ test("keeps conversation drafts and work editors mounted across width, tab, and 
 	);
 	resize(1400);
 	rerender(
-		<ConversationWorkspace
-			isOpen
-			onOpenWorkArea={onOpenWorkArea}
-			panel={panel}
-		>
+		<ConversationWorkspace isOpen panel={panel}>
 			{children}
 		</ConversationWorkspace>,
 	);
 	draft.focus();
 	editor.focus();
 	rerender(
-		<ConversationWorkspace
-			isOpen={false}
-			onOpenWorkArea={onOpenWorkArea}
-			panel={panel}
-		>
+		<ConversationWorkspace isOpen={false} panel={panel}>
 			{children}
 		</ConversationWorkspace>,
 	);
 	await waitFor(() => expect(draft).toHaveFocus());
 	rerender(
-		<ConversationWorkspace
-			isOpen
-			onOpenWorkArea={onOpenWorkArea}
-			panel={panel}
-		>
+		<ConversationWorkspace isOpen panel={panel}>
 			{children}
 		</ConversationWorkspace>,
 	);
@@ -122,94 +103,42 @@ test("keeps conversation drafts and work editors mounted across width, tab, and 
 	expect(editor).toHaveValue("Keep my edits");
 });
 
-function WorkspaceOpenHarness() {
+/** A header place that opens the work area, and a close button inside it. */
+function HeaderPlace({ onOpen }: { onOpen: () => void }) {
+	const workspace = useContext(ConversationWorkspaceActionsContext);
+	return (
+		<button
+			type="button"
+			aria-pressed={workspace?.isWorkAreaVisible ?? false}
+			onClick={(event) => {
+				onOpen();
+				workspace?.revealWorkArea(event.currentTarget);
+			}}
+		>
+			Files
+		</button>
+	);
+}
+
+function WorkspaceHeaderHarness() {
 	const [isOpen, setIsOpen] = useState(false);
 	return (
 		<ConversationWorkspace
 			isOpen={isOpen}
-			onOpenWorkArea={() => setIsOpen(true)}
+			header={<HeaderPlace onOpen={() => setIsOpen(true)} />}
 			panel={
 				<button type="button" onClick={() => setIsOpen(false)}>
 					Close work area
 				</button>
 			}
 		>
-			<WorkspaceComposerAction />
+			<input aria-label="Draft" />
 		</ConversationWorkspace>
 	);
 }
 
-test("desktop opener moves focus into the work area and receives it on close", async () => {
-	const user = userEvent.setup();
-	render(<WorkspaceOpenHarness />);
-	const opener = screen.getByRole("button", {
-		name: "studio.openWorkArea",
-	});
-	expect(opener).toHaveAttribute("aria-expanded", "false");
-	expect(opener).toHaveClass("top-2", "size-8");
-	await user.click(opener);
-	const workArea = screen.getByRole("region", { name: "studio.workArea" });
-	await waitFor(() => expect(workArea).toHaveFocus());
-	expect(
-		screen.queryByRole("button", { name: "studio.openWorkArea" }),
-	).not.toBeInTheDocument();
-	await user.click(screen.getByRole("button", { name: "Close work area" }));
-	await waitFor(() =>
-		expect(
-			screen.getByRole("button", { name: "studio.openWorkArea" }),
-		).toHaveFocus(),
-	);
-});
-
-test("mobile opener uses the top-corner target and selects the Work area tab", async () => {
-	vi.stubGlobal("innerWidth", 360);
-	const observations: ResizeObserverCallback[] = [];
-	vi.stubGlobal(
-		"ResizeObserver",
-		class {
-			constructor(callback: ResizeObserverCallback) {
-				observations.push(callback);
-			}
-			observe() {}
-			unobserve() {}
-			disconnect() {}
-		},
-	);
-	const user = userEvent.setup();
-	render(<WorkspaceOpenHarness />);
-	act(() => {
-		observations[0]?.(
-			[{ contentRect: { width: 360 } } as ResizeObserverEntry],
-			{} as ResizeObserver,
-		);
-	});
-	const opener = await screen.findByRole("button", {
-		name: "studio.openWorkArea",
-	});
-	expect(opener).toHaveClass("min-h-11", "min-w-11", "top-1");
-	await user.click(opener);
-	await waitFor(() =>
-		expect(
-			screen.getByRole("tab", { name: "studio.workArea" }),
-		).toHaveAttribute("aria-selected", "true"),
-	);
-	await waitFor(() =>
-		expect(
-			screen.getByRole("tabpanel", { name: "studio.workArea" }),
-		).toHaveFocus(),
-	);
-});
-
-function WorkspaceComposerAction() {
-	const open = useContext(ConversationWorkspaceActionsContext);
-	return (
-		<button type="button" onClick={() => open?.()}>
-			Conversation action
-		</button>
-	);
-}
-
-test("opening Workspace from the composer reactivates an already-open narrow pane", async () => {
+/** Report one width to every ResizeObserver the workspace creates. */
+function stubWidth(): (width: number) => void {
 	const callbacks: ResizeObserverCallback[] = [];
 	vi.stubGlobal(
 		"ResizeObserver",
@@ -222,21 +151,51 @@ test("opening Workspace from the composer reactivates an already-open narrow pan
 			disconnect() {}
 		},
 	);
+	return (width) =>
+		act(() => {
+			for (const callback of callbacks)
+				callback(
+					[{ contentRect: { width } } as ResizeObserverEntry],
+					{} as ResizeObserver,
+				);
+		});
+}
+
+test("the header sits above both panes, with no floating opener", () => {
+	stubWidth();
+	render(<WorkspaceHeaderHarness />);
+	expect(screen.getByRole("button", { name: "Files" })).toBeVisible();
+	expect(
+		screen.queryByRole("button", { name: "studio.openWorkArea" }),
+	).not.toBeInTheDocument();
+});
+
+test("closing the work area returns focus to the header place that opened it", async () => {
+	stubWidth();
 	const user = userEvent.setup();
-	render(<WorkspaceOpenHarness />);
-	act(() =>
-		callbacks[0]?.(
-			[{ contentRect: { width: 360 } } as ResizeObserverEntry],
-			{} as ResizeObserver,
-		),
-	);
-	await user.click(
-		screen.getByRole("button", { name: "Conversation action" }),
-	);
-	await user.click(screen.getByRole("tab", { name: "studio.chat" }));
-	await user.click(
-		screen.getByRole("button", { name: "Conversation action" }),
-	);
+	render(<WorkspaceHeaderHarness />);
+	const place = screen.getByRole("button", { name: "Files" });
+	await user.click(place);
+	expect(place).toHaveAttribute("aria-pressed", "true");
+	await user.click(screen.getByRole("button", { name: "Close work area" }));
+	await waitFor(() => expect(place).toHaveFocus());
+	expect(place).toHaveAttribute("aria-pressed", "false");
+});
+
+test("a header place brings an already-open work area forward from the narrow Chat tab", async () => {
+	const resize = stubWidth();
+	const user = userEvent.setup();
+	render(<WorkspaceHeaderHarness />);
+	resize(600);
+	const place = screen.getByRole("button", { name: "Files" });
+	await user.click(place);
+	fireEvent.mouseDown(screen.getByRole("tab", { name: "studio.chat" }), {
+		button: 0,
+	});
+	// on a narrow screen the open work area moves the header above both panes
+	const narrowPlace = screen.getByRole("button", { name: "Files" });
+	expect(narrowPlace).toHaveAttribute("aria-pressed", "false");
+	await user.click(narrowPlace);
 	await waitFor(() =>
 		expect(
 			screen.getByRole("tab", { name: "studio.workArea" }),
@@ -245,82 +204,5 @@ test("opening Workspace from the composer reactivates an already-open narrow pan
 	expect(
 		screen.getByRole("tabpanel", { name: "studio.workArea" }),
 	).toBeVisible();
-});
-
-/** Reports, from inside the work area, whether the rail is on screen. */
-function RailState() {
-	const hasRail = useContext(ConversationWorkspaceRailContext);
-	return <p>{hasRail ? "Rail shown" : "Rail hidden"}</p>;
-}
-
-function WorkspaceRailHarness() {
-	const [isOpen, setIsOpen] = useState(true);
-	return (
-		<ConversationWorkspace
-			isOpen={isOpen}
-			onOpenWorkArea={() => setIsOpen(true)}
-			rail={<nav aria-label="Places" />}
-			railMenuItems={
-				<DropdownMenuItem onSelect={() => setIsOpen(true)}>
-					Files
-				</DropdownMenuItem>
-			}
-			panel={
-				<>
-					<RailState />
-					<button type="button" onClick={() => setIsOpen(false)}>
-						Close work area
-					</button>
-				</>
-			}
-		>
-			<input aria-label="Draft" />
-		</ConversationWorkspace>
-	);
-}
-
-test("a wide view shows the rail instead of the opener, and a narrow one lists its places from the opener", async () => {
-	const callbacks: ResizeObserverCallback[] = [];
-	vi.stubGlobal(
-		"ResizeObserver",
-		class {
-			constructor(callback: ResizeObserverCallback) {
-				callbacks.push(callback);
-			}
-			observe() {}
-			unobserve() {}
-			disconnect() {}
-		},
-	);
-	const user = userEvent.setup();
-	render(<WorkspaceRailHarness />);
-	expect(screen.getByRole("navigation", { name: "Places" })).toBeVisible();
-	expect(screen.getByText("Rail shown")).toBeInTheDocument();
-
-	await user.click(screen.getByRole("button", { name: "Close work area" }));
-	expect(screen.getByRole("navigation", { name: "Places" })).toBeVisible();
-	expect(
-		screen.queryByRole("button", { name: "studio.openWorkArea" }),
-	).not.toBeInTheDocument();
-
-	act(() =>
-		callbacks[0]?.(
-			[{ contentRect: { width: 600 } } as ResizeObserverEntry],
-			{} as ResizeObserver,
-		),
-	);
-	expect(
-		screen.queryByRole("navigation", { name: "Places" }),
-	).not.toBeInTheDocument();
-	fireEvent.keyDown(
-		screen.getByRole("button", { name: "studio.openWorkArea" }),
-		{ key: "Enter" },
-	);
-	await user.click(await screen.findByRole("menuitem", { name: "Files" }));
-	await waitFor(() =>
-		expect(
-			screen.getByRole("tab", { name: "studio.workArea" }),
-		).toHaveAttribute("aria-selected", "true"),
-	);
-	expect(screen.getByText("Rail hidden")).toBeInTheDocument();
+	expect(narrowPlace).toHaveAttribute("aria-pressed", "true");
 });

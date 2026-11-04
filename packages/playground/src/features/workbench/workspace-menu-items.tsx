@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
-import { DropdownMenuItem, DropdownMenuSeparator } from "@semoss/ui/next";
+import { DropdownMenuItem } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores/room/room.store";
 import {
 	type DraftWorkspacePlaces,
@@ -14,15 +14,19 @@ export interface WorkspaceMenuItemsProps {
 	room: RoomStore;
 	/** A new chat's own actions, until its first message. */
 	draft?: DraftWorkspacePlaces;
+	/** Places listed elsewhere, such as the header's own icons. */
+	excludeIds?: readonly string[];
 	/** Dismiss the containing mobile drawer after selecting a place. */
 	onNavigate?: () => void;
 }
 
-/** The rail's places as menu items, for screens too narrow for the rail. */
+/** The Workspace's places as menu items, such as the header's More menu. */
 export const WorkspaceMenuItems = observer(
-	({ room, draft, onNavigate }: WorkspaceMenuItemsProps) => {
+	({ room, draft, excludeIds = [], onNavigate }: WorkspaceMenuItemsProps) => {
 		const { t } = useTranslation("room");
-		const places = useWorkspacePlaces(room, draft);
+		const places = useWorkspacePlaces(room, draft).filter(
+			(place) => !excludeIds.includes(place.id),
+		);
 		const roomPlaces = places.filter((place) => place.kind === "room");
 		const connectorPlaces = places.filter(
 			(place) => place.kind === "connector",
@@ -30,7 +34,7 @@ export const WorkspaceMenuItems = observer(
 		const renderItem = (place: WorkspacePlace) => (
 			<DropdownMenuItem
 				key={place.id}
-				className="text-xs max-md:min-h-11"
+				className="gap-2.5 max-md:min-h-11"
 				disabled={place.isDisabled}
 				onSelect={() => {
 					place.onOpen();
@@ -44,7 +48,6 @@ export const WorkspaceMenuItems = observer(
 		return (
 			<>
 				{roomPlaces.map(renderItem)}
-				{connectorPlaces.length > 0 && <DropdownMenuSeparator />}
 				{connectorPlaces.map(renderItem)}
 			</>
 		);

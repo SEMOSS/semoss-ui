@@ -4,6 +4,7 @@ import {
 	useContext,
 	useEffect,
 	useId,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
@@ -17,11 +18,12 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
-	useIsMobile,
 } from "@semoss/ui/next";
-import { ConversationWorkspaceActionsContext } from "./conversation-workspace-actions.context";
-import { ConversationWorkspaceRailContext } from "./conversation-workspace-rail.context";
-import { OpenWorkspaceButton } from "./open-workspace-button";
+import { ChatScrollContext } from "./chat-scroll.context";
+import {
+	type ConversationWorkspaceActions,
+	ConversationWorkspaceActionsContext,
+} from "./conversation-workspace-actions.context";
 import { WorkspaceNavigationContext } from "./workspace-navigation.context";
 
 interface ConversationWorkspaceProps {
@@ -31,12 +33,13 @@ interface ConversationWorkspaceProps {
 	panel: ReactNode;
 	/** Whether the contextual work area is visible. */
 	isOpen: boolean;
-	/** Opens the contextual work area, restoring its prior contents when possible. */
-	onOpenWorkArea: () => void;
-	/** The Workspace's places, beside the work area on wide screens. */
-	rail?: ReactNode;
-	/** The same places as menu items, behind the open button on narrow screens. */
-	railMenuItems?: ReactNode;
+	/**
+	 * The route's header, holding the Workspace's places. It floats over the
+	 * top of the conversation, so an open work area takes the full height
+	 * beside it; on narrow screens, where one pane shows at a time, it sits
+	 * above both.
+	 */
+	header?: ReactNode;
 }
 
 /** One stable pair of panes across desktop and narrow views. */
@@ -44,43 +47,36 @@ export function ConversationWorkspace({
 	children,
 	panel,
 	isOpen,
-	onOpenWorkArea,
-	rail,
-	railMenuItems,
+	header,
 }: ConversationWorkspaceProps) {
 	const { t } = useTranslation("room");
-	const isMobile = useIsMobile();
 	const id = useId();
 	const setWorkAreaOpen = useContext(WorkspaceNavigationContext);
 	const containerRef = useRef<HTMLDivElement>(null);
+	const headerRef = useRef<HTMLDivElement>(null);
 	const chatRef = useRef<HTMLDivElement>(null);
 	const workRef = useRef<HTMLDivElement>(null);
-	const railRef = useRef<HTMLDivElement>(null);
-	const openWorkAreaRef = useRef<HTMLButtonElement>(null);
 	const lastChatFocus = useRef<HTMLElement | null>(null);
-	const openedFromTrigger = useRef(false);
-	const pendingWorkAreaFocus = useRef(false);
+	// The header control that brought the work area into view, so closing the
+	// work area from inside it hands focus back there.
+	const revealedFrom = useRef<HTMLElement | null>(null);
 	const wasOpen = useRef(isOpen);
 	const [isNarrow, setIsNarrow] = useState(false);
-	const [focusRequest, setFocusRequest] = useState(0);
 	const [view, setView] = useState("chat");
 	const [hasOpened, setHasOpened] = useState(isOpen);
+	// the conversation has scrolled beneath the floating header
+	const [isChatScrolled, setIsChatScrolled] = useState(false);
 
-	const handleOpenWorkArea = useCallback(() => {
-		openedFromTrigger.current = true;
-		pendingWorkAreaFocus.current = true;
+	const handleRevealWorkArea = useCallback((trigger?: HTMLElement | null) => {
+		// a click does not focus a button in every browser, so the place
+		// says which control it is; a menu item's focus falls back to the
+		// chat
+		const active = document.activeElement;
+		const from = trigger ?? (active instanceof HTMLElement ? active : null);
+		if (from && headerRef.current?.contains(from))
+			revealedFrom.current = from;
 		setView("work");
-		setFocusRequest((request) => request + 1);
-		onOpenWorkArea();
-	}, [onOpenWorkArea]);
-
-	// Choosing a place in the menu opens the Workspace the way the button does,
-	// so focus moves into it and returns to the button when it closes.
-	const handleRailMenuOpenChange = (isMenuOpen: boolean) => {
-		if (!isMenuOpen) return;
-		openedFromTrigger.current = true;
-		setFocusRequest((request) => request + 1);
-	};
+	}, []);
 
 	useEffect(() => {
 		setWorkAreaOpen?.(isOpen);
@@ -108,31 +104,21 @@ export function ConversationWorkspace({
 	const showChat = !isOpen || !isNarrow || activeView === "chat";
 	const showPanel = isOpen && (!isNarrow || activeView === "work");
 	const hasTabs = isNarrow && isOpen;
-	const showRail = Boolean(rail) && !isNarrow && !isMobile;
 
 	useEffect(() => {
 		const active = document.activeElement;
-		const hasOpenedFromClosed = !wasOpen.current && isOpen;
 		const hasClosed = wasOpen.current && !isOpen;
 		wasOpen.current = isOpen;
-		if (hasOpenedFromClosed && openedFromTrigger.current) {
-			pendingWorkAreaFocus.current = true;
-		}
-		if (focusRequest > 0 && pendingWorkAreaFocus.current && showPanel) {
-			pendingWorkAreaFocus.current = false;
-			const frame = requestAnimationFrame(() => workRef.current?.focus());
-			return () => cancelAnimationFrame(frame);
-		}
 		if (hasClosed || (!showPanel && workRef.current?.contains(active))) {
-			pendingWorkAreaFocus.current = false;
-			// a place on the rail keeps focus when it closes the Workspace
-			if (railRef.current?.contains(active)) return;
+			// a header place keeps focus when it closes the Workspace
+			if (headerRef.current?.contains(active)) return;
 			// Mobile actions live in a portal, outside workRef. Wait for its
 			// drawer to release focus before restoring the conversation.
 			const frame = requestAnimationFrame(() => {
-				if (hasClosed && openedFromTrigger.current) {
-					openedFromTrigger.current = false;
-					openWorkAreaRef.current?.focus();
+				const trigger = revealedFrom.current;
+				revealedFrom.current = null;
+				if (!isOpen && trigger?.isConnected) {
+					trigger.focus();
 					return;
 				}
 				const previous = lastChatFocus.current;
@@ -144,30 +130,32 @@ export function ConversationWorkspace({
 		} else if (!showChat && chatRef.current?.contains(active)) {
 			workRef.current?.focus();
 		}
-	}, [isOpen, showChat, showPanel, focusRequest]);
+	}, [isOpen, showChat, showPanel]);
+
+	const actions = useMemo<ConversationWorkspaceActions>(
+		() => ({
+			revealWorkArea: handleRevealWorkArea,
+			isWorkAreaVisible: showPanel,
+		}),
+		[handleRevealWorkArea, showPanel],
+	);
 
 	return (
-		<ConversationWorkspaceActionsContext.Provider
-			value={handleOpenWorkArea}
-		>
-			<ConversationWorkspaceRailContext.Provider value={showRail}>
+		<ConversationWorkspaceActionsContext.Provider value={actions}>
+			<ChatScrollContext.Provider value={setIsChatScrolled}>
 				<div
 					ref={containerRef}
-					className="relative flex h-full min-h-0 min-w-0"
+					className="relative flex h-full min-h-0 min-w-0 flex-col"
 				>
-					{!isOpen && !showRail && (
-						<OpenWorkspaceButton
-							ref={openWorkAreaRef}
-							menuItems={railMenuItems}
-							onOpen={handleOpenWorkArea}
-							onMenuOpenChange={handleRailMenuOpenChange}
-							controlsId={`${id}-work-panel`}
-						/>
+					{header && hasTabs && (
+						<div ref={headerRef} className="shrink-0">
+							{header}
+						</div>
 					)}
 					<Tabs
 						value={activeView}
 						onValueChange={setView}
-						className="h-full min-w-0 flex-1 gap-0"
+						className="min-h-0 w-full min-w-0 flex-1 gap-0"
 					>
 						{hasTabs && (
 							<div className="shrink-0 border-b bg-sidebar px-4 py-2">
@@ -201,8 +189,23 @@ export function ConversationWorkspace({
 								order={1}
 								defaultSize={35}
 								minSize={25}
-								className={cn("min-w-0", !showChat && "hidden")}
+								className={cn(
+									"relative min-w-0",
+									!showChat && "hidden",
+								)}
 							>
+								{header && !hasTabs && (
+									<div
+										ref={headerRef}
+										className={cn(
+											"absolute inset-x-0 top-0 z-20 transition-[background-color,backdrop-filter] duration-200",
+											isChatScrolled &&
+												"bg-background/75 backdrop-blur-sm",
+										)}
+									>
+										{header}
+									</div>
+								)}
 								<TabsContent
 									ref={chatRef}
 									id={`${id}-chat-panel`}
@@ -261,13 +264,8 @@ export function ConversationWorkspace({
 							</ResizablePanel>
 						</ResizablePanelGroup>
 					</Tabs>
-					{showRail && (
-						<div ref={railRef} className="flex h-full shrink-0">
-							{rail}
-						</div>
-					)}
 				</div>
-			</ConversationWorkspaceRailContext.Provider>
+			</ChatScrollContext.Provider>
 		</ConversationWorkspaceActionsContext.Provider>
 	);
 }

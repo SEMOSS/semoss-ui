@@ -1,6 +1,6 @@
 import { MoveDownIcon, MoveUpIcon, TriangleAlertIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import { ChatGeneratingIndicator } from "@semoss/shared";
@@ -20,6 +20,7 @@ import { InputMessage } from "@/components/message/input-message";
 import { ResponseMessage } from "@/components/message/response-message";
 import { RoomInput, type SendButtonState } from "@/components/room/room-input";
 import { useFileDrag } from "@/contexts/file-drag-context";
+import { ChatScrollContext } from "@/features/conversation/chat-scroll.context";
 import { ModelRouterAttribution } from "@/features/conversation/model-router-attribution";
 import { useChat } from "@/hooks/use-chat";
 import { useGracefulErrors } from "@/hooks/use-graceful-errors";
@@ -27,7 +28,6 @@ import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { InputMessageStore } from "@/stores/message/input-message.store";
 import { ResponseMessageStore } from "@/stores/message/response-message.store";
 import type { RoomStore } from "@/stores/room/room.store";
-import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomGreeting } from "./room-greeting";
@@ -79,17 +79,6 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 	};
 
 	/**
-	 * Open the room configuration sidebar tab
-	 */
-	const handleOpenSettings = useCallback(() => {
-		room.openSidebarPanel(
-			ROOM_PANEL_TYPES.CONFIGURATION,
-			{},
-			t("settings.panelTitle"),
-		);
-	}, [room, t]);
-
-	/**
 	 * Compact messages in the room
 	 */
 	const handleCompactMessages = async (
@@ -107,6 +96,11 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 		}
 	};
 
+	// the room header floats over the conversation and blurs once it scrolls
+	const reportChatScrolled = useContext(ChatScrollContext);
+
+	useEffect(() => () => reportChatScrolled?.(false), [reportChatScrolled]);
+
 	/**
 	 * Handle scroll events to detect user scrolling
 	 */
@@ -114,8 +108,11 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 		if (!scrollEle) {
 			setShowScrolldown(false);
 			setShowScrollup(false);
+			reportChatScrolled?.(false);
 			return;
 		}
+
+		reportChatScrolled?.(scrollEle.scrollTop > 0);
 
 		// show scroll up if near the top
 		if (scrollEle.scrollTop > SCROLL_THRESHOLD) {
@@ -141,7 +138,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 			// Lock scroll when user scrolls away from bottom
 			setIsScrollLocked(true);
 		}
-	}, [scrollEle]);
+	}, [scrollEle, reportChatScrolled]);
 
 	/**
 	 * Scroll to target position based on direction
@@ -493,7 +490,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto box-content flex max-w-3xl flex-col gap-4 @md:px-6 px-4 py-6">
+						<div className="mx-auto box-content flex max-w-3xl flex-col gap-4 @md:px-6 px-4 pt-20 pb-6 md:pt-17">
 							{room.agentGreeting && (
 								<RoomGreeting
 									room={room}
@@ -608,7 +605,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 				{showScrollup && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="absolute end-4 top-4 z-50">
+							<span className="absolute end-4 top-16 z-50 md:top-14">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
@@ -675,14 +672,11 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 						sendState={sendState}
 						onStop={room.cancelActiveJob}
 						onCompact={handleCompactMessages}
-						onOpenSettings={handleOpenSettings}
 						excludeCommandIds={[
-							"agent",
-							"workspace",
 							// A room's mode is fixed at creation — never let an
 							// existing room switch into agent-harness mid-chat.
 							"agent-harness",
-							"harness",
+							"chat-mode",
 						]}
 					/>
 				</div>

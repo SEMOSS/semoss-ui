@@ -25,10 +25,10 @@ import { ConversationWorkspace } from "@/features/conversation/conversation-work
 import { DropHighlight } from "@/features/conversation/drop-highlight";
 import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
 import { usePreparedRoom } from "@/features/conversation/use-prepared-room";
+import { RoomHeader } from "@/features/room-header/room-header";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
 import type { DraftWorkspacePlaces } from "@/features/workbench/use-workspace-places";
-import { WorkspaceMenuItems } from "@/features/workbench/workspace-menu-items";
-import { WorkspaceRail } from "@/features/workbench/workspace-rail";
+import { WorkspaceQuickActions } from "@/features/workbench/workspace-quick-actions";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { RoomStore } from "@/stores/room/room.store";
@@ -633,7 +633,7 @@ export const NewRoomPage = observer(() => {
 		workspaceRoom.openSidebarPanel(
 			ROOM_PANEL_TYPES.CONFIGURATION,
 			{},
-			t("room:settings.panelTitle"),
+			t("room:workspacePlaces.settings"),
 		);
 	};
 	const handleOpenFiles = async () => {
@@ -642,7 +642,7 @@ export const NewRoomPage = observer(() => {
 		if (room)
 			room.openSidebarFileExplorer(
 				undefined,
-				t("room:menuFileExplorer.name"),
+				t("room:workspacePlaces.files"),
 			);
 		else handleOpenWorkArea();
 	};
@@ -663,7 +663,7 @@ export const NewRoomPage = observer(() => {
 			room.openSidebarPanel(
 				ROOM_PANEL_TYPES.AUDIT_LOG,
 				{},
-				t("room:studio.activityLog"),
+				t("room:workspacePlaces.activity"),
 			);
 		else handleOpenWorkArea();
 	};
@@ -693,13 +693,7 @@ export const NewRoomPage = observer(() => {
 		connectors: tempRoomStore.connectors,
 	};
 
-	const workbench = (
-		<RoomSidebar
-			room={workspaceRoom}
-			canPublish={Boolean(preCreatedRoom)}
-			draft={draftPlaces}
-		/>
-	);
+	const workbench = <RoomSidebar room={workspaceRoom} />;
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
@@ -714,17 +708,15 @@ export const NewRoomPage = observer(() => {
 			<div className="min-h-0 flex-1">
 				<ConversationWorkspace
 					isOpen={workspaceRoom.sidebar.isOpen}
-					onOpenWorkArea={handleOpenWorkArea}
-					rail={
-						<WorkspaceRail
-							room={workspaceRoom}
-							draft={draftPlaces}
-						/>
-					}
-					railMenuItems={
-						<WorkspaceMenuItems
-							room={workspaceRoom}
-							draft={draftPlaces}
+					header={
+						<RoomHeader
+							title={null}
+							actions={
+								<WorkspaceQuickActions
+									room={workspaceRoom}
+									draft={draftPlaces}
+								/>
+							}
 						/>
 					}
 					panel={
@@ -878,13 +870,12 @@ export const NewRoomPage = observer(() => {
 									}
 									onWorkspaceChange={handleAgentChange}
 									onPrompt={createRoom}
-									excludeCommandIds={[
-										"compact",
-										...(root.theme.featureFlags
+									excludeCommandIds={
+										root.theme.featureFlags
 											?.enableAgentHarness
 											? []
-											: ["agent-harness", "harness"]),
-									]}
+											: ["agent-harness", "chat-mode"]
+									}
 									onSwitchToAgentHarness={() =>
 										setMode("agent")
 									}
@@ -896,7 +887,10 @@ export const NewRoomPage = observer(() => {
 											? "loading"
 											: "send"
 									}
-									onOpenSettings={handleOpenSettings}
+									workspace={{
+										room: workspaceRoom,
+										draft: draftPlaces,
+									}}
 									onOpenSource={(service) =>
 										void handleOpenSource(service)
 									}

@@ -1,10 +1,7 @@
 import {
 	Bot,
 	DownloadIcon,
-	FileIcon,
-	FileTextIcon,
 	HelpCircle,
-	Loader2Icon,
 	MessagesSquareIcon,
 	MoreVertical,
 	PencilIcon,
@@ -23,15 +20,10 @@ import {
 	useParams,
 } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
+import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -67,6 +59,7 @@ import {
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
 import { NavigationRail } from "@/features/navigation/navigation-rail";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
+import { DownloadConversationDialog } from "@/features/room-actions/download-conversation-dialog";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { AppLogo } from "./app-logo";
@@ -94,9 +87,6 @@ export const GlobalNav = observer(() => {
 	const BUCKETS = [t("buckets.favorites"), ...dateBucketLabels];
 	const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
 	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);
-	const [downloadingFormat, setDownloadingFormat] = useState<string | null>(
-		null,
-	);
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
@@ -377,47 +367,17 @@ export const GlobalNav = observer(() => {
 		}
 
 		try {
-			await runPixel(
-				`META | RenameRoom(roomId=["${roomId}"], name=["${editingName}"]);`,
-			);
+			// renameRoom bumps roomCounter, which the effect above watches to
+			// refetch both room queries
+			await chat.renameRoom(roomId, editingName);
 
 			toast.success(t("toasts.roomRenamedSuccess"));
 
 			// Reset state
 			setEditingRoomId(null);
 			setEditingName("");
-
-			// Refetch rooms after renaming
-			getRooms.reset();
-			getPinnedRooms.reset();
 		} catch {
 			toast.error(t("toasts.failedToRename"));
-		}
-	};
-
-	const handleDownloadConversation = async (
-		roomId: string,
-		format: "word" | "pdf",
-	) => {
-		if (!roomId) return;
-
-		setDownloadingFormat(format);
-
-		try {
-			await chat.downloadConversation(roomId, format);
-			toast.success(
-				`Conversation downloaded successfully as ${format.toUpperCase()}`,
-			);
-			setDownloadDialogOpen(false);
-		} catch (e) {
-			console.error("Download error:", e);
-			if (e instanceof Error) {
-				toast.error(e.message || "Failed to download conversation");
-			} else {
-				toast.error("Failed to download conversation");
-			}
-		} finally {
-			setDownloadingFormat(null);
 		}
 	};
 
@@ -970,79 +930,14 @@ export const GlobalNav = observer(() => {
 				<NavigationRail />
 			</Sidebar>
 
-			{/* Download Conversation Dialog */}
-			<Dialog
+			<DownloadConversationDialog
+				roomId={downloadRoomId}
 				open={downloadDialogOpen}
 				onOpenChange={(open) => {
 					setDownloadDialogOpen(open);
 					if (!open) setDownloadRoomId(null);
 				}}
-			>
-				<DialogContent className="sm:max-w-md">
-					<DialogHeader>
-						<DialogTitle>Download Conversation</DialogTitle>
-						<DialogDescription>
-							Choose the format for your download:
-						</DialogDescription>
-					</DialogHeader>
-					<div className="grid grid-cols-2 gap-3 py-4">
-						<Button
-							variant="outline"
-							className="h-auto flex-col gap-1 p-4"
-							disabled={downloadingFormat !== null}
-							onClick={() => {
-								if (downloadRoomId) {
-									handleDownloadConversation(
-										downloadRoomId,
-										"word",
-									);
-								}
-							}}
-						>
-							{downloadingFormat === "word" ? (
-								<Loader2Icon className="size-4 animate-spin" />
-							) : (
-								<>
-									<FileTextIcon className="mb-1 size-6" />
-									<span className="font-medium">
-										Word Document
-									</span>
-									<span className="text-muted-foreground text-xs">
-										.docx
-									</span>
-								</>
-							)}
-						</Button>
-						<Button
-							variant="outline"
-							className="h-auto flex-col gap-1 p-4"
-							disabled={downloadingFormat !== null}
-							onClick={() => {
-								if (downloadRoomId) {
-									handleDownloadConversation(
-										downloadRoomId,
-										"pdf",
-									);
-								}
-							}}
-						>
-							{downloadingFormat === "pdf" ? (
-								<Loader2Icon className="size-4 animate-spin" />
-							) : (
-								<>
-									<FileIcon className="mb-1 size-6" />
-									<span className="font-medium">
-										PDF Document
-									</span>
-									<span className="text-muted-foreground text-xs">
-										.pdf
-									</span>
-								</>
-							)}
-						</Button>
-					</div>
-				</DialogContent>
-			</Dialog>
+			/>
 		</>
 	);
 });

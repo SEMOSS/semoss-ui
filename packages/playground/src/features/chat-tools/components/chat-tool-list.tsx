@@ -1,7 +1,7 @@
 import type { ChatToolInfo } from "../tools/chat-tool-info";
 import { ChatToolRow } from "./chat-tool-row";
 
-/** The bordered list every group of rows sits in, as in Room Settings. */
+/** The bordered list every group of rows sits in, as in Settings. */
 export const CHAT_TOOL_LIST_CLASS_NAME =
 	"flex flex-col divide-y divide-border overflow-hidden rounded-md border border-border";
 

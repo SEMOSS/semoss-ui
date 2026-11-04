@@ -4,10 +4,7 @@
 		"title": "次のメッセージの提案"
 	},
 	"settings": {
-		"title": "ルーム設定",
-		"description": "ルーム設定を更新し、チャットの動作を変更します",
-		"open": "ルーム設定を開く",
-		"close": "ルーム設定を閉じる",
+		"description": "このルームのモデル、指示、ナレッジ、ツールです。",
 		"compact": "会話を圧縮",
 		"compactSuccess": "会話を圧縮しました",
 		"compactSkipped": "圧縮する内容がありません — 会話はすでに簡潔です",
@@ -28,13 +25,13 @@
 			"TOOL_PRUNE": "会話履歴から冗長なツール呼び出しの結果を削除します。ツールの出力が大きく、詳細が不要になった場合に最適です。",
 			"AUTO": "現在の会話内容に基づいて、要約またはツール整理のいずれかを選択します。"
 		},
-		"panelTitle": "設定",
 		"noKnowledge": "ナレッジが選択されていません。",
 		"noTools": "ツールが選択されていません。",
 		"fromRoom": "ルームから",
 		"inheritedSelection": "継承された項目はこのチャットから削除できません。",
 		"removeSelection": "{{name}}を削除",
-		"agentLoadError": "エージェントを読み込めませんでした。再試行するか、別のエージェントを選択してください。"
+		"agentLoadError": "エージェントを読み込めませんでした。再試行するか、別のエージェントを選択してください。",
+		"toolsTitle": "ツール"
 	},
 	"form": {
 		"modelLabel": "モデル",
@@ -71,7 +68,7 @@
 		"ariaPlaceholder": "テキストを入力",
 		"thinking": "考え中...",
 		"menuPrompt": "今日はどのようにお手伝いできますか？",
-		"openSettings": "チャットに追加",
+		"addToChat": "チャットに追加",
 		"recordLabel": "モデルを録音",
 		"stopRecording": "録音を停止",
 		"record": "録音",
@@ -120,9 +117,7 @@
 		"attachDocument": "ファイルを添付"
 	},
 	"menuFileExplorer": {
-		"name": "チャットのファイル",
-		"open": "チャットのファイルを表示",
-		"close": "チャットのファイルを非表示"
+		"name": "ルームのファイル"
 	},
 	"errors": {
 		"createRoom": "ルームの作成中にエラーが発生しました。エラー: {{message}}",
@@ -146,14 +141,10 @@
 	"studio": {
 		"views": "会話の表示",
 		"chat": "チャット",
-		"openWorkArea": "ワークスペースを開く",
 		"workArea": "ワークスペース",
 		"toolsCount": "ツール、{{count}} 件選択済み",
-		"tools": "ツール",
 		"toolsLocked": "応答の生成中はツールを変更できません。",
 		"toolsHint": "選択内容は次のメッセージに適用されます。",
-		"toolsTitle": "ツールとナレッジ",
-		"toolsDescription": "この会話で利用するツールとナレッジを選択します。",
 		"moreActions": "その他の操作",
 		"prompts": "プロンプト",
 		"removeFile": "{{name}} を削除",
@@ -166,15 +157,19 @@
 		"exportPdf": "PDF でエクスポート",
 		"closeWorkspace": "ワークスペースを閉じる",
 		"preparingWorkspace": "ワークスペースを準備中…",
-		"activityLog": "アクティビティログ",
 		"prepareError": "ワークスペースを準備できませんでした。下書きは保持されています。",
 		"retry": "再試行"
 	},
 	"workspacePlaces": {
 		"files": "ファイル",
-		"tools": "ツール",
 		"activity": "アクティビティ",
-		"settings": "設定"
+		"settings": "設定",
+		"more": "その他",
+		"descriptions": {
+			"files": "ここにアップロードしたファイルと、ルームのツールが作成したもの",
+			"settings": "このルームのモデル、指示、ナレッジ、ツール",
+			"activity": "このルームでのすべてのツール呼び出しと変更"
+		}
 	},
 	"optimizer": {
 		"optimize": "プロンプトを最適化",
@@ -190,5 +185,78 @@
 	"contextItems": {
 		"label": "次のメッセージに追加済み",
 		"remove": "{{name}} を次のメッセージから削除"
+	},
+	"header": {
+		"untitled": "無題のルーム",
+		"renameLabel": "ルーム名",
+		"roomSection": "ルーム"
+	},
+	"slash": {
+		"empty": "コマンドが見つかりません",
+		"openPlace": "{{name}} をワークスペースで開く",
+		"groups": {
+			"chat": "チャット",
+			"workspace": "ワークスペース",
+			"room": "ルーム",
+			"prompts": "プロンプト"
+		},
+		"commands": {
+			"attach": {
+				"label": "ファイルを添付",
+				"description": "次のメッセージにファイルを追加します"
+			},
+			"knowledge": {
+				"label": "ナレッジを追加",
+				"description": "アシスタントがナレッジソースを検索できるようにします"
+			},
+			"toolbox": {
+				"label": "ツールを追加",
+				"description": "アシスタントが使えるツールボックスを追加します"
+			},
+			"agent": {
+				"label": "エージェントを選択",
+				"description": "このルームで使うエージェントを選びます"
+			},
+			"agent-harness": {
+				"label": "エージェントに切り替え",
+				"description": "このルームをエージェントで実行します"
+			},
+			"chat-mode": {
+				"label": "チャットに切り替え",
+				"description": "このルームをエージェントなしで実行します"
+			},
+			"compact": {
+				"label": "圧縮",
+				"description": "会話を要約してコンテキストを空けます"
+			},
+			"close-workspace": {
+				"label": "ワークスペースを閉じる",
+				"description": "タブを残したままワークスペースを隠します"
+			},
+			"favorite": {
+				"label": "お気に入り",
+				"description": "このルームを一覧の先頭に固定します"
+			},
+			"unfavorite": {
+				"label": "お気に入りを解除",
+				"description": "このルームの固定を解除します"
+			},
+			"rename": {
+				"label": "名前を変更",
+				"description": "このルームの名前を変更します"
+			},
+			"download": {
+				"label": "ダウンロード",
+				"description": "この会話を Word または PDF で保存します"
+			},
+			"delete": {
+				"label": "削除",
+				"description": "このルームと会話を削除します"
+			},
+			"publish": {
+				"label": "エージェントとして公開",
+				"description": "このルームの指示とツールをエージェントとして保存します"
+			}
+		}
 	}
 }

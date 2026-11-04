@@ -95,6 +95,12 @@ export class ChatToolsStore {
 	private readonly roomFiles: RoomFolderProvider;
 
 	/**
+	 * The part of Settings to bring into view the next time it shows, until
+	 * Settings takes it with {@link ChatToolsStore.takeSettingsSection}.
+	 */
+	pendingSettingsSection: "tools" | null = null;
+
+	/**
 	 * @param room - The room these tools belong to.
 	 */
 	constructor(room: RoomStore) {
@@ -219,7 +225,7 @@ export class ChatToolsStore {
 		}
 		if (this.getDefaultToolMode(name) === "disabled") {
 			return failure(
-				`${name} is disabled in this chat's settings. Ask the user to allow it in Room Settings if they want this done.`,
+				`${name} is disabled in this chat's settings. Ask the user to allow it in Settings if they want this done.`,
 			);
 		}
 
@@ -305,20 +311,33 @@ export class ChatToolsStore {
 	};
 
 	/**
-	 * Show "Chat Tools" in the room's sidebar: every tool the assistant has
-	 * for the next message, including the ones this browser sends itself.
+	 * Show Settings in the room's sidebar on its Tools: every tool the
+	 * assistant has for the next message, including the ones this browser
+	 * sends itself.
 	 */
 	openToolsPanel = (): void => {
-		this.room.openSidebarPanel(
-			ROOM_PANEL_TYPES.CHAT_TOOLS,
-			{},
-			getI18n().t("chatTools:panel.title"),
-		);
+		this.pendingSettingsSection = "tools";
+		this.openRoomSettings();
+	};
+
+	/**
+	 * Take the part of Settings to bring into view, so it is shown once.
+	 *
+	 * @return The section, or null when nothing asked for one.
+	 */
+	takeSettingsSection = (): "tools" | null => {
+		const section = this.pendingSettingsSection;
+		this.pendingSettingsSection = null;
+		return section;
 	};
 
 	/** Show the room's settings in its sidebar, where the default tools are. */
 	openRoomSettings = (): void => {
-		this.room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+		this.room.openSidebarPanel(
+			ROOM_PANEL_TYPES.CONFIGURATION,
+			{},
+			getI18n().t("room:workspacePlaces.settings"),
+		);
 	};
 
 	/**

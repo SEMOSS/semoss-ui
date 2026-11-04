@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import { ToolViewProvider } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
@@ -10,12 +9,13 @@ import { RoomSidebar } from "@/components/room/room-sidebar";
 import { FileDragProvider } from "@/contexts/file-drag-context";
 import { RoomProvider } from "@/contexts/room.context";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
+import { RoomHeader } from "@/features/room-header/room-header";
+import { RoomHeaderActions } from "@/features/room-header/room-header-actions";
+import { RoomTitle } from "@/features/room-header/room-title";
+import { RoomTitleProvider } from "@/features/room-header/room-title.context";
 import { TOOL_VIEW_LIBRARIES } from "@/features/tool-views/tool-view-libraries";
-import { WorkspaceMenuItems } from "@/features/workbench/workspace-menu-items";
-import { WorkspaceRail } from "@/features/workbench/workspace-rail";
 import { useChat } from "@/hooks/use-chat";
 import type { RoomStore } from "@/stores/room/room.store";
-import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type { Engine } from "@/types";
 /**
  * The page for a room
@@ -24,7 +24,6 @@ import type { Engine } from "@/types";
  */
 export const RoomPage = observer(() => {
 	const { roomId } = useParams();
-	const { t } = useTranslation("room");
 	const { chat } = useChat();
 	const navigate = useNavigate();
 
@@ -114,28 +113,23 @@ export const RoomPage = observer(() => {
 		>
 			<RoomProvider room={room}>
 				<ToolViewProvider libraries={TOOL_VIEW_LIBRARIES}>
-					<ConversationWorkspace
-						isOpen={room.sidebar.isOpen}
-						onOpenWorkArea={() => {
-							if (
-								room.workbench.getState().layout.openPanelIds
-									.length === 0
-							) {
-								room.openSidebarPanel(
-									ROOM_PANEL_TYPES.CONFIGURATION,
-									{},
-									t("settings.panelTitle"),
-								);
-							} else room.openSidebar();
-						}}
-						rail={<WorkspaceRail room={room} />}
-						railMenuItems={<WorkspaceMenuItems room={room} />}
-						panel={<RoomSidebar room={room} />}
-					>
-						<FileDragProvider>
-							<RoomContent room={room} />
-						</FileDragProvider>
-					</ConversationWorkspace>
+					{/* the header and the composer's slash menu share the room's actions */}
+					<RoomTitleProvider room={room}>
+						<ConversationWorkspace
+							isOpen={room.sidebar.isOpen}
+							header={
+								<RoomHeader
+									title={<RoomTitle />}
+									actions={<RoomHeaderActions room={room} />}
+								/>
+							}
+							panel={<RoomSidebar room={room} />}
+						>
+							<FileDragProvider>
+								<RoomContent room={room} />
+							</FileDragProvider>
+						</ConversationWorkspace>
+					</RoomTitleProvider>
 				</ToolViewProvider>
 			</RoomProvider>
 		</InsightProvider>

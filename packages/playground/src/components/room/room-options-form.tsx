@@ -1,6 +1,6 @@
 import { Bot, ChevronDown } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useId, useState } from "react";
+import { type ReactNode, type Ref, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect, EngineSubtypeIcon } from "@semoss/shared";
 import {
@@ -11,6 +11,8 @@ import {
 	Form,
 	FormField,
 	H3,
+	H4,
+	Muted,
 	Slider,
 	Textarea,
 	useForm,
@@ -33,6 +35,10 @@ export interface RoomOptionsFormProps {
 	disabled?: boolean;
 	/** Agent runs supply their own tools instead of the chat's default tools. */
 	isAgentMode?: boolean;
+	/** The tools in the room's own toolbox, listed under Tools; rooms only. */
+	toolbox?: ReactNode;
+	/** The Tools heading, for bringing Tools into view. */
+	toolsHeadingRef?: Ref<HTMLHeadingElement>;
 }
 
 export const RoomOptionsForm = observer(
@@ -44,8 +50,10 @@ export const RoomOptionsForm = observer(
 		agentEditable = false,
 		disabled = false,
 		isAgentMode = false,
+		toolbox,
+		toolsHeadingRef,
 	}: RoomOptionsFormProps) => {
-		const { t } = useTranslation(["room", "common"]);
+		const { t } = useTranslation(["room", "common", "chatTools"]);
 		const { root } = useRoot();
 		const id = useId();
 		const form = useForm({
@@ -56,7 +64,21 @@ export const RoomOptionsForm = observer(
 			type: "AGENT" | "KNOWLEDGE" | "TOOLBOX";
 			isOpen: boolean;
 		}>({ type: "KNOWLEDGE", isOpen: false });
-		const { knowledge, toolbox } = splitMcpByType(options.mcp);
+		const { knowledge, toolbox: toolboxes } = splitMcpByType(options.mcp);
+		const handleRemove = (item: (typeof options.mcp)[number]) => {
+			if (
+				!disabled &&
+				!item.fromWorkspace &&
+				!item.fromRoom &&
+				item.type !== "ROOM"
+			) {
+				onOptionsChange({
+					mcp: options.mcp.filter(
+						(selected) => selected.id !== item.id,
+					),
+				});
+			}
+		};
 		// the agent the room runs; an agent run with none picked uses the
 		// default agent
 		const agentName =
@@ -76,7 +98,7 @@ export const RoomOptionsForm = observer(
 				className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6"
 			>
 				<div className="space-y-2">
-					<H3>{t("room:settings.panelTitle")}</H3>
+					<H3>{t("room:workspacePlaces.settings")}</H3>
 					<FieldDescription>
 						{t("room:settings.description")}
 					</FieldDescription>
@@ -186,40 +208,58 @@ export const RoomOptionsForm = observer(
 								: "room:studio.toolsHint",
 						)}
 					</FieldDescription>
-					{(["KNOWLEDGE", "TOOLBOX"] as const).map((type) => (
+					<RoomSelectedResources
+						type="KNOWLEDGE"
+						items={knowledge}
+						disabled={disabled}
+						onAdd={() =>
+							setOverlay({ type: "KNOWLEDGE", isOpen: true })
+						}
+						onRemove={handleRemove}
+					/>
+					<section
+						aria-labelledby={`${id}-tools`}
+						className="flex min-w-0 flex-col gap-6"
+					>
+						<div className="space-y-1">
+							<H4
+								ref={toolsHeadingRef}
+								id={`${id}-tools`}
+								tabIndex={-1}
+								className="scroll-mt-4 text-base focus-visible:outline-none"
+							>
+								{t("room:settings.toolsTitle")}
+							</H4>
+							<FieldDescription>
+								{t("chatTools:panel.description")}
+							</FieldDescription>
+						</div>
+						{isAgentMode ? (
+							<Muted className="font-normal">
+								{t("chatTools:panel.agentDescription")}
+							</Muted>
+						) : (
+							<DefaultToolsField
+								defaultTools={options.defaultTools}
+								disabled={disabled}
+								onChange={(defaultTools) => {
+									if (!disabled)
+										onOptionsChange({ defaultTools });
+								}}
+							/>
+						)}
+						{toolbox}
 						<RoomSelectedResources
-							key={type}
-							type={type}
-							items={type === "KNOWLEDGE" ? knowledge : toolbox}
+							type="TOOLBOX"
+							level={5}
+							items={toolboxes}
 							disabled={disabled}
-							onAdd={() => setOverlay({ type, isOpen: true })}
-							onRemove={(item) => {
-								if (
-									!disabled &&
-									!item.fromWorkspace &&
-									!item.fromRoom &&
-									item.type !== "ROOM"
-								) {
-									onOptionsChange({
-										mcp: options.mcp.filter(
-											(selected) =>
-												selected.id !== item.id,
-										),
-									});
-								}
-							}}
+							onAdd={() =>
+								setOverlay({ type: "TOOLBOX", isOpen: true })
+							}
+							onRemove={handleRemove}
 						/>
-					))}
-					{!isAgentMode && (
-						<DefaultToolsField
-							defaultTools={options.defaultTools}
-							disabled={disabled}
-							onChange={(defaultTools) => {
-								if (!disabled)
-									onOptionsChange({ defaultTools });
-							}}
-						/>
-					)}
+					</section>
 					{root.theme.featureFlags?.enableTemperature && (
 						<Field>
 							<FieldLabel htmlFor={`${id}-temperature`}>

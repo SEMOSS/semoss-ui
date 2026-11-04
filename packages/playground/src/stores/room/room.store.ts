@@ -1095,10 +1095,15 @@ export class RoomStore {
 		this.workbench.getState().layout.actions.loadSnapshot(snapshot);
 	};
 
-	/** Restore the existing work area, or open Room settings when it is empty. */
+	/** Restore the existing work area, or open Settings when it is empty. */
 	openSidebar = (): void => {
 		if (this.workbench.getState().layout.openPanelIds.length === 0) {
-			this.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+			this.openSidebarPanel(
+				ROOM_PANEL_TYPES.CONFIGURATION,
+				{},
+				// no translations outside the app, as in tests; the blueprint names it
+				getI18n()?.t("room:workspacePlaces.settings"),
+			);
 			return;
 		}
 
@@ -1189,7 +1194,7 @@ export class RoomStore {
 			FILE_PANEL_TYPES.FILE_EXPLORER,
 			{ mode: this.fileMode },
 			// no translations outside the app, as in tests; the blueprint names it
-			name ?? getI18n()?.t("room:menuFileExplorer.name"),
+			name ?? getI18n()?.t("room:workspacePlaces.files"),
 		);
 
 		if (initialPath) {

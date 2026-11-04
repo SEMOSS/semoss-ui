@@ -124,7 +124,7 @@ export const getUsualFolderToolExecution = (
 ): FolderToolExecution => (READ_TOOLS.has(name) ? "auto" : "ask");
 
 /** How the tools name the chat's own files, the room's folder. */
-export const ROOM_FILES_NAME = "Chat Files";
+export const ROOM_FILES_NAME = "Room Files";
 
 /** What the definitions need to know. */
 export interface FolderToolContext {
@@ -136,7 +136,7 @@ export interface FolderToolContext {
 }
 
 /** The folder, the way the model should refer to it wherever a tool names it. */
-const FOLDER_DESCRIPTION = `${ROOM_FILES_NAME} (this chat's own files)`;
+const FOLDER_DESCRIPTION = `${ROOM_FILES_NAME} (this room's own files)`;
 
 /**
  * How the folder relates to the files the chat's other tools use, so the

@@ -1,9 +1,4 @@
-import {
-	BlocksIcon,
-	BotIcon,
-	MessageCircleIcon,
-	PanelRightOpenIcon,
-} from "lucide-react";
+import { BotIcon, MessageCircleIcon } from "lucide-react";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -14,14 +9,15 @@ import {
 } from "@semoss/ui/next";
 import { RoomInputMenuMCP } from "@/components/room/room-input-menu-mcp";
 import { RoomInputMenuUpload } from "@/components/room/room-input-menu-upload";
-import { ConnectorSourcesMenuItem } from "@/features/connectors/components/connector-sources-menu-item";
-import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
 import type { RoomStore } from "@/stores/room/room.store";
 
 export interface RoomComposerMenuProps {
 	/** Owns the connector configuration and context queue. */
 	room: RoomStore;
-	/** Drafts prepare a room before opening a connector viewer. */
+	/**
+	 * Drafts prepare a room before opening a connector viewer. Kept for custom
+	 * composer menus; the default menu leaves the viewers to the room header.
+	 */
 	onOpenSource?: (service: ConnectorViewerService) => void;
 	/** Retained for custom composer menus. */
 	isOpen: boolean;
@@ -30,7 +26,6 @@ export interface RoomComposerMenuProps {
 	options: RoomStore["options"];
 	/** Only mutations are locked while a turn is running. */
 	disabled: boolean;
-	onOpenWorkspace: () => void;
 	/** Present only while creating a chat. */
 	onSelectChat?: () => void;
 	/** Changes execution mode while keeping the selected saved agent. */
@@ -42,13 +37,10 @@ export interface RoomComposerMenuProps {
 
 /** Stable composer actions shared by draft and existing conversations. */
 export function RoomComposerMenu({
-	room,
-	onOpenSource,
 	onOpenChange,
 	onOpenMcpOverlay,
 	options,
 	disabled,
-	onOpenWorkspace,
 	onSelectChat,
 	onSelectAgent,
 	mode,
@@ -56,7 +48,6 @@ export function RoomComposerMenu({
 	enableAgentHarness,
 }: RoomComposerMenuProps) {
 	const { t } = useTranslation(["room", "sidebar"]);
-	const { openSettings } = useSettingsDialog();
 	const close = () => onOpenChange(false);
 	const openPicker = (tab: "AGENT" | "KNOWLEDGE" | "TOOLBOX") => {
 		onOpenMcpOverlay(tab);
@@ -81,20 +72,6 @@ export function RoomComposerMenu({
 				options={options}
 				disabled={disabled}
 				onSelect={() => openPicker("TOOLBOX")}
-			/>
-			<DropdownMenuItem
-				onSelect={() => {
-					openSettings("connectors");
-					close();
-				}}
-			>
-				<BlocksIcon aria-hidden="true" />
-				{t("sidebar:settings.sections.connectors")}
-			</DropdownMenuItem>
-			<ConnectorSourcesMenuItem
-				connectors={room.connectors}
-				onOpenSource={onOpenSource}
-				onSelect={close}
 			/>
 			{agentEditable && (
 				<>
@@ -140,16 +117,6 @@ export function RoomComposerMenu({
 					</DropdownMenuItem>
 				</>
 			)}
-			<DropdownMenuSeparator />
-			<DropdownMenuItem
-				onSelect={() => {
-					onOpenWorkspace();
-					close();
-				}}
-			>
-				<PanelRightOpenIcon aria-hidden="true" />
-				{t("studio.openWorkArea")}
-			</DropdownMenuItem>
 		</>
 	);
 }

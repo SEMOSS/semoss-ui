@@ -1,33 +1,25 @@
 {
 	"panel": {
-		"title": "Outils du chat",
 		"description": "Ce que l'assistant peut utiliser dans votre prochain message.",
 		"toolboxTitle": "Boîte à outils de ce chat",
-		"toolboxDescription": "Les connecteurs activés pour ce chat, depuis mcp/pixel_mcp.json dans Fichiers du chat.",
+		"toolboxDescription": "Les connecteurs activés pour ce chat, depuis mcp/pixel_mcp.json dans Fichiers de la salle.",
 		"toolboxEmpty": "Aucun connecteur n'est activé.",
 		"toolboxError": "Impossible de lire la boîte à outils de ce chat.",
 		"otherTools": "Autres outils",
-		"addedTitle": "Boîtes à outils ajoutées",
-		"addedDescription": "Chaque boîte à outils apporte ses propres outils.",
-		"addedEmpty": "Aucune boîte à outils ajoutée.",
 		"parameters": "Paramètres",
 		"required": "Obligatoire",
 		"noParameters": "Aucun paramètre.",
-		"defaultTitle": "Outils par défaut",
-		"defaultDescription": "Ajoutés à chaque message et exécutés dans ce navigateur, dans Fichiers du chat.",
-		"defaultEmpty": "Tous les outils par défaut sont désactivés dans les paramètres de la salle.",
-		"openSettings": "Paramètres de la salle",
-		"agentTitle": "Outils de l'agent",
-		"agentDescription": "Les exécutions de l'agent apportent leurs propres outils de fichiers, de shell et de code, et travaillent dans Fichiers du chat."
+		"agentDescription": "Les exécutions de l'agent apportent leurs propres outils de fichiers, de shell et de code, et travaillent dans Fichiers de la salle."
 	},
 	"defaultTools": {
 		"label": "Outils par défaut",
-		"description": "Outils que ce navigateur ajoute à chaque message et exécute dans Fichiers du chat. Auto exécute un outil seul, Demander attend votre accord pour chaque appel, et Désactivé le retire.",
+		"description": "Outils que ce navigateur ajoute à chaque message et exécute dans Fichiers de la salle. Auto exécute un outil seul, Demander attend votre accord pour chaque appel, et Désactivé le retire.",
 		"modes": {
 			"auto": "Auto",
 			"ask": "Demander",
 			"disabled": "Désactivé"
-		}
+		},
+		"showDetails": "Afficher les détails de {{tool}}"
 	},
 	"tools": {
 		"rootFolder": "Racine du dossier",
@@ -52,7 +44,7 @@
 			"failed": "Échoué",
 			"notRun": "Non exécuté"
 		},
-		"folderApproval": "L'assistant souhaite modifier un fichier dans Fichiers du chat. Examinez la modification, puis autorisez-la ou refusez-la.",
+		"folderApproval": "L'assistant souhaite modifier un fichier dans Fichiers de la salle. Examinez la modification, puis autorisez-la ou refusez-la.",
 		"connectorApproval": "L'assistant souhaite agir avec votre compte. Examinez les détails, puis autorisez ou refusez l'action.",
 		"file": "Fichier",
 		"path": "Chemin",
@@ -73,6 +65,6 @@
 		"deny": "Refuser",
 		"denying": "Refus en cours...",
 		"decisionError": "Impossible de terminer cette action. {{message}}",
-		"chatFiles": "Fichiers du chat"
+		"chatFiles": "Fichiers de la salle"
 	}
 }

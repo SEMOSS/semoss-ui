@@ -34,13 +34,26 @@ interface SaveWorkspaceDialogProps {
 	systemPrompt: string;
 	/** MCPs to include in the saved agent. */
 	mcps: MCPConfig[];
+	/**
+	 * Whether the dialog is open, for a dialog opened from elsewhere, such as
+	 * a menu. Without it, the dialog brings its own icon button.
+	 */
+	open?: boolean;
+	/** Called as a controlled dialog opens or closes. */
+	onOpenChange?: (open: boolean) => void;
 }
 
 export const SaveWorkspaceDialog = observer(
-	({ systemPrompt, mcps }: SaveWorkspaceDialogProps) => {
+	({ systemPrompt, mcps, open, onOpenChange }: SaveWorkspaceDialogProps) => {
 		const { chat } = useChat();
 		const { t } = useTranslation("room");
-		const [isOpen, setIsOpen] = useState(false);
+		const [ownOpen, setOwnOpen] = useState(false);
+		const isControlled = open !== undefined;
+		const isOpen = isControlled ? open : ownOpen;
+		const setIsOpen = (next: boolean) => {
+			if (isControlled) onOpenChange?.(next);
+			else setOwnOpen(next);
+		};
 		const form = useForm({
 			resolver: zodResolver(
 				z.object({
@@ -88,28 +101,30 @@ export const SaveWorkspaceDialog = observer(
 		return (
 			<Dialog
 				open={isOpen}
-				onOpenChange={(open) => {
-					if (open) setIsOpen(true);
+				onOpenChange={(next) => {
+					if (next) setIsOpen(true);
 					else close();
 				}}
 			>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<DialogTrigger asChild>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								aria-label={t("workspace.publishTooltip")}
-							>
-								<PackagePlus aria-hidden="true" />
-							</Button>
-						</DialogTrigger>
-					</TooltipTrigger>
-					<TooltipContent>
-						{t("workspace.publishTooltip")}
-					</TooltipContent>
-				</Tooltip>
+				{!isControlled && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<DialogTrigger asChild>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									aria-label={t("workspace.publishTooltip")}
+								>
+									<PackagePlus aria-hidden="true" />
+								</Button>
+							</DialogTrigger>
+						</TooltipTrigger>
+						<TooltipContent>
+							{t("workspace.publishTooltip")}
+						</TooltipContent>
+					</Tooltip>
+				)}
 				<DialogContent
 					className="max-h-[90dvh] overflow-y-auto"
 					showCloseButton={!isLoading}
