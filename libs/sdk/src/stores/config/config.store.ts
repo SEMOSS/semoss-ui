@@ -219,8 +219,6 @@ export class ConfigStore {
 					Env.update({ CSRF: true });
 				}
 
-				CONFIG_AS_SENT.set(this, data);
-
 				this.state.set({
 					status: "READY",
 					config: next,
@@ -256,7 +254,6 @@ export class ConfigStore {
 	 * it lands.
 	 */
 	reset = (): void => {
-		CONFIG_AS_SENT.delete(this);
 		this.version++;
 		this.request = null;
 		this.state.set(EMPTY_SNAPSHOT);
@@ -287,28 +284,3 @@ export class ConfigStore {
 
 /** The page's system config, read by the page's {@link Session}. */
 export const Config = new ConfigStore();
-
-/**
- * Each store's config exactly as the backend sent it, before the meta key
- * lists are sorted and the lists defaulted.
- */
-const CONFIG_AS_SENT = new WeakMap<ConfigStore, SystemConfig>();
-
-/**
- * Read a store's config, through its one shared read, as the backend sent
- * it. Internal, and not exported from the package: `InsightStore.system` has
- * always shown the config unsorted, and keeps doing so while it shares the
- * read with `Session`.
- *
- * @param store - The config store.
- * @param force - Read it again, as after a sign in.
- * @returns The config as sent.
- * @throws When the config cannot be read.
- */
-export const loadConfigAsSent = async (
-	store: ConfigStore,
-	force = false,
-): Promise<SystemConfig> => {
-	const config = await store.load({ force: force });
-	return CONFIG_AS_SENT.get(store) ?? config;
-};

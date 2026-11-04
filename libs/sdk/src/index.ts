@@ -25,6 +25,7 @@ export {
 	parseUserInputRequest,
 	RoomStore,
 	Session,
+	SessionInsightStore,
 	SessionPermissionStore,
 	SessionStore,
 	type UserInputOption,

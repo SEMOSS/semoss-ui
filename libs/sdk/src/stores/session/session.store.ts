@@ -1,7 +1,5 @@
 import { toError } from "@semoss/utility/error";
-import { isRecord } from "@semoss/utility/object";
 import { Observable } from "@semoss/utility/observable";
-import { asString } from "@semoss/utility/string";
 import {
 	confirmOTP,
 	isAdminUser,
@@ -12,14 +10,13 @@ import {
 	oauth,
 	registerUser,
 } from "../../api/auth";
-import { runPixel, runPixelAsync } from "../../api/base";
-import { download, upload } from "../../api/file";
-import { getUserInfo, setUserDefaultModel } from "../../api/user";
+import { getUserInfo, setUserMetadata } from "../../api/user";
 import { Env } from "../../env";
-import { HttpError, UnauthorizedError } from "../../utility/error";
+import { UnauthorizedError } from "../../utility/error";
 import { onUnauthorized } from "../../utility/fetch";
 import { Config, type ConfigStore } from "../config/config.store";
 import { LoginsStore } from "../logins/logins.store";
+import { SessionInsightStore } from "./session-insight.store";
 import { SessionPermissionStore } from "./session-permissions.store";
 
 /** What is known once the session is signed out, and the shape of every snapshot. */
@@ -46,18 +43,16 @@ const SIGNED_OUT = {
 				isAdmin: boolean;
 				/** Whether the session holds a native login. */
 				isNative: boolean;
-				/** The user's default model engine ids, empty when none is set. */
+				/**
+				 * The user's default model engine ids, empty when none is set. Read
+				 * from `meta`; change them with `setMetadata`.
+				 */
 				defaultModels: {
 					textGeneration: string;
 					codeGeneration: string;
 				};
 		  })
 		| null,
-	/**
-	 * The session's own insight, created when the user is read, for pixels
-	 * that belong to no workspace. Empty until then.
-	 */
-	insightId: "",
 	/** Why the session could not be read, or null. */
 	error: null as Error | null,
 };
@@ -102,6 +97,19 @@ const pickLogin = <L>(
 };
 
 /**
+ * Read the user's default models from their metadata.
+ *
+ * @param meta - The user's metadata.
+ * @returns Each default's engine id, empty when none is set.
+ */
+const toDefaultModels = (
+	meta: Record<string, string[]>,
+): NonNullable<(typeof SIGNED_OUT)["user"]>["defaultModels"] => ({
+	textGeneration: meta["text-generation-model"]?.[0] ?? "",
+	codeGeneration: meta["code-generation-model"]?.[0] ?? "",
+});
+
+/**
  * Describe the signed in user from what `getUserInfo` read: who they are
  * from their picked login, and their metadata from the database when it was
  * read, else from that login's token.
@@ -133,24 +141,9 @@ const toUser = (
 		lastLogin: record?.lastLogin,
 		groupInfo: record?.groupInfo,
 		meta: meta,
-		defaultModels: {
-			textGeneration: asString(meta["text-generation-model"]),
-			codeGeneration: asString(meta["code-generation-model"]),
-		},
+		defaultModels: toDefaultModels(meta),
 	};
 };
-
-/**
- * Whether a request failed because the backend no longer has its insight, as
- * after the session that held it ended.
- *
- * @param error - What the request threw.
- * @returns True for the backend's `INSIGHT_NOT_FOUND` answer.
- */
-const isInsightNotFound = (error: unknown): boolean =>
-	error instanceof HttpError &&
-	isRecord(error.data) &&
-	error.data.errorType === "INSIGHT_NOT_FOUND";
 
 /**
  * The signed in user's session: who they are, what they are signed in to,
@@ -162,10 +155,12 @@ const isInsightNotFound = (error: unknown): boolean =>
  * or out here clears everything the previous user's session knew, its logins
  * and permissions included, so nothing of theirs shows up for the next user.
  *
- * It owns three parts, each readable on its own:
+ * It owns four parts, each readable on its own:
  * - `config`: the system config, which needs no session.
  * - `logins`: what the session is signed in to.
  * - `permissions`: the user's permission on each resource asked about.
+ * - `insight`: the session's own insight, for work that belongs to no
+ *   workspace but must share one insight.
  *
  * @example
  * ```ts
@@ -213,6 +208,9 @@ export class SessionStore {
 	/** The user's permission on each resource the page has asked about. */
 	readonly permissions = new SessionPermissionStore();
 
+	/** The session's own insight, made on first use. */
+	readonly insight = new SessionInsightStore();
+
 	/** The check in flight or done, shared by every caller of `initialize`. */
 	private initializing: Promise<typeof SIGNED_OUT> | null = null;
 
@@ -223,11 +221,12 @@ export class SessionStore {
 	 */
 	private version = 0;
 
-	/** The session insight being created, joined by every caller. */
-	private insightRequest: Promise<string> | null = null;
-
-	/** Stops hearing about the backend ending the session; see `dispose`. */
-	private readonly stopListening: () => void;
+	/**
+	 * Stops hearing about the backend ending the session; see `dispose`. Null
+	 * until the page first uses the session, so a page that never does is not
+	 * signed out by it.
+	 */
+	private stopListening: (() => void) | null = null;
 
 	/**
 	 * Create a session. A page normally uses {@link Session} instead.
@@ -242,9 +241,6 @@ export class SessionStore {
 	}: { config?: ConfigStore; logins?: LoginsStore } = {}) {
 		this.config = config;
 		this.logins = logins;
-
-		// the backend sends any request away to sign in once the session ends
-		this.stopListening = onUnauthorized(() => this.handleUnauthorized());
 	}
 
 	/**
@@ -253,7 +249,8 @@ export class SessionStore {
 	 * long as the page.
 	 */
 	dispose = (): void => {
-		this.stopListening();
+		this.stopListening?.();
+		this.stopListening = null;
 	};
 
 	/**
@@ -273,6 +270,7 @@ export class SessionStore {
 	 * `ERROR` status, and the next call reads the session again.
 	 */
 	initialize = (): Promise<typeof SIGNED_OUT> => {
+		this.listen();
 		if (!this.initializing) {
 			this.initializing = this.check(false);
 		}
@@ -286,6 +284,7 @@ export class SessionStore {
 	 * @returns The session once known. It never rejects.
 	 */
 	refresh = (): Promise<typeof SIGNED_OUT> => {
+		this.listen();
 		this.initializing = this.check(true);
 		return this.initializing;
 	};
@@ -307,7 +306,7 @@ export class SessionStore {
 
 		const [config, info] = await Promise.all([
 			this.config.load(),
-			this.withInsight((insightId) => getUserInfo(insightId)),
+			this.insight.withInsight((insightId) => getUserInfo(insightId)),
 		]);
 
 		// a sign in, sign out or check since replaced the user
@@ -348,7 +347,7 @@ export class SessionStore {
 
 		// signing in can give the browser a new backend session, so an insight
 		// made before belongs to the old one and is not reused
-		this.state.update({ insightId: "" });
+		this.insight.clear();
 
 		// the config read while signed out names none of the new logins
 		const { status, error } = await this.refresh();
@@ -392,19 +391,8 @@ export class SessionStore {
 	 */
 	logout = async (): Promise<void> => {
 		await logout();
+		this.listen();
 		this.signOut();
-
-		// the signed out config names the sign ins to offer; a failed read keeps
-		// the last config, and the next sign in reads it again
-		const version = this.version;
-		void this.config
-			.load({ force: true })
-			.then((config) => {
-				if (version === this.version) {
-					this.logins.seed(config);
-				}
-			})
-			.catch(() => undefined);
 	};
 
 	/**
@@ -417,58 +405,6 @@ export class SessionStore {
 			this.signOut();
 		}
 	};
-
-	/**
-	 * Run a pixel in the session's insight, for work that belongs to no
-	 * workspace, app or room. Prefix it with `META |` unless it should be kept
-	 * in the insight's recipe.
-	 *
-	 * @param pixel - The pixel to run.
-	 * @returns The pixel's results, with any pixel errors in `errors`.
-	 * @throws When the request fails.
-	 */
-	run = <O extends unknown[] | []>(pixel: string) =>
-		this.withInsight((insightId) => runPixel<O>(pixel, insightId));
-
-	/**
-	 * Start a pixel in the session's insight without waiting for it.
-	 *
-	 * @param pixel - The pixel to run.
-	 * @returns The job to read the result from.
-	 * @throws When the request fails.
-	 */
-	runAsync = (pixel: string) =>
-		this.withInsight((insightId) => runPixelAsync(pixel, insightId));
-
-	/**
-	 * Upload files through the session's insight.
-	 *
-	 * @param files - What to upload.
-	 * @param projectId - The project to upload into, or null for the insight.
-	 * @param path - The folder to upload into. Defaults to the top.
-	 * @returns Each uploaded file's name and location.
-	 * @throws When the upload fails.
-	 */
-	upload = (
-		files: File | File[],
-		projectId: string | null = null,
-		path = "",
-	) =>
-		// the backend refuses an upload without an existing insight
-		this.withInsight((insightId) =>
-			upload(files, insightId, projectId, path),
-		);
-
-	/**
-	 * Download a file the session's insight made. The key belongs to the
-	 * insight that made the file, so a pixel run through `run` must have made
-	 * it.
-	 *
-	 * @param fileKey - The file's key, from the pixel that made it.
-	 * @throws When the session has no insight, so no file to download.
-	 */
-	download = (fileKey: string) =>
-		download(this.getSnapshot().insightId, fileKey);
 
 	/**
 	 * Whether the user may do an operation the config can keep for admins.
@@ -485,34 +421,48 @@ export class SessionStore {
 		!this.config.isAdminOnly(resource, operation);
 
 	/**
-	 * Set or remove one of the user's default models. The session's user shows
-	 * the choice at once, and goes back to the previous one when the save
-	 * fails.
+	 * Set the user's metadata, such as a default model with
+	 * `{ "text-generation-model": engineId }`. Only the keys given change; an
+	 * empty value or list removes a key. The user shows the change at once,
+	 * goes back when the backend refuses it, and is read again once saved,
+	 * since the backend does not report every failed write.
 	 *
-	 * @param key - Which default.
-	 * @param engineId - The model's engine id, or empty to remove it.
+	 * @param meta - The values to set, by key: one value, or a list in order.
+	 * Each key must be one of the server's user meta keys.
+	 * @returns The session once saved.
 	 * @throws When the backend refuses the change.
 	 */
-	setDefaultModel = async (
-		key: Parameters<typeof setUserDefaultModel>[0],
-		engineId: string,
-	): Promise<void> => {
+	setMetadata = async (
+		meta: Record<string, string | string[]>,
+	): Promise<typeof SIGNED_OUT> => {
 		const version = this.version;
-		const previous = this.getSnapshot().user?.meta[key];
+		const changes = Object.fromEntries(
+			Object.entries(meta).map(([key, value]) => [
+				key,
+				(Array.isArray(value) ? value : [value]).filter(Boolean),
+			]),
+		);
+		const current = this.getSnapshot().user?.meta ?? {};
+		const previous = Object.fromEntries(
+			Object.keys(changes).map((key) => [key, current[key] ?? []]),
+		);
 
-		// show the choice at once; the save below confirms or reverts it
-		this.applyDefaultModel(key, engineId);
+		// show the change at once; the save below confirms or reverts it
+		this.applyMetadata(changes);
 		try {
-			await this.withInsight((insightId) =>
-				setUserDefaultModel(key, engineId, insightId),
+			await this.insight.withInsight((insightId) =>
+				setUserMetadata(changes, insightId),
 			);
 		} catch (error) {
 			// only revert for the same user; a sign in or out since replaced them
 			if (version === this.version) {
-				this.applyDefaultModel(key, asString(previous));
+				this.applyMetadata(previous);
 			}
 			throw error;
 		}
+
+		// what the database kept; a failed read keeps the change shown
+		return this.reloadUser().catch(() => this.getSnapshot());
 	};
 
 	/**
@@ -547,7 +497,7 @@ export class SessionStore {
 			// the backend sets the insight's user from the session on every call,
 			// so the session keeps reusing its insight
 			const [info, isAdmin] = await Promise.all([
-				this.withInsight((insightId) => getUserInfo(insightId)),
+				this.insight.withInsight((insightId) => getUserInfo(insightId)),
 				isAdminUser(),
 			]);
 			if (version !== this.version) {
@@ -556,7 +506,6 @@ export class SessionStore {
 
 			this.state.set({
 				status: "AUTHENTICATED",
-				insightId: info.insightId,
 				error: null,
 				user: toUser(info, config.primaryLogin, isAdmin),
 			});
@@ -580,121 +529,67 @@ export class SessionStore {
 	};
 
 	/**
+	 * Hear when the backend ends the session, from the first time the page
+	 * uses it. Safe to call again.
+	 */
+	private listen = (): void => {
+		// the backend sends any request away to sign in once the session ends
+		this.stopListening ??= onUnauthorized(() => this.handleUnauthorized());
+	};
+
+	/**
 	 * Forget the user and everything the session knew about them. Checks in
 	 * flight are dropped, and `initialize` answers signed out until the next
 	 * sign in.
+	 *
+	 * The config names the old session's logins, so a session the page uses
+	 * reads it again in the background and takes the sign ins it offers. When
+	 * that read fails the config is forgotten rather than kept naming the old
+	 * user; the next sign in reads it again.
 	 */
 	private signOut = (): void => {
 		this.version++;
 		this.initializing = Promise.resolve(SIGNED_OUT);
-		this.insightRequest = null;
+		this.insight.clear();
 		this.logins.reset();
 		this.permissions.clear();
 		this.state.set(SIGNED_OUT);
+
+		const version = this.version;
+		void this.config
+			.load({ force: true })
+			.then((config) => {
+				if (version === this.version) {
+					this.logins.seed(config);
+				}
+			})
+			.catch(() => {
+				if (version === this.version) {
+					this.config.reset();
+				}
+			});
 	};
 
 	/**
-	 * Show a default model on the session's user. An empty engine id removes
-	 * it, as the backend does.
+	 * Show metadata on the session's user. An empty list removes its key, as
+	 * the backend does.
 	 *
-	 * @param key - Which default.
-	 * @param engineId - The model's engine id, or empty to remove it.
+	 * @param changes - The values to show, by key.
 	 */
-	private applyDefaultModel = (
-		key: Parameters<typeof setUserDefaultModel>[0],
-		engineId: string,
-	): void => {
+	private applyMetadata = (changes: Record<string, string[]>): void => {
 		const { user } = this.getSnapshot();
 		if (!user) {
 			return;
 		}
 
 		const meta = Object.fromEntries(
-			Object.entries(user.meta).filter(([name]) => name !== key),
+			Object.entries({ ...user.meta, ...changes }).filter(
+				([, values]) => values.length > 0,
+			),
 		);
-		if (engineId) {
-			meta[key] = engineId;
-		}
 		this.state.update({
-			user: {
-				...user,
-				meta: meta,
-				defaultModels: {
-					...user.defaultModels,
-					[key === "text-generation-model"
-						? "textGeneration"
-						: "codeGeneration"]: engineId,
-				},
-			},
+			user: { ...user, meta: meta, defaultModels: toDefaultModels(meta) },
 		});
-	};
-
-	/**
-	 * Run a request in the session's insight, making the insight first when
-	 * the session has none. When the backend no longer has it, as after its
-	 * session timed out, a new one is made and the request runs once more.
-	 *
-	 * @param task - The request, given the insight to run in.
-	 * @returns What the request returns.
-	 * @throws What the request throws.
-	 */
-	private withInsight = async <R>(
-		task: (insightId: string) => Promise<R>,
-	): Promise<R> => {
-		const insightId = await this.ensureInsight();
-		try {
-			return await task(insightId);
-		} catch (error) {
-			if (!isInsightNotFound(error)) {
-				throw error;
-			}
-			this.forgetInsight(insightId);
-			return task(await this.ensureInsight());
-		}
-	};
-
-	/**
-	 * The session's insight, made with a no-op pixel when it has none. Every
-	 * caller shares one, so the backend holds a single insight per session.
-	 *
-	 * @returns The insight id.
-	 * @throws When the insight cannot be made.
-	 */
-	private ensureInsight = (): Promise<string> => {
-		const { insightId } = this.getSnapshot();
-		if (insightId) {
-			return Promise.resolve(insightId);
-		}
-
-		if (!this.insightRequest) {
-			const version = this.version;
-			const request = runPixel("META | init", "new")
-				.then((result) => {
-					// an insight made for a session that has since ended is not kept
-					if (version === this.version) {
-						this.state.update({ insightId: result.insightId });
-					}
-					return result.insightId;
-				})
-				.finally(() => {
-					if (this.insightRequest === request) {
-						this.insightRequest = null;
-					}
-				});
-			this.insightRequest = request;
-		}
-		return this.insightRequest;
-	};
-
-	/**
-	 * Stop using an insight the backend no longer has.
-	 *
-	 * @param insightId - The insight to forget.
-	 */
-	private forgetInsight = (insightId: string): void => {
-		if (this.getSnapshot().insightId === insightId) {
-			this.state.update({ insightId: "" });
-		}
 	};
 }
 

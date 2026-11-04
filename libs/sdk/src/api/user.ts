@@ -17,19 +17,20 @@ const readText = (value: unknown): string => {
 };
 
 /**
- * Flatten the user's metadata. The backend keeps every key as a list of
- * values, in order; the user's settings, such as their default models, are
- * each one value, so each list is read as its first entry.
+ * Read the user's metadata as the backend keeps it: every key a list of text
+ * values, in order. A key sent as one value is read as a list of one.
  *
  * @param value - The metadata as the backend sent it, by key.
- * @returns Each key's first value.
+ * @returns Each key's values.
  */
-const flattenMeta = (value: unknown): Record<string, unknown> =>
+const readMeta = (value: unknown): Record<string, string[]> =>
 	isRecord(value)
 		? Object.fromEntries(
 				Object.entries(value).map(([key, entry]) => [
 					key,
-					Array.isArray(entry) ? entry[0] : entry,
+					(Array.isArray(entry) ? entry : [entry]).filter(
+						(item): item is string => typeof item === "string",
+					),
 				]),
 			)
 		: {};
@@ -54,8 +55,8 @@ const parseLoginInfo = (
 	lastLogin?: string;
 	/** The directory groups the login belongs to; absent when the provider sends none. */
 	groupInfo?: { groupType?: string; groups: string[] };
-	/** The user's metadata, each value as one entry rather than a list. */
-	meta: Record<string, unknown>;
+	/** The user's metadata, each key's values in order. */
+	meta: Record<string, string[]>;
 } => {
 	const groupInfo = record.groupInfo;
 	return {
@@ -69,7 +70,7 @@ const parseLoginInfo = (
 			isRecord(groupInfo) && Array.isArray(groupInfo.groups)
 				? (groupInfo as { groupType?: string; groups: string[] })
 				: undefined,
-		meta: flattenMeta(record.meta),
+		meta: readMeta(record.meta),
 	};
 };
 
@@ -121,33 +122,45 @@ export const getUserInfo = async (insightId = "new") => {
 		metadata &&
 		!metadata.operationType.includes("ERROR") &&
 		isRecord(metadata.output)
-			? flattenMeta(metadata.output)
+			? readMeta(metadata.output)
 			: null;
 	return { insightId: response.insightId, logins: logins, meta: meta };
 };
 
 /**
- * Set or remove one of the user's default models. The backend replaces the
- * key's values with the list sent, so an empty list deletes it, and a removed
- * default is gone rather than blank.
+ * Set the signed in user's metadata, on their primary login. The backend
+ * replaces only the keys sent, each with its list of values in order; an
+ * empty list removes the key. Every key must be one an admin allows (the
+ * server's user meta keys, such as `text-generation-model`).
  *
- * @param metaKey - Which default.
- * @param engineId - The model's engine id, or empty to remove the default.
+ * The backend logs a failed database write rather than reporting it, so read
+ * the metadata again to see what was kept.
+ *
+ * @param meta - The values to set, by key.
  * @param insightId - The insight to run in. Defaults to a new one.
- * @throws When the backend refuses the change.
+ * @throws When the backend refuses a key or the pixel fails.
  */
-export const setUserDefaultModel = async (
-	metaKey: "text-generation-model" | "code-generation-model",
-	engineId: string,
+export const setUserMetadata = async (
+	meta: Record<string, string[]>,
 	insightId = "new",
 ): Promise<void> => {
+	const entries = Object.entries(meta);
+	if (entries.length === 0) {
+		return;
+	}
+
 	// `<` is escaped so a value cannot open Pixel preprocessor markup
 	const literal = (text: string) =>
 		JSON.stringify(text).replace(/</g, "\\u003c");
-	const value = engineId ? literal(engineId) : "";
+	const map = entries
+		.map(
+			([key, values]) =>
+				`${literal(key)}:[${values.map(literal).join(",")}]`,
+		)
+		.join(",");
 
 	const response = await runPixel(
-		`META | SetUserMetadata(meta=[{${literal(metaKey)}:[${value}]}]);`,
+		`META | SetUserMetadata(meta=[{${map}}]);`,
 		insightId,
 	);
 	if (response.errors.length > 0) {

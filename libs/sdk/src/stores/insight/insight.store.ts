@@ -1,3 +1,4 @@
+import { toError } from "@semoss/utility/error";
 import {
 	confirmOTP,
 	download,
@@ -21,25 +22,9 @@ import {
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
-import { Config, loadConfigAsSent } from "../config/config.store";
+import { Config } from "../config/config.store";
 import { createRoom, RoomStore } from "../room";
 import { Session } from "../session/session.store";
-
-/**
- * The system config, read once for the page through {@link Config}, so every
- * insight and `Session` share one `/api/config` read: the playground's
- * app-level provider plus a room-level provider that attaches to an existing
- * insight, for example. Concurrent reads join the one in flight, and a failed
- * read is tried again by the next caller. It is the config as the backend
- * sent it, as `system` has always shown it.
- *
- * @param force - Read it again, as after a sign in.
- * @returns The config as the backend sent it.
- */
-const loadSystemConfig = (
-	force = false,
-): Promise<Awaited<ReturnType<typeof getSystemConfig>>> =>
-	loadConfigAsSent(Config, force);
 
 /**
  * The system information from the config, over the defaults every app reads.
@@ -238,8 +223,8 @@ export class InsightStore {
 	 * Update user meta with a model selection
 	 * @param modelName - The model name (e.g., "text-generation-model", "code-generation-model")
 	 * @param modelId - The model ID to set
-	 * @deprecated Use `Session.setDefaultModel(modelName, modelId)`, which also
-	 * saves it to the backend.
+	 * @deprecated Use `Session.setMetadata({ [modelName]: modelId })`, which
+	 * also saves it to the backend.
 	 */
 	updateUserDefaultModel(modelName: string, modelId: string): void {
 		this._store.meta = {
@@ -286,8 +271,8 @@ export class InsightStore {
 	 * Set the user meta with a full meta record
 	 * @param meta - full meta record to store
 	 * @deprecated The session reads the user's meta itself, from
-	 * `GetUserInfo`; read `Session.getSnapshot().user?.meta`, and change a
-	 * default model with `Session.setDefaultModel`.
+	 * `GetUserMetadata`; read `Session.getSnapshot().user?.meta`, and change it
+	 * with `Session.setMetadata`.
 	 */
 	setUserDefaultModel(meta: Record<string, unknown>): void {
 		this._store.meta = { ...meta };
@@ -387,12 +372,12 @@ export class InsightStore {
 		this.isJoiningSession = true;
 		try {
 			// the session read the config again when it signed in
-			this._store.system = createSystem(await loadSystemConfig());
+			this._store.system = createSystem(await Config.load());
 			this._store.isAuthorized = true;
 			await this.setupInsight();
 		} catch (error) {
 			console.warn(error);
-			this._store.error = error as Error;
+			this._store.error = toError(error);
 		} finally {
 			this.isJoiningSession = false;
 			this.notify();
@@ -596,7 +581,7 @@ export class InsightStore {
 		this._store.isInitialized = false;
 
 		// get the response (shared across providers via a module-level cache)
-		const data = await loadSystemConfig();
+		const data = await Config.load();
 
 		this._store.system = createSystem(data);
 		if (data) {
@@ -619,7 +604,7 @@ export class InsightStore {
 	 */
 	private refreshSystem = async (): Promise<void> => {
 		try {
-			const data = await loadSystemConfig(true);
+			const data = await Config.load({ force: true });
 			if (data) {
 				this._store.system = createSystem(data);
 				Session.logins.reset();

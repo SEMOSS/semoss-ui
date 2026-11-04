@@ -160,29 +160,43 @@ so their public types never name a utility type.
   `permissions`. `initialize`
   is single flight; `login(credentials)`, `logout`, and the 302 handler
   (`onUnauthorized` in [`utility/fetch.ts`](./src/utility/fetch.ts)) start the session over,
-  clearing logins and permissions. The user comes from one request,
+  clearing logins and permissions. Every sign out, the 302 one included, reads the config
+  again in the background and seeds the logins from it; when that read fails it resets
+  `Config`, so no config naming the old user's logins is left. `Session` only hears 302s once the page uses
+  it (`initialize`, `refresh`, `login` or `logout`), so on a page that never
+  does, its status stays `INITIALIZING` and an insight's own sign in does not start it. The user comes from one request,
   `META | GetUserInfo(); META | GetUserMetadata();`: identity from `GetUserInfo`, described by
   the config's `primaryLogin` (where the backend keeps user metadata), then SAML, NATIVE, or
-  the first login; `meta` and `defaultModels` from `GetUserMetadata`, which reads the database
+  the first login; `meta` (each key a list of values, as the backend keeps it) and `defaultModels` from `GetUserMetadata`, which reads the database
   each time (the token copy in `GetUserInfo` is only reloaded after the user's own
   `SetUserMetadata`), falling back to the login's token copy when that read fails.
-  `reloadUser` reads the user again without touching the config, logins or permissions. The session keeps one insight, made with `META | init` when it has none,
-  and reuses it for every check, `run`, `runAsync`, `upload` (the backend refuses `"new"`) and
-  `download`; on `INSIGHT_NOT_FOUND` it makes a new one and retries once. The backend sets the
-  insight's user on every call and drops the session's insights on logout, so the insight
-  needs no explicit drop. `canPerform` combines `isAdmin` with the config's admin-only flags;
+  `reloadUser` reads the user again without touching the config, logins or permissions. The session's own insight is `Session.insight`, below; the session
+  reads the user and saves metadata through it, and clears it on every sign in and out. The
+  backend sets the insight's user on every call and drops the session's insights on logout, so
+  the insight needs no explicit drop. `canPerform` combines `isAdmin` with the config's admin-only flags;
   guardrails have no flags and are always admin-only.
+- [`SessionInsightStore`](./src/stores/session/session-insight.store.ts) (`Session.insight`)
+  is the session's own insight: `{ insightId }` in an `Observable`, with `run`, `runAsync`,
+  `upload`, `download`, `withInsight(task)` and `clear`. It is made on first use and shared by
+  every caller. `withInsight` runs a request in `"new"` when there is no insight yet and keeps
+  the `insightId` it returns (so the first check is one `GetUserInfo` request), falling back to
+  `META | init` when the result names none; `runAsync` and `upload` need an existing insight
+  (the backend refuses `"new"` for uploads), so they make one first. On `INSIGHT_NOT_FOUND` it
+  makes a new one and retries once. `clear` bumps a version, so an insight still being made
+  for the previous user is not kept.
 - [`SessionPermissionStore`](./src/stores/session/session-permissions.store.ts) caches the
   user's permission per `TYPE:id`, sharing one read per resource and dropping reads that land
   after a clear.
-- React: `useSession(selector)`, `useConfig(selector)`, `useLogins()` and
-  `useSessionPermissions(type, id)` (which also returns `refresh` and `sync`), under an optional
+- React: `useSession(selector)`, `useConfig(selector)`, `useLogins()`,
+  `useSessionPermissions(type, id)` (which also returns `refresh` and `sync`) and
+  `useSessionInsight()` (`insightId` and the insight's actions), under an optional
   `SessionProvider`. Each finds its session through the internal `useSessionStore` in
   `hooks/use-session.ts`: the nearest provider's, else `Session`. Selectors may build objects;
   equal selections do not render. `useSessionStore`, `SessionContext` and the selector cache
   (`js-frameworks/react/utility/store-selector.ts`) are not exported.
-- `InsightStore` reads its config through `Config` (`loadConfigAsSent`, internal, so `system`
-  keeps the backend's unsorted meta keys) and follows `Session`: once initialized it subscribes,
+- `InsightStore` reads its config through `Config.load`, so `system.config` is the same
+  normalized copy (meta keys sorted by `display_order`, lists never missing), and follows
+  `Session`: once initialized it subscribes,
   a `Session` sign in sets up an insight still waiting for one (`joinSession`, also run when an
   initialize finishes), and a sign out signs it out. Its own `actions.login`/`logout` call
   `Session.refresh()` when the page has started `Session`; a page that never starts it reads
@@ -193,10 +207,14 @@ so their public types never name a utility type.
   `Session.logins`.
 - Where a pixel runs: `runPixel(pixel)` / `usePixel(pixel)` with no insight id for one that
   needs no workspace (the backend makes a temporary insight); the workspace's `useInsight()`
-  inside an `InsightProvider`; `Session.run`/`upload`/`download` only for steps that must share
-  one insight but belong to no workspace. `Session.run` returns `errors`; it does not throw.
+  inside an `InsightProvider`; `Session.insight` (`run`/`upload`/`download`, `useSessionInsight()`) only
+  for steps that must share one insight but belong to no workspace. `run` returns `errors`; it
+  does not throw.
 - Transport these use: `isAdminUser`, `registerUser` ([`api/auth.ts`](./src/api/auth.ts)),
-  `getUserInfo` and `setUserDefaultModel` ([`api/user.ts`](./src/api/user.ts)). The config's
+  `getUserInfo` and `setUserMetadata` ([`api/user.ts`](./src/api/user.ts)). `Session.setMetadata`
+  is a partial update like the backend's `SetUserMetadata`: only the keys sent change, an empty
+  list removes one, and keys must be in the server's `USERMETAKEYS`. The backend logs a failed
+  database write rather than reporting it, so `setMetadata` reads the user again after saving. The config's
   shape is typed once, on `getSystemConfig` in [`api/base.ts`](./src/api/base.ts), and
   checked against the backend's `ServerConfigurationResource`: null fields are left out of
   responses, `logins` and `loginDetails` are always present (empty when signed out), and

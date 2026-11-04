@@ -1,6 +1,6 @@
 ---
 name: sdk-session
-description: "Use when signing users in or out, reading the signed in user or their metadata, gating UI on sign in, reading the server config or theme, checking a user's permission on a project or engine, or deciding which insight a pixel runs in with @semoss/sdk. Covers Session, Config, useSession, useConfig, useSessionPermissions and useLogins."
+description: "Use when signing users in or out, reading the signed in user or their metadata, gating UI on sign in, reading the server config or theme, checking a user's permission on a project or engine, or deciding which insight a pixel runs in with @semoss/sdk. Covers Session, Config, useSession, useConfig, useSessionPermissions, useSessionInsight and useLogins."
 ---
 
 # @semoss/sdk Session, Config and Permissions
@@ -12,7 +12,7 @@ the stores from `@semoss/sdk` and the hooks from `@semoss/sdk/react`.
 
 | Store | Owns | React |
 |---|---|---|
-| `Session` | The signed in user: sign in and out, who they are, their metadata, permissions, logins, and one insight of its own | `useSession(selector)`, `useSessionPermissions(type, id)`, `useLogins()` |
+| `Session` | The signed in user: sign in and out, who they are, their metadata, permissions, logins, and one insight of its own (`Session.insight`) | `useSession(selector)`, `useSessionPermissions(type, id)`, `useSessionInsight()`, `useLogins()` |
 | `Config` | The server's metadata: theme, version, flags, meta keys, sign in providers. Needs no session | `useConfig(selector)` |
 | `Insight` | A workspace the user works in: a workbench, room, terminal tab or notebook | `<InsightProvider>`, `useInsight()` |
 
@@ -56,7 +56,6 @@ Selectors may return objects; an equal selection does not render again.
 |---|---|
 | `status` | `"INITIALIZING"`, `"UNAUTHENTICATED"`, `"AUTHENTICATED"` or `"ERROR"` |
 | `user` | `null` when signed out, else `{ id, name, username, email, provider, isAdmin, isNative, userEpoch, lastLogin?, groupInfo?, meta, defaultModels: { textGeneration, codeGeneration } }` |
-| `insightId` | The session's own insight, empty until made |
 | `error` | Why the session could not be read, else `null` |
 
 The user is read in one request from two pixels, which return different things:
@@ -68,8 +67,10 @@ The user is read in one request from two pixels, which return different things:
   so it includes an admin's changes and those made through another server.
 
 `user` describes the config's `primaryLogin`, then SAML, then NATIVE, then the first
-login. `user.meta` and `user.defaultModels` come from `GetUserMetadata`, or from that
-login's token copy when the database read fails. `Session.reloadUser()` reads the
+login. `user.meta` comes from `GetUserMetadata`, or from that login's token copy when
+the database read fails. It is kept as the backend keeps it, each key a list of text
+values in order (`{ "text-generation-model": ["engine-id"] }`). `user.defaultModels`
+reads the two default model keys from it. `Session.reloadUser()` reads the
 user again, such as when another app may have changed their default model, without
 touching the config, logins or permissions. `Session.refresh()` starts the whole
 session over, config included.
@@ -83,9 +84,8 @@ session over, config included.
 | `requestOTP(username, pin)` then `login({ type: "linotp", otp })` | `requestOTP` resolves false when the password must change first |
 | `register({ name, username, email, password, phone, phoneextension, countrycode })` | Creates a native account; does not sign in |
 | `logout()` | Forgets the user, their logins and permissions; throws when refused |
-| `setDefaultModel(key, engineId)` | Shows the choice at once and reverts when the save fails |
+| `setMetadata(meta)` | Sets the user's metadata, such as `{ "text-generation-model": engineId }`. Only the keys given change; an empty value or list removes a key. Shows the change at once, reverts when the backend refuses it, then reads the user again, since the backend does not report every failed write. Each key must be one of the server's user meta keys, which admins manage |
 | `canPerform(resource, operation)` | True for an admin, or when the config does not keep the operation for admins |
-| `run(pixel)`, `runAsync(pixel)`, `upload(files, projectId?, path?)`, `download(fileKey)` | Run in the session's insight; see below |
 
 ## Where a pixel runs
 
@@ -93,9 +93,23 @@ session over, config included.
 |---|---|
 | Needs no workspace, such as a catalog read or a one off mutation | `runPixel(pixel)` or `usePixel(pixel)` with no insight id. The backend makes a temporary insight for it |
 | Belongs to a workspace | That workspace's `useInsight().actions.run`, `usePixel` inside its `<InsightProvider>`, or its `insightId` |
-| Is one of several steps that must share an insight but belong to no workspace, such as an upload then a pixel reading the file, or an export then its download | `Session.upload`, `Session.run`, `Session.download` |
+| Is one of several steps that must share an insight but belong to no workspace, such as an upload then a pixel reading the file, or an export then its download | `Session.insight`: `upload`, `run`, `download`, or `useSessionInsight()` in React |
 
-`Session.run` returns `{ insightId, errors, pixelReturn }` and does not throw on pixel
+`Session.insight` (a `SessionInsightStore`) is the session's own insight. It is not a
+workspace: it has no recipe, room or state, only an id that every call shares.
+
+| Member | Notes |
+|---|---|
+| `run(pixel)`, `runAsync(pixel)` | Run in the insight. The first `run` makes the insight in the same request |
+| `upload(files, projectId?, path?)` | The backend refuses an upload without an existing insight, so one is made first |
+| `download(fileKey)` | Only for a file the same insight made |
+| `withInsight((insightId) => request)` | Any other request that takes an insight id |
+| `getSnapshot().insightId` | Empty until made |
+
+It is made on first use and kept; on `INSIGHT_NOT_FOUND` a new one is made and the call
+runs once more. A sign in or out clears it.
+
+`Session.insight.run` returns `{ insightId, errors, pixelReturn }` and does not throw on pixel
 errors, unlike `useInsight().actions.run`. Check `errors` before reading
 `pixelReturn`, and throw `new Error(errors.join(""))` where the caller expects a throw.
 Session pixels should start with `META |` so they stay out of the insight's recipe.
@@ -107,7 +121,9 @@ Session pixels should start with `META |` so they stay out of the insight's reci
 `theme` are `null` until the config loads, so give every read a fallback:
 `useConfig((state) => state.config?.databaseMetaKeys) ?? []`. `theme` is the server's
 `THEME_MAP`, already parsed. `Config.load({ force })` reads again; the session does so
-after each sign in and sign out.
+after each sign in and sign out, including when the backend ends the session. If the read
+after a sign out fails, the config is reset to `IDLE` rather than kept naming the old
+user's logins.
 
 ## Permissions
 
@@ -152,7 +168,7 @@ These still work but are deprecated, because their data has one home:
 | `system.config.x` | `useConfig((state) => state.config?.x)` |
 | `actions.login(...)`, `actions.logout()` | `Session.login(...)`, `Session.logout()`; a sign in or out is for the whole page |
 | `actions.requestOTP(...)` | `Session.requestOTP(...)` |
-| The default model members | `useSession((state) => state.user?.defaultModels)` and `Session.setDefaultModel` |
+| The default model members | `useSession((state) => state.user?.defaultModels)` and `Session.setMetadata` |
 
 The insight's own `actions.login` and `logout` tell `Session`, so a page that uses
 both stays in step.

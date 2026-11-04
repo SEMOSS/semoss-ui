@@ -52,9 +52,9 @@ Where a pixel runs:
 - It belongs to a workspace: that workspace's `useInsight().actions.run` or `usePixel`
   inside its `InsightProvider`.
 - Several steps must share one insight but belong to no workspace, such as an upload
-  and then a pixel that reads the file: `Session.run`, `Session.upload` and
-  `Session.download`. `Session.run` returns `{ errors, pixelReturn }`; it does not
-  throw on pixel errors.
+  and then a pixel that reads the file: the session's own insight, `Session.insight`
+  (`run`, `upload`, `download`, or `useSessionInsight()` in React). `run` returns
+  `{ errors, pixelReturn }`; it does not throw on pixel errors.
 
 Ask whether the user may act on a resource with `useSessionPermissions(type, id)`
 (`permission`, `canEdit`, `isOwner`, `refresh`, `sync`), and whether the config keeps

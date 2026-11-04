@@ -14,12 +14,8 @@ const SESSION_ACTIONS = [
 	"requestOTP",
 	"register",
 	"logout",
-	"run",
-	"runAsync",
-	"upload",
-	"download",
 	"canPerform",
-	"setDefaultModel",
+	"setMetadata",
 ] as const;
 
 /** The session's state, with the actions that change it. */
@@ -45,7 +41,8 @@ export const useSessionStore = (): SessionStore =>
  * that one read.
  *
  * Read the session's logins with `useLogins`, its config with `useConfig`,
- * and a resource's permission with `useSessionPermissions`.
+ * a resource's permission with `useSessionPermissions`, and its own insight
+ * with `useSessionInsight`.
  *
  * @param selector - Picks the part to read. Defaults to all of it, which
  * renders on every change.

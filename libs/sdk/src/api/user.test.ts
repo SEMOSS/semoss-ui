@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runPixel } from "./base";
-import { getUserInfo } from "./user";
+import { getUserInfo, setUserMetadata } from "./user";
 
 vi.mock("./base", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./base")>()),
@@ -58,12 +58,12 @@ describe("getUserInfo", () => {
 				NATIVE: {
 					id: "ada",
 					email: "",
-					meta: { "text-generation-model": "from-token" },
+					meta: { "text-generation-model": ["from-token"] },
 				},
 			},
 			meta: {
-				"text-generation-model": "from-database",
-				markdown: "# Ada",
+				"text-generation-model": ["from-database"],
+				markdown: ["# Ada"],
 			},
 		});
 	});
@@ -92,5 +92,55 @@ describe("getUserInfo", () => {
 		});
 
 		await expect(getUserInfo()).rejects.toThrow("no user");
+	});
+});
+
+describe("setUserMetadata", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockRunPixel.mockResolvedValue({
+			insightId: "insight-1",
+			errors: [],
+			pixelReturn: [],
+		});
+	});
+
+	it("sends every key's values in order, and an empty list to remove one", async () => {
+		await setUserMetadata(
+			{ tags: ["b", "a"], "code-generation-model": [] },
+			"insight-1",
+		);
+
+		expect(mockRunPixel).toHaveBeenCalledWith(
+			'META | SetUserMetadata(meta=[{"tags":["b","a"],"code-generation-model":[]}]);',
+			"insight-1",
+		);
+	});
+
+	it("escapes values so they cannot open Pixel markup", async () => {
+		await setUserMetadata({ note: ['</script>"'] });
+
+		expect(mockRunPixel).toHaveBeenCalledWith(
+			'META | SetUserMetadata(meta=[{"note":["\\u003c/script>\\""]}]);',
+			"new",
+		);
+	});
+
+	it("sends nothing when there is nothing to set", async () => {
+		await setUserMetadata({});
+
+		expect(mockRunPixel).not.toHaveBeenCalled();
+	});
+
+	it("throws when the backend refuses a key", async () => {
+		mockRunPixel.mockResolvedValue({
+			insightId: "insight-1",
+			errors: ["Unallowed metakeys. Can only use: text-generation-model"],
+			pixelReturn: [],
+		});
+
+		await expect(setUserMetadata({ other: ["x"] })).rejects.toThrow(
+			"Unallowed metakeys",
+		);
 	});
 });

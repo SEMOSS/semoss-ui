@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { isAdminUser, login, logout } from "../../api/auth";
 import { getSystemConfig, runPixel } from "../../api/base";
-import { upload } from "../../api/file";
-import { getUserInfo, setUserDefaultModel } from "../../api/user";
+import { getUserInfo, setUserMetadata } from "../../api/user";
 import { Env } from "../../env";
-import { HttpError, UnauthorizedError } from "../../utility/error";
+import { UnauthorizedError } from "../../utility/error";
 import { onUnauthorized } from "../../utility/fetch";
 import { ConfigStore } from "../config/config.store";
 import { LoginsStore } from "../logins/logins.store";
@@ -21,14 +20,10 @@ vi.mock("../../api/base", async (importOriginal) => ({
 	getSystemConfig: vi.fn(),
 	runPixel: vi.fn(),
 }));
-vi.mock("../../api/file", async (importOriginal) => ({
-	...(await importOriginal<typeof import("../../api/file")>()),
-	upload: vi.fn(),
-}));
 vi.mock("../../api/user", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../../api/user")>()),
 	getUserInfo: vi.fn(),
-	setUserDefaultModel: vi.fn(),
+	setUserMetadata: vi.fn(),
 }));
 vi.mock("../../api/permissions", () => ({
 	getUserEnginePermission: vi.fn(),
@@ -43,10 +38,9 @@ const mockGetSystemConfig = vi.mocked(getSystemConfig);
 const mockGetUserInfo = vi.mocked(getUserInfo);
 const mockIsAdminUser = vi.mocked(isAdminUser);
 const mockLogin = vi.mocked(login);
-const mockUpload = vi.mocked(upload);
 const mockLogout = vi.mocked(logout);
 const mockRunPixel = vi.mocked(runPixel);
-const mockSetUserDefaultModel = vi.mocked(setUserDefaultModel);
+const mockSetUserMetadata = vi.mocked(setUserMetadata);
 const mockOnUnauthorized = vi.mocked(onUnauthorized);
 
 /** A config as the backend sends it, signed in to the given logins. */
@@ -74,7 +68,7 @@ const backendConfig = (
 });
 
 /** A `GetUserInfo` record for a login. */
-const loginInfo = (name: string, meta: Record<string, unknown> = {}) => ({
+const loginInfo = (name: string, meta: Record<string, string[]> = {}) => ({
 	id: `${name.toLowerCase()}-id`,
 	name: name,
 	username: name.toLowerCase(),
@@ -133,7 +127,7 @@ describe("SessionStore", () => {
 			meta: null,
 			logins: {
 				NATIVE: loginInfo("Ada", {
-					"text-generation-model": "model-1",
+					"text-generation-model": ["model-1"],
 				}),
 			},
 		});
@@ -144,7 +138,6 @@ describe("SessionStore", () => {
 		expect(mockGetSystemConfig).toHaveBeenCalledTimes(1);
 		expect(session.getSnapshot()).toMatchObject({
 			status: "AUTHENTICATED",
-			insightId: "session-insight",
 			user: {
 				name: "Ada",
 				provider: "NATIVE",
@@ -157,16 +150,17 @@ describe("SessionStore", () => {
 			},
 		});
 		expect(logins.getSnapshot().logins).toEqual({ NATIVE: "Ada" });
+		expect(session.insight.getSnapshot().insightId).toBe("session-insight");
 	});
 
 	it("takes the user's metadata from the database, else from their login", async () => {
 		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
 		mockGetUserInfo.mockResolvedValueOnce({
 			insightId: "session-insight",
-			meta: { "text-generation-model": "from-database" },
+			meta: { "text-generation-model": ["from-database"] },
 			logins: {
 				NATIVE: loginInfo("Ada", {
-					"text-generation-model": "from-token",
+					"text-generation-model": ["from-token"],
 				}),
 			},
 		});
@@ -175,7 +169,7 @@ describe("SessionStore", () => {
 		await session.initialize();
 
 		expect(session.getSnapshot().user).toMatchObject({
-			meta: { "text-generation-model": "from-database" },
+			meta: { "text-generation-model": ["from-database"] },
 			defaultModels: { textGeneration: "from-database" },
 		});
 
@@ -185,7 +179,7 @@ describe("SessionStore", () => {
 			meta: null,
 			logins: {
 				NATIVE: loginInfo("Ada", {
-					"text-generation-model": "from-token",
+					"text-generation-model": ["from-token"],
 				}),
 			},
 		});
@@ -206,7 +200,7 @@ describe("SessionStore", () => {
 
 		mockGetUserInfo.mockResolvedValueOnce({
 			insightId: "session-insight",
-			meta: { "text-generation-model": "model-2" },
+			meta: { "text-generation-model": ["model-2"] },
 			logins: { NATIVE: loginInfo("Ada") },
 		});
 		await session.reloadUser();
@@ -316,8 +310,8 @@ describe("SessionStore", () => {
 		expect(session.getSnapshot()).toMatchObject({
 			status: "UNAUTHENTICATED",
 			user: null,
-			insightId: "",
 		});
+		expect(session.insight.getSnapshot().insightId).toBe("");
 		expect(logins.getSnapshot().status).toBe("LOADING");
 		expect(session.permissions.get("PROJECT", "p1")).toBeNull();
 		expect(await session.initialize()).toMatchObject({
@@ -338,6 +332,52 @@ describe("SessionStore", () => {
 			status: "UNAUTHENTICATED",
 			user: null,
 		});
+	});
+
+	it("reads the config again when the backend ends the session", async () => {
+		mockGetSystemConfig
+			.mockResolvedValueOnce(backendConfig({ NATIVE: "Ada" }))
+			.mockResolvedValueOnce(backendConfig());
+		const { session, logins } = createSession();
+		await session.initialize();
+
+		const listener = mockOnUnauthorized.mock.calls.at(-1)?.[0];
+		listener?.(new UnauthorizedError("Redirecting", 302));
+		await vi.waitFor(() =>
+			expect(logins.getSnapshot().status).toBe("READY"),
+		);
+
+		expect(mockGetSystemConfig).toHaveBeenCalledTimes(2);
+		expect(session.config.getSnapshot().config?.logins).toEqual({});
+		expect(logins.getSnapshot().logins).toEqual({});
+	});
+
+	it("forgets the config when it cannot be read after a sign out", async () => {
+		mockGetSystemConfig
+			.mockResolvedValueOnce(backendConfig({ NATIVE: "Ada" }))
+			.mockRejectedValueOnce(new Error("down"));
+		mockLogout.mockResolvedValue(true);
+		const { session } = createSession();
+		await session.initialize();
+
+		await session.logout();
+		await vi.waitFor(() =>
+			expect(session.config.getSnapshot().status).toBe("IDLE"),
+		);
+
+		// nothing of the old user's logins is left to show
+		expect(session.config.getSnapshot().config).toBeNull();
+	});
+
+	it("does not hear 302s until the page uses the session", async () => {
+		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
+		const { session } = createSession();
+		expect(mockOnUnauthorized).not.toHaveBeenCalled();
+
+		await session.initialize();
+		await session.refresh();
+
+		expect(mockOnUnauthorized).toHaveBeenCalledTimes(1);
 	});
 
 	it("signs out when the session ends while it is being read", async () => {
@@ -364,21 +404,6 @@ describe("SessionStore", () => {
 		});
 	});
 
-	it("runs pixels in the session's insight", async () => {
-		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
-		mockRunPixel.mockResolvedValue({
-			errors: [],
-			insightId: "session-insight",
-			pixelReturn: [],
-		});
-		const { session } = createSession();
-		await session.initialize();
-
-		await session.run("1+1;");
-
-		expect(mockRunPixel).toHaveBeenCalledWith("1+1;", "session-insight");
-	});
-
 	it("lets admins, or anyone the config allows, do admin-only operations", async () => {
 		mockGetSystemConfig.mockResolvedValue(
 			backendConfig({ NATIVE: "Ada" }, { adminOnlyDbAdd: false }),
@@ -394,81 +419,91 @@ describe("SessionStore", () => {
 		expect(session.canPerform("DATABASE", "delete")).toBe(true);
 	});
 
-	it("saves a default model and keeps it on the user", async () => {
+	it("saves metadata, then reads what the database kept", async () => {
 		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
-		mockSetUserDefaultModel.mockResolvedValue();
+		mockSetUserMetadata.mockResolvedValue();
 		const { session } = createSession();
 		await session.initialize();
 
-		await session.setDefaultModel("code-generation-model", "model-2");
+		mockGetUserInfo.mockResolvedValueOnce({
+			insightId: "session-insight",
+			meta: { "code-generation-model": ["model-2"] },
+			logins: { NATIVE: loginInfo("Ada") },
+		});
+		await session.setMetadata({ "code-generation-model": "model-2" });
 
-		expect(mockSetUserDefaultModel).toHaveBeenCalledWith(
-			"code-generation-model",
-			"model-2",
+		expect(mockSetUserMetadata).toHaveBeenCalledWith(
+			{ "code-generation-model": ["model-2"] },
 			"session-insight",
 		);
+		expect(mockGetUserInfo).toHaveBeenLastCalledWith("session-insight");
 		expect(session.getSnapshot().user?.defaultModels.codeGeneration).toBe(
 			"model-2",
 		);
 	});
 
-	it("reuses its insight across checks and makes one only once", async () => {
+	it("shows what the database kept, even when the save reported success", async () => {
+		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
+		mockSetUserMetadata.mockResolvedValue();
+		const { session } = createSession();
+		await session.initialize();
+
+		// the backend logs a failed write and still answers true
+		mockGetUserInfo.mockResolvedValueOnce({
+			insightId: "session-insight",
+			meta: {},
+			logins: { NATIVE: loginInfo("Ada") },
+		});
+		await session.setMetadata({ "text-generation-model": "model-2" });
+
+		expect(session.getSnapshot().user?.meta).toEqual({});
+	});
+
+	it("changes only the keys given, keeping list values in order", async () => {
+		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
+		mockGetUserInfo.mockResolvedValue({
+			insightId: "session-insight",
+			meta: { "text-generation-model": ["model-1"] },
+			logins: { NATIVE: loginInfo("Ada") },
+		});
+		// hold the save, so the change shown before it is seen
+		mockSetUserMetadata.mockReturnValue(new Promise(() => undefined));
+		const { session } = createSession();
+		await session.initialize();
+
+		void session.setMetadata({ tags: ["b", "a"] });
+
+		await vi.waitFor(() =>
+			expect(session.getSnapshot().user?.meta).toEqual({
+				"text-generation-model": ["model-1"],
+				tags: ["b", "a"],
+			}),
+		);
+	});
+
+	it("makes its insight by reading the user, in one request", async () => {
 		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
 		const { session } = createSession();
 
 		await session.initialize();
 		await session.refresh();
 
-		expect(mockRunPixel).toHaveBeenCalledTimes(1);
-		expect(mockRunPixel).toHaveBeenCalledWith("META | init", "new");
+		expect(mockRunPixel).not.toHaveBeenCalled();
+		expect(mockGetUserInfo).toHaveBeenNthCalledWith(1, "new");
 		expect(mockGetUserInfo).toHaveBeenNthCalledWith(2, "session-insight");
+		expect(session.insight.getSnapshot().insightId).toBe("session-insight");
 	});
 
-	it("makes a new insight once when the backend no longer has it", async () => {
+	it("runs a pixel started during the first check in the insight the check makes", async () => {
 		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
 		const { session } = createSession();
-		await session.initialize();
 
-		mockRunPixel
-			.mockRejectedValueOnce(
-				new HttpError("Could not find the insight id", 400, {
-					errorType: "INSIGHT_NOT_FOUND",
-				}),
-			)
-			.mockResolvedValueOnce({
-				errors: [],
-				insightId: "fresh-insight",
-				pixelReturn: [],
-			})
-			.mockResolvedValueOnce({
-				errors: [],
-				insightId: "fresh-insight",
-				pixelReturn: [],
-			});
-		const result = await session.run("1+1;");
+		const checking = session.initialize();
+		await vi.waitFor(() => expect(mockGetUserInfo).toHaveBeenCalled());
+		await Promise.all([checking, session.insight.run("1+1;")]);
 
-		expect(result.insightId).toBe("fresh-insight");
-		expect(mockRunPixel).toHaveBeenCalledWith("META | init", "new");
-		expect(mockRunPixel).toHaveBeenLastCalledWith("1+1;", "fresh-insight");
-		expect(session.getSnapshot().insightId).toBe("fresh-insight");
-	});
-
-	it("makes its insight before an upload, which the backend requires", async () => {
-		mockGetSystemConfig.mockResolvedValue(backendConfig());
-		mockUpload.mockResolvedValue([]);
-		const { session } = createSession();
-		await session.initialize();
-		const file = new File(["text"], "notes.txt");
-
-		await session.upload(file, "project-1", "docs");
-
-		expect(mockRunPixel).toHaveBeenCalledWith("META | init", "new");
-		expect(mockUpload).toHaveBeenCalledWith(
-			file,
-			"session-insight",
-			"project-1",
-			"docs",
-		);
+		expect(mockRunPixel).toHaveBeenCalledTimes(1);
+		expect(mockRunPixel).toHaveBeenCalledWith("1+1;", "session-insight");
 	});
 
 	it("describes the user by the primary login first", async () => {
@@ -494,6 +529,29 @@ describe("SessionStore", () => {
 			provider: "MICROSOFT",
 			name: "Microsoft",
 		});
+	});
+
+	it("starts a new insight on login, since the backend session may change", async () => {
+		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
+		mockLogin.mockResolvedValue(true);
+		const { session } = createSession();
+		await session.initialize();
+
+		mockGetUserInfo.mockResolvedValue({
+			insightId: "new-session-insight",
+			meta: null,
+			logins: { NATIVE: loginInfo("Ada") },
+		});
+		await session.login({
+			type: "native",
+			username: "ada",
+			password: "pw",
+		});
+
+		expect(mockGetUserInfo).toHaveBeenLastCalledWith("new");
+		expect(session.insight.getSnapshot().insightId).toBe(
+			"new-session-insight",
+		);
 	});
 
 	it("throws when the session cannot be read after a login", async () => {
@@ -567,12 +625,12 @@ describe("SessionStore", () => {
 			meta: null,
 			logins: {
 				NATIVE: loginInfo("Ada", {
-					"text-generation-model": "model-1",
+					"text-generation-model": ["model-1"],
 				}),
 			},
 		});
 		let reject: (error: Error) => void = () => {};
-		mockSetUserDefaultModel.mockReturnValue(
+		mockSetUserMetadata.mockReturnValue(
 			new Promise((_, fail) => {
 				reject = fail;
 			}),
@@ -580,10 +638,9 @@ describe("SessionStore", () => {
 		const { session } = createSession();
 		await session.initialize();
 
-		const saving = session.setDefaultModel(
-			"text-generation-model",
-			"model-2",
-		);
+		const saving = session.setMetadata({
+			"text-generation-model": "model-2",
+		});
 		await vi.waitFor(() =>
 			expect(
 				session.getSnapshot().user?.defaultModels.textGeneration,
@@ -604,15 +661,26 @@ describe("SessionStore", () => {
 			meta: null,
 			logins: {
 				NATIVE: loginInfo("Ada", {
-					"code-generation-model": "model-1",
+					"code-generation-model": ["model-1"],
 				}),
 			},
 		});
-		mockSetUserDefaultModel.mockResolvedValue();
+		mockSetUserMetadata.mockResolvedValue();
 		const { session } = createSession();
 		await session.initialize();
 
-		await session.setDefaultModel("code-generation-model", "");
+		// the reload after saving has the key removed too
+		mockGetUserInfo.mockResolvedValueOnce({
+			insightId: "session-insight",
+			meta: null,
+			logins: { NATIVE: loginInfo("Ada") },
+		});
+		await session.setMetadata({ "code-generation-model": "" });
+
+		expect(mockSetUserMetadata).toHaveBeenCalledWith(
+			{ "code-generation-model": [] },
+			"session-insight",
+		);
 
 		expect(session.getSnapshot().user?.meta).not.toHaveProperty(
 			"code-generation-model",
@@ -622,10 +690,12 @@ describe("SessionStore", () => {
 		);
 	});
 
-	it("stops listening for the session ending when disposed", () => {
+	it("stops listening for the session ending when disposed", async () => {
 		const stop = vi.fn();
 		mockOnUnauthorized.mockReturnValueOnce(stop);
+		mockGetSystemConfig.mockResolvedValue(backendConfig());
 		const { session } = createSession();
+		await session.initialize();
 
 		session.dispose();
 

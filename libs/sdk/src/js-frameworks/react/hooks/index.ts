@@ -2,6 +2,7 @@ export { useConfig } from "./use-config";
 export { useIteratorApi } from "./use-iterator-api";
 export { useIteratorPixel } from "./use-iterator-pixel";
 export { useSession } from "./use-session";
+export { useSessionInsight } from "./use-session-insight";
 export { useSessionPermissions } from "./use-session-permissions";
 export {
 	/**@deprecated use useDebouncedCallback from @semoss/ui/next */

@@ -76,7 +76,7 @@ describe("InsightStore and Session", () => {
 		});
 	});
 
-	it("shares one config read, keeping the meta keys as sent", async () => {
+	it("shares one config read, with the meta keys sorted as Config keeps them", async () => {
 		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
 
 		const first = new InsightStore();
@@ -85,8 +85,8 @@ describe("InsightStore and Session", () => {
 
 		expect(mockGetSystemConfig).toHaveBeenCalledTimes(1);
 		expect(first.system?.config.databaseMetaKeys).toEqual([
-			{ metakey: "b", display_order: 2 },
 			{ metakey: "a", display_order: 1 },
+			{ metakey: "b", display_order: 2 },
 		]);
 	});
 
