@@ -1,6 +1,7 @@
 import { type ComponentProps, useContext, useId } from "react";
 import { Button, cn } from "@semoss/ui/next";
 import { ToolWorkbenchContext } from "@/features/tools/tool-workbench.context";
+import { SaveTopicFileButton } from "@/features/topic-files/components/save-topic-file-button";
 import { parseRoomFileLink } from "../utils/room-file-link";
 
 const LINK_CLASS_NAME =
@@ -21,17 +22,24 @@ export function MessageMarkdownLink({
 	if (file) {
 		if (!workbench) return <span>{children}</span>;
 		return (
-			<Button
-				id={id}
-				type="button"
-				variant="link"
-				className={LINK_CLASS_NAME}
-				title={props.title ?? `Open room file: ${file.name}`}
-				onClick={() => workbench.openFile(file.path, file.name)}
-			>
-				{children}
-				<span className="sr-only"> (open room file)</span>
-			</Button>
+			<span className="inline-flex max-w-full flex-wrap items-center gap-2">
+				<Button
+					id={id}
+					type="button"
+					variant="link"
+					className={LINK_CLASS_NAME}
+					title={props.title ?? `Open room file: ${file.name}`}
+					onClick={() => workbench.openFile(file.path, file.name)}
+				>
+					{children}
+					<span className="sr-only"> (open room file)</span>
+				</Button>
+				<SaveTopicFileButton
+					roomId={workbench.roomId}
+					filePath={file.path}
+					fileName={file.name}
+				/>
+			</span>
 		);
 	}
 	if (!href) return <span>{children}</span>;

@@ -6,10 +6,13 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { SaveTopicFileButton } from "@/features/topic-files/components/save-topic-file-button";
 import type { UploadedRoomFile } from "../api/upload-room-files";
 import type { RoomSource } from "../source-import/room-source";
 
 interface RoomContextFilesProps {
+	/** Saved chat owning these files; absent for an unsent draft. */
+	roomId?: string;
 	/** Session-owned files queued for the next message. */
 	files: readonly UploadedRoomFile[];
 	/** Removes a queued file without deleting the saved file. */
@@ -23,6 +26,7 @@ interface RoomContextFilesProps {
 /** The same removable saved-file queue in a draft and a saved conversation. */
 export function RoomContextFiles({
 	files,
+	roomId,
 	onRemove,
 	isDisabled = false,
 	source,
@@ -51,6 +55,14 @@ export function RoomContextFiles({
 									: "Source conversation"
 							: file.fileName}
 					</span>
+					{roomId && (
+						<SaveTopicFileButton
+							roomId={roomId}
+							filePath={file.fileLocation}
+							fileName={file.fileName}
+							isDisabled={isDisabled}
+						/>
+					)}
 					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<Button

@@ -6,6 +6,12 @@ import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { animationClock } from "../test-utils/animation-clock";
 import { MessageMarkdown } from "./message-markdown";
 
+// Attachment actions use the insight; these existing layout/open-file tests do not submit them.
+vi.mock("@semoss/sdk/react", async (original) => ({
+	...(await original<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => ({ actions: { run: vi.fn() }, insightId: "insight-1" }),
+}));
+
 const captured: { workbench?: ReturnType<typeof useToolWorkbench> } = {};
 
 function WorkbenchControls() {
@@ -89,7 +95,9 @@ it.each(["docx", "xlsx", "pdf", "txt", "pptx"])(
 it("uses the rebound room insight for restored links", async () => {
 	const text = "[summary.docx](room://summary.docx)";
 	const { rerender } = render(view(text));
-	await userEvent.click(screen.getByRole("button", { name: /summary.docx/ }));
+	await userEvent.click(
+		screen.getByRole("button", { name: /summary.docx \(open room file\)/ }),
+	);
 	rerender(view(text, "insight-2"));
 	await waitFor(() =>
 		expect(selectedPanel()?.config?.mode).toEqual({
@@ -97,7 +105,9 @@ it("uses the rebound room insight for restored links", async () => {
 			insightId: "insight-2",
 		}),
 	);
-	await userEvent.click(screen.getByRole("button", { name: /summary.docx/ }));
+	await userEvent.click(
+		screen.getByRole("button", { name: /summary.docx \(open room file\)/ }),
+	);
 	const panels = Object.values(
 		captured.workbench?.store.getState().layout.panels ?? {},
 	).filter((panel) => panel.config?.path === "/summary.docx");
@@ -109,7 +119,9 @@ it("supports keyboard activation and returns focus after closing the file dock",
 	const user = userEvent.setup();
 	render(view("[summary.docx](room://summary.docx)"));
 	await user.tab();
-	const file = screen.getByRole("button", { name: /summary.docx/ });
+	const file = screen.getByRole("button", {
+		name: /summary.docx \(open room file\)/,
+	});
 	expect(file).toHaveFocus();
 	await user.keyboard("{Enter}");
 	expect(selectedPanel()?.config?.path).toBe("/summary.docx");
