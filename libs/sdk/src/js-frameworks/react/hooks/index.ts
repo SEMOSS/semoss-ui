@@ -1,3 +1,8 @@
+export {
+	type UseAPIOptions,
+	type UseAPIResult,
+	useAPI,
+} from "./use-api";
 export { useIteratorApi } from "./use-iterator-api";
 export { useIteratorPixel } from "./use-iterator-pixel";
 export {
