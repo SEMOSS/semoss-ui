@@ -186,41 +186,6 @@ export function ModelEngineForm({
 					)}
 				</>
 			)}
-			{config.operation === "ner" && (
-				<>
-					<BoundInput
-						label="Text to Analyze"
-						required
-						value={config.command}
-						placeholder="${text}"
-						onChange={(v) => onChange({ ...config, command: v })}
-						upstreamVars={upstreamVars}
-						readOnly={readOnly}
-						mono
-					/>
-					<BoundInput
-						label="Mask Entities (JSON, optional)"
-						value={config.maskEntities}
-						placeholder='["PERSON"]'
-						onChange={(v) =>
-							onChange({ ...config, maskEntities: v })
-						}
-						upstreamVars={upstreamVars}
-						readOnly={readOnly}
-						mono
-					/>
-					<BoundInput
-						label="Entities (JSON)"
-						required
-						value={config.entities}
-						placeholder='["PERSON", "ORG", "DATE"]'
-						onChange={(v) => onChange({ ...config, entities: v })}
-						upstreamVars={upstreamVars}
-						readOnly={readOnly}
-						mono
-					/>
-				</>
-			)}
 		</div>
 	);
 }

@@ -58,7 +58,8 @@ export interface ConnectorFileExplorerProps {
  * the files; the rows add the connector's own actions, as every connector row
  * has them. The row's button adds a file to context, or saves it where the
  * host takes no context, and its right-click menu adds it to context, saves it
- * to the chat's files, or opens it in its own app. A signed out
+ * to the chat's files, or opens it in its own app. Selecting a file opens a
+ * preview when the host supports it. A signed out
  * account gets the same sign in prompt as every other viewer.
  */
 export const ConnectorFileExplorer = ({
@@ -75,6 +76,10 @@ export const ConnectorFileExplorer = ({
 		mode: INSIGHT_MODE,
 		adapter: adapter,
 		readOnly: true,
+		onItemSelect: (item) => {
+			const request = getSaveRequest(item);
+			if (request) saver.open?.(request);
+		},
 	});
 
 	const itemActions = (item: FileItem): FileExplorerItemActions => {

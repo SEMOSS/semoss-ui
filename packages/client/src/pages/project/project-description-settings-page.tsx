@@ -1,7 +1,7 @@
 import { CatalogDescriptionSettings } from "@/components/catalog";
 import { useProject, useSession } from "@/hooks";
 
-/** Settings section for a project's catalog description. */
+/** Settings section for a project's catalog description and About markdown. */
 export const ProjectDescriptionSettingsPage = () => {
 	const { project, permission, refresh, catalog } = useProject();
 	const runPixel = useSession((state) => state.runPixel);
@@ -22,8 +22,9 @@ export const ProjectDescriptionSettingsPage = () => {
 				}
 			}}
 			onUpdated={refresh}
-			description={`The summary that describes this ${noun}.`}
+			description={`The summary and About content that describe this ${noun}.`}
 			descriptionHelp={`A short summary shown in the ${noun} catalog and on the Overview tab.`}
+			aboutHelp="Long-form markdown shown on the Overview tab."
 			testIdPrefix="project-description-settings"
 		/>
 	);

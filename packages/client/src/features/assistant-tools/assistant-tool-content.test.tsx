@@ -103,6 +103,182 @@ const makeStore = () => {
 };
 
 describe("tool views and embedded protocol", () => {
+	it("opens a vector search's input and results through the real tool panel action", async () => {
+		const workbench = createWorkbenchStore({
+			components: { [ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL },
+		});
+		const store = createAssistantStore({ workbenchId: "test", workbench });
+		const vectorTool = {
+			...tool,
+			name: "VectorDatabaseQuery",
+			status: "COMPLETED",
+			arguments: { engine: "vector-engine", command: "holiday policy" },
+			output: JSON.stringify([
+				{
+					Source: "handbook.pdf",
+					Content: "Employees receive paid holidays.",
+				},
+			]),
+			metadata: { SMSS_MCP_UI: { displayLocation: "sidebar" } },
+		};
+		const completedRun = {
+			...run,
+			status: "COMPLETED",
+			pendingActions: [],
+			tools: [vectorTool],
+		};
+		store.setState({
+			roomId: "conversation",
+			runs: { child: completedRun },
+		});
+		const view = render(
+			<WorkbenchProvider store={workbench}>
+				<AssistantStoreProvider store={store}>
+					<AssistantToolActivity
+						run={completedRun}
+						tool={vectorTool}
+					/>
+				</AssistantStoreProvider>
+			</WorkbenchProvider>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Open tool" }));
+		const panels = workbench
+			.getState()
+			.layout.actions.findPanels(
+				(panel) => panel.type === ASSISTANT_TOOL_PANEL_TYPE,
+			);
+		expect(panels).toHaveLength(1);
+		await act(async () =>
+			view.rerender(
+				<WorkbenchProvider store={workbench}>
+					<AssistantStoreProvider store={store}>
+						<AssistantToolPanel id={panels[0].id} />
+					</AssistantStoreProvider>
+				</WorkbenchProvider>,
+			),
+		);
+		expect(
+			screen.getByRole("region", { name: "Tool input" }),
+		).toHaveTextContent("holiday policy");
+		expect(
+			screen.getByRole("region", { name: "Tool output" }),
+		).toHaveTextContent("handbook.pdf");
+		expect(
+			screen.getByRole("region", { name: "Tool output" }),
+		).toHaveTextContent("Employees receive paid holidays.");
+		store.getState().destroy();
+	});
+	it.each([undefined, ""])(
+		"explains a completed tool's empty output (%s)",
+		async (output) => {
+			const store = makeStore();
+			await act(async () =>
+				render(
+					<AssistantStoreProvider store={store}>
+						<AssistantToolContent
+							run={{
+								...run,
+								status: "COMPLETED",
+								pendingActions: [],
+							}}
+							tool={{
+								...tool,
+								status: "COMPLETED",
+								output,
+								metadata: {},
+							}}
+						/>
+					</AssistantStoreProvider>,
+				),
+			);
+			expect(
+				screen.getByText("No output was returned."),
+			).toBeInTheDocument();
+			store.getState().destroy();
+		},
+	);
+	it.each(["[]", "0", "false", '<img src="missing" onerror="alert(1)">'])(
+		"preserves literal tool output: %s",
+		async (output) => {
+			const store = makeStore();
+			await act(async () =>
+				render(
+					<AssistantStoreProvider store={store}>
+						<AssistantToolContent
+							run={{
+								...run,
+								status: "COMPLETED",
+								pendingActions: [],
+							}}
+							tool={{
+								...tool,
+								status: "COMPLETED",
+								output,
+								metadata: {},
+							}}
+						/>
+					</AssistantStoreProvider>,
+				),
+			);
+			const result = screen.getByRole("region", { name: "Tool output" });
+			expect(result).toHaveTextContent(output);
+			expect(result.querySelector("img")).toBeNull();
+			expect(
+				screen.queryByText("No output was returned."),
+			).not.toBeInTheDocument();
+			store.getState().destroy();
+		},
+	);
+	it("keeps a failed tool's input, output, and error available without an authored page", async () => {
+		const store = makeStore();
+		await act(async () =>
+			render(
+				<AssistantStoreProvider store={store}>
+					<AssistantToolContent
+						run={{ ...run, status: "FAILED", pendingActions: [] }}
+						tool={{
+							...tool,
+							status: "FAILED",
+							metadata: {},
+							output: "The index could not be searched.",
+							error: "Vector engine unavailable",
+						}}
+					/>
+				</AssistantStoreProvider>,
+			),
+		);
+		expect(
+			screen.getByRole("region", { name: "Tool input" }),
+		).toHaveTextContent("hello");
+		expect(
+			screen.getByRole("region", { name: "Tool output" }),
+		).toHaveTextContent("The index could not be searched.");
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"Vector engine unavailable",
+		);
+		store.getState().destroy();
+	});
+	it("shows a running tool's input without claiming its output is empty", async () => {
+		const store = makeStore();
+		await act(async () =>
+			render(
+				<AssistantStoreProvider store={store}>
+					<AssistantToolContent
+						run={{ ...run, status: "RUNNING", pendingActions: [] }}
+						tool={{ ...tool, status: "RUNNING", metadata: {} }}
+					/>
+				</AssistantStoreProvider>,
+			),
+		);
+		expect(screen.getByRole("status")).toHaveTextContent("Running tool…");
+		expect(
+			screen.getByRole("region", { name: "Tool input" }),
+		).toHaveTextContent("hello");
+		expect(
+			screen.queryByText("No output was returned."),
+		).not.toBeInTheDocument();
+		store.getState().destroy();
+	});
 	it.each(["inline", "sidebar"])(
 		"preserves the submitted %s page through approval reconciliation and later results",
 		async (displayLocation) => {
@@ -461,7 +637,7 @@ describe("tool views and embedded protocol", () => {
 		expect(post).toHaveBeenCalledTimes(1);
 		store.getState().destroy();
 	});
-	it("renders inline pages expanded and sidebar buttons separately without loading hidden or unsupported views", () => {
+	it("renders inline pages expanded and sidebar buttons separately without loading hidden or unsupported views", async () => {
 		const store = makeStore();
 		const draw = (
 			displayLocation: string,
@@ -472,6 +648,7 @@ describe("tool views and embedded protocol", () => {
 					run={run}
 					tool={{
 						...tool,
+						output: "Tool response",
 						metadata: {
 							SMSS_MCP_UI: { displayLocation, resourceURI },
 						},
@@ -491,8 +668,16 @@ describe("tool views and embedded protocol", () => {
 		expect(screen.queryByTitle("Tool")).not.toBeInTheDocument();
 		view.rerender(draw("hidden"));
 		expect(view.container).toBeEmptyDOMElement();
-		view.rerender(draw("inline", "component://mail/thread"));
+		await act(async () =>
+			view.rerender(draw("inline", "component://mail/thread")),
+		);
 		expect(screen.queryByTitle("Tool")).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("region", { name: "Tool input" }),
+		).toHaveTextContent("hello");
+		expect(
+			screen.getByRole("region", { name: "Tool output" }),
+		).toHaveTextContent("Tool response");
 		store.getState().destroy();
 	});
 	it("stops accepting frame results after load failure and exposes fallback controls", async () => {
@@ -512,6 +697,9 @@ describe("tool views and embedded protocol", () => {
 		expect(screen.getByRole("alert")).toHaveTextContent(
 			"could not be loaded",
 		);
+		expect(
+			screen.getByRole("region", { name: "Tool input" }),
+		).toHaveTextContent("hello");
 		await act(async () =>
 			window.dispatchEvent(
 				new MessageEvent("message", {
@@ -667,6 +855,9 @@ describe("tool views and embedded protocol", () => {
 				expect(
 					screen.getByRole("button", { name: "Approve" }),
 				).toBeInTheDocument();
+				expect(
+					screen.getByRole("region", { name: "Tool input" }),
+				).toHaveTextContent("hello");
 			}
 			store.getState().destroy();
 		},

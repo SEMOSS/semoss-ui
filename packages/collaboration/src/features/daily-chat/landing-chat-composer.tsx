@@ -6,12 +6,17 @@ import { useNewChatController } from "./use-new-chat-controller";
 interface LandingChatComposerProps {
 	/** Link the first conversation to this topic before its assistant runs. */
 	topicId?: string;
+	/** Link the first conversation to this work item. */
+	taskId?: string;
 }
 
 /** Start a conversation in place without opening a room yet. */
-export function LandingChatComposer({ topicId }: LandingChatComposerProps) {
+export function LandingChatComposer({
+	topicId,
+	taskId,
+}: LandingChatComposerProps) {
 	const location = useLocation();
-	const controller = useNewChatController(location.state, topicId);
+	const controller = useNewChatController(location.state, topicId, taskId);
 	return (
 		<NewChatWorkbenchProvider
 			key={controller.draftId}

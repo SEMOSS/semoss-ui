@@ -394,6 +394,8 @@ const watchAgentRun = (
 				return;
 			}
 			agent.stop();
+			// the harness's tools write Chat Files server-side, so an open explorer misses the turn's files
+			responseMessage.room.refreshSidebarFileExplorer();
 			if (status !== "COMPLETED") {
 				reject(
 					new Error(

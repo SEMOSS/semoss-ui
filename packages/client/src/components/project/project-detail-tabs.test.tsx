@@ -26,8 +26,8 @@ vi.mock("@/pages/app/app-github-page", () => ({ AppGithubPage: () => null }));
 vi.mock("@/pages/app/app-mcp-usage-page", () => ({
 	AppMcpUsagePage: () => null,
 }));
-vi.mock("@/pages/app/app-settings-page", () => ({
-	AppSettingsPage: () => null,
+vi.mock("@/components/project/project-settings-panel", () => ({
+	ProjectSettingsPanel: () => null,
 }));
 vi.mock("@/pages/app/app-smss-page", () => ({ AppSmssPage: () => null }));
 vi.mock("@/pages/project/agent/agent-activity-page", () => ({

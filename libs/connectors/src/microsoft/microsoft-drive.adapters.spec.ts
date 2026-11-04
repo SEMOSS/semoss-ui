@@ -47,9 +47,9 @@ describe("the OneDrive adapter", () => {
 			{
 				files: [
 					entry("q3.xlsx"),
-					entry("Old", { isFolder: true }),
-					// a search hit says where it lives
-					entry("deck.pptx", { path: "Decks/deck.pptx" }),
+					entry("Old", { isFolder: true, path: "Reports" }),
+					// a search hit names the folder it lives in
+					entry("deck.pptx", { path: "Decks" }),
 				],
 			},
 			"/Reports/",
@@ -109,7 +109,7 @@ describe("the Teams files adapter", () => {
 		expect(
 			adapter
 				.mapEntries(
-					[entry("spec.docx", { path: "General/spec.docx" })],
+					[entry("spec.docx", { path: "General" })],
 					"/Specs/",
 				)
 				.map((row) => row.path),

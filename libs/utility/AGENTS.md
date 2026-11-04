@@ -30,7 +30,7 @@ exports the public helpers. See the [README](./README.md) for import examples.
 | `json` | JSON parsing and formatting, key-sorted serialization, tabular detection, and error locations |
 | `file` | File extensions and filename sanitization |
 | `encoding` | Base64 encoding and decoding |
-| `browser` | Favicons and file downloads |
+| `browser` | Favicons, file downloads, and scrolling a view's ancestors to the top |
 | `clipboard` | Copying text to the clipboard |
 | `csv` | CSV cell escaping |
 | `async` | Timing helpers |

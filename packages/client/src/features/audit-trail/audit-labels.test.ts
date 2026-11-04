@@ -12,6 +12,9 @@ describe("audit labels", () => {
 		expect(describeAuditEvent("USAGE_LIMIT_UPDATE", null, "SUCCESS")).toBe(
 			"Usage Limit Changed",
 		);
+		expect(describeAuditEvent("DATABASE_WRITE", null, "FAILURE")).toBe(
+			"Database Write",
+		);
 		expect(
 			describeAuditEvent(
 				"AUTHORIZATION_DENIED",
@@ -21,6 +24,41 @@ describe("audit labels", () => {
 		).toBe("Access Denied");
 		expect(describeAuditEvent("AUDIT_QUERY", "AUDIT_QUERY", "DENIED")).toBe(
 			"Access Denied",
+		);
+	});
+
+	it.each([
+		["PROJECT_RENAME", "App Renamed"],
+		["PROJECT_DISPLAY_NAME_UPDATE", "App Display Name Changed"],
+		["PROJECT_GLOBAL_UPDATE", "App Made Public Or Private"],
+		["PROJECT_DISCOVERABLE_UPDATE", "App Discoverability Changed"],
+		["PROJECT_TEMPLATE_UPDATE", "App Template Setting Changed"],
+		["PROJECT_METADATA_UPDATE", "App Metadata Changed"],
+		["PROJECT_BLOCKS_UPDATE", "App Blocks Saved"],
+		["PROJECT_REPLACE", "App Replaced By Upload"],
+		["ENGINE_RENAME", "Engine Renamed"],
+		["ENGINE_DISPLAY_NAME_UPDATE", "Engine Display Name Changed"],
+		["ENGINE_GLOBAL_UPDATE", "Engine Made Public Or Private"],
+		["ENGINE_DISCOVERABLE_UPDATE", "Engine Discoverability Changed"],
+		["ENGINE_METADATA_UPDATE", "Engine Metadata Changed"],
+		[
+			"ENGINE_VISIBILITY_UPDATE",
+			"Engine Shown Or Hidden In A User's Lists",
+		],
+	])("names the setting change %s %s", (eventType, label) => {
+		expect(describeAuditEvent(eventType, null, "SUCCESS")).toBe(label);
+	});
+
+	it.each([
+		["PROJECT_EXPORT", "App Exported"],
+		["ENGINE_EXPORT", "Engine Exported"],
+	])("names the export %s %s", (eventType, label) => {
+		expect(describeAuditEvent(eventType, null, "SUCCESS")).toBe(label);
+	});
+
+	it("names an admin closing a user's agent room", () => {
+		expect(describeAuditEvent("AGENT_ROOM_CLOSE", null, "SUCCESS")).toBe(
+			"Agent Room Closed",
 		);
 	});
 

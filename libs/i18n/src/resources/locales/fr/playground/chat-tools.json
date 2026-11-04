@@ -1,7 +1,4 @@
 {
-	"menu": {
-		"showTools": "Afficher les outils du chat"
-	},
 	"panel": {
 		"title": "Outils du chat",
 		"description": "Ce que l'assistant peut utiliser dans votre prochain message.",

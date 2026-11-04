@@ -11,6 +11,8 @@ import { FileDragProvider } from "@/contexts/file-drag-context";
 import { RoomProvider } from "@/contexts/room.context";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
 import { TOOL_VIEW_LIBRARIES } from "@/features/tool-views/tool-view-libraries";
+import { WorkspaceMenuItems } from "@/features/workbench/workspace-menu-items";
+import { WorkspaceRail } from "@/features/workbench/workspace-rail";
 import { useChat } from "@/hooks/use-chat";
 import type { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
@@ -126,6 +128,8 @@ export const RoomPage = observer(() => {
 								);
 							} else room.openSidebar();
 						}}
+						rail={<WorkspaceRail room={room} />}
+						railMenuItems={<WorkspaceMenuItems room={room} />}
 						panel={<RoomSidebar room={room} />}
 					>
 						<FileDragProvider>

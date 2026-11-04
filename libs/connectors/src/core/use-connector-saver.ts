@@ -30,6 +30,8 @@ export interface ConnectorSaver {
 	isBusy: (key: string) => boolean;
 	/** Save an item into the insight's files. */
 	save: (request: ConnectorSaveRequest) => void;
+	/** Fetch a file and open it when the host supports file previews. */
+	open?: (request: ConnectorSaveRequest) => void;
 	/**
 	 * Save an item, then add it to the conversation. Undefined when the host
 	 * takes nothing into its context, so the action can be left out.
@@ -52,7 +54,8 @@ export const useConnectorSaver = (
 	service: ConnectorViewerService,
 	host: ConnectorViewerProps,
 ): ConnectorSaver => {
-	const { saveTargetName, onSaved, onAddToContext, prepareSave } = host;
+	const { saveTargetName, onSaved, onOpenFile, onAddToContext, prepareSave } =
+		host;
 	const { insightId } = useInsight();
 	const { t } = useTranslation("connectors");
 	const [busyKeys, setBusyKeys] = useState<ReadonlySet<string>>(
@@ -72,7 +75,7 @@ export const useConnectorSaver = (
 	const run = useCallback(
 		async (
 			request: ConnectorSaveRequest,
-			intent: "save" | "context",
+			intent: "save" | "context" | "open",
 		): Promise<void> => {
 			if (!insightId) {
 				toast.error(
@@ -98,7 +101,9 @@ export const useConnectorSaver = (
 					service,
 					request.source,
 				);
-				if (intent === "context" && onAddToContext) {
+				if (intent === "open" && onOpenFile) {
+					onOpenFile(file);
+				} else if (intent === "context" && onAddToContext) {
 					onAddToContext(file);
 				} else if (onSaved) {
 					onSaved(file);
@@ -132,7 +137,15 @@ export const useConnectorSaver = (
 				}
 			}
 		},
-		[insightId, onAddToContext, onSaved, prepareSave, service, t],
+		[
+			insightId,
+			onAddToContext,
+			onOpenFile,
+			onSaved,
+			prepareSave,
+			service,
+			t,
+		],
 	);
 
 	const save = useCallback(
@@ -149,12 +162,20 @@ export const useConnectorSaver = (
 		[run],
 	);
 
+	const open = useCallback(
+		(request: ConnectorSaveRequest) => {
+			void run(request, "open");
+		},
+		[run],
+	);
+
 	return {
 		saveLabel: saveTargetName
 			? t("actions.saveTo", { target: saveTargetName })
 			: t("actions.save"),
 		isBusy: (key) => busyKeys.has(key),
 		save: save,
+		open: onOpenFile ? open : undefined,
 		addToContext: onAddToContext ? addToContext : undefined,
 	};
 };

@@ -1,5 +1,14 @@
 import { Env, usePixel } from "@semoss/sdk/react";
-import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
+import {
+	Alert,
+	AlertDescription,
+	Button,
+	Code,
+	CodeContainer,
+	H3,
+	Spinner,
+} from "@semoss/ui/next";
+import { formatJson } from "@semoss/utility/json";
 import { toolOwnerQuery } from "@/api/assistant-tools";
 import { AssistantPendingActions } from "@/components/assistant/assistant-pending-actions";
 import { displayToolName } from "@/components/assistant/assistant-tools";
@@ -21,7 +30,7 @@ interface AssistantToolContentProps {
 	showApprovals?: boolean;
 }
 
-/** Authored tool page with accessible approvals. */
+/** Authored tool page or input/output details, with accessible approvals. */
 export const AssistantToolContent = ({
 	run,
 	tool: originalTool,
@@ -117,6 +126,59 @@ export const AssistantToolContent = ({
 						</Button>
 					</AlertDescription>
 				</Alert>
+			)}
+			{((!url && !isLoading) || hasLoadError) && (
+				<>
+					{tool.arguments !== undefined && (
+						<section
+							aria-label="Tool input"
+							className="min-w-0 shrink-0"
+						>
+							<H3 className="mb-2 text-sm">Input</H3>
+							<CodeContainer
+								aria-label="Input data"
+								tabIndex={0}
+								className="overflow-auto rounded-md bg-muted p-3 font-mono"
+							>
+								<Code
+									code={JSON.stringify(
+										tool.arguments,
+										null,
+										2,
+									)}
+									language="json"
+								/>
+							</CodeContainer>
+						</section>
+					)}
+					{tool.output ? (
+						<section
+							aria-label="Tool output"
+							className="min-w-0 shrink-0"
+						>
+							<H3 className="mb-2 text-sm">Output</H3>
+							<CodeContainer
+								aria-label="Output data"
+								tabIndex={0}
+								className="overflow-auto rounded-md bg-muted p-3 font-mono"
+							>
+								<Code
+									code={formatJson(tool.output)}
+									language="json"
+								/>
+							</CodeContainer>
+						</section>
+					) : isReady && pending.length === 0 && !tool.error ? (
+						<output className="text-muted-foreground text-sm">
+							No output was returned.
+						</output>
+					) : null}
+					{tool.error && (
+						<Alert variant="destructive">
+							<AlertDescription>{tool.error}</AlertDescription>
+						</Alert>
+					)}
+				</>
 			)}
 			{shouldShowApprovals && (
 				<section

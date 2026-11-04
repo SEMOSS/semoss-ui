@@ -2,8 +2,8 @@ import { ArchiveIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { useLoadingMessage } from "@semoss/shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
-import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore } from "@/stores";
 
 const APPEAR_DELAY_MS = 150;

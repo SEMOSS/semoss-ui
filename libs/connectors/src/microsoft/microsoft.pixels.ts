@@ -175,6 +175,15 @@ export const MICROSOFT_PIXELS = {
 		}),
 
 	/**
+	 * One chat, with its name and who is in it.
+	 *
+	 * @param chatId - The chat.
+	 * @return The pixel.
+	 */
+	teamsGetChat: (chatId: string): string =>
+		call("MicrosoftTeamsGetChat", { chatId: id(chatId) }),
+
+	/**
 	 * A chat's newest messages.
 	 *
 	 * @param options - The chat and how many messages to read.
@@ -187,5 +196,27 @@ export const MICROSOFT_PIXELS = {
 		call("MicrosoftTeamsListChatMessages", {
 			chatId: id(options.chatId),
 			limit: options.limit,
+		}),
+
+	/**
+	 * The Teams messages that match what the user typed, by their text, their
+	 * sender, or the files attached to them.
+	 *
+	 * @param options - What to look for, how many messages to read, where in
+	 * the matches to start (the `nextOffset` of the page before), and whether
+	 * channel posts are left out.
+	 * @return The pixel.
+	 */
+	teamsSearchMessages: (options: {
+		search: string;
+		limit: number;
+		offset?: number;
+		chatsOnly?: boolean;
+	}): string =>
+		call("MicrosoftTeamsSearchMessages", {
+			search: text(options.search),
+			limit: options.limit,
+			offset: options.offset || undefined,
+			chatsOnly: options.chatsOnly || undefined,
 		}),
 } as const;

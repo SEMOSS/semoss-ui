@@ -3,9 +3,10 @@ import { UsageLimitSettingsCard } from "@/components/settings/usage-limit-settin
 import { useStoredUsageLimit } from "@/components/settings/use-stored-usage-limit";
 
 /**
- * The General Platform Limit card of the admin Model Settings: the usage limit,
- * across all models, of everyone with no other limit. Its rules count each
- * person's own use. Render it in admin mode only; the calls are admin only.
+ * The General Platform Limit card, on the admin Configuration page's Usage
+ * Limits tab: the usage limit, across all models, of everyone with no other
+ * limit. Its rules count each person's own use. Render it in admin mode only;
+ * the calls are admin only.
  */
 export const PlatformDefaultCard = () => {
 	const limit = useStoredUsageLimit(

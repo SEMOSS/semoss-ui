@@ -251,8 +251,13 @@ async function observeChatJob(
 ```
 
 `PixelStreamMessage` is discriminated by `stream_type`: `content` carries
-`data.content`, `thinking` carries `data.thinking`, and `tool` carries optional
-`data.index`, `id`, and `function` name/argument fragments. Do not execute tools
+`data.content`, `thinking` carries `data.thinking`, `tool` carries optional
+`data.index`, `id`, and `function` name/argument fragments, and `usage` carries
+`data.input_tokens` or `data.output_tokens`. Read chunks with
+`readPixelStreamChunk(chunk, { onText, onThinking, onTool, onUsage })` rather
+than branching on `stream_type` yourself: it skips empty text and reasoning,
+hands each kind to its handler, and ignores a kind it does not know instead of
+taking it for a tool call. Do not execute tools
 from incomplete streamed arguments. Validate the settled `unknown` output before
 reading message parts or executing tool calls. A generic type argument is not
 runtime validation. Keep one consumer per job's incremental stream.

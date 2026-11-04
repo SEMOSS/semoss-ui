@@ -53,6 +53,9 @@ export interface ToolViewSavedFile {
 
 /** What the host offers a tool view besides deciding its call. */
 export interface ToolViewHost {
+	/** Prepare the originating file space and retain it until saving finishes. */
+	// biome-ignore lint/suspicious/noConfusingVoidType: matches the existing connector host preparation contract
+	prepareSave?: () => Promise<void | (() => void)>;
 	/** What the host calls its files, such as `Chat files`. */
 	saveTargetName?: string;
 	/** Called once the view saved an item into the host's files. */

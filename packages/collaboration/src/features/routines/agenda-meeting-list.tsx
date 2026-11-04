@@ -8,7 +8,7 @@ import {
 	FieldLabel,
 	Small,
 } from "@semoss/ui/next";
-import { type AgendaMeetingOption, meetingKey } from "./agenda-meeting-options";
+import { type AgendaMeetingOption, optionKey } from "./agenda-meeting-options";
 
 interface AgendaMeetingListProps {
 	/** Names the list for assistive technology, such as "Recurring meetings". */
@@ -17,7 +17,7 @@ interface AgendaMeetingListProps {
 	emptyText: string;
 	/** The list's meetings, soonest first, without ignored ones. */
 	options: AgendaMeetingOption[];
-	/** Keys of the chosen meetings, from meetingKey. */
+	/** Keys of the chosen meetings, from optionKey. */
 	chosen: ReadonlySet<string>;
 	/** One line under a meeting, such as when it next meets. */
 	describe: (option: AgendaMeetingOption) => string;
@@ -32,9 +32,13 @@ interface AgendaMeetingListProps {
 	/** Focus target for a validation error, set on the first row. */
 	inputRef?: (element: HTMLButtonElement | null) => void;
 	/** Receives a meeting checked or cleared. */
-	onToggle: (title: string, checked: boolean) => void;
+	onToggle: (
+		title: string,
+		checked: boolean,
+		option: AgendaMeetingOption,
+	) => void;
 	/** Receives a meeting to hide from the lists. */
-	onIgnore: (title: string) => void;
+	onIgnore: (title: string, option: AgendaMeetingOption) => void;
 	/** Marks the field touched when focus leaves a checkbox. */
 	onBlur: () => void;
 }
@@ -58,7 +62,7 @@ export function AgendaMeetingList({
 	const id = useId();
 	const boxRef = useRef<HTMLDivElement>(null);
 	const isChosen = (option: AgendaMeetingOption) =>
-		chosen.has(meetingKey(option.title));
+		chosen.has(optionKey(option));
 	const sorted = [
 		...options.filter(isChosen),
 		...options.filter((option) => !isChosen(option)),
@@ -78,7 +82,7 @@ export function AgendaMeetingList({
 				{sorted.map((option, index) => {
 					const checked = isChosen(option);
 					return (
-						<li key={meetingKey(option.title)}>
+						<li key={optionKey(option)}>
 							<Field
 								orientation="horizontal"
 								className="items-start"
@@ -88,7 +92,11 @@ export function AgendaMeetingList({
 									ref={index === 0 ? inputRef : undefined}
 									checked={checked}
 									onCheckedChange={(next) =>
-										onToggle(option.title, next === true)
+										onToggle(
+											option.title,
+											next === true,
+											option,
+										)
 									}
 									onBlur={onBlur}
 									disabled={
@@ -118,7 +126,7 @@ export function AgendaMeetingList({
 									disabled={disabled || ignoreLimitReached}
 									aria-label={`Ignore ${option.title}`}
 									onClick={() => {
-										onIgnore(option.title);
+										onIgnore(option.title, option);
 										// the row is gone, so focus stays on its list
 										boxRef.current?.focus();
 									}}

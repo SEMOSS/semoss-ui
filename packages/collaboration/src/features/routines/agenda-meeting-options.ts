@@ -24,6 +24,13 @@ export interface AgendaMeetingOption {
 	count: number;
 	/** Whether any sitting in the window belongs to a recurring series. */
 	recurring: boolean;
+	/** What tells this meeting apart in a list; its title when not set. */
+	key?: string;
+}
+
+/** The list key of an option: its own key, else its title as the server matches it. */
+export function optionKey(option: AgendaMeetingOption): string {
+	return option.key ?? meetingKey(option.title);
 }
 
 /** Meeting titles compare like the server matches them: case and repeated spaces do not count. */

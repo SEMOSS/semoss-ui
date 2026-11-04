@@ -1,6 +1,6 @@
 import { usePixel } from "@semoss/sdk/react";
 import { AgentDefinition, type AgentWorkspace } from "@semoss/shared";
-import { Spinner } from "@semoss/ui/next";
+import { Markdown, Spinner } from "@semoss/ui/next";
 import { useProject } from "@/hooks";
 import { CLIENT_AGENT_LINKS } from "@/utility";
 
@@ -24,8 +24,9 @@ export const AgentDefinitionView = ({
 );
 
 /**
- * Read-only view of the current WORKSPACE project's agent configuration,
- * rendered inside the agent Overview tab (which owns scrolling).
+ * Read-only view of the current WORKSPACE project: its About markdown, when it
+ * has one, above its agent configuration, rendered inside the agent Overview
+ * tab (which owns scrolling).
  */
 export const AgentViewer = () => {
 	const { project } = useProject();
@@ -41,5 +42,20 @@ export const AgentViewer = () => {
 		);
 	}
 
-	return <AgentDefinitionView workspace={data} className="px-2 py-2" />;
+	const markdown = String(project.markdown || "");
+
+	return (
+		<div className="flex flex-col gap-6 px-2 py-2">
+			{markdown.trim() ? (
+				<Markdown
+					className="w-full text-sm leading-relaxed"
+					variant="document"
+					data-testid="agentViewer-markdown"
+				>
+					{markdown}
+				</Markdown>
+			) : null}
+			<AgentDefinitionView workspace={data} />
+		</div>
+	);
 };

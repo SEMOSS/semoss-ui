@@ -15,7 +15,7 @@ const NOTES: { title: string; items: string[] }[] = [
 		items: [
 			"Usage Reflects Retained Logs And Enabled Logging.",
 			"Model Usage Comes From The Inference Logs; Platform Activity Comes From The Separate Activity Database.",
-			"Access And Usage Limit Changes Come From The Audit Trail, Which Records Times In UTC.",
+			"Access, App And Engine Setting, And Usage Limit Changes Come From The Audit Trail, Which Records Times In UTC.",
 			"App Attribution Comes From The Room's Recorded App.",
 		],
 	},

@@ -8,7 +8,7 @@ import { WorkThreadPage } from "./work-thread.page";
 const mocks = vi.hoisted(() => ({
 	createAttempt: vi.fn(),
 	actions: {},
-	state: {},
+	state: { threads: [] },
 }));
 vi.mock("@semoss/sdk/react", () => ({
 	useInsight: () => ({ insightId: "owner-insight", actions: mocks.actions }),
@@ -68,7 +68,7 @@ beforeEach(() => vi.clearAllMocks());
 
 it("shows loading and prevents an abandoned import from changing the route", async () => {
 	const { router, activations } = setup();
-	expect(screen.getByText("Loading thread…")).toBeVisible();
+	expect(screen.getByText("Load the thread")).toBeVisible();
 	await act(async () => {
 		await router.navigate("/");
 	});

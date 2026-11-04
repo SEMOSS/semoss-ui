@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useRecordIds } from "@/features/collaboration/live/work-updates.context";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { ROOM_PAGE_SIZE } from "@/features/rooms/api/list-rooms";
 import type { RoomRow } from "@/features/rooms/api/room-schemas";
@@ -18,6 +19,7 @@ interface TopicSessionsState {
 /** Match linked topics and sources in user-requested history batches. */
 export function useTopicSessions(topicId: string): TopicSessionsState {
 	const { state } = useCollaborationSession();
+	const { localId } = useRecordIds();
 	const { history } = useDashboard();
 	const associations = useRoomSourceAssociations();
 	const [activation] = useState(() => associations.createActivation());
@@ -56,8 +58,9 @@ export function useTopicSessions(topicId: string): TopicSessionsState {
 		}
 		// Keep verified links visible while refreshes run or fail. An unverified
 		// or malformed source never invents a legacy association.
+		// a chat's topic links carry server ids; a topic made on this page keeps its own
 		if (
-			entry?.topicIds?.includes(topicId) ||
+			entry?.topicIds?.some((id) => localId(id) === topicId) ||
 			(entry?.threadId !== undefined &&
 				(entry.threadId === null
 					? legacyRoomIds.has(room.roomId)

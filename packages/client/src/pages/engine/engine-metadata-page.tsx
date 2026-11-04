@@ -11,7 +11,7 @@ import {
 	Search,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	console as getPixelConsole,
 	runPixel,
@@ -49,6 +49,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
@@ -57,6 +58,19 @@ import { useEngine, useSession } from "@/hooks";
 const normalizeSearchValue = (value: string) =>
 	value.toLowerCase().replace(/[\s_]+/g, "");
 const CONSOLE_POLL_INTERVAL_MS = 1000;
+
+/** What the progress overlay says while each long request runs. */
+const LOADING_COPY = {
+	SCHEMA: {
+		title: "Reading Database Schema",
+		description:
+			"We are reading the tables and views you picked from the database.",
+	},
+	SAVE: {
+		title: "Syncing Database",
+		description: "We are applying your database changes.",
+	},
+} as const;
 
 type SearchMatch = {
 	nodeId: string;
@@ -192,6 +206,14 @@ export const EngineMetadataPage = observer(() => {
 		}[]
 	>([]);
 	const [edges, setEdges] = useState<MetadataEdge[]>([]);
+	// the canvas redraws from nodes and edges on its own only when a table id
+	// changes, so this tells it to show a metamodel the backend returned exactly
+	// as given, names, columns and types included
+	const [metamodelResetKey, setMetamodelResetKey] = useState(0);
+	// whether the next metamodel read follows a save that changed the schema,
+	// whose names and types the database may return differently from what was
+	// sent; a read after a save of positions alone keeps the canvas as it is
+	const shouldRedrawAfterReadRef = useRef(false);
 
 	const [selectedNode, setSelectedNode] = useState(null);
 	const [columnPage, setColumnPage] = useState<number>(0);
@@ -291,6 +313,10 @@ export const EngineMetadataPage = observer(() => {
 				}));
 
 				setEdges(e);
+				if (shouldRedrawAfterReadRef.current) {
+					shouldRedrawAfterReadRef.current = false;
+					setMetamodelResetKey((k) => k + 1);
+				}
 			},
 		},
 		insightID,
@@ -340,11 +366,14 @@ export const EngineMetadataPage = observer(() => {
 	const isRdbms = getDatabaseCategory.data?.toUpperCase() === "SQL";
 
 	const [showSyncDatabase, setShowSyncDatabase] = useState(false);
-	const [metamodelResetKey, setMetamodelResetKey] = useState(0);
 	const [showSaveReminder, setShowSaveReminder] = useState(false);
 	const [hasSchemaChanges, setHasSchemaChanges] = useState(false);
 	const [hasPositionChanges, setHasPositionChanges] = useState(false);
-	const [loading, setLoading] = useState(false);
+	// the long request running, if any, which the progress overlay describes
+	const [loadingKind, setLoadingKind] = useState<
+		keyof typeof LOADING_COPY | null
+	>(null);
+	const isLoading = loadingKind !== null;
 	const [loadingMessage, setLoadingMessage] = useState("Loading...");
 	const [loadingLogMessages, setLoadingLogMessages] = useState<string[]>([]);
 	const [openLoadingLog, setOpenLoadingLog] = useState(false);
@@ -370,7 +399,7 @@ export const EngineMetadataPage = observer(() => {
 	) => {
 		const insightId = insightID;
 		if (!insightId) {
-			throw new Error("Missing insight ID for metadata save request.");
+			throw new Error("Missing insight ID for the metadata request.");
 		}
 
 		let stopPolling = false;
@@ -577,12 +606,20 @@ export const EngineMetadataPage = observer(() => {
 	 * @param views
 	 */
 	const syncDatabase = async (tables: string[], views: string[]) => {
+		if (isLoading) {
+			return;
+		}
+
+		setLoadingKind("SCHEMA");
+		setLoadingMessage("Reading the database schema...");
+		setLoadingLogMessages(["Reading the database schema..."]);
+		setOpenLoadingLog(false);
 		try {
 			// create the filters
 			const filters = JSON.stringify([...tables, ...views]);
 
-			// run it
-			const { errors, pixelReturn } = await runPixel<
+			// run it, showing each table it reads as it goes
+			const { errors, pixelReturn } = await runPixelWithConsole<
 				[
 					{
 						positions: Record<
@@ -784,6 +821,10 @@ export const EngineMetadataPage = observer(() => {
 							type: [] as string[],
 						}));
 
+			// a table already on the canvas stays where it is, saved or not
+			const canvasPositions = new Map(
+				nodes.map((node) => [node.id, node.position]),
+			);
 			const newNodes = normalizedTables.map((table) => ({
 				id: table.table,
 				type: "metamodel" as const,
@@ -795,12 +836,14 @@ export const EngineMetadataPage = observer(() => {
 						type: table.type?.[idx] || "",
 					})),
 				},
-				position: outputPositions?.[table.table]
-					? {
-							x: outputPositions[table.table].left ?? 0,
-							y: outputPositions[table.table].top ?? 0,
-						}
-					: { x: 0, y: 0 },
+				position:
+					canvasPositions.get(table.table) ??
+					(outputPositions?.[table.table]
+						? {
+								x: outputPositions[table.table].left ?? 0,
+								y: outputPositions[table.table].top ?? 0,
+							}
+						: { x: 0, y: 0 }),
 			}));
 
 			const existingRelationshipNamesByPair = edges.reduce(
@@ -852,6 +895,9 @@ export const EngineMetadataPage = observer(() => {
 
 			setNodes(newNodes);
 			setEdges(newEdges);
+			// show the tables as the database returned them, even ones whose id is
+			// unchanged, such as a column whose case the database changed
+			setMetamodelResetKey((k) => k + 1);
 			setSelectedNode(newNodes[0] ?? null);
 
 			// set as modified
@@ -863,9 +909,14 @@ export const EngineMetadataPage = observer(() => {
 				`
 Failed to sync with database changes. Please try again. 
 				
-Error ${e.message || "Unknown error"}				
+Error ${getErrorMessage(e, "Unknown error")}				
 				`,
 			);
+		} finally {
+			setLoadingKind(null);
+			setLoadingMessage("Loading...");
+			setLoadingLogMessages([]);
+			setOpenLoadingLog(false);
 		}
 	};
 
@@ -902,13 +953,13 @@ Error ${e.message || "Unknown error"}
 	 * Save the changes
 	 */
 	const saveDatabase = async () => {
-		if (!hasSchemaChanges && !hasPositionChanges) {
+		if (isLoading || (!hasSchemaChanges && !hasPositionChanges)) {
 			return;
 		}
 
 		const saveSchemaChanges = hasSchemaChanges;
 
-		setLoading(true);
+		setLoadingKind("SAVE");
 		if (saveSchemaChanges) {
 			setLoadingMessage("Starting database synchronization...");
 			setLoadingLogMessages(["Starting database synchronization..."]);
@@ -966,6 +1017,7 @@ Error ${e.message || "Unknown error"}
 			}
 
 			// refresh it
+			shouldRedrawAfterReadRef.current = saveSchemaChanges;
 			getDatabaseMetamodel.refresh();
 
 			setIsModified(false);
@@ -984,11 +1036,11 @@ Error ${e.message || "Unknown error"}
 				`
 Failed to sync with database changes. Please try again. 
 				
-Error ${e.message || "Unknown error"}				
+Error ${getErrorMessage(e, "Unknown error")}				
 				`,
 			);
 		} finally {
-			setLoading(false);
+			setLoadingKind(null);
 			setLoadingMessage("Loading...");
 			setLoadingLogMessages([]);
 			setOpenLoadingLog(false);
@@ -1108,6 +1160,7 @@ Error ${e.message || "Unknown error"}
 											size="sm"
 											variant="outline"
 											onClick={handleReset}
+											disabled={isLoading}
 											data-testid="engineMetadata-reset-btn"
 										>
 											<RefreshCwIcon />
@@ -1131,6 +1184,7 @@ Error ${e.message || "Unknown error"}
 											onClick={() =>
 												setShowSyncDatabase(true)
 											}
+											disabled={isLoading}
 											data-testid="engineMetadata-sync-btn"
 										>
 											<RefreshCwIcon />
@@ -1165,7 +1219,11 @@ Error ${e.message || "Unknown error"}
 								<TooltipTrigger asChild>
 									<span
 										className="inline-flex"
-										tabIndex={!isModified ? 0 : undefined}
+										tabIndex={
+											!isModified || isLoading
+												? 0
+												: undefined
+										}
 									>
 										<Button
 											aria-label={
@@ -1174,7 +1232,7 @@ Error ${e.message || "Unknown error"}
 													: "Save changes to the metamodel"
 											}
 											size="sm"
-											disabled={!isModified}
+											disabled={!isModified || isLoading}
 											variant="outline"
 											className={
 												showSaveReminder
@@ -1195,11 +1253,13 @@ Error ${e.message || "Unknown error"}
 									</span>
 								</TooltipTrigger>
 								<TooltipContent>
-									{!isModified
-										? "No changes to save"
-										: showSaveReminder
-											? saveTooltipText
-											: "Save changes to the metamodel"}
+									{isLoading
+										? "Wait for the sync to finish"
+										: !isModified
+											? "No changes to save"
+											: showSaveReminder
+												? saveTooltipText
+												: "Save changes to the metamodel"}
 								</TooltipContent>
 							</Tooltip>
 						</div>
@@ -1246,18 +1306,25 @@ Error ${e.message || "Unknown error"}
 							searchInputTestId="engineMetadata-search-input"
 						/>
 					</section>
-					{loading && (
+					{loadingKind && (
 						<div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-background/70 backdrop-blur-sm">
 							<div className="w-full max-w-2xl px-4">
 								<div className="flex flex-col items-center gap-5 rounded-md border border-border bg-card p-6 shadow-md">
-									<div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+									<Spinner
+										className="size-8 text-primary"
+										aria-label={
+											LOADING_COPY[loadingKind].title
+										}
+									/>
 									<div className="flex flex-col items-center gap-1">
 										<H4 className="text-center font-semibold text-lg tracking-tight">
-											Syncing Database
+											{LOADING_COPY[loadingKind].title}
 										</H4>
 										<Muted className="text-center text-sm leading-6">
-											We are applying your database
-											changes.
+											{
+												LOADING_COPY[loadingKind]
+													.description
+											}
 										</Muted>
 									</div>
 									<div className="flex w-full max-w-xl flex-col items-center gap-1">
@@ -1768,12 +1835,12 @@ Error ${e.message || "Unknown error"}
 				views={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
 				open={showSyncDatabase}
 				onClose={async (success, data) => {
+					// close it first, so the page shows its progress while the
+					// schema is read
+					setShowSyncDatabase(false);
 					if (success && data) {
 						await syncDatabase(data.tables, data.views);
 					}
-
-					// close it
-					setShowSyncDatabase(false);
 				}}
 			/>
 		</div>

@@ -73,6 +73,8 @@ export const foldersSchema = z.object({
 		z.object({
 			id: z.string().min(1),
 			name: optionalText,
+			/** Nested folders follow their parent, named from the top of the mailbox. */
+			path: optionalText,
 			totalCount: z.number().optional(),
 		}),
 	),

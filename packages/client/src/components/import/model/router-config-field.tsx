@@ -1,5 +1,5 @@
-import { ArrowUp, ChevronDown, Plus, X } from "lucide-react";
-import { useId } from "react";
+import { ChevronDown, CircleCheck, Plus, TriangleAlert, X } from "lucide-react";
+import { useEffect, useId, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -8,12 +8,12 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	cn,
 	Field,
 	FieldDescription,
 	FieldLabel,
 	FieldLegend,
 	FieldSet,
-	Input,
 	P,
 	Select,
 	SelectContent,
@@ -21,13 +21,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Switch,
-	Textarea,
 } from "@semoss/ui/next";
 import { isRecord } from "@semoss/utility/object";
 import {
 	type RouterEngineOption,
+	type RouterEngineRole,
 	RouterEngineSelect,
 } from "@/features/model-router/router-engine-select";
+import { RouterRouteCard } from "@/features/model-router/router-route-card";
 import {
 	createDefaultRouterConfigValue,
 	createRouterEngineRef,
@@ -351,6 +352,47 @@ export const RouterConfigField = ({
 				route.id === id ? { ...route, ...partial } : route,
 			),
 		});
+	// the route whose name gets focus once a removed route's card is gone
+	const [focusRouteId, setFocusRouteId] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!focusRouteId) {
+			return;
+		}
+		document.getElementById(`${baseId}-${focusRouteId}-name`)?.focus();
+		setFocusRouteId(null);
+	}, [focusRouteId, baseId]);
+
+	/**
+	 * Swaps a route with its neighbor above or below.
+	 *
+	 * @param index - The route's place.
+	 * @param offset - -1 to move it up, 1 to move it down.
+	 */
+	const moveRoute = (index: number, offset: -1 | 1) => {
+		const target = index + offset;
+		if (target < 0 || target >= config.routes.length) {
+			return;
+		}
+		const routes = [...config.routes];
+		[routes[index], routes[target]] = [routes[target], routes[index]];
+		update({ routes });
+	};
+
+	/**
+	 * Removes a route and moves focus to the route that takes its place, or
+	 * to the one before it when it was the last.
+	 *
+	 * @param index - The route's place.
+	 */
+	const removeRoute = (index: number) => {
+		const routes = config.routes.filter((_, other) => other !== index);
+		update({ routes });
+		const next = routes[Math.min(index, routes.length - 1)];
+		if (next) {
+			setFocusRouteId(next.id);
+		}
+	};
 	const weightTotal = sumRouteWeights(config.routes);
 	const selectedClassifier = engineOptions.find(
 		(engine) => engine.engine_id === config.classifier_engine,
@@ -381,11 +423,7 @@ export const RouterConfigField = ({
 		id: string,
 		selected: string,
 		onSelect: (next: string) => void,
-		role:
-			| "destination"
-			| "decision"
-			| "classifier"
-			| "embeddings" = "destination",
+		role: RouterEngineRole = "destination",
 		allowNone = false,
 	) => (
 		<RouterEngineSelect
@@ -510,169 +548,23 @@ export const RouterConfigField = ({
 				</FieldDescription>
 				<div className="flex flex-col gap-4">
 					{config.routes.map((route, index) => (
-						<FieldSet
+						<RouterRouteCard
 							key={route.id}
-							className="min-w-0 gap-4 rounded-lg border border-border p-4"
-						>
-							<FieldLegend className="mb-0">
-								Route {index + 1}
-							</FieldLegend>
-							<div className="flex flex-wrap justify-end gap-2">
-								{index > 0 && (
-									<Button
-										type="button"
-										variant="outline"
-										className="bg-background text-foreground"
-										size="sm"
-										disabled={disabled}
-										aria-label={`Move route ${index + 1} up`}
-										onClick={() => {
-											const routes = [...config.routes];
-											[routes[index - 1], routes[index]] =
-												[
-													routes[index],
-													routes[index - 1],
-												];
-											update({ routes });
-										}}
-									>
-										<ArrowUp
-											aria-hidden="true"
-											className="size-4"
-										/>
-										Move up
-									</Button>
-								)}
-								<Button
-									type="button"
-									variant="ghost"
-									className="bg-transparent text-foreground"
-									size="icon"
-									aria-label={`Remove route ${index + 1}`}
-									disabled={
-										disabled || config.routes.length === 1
-									}
-									onClick={() =>
-										update({
-											routes: config.routes.filter(
-												(other) =>
-													other.id !== route.id,
-											),
-										})
-									}
-								>
-									<X aria-hidden="true" className="size-4" />
-								</Button>
-							</div>
-							<div className="grid min-w-0 gap-4 md:grid-cols-2">
-								<Field>
-									<FieldLabel
-										htmlFor={`${baseId}-${route.id}-name`}
-									>
-										Intent / route name
-									</FieldLabel>
-									<Input
-										className="text-foreground"
-										id={`${baseId}-${route.id}-name`}
-										value={route.name}
-										placeholder="e.g. coding"
-										onChange={(event) =>
-											updateRoute(route.id, {
-												name: event.target.value,
-											})
-										}
-										disabled={disabled}
-									/>
-								</Field>
-								<Field>
-									<FieldLabel
-										htmlFor={`${baseId}-${route.id}-engine`}
-									>
-										Destination model (required)
-									</FieldLabel>
-									{engineSelect(
-										`${baseId}-${route.id}-engine`,
-										route.engine_id,
-										(engine_id) =>
-											updateRoute(route.id, {
-												engine_id,
-											}),
-									)}
-								</Field>
-							</div>
-							{isClassification && (
-								<Field>
-									<FieldLabel
-										htmlFor={`${baseId}-${route.id}-description`}
-									>
-										When should this route be used?
-										(required)
-									</FieldLabel>
-									<Textarea
-										className="text-foreground"
-										id={`${baseId}-${route.id}-description`}
-										value={route.description}
-										placeholder="Requests to write, debug, or explain source code."
-										rows={3}
-										onChange={(event) =>
-											updateRoute(route.id, {
-												description: event.target.value,
-											})
-										}
-										disabled={disabled}
-									/>
-								</Field>
-							)}
-							{config.mode !== "weighted" && (
-								<Field>
-									<FieldLabel
-										htmlFor={`${baseId}-${route.id}-keywords`}
-									>
-										{isClassification
-											? "Fallback keywords (optional)"
-											: "Keywords"}
-									</FieldLabel>
-									<Input
-										className="text-foreground"
-										id={`${baseId}-${route.id}-keywords`}
-										value={route.keywords}
-										placeholder="code, python, debug"
-										onChange={(event) =>
-											updateRoute(route.id, {
-												keywords: event.target.value,
-											})
-										}
-										disabled={disabled}
-									/>
-								</Field>
-							)}
-							{config.mode === "weighted" && (
-								<Field>
-									<FieldLabel
-										htmlFor={`${baseId}-${route.id}-weight`}
-									>
-										Traffic percentage
-									</FieldLabel>
-									<Input
-										className="text-foreground"
-										id={`${baseId}-${route.id}-weight`}
-										type="number"
-										min={0}
-										max={100}
-										step={1}
-										value={route.weight}
-										onChange={(event) =>
-											updateRoute(route.id, {
-												weight: Number(
-													event.target.value,
-												),
-											})
-										}
-										disabled={disabled}
-									/>
-								</Field>
-							)}
-						</FieldSet>
+							route={route}
+							index={index}
+							routeCount={config.routes.length}
+							mode={config.mode}
+							idPrefix={`${baseId}-${route.id}`}
+							engines={engineOptions}
+							isLoadingEngines={isLoading}
+							isEngineSelectDisabled={engines.status === "ERROR"}
+							disabled={disabled}
+							onChange={(partial) =>
+								updateRoute(route.id, partial)
+							}
+							onMove={(offset) => moveRoute(index, offset)}
+							onRemove={() => removeRoute(index)}
+						/>
 					))}
 				</div>
 				<Button
@@ -692,13 +584,25 @@ export const RouterConfigField = ({
 				</Button>
 				{config.mode === "weighted" && (
 					<P
-						className={
+						className={cn(
+							"flex items-center gap-2 text-base",
 							weightTotal === 100
-								? "text-base text-muted-foreground"
-								: "text-base text-warning"
-						}
+								? "text-muted-foreground"
+								: "text-warning",
+						)}
 					>
-						Total: {weightTotal}% —{" "}
+						{weightTotal === 100 ? (
+							<CircleCheck
+								aria-hidden="true"
+								className="size-4 shrink-0 text-success"
+							/>
+						) : (
+							<TriangleAlert
+								aria-hidden="true"
+								className="size-4 shrink-0"
+							/>
+						)}
+						Total {weightTotal}%:{" "}
 						{weightTotal === 100
 							? "ready to save"
 							: "must add up to 100%"}

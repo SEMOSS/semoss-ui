@@ -13,7 +13,6 @@ import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-acc
 import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
 import { useConfig, useProject } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
 
 export interface ProjectAccessControlProps {
 	/**
@@ -32,7 +31,6 @@ export const ProjectAccessControl = ({
 }: ProjectAccessControlProps) => {
 	const { project, permission, refresh } = useProject();
 
-	const navigate = useNavigate();
 	// bulk access management, effective permissions and teams go by the user's own access:
 	// an admin uses them in admin mode, from the settings pages
 	const canEditAccess = permission === "OWNER" || permission === "EDIT";
@@ -71,9 +69,6 @@ export const ProjectAccessControl = ({
 								"app"
 							}
 							id={project.project_id}
-							onDelete={() => {
-								navigate("/app");
-							}}
 						/>
 					</section>
 				)}

@@ -22,6 +22,7 @@ import {
 import { setProjectDisplayName } from "@/api/projects";
 import { ProjectAccessRequestButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { ProjectActionsMenu } from "@/features/project-actions/project-actions-menu";
 import { useProject, useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
@@ -150,6 +151,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 						renameLabel={`Rename ${catalog.name}`}
 						actions={
 							<>
+								<ProjectActionsMenu />
 								{permission !== "OWNER" && (
 									<ProjectAccessRequestButton
 										project={project}

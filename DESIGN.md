@@ -132,8 +132,9 @@ settings page is not a dashboard and should not wrap every field group in a card
   blue hover/selection surfaces in both themes. A status still uses the appropriate
   `success`, `warning`, or `destructive` role with a textual label.
 - **Playground defaults:** an expanded 16rem navigation sidebar; a resizable 35/65
-  conversation/Workspace split; Chat/Workspace tabs below 64rem of available content
-  width. Opening the Workspace temporarily collapses navigation without changing its
+  conversation/Workspace split; a 3rem Workspace icon rail at the end of the route that
+  lists the Workspace's places, each named in a tooltip; Chat/Workspace tabs below 64rem of available content
+  width, where the open button's menu lists the places instead of the rail. Opening the Workspace temporarily collapses navigation without changing its
   stored preference, and closing it restores that preference. Manual navigation toggles
   override the temporary state. These dimensions are playground defaults, not mandates
   for every host.

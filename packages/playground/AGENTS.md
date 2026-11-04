@@ -157,20 +157,30 @@ code and are easy to undo by accident:
 - **Publish and close live in the workbench's top border end slot**, because they act on the work
   area. On mobile, the workbench places these controls in its actions drawer. The per-panel
   control — "open inline" — is registered by the tool panel with `useWorkbenchControl`.
-- **File lives in the top border start slot.** `features/workbench/room-workbench-menus.tsx`
-  translates the generic `WorkbenchMenus` labels from `sidebar.workbench` and uses `textSize="xs"`. Arrange Panels remains a submenu; a flat Workspace section offers Open File Explorer, Show Chat Tools
-  (rooms only, since a draft's tools are not settled until its first message), View Activity Log,
-  and Edit Settings. Playground disables the generic Navigate submenu. Forward the slot's `onNavigate` callback for mobile drawer dismissal.
+- **The rail lists the Workspace's places.** `features/workbench/workspace-rail.tsx` sits at the
+  end of `ConversationWorkspace` whether the Workspace is open or closed: Files, Tools (rooms
+  only, since a draft's tools are not settled until its first message), Activity, Settings,
+  then the connector viewers the chat can show
+  (`ConnectorsStore.availableSources`). A place opens the Workspace on its panel, and closes the
+  Workspace when its panel is already in front. `useWorkspacePlaces` builds the list for a room,
+  or from `DraftWorkspacePlaces` for a new chat. Below 64rem of content width, and on mobile, the
+  rail is not shown: the open button lists the same places in a menu (`WorkspaceMenuItems`).
+- **View lives in the top border start slot.** `features/workbench/room-workbench-menus.tsx`
+  translates the generic `WorkbenchMenus` labels from `sidebar.workbench` and uses
+  `textSize="xs"`. It holds the command palette and Arrange Panels, and lists the places too
+  whenever `ConversationWorkspaceRailContext` says the rail is not on screen. Playground disables
+  the generic Navigate submenu. Forward the slot's `onNavigate` callback for mobile drawer
+  dismissal.
 - **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
   so switching rooms cannot bleed panel state between room instances.
 
 New chats keep draft settings in their temporary room store. Opening Workspace restores its
 last active tab, or opens a Settings tab when empty, without creating a server room. Settings
-uses the same workbench shell as Files. File Explorer and connector viewers share `usePreparedRoom` to prepare one room lazily
-and transfer the draft's arrangement before opening their panels. Connector viewers queue
+uses the same workbench shell as Files. File Explorer, the activity log, and connector viewers share `usePreparedRoom` to prepare one room lazily
+and transfer the draft's arrangement before opening their panels; a failed preparation opens the Workspace on its error, whose Retry opens the same place again. Connector viewers queue
 attachments on the draft through `NextMessageRoomProvider` until the first message. `DraftSettingsContext` keeps Settings and publishing
-bound to the current draft until submission, including after preparation. Draft menu overrides
-keep room-only actions unavailable until preparation succeeds. Selecting Chat clears agent
+bound to the current draft until submission, including after preparation. A draft's places
+(`DraftWorkspacePlaces`) leave out Chat Tools until its first message. Selecting Chat clears agent
 inheritance but preserves locally added Knowledge and Tools.
 
 Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the room's own
@@ -204,7 +214,7 @@ affects only the current room instance.
   come back with no `_meta`; `ToolStore.json` gets it from `ChatToolsStore.decorateToolCall`, and
   `runToolExecution` hands folder calls to `ChatToolsStore.runChatTool` instead of `RunMCPTool`.
 - **Chat Tools shows what the assistant has.** The default tools are not in any toolbox, so
-  `ChatToolsPanel` (Show Chat Tools in the workspace File menu) lists them from
+  `ChatToolsPanel` (Tools on the Workspace rail) lists them from
   `ChatToolsStore.chatToolDefinitions`, the exact definitions sent, or notes that an agent room's
   runs bring their own, beside the room toolbox's tools read from `mcp/pixel_mcp.json` and the
   toolboxes the user added. Each tool says whether it runs on its own or asks first, and opens to

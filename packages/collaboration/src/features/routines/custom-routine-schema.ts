@@ -61,6 +61,20 @@ export const mySkillSchema = z.object({
 
 export const mySkillListSchema = z.object({ skills: z.array(mySkillSchema) });
 
+/** One of the owner's reference documents for a routine, copied into each of its runs. */
+export const routineDocumentSchema = z.object({
+	name: z.string().min(1),
+	size: z.number(),
+	updatedAt: z.string(),
+});
+
+/** The routine's documents folder in the owner's user assets, and what is in it. */
+export const routineDocumentsSchema = z.object({
+	path: z.string().min(1),
+	documents: z.array(routineDocumentSchema),
+});
+
 export type CustomRoutineSettings = z.infer<typeof customRoutineSettingsSchema>;
 export type CustomRoutine = z.infer<typeof customRoutineSchema>;
 export type MySkill = z.infer<typeof mySkillSchema>;
+export type RoutineDocument = z.infer<typeof routineDocumentSchema>;

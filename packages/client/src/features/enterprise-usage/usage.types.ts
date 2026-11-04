@@ -7,7 +7,7 @@ export interface UsageFilters {
 	engine: string;
 }
 
-/** Model inference logs, platform activity logs, or the audit trail's access and usage limit changes. */
+/** Model inference logs, platform activity logs, or the audit trail's access, setting and usage limit changes. */
 export type UsageSource = "model" | "activity" | "audit";
 export type UsageFilterDimension = "user" | "app" | "engine";
 
