@@ -11,6 +11,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTINE_RUN_DELETED } from "./api/delete-routine-run";
+import { SKILL_CATALOG_PIXEL } from "./custom-routine-api";
 import { InboxRoutineForm } from "./inbox-routine-form";
 import type {
 	InboxRoutine,
@@ -687,7 +688,9 @@ describe("RoutinesWorkspace", () => {
 					}
 				: statement === "WorkListMySkills();"
 					? { ...service.result, data: { skills: [] } }
-					: service.result,
+					: statement === SKILL_CATALOG_PIXEL
+						? { ...service.result, data: [] }
+						: service.result,
 		);
 		render(
 			<MemoryRouter initialEntries={["/routines?routine=custom-2"]}>

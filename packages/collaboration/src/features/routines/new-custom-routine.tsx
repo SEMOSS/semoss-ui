@@ -17,14 +17,15 @@ import {
 import { saveCustomRoutine } from "./custom-routine-api";
 import { CustomRoutineFields } from "./custom-routine-fields";
 import {
+	type CatalogSkill,
 	type CustomRoutine,
 	type CustomRoutineSettings,
 	customRoutineSettingsSchema,
-	type MySkill,
 } from "./custom-routine-schema";
 
 interface NewCustomRoutineProps {
-	skills: MySkill[];
+	/** The owner's skill catalog, for the routine's skill picker. */
+	skills: CatalogSkill[];
 	onCreated: (routine: CustomRoutine) => void;
 	onCancel: () => void;
 }
@@ -47,6 +48,7 @@ export function NewCustomRoutine({
 			timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 			delivery: "email",
 			skills: [],
+			tools: [],
 			agentId: "",
 		},
 	});

@@ -9,6 +9,12 @@ import {
 	routineDocumentsSchema,
 } from "./custom-routine-schema";
 
+/** Every skill the owner can use, from their SEMOSS skill catalog, for a routine's skill picker. */
+export const SKILL_CATALOG_PIXEL = `META | ${pixel("MyProjects", {
+	projectType: ["SKILL"],
+	metaKeys: ["description"],
+})}`;
+
 /** Create (no routineId) or save one of the owner's routines. */
 export async function saveCustomRoutine(
 	actions: InsightActions,

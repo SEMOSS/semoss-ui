@@ -11,9 +11,11 @@ import {
 } from "@semoss/ui/next";
 import { callPixel, pixel } from "@/lib/pixel";
 import { ROUTINE_RUN_DELETED } from "./api/delete-routine-run";
+import { SKILL_CATALOG_PIXEL } from "./custom-routine-api";
 import { CustomRoutineCard } from "./custom-routine-card";
 import {
 	type CustomRoutine,
+	catalogSkillListSchema,
 	customRoutineListSchema,
 	type MySkill,
 	mySkillListSchema,
@@ -35,6 +37,7 @@ interface CustomRoutinesTabProps {
 export function CustomRoutinesTab({ request }: CustomRoutinesTabProps) {
 	const routines = usePixel<unknown>("WorkListCustomRoutines();");
 	const skills = usePixel<unknown>("WorkListMySkills();");
+	const catalog = usePixel<unknown>(SKILL_CATALOG_PIXEL);
 	const [isAdding, setIsAdding] = useState(false);
 	const [selected, setSelected] = useState("");
 	const [shownRequest, setShownRequest] = useState<string | null>(null);
@@ -45,6 +48,7 @@ export function CustomRoutinesTab({ request }: CustomRoutinesTabProps) {
 	}
 	const parsedRoutines = customRoutineListSchema.safeParse(routines.data);
 	const parsedSkills = mySkillListSchema.safeParse(skills.data);
+	const parsedCatalog = catalogSkillListSchema.safeParse(catalog.data);
 	const { actions } = useInsight();
 	const { update } = routines;
 	const isRunning =
@@ -74,7 +78,7 @@ export function CustomRoutinesTab({ request }: CustomRoutinesTabProps) {
 		window.addEventListener(ROUTINE_RUN_DELETED, reread);
 		return () => window.removeEventListener(ROUTINE_RUN_DELETED, reread);
 	}, [reread]);
-	const isLoading = [routines.status, skills.status].some(
+	const isLoading = [routines.status, skills.status, catalog.status].some(
 		(status) => status === "INITIAL" || status === "LOADING",
 	);
 	if (isLoading) {
@@ -86,19 +90,25 @@ export function CustomRoutinesTab({ request }: CustomRoutinesTabProps) {
 			</div>
 		);
 	}
-	if (!parsedRoutines.success || !parsedSkills.success) {
+	if (
+		!parsedRoutines.success ||
+		!parsedSkills.success ||
+		!parsedCatalog.success
+	) {
 		return (
 			<Alert variant="destructive">
 				<AlertTitle>Could not load your routines</AlertTitle>
 				<AlertDescription>
 					{routines.error?.message ||
 						skills.error?.message ||
+						catalog.error?.message ||
 						"Your routines could not be verified. Please try again."}
 					<Button
 						variant="outline"
 						onClick={() => {
 							routines.refresh();
 							skills.refresh();
+							catalog.refresh();
 						}}
 					>
 						Try again
@@ -109,6 +119,7 @@ export function CustomRoutinesTab({ request }: CustomRoutinesTabProps) {
 	}
 	const list = parsedRoutines.data.routines;
 	const mySkills = parsedSkills.data.skills;
+	const catalogSkills = parsedCatalog.data;
 	const setList = (next: CustomRoutine[]) =>
 		routines.update({ routines: next });
 	const setSkills = (next: MySkill[]) => skills.update({ skills: next });
@@ -151,7 +162,7 @@ export function CustomRoutinesTab({ request }: CustomRoutinesTabProps) {
 				<div className="min-w-0">
 					{isAdding ? (
 						<NewCustomRoutine
-							skills={mySkills}
+							skills={catalogSkills}
 							onCreated={(created) => {
 								setList([...list, created]);
 								setSelected(created.id);
@@ -168,7 +179,7 @@ export function CustomRoutinesTab({ request }: CustomRoutinesTabProps) {
 						>
 							<CustomRoutineCard
 								routine={current}
-								skills={mySkills}
+								skills={catalogSkills}
 								onChange={(saved) =>
 									setList(
 										saved

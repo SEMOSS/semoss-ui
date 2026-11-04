@@ -21,11 +21,11 @@ import { collaborationTabsStyles } from "@/features/collaboration/components/col
 import { manageCustomRoutine, saveCustomRoutine } from "./custom-routine-api";
 import { CustomRoutineFields } from "./custom-routine-fields";
 import {
+	type CatalogSkill,
 	type CustomRoutine,
 	type CustomRoutineSettings,
 	customRoutineSettingsSchema,
 	DELIVERY_LABELS,
-	type MySkill,
 } from "./custom-routine-schema";
 import { RoutineAvailability } from "./routine-availability";
 import { RoutineCardHeader } from "./routine-card-header";
@@ -54,13 +54,15 @@ function formValues(routine: CustomRoutine): CustomRoutineSettings {
 		timezone: routine.timezone,
 		delivery: routine.delivery,
 		skills: routine.skills,
+		tools: routine.tools,
 		agentId: routine.agentId,
 	};
 }
 
 interface CustomRoutineCardProps {
 	routine: CustomRoutine;
-	skills: MySkill[];
+	/** The owner's skill catalog, for the routine's skill picker. */
+	skills: CatalogSkill[];
 	/** Replaces the routine after a save, or drops it after a delete. */
 	onChange: (routine: CustomRoutine | null) => void;
 	/** Reloads the list after a run starts. */
