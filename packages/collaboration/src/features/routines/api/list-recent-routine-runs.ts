@@ -14,7 +14,12 @@ const recentRoutinesSchema = z.object({
 				.array(
 					z.object({
 						runId: z.string().min(1),
-						status: z.enum(["running", "completed", "failed"]),
+						status: z.enum([
+							"running",
+							"completed",
+							"failed",
+							"stopped",
+						]),
 						startedAt: z.iso.datetime(),
 						finishedAt: z.iso.datetime().nullish().default(null),
 						// where a running run of the owner's own routine can be watched
