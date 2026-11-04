@@ -255,6 +255,11 @@ export interface Settings {
 	/** The Outlook folder drafts are left in; blank means the mailbox's own Drafts. */
 	draftFolderId: string;
 	draftFolderName: string;
+	/** How drafts look: font, size in pt, and the signature copied from sent mail. */
+	draftFont: string;
+	draftFontSize: number;
+	draftSignatureHtml: string;
+	draftSignatureOn: boolean;
 	/** Minutes between background syncs while the app is closed; 0 turns them off. */
 	syncEveryMinutes: number;
 	version: number;

@@ -170,6 +170,10 @@ function mapSettings(row: Row): Settings {
 		},
 		draftFolderId: str(row.draftFolderId),
 		draftFolderName: str(row.draftFolderName),
+		draftFont: str(row.draftFont) || "Aptos",
+		draftFontSize: Number(row.draftFontSize ?? 12),
+		draftSignatureHtml: str(row.draftSignatureHtml),
+		draftSignatureOn: row.draftSignatureOn !== false,
 		// older servers send none and sync every 15 minutes
 		syncEveryMinutes: Number(row.syncEveryMinutes ?? 15),
 		version: Number(row.version ?? 0),
