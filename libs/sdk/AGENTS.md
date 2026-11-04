@@ -116,6 +116,9 @@ commands and how a backend endpoint or reactor is added.
     `fetch`, such as an `AbortSignal`. Since a parameter with a default is not counted in a
     function's `length`, a call with inputs has length 1 and one without has length 0: the
     hooks read that to know where the options go.
+  - Every general backend reactor is in the catalog, its contract inferred from what it declares
+    unless it is annotated (`@PixelInput`, `@PixelOutput`). An inferred one says so in its TSDoc,
+    and its undeclared output is `unknown`.
   - An operation or reactor the backend marks `@Internal` is tagged `@internal` in its TSDoc,
     with the reason. Editors warn on use; nothing else changes.
   - These modules import only `Env` and `get`/`post`: no React, stores or listener.

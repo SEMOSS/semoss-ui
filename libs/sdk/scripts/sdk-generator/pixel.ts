@@ -89,11 +89,22 @@ export function emitPixelCatalog(
 	return files;
 }
 
-/** A reactor's TSDoc: its description, then `@internal` and its reason when it is internal. */
+/** What a reactor's TSDoc says when the backend inferred part of its contract. */
+export const INFERRED_NOTE =
+	"Inferred from the reactor's declared keys; annotate it with @PixelInput or @PixelOutput to refine it.";
+
+/**
+ * A reactor's TSDoc: its description, a note when its contract is inferred,
+ * then `@internal` and its reason when it is internal.
+ */
 function reactorDoc(reactor: PixelReactorObject): string | undefined {
-	if (!reactor["x-internal"]) {
-		return reactor.description;
+	const parts = [reactor.description];
+	if (reactor["x-semoss-inferred"]) {
+		parts.push(INFERRED_NOTE);
 	}
-	const reason = reactor["x-internal-reason"];
-	return `${reactor.description}\n\n${reason ? `@internal ${reason}` : "@internal"}`;
+	if (reactor["x-internal"]) {
+		const reason = reactor["x-internal-reason"];
+		parts.push(reason ? `@internal ${reason}` : "@internal");
+	}
+	return parts.filter(Boolean).join("\n\n");
 }

@@ -59,6 +59,8 @@ export interface PixelReactorObject {
 	description?: string;
 	inputSchema?: SchemaObject;
 	outputSchema?: SchemaObject;
+	/** Set when the backend inferred part of the contract rather than reading annotations. */
+	"x-semoss-inferred"?: boolean;
 	/** Set by the backend's @Internal: published, but not for general use. */
 	"x-internal"?: boolean;
 	/** Why it is internal. */
@@ -413,12 +415,19 @@ function validatePixelExtension(
 					"outputSchema",
 					"x-internal",
 					"x-internal-reason",
+					"x-semoss-inferred",
 				].includes(key)
 			) {
 				throw new SpecError(`${reactorWhere}: unknown field "${key}"`);
 			}
 		}
 		validateInternal(reactor, reactorWhere);
+		const inferred = reactor["x-semoss-inferred"];
+		if (inferred !== undefined && typeof inferred !== "boolean") {
+			throw new SpecError(
+				`${reactorWhere}: x-semoss-inferred must be true or false`,
+			);
+		}
 		if (!reactor.description) {
 			throw new SpecError(`${reactorWhere}: a description is required`);
 		}

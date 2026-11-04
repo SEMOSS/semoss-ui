@@ -5,7 +5,7 @@ document the backend writes. The backend owns the contract and each SDK consumes
 this generator for TypeScript, and later a Python generator reading the same document.
 
 ```
-Semoss reactors (AbstractReactor2)  ┐
+Semoss reactors (inferred, @Pixel*) ┐
 Monolith resources (@Operation)     ┴─► Monolith scripts/generate-api ─► target/generator/openapi.json
                                                                                   │ (read, not copied)
 libs/sdk: pnpm generate --openapi <that file> ◄───────────────────────────────────┘
@@ -48,8 +48,11 @@ document and runs `pnpm generate --openapi` with it.
    is `users`, published as `users` from `@semoss/sdk/api/monolith/auth`. The response
    type is a record next to the resource. Declare request bodies and query parameters
    with `@RequestBody` and `@Parameter`, since most resources read them by hand.
-2. **Pixel.** Extend `AbstractReactor2<Input, Output>`. The `Input` record declares the
-   keys and the return type declares the output.
+2. **Pixel.** Nothing to do: every general reactor is published, its contract inferred
+   from `keysToGet`, `keyRequired`, `getKeyTypeForMCP` and its descriptions. Declare its
+   output with `@PixelOutput` and refine an input with `@PixelInput` (both in Semoss's
+   `prerna.openapi`). An inferred reactor is marked `x-semoss-inferred`, which adds a note
+   to its TSDoc.
 3. Nothing is listed by hand: whatever is annotated is published. Add swagger-core's
    `@Hidden` to leave an API out of the document and every SDK, or Semoss's
    `@Internal("why")` to publish it tagged as internal.

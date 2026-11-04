@@ -17,6 +17,7 @@ import {
 	readManifest,
 } from "./generate.ts";
 import { byName } from "./order.ts";
+import { INFERRED_NOTE } from "./pixel.ts";
 import { SpecError } from "./spec.ts";
 
 /** A document with the shapes the generator supports, beyond what the pilot uses. */
@@ -421,6 +422,24 @@ describe("generate", () => {
 		expect(catalog).not.toContain("Reads rows\n *\n * @internal");
 	});
 
+	it("notes in the TSDoc when a reactor's contract is inferred", () => {
+		const inferred = variant((doc) => {
+			const reactors = (
+				doc["x-semoss-pixels"] as {
+					reactors: Record<string, Record<string, unknown>>;
+				}
+			).reactors;
+			reactors.Rows["x-semoss-inferred"] = true;
+		});
+		generate({ outDir, openapi: inferred, format: identity });
+		const catalog = read("pixel/catalog.ts");
+
+		expect(catalog).toContain(
+			` * Reads rows\n *\n * ${INFERRED_NOTE}\n */\nRows: {`,
+		);
+		expect(catalog).not.toContain(`Counts rows\n *\n * ${INFERRED_NOTE}`);
+	});
+
 	it("writes an input whose fields are all optional as input?, so fn.length stays 1", async () => {
 		const optional = variant((doc) => {
 			const paths = doc.paths as Record<
@@ -657,6 +676,18 @@ describe("generate", () => {
 			/x-internal must be true or false/,
 		],
 		[
+			"an x-semoss-inferred that is not a boolean",
+			(doc: Record<string, unknown>) => {
+				const reactors = (
+					doc["x-semoss-pixels"] as {
+						reactors: Record<string, Record<string, unknown>>;
+					}
+				).reactors;
+				reactors.Count["x-semoss-inferred"] = "yes";
+			},
+			/x-semoss-inferred must be true or false/,
+		],
+		[
 			"a reason without x-internal",
 			(doc: Record<string, unknown>) => {
 				const reactors = (
@@ -801,4 +832,77 @@ describe("determinism", () => {
 			"users",
 		]);
 	});
+});
+
+describe("a catalog of every reactor", () => {
+	/** A document with as many reactors as the backend has, each with a few inputs. */
+	function manyReactors(count: number): Record<string, unknown> {
+		const doc = structuredClone(SHAPES) as Record<string, unknown>;
+		const schemas = (doc.components as { schemas: Record<string, unknown> })
+			.schemas;
+		const reactors: Record<string, unknown> = {};
+		for (let i = 0; i < count; i++) {
+			const name = `Reactor${String(i).padStart(4, "0")}`;
+			schemas[`Pixel.${name}.Input`] = {
+				type: "object",
+				description: `Inputs for ${name}`,
+				required: ["frame"],
+				properties: {
+					frame: { type: "string", description: "The frame" },
+					limit: { type: "integer", description: "How many" },
+					columns: { type: "array", description: "Columns" },
+				},
+			};
+			schemas[`Pixel.${name}.Output`] = {
+				description: "Not declared by the reactor",
+			};
+			reactors[name] = {
+				description: `${name} reactor`,
+				inputSchema: {
+					$ref: `#/components/schemas/Pixel.${name}.Input`,
+				},
+				outputSchema: {
+					$ref: `#/components/schemas/Pixel.${name}.Output`,
+				},
+				"x-semoss-inferred": true,
+			};
+		}
+		(
+			doc["x-semoss-pixels"] as { reactors: Record<string, unknown> }
+		).reactors = reactors;
+		return doc;
+	}
+
+	it("stays types only and deterministic at 1,500 reactors", () => {
+		const doc = manyReactors(1500);
+		const path = join(workDir, "many.json");
+		writeFileSync(path, JSON.stringify(doc));
+		generate({ outDir, openapi: path, format: identity });
+		const catalog = read("pixel/catalog.ts");
+
+		expect(catalog.match(/^export /gm)).toEqual(["export "]);
+		expect(catalog).toContain("Reactor1499: {");
+		expect(catalog).toContain("columns?: PixelValue[];");
+
+		const reversedPath = join(workDir, "many-reversed.json");
+		const reverse = (value: unknown): unknown =>
+			Array.isArray(value)
+				? value.map(reverse)
+				: value !== null && typeof value === "object"
+					? Object.fromEntries(
+							Object.entries(value)
+								.reverse()
+								.map(([key, child]) => [key, reverse(child)]),
+						)
+					: value;
+		writeFileSync(reversedPath, JSON.stringify(reverse(doc)));
+		expect(
+			generate({
+				outDir,
+				openapi: reversedPath,
+				check: true,
+				format: identity,
+			}).changed,
+		).toEqual([]);
+	}, 30_000);
 });
