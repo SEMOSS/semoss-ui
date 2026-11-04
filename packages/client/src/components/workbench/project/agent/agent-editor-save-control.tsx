@@ -31,7 +31,7 @@ export const AgentEditorSaveControl: FC<WorkbenchPanelProps> = ({ id }) => {
 			icon={isLoading ? Spinner : SaveIcon}
 			label="Save agent"
 			onClick={value.onSave}
-			disabled={isLoading || isFetching}
+			disabled={isLoading || isFetching || !value.isFormValid}
 			data-testid="agent-editor-save-button"
 		/>
 	);

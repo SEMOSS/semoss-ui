@@ -223,6 +223,8 @@
 		},
 		"hooks": {
 			"pixelLabel": "Pixel expression",
+			"pixelSemicolonHelp": "End the Pixel expression with a semicolon (;).",
+			"pixelSemicolonError": "Pixel expressions must end with a semicolon (;).",
 			"eventsLabel": "Lifecycle events",
 			"eventsHelp": "With none selected, it runs on every event.",
 			"add": "Add hook"
