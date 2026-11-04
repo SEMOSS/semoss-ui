@@ -25,7 +25,7 @@ export const ChatToolDetails = ({
 	const { t } = useTranslation("chatTools");
 	return (
 		<div className="flex flex-col gap-3 ps-10 pe-3 pb-3">
-			<code className="truncate text-muted-foreground text-xs">
+			<code className="break-all text-muted-foreground text-xs">
 				{name}
 			</code>
 			{description ? (
@@ -45,7 +45,7 @@ export const ChatToolDetails = ({
 								className="flex min-w-0 flex-col gap-0.5"
 							>
 								<span className="flex min-w-0 items-center gap-2">
-									<code className="truncate text-xs">
+									<code className="break-all text-xs">
 										{parameter.name}
 									</code>
 									{parameter.isRequired ? (

@@ -1,25 +1,32 @@
 {
 	"panel": {
 		"description": "次のメッセージでアシスタントが使用できるものです。",
-		"toolboxTitle": "このチャットのツールボックス",
-		"toolboxDescription": "このチャットでオンになっているコネクターです。ルームのファイルの mcp/pixel_mcp.json から読み取ります。",
+		"connectorsTitle": "コネクター",
+		"manageConnectors": "コネクターを管理",
+		"toolboxDescription": "設定 > コネクターでオンにしたアプリのツールです。各ツールは自動で実行されるか、先に確認します。",
 		"toolboxEmpty": "オンになっているコネクターはありません。",
 		"toolboxError": "このチャットのツールボックスを読み取れませんでした。",
 		"otherTools": "その他のツール",
 		"parameters": "パラメーター",
 		"required": "必須",
 		"noParameters": "パラメーターはありません。",
-		"agentDescription": "エージェントの実行は独自のファイル、シェル、コードのツールを使い、ルームのファイルで作業します。"
+		"agentDescription": "エージェントの実行は独自のファイル、シェル、コードのツールを使い、ルームのファイルで作業します。",
+		"agentTitle": "エージェント",
+		"agentTooltip": "このルームのエージェントが提供するツールボックスです。変更するにはエージェントを編集してください。",
+		"toolboxesTitle": "ツールボックス",
+		"toolboxesTooltip": "このルームに追加したツールボックスです。開くとツールが表示されます。",
+		"aboutSection": "{{section}} について",
+		"toolboxToolsError": "このツールボックスのツールを読み取れませんでした。",
+		"toolboxNoTools": "このツールボックスにはツールがありません。"
 	},
 	"defaultTools": {
-		"label": "既定のツール",
+		"title": "既定",
 		"description": "このブラウザーがすべてのメッセージに追加し、ルームのファイルで実行するツールです。「自動」はツールを自動で実行し、「確認」は呼び出しごとに承認を待ち、「無効」はツールを除外します。",
 		"modes": {
 			"auto": "自動",
 			"ask": "確認",
 			"disabled": "無効"
-		},
-		"showDetails": "{{tool}} の詳細を表示"
+		}
 	},
 	"tools": {
 		"rootFolder": "フォルダーの最上位",

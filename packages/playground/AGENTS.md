@@ -223,12 +223,20 @@ affects only the current room instance.
   only re-adds the room's own tools, so leaving them off drops them mid-task. The model's calls
   come back with no `_meta`; `ToolStore.json` gets it from `ChatToolsStore.decorateToolCall`, and
   `runToolExecution` hands folder calls to `ChatToolsStore.runChatTool` instead of `RunMCPTool`.
-- **Settings shows what the assistant has.** Its Tools section (`RoomOptionsForm`) sets each
-  default tool's mode, each row opening to the definition the model is told, or notes that an
-  agent room's runs bring their own; then a room's own toolbox (`RoomToolboxSection`, read from
-  `mcp/pixel_mcp.json`, by connector service, with sign in notices), and the toolboxes the user
-  added. `ChatToolsStore.openToolsPanel` opens Settings and scrolls to Tools through
-  `pendingSettingsSection`. There is no separate Chat Tools panel.
+- **Settings shows what the assistant has.** Its Tools section (`RoomOptionsForm`) has Add
+  Tools beside its heading, then up to four groups that all work the same way
+  (`ChatToolsSection`: a collapsible header with an info tooltip in place of a description, the
+  number of rows, and any actions, over one bordered list). Every tool is the same row
+  (`ChatToolRow`: title, opening to its definition and parameters, with a fixed-width mode column
+  at the end); group rows (`ChatToolGroupRow`) keep an action slot so counts line up, and loading,
+  error, and empty states are list rows (`ChatToolListStatus`). **Default** sets each default
+  tool's mode in its rows' mode column, or notes that an agent room's runs bring their own. **Connectors** is the room's own
+  toolbox (`RoomToolboxSection`, read from `mcp/pixel_mcp.json`, by connector service, with sign
+  in notices and Manage Connectors, which opens the settings dialog). **Agent** and **Toolboxes**
+  (`RoomToolboxesSection`) list the agent's toolboxes and the ones the user added, each read with
+  `GetMCPTools` the first time it opens (`useToolboxTools`); either is left out when empty, and the
+  room's own toolbox entry is never listed there. `ChatToolsStore.openToolsPanel` opens Settings
+  and scrolls to Tools through `pendingSettingsSection`. There is no separate Chat Tools panel.
 - **Never send `DeleteInsightAssets` an empty path.** With no path it clears the whole space.
   `AssetFolderProvider` refuses to address its root for writes, moves, and deletes. The room
   folder also hides and refuses its `mcp` folder, where the room's tools are kept: rewriting it

@@ -58,15 +58,15 @@ export const listToolParameters = (
 };
 
 /**
- * The tools a room's toolbox offers the assistant, from the tool file
- * `MakeRoomPixelMCP` keeps in the room's folder. Tools written as `disabled`,
- * which the file holds only because the reactor needs at least one, are left
- * out: the assistant is never offered them.
+ * The tools an MCP document offers the assistant, such as a room's tool file
+ * or what `GetMCPTools` returns for a toolbox. Tools written as `disabled`,
+ * which a room's file holds only because the reactor needs at least one, are
+ * left out: the assistant is never offered them.
  *
- * @param mcpJson - The parsed `mcp/pixel_mcp.json`.
+ * @param mcpJson - The parsed MCP document, with its `tools`.
  * @return The tools, each with the reactor it runs.
  */
-export const parseRoomToolbox = (
+export const parseMcpTools = (
 	mcpJson: unknown,
 ): (ChatToolInfo & { reactor: string })[] => {
 	const tools =
@@ -106,3 +106,12 @@ export const parseRoomToolbox = (
 		[],
 	);
 };
+
+/**
+ * The tools a room's toolbox offers the assistant, from the tool file
+ * `MakeRoomPixelMCP` keeps in the room's folder.
+ *
+ * @param mcpJson - The parsed `mcp/pixel_mcp.json`.
+ * @return The tools, each with the reactor it runs.
+ */
+export const parseRoomToolbox = parseMcpTools;

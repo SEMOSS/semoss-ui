@@ -1,19 +1,14 @@
 import {
 	LogInIcon,
 	RefreshCwIcon,
+	Settings2Icon,
 	ShieldAlertIcon,
-	TriangleAlertIcon,
 	WrenchIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import {
-	Alert,
-	AlertDescription,
-	AlertTitle,
 	Button,
-	Muted,
-	Skeleton,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -30,10 +25,12 @@ import {
 import { signInToProvider } from "@/features/connectors/connector-sign-in";
 import { useConnectProvider } from "@/features/connectors/use-connect-provider";
 import { useConnectorLogins } from "@/features/connectors/use-connector-logins";
+import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
 import type { RoomStore } from "@/stores/room/room.store";
 import { useRoomToolbox } from "../use-room-toolbox";
 import { ChatToolGroupRow } from "./chat-tool-group-row";
 import { CHAT_TOOL_LIST_CLASS_NAME } from "./chat-tool-list";
+import { ChatToolListStatus } from "./chat-tool-list-status";
 import { ChatToolsSection } from "./chat-tools-section";
 
 /**
@@ -50,9 +47,6 @@ const ACCESS_ISSUES: readonly AccessIssue[] = [
 	"notCovered",
 ];
 
-/** Placeholder rows while the toolbox loads. */
-const SKELETON_ROWS = ["a", "b", "c"];
-
 /** Props for {@link RoomToolboxSection}. */
 export interface RoomToolboxSectionProps {
 	/** The room whose own toolbox is listed. */
@@ -60,11 +54,12 @@ export interface RoomToolboxSectionProps {
 }
 
 /**
- * The tools in the chat's own toolbox, in Settings: its connector tools under
- * their service, then anything else it holds. Each tool says whether it runs
- * on its own or asks first, and opens to show what the model is told about
- * it. A connector whose tools cannot run says why, with a sign in where that
- * fixes it.
+ * Settings' Connectors section, the tools in the chat's own toolbox: its
+ * connector tools under their service, then anything else it holds. Each tool
+ * says whether it runs on its own or asks first, and opens to show what the
+ * model is told about it. A connector whose tools cannot run says why, with a
+ * sign in where that fixes it. Connectors are switched on for the user in the
+ * settings dialog, which the section links to.
  */
 export const RoomToolboxSection = observer(
 	({ room }: RoomToolboxSectionProps) => {
@@ -75,6 +70,7 @@ export const RoomToolboxSection = observer(
 			"common",
 		]);
 		const handleSignIn = useConnectProvider(signInToProvider);
+		const { openSettings } = useSettingsDialog();
 		// sign ins made or lost in another tab show up when the window is focused
 		useConnectorLogins(connectors);
 		// read again once a connector change has been written to the toolbox
@@ -207,52 +203,57 @@ export const RoomToolboxSection = observer(
 		return (
 			<ChatToolsSection
 				level={5}
-				title={t("panel.toolboxTitle")}
-				count={toolbox.tools.length}
-				description={t("panel.toolboxDescription")}
+				title={t("panel.connectorsTitle")}
+				count={toolboxGroups.length}
+				tooltip={t("panel.toolboxDescription")}
 				actions={
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								aria-label={t("common:buttons.refresh")}
-								onClick={toolbox.reload}
-							>
-								<RefreshCwIcon aria-hidden />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							{t("common:buttons.refresh")}
-						</TooltipContent>
-					</Tooltip>
+					<>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label={t("common:buttons.refresh")}
+									onClick={toolbox.reload}
+								>
+									<RefreshCwIcon aria-hidden />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{t("common:buttons.refresh")}
+							</TooltipContent>
+						</Tooltip>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							onClick={() => openSettings("connectors")}
+						>
+							<Settings2Icon aria-hidden />
+							{t("panel.manageConnectors")}
+						</Button>
+					</>
 				}
 			>
 				{toolbox.status === "loading" && toolbox.tools.length === 0 ? (
-					<div className="flex flex-col gap-2">
-						{SKELETON_ROWS.map((row) => (
-							<Skeleton key={row} className="h-12 w-full" />
-						))}
-					</div>
+					<ul className={CHAT_TOOL_LIST_CLASS_NAME}>
+						<ChatToolListStatus status="loading" />
+					</ul>
 				) : toolbox.status === "error" ? (
-					<Alert variant="destructive">
-						<TriangleAlertIcon aria-hidden />
-						<AlertTitle>{t("panel.toolboxError")}</AlertTitle>
-						<AlertDescription>
-							<Button
-								variant="outline"
-								size="sm"
-								className="mt-2"
-								onClick={toolbox.reload}
-							>
-								{t("common:buttons.retry")}
-							</Button>
-						</AlertDescription>
-					</Alert>
+					<ul className={CHAT_TOOL_LIST_CLASS_NAME}>
+						<ChatToolListStatus
+							status="error"
+							message={t("panel.toolboxError")}
+							onRetry={toolbox.reload}
+						/>
+					</ul>
 				) : toolboxGroups.length === 0 ? (
-					<Muted className="font-normal">
-						{t("panel.toolboxEmpty")}
-					</Muted>
+					<ul className={CHAT_TOOL_LIST_CLASS_NAME}>
+						<ChatToolListStatus
+							status="empty"
+							message={t("panel.toolboxEmpty")}
+						/>
+					</ul>
 				) : (
 					<>
 						{accessNotices.length > 0 && (

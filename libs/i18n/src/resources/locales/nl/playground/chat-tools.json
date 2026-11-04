@@ -1,25 +1,32 @@
 {
 	"panel": {
 		"description": "Wat de assistent in je volgende bericht kan gebruiken.",
-		"toolboxTitle": "Toolbox van deze chat",
-		"toolboxDescription": "De connectors die voor deze chat aan staan, uit mcp/pixel_mcp.json in Kamerbestanden.",
+		"connectorsTitle": "Connectors",
+		"manageConnectors": "Connectors beheren",
+		"toolboxDescription": "Tools van de apps die je hebt aangezet in Instellingen > Connectors. Elke tool werkt zelfstandig of vraagt eerst.",
 		"toolboxEmpty": "Er staan geen connectors aan.",
 		"toolboxError": "De toolbox van deze chat kon niet worden gelezen.",
 		"otherTools": "Andere tools",
 		"parameters": "Parameters",
 		"required": "Verplicht",
 		"noParameters": "Geen parameters.",
-		"agentDescription": "Agentruns hebben hun eigen tools voor bestanden, shell en code, en werken in Kamerbestanden."
+		"agentDescription": "Agentruns hebben hun eigen tools voor bestanden, shell en code, en werken in Kamerbestanden.",
+		"agentTitle": "Agent",
+		"agentTooltip": "Toolboxen die de agent van deze kamer meebrengt. Bewerk de agent om ze te wijzigen.",
+		"toolboxesTitle": "Toolboxen",
+		"toolboxesTooltip": "Toolboxen die je aan deze kamer hebt toegevoegd. Open er een om de tools te zien.",
+		"aboutSection": "Over {{section}}",
+		"toolboxToolsError": "De tools van deze toolbox konden niet worden gelezen.",
+		"toolboxNoTools": "Deze toolbox heeft geen tools."
 	},
 	"defaultTools": {
-		"label": "Standaardtools",
+		"title": "Standaard",
 		"description": "Tools die deze browser aan elk bericht toevoegt en uitvoert in Kamerbestanden. Automatisch voert een tool zelfstandig uit, Vragen wacht bij elke aanroep op je goedkeuring en Uitgeschakeld laat hem weg.",
 		"modes": {
 			"auto": "Automatisch",
 			"ask": "Vragen",
 			"disabled": "Uitgeschakeld"
-		},
-		"showDetails": "Details van {{tool}} tonen"
+		}
 	},
 	"tools": {
 		"rootFolder": "Hoofdniveau van de map",

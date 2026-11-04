@@ -1,25 +1,32 @@
 {
 	"panel": {
 		"description": "Ce que l'assistant peut utiliser dans votre prochain message.",
-		"toolboxTitle": "Boîte à outils de ce chat",
-		"toolboxDescription": "Les connecteurs activés pour ce chat, depuis mcp/pixel_mcp.json dans Fichiers de la salle.",
+		"connectorsTitle": "Connecteurs",
+		"manageConnectors": "Gérer les connecteurs",
+		"toolboxDescription": "Outils des applications que vous avez activées dans Paramètres > Connecteurs. Chacun s'exécute seul ou demande d'abord.",
 		"toolboxEmpty": "Aucun connecteur n'est activé.",
 		"toolboxError": "Impossible de lire la boîte à outils de ce chat.",
 		"otherTools": "Autres outils",
 		"parameters": "Paramètres",
 		"required": "Obligatoire",
 		"noParameters": "Aucun paramètre.",
-		"agentDescription": "Les exécutions de l'agent apportent leurs propres outils de fichiers, de shell et de code, et travaillent dans Fichiers de la salle."
+		"agentDescription": "Les exécutions de l'agent apportent leurs propres outils de fichiers, de shell et de code, et travaillent dans Fichiers de la salle.",
+		"agentTitle": "Agent",
+		"agentTooltip": "Boîtes à outils apportées par l'agent de cette salle. Modifiez l'agent pour les changer.",
+		"toolboxesTitle": "Boîtes à outils",
+		"toolboxesTooltip": "Boîtes à outils que vous avez ajoutées à cette salle. Ouvrez-en une pour voir ses outils.",
+		"aboutSection": "À propos de {{section}}",
+		"toolboxToolsError": "Impossible de lire les outils de cette boîte à outils.",
+		"toolboxNoTools": "Cette boîte à outils ne contient aucun outil."
 	},
 	"defaultTools": {
-		"label": "Outils par défaut",
+		"title": "Par défaut",
 		"description": "Outils que ce navigateur ajoute à chaque message et exécute dans Fichiers de la salle. Auto exécute un outil seul, Demander attend votre accord pour chaque appel, et Désactivé le retire.",
 		"modes": {
 			"auto": "Auto",
 			"ask": "Demander",
 			"disabled": "Désactivé"
-		},
-		"showDetails": "Afficher les détails de {{tool}}"
+		}
 	},
 	"tools": {
 		"rootFolder": "Racine du dossier",

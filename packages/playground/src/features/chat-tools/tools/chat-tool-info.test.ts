@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { listToolParameters, parseRoomToolbox } from "./chat-tool-info";
+import {
+	listToolParameters,
+	parseMcpTools,
+	parseRoomToolbox,
+} from "./chat-tool-info";
 
 describe("parseRoomToolbox", () => {
 	test("reads each offered tool with how it runs, leaving out switched off ones", () => {
@@ -49,6 +53,37 @@ describe("parseRoomToolbox", () => {
 		]);
 		expect(tools[1].title).toBe("MicrosoftOutlookSendMail");
 		expect(parseRoomToolbox(null)).toEqual([]);
+	});
+});
+
+describe("parseMcpTools", () => {
+	test("reads a toolbox's tools as GetMCPTools returns them", () => {
+		const tools = parseMcpTools({
+			tools: [
+				{
+					name: "search_web",
+					title: "Search the Web",
+					description: "Searches the web.",
+					inputSchema: {
+						properties: { query: { description: "What to find." } },
+						required: ["query"],
+					},
+					_meta: { SMSS_MCP_EXECUTION: "ask" },
+				},
+				{ name: "fetch_page" },
+			],
+		});
+
+		expect(
+			tools.map((tool) => [tool.title, tool.execution, tool.reactor]),
+		).toEqual([
+			["Search the Web", "ask", "search_web"],
+			["fetch_page", "auto", "fetch_page"],
+		]);
+		expect(tools[0].parameters).toEqual([
+			{ name: "query", description: "What to find.", isRequired: true },
+		]);
+		expect(parseMcpTools({ tools: "none" })).toEqual([]);
 	});
 });
 

@@ -386,7 +386,7 @@ export const GlobalNav = observer(() => {
 			<Sidebar
 				collapsible="icon"
 				variant="inset"
-				className="h-full p-0 transition-[width] duration-200 ease-in-out"
+				className="z-30 h-full p-0 transition-[width] duration-200 ease-in-out"
 			>
 				<SidebarHeader>
 					<SidebarMenu className="gap-1 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:px-2">

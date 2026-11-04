@@ -232,8 +232,10 @@ export function ConversationWorkspace({
 								</TabsContent>
 							</ResizablePanel>
 							<ResizableHandle
-								withHandle
+								// on the Workspace's edge, a 2px line on hover or drag as the
+								// navigation's edge shows; a wider invisible strip to grab
 								className={cn(
+									"before:-translate-x-1/2 z-10 w-px bg-transparent before:absolute before:inset-y-0 before:left-1/2 before:w-2 after:w-0.5 after:bg-transparent after:transition-colors hover:after:bg-sidebar-border focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:after:bg-ring data-[resize-handle-state=drag]:after:bg-sidebar-border",
 									(!isOpen || isNarrow) && "hidden",
 								)}
 							/>

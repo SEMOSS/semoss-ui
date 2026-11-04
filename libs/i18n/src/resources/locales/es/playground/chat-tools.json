@@ -1,25 +1,32 @@
 {
 	"panel": {
 		"description": "Lo que el asistente puede usar en tu próximo mensaje.",
-		"toolboxTitle": "Caja de herramientas de este chat",
-		"toolboxDescription": "Los conectores activados para este chat, desde mcp/pixel_mcp.json en Archivos de la sala.",
+		"connectorsTitle": "Conectores",
+		"manageConnectors": "Administrar conectores",
+		"toolboxDescription": "Herramientas de las aplicaciones que activaste en Configuración > Conectores. Cada una se ejecuta sola o pregunta primero.",
 		"toolboxEmpty": "No hay conectores activados.",
 		"toolboxError": "No se pudo leer la caja de herramientas de este chat.",
 		"otherTools": "Otras herramientas",
 		"parameters": "Parámetros",
 		"required": "Obligatorio",
 		"noParameters": "Sin parámetros.",
-		"agentDescription": "Las ejecuciones del agente traen sus propias herramientas de archivos, shell y código, y trabajan en Archivos de la sala."
+		"agentDescription": "Las ejecuciones del agente traen sus propias herramientas de archivos, shell y código, y trabajan en Archivos de la sala.",
+		"agentTitle": "Agente",
+		"agentTooltip": "Cajas de herramientas que trae el agente de esta sala. Edita el agente para cambiarlas.",
+		"toolboxesTitle": "Cajas de herramientas",
+		"toolboxesTooltip": "Cajas de herramientas que añadiste a esta sala. Abre una para ver sus herramientas.",
+		"aboutSection": "Acerca de {{section}}",
+		"toolboxToolsError": "No se pudieron leer las herramientas de esta caja.",
+		"toolboxNoTools": "Esta caja de herramientas no tiene herramientas."
 	},
 	"defaultTools": {
-		"label": "Herramientas predeterminadas",
+		"title": "Predeterminadas",
 		"description": "Herramientas que este navegador añade a cada mensaje y ejecuta en Archivos de la sala. Automático ejecuta una herramienta sola, Preguntar espera tu aprobación en cada llamada y Desactivada la deja fuera.",
 		"modes": {
 			"auto": "Automático",
 			"ask": "Preguntar",
 			"disabled": "Desactivada"
-		},
-		"showDetails": "Mostrar detalles de {{tool}}"
+		}
 	},
 	"tools": {
 		"rootFolder": "Nivel superior de la carpeta",

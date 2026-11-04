@@ -514,7 +514,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 										<React.Fragment key={m.key}>
 											{showModelName && (
 												<div className="relative mb-4 flex flex-col items-center justify-center">
-													<Muted className="z-10 bg-background px-2 text-base leading-normal">
+													<Muted className="z-10 bg-background px-2 text-xs leading-normal">
 														{m.ornaments.modelName}
 													</Muted>
 													<Separator className="absolute top-1/2" />

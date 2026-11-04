@@ -206,3 +206,16 @@ test("a header place brings an already-open work area forward from the narrow Ch
 	).toBeVisible();
 	expect(narrowPlace).toHaveAttribute("aria-pressed", "true");
 });
+
+test("the divider between the panes shows the navigation's hover line, with no grip", () => {
+	stubWidth();
+	render(
+		<ConversationWorkspace isOpen panel={<p>Work</p>}>
+			<p>Chat</p>
+		</ConversationWorkspace>,
+	);
+	const divider = screen.getByRole("separator");
+	expect(divider).toHaveClass("after:w-0.5", "hover:after:bg-sidebar-border");
+	expect(divider).not.toHaveClass("bg-border");
+	expect(divider).toBeEmptyDOMElement();
+});

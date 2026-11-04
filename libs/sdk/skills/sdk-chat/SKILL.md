@@ -293,6 +293,10 @@ with no statement; submit that failure with `mcpToolStatus: "error"`. Use
 `decideAgentRunAction` instead for a paused agent run's tool.
 `makeUserPixelMcp({ filePath, generator, tools })` writes a generator's tools
 into a pixel MCP file in the user's own assets.
+`getMcpTools({ id, type })` calls GetMCPTools and returns the MCP document as
+the backend returns it, with its `tools` (each tool's definition and `_meta`).
+A `PROJECT` is read by project and every other catalog type by engine. It
+rejects when the pixel fails.
 
 The client owns chat tool execution, authorization, concurrency, and result
 submission. There is no SDK `toolAutoExecutionLimit` option or default of five.
