@@ -14,6 +14,7 @@ import { GlobalDialog } from "@/components/common/global-dialog";
 import { GlobalFooter } from "@/components/common/global-footer";
 import { GlobalNav } from "@/components/common/global-nav";
 import { LandingTour } from "@/components/common/landing-tour";
+import { SessionRevokedDialog } from "@/components/common/session-revoked-dialog";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import { ChatContext } from "@/contexts/chat-context";
 import { TourContext } from "@/contexts/tour-context";
@@ -186,6 +187,7 @@ export const MainLayout = observer(() => {
 										}
 									}}
 								/>
+								<SessionRevokedDialog />
 								<div
 									data-testid="main-layout"
 									className="relative flex h-dvh w-full flex-col overflow-hidden bg-background pt-14 md:pt-0"

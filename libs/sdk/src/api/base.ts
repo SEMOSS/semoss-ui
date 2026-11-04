@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { CSRF, get, post } from "../utility";
+import { CSRF, get, notifySessionRevoked, post } from "../utility";
 /**
  * Get the System's configuration information
  */
@@ -89,6 +89,9 @@ export const runPixel = async <O extends unknown[] | []>(
 				typeof output === "string" ? output : JSON.stringify(output),
 			);
 		}
+		if (operationType.indexOf("USER_LOGGED_OUT_ERROR") > -1) {
+			notifySessionRevoked(output as string);
+		}
 	}
 
 	return {
@@ -169,6 +172,9 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
 			errors.push(
 				typeof output === "string" ? output : JSON.stringify(output),
 			);
+		}
+		if (operationType.indexOf("USER_LOGGED_OUT_ERROR") > -1) {
+			notifySessionRevoked(output as string);
 		}
 	}
 
