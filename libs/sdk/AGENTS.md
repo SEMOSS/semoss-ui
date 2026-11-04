@@ -124,6 +124,10 @@ commands and how a backend endpoint or reactor is added.
     `Parameters<typeof users>[0]`.
 - **Pixels.** [`api/pixel.ts`](./src/api/pixel.ts) has `buildPixel(name, input)`, typed by the
   generated `PixelCatalog`. Every value is written as an escaped JSON literal.
+  - The catalog is types only. TypeScript rejects an unknown reactor, an unknown input or a
+    missing required one; at runtime `buildPixel` looks nothing up, so the catalog adds no
+    code to a bundle at any size. It only checks that the name and keys are identifiers,
+    since they are written unescaped, and the backend still rejects a missing input.
   - `runPixel`, `usePixel` and `useIteratorPixel` infer the output from a built `Pixel`.
     `runPixelAsync` returns a `PixelJobId` that remembers it, so `getPixelAsyncResult`
     types the results too. The streamed chunks of `getPixelJobStreaming` are LLM output,

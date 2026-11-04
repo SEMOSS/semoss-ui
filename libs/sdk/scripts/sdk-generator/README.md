@@ -75,9 +75,10 @@ document and runs `pnpm generate --openapi` with it.
     standard TypeScript: `Awaited<ReturnType<typeof config>>` and
     `Parameters<typeof users>[0]`. An enum is a string-literal union.
   - A schema that contains itself cannot be written inline, so it is rejected.
-- **Pixel.** `PixelCatalog`, each reactor's input and output types, and `PIXEL_PARAMS`,
-  which `buildPixel` in `src/api/pixel.ts` uses to write calls. An unconstrained input is
-  `PixelValue`; an unconstrained output is `unknown`.
+- **Pixel.** `PixelCatalog`, each reactor's input and output types. It is types only, so it
+  adds nothing to a bundle however many reactors there are: `buildPixel` in
+  `src/api/pixel.ts` is checked against it at compile time and writes calls from the input
+  itself. An unconstrained input is `PixelValue`; an unconstrained output is `unknown`.
 - **Manifest.** `manifest.json` records:
   - the generator version;
   - a hash of the document (keys sorted, so reformatting it changes nothing);

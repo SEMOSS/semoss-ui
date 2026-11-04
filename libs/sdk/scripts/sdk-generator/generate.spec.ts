@@ -492,9 +492,10 @@ describe("generate", () => {
 		expect(catalog).toContain("value?: PixelValue;");
 		expect(catalog).toContain("output: unknown;");
 		expect(catalog).toContain("input: Record<string, never>;");
-		expect(catalog).toContain(
-			'Count: [{ name: "columns", required: false }, { name: "frame", required: true }],',
-		);
+		// types only: nothing in the catalog ends up in a bundle
+		expect(catalog).not.toMatch(/^export (const|function|class|let|var) /m);
+		expect(catalog.match(/^export /gm)).toEqual(["export "]);
+		expect(catalog).toContain("export interface PixelCatalog {");
 	});
 
 	it("rejects a schema that contains itself, which cannot be written inline", () => {

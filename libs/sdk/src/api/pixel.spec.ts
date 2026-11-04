@@ -41,19 +41,43 @@ describe("buildPixel", () => {
 		);
 	});
 
-	it("rejects a missing required input", () => {
-		expect(() =>
-			buildPixel("StopPixelExecution", {} as unknown as { id: string }),
-		).toThrow(new PixelInputError('StopPixelExecution needs "id"'));
+	it("writes the inputs sorted by name, whatever order they were given in", () => {
+		expect(buildPixel("Echo", { value: { b: 1, a: 2 } })).toBe(
+			'Echo(value={"b":1,"a":2});',
+		);
+		const pixel = buildPixel(
+			"StopPixelExecution" as "Echo",
+			{ zeta: 1, alpha: 2 } as unknown as { value: number },
+		);
+		expect(pixel).toBe("StopPixelExecution(alpha=2, zeta=1);");
 	});
 
-	it("rejects an input the reactor does not have", () => {
+	it("leaves required inputs to the type checker and the backend", () => {
+		// TypeScript rejects this call; at runtime nothing is looked up, so the
+		// backend reports the missing input.
+		expect(
+			buildPixel("StopPixelExecution", {} as unknown as { id: string }),
+		).toBe("StopPixelExecution();");
+	});
+
+	it.each([
+		["a name with a space", "Stop Pixel", {}],
+		["a name that closes the call", "Echo); Delete(", {}],
+		["a key that closes the call", "Echo", { "value=1); Delete(x": 1 }],
+		["a key starting with a digit", "Echo", { "1value": 1 }],
+	])(
+		"rejects %s, which would be written unescaped",
+		(_name, reactor, input) => {
+			expect(() =>
+				buildPixel(reactor as "Echo", input as { value?: string }),
+			).toThrow(PixelInputError);
+		},
+	);
+
+	it("rejects an input that is not an object", () => {
 		expect(() =>
-			buildPixel("StopPixelExecution", {
-				id: "x",
-				other: 1,
-			} as unknown as { id: string }),
-		).toThrow('StopPixelExecution has no input "other"');
+			buildPixel("Echo", "value" as unknown as { value: string }),
+		).toThrow("takes an object of inputs");
 	});
 
 	it.each([

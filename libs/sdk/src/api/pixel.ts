@@ -1,4 +1,4 @@
-import { PIXEL_PARAMS, type PixelCatalog } from "../generated/pixel/catalog";
+import type { PixelCatalog } from "../generated/pixel/catalog";
 
 export type { PixelCatalog } from "../generated/pixel/catalog";
 
@@ -61,9 +61,20 @@ export class PixelError extends Error {
 	}
 }
 
+/** A reactor name or input key: the only text written into a call unescaped. */
+const PIXEL_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** Compares by UTF-16 code unit, so the argument order never depends on locale. */
+const byName = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
 /**
  * Builds a call to one reactor from typed input. Every value is escaped, so
  * user text can never change the call.
+ *
+ * The contract is checked at compile time: TypeScript rejects an unknown
+ * reactor, an unknown input or a missing required one. At runtime nothing is
+ * looked up, so the catalog adds no code to a bundle; the backend still rejects
+ * a missing required input.
  *
  * @example
  * ```ts
@@ -73,39 +84,33 @@ export class PixelError extends Error {
  *
  * @param name - the reactor
  * @param input - its inputs; leave out the ones you do not set
- * @throws PixelInputError for an unknown input, a missing required input, or a
- * value that has no Pixel form (NaN, Infinity, bigint, a function, a class instance...)
+ * @throws PixelInputError for a name or key that is not an identifier, or a value
+ * that has no Pixel form (NaN, Infinity, bigint, a function, a class instance...)
  */
 export function buildPixel<N extends PixelName>(
 	name: N,
 	...[input]: PixelArgs<N>
 ): Pixel<N> {
+	// The name and keys are written as they are, so they must be identifiers:
+	// otherwise a caller without type checking could inject Pixel through them.
+	if (typeof name !== "string" || !PIXEL_IDENTIFIER.test(name)) {
+		throw new PixelInputError(`"${String(name)}" is not a reactor name`);
+	}
+	if (input !== undefined && (typeof input !== "object" || input === null)) {
+		throw new PixelInputError(`${name} takes an object of inputs`);
+	}
+
 	const values = (input ?? {}) as Record<string, unknown>;
-	const params: readonly { name: string; required: boolean }[] =
-		PIXEL_PARAMS[name];
-
-	if (!params) {
-		throw new PixelInputError(`Unknown reactor "${String(name)}"`);
-	}
-
-	for (const key of Object.keys(values)) {
-		if (!params.some((param) => param.name === key)) {
-			throw new PixelInputError(`${name} has no input "${key}"`);
-		}
-	}
-
 	const args: string[] = [];
-	for (const param of params) {
-		const value = values[param.name];
+	for (const key of Object.keys(values).sort(byName)) {
+		if (!PIXEL_IDENTIFIER.test(key)) {
+			throw new PixelInputError(`${name}: "${key}" is not an input name`);
+		}
+		const value = values[key];
 		if (value === undefined) {
-			if (param.required) {
-				throw new PixelInputError(`${name} needs "${param.name}"`);
-			}
 			continue;
 		}
-		args.push(
-			`${param.name}=${toPixelLiteral(value, `${name}.${param.name}`)}`,
-		);
+		args.push(`${key}=${toPixelLiteral(value, `${name}.${key}`)}`);
 	}
 
 	return `${name}(${args.join(", ")});` as Pixel<N>;

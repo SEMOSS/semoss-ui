@@ -30,10 +30,3 @@ export interface PixelCatalog {
 		output: string;
 	};
 }
-
-/** The inputs of each reactor, sorted by name, for building Pixel calls. */
-export const PIXEL_PARAMS = {
-	Echo: [{ name: "value", required: false }],
-	GetCurrentInsightId: [],
-	StopPixelExecution: [{ name: "id", required: true }],
-} as const;

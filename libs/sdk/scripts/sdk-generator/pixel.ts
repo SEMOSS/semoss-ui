@@ -1,5 +1,6 @@
 /**
- * Turns `x-semoss-pixels` into the typed Pixel catalog.
+ * Turns `x-semoss-pixels` into the typed Pixel catalog. The catalog is types
+ * only, so it adds nothing to a bundle however many reactors there are.
  */
 import { byName, sortedEntries } from "./order.ts";
 import {
@@ -34,7 +35,6 @@ export function emitPixelCatalog(
 
 	const ctx = createContext(doc);
 	const entries: string[] = [];
-	const params: string[] = [];
 
 	for (const [name, reactor] of reactors) {
 		const where = `x-semoss-pixels.reactors.${name}`;
@@ -59,8 +59,6 @@ export function emitPixelCatalog(
 				);
 			}
 		}
-		const required = new Set(input.required ?? []);
-
 		const inputType =
 			keys.length === 0
 				? "Record<string, never>"
@@ -74,14 +72,6 @@ export function emitPixelCatalog(
 				`${docComment(output.description)}output: ${outputType};\n` +
 				"};\n",
 		);
-		params.push(
-			`${name}: [${keys
-				.map(
-					(key) =>
-						`{ name: ${JSON.stringify(key)}, required: ${required.has(key)} }`,
-				)
-				.join(", ")}],`,
-		);
 	}
 
 	const imports = ctx.usesPixelValue
@@ -92,13 +82,9 @@ export function emitPixelCatalog(
 		`${docComment("Every reactor the SDK has a typed contract for, with its input and output.")}` +
 		`export interface PixelCatalog {\n${entries.join("")}}`;
 
-	const paramList =
-		`${docComment("The inputs of each reactor, sorted by name, for building Pixel calls.")}` +
-		`export const PIXEL_PARAMS = {\n${params.join("\n")}\n} as const;`;
-
 	files.set(
 		"pixel/catalog.ts",
-		[header, imports, catalog, paramList].filter(Boolean).join("\n\n"),
+		[header, imports, catalog].filter(Boolean).join("\n\n"),
 	);
 	return files;
 }
