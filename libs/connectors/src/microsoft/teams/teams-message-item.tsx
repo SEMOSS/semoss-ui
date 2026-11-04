@@ -1,6 +1,6 @@
 import { useTranslation } from "@semoss/i18n";
 import { getFileIconComponent } from "@semoss/shared";
-import { Muted } from "@semoss/ui/next";
+import { cn, Muted } from "@semoss/ui/next";
 import { ConnectorAuthorAvatar } from "../../components/connector-author-avatar";
 import { ConnectorItemRow } from "../../components/connector-item-row";
 import { ConnectorTextBody } from "../../components/connector-text-body";
@@ -26,6 +26,8 @@ export interface TeamsMessageItemProps {
 	getAttachmentRequest: (
 		attachment: TeamsAttachment,
 	) => ConnectorSaveRequest | null;
+	/** Whether a search found this message, which marks it. */
+	isMatch?: boolean;
 }
 
 /**
@@ -37,6 +39,7 @@ export const TeamsMessageItem = ({
 	saver,
 	serviceName,
 	getAttachmentRequest,
+	isMatch = false,
 }: TeamsMessageItemProps) => {
 	const { t, i18n } = useTranslation("connectors");
 	const files = message.attachments.filter((attachment) => attachment.isFile);
@@ -44,7 +47,18 @@ export const TeamsMessageItem = ({
 	const author = message.fromName ?? t("teams.someone");
 
 	return (
-		<article className="flex min-w-0 flex-col gap-2 border-border border-b py-3 last:border-b-0">
+		<article
+			data-message-id={message.id}
+			className={cn(
+				"flex min-w-0 flex-col gap-2 border-border border-b py-3 last:border-b-0",
+				isMatch && "-mx-2 rounded-md border-b-0 bg-muted px-2",
+			)}
+		>
+			{isMatch ? (
+				<span className="font-medium text-primary text-xs">
+					{t("teams.searchMatch")}
+				</span>
+			) : null}
 			<div className="flex min-w-0 items-center gap-2">
 				<ConnectorAuthorAvatar name={author} />
 				<span className="min-w-0 flex-1 truncate font-medium text-sm">

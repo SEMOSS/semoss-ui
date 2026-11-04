@@ -64,9 +64,14 @@
 	},
 	"mail": {
 		"folder": "Mail Folder",
+		"folderPicker": "Mail folder: {{folder}}",
+		"unreadCount_one": "{{count}} unread",
+		"unreadCount_other": "{{count}} unread",
 		"inbox": "Inbox",
 		"unreadOnly": "Unread",
-		"searchPlaceholder": "Search subjects",
+		"searchPlaceholder": "Search mail",
+		"searchHintOutlook": "Words match the sender, subject, or body. Narrow one with from:, to:, cc:, subject:, or body:, and use quotes for a phrase.",
+		"searchHintGmail": "Words match anywhere in the email. Narrow one with from:, to:, cc:, or subject:, and use quotes for a phrase.",
 		"empty": "No emails in this folder",
 		"noUnread": "No unread emails in this folder",
 		"unknownSender": "Unknown Sender",
@@ -102,7 +107,25 @@
 		"hideQuoted": "Hide Quoted Emails",
 		"filters": "Filters",
 		"pageError": "Could not load more messages.",
-		"emptyPage": "The mailbox returned an empty page. Try again."
+		"emptyPage": "The mailbox returned an empty page. Try again.",
+		"picturesHidden": "Pictures from the web are hidden to protect your privacy.",
+		"showWebPictures": "Show Web Pictures",
+		"showEmbeddedPictures": "Show Embedded Pictures",
+		"loadingPictures": "Loading Pictures...",
+		"embeddedPicturesHidden": "Pictures embedded in this email are hidden.",
+		"embeddedPicturesLoading": "Loading the pictures embedded in this email...",
+		"embeddedPicturesFailed": "The pictures embedded in this email could not be loaded.",
+		"embeddedPicturesOmitted_one": "{{count}} embedded picture could not be shown.",
+		"embeddedPicturesOmitted_other": "{{count}} embedded pictures could not be shown.",
+		"pictureSettings": "Picture Settings",
+		"picturesInEmails": "Pictures in Emails",
+		"picturesAsk": "Ask Each Time",
+		"picturesEmbedded": "Always Show Embedded Pictures",
+		"picturesAll": "Always Show All Pictures",
+		"remoteImage": "Picture from the web",
+		"embeddedImage": "Embedded picture or file",
+		"image": "Picture",
+		"htmlFrame": "Email from {{from}}"
 	},
 	"calendar": {
 		"range": "{{start}} to {{end}}",
@@ -162,6 +185,7 @@
 		"openCalendar": "Open calendar"
 	},
 	"teams": {
+		"pageError": "Could not load more messages.",
 		"team": "Team",
 		"channel": "Channel",
 		"chooseTeam": "Choose a team",
@@ -199,7 +223,12 @@
 		"changeLocation": "Change team or channel: {{team}}, {{channel}}",
 		"postsLabel": "Posts",
 		"filesLabel": "Files",
-		"chatsLabel": "Your chats"
+		"chatsLabel": "Your chats",
+		"searchMessages": "Search messages",
+		"searchResultIn": "{{author}} in {{chat}}",
+		"openSearchResult": "Open the message from {{author}}: {{text}}",
+		"searchMatch": "Found by your search",
+		"searchMatchNotShown": "The message your search found is older than the messages shown here. Open the chat in Teams to read further back."
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

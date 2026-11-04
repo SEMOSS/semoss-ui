@@ -98,6 +98,11 @@ export const COLLABORATION_TOOL_VIEWS = {
 		family: "teams",
 		collection: "messages",
 	},
+	SearchTeamsMessages: {
+		title: "Teams message search",
+		family: "teams",
+		collection: "messages",
+	},
 	GetChatMessage: { title: "Chat message", family: "teams" },
 	SendChatMessage: { title: "Send a chat message", family: "teams" },
 	DownloadMessageAttachment: { title: "Chat attachment", family: "files" },
