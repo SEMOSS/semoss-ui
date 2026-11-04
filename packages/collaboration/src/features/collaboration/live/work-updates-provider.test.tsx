@@ -20,7 +20,6 @@ import {
 import {
 	readMailCheck,
 	readTopic,
-	readTopicGoals,
 	readWorkUpdates,
 	syncMail,
 } from "./live-state";
@@ -32,7 +31,6 @@ import { WorkUpdatesProvider } from "./work-updates-provider";
 vi.mock("./live-state", () => ({
 	readMailCheck: vi.fn().mockResolvedValue(null),
 	readTopic: vi.fn(),
-	readTopicGoals: vi.fn(),
 	readWorkUpdates: vi.fn(),
 	syncMail: vi.fn(),
 }));
@@ -68,149 +66,6 @@ function Harness() {
 	);
 }
 
-it("refreshes an approved goal after queued saves while preserving other goals and newer local edits", async () => {
-	const state = createInitialCollaborationState();
-	const topic = state.topics[0];
-	topic.isSample = false;
-	topic.goals = [
-		{ noteId: "local-goal", text: "Ship the release", status: "open" },
-		{ noteId: "other-goal", text: "Keep editing", status: "open" },
-	];
-	const saving = deferred<void>();
-	const read = deferred<Awaited<ReturnType<typeof readTopicGoals>>>();
-	const sync: LiveSync = Object.assign(vi.fn(), {
-		settled: vi
-			.fn()
-			.mockReturnValueOnce(saving.promise)
-			.mockResolvedValue(undefined),
-		localId: (id: string) => (id === "server-goal" ? "local-goal" : id),
-		serverId: (id: string) => id,
-	});
-	vi.mocked(readTopicGoals).mockReset().mockReturnValueOnce(read.promise);
-	const { result, unmount } = renderHook(
-		() => ({
-			...useCollaborationSession(),
-			updates: useWorkUpdates(),
-		}),
-		{
-			wrapper: ({ children }) => (
-				<CollaborationSessionProvider initialState={state}>
-					<WorkUpdatesProvider
-						actions={{} as InsightActions}
-						sync={sync}
-					>
-						{children}
-					</WorkUpdatesProvider>
-				</CollaborationSessionProvider>
-			),
-		},
-	);
-	act(() =>
-		result.current.updates?.refreshTopicGoal(
-			{ topicId: topic.id },
-			"server-goal",
-		),
-	);
-	expect(readTopicGoals).not.toHaveBeenCalled();
-	await act(async () => saving.resolve());
-	expect(readTopicGoals).toHaveBeenCalledWith({}, { topicId: topic.id });
-	const server = {
-		id: topic.id,
-		goals: [
-			{
-				noteId: "server-goal",
-				text: "Ship the release",
-				status: "done" as const,
-				resolution: "Released version 2.0",
-			},
-			{
-				noteId: "other-goal",
-				text: "Stale server copy",
-				status: "done" as const,
-			},
-		],
-	};
-	await act(async () => read.resolve(server));
-	expect(result.current.state.topics[0].goals).toEqual([
-		{
-			...topic.goals[0],
-			status: "done",
-			resolution: "Released version 2.0",
-		},
-		topic.goals[1],
-	]);
-
-	const stale = deferred<typeof server>();
-	vi.mocked(readTopicGoals).mockReturnValueOnce(stale.promise);
-	act(() =>
-		result.current.updates?.refreshTopicGoal(
-			{ topicId: topic.id },
-			"server-goal",
-		),
-	);
-	await waitFor(() => expect(readTopicGoals).toHaveBeenCalledTimes(2));
-	act(() =>
-		result.current.dispatch({
-			type: "topic.note",
-			topicId: topic.id,
-			kind: "goal",
-			operation: "save",
-			noteId: "local-goal",
-			text: "Updated locally",
-			status: "open",
-		}),
-	);
-	await act(async () => stale.resolve(server));
-	expect(result.current.state.topics[0].goals[0]).toEqual({
-		noteId: "local-goal",
-		text: "Updated locally",
-		status: "open",
-		resolution: "Released version 2.0",
-	});
-	unmount();
-});
-
-it("does not mark a goal done when the server still says open or the read fails", async () => {
-	const state = createInitialCollaborationState();
-	const topic = state.topics[0];
-	topic.isSample = false;
-	const goal = topic.goals[0];
-	goal.status = "open";
-	vi.mocked(readTopicGoals)
-		.mockReset()
-		.mockResolvedValueOnce({ id: topic.id, goals: [goal] })
-		.mockRejectedValueOnce(new Error("Topic read unavailable"));
-	const { result } = renderHook(
-		() => ({
-			...useCollaborationSession(),
-			updates: useWorkUpdates(),
-		}),
-		{
-			wrapper: ({ children }) => (
-				<CollaborationSessionProvider initialState={state}>
-					<WorkUpdatesProvider actions={{} as InsightActions}>
-						{children}
-					</WorkUpdatesProvider>
-				</CollaborationSessionProvider>
-			),
-		},
-	);
-	await act(async () =>
-		result.current.updates?.refreshTopicGoal(
-			{ topicId: topic.id },
-			goal.noteId,
-		),
-	);
-	expect(result.current.state.topics[0].goals[0].status).toBe("open");
-	await act(async () =>
-		result.current.updates?.refreshTopicGoal(
-			{ topicId: topic.id },
-			goal.noteId,
-		),
-	);
-	expect(result.current.updates?.error).toBe("Topic read unavailable");
-	expect(result.current.state.topics[0].goals[0].status).toBe("open");
-});
 it("deduplicates server echoes, ignores removed actions during a refresh, and releases its listener", async () => {
 	const state = createInitialCollaborationState();
 	const threadId = state.threads[0].id;
@@ -625,7 +480,6 @@ it("adds a topic the assistant made once, then reloads threads for the emails it
 		id: "server-topic",
 		name: "Uber Trip Receipts",
 		short: "Uber Trip Receipts",
-		goals: [],
 		people: [],
 		isSample: false,
 	};

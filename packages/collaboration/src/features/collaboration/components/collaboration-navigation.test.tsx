@@ -114,7 +114,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("keeps Today and Routines as the main destinations without Topics", () => {
+	it("keeps Today, Work and Routines as the main destinations without Topics", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -136,11 +136,11 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["Today", "Routines"]);
+		).toEqual(["Today", "Work", "Routines"]);
 		expect(
 			within(main).getByRole("link", { name: "Today" }),
 		).toHaveTextContent(/^Today$/);
-		for (const name of ["For you", "Work", "Unassigned", "Brain"]) {
+		for (const name of ["For you", "Unassigned", "Brain"]) {
 			expect(
 				screen.queryByRole("link", { name }),
 			).not.toBeInTheDocument();
@@ -319,7 +319,8 @@ describe("CollaborationNavigation", () => {
 		expect(screen.getByRole("button", { name: /Account menu for/ })).toBe(
 			account,
 		);
-		await user.click(settings);
+		// the rail remounts Settings with a fresh tooltip when it collapses
+		await user.click(screen.getByRole("link", { name: "Settings" }));
 		expect(onNavigate).toHaveBeenCalledOnce();
 		expect(router.state.location.pathname).toBe("/settings");
 		await user.click(account);
