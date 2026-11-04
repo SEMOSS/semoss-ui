@@ -7,6 +7,7 @@ import {
 	useState,
 } from "react";
 import { runPixel } from "../../../api";
+import type { OutputOf, Pixel } from "../../../api/pixel";
 import { InsightContext } from "../contexts";
 
 interface PixelState<D> {
@@ -40,12 +41,32 @@ interface usePixel<D> extends PixelState<D> {
 }
 
 /**
+ * Run a Pixel built by `buildPixel` and receive its typed output.
+ *
+ * @param pixel - pixel built by `buildPixel`
+ *
+ * @returns Information about the pixel response
+ */
+// Two type parameters, so one type argument (`usePixel<Foo>`) always picks the
+// plain-string signature below. `D` has nothing to infer from, so it is the
+// reactor's output.
+export function usePixel<P extends Pixel, D extends OutputOf<P>>(
+	pixel: P,
+	config?: Partial<PixelConfig<D>>,
+	insightId?: string,
+): usePixel<D>;
+/**
  * Send a command to the backend and recieve a response. This is intended to be used by a single pixel statement (nothing seperated by ;)
  *
  * @param pixel - pixel string to call
  *
  * @returns Information about the pixel response
  */
+export function usePixel<D>(
+	pixel: string,
+	config?: Partial<PixelConfig<D>>,
+	insightId?: string,
+): usePixel<D>;
 export function usePixel<D>(
 	pixel: string,
 	config?: Partial<PixelConfig<D>>,
