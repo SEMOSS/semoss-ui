@@ -1,5 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ContextType } from "react";
+import { RoomEmailContext } from "@/features/room-email/room-email.context";
+import { RoomEmailStore } from "@/features/room-email/room-email-store";
 import type { ConversationMessage, ConversationTool } from "../types/message";
 import { ownedMessageParts } from "../utils/message-presentation";
 import { MessageToolActivity } from "./message-tool-activity";
@@ -301,6 +304,49 @@ it("opens the display menu independently and preserves its destination choices",
 		screen.getByRole("menuitem", { name: "Open in workbench" }),
 	);
 	expect(workbench.openWorkbench).toHaveBeenCalledWith("tool-0");
+});
+
+it("folds a result that can open what it found with the other steps, keeping its Open inside them", () => {
+	const step = (id: string, name: string, output?: unknown) => ({
+		type: "tool" as const,
+		tool: {
+			id,
+			parentMessageId: "source",
+			name,
+			title: name,
+			arguments: {},
+			status: "COMPLETED" as const,
+			...(output ? { output: JSON.stringify(output) } : {}),
+		},
+	});
+	const items = ownedMessageParts({
+		id: "source",
+		role: "assistant",
+		parts: [
+			step("topics", "ListTopics"),
+			step("search", "SearchMail"),
+			step("read", "ReadThread", {
+				threadId: "th-1",
+				source: "email",
+				messages: [{ subject: "GTC DC" }],
+			}),
+		],
+	});
+	const room = {
+		store: new RoomEmailStore(),
+		openItem: vi.fn(),
+	} as unknown as NonNullable<ContextType<typeof RoomEmailContext>>;
+	render(
+		<RoomEmailContext.Provider value={room}>
+			<MessageToolActivity items={items} />
+		</RoomEmailContext.Provider>,
+	);
+	const open = { name: "Open email: ReadThread · GTC DC" };
+	expect(screen.queryByRole("button", open)).toBeNull();
+	fireEvent.click(
+		screen.getByRole("button", { name: "3 tools completed View steps" }),
+	);
+	expect(screen.getByRole("button", open)).toBeVisible();
 });
 
 it("keeps a sidebar tool inline on mobile", async () => {

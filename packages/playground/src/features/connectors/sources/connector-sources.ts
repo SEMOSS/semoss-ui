@@ -58,7 +58,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "MICROSOFT",
 		requires: "teams",
 		panelType: ROOM_PANEL_TYPES.TEAMS_CHANNELS,
-		brand: "teams",
+		brand: "teams-channels",
 		nameKey: "connectors:services.teamsChannels",
 	},
 	{
@@ -66,7 +66,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "MICROSOFT",
 		requires: "teams",
 		panelType: ROOM_PANEL_TYPES.TEAMS_FILES,
-		brand: "teams",
+		brand: "teams-files",
 		nameKey: "connectors:services.teamsFiles",
 	},
 	{
@@ -74,7 +74,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "MICROSOFT",
 		requires: "teams",
 		panelType: ROOM_PANEL_TYPES.TEAMS_CHATS,
-		brand: "teams",
+		brand: "teams-chats",
 		nameKey: "connectors:services.teamsChats",
 	},
 	{

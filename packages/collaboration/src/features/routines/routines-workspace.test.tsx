@@ -4,10 +4,14 @@ import {
 	fireEvent,
 	render,
 	screen,
+	waitFor,
+	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ROUTINE_RUN_DELETED } from "./api/delete-routine-run";
+import { SKILL_CATALOG_PIXEL } from "./custom-routine-api";
 import { InboxRoutineForm } from "./inbox-routine-form";
 import type {
 	InboxRoutine,
@@ -20,6 +24,7 @@ import { RoutinesWorkspace } from "./routines-workspace";
 const service = vi.hoisted(() => ({
 	actions: { run: vi.fn() },
 	save: vi.fn<(settings: InboxRoutineSettings) => Promise<InboxRoutine>>(),
+	saveCustom: vi.fn(),
 	usePixel: vi.fn(),
 	result: {
 		status: "SUCCESS",
@@ -38,6 +43,10 @@ vi.mock("./inbox-routine-api", () => ({
 	saveInboxRoutine: (_actions: unknown, settings: InboxRoutineSettings) =>
 		service.save(settings),
 }));
+vi.mock("./custom-routine-api", async (importOriginal) => ({
+	...(await importOriginal<typeof import("./custom-routine-api")>()),
+	saveCustomRoutine: service.saveCustom,
+}));
 
 const routine: InboxRoutine = {
 	id: "inbox-daily-brief",
@@ -47,6 +56,10 @@ const routine: InboxRoutine = {
 	days: ["MON", "TUE", "WED", "THU", "FRI"],
 	timezone: "America/New_York",
 	lookbackHours: 24,
+	preferences: "",
+	sections: ["priorities", "replies", "meetings", "actions"],
+	priorityCount: 5,
+	writeDrafts: true,
 	nextRunAt: null,
 	schedulerAvailable: true,
 	assistantAvailable: true,
@@ -167,6 +180,10 @@ describe("InboxRoutineForm", () => {
 			days: ["TUE", "THU"],
 			timezone: "America/Chicago",
 			lookbackHours: 96,
+			preferences: "",
+			sections: ["priorities", "replies", "meetings", "actions"],
+			priorityCount: 5,
+			writeDrafts: true,
 		});
 		expect(
 			screen.getByRole("status", { name: "Save status" }),
@@ -216,6 +233,10 @@ describe("InboxRoutineForm", () => {
 				days: ["MON", "TUE", "WED", "THU", "FRI"],
 				timezone: "America/New_York",
 				lookbackHours,
+				preferences: "",
+				sections: ["priorities", "replies", "meetings", "actions"],
+				priorityCount: 5,
+				writeDrafts: true,
 			});
 			expect(lookback).toHaveValue(lookbackHours);
 			expect(unit).toHaveTextContent("Hours");
@@ -542,7 +563,45 @@ describe("RoutinesWorkspace", () => {
 		);
 	});
 
-	it("keeps a pending inbox autosave when switching routine tabs", async () => {
+	it("re-reads the routine in place after one of its runs is deleted", async () => {
+		service.result.data = {
+			...routine,
+			lastRun: {
+				status: "completed",
+				startedAt: "2026-10-15T12:00:00Z",
+				finishedAt: "2026-10-15T12:01:00Z",
+				roomId: "brief-room",
+				summary: "Reply to Dana before Thursday.",
+				error: null,
+			},
+		};
+		service.actions.run.mockResolvedValue({
+			pixelReturn: [
+				{
+					output: { ...routine, lastRun: null },
+					operationType: ["OPERATION"],
+				},
+			],
+		});
+		render(
+			<MemoryRouter>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		act(() => {
+			window.dispatchEvent(new Event(ROUTINE_RUN_DELETED));
+		});
+		await waitFor(() =>
+			expect(service.result.update).toHaveBeenCalledWith(
+				expect.objectContaining({ lastRun: null }),
+			),
+		);
+		expect(service.actions.run).toHaveBeenCalledWith(
+			"WorkGetInboxRoutine();",
+		);
+	});
+
+	it("keeps a pending inbox autosave when picking another routine", async () => {
 		const user = userEvent.setup();
 		render(
 			<MemoryRouter>
@@ -553,7 +612,9 @@ describe("RoutinesWorkspace", () => {
 		await user.clear(lookback);
 		await user.type(lookback, "5");
 		await user.click(
-			screen.getByRole("tab", { name: "Weekly meeting agendas" }),
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
 		);
 		expect(service.save).not.toHaveBeenCalled();
 		await autosave();
@@ -561,7 +622,7 @@ describe("RoutinesWorkspace", () => {
 			expect.objectContaining({ lookbackHours: 120 }),
 		);
 		await user.click(
-			screen.getByRole("tab", { name: "Inbox daily brief" }),
+			screen.getByRole("button", { name: "Inbox daily brief agent" }),
 		);
 		expect(screen.getByLabelText("Email lookback (required)")).toBe(
 			lookback,
@@ -570,6 +631,177 @@ describe("RoutinesWorkspace", () => {
 		expect(
 			screen.getByRole("status", { name: "Save status" }),
 		).toHaveTextContent("Saved");
+	});
+
+	it("opens the system routine a link names", () => {
+		render(
+			<MemoryRouter
+				initialEntries={["/routines?routine=weekly-meeting-agendas"]}
+			>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		expect(
+			screen.getByRole("tab", { name: "System routines" }),
+		).toHaveAttribute("aria-selected", "true");
+		expect(
+			screen.getByRole("button", {
+				name: "Weekly meeting agendas agent",
+			}),
+		).toHaveAttribute("aria-current", "true");
+		expect(
+			screen.getByRole("button", { name: "Inbox daily brief agent" }),
+		).not.toHaveAttribute("aria-current");
+	});
+
+	it("opens one of the owner's routines a link names on My routines", () => {
+		const custom = {
+			enabled: true,
+			prompt: "Summarize the week.",
+			time: "08:00",
+			days: ["MON"],
+			timezone: "America/New_York",
+			delivery: "email",
+			skills: [],
+			agentId: "",
+			configured: true,
+			nextRunAt: null,
+			schedulerAvailable: true,
+			assistantAvailable: true,
+			mailboxAvailable: true,
+			availabilityMessage: null,
+			lastRun: null,
+		};
+		service.usePixel.mockImplementation((statement: string) =>
+			statement === "WorkListCustomRoutines();"
+				? {
+						...service.result,
+						data: {
+							routines: [
+								{
+									...custom,
+									id: "custom-1",
+									name: "Client asks digest",
+								},
+								{
+									...custom,
+									id: "custom-2",
+									name: "Vendor invoice check",
+								},
+							],
+						},
+					}
+				: statement === SKILL_CATALOG_PIXEL
+					? { ...service.result, data: [] }
+					: service.result,
+		);
+		render(
+			<MemoryRouter initialEntries={["/routines?routine=custom-2"]}>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		expect(
+			screen.getByRole("tab", { name: "My routines" }),
+		).toHaveAttribute("aria-selected", "true");
+		const mine = screen.getByRole("navigation", { name: "My routines" });
+		expect(
+			within(mine).getByRole("button", { name: "Vendor invoice check" }),
+		).toHaveAttribute("aria-current", "true");
+		expect(
+			within(mine).getByRole("button", { name: "Client asks digest" }),
+		).not.toHaveAttribute("aria-current");
+	});
+
+	it("creates a routine in the New routine tab and opens it in My routines", async () => {
+		const created = {
+			enabled: true,
+			prompt: "Give me my top five priorities.",
+			time: "07:30",
+			days: ["MON"],
+			timezone: "America/New_York",
+			delivery: "teams",
+			skills: [],
+			tools: [],
+			agentId: "",
+			configured: true,
+			nextRunAt: null,
+			schedulerAvailable: true,
+			assistantAvailable: true,
+			mailboxAvailable: true,
+			availabilityMessage: null,
+			lastRun: null,
+			id: "custom-3",
+			name: "Monday priorities",
+		};
+		service.saveCustom.mockResolvedValue(created);
+		// the server's list after the save
+		service.usePixel.mockImplementation((statement: string) =>
+			statement === "WorkListCustomRoutines();"
+				? { ...service.result, data: { routines: [created] } }
+				: statement === SKILL_CATALOG_PIXEL
+					? { ...service.result, data: [] }
+					: service.result,
+		);
+		const user = userEvent.setup();
+		render(
+			<MemoryRouter initialEntries={["/routines"]}>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		await user.click(screen.getByRole("tab", { name: "New routine" }));
+		await user.click(
+			screen.getByRole("button", { name: "Monday priorities" }),
+		);
+		await user.click(
+			screen.getByRole("button", { name: "Create routine" }),
+		);
+
+		expect(service.saveCustom).toHaveBeenCalledWith(
+			service.actions,
+			expect.objectContaining({
+				name: "Monday priorities",
+				delivery: "teams",
+			}),
+		);
+		// the save resolves first, then the address names the new routine
+		await waitFor(() =>
+			expect(
+				screen.getByRole("tab", { name: "My routines" }),
+			).toHaveAttribute("aria-selected", "true"),
+		);
+		const mine = await screen.findByRole("navigation", {
+			name: "My routines",
+		});
+		expect(
+			within(mine).getByRole("button", { name: "Monday priorities" }),
+		).toHaveAttribute("aria-current", "true");
+	});
+
+	it("points an empty My routines to the New routine tab", async () => {
+		service.usePixel.mockImplementation((statement: string) =>
+			statement === "WorkListCustomRoutines();"
+				? { ...service.result, data: { routines: [] } }
+				: statement === SKILL_CATALOG_PIXEL
+					? { ...service.result, data: [] }
+					: service.result,
+		);
+		const user = userEvent.setup();
+		render(
+			<MemoryRouter initialEntries={["/routines"]}>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		await user.click(screen.getByRole("tab", { name: "My routines" }));
+		expect(
+			screen.getByRole("heading", { name: "No routines yet" }),
+		).toBeVisible();
+		await user.click(screen.getByRole("button", { name: "New routine" }));
+		expect(
+			screen.getByRole("tab", { name: "New routine" }),
+		).toHaveAttribute("aria-selected", "true");
+		expect(
+			screen.getByRole("heading", { name: "Start with an idea" }),
+		).toBeVisible();
 	});
 
 	it.each(["running", "failed", "completed"] as const)(

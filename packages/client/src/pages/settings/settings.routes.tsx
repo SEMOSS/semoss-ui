@@ -2,16 +2,13 @@ import type { ComponentType } from "react";
 import { Navigate, type RouteObject } from "react-router";
 import { AddNewJob } from "../jobs/add-new-job";
 import { JobsPage } from "../jobs/jobs-page";
-import { AdminBulkAccessManagementPage } from "./admin-bulk-access-management-page";
-import { AdminEffectivePermissionsPage } from "./admin-effective-permissions-page";
 import { AdminQueryPage } from "./admin-query-page";
 import { AdminTeamDetailPage } from "./admin-team-detail-page";
 import { AdminTeamsPage } from "./admin-teams-page";
 import { AdminThemePage } from "./admin-theme-page";
+import { AgentRunsPage } from "./agent-runs.page";
 import { AuditTrailPage } from "./audit-trail.page";
 import { ConfigurationsPage } from "./configurations-page";
-import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
-import { EngineSettingsIndexPage } from "./engine-settings-index-page";
 import { EnterpriseUsagePage } from "./enterprise-usage.page";
 import { GitHubAppPage } from "./github-app-page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
@@ -20,14 +17,10 @@ import { ManagedTeamsPage } from "./managed-teams-page";
 import { MemberSettingsPage } from "./member-settings-page";
 import { MyFilesPage } from "./my-files-page";
 import { MyProfilePage } from "./my-profile-page";
-import { ProjectSettingsDetailsPage } from "./project-settings-details-page";
-import { ProjectSettingsIndexPage } from "./project-settings-index-page";
 import { RDFMapPage } from "./rdf-map-page";
+import { ResourceGovernancePage } from "./resource-governance-page";
 import { ServiceAccountsSettingsPage } from "./service-accounts-settings-page";
-import {
-	ADMIN_ACCESS_SETTINGS_PAGES,
-	SETTINGS_ROUTES,
-} from "./settings.constants";
+import { SETTINGS_ROUTES } from "./settings.constants";
 import { SettingsIndexPage } from "./settings-index-page";
 import { SettingsLayout } from "./settings-layout";
 import { TeamAccessManagementPage } from "./team-access-management-page";
@@ -35,14 +28,16 @@ import { TeamAccessManagementPage } from "./team-access-management-page";
 // map each settings route path to the component that renders it
 const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"": SettingsIndexPage,
-	app: ProjectSettingsIndexPage,
-	"app/:id": ProjectSettingsDetailsPage,
 	members: MemberSettingsPage,
+	resources: ResourceGovernancePage,
+	"resources/:type": ResourceGovernancePage,
+	"resources/:type/:id": ResourceGovernancePage,
 	"service-accounts": ServiceAccountsSettingsPage,
 	"social-properties": ConfigurationsPage,
 	"github-app": GitHubAppPage,
 	"admin-query": AdminQueryPage,
 	"audit-trail": AuditTrailPage,
+	"agent-runs": AgentRunsPage,
 	"enterprise-usage": EnterpriseUsagePage,
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
@@ -60,44 +55,6 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"managed-teams/:id/bulk-access-management": TeamAccessManagementPage,
 	"view-rdf-map": RDFMapPage,
 	"llm-feedback": LLMFeedbackPage,
-
-	// engine
-	database: () => <EngineSettingsIndexPage type="DATABASE" />,
-	"database/:id": () => <EngineSettingsDetailPage type="DATABASE" />,
-	model: () => <EngineSettingsIndexPage type="MODEL" />,
-	"model/:id": () => <EngineSettingsDetailPage type="MODEL" />,
-	storage: () => <EngineSettingsIndexPage type="STORAGE" />,
-	"storage/:id": () => <EngineSettingsDetailPage type="STORAGE" />,
-	function: () => <EngineSettingsIndexPage type="FUNCTION" />,
-	"function/:id": () => <EngineSettingsDetailPage type="FUNCTION" />,
-	vector: () => <EngineSettingsIndexPage type="VECTOR" />,
-	"vector/:id": () => <EngineSettingsDetailPage type="VECTOR" />,
-	guardrail: () => <EngineSettingsIndexPage type="GUARDRAIL" />,
-	"guardrail/:id": () => <EngineSettingsDetailPage type="GUARDRAIL" />,
-
-	// the admin mode Bulk Access Management and Effective Permissions of apps and engines
-	...Object.fromEntries(
-		ADMIN_ACCESS_SETTINGS_PAGES.flatMap(({ root, kind, engineType }) => [
-			[
-				`${root}/:id/bulk-access-management`,
-				() => (
-					<AdminBulkAccessManagementPage
-						kind={kind}
-						engineType={engineType}
-					/>
-				),
-			],
-			[
-				`${root}/:id/effective-permissions`,
-				() => (
-					<AdminEffectivePermissionsPage
-						kind={kind}
-						engineType={engineType}
-					/>
-				),
-			],
-		]),
-	),
 };
 
 const SETTINGS_CHILDREN: RouteObject[] = SETTINGS_ROUTES.map((route) => {

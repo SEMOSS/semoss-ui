@@ -7,6 +7,7 @@ import {
 } from "./collaboration.reducer";
 import {
 	selectThreadContext,
+	selectTopicIgnores,
 	selectWorkItems,
 } from "./collaboration.selectors";
 import type {
@@ -125,21 +126,6 @@ describe("shared collaboration session", () => {
 			name: "New initiative",
 			isSample: false,
 		});
-	});
-
-	it("updates goal status without requiring unchanged text again", () => {
-		const state = apply(createInitialCollaborationState(), {
-			type: "topic.note",
-			topicId: "t-geng",
-			kind: "goal",
-			operation: "save",
-			noteId: "t-geng-goal-1",
-			status: "done",
-		});
-		expect(
-			state.topics.find((candidate) => candidate.id === "t-geng")
-				?.goals[0],
-		).toMatchObject({ noteId: "t-geng-goal-1", status: "done" });
 	});
 
 	it("keeps a suggested memory out of use until it is kept, and an edit confirms it", () => {
@@ -265,7 +251,7 @@ describe("shared collaboration session", () => {
 		]);
 	});
 
-	it("normalizes sample timestamps and IDs without treating fake rooms as backend rooms", () => {
+	it("normalizes sample timestamps without treating fake rooms as backend rooms", () => {
 		const state = createInitialCollaborationState();
 		expect(state.today).toBe("2026-09-24");
 		expect(state.liveProfile).toBeNull();
@@ -278,11 +264,6 @@ describe("shared collaboration session", () => {
 			state.threads.find((thread) => thread.id === "th-geng-review")
 				?.lastAt,
 		).toBe("2026-09-24T13:02:00.000Z");
-		expect(
-			state.topics
-				.flatMap((topic) => topic.goals)
-				.every((goal) => Boolean(goal.noteId)),
-		).toBe(true);
 		expect(state.memories.every((memory) => memory.isSample)).toBe(true);
 		expect(state.reviews.every((review) => review.status === "open")).toBe(
 			true,
@@ -362,6 +343,59 @@ describe("shared collaboration session", () => {
 			state.threads.find((thread) => thread.id === "th-procurement")
 				?.topicLinks,
 		);
+	});
+
+	it("keeps a topic VIP on the membership and drops it when the person leaves", () => {
+		const vipOf = (state: CollaborationState) =>
+			state.topics
+				.find((topic) => topic.id === "t-geng")
+				?.people.find((person) => person.personId === "p-ava")?.vip;
+		const vip = apply(createInitialCollaborationState(), {
+			type: "topic.person",
+			topicId: "t-geng",
+			personId: "p-ava",
+			state: "member",
+			vip: true,
+		});
+		expect(vipOf(vip)).toBe(true);
+		// a role change alone keeps it
+		const renamed = apply(vip, {
+			type: "topic.person",
+			topicId: "t-geng",
+			personId: "p-ava",
+			state: "member",
+			role: "Lead",
+		});
+		expect(vipOf(renamed)).toBe(true);
+		const removed = apply(renamed, {
+			type: "topic.person",
+			topicId: "t-geng",
+			personId: "p-ava",
+			state: "removed",
+		});
+		expect(vipOf(removed)).toBe(false);
+	});
+
+	it("adds a topic ignore, which names a person and needs no value", () => {
+		const state = apply(createInitialCollaborationState(), {
+			type: "rule.add",
+			rule: {
+				kind: "exclude_topic",
+				value: "",
+				topicId: "t-geng",
+				personId: "p-ava",
+			},
+		});
+		expect(selectTopicIgnores(state.rules, "t-geng")).toMatchObject([
+			{ personId: "p-ava" },
+		]);
+		expect(selectTopicIgnores(state.rules, "t-gsales")).toEqual([]);
+		// a rule with neither a value nor a person is still ignored
+		const blank = apply(state, {
+			type: "rule.add",
+			rule: { kind: "never_sender", value: " " },
+		});
+		expect(blank.rules).toHaveLength(state.rules.length);
 	});
 
 	it("keeps a loaded live profile when the signed-in placeholder arrives", () => {
@@ -591,16 +625,18 @@ describe("shared collaboration session", () => {
 	});
 
 	it("retains the current state for unchanged commands and snooze checks", () => {
+		const threadId = "th-geng-review";
 		const command: CollaborationCommand = {
-			type: "thread.goal",
-			threadId: "th-geng-review",
-			goal: "Review together",
+			type: "thread.mute",
+			threadId,
+			muted: true,
 		};
 		const initial = createInitialCollaborationState();
-		const originalGoal = initial.workspaces[command.threadId].goal;
+		const isMuted = (value: CollaborationState) =>
+			value.threads.find((thread) => thread.id === threadId)?.muted;
 		const state = apply(initial, command);
-		expect(initial.workspaces[command.threadId].goal).toBe(originalGoal);
-		expect(state.workspaces[command.threadId].goal).toBe(command.goal);
+		expect(isMuted(initial)).toBe(false);
+		expect(isMuted(state)).toBe(true);
 		expect(apply(state, command)).toBe(state);
 		expect(apply(state, { type: "snooze.expire" })).toBe(state);
 		expect(
@@ -615,11 +651,6 @@ describe("shared collaboration session", () => {
 	it("refreshes a native source idempotently and preserves local decisions", () => {
 		const command = importCommand();
 		let state = apply(createInitialCollaborationState(), command);
-		state = apply(state, {
-			type: "thread.goal",
-			threadId: command.thread.id,
-			goal: "Review together",
-		});
 		state = apply(state, {
 			type: "thread.participant",
 			threadId: command.thread.id,
@@ -659,7 +690,6 @@ describe("shared collaboration session", () => {
 			participants: [{ included: false }],
 		});
 		expect(state.workspaces[command.thread.id]).toMatchObject({
-			goal: "Review together",
 			messages: [{ text: "Updated body" }],
 		});
 		expect(

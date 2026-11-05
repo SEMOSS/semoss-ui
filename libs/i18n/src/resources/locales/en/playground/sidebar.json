@@ -11,8 +11,8 @@
 			"tooltip": "Agents"
 		},
 		"allChats": {
-			"label": "All chats",
-			"tooltip": "All chats"
+			"label": "All Chats",
+			"tooltip": "All Chats"
 		},
 		"agentsWorkspaces": {
 			"tooltip": "Agents/Workspaces - Access your workspaces or create new AI agents."
@@ -65,7 +65,7 @@
 		"roomDeletedSuccess": "Room deleted successfully"
 	},
 	"workbench": {
-		"file": "File",
+		"view": "View",
 		"navigate": "Navigate",
 		"commandPalette": "Open Command Palette…",
 		"layout": "Arrange Panels",

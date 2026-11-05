@@ -8,7 +8,6 @@
 		"description": "Update room settings and modify the behavior of the chat",
 		"open": "Open Settings",
 		"close": "Close",
-		"edit": "Edit Settings",
 		"compact": "Compact Conversation",
 		"compactSuccess": "Conversation compacted successfully",
 		"compactSkipped": "Nothing to compact — conversation is already concise",
@@ -158,7 +157,6 @@
 		"moreActions": "More actions",
 		"prompts": "Prompts",
 		"removeFile": "Remove {{name}}",
-		"thinking": "Reasoning",
 		"errorTitle": "Something went wrong",
 		"errorDescription": "Please refresh or return to the home page and try again.",
 		"backHome": "Back to home",
@@ -170,8 +168,13 @@
 		"preparingWorkspace": "Preparing Workspace…",
 		"activityLog": "Activity Log",
 		"prepareError": "Could not prepare the Workspace. Your draft is preserved.",
-		"retry": "Try again",
-		"viewActivityLog": "View Activity Log"
+		"retry": "Try again"
+	},
+	"workspacePlaces": {
+		"files": "Files",
+		"tools": "Tools",
+		"activity": "Activity",
+		"settings": "Settings"
 	},
 	"optimizer": {
 		"optimize": "Optimize prompt",

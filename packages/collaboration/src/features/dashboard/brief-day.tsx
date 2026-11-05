@@ -98,7 +98,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 											<Button
 												variant="link"
 												className={cn(
-													"h-auto max-w-full justify-start whitespace-normal p-0 text-left font-medium text-current text-sm leading-5",
+													"wrap-anywhere h-auto max-w-full justify-start whitespace-normal p-0 text-left font-medium text-current text-sm leading-5",
 													compact &&
 														"block truncate whitespace-nowrap",
 												)}
@@ -118,8 +118,10 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 											</Button>
 											<P
 												className={cn(
-													"mt-1 text-muted-foreground text-xs leading-5",
-													compact && "truncate",
+													"wrap-anywhere mt-1 text-muted-foreground text-xs leading-5",
+													compact
+														? "truncate"
+														: "line-clamp-2",
 												)}
 											>
 												{entry.event.attendees

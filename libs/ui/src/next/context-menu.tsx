@@ -177,7 +177,8 @@ function ContextMenuRadioItem({
 			)}
 			{...props}
 		>
-			<span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+			{/* the dot is small, so it centers in the whole start margin */}
+			<span className="pointer-events-none absolute inset-y-0 left-0 flex w-8 items-center justify-center">
 				<ContextMenuPrimitive.ItemIndicator>
 					<CircleIcon className="size-2 fill-current" />
 				</ContextMenuPrimitive.ItemIndicator>

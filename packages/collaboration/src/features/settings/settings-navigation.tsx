@@ -36,6 +36,7 @@ export const SETUP_DESTINATIONS: {
 		label: "Memory",
 		count: (state) => suggestedMemories(state.memories).length,
 	},
+	{ to: "/settings/skills", label: "Skills" },
 	{ to: "/settings/rules", label: "Rules" },
 	{ to: "/settings/appearance", label: "Appearance", startsGroup: true },
 	{ to: "/settings/data", label: "Data" },

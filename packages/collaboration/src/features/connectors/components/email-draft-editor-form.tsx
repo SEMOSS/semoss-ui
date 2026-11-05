@@ -19,6 +19,10 @@ import {
 	emailDraftSchema,
 } from "@/features/connectors/api/email-draft-values";
 import { safeSourceUrl } from "@/features/connectors/api/microsoft";
+import {
+	DraftSignaturePreview,
+	useDraftLook,
+} from "@/features/connectors/components/draft-look";
 import { showEmailDraftSavedToast } from "@/features/connectors/components/email-draft-feedback";
 import { EmailDraftForm } from "@/features/connectors/components/email-draft-form";
 import type { EmailReplyContext } from "@/features/connectors/components/email-reply-field";
@@ -54,6 +58,7 @@ export function EmailDraftEditorForm({
 		draft.getSnapshot,
 		draft.getSnapshot,
 	);
+	const look = useDraftLook();
 	const form = useForm<EmailDraftValues>({
 		resolver: zodResolver(emailDraftSchema),
 		defaultValues: snapshot.values,
@@ -169,6 +174,8 @@ export function EmailDraftEditorForm({
 				</H3>
 			</header>
 			<EmailDraftForm
+				bodyStyle={look.style}
+				afterBody={<DraftSignaturePreview />}
 				form={form}
 				mode={draft.seed.mode}
 				requiresAcceptance={snapshot.requiresAcceptance}

@@ -69,7 +69,7 @@ export function RoomThread({
 			>
 				<div
 					ref={scroll.contentRef}
-					className="mx-auto flex w-full max-w-3xl flex-col"
+					className="mx-auto flex w-full max-w-4xl flex-col"
 				>
 					{thread.length === 0 && isLoadingHistory && (
 						<output className="flex items-center justify-center gap-2 px-5 py-12 text-muted-foreground">

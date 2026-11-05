@@ -9,6 +9,7 @@ import {
 	P,
 	Small,
 } from "@semoss/ui/next";
+import { PersonAvatar } from "@/features/collaboration/components/person-avatar";
 import { dateLabel } from "@/features/collaboration/date-label";
 import { EmailAddressRow } from "./email-address-row";
 
@@ -42,13 +43,6 @@ export function EmailMessageHeader({
 	isExpanded = true,
 }: EmailMessageHeaderProps) {
 	const sender = name || address;
-	const initials = sender
-		?.trim()
-		.split(/\s+/)
-		.slice(0, 2)
-		.map((word) => word[0])
-		.join("")
-		.toUpperCase();
 	const recipients = to.length ? to : cc;
 	const additional = to.length + cc.length - 1;
 	return (
@@ -75,13 +69,21 @@ export function EmailMessageHeader({
 				)}
 			</div>
 			<div className="flex min-w-0 items-start gap-2">
-				{avatar ?? (
-					<Avatar className="size-8 shrink-0" aria-hidden="true">
-						<AvatarFallback className="bg-muted text-muted-foreground">
-							{initials || <Mail className="size-4" />}
-						</AvatarFallback>
-					</Avatar>
-				)}
+				{avatar ??
+					(sender?.trim() ? (
+						<PersonAvatar
+							name={sender.trim()}
+							email={address}
+							className="size-8"
+							tone="bg-muted text-muted-foreground"
+						/>
+					) : (
+						<Avatar className="size-8 shrink-0" aria-hidden="true">
+							<AvatarFallback className="bg-muted text-muted-foreground">
+								<Mail className="size-4" />
+							</AvatarFallback>
+						</Avatar>
+					))}
 				<div className="min-w-0 flex-1">
 					<div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
 						<P className="min-w-0 break-words font-medium text-base">

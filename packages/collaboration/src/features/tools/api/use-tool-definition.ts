@@ -34,6 +34,18 @@ const toolsSchema = z.object({
 export type ToolInputSchema = z.infer<typeof inputSchema>;
 export type ToolProperty = z.infer<typeof propertySchema>;
 
+/** Read schemas carried by system calls as well as schemas returned by an MCP. */
+export function readToolInputSchema(value: unknown): ToolInputSchema | null {
+	const parsed = inputSchema.safeParse(value);
+	return parsed.success ? parsed.data : null;
+}
+
+/** Narrow an array item's or nested object's schema at the UI boundary. */
+export function readToolProperty(value: unknown): ToolProperty {
+	const parsed = propertySchema.safeParse(value);
+	return parsed.success ? parsed.data : {};
+}
+
 /** Only render schemas whose validation can be represented faithfully by these controls. */
 export function supportsToolFields(
 	schema: ToolInputSchema,
@@ -77,35 +89,91 @@ export function supportsToolFields(
 	);
 }
 
-/** Validate the supported schema without coercing empty numbers or dropping optional arguments. */
-export function validateToolArguments(
+/** The first invalid argument, including its location in nested objects and lists. */
+export interface ToolArgumentError {
+	path: string[];
+	message: string;
+}
+
+/** Locate schema errors without coercing or dropping proposed values. */
+export function findToolArgumentError(
 	schema: ToolInputSchema,
 	values: Record<string, unknown>,
-): string | null {
+): ToolArgumentError | null {
 	for (const name of schema.required)
-		if (!(name in values)) return `${name} is required.`;
+		if (!(name in values) || values[name] === undefined)
+			return { path: [name], message: `${name} is required.` };
 	for (const [name, value] of Object.entries(values)) {
 		const property = schema.properties[name];
 		if (!property) continue;
+		const invalid = (message: string): ToolArgumentError => ({
+			path: [name],
+			message,
+		});
+		if (property.type === "object") {
+			if (
+				value === null ||
+				typeof value !== "object" ||
+				Array.isArray(value)
+			)
+				return invalid(`${name} must be an object.`);
+			const nested = readToolInputSchema(property);
+			const error =
+				nested &&
+				findToolArgumentError(nested, value as Record<string, unknown>);
+			if (error)
+				return {
+					path: [name, ...error.path],
+					message: `${name}: ${error.message}`,
+				};
+		}
+		if (property.type === "array") {
+			if (!Array.isArray(value))
+				return invalid(`${name} must be a list.`);
+			if (
+				(typeof property.minItems === "number" &&
+					value.length < property.minItems) ||
+				(typeof property.maxItems === "number" &&
+					value.length > property.maxItems)
+			)
+				return invalid(`${name} has an invalid number of items.`);
+			for (const [index, item] of value.entries()) {
+				const itemName = `${name} ${index + 1}`;
+				const error = findToolArgumentError(
+					{
+						properties: {
+							[itemName]: readToolProperty(property.items),
+						},
+						required: [itemName],
+					},
+					{ [itemName]: item },
+				);
+				if (error)
+					return {
+						path: [name, String(index), ...error.path.slice(1)],
+						message: error.message,
+					};
+			}
+		}
 		if (property.type === "string" && typeof value !== "string")
-			return `${name} must be text.`;
+			return invalid(`${name} must be text.`);
 		if (property.type === "boolean" && typeof value !== "boolean")
-			return `${name} must be true or false.`;
+			return invalid(`${name} must be true or false.`);
 		if (
 			(property.type === "number" || property.type === "integer") &&
 			(typeof value !== "number" || !Number.isFinite(value))
 		)
-			return `${name} must be a number.`;
+			return invalid(`${name} must be a number.`);
 		if (property.type === "integer" && !Number.isInteger(value))
-			return `${name} must be an integer.`;
+			return invalid(`${name} must be an integer.`);
 		if (property.enum && !property.enum.includes(String(value)))
-			return `Choose a valid value for ${name}.`;
+			return invalid(`Choose a valid value for ${name}.`);
 		if (
 			typeof value === "number" &&
 			((property.minimum !== undefined && value < property.minimum) ||
 				(property.maximum !== undefined && value > property.maximum))
 		)
-			return `${name} is outside the allowed range.`;
+			return invalid(`${name} is outside the allowed range.`);
 		if (
 			typeof value === "string" &&
 			((property.minLength !== undefined &&
@@ -113,9 +181,17 @@ export function validateToolArguments(
 				(property.maxLength !== undefined &&
 					value.length > property.maxLength))
 		)
-			return `${name} has an invalid length.`;
+			return invalid(`${name} has an invalid length.`);
 	}
 	return null;
+}
+
+/** Validate the supported schema, retaining the existing generic approval API. */
+export function validateToolArguments(
+	schema: ToolInputSchema,
+	values: Record<string, unknown>,
+): string | null {
+	return findToolArgumentError(schema, values)?.message ?? null;
 }
 
 /** Resolve a declared tool schema through the current room's SDK insight. */
@@ -144,7 +220,9 @@ export function useToolDefinition(tool: ConversationTool): {
 		: undefined;
 	const parsedInput = inputSchema.safeParse(found?.inputSchema);
 	return {
-		schema: parsedInput.success ? parsedInput.data : null,
+		schema:
+			readToolInputSchema(tool.metadata?.SMSS_TOOL_INPUT_SCHEMA) ??
+			(parsedInput.success ? parsedInput.data : null),
 		description: found?.description,
 		isLoading:
 			Boolean(owner) &&

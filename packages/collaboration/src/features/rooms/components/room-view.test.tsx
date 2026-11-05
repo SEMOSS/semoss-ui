@@ -6,9 +6,19 @@ import type { RoomViewProps } from "../types/room";
 import { pendingSession } from "../utils/session-from-room";
 import { RoomView } from "./room-view";
 
-const refreshTopicGoal = vi.fn();
+const refreshTopic = vi.fn();
 vi.mock("@/features/collaboration/live/work-updates.context", () => ({
-	useWorkUpdates: () => ({ refreshTopicGoal }),
+	useWorkUpdates: () => ({ refreshTopic }),
+}));
+// one stable insight; the room's task read finds no work item for it
+const insight = vi.hoisted(() => ({
+	actions: {
+		run: vi.fn().mockResolvedValue({ pixelReturn: [{ output: {} }] }),
+	},
+}));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => insight,
 }));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
@@ -39,19 +49,38 @@ vi.mock("./room-workspace", () => ({
 					onClick={() =>
 						void workbench.onApproveTool(
 							{
-								toolId: "complete-goal",
+								toolId: "new-topic",
 								parentMessageId: "assistant-message",
 								toolName: "EditTopic",
 								arguments: {},
 							},
+							// the model leaves the arguments it does not use blank
 							{
-								topicId: "topic-one",
-								completeGoalId: " goal-one ",
+								topicId: "",
+								topic: "",
+								name: "Uber Trip Receipts",
+								addEmails: ["AQMk-receipt"],
 							},
 						)
 					}
 				>
-					Approve goal
+					Approve new topic
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						void workbench.onApproveTool(
+							{
+								toolId: "send-email",
+								parentMessageId: "assistant-message",
+								toolName: "SendEmail",
+								arguments: {},
+							},
+							{ openEmailId: "draft-one", name: "Not a topic" },
+						)
+					}
+				>
+					Approve send
 				</button>
 			</>
 		);
@@ -112,111 +141,31 @@ const props: RoomViewProps = {
 	onOpenRooms: vi.fn(),
 };
 
-it("rereads a completed goal only after its tool approval settles", async () => {
-	refreshTopicGoal.mockClear();
+it("shows a topic the assistant made once its approval settles, and nothing for other tools", async () => {
+	refreshTopic.mockClear();
 	const approval = deferred<void>();
 	const approve = vi.fn().mockReturnValue(approval.promise);
 	render(<RoomView {...props} onApproveTool={approve} />);
-	fireEvent.click(screen.getByRole("button", { name: "Approve goal" }));
-	expect(approve).toHaveBeenCalledWith(
-		expect.objectContaining({ toolName: "EditTopic" }),
-		{ topicId: "topic-one", completeGoalId: " goal-one " },
-	);
-	expect(refreshTopicGoal).not.toHaveBeenCalled();
+	fireEvent.click(screen.getByRole("button", { name: "Approve new topic" }));
+	expect(refreshTopic).not.toHaveBeenCalled();
 	await act(async () => approval.resolve());
-	expect(refreshTopicGoal).toHaveBeenCalledExactlyOnceWith(
-		{ topicId: "topic-one", topic: undefined },
-		"goal-one",
-	);
+	expect(refreshTopic).toHaveBeenCalledExactlyOnceWith({
+		topicId: undefined,
+		topic: "Uber Trip Receipts",
+	});
+
+	approve.mockResolvedValue(undefined);
+	await act(async () => {
+		fireEvent.click(screen.getByRole("button", { name: "Approve send" }));
+	});
+	expect(approve).toHaveBeenCalledTimes(2);
+	expect(refreshTopic).toHaveBeenCalledTimes(1);
 });
 
-it("rereads an automatically completed goal once after its successful result arrives", () => {
-	refreshTopicGoal.mockClear();
-	const completedGoal: ConversationTool = {
-		...tool,
-		id: "complete-goal",
-		name: "CompleteGoal",
-		arguments: { topicId: "topic-one", goalId: " goal-one " },
-		status: "RUNNING",
-	};
-	const thread: RoomViewProps["thread"] = [
-		{
-			id: "assistant-message",
-			role: "assistant",
-			parts: [{ type: "tool", tool: completedGoal }],
-		},
-	];
-	const { rerender } = render(<RoomView {...props} thread={thread} />);
-	expect(refreshTopicGoal).not.toHaveBeenCalled();
-	rerender(
-		<RoomView
-			{...props}
-			thread={thread}
-			toolStates={{ "complete-goal": { status: "COMPLETED" } }}
-		/>,
-	);
-	expect(refreshTopicGoal).not.toHaveBeenCalled();
-	const toolStates: RoomViewProps["toolStates"] = {
-		"complete-goal": {
-			status: "COMPLETED",
-			output: JSON.stringify({
-				changes: ["goal completed"],
-				topic: { id: "topic-one" },
-			}),
-		},
-	};
-	rerender(<RoomView {...props} thread={thread} toolStates={toolStates} />);
-	expect(refreshTopicGoal).toHaveBeenCalledExactlyOnceWith(
-		{ topicId: "topic-one" },
-		"goal-one",
-	);
-	rerender(
-		<RoomView {...props} thread={[...thread]} toolStates={toolStates} />,
-	);
-	expect(refreshTopicGoal).toHaveBeenCalledTimes(1);
-});
-
-it.each<Partial<ConversationTool>>([
-	{ status: "FAILED" },
-	{ error: "The goal could not be saved." },
-	{ output: "The goal could not be saved." },
-	{ output: JSON.stringify({ changes: [], topic: { id: "topic-one" } }) },
-])("does not refresh a goal without a successful completion: %j", (failure) => {
-	refreshTopicGoal.mockClear();
-	render(
-		<RoomView
-			{...props}
-			thread={[
-				{
-					id: "assistant-message",
-					role: "assistant",
-					parts: [
-						{
-							type: "tool",
-							tool: {
-								...tool,
-								name: "CompleteGoal",
-								arguments: {
-									topicId: "topic-one",
-									goalId: "goal-one",
-								},
-								output: JSON.stringify({
-									changes: ["goal completed"],
-									topic: { id: "topic-one" },
-								}),
-								...failure,
-							},
-						},
-					],
-				},
-			]}
-		/>,
-	);
-	expect(refreshTopicGoal).not.toHaveBeenCalled();
-});
-
-it("keeps the workbench closed when entering a room with restored tools and approvals", () => {
+it("keeps the workbench closed when entering a room with restored tools and approvals", async () => {
 	const { rerender } = render(<RoomView {...props} />);
+	// the room's task read settles first
+	await act(async () => undefined);
 	expect(screen.getByLabelText("Dock visibility")).toHaveTextContent(
 		"closed",
 	);

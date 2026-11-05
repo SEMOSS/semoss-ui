@@ -80,6 +80,10 @@ const inboxRoutine: InboxRoutine = {
 	days: ["MON", "TUE", "WED", "THU", "FRI"],
 	timezone: "America/New_York",
 	lookbackHours: 24,
+	preferences: "",
+	sections: ["priorities", "replies", "meetings", "actions"],
+	priorityCount: 5,
+	writeDrafts: true,
 	nextRunAt: null,
 	schedulerAvailable: true,
 	assistantAvailable: true,
@@ -93,6 +97,7 @@ const agendaRoutine: AgendaRoutine = {
 	days: ["MON"],
 	meetings: ["Board review"],
 	ignored: [],
+	preferences: "",
 };
 
 beforeEach(() => {
@@ -133,8 +138,8 @@ describe("routine flow sections", () => {
 		expect(screen.queryByRole("menu")).not.toBeInTheDocument();
 
 		for (const [title, expectedFlow] of [
-			["Inbox daily brief", flow],
-			["Weekly meeting agendas", agendaFlow],
+			["Inbox daily brief agent", flow],
+			["Weekly meeting agendas agent", agendaFlow],
 		] as const) {
 			service.preview.mockClear();
 			const trigger = screen.getByRole("button", {

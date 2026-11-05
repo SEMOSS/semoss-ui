@@ -6,10 +6,18 @@ import {
 	completedToolGroups,
 	type OwnedMessagePart,
 } from "../utils/message-presentation";
+import { MessagePart } from "./message-part";
 import { MessageToolSummary } from "./message-tool-summary";
 
 /** Finished tool summaries keep each keyed row mounted, preserving UI and focus. */
-export function MessageToolActivity({ items }: { items: OwnedMessagePart[] }) {
+export function MessageToolActivity({
+	items,
+	agentName = "",
+}: {
+	items: OwnedMessagePart[];
+	/** For a folded thinking part's run card. */
+	agentName?: string;
+}) {
 	const workbench = useToolWorkbench();
 	const regionId = useId();
 	const [expandedTools, setExpandedTools] = useState<Set<string>>(
@@ -35,6 +43,7 @@ export function MessageToolActivity({ items }: { items: OwnedMessagePart[] }) {
 	for (const { part } of tools) {
 		if (part.type !== "tool") continue;
 		const displayMode = workbench.getToolDisplayMode(part.tool.id);
+		// a found file or email folds too; its Open is in the steps and the answer links it
 		if (
 			displayMode === "inline" ||
 			(displayMode === "workbench" && workbench.isOpen) ||
@@ -43,7 +52,11 @@ export function MessageToolActivity({ items }: { items: OwnedMessagePart[] }) {
 		)
 			pinnedIds.add(part.tool.id);
 	}
-	const groups = completedToolGroups(tools, pinnedIds);
+	// while the turn works, the latest steps stay in view and the earlier ones fold
+	const groups = completedToolGroups(
+		isWorking(items) ? tools.slice(0, -LIVE_STEPS) : tools,
+		pinnedIds,
+	);
 	const groupByKey = new Map(
 		groups.flatMap((group) =>
 			group.map((item) => [item.key, group] as const),
@@ -81,8 +94,10 @@ export function MessageToolActivity({ items }: { items: OwnedMessagePart[] }) {
 			}}
 		>
 			{tools.map((item) => {
-				if (item.part.type !== "tool") return null;
-				const tool = item.part.tool;
+				if (item.part.type !== "tool" && item.part.type !== "thinking")
+					return null;
+				const tool =
+					item.part.type === "tool" ? item.part.tool : undefined;
 				const group = groupByKey.get(item.key);
 				const isExpanded =
 					!group ||
@@ -122,18 +137,31 @@ export function MessageToolActivity({ items }: { items: OwnedMessagePart[] }) {
 									className="py-1"
 									data-scroll-anchor={item.key}
 								>
-									<ToolCallCard
-										tool={tool}
-										createdAt={item.message.createdAt}
-										onMenuOpenChange={(isOpen) =>
-											setOpenMenus((current) => {
-												const next = new Set(current);
-												if (isOpen) next.add(tool.id);
-												else next.delete(tool.id);
-												return next;
-											})
-										}
-									/>
+									{tool ? (
+										<ToolCallCard
+											tool={tool}
+											createdAt={item.message.createdAt}
+											onMenuOpenChange={(isOpen) =>
+												setOpenMenus((current) => {
+													const next = new Set(
+														current,
+													);
+													if (isOpen)
+														next.add(tool.id);
+													else next.delete(tool.id);
+													return next;
+												})
+											}
+										/>
+									) : (
+										<MessagePart
+											part={item.part}
+											role={item.message.role}
+											phase={item.message.live?.phase}
+											createdAt={item.message.createdAt}
+											agentName={agentName}
+										/>
+									)}
 								</div>
 							</div>
 						</div>
@@ -141,5 +169,19 @@ export function MessageToolActivity({ items }: { items: OwnedMessagePart[] }) {
 				);
 			})}
 		</div>
+	);
+}
+
+const LIVE_STEPS = 2;
+
+const SETTLED = new Set(["completed", "failed", "cancelled"]);
+
+function isWorking(items: OwnedMessagePart[]): boolean {
+	const message = items.at(-1)?.message;
+	const phase = message?.live?.phase;
+	if (!phase || SETTLED.has(phase)) return false;
+	return !message.parts.some(
+		(part) =>
+			part.type === "text" && part.state === "active" && part.text.trim(),
 	);
 }

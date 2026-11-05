@@ -4,6 +4,7 @@ import { z } from "@semoss/ui/next";
 export type RoutineId =
 	| "inbox-daily-brief"
 	| "weekly-meeting-agendas"
+	| "expense-review"
 	// the id of one of the owner's own routines
 	| (string & {});
 
@@ -29,6 +30,18 @@ export const ROUTINE_DAY_NAMES = {
 } as const;
 
 export const routineDaySchema = z.enum(ROUTINE_DAYS);
+
+/** How long the owner's preferences for a routine's model steps may be, matching the server limit. */
+export const ROUTINE_PREFERENCES_LIMIT = 2000;
+
+/** Free text the owner adds to a routine's model prompts; the server frames it after its own rules. */
+export const routinePreferencesSchema = z
+	.string()
+	.trim()
+	.max(
+		ROUTINE_PREFERENCES_LIMIT,
+		`Keep preferences to ${ROUTINE_PREFERENCES_LIMIT} characters.`,
+	);
 
 /** Opt-in, local run time, and time zone every routine schedule shares. */
 export const routineScheduleSchema = z.object({

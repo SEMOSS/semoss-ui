@@ -1,6 +1,14 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export type ChunkStatus = "done" | "active" | "not_started";
+
+interface UseActiveIndexReturn {
+	/** One callback per item; each advances the queue past its item. */
+	chunkCallbacks: (() => void)[];
+
+	/** Animation status of the item at an index. */
+	getChunkStatus: (index: number) => ChunkStatus;
+}
 
 /**
  * Sequential reveal queue. Tracks which index is currently allowed to animate
@@ -12,6 +20,10 @@ export type ChunkStatus = "done" | "active" | "not_started";
  * @param onComplete optional — called when the *last* item reports completion,
  *                   so a parent queue can learn this whole queue has caught up.
  *                   The parent's own guard decides whether to actually advance.
+ *                   A new identity regenerates `chunkCallbacks`, so the active
+ *                   item reports again: that is how a nested queue held as its
+ *                   parent's last item lets the parent advance once an item
+ *                   lands below it. Pass a callback that is stable otherwise.
  * @param startAtLatest optional — on a return view, seed at the latest item so
  *                   we jump straight to the frontier instead of replaying the
  *                   reveal from the start. Only seeds the initial index; once
@@ -22,17 +34,11 @@ export const useActiveIndex = (
 	isActive: boolean,
 	onComplete?: () => void,
 	startAtLatest = false,
-) => {
+): UseActiveIndexReturn => {
 	// Index of the item currently allowed to animate.
 	const [activeIndex, setActiveIndex] = useState(
 		startAtLatest ? Math.max(0, length - 1) : 0,
 	);
-
-	// Keep onComplete in a ref so it's never a dependency below — callers may
-	// pass a fresh closure each render, and we don't want to regenerate
-	// chunkCallbacks (which would re-fire children effects that dep on it).
-	const onCompleteRef = useRef(onComplete);
-	onCompleteRef.current = onComplete;
 
 	// Called by each item when its animation is complete. Only advances when the
 	// completed item is the current active one. If it's the last item and we're
@@ -46,16 +52,16 @@ export const useActiveIndex = (
 				return completedIndex + 1;
 			});
 			if (completedIndex === length - 1) {
-				onCompleteRef.current?.();
+				onComplete?.();
 			}
 		},
-		[length, isActive],
+		[length, isActive, onComplete],
 	);
 
-	// Stable per-item callbacks — each function identity is preserved across
-	// re-renders as long as the item count doesn't change. This prevents effects
-	// in children that dep on `onComplete` from firing on every streaming token
-	// just because the parent re-rendered.
+	// Per-item callbacks keep their identity while the item count, the
+	// streaming flag, and `onComplete` stay the same, so children whose effects
+	// depend on them do not re-run on every streaming token. Any of those
+	// changing re-runs those effects, and a caught up item reports again.
 	const chunkCallbacks = useMemo(
 		() =>
 			Array.from({ length }, (_, idx) => () => handleChunkComplete(idx)),

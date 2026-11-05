@@ -42,9 +42,24 @@ const dashboard = vi.hoisted(() => ({
 vi.mock("@/features/dashboard/dashboard.context", () => ({
 	useDashboard: () => dashboard,
 }));
+// one actions object: the recent routine runs reader reruns whenever it changes
+const insight = vi.hoisted(() => ({
+	routines: [] as unknown[],
+	actions: {
+		logout: vi.fn(),
+		run: vi.fn(async () => ({
+			pixelReturn: [
+				{
+					output: { routines: insight.routines },
+					operationType: ["OPERATION"],
+				},
+			],
+		})),
+	},
+}));
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
-	useInsight: () => ({ actions: { logout: vi.fn() } }),
+	useInsight: () => insight,
 }));
 
 /** Exercise the controlled navigation contract without involving persistence. */
@@ -91,6 +106,7 @@ function renderNavigation(
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	insight.routines = [];
 	dashboard.searchReturnFocus.current = null;
 	dashboard.history.scrollTop.current = 0;
 	dashboard.openRoom.mockResolvedValue(undefined);
@@ -98,7 +114,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("keeps Today and Routines as the main destinations without Topics", () => {
+	it("keeps Today, Work and Routines as the main destinations without Topics", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -120,11 +136,11 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["Today", "Routines"]);
+		).toEqual(["Today", "Work", "Routines"]);
 		expect(
 			within(main).getByRole("link", { name: "Today" }),
 		).toHaveTextContent(/^Today$/);
-		for (const name of ["For you", "Work", "Unassigned", "Brain"]) {
+		for (const name of ["For you", "Unassigned", "Brain"]) {
 			expect(
 				screen.queryByRole("link", { name }),
 			).not.toBeInTheDocument();
@@ -173,6 +189,54 @@ describe("CollaborationNavigation", () => {
 		expect(screen.getByRole("link", { name: "Today" })).not.toHaveAttribute(
 			"aria-current",
 		);
+	});
+
+	it("lists the routines that ran last under Routines and keeps them mounted in the collapsed rail", async () => {
+		insight.routines = [
+			{
+				routineId: "inbox-daily-brief",
+				name: null,
+				runs: [
+					{
+						runId: "inbox-1",
+						status: "completed",
+						startedAt: new Date().toISOString(),
+					},
+				],
+			},
+		];
+		const { user, router, onNavigate } = renderNavigation();
+		const recent = await screen.findByRole("list", {
+			name: "Recent routines",
+		});
+		// right after Routines, ahead of Chats, in the scroller they share
+		expect(
+			screen
+				.getByRole("link", { name: "Routines" })
+				.compareDocumentPosition(recent) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(recent.parentElement).toContainElement(
+			screen.getByRole("region", { name: "Chats" }),
+		);
+		await user.click(
+			within(recent).getByRole("link", {
+				name: "Inbox daily brief agent",
+			}),
+		);
+		expect(router.state.location.pathname).toBe("/routines");
+		expect(router.state.location.search).toBe("?routine=inbox-daily-brief");
+		expect(onNavigate).toHaveBeenCalledOnce();
+		const toggle = screen.getByRole("button", {
+			name: "Toggle navigation fixture",
+		});
+		await user.click(toggle);
+		expect(recent.closest(".hidden")).not.toBeNull();
+		await user.click(toggle);
+		expect(screen.getByRole("list", { name: "Recent routines" })).toBe(
+			recent,
+		);
+		expect(recent.closest(".hidden")).toBeNull();
 	});
 
 	it.each([
@@ -255,7 +319,8 @@ describe("CollaborationNavigation", () => {
 		expect(screen.getByRole("button", { name: /Account menu for/ })).toBe(
 			account,
 		);
-		await user.click(settings);
+		// the rail remounts Settings with a fresh tooltip when it collapses
+		await user.click(screen.getByRole("link", { name: "Settings" }));
 		expect(onNavigate).toHaveBeenCalledOnce();
 		expect(router.state.location.pathname).toBe("/settings");
 		await user.click(account);

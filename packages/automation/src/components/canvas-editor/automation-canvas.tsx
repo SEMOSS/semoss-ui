@@ -117,6 +117,7 @@ import { useHelperLines } from "../../features/canvas-helper-lines/use-helper-li
 import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
+import { AutomationVersionHistory } from "./automation-version-history";
 import { DeletableEdge } from "./deletable-edge";
 import { getFlowStrokeColor, LOOP_PATH_HIGHLIGHT_COLOR } from "./flow-colors";
 import {
@@ -659,6 +660,7 @@ export const AutomationCanvasContent = forwardRef<
 
 	const [saving, setSaving] = useState(false);
 	const [confirmReload, setConfirmReload] = useState(false);
+	const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
 	const [deleteDownstreamStepId, setDeleteDownstreamStepId] = useState<
 		string | null
 	>(null);
@@ -2935,6 +2937,7 @@ export const AutomationCanvasContent = forwardRef<
 	);
 
 	const save = useCallback(async (): Promise<boolean> => {
+		if (isVersionHistoryOpen || !workflowLoaded) return false;
 		if (viewingHistory) {
 			toast.error("Return to the editor before saving.");
 			return false;
@@ -3036,11 +3039,13 @@ export const AutomationCanvasContent = forwardRef<
 		appId,
 		description,
 		graphEdges,
+		isVersionHistoryOpen,
 		nodeGroups,
 		readOnly,
 		steps,
 		triggerBindings,
 		viewingHistory,
+		workflowLoaded,
 	]);
 
 	const prepareSchedule = useCallback(
@@ -5041,8 +5046,34 @@ export const AutomationCanvasContent = forwardRef<
 										</Suspense>
 									)}
 
+									{readOnly &&
+										mcpMode !== "trigger" &&
+										!viewingHistory && (
+											<div className="absolute top-4 right-4 z-30">
+												<AutomationVersionHistory
+													key={appId}
+													appId={appId}
+													open={isVersionHistoryOpen}
+													onOpenChange={
+														setIsVersionHistoryOpen
+													}
+													onRestored={() => undefined}
+													isDirty={false}
+													canRestore={false}
+													currentRevision={
+														definitionRevisionRef.current
+													}
+													disabled={
+														!workflowLoaded ||
+														isRunInputDialogOpen
+													}
+													isDeveloperMode={devMode}
+												/>
+											</div>
+										)}
+
 									<div
-										className={`absolute top-4 right-4 z-30 items-center gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory ? "hidden" : "flex"}`}
+										className={`absolute top-4 right-4 left-4 z-30 flex-wrap items-center justify-end gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory ? "hidden" : "flex"}`}
 									>
 										{bpmnMode && (
 											<input
@@ -5053,6 +5084,60 @@ export const AutomationCanvasContent = forwardRef<
 												onChange={
 													handleBpmnFileSelected
 												}
+											/>
+										)}
+										{!readOnly && mcpMode !== "trigger" && (
+											<AutomationVersionHistory
+												key={appId}
+												appId={appId}
+												open={isVersionHistoryOpen}
+												onOpenChange={
+													setIsVersionHistoryOpen
+												}
+												isDirty={isDirty}
+												canRestore={
+													!readOnly && !viewingHistory
+												}
+												currentRevision={
+													definitionRevisionRef.current
+												}
+												disabled={
+													saving ||
+													running ||
+													!workflowLoaded ||
+													isRunInputDialogOpen ||
+													activeRun?.STATUS ===
+														"WAITING_FOR_INPUT"
+												}
+												isDeveloperMode={devMode}
+												onRestored={() => {
+													loadedRef.current = false;
+													setWorkflowLoaded(false);
+													setIsDirty(false);
+													setUndoSnapshot(null);
+													setStepStatuses({});
+													setStepErrors({});
+													setStepDurations({});
+													setLatestRunResults([]);
+													setScopeSampleResults([]);
+													setLatestRunDefinition(
+														null,
+													);
+													setLatestRunStatus(null);
+													setActiveRun(null);
+													setAiRunSummary(null);
+													refresh(
+														{
+															toolName:
+																"rollback",
+															changedStepIds: [],
+														},
+														true,
+													);
+													toast.success(
+														"Automation version restored",
+													);
+												}}
 											/>
 										)}
 										{bpmnSource !== null ? (

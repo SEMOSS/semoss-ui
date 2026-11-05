@@ -13,7 +13,7 @@ import { useRoomConnectors } from "./room-connectors.context";
 /** Capture the chat that started the operation, even when saving outlives navigation. */
 export function useRoomConnectorHost(): ConnectorViewerProps {
 	const { session } = useRoomConnectors();
-	const { store, insightId } = useToolWorkbench();
+	const { store, insightId, openFile } = useToolWorkbench();
 	const { t } = useTranslation(["connectors", "room", "chatConnectors"]);
 	const prepareSave = useCallback(async (): Promise<() => void> => {
 		if (!session) throw new Error(t("connectors:errors.noInsight"));
@@ -60,6 +60,17 @@ export function useRoomConnectorHost(): ConnectorViewerProps {
 		},
 		[refreshFiles, session, t],
 	);
+	const onOpenFile = useCallback(
+		(file: ConnectorSavedFile) => {
+			refreshFiles(file);
+			openFile(
+				file.path,
+				file.name,
+				session?.insight.insightId ?? insightId,
+			);
+		},
+		[refreshFiles, openFile, session, insightId],
+	);
 	const onSignIn = useCallback(async (): Promise<boolean> => {
 		// Start OAuth in the click before awaiting so popup blockers allow it.
 		const attempt = connectMicrosoft();
@@ -81,6 +92,7 @@ export function useRoomConnectorHost(): ConnectorViewerProps {
 		saveTargetName: t("room:menuFileExplorer.name"),
 		prepareSave: session ? prepareSave : undefined,
 		onSaved,
+		onOpenFile,
 		onAddToContext: session ? onAddToContext : undefined,
 		onSignIn,
 	};

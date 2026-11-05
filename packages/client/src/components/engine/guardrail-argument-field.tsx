@@ -35,7 +35,7 @@ export interface GuardrailArgumentFieldProps {
 const CUSTOM_ARGUMENT_OPTION = "__custom-argument__";
 
 const FREE_TEXT_DESCRIPTION =
-	"Use the argument name the runtime resolves, such as arg0, or result for the model's return value. A dot path such as arg0.message reads inside a map argument, and several comma separated names are joined before the guardrail runs.";
+	"Use the argument name the runtime resolves, such as arg0, or result for the call's return value. A dot path such as arg0.message reads inside a map argument, and several comma separated names are joined before the guardrail runs.";
 
 const PICKER_DESCRIPTION =
 	"Several comma separated names are joined before the guardrail runs, and a dot path such as arg0.message reads inside a map argument.";

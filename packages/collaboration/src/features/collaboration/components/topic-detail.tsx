@@ -1,10 +1,9 @@
 import {
-	Bot,
 	ChevronDown,
 	LockKeyhole,
-	MessageSquare,
 	PanelRightOpen,
 	Plus,
+	Search,
 	X,
 } from "lucide-react";
 import { lazy, Suspense, useId, useRef, useState } from "react";
@@ -13,7 +12,6 @@ import {
 	Badge,
 	Button,
 	Card,
-	Checkbox,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
@@ -25,7 +23,6 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-	Progress,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -41,6 +38,7 @@ import { TopicSessions } from "@/features/dashboard/topic-sessions";
 import { lexicon } from "@/lib/lexicon";
 import { givenFirst } from "@/lib/person-name";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
+import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
 import { topicTone } from "../topic-tone";
@@ -50,11 +48,15 @@ import { CollaborationSurface } from "./collaboration-surface";
 import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { MemoryList } from "./memory-list";
 import { PersonAvatar } from "./person-avatar";
+import { PersonGlobalBadges } from "./person-global-badges";
 import { TextEntryForm } from "./text-entry-form";
 import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
 import { TopicFolders } from "./topic-folders";
-import { TopicGoalPopover } from "./topic-goal-popover";
+import { TopicIgnoredPeople } from "./topic-ignored-people";
+import { TopicMatchesDialog } from "./topic-matches-dialog";
+import { TopicPeoplePopover } from "./topic-people-popover";
+import { TopicPersonMenu } from "./topic-person-menu";
 import { TopicThreadRow } from "./topic-thread-row";
 import { useWorkFeed, WorkFilterMenu, WorkItemsList } from "./work-items-feed";
 
@@ -85,6 +87,9 @@ const contextHeadingClassName = "font-display font-semibold text-base";
 const SUGGESTED_PREVIEW = 3;
 const hintClassName =
 	"block font-normal text-muted-foreground text-xs leading-5";
+// a member row's controls stay out of the way until the row is hovered or focused
+const memberControlClassName =
+	"text-muted-foreground pointer-fine:opacity-0 pointer-fine:group-focus-within/person:opacity-100 pointer-fine:group-hover/person:opacity-100";
 
 /** One topic workspace for actions, threads, sessions, and editable context. */
 export function TopicDetail() {
@@ -93,21 +98,22 @@ export function TopicDetail() {
 	const { state, dispatch } = useCollaborationSession();
 	const [isEditing, setIsEditing] = useState(false);
 	const [tab, setTab] = useState("actions");
-	const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-	const [hasOpenedAssistant, setHasOpenedAssistant] = useState(false);
+	const [isMatchReviewOpen, setIsMatchReviewOpen] = useState(false);
+	const updates = useWorkUpdates();
 	const editButtonRef = useRef<HTMLButtonElement>(null);
+	// the button that opened the review, for focus on close; a click does not focus it in Safari
+	const matchTriggerRef = useRef<HTMLElement | null>(null);
 	const contextButtonRef = useRef<HTMLButtonElement>(null);
 	const contextRef = useRef<HTMLElement>(null);
-	const [personToAdd, setPersonToAdd] = useState("");
 	const [showAllSuggested, setShowAllSuggested] = useState(false);
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
+	const canStartAssistant =
+		topic?.status === "active" || topic?.status === "dormant";
 	const topicMemories = memoriesAbout(state.memories, {
 		type: "topic",
 		id: topicId ?? "",
 	});
-	const [isContextOpen, setIsContextOpen] = useState(
-		Boolean(topic?.goals.length),
-	);
+	const [isContextOpen, setIsContextOpen] = useState(false);
 	const [areNotesOpen, setAreNotesOpen] = useState(topicMemories.length > 0);
 	const feed = useWorkFeed({ topicId: topicId ?? "", initialFilter: "open" });
 	if (!topic)
@@ -120,21 +126,13 @@ export function TopicDetail() {
 						This topic is not available.
 					</P>
 					<Button asChild variant="outline">
-						<Link to="/work">All topics</Link>
+						<Link to="/work/topics">All topics</Link>
 					</Button>
 				</div>
 			</CollaborationSurface>
 		);
 	const threads = state.threads.filter((thread) =>
 		thread.topicLinks.some((link) => link.topicId === topic.id),
-	);
-	const availablePeople = state.people.filter(
-		(person) =>
-			person.isSample === topic.isSample &&
-			!topic.people.some(
-				(member) =>
-					member.personId === person.id && member.state === "member",
-			),
 	);
 	const members = topic.people.filter((person) => person.state === "member");
 	const workItems = state.items.filter(
@@ -147,11 +145,16 @@ export function TopicDetail() {
 	const accountName =
 		state.accounts.find((account) => account.id === topic.accountId)
 			?.name || "No account";
-	const doneGoals = topic.goals.filter((goal) => goal.status === "done");
 	const feedThreadCount = new Set(workItems.map((item) => item.threadId))
 		.size;
-	const canStartAssistant =
-		topic.status === "active" || topic.status === "dormant";
+	// the server scores active and dormant topics; samples and isolated pages have no server to ask
+	const canFindConversations =
+		Boolean(updates) && !topic.isSample && canStartAssistant;
+	// the menu returns focus to its own trigger; a button passes itself
+	const openMatchReview = (trigger?: HTMLElement) => {
+		matchTriggerRef.current = trigger ?? null;
+		setIsMatchReviewOpen(true);
+	};
 
 	return (
 		<CollaborationPage>
@@ -218,24 +221,14 @@ export function TopicDetail() {
 							<PanelRightOpen aria-hidden="true" />
 							Context
 						</Button>
-						<Button
-							variant="outline"
-							className="pointer-coarse:min-h-11"
-							aria-expanded={isAssistantOpen}
-							aria-controls={`${fieldId}-assistant`}
-							onClick={() => {
-								setHasOpenedAssistant(true);
-								setIsAssistantOpen((open) => !open);
-							}}
-						>
-							<MessageSquare aria-hidden="true" />
-							{isAssistantOpen
-								? "Hide assistant"
-								: "Ask assistant"}
-						</Button>
 						<TopicActions
 							topic={topic}
 							threadCount={threads.length}
+							onFindConversations={
+								canFindConversations
+									? () => openMatchReview()
+									: undefined
+							}
 						/>
 					</>
 				}
@@ -253,18 +246,13 @@ export function TopicDetail() {
 					</div>
 				)}
 			</CollaborationPageHeader>
-			<section
-				id={`${fieldId}-assistant`}
-				aria-label="Topic assistant"
-				hidden={!isAssistantOpen}
-				className="mb-8 space-y-3"
-			>
+			<section aria-label="Topic assistant" className="mb-8 space-y-3">
 				<P className="text-muted-foreground text-sm">
 					{canStartAssistant
-						? "Ask about this topic’s goals, people, and emails."
+						? "Ask about this topic’s work, people, and emails."
 						: "Set this topic to Active or Dormant to start a chat."}
 				</P>
-				{hasOpenedAssistant && canStartAssistant && (
+				{canStartAssistant && (
 					<Suspense fallback={<output>Loading assistant…</output>}>
 						<LandingChatComposer topicId={topic.id} />
 					</Suspense>
@@ -327,6 +315,24 @@ export function TopicDetail() {
 										<WorkFilterMenu feed={feed} />
 									</div>
 								)}
+								{tab === "threads" &&
+									canFindConversations &&
+									threads.length > 0 && (
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											className="ml-auto pointer-coarse:min-h-11"
+											onClick={(event) =>
+												openMatchReview(
+													event.currentTarget,
+												)
+											}
+										>
+											<Search aria-hidden="true" />
+											Find conversations
+										</Button>
+									)}
 							</div>
 							<TabsContent value="actions" className="mt-0">
 								<WorkItemsList feed={feed} />
@@ -368,6 +374,28 @@ export function TopicDetail() {
 											/>
 										))}
 									</ul>
+								) : canFindConversations ? (
+									<div className="flex flex-col items-start gap-3 px-5 py-4">
+										<P className="text-muted-foreground text-sm">
+											No threads in this topic yet. Find
+											conversations that fit it, or add it
+											from a thread's details.
+										</P>
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											className="pointer-coarse:min-h-11"
+											onClick={(event) =>
+												openMatchReview(
+													event.currentTarget,
+												)
+											}
+										>
+											<Search aria-hidden="true" />
+											Find conversations
+										</Button>
+									</div>
 								) : (
 									<P className="px-5 py-4 text-muted-foreground text-sm">
 										No threads in this topic yet. Add it
@@ -409,111 +437,6 @@ export function TopicDetail() {
 							<X aria-hidden="true" />
 						</Button>
 					</div>
-					<section aria-labelledby={`${fieldId}-goals`}>
-						<div>
-							<div className={asideHeaderClassName}>
-								<div className="min-w-0 space-y-1.5">
-									<H2
-										id={`${fieldId}-goals`}
-										className="font-display font-semibold text-base"
-									>
-										Goals
-									</H2>
-									<div className="flex flex-wrap items-center gap-3">
-										{topic.goals.length > 0 && (
-											<Progress
-												aria-label="Goals completed"
-												aria-valuenow={
-													(doneGoals.length /
-														topic.goals.length) *
-													100
-												}
-												aria-valuetext={`${doneGoals.length} of ${topic.goals.length} complete`}
-												className={cn(
-													"h-1.5 w-16 bg-muted [&>div]:motion-reduce:transition-none",
-													doneGoals.length ===
-														topic.goals.length &&
-														"[&>div]:bg-success",
-												)}
-												value={
-													(doneGoals.length /
-														topic.goals.length) *
-													100
-												}
-											/>
-										)}
-										<Small className="font-normal text-muted-foreground text-xs tabular-nums">
-											<output>
-												{topic.goals.length
-													? `${doneGoals.length} of ${topic.goals.length} complete`
-													: "No goals yet"}
-											</output>
-										</Small>
-									</div>
-								</div>
-								<TopicGoalPopover topicId={topic.id} />
-							</div>
-							{topic.goals.length > 0 ? (
-								<ul
-									aria-label="Topic goals"
-									className="divide-y divide-border border-t"
-								>
-									{topic.goals.map((goal) => (
-										<li
-											key={goal.noteId}
-											className="flex items-start gap-3 py-2.5"
-										>
-											<Checkbox
-												id={`${fieldId}-${goal.noteId}`}
-												checked={goal.status === "done"}
-												className="after:-inset-2.5 relative size-5 rounded-full border-muted-foreground bg-background shadow-none after:absolute after:content-[''] data-[state=checked]:border-success data-[state=checked]:bg-success/10 data-[state=checked]:text-foreground dark:data-[state=checked]:bg-success/10"
-												onCheckedChange={(checked) =>
-													dispatch({
-														type: "topic.note",
-														topicId: topic.id,
-														kind: "goal",
-														operation: "save",
-														noteId: goal.noteId,
-														status:
-															checked === true
-																? "done"
-																: "open",
-													})
-												}
-											/>
-											<div className="min-w-0 flex-1 space-y-2">
-												<Label
-													htmlFor={`${fieldId}-${goal.noteId}`}
-													className="wrap-anywhere block min-w-0 cursor-pointer whitespace-pre-wrap font-normal text-foreground text-sm leading-5"
-												>
-													{goal.text}
-												</Label>
-												{goal.resolution && (
-													<div className="space-y-1.5 rounded-lg bg-muted/60 p-3">
-														<Small className="flex items-center gap-2 font-medium text-foreground text-xs leading-5">
-															<Bot
-																aria-hidden="true"
-																className="size-4 shrink-0 text-muted-foreground"
-															/>
-															AI accomplishment
-														</Small>
-														<P className="wrap-anywhere max-w-prose whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
-															{goal.resolution}
-														</P>
-													</div>
-												)}
-											</div>
-										</li>
-									))}
-								</ul>
-							) : (
-								<P className="text-muted-foreground text-sm">
-									Add a goal for you and your assistant to
-									work toward.
-								</P>
-							)}
-						</div>
-					</section>
 					<section aria-labelledby={`${fieldId}-people`}>
 						<div>
 							<div className={asideHeaderClassName}>
@@ -528,86 +451,7 @@ export function TopicDetail() {
 										{members.length}
 									</Small>
 								</div>
-								<Popover>
-									<PopoverTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											aria-label="Add people"
-											className="text-muted-foreground"
-										>
-											<Plus aria-hidden="true" />
-										</Button>
-									</PopoverTrigger>
-									<PopoverContent
-										align="end"
-										aria-label="Add people"
-										className="space-y-3"
-									>
-										<div className="flex flex-wrap items-center gap-2">
-											<Label
-												htmlFor={`${fieldId}-topic-person`}
-												className="sr-only"
-											>
-												Add someone
-											</Label>
-											<Select
-												value={personToAdd}
-												onValueChange={setPersonToAdd}
-											>
-												<SelectTrigger
-													id={`${fieldId}-topic-person`}
-													className="h-9 w-full"
-												>
-													<SelectValue placeholder="Add someone to this topic" />
-												</SelectTrigger>
-												<SelectContent>
-													{availablePeople.map(
-														(person) => (
-															<SelectItem
-																key={person.id}
-																value={
-																	person.id
-																}
-															>
-																{givenFirst(
-																	person.name,
-																)}
-															</SelectItem>
-														),
-													)}
-												</SelectContent>
-											</Select>
-											<Button
-												variant="outline"
-												size="sm"
-												disabled={
-													!availablePeople.some(
-														(person) =>
-															person.id ===
-															personToAdd,
-													)
-												}
-												onClick={() => {
-													dispatch({
-														type: "topic.person",
-														topicId: topic.id,
-														personId: personToAdd,
-														state: "member",
-													});
-													setPersonToAdd("");
-												}}
-											>
-												Add person
-											</Button>
-										</div>
-										<Small className={hintClassName}>
-											Membership is separate from
-											including a person's messages in
-											assistant context.
-										</Small>
-									</PopoverContent>
-								</Popover>
+								<TopicPeoplePopover topic={topic} />
 							</div>
 							<div className="space-y-4">
 								{MEMBERSHIPS.map(
@@ -689,6 +533,9 @@ export function TopicDetail() {
 																			initials={
 																				person.initials
 																			}
+																			email={
+																				person.email
+																			}
 																		/>
 																		<div className="min-w-0 flex-1">
 																			<Link
@@ -699,6 +546,20 @@ export function TopicDetail() {
 																					person.name,
 																				)}
 																			</Link>
+																			{member.vip && (
+																				<Badge
+																					variant="secondary"
+																					className="ml-2"
+																				>
+																					Topic
+																					VIP
+																				</Badge>
+																			)}
+																			<PersonGlobalBadges
+																				person={
+																					person
+																				}
+																			/>
 																			<Small className="block font-normal text-muted-foreground text-xs leading-5">
 																				{(membership ===
 																					"suggested" &&
@@ -711,6 +572,24 @@ export function TopicDetail() {
 																				</span>
 																			</Small>
 																		</div>
+																		{membership ===
+																			"member" && (
+																			<TopicPersonMenu
+																				topic={
+																					topic
+																				}
+																				personId={
+																					person.id
+																				}
+																				name={givenFirst(
+																					person.name,
+																				)}
+																				className={cn(
+																					memberControlClassName,
+																					"pointer-fine:data-[state=open]:opacity-100",
+																				)}
+																			/>
+																		)}
 																		<Button
 																			variant="ghost"
 																			size="sm"
@@ -719,7 +598,7 @@ export function TopicDetail() {
 																				// Remove stays out of the way until the row is hovered; Add and Restore are the decision
 																				membership ===
 																					"member" &&
-																					"text-muted-foreground pointer-fine:opacity-0 pointer-fine:group-focus-within/person:opacity-100 pointer-fine:group-hover/person:opacity-100",
+																					memberControlClassName,
 																			)}
 																			onClick={() =>
 																				dispatch(
@@ -766,6 +645,7 @@ export function TopicDetail() {
 										);
 									},
 								)}
+								<TopicIgnoredPeople topic={topic} />
 							</div>
 						</div>
 					</section>
@@ -919,8 +799,8 @@ export function TopicDetail() {
 											isSample={topic.isSample}
 										/>
 										<Small className={hintClassName}>
-											Goals and notes are used in chats
-											and threads linked to this topic.
+											Notes are used in chats and threads
+											linked to this topic.
 										</Small>
 									</CollapsibleContent>
 								</Collapsible>
@@ -1023,6 +903,22 @@ export function TopicDetail() {
 					returnFocusRef={editButtonRef}
 					topic={topic}
 					onClose={() => setIsEditing(false)}
+					onFindConversations={
+						canFindConversations
+							? () => openMatchReview()
+							: undefined
+					}
+				/>
+			)}
+			{updates && canFindConversations && (
+				<TopicMatchesDialog
+					// an edit to what Brain matches on starts the review over
+					key={`${topic.name}\n${topic.description}\n${topic.accountId ?? ""}`}
+					topic={topic}
+					updates={updates}
+					open={isMatchReviewOpen}
+					onOpenChange={setIsMatchReviewOpen}
+					returnFocusRef={matchTriggerRef}
 				/>
 			)}
 		</CollaborationPage>

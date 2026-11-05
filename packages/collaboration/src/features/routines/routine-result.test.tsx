@@ -177,6 +177,9 @@ describe("RoutineResult email panel", () => {
 			"href",
 			"/thread/room%3Asource-room",
 		);
+		expect(
+			screen.queryByRole("button", { name: "Ask Assistant" }),
+		).toBeNull();
 	});
 
 	it("does not link the room of a built-in routine's run", async () => {
@@ -202,5 +205,15 @@ describe("RoutineResult email panel", () => {
 		expect(
 			screen.getByRole("link", { name: "Manage inbox connection" }),
 		).toBeVisible();
+	});
+
+	it("shows how long a run has been going", async () => {
+		await showResult({
+			...completedRun,
+			status: "running",
+			startedAt: new Date(Date.now() - 125_000).toISOString(),
+		});
+		expect(screen.getByText(/Running for/)).toBeVisible();
+		expect(screen.getByText(/^2m [45]s$/)).toBeVisible();
 	});
 });

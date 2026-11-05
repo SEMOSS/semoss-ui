@@ -21,6 +21,7 @@ import {
 	setProjectVisiblity,
 } from "@/api";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
+import { useDeleteResource } from "@/features/resource-delete/use-delete-resource";
 import { useSession, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
 
@@ -93,11 +94,10 @@ const AlertTile = ({
 export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { id, type, name, condensed, onDelete, direction = "column" } = props;
 
-	const runPixel = useSession((state) => state.runPixel);
 	const isEngineOperationAvailable = useSession(
 		(state) => state.isEngineOperationAvailable,
 	);
-	const { adminMode, engineInfo: contextEngineInfo } = useSettings();
+	const { adminMode } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
 	const [discoverable, setDiscoverable] = useState(true);
@@ -112,25 +112,17 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		type === "VECTOR" ||
 		type === "GUARDRAIL" ||
 		type === "FUNCTION";
-	// Reuse the parent settings layout's EngineInfo result when available to
-	// avoid a duplicate pixel call.
-	const shouldFetchLocally = !(isEngineType && contextEngineInfo);
-
-	const localEngineInfo = usePixel(
-		shouldFetchLocally
-			? isEngineType
+	const engineInfo = usePixel(
+		isEngineType
+			? adminMode
+				? `AdminEngineInfo(engine='${id}');`
+				: `EngineInfo(engine='${id}');`
+			: type === "PROJECT"
 				? adminMode
-					? `AdminEngineInfo(engine='${id}');`
-					: `EngineInfo(engine='${id}');`
-				: type === "PROJECT"
-					? adminMode
-						? `AdminProjectInfo(project='${id}')`
-						: `ProjectInfo(project='${id}')`
-					: ""
-			: "",
+					? `AdminProjectInfo(project='${id}')`
+					: `ProjectInfo(project='${id}')`
+				: "",
 	);
-
-	const engineInfo = shouldFetchLocally ? localEngineInfo : contextEngineInfo;
 
 	useEffect(() => {
 		// pixel call to get pending members
@@ -188,70 +180,21 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		| undefined;
 	const deleteTargetName = deleteTargetNameCandidate || name;
 
+	const { deleteResource, isDeleting } = useDeleteResource({
+		type,
+		id,
+		projectType: isProjectType
+			? (engineInfo.data as { project_type?: string } | undefined)
+					?.project_type
+			: undefined,
+	});
+
 	/**
-	 * Delete the item
+	 * Delete the item, then leave its page
 	 */
 	const deleteWorkflow = async () => {
-		try {
-			// start the loading screen
-			setLoading(true);
-
-			// Determine the correct delete pixel based on type and project_type
-			let deletePixel = "";
-			let entityLabel = "";
-
-			if (
-				type === "DATABASE" ||
-				type === "STORAGE" ||
-				type === "MODEL" ||
-				type === "VECTOR" ||
-				type === "GUARDRAIL" ||
-				type === "FUNCTION"
-			) {
-				deletePixel = `DeleteEngine(engine=['${id}']);`;
-				entityLabel = "engine";
-			} else if (type === "PROJECT") {
-				const projectData = engineInfo.data as {
-					project_type?: string;
-				};
-				const isWorkspace = projectData?.project_type === "WORKSPACE";
-				const isSkill = projectData?.project_type === "SKILL";
-				const isNotebook = projectData?.project_type === "NOTEBOOK";
-
-				if (isWorkspace) {
-					deletePixel = `DeleteWorkspace(workspaceId=['${id}']);`;
-					entityLabel = "agent";
-				} else if (isSkill) {
-					deletePixel = `DeleteSkill(skillId=['${id}']);`;
-					entityLabel = "skill";
-				} else if (isNotebook) {
-					deletePixel = `DeleteProject(project=['${id}']);`;
-					entityLabel = "notebook";
-				} else {
-					deletePixel = `DeleteProject(project=['${id}']);`;
-					entityLabel = "app";
-				}
-			}
-
-			// run the pixel
-			const response = await runPixel(deletePixel);
-
-			const operationType = response.pixelReturn[0].operationType;
-			const output = response.pixelReturn[0].output;
-
-			if (operationType.indexOf("ERROR") === -1) {
-				toast.success(`Successfully deleted ${entityLabel}`);
-
-				// go back to page before
-				onDelete();
-			} else {
-				toast.error(String(output));
-			}
-		} catch (e) {
-			toast.error(String(e));
-		} finally {
-			// stop the loading screen
-			setLoading(false);
+		if (await deleteResource()) {
+			onDelete?.();
 		}
 	};
 
@@ -432,7 +375,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		) : null;
 
 	/** LOADING */
-	if (loading) {
+	if (loading || isDeleting) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-4">
 				<Spinner className="size-8" />

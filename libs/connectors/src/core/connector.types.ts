@@ -64,6 +64,8 @@ export interface ConnectorViewerProps {
 	 * viewer confirms the save itself.
 	 */
 	onSaved?: (file: ConnectorSavedFile) => void;
+	/** Open a file in the host after fetching it into the insight's files. */
+	onOpenFile?: (file: ConnectorSavedFile) => void;
 	/**
 	 * Add a saved item to the conversation, for example to the next message.
 	 * The viewer saves the item first. The action only shows when this is

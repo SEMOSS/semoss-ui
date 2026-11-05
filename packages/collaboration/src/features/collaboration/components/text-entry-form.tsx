@@ -11,7 +11,7 @@ import {
 
 const schema = z.object({ text: z.string().trim().min(1, "Enter some text.") });
 
-/** A small, labelled form used for local goals, notes, and editable text. */
+/** A small, labelled form used for local notes, and editable text. */
 export function TextEntryForm({
 	label,
 	initialValue = "",

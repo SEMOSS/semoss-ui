@@ -86,9 +86,7 @@ describe("CatalogImageSettings", () => {
 			expect(URL.createObjectURL).toHaveBeenCalledWith(file);
 			expect(uploadProjectImage).not.toHaveBeenCalled();
 			expect(uploadEngineImage).not.toHaveBeenCalled();
-			fireEvent.click(
-				screen.getByRole("button", { name: "Upload image" }),
-			);
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
 			await waitFor(() =>
 				expect(
 					resource === "PROJECT"
@@ -123,13 +121,13 @@ describe("CatalogImageSettings", () => {
 		fireEvent.change(screen.getByLabelText("Choose image"), {
 			target: { files: [file] },
 		});
-		fireEvent.click(screen.getByRole("button", { name: "Upload image" }));
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
 		expect(await screen.findByRole("alert")).toHaveTextContent(
 			"Image storage unavailable",
 		);
 		expect(url.result.current).toBe(original);
 		expect(URL.revokeObjectURL).not.toHaveBeenCalled();
-		fireEvent.click(screen.getByRole("button", { name: "Upload image" }));
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
 		await waitFor(() =>
 			expect(uploadProjectImage).toHaveBeenCalledTimes(2),
 		);
@@ -166,21 +164,23 @@ describe("CatalogImageSettings", () => {
 			expect(input).toHaveAccessibleDescription(
 				expect.stringContaining(message),
 			);
-			fireEvent.click(
-				screen.getByRole("button", { name: "Upload image" }),
-			);
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
 			await waitFor(() => expect(input).toHaveFocus());
 			expect(uploadProjectImage).not.toHaveBeenCalled();
 			expect(URL.createObjectURL).not.toHaveBeenCalled();
 		},
 	);
 
-	it("requires a selection before uploading", async () => {
+	it("offers Save and Discard only once an image is chosen", () => {
 		renderSettings();
-		fireEvent.click(screen.getByRole("button", { name: "Upload image" }));
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Choose an image to upload.",
-		);
+		expect(
+			screen.queryByRole("button", { name: "Save" }),
+		).not.toBeInTheDocument();
+		fireEvent.change(screen.getByLabelText("Choose image"), {
+			target: { files: [photo()] },
+		});
+		expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+		expect(screen.getByRole("button", { name: "Discard" })).toBeEnabled();
 		expect(uploadProjectImage).not.toHaveBeenCalled();
 	});
 
@@ -195,15 +195,13 @@ describe("CatalogImageSettings", () => {
 		fireEvent.change(screen.getByLabelText("Choose image"), {
 			target: { files: [photo()] },
 		});
-		fireEvent.click(screen.getByRole("button", { name: "Upload image" }));
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
 		await waitFor(() =>
 			expect(uploadProjectImage).toHaveBeenCalledTimes(1),
 		);
 		expect(screen.getByLabelText("Choose image")).toBeDisabled();
-		expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
-		expect(
-			screen.getByRole("button", { name: /Uploading image/ }),
-		).toBeDisabled();
+		expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
+		expect(screen.getByRole("button", { name: /Saving/ })).toBeDisabled();
 		fireEvent.submit(screen.getByRole("form", { name: "Catalog image" }));
 		await waitFor(() =>
 			expect(uploadProjectImage).toHaveBeenCalledTimes(1),
@@ -215,18 +213,17 @@ describe("CatalogImageSettings", () => {
 		);
 	});
 
-	it("cancels a selection, releases its preview and returns focus to the picker", async () => {
+	it("discards a selection, releases its preview and returns focus to the picker", async () => {
 		renderSettings();
 		fireEvent.change(screen.getByLabelText("Choose image"), {
 			target: { files: [photo()] },
 		});
-		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		fireEvent.click(screen.getByRole("button", { name: "Discard" }));
 		expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:selected-image");
 		expect(screen.getByLabelText("Choose image")).toHaveFocus();
-		fireEvent.click(screen.getByRole("button", { name: "Upload image" }));
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Choose an image to upload.",
-		);
+		expect(
+			screen.queryByRole("button", { name: "Save" }),
+		).not.toBeInTheDocument();
 		expect(uploadProjectImage).not.toHaveBeenCalled();
 	});
 
@@ -234,7 +231,7 @@ describe("CatalogImageSettings", () => {
 		renderSettings("PROJECT", false);
 		expect(screen.queryByLabelText("Choose image")).not.toBeInTheDocument();
 		expect(
-			screen.queryByRole("button", { name: "Upload image" }),
+			screen.queryByRole("button", { name: "Save" }),
 		).not.toBeInTheDocument();
 		expect(
 			screen.getByText("You need edit permission to change this image."),
