@@ -219,3 +219,41 @@ test("the divider between the panes shows the navigation's hover line, with no g
 	expect(divider).not.toHaveClass("bg-border");
 	expect(divider).toBeEmptyDOMElement();
 });
+
+test("the work area opens as wide as its content, and fills once it has none to fit", () => {
+	let observe: ((width: number) => void) | null = null;
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			constructor(callback: ResizeObserverCallback) {
+				observe = (width) =>
+					callback(
+						[{ contentRect: { width } } as ResizeObserverEntry],
+						{} as ResizeObserver,
+					);
+			}
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
+	const panel = <div>Work</div>;
+	const { rerender } = render(
+		<ConversationWorkspace isOpen fitWidth={350} panel={panel}>
+			<div>Chat</div>
+		</ConversationWorkspace>,
+	);
+	act(() => observe?.(1400));
+	const workArea = screen.getByRole("region", {
+		name: "studio.workArea",
+	}).parentElement;
+	// 350px of a 1400px row
+	expect(Number(workArea?.style.flexGrow)).toBeCloseTo(25);
+
+	rerender(
+		<ConversationWorkspace isOpen fitWidth={null} panel={panel}>
+			<div>Chat</div>
+		</ConversationWorkspace>,
+	);
+	expect(Number(workArea?.style.flexGrow)).toBeCloseTo(65);
+});

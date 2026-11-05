@@ -1,4 +1,4 @@
-import { makeAutoObservable, observable, runInAction } from "mobx";
+import { makeAutoObservable, observable, reaction, runInAction } from "mobx";
 import type { StoreApi } from "zustand";
 import { getI18n } from "@semoss/i18n";
 import {
@@ -22,6 +22,7 @@ import {
 	type WorkbenchPanelConfigAny,
 	type WorkbenchPanelId,
 	type WorkbenchPanelParams,
+	type WorkbenchPanelRecord,
 	type WorkbenchPanelType,
 	type WorkbenchSnapshot,
 	type WorkbenchState,
@@ -29,6 +30,7 @@ import {
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
 import { ChatToolsStore } from "@/features/chat-tools/chat-tools.store";
 import { ConnectorsStore } from "@/features/connectors/connectors.store";
+import { CONNECTOR_SOURCES } from "@/features/connectors/sources/connector-sources";
 import { ContextItemsStore } from "@/features/conversation/context-items.store";
 import type { AbstractMessageStore } from "@/stores/message/abstract-message.store";
 import {
@@ -52,9 +54,10 @@ import type {
 	Workspace,
 } from "@/types";
 import {
+	createRoomSidebarLayout,
 	getRoomFileMode,
 	ROOM_PANEL_TYPES,
-	ROOM_SIDEBAR_LAYOUT,
+	ROOM_SIDEBAR_RAIL_SIZE,
 } from "./room-sidebar";
 import {
 	type StreamHandlers,
@@ -260,7 +263,10 @@ export class RoomStore {
 	readonly workbench: StoreApi<WorkbenchState>;
 
 	/** Stable initialization reference shared by the store and every sidebar mount. */
-	sidebarSnapshot: WorkbenchSnapshot = ROOM_SIDEBAR_LAYOUT;
+	sidebarSnapshot: WorkbenchSnapshot;
+
+	/** Whether the Workspace's rail offers Files; a new chat's draft does not. */
+	private readonly _hasFilesRail: boolean;
 	/**
 	 * The default tools the room's chat sends and the user's decisions on the
 	 * calls that wait for them. Its own store with its own observability, like
@@ -285,13 +291,31 @@ export class RoomStore {
 		 * down.
 		 */
 		panelComponents: Record<string, WorkbenchPanelConfigAny>;
+		/**
+		 * Whether the Workspace's rail offers Files. A new chat's draft has no
+		 * insight for Files to read, so it leaves Files out until it prepares
+		 * the room that takes its arrangement.
+		 */
+		includeFiles?: boolean;
 	}) {
-		const { theme, roomId, insightId = "new", panelComponents } = options;
+		const {
+			theme,
+			roomId,
+			insightId = "new",
+			panelComponents,
+			includeFiles = true,
+		} = options;
 		this._theme = theme;
 		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
 
+		this._hasFilesRail = includeFiles;
+		this.sidebarSnapshot = createRoomSidebarLayout({
+			fileMode: includeFiles ? this.fileMode : null,
+			filesName: this._getPlaceName("files", panelComponents),
+			settingsName: this._getPlaceName("settings", panelComponents),
+		});
 		this.workbench = createWorkbenchStore({ components: panelComponents });
 		this.workbench
 			.getState()
@@ -313,11 +337,40 @@ export class RoomStore {
 		});
 
 		this._watchSidebar();
+		// the rail offers each connector viewer the chat can show
+		reaction(
+			() =>
+				this.connectors.availableSources
+					.map((source) => source.service)
+					.join(),
+			() => this.syncSidebarRail(),
+			{ fireImmediately: true },
+		);
 	}
 
 	/**
+	 * A room place's tab label. There are no translations outside the app, as
+	 * in tests, so it falls back to the blueprint's own name.
+	 */
+	private _getPlaceName = (
+		place: "files" | "settings",
+		panelComponents: Record<string, WorkbenchPanelConfigAny>,
+	): string => {
+		const type =
+			place === "files"
+				? FILE_PANEL_TYPES.FILE_EXPLORER
+				: ROOM_PANEL_TYPES.CONFIGURATION;
+		return (
+			getI18n()?.t(`room:workspacePlaces.${place}`) ??
+			panelComponents[type]?.name ??
+			place
+		);
+	};
+
+	/**
 	 * Return tools inline when their tabs close, and close the sidebar when
-	 * it has no panels left.
+	 * a close leaves nothing in front: no tab in the main area and no rail
+	 * panel open.
 	 *
 	 * This is the replacement for the FlexLayout change listener, and the reason
 	 * the room store holds the dock: both reactions have to fire whether the
@@ -348,10 +401,14 @@ export class RoomStore {
 				}
 			}
 
-			if (
-				this._store.sidebar.isOpen &&
-				state.layout.openPanelIds.length === 0
-			) {
+			const isEmpty =
+				state.layout.tabsets.every(
+					(tabset) => tabset.panelIds.length === 0,
+				) &&
+				Object.values(state.layout.borders).every(
+					(border) => border.activeId === null,
+				);
+			if (closed.length > 0 && this._store.sidebar.isOpen && isEmpty) {
 				this.closeSidebar();
 			}
 		});
@@ -1093,21 +1150,105 @@ export class RoomStore {
 	restoreSidebarLayout = (snapshot: WorkbenchSnapshot): void => {
 		this.sidebarSnapshot = snapshot;
 		this.workbench.getState().layout.actions.loadSnapshot(snapshot);
+		this._syncSidebarFileMode();
+		// a draft's arrangement has no Files; this room has one to read
+		this.syncSidebarRail();
 	};
 
-	/** Restore the existing work area, or open Settings when it is empty. */
+	/** Open the Workspace as it was left, its rail always beside it. */
 	openSidebar = (): void => {
-		if (this.workbench.getState().layout.openPanelIds.length === 0) {
-			this.openSidebarPanel(
-				ROOM_PANEL_TYPES.CONFIGURATION,
-				{},
-				// no translations outside the app, as in tests; the blueprint names it
-				getI18n()?.t("room:workspacePlaces.settings"),
-			);
-			return;
+		this._store.sidebar.isOpen = true;
+	};
+
+	/**
+	 * Keep the Workspace's left rail offering the room's places: Files (unless
+	 * this is a draft), Settings, and each connector viewer the chat can show.
+	 * A place already open anywhere in the dock is left where it is, and a
+	 * viewer the chat can no longer show leaves the rail. Additions stay
+	 * collapsed and do not take the selection.
+	 */
+	syncSidebarRail = (): void => {
+		const { actions } = this.workbench.getState().layout;
+		const places: {
+			type: WorkbenchPanelType;
+			config: WorkbenchPanelParams;
+			name: string;
+			/** Whether an open panel of the place's type already offers it. */
+			isOffered?: (record: WorkbenchPanelRecord) => boolean;
+		}[] = [];
+		const panelComponents = this.workbench.getState().layout.components;
+		if (this._hasFilesRail) {
+			places.push({
+				type: FILE_PANEL_TYPES.FILE_EXPLORER,
+				config: { mode: this.fileMode },
+				name: this._getPlaceName("files", panelComponents),
+				// a connector's work folder is another explorer, not Files
+				isOffered: (record) =>
+					(record.config as { mode?: FilePanelMode } | undefined)
+						?.mode?.type === "INSIGHT",
+			});
+		}
+		places.push({
+			type: ROOM_PANEL_TYPES.CONFIGURATION,
+			config: {},
+			name: this._getPlaceName("settings", panelComponents),
+		});
+		const available = this.connectors.availableSources;
+		for (const source of available) {
+			places.push({
+				type: source.panelType,
+				config: {},
+				name: getI18n()?.t(source.nameKey) ?? source.service,
+			});
 		}
 
-		this._store.sidebar.isOpen = true;
+		for (const place of places) {
+			// one of each place, wherever it was moved to
+			const isOffered = place.isOffered ?? (() => true);
+			if (
+				actions.findPanels(
+					(record) => record.type === place.type && isOffered(record),
+				).length > 0
+			) {
+				continue;
+			}
+			const before = this.workbench.getState().layout;
+			const activeId = before.borders.left.activeId;
+			const selected = before.selection.panel;
+			actions.spawnPanel(place.type, {
+				config: place.config,
+				name: place.name,
+				canClose: false,
+				minWidth: ROOM_SIDEBAR_RAIL_SIZE,
+				target: { kind: "border", side: "left" },
+			});
+			// spawning into a border opens it; the rail stays as it was
+			if (activeId) {
+				actions.activatePanel({ kind: "border", id: "left" }, activeId);
+			} else {
+				actions.collapseBorder("left");
+			}
+			actions.setSelectedPanel(selected);
+		}
+
+		const availableTypes = new Set(
+			available.map((source) => source.panelType),
+		);
+		const { borders, panels } = this.workbench.getState().layout;
+		for (const pid of borders.left.panelIds) {
+			const record = panels[pid];
+			if (
+				!record ||
+				availableTypes.has(record.type) ||
+				!CONNECTOR_SOURCES.some(
+					(source) => source.panelType === record.type,
+				)
+			) {
+				continue;
+			}
+			actions.updatePanel(pid, { canClose: true });
+			actions.closePanel(pid);
+		}
 	};
 
 	/**

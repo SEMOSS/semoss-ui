@@ -156,15 +156,16 @@
 		"exportCsv": "تصدير بصيغة CSV",
 		"exportPdf": "تصدير بصيغة PDF",
 		"closeWorkspace": "إغلاق مساحة العمل",
+		"openWorkspace": "فتح مساحة العمل",
 		"preparingWorkspace": "جارٍ إعداد مساحة العمل…",
 		"prepareError": "تعذر إعداد مساحة العمل. تم الاحتفاظ بمسودتك.",
 		"retry": "إعادة المحاولة"
 	},
 	"workspacePlaces": {
 		"files": "الملفات",
+		"openPanel": "فتح لوحة",
 		"activity": "النشاط",
 		"settings": "الإعدادات",
-		"more": "أخرى",
 		"descriptions": {
 			"files": "الملفات التي ترفعها هنا وكل ما تنشئه أدوات الغرفة",
 			"settings": "نموذج هذه الغرفة وتعليماتها ومعرفتها وأدواتها",

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { FileExplorerHost } from "@semoss/panels";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
 import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
-import { CloseWorkspaceButton } from "@/features/workbench/close-workspace-button";
+import { WorkspaceToggleButton } from "@/features/workbench/workspace-toggle-button";
 import { RoomStore } from "@/stores/room/room.store";
 import { RootStore } from "@/stores/root/root.store";
 import { RoomSidebar } from "./room-sidebar";
@@ -42,6 +42,7 @@ vi.mock("@semoss/panels", async (original) => {
 });
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
+	getI18n: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@/hooks", () => ({
 	useChat: () => ({ chat: { addWorkspace: mocks.addWorkspace } }),
@@ -55,7 +56,7 @@ function NotesEditor() {
 const RoomWorkspaceTest = observer(({ room }: { room: RoomStore }) => (
 	<ConversationWorkspace
 		isOpen={room.sidebar.isOpen}
-		header={<CloseWorkspaceButton room={room} />}
+		header={<WorkspaceToggleButton room={room} />}
 		panel={<RoomSidebar room={room} />}
 	>
 		<input aria-label="Draft" defaultValue="Unsent draft" />

@@ -1,4 +1,5 @@
 import {
+	type ComponentRef,
 	type ReactNode,
 	useCallback,
 	useContext,
@@ -40,7 +41,21 @@ interface ConversationWorkspaceProps {
 	 * above both.
 	 */
 	header?: ReactNode;
+	/**
+	 * The work area's content width in px, which it opens to until the user
+	 * drags the divider; null or omitted to take its default share.
+	 */
+	fitWidth?: number | null;
 }
+
+/** The work area's share of the row, in percent, when it fills. */
+const WORK_AREA_DEFAULT_SIZE = 65;
+
+/** The most of the row the work area takes when fitting its content. */
+const WORK_AREA_MAX_FIT_SIZE = 75;
+
+/** The least of the row each pane can be dragged to, in percent. */
+const PANE_MIN_SIZE = 25;
 
 /** One stable pair of panes across desktop and narrow views. */
 export function ConversationWorkspace({
@@ -48,6 +63,7 @@ export function ConversationWorkspace({
 	panel,
 	isOpen,
 	header,
+	fitWidth = null,
 }: ConversationWorkspaceProps) {
 	const { t } = useTranslation("room");
 	const id = useId();
@@ -56,12 +72,16 @@ export function ConversationWorkspace({
 	const headerRef = useRef<HTMLDivElement>(null);
 	const chatRef = useRef<HTMLDivElement>(null);
 	const workRef = useRef<HTMLDivElement>(null);
+	const workPanelRef = useRef<ComponentRef<typeof ResizablePanel>>(null);
 	const lastChatFocus = useRef<HTMLElement | null>(null);
 	// The header control that brought the work area into view, so closing the
 	// work area from inside it hands focus back there.
 	const revealedFrom = useRef<HTMLElement | null>(null);
 	const wasOpen = useRef(isOpen);
 	const [isNarrow, setIsNarrow] = useState(false);
+	const [rowWidth, setRowWidth] = useState(0);
+	// once the user drags the divider, the work area keeps their size
+	const [isUserSized, setIsUserSized] = useState(false);
 	const [view, setView] = useState("chat");
 	const [hasOpened, setHasOpened] = useState(isOpen);
 	// the conversation has scrolled beneath the floating header
@@ -94,7 +114,9 @@ export function ConversationWorkspace({
 		const container = containerRef.current;
 		if (!container) return;
 		const observer = new ResizeObserver(([entry]) => {
-			if (entry) setIsNarrow(entry.contentRect.width < 1024);
+			if (!entry) return;
+			setIsNarrow(entry.contentRect.width < 1024);
+			setRowWidth(entry.contentRect.width);
 		});
 		observer.observe(container);
 		return () => observer.disconnect();
@@ -104,6 +126,20 @@ export function ConversationWorkspace({
 	const showChat = !isOpen || !isNarrow || activeView === "chat";
 	const showPanel = isOpen && (!isNarrow || activeView === "work");
 	const hasTabs = isNarrow && isOpen;
+	// the fitted share of the row; null fills
+	const fitSize =
+		fitWidth !== null && rowWidth > 0
+			? Math.min((fitWidth / rowWidth) * 100, WORK_AREA_MAX_FIT_SIZE)
+			: null;
+	// a pane narrower than the minimum share is what fitting is for
+	const workMinSize = Math.min(PANE_MIN_SIZE, fitSize ?? PANE_MIN_SIZE);
+
+	// the panel group is an external layout engine: size it to the content
+	// whenever the content changes, until the user takes over
+	useEffect(() => {
+		if (!isOpen || isNarrow || isUserSized) return;
+		workPanelRef.current?.resize(fitSize ?? WORK_AREA_DEFAULT_SIZE);
+	}, [fitSize, isOpen, isNarrow, isUserSized]);
 
 	useEffect(() => {
 		const active = document.activeElement;
@@ -187,8 +223,8 @@ export function ConversationWorkspace({
 							<ResizablePanel
 								id={`${id}-conversation`}
 								order={1}
-								defaultSize={35}
-								minSize={25}
+								defaultSize={100 - WORK_AREA_DEFAULT_SIZE}
+								minSize={PANE_MIN_SIZE}
 								className={cn(
 									"relative min-w-0",
 									!showChat && "hidden",
@@ -232,6 +268,9 @@ export function ConversationWorkspace({
 								</TabsContent>
 							</ResizablePanel>
 							<ResizableHandle
+								onDragging={(isDragging) => {
+									if (isDragging) setIsUserSized(true);
+								}}
 								// on the Workspace's edge, a 2px line on hover or drag as the
 								// navigation's edge shows; a wider invisible strip to grab
 								className={cn(
@@ -240,10 +279,11 @@ export function ConversationWorkspace({
 								)}
 							/>
 							<ResizablePanel
+								ref={workPanelRef}
 								id={`${id}-work-area`}
 								order={2}
-								defaultSize={65}
-								minSize={25}
+								defaultSize={WORK_AREA_DEFAULT_SIZE}
+								minSize={workMinSize}
 								className={cn(
 									"min-w-0 bg-muted/30",
 									!showPanel && "hidden",

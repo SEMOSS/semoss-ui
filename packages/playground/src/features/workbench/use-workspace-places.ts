@@ -49,9 +49,11 @@ export type WorkspacePlace =
 
 /** How a new chat opens the Workspace's places before its first message. */
 export interface DraftWorkspacePlaces {
+	/** Opens the Workspace, then prepares the draft's room and opens it there. */
+	onOpenWorkspace: () => void;
 	/** Prepares the draft's room, then opens Chat Files in it. */
 	onOpenFiles: () => void;
-	/** Opens the draft's settings. */
+	/** Opens the draft's settings, then prepares its room and opens them there. */
 	onOpenSettings: () => void;
 	/** Prepares the draft's room, then opens the activity log in it. */
 	onOpenActivity: () => void;

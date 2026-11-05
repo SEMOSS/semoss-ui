@@ -27,6 +27,7 @@ import { NextMessageRoomProvider } from "@/features/conversation/next-message-ro
 import { usePreparedRoom } from "@/features/conversation/use-prepared-room";
 import { RoomHeader } from "@/features/room-header/room-header";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
+import { useWorkspaceFitWidth } from "@/features/workbench/use-workspace-fit-width";
 import type { DraftWorkspacePlaces } from "@/features/workbench/use-workspace-places";
 import { WorkspaceQuickActions } from "@/features/workbench/workspace-quick-actions";
 import { useChat } from "@/hooks/use-chat";
@@ -34,6 +35,20 @@ import { useRoot } from "@/hooks/use-root";
 import { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
+
+/** A Workspace place a new chat opens, preparing its room for it. */
+type DraftPlace =
+	| { kind: "workspace" }
+	| { kind: "settings" }
+	| { kind: "files" }
+	| { kind: "activity" }
+	| { kind: "source"; service: ConnectorViewerService };
+
+/** Places that need no insight, so they show on the draft while it prepares. */
+const DRAFT_PLACE_KINDS: ReadonlySet<DraftPlace["kind"]> = new Set([
+	"workspace",
+	"settings",
+]);
 
 /**
  * The page to create a new room
@@ -86,6 +101,8 @@ export const NewRoomPage = observer(() => {
 				theme: root.theme,
 				roomId: "temp",
 				panelComponents: ROOM_PANEL_COMPONENTS,
+				// no insight for Files to read until the draft prepares its room
+				includeFiles: false,
 			}),
 		[root.theme],
 	);
@@ -134,12 +151,10 @@ export const NewRoomPage = observer(() => {
 		prepare,
 	} = usePreparedRoom(tempRoomStore, mode, submittedRef);
 	const workspaceRoom = preCreatedRoom ?? tempRoomStore;
+	// as wide as the Workspace's content, until a tab opens or the user drags
+	const fitWidth = useWorkspaceFitWidth(workspaceRoom);
 	// what Retry opens again after a failed preparation
-	const pendingPlaceRef = useRef<
-		| { kind: "files" }
-		| { kind: "activity" }
-		| { kind: "source"; service: ConnectorViewerService }
-	>({ kind: "files" });
+	const pendingPlaceRef = useRef<DraftPlace>({ kind: "workspace" });
 
 	// tempRoomStore is only created once (createRoom below builds the real,
 	// separate room), so RoomInput's agent-harness chip — keyed off
@@ -629,66 +644,76 @@ export const NewRoomPage = observer(() => {
 	const handleSelectChat = () => {
 		setMode("chat");
 	};
-	const handleOpenSettings = () => {
-		workspaceRoom.openSidebarPanel(
-			ROOM_PANEL_TYPES.CONFIGURATION,
-			{},
-			t("room:workspacePlaces.settings"),
-		);
-	};
-	const handleOpenFiles = async () => {
-		pendingPlaceRef.current = { kind: "files" };
-		const room = await prepare();
-		if (room)
-			room.openSidebarFileExplorer(
-				undefined,
-				t("room:workspacePlaces.files"),
-			);
-		else handleOpenWorkArea();
-	};
-	const handleOpenSource = async (
-		service: ConnectorViewerService,
-	): Promise<void> => {
-		if (isLoading) return;
-		pendingPlaceRef.current = { kind: "source", service };
-		// Sources, Files, and Activity share preparation, layout transfer, and abandoned-draft cleanup.
-		const room = await prepare();
-		if (room) room.connectors.openSourcePanel(service);
-		else handleOpenWorkArea();
-	};
-	const handleOpenActivity = async (): Promise<void> => {
-		pendingPlaceRef.current = { kind: "activity" };
-		const room = await prepare();
-		if (room)
-			room.openSidebarPanel(
-				ROOM_PANEL_TYPES.AUDIT_LOG,
-				{},
-				t("room:workspacePlaces.activity"),
-			);
-		else handleOpenWorkArea();
-	};
-	const handleRetryPreparation = () => {
-		const pending = pendingPlaceRef.current;
-		if (pending.kind === "source") void handleOpenSource(pending.service);
-		else if (pending.kind === "activity") void handleOpenActivity();
-		else void handleOpenFiles();
+	/** Show a place in a room's Workspace. */
+	const showPlace = (room: RoomStore, place: DraftPlace): void => {
+		switch (place.kind) {
+			case "workspace":
+				room.openSidebar();
+				return;
+			case "settings":
+				room.openSidebarPanel(
+					ROOM_PANEL_TYPES.CONFIGURATION,
+					{},
+					t("room:workspacePlaces.settings"),
+				);
+				return;
+			case "files":
+				room.openSidebarFileExplorer(
+					undefined,
+					t("room:workspacePlaces.files"),
+				);
+				return;
+			case "activity":
+				room.openSidebarPanel(
+					ROOM_PANEL_TYPES.AUDIT_LOG,
+					{},
+					t("room:workspacePlaces.activity"),
+				);
+				return;
+			case "source":
+				room.connectors.openSourcePanel(place.service);
+		}
 	};
 
-	const handleOpenWorkArea = () => {
-		if (
-			workspaceRoom.workbench.getState().layout.openPanelIds.length === 0
-		) {
-			handleOpenSettings();
+	/**
+	 * Open a place in the Workspace, preparing the draft's room for it. Every
+	 * place shares preparation, layout transfer, and abandoned-draft cleanup.
+	 * The Workspace and Settings show on the draft at once and carry over to
+	 * the room, unless closed meanwhile; Files, the activity log, and the
+	 * viewers read the room's insight, so they wait for it. A failure shows in
+	 * the Workspace, where Retry opens the same place again.
+	 *
+	 * @param place - The place to open.
+	 */
+	const openPlace = async (place: DraftPlace): Promise<void> => {
+		// submitting builds its own room
+		if (isLoading) return;
+		if (preCreatedRoom) {
+			showPlace(preCreatedRoom, place);
 			return;
 		}
-		workspaceRoom.openSidebar();
+		pendingPlaceRef.current = place;
+		const isDraftPlace = DRAFT_PLACE_KINDS.has(place.kind);
+		if (isDraftPlace) showPlace(tempRoomStore, place);
+		const room = await prepare();
+		if (!room) {
+			if (!isDraftPlace) tempRoomStore.openSidebar();
+			return;
+		}
+		if (!isDraftPlace) showPlace(room, place);
+		else if (tempRoomStore.sidebar.isOpen) room.openSidebar();
+	};
+
+	const handleRetryPreparation = () => {
+		void openPlace(pendingPlaceRef.current);
 	};
 
 	const draftPlaces: DraftWorkspacePlaces = {
-		onOpenFiles: () => void handleOpenFiles(),
-		onOpenSettings: handleOpenSettings,
-		onOpenActivity: () => void handleOpenActivity(),
-		onOpenSource: (service) => void handleOpenSource(service),
+		onOpenWorkspace: () => void openPlace({ kind: "workspace" }),
+		onOpenFiles: () => void openPlace({ kind: "files" }),
+		onOpenSettings: () => void openPlace({ kind: "settings" }),
+		onOpenActivity: () => void openPlace({ kind: "activity" }),
+		onOpenSource: (service) => void openPlace({ kind: "source", service }),
 		isPreparing: isPreparing || isLoading,
 		connectors: tempRoomStore.connectors,
 	};
@@ -716,6 +741,8 @@ export const NewRoomPage = observer(() => {
 			<div className="min-h-0 flex-1">
 				<ConversationWorkspace
 					isOpen={workspaceRoom.sidebar.isOpen}
+					// a preparation error needs the space, so the Workspace fills
+					fitWidth={preparationError ? null : fitWidth}
 					header={
 						<RoomHeader
 							title={null}
@@ -899,9 +926,7 @@ export const NewRoomPage = observer(() => {
 										room: workspaceRoom,
 										draft: draftPlaces,
 									}}
-									onOpenSource={(service) =>
-										void handleOpenSource(service)
-									}
+									onOpenSource={draftPlaces.onOpenSource}
 								/>
 								{tempRoomStore.options.predefinedPrompts
 									.length > 0 ? (

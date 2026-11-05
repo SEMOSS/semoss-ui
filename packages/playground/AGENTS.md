@@ -146,18 +146,35 @@ code and are easy to undo by accident:
   to be in place before the first `openSidebarPanel`, which for a streaming tool is long before
   anything mounts — without them the dock falls back to a shallow compare of config, and since a
   file panel's `mode` is a fresh object per call, every open would spawn another tab.
-- **`RoomSidebar` uses the room's stable `sidebarSnapshot`.** New rooms start from
-  `ROOM_SIDEBAR_LAYOUT`; a prepared room adopts the draft's arrangement through
+- **`RoomSidebar` uses the room's stable `sidebarSnapshot`.** Each new room builds its own from
+  `createRoomSidebarLayout`; a prepared room adopts the draft's arrangement through
   `restoreSidebarLayout` before its first sidebar mount. The shell must use the same snapshot
   reference so mounting it does not reset tabs opened since initialization. The arrangement is
   owned by the room instance and is not persisted between room sessions.
 - **A restored file panel is re-pointed at the room's live insight.** A room binds to a fresh
   insight on every load, and a file panel's `mode.insightId` is what its reads and saves run
   against. `_syncSidebarFileMode` rewrites them once, before anything mounts.
+- **The Workspace has a left rail, collapsed.** `createRoomSidebarLayout` docks Files and
+  Settings on the left border with nothing open, and `RoomStore.syncSidebarRail` (a reaction on
+  `ConnectorsStore.availableSources`) adds a rail entry for each connector viewer the chat can
+  show and removes one it can no longer show, without opening the rail or taking the selection.
+  Rail panels cannot be closed. A new chat's draft is built with `includeFiles: false`, since it
+  has no insight for Files to read; the room it prepares adds Files in `restoreSidebarLayout`.
+  Opening a place (`openSidebarFileExplorer`, `openRoomSettings`, `openSourcePanel`) goes
+  through `selectPanel`, which expands its rail entry rather than adding a tab. The Workspace
+  closes itself only when a close leaves no tab in the main area and no rail panel open.
+- **The Workspace opens as wide as its content.** While nothing is open in its main area,
+  `useWorkspaceFitWidth` gives `ConversationWorkspace` the rail's width, plus the open rail
+  panel's when there is one (`getWorkspaceFitWidth`, from the dock's state), and the pane resizes
+  to it as the content changes. A tab in the main area makes it fill its default share. Once the
+  user drags the divider, the pane keeps their size for as long as the page is mounted. The room
+  page reads it through `RoomConversationWorkspace`; the new-chat page fills while it shows a
+  preparation error.
 - **The Workspace has no top strip.** `RoomSidebar` passes the workbench no border slots, so its
-  tab row is its top edge. Close is the header's last icon while the Workspace is open
-  (`CloseWorkspaceButton`), and Close Workspace is in the Other menu and the slash menu; Publish
-  as Agent is in the Room section of the Other menu and the slash menu (`RoomTitleProvider`
+  tab row is its top edge. The header's last icon toggles it (`WorkspaceToggleButton`, which
+  opens it as it was left and brings it forward behind the narrow Chat tab), and Close Workspace
+  is also in the More actions menu and the slash menu; Publish
+  as Agent is in the Room section of the More actions menu and the slash menu (`RoomTitleProvider`
   renders a controlled `SaveWorkspaceDialog`), so a new chat publishes only once it is a room.
   The per-panel control — "open inline" — is registered by the tool panel with
   `useWorkbenchControl`.
@@ -166,22 +183,22 @@ code and are easy to undo by accident:
   conversation with no border, blurring what scrolls beneath it once the conversation reports
   it has scrolled (`ChatScrollContext`), so an open Workspace takes the full height beside it;
   on narrow screens with the Workspace open it sits above both panes. At its start a room's name (`RoomTitle`); its actions (Favorite, Rename, Publish,
-  Download, Delete, from `features/room-actions/`, which global-nav shares) end the header's Other menu
+  Download, Delete, from `features/room-actions/`, which global-nav shares) end the header's More actions menu
   (`RoomActionMenuItems`). `RoomTitleProvider` shares them, so Rename edits the name in place
   through `handleMenuCloseAutoFocus`; a new chat has
   no title and no menu. On mobile it also holds the navigation button: it registers with
   `PageHeaderContext`, so `MainLayout` drops its floating one and its top padding.
-- **Quick actions are the places, one click each.** `features/workbench/workspace-quick-actions.tsx`
-  ends the header: Files and Settings as icons, then Other in sections: Workspace (Activity and
-  the connector viewers the chat can show, `ConnectorsStore.availableSources`), Room, and
+- **The header has no quick icons.** `features/workbench/workspace-quick-actions.tsx` ends the
+  header with More actions, then the Workspace toggle. More actions runs in sections: Workspace (Open a Panel,
+  a submenu of every place: Files, Settings, Activity, and the connector viewers the chat can
+  show, `ConnectorsStore.availableSources`; then Close Workspace while it is open), Room, and
   Settings (Connectors, the settings dialog's Connectors page). A place opens the Workspace on
-  its panel, and closes it when its panel is already in front and on screen; behind the narrow
-  Chat tab it brings the Workspace forward instead. `useWorkspacePlaces` builds the list for a
+  its panel. `useWorkspacePlaces` builds the list for a
   room, or from `DraftWorkspacePlaces` for a new chat, and every place's `onOpen` also calls
   `ConversationWorkspaceActionsContext.revealWorkArea`. Each place has a short label, the same in
-  the header, its tab, and the slash menu, and a description shown on hover. There is no
-  generic "Open Workspace" action and no default panel.
-- **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
+  the More actions menu, its tab, and the slash menu. There is no
+  default panel in the main area: the toggle opens the Workspace on its rail.
+- **The layout is not cached.** Each new `RoomStore` starts from `createRoomSidebarLayout`,
   so switching rooms cannot bleed panel state between room instances.
 
 New chats keep draft settings in their temporary room store. Opening Settings shows them
@@ -302,7 +319,7 @@ queue with `ContextItemsStore.adopt` before its first message.
 `src/features/connectors/` connects Microsoft 365 and Google Workspace.
 `RoomStore.connectors` (`ConnectorsStore`) owns the services switched on and the accounts they
 sign in with, per room. The Connectors page of the settings dialog
-(`features/settings/`, opened from the user menu, from Connectors in the room header's Other menu, or
+(`features/settings/`, opened from the user menu, from Connectors in the room header's More actions menu, or
 anywhere with `useSettingsDialog().openSettings("connectors")`) connects accounts and switches the
 user's apps on or off for all their chats; it is the only place connectors are switched. An app switched on whose
 account is not connected shows its switch in gray with a warning mark. These details are easy to break:
@@ -337,13 +354,13 @@ account is not connected shows its switch in gray with a warning mark. These det
   viewers (`libs/connectors/`). The room mounts each as a sidebar panel
   (`components/connector-viewer-panels.tsx`) with `showHeader={false}`, since its tab already names
   it; the Outlook and Gmail panels both render `MailboxView`, and the two calendar panels
-  `CalendarAgendaView`, each with its `provider`. The tab, the header's Other menu, and context chips show the app's logo from the source's `brand`
+  `CalendarAgendaView`, each with its `provider`. The tab, the header's More actions menu, and context chips show the app's logo from the source's `brand`
   (`sources/connector-sources.ts`); a panel opened with `{ brand }` in its config shows that logo
   instead and gets a tab of its own (`components/connector-panel-icon.tsx`), so one viewer can
   stand for more than one app. The room wires each viewer with
   `sources/use-room-connector-host.ts`: saves land at the top of chat files, and Add to context
   also queues the file in `RoomStore.contextItems`.
-- **A viewer shows once its connector is on.** The room header's Other menu and the slash menu
+- **A viewer shows once its connector is on.** The room header's More actions menu and the slash menu
   list `ConnectorsStore.availableSources` with the Workspace's places (the plus menu does not): a viewer needs its connector switched
   on for the chat (`requires` in `sources/connector-sources.ts`) and its account signed in.
 - **A chat says when its connectors cannot run.** Inside the input box, `ConnectorSignInNotice`

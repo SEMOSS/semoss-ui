@@ -156,15 +156,16 @@
 		"exportCsv": "CSV でエクスポート",
 		"exportPdf": "PDF でエクスポート",
 		"closeWorkspace": "ワークスペースを閉じる",
+		"openWorkspace": "ワークスペースを開く",
 		"preparingWorkspace": "ワークスペースを準備中…",
 		"prepareError": "ワークスペースを準備できませんでした。下書きは保持されています。",
 		"retry": "再試行"
 	},
 	"workspacePlaces": {
 		"files": "ファイル",
+		"openPanel": "パネルを開く",
 		"activity": "アクティビティ",
 		"settings": "設定",
-		"more": "その他",
 		"descriptions": {
 			"files": "ここにアップロードしたファイルと、ルームのツールが作成したもの",
 			"settings": "このルームのモデル、指示、ナレッジ、ツール",

@@ -156,15 +156,16 @@
 		"exportCsv": "Exporter au format CSV",
 		"exportPdf": "Exporter au format PDF",
 		"closeWorkspace": "Fermer l’espace de travail",
+		"openWorkspace": "Ouvrir l’espace de travail",
 		"preparingWorkspace": "Préparation de l’espace de travail…",
 		"prepareError": "Impossible de préparer l’espace de travail. Votre brouillon est conservé.",
 		"retry": "Réessayer"
 	},
 	"workspacePlaces": {
 		"files": "Fichiers",
+		"openPanel": "Ouvrir un panneau",
 		"activity": "Activité",
 		"settings": "Paramètres",
-		"more": "Autres",
 		"descriptions": {
 			"files": "Les fichiers que vous envoyez ici et ce que créent les outils de la salle",
 			"settings": "Le modèle, les instructions, les connaissances et les outils de cette salle",

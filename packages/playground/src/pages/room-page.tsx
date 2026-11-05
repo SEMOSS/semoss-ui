@@ -8,12 +8,12 @@ import { RoomContent } from "@/components/room/room-content";
 import { RoomSidebar } from "@/components/room/room-sidebar";
 import { FileDragProvider } from "@/contexts/file-drag-context";
 import { RoomProvider } from "@/contexts/room.context";
-import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
 import { RoomHeader } from "@/features/room-header/room-header";
 import { RoomHeaderActions } from "@/features/room-header/room-header-actions";
 import { RoomTitle } from "@/features/room-header/room-title";
 import { RoomTitleProvider } from "@/features/room-header/room-title.context";
 import { TOOL_VIEW_LIBRARIES } from "@/features/tool-views/tool-view-libraries";
+import { RoomConversationWorkspace } from "@/features/workbench/room-conversation-workspace";
 import { useChat } from "@/hooks/use-chat";
 import type { RoomStore } from "@/stores/room/room.store";
 import type { Engine } from "@/types";
@@ -115,8 +115,8 @@ export const RoomPage = observer(() => {
 				<ToolViewProvider libraries={TOOL_VIEW_LIBRARIES}>
 					{/* the header and the composer's slash menu share the room's actions */}
 					<RoomTitleProvider room={room}>
-						<ConversationWorkspace
-							isOpen={room.sidebar.isOpen}
+						<RoomConversationWorkspace
+							room={room}
 							header={
 								<RoomHeader
 									title={<RoomTitle />}
@@ -128,7 +128,7 @@ export const RoomPage = observer(() => {
 							<FileDragProvider>
 								<RoomContent room={room} />
 							</FileDragProvider>
-						</ConversationWorkspace>
+						</RoomConversationWorkspace>
 					</RoomTitleProvider>
 				</ToolViewProvider>
 			</RoomProvider>

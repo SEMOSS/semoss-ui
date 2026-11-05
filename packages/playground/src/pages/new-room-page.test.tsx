@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentProps, ReactNode } from "react";
@@ -135,6 +141,11 @@ vi.mock("@/components/room/panels/room-panel.components", async () => {
 			[FILE_PANEL_TYPES.FILE_EXPLORER]: {
 				name: "Files",
 				mount: "keepAlive",
+				// one explorer per scope, as the real blueprint dedupes
+				matches: (
+					a: { mode?: { insightId?: string } },
+					b: { mode?: { insightId?: string } },
+				) => a.mode?.insightId === b.mode?.insightId,
 				content: () => (
 					<textarea
 						aria-label="File draft"
@@ -295,35 +306,34 @@ beforeEach(() => {
 	mocks.workspaceStatus = "SUCCESS";
 	root.theme.featureFlags.enableAgentHarness = true;
 	mocks.createRoom.mockResolvedValue({ roomId: "sent" });
+	// preparing fails unless a test hands over a room, so sending creates one
+	mocks.createEmptyRoom.mockReset().mockRejectedValue(new Error("Offline"));
 });
 afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
 
-/** Start the local workspace through its normal opener. */
-function renderWorkspace() {
-	const result = render(<NewRoomPage />);
-	fireEvent.click(
-		screen.getByRole("button", { name: "workspacePlaces.settings" }),
-	);
-	return result;
-}
-
-/** The header's icons; every other place is under its More menu. */
-const HEADER_PLACES = ["workspacePlaces.files", "workspacePlaces.settings"];
-
-/** Select a place from the room header's quick actions. */
+/** Select a place from the room header's Other menu, under Open a Panel. */
 function selectWorkspaceItem(name: string) {
-	if (HEADER_PLACES.includes(name)) {
-		fireEvent.click(screen.getByRole("button", { name }));
-		return;
-	}
 	fireEvent.keyDown(
-		screen.getByRole("button", { name: "workspacePlaces.more" }),
+		screen.getByRole("button", { name: "studio.moreActions" }),
+		{ key: "Enter" },
+	);
+	fireEvent.keyDown(
+		screen.getByRole("menuitem", { name: "workspacePlaces.openPanel" }),
 		{ key: "Enter" },
 	);
 	fireEvent.click(screen.getByRole("menuitem", { name }));
+}
+
+/** Open Settings, which prepares the room, and let the preparation settle. */
+async function renderWorkspace() {
+	const result = render(<NewRoomPage />);
+	selectWorkspaceItem("workspacePlaces.settings");
+	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalled());
+	await act(async () => {});
+	return result;
 }
 
 /** Prepare a file-capable room without backend calls in this integration test. */
@@ -337,7 +347,7 @@ function createPreparedRoom(): RoomStore {
 }
 
 test("selecting an agent and changing modes preserves its settings and the composer draft", async () => {
-	renderWorkspace();
+	await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Add local" }));
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 	await waitFor(() =>
@@ -398,7 +408,7 @@ test("selecting an agent and changing modes preserves its settings and the compo
 });
 
 test("Agent mode survives selecting and removing a saved agent", async () => {
-	renderWorkspace();
+	await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Add local" }));
 	fireEvent.click(screen.getByRole("button", { name: "Agent" }));
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
@@ -450,7 +460,7 @@ test.each(["chat", "agent"] as const)(
 				.mockResolvedValue();
 		});
 		mocks.createEmptyRoom.mockResolvedValue(room);
-		renderWorkspace();
+		await renderWorkspace();
 		fireEvent.click(screen.getByRole("button", { name: "Add local" }));
 		fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 		await waitFor(() =>
@@ -493,7 +503,9 @@ test.each(["chat", "agent"] as const)(
 
 test("a pending agent stays selected in Chat, and removing it ignores its late response", async () => {
 	mocks.workspaceStatus = "LOADING";
-	const { rerender } = renderWorkspace();
+	// a prepared room, so the only Retry is the agent's
+	mocks.createEmptyRoom.mockResolvedValue(createPreparedRoom());
+	const { rerender } = await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Agent" }));
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 	fireEvent.click(screen.getByRole("button", { name: "Chat" }));
@@ -515,7 +527,7 @@ test("a pending agent stays selected in Chat, and removing it ignores its late r
 test.each(["chat", "agent"] as const)(
 	"selecting an agent in Settings preserves %s mode",
 	async (mode) => {
-		renderWorkspace();
+		await renderWorkspace();
 		if (mode === "agent")
 			fireEvent.click(screen.getByRole("button", { name: "Agent" }));
 		fireEvent.click(
@@ -535,7 +547,7 @@ test.each(["chat", "agent"] as const)(
 
 test("without the harness flag saved agents retain chat behavior", async () => {
 	root.theme.featureFlags.enableAgentHarness = false;
-	renderWorkspace();
+	await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 	await waitFor(() =>
 		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
@@ -548,29 +560,94 @@ test("without the harness flag saved agents retain chat behavior", async () => {
 	);
 });
 
-test("Settings opens locally, closes from its own icon, and reopens the same tab", () => {
-	renderWorkspace();
+test("Settings prepares the room, and the toggle closes and reopens it on the same tab", async () => {
+	const room = createPreparedRoom();
+	mocks.createEmptyRoom.mockResolvedValue(room);
+	await renderWorkspace();
+	// the prepared room adds Files to the rail and keeps Settings in front
+	expect(
+		screen.getByRole("tab", { name: "room:workspacePlaces.files" }),
+	).toHaveAttribute("aria-selected", "false");
 	const settings = screen.getByRole("tab", {
 		name: "room:workspacePlaces.settings",
 	});
 	expect(settings).toHaveAttribute("aria-selected", "true");
+	expect(room.sidebar.isOpen).toBe(true);
 	expect(
 		screen.queryByRole("button", { name: "Publish" }),
 	).not.toBeInTheDocument();
-	const settingsPlace = screen.getByRole("button", {
-		name: "workspacePlaces.settings",
-	});
-	expect(settingsPlace).toHaveAttribute("aria-pressed", "true");
-	fireEvent.click(settingsPlace);
-	expect(settingsPlace).toHaveAttribute("aria-pressed", "false");
-	fireEvent.click(settingsPlace);
-	expect(screen.getAllByRole("tab")).toHaveLength(1);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
 	expect(
 		screen.getByRole("tab", { name: "room:workspacePlaces.settings" }),
 	).toBe(settings);
 	expect(settings).toHaveAttribute("aria-selected", "true");
-	expect(mocks.createEmptyRoom).not.toHaveBeenCalled();
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
 	expect(mocks.createRoom).not.toHaveBeenCalled();
+});
+
+test("opening the Workspace on a new chat prepares its room once", async () => {
+	const room = createPreparedRoom();
+	mocks.createEmptyRoom.mockResolvedValue(room);
+	render(<NewRoomPage />);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	expect(
+		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+	).toBeInTheDocument();
+	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
+	expect(room.sidebar.isOpen).toBe(true);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
+});
+
+test("closing the Workspace while the room prepares leaves it closed", async () => {
+	const room = createPreparedRoom();
+	let resolvePreparation: (room: RoomStore) => void = () => {};
+	mocks.createEmptyRoom.mockImplementationOnce(
+		() =>
+			new Promise<RoomStore>((resolve) => {
+				resolvePreparation = resolve;
+			}),
+	);
+	render(<NewRoomPage />);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+	);
+	resolvePreparation(room);
+	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1));
+	await screen.findByRole("button", { name: "studio.openWorkspace" });
+	expect(room.sidebar.isOpen).toBe(false);
+});
+
+test("Retry after a failed preparation reopens the Workspace in the prepared room", async () => {
+	const room = createPreparedRoom();
+	mocks.createEmptyRoom
+		.mockRejectedValueOnce(new Error("Offline"))
+		.mockResolvedValueOnce(room);
+	render(<NewRoomPage />);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	await screen.findByRole("alert");
+	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
+	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
 });
 
 test("a new chat's header has its places but no title or room menu", () => {
@@ -588,7 +665,7 @@ test("a new chat's header has its places but no title or room menu", () => {
 test("reopening keeps Files, and tab changes preserve both the form and editor", async () => {
 	const room = createPreparedRoom();
 	mocks.createEmptyRoom.mockResolvedValue(room);
-	renderWorkspace();
+	await renderWorkspace();
 	selectWorkspaceItem("workspacePlaces.files");
 	const files = await screen.findByRole("tab", {
 		name: "room:workspacePlaces.files",
@@ -616,24 +693,24 @@ test("reopening keeps Files, and tab changes preserve both the form and editor",
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
 });
 
-test("failed file preparation keeps draft settings usable and supports retry", async () => {
+test("failed preparation keeps draft settings usable, and Retry reopens Settings in the room", async () => {
 	const room = createPreparedRoom();
-	mocks.createEmptyRoom
-		.mockRejectedValueOnce(new Error("Offline"))
-		.mockResolvedValueOnce(room);
-	renderWorkspace();
-	selectWorkspaceItem("workspacePlaces.files");
+	await renderWorkspace();
 	await screen.findByRole("alert");
 	fireEvent.change(screen.getByLabelText("Instructions"), {
 		target: { value: "Keep after retry" },
 	});
+	mocks.createEmptyRoom.mockResolvedValueOnce(room);
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
 	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
 	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-	selectWorkspaceItem("workspacePlaces.settings");
+	expect(
+		screen.getByRole("tab", { name: "room:workspacePlaces.settings" }),
+	).toHaveAttribute("aria-selected", "true");
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
 		"Keep after retry",
 	);
+	expect(room.sidebar.isOpen).toBe(true);
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
 });
 
@@ -653,16 +730,19 @@ test("connector viewers share the prepared room and transfer draft context befor
 			.mockResolvedValue();
 		room.askMessage = askMessage;
 	});
-	renderWorkspace();
+	render(<NewRoomPage />);
+	selectWorkspaceItem("workspacePlaces.settings");
 	fireEvent.change(screen.getByLabelText("Instructions"), {
 		target: { value: "Keep draft settings" },
 	});
+	// Settings and both viewer opens share one preparation
 	fireEvent.click(screen.getByRole("button", { name: "Open Gmail" }));
 	fireEvent.click(screen.getByRole("button", { name: "Open Gmail" }));
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
 	resolvePreparation(room);
 	await screen.findByRole("tab", { name: "connectors:services.gmail" });
-	expect(screen.getAllByRole("tab")).toHaveLength(2);
+	// Settings and the Files the prepared room adds to the rail, then Gmail
+	expect(screen.getAllByRole("tab")).toHaveLength(3);
 	fireEvent.click(
 		screen.getByRole("button", { name: "Add email to context" }),
 	);
@@ -686,30 +766,28 @@ test("connector viewers share the prepared room and transfer draft context befor
 });
 
 test("retrying failed source preparation reopens the requested viewer", async () => {
-	mocks.createEmptyRoom
-		.mockRejectedValueOnce(new Error("Offline"))
-		.mockResolvedValueOnce(createPreparedRoom());
-	renderWorkspace();
+	await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Open Gmail" }));
-	await screen.findByRole("alert");
+	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2));
+	mocks.createEmptyRoom.mockResolvedValueOnce(createPreparedRoom());
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
 	await screen.findByRole("tab", { name: "connectors:services.gmail" });
+	// the prepared room offers Files on its rail without opening it
 	expect(
-		screen.queryByRole("tab", { name: "room:workspacePlaces.files" }),
-	).toBeNull();
+		screen.getByRole("tab", { name: "room:workspacePlaces.files" }),
+	).toHaveAttribute("aria-selected", "false");
 });
 
 test("Activity prepares the room and opens its log, and Retry after a failure opens it again", async () => {
-	mocks.createEmptyRoom
-		.mockRejectedValueOnce(new Error("Offline"))
-		.mockResolvedValueOnce(createPreparedRoom());
-	renderWorkspace();
+	await renderWorkspace();
 	selectWorkspaceItem("workspacePlaces.activity");
-	await screen.findByRole("alert");
+	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2));
+	mocks.createEmptyRoom.mockResolvedValueOnce(createPreparedRoom());
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
 	await screen.findByRole("tab", { name: "room:workspacePlaces.activity" });
-	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(3);
+	// the prepared room offers Files on its rail without opening it
 	expect(
-		screen.queryByRole("tab", { name: "room:workspacePlaces.files" }),
-	).toBeNull();
+		screen.getByRole("tab", { name: "room:workspacePlaces.files" }),
+	).toHaveAttribute("aria-selected", "false");
 });

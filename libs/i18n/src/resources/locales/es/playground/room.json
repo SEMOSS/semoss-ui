@@ -152,15 +152,16 @@
 		"exportCsv": "Exportar como CSV",
 		"exportPdf": "Exportar como PDF",
 		"closeWorkspace": "Cerrar espacio de trabajo",
+		"openWorkspace": "Abrir espacio de trabajo",
 		"preparingWorkspace": "Preparando espacio de trabajo…",
 		"prepareError": "No se pudo preparar el espacio de trabajo. Se conserva tu borrador.",
 		"retry": "Intentar de nuevo"
 	},
 	"workspacePlaces": {
 		"files": "Archivos",
+		"openPanel": "Abrir un panel",
 		"activity": "Actividad",
 		"settings": "Configuración",
-		"more": "Otros",
 		"descriptions": {
 			"files": "Los archivos que subes aquí y lo que crean las herramientas de la sala",
 			"settings": "El modelo, las instrucciones, el conocimiento y las herramientas de esta sala",

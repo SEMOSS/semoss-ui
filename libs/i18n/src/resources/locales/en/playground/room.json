@@ -156,15 +156,16 @@
 		"exportCsv": "Export as CSV",
 		"exportPdf": "Export as PDF",
 		"closeWorkspace": "Close Workspace",
+		"openWorkspace": "Open Workspace",
 		"preparingWorkspace": "Preparing Workspace…",
 		"prepareError": "Could not prepare the Workspace. Your draft is preserved.",
 		"retry": "Try again"
 	},
 	"workspacePlaces": {
 		"files": "Files",
+		"openPanel": "Open a Panel",
 		"activity": "Activity",
 		"settings": "Settings",
-		"more": "Other",
 		"descriptions": {
 			"files": "Files you upload here and anything the room's tools create",
 			"settings": "This room's model, instructions, knowledge, and tools",

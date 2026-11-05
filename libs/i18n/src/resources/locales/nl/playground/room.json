@@ -156,15 +156,16 @@
 		"exportCsv": "Exporteren als CSV",
 		"exportPdf": "Exporteren als PDF",
 		"closeWorkspace": "Werkruimte sluiten",
+		"openWorkspace": "Werkruimte openen",
 		"preparingWorkspace": "Werkruimte voorbereiden…",
 		"prepareError": "De werkruimte kon niet worden voorbereid. Je concept is bewaard.",
 		"retry": "Opnieuw proberen"
 	},
 	"workspacePlaces": {
 		"files": "Bestanden",
+		"openPanel": "Een paneel openen",
 		"activity": "Activiteit",
 		"settings": "Instellingen",
-		"more": "Overig",
 		"descriptions": {
 			"files": "Bestanden die je hier uploadt en alles wat de tools van de kamer maken",
 			"settings": "Het model, de instructies, kennis en tools van deze kamer",

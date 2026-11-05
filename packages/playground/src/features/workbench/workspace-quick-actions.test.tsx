@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { runInAction } from "mobx";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { RoomStore } from "@/stores/room/room.store";
+import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import { RootStore } from "@/stores/root/root.store";
 import type { DraftWorkspacePlaces } from "./use-workspace-places";
 import { WorkspaceQuickActions } from "./workspace-quick-actions";
@@ -49,28 +50,47 @@ function getIconNames(): string[] {
 		.map((button) => button.getAttribute("aria-label") ?? "");
 }
 
-/** Open the More menu and list its places. */
+/** Open the Other menu and list its top-level items. */
 function openMore(): string[] {
 	fireEvent.keyDown(
-		screen.getByRole("button", { name: "workspacePlaces.more" }),
+		screen.getByRole("button", { name: "studio.moreActions" }),
 		{ key: "Enter" },
 	);
-	return screen
+	return within(screen.getByRole("menu"))
 		.getAllByRole("menuitem")
 		.map((item) => item.textContent ?? "");
 }
 
-test("shows Files and Settings as icons, and the rest of the places under More", () => {
+/** Open the Other menu's Open a Panel submenu and list its places. */
+function openPanelMenu(): string[] {
+	openMore();
+	fireEvent.keyDown(
+		screen.getByRole("menuitem", { name: "workspacePlaces.openPanel" }),
+		{ key: "Enter" },
+	);
+	const [, submenu] = screen.getAllByRole("menu");
+	if (!submenu) throw new Error("Open a Panel did not open");
+	return within(submenu)
+		.getAllByRole("menuitem")
+		.map((item) => item.textContent ?? "");
+}
+
+/** Close any open menu. */
+function closeMenus(): void {
+	fireEvent.keyDown(document.activeElement ?? document.body, {
+		key: "Escape",
+	});
+}
+
+test("the header shows Other and the Workspace toggle, with no quick icons", () => {
 	render(<WorkspaceQuickActions room={createRoom()} />);
 
 	expect(getIconNames()).toEqual([
-		"workspacePlaces.files",
-		"workspacePlaces.settings",
-		"workspacePlaces.more",
+		"studio.moreActions",
+		"studio.openWorkspace",
 	]);
 	expect(openMore()).toEqual([
-		"workspacePlaces.activity",
-		"connectors:services.onedrive",
+		"workspacePlaces.openPanel",
 		"sidebar:settings.sections.connectors",
 	]);
 	fireEvent.click(
@@ -81,26 +101,43 @@ test("shows Files and Settings as icons, and the rest of the places under More",
 	expect(openSettings).toHaveBeenCalledWith("connectors");
 });
 
-test("a place opens the Workspace on it, and closes the Workspace while in front", () => {
+test("Open a Panel lists every place and opens the Workspace on it", () => {
 	const room = createRoom();
 	render(<WorkspaceQuickActions room={room} />);
-	const files = screen.getByRole("button", { name: "workspacePlaces.files" });
-	const settings = screen.getByRole("button", {
-		name: "workspacePlaces.settings",
-	});
 
-	fireEvent.click(files);
+	expect(openPanelMenu()).toEqual([
+		"workspacePlaces.files",
+		"workspacePlaces.settings",
+		"workspacePlaces.activity",
+		"connectors:services.onedrive",
+	]);
+	fireEvent.click(
+		screen.getByRole("menuitem", { name: "workspacePlaces.settings" }),
+	);
+
+	const { borders, panels } = room.workbench.getState().layout;
 	expect(room.sidebar.isOpen).toBe(true);
-	expect(files).toHaveAttribute("aria-pressed", "true");
+	expect(panels[borders.left.activeId ?? ""]?.type).toBe(
+		ROOM_PANEL_TYPES.CONFIGURATION,
+	);
+});
 
-	fireEvent.click(settings);
-	expect(settings).toHaveAttribute("aria-pressed", "true");
-	expect(files).toHaveAttribute("aria-pressed", "false");
+test("the toggle opens the Workspace as it was left and closes it", () => {
+	const room = createRoom();
+	render(<WorkspaceQuickActions room={room} />);
+	const toggle = screen.getByRole("button", { name: "studio.openWorkspace" });
+	expect(toggle).toHaveAttribute("aria-pressed", "false");
 
-	fireEvent.click(settings);
+	fireEvent.click(toggle);
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(toggle).toHaveAttribute("aria-label", "studio.closeWorkspace");
+	expect(toggle).toHaveAttribute("aria-pressed", "true");
+	// the rail stays collapsed: nothing is opened for the user
+	expect(room.workbench.getState().layout.borders.left.activeId).toBeNull();
+
+	fireEvent.click(toggle);
 	expect(room.sidebar.isOpen).toBe(false);
-	expect(settings).toHaveAttribute("aria-pressed", "false");
-	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(2);
+	expect(toggle).toHaveAttribute("aria-label", "studio.openWorkspace");
 });
 
 test("a draft waits while preparing and uses its own actions", () => {
@@ -109,6 +146,7 @@ test("a draft waits while preparing and uses its own actions", () => {
 		onOpenFiles: vi.fn(),
 		onOpenSettings: vi.fn(),
 		onOpenActivity: vi.fn(),
+		onOpenWorkspace: vi.fn(),
 		onOpenSource: vi.fn(),
 		isPreparing: true,
 		connectors: room.connectors,
@@ -117,13 +155,15 @@ test("a draft waits while preparing and uses its own actions", () => {
 		<WorkspaceQuickActions room={room} draft={draft} />,
 	);
 
-	const files = screen.getByRole("button", { name: "workspacePlaces.files" });
-	expect(files).toBeDisabled();
-	expect(files).toHaveAttribute("aria-busy", "true");
+	openPanelMenu();
+	expect(
+		screen.getByRole("menuitem", { name: "studio.preparingWorkspace" }),
+	).toHaveAttribute("aria-disabled", "true");
 	fireEvent.click(
-		screen.getByRole("button", { name: "workspacePlaces.settings" }),
+		screen.getByRole("menuitem", { name: "workspacePlaces.settings" }),
 	);
 	expect(draft.onOpenSettings).toHaveBeenCalledTimes(1);
+	closeMenus();
 
 	rerender(
 		<WorkspaceQuickActions
@@ -131,49 +171,34 @@ test("a draft waits while preparing and uses its own actions", () => {
 			draft={{ ...draft, isPreparing: false }}
 		/>,
 	);
-	fireEvent.click(
-		screen.getByRole("button", { name: "workspacePlaces.files" }),
-	);
-	expect(draft.onOpenFiles).toHaveBeenCalledTimes(1);
-	openMore();
-	fireEvent.click(
-		screen.getByRole("menuitem", { name: "workspacePlaces.activity" }),
-	);
-	expect(draft.onOpenActivity).toHaveBeenCalledTimes(1);
-	openMore();
+	for (const [name, action] of [
+		["workspacePlaces.files", draft.onOpenFiles],
+		["workspacePlaces.activity", draft.onOpenActivity],
+	] as const) {
+		openPanelMenu();
+		fireEvent.click(screen.getByRole("menuitem", { name }));
+		expect(action).toHaveBeenCalledTimes(1);
+		closeMenus();
+	}
+	openPanelMenu();
 	fireEvent.click(
 		screen.getByRole("menuitem", { name: "connectors:services.onedrive" }),
 	);
 	expect(draft.onOpenSource).toHaveBeenCalledWith("onedrive");
 });
 
-test("while the Workspace is open, a close icon ends the row and Other lists Close Workspace", () => {
+test("while the Workspace is open, Other lists Close Workspace", () => {
 	const room = createRoom();
 	render(<WorkspaceQuickActions room={room} />);
-	expect(
-		screen.queryByRole("button", { name: "studio.closeWorkspace" }),
-	).toBeNull();
 	expect(openMore()).not.toContain("studio.closeWorkspace");
-	fireEvent.keyDown(document.activeElement ?? document.body, {
-		key: "Escape",
-	});
+	closeMenus();
 
 	fireEvent.click(
-		screen.getByRole("button", { name: "workspacePlaces.files" }),
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
 	);
-	expect(getIconNames().at(-1)).toBe("studio.closeWorkspace");
 	expect(openMore()).toContain("studio.closeWorkspace");
 	fireEvent.click(
 		screen.getByRole("menuitem", { name: "studio.closeWorkspace" }),
 	);
 	expect(room.sidebar.isOpen).toBe(false);
-
-	fireEvent.click(
-		screen.getByRole("button", { name: "workspacePlaces.files" }),
-	);
-	fireEvent.click(
-		screen.getByRole("button", { name: "studio.closeWorkspace" }),
-	);
-	expect(room.sidebar.isOpen).toBe(false);
-	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(1);
 });
