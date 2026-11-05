@@ -19,6 +19,7 @@ import {
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components/mcp/mcp-overlay";
 import { DefaultToolsField } from "@/features/chat-tools/components/default-tools-field";
+import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
 import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
@@ -247,9 +248,9 @@ export const RoomOptionsForm = observer(
 				<MCPOverlay
 					open={overlay.isOpen}
 					disabled={disabled}
-					allowDefaultAgent={
-						!!root.theme.featureFlags?.enableAgentHarness
-					}
+					allowDefaultAgent={canChooseAgentMode(
+						root.theme.featureFlags,
+					)}
 					defaultTab={overlay.type}
 					values={options.mcp}
 					workspace={options.workspace ?? null}

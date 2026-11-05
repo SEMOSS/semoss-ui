@@ -20,6 +20,7 @@ import { RoomGreeting } from "@/components/room/room-greeting";
 import { RoomInput } from "@/components/room/room-input";
 import { RoomSidebar } from "@/components/room/room-sidebar";
 import { FileDragProvider } from "@/contexts/file-drag-context";
+import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { clearAgentOptions } from "@/features/conversation/clear-agent-options";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
 import { DropHighlight } from "@/features/conversation/drop-highlight";
@@ -126,7 +127,14 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const submittedRef = useRef(false);
 	const greetingRoomStartedForRef = useRef<string>("");
-	const [mode, setMode] = useState<"chat" | "agent">("chat");
+	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	const [chosenMode, setChosenMode] = useState<"chat" | "agent">("chat");
+	// a theme can have the selected agent decide the mode, with no choice
+	const mode: "chat" | "agent" = root.theme.featureFlags?.modeFollowsAgent
+		? selectedWorkspaceId
+			? "agent"
+			: "chat"
+		: chosenMode;
 	const {
 		room: preCreatedRoom,
 		isPreparing,
@@ -148,7 +156,6 @@ export const NewRoomPage = observer(() => {
 	useEffect(() => {
 		tempRoomStore.setMode(mode);
 	}, [mode, tempRoomStore]);
-	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	// The agent whose default model has already been applied to the picker
 	const appliedAgentModelRef = useRef<string>("");
 	const appliedAgentOptionsRef = useRef<string>("");
@@ -627,7 +634,7 @@ export const NewRoomPage = observer(() => {
 		setSelectedWorkspaceId(next?.workspace_id ?? "");
 	};
 	const handleSelectChat = () => {
-		setMode("chat");
+		setChosenMode("chat");
 	};
 	const handleOpenSettings = () => {
 		workspaceRoom.openSidebarPanel(
@@ -888,13 +895,14 @@ export const NewRoomPage = observer(() => {
 									onPrompt={createRoom}
 									excludeCommandIds={[
 										"compact",
-										...(root.theme.featureFlags
-											?.enableAgentHarness
+										...(canChooseAgentMode(
+											root.theme.featureFlags,
+										)
 											? []
 											: ["agent-harness", "harness"]),
 									]}
 									onSwitchToAgentHarness={() =>
-										setMode("agent")
+										setChosenMode("agent")
 									}
 									onExitAgentHarness={handleSelectChat}
 									// The new-room flow has no cancellable turn, so

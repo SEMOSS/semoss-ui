@@ -337,10 +337,13 @@ export interface ThemeMap {
 		 */
 		featureFlags?: {
 			enableModelSelect?: boolean;
+			/** Whether to show the Agents link in the sidebar navigation. Agents stay available everywhere else, such as the agent picker in a new chat. */
 			enableAgent?: boolean;
 			enableSuggestions?: boolean;
 			/** Whether to enable the server-side agent harness mode (RunAgent) in the chat input. */
 			enableAgentHarness?: boolean;
+			/** Whether the selected agent decides a new chat's mode: agent mode with an agent, chat mode without one. Users get no Chat and Agent choice. Defaults to false. */
+			modeFollowsAgent?: boolean;
 			enableRewrite?: boolean;
 			enableDarkMode?: boolean;
 			enablePromptOptimizer?: boolean;

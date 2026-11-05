@@ -129,9 +129,14 @@ vi.mock("@/components/mcp/mcp-overlay", () => ({
 		defaultTab,
 		onClose,
 		values,
+		allowDefaultAgent,
 	}: React.ComponentProps<typeof MCPOverlay>) =>
 		open ? (
-			<div role="dialog" aria-label={defaultTab}>
+			<div
+				role="dialog"
+				aria-label={defaultTab}
+				data-allow-default-agent={String(Boolean(allowDefaultAgent))}
+			>
 				<button type="button" onClick={() => onClose()}>
 					Close picker
 				</button>
@@ -664,6 +669,37 @@ test.each([true, false])(
 		expect(onExitAgentHarness).not.toHaveBeenCalled();
 	},
 );
+
+test("when the agent decides the mode, new chats only pick an agent", async () => {
+	featureFlags.enableAgentHarness = true;
+	featureFlags.modeFollowsAgent = true;
+	const user = userEvent.setup();
+	const onWorkspaceChange = vi.fn();
+	render(
+		<RoomInput
+			{...defaultProps}
+			MenuComponent={undefined}
+			onMcpChange={vi.fn()}
+			onWorkspaceChange={onWorkspaceChange}
+		/>,
+	);
+	await user.click(
+		screen.getByRole("button", { name: "input.openSettings" }),
+	);
+	expect(screen.queryAllByRole("menuitemradio")).toHaveLength(0);
+	await user.click(
+		screen.getByRole("menuitem", { name: "menuWorkspace.selectAgent" }),
+	);
+	expect(screen.getByRole("dialog", { name: "AGENT" })).toHaveAttribute(
+		"data-allow-default-agent",
+		"false",
+	);
+	await user.click(screen.getByRole("button", { name: "Save agent" }));
+	expect(onWorkspaceChange).toHaveBeenCalledExactlyOnceWith({
+		workspace_id: "alpha",
+		name: "Alpha",
+	});
+});
 
 test("connector attachments stay visible and removable without an uploaded file", () => {
 	const remove = vi.fn();

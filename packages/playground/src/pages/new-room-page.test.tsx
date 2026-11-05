@@ -51,7 +51,7 @@ const alpha = {
 const root = {
 	theme: {
 		...new RootStore().theme,
-		featureFlags: { enableAgentHarness: true },
+		featureFlags: { enableAgentHarness: true, modeFollowsAgent: false },
 		banner: "",
 		landing: "",
 	},
@@ -299,6 +299,7 @@ beforeEach(() => {
 	);
 	mocks.workspaceStatus = "SUCCESS";
 	root.theme.featureFlags.enableAgentHarness = true;
+	root.theme.featureFlags.modeFollowsAgent = false;
 	mocks.createRoom.mockResolvedValue({ roomId: "sent" });
 });
 afterEach(() => {
@@ -540,6 +541,68 @@ test("without the harness flag saved agents retain chat behavior", async () => {
 	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
 		"Agent instructions",
+	);
+});
+
+test("when the agent decides the mode, a chat with an agent runs in agent mode", async () => {
+	root.theme.featureFlags.modeFollowsAgent = true;
+	renderWorkspace();
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
+	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Instructions")).toHaveValue(
+			"Agent instructions",
+		),
+	);
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Chat" }));
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"agent",
+			"Hello",
+			[],
+			expect.objectContaining({
+				harnessType: "semoss",
+				workspace: { workspace_id: "alpha", name: "Alpha" },
+			}),
+			"alpha",
+			undefined,
+			expect.any(Function),
+		),
+	);
+});
+
+test("when the agent decides the mode, a chat without an agent runs in chat mode", async () => {
+	root.theme.featureFlags.modeFollowsAgent = true;
+	renderWorkspace();
+	fireEvent.click(screen.getByRole("button", { name: "Agent" }));
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
+	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Save default" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("chat"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"chat",
+			"Hello",
+			[],
+			expect.objectContaining({
+				harnessType: undefined,
+				workspace: undefined,
+			}),
+			undefined,
+			undefined,
+			expect.any(Function),
+		),
 	);
 });
 

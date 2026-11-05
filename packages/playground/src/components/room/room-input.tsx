@@ -69,6 +69,7 @@ import {
 import { useFileDrag } from "@/contexts/file-drag-context";
 import { ConnectorSignInNotice } from "@/features/connectors/components/connector-sign-in-notice";
 import { useUserConnectorsSync } from "@/features/connectors/use-user-connectors-sync";
+import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { ContextItems } from "@/features/conversation/context-items";
 import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
 import {
@@ -257,6 +258,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [isScrollable, setIsScrollable] = useState(false);
 		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
+		const canChooseMode = canChooseAgentMode(root.theme.featureFlags);
 		// connectors switched on or off in settings reach this chat at once
 		useUserConnectorsSync(room.connectors);
 		const openWorkspace =
@@ -912,9 +914,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													agentEditable={
 														!!onWorkspaceChange
 													}
-													enableAgentHarness={
-														root.theme.featureFlags
-															?.enableAgentHarness
+													canChooseMode={
+														canChooseMode
 													}
 													onOpenChange={setMenuOpen}
 													onOpenMcpOverlay={
@@ -1216,9 +1217,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						values={options.mcp}
 						workspace={agentChipWorkspace}
 						agentEditable={!!onWorkspaceChange}
-						allowDefaultAgent={
-							!!root.theme.featureFlags?.enableAgentHarness
-						}
+						allowDefaultAgent={canChooseMode}
 						disabled={isBusy}
 						onClose={(next) => {
 							setMcpOverlay((prev) => ({ ...prev, open: false }));

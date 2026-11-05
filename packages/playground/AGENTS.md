@@ -183,6 +183,13 @@ bound to the current draft until submission, including after preparation. A draf
 (`DraftWorkspacePlaces`) leave out Chat Tools until its first message. Selecting Chat clears agent
 inheritance but preserves locally added Knowledge and Tools.
 
+A draft's mode is the user's choice from the composer menu (the `enableAgentHarness` theme flag),
+unless the theme's `modeFollowsAgent` flag is on. Then the selected agent decides it: a draft
+with an agent runs in agent mode and one without runs in chat mode. The menu shows no Chat and
+Agent choice, the `/agent-harness` command is left out, and the agent picker offers no default
+agent. `canChooseAgentMode` (`features/conversation/agent-mode-choice.ts`) holds that rule. A
+room keeps the mode it was created with.
+
 Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the room's own
 blueprints live in `components/room/panels/`, and a feature's (Chat Tools, the connector viewers)
 live in its folder. `room-panel.components.ts` registers them all. Changing a panel type string
