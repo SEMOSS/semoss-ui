@@ -1,5 +1,9 @@
 import { runPixel } from "@semoss/sdk";
 import { isRecord } from "@semoss/utility/object";
+import {
+	hasAutomationNodeDefinitions,
+	setAutomationNodeDefinitions,
+} from "../domain/automation-node-catalog";
 import type {
 	AutomationNodeCatalog,
 	AutomationNodeDefinition,
@@ -143,4 +147,24 @@ export async function fetchAutomationNodeDefinitions(): Promise<AutomationNodeCa
 		schemaVersion: SUPPORTED_SCHEMA_VERSION,
 		nodes: output.nodes,
 	};
+}
+
+let catalogLoadPromise: Promise<void> | null = null;
+
+/**
+ * Makes sure the node catalog is loaded for code that runs outside the canvas,
+ * such as workflow import and export. Concurrent callers share one request, and
+ * a failed load can be retried.
+ */
+export function ensureAutomationNodeDefinitions(): Promise<void> {
+	if (hasAutomationNodeDefinitions()) return Promise.resolve();
+	if (!catalogLoadPromise) {
+		catalogLoadPromise = fetchAutomationNodeDefinitions()
+			.then((catalog) => setAutomationNodeDefinitions(catalog.nodes))
+			.catch((error: unknown) => {
+				catalogLoadPromise = null;
+				throw error;
+			});
+	}
+	return catalogLoadPromise;
 }

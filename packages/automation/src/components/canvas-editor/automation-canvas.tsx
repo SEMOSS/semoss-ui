@@ -17,6 +17,8 @@ import "@xyflow/react/dist/style.css";
 import {
 	CheckCircle,
 	Code2,
+	Download,
+	GitBranch,
 	Layers3,
 	Loader2,
 	Lock,
@@ -24,12 +26,16 @@ import {
 	RefreshCw,
 	Save,
 	Scan,
+	Upload,
 	Workflow,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
 import {
+	type ChangeEvent,
 	forwardRef,
+	lazy,
+	Suspense,
 	useCallback,
 	useEffect,
 	useImperativeHandle,
@@ -58,7 +64,11 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
-import { getAutomationRun, listAutomationRuns } from "../../api";
+import {
+	getAutomationRun,
+	listAutomationRuns,
+	listDataStoreEngines,
+} from "../../api";
 import { AutomationContext } from "../../contexts/automation.context";
 import type {
 	AutomationEdge,
@@ -82,6 +92,7 @@ import {
 import { getAutomationNodeDefinition } from "../../domain/automation-node-catalog";
 import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 import type {
+	AutomationBranchClause,
 	AutomationGlobalVariable,
 	AutomationNodeGroup,
 	AutomationWorkflowDocument,
@@ -98,6 +109,11 @@ import {
 	validateCanvasWorkflowConnections,
 	validateCanvasWorkflowNode,
 } from "../../domain/automation-workflow-adapter";
+import type { BpmnEditorHandle } from "../../features/bpmn-viewer/automation-bpmn-viewer";
+import type { BpmnImportResult } from "../../features/bpmn-viewer/bpmn-import-adapter";
+import { CANVAS_GRID_SIZE } from "../../features/canvas-helper-lines/helper-lines";
+import { HelperLinesOverlay } from "../../features/canvas-helper-lines/helper-lines-overlay";
+import { useHelperLines } from "../../features/canvas-helper-lines/use-helper-lines";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
@@ -125,6 +141,12 @@ import { TriggerNode } from "./nodes/trigger-node";
 import { RunInputDialog } from "./run-input-dialog";
 import type { AutomationTraceSnapshot } from "./tabs/runs-tab";
 import { UndoBanner } from "./undo-banner";
+
+const AutomationBpmnViewer = lazy(() =>
+	import("../../features/bpmn-viewer/automation-bpmn-viewer").then(
+		(module) => ({ default: module.AutomationBpmnViewer }),
+	),
+);
 
 const nodeTypes = {
 	trigger: TriggerNode,
@@ -643,8 +665,41 @@ export const AutomationCanvasContent = forwardRef<
 		string | null
 	>(null);
 	const [description, setDescription] = useState("");
-	const [devMode, setDevMode] = useState(
-		() => localStorage.getItem(`automation-devmode-${appId}`) === "true",
+	const [canvasMode, setCanvasMode] = useState<"design" | "dev" | "bpmn">(
+		() => {
+			const savedMode = localStorage.getItem(
+				`automation-viewmode-${appId}`,
+			);
+			if (
+				savedMode === "design" ||
+				savedMode === "dev" ||
+				savedMode === "bpmn"
+			) {
+				return savedMode;
+			}
+			return localStorage.getItem(`automation-devmode-${appId}`) ===
+				"true"
+				? "dev"
+				: "design";
+		},
+	);
+	const devMode = canvasMode === "dev";
+	const bpmnMode = canvasMode === "bpmn";
+	const [bpmnSource, setBpmnSource] = useState<{
+		xml: string;
+		fileName: string;
+	} | null>(null);
+	const [pendingBpmnConversion, setPendingBpmnConversion] =
+		useState<BpmnImportResult | null>(null);
+	const [isConvertingBpmn, setIsConvertingBpmn] = useState(false);
+	const [isBpmnDirty, setIsBpmnDirty] = useState(false);
+	const [pendingModeSwitch, setPendingModeSwitch] = useState<
+		"design" | "dev" | null
+	>(null);
+	const bpmnFileInputRef = useRef<HTMLInputElement>(null);
+	const bpmnEditorRef = useRef<BpmnEditorHandle>(null);
+	const canvasModeBeforeBpmnImportRef = useRef<"design" | "dev" | "bpmn">(
+		"design",
 	);
 	const [activeDockTab, setActiveDockTab] = useState<
 		"inspector" | "validation"
@@ -663,6 +718,12 @@ export const AutomationCanvasContent = forwardRef<
 		() => createInitialCanvasWorkflowDocument().steps,
 	);
 	const [graphEdges, setGraphEdges] = useState<AutomationEdge[]>([]);
+	// Stable refs used by BPMN bridge callbacks to read current state without
+	// capturing stale closures (bpmn-js fires outside React's event system).
+	const stepsRef = useRef<AutomationNode[]>([]);
+	const graphEdgesRef = useRef<AutomationEdge[]>([]);
+	stepsRef.current = steps;
+	graphEdgesRef.current = graphEdges;
 	const [nodeGroups, setNodeGroups] = useState<AutomationNodeGroup[]>([]);
 	const [collapsedNodeGroupIds, setCollapsedNodeGroupIds] = useState<
 		Set<string>
@@ -677,6 +738,9 @@ export const AutomationCanvasContent = forwardRef<
 		() => createInitialCanvasWorkflowDocument().triggerBindings,
 	);
 	const [workflowRefreshToken, setWorkflowRefreshToken] = useState(0);
+	// Bumped each time the workflow finishes loading, so the BPMN view (which
+	// builds its diagram once on mount) redraws from the loaded workflow.
+	const [bpmnViewKey, setBpmnViewKey] = useState(0);
 	// Transient highlight applied to node cards right after an Assistant tool changes the
 	// automation — cleared automatically a few seconds later (or replaced by the next change).
 	const [changeHighlight, setChangeHighlight] =
@@ -989,9 +1053,15 @@ export const AutomationCanvasContent = forwardRef<
 	const [groupSelectionIds, setGroupSelectionIds] = useState<Set<string>>(
 		() => new Set(),
 	);
+	const {
+		lines: helperLines,
+		applyHelperLines,
+		clearHelperLines,
+	} = useHelperLines();
 	const handleRfNodesChange = useCallback(
 		(changes: Parameters<typeof onRfNodesChange>[0]) => {
-			onRfNodesChange(changes);
+			const flowNodes = reactFlowInstanceRef.current?.getNodes() ?? [];
+			onRfNodesChange(applyHelperLines(changes, flowNodes));
 			for (const change of changes) {
 				if (change.type !== "select") continue;
 				if (change.id.startsWith("node-group-")) continue;
@@ -1002,7 +1072,7 @@ export const AutomationCanvasContent = forwardRef<
 				}
 			}
 		},
-		[onRfNodesChange],
+		[onRfNodesChange, applyHelperLines],
 	);
 	const canvasContainerRef = useRef<HTMLDivElement>(null);
 	const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
@@ -1630,6 +1700,7 @@ export const AutomationCanvasContent = forwardRef<
 				if (!cancelled) {
 					loadedRef.current = true;
 					setWorkflowLoaded(true);
+					setBpmnViewKey((key) => key + 1);
 				}
 			});
 		return () => {
@@ -1739,15 +1810,434 @@ export const AutomationCanvasContent = forwardRef<
 	}, [activeDockTab, incompleteCount]);
 
 	// ---- Callbacks ----
-	const handleDevModeChange = useCallback(
-		(value: boolean) => {
-			if (readOnly || viewingHistory) return;
-			if (!value) setIsVersionHistoryOpen(false);
-			setDevMode(value);
-			localStorage.setItem(`automation-devmode-${appId}`, String(value));
+	const applyCanvasModeChange = useCallback(
+		(mode: "design" | "dev" | "bpmn") => {
+			if (mode === "dev" && (readOnly || viewingHistory)) return;
+			setCanvasMode(mode);
+			localStorage.setItem(`automation-viewmode-${appId}`, mode);
+			if (mode !== "bpmn") {
+				localStorage.setItem(
+					`automation-devmode-${appId}`,
+					String(mode === "dev"),
+				);
+			}
 		},
 		[appId, readOnly, viewingHistory],
 	);
+	const handleCanvasModeChange = useCallback(
+		(mode: "design" | "dev" | "bpmn") => {
+			// Guard: show confirmation before leaving the BPMN editor with unsaved edits.
+			// Skip the guard during import-preview flows (bpmnSource is set) — those have
+			// their own Cancel / Convert buttons.
+			if (
+				bpmnMode &&
+				mode !== "bpmn" &&
+				isBpmnDirty &&
+				bpmnSource === null
+			) {
+				setPendingModeSwitch(mode);
+				return;
+			}
+			applyCanvasModeChange(mode);
+		},
+		[applyCanvasModeChange, bpmnMode, bpmnSource, isBpmnDirty],
+	);
+	const handleDevModeChange = useCallback(
+		(value: boolean) => {
+			if (readOnly || viewingHistory) return;
+			handleCanvasModeChange(value ? "dev" : "design");
+		},
+		[handleCanvasModeChange, readOnly, viewingHistory],
+	);
+	const handleBpmnFileSelected = useCallback(
+		async (event: ChangeEvent<HTMLInputElement>) => {
+			const input = event.currentTarget;
+			const file = input.files?.[0];
+			input.value = "";
+			if (!file) return;
+			if (!/\.(bpmn|xml)$/i.test(file.name)) {
+				toast.error("Choose a BPMN .bpmn or .xml file.");
+				return;
+			}
+			try {
+				const xml = await file.text();
+				if (!xml.trimStart().startsWith("<")) {
+					throw new Error("The selected file is not BPMN XML.");
+				}
+				canvasModeBeforeBpmnImportRef.current =
+					canvasMode === "bpmn" ? "design" : canvasMode;
+				setPendingBpmnConversion(null);
+				setBpmnSource({ xml, fileName: file.name });
+				handleCanvasModeChange("bpmn");
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Could not read the selected BPMN file.",
+				);
+			}
+		},
+		[canvasMode, handleCanvasModeChange],
+	);
+	const handleCancelBpmnImport = useCallback(() => {
+		setBpmnSource(null);
+		setPendingBpmnConversion(null);
+		const restoredMode =
+			canvasModeBeforeBpmnImportRef.current === "bpmn"
+				? "design"
+				: canvasModeBeforeBpmnImportRef.current;
+		handleCanvasModeChange(restoredMode);
+	}, [handleCanvasModeChange]);
+	const handleRequestBpmnConversion = useCallback(
+		async (xml: string) => {
+			if (!bpmnSource || isConvertingBpmn) return;
+			setIsConvertingBpmn(true);
+			try {
+				const { bpmnXmlToAutomationDocument } = await import(
+					"../../features/bpmn-viewer/bpmn-import-adapter"
+				);
+				// Only look the engines up when the file has data stores to match.
+				let engines: Awaited<ReturnType<typeof listDataStoreEngines>> =
+					[];
+				let engineLookupWarning: string | undefined;
+				if (/dataStoreReference/i.test(xml)) {
+					try {
+						engines = await listDataStoreEngines();
+					} catch (error) {
+						engineLookupWarning = `Could not load your engines to match the BPMN data stores: ${
+							error instanceof Error
+								? error.message
+								: "unknown error"
+						}`;
+					}
+				}
+				const result = await bpmnXmlToAutomationDocument(
+					xml,
+					bpmnSource.fileName,
+					{ engines },
+				);
+				setPendingBpmnConversion(
+					engineLookupWarning
+						? {
+								...result,
+								warnings: [
+									engineLookupWarning,
+									...result.warnings,
+								],
+							}
+						: result,
+				);
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Could not convert the BPMN document.",
+				);
+			} finally {
+				setIsConvertingBpmn(false);
+			}
+		},
+		[bpmnSource, isConvertingBpmn],
+	);
+	const handleApplyBpmnConversion = useCallback(() => {
+		if (!pendingBpmnConversion) return;
+		const converted = canvasDocumentFromWorkflow(
+			pendingBpmnConversion.document,
+			pendingBpmnConversion.nodeSources,
+		);
+		setDescription(converted.description);
+		setTriggerBindings(converted.triggerBindings);
+		// Reset the layout guard so layoutFlowNodes runs on the converted steps,
+		// producing a clean left-to-right layout instead of raw BPMN coordinates.
+		initialLayoutAppliedRef.current = false;
+		setSteps(converted.steps);
+		setGraphEdges(converted.edges);
+		setNodeGroups(converted.nodeGroups ?? []);
+		setCollapsedNodeGroupIds(new Set());
+		setExpandedLoopIds(new Set());
+		setEditingStepId(null);
+		setSelectedBodyNodeId(undefined);
+		setSelectedNodeGroupId(null);
+		setUndoSnapshot(null);
+		setBpmnSource(null);
+		setPendingBpmnConversion(null);
+		handleCanvasModeChange("design");
+		setIsDirty(true);
+		toast.success(
+			"BPMN converted. Review the workflow and save when ready.",
+		);
+	}, [handleCanvasModeChange, pendingBpmnConversion]);
+
+	const handleBpmnNodeAdded = useCallback((node: AutomationNode) => {
+		setSteps((prev) => [...prev, node]);
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnNodeRemoved = useCallback((nodeId: string) => {
+		setSteps((prev) => prev.filter((s) => s.id !== nodeId));
+		setGraphEdges((prev) =>
+			prev.filter((e) => e.source !== nodeId && e.target !== nodeId),
+		);
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnEdgeAdded = useCallback((edge: AutomationEdge) => {
+		// Stable ID generated once; the updater may run multiple times in
+		// concurrent mode but always uses this same value.
+		const newClauseId = crypto.randomUUID();
+
+		setGraphEdges((prev) => {
+			const sourceNode = stepsRef.current.find(
+				(s) => s.id === edge.source,
+			);
+			if (sourceNode?.type !== "branch") {
+				return [
+					...prev,
+					{
+						...edge,
+						sourceHandle: `out-${edge.source}`,
+						targetHandle: `in-${edge.target}`,
+					},
+				];
+			}
+			// Read COMMITTED prev to avoid stale-ref issues when delete+add fire
+			// before React re-renders.
+			const outgoing = prev.filter(
+				(e) => e.source === edge.source && e.kind !== "data",
+			);
+			const hasElse = outgoing.some((e) =>
+				e.sourceHandle?.startsWith("else-"),
+			);
+			const sourceHandle =
+				outgoing.length === 0 || !hasElse
+					? `else-${edge.source}`
+					: `case-${edge.source}-${newClauseId}`;
+			return [
+				...prev,
+				{ ...edge, sourceHandle, targetHandle: `in-${edge.target}` },
+			];
+		});
+
+		// Mirror the same logic to add the clause to the node config when needed.
+		// Reads graphEdgesRef for the condition check; guarded with an id check so
+		// it is idempotent if the updater runs more than once.
+		setSteps((prev) => {
+			const sourceNode = prev.find((s) => s.id === edge.source);
+			if (sourceNode?.type !== "branch") return prev;
+			const outgoing = graphEdgesRef.current.filter(
+				(e) => e.source === edge.source && e.kind !== "data",
+			);
+			const hasElse = outgoing.some((e) =>
+				e.sourceHandle?.startsWith("else-"),
+			);
+			// If there's no else yet or no outgoing, the new edge is the else — no clause.
+			if (outgoing.length === 0 || !hasElse) return prev;
+			const existing: AutomationBranchClause[] =
+				(sourceNode.workflowConfig
+					?.clauses as AutomationBranchClause[]) ?? [];
+			if (existing.some((c) => c.id === newClauseId)) return prev;
+			const updated = [...existing, { id: newClauseId, condition: "" }];
+			return prev.map((s) =>
+				s.id !== edge.source
+					? s
+					: {
+							...s,
+							config: { ...(s.config ?? {}), clauses: updated },
+							workflowConfig: {
+								...(s.workflowConfig ?? {}),
+								clauses: updated,
+							},
+						},
+			);
+		});
+
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnEdgeRemoved = useCallback((edgeId: string) => {
+		// Find the removed edge inside the updater so we always read committed state.
+		let removedEdge: AutomationEdge | undefined;
+		setGraphEdges((prev) => {
+			removedEdge = prev.find((e) => e.id === edgeId);
+			return prev.filter((e) => e.id !== edgeId);
+		});
+
+		// Clean up the matching clause when a case edge is removed.
+		if (removedEdge?.sourceHandle?.startsWith("case-")) {
+			const match = removedEdge.sourceHandle.match(/^case-[^-]+-(.+)$/);
+			const clauseId = match?.[1];
+			if (clauseId && removedEdge.source) {
+				const srcId = removedEdge.source;
+				setSteps((prev) =>
+					prev.map((s) => {
+						if (s.id !== srcId) return s;
+						const existing: AutomationBranchClause[] =
+							(s.workflowConfig
+								?.clauses as AutomationBranchClause[]) ?? [];
+						const updated = existing.filter(
+							(c) => c.id !== clauseId,
+						);
+						return {
+							...s,
+							config: { ...(s.config ?? {}), clauses: updated },
+							workflowConfig: {
+								...(s.workflowConfig ?? {}),
+								clauses: updated,
+							},
+						};
+					}),
+				);
+			}
+		}
+
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnNodeLabelChanged = useCallback(
+		(nodeId: string, label: string) => {
+			setSteps((prev) =>
+				prev.map((s) => (s.id === nodeId ? { ...s, label } : s)),
+			);
+			setIsDirty(true);
+		},
+		[],
+	);
+
+	const handleBpmnGroupAdded = useCallback((group: AutomationNodeGroup) => {
+		setNodeGroups((prev) => {
+			const exists = prev.some((g) => g.id === group.id);
+			return exists
+				? prev.map((g) =>
+						g.id === group.id ? { ...g, name: group.name } : g,
+					)
+				: [...prev, group];
+		});
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnGroupRemoved = useCallback((groupId: string) => {
+		setNodeGroups((prev) => prev.filter((g) => g.id !== groupId));
+		setIsDirty(true);
+	}, []);
+
+	const handleBpmnNodeMoved = useCallback(
+		(nodeId: string, position: { x: number; y: number }) => {
+			setSteps((prev) =>
+				prev.map((s) => (s.id === nodeId ? { ...s, position } : s)),
+			);
+		},
+		[],
+	);
+
+	const handleBpmnBodyNodeAdded = useCallback(
+		(loopId: string, node: AutomationNode) => {
+			setSteps((prev) =>
+				prev.map((s) => {
+					if (s.id !== loopId) return s;
+					const existing = s.body?.nodes ?? [];
+					if (existing.some((n) => n.id === node.id)) return s;
+					return {
+						...s,
+						body: {
+							nodes: [...existing, node],
+							edges: s.body?.edges ?? [],
+						},
+					};
+				}),
+			);
+			setIsDirty(true);
+		},
+		[],
+	);
+
+	const handleBpmnBodyNodeRemoved = useCallback(
+		(loopId: string, nodeId: string) => {
+			setSteps((prev) =>
+				prev.map((s) => {
+					if (s.id !== loopId || !s.body) return s;
+					return {
+						...s,
+						body: {
+							nodes: s.body.nodes.filter((n) => n.id !== nodeId),
+							edges: s.body.edges.filter(
+								(e) =>
+									e.source !== nodeId && e.target !== nodeId,
+							),
+						},
+					};
+				}),
+			);
+			setIsDirty(true);
+		},
+		[],
+	);
+
+	const handleBpmnBodyEdgeAdded = useCallback(
+		(loopId: string, edge: AutomationEdge) => {
+			setSteps((prev) =>
+				prev.map((s) => {
+					if (s.id !== loopId) return s;
+					const existing = s.body?.edges ?? [];
+					if (existing.some((e) => e.id === edge.id)) return s;
+					return {
+						...s,
+						body: {
+							nodes: s.body?.nodes ?? [],
+							edges: [
+								...existing,
+								{
+									...edge,
+									sourceHandle: `out-${edge.source}`,
+									targetHandle: `in-${edge.target}`,
+								},
+							],
+						},
+					};
+				}),
+			);
+			setIsDirty(true);
+		},
+		[],
+	);
+
+	const handleBpmnBodyEdgeRemoved = useCallback(
+		(loopId: string, edgeId: string) => {
+			setSteps((prev) =>
+				prev.map((s) => {
+					if (s.id !== loopId || !s.body) return s;
+					return {
+						...s,
+						body: {
+							nodes: s.body.nodes,
+							edges: s.body.edges.filter((e) => e.id !== edgeId),
+						},
+					};
+				}),
+			);
+			setIsDirty(true);
+		},
+		[],
+	);
+
+	const handleBpmnNodeSelected = useCallback((nodeId: string | null) => {
+		if (!nodeId) return;
+		// Check if it's a top-level step.
+		const isTopLevel = stepsRef.current.some((s) => s.id === nodeId);
+		if (isTopLevel) {
+			setEditingStepId(nodeId);
+			setSelectedBodyNodeId(undefined);
+		} else {
+			// Search loop body nodes to find the parent loop.
+			const loopNode = stepsRef.current.find((s) =>
+				s.body?.nodes.some((n) => n.id === nodeId),
+			);
+			if (loopNode) {
+				setEditingStepId(loopNode.id);
+				setSelectedBodyNodeId(nodeId);
+			}
+		}
+		setActiveDockTab("inspector");
+	}, []);
 
 	const fitWorkflow = useCallback(() => {
 		reactFlowInstanceRef.current?.fitView({
@@ -3927,6 +4417,7 @@ export const AutomationCanvasContent = forwardRef<
 	// ---- Persist canvas positions ----
 	const onNodeDragStop = useCallback(
 		(_event: React.MouseEvent, draggedNode: Node) => {
+			clearHelperLines();
 			if (readOnly || viewingHistory) return;
 			const containingLoop = steps.find((step) =>
 				step.body?.nodes.some((node) => node.id === draggedNode.id),
@@ -4092,6 +4583,7 @@ export const AutomationCanvasContent = forwardRef<
 			layoutNodes,
 			readOnly,
 			viewingHistory,
+			clearHelperLines,
 		],
 	);
 
@@ -4335,6 +4827,11 @@ export const AutomationCanvasContent = forwardRef<
 											!viewingHistory &&
 											!running
 										}
+										snapToGrid
+										snapGrid={[
+											CANVAS_GRID_SIZE,
+											CANVAS_GRID_SIZE,
+										]}
 										panOnDrag
 										panOnScroll
 										selectionOnDrag
@@ -4352,7 +4849,9 @@ export const AutomationCanvasContent = forwardRef<
 										proOptions={{
 											hideAttribution: true,
 										}}
-										className="h-full"
+										className={`${bpmnMode ? "pointer-events-none invisible" : ""} h-full`}
+										aria-hidden={bpmnMode}
+										inert={bpmnMode}
 										onInit={(instance) => {
 											reactFlowInstanceRef.current =
 												instance;
@@ -4467,11 +4966,85 @@ export const AutomationCanvasContent = forwardRef<
 									>
 										<Background
 											variant={BackgroundVariant.Dots}
-											gap={20}
+											gap={CANVAS_GRID_SIZE}
 											size={1}
 											color={dotColor}
 										/>
+										<HelperLinesOverlay
+											lines={helperLines}
+										/>
 									</ReactFlow>
+									{bpmnMode && (
+										<Suspense
+											fallback={
+												<output className="absolute inset-0 z-0 flex items-center justify-center bg-background text-muted-foreground text-sm">
+													Loading BPMN view...
+												</output>
+											}
+										>
+											<AutomationBpmnViewer
+												key={bpmnViewKey}
+												ref={bpmnEditorRef}
+												nodes={displaySteps}
+												edges={displayEdges}
+												processName={
+													description ||
+													"Automation workflow"
+												}
+												sourceXml={bpmnSource?.xml}
+												sourceName={
+													bpmnSource?.fileName
+												}
+												onConvertToAutomation={
+													handleRequestBpmnConversion
+												}
+												onCancelImport={
+													handleCancelBpmnImport
+												}
+												isConverting={isConvertingBpmn}
+												onDirtyChange={setIsBpmnDirty}
+												onNodeAdded={
+													handleBpmnNodeAdded
+												}
+												onNodeRemoved={
+													handleBpmnNodeRemoved
+												}
+												onEdgeAdded={
+													handleBpmnEdgeAdded
+												}
+												onEdgeRemoved={
+													handleBpmnEdgeRemoved
+												}
+												onNodeLabelChanged={
+													handleBpmnNodeLabelChanged
+												}
+												onGroupAdded={
+													handleBpmnGroupAdded
+												}
+												onGroupRemoved={
+													handleBpmnGroupRemoved
+												}
+												onNodeMoved={
+													handleBpmnNodeMoved
+												}
+												onBodyNodeAdded={
+													handleBpmnBodyNodeAdded
+												}
+												onBodyNodeRemoved={
+													handleBpmnBodyNodeRemoved
+												}
+												onBodyEdgeAdded={
+													handleBpmnBodyEdgeAdded
+												}
+												onBodyEdgeRemoved={
+													handleBpmnBodyEdgeRemoved
+												}
+												onNodeSelected={
+													handleBpmnNodeSelected
+												}
+											/>
+										</Suspense>
+									)}
 
 									{readOnly &&
 										mcpMode !== "trigger" &&
@@ -4502,6 +5075,17 @@ export const AutomationCanvasContent = forwardRef<
 									<div
 										className={`absolute top-4 right-4 left-4 z-30 flex-wrap items-center justify-end gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory ? "hidden" : "flex"}`}
 									>
+										{bpmnMode && (
+											<input
+												ref={bpmnFileInputRef}
+												type="file"
+												accept=".bpmn,.xml,application/xml,text/xml"
+												className="hidden"
+												onChange={
+													handleBpmnFileSelected
+												}
+											/>
+										)}
 										{!readOnly && mcpMode !== "trigger" && (
 											<AutomationVersionHistory
 												key={appId}
@@ -4556,131 +5140,214 @@ export const AutomationCanvasContent = forwardRef<
 												}}
 											/>
 										)}
-										{mcpMode !== "trigger" && (
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														size="sm"
-														variant="outline"
-														className="bg-background shadow-sm"
-														onClick={
-															reloadFromServer
-														}
-														disabled={
-															saving || running
-														}
-														aria-label="Reload workflow"
-													>
-														<RefreshCw className="h-3.5 w-3.5" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent side="bottom">
-													Reload the saved workflow
-												</TooltipContent>
-											</Tooltip>
-										)}
-										{!readOnly && (
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<span
-														tabIndex={
-															selectedCanvasNodeIds.length <
-															2
-																? 0
-																: -1
-														}
-														className="inline-flex"
+										{bpmnSource !== null ? (
+											<>
+												<Button
+													size="sm"
+													variant="outline"
+													className="bg-background shadow-sm"
+													onClick={
+														handleCancelBpmnImport
+													}
+												>
+													Cancel
+												</Button>
+												<Button
+													size="sm"
+													className="shadow-sm"
+													disabled={isConvertingBpmn}
+													onClick={async () => {
+														const xml =
+															await bpmnEditorRef.current?.getXml();
+														if (xml)
+															handleRequestBpmnConversion(
+																xml,
+															);
+													}}
+												>
+													{isConvertingBpmn
+														? "Converting…"
+														: "Convert to Automation"}
+												</Button>
+											</>
+										) : (
+											<>
+												{bpmnMode && (
+													<>
+														{!readOnly &&
+															mcpMode !==
+																"trigger" && (
+																<Button
+																	size="sm"
+																	variant="outline"
+																	className="bg-background shadow-sm"
+																	onClick={() =>
+																		bpmnFileInputRef.current?.click()
+																	}
+																>
+																	<Upload
+																		className="mr-1.5 size-3.5"
+																		aria-hidden
+																	/>
+																	Import BPMN
+																</Button>
+															)}
+														<Button
+															size="sm"
+															variant="outline"
+															className="bg-background shadow-sm"
+															onClick={() =>
+																bpmnEditorRef.current?.exportBpmn()
+															}
+														>
+															<Download
+																className="mr-1.5 size-3.5"
+																aria-hidden
+															/>
+															Export
+														</Button>
+													</>
+												)}
+												{mcpMode !== "trigger" && (
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																size="sm"
+																variant="outline"
+																className="bg-background shadow-sm"
+																onClick={
+																	reloadFromServer
+																}
+																disabled={
+																	saving ||
+																	running
+																}
+																aria-label="Reload workflow"
+															>
+																<RefreshCw className="h-3.5 w-3.5" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent side="bottom">
+															Reload the saved
+															workflow
+														</TooltipContent>
+													</Tooltip>
+												)}
+												{!readOnly &&
+													canvasMode !== "bpmn" && (
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<span
+																	tabIndex={
+																		selectedCanvasNodeIds.length <
+																		2
+																			? 0
+																			: -1
+																	}
+																	className="inline-flex"
+																>
+																	<Button
+																		size="sm"
+																		variant="outline"
+																		className="bg-background shadow-sm"
+																		disabled={
+																			selectedCanvasNodeIds.length <
+																			2
+																		}
+																		onClick={() =>
+																			openNodeGroupDialog()
+																		}
+																	>
+																		<Layers3
+																			className="mr-1.5 size-3.5"
+																			aria-hidden
+																		/>
+																		Create
+																		Group
+																	</Button>
+																</span>
+															</TooltipTrigger>
+															<TooltipContent side="bottom">
+																<span className="block">
+																	Shift-click
+																	nodes or
+																	Shift-drag a
+																	selection
+																	box.
+																</span>
+																<span className="block">
+																	Select at
+																	least two to
+																	create a
+																	group.
+																</span>
+															</TooltipContent>
+														</Tooltip>
+													)}
+												{mcpMode !== "trigger" && (
+													<div
+														className="relative"
+														data-tour="save"
 													>
 														<Button
 															size="sm"
 															variant="outline"
 															className="bg-background shadow-sm"
-															disabled={
-																selectedCanvasNodeIds.length <
-																2
-															}
 															onClick={() =>
-																openNodeGroupDialog()
+																void (mcpMode &&
+																mcpContext
+																	? handleDoneReturnToChat()
+																	: save())
 															}
+															disabled={saving}
 														>
-															<Layers3
-																className="mr-1.5 size-3.5"
-																aria-hidden
-															/>
-															Create Group
+															<span className="relative mr-1.5">
+																{saving ? (
+																	<Loader2 className="h-3.5 w-3.5 animate-spin" />
+																) : (
+																	<Save className="h-3.5 w-3.5" />
+																)}
+																{isDirty &&
+																	!saving && (
+																		<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-warning ring-1 ring-background" />
+																	)}
+															</span>
+															{mcpMode &&
+															mcpContext
+																? "Save — Return to Chat"
+																: "Save"}
 														</Button>
-													</span>
-												</TooltipTrigger>
-												<TooltipContent side="bottom">
-													<span className="block">
-														Shift-click nodes or
-														Shift-drag a selection
-														box.
-													</span>
-													<span className="block">
-														Select at least two to
-														create a group.
-													</span>
-												</TooltipContent>
-											</Tooltip>
-										)}
-										{mcpMode !== "trigger" && (
-											<div
-												className="relative"
-												data-tour="save"
-											>
+													</div>
+												)}
 												<Button
+													data-tour="run"
 													size="sm"
-													variant="outline"
-													className="bg-background shadow-sm"
-													onClick={() =>
-														void (mcpMode &&
-														mcpContext
-															? handleDoneReturnToChat()
-															: save())
+													className="shadow-sm"
+													onClick={run}
+													disabled={
+														running ||
+														!hasRunnableSteps
 													}
-													disabled={saving}
+													title={
+														!hasRunnableSteps
+															? "Add at least one step before running"
+															: undefined
+													}
 												>
-													<span className="relative mr-1.5">
-														{saving ? (
-															<Loader2 className="h-3.5 w-3.5 animate-spin" />
-														) : (
-															<Save className="h-3.5 w-3.5" />
-														)}
-														{isDirty && !saving && (
-															<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-warning ring-1 ring-background" />
-														)}
-													</span>
-													{mcpMode && mcpContext
-														? "Save — Return to Chat"
-														: "Save"}
+													{running ? (
+														<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+													) : (
+														<Play className="mr-1.5 h-3.5 w-3.5" />
+													)}
+													Run
 												</Button>
-											</div>
+											</>
 										)}
-										<Button
-											data-tour="run"
-											size="sm"
-											className="shadow-sm"
-											onClick={run}
-											disabled={
-												running || !hasRunnableSteps
-											}
-											title={
-												!hasRunnableSteps
-													? "Add at least one step before running"
-													: undefined
-											}
-										>
-											{running ? (
-												<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-											) : (
-												<Play className="mr-1.5 h-3.5 w-3.5" />
-											)}
-											Run
-										</Button>
 									</div>
 
-									{!readOnly && (
+									{!readOnly && !bpmnMode && (
 										<div className="absolute right-4 bottom-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -4751,15 +5418,16 @@ export const AutomationCanvasContent = forwardRef<
 										</div>
 									)}
 
-									{!readOnly && (
-										<div className="absolute bottom-4 left-4 z-10 flex items-center gap-1 rounded-lg border bg-background p-1 shadow-sm">
+									<div className="absolute bottom-4 left-4 z-10 flex items-center gap-1 rounded-lg border bg-background p-1 shadow-sm">
+										{!readOnly && (
 											<Tooltip>
 												<TooltipTrigger asChild>
 													<button
 														type="button"
 														aria-label="Clean up node layout"
+														disabled={bpmnMode}
 														onClick={cleanUpLayout}
-														className="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted"
+														className="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
 													>
 														<RefreshCw className="h-4 w-4" />
 													</button>
@@ -4768,56 +5436,98 @@ export const AutomationCanvasContent = forwardRef<
 													Clean up layout
 												</TooltipContent>
 											</Tooltip>
-
-											<div className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5">
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<button
-															type="button"
-															aria-pressed={
-																!devMode
-															}
-															aria-label="Design mode"
-															onClick={() =>
-																handleDevModeChange(
-																	false,
-																)
-															}
-															className={`flex items-center justify-center rounded p-1.5 transition-colors ${!devMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-														>
-															<Workflow className="h-4 w-4" />
-														</button>
-													</TooltipTrigger>
-													<TooltipContent side="top">
-														Design mode
-													</TooltipContent>
-												</Tooltip>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<button
-															type="button"
-															aria-pressed={
-																devMode
-															}
-															aria-label="Dev mode"
-															onClick={() =>
-																handleDevModeChange(
-																	true,
-																)
-															}
-															className={`flex items-center justify-center rounded p-1.5 transition-colors ${devMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-														>
-															<Code2 className="h-4 w-4" />
-														</button>
-													</TooltipTrigger>
-													<TooltipContent side="top">
-														Dev mode — Python source
-														editors
-													</TooltipContent>
-												</Tooltip>
-											</div>
-										</div>
-									)}
+										)}
+										<fieldset className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5">
+											<legend className="sr-only">
+												Workflow view mode
+											</legend>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-pressed={
+															canvasMode ===
+															"design"
+														}
+														aria-label="Design mode"
+														disabled={
+															readOnly ||
+															viewingHistory ||
+															bpmnSource !== null
+														}
+														onClick={() =>
+															handleCanvasModeChange(
+																"design",
+															)
+														}
+														className={`flex items-center justify-center rounded p-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${canvasMode === "design" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+													>
+														<Workflow
+															className="h-4 w-4"
+															aria-hidden
+														/>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Design mode
+												</TooltipContent>
+											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-pressed={
+															canvasMode === "dev"
+														}
+														aria-label="Dev mode"
+														disabled={
+															readOnly ||
+															viewingHistory ||
+															bpmnSource !== null
+														}
+														onClick={() =>
+															handleCanvasModeChange(
+																"dev",
+															)
+														}
+														className={`flex items-center justify-center rounded p-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${canvasMode === "dev" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+													>
+														<Code2
+															className="h-4 w-4"
+															aria-hidden
+														/>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Dev mode — Python source
+													editors
+												</TooltipContent>
+											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-pressed={bpmnMode}
+														aria-label="BPMN mode"
+														onClick={() =>
+															handleCanvasModeChange(
+																"bpmn",
+															)
+														}
+														className={`flex items-center justify-center rounded p-1.5 transition-colors ${bpmnMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+													>
+														<GitBranch
+															className="h-4 w-4"
+															aria-hidden
+														/>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													BPMN view
+												</TooltipContent>
+											</Tooltip>
+										</fieldset>
+									</div>
 								</div>
 							}
 						/>
@@ -4831,6 +5541,56 @@ export const AutomationCanvasContent = forwardRef<
 				onCancel={() => setIsRunInputDialogOpen(false)}
 				onRun={handleRunWithInputs}
 			/>
+			<Dialog
+				open={pendingBpmnConversion !== null}
+				onOpenChange={(open) => {
+					if (!open) setPendingBpmnConversion(null);
+				}}
+			>
+				<DialogContent className="max-w-xl">
+					<DialogHeader>
+						<DialogTitle>Convert BPMN to Automation?</DialogTitle>
+						<DialogDescription>
+							This replaces the current canvas with the converted
+							workflow. The result remains unsaved until you
+							choose Save.
+							{isDirty &&
+								" Your existing unsaved canvas edits will be replaced."}
+						</DialogDescription>
+					</DialogHeader>
+					{pendingBpmnConversion?.warnings.length ? (
+						<div className="max-h-64 overflow-y-auto rounded-md border p-3">
+							<p className="mb-2 font-medium text-sm">
+								Import notes
+							</p>
+							<ul className="list-disc space-y-1 pl-5 text-muted-foreground text-sm">
+								{pendingBpmnConversion.warnings.map(
+									(warning, index) => (
+										<li key={`${index}-${warning}`}>
+											{warning}
+										</li>
+									),
+								)}
+							</ul>
+						</div>
+					) : (
+						<p className="text-muted-foreground text-sm">
+							No conversion warnings were reported.
+						</p>
+					)}
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setPendingBpmnConversion(null)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleApplyBpmnConversion}>
+							Replace workflow
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 			<Dialog open={confirmReload} onOpenChange={setConfirmReload}>
 				<DialogContent className="max-w-md">
 					<DialogHeader>
@@ -4861,6 +5621,46 @@ export const AutomationCanvasContent = forwardRef<
 							}}
 						>
 							Discard and reload
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+			<Dialog
+				open={pendingModeSwitch !== null}
+				onOpenChange={(open) => {
+					if (!open) setPendingModeSwitch(null);
+				}}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Unsaved BPMN changes</DialogTitle>
+						<DialogDescription>
+							You&apos;ve made edits in the BPMN editor that
+							won&apos;t be applied to the automation canvas. Use
+							the <strong>Export</strong> button in the editor
+							toolbar to download your work before switching
+							modes.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setPendingModeSwitch(null)}
+						>
+							Stay in editor
+						</Button>
+						<Button
+							variant="destructive"
+							size="sm"
+							onClick={() => {
+								const mode = pendingModeSwitch;
+								setPendingModeSwitch(null);
+								setIsBpmnDirty(false);
+								if (mode) applyCanvasModeChange(mode);
+							}}
+						>
+							Switch anyway
 						</Button>
 					</DialogFooter>
 				</DialogContent>

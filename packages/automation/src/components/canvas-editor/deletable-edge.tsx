@@ -3,7 +3,6 @@ import {
 	type Edge,
 	EdgeLabelRenderer,
 	type EdgeProps,
-	getSmoothStepPath,
 } from "@xyflow/react";
 import { X } from "lucide-react";
 
@@ -17,37 +16,100 @@ export interface DeletableEdgeData extends Record<string, unknown> {
 	laneCount?: number;
 }
 
+/**
+ * Orthogonal (Manhattan) path matching the bpmn-js routing algorithm.
+ *
+ * Forward edges (tx >= sx): right → bend at laneX → left into target.
+ * Backward edges (tx < sx): right → up above the flow → left → down into
+ *   target, producing a visible arc instead of overlapping the forward edges.
+ */
+function buildOrthogonalPath(
+	sx: number,
+	sy: number,
+	tx: number,
+	ty: number,
+	laneIndex: number,
+	laneCount: number,
+): [path: string, labelX: number, labelY: number] {
+	// Backward edge: U-shape above the flow so loop-backs are clearly visible.
+	if (tx < sx) {
+		const BACK_PAD = 60;
+		const LANE_STEP = 22;
+		const laneY = Math.min(sy, ty) - BACK_PAD - laneIndex * LANE_STEP;
+		const r = Math.min(
+			4,
+			Math.abs(sy - laneY) / 2,
+			Math.abs(tx - sx) / 2,
+			Math.abs(ty - laneY) / 2,
+		);
+		const h = Math.sign(tx - sx); // -1 (going left)
+		const v1 = Math.sign(laneY - sy); // -1 (going up to lane)
+		const v2 = Math.sign(ty - laneY); // +1 (going down from lane to target)
+		const path = [
+			`M ${sx} ${sy}`,
+			`L ${sx} ${laneY - r * v1}`,
+			`Q ${sx} ${laneY} ${sx + r * h} ${laneY}`,
+			`L ${tx - r * h} ${laneY}`,
+			`Q ${tx} ${laneY} ${tx} ${laneY + r * v2}`,
+			`L ${tx} ${ty}`,
+		].join(" ");
+		return [path, (sx + tx) / 2, laneY];
+	}
+
+	// Direct horizontal line when source and target share the same Y.
+	if (Math.abs(sy - ty) < 1) {
+		return [`M ${sx} ${sy} L ${tx} ${ty}`, (sx + tx) / 2, sy];
+	}
+
+	// Forward edge: horizontal → vertical → horizontal.
+	const dx = tx - sx;
+	const baseLaneX = sx + Math.max(40, dx / 2);
+	const spread =
+		laneCount > 1
+			? Math.min(36, Math.max(12, Math.abs(dx) / laneCount))
+			: 0;
+	const laneX = baseLaneX + (laneIndex - (laneCount - 1) / 2) * spread;
+	const r = Math.min(
+		4,
+		Math.abs(laneX - sx) / 2,
+		Math.abs(ty - sy) / 2,
+		Math.abs(tx - laneX) / 2,
+	);
+	const h1 = Math.sign(laneX - sx);
+	const v = Math.sign(ty - sy);
+	const h2 = Math.sign(tx - laneX);
+	const path = [
+		`M ${sx} ${sy}`,
+		`L ${laneX - r * h1} ${sy}`,
+		`Q ${laneX} ${sy} ${laneX} ${sy + r * v}`,
+		`L ${laneX} ${ty - r * v}`,
+		`Q ${laneX} ${ty} ${laneX + r * h2} ${ty}`,
+		`L ${tx} ${ty}`,
+	].join(" ");
+	return [path, laneX, (sy + ty) / 2];
+}
+
 /** Custom React Flow edge rendering a delete button at its midpoint. */
 export function DeletableEdge({
 	id,
 	sourceX,
 	sourceY,
-	sourcePosition,
 	targetX,
 	targetY,
-	targetPosition,
 	style,
 	markerEnd,
 	data,
 }: EdgeProps<Edge<DeletableEdgeData>>) {
 	const laneCount = data?.laneCount ?? 1;
 	const laneIndex = data?.laneIndex ?? 0;
-	let centerX: number | undefined;
-	if (laneCount > 1) {
-		const gap = targetX - sourceX;
-		const spread = Math.min(28, Math.abs(gap) / (laneCount + 1));
-		centerX =
-			sourceX + gap / 2 + (laneIndex - (laneCount - 1) / 2) * spread;
-	}
-	const [edgePath, labelX, labelY] = getSmoothStepPath({
+	const [edgePath, labelX, labelY] = buildOrthogonalPath(
 		sourceX,
 		sourceY,
-		sourcePosition,
 		targetX,
 		targetY,
-		targetPosition,
-		...(centerX !== undefined ? { centerX } : {}),
-	});
+		laneIndex,
+		laneCount,
+	);
 
 	return (
 		<>

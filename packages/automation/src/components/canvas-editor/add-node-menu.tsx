@@ -28,7 +28,7 @@ interface AddNodeMenuProps {
 	description?: string;
 }
 
-const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
+export const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
 	"trigger",
 	"database",
 	"model",
@@ -54,7 +54,7 @@ const SEARCH_ALIASES: Partial<Record<AutomationWorkflowNodeType, string>> = {
 	"control.loop": "loop for each batch repeat iterate iterator",
 };
 
-const CATEGORY_META: Record<
+export const CATEGORY_META: Record<
 	AutomationNodeCategory,
 	{ label: string; icon: typeof Database }
 > = {

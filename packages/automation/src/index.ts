@@ -53,6 +53,11 @@ export type {
 	N8nImportConversionModel,
 	N8nImportConversionResult,
 } from "./domain/n8n-import-adapter";
+export {
+	downloadBpmnExport,
+	isBpmnImportText,
+	parseBpmnImportFile,
+} from "./features/bpmn-viewer/bpmn-import-export";
 export type { AutomationFlow } from "./features/flow-preview/automation-flow.types";
 export type { AutomationFlowPreviewProps } from "./features/flow-preview/automation-flow-preview";
 export { AutomationFlowPreview } from "./features/flow-preview/automation-flow-preview";
