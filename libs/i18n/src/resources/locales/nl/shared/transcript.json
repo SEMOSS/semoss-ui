@@ -1,0 +1,8 @@
+{
+	"reasoning": "Redenering",
+	"toolStatus": {
+		"running": "Bezig",
+		"completed": "Voltooid",
+		"failed": "Mislukt"
+	}
+}

@@ -1,4 +1,4 @@
-import { PaperclipIcon, SendIcon, SquareIcon } from "lucide-react";
+import { PaperclipIcon, SendIcon, SquareIcon, XIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import {
 	Alert,
@@ -98,146 +98,156 @@ export const ModelChatComposer = () => {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col gap-2 px-4 py-4 sm:px-8 lg:px-16">
-			{error && (
-				<Alert variant="destructive">
-					<AlertDescription>
-						<div className="flex items-start justify-between gap-2">
-							<span className="wrap-break-word">{error}</span>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								aria-label="Dismiss error"
-								onClick={dismissError}
-							>
-								<span aria-hidden>×</span>
-							</Button>
-						</div>
-					</AlertDescription>
-				</Alert>
-			)}
-
-			{/*
-			 * The dock drags panels with native HTML5 drags too, so a tab
-			 * crossing the composer must not paint a file-drop highlight —
-			 * hence the spawn-drag check alongside the "Files" one.
-			 */}
-			{/* biome-ignore lint/a11y/noStaticElementInteractions: drop target — the paperclip button is the keyboard path */}
-			<div
-				className={cn(
-					"flex w-full flex-col overflow-hidden rounded-md border border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
-					isDraggingFiles &&
-						"border-primary bg-primary/5 ring-[3px] ring-primary/20",
+		<div className="flex w-full shrink-0 flex-col px-4 py-4 sm:px-6">
+			<div className="mx-auto flex w-full max-w-3xl flex-col gap-2">
+				{error && (
+					<Alert variant="destructive">
+						<AlertDescription>
+							{/* the description is a grid that sizes its children to their
+						    content, so the row stretches to put the button at the edge */}
+							<div className="flex w-full items-center justify-between gap-2">
+								<span className="wrap-break-word min-w-0">
+									{error}
+								</span>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									className="shrink-0"
+									aria-label="Dismiss error"
+									onClick={dismissError}
+								>
+									<XIcon className="size-4" aria-hidden />
+								</Button>
+							</div>
+						</AlertDescription>
+					</Alert>
 				)}
-				onDragOver={(event) => {
-					if (
-						!canAttach ||
-						isSpawnDrag(event.dataTransfer) ||
-						!event.dataTransfer.types.includes("Files")
-					) {
-						return;
-					}
-					event.preventDefault();
-					setIsDraggingFiles(true);
-				}}
-				onDragLeave={(event) => {
-					const nextTarget = event.relatedTarget;
-					if (
-						nextTarget instanceof Node &&
-						event.currentTarget.contains(nextTarget)
-					) {
-						return;
-					}
-					setIsDraggingFiles(false);
-				}}
-				onDrop={(event) => {
-					setIsDraggingFiles(false);
-					if (!canAttach || isSpawnDrag(event.dataTransfer)) return;
 
-					const dropped = Array.from(event.dataTransfer.files);
-					if (dropped.length === 0) return;
-					event.preventDefault();
-					queueFiles(dropped);
-				}}
-			>
-				<ModelChatAttachmentStrip
-					files={pendingFiles}
-					onRemove={removeFile}
-					disabled={isBusy}
-				/>
-				<Textarea
-					ref={textareaRef}
-					value={draft}
-					onChange={(event) => setDraft(event.target.value)}
-					onKeyDown={handleKeyDown}
-					onPaste={handlePaste}
-					disabled={!isReady}
-					placeholder="Ask this model a question"
-					aria-label="Message"
-					className="max-h-56 min-h-24 resize-none rounded-none border-0 bg-card px-4 py-4 shadow-none focus-visible:ring-0"
-					data-testid="model-chat-composer-input"
-				/>
-				<div className="flex items-center gap-2 bg-card p-2">
-					{supportsAttachments && (
-						<>
-							<input
-								ref={fileInputRef}
-								type="file"
-								multiple
-								hidden
-								onChange={(event) => {
-									const selected = Array.from(
-										event.target.files ?? [],
-									);
-									event.target.value = "";
-									queueFiles(selected);
-								}}
-								data-testid="model-chat-composer-file-input"
-							/>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								aria-label="Attach files"
-								disabled={!canAttach}
-								onClick={() => fileInputRef.current?.click()}
-								data-testid="model-chat-composer-attach"
-							>
-								<PaperclipIcon aria-hidden />
-							</Button>
-						</>
+				{/*
+				 * The dock drags panels with native HTML5 drags too, so a tab
+				 * crossing the composer must not paint a file-drop highlight —
+				 * hence the spawn-drag check alongside the "Files" one.
+				 */}
+				{/* biome-ignore lint/a11y/noStaticElementInteractions: drop target — the paperclip button is the keyboard path */}
+				<div
+					className={cn(
+						"flex w-full flex-col overflow-hidden rounded-md border border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
+						isDraggingFiles &&
+							"border-primary bg-primary/5 ring-[3px] ring-primary/20",
 					)}
-					<div className="min-w-0 flex-1" />
-					{isBusy ? (
-						<Button
-							variant="default"
-							size="icon-sm"
-							aria-label="Stop generating"
-							disabled={isStopping}
-							onClick={() => void stop()}
-							data-testid="model-chat-composer-stop"
-						>
-							{isStopping ? (
-								<Spinner />
-							) : (
-								<SquareIcon
-									className="size-3"
-									fill="currentColor"
-									aria-hidden
+					onDragOver={(event) => {
+						if (
+							!canAttach ||
+							isSpawnDrag(event.dataTransfer) ||
+							!event.dataTransfer.types.includes("Files")
+						) {
+							return;
+						}
+						event.preventDefault();
+						setIsDraggingFiles(true);
+					}}
+					onDragLeave={(event) => {
+						const nextTarget = event.relatedTarget;
+						if (
+							nextTarget instanceof Node &&
+							event.currentTarget.contains(nextTarget)
+						) {
+							return;
+						}
+						setIsDraggingFiles(false);
+					}}
+					onDrop={(event) => {
+						setIsDraggingFiles(false);
+						if (!canAttach || isSpawnDrag(event.dataTransfer))
+							return;
+
+						const dropped = Array.from(event.dataTransfer.files);
+						if (dropped.length === 0) return;
+						event.preventDefault();
+						queueFiles(dropped);
+					}}
+				>
+					<ModelChatAttachmentStrip
+						files={pendingFiles}
+						onRemove={removeFile}
+						disabled={isBusy}
+					/>
+					<Textarea
+						ref={textareaRef}
+						value={draft}
+						onChange={(event) => setDraft(event.target.value)}
+						onKeyDown={handleKeyDown}
+						onPaste={handlePaste}
+						disabled={!isReady}
+						placeholder="Ask this model a question"
+						aria-label="Message"
+						className="max-h-56 min-h-24 resize-none rounded-none border-0 bg-card px-4 py-4 shadow-none focus-visible:ring-0"
+						data-testid="model-chat-composer-input"
+					/>
+					<div className="flex items-center gap-2 bg-card p-2">
+						{supportsAttachments && (
+							<>
+								<input
+									ref={fileInputRef}
+									type="file"
+									multiple
+									hidden
+									onChange={(event) => {
+										const selected = Array.from(
+											event.target.files ?? [],
+										);
+										event.target.value = "";
+										queueFiles(selected);
+									}}
+									data-testid="model-chat-composer-file-input"
 								/>
-							)}
-						</Button>
-					) : (
-						<Button
-							variant="default"
-							size="icon-sm"
-							aria-label="Send message"
-							disabled={!canSend}
-							onClick={submit}
-							data-testid="model-chat-composer-send"
-						>
-							<SendIcon aria-hidden />
-						</Button>
-					)}
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Attach files"
+									disabled={!canAttach}
+									onClick={() =>
+										fileInputRef.current?.click()
+									}
+									data-testid="model-chat-composer-attach"
+								>
+									<PaperclipIcon aria-hidden />
+								</Button>
+							</>
+						)}
+						<div className="min-w-0 flex-1" />
+						{isBusy ? (
+							<Button
+								variant="default"
+								size="icon-sm"
+								aria-label="Stop generating"
+								disabled={isStopping}
+								onClick={() => void stop()}
+								data-testid="model-chat-composer-stop"
+							>
+								{isStopping ? (
+									<Spinner />
+								) : (
+									<SquareIcon
+										className="size-3"
+										fill="currentColor"
+										aria-hidden
+									/>
+								)}
+							</Button>
+						) : (
+							<Button
+								variant="default"
+								size="icon-sm"
+								aria-label="Send message"
+								disabled={!canSend}
+								onClick={submit}
+								data-testid="model-chat-composer-send"
+							>
+								<SendIcon aria-hidden />
+							</Button>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>

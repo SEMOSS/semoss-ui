@@ -33,6 +33,15 @@ export interface ConnectorPanelValue {
 	focusItem?: ConnectorFocusRequest;
 }
 
+/** A browser the dock's left rail holds. */
+export type ConnectorBrowser =
+	| "mail"
+	| "calendar"
+	| "onedrive"
+	| "teams-chats"
+	| "teams-channels"
+	| "teams-files";
+
 /** Collaboration owns navigation and calendar state for the open chat. */
 export interface RoomConnectorsContextValue {
 	session?: RoomSession;
@@ -44,7 +53,7 @@ export interface RoomConnectorsContextValue {
 	) => void;
 	openCalendar: (provider: ConnectorAccount) => void;
 	returnToBrowser: (
-		browser: "mail" | "calendar",
+		browser: ConnectorBrowser,
 		provider: ConnectorAccount,
 		itemKey?: string,
 		returnFocusId?: string,

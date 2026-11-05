@@ -14,12 +14,30 @@ import {
 	EVENT_DETAIL_PANEL,
 	FULL_CALENDAR_PANEL,
 	MAIL_DETAIL_PANEL,
+	ONEDRIVE_BROWSER_PANEL,
+	TEAMS_CHANNELS_PANEL,
+	TEAMS_CHATS_PANEL,
+	TEAMS_FILES_PANEL,
 } from "./room-connectors.constants";
 import { RoomConnectorsContext } from "./room-connectors.context";
 import type {
+	ConnectorBrowser,
 	ConnectorPanelValue,
 	RoomConnectorsContextValue,
 } from "./room-connectors.types";
+
+// each rail browser, and the name one opened on demand is given
+const BROWSERS: Record<ConnectorBrowser, { type: string; nameKey: string }> = {
+	mail: { type: EMAIL_BROWSER_PANEL, nameKey: "mail.emails" },
+	calendar: { type: CALENDAR_BROWSER_PANEL, nameKey: "calendar.title" },
+	onedrive: { type: ONEDRIVE_BROWSER_PANEL, nameKey: "services.onedrive" },
+	"teams-chats": { type: TEAMS_CHATS_PANEL, nameKey: "services.teamsChats" },
+	"teams-channels": {
+		type: TEAMS_CHANNELS_PANEL,
+		nameKey: "services.teamsChannels",
+	},
+	"teams-files": { type: TEAMS_FILES_PANEL, nameKey: "services.teamsFiles" },
+};
 
 /** Keep connector state inside the current chat's retained workbench lifetime. */
 export function RoomConnectorsProvider({
@@ -122,20 +140,17 @@ export function RoomConnectorsProvider({
 	);
 	const returnToBrowser = useCallback(
 		(
-			browser: "mail" | "calendar",
+			browser: ConnectorBrowser,
 			provider: ConnectorAccount,
 			itemKey?: string,
 			returnFocusId?: string,
 		) => {
-			const type =
-				browser === "mail"
-					? EMAIL_BROWSER_PANEL
-					: CALENDAR_BROWSER_PANEL;
+			const { type, nameKey } = BROWSERS[browser];
 			const actions = store.getState().layout.actions;
 			const id = actions.selectPanel(
 				type,
 				{ provider },
-				{ target: { kind: "border", side: "left" } },
+				{ name: t(nameKey), target: { kind: "border", side: "left" } },
 			);
 			actions.setPanelValue(id, (previous: unknown) => {
 				const value = previous as ConnectorPanelValue | undefined;
@@ -149,7 +164,7 @@ export function RoomConnectorsProvider({
 			});
 			openWorkbench(undefined, returnFocusId);
 		},
-		[openWorkbench, store],
+		[openWorkbench, store, t],
 	);
 	const value: RoomConnectorsContextValue = {
 		session,

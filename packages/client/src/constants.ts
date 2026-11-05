@@ -59,6 +59,7 @@ export const TYPE_TO_ROUTE = {
 	INSIGHT: "/app",
 	SKILL: "/skill",
 	NOTEBOOK: "/notebook",
+	AUTOMATION: "/automation",
 	WORKSPACE: "/agent",
 	FUNCTION: "/function",
 	MODEL: "/model",

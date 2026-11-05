@@ -30,8 +30,6 @@ export interface RoomOptionsFormProps {
 	options: RoomStore["options"];
 	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
 	agentEditable?: boolean;
-	/** Commit Agent mode only after a picker Save. */
-	onAgentModeSelected?: () => void;
 	disabled?: boolean;
 	/** Agent runs supply their own tools instead of the chat's default tools. */
 	isAgentMode?: boolean;
@@ -44,7 +42,6 @@ export const RoomOptionsForm = observer(
 		options,
 		onOptionsChange,
 		agentEditable = false,
-		onAgentModeSelected,
 		disabled = false,
 		isAgentMode = false,
 	}: RoomOptionsFormProps) => {
@@ -265,14 +262,6 @@ export const RoomOptionsForm = observer(
 									? { workspace: next.workspace ?? undefined }
 									: {}),
 							});
-							if (
-								agentEditable &&
-								(next.agentModeSelected ||
-									overlay.type === "AGENT" ||
-									next.workspace?.workspace_id !==
-										options.workspace?.workspace_id)
-							)
-								onAgentModeSelected?.();
 						}
 						setOverlay((current) => ({
 							...current,

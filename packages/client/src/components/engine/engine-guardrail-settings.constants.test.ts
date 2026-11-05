@@ -7,10 +7,12 @@ import {
 	extractInterceptableMethods,
 	extractResultArgumentName,
 	guardrailArgumentOptions,
+	guardrailCanRespond,
 	guardrailConfigFromResponse,
 	guardrailConfigToJson,
 	guardrailToolResultArgument,
 	type InterceptableMethod,
+	nextGuardrailCheckId,
 	validateGuardrailConfig,
 } from "./engine-guardrail-settings.constants";
 
@@ -21,15 +23,16 @@ const LIST_BATCHES: InterceptableMethod = {
 	deprecated: false,
 	returnType: "BatchListResponse",
 	returnsModelResponse: false,
+	resultGuardable: false,
 	arguments: [],
 };
 
 /** A blocking response check reading one argument. */
 const outputCheck = (args: string) => ({
 	id: "check-1",
+	checkId: "check-1",
 	guardrailEngineId: "guardrail-1",
 	failureAction: "block" as const,
-	closeRoomOnBlock: false,
 	blockErrorMessage: "",
 	inputMapping: [{ id: "a", key: "prompt", args }],
 	directParameters: [],
@@ -40,6 +43,7 @@ const ASK_ROOM: InterceptableMethod = {
 	deprecated: false,
 	returnType: "AskModelEngineResponse",
 	returnsModelResponse: true,
+	resultGuardable: true,
 	arguments: [
 		{
 			name: "arg0",
@@ -73,7 +77,6 @@ describe("guardrail settings configuration", () => {
 								blockOnGuardrailFailure: false,
 								maskOnGuardrailFailure: false,
 								respondWithGuardrailMessage: true,
-								closeRoomOnBlock: false,
 								inputMapping: { prompt: "arg0" },
 							},
 						},
@@ -85,7 +88,8 @@ describe("guardrail settings configuration", () => {
 		const entry = form.pipelines[0]?.input[0];
 		expect(entry).toMatchObject({
 			failureAction: "respond",
-			closeRoomOnBlock: false,
+			// a check stored without an id takes the next one in order
+			checkId: "check0",
 			blockErrorMessage: "",
 		});
 
@@ -96,9 +100,83 @@ describe("guardrail settings configuration", () => {
 			blockOnGuardrailFailure: false,
 			maskOnGuardrailFailure: false,
 			respondWithGuardrailMessage: true,
-			closeRoomOnBlock: false,
+			checkId: "check0",
 		});
 		expect(serializedEntry.params).not.toHaveProperty("blockErrorMessage");
+	});
+
+	test("flags a hit limit counting a check that was removed", () => {
+		const form = guardrailConfigFromResponse({
+			pipelines: {
+				askRoom: {
+					input: [
+						{
+							reactorClass: INPUT_REACTOR,
+							params: {
+								checkId: "toxicity",
+								guardrailEngineId: "guardrail-1",
+								inputMapping: { prompt: "arg0" },
+							},
+						},
+					],
+				},
+			},
+			hitLimits: [
+				{
+					limitId: "close",
+					checks: ["toxicity"],
+					hits: 3,
+					scope: "ROOM",
+				},
+			],
+		});
+		expect(validateGuardrailConfig(form)).toBe(true);
+
+		const [pipeline] = form.pipelines;
+		if (!pipeline) {
+			throw Error("The rule was not read");
+		}
+		pipeline.input = [];
+		pipeline.output = [outputCheck("result")];
+
+		expect(validateGuardrailConfig(form)).toBe(
+			"Hit limit 1 counts a check that was removed. Choose the checks again.",
+		);
+	});
+
+	test("numbers new checks after the highest id the configuration has", () => {
+		const form = guardrailConfigFromResponse({
+			pipelines: {
+				askRoom: {
+					input: [
+						{
+							reactorClass: INPUT_REACTOR,
+							params: {
+								checkId: "check4",
+								guardrailEngineId: "guardrail-1",
+								inputMapping: { prompt: "arg0" },
+							},
+						},
+						{
+							reactorClass: INPUT_REACTOR,
+							params: {
+								guardrailEngineId: "guardrail-2",
+								inputMapping: { prompt: "arg0" },
+							},
+						},
+					],
+				},
+			},
+		});
+
+		expect(form.pipelines[0]?.input.map((entry) => entry.checkId)).toEqual([
+			"check4",
+			"check5",
+		]);
+		expect(nextGuardrailCheckId(form.pipelines)).toBe("check6");
+		expect(
+			createGuardrailPipeline("*", form.pipelines).input[0]?.checkId,
+		).toBe("check6");
 	});
 
 	test("writes explicit false defaults and omits an empty block message", () => {
@@ -113,7 +191,6 @@ describe("guardrail settings configuration", () => {
 		expect(params.blockOnGuardrailFailure).toBe(true);
 		expect(params.maskOnGuardrailFailure).toBe(false);
 		expect(params.respondWithGuardrailMessage).toBe(false);
-		expect(params.closeRoomOnBlock).toBe(false);
 		expect(params).not.toHaveProperty("blockErrorMessage");
 	});
 
@@ -349,7 +426,7 @@ describe("guardrail settings configuration", () => {
 		).toEqual([]);
 	});
 
-	test("warns when the intercepted call returns no model response", () => {
+	test("warns when the intercepted call returns nothing a guardrail can screen", () => {
 		const pipeline = createGuardrailPipeline("listBatches");
 		pipeline.input = [];
 		pipeline.output = [outputCheck("result")];
@@ -363,8 +440,48 @@ describe("guardrail settings configuration", () => {
 		).filter((issue) => issue.severity === "warning");
 
 		expect(warnings.map((issue) => issue.message)).toEqual([
-			'listBatches returns BatchListResponse rather than a model response, so "prompt" receives that object rather than screenable content.',
+			'listBatches returns BatchListResponse, which carries no text a guardrail can screen, so "prompt" receives that object rather than screenable content.',
 		]);
+	});
+
+	test("rejects answering with the guardrail's message where no model response comes back", () => {
+		const pipeline = createGuardrailPipeline("listBatches");
+		const [check] = pipeline.input;
+		if (!check) {
+			throw Error("A new rule starts with a request check");
+		}
+		pipeline.input = [{ ...check, failureAction: "respond" }];
+
+		const errors = collectGuardrailConfigIssues(
+			{ pipelines: [pipeline] },
+			{ methods: [ASK_ROOM, LIST_BATCHES], resultArgumentName: "result" },
+		).filter((issue) => issue.severity === "error");
+
+		expect(errors.map((issue) => issue.message)).toEqual([
+			"listBatches does not return a model response, so this check cannot answer with the guardrail's message. Choose Block or Mask.",
+		]);
+	});
+
+	test("lets a rule on every call answer when some call returns a model response", () => {
+		expect(
+			guardrailCanRespond({
+				method: "*",
+				methods: [ASK_ROOM, LIST_BATCHES],
+			}),
+		).toBe(true);
+		expect(
+			guardrailCanRespond({ method: "*", methods: [LIST_BATCHES] }),
+		).toBe(false);
+		expect(
+			guardrailCanRespond({
+				method: "listBatches",
+				methods: [ASK_ROOM, LIST_BATCHES],
+			}),
+		).toBe(false);
+		// a method the backend did not report cannot be ruled out
+		expect(
+			guardrailCanRespond({ method: "custom", methods: [ASK_ROOM] }),
+		).toBe(true);
 	});
 
 	test("warns when an input check reads a result that does not exist yet", () => {
@@ -381,7 +498,7 @@ describe("guardrail settings configuration", () => {
 		).filter((issue) => issue.severity === "warning");
 
 		expect(warnings[0]?.message).toBe(
-			'"result" only exists after the model runs, so an input guardrail receives nothing for "prompt".',
+			'"result" only exists after the call runs, so an input guardrail receives nothing for "prompt".',
 		);
 	});
 });
@@ -546,6 +663,7 @@ describe("guardrail settings response extraction", () => {
 					deprecated: false,
 					returnType: "AskModelEngineResponse",
 					returnsModelResponse: true,
+					resultGuardable: true,
 					arguments: [
 						{
 							name: "arg0",
@@ -564,6 +682,7 @@ describe("guardrail settings response extraction", () => {
 
 		const methods = extractInterceptableMethods(response);
 		expect(methods).toHaveLength(1);
+		expect(methods[0]?.resultGuardable).toBe(true);
 		expect(methods[0]?.arguments.map((argument) => argument.name)).toEqual([
 			"arg0",
 		]);

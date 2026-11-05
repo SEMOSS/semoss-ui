@@ -1,4 +1,3 @@
-import { Receipt } from "lucide-react";
 import { useId } from "react";
 import {
 	Card,
@@ -25,6 +24,7 @@ import {
 	type ExpenseRoutineSettings,
 	expenseRoutineSettingsSchema,
 } from "./expense-routine-schema";
+import { RoutineAgentAvatar } from "./routine-agent-avatar";
 import { RoutineAvailability } from "./routine-availability";
 import { RoutineCardHeader } from "./routine-card-header";
 import { EXPENSE_RESULT_COPY } from "./routine-copy";
@@ -128,8 +128,10 @@ export function ExpenseRoutineForm({
 					aria-busy={isSubmitting}
 				>
 					<RoutineCardHeader
-						icon={Receipt}
-						title="Expense review"
+						avatar={
+							<RoutineAgentAvatar routineId="expense-review" />
+						}
+						title="Expense review agent"
 						description="A suggested decision on each meeting or business approval request that reaches your inbox, checked against your guideline documents."
 						routine={routine}
 						enabledLabel="On"
@@ -244,7 +246,10 @@ export function ExpenseRoutineForm({
 					/>
 				</Form>
 			</Card>
-			<RoutineFlowSection title="Expense review" flow={routine.flow} />
+			<RoutineFlowSection
+				title="Expense review agent"
+				flow={routine.flow}
+			/>
 		</div>
 	);
 }

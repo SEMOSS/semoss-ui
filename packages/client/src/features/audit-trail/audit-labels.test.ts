@@ -49,6 +49,19 @@ describe("audit labels", () => {
 		expect(describeAuditEvent(eventType, null, "SUCCESS")).toBe(label);
 	});
 
+	it.each([
+		["PROJECT_EXPORT", "App Exported"],
+		["ENGINE_EXPORT", "Engine Exported"],
+	])("names the export %s %s", (eventType, label) => {
+		expect(describeAuditEvent(eventType, null, "SUCCESS")).toBe(label);
+	});
+
+	it("names an admin closing a user's agent room", () => {
+		expect(describeAuditEvent("AGENT_ROOM_CLOSE", null, "SUCCESS")).toBe(
+			"Agent Room Closed",
+		);
+	});
+
 	it("names a grant removed at its end date Access Ended, without repeating the action", () => {
 		expect(
 			describeAuditEvent(

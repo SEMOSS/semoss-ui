@@ -1,5 +1,6 @@
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
+import { ROUTINE_RUNS_CHANGED } from "./api/list-recent-routine-runs";
 import {
 	type CustomRoutine,
 	type CustomRoutineSettings,
@@ -8,13 +9,19 @@ import {
 	routineDocumentsSchema,
 } from "./custom-routine-schema";
 
+/** Every skill the owner can use, from their SEMOSS skill catalog, for a routine's skill picker. */
+export const SKILL_CATALOG_PIXEL = `META | ${pixel("MyProjects", {
+	projectType: ["SKILL"],
+	metaKeys: ["description"],
+})}`;
+
 /** Create (no routineId) or save one of the owner's routines. */
 export async function saveCustomRoutine(
 	actions: InsightActions,
 	settings: CustomRoutineSettings,
 	routineId?: string,
 ): Promise<CustomRoutine> {
-	return callPixel(
+	const saved = await callPixel(
 		actions,
 		pixel("WorkSaveCustomRoutine", {
 			...customRoutineSettingsSchema.parse(settings),
@@ -22,6 +29,9 @@ export async function saveCustomRoutine(
 		}),
 		customRoutineSchema,
 	);
+	// a new name shows in the sidebar's recent runs
+	window.dispatchEvent(new Event(ROUTINE_RUNS_CHANGED));
+	return saved;
 }
 
 /** Pause, resume, run now, or delete one of the owner's routines. */
@@ -35,6 +45,7 @@ export async function manageCustomRoutine(
 		pixel("WorkManageCustomRoutine", { routineId, action }),
 		z.unknown(),
 	);
+	window.dispatchEvent(new Event(ROUTINE_RUNS_CHANGED));
 }
 
 /**
@@ -49,18 +60,5 @@ export function openRoutineDocuments(
 		actions,
 		pixel("WorkRoutineDocuments", { routineId }),
 		routineDocumentsSchema,
-	);
-}
-
-/** Turn one of the owner's skills on or off for their assistant. */
-export async function setSkillInAssistant(
-	actions: InsightActions,
-	skillId: string,
-	use: boolean,
-): Promise<void> {
-	await callPixel(
-		actions,
-		pixel("WorkUseSkillInAssistant", { skillId, use }),
-		z.unknown(),
 	);
 }

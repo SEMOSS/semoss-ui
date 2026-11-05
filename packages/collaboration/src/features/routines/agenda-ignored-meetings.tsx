@@ -4,10 +4,12 @@ import { Button, Small } from "@semoss/ui/next";
 interface AgendaIgnoredMeetingsProps {
 	/** Ignored titles to list, after any filter. */
 	titles: string[];
+	/** Tells rows apart when titles can repeat; the title when not given. */
+	keys?: string[];
 	/** Every ignored title, to tell an empty list from a filtered one. */
 	total: number;
 	/** Receives a title to show in the lists again. */
-	onRestore: (title: string) => void;
+	onRestore: (title: string, index: number) => void;
 	/** Locks the buttons while a save is pending. */
 	disabled: boolean;
 }
@@ -15,6 +17,7 @@ interface AgendaIgnoredMeetingsProps {
 /** The meetings the owner hid from the picker, each with a way back. */
 export function AgendaIgnoredMeetings({
 	titles,
+	keys,
 	total,
 	onRestore,
 	disabled,
@@ -35,9 +38,9 @@ export function AgendaIgnoredMeetings({
 						: "Hidden from the other tabs. Restore one to choose it again."}
 			</Small>
 			<ul aria-label="Ignored meetings" className="flex flex-col gap-2">
-				{titles.map((title) => (
+				{titles.map((title, index) => (
 					<li
-						key={title}
+						key={keys?.[index] ?? title}
 						className="flex items-center justify-between gap-3"
 					>
 						<span className="min-w-0 break-words text-sm">
@@ -51,7 +54,7 @@ export function AgendaIgnoredMeetings({
 							disabled={disabled}
 							aria-label={`Restore ${title}`}
 							onClick={() => {
-								onRestore(title);
+								onRestore(title, index);
 								// the row is gone, so focus stays on the list
 								boxRef.current?.focus();
 							}}

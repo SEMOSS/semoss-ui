@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import { useInsight } from "@semoss/sdk/react";
-import { Alert, AlertDescription, Small, Spinner } from "@semoss/ui/next";
+import { Alert, AlertDescription, Spinner } from "@semoss/ui/next";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import { openRoutineDocuments } from "./custom-routine-api";
 import { RoutineDocumentsDock } from "./routine-documents-dock";
@@ -49,10 +49,6 @@ export function RoutineDocuments({
 			aria-label="Reference documents"
 			className="flex min-h-0 min-w-0 flex-1 flex-col gap-3"
 		>
-			<Small className="font-normal text-muted-foreground">
-				Files your routine can read on every run. Upload, open and edit
-				them here; only you see them.
-			</Small>
 			{error ? (
 				<Alert variant="destructive">
 					<AlertDescription>{error}</AlertDescription>

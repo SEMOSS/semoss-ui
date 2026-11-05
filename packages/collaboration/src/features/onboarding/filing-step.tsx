@@ -38,15 +38,13 @@ export function FilingStep({ actions, onBack, eyebrow }: OnboardingStepProps) {
 		? noTopics
 			? "Setup saved without topics"
 			: "Your Work is ready"
-		: partial
-			? "Some threads still need filing"
-			: running
-				? "Filing your mail"
-				: isLoading
-					? "Checking your saved setup"
-					: review?.appliedRevision === review?.revision && review
-						? "Your topics are saved"
-						: "Check your topic setup";
+		: running
+			? "Filing your mail"
+			: isLoading
+				? "Checking your saved setup"
+				: review?.appliedRevision === review?.revision && review
+					? "Your topics are saved"
+					: "Check your topic setup";
 	const finish = (): void => {
 		if (!ready) return;
 		window.location.hash = "#/work";
@@ -58,7 +56,9 @@ export function FilingStep({ actions, onBack, eyebrow }: OnboardingStepProps) {
 				{ready && noTopics
 					? "Your mail stays available in Work. You can add topics later."
 					: ready
-						? "Your saved topics are ready, and the filing result is confirmed."
+						? partial
+							? "Your saved topics are ready, and most of your mail is filed."
+							: "Your saved topics are ready, and the filing result is confirmed."
 						: "We are checking the filing job for the topic review you saved."}
 			</StepHeader>
 			{isLoading && (

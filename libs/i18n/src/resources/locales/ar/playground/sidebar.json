@@ -64,7 +64,7 @@
 		"roomDeletedSuccess": "تم حذف الغرفة بنجاح"
 	},
 	"workbench": {
-		"file": "ملف",
+		"view": "عرض",
 		"navigate": "تنقّل",
 		"commandPalette": "افتح لوحة الأوامر…",
 		"layout": "رتّب اللوحات",

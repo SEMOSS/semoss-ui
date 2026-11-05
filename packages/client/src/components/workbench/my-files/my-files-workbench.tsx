@@ -26,8 +26,10 @@ import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
+import { TERMINAL_PANEL } from "../terminal/terminal-panel";
 import {
 	createFileCommands,
+	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../workbench.presets";
@@ -38,20 +40,22 @@ const USER_MODE = { type: "USER" } as const;
 /**
  * Blueprints, keyed by type. Module-scope so identities never churn.
  *
- * Only the file panels: a user's space has no engine, no project, and so no
- * settings, version control, or assistant room to hang off. The assistant in
- * particular needs a PROJECT or ENGINE id to source its room tools from, and
- * there is no user-scoped equivalent yet.
+ * The file panels and a terminal: a user's space has no engine, no project,
+ * and so no settings, version control, or assistant room to hang off. The
+ * assistant in particular needs a PROJECT or ENGINE id to source its room
+ * tools from, and there is no user-scoped equivalent yet.
  */
 export const MY_FILES_WORKBENCH_COMPONENTS: Record<
 	string,
 	WorkbenchPanelConfigAny
 > = {
 	...FILE_PANEL_COMPONENTS,
+	[WORKBENCH_COMPONENTS.TERMINAL]: TERMINAL_PANEL,
 };
 
 /**
- * The default arrangement: files on the left, an empty stage to open them into.
+ * The default arrangement: files on the left, the terminal below, an empty
+ * stage to open files into.
  *
  * A module-scope constant rather than a factory, because USER mode has nothing
  * to parameterise it with — no id, and no permission to branch on (a user
@@ -70,11 +74,17 @@ const MY_FILES_LAYOUT: WorkbenchLayout = {
 			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
 			config: { mode: USER_MODE },
 		},
+		[WORKBENCH_PANEL_RECORDS.TERMINAL.id]: WORKBENCH_PANEL_RECORDS.TERMINAL,
 	},
 	borders: {
 		left: {
 			panelIds: [WORKBENCH_COMPONENTS.FILE_EXPLORER],
 			activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+			size: 300,
+		},
+		bottom: {
+			panelIds: [WORKBENCH_COMPONENTS.TERMINAL],
+			activeId: null,
 			size: 300,
 		},
 	},
@@ -91,7 +101,7 @@ const MY_FILES_LAYOUT: WorkbenchLayout = {
 export const MyFilesWorkbench: React.FC = () => {
 	const insight = useInsight();
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		"workbench-layout--my-files--1",
+		"workbench-layout--my-files--2",
 		MY_FILES_LAYOUT,
 	);
 	const [isMaximized, setIsMaximized] = useState(false);
@@ -105,6 +115,12 @@ export const MyFilesWorkbench: React.FC = () => {
 			type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 			config: { mode: USER_MODE },
 		}),
+		createOpenPanelCommand({
+			id: "workbench.terminal.open",
+			label: "Open Terminal",
+			type: WORKBENCH_COMPONENTS.TERMINAL,
+		}),
+		createNewTerminalCommand(WORKBENCH_COMPONENTS.TERMINAL),
 	]);
 
 	return (

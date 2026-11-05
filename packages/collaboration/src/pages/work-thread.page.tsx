@@ -7,8 +7,9 @@ import {
 } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
-import { Alert, AlertDescription, Button, P, Spinner } from "@semoss/ui/next";
+import { Alert, AlertDescription, Button } from "@semoss/ui/next";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { RoomLoading } from "@/features/rooms/components/room-loading";
 import { createSourceImportAttempt } from "@/features/rooms/source-import/source-import-attempt";
 import { roomPath } from "@/lib/workspace-paths";
 
@@ -54,36 +55,35 @@ export function WorkThreadPage() {
 			release();
 		};
 	}, [attempt, open]);
-	const progress =
-		snapshot.phase === "loading-source"
-			? "Loading thread…"
-			: snapshot.phase === "creating-room"
-				? "Opening room…"
-				: "Saving thread to room files…";
+	if (!snapshot.error) {
+		const thread = state.threads.find((current) => current.id === threadId);
+		return (
+			<RoomLoading
+				step={
+					snapshot.phase === "loading-source"
+						? 0
+						: snapshot.phase === "creating-room"
+							? 1
+							: 2
+				}
+				subject={thread?.subject}
+				channel={thread?.channel}
+			/>
+		);
+	}
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-auto p-6">
-			{snapshot.error ? (
-				<>
-					<Alert variant="destructive">
-						<AlertDescription>{snapshot.error}</AlertDescription>
-					</Alert>
-					<Button
-						type="button"
-						variant="outline"
-						className="min-h-11 self-start"
-						onClick={() => void open()}
-					>
-						Retry opening thread
-					</Button>
-				</>
-			) : (
-				<P>
-					<output className="flex items-center gap-2">
-						<Spinner aria-hidden="true" />
-						{progress}
-					</output>
-				</P>
-			)}
+			<Alert variant="destructive">
+				<AlertDescription>{snapshot.error}</AlertDescription>
+			</Alert>
+			<Button
+				type="button"
+				variant="outline"
+				className="min-h-11 self-start"
+				onClick={() => void open()}
+			>
+				Retry opening thread
+			</Button>
 		</div>
 	);
 }

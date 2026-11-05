@@ -2,6 +2,16 @@ export * from "./agent";
 export * from "./app-catalog-avatar";
 export * from "./auditlog";
 export * from "./cell-output";
+export {
+	ChatGeneratingIndicator,
+	type ChatGeneratingIndicatorProps,
+} from "./chat/chat-generating-indicator";
+export { ChatReasoning, type ChatReasoningProps } from "./chat/chat-reasoning";
+export {
+	ChatToolCallRow,
+	type ChatToolCallRowProps,
+	type ChatToolCallStatus,
+} from "./chat/chat-tool-call-row";
 export * from "./column-metadata-modal";
 export * from "./connector-brand-icon";
 export * from "./current-login-star";

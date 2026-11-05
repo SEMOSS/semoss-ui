@@ -21,6 +21,7 @@ import github from "@/assets/img/GITHUB.svg";
 import google from "@/assets/img/GOOGLE.svg";
 import ms from "@/assets/img/ms.png";
 import other from "@/assets/img/other.png";
+import { PlatformDefaultCard } from "@/features/platform-default-limit/platform-default-card";
 import { useAPI, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
@@ -134,16 +135,9 @@ export const ConfigurationsPage = () => {
 		setAuthentication(filtered);
 	}, [authSearch]);
 
-	if (loginProperties.status !== "SUCCESS" || !Object.keys(socialProps)) {
-		return (
-			<div className="flex h-full items-center justify-center gap-2">
-				<Spinner className="size-6" />
-				<span className="text-muted-foreground text-sm">
-					Retrieving social properties
-				</span>
-			</div>
-		);
-	}
+	// only the Settings tab waits for the login properties
+	const isLoadingLoginProperties =
+		loginProperties.status !== "SUCCESS" || !Object.keys(socialProps);
 
 	const updateSocialProps = (
 		fieldName: string,
@@ -288,12 +282,31 @@ export const ConfigurationsPage = () => {
 			<Tabs value={tabValue} onValueChange={setTabValue} className="mb-4">
 				<TabsList>
 					<TabsTrigger value="settings">Settings</TabsTrigger>
+					<TabsTrigger value="usage-limits">Usage Limits</TabsTrigger>
 					<TabsTrigger value="file-contents" disabled>
 						File Contents
 					</TabsTrigger>
 				</TabsList>
 			</Tabs>
-			{customTogglePanel(settingsPage(), "settings", tabValue)}
+			{customTogglePanel(
+				isLoadingLoginProperties ? (
+					<div className="flex items-center justify-center gap-2 py-10">
+						<Spinner className="size-6" />
+						<span className="text-muted-foreground text-sm">
+							Retrieving social properties
+						</span>
+					</div>
+				) : (
+					settingsPage()
+				),
+				"settings",
+				tabValue,
+			)}
+			{customTogglePanel(
+				<PlatformDefaultCard />,
+				"usage-limits",
+				tabValue,
+			)}
 			{customTogglePanel(fileContentsPage(), "file-contents", tabValue)}
 		</div>
 	);

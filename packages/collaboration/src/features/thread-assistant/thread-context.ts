@@ -1,90 +1,39 @@
 import { z } from "@semoss/ui/next";
-import type { ThreadContext } from "@/features/collaboration/state/collaboration.types";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS } from "./thread-draft-proposal";
 
 const HEADER = "[SEMOSS_WORK_CONTEXT_V1]\n";
 const FOOTER = "\n[/SEMOSS_WORK_CONTEXT_V1]\n\n";
-const sourceContextSchema = z
-	.object({
-		threadId: z.string().min(1),
-		revision: z.string(),
-	})
-	.passthrough();
-const contextSchema = z
-	.object({
-		threadId: z.string().min(1),
-		contextRevision: z.string(),
-		context: sourceContextSchema.optional(),
-		/** Historical requests stored the snapshot as a JSON string. */
-		contextText: z.string().optional(),
-		referenceResults: z
-			.array(
-				z.object({
-					toolId: z.string(),
-					title: z.string(),
-					output: z.string(),
-				}),
-			)
-			.optional(),
-		insightsRequestId: z.string().optional(),
-		selectedSourceMessageId: z.string().min(1).optional(),
-		/** Email files sent with this request, and which message each came from. */
-		attachments: z
-			.array(
-				z.object({
-					messageId: z.string().min(1),
-					attachmentId: z.string().min(1),
-					name: z.string(),
-					/** Name of the copy in the room folder. */
-					file: z.string().min(1),
-					/** Office and mail files reach the model as their text. */
-					sentAs: z.enum(["file", "text"]),
-				}),
-			)
-			.optional(),
-		/** The email open in the owner's editor when they sent this, with their edits; ComposeEmail changes it by id. */
-		openEmail: z
-			.object({
-				id: z.string().min(1),
-				/** waiting: a SendEmail call is waiting for the owner to press Send */
-				status: z
-					.enum(["editing", "saved", "waiting", "sent"])
-					.optional(),
-				replyTo: z.string().min(1).optional(),
-				forward: z.string().min(1).optional(),
-				to: z.string(),
-				cc: z.string(),
-				subject: z.string(),
-				body: z.string(),
-				bodyRevision: z.number().int().nonnegative(),
-				attachments: z
-					.array(
-						z.object({
-							name: z.string(),
-							size: z.number().nonnegative(),
-						}),
-					)
-					.optional(),
-			})
-			.optional(),
-		/** Local editor target, persisted with the request for response correlation. */
-		emailDraft: z
-			.object({
-				draftId: z.string().min(1),
-				requestId: z.string().min(1),
-				body: z.string(),
-				bodyRevision: z.number().int().nonnegative(),
-			})
-			.optional(),
-	})
-	.refine((value) =>
-		value.context
-			? value.context.threadId === value.threadId &&
-				value.context.revision === value.contextRevision
-			: value.contextText !== undefined,
-	);
+// Older requests also carried the thread snapshot; zod drops those keys, so they still read.
+const contextSchema = z.object({
+	/** Historical requests for a thread summary. */
+	insightsRequestId: z.string().optional(),
+	selectedSourceMessageId: z.string().min(1).optional(),
+	/** The email open in the owner's editor when they sent this, with their edits; ComposeEmail changes it by id. */
+	openEmail: z
+		.object({
+			id: z.string().min(1),
+			/** waiting: a SendEmail call is waiting for the owner to press Send */
+			status: z.enum(["editing", "saved", "waiting", "sent"]).optional(),
+			replyTo: z.string().min(1).optional(),
+			forward: z.string().min(1).optional(),
+			to: z.string(),
+			cc: z.string(),
+			subject: z.string(),
+			body: z.string(),
+			bodyRevision: z.number().int().nonnegative(),
+			attachments: z
+				.array(
+					z.object({
+						name: z.string(),
+						size: z.number().nonnegative(),
+					}),
+				)
+				.optional(),
+		})
+		.optional(),
+});
 
 export type SubmittedThreadContext = z.infer<typeof contextSchema>;
 
@@ -125,58 +74,18 @@ export function threadInstructions(_agentId?: string): string {
 	return THREAD_ASSISTANT_INSTRUCTIONS;
 }
 
-/** Send the filtered source object once, omitting empty owner profile settings. */
-export function submittedThreadContext(
-	source: ThreadContext,
-): SubmittedThreadContext {
-	const { goal, profile, ...context } = source;
-	const owner = profile
-		? (() => {
-				const {
-					role,
-					style,
-					vips,
-					initials: _initials,
-					...fields
-				} = profile;
-				return {
-					...Object.fromEntries(
-						Object.entries(fields).filter(
-							([, value]) =>
-								typeof value !== "string" ||
-								value.trim().length > 0,
-						),
-					),
-					...(role.value.trim() ? { role } : {}),
-					...(style.confirmed ? { style } : {}),
-					...(vips.length ? { vips } : {}),
-				};
-			})()
-		: null;
-	return {
-		threadId: source.threadId,
-		contextRevision: source.revision,
-		context: {
-			...context,
-			...(goal.trim() ? { goal } : {}),
-			...(owner ? { profile: owner } : {}),
-		},
-	};
-}
-
-/** Diagnostics display both current structured sources and historical text snapshots. */
-export function threadContextText(context: SubmittedThreadContext): string {
-	return context.context
-		? JSON.stringify(context.context, null, 2)
-		: (context.contextText ?? "");
-}
-
-/** The exact source snapshot is persisted alongside the user's request. */
+/**
+ * The owner's request, led by the email they have selected or open. The thread
+ * itself reaches the model as the chat's file and the backend's Chat threads
+ * section, so a request with neither goes as typed.
+ */
 export function threadCommand(
 	context: SubmittedThreadContext,
 	request: string,
 ): string {
-	return `${HEADER}${JSON.stringify(context)}${FOOTER}${request}`;
+	return context.selectedSourceMessageId || context.openEmail
+		? `${HEADER}${JSON.stringify(context)}${FOOTER}${request}`
+		: request;
 }
 
 /** Validate a saved envelope before separating its visible request from source data. */
@@ -238,20 +147,4 @@ export function presentThreadMessages(
 					),
 				},
 	);
-}
-
-/** Recover the source audit snapshot from this thread's newest saved request. */
-export function lastSubmittedContext(
-	messages: ConversationMessage[],
-	threadId: string,
-): SubmittedThreadContext | null {
-	for (const message of [...messages].reverse()) {
-		if (message.role !== "user") continue;
-		for (const part of message.parts) {
-			if (part.type !== "text") continue;
-			const saved = readThreadCommand(part.command ?? part.text);
-			if (saved?.context.threadId === threadId) return saved.context;
-		}
-	}
-	return null;
 }

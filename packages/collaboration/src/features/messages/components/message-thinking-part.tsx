@@ -11,6 +11,7 @@ import {
 } from "@semoss/ui/next";
 import { useFollowScroll } from "../hooks/use-follow-scroll";
 import { useStreamingText } from "../hooks/use-streaming-text";
+import { thoughtHeading } from "../utils/thought-heading";
 import { MESSAGE_PROSE_CLASS_NAME } from "./message-prose.styles";
 
 /** Live reasoning that folds away when complete, without hiding keyboard focus. */
@@ -31,6 +32,7 @@ export function MessageThinkingPart({
 		shouldFlush,
 	});
 	const isActive = isStreaming || isRevealing;
+	const heading = thoughtHeading(displayedText);
 	const scroll = useFollowScroll({
 		resetKey: isActive ? "live" : "settled",
 		initialFollow: isActive,
@@ -71,7 +73,9 @@ export function MessageThinkingPart({
 						className="size-4 text-muted-foreground"
 					/>
 				)}
-				<Muted className="flex-1 text-sm">Thinking</Muted>
+				<Muted className="wrap-anywhere min-w-0 flex-1 text-sm">
+					{heading ? `Thinking \u00b7 ${heading}` : "Thinking"}
+				</Muted>
 				<ChevronDown
 					aria-hidden="true"
 					className={cn(

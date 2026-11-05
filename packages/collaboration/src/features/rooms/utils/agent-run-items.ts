@@ -5,6 +5,7 @@ import type {
 } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { resolveToolUiUrl } from "@/features/tools/utils/tool-metadata";
+import { readableToolTitle } from "@/features/tools/utils/tool-title";
 import {
 	type AgentAction,
 	type AgentEvent,
@@ -51,9 +52,11 @@ export function runItemTool(
 		id: item.id,
 		parentMessageId: "",
 		name: item.name,
-		title:
+		title: readableToolTitle(
 			item.title ||
-			(typeof originalName === "string" ? originalName : item.name),
+				(typeof originalName === "string" ? originalName : ""),
+			item.name,
+		),
 		arguments: item.arguments,
 		metadata: item.metadata ?? undefined,
 		status: item.status,

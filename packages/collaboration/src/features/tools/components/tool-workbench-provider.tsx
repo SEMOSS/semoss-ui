@@ -38,6 +38,8 @@ export interface ToolWorkbenchProviderProps {
 	/** Host-specific panels and initial arrangement; supplied before store creation. */
 	components?: Record<string, WorkbenchPanelConfigAny>;
 	createLayout?: (insightId: string) => WorkbenchLayout;
+	/** Changing it merges a fresh createLayout into the live dock, keeping children mounted. */
+	layoutKey?: string;
 	/** A host with persistent run-status controls may keep the dock closed until requested. */
 	autoReveal?: boolean;
 	/** Initial visibility chosen by the host; later toggles remain user-owned. */
@@ -96,10 +98,29 @@ export function ToolWorkbenchProvider({
 	panelTarget,
 	components = TOOL_WORKBENCH_COMPONENTS,
 	createLayout = createToolWorkbenchLayout,
+	layoutKey,
 }: ToolWorkbenchProviderProps) {
-	const [{ store, snapshot }] = useState(() =>
+	const [{ store, snapshot: initialSnapshot }] = useState(() =>
 		createRoomToolWorkbench(insightId, components, createLayout),
 	);
+	// the shell re-applies this on mount, so it must track what the store loaded
+	const [snapshot, setSnapshot] = useState(initialSnapshot);
+	const appliedLayoutKey = useRef(layoutKey);
+	useEffect(() => {
+		if (appliedLayoutKey.current === layoutKey) return;
+		appliedLayoutKey.current = layoutKey;
+		const actions = store.getState().layout.actions;
+		const current = actions.getSnapshot();
+		const next = createLayout(insightId);
+		// new panels and rails join; panels the user already opened stay
+		const merged = {
+			...current,
+			panels: { ...next.panels, ...current.panels },
+			borders: { ...current.borders, ...next.borders },
+		};
+		actions.loadSnapshot(merged);
+		setSnapshot(merged);
+	}, [layoutKey, createLayout, insightId, store]);
 	const isMobile = useIsMobile();
 	const [isOpen, setIsOpen] = useState(defaultOpen);
 	const [inlineToolIds, setInlineToolIds] = useState<Set<string>>(

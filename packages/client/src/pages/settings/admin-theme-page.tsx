@@ -677,7 +677,7 @@ export const AdminThemePage: React.FC = () => {
 	const hasNoThemeSelected = !isCreating && !selectedTheme;
 
 	return (
-		<div className="mx-auto flex w-full flex-1 flex-col gap-4 pb-8">
+		<div className="mx-auto flex w-full flex-1 flex-col gap-4">
 			{/* Header: theme picker + actions */}
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 				<Select
