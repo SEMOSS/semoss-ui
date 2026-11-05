@@ -6,6 +6,22 @@ import {
 	readRun,
 } from "@/features/rooms/api/agent-run-api";
 
+// status reads: every 3 s on screen, 10 s while it waits for the owner, 15 s from a hidden tab
+const LIVE_WAIT_MS = 3000;
+const WAITING_WAIT_MS = 10_000;
+const HIDDEN_WAIT_MS = 15_000;
+
+function nextWait(run: AgentRun, children: AgentRun[]): number {
+	if (document.visibilityState === "hidden") return HIDDEN_WAIT_MS;
+	const waiting =
+		run.status === "INPUT_REQUIRED" &&
+		children.every(
+			(child) =>
+				isTerminalRun(child) || child.status === "INPUT_REQUIRED",
+		);
+	return waiting ? WAITING_WAIT_MS : LIVE_WAIT_MS;
+}
+
 /** Inspect durable run records; never attach another consumer to a run's event stream. */
 export function useRunDetail(
 	insightId: string,
@@ -37,14 +53,21 @@ export function useRunDetail(
 		let cancelled = false;
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		let failures = 0;
+		// messages are the heavy part: read them first, then only when the run visibly moves
+		let withMessages = true;
+		let messages: AgentRun["messages"];
+		let lastKey = "";
 		const refresh = async (): Promise<void> => {
+			const reading = withMessages;
 			try {
-				const [run, children] = await Promise.all([
-					readRun(insightId, runId),
+				const [read, children] = await Promise.all([
+					readRun(insightId, runId, reading),
 					listChildRuns(insightId, runId),
 				]);
 				if (cancelled) return;
 				failures = 0;
+				if (reading) messages = read.messages;
+				const run = reading ? read : { ...read, messages };
 				setState({
 					id: runId,
 					run,
@@ -52,14 +75,28 @@ export function useRunDetail(
 					error: null,
 					isLoading: false,
 				});
-				if (
+				const key = JSON.stringify([
+					run.status,
+					run.progress?.activity,
+					run.pendingActions.map((action) => action.actionId),
+					children.map((child) => [child.runId, child.status]),
+				]);
+				const moved = key !== lastKey;
+				lastKey = key;
+				const live =
 					!isTerminalRun(run) ||
-					children.some((child) => !isTerminalRun(child))
-				)
-					timer = setTimeout(() => void refresh(), 1500);
+					children.some((child) => !isTerminalRun(child));
+				// something changed since the last message read: read them now
+				withMessages = moved && !reading;
+				if (!live && !withMessages) return;
+				timer = setTimeout(
+					() => void refresh(),
+					withMessages ? 0 : nextWait(run, children),
+				);
 			} catch (cause) {
 				if (cancelled) return;
 				failures++;
+				withMessages = reading;
 				setState((current) => ({
 					id: runId,
 					run: current.id === runId ? current.run : null,
