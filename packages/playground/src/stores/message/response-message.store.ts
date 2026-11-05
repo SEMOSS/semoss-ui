@@ -19,8 +19,8 @@ import { getToolEngineId } from "@/utility/mcp-utils";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
+import { applyResponseStreamChunk } from "./response-stream";
 import { ToolSaveController } from "./tool-save-controller";
-import { applyToolStreamChunk } from "./tool-stream";
 import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 
 /**
@@ -272,32 +272,13 @@ paramValues=[${JSON.stringify({
 				]
 			>(`AskPlayground(${turnParams});`, {
 				onEmit: (chunk) => {
-					runInAction(() => {
-						if (chunk.stream_type === "content") {
-							if (chunk.data.content) {
-								responseMessage.savePart({
-									type: "TEXT",
-									text: chunk.data.content,
-									uiText: chunk.data.content,
-								});
-							}
-						} else if (chunk.stream_type === "thinking") {
-							if (chunk.data.thinking) {
-								responseMessage.savePart({
-									type: "THINKING",
-									thinking: chunk.data.thinking,
-								});
-							}
-						} else if (chunk.stream_type === "tool") {
-							applyToolStreamChunk(
-								responseMessage,
-								toolStreamIndexToId,
-								chunk.data,
-							);
-						} else {
-							console.error(`Unknown stream type`, chunk);
-						}
-					});
+					runInAction(() =>
+						applyResponseStreamChunk(
+							responseMessage,
+							toolStreamIndexToId,
+							chunk,
+						),
+					);
 				},
 				onResult: ({ results }) => {
 					const { output } = results[0];

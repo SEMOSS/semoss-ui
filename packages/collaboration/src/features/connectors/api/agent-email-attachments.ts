@@ -8,12 +8,13 @@ export const emailAttachmentSchema = z.object({
 		.min(1)
 		.max(1000)
 		.refine((name) => !/[\\/]/.test(name)),
-	size: z.number().int().min(0).max(2_500_000),
+	// The server holds the size limit (MS_MAIL_MAX_MESSAGE_MB).
+	size: z.number().int().min(0),
 	sha256: z.string().regex(/^[a-f0-9]{64}$/),
 });
 export type AgentEmailAttachment = z.infer<typeof emailAttachmentSchema>;
 const receiptSchema = emailAttachmentSchema.omit({ sha256: true }).extend({
-	contentBase64: z.string().max(3_333_336),
+	contentBase64: z.string(),
 });
 
 /** File bytes go directly to the editor, without entering the model's tool history. */

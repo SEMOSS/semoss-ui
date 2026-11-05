@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { type CSSProperties, useId } from "react";
 import {
 	Field,
 	FieldError,
@@ -14,11 +14,13 @@ export function EmailBodyField({
 	required,
 	disabled,
 	bodyReplacement,
+	contentStyle,
 }: {
 	label: string;
 	required?: boolean;
 	disabled?: boolean;
 	bodyReplacement?: number;
+	contentStyle?: CSSProperties;
 }) {
 	const id = useId();
 	const { control } = useFormContext<{ body: string }>();
@@ -37,6 +39,7 @@ export function EmailBodyField({
 					</FieldLabel>
 					<EmailEditor
 						bodyReplacement={bodyReplacement}
+						contentStyle={contentStyle}
 						id={id}
 						labelId={`${id}-label`}
 						errorId={fieldState.error ? `${id}-error` : undefined}

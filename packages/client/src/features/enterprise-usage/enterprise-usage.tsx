@@ -126,7 +126,9 @@ export function EnterpriseUsage() {
 					</TabsTrigger>
 					<TabsTrigger value="messages">Messages</TabsTrigger>
 					<TabsTrigger value="activity">Activity Log</TabsTrigger>
-					<TabsTrigger value="changes">Access & Limits</TabsTrigger>
+					<TabsTrigger value="changes">
+						Access, Settings & Limits
+					</TabsTrigger>
 				</TabsList>
 				<TabsContent value="overview" className="min-w-0 pt-2">
 					<UsageOverview

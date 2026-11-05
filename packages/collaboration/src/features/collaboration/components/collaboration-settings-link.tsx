@@ -31,7 +31,8 @@ export function CollaborationSettingsLink({
 		state.reviews.filter((review) => review.status === "open").length +
 		suggestedMemories(state.memories).length;
 	return (
-		<Tooltip disableHoverableContent={false}>
+		// fresh per rail state, as the navigation links: a label hovered while expanded would show on collapse
+		<Tooltip key={String(isCollapsed)} disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<Button
 					asChild

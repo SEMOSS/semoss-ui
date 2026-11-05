@@ -5,6 +5,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { isRequestUserInputAction } from "@semoss/sdk";
 import {
 	Button,
 	Code,
@@ -17,9 +18,12 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage as toErrorMessage } from "@semoss/utility/error";
+import { hasPendingToolUi } from "@/features/assistant-tools/assistant-tool-ui";
 import { useAssistant } from "@/hooks/use-assistant";
-import type { BuildPendingAction, BuildRun } from "@/stores/assistant";
-import { isRequestUserInputAction } from "@/stores/assistant";
+import type {
+	BuildPendingAction,
+	BuildRun,
+} from "@/stores/assistant/assistant.runs";
 import { actionDetails, friendlyToolName } from "./assistant-tools";
 
 interface ActionRequestDetailsProps {
@@ -66,6 +70,8 @@ const ActionRequestDetails = ({ details }: ActionRequestDetailsProps) => {
 interface AssistantPendingActionsProps {
 	/** The run whose pending review actions are shown */
 	run: BuildRun;
+	/** Authored content enables its own fallback after a page fails or is dismissed. */
+	includeToolUiActions?: boolean;
 }
 
 /**
@@ -81,6 +87,7 @@ interface AssistantPendingActionsProps {
  */
 export const AssistantPendingActions = ({
 	run,
+	includeToolUiActions = false,
 }: AssistantPendingActionsProps) => {
 	const decideAction = useAssistant((state) => state.decideAction);
 	const reconcileRun = useAssistant((state) => state.reconcileRun);
@@ -89,7 +96,9 @@ export const AssistantPendingActions = ({
 	const [approveAllProgress, setApproveAllProgress] = useState(0);
 
 	const reviewActions = run.pendingActions.filter(
-		(action) => !isRequestUserInputAction(action),
+		(action) =>
+			!isRequestUserInputAction(action) &&
+			(includeToolUiActions || !hasPendingToolUi(run, action)),
 	);
 	const inputRequired = run.status.toUpperCase() === "INPUT_REQUIRED";
 
@@ -187,8 +196,8 @@ export const AssistantPendingActions = ({
 							key={id}
 							className="rounded-md border border-border p-2"
 						>
-							<div className="flex flex-wrap items-start justify-between gap-2">
-								<div className="min-w-0 flex-1">
+							<div className="flex flex-col gap-2">
+								<div className="min-w-0">
 									<p className="truncate font-medium text-sm">
 										{friendlyToolName(
 											String(

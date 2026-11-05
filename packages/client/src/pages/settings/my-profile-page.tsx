@@ -6,9 +6,8 @@ import {
 	Plus,
 	Trash2,
 } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -17,16 +16,8 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Field,
-	FieldDescription,
-	FieldLabel,
 	Input,
 	Label,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -40,12 +31,12 @@ import {
 	createUserAccessKey,
 	deleteUserAccessKeys,
 	editMemberInfo,
-	setUserDefaultModel,
 } from "@/api/auth";
 import { MicrosoftSubscriptions } from "@/components/settings";
 import { SdkBlock } from "@/components/shared/sdk-block";
+import { DefaultModelsCard } from "@/features/default-models/default-models-card";
 import { MyModelUsageCard } from "@/features/my-model-usage/my-model-usage-card";
-import { useAPI, useConfig, useSession, useSettings } from "@/hooks";
+import { useAPI, useConfig, useSession } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
 
@@ -56,12 +47,6 @@ interface CreateAccessKeyForm {
 	SECRETKEY: string;
 }
 
-interface Engine {
-	engine_id: string;
-	engine_name: string;
-	engine_subtype?: string;
-}
-
 interface EditUserInfoForm {
 	NAME: string;
 	USERNAME: string;
@@ -70,28 +55,17 @@ interface EditUserInfoForm {
 }
 
 export const MyProfilePage = () => {
-	const modelSelectId = useId();
 	const generateKeyFormId = useId();
 	const nativeRegistration = useConfig(
 		(state) => state.config.nativeRegistration,
 	);
 	const logins = useConfig((state) => state.config.logins);
 	const loginDetails = useConfig((state) => state.config.loginDetails);
-	const defaultTextGenerationModel = useSession(
-		(state) => state.defaultTextGenerationModel,
-	);
-	const defaultCodeGenerationModel = useSession(
-		(state) => state.defaultCodeGenerationModel,
-	);
-	const updateUserDefaultModel = useSession(
-		(state) => state.updateUserDefaultModel,
-	);
 	const { email, id, name, admin, lastLogin, groupInfo } = useSession(
 		(state) => state.user,
 	);
 	const isNative = useSession((state) => state.isNative);
 	const groups = groupInfo?.groups ?? [];
-	const { adminMode } = useSettings();
 
 	const [addModal, setAddModal] = useState(false);
 	const [passwordModal, setPasswordModal] = useState(false);
@@ -99,17 +73,6 @@ export const MyProfilePage = () => {
 	const [editEmail, setEditEmail] = useState(email);
 
 	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
-	const getModals = useAPI(["getEngines", adminMode, "", "MODEL"]);
-
-	const [
-		selectedTextGenerationDefaultModel,
-		setSelectedTextGenerationDefaultModel,
-	] = useState<string>("");
-
-	const [
-		selectedCodeGenerationDefaultModel,
-		setSelectedCodeGenerationDefaultModel,
-	] = useState<string>("");
 
 	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
 	// the config keys logins by auth provider, so a Microsoft entry is the only
@@ -159,34 +122,6 @@ export const MyProfilePage = () => {
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
 	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
 
-	const modals =
-		getModals.status === "SUCCESS" && Array.isArray(getModals.data)
-			? (getModals.data as unknown as Engine[]).filter(
-					(e) => e.engine_subtype !== "EMBEDDED",
-				)
-			: [];
-
-	useEffect(() => {
-		if (defaultTextGenerationModel && modals.length > 0) {
-			const matchingEngine = modals.find(
-				(e) => e.engine_id === defaultTextGenerationModel,
-			);
-			if (matchingEngine) {
-				setSelectedTextGenerationDefaultModel(matchingEngine.engine_id);
-			}
-		}
-		if (defaultCodeGenerationModel && modals.length > 0) {
-			const matchingCodeEngine = modals.find(
-				(e) => e.engine_id === defaultCodeGenerationModel,
-			);
-			if (matchingCodeEngine) {
-				setSelectedCodeGenerationDefaultModel(
-					matchingCodeEngine.engine_id,
-				);
-			}
-		}
-	}, [defaultTextGenerationModel, defaultCodeGenerationModel, modals]);
-
 	const profileEditSubmit = async (data: EditUserInfoForm) => {
 		try {
 			console.log(data);
@@ -215,35 +150,6 @@ export const MyProfilePage = () => {
 			}
 		} catch (_e) {
 			toast.error("Error editing profile information");
-		}
-	};
-
-	const handleSelectModel = async (
-		selectedEngineId: string,
-		modelType: string,
-	) => {
-		try {
-			if (modelType === "text-generation-model") {
-				setSelectedTextGenerationDefaultModel(selectedEngineId);
-			} else if (modelType === "code-generation-model") {
-				setSelectedCodeGenerationDefaultModel(selectedEngineId);
-			}
-			if (!selectedEngineId) return;
-
-			const selectedEngine = modals.find(
-				(e) => e.engine_id === selectedEngineId,
-			);
-			if (!selectedEngine) throw new Error("Selected model not found");
-
-			updateUserDefaultModel(modelType, selectedEngineId);
-			await setUserDefaultModel(modelType, selectedEngineId);
-			toast.success(`Default ${modelType} saved successfully`);
-		} catch (e) {
-			if (e instanceof Error) {
-				toast.error(e.message);
-			} else {
-				toast.error("Error saving default model");
-			}
 		}
 	};
 
@@ -513,136 +419,7 @@ export const MyProfilePage = () => {
 				</div>
 			</div>
 
-			{/* Default Model Selection */}
-			<div className="rounded-lg border bg-card px-6 py-5">
-				<h2 className="mb-4 font-semibold text-base">
-					Default AI models for your requests
-				</h2>
-				{getModals.status === "INITIAL" ||
-				getModals.status === "LOADING" ? (
-					<span className="font-medium text-muted-foreground text-sm">
-						Loading models...
-					</span>
-				) : getModals.status === "ERROR" ? (
-					<span className="font-medium text-red-600 text-sm">
-						Error loading models
-					</span>
-				) : (
-					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-						<Field>
-							<FieldLabel htmlFor={modelSelectId}>
-								Text Generation Model
-							</FieldLabel>
-							<Select
-								value={selectedTextGenerationDefaultModel}
-								onValueChange={(value) =>
-									handleSelectModel(
-										value,
-										"text-generation-model",
-									)
-								}
-							>
-								<SelectTrigger
-									id={modelSelectId}
-									data-testid="myProfilePage-default-model-select"
-								>
-									<SelectValue placeholder="Select a model" />
-								</SelectTrigger>
-								<SelectContent>
-									{modals.map((engine) => (
-										<SelectItem
-											key={engine.engine_id}
-											value={engine.engine_id}
-											data-testid={`myProfilePage-model-option-${engine.engine_id}`}
-										>
-											<span className="flex w-full items-center gap-2 text-left">
-												<span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-sm">
-													<EngineSubtypeIcon
-														engineType="MODEL"
-														engineSubtype={
-															engine.engine_subtype ||
-															""
-														}
-														alt={engine.engine_name}
-														className="size-full object-contain"
-													/>
-												</span>
-												<span className="flex min-w-0 flex-1 flex-col items-start">
-													<span className="font-medium text-sm">
-														{engine.engine_name}
-													</span>
-													<span className="break-all font-mono text-muted-foreground text-xs">
-														{engine.engine_id}
-													</span>
-												</span>
-											</span>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<FieldDescription className="text-muted-foreground text-xs">
-								Powers AI-driven text generation requests
-							</FieldDescription>
-						</Field>
-
-						<Field>
-							<FieldLabel htmlFor={`${modelSelectId}-secondary`}>
-								Code Generation Model
-							</FieldLabel>
-							<Select
-								value={selectedCodeGenerationDefaultModel}
-								onValueChange={(value) =>
-									handleSelectModel(
-										value,
-										"code-generation-model",
-									)
-								}
-							>
-								<SelectTrigger
-									id={`${modelSelectId}-secondary`}
-									data-testid="myProfilePage-secondary-model-select"
-								>
-									<SelectValue placeholder="Select a model" />
-								</SelectTrigger>
-								<SelectContent>
-									{modals.map((engine) => (
-										<SelectItem
-											key={`secondary-${engine.engine_id}`}
-											value={engine.engine_id}
-											data-testid={`myProfilePage-secondary-model-option-${engine.engine_id}`}
-										>
-											<span className="flex w-full items-center gap-2 text-left">
-												<span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-sm">
-													<EngineSubtypeIcon
-														engineType="MODEL"
-														engineSubtype={
-															engine.engine_subtype ||
-															""
-														}
-														alt={engine.engine_name}
-														className="size-full object-contain"
-													/>
-												</span>
-												<span className="flex min-w-0 flex-1 flex-col items-start">
-													<span className="font-medium text-sm">
-														{engine.engine_name}
-													</span>
-													<span className="break-all font-mono text-muted-foreground text-xs">
-														{engine.engine_id}
-													</span>
-												</span>
-											</span>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<FieldDescription className="text-muted-foreground text-xs">
-								Powers AI-driven code generation requests
-							</FieldDescription>
-						</Field>
-					</div>
-				)}
-			</div>
+			<DefaultModelsCard />
 
 			<MyModelUsageCard />
 

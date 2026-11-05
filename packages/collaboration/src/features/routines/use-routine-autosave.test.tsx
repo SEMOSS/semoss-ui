@@ -6,10 +6,10 @@ import { useRoutineAutosave } from "./use-routine-autosave";
 
 const schema = z.object({
 	time: z.string().regex(/^\d{2}:\d{2}$/, "Choose a valid time."),
-	emailCount: z.string().regex(/^\d+$/, "Choose a number."),
+	lookbackHours: z.string().regex(/^\d+$/, "Choose a number."),
 });
 type Values = z.infer<typeof schema>;
-const initial: Values = { time: "08:00", emailCount: "25" };
+const initial: Values = { time: "08:00", lookbackHours: "24" };
 
 /** A request whose response can be delivered after more edits. */
 function deferred() {
@@ -70,16 +70,16 @@ describe("routine autosave", () => {
 
 	it("debounces changes and saves the latest typed values once", async () => {
 		const { result, onSave } = renderAutosave();
-		act(() => result.current.form.setValue("emailCount", "3"));
+		act(() => result.current.form.setValue("lookbackHours", "3"));
 		expect(result.current.status).toBe("saving");
 		await advance(500);
-		act(() => result.current.form.setValue("emailCount", "30"));
+		act(() => result.current.form.setValue("lookbackHours", "30"));
 		await advance(749);
 		expect(onSave).not.toHaveBeenCalled();
 		await advance(1);
 		expect(onSave).toHaveBeenCalledExactlyOnceWith({
 			...initial,
-			emailCount: "30",
+			lookbackHours: "30",
 		});
 		expect(result.current.status).toBe("saved");
 		await advance(2000);
@@ -185,9 +185,9 @@ describe("routine autosave", () => {
 
 	it("does not send a valid value superseded by invalid input before debounce", async () => {
 		const { result, onSave } = renderAutosave();
-		act(() => result.current.form.setValue("emailCount", "30"));
+		act(() => result.current.form.setValue("lookbackHours", "30"));
 		await advance(500);
-		act(() => result.current.form.setValue("emailCount", ""));
+		act(() => result.current.form.setValue("lookbackHours", ""));
 		await advance();
 		expect(onSave).not.toHaveBeenCalled();
 		expect(result.current.status).toBe("invalid");

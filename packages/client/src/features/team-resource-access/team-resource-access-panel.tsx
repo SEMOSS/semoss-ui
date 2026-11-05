@@ -50,6 +50,7 @@ import {
 	removeTeamResourceAccess,
 	type TeamResource,
 } from "@/api/teams";
+import { ResourceId } from "@/components/shared/resource-id";
 import { TablePagination } from "@/components/ui/table-pagination/table-pagination";
 import {
 	GROUP_ACCESS_LEVELS,
@@ -57,6 +58,7 @@ import {
 } from "@/features/group-access/group-access-levels";
 import { usePagedList } from "@/hooks/use-paged-list";
 import { AddTeamResourceAccessDialog } from "./add-team-resource-access-dialog";
+import { TeamResourceName } from "./team-resource-name";
 import { TEAM_RESOURCE_NOUNS } from "./team-resource-nouns";
 
 export interface TeamResourceAccessPanelProps {
@@ -363,13 +365,18 @@ export const TeamResourceAccessPanel = ({
 															/>
 														)}
 														<div className="min-w-0">
-															<p className="truncate font-medium">
-																{resource.name}
-															</p>
-															<p className="truncate text-muted-foreground text-xs">
-																id:{" "}
-																{resource.id}
-															</p>
+															<TeamResourceName
+																kind={kind}
+																resource={
+																	resource
+																}
+															/>
+															<ResourceId
+																id={resource.id}
+																name={
+																	resource.name
+																}
+															/>
 														</div>
 													</div>
 												</TableCell>

@@ -21,6 +21,8 @@ export interface ComposerPanelAction {
 	id: string;
 	label: string;
 	icon: LucideIcon;
+	/** Colors the icon, such as an app's own color; muted when absent. */
+	iconClassName?: string;
 	disabled?: boolean;
 	onSelect: () => void;
 }

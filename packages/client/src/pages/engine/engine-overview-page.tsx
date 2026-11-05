@@ -3,13 +3,7 @@ import { EngineOverview } from "@/components/engine";
 import { useEngine } from "@/hooks";
 
 export const EngineOverviewPage = observer(() => {
-	const { engine, permission, refresh } = useEngine();
+	const { engine } = useEngine();
 
-	return (
-		<EngineOverview
-			engine={engine}
-			permission={permission}
-			refresh={refresh}
-		/>
-	);
+	return <EngineOverview engine={engine} />;
 });

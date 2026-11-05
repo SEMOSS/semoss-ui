@@ -119,16 +119,17 @@ export function useTopicFiling(actions: InsightActions): TopicFilingController {
 	else if (job?.status === "failed")
 		error = job.error || "Your topics are saved, but filing stopped.";
 	else if (partial)
-		error = `${failures} ${failures === 1 ? "thread could" : "threads could"} not be filed. Your saved topics and completed results are available; retry the remaining threads.`;
+		error = `${failures} ${failures === 1 ? "thread" : "threads"} could not be filed. You can open Work now, or retry ${failures === 1 ? "it" : "them"}.`;
 	else if (matches && job.status === "done" && failures === null)
 		error =
 			"Filing finished, but its result could not be confirmed. Retry filing to check the remaining threads.";
+	// a few threads that failed to file do not hold up onboarding; they stay retryable
 	const ready =
 		!isLoading &&
-		!error &&
+		(!error || partial) &&
 		!retryError &&
 		!isRetrying &&
-		(noTopics || (matches && job.status === "done" && failures === 0));
+		(noTopics || (matches && job.status === "done" && failures !== null));
 	const canRetryFiling =
 		applied &&
 		!noTopics &&

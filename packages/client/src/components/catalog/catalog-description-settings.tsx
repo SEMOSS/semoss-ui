@@ -148,7 +148,8 @@ export const CatalogDescriptionSettings = ({
 							disabled={isSaving}
 							data-testid={`${testIdPrefix}--save-btn`}
 						>
-							{isSaving ? <Spinner className="size-4" /> : "Save"}
+							{isSaving ? <Spinner className="size-4" /> : null}
+							{isSaving ? "Saving..." : "Save"}
 						</Button>
 					</CardAction>
 				)}

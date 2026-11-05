@@ -56,15 +56,17 @@ function createOwner(insightId: string) {
 	const create = vi.spyOn(session, "create").mockResolvedValue("saved-room");
 	const store = createWorkbenchStore({ components: {} });
 	const emit = vi.spyOn(store.getState().events.actions, "emit");
+	const openFile = vi.fn();
 	const select = () => {
 		mocks.readConnectors.mockReturnValue({ session });
 		// The session's insight must win over an earlier workbench snapshot.
 		mocks.readWorkbench.mockReturnValue({
 			store,
 			insightId: "old-workbench-id",
+			openFile,
 		});
 	};
-	return { session, create, store, emit, select };
+	return { session, create, store, emit, openFile, select };
 }
 
 beforeEach(() => {
@@ -155,6 +157,21 @@ it("queues saved files through the session's deduplicating method", () => {
 	expect(origin.emit).toHaveBeenCalledTimes(2);
 });
 
+it("opens a fetched file in the originating room's workbench without queuing context", () => {
+	const origin = createOwner("origin-insight");
+	origin.select();
+	const { result } = renderHook(() => useRoomConnectorHost());
+	result.current.onOpenFile?.(saved);
+	expect(origin.openFile).toHaveBeenCalledExactlyOnceWith(
+		saved.path,
+		saved.name,
+		"origin-insight",
+	);
+	expect(origin.emit).toHaveBeenCalledOnce();
+	expect(origin.session.getSnapshot().contextFiles).toEqual([]);
+	expect(mocks.success).not.toHaveBeenCalled();
+});
+
 it("keeps pending preparation and late callbacks bound to the original session after navigation", async () => {
 	const origin = createOwner("origin-insight");
 	const destination = createOwner("destination-insight");
@@ -176,7 +193,14 @@ it("keeps pending preparation and late callbacks bound to the original session a
 	const releaseSave = await preparation;
 	originHost.onSaved?.(saved);
 	originHost.onAddToContext?.(saved);
-	expect(origin.emit).toHaveBeenCalledTimes(2);
+	originHost.onOpenFile?.(saved);
+	expect(origin.emit).toHaveBeenCalledTimes(3);
+	expect(origin.openFile).toHaveBeenCalledExactlyOnceWith(
+		saved.path,
+		saved.name,
+		"origin-insight",
+	);
+	expect(destination.openFile).not.toHaveBeenCalled();
 	expect(origin.emit).toHaveBeenLastCalledWith(
 		FILE_PANEL_EVENTS.FILES_CHANGED,
 		{

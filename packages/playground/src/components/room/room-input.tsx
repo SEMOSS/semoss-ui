@@ -152,10 +152,7 @@ interface RoomInputProps {
 	 * this prop is the signal that the caller supports agent selection
 	 * (today: new-room flow only).
 	 */
-	onWorkspaceChange?: (
-		next: WorkspaceRef | null,
-		activateAgentMode?: boolean,
-	) => void;
+	onWorkspaceChange?: (next: WorkspaceRef | null) => void;
 
 	/** Room options containing MCP configurations for slash menu */
 	options: RoomStore["options"];
@@ -909,6 +906,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													onSelectChat={
 														onExitAgentHarness
 													}
+													onSelectAgent={
+														handleSwitchToAgentHarness
+													}
 													agentEditable={
 														!!onWorkspaceChange
 													}
@@ -1080,7 +1080,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													</Label>
 													<EngineSelect
 														id={modelSelectId}
-														className="h-8 w-auto max-w-32 gap-1 rounded-full border-none bg-transparent px-2 text-xs shadow-none hover:bg-accent"
+														className="h-8 w-auto max-w-44 gap-1 rounded-full border-none bg-transparent px-2 text-[11px] shadow-none hover:bg-accent"
 														name={modelName}
 														value={
 															model?.app_id || ""
@@ -1226,13 +1226,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							if (!next || isBusy) return;
 							onMcpChange(next.mcp);
 							if (onWorkspaceChange && "workspace" in next) {
-								onWorkspaceChange(
-									next.workspace ?? null,
-									next.agentModeSelected ||
-										mcpOverlay.defaultTab === "AGENT" ||
-										next.workspace?.workspace_id !==
-											options.workspace?.workspace_id,
-								);
+								onWorkspaceChange(next.workspace ?? null);
 							}
 						}}
 					/>

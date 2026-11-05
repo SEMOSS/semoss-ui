@@ -73,8 +73,9 @@ vi.mock("@/stores/message/response-message.store", () => ({
 	ResponseMessageStore: mocks.MockResponseMessageStore,
 }));
 
-vi.mock("./room-generating-indicator", () => ({
-	RoomGeneratingIndicator: () => null,
+vi.mock("@semoss/shared", async (original) => ({
+	...(await original<typeof import("@semoss/shared")>()),
+	ChatGeneratingIndicator: () => null,
 }));
 
 vi.mock("./room-suggestions", () => ({

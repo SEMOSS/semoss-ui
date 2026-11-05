@@ -6,6 +6,7 @@
 @import "@semoss/panels/globals.css";
 
 @source "./**/*.{ts,tsx}";
+@source "../../automation/src/**/*.{ts,tsx}";
 
 /* Swappable font: Settings > Appearance, default in lib/typeface.ts. "standard" keeps the shared Geist. */
 :root {

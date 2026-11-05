@@ -10,6 +10,9 @@ interface EngineTagsSettingsProps {
 	/** User's permission for the engine */
 	permission: Role;
 
+	/** What the catalog calls this kind of engine, such as "Database" */
+	catalogName: string;
+
 	/** Called after a successful save so the parent can refresh engine data */
 	onUpdated?: () => void;
 }
@@ -22,6 +25,7 @@ interface EngineTagsSettingsProps {
 export const EngineTagsSettings = ({
 	engine,
 	permission,
+	catalogName,
 	onUpdated,
 }: EngineTagsSettingsProps) => {
 	const databaseMetaKeys = useConfig(
@@ -50,7 +54,7 @@ export const EngineTagsSettings = ({
 				}
 			}}
 			onUpdated={onUpdated}
-			description="Organize and classify this model across the catalog."
+			description={`Organize and classify this ${catalogName.toLowerCase()} across the catalog.`}
 			testIdPrefix="engine-tags-settings"
 		/>
 	);

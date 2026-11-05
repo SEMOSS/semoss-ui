@@ -8,7 +8,6 @@
 		"description": "ルーム設定を更新し、チャットの動作を変更します",
 		"open": "ルーム設定を開く",
 		"close": "ルーム設定を閉じる",
-		"edit": "ルーム設定を編集",
 		"compact": "会話を圧縮",
 		"compactSuccess": "会話を圧縮しました",
 		"compactSkipped": "圧縮する内容がありません — 会話はすでに簡潔です",
@@ -158,7 +157,6 @@
 		"moreActions": "その他の操作",
 		"prompts": "プロンプト",
 		"removeFile": "{{name}} を削除",
-		"thinking": "推論",
 		"errorTitle": "問題が発生しました",
 		"errorDescription": "ページを更新するか、ホームに戻ってもう一度お試しください。",
 		"backHome": "ホームに戻る",
@@ -170,8 +168,13 @@
 		"preparingWorkspace": "ワークスペースを準備中…",
 		"activityLog": "アクティビティログ",
 		"prepareError": "ワークスペースを準備できませんでした。下書きは保持されています。",
-		"retry": "再試行",
-		"viewActivityLog": "アクティビティログを表示"
+		"retry": "再試行"
+	},
+	"workspacePlaces": {
+		"files": "ファイル",
+		"tools": "ツール",
+		"activity": "アクティビティ",
+		"settings": "設定"
 	},
 	"optimizer": {
 		"optimize": "プロンプトを最適化",

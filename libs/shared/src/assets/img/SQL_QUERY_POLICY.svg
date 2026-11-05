@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <!-- drawn at the 32px size it is shown at, with solid shapes and no hairlines, so it stays sharp -->
+  <rect width="32" height="32" rx="8" fill="#4F46E5" />
+  <!-- the database -->
+  <ellipse cx="13" cy="8.5" rx="7" ry="2.75" fill="#FFFFFF" />
+  <path d="M6 11.4c1.45 1.1 4.1 1.85 7 1.85s5.55-.75 7-1.85v2.85c0 1.52-3.13 2.75-7 2.75s-7-1.23-7-2.75v-2.85Z" fill="#FFFFFF" />
+  <path d="M6 17.65c1.45 1.1 4.1 1.85 7 1.85s5.55-.75 7-1.85v2.85c0 1.52-3.13 2.75-7 2.75s-7-1.23-7-2.75v-2.85Z" fill="#FFFFFF" />
+  <!-- the policy: a shield cut out of the tile color, then filled -->
+  <path d="M22 14.25 27.25 16.25v4.35c0 3.25-2.2 5.7-5.25 6.9-3.05-1.2-5.25-3.65-5.25-6.9v-4.35L22 14.25Z" fill="#4F46E5" stroke="#4F46E5" stroke-width="3" stroke-linejoin="round" />
+  <path d="M22 14.25 27.25 16.25v4.35c0 3.25-2.2 5.7-5.25 6.9-3.05-1.2-5.25-3.65-5.25-6.9v-4.35L22 14.25Z" fill="#FFFFFF" />
+  <path d="m19.6 20.7 1.75 1.75 3.1-3.25" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

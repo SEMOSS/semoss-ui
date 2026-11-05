@@ -98,8 +98,11 @@ export interface EffectivePermissionsProps {
 	target: PermissionTargetResource;
 	/** Its name */
 	name: string;
-	/** Where its access page is, relative to this view */
-	backTo: string;
+	/**
+	 * Where its access page is, relative to this view; left out when the view
+	 * sits in a page, such as Resource Governance, with no back
+	 */
+	backTo?: string;
 	/** Whether to read in admin mode; outside it an admin has only their own permissions */
 	admin?: boolean;
 	/** The title's heading level: 3 when the view sits under a page's own heading */

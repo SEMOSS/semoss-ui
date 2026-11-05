@@ -197,6 +197,9 @@ export function ThreadSettings({
 											participant.email ||
 											"Unknown participant"
 										}
+										email={
+											person?.email || participant.email
+										}
 									/>
 									<div className="min-w-0 flex-1">
 										<Link

@@ -1,5 +1,4 @@
 import { observer } from "mobx-react-lite";
-import { Help } from "@/components/help";
 import { Sidebar } from "./app-sidebar";
 import { Navbar } from "./navbar";
 import { PlatformMessages } from "./platform-messages";
@@ -28,7 +27,6 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
 				</div>
 			</div>
 			<PlatformMessages />
-			<Help />
 		</div>
 	);
 });

@@ -10,6 +10,12 @@ const providers = [
 	["MODEL", "OPEN_AI", "OPEN_AI.svg"],
 	["MODEL", "CLAUDE", "CLAUDE_AI.svg"],
 	["MODEL", "UNKNOWN_PROVIDER", "BRAIN.png"],
+	["GUARDRAIL", "EMBEDDED_AGGRESSIVE_SELF_HARM", "AGGRESSIVE_SELF_HARM.svg"],
+	["GUARDRAIL", "EMBEDDED_DETOXIFY", "DETOXIFY.svg"],
+	["GUARDRAIL", "EMBEDDED_JEV_POLICY", "TYPESAFE.png"],
+	["GUARDRAIL", "EMBEDDED_ON_TOPIC", "ON_TOPIC.svg"],
+	["GUARDRAIL", "EMBEDDED_POLICY_COMPLIANCE", "POLICY_COMPLIANCE.svg"],
+	["GUARDRAIL", "EMBEDDED_SQL_QUERY", "SQL_QUERY_POLICY.svg"],
 ] satisfies [Engine["engine_type"], string, string][];
 
 afterEach(cleanup);

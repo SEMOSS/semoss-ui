@@ -16,10 +16,13 @@ import type {
 	MemoryRef,
 	Person,
 	Profile,
+	ProfileStyle,
 	ReviewEntry,
 	Rule,
 	Settings,
 	SourceStatus,
+	StyleAudience,
+	StyleVariant,
 	Thread,
 	ThreadWorkspace,
 	Topic,
@@ -100,12 +103,58 @@ function mapProfile(row: Row, selfId: string | undefined): Profile {
 					? `${str(hours.start)} - ${str(hours.end)}`
 					: "",
 		vips: list<string>(row.vips),
-		style: {
-			summary: str(style.summary),
-			source: style.source === "you" ? "you" : "learned",
-			confirmed: style.confirmed === true,
-			examples: list<string>(style.examples),
-		},
+		style: mapStyle(style),
+	};
+}
+
+const AUDIENCES: StyleAudience[] = ["internal", "external"];
+
+const strings = (value: unknown): string[] =>
+	list(value).filter((item): item is string => typeof item === "string");
+
+function mapVariants(
+	value: unknown,
+): Partial<Record<StyleAudience, StyleVariant>> {
+	const row = (value ?? {}) as Row;
+	const variants: Partial<Record<StyleAudience, StyleVariant>> = {};
+	for (const audience of AUDIENCES) {
+		const variant = row[audience] as Row | undefined;
+		if (variant && str(variant.summary).trim())
+			variants[audience] = {
+				summary: str(variant.summary),
+				examples: strings(variant.examples),
+			};
+	}
+	return variants;
+}
+
+/** The profile's writing style, with the agreed variants and any proposal still to review. */
+export function mapStyle(style: Row): ProfileStyle {
+	const pending = style.pending as Row | undefined;
+	const sample = pending?.sample as Row | undefined;
+	return {
+		summary: str(style.summary),
+		source: style.source === "you" ? "you" : "learned",
+		confirmed: style.confirmed === true,
+		examples: strings(style.examples),
+		variants: mapVariants(style.variants),
+		pending:
+			pending && str(pending.summary).trim()
+				? {
+						summary: str(pending.summary),
+						examples: strings(pending.examples),
+						variants: mapVariants(pending.variants),
+						learnedAt: opt(pending.learnedAt),
+						sample: sample
+							? {
+									emails: Number(sample.emails ?? 0),
+									chats: Number(sample.chats ?? 0),
+									windowDays: Number(sample.windowDays ?? 0),
+								}
+							: undefined,
+					}
+				: null,
+		learnedAt: opt(style.learnedAt),
 	};
 }
 
@@ -121,6 +170,12 @@ function mapSettings(row: Row): Settings {
 		},
 		draftFolderId: str(row.draftFolderId),
 		draftFolderName: str(row.draftFolderName),
+		draftFont: str(row.draftFont) || "Aptos",
+		draftFontSize: Number(row.draftFontSize ?? 12),
+		draftSignatureHtml: str(row.draftSignatureHtml),
+		draftSignatureOn: row.draftSignatureOn !== false,
+		// older servers send none and sync every 15 minutes
+		syncEveryMinutes: Number(row.syncEveryMinutes ?? 15),
 		version: Number(row.version ?? 0),
 	};
 }
@@ -220,7 +275,6 @@ export function mapTopic(row: Row): Topic {
 		status: (row.status as Topic["status"]) ?? "active",
 		description: str(row.description),
 		keywords: list<string>(row.keywords),
-		goals: list(row.goals),
 		people: list<Row>(row.people).map((person) => ({
 			personId: str(person.personId),
 			role: str(person.role),
@@ -233,6 +287,7 @@ export function mapTopic(row: Row): Topic {
 			origin:
 				(person.origin as Topic["people"][number]["origin"]) ?? "brain",
 			reason: opt(person.reason),
+			vip: person.vip === true,
 		})),
 		calendarSeries: list<string>(row.calendarSeries),
 		folders: list<Row>(row.folders).map((folder) => ({
@@ -462,7 +517,7 @@ export async function loadLiveState(
 	const topicIds = [
 		...new Set(topicsPage.items.map((topic) => str(topic.id))),
 	];
-	// topic goals and people come from the detail call; topic notes are memories
+	// topic people come from the detail call; topic notes are memories
 	const topicRows = (await runBatch(
 		actions,
 		topicIds.map((topicId) => pixel("BrainGetTopic", { topicId })),
@@ -520,14 +575,13 @@ function mapStep(step: Row): WorkspaceStep {
 	};
 }
 
-// saved goal and steps; messages load when the thread opens, and a thread's facts are memories
+// saved steps; messages load when the thread opens, and a thread's facts are memories
 export function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 	return Object.fromEntries(
 		page.items.map((row) => [
 			str(row.threadId),
 			{
 				...createEmptyWorkspace(),
-				goal: str(row.goal),
 				steps: list<Row>(row.steps).map(mapStep),
 			},
 		]),
@@ -578,6 +632,7 @@ function recipientNames(value: unknown): string[] | undefined {
 
 const threadPageSchema = z.object({
 	threadId: z.string().optional(),
+	source: z.string().optional(),
 	messages: z.array(z.record(z.string(), z.unknown())),
 	hasMore: z.boolean().optional(),
 	nextCursor: z.string().min(1).optional(),
@@ -586,6 +641,8 @@ const threadPageSchema = z.object({
 });
 
 export interface ThreadMessagePage {
+	/** Where Brain got the thread: "email", "teams", or "calendar". */
+	source?: string;
 	messages: WorkspaceMessage[];
 	hasMore: boolean;
 	nextCursor?: string;
@@ -635,6 +692,7 @@ export async function readThreadMessagesPage(
 		attachments: mapAttachments(message.attachments, str(message.id)),
 	}));
 	return {
+		source: out.source,
 		messages,
 		hasMore: out.hasMore ?? false,
 		nextCursor: out.nextCursor,
@@ -756,25 +814,17 @@ export async function readWorkUpdates(actions: InsightActions): Promise<
 	};
 }
 
-/** Read the current goals after an assistant edits a topic, including calls that use its name. */
-export function readTopicGoals(
+/** Read one topic in full after an assistant creates or changes it, by id or by a name that picks one. */
+export async function readTopic(
 	actions: InsightActions,
 	topic: { topicId?: string; topic?: string },
-): Promise<Pick<Topic, "id" | "goals">> {
-	return callPixel(
-		actions,
-		pixel("BrainListTopics", topic),
-		z.object({
-			id: z.string().min(1),
-			goals: z.array(
-				z.object({
-					noteId: z.string().min(1),
-					text: z.string(),
-					status: z.enum(["open", "done"]),
-					resolution: z.string().optional(),
-				}),
-			),
-		}),
+): Promise<Topic> {
+	return mapTopic(
+		await callPixel(
+			actions,
+			pixel("BrainListTopics", topic),
+			z.object({ id: z.string().min(1) }).passthrough(),
+		),
 	);
 }
 

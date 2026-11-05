@@ -12,13 +12,19 @@ interface RoutineChatButtonProps {
 	/** Routine whose saved output starts the conversation. */
 	routineId: RoutineId;
 	/** Identifies the displayed run so a newer result cannot silently replace it. */
-	startedAt: string;
+	startedAt?: string;
+	/** A past run whose output starts the conversation, instead of the latest. */
+	runId?: string;
+	/** The button text; "Ask Assistant" by default. */
+	label?: string;
 }
 
 /** Opens a persisted conversation without rerunning the routine. */
 export function RoutineChatButton({
 	routineId,
 	startedAt,
+	runId,
+	label = "Ask Assistant",
 }: RoutineChatButtonProps) {
 	const { actions } = useInsight();
 	const navigate = useNavigate();
@@ -39,7 +45,12 @@ export function RoutineChatButton({
 		setIsOpening(true);
 		setError("");
 		try {
-			const roomId = await openRoutineRoom(actions, routineId, startedAt);
+			const roomId = await openRoutineRoom(
+				actions,
+				routineId,
+				startedAt,
+				runId,
+			);
 			window.dispatchEvent(
 				new CustomEvent(ROOM_HISTORY_CHANGED, { detail: { roomId } }),
 			);
@@ -71,7 +82,7 @@ export function RoutineChatButton({
 				) : (
 					<Sparkles aria-hidden="true" data-icon="inline-start" />
 				)}
-				{isOpening ? "Opening chat…" : "Ask Assistant"}
+				{isOpening ? "Opening chat…" : label}
 			</Button>
 			<output className="sr-only">
 				{isOpening ? "Opening chat…" : ""}

@@ -21,8 +21,8 @@ export function AboutYou() {
 						About you
 					</H2>
 					<P className="text-base text-muted-foreground">
-						The profile and writing preferences you choose for
-						assistant context.
+						The profile you choose for assistant context. How you
+						write is under Email.
 					</P>
 				</header>
 				{profile ? (
@@ -31,6 +31,7 @@ export function AboutYou() {
 							<PersonAvatar
 								name={profile.name}
 								initials={profile.initials}
+								email={profile.email}
 							/>
 							<div className="min-w-0 space-y-1">
 								<P className="break-words font-medium text-base">
@@ -66,6 +67,7 @@ export function AboutYou() {
 									<PersonAvatar
 										name={person.name}
 										initials={person.initials}
+										email={person.email}
 									/>
 									<div className="min-w-0 flex-1">
 										<Link

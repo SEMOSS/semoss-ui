@@ -1,8 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router";
-import { WorkUpdatesContext } from "@/features/collaboration/live/work-updates.context";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import type {
 	CollaborationState,
@@ -15,7 +14,6 @@ import {
 } from "@/features/collaboration/state/collaboration-session.context";
 import type { InsightActions } from "@/lib/pixel";
 import { DashboardPage } from "@/pages/dashboard.page";
-import { BriefNeeds } from "./brief-needs";
 import { DashboardContext } from "./dashboard.context";
 import { useDashboardLayout } from "./use-dashboard-layout";
 
@@ -24,6 +22,45 @@ vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
 		<section aria-label="Start a conversation">Chat composer</section>
 	),
 }));
+// Today reads the onboarding flag and the owner's work items from the server; one actions
+// object, since those reads rerun whenever it changes
+const insight = vi.hoisted(() => ({
+	workItems: [] as Record<string, unknown>[],
+	workError: "",
+	actions: {
+		run: vi.fn(async (statement: string) => ({
+			pixelReturn: [
+				statement.startsWith("WorkListMyWork") && !insight.workError
+					? {
+							output: {
+								selfId: "me",
+								workItems: insight.workItems,
+							},
+							operationType: ["OPERATION"],
+						}
+					: // an unread connection keeps Today, as a server without the onboarding flag does
+						{
+							output:
+								insight.workError || "Not read in these tests",
+							operationType: ["ERROR"],
+						},
+			],
+		})),
+	},
+}));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => insight,
+}));
+
+/** A work item as WorkListMyWork returns it. */
+const workItem = (index: number) => ({
+	id: `task-${index}`,
+	title: `Work item ${index}`,
+	state: "active",
+	mine: true,
+	openSteps: [],
+});
 
 const storageKey = "brief-interaction-layout";
 const request = vi.fn((): never => {
@@ -201,16 +238,6 @@ function renderBrief(state = createBriefState(), calendarError = "") {
 	return { ...result, router, onChange };
 }
 
-function workCard(title: string): HTMLElement {
-	const card = within(
-		screen.getByRole("region", { name: "When you're ready" }),
-	)
-		.getByRole("link", { name: title })
-		.closest("article");
-	if (!card) throw new Error(`Missing work card: ${title}`);
-	return card;
-}
-
 beforeAll(() => {
 	// JSDOM does not provide the pointer-capture APIs used by the shared Select.
 	HTMLElement.prototype.hasPointerCapture = () => false;
@@ -221,9 +248,11 @@ afterEach(() => {
 	cleanup();
 	localStorage.clear();
 	vi.clearAllMocks();
+	insight.workItems = [];
+	insight.workError = "";
 });
 
-it("shows Today as greeting, ask box, the short list and Your day without setup panels", () => {
+it("shows Today as greeting, ask box, your work and Your day without setup panels", () => {
 	const { container } = renderBrief();
 	expect(
 		[
@@ -237,7 +266,7 @@ it("shows Today as greeting, ask box, the short list and Your day without setup 
 					region.getAttribute("aria-labelledby") || "",
 				)?.textContent,
 		),
-	).toEqual(["Start a conversation", "When you're ready", "Your day"]);
+	).toEqual(["Start a conversation", "Your work", "Your day"]);
 	for (const name of ["Brain wants to check", "Handled", "Needs you"]) {
 		expect(screen.queryByRole("region", { name })).not.toBeInTheDocument();
 	}
@@ -297,7 +326,7 @@ it("greets by the given name for first-last and last-first profile names", () =>
 	expect(screen.getByText("Nothing is due today.")).toBeVisible();
 });
 
-it("puts overdue and due-today work first and counts it in the headline", () => {
+it("counts overdue and due-today work in the headline", () => {
 	const state = createBriefState();
 	const now = Date.now();
 	state.items = state.items.map((item) =>
@@ -309,83 +338,25 @@ it("puts overdue and due-today work first and counts it in the headline", () => 
 	);
 	renderBrief(state);
 	expect(screen.getByText("2 things are due today.")).toBeVisible();
-	const today = within(
-		screen.getByRole("region", { name: "When you're ready" }),
-	);
-	expect(
-		today
-			.getAllByRole("heading", { level: 3 })
-			.map((heading) => heading.textContent),
-	).toEqual([
-		"Choose support tier",
-		"Review the sprint backlog",
-		"Confirm revised pricing",
-	]);
 });
 
-it("shows the five-task limit without another click and keeps the rest behind See everything", () => {
-	const state = createBriefState();
-	const [first] = state.items;
-	if (!first) throw new Error("Missing sample item");
-	state.items = [
-		...state.items,
-		...Array.from({ length: 4 }, (_, index) => ({
-			...first,
-			id: `extra-${index}`,
-			title: `Extra task ${index}`,
-			score: 10 - index,
-		})),
-	];
-	renderBrief(state);
-	const today = within(
-		screen.getByRole("region", { name: "When you're ready" }),
+it("shows six work items without another click and keeps the rest behind Work", async () => {
+	insight.workItems = Array.from({ length: 7 }, (_, index) =>
+		workItem(index),
 	);
-	expect(today.getAllByRole("article")).toHaveLength(5);
+	renderBrief();
+	const work = await screen.findByRole("list", { name: "Your work items" });
+	expect(within(work).getAllByRole("listitem")).toHaveLength(6);
 	expect(
-		today.queryByRole("button", { name: /Show .* more/ }),
+		screen.queryByRole("button", { name: "Work item 6" }),
 	).not.toBeInTheDocument();
-	expect(
-		today.getByRole("link", { name: "See everything (7)" }),
-	).toHaveAttribute("href", "/work/all");
-	expect(today.getByRole("link", { name: "1 done" })).toHaveAttribute(
+	expect(screen.getByRole("link", { name: "See all 7" })).toHaveAttribute(
 		"href",
-		"/work/done",
-	);
-});
-
-it("previews context and keeps one main action and Done visible, with details in the menu", async () => {
-	const user = userEvent.setup();
-	const { onChange } = renderBrief();
-	const card = workCard("Confirm revised pricing");
-	expect(within(card).getByRole("link", { name: "Open" })).toHaveAttribute(
-		"href",
-		"/thread/pricing-thread",
+		"/work",
 	);
 	expect(
-		within(card).getByText("Review the conversation before replying."),
-	).toBeVisible();
-	await user.click(
-		within(card).getByRole("button", {
-			name: "Thread actions for Confirm revised pricing",
-		}),
-	);
-	await user.click(screen.getByRole("button", { name: "Show details" }));
-	expect(
-		within(card).getAllByText("Review the conversation before replying."),
-	).toHaveLength(2);
-	expect(
-		within(card).getByRole("link", { name: "Ask about this" }),
-	).toBeVisible();
-	await user.click(within(card).getByRole("button", { name: "Done" }));
-	expect(onChange.mock.lastCall?.[0].commands).toEqual([
-		{ type: "item.update", itemId: "pricing", changes: { status: "done" } },
-	]);
-	expect(
-		within(
-			screen.getByRole("region", { name: "When you're ready" }),
-		).queryByRole("link", { name: "Confirm revised pricing" }),
-	).not.toBeInTheDocument();
-	expect(screen.getByRole("link", { name: "2 done" })).toBeVisible();
+		screen.getByRole("link", { name: "All work items" }),
+	).toHaveAttribute("href", "/work");
 });
 
 it("fills the ask box from a suggestion without sending it", async () => {
@@ -400,43 +371,16 @@ it("fills the ask box from a suggestion without sending it", async () => {
 	expect(request).not.toHaveBeenCalled();
 });
 
-it("keeps a failed empty work refresh distinct from being caught up and offers retry", async () => {
-	const user = userEvent.setup();
-	const state = createBriefState();
-	state.items = [];
-	const refresh = vi.fn();
-	const content = (error: string) => (
-		<MemoryRouter>
-			<CollaborationSessionProvider initialState={state}>
-				<WorkUpdatesContext.Provider
-					value={{
-						isRefreshing: false,
-						lastUpdated: null,
-						error,
-						lastMailCheck: null,
-						refresh,
-						refreshTopicGoal: vi.fn(),
-						isSyncing: false,
-						lastSync: null,
-						syncError: "",
-						syncMail: vi.fn(),
-					}}
-				>
-					<BriefNeeds />
-				</WorkUpdatesContext.Provider>
-			</CollaborationSessionProvider>
-		</MemoryRouter>
-	);
-	const { rerender } = render(content("Could not refresh your work."));
-	expect(screen.getByRole("alert")).toHaveTextContent(
-		"Could not refresh your work.",
-	);
-	expect(screen.queryByText(/You're all caught up/)).not.toBeInTheDocument();
-	await user.click(screen.getByRole("button", { name: "Retry" }));
-	expect(refresh).toHaveBeenCalledTimes(1);
-	rerender(content(""));
-	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+it("keeps a failed work load distinct from having no work", async () => {
+	insight.workError = "Could not load your work.";
+	renderBrief();
+	expect(await screen.findByText("Could not load your work.")).toBeVisible();
+	expect(screen.queryByText(/^No work items yet/)).not.toBeInTheDocument();
+	cleanup();
+	insight.workError = "";
+	renderBrief();
+	expect(await screen.findByText(/^No work items yet/)).toBeVisible();
 	expect(
-		screen.getByText("You're all caught up. Nothing needs you right now."),
-	).toBeVisible();
+		screen.queryByText("Could not load your work."),
+	).not.toBeInTheDocument();
 });

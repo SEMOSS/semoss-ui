@@ -64,7 +64,8 @@ const FencedCodeContext = React.createContext(false);
 
 /**
  * Wraps a fenced code block with a header bar showing the language and a
- * copy-to-clipboard button. Used by the `document` variant.
+ * copy-to-clipboard button. Used by the `document` variant, and by the default
+ * one when `copyableCode` is set.
  */
 function DocumentCodeBlock({ children }: { children?: React.ReactNode }) {
 	const [copied, setCopied] = React.useState(false);
@@ -218,6 +219,15 @@ function DocumentCode({
 	);
 }
 
+/**
+ * Fenced code blocks with the language and a Copy button for the default
+ * variant. Its own `code` renderer still draws the block, which
+ * DocumentCodeBlock reads the language and text from.
+ */
+const copyableCodeComponents: Partial<Components> = {
+	pre: ({ children }) => <DocumentCodeBlock>{children}</DocumentCodeBlock>,
+};
+
 function isPrimative(value: unknown): value is string | number | boolean {
 	const type = typeof value;
 	return type === "string" || type === "number" || type === "boolean";
@@ -303,6 +313,12 @@ interface MarkdownProps extends React.HTMLAttributes<HTMLDivElement> {
 	variant?: "default" | "document";
 	/** Render LaTeX math ($, $$, \\(…\\), \\[…\\]); opt in for mathematical content. */
 	math?: boolean;
+	/**
+	 * Give fenced code blocks the `document` variant's header, with the
+	 * language and a Copy button, without the rest of its styling. The
+	 * `document` variant always has it.
+	 */
+	copyableCode?: boolean;
 	/** Override URL transformation (e.g. to allow custom protocols through sanitization) */
 	urlTransform?: (url: string) => string | null | undefined;
 }
@@ -312,6 +328,7 @@ function Markdown({
 	components,
 	variant = "default",
 	math = false,
+	copyableCode = false,
 	className,
 	urlTransform,
 	...props
@@ -502,10 +519,17 @@ function Markdown({
 	const mergedComponents = React.useMemo(() => {
 		return {
 			...defaultComponents,
+			...(copyableCode ? copyableCodeComponents : {}),
 			...(variant === "document" ? documentComponents : {}),
 			...(components || {}),
 		};
-	}, [defaultComponents, documentComponents, variant, components]);
+	}, [
+		defaultComponents,
+		documentComponents,
+		variant,
+		copyableCode,
+		components,
+	]);
 
 	const { content, frontmatter } = React.useMemo(() => {
 		if (!children) {

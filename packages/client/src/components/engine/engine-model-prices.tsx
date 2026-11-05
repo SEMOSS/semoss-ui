@@ -353,9 +353,11 @@ export const EngineModelPrices = ({
 
 	if (getModelMetadata.status === "ERROR") {
 		return (
-			<p className="text-destructive text-sm">
-				Unable to load the model's prices.
-			</p>
+			<Alert variant="destructive">
+				<AlertDescription>
+					Unable to load the model's prices.
+				</AlertDescription>
+			</Alert>
 		);
 	}
 
@@ -384,14 +386,8 @@ export const EngineModelPrices = ({
 							onClick={handleSave}
 							disabled={isSaving}
 						>
-							{isSaving ? (
-								<>
-									<Spinner className="size-4" aria-hidden />
-									Saving...
-								</>
-							) : (
-								"Save"
-							)}
+							{isSaving ? <Spinner className="size-4" /> : null}
+							{isSaving ? "Saving..." : "Save"}
 						</Button>
 					</CardAction>
 				) : null}
