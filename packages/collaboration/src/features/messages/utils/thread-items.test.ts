@@ -69,7 +69,7 @@ describe("threadFromMessages", () => {
 		expect(thread[0]?.parentMessageId).toBe("user-1");
 		expect(toolsFromMessages(thread)["tool-1"]).toMatchObject({
 			parentMessageId: "assistant-1",
-			title: "Search documents",
+			title: "Search Documents",
 			status: "COMPLETED",
 			output: "Found 3 documents",
 		});
@@ -111,7 +111,7 @@ describe("threadFromMessages", () => {
 		};
 		const tool = toolsFromMessages([], [approval])["tool-2"];
 		expect(tool).toMatchObject({
-			title: "Send email",
+			title: "Send Email",
 			status: "INPUT_REQUIRED",
 		});
 

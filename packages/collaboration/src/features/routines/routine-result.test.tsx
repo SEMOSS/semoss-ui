@@ -177,6 +177,9 @@ describe("RoutineResult email panel", () => {
 			"href",
 			"/thread/room%3Asource-room",
 		);
+		expect(
+			screen.queryByRole("button", { name: "Ask Assistant" }),
+		).toBeNull();
 	});
 
 	it("does not link the room of a built-in routine's run", async () => {

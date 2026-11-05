@@ -65,7 +65,7 @@ describe("messageActivityLabel", () => {
 					],
 				}),
 			),
-		).toBe("Using Search documents…");
+		).toBe("Search documents…");
 	});
 
 	it("leaves recovery to the actionable notice and removes terminal activity", () => {

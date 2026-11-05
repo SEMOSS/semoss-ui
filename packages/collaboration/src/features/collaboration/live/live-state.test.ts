@@ -8,45 +8,10 @@ import {
 	mapStyle,
 	readThreadInsights,
 	readThreadMessagesPage,
-	readTopicGoals,
 	readWorkUpdates,
 	summarizeThread,
 	syncMail,
 } from "./live-state";
-
-it("reads authoritative goals with optional resolutions and rejects invalid topic results", async () => {
-	const topic = {
-		id: "topic",
-		goals: [
-			{
-				noteId: "goal",
-				text: "Get room code for Florida",
-				status: "done",
-				resolution: "Florida room code is 444553",
-			},
-			{ noteId: "next", text: "Book the room", status: "open" },
-		],
-	};
-	const run = vi
-		.fn()
-		.mockResolvedValueOnce({ pixelReturn: [{ output: topic }] })
-		.mockResolvedValueOnce({
-			pixelReturn: [
-				{
-					output: {
-						...topic,
-						goals: [{ ...topic.goals[0], status: "closed" }],
-					},
-				},
-			],
-		});
-	const actions = { run } as unknown as InsightActions;
-	expect(await readTopicGoals(actions, { topic: "Launch" })).toEqual(topic);
-	expect(run).toHaveBeenCalledWith('BrainListTopics(topic=["Launch"]);');
-	await expect(readTopicGoals(actions, { topicId: "topic" })).rejects.toThrow(
-		"unexpected shape",
-	);
-});
 
 it("uses only native source ids provided by BrainListThreads", async () => {
 	const run = vi.fn().mockResolvedValue({
@@ -106,18 +71,7 @@ it("uses only native source ids provided by BrainListThreads", async () => {
 
 it("loads each topic once when the list contains duplicate records", async () => {
 	const topics = [
-		{
-			id: "one",
-			name: "First",
-			goals: [
-				{
-					noteId: "goal",
-					text: "Get room code for Florida",
-					status: "done",
-					resolution: "Florida room code is 444553",
-				},
-			],
-		},
+		{ id: "one", name: "First" },
 		{ id: "two", name: "Second" },
 	];
 	const response = (outputs: unknown[]) => ({
@@ -138,7 +92,6 @@ it("loads each topic once when the list contains duplicate records", async () =>
 		'BrainGetTopic(topicId=["one"]); BrainGetTopic(topicId=["two"]);',
 	);
 	expect(state.topics).toMatchObject(topics);
-	expect(state.topics[1].goals).toEqual([]);
 });
 
 it("requests optional display bodies while preserving exclusions, links and legacy text", async () => {
