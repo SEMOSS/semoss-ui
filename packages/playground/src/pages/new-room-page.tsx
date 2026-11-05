@@ -129,12 +129,11 @@ export const NewRoomPage = observer(() => {
 	const greetingRoomStartedForRef = useRef<string>("");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [chosenMode, setChosenMode] = useState<"chat" | "agent">("chat");
-	// a theme can have the selected agent decide the mode, with no choice
-	const mode: "chat" | "agent" = root.theme.featureFlags?.modeFollowsAgent
-		? selectedWorkspaceId
-			? "agent"
-			: "chat"
-		: chosenMode;
+	// With modeFollowsAgent the agent picker decides the mode: a saved agent
+	// or Default Agent runs in agent mode, No Agent in chat mode.
+	const modeFollowsAgent = !!root.theme.featureFlags?.modeFollowsAgent;
+	const mode: "chat" | "agent" =
+		modeFollowsAgent && selectedWorkspaceId ? "agent" : chosenMode;
 	const {
 		room: preCreatedRoom,
 		isPreparing,
@@ -636,6 +635,10 @@ export const NewRoomPage = observer(() => {
 	const handleSelectChat = () => {
 		setChosenMode("chat");
 	};
+	const handleDefaultAgentChange = (isDefaultAgent: boolean) => {
+		if (isLoading || isPreparing) return;
+		setChosenMode(isDefaultAgent ? "agent" : "chat");
+	};
 	const handleOpenSettings = () => {
 		workspaceRoom.openSidebarPanel(
 			ROOM_PANEL_TYPES.CONFIGURATION,
@@ -756,6 +759,9 @@ export const NewRoomPage = observer(() => {
 								},
 								agentEditable: true,
 								isAgentMode: mode === "agent",
+								onDefaultAgentChange: modeFollowsAgent
+									? handleDefaultAgentChange
+									: undefined,
 								onOptionsChange: (opts) => {
 									if ("workspace" in opts)
 										handleAgentChange(
@@ -905,6 +911,11 @@ export const NewRoomPage = observer(() => {
 										setChosenMode("agent")
 									}
 									onExitAgentHarness={handleSelectChat}
+									onDefaultAgentChange={
+										modeFollowsAgent
+											? handleDefaultAgentChange
+											: undefined
+									}
 									// The new-room flow has no cancellable turn, so
 									// it's only ever busy (spinner) or idle (send).
 									sendState={

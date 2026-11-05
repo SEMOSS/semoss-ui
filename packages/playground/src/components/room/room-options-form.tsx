@@ -26,14 +26,25 @@ import type { RoomStore } from "@/stores/room/room.store";
 import { splitMcpByType } from "@/utility/mcp-utils";
 
 export interface RoomOptionsFormProps {
+	/** The model the chat runs on. */
 	model: RoomStore["model"];
+	/** Called with the model picked. */
 	onModelChange: (model: RoomStore["model"]) => void;
+	/** The chat's settings. */
 	options: RoomStore["options"];
+	/** Called with the settings changed. */
 	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
+	/** Lets the user pick the agent; true only while creating a chat. */
 	agentEditable?: boolean;
+	/** Keeps the settings visible but locked while a turn is running. */
 	disabled?: boolean;
 	/** Agent runs supply their own tools instead of the chat's default tools. */
 	isAgentMode?: boolean;
+	/**
+	 * Offers Default Agent beside No Agent in the agent picker, and is called
+	 * with whether Default Agent is picked.
+	 */
+	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 }
 
 export const RoomOptionsForm = observer(
@@ -45,6 +56,7 @@ export const RoomOptionsForm = observer(
 		agentEditable = false,
 		disabled = false,
 		isAgentMode = false,
+		onDefaultAgentChange,
 	}: RoomOptionsFormProps) => {
 		const { t } = useTranslation(["room", "common"]);
 		const { root } = useRoot();
@@ -251,6 +263,11 @@ export const RoomOptionsForm = observer(
 					allowDefaultAgent={canChooseAgentMode(
 						root.theme.featureFlags,
 					)}
+					isDefaultAgent={
+						onDefaultAgentChange
+							? isAgentMode && !options.workspace
+							: undefined
+					}
 					defaultTab={overlay.type}
 					values={options.mcp}
 					workspace={options.workspace ?? null}
@@ -263,6 +280,12 @@ export const RoomOptionsForm = observer(
 									? { workspace: next.workspace ?? undefined }
 									: {}),
 							});
+							if (
+								onDefaultAgentChange &&
+								next.isDefaultAgent !== undefined
+							) {
+								onDefaultAgentChange(next.isDefaultAgent);
+							}
 						}
 						setOverlay((current) => ({
 							...current,

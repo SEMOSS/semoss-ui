@@ -232,7 +232,7 @@ const FEATURE_FLAGS: {
 		key: "modeFollowsAgent",
 		label: "Mode Follows Agent",
 		description:
-			"A new chat with an agent selected runs in agent mode, and one without an agent runs in chat mode. Users only pick an agent: the Chat and Agent choice is not shown. Turns on agent mode itself, so Enable Agent Harness is not needed.",
+			"The agent picker decides a new chat's mode: a saved agent or Default Agent runs in agent mode, and No Agent runs in chat mode. The Chat and Agent choice is not shown. Turns on agent mode itself, so Enable Agent Harness is not needed.",
 	},
 	{
 		key: "showActivityLog",

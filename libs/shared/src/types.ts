@@ -342,7 +342,7 @@ export interface ThemeMap {
 			enableSuggestions?: boolean;
 			/** Whether to enable the server-side agent harness mode (RunAgent) in the chat input. */
 			enableAgentHarness?: boolean;
-			/** Whether the selected agent decides a new chat's mode: agent mode with an agent, chat mode without one. Users get no Chat and Agent choice. Defaults to false. */
+			/** Whether the agent picker decides a new chat's mode: a saved agent or Default Agent runs in agent mode, No Agent in chat mode. Users get no Chat and Agent choice. Defaults to false. */
 			modeFollowsAgent?: boolean;
 			enableRewrite?: boolean;
 			enableDarkMode?: boolean;

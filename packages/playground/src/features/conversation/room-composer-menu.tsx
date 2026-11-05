@@ -45,6 +45,8 @@ export interface RoomComposerMenuProps {
 	agentEditable?: boolean;
 	/** Shows the Chat and Agent choice. */
 	canChooseMode?: boolean;
+	/** Default Agent is picked, so the agent item names it. */
+	isDefaultAgent?: boolean;
 }
 
 /** Stable composer actions shared by draft and existing conversations. */
@@ -61,6 +63,7 @@ export function RoomComposerMenu({
 	mode,
 	agentEditable,
 	canChooseMode,
+	isDefaultAgent,
 }: RoomComposerMenuProps) {
 	const { t } = useTranslation(["room", "sidebar"]);
 	const { openSettings } = useSettingsDialog();
@@ -73,7 +76,9 @@ export function RoomComposerMenu({
 		? t("modes.selectedAgent", {
 				name: options.workspace.name || options.workspace.workspace_id,
 			})
-		: t("menuWorkspace.selectAgent");
+		: isDefaultAgent
+			? t("modes.selectedAgent", { name: t("modes.defaultAgent") })
+			: t("menuWorkspace.selectAgent");
 	return (
 		<>
 			<RoomInputMenuUpload disabled={disabled} onSelect={close} />

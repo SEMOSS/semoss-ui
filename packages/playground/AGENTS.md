@@ -184,11 +184,18 @@ bound to the current draft until submission, including after preparation. A draf
 inheritance but preserves locally added Knowledge and Tools.
 
 A draft's mode is the user's choice from the composer menu (the `enableAgentHarness` theme flag),
-unless the theme's `modeFollowsAgent` flag is on. Then the selected agent decides it: a draft
-with an agent runs in agent mode and one without runs in chat mode. The menu shows no Chat and
-Agent choice, the `/agent-harness` command is left out, and the agent picker offers no default
-agent. `canChooseAgentMode` (`features/conversation/agent-mode-choice.ts`) holds that rule. A
-room keeps the mode it was created with.
+unless the theme's `modeFollowsAgent` flag is on. Then the agent picker decides it: a saved agent
+or Default Agent runs in agent mode, and No Agent runs in chat mode, so picking No Agent is how
+Default Agent is removed. The menu shows no Chat and Agent choice and the `/agent-harness`
+command is left out (`canChooseAgentMode`, `features/conversation/agent-mode-choice.ts`). The
+new chat page turns the flag on by passing `onDefaultAgentChange` to `RoomInput` and the draft
+Settings form; with it, `MCPOverlay` and `AgentSelector` offer No Agent and Default Agent as
+separate choices. A room keeps the mode it was created with.
+
+Whatever the theme, a chat in agent mode with no saved agent runs Default Agent, and the input
+shows a Default Agent chip beside the add button: editable in a new chat, where it opens the
+agent picker and the menu's agent item reads "Agent: Default Agent", and read-only in an
+existing room.
 
 Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the room's own
 blueprints live in `components/room/panels/`, and a feature's (Chat Tools, the connector viewers)

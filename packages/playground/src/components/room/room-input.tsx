@@ -202,6 +202,13 @@ interface RoomInputProps {
 	 * is a persisted, committed choice, not something to back out of inline.
 	 */
 	onExitAgentHarness?: () => void;
+
+	/**
+	 * Offers Default Agent beside No Agent in the agent picker, and is called
+	 * with whether Default Agent is picked. Only the new chat page passes it,
+	 * when the theme lets the agent choice decide the mode.
+	 */
+	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 }
 
 // ============================================================================
@@ -242,6 +249,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onOpenSettings,
 		onSwitchToAgentHarness,
 		onExitAgentHarness,
+		onDefaultAgentChange,
 		onOpenSource,
 	}) => {
 		// ========================================================================
@@ -318,8 +326,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			});
 
 		const agentChipWorkspace = options.workspace ?? null;
+		// agent mode with no saved agent runs the default agent
+		const isDefaultAgent = room.mode === "agent" && !agentChipWorkspace;
 		const agentName =
-			agentChipWorkspace?.name || agentChipWorkspace?.workspace_id || "";
+			agentChipWorkspace?.name ||
+			agentChipWorkspace?.workspace_id ||
+			(isDefaultAgent ? t("modes.defaultAgent") : "");
 		const modelName = model?.engine_display_name || model?.app_name || "";
 		const history = room.history;
 		const historyEntries = useMemo(
@@ -917,6 +929,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													canChooseMode={
 														canChooseMode
 													}
+													isDefaultAgent={
+														isDefaultAgent
+													}
 													onOpenChange={setMenuOpen}
 													onOpenMcpOverlay={
 														handleOpenMcpOverlay
@@ -925,7 +940,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											</DropdownMenuContent>
 										</DropdownMenu>
 									)}
-									{agentChipWorkspace && (
+									{(agentChipWorkspace || isDefaultAgent) && (
 										<Tooltip
 											disableHoverableContent={false}
 										>
@@ -1218,6 +1233,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						workspace={agentChipWorkspace}
 						agentEditable={!!onWorkspaceChange}
 						allowDefaultAgent={canChooseMode}
+						isDefaultAgent={
+							onDefaultAgentChange ? isDefaultAgent : undefined
+						}
 						disabled={isBusy}
 						onClose={(next) => {
 							setMcpOverlay((prev) => ({ ...prev, open: false }));
@@ -1226,6 +1244,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							onMcpChange(next.mcp);
 							if (onWorkspaceChange && "workspace" in next) {
 								onWorkspaceChange(next.workspace ?? null);
+							}
+							if (
+								onDefaultAgentChange &&
+								next.isDefaultAgent !== undefined
+							) {
+								onDefaultAgentChange(next.isDefaultAgent);
 							}
 						}}
 					/>

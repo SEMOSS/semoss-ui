@@ -1,9 +1,9 @@
 import type { ThemeMap } from "@semoss/shared";
 
 /**
- * Whether users pick a new chat's mode themselves, and so can run agent mode
- * without a saved agent. False when the theme lets the selected agent decide
- * the mode (`modeFollowsAgent`).
+ * Whether users pick a new chat's mode with the Chat and Agent choice. False
+ * when the theme lets the agent picker decide the mode instead
+ * (`modeFollowsAgent`), where No Agent and Default Agent are separate choices.
  *
  * @param featureFlags - The playground theme's feature flags.
  * @returns True when the Chat and Agent choice is offered.
