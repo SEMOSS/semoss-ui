@@ -60,6 +60,12 @@ export interface AgentTurnSnapshot {
 }
 
 /** One observer per room. Tools and durable cancellation are owned by RunAgent. */
+// a run paused for approval polls slowly: every 5 s while its room is on screen, 30 s otherwise,
+// reading its child runs every 10 s
+const WAITING_WATCHED_MS = 5000;
+const WAITING_UNWATCHED_MS = 30_000;
+const WAITING_CHILDREN_MS = 10_000;
+
 export class AgentTurnController {
 	private config: AgentTurnConfig;
 	private snapshot: AgentTurnSnapshot = {
@@ -119,8 +125,28 @@ export class AgentTurnController {
 	}
 	subscribe = (listener: () => void): (() => void) => {
 		this.listeners.add(listener);
+		// opening the room again checks a slow-polled run at once
+		if (this.listeners.size === 1) this.wake?.();
 		return () => this.listeners.delete(listener);
 	};
+
+	/** The run is paused for the owner's approval and nothing beneath it is still working. */
+	private isWaitingOnOwner(): boolean {
+		return (
+			this.run?.status === "INPUT_REQUIRED" &&
+			[...this.children.values()].every(
+				(child) =>
+					isTerminalRun(child) || child.status === "INPUT_REQUIRED",
+			)
+		);
+	}
+
+	/** Someone has this room open in a visible tab. */
+	private isWatched(): boolean {
+		return (
+			this.listeners.size > 0 && document.visibilityState === "visible"
+		);
+	}
 
 	private update(patch: Partial<AgentTurnSnapshot>): void {
 		if (this.disposed) return;
@@ -377,7 +403,13 @@ export class AgentTurnController {
 					await this.reconcileRun();
 					this.lastReconcileKey = key;
 				}
-				if (Date.now() - this.lastChildrenRead >= 1500 || terminal)
+				// waiting on the owner with nothing running below can last hours: read slowly
+				const waiting = this.isWaitingOnOwner();
+				if (
+					Date.now() - this.lastChildrenRead >=
+						(waiting ? WAITING_CHILDREN_MS : 1500) ||
+					terminal
+				)
 					await this.refreshChildren();
 				failures = 0;
 				this.update({ transportError: null });
@@ -388,9 +420,13 @@ export class AgentTurnController {
 					? received > 0
 						? 100
 						: 1500
-					: this.run.status === "INPUT_REQUIRED"
-						? 1500
-						: 500;
+					: this.isWaitingOnOwner()
+						? this.isWatched()
+							? WAITING_WATCHED_MS
+							: WAITING_UNWATCHED_MS
+						: this.run.status === "INPUT_REQUIRED"
+							? 1500
+							: 500;
 			} catch (cause) {
 				if (this.disposed) return;
 				failures++;
@@ -408,15 +444,20 @@ export class AgentTurnController {
 				delay = Math.min(500 * 2 ** failures, 8000);
 			}
 			await new Promise<void>((resolve) => {
-				const timer = setTimeout(() => {
-					this.wake = null;
-					resolve();
-				}, delay);
-				this.wake = () => {
+				// a long wait ends early when the tab comes back
+				const onVisible = () => {
+					if (document.visibilityState === "visible") this.wake?.();
+				};
+				const done = () => {
 					clearTimeout(timer);
+					document.removeEventListener("visibilitychange", onVisible);
 					this.wake = null;
 					resolve();
 				};
+				const timer = setTimeout(done, delay);
+				this.wake = done;
+				if (delay > 1500)
+					document.addEventListener("visibilitychange", onVisible);
 			});
 		}
 	}

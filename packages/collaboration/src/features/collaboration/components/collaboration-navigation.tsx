@@ -128,7 +128,10 @@ export function CollaborationNavigation({
 					)}
 				>
 					{/* under Routines, the last link, but scrolling with Chats so a long list never pushes Settings off screen */}
-					<RoutineRecentRuns onNavigate={onNavigate} />
+					{/* not mounted while collapsed, so its poll stops with it */}
+					{!isCollapsed && (
+						<RoutineRecentRuns onNavigate={onNavigate} />
+					)}
 					<ChatHistoryList
 						isOpen={isSessionsOpen}
 						onOpenChange={onSessionsOpenChange}

@@ -63,7 +63,9 @@ export function CustomRoutinesTab({ request, onNew }: CustomRoutinesTabProps) {
 	}, [actions, update]);
 	useEffect(() => {
 		if (!isRunning) return;
-		const timer = window.setInterval(reread, RUNNING_POLL_MS);
+		const timer = window.setInterval(() => {
+			if (document.visibilityState === "visible") reread();
+		}, RUNNING_POLL_MS);
 		return () => window.clearInterval(timer);
 	}, [isRunning, reread]);
 	// a deleted run can be a routine's latest, whose result then goes
