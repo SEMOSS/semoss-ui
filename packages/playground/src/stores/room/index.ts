@@ -5,5 +5,4 @@ export {
 	getRoomFileMode,
 	isActiveSidebarPanel,
 	ROOM_PANEL_TYPES,
-	ROOM_SIDEBAR_LAYOUT,
 } from "./room-sidebar";

@@ -315,7 +315,7 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 				<Small className="truncate text-muted-foreground">
 					{service
 						? t(`chatConnectors:services.${service.id}.name`)
-						: t("card.chatFiles")}
+						: t("card.roomFiles")}
 				</Small>
 			</div>
 			<Badge variant="outline" className="shrink-0">

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runPixel } from "./base";
-import { makeUserPixelMcp, runMcpTool } from "./mcp";
+import { getMcpTools, makeUserPixelMcp, runMcpTool } from "./mcp";
 
 vi.mock("./base", () => ({
 	runPixel: vi.fn(),
@@ -107,5 +107,32 @@ describe("runMcpTool", () => {
 		await expect(runMcpTool(params, "insight-1")).rejects.toThrow(
 			"SendMail returned no result.",
 		);
+	});
+});
+
+describe("getMcpTools", () => {
+	it("reads a project's tools by project and any other type's by engine", async () => {
+		const tools = { tools: [{ name: "search_web" }] };
+		mockRunPixel.mockResolvedValue(answer([{ output: tools }]));
+
+		await expect(
+			getMcpTools({ id: "app-1", type: "PROJECT" }),
+		).resolves.toEqual(tools);
+		expect(mockRunPixel).toHaveBeenLastCalledWith(
+			'GetMCPTools(project=["app-1"]);',
+		);
+
+		await getMcpTools({ id: "fn-1", type: "FUNCTION" });
+		expect(mockRunPixel).toHaveBeenLastCalledWith(
+			'GetMCPTools(engine=["fn-1"]);',
+		);
+	});
+
+	it("throws the backend's error", async () => {
+		mockRunPixel.mockResolvedValue(answer([], ["No access"]));
+
+		await expect(
+			getMcpTools({ id: "app-1", type: "PROJECT" }),
+		).rejects.toThrow("No access");
 	});
 });

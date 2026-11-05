@@ -25,9 +25,6 @@ export function NavigationRail() {
 					aria-expanded={open}
 					onClick={toggleSidebar}
 					title={undefined}
-					className={
-						"focus-visible:-outline-offset-2 w-6 focus-visible:outline-2 focus-visible:outline-ring rtl:translate-x-1/2"
-					}
 				/>
 			</TooltipTrigger>
 			<TooltipContent>{label}</TooltipContent>

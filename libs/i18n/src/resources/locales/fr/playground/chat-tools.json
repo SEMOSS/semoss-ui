@@ -1,28 +1,41 @@
 {
-	"panel": {
-		"title": "Outils du chat",
-		"description": "Ce que l'assistant peut utiliser dans votre prochain message.",
-		"toolboxTitle": "Boîte à outils de ce chat",
-		"toolboxDescription": "Les connecteurs activés pour ce chat, depuis mcp/pixel_mcp.json dans Fichiers du chat.",
-		"toolboxEmpty": "Aucun connecteur n'est activé.",
-		"toolboxError": "Impossible de lire la boîte à outils de ce chat.",
-		"otherTools": "Autres outils",
-		"addedTitle": "Boîtes à outils ajoutées",
-		"addedDescription": "Chaque boîte à outils apporte ses propres outils.",
-		"addedEmpty": "Aucune boîte à outils ajoutée.",
+	"sections": {
+		"tools": {
+			"tooltip": "Ce que l'assistant peut utiliser dans votre prochain message."
+		},
+		"about": "À propos de {{section}}",
+		"default": {
+			"title": "Par défaut",
+			"tooltip": "Outils que ce navigateur ajoute à chaque message et exécute dans Fichiers de la salle. Auto exécute un outil seul, Demander attend votre accord pour chaque appel, et Désactivé le retire.",
+			"agentNote": "Les exécutions de l'agent apportent leurs propres outils de fichiers, de shell et de code, et travaillent dans Fichiers de la salle."
+		},
+		"connectors": {
+			"title": "Connecteurs",
+			"tooltip": "Outils des applications que vous avez activées dans Paramètres > Connecteurs. Chacun s'exécute seul ou demande d'abord.",
+			"manage": "Gérer les connecteurs",
+			"empty": "Aucun connecteur n'est activé.",
+			"error": "Impossible de lire la boîte à outils de ce chat.",
+			"otherTools": "Autres outils"
+		},
+		"agent": {
+			"title": "Agent",
+			"tooltip": "Boîtes à outils apportées par l'agent de cette salle. Modifiez l'agent pour les changer."
+		},
+		"toolboxes": {
+			"title": "Boîtes à outils",
+			"tooltip": "Boîtes à outils que vous avez ajoutées à cette salle. Ouvrez-en une pour voir ses outils."
+		},
+		"toolbox": {
+			"error": "Impossible de lire les outils de cette boîte à outils.",
+			"empty": "Cette boîte à outils ne contient aucun outil."
+		}
+	},
+	"details": {
 		"parameters": "Paramètres",
 		"required": "Obligatoire",
-		"noParameters": "Aucun paramètre.",
-		"defaultTitle": "Outils par défaut",
-		"defaultDescription": "Ajoutés à chaque message et exécutés dans ce navigateur, dans Fichiers du chat.",
-		"defaultEmpty": "Tous les outils par défaut sont désactivés dans les paramètres de la salle.",
-		"openSettings": "Paramètres de la salle",
-		"agentTitle": "Outils de l'agent",
-		"agentDescription": "Les exécutions de l'agent apportent leurs propres outils de fichiers, de shell et de code, et travaillent dans Fichiers du chat."
+		"noParameters": "Aucun paramètre."
 	},
 	"defaultTools": {
-		"label": "Outils par défaut",
-		"description": "Outils que ce navigateur ajoute à chaque message et exécute dans Fichiers du chat. Auto exécute un outil seul, Demander attend votre accord pour chaque appel, et Désactivé le retire.",
 		"modes": {
 			"auto": "Auto",
 			"ask": "Demander",
@@ -52,7 +65,7 @@
 			"failed": "Échoué",
 			"notRun": "Non exécuté"
 		},
-		"folderApproval": "L'assistant souhaite modifier un fichier dans Fichiers du chat. Examinez la modification, puis autorisez-la ou refusez-la.",
+		"folderApproval": "L'assistant souhaite modifier un fichier dans Fichiers de la salle. Examinez la modification, puis autorisez-la ou refusez-la.",
 		"connectorApproval": "L'assistant souhaite agir avec votre compte. Examinez les détails, puis autorisez ou refusez l'action.",
 		"file": "Fichier",
 		"path": "Chemin",
@@ -73,6 +86,6 @@
 		"deny": "Refuser",
 		"denying": "Refus en cours...",
 		"decisionError": "Impossible de terminer cette action. {{message}}",
-		"chatFiles": "Fichiers du chat"
+		"roomFiles": "Fichiers de la salle"
 	}
 }

@@ -192,7 +192,7 @@ describe("buildFolderToolDefinitions", () => {
 	test("the chat's own files are described as shared with its other tools", () => {
 		const [list] = buildFolderToolDefinitions(context);
 		expect(list.description).toContain(
-			`${ROOM_FILES_NAME} (this chat's own files)`,
+			`${ROOM_FILES_NAME} (this room's own files)`,
 		);
 		expect(list.description).toContain(
 			"the chat's other tools read and write them too",
