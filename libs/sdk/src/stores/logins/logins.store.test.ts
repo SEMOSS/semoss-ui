@@ -28,7 +28,7 @@ describe("LoginsStore", () => {
 			primaryLogin: "NATIVE",
 			connectorAccess: null,
 			availableProviders: [],
-			status: "ready",
+			status: "READY",
 		});
 
 		// a later config, read from the page's cache, never overwrites known logins
@@ -65,7 +65,7 @@ describe("LoginsStore", () => {
 		expect(store.getSnapshot()).toMatchObject({
 			logins: { MICROSOFT: "Ada" },
 			primaryLogin: "NATIVE",
-			status: "error",
+			status: "ERROR",
 		});
 	});
 
@@ -151,7 +151,7 @@ describe("LoginsStore", () => {
 		const store = new LoginsStore();
 		store.seed({ logins: { NATIVE: "Ada" }, primaryLogin: "NATIVE" });
 		store.reset();
-		expect(store.getSnapshot().status).toBe("loading");
+		expect(store.getSnapshot().status).toBe("LOADING");
 		store.seed({ logins: {}, primaryLogin: undefined });
 		expect(store.getSnapshot()).toEqual({
 			logins: {},
@@ -159,7 +159,7 @@ describe("LoginsStore", () => {
 			primaryLogin: null,
 			connectorAccess: null,
 			availableProviders: [],
-			status: "ready",
+			status: "READY",
 		});
 	});
 

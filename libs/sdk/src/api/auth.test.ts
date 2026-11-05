@@ -74,7 +74,9 @@ describe("connectLogin", () => {
 			clearInterval: (id: ReturnType<typeof setInterval>) =>
 				globalThis.clearInterval(id),
 		});
-		mockGet.mockImplementation((async () => ({ data: {} })) as typeof get);
+		mockGet.mockImplementation((async () => ({
+			data: {},
+		})) as unknown as typeof get);
 
 		try {
 			const signIn = connectLogin({
@@ -117,7 +119,7 @@ describe("oauth", () => {
 	const answerUserInfo = (names: (string | undefined)[]) => {
 		mockGet.mockImplementation((async () => ({
 			data: { name: names.length > 1 ? names.shift() : names[0] },
-		})) as typeof get);
+		})) as unknown as typeof get);
 	};
 
 	const stubWindow = (popup: unknown) => {

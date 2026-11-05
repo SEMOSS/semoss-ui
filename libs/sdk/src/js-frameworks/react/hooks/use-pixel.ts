@@ -42,7 +42,14 @@ interface usePixel<D> extends PixelState<D> {
 /**
  * Send a command to the backend and recieve a response. This is intended to be used by a single pixel statement (nothing seperated by ;)
  *
+ * usePixel(pixel), usePixel(pixel, config), and usePixel(pixel, config, insightId)
+ * remain valid. Only implicit InsightContext fallback is deprecated; use
+ * useInsightPixel instead. Passing an insightId bypasses context, and an empty
+ * ID lets the backend create an insight.
+ *
  * @param pixel - pixel string to call
+ * @param config - Initial data and callbacks
+ * @param insightId - The insight to run in
  *
  * @returns Information about the pixel response
  */
@@ -52,6 +59,7 @@ export function usePixel<D>(
 	insightId?: string,
 ): usePixel<D> {
 	const context = useContext(InsightContext);
+	// Implicit InsightContext fallback is deprecated; use useInsightPixel or pass an insightId.
 	const resolvedInsightId = insightId ?? context?.insightId;
 
 	// Memoize the initial data

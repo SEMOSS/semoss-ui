@@ -35,6 +35,8 @@ skills supplement the standard; they do not waive reading it for React work.
 - [Mobile development](./skills/mobile-development.skill.md): responsive and touch interfaces.
 - [React form builder](./skills/react-form-builder.skill.md): form fields, validation, and submission.
 - [SDK chat](./skills/sdk-chat.skill.md): rooms, messages, agent runs, approvals, and polling lifecycle.
+- [SDK session](./libs/sdk/skills/session.skill.md): sign in, the user, config, permissions, and
+  which insight a pixel runs in.
 - [Design rulebook](./DESIGN.md): UI composition and styling.
 
 Lint and formatting configuration lives in [biome.json](./biome.json).
@@ -50,7 +52,7 @@ and the owning guides define the exact public entry points and architectural bou
 
 Libraries (`libs/*`, publishable):
 - `@semoss/utility` → Generic text, date, object, JSON, file, encoding, browser, and other functional helpers
-- `@semoss/sdk` → Core SDK (no internal dependencies)
+- `@semoss/sdk` → Core SDK (bundles `@semoss/utility`; no runtime dependencies)
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
 - `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui, utility)
@@ -135,6 +137,9 @@ semoss/
 | `pnpm check` | Run Biome linting/formatting check |
 | `pnpm fix` | Auto-fix Biome issues |
 
+Name test files `*.test.ts` / `*.test.tsx`, never `*.spec.ts`. Existing `*.spec.ts` files
+are not renamed.
+
 ## Design System & Styling
 
 See [DESIGN.md](./DESIGN.md) and the [UI component catalog](./libs/ui/AGENTS.md).
@@ -162,7 +167,10 @@ package guide below.
   use different names or syntax.
 - Keep feature policy, UI composition, SDK transport, and orchestration in their
   owning packages. Preserve dependency boundaries: this does not authorize adding
-  utility dependencies to SDK, UI, i18n, workbench, or CLI.
+  utility dependencies to UI, i18n, workbench, or CLI. The SDK may import utility
+  category subpaths only as a devDependency that its build bundles into `dist`, and
+  its public types must not reference utility types, since its declarations are
+  not bundled.
 - Preserve whitespace, timezone, rounding, null/fallback, filename, and error behavior.
   Use compatibility re-exports or small adapters for existing public contracts.
 - Prefer native operations over unnecessary wrappers. Do not add option-heavy

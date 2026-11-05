@@ -5,12 +5,29 @@ This document provides context for AI coding assistants working with the SEMOSS 
 > **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
 > structure, commit messages, Biome config, and Node/pnpm requirements.
 
+## Skills
+
+Read the skill for the area before working on it, or on code that uses it. They ship in the
+package's `skills/` folder, so apps get the same guidance under
+`node_modules/@semoss/sdk/skills/`:
+
+- [Session, Config and permissions](./skills/session.skill.md): sign in and out, the user and
+  their metadata, `useSession`/`useConfig`/`useSessionPermissions`/`useLogins`, and which
+  insight a pixel runs in.
+- [Rooms, chat and agent runs](./skills/sdk-chat/SKILL.md): rooms, AskRoom jobs,
+  RunAgent/`AgentStore`, tool approvals and streaming.
+
+When an API they describe changes, update the skill in the same change. Keep each skill
+self-contained for consumers outside this repository.
+
 ## Overview
 
 `@semoss/sdk` is the core client SDK for talking to a SEMOSS backend (pixel/API calls, insight
 state, environment config). It has framework-independent stores and optional **React**
 bindings on a subpath; this is not a blanket Node/SSR compatibility guarantee.
-It has **no internal runtime workspace dependencies**. Treat its published public
+It has **no runtime dependencies**: it imports `@semoss/utility` category subpaths as a
+devDependency, which the build bundles into `dist`. Its public types must not reference utility
+types, because declarations are emitted per file and not bundled. Treat its published public
 surface as stable and versioned.
 
 ## Build System
@@ -124,12 +141,95 @@ tests are not backend authority; retain its compatibility caveats until verified
   `readPixelMessages` in [`api/pixel-messages.ts`](./src/api/pixel-messages.ts). A warning means
   the action ran here but the other servers in a cluster could not be told, for example.
 
+## Session, Config and Permissions
+
+Session state lives in three framework-free stores. Every status they and their hooks report is
+upper case, like the rest of the SDK's states: `Session` `INITIALIZING | UNAUTHENTICATED |
+AUTHENTICATED | ERROR`, `Config` `IDLE | LOADING | READY | ERROR`, `useSessionPermissions`
+`IDLE | LOADING | READY | ERROR`, and `LoginsStore` `LOADING | READY | ERROR`. Each holds a private `Observable` from
+`@semoss/utility/observable` (an immutable snapshot) and exposes typed `getSnapshot` and
+`subscribe`, read in React through `useSyncExternalStore`. They compose it rather than extend it,
+so their public types never name a utility type.
+
+- [`ConfigStore`](./src/stores/config/config.store.ts) (`Config`) reads `/api/config` once
+  per page and needs no session. `load({ force })` joins a read in flight and reuses a known
+  config; it sorts the meta keys, parses `theme.THEME_MAP` once, and sets `Env.CSRF`.
+  `isAdminOnly(resource, operation)` reads the `adminOnly{Resource}{Operation}` flags.
+- [`SessionStore`](./src/stores/session/session.store.ts) (`Session`) is the signed in
+  user. It owns `config`, `logins` (its own `LoginsStore`; `Session.logins` is the page's) and
+  `permissions`. `initialize`
+  is single flight; `login(credentials)`, `logout`, and the 302 handler
+  (`onUnauthorized` in [`utility/fetch.ts`](./src/utility/fetch.ts)) start the session over,
+  clearing logins and permissions. Every sign out, the 302 one included, reads the config
+  again in the background and seeds the logins from it; when that read fails it resets
+  `Config`, so no config naming the old user's logins is left. `Session` only hears 302s once the page uses
+  it (`initialize`, `refresh`, `login` or `logout`), so on a page that never
+  does, its status stays `INITIALIZING` and an insight's own sign in does not start it. The user comes from one request,
+  `META | GetUserInfo(); META | GetUserMetadata();`: identity from `GetUserInfo`, described by
+  the config's `primaryLogin` (where the backend keeps user metadata), then SAML, NATIVE, or
+  the first login; `meta` (each key a list of values, as the backend keeps it) and `defaultModels` from `GetUserMetadata`, which reads the database
+  each time (the token copy in `GetUserInfo` is only reloaded after the user's own
+  `SetUserMetadata`), falling back to the login's token copy when that read fails.
+  `reloadUser` reads the user again without touching the config, logins or permissions. The session's own insight is `Session.insight`, below; the session
+  reads the user and saves metadata through it, and clears it on every sign in and out. The
+  backend sets the insight's user on every call and drops the session's insights on logout, so
+  the insight needs no explicit drop. `canPerform` combines `isAdmin` with the config's admin-only flags;
+  guardrails have no flags and are always admin-only.
+- [`SessionInsightStore`](./src/stores/session/session-insight.store.ts) (`Session.insight`)
+  is the session's own insight: `{ insightId }` in an `Observable`, with `run`, `runAsync`,
+  `upload`, `download`, `withInsight(task)`, `ensure` and `clear`. It is made on first use and shared by
+  every caller. `withInsight` runs a request in `"new"` when there is no insight yet and keeps
+  the `insightId` it returns (so the first check is one `GetUserInfo` request), falling back to
+  `META | init` when the result names none; `runAsync` and `upload` need an existing insight
+  (the backend refuses `"new"` for uploads), so they make one first. On `INSIGHT_NOT_FOUND` it
+  makes a new one and retries once. `clear` bumps a version, so an insight still being made
+  for the previous user is not kept.
+- [`SessionPermissionStore`](./src/stores/session/session-permissions.store.ts) caches the
+  user's permission per `TYPE:id`, sharing one read per resource and dropping reads that land
+  after a clear.
+- React: `useSession(selector)`, `useConfig(selector)`, `useLogins()`,
+  `useSessionPermissions(type, id)` (which also returns `refresh` and `sync`) and
+  `useSessionInsight()` (`insightId` and the insight's actions), under an optional
+  `SessionProvider`. Each finds its session through the internal `useSessionStore` in
+  `hooks/use-session.ts`: the nearest provider's, else `Session`. Selectors may build objects;
+  equal selections do not render. `useSessionStore`, `SessionContext` and the selector cache
+  (`js-frameworks/react/utility/store-selector.ts`) are not exported.
+- `InsightStore` reads its config through `Config.load`, so `system.config` is the same
+  normalized copy (meta keys sorted by `display_order`, lists never missing), and fills
+  `Session.logins`. Its lifecycle remains explicit: initialize, use, then destroy when the
+  caller owns the workspace. Do not add `Session` subscriptions, automatic rejoining, or
+  lifecycle-generation/disposal machinery to `InsightStore`. The backend associates
+  insights with the session and drops them on session close. `InsightProvider` preserves
+  externally owned workspaces with `destroyOnUnmount={false}`. Local readiness/auth flags
+  update through initialization and insight actions; they are not reactive session state.
+  Its auth actions do not refresh or notify `Session`. See the
+  [session guide](./skills/session.skill.md#insight-lifecycle-belongs-to-its-owner).
+- Where a pixel runs: `runPixel(pixel)` with no insight id for a one off pixel that needs no
+  workspace (the backend makes an insight and keeps it until the session ends);
+  `useSessionPixel` waits for the session's existing insight ID and `useInsightPixel`
+  waits for the nearest `InsightProvider`'s ID. Both call transport directly, without
+  insight creation or recovery. Existing `usePixel` retains explicit/workspace
+  routing with no session fallback; only implicit context fallback is deprecated,
+  not its call signatures. An explicit empty ID bypasses context and allows backend creation.
+  `Session.insight` (`run`/`upload`/`download`, `useSessionInsight()`) manages shared
+  insight creation and recovery for work outside a workspace. `run` returns `errors`;
+  it does not throw on pixel errors.
+- Transport these use: `isAdminUser`, `registerUser` ([`api/auth.ts`](./src/api/auth.ts)),
+  `getUserInfo` and `setUserMetadata` ([`api/user.ts`](./src/api/user.ts)). `Session.setMetadata`
+  is a partial update like the backend's `SetUserMetadata`: only the keys sent change, an empty
+  list removes one, and keys must be in the server's `USERMETAKEYS`. The backend logs a failed
+  database write rather than reporting it, so `setMetadata` reads the user again after saving. The config's
+  shape is typed once, on `getSystemConfig` in [`api/base.ts`](./src/api/base.ts), and
+  checked against the backend's `ServerConfigurationResource`: null fields are left out of
+  responses, `logins` and `loginDetails` are always present (empty when signed out), and
+  there are no `adminOnlyGuardrail*` flags.
+
 ## Session Logins
 
 The SDK owns what the session is signed in to, so an app never tracks or caches it:
 
-- [`Logins`](./src/stores/logins/logins.store.ts) holds the session's logins for the whole
-  page, shared by every `InsightStore` and view. `InsightStore` fills it from the system config
+- [`LoginsStore`](./src/stores/logins/logins.store.ts), as `Session.logins`, holds the session's
+  logins for the whole page, shared by every `InsightStore` and view. `InsightStore` fills it from the system config
   when it loads. After a login it reads `/api/config` again, since the copy read while signed
   out names no logins, and refills it from that, or from a fresh logins read when the config
   cannot be read. On logout it only resets it, so views still on screen show the logins as
@@ -143,8 +243,8 @@ The SDK owns what the session is signed in to, so an app never tracks or caches 
   has no ids. A read drops the id of a login the session signed out of, and a login signed in to
   since the config was read has none until the config is read again. Once logins are known, a
   config only adds the id of a login that has none, and only when it names that login the same
-  way, so a config cached for an earlier session never replaces them. The client app seeds
-  `Logins` from its own config read, at start and after each login, and resets it on logout.
+  way, so a config cached for an earlier session never replaces them. `Session` seeds it from
+  its config read, at start and after each login, and resets it on logout.
 - `connect` signs in to one more provider with a fresh popup (see `connectLogin` in
   [`api/auth.ts`](./src/api/auth.ts)): a listed provider is signed out first, since the backend
   keeps listing an expired token. Neither it nor `disconnect` ever signs out the session's own

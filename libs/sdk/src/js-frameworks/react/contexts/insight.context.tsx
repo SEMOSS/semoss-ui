@@ -12,10 +12,13 @@ import { Env, Insight, type MCPToolRequest } from "../../..";
  */
 export const InsightContext = createContext<
 	| {
+			/** Whether the system config has been read for the insight. */
 			isInitialized: Insight["isInitialized"];
+			/** Whether initialization or the insight's own auth actions authorized it. */
 			isAuthorized: Insight["isAuthorized"];
 			isReady: Insight["isReady"];
 			error: Insight["error"];
+			/** @deprecated Use `useConfig((state) => state.config)`. */
 			system: Insight["system"];
 			actions: Insight["actions"];
 			insightId: Insight["insightId"];

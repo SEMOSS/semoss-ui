@@ -412,11 +412,11 @@ account is not connected shows its switch in gray with a warning mark. These det
   switched on. The session can also list an account whose token has lapsed, so a connector call
   that fails with the login required error offers a sign in in its own card (`isSignInFailure`).
 - **The SDK owns the session's logins.** Playground keeps no login state or cache of its own:
-  `useLogins()` from `@semoss/sdk/react` reads the SDK's `Logins`, shared by the whole page, and
+  `useLogins()` from `@semoss/sdk/react` reads the SDK's `Session.logins`, shared by the whole page, and
   reads again when a view mounts or the window regains focus. `useConnectorLogins` hands it to
   `ConnectorsStore.setSessionLogins`, and `useConnections` reads it for the Connectors page. Signing
   in goes through `signInToProvider` (`connector-sign-in.ts`), which calls
-  `Logins.connect`: a fresh sign in that never signs out the session's own login. See
+  `Session.logins.connect`: a fresh sign in that never signs out the session's own login. See
   [the SDK guide](../../libs/sdk/AGENTS.md#session-logins).
 - **Connector files are pixel calls, not session state.** `connector-tools.ts` reads the user's
   connector file with the file explorer adapter's asset pixels, writes it with the SDK's
