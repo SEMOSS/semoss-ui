@@ -2,37 +2,45 @@ import {
 	BookOpenIcon,
 	BotIcon,
 	ChevronsDownUpIcon,
-	DownloadIcon,
 	HammerIcon,
 	MessageCircleIcon,
-	PackagePlusIcon,
 	PanelRightCloseIcon,
 	PaperclipIcon,
-	PencilIcon,
 	SparklesIcon,
-	StarIcon,
 	TextQuoteIcon,
-	TrashIcon,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import type { SlashCommand } from "@/components/common/lexical/slash-command/types";
 import type { PromptLibraryItem } from "@/components/prompts/prompt-library-dialog";
-import { useRoomTitle } from "@/features/room-header/room-title.context";
+import { useRoomActionsContext } from "@/features/room-actions/room-actions.context";
+import { useRoomActionItems } from "@/features/room-actions/use-room-action-items";
 import {
-	type DraftWorkspacePlaces,
-	useWorkspacePlaces,
-} from "@/features/workbench/use-workspace-places";
-import { WorkspacePlaceIcon } from "@/features/workbench/workspace-place-icon";
+	type NewRoomWorkbenchPanels,
+	useWorkbenchPanels,
+} from "@/features/workbench/use-workbench-panels";
+import { WorkbenchPanelIcon } from "@/features/workbench/workbench-panel-icon";
 import type { RoomStore } from "@/stores/room/room.store";
+
+/** Other words a Workspace panel's command is found by, such as old names. */
+const PANEL_KEYWORDS: Readonly<Record<string, string[]>> = {
+	settings: [
+		"room-options",
+		"options",
+		"model",
+		"instructions",
+		"tools",
+		"default tools",
+	],
+};
 
 /** What the composer hands {@link useRoomSlashCommands}. */
 export interface RoomSlashCommandsOptions {
-	/** The room the composer sends to, or a new chat's draft. */
+	/** The room the composer sends to, or the new room before a chat's first message. */
 	room: RoomStore;
-	/** The room whose Workspace the places open in; defaults to `room`. */
-	workspaceRoom?: RoomStore;
+	/** The room whose Workspace the panels open in; defaults to `room`. */
+	workbenchRoom?: RoomStore;
 	/** A new chat's own actions, until its first message. */
-	draft?: DraftWorkspacePlaces;
+	newRoomPanels?: NewRoomWorkbenchPanels;
 	/** Opens the knowledge, toolbox, or agent picker. */
 	onOpenMcpOverlay: (tab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") => void;
 	/** Opens the file picker for the next message. */
@@ -53,19 +61,19 @@ export interface RoomSlashCommandsOptions {
 
 /**
  * Every action the composer's "/" menu offers: adding to the next message,
- * switching mode, and compacting; each of the Workspace's places, its
- * connector viewers, and closing it; the room's own Favorite, Rename,
- * Publish, Download, and Delete, inside a room; and the room's prompts. Labels and descriptions are the ones
- * the rest of the app uses, so a command is found by the name it has
- * elsewhere. Call it from an observer: the places are read from MobX.
+ * switching mode, and compacting; each Workspace panel that can open now and
+ * Close Workspace; the room's own actions, inside a room; and the room's
+ * prompts. Panels and room actions share their labels with the More actions
+ * menu, so a command is found by the name it has there. Call it from an
+ * observer: the panels are read from MobX.
  *
  * @param options - The composer's room and its actions.
  * @return The commands, by group.
  */
 export const useRoomSlashCommands = ({
 	room,
-	workspaceRoom = room,
-	draft,
+	workbenchRoom = room,
+	newRoomPanels,
 	onOpenMcpOverlay,
 	onAttachFiles,
 	onCompact,
@@ -76,8 +84,9 @@ export const useRoomSlashCommands = ({
 	onRunPrompt,
 }: RoomSlashCommandsOptions): SlashCommand[] => {
 	const { t } = useTranslation("room");
-	const places = useWorkspacePlaces(workspaceRoom, draft);
-	const roomTitle = useRoomTitle();
+	const panels = useWorkbenchPanels(workbenchRoom, newRoomPanels);
+	const roomActions = useRoomActionsContext();
+	const roomActionItems = useRoomActionItems();
 	const isAgentMode = room.mode === "agent";
 	const command = (
 		id: string,
@@ -92,7 +101,6 @@ export const useRoomSlashCommands = ({
 		label: t(`slash.commands.${id}.label`),
 		description: t(`slash.commands.${id}.description`),
 		onExecute: onExecute,
-		noChip: true,
 		...extra,
 	});
 
@@ -134,114 +142,78 @@ export const useRoomSlashCommands = ({
 	if (onCompact) {
 		commands.push(
 			command("compact", "chat", <ChevronsDownUpIcon />, onCompact, {
-				disableWithTools: true,
+				isLockedWhileBusy: true,
 			}),
 		);
 	}
 
-	for (const place of places) {
-		const icon = <WorkspacePlaceIcon place={place} />;
-		if (place.kind === "connector") {
-			commands.push({
-				id: place.id,
-				group: "workspace",
-				icon: icon,
-				label: place.label,
-				description: t("slash.openPlace", { name: place.label }),
-				onExecute: () => place.onOpen(),
-				noChip: true,
-			});
-			continue;
-		}
-		commands.push({
-			id: place.id,
-			group: "workspace",
-			icon: icon,
-			label: place.label,
-			description: place.description,
-			keywords:
-				place.id === "settings"
-					? [
-							"room-options",
-							"options",
-							"model",
-							"instructions",
-							"tools",
-							"default tools",
-						]
-					: undefined,
-			onExecute: () => place.onOpen(),
-			noChip: true,
-		});
+	// a panel waiting on a new chat's preparation cannot open yet
+	for (const panel of panels) {
+		if (panel.isDisabled) continue;
+		commands.push(
+			command(
+				panel.id,
+				"workspace",
+				<WorkbenchPanelIcon place={panel} />,
+				() => panel.onOpen(),
+				{
+					label: panel.label,
+					description:
+						panel.kind === "connector"
+							? t("slash.openPlace", { name: panel.label })
+							: panel.description,
+					keywords: PANEL_KEYWORDS[panel.id],
+				},
+			),
+		);
 	}
-	if (workspaceRoom.sidebar.isOpen) {
+	if (workbenchRoom.sidebar.isOpen) {
 		commands.push(
 			command(
 				"close-workspace",
 				"workspace",
 				<PanelRightCloseIcon className="rtl:-scale-x-100" />,
-				() => void workspaceRoom.closeSidebar(),
+				() => void workbenchRoom.closeSidebar(),
+				{ label: t("studio.closeWorkspace") },
 			),
 		);
 	}
 
-	// the room's own actions, as the header's Other menu lists them
-	if (roomTitle) {
-		const { actions } = roomTitle;
+	for (const item of roomActionItems) {
+		const Icon = item.icon;
 		commands.push(
 			command(
-				actions.isPinned ? "unfavorite" : "favorite",
+				item.id,
 				"room",
-				<StarIcon />,
-				() => void actions.togglePinned(),
-				{ keywords: ["favorite", "pin"] },
-			),
-			// the composer keeps focus as the menu closes; rename after that
-			command("rename", "room", <PencilIcon />, () =>
-				setTimeout(roomTitle.startRename, 0),
-			),
-			command(
-				"publish",
-				"room",
-				<PackagePlusIcon />,
-				roomTitle.openPublish,
+				<Icon />,
+				// the composer keeps focus as the menu closes; rename after that
+				item.id === "rename" && roomActions
+					? () => setTimeout(roomActions.startRenaming, 0)
+					: item.onSelect,
 				{
-					keywords: ["agent", "save as agent"],
-				},
-			),
-			command(
-				"download",
-				"room",
-				<DownloadIcon />,
-				roomTitle.openDownload,
-				{
-					keywords: ["export", "word", "pdf"],
-				},
-			),
-			command(
-				"delete",
-				"room",
-				<TrashIcon />,
-				() => void actions.remove(),
-				{
-					keywords: ["remove"],
+					label: item.label,
+					description: item.description,
+					keywords: item.keywords,
 				},
 			),
 		);
 	}
 
 	for (const prompt of prompts) {
-		commands.push({
-			id: `prompt-${prompt.id}`,
-			group: "prompts",
-			icon: <TextQuoteIcon />,
-			label: prompt.title,
-			description: prompt.intent,
-			keywords: prompt.tags,
-			onExecute: () => onRunPrompt(prompt),
-			noChip: true,
-			disableWithTools: true,
-		});
+		commands.push(
+			command(
+				`prompt-${prompt.id}`,
+				"prompts",
+				<TextQuoteIcon />,
+				() => onRunPrompt(prompt),
+				{
+					label: prompt.title,
+					description: prompt.intent,
+					keywords: prompt.tags,
+					isLockedWhileBusy: true,
+				},
+			),
+		);
 	}
 
 	return commands;

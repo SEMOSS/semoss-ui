@@ -1,23 +1,10 @@
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandItem,
-	CommandList,
-} from "@semoss/ui/next";
+import { Command, CommandEmpty, CommandList } from "@semoss/ui/next";
 import { useSlashCommands } from "./context";
-import {
-	SLASH_COMMAND_GROUPS,
-	type SlashCommand,
-	type SlashCommandGroup,
-} from "./types";
-
-// ============================================================================
-// Filter
-// ============================================================================
+import { SlashCommandMenuGroup } from "./menu-group";
+import { SLASH_COMMAND_GROUPS, type SlashCommand } from "./types";
 
 /** How many prompts the menu lists before anything is typed. */
 const PROMPT_PREVIEW_COUNT = 5;
@@ -48,8 +35,8 @@ const rankSlashCommand = (cmd: SlashCommand, query: string): number => {
 /**
  * The commands the menu lists for a query, by group in
  * {@link SLASH_COMMAND_GROUPS} order, the closest matches first within each.
- * Before anything is typed it lists every command not hidden, with only the
- * first few prompts.
+ * Before anything is typed it lists every command, with only the first few
+ * prompts.
  *
  * @param commands - The composer's commands.
  * @param query - What was typed after "/".
@@ -61,8 +48,7 @@ export const filterSlashCommands = (
 ): SlashCommand[] => {
 	const lowerQuery = query.trim().toLowerCase();
 	const ranked = commands.flatMap((cmd, index) => {
-		if (!lowerQuery)
-			return cmd.hiddenInMenu ? [] : [{ cmd, rank: 0, index }];
+		if (!lowerQuery) return [{ cmd, rank: 0, index }];
 		const rank = rankSlashCommand(cmd, lowerQuery);
 		return rank < 0 ? [] : [{ cmd, rank, index }];
 	});
@@ -84,11 +70,7 @@ export const filterSlashCommands = (
 	);
 };
 
-// ============================================================================
-// Component
-// ============================================================================
-
-interface RoomInputMenuSlashProps {
+interface SlashCommandMenuProps {
 	/** Text typed after the "/" trigger, used to filter commands */
 	query: string;
 	/** Index of the currently highlighted command */
@@ -97,36 +79,24 @@ interface RoomInputMenuSlashProps {
 	setItemCount: (count: number) => void;
 	/** Syncs hover / cmdk-driven selection back to the parent */
 	setSelectedIndex: (index: number) => void;
-	/** Removes the slash + query text from the editor and closes the menu */
-	onRequestClose: () => void;
-	/**
-	 * Called when a command is selected by click or keyboard. When provided,
-	 * the caller is responsible for executing the command and closing the menu.
-	 */
-	onCommandSelect?: (cmd: SlashCommand) => void;
-	/** When true, commands with disableWithTools are shown as disabled */
-	isLoading?: boolean;
-	/** When true, commands with disableWithTools are shown as disabled */
-	hasTools?: boolean;
+	/** Runs a command picked by click or keyboard, and closes the menu. */
+	onCommandSelect: (cmd: SlashCommand) => void;
+	/** Whether commands locked while busy are disabled. */
+	isBusy: boolean;
 }
 
 /**
- * RoomInputMenuSlash – slash command palette
- *
- * Reads the available commands from SlashCommandContext (must be rendered
- * inside a SlashCommandProvider). Filters by the text typed after "/" and
- * lists the matches under their groups' headings. Arrow keys highlight items;
- * Enter or click executes the selected command.
+ * The slash command palette. Reads the commands from `SlashCommandProvider`,
+ * filters them by the text typed after "/", and lists the matches under their
+ * groups' headings. Arrow keys highlight items; Enter or click runs one.
  */
-export const RoomInputMenuSlash: React.FC<RoomInputMenuSlashProps> = ({
+export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
 	query,
 	selectedIndex,
 	setItemCount,
 	setSelectedIndex,
-	onRequestClose,
 	onCommandSelect,
-	isLoading,
-	hasTools,
+	isBusy,
 }) => {
 	const { t } = useTranslation("room");
 	const { commands } = useSlashCommands();
@@ -168,76 +138,16 @@ export const RoomInputMenuSlash: React.FC<RoomInputMenuSlashProps> = ({
 					<CommandEmpty>{t("slash.empty")}</CommandEmpty>
 				) : (
 					groups.map(({ group, items }) => (
-						<SlashCommandGroupItems
+						<SlashCommandMenuGroup
 							key={group}
 							group={group}
 							items={items}
-							isBusy={Boolean(isLoading || hasTools)}
-							onSelect={(cmd) => {
-								if (onCommandSelect) {
-									onCommandSelect(cmd);
-								} else {
-									cmd.onExecute();
-									onRequestClose();
-								}
-							}}
+							isBusy={isBusy}
+							onSelect={onCommandSelect}
 						/>
 					))
 				)}
 			</CommandList>
 		</Command>
-	);
-};
-
-interface SlashCommandGroupItemsProps {
-	/** The group. */
-	group: SlashCommandGroup;
-	/** Its commands, in the order the menu lists them. */
-	items: SlashCommand[];
-	/** Whether commands with disableWithTools are disabled. */
-	isBusy: boolean;
-	/** Runs a command the user picked. */
-	onSelect: (cmd: SlashCommand) => void;
-}
-
-/** One group of the slash menu under its heading. */
-const SlashCommandGroupItems = ({
-	group,
-	items,
-	isBusy,
-	onSelect,
-}: SlashCommandGroupItemsProps) => {
-	const { t } = useTranslation("room");
-	return (
-		<CommandGroup heading={t(`slash.groups.${group}`)}>
-			{items.map((cmd) => {
-				const disabled = Boolean(cmd.disableWithTools && isBusy);
-				return (
-					<CommandItem
-						key={cmd.id}
-						value={cmd.id}
-						disabled={disabled}
-						onSelect={() => {
-							if (!disabled) onSelect(cmd);
-						}}
-						className="gap-2 max-md:min-h-11"
-					>
-						<span className="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
-							{cmd.icon}
-						</span>
-						<div className="flex min-w-0 flex-col gap-0.5">
-							<span className="truncate font-medium text-sm">
-								{cmd.label}
-							</span>
-							{cmd.description && (
-								<span className="truncate text-muted-foreground text-xs">
-									{cmd.description}
-								</span>
-							)}
-						</div>
-					</CommandItem>
-				);
-			})}
-		</CommandGroup>
 	);
 };

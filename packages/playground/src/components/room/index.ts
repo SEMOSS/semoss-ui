@@ -7,5 +7,5 @@ export * from "./room-inline-tool";
 export * from "./room-input";
 export * from "./room-input-menu-mcp";
 export * from "./room-input-menu-upload";
-export * from "./room-sidebar";
+export * from "./room-workbench";
 export * from "./room-workspace-creation";

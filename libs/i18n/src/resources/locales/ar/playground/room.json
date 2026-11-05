@@ -26,7 +26,6 @@
 			"AUTO": "سيتم اختيار التلخيص أو تقليم الأدوات بناءً على المحادثة الحالية."
 		},
 		"noKnowledge": "لم يتم تحديد أي معرفة.",
-		"noTools": "لم يتم تحديد أي أدوات.",
 		"fromRoom": "من الغرفة",
 		"inheritedSelection": "لا يمكن إزالة العناصر الموروثة من هذه الدردشة.",
 		"removeSelection": "إزالة {{name}}",
@@ -38,7 +37,6 @@
 		"instructionsLabel": "التعليمات",
 		"agentLabel": "الوكيل",
 		"knowledgeLabel": "المعرفة",
-		"toolboxLabel": "صناديق الأدوات",
 		"temperatureLabel": "درجة الحرارة"
 	},
 	"modes": {
@@ -50,7 +48,7 @@
 		"noAgent": "بدون وكيل"
 	},
 	"workspace": {
-		"publishTooltip": "نشر كوكيل",
+		"publish": "نشر كوكيل",
 		"publishTitle": "نشر الوكيل",
 		"publishDescription": "نشر وكيل جديد بتكوين الغرفة الحالي، بما في ذلك التعليمات وMCPs.",
 		"nameLabel": "الاسم *",
@@ -141,8 +139,7 @@
 	"studio": {
 		"views": "طرق عرض المحادثة",
 		"chat": "المحادثة",
-		"workArea": "مساحة العمل",
-		"toolsCount": "الأدوات، تم اختيار {{count}}",
+		"workspace": "مساحة العمل",
 		"toolsLocked": "لا يمكن تغيير الأدوات أثناء إنشاء الرد.",
 		"toolsHint": "تُطبّق اختياراتك على رسالتك التالية.",
 		"moreActions": "إجراءات إضافية",
@@ -231,31 +228,24 @@
 				"description": "لخّص المحادثة لتحرير السياق"
 			},
 			"close-workspace": {
-				"label": "إغلاق مساحة العمل",
 				"description": "إخفاء مساحة العمل مع الاحتفاظ بعلاماتها"
 			},
 			"favorite": {
-				"label": "المفضلة",
 				"description": "ثبّت هذه الغرفة أعلى قائمتك"
 			},
 			"unfavorite": {
-				"label": "إزالة من المفضلة",
 				"description": "ألغِ تثبيت هذه الغرفة من أعلى قائمتك"
 			},
 			"rename": {
-				"label": "إعادة التسمية",
 				"description": "غيّر اسم هذه الغرفة"
 			},
 			"download": {
-				"label": "تنزيل",
 				"description": "احفظ هذه المحادثة بتنسيق Word أو PDF"
 			},
 			"delete": {
-				"label": "حذف",
 				"description": "احذف هذه الغرفة ومحادثتها"
 			},
 			"publish": {
-				"label": "النشر كوكيل",
 				"description": "احفظ تعليمات هذه الغرفة وأدواتها كوكيل"
 			}
 		}

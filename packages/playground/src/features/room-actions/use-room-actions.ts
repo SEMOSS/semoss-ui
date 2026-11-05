@@ -5,13 +5,70 @@ import { usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { useChat } from "@/hooks/use-chat";
+import type { ChatStore } from "@/stores/chat/chat.store";
+
+/** Translates a `sidebar` key. */
+type Translate = (key: string) => string;
+
+/**
+ * Adds a room to the favorites, or takes it out, with a toast on failure.
+ *
+ * @param chat - The chat store, which refreshes every room list after.
+ * @param roomId - The room.
+ * @param isFavorite - Whether it is a favorite now.
+ * @param t - Translates the `sidebar` toasts.
+ */
+export const toggleRoomFavorite = async (
+	chat: ChatStore,
+	roomId: string,
+	isFavorite: boolean,
+	t: Translate,
+): Promise<void> => {
+	try {
+		await chat.pinRoom(roomId, !isFavorite);
+	} catch {
+		toast.error(
+			isFavorite ? t("toasts.failedToUnpin") : t("toasts.failedToPin"),
+		);
+	}
+};
+
+/**
+ * Renames a room, with a toast either way; a blank name is refused.
+ *
+ * @param chat - The chat store, which refreshes every room list after.
+ * @param roomId - The room.
+ * @param name - The new name, trimmed before it is saved.
+ * @param t - Translates the `sidebar` toasts.
+ * @return Whether the room was renamed.
+ */
+export const renameRoom = async (
+	chat: ChatStore,
+	roomId: string,
+	name: string,
+	t: Translate,
+): Promise<boolean> => {
+	const trimmed = name.trim();
+	if (!trimmed) {
+		toast.error(t("toasts.roomNameEmpty"));
+		return false;
+	}
+	try {
+		await chat.renameRoom(roomId, trimmed);
+		toast.success(t("toasts.roomRenamedSuccess"));
+		return true;
+	} catch {
+		toast.error(t("toasts.failedToRename"));
+		return false;
+	}
+};
 
 /** What a room's own menu can do to it. */
 export interface RoomActions {
 	/** Whether the room is among the user's favorites. */
-	isPinned: boolean;
+	isFavorite: boolean;
 	/** Adds the room to the favorites, or takes it out. */
-	togglePinned: () => Promise<void>;
+	toggleFavorite: () => Promise<void>;
 	/**
 	 * Renames the room.
 	 *
@@ -30,7 +87,7 @@ export interface RoomActions {
  * chat store's room counter moves.
  *
  * @param roomId - The room.
- * @return The room's pinned state and its actions.
+ * @return The room's favorite state and its actions.
  */
 export const useRoomActions = (roomId: string): RoomActions => {
 	const { t } = useTranslation("sidebar");
@@ -51,34 +108,15 @@ export const useRoomActions = (roomId: string): RoomActions => {
 		refresh();
 	}, [roomCounter, refresh]);
 
-	const isPinned = (pinnedRooms.data ?? []).some(
+	// the backend calls favorites pinned rooms
+	const isFavorite = (pinnedRooms.data ?? []).some(
 		(room) => room.ROOM_ID === roomId,
 	);
 
-	const togglePinned = async () => {
-		try {
-			await chat.pinRoom(roomId, !isPinned);
-		} catch {
-			toast.error(
-				isPinned ? t("toasts.failedToUnpin") : t("toasts.failedToPin"),
-			);
-		}
-	};
+	const toggleFavorite = () =>
+		toggleRoomFavorite(chat, roomId, isFavorite, t);
 
-	const rename = async (name: string): Promise<boolean> => {
-		if (!name.trim()) {
-			toast.error(t("toasts.roomNameEmpty"));
-			return false;
-		}
-		try {
-			await chat.renameRoom(roomId, name);
-			toast.success(t("toasts.roomRenamedSuccess"));
-			return true;
-		} catch {
-			toast.error(t("toasts.failedToRename"));
-			return false;
-		}
-	};
+	const rename = (name: string) => renameRoom(chat, roomId, name, t);
 
 	const remove = async () => {
 		try {
@@ -90,5 +128,5 @@ export const useRoomActions = (roomId: string): RoomActions => {
 		}
 	};
 
-	return { isPinned, togglePinned, rename, remove };
+	return { isFavorite, toggleFavorite, rename, remove };
 };

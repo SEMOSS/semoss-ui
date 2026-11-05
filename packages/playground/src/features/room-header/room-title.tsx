@@ -1,79 +1,45 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Input } from "@semoss/ui/next";
-import { useRoomTitle } from "./room-title.context";
+import { useRoomActionsContext } from "@/features/room-actions/room-actions.context";
+import { RoomNameField } from "./room-name-field";
 
 /**
- * The room's name at the start of its header. Rename, from the header's Other
- * menu, edits it in place: Enter or leaving the field saves it, and Escape
- * keeps the old name. Renders inside a `RoomTitleProvider`.
+ * The room's name at the start of its header. Rename, from the More actions
+ * menu or the slash menu, edits it in place with {@link RoomNameField}.
+ * Renders inside a `RoomActionsProvider`.
  */
 export const RoomTitle = observer(() => {
 	const { t } = useTranslation("room");
-	const title = useRoomTitle();
-	const [draftName, setDraftName] = useState("");
-	// Enter saves, and the field's blur that follows must not save again.
-	const isSaving = useRef(false);
-	// Enter and Escape hand focus back to the name; a click elsewhere keeps it.
-	const shouldRefocus = useRef(false);
+	const context = useRoomActionsContext();
 	const headingRef = useRef<HTMLHeadingElement>(null);
-	const inputRef = useRef<HTMLInputElement>(null);
-	const isRenaming = title?.isRenaming ?? false;
-	const savedName = title?.room.metadata.name ?? "";
+	// Enter and Escape hand focus back to the name; a click elsewhere keeps it
+	const shouldRefocus = useRef(false);
+	const isRenaming = context?.isRenaming ?? false;
 
-	// the field starts from the saved name and takes focus as it shows
 	useEffect(() => {
-		if (isRenaming) {
-			setDraftName(savedName);
-			inputRef.current?.focus();
-			return;
-		}
-		if (!shouldRefocus.current) return;
+		if (isRenaming || !shouldRefocus.current) return;
 		shouldRefocus.current = false;
 		headingRef.current?.focus();
-	}, [isRenaming, savedName]);
+	}, [isRenaming]);
 
-	if (!title) return null;
-	const { actions, stopRenaming } = title;
-	const name = savedName || t("header.untitled");
-
-	const handleSave = async () => {
-		if (isSaving.current) return;
-		if (draftName.trim() === savedName) {
-			stopRenaming();
-			return;
-		}
-		isSaving.current = true;
-		const isRenamed = await actions.rename(draftName);
-		isSaving.current = false;
-		if (isRenamed) stopRenaming();
-	};
+	if (!context) return null;
+	const savedName = context.room.metadata.name ?? "";
 
 	if (isRenaming) {
 		return (
-			<Input
-				ref={inputRef}
-				aria-label={t("header.renameLabel")}
-				value={draftName}
-				onChange={(event) => setDraftName(event.target.value)}
-				onKeyDown={(event) => {
-					if (event.key === "Enter") {
-						event.preventDefault();
-						shouldRefocus.current = true;
-						void handleSave();
-					} else if (event.key === "Escape") {
-						event.preventDefault();
-						shouldRefocus.current = true;
-						stopRenaming();
-					}
+			<RoomNameField
+				savedName={savedName}
+				onRename={context.actions.rename}
+				onClose={(isRefocusing) => {
+					shouldRefocus.current = isRefocusing;
+					context.stopRenaming();
 				}}
-				onBlur={() => void handleSave()}
-				className="h-8 w-full max-w-sm"
 			/>
 		);
 	}
 
+	const name = savedName || t("header.untitled");
 	return (
 		<h1
 			ref={headingRef}

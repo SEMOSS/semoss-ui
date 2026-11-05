@@ -1,27 +1,41 @@
 {
-	"panel": {
-		"description": "Lo que el asistente puede usar en tu próximo mensaje.",
-		"connectorsTitle": "Conectores",
-		"manageConnectors": "Administrar conectores",
-		"toolboxDescription": "Herramientas de las aplicaciones que activaste en Configuración > Conectores. Cada una se ejecuta sola o pregunta primero.",
-		"toolboxEmpty": "No hay conectores activados.",
-		"toolboxError": "No se pudo leer la caja de herramientas de este chat.",
-		"otherTools": "Otras herramientas",
+	"sections": {
+		"tools": {
+			"tooltip": "Lo que el asistente puede usar en tu próximo mensaje."
+		},
+		"about": "Acerca de {{section}}",
+		"default": {
+			"title": "Predeterminadas",
+			"tooltip": "Herramientas que este navegador añade a cada mensaje y ejecuta en Archivos de la sala. Automático ejecuta una herramienta sola, Preguntar espera tu aprobación en cada llamada y Desactivada la deja fuera.",
+			"agentNote": "Las ejecuciones del agente traen sus propias herramientas de archivos, shell y código, y trabajan en Archivos de la sala."
+		},
+		"connectors": {
+			"title": "Conectores",
+			"tooltip": "Herramientas de las aplicaciones que activaste en Configuración > Conectores. Cada una se ejecuta sola o pregunta primero.",
+			"manage": "Administrar conectores",
+			"empty": "No hay conectores activados.",
+			"error": "No se pudo leer la caja de herramientas de este chat.",
+			"otherTools": "Otras herramientas"
+		},
+		"agent": {
+			"title": "Agente",
+			"tooltip": "Cajas de herramientas que trae el agente de esta sala. Edita el agente para cambiarlas."
+		},
+		"toolboxes": {
+			"title": "Cajas de herramientas",
+			"tooltip": "Cajas de herramientas que añadiste a esta sala. Abre una para ver sus herramientas."
+		},
+		"toolbox": {
+			"error": "No se pudieron leer las herramientas de esta caja.",
+			"empty": "Esta caja de herramientas no tiene herramientas."
+		}
+	},
+	"details": {
 		"parameters": "Parámetros",
 		"required": "Obligatorio",
-		"noParameters": "Sin parámetros.",
-		"agentDescription": "Las ejecuciones del agente traen sus propias herramientas de archivos, shell y código, y trabajan en Archivos de la sala.",
-		"agentTitle": "Agente",
-		"agentTooltip": "Cajas de herramientas que trae el agente de esta sala. Edita el agente para cambiarlas.",
-		"toolboxesTitle": "Cajas de herramientas",
-		"toolboxesTooltip": "Cajas de herramientas que añadiste a esta sala. Abre una para ver sus herramientas.",
-		"aboutSection": "Acerca de {{section}}",
-		"toolboxToolsError": "No se pudieron leer las herramientas de esta caja.",
-		"toolboxNoTools": "Esta caja de herramientas no tiene herramientas."
+		"noParameters": "Sin parámetros."
 	},
 	"defaultTools": {
-		"title": "Predeterminadas",
-		"description": "Herramientas que este navegador añade a cada mensaje y ejecuta en Archivos de la sala. Automático ejecuta una herramienta sola, Preguntar espera tu aprobación en cada llamada y Desactivada la deja fuera.",
 		"modes": {
 			"auto": "Automático",
 			"ask": "Preguntar",
@@ -72,6 +86,6 @@
 		"deny": "Denegar",
 		"denying": "Denegando...",
 		"decisionError": "No se pudo completar la acción. {{message}}",
-		"chatFiles": "Archivos de la sala"
+		"roomFiles": "Archivos de la sala"
 	}
 }

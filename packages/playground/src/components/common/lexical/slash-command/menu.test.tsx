@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { SlashCommandProvider } from "./context";
-import { filterSlashCommands, RoomInputMenuSlash } from "./menu";
+import { filterSlashCommands, SlashCommandMenu } from "./menu";
 import type { SlashCommand } from "./types";
 
 vi.mock("@semoss/i18n", () => ({
@@ -20,7 +20,6 @@ const command = (
 	label: label,
 	icon: null,
 	onExecute: vi.fn(),
-	noChip: true,
 	...extra,
 });
 
@@ -28,7 +27,7 @@ const COMMANDS: SlashCommand[] = [
 	command("attach", "chat", "Attach files", {
 		keywords: ["file", "document"],
 	}),
-	command("compact", "chat", "Compact", { disableWithTools: true }),
+	command("compact", "chat", "Compact", { isLockedWhileBusy: true }),
 	command("files", "workspace", "Files"),
 	command("settings", "workspace", "Settings", {
 		keywords: ["room-options"],
@@ -38,6 +37,10 @@ const COMMANDS: SlashCommand[] = [
 		command(`prompt-${id}`, "prompts", `Prompt ${id}`),
 	),
 ];
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
 
 const ids = (commands: SlashCommand[]) => commands.map((cmd) => cmd.id);
 
@@ -84,16 +87,17 @@ test("within a group, a command that starts with the query comes before one that
 
 test("the menu lists matches under their group headings, and locks busy commands", () => {
 	// jsdom lays nothing out, so it has no scrolling
-	Element.prototype.scrollIntoView = vi.fn();
+	Element.prototype.scrollIntoView ??= () => {};
+	vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => {});
 	render(
 		<SlashCommandProvider commands={COMMANDS} excludeCommandIds={["files"]}>
-			<RoomInputMenuSlash
+			<SlashCommandMenu
 				query=""
 				selectedIndex={0}
 				setItemCount={vi.fn()}
 				setSelectedIndex={vi.fn()}
-				onRequestClose={vi.fn()}
-				isLoading
+				onCommandSelect={vi.fn()}
+				isBusy
 			/>
 		</SlashCommandProvider>,
 	);

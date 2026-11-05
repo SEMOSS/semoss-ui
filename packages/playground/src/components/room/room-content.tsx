@@ -20,7 +20,7 @@ import { InputMessage } from "@/components/message/input-message";
 import { ResponseMessage } from "@/components/message/response-message";
 import { RoomInput, type SendButtonState } from "@/components/room/room-input";
 import { useFileDrag } from "@/contexts/file-drag-context";
-import { ChatScrollContext } from "@/features/conversation/chat-scroll.context";
+import { ConversationScrollContext } from "@/features/conversation/conversation-scroll.context";
 import { ModelRouterAttribution } from "@/features/conversation/model-router-attribution";
 import { useChat } from "@/hooks/use-chat";
 import { useGracefulErrors } from "@/hooks/use-graceful-errors";
@@ -41,7 +41,7 @@ export interface RoomContentProps {
 }
 
 /**
- * The page for a room
+ * A room's conversation and its composer
  */
 export const RoomContent = observer(({ room }: RoomContentProps) => {
 	const { chat } = useChat();
@@ -97,22 +97,16 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 	};
 
 	// the room header floats over the conversation and blurs once it scrolls
-	const reportChatScrolled = useContext(ChatScrollContext);
-
-	useEffect(() => () => reportChatScrolled?.(false), [reportChatScrolled]);
+	const reportConversationScrolled = useContext(ConversationScrollContext);
 
 	/**
 	 * Handle scroll events to detect user scrolling
 	 */
 	const handleScroll = useCallback(() => {
-		if (!scrollEle) {
-			setShowScrolldown(false);
-			setShowScrollup(false);
-			reportChatScrolled?.(false);
-			return;
-		}
+		// the effect that calls this only does so once the element exists
+		if (!scrollEle) return;
 
-		reportChatScrolled?.(scrollEle.scrollTop > 0);
+		reportConversationScrolled?.(scrollEle.scrollTop > 0);
 
 		// show scroll up if near the top
 		if (scrollEle.scrollTop > SCROLL_THRESHOLD) {
@@ -138,7 +132,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 			// Lock scroll when user scrolls away from bottom
 			setIsScrollLocked(true);
 		}
-	}, [scrollEle, reportChatScrolled]);
+	}, [scrollEle, reportConversationScrolled]);
 
 	/**
 	 * Scroll to target position based on direction
@@ -676,7 +670,6 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 							// A room's mode is fixed at creation — never let an
 							// existing room switch into agent-harness mid-chat.
 							"agent-harness",
-							"chat-mode",
 						]}
 					/>
 				</div>

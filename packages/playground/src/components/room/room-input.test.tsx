@@ -13,7 +13,6 @@ import { RoomInputMenuUpload } from "./room-input-menu-upload";
 // Fake editor state shared between mocks
 // ---------------------------------------------------------------------------
 const openFilePicker = vi.hoisted(() => vi.fn());
-const openSettings = vi.hoisted(() => vi.fn());
 // stable, as the SDK's are, so views keep the same logins between renders
 const sessionLogins = vi.hoisted(() => ({
 	logins: {},
@@ -61,11 +60,6 @@ vi.mock("@semoss/i18n", async (importOriginal) => {
 		}),
 	};
 });
-
-// the settings dialog belongs to the main layout, which these tests leave out
-vi.mock("@/features/settings/settings-dialog.context", () => ({
-	useSettingsDialog: () => ({ openSettings }),
-}));
 
 vi.mock("@/contexts/file-drag-context", async (importOriginal) => {
 	const actual =
@@ -191,8 +185,6 @@ vi.mock("lexical", async (importOriginal) => {
 			},
 		})),
 		$createTextNode: vi.fn((text: string) => text),
-		$isElementNode: vi.fn(() => true),
-		$isSlashCommandNode: vi.fn(() => false),
 	};
 });
 
@@ -267,7 +259,6 @@ const defaultProps = {
 	room: {
 		chatTools: {
 			isAgentMode: false,
-			openToolsPanel: vi.fn(),
 		},
 		connectors: {
 			services: [],
@@ -459,7 +450,7 @@ test("keeps optimizer beside the editor after typing and disables it while busy"
 	).toBeDisabled();
 });
 
-test("routes file, tool, and source actions from the single add menu", async () => {
+test("routes file and tool actions from the single add menu", async () => {
 	const user = userEvent.setup();
 	render(
 		<RoomInput
@@ -533,7 +524,7 @@ test("opens prompts from the inline action before the microphone", async () => {
 	).toBeVisible();
 });
 
-test("locks mutating menu actions during a turn and leaves opening the Workspace to the header", async () => {
+test("locks mutating menu actions during a turn", async () => {
 	const user = userEvent.setup();
 	render(
 		<RoomInput
@@ -553,20 +544,6 @@ test("locks mutating menu actions during a turn and leaves opening the Workspace
 			"true",
 		);
 	}
-	expect(
-		screen.queryByRole("menuitem", { name: "studio.openWorkArea" }),
-	).toBeNull();
-});
-
-test("the add menu leaves Connectors to the room header", async () => {
-	const user = userEvent.setup();
-	render(<RoomInput {...defaultProps} MenuComponent={undefined} />);
-	await user.click(screen.getByRole("button", { name: "input.addToChat" }));
-	expect(
-		screen.queryByRole("menuitem", {
-			name: "sidebar:settings.sections.connectors",
-		}),
-	).toBeNull();
 });
 
 test("new chats choose execution mode separately from the saved agent", async () => {

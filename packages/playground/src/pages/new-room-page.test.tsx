@@ -156,31 +156,28 @@ vi.mock("@/components/room/panels/room-panel.components", async () => {
 		},
 	};
 });
-vi.mock("@/components/room/room-workspace-creation", () => ({
-	SaveWorkspaceDialog: () => <button type="button">Publish</button>,
-}));
 vi.mock("@/contexts/file-drag-context", () => ({
 	FileDragProvider: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("@/features/conversation/drop-highlight", () => ({
 	DropHighlight: ({ children }: { children: ReactNode }) => children,
 }));
-vi.mock("@/features/conversation/conversation-workspace", () => ({
-	ConversationWorkspace: ({
+vi.mock("@/features/conversation/room-layout", () => ({
+	RoomLayout: ({
 		children,
-		panel,
-		isOpen,
+		workbench,
+		isWorkbenchOpen,
 		header,
 	}: {
 		children: ReactNode;
-		panel: ReactNode;
-		isOpen: boolean;
+		workbench: ReactNode;
+		isWorkbenchOpen: boolean;
 		header: ReactNode;
 	}) => (
 		<>
 			{header}
 			{children}
-			<div hidden={!isOpen}>{panel}</div>
+			<div hidden={!isWorkbenchOpen}>{workbench}</div>
 		</>
 	),
 }));
@@ -230,7 +227,7 @@ vi.mock("@/components/room/room-input", () => ({
 			onExitAgentHarness,
 			onSwitchToAgentHarness,
 			onPrompt,
-			onOpenSource,
+			workbenchPanels,
 		}: ComponentProps<typeof RoomInput>) => (
 			<>
 				<input
@@ -241,7 +238,15 @@ vi.mock("@/components/room/room-input", () => ({
 				<output aria-label="Queued context">
 					{room.contextItems.items.map((item) => item.name).join(",")}
 				</output>
-				<button type="button" onClick={() => onOpenSource?.("gmail")}>
+				<button
+					type="button"
+					onClick={() =>
+						workbenchPanels?.newRoomPanels?.onOpenPanel({
+							kind: "connector",
+							service: "gmail",
+						})
+					}
+				>
 					Open Gmail
 				</button>
 				<output aria-label="Selected agent">
@@ -314,7 +319,7 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
-/** Select a place from the room header's Other menu, under Open a Panel. */
+/** Select a panel from the room header's More actions menu, under Open a Panel. */
 function selectWorkspaceItem(name: string) {
 	fireEvent.keyDown(
 		screen.getByRole("button", { name: "studio.moreActions" }),
@@ -573,9 +578,6 @@ test("Settings prepares the room, and the toggle closes and reopens it on the sa
 	});
 	expect(settings).toHaveAttribute("aria-selected", "true");
 	expect(room.sidebar.isOpen).toBe(true);
-	expect(
-		screen.queryByRole("button", { name: "Publish" }),
-	).not.toBeInTheDocument();
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.closeWorkspace" }),
 	);
@@ -650,12 +652,12 @@ test("Retry after a failed preparation reopens the Workspace in the prepared roo
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
 });
 
-test("a new chat's header has its places but no title or room menu", () => {
+test("a new chat's header has its controls but no title or room menu", () => {
 	render(<NewRoomPage />);
 	expect(screen.getByRole("banner")).not.toHaveTextContent("header.newChat");
 	expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
 	expect(
-		screen.getByRole("navigation", { name: "studio.workArea" }),
+		screen.getByRole("button", { name: "studio.moreActions" }),
 	).toBeVisible();
 	expect(
 		screen.queryByRole("menuitem", { name: "sidebar:actions.rename" }),

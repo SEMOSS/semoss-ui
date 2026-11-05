@@ -11,6 +11,7 @@ export const SLASH_COMMAND_GROUPS = [
 /** One of the slash menu's groups. */
 export type SlashCommandGroup = (typeof SLASH_COMMAND_GROUPS)[number];
 
+/** One action the composer's "/" menu offers. */
 export interface SlashCommand {
 	/** Stable key, and what Tab completes the query to. */
 	id: string;
@@ -24,11 +25,8 @@ export interface SlashCommand {
 	keywords?: string[];
 	/** The command's icon, sized by the menu. */
 	icon: ReactNode;
+	/** Runs the command once it is picked. */
 	onExecute: () => void;
-	/** If true, the command is hidden until at least 1 character is typed */
-	hiddenInMenu?: boolean;
-	/** If true, selecting the command fires onExecute immediately without inserting a chip */
-	noChip?: boolean;
-	/** If true, the command is shown as disabled (non-selectable) while the model is responding or the latest response has tool calls */
-	disableWithTools?: boolean;
+	/** Whether the command is disabled while the model responds or the latest response has tool calls. */
+	isLockedWhileBusy?: boolean;
 }

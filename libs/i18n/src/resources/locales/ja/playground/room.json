@@ -26,7 +26,6 @@
 			"AUTO": "現在の会話内容に基づいて、要約またはツール整理のいずれかを選択します。"
 		},
 		"noKnowledge": "ナレッジが選択されていません。",
-		"noTools": "ツールが選択されていません。",
 		"fromRoom": "ルームから",
 		"inheritedSelection": "継承された項目はこのチャットから削除できません。",
 		"removeSelection": "{{name}}を削除",
@@ -38,7 +37,6 @@
 		"instructionsLabel": "指示",
 		"agentLabel": "エージェント",
 		"knowledgeLabel": "ナレッジ",
-		"toolboxLabel": "ツールボックス",
 		"temperatureLabel": "温度"
 	},
 	"modes": {
@@ -50,7 +48,7 @@
 		"noAgent": "エージェントなし"
 	},
 	"workspace": {
-		"publishTooltip": "エージェントとして公開",
+		"publish": "エージェントとして公開",
 		"publishTitle": "エージェントを公開",
 		"publishDescription": "現在のルーム構成(指示とMCPを含む)で新しいエージェントを公開します。",
 		"nameLabel": "名前 *",
@@ -141,8 +139,7 @@
 	"studio": {
 		"views": "会話の表示",
 		"chat": "チャット",
-		"workArea": "ワークスペース",
-		"toolsCount": "ツール、{{count}} 件選択済み",
+		"workspace": "ワークスペース",
 		"toolsLocked": "応答の生成中はツールを変更できません。",
 		"toolsHint": "選択内容は次のメッセージに適用されます。",
 		"moreActions": "その他の操作",
@@ -231,31 +228,24 @@
 				"description": "会話を要約してコンテキストを空けます"
 			},
 			"close-workspace": {
-				"label": "ワークスペースを閉じる",
 				"description": "タブを残したままワークスペースを隠します"
 			},
 			"favorite": {
-				"label": "お気に入り",
 				"description": "このルームを一覧の先頭に固定します"
 			},
 			"unfavorite": {
-				"label": "お気に入りを解除",
 				"description": "このルームの固定を解除します"
 			},
 			"rename": {
-				"label": "名前を変更",
 				"description": "このルームの名前を変更します"
 			},
 			"download": {
-				"label": "ダウンロード",
 				"description": "この会話を Word または PDF で保存します"
 			},
 			"delete": {
-				"label": "削除",
 				"description": "このルームと会話を削除します"
 			},
 			"publish": {
-				"label": "エージェントとして公開",
 				"description": "このルームの指示とツールをエージェントとして保存します"
 			}
 		}

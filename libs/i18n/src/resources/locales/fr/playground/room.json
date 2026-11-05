@@ -26,7 +26,6 @@
 			"AUTO": "Choisira le résumé ou l'élagage des outils selon la conversation en cours."
 		},
 		"noKnowledge": "Aucune connaissance sélectionnée.",
-		"noTools": "Aucun outil sélectionné.",
 		"fromRoom": "De la conversation",
 		"inheritedSelection": "Les sélections héritées ne peuvent pas être retirées de ce chat.",
 		"removeSelection": "Retirer {{name}}",
@@ -38,7 +37,6 @@
 		"instructionsLabel": "Instructions",
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Connaissances",
-		"toolboxLabel": "Boîtes à outils",
 		"temperatureLabel": "Température"
 	},
 	"modes": {
@@ -50,7 +48,7 @@
 		"noAgent": "Aucun agent"
 	},
 	"workspace": {
-		"publishTooltip": "Publier en tant qu'agent",
+		"publish": "Publier en tant qu'agent",
 		"publishTitle": "Publier l'agent",
 		"publishDescription": "Publiez un nouvel agent avec la configuration actuelle de la salle, y compris les instructions et les MCPs.",
 		"nameLabel": "Nom *",
@@ -141,8 +139,7 @@
 	"studio": {
 		"views": "Vues de la conversation",
 		"chat": "Discussion",
-		"workArea": "Espace de travail",
-		"toolsCount": "Outils, {{count}} sélectionnés",
+		"workspace": "Espace de travail",
 		"toolsLocked": "Les outils ne peuvent pas être modifiés pendant une réponse.",
 		"toolsHint": "Les sélections s’appliquent à votre prochain message.",
 		"moreActions": "Autres actions",
@@ -231,31 +228,24 @@
 				"description": "Résumez la conversation pour libérer du contexte"
 			},
 			"close-workspace": {
-				"label": "Fermer l’espace de travail",
 				"description": "Masquez l’espace de travail en gardant ses onglets"
 			},
 			"favorite": {
-				"label": "Favori",
 				"description": "Épinglez cette salle en haut de votre liste"
 			},
 			"unfavorite": {
-				"label": "Retirer des favoris",
 				"description": "Désépinglez cette salle du haut de votre liste"
 			},
 			"rename": {
-				"label": "Renommer",
 				"description": "Changez le nom de cette salle"
 			},
 			"download": {
-				"label": "Télécharger",
 				"description": "Enregistrez cette conversation au format Word ou PDF"
 			},
 			"delete": {
-				"label": "Supprimer",
 				"description": "Supprimez cette salle et sa conversation"
 			},
 			"publish": {
-				"label": "Publier comme agent",
 				"description": "Enregistrez les instructions et les outils de cette salle comme agent"
 			}
 		}

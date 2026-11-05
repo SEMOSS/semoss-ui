@@ -1,27 +1,41 @@
 {
-	"panel": {
-		"description": "Wat de assistent in je volgende bericht kan gebruiken.",
-		"connectorsTitle": "Connectors",
-		"manageConnectors": "Connectors beheren",
-		"toolboxDescription": "Tools van de apps die je hebt aangezet in Instellingen > Connectors. Elke tool werkt zelfstandig of vraagt eerst.",
-		"toolboxEmpty": "Er staan geen connectors aan.",
-		"toolboxError": "De toolbox van deze chat kon niet worden gelezen.",
-		"otherTools": "Andere tools",
+	"sections": {
+		"tools": {
+			"tooltip": "Wat de assistent in je volgende bericht kan gebruiken."
+		},
+		"about": "Over {{section}}",
+		"default": {
+			"title": "Standaard",
+			"tooltip": "Tools die deze browser aan elk bericht toevoegt en uitvoert in Kamerbestanden. Automatisch voert een tool zelfstandig uit, Vragen wacht bij elke aanroep op je goedkeuring en Uitgeschakeld laat hem weg.",
+			"agentNote": "Agentruns hebben hun eigen tools voor bestanden, shell en code, en werken in Kamerbestanden."
+		},
+		"connectors": {
+			"title": "Connectors",
+			"tooltip": "Tools van de apps die je hebt aangezet in Instellingen > Connectors. Elke tool werkt zelfstandig of vraagt eerst.",
+			"manage": "Connectors beheren",
+			"empty": "Er staan geen connectors aan.",
+			"error": "De toolbox van deze chat kon niet worden gelezen.",
+			"otherTools": "Andere tools"
+		},
+		"agent": {
+			"title": "Agent",
+			"tooltip": "Toolboxen die de agent van deze kamer meebrengt. Bewerk de agent om ze te wijzigen."
+		},
+		"toolboxes": {
+			"title": "Toolboxen",
+			"tooltip": "Toolboxen die je aan deze kamer hebt toegevoegd. Open er een om de tools te zien."
+		},
+		"toolbox": {
+			"error": "De tools van deze toolbox konden niet worden gelezen.",
+			"empty": "Deze toolbox heeft geen tools."
+		}
+	},
+	"details": {
 		"parameters": "Parameters",
 		"required": "Verplicht",
-		"noParameters": "Geen parameters.",
-		"agentDescription": "Agentruns hebben hun eigen tools voor bestanden, shell en code, en werken in Kamerbestanden.",
-		"agentTitle": "Agent",
-		"agentTooltip": "Toolboxen die de agent van deze kamer meebrengt. Bewerk de agent om ze te wijzigen.",
-		"toolboxesTitle": "Toolboxen",
-		"toolboxesTooltip": "Toolboxen die je aan deze kamer hebt toegevoegd. Open er een om de tools te zien.",
-		"aboutSection": "Over {{section}}",
-		"toolboxToolsError": "De tools van deze toolbox konden niet worden gelezen.",
-		"toolboxNoTools": "Deze toolbox heeft geen tools."
+		"noParameters": "Geen parameters."
 	},
 	"defaultTools": {
-		"title": "Standaard",
-		"description": "Tools die deze browser aan elk bericht toevoegt en uitvoert in Kamerbestanden. Automatisch voert een tool zelfstandig uit, Vragen wacht bij elke aanroep op je goedkeuring en Uitgeschakeld laat hem weg.",
 		"modes": {
 			"auto": "Automatisch",
 			"ask": "Vragen",
@@ -72,6 +86,6 @@
 		"deny": "Weigeren",
 		"denying": "Bezig met weigeren...",
 		"decisionError": "Kan dit niet voltooien. {{message}}",
-		"chatFiles": "Kamerbestanden"
+		"roomFiles": "Kamerbestanden"
 	}
 }

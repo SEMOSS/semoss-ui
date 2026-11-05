@@ -60,6 +60,10 @@ import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-c
 import { NavigationRail } from "@/features/navigation/navigation-rail";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
 import { DownloadConversationDialog } from "@/features/room-actions/download-conversation-dialog";
+import {
+	renameRoom,
+	toggleRoomFavorite,
+} from "@/features/room-actions/use-room-actions";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { AppLogo } from "./app-logo";
@@ -85,7 +89,6 @@ export const GlobalNav = observer(() => {
 		t(`buckets.${bucket}`),
 	);
 	const BUCKETS = [t("buckets.favorites"), ...dateBucketLabels];
-	const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
 	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
@@ -332,23 +335,10 @@ export const GlobalNav = observer(() => {
 	/**
 	 * Handlers
 	 */
-	const handleToggleFavorite = async (
-		roomId: string,
-		isFavorite: boolean,
-	) => {
-		try {
-			// pinRoom bumps roomCounter, which the effect above watches to
-			// refetch both room queries here — and keeps the chats page in
-			// sync, so pinning is bidirectional across the two views.
-			await chat.pinRoom(roomId, !isFavorite);
-		} catch {
-			toast.error(
-				isFavorite
-					? t("toasts.failedToUnpin")
-					: t("toasts.failedToPin"),
-			);
-		}
-	};
+	// pinRoom bumps roomCounter, which the effect above watches to refetch
+	// both room queries here, and keeps the chats page in sync
+	const handleToggleFavorite = (roomId: string, isFavorite: boolean) =>
+		toggleRoomFavorite(chat, roomId, isFavorite, t);
 
 	const handleStartRename = (roomId: string, currentName: string) => {
 		setEditingRoomId(roomId);
@@ -361,24 +351,8 @@ export const GlobalNav = observer(() => {
 	};
 
 	const handleSaveRename = async (roomId: string) => {
-		if (!editingName.trim()) {
-			toast.error(t("toasts.roomNameEmpty"));
-			return;
-		}
-
-		try {
-			// renameRoom bumps roomCounter, which the effect above watches to
-			// refetch both room queries
-			await chat.renameRoom(roomId, editingName);
-
-			toast.success(t("toasts.roomRenamedSuccess"));
-
-			// Reset state
-			setEditingRoomId(null);
-			setEditingName("");
-		} catch {
-			toast.error(t("toasts.failedToRename"));
-		}
+		if (await renameRoom(chat, roomId, editingName, t))
+			handleCancelRename();
 	};
 
 	return (
@@ -757,9 +731,6 @@ export const GlobalNav = observer(() => {
 																					setDownloadRoomId(
 																						roomId,
 																					);
-																					setDownloadDialogOpen(
-																						true,
-																					);
 																				}}
 																			>
 																				<DownloadIcon className="me-2 size-4" />
@@ -932,9 +903,8 @@ export const GlobalNav = observer(() => {
 
 			<DownloadConversationDialog
 				roomId={downloadRoomId}
-				open={downloadDialogOpen}
+				open={downloadRoomId !== null}
 				onOpenChange={(open) => {
-					setDownloadDialogOpen(open);
 					if (!open) setDownloadRoomId(null);
 				}}
 			/>

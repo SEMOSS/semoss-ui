@@ -1,10 +1,10 @@
 import { Settings2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useContext, useEffect, useRef } from "react";
+import { useContext } from "react";
 import { ScrollArea } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useRoom } from "@/contexts/room.context";
-import { RoomToolboxSection } from "@/features/chat-tools/components/room-toolbox-section";
+import { RoomToolsConnectorsSection } from "@/features/chat-tools/components/room-tools-connectors-section";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
 import { useChat } from "@/hooks/use-chat";
 import { RoomOptionsForm } from "../room-options-form";
@@ -18,18 +18,6 @@ const RoomConfigurationPanel = observer(() => {
 	const room = useRoom();
 	const { chat } = useChat();
 	const draftSettings = useContext(DraftSettingsContext);
-	const toolsHeadingRef = useRef<HTMLHeadingElement>(null);
-	const pendingSection = room.chatTools.pendingSettingsSection;
-
-	// Opening Tools brings them into view, whether or not Settings was open.
-	useEffect(() => {
-		if (pendingSection !== "tools") return;
-		room.chatTools.takeSettingsSection();
-		const heading = toolsHeadingRef.current;
-		heading?.scrollIntoView({ block: "start" });
-		heading?.focus({ preventScroll: true });
-	}, [pendingSection, room.chatTools]);
-
 	return (
 		<ScrollArea className="h-full w-full">
 			<RoomOptionsForm
@@ -52,12 +40,11 @@ const RoomConfigurationPanel = observer(() => {
 						room.setOptions(options);
 					}
 				}}
-				toolbox={
+				connectorsSection={
 					draftSettings ? undefined : (
-						<RoomToolboxSection room={room} />
+						<RoomToolsConnectorsSection room={room} />
 					)
 				}
-				toolsHeadingRef={toolsHeadingRef}
 				{...draftSettings}
 			/>
 		</ScrollArea>

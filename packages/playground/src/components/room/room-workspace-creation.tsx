@@ -1,6 +1,4 @@
-import { PackagePlus } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Alert,
@@ -12,14 +10,10 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 	Form,
 	FormInput,
 	FormTextarea,
 	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 	useForm,
 	z,
@@ -34,26 +28,17 @@ interface SaveWorkspaceDialogProps {
 	systemPrompt: string;
 	/** MCPs to include in the saved agent. */
 	mcps: MCPConfig[];
-	/**
-	 * Whether the dialog is open, for a dialog opened from elsewhere, such as
-	 * a menu. Without it, the dialog brings its own icon button.
-	 */
-	open?: boolean;
-	/** Called as a controlled dialog opens or closes. */
-	onOpenChange?: (open: boolean) => void;
+	/** Whether the dialog is open; a menu such as More actions opens it. */
+	open: boolean;
+	/** Called as the dialog opens or closes. */
+	onOpenChange: (open: boolean) => void;
 }
 
+/** Publishes the room's instructions and tools as a new agent. */
 export const SaveWorkspaceDialog = observer(
 	({ systemPrompt, mcps, open, onOpenChange }: SaveWorkspaceDialogProps) => {
 		const { chat } = useChat();
 		const { t } = useTranslation("room");
-		const [ownOpen, setOwnOpen] = useState(false);
-		const isControlled = open !== undefined;
-		const isOpen = isControlled ? open : ownOpen;
-		const setIsOpen = (next: boolean) => {
-			if (isControlled) onOpenChange?.(next);
-			else setOwnOpen(next);
-		};
 		const form = useForm({
 			resolver: zodResolver(
 				z.object({
@@ -66,7 +51,7 @@ export const SaveWorkspaceDialog = observer(
 		const isLoading = form.formState.isSubmitting;
 		const close = () => {
 			if (isLoading) return;
-			setIsOpen(false);
+			onOpenChange(false);
 			form.reset();
 		};
 		const save = async ({
@@ -95,36 +80,17 @@ export const SaveWorkspaceDialog = observer(
 				return;
 			}
 			toast.success(t("workspace.publishSuccess"));
-			setIsOpen(false);
+			onOpenChange(false);
 			form.reset();
 		};
 		return (
 			<Dialog
-				open={isOpen}
+				open={open}
 				onOpenChange={(next) => {
-					if (next) setIsOpen(true);
-					else close();
+					// nothing in the dialog opens it; only closing comes back
+					if (!next) close();
 				}}
 			>
-				{!isControlled && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<DialogTrigger asChild>
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon-sm"
-									aria-label={t("workspace.publishTooltip")}
-								>
-									<PackagePlus aria-hidden="true" />
-								</Button>
-							</DialogTrigger>
-						</TooltipTrigger>
-						<TooltipContent>
-							{t("workspace.publishTooltip")}
-						</TooltipContent>
-					</Tooltip>
-				)}
 				<DialogContent
 					className="max-h-[90dvh] overflow-y-auto"
 					showCloseButton={!isLoading}

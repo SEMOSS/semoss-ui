@@ -3,7 +3,6 @@ import type { StoreApi } from "zustand";
 import { getI18n } from "@semoss/i18n";
 import {
 	FILE_PANEL_TYPES,
-	type FilePanelMode,
 	type FilePanelValue,
 	getFilePanelType,
 	isFilePanelType,
@@ -55,7 +54,9 @@ import type {
 } from "@/types";
 import {
 	createRoomSidebarLayout,
+	getPanelFileMode,
 	getRoomFileMode,
+	hasMainAreaTabs,
 	ROOM_PANEL_TYPES,
 	ROOM_SIDEBAR_RAIL_SIZE,
 } from "./room-sidebar";
@@ -266,7 +267,7 @@ export class RoomStore {
 	sidebarSnapshot: WorkbenchSnapshot;
 
 	/** Whether the Workspace's rail offers Files; a new chat's draft does not. */
-	private readonly _hasFilesRail: boolean;
+	private readonly _includesFiles: boolean;
 	/**
 	 * The default tools the room's chat sends and the user's decisions on the
 	 * calls that wait for them. Its own store with its own observability, like
@@ -310,11 +311,11 @@ export class RoomStore {
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
 
-		this._hasFilesRail = includeFiles;
+		this._includesFiles = includeFiles;
 		this.sidebarSnapshot = createRoomSidebarLayout({
 			fileMode: includeFiles ? this.fileMode : null,
-			filesName: this._getPlaceName("files", panelComponents),
-			settingsName: this._getPlaceName("settings", panelComponents),
+			filesName: this._getRailPanelName("files", panelComponents),
+			settingsName: this._getRailPanelName("settings", panelComponents),
 		});
 		this.workbench = createWorkbenchStore({ components: panelComponents });
 		this.workbench
@@ -343,27 +344,27 @@ export class RoomStore {
 				this.connectors.availableSources
 					.map((source) => source.service)
 					.join(),
-			() => this.syncSidebarRail(),
+			() => this._syncSidebarRail(),
 			{ fireImmediately: true },
 		);
 	}
 
 	/**
-	 * A room place's tab label. There are no translations outside the app, as
+	 * A rail panel's tab label. There are no translations outside the app, as
 	 * in tests, so it falls back to the blueprint's own name.
 	 */
-	private _getPlaceName = (
-		place: "files" | "settings",
+	private _getRailPanelName = (
+		panel: "files" | "settings",
 		panelComponents: Record<string, WorkbenchPanelConfigAny>,
 	): string => {
 		const type =
-			place === "files"
+			panel === "files"
 				? FILE_PANEL_TYPES.FILE_EXPLORER
 				: ROOM_PANEL_TYPES.CONFIGURATION;
 		return (
-			getI18n()?.t(`room:workspacePlaces.${place}`) ??
+			getI18n()?.t(`room:workspacePlaces.${panel}`) ??
 			panelComponents[type]?.name ??
-			place
+			panel
 		);
 	};
 
@@ -402,9 +403,7 @@ export class RoomStore {
 			}
 
 			const isEmpty =
-				state.layout.tabsets.every(
-					(tabset) => tabset.panelIds.length === 0,
-				) &&
+				!hasMainAreaTabs(state.layout) &&
 				Object.values(state.layout.borders).every(
 					(border) => border.activeId === null,
 				);
@@ -1152,7 +1151,7 @@ export class RoomStore {
 		this.workbench.getState().layout.actions.loadSnapshot(snapshot);
 		this._syncSidebarFileMode();
 		// a draft's arrangement has no Files; this room has one to read
-		this.syncSidebarRail();
+		this._syncSidebarRail();
 	};
 
 	/** Open the Workspace as it was left, its rail always beside it. */
@@ -1161,53 +1160,52 @@ export class RoomStore {
 	};
 
 	/**
-	 * Keep the Workspace's left rail offering the room's places: Files (unless
+	 * Keep the Workspace's left rail offering the room's panels: Files (unless
 	 * this is a draft), Settings, and each connector viewer the chat can show.
-	 * A place already open anywhere in the dock is left where it is, and a
+	 * A panel already open anywhere in the dock is left where it is, and a
 	 * viewer the chat can no longer show leaves the rail. Additions stay
 	 * collapsed and do not take the selection.
 	 */
-	syncSidebarRail = (): void => {
+	private _syncSidebarRail = (): void => {
 		const { actions } = this.workbench.getState().layout;
-		const places: {
+		const railPanels: {
 			type: WorkbenchPanelType;
 			config: WorkbenchPanelParams;
 			name: string;
-			/** Whether an open panel of the place's type already offers it. */
+			/** Whether an open panel of this type already offers it. */
 			isOffered?: (record: WorkbenchPanelRecord) => boolean;
 		}[] = [];
 		const panelComponents = this.workbench.getState().layout.components;
-		if (this._hasFilesRail) {
-			places.push({
+		if (this._includesFiles) {
+			railPanels.push({
 				type: FILE_PANEL_TYPES.FILE_EXPLORER,
 				config: { mode: this.fileMode },
-				name: this._getPlaceName("files", panelComponents),
+				name: this._getRailPanelName("files", panelComponents),
 				// a connector's work folder is another explorer, not Files
 				isOffered: (record) =>
-					(record.config as { mode?: FilePanelMode } | undefined)
-						?.mode?.type === "INSIGHT",
+					getPanelFileMode(record)?.type === "INSIGHT",
 			});
 		}
-		places.push({
+		railPanels.push({
 			type: ROOM_PANEL_TYPES.CONFIGURATION,
 			config: {},
-			name: this._getPlaceName("settings", panelComponents),
+			name: this._getRailPanelName("settings", panelComponents),
 		});
 		const available = this.connectors.availableSources;
 		for (const source of available) {
-			places.push({
+			railPanels.push({
 				type: source.panelType,
 				config: {},
 				name: getI18n()?.t(source.nameKey) ?? source.service,
 			});
 		}
 
-		for (const place of places) {
-			// one of each place, wherever it was moved to
-			const isOffered = place.isOffered ?? (() => true);
+		for (const panel of railPanels) {
+			// one of each panel, wherever it was moved to
+			const isOffered = panel.isOffered ?? (() => true);
 			if (
 				actions.findPanels(
-					(record) => record.type === place.type && isOffered(record),
+					(record) => record.type === panel.type && isOffered(record),
 				).length > 0
 			) {
 				continue;
@@ -1215,9 +1213,9 @@ export class RoomStore {
 			const before = this.workbench.getState().layout;
 			const activeId = before.borders.left.activeId;
 			const selected = before.selection.panel;
-			actions.spawnPanel(place.type, {
-				config: place.config,
-				name: place.name,
+			actions.spawnPanel(panel.type, {
+				config: panel.config,
+				name: panel.name,
 				canClose: false,
 				minWidth: ROOM_SIDEBAR_RAIL_SIZE,
 				target: { kind: "border", side: "left" },
@@ -1298,9 +1296,7 @@ export class RoomStore {
 		const mode = this.fileMode;
 
 		for (const record of actions.findPanels((candidate) => {
-			const panelMode = (
-				candidate.config as { mode?: FilePanelMode } | undefined
-			)?.mode;
+			const panelMode = getPanelFileMode(candidate);
 			return (
 				isFilePanelType(candidate.type) &&
 				panelMode?.type === "INSIGHT" &&

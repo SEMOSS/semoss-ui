@@ -1,6 +1,6 @@
 import { Bot, ChevronDown, PlusIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { type ReactNode, type Ref, useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect, EngineSubtypeIcon } from "@semoss/shared";
 import {
@@ -19,29 +19,45 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components/mcp/mcp-overlay";
-import { DefaultToolsField } from "@/features/chat-tools/components/default-tools-field";
-import { RoomToolboxesSection } from "@/features/chat-tools/components/room-toolboxes-section";
+import { RoomToolsDefaultSection } from "@/features/chat-tools/components/room-tools-default-section";
+import { RoomToolsToolboxesSection } from "@/features/chat-tools/components/room-tools-toolboxes-section";
 import { SectionInfoTooltip } from "@/features/chat-tools/components/section-info-tooltip";
 import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
 import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
-import { splitMcpByType } from "@/utility/mcp-utils";
+import { isRemovableToolbox, splitMcpByType } from "@/utility/mcp-utils";
 
+const instructionsSchema = z.object({ instructions: z.string() });
+
+type InstructionsValues = z.infer<typeof instructionsSchema>;
+
+/** Props for {@link RoomOptionsForm}. */
 export interface RoomOptionsFormProps {
+	/** The model the room answers with. */
 	model: RoomStore["model"];
+	/** Told when the user picks another model. */
 	onModelChange: (model: RoomStore["model"]) => void;
+	/** The room's options: instructions, knowledge, toolboxes, and tools. */
 	options: RoomStore["options"];
+	/** Told of each change to the options, with only the changed ones. */
 	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
+	/** Whether the user can pick the room's agent. */
 	agentEditable?: boolean;
+	/** Lock every edit while the current turn is in progress. */
 	disabled?: boolean;
 	/** Agent runs supply their own tools instead of the chat's default tools. */
 	isAgentMode?: boolean;
-	/** The tools in the room's own toolbox, listed under Tools; rooms only. */
-	toolbox?: ReactNode;
-	/** The Tools heading, for bringing Tools into view. */
-	toolsHeadingRef?: Ref<HTMLHeadingElement>;
+	/**
+	 * Settings' Connectors section, the room's own toolbox, listed under
+	 * Tools; left out for a new room, whose toolbox is not settled yet.
+	 */
+	connectorsSection?: ReactNode;
 }
 
+/**
+ * A room's settings: its agent, model, instructions, knowledge, and every
+ * tool the assistant has. Changes apply as they are made.
+ */
 export const RoomOptionsForm = observer(
 	({
 		model,
@@ -51,35 +67,26 @@ export const RoomOptionsForm = observer(
 		agentEditable = false,
 		disabled = false,
 		isAgentMode = false,
-		toolbox,
-		toolsHeadingRef,
+		connectorsSection,
 	}: RoomOptionsFormProps) => {
 		const { t } = useTranslation(["room", "common", "chatTools"]);
 		const { root } = useRoot();
 		const id = useId();
-		const form = useForm({
+		const form = useForm<InstructionsValues>({
 			values: { instructions: options.instructions },
-			resolver: zodResolver(z.object({ instructions: z.string() })),
+			resolver: zodResolver(instructionsSchema),
 		});
 		const [overlay, setOverlay] = useState<{
 			type: "AGENT" | "KNOWLEDGE" | "TOOLBOX";
 			isOpen: boolean;
 		}>({ type: "KNOWLEDGE", isOpen: false });
 		const { knowledge, toolbox: toolboxes } = splitMcpByType(options.mcp);
-		// the room's own toolbox shows under Default and Connectors, so only the
-		// agent's toolboxes and the ones the user added are listed here
+		// the room's own toolbox shows under Connectors, so only the agent's
+		// toolboxes and the ones the user added are listed here
 		const agentToolboxes = toolboxes.filter((item) => item.fromWorkspace);
-		const addedToolboxes = toolboxes.filter(
-			(item) =>
-				!item.fromWorkspace && !item.fromRoom && item.type !== "ROOM",
-		);
-		const handleRemove = (item: (typeof options.mcp)[number]) => {
-			if (
-				!disabled &&
-				!item.fromWorkspace &&
-				!item.fromRoom &&
-				item.type !== "ROOM"
-			) {
+		const addedToolboxes = toolboxes.filter(isRemovableToolbox);
+		const handleRemove = (item: (typeof options.mcp)[number]): void => {
+			if (!disabled) {
 				onOptionsChange({
 					mcp: options.mcp.filter(
 						(selected) => selected.id !== item.id,
@@ -97,12 +104,13 @@ export const RoomOptionsForm = observer(
 					? "room:modes.defaultAgent"
 					: "room:menuWorkspace.selectAgent",
 			);
+		const handleSubmit = (values: InstructionsValues): void => {
+			if (!disabled) onOptionsChange(values);
+		};
 		return (
 			<Form
 				form={form}
-				onSubmit={(values) => {
-					if (!disabled) onOptionsChange(values);
-				}}
+				onSubmit={handleSubmit}
 				className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6"
 			>
 				<div className="space-y-2">
@@ -209,15 +217,7 @@ export const RoomOptionsForm = observer(
 							</Field>
 						)}
 					/>
-					<FieldDescription>
-						{t(
-							disabled
-								? "room:studio.toolsLocked"
-								: "room:studio.toolsHint",
-						)}
-					</FieldDescription>
 					<RoomSelectedResources
-						type="KNOWLEDGE"
 						items={knowledge}
 						disabled={disabled}
 						onAdd={() =>
@@ -225,6 +225,29 @@ export const RoomOptionsForm = observer(
 						}
 						onRemove={handleRemove}
 					/>
+					{root.theme.featureFlags?.enableTemperature && (
+						<Field>
+							<FieldLabel htmlFor={`${id}-temperature`}>
+								{t("room:form.temperatureLabel")} (
+								{(options.temperature ?? 0).toFixed(2)})
+							</FieldLabel>
+							<Slider
+								id={`${id}-temperature`}
+								aria-label={t("room:form.temperatureLabel")}
+								min={0}
+								max={1}
+								step={0.01}
+								value={[options.temperature ?? 0]}
+								disabled={disabled}
+								onValueChange={(value) => {
+									if (!disabled)
+										onOptionsChange({
+											temperature: value[0],
+										});
+								}}
+							/>
+						</Field>
+					)}
 				</fieldset>
 				{/* outside the fieldset, so its sections still open and explain
 				    themselves while a response runs; its edits lock on their own */}
@@ -233,18 +256,13 @@ export const RoomOptionsForm = observer(
 					className="flex min-w-0 flex-col gap-6"
 				>
 					<div className="flex flex-wrap items-center gap-2">
-						<H4
-							ref={toolsHeadingRef}
-							id={`${id}-tools`}
-							tabIndex={-1}
-							className="scroll-mt-4 text-base focus-visible:outline-none"
-						>
+						<H4 id={`${id}-tools`} className="text-base">
 							{t("room:settings.toolsTitle")}
 						</H4>
 						<SectionInfoTooltip
 							label={t("room:settings.toolsTitle")}
 						>
-							{t("chatTools:panel.description")}
+							{t("chatTools:sections.tools.tooltip")}
 						</SectionInfoTooltip>
 						<Button
 							type="button"
@@ -262,52 +280,34 @@ export const RoomOptionsForm = observer(
 							<PlusIcon aria-hidden="true" />
 							{t("room:menuToolbox.addToolbox")}
 						</Button>
+						<FieldDescription className="w-full">
+							{t(
+								disabled
+									? "room:studio.toolsLocked"
+									: "room:studio.toolsHint",
+							)}
+						</FieldDescription>
 					</div>
-					<DefaultToolsField
+					<RoomToolsDefaultSection
 						defaultTools={options.defaultTools}
 						disabled={disabled}
 						isAgentMode={isAgentMode}
-						onChange={(defaultTools) => {
-							if (!disabled) onOptionsChange({ defaultTools });
-						}}
+						onChange={(defaultTools) =>
+							onOptionsChange({ defaultTools })
+						}
 					/>
-					{toolbox}
-					<RoomToolboxesSection
-						title={t("chatTools:panel.agentTitle")}
-						tooltip={t("chatTools:panel.agentTooltip")}
+					{connectorsSection}
+					<RoomToolsToolboxesSection
+						variant="agent"
 						toolboxes={agentToolboxes}
 					/>
-					<RoomToolboxesSection
-						title={t("chatTools:panel.toolboxesTitle")}
-						tooltip={t("chatTools:panel.toolboxesTooltip")}
+					<RoomToolsToolboxesSection
+						variant="added"
 						toolboxes={addedToolboxes}
 						disabled={disabled}
 						onRemove={handleRemove}
 					/>
 				</section>
-				{root.theme.featureFlags?.enableTemperature && (
-					<Field>
-						<FieldLabel htmlFor={`${id}-temperature`}>
-							{t("room:form.temperatureLabel")} (
-							{(options.temperature ?? 0).toFixed(2)})
-						</FieldLabel>
-						<Slider
-							id={`${id}-temperature`}
-							aria-label={t("room:form.temperatureLabel")}
-							min={0}
-							max={1}
-							step={0.01}
-							value={[options.temperature ?? 0]}
-							disabled={disabled}
-							onValueChange={(value) => {
-								if (!disabled)
-									onOptionsChange({
-										temperature: value[0],
-									});
-							}}
-						/>
-					</Field>
-				)}
 				<MCPOverlay
 					open={overlay.isOpen}
 					disabled={disabled}

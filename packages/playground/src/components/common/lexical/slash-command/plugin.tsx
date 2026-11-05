@@ -4,12 +4,8 @@ import { createPortal } from "react-dom";
 import { MentionPlugin } from "@/components";
 import { useRoot } from "@/hooks";
 import { useSlashCommands } from "./context";
-import { filterSlashCommands, RoomInputMenuSlash } from "./menu";
-import { $createSlashCommandNode } from "./node";
-
-// ============================================================================
-// isIframed
-// ============================================================================
+import { filterSlashCommands, SlashCommandMenu } from "./menu";
+import type { SlashCommand } from "./types";
 
 let isIframed = false;
 try {
@@ -18,13 +14,17 @@ try {
 	isIframed = true;
 }
 
-// ============================================================================
-// MenuPortal
-// ============================================================================
-
-/** The menu's width (w-72) and its smallest distance from the window's edge. */
+/** The menu's width in px; matches its `w-72`. */
 const MENU_WIDTH = 288;
+
+/** The menu's smallest distance from the window's edge, in px. */
 const MENU_GUTTER = 8;
+
+/**
+ * The room the menu needs below the caret, in px (its `max-h-80` list plus
+ * margin); with less, it opens above.
+ */
+const MENU_FLIP_HEIGHT = 340;
 
 /**
  * Renders the slash command menu into a portal and closes it when the user
@@ -67,7 +67,7 @@ const MenuPortal: React.FC<{
 			ref={ref}
 			style={{
 				position: "fixed",
-				...(window.innerHeight - menuPosition.bottom < 340
+				...(window.innerHeight - menuPosition.bottom < MENU_FLIP_HEIGHT
 					? { bottom: window.innerHeight - menuPosition.top + 4 }
 					: { top: menuPosition.bottom + 4 }),
 				left,
@@ -81,40 +81,39 @@ const MenuPortal: React.FC<{
 	);
 };
 
-// ============================================================================
-// SlashMentionPlugin
-// ============================================================================
-
 /**
  * Wires MentionPlugin to the slash command system. Must be rendered inside a
  * LexicalComposer wrapped by SlashCommandProvider so it can read the current
  * command list from context via useSlashCommands().
  */
-export const SlashMentionPlugin: React.FC<{
-	disabled?: boolean;
+export const SlashCommandPlugin: React.FC<{
 	isLoading?: boolean;
 	hasTools?: boolean;
-}> = ({ disabled, isLoading, hasTools }) => {
+}> = ({ isLoading, hasTools }) => {
 	const { root } = useRoot();
 	const { commands } = useSlashCommands();
+	const isBusy = Boolean(isLoading || hasTools);
 
-	if (disabled || (root.theme.featureFlags?.hideToolsInIframe && isIframed))
-		return null;
+	if (root.theme.featureFlags?.hideToolsInIframe && isIframed) return null;
+
+	/**
+	 * Runs a picked command, unless it is locked while busy.
+	 *
+	 * @return Whether it ran.
+	 */
+	const runCommand = (cmd: SlashCommand): boolean => {
+		if (cmd.isLockedWhileBusy && isBusy) return false;
+		cmd.onExecute();
+		return true;
+	};
 
 	return (
 		<MentionPlugin
 			trigger="/"
-			onAccept={(query, selectedIndex, addNode) => {
+			onAccept={(query, selectedIndex) => {
 				const filtered = filterSlashCommands(commands, query);
 				const match = filtered[selectedIndex] ?? filtered[0];
-				if (!match) return;
-				if (match.disableWithTools && (isLoading || hasTools)) return;
-				if (!match.noChip) {
-					addNode(() =>
-						$createSlashCommandNode(match.id, match.label),
-					);
-				}
-				match.onExecute();
+				if (match) runCommand(match);
 			}}
 			onTabComplete={(query, selectedIndex) => {
 				const filtered = filterSlashCommands(commands, query);
@@ -125,7 +124,6 @@ export const SlashMentionPlugin: React.FC<{
 				isOpen,
 				onOpenChange,
 				menuPosition,
-				addNode,
 				onRequestClose,
 				query,
 				selectedIndex,
@@ -137,32 +135,14 @@ export const SlashMentionPlugin: React.FC<{
 						menuPosition={menuPosition}
 						onClose={() => onOpenChange(false)}
 					>
-						<RoomInputMenuSlash
+						<SlashCommandMenu
 							query={query}
 							selectedIndex={selectedIndex}
 							setItemCount={setItemCount}
 							setSelectedIndex={setSelectedIndex}
-							onRequestClose={onRequestClose}
-							isLoading={isLoading}
-							hasTools={hasTools}
+							isBusy={isBusy}
 							onCommandSelect={(cmd) => {
-								if (
-									cmd.disableWithTools &&
-									(isLoading || hasTools)
-								)
-									return;
-								if (cmd.noChip) {
-									cmd.onExecute();
-									onRequestClose();
-								} else {
-									addNode(() =>
-										$createSlashCommandNode(
-											cmd.id,
-											cmd.label,
-										),
-									);
-									cmd.onExecute();
-								}
+								if (runCommand(cmd)) onRequestClose();
 							}}
 						/>
 					</MenuPortal>

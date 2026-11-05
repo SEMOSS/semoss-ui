@@ -7,9 +7,7 @@ import type {
 } from "@semoss/workbench";
 
 /**
- * Panel type ids the room sidebar can dock.
- *
- * These strings identify the panels the room sidebar can dock.
+ * Panel type ids the room's Workspace can dock.
  *
  * They live beside the store rather than beside the blueprints because both
  * halves need them and the store must not import the blueprints: those reach
@@ -45,8 +43,8 @@ export const ROOM_PANEL_TYPES = {
 /** The width the Workspace's left rail opens to, in px. */
 export const ROOM_SIDEBAR_RAIL_SIZE = 450;
 
-/** The room's own places, docked collapsed on the Workspace's left rail. */
-export const ROOM_RAIL_PANEL_IDS = {
+/** The room's own panels, docked collapsed on the Workspace's left rail. */
+const ROOM_RAIL_PANEL_IDS = {
 	FILES: "room-rail-files",
 	SETTINGS: "room-rail-settings",
 } as const;
@@ -57,7 +55,7 @@ export const ROOM_RAIL_PANEL_IDS = {
  *
  * The tabset has to survive its last close, or the dock would prune its only
  * container and have nowhere to put the next panel. The rail's panels cannot
- * be closed; `RoomStore.syncSidebarRail` adds the connector viewers beside
+ * be closed; `RoomStore._syncSidebarRail` adds the connector viewers beside
  * them, and Files once a draft has a room to read.
  *
  * @param options.fileMode - The scope Files reads, or null to leave Files out
@@ -123,8 +121,8 @@ export const createRoomSidebarLayout = ({
  *
  * Every read, save and download a file panel makes runs against the insight
  * named here, and it is also the key renames are broadcast on and the config
- * the file panels dedupe by — so it has to be the room's *live* insight, not
- * A room binds to a fresh insight on every load, and `RoomStore` updates any
+ * the file panels dedupe by — so it has to be the room's *live* insight. A
+ * room binds to a fresh insight on every load, and `RoomStore` updates any
  * panels opened before that binding completes.
  *
  * @param insightId - The room's current insight.
@@ -162,3 +160,23 @@ export const isActiveSidebarPanel = (
 		.matchPanels(type, config)
 		.some((record) => record.id === selected);
 };
+
+/**
+ * Whether any tab is open in the Workspace's main area, outside its rail.
+ *
+ * @param layout - The Workspace's dock layout state.
+ * @return True when a tabset holds a panel.
+ */
+export const hasMainAreaTabs = (layout: WorkbenchState["layout"]): boolean =>
+	layout.tabsets.some((tabset) => tabset.panelIds.length > 0);
+
+/**
+ * The file scope a docked panel was opened with, if it is a file panel.
+ *
+ * @param record - The panel.
+ * @return Its `mode`, or undefined.
+ */
+export const getPanelFileMode = (record: {
+	config?: unknown;
+}): FilePanelMode | undefined =>
+	(record.config as { mode?: FilePanelMode } | undefined)?.mode;

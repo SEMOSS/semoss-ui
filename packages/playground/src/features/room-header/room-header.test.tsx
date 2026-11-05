@@ -1,266 +1,213 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, test, vi } from "vitest";
-import {
-	Button,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuTrigger,
-	toast,
-} from "@semoss/ui/next";
-import type { RoomStore } from "@/stores/room/room.store";
-import { RoomActionMenuItems } from "./room-action-menu-items";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { runInAction } from "mobx";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import type { NewRoomWorkbenchPanels } from "@/features/workbench/use-workbench-panels";
+import { RoomStore } from "@/stores/room/room.store";
+import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
+import { RootStore } from "@/stores/root/root.store";
 import { RoomHeader } from "./room-header";
-import { RoomTitle } from "./room-title";
-import { RoomTitleProvider, useRoomTitle } from "./room-title.context";
 
-const mocks = vi.hoisted(() => ({
-	navigate: vi.fn(),
-	pinRoom: vi.fn(),
-	renameRoom: vi.fn(),
-	closeRoom: vi.fn(),
-	addWorkspace: vi.fn(),
-	pinned: [] as { ROOM_ID: string }[],
+const openSettings = vi.hoisted(() => vi.fn());
+vi.mock("@/features/settings/settings-dialog.context", () => ({
+	useSettingsDialog: () => ({ openSettings }),
 }));
-
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
-}));
-vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
-vi.mock("@semoss/sdk/react", () => ({
-	usePixel: () => ({ data: mocks.pinned, refresh: vi.fn() }),
-}));
-// a desktop window: the menu button is the compact size
-vi.stubGlobal(
-	"matchMedia",
-	vi.fn(() => ({
-		matches: false,
-		addEventListener: vi.fn(),
-		removeEventListener: vi.fn(),
-	})),
-);
-vi.mock("@/hooks/use-chat", () => ({
-	useChat: () => ({
-		chat: {
-			keys: { roomCounter: 0 },
-			pinRoom: mocks.pinRoom,
-			renameRoom: mocks.renameRoom,
-			closeRoom: mocks.closeRoom,
-			downloadConversation: vi.fn(),
-			addWorkspace: mocks.addWorkspace,
-		},
-	}),
+	getI18n: () => ({ t: (key: string) => key }),
 }));
 
-/** Only the fields the title menu reads. */
-const room = {
-	roomId: "r1",
-	metadata: { name: "Quarterly plan", dateCreated: "" },
-	options: {
-		instructions: "Room instructions",
-		mcp: [{ id: "tool-1", type: "PROJECT", name: "Tool" }],
-	},
-	theme: { featureFlags: {} },
-} as unknown as RoomStore;
-
+// a desktop window: the header's icons are the compact size
 beforeEach(() => {
-	for (const mock of [mocks.navigate, mocks.pinRoom, mocks.closeRoom])
-		mock.mockReset();
-	mocks.renameRoom.mockReset().mockResolvedValue(undefined);
-	mocks.pinned = [];
+	vi.stubGlobal(
+		"matchMedia",
+		vi.fn(() => ({
+			matches: false,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+		})),
+	);
 });
+afterEach(() => vi.unstubAllGlobals());
 
-/** A second header menu holding the room's actions, as the Other menu does. */
-function OtherMenu() {
-	const title = useRoomTitle();
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button>Other</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent
-				onCloseAutoFocus={title?.handleMenuCloseAutoFocus}
-			>
-				<RoomActionMenuItems showLabel />
-			</DropdownMenuContent>
-		</DropdownMenu>
+/** Build a room with OneDrive switched on, without network-backed loading. */
+function createRoom(): RoomStore {
+	const room = new RoomStore({
+		theme: new RootStore().theme,
+		roomId: "header-controls",
+		panelComponents: {},
+	});
+	runInAction(() => {
+		room.connectors.services = ["onedrive"];
+	});
+	return room;
+}
+
+/** The header's own icons, in order. */
+function getIconNames(): string[] {
+	return screen
+		.getAllByRole("button")
+		.map((button) => button.getAttribute("aria-label") ?? "");
+}
+
+/** Open the More actions menu and list its top-level items. */
+function openMore(): string[] {
+	fireEvent.keyDown(
+		screen.getByRole("button", { name: "studio.moreActions" }),
+		{ key: "Enter" },
 	);
+	return within(screen.getByRole("menu"))
+		.getAllByRole("menuitem")
+		.map((item) => item.textContent ?? "");
 }
 
-/** The room's name and its menu, inside the header's shared room state. */
-function titleTree(target: RoomStore = room) {
-	return (
-		<RoomTitleProvider room={target}>
-			<RoomTitle />
-			<OtherMenu />
-		</RoomTitleProvider>
+/** Open the More actions menu's Open a Panel submenu and list its panels. */
+function openPanelMenu(): string[] {
+	openMore();
+	fireEvent.keyDown(
+		screen.getByRole("menuitem", { name: "workspacePlaces.openPanel" }),
+		{ key: "Enter" },
 	);
+	const [, submenu] = screen.getAllByRole("menu");
+	if (!submenu) throw new Error("Open a Panel did not open");
+	return within(submenu)
+		.getAllByRole("menuitem")
+		.map((item) => item.textContent ?? "");
 }
 
-function renderTitle() {
-	return render(titleTree());
+/** Close any open menu. */
+function closeMenus(): void {
+	fireEvent.keyDown(document.activeElement ?? document.body, {
+		key: "Escape",
+	});
 }
 
-/** Open the header's Other menu, which holds the room's actions. */
-async function openMenu(user: ReturnType<typeof userEvent.setup>) {
-	await user.click(screen.getByRole("button", { name: "Other" }));
-}
-
-test("the header holds the title at the start and the actions at the end", () => {
-	render(
-		<RoomHeader
-			title={<span>Title</span>}
-			actions={<nav aria-label="Places" />}
-		/>,
-	);
-	const header = screen.getByRole("banner");
-	expect(header).toHaveTextContent("Title");
-	expect(screen.getByRole("navigation", { name: "Places" })).toBeVisible();
-	// outside the app layout there is no navigation to open
+test("outside a room the header has no title, and no navigation outside the app layout", () => {
+	render(<RoomHeader room={createRoom()} />);
+	expect(screen.getByRole("banner")).toBeVisible();
+	expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
 	expect(
 		screen.queryByRole("button", { name: "actions.openNavigation" }),
 	).toBeNull();
 });
 
-test("the room's name is plain text, with no menu of its own", () => {
-	renderTitle();
-	expect(
-		screen.getByRole("heading", { name: "Quarterly plan" }),
-	).toBeVisible();
-	expect(screen.queryByRole("button", { name: /Quarterly plan/ })).toBeNull();
-});
+test("the header shows More actions and the Workspace toggle, with no quick icons", () => {
+	render(<RoomHeader room={createRoom()} />);
 
-test("the room menu favorites, and says unfavorite once the room is a favorite", async () => {
-	const user = userEvent.setup();
-	const { rerender } = renderTitle();
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.favorite" }),
-	);
-	expect(mocks.pinRoom).toHaveBeenCalledWith("r1", true);
-
-	// the favorites read again once the pin lands; a new prop re-renders
-	mocks.pinned = [{ ROOM_ID: "r1" }];
-	rerender(titleTree({ ...room } as RoomStore));
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.unfavorite" }),
-	);
-	expect(mocks.pinRoom).toHaveBeenCalledWith("r1", false);
-});
-
-test("rename edits the name in place: Enter saves, Escape keeps the old name", async () => {
-	const user = userEvent.setup();
-	renderTitle();
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.rename" }),
-	);
-	const field = await screen.findByRole("textbox", {
-		name: "header.renameLabel",
-	});
-	expect(field).toHaveValue("Quarterly plan");
-	await user.clear(field);
-	await user.type(field, "Q3 plan{Enter}");
-	expect(mocks.renameRoom).toHaveBeenCalledWith("r1", "Q3 plan");
-	await waitFor(() =>
-		expect(
-			screen.getByRole("heading", { name: "Quarterly plan" }),
-		).toHaveFocus(),
-	);
-
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.rename" }),
-	);
-	await user.type(
-		await screen.findByRole("textbox", { name: "header.renameLabel" }),
-		" draft{Escape}",
-	);
-	expect(mocks.renameRoom).toHaveBeenCalledTimes(1);
-	expect(
-		screen.getByRole("heading", { name: "Quarterly plan" }),
-	).toBeVisible();
-});
-
-test("rename refuses an empty name and keeps the field open", async () => {
-	const error = vi.spyOn(toast, "error").mockImplementation(() => "");
-	const user = userEvent.setup();
-	renderTitle();
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.rename" }),
-	);
-	const field = await screen.findByRole("textbox", {
-		name: "header.renameLabel",
-	});
-	await user.clear(field);
-	await user.type(field, "{Enter}");
-	expect(error).toHaveBeenCalledWith("toasts.roomNameEmpty");
-	expect(mocks.renameRoom).not.toHaveBeenCalled();
-	expect(field).toBeVisible();
-	error.mockRestore();
-});
-
-test("delete removes the room and leaves its page", async () => {
-	mocks.closeRoom.mockResolvedValue(undefined);
-	const user = userEvent.setup();
-	renderTitle();
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.delete" }),
-	);
-	expect(mocks.closeRoom).toHaveBeenCalledWith("r1");
-	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith("/"));
-});
-
-test("the Other menu lists the room's actions under its heading, and renames in place", async () => {
-	const user = userEvent.setup();
-	renderTitle();
-	await user.click(screen.getByRole("button", { name: "Other" }));
-	expect(screen.getByText("room:header.roomSection")).toBeVisible();
-	expect(
-		screen.getAllByRole("menuitem").map((item) => item.textContent),
-	).toEqual([
-		"sidebar:actions.favorite",
-		"sidebar:actions.rename",
-		"room:workspace.publishTooltip",
-		"sidebar:actions.download",
-		"sidebar:actions.delete",
+	expect(getIconNames()).toEqual([
+		"studio.moreActions",
+		"studio.openWorkspace",
 	]);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.rename" }),
+	expect(openMore()).toEqual([
+		"workspacePlaces.openPanel",
+		"sidebar:settings.sections.connectors",
+	]);
+	fireEvent.click(
+		screen.getByRole("menuitem", {
+			name: "sidebar:settings.sections.connectors",
+		}),
 	);
-	const field = await screen.findByRole("textbox", {
-		name: "header.renameLabel",
-	});
-	await waitFor(() => expect(field).toHaveFocus());
-	await user.type(field, " v2{Enter}");
-	expect(mocks.renameRoom).toHaveBeenCalledWith("r1", "Quarterly plan v2");
+	expect(openSettings).toHaveBeenCalledWith("connectors");
 });
 
-test("Publish as Agent saves the room's instructions and tools as an agent", async () => {
-	mocks.addWorkspace.mockResolvedValue("saved-agent");
-	const user = userEvent.setup();
-	renderTitle();
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "room:workspace.publishTooltip" }),
+test("Open a Panel lists every panel and opens the Workspace on it", () => {
+	const room = createRoom();
+	render(<RoomHeader room={room} />);
+
+	expect(openPanelMenu()).toEqual([
+		"workspacePlaces.files",
+		"workspacePlaces.settings",
+		"workspacePlaces.activity",
+		"connectors:services.onedrive",
+	]);
+	fireEvent.click(
+		screen.getByRole("menuitem", { name: "workspacePlaces.settings" }),
 	);
-	await user.type(
-		await screen.findByLabelText("workspace.nameLabel"),
-		"Published agent",
+
+	const { borders, panels } = room.workbench.getState().layout;
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(panels[borders.left.activeId ?? ""]?.type).toBe(
+		ROOM_PANEL_TYPES.CONFIGURATION,
 	);
-	await user.click(
-		screen.getByRole("button", { name: "workspace.publishButton" }),
+});
+
+test("the toggle opens the Workspace as it was left and closes it", () => {
+	const room = createRoom();
+	render(<RoomHeader room={room} />);
+	const toggle = screen.getByRole("button", { name: "studio.openWorkspace" });
+	expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+	fireEvent.click(toggle);
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(toggle).toHaveAttribute("aria-label", "studio.closeWorkspace");
+	expect(toggle).toHaveAttribute("aria-pressed", "true");
+	// the rail stays collapsed: nothing is opened for the user
+	expect(room.workbench.getState().layout.borders.left.activeId).toBeNull();
+
+	fireEvent.click(toggle);
+	expect(room.sidebar.isOpen).toBe(false);
+	expect(toggle).toHaveAttribute("aria-label", "studio.openWorkspace");
+});
+
+test("a new room waits while preparing and uses its own panel actions", () => {
+	const room = createRoom();
+	const newRoomPanels: NewRoomWorkbenchPanels = {
+		onOpenPanel: vi.fn(),
+		isBusy: true,
+		connectors: room.connectors,
+	};
+	const { rerender } = render(
+		<RoomHeader room={room} newRoomPanels={newRoomPanels} />,
 	);
-	await waitFor(() =>
-		expect(mocks.addWorkspace).toHaveBeenCalledWith(
-			expect.objectContaining({
-				name: "Published agent",
-				system_prompt: "Room instructions",
-				mcp: [{ id: "tool-1", type: "PROJECT", name: "Tool" }],
-			}),
-		),
+
+	openPanelMenu();
+	expect(
+		screen.getByRole("menuitem", { name: "studio.preparingWorkspace" }),
+	).toHaveAttribute("aria-disabled", "true");
+	fireEvent.click(
+		screen.getByRole("menuitem", { name: "workspacePlaces.settings" }),
 	);
+	expect(newRoomPanels.onOpenPanel).toHaveBeenLastCalledWith({
+		kind: "settings",
+	});
+	closeMenus();
+
+	rerender(
+		<RoomHeader
+			room={room}
+			newRoomPanels={{ ...newRoomPanels, isBusy: false }}
+		/>,
+	);
+	for (const [name, kind] of [
+		["workspacePlaces.files", "files"],
+		["workspacePlaces.activity", "activity"],
+	] as const) {
+		openPanelMenu();
+		fireEvent.click(screen.getByRole("menuitem", { name }));
+		expect(newRoomPanels.onOpenPanel).toHaveBeenLastCalledWith({ kind });
+		closeMenus();
+	}
+	openPanelMenu();
+	fireEvent.click(
+		screen.getByRole("menuitem", { name: "connectors:services.onedrive" }),
+	);
+	expect(newRoomPanels.onOpenPanel).toHaveBeenLastCalledWith({
+		kind: "connector",
+		service: "onedrive",
+	});
+});
+
+test("while the Workspace is open, More actions lists Close Workspace", () => {
+	const room = createRoom();
+	render(<RoomHeader room={room} />);
+	expect(openMore()).not.toContain("studio.closeWorkspace");
+	closeMenus();
+
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	expect(openMore()).toContain("studio.closeWorkspace");
+	fireEvent.click(
+		screen.getByRole("menuitem", { name: "studio.closeWorkspace" }),
+	);
+	expect(room.sidebar.isOpen).toBe(false);
 });

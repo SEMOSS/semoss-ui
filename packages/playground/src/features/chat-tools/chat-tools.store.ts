@@ -78,12 +78,12 @@ const toToolResponseText = (outcome: FolderToolOutcome): string =>
  * decisions on the calls that wait for them.
  *
  * In chat, every message carries the default tools, the folder tools this
- * browser runs in Chat Files, except the ones the room's settings disable.
+ * browser runs in Room Files, except the ones the room's settings disable.
  * The settings (`defaultTools`) also say which run on their own and which
  * wait for the user's decision in the tool's card; by default reading runs on
  * its own and every change asks. The room's tool loop hands each call to
  * {@link ChatToolsStore.runChatTool}. An agent run brings its own file, shell,
- * and code tools and works in Chat Files, so no folder tools are sent with it.
+ * and code tools and works in Room Files, so no folder tools are sent with it.
  *
  * The settings live in the room's options, which the room saves before each
  * message. Owned by the room store, and so as long lived as the room.
@@ -93,12 +93,6 @@ export class ChatToolsStore {
 
 	/** The chat's own files, where the default tools read and write. */
 	private readonly roomFiles: RoomFolderProvider;
-
-	/**
-	 * The part of Settings to bring into view the next time it shows, until
-	 * Settings takes it with {@link ChatToolsStore.takeSettingsSection}.
-	 */
-	pendingSettingsSection: "tools" | null = null;
 
 	/**
 	 * @param room - The room these tools belong to.
@@ -308,27 +302,6 @@ export class ChatToolsStore {
 			return;
 		}
 		await message.runMcpToolCall(tool);
-	};
-
-	/**
-	 * Show Settings in the room's sidebar on its Tools: every tool the
-	 * assistant has for the next message, including the ones this browser
-	 * sends itself.
-	 */
-	openToolsPanel = (): void => {
-		this.pendingSettingsSection = "tools";
-		this.openRoomSettings();
-	};
-
-	/**
-	 * Take the part of Settings to bring into view, so it is shown once.
-	 *
-	 * @return The section, or null when nothing asked for one.
-	 */
-	takeSettingsSection = (): "tools" | null => {
-		const section = this.pendingSettingsSection;
-		this.pendingSettingsSection = null;
-		return section;
 	};
 
 	/** Show the room's settings in its sidebar, where the default tools are. */

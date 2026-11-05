@@ -32,10 +32,10 @@ export const ChatToolDetails = ({
 				<Muted className="font-normal">{description}</Muted>
 			) : null}
 			<div className="flex flex-col gap-1.5">
-				<Small>{t("panel.parameters")}</Small>
+				<Small>{t("details.parameters")}</Small>
 				{parameters.length === 0 ? (
 					<Muted className="font-normal">
-						{t("panel.noParameters")}
+						{t("details.noParameters")}
 					</Muted>
 				) : (
 					<ul className="flex flex-col gap-1.5">
@@ -53,7 +53,7 @@ export const ChatToolDetails = ({
 											variant="outline"
 											className="shrink-0"
 										>
-											{t("panel.required")}
+											{t("details.required")}
 										</Badge>
 									) : null}
 								</span>

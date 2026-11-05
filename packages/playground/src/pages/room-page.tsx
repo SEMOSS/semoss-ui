@@ -5,20 +5,18 @@ import { InsightProvider } from "@semoss/sdk/react";
 import { ToolViewProvider } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { RoomContent } from "@/components/room/room-content";
-import { RoomSidebar } from "@/components/room/room-sidebar";
+import { RoomWorkbench } from "@/components/room/room-workbench";
 import { FileDragProvider } from "@/contexts/file-drag-context";
 import { RoomProvider } from "@/contexts/room.context";
+import { RoomActionsProvider } from "@/features/room-actions/room-actions.context";
 import { RoomHeader } from "@/features/room-header/room-header";
-import { RoomHeaderActions } from "@/features/room-header/room-header-actions";
-import { RoomTitle } from "@/features/room-header/room-title";
-import { RoomTitleProvider } from "@/features/room-header/room-title.context";
 import { TOOL_VIEW_LIBRARIES } from "@/features/tool-views/tool-view-libraries";
-import { RoomConversationWorkspace } from "@/features/workbench/room-conversation-workspace";
+import { FittedRoomLayout } from "@/features/workbench/fitted-room-layout";
 import { useChat } from "@/hooks/use-chat";
 import type { RoomStore } from "@/stores/room/room.store";
 import type { Engine } from "@/types";
 /**
- * The page for a room
+ * The room page: the room's header, its conversation, and its Workspace.
  *
  * @component
  */
@@ -114,22 +112,17 @@ export const RoomPage = observer(() => {
 			<RoomProvider room={room}>
 				<ToolViewProvider libraries={TOOL_VIEW_LIBRARIES}>
 					{/* the header and the composer's slash menu share the room's actions */}
-					<RoomTitleProvider room={room}>
-						<RoomConversationWorkspace
+					<RoomActionsProvider room={room}>
+						<FittedRoomLayout
 							room={room}
-							header={
-								<RoomHeader
-									title={<RoomTitle />}
-									actions={<RoomHeaderActions room={room} />}
-								/>
-							}
-							panel={<RoomSidebar room={room} />}
+							header={<RoomHeader room={room} />}
+							workbench={<RoomWorkbench room={room} />}
 						>
 							<FileDragProvider>
 								<RoomContent room={room} />
 							</FileDragProvider>
-						</RoomConversationWorkspace>
-					</RoomTitleProvider>
+						</FittedRoomLayout>
+					</RoomActionsProvider>
 				</ToolViewProvider>
 			</RoomProvider>
 		</InsightProvider>

@@ -1,11 +1,6 @@
 import { InfoIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import {
-	Button,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
+import { TooltipIconButton } from "./tooltip-icon-button";
 
 /** Props for {@link SectionInfoTooltip}. */
 export interface SectionInfoTooltipProps {
@@ -26,24 +21,15 @@ export const SectionInfoTooltip = ({
 }: SectionInfoTooltipProps) => {
 	const { t } = useTranslation("chatTools");
 	return (
-		<Tooltip disableHoverableContent={false}>
-			<TooltipTrigger asChild>
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon-sm"
-					className="shrink-0"
-					aria-label={t("panel.aboutSection", { section: label })}
-				>
-					<InfoIcon
-						aria-hidden="true"
-						className="size-4 text-muted-foreground"
-					/>
-				</Button>
-			</TooltipTrigger>
-			<TooltipContent className="max-w-64 text-wrap text-xs">
-				{children}
-			</TooltipContent>
-		</Tooltip>
+		<TooltipIconButton
+			label={t("sections.about", { section: label })}
+			tooltip={children}
+			icon={
+				<InfoIcon
+					aria-hidden="true"
+					className="size-4 text-muted-foreground"
+				/>
+			}
+		/>
 	);
 };

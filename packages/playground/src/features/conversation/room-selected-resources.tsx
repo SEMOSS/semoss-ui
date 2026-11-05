@@ -5,57 +5,38 @@ import type { MCPConfig } from "@semoss/shared";
 import {
 	Badge,
 	Button,
-	cn,
 	H4,
 	Muted,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { isRemovableToolbox } from "@/utility/mcp-utils";
 
 interface RoomSelectedResourcesProps {
-	/** Selected values for exactly one section, never the entire catalog. */
+	/** The selected knowledge, never the entire catalog. */
 	items: MCPConfig[];
-	type: "KNOWLEDGE" | "TOOLBOX";
 	disabled: boolean;
 	onAdd: () => void;
 	onRemove: (item: MCPConfig) => void;
-	/**
-	 * Heading level: a section of its own, or part of a larger one such as
-	 * Settings' Tools. Defaults to a section of its own.
-	 */
-	level?: 4 | 5;
 }
 
-/** Visible selections with conversation-scoped removal and explicit ownership. */
+/** The room's selected knowledge, with conversation-scoped removal and explicit ownership. */
 export function RoomSelectedResources({
 	items,
-	type,
 	disabled,
 	onAdd,
 	onRemove,
-	level = 4,
 }: RoomSelectedResourcesProps) {
 	const { t } = useTranslation(["room", "common"]);
 	const id = useId();
-	const Heading = level === 4 ? H4 : "h5";
 	return (
 		<section aria-labelledby={id} className="flex min-w-0 flex-col gap-3">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<Heading
-					id={id}
-					className={cn(
-						"flex items-center gap-2",
-						level === 4 ? "text-base" : "font-medium text-sm",
-					)}
-				>
-					{t(
-						type === "KNOWLEDGE"
-							? "room:form.knowledgeLabel"
-							: "room:form.toolboxLabel",
-					)}
+				<H4 id={id} className="flex items-center gap-2 text-base">
+					{t("room:form.knowledgeLabel")}
 					<Badge variant="secondary">{items.length}</Badge>
-				</Heading>
+				</H4>
 				<Button
 					type="button"
 					variant="outline"
@@ -64,28 +45,15 @@ export function RoomSelectedResources({
 					onClick={onAdd}
 				>
 					<PlusIcon aria-hidden="true" />
-					{t(
-						type === "KNOWLEDGE"
-							? "room:menuKnowledge.addKnowledge"
-							: "room:menuToolbox.addToolbox",
-					)}
+					{t("room:menuKnowledge.addKnowledge")}
 				</Button>
 			</div>
 			{items.length === 0 ? (
-				<Muted>
-					{t(
-						type === "KNOWLEDGE"
-							? "room:settings.noKnowledge"
-							: "room:settings.noTools",
-					)}
-				</Muted>
+				<Muted>{t("room:settings.noKnowledge")}</Muted>
 			) : (
 				<ul className="divide-y divide-border">
 					{items.map((item) => {
-						const inherited =
-							item.fromWorkspace ||
-							item.fromRoom ||
-							item.type === "ROOM";
+						const inherited = !isRemovableToolbox(item);
 						return (
 							<li
 								key={item.id}

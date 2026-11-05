@@ -1,5 +1,4 @@
 import { BotIcon, MessageCircleIcon } from "lucide-react";
-import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
 import {
 	DropdownMenuItem,
@@ -12,15 +11,6 @@ import { RoomInputMenuUpload } from "@/components/room/room-input-menu-upload";
 import type { RoomStore } from "@/stores/room/room.store";
 
 export interface RoomComposerMenuProps {
-	/** Owns the connector configuration and context queue. */
-	room: RoomStore;
-	/**
-	 * Drafts prepare a room before opening a connector viewer. Kept for custom
-	 * composer menus; the default menu leaves the viewers to the room header.
-	 */
-	onOpenSource?: (service: ConnectorViewerService) => void;
-	/** Retained for custom composer menus. */
-	isOpen: boolean;
 	onOpenChange: (isOpen: boolean) => void;
 	onOpenMcpOverlay: (tab: "AGENT" | "KNOWLEDGE" | "TOOLBOX") => void;
 	options: RoomStore["options"];
@@ -47,7 +37,7 @@ export function RoomComposerMenu({
 	agentEditable,
 	enableAgentHarness,
 }: RoomComposerMenuProps) {
-	const { t } = useTranslation(["room", "sidebar"]);
+	const { t } = useTranslation("room");
 	const close = () => onOpenChange(false);
 	const openPicker = (tab: "AGENT" | "KNOWLEDGE" | "TOOLBOX") => {
 		onOpenMcpOverlay(tab);

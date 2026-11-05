@@ -1,13 +1,9 @@
 import { describe, expect, test } from "vitest";
-import {
-	listToolParameters,
-	parseMcpTools,
-	parseRoomToolbox,
-} from "./chat-tool-info";
+import { listToolParameters, parseMcpTools } from "./chat-tool-info";
 
-describe("parseRoomToolbox", () => {
-	test("reads each offered tool with how it runs, leaving out switched off ones", () => {
-		const tools = parseRoomToolbox({
+describe("parseMcpTools", () => {
+	test("reads a room's tool file with how each tool runs, leaving out switched off ones", () => {
+		const tools = parseMcpTools({
 			tools: [
 				{
 					name: "MicrosoftOutlookListMail",
@@ -52,11 +48,9 @@ describe("parseRoomToolbox", () => {
 			},
 		]);
 		expect(tools[1].title).toBe("MicrosoftOutlookSendMail");
-		expect(parseRoomToolbox(null)).toEqual([]);
+		expect(parseMcpTools(null)).toEqual([]);
 	});
-});
 
-describe("parseMcpTools", () => {
 	test("reads a toolbox's tools as GetMCPTools returns them", () => {
 		const tools = parseMcpTools({
 			tools: [

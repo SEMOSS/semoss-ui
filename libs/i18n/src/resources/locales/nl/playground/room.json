@@ -26,7 +26,6 @@
 			"AUTO": "Kiest samenvatten of tools opschonen op basis van het huidige gesprek."
 		},
 		"noKnowledge": "Geen kennis geselecteerd.",
-		"noTools": "Geen tools geselecteerd.",
 		"fromRoom": "Van de chatruimte",
 		"inheritedSelection": "Overgenomen selecties kunnen niet uit deze chat worden verwijderd.",
 		"removeSelection": "{{name}} verwijderen",
@@ -38,7 +37,6 @@
 		"instructionsLabel": "Instructies",
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Kennis",
-		"toolboxLabel": "Toolboxes",
 		"temperatureLabel": "Temperatuur"
 	},
 	"modes": {
@@ -50,7 +48,7 @@
 		"noAgent": "Geen agent"
 	},
 	"workspace": {
-		"publishTooltip": "Publiceren als agent",
+		"publish": "Publiceren als agent",
 		"publishTitle": "Agent publiceren",
 		"publishDescription": "Publiceer een nieuwe agent met de huidige kamerconfiguratie, inclusief instructies en MCP's.",
 		"nameLabel": "Naam *",
@@ -141,8 +139,7 @@
 	"studio": {
 		"views": "Gespreksweergaven",
 		"chat": "Chat",
-		"workArea": "Werkruimte",
-		"toolsCount": "Tools, {{count}} geselecteerd",
+		"workspace": "Werkruimte",
 		"toolsLocked": "Tools kunnen niet worden gewijzigd terwijl een antwoord wordt gemaakt.",
 		"toolsHint": "Selecties gelden voor je volgende bericht.",
 		"moreActions": "Meer acties",
@@ -231,31 +228,24 @@
 				"description": "Vat het gesprek samen om context vrij te maken"
 			},
 			"close-workspace": {
-				"label": "Werkruimte sluiten",
 				"description": "Verberg de werkruimte en behoud de tabbladen"
 			},
 			"favorite": {
-				"label": "Favoriet",
 				"description": "Zet deze kamer bovenaan je lijst"
 			},
 			"unfavorite": {
-				"label": "Uit favorieten",
 				"description": "Haal deze kamer weg bovenaan je lijst"
 			},
 			"rename": {
-				"label": "Naam wijzigen",
 				"description": "Wijzig de naam van deze kamer"
 			},
 			"download": {
-				"label": "Downloaden",
 				"description": "Sla dit gesprek op als Word of PDF"
 			},
 			"delete": {
-				"label": "Verwijderen",
 				"description": "Verwijder deze kamer en het gesprek"
 			},
 			"publish": {
-				"label": "Publiceren als agent",
 				"description": "Sla de instructies en tools van deze kamer op als agent"
 			}
 		}
