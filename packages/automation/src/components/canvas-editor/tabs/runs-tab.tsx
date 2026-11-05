@@ -22,6 +22,8 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	ToggleGroup,
+	ToggleGroupItem,
 	toast,
 } from "@semoss/ui/next";
 import { formatDurationMs } from "@semoss/utility/date";
@@ -51,6 +53,7 @@ import { ErrorDetail } from "../../form-editor/error-detail";
 import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
+import { RunHistoryDashboard } from "./run-history-dashboard";
 import { RunNodeDataViewer } from "./run-node-data-viewer";
 import {
 	findSavedResultForOccurrence,
@@ -112,6 +115,7 @@ interface RunsTabProps extends AutomationTraceSnapshot {
 }
 
 type View = "history" | "live" | "detail";
+type HistoryView = "list" | "dashboard";
 
 function getExecutedSteps(run: AutomationRunDetail | null): AutomationNode[] {
 	if (!run?.DEFINITION_SNAPSHOT) return [];
@@ -149,6 +153,7 @@ export function RunsTab({
 	focusToken,
 }: RunsTabProps) {
 	const [view, setView] = useState<View>("history");
+	const [historyView, setHistoryView] = useState<HistoryView>("list");
 	const [runs, setRuns] = useState<AutomationRunSummary[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
@@ -375,6 +380,23 @@ export function RunsTab({
 							{formatRelativeTime(lastRefreshed.toISOString())}
 						</span>
 					)}
+					<ToggleGroup
+						type="single"
+						variant="outline"
+						size="sm"
+						value={historyView}
+						aria-label="Run history view"
+						onValueChange={(next) => {
+							if (next === "list" || next === "dashboard") {
+								setHistoryView(next);
+							}
+						}}
+					>
+						<ToggleGroupItem value="list">List</ToggleGroupItem>
+						<ToggleGroupItem value="dashboard">
+							Advanced Run History
+						</ToggleGroupItem>
+					</ToggleGroup>
 					<Button
 						size="sm"
 						variant="ghost"
@@ -403,73 +425,79 @@ export function RunsTab({
 				</Alert>
 			)}
 
-			<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
-				{loading ? (
-					<div className="flex h-40 items-center justify-center">
-						<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-					</div>
-				) : runs.length === 0 ? (
-					<div className="flex h-40 flex-col items-center justify-center gap-2 px-4 text-center">
-						<p className="font-medium text-sm">
-							{loadError
-								? "Run history unavailable"
-								: "No runs yet"}
-						</p>
-						<p className="text-muted-foreground text-xs">
-							{loadError
-								? "Retry the request above."
-								: "Completed runs will appear here."}
-						</p>
-					</div>
-				) : (
-					<div className="divide-y">
-						{runs.map((run) => (
-							<button
-								key={run.RUN_ID}
-								type="button"
-								onClick={() => void openRun(run.RUN_ID)}
-								className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
-							>
-								<StatusBadge status={run.STATUS} />
-								{run.RUN_ID === followedRunId && (
-									<span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
-										Following
-									</span>
-								)}
-								{run.TRIGGER_TYPE === "SCHEDULED" && (
-									<span
-										className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs"
-										role="img"
-										aria-label="Scheduled run"
-									>
-										<CalendarClock
-											className="h-3 w-3"
-											aria-hidden
-										/>
-									</span>
-								)}
-								<div className="min-w-0 flex-1">
-									<p className="truncate text-xs">
-										{formatTimestamp(run.STARTED_AT)}
-									</p>
-									{run.COMPLETED_AT && (
-										<p className="text-muted-foreground text-xs">
-											{formatRunDuration(
-												run.STARTED_AT,
-												run.COMPLETED_AT,
-											)}
-										</p>
+			{historyView === "dashboard" ? (
+				<div className="mt-3 min-h-0 flex-1 overflow-y-auto">
+					<RunHistoryDashboard runs={runs} />
+				</div>
+			) : (
+				<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
+					{loading ? (
+						<div className="flex h-40 items-center justify-center">
+							<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+						</div>
+					) : runs.length === 0 ? (
+						<div className="flex h-40 flex-col items-center justify-center gap-2 px-4 text-center">
+							<p className="font-medium text-sm">
+								{loadError
+									? "Run history unavailable"
+									: "No runs yet"}
+							</p>
+							<p className="text-muted-foreground text-xs">
+								{loadError
+									? "Retry the request above."
+									: "Completed runs will appear here."}
+							</p>
+						</div>
+					) : (
+						<div className="divide-y">
+							{runs.map((run) => (
+								<button
+									key={run.RUN_ID}
+									type="button"
+									onClick={() => void openRun(run.RUN_ID)}
+									className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+								>
+									<StatusBadge status={run.STATUS} />
+									{run.RUN_ID === followedRunId && (
+										<span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
+											Following
+										</span>
 									)}
-								</div>
-								<Play
-									className="h-3 w-3 text-muted-foreground"
-									aria-hidden
-								/>
-							</button>
-						))}
-					</div>
-				)}
-			</div>
+									{run.TRIGGER_TYPE === "SCHEDULED" && (
+										<span
+											className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs"
+											role="img"
+											aria-label="Scheduled run"
+										>
+											<CalendarClock
+												className="h-3 w-3"
+												aria-hidden
+											/>
+										</span>
+									)}
+									<div className="min-w-0 flex-1">
+										<p className="truncate text-xs">
+											{formatTimestamp(run.STARTED_AT)}
+										</p>
+										{run.COMPLETED_AT && (
+											<p className="text-muted-foreground text-xs">
+												{formatRunDuration(
+													run.STARTED_AT,
+													run.COMPLETED_AT,
+												)}
+											</p>
+										)}
+									</div>
+									<Play
+										className="h-3 w-3 text-muted-foreground"
+										aria-hidden
+									/>
+								</button>
+							))}
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }
