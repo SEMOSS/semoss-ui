@@ -235,7 +235,8 @@ export function useRoomSourceEmails(
 				"visibilitychange",
 				refreshOnReturn,
 			);
-			window.addEventListener(MAIL_SENT_EVENT, refreshVisible);
+			// a send triggers the page sync, whose lastUpdated re-reads synced rooms below; only Outlook rooms read now
+			if (every) window.addEventListener(MAIL_SENT_EVENT, refreshVisible);
 		}
 		return () => {
 			isCurrent = false;

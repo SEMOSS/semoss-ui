@@ -45,13 +45,20 @@ export function useVisibleResource<T>(
 	const everyRef = useRef(every);
 	everyRef.current = every;
 	const data = useRef<T | null>(null);
+	// kept across pauses: turning a reader back on (a route, a collapsed nav) reuses fresh data
+	const lastReadAt = useRef(0);
+	const readFor = useRef<(() => Promise<T>) | null>(null);
+	const seenRevision = useRef(revision);
 	useEffect(() => {
-		void revision;
 		if (!enabled) return;
+		const forced = revision !== seenRevision.current;
+		seenRevision.current = revision;
+		const fresh =
+			!forced && readFor.current === load && data.current !== null;
 		const token = ++generation.current;
 		let pending = false;
 		let timer: number | undefined;
-		let lastRead = 0;
+		let lastRead = fresh ? lastReadAt.current : 0;
 		let failures = 0;
 		const hidden = () => document.visibilityState === "hidden";
 		const schedule = () => {
@@ -74,11 +81,13 @@ export function useVisibleResource<T>(
 			if (pending || hidden()) return;
 			pending = true;
 			lastRead = Date.now();
+			lastReadAt.current = lastRead;
 			setState((current) => ({ ...current, isLoading: true, error: "" }));
 			try {
 				const next = await load();
 				if (generation.current !== token) return;
 				data.current = next;
+				readFor.current = load;
 				failures = 0;
 				setState({
 					data: next,
@@ -112,7 +121,8 @@ export function useVisibleResource<T>(
 				void read();
 			else if (!pending) schedule();
 		};
-		void read();
+		if (fresh) schedule();
+		else void read();
 		window.addEventListener("focus", onReturn);
 		document.addEventListener("visibilitychange", onReturn);
 		return () => {

@@ -40,17 +40,22 @@ const RUN_ROW =
 interface RoutineRecentRunsProps {
 	/** Closes mobile navigation after a routine or run opens. */
 	onNavigate?: () => void;
+	/** Hidden (a collapsed nav): stop polling, keep the last list. */
+	paused?: boolean;
 }
 
 /**
  * The routines that ran last, under Routines in the sidebar, each with its latest runs. A routine opens on the
  * Routines page; a finished run opens its chat, a running one of the owner's own routines its room.
  */
-export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
+export function RoutineRecentRuns({
+	onNavigate,
+	paused = false,
+}: RoutineRecentRunsProps) {
 	const { actions } = useInsight();
 	const navigate = useNavigate();
 	const load = useCallback(() => listRecentRoutineRuns(actions), [actions]);
-	const recent = useVisibleResource(load, true, {
+	const recent = useVisibleResource(load, !paused, {
 		every: pollEvery,
 		refreshOnReturn: RUNNING_POLL_MS,
 	});
