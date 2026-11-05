@@ -1,4 +1,4 @@
-import type { FilePanelMode } from "@semoss/panels";
+import { FILE_PANEL_TYPES, type FilePanelMode } from "@semoss/panels";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelParams,
@@ -7,9 +7,7 @@ import type {
 } from "@semoss/workbench";
 
 /**
- * Panel type ids the room sidebar can dock.
- *
- * These strings identify the panels the room sidebar can dock.
+ * Panel type ids the room's Workspace can dock.
  *
  * They live beside the store rather than beside the blueprints because both
  * halves need them and the store must not import the blueprints: those reach
@@ -20,8 +18,6 @@ export const ROOM_PANEL_TYPES = {
 	SUBAGENT: "room-subagent",
 	CONFIGURATION: "room-configuration",
 	AUDIT_LOG: "room-audit-log",
-	/** The tools the assistant has for the next message. */
-	CHAT_TOOLS: "room-chat-tools",
 	/** The user's OneDrive. */
 	ONEDRIVE: "room-onedrive",
 	/** The user's Outlook mail. */
@@ -44,26 +40,80 @@ export const ROOM_PANEL_TYPES = {
 	GOOGLE_DOCS: "room-google-docs",
 } as const;
 
+/** The width the Workspace's left rail opens to, in px. */
+export const ROOM_SIDEBAR_RAIL_SIZE = 450;
+
+/** The room's own panels, docked collapsed on the Workspace's left rail. */
+const ROOM_RAIL_PANEL_IDS = {
+	FILES: "room-rail-files",
+	SETTINGS: "room-rail-settings",
+} as const;
+
 /**
- * The room sidebar's starting arrangement: one dock, no panels.
+ * The room sidebar's starting arrangement: an empty dock, with Files and
+ * Settings collapsed on the left rail.
  *
- * Every panel arrives from a call site, so the default is empty — but the
- * tabset itself has to survive its last close, or the dock would prune its only
- * container and have nowhere to put the next panel.
+ * The tabset has to survive its last close, or the dock would prune its only
+ * container and have nowhere to put the next panel. The rail's panels cannot
+ * be closed; `RoomStore._syncSidebarRail` adds the connector viewers beside
+ * them, and Files once a draft has a room to read.
  *
- * Module scope keeps the store and `<Workbench>` aligned on the same starting
- * layout when the sidebar mounts.
+ * @param options.fileMode - The scope Files reads, or null to leave Files out
+ * (a new chat has no insight to read until it prepares its room).
+ * @param options.filesName - Files' tab label.
+ * @param options.settingsName - Settings' tab label.
+ * @return A fresh arrangement; each room keeps its own reference.
  */
-export const ROOM_SIDEBAR_LAYOUT: WorkbenchLayout = {
-	tree: {
-		type: "tabset",
-		id: "main",
-		size: 1,
-		panelIds: [],
-		activeId: null,
-		enableDeleteWhenEmpty: false,
-	},
-	panels: {},
+export const createRoomSidebarLayout = ({
+	fileMode,
+	filesName,
+	settingsName,
+}: {
+	fileMode: FilePanelMode | null;
+	filesName: string;
+	settingsName: string;
+}): WorkbenchLayout => {
+	const panels: WorkbenchLayout["panels"] = {
+		[ROOM_RAIL_PANEL_IDS.SETTINGS]: {
+			id: ROOM_RAIL_PANEL_IDS.SETTINGS,
+			type: ROOM_PANEL_TYPES.CONFIGURATION,
+			name: settingsName,
+			config: {},
+			canClose: false,
+			minWidth: ROOM_SIDEBAR_RAIL_SIZE,
+		},
+	};
+	if (fileMode) {
+		panels[ROOM_RAIL_PANEL_IDS.FILES] = {
+			id: ROOM_RAIL_PANEL_IDS.FILES,
+			type: FILE_PANEL_TYPES.FILE_EXPLORER,
+			name: filesName,
+			config: { mode: fileMode },
+			canClose: false,
+			minWidth: ROOM_SIDEBAR_RAIL_SIZE,
+		};
+	}
+	return {
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [],
+			activeId: null,
+			enableDeleteWhenEmpty: false,
+		},
+		panels: panels,
+		borders: {
+			left: {
+				panelIds: [
+					...(fileMode ? [ROOM_RAIL_PANEL_IDS.FILES] : []),
+					ROOM_RAIL_PANEL_IDS.SETTINGS,
+				],
+				activeId: null,
+				size: ROOM_SIDEBAR_RAIL_SIZE,
+			},
+		},
+	};
 };
 
 /**
@@ -71,8 +121,8 @@ export const ROOM_SIDEBAR_LAYOUT: WorkbenchLayout = {
  *
  * Every read, save and download a file panel makes runs against the insight
  * named here, and it is also the key renames are broadcast on and the config
- * the file panels dedupe by — so it has to be the room's *live* insight, not
- * A room binds to a fresh insight on every load, and `RoomStore` updates any
+ * the file panels dedupe by — so it has to be the room's *live* insight. A
+ * room binds to a fresh insight on every load, and `RoomStore` updates any
  * panels opened before that binding completes.
  *
  * @param insightId - The room's current insight.
@@ -110,3 +160,23 @@ export const isActiveSidebarPanel = (
 		.matchPanels(type, config)
 		.some((record) => record.id === selected);
 };
+
+/**
+ * Whether any tab is open in the Workspace's main area, outside its rail.
+ *
+ * @param layout - The Workspace's dock layout state.
+ * @return True when a tabset holds a panel.
+ */
+export const hasMainAreaTabs = (layout: WorkbenchState["layout"]): boolean =>
+	layout.tabsets.some((tabset) => tabset.panelIds.length > 0);
+
+/**
+ * The file scope a docked panel was opened with, if it is a file panel.
+ *
+ * @param record - The panel.
+ * @return Its `mode`, or undefined.
+ */
+export const getPanelFileMode = (record: {
+	config?: unknown;
+}): FilePanelMode | undefined =>
+	(record.config as { mode?: FilePanelMode } | undefined)?.mode;

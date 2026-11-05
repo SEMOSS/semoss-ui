@@ -2,10 +2,20 @@ import { MenuIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { Button, useSidebar } from "@semoss/ui/next";
+import { Button, cn, useSidebar } from "@semoss/ui/next";
+
+export interface MobileNavigationButtonProps {
+	/**
+	 * Floating over the page's top corner, or inline in a route's own header.
+	 * Defaults to floating.
+	 */
+	placement?: "floating" | "inline";
+}
 
 /** Opens mobile navigation without reserving a desktop navbar. */
-export function MobileNavigationButton() {
+export function MobileNavigationButton({
+	placement = "floating",
+}: MobileNavigationButtonProps) {
 	const { t } = useTranslation("sidebar");
 	const { isMobile, openMobile, setOpenMobile } = useSidebar();
 	const { key: locationKey } = useLocation();
@@ -38,7 +48,12 @@ export function MobileNavigationButton() {
 			type="button"
 			variant="ghost"
 			size="icon-lg"
-			className="absolute start-2 top-1 min-h-11 min-w-11"
+			className={cn(
+				"min-h-11 min-w-11",
+				placement === "floating"
+					? "absolute start-2 top-1"
+					: "shrink-0",
+			)}
 			aria-label={t("actions.openNavigation")}
 			aria-expanded={openMobile}
 			aria-haspopup="dialog"

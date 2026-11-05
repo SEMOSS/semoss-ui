@@ -18,7 +18,7 @@ const ROOM_SPACE: AssetFolderSpace = {
 };
 
 /**
- * The chat's own files ("Chat Files"), the room's folder, read and written
+ * The room's own files ("Room Files"), the room's folder, read and written
  * through the insight asset pixels. The pixels have to run against
  * the room's insight, whose folder is the room's once the room is bound to it.
  * The user's uploads and saved downloads are here, and the chat's other tools

@@ -10,7 +10,6 @@ import {
 	$createParagraphNode,
 	$createTextNode,
 	$getRoot,
-	$isElementNode,
 	type LexicalEditor,
 } from "lexical";
 import {
@@ -25,14 +24,12 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import {
 	useCallback,
-	useContext,
 	useEffect,
 	useId,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
-import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -56,11 +53,7 @@ import { BackspacePlugin } from "@/components/common/lexical/backspace-plugin";
 import { EnterPlugin } from "@/components/common/lexical/enter-plugin";
 import { FocusPlugin } from "@/components/common/lexical/focus-plugin";
 import { SlashCommandProvider } from "@/components/common/lexical/slash-command/context";
-import {
-	$isSlashCommandNode,
-	SlashCommandNode,
-} from "@/components/common/lexical/slash-command/node";
-import { SlashMentionPlugin } from "@/components/common/lexical/slash-command/plugin";
+import { SlashCommandPlugin } from "@/components/common/lexical/slash-command/plugin";
 import { MCPOverlay } from "@/components/mcp/mcp-overlay";
 import {
 	PromptLibraryDialog,
@@ -71,7 +64,6 @@ import { ConnectorSignInNotice } from "@/features/connectors/components/connecto
 import { useUserConnectorsSync } from "@/features/connectors/use-user-connectors-sync";
 import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { ContextItems } from "@/features/conversation/context-items";
-import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
 import {
 	getPromptHistory,
 	RESET_PROMPT_HISTORY_COMMAND,
@@ -81,6 +73,8 @@ import {
 	RoomComposerMenu,
 	type RoomComposerMenuProps,
 } from "@/features/conversation/room-composer-menu";
+import { useRoomSlashCommands } from "@/features/conversation/use-room-slash-commands";
+import type { NewRoomWorkbenchPanels } from "@/features/workbench/use-workbench-panels";
 import { useGracefulErrors } from "@/hooks/use-graceful-errors";
 import { useRoot } from "@/hooks/use-root";
 import { AGENT_HARNESS_TYPE } from "@/stores/message/agent-harness";
@@ -103,8 +97,6 @@ try {
 // Constants & Helper Functions
 // ============================================================================
 
-const noop = () => {};
-
 // ============================================================================
 // TypeScript Interfaces
 // ============================================================================
@@ -122,8 +114,6 @@ const noop = () => {};
 export type SendButtonState = "send" | "stop" | "loading";
 
 interface RoomInputProps {
-	/** Drafts prepare a file-capable room before opening a connector viewer. */
-	onOpenSource?: (service: ConnectorViewerService) => void;
 	/** Classes to override */
 	className?: string;
 
@@ -186,8 +176,14 @@ interface RoomInputProps {
 	/** Command IDs to suppress from the slash menu */
 	excludeCommandIds?: string[];
 
-	/** Callback to open the room settings/configuration panel */
-	onOpenSettings?: () => void;
+	/**
+	 * Where the slash menu's Workspace panels open: a new chat's prepared or
+	 * new room and its own panel actions. Defaults to `room`.
+	 */
+	workbenchPanels?: {
+		room: RoomStore;
+		newRoomPanels?: NewRoomWorkbenchPanels;
+	};
 
 	/**
 	 * Callback for the /agent-harness slash command. Defaults to switching
@@ -197,9 +193,9 @@ interface RoomInputProps {
 	onSwitchToAgentHarness?: () => void;
 
 	/**
-	 * Legacy callback retained for callers; mode switching now lives in the + menu.
-	 * Only passed on the new-room page — once a room exists its harness type
-	 * is a persisted, committed choice, not something to back out of inline.
+	 * Switches back to chat mode, from the + menu and the slash menu. Only
+	 * passed on the new-room page — once a room exists its harness type is a
+	 * persisted, committed choice, not something to back out of inline.
 	 */
 	onExitAgentHarness?: () => void;
 
@@ -246,11 +242,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		room,
 		onCompact,
 		excludeCommandIds,
-		onOpenSettings,
+		workbenchPanels,
 		onSwitchToAgentHarness,
 		onExitAgentHarness,
 		onDefaultAgentChange,
-		onOpenSource,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -269,21 +264,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const canChooseMode = canChooseAgentMode(root.theme.featureFlags);
 		// connectors switched on or off in settings reach this chat at once
 		useUserConnectorsSync(room.connectors);
-		const openWorkspace =
-			useContext(ConversationWorkspaceActionsContext) ??
-			(() => room.openSidebar());
 		const afterMenuClose = useRef<(() => void) | null>(null);
-		const handleOpenWorkspace = () => {
-			afterMenuClose.current = openWorkspace;
-			setMenuOpen(false);
-		};
-		const handleOpenSource = (service: ConnectorViewerService) => {
-			afterMenuClose.current = () => {
-				if (onOpenSource) onOpenSource(service);
-				else room.connectors.openSourcePanel(service);
-			};
-			setMenuOpen(false);
-		};
 
 		// MCP overlay state — managed here so the overlay renders outside the DropdownMenu's React subtree
 		const [mcpOverlay, setMcpOverlay] = useState<{
@@ -401,6 +382,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+		const slashCommands = useRoomSlashCommands({
+			room: room,
+			workbenchRoom: workbenchPanels?.room,
+			newRoomPanels: workbenchPanels?.newRoomPanels,
+			onOpenMcpOverlay: handleOpenMcpOverlay,
+			onAttachFiles: openFilePicker,
+			onCompact: onCompact,
+			onSwitchToAgent: handleSwitchToAgentHarness,
+			onSwitchToChat: onExitAgentHarness,
+			canChooseAgent: Boolean(onWorkspaceChange),
+			prompts: predefinedPrompts,
+			onRunPrompt: (prompt) => void runPredefinedPrompt(prompt.context),
+		});
 
 		// Whether the latest response has unfinished tools — compaction can't
 		// touch a response until all tool calls have resolved
@@ -521,25 +516,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		 */
 		const promptModel = async () => {
 			if (isSubmittingRef.current) return;
-			// Extract current text from Lexical editor, converting slash command
-			// chips to their plain-text label so they're included in the message.
+			// Extract current text from Lexical editor, one line per paragraph.
 			let userInput = "";
 			editorRef.current?.getEditorState().read(() => {
-				const root = $getRoot();
-				userInput = root
+				userInput = $getRoot()
 					.getChildren()
-					.map((paragraph) => {
-						if (!$isElementNode(paragraph))
-							return paragraph.getTextContent();
-						return paragraph
-							.getChildren()
-							.map((node) =>
-								$isSlashCommandNode(node)
-									? node.getLabel()
-									: node.getTextContent(),
-							)
-							.join("");
-					})
+					.map((paragraph) => paragraph.getTextContent())
 					.join("\n");
 			});
 
@@ -635,18 +617,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		return (
 			<div className="relative w-full" ref={ref} data-tour="tour-input">
 				<SlashCommandProvider
-					onOpenMcpOverlay={handleOpenMcpOverlay}
-					onCompact={onCompact ?? noop}
-					onAttachDocument={openFilePicker}
-					onOpenSettings={onOpenSettings ?? noop}
-					onSwitchToAgentHarness={handleSwitchToAgentHarness}
+					commands={slashCommands}
 					excludeCommandIds={excludeCommandIds}
 				>
 					<LexicalComposer
 						initialConfig={{
 							namespace: "RoomInput",
 							theme: {},
-							nodes: [SlashCommandNode],
 							onError: (error) => {
 								console.error(error);
 							},
@@ -880,7 +857,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 															size="icon-sm"
 															className="shrink-0 rounded-full"
 															aria-label={t(
-																"input.openSettings",
+																"input.addToChat",
 															)}
 															data-tour="tour-input-menu"
 														>
@@ -889,7 +866,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													</DropdownMenuTrigger>
 												</TooltipTrigger>
 												<TooltipContent>
-													{t("input.openSettings")}
+													{t("input.addToChat")}
 												</TooltipContent>
 											</Tooltip>
 											<DropdownMenuContent
@@ -906,16 +883,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												}}
 											>
 												<MenuComponent
-													room={room}
-													onOpenSource={
-														handleOpenSource
-													}
-													isOpen={menuOpen}
 													options={options}
 													disabled={isBusy}
-													onOpenWorkspace={
-														handleOpenWorkspace
-													}
 													mode={room.mode}
 													onSelectChat={
 														onExitAgentHarness
@@ -1163,18 +1132,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 									// Track empty state to disable send button
 									const text = root.getTextContent();
-									const hasSlashCommands = root
-										.getChildren()
-										.some(
-											(p) =>
-												$isElementNode(p) &&
-												p
-													.getChildren()
-													.some($isSlashCommandNode),
-										);
-									setIsEmpty(
-										text.length === 0 && !hasSlashCommands,
-									);
+									setIsEmpty(text.length === 0);
 									setInputText(text);
 
 									// Check if content is scrollable
@@ -1210,7 +1168,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<AutoScrollOnPastePlugin
 							scrollContainerRef={scrollViewportRef}
 						/>
-						<SlashMentionPlugin
+						<SlashCommandPlugin
 							isLoading={isLoading}
 							hasTools={latestResponseHasTools}
 						/>

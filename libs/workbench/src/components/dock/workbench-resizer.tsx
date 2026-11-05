@@ -219,17 +219,14 @@ export const WorkbenchResizer: FC<WorkbenchResizerProps> = (props) => {
 							: "h-2",
 			)}
 		>
+			{/* a full-length 2px line, as the app's navigation edge shows */}
 			<span
 				className={cn(
 					"rounded-full bg-transparent transition-colors",
-					"group-hover:bg-primary group-focus-visible:bg-primary group-active:bg-primary",
+					"group-hover:bg-sidebar-border group-focus-visible:bg-ring group-active:bg-sidebar-border",
 					horizontal
-						? thin
-							? "h-6 w-0.5"
-							: "h-8 w-1"
-						: thin
-							? "h-0.5 w-6"
-							: "h-1 w-8",
+						? "my-1 w-0.5 self-stretch"
+						: "mx-1 h-0.5 w-full",
 				)}
 			/>
 		</div>
