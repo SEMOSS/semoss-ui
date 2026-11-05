@@ -91,7 +91,8 @@ session over, config included.
 
 | The pixel | Run it with |
 |---|---|
-| Needs no workspace, such as a catalog read or a one off mutation | `runPixel(pixel)` or `usePixel(pixel)` with no insight id. The backend makes a temporary insight for it |
+| Needs no workspace and runs once, such as a one off mutation | `runPixel(pixel)` with no insight id. The backend makes an insight for it and keeps it until the session ends |
+| Needs no workspace and runs again and again, such as a search, a list that pages, or a poll | `usePixel(pixel)` outside any `<InsightProvider>`, which runs in `Session.insight`, or `Session.insight.run` / `useSessionInsight().run`. Never `runPixel` with no id, which would keep one more insight each time |
 | Belongs to a workspace | That workspace's `useInsight().actions.run`, `usePixel` inside its `<InsightProvider>`, or its `insightId` |
 | Is one of several steps that must share an insight but belong to no workspace, such as an upload then a pixel reading the file, or an export then its download | `Session.insight`: `upload`, `run`, `download`, or `useSessionInsight()` in React |
 
@@ -103,7 +104,8 @@ workspace: it has no recipe, room or state, only an id that every call shares.
 | `run(pixel)`, `runAsync(pixel)` | Run in the insight. The first `run` makes the insight in the same request |
 | `upload(files, projectId?, path?)` | The backend refuses an upload without an existing insight, so one is made first |
 | `download(fileKey)` | Only for a file the same insight made |
-| `withInsight((insightId) => request)` | Any other request that takes an insight id |
+| `withInsight((insightId) => request)` | Any other request that takes an insight id. Before the insight is made it is given `"new"` |
+| `ensure()` | Makes the insight now when there is none and resolves to its id. Use it before a long request watched by that id, such as a pixel whose console is read while it runs |
 | `getSnapshot().insightId` | Empty until made |
 
 It is made on first use and kept; on `INSIGHT_NOT_FOUND` a new one is made and the call

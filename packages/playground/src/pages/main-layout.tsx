@@ -7,7 +7,6 @@ import {
 	useState,
 } from "react";
 import { matchPath, Outlet, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
 import { SidebarInset, SidebarProvider, useCacheState } from "@semoss/ui/next";
 import { setFavicon } from "@semoss/utility/browser";
 import { GlobalDialog } from "@/components/common/global-dialog";
@@ -26,7 +25,6 @@ import { useThemeTitle } from "@/hooks/use-theme-title";
 import { ChatStore } from "@/stores/chat/chat.store";
 
 export const MainLayout = observer(() => {
-	const { actions } = useInsight();
 	const { root } = useRoot();
 	const theme = root.theme;
 	// React freezes DOM style props in development; keep the observable theme mutable.
@@ -44,13 +42,13 @@ export const MainLayout = observer(() => {
 
 	// set up the chat store
 	const chatStore = useMemo(() => {
-		const store = new ChatStore(root.theme, actions, ROOM_PANEL_COMPONENTS);
+		const store = new ChatStore(root.theme, ROOM_PANEL_COMPONENTS);
 
 		// initialize it
 		store.initialize();
 
 		return store;
-	}, [root.theme, actions]);
+	}, [root.theme]);
 
 	// Refs for embed iframe sync
 	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});

@@ -7,6 +7,7 @@ import {
 	useLocation,
 	useParams,
 } from "react-router";
+import { useSession } from "@semoss/sdk/react";
 import { EntityHeader } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -22,7 +23,7 @@ import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-prefe
 import { SettingsContext } from "@/contexts";
 import { TeamHeader } from "@/features/team-details/team-header";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
-import { useConfig, useSession } from "@/hooks";
+import { useThemeConfig } from "@/hooks";
 import {
 	ADMIN_MODE_STORAGE_KEY,
 	getStoredAdminMode,
@@ -31,8 +32,8 @@ import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
 export const SettingsLayout = () => {
-	const themeConfig = useConfig((state) => state.theme);
-	const isAdmin = useSession((state) => state.user.admin);
+	const themeConfig = useThemeConfig();
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
 	const { id, type } = useParams();
 	const { pathname } = useLocation();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);

@@ -5,6 +5,7 @@
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -28,7 +29,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { GUARDRAIL_CONNECTION } from "./guardrail-import.constants";
 import { GuardrailForm } from "./guardrail-import-form";
@@ -49,8 +49,7 @@ interface GuardrailOption {
 
 export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const { run, upload } = useSessionInsight();
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("");
@@ -102,7 +101,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 					`UploadEngine(filePath=["${uploadedFiles[0].fileLocation}"], engineTypes=["GUARDRAIL"])`,
 			);
 			for (const pixelString of pixelExpressions) {
-				const response = await runPixel(pixelString);
+				const response = await run(pixelString);
 				const { output, operationType } = response.pixelReturn[0];
 				if (operationType.includes("ERROR")) {
 					toast.error(String(output));

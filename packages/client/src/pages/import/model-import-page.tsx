@@ -4,6 +4,7 @@
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
+import { runPixel, useSessionInsight } from "@semoss/sdk/react";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -66,7 +67,6 @@ import {
 	ModelTileCard,
 } from "@/components/import/model/model-tile-card";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	getOptionLabels,
@@ -728,8 +728,8 @@ export const mergeModelMetadataFields = (
 export const ModelImportPage: React.FC = () => {
 	const navigate = useNavigate();
 
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	// UploadEngine reads the file the upload put in the insight, so they share one
+	const { run, upload } = useSessionInsight();
 
 	const [search, setSearch] = useState("");
 	const [importableModels, setImportableModels] =
@@ -767,7 +767,6 @@ export const ModelImportPage: React.FC = () => {
 	/**
 	 * Any initialization logic for the model import flow - fetch importable models
 	 */
-	// biome-ignore lint/correctness/useExhaustiveDependencies: run-once init; runPixel is a stable reference
 	useEffect(() => {
 		const fetch = async () => {
 			setImportableModels(IMPORTABLE_MODELS as ImportableModels);
@@ -915,11 +914,12 @@ export const ModelImportPage: React.FC = () => {
 			allKeys: [],
 		});
 
+		// runs as the user types, so it shares the session's insight
 		const pixel = `MatchStaticModelMetadata(modelId=${JSON.stringify(
 			modelId,
 		)});`;
 
-		runPixel(pixel)
+		run(pixel)
 			.then((response) => {
 				if (isCancelled) return;
 
@@ -963,7 +963,7 @@ export const ModelImportPage: React.FC = () => {
 		return () => {
 			isCancelled = true;
 		};
-	}, [runPixel, typedModelId, isTypedModelId]);
+	}, [typedModelId, isTypedModelId, run]);
 
 	// a hand-picked entry wins; otherwise a typed ID that resolved on its own is
 	// just as good a source of metadata, it simply is not worth storing
@@ -1004,7 +1004,7 @@ export const ModelImportPage: React.FC = () => {
 			staticMetadataLookup.modelId,
 		)});`;
 
-		runPixel(pixel)
+		run(pixel)
 			.then((response) => {
 				if (isCancelled) return;
 
@@ -1041,7 +1041,7 @@ export const ModelImportPage: React.FC = () => {
 		return () => {
 			isCancelled = true;
 		};
-	}, [runPixel, staticMetadataLookup]);
+	}, [staticMetadataLookup, run]);
 
 	// A typed Model ID is looked up while the form is already on screen, so blocking
 	// on it would tear the form down and lose whatever has been filled in. Only the
@@ -1095,7 +1095,7 @@ export const ModelImportPage: React.FC = () => {
 
 		const pixelString = `UploadEngine(filePath=["${uploaded[0].fileLocation}"], engineTypes=["MODEL"])`;
 
-		const response = await runPixel(pixelString);
+		const response = await run<[{ database_id: string }]>(pixelString);
 		const output = response.pixelReturn[0].output,
 			operationType = response.pixelReturn[0].operationType;
 

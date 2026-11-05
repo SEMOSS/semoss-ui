@@ -17,7 +17,12 @@ vi.mock("@/hooks/useEngine", () => ({
 		permission: mocks.permission,
 	}),
 }));
-vi.mock("@/hooks/use-session", () => ({ useSession: () => mocks.admin }));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useSession: (
+		selector: (state: { user: { isAdmin: boolean } }) => unknown,
+	) => selector({ user: { isAdmin: mocks.admin } }),
+}));
 vi.mock("@/pages/engine/engine-activity-page", () => ({
 	EngineActivityPage: () => null,
 }));

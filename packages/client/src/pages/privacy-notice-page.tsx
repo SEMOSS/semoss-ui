@@ -1,8 +1,8 @@
 import { Navigate } from "react-router";
-import { useConfig } from "@/hooks";
+import { useThemeConfig } from "@/hooks";
 
 export const PrivacyNoticePage = () => {
-	const html = useConfig((state) => state.theme.privacyNoticePage);
+	const html = useThemeConfig().privacyNoticePage;
 
 	if (!html) {
 		return <Navigate to="/" replace />;

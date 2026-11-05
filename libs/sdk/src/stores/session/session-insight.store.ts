@@ -143,7 +143,9 @@ export class SessionInsightStore {
 	 * insight yet, the request runs in `"new"` and the insight it ran in is
 	 * kept, read from the `insightId` it returns, so the first call is one
 	 * request. When the backend no longer has the insight, a new one is made
-	 * and the request runs once more.
+	 * and the request runs once more. A request that fails, or whose pixels
+	 * fail, fails only its own caller: the insight is kept, or made for the
+	 * callers that were waiting on it.
 	 *
 	 * @param task - The request, given the insight to run in.
 	 * @returns What the request returns.
@@ -155,10 +157,14 @@ export class SessionInsightStore {
 		}
 
 		// whoever needs the insight meanwhile joins this request; one that names
-		// no insight is followed by a no-op pixel that makes one
+		// no insight, or fails, is followed by a no-op pixel that makes one, so
+		// a failed call fails only its caller and never the calls that joined it
 		const result = task("new");
 		const request = this.make(() =>
-			result.then((value) => readInsightId(value) || this.makeEmpty()),
+			result.then(
+				(value) => readInsightId(value) || this.makeEmpty(),
+				() => this.makeEmpty(),
+			),
 		);
 
 		// answer once the insight it ran in is kept, so the caller's next call,
@@ -210,11 +216,14 @@ export class SessionInsightStore {
 	/**
 	 * The insight's id, made with a no-op pixel when there is none. Every
 	 * caller shares one, so the backend holds a single insight per session.
+	 * Call it before a long request that is watched by the insight's id, such
+	 * as a pixel whose console is read while it runs, so that request does not
+	 * have to make the insight itself.
 	 *
 	 * @returns The insight id.
 	 * @throws When the insight cannot be made.
 	 */
-	private ensure = (): Promise<string> => {
+	ensure = (): Promise<string> => {
 		const { insightId } = this.getSnapshot();
 		if (insightId) {
 			return Promise.resolve(insightId);

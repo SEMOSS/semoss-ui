@@ -2,10 +2,10 @@ import { useEffect } from "react";
 import { LoadingScreen } from "@semoss/ui/next";
 import { Router } from "@/pages";
 import { CookieWrapper } from "./components/cookies";
-import { useConfig } from "./hooks";
+import { useThemeConfig } from "./hooks";
 
 export const AppWrapper = () => {
-	const theme = useConfig((state) => state.theme);
+	const theme = useThemeConfig();
 
 	useEffect(() => {
 		try {

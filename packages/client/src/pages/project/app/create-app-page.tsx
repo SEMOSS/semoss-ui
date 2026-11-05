@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, Navigate } from "react-router";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -18,7 +19,7 @@ import { NewAppModal } from "@/components/app";
 import { LandingHeader } from "@/components/landing";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useAdminMode, useSession } from "@/hooks";
+import { useAdminMode } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -29,9 +30,9 @@ import {
 export const CreateAppPage = () => {
 	const navigate = useNavigate();
 
-	const isAdmin = useSession((state) => state.user.admin);
-	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
+	const canAddProject = useSession((state) =>
+		state.canPerform("PROJECT", "add"),
 	);
 	const adminMode = useAdminMode();
 
@@ -56,7 +57,7 @@ export const CreateAppPage = () => {
 			isAutomation ? `/automation/${appId}/edit` : `/app/${appId}/edit`,
 		);
 	};
-	const isRestricted = !isEngineOperationAvailable("PROJECT", "add");
+	const isRestricted = !canAddProject;
 
 	if (isRestricted) {
 		return <Navigate to="/" replace />;

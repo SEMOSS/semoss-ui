@@ -177,7 +177,7 @@ so their public types never name a utility type.
   guardrails have no flags and are always admin-only.
 - [`SessionInsightStore`](./src/stores/session/session-insight.store.ts) (`Session.insight`)
   is the session's own insight: `{ insightId }` in an `Observable`, with `run`, `runAsync`,
-  `upload`, `download`, `withInsight(task)` and `clear`. It is made on first use and shared by
+  `upload`, `download`, `withInsight(task)`, `ensure` and `clear`. It is made on first use and shared by
   every caller. `withInsight` runs a request in `"new"` when there is no insight yet and keeps
   the `insightId` it returns (so the first check is one `GetUserInfo` request), falling back to
   `META | init` when the result names none; `runAsync` and `upload` need an existing insight
@@ -205,8 +205,11 @@ so their public types never name a utility type.
   `requestOTP` and the default-model members are, as their data lives in `Config`/`Session`.
   It fills `Session.logins`. There is no `Logins` singleton (it was never published); use
   `Session.logins`.
-- Where a pixel runs: `runPixel(pixel)` / `usePixel(pixel)` with no insight id for one that
-  needs no workspace (the backend makes a temporary insight); the workspace's `useInsight()`
+- Where a pixel runs: `runPixel(pixel)` with no insight id for a one off pixel that needs no
+  workspace (the backend makes an insight and keeps it until the session ends, since the removal
+  in its `runPixelJob` is disabled); `usePixel` with no id and no `InsightProvider` runs in
+  `Session.insight`, so a read that repeats on every search or page keeps no extra insights;
+  the workspace's `useInsight()`
   inside an `InsightProvider`; `Session.insight` (`run`/`upload`/`download`, `useSessionInsight()`) only
   for steps that must share one insight but belong to no workspace. `run` returns `errors`; it
   does not throw.

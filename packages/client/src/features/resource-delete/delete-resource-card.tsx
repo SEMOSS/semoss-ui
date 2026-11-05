@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -10,7 +11,6 @@ import {
 	Spinner,
 } from "@semoss/ui/next";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useSession } from "@/hooks/use-session";
 import type { ALL_TYPES } from "@/types";
 import { useDeleteResource } from "./use-delete-resource";
 
@@ -42,9 +42,7 @@ export const DeleteResourceCard = ({
 	projectType,
 	onDeleted,
 }: DeleteResourceCardProps) => {
-	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
-	);
+	const canDelete = useSession((state) => state.canPerform(type, "delete"));
 	const { isDeleting, deleteResource } = useDeleteResource({
 		type,
 		id,
@@ -73,10 +71,7 @@ export const DeleteResourceCard = ({
 							type="button"
 							variant="destructive"
 							size="sm"
-							disabled={
-								isDeleting ||
-								!isEngineOperationAvailable(type, "delete")
-							}
+							disabled={isDeleting || !canDelete}
 							onClick={() => setIsConfirmOpen(true)}
 							data-testid="deleteResourceCard-delete-btn"
 						>

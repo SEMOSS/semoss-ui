@@ -47,8 +47,11 @@ without touching the config, logins or permissions.
 
 Where a pixel runs:
 
-- It needs no workspace: `runPixel(pixel)` or `usePixel(pixel)` with no insight id.
-  The backend makes a temporary insight for it.
+- It needs no workspace and runs once: `runPixel(pixel)` with no insight id. The
+  backend makes an insight for it and keeps it until the session ends.
+- It needs no workspace and runs again and again (a search, a paged list, a poll):
+  `usePixel(pixel)` outside any `InsightProvider`, which runs in `Session.insight`,
+  or `Session.insight.run(pixel)`.
 - It belongs to a workspace: that workspace's `useInsight().actions.run` or `usePixel`
   inside its `InsightProvider`.
 - Several steps must share one insight but belong to no workspace, such as an upload

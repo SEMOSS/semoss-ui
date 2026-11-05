@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { useInsight, useSessionPermissions } from "@semoss/sdk/react";
 import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -22,7 +22,7 @@ import { AssistantStoreProvider } from "@/contexts";
 import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
 import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
 import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
-import { useAssistantStore, useEngine, useSession } from "@/hooks";
+import { useAssistantStore, useEngine } from "@/hooks";
 import { DATABASE_EXPLORER_AGENT } from "@/stores/assistant/assistant-agents";
 import {
 	WORKBENCH_COMPONENTS,
@@ -192,8 +192,8 @@ export const DatabaseWorkbench: React.FC = () => {
 		void databaseStore.getState().initialize(engine.engine_id);
 	}, [engine.engine_id, databaseStore]);
 
-	const syncPermission = useSession((s) => s.syncPermission);
-	const refreshPermission = useSession((s) => s.refreshPermission);
+	const { sync: syncPermission, refresh: refreshPermission } =
+		useSessionPermissions("ENGINE", engine.engine_id);
 
 	const assistantStore = useAssistantStore(workbenchId);
 
@@ -205,10 +205,8 @@ export const DatabaseWorkbench: React.FC = () => {
 	});
 
 	useEffect(() => {
-		syncPermission("ENGINE", engine.engine_id, permission);
-		void refreshPermission("ENGINE", engine.engine_id).catch(
-			() => undefined,
-		);
+		syncPermission(permission);
+		void refreshPermission().catch(() => undefined);
 
 		assistantStore.getState().configure({
 			defaultAgent: DATABASE_EXPLORER_AGENT,

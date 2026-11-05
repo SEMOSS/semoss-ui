@@ -1,5 +1,6 @@
 import { DownloadIcon, UploadIcon } from "lucide-react";
 import { useState } from "react";
+import { useSession, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -17,7 +18,6 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { useAppExport } from "@/features/app-export/use-app-export";
 import { useProject } from "@/hooks/use-project";
-import { useSession } from "@/hooks/use-session";
 import { AutomationImportExportCard } from "./app-detail-tabs/automation-import-export-card";
 
 type UpdateAppForm = {
@@ -29,12 +29,25 @@ type UpdateAppForm = {
  * with a zip, and export the app. An automation also imports and exports its
  * definition here.
  */
+/**
+ * Stop the import when a step's pixel failed, since `run` reports pixel
+ * errors instead of throwing them.
+ *
+ * @param result - The step's result.
+ * @throws When the pixel failed.
+ */
+const throwOnErrors = (result: { errors: string[] }): void => {
+	if (result.errors.length > 0) {
+		throw new Error(result.errors.join(""));
+	}
+};
+
 export const AppImportExportSettingsPage = () => {
 	const { project } = useProject();
-	const sessionRunPixel = useSession((state) => state.runPixel);
-	const sessionUpload = useSession((state) => state.upload);
-	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
+	// the unzip reads the file the upload put in the insight, so they share one
+	const { run, upload } = useSessionInsight();
+	const canUpload = useSession((state) =>
+		state.canPerform("PROJECT", "access"),
 	);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const { isExporting, exportApp } = useAppExport(project.project_id);
@@ -46,7 +59,6 @@ export const AppImportExportSettingsPage = () => {
 	});
 
 	const uploadFile = watch("PROJECT_UPLOAD");
-	const canUpload = isEngineOperationAvailable("PROJECT", "access");
 
 	/**
 	 * Replaces the app's assets with the uploaded zip, then compiles and
@@ -64,31 +76,38 @@ export const AppImportExportSettingsPage = () => {
 
 			const path = "version/assets/";
 
-			// clear the current assets
-			await sessionRunPixel(
+			// clear the current assets; a first import has none, which the
+			// backend reports as an error, so it is not checked
+			await run(
 				`DeleteAsset(filePath=["${path}"], space=["${project.project_id}"]);`,
 			);
 
 			// upload the file
-			const uploaded = await sessionUpload(
+			const uploaded = await upload(
 				[data.PROJECT_UPLOAD],
 				project.project_id,
 				path,
 			);
 
 			// unzip the file in the app
-			await sessionRunPixel(
-				`UnzipFile(filePath=["${`${path}${uploaded[0].fileName}`}"], space=["${project.project_id}"]);`,
+			throwOnErrors(
+				await run(
+					`UnzipFile(filePath=["${`${path}${uploaded[0].fileName}`}"], space=["${project.project_id}"]);`,
+				),
 			);
 
 			// load the insight classes
-			await sessionRunPixel(
-				`CompileAppReactors(project='${project.project_id}', release=true);`,
+			throwOnErrors(
+				await run(
+					`CompileAppReactors(project='${project.project_id}', release=true);`,
+				),
 			);
 
 			// publish the app
-			await sessionRunPixel(
-				`PublishProject(project='${project.project_id}', release=true);`,
+			throwOnErrors(
+				await run(
+					`PublishProject(project='${project.project_id}', release=true);`,
+				),
 			);
 			toast.success("Updated the app");
 

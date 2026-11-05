@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
+import { runPixel } from "@semoss/sdk";
 import type { SelectedFile } from "../../types";
-import { runPixel } from "../../utility/pixel";
 import { useTerminal } from "./terminal-context";
 
 export const SaveModal = () => {
 	const terminal = useTerminal();
-	const { actions } = useInsight();
 	const { t } = useTranslation("dialog");
 	const [submitting, setSubmitting] = useState(false);
 	const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -55,25 +53,30 @@ export const SaveModal = () => {
 			space = terminal.getBrowserSpace();
 		}
 
+		// The insight space is the active terminal tab's workspace; a project or
+		// user space belongs to no insight.
+		const insightId = space
+			? undefined
+			: (terminal.activeInsightId ?? undefined);
+		if (!space && !insightId) {
+			terminal.alert("error", t("save.errors.saveFailed"));
+			return;
+		}
+
 		setSubmitting(true);
 		try {
-			const saveResp = await runPixel<string>(
-				actions,
+			const { errors } = await runPixel(
 				`SaveAsset(fileName=["${path}"], content=["<encode>${selected.updated}</encode>"], space=[${space ? `"${space}"` : ""}])`,
+				insightId,
 			);
-			if (
-				!saveResp ||
-				saveResp.operationType.some(
-					(opType) => opType.indexOf("ERROR") > -1,
-				)
-			) {
+			if (errors.length) {
 				terminal.alert("error", t("save.errors.saveFailed"));
 				return;
 			}
 
 			await runPixel(
-				actions,
 				`CommitAsset(filePath=["${path}"], comment=["${terminal.save.comment}"], space=[${space ? `"${space}"` : ""}])`,
+				insightId,
 			);
 
 			terminal.updateFile({

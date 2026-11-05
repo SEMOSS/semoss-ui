@@ -1,6 +1,7 @@
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Navigate } from "react-router";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	DropdownMenu,
@@ -21,7 +22,6 @@ import {
 	getAdminTeamPath,
 	MANAGED_TEAMS_PATH,
 } from "@/features/team-list/team-paths";
-import { useSession } from "@/hooks/use-session";
 import { useNavigate } from "@/hooks/useNavigate";
 
 /** Which team the form is open for: null to create one */
@@ -36,7 +36,7 @@ interface FormTarget {
 export const AdminTeamsPage = () => {
 	const navigate = useNavigate();
 	// the signed in role, not the admin mode preference, decides who sees this page
-	const isAdmin = useSession((state) => state.user.admin);
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
 	const [formTarget, setFormTarget] = useState<FormTarget | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<TeamSummary | null>(null);
 	const [refreshKey, setRefreshKey] = useState(0);

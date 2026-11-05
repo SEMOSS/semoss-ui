@@ -5,7 +5,7 @@ import {
 	SlidersHorizontal,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useConfig, usePixel } from "@semoss/sdk/react";
 import type { Engine, Project } from "@semoss/shared";
 import {
 	Badge,
@@ -20,7 +20,6 @@ import {
 	formatUnderscoreLabel,
 	toTitleCase,
 } from "@semoss/utility/text";
-import { useConfig } from "@/hooks";
 import { getTagColorPalette } from "@/utility";
 import {
 	CATALOG_ACCESS_FILTERS,
@@ -59,9 +58,11 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 	const { type, projectTypes, filters, onChange, access, onAccessChange } =
 		props;
 
-	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const projectMetaKeys = useConfig(
+		(state) => state.config?.projectMetaKeys ?? [],
+	);
 	const databaseMetaKeys = useConfig(
-		(state) => state.config.databaseMetaKeys,
+		(state) => state.config?.databaseMetaKeys ?? [],
 	);
 
 	const [filterSearch, setFilterSearch] = useState("");

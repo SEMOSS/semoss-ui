@@ -1,16 +1,18 @@
 import { Navigate, Outlet, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 
 /**
  * Wrap the database routes and add additional funcitonality
  */
 export const AuthenticatedLayout = () => {
-	const { isAuthorized } = useInsight();
+	const isAuthenticated = useSession(
+		(state) => state.status === "AUTHENTICATED",
+	);
 
 	// track the location
 	const location = useLocation();
 
-	if (!isAuthorized) {
+	if (!isAuthenticated) {
 		return <Navigate to="/login" state={{ from: location }} replace />;
 	}
 

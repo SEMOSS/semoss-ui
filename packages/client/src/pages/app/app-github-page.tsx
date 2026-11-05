@@ -14,6 +14,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { useTranslation } from "@semoss/i18n";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -41,7 +42,7 @@ import {
 	selectRepo,
 	setProjectBranch,
 } from "@/api/github";
-import { useProject, useSession } from "@/hooks";
+import { useProject } from "@/hooks";
 import { GithubBranchSelect } from "./app-detail-tabs/github-branch-select";
 import { GithubInstallationPicker } from "./app-detail-tabs/github-installation-picker";
 import { GithubRepoPicker } from "./app-detail-tabs/github-repo-picker";
@@ -62,7 +63,6 @@ export const AppGithubPage = () => {
 	const { t } = useTranslation("githubApp");
 	const { project } = useProject();
 	const appId = project.project_id;
-	const runPixel = useSession((state) => state.runPixel);
 	const location = useLocation();
 
 	// Seed from router state (set when the select-repo page links a repo and
@@ -152,7 +152,7 @@ export const AppGithubPage = () => {
 			// Leave as "unknown" — don't block the rest of the tab on this check.
 			setInstallationValid(null);
 		}
-	}, [appId, runPixel]);
+	}, [appId]);
 
 	// Recent webhook deliveries for this project's installation.
 	const loadDeliveries = useCallback(async () => {
@@ -181,7 +181,7 @@ export const AppGithubPage = () => {
 		} finally {
 			setIsDeliveriesLoading(false);
 		}
-	}, [appId, runPixel, t]);
+	}, [appId, t]);
 
 	// Load health + deliveries whenever the project becomes connected.
 	useEffect(() => {

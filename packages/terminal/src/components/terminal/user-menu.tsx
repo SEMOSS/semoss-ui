@@ -6,9 +6,9 @@ import {
 	MoonIcon,
 	SunIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
-import { Env, useInsight } from "@semoss/sdk/react";
+import { Session, useConfig, useSession } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -26,124 +26,40 @@ import {
 	Spinner,
 	useTheme,
 } from "@semoss/ui/next";
-import { runPixel } from "../../utility/pixel";
-
-interface UserInfo {
-	id?: string;
-	name?: string;
-	email?: string;
-}
-
-interface VersionInfo {
-	version: string;
-	datetime: string;
-}
 
 /**
  * Account dropdown — mirrors the playground's NavUser (theme submenu +
  * logout) plus the client's LogoutPopover (user header + version footer).
  *
- * - User info: `GetUserInfo()` pixel; provider precedence SAML → NATIVE →
- *   first key (same as the client).
+ * - User info: the SDK session's signed in user.
  * - Theme: `useTheme()` from @semoss/ui/next; sub-menu with Light / Dark /
  *   System options identical to the playground.
- * - Version + build datetime: `GET ${MODULE}/api/config` (same endpoint the
- *   client reads in monolith.store).
+ * - Version + build datetime: the SDK config's `version`.
  */
 export const UserMenu = () => {
-	const { actions, isAuthorized } = useInsight();
+	const user = useSession((state) => state.user);
+	const version = useConfig((state) => state.config?.version);
 	const { theme, setTheme } = useTheme();
 	const { t, i18n } = useTranslation("chrome");
-	const [user, setUser] = useState<UserInfo>({});
 
 	const selectedLanguage = LANGUAGES.find(
 		(lang) => lang.code === i18n.language,
 	);
-	const [version, setVersion] = useState<VersionInfo | null>(null);
 	const [loggingOut, setLoggingOut] = useState(false);
-
-	// Fetch the current user once authorized
-	useEffect(() => {
-		if (!isAuthorized) return;
-		let cancelled = false;
-		(async () => {
-			const resp = await runPixel<
-				Record<
-					string,
-					{
-						id?: string;
-						name?: string;
-						email?: string;
-					}
-				>
-			>(actions, `GetUserInfo();`);
-			if (cancelled || !resp) return;
-			if (
-				resp.operationType.some(
-					(opType) => opType.indexOf("ERROR") > -1,
-				)
-			)
-				return;
-			const output = resp.output ?? {};
-			// SAML > NATIVE > first present
-			const picked =
-				output.SAML ??
-				output.NATIVE ??
-				output[Object.keys(output)[0] ?? ""] ??
-				null;
-			if (picked) {
-				setUser({
-					id: picked.id,
-					name: picked.name,
-					email: picked.email,
-				});
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [actions, isAuthorized]);
-
-	// Fetch app version + build datetime once authorized. Mirrors the client's
-	// LogoutPopover which reads these from `GET ${MODULE}/api/config`.
-	useEffect(() => {
-		if (!isAuthorized) return;
-		let cancelled = false;
-		(async () => {
-			try {
-				const resp = await fetch(`${Env.MODULE}/api/config`, {
-					credentials: "include",
-				});
-				if (!resp.ok) return;
-				const data = (await resp.json()) as {
-					version?: { version?: string; datetime?: string };
-				};
-				if (cancelled) return;
-				if (data?.version?.version || data?.version?.datetime) {
-					setVersion({
-						version: data.version.version ?? "",
-						datetime: data.version.datetime ?? "",
-					});
-				}
-			} catch {
-				// silent — version footer is purely informational
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [isAuthorized]);
 
 	const handleLogout = async () => {
 		setLoggingOut(true);
 		try {
-			await actions.logout();
+			await Session.logout();
+		} catch (error) {
+			// the session stays signed in; the menu stays usable for a retry
+			console.error("[terminal] logout failed", error);
 		} finally {
 			setLoggingOut(false);
 		}
 	};
 
-	const initial = (user.name || user.id || "U").charAt(0).toUpperCase();
+	const initial = (user?.name || user?.id || "U").charAt(0).toUpperCase();
 
 	return (
 		<>
@@ -178,11 +94,11 @@ export const UserMenu = () => {
 						</Avatar>
 						<div className="flex min-w-0 flex-col">
 							<span className="truncate font-medium text-foreground text-sm">
-								{user.name ||
-									user.id ||
+								{user?.name ||
+									user?.id ||
 									t("userMenu.defaultUser")}
 							</span>
-							{user.email && (
+							{user?.email && (
 								<span className="truncate text-muted-foreground text-xs">
 									{user.email}
 								</span>

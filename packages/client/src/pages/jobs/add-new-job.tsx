@@ -25,7 +25,7 @@ import {
 	Separator,
 	Textarea,
 } from "@semoss/ui/next";
-import { useConfig, useSettings } from "@/hooks";
+import { useSettings, useThemeConfig } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { getTagBadgeStyle } from "@/utility";
 import {
@@ -61,8 +61,7 @@ const emptyBuilder: JobBuilder = {
 
 export const AddNewJob = () => {
 	const { adminMode } = useSettings();
-	const themeName =
-		useConfig((state) => state.theme.name)?.trim() || "SEMOSS";
+	const themeName = useThemeConfig().name?.trim() || "SEMOSS";
 	const location = useLocation();
 	const navigate = useNavigate();
 	const initialBuilderFromLocation = (

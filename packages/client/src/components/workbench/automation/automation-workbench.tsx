@@ -43,7 +43,11 @@ import {
 	getFilePanelScope,
 } from "@semoss/panels";
 import { type Role, runPixel } from "@semoss/sdk";
-import { InsightProvider, useInsight } from "@semoss/sdk/react";
+import {
+	InsightProvider,
+	useInsight,
+	useSessionPermissions,
+} from "@semoss/sdk/react";
 import { type MCPConfig, MonacoEditor } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -83,7 +87,7 @@ import { ShareAppDialog } from "@/components/ui/share/share-app-dialog";
 import { AssistantStoreProvider, WorkbenchProvider } from "@/contexts";
 import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
 import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
-import { useAssistantStore, useProject, useSession } from "@/hooks";
+import { useAssistantStore, useProject } from "@/hooks";
 import type { BuildTool } from "@/stores/assistant";
 import { AUTOMATION_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
 import { createAutomationWorkbenchStore } from "@/stores/workbench/automation/automation-workbench.store";
@@ -538,15 +542,13 @@ export const AutomationWorkbench = observer(
 			(state) => state.runDetailsFocus,
 		);
 		const assistantStore = useAssistantStore(workbenchId);
-		const syncPermission = useSession((state) => state.syncPermission);
-		const refreshPermission = useSession(
-			(state) => state.refreshPermission,
-		);
+		const { sync: syncPermission, refresh: refreshPermission } =
+			useSessionPermissions("PROJECT", appId);
 
 		useEffect(() => {
-			syncPermission("PROJECT", appId, permission);
-			void refreshPermission("PROJECT", appId).catch(() => undefined);
-		}, [appId, permission, refreshPermission, syncPermission]);
+			syncPermission(permission);
+			void refreshPermission().catch(() => undefined);
+		}, [permission, refreshPermission, syncPermission]);
 
 		useWorkbenchCommands([
 			createReconnectCommand(insight),

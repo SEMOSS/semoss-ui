@@ -11,10 +11,6 @@ import { MainLayout } from "./main-layout";
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@semoss/sdk/react", () => {
-	const actions = {};
-	return { useInsight: () => ({ actions }) };
-});
 vi.mock("@/stores/chat/chat.store", () => ({
 	ChatStore: class {
 		initialize = vi.fn();

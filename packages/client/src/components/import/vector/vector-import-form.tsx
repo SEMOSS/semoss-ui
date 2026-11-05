@@ -5,6 +5,7 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { runPixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -30,7 +31,6 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { ImportEngineSelect } from "../shared/import-engine-select";
@@ -71,8 +71,8 @@ export const VectorForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	// the embeddings are uploaded, then read by the pixel that adds them
+	const { run, upload } = useSessionInsight();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -127,7 +127,7 @@ export const VectorForm = ({
 						return;
 					}
 					const pixelExpressions = `CreateEmbeddingsFromDocuments(filePaths=["${uploadedFiles[0].fileLocation}"], engine=["${pixelOutput.engine_id || pixelOutput.database_id}"])`;
-					const response = await runPixel(pixelExpressions);
+					const response = await run(pixelExpressions);
 					const { output, operationType } = response.pixelReturn[0];
 					if (operationType.includes("ERROR")) {
 						toast.error(String(output));
@@ -234,7 +234,8 @@ export const VectorForm = ({
 			userInput.trim(),
 		);
 
-		const response = await runPixel(pixelToExecute);
+		// runs as the user types, so it shares the session's insight
+		const response = await run(pixelToExecute);
 		const output = response.pixelReturn[0].output as { exists: boolean };
 		const operationType = response.pixelReturn[0].operationType;
 

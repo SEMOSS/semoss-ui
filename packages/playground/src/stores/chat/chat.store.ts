@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { getI18n } from "@semoss/i18n";
-import { download, type Insight, runPixel } from "@semoss/sdk/react";
+import { runPixel, Session } from "@semoss/sdk/react";
 import {
 	type AgentFormValues,
 	agentNeedsFollowUpEdit,
@@ -61,12 +61,6 @@ interface ChatStoreInterface {
 	};
 
 	/**
-	 * Engine ID of the model set as default in the user's profile (Settings > My Profile).
-	 * Empty string if no profile default is set.
-	 */
-	profileDefaultModelId: string;
-
-	/**
 	 * Cached rooms
 	 */
 	rooms: Record<string, RoomStore>;
@@ -99,15 +93,6 @@ interface ChatStoreInterface {
 		| ThemeMap["playground"]["sidebar"]["headerItems"][number]
 		| ThemeMap["playground"]["sidebar"]["footerItems"][number]
 	>;
-
-	/**
-	 * Current user info
-	 */
-	user: {
-		id: string;
-		name: string;
-		lastLogin?: string;
-	};
 }
 
 /**
@@ -115,7 +100,6 @@ interface ChatStoreInterface {
  */
 export class ChatStore {
 	private _theme: ThemeMap["playground"];
-	private _actions: Insight["actions"];
 	private _panelComponents: Record<string, WorkbenchPanelConfigAny>;
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
@@ -129,17 +113,11 @@ export class ChatStore {
 		keys: {
 			roomCounter: 0,
 		},
-		user: {
-			id: "",
-			name: "",
-		},
 		embeddedPageMap: {},
-		profileDefaultModelId: "",
 	};
 
 	constructor(
 		theme: ThemeMap["playground"],
-		actions: Insight["actions"],
 		/**
 		 * The sidebar blueprints every room it creates is built with. Passed
 		 * through rather than imported: they live in `@/components`, which
@@ -148,7 +126,6 @@ export class ChatStore {
 		panelComponents: Record<string, WorkbenchPanelConfigAny>,
 	) {
 		this._theme = theme;
-		this._actions = actions;
 		this._panelComponents = panelComponents;
 		this._store.embeddedPageMap = [
 			...theme.sidebar.headerItems,
@@ -196,24 +173,10 @@ export class ChatStore {
 	}
 
 	/**
-	 * Get the current user
-	 */
-	get user() {
-		return this._store.user;
-	}
-
-	/**
 	 * Get the map of preloaded embed paths
 	 */
 	get embeddedPageMap() {
 		return this._store.embeddedPageMap;
-	}
-
-	/**
-	 * Get the engine ID of the user's profile default model
-	 */
-	get profileDefaultModelId() {
-		return this._store.profileDefaultModelId;
 	}
 
 	/**
@@ -228,9 +191,6 @@ export class ChatStore {
 	 */
 	initialize = async (): Promise<void> => {
 		try {
-			// getUser must complete first so profileDefaultModelId is set
-			// before getDefaultModel runs its model selection logic
-			await this.getUser();
 			await this.getDefaultModel();
 		} catch (e) {
 			console.error(e);
@@ -238,50 +198,6 @@ export class ChatStore {
 			runInAction(() => {
 				this._store.isInitialized = true;
 			});
-		}
-	};
-
-	getUser = async (): Promise<void> => {
-		try {
-			// Send both pixels in a single request.
-			// GetUserMetadata bypasses the cache that GetUserInfo has, so it
-			// always returns the latest saved text-generation-model value.
-			const result = await this._actions.run<
-				[
-					Record<
-						string,
-						{ id: string; name: string; lastLogin?: string }
-					>,
-					{ "text-generation-model"?: string | string[] },
-				]
-			>(`META | GetUserInfo(); META | GetUserMetadata();`);
-
-			// Extract user id, name, lastLogin from GetUserInfo
-			const providerData = Object.values(result.pixelReturn[0].output)[0];
-			if (providerData) {
-				runInAction(() => {
-					this._store.user = {
-						id: providerData.id,
-						name: providerData.name,
-						lastLogin: providerData.lastLogin,
-					};
-				});
-			}
-
-			// Extract profile default model from GetUserMetadata (bypasses cache)
-			const meta = result.pixelReturn[1].output;
-			const metaValue = meta?.["text-generation-model"];
-			const profileDefaultModelId = Array.isArray(metaValue)
-				? (metaValue[0] as string) || ""
-				: typeof metaValue === "string"
-					? metaValue
-					: "";
-
-			runInAction(() => {
-				this._store.profileDefaultModelId = profileDefaultModelId;
-			});
-		} catch (e) {
-			console.error(e);
 		}
 	};
 
@@ -472,9 +388,12 @@ export class ChatStore {
 		const insightId = room?.insightId;
 
 		// wait for the pixel to run
-		await this._actions.run<[boolean]>(
+		const { errors } = await runPixel<[boolean]>(
 			`RemoveUserRoom(roomId=["${roomId}"]);`,
 		);
+		if (errors.length > 0) {
+			throw new Error(errors.join(""));
+		}
 
 		// only drop if the room was opened and has a real insightId
 		if (insightId && insightId !== "new") {
@@ -508,9 +427,12 @@ export class ChatStore {
 		if (!trimmed) {
 			throw new Error("Room name cannot be empty");
 		}
-		await this._actions.run<[boolean]>(
+		const { errors } = await runPixel<[boolean]>(
 			`META | RenameRoom(roomId=["${roomId}"], name=["<encode>${trimmed}</encode>"]);`,
 		);
+		if (errors.length > 0) {
+			throw new Error(errors.join(""));
+		}
 		runInAction(() => {
 			const cached = this._store.rooms[roomId];
 			if (cached) {
@@ -526,9 +448,12 @@ export class ChatStore {
 	 * chats page, per-agent timeline) refetch and stay in sync.
 	 */
 	pinRoom = async (roomId: string, pinned: boolean): Promise<void> => {
-		await this._actions.run<[boolean]>(
+		const { errors } = await runPixel<[boolean]>(
 			`PinRoom(roomId=["${roomId}"], pinned=[${pinned}]);`,
 		);
+		if (errors.length > 0) {
+			throw new Error(errors.join(""));
+		}
 		runInAction(() => {
 			this._store.keys.roomCounter++;
 		});
@@ -540,7 +465,6 @@ export class ChatStore {
 	): Promise<void> => {
 		const messagesResponse = await runPixel<[AbstractPixelMessage[]]>(
 			`GetPlaygroundMessages(roomId=["${roomId}"]);`,
-			"new",
 		);
 
 		if (!messagesResponse?.pixelReturn?.[0]?.output) {
@@ -608,10 +532,10 @@ export class ChatStore {
 				? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`
 				: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`;
 
-		const downloadResponse = await runPixel<[string]>(
-			pixelCommand,
-			messagesResponse.insightId,
-		);
+		// the file belongs to the insight that makes it, so its download must
+		// run in the same one
+		const downloadResponse =
+			await Session.insight.run<[string]>(pixelCommand);
 
 		if (!downloadResponse?.pixelReturn?.[0]) {
 			throw new Error("No response received from server");
@@ -625,7 +549,7 @@ export class ChatStore {
 			);
 		}
 
-		download(downloadResponse.insightId, output);
+		await Session.insight.download(output);
 	};
 
 	/**
@@ -666,51 +590,6 @@ export class ChatStore {
 	};
 
 	/**
-	 * Re-fetch the user's profile default text-generation model from the backend
-	 * and update the selected model if it has changed. Called when the new-room
-	 * page mounts so any change made in the token-usage page (embed) is picked
-	 * up without requiring a logout/login cycle.
-	 */
-	refreshProfileDefaultModel = async (): Promise<void> => {
-		try {
-			// Use GetUserMetadata to bypass the GetUserInfo cache
-			const result = await this._actions.run<
-				[{ "text-generation-model"?: string | string[] }]
-			>(`META | GetUserMetadata();`);
-
-			const meta = result.pixelReturn[0].output;
-			const metaValue = meta?.["text-generation-model"];
-			const newModelId = Array.isArray(metaValue)
-				? (metaValue[0] as string) || ""
-				: typeof metaValue === "string"
-					? metaValue
-					: "";
-
-			// Only update if the default has actually changed
-			if (
-				!newModelId ||
-				newModelId === this._store.profileDefaultModelId
-			) {
-				return;
-			}
-
-			runInAction(() => {
-				this._store.profileDefaultModelId = newModelId;
-			});
-
-			const match = this._store.models.available.find(
-				(m) => m.engine_id === newModelId,
-			);
-
-			if (match) {
-				this.setSelectedModel(match);
-			}
-		} catch (e) {
-			console.error("[ChatStore] refreshProfileDefaultModel failed:", e);
-		}
-	};
-
-	/**
 	 * Set the selected model
 	 */
 	setSelectedModel = (model: Engine): void => {
@@ -720,7 +599,10 @@ export class ChatStore {
 
 		sessionStorage.setItem(
 			SESSION_MODEL_KEY,
-			JSON.stringify({ model, lastLogin: this._store.user.lastLogin }),
+			JSON.stringify({
+				model,
+				lastLogin: Session.getSnapshot().user?.lastLogin,
+			}),
 		);
 
 		this.loadEngineContextWindow(model.engine_id);
@@ -741,9 +623,12 @@ export class ChatStore {
 		}
 
 		try {
-			const { pixelReturn } = await this._actions.run<[Engine[]]>(
+			const { errors, pixelReturn } = await runPixel<[Engine[]]>(
 				`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"], engine=[${JSON.stringify(id)}]);`,
 			);
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
+			}
 
 			const model = pixelReturn[0].output?.find(
 				(m) => m.engine_id === id,
@@ -765,9 +650,12 @@ export class ChatStore {
 			this._store.models.contextWindow = undefined;
 		});
 
-		const { pixelReturn } = await this._actions.run<[number | undefined]>(
+		const { errors, pixelReturn } = await runPixel<[number | undefined]>(
 			`META | GetContextWindow(${JSON.stringify(engineId)});`,
 		);
+		if (errors.length > 0) {
+			throw new Error(errors.join(""));
+		}
 
 		if (this.models.selected?.engine_id === engineId) {
 			runInAction(() => {
@@ -797,7 +685,10 @@ export class ChatStore {
 			const skills = data.skills.map((s) => s.id);
 
 			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
-			const { pixelReturn } = await this._actions.run<[string]>(pixel);
+			const { errors, pixelReturn } = await runPixel<[string]>(pixel);
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
+			}
 
 			return pixelReturn[0].output;
 		} catch (e) {
@@ -821,9 +712,12 @@ export class ChatStore {
 		warning?: string;
 		settingsFailed?: boolean;
 	}> => {
-		const { pixelReturn } = await this._actions.run<[string]>(
+		const { errors, pixelReturn } = await runPixel<[string]>(
 			buildAddWorkspacePixel(values),
 		);
+		if (errors.length > 0) {
+			throw new Error(errors.join(""));
+		}
 		const workspaceId = pixelReturn[0]?.output;
 		if (!workspaceId) {
 			throw new Error();
@@ -848,9 +742,12 @@ export class ChatStore {
 		workspaceId: string,
 		values: AgentFormValues,
 	): Promise<string | undefined> => {
-		const { pixelReturn } = await this._actions.run<[unknown]>(
+		const { errors, pixelReturn } = await runPixel<[unknown]>(
 			buildEditWorkspacePixel(workspaceId, values),
 		);
+		if (errors.length > 0) {
+			throw new Error(errors.join(""));
+		}
 		const output = pixelReturn[0]?.output;
 		if (!output) {
 			throw new Error();
@@ -860,9 +757,12 @@ export class ChatStore {
 
 	deleteWorkspace = async (workspaceId: string) => {
 		try {
-			await this._actions.run(
+			const { errors } = await runPixel(
 				`DeleteWorkspace(workspaceId=['${workspaceId}'])`,
 			);
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
+			}
 
 			return;
 		} catch (e) {
@@ -894,18 +794,25 @@ export class ChatStore {
 			return;
 		}
 
-		const { pixelReturn } = await this._actions.run<[Engine[]]>(
+		const { errors, pixelReturn } = await runPixel<[Engine[]]>(
 			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
 		);
+		if (errors.length > 0) {
+			throw new Error(errors.join(""));
+		}
+
+		// the session reads the user before the app gates on it, so their
+		// profile default (Settings > My Profile) is already known
+		const user = Session.getSnapshot().user;
+		const profileDefaultModelId = user?.defaultModels.textGeneration ?? "";
+		const currentLogin = user?.lastLogin;
 
 		runInAction(() => {
 			const { output } = pixelReturn[0];
 
-			// Cache the full list so setProfileDefaultModel() can resolve an id to an Engine later
+			// Cache the full list of models the user can pick from
 			this._store.models.available = output;
 
-			// profileDefaultModelId is already set by getUser(), which runs before this
-			const profileDefaultModelId = this._store.profileDefaultModelId;
 			let isSelected = false;
 
 			// 1. user's profile default — explicitly set by the user, highest personal priority
@@ -930,7 +837,6 @@ export class ChatStore {
 								model: Engine;
 								lastLogin?: string;
 							};
-						const currentLogin = this._store.user.lastLogin;
 						if (
 							storedLogin &&
 							currentLogin &&

@@ -8,6 +8,7 @@ import {
 } from "react";
 import { runPixel } from "../../../api";
 import { InsightContext } from "../contexts";
+import { useSessionStore } from "./use-session";
 
 interface PixelState<D> {
 	/** Status of the pixel call */
@@ -42,7 +43,14 @@ interface usePixel<D> extends PixelState<D> {
 /**
  * Send a command to the backend and recieve a response. This is intended to be used by a single pixel statement (nothing seperated by ;)
  *
+ * It runs in the given insight, else the nearest `InsightProvider`'s. With
+ * neither, it runs in the session's own insight (`Session.insight`): the
+ * backend keeps every insight a pixel makes until the session ends, so a read
+ * that runs again on every search or page must not make one each time.
+ *
  * @param pixel - pixel string to call
+ * @param config - Initial data and callbacks
+ * @param insightId - The insight to run in
  *
  * @returns Information about the pixel response
  */
@@ -52,7 +60,10 @@ export function usePixel<D>(
 	insightId?: string,
 ): usePixel<D> {
 	const context = useContext(InsightContext);
-	const resolvedInsightId = insightId ?? context?.insightId;
+	const session = useSessionStore();
+	const resolvedInsightId = insightId || context?.insightId;
+	// no workspace to run in, so share the session's insight
+	const isInSession = !insightId && !context;
 
 	// Memoize the initial data
 	// biome-ignore lint/correctness/useExhaustiveDependencies: config?.data is handled by deep check
@@ -124,7 +135,10 @@ export function usePixel<D>(
 			data: initialData,
 		});
 
-		runPixel<[D]>(pixel, resolvedInsightId)
+		(isInSession
+			? session.insight.run<[D]>(pixel)
+			: runPixel<[D]>(pixel, resolvedInsightId)
+		)
 			.then((response) => {
 				// ignore if its cancelled
 				if (isCancelled) {
@@ -176,7 +190,7 @@ export function usePixel<D>(
 		return () => {
 			isCancelled = true;
 		};
-	}, [count, pixel, resolvedInsightId, initialData]);
+	}, [count, pixel, resolvedInsightId, isInSession, session, initialData]);
 
 	return {
 		...state,

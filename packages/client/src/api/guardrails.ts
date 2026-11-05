@@ -10,23 +10,20 @@ interface CreateGuardrailEngineOutput {
  * Creates a guardrail engine whose configuration is persisted as SMSS
  * properties and returns its catalog identifier.
  *
- * @param insightId - Insight used to execute the Pixel request.
  * @param name - Catalog name for the guardrail.
  * @param details - Guardrail type and engine-specific SMSS properties.
  * @returns The created guardrail engine identifier.
  */
 export const createGuardrailEngine = async (
-	insightId: string | undefined,
 	name: string,
 	details: Record<string, unknown>,
 ): Promise<string> => {
 	const pixel = `CreateGuardrailEngine(guardrail=[${JSON.stringify(name)}],guardrailDetails=[${JSON.stringify(details)}]);`;
-	const response = await runPixel<[CreateGuardrailEngineOutput]>(
-		pixel,
-		insightId,
-	).catch((error) => {
-		throw Error(error);
-	});
+	const response = await runPixel<[CreateGuardrailEngineOutput]>(pixel).catch(
+		(error) => {
+			throw Error(error);
+		},
+	);
 
 	if (response.errors.length > 0) {
 		throw Error(response.errors.join("\n"));

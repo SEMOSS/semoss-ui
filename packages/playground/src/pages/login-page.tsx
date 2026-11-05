@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
 import { useTheme } from "@semoss/ui/next";
 import { setFavicon } from "@semoss/utility/browser";
@@ -15,7 +15,9 @@ import { useThemeTitle } from "@/hooks/use-theme-title";
 export const LoginPage = observer(() => {
 	const { root } = useRoot();
 	const theme = root.theme;
-	const { isAuthorized } = useInsight();
+	const isAuthenticated = useSession(
+		(state) => state.status === "AUTHENTICATED",
+	);
 	const { theme: colorMode } = useTheme();
 
 	// theme = dark or system matches dark
@@ -37,7 +39,7 @@ export const LoginPage = observer(() => {
 	}, [theme?.images?.tabIcon]);
 
 	// navigate if already logged in
-	if (isAuthorized) {
+	if (isAuthenticated) {
 		return <Navigate to={path} replace />;
 	}
 

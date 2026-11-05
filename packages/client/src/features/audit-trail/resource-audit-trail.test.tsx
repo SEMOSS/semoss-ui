@@ -20,14 +20,21 @@ const mocks = vi.hoisted(() => ({
 	permission: "OWNER",
 	isAdmin: false,
 }));
-vi.mock("@semoss/sdk/react", () => ({ usePixel: mocks.usePixel }));
+/** The part of the session the pages read */
+interface SessionState {
+	user: { isAdmin: boolean } | null;
+}
+vi.mock("@semoss/sdk/react", () => ({
+	usePixel: mocks.usePixel,
+	useSession: (selector: (state: SessionState) => unknown) =>
+		selector({ user: { isAdmin: mocks.isAdmin } }),
+}));
 vi.mock("@/hooks/useEngine", () => ({
 	useEngine: () => ({
 		engine: { engine_id: "a" },
 		permission: mocks.permission,
 	}),
 }));
-vi.mock("@/hooks/use-session", () => ({ useSession: () => mocks.isAdmin }));
 vi.mock("@/hooks/use-project", () => ({
 	useProject: () => ({
 		project: { project_id: "p" },

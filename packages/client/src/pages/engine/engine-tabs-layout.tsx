@@ -2,6 +2,7 @@ import { ChevronRightIcon, SquareArrowOutUpRightIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Link, matchPath, Navigate, Outlet, useLocation } from "react-router";
 import type { Role } from "@semoss/sdk";
+import { useSession } from "@semoss/sdk/react";
 import { EngineSubtypeIcon, EntityHeader } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -21,7 +22,6 @@ import { NavbarHeader } from "@/components/shared/navbar-header";
 import { NavbarLeft } from "@/components/shared/navbar-left";
 import { EngineActionsMenu } from "@/features/engine-actions/engine-actions-menu";
 import { MyUsageLimitButton } from "@/features/usage-limit-path/my-usage-limit-button";
-import { useSession } from "@/hooks/use-session";
 import { useEngine } from "@/hooks/useEngine";
 import { useNavigate } from "@/hooks/useNavigate";
 
@@ -45,8 +45,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const { catalog, engine, permission, type, update } = useEngine();
-	const insightID = useSession((state) => state.insightID);
-	const isAdmin = useSession((state) => state.user.admin);
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
 	const enginePath = `${catalog.path}/${engine.engine_id}`;
 
 	// get the visible tabs based on permission
@@ -94,7 +93,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 	 * Save the engine's new display name and show it in place
 	 */
 	const handleRename = async (name: string) => {
-		await setEngineDisplayName(insightID, engine.engine_id, name);
+		await setEngineDisplayName(engine.engine_id, name);
 		update({ engine_display_name: name });
 	};
 

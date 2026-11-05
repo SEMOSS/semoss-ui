@@ -15,9 +15,14 @@ const { runPixel, navigate } = vi.hoisted(() => ({
 	navigate: vi.fn(),
 }));
 
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	runPixel,
+	// the create pixel runs in the session's insight, beside any upload
+	useSessionInsight: () => ({ run: runPixel, upload: vi.fn() }),
+}));
+
 vi.mock("@/hooks", () => ({
-	useSession: (selector: (state: { runPixel: typeof runPixel }) => unknown) =>
-		selector({ runPixel }),
 	useStepper: () => {
 		const [isLoading, setIsLoading] = useState(false);
 		return { isLoading, setIsLoading };

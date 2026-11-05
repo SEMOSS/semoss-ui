@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
+import { runPixel, useInsight } from "@semoss/sdk/react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import type { AppRef, FileMode } from "../../types";
-import { runPixel } from "../../utility/pixel";
 import { useTerminal } from "./terminal-context";
 
 const PAGE_SIZE = 50;
@@ -17,7 +16,9 @@ const DEBOUNCE_MS = 250;
  */
 export const ScopePicker = () => {
 	const terminal = useTerminal();
-	const { actions } = useInsight();
+	// The active terminal tab's insight: the picker renders inside the Files
+	// pane's adopted provider, and `LoadApp` must run in that workspace.
+	const { actions, insightId } = useInsight();
 	const { t } = useTranslation("chrome");
 
 	const [scope, setScope] = useState<"INSIGHT" | "APP" | "USER">(
@@ -84,18 +85,16 @@ export const ScopePicker = () => {
 				? `filterWord=["<encode>${filter}</encode>"], `
 				: "";
 			const pixel = `META | MyProjects(${filterArg}limit=[${PAGE_SIZE}], offset=[${offsetOverride}]);`;
-			const resp = await runPixel<AppRef[]>(actions, pixel);
+			// a catalog read; it runs on every search and page, so it runs in the
+			// tab's insight rather than making one each time
+			const output = await runPixel<[AppRef[]]>(pixel, insightId)
+				.then(({ errors, pixelReturn }) =>
+					errors.length ? null : pixelReturn[0]?.output,
+				)
+				.catch(() => null);
 			setLoading(false);
 
-			let next: AppRef[] = [];
-			if (
-				resp &&
-				!resp.operationType.some(
-					(opType) => opType.indexOf("ERROR") > -1,
-				)
-			) {
-				next = Array.isArray(resp.output) ? resp.output : [];
-			}
+			const next: AppRef[] = Array.isArray(output) ? output : [];
 
 			if (offsetOverride === 0) {
 				setApps(next);
@@ -105,7 +104,7 @@ export const ScopePicker = () => {
 			setOffset(offsetOverride + next.length);
 			setHasMore(next.length === PAGE_SIZE);
 		},
-		[actions],
+		[insightId],
 	);
 
 	// (re)load when the picker opens or the debounced search changes
@@ -273,26 +272,12 @@ export const ScopePicker = () => {
 												// before updating selectedApp so that
 												// TerminalConsole's GetProjectAvailableReactors
 												// call sees a populated hash.
-												const result = await runPixel(
-													actions,
+												// throws when LoadApp fails, so the
+												// context only updates on success
+												await actions.run(
 													`LoadApp("${app.project_id}");`,
 												);
-												// Only update context if LoadApp succeeded
-												if (
-													result &&
-													!result.operationType.some(
-														(t) =>
-															t.indexOf("ERROR") >
-															-1,
-													)
-												) {
-													setSelectedApp(app);
-												} else {
-													terminal.alert(
-														"error",
-														`Failed to load app: ${app.project_name}`,
-													);
-												}
+												setSelectedApp(app);
 											} catch {
 												terminal.alert(
 													"error",

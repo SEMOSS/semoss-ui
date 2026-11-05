@@ -2,7 +2,6 @@ import { useState } from "react";
 import { reloadApp } from "@semoss/sdk";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useSession } from "@/hooks/use-session";
 
 /** What {@link useAppPythonReload} gives its caller. */
 export interface UseAppPythonReloadResult {
@@ -20,7 +19,6 @@ export interface UseAppPythonReloadResult {
  * @returns The reload action and its state.
  */
 export const useAppPythonReload = (appId: string): UseAppPythonReloadResult => {
-	const insightID = useSession((state) => state.insightID);
 	const [isReloading, setIsReloading] = useState(false);
 
 	const reloadPython = async () => {
@@ -28,7 +26,7 @@ export const useAppPythonReload = (appId: string): UseAppPythonReloadResult => {
 		let success: string[];
 		let warnings: string[];
 		try {
-			({ success, warnings } = await reloadApp(appId, insightID));
+			({ success, warnings } = await reloadApp(appId));
 		} catch (e: unknown) {
 			toast.error(
 				getErrorMessage(e, "Could not reload the python files"),

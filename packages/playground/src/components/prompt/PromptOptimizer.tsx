@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Spinner,
@@ -55,7 +55,6 @@ function escapeForPixelCommand(raw: string): string {
 /** Optimize the current draft, with a single-click revert until it changes. */
 export const PromptOptimizer: React.FC<PromptOptimizerProps> = observer(
 	({ input, setInput, disabled, modelId, room }) => {
-		const { actions } = useInsight();
 		const { t } = useTranslation("room");
 		const { chat } = useChat();
 
@@ -101,7 +100,10 @@ export const PromptOptimizer: React.FC<PromptOptimizerProps> = observer(
 					? `"<encode>${context}</encode>"`
 					: "";
 				const pixel = `LLM(engine=["${selectedModelId}"], command=["${escapedPrompt}"], context=[${contextValue}], paramValues=[{"max_tokens":10000}]);`;
-				const response = (await actions.run(pixel)) as LLMResponse;
+				// the LLM call belongs to no workspace; a pixel error comes back
+				// as an ERROR operation, handled below
+				const response: LLMResponse =
+					await runPixel<[LLMOutput]>(pixel);
 				if (requestId !== requestRef.current) return;
 
 				if (!response?.pixelReturn?.[0]) {

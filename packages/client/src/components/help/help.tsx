@@ -8,8 +8,37 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
 import { formatToDataTestId } from "@semoss/utility/text";
-import { useConfig } from "@/hooks";
+import { useThemeConfig } from "@/hooks";
+
+/** One help link the theme lists. */
+interface HelpLink {
+	src: string;
+	label: string;
+	disabled: boolean;
+}
+
+/**
+ * Read one help link from the theme's `helpBannerValues`.
+ *
+ * @param values - The theme's help links by key, as the server sent them.
+ * @param key - The link to read.
+ * @returns The link, or null when the theme has no valid link for the key.
+ */
+const getHelpLink = (values: unknown, key: string): HelpLink | null => {
+	const value = isRecord(values) ? values[key] : undefined;
+	if (!isRecord(value)) {
+		return null;
+	}
+
+	return {
+		src: typeof value.src === "string" ? value.src : "",
+		label: typeof value.label === "string" ? value.label : "",
+		// a theme may send the flag as text, which always disabled the link
+		disabled: Boolean(value.disabled) && value.disabled !== "false",
+	};
+};
 
 export interface HelpProps {
 	/** Classes for the sidebar button that opens the menu */
@@ -25,28 +54,10 @@ export interface HelpProps {
 export const Help = (props: HelpProps): JSX.Element | null => {
 	const { className, onOpenChange } = props;
 
-	const raw = useConfig(
-		(state) =>
-			(state.config.theme as { THEME_MAP?: string } | undefined)
-				?.THEME_MAP,
-	);
-	if (!raw) return null;
+	const { helpBannerOrder, helpBannerValues } = useThemeConfig();
 
-	let themeMap: {
-		helpBannerOrder: string[];
-		helpBannerValues: Record<
-			string,
-			{ src: string; label: string; disabled?: boolean }
-		>;
-	};
-	try {
-		const parsed = JSON.parse(raw);
-		themeMap = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
-	} catch {
-		return null;
-	}
-
-	if (!themeMap?.helpBannerOrder?.length) {
+	// the theme comes from the server, so its order may not be a list
+	if (!Array.isArray(helpBannerOrder) || helpBannerOrder.length === 0) {
 		return null;
 	}
 
@@ -65,18 +76,16 @@ export const Help = (props: HelpProps): JSX.Element | null => {
 					</SidebarMenuButton>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent side="right" align="end" sideOffset={8}>
-					{themeMap.helpBannerOrder
+					{helpBannerOrder
 						.filter((key) => key !== "tutorials")
 						.map((key) => {
-							const v = themeMap.helpBannerValues[key];
+							const v = getHelpLink(helpBannerValues, key);
 
 							if (v) {
 								return (
 									<DropdownMenuItem
 										key={key}
-										disabled={
-											v.disabled ? v.disabled : false
-										}
+										disabled={v.disabled}
 										asChild
 									>
 										<a

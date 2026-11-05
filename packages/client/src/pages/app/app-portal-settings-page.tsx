@@ -1,6 +1,6 @@
 import { CloudUploadIcon } from "lucide-react";
 import { useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { runPixel, usePixel, useSession } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -18,7 +18,6 @@ import { getErrorMessage } from "@semoss/utility/error";
 import { SettingsLinkField } from "@/components/settings/settings-link-field";
 import { getAppShareUrl } from "@/components/ui/share/app-share-url";
 import { useProject } from "@/hooks/use-project";
-import { useSession } from "@/hooks/use-session";
 import { useSettings } from "@/hooks/useSettings";
 
 /** An app's portal, as GetProjectPortalDetails reads it */
@@ -36,9 +35,8 @@ interface PortalDetails {
  */
 export const AppPortalSettingsPage = () => {
 	const { project } = useProject();
-	const sessionRunPixel = useSession((state) => state.runPixel);
-	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
+	const canShare = useSession((state) =>
+		state.canPerform("PROJECT", "access"),
 	);
 	const { adminMode } = useSettings();
 	const [isPublishing, setIsPublishing] = useState(false);
@@ -57,7 +55,7 @@ export const AppPortalSettingsPage = () => {
 	const handlePublish = async () => {
 		setIsPublishing(true);
 		try {
-			const response = await sessionRunPixel(
+			const response = await runPixel(
 				`PublishProject(project='${project.project_id}', release=true);`,
 			);
 			const [result] = response.pixelReturn;
@@ -93,11 +91,7 @@ export const AppPortalSettingsPage = () => {
 					<Button
 						type="button"
 						size="sm"
-						disabled={
-							!isLoaded ||
-							isPublishing ||
-							!isEngineOperationAvailable("PROJECT", "access")
-						}
+						disabled={!isLoaded || isPublishing || !canShare}
 						onClick={handlePublish}
 						data-testid="appPortal-publish-btn"
 					>

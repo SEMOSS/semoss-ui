@@ -1,7 +1,8 @@
 // biome-ignore-all lint/correctness/useUniqueElementIds: shared navbar slot IDs
 import { Bell } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { runPixel } from "@semoss/sdk";
+import { Session } from "@semoss/sdk";
+import { useConfig } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -9,7 +10,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useConfig, usePage } from "@/hooks";
+import { usePage } from "@/hooks";
 import { NotificationDrawer } from "../notifications/notification-drawer";
 
 const PlatformSearch = lazy(() =>
@@ -24,7 +25,7 @@ export const Navbar: React.FC = () => {
 	const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 	const [hasUnread, setHasUnread] = useState<number>(0);
 	const notificationsEnabled = useConfig(
-		(state) => state.config.notificationEnabled,
+		(state) => state.config?.notificationEnabled === true,
 	);
 
 	useEffect(() => {
@@ -38,7 +39,8 @@ export const Navbar: React.FC = () => {
 		async function poll() {
 			try {
 				const pixel = `PollNotifications()`;
-				const res = await runPixel(pixel);
+				// runs every minute, so it shares the session's insight
+				const res = await Session.insight.run(pixel);
 				const num = res.pixelReturn[0].output;
 				if (isActive) {
 					setHasUnread(num as number);

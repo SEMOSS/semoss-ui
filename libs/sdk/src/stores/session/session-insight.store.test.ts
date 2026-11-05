@@ -85,6 +85,64 @@ describe("SessionInsightStore", () => {
 		expect(mockRunPixel).toHaveBeenCalledWith("META | init", "new");
 	});
 
+	it("fails only the first call when it fails, not the calls that joined it", async () => {
+		mockRunPixel.mockImplementation(async (pixel, insightId) => {
+			if (pixel === "bad;") {
+				throw new Error("server error");
+			}
+			return answer(
+				insightId === "new" ? "insight-1" : String(insightId),
+			);
+		});
+		const insight = new SessionInsightStore();
+
+		const first = insight.run("bad;");
+		const second = insight.run("good;");
+
+		await expect(first).rejects.toThrow("server error");
+		await expect(second).resolves.toMatchObject({ insightId: "insight-1" });
+		expect(mockRunPixel).toHaveBeenCalledWith("META | init", "new");
+		expect(mockRunPixel).toHaveBeenCalledWith("good;", "insight-1");
+		expect(insight.getSnapshot().insightId).toBe("insight-1");
+	});
+
+	it("keeps the insight after a pixel error, so later calls still run", async () => {
+		mockRunPixel.mockImplementationOnce(async () => ({
+			insightId: "insight-1",
+			errors: ["Bad pixel"],
+			pixelReturn: [],
+		}));
+		const insight = new SessionInsightStore();
+
+		const failed = await insight.run("bad;");
+		const next = await insight.run("good;");
+
+		expect(failed.errors).toEqual(["Bad pixel"]);
+		expect(next.errors).toEqual([]);
+		expect(mockRunPixel).toHaveBeenLastCalledWith("good;", "insight-1");
+	});
+
+	it("makes the insight again after a failed first call, for the next call", async () => {
+		mockRunPixel.mockRejectedValueOnce(new Error("offline"));
+		const insight = new SessionInsightStore();
+
+		await expect(insight.run("1+1;")).rejects.toThrow("offline");
+		await expect(insight.run("2+2;")).resolves.toMatchObject({
+			insightId: "insight-1",
+		});
+	});
+
+	it("makes the insight on ensure, and reuses it after", async () => {
+		const insight = new SessionInsightStore();
+
+		expect(await insight.ensure()).toBe("insight-1");
+		expect(await insight.ensure()).toBe("insight-1");
+		await insight.withInsight(async (insightId) => insightId);
+
+		expect(mockRunPixel).toHaveBeenCalledTimes(1);
+		expect(mockRunPixel).toHaveBeenCalledWith("META | init", "new");
+	});
+
 	it("makes the insight before an upload, which the backend requires", async () => {
 		mockUpload.mockResolvedValue([]);
 		const insight = new SessionInsightStore();

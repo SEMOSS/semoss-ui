@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 	workspace: {} as Record<string, unknown>,
 	editWorkspace: vi.fn(),
 	navigate: vi.fn(),
+	refreshPermission: vi.fn(() => Promise.resolve("OWNER")),
 }));
 // Query snapshots are supplied through rerender instead of an SDK subscription.
 vi.mock("mobx-react-lite", () => ({
@@ -37,10 +38,6 @@ vi.mock("@/hooks/use-chat", () => ({
 vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
 }));
-vi.mock("@semoss/sdk", async (original) => ({
-	...(await original<typeof import("@semoss/sdk")>()),
-	getUserProjectPermission: async () => "OWNER",
-}));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	usePixel: (pixel: string) => ({
@@ -53,6 +50,16 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 		isLoading: false,
 		hasMore: false,
 	}),
+	// the signed in user owns the agent
+	useSessionPermissions: () => ({
+		status: "READY",
+		permission: "OWNER",
+		canEdit: true,
+		isOwner: true,
+		refresh: mocks.refreshPermission,
+	}),
+	useConfig: <T,>(selector: (state: { config: null }) => T) =>
+		selector({ config: null }),
 }));
 vi.mock("@semoss/shared", async (original) => ({
 	...(await original<typeof import("@semoss/shared")>()),
@@ -235,6 +242,8 @@ test("the detail view shows the shared agent definition with its attached resour
 	expect(screen.getByText("Notes")).toBeVisible();
 	expect(screen.getByText("Files")).toBeVisible();
 	expect(screen.getByText("Writing")).toBeVisible();
+	// the role may have changed on the edit page, so it is read on each visit
+	expect(mocks.refreshPermission).toHaveBeenCalled();
 	expect(screen.getByText("Summarize")).toBeVisible();
 	expect(screen.getByText("Welcome")).toBeVisible();
 	expect(screen.getByText(/First\s+Second/)).toBeVisible();

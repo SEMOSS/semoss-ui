@@ -1,6 +1,6 @@
 import { Copy, EyeOff, LockKeyhole, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -22,7 +22,7 @@ import {
 } from "@/api";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useDeleteResource } from "@/features/resource-delete/use-delete-resource";
-import { useSession, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
 
 interface SettingsTilesProps {
@@ -94,9 +94,13 @@ const AlertTile = ({
 export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { id, type, name, condensed, onDelete, direction = "column" } = props;
 
-	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
+	const canSetPublic = useSession((state) =>
+		state.canPerform(type, "public"),
 	);
+	const canSetDiscoverable = useSession((state) =>
+		state.canPerform(type, "discoverable"),
+	);
+	const canDelete = useSession((state) => state.canPerform(type, "delete"));
 	const { adminMode } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
@@ -403,9 +407,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										: `Make ${name} public`
 								}
 								checked={!global}
-								disabled={
-									!isEngineOperationAvailable(type, "public")
-								}
+								disabled={!canSetPublic}
 								data-testid={formatToDataTestId(
 									`settingsTiles-make-${name}-public-private-switch`,
 								)}
@@ -435,10 +437,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												}
 												disabled={
 													global ||
-													!isEngineOperationAvailable(
-														type,
-														"discoverable",
-													)
+													!canSetDiscoverable
 												}
 												data-testid={formatToDataTestId(
 													`settingsTiles-${name}-makeDiscoverable-switch`,
@@ -478,13 +477,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									data-testid={formatToDataTestId(
 										`settingsTiles-${name}-makeDiscoverable-switch`,
 									)}
-									disabled={
-										global ||
-										!isEngineOperationAvailable(
-											type,
-											"discoverable",
-										)
-									}
+									disabled={global || !canSetDiscoverable}
 									checked={!discoverable}
 									onCheckedChange={() => {
 										changeDiscoverable();
@@ -502,9 +495,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						action={
 							<Button
 								variant="destructive"
-								disabled={
-									!isEngineOperationAvailable(type, "delete")
-								}
+								disabled={!canDelete}
 								data-testid={formatToDataTestId(
 									`settingsTiles-${name}-delete-btn`,
 								)}
@@ -555,9 +546,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										: `Make ${name} public`
 								}
 								checked={!global}
-								disabled={
-									!isEngineOperationAvailable(type, "public")
-								}
+								disabled={!canSetPublic}
 								data-testid={formatToDataTestId(
 									`settingsTiles-make-${name}-public-private-switch`,
 								)}
@@ -583,10 +572,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											<Switch
 												disabled={
 													global ||
-													!isEngineOperationAvailable(
-														type,
-														"discoverable",
-													)
+													!canSetDiscoverable
 												}
 												title={
 													discoverable
@@ -618,13 +604,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							description={`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
 							action={
 								<Switch
-									disabled={
-										global ||
-										!isEngineOperationAvailable(
-											type,
-											"discoverable",
-										)
-									}
+									disabled={global || !canSetDiscoverable}
 									title={
 										discoverable
 											? `Make ${name} non-discoverable`
@@ -658,12 +638,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										data-testid={formatToDataTestId(
 											`settingsTiles-${name}-delete-btn`,
 										)}
-										disabled={
-											!isEngineOperationAvailable(
-												type,
-												"delete",
-											)
-										}
+										disabled={!canDelete}
 									>
 										Delete
 									</Button>

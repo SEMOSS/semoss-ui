@@ -1,5 +1,6 @@
 import { LockOpen } from "lucide-react";
 import { useState } from "react";
+import { runPixel } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { PersonIdentity } from "@semoss/shared";
 import {
@@ -23,7 +24,6 @@ import {
 	engineGuardrailLocksQuery,
 	parseEngineGuardrailLocks,
 } from "@/api/guardrails";
-import { useSession } from "@/hooks";
 
 export interface GuardrailLockedUsersProps {
 	/** The engine whose locks are listed */
@@ -45,7 +45,6 @@ export const GuardrailLockedUsers = ({
 	engineId,
 	isEditable,
 }: GuardrailLockedUsersProps) => {
-	const runPixel = useSession((state) => state.runPixel);
 	const locks = usePixel<unknown>(engineGuardrailLocksQuery(engineId));
 	const [unlockingKey, setUnlockingKey] = useState<string | null>(null);
 

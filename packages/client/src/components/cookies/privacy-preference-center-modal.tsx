@@ -10,7 +10,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { useConfig } from "@/hooks";
+import { useThemeConfig } from "@/hooks";
 
 interface PrivacyPreferenceCenterProps {
 	/** determines if the modal is displayed or not */
@@ -24,7 +24,7 @@ export const PrivacyPreferenceCenterModal = (
 	props: PrivacyPreferenceCenterProps,
 ) => {
 	const { isOpen, onClose } = props;
-	const theme = useConfig((state) => state.theme);
+	const theme = useThemeConfig();
 	const [cookiePolicyOrder, setCookiePolicyOrder] = useState<string[]>([]);
 	const [cookiePolicies, setCookiePolicies] = useState({});
 	const [cookiePolicyModalHeader, setCookiePolicyModalHeader] = useState("");

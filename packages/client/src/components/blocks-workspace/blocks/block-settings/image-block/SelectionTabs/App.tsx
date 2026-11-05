@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { upload, usePixel } from "@semoss/sdk/react";
+import { usePixel, useSessionInsight } from "@semoss/sdk/react";
 import { FileDropzone, toast } from "@semoss/ui/next";
 import { getImageFiles, imageExtensions } from "../utils";
 import SelectedItem from "./SelectedItem";
 import SelectImage from "./SelectImage";
 
-const AppTab = ({ id, data, setData, appId, insightId }) => {
+export const AppTab = ({ id, data, setData, appId }) => {
+	// an upload needs an insight to go through, though the image lands in the app
+	const { upload } = useSessionInsight();
 	const [isLoading, setIsLoading] = useState(false);
 	// biome-ignore lint/suspicious/noExplicitAny: pixel response data is untyped
 	const getAssets = usePixel<{ status: string; data: any }>(
@@ -18,7 +20,7 @@ const AppTab = ({ id, data, setData, appId, insightId }) => {
 			setIsLoading(true);
 
 			let uploadRes = null;
-			uploadRes = await upload(file, insightId, appId, "version/assets/");
+			uploadRes = await upload(file, appId, "version/assets/");
 			setData("title", "");
 			setData("src", uploadRes[0]);
 			toast.success("Image uploaded successfully");
@@ -58,5 +60,3 @@ const AppTab = ({ id, data, setData, appId, insightId }) => {
 		</>
 	);
 };
-
-export default AppTab;

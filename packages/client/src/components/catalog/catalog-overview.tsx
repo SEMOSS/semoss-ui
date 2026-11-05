@@ -64,17 +64,11 @@ interface CatalogOverviewProps {
 	id: string;
 	/** Keys to show in the overview */
 	metaKeys: {
-		display_options:
-			| "input"
-			| "textarea"
-			| "markdown"
-			| "single-checklist"
-			| "multi-checklist"
-			| "single-select"
-			| "multi-select"
-			| "single-typeahead"
-			| "multi-typeahead"
-			| "select-box";
+		/**
+		 * How the value is shown, such as `markdown` or `multi-select`, as the
+		 * server's meta keys name it; left out for a plain value
+		 */
+		display_options?: string;
 		display_order: number;
 		metakey: string;
 		single_multi: string;
@@ -260,7 +254,7 @@ export const CatalogOverview = ({
 							</FieldLabel>
 							{renderDynamicValue(
 								metadata[meta.metakey],
-								meta.display_options,
+								meta.display_options ?? "",
 								meta.input_type,
 							)}
 						</Field>

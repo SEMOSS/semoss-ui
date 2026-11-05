@@ -22,7 +22,7 @@ import { useSessionStore } from "./use-session";
  */
 export const useSessionInsight = (): Pick<
 	SessionInsightStore,
-	"run" | "runAsync" | "upload" | "download" | "withInsight"
+	"run" | "runAsync" | "upload" | "download" | "withInsight" | "ensure"
 > & {
 	/** The insight's id, empty until one is made. */
 	insightId: string;
@@ -40,5 +40,6 @@ export const useSessionInsight = (): Pick<
 		upload: insight.upload,
 		download: insight.download,
 		withInsight: insight.withInsight,
+		ensure: insight.ensure,
 	};
 };

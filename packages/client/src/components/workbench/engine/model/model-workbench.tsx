@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { useInsight, useSessionPermissions } from "@semoss/sdk/react";
 import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -16,7 +16,7 @@ import {
 	WorkbenchResetButton,
 } from "@semoss/workbench";
 import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
-import { useEngine, useSession } from "@/hooks";
+import { useEngine } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
@@ -153,15 +153,13 @@ export const ModelWorkbench: React.FC = () => {
 		`workbench-layout--${workbenchId}--2`,
 		workbenchLayout,
 	);
-	const syncPermission = useSession((state) => state.syncPermission);
-	const refreshPermission = useSession((state) => state.refreshPermission);
+	const { sync: syncPermission, refresh: refreshPermission } =
+		useSessionPermissions("ENGINE", engine.engine_id);
 
 	useEffect(() => {
-		syncPermission("ENGINE", engine.engine_id, permission);
-		void refreshPermission("ENGINE", engine.engine_id).catch(
-			() => undefined,
-		);
-	}, [syncPermission, refreshPermission, engine.engine_id, permission]);
+		syncPermission(permission);
+		void refreshPermission().catch(() => undefined);
+	}, [syncPermission, refreshPermission, permission]);
 
 	// Created once per workbench instance before its panels render.
 	const [chatStore] = useState<StoreApi<ModelChatStoreInterface>>(() => {

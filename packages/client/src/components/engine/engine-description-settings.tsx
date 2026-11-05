@@ -1,7 +1,6 @@
-import type { Role } from "@semoss/sdk";
+import { type Role, runPixel } from "@semoss/sdk";
 import type { Engine } from "@semoss/shared";
 import { CatalogDescriptionSettings } from "@/components/catalog";
-import { useSession } from "@/hooks";
 
 interface EngineDescriptionSettingsProps {
 	/** Current engine */
@@ -23,8 +22,6 @@ export const EngineDescriptionSettings = ({
 	permission,
 	onUpdated,
 }: EngineDescriptionSettingsProps) => {
-	const runPixel = useSession((state) => state.runPixel);
-
 	return (
 		<CatalogDescriptionSettings
 			metadata={engine as unknown as Record<string, unknown>}

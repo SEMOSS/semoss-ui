@@ -5,6 +5,7 @@ import {
 	download,
 	getPixelAsyncResult,
 	console as getPixelConsole,
+	runPixel,
 	runPixelAsync,
 } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
@@ -16,7 +17,6 @@ import type {
 	ConsoleHistoryStep,
 	ConsoleState,
 } from "../../types";
-import { runPixel } from "../../utility/pixel";
 import { useResizableHandle } from "../../utility/resizable";
 import { useTerminal } from "../terminal/terminal-context";
 import { Tooltip } from "../tooltip";
@@ -549,16 +549,15 @@ export const TerminalConsole = ({
 		let cancelled = false;
 		(async () => {
 			try {
-				const helpResp = await runPixel<string>(actions, `Help();`);
+				// the platform catalog belongs to no workspace
+				const { errors, pixelReturn } =
+					await runPixel<[string]>(`Help();`);
 				if (cancelled) return;
 
 				const items: ReactorSuggestion[] = [];
+				const helpResp = pixelReturn[0];
 
-				if (
-					helpResp &&
-					Array.isArray(helpResp.operationType) &&
-					!helpResp.operationType.some((t) => t.indexOf("ERROR") > -1)
-				) {
+				if (helpResp && errors.length === 0) {
 					const raw =
 						typeof helpResp.output === "string"
 							? helpResp.output
@@ -586,7 +585,7 @@ export const TerminalConsole = ({
 		return () => {
 			cancelled = true;
 		};
-	}, [isAuthorized, actions, rebuildReactorCatalog]);
+	}, [isAuthorized, rebuildReactorCatalog]);
 
 	// App-specific reactors — re-fetched only when the project context changes.
 	useEffect(() => {
@@ -598,13 +597,14 @@ export const TerminalConsole = ({
 		let cancelled = false;
 		(async () => {
 			try {
-				const appResp = await runPixel<string[]>(
-					actions,
+				// runs in this tab's insight, where LoadApp seeded the project
+				const { pixelReturn } = await actions.run<[string[]]>(
 					`GetProjectAvailableReactors(project=['${effectiveProjectId}']);`,
 				);
 				if (cancelled) return;
-				if (appResp && Array.isArray(appResp.output)) {
-					appReactorsRef.current = appResp.output
+				const appReactors = pixelReturn[0]?.output;
+				if (Array.isArray(appReactors)) {
+					appReactorsRef.current = appReactors
 						.filter((name) => !!name)
 						.map((name) => ({ name, meta: "app" }));
 					rebuildReactorCatalog();

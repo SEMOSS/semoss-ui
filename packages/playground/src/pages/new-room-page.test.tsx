@@ -9,6 +9,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { Session } from "@semoss/sdk/react";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import type { RoomInput } from "@/components/room/room-input";
 import type { RoomOptionsForm } from "@/components/room/room-options-form";
@@ -23,6 +24,17 @@ const mocks = vi.hoisted(() => ({
 	navigate: vi.fn(),
 	selectModelById: vi.fn(),
 	workspaceStatus: "SUCCESS",
+	// the signed in user, with the model set as default in their profile
+	session: {
+		status: "AUTHENTICATED",
+		user: {
+			name: "Tester",
+			defaultModels: {
+				textGeneration: "default-model",
+				codeGeneration: "",
+			},
+		},
+	},
 	refreshWorkspace: vi.fn(),
 	// stable, as the SDK's are, so views keep the same logins between renders
 	logins: {
@@ -59,9 +71,6 @@ const root = {
 const chat = {
 	...mocks,
 	models: { selected: null },
-	user: { name: "Tester" },
-	profileDefaultModelId: "default-model",
-	refreshProfileDefaultModel: vi.fn(),
 	setSelectedModel: vi.fn(),
 	addOptimisticRoom: vi.fn(),
 	removeOptimisticRoom: vi.fn(),
@@ -87,6 +96,8 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	InsightProvider: ({ children }: { children: ReactNode }) => children,
 	// the session's logins, without reading them from a server
 	useLogins: () => mocks.logins,
+	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
+		selector(mocks.session),
 	usePixel: (pixel: string) => ({
 		status: pixel.includes("GetWorkspace")
 			? mocks.workspaceStatus
@@ -300,6 +311,7 @@ beforeEach(() => {
 	mocks.workspaceStatus = "SUCCESS";
 	root.theme.featureFlags.enableAgentHarness = true;
 	mocks.createRoom.mockResolvedValue({ roomId: "sent" });
+	vi.spyOn(Session, "reloadUser").mockResolvedValue(Session.getSnapshot());
 });
 afterEach(() => {
 	vi.restoreAllMocks();
@@ -330,6 +342,15 @@ function createPreparedRoom(): RoomStore {
 		panelComponents: ROOM_PANEL_COMPONENTS,
 	});
 }
+
+test("reads the user again and selects their default model without an agent", async () => {
+	render(<NewRoomPage />);
+	expect(Session.reloadUser).toHaveBeenCalledTimes(1);
+	await waitFor(() =>
+		expect(mocks.selectModelById).toHaveBeenCalledWith("default-model"),
+	);
+	expect(screen.getByText("room:welcome")).toBeVisible();
+});
 
 test("selecting an agent and changing modes preserves its settings and the composer draft", async () => {
 	renderWorkspace();

@@ -1,11 +1,11 @@
 import { useCallback } from "react";
 import { Outlet, useParams } from "react-router";
-import { usePixel } from "@semoss/sdk/react";
+import { useConfig, usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { EngineContext } from "@/contexts";
-import { useAPI, useConfig } from "@/hooks";
+import { useAPI } from "@/hooks";
 
 interface EngineLayoutProps {
 	/** Catalog information */
@@ -36,7 +36,7 @@ const getEngineOverviewMetaKeys = (
 export const EngineLayout: React.FC<EngineLayoutProps> = ({ catalog }) => {
 	const { engineId } = useParams();
 	const databaseMetaKeys = useConfig(
-		(state) => state.config.databaseMetaKeys,
+		(state) => state.config?.databaseMetaKeys ?? [],
 	);
 
 	// Always request dedicated overview fields, including the catalog description.

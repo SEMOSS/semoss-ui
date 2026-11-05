@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 import { Spinner, useTheme } from "@semoss/ui/next";
 import { LoginForm } from "./form/login-form";
+import { SessionError } from "./session-error";
 
 interface LoginPageProps {
 	/**
@@ -28,21 +29,16 @@ interface LoginPageProps {
 
 /**
  * Drop-in auth gate. Wrap your app's root with this and the user will see the
- * shared login form until `useInsight().isAuthorized` flips to true, at which
- * point the wrapped children render.
- *
- * Must be mounted inside an `<InsightProvider>` (so `LoginForm` can call
- * `actions.login(...)`).
+ * shared login form until the SDK's `Session` is signed in, at which point the
+ * wrapped children render. It needs no provider.
  *
  * Example:
  *
- *     <InsightProvider>
- *       <ThemeProvider defaultTheme="light" storageKey="...">
- *         <LoginPage branding={<AppLogo />} imageSrc={...}>
- *           <YourApp />
- *         </LoginPage>
- *       </ThemeProvider>
- *     </InsightProvider>
+ *     <ThemeProvider defaultTheme="light" storageKey="...">
+ *       <LoginPage branding={<AppLogo />} imageSrc={...}>
+ *         <YourApp />
+ *       </LoginPage>
+ *     </ThemeProvider>
  */
 export const LoginPage = ({
 	branding,
@@ -50,12 +46,12 @@ export const LoginPage = ({
 	imageSrcDark,
 	children,
 }: LoginPageProps) => {
-	const { isInitialized, isAuthorized } = useInsight();
+	const status = useSession((state) => state.status);
 	const { theme: colorMode } = useTheme();
 
-	// While the insight is still bootstrapping (figuring out auth state)
-	// show a centered spinner so the page doesn't flash login + then app.
-	if (!isInitialized) {
+	// While the session is still being read, show a centered spinner so the
+	// page doesn't flash login + then app.
+	if (status === "INITIALIZING") {
 		return (
 			<div className="flex h-svh w-full items-center justify-center">
 				<Spinner />
@@ -63,8 +59,13 @@ export const LoginPage = ({
 		);
 	}
 
-	if (isAuthorized) {
+	if (status === "AUTHENTICATED") {
 		return <>{children}</>;
+	}
+
+	// the user may still be signed in, so offer to read the session again
+	if (status === "ERROR") {
+		return <SessionError />;
 	}
 
 	const isDark =

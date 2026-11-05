@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { useInsight, useSessionPermissions } from "@semoss/sdk/react";
 import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -18,7 +18,7 @@ import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
 import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
 import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
-import { useAssistantStore, useProject, useSession } from "@/hooks";
+import { useAssistantStore, useProject } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
@@ -159,8 +159,8 @@ export const SkillWorkbench: React.FC = () => {
 		workbenchLayout,
 	);
 
-	const syncPermission = useSession((s) => s.syncPermission);
-	const refreshPermission = useSession((s) => s.refreshPermission);
+	const { sync: syncPermission, refresh: refreshPermission } =
+		useSessionPermissions("PROJECT", project.project_id);
 
 	const assistantStore = useAssistantStore(workbenchId);
 
@@ -173,10 +173,8 @@ export const SkillWorkbench: React.FC = () => {
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		syncPermission("PROJECT", project.project_id, permission);
-		void refreshPermission("PROJECT", project.project_id).catch(
-			() => undefined,
-		);
+		syncPermission(permission);
+		void refreshPermission().catch(() => undefined);
 
 		assistantStore.getState().configure({
 			onRunCompleted: filesChanged,

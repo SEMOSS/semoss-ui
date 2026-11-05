@@ -31,8 +31,9 @@ vi.mock("@semoss/sdk/react", () => ({
 	},
 }));
 
-vi.mock("@/hooks", () => ({
-	useSession: () => ({ runPixel: async () => ({}) }),
+vi.mock("@semoss/sdk", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk")>()),
+	runPixel: async () => ({ errors: [], insightId: "", pixelReturn: [] }),
 }));
 
 const { EngineModelSettings } = await import("./engine-model-settings");

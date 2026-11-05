@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
+import { useSession } from "@semoss/sdk/react";
 import { Button, H4, Muted } from "@semoss/ui/next";
 import BI from "@/assets/img/BI.png";
 import BIDark from "@/assets/img/BI-dark.png";
@@ -18,7 +19,7 @@ import {
 	LandingHeader,
 	SystemAppCard,
 } from "@/components/landing";
-import { useAdminMode, usePage, useSession } from "@/hooks";
+import { useAdminMode, usePage } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -33,9 +34,9 @@ export const LandingPage: React.FC = () => {
 		showNavbarSearch: true,
 	});
 
-	const isAdmin = useSession((state) => state.user.admin);
-	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
+	const canAddProject = useSession((state) =>
+		state.canPerform("PROJECT", "add"),
 	);
 	const navigate = useNavigate();
 	const adminMode = useAdminMode();
@@ -46,7 +47,7 @@ export const LandingPage: React.FC = () => {
 
 	const isNameOpen = !!newAppOptions;
 
-	const isRestricted = !isEngineOperationAvailable("PROJECT", "add");
+	const isRestricted = !canAddProject;
 
 	return (
 		<>

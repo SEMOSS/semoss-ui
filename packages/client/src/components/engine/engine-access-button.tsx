@@ -1,7 +1,7 @@
 import { Eye, LockKeyhole, Pencil, Plus, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import type { Role } from "@semoss/sdk";
+import { type Role, runPixel } from "@semoss/sdk";
 import {
 	Button,
 	Card,
@@ -20,7 +20,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
-import { useEngine, useSession } from "@/hooks";
+import { useEngine } from "@/hooks";
 
 type EngineAccessButtonProps = {
 	fromApp?: boolean;
@@ -61,8 +61,6 @@ const PermissionCard = ({
 
 export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 	const { type, engine, permission } = useEngine();
-
-	const runPixel = useSession((state) => state.runPixel);
 
 	const [open, setOpen] = useState(false);
 	const [requestedRole, setRequestedRole] = useState<Role>("READ_ONLY");

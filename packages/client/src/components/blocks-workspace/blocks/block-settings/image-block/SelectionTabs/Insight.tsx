@@ -3,12 +3,10 @@ import { getImageFiles } from "../utils";
 import SelectedItem from "./SelectedItem";
 import SelectImage from "./SelectImage";
 
-const InsightTab = ({ insightId, data, setData }) => {
+export const InsightTab = ({ data, setData }) => {
 	// biome-ignore lint/suspicious/noExplicitAny: pixel response data is untyped
 	const getAssets = usePixel<{ status: string; data: any }>(
 		`BrowseAsset(filePath=["/"] );`,
-		{},
-		insightId,
 	);
 	const imageFiles =
 		getAssets.status === "SUCCESS" ? getImageFiles(getAssets.data) : [];
@@ -30,5 +28,3 @@ const InsightTab = ({ insightId, data, setData }) => {
 		<SelectImage imageFiles={imageFiles} data={data} setData={setData} />
 	);
 };
-
-export default InsightTab;

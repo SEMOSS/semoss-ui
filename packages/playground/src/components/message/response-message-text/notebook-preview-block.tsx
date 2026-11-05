@@ -44,7 +44,8 @@ interface NotebookPreviewBlockProps {
 /**
  * A chat block that renders a fenced `.ipynb` payload as the interactive shared
  * Notebook (run cells, edit, save to the room). Falls back to a read-only JSON
- * view while streaming, when the JSON can't be parsed, or without a room.
+ * view while streaming, when the JSON can't be parsed, or without a room that
+ * has an insight (a draft room's is still "new").
  */
 export const NotebookPreviewBlock = ({
 	content,
@@ -83,7 +84,9 @@ export const NotebookPreviewBlock = ({
 		}
 	}, [content, isLoading]);
 
-	const showNotebook = isValidNotebook && !!room && !isRaw;
+	// a draft room ("new") has no insight to run cells in, nor one around it
+	const showNotebook =
+		isValidNotebook && !!room && room.insightId !== "new" && !isRaw;
 	const isRunning = showNotebook && notebookState.isRunning;
 
 	const openSaveDialog = () => {

@@ -1,13 +1,16 @@
 import { useState } from "react";
+import { Session } from "@semoss/sdk";
+import { useSession } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Alert, AlertDescription, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { isRecord } from "@semoss/utility/object";
-import { setUserDefaultModel, type UserDefaultModelKey } from "@/api/auth";
 import { useAPI } from "@/hooks/use-api";
-import { useSession } from "@/hooks/use-session";
 import { useSettings } from "@/hooks/useSettings";
 import { DefaultModelField } from "./default-model-field";
+
+/** A default model kept in the user's metadata. */
+type UserDefaultModelKey = "text-generation-model" | "code-generation-model";
 
 /** One default the card offers. */
 interface DefaultModelOption {
@@ -80,23 +83,18 @@ const readModels = (data: unknown): Engine[] => {
 export const DefaultModelsCard = () => {
 	const { adminMode } = useSettings();
 	const getModels = useAPI(["getEngines", adminMode, "", "MODEL"]);
-	const defaultTextGenerationModel = useSession(
-		(state) => state.defaultTextGenerationModel,
-	);
-	const defaultCodeGenerationModel = useSession(
-		(state) => state.defaultCodeGenerationModel,
-	);
-	const updateUserDefaultModel = useSession(
-		(state) => state.updateUserDefaultModel,
+	const values = useSession(
+		(state): Record<UserDefaultModelKey, string> => ({
+			"text-generation-model":
+				state.user?.defaultModels.textGeneration ?? "",
+			"code-generation-model":
+				state.user?.defaultModels.codeGeneration ?? "",
+		}),
 	);
 	const [savingKey, setSavingKey] = useState<UserDefaultModelKey | null>(
 		null,
 	);
 
-	const values: Record<UserDefaultModelKey, string> = {
-		"text-generation-model": defaultTextGenerationModel,
-		"code-generation-model": defaultCodeGenerationModel,
-	};
 	const isLoading =
 		getModels.status === "INITIAL" || getModels.status === "LOADING";
 	const isError = getModels.status === "ERROR";
@@ -107,18 +105,16 @@ export const DefaultModelsCard = () => {
 		option: DefaultModelOption,
 		engineId: string,
 	) => {
-		const previous = values[option.key];
-		if (engineId === previous) {
+		if (engineId === values[option.key]) {
 			return;
 		}
 		const name = `Default ${option.label.toLowerCase()}`;
 		setSavingKey(option.key);
-		updateUserDefaultModel(option.key, engineId);
 		try {
-			await setUserDefaultModel(option.key, engineId);
+			// shown at once; an empty value removes the key, and a refused save reverts it
+			await Session.setMetadata({ [option.key]: engineId });
 			toast.success(engineId ? `${name} saved` : `${name} removed`);
 		} catch (error) {
-			updateUserDefaultModel(option.key, previous);
 			toast.error(getErrorMessage(error, `${name} could not be saved`));
 		} finally {
 			setSavingKey(null);

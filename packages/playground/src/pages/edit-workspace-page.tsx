@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { useConfig, usePixel } from "@semoss/sdk/react";
 import {
 	AgentForm,
 	type AgentFormValues,
@@ -38,8 +38,9 @@ interface AgentFormSeed {
  */
 export const EditWorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
-	const { system } = useInsight();
-	const isDirectoryAvailable = system?.config.msGraphLookup === true;
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config?.msGraphLookup === true,
+	);
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChat();

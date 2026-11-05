@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import { useParams } from "react-router";
+import { useConfig } from "@semoss/sdk/react";
 import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { useGroupManagersSource } from "@/features/group-managers/use-group-managers-source";
 import { TeamPeopleCard } from "@/features/team-details/team-people-card";
 import { useTeamMembersSource } from "@/features/team-members/use-team-members-source";
 import { TeamResourceAccessPanel } from "@/features/team-resource-access/team-resource-access-panel";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
-import { useConfig } from "@/hooks/use-config";
 
 /**
  * One custom team, for its managers, on one page: add and remove its members
@@ -19,7 +19,7 @@ export const ManagedTeamDetailPage = () => {
 	const { id = "" } = useParams<{ id: string }>();
 	const group = useMemo(() => ({ id, type: CUSTOM_TEAM_TYPE }), [id]);
 	const isDirectoryAvailable = useConfig(
-		(state) => state.config.msGraphLookup === true,
+		(state) => state.config?.msGraphLookup === true,
 	);
 	const membersSource = useTeamMembersSource(id, false);
 	const managersSource = useGroupManagersSource(id || null, false);

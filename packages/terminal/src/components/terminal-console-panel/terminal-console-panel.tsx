@@ -44,10 +44,10 @@ export interface TerminalConsolePanelProps {
 
 /**
  * Reports the ambient insight (this tab's) up to the panel whenever it becomes
- * ready or changes, and retracts it on unmount. Rendered inside each Session's
- * InsightProvider so it reads that tab's own insight.
+ * ready or changes, and retracts it on unmount. Rendered inside each
+ * ConsoleSession's InsightProvider so it reads that tab's own insight.
  */
-const SessionInsightReporter = ({
+const ConsoleInsightReporter = ({
 	tabId,
 	onInsight,
 }: {
@@ -62,7 +62,8 @@ const SessionInsightReporter = ({
 	return null;
 };
 
-const Session = ({
+/** One console tab: its own insight, terminal context and transcript. */
+const ConsoleSession = ({
 	appId,
 	tabId,
 	onInsight,
@@ -73,7 +74,7 @@ const Session = ({
 }) => (
 	<InsightProvider options={appId ? { app: appId } : undefined}>
 		<TerminalProvider location="panel">
-			<SessionInsightReporter tabId={tabId} onInsight={onInsight} />
+			<ConsoleInsightReporter tabId={tabId} onInsight={onInsight} />
 			<TerminalConsole projectId={appId} />
 		</TerminalProvider>
 	</InsightProvider>
@@ -174,7 +175,7 @@ export const TerminalConsolePanel = ({
 	if (!allowMultipleTerminals) {
 		return (
 			<div className="flex h-full flex-col overflow-hidden bg-background">
-				<Session
+				<ConsoleSession
 					appId={appId}
 					tabId={tabs[0].id}
 					onInsight={handleTabInsight}
@@ -260,7 +261,7 @@ export const TerminalConsolePanel = ({
 								pointerEvents: isActive ? "auto" : "none",
 							}}
 						>
-							<Session
+							<ConsoleSession
 								appId={appId}
 								tabId={tab.id}
 								onInsight={handleTabInsight}

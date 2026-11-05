@@ -1,6 +1,6 @@
+import { useConfig } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import { CatalogOverview } from "@/components/catalog";
-import { useConfig } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
 
 interface ProjectOverviewProps {
@@ -13,7 +13,9 @@ interface ProjectOverviewProps {
  * Settings tab.
  */
 export const ProjectOverview = ({ project }: ProjectOverviewProps) => {
-	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const projectMetaKeys = useConfig(
+		(state) => state.config?.projectMetaKeys ?? [],
+	);
 
 	if (!project) {
 		return <div className="text-muted-foreground">No details found</div>;

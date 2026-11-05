@@ -4,7 +4,7 @@
 import { ChevronDown, ChevronUp, TriangleAlert, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useWatch } from "react-hook-form";
-import { usePixel } from "@semoss/sdk/react";
+import { runPixel, usePixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -40,7 +40,7 @@ import type {
 	BuiltinToolSelection,
 	ReasoningConfig,
 } from "@/components/engine/engine-metadata-display";
-import { useSession, useStepper } from "@/hooks";
+import { useStepper } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { CatalogMatchState } from "./model-catalog-match";
 import { ModelCatalogMatch } from "./model-catalog-match";
@@ -159,8 +159,8 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		onPickCatalogKey,
 	} = props;
 
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	// a model's files are uploaded, then read by the pixel that creates it
+	const { run, upload } = useSessionInsight();
 	const navigate = useNavigate();
 	const { isLoading, setIsLoading } = useStepper();
 
@@ -371,7 +371,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		}
 
 		// debugger;
-		runPixel(pixel).then(async (response) => {
+		run(pixel).then(async (response) => {
 			const output = response.pixelReturn[0].output,
 				operationType = response.pixelReturn[0].operationType;
 
@@ -533,7 +533,8 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 				userInput,
 			);
 
-			const response = await runPixel(pixelToExecute);
+			// runs as the user types, so it shares the session's insight
+			const response = await run(pixelToExecute);
 			const output = response.pixelReturn[0].output,
 				operationType = response.pixelReturn[0].operationType;
 

@@ -1,9 +1,8 @@
 import { Navigate, useParams } from "react-router";
+import { useConfig, useSession } from "@semoss/sdk/react";
 import { TeamAccessManagement } from "@/features/team-access-management/team-access-management";
 import { MANAGED_TEAMS_PATH } from "@/features/team-list/team-paths";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
-import { useConfig } from "@/hooks/use-config";
-import { useSession } from "@/hooks/use-session";
 
 export interface TeamAccessManagementPageProps {
 	/**
@@ -27,9 +26,9 @@ export const TeamAccessManagementPage = ({
 		type: string;
 	}>();
 	// the signed in role, not the admin mode preference, decides who sees the admin page
-	const isAdmin = useSession((state) => state.user.admin);
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
 	const isDirectoryAvailable = useConfig(
-		(state) => state.config.msGraphLookup === true,
+		(state) => state.config?.msGraphLookup === true,
 	);
 
 	if (admin && !isAdmin) {

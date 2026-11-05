@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useConfig, useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -36,7 +37,7 @@ import { MicrosoftSubscriptions } from "@/components/settings";
 import { SdkBlock } from "@/components/shared/sdk-block";
 import { DefaultModelsCard } from "@/features/default-models/default-models-card";
 import { MyModelUsageCard } from "@/features/my-model-usage/my-model-usage-card";
-import { useAPI, useConfig, useSession } from "@/hooks";
+import { useAPI } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
 
@@ -57,14 +58,20 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const generateKeyFormId = useId();
 	const nativeRegistration = useConfig(
-		(state) => state.config.nativeRegistration,
+		(state) => state.config?.nativeRegistration === true,
 	);
-	const logins = useConfig((state) => state.config.logins);
-	const loginDetails = useConfig((state) => state.config.loginDetails);
-	const { email, id, name, admin, lastLogin, groupInfo } = useSession(
-		(state) => state.user,
-	);
-	const isNative = useSession((state) => state.isNative);
+	const logins = useConfig((state) => state.config?.logins ?? {});
+	const loginDetails = useConfig((state) => state.config?.loginDetails ?? {});
+	const { email, id, name, admin, lastLogin, groupInfo, isNative } =
+		useSession((state) => ({
+			email: state.user?.email ?? "",
+			id: state.user?.id ?? "",
+			name: state.user?.name ?? "",
+			admin: state.user?.isAdmin === true,
+			lastLogin: state.user?.lastLogin,
+			groupInfo: state.user?.groupInfo,
+			isNative: state.user?.isNative === true,
+		}));
 	const groups = groupInfo?.groups ?? [];
 
 	const [addModal, setAddModal] = useState(false);
@@ -74,11 +81,10 @@ export const MyProfilePage = () => {
 
 	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
 
-	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
+	const nativeLogin = logins.NATIVE;
 	// the config keys logins by auth provider, so a Microsoft entry is the only
 	// sign that somebody has a Microsoft login to subscribe with
-	const microsoftLogin = (logins as unknown as { MICROSOFT?: string })
-		?.MICROSOFT;
+	const microsoftLogin = logins.MICROSOFT;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({
@@ -384,11 +390,7 @@ export const MyProfilePage = () => {
 										Login Type
 									</Label>
 									<Input
-										value={
-											Object.keys(
-												loginDetails as object,
-											)[0]
-										}
+										value={Object.keys(loginDetails)[0]}
 										maxLength={500}
 										disabled
 									/>

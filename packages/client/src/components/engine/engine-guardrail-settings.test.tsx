@@ -194,10 +194,9 @@ vi.mock("@semoss/sdk/react", () => ({
 	}),
 }));
 
-vi.mock("@/hooks", () => ({
-	useSession: () => ({
-		runPixel: async () => ({ errors: [] }),
-	}),
+vi.mock("@semoss/sdk", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk")>()),
+	runPixel: async () => ({ errors: [], insightId: "", pixelReturn: [] }),
 }));
 
 /** Renders the editor against a response built from the given overrides. */

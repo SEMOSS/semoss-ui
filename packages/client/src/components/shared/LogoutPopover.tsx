@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { Session } from "@semoss/sdk";
+import { useConfig, useSession } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -25,7 +27,7 @@ import {
 	TooltipTrigger,
 	useTheme,
 } from "@semoss/ui/next";
-import { useConfig, useSession } from "@/hooks";
+import { useThemeConfig } from "@/hooks";
 
 interface LogoutPopoverProps {
 	/** Content to popover */
@@ -37,19 +39,14 @@ interface LogoutPopoverProps {
 export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	const { children, onOpenChange } = props;
 
-	const appTheme = useConfig((state) => state.theme);
-	const version = useConfig((state) => state.config.version);
-	const user = useSession((state) => state.user);
-	const logout = useSession((state) => state.logout);
+	const featureFlags = useThemeConfig().featureFlags;
+	const version = useConfig((state) => state.config?.version);
+	const userName = useSession((state) => state.user?.name ?? "");
+	const lastLogin = useSession((state) => state.user?.lastLogin ?? "");
 	const { theme, setTheme } = useTheme();
 	const [loggingOut, setLoggingOut] = useState(false);
 	const [open, setOpen] = useState(false);
-	const darkModeEnabled =
-		(
-			appTheme as {
-				featureFlags?: { enableDarkMode?: boolean };
-			}
-		).featureFlags?.enableDarkMode ?? true;
+	const darkModeEnabled = featureFlags?.enableDarkMode ?? true;
 
 	const handleOpenChange = (next: boolean) => {
 		setOpen(next);
@@ -61,7 +58,7 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 		handleOpenChange(false);
 		try {
 			setLoggingOut(true);
-			await logout();
+			await Session.logout();
 		} catch (error) {
 			console.error(error);
 			throw error;
@@ -106,19 +103,19 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 				>
 					{/* User info row */}
 					<div className="flex items-center gap-3 border-border border-b px-4 py-3">
-						{user.name ? (
+						{userName ? (
 							<Avatar>
-								<AvatarFallback>{user.name[0]}</AvatarFallback>
+								<AvatarFallback>{userName[0]}</AvatarFallback>
 							</Avatar>
 						) : null}
 						<span className="max-w-[9rem] truncate font-medium text-foreground text-sm">
-							{user.name}
+							{userName}
 						</span>
 					</div>
-					{user.lastLogin && user.lastLogin !== "null" && (
+					{lastLogin && lastLogin !== "null" && (
 						<div className="flex items-center justify-center border-border border-b px-4 py-2">
 							<span className="text-muted-foreground text-xs">
-								Last login: {user.lastLogin} UTC
+								Last login: {lastLogin} UTC
 							</span>
 						</div>
 					)}
@@ -214,10 +211,10 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 					{/* Version info row */}
 					<div className="flex flex-col items-center gap-0.5 px-4 py-3">
 						<span className="truncate text-muted-foreground text-xs">
-							{version.version}
+							{version?.version}
 						</span>
 						<span className="truncate text-muted-foreground text-xs">
-							{version.datetime}
+							{version?.datetime}
 						</span>
 					</div>
 				</PopoverContent>

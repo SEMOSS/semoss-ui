@@ -10,8 +10,6 @@ import { type BuiltInRules, toBuiltInRulesByPolicy } from "./sql-query-policy";
 export interface UseSqlPolicyBuiltInsOptions {
 	/** The SQL_DIALECT whose built-in rules are read. */
 	dialect: string;
-	/** The insight the read runs in. */
-	insightId?: string;
 	/**
 	 * Called once a dialect's built-in rules were read, or could not be, with
 	 * the ones the lists showed before, so the lists can swap one for the other.
@@ -39,12 +37,11 @@ export interface SqlPolicyBuiltIns {
  * to {@link UseSqlPolicyBuiltInsOptions.onChange}. A read for a dialect that
  * was already left is ignored.
  *
- * @param options - The dialect, the insight, and what to do with the rules.
+ * @param options - The dialect, and what to do with the rules.
  * @returns The built-in rules shown, the read's status and a way to read again.
  */
 export const useSqlPolicyBuiltIns = ({
 	dialect,
-	insightId,
 	onChange,
 }: UseSqlPolicyBuiltInsOptions): SqlPolicyBuiltIns => {
 	const [builtIns, setBuiltIns] = useState<BuiltInRules>({});
@@ -60,29 +57,23 @@ export const useSqlPolicyBuiltIns = ({
 		setLastRead({ dialect, isRead });
 	};
 
-	const read = usePixel<unknown>(
-		sqlQueryPolicyDefaultsQuery(dialect),
-		{
-			onSuccess: (output) => {
-				try {
-					show(
-						toBuiltInRulesByPolicy(
-							parseSqlQueryPolicyDefaults(output),
-						),
-						true,
-					);
-				} catch (error: unknown) {
-					console.error(error);
-					show({}, false);
-				}
-			},
-			onError: (_data, error) => {
+	const read = usePixel<unknown>(sqlQueryPolicyDefaultsQuery(dialect), {
+		onSuccess: (output) => {
+			try {
+				show(
+					toBuiltInRulesByPolicy(parseSqlQueryPolicyDefaults(output)),
+					true,
+				);
+			} catch (error: unknown) {
 				console.error(error);
 				show({}, false);
-			},
+			}
 		},
-		insightId,
-	);
+		onError: (_data, error) => {
+			console.error(error);
+			show({}, false);
+		},
+	});
 
 	const isSettled = read.status === "SUCCESS" || read.status === "ERROR";
 	const status: SqlPolicyBuiltIns["status"] =
