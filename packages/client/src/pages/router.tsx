@@ -1,8 +1,7 @@
 import { createHashRouter, Navigate } from "react-router";
 import { RouterProvider } from "react-router/dom";
-import { useSession } from "@semoss/sdk/react";
-import { SessionError } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
+import { useSession } from "@/hooks";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { CookieNoticePage } from "./cookie-notice-page";
 import { ENGINE_ROUTES, EngineRedirect } from "./engine";
@@ -54,12 +53,6 @@ const router = createHashRouter([
 
 export const Router = () => {
 	const status = useSession((state) => state.status);
-
-	// the user may still be signed in, so offer to read the session again
-	// rather than sending them to sign in
-	if (status === "ERROR") {
-		return <SessionError />;
-	}
 
 	if (status === "INITIALIZING") {
 		return (

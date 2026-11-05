@@ -1,7 +1,7 @@
 import { FileIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { usePixel, useSessionInsight } from "@semoss/sdk/react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -29,8 +29,7 @@ export const EmbedDocumentsOverlay = ({
 	onClose,
 }: EmbedDocumentsOverlayProps) => {
 	const { t } = useTranslation("mcp");
-	// the uploaded files are read by a pixel in the insight they went to
-	const { upload, run } = useSessionInsight();
+	const { actions } = useInsight();
 	const fileInputId = useId();
 	const [selectedKnowledge, setSelectedKnowledge] = useState<string | null>(
 		null,
@@ -68,14 +67,14 @@ export const EmbedDocumentsOverlay = ({
 		setIsEmbedding(true);
 		try {
 			// Upload the files
-			const uploaded = await upload(files);
+			const uploaded = await actions.upload(files, "");
 
 			// Create the embeddings
 			const filePaths = uploaded
 				.map(({ fileLocation }) => `"${fileLocation}"`)
 				.join(", ");
 
-			const { errors } = await run<
+			await actions.run<
 				[
 					{
 						engine_id: string;
@@ -85,9 +84,6 @@ export const EmbedDocumentsOverlay = ({
 				engine=["${selectedKnowledge}"],
 				filePaths=[${filePaths}]
 			);`);
-			if (errors.length > 0) {
-				throw new Error(errors.join(""));
-			}
 
 			toast.success(t("messages.embedSuccess"));
 			setFiles([]);

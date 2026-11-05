@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { runPixel } from "@semoss/sdk";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { getDeleteRequest } from "@/features/resource-delete/delete-request";
+import { useSession } from "@/hooks/use-session";
 import { GOVERNANCE_NOUNS, type GovernanceType } from "./governance-types";
 import type { GovernanceResource } from "./use-governance-resources";
 
@@ -30,6 +30,7 @@ export interface DeleteGovernanceResources {
 export const useDeleteGovernanceResources = (
 	entry: GovernanceType,
 ): DeleteGovernanceResources => {
+	const runPixel = useSession((state) => state.runPixel);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const nouns = GOVERNANCE_NOUNS[entry.kind];
 

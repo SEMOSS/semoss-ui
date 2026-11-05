@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { useConfig } from "@semoss/sdk/react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@semoss/ui/next";
 import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { useGroupManagersSource } from "@/features/group-managers/use-group-managers-source";
 import { useTeamMembersSource } from "@/features/team-members/use-team-members-source";
 import { TeamResourceAccessPanel } from "@/features/team-resource-access/team-resource-access-panel";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
+import { useConfig } from "@/hooks/use-config";
 import { TeamPeopleCard } from "./team-people-card";
 import { TeamTotalCard } from "./team-total-card";
 
@@ -27,7 +27,7 @@ export const AdminTeamDetails = ({ id, type }: AdminTeamDetailsProps) => {
 	const group = useMemo(() => ({ id, type }), [id, type]);
 	const isCustom = type === CUSTOM_TEAM_TYPE;
 	const isDirectoryAvailable = useConfig(
-		(state) => state.config?.msGraphLookup === true,
+		(state) => state.config.msGraphLookup === true,
 	);
 	const membersSource = useTeamMembersSource(id, true);
 	// only custom teams have managers

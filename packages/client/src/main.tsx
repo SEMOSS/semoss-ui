@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { Session, waitForEmbedAuth } from "@semoss/sdk/react";
+import { waitForEmbedAuth } from "@semoss/sdk/react";
 import { App, i18nReady } from "./App";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import "./index.css";
@@ -14,9 +14,6 @@ const mount = async () => {
 	// Wait for the active language's translations before the first render so
 	// shared components don't flash raw i18n keys.
 	await Promise.all([waitForEmbedAuth(), i18nReady]);
-
-	// read the platform config, then the user, once any embed has signed in
-	void Session.initialize();
 
 	root.render(
 		// <React.StrictMode>

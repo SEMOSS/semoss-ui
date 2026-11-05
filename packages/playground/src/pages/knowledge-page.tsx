@@ -2,7 +2,7 @@ import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { Env, post, runPixel } from "@semoss/sdk/react";
+import { Env, post, useInsight } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -96,6 +96,7 @@ export const DocumentLibrary = () => {
 	const [assetsError, setAssetsError] = useState<string | null>(null);
 	const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
+	const { actions } = useInsight();
 	const [data, setData] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState(false);
@@ -108,12 +109,9 @@ export const DocumentLibrary = () => {
 			setLoading(true);
 			setLoadError(false);
 			try {
-				const result = await runPixel(
+				const result = await actions.run(
 					`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"])`,
 				);
-				if (result.errors.length > 0) {
-					throw new Error(result.errors.join(""));
-				}
 
 				const pixelData = result?.pixelReturn?.[0];
 				if (!pixelData) {
@@ -135,7 +133,7 @@ export const DocumentLibrary = () => {
 		return () => {
 			active = false;
 		};
-	}, [reload]);
+	}, [actions, reload]);
 
 	const centers = useMemo(() => {
 		const tags = new Set<string>();
@@ -164,15 +162,13 @@ export const DocumentLibrary = () => {
 		setAssetsError(null);
 		setEngineAssets([]);
 
-		void runPixel<
-			{ fileName: string; lastModified: string; fileSize: string }[]
-		>(`ListDocumentsInVectorDatabase(engine=["${selectedEngine.id}"]);`)
+		void actions
+			.run<
+				{ fileName: string; lastModified: string; fileSize: string }[]
+			>(`ListDocumentsInVectorDatabase(engine=["${selectedEngine.id}"]);`)
 			.then((result) => {
 				if (cancelled) {
 					return;
-				}
-				if (result.errors.length > 0) {
-					throw new Error(result.errors.join(""));
 				}
 
 				const output = result?.pixelReturn?.[0]?.output;
@@ -197,7 +193,7 @@ export const DocumentLibrary = () => {
 		return () => {
 			cancelled = true;
 		};
-	}, [documentsModalOpen, selectedEngine?.id]);
+	}, [actions, documentsModalOpen, selectedEngine?.id]);
 
 	const formatted: DocumentLibraryEngine[] =
 		data[0]?.reduce((acc, item) => {
@@ -336,17 +332,19 @@ export const DocumentLibrary = () => {
 
 						// refresh list if a knowledge source was created
 						if (knowledge) {
-							void runPixel(
-								`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"],  metaFilters=[{"tag":${JSON.stringify(
-									["FDA", ...centers],
-								)}}])`,
-							).then((result) => {
-								const pixelData = result.pixelReturn[0];
-								if (result.errors.length > 0 || !pixelData) {
-									return;
-								}
-								setData([pixelData.output]);
-							});
+							void actions
+								.run(
+									`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"],  metaFilters=[{"tag":${JSON.stringify(
+										["FDA", ...centers],
+									)}}])`,
+								)
+								.then((result) => {
+									const pixelData = result?.pixelReturn?.[0];
+									if (!pixelData) {
+										return;
+									}
+									setData([pixelData.output]);
+								});
 						}
 					}}
 				/>

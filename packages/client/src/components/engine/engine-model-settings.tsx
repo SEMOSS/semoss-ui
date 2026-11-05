@@ -1,6 +1,6 @@
 import { RotateCcw } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { type Role, runPixel } from "@semoss/sdk";
+import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -41,6 +41,7 @@ import type {
 	CatalogMatchSuggestion,
 } from "@/components/import/model/model-catalog-match";
 import { ModelCatalogMatch } from "@/components/import/model/model-catalog-match";
+import { useSession } from "@/hooks";
 import {
 	MODEL_PROVIDER_OPTIONS,
 	SERVING_PROVIDER_OPTIONS,
@@ -235,6 +236,8 @@ export const EngineModelSettings = ({
 	permission,
 	onUpdated,
 }: EngineModelSettingsProps) => {
+	const runPixel = useSession((state) => state.runPixel);
+
 	const fieldId = useId();
 	const modelIdFieldId = `${fieldId}-model-id`;
 	const contextWindowFieldId = `${fieldId}-context-window`;

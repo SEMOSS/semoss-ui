@@ -1,6 +1,5 @@
 import { Hammer, Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -16,7 +15,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { McpUsage } from "@/components/shared/mcp-usage";
-import { useEngine } from "@/hooks";
+import { useEngine, useSession } from "@/hooks";
 
 interface MCPToolInputProperty {
 	title?: string;
@@ -62,6 +61,7 @@ const hasPixelError = (operationType?: string[] | string): boolean => {
  */
 export const EngineMcpUsagePage = () => {
 	const { engine, permission } = useEngine();
+	const runPixel = useSession((state) => state.runPixel);
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");
@@ -69,43 +69,46 @@ export const EngineMcpUsagePage = () => {
 	const [openGenerateMcpDialog, setOpenGenerateMcpDialog] = useState(false);
 	const canGenerateMCP = permission === "OWNER" || permission === "EDIT";
 
-	const fetchMcpTools = useCallback(async (engineId: string) => {
-		setMcpToolsLoading(true);
-		setMcpToolsError("");
+	const fetchMcpTools = useCallback(
+		async (engineId: string) => {
+			setMcpToolsLoading(true);
+			setMcpToolsError("");
 
-		try {
-			const response = (await runPixel(
-				`GetMCPTools(engine=["${engineId}"]);`,
-			)) as MCPToolsPixelResponse;
+			try {
+				const response = (await runPixel(
+					`GetMCPTools(engine=["${engineId}"]);`,
+				)) as MCPToolsPixelResponse;
 
-			const result = response?.pixelReturn?.[0];
-			if (hasPixelError(result?.operationType)) {
-				const errorMessage =
-					typeof result?.output === "string"
-						? result.output
-						: "Unable to load MCP tools for this engine.";
+				const result = response?.pixelReturn?.[0];
+				if (hasPixelError(result?.operationType)) {
+					const errorMessage =
+						typeof result?.output === "string"
+							? result.output
+							: "Unable to load MCP tools for this engine.";
+					setMcpTools([]);
+					setMcpToolsError(errorMessage);
+					return;
+				}
+
+				const output = result?.output;
+				const tools =
+					typeof output === "object" && output !== null
+						? output.tools
+						: undefined;
+				setMcpTools(Array.isArray(tools) ? tools : []);
+			} catch (error) {
+				const message = getErrorMessage(
+					error,
+					"Unable to load MCP tools for this engine.",
+				);
 				setMcpTools([]);
-				setMcpToolsError(errorMessage);
-				return;
+				setMcpToolsError(message);
+			} finally {
+				setMcpToolsLoading(false);
 			}
-
-			const output = result?.output;
-			const tools =
-				typeof output === "object" && output !== null
-					? output.tools
-					: undefined;
-			setMcpTools(Array.isArray(tools) ? tools : []);
-		} catch (error) {
-			const message = getErrorMessage(
-				error,
-				"Unable to load MCP tools for this engine.",
-			);
-			setMcpTools([]);
-			setMcpToolsError(message);
-		} finally {
-			setMcpToolsLoading(false);
-		}
-	}, []);
+		},
+		[runPixel],
+	);
 
 	useEffect(() => {
 		if (!engine.engine_id) {

@@ -35,16 +35,11 @@ vi.mock("@semoss/sdk", async (importOriginal) => ({
 	runPixel: vi.fn(),
 	download: vi.fn(),
 }));
-/** The part of the session the pages read */
-interface SessionState {
-	user: { isAdmin: boolean } | null;
-}
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: mocks.usePixel,
 	useInsight: () => ({ insightId: "test-insight" }),
-	useSession: (selector: (state: SessionState) => unknown) =>
-		selector({ user: { isAdmin: mocks.isAdmin } }),
 }));
+vi.mock("@/hooks/use-session", () => ({ useSession: () => mocks.isAdmin }));
 
 const summary = {
 	REQUESTS: 2,

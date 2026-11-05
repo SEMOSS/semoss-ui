@@ -37,6 +37,10 @@ vi.mock("@semoss/sdk/react", () => ({
 vi.mock("@/api/guardrails", () => ({
 	createGuardrailEngine: mocks.createGuardrailEngine,
 }));
+vi.mock("@/hooks/use-session", () => ({
+	useSession: (selector: (state: { insightID: string }) => unknown) =>
+		selector({ insightID: "insight-1" }),
+}));
 
 const MODELS = [
 	{
@@ -170,6 +174,7 @@ describe("Jev policy guardrail form", () => {
 			expect(onSubmit).toHaveBeenCalledWith("new-guardrail"),
 		);
 		expect(mocks.createGuardrailEngine).toHaveBeenCalledWith(
+			"insight-1",
 			"Scope check",
 			{
 				GUARDRAIL_TYPE: "EMBEDDED_JEV_POLICY",
@@ -202,7 +207,7 @@ describe("Jev policy guardrail form", () => {
 		await waitFor(() =>
 			expect(mocks.createGuardrailEngine).toHaveBeenCalled(),
 		);
-		expect(mocks.createGuardrailEngine.mock.calls[0][1]).toMatchObject({
+		expect(mocks.createGuardrailEngine.mock.calls[0][2]).toMatchObject({
 			CONFIDENCE_THRESHOLD: "0.8",
 			LOW_CONFIDENCE_VERDICT: "BLOCK",
 		});
@@ -245,7 +250,7 @@ describe("Jev policy guardrail form", () => {
 		await waitFor(() =>
 			expect(mocks.createGuardrailEngine).toHaveBeenCalled(),
 		);
-		const details = mocks.createGuardrailEngine.mock.calls[0][1];
+		const details = mocks.createGuardrailEngine.mock.calls[0][2];
 		expect(details.QUESTION_TYPE).toBe("CHOICE");
 		expect(details).not.toHaveProperty("VIOLATION_DIRECTION");
 		expect(JSON.parse(details.QUESTION_CRITERIA)).toEqual({

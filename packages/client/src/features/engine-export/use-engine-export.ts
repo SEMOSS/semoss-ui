@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useSessionInsight } from "@semoss/sdk/react";
+import { download, runPixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { useSession } from "@/hooks/use-session";
 
 /** The engine subtypes whose export can leave out the data, which the user picks */
 export const ENGINE_SUBTYPES_WITH_DATA = ["H2_DB"];
@@ -27,20 +28,20 @@ export interface UseEngineExportResult {
  * @returns The export action and its state.
  */
 export const useEngineExport = (engineId: string): UseEngineExportResult => {
-	// the export makes the zip in an insight, which its download must share
-	const { run, download } = useSessionInsight();
+	const insightID = useSession((state) => state.insightID);
 	const [isExporting, setIsExporting] = useState(false);
 
 	const exportEngine = async (includeData: boolean) => {
 		setIsExporting(true);
 		try {
-			const response = await run(
+			const response = await runPixel(
 				`META | ExportEngine(engine=[${JSON.stringify(engineId)}], includeData="${includeData ? "true" : "false"}" );`,
+				insightID,
 			);
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join(""));
 			}
-			await download(response.pixelReturn[0].output as string);
+			await download(insightID, response.pixelReturn[0].output as string);
 		} catch (error) {
 			toast.error(
 				getErrorMessage(error, "Failed to export. Please try again."),

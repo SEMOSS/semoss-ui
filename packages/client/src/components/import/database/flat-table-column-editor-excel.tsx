@@ -10,7 +10,6 @@ import {
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSessionInsight } from "@semoss/sdk/react";
 import { DataTypeIcon } from "@semoss/shared";
 import {
 	Button,
@@ -36,6 +35,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { useSession } from "@/hooks";
 import { ColumnEditModal } from "./column-edit-modal";
 
 interface ParsedResult {
@@ -93,7 +93,7 @@ export const ExcelDataSelection = ({
 		{},
 	);
 
-	const { run } = useSessionInsight();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const handlePreviewRange = async (
 		filePath: string,
@@ -112,7 +112,7 @@ export const ExcelDataSelection = ({
 
 		try {
 			const pixelExpression = `META|PredictExcelRangeMetadata(filePath=["${filePath}"], sheetName=["${sheetName}"], sheetRange=["${customRangeValues}"]);`;
-			const response = await run(pixelExpression);
+			const response = await runPixel(pixelExpression);
 
 			const result: ParsedResult = response.pixelReturn[0]
 				.output as ParsedResult;

@@ -4,11 +4,7 @@
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import {
-	console as getPixelConsole,
-	runPixel,
-	useSessionInsight,
-} from "@semoss/sdk/react";
+import { console as getPixelConsole } from "@semoss/sdk/react";
 import { PairedFileUpload, type PairedFileUploadRow } from "@semoss/shared";
 import {
 	Button,
@@ -37,6 +33,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { capitalize } from "@semoss/utility/text";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeOptions, computeVisibility } from "../shared/import-form.utils";
@@ -130,9 +127,9 @@ export const DatabaseForm = ({
 	const debounceTimeoutsRef = useRef<
 		Record<string, ReturnType<typeof setTimeout>>
 	>({});
-	// an uploaded file is read by the pixels after it, so they share the
-	// session's insight
-	const { run, upload, withInsight, ensure } = useSessionInsight();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
+	const insightID = useSession((state) => state.insightID);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -293,7 +290,7 @@ export const DatabaseForm = ({
 				setFormData(connectionData);
 				setFormValues(connectionData);
 				const pixel = `ExternalJdbcTablesAndViews(conDetails=[${JSON.stringify(connectionData)}]);`;
-				const response = await run(pixel);
+				const response = await runPixel(pixel);
 				const { output, operationType } = response.pixelReturn[0];
 				if (operationType.includes("ERROR")) {
 					toast.error(output as string);
@@ -415,7 +412,7 @@ export const DatabaseForm = ({
 						const pixel = propPath
 							? `ParseMetamodel(filePath=["${csvPath}"], delimiter=["${formData.DELIMITER ?? ","}"], rowCount=[false], propFile=["${propPath}"])`
 							: `PredictMetamodel(filePath=["${csvPath}"], delimiter=["${formData.DELIMITER ?? ","}"], rowCount=[false])`;
-						const response = await run(pixel);
+						const response = await runPixel(pixel);
 						if (response.errors?.length > 0) {
 							toast.error(response.errors.join(""));
 							setLoading(false);
@@ -452,7 +449,7 @@ export const DatabaseForm = ({
 			const fileNames: string[] = [];
 
 			for (const pixelString of pixelExpressions) {
-				const response = await run(pixelString);
+				const response = await runPixel(pixelString);
 				const output = response?.pixelReturn?.[0]?.output as {
 					engine_id?: string;
 					database_id?: string;
@@ -497,65 +494,61 @@ export const DatabaseForm = ({
 		}
 	};
 
-	/**
-	 * Run a pixel in the session's insight, showing its console messages while
-	 * it runs.
-	 */
 	const runPixelWithConsole = async <O extends unknown[] | []>(
 		pixel: string,
 	) => {
-		// make the insight first, so its console can be read from the start and
-		// a long pixel does not hold every other session call while it runs
-		await ensure();
-		return withInsight(async (insightId) => {
-			let stopPolling = false;
-			const pollConsole = async () => {
-				while (!stopPolling) {
-					try {
-						const { message } = await getPixelConsole(insightId);
+		const insightId = insightID;
+		if (!insightId) {
+			throw new Error("Missing insight ID for database import request.");
+		}
 
-						if (Array.isArray(message) && message.length > 0) {
-							let latestConsoleMessage = "";
-							const cleanedMessages = message
-								.map((entry) => String(entry ?? "").trim())
-								.filter(Boolean);
+		let stopPolling = false;
+		const pollConsole = async () => {
+			while (!stopPolling) {
+				try {
+					const { message } = await getPixelConsole(insightId);
 
-							if (cleanedMessages.length > 0) {
-								latestConsoleMessage =
-									cleanedMessages[cleanedMessages.length - 1];
-								setLoadingLogMessages((prev) => {
-									const next = [...prev];
-									for (const entry of cleanedMessages) {
-										if (next[next.length - 1] !== entry) {
-											next.push(entry);
-										}
+					if (Array.isArray(message) && message.length > 0) {
+						let latestConsoleMessage = "";
+						const cleanedMessages = message
+							.map((entry) => String(entry ?? "").trim())
+							.filter(Boolean);
+
+						if (cleanedMessages.length > 0) {
+							latestConsoleMessage =
+								cleanedMessages[cleanedMessages.length - 1];
+							setLoadingLogMessages((prev) => {
+								const next = [...prev];
+								for (const entry of cleanedMessages) {
+									if (next[next.length - 1] !== entry) {
+										next.push(entry);
 									}
-									return next;
-								});
-							}
-
-							if (latestConsoleMessage) {
-								setLoadingMessage(latestConsoleMessage);
-							}
+								}
+								return next;
+							});
 						}
-					} catch {
-						// Ignore console polling failures; main query result decides success/failure.
+
+						if (latestConsoleMessage) {
+							setLoadingMessage(latestConsoleMessage);
+						}
 					}
-
-					await new Promise((resolve) =>
-						setTimeout(resolve, CONSOLE_POLL_INTERVAL_MS),
-					);
+				} catch {
+					// Ignore console polling failures; main query result decides success/failure.
 				}
-			};
 
-			const pollPromise = pollConsole();
-			try {
-				return await runPixel<O>(pixel, insightId);
-			} finally {
-				stopPolling = true;
-				await pollPromise;
+				await new Promise((resolve) =>
+					setTimeout(resolve, CONSOLE_POLL_INTERVAL_MS),
+				);
 			}
-		});
+		};
+
+		const pollPromise = pollConsole();
+		try {
+			return await runPixel<O>(pixel);
+		} finally {
+			stopPolling = true;
+			await pollPromise;
+		}
 	};
 
 	const watchFile = filePath;
@@ -651,7 +644,7 @@ export const DatabaseForm = ({
 				}),
 			};
 
-			const response = await run(
+			const response = await runPixel(
 				`${pixelCommands.join("")}SetDatabaseMetadata(database=[${JSON.stringify(formValuesLocal.DATABASE_NAME)}], meta=[${JSON.stringify(meta)}]);`,
 			);
 
@@ -909,7 +902,7 @@ export const DatabaseForm = ({
 				);
 			}
 		},
-		[setValue],
+		[runPixel, setValue],
 	);
 
 	useEffect(() => {
@@ -942,8 +935,7 @@ export const DatabaseForm = ({
 			userInput.trim(),
 		);
 
-		// runs as the user types, so it shares the session's insight
-		const response = await run(pixelToExecute);
+		const response = await runPixel(pixelToExecute);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -1738,8 +1730,7 @@ export const DatabaseForm = ({
 		const pixel = `ExternalJdbcSchema(conDetails=[${JSON.stringify(formData)}], filters=${JSON.stringify(filter)})`;
 
 		try {
-			// the connection can name a file uploaded into the session's insight
-			const response = await run(pixel);
+			const response = await runPixel(pixel);
 			const { output, operationType } = response.pixelReturn[0];
 			if (operationType.includes("ERROR")) {
 				toast.error(output as string);

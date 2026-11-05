@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Button, toast } from "@semoss/ui/next";
+import { SessionStoreContext } from "@/contexts";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	INPUT_TYPE_DATABASE,
@@ -61,6 +62,8 @@ const initialBuilder: Builder = {
 };
 
 export const PromptBuilder = () => {
+	// imperative snapshot only, not a reactive read - avoids re-rendering on every session change
+	const sessionStoreApi = useContext(SessionStoreContext);
 	const [builder, setBuilder] = useState<Builder>(initialBuilder);
 	const [currentBuilderStep, changeBuilderStep] = useState<number>(1);
 	const [createAppLoading, setCreateAppLoading] = useState<boolean>(false);
@@ -98,7 +101,11 @@ export const PromptBuilder = () => {
 		if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
 			setCreateAppLoading(true);
 			try {
-				await setBlocksAndOpenUIBuilder(builder, navigate);
+				await setBlocksAndOpenUIBuilder(
+					builder,
+					sessionStoreApi.getState(),
+					navigate,
+				);
 			} catch (e) {
 				toast.error(checkForInputTypesSkipped(e.message));
 				setCreateAppLoading(false);

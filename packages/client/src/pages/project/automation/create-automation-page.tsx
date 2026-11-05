@@ -1,18 +1,18 @@
 import { ChevronRight } from "lucide-react";
 import { Link, Navigate } from "react-router";
-import { useSession } from "@semoss/sdk/react";
 import { H4, Muted } from "@semoss/ui/next";
 import { NewAppModal } from "@/components/app";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 export const CreateAutomationPage = () => {
 	const navigate = useNavigate();
-	const canAddProject = useSession((state) =>
-		state.canPerform("PROJECT", "add"),
+	const isEngineOperationAvailable = useSession(
+		(state) => state.isEngineOperationAvailable,
 	);
 
-	if (!canAddProject) {
+	if (!isEngineOperationAvailable("PROJECT", "add")) {
 		return <Navigate to="/" replace />;
 	}
 

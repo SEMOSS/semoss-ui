@@ -4,7 +4,6 @@
 
 import { ChevronDown, ChevronUp, Info, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { runPixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -39,6 +38,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import type { FormField as FormFieldConfig } from "../shared/import-form.types";
@@ -231,8 +231,8 @@ export const FunctionForm = ({
 			}
 		}
 	}, [watchedValues, allFormFields]);
-	// a function's files are uploaded, then read by the pixel that creates it
-	const { run, upload } = useSessionInsight();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -287,7 +287,7 @@ export const FunctionForm = ({
 			}
 		}
 
-		const response = await run(pixel);
+		const response = await runPixel(pixel);
 		const pixelOutput = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -388,8 +388,7 @@ export const FunctionForm = ({
 			userInput.trim(),
 		);
 
-		// runs as the user types, so it shares the session's insight
-		const response = await run(pixelToExecute);
+		const response = await runPixel(pixelToExecute);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 

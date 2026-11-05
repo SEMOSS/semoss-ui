@@ -1,6 +1,5 @@
 import { Info, X } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -19,6 +18,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { useSession } from "@/hooks";
 
 interface PromptModalProps {
 	isOpen: boolean;
@@ -36,6 +36,7 @@ interface PromptModalProps {
 }
 
 export const PromptModal = (props: PromptModalProps) => {
+	const runPixel = useSession((state) => state.runPixel);
 	const { isOpen, onClose, mode, prompt, initialData } = props;
 	const [context, setContext] = useState("");
 	const [title, setTitle] = useState("");

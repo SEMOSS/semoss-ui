@@ -11,9 +11,8 @@ import type { RoomStore } from "@/stores/room/room.store";
 import { PromptOptimizer } from "./PromptOptimizer";
 
 const run = vi.hoisted(() => vi.fn());
-vi.mock("@semoss/sdk/react", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
-	runPixel: run,
+vi.mock("@semoss/sdk/react", () => ({
+	useInsight: () => ({ actions: { run } }),
 }));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),

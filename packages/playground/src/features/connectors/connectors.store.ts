@@ -290,7 +290,7 @@ export class ConnectorsStore {
 
 	/**
 	 * Take what the SDK knows about the session's sign ins: the logins it holds,
-	 * from `Session.logins`, and what the server's config says they allow. Handed over
+	 * from `Logins`, and what the server's config says they allow. Handed over
 	 * by `useConnectorLogins` while a view shows sign in state. An unchanged
 	 * answer leaves the views that show it alone.
 	 *

@@ -7,7 +7,7 @@ import {
 	downloadN8nExport,
 	parseAutomationImportFileAsync,
 } from "@semoss/automation";
-import { runPixel, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Button,
@@ -33,6 +33,7 @@ import {
 } from "@semoss/ui/next";
 import { encodeTextToBase64 } from "@semoss/utility/encoding";
 import { getErrorMessage } from "@semoss/utility/error";
+import { useSession } from "@/hooks";
 
 interface AutomationImportExportCardProps {
 	project: Project;
@@ -68,6 +69,7 @@ function isSavedAutomation(value: unknown): value is SavedAutomation {
 export const AutomationImportExportCard = ({
 	project,
 }: AutomationImportExportCardProps) => {
+	const runPixel = useSession((state) => state.runPixel);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isExporting, setIsExporting] = useState(false);
 	const [isImporting, setIsImporting] = useState(false);

@@ -1,28 +1,33 @@
 import { type PropsWithChildren, useMemo } from "react";
-import { useConfig } from "@semoss/sdk/react";
+import { useInsight } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
-import { isRecord } from "@semoss/utility/object";
 import { RootContext } from "@/contexts/root-context";
 import { RootStore } from "@/stores/root/root.store";
 
 export const RootLayout = ({ children }: PropsWithChildren) => {
-	// the server's THEME_MAP, already parsed; the playground reads its own part
-	const playgroundTheme = useConfig((state) => state.theme?.playground);
+	const { system } = useInsight();
 
 	// set up the store
 	const rootStore = useMemo(() => {
 		const store = new RootStore();
-		// the server's theme is trusted to match the playground's shape, as before
-		const theme = (
-			isRecord(playgroundTheme) ? playgroundTheme : {}
-		) as Partial<ThemeMap["playground"]>;
+		let theme: Partial<ThemeMap["playground"]> = {};
 
+		if (system?.config?.theme) {
+			// parse the theme
+			const rawTheme = system.config.theme.THEME_MAP || "{}";
+			try {
+				if (rawTheme) {
+					const parsedTheme = JSON.parse(String(rawTheme));
+					theme = parsedTheme?.playground || {};
+				}
+			} catch (_e) {}
+		}
 		// A deployment without a custom theme still uses the normal app defaults.
 		void store.initialize(theme);
 
 		return store;
-	}, [playgroundTheme]);
+	}, [system.config.theme]);
 
 	if (!rootStore.isInitialized) {
 		return (

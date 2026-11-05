@@ -39,7 +39,7 @@ Run these from `packages/client`, or use `pnpm --filter @semoss/client <command>
 
 ### Path Alias
 
-- `@/` → `./src/` (e.g. `import { useThemeConfig } from "@/hooks/use-theme-config"`)
+- `@/` → `./src/` (e.g. `import { useSession } from "@/hooks/use-session"`)
 
 ## Structure
 
@@ -56,15 +56,15 @@ application features; this inventory does not require moving existing features.
 | `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `my-model-usage/`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree (see below) |
-| `stores/` | State owners (`assistant/`, `designer/`, `page/`, `workbench/`, `workspace/`) |
+| `stores/` | State owners (`assistant/`, `config/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
 | `types/` | TypeScript types (`<name>.types.ts`) |
 | `utility/` | Client-specific adapters and compatibility exports; generic helpers live in `@semoss/utility` |
 | `main.tsx`, `App.tsx`, `index.css` | App entry files |
 
 Client `api/` modules contain application-specific requests. LinOTP login/OTP
 confirmation, file upload/download, engine-member listing, logout, and bulk
-permission changes use the owning `@semoss/sdk` APIs; sign in and out go through the
-SDK's `Session`. Reuse those APIs instead of restoring duplicate client wrappers.
+permission changes use the owning `@semoss/sdk` APIs; logout is exposed through
+the session store. Reuse those APIs instead of restoring duplicate client wrappers.
 Database catalogs use paginated `MyEngines`/`AdminMyEngines` reactors. Audit reads
 and exports use the audit API builders backed by `AdminUserAuditEvents`.
 
@@ -404,9 +404,9 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   the text and code generation models the user's requests use, kept in their metadata as
   `text-generation-model` and `code-generation-model`. Each is a `default-model-field.tsx`, the
   shared `EngineSelect` over the models `getEngines` lists (without the EMBEDDED subtype), with No
-  default first. A pick saves at once through the SDK's `Session.setMetadata`
-  (`SetUserMetadata`), which shows it at once and reverts it when the save fails. No default
-  sends an empty list, which deletes the key, so a removed default is gone rather than blank. A default the list no longer offers stays shown, marked unavailable,
+  default first. A pick saves at once through `setUserDefaultModel` in `api/auth.ts`
+  (`SetUserMetadata`); No default sends an empty list, which deletes the key, so a removed default
+  is gone rather than blank. A default the list no longer offers stays shown, marked unavailable,
   so it can be removed.
 
 ### Workbench Terminal
@@ -649,17 +649,9 @@ read that list:
 
 ## State Management
 
-- **The session, config and permissions** come from the SDK: `useSession`, `useConfig`,
-  `useSessionPermissions` and `useSessionInsight` from `@semoss/sdk/react` (see
-  [the session skill](../../libs/sdk/skills/session.skill.md)). The client keeps no copy of them;
-  `hooks/use-theme-config.ts` only lays the client's theme defaults under `useConfig`'s theme.
-- **Pixels** that belong to no workspace and run once use `runPixel(pixel)` with no insight id.
-  One that runs again and again (a search, a paged list, a poll, a check as the user types) uses
-  `usePixel` with no id or `Session.insight.run`, since the backend keeps each insight a no-id
-  `runPixel` makes until the session ends. Steps that must share one insight (an upload then a
-  pixel reading it, an export then its download) use `useSessionInsight()`.
-- **Other application state** is split among the existing stores; there is no `stores/root`,
-  `stores/monolith`, or `useRootStore` entry to extend.
+- **Application state** is split among the existing stores, including session and config.
+  Use their owning hooks, such as `hooks/use-session.ts` and `hooks/use-config.ts`; there is
+  no `stores/root`, `stores/monolith`, or `useRootStore` entry to extend.
 - **Domain state** uses its existing context/store contract. See the
   [client workbench components](./src/components/workbench/) and
   [domain stores](./src/stores/workbench/) for their owning implementations. General local-state and orchestration rules
@@ -688,6 +680,7 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
 ### Be Cautious With
 
 - **`vite.config.ts`** — dev server, build, and test configuration.
+- **`stores/session/`** — shared session state and permission ownership affect multiple surfaces.
 
 ### Known Gotchas
 

@@ -1,7 +1,7 @@
-import { type Role, runPixel } from "@semoss/sdk";
-import { useConfig } from "@semoss/sdk/react";
+import type { Role } from "@semoss/sdk";
 import type { Engine } from "@semoss/shared";
 import { CatalogTagsSettings } from "@/components/catalog";
+import { useConfig, useSession } from "@/hooks";
 
 interface EngineTagsSettingsProps {
 	/** Current engine */
@@ -29,8 +29,9 @@ export const EngineTagsSettings = ({
 	onUpdated,
 }: EngineTagsSettingsProps) => {
 	const databaseMetaKeys = useConfig(
-		(state) => state.config?.databaseMetaKeys ?? [],
+		(state) => state.config.databaseMetaKeys,
 	);
+	const runPixel = useSession((state) => state.runPixel);
 
 	return (
 		<CatalogTagsSettings

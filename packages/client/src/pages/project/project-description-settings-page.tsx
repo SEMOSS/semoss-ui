@@ -1,10 +1,10 @@
-import { runPixel } from "@semoss/sdk/react";
 import { CatalogDescriptionSettings } from "@/components/catalog";
-import { useProject } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 
 /** Settings section for a project's catalog description and About markdown. */
 export const ProjectDescriptionSettingsPage = () => {
 	const { project, permission, refresh, catalog } = useProject();
+	const runPixel = useSession((state) => state.runPixel);
 	const noun = catalog.name.toLowerCase();
 
 	return (

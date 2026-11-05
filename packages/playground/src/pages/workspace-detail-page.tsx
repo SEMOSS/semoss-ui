@@ -9,7 +9,8 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { usePixel, useSessionPermissions } from "@semoss/sdk/react";
+import { getUserProjectPermission, type Role } from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	AgentDefinition,
 	type AgentWorkspace,
@@ -56,20 +57,29 @@ export const WorkspaceDetailPage = observer(() => {
 
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [deleteModal, setDeleteModal] = useState(false);
-	// Edit and Delete stay hidden until the permission is known, and when it
-	// cannot be read
-	const {
-		canEdit,
-		isOwner: canDelete,
-		refresh: refreshPermission,
-	} = useSessionPermissions("PROJECT", workspaceId);
+	const [userPermission, setUserPermission] = useState<Role | null>(null);
 
-	// the edit page can change the user's own role, so read it on each visit
 	useEffect(() => {
-		if (workspaceId) {
-			void refreshPermission().catch(() => undefined);
-		}
-	}, [refreshPermission, workspaceId]);
+		setUserPermission(null);
+		if (!workspaceId) return;
+		let cancelled = false;
+		(async () => {
+			try {
+				const permission = await getUserProjectPermission(workspaceId);
+				if (!cancelled && permission) {
+					setUserPermission(permission);
+				}
+			} catch {
+				// If permission fetch fails, leave as null — Edit/Delete stay hidden
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [workspaceId]);
+
+	const canEdit = userPermission === "EDIT" || userPermission === "OWNER";
+	const canDelete = userPermission === "OWNER";
 
 	const getWorkspace = usePixel<
 		AgentWorkspace & Pick<Workspace, "workspace_id">

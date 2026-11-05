@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { runPixel, useSession } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -40,6 +39,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { buildInitials, hashString } from "@semoss/utility/text";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { Prompt } from "../../components/prompt/prompt.types";
 import { PromptDeleteModal } from "../../components/prompt/prompt-delete-modal";
@@ -107,7 +107,8 @@ const normalizeModelOption = (value: unknown): LlmModelOption | null => {
 
 export const PromptDetailPage = () => {
 	const { promptId } = useParams<{ promptId: string }>();
-	const userId = useSession((state) => state.user?.id ?? "");
+	const userId = useSession((state) => state.user.id);
+	const runPixel = useSession((state) => state.runPixel);
 	const navigate = useNavigate();
 
 	const [versions, setVersions] = useState<Prompt[]>([]);
@@ -201,7 +202,7 @@ export const PromptDetailPage = () => {
 		return () => {
 			isMounted = false;
 		};
-	}, []);
+	}, [runPixel]);
 
 	const selectVersion = (index: number) => {
 		setSelectedVersionIndex(index);

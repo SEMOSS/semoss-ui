@@ -1,5 +1,6 @@
 import type { FileMode } from "@semoss/shared";
 import { getFileEditorPathScope } from "@semoss/shared";
+import type { ResourceType } from "./access.types";
 
 /**
  * The scopes a file panel can be opened for.
@@ -17,9 +18,6 @@ import { getFileEditorPathScope } from "@semoss/shared";
 export type FilePanelMode =
 	| Extract<FileMode, { type: "APP" } | { type: "ENGINE" } | { type: "USER" }>
 	| { type: "INSIGHT"; insightId: string };
-
-/** Kinds of resource a permission can be resolved for. */
-export type ResourceType = "ENGINE" | "PROJECT" | "INSIGHT";
 
 /** The resource a mode's permissions are resolved against. */
 export interface FilePanelResource {

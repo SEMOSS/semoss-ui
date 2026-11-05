@@ -4,7 +4,7 @@ import {
 	terminalResources,
 	useTranslation,
 } from "@semoss/i18n";
-import { Env } from "@semoss/sdk/react";
+import { Env, InsightProvider } from "@semoss/sdk/react";
 import { LoginPage } from "@semoss/shared";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { EmbedTerminal } from "./components/embed-terminal/embed-terminal";
@@ -31,15 +31,17 @@ const Branding = () => {
 export const App = () => {
 	return (
 		<I18nextProvider i18n={i18n}>
-			<ThemeProvider
-				defaultTheme="light"
-				storageKey="smss-ui-theme-terminal"
-			>
-				<LoginPage branding={<Branding />}>
-					<EmbedTerminal />
-				</LoginPage>
-				<Toaster position="top-center" closeButton />
-			</ThemeProvider>
+			<InsightProvider>
+				<ThemeProvider
+					defaultTheme="light"
+					storageKey="smss-ui-theme-terminal"
+				>
+					<LoginPage branding={<Branding />}>
+						<EmbedTerminal />
+					</LoginPage>
+					<Toaster position="top-center" closeButton />
+				</ThemeProvider>
+			</InsightProvider>
 		</I18nextProvider>
 	);
 };

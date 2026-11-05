@@ -18,6 +18,7 @@ import {
 	ScrollArea,
 	Spinner,
 } from "@semoss/ui/next";
+import { useSession } from "@/hooks";
 
 interface SyncExternalDatabaseOverlayProps {
 	/** engine to load */
@@ -42,6 +43,8 @@ interface SyncExternalDatabaseOverlayProps {
 export const SyncExternalDatabaseOverlay: React.FC<
 	SyncExternalDatabaseOverlayProps
 > = ({ engine, tables = [], views = [], open, onClose }) => {
+	const insightID = useSession((state) => state.insightID);
+
 	const [tableSearch, setTableSearch] = useState("");
 	const [viewSearch, setViewSearch] = useState("");
 	const [selectedTables, setSelectedTables] = useState<string[]>(tables);
@@ -63,6 +66,7 @@ export const SyncExternalDatabaseOverlay: React.FC<
 				setSelectedViews(v);
 			},
 		},
+		insightID,
 	);
 
 	const filteredTables = useMemo(() => {

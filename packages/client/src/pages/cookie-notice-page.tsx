@@ -1,8 +1,8 @@
 import { Navigate } from "react-router";
-import { useThemeConfig } from "@/hooks";
+import { useConfig } from "@/hooks";
 
 export const CookieNoticePage = () => {
-	const html = useThemeConfig().cookiePolicyNoticePage;
+	const html = useConfig((state) => state.theme.cookiePolicyNoticePage);
 
 	if (!html) {
 		return <Navigate to="/" replace />;

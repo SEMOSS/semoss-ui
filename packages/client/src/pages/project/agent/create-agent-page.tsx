@@ -2,7 +2,7 @@ import { ChevronRight, UploadIcon } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	AGENT_FORM_DEFAULT_VALUES,
 	type AgentDefaultTool,
@@ -29,12 +29,14 @@ import {
 } from "@semoss/ui/next";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { CLIENT_AGENT_LINKS } from "@/utility";
 
 export const CreateAgentPage = () => {
 	const { t } = useTranslation("agent");
 	const navigate = useNavigate();
+	const runPixel = useSession((state) => state.runPixel);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [formValues, setFormValues] = useState<AgentFormValues>(

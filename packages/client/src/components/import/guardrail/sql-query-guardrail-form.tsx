@@ -23,6 +23,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api/guardrails";
 import { EngineFormHeader } from "@/components/import/shared/engine-form-header";
+import { useSession } from "@/hooks/use-session";
 import { SqlPolicyRulesField } from "./sql-policy-rules-field";
 import {
 	type BuiltInRules,
@@ -187,6 +188,7 @@ export const SqlQueryGuardrailForm = ({
 	icon,
 	onSubmit,
 }: SqlQueryGuardrailFormProps) => {
+	const insightID = useSession((state) => state.insightID);
 	const form = useForm<SqlQueryGuardrailFormValues>({
 		resolver: zodResolver(sqlQueryGuardrailSchema),
 		defaultValues: SQL_QUERY_GUARDRAIL_DEFAULTS,
@@ -198,6 +200,7 @@ export const SqlQueryGuardrailForm = ({
 	// take the place of the previous dialect's; the user's own rules stay
 	const policyBuiltIns = useSqlPolicyBuiltIns({
 		dialect,
+		insightId: insightID,
 		onChange: (next, previous) => {
 			for (const field of IDENTIFIER_POLICY_FIELDS) {
 				form.setValue(
@@ -267,6 +270,7 @@ export const SqlQueryGuardrailForm = ({
 		let engineId: string;
 		try {
 			engineId = await createGuardrailEngine(
+				insightID,
 				values.MODEL_NAME,
 				toSqlQueryGuardrailDetails(values, builtIns),
 			);

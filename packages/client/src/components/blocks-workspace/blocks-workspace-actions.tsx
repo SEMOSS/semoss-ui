@@ -15,12 +15,13 @@ import {
 } from "@semoss/ui/next";
 import { ShareAppDialog } from "@/components/ui/share/share-app-dialog";
 import { PreviewDialog } from "@/components/workspace";
-import { useProject, useWorkspace } from "@/hooks";
+import { useProject, useSession, useWorkspace } from "@/hooks";
 import { LLMSelectDialog } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
 	const { state } = useBlocks();
 
+	const sessionRunPixel = useSession((state) => state.runPixel);
 	const { workspace } = useWorkspace();
 	const { permission, project } = useProject();
 
@@ -112,7 +113,7 @@ export const BlocksWorkspaceActions = observer(() => {
 		});
 		try {
 			// save the json
-			const { errors } = await runPixel<[true]>(
+			const { errors } = await sessionRunPixel<[true]>(
 				`SaveAppBlocksJson(project=["${
 					project.project_id
 				}"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
@@ -146,7 +147,7 @@ export const BlocksWorkspaceActions = observer(() => {
 
 			// only get the json if the user can edit
 			if (permission === "OWNER" || permission === "EDIT") {
-				const { pixelReturn, errors } = await runPixel<[true]>(
+				const { pixelReturn, errors } = await sessionRunPixel<[true]>(
 					`GetAppBlocksJson ( project=['${project.project_id}']);`,
 				);
 

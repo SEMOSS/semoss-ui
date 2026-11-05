@@ -1,13 +1,7 @@
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { runPixel } from "@semoss/sdk";
-import {
-	useConfig,
-	useIteratorPixel,
-	usePixel,
-	useSession,
-} from "@semoss/sdk/react";
+import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Button,
@@ -27,6 +21,7 @@ import {
 } from "@/components/catalog";
 import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
+import { useConfig, useSession } from "@/hooks";
 import {
 	buildAccessFilterParams,
 	type CatalogAccessFilter,
@@ -154,19 +149,13 @@ interface ProjectCatalogProps {
 
 export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 	const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
-	const projectMetaKeys = useConfig(
-		(state) => state.config?.projectMetaKeys ?? [],
-	);
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
 	const adminOnlyViewMenuBarFlag = useConfig(
-		(state) => state.config?.adminOnlyViewMenuBarFlag === true,
+		(state) => state.config.adminOnlyViewMenuBarFlag,
 	);
-	const canAdd = useSession((state) =>
-		state.canPerform(
-			CATALOG_PERMISSION_TYPE[
-				type as keyof typeof CATALOG_PERMISSION_TYPE
-			],
-			"add",
-		),
+	const runPixel = useSession((state) => state.runPixel);
+	const isEngineOperationAvailable = useSession(
+		(state) => state.isEngineOperationAvailable,
 	);
 
 	// get metakeys of the ones we want
@@ -439,7 +428,12 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 				}
 				description={config.description}
 				headerActions={
-					canAdd ? (
+					isEngineOperationAvailable(
+						CATALOG_PERMISSION_TYPE[
+							type as keyof typeof CATALOG_PERMISSION_TYPE
+						],
+						"add",
+					) ? (
 						<Button
 							variant="default"
 							aria-label={`Add ${config.name}`}
@@ -512,7 +506,13 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 					/>
 				}
 				filterBox={
-					!adminOnlyViewMenuBarFlag && canAdd ? (
+					!adminOnlyViewMenuBarFlag &&
+					isEngineOperationAvailable(
+						CATALOG_PERMISSION_TYPE[
+							type as keyof typeof CATALOG_PERMISSION_TYPE
+						],
+						"add",
+					) ? (
 						<CatalogFilterBox
 							key={filterKey}
 							type={type}

@@ -4,7 +4,7 @@
 import { FileIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useSessionInsight } from "@semoss/sdk/react";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -28,8 +28,7 @@ export const EmbedDocumentsOverlay = ({
 	onClose,
 }: EmbedDocumentsOverlayProps) => {
 	const { t } = useTranslation(["knowledge", "common"]);
-	// the uploaded files are read by a pixel in the insight they went to
-	const { upload, run } = useSessionInsight();
+	const { actions } = useInsight();
 	const fileInputId = useId();
 	const [files, setFiles] = useState<File[]>([]);
 	const [isEmbedding, setIsEmbedding] = useState(false);
@@ -54,18 +53,20 @@ export const EmbedDocumentsOverlay = ({
 			return;
 		}
 
-		let embeddingsResponse: Awaited<ReturnType<typeof run>> | undefined;
+		let embeddingsResponse:
+			| Awaited<ReturnType<typeof actions.run>>
+			| undefined;
 		setIsEmbedding(true);
 		try {
 			// Upload the files
-			const uploaded = await upload(files);
+			const uploaded = await actions.upload(files, "");
 
 			// Create the embeddings
 			const filePaths = uploaded
 				.map(({ fileLocation }) => `"${fileLocation}"`)
 				.join(", ");
 
-			embeddingsResponse = await run<
+			embeddingsResponse = await actions.run<
 				[
 					{
 						database_id: string;
@@ -75,9 +76,6 @@ export const EmbedDocumentsOverlay = ({
 				engine=["${knowledgeId}"],
 				filePaths=[${filePaths}]
 			);`);
-			if (embeddingsResponse.errors.length > 0) {
-				throw new Error(embeddingsResponse.errors.join(""));
-			}
 
 			toast.success(t("embedMessages.embedSuccess"));
 			setFiles([]);

@@ -23,8 +23,7 @@ interface ConfigState {
 	};
 }
 
-vi.mock("@semoss/sdk/react", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+vi.mock("@/hooks", () => ({
 	useConfig: (selector: (state: ConfigState) => unknown) =>
 		selector({
 			config: {

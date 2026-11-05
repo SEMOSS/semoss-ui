@@ -4,12 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
-import {
-	InsightProvider,
-	Session,
-	usePixel,
-	useSession,
-} from "@semoss/sdk/react";
+import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -69,19 +64,11 @@ export const NewRoomPage = observer(() => {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 
-	const userName = useSession((state) => state.user?.name ?? "");
-	// the model set as default in the user's profile (Settings > My Profile)
-	const profileDefaultModelId = useSession(
-		(state) => state.user?.defaultModels.textGeneration ?? "",
-	);
-
-	// Re-read the user each time this page mounts so a default model changed in
-	// the token-usage embed is reflected immediately.
+	// Re-fetch the user's profile default model each time this page mounts so
+	// changes made in the token-usage embed are reflected immediately.
 	useEffect(() => {
-		Session.reloadUser().catch((e: unknown) => {
-			console.error(e);
-		});
-	}, []);
+		chat.refreshProfileDefaultModel();
+	}, [chat]);
 
 	const initialPrompt = searchParams.get("prompt") ?? "";
 
@@ -423,8 +410,8 @@ export const NewRoomPage = observer(() => {
 			// agent again applies its default model again
 			appliedAgentModelRef.current = "";
 			appliedAgentOptionsRef.current = "";
-			if (profileDefaultModelId) {
-				void chat.selectModelById(profileDefaultModelId);
+			if (chat.profileDefaultModelId) {
+				void chat.selectModelById(chat.profileDefaultModelId);
 			}
 			return;
 		}
@@ -498,7 +485,6 @@ export const NewRoomPage = observer(() => {
 		getWorkspace.data,
 		tempRoomStore,
 		chat,
-		profileDefaultModelId,
 	]);
 
 	// A URL-routed agent with a greeting drops straight into a room with it
@@ -811,12 +797,7 @@ export const NewRoomPage = observer(() => {
 											</NextMessageRoomProvider>
 										</InsightProvider>
 									) : (
-										// before a room exists, the file panels
-										// and explorer work in an insight of
-										// their own
-										<InsightProvider>
-											{workbench}
-										</InsightProvider>
+										workbench
 									)}
 								</div>
 							</div>
@@ -852,7 +833,7 @@ export const NewRoomPage = observer(() => {
 									<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 										<H2 className="text-center">
 											{t("room:welcome", {
-												name: userName,
+												name: chat.user.name,
 											})}
 										</H2>
 										{root.theme.description ? (

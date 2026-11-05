@@ -1,12 +1,11 @@
 import { Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { runPixel } from "@semoss/sdk/react";
 import { Badge, H4, Spinner, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { RemoteMcpConnection } from "@/components/shared/remote-mcp-connection";
 import { SettingsContext } from "@/contexts";
-import { useProject } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 
 interface MCPToolInputProperty {
 	title?: string;
@@ -58,6 +57,7 @@ export const AppMcpUsagePage = ({
 	showRemoteConnection = true,
 }: AppMcpUsagePageProps = {}) => {
 	const { project, type } = useProject();
+	const runPixel = useSession((state) => state.runPixel);
 
 	// the same page serves the app and skill catalogs, so name what the reader
 	// is actually looking at
@@ -67,41 +67,47 @@ export const AppMcpUsagePage = ({
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");
 
-	const fetchMcpTools = useCallback(async (projectId: string) => {
-		setMcpToolsLoading(true);
-		setMcpToolsError("");
+	const fetchMcpTools = useCallback(
+		async (projectId: string) => {
+			setMcpToolsLoading(true);
+			setMcpToolsError("");
 
-		try {
-			const response = (await runPixel(
-				`GetMCPTools(project="${projectId}")`,
-			)) as MCPToolsPixelResponse;
+			try {
+				const response = (await runPixel(
+					`GetMCPTools(project="${projectId}")`,
+				)) as MCPToolsPixelResponse;
 
-			const result = response?.pixelReturn?.[0];
-			if (hasPixelError(result?.operationType)) {
-				const errorMessage =
-					typeof result?.output === "string"
-						? result.output
-						: "Unable to load MCP tools.";
+				const result = response?.pixelReturn?.[0];
+				if (hasPixelError(result?.operationType)) {
+					const errorMessage =
+						typeof result?.output === "string"
+							? result.output
+							: "Unable to load MCP tools.";
+					setMcpTools([]);
+					setMcpToolsError(errorMessage);
+					return;
+				}
+
+				const output = result?.output;
+				const tools =
+					typeof output === "object" && output !== null
+						? output.tools
+						: undefined;
+				setMcpTools(Array.isArray(tools) ? tools : []);
+			} catch (error) {
+				const message = getErrorMessage(
+					error,
+					"Unable to load MCP tools.",
+				);
 				setMcpTools([]);
-				setMcpToolsError(errorMessage);
-				return;
+				setMcpToolsError(message);
+				toast.error(message);
+			} finally {
+				setMcpToolsLoading(false);
 			}
-
-			const output = result?.output;
-			const tools =
-				typeof output === "object" && output !== null
-					? output.tools
-					: undefined;
-			setMcpTools(Array.isArray(tools) ? tools : []);
-		} catch (error) {
-			const message = getErrorMessage(error, "Unable to load MCP tools.");
-			setMcpTools([]);
-			setMcpToolsError(message);
-			toast.error(message);
-		} finally {
-			setMcpToolsLoading(false);
-		}
-	}, []);
+		},
+		[runPixel],
+	);
 
 	useEffect(() => {
 		if (!project.project_id) {

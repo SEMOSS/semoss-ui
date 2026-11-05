@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { runPixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -45,6 +44,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { ImportEngineSelect } from "../shared/import-engine-select";
@@ -67,9 +67,6 @@ export const GuardrailForm = ({
 	advanced,
 	categoryDescription,
 }) => {
-	// the name check runs as the user types, so it shares the session's
-	// insight rather than making one per check
-	const { run } = useSessionInsight();
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [isValidDatabaseName, setIsValidDatabaseName] =
@@ -105,6 +102,8 @@ export const GuardrailForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
+	const runPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -230,6 +229,7 @@ export const GuardrailForm = ({
 		setLoading(true);
 		try {
 			const engineId = await createGuardrailEngine(
+				insightID,
 				formData.MODEL_NAME,
 				newFormData,
 			);
@@ -398,7 +398,7 @@ export const GuardrailForm = ({
 			userInput.trim(),
 		);
 
-		const response = await run(pixelToExecute);
+		const response = await runPixel(pixelToExecute);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 

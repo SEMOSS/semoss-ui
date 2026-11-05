@@ -1,24 +1,8 @@
 import { Menu } from "lucide-react";
 import type React from "react";
-import { useConfig } from "@semoss/sdk/react";
 import { Button } from "@semoss/ui/next";
 import { THEME } from "@/constants";
-import { usePage, useThemeLogo } from "@/hooks";
-
-/**
- * Read a text field the server's theme sets, ignoring a blank one.
- *
- * @param theme - The server's parsed theme, or null without one.
- * @param key - The field to read.
- * @returns The field's text, or empty when it is missing or blank.
- */
-const getThemeText = (
-	theme: Record<string, unknown> | null,
-	key: string,
-): string => {
-	const value = theme?.[key];
-	return typeof value === "string" && value.trim().length > 0 ? value : "";
-};
+import { useConfig, usePage, useThemeLogo } from "@/hooks";
 
 interface NavbarHeaderProps {
 	/**
@@ -29,20 +13,31 @@ interface NavbarHeaderProps {
 export const NavbarHeader = (props: NavbarHeaderProps) => {
 	const { logo } = props;
 	const page = usePage();
-	// the server's own theme, without the client defaults, so a theme that
-	// sets only its name still names the navbar
-	const customLandingPageName = useConfig((state) =>
-		getThemeText(state.theme, "landingPageName"),
-	);
-	const customThemeName = useConfig((state) =>
-		getThemeText(state.theme, "name"),
-	);
+	const themeConfig = useConfig((state) => state.config.theme);
 	const themeLogo = useThemeLogo();
 	// `logo` has three intentional states:
 	// - `undefined`: show default branding (theme logo + name)
 	// - `ReactNode`: show custom branding content
 	// - `null`: hide branding completely
 	const showDefaultBranding = logo === undefined;
+	let customThemeMap: Record<string, unknown> = {};
+	try {
+		const rawThemeMap = (themeConfig as { THEME_MAP?: string })?.THEME_MAP;
+		if (rawThemeMap) {
+			customThemeMap = JSON.parse(rawThemeMap) as Record<string, unknown>;
+		}
+	} catch {}
+
+	const customLandingPageName =
+		typeof customThemeMap.landingPageName === "string" &&
+		customThemeMap.landingPageName.trim().length > 0
+			? customThemeMap.landingPageName
+			: "";
+	const customThemeName =
+		typeof customThemeMap.name === "string" &&
+		customThemeMap.name.trim().length > 0
+			? customThemeMap.name
+			: "";
 	const defaultLandingPageName = THEME.name;
 	// Navbar title priority:
 	// 1) custom THEME_MAP.landingPageName

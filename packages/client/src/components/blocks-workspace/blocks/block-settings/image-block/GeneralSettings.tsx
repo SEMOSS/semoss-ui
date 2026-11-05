@@ -1,5 +1,6 @@
 import { useParams } from "react-router";
 import { useBlock } from "@semoss/renderer";
+import { useSession } from "@/hooks";
 import { TabsComponent } from "./SelectionTabs";
 
 interface GeneralSettingsProps {
@@ -8,6 +9,7 @@ interface GeneralSettingsProps {
 
 export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ id }) => {
 	const { data, setData } = useBlock(id);
+	const insightID = useSession((state) => state.insightID);
 	const { appId } = useParams();
 
 	return (
@@ -15,6 +17,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ id }) => {
 			<TabsComponent
 				{...{
 					data,
+					insightId: insightID,
 					appId,
 					id,
 					setData,

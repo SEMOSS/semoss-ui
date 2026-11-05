@@ -1,11 +1,12 @@
 import { Navigate } from "react-router";
-import { InsightProvider, useInsight, useSession } from "@semoss/sdk/react";
+import { InsightProvider, useInsight } from "@semoss/sdk/react";
 import { Alert, AlertDescription, AlertTitle, Skeleton } from "@semoss/ui/next";
 import { EnterpriseUsage } from "@/features/enterprise-usage/enterprise-usage";
+import { useSession } from "@/hooks/use-session";
 
 /** Uses the authenticated role, independent of the persisted admin-mode preference. */
 export function EnterpriseUsagePage() {
-	const isAdmin = useSession((state) => state.user?.isAdmin === true);
+	const isAdmin = useSession((state) => state.user.admin);
 	return isAdmin ? (
 		<InsightProvider options={{ disableRoom: true }}>
 			<EnterpriseUsageSession />

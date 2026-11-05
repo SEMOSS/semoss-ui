@@ -29,7 +29,7 @@ Internal deps: `automation, connectors, i18n, panels, sdk, shared, ui, utility, 
 Path alias `@/` → `src/`. Generic helpers belong in `@semoss/utility` (search before adding).
 
 Bootstrap (`src/app.tsx`): `Env.update` (MODULE/ENDPOINT/APP/ACCESS_KEY/SECRET_KEY) →
-`I18nextProvider` → `InsightProvider` → `ThemeProvider`
+`I18nextProvider` → `AccessStoreProvider` → `InsightProvider` → `ThemeProvider`
 (storage key `smss-ui-theme-collaboration`, default light) → `Router` + `Toaster`.
 
 ## 3. Directory map

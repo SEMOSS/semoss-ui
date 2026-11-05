@@ -3,7 +3,6 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { runPixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -29,6 +28,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { encodeTextToBase64 } from "@semoss/utility/encoding";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
@@ -41,9 +41,6 @@ export const StorageForm = ({
 	advanced,
 	categoryDescription,
 }) => {
-	// the name check runs as the user types, so it shares the session's
-	// insight rather than making one per check
-	const { run } = useSessionInsight();
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [isValidDatabaseName, setIsValidDatabaseName] =
@@ -68,6 +65,7 @@ export const StorageForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
+	const runPixel = useSession((state) => state.runPixel);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -210,7 +208,7 @@ export const StorageForm = ({
 			userInput.trim(),
 		);
 
-		const response = await run(pixelToExecute);
+		const response = await runPixel(pixelToExecute);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 

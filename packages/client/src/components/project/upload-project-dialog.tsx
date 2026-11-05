@@ -1,7 +1,5 @@
 import { X } from "lucide-react";
 import { useId, useState } from "react";
-import { runPixel } from "@semoss/sdk";
-import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -27,6 +25,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { useSession } from "@/hooks";
 
 /** Title and error message shown based on the entity being uploaded. */
 const DIALOG_CONFIG = {
@@ -81,8 +80,8 @@ export const UploadProjectDialog = ({
 	handleClose,
 }: UploadProjectDialogProps) => {
 	const config = DIALOG_CONFIG[type];
-	// an uploaded zip is read in the insight it was uploaded through
-	const { run: runInInsight, upload: uploadToInsight } = useSessionInsight();
+	const runPixel = useSession((state) => state.runPixel);
+	const sessionUpload = useSession((state) => state.upload);
 
 	// --- Form state ---
 	const [upload, setUpload] = useState<File | null>(null);
@@ -125,8 +124,8 @@ export const UploadProjectDialog = ({
 
 			if (isAppZip) {
 				// App Zip: single pixel handles the full project creation
-				const uploaded = await uploadToInsight([upload]);
-				const resp = await runInInsight(
+				const uploaded = await sessionUpload([upload]);
+				const resp = await runPixel(
 					`UploadProjectApp(filePath=["${uploaded[0].fileLocation}"], global=[${isGlobal}]);`,
 				);
 				const output = resp.pixelReturn[0].output as {
@@ -180,13 +179,13 @@ export const UploadProjectDialog = ({
 					return;
 				}
 
-				const uploaded = await uploadToInsight(
+				const uploaded = await sessionUpload(
 					[upload],
 					createOutput.project_id,
 					"version",
 				);
 
-				const unzipResp = await runInInsight(
+				const unzipResp = await runPixel(
 					`UnzipFile(filePath=["${uploaded[0].fileLocation}"], space=["${createOutput.project_id}"]);`,
 				);
 				if (

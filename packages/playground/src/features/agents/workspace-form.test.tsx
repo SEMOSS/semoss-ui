@@ -11,7 +11,6 @@ const mocks = vi.hoisted(() => ({
 	createAgent: vi.fn(),
 	navigate: vi.fn(),
 	run: vi.fn(),
-	runPixel: vi.fn(),
 	upload: vi.fn(),
 }));
 vi.mock("@semoss/i18n", () => ({
@@ -59,8 +58,7 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 		isLoading: false,
 		hasMore: false,
 	}),
-	runPixel: mocks.runPixel,
-	useSessionInsight: () => ({ run: mocks.run, upload: mocks.upload }),
+	useInsight: () => ({ actions: { run: mocks.run, upload: mocks.upload } }),
 }));
 vi.mock("@semoss/shared", async (original) => ({
 	...(await original<typeof import("@semoss/shared")>()),
@@ -148,12 +146,7 @@ test("agent creation retains all settings on failure and retries with the full c
 
 test("knowledge creation retains its files and text after failure", async () => {
 	const onSuccess = vi.fn();
-	// a pixel error comes back in `errors` rather than as a rejection
-	mocks.runPixel.mockResolvedValueOnce({
-		errors: ["Create unavailable"],
-		insightId: "",
-		pixelReturn: [],
-	});
+	mocks.run.mockRejectedValueOnce(new Error("Create unavailable"));
 	const formId = "knowledge-test-form";
 	render(
 		<>

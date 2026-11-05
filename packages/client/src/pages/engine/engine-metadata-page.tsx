@@ -16,7 +16,6 @@ import {
 	console as getPixelConsole,
 	runPixel,
 	usePixel,
-	useSessionInsight,
 } from "@semoss/sdk/react";
 import { ColumnMetadataModal, type LogicalDataType } from "@semoss/shared";
 import {
@@ -54,7 +53,7 @@ import { getErrorMessage } from "@semoss/utility/error";
 import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
-import { useEngine } from "@/hooks";
+import { useEngine, useSession } from "@/hooks";
 
 const normalizeSearchValue = (value: string) =>
 	value.toLowerCase().replace(/[\s_]+/g, "");
@@ -180,9 +179,9 @@ export const EngineMetadataPage = observer(() => {
 	};
 
 	const { engine } = useEngine();
-	// the PDF export and its download, and each pixel and the console read
-	// while it runs, share the session's insight
-	const { run, download, withInsight, ensure } = useSessionInsight();
+	const sessionRunPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
+	const download = useSession((state) => state.download);
 
 	const [isModified, setIsModified] = useState(false);
 	const [nodes, setNodes] = useState<
@@ -320,6 +319,7 @@ export const EngineMetadataPage = observer(() => {
 				}
 			},
 		},
+		insightID,
 	);
 
 	// get the data if a table is selected
@@ -355,6 +355,7 @@ export const EngineMetadataPage = observer(() => {
 				numCollected: 0,
 			},
 		},
+		insightID,
 	);
 
 	const getDatabaseCategory = usePixel<string>(
@@ -393,65 +394,61 @@ export const EngineMetadataPage = observer(() => {
 		[nodes],
 	);
 
-	/**
-	 * Run a pixel in the session's insight, showing its console messages while
-	 * it runs.
-	 */
 	const runPixelWithConsole = async <O extends unknown[] | []>(
 		pixel: string,
 	) => {
-		// make the insight first, so its console can be read from the start and
-		// a long pixel does not hold every other session call while it runs
-		await ensure();
-		return withInsight(async (insightId) => {
-			let stopPolling = false;
-			const pollConsole = async () => {
-				while (!stopPolling) {
-					try {
-						const { message } = await getPixelConsole(insightId);
+		const insightId = insightID;
+		if (!insightId) {
+			throw new Error("Missing insight ID for the metadata request.");
+		}
 
-						if (Array.isArray(message) && message.length > 0) {
-							let latestConsoleMessage = "";
-							const cleanedMessages = message
-								.map((entry) => String(entry ?? "").trim())
-								.filter(Boolean);
+		let stopPolling = false;
+		const pollConsole = async () => {
+			while (!stopPolling) {
+				try {
+					const { message } = await getPixelConsole(insightId);
 
-							if (cleanedMessages.length > 0) {
-								latestConsoleMessage =
-									cleanedMessages[cleanedMessages.length - 1];
-								setLoadingLogMessages((prev) => {
-									const next = [...prev];
-									for (const entry of cleanedMessages) {
-										if (next[next.length - 1] !== entry) {
-											next.push(entry);
-										}
+					if (Array.isArray(message) && message.length > 0) {
+						let latestConsoleMessage = "";
+						const cleanedMessages = message
+							.map((entry) => String(entry ?? "").trim())
+							.filter(Boolean);
+
+						if (cleanedMessages.length > 0) {
+							latestConsoleMessage =
+								cleanedMessages[cleanedMessages.length - 1];
+							setLoadingLogMessages((prev) => {
+								const next = [...prev];
+								for (const entry of cleanedMessages) {
+									if (next[next.length - 1] !== entry) {
+										next.push(entry);
 									}
-									return next;
-								});
-							}
-
-							if (latestConsoleMessage) {
-								setLoadingMessage(latestConsoleMessage);
-							}
+								}
+								return next;
+							});
 						}
-					} catch {
-						// Ignore console polling failures; pixel result decides success/failure.
+
+						if (latestConsoleMessage) {
+							setLoadingMessage(latestConsoleMessage);
+						}
 					}
-
-					await new Promise((resolve) =>
-						setTimeout(resolve, CONSOLE_POLL_INTERVAL_MS),
-					);
+				} catch {
+					// Ignore console polling failures; pixel result decides success/failure.
 				}
-			};
 
-			const pollPromise = pollConsole();
-			try {
-				return await runPixel<O>(pixel, insightId);
-			} finally {
-				stopPolling = true;
-				await pollPromise;
+				await new Promise((resolve) =>
+					setTimeout(resolve, CONSOLE_POLL_INTERVAL_MS),
+				);
 			}
-		});
+		};
+
+		const pollPromise = pollConsole();
+		try {
+			return await runPixel<O>(pixel, insightID);
+		} finally {
+			stopPolling = true;
+			await pollPromise;
+		}
 	};
 
 	const filteredColumns = useMemo(() => {
@@ -929,7 +926,7 @@ Error ${getErrorMessage(e, "Unknown error")}
 	const downloadDatabaseMetadata = async () => {
 		try {
 			// run it
-			const { errors, pixelReturn } = await run<[string]>(
+			const { errors, pixelReturn } = await sessionRunPixel<[string]>(
 				`DatabaseMetadataToPdf(database=["${engine.engine_id}"]);`,
 			);
 
@@ -940,7 +937,7 @@ Error ${getErrorMessage(e, "Unknown error")}
 			const output = pixelReturn[0]?.output;
 
 			// download the file
-			await download(output);
+			download(output);
 		} catch (e) {
 			toast.error(
 				`

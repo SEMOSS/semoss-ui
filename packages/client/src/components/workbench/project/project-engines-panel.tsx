@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { runPixel, Session } from "@semoss/sdk";
 import type { Engine, ProjectDependency } from "@semoss/shared";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
@@ -34,7 +33,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
-import { useProject } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 import { isProjectType } from "@/utility/catalog";
 
 /** Display metadata for one engine category card. */
@@ -145,6 +144,7 @@ const ManageEnginesDialog = ({
 	dependencies,
 	onClose,
 }: ManageEnginesDialogProps) => {
+	const runPixel = useSession((state) => state.runPixel);
 	const meta = CATEGORY_META[category];
 
 	const [search, setSearch] = useState("");
@@ -174,8 +174,7 @@ const ManageEnginesDialog = ({
 				const filterClause = trimmed
 					? `filterWord=${JSON.stringify(trimmed)}, `
 					: "";
-				// runs as the user types, so it shares the session's insight
-				const response = await Session.insight.run<[Engine[]]>(
+				const response = await runPixel<[Engine[]]>(
 					`MyEngines(${filterClause}engineTypes=${JSON.stringify([category])}, limit=[${MANAGE_FETCH_LIMIT}], offset=[0]);`,
 				);
 				if (response.errors.length > 0) {
@@ -205,7 +204,7 @@ const ManageEnginesDialog = ({
 			cancelled = true;
 			window.clearTimeout(timer);
 		};
-	}, [category, search]);
+	}, [category, runPixel, search]);
 
 	const toggleEngine = (engineId: string) => {
 		setSelectedIds((current) => {
@@ -466,6 +465,7 @@ const EngineCategoryCard = ({
  */
 const ProjectEnginesPanel = () => {
 	const { project, dependencies, permission, refresh } = useProject();
+	const runPixel = useSession((state) => state.runPixel);
 	const [manageCategory, setManageCategory] = useState<string | null>(null);
 	const [isRemoving, setIsRemoving] = useState(false);
 	const canEdit = permission === "OWNER" || permission === "EDIT";

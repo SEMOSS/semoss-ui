@@ -3,7 +3,7 @@
 import { LanguagesIcon, LogOutIcon, MapIcon, SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
-import { Session, useSession } from "@semoss/sdk/react";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -22,7 +22,7 @@ import {
 } from "@semoss/ui/next";
 import { buildInitials } from "@semoss/utility/text";
 import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
-import { useRoot, useTour } from "@/hooks";
+import { useChat, useRoot, useTour } from "@/hooks";
 
 /**
  * The signed in user's name and avatar at the foot of the sidebar. Clicking it
@@ -32,13 +32,15 @@ import { useRoot, useTour } from "@/hooks";
 export const NavUser = () => {
 	const { t, i18n } = useTranslation(["common", "sidebar"]);
 	const { isMobile } = useSidebar();
+	const { actions } = useInsight();
+	const { chat } = useChat();
 	const { root } = useRoot();
 	const { startTour } = useTour();
 	const { openSettings } = useSettingsDialog();
 
 	const navigate = useNavigate();
 
-	const userName = useSession((state) => state.user?.name ?? "");
+	const userName = chat.user.name;
 
 	const selectedLanguage = LANGUAGES.find(
 		(lang) => lang.code === i18n.language,
@@ -112,13 +114,7 @@ export const NavUser = () => {
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					onClick={async () => {
-						try {
-							await Session.logout();
-						} catch (error) {
-							// the backend kept the session, so the user stays here
-							console.error(error);
-							return;
-						}
+						await actions.logout();
 
 						navigate("/login");
 					}}

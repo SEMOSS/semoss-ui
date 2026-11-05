@@ -9,9 +9,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { AppTab } from "./App";
+import AppTab from "./App";
 import ExternalTab from "./External";
-import { InsightTab } from "./Insight";
+import InsightTab from "./Insight";
 
 type TabRenderProps = {
 	id: string;
@@ -20,6 +20,7 @@ type TabRenderProps = {
 	// biome-ignore lint/suspicious/noExplicitAny: upload callback uses untyped promise
 	uploadFile?: (file: File, appId: string, path: string) => Promise<any>;
 	appId: string;
+	insightId?: string;
 	// biome-ignore lint/suspicious/noExplicitAny: setData path/value are dynamically typed
 	setData?: (path: string, value: any, force?: boolean) => void;
 };
@@ -29,16 +30,22 @@ const tabConfig = [
 		label: "Insight",
 		value: "insight",
 		tooltip: "Image generated when the app runs",
-		render: ({ data, setData }: TabRenderProps) => (
-			<InsightTab data={data} setData={setData} />
+		render: ({ insightId, data, setData }: TabRenderProps) => (
+			<InsightTab insightId={insightId} data={data} setData={setData} />
 		),
 	},
 	{
 		label: "App",
 		value: "app",
 		tooltip: "Image stored in app assets",
-		render: ({ id, data, setData, appId }: TabRenderProps) => (
-			<AppTab data={data} setData={setData} id={id} appId={appId} />
+		render: ({ id, data, setData, appId, insightId }: TabRenderProps) => (
+			<AppTab
+				insightId={insightId}
+				data={data}
+				setData={setData}
+				id={id}
+				appId={appId}
+			/>
 		),
 	},
 	{
@@ -52,7 +59,7 @@ const tabConfig = [
 ];
 
 export const TabsComponent = observer(
-	({ data, setData, appId, id }: TabRenderProps) => {
+	({ data, setData, insightId, appId, id }: TabRenderProps) => {
 		const [value, setValue] = useState("insight");
 
 		// biome-ignore lint/suspicious/noExplicitAny: image data value is dynamically typed
@@ -69,6 +76,7 @@ export const TabsComponent = observer(
 					data,
 					setData: updateData,
 					appId: appId || "",
+					insightId: insightId || "",
 				}),
 			[value, data],
 		);

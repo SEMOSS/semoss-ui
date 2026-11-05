@@ -2,7 +2,6 @@ import { Download, Shield, Upload } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { ModelUsageLimit, UserSearchResult } from "@semoss/sdk";
-import { useConfig } from "@semoss/sdk/react";
 import {
 	findModelUsageLimitProblem,
 	ModelUsageLimitEditor,
@@ -38,7 +37,7 @@ import {
 	DirectoryPersonSearch,
 	getPersonLabel,
 } from "@/features/directory-person-search/directory-person-search";
-import { useSettings } from "@/hooks";
+import { useConfig, useSettings } from "@/hooks";
 import type { ApiResponse } from "@/types";
 
 interface User {
@@ -158,13 +157,13 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 	const { open = false, user = null, onClose = () => null } = props;
 
 	const availableProviders = useConfig(
-		(state) => state.config?.availableProviders ?? [],
+		(state) => state.config.availableProviders,
 	);
 	const { adminMode } = useSettings();
 
 	const isNewUser = user === null;
 	const isDirectoryAvailable = useConfig(
-		(state) => state.config?.msGraphLookup === true,
+		(state) => state.config.msGraphLookup === true,
 	);
 	const [entryMode, setEntryMode] = useState<EntryMode>("directory");
 	const [selectedPerson, setSelectedPerson] =

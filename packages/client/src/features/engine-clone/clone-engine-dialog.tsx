@@ -18,6 +18,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { useSession } from "@/hooks/use-session";
 
 /** Added to the engine's name for the name the clone starts with */
 const DEFAULT_NAME_SUFFIX = " Copy";
@@ -62,6 +63,7 @@ export const CloneEngineDialog = ({
 	engineLabel,
 	onSubmit,
 }: CloneEngineDialogProps) => {
+	const insightID = useSession((state) => state.insightID);
 	const form = useForm<CloneEngineValues>({
 		resolver: zodResolver(schema),
 		defaultValues: { name: `${engineName}${DEFAULT_NAME_SUFFIX}` },
@@ -73,10 +75,10 @@ export const CloneEngineDialog = ({
 		let cloneId: string;
 		let cloneName: string;
 		try {
-			const clone = await cloneEngine({
-				engineId,
-				name: values.name,
-			});
+			const clone = await cloneEngine(
+				{ engineId, name: values.name },
+				insightID,
+			);
 			cloneId = clone.engineId;
 			cloneName = clone.name || values.name;
 		} catch (e: unknown) {

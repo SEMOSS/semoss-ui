@@ -1,6 +1,5 @@
 import { ListChecks } from "lucide-react";
 import { Link, useLocation } from "react-router";
-import { useConfig } from "@semoss/sdk/react";
 import { MembersTable } from "@semoss/shared";
 import { Button, H2 } from "@semoss/ui/next";
 import { PendingMembersTable, SettingsTiles } from "@/components/settings";
@@ -13,7 +12,7 @@ import {
 import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-access-management";
 import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
-import { useProject } from "@/hooks";
+import { useConfig, useProject } from "@/hooks";
 
 export interface ProjectAccessControlProps {
 	/**
@@ -36,7 +35,7 @@ export const ProjectAccessControl = ({
 	// an admin uses them in admin mode, from the settings pages
 	const canEditAccess = permission === "OWNER" || permission === "EDIT";
 	const isDirectoryAvailable = useConfig(
-		(state) => state.config?.msGraphLookup === true,
+		(state) => state.config.msGraphLookup === true,
 	);
 	// the other views are reached from the access control tab only, not where
 	// the page is shown inside another one

@@ -2,7 +2,6 @@ import { X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { SerializedState } from "@semoss/renderer";
-import { runPixel } from "@semoss/sdk";
 import type { Project } from "@semoss/shared";
 import {
 	Badge,
@@ -19,6 +18,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
+import { useSession } from "@/hooks";
 
 type NewAppForm = {
 	APP_NAME: string;
@@ -38,6 +38,8 @@ interface NewAppModalProps {
 
 export const NewAppModal = (props: NewAppModalProps) => {
 	const { open, options, onClose = () => null } = props;
+	const runPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
 	const [isLoading, setIsLoading] = useState(false);
 	const [tagInput, setTagInput] = useState("");
 	const nameId = useId();
@@ -100,7 +102,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				appId = pixelReturn[0].output.project_id;
 
 				if (data.APP_IMG && appId) {
-					await uploadImage(data.APP_IMG, appId);
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
 				if (!(await saveMetadata(appId))) return;
@@ -114,7 +116,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				appId = pixelReturn[0].output.project_id;
 
 				if (data.APP_IMG && appId) {
-					await uploadImage(data.APP_IMG, appId);
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
 				if (!(await saveMetadata(appId, ["AUTOMATION"]))) return;
@@ -128,7 +130,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				appId = pixelReturn[0].output.project_id;
 
 				if (data.APP_IMG && appId) {
-					await uploadImage(data.APP_IMG, appId);
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
 				const newIndexFilePath = "version/assets/portals/index.html";

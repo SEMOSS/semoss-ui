@@ -2,8 +2,6 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { type Location, Navigate, useLocation } from "react-router";
-import { Session } from "@semoss/sdk";
-import { useConfig, useSession } from "@semoss/sdk/react";
 import {
 	getLoginProviderInitials,
 	getLoginProviderKey,
@@ -32,7 +30,7 @@ import { getErrorMessage } from "@semoss/utility/error";
 import { setupResetPassword } from "@/api/auth";
 import loginDarkHero from "@/assets/img/login-dark-hero.gif";
 import loginHero from "@/assets/img/login-gif.gif";
-import { useThemeConfig, useThemeLogo } from "@/hooks";
+import { useConfig, useSession, useThemeLogo } from "@/hooks";
 
 interface TypeUserLogin {
 	USERNAME: string;
@@ -67,22 +65,21 @@ const LOGIN_TYPE_LABELS: Record<LoginPasswordResetType, string> = {
 	linotp: "LinOTP",
 };
 
-/** Kept stable so the provider lists are not rebuilt every render */
-const NO_PROVIDERS: {
-	provider: string;
-	name: string;
-	label: string;
-	isOauth: boolean;
-}[] = [];
-
 export const LoginPage = () => {
-	const theme = useThemeConfig();
-	const availableProviders =
-		useConfig((state) => state.config?.availableProviders) ?? NO_PROVIDERS;
+	const theme = useConfig((state) => state.theme);
+	const availableProviders = useConfig(
+		(state) => state.config.availableProviders,
+	);
 	const nativeRegistration = useConfig(
-		(state) => state.config?.nativeRegistration === true,
+		(state) => state.config.nativeRegistration,
 	);
 	const status = useSession((state) => state.status);
+	const sessionLogin = useSession((state) => state.login);
+	const sessionLoginLDAP = useSession((state) => state.loginLDAP);
+	const sessionLoginOTP = useSession((state) => state.loginOTP);
+	const sessionConfirmOTP = useSession((state) => state.confirmOTP);
+	const sessionRegister = useSession((state) => state.register);
+	const sessionOauth = useSession((state) => state.oauth);
 	const { resolvedTheme } = useTheme();
 	const themeLogo = useThemeLogo();
 	const location = useLocation();
@@ -273,11 +270,7 @@ export const LoginPage = () => {
 
 		if (!showOTPCodeField) {
 			if (loginType === "native") {
-				await Session.login({
-					type: "native",
-					username: data.USERNAME,
-					password: data.PASSWORD,
-				})
+				await sessionLogin(data.USERNAME, data.PASSWORD)
 					.catch((err) => {
 						setError(err.message);
 					})
@@ -286,11 +279,7 @@ export const LoginPage = () => {
 					});
 			}
 			if (loginType === "ldap") {
-				await Session.login({
-					type: "ldap",
-					username: data.USERNAME,
-					password: data.PASSWORD,
-				})
+				await sessionLoginLDAP(data.USERNAME, data.PASSWORD)
 					.catch((err) => {
 						setError(err.message);
 					})
@@ -299,7 +288,7 @@ export const LoginPage = () => {
 					});
 			}
 			if (loginType === "linotp") {
-				await Session.requestOTP(data.USERNAME, data.PASSWORD)
+				await sessionLoginOTP(data.USERNAME, data.PASSWORD)
 					.then((challengeAccepted) => {
 						if (!challengeAccepted) {
 							setError(
@@ -318,7 +307,7 @@ export const LoginPage = () => {
 			}
 		}
 		if (showOTPCodeField) {
-			await Session.login({ type: "linotp", otp: data.OTP_CONFIRM })
+			await sessionConfirmOTP(data.OTP_CONFIRM)
 				.catch((err) => {
 					setError(err.message);
 				})
@@ -354,15 +343,15 @@ export const LoginPage = () => {
 				return;
 			}
 
-			await Session.register({
-				name: `${data.FIRST_NAME} ${data.LAST_NAME}`,
-				username: data.USERNAME,
-				email: data.EMAIL,
-				password: data.PASSWORD,
-				phone: data.PHONE,
-				phoneextension: data.EXTENTION,
-				countrycode: data.COUNTRY_CODE,
-			})
+			await sessionRegister(
+				`${data.FIRST_NAME} ${data.LAST_NAME}`,
+				data.USERNAME,
+				data.EMAIL,
+				data.PASSWORD,
+				data.PHONE,
+				data.EXTENTION,
+				data.COUNTRY_CODE,
+			)
 				.then((res) => {
 					if (res) {
 						setError("");
@@ -386,7 +375,7 @@ export const LoginPage = () => {
 	const oauth = async (provider: string) => {
 		setIsLoading(true);
 
-		await Session.login({ type: "oauth", provider: provider })
+		await sessionOauth(provider)
 			.then(() => {
 				setIsLoading(false);
 				toast.success("Successfully logged in");
@@ -469,7 +458,7 @@ export const LoginPage = () => {
 
 	const path = (location.state as { from: Location })?.from?.pathname || "/";
 
-	if (status === "AUTHENTICATED") {
+	if (status === "SUCCESS") {
 		return <Navigate to={path} replace />;
 	}
 

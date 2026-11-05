@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { runPixel } from "@semoss/sdk";
 import {
 	Button,
 	Dialog,
@@ -10,6 +9,7 @@ import {
 	DialogTitle,
 	toast,
 } from "@semoss/ui/next";
+import { useSession } from "@/hooks";
 
 interface PromptDeleteModalProps {
 	isOpen: boolean;
@@ -20,6 +20,8 @@ interface PromptDeleteModalProps {
 
 export const PromptDeleteModal = (props: PromptDeleteModalProps) => {
 	const { isOpen, onClose, promptId, onDelete } = props;
+
+	const runPixel = useSession((state) => state.runPixel);
 
 	const [loading, setLoading] = useState(false);
 

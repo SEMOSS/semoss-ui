@@ -14,15 +14,7 @@ vi.mock("echarts/core", () => ({
 		dispose: vi.fn(),
 	}),
 }));
-/** The part of the session the pages read */
-interface SessionState {
-	user: { isAdmin: boolean } | null;
-}
-vi.mock("@semoss/sdk/react", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
-	useSession: (selector: (state: SessionState) => unknown) =>
-		selector({ user: { isAdmin: true } }),
-}));
+vi.mock("@/hooks/use-session", () => ({ useSession: () => true }));
 
 const response = (data: unknown) =>
 	new Response(JSON.stringify(data), {

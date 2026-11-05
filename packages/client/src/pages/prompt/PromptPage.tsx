@@ -1,6 +1,5 @@
 import { Filter, LayoutGrid, List, Plus, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { runPixel, useSession } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -22,28 +21,18 @@ import {
 } from "@semoss/ui/next";
 import { NavbarHeader } from "@/components/shared/navbar-header";
 import { NavbarLeft } from "@/components/shared/navbar-left";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { PromptLibraryCards } from "../../components/prompt/library/prompt-library-cards";
 import type { Prompt } from "../../components/prompt/prompt.types";
 import { PromptModal } from "./PromptModal";
 
 type ViewMode = "grid" | "list";
-
-/** A prompt as ListPrompt returns it; the backend leaves out empty fields */
-interface ListedPrompt {
-	context?: string;
-	created_by?: string;
-	date_created?: string;
-	id?: string;
-	intent?: string;
-	title?: string;
-	tags?: string[];
-	global?: boolean;
-}
 type PromptTabMode = "My Prompts" | "Global Prompts";
 
 export const PromptPage = () => {
-	const userId = useSession((state) => state.user?.id ?? "");
+	const runPixel = useSession((state) => state.runPixel);
+	const userId = useSession((state) => state.user.id);
 	const navigate = useNavigate();
 	const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
 	const [promptMode, setPromptMode] = useState("");
@@ -70,7 +59,7 @@ export const PromptPage = () => {
 	 * @desc Gets All prompts
 	 */
 	const init = () => {
-		runPixel<[ListedPrompt[]]>("ListPrompt()").then((response) => {
+		runPixel("ListPrompt()").then((response) => {
 			const { output } = response.pixelReturn[0];
 			if (output.length > 0) {
 				const promptArr = [];
@@ -97,18 +86,18 @@ export const PromptPage = () => {
 	 * @desc Gets all filter tag options
 	 */
 	const loadTags = () => {
-		runPixel<[{ metavalue: string }[]]>(
-			'GetPromptMetaValues( metaKeys = ["tag","domain"])',
-		).then((response) => {
-			const { output } = response.pixelReturn[0];
-			if (output.length > 0) {
-				const tagSet = new Set<string>();
-				output.forEach((tag) => {
-					tagSet.add(tag.metavalue);
-				});
-				setPromptTags([...tagSet]);
-			}
-		});
+		sessionStore
+			.runPixel('GetPromptMetaValues( metaKeys = ["tag","domain"])')
+			.then((response) => {
+				const { output } = response.pixelReturn[0];
+				if (output.length > 0) {
+					const tagSet = new Set<string>();
+					output.forEach((tag: { metavalue: string }) => {
+						tagSet.add(tag.metavalue);
+					});
+					setPromptTags([...tagSet]);
+				}
+			});
 	};
 
 	/**

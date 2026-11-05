@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
-import { useSession } from "@semoss/sdk/react";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ProjectAccessControl, ProjectOverview } from "@/components/project";
 import { ProjectSettingsPanel } from "@/components/project/project-settings-panel";
 import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail";
 import { useProject } from "@/hooks/use-project";
+import { useSession } from "@/hooks/use-session";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
 import { AppGithubPage } from "@/pages/app/app-github-page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
@@ -34,7 +34,7 @@ interface ProjectDetailTabsProps {
 
 export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 	const { project, type, permission } = useProject();
-	const isAdmin = useSession((state) => state.user?.isAdmin === true);
+	const isAdmin = useSession((state) => state.user.admin);
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
 

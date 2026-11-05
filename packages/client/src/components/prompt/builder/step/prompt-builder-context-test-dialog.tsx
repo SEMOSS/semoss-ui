@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { runPixel } from "@semoss/sdk";
 import {
 	Button,
 	Dialog,
@@ -8,7 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { isRecord } from "@semoss/utility/object";
+import { useSession } from "@/hooks";
 
 export const PromptBuilderContextTestDialog = (props: {
 	llm: string;
@@ -16,6 +15,7 @@ export const PromptBuilderContextTestDialog = (props: {
 	open: boolean;
 	close: () => void;
 }) => {
+	const runPixel = useSession((state) => state.runPixel);
 	const [loading, setLoading] = useState(false);
 	const [response, setResponse] = useState("");
 
@@ -24,15 +24,8 @@ export const PromptBuilderContextTestDialog = (props: {
 		const LLMresponse = await runPixel(
 			`LLM(engine="${props.llm}", command=["<encode>${props.context}</encode>"])`,
 		);
-		const { output } = LLMresponse.pixelReturn[0];
-		// the model answers with text, or an object holding it
-		if (typeof output === "string") {
-			setResponse(output);
-		} else if (isRecord(output) && typeof output.response === "string") {
-			setResponse(output.response);
-		} else {
-			setResponse("");
-		}
+		const { output: LLMOutput } = LLMresponse.pixelReturn[0];
+		setResponse(LLMOutput?.response ?? LLMOutput ?? "");
 		setLoading(false);
 	};
 

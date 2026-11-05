@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel } from "@semoss/sdk";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Dialog,
 	DialogContent,
@@ -14,6 +14,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { runPixel } from "../../utility/pixel";
 
 const ENGINE_TYPES = [
 	"MODEL",
@@ -84,6 +85,7 @@ interface HelpDialogProps {
  * paste straight into the REPL or a file.
  */
 export const HelpDialog = ({ open, onOpenChange }: HelpDialogProps) => {
+	const { actions } = useInsight();
 	const { t } = useTranslation("dialog");
 	const [activeType, setActiveType] = useState<EngineType>("MODEL");
 	// cache fetched data per type so re-selecting a tab is instant
@@ -102,12 +104,10 @@ export const HelpDialog = ({ open, onOpenChange }: HelpDialogProps) => {
 		let cancelled = false;
 		setLoadingType(activeType);
 		(async () => {
-			// a catalog read: it belongs to no workspace
-			const resp = await runPixel<[unknown]>(
+			const resp = await runPixel<unknown>(
+				actions,
 				`GetEngineUsage(type=["${activeType}"]);`,
-			)
-				.then(({ pixelReturn }) => pixelReturn[0] ?? null)
-				.catch(() => null);
+			);
 			if (cancelled) return;
 			setLoadingType(null);
 			if (!resp) {

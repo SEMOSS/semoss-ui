@@ -200,7 +200,11 @@ export const setProjectVisiblity = async (admin, appId, visible) => {
 	return response;
 };
 
-export const uploadImage = async (files: File[], projectId: string | null) => {
+export const uploadImage = async (
+	files: File[],
+	projectId: string | null,
+	insightId?: string | null,
+) => {
 	const url = `${Env.MODULE}/api/images/projectImage/upload`,
 		fd: FormData = new FormData();
 
@@ -211,6 +215,10 @@ export const uploadImage = async (files: File[], projectId: string | null) => {
 	} else {
 		// pasted data
 		fd.append("file", files);
+	}
+
+	if (insightId) {
+		fd.append("insightId", insightId);
 	}
 
 	if (projectId) {
@@ -248,16 +256,19 @@ export const updateProjectSmssProperties = async (
  * Set the name a project is displayed under. Only the project's owner can.
  *
  * @name setProjectDisplayName
+ * @param insightId - Insight the pixel executes against.
  * @param projectId - Project to rename.
  * @param name - New display name.
  * @return Resolves when the display name is persisted.
  */
 export const setProjectDisplayName = async (
+	insightId: string,
 	projectId: string,
 	name: string,
 ): Promise<void> => {
 	const response = await runPixel<[boolean]>(
 		`SetProjectDisplayName(project=[${JSON.stringify(projectId)}], name=[${JSON.stringify(`<encode>${name}</encode>`)}]);`,
+		insightId,
 	);
 	if (response.errors.length > 0) {
 		throw new Error(response.errors.join(""));

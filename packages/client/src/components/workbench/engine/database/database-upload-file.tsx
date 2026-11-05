@@ -1,6 +1,5 @@
 import { useEffect, useId, useState } from "react";
 import type { ColumnInterface } from "@semoss/sdk/react";
-import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -32,7 +31,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useEngine } from "@/hooks";
+import { useEngine, useSession } from "@/hooks";
 
 const NEW_DATABASE = "TABLE";
 
@@ -60,9 +59,8 @@ export const DatabaseUploadCsv = ({
 	onClose,
 }: DatabaseUploadFileProps) => {
 	const { engine } = useEngine();
-	// the uploaded file is previewed and then loaded in the insight it was
-	// uploaded through
-	const { run: runPixel, upload } = useSessionInsight();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
 
 	const targetTableId = useId();
 	const appendModeId = useId();

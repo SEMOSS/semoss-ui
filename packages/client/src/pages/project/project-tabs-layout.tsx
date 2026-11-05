@@ -6,7 +6,6 @@ import {
 import { useMemo } from "react";
 import { Link, matchPath, Outlet, useLocation } from "react-router";
 import type { Role } from "@semoss/sdk";
-import { useSession } from "@semoss/sdk/react";
 import { AppCatalogAvatar, EntityHeader } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -24,7 +23,7 @@ import { setProjectDisplayName } from "@/api/projects";
 import { ProjectAccessRequestButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { ProjectActionsMenu } from "@/features/project-actions/project-actions-menu";
-import { useProject } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 interface ProjectTabsLayoutProps {
@@ -42,7 +41,8 @@ interface ProjectTabsLayoutProps {
 export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	const { catalog, project, permission, refresh, type, update } =
 		useProject();
-	const isAdmin = useSession((state) => state.user?.isAdmin === true);
+	const insightID = useSession((state) => state.insightID);
+	const isAdmin = useSession((state) => state.user.admin);
 
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
@@ -89,7 +89,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	 * Save the project's new display name and show it in place
 	 */
 	const handleRename = async (name: string) => {
-		await setProjectDisplayName(project.project_id, name);
+		await setProjectDisplayName(insightID, project.project_id, name);
 		update({ project_display_name: name });
 	};
 

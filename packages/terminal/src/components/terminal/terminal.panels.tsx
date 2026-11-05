@@ -60,8 +60,9 @@ const PaneLoader = () => (
 );
 
 /**
- * Binds a file pane to an *existing* terminal-tab insight, so browsing,
- * uploading and REPL commands share a single workspace. Passing `insightId` makes the SDK attach to the already
+ * Binds a file pane to an *existing* terminal-tab insight instead of the
+ * ambient app-level one, so browsing, uploading and REPL commands share a
+ * single workspace. Passing `insightId` makes the SDK attach to the already
  * live insight rather than spin up a new one, and `destroyOnUnmount` is off so
  * unmounting a pane never drops the insight the terminal owns.
  *
@@ -131,6 +132,7 @@ const TerminalFileExplorerPane = ({ id }: { id: WorkbenchPanelId }) => {
 	// channel for exactly this, which until now had no consumer at all.
 	const renderToken = terminal.browserRenderToken;
 	const refresh = explorer.commands.refresh;
+	// biome-ignore lint/correctness/useExhaustiveDependencies: the token is the trigger, not a value this reads
 	useEffect(() => {
 		if (renderToken > 0) {
 			refresh();

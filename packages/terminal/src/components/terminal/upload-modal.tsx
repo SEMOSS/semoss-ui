@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, Session, uploadInsight } from "@semoss/sdk";
+import { uploadInsight } from "@semoss/sdk";
+import { useInsight } from "@semoss/sdk/react";
+import { runPixel } from "../../utility/pixel";
 import { useTerminal } from "./terminal-context";
 
 export const UploadModal = () => {
 	const terminal = useTerminal();
+	const { actions, insightId } = useInsight();
 	const { t } = useTranslation("dialog");
 	const inputRef = useRef<HTMLInputElement | null>(null);
 	const [dragging, setDragging] = useState(false);
@@ -47,38 +50,22 @@ export const UploadModal = () => {
 			terminal.alert("warn", t("upload.errors.commentRequired"));
 			return;
 		}
-		// The insight space is the active terminal tab's workspace. A project or
-		// user space belongs to no insight, so the session's own insight carries
-		// the upload and the commit runs in none.
-		const space = terminal.getBrowserSpace();
-		const insightId = space
-			? undefined
-			: (terminal.activeInsightId ?? undefined);
-		if (!space && !insightId) {
-			terminal.alert("error", t("upload.errors.unknown"));
-			return;
-		}
-
 		setSubmitting(true);
 		try {
 			let path = terminal.getBrowserPath();
+			const space = terminal.getBrowserSpace();
 			if (path.length > 0) path += "/";
 
-			const uploaded = insightId
-				? ((await uploadInsight(insightId, path, terminal.upload.files))
-						.data ?? [])
-				: // a project or the user's own space; the upload endpoint names
-					// the user's space in lower case
-					await Session.insight.upload(
-						terminal.upload.files,
-						space.toUpperCase() === "USER" ? "user" : space,
-						path,
-					);
+			const uploaded = await uploadInsight(
+				insightId || null,
+				path,
+				terminal.upload.files,
+			);
 
-			for (const file of uploaded) {
+			for (const file of uploaded.data ?? []) {
 				await runPixel(
+					actions,
 					`CommitAsset(filePath=["${path}${file.fileName}"], comment=["${terminal.upload.comment}"], space=[${space ? `"${space}"` : ""}])`,
-					insightId,
 				);
 			}
 

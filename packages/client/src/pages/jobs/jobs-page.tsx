@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router";
-import { runPixel, Session, useDebouncedValue } from "@semoss/sdk/react";
+import { runPixel, useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -30,7 +30,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useSettings } from "@/hooks";
+import { useSession, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { DeleteJobModal } from "./delete-job-modal";
 import type {
@@ -83,6 +83,7 @@ const formatNextRunIn = (iso: string | null | undefined): string | null => {
 };
 
 export function JobsPage() {
+	const sessionRunPixel = useSession((state) => state.runPixel);
 	const { adminMode } = useSettings();
 	const navigate = useNavigate();
 
@@ -176,7 +177,7 @@ export function JobsPage() {
 	const getJobs = () => {
 		setJobsLoading(true);
 		const pixel = "META|ListAllJobs()";
-		runPixel<[Record<string, PixelReturnJob>]>(pixel)
+		sessionRunPixel<[Record<string, PixelReturnJob>]>(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 
@@ -233,7 +234,7 @@ export function JobsPage() {
 			pixel += `jobId=["${jobId[0]}"], `;
 			pixel += `jobGroup=["${jobGroup[0]}"]) `;
 		}
-		runPixel(pixel)
+		sessionRunPixel(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType;
 				const output = response.pixelReturn[0].output as OutputType;
@@ -333,18 +334,16 @@ export function JobsPage() {
 		}
 		pixel += `limit=${rowsPerPage},offset=${page * rowsPerPage})`;
 
-		// runs on every search and page, so it shares the session's insight
-		return Session.insight
-			.run<
-				[
-					{
-						data: {
-							values: string[][];
-							headers: string[];
-						};
-					},
-				]
-			>(pixel)
+		return sessionRunPixel<
+			[
+				{
+					data: {
+						values: string[][];
+						headers: string[];
+					};
+				},
+			]
+		>(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 				if (type.indexOf("ERROR") > -1) {
@@ -356,7 +355,7 @@ export function JobsPage() {
 				} else {
 					const historyData: HistoryJob[] = [];
 					const output = response.pixelReturn[0].output;
-					const headers: Record<string, number> = {};
+					const headers = {};
 					for (
 						let headerIdx = 0,
 							headerLen = output.data.headers.length;
@@ -515,7 +514,7 @@ export function JobsPage() {
 	const getStats = (window: "24h" | "7d" | "30d" = statsWindow) => {
 		setStatsLoading(true);
 		const pixel = `META|SchedulerStats(window=["${window}"])`;
-		runPixel<[SchedulerStats]>(pixel)
+		sessionRunPixel<[SchedulerStats]>(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 				if (type.indexOf("ERROR") > -1) {

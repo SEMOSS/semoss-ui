@@ -1,6 +1,8 @@
+import { useCallback, useContext, useEffect } from "react";
+import { useStore } from "zustand";
 import type { Role } from "@semoss/sdk";
-import { useSessionPermissions } from "@semoss/sdk/react";
-import type { ResourceType } from "../types/file-panel.types";
+import { AccessStoreContext } from "../contexts/access.context";
+import { getPermissionKey, type ResourceType } from "../types/access.types";
 
 /** Still resolving a resource's permission for the first time. */
 interface AccessLoadingState {
@@ -31,54 +33,69 @@ export type AccessState =
 	| AccessErrorState
 	| AccessReadyState;
 
+/** The host's permission cache, or a throw naming the missing provider. */
+export const useAccessStore = () => {
+	const store = useContext(AccessStoreContext);
+	if (!store) {
+		throw new Error(
+			"File panels must be mounted underneath an AccessStoreProvider",
+		);
+	}
+	return store;
+};
+
 /**
- * Resolve one resource's permission off the session's shared cache, so every
- * surface open on a resource sees the same answer.
+ * Resolve one resource's permission off the host's shared cache.
+ *
+ * The cache is host-scoped, so every surface open on a resource sees the same
+ * answer and a revalidation reaches all of them at once.
  *
  * @param type - Kind of resource being accessed.
- * @param id - The resource's id. An insight without one (a user's own files)
- * is editable; a project or engine without one is an error.
+ * @param id - The resource's id.
  * @return Loading, error, or ready state — `permission`/`readOnly` only once resolved.
  */
 export const useAccess = (type: ResourceType, id: string): AccessState => {
-	const access = useSessionPermissions(type, id || null);
+	const store = useAccessStore();
+	const key = getPermissionKey(type, id);
+	const entry = useStore(store, (state) => state.permissions[key]);
+	const loadPermission = useStore(store, (state) => state.loadPermission);
+	const refreshPermission = useStore(
+		store,
+		(state) => state.refreshPermission,
+	);
 
-	if (access.status === "IDLE") {
-		// a project or engine is always named; without an id there is nothing
-		// the user can be shown to have access to
-		if (type !== "INSIGHT") {
-			return {
-				status: "error",
-				error: "No resource to read access for",
-				refresh: access.refresh,
-			};
+	useEffect(() => {
+		if (!entry) {
+			void loadPermission(type, id).catch(() => undefined);
 		}
-		return {
-			status: "ready",
-			permission: "EDIT",
-			readOnly: false,
-			refreshing: false,
-			refresh: () => Promise.resolve("EDIT"),
-		};
-	}
+	}, [loadPermission, entry, id, type]);
 
-	if (access.status === "LOADING" || !access.permission) {
-		if (access.status === "ERROR") {
-			return {
-				status: "error",
-				error: access.error ?? "Failed to load resource access",
-				refresh: access.refresh,
-			};
-		}
+	const refresh = useCallback(
+		() => refreshPermission(type, id),
+		[refreshPermission, id, type],
+	);
+
+	if (!entry || (entry.status === "LOADING" && !entry.permission)) {
 		return { status: "loading" };
 	}
 
+	if (entry.status === "ERROR" && !entry.permission) {
+		return {
+			status: "error",
+			error: entry.error ?? "Failed to load resource access",
+			refresh,
+		};
+	}
+
+	// entry.permission is defined here: SUCCESS always sets it, and the two
+	// branches above rule out LOADING/ERROR without a stale value.
+	const permission = entry.permission as Role;
 	return {
 		status: "ready",
-		permission: access.permission,
-		readOnly: !access.canEdit,
-		refreshing: access.refreshing,
-		refreshError: access.error ?? undefined,
-		refresh: access.refresh,
+		permission,
+		readOnly: !(permission === "OWNER" || permission === "EDIT"),
+		refreshing: entry.status === "LOADING",
+		refreshError: entry.status === "ERROR" ? entry.error : undefined,
+		refresh,
 	};
 };

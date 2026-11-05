@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight, useSessionPermissions } from "@semoss/sdk/react";
+import { useInsight } from "@semoss/sdk/react";
 import { toast, useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -19,7 +19,7 @@ import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
 import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
 import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
-import { useAssistantStore, useProject } from "@/hooks";
+import { useAssistantStore, useProject, useSession } from "@/hooks";
 import type { BuildRun } from "@/stores/assistant";
 import { APP_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
 import {
@@ -259,8 +259,8 @@ export const CodeWorkbench: React.FC = () => {
 		toast.success("App rebuilt and published.");
 	}, [readOnly, insight.actions, project.project_id, announcePublished]);
 
-	const { sync: syncPermission, refresh: refreshPermission } =
-		useSessionPermissions("PROJECT", project.project_id);
+	const syncPermission = useSession((s) => s.syncPermission);
+	const refreshPermission = useSession((s) => s.refreshPermission);
 
 	const assistantStore = useAssistantStore(workbenchId);
 
@@ -268,8 +268,10 @@ export const CodeWorkbench: React.FC = () => {
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		syncPermission(permission);
-		void refreshPermission().catch(() => undefined);
+		syncPermission("PROJECT", project.project_id, permission);
+		void refreshPermission("PROJECT", project.project_id).catch(
+			() => undefined,
+		);
 
 		assistantStore.getState().configure({
 			defaultAgent: APP_BUILDER_AGENT,

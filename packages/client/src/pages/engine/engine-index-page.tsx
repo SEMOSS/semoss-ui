@@ -1,11 +1,6 @@
 import { Plus } from "lucide-react";
 import { type JSX, useEffect, useState } from "react";
-import {
-	runPixel,
-	useConfig,
-	useIteratorPixel,
-	usePixel,
-} from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import {
 	Button,
@@ -28,6 +23,7 @@ import {
 import { EngineGridItem } from "@/components/engine";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
+import { useConfig } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	buildAccessFilterParams,
@@ -56,7 +52,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = ({
 }): JSX.Element => {
 	const route = { name, path, type, description };
 	const databaseMetaKeys = useConfig(
-		(state) => state.config?.databaseMetaKeys ?? [],
+		(state) => state.config.databaseMetaKeys,
 	);
 	const navigate = useNavigate();
 

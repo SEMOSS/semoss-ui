@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { runPixel } from "@semoss/sdk";
 import { toast } from "@semoss/ui/next";
+import { useSession } from "@/hooks/use-session";
 import type { ALL_TYPES } from "@/types";
 import { getDeleteRequest } from "./delete-request";
 
@@ -40,6 +40,7 @@ export const useDeleteResource = ({
 	id,
 	projectType,
 }: DeleteResourceTarget): UseDeleteResourceResult => {
+	const runPixel = useSession((state) => state.runPixel);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const request = getDeleteRequest(type, id, projectType);
 

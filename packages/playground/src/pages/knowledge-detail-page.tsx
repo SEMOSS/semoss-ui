@@ -22,12 +22,7 @@ import {
 	type PostUser,
 	removeEngineUserPermissions,
 } from "@semoss/sdk";
-import {
-	runPixel,
-	useConfig,
-	usePixel,
-	useSessionInsight,
-} from "@semoss/sdk/react";
+import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import { type UserSource, UserSourceToggle } from "@semoss/shared";
 import {
 	Badge,
@@ -217,11 +212,8 @@ export const KnowledgeDetailPage = observer(() => {
 	// with both available, people already in the app are searched first
 	const [userSource, setUserSource] = useState<UserSource>("existing");
 	const [removeTarget, setRemoveTarget] = useState<EngineUser | null>(null);
-	// a file made for download belongs to the insight that made it
-	const sessionInsight = useSessionInsight();
-	const isDirectoryAvailable = useConfig(
-		(state) => state.config?.msGraphLookup === true,
-	);
+	const insight = useInsight();
+	const isDirectoryAvailable = insight.system?.config.msGraphLookup === true;
 	// Without the directory, leave the choice to the backend
 	const msGraphLookup = isDirectoryAvailable
 		? userSource === "directory"
@@ -244,21 +236,15 @@ export const KnowledgeDetailPage = observer(() => {
 			try {
 				const filePath = `/schema/default/documents/${previewDoc.fileName}`;
 				if (isText(previewDoc.fileName)) {
-					const { errors, pixelReturn } = await runPixel<[string]>(
+					const { pixelReturn } = await insight.actions.run<[string]>(
 						`GetEngineAssets(filePath=["${filePath}"], engine=["${knowledgeId}"]);`,
 					);
-					if (errors.length > 0) {
-						throw new Error(errors.join(""));
-					}
 					const text = pixelReturn[0].output;
 					if (!cancelled) setPreviewText(text);
 				} else {
-					const { errors, pixelReturn } = await runPixel<[string]>(
+					const { pixelReturn } = await insight.actions.run<[string]>(
 						`GetEngineAssetsBase64(filePath=["${filePath}"], engine=["${knowledgeId}"]);`,
 					);
-					if (errors.length > 0) {
-						throw new Error(errors.join(""));
-					}
 					const b64 = pixelReturn[0].output;
 					if (!cancelled) {
 						const mimeType = isImage(previewDoc.fileName)
@@ -283,7 +269,7 @@ export const KnowledgeDetailPage = observer(() => {
 			cancelled = true;
 			if (createdBlobUrl) URL.revokeObjectURL(createdBlobUrl);
 		};
-	}, [previewDoc, knowledgeId]);
+	}, [previewDoc, knowledgeId, insight.actions.run]);
 
 	const loadMembers = useCallback(async () => {
 		if (!knowledgeId) return;
@@ -411,14 +397,11 @@ export const KnowledgeDetailPage = observer(() => {
 	};
 
 	const handleDownload = async (fileName: string) => {
-		const { errors, pixelReturn } = await sessionInsight.run<[string]>(
+		const { pixelReturn } = await insight.actions.run<[string]>(
 			`META | VectorFileDownload(engine = "${knowledgeId}", fileNames=["${fileName}"]);`,
 		);
-		if (errors.length > 0) {
-			throw new Error(errors.join(""));
-		}
 		const fileKey = pixelReturn[0].output;
-		await sessionInsight.download(fileKey);
+		await download(insight.insightId, fileKey);
 	};
 
 	if (!knowledgeId) {

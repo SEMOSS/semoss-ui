@@ -1,13 +1,11 @@
-import { runPixel, useConfig } from "@semoss/sdk/react";
 import { CatalogTagsSettings } from "@/components/catalog";
-import { useProject } from "@/hooks";
+import { useConfig, useProject, useSession } from "@/hooks";
 
 /** Settings section for a project's tags, classification, and domain. */
 export const ProjectTagsSettingsPage = () => {
 	const { project, permission, refresh, catalog } = useProject();
-	const projectMetaKeys = useConfig(
-		(state) => state.config?.projectMetaKeys ?? [],
-	);
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const runPixel = useSession((state) => state.runPixel);
 
 	return (
 		<CatalogTagsSettings

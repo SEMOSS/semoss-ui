@@ -12,8 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { runPixel } from "@semoss/sdk";
-import { usePixel, useSessionInsight } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -34,6 +33,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
+import { useSession } from "@/hooks";
 
 interface FileTableProps {
 	/**
@@ -100,9 +100,9 @@ export const FileTable = (props: FileTableProps) => {
 	const fileSearchRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const didMount = useRef<boolean>(false);
-	// an uploaded file is embedded, and an exported one downloaded, in the
-	// insight that holds it
-	const { run, upload, download } = useSessionInsight();
+	const runPixel = useSession((state) => state.runPixel);
+	const sessionUpload = useSession((state) => state.upload);
+	const download = useSession((state) => state.download);
 	const [exportLoading, setExportLoading] = useState(false);
 
 	// newly added state
@@ -295,8 +295,8 @@ export const FileTable = (props: FileTableProps) => {
 		query: string,
 	): Promise<PixelReturnLike> => {
 		try {
-			const response = await run(query);
-			return (response?.pixelReturn?.[0] ?? {}) as PixelReturnLike;
+			const response = await runPixel(query);
+			return response?.pixelReturn?.[0] ?? {};
 		} catch (queryError: unknown) {
 			const error = queryError as Record<string, unknown>;
 			const pixelReturn = error?.pixelReturn;
@@ -414,7 +414,7 @@ export const FileTable = (props: FileTableProps) => {
 
 		try {
 			// Upload files to the server first
-			const uploaded = await upload(data.PROJECT_UPLOAD);
+			const uploaded = await sessionUpload(data.PROJECT_UPLOAD);
 
 			const pixelReturn = await runEmbeddingQuery(
 				uploaded.map((file) => file.fileLocation),
@@ -499,9 +499,9 @@ export const FileTable = (props: FileTableProps) => {
 		const pixel = `META | VectorFileDownload(engine = "${id}", fileNames=[${fileArray}]);`;
 
 		try {
-			const response = await run(pixel);
+			const response = await runPixel(pixel);
 			const { output } = response.pixelReturn[0];
-			await download(String(output));
+			download(String(output));
 		} finally {
 			setExportLoading(false);
 		}

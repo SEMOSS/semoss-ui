@@ -39,7 +39,7 @@ export interface ProviderConnection {
 /** What {@link useConnections} returns. */
 export interface UseConnectionsResult {
 	/** Whether the session's logins have loaded. */
-	status: "LOADING" | "READY" | "ERROR";
+	status: "loading" | "ready" | "error";
 	/** Every provider, in display order. */
 	connections: ProviderConnection[];
 	/** The provider whose sign in popup is open, if any. */
@@ -175,7 +175,7 @@ export const useConnections = (): UseConnectionsResult => {
 		isCoveredByServer(serviceId, connectorAccess);
 
 	return {
-		status: status,
+		status: status.toLowerCase() as UseConnectionsResult["status"],
 		connections: connections,
 		connectingProviderId: connectingProviderId,
 		disconnectingProviderId: disconnectingProviderId,

@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { runPixel } from "@semoss/sdk";
 import type { Project } from "@semoss/shared";
 import {
 	Button,
@@ -20,6 +19,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { useSession } from "@/hooks";
 
 const schema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -41,6 +41,7 @@ export interface CloneProjectDialogProps {
 
 export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 	const { open, project, onClose } = props;
+	const runPixel = useSession((state) => state.runPixel);
 
 	const label =
 		project.project_type === "SKILL"

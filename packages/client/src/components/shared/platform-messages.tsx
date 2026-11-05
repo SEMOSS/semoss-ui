@@ -1,6 +1,5 @@
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -9,9 +8,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { tryParseJson } from "@semoss/utility/json";
-import { isRecord } from "@semoss/utility/object";
-import { useThemeConfig } from "@/hooks";
+import { useConfig, useSession } from "@/hooks/";
 
 const RawHtml = ({ html }: { html: string }) => {
 	return (
@@ -24,8 +21,10 @@ const RawHtml = ({ html }: { html: string }) => {
 };
 
 export const PlatformMessages: React.FC = () => {
-	const { termsHeaderReact, termsReact } = useThemeConfig();
-	const userEpoch = useSession((state) => state.user?.userEpoch ?? "");
+	const termsHeaderReact = useConfig((state) => state.theme.termsHeaderReact);
+	const termsReact = useConfig((state) => state.theme.termsReact);
+	const config = useConfig((state) => state.config);
+	const userEpoch = useSession((state) => state.userEpoch);
 	const [acceptedTerms, setAcceptedTerms] = useState<boolean | null>(null);
 
 	const terms = {
@@ -33,15 +32,19 @@ export const PlatformMessages: React.FC = () => {
 		text: termsReact,
 	};
 
-	// read whether this user accepted the terms, kept per user epoch
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - config is used for side effects only
 	useEffect(() => {
 		if (userEpoch) {
-			const item = localStorage.getItem(`smss--terms--${userEpoch}`);
-			// a corrupt entry counts as not accepted
-			const stored = item ? tryParseJson(item) : undefined;
-			setAcceptedTerms(isRecord(stored) && stored.state === true);
+			const key = `smss--terms--${userEpoch}`;
+			const item = localStorage.getItem(key);
+			if (item) {
+				const d = JSON.parse(item);
+				setAcceptedTerms(d.state);
+			} else {
+				setAcceptedTerms(false);
+			}
 		}
-	}, [userEpoch]);
+	}, [userEpoch, config]);
 
 	const acceptTerms = () => {
 		if (userEpoch) {

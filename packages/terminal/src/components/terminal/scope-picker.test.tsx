@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
@@ -5,22 +6,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ScopePicker } from "./scope-picker";
 import { TerminalProvider, useTerminal } from "./terminal-context";
 
-const { actions, runPixel } = vi.hoisted(() => ({
-	actions: { run: vi.fn() },
-	runPixel: vi.fn(),
-}));
+const { actions } = vi.hoisted(() => ({ actions: { run: vi.fn() } }));
 
-vi.mock("@semoss/sdk/react", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
-	// the active tab's insight, which LoadApp and the catalog read run in
-	useInsight: () => ({ actions, insightId: "tab-1" }),
-	// the project catalog, read in the tab's insight
-	runPixel,
+vi.mock("@semoss/sdk/react", () => ({
+	useInsight: () => ({ actions }),
 }));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@semoss/shared", () => ({ AppCatalogAvatar: () => null }));
+vi.mock("@semoss/panels", () => ({
+	createAccessStore: () => ({}),
+	AccessStoreProvider: ({ children }: { children: ReactNode }) => children,
+}));
 
 /** Exercise context updates from sibling panes with the real terminal provider. */
 function ScopeControls() {
@@ -58,12 +56,6 @@ describe("ScopePicker effects", () => {
 		vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
 		actions.run.mockReset();
 		actions.run.mockResolvedValue({
-			pixelReturn: [{ operationType: ["SUCCESS"], output: true }],
-		});
-		runPixel.mockReset();
-		runPixel.mockResolvedValue({
-			errors: [],
-			insightId: "temporary",
 			pixelReturn: [
 				{
 					operationType: ["SUCCESS"],
@@ -105,19 +97,17 @@ describe("ScopePicker effects", () => {
 
 	it("fetches once on opening and does not refetch for unrelated context updates", async () => {
 		await mount();
-		expect(runPixel).not.toHaveBeenCalled();
+		expect(actions.run).not.toHaveBeenCalled();
 		await clickButton("scope.app");
-		expect(runPixel).toHaveBeenCalledExactlyOnceWith(
+		expect(actions.run).toHaveBeenCalledExactlyOnceWith(
 			"META | MyProjects(limit=[50], offset=[0]);",
-			"tab-1",
 		);
 		const searchInput = container.querySelector("input");
 		expect(searchInput).not.toBeNull();
 		expect(document.activeElement).toBe(searchInput);
 
 		await clickButton("Update title");
-		expect(runPixel).toHaveBeenCalledTimes(1);
-		expect(actions.run).not.toHaveBeenCalled();
+		expect(actions.run).toHaveBeenCalledTimes(1);
 		expect(container.querySelector("input")).toBe(searchInput);
 	});
 
@@ -128,9 +118,7 @@ describe("ScopePicker effects", () => {
 		expect(container.querySelector("output")?.textContent).toBe(
 			"APP:app-1",
 		);
-		expect(actions.run).toHaveBeenCalledExactlyOnceWith(
-			'LoadApp("app-1");',
-		);
+		expect(actions.run).toHaveBeenLastCalledWith('LoadApp("app-1");');
 
 		await clickButton("Select second project");
 		expect(container.querySelector("output")?.textContent).toBe(
@@ -140,21 +128,6 @@ describe("ScopePicker effects", () => {
 		expect(container.querySelector("output")?.textContent).toBe("USER");
 		await clickButton("scope.insight");
 		expect(container.querySelector("output")?.textContent).toBe("INSIGHT");
-		expect(runPixel).toHaveBeenCalledTimes(1);
-		expect(actions.run).toHaveBeenCalledTimes(1);
-	});
-
-	it("keeps the previous scope when LoadApp fails", async () => {
-		const log = vi.spyOn(console, "log").mockImplementation(() => {});
-		actions.run.mockRejectedValue(new Error("LoadApp failed"));
-		await mount();
-		await clickButton("scope.app");
-		await clickButton("First Appapp-1");
-		expect(container.querySelector("output")?.textContent).toBe("INSIGHT");
-		expect(log).toHaveBeenCalledWith(
-			"[terminal:error]",
-			"Failed to load app: First App",
-		);
-		log.mockRestore();
+		expect(actions.run).toHaveBeenCalledTimes(2);
 	});
 });

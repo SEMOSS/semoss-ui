@@ -1,6 +1,5 @@
 import { ExternalLink } from "lucide-react";
 import { Link, useSearchParams } from "react-router";
-import { useConfig } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -21,6 +20,7 @@ import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-acc
 import { useAdminResourceName } from "@/features/bulk-access-management/use-admin-resource-name";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
 import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
+import { useConfig } from "@/hooks/use-config";
 import { getResourcePagePath } from "@/utility/catalog";
 import { GovernanceResourceIcon } from "./governance-resource-icon";
 import { GOVERNANCE_NOUNS, type GovernanceType } from "./governance-types";
@@ -73,7 +73,7 @@ export const GovernanceResourceDetails = ({
 }: GovernanceResourceDetailsProps) => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const isDirectoryAvailable = useConfig(
-		(state) => state.config?.msGraphLookup === true,
+		(state) => state.config.msGraphLookup === true,
 	);
 	// a link straight to a resource opens before the list has read it
 	const fetchedName = useAdminResourceName(

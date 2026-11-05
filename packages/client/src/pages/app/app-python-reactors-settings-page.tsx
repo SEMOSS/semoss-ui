@@ -1,6 +1,6 @@
 import { FileCode, HardDriveUpload } from "lucide-react";
 import { useState } from "react";
-import { runPixel, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -17,6 +17,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { AppPythonReloadCard } from "@/features/app-python-reload/app-python-reload-card";
 import { useProject } from "@/hooks/use-project";
+import { useSession } from "@/hooks/use-session";
 import { useSettings } from "@/hooks/useSettings";
 
 /**
@@ -26,6 +27,7 @@ import { useSettings } from "@/hooks/useSettings";
  */
 export const AppPythonReactorsSettingsPage = () => {
 	const { project } = useProject();
+	const sessionRunPixel = useSession((state) => state.runPixel);
 	const { adminMode } = useSettings();
 	const [isCompiling, setIsCompiling] = useState(false);
 
@@ -45,7 +47,7 @@ export const AppPythonReactorsSettingsPage = () => {
 	const handleCompile = async () => {
 		setIsCompiling(true);
 		try {
-			const response = await runPixel(
+			const response = await sessionRunPixel(
 				`CompileAppReactors(project='${project.project_id}', release=true);`,
 			);
 			if (response.errors.length > 0) {

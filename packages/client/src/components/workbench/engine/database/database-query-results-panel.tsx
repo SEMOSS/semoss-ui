@@ -1,6 +1,6 @@
 import { AlertCircle, Download, Table2Icon } from "lucide-react";
 import { useState } from "react";
-import { useSessionInsight } from "@semoss/sdk/react";
+import { download } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -30,7 +30,7 @@ import type {
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
 import { useWorkbenchPanel } from "@semoss/workbench";
-import { useDatabaseWorkbench, useEngine } from "@/hooks";
+import { useDatabaseWorkbench, useEngine, useSession } from "@/hooks";
 import { DatabaseResultsHeader } from "./database-results-header";
 import { DatabaseStatementResultView } from "./database-statement-result-view";
 
@@ -44,8 +44,7 @@ const DatabaseQueryResultsPanel: WorkbenchComponent = ({ id }) => {
 	const { config } = useWorkbenchPanel<DatabaseQueryResultsConfig>(id);
 
 	const { engine } = useEngine();
-	// the csv is made and downloaded in one insight
-	const { run: runPixel, download } = useSessionInsight();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const sourcePanel = config.sourcePanel;
 
@@ -94,7 +93,7 @@ const DatabaseQueryResultsPanel: WorkbenchComponent = ({ id }) => {
 
 			const firstResult = response?.pixelReturn?.[0];
 
-			await download(firstResult.output as string);
+			await download(response.insightId, firstResult.output as string);
 
 			toast.success("Successfully exported results");
 		} catch (error) {

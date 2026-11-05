@@ -101,7 +101,6 @@ export * from "./notebook";
 export * from "./paired-file-upload";
 export * from "./project";
 export * from "./prompts";
-export * from "./session-error";
 export * from "./skills";
 export type {
 	ToolCallOutcome,

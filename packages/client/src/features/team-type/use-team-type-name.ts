@@ -1,5 +1,5 @@
-import { useConfig } from "@semoss/sdk/react";
 import { getLoginTypeName } from "@semoss/shared";
+import { useConfig } from "@/hooks";
 import { CUSTOM_TEAM_TYPE } from "./team-type";
 
 /**
@@ -11,9 +11,7 @@ import { CUSTOM_TEAM_TYPE } from "./team-type";
  * the server does not list it, or the type in title case
  */
 export const useTeamTypeName = (type: string): string => {
-	const providers = useConfig(
-		(state) => state.config?.availableProviders ?? [],
-	);
+	const providers = useConfig((state) => state.config.availableProviders);
 	if (type === CUSTOM_TEAM_TYPE) {
 		return "Custom";
 	}

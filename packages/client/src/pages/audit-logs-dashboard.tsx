@@ -2,8 +2,7 @@
 import { Download, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
-import { runPixel, Session } from "@semoss/sdk";
-import { useSessionInsight } from "@semoss/sdk/react";
+import { download } from "@semoss/sdk";
 import {
 	AppCatalogAvatar,
 	AuditLogFilter,
@@ -33,6 +32,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { useSession } from "@/hooks";
 
 interface AuditLogsDashboardProps {
 	catalogName: string;
@@ -80,8 +80,8 @@ export const AuditLogsDashboard = ({
 	catalogName,
 	embedded = false,
 }: AuditLogsDashboardProps) => {
-	// the export makes the file in an insight, which its download must share
-	const { run, download } = useSessionInsight();
+	const runPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
 	const { appId, engineId } = useParams();
 	const [logs, setLogs] = useState<EventData[]>([]);
 	const [page, setPage] = useState(0);
@@ -207,7 +207,7 @@ export const AuditLogsDashboard = ({
 		return () => {
 			cancelled = true;
 		};
-	}, [appId, engineId, catalogName]);
+	}, [appId, engineId, runPixel, catalogName]);
 
 	/**
 	 * Fetches the audit logs from the API using the current filter state.
@@ -223,9 +223,7 @@ export const AuditLogsDashboard = ({
 		setLoading(true);
 		try {
 			const params = filterValueToReportParams(filterValue);
-			// runs on every search, filter and page, so it shares the session's
-			// insight rather than making one each time
-			const response = await Session.insight.run(
+			const response = await runPixel(
 				buildAuditLogReportPixel(params, limit, offset),
 			);
 			const { operationType, output } = response.pixelReturn[0];
@@ -266,13 +264,13 @@ export const AuditLogsDashboard = ({
 		try {
 			const params = filterValueToReportParams(filterValue);
 			const exportLimit = totalCount > 0 ? totalCount : rowsPerPage;
-			const response = await run(
+			const response = await runPixel(
 				buildExportAuditLogReportPixel(params, exportLimit, 0, pdf),
 			);
 			const { operationType, output } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1)
 				throw new Error(`API Error: ${output}`);
-			await download(output as unknown as string);
+			await download(insightID, output as unknown as string);
 		} catch (error) {
 			toast.error(`Error exporting logs: ${error}`);
 			console.error("Error exporting logs:", error);
@@ -379,10 +377,7 @@ export const AuditLogsDashboard = ({
 		<div className="flex w-full flex-wrap items-center gap-2">
 			<AuditLogFilter
 				updateLogs={updateLogs}
-				// its option lists are standalone reads; this dashboard always has a
-				// route scope, so the scope pickers that need an insight id never show
-				insightId=""
-				runFilterPixel={(pixel) => Session.insight.run(pixel)}
+				insightId={insightID}
 				parent={isContextualDashboard ? "client" : null}
 				scope={routeScope}
 				actions={headerActions}

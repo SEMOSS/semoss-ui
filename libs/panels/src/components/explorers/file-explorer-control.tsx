@@ -1,12 +1,14 @@
 import { FilePlus2Icon, RefreshCwIcon } from "lucide-react";
 import type { FC } from "react";
-import { useSessionPermissions } from "@semoss/sdk/react";
+import { useStore } from "zustand";
 import type { FileExplorerApi } from "@semoss/shared";
 import {
 	useWorkbenchPanel,
 	WorkbenchChromeButton,
 	type WorkbenchPanelProps,
 } from "@semoss/workbench";
+import { useAccessStore } from "../../hooks/use-access";
+import { getPermissionKey } from "../../types/access.types";
 import type { FileExplorerParams } from "./file-explorer-panel";
 
 /** File explorer refresh and create actions for the active panel. */
@@ -15,25 +17,28 @@ export const FileExplorerControl: FC<WorkbenchPanelProps> = ({ id }) => {
 		id,
 	);
 
-	const resource = value
+	const accessKey = value
 		? value.mode.type === "APP"
-			? ({ type: "PROJECT", id: value.mode.app } as const)
+			? getPermissionKey("PROJECT", value.mode.app)
 			: value.mode.type === "ENGINE"
-				? ({ type: "ENGINE", id: value.mode.engine } as const)
+				? getPermissionKey("ENGINE", value.mode.engine)
 				: value.mode.type === "STORAGE"
-					? ({ type: "ENGINE", id: value.mode.storage } as const)
+					? getPermissionKey("ENGINE", value.mode.storage)
 					: null
 		: null;
-	// a chrome control renders outside its panel's subtree, so it reads the
-	// session's shared permission for the same resource
-	const { canEdit } = useSessionPermissions(
-		resource?.type ?? "PROJECT",
-		resource?.id ?? null,
+	// read the cache directly rather than through `useAccess`: a chrome
+	// control renders outside its panel's subtree, so it cannot reuse the
+	// access the panel already resolved
+	const accessStore = useAccessStore();
+	const permission = useStore(accessStore, (state) =>
+		accessKey ? state.permissions[accessKey]?.permission : undefined,
 	);
 
 	if (!value) return null;
 
-	const readOnlyResource = resource ? !canEdit : false;
+	const readOnlyResource = accessKey
+		? !(permission === "OWNER" || permission === "EDIT")
+		: false;
 	const canCreate =
 		!readOnlyResource &&
 		(value.capabilities.mutate || value.capabilities.upload);

@@ -1,6 +1,5 @@
 import { useId, useState } from "react";
 import { Navigate } from "react-router";
-import { useConfig } from "@semoss/sdk/react";
 import {
 	Select,
 	SelectContent,
@@ -13,7 +12,7 @@ import {
 	AdminQueryWorkbench,
 } from "@/components/workbench";
 import { EngineContext, WorkbenchProvider } from "@/contexts";
-import { useSettings } from "@/hooks";
+import { useConfig, useSettings } from "@/hooks";
 
 const DATABASE_OPTIONS = [
 	{ label: "Audit Logs", value: "AuditLogs" },
@@ -31,7 +30,7 @@ const DATABASE_OPTIONS = [
 
 export const AdminQueryPage = () => {
 	const notificationEnabled = useConfig(
-		(state) => state.config?.notificationEnabled === true,
+		(state) => state.config.notificationEnabled,
 	);
 	const { adminMode } = useSettings();
 	const dbSelectId = useId();
