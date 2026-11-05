@@ -89,6 +89,7 @@ export class RootStore {
 				showPlatformLinks: true,
 				enableFeedbackText: true,
 				enableTemperature: false,
+				showDisabledConnectors: true,
 			},
 		},
 	};

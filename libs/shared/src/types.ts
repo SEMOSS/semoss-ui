@@ -366,6 +366,12 @@ export interface ThemeMap {
 			showSystemSkills?: boolean;
 			/** Whether to show items tagged SYSTEM in the MCP selector tools list (MyEngines for TOOLBOX). Defaults to true. */
 			showSystemTools?: boolean;
+			/**
+			 * Whether to show the Connectors row in the chat input menu when no
+			 * connector providers are offered by the server. Defaults to true.
+			 * Set to false to hide it on deployments that have no connectors enabled.
+			 */
+			showDisabledConnectors?: boolean;
 		};
 	};
 }

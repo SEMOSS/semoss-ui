@@ -916,6 +916,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 														root.theme.featureFlags
 															?.enableAgentHarness
 													}
+													showDisabledConnectors={
+														root.theme.featureFlags
+															?.showDisabledConnectors
+													}
 													onOpenChange={setMenuOpen}
 													onOpenMcpOverlay={
 														handleOpenMcpOverlay
