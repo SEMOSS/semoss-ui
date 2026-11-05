@@ -16,6 +16,21 @@ import type {
 	CollaborationState,
 } from "./collaboration.types";
 
+// long snoozes re-check hourly so a sleeping laptop does not stretch one timer
+const MAX_SNOOZE_WAIT_MS = 60 * 60_000;
+
+/** When the soonest snoozed item comes back, in ms; null when nothing is snoozed. */
+function nextSnoozeEnd(items: CollaborationState["items"]): number | null {
+	let soonest: number | null = null;
+	for (const item of items) {
+		if (item.status !== "snoozed" || !item.snoozeUntil) continue;
+		const at = Date.parse(item.snoozeUntil);
+		if (!Number.isNaN(at) && (soonest === null || at < soonest))
+			soonest = at;
+	}
+	return soonest;
+}
+
 interface CollaborationSession {
 	state: CollaborationState;
 	dispatch: (command: CollaborationCommand) => void;
@@ -72,18 +87,31 @@ export function CollaborationSessionProvider({
 		pending.current = [];
 		onChange?.(change);
 	}, [state, onChange]);
+	// wake once, when the soonest snooze is due, instead of re-running the reducer on a clock
+	const nextWake = nextSnoozeEnd(state.items);
 	useEffect(() => {
-		const expire = () => dispatch({ type: "snooze.expire" });
-		const interval = window.setInterval(expire, 30_000);
-		const handleVisibility = () => {
-			if (document.visibilityState === "visible") expire();
+		if (nextWake === null) return;
+		let timer: number | undefined;
+		const arm = () => {
+			window.clearTimeout(timer);
+			const left = nextWake - Date.now();
+			if (left <= 0) return dispatch({ type: "snooze.expire" });
+			timer = window.setTimeout(
+				arm,
+				Math.min(left + 500, MAX_SNOOZE_WAIT_MS),
+			);
 		};
+		// hidden tabs throttle timers; check again on return
+		const handleVisibility = () => {
+			if (document.visibilityState === "visible") arm();
+		};
+		arm();
 		document.addEventListener("visibilitychange", handleVisibility);
 		return () => {
-			window.clearInterval(interval);
+			window.clearTimeout(timer);
 			document.removeEventListener("visibilitychange", handleVisibility);
 		};
-	}, [dispatch]);
+	}, [dispatch, nextWake]);
 	return (
 		<CollaborationSessionContext.Provider
 			value={{

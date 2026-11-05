@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -126,6 +126,7 @@ export function ConnectionsView() {
 	const [connection, setConnection] = useState<Connection | null>(null);
 	const [busy, setBusy] = useState<string | null>(null);
 	const [error, setError] = useState("");
+	const catchUp = useRef<number | undefined>(undefined);
 
 	const load = useCallback(async () => {
 		setError("");
@@ -139,6 +140,7 @@ export function ConnectionsView() {
 	useEffect(() => {
 		void load();
 	}, [load]);
+	useEffect(() => () => window.clearTimeout(catchUp.current), []);
 
 	async function run(key: string, work: () => Promise<unknown>) {
 		setBusy(key);
@@ -177,7 +179,10 @@ export function ConnectionsView() {
 			changes: { sourcesJson: { ...enabled, [id]: on } },
 		});
 		// the server starts a catch-up read when mail or Teams turns on; show its result once it lands
-		if (on && id !== "calendar") setTimeout(() => void load(), 4000);
+		if (on && id !== "calendar") {
+			window.clearTimeout(catchUp.current);
+			catchUp.current = window.setTimeout(() => void load(), 4000);
+		}
 	}
 
 	return (

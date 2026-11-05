@@ -1,6 +1,7 @@
 import { Bot } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { P } from "@semoss/ui/next";
+import { useNow } from "@/lib/use-now";
 
 interface RoutineRunningProps {
 	/** The routine's own status sentence; announced once when the run starts. */
@@ -31,11 +32,7 @@ export function RoutineRunning({
 	startedAt,
 	action,
 }: RoutineRunningProps) {
-	const [now, setNow] = useState(() => Date.now());
-	useEffect(() => {
-		const timer = window.setInterval(() => setNow(Date.now()), 1000);
-		return () => window.clearInterval(timer);
-	}, []);
+	const now = useNow(1000);
 	const elapsed = elapsedLabel(startedAt, now);
 	return (
 		<div className="flex size-full flex-col items-center justify-center gap-6 p-8 text-center">
