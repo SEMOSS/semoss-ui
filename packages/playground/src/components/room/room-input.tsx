@@ -69,6 +69,7 @@ import {
 import { useFileDrag } from "@/contexts/file-drag-context";
 import { ConnectorSignInNotice } from "@/features/connectors/components/connector-sign-in-notice";
 import { useUserConnectorsSync } from "@/features/connectors/use-user-connectors-sync";
+import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { ContextItems } from "@/features/conversation/context-items";
 import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
 import {
@@ -201,6 +202,13 @@ interface RoomInputProps {
 	 * is a persisted, committed choice, not something to back out of inline.
 	 */
 	onExitAgentHarness?: () => void;
+
+	/**
+	 * Offers Default Agent beside No Agent in the agent picker, and is called
+	 * with whether Default Agent is picked. Only the new chat page passes it,
+	 * when the theme lets the agent choice decide the mode.
+	 */
+	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 }
 
 // ============================================================================
@@ -241,6 +249,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onOpenSettings,
 		onSwitchToAgentHarness,
 		onExitAgentHarness,
+		onDefaultAgentChange,
 		onOpenSource,
 	}) => {
 		// ========================================================================
@@ -257,6 +266,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [isScrollable, setIsScrollable] = useState(false);
 		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
+		const canChooseMode = canChooseAgentMode(root.theme.featureFlags);
 		// connectors switched on or off in settings reach this chat at once
 		useUserConnectorsSync(room.connectors);
 		const openWorkspace =
@@ -316,8 +326,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			});
 
 		const agentChipWorkspace = options.workspace ?? null;
+		// agent mode with no saved agent runs the default agent
+		const isDefaultAgent = room.mode === "agent" && !agentChipWorkspace;
 		const agentName =
-			agentChipWorkspace?.name || agentChipWorkspace?.workspace_id || "";
+			agentChipWorkspace?.name ||
+			agentChipWorkspace?.workspace_id ||
+			(isDefaultAgent ? t("modes.defaultAgent") : "");
 		const modelName = model?.engine_display_name || model?.app_name || "";
 		const history = room.history;
 		const historyEntries = useMemo(
@@ -912,9 +926,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													agentEditable={
 														!!onWorkspaceChange
 													}
-													enableAgentHarness={
-														root.theme.featureFlags
-															?.enableAgentHarness
+													canChooseMode={
+														canChooseMode
+													}
+													isDefaultAgent={
+														isDefaultAgent
 													}
 													onOpenChange={setMenuOpen}
 													onOpenMcpOverlay={
@@ -924,7 +940,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											</DropdownMenuContent>
 										</DropdownMenu>
 									)}
-									{agentChipWorkspace && (
+									{(agentChipWorkspace || isDefaultAgent) && (
 										<Tooltip
 											disableHoverableContent={false}
 										>
@@ -1080,7 +1096,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													</Label>
 													<EngineSelect
 														id={modelSelectId}
-														className="h-8 w-auto max-w-32 gap-1 rounded-full border-none bg-transparent px-2 text-xs shadow-none hover:bg-accent"
+														className="h-8 w-auto max-w-44 gap-1 rounded-full border-none bg-transparent px-2 text-[11px] shadow-none hover:bg-accent"
 														name={modelName}
 														value={
 															model?.app_id || ""
@@ -1216,8 +1232,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						values={options.mcp}
 						workspace={agentChipWorkspace}
 						agentEditable={!!onWorkspaceChange}
-						allowDefaultAgent={
-							!!root.theme.featureFlags?.enableAgentHarness
+						allowDefaultAgent={canChooseMode}
+						isDefaultAgent={
+							onDefaultAgentChange ? isDefaultAgent : undefined
 						}
 						disabled={isBusy}
 						onClose={(next) => {
@@ -1227,6 +1244,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							onMcpChange(next.mcp);
 							if (onWorkspaceChange && "workspace" in next) {
 								onWorkspaceChange(next.workspace ?? null);
+							}
+							if (
+								onDefaultAgentChange &&
+								next.isDefaultAgent !== undefined
+							) {
+								onDefaultAgentChange(next.isDefaultAgent);
 							}
 						}}
 					/>

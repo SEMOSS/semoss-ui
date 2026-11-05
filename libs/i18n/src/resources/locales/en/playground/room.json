@@ -50,7 +50,7 @@
 		"exitAgent": "Switch to chat",
 		"selectedAgent": "Agent: {{name}}",
 		"defaultAgent": "Default Agent",
-		"noAgent": "No agent"
+		"noAgent": "No Agent"
 	},
 	"workspace": {
 		"publishTooltip": "Publish as Agent",

@@ -51,7 +51,7 @@ const alpha = {
 const root = {
 	theme: {
 		...new RootStore().theme,
-		featureFlags: { enableAgentHarness: true },
+		featureFlags: { enableAgentHarness: true, modeFollowsAgent: false },
 		banner: "",
 		landing: "",
 	},
@@ -182,8 +182,17 @@ vi.mock("@/components/room/room-options-form", () => ({
 	RoomOptionsForm: ({
 		options,
 		onOptionsChange,
+		onDefaultAgentChange,
 	}: ComponentProps<typeof RoomOptionsForm>) => (
 		<>
+			{onDefaultAgentChange && (
+				<button
+					type="button"
+					onClick={() => onDefaultAgentChange(true)}
+				>
+					Pick Default Agent in Settings
+				</button>
+			)}
 			<input
 				aria-label="Instructions"
 				value={options.instructions}
@@ -223,10 +232,33 @@ vi.mock("@/components/room/room-input", () => ({
 			onWorkspaceChange,
 			onExitAgentHarness,
 			onSwitchToAgentHarness,
+			onDefaultAgentChange,
 			onPrompt,
 			onOpenSource,
 		}: ComponentProps<typeof RoomInput>) => (
 			<>
+				{onDefaultAgentChange && (
+					<>
+						<button
+							type="button"
+							onClick={() => {
+								onWorkspaceChange?.(null);
+								onDefaultAgentChange(true);
+							}}
+						>
+							Pick Default Agent
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								onWorkspaceChange?.(null);
+								onDefaultAgentChange(false);
+							}}
+						>
+							Pick No Agent
+						</button>
+					</>
+				)}
 				<input
 					aria-label="Message draft"
 					defaultValue="Keep this draft"
@@ -299,6 +331,7 @@ beforeEach(() => {
 	);
 	mocks.workspaceStatus = "SUCCESS";
 	root.theme.featureFlags.enableAgentHarness = true;
+	root.theme.featureFlags.modeFollowsAgent = false;
 	mocks.createRoom.mockResolvedValue({ roomId: "sent" });
 });
 afterEach(() => {
@@ -541,6 +574,116 @@ test("without the harness flag saved agents retain chat behavior", async () => {
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
 		"Agent instructions",
 	);
+});
+
+test("when the agent decides the mode, a chat with an agent runs in agent mode", async () => {
+	root.theme.featureFlags.modeFollowsAgent = true;
+	renderWorkspace();
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
+	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Instructions")).toHaveValue(
+			"Agent instructions",
+		),
+	);
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Chat" }));
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"agent",
+			"Hello",
+			[],
+			expect.objectContaining({
+				harnessType: "semoss",
+				workspace: { workspace_id: "alpha", name: "Alpha" },
+			}),
+			"alpha",
+			undefined,
+			expect.any(Function),
+		),
+	);
+});
+
+test("when the agent decides the mode, Default Agent runs in agent mode and No Agent removes it", async () => {
+	root.theme.featureFlags.modeFollowsAgent = true;
+	renderWorkspace();
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
+	fireEvent.click(screen.getByRole("button", { name: "Pick Default Agent" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Pick No Agent" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("chat"),
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Pick Default Agent in Settings" }),
+	);
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"agent",
+			"Hello",
+			[],
+			expect.objectContaining({
+				harnessType: "semoss",
+				workspace: undefined,
+			}),
+			undefined,
+			undefined,
+			expect.any(Function),
+		),
+	);
+});
+
+test("when the agent decides the mode, No Agent after a saved agent runs in chat mode", async () => {
+	root.theme.featureFlags.modeFollowsAgent = true;
+	renderWorkspace();
+	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Pick No Agent" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("chat"),
+	);
+	expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+		"Default",
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"chat",
+			"Hello",
+			[],
+			expect.objectContaining({
+				harnessType: undefined,
+				workspace: undefined,
+			}),
+			undefined,
+			undefined,
+			expect.any(Function),
+		),
+	);
+});
+
+test("without the flag, No Agent and Default Agent are not separate choices", () => {
+	renderWorkspace();
+	expect(
+		screen.queryByRole("button", { name: "Pick Default Agent" }),
+	).toBeNull();
+	expect(
+		screen.queryByRole("button", {
+			name: "Pick Default Agent in Settings",
+		}),
+	).toBeNull();
 });
 
 test("Settings opens locally, deduplicates, and returns when the workspace is empty", () => {

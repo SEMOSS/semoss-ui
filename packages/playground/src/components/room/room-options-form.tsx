@@ -19,20 +19,32 @@ import {
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components/mcp/mcp-overlay";
 import { DefaultToolsField } from "@/features/chat-tools/components/default-tools-field";
+import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
 import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
 import { splitMcpByType } from "@/utility/mcp-utils";
 
 export interface RoomOptionsFormProps {
+	/** The model the chat runs on. */
 	model: RoomStore["model"];
+	/** Called with the model picked. */
 	onModelChange: (model: RoomStore["model"]) => void;
+	/** The chat's settings. */
 	options: RoomStore["options"];
+	/** Called with the settings changed. */
 	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
+	/** Lets the user pick the agent; true only while creating a chat. */
 	agentEditable?: boolean;
+	/** Keeps the settings visible but locked while a turn is running. */
 	disabled?: boolean;
 	/** Agent runs supply their own tools instead of the chat's default tools. */
 	isAgentMode?: boolean;
+	/**
+	 * Offers Default Agent beside No Agent in the agent picker, and is called
+	 * with whether Default Agent is picked.
+	 */
+	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 }
 
 export const RoomOptionsForm = observer(
@@ -44,6 +56,7 @@ export const RoomOptionsForm = observer(
 		agentEditable = false,
 		disabled = false,
 		isAgentMode = false,
+		onDefaultAgentChange,
 	}: RoomOptionsFormProps) => {
 		const { t } = useTranslation(["room", "common"]);
 		const { root } = useRoot();
@@ -247,8 +260,13 @@ export const RoomOptionsForm = observer(
 				<MCPOverlay
 					open={overlay.isOpen}
 					disabled={disabled}
-					allowDefaultAgent={
-						!!root.theme.featureFlags?.enableAgentHarness
+					allowDefaultAgent={canChooseAgentMode(
+						root.theme.featureFlags,
+					)}
+					isDefaultAgent={
+						onDefaultAgentChange
+							? isAgentMode && !options.workspace
+							: undefined
 					}
 					defaultTab={overlay.type}
 					values={options.mcp}
@@ -262,6 +280,12 @@ export const RoomOptionsForm = observer(
 									? { workspace: next.workspace ?? undefined }
 									: {}),
 							});
+							if (
+								onDefaultAgentChange &&
+								next.isDefaultAgent !== undefined
+							) {
+								onDefaultAgentChange(next.isDefaultAgent);
+							}
 						}
 						setOverlay((current) => ({
 							...current,

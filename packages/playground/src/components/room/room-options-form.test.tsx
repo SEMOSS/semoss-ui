@@ -21,16 +21,40 @@ vi.mock("@/components/mcp/mcp-overlay", () => ({
 	MCPOverlay: ({
 		open,
 		defaultTab,
+		values,
+		isDefaultAgent,
 		onClose,
 	}: {
 		open: boolean;
 		defaultTab: string;
-		onClose: () => void;
+		values: RoomStore["options"]["mcp"];
+		isDefaultAgent?: boolean;
+		onClose: (next?: {
+			mcp: RoomStore["options"]["mcp"];
+			workspace?: null;
+			isDefaultAgent?: boolean;
+		}) => void;
 	}) =>
 		open ? (
-			<div role="dialog" aria-label={defaultTab}>
+			<div
+				role="dialog"
+				aria-label={defaultTab}
+				data-default-agent={String(isDefaultAgent)}
+			>
 				<button type="button" onClick={() => onClose()}>
 					Cancel
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						onClose({
+							mcp: values,
+							workspace: null,
+							isDefaultAgent: true,
+						})
+					}
+				>
+					Save Default Agent
 				</button>
 			</div>
 		) : null,
@@ -142,4 +166,35 @@ test("agent mode hides default chat tools and chat mode restores them", () => {
 	expect(screen.queryByText("defaultTools.label")).toBeNull();
 	rerender(<Settings />);
 	expect(screen.getByText("defaultTools.label")).toBeVisible();
+});
+
+test("a new chat's Settings reports Default Agent and names it once picked", () => {
+	const onDefaultAgentChange = vi.fn();
+	const onOptionsChange = vi.fn();
+	const props = {
+		model: null,
+		onModelChange: vi.fn(),
+		options,
+		onOptionsChange,
+		agentEditable: true,
+		onDefaultAgentChange,
+	};
+	const { rerender } = render(<RoomOptionsForm {...props} />);
+	fireEvent.click(
+		screen.getByRole("button", { name: "room:menuWorkspace.selectAgent" }),
+	);
+	expect(screen.getByRole("dialog", { name: "AGENT" })).toHaveAttribute(
+		"data-default-agent",
+		"false",
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Save Default Agent" }));
+	expect(onOptionsChange).toHaveBeenCalledWith({
+		mcp: options.mcp,
+		workspace: undefined,
+	});
+	expect(onDefaultAgentChange).toHaveBeenCalledExactlyOnceWith(true);
+	rerender(<RoomOptionsForm {...props} isAgentMode />);
+	expect(
+		screen.getByRole("button", { name: "room:modes.defaultAgent" }),
+	).toBeVisible();
 });
