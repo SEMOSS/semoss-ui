@@ -55,10 +55,19 @@ Where a pixel runs:
 - It needs no workspace and runs once: `runPixel(pixel)` with no insight id. The
   backend makes an insight for it and keeps it until the session ends.
 - It needs no workspace and runs again and again (a search, a paged list, a poll):
-  `usePixel(pixel)` outside any `InsightProvider`, which runs in `Session.insight`,
-  or `Session.insight.run(pixel)`.
-- It belongs to a workspace: that workspace's `useInsight().actions.run` or `usePixel`
-  inside its `InsightProvider`.
+  `useSessionPixel(pixel)` waits for a non-empty `Session.insight` ID supplied by
+  session initialization. It calls `runPixel` directly and does not create or
+  recover the insight. Use `Session.insight.run(pixel)` when recovery is needed.
+- It belongs to a workspace: `useInsightPixel(pixel)` uses only the nearest
+  `InsightProvider` and waits for its ID. It throws outside a provider. The
+  workspace's `useInsight().actions.run` is also available.
+- Existing `usePixel(pixel, config?, insightId?)` callers keep their routing:
+  explicit ID, otherwise the workspace ID. Only implicit context fallback is
+  deprecated; all call signatures remain valid. Prefer `useInsightPixel` for
+  context-based reads or `useSessionPixel` for session reads. An empty ID (or no ID outside
+  a workspace) creates a backend insight without retaining it in the session.
+  All three hooks return the same request state,
+  callbacks, and refresh/update actions.
 - Several steps must share one insight but belong to no workspace, such as an upload
   and then a pixel that reads the file: the session's own insight, `Session.insight`
   (`run`, `upload`, `download`, or `useSessionInsight()` in React). `run` returns

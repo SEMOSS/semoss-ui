@@ -354,12 +354,18 @@ importers:
       '@testing-library/jest-dom':
         specifier: ^6.6.3
         version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16.3.0
+        version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.18
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
+      jsdom:
+        specifier: ~22.1.0
+        version: 22.1.0
       react:
         specifier: ^19.0.0
         version: 19.2.8

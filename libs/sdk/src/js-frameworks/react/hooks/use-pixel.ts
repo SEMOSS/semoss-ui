@@ -8,7 +8,6 @@ import {
 } from "react";
 import { runPixel } from "../../../api";
 import { InsightContext } from "../contexts";
-import { useSessionStore } from "./use-session";
 
 interface PixelState<D> {
 	/** Status of the pixel call */
@@ -43,10 +42,10 @@ interface usePixel<D> extends PixelState<D> {
 /**
  * Send a command to the backend and recieve a response. This is intended to be used by a single pixel statement (nothing seperated by ;)
  *
- * It runs in the given insight, else the nearest `InsightProvider`'s. With
- * neither, it runs in the session's own insight (`Session.insight`): the
- * backend keeps every insight a pixel makes until the session ends, so a read
- * that runs again on every search or page must not make one each time.
+ * usePixel(pixel), usePixel(pixel, config), and usePixel(pixel, config, insightId)
+ * remain valid. Only implicit InsightContext fallback is deprecated; use
+ * useInsightPixel instead. Passing an insightId bypasses context, and an empty
+ * ID lets the backend create an insight.
  *
  * @param pixel - pixel string to call
  * @param config - Initial data and callbacks
@@ -60,10 +59,8 @@ export function usePixel<D>(
 	insightId?: string,
 ): usePixel<D> {
 	const context = useContext(InsightContext);
-	const session = useSessionStore();
-	const resolvedInsightId = insightId || context?.insightId;
-	// no workspace to run in, so share the session's insight
-	const isInSession = !insightId && !context;
+	// Implicit InsightContext fallback is deprecated; use useInsightPixel or pass an insightId.
+	const resolvedInsightId = insightId ?? context?.insightId;
 
 	// Memoize the initial data
 	// biome-ignore lint/correctness/useExhaustiveDependencies: config?.data is handled by deep check
@@ -135,10 +132,7 @@ export function usePixel<D>(
 			data: initialData,
 		});
 
-		(isInSession
-			? session.insight.run<[D]>(pixel)
-			: runPixel<[D]>(pixel, resolvedInsightId)
-		)
+		runPixel<[D]>(pixel, resolvedInsightId)
 			.then((response) => {
 				// ignore if its cancelled
 				if (isCancelled) {
@@ -190,7 +184,7 @@ export function usePixel<D>(
 		return () => {
 			isCancelled = true;
 		};
-	}, [count, pixel, resolvedInsightId, isInSession, session, initialData]);
+	}, [count, pixel, resolvedInsightId, initialData]);
 
 	return {
 		...state,

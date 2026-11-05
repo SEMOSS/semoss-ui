@@ -205,13 +205,15 @@ so their public types never name a utility type.
   Its auth actions do not refresh or notify `Session`. See the
   [session guide](./skills/session.skill.md#insight-lifecycle-belongs-to-its-owner).
 - Where a pixel runs: `runPixel(pixel)` with no insight id for a one off pixel that needs no
-  workspace (the backend makes an insight and keeps it until the session ends, since the removal
-  in its `runPixelJob` is disabled); `usePixel` with no id and no `InsightProvider` runs in
-  `Session.insight`, so a read that repeats on every search or page keeps no extra insights;
-  the workspace's `useInsight()`
-  inside an `InsightProvider`; `Session.insight` (`run`/`upload`/`download`, `useSessionInsight()`) only
-  for steps that must share one insight but belong to no workspace. `run` returns `errors`; it
-  does not throw.
+  workspace (the backend makes an insight and keeps it until the session ends);
+  `useSessionPixel` waits for the session's existing insight ID and `useInsightPixel`
+  waits for the nearest `InsightProvider`'s ID. Both call transport directly, without
+  insight creation or recovery. Existing `usePixel` retains explicit/workspace
+  routing with no session fallback; only implicit context fallback is deprecated,
+  not its call signatures. An explicit empty ID bypasses context and allows backend creation.
+  `Session.insight` (`run`/`upload`/`download`, `useSessionInsight()`) manages shared
+  insight creation and recovery for work outside a workspace. `run` returns `errors`;
+  it does not throw on pixel errors.
 - Transport these use: `isAdminUser`, `registerUser` ([`api/auth.ts`](./src/api/auth.ts)),
   `getUserInfo` and `setUserMetadata` ([`api/user.ts`](./src/api/user.ts)). `Session.setMetadata`
   is a partial update like the backend's `SetUserMetadata`: only the keys sent change, an empty

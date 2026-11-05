@@ -98,12 +98,27 @@ session over, config included.
 | The pixel | Run it with |
 |---|---|
 | Needs no workspace and runs once, such as a one off mutation | `runPixel(pixel)` with no insight id. The backend makes an insight for it and keeps it until the session ends |
-| Needs no workspace and runs again and again, such as a search, a list that pages, or a poll | `usePixel(pixel)` outside any `<InsightProvider>`, which runs in `Session.insight`, or `Session.insight.run` / `useSessionInsight().run`. Never `runPixel` with no id, which would keep one more insight each time |
-| Belongs to a workspace | That workspace's `useInsight().actions.run`, `usePixel` inside its `<InsightProvider>`, or its `insightId` |
+| Needs no workspace and runs again and again, such as a search, a list that pages, or a poll | `useSessionPixel(pixel)` waits for the session's existing insight ID, or `Session.insight.run` / `useSessionInsight().run` when creation and recovery are needed. Never `runPixel` with no id, which would keep one more insight each time |
+| Belongs to a workspace | `useInsightPixel(pixel)` uses only the nearest `<InsightProvider>` and waits for its ID; it throws without a provider. Alternatively, use that workspace's `useInsight().actions.run` or its `insightId` |
 | Is one of several steps that must share an insight but belong to no workspace, such as an upload then a pixel reading the file, or an export then its download | `Session.insight`: `upload`, `run`, `download`, or `useSessionInsight()` in React |
 
 `Session.insight` (a `SessionInsightStore`) is the session's own insight. It is not a
 workspace: it has no recipe, room or state, only an id that every call shares.
+
+`useSessionPixel(pixel, config?)` subscribes to that ID and stays `INITIAL` while it
+is empty. It does not initialize the session or create the insight: the host must
+call `Session.initialize()` (or use `useSession`) to supply it. It ignores workspace
+context and calls `runPixel` directly, without missing-insight recovery.
+`useInsightPixel(pixel, config?)` likewise never runs with an empty workspace ID.
+Both expose the same state, callbacks, `refresh` and `update` as `usePixel`.
+An empty pixel also leaves them `INITIAL`; losing an ID cancels stale results.
+
+Existing `usePixel(pixel, config?, insightId?)` callers retain their routing:
+explicit ID, otherwise the nearest workspace ID, with no session fallback.
+Only implicit context fallback is deprecated; all call signatures remain valid.
+Use `useInsightPixel` for context-based reads or `useSessionPixel` for session reads.
+An explicit empty ID bypasses context. An empty ID, or no ID outside a workspace,
+lets the backend create an insight without retaining it in the session.
 
 | Member | Notes |
 |---|---|
