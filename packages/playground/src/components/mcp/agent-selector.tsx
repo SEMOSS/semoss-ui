@@ -29,13 +29,28 @@ import type { App, Workspace } from "@/types";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
-interface AgentSelectorProps {
+
+/** Radio value of the Default Agent choice; agent ids are never this. */
+const DEFAULT_AGENT_VALUE = "default-agent";
+
+export interface AgentSelectorProps {
+	/** The saved agent picked, or null when none is. */
 	value: WorkspaceRef | null;
+	/** Called with the saved agent picked, or null when none is. */
 	onChange: (next: WorkspaceRef | null) => void;
+	/** Keeps the choices visible but locked while the conversation is busy. */
 	disabled?: boolean;
+	/** Classes for the picker's outer layout. */
 	className?: string;
 	/** Harness-enabled rooms can run without a saved agent. */
 	allowDefaultAgent?: boolean;
+	/** Whether Default Agent is picked, when it is offered beside No Agent. */
+	isDefaultAgent?: boolean;
+	/**
+	 * Offers No Agent and Default Agent as separate choices, and is called
+	 * with whether Default Agent is picked each time the choice changes.
+	 */
+	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 }
 
 /** Searchable, keyboard-accessible agent selection with a deliberate default. */
@@ -45,9 +60,15 @@ export function AgentSelector({
 	disabled,
 	className,
 	allowDefaultAgent = false,
+	isDefaultAgent = false,
+	onDefaultAgentChange,
 }: AgentSelectorProps) {
 	const { t } = useTranslation(["mcp", "workspace", "room", "common"]);
 	const id = useId();
+	const offersDefaultAgent = onDefaultAgentChange !== undefined;
+	const selectedValue =
+		value?.workspace_id ??
+		(offersDefaultAgent && isDefaultAgent ? DEFAULT_AGENT_VALUE : "");
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
 	const getWorkspaces = useIteratorPixel<App[], App>(
@@ -96,9 +117,15 @@ export function AgentSelector({
 			<ScrollArea className="min-h-0 flex-1" viewportRef={setScroll}>
 				<RadioGroup
 					aria-label={t("room:form.agentLabel")}
-					value={value?.workspace_id ?? ""}
+					value={selectedValue}
 					disabled={disabled}
 					onValueChange={(next) => {
+						if (next === DEFAULT_AGENT_VALUE) {
+							onChange(null);
+							onDefaultAgentChange?.(true);
+							return;
+						}
+						onDefaultAgentChange?.(false);
 						if (!next) {
 							onChange(null);
 							return;
@@ -117,19 +144,34 @@ export function AgentSelector({
 					className="gap-2 p-1"
 				>
 					<div className="flex items-center gap-3 rounded-lg border p-3">
-						<RadioGroupItem id={`${id}-default`} value="" />
+						<RadioGroupItem id={`${id}-none`} value="" />
 						<Label
-							htmlFor={`${id}-default`}
+							htmlFor={`${id}-none`}
 							className="min-h-8 flex-1"
 						>
 							<Bot aria-hidden="true" className="size-4" />
 							{t(
-								allowDefaultAgent
+								allowDefaultAgent && !offersDefaultAgent
 									? "room:modes.defaultAgent"
 									: "room:modes.noAgent",
 							)}
 						</Label>
 					</div>
+					{offersDefaultAgent && (
+						<div className="flex items-center gap-3 rounded-lg border p-3">
+							<RadioGroupItem
+								id={`${id}-default-agent`}
+								value={DEFAULT_AGENT_VALUE}
+							/>
+							<Label
+								htmlFor={`${id}-default-agent`}
+								className="min-h-8 flex-1"
+							>
+								<Bot aria-hidden="true" className="size-4" />
+								{t("room:modes.defaultAgent")}
+							</Label>
+						</div>
+					)}
 					{value &&
 						!getWorkspaces.data.some(
 							(item) => item.project_id === value.workspace_id,

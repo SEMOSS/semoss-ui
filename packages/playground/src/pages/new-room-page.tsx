@@ -20,6 +20,7 @@ import { RoomGreeting } from "@/components/room/room-greeting";
 import { RoomInput } from "@/components/room/room-input";
 import { RoomSidebar } from "@/components/room/room-sidebar";
 import { FileDragProvider } from "@/contexts/file-drag-context";
+import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { clearAgentOptions } from "@/features/conversation/clear-agent-options";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
 import { DropHighlight } from "@/features/conversation/drop-highlight";
@@ -126,7 +127,13 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const submittedRef = useRef(false);
 	const greetingRoomStartedForRef = useRef<string>("");
-	const [mode, setMode] = useState<"chat" | "agent">("chat");
+	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	const [chosenMode, setChosenMode] = useState<"chat" | "agent">("chat");
+	// With modeFollowsAgent the agent picker decides the mode: a saved agent
+	// or Default Agent runs in agent mode, No Agent in chat mode.
+	const modeFollowsAgent = !!root.theme.featureFlags?.modeFollowsAgent;
+	const mode: "chat" | "agent" =
+		modeFollowsAgent && selectedWorkspaceId ? "agent" : chosenMode;
 	const {
 		room: preCreatedRoom,
 		isPreparing,
@@ -148,7 +155,6 @@ export const NewRoomPage = observer(() => {
 	useEffect(() => {
 		tempRoomStore.setMode(mode);
 	}, [mode, tempRoomStore]);
-	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	// The agent whose default model has already been applied to the picker
 	const appliedAgentModelRef = useRef<string>("");
 	const appliedAgentOptionsRef = useRef<string>("");
@@ -627,7 +633,11 @@ export const NewRoomPage = observer(() => {
 		setSelectedWorkspaceId(next?.workspace_id ?? "");
 	};
 	const handleSelectChat = () => {
-		setMode("chat");
+		setChosenMode("chat");
+	};
+	const handleDefaultAgentChange = (isDefaultAgent: boolean) => {
+		if (isLoading || isPreparing) return;
+		setChosenMode(isDefaultAgent ? "agent" : "chat");
 	};
 	const handleOpenSettings = () => {
 		workspaceRoom.openSidebarPanel(
@@ -749,6 +759,9 @@ export const NewRoomPage = observer(() => {
 								},
 								agentEditable: true,
 								isAgentMode: mode === "agent",
+								onDefaultAgentChange: modeFollowsAgent
+									? handleDefaultAgentChange
+									: undefined,
 								onOptionsChange: (opts) => {
 									if ("workspace" in opts)
 										handleAgentChange(
@@ -888,15 +901,21 @@ export const NewRoomPage = observer(() => {
 									onPrompt={createRoom}
 									excludeCommandIds={[
 										"compact",
-										...(root.theme.featureFlags
-											?.enableAgentHarness
+										...(canChooseAgentMode(
+											root.theme.featureFlags,
+										)
 											? []
 											: ["agent-harness", "harness"]),
 									]}
 									onSwitchToAgentHarness={() =>
-										setMode("agent")
+										setChosenMode("agent")
 									}
 									onExitAgentHarness={handleSelectChat}
+									onDefaultAgentChange={
+										modeFollowsAgent
+											? handleDefaultAgentChange
+											: undefined
+									}
 									// The new-room flow has no cancellable turn, so
 									// it's only ever busy (spinner) or idle (send).
 									sendState={
