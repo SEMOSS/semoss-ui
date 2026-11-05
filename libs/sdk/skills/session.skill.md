@@ -46,7 +46,13 @@ const AuthenticatedLayout = () => {
 
 The hooks need no provider; they read the page's `Session`. A `<SessionProvider>`
 only swaps in another session, as tests do with `new SessionStore({ config: new ConfigStore() })`.
-Selectors may return objects; an equal selection does not render again.
+Selectors may build plain records or arrays; shallowly equal selections stay stable.
+Errors and other non-plain objects compare by identity.
+
+Components under a provider must select their `login`, `requestOTP`, and `refresh`
+actions from `useSession` as well, for example `useSession((state) => state.login)`.
+Calling the global `Session` would mutate a different session from the one whose
+state the component reads. With no provider, the hooks keep using the global session.
 
 ## Snapshot
 
@@ -148,20 +154,26 @@ window focus. `Session.logins` is the same store outside React. `connect(provide
 opens a sign in popup from a click; neither it nor `disconnect` signs out the
 session's own login.
 
-## Insights follow the session
+## Insight lifecycle belongs to its owner
 
-An insight reads its config through `Config` and follows `Session`: a sign in
-through `Session` sets up an insight that was waiting for one, and a sign out
-signs every insight out, as the backend drops them. So `useInsight()`'s
-`isInitialized`, `isAuthorized`, `isReady` and `error` stay correct however the
-user signed in, and an app with one workspace can keep gating on them:
+The backend associates insights with the authenticated session and drops them when
+that session closes. `InsightStore` does not subscribe to `Session`, automatically
+reinitialize on sign-in, or broadcast session changes. It reads shared configuration
+through `Config`; its local flags change through initialization and its own actions:
 
 ```tsx
 const { isInitialized, isAuthorized, isReady } = useInsight();
 ```
 
-An app with several workspaces (workbenches, rooms, tabs) gates on `useSession`
-instead, and mounts an `InsightProvider` only around each workspace.
+Use `useSession` for page-level session state and an `InsightProvider` for each
+workspace. The insight's local authorization flag is not a reactive session mirror.
+
+`InsightProvider` destroys its insight on cleanup by default. Set
+`destroyOnUnmount={false}` when a room or terminal owns that backend workspace.
+Outside React, call `initialize()` and `destroy()` explicitly. Concurrent
+initialization calls share one setup, and a later call reinitializes the instance.
+There is no separate `dispose()` method, lifecycle generation tracking, or frontend
+session-subscription cleanup.
 
 These still work but are deprecated, because their data has one home:
 
@@ -172,5 +184,5 @@ These still work but are deprecated, because their data has one home:
 | `actions.requestOTP(...)` | `Session.requestOTP(...)` |
 | The default model members | `useSession((state) => state.user?.defaultModels)` and `Session.setMetadata` |
 
-The insight's own `actions.login` and `logout` tell `Session`, so a page that uses
-both stays in step.
+The insight's own auth actions update that insight and its config/logins; they do
+not refresh or notify the frontend `Session` store.

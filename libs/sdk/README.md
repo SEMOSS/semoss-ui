@@ -40,6 +40,11 @@ const name = useSession((state) => state.user?.name);
 const version = useConfig((state) => state.config?.version);
 ```
 
+Under a `SessionProvider`, select actions from `useSession` too, for example
+`useSession((state) => state.login)` or `useSession((state) => state.refresh)`.
+Calling the global `Session` instead would change a different session from the one
+the component displays. Without a provider, these selectors use the global session.
+
 The user is read from two pixels in one request: `GetUserInfo` gives who they are
 on each login, and `GetUserMetadata` gives their metadata as the database holds it
 now (`user.meta`, `user.defaultModels`). `Session.reloadUser()` reads the user again
@@ -82,10 +87,11 @@ await insight.initialize();
 It is declared to return a promise of `{ tool: MCPToolRequest | null }`, but the
 current implementation can catch setup failures and return `null`. Earlier setup
 work can also reject. Awaiting initialization alone does not prove readiness:
-inspect `insight.isReady`, `insight.isAuthorized` and `insight.error`. The insight
-follows `Session`: a sign in through `Session` sets it up, and a sign out signs it
-out. Sign in through `Session` rather than the insight's deprecated `actions.login`.
-Use the public `insight.insightId` getter, not private store state.
+inspect `insight.isReady`, `insight.isAuthorized` and `insight.error`. These are
+local flags updated by initialization and the insight's own actions, not a
+subscription to `Session`. The backend associates insights with the session and
+drops them when the session closes. Use `useSession` for page-level session state
+and the public `insight.insightId` getter for the workspace ID.
 
 Before actions requiring a ready insight:
 
@@ -99,8 +105,13 @@ function requireReadyInsight(): void {
 
 Concurrent initialization calls share setup; calling again after completion
 reinitializes the instance. Await `insight.destroy()` when its owning application
-lifecycle ends. Core stores do not require React, but this does not guarantee
-Node/SSR support for all browser-dependent SDK APIs.
+lifecycle ends. `InsightProvider` does this by default; use
+`destroyOnUnmount={false}` when a room, terminal, or other caller owns the backend
+workspace. There is no separate local disposal or automatic session-following
+lifecycle.
+
+Core stores do not require React, but this does not guarantee Node/SSR support for
+all browser-dependent SDK APIs.
 
 ## HTTP Requests
 

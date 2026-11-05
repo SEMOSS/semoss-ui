@@ -1,6 +1,5 @@
 import { useEffect, useId, useMemo, useState } from "react";
-import { Session } from "@semoss/sdk";
-import { useConfig } from "@semoss/sdk/react";
+import { useConfig, useSession } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -48,6 +47,10 @@ export function LoginForm() {
 	const usernameId = useId();
 	const passwordId = useId();
 	const otpId = useId();
+	const { login, requestOTP } = useSession((state) => ({
+		login: state.login,
+		requestOTP: state.requestOTP,
+	}));
 
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
@@ -130,7 +133,7 @@ export function LoginForm() {
 			if (loginType === "linotp") {
 				// step one, verify the pin and trigger the otp challenge
 				if (!showOTPField) {
-					if (await Session.requestOTP(username, password)) {
+					if (await requestOTP(username, password)) {
 						setShowOTPField(true);
 					} else {
 						setError(UNABLE_TO_LOGIN);
@@ -140,7 +143,7 @@ export function LoginForm() {
 				}
 
 				// step two, confirm the otp to create the session
-				if (!(await Session.login({ type: "linotp", otp: otp }))) {
+				if (!(await login({ type: "linotp", otp: otp }))) {
 					setError(UNABLE_TO_LOGIN);
 				}
 
@@ -149,12 +152,12 @@ export function LoginForm() {
 
 			const loggedIn =
 				loginType === "ldap"
-					? await Session.login({
+					? await login({
 							type: "ldap",
 							username: username,
 							password: password,
 						})
-					: await Session.login({
+					: await login({
 							type: "native",
 							username: username,
 							password: password,
@@ -304,7 +307,7 @@ export function LoginForm() {
 									onClick={async () => {
 										setLoadingProvider(p.provider);
 
-										await Session.login({
+										await login({
 											type: "oauth",
 											provider: p.provider,
 										})

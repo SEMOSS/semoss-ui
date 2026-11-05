@@ -37,6 +37,12 @@ import { formatTextByteSize, hashString } from "@semoss/utility/text";
 The root also exports these helpers. Existing `/string` and `/file-extension`
 category paths remain available; prefer the defining categories above for new code.
 
+`isShallowEqual` compares plain records (including null-prototype records) and
+ordinary arrays by their own enumerable string-keyed entries, with matching
+prototypes and array lengths. Nested values use identity. Other objects, such as
+errors, dates, maps, sets, and class instances, compare by identity rather than
+their enumerable fields.
+
 Add a helper here only when it has multiple consumers and a stable, generic
 contract. Keep feature-specific adapters and UI composition in the owning
 package.

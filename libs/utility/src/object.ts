@@ -38,8 +38,9 @@ export const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
- * Whether two values are the same, or objects or arrays of the same kind
- * holding the same entries. Entries are compared by identity, not deeply.
+ * Whether two values are the same, or plain records or arrays with the same
+ * prototype and entries. Entries and non-plain objects are compared by
+ * identity, not deeply.
  *
  * @param a - One value.
  * @param b - The other value.
@@ -58,6 +59,18 @@ export const isShallowEqual = (a: unknown, b: unknown): boolean => {
 		b === null ||
 		Array.isArray(a) !== Array.isArray(b)
 	) {
+		return false;
+	}
+
+	const prototype = Object.getPrototypeOf(a);
+	if (prototype !== Object.getPrototypeOf(b)) {
+		return false;
+	}
+	if (Array.isArray(a) && Array.isArray(b)) {
+		if (prototype !== Array.prototype || a.length !== b.length) {
+			return false;
+		}
+	} else if (prototype !== Object.prototype && prototype !== null) {
 		return false;
 	}
 

@@ -14,10 +14,7 @@ export const InsightContext = createContext<
 	| {
 			/** Whether the system config has been read for the insight. */
 			isInitialized: Insight["isInitialized"];
-			/**
-			 * Whether a user is signed in for the insight. It follows a sign in or
-			 * out made through `Session` too.
-			 */
+			/** Whether initialization or the insight's own auth actions authorized it. */
 			isAuthorized: Insight["isAuthorized"];
 			isReady: Insight["isReady"];
 			error: Insight["error"];
@@ -98,10 +95,6 @@ export const InsightProvider = (props: InsightProviderProps) => {
 			{} as Insight["actions"],
 		);
 	}, [insight, insight.actions, syncInsight]);
-
-	// follow changes the insight makes on its own, as after a sign in or out
-	// made through `Session`
-	useEffect(() => insight.subscribe(syncInsight), [insight, syncInsight]);
 
 	// initialize the insight / destroy
 	// biome-ignore lint/correctness/useExhaustiveDependencies: options is checked in the string

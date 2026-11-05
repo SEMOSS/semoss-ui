@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Session } from "@semoss/sdk";
 import { useSession } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -16,13 +15,14 @@ import {
  */
 export const SessionError = () => {
 	const error = useSession((state) => state.error);
+	const refresh = useSession((state) => state.refresh);
 	const [isRetrying, setIsRetrying] = useState(false);
 
 	/** Read the session again; a failure shows here once more. */
 	const handleRetry = async () => {
 		setIsRetrying(true);
 		try {
-			await Session.refresh();
+			await refresh();
 		} finally {
 			setIsRetrying(false);
 		}

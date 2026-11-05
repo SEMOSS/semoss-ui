@@ -1,50 +1,57 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../../env";
+import type { RoomOptions } from "../../types";
 
-const { mockGetSystemConfig, mockLogin, mockLogout, mockRunPixel, session } =
-	vi.hoisted(() => {
-		/** A stand-in for the page's `Session`, whose status the test moves. */
-		const listeners = new Set<() => void>();
-		let status = "INITIALIZING";
-		return {
-			mockGetSystemConfig: vi.fn(),
-			mockLogin: vi.fn(),
-			mockLogout: vi.fn(),
-			mockRunPixel: vi.fn(),
-			session: {
-				getSnapshot: () => ({ status: status }),
-				subscribe: (listener: () => void) => {
-					listeners.add(listener);
-					return () => listeners.delete(listener);
-				},
-				refresh: vi.fn(async () => ({ status: status })),
-				logins: { seed: vi.fn(), reset: vi.fn(), refresh: vi.fn() },
-				/** Move the session to a status and tell its listeners. */
-				move: (next: string) => {
-					status = next;
-					for (const listener of listeners) {
-						listener();
-					}
-				},
-			},
-		};
-	});
+const {
+	mockGetSystemConfig,
+	mockGetRoomForInsight,
+	mockGetRoomOptions,
+	mockSetRoomForInsight,
+	mockCreateRoom,
+	mockLogin,
+	mockLogout,
+	mockRunPixel,
+	session,
+} = vi.hoisted(() => ({
+	mockGetSystemConfig: vi.fn(),
+	mockGetRoomForInsight: vi.fn(),
+	mockGetRoomOptions: vi.fn(),
+	mockSetRoomForInsight: vi.fn(),
+	mockCreateRoom: vi.fn(),
+	mockLogin: vi.fn(),
+	mockLogout: vi.fn(),
+	mockRunPixel: vi.fn(),
+	session: {
+		getSnapshot: vi.fn(() => ({ status: "AUTHENTICATED" })),
+		subscribe: vi.fn(() => () => {}),
+		refresh: vi.fn(),
+		logins: { seed: vi.fn(), reset: vi.fn(), refresh: vi.fn() },
+	},
+}));
 
 vi.mock("../../api", () => ({
 	getSystemConfig: mockGetSystemConfig,
+	getRoomForInsight: mockGetRoomForInsight,
+	getRoomOptions: mockGetRoomOptions,
+	setRoomForInsight: mockSetRoomForInsight,
 	login: mockLogin,
 	logout: mockLogout,
 	runPixel: mockRunPixel,
 }));
 
+vi.mock("../room", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../room")>()),
+	createRoom: mockCreateRoom,
+}));
+
 vi.mock("../session/session.store", () => ({ Session: session }));
 
 import { Config } from "../config/config.store";
+import { RoomStore } from "../room/room.store";
 import { InsightStore } from "./insight.store";
 
-/** A config as the backend sends it, signed in to the given logins. */
 const backendConfig = (logins: Record<string, string>) => ({
-	logins: logins,
+	logins,
 	availableProviders: [],
 	theme: {},
 	databaseMetaKeys: [
@@ -53,15 +60,17 @@ const backendConfig = (logins: Record<string, string>) => ({
 	],
 });
 
-/** Let the store's background work settle. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+const ROOM_OPTIONS: RoomOptions = {
+	predefinedPrompts: [],
+	instructions: "",
+	mcp: [],
+	modelId: "",
+};
 
-describe("InsightStore and Session", () => {
+describe("InsightStore baseline lifecycle", () => {
 	beforeEach(() => {
-		vi.clearAllMocks();
-		vi.spyOn(console, "warn").mockImplementation(() => undefined);
+		vi.resetAllMocks();
 		Config.reset();
-		session.move("INITIALIZING");
 		Env.update({
 			MODULE: "http://localhost/Monolith",
 			APP: "",
@@ -69,6 +78,8 @@ describe("InsightStore and Session", () => {
 			SECRET_KEY: "",
 			TOOL: null,
 		});
+		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
+		mockGetRoomOptions.mockResolvedValue(ROOM_OPTIONS);
 		mockRunPixel.mockResolvedValue({
 			insightId: "insight-1",
 			errors: [],
@@ -76,9 +87,11 @@ describe("InsightStore and Session", () => {
 		});
 	});
 
-	it("shares one config read, with the meta keys sorted as Config keeps them", async () => {
-		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
 
+	it("shares the normalized config without subscribing to the frontend session", async () => {
 		const first = new InsightStore();
 		const second = new InsightStore();
 		await Promise.all([first.initialize(), second.initialize()]);
@@ -88,88 +101,111 @@ describe("InsightStore and Session", () => {
 			{ metakey: "a", display_order: 1 },
 			{ metakey: "b", display_order: 2 },
 		]);
+		expect(session.logins.seed).toHaveBeenCalled();
+		expect(session.getSnapshot).not.toHaveBeenCalled();
+		expect(session.subscribe).not.toHaveBeenCalled();
 	});
 
-	it("sets itself up after a sign in made through the session", async () => {
-		mockGetSystemConfig.mockResolvedValue(backendConfig({}));
-		const insight = new InsightStore();
-		const listener = vi.fn();
-		insight.subscribe(listener);
-		session.move("UNAUTHENTICATED");
-		await insight.initialize();
-		expect(insight.isAuthorized).toBe(false);
-
-		// the session signs in, and reads the config again as the new user
-		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
-		await Config.load({ force: true });
-		session.move("AUTHENTICATED");
-		await settle();
-
-		expect(insight.isAuthorized).toBe(true);
-		expect(insight.isReady).toBe(true);
-		expect(insight.insightId).toBe("insight-1");
-		expect(insight.system?.config.logins).toEqual({ NATIVE: "Ada" });
-		expect(listener).toHaveBeenCalled();
-	});
-
-	it("is signed out with the session", async () => {
-		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
-		session.move("AUTHENTICATED");
-		const insight = new InsightStore();
-		await insight.initialize();
-		expect(insight.isReady).toBe(true);
-
-		session.move("UNAUTHENTICATED");
-
-		expect(insight.isAuthorized).toBe(false);
-		expect(insight.isReady).toBe(false);
-		expect(insight.insightId).toBe("");
-	});
-
-	it("stops following the session once destroyed", async () => {
-		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
-		session.move("AUTHENTICATED");
-		const insight = new InsightStore();
-		await insight.initialize();
-		await insight.destroy();
-		const listener = vi.fn();
-		insight.subscribe(listener);
-
-		session.move("UNAUTHENTICATED");
-
-		expect(listener).not.toHaveBeenCalled();
-	});
-
-	it("tells a session the page uses about its own sign in", async () => {
-		mockGetSystemConfig.mockResolvedValue(backendConfig({}));
-		mockLogin.mockResolvedValue(true);
-		session.move("UNAUTHENTICATED");
-		const insight = new InsightStore();
-		await insight.initialize();
-
-		await insight.actions.login({
-			type: "native",
-			username: "ada",
-			password: "secret",
-		});
-
-		expect(session.refresh).toHaveBeenCalledTimes(1);
-	});
-
-	it("reads no session when the page never started one", async () => {
-		mockGetSystemConfig.mockResolvedValue(backendConfig({}));
+	it("keeps its own login and logout explicit without refreshing Session", async () => {
+		mockGetSystemConfig.mockResolvedValueOnce(backendConfig({}));
 		mockLogin.mockResolvedValue(true);
 		mockLogout.mockResolvedValue(true);
 		const insight = new InsightStore();
 		await insight.initialize();
+		expect(insight.isAuthorized).toBe(false);
 
 		await insight.actions.login({
 			type: "native",
-			username: "ada",
-			password: "secret",
+			username: "test-user",
+			password: "test-password",
 		});
+		expect(insight.isReady).toBe(true);
 		await insight.actions.logout();
 
+		expect(insight.isAuthorized).toBe(false);
+		expect(insight.insightId).toBe("");
 		expect(session.refresh).not.toHaveBeenCalled();
+		expect(session.subscribe).not.toHaveBeenCalled();
+	});
+
+	it("destroys its workspace only when explicitly requested", async () => {
+		const insight = new InsightStore();
+		await insight.initialize({ insightId: "owned-insight" });
+		expect(mockRunPixel).not.toHaveBeenCalled();
+
+		await insight.destroy();
+
+		expect(mockRunPixel).toHaveBeenCalledWith(
+			"DropInsight()",
+			"owned-insight",
+		);
+		expect(insight.isInitialized).toBe(false);
+		expect(insight.isReady).toBe(false);
+		expect(session.subscribe).not.toHaveBeenCalled();
+	});
+
+	it("looks up and caches an existing room", async () => {
+		mockGetRoomForInsight.mockResolvedValue({
+			roomId: "room-1",
+			name: "Room",
+		});
+		const insight = new InsightStore();
+		await insight.initialize({ insightId: "workspace" });
+
+		const room = await insight.actions.getRoom();
+
+		expect(room?.roomId).toBe("room-1");
+		expect(room?.insightId).toBe("workspace");
+		expect(await insight.actions.getRoom()).toBe(room);
+		expect(mockGetRoomForInsight).toHaveBeenCalledTimes(1);
+		expect(mockGetRoomOptions).toHaveBeenCalledWith("workspace", "room-1");
+	});
+
+	it("uses the tool's room before looking up another room", async () => {
+		Env.update({
+			TOOL: {
+				type: "MCP",
+				message: "",
+				id: "tool",
+				name: "Tool",
+				parameters: {},
+				roomId: "tool-room",
+				original_name: "Tool",
+			},
+		});
+		const insight = new InsightStore();
+		await insight.initialize({ insightId: "workspace" });
+
+		expect((await insight.actions.getRoom())?.roomId).toBe("tool-room");
+		expect(mockSetRoomForInsight).toHaveBeenCalledWith(
+			"workspace",
+			"tool-room",
+		);
+		expect(mockGetRoomForInsight).not.toHaveBeenCalled();
+	});
+
+	it("creates and caches a room when none is bound", async () => {
+		mockGetRoomForInsight.mockResolvedValue(null);
+		const created = new RoomStore(
+			"created-room",
+			"workspace",
+			ROOM_OPTIONS,
+		);
+		mockCreateRoom.mockResolvedValue(created);
+		const insight = new InsightStore();
+		await insight.initialize({ insightId: "workspace" });
+
+		expect(await insight.actions.getRoom()).toBe(created);
+		expect(await insight.actions.getRoom()).toBe(created);
+		expect(mockCreateRoom).toHaveBeenCalledExactlyOnceWith("workspace");
+	});
+
+	it("returns no room only when room handling is disabled", async () => {
+		const insight = new InsightStore();
+		await insight.initialize({ insightId: "workspace", disableRoom: true });
+
+		expect(await insight.actions.getRoom()).toBeNull();
+		expect(mockGetRoomForInsight).not.toHaveBeenCalled();
+		expect(mockCreateRoom).not.toHaveBeenCalled();
 	});
 });

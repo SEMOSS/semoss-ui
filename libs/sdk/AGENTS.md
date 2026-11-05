@@ -195,16 +195,15 @@ so their public types never name a utility type.
   equal selections do not render. `useSessionStore`, `SessionContext` and the selector cache
   (`js-frameworks/react/utility/store-selector.ts`) are not exported.
 - `InsightStore` reads its config through `Config.load`, so `system.config` is the same
-  normalized copy (meta keys sorted by `display_order`, lists never missing), and follows
-  `Session`: once initialized it subscribes,
-  a `Session` sign in sets up an insight still waiting for one (`joinSession`, also run when an
-  initialize finishes), and a sign out signs it out. Its own `actions.login`/`logout` call
-  `Session.refresh()` when the page has started `Session`; a page that never starts it reads
-  nothing more. `subscribe` tells `InsightProvider` about these changes. So `isAuthorized`,
-  `isInitialized`, `isReady` and `error` are not deprecated; `system`, `actions.login`/`logout`/
-  `requestOTP` and the default-model members are, as their data lives in `Config`/`Session`.
-  It fills `Session.logins`. There is no `Logins` singleton (it was never published); use
-  `Session.logins`.
+  normalized copy (meta keys sorted by `display_order`, lists never missing), and fills
+  `Session.logins`. Its lifecycle remains explicit: initialize, use, then destroy when the
+  caller owns the workspace. Do not add `Session` subscriptions, automatic rejoining, or
+  lifecycle-generation/disposal machinery to `InsightStore`. The backend associates
+  insights with the session and drops them on session close. `InsightProvider` preserves
+  externally owned workspaces with `destroyOnUnmount={false}`. Local readiness/auth flags
+  update through initialization and insight actions; they are not reactive session state.
+  Its auth actions do not refresh or notify `Session`. See the
+  [session guide](./skills/session.skill.md#insight-lifecycle-belongs-to-its-owner).
 - Where a pixel runs: `runPixel(pixel)` with no insight id for a one off pixel that needs no
   workspace (the backend makes an insight and keeps it until the session ends, since the removal
   in its `runPixelJob` is disabled); `usePixel` with no id and no `InsightProvider` runs in

@@ -1,4 +1,3 @@
-import { toError } from "@semoss/utility/error";
 import {
 	confirmOTP,
 	download,
@@ -187,9 +186,7 @@ export class InsightStore {
 	}
 
 	/**
-	 * Whether a user is signed in for the insight. It follows a sign in or out
-	 * made through `Session` too: a sign in sets up an insight that was waiting
-	 * for one, and a sign out signs it out.
+	 * Whether initialization or this insight's own auth actions authorized it.
 	 */
 	get isAuthorized() {
 		return this._store.isAuthorized;
@@ -286,115 +283,6 @@ export class InsightStore {
 		tool: (typeof Env)["TOOL"] | null;
 	} | null> | null = null;
 
-	/** Told whenever the insight changes on its own, as when it follows the session. */
-	private readonly listeners = new Set<() => void>();
-
-	/** Stops following the session; set while the insight is initialized. */
-	private stopFollowingSession: (() => void) | null = null;
-
-	/** The session's status as this insight last saw it, so each change is acted on once. */
-	private sessionStatus = Session.getSnapshot().status;
-
-	/** Whether the insight is setting itself up after a sign in made through the session. */
-	private isJoiningSession = false;
-
-	/**
-	 * Hear whenever the insight changes on its own rather than through one of
-	 * its actions: when a sign in or out made through `Session` signs it in
-	 * or out. `InsightProvider` listens so its views follow.
-	 *
-	 * @param listener - Called after each such change.
-	 * @returns Stops listening.
-	 */
-	subscribe = (listener: () => void): (() => void) => {
-		this.listeners.add(listener);
-		return () => {
-			this.listeners.delete(listener);
-		};
-	};
-
-	/** Tell every listener the insight changed. */
-	private notify = (): void => {
-		for (const listener of this.listeners) {
-			listener();
-		}
-	};
-
-	/**
-	 * Follow a sign in or out made through `Session`. A sign in sets up an
-	 * insight that was waiting for one; a sign out signs the insight out, as
-	 * the backend drops the session's insights then. A page that never starts
-	 * `Session` changes nothing here.
-	 */
-	private followSession = (): void => {
-		const { status } = Session.getSnapshot();
-		const previous = this.sessionStatus;
-		this.sessionStatus = status;
-		if (status === previous) {
-			return;
-		}
-
-		if (status === "AUTHENTICATED") {
-			void this.joinSession();
-			return;
-		}
-
-		if (
-			status === "UNAUTHENTICATED" &&
-			previous === "AUTHENTICATED" &&
-			this._store.isAuthorized
-		) {
-			this._store.isAuthorized = false;
-			this._store.insightId = "";
-			this._store.isReady = false;
-			this._room = null;
-			this.notify();
-		}
-	};
-
-	/**
-	 * Set the insight up for the session's user, when the session is signed in
-	 * and the insight read the config while signed out. Nothing happens while
-	 * the insight initializes (it checks again when done), once it is signed
-	 * in, or while it is already setting up.
-	 */
-	private joinSession = async (): Promise<void> => {
-		if (
-			Session.getSnapshot().status !== "AUTHENTICATED" ||
-			!this._store.isInitialized ||
-			this._store.isAuthorized ||
-			this._initializing ||
-			this.isJoiningSession
-		) {
-			return;
-		}
-
-		this.isJoiningSession = true;
-		try {
-			// the session read the config again when it signed in
-			this._store.system = createSystem(await Config.load());
-			this._store.isAuthorized = true;
-			await this.setupInsight();
-		} catch (error) {
-			console.warn(error);
-			this._store.error = toError(error);
-		} finally {
-			this.isJoiningSession = false;
-			this.notify();
-		}
-	};
-
-	/**
-	 * After the insight's own sign in or out, have a page that also uses
-	 * `Session` read the session again, so its user follows. A page that
-	 * never started `Session` reads nothing.
-	 */
-	private tellSession = (): void => {
-		if (Session.getSnapshot().status !== "INITIALIZING") {
-			void Session.refresh();
-		}
-	};
-
 	/** Methods */
 	/**
 	 * Initialize the insight.
@@ -420,10 +308,6 @@ export class InsightStore {
 		if (this._initializing) {
 			return this._initializing;
 		}
-		if (!this.stopFollowingSession) {
-			this.sessionStatus = Session.getSnapshot().status;
-			this.stopFollowingSession = Session.subscribe(this.followSession);
-		}
 		this._initializing = this.runInitialize(options);
 		try {
 			return await this._initializing;
@@ -431,9 +315,6 @@ export class InsightStore {
 			// Cleared in a finally so a rejected or aborted attempt does not wedge
 			// every later call into returning the failed promise.
 			this._initializing = null;
-
-			// a sign in through the session while this read the signed out config
-			void this.joinSession();
 		}
 	};
 
@@ -550,8 +431,6 @@ export class InsightStore {
 	 * Destroy the insight
 	 */
 	destroy = async () => {
-		this.stopFollowingSession?.();
-		this.stopFollowingSession = null;
 		try {
 			// destroy the insight
 			await this.destroyInsight();
@@ -803,7 +682,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * @returns
 		 * @deprecated Use `Session.login`, which takes the same credentials and
 		 * throws when the sign in is refused rather than returning false. A sign
-		 * in is for the whole page, not one insight: every insight follows it.
+		 * in is for the whole page, not one insight.
 		 */
 		login: async (
 			credentials:
@@ -869,9 +748,6 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 					// get the new insight with the new user
 					await this.setupInsight();
-
-					// a page that also uses `Session` reads the new user
-					this.tellSession();
 				} else {
 					// track that the user is unauthorized
 					this._store.isAuthorized = false;
@@ -891,8 +767,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 *
 		 * @deprecated Use `Session.logout`, which also clears the user's logins
 		 * and permissions, and throws when the backend refuses rather than
-		 * returning false. A sign out is for the whole page: every insight and
-		 * room is signed out with it.
+		 * returning false. The backend drops the session's insights on sign out.
 		 */
 		logout: async (): Promise<boolean> => {
 			try {
@@ -915,9 +790,6 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				// logins as unknown rather than signed out.
 				Config.reset();
 				Session.logins.reset();
-
-				// a page that also uses `Session` reads the signed out session
-				this.tellSession();
 
 				// success
 				return true;
