@@ -11,8 +11,11 @@ import { RoomInputMenuUpload } from "@/components/room/room-input-menu-upload";
 import type { RoomStore } from "@/stores/room/room.store";
 
 export interface RoomComposerMenuProps {
+	/** Opens or closes the menu. */
 	onOpenChange: (isOpen: boolean) => void;
+	/** Opens the picker on the given tab. */
 	onOpenMcpOverlay: (tab: "AGENT" | "KNOWLEDGE" | "TOOLBOX") => void;
+	/** The room's options, for the selected agent and the resource counts. */
 	options: RoomStore["options"];
 	/** Only mutations are locked while a turn is running. */
 	disabled: boolean;
@@ -20,9 +23,14 @@ export interface RoomComposerMenuProps {
 	onSelectChat?: () => void;
 	/** Changes execution mode while keeping the selected saved agent. */
 	onSelectAgent?: () => void;
+	/** The room's mode, checked in the Chat and Agent choice. */
 	mode?: "chat" | "agent" | "workspace";
+	/** Shows the agent picker; true only while creating a chat. */
 	agentEditable?: boolean;
-	enableAgentHarness?: boolean;
+	/** Shows the Chat and Agent choice. */
+	canChooseMode?: boolean;
+	/** Default Agent is picked, so the agent item names it. */
+	isDefaultAgent?: boolean;
 }
 
 /** Stable composer actions shared by draft and existing conversations. */
@@ -35,7 +43,8 @@ export function RoomComposerMenu({
 	onSelectAgent,
 	mode,
 	agentEditable,
-	enableAgentHarness,
+	canChooseMode,
+	isDefaultAgent,
 }: RoomComposerMenuProps) {
 	const { t } = useTranslation("room");
 	const close = () => onOpenChange(false);
@@ -47,7 +56,9 @@ export function RoomComposerMenu({
 		? t("modes.selectedAgent", {
 				name: options.workspace.name || options.workspace.workspace_id,
 			})
-		: t("menuWorkspace.selectAgent");
+		: isDefaultAgent
+			? t("modes.selectedAgent", { name: t("modes.defaultAgent") })
+			: t("menuWorkspace.selectAgent");
 	return (
 		<>
 			<RoomInputMenuUpload disabled={disabled} onSelect={close} />
@@ -66,7 +77,7 @@ export function RoomComposerMenu({
 			{agentEditable && (
 				<>
 					<DropdownMenuSeparator />
-					{enableAgentHarness && (
+					{canChooseMode && (
 						<DropdownMenuRadioGroup
 							aria-label={`${t("modes.ask")} / ${t("modes.agent")}`}
 							value={mode === "agent" ? "agent" : "chat"}
@@ -95,7 +106,7 @@ export function RoomComposerMenu({
 							</DropdownMenuRadioItem>
 						</DropdownMenuRadioGroup>
 					)}
-					{enableAgentHarness && <DropdownMenuSeparator />}
+					{canChooseMode && <DropdownMenuSeparator />}
 					<DropdownMenuItem
 						disabled={disabled}
 						onSelect={() => openPicker("AGENT")}

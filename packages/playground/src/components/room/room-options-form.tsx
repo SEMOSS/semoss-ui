@@ -22,6 +22,7 @@ import { MCPOverlay } from "@/components/mcp/mcp-overlay";
 import { RoomToolsDefaultSection } from "@/features/chat-tools/components/room-tools-default-section";
 import { RoomToolsToolboxesSection } from "@/features/chat-tools/components/room-tools-toolboxes-section";
 import { SectionInfoTooltip } from "@/features/chat-tools/components/section-info-tooltip";
+import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
 import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
@@ -52,6 +53,11 @@ export interface RoomOptionsFormProps {
 	 * Tools; left out for a new room, whose toolbox is not settled yet.
 	 */
 	connectorsSection?: ReactNode;
+	/**
+	 * Offers Default Agent beside No Agent in the agent picker, and is called
+	 * with whether Default Agent is picked.
+	 */
+	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 }
 
 /**
@@ -68,6 +74,7 @@ export const RoomOptionsForm = observer(
 		disabled = false,
 		isAgentMode = false,
 		connectorsSection,
+		onDefaultAgentChange,
 	}: RoomOptionsFormProps) => {
 		const { t } = useTranslation(["room", "common", "chatTools"]);
 		const { root } = useRoot();
@@ -311,8 +318,13 @@ export const RoomOptionsForm = observer(
 				<MCPOverlay
 					open={overlay.isOpen}
 					disabled={disabled}
-					allowDefaultAgent={
-						!!root.theme.featureFlags?.enableAgentHarness
+					allowDefaultAgent={canChooseAgentMode(
+						root.theme.featureFlags,
+					)}
+					isDefaultAgent={
+						onDefaultAgentChange
+							? isAgentMode && !options.workspace
+							: undefined
 					}
 					defaultTab={overlay.type}
 					values={options.mcp}
@@ -326,6 +338,12 @@ export const RoomOptionsForm = observer(
 									? { workspace: next.workspace ?? undefined }
 									: {}),
 							});
+							if (
+								onDefaultAgentChange &&
+								next.isDefaultAgent !== undefined
+							) {
+								onDefaultAgentChange(next.isDefaultAgent);
+							}
 						}
 						setOverlay((current) => ({
 							...current,
