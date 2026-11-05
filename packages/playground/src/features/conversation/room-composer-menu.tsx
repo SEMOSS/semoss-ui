@@ -4,6 +4,7 @@ import {
 	MessageCircleIcon,
 	PanelRightOpenIcon,
 } from "lucide-react";
+import { observer } from "mobx-react-lite";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -38,10 +39,11 @@ export interface RoomComposerMenuProps {
 	mode?: "chat" | "agent" | "workspace";
 	agentEditable?: boolean;
 	enableAgentHarness?: boolean;
+	showDisabledConnectors?: boolean;
 }
 
 /** Stable composer actions shared by draft and existing conversations. */
-export function RoomComposerMenu({
+export const RoomComposerMenu = observer(function RoomComposerMenu({
 	room,
 	onOpenSource,
 	onOpenChange,
@@ -54,6 +56,7 @@ export function RoomComposerMenu({
 	mode,
 	agentEditable,
 	enableAgentHarness,
+	showDisabledConnectors = true,
 }: RoomComposerMenuProps) {
 	const { t } = useTranslation(["room", "sidebar"]);
 	const { openSettings } = useSettingsDialog();
@@ -67,6 +70,12 @@ export function RoomComposerMenu({
 				name: options.workspace.name || options.workspace.workspace_id,
 			})
 		: t("menuWorkspace.selectAgent");
+
+	const noProvidersOffered =
+		room.connectors.offeredProviders !== null &&
+		room.connectors.offeredProviders.length === 0;
+	const showConnectorsRow = showDisabledConnectors || !noProvidersOffered;
+
 	return (
 		<>
 			<RoomInputMenuUpload disabled={disabled} onSelect={close} />
@@ -82,15 +91,17 @@ export function RoomComposerMenu({
 				disabled={disabled}
 				onSelect={() => openPicker("TOOLBOX")}
 			/>
-			<DropdownMenuItem
-				onSelect={() => {
-					openSettings("connectors");
-					close();
-				}}
-			>
-				<BlocksIcon aria-hidden="true" />
-				{t("sidebar:settings.sections.connectors")}
-			</DropdownMenuItem>
+			{showConnectorsRow && (
+				<DropdownMenuItem
+					onSelect={() => {
+						openSettings("connectors");
+						close();
+					}}
+				>
+					<BlocksIcon aria-hidden="true" />
+					{t("sidebar:settings.sections.connectors")}
+				</DropdownMenuItem>
+			)}
 			<ConnectorSourcesMenuItem
 				connectors={room.connectors}
 				onOpenSource={onOpenSource}
@@ -152,4 +163,4 @@ export function RoomComposerMenu({
 			</DropdownMenuItem>
 		</>
 	);
-}
+});
