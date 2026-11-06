@@ -48,20 +48,12 @@ async function loadTask(
 	actions: ReturnType<typeof useInsight>["actions"],
 	key: { taskId?: string; roomId?: string },
 ): Promise<TaskView | null> {
-	// the room only knows its own id; the list says which item it belongs to
-	const [list] = (await runBatch(actions, [
-		pixel("WorkListMyWork"),
-	])) as Row[];
-	const selfId = str(list?.selfId);
-	const taskId =
-		key.taskId ??
-		str(
-			rows(list?.workItems).find((i) => str(i.roomId) === key.roomId)?.id,
-		);
-	if (!taskId) return null;
 	const [work] = (await runBatch(actions, [
-		pixel("WorkGetWork", { taskId }),
+		pixel("WorkGetWork", key),
 	])) as Row[];
+	if (!work?.id) return null;
+	const taskId = str(work.id);
+	const selfId = str(work.selfId);
 	return {
 		id: taskId,
 		title: str(work?.title),
@@ -86,7 +78,11 @@ async function loadTask(
 }
 
 /** The task a room belongs to (or the task itself): steps, threads and updates. */
-export function useTaskContext(key: { taskId?: string; roomId?: string }) {
+export function useTaskContext(key: { taskId?: string; roomId?: string }): {
+	task: TaskView | null;
+	loading: boolean;
+	error: string;
+} {
 	const { actions } = useInsight();
 	const { taskId, roomId } = key;
 	const current = `${taskId ?? ""}|${roomId ?? ""}`;

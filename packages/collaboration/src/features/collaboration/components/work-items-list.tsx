@@ -29,9 +29,9 @@ import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
-import { TaskContextView, useTaskContext } from "./task-context";
 import { TopicChip as SharedTopicChip } from "./topic-chip";
 import { WorkBuildMenu } from "./work-build-menu";
+import { WorkItemDetails } from "./work-item-details";
 
 // The Work page: the outcomes the owner is driving (D25), in the owner's order.
 // Items Brain infers wait in review until the owner adds, merges or dismisses them.
@@ -226,12 +226,14 @@ function ItemRow({
 	onDrop?: () => void;
 }) {
 	const navigate = useNavigate();
+	const [isExpanded, setIsExpanded] = useState(false);
 	const due = dueLabel(item.due);
 	const next = mineNext(item, isMine);
 	const waiting = waitingOn(item, isMine);
 
 	return (
 		<li
+			className="min-w-0"
 			draggable={draggable}
 			onDragStart={onDragStart}
 			onDragOver={(event) => {
@@ -243,92 +245,92 @@ function ItemRow({
 				event.preventDefault();
 				onDrop?.();
 			}}
-			className={cn(
-				"group flex min-w-0 items-center gap-3 transition-colors hover:bg-accent",
-				rowPad(compact),
-				compact && "-mx-5 px-5",
-			)}
 		>
-			{draggable ? (
-				<GripVertical
-					aria-hidden="true"
-					className="-ml-2 size-4 flex-none cursor-grab text-muted-foreground/40 group-hover:text-muted-foreground"
-				/>
-			) : null}
-			<div className="min-w-0 flex-1 space-y-1">
-				<div className="flex flex-wrap items-center gap-2">
-					<button
-						type="button"
-						onClick={() => openRoom(navigate, item)}
-						className="min-w-0 break-words text-left font-medium text-base hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-					>
-						{item.title}
-					</button>
-					<TopicChip item={item} />
-				</div>
-				{next ? (
-					<P className="truncate text-sm">
-						<span className="text-muted-foreground">Next: </span>
-						{next.text}
-					</P>
-				) : null}
-				{waiting ? (
-					<P className="truncate text-muted-foreground text-sm">
-						Waiting on {waiting.assigneeName ?? "someone"}:{" "}
-						{waiting.text}
-					</P>
-				) : null}
-				{!next && !waiting ? (
-					<P className="text-muted-foreground text-sm">
-						No open steps
-					</P>
-				) : null}
-			</div>
-			{due ? (
-				<Small
-					className={cn(
-						"shrink-0 text-muted-foreground tabular-nums",
-						due.soon && "text-destructive",
-					)}
-				>
-					{due.text}
-				</Small>
-			) : null}
-			<Button
-				size="sm"
-				variant="outline"
-				className="shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
-				onClick={() => openRoom(navigate, item)}
+			<div
+				className={cn(
+					"group flex min-w-0 flex-wrap items-center gap-3 transition-colors hover:bg-accent",
+					rowPad(compact),
+					compact && "-mx-5 px-5",
+				)}
 			>
-				Open room
-			</Button>
+				{draggable ? (
+					<GripVertical
+						aria-hidden="true"
+						className="-ml-2 size-4 flex-none cursor-grab text-muted-foreground/40 group-hover:text-muted-foreground"
+					/>
+				) : null}
+				<div className="min-w-0 flex-1 space-y-1">
+					<div className="flex flex-wrap items-center gap-2">
+						<button
+							type="button"
+							onClick={() => setIsExpanded((current) => !current)}
+							aria-expanded={isExpanded}
+							aria-controls={`work-${item.id}-detail`}
+							className="min-w-0 break-words text-left font-medium text-base hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+						>
+							{item.title}
+						</button>
+						<TopicChip item={item} />
+					</div>
+					{next ? (
+						<P className="truncate text-sm">
+							<span className="text-muted-foreground">
+								Next:{" "}
+							</span>
+							{next.text}
+						</P>
+					) : null}
+					{waiting ? (
+						<P className="truncate text-muted-foreground text-sm">
+							Waiting on {waiting.assigneeName ?? "someone"}:{" "}
+							{waiting.text}
+						</P>
+					) : null}
+					{!next && !waiting ? (
+						<P className="text-muted-foreground text-sm">
+							No open steps
+						</P>
+					) : null}
+				</div>
+				{due ? (
+					<Small
+						className={cn(
+							"shrink-0 text-muted-foreground tabular-nums",
+							due.soon && "text-destructive",
+						)}
+					>
+						{due.text}
+					</Small>
+				) : null}
+				<Button
+					size="sm"
+					variant="outline"
+					className="w-full shrink-0 sm:w-auto"
+					onClick={() => openRoom(navigate, item)}
+				>
+					{item.roomId ? "Open latest room" : "Open details"}
+				</Button>
+			</div>
+			{isExpanded && (
+				<div
+					id={`work-${item.id}-detail`}
+					className="border-t bg-muted/30"
+				>
+					<WorkItemDetails taskId={item.id} />
+				</div>
+			)}
 		</li>
 	);
 }
 
-// loads only once a row is opened
+// Pending and accepted rows share the exact same details/editor pane.
 function ExpandedTask({ taskId, id }: { taskId: string; id: string }) {
-	const { task, loading, error } = useTaskContext({ taskId });
 	return (
 		<div
 			id={id}
-			className="mt-3 overflow-hidden rounded-lg border bg-muted/30 sm:ml-5.5"
+			className="mt-3 overflow-hidden rounded-lg border bg-muted/30"
 		>
-			{task ? (
-				<TaskContextView task={task} />
-			) : (
-				<P
-					role={error ? "alert" : undefined}
-					className={cn(
-						"px-4 py-3 text-sm",
-						error ? "text-destructive" : "text-muted-foreground",
-					)}
-				>
-					{loading
-						? "Loading details..."
-						: error || "No more detail for this item."}
-				</P>
-			)}
+			<WorkItemDetails taskId={taskId} />
 		</div>
 	);
 }
@@ -722,6 +724,7 @@ export function WorkItemsList({ review = false }: { review?: boolean }) {
 		<CollaborationSurface
 			header={
 				<CollaborationPageHeader
+					layoutClassName="flex-col sm:flex-row"
 					title={review ? "New work items" : "Work"}
 					description={
 						review
