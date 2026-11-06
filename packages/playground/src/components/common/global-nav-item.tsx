@@ -26,7 +26,7 @@ interface GlobalNavItemProps {
 }
 
 // Maps the well-known English item names that ship in default themes to
-// translation keys under sidebar:nav.<item>.tooltip. Items with names outside
+// translation keys under appNav:nav.<item>.tooltip. Items with names outside
 // this map fall back to displaying the raw `name` as both label and tooltip.
 const KNOWN_TOOLTIP_KEYS: Record<string, string> = {
 	"Agents/Workspaces": "nav.agentsWorkspaces.tooltip",
@@ -50,7 +50,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	tooltip,
 }) => {
 	const { pathname } = useLocation();
-	const { t } = useTranslation("sidebar");
+	const { t } = useTranslation("appNav");
 	const { resolvedTheme } = useTheme();
 	const isDarkMode = resolvedTheme === "dark";
 

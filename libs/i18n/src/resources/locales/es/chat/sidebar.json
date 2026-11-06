@@ -1,0 +1,69 @@
+{
+	"buckets": {
+		"favorites": "Favoritos",
+		"today": "Hoy",
+		"yesterday": "Ayer",
+		"fewDaysAgo": "Hace unos días",
+		"lastWeek": "Última semana",
+		"thisMonth": "Este mes",
+		"lastMonth": "Último mes",
+		"older": "Más antiguo"
+	},
+	"messages": {
+		"errorLoadingRooms": "Error al cargar las salas",
+		"noRoomsFound": "No se encontraron salas",
+		"untitled": "Sin título"
+	},
+	"actions": {
+		"openNavigation": "Abrir navegación",
+		"openSidebar": "Abrir barra lateral",
+		"closeSidebar": "Cerrar barra lateral",
+		"favorite": "Favorito",
+		"unfavorite": "Quitar de favoritos",
+		"rename": "Renombrar",
+		"download": "Descargar",
+		"delete": "Eliminar",
+		"openInline": "Abrir en línea",
+		"minimize": "Minimizar",
+		"maximize": "Maximizar",
+		"close": "Cerrar"
+	},
+	"toasts": {
+		"failedToPin": "Error al fijar la sala",
+		"failedToUnpin": "Error al desfijar la sala",
+		"roomNameEmpty": "El nombre de la sala no puede estar vacío",
+		"roomRenamedSuccess": "Sala renombrada exitosamente",
+		"failedToRename": "Error al renombrar la sala",
+		"roomDeletedSuccess": "Sala eliminada exitosamente",
+		"failedToDelete": "No se pudo eliminar la sala"
+	},
+	"settings": {
+		"title": "Configuración",
+		"description": "Tus preferencias y las aplicaciones que puede usar el asistente.",
+		"sections": {
+			"general": "General",
+			"connectors": "Conectores"
+		},
+		"general": {
+			"appearance": "Apariencia",
+			"theme": "Tema",
+			"themeDescription": "Los temas oscuro y del sistema están en beta.",
+			"themes": {
+				"system": "Sistema",
+				"light": "Claro",
+				"dark": "Oscuro"
+			},
+			"language": "Idioma",
+			"languageDescription": "El idioma en el que se muestra la aplicación.",
+			"version": "Versión {{version}}"
+		}
+	},
+	"download": {
+		"title": "Descargar conversación",
+		"description": "Elige un formato para la descarga.",
+		"word": "Documento de Word",
+		"pdf": "Documento PDF",
+		"success": "Conversación descargada como {{format}}",
+		"failed": "No se pudo descargar la conversación"
+	}
+}

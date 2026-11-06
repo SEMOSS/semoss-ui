@@ -1,0 +1,46 @@
+{
+	"app": {
+		"title": "SEMOSS Playground"
+	},
+	"instances": {
+		"title": "Conectar a SEMOSS",
+		"description": "Introduzca la dirección del servidor SEMOSS en el que inicia sesión.",
+		"name": "Nombre",
+		"namePlaceholder": "Trabajo",
+		"url": "Dirección del servidor",
+		"module": "Ruta de implementación",
+		"connect": "Conectar",
+		"checking": "Comprobando el servidor…",
+		"unreachable": "No se pudo acceder al servidor: {{message}}",
+		"saved": "Servidores guardados",
+		"use": "Usar",
+		"remove": "Quitar {{name}}",
+		"addAnother": "Añadir un servidor"
+	},
+	"auth": {
+		"title": "Iniciar sesión en {{name}}",
+		"token": "Token de acceso",
+		"tokenHint": "Inicie sesión con un token de portador de su proveedor de identidad.",
+		"tokenLabel": "Token",
+		"provider": "Proveedor",
+		"remember": "Recordar en este equipo",
+		"signIn": "Iniciar sesión",
+		"switchServer": "Cambiar de servidor",
+		"tokenRefused": "El servidor no aceptó el token."
+	},
+	"nav": {
+		"newChat": "Nuevo chat",
+		"chats": "Todos los chats",
+		"agents": "Agentes",
+		"knowledge": "Conocimiento",
+		"signOut": "Cerrar sesión",
+		"search": "Buscar",
+		"language": "Idioma"
+	},
+	"tools": {
+		"source": "Este equipo",
+		"approval": "Se ejecuta en este equipo cuando lo permita.",
+		"notify": "Mostrar una notificación",
+		"reveal": "Mostrar en la carpeta"
+	}
+}

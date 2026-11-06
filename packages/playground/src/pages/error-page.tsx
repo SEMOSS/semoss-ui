@@ -3,7 +3,7 @@ import { useContext } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn, H1, P, SidebarTrigger, useTheme } from "@semoss/ui/next";
-import { RootContext } from "@/contexts/root-context";
+import { RootContext } from "@/contexts/root.context";
 
 export interface ErrorPageProps {
 	isInnerComponent?: boolean;

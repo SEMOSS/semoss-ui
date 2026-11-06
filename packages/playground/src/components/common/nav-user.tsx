@@ -2,8 +2,9 @@
 
 import { LanguagesIcon, LogOutIcon, MapIcon, SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useSettingsDialog } from "@semoss/chat";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -21,8 +22,8 @@ import {
 	useSidebar,
 } from "@semoss/ui/next";
 import { buildInitials } from "@semoss/utility/text";
-import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
-import { useChat, useRoot, useTour } from "@/hooks";
+import { useRoot } from "@/hooks/use-root";
+import { useTour } from "@/hooks/use-tour";
 
 /**
  * The signed in user's name and avatar at the foot of the sidebar. Clicking it
@@ -30,17 +31,15 @@ import { useChat, useRoot, useTour } from "@/hooks";
  * The tour's last step points here, where it can be replayed.
  */
 export const NavUser = () => {
-	const { t, i18n } = useTranslation(["common", "sidebar"]);
+	const { t, i18n } = useTranslation(["common", "appNav"]);
 	const { isMobile } = useSidebar();
-	const { actions } = useInsight();
-	const { chat } = useChat();
+	const logout = useSession((state) => state.logout);
+	const userName = useSession((state) => state.user?.name ?? "");
 	const { root } = useRoot();
 	const { startTour } = useTour();
 	const { openSettings } = useSettingsDialog();
 
 	const navigate = useNavigate();
-
-	const userName = chat.user.name;
 
 	const selectedLanguage = LANGUAGES.find(
 		(lang) => lang.code === i18n.language,
@@ -73,12 +72,12 @@ export const NavUser = () => {
 			>
 				<DropdownMenuItem onSelect={() => openSettings()}>
 					<SettingsIcon />
-					{t("sidebar:userMenu.settings")}
+					{t("appNav:userMenu.settings")}
 				</DropdownMenuItem>
 				<DropdownMenuSub>
 					<DropdownMenuSubTrigger>
 						<LanguagesIcon />
-						{t("sidebar:userMenu.language")}
+						{t("appNav:userMenu.language")}
 					</DropdownMenuSubTrigger>
 					<DropdownMenuPortal>
 						<DropdownMenuSubContent>
@@ -108,13 +107,13 @@ export const NavUser = () => {
 						}}
 					>
 						<MapIcon />
-						{t("sidebar:takeTour")}
+						{t("appNav:takeTour")}
 					</DropdownMenuItem>
 				) : null}
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					onClick={async () => {
-						await actions.logout();
+						await logout();
 
 						navigate("/login");
 					}}

@@ -1,0 +1,34 @@
+{
+	"search": "Zoeken",
+	"takeTour": "Volg een rondleiding",
+	"userMenu": {
+		"settings": "Instellingen",
+		"language": "Taal"
+	},
+	"nav": {
+		"newChat": {
+			"label": "Nieuw",
+			"tooltip": "Nieuwe chat - Begin op elk moment een nieuw gesprek."
+		},
+		"agents": {
+			"label": "Agents",
+			"tooltip": "Agents"
+		},
+		"allChats": {
+			"label": "Alle chats",
+			"tooltip": "Alle chats"
+		},
+		"agentsWorkspaces": {
+			"tooltip": "Agents/Werkruimtes - Open je werkruimtes of maak nieuwe AI-agents aan."
+		},
+		"knowledgeLibrary": {
+			"tooltip": "Kennisbibliotheek - Blader door, maak, deel en beheer je documentbibliotheken."
+		},
+		"toolbox": {
+			"tooltip": "Toolbox - Ontdek de uitgebreide mogelijkheden van Elsa met krachtige aanvullende tools."
+		},
+		"promptLibrary": {
+			"tooltip": "Promptbibliotheek - Blader door, maak en gebruik opgeslagen prompts."
+		}
+	}
+}

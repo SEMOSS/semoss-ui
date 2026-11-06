@@ -1,0 +1,46 @@
+{
+	"app": {
+		"title": "SEMOSS Playground"
+	},
+	"instances": {
+		"title": "Verbinden met SEMOSS",
+		"description": "Voer het adres in van de SEMOSS-server waarop u zich aanmeldt.",
+		"name": "Naam",
+		"namePlaceholder": "Werk",
+		"url": "Serveradres",
+		"module": "Implementatiepad",
+		"connect": "Verbinden",
+		"checking": "Server controleren…",
+		"unreachable": "Kan de server niet bereiken: {{message}}",
+		"saved": "Opgeslagen servers",
+		"use": "Gebruiken",
+		"remove": "{{name}} verwijderen",
+		"addAnother": "Een server toevoegen"
+	},
+	"auth": {
+		"title": "Aanmelden bij {{name}}",
+		"token": "Toegangstoken",
+		"tokenHint": "Meld u aan met een bearer-token van uw identiteitsprovider.",
+		"tokenLabel": "Token",
+		"provider": "Provider",
+		"remember": "Onthouden op deze computer",
+		"signIn": "Aanmelden",
+		"switchServer": "Andere server",
+		"tokenRefused": "De server heeft het token niet geaccepteerd."
+	},
+	"nav": {
+		"newChat": "Nieuwe chat",
+		"chats": "Alle chats",
+		"agents": "Agents",
+		"knowledge": "Kennis",
+		"signOut": "Afmelden",
+		"search": "Zoeken",
+		"language": "Taal"
+	},
+	"tools": {
+		"source": "Deze computer",
+		"approval": "Wordt op deze computer uitgevoerd zodra u het toestaat.",
+		"notify": "Een melding tonen",
+		"reveal": "Tonen in map"
+	}
+}

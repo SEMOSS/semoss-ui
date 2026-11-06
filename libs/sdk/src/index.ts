@@ -15,7 +15,6 @@ export {
 	AgentStore,
 	Config,
 	ConfigStore,
-	createRoom,
 	getPermissionKey,
 	InsightStore as Insight,
 	isRequestUserInputAction,
@@ -23,7 +22,7 @@ export {
 	LoginsStore,
 	normalizeUserInputQuestion,
 	parseUserInputRequest,
-	RoomStore,
+	runSessionPixel,
 	Session,
 	SessionInsightStore,
 	SessionPermissionStore,
@@ -32,5 +31,6 @@ export {
 	type UserInputQuestion,
 	type UserInputRequest,
 } from "./stores";
+export * from "./stores/room";
 export * from "./types";
 export * from "./utility";

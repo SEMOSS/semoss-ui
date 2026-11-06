@@ -1,0 +1,76 @@
+import { ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
+import type { ToolCallStore } from "@semoss/sdk";
+import { useToolSelector } from "@semoss/sdk/react";
+import { cn, Spinner } from "@semoss/ui/next";
+import { formatJson } from "@semoss/utility/json";
+
+interface ResponseMessageToolStreamingProps {
+	tool: ToolCallStore;
+}
+
+/**
+ * Placeholder pill rendered while a tool call is still streaming in. We have
+ * the wire id and (eventually) the wire name and partial JSON arguments — but
+ * not the friendly title, description, or `_meta` (those arrive in the final
+ * sync, at which point the parent swaps this component for the real pill).
+ *
+ * Clicking the pill expands an inline preview of the accumulating JSON.
+ */
+export const ResponseMessageToolStreaming: React.FC<
+	ResponseMessageToolStreamingProps
+> = ({ tool }) => {
+	const { t } = useTranslation("tool");
+	const [isOpen, setIsOpen] = useState(false);
+	const { title, argumentsBuffer } = useToolSelector(
+		tool,
+		(call) => ({
+			title: call.json.title,
+			argumentsBuffer: call.argumentsBuffer,
+		}),
+		{ title: undefined, argumentsBuffer: "" },
+	);
+
+	return (
+		<div className="flex flex-col rounded-lg border border-border bg-sidebar">
+			<div className="flex items-center">
+				<button
+					type="button"
+					className="flex min-w-0 flex-1 items-center gap-3 p-2 text-start"
+					onClick={() => setIsOpen((prev) => !prev)}
+				>
+					<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
+						<Spinner />
+					</div>
+					<div className="-ms-1.5 flex min-w-0 flex-1 items-center gap-2">
+						<span
+							className="truncate text-muted-foreground text-sm"
+							title={title || undefined}
+						>
+							{title || t("status.loadingTool")}
+						</span>
+					</div>
+					<ChevronDown
+						className={cn(
+							"me-1 size-4 shrink-0 text-muted-foreground transition-transform",
+							isOpen && "rotate-180",
+						)}
+					/>
+				</button>
+			</div>
+
+			{isOpen && (
+				<div className="border-border border-t p-2">
+					<pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-muted p-2 font-mono text-muted-foreground text-xs">
+						{formatJson(argumentsBuffer) || (
+							<span className="italic">
+								{t("status.waitingForArguments")}
+							</span>
+						)}
+					</pre>
+				</div>
+			)}
+		</div>
+	);
+};

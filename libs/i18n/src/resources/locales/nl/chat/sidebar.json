@@ -1,0 +1,69 @@
+{
+	"buckets": {
+		"favorites": "Favorieten",
+		"today": "Vandaag",
+		"yesterday": "Gisteren",
+		"fewDaysAgo": "Enkele dagen geleden",
+		"lastWeek": "Vorige week",
+		"thisMonth": "Deze maand",
+		"lastMonth": "Vorige maand",
+		"older": "Ouder"
+	},
+	"messages": {
+		"errorLoadingRooms": "Fout bij het laden van ruimtes",
+		"noRoomsFound": "Geen ruimtes gevonden",
+		"untitled": "Naamloos"
+	},
+	"actions": {
+		"openNavigation": "Navigatie openen",
+		"openSidebar": "Zijbalk openen",
+		"closeSidebar": "Zijbalk sluiten",
+		"favorite": "Markeren als favoriet",
+		"unfavorite": "Verwijderen uit favorieten",
+		"rename": "Naam wijzigen",
+		"download": "Downloaden",
+		"delete": "Verwijderen",
+		"openInline": "In-line openen",
+		"minimize": "Minimaliseren",
+		"maximize": "Maximaliseren",
+		"close": "Sluiten"
+	},
+	"toasts": {
+		"failedToPin": "Vastmaken van ruimte mislukt",
+		"failedToUnpin": "Losmaken van ruimte mislukt",
+		"roomNameEmpty": "Ruimtenaam mag niet leeg zijn",
+		"roomRenamedSuccess": "Naam van ruimte succesvol gewijzigd",
+		"failedToRename": "Naam wijzigen van ruimte mislukt",
+		"roomDeletedSuccess": "Ruimte succesvol verwijderd",
+		"failedToDelete": "Kan de kamer niet verwijderen"
+	},
+	"settings": {
+		"title": "Instellingen",
+		"description": "Je voorkeuren en de apps die de assistent kan gebruiken.",
+		"sections": {
+			"general": "Algemeen",
+			"connectors": "Connectors"
+		},
+		"general": {
+			"appearance": "Weergave",
+			"theme": "Thema",
+			"themeDescription": "Donkere en systeemthema's zijn in bèta.",
+			"themes": {
+				"system": "Systeem",
+				"light": "Licht",
+				"dark": "Donker"
+			},
+			"language": "Taal",
+			"languageDescription": "De taal waarin de app wordt weergegeven.",
+			"version": "Versie {{version}}"
+		}
+	},
+	"download": {
+		"title": "Gesprek downloaden",
+		"description": "Kies een indeling voor je download.",
+		"word": "Word-document",
+		"pdf": "PDF-document",
+		"success": "Gesprek gedownload als {{format}}",
+		"failed": "Kan het gesprek niet downloaden"
+	}
+}

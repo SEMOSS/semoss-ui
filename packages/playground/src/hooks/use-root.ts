@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { RootContext } from "@/contexts";
+import { RootContext } from "@/contexts/root.context";
 
 /**
  * Get the root store

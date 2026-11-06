@@ -11,7 +11,9 @@ export * from "./constants";
 // Fetch on-demand namespaces (e.g. the client's embedded terminal) at runtime.
 export { preloadNamespaces } from "./preload";
 export { auditlogResources } from "./resources/auditlog";
+export { chatResources } from "./resources/chat";
 export { clientResources } from "./resources/client";
+export { desktopResources } from "./resources/desktop";
 export { playgroundResources } from "./resources/playground";
 export { terminalResources } from "./resources/terminal";
 // Per-app lazy resource configs passed to I18nBuilder.

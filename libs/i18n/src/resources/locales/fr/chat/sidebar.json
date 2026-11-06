@@ -1,0 +1,69 @@
+{
+	"buckets": {
+		"favorites": "Favoris",
+		"today": "Aujourd'hui",
+		"yesterday": "Hier",
+		"fewDaysAgo": "Il y a quelques jours",
+		"lastWeek": "La semaine dernière",
+		"thisMonth": "Ce mois-ci",
+		"lastMonth": "Le mois dernier",
+		"older": "Plus ancien"
+	},
+	"messages": {
+		"errorLoadingRooms": "Erreur lors du chargement des salles",
+		"noRoomsFound": "Aucune salle trouvée",
+		"untitled": "Sans titre"
+	},
+	"actions": {
+		"openNavigation": "Ouvrir la navigation",
+		"openSidebar": "Ouvrir la barre latérale",
+		"closeSidebar": "Fermer la barre latérale",
+		"favorite": "Favori",
+		"unfavorite": "Retirer des favoris",
+		"rename": "Renommer",
+		"download": "Télécharger",
+		"delete": "Supprimer",
+		"openInline": "Ouvrir en ligne",
+		"minimize": "Réduire",
+		"maximize": "Agrandir",
+		"close": "Fermer"
+	},
+	"toasts": {
+		"failedToPin": "Échec de l'épinglage de la salle",
+		"failedToUnpin": "Échec du désépinglage de la salle",
+		"roomNameEmpty": "Le nom de la salle ne peut pas être vide",
+		"roomRenamedSuccess": "Salle renommée avec succès",
+		"failedToRename": "Échec du renommage de la salle",
+		"roomDeletedSuccess": "Salle supprimée avec succès",
+		"failedToDelete": "Impossible de supprimer la salle"
+	},
+	"settings": {
+		"title": "Paramètres",
+		"description": "Vos préférences et les applications que l'assistant peut utiliser.",
+		"sections": {
+			"general": "Général",
+			"connectors": "Connecteurs"
+		},
+		"general": {
+			"appearance": "Apparence",
+			"theme": "Thème",
+			"themeDescription": "Les thèmes sombre et système sont en bêta.",
+			"themes": {
+				"system": "Système",
+				"light": "Clair",
+				"dark": "Sombre"
+			},
+			"language": "Langue",
+			"languageDescription": "La langue dans laquelle l'application s'affiche.",
+			"version": "Version {{version}}"
+		}
+	},
+	"download": {
+		"title": "Télécharger la conversation",
+		"description": "Choisissez un format pour le téléchargement.",
+		"word": "Document Word",
+		"pdf": "Document PDF",
+		"success": "Conversation téléchargée au format {{format}}",
+		"failed": "Impossible de télécharger la conversation"
+	}
+}

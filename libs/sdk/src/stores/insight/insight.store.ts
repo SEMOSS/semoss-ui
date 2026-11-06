@@ -1,8 +1,8 @@
 import {
 	confirmOTP,
+	createPlaygroundRoom,
 	download,
 	getRoomForInsight,
-	getRoomOptions,
 	type getSystemConfig,
 	login,
 	loginLDAP,
@@ -11,7 +11,6 @@ import {
 	oauth,
 	runPixel,
 	runPixelAsync,
-	setRoomForInsight,
 	upload,
 	uploadApp,
 	uploadEngine,
@@ -22,7 +21,7 @@ import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
 import { Config } from "../config/config.store";
-import { createRoom, RoomStore } from "../room";
+import { RoomEngine } from "../room/room-engine.store";
 import { Session } from "../session/session.store";
 
 /**
@@ -168,7 +167,7 @@ export class InsightStore {
 	};
 
 	/** Room bound to the current insightId, lazily created/cached by getRoom(). */
-	private _room: RoomStore | null = null;
+	private _room: RoomEngine | null = null;
 
 	/** Getters */
 	/**
@@ -883,15 +882,16 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * Get the room bound to this insightId, wrapped as a `RoomStore`. Cached
-		 * per insight — repeated calls return the same instance. Resolution order:
-		 * a tool execution context's room (`Env.TOOL.roomId`), then whatever room
-		 * {@link getRoomForInsight} reports is already bound to this insightId,
-		 * then finally a brand-new room created and bound via {@link createRoom}.
+		 * Get the room bound to this insightId, as a loaded `RoomEngine`. Cached
+		 * per insight — repeated calls return the same instance. Resolution
+		 * order: a tool execution context's room (`Env.TOOL.roomId`), then
+		 * whatever room {@link getRoomForInsight} reports is already bound to
+		 * this insightId, then a room created through `CreatePlaygroundRoom` in
+		 * this insight. The room is loaded, which binds this insight to it.
 		 *
-		 * @returns The bound `RoomStore`, or `null` if `disableRoom` was set on this insight.
+		 * @returns The bound room, or `null` if `disableRoom` was set on this insight.
 		 */
-		getRoom: async (): Promise<RoomStore | null> => {
+		getRoom: async (): Promise<RoomEngine | null> => {
 			if (this._store.options.disableRoom) {
 				return null;
 			}
@@ -900,37 +900,24 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				return this._room;
 			}
 
-			const toolRoomId = Env.TOOL?.roomId;
-			if (toolRoomId) {
-				await setRoomForInsight(this._store.insightId, toolRoomId);
-				const options = await getRoomOptions(
-					this._store.insightId,
-					toolRoomId,
-				);
-				this._room = new RoomStore(
-					toolRoomId,
-					this._store.insightId,
-					options,
-				);
-				return this._room;
+			const insightId = this._store.insightId;
+			let roomId = Env.TOOL?.roomId ?? "";
+			let isNew = false;
+			if (!roomId) {
+				roomId = (await getRoomForInsight(insightId))?.roomId ?? "";
+			}
+			if (!roomId) {
+				roomId = (await createPlaygroundRoom({}, insightId)).roomId;
+				isNew = true;
 			}
 
-			const existingRoom = await getRoomForInsight(this._store.insightId);
-			if (existingRoom) {
-				const options = await getRoomOptions(
-					this._store.insightId,
-					existingRoom.roomId,
-				);
-				this._room = new RoomStore(
-					existingRoom.roomId,
-					this._store.insightId,
-					options,
-				);
-				return this._room;
-			}
-
-			this._room = await createRoom(this._store.insightId);
-			return this._room;
+			const room = new RoomEngine({
+				roomId: roomId,
+				insightId: insightId,
+			});
+			await room.initialize({ isNew: isNew });
+			this._room = room;
+			return room;
 		},
 
 		/**

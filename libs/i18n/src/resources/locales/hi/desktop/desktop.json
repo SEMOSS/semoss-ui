@@ -1,0 +1,46 @@
+{
+	"app": {
+		"title": "SEMOSS Playground"
+	},
+	"instances": {
+		"title": "SEMOSS से कनेक्ट करें",
+		"description": "उस SEMOSS सर्वर का पता दर्ज करें जिसमें आप साइन इन करते हैं।",
+		"name": "नाम",
+		"namePlaceholder": "कार्य",
+		"url": "सर्वर का पता",
+		"module": "डिप्लॉयमेंट पथ",
+		"connect": "कनेक्ट करें",
+		"checking": "सर्वर जाँचा जा रहा है…",
+		"unreachable": "सर्वर तक नहीं पहुँच सके: {{message}}",
+		"saved": "सहेजे गए सर्वर",
+		"use": "उपयोग करें",
+		"remove": "{{name}} हटाएँ",
+		"addAnother": "सर्वर जोड़ें"
+	},
+	"auth": {
+		"title": "{{name}} में साइन इन करें",
+		"token": "एक्सेस टोकन",
+		"tokenHint": "अपने पहचान प्रदाता के बेयरर टोकन से साइन इन करें।",
+		"tokenLabel": "टोकन",
+		"provider": "प्रदाता",
+		"remember": "इस कंप्यूटर पर याद रखें",
+		"signIn": "साइन इन करें",
+		"switchServer": "सर्वर बदलें",
+		"tokenRefused": "सर्वर ने टोकन स्वीकार नहीं किया।"
+	},
+	"nav": {
+		"newChat": "नई चैट",
+		"chats": "सभी चैट",
+		"agents": "एजेंट",
+		"knowledge": "ज्ञान",
+		"signOut": "साइन आउट",
+		"search": "खोजें",
+		"language": "भाषा"
+	},
+	"tools": {
+		"source": "यह कंप्यूटर",
+		"approval": "आपकी अनुमति के बाद इस कंप्यूटर पर चलता है।",
+		"notify": "सूचना दिखाएँ",
+		"reveal": "फ़ोल्डर में दिखाएँ"
+	}
+}

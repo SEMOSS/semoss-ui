@@ -48,11 +48,22 @@ export class InsightWebSocket {
 		};
 	}
 
-	/** Build the WebSocket URL from the current page location and Env.MODULE */
+	/**
+	 * Build the WebSocket URL from Env.MODULE: an absolute MODULE (a desktop
+	 * host talking to a hosted instance) names the server itself; a path is
+	 * on the page's own host.
+	 */
 	private buildUrl(): string {
+		const query = `insightId=${encodeURIComponent(this.insightId)}`;
+		if (/^https?:\/\//i.test(Env.MODULE)) {
+			const module = new URL(Env.MODULE);
+			const protocol = module.protocol === "https:" ? "wss:" : "ws:";
+			const path = module.pathname.replace(/\/+$/, "");
+			return `${protocol}//${module.host}${path}/insightSocket?${query}`;
+		}
 		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 		const host = window.location.host;
-		return `${protocol}//${host}${Env.MODULE}/insightSocket?insightId=${encodeURIComponent(this.insightId)}`;
+		return `${protocol}//${host}${Env.MODULE}/insightSocket?${query}`;
 	}
 
 	/** Open the WebSocket connection */

@@ -1,8 +1,7 @@
-import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useRoot } from "@/hooks";
+import { useRoot } from "@/hooks/use-root";
 
-export const GlobalFooter: React.FC = observer(() => {
+export const GlobalFooter: React.FC = () => {
 	const { root } = useRoot();
 
 	if (!root.theme.footer) {
@@ -18,4 +17,4 @@ export const GlobalFooter: React.FC = observer(() => {
 			}}
 		></footer>
 	);
-});
+};

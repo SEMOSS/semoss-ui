@@ -198,12 +198,57 @@ export const logoutProvider = async (provider: string): Promise<void> => {
 };
 
 /**
- * Whether a popup has come back to this app, which is where the backend sends
- * it once a sign in finishes. A popup still on the provider's pages cannot be
- * read, which counts as not yet.
+ * A window showing a sign in, as a {@link SignInWindowOpener} hands it back.
+ * The browser's popup is one; a desktop host supplies its own (a webview
+ * window) through {@link setSignInWindowOpener}.
+ */
+export interface SignInWindow {
+	/** Whether the window has closed. */
+	readonly closed: boolean;
+	/**
+	 * Send the window to a page.
+	 *
+	 * @param url - The page to show.
+	 */
+	navigate(url: string): void;
+	/**
+	 * Whether the window has come back to this app, which is where the
+	 * backend sends it once a sign in finishes. A window that cannot be read,
+	 * such as one still on the provider's pages, counts as not yet.
+	 */
+	isBack(): boolean;
+	/** Close the window. */
+	close(): void;
+}
+
+/**
+ * What a sign in asks its window opener for.
+ *
+ * - `connect`: a sign in to one more provider ({@link connectLogin}). The
+ *   window opens blank (`url` null) straight from the click and is sent on
+ *   with `navigate` once any stale login is gone.
+ * - `oauth`: the session's first login ({@link oauth}), opened on `url`.
+ */
+export interface SignInWindowRequest {
+	kind: "connect" | "oauth";
+	/** The page to open on, or null to open blank. */
+	url: string | null;
+}
+
+/**
+ * Opens the window a sign in runs in, or returns null when it could not open
+ * (a blocked popup). Must open synchronously: it is called straight from the
+ * click that started the sign in.
+ */
+export type SignInWindowOpener = (
+	request: SignInWindowRequest,
+) => SignInWindow | null;
+
+/**
+ * Whether a popup shows a page of this app again, away from the sign in.
  *
  * @param popup - The sign in popup.
- * @returns True once the popup shows a page of this app again.
+ * @returns True once the popup is back; false while it cannot be read.
  */
 const isPopupBack = (popup: Window): boolean => {
 	try {
@@ -217,6 +262,55 @@ const isPopupBack = (popup: Window): boolean => {
 	} catch {
 		return false;
 	}
+};
+
+/**
+ * The browser's own sign in window: a popup, opened from the top window for
+ * an OAuth sign in so one started in an iframe still works.
+ *
+ * @param request - What the sign in asks for.
+ * @returns The popup, or null when the browser blocked it.
+ */
+const openSignInPopup: SignInWindowOpener = ({ kind, url }) => {
+	const popup =
+		kind === "connect"
+			? window.open(url ?? "", "semoss-connect", POPUP_FEATURES)
+			: (window.top?.open(
+					url ?? "",
+					"_blank",
+					"height=600,width=400,top=300,left=600",
+				) ?? null);
+	if (!popup) {
+		return null;
+	}
+	return {
+		get closed() {
+			return popup.closed;
+		},
+		navigate: (next) => {
+			popup.location.href = next;
+		},
+		isBack: () => isPopupBack(popup),
+		close: () => popup.close(),
+	};
+};
+
+/** The opener every sign in uses; the browser popup unless a host set one. */
+let signInWindowOpener: SignInWindowOpener = openSignInPopup;
+
+/**
+ * Choose where sign ins open, such as a desktop app's own webview window in
+ * place of a browser popup. Covers {@link connectLogin} (and so
+ * `Session.logins.connect`) and {@link oauth} (and so an OAuth
+ * `Session.login`). The session's cookie jar must be shared with that window
+ * for the sign in to reach the session.
+ *
+ * @param opener - The opener to use, or null to go back to the browser popup.
+ */
+export const setSignInWindowOpener = (
+	opener: SignInWindowOpener | null,
+): void => {
+	signInWindowOpener = opener ?? openSignInPopup;
 };
 
 /**
@@ -236,7 +330,7 @@ const isPopupBack = (popup: Window): boolean => {
  * @returns Whether the session holds the login once the popup is done.
  */
 const waitForSignInPopup = (
-	popup: Window,
+	popup: SignInWindow,
 	isSignedIn: () => Promise<boolean>,
 	watchesLogin: boolean,
 ): Promise<boolean> =>
@@ -252,7 +346,7 @@ const waitForSignInPopup = (
 			isChecking = true;
 			try {
 				const now = Date.now();
-				const hasEnded = popup.closed || isPopupBack(popup);
+				const hasEnded = popup.closed || popup.isBack();
 				const hasTimedOut = now - startedAt > SIGN_IN_TIMEOUT_MS;
 				let hasLogin = false;
 				if (watchesLogin && now - loginReadAt >= SIGN_IN_POLL_MS) {
@@ -320,7 +414,7 @@ export const connectLogin = ({
 
 	// opened blank inside the click, and sent to the sign in once any stale
 	// login is gone
-	const popup = window.open("", "semoss-connect", POPUP_FEATURES);
+	const popup = signInWindowOpener({ kind: "connect", url: null });
 	if (!popup) {
 		return Promise.reject(new PopupBlockedError());
 	}
@@ -346,7 +440,7 @@ export const connectLogin = ({
 		if (popup.closed) {
 			return isConnected();
 		}
-		popup.location.href = getSignInUrl(loginPath);
+		popup.navigate(getSignInUrl(loginPath));
 
 		return waitForSignInPopup(popup, isConnected, watchesLogins);
 	})();
@@ -384,16 +478,13 @@ export const oauth = async (
 		throw new Error("Unable to login");
 	}
 
-	// opened from the top window, so a sign in started in an iframe still works
-	const top = typeof window === "undefined" ? null : window.top;
-	if (!top) {
+	if (typeof window === "undefined") {
 		throw new Error("Unable to login");
 	}
-	const popup = top.open(
-		getSignInUrl(provider),
-		"_blank",
-		"height=600,width=400,top=300,left=600",
-	);
+	const popup = signInWindowOpener({
+		kind: "oauth",
+		url: getSignInUrl(provider),
+	});
 	if (!popup) {
 		throw new PopupBlockedError();
 	}

@@ -4,6 +4,7 @@ export * from "./app";
 export * from "./auth";
 export * from "./base";
 export * from "./chat";
+export * from "./chat-pixels";
 export * from "./engine";
 export * from "./file";
 export * from "./insight";

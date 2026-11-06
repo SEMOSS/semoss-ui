@@ -1,0 +1,46 @@
+{
+	"app": {
+		"title": "SEMOSS Playground"
+	},
+	"instances": {
+		"title": "Se connecter à SEMOSS",
+		"description": "Saisissez l'adresse du serveur SEMOSS auquel vous vous connectez.",
+		"name": "Nom",
+		"namePlaceholder": "Travail",
+		"url": "Adresse du serveur",
+		"module": "Chemin de déploiement",
+		"connect": "Se connecter",
+		"checking": "Vérification du serveur…",
+		"unreachable": "Impossible de joindre le serveur : {{message}}",
+		"saved": "Serveurs enregistrés",
+		"use": "Utiliser",
+		"remove": "Supprimer {{name}}",
+		"addAnother": "Ajouter un serveur"
+	},
+	"auth": {
+		"title": "Se connecter à {{name}}",
+		"token": "Jeton d'accès",
+		"tokenHint": "Connectez-vous avec un jeton porteur de votre fournisseur d'identité.",
+		"tokenLabel": "Jeton",
+		"provider": "Fournisseur",
+		"remember": "Mémoriser sur cet ordinateur",
+		"signIn": "Se connecter",
+		"switchServer": "Changer de serveur",
+		"tokenRefused": "Le serveur n'a pas accepté le jeton."
+	},
+	"nav": {
+		"newChat": "Nouvelle conversation",
+		"chats": "Toutes les discussions",
+		"agents": "Agents",
+		"knowledge": "Connaissances",
+		"signOut": "Se déconnecter",
+		"search": "Rechercher",
+		"language": "Langue"
+	},
+	"tools": {
+		"source": "Cet ordinateur",
+		"approval": "S'exécute sur cet ordinateur une fois autorisé.",
+		"notify": "Afficher une notification",
+		"reveal": "Afficher dans le dossier"
+	}
+}

@@ -1,0 +1,46 @@
+{
+	"app": {
+		"title": "SEMOSS Playground"
+	},
+	"instances": {
+		"title": "الاتصال بـ SEMOSS",
+		"description": "أدخل عنوان خادم SEMOSS الذي تسجّل الدخول إليه.",
+		"name": "الاسم",
+		"namePlaceholder": "العمل",
+		"url": "عنوان الخادم",
+		"module": "مسار النشر",
+		"connect": "اتصال",
+		"checking": "جارٍ التحقق من الخادم…",
+		"unreachable": "تعذّر الوصول إلى الخادم: {{message}}",
+		"saved": "الخوادم المحفوظة",
+		"use": "استخدام",
+		"remove": "إزالة {{name}}",
+		"addAnother": "إضافة خادم"
+	},
+	"auth": {
+		"title": "تسجيل الدخول إلى {{name}}",
+		"token": "رمز الوصول",
+		"tokenHint": "سجّل الدخول باستخدام رمز حامل من موفر الهوية لديك.",
+		"tokenLabel": "الرمز",
+		"provider": "الموفر",
+		"remember": "التذكّر على هذا الكمبيوتر",
+		"signIn": "تسجيل الدخول",
+		"switchServer": "تبديل الخادم",
+		"tokenRefused": "لم يقبل الخادم الرمز."
+	},
+	"nav": {
+		"newChat": "محادثة جديدة",
+		"chats": "جميع الدردشات",
+		"agents": "الوكلاء",
+		"knowledge": "المعرفة",
+		"signOut": "تسجيل الخروج",
+		"search": "بحث",
+		"language": "اللغة"
+	},
+	"tools": {
+		"source": "هذا الكمبيوتر",
+		"approval": "يعمل على هذا الكمبيوتر بعد أن تسمح بذلك.",
+		"notify": "إظهار إشعار",
+		"reveal": "الإظهار في المجلد"
+	}
+}

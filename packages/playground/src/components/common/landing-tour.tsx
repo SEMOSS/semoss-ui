@@ -4,7 +4,6 @@ import {
 	MapIcon,
 	XIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -14,7 +13,8 @@ import {
 	DialogDescription,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useRoot, useTour } from "@/hooks";
+import { useRoot } from "@/hooks/use-root";
+import { useTour } from "@/hooks/use-tour";
 
 interface TourStep {
 	target?: string;
@@ -119,7 +119,7 @@ function getCardStyle(
 	}
 }
 
-export const LandingTour: React.FC = observer(() => {
+export const LandingTour: React.FC = () => {
 	const { t } = useTranslation("tour");
 	const { isOpen, stopTour } = useTour();
 	const { root } = useRoot();
@@ -314,4 +314,4 @@ export const LandingTour: React.FC = observer(() => {
 			</DialogContent>
 		</Dialog>
 	);
-});
+};
