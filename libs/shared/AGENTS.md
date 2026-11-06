@@ -141,7 +141,7 @@ anyone else the list's Delete button and selection box are disabled on those row
 usage limit") under the list.
 
 `useIsCurrentLogin()` (`hooks/use-is-current-login.ts`) checks a person's login type and id
-against the account ids the SDK's `Logins` holds, reading them as they are so every row can call
+against the account ids the SDK's `Session.logins` holds, reading them as they are so every row can call
 it. A lone login logo, outside an avatar, gets `CurrentLoginStar` (`components/current-login-star.tsx`)
 at its corner. The members table also stars its host's `currentUserId` when the login type is not
 known, and keeps a Login Type column with `LoginTypeLabel` (`components/login-type-label.tsx`):

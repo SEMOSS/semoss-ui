@@ -9,7 +9,7 @@ const REGEXP_SPECIAL_CHARACTERS = /[.+^${}()|[\]\\]/g;
  * carries control characters, or nests absurdly deep. Raised with a message
  * written for the model, which reads it back as the tool result.
  */
-export class FolderPathError extends Error {
+class FolderPathError extends Error {
 	constructor(message: string) {
 		super(message);
 		this.name = "FolderPathError";
@@ -112,16 +112,6 @@ export const getFolderPathName = (path: string): string => {
 	const segments = splitFolderPath(path);
 	return segments[segments.length - 1] ?? "";
 };
-
-/**
- * Whether `path` is `ancestor` or sits somewhere beneath it.
- *
- * @param path - A normalized path.
- * @param ancestor - A normalized directory path.
- * @return True when `path` is inside `ancestor`.
- */
-export const isWithinFolderPath = (path: string, ancestor: string): boolean =>
-	ancestor === "" || path === ancestor || path.startsWith(`${ancestor}/`);
 
 /**
  * Build a case-insensitive matcher for file and folder names.

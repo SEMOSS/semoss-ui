@@ -72,10 +72,12 @@ beforeEach(() => vi.clearAllMocks());
 test("saving an agent from a conversation validates and retains the form after a failed save", async () => {
 	mocks.addWorkspace.mockRejectedValueOnce(new Error("Save failed"));
 	render(
-		<SaveWorkspaceDialog systemPrompt="Current instructions" mcps={[]} />,
-	);
-	fireEvent.click(
-		screen.getByRole("button", { name: "workspace.publishTooltip" }),
+		<SaveWorkspaceDialog
+			systemPrompt="Current instructions"
+			mcps={[]}
+			open
+			onOpenChange={vi.fn()}
+		/>,
 	);
 	fireEvent.click(
 		screen.getByRole("button", { name: "workspace.publishButton" }),

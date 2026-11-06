@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest";
 import {
-	countOccurrences,
 	decodeTextFile,
 	FolderToolError,
 	isBinaryFileName,
@@ -110,9 +109,5 @@ describe("replaceFileText", () => {
 		expect(() => replaceFileText("abc", "a", "a", false)).toThrow(
 			FolderToolError,
 		);
-	});
-
-	test("counts without overlaps", () => {
-		expect(countOccurrences("aaaa", "aa")).toBe(2);
 	});
 });

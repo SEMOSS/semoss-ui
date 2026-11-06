@@ -1,6 +1,6 @@
 import { Lock } from "lucide-react";
 import { useEffect, useState } from "react";
-import { P, Progress } from "@semoss/ui/next";
+import { cn, P, Progress } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
 import type { MailboxOverview } from "./onboarding-api";
 import {
@@ -69,7 +69,13 @@ export function Onboarding({
 
 	return (
 		<div className="min-h-dvh bg-background text-foreground">
-			<div className="mx-auto flex max-w-5xl flex-col gap-4 p-4 md:p-6">
+			<div
+				className={cn(
+					"mx-auto flex flex-col gap-4 p-4 md:p-6",
+					// topics is a list and a detail side by side, so it takes the whole window
+					started && step === 6 ? "max-w-screen-2xl" : "max-w-5xl",
+				)}
+			>
 				<header className="flex flex-col gap-2">
 					<P className="font-bold text-lg tracking-tight">
 						collaboration<span className="text-primary">.</span>

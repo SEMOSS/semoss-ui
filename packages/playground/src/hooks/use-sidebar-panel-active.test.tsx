@@ -73,6 +73,8 @@ test("nothing is active once the sidebar is closed", async () => {
 	);
 
 	// the panel is still open in the dock, and still the selection
-	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(1);
+	expect(room.workbench.getState().layout.selection.panel).toBe(
+		room.workbench.getState().layout.borders.left.activeId,
+	);
 	expect(result.current).toBe(false);
 });

@@ -4,10 +4,7 @@
 		"title": "Suggested follow-ups"
 	},
 	"settings": {
-		"title": "Room Settings",
-		"description": "Update room settings and modify the behavior of the chat",
-		"open": "Open Settings",
-		"close": "Close",
+		"description": "Model, instructions, knowledge, and tools for this room.",
 		"compact": "Compact Conversation",
 		"compactSuccess": "Conversation compacted successfully",
 		"compactSkipped": "Nothing to compact — conversation is already concise",
@@ -28,20 +25,18 @@
 			"TOOL_PRUNE": "Removes verbose tool call results from the conversation history. Best when tool outputs are large and the details are no longer needed.",
 			"AUTO": "Will select summarization or tool pruning based on the current conversation."
 		},
-		"panelTitle": "Settings",
 		"noKnowledge": "No Knowledge selected.",
-		"noTools": "No Tools selected.",
 		"fromRoom": "From room",
-		"inheritedSelection": "Inherited selections cannot be removed from this chat.",
+		"inheritedSelection": "Inherited selections cannot be removed from this room.",
 		"removeSelection": "Remove {{name}}",
-		"agentLoadError": "Could not load the agent. Try again or select another agent."
+		"agentLoadError": "Could not load the agent. Try again or select another agent.",
+		"toolsTitle": "Tools"
 	},
 	"form": {
 		"modelLabel": "Model",
 		"instructionsLabel": "Instructions",
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolboxes",
 		"temperatureLabel": "Temperature"
 	},
 	"modes": {
@@ -53,7 +48,7 @@
 		"noAgent": "No Agent"
 	},
 	"workspace": {
-		"publishTooltip": "Publish as Agent",
+		"publish": "Publish as Agent",
 		"publishTitle": "Publish Agent",
 		"publishDescription": "Publish a new agent with the current room configuration, including instructions and MCPs.",
 		"nameLabel": "Name *",
@@ -71,7 +66,7 @@
 		"ariaPlaceholder": "Enter text",
 		"thinking": "Thinking...",
 		"menuPrompt": "How can I help you today?",
-		"openSettings": "Add to your chat",
+		"addToChat": "Add to your chat",
 		"recordLabel": "Record the Model",
 		"stopRecording": "Stop Recording",
 		"record": "Record",
@@ -120,9 +115,7 @@
 		"attachDocument": "Attach Files"
 	},
 	"menuFileExplorer": {
-		"name": "Chat Files",
-		"open": "Show Chat Files",
-		"close": "Hide Chat Files"
+		"name": "Room Files"
 	},
 	"errors": {
 		"createRoom": "An error occurred while creating the room. Error: {{message}}",
@@ -146,14 +139,9 @@
 	"studio": {
 		"views": "Conversation views",
 		"chat": "Chat",
-		"openWorkArea": "Open Workspace",
-		"workArea": "Workspace",
-		"toolsCount": "Tools, {{count}} selected",
-		"tools": "Tools",
+		"workspace": "Workspace",
 		"toolsLocked": "Tools cannot be changed while a response is running.",
 		"toolsHint": "Selections apply to your next message.",
-		"toolsTitle": "Tools & knowledge",
-		"toolsDescription": "Choose the tools and knowledge available to this conversation.",
 		"moreActions": "More actions",
 		"prompts": "Prompts",
 		"removeFile": "Remove {{name}}",
@@ -165,16 +153,21 @@
 		"exportCsv": "Export as CSV",
 		"exportPdf": "Export as PDF",
 		"closeWorkspace": "Close Workspace",
+		"openWorkspace": "Open Workspace",
 		"preparingWorkspace": "Preparing Workspace…",
-		"activityLog": "Activity Log",
 		"prepareError": "Could not prepare the Workspace. Your draft is preserved.",
 		"retry": "Try again"
 	},
 	"workspacePlaces": {
 		"files": "Files",
-		"tools": "Tools",
+		"openPanel": "Open a Panel",
 		"activity": "Activity",
-		"settings": "Settings"
+		"settings": "Settings",
+		"descriptions": {
+			"files": "Files you upload here and anything the room's tools create",
+			"settings": "This room's model, instructions, knowledge, and tools",
+			"activity": "Every tool call and change in this room"
+		}
 	},
 	"optimizer": {
 		"optimize": "Optimize prompt",
@@ -190,5 +183,71 @@
 	"contextItems": {
 		"label": "Added to Your Next Message",
 		"remove": "Remove {{name}} from your next message"
+	},
+	"header": {
+		"untitled": "Untitled room",
+		"renameLabel": "Room name",
+		"roomSection": "Room"
+	},
+	"slash": {
+		"empty": "No commands found",
+		"openPlace": "Open {{name}} in the Workspace",
+		"groups": {
+			"chat": "Chat",
+			"workspace": "Workspace",
+			"room": "Room",
+			"prompts": "Prompts"
+		},
+		"commands": {
+			"attach": {
+				"label": "Attach files",
+				"description": "Add files to your next message"
+			},
+			"knowledge": {
+				"label": "Add knowledge",
+				"description": "Let the assistant search your knowledge sources"
+			},
+			"toolbox": {
+				"label": "Add tools",
+				"description": "Add toolboxes the assistant can use"
+			},
+			"agent": {
+				"label": "Choose agent",
+				"description": "Pick the agent this room runs"
+			},
+			"agent-harness": {
+				"label": "Switch to agent",
+				"description": "Run this room with an agent"
+			},
+			"chat-mode": {
+				"label": "Switch to chat",
+				"description": "Run this room without an agent"
+			},
+			"compact": {
+				"label": "Compact",
+				"description": "Summarize the conversation to free up context"
+			},
+			"close-workspace": {
+				"description": "Hide the Workspace and keep its tabs"
+			},
+			"favorite": {
+				"description": "Pin this room to the top of your list"
+			},
+			"unfavorite": {
+				"description": "Unpin this room from the top of your list"
+			},
+			"rename": {
+				"description": "Change this room's name"
+			},
+			"download": {
+				"description": "Save this conversation as Word or PDF"
+			},
+			"delete": {
+				"description": "Delete this room and its conversation"
+			},
+			"publish": {
+				"description": "Save this room's instructions and tools as an agent"
+			}
+		}
 	}
 }
