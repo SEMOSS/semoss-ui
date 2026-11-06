@@ -288,9 +288,9 @@ function DashboardRowView({
 				) : (
 					<span />
 				)}
-				<span />
-				<span />
-				<span />
+				<span className="col-span-3 truncate pl-5">
+					{row.node.NODE_LABEL || row.node.NODE_ID}
+				</span>
 				<span>
 					<StatusBadge status={row.node.STATUS} />
 				</span>
