@@ -14,7 +14,9 @@ export interface SyncDone {
 /** When any tab last started a sync, in ms; 0 when unknown. */
 export function sharedLastAttempt(): number {
 	try {
-		return Number(window.localStorage.getItem(LAST_ATTEMPT_KEY)) || 0;
+		const at = Number(window.localStorage.getItem(LAST_ATTEMPT_KEY)) || 0;
+		// a time ahead of this clock (another machine's, a bad write) must not hold syncs off
+		return at > Date.now() ? 0 : at;
 	} catch {
 		return 0;
 	}

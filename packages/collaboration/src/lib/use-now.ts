@@ -7,34 +7,24 @@ interface Clock {
 	now: number;
 	listeners: Set<() => void>;
 	timer?: number;
-}
-
-function tick(clock: Clock, intervalMs: number) {
-	clock.now = Date.now();
-	for (const listener of clock.listeners) listener();
-	// land on the next whole interval so minute clocks change on the minute
-	clock.timer = window.setTimeout(
-		() => tick(clock, intervalMs),
-		intervalMs - (Date.now() % intervalMs),
-	);
+	// stable per clock: a new subscribe each render would make React resubscribe every render
+	subscribe: (listener: () => void) => () => void;
+	getSnapshot: () => number;
 }
 
 function clockFor(intervalMs: number): Clock {
-	let clock = clocks.get(intervalMs);
-	if (!clock) {
-		clock = { now: Date.now(), listeners: new Set() };
-		clocks.set(intervalMs, clock);
-	}
-	return clock;
-}
-
-/** The current time in ms, updated every intervalMs through one timer shared by every caller. */
-export function useNow(intervalMs = 60_000): number {
-	const clock = clockFor(intervalMs);
-	return useSyncExternalStore(
-		(listener) => {
+	const existing = clocks.get(intervalMs);
+	if (existing) return existing;
+	const clock: Clock = {
+		now: Date.now(),
+		listeners: new Set(),
+		subscribe: (listener) => {
 			clock.listeners.add(listener);
-			if (clock.timer === undefined) tick(clock, intervalMs);
+			if (clock.timer === undefined) {
+				// a clock idle for a while starts from now; React re-reads the snapshot after subscribing
+				clock.now = Date.now();
+				schedule();
+			}
 			return () => {
 				clock.listeners.delete(listener);
 				if (clock.listeners.size === 0) {
@@ -43,6 +33,25 @@ export function useNow(intervalMs = 60_000): number {
 				}
 			};
 		},
-		() => clock.now,
-	);
+		getSnapshot: () => clock.now,
+	};
+	// land on the next whole interval so minute clocks change on the minute
+	const schedule = () => {
+		clock.timer = window.setTimeout(
+			() => {
+				clock.now = Date.now();
+				for (const listener of clock.listeners) listener();
+				schedule();
+			},
+			intervalMs - (Date.now() % intervalMs),
+		);
+	};
+	clocks.set(intervalMs, clock);
+	return clock;
+}
+
+/** The current time in ms, updated every intervalMs through one timer shared by every caller. */
+export function useNow(intervalMs = 60_000): number {
+	const clock = clockFor(intervalMs);
+	return useSyncExternalStore(clock.subscribe, clock.getSnapshot);
 }

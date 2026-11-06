@@ -403,8 +403,10 @@ export function WorkUpdatesProvider({
 		// Graph cannot notify local servers and Teams has no push; keep views current while visible.
 		// The clock is shared: whichever visible tab claims it syncs, the rest hear the result.
 		const checkMail = () => {
+			// a tab still syncing must not claim the minute: the claim would push the clock and block every tab
 			if (
 				!hasConnectedMail ||
+				syncing.current ||
 				document.visibilityState !== "visible" ||
 				Date.now() - sharedLastAttempt() < MAIL_CHECK_MS
 			)
