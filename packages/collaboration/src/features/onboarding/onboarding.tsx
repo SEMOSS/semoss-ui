@@ -27,6 +27,8 @@ const STEPS = [
 	{ label: "Topics" },
 	{ label: "Work" },
 ];
+// People: where setup resumes once an import has finished
+const AFTER_IMPORT = 3;
 
 /** First run with real mail: look, keep out, import headers, people, sort, topics from what is left, then file into Work. */
 export function Onboarding({
@@ -38,7 +40,12 @@ export function Onboarding({
 	initialStep?: number;
 }) {
 	const { step, started, isResuming, error, start, next, back } =
-		useOnboardingProgress(actions, initialStep, STEPS.length - 1);
+		useOnboardingProgress(
+			actions,
+			initialStep,
+			STEPS.length - 1,
+			AFTER_IMPORT,
+		);
 	const [days, setDays] = useState(30);
 	const [overview, setOverview] = useState<MailboxOverview | null>(null);
 	const [managerId, setManagerId] = useState("");
@@ -92,6 +99,7 @@ export function Onboarding({
 				>
 					{!started && !isResuming && !error && (
 						<WelcomeStep
+							actions={actions}
 							onStart={() => {
 								void start();
 							}}

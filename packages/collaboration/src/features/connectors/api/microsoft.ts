@@ -1,6 +1,7 @@
 import { download, oauth } from "@semoss/sdk";
 import { z } from "@semoss/ui/next";
 import { safeHttpsUrl } from "@semoss/utility/browser";
+import { hashString } from "@semoss/utility/text";
 import { draftText, sanitizeDraftHtml } from "@/features/email/email-html";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 import {
@@ -256,13 +257,18 @@ export async function saveEmailDraft(
 	}
 }
 
-/** Stage one file attachment into the same insight used by the caller's room. */
+/**
+ * Stage one file attachment into the same insight used by the caller's room.
+ *
+ * @param includeText - Also write a plain-text copy of an Office or mail file.
+ */
 export async function stageMailAttachment(
 	actions: InsightActions,
 	insightId: string,
 	uid: string,
 	attachmentId: string,
 	originalName: string,
+	includeText = false,
 ): Promise<StagedSourceAttachment> {
 	if (!insightId)
 		throw new Error(
@@ -273,15 +279,21 @@ export async function stageMailAttachment(
 			.split(/[\\/]/)
 			.pop()
 			?.replace(/[^\p{L}\p{N}._-]/gu, "_") || "attachment";
-	const fileName = `${crypto.randomUUID()}-${basename}`;
+	// one name per attachment, so a retry overwrites it; shortcut: 31-bit hash, same-named files could rarely collide
+	const fileName = `${hashString(JSON.stringify([uid, attachmentId])).toString(36)}-${basename}`;
 	const receipt = await callPixel(
 		actions,
 		pixel("MicrosoftOutlookDownloadAttachment", {
 			id: uid,
 			attachmentId,
 			fileName,
+			includeText,
 		}),
-		stagedAttachmentSchema,
+		stagedAttachmentSchema.extend({
+			textPath: z.string().min(1).optional(),
+			textTruncated: z.boolean().optional(),
+			textError: z.string().optional(),
+		}),
 	);
 	if (
 		receipt.id !== uid ||
@@ -298,6 +310,9 @@ export async function stageMailAttachment(
 		size: receipt.size,
 		attachmentId: receipt.attachmentId,
 		sourceUid: uid,
+		...(receipt.textPath ? { textPath: receipt.textPath } : {}),
+		...(receipt.textTruncated ? { isTextTruncated: true } : {}),
+		...(receipt.textError ? { textError: receipt.textError } : {}),
 	};
 }
 
