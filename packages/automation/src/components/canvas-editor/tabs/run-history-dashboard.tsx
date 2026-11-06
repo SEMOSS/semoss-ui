@@ -471,7 +471,7 @@ function NodeDetailPanel({
 	const variableRows = getRunScopeVariableRows(selected.result.scopeSnapshot);
 
 	return (
-		<section className="flex h-full w-96 shrink-0 flex-col rounded-lg border bg-card">
+		<section className="flex h-full w-[32rem] shrink-0 flex-col rounded-lg border bg-card">
 			<div className="flex items-center justify-between gap-2 border-b px-3 py-2">
 				<div className="min-w-0">
 					<p className="truncate font-medium text-sm">
