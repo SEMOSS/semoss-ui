@@ -5,10 +5,11 @@ import { getAutomationRun } from "../../../api";
 import type {
 	AutomationRunDetail,
 	AutomationRunSummary,
+	RunStatus,
 } from "../../../domain/automation.types";
 import {
-	formatRelativeTime,
-	formatRunDuration,
+	formatTimestamp,
+	getStatusClasses,
 } from "../../../domain/automation-display";
 import {
 	formatDurationMs,
@@ -29,7 +30,7 @@ interface RunHistoryDashboardProps {
 }
 
 const ROW_HEIGHT = 36;
-const GRID_COLUMNS = "grid-cols-[28px_1fr_120px_110px_90px]";
+const GRID_COLUMNS = "grid-cols-[28px_52px_1fr_150px_150px_100px]";
 
 /**
  * Mirth Connect message-browser-style dashboard: one row per run, expandable
@@ -158,10 +159,11 @@ export function RunHistoryDashboard({ appId, runs }: RunHistoryDashboardProps) {
 				className={`grid ${GRID_COLUMNS} items-center gap-2 border-b bg-muted/50 px-3 py-2 text-muted-foreground text-xs uppercase tracking-wide`}
 			>
 				<span />
+				<span>ID</span>
 				<span>Run / Node / Iteration</span>
+				<span>Time Started</span>
+				<span>Time Ended</span>
 				<span>Status</span>
-				<span>Started</span>
-				<span className="text-right">Duration</span>
 			</div>
 
 			{runs.length === 0 ? (
@@ -243,6 +245,9 @@ function DashboardRowView({
 						/>
 					)}
 				</button>
+				<span className="text-muted-foreground tabular-nums">
+					{row.runNumber}
+				</span>
 				<span className={`truncate font-medium ${indentClass}`}>
 					Run {row.run.RUN_ID.slice(0, 8)}
 					{row.loadError ? (
@@ -255,17 +260,16 @@ function DashboardRowView({
 						</button>
 					) : null}
 				</span>
-				<span>
-					<StatusBadge status={row.run.STATUS} />
+				<span className="text-muted-foreground">
+					{formatTimestamp(row.run.STARTED_AT)}
 				</span>
 				<span className="text-muted-foreground">
-					{formatRelativeTime(row.run.STARTED_AT)}
+					{row.run.COMPLETED_AT
+						? formatTimestamp(row.run.COMPLETED_AT)
+						: "—"}
 				</span>
-				<span className="text-right tabular-nums">
-					{formatRunDuration(
-						row.run.STARTED_AT,
-						row.run.COMPLETED_AT,
-					)}
+				<span>
+					<RunOutcomeBadge status={row.run.STATUS} />
 				</span>
 			</div>
 		);
@@ -294,6 +298,7 @@ function DashboardRowView({
 				) : (
 					<span />
 				)}
+				<span />
 				<span className={`truncate ${indentClass}`}>
 					{row.node.NODE_LABEL || row.node.NODE_ID}
 					{row.isLoop ? (
@@ -301,14 +306,16 @@ function DashboardRowView({
 							· {row.iterationCount} iteration
 							{row.iterationCount === 1 ? "" : "s"}
 						</span>
-					) : null}
-				</span>
-				<span>
-					<StatusBadge status={row.node.STATUS} />
+					) : (
+						<span className="ml-2 text-muted-foreground">
+							· {formatDurationMs(row.node.DURATION_MS)}
+						</span>
+					)}
 				</span>
 				<span />
-				<span className="text-right tabular-nums">
-					{row.isLoop ? "—" : formatDurationMs(row.node.DURATION_MS)}
+				<span />
+				<span>
+					<StatusBadge status={row.node.STATUS} />
 				</span>
 			</div>
 		);
@@ -319,19 +326,42 @@ function DashboardRowView({
 			className={`grid h-full ${GRID_COLUMNS} items-center gap-2 border-b bg-muted/10 px-3 text-xs`}
 		>
 			<span />
+			<span />
 			<span className={`truncate text-muted-foreground ${indentClass}`}>
 				{row.nodeLabel} · Item {row.iterationIndex + 1}
 				<span className="ml-2">
-					· {row.stepCount} step{row.stepCount === 1 ? "" : "s"}
+					· {row.stepCount} step{row.stepCount === 1 ? "" : "s"} ·{" "}
+					{formatDurationMs(row.durationMs)}
 				</span>
 			</span>
+			<span />
+			<span />
 			<span>
 				{row.status ? <StatusBadge status={row.status} /> : "—"}
 			</span>
-			<span />
-			<span className="text-right tabular-nums">
-				{formatDurationMs(row.durationMs)}
-			</span>
 		</div>
 	);
+}
+
+function RunOutcomeBadge({ status }: { status: RunStatus }) {
+	if (status === "SUCCESS") {
+		return (
+			<span
+				className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium text-[11px] ${getStatusClasses(status)}`}
+			>
+				Success
+			</span>
+		);
+	}
+	if (status === "FAILED") {
+		return (
+			<span
+				className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium text-[11px] ${getStatusClasses(status)}`}
+			>
+				Failure
+			</span>
+		);
+	}
+	// Not yet resolved (still running, cancelled, etc.) — neither success nor failure.
+	return <StatusBadge status={status} />;
 }

@@ -136,6 +136,39 @@ describe("buildDashboardRows", () => {
 		});
 	});
 
+	it("numbers runs 1-based in ascending STARTED_AT order, independent of input order", () => {
+		const rows = buildDashboardRows({
+			runs: [
+				run({
+					RUN_ID: "run-newest",
+					STARTED_AT: "2026-11-05T02:00:00Z",
+				}),
+				run({
+					RUN_ID: "run-oldest",
+					STARTED_AT: "2026-11-05T00:00:00Z",
+				}),
+				run({
+					RUN_ID: "run-middle",
+					STARTED_AT: "2026-11-05T01:00:00Z",
+				}),
+			],
+			expandedRunIds: new Set(),
+			runDetails: new Map(),
+			loadingRunIds: new Set(),
+			runErrors: new Map(),
+			expandedLoopKeys: new Set(),
+		});
+		const numbersById = new Map(
+			rows.map((row) => [
+				(row as { run: AutomationRunSummary }).run.RUN_ID,
+				(row as { runNumber: number }).runNumber,
+			]),
+		);
+		expect(numbersById.get("run-oldest")).toBe(1);
+		expect(numbersById.get("run-middle")).toBe(2);
+		expect(numbersById.get("run-newest")).toBe(3);
+	});
+
 	it("surfaces a run-level load error without adding node rows", () => {
 		const rows = buildDashboardRows({
 			runs: [run({ RUN_ID: "run-1" })],

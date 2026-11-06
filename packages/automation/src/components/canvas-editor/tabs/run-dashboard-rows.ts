@@ -23,6 +23,8 @@ export interface DashboardRunRow extends BaseDashboardRow {
 	kind: "run";
 	depth: 0;
 	run: AutomationRunSummary;
+	/** 1-based, ascending by STARTED_AT across all currently fetched runs — the first run ever is 1. */
+	runNumber: number;
 	expanded: boolean;
 	loading: boolean;
 	loadError?: string;
@@ -82,6 +84,7 @@ export function buildDashboardRows(
 		expandedLoopKeys,
 	} = params;
 	const rows: DashboardRow[] = [];
+	const runNumbers = assignRunNumbers(runs);
 
 	for (const run of runs) {
 		const expanded = expandedRunIds.has(run.RUN_ID);
@@ -90,6 +93,7 @@ export function buildDashboardRows(
 			key: `run:${run.RUN_ID}`,
 			depth: 0,
 			run,
+			runNumber: runNumbers.get(run.RUN_ID) ?? 0,
 			expanded,
 			loading: loadingRunIds.has(run.RUN_ID),
 			loadError: runErrors.get(run.RUN_ID),
@@ -138,4 +142,20 @@ export function buildDashboardRows(
 	}
 
 	return rows;
+}
+
+/** Maps each run to a unique, 1-based number in ascending STARTED_AT order — ties broken by RUN_ID for stability. */
+function assignRunNumbers(
+	runs: AutomationRunSummary[],
+): ReadonlyMap<string, number> {
+	const sorted = [...runs].sort((a, b) => {
+		const diff =
+			new Date(a.STARTED_AT).getTime() - new Date(b.STARTED_AT).getTime();
+		return diff !== 0 ? diff : a.RUN_ID.localeCompare(b.RUN_ID);
+	});
+	const numbers = new Map<string, number>();
+	sorted.forEach((run, index) => {
+		numbers.set(run.RUN_ID, index + 1);
+	});
+	return numbers;
 }
