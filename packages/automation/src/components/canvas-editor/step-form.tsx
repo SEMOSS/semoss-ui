@@ -1,5 +1,6 @@
 import type {
 	AgentRunConfig,
+	ApiRequestConfig,
 	AppConfig,
 	AutomationNode,
 	BranchConfig,
@@ -15,6 +16,7 @@ import type {
 import type { AutomationWorkflowNodeConfig } from "../../domain/automation-workflow.types";
 import { normalizeJevDecisionConfig } from "../../domain/automation-workflow-adapter";
 import { AgentRunForm } from "./forms/agent-run-form";
+import { ApiRequestForm } from "./forms/api-request-form";
 import { AppEngineForm } from "./forms/app-engine-form";
 import { BranchConditionBuilder } from "./forms/branch-condition-builder";
 import { DataExtractForm } from "./forms/data-extract-form";
@@ -130,6 +132,16 @@ export function StepForm({
 					upstreamVars={upstreamVars}
 					onChange={update}
 					devMode={devMode}
+					readOnly={readOnly}
+				/>
+			);
+		case "api-request":
+			return (
+				<ApiRequestForm
+					config={step.config as ApiRequestConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					projectId={appId}
 					readOnly={readOnly}
 				/>
 			);
