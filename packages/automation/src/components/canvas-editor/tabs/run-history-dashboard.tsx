@@ -1,8 +1,9 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ChevronRight, Loader2, X } from "lucide-react";
+import { ChevronRight, Loader2, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CellOutputBlock } from "@semoss/shared";
 import {
+	Input,
 	Table,
 	TableBody,
 	TableCell,
@@ -28,11 +29,13 @@ import {
 import { normalizeAutomationErrorMessage } from "../../../domain/automation-utils";
 import { StatusBadge } from "../../status-badge";
 import {
+	assignRunNumbers,
 	buildDashboardRows,
 	type DashboardRow,
 	type LoopRowKey,
 	loopRowKey,
 } from "./run-dashboard-rows";
+import { runMatchesKeyword } from "./run-data-browser-data";
 import { getRunScopeVariableRows } from "./run-node-view-state";
 
 interface RunHistoryDashboardProps {
@@ -46,6 +49,15 @@ const ROW_HEIGHT = 36;
 const DETAIL_PANEL_HEIGHT = 320;
 const GRID_COLUMNS = "grid-cols-[28px_52px_150px_150px_1fr]";
 type DetailTab = "incoming" | "outgoing" | "variables";
+
+const STATUS_FILTER_OPTIONS: { status: RunStatus; label: string }[] = [
+	{ status: "SUCCESS", label: "Success" },
+	{ status: "FAILED", label: "Error" },
+	{ status: "RUNNING", label: "Running" },
+	{ status: "WAITING_FOR_INPUT", label: "Pending" },
+	{ status: "INTERRUPTED", label: "Interrupted" },
+	{ status: "CANCELLED", label: "Cancelled" },
+];
 
 interface SelectedNode {
 	key: string;
@@ -171,23 +183,120 @@ export function RunHistoryDashboard({
 
 	const closeDetail = useCallback(() => setSelected(null), []);
 
+	const [keyword, setKeyword] = useState("");
+	const [runIdQuery, setRunIdQuery] = useState("");
+	const [startedAfter, setStartedAfter] = useState("");
+	const [startedBefore, setStartedBefore] = useState("");
+	const [statusFilters, setStatusFilters] = useState<Set<RunStatus>>(
+		new Set(),
+	);
+
+	const toggleStatusFilter = useCallback((status: RunStatus) => {
+		setStatusFilters((prev) => {
+			const next = new Set(prev);
+			if (next.has(status)) {
+				next.delete(status);
+			} else {
+				next.add(status);
+			}
+			return next;
+		});
+	}, []);
+
+	const hasActiveFilters =
+		keyword.trim() !== "" ||
+		runIdQuery.trim() !== "" ||
+		startedAfter !== "" ||
+		startedBefore !== "" ||
+		statusFilters.size > 0;
+
+	const clearFilters = useCallback(() => {
+		setKeyword("");
+		setRunIdQuery("");
+		setStartedAfter("");
+		setStartedBefore("");
+		setStatusFilters(new Set());
+	}, []);
+
+	/** Stable, independent of any active filters, so a run's displayed ID never changes while searching. */
+	const runNumbers = useMemo(() => assignRunNumbers(runs), [runs]);
+
+	const matchesNonKeywordFilters = useCallback(
+		(run: AutomationRunSummary) => {
+			if (statusFilters.size > 0 && !statusFilters.has(run.STATUS)) {
+				return false;
+			}
+			if (startedAfter) {
+				const started = new Date(run.STARTED_AT).getTime();
+				if (started < new Date(startedAfter).getTime()) return false;
+			}
+			if (startedBefore) {
+				const started = new Date(run.STARTED_AT).getTime();
+				if (started > new Date(startedBefore).getTime()) return false;
+			}
+			if (runIdQuery.trim()) {
+				const needle = runIdQuery.trim().toLowerCase();
+				const numberMatch = String(runNumbers.get(run.RUN_ID) ?? "")
+					.toLowerCase()
+					.includes(needle);
+				const idMatch = run.RUN_ID.toLowerCase().includes(needle);
+				if (!numberMatch && !idMatch) return false;
+			}
+			return true;
+		},
+		[statusFilters, startedAfter, startedBefore, runIdQuery, runNumbers],
+	);
+
+	// Keyword search reads retained message/variable data, which is only fetched once a run is expanded —
+	// so eagerly load details for every run that otherwise passes the filters while a keyword is active.
+	useEffect(() => {
+		if (!keyword.trim()) return;
+		for (const run of runs) {
+			if (matchesNonKeywordFilters(run)) {
+				fetchDetailIfNeeded(run.RUN_ID);
+			}
+		}
+	}, [keyword, runs, matchesNonKeywordFilters, fetchDetailIfNeeded]);
+
+	const filteredRuns = useMemo(() => {
+		const trimmedKeyword = keyword.trim();
+		return runs.filter((run) => {
+			if (!matchesNonKeywordFilters(run)) return false;
+			if (trimmedKeyword) {
+				const detail = runDetails.get(run.RUN_ID);
+				if (!detail) return false;
+				if (!runMatchesKeyword(detail, trimmedKeyword)) return false;
+			}
+			return true;
+		});
+	}, [runs, matchesNonKeywordFilters, keyword, runDetails]);
+
+	const searchingForKeyword =
+		keyword.trim() !== "" &&
+		runs.some(
+			(run) =>
+				matchesNonKeywordFilters(run) && loadingRunIds.has(run.RUN_ID),
+		);
+
 	const rows = useMemo(
 		() =>
 			buildDashboardRows({
-				runs,
+				runs: filteredRuns,
 				expandedRunIds,
 				runDetails,
 				loadingRunIds,
 				runErrors,
 				expandedLoopKeys,
+				runNumbers,
 			}),
 		[
-			runs,
+			filteredRuns,
 			expandedRunIds,
 			runDetails,
 			loadingRunIds,
 			runErrors,
 			expandedLoopKeys,
+			runNumbers,
 		],
 	);
 
@@ -222,6 +331,21 @@ export function RunHistoryDashboard({
 
 	return (
 		<div className="flex h-full min-h-0 flex-col rounded-lg border bg-card">
+			<RunHistoryFilterBar
+				keyword={keyword}
+				onKeywordChange={setKeyword}
+				runIdQuery={runIdQuery}
+				onRunIdQueryChange={setRunIdQuery}
+				startedAfter={startedAfter}
+				onStartedAfterChange={setStartedAfter}
+				startedBefore={startedBefore}
+				onStartedBeforeChange={setStartedBefore}
+				statusFilters={statusFilters}
+				onToggleStatusFilter={toggleStatusFilter}
+				hasActiveFilters={hasActiveFilters}
+				onClearFilters={clearFilters}
+				searching={searchingForKeyword}
+			/>
 			<div
 				className={`grid ${GRID_COLUMNS} items-center gap-2 border-b bg-muted/50 px-3 py-2 text-muted-foreground text-xs uppercase tracking-wide`}
 			>
@@ -235,6 +359,12 @@ export function RunHistoryDashboard({
 			{runs.length === 0 ? (
 				<div className="flex flex-1 items-center justify-center px-4 py-10 text-center text-muted-foreground text-xs">
 					No runs yet.
+				</div>
+			) : filteredRuns.length === 0 ? (
+				<div className="flex flex-1 items-center justify-center px-4 py-10 text-center text-muted-foreground text-xs">
+					{searchingForKeyword
+						? "Searching retained run data…"
+						: "No runs match your filters."}
 				</div>
 			) : (
 				<div
@@ -286,6 +416,137 @@ export function RunHistoryDashboard({
 					</div>
 				</div>
 			)}
+		</div>
+	);
+}
+
+function RunHistoryFilterBar({
+	keyword,
+	onKeywordChange,
+	runIdQuery,
+	onRunIdQueryChange,
+	startedAfter,
+	onStartedAfterChange,
+	startedBefore,
+	onStartedBeforeChange,
+	statusFilters,
+	onToggleStatusFilter,
+	hasActiveFilters,
+	onClearFilters,
+	searching,
+}: {
+	keyword: string;
+	onKeywordChange: (value: string) => void;
+	runIdQuery: string;
+	onRunIdQueryChange: (value: string) => void;
+	startedAfter: string;
+	onStartedAfterChange: (value: string) => void;
+	startedBefore: string;
+	onStartedBeforeChange: (value: string) => void;
+	statusFilters: ReadonlySet<RunStatus>;
+	onToggleStatusFilter: (status: RunStatus) => void;
+	hasActiveFilters: boolean;
+	onClearFilters: () => void;
+	searching: boolean;
+}) {
+	return (
+		<div className="flex flex-wrap items-end gap-3 border-b bg-muted/30 px-3 py-2">
+			<div className="flex min-w-[240px] flex-1 flex-col gap-1">
+				<span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+					Search messages &amp; variable map
+				</span>
+				<div className="relative">
+					<Search
+						className="-translate-y-1/2 absolute top-1/2 left-2 size-3.5 text-muted-foreground"
+						aria-hidden="true"
+					/>
+					<Input
+						value={keyword}
+						onChange={(event) =>
+							onKeywordChange(event.target.value)
+						}
+						placeholder="Search incoming, outgoing, and variable map values"
+						className="h-8 pl-7 text-xs"
+					/>
+				</div>
+			</div>
+			<div className="flex w-32 flex-col gap-1">
+				<span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+					Run ID
+				</span>
+				<Input
+					value={runIdQuery}
+					onChange={(event) => onRunIdQueryChange(event.target.value)}
+					placeholder="e.g. 42"
+					className="h-8 text-xs"
+				/>
+			</div>
+			<div className="flex flex-col gap-1">
+				<span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+					Started after
+				</span>
+				<input
+					type="datetime-local"
+					value={startedAfter}
+					onChange={(event) =>
+						onStartedAfterChange(event.target.value)
+					}
+					className="h-8 rounded-md border bg-background px-2 text-xs"
+				/>
+			</div>
+			<div className="flex flex-col gap-1">
+				<span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+					Started before
+				</span>
+				<input
+					type="datetime-local"
+					value={startedBefore}
+					onChange={(event) =>
+						onStartedBeforeChange(event.target.value)
+					}
+					className="h-8 rounded-md border bg-background px-2 text-xs"
+				/>
+			</div>
+			<div className="flex flex-col gap-1">
+				<span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+					Status
+				</span>
+				<div className="flex flex-wrap gap-1">
+					{STATUS_FILTER_OPTIONS.map(({ status, label }) => {
+						const isActive = statusFilters.has(status);
+						return (
+							<button
+								key={status}
+								type="button"
+								onClick={() => onToggleStatusFilter(status)}
+								aria-pressed={isActive}
+								className={`rounded-full border px-2.5 py-1 font-medium text-[11px] ${
+									isActive
+										? "border-primary bg-primary/10 text-primary"
+										: "border-transparent bg-muted text-muted-foreground hover:bg-muted/70"
+								}`}
+							>
+								{label}
+							</button>
+						);
+					})}
+				</div>
+			</div>
+			{searching ? (
+				<span className="flex items-center gap-1 text-muted-foreground text-xs">
+					<Loader2 className="h-3 w-3 animate-spin" />
+					Searching retained data…
+				</span>
+			) : null}
+			{hasActiveFilters ? (
+				<button
+					type="button"
+					onClick={onClearFilters}
+					className="flex h-8 items-center rounded-md px-2 text-muted-foreground text-xs hover:bg-muted"
+				>
+					Clear filters
+				</button>
+			) : null}
 		</div>
 	);
 }

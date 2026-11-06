@@ -79,6 +79,41 @@ export function lastRelevantResult(
 	);
 }
 
+/** Recursively includes loop-iteration steps so nested nodes are searchable too. */
+function flattenNodeResults(
+	results: AutomationNodeResult[],
+): AutomationNodeResult[] {
+	const flat: AutomationNodeResult[] = [];
+	for (const result of results) {
+		flat.push(result);
+		for (const iteration of result.iterations ?? []) {
+			flat.push(...flattenNodeResults(iteration.nodeResults));
+		}
+	}
+	return flat;
+}
+
+/** Keyword search across a run's retained incoming/outgoing messages and variable-map snapshots. */
+export function runMatchesKeyword(
+	detail: AutomationRunDetail,
+	keyword: string,
+): boolean {
+	const needle = keyword.trim().toLowerCase();
+	if (!needle) return true;
+	if (detail.RUN_ID.toLowerCase().includes(needle)) return true;
+	return flattenNodeResults(detail.nodeResults).some((result) =>
+		[
+			result.NODE_LABEL,
+			result.NODE_ID,
+			result.inputPayload,
+			result.OUTPUT_PREVIEW,
+			result.OUTPUT_VALUE,
+			result.ERROR_MESSAGE,
+			result.scopeSnapshot,
+		].some((value) => value?.toLowerCase().includes(needle)),
+	);
+}
+
 function searchText(
 	label: string,
 	input: string,

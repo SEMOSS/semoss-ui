@@ -71,6 +71,8 @@ export interface BuildDashboardRowsParams {
 	loadingRunIds: ReadonlySet<string>;
 	runErrors: ReadonlyMap<string, string>;
 	expandedLoopKeys: ReadonlySet<LoopRowKey>;
+	/** Precomputed by assignRunNumbers(allRuns) — pass this when `runs` is a filtered subset so IDs stay stable while searching. */
+	runNumbers?: ReadonlyMap<string, number>;
 }
 
 /**
@@ -90,7 +92,7 @@ export function buildDashboardRows(
 		expandedLoopKeys,
 	} = params;
 	const rows: DashboardRow[] = [];
-	const runNumbers = assignRunNumbers(runs);
+	const runNumbers = params.runNumbers ?? assignRunNumbers(runs);
 
 	for (const run of runs) {
 		const expanded = expandedRunIds.has(run.RUN_ID);
@@ -152,7 +154,7 @@ export function buildDashboardRows(
 }
 
 /** Maps each run to a unique, 1-based number in ascending STARTED_AT order — ties broken by RUN_ID for stability. */
-function assignRunNumbers(
+export function assignRunNumbers(
 	runs: AutomationRunSummary[],
 ): ReadonlyMap<string, number> {
 	const sorted = [...runs].sort((a, b) => {

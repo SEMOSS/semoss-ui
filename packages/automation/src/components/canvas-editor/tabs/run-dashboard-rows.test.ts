@@ -4,7 +4,11 @@ import type {
 	AutomationRunDetail,
 	AutomationRunSummary,
 } from "../../../domain/automation.types";
-import { buildDashboardRows, loopRowKey } from "./run-dashboard-rows";
+import {
+	assignRunNumbers,
+	buildDashboardRows,
+	loopRowKey,
+} from "./run-dashboard-rows";
 
 function run(overrides: Partial<AutomationRunSummary>): AutomationRunSummary {
 	return {
@@ -168,6 +172,27 @@ describe("buildDashboardRows", () => {
 		expect(numbersById.get("run-oldest")).toBe(1);
 		expect(numbersById.get("run-middle")).toBe(2);
 		expect(numbersById.get("run-newest")).toBe(3);
+	});
+
+	it("keeps IDs stable for a filtered subset when precomputed runNumbers are passed in", () => {
+		const allRuns = [
+			run({ RUN_ID: "run-oldest", STARTED_AT: "2026-11-05T00:00:00Z" }),
+			run({ RUN_ID: "run-middle", STARTED_AT: "2026-11-05T01:00:00Z" }),
+			run({ RUN_ID: "run-newest", STARTED_AT: "2026-11-05T02:00:00Z" }),
+		];
+		const runNumbers = assignRunNumbers(allRuns);
+
+		const rows = buildDashboardRows({
+			runs: [allRuns[2]],
+			expandedRunIds: new Set(),
+			runDetails: new Map(),
+			loadingRunIds: new Set(),
+			runErrors: new Map(),
+			expandedLoopKeys: new Set(),
+			runNumbers,
+		});
+
+		expect((rows[0] as { runNumber: number }).runNumber).toBe(3);
 	});
 
 	it("surfaces a run-level load error without adding node rows", () => {
