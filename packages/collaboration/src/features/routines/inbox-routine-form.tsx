@@ -36,6 +36,7 @@ import { INBOX_RESULT_COPY } from "./routine-copy";
 import { RoutineFlowSection } from "./routine-flow-section";
 import { RoutineNextRun } from "./routine-next-run";
 import { RoutineResult } from "./routine-result";
+import { RoutineRunNowButton } from "./routine-run-now-button";
 import { RoutineSaveStatus } from "./routine-save-status";
 import {
 	ROUTINE_DAY_NAMES,
@@ -131,10 +132,16 @@ interface InboxRoutineFormProps {
 	routine: InboxRoutine;
 	/** Saves the complete schedule; rejected writes leave the draft intact. */
 	onSave: (values: InboxRoutineSettings) => Promise<InboxRoutine>;
+	/** Starts a brief now and returns the routine as it reads after. */
+	onRunNow: () => Promise<InboxRoutine>;
 }
 
 /** A single opt-in form owns the schedule, inbox scope, and save lifecycle. */
-export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
+export function InboxRoutineForm({
+	routine,
+	onSave,
+	onRunNow,
+}: InboxRoutineFormProps) {
 	const id = useId();
 	const form = useForm<RoutineFormValues>({
 		resolver: zodResolver(formSchema),
@@ -148,7 +155,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 		routine.assistantAvailable &&
 		routine.mailboxAvailable;
 
-	const { status, handleSubmit, retry } = useRoutineAutosave({
+	const { status, handleSubmit, retry, flush } = useRoutineAutosave({
 		form,
 		onSave: async (values) => {
 			if (values.enabled && !isAvailable) {
@@ -177,6 +184,11 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 			return formValues(saved, lookbackUnit);
 		},
 	});
+	// the run reads the saved routine, so an edit still waiting to save goes first
+	const handleRunNow = async () => {
+		await flush();
+		return onRunNow();
+	};
 
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
@@ -220,6 +232,10 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 										</span>
 									</span>
 								}
+							/>
+							<RoutineRunNowButton
+								routine={routine}
+								onRunNow={handleRunNow}
 							/>
 							<Separator />
 							<FormField
@@ -339,6 +355,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 							<RoutineResult
 								routine={routine}
 								copy={INBOX_RESULT_COPY}
+								onRunNow={handleRunNow}
 							/>
 						</div>
 					</CardContent>

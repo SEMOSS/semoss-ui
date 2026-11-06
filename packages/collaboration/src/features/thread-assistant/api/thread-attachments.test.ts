@@ -108,6 +108,26 @@ it("rejects a receipt for a different file", async () => {
 	).rejects.toThrow("does not match the selected file");
 });
 
+it("takes the chat's earlier copy of the same attachment under its first name", async () => {
+	const { actions } = actionsReturning(() => ({
+		threadId: "thread-1",
+		messageId: "msg-1",
+		attachmentId: "att-1",
+		name: "Q3 Budget.xlsx",
+		size: 2048,
+		filePath: "Q3 Budget-a1b2c3.xlsx",
+		alreadyInChat: true,
+	}));
+	const staged = await stageThreadAttachment(
+		actions,
+		"insight-1",
+		"thread-1",
+		attachment,
+		false,
+	);
+	expect(staged.filePath).toBe("Q3 Budget-a1b2c3.xlsx");
+});
+
 it("needs a ready insight and an email on the thread", async () => {
 	const { run, actions } = actionsReturning(() => ({}));
 	await expect(

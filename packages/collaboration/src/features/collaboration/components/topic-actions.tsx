@@ -30,10 +30,16 @@ import { useCollaborationSession } from "../state/collaboration-session.context"
 export function TopicActions({
 	topic,
 	threadCount,
+	onEdit,
+	onResort,
 	onFindConversations,
 }: {
 	topic: Topic;
 	threadCount: number;
+	/** Opens the topic editor: name, description, kind and account. */
+	onEdit?: () => void;
+	/** Re-checks the conversations already in the topic, for after narrowing it. */
+	onResort?: () => void;
 	/** Opens the review of existing conversations that fit; absent where no server can check them. */
 	onFindConversations?: () => void;
 }) {
@@ -65,9 +71,19 @@ export function TopicActions({
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end">
+					{onEdit && (
+						<DropdownMenuItem onSelect={onEdit}>
+							Edit topic...
+						</DropdownMenuItem>
+					)}
 					{onFindConversations && (
 						<DropdownMenuItem onSelect={onFindConversations}>
 							Find conversations...
+						</DropdownMenuItem>
+					)}
+					{onResort && (
+						<DropdownMenuItem onSelect={onResort}>
+							Re-sort conversations...
 						</DropdownMenuItem>
 					)}
 					<DropdownMenuItem

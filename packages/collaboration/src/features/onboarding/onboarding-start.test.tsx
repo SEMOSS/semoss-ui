@@ -23,6 +23,7 @@ afterEach(() => {
 	cleanup();
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
+	window.location.hash = "";
 });
 
 describe("onboarding start", () => {
@@ -109,6 +110,62 @@ describe("onboarding start", () => {
 		expect(
 			steps.filter((item) => item.hasAttribute("aria-current")),
 		).toHaveLength(1);
+	});
+
+	it.each([
+		{
+			job: "import",
+			finished: 'BrainGetJob(kind=["import"]);',
+			resumed: "step 4 of 8, People",
+		},
+		{
+			job: "sort",
+			finished: 'BrainGetJob(kind=["classify"], mode=["sort"]);',
+			resumed: "step 7 of 8, Topics",
+		},
+	])(
+		"after a finished $job, resumes on $resumed without the mailbox steps",
+		async ({ finished, resumed }) => {
+			const run = vi.fn(async (statement: string) => ({
+				pixelReturn: [
+					{
+						output:
+							statement === finished
+								? { id: "job-1", status: "done" }
+								: statement === "BrainGetTopicReview();"
+									? { exists: false }
+									: {},
+						operationType: ["MAP"],
+					},
+				],
+			}));
+			const user = userEvent.setup();
+			render(
+				<Onboarding actions={{ run } as unknown as InsightActions} />,
+			);
+			await user.click(
+				screen.getByRole("button", { name: "Start setup" }),
+			);
+			expect(
+				await screen.findByRole("progressbar", {
+					name: `Setup progress: ${resumed}`,
+				}),
+			).toBeInTheDocument();
+			expect(run).not.toHaveBeenCalledWith(
+				"BrainMailboxOverview(days=[30]);",
+			);
+		},
+	);
+
+	it("lets the owner skip setup from the first screen, and records it", async () => {
+		const run = vi.fn(async () => ({
+			pixelReturn: [{ output: {}, operationType: ["MAP"] }],
+		}));
+		const user = userEvent.setup();
+		render(<Onboarding actions={{ run } as unknown as InsightActions} />);
+		await user.click(screen.getByRole("button", { name: "Skip for now" }));
+		await waitFor(() => expect(window.location.hash).toBe("#/work"));
+		expect(run).toHaveBeenCalledExactlyOnceWith("BrainFinishSetup();");
 	});
 
 	it("keeps a failed resume check visible and does not begin mailbox work", async () => {

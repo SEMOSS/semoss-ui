@@ -556,9 +556,15 @@ export async function loadLiveState(
 }
 
 // a due day is saved as midnight UTC; as a plain date it shows on that day in every time zone
-function dueDay(value: unknown): string | null {
+export function dueDay(value: unknown): string | null {
 	const due = opt(value);
 	return due?.endsWith("T00:00:00Z") ? due.slice(0, 10) : (due ?? null);
+}
+
+/** A due to read in local time: a plain due day becomes its local midnight, so it shows on that day. */
+export function localDue(value: unknown): string | null {
+	const day = dueDay(value);
+	return day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? `${day}T00:00` : day;
 }
 
 function mapStep(step: Row): WorkspaceStep {
