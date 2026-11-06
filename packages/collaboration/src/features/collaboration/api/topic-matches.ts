@@ -2,7 +2,7 @@ import { z } from "@semoss/ui/next";
 import { type Job, mapJob } from "@/features/onboarding/onboarding-api";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 
-const opSchema = z.enum(["move", "also_link"]);
+const opSchema = z.enum(["move", "also_link", "reject"]);
 
 const matchSchema = z.object({
 	threadId: z.string().min(1),
@@ -10,7 +10,10 @@ const matchSchema = z.object({
 	channel: z.string().nullish(),
 	lastMessageAt: z.string().nullish(),
 	confidence: z.number(),
-	fit: z.enum(["best", "shared"]),
+	fit: z.enum(["best", "shared", "elsewhere", "none"]),
+	/** Re-sort: the topic that now fits the conversation, and how well. */
+	toTopicId: z.string().nullish(),
+	toConfidence: z.number().nullish(),
 	links: z.array(
 		z.object({
 			topicId: z.string(),
@@ -47,12 +50,18 @@ const applySchema = z.object({
  * Outlook folder and are never removed; `ops` are the accept choices the server allows, `op` its pick.
  */
 export type TopicMatch = z.infer<typeof matchSchema>;
-/** Accepting joins the topic in place of the topics Brain guessed (move) or next to them (also_link). */
+/**
+ * Accepting joins the topic in place of the topics Brain guessed (move) or next to them (also_link). On a
+ * re-sort, move goes to toTopicId and reject takes the topic off.
+ */
 export type TopicMatchOp = z.infer<typeof opSchema>;
+/** Find conversations for a topic, or re-sort the ones already in it after narrowing it. */
+export type TopicMatchMode = "find" | "resort";
 /** The owner's choice for one conversation; reject remembers it is not about the topic. */
 export interface TopicMatchChange {
 	threadId: string;
-	op: TopicMatchOp | "reject";
+	op: TopicMatchOp;
+	toTopicId?: string;
 }
 /** A finished preview: how many conversations were scored and the ones that fit, best first. */
 export type TopicMatchPreview = z.infer<typeof previewSchema>;
@@ -66,11 +75,15 @@ export type TopicMatchApplyResult = z.infer<typeof applySchema>;
 export async function startTopicMatches(
 	actions: InsightActions,
 	topicId: string,
+	mode: TopicMatchMode = "find",
 ): Promise<Job> {
 	return mapJob(
 		await callPixel(
 			actions,
-			pixel("BrainPreviewTopicMatches", { topicId }),
+			pixel(
+				"BrainPreviewTopicMatches",
+				mode === "resort" ? { topicId, resort: true } : { topicId },
+			),
 			z.record(z.string(), z.unknown()),
 		),
 	);
