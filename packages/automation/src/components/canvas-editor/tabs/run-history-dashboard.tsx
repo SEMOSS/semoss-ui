@@ -11,10 +11,7 @@ import {
 	formatTimestamp,
 	getStatusClasses,
 } from "../../../domain/automation-display";
-import {
-	formatDurationMs,
-	normalizeAutomationErrorMessage,
-} from "../../../domain/automation-utils";
+import { normalizeAutomationErrorMessage } from "../../../domain/automation-utils";
 import { StatusBadge } from "../../status-badge";
 import {
 	buildDashboardRows,
@@ -30,7 +27,7 @@ interface RunHistoryDashboardProps {
 }
 
 const ROW_HEIGHT = 36;
-const GRID_COLUMNS = "grid-cols-[28px_52px_1fr_150px_150px_100px]";
+const GRID_COLUMNS = "grid-cols-[28px_52px_150px_150px_1fr]";
 
 /**
  * Mirth Connect message-browser-style dashboard: one row per run, expandable
@@ -160,7 +157,6 @@ export function RunHistoryDashboard({ appId, runs }: RunHistoryDashboardProps) {
 			>
 				<span />
 				<span>ID</span>
-				<span>Run / Node / Iteration</span>
 				<span>Time Started</span>
 				<span>Time Ended</span>
 				<span>Status</span>
@@ -223,9 +219,6 @@ function DashboardRowView({
 	onToggleLoop: (runId: string, nodeId: string) => void;
 	onRetry: (runId: string) => void;
 }) {
-	const indentClass =
-		row.depth === 0 ? "" : row.depth === 1 ? "pl-5" : "pl-10";
-
 	if (row.kind === "run") {
 		return (
 			<div
@@ -247,9 +240,6 @@ function DashboardRowView({
 				</button>
 				<span className="text-muted-foreground tabular-nums">
 					{row.runNumber}
-				</span>
-				<span className={`truncate font-medium ${indentClass}`}>
-					Run {row.run.RUN_ID.slice(0, 8)}
 					{row.loadError ? (
 						<button
 							type="button"
@@ -299,19 +289,6 @@ function DashboardRowView({
 					<span />
 				)}
 				<span />
-				<span className={`truncate ${indentClass}`}>
-					{row.node.NODE_LABEL || row.node.NODE_ID}
-					{row.isLoop ? (
-						<span className="ml-2 text-muted-foreground">
-							· {row.iterationCount} iteration
-							{row.iterationCount === 1 ? "" : "s"}
-						</span>
-					) : (
-						<span className="ml-2 text-muted-foreground">
-							· {formatDurationMs(row.node.DURATION_MS)}
-						</span>
-					)}
-				</span>
 				<span />
 				<span />
 				<span>
@@ -327,13 +304,6 @@ function DashboardRowView({
 		>
 			<span />
 			<span />
-			<span className={`truncate text-muted-foreground ${indentClass}`}>
-				{row.nodeLabel} · Item {row.iterationIndex + 1}
-				<span className="ml-2">
-					· {row.stepCount} step{row.stepCount === 1 ? "" : "s"} ·{" "}
-					{formatDurationMs(row.durationMs)}
-				</span>
-			</span>
 			<span />
 			<span />
 			<span>
