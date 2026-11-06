@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { Session, useInsight } from "@semoss/sdk/react";
 import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -16,14 +16,15 @@ import {
 	WorkbenchResetButton,
 } from "@semoss/workbench";
 import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
-import { useEngine, useSession } from "@/hooks";
+import { useEngine } from "@/hooks/useEngine";
+import type { ModelChatStoreInterface } from "@/stores/workbench/model/model-chat.store";
+import { createModelChatStore } from "@/stores/workbench/model/model-chat.store";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "@/stores/workbench";
-import type { ModelChatStoreInterface } from "@/stores/workbench/model";
-import { createModelChatStore } from "@/stores/workbench/model";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+} from "@/stores/workbench/workbench.constants";
+import { GIT_DIFF_PANEL } from "../../git/git-diff-panel";
+import { GIT_VERSION_PANEL } from "../../git/git-version-panel";
 import { TERMINAL_PANEL } from "../../terminal/terminal-panel";
 import {
 	createFileCommands,
@@ -153,15 +154,13 @@ export const ModelWorkbench: React.FC = () => {
 		`workbench-layout--${workbenchId}--2`,
 		workbenchLayout,
 	);
-	const syncPermission = useSession((state) => state.syncPermission);
-	const refreshPermission = useSession((state) => state.refreshPermission);
 
 	useEffect(() => {
-		syncPermission("ENGINE", engine.engine_id, permission);
-		void refreshPermission("ENGINE", engine.engine_id).catch(
-			() => undefined,
-		);
-	}, [syncPermission, refreshPermission, engine.engine_id, permission]);
+		Session.permissions.sync("ENGINE", engine.engine_id, permission);
+		void Session.permissions
+			.refresh("ENGINE", engine.engine_id)
+			.catch(() => undefined);
+	}, [engine.engine_id, permission]);
 
 	// Created once per workbench instance before its panels render.
 	const [chatStore] = useState<StoreApi<ModelChatStoreInterface>>(() => {

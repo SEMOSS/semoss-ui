@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
-import { useSession } from "@/hooks/use-session";
-import type { ALL_TYPES } from "@/types";
+import type { ALL_TYPES } from "@/types/types";
 import { getDeleteRequest } from "./delete-request";
 
 /** The resource {@link useDeleteResource} deletes. */
@@ -40,7 +40,7 @@ export const useDeleteResource = ({
 	id,
 	projectType,
 }: DeleteResourceTarget): UseDeleteResourceResult => {
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 	const [isDeleting, setIsDeleting] = useState(false);
 	const request = getDeleteRequest(type, id, projectType);
 

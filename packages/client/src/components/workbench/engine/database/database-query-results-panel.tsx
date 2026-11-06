@@ -1,6 +1,6 @@
 import { AlertCircle, Download, Table2Icon } from "lucide-react";
 import { useState } from "react";
-import { download } from "@semoss/sdk/react";
+import { download, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -30,7 +30,8 @@ import type {
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
 import { useWorkbenchPanel } from "@semoss/workbench";
-import { useDatabaseWorkbench, useEngine, useSession } from "@/hooks";
+import { useDatabaseWorkbench } from "@/hooks/use-database-workbench";
+import { useEngine } from "@/hooks/useEngine";
 import { DatabaseResultsHeader } from "./database-results-header";
 import { DatabaseStatementResultView } from "./database-statement-result-view";
 
@@ -40,11 +41,15 @@ export interface DatabaseQueryResultsConfig {
 	sourcePanel: string;
 }
 
+/**
+ * The results of the query panel it is paired with: a table, a message, JSON
+ * or one tab per statement, with export to CSV where the mode allows it.
+ */
 const DatabaseQueryResultsPanel: WorkbenchComponent = ({ id }) => {
 	const { config } = useWorkbenchPanel<DatabaseQueryResultsConfig>(id);
 
 	const { engine } = useEngine();
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 
 	const sourcePanel = config.sourcePanel;
 

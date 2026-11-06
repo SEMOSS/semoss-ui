@@ -5,75 +5,7 @@ import {
 	type ModelUsageLimit,
 	post,
 	readModelUsageLimit,
-	runPixel,
 } from "@semoss/sdk/react";
-import { auditPixelLiteral } from "./audit-pixel";
-
-export const config = async () => {
-	// get the response
-	const response = await get<{
-		logins: {
-			[key: string]: unknown;
-		};
-		/**
-		 * List of available providers (logins) that are available
-		 */
-		availableProviders: {
-			provider: string;
-			name: string;
-			isOauth: boolean;
-		}[];
-		[key: string]: unknown;
-	}>(`${Env.MODULE}/api/config`).catch((error) => {
-		throw Error(error);
-	});
-	// there was an error, no response
-	if (!response) {
-		throw Error("No Config Response");
-	}
-	// save the config data
-	return response.data;
-};
-
-export const login = async (
-	username: string,
-	password: string,
-): Promise<boolean> => {
-	//not encoding these, because the post function has encode URI built in.
-	const postData = {
-		username: username,
-		password: password,
-		disableRedirect: true,
-	};
-
-	await post(`${Env.MODULE}/api/auth/login`, postData).catch((error) => {
-		throw Error(error);
-	});
-	return true;
-};
-
-export const loginLDAP = async (
-	username: string,
-	password: string,
-): Promise<boolean> => {
-	// loginLDAP reads username / password, pin is only for linotp
-	const postData = {
-		username: username,
-		password: password,
-		disableRedirect: true,
-	};
-
-	// an expired password comes back as a 401 with the error message,
-	// let it bubble up to the caller
-	await post(`${Env.MODULE}/api/auth/loginLDAP`, postData, {}).catch(
-		(error) => {
-			throw new Error(
-				error instanceof Error ? error.message : `${error}`,
-			);
-		},
-	);
-	return true;
-};
 
 export const setupResetPassword = async (
 	email: string,
@@ -143,40 +75,6 @@ const ensureCsrfToken = async () => {
 	}
 };
 
-export const registerUser = async (
-	name: string,
-	username: string,
-	email: string,
-	password: string,
-	phone: string,
-	phoneextension: string,
-	countrycode: string,
-) => {
-	const create: Record<string, string> = {
-		name: name,
-		username: username,
-		email: email,
-		password: password,
-		phone: phone,
-		phoneextension: phoneextension,
-		countrycode: countrycode,
-	};
-	return await post(`${Env.MODULE}/api/auth/createUser`, create).catch(
-		(error) => {
-			if (
-				error.response &&
-				error.response.status === 401 &&
-				error.response.data &&
-				error.response.data.requirePwdChange
-			) {
-				return;
-			}
-			// throw the message
-			throw Error(error);
-		},
-	);
-};
-
 /** @public Called by name through `useAPI`. */
 export const getLoginProperties = async () => {
 	const url = `${Env.MODULE}/api/auth/loginProperties`;
@@ -194,20 +92,6 @@ export const modifyLoginProperties = async (provider, properties) => {
 	const response = await post<boolean>(url, postData).catch((error) => {
 		throw Error(error);
 	});
-	return response.data;
-};
-
-export const isAdminUser = async (): Promise<boolean> => {
-	const response = await get<boolean>(
-		`${Env.MODULE}/api/auth/admin/user/isAdminUser`,
-	).catch((error) => {
-		throw Error(error);
-	});
-
-	if (!response) {
-		throw Error("No Response to isAdminUser");
-	}
-
 	return response.data;
 };
 
@@ -667,30 +551,4 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 		throw Error(error);
 	});
 	return response.data;
-};
-
-/** A default model kept in the user's metadata. */
-export type UserDefaultModelKey =
-	| "text-generation-model"
-	| "code-generation-model";
-
-/**
- * Sets or removes one of the user's default models. An empty list for the key
- * deletes its stored value, so a removed default is gone rather than blank.
- *
- * @param metaKey - Which default.
- * @param engineId - The model's engine id, or empty to remove the default.
- * @throws When the backend refuses the change.
- */
-export const setUserDefaultModel = async (
-	metaKey: UserDefaultModelKey,
-	engineId: string,
-): Promise<void> => {
-	const value = engineId ? auditPixelLiteral(engineId) : "";
-	const response = await runPixel(
-		`SetUserMetadata(meta=[{${auditPixelLiteral(metaKey)}:[${value}]}]);`,
-	);
-	if (response.errors.length > 0) {
-		throw new Error(response.errors.join(""));
-	}
 };

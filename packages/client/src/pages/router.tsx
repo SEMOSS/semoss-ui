@@ -1,20 +1,29 @@
+import { useState } from "react";
 import { createHashRouter, Navigate } from "react-router";
 import { RouterProvider } from "react-router/dom";
-import { Spinner } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
-import { AuthenticatedLayout } from "./authenticated-layout";
-import { CookieNoticePage } from "./cookie-notice-page";
-import { ENGINE_ROUTES, EngineRedirect } from "./engine";
-import { LandingPage } from "./landing-page";
-import { LoginPage } from "./login-page";
+import { useSession } from "@semoss/sdk/react";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+	Button,
+	P,
+	Spinner,
+} from "@semoss/ui/next";
+import { AuthenticatedLayout } from "./authenticated.layout";
+import { CookieNoticePage } from "./cookie-notice.page";
+import { ENGINE_ROUTES } from "./engine/engine.routes";
+import { EngineRedirect } from "./engine/engine-redirect";
+import { LandingPage } from "./landing.page";
+import { LoginPage } from "./login.page";
 import { PageLayout } from "./page-layout";
-import { PrivacyNoticePage } from "./privacy-notice-page";
-import { PROJECT_ROUTES } from "./project";
-import { ProjectLayout } from "./project/project-layout";
+import { PrivacyNoticePage } from "./privacy-notice.page";
+import { ProjectLayout } from "./project/project.layout";
+import { PROJECT_ROUTES } from "./project/project.routes";
 import { PROMPT_ROUTE } from "./prompt/prompt.routes";
 import { SETTINGS_ROUTE } from "./settings/settings.routes";
 import { SharePage } from "./share-page";
-import { TemplatePage } from "./template-page";
+import { TemplatePage } from "./template.page";
 
 const router = createHashRouter([
 	{
@@ -53,11 +62,50 @@ const router = createHashRouter([
 
 export const Router = () => {
 	const status = useSession((state) => state.status);
+	const errorMessage = useSession((state) => state.error?.message ?? "");
+	const refresh = useSession((state) => state.refresh);
+	const [isRetrying, setIsRetrying] = useState(false);
 
 	if (status === "INITIALIZING") {
 		return (
 			<div className="flex h-screen w-screen items-center justify-center">
 				<Spinner />
+			</div>
+		);
+	}
+
+	// the config or the user could not be read, so no page has what it needs
+	if (status === "ERROR") {
+		const handleRetry = async () => {
+			setIsRetrying(true);
+			// never rejects: a failure shows as the ERROR status again
+			await refresh();
+			setIsRetrying(false);
+		};
+
+		return (
+			<div className="flex h-screen w-screen items-center justify-center p-4">
+				<Alert variant="destructive" className="max-w-md">
+					<AlertTitle>Unable to load your session</AlertTitle>
+					<AlertDescription>
+						<P className="break-words text-sm">{errorMessage}</P>
+						<Button
+							type="button"
+							variant="outline"
+							disabled={isRetrying}
+							onClick={handleRetry}
+						>
+							{isRetrying ? (
+								<>
+									<Spinner />
+									Retrying...
+								</>
+							) : (
+								"Retry"
+							)}
+						</Button>
+					</AlertDescription>
+				</Alert>
 			</div>
 		);
 	}

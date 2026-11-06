@@ -5,6 +5,7 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -30,12 +31,35 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { ImportEngineSelect } from "../shared/import-engine-select";
 import { computeVisibility } from "../shared/import-form.utils";
 
+interface VectorFormProps {
+	/** The vector database type's name, shown as the form's title. */
+	title: string;
+	/** Helper text shown below the title. */
+	description: string;
+	/** The vector database type's logo, shown beside the title. */
+	icon?: string;
+	/**
+	 * The vector database type's fields, from its connection constants,
+	 * grouped into sections by their category. Left untyped: the field configs
+	 * are not modeled yet, and their shapes vary by type.
+	 */
+	fields;
+	/** Fields shown folded away under Advanced. */
+	advanced;
+	/** Each section's description, by field category. */
+	categoryDescription: Record<string, string>;
+}
+
+/**
+ * Adds a vector database of the chosen type to the catalog, with its
+ * description and tags, then makes embeddings from any documents uploaded with
+ * it.
+ */
 export const VectorForm = ({
 	title,
 	description,
@@ -43,7 +67,7 @@ export const VectorForm = ({
 	fields,
 	advanced,
 	categoryDescription,
-}) => {
+}: VectorFormProps) => {
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [isValidDatabaseName, setIsValidDatabaseName] =
@@ -71,8 +95,7 @@ export const VectorForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const { run: runPixel, upload } = useSessionInsight();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
