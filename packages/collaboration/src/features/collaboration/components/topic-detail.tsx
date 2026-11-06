@@ -193,6 +193,19 @@ export function TopicDetail() {
 				}
 				actions={
 					<>
+						{/* a topic with no threads yet starts by finding the conversations that fit it */}
+						{canFindConversations && threads.length === 0 && (
+							<Button
+								type="button"
+								className="pointer-coarse:min-h-11"
+								onClick={(event) =>
+									openMatchReview(event.currentTarget)
+								}
+							>
+								<Search aria-hidden="true" />
+								Find conversations
+							</Button>
+						)}
 						<Button
 							ref={contextButtonRef}
 							variant={isContextOpen ? "secondary" : "outline"}
@@ -224,6 +237,10 @@ export function TopicDetail() {
 						<TopicActions
 							topic={topic}
 							threadCount={threads.length}
+							onEdit={() => {
+								editButtonRef.current = null;
+								setIsEditing(true);
+							}}
 							onFindConversations={
 								canFindConversations
 									? () => openMatchReview()
@@ -335,7 +352,27 @@ export function TopicDetail() {
 									)}
 							</div>
 							<TabsContent value="actions" className="mt-0">
-								<WorkItemsList feed={feed} />
+								<WorkItemsList
+									feed={feed}
+									emptyAction={
+										canFindConversations ? (
+											<Button
+												type="button"
+												size="sm"
+												className="pointer-coarse:min-h-11"
+												onClick={(event) =>
+													openMatchReview(
+														event.currentTarget,
+													)
+												}
+											>
+												<Search aria-hidden="true" />
+												Find conversations for this
+												topic
+											</Button>
+										) : undefined
+									}
+								/>
 							</TabsContent>
 							<TabsContent value="threads" className="mt-0">
 								{/* the tab already says Threads; this line only counts them */}

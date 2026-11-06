@@ -1,6 +1,7 @@
 import { ListFilter } from "lucide-react";
 import {
 	type Dispatch,
+	type ReactNode,
 	type RefObject,
 	type SetStateAction,
 	useRef,
@@ -307,7 +308,14 @@ export function WorkFilterMenu({
 }
 
 /** The rows for the feed's current view, with an empty state that offers a way out. */
-export function WorkItemsList({ feed }: { feed: WorkFeed }) {
+export function WorkItemsList({
+	feed,
+	emptyAction,
+}: {
+	feed: WorkFeed;
+	/** The way out of an empty open view; the email and sources link when absent. */
+	emptyAction?: ReactNode;
+}) {
 	const {
 		topicId,
 		items,
@@ -380,11 +388,13 @@ export function WorkItemsList({ feed }: { feed: WorkFeed }) {
 							Show all open work
 						</Button>
 					) : (
-						<Button asChild variant="outline" size="sm">
-							<Link to="/brain/sources">
-								Browse your email and sources
-							</Link>
-						</Button>
+						(emptyAction ?? (
+							<Button asChild variant="outline" size="sm">
+								<Link to="/brain/sources">
+									Browse your email and sources
+								</Link>
+							</Button>
+						))
 					)}
 				</div>
 			)}
