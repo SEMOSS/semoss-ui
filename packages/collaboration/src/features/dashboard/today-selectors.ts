@@ -1,3 +1,4 @@
+import { dueDay } from "@/features/collaboration/live/live-state";
 import { selectWorkItems } from "@/features/collaboration/state/collaboration.selectors";
 import type {
 	CollaborationState,
@@ -26,12 +27,13 @@ export function selectToday(
 	const today = dayKey(now, zone);
 	const all = selectWorkItems(state, { view: "needs_me" }).items;
 	const dueAt = (item: WorkItem): number | null => {
-		if (!item.due) return null;
-		const due = new Date(item.due);
-		// en-CA day keys sort as dates
-		return Number.isFinite(due.getTime()) && dayKey(due, zone) <= today
-			? due.getTime()
-			: null;
+		const day = dueDay(item.due);
+		if (!day) return null;
+		const due = new Date(day);
+		if (!Number.isFinite(due.getTime())) return null;
+		// a plain due day is already a day key; en-CA day keys sort as dates
+		const key = /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : dayKey(due, zone);
+		return key <= today ? due.getTime() : null;
 	};
 	const due = all
 		.filter((item) => dueAt(item) !== null)

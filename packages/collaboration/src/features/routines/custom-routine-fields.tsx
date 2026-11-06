@@ -31,6 +31,7 @@ import {
 	type CustomRoutineSettings,
 	DELIVERY_LABELS,
 	IS_ROUTINE_KNOWLEDGE_ENABLED,
+	MAX_ROUTINE_TOOLS,
 } from "./custom-routine-schema";
 import { ROUTINE_DAY_NAMES, ROUTINE_DAYS } from "./routine-schema";
 import { RoutineTimeFields } from "./routine-time-fields";
@@ -245,12 +246,21 @@ export function CustomRoutineFields({
 										(tool) => tool.id !== toolId,
 									),
 								);
+							// the server refuses more, hidden knowledge included; removing stays open
+							const isFull =
+								field.value.length >= MAX_ROUTINE_TOOLS;
+							const limit = isFull
+								? `A routine can use up to ${MAX_ROUTINE_TOOLS} tools and knowledge bases. Remove one to add another.`
+								: null;
 							return (
 								<>
 									{IS_ROUTINE_KNOWLEDGE_ENABLED && (
 										<CapabilitySection
 											title="Knowledge"
-											description="Knowledge bases the routine can search, such as your team's policy documents."
+											description={
+												limit ??
+												"Knowledge bases the routine can search, such as your team's policy documents."
+											}
 											emptyText="No knowledge added."
 											icon={BookOpen}
 											items={knowledge}
@@ -259,6 +269,7 @@ export function CustomRoutineFields({
 											<CapabilityPicker
 												kind="KNOWLEDGE"
 												values={knowledge}
+												disabled={isFull}
 												onChange={(values) =>
 													save([
 														...toolbox,
@@ -270,7 +281,10 @@ export function CustomRoutineFields({
 									)}
 									<CapabilitySection
 										title="Tools"
-										description="Toolboxes the routine can use, such as a database. A tool that asks for your approval does not run in a routine."
+										description={
+											limit ??
+											"Toolboxes the routine can use, such as a database. A tool that asks for your approval does not run in a routine."
+										}
 										emptyText="No tools added."
 										icon={Wrench}
 										items={toolbox}
@@ -279,6 +293,7 @@ export function CustomRoutineFields({
 										<CapabilityPicker
 											kind="TOOLBOX"
 											values={toolbox}
+											disabled={isFull}
 											onChange={(values) =>
 												save([...values, ...knowledge])
 											}

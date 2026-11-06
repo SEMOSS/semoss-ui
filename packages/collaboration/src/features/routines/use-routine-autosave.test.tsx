@@ -296,6 +296,71 @@ describe("routine autosave", () => {
 		expect(onSave).toHaveBeenLastCalledWith({ ...initial, time: "11:00" });
 	});
 
+	it("flushes an edit still waiting for its debounce at once, and saves nothing when there is nothing to save", async () => {
+		const { result, onSave } = renderAutosave();
+		await act(async () => result.current.flush());
+		expect(onSave).not.toHaveBeenCalled();
+		act(() => result.current.form.setValue("lookbackHours", "1"));
+		await act(async () => result.current.flush());
+		expect(onSave).toHaveBeenCalledExactlyOnceWith({
+			...initial,
+			lookbackHours: "1",
+		});
+		expect(result.current.status).toBe("saved");
+		await advance(2000);
+		expect(onSave).toHaveBeenCalledTimes(1);
+	});
+
+	it("flushes after the write in flight, then saves the newer edit", async () => {
+		const first = deferred();
+		const onSave = vi
+			.fn(async (values: Values) => values)
+			.mockReturnValueOnce(first.promise);
+		const { result } = renderAutosave(onSave);
+		act(() => result.current.form.setValue("time", "09:00"));
+		await advance();
+		act(() => result.current.form.setValue("time", "10:00"));
+		let isFlushed = false;
+		let flushing: Promise<void> | undefined;
+		act(() => {
+			flushing = result.current.flush().then(() => {
+				isFlushed = true;
+			});
+		});
+		await advance();
+		expect(onSave).toHaveBeenCalledTimes(1);
+		expect(isFlushed).toBe(false);
+		await act(async () => {
+			first.resolve({ ...initial, time: "09:00" });
+			await flushing;
+		});
+		expect(onSave).toHaveBeenCalledTimes(2);
+		expect(onSave).toHaveBeenLastCalledWith({ ...initial, time: "10:00" });
+		expect(result.current.status).toBe("saved");
+	});
+
+	it("rejects a flush of an invalid draft or a failed save, saying why", async () => {
+		const onSave = vi
+			.fn<(values: Values) => Promise<Values>>()
+			.mockRejectedValue(new Error("Mailbox unavailable"));
+		const { result } = renderAutosave(onSave);
+		act(() => result.current.form.setValue("time", ""));
+		await act(async () => {
+			await expect(result.current.flush()).rejects.toThrow(
+				"Fix the highlighted settings",
+			);
+		});
+		expect(onSave).not.toHaveBeenCalled();
+		expect(result.current.status).toBe("invalid");
+		act(() => result.current.form.setValue("time", "09:00"));
+		await act(async () => {
+			await expect(result.current.flush()).rejects.toThrow(
+				"Your changes did not save, so the run did not start. Mailbox unavailable",
+			);
+		});
+		expect(result.current.status).toBe("error");
+	});
+
 	it("does not retry a failed snapshot or send invalid values on cleanup", async () => {
 		const onSave = vi
 			.fn<(values: Values) => Promise<Values>>()

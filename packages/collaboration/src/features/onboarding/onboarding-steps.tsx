@@ -16,7 +16,14 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
+import {
+	type ReactNode,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	Badge,
 	Button,
@@ -60,6 +67,7 @@ import {
 	StepHeader,
 } from "./onboarding-ui";
 import { TeamsImportNotice } from "./teams-import-notice";
+import { useFinishSetup } from "./use-finish-setup";
 import { useJob } from "./use-job";
 
 type StepProps = OnboardingStepProps;
@@ -95,8 +103,12 @@ function Next({
 	);
 }
 
-/** Before anything is read: what setup does, and a button to start it. */
-export function WelcomeStep({ onStart }: { onStart: () => void }) {
+/** Before anything is read: what setup does, and buttons to start or skip it. */
+export function WelcomeStep({
+	actions,
+	onStart,
+}: Pick<StepProps, "actions"> & { onStart: () => void }) {
+	const { isFinishing, finish } = useFinishSetup(actions);
 	return (
 		<>
 			<StepHeader
@@ -116,7 +128,18 @@ export function WelcomeStep({ onStart }: { onStart: () => void }) {
 				<li>Review the people and topics suggested for you.</li>
 			</ul>
 			<StepActions>
-				<Next onClick={onStart}>Start setup</Next>
+				<Button
+					variant="ghost"
+					onClick={() => {
+						void finish();
+					}}
+					disabled={isFinishing}
+				>
+					Skip for now
+				</Button>
+				<Next onClick={onStart} disabled={isFinishing}>
+					Start setup
+				</Next>
 			</StepActions>
 		</>
 	);
@@ -1022,16 +1045,21 @@ export function PeopleStep({
 	// follow someone Brain did not suggest
 	const [query, setQuery] = useState("");
 	const [found, setFound] = useState<OnboardingPerson[]>([]);
+	// setup resumed after a reload skips the mailbox step, so the owner's address comes from their own record
+	const [savedSelf, setSavedSelf] = useState("");
+	const self = (selfEmail || savedSelf).toLowerCase();
 	useEffect(() => {
-		const self = selfEmail.toLowerCase();
-		const mine = (p: OnboardingPerson) =>
-			p.email.toLowerCase() !== self && !p.automated;
 		Promise.all([
 			listPeople(actions, { follow: "following" }),
 			listPeople(actions, { follow: "suggested" }),
 			listPeople(actions, { relationship: "automated" }),
+			selfEmail ? [] : listPeople(actions, { relationship: "self" }),
 		])
-			.then(async ([following, suggested, bots]) => {
+			.then(async ([following, suggested, bots, [owner]]) => {
+				const address = (selfEmail || owner?.email || "").toLowerCase();
+				const mine = (p: OnboardingPerson) =>
+					p.email.toLowerCase() !== address && !p.automated;
+				setSavedSelf(owner?.email ?? "");
 				let list = [...following, ...suggested].filter(mine);
 				// data from before follow suggestions: the strongest contacts instead
 				if (!list.length)
@@ -1086,23 +1114,29 @@ export function PeopleStep({
 			setFound([]);
 			return;
 		}
+		let isCurrent = true;
 		const timer = setTimeout(() => {
 			listPeople(actions, { query: q })
-				.then((list) =>
-					setFound(
-						list.filter(
-							(p) =>
-								!p.automated &&
-								p.email.toLowerCase() !==
-									selfEmail.toLowerCase() &&
-								!people?.some((known) => known.id === p.id),
-						),
-					),
-				)
-				.catch(() => setFound([]));
+				.then((list) => {
+					if (isCurrent)
+						setFound(
+							list.filter(
+								(p) =>
+									!p.automated &&
+									p.email.toLowerCase() !== self &&
+									!people?.some((known) => known.id === p.id),
+							),
+						);
+				})
+				.catch(() => {
+					if (isCurrent) setFound([]);
+				});
 		}, 250);
-		return () => clearTimeout(timer);
-	}, [actions, query, people, selfEmail]);
+		return () => {
+			isCurrent = false;
+			clearTimeout(timer);
+		};
+	}, [actions, query, people, self]);
 
 	const add = (person: OnboardingPerson) => {
 		setPeople((prev) => [...(prev ?? []), person]);
@@ -1113,7 +1147,7 @@ export function PeopleStep({
 	const rescue = async (person: OnboardingPerson) => {
 		setError(null);
 		try {
-			const mine = selfEmail.split("@")[1]?.toLowerCase();
+			const mine = self.split("@")[1];
 			await markPerson(
 				actions,
 				person.id,
@@ -1430,6 +1464,8 @@ export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	const [addError, setAddError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	// contacts an earlier attempt already kept; their organization must not be made again on a retry
+	const kept = useRef(new Set<string>());
 	useEffect(() => {
 		suggestAccounts(actions)
 			.then((list) => {
@@ -1448,14 +1484,17 @@ export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 		setBusy(true);
 		setError(null);
 		try {
+			// safe to send again: the server returns the account it already has for a domain
 			await saveAccounts(
 				actions,
 				accounts.filter((a) => picked.has(a.domain)),
 			);
-			await saveContacts(
-				actions,
-				contacts.filter((c) => picked.has(c.id)),
-			);
+			for (const contact of contacts) {
+				if (!picked.has(contact.id) || kept.current.has(contact.id))
+					continue;
+				await saveContacts(actions, [contact]);
+				kept.current.add(contact.id);
+			}
 			onNext();
 		} catch (cause) {
 			setError(message(cause));
@@ -1689,10 +1728,7 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 		}
 	};
 
-	const finish = () => {
-		window.location.hash = "#/work";
-		window.location.reload();
-	};
+	const { isFinishing, finish } = useFinishSetup(actions);
 
 	return (
 		<>
@@ -1783,8 +1819,12 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 				{!done && (
 					<Button
 						variant="ghost"
-						onClick={finish}
-						disabled={running || starting || isLoading}
+						onClick={() => {
+							void finish();
+						}}
+						disabled={
+							running || starting || isLoading || isFinishing
+						}
 					>
 						Skip for now
 					</Button>

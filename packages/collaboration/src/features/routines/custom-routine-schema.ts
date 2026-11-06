@@ -17,6 +17,9 @@ export const CUSTOM_ROUTINE_DELIVERIES = ["email", "teams", "none"] as const;
 // shortcut: off until this environment has an embedder model; set true to offer knowledge again
 export const IS_ROUTINE_KNOWLEDGE_ENABLED = false;
 
+/** The most tools and knowledge bases, together, the server saves on one routine (WorkCustomRoutine.MAX_TOOLS). */
+export const MAX_ROUTINE_TOOLS = 10;
+
 /** Where a routine's answer goes; always only to the owner. */
 export const DELIVERY_LABELS = {
 	email: "Email me",
@@ -50,7 +53,12 @@ export const customRoutineSettingsSchema = z.object({
 	delivery: z.enum(CUSTOM_ROUTINE_DELIVERIES),
 	skills: z.array(z.string()),
 	/** Toolboxes and knowledge bases (VECTOR) the owner added; a run uses their ids, Routines shows their names. */
-	tools: z.array(mcpConfigSchema),
+	tools: z
+		.array(mcpConfigSchema)
+		.max(
+			MAX_ROUTINE_TOOLS,
+			`Add at most ${MAX_ROUTINE_TOOLS} tools and knowledge bases.`,
+		),
 	agentId: z.string(),
 });
 

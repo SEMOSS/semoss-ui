@@ -455,6 +455,21 @@ export async function saveTopics(
 		await run(actions, pixel("BrainDeleteTopic", { topicId: id }));
 }
 
+/** The connection's setup flags; either is absent on an older server. */
+export async function getSetupState(
+	actions: InsightActions,
+): Promise<{ imported?: boolean; setupDone?: boolean }> {
+	const out = await run(actions, pixel("BrainGetConnection"));
+	const flag = (value: unknown) =>
+		typeof value === "boolean" ? value : undefined;
+	return { imported: flag(out.imported), setupDone: flag(out.setupDone) };
+}
+
+/** Setup is over, finished at Open Work or skipped, so Today stops sending the owner back to it. */
+export async function finishSetup(actions: InsightActions): Promise<void> {
+	await run(actions, pixel("BrainFinishSetup"));
+}
+
 // deletes everything this owner has in Collaboration except the Microsoft link
 export async function resetMyData(actions: InsightActions): Promise<number> {
 	const out = await run(
