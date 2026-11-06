@@ -82,6 +82,7 @@ export class AgentTurnController {
 		settlementVersion: 0,
 	};
 	private listeners = new Set<() => void>();
+	private viewed = false;
 	private run: AgentRun | null = null;
 	private items = new Map<string, RunItemState>();
 	private seenEvents = new Set<string>();
@@ -125,10 +126,16 @@ export class AgentTurnController {
 	}
 	subscribe = (listener: () => void): (() => void) => {
 		this.listeners.add(listener);
-		// opening the room again checks a slow-polled run at once
-		if (this.listeners.size === 1) this.wake?.();
 		return () => this.listeners.delete(listener);
 	};
+
+	/** A room view is on screen for this room (a retained session with no view is not). */
+	setViewed(viewed: boolean): void {
+		if (this.viewed === viewed) return;
+		this.viewed = viewed;
+		// opening the room again checks a slow-polled run at once
+		if (viewed) this.wake?.();
+	}
 
 	/** The run is paused for the owner's approval and nothing beneath it is still working. */
 	private isWaitingOnOwner(): boolean {
@@ -141,11 +148,9 @@ export class AgentTurnController {
 		);
 	}
 
-	/** Someone has this room open in a visible tab. */
+	/** A room view for this room is open in a visible tab. */
 	private isWatched(): boolean {
-		return (
-			this.listeners.size > 0 && document.visibilityState === "visible"
-		);
+		return this.viewed && document.visibilityState === "visible";
 	}
 
 	private update(patch: Partial<AgentTurnSnapshot>): void {

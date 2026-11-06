@@ -321,7 +321,7 @@ export function WorkUpdatesProvider({
 		},
 		[actions],
 	);
-	// a sync another tab ran: take its time, and reload only when it brought something in
+	// a sync another tab ran: take its time, and reload when it brought something in or this tab's last full read is old
 	useEffect(
 		() =>
 			onSyncElsewhere((done) => {
@@ -329,7 +329,16 @@ export function WorkUpdatesProvider({
 					const lastMailCheck = done.lastMailCheck;
 					setStatus((current) => ({ ...current, lastMailCheck }));
 				}
-				if (done.quiet) return;
+				if (done.quiet) {
+					// a quiet sync reloads nothing, so this tab keeps its own full-read age
+					if (
+						document.visibilityState === "visible" &&
+						Date.now() - lastFullRead.current >=
+							FULL_READ_MAX_AGE_MS
+					)
+						refreshRef.current();
+					return;
+				}
 				if (document.visibilityState === "visible") {
 					refreshRef.current();
 				} else stale.current = true;

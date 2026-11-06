@@ -11,22 +11,27 @@ export interface SyncDone {
 	lastMailCheck: MailCheck | null;
 }
 
+// this tab's own last attempt: the clock when storage is off, and never behind it when storage is on
+let memoryAttempt = 0;
+
 /** When any tab last started a sync, in ms; 0 when unknown. */
 export function sharedLastAttempt(): number {
+	let at = 0;
 	try {
-		const at = Number(window.localStorage.getItem(LAST_ATTEMPT_KEY)) || 0;
-		// a time ahead of this clock (another machine's, a bad write) must not hold syncs off
-		return at > Date.now() ? 0 : at;
+		at = Number(window.localStorage.getItem(LAST_ATTEMPT_KEY)) || 0;
 	} catch {
-		return 0;
+		// storage off (private mode): only this tab's clock is known
 	}
+	// a time ahead of this clock (another machine's, a bad write) must not hold syncs off
+	return Math.max(at > Date.now() ? 0 : at, memoryAttempt);
 }
 
 function markAttempt(at: number): void {
+	memoryAttempt = at;
 	try {
 		window.localStorage.setItem(LAST_ATTEMPT_KEY, String(at));
 	} catch {
-		// storage off (private mode): each tab keeps its own clock
+		// storage off (private mode): memoryAttempt is this tab's clock
 	}
 }
 
