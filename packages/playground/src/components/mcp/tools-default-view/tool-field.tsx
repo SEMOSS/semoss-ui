@@ -70,7 +70,7 @@ const CollapsibleField = ({
 	);
 };
 
-export interface ToolFieldProps<T = unknown> {
+interface ToolFieldProps<T = unknown> {
 	/** The name of the field */
 	fieldName: string;
 	/** JSON schema definition for the field */

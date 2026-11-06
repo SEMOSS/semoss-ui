@@ -218,8 +218,4 @@ export const toPlainText = (content: string): string => {
 		.trim();
 };
 
-export {
-	addLocalDays,
-	isSameLocalDay,
-	startOfLocalDay,
-} from "@semoss/utility/date";
+export { addLocalDays } from "@semoss/utility/date";

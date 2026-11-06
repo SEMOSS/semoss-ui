@@ -40,7 +40,7 @@ const toForm = (user: SETTINGS_MEMBER): ProfileForm => ({
 	usageLimit: user.model_usage_limit ?? null,
 });
 
-export interface MemberProfileFormProps {
+interface MemberProfileFormProps {
 	user: SETTINGS_MEMBER;
 	/** Called with the updated member after a successful save */
 	onSaved: (updated: SETTINGS_MEMBER) => void;

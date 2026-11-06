@@ -15,7 +15,6 @@ import type {
 	dateUnit,
 	joinType,
 	operation,
-	TransformationDef,
 	TransformationTypes,
 } from "./transformation.types";
 
@@ -45,13 +44,6 @@ export const transformationColumnTypes: columnTypes[] = [
 ];
 
 export const dateUnitTypes: dateUnit[] = ["day", "week", "month", "year"];
-
-export interface TransformationConfig<
-	D extends TransformationDef = TransformationDef,
-> {
-	key: D["key"];
-	parameters: D["parameters"];
-}
 
 export const Transformations: Record<
 	TransformationTypes,

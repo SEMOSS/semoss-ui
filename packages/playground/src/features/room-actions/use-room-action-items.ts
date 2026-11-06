@@ -10,7 +10,7 @@ import { useTranslation } from "@semoss/i18n";
 import { useRoomActionsContext } from "./room-actions.context";
 
 /** One of a room's actions, as a menu item or a slash command shows it. */
-export interface RoomActionItem {
+interface RoomActionItem {
 	/** Stable key; also the slash command's id. */
 	id: "favorite" | "rename" | "publish" | "download" | "delete";
 	/** The action's icon. */

@@ -6,7 +6,7 @@ import {
 import type { RoomStore } from "@/stores/room/room.store";
 import { useWorkbenchFitWidth } from "./use-workbench-fit-width";
 
-export type FittedRoomLayoutProps = Omit<
+type FittedRoomLayoutProps = Omit<
 	RoomLayoutProps,
 	"isWorkbenchOpen" | "workbenchFitWidth"
 > & {

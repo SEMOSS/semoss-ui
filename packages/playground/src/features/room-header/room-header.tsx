@@ -36,7 +36,7 @@ import {
 import { RoomActionMenuItems } from "./room-action-menu-items";
 import { RoomTitle } from "./room-title";
 
-export interface RoomHeaderProps {
+interface RoomHeaderProps {
 	/** The room whose Workbench the header opens and whose actions it lists. */
 	room: RoomStore;
 	/** A new chat's own panel actions, until its first message. */

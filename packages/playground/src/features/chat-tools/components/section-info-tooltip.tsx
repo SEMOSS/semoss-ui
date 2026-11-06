@@ -3,7 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import { TooltipIconButton } from "./tooltip-icon-button";
 
 /** Props for {@link SectionInfoTooltip}. */
-export interface SectionInfoTooltipProps {
+interface SectionInfoTooltipProps {
 	/** The name of what it explains, such as a section's title. */
 	label: string;
 	/** The explanation. */

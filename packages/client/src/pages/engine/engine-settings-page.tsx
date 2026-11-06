@@ -15,7 +15,7 @@ import { EffectivePermissions } from "@/features/effective-permissions/effective
 import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
 import { useConfig, useEngine } from "@/hooks";
 
-export interface EngineSettingsPageProps {
+interface EngineSettingsPageProps {
 	/**
 	 * What shows under Member Permissions: the members, Bulk Access Management
 	 * or Effective Permissions. The access settings above stay as they are.

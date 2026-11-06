@@ -6,7 +6,7 @@ import { Button, Muted, Skeleton } from "@semoss/ui/next";
 const SKELETON_ROWS = ["a", "b", "c"];
 
 /** Props for {@link ToolListStatus}. */
-export interface ToolListStatusProps {
+interface ToolListStatusProps {
 	/**
 	 * What the list is doing instead of showing tools: still loading, failed
 	 * to load, or holding nothing (or a note in place of its tools).

@@ -38,7 +38,7 @@ const schema = z.object({
 
 type CloneEngineValues = z.infer<typeof schema>;
 
-export interface CloneEngineDialogProps {
+interface CloneEngineDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The engine to clone */

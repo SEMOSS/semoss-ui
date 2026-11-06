@@ -7,12 +7,7 @@ import { useBlock, useFrame } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { ChartContextMenu } from "./ChartContextMenu";
-//echart field structure
-export interface EChartColumns {
-	name: string;
-	selector: string;
-	width: string;
-}
+
 //bar component properties
 interface BarProps {
 	id: string;

@@ -16,7 +16,7 @@ export interface UsageLimitPathRequest {
 	admin?: boolean;
 }
 
-export interface UseUsageLimitPathResult {
+interface UseUsageLimitPathResult {
 	/** How the limits apply, or null until it loads */
 	path: UsageLimitPath | null;
 	/** Whether it is being read */

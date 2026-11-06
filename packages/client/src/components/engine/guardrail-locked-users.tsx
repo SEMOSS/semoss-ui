@@ -25,7 +25,7 @@ import {
 } from "@/api/guardrails";
 import { useSession } from "@/hooks";
 
-export interface GuardrailLockedUsersProps {
+interface GuardrailLockedUsersProps {
 	/** The engine whose locks are listed */
 	engineId: string;
 

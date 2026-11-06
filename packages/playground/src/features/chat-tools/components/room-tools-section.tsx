@@ -9,7 +9,7 @@ import { SectionInfoTooltip } from "./section-info-tooltip";
 import { ToolCountBadge } from "./tool-count-badge";
 
 /** Props for {@link RoomToolsSection}. */
-export interface RoomToolsSectionProps {
+interface RoomToolsSectionProps {
 	/** The section's heading. */
 	title: string;
 	/** How many rows its list holds, when it lists any. */

@@ -2,7 +2,7 @@ import type React from "react";
 import { createContext, useContext } from "react";
 import type { SlashCommand } from "./types";
 
-export interface SlashCommandContextValue {
+interface SlashCommandContextValue {
 	/** Full list of available commands (after any exclusion filtering) */
 	commands: SlashCommand[];
 }
@@ -15,7 +15,7 @@ const SlashCommandContext = createContext<SlashCommandContextValue>({
 export const useSlashCommands = (): SlashCommandContextValue =>
 	useContext(SlashCommandContext);
 
-export interface SlashCommandProviderProps {
+interface SlashCommandProviderProps {
 	/** Every command the composer offers. */
 	commands: SlashCommand[];
 	/** Command IDs to suppress */

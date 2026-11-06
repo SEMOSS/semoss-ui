@@ -254,7 +254,7 @@ const isPersonMessage = (message: TeamsMessage): boolean =>
  * as a member joining are left out of the messages but counted, so a caller
  * can tell whether the read stopped at its limit.
  */
-export interface TeamsMessagePage {
+interface TeamsMessagePage {
 	messages: TeamsMessage[];
 	/** How many messages the backend returned, system events included. */
 	readCount: number;

@@ -107,7 +107,7 @@ const hasStreamedContent = (parts: ResponseMessageStore["parts"]) =>
 			part.type === "MEDIA",
 	);
 
-export interface ResponseMessageProps {
+interface ResponseMessageProps {
 	/** Room */
 	room: RoomStore;
 

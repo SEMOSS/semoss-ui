@@ -5,7 +5,7 @@ import { ToolList } from "./tool-list";
 import { ToolboxRow } from "./toolbox-row";
 
 /** Props for {@link RoomToolsToolboxesSection}. */
-export type RoomToolsToolboxesSectionProps =
+type RoomToolsToolboxesSectionProps =
 	| {
 			/** The toolboxes the room's agent brings, which cannot be removed here. */
 			variant: "agent";

@@ -38,7 +38,7 @@ const DEFAULT_TOOL_DEFINITIONS = new Map(
 );
 
 /** Props for {@link RoomToolsDefaultSection}. */
-export interface RoomToolsDefaultSectionProps {
+interface RoomToolsDefaultSectionProps {
 	/** The room's `defaultTools` option. */
 	defaultTools: RoomStore["options"]["defaultTools"];
 	/** Store the new modes in the room's options. */

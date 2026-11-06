@@ -5,7 +5,7 @@ import { getErrorMessage } from "@semoss/utility/error";
 /** How long typing pauses before a filter's choices are read again */
 const SEARCH_DELAY_MS = 300;
 
-export interface UseAgentRunFilterOptionsResult<T> {
+interface UseAgentRunFilterOptionsResult<T> {
 	/** The choices for the search, as last read */
 	options: T[];
 	/** Whether the choices are being read */

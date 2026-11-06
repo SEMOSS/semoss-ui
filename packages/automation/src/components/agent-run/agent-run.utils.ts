@@ -5,7 +5,7 @@ import type { AutomationAgentRunToolGroup } from "./agent-run.types";
 export const isActiveToolInvocationStatus = (status?: string): boolean =>
 	!status;
 
-export const isFailedToolInvocationStatus = (status?: string): boolean =>
+const isFailedToolInvocationStatus = (status?: string): boolean =>
 	Boolean(status && /error|fail/i.test(status));
 
 /**

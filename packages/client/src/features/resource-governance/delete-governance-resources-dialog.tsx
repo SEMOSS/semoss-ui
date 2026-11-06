@@ -14,7 +14,7 @@ import { GOVERNANCE_NOUNS, type GovernanceType } from "./governance-types";
 import { useDeleteGovernanceResources } from "./use-delete-governance-resources";
 import type { GovernanceResource } from "./use-governance-resources";
 
-export interface DeleteGovernanceResourcesDialogProps {
+interface DeleteGovernanceResourcesDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The type of the resources */

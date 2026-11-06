@@ -1,0 +1,27 @@
+{
+	"$schema": "https://unpkg.com/knip@5/schema.json",
+	"ignoreWorkspaces": ["packages/collaboration"],
+	"workspaces": {
+		"packages/chrome-extension": {
+			"entry": [
+				"src/background/index.ts",
+				"src/content/index.ts",
+				"src/panel/index.tsx",
+				"src/devtools/devtools.js",
+				"src/options/options.js"
+			]
+		},
+		"packages/cli": {
+			"entry": ["bin/*.js", "src/commands/**/*.ts"],
+			"ignoreDependencies": [
+				"@oclif/plugin-help",
+				"@oclif/plugin-plugins",
+				"ts-node"
+			]
+		},
+		"libs/panels": {
+			"entry": ["src/vite/ai-sdk-stub.ts"]
+		}
+	},
+	"ignoreDependencies": ["@vitest/coverage-v8"]
+}

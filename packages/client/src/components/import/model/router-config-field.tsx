@@ -304,7 +304,7 @@ export const routerConfigToJson = (raw: unknown): string => {
 	return JSON.stringify(config);
 };
 
-export interface RouterConfigFieldProps {
+interface RouterConfigFieldProps {
 	value: unknown;
 	onChange: (next: RouterConfigFormValue) => void;
 	disabled?: boolean;

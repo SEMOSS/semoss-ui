@@ -50,7 +50,7 @@ interface ConnectorAccessNotice {
 }
 
 /** A room toolbox's tools, by connector service. */
-export interface GroupedConnectorTools {
+interface GroupedConnectorTools {
 	/** The services with tools in the toolbox, by name. */
 	groups: ConnectorToolGroup[];
 	/** The toolbox's tools that are not a connector's. */

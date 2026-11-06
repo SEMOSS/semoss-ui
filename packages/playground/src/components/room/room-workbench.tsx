@@ -11,7 +11,7 @@ import { normalizeFolderPath } from "@/features/chat-tools/folders/folder-path";
 import { useNextMessageRoom } from "@/features/conversation/next-message-room.context";
 import type { RoomStore } from "@/stores/room/room.store";
 
-export interface RoomWorkbenchProps {
+interface RoomWorkbenchProps {
 	/** The room owns the dock, including while this view is hidden. */
 	room: RoomStore;
 }

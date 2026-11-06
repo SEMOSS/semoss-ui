@@ -5,7 +5,7 @@ import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 import { useConfig } from "@/hooks/use-config";
 import { useSession } from "@/hooks/use-session";
 
-export interface TeamAccessManagementPageProps {
+interface TeamAccessManagementPageProps {
 	/**
 	 * Whether this is the admin mode view, from Team Permissions, where an
 	 * admin can change any custom team; My Teams uses the user's own permissions

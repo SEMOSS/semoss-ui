@@ -14,7 +14,7 @@ const GROUP_LIST_CLASS_NAME =
 	"flex flex-col divide-y divide-border border-border border-t ps-7";
 
 /** Props for {@link ToolList}. */
-export interface ToolListProps {
+interface ToolListProps {
 	/**
 	 * How reading the rows went. Defaults to `ready`, for rows that are always
 	 * known. Rows already read stay shown while they are read again.

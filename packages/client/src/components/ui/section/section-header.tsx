@@ -6,7 +6,7 @@ import {
 } from "react";
 import { cn } from "@semoss/ui/next";
 
-export interface SectionHeaderProps extends ComponentPropsWithRef<"div"> {
+interface SectionHeaderProps extends ComponentPropsWithRef<"div"> {
 	actions?: React.ReactNode;
 }
 

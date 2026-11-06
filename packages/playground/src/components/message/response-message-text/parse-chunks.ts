@@ -4,7 +4,7 @@
 
 type ChunkType = "md" | "html";
 
-export interface ContentChunk {
+interface ContentChunk {
 	/**
 	 * Stable identity key: the character offset where this chunk begins in
 	 * the original text string. Stable across re-parses as content grows,

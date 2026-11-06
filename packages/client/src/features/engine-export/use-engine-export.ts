@@ -8,7 +8,7 @@ import { useSession } from "@/hooks/use-session";
 export const ENGINE_SUBTYPES_WITH_DATA = ["H2_DB"];
 
 /** What {@link useEngineExport} gives its caller. */
-export interface UseEngineExportResult {
+interface UseEngineExportResult {
 	/** Whether an export is running */
 	isExporting: boolean;
 	/**

@@ -8,7 +8,7 @@ import { ToolList } from "./tool-list";
 import { TooltipIconButton } from "./tooltip-icon-button";
 
 /** Props for {@link ToolboxRow}. */
-export interface ToolboxRowProps {
+interface ToolboxRowProps {
 	/** The toolbox. */
 	toolbox: MCPConfig;
 	/** Take the toolbox out of the room; left out when it cannot be removed. */

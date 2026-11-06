@@ -1,7 +1,7 @@
 import { Badge } from "@semoss/ui/next";
 
 /** Props for {@link ToolCountBadge}. */
-export interface ToolCountBadgeProps {
+interface ToolCountBadgeProps {
 	/** How many rows a section or group holds. */
 	count: number;
 }

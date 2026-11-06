@@ -16,7 +16,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { useSession } from "@/hooks/use-session";
 
-export interface RestartEngineDialogProps {
+interface RestartEngineDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The engine to restart */

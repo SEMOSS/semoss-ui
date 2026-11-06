@@ -14,7 +14,7 @@ import { useSession } from "@/hooks/use-session";
 import type { ALL_TYPES } from "@/types";
 import { useDeleteResource } from "./use-delete-resource";
 
-export interface DeleteResourceCardProps {
+interface DeleteResourceCardProps {
 	/** The resource's type: an engine type, or PROJECT */
 	type: ALL_TYPES;
 	/** The resource's id */

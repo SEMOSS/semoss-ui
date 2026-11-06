@@ -34,7 +34,7 @@ const PANEL_KEYWORDS: Readonly<Record<string, string[]>> = {
 };
 
 /** What the composer hands {@link useRoomSlashCommands}. */
-export interface RoomSlashCommandsOptions {
+interface RoomSlashCommandsOptions {
 	/** The room the composer sends to, or the new room before a chat's first message. */
 	room: RoomStore;
 	/** The room whose Workspace the panels open in; defaults to `room`. */

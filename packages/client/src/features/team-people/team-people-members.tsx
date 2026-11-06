@@ -21,7 +21,7 @@ import { usePagedList } from "@/hooks/use-paged-list";
 /** Members shown per page; the sheet is narrow, so pages are short */
 const ROWS_PER_PAGE_OPTIONS = [25, 50, 100];
 
-export interface TeamPeopleMembersProps {
+interface TeamPeopleMembersProps {
 	/** The custom team */
 	groupId: string;
 	/** The project or engine the members are read through */

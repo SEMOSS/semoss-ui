@@ -25,7 +25,7 @@ const ROW_HINTS: Readonly<Record<ModelLimitCategory, string>> = {
 	PUBLIC: "Everyone with no limit from their own grant or a team.",
 };
 
-export interface ModelUsageLimitsCardProps {
+interface ModelUsageLimitsCardProps {
 	/** The model */
 	engineId: string;
 	/** Whether to read and save in admin mode */

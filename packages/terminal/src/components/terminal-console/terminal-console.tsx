@@ -455,8 +455,14 @@ export const TerminalConsole = ({
 		// schedule after the controlled value flushes through React
 		setTimeout(() => {
 			const editor = editorRef.current;
-			if (!editor) return;
-			editor.gotoLine(editor.session.getLength(), Infinity, false);
+			const model = editor?.getModel();
+			if (!editor || !model) return;
+			const lineNumber = model.getLineCount();
+			editor.setPosition({
+				lineNumber,
+				column: model.getLineMaxColumn(lineNumber),
+			});
+			editor.revealLine(lineNumber);
 			editor.focus();
 		}, 0);
 	};

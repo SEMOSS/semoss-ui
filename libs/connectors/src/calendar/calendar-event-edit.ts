@@ -36,7 +36,7 @@ export interface CalendarEventValues {
 }
 
 /** The messages the event form shows when a value cannot be sent. */
-export interface CalendarEventMessages {
+interface CalendarEventMessages {
 	/** A created event needs a start and an end. */
 	timeRequired: string;
 	/** A time cannot be read. */

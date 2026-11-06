@@ -25,7 +25,7 @@ const FORMATS: {
 	{ format: "pdf", icon: FileIcon, extension: ".pdf" },
 ];
 
-export interface DownloadConversationDialogProps {
+interface DownloadConversationDialogProps {
 	/** The room to download, or null while the dialog is closed. */
 	roomId: string | null;
 	/** Whether the dialog is open. */

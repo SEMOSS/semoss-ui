@@ -3,7 +3,7 @@ import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { TimePickerBlock, type TimePickerBlockDef } from "./TimePickerBlock";
 
-export const DefaultStyles: CSSProperties = {};
+const DefaultStyles: CSSProperties = {};
 
 // Helper function to generate multi-select options for views
 const getViewsOptions = () => {

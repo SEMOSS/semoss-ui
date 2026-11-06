@@ -461,7 +461,7 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	},
 };
 
-export const AutomationWorkbench = observer(
+const AutomationWorkbench = observer(
 	({
 		appId,
 		permission,

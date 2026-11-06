@@ -93,7 +93,7 @@ interface PathPerson {
 	label: string;
 }
 
-export interface EffectivePermissionsProps {
+interface EffectivePermissionsProps {
 	/** The project or engine */
 	target: PermissionTargetResource;
 	/** Its name */

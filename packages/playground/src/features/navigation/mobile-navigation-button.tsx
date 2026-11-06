@@ -4,7 +4,7 @@ import { useLocation } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn, useSidebar } from "@semoss/ui/next";
 
-export interface MobileNavigationButtonProps {
+interface MobileNavigationButtonProps {
 	/**
 	 * Floating over the page's top corner, or inline in a route's own header.
 	 * Defaults to floating.

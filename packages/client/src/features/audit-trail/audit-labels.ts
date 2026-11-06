@@ -1,7 +1,7 @@
 import { formatUnderscoreLabel } from "@semoss/utility/text";
 
 /** What each event the audit trail records is called, by its stored type. */
-export const AUDIT_EVENT_LABELS: Readonly<Record<string, string>> = {
+const AUDIT_EVENT_LABELS: Readonly<Record<string, string>> = {
 	LOGIN: "Signed In",
 	LOGOUT: "Signed Out",
 	LOGIN_FAILED: "Sign In Failed",

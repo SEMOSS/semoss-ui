@@ -30,7 +30,7 @@ const schema = z.object({
 type FormInputValues = z.input<typeof schema>;
 type FormValues = z.output<typeof schema>;
 
-export interface CloneProjectDialogProps {
+interface CloneProjectDialogProps {
 	/** Track if the dialog is open */
 	open: boolean;
 	/** Full project object to clone (picks project_id and project_type) */

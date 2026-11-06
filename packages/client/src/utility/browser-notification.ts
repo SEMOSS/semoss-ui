@@ -6,7 +6,7 @@
 const STORAGE_KEY = "smss--browser-notifications";
 
 /** Options for a single browser notification. */
-export interface BrowserNotificationOptions {
+interface BrowserNotificationOptions {
 	/** Notification headline. */
 	title: string;
 	/** Secondary body text shown under the title. */

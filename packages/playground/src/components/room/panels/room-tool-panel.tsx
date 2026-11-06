@@ -21,7 +21,7 @@ import { ToolsView } from "@/components";
 import { useRoom } from "@/contexts";
 
 /** Which tool a panel is showing. `toolId` is what dedupes it. */
-export interface RoomToolParams {
+interface RoomToolParams {
 	toolId: string;
 	app: string;
 	message: string;

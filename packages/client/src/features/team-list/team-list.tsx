@@ -23,7 +23,7 @@ import { TablePagination } from "@/components/ui/table-pagination/table-paginati
 import { TeamTypeBadge } from "@/features/team-type/team-type-badge";
 import { usePagedList } from "@/hooks/use-paged-list";
 
-export interface TeamListProps {
+interface TeamListProps {
 	/** Loads a page of teams for a search */
 	loadTeams: (
 		searchTerm: string,
@@ -52,7 +52,7 @@ export interface TeamListProps {
 }
 
 /** A column the team list can show after the team's name */
-export type TeamListColumn = "type" | "members" | "created" | "managerSince";
+type TeamListColumn = "type" | "members" | "created" | "managerSince";
 
 /** The columns shown when a page does not choose its own */
 const DEFAULT_COLUMNS: TeamListColumn[] = ["type", "members", "created"];

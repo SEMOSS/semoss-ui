@@ -2,7 +2,7 @@ import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Input } from "@semoss/ui/next";
 
-export interface RoomNameFieldProps {
+interface RoomNameFieldProps {
 	/** The room's saved name, which the field starts from. */
 	savedName: string;
 	/**

@@ -27,7 +27,7 @@ const STATUS_FILTER_STATUSES: Record<AgentRunRoomStatusFilter, string[]> = {
 };
 
 /** Which rooms the admin Agent Runs page lists */
-export interface AgentRunRoomFilters {
+interface AgentRunRoomFilters {
 	/** Rooms holding a run of this agent, or empty for every agent */
 	agentId: string;
 	/** This user's rooms, or empty for every user */
@@ -102,7 +102,7 @@ export interface AgentRunRoomClosure {
 }
 
 /** One page of rooms and how many match in all */
-export interface AgentRunRoomsPage {
+interface AgentRunRoomsPage {
 	rooms: AgentRunRoom[];
 	total: number;
 }

@@ -33,7 +33,7 @@ import { ToolTextBlock } from "./tool-text-block";
 import { ToolValueRow } from "./tool-value-row";
 
 /** Props for {@link ChatToolCard}. */
-export interface ChatToolCardProps {
+interface ChatToolCardProps {
 	/** The work folder or connector call to show. */
 	tool: ToolStore;
 	/** `inline` sits in the conversation; `panel` fills a sidebar tab. */
