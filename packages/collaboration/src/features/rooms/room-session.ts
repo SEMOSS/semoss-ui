@@ -17,6 +17,7 @@ import {
 	canEvictRoomEmailStore,
 	disposeRoomEmailStore,
 } from "@/features/room-email/room-email-store";
+import { sendsAsText } from "@/features/thread-assistant/api/thread-attachments";
 import { resolveThreadModel } from "@/features/thread-assistant/api/thread-model";
 import {
 	getThreadAgent,
@@ -48,6 +49,7 @@ import {
 } from "./api/room-schemas";
 import { saveRoomSourceFile } from "./api/save-room-source-file";
 import type { UploadedRoomFile } from "./api/upload-room-files";
+import { uploadRoomTextCopies } from "./api/upload-room-text-copies";
 import type { ComposerDraft } from "./components/room-composer.types";
 import { removeSubmittedComposerDraft } from "./components/submitted-composer-draft";
 import { type RoomSource, roomSourceSchema } from "./source-import/room-source";
@@ -713,13 +715,28 @@ export class RoomSession {
 		try {
 			if (this.snapshot.options?.modelId !== this.snapshot.modelId)
 				await this.updateOptions({ modelId: this.snapshot.modelId });
+			const files = submittedDraft.composer.files;
+			const textFiles = files.filter((file) => sendsAsText(file.name));
+			// awaited only when needed, so any other send starts its turn, and its Stop, at once
+			const textCopies = textFiles.length
+				? await uploadRoomTextCopies(
+						this.insight.actions,
+						this.insight.insightId,
+						textFiles,
+					)
+				: [];
+			for (const copy of textCopies)
+				existingMedia.push({
+					...copy,
+					insightId: this.insight.insightId,
+				});
 			requested = true;
 			const accepted = await this.controller.send(
 				{
 					...submission,
 					text: command,
 					userText,
-					files: submittedDraft.composer.files,
+					files: files.filter((file) => !sendsAsText(file.name)),
 					existingMedia,
 				},
 				this.config(),

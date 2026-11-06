@@ -9,6 +9,7 @@ import {
 	StepActions,
 	StepHeader,
 } from "./onboarding-ui";
+import { useFinishSetup } from "./use-finish-setup";
 import { useTopicFiling } from "./use-topic-filing";
 
 /** Show the saved topic profiles and the confirmed filing result before opening Work. */
@@ -45,11 +46,7 @@ export function FilingStep({ actions, onBack, eyebrow }: OnboardingStepProps) {
 				: review?.appliedRevision === review?.revision && review
 					? "Your topics are saved"
 					: "Check your topic setup";
-	const finish = (): void => {
-		if (!ready) return;
-		window.location.hash = "#/work";
-		window.location.reload();
-	};
+	const { isFinishing, finish } = useFinishSetup(actions);
 	return (
 		<>
 			<StepHeader eyebrow={eyebrow} title={title}>
@@ -139,7 +136,12 @@ export function FilingStep({ actions, onBack, eyebrow }: OnboardingStepProps) {
 						{isRetrying && <Spinner />}Retry filing
 					</Button>
 				)}
-				<Button onClick={finish} disabled={!ready}>
+				<Button
+					onClick={() => {
+						if (ready) void finish();
+					}}
+					disabled={!ready || isFinishing}
+				>
 					Open Work
 					<ArrowRight className="size-4" aria-hidden="true" />
 				</Button>

@@ -4,6 +4,7 @@ import { createInitialCollaborationState } from "../state/collaboration.fixtures
 import {
 	loadLiveState,
 	loadThreadMessages,
+	localDue,
 	mapMemory,
 	mapStyle,
 	readThreadInsights,
@@ -240,6 +241,14 @@ it("surfaces a failed mail sync instead of reporting success", async () => {
 	await expect(
 		syncMail({ run } as unknown as InsightActions, async () => undefined),
 	).rejects.toThrow("Microsoft login expired");
+});
+
+it("reads a due day saved as midnight UTC at local midnight, so it shows on that day in any zone", () => {
+	const shown = localDue("2026-11-06T00:00:00Z");
+	expect(shown).toBe("2026-11-06T00:00");
+	expect(new Date(shown ?? "").getDate()).toBe(6);
+	expect(localDue("2026-11-06T16:30:00Z")).toBe("2026-11-06T16:30:00Z");
+	expect(localDue(null)).toBeNull();
 });
 
 it("reads Brain's summary runs with generated steps and plain due days", async () => {

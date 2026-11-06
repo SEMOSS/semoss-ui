@@ -5,7 +5,7 @@ import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger, z } from "@semoss/ui/next";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import { CollaborationPageHeader } from "@/features/collaboration/components/collaboration-page-header";
-import { saveAgendaRoutine } from "./agenda-routine-api";
+import { runAgendaRoutineNow, saveAgendaRoutine } from "./agenda-routine-api";
 import { AgendaRoutineForm } from "./agenda-routine-form";
 import { agendaRoutineSchema } from "./agenda-routine-schema";
 import { CustomRoutinesTab } from "./custom-routines-tab";
@@ -18,7 +18,7 @@ import { eventPlanningRoutineSchema } from "./event-planning-schema";
 import { saveExpenseRoutine } from "./expense-routine-api";
 import { ExpenseRoutineForm } from "./expense-routine-form";
 import { expenseRoutineSchema } from "./expense-routine-schema";
-import { saveInboxRoutine } from "./inbox-routine-api";
+import { runInboxRoutineNow, saveInboxRoutine } from "./inbox-routine-api";
 import { InboxRoutineForm } from "./inbox-routine-form";
 import { inboxRoutineSchema } from "./inbox-routine-schema";
 import { NewRoutineTab } from "./new-routine-tab";
@@ -133,7 +133,7 @@ export function RoutinesWorkspace() {
 						pixel="WorkGetInboxRoutine();"
 						schema={inboxRoutineSchema}
 					>
-						{(routine, update) => (
+						{(routine, update, runNow) => (
 							<RoutineDetail
 								routineId={id}
 								timezone={routine.timezone}
@@ -153,6 +153,11 @@ export function RoutinesWorkspace() {
 										update(saved);
 										return saved;
 									}}
+									onRunNow={() =>
+										runNow(() =>
+											runInboxRoutineNow(actions),
+										)
+									}
 								/>
 							</RoutineDetail>
 						)}
@@ -164,7 +169,7 @@ export function RoutinesWorkspace() {
 						pixel="WorkGetAgendaRoutine();"
 						schema={agendaRoutineSchema}
 					>
-						{(routine, update) => (
+						{(routine, update, runNow) => (
 							<RoutineDetail
 								routineId={id}
 								timezone={routine.timezone}
@@ -184,6 +189,11 @@ export function RoutinesWorkspace() {
 										update(saved);
 										return saved;
 									}}
+									onRunNow={() =>
+										runNow(() =>
+											runAgendaRoutineNow(actions),
+										)
+									}
 								/>
 							</RoutineDetail>
 						)}
@@ -195,7 +205,7 @@ export function RoutinesWorkspace() {
 						pixel="WorkGetEventPlanningRoutine();"
 						schema={eventPlanningRoutineSchema}
 					>
-						{(routine, update) => (
+						{(routine, update, runNow) => (
 							<RoutineDetail
 								routineId={id}
 								timezone={routine.timezone}
@@ -216,12 +226,11 @@ export function RoutinesWorkspace() {
 										update(saved);
 										return saved;
 									}}
-									onRunNow={async () => {
-										const next =
-											await runEventPlanningNow(actions);
-										update(next);
-										return next;
-									}}
+									onRunNow={() =>
+										runNow(() =>
+											runEventPlanningNow(actions),
+										)
+									}
 								/>
 							</RoutineDetail>
 						)}

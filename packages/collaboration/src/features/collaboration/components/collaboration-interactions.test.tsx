@@ -598,6 +598,15 @@ describe("collaboration Work and Brain integration", () => {
 		).toBeInTheDocument();
 	});
 
+	it("shows an open item's due day, saved as midnight UTC, as that day on a person's page", () => {
+		const state = createInitialCollaborationState();
+		const item = state.items.find((candidate) => candidate.id === "i1");
+		if (!item) throw new Error("Missing sample item");
+		item.due = "2026-11-06T00:00:00Z";
+		renderSession("/brain/people/p-ava", state);
+		expect(screen.getByText("Due Nov 6")).toBeInTheDocument();
+	});
+
 	it("marks a topic's people with the settings that hold everywhere", async () => {
 		const user = userEvent.setup();
 		const state = createInitialCollaborationState();
