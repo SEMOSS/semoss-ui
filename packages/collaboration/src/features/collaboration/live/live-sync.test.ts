@@ -121,6 +121,30 @@ it("ignoring someone in a topic saves that topic's exclude_topic rule", async ()
 	expect(onError).not.toHaveBeenCalled();
 });
 
+it("starring a suggested topic confirms it and saves it as the main topic", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const star = step({
+		type: "thread.link",
+		threadId: "th-geng-review",
+		topicId: "t-trip",
+		operation: "primary",
+	});
+	sync(star);
+	await sync.settled();
+	// the new primary demotes the old one on the server
+	expect(sent).toEqual([
+		'BrainLinkThreadTopic(threadId=["th-geng-review"], topicId=["t-trip"], primary=[true]);',
+	]);
+	expect(
+		star.next.threads.find((thread) => thread.id === "th-geng-review")
+			?.topicLinks,
+	).toMatchObject([
+		{ topicId: "t-geng", source: "confirmed", primary: false },
+		{ topicId: "t-trip", source: "confirmed", primary: true },
+	]);
+});
+
 it("a delete sends one BrainDeleteTopic operation", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());

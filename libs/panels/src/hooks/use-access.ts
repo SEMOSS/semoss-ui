@@ -1,8 +1,6 @@
-import { useCallback, useContext, useEffect } from "react";
-import { useStore } from "zustand";
 import type { Role } from "@semoss/sdk";
-import { AccessStoreContext } from "../contexts/access.context";
-import { getPermissionKey, type ResourceType } from "../types/access.types";
+import { useSessionPermissions } from "@semoss/sdk/react";
+import type { ResourceType } from "../types/access.types";
 
 /** Still resolving a resource's permission for the first time. */
 interface AccessLoadingState {
@@ -33,69 +31,69 @@ export type AccessState =
 	| AccessErrorState
 	| AccessReadyState;
 
-/** The host's permission cache, or a throw naming the missing provider. */
-export const useAccessStore = () => {
-	const store = useContext(AccessStoreContext);
-	if (!store) {
-		throw new Error(
-			"File panels must be mounted underneath an AccessStoreProvider",
-		);
-	}
-	return store;
-};
+/**
+ * What an insight's permission always is. Hoisted so `refresh` keeps its
+ * identity across renders, as the session's own `refresh` does.
+ */
+const refreshInsight = (): Promise<Role> => Promise.resolve("EDIT");
 
 /**
- * Resolve one resource's permission off the host's shared cache.
+ * Resolve one resource's permission off the session's shared cache.
  *
- * The cache is host-scoped, so every surface open on a resource sees the same
- * answer and a revalidation reaches all of them at once.
+ * Reads `Session.permissions` through `useSessionPermissions`, so every
+ * surface open on a resource — a panel, its chrome control, a host's own
+ * workbench — sees the same answer, a revalidation reaches all of them at
+ * once, and a sign in or out clears it. The panels need no provider for it.
  *
  * @param type - Kind of resource being accessed.
- * @param id - The resource's id.
+ * @param id - The resource's id. Empty only for a scope with no resource of
+ * its own, such as a user's own files, which callers ask about as an
+ * `INSIGHT`.
  * @return Loading, error, or ready state — `permission`/`readOnly` only once resolved.
  */
 export const useAccess = (type: ResourceType, id: string): AccessState => {
-	const store = useAccessStore();
-	const key = getPermissionKey(type, id);
-	const entry = useStore(store, (state) => state.permissions[key]);
-	const loadPermission = useStore(store, (state) => state.loadPermission);
-	const refreshPermission = useStore(
-		store,
-		(state) => state.refreshPermission,
-	);
+	const { status, permission, canEdit, refreshing, error, refresh } =
+		useSessionPermissions(type, id);
 
-	useEffect(() => {
-		if (!entry) {
-			void loadPermission(type, id).catch(() => undefined);
-		}
-	}, [loadPermission, entry, id, type]);
+	// no id, so the session reads nothing: an insight is always the user's
+	// to edit, as the session would answer for one with an id, and anything
+	// else fails closed
+	if (status === "IDLE") {
+		return type === "INSIGHT"
+			? {
+					status: "ready",
+					permission: "EDIT",
+					readOnly: false,
+					refreshing: false,
+					refresh: refreshInsight,
+				}
+			: {
+					status: "error",
+					error: "No resource to read a permission for",
+					refresh,
+				};
+	}
 
-	const refresh = useCallback(
-		() => refreshPermission(type, id),
-		[refreshPermission, id, type],
-	);
-
-	if (!entry || (entry.status === "LOADING" && !entry.permission)) {
+	if (status === "LOADING") {
 		return { status: "loading" };
 	}
 
-	if (entry.status === "ERROR" && !entry.permission) {
+	if (status === "ERROR" || !permission) {
 		return {
 			status: "error",
-			error: entry.error ?? "Failed to load resource access",
+			error: error ?? "Failed to load resource access",
 			refresh,
 		};
 	}
 
-	// entry.permission is defined here: SUCCESS always sets it, and the two
-	// branches above rule out LOADING/ERROR without a stale value.
-	const permission = entry.permission as Role;
+	// a known permission stays on screen while it is read again, and after
+	// that read fails, when `error` says why
 	return {
 		status: "ready",
 		permission,
-		readOnly: !(permission === "OWNER" || permission === "EDIT"),
-		refreshing: entry.status === "LOADING",
-		refreshError: entry.status === "ERROR" ? entry.error : undefined,
+		readOnly: !canEdit,
+		refreshing,
+		refreshError: error ?? undefined,
 		refresh,
 	};
 };

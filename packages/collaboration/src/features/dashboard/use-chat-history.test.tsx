@@ -85,6 +85,47 @@ it("retains newly created chats before the server list catches up and refreshes 
 	);
 });
 
+it("drops deleted chats at once, and a page read before the delete does not bring them back", async () => {
+	read.mockResolvedValue({
+		rooms: rows(0, 3),
+		hasMore: false,
+		nextOffset: 3,
+	});
+	const { result } = renderHook(useChatHistory);
+	await waitFor(() => expect(result.current.rooms).toHaveLength(3));
+	let finishStaleRead: (page: {
+		rooms: ReturnType<typeof rows>;
+		hasMore: boolean;
+		nextOffset: number;
+	}) => void = () => undefined;
+	read.mockReturnValueOnce(
+		new Promise((resolve) => {
+			finishStaleRead = resolve;
+		}),
+	);
+	act(() => result.current.refresh());
+	read.mockResolvedValue({
+		rooms: [...rows(0, 1), ...rows(2, 1)],
+		hasMore: false,
+		nextOffset: 2,
+	});
+	act(() =>
+		window.dispatchEvent(
+			new CustomEvent(ROOM_HISTORY_CHANGED, {
+				detail: { deletedRoomIds: ["room-1"] },
+			}),
+		),
+	);
+	const ids = () => result.current.rooms.map((room) => room.roomId);
+	expect(ids()).toEqual(["room-0", "room-2"]);
+	await act(async () =>
+		finishStaleRead({ rooms: rows(0, 3), hasMore: false, nextOffset: 3 }),
+	);
+	await waitFor(() => expect(read).toHaveBeenCalledTimes(3));
+	await waitFor(() => expect(result.current.isLoading).toBe(false));
+	expect(ids()).toEqual(["room-0", "room-2"]);
+});
+
 it("keeps a chat closed after refresh and allows reopening without deleting its record", async () => {
 	read.mockResolvedValue({
 		rooms: rows(0, 2),

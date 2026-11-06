@@ -1,3 +1,7 @@
+import {
+	mergeTranscript,
+	threadFromMessages,
+} from "@/features/messages/utils/thread-items";
 import type { AgentEvent, AgentRun } from "./agent-run-api";
 import * as api from "./agent-run-api";
 import { AgentTurnController } from "./agent-turn-controller";
@@ -358,6 +362,25 @@ it("honors a stop requested while RunAgent submission is in flight", async () =>
 	expect(api.cancelRun).toHaveBeenCalledWith("insight-1", "run-1");
 });
 
+it("keeps the message being sent when the room reconnects before its run starts", async () => {
+	const submitted = deferred<AgentRun>();
+	vi.mocked(api.startAgentRun).mockReturnValue(submitted.promise);
+	const instance = controller();
+	const sending = instance.send({ text: "Hello", files: [] });
+	await vi.advanceTimersByTimeAsync(0);
+	// a person's answer reconnects the room while the send is in flight
+	const earlier = run({ runId: "run-0", status: "COMPLETED", messages });
+	vi.mocked(api.listRoomRuns).mockResolvedValue([earlier]);
+	vi.mocked(api.readRun).mockResolvedValue(earlier);
+	await instance.reconnect();
+	expect(instance.getSnapshot().messages.at(-1)).toMatchObject({
+		role: "user",
+		parts: [{ type: "text", text: "Hello" }],
+	});
+	submitted.resolve(run({ status: "SUBMITTED" }));
+	await expect(sending).resolves.toBe(true);
+});
+
 it("cancels active descendants as well as their parent", async () => {
 	const child = run({ runId: "child-1", roomId: "child-room" });
 	vi.mocked(api.listRoomRuns).mockResolvedValue([run()]);
@@ -645,6 +668,58 @@ it("restores prior child runs with their parent identity", async () => {
 		}),
 	]);
 	expect(api.startAgentRun).not.toHaveBeenCalled();
+});
+
+it("keeps an earlier turn's sub-agent with that turn after a reload", async () => {
+	const earlier = run({
+		runId: "run-0",
+		status: "COMPLETED",
+		inputMessageId: "input-0",
+		finalOutputMessageId: "output-0",
+	});
+	const latest = run({
+		status: "COMPLETED",
+		inputMessageId: "input-1",
+		finalOutputMessageId: "output-1",
+		messages,
+	});
+	const helper = run({
+		runId: "child-0",
+		roomId: "child-room",
+		status: "COMPLETED",
+	});
+	vi.mocked(api.listRoomRuns).mockResolvedValue([earlier, latest]);
+	vi.mocked(api.readRun).mockResolvedValue(latest);
+	vi.mocked(api.listChildRuns).mockImplementation(async (_insight, id) =>
+		id === "run-0" ? [helper] : [],
+	);
+	const instance = controller();
+	await instance.reconnect();
+	// the room's saved messages, which hold every turn
+	const history = threadFromMessages([
+		{
+			messageId: "input-0",
+			type: "INPUT_TEXT",
+			parts: [{ type: "TEXT", text: "Research it" }],
+		},
+		{
+			messageId: "output-0",
+			type: "RESPONSE_TEXT",
+			parts: [{ type: "TEXT", text: "Researched" }],
+		},
+		...messages,
+	]);
+	expect(
+		mergeTranscript(history, instance.getSnapshot().messages).map(
+			(message) => message.id,
+		),
+	).toEqual([
+		"input-0",
+		"output-0",
+		"child-run:child-0",
+		"input-1",
+		"output-1",
+	]);
 });
 
 it("distinguishes durable cancellation from execution failure", async () => {

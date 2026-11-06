@@ -1,7 +1,8 @@
 # AGENTS.md - @semoss/panels
 
 The SEMOSS file panels: file *views*, the blueprints that mount them in a dock, three
-explorer variants, the MCP toolbox editor, and the resource-permission cache they read.
+explorer variants, the MCP toolbox editor, and `useAccess`, which reads a resource's
+permission from the SDK session.
 
 > **Inherits from:** [../../AGENTS.md](../../AGENTS.md) (root).
 > Load the applicable [root skills](../../skills/README.md), including the
@@ -32,8 +33,8 @@ src/
 ├── components/
 │   ├── views/  one component per file kind
 │   └── ...     the blueprint factory, the chrome control, explorers, `mcp/` editor UI
-├── contexts/   access provider context
-├── stores/     access store factory
+├── contexts/   the file explorer host context; the deprecated access provider
+├── stores/     the deprecated access store factory
 ├── hooks/      access, file-panel, explorer, and MCP hooks
 ├── utility/    file-panel and MCP utility functions
 ├── types/      access, file-panel, and MCP types
@@ -45,25 +46,29 @@ src/
 
 `src/vite/` is Node-side and is **not** in the barrel — it has its own `./vite` export subpath.
 
-## Access is provided by the host
+## Access comes from the session
 
-Panels call `useAccess(type, id)`, which reads whatever store the nearest `AccessStoreProvider`
-carries. The contract is structural (`StoreApi<PermissionCache>`) so a host can fold the cache into
-a bigger store:
-
-- **The client** mirrors the SDK session's `Session.permissions` into a `PermissionCache` store
-  (`createSessionAccessStore` in its `stores/session/`), so its workbenches and the panels share
-  one cache that is **cleared on every sign in and out** — without that, one user's `OWNER`
-  survives into the next user's session in the same tab. Once the panels read
-  `Session.permissions` themselves, the client drops that bridge.
-- **A host with no session** (the playground, a test) mounts `createAccessStore()`.
+Panels call `useAccess(type, id)`, which reads the SDK session's `Session.permissions` through
+`useSessionPermissions` (`@semoss/sdk/react`) and maps it onto the panels' `loading` / `error` /
+`ready` union. A host wires nothing: the panels, the host's own workbenches and pages share one
+read per resource, and `Session` clears every permission whenever it signs in or out (a 302
+included, once the page uses `Session`), so one user's `OWNER` never survives into the next
+user's session in the same tab. To hand the panels a permission a route already read, call
+`Session.permissions.sync(type, id, permission)`; a test gives views its own session with
+`<SessionProvider session={new SessionStore({ config: new ConfigStore() })}>`.
 
 Worth knowing when reasoning about cost: an `INSIGHT` permission resolves to `"EDIT"` with no
-network call at all.
+network call at all. A scope with no resource of its own (a user's own files) asks as an
+`INSIGHT` with an empty id and is editable without asking the session; a project or engine with
+an empty id fails closed.
 
-`file-explorer-control.tsx` reads `state.permissions[key]` directly rather than through
-`useAccess`. That is deliberate — a chrome control renders outside its panel's subtree, so it
-cannot reuse the access the panel already resolved.
+`file-explorer-control.tsx` calls `useSessionPermissions` itself rather than `useAccess`, because
+a chrome control renders outside its panel's subtree, so it cannot reuse the access the panel
+already resolved. Both share the session's one read.
+
+`AccessStoreProvider`, `createAccessStore`, `createPermissionCache` and `PermissionCache` are
+still exported, **deprecated**, for hosts outside this repository: the provider only renders its
+children and nothing reads a store made by the others. Do not use them in new code.
 
 ## A host can add right-click entries to the explorer
 

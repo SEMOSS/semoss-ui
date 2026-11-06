@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { Navigate } from "react-router";
 import type { SearchKind } from "../api/collaboration-search";
+import { useRecordIds } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { MissingSavedRecord } from "./missing-saved-record";
 
@@ -18,6 +20,7 @@ export function SavedRecordBoundary({
 	children,
 }: SavedRecordBoundaryProps) {
 	const { state } = useCollaborationSession();
+	const { localId } = useRecordIds();
 	const records =
 		kind === "thread"
 			? state.threads
@@ -25,5 +28,15 @@ export function SavedRecordBoundary({
 				? state.people
 				: state.topics;
 	if (records.some((row) => row.id === id)) return children;
+	const local = localId(id);
+	// a record made on this page keeps its own id, which its views read from the route
+	if (records.some((row) => row.id === local))
+		return (
+			<Navigate
+				to={`../${encodeURIComponent(local)}`}
+				relative="path"
+				replace
+			/>
+		);
 	return <MissingSavedRecord key={`${kind}:${id}`} kind={kind} id={id} />;
 }

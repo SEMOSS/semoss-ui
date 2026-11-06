@@ -1,35 +1,34 @@
-import { createContext, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { StoreApi } from "zustand";
 import type { PermissionCache } from "../types/access.types";
 
 /**
- * The store a host exposes its resource permissions through.
+ * A store holding a standalone permission cache, as `createAccessStore`
+ * makes.
  *
- * Structural on purpose: the client satisfies it with a mirror of the SDK
- * session's permissions, and a host with no session at all can mount a store
- * that only holds the cache.
+ * @deprecated The file panels read the SDK session's `Session.permissions`;
+ * nothing in them reads this store.
  */
 export type AccessStore = StoreApi<PermissionCache>;
 
-/** The nearest host's permission cache. */
-export const AccessStoreContext = createContext<AccessStore | undefined>(
-	undefined,
-);
-
+/** Props for the deprecated {@link AccessStoreProvider}. */
 interface AccessStoreProviderProps {
-	/** The host's store, which must satisfy `PermissionCache`. */
-	store: AccessStore;
+	/** Ignored: the file panels read the session's permissions instead. */
+	store?: AccessStore;
 	children: ReactNode;
 }
 
-/** Provide a host's permission cache to the file panels. */
-export function AccessStoreProvider({
-	store,
-	children,
-}: AccessStoreProviderProps) {
-	return (
-		<AccessStoreContext.Provider value={store}>
-			{children}
-		</AccessStoreContext.Provider>
-	);
+/**
+ * Renders its children, and nothing else.
+ *
+ * The file panels used to read permissions from the store given here. They now
+ * read the SDK session's `Session.permissions`, which every view shares and a
+ * sign in or out clears, so a host needs no provider and a store given here is
+ * never read.
+ *
+ * @deprecated Remove it. To hand the panels a permission already read, call
+ * `Session.permissions.sync(type, id, permission)` from `@semoss/sdk`.
+ */
+export function AccessStoreProvider({ children }: AccessStoreProviderProps) {
+	return children;
 }
