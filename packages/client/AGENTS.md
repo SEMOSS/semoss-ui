@@ -658,9 +658,9 @@ read that list:
   downloads with `useSessionInsight` (all from `@semoss/sdk/react`); the client keeps no copy of
   either store. `usePlatformTheme` (`hooks/use-platform-theme.ts`) lays the client's theme
   defaults under the config's theme. Workbenches seed a route's permission with
-  `Session.permissions.sync` and `refresh`, and `stores/session/session-access.store.ts` mirrors
-  `Session.permissions` into the file panels' `AccessStoreProvider` until `@semoss/panels` reads
-  the session itself.
+  `Session.permissions.sync` and `refresh`; the file panels' `useAccess` reads the same
+  `Session.permissions`, so a panel and a workbench on one resource share one read and a sign in
+  or out clears both. Mount no `AccessStoreProvider`: it is deprecated and reads nothing.
 - **Other application state** is split among the existing stores; there is no `stores/root`,
   `stores/monolith`, or `useRootStore` entry to extend.
 - **Domain state** uses its existing context/store contract. See the
@@ -691,8 +691,6 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
 ### Be Cautious With
 
 - **`vite.config.ts`** — dev server, build, and test configuration.
-- **`stores/session/`** — the bridge from the SDK session's permissions to the file panels;
-  every workbench and panel on a resource reads one cache through it.
 
 ### Known Gotchas
 

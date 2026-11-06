@@ -1,7 +1,5 @@
 import { clientResources, I18nBuilder, I18nextProvider } from "@semoss/i18n";
-import { AccessStoreProvider } from "@semoss/panels";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
-import { createSessionAccessStore } from "@/stores/session/session-access.store";
 import { AppWrapper } from "./app-wrapper";
 
 // The client isn't localized yet, but shared components (file explorer,
@@ -16,9 +14,11 @@ const i18n = i18nBuilder.i18n;
 // instead of raw keys.
 export const i18nReady = i18nBuilder.ready;
 
-// the file panels read the session's permissions through this
-const accessStore = createSessionAccessStore();
-
+/**
+ * The client's root. The file panels need no provider here: they read
+ * resource permissions from the SDK's `Session.permissions`, as the
+ * workbenches do.
+ */
 export const App = () => {
 	//  NCRT ASK - (https://play.semoss.org/ncrt/SemossWeb/packages/client/dist/#!/)
 	if (window.location.href.includes("client/dist/#!/")) {
@@ -29,16 +29,14 @@ export const App = () => {
 	}
 
 	return (
-		<AccessStoreProvider store={accessStore}>
-			<I18nextProvider i18n={i18n}>
-				<ThemeProvider
-					defaultTheme="light"
-					storageKey="smss-ui-theme-client"
-				>
-					<AppWrapper />
-					<Toaster />
-				</ThemeProvider>
-			</I18nextProvider>
-		</AccessStoreProvider>
+		<I18nextProvider i18n={i18n}>
+			<ThemeProvider
+				defaultTheme="light"
+				storageKey="smss-ui-theme-client"
+			>
+				<AppWrapper />
+				<Toaster />
+			</ThemeProvider>
+		</I18nextProvider>
 	);
 };
