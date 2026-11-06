@@ -223,15 +223,6 @@ export class ToolStore {
 		part: PixelMessageToolCallPart | null;
 	} = { message: null, part: null };
 
-	/**
-	 * Tool result data — MCP tools land in a follow-up InputMessage; server
-	 * tools land in the same ResponseMessage as the call.
-	 */
-	private toolResult: {
-		message: InputMessageStore | ResponseMessageStore | null;
-		part: PixelMessageToolResultPart | null;
-	} = { message: null, part: null };
-
 	constructor(room: RoomStore, toolId: string) {
 		this.room = room;
 
@@ -301,12 +292,6 @@ export class ToolStore {
 			} else {
 				this.status = "SUCCESS";
 			}
-
-			// update the tool result information
-			this.toolResult = {
-				message: message,
-				part,
-			};
 		}
 	};
 

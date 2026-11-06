@@ -19,7 +19,7 @@ const RAIL_CHROME_WIDTH = 8 + 8 + 8 + 40;
  * @param state - The Workspace's dock state.
  * @return The content's width, or null when it should fill.
  */
-export const getWorkbenchFitWidth = (state: WorkbenchState): number | null => {
+const getWorkbenchFitWidth = (state: WorkbenchState): number | null => {
 	if (hasMainAreaTabs(state.layout)) return null;
 	const rail = state.layout.borders.left;
 	if (rail.panelIds.length === 0) return null;

@@ -104,15 +104,6 @@ export const isFolderToolName = (name: string): name is FolderToolName =>
 	ALL_FOLDER_TOOLS.includes(name);
 
 /**
- * Whether a folder tool changes the folder rather than only reading it.
- *
- * @param name - A folder tool.
- * @return True for writes, edits, moves, deletions, and new folders.
- */
-export const isFolderChangeTool = (name: FolderToolName): boolean =>
-	!READ_TOOLS.has(name);
-
-/**
  * How a folder tool runs when nothing says otherwise: reading on its own, and
  * every change once the user approves it.
  *
@@ -503,7 +494,7 @@ const now = (): string => new Date().toISOString();
  * @param error - What was thrown.
  * @return The explanation.
  */
-export const describeFolderError = (error: unknown): string =>
+const describeFolderError = (error: unknown): string =>
 	getErrorMessage(error, "") || "The operation failed.";
 
 /**

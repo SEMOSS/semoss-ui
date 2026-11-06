@@ -1,9 +1,10 @@
+import { act, renderHook } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import type { ThemeMap } from "@semoss/shared";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
-import { getWorkbenchFitWidth } from "./use-workbench-fit-width";
+import { useWorkbenchFitWidth } from "./use-workbench-fit-width";
 
 vi.mock("@semoss/sdk/react", () => ({
 	console: vi.fn(),
@@ -21,26 +22,35 @@ const createRoom = () =>
 		panelComponents: ROOM_PANEL_COMPONENTS,
 	});
 
-const fitWidth = (room: RoomStore) =>
-	getWorkbenchFitWidth(room.workbench.getState());
+const renderFitWidth = (room: RoomStore) =>
+	renderHook(() => useWorkbenchFitWidth(room));
 
 test("a collapsed rail fits the rail alone", () => {
-	expect(fitWidth(createRoom())).toBe(64);
+	const { result } = renderFitWidth(createRoom());
+	expect(result.current).toBe(64);
 });
 
 test("an open rail panel adds its width, and resizing it follows", () => {
 	const room = createRoom();
-	room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	const { result } = renderFitWidth(room);
+	act(() => {
+		room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	});
 	// the rail opens to the panel's own minimum width when it asks for more
 	const { size } = room.workbench.getState().layout.borders.left;
-	expect(fitWidth(room)).toBe(64 + size);
+	expect(result.current).toBe(64 + size);
 
-	room.workbench.getState().layout.actions.resizeBorder("left", 420);
-	expect(fitWidth(room)).toBe(64 + 420);
+	act(() => {
+		room.workbench.getState().layout.actions.resizeBorder("left", 420);
+	});
+	expect(result.current).toBe(64 + 420);
 });
 
 test("a tab in the main area fills", () => {
 	const room = createRoom();
-	room.openSidebarPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
-	expect(fitWidth(room)).toBeNull();
+	const { result } = renderFitWidth(room);
+	act(() => {
+		room.openSidebarPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
+	});
+	expect(result.current).toBeNull();
 });
