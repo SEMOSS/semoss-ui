@@ -77,7 +77,7 @@ export const countTeamChanges = (edits: TeamEdits): number =>
 	);
 
 /** The permission batches to save, and how the review lists their changes */
-export interface TeamBatches {
+interface TeamBatches {
 	/** A batch for each list that changes, members first */
 	batches: PermissionBatch[];
 	/** The list each batch changes, in the same order */

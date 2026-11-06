@@ -18,7 +18,7 @@ import {
 import type { MailFolder } from "./mail.types";
 
 /** Props for {@link MailFolderPicker}. */
-export interface MailFolderPickerProps {
+interface MailFolderPickerProps {
 	/** The mailbox's folders, each right after the one it sits in. */
 	folders: MailFolder[];
 	/** The id of the folder being read. */

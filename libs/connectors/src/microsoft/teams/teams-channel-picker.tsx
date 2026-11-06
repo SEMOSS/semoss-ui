@@ -34,7 +34,7 @@ import type { TeamsChannelChoice } from "./use-teams-channel-choice";
 const PAGE_SIZE = 50;
 
 /** Props for {@link TeamsChannelPicker}. */
-export interface TeamsChannelPickerProps {
+interface TeamsChannelPickerProps {
 	/** The location currently shown by the viewer. */
 	choice: TeamsChannelChoice;
 	/** Reconnects Microsoft when browsing requires a new sign-in. */

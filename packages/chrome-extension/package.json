@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@semoss/utility": "workspace:*",
-    "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

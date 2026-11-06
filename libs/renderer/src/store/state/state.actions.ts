@@ -38,7 +38,6 @@ export enum ActionMessages {
 	 * pure TypeScript identifiers and have been updated to the new
 	 * "Notebook" vocabulary.
 	 */
-	SET_NOTEBOOK = "SET_QUERY",
 	NEW_NOTEBOOK = "NEW_QUERY",
 	NEW_CELL = "NEW_CELL",
 	MOVE_CELL = "MOVE_CELL",
@@ -53,7 +52,6 @@ export enum ActionMessages {
 	RUN_CELL = "RUN_CELL",
 	RUN_NOTEBOOK = "RUN_QUERY",
 	DISPATCH_EVENT = "DISPATCH_EVENT",
-	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 	MODIFY_VARIABLE = "MODIFY_VARIABLE",
 }
@@ -90,7 +88,7 @@ export type Actions =
 /**
  * All
  */
-export interface Action {
+interface Action {
 	message: string;
 	payload: Record<string, unknown>;
 }

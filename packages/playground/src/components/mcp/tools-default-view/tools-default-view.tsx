@@ -21,7 +21,7 @@ import type { ToolStore } from "@/stores/tool/tool.store";
 import { getToolEngineId, isAskExecutionMode } from "@/utility/mcp-utils";
 import { ToolField } from "./tool-field";
 
-export interface ToolsDefaultViewProps {
+interface ToolsDefaultViewProps {
 	/** Room */
 	room: RoomStore;
 

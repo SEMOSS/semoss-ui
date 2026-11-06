@@ -4,9 +4,13 @@ import { useCallback, useSyncExternalStore } from "react";
  * Which pictures an email shows without being asked: none (`ask`), the ones
  * it embeds, which come from the mailbox, or those and the ones on the web.
  */
-export type MailPicturePreference = "ask" | "embedded" | "all";
+type MailPicturePreference = "ask" | "embedded" | "all";
 
-/** Where the choice is kept; the version changes if its values ever do. */
+/**
+ * Where the choice is kept; the version changes if its values ever do.
+ *
+ * @public Used by specs through a dynamic import.
+ */
 export const MAIL_PICTURE_PREFERENCE_KEY = "semoss.connectors.mail.pictures.v1";
 
 const PREFERENCES: readonly MailPicturePreference[] = [
@@ -75,6 +79,7 @@ const subscribe = (listener: () => void): (() => void) => {
  * Change the choice for every email shown, and keep it for next time.
  *
  * @param preference - The new choice.
+ * @public Used by specs through a dynamic import.
  */
 export const setMailPicturePreference = (
 	preference: MailPicturePreference,
@@ -89,7 +94,7 @@ export const setMailPicturePreference = (
 };
 
 /** What {@link useMailPicturePreference} returns. */
-export interface MailPicturePreferenceState {
+interface MailPicturePreferenceState {
 	preference: MailPicturePreference;
 	setPreference: (preference: MailPicturePreference) => void;
 }

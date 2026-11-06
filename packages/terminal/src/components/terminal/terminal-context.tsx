@@ -18,17 +18,14 @@ import type {
 	TerminalView,
 } from "../../types";
 
-export interface SubmitToConsoleOptions {
+interface SubmitToConsoleOptions {
 	/** What appears as the "(Px) > ..." line in the transcript. */
 	displayInput: string;
 	/** Which persona to label the transcript entry with. */
 	context: ConsoleContext;
 }
 
-export type SubmitToConsoleFn = (
-	pixel: string,
-	opts: SubmitToConsoleOptions,
-) => void;
+type SubmitToConsoleFn = (pixel: string, opts: SubmitToConsoleOptions) => void;
 
 interface SaveModalState {
 	open: boolean;

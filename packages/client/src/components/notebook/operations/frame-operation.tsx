@@ -10,7 +10,7 @@ import {
 	TableRow,
 } from "@semoss/ui/next";
 
-export interface FrameOperationProps {
+interface FrameOperationProps {
 	/** Output returned that can render a preview of the frame */
 	output: {
 		/** Name of the frame  */

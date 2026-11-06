@@ -46,7 +46,7 @@ import { MetaModelConnections } from "./metamodel-editor-jdbc";
 const hasParameterizedValue = (str: string) => /<([^>]+)>/.test(str);
 const CONSOLE_POLL_INTERVAL_MS = 1000;
 
-export interface ParsedResult {
+interface ParsedResult {
 	headers: string[];
 	dataTypes: Record<string, string>;
 	cleanHeaders: string[];

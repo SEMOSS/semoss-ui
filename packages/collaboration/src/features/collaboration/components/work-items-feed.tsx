@@ -23,12 +23,10 @@ import {
 	Small,
 } from "@semoss/ui/next";
 import { channelMeta } from "../channel-meta";
-import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import type { Channel, WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { WorkItemCard } from "./work-item-card";
-import { WorkSearch } from "./work-search";
 
 const STATUS_FILTERS = [
 	{ value: "needs_me", label: "Needs you", view: "needs_me" },
@@ -38,7 +36,7 @@ const STATUS_FILTERS = [
 	{ value: "snoozed", label: "Snoozed", view: "snoozed" },
 ] as const;
 
-export type WorkStatusFilter = (typeof STATUS_FILTERS)[number]["value"];
+type WorkStatusFilter = (typeof STATUS_FILTERS)[number]["value"];
 
 interface WorkFeedOptions {
 	/** Limit every status, source count, and action to this topic when present. */
@@ -139,7 +137,7 @@ export function useWorkFeed({
 	};
 }
 
-export interface WorkFeed {
+interface WorkFeed {
 	topicId?: string;
 	query: string;
 	setQuery: Dispatch<SetStateAction<string>>;
@@ -160,21 +158,6 @@ export interface WorkFeed {
 	items: WorkItem[];
 	viewLabel: string;
 	total: (view: (typeof STATUS_FILTERS)[number]["view"]) => number;
-}
-
-/** Shared, explicitly scoped work filters and rows with existing item commands. */
-export function WorkItemsFeed(options: WorkFeedOptions) {
-	const feed = useWorkFeed(options);
-	return (
-		<div>
-			<div className="flex flex-wrap items-center gap-3 border-border border-b px-4 py-3 md:px-5">
-				<WorkSearch feed={feed} />
-				<WorkRefreshStatus />
-				<WorkFilterMenu feed={feed} className="ml-auto" />
-			</div>
-			<WorkItemsList feed={feed} />
-		</div>
-	);
 }
 
 /** One menu for status, order, and source. */

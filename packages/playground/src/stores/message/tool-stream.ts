@@ -10,7 +10,7 @@ import type { ResponseMessageStore } from "./response-message.store";
  *   - args chunks:    `{ index, function: { arguments: "<JSON delta>" } }`
  *   - closing chunk:  `{ finish_reason }`
  */
-export interface ToolStreamChunkData {
+interface ToolStreamChunkData {
 	index?: number;
 	id?: string;
 	type?: string;

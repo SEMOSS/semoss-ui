@@ -67,7 +67,7 @@ const ENGINE_TARGETS = new Set([
 /** A detail line under the name */
 const DETAIL_CLASS = "truncate text-muted-foreground text-xs";
 
-export interface AuditTargetProps {
+interface AuditTargetProps {
 	/**
 	 * The event: its stored TARGET_TYPE, TARGET_ID and TARGET_NAME, the catalog's
 	 * TARGET_DISPLAY_NAME, TARGET_ENGINE_TYPE and TARGET_ENGINE_SUBTYPE, and the

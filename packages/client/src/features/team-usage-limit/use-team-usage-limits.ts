@@ -8,7 +8,7 @@ import { getErrorMessage } from "@semoss/utility/error";
 import { getTeamLimitKey } from "./team-usage-limit";
 
 /** The teams' access on a model, with their limits, and what the user may change */
-export interface TeamUsageLimits {
+interface TeamUsageLimits {
 	/**
 	 * Each team's access on the model, with its limit, by `getTeamLimitKey`;
 	 * null until it is read, and after a read fails

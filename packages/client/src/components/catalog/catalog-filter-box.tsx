@@ -28,7 +28,7 @@ import {
 	isProjectType,
 } from "@/utility/catalog";
 
-export interface CatalogFilterboxProps {
+interface CatalogFilterboxProps {
 	/** Determined to get filter keys for Engines/App */
 	type: Engine["engine_type"] | Project["project_type"];
 	/**

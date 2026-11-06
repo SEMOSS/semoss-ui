@@ -8,7 +8,7 @@ import { initReactI18next } from "react-i18next";
 import { getLanguageDirection, LANGUAGES } from "./constants";
 import type { LazyResources } from "./resources/types";
 
-export const defaultNS = "common";
+const defaultNS = "common";
 
 export interface I18nBuilderOptions {
 	/**

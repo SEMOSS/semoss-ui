@@ -1,6 +1,6 @@
 import { Spinner } from "@semoss/ui/next";
 
-export interface CatalogGridProps {
+interface CatalogGridProps {
 	/** Grid style - LIST for single column, CARD for multi-column grid */
 	variant?: "LIST" | "CARD";
 	/** Child elements to render in the grid */

@@ -42,7 +42,7 @@ const OUTCOME_DISPLAY: Record<DatabaseTransactionOutcome, OutcomeDisplay> = {
 };
 
 /** Props for {@link DatabaseTransactionOutcomeIcon}. */
-export interface DatabaseTransactionOutcomeIconProps {
+interface DatabaseTransactionOutcomeIconProps {
 	/** What the script left in the database, and the backend's message about it. */
 	transaction: DatabaseTransactionSummary;
 }

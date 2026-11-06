@@ -23,7 +23,7 @@ const ALL_VALUE = "__all__";
 /** The chosen item's highlight */
 const CHOSEN_CLASS = "bg-primary/10 data-[selected=true]:bg-primary/15";
 
-export interface AgentRunFilterSelectProps<T> {
+interface AgentRunFilterSelectProps<T> {
 	/** What the filter chooses, such as "Agent", shown before the choice */
 	label: string;
 	/** The choice that clears the filter, such as "All agents" */

@@ -11,7 +11,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 
-export interface AccessViewHeaderProps {
+interface AccessViewHeaderProps {
 	/** The view's title, such as "Bulk Access Management" */
 	title: string;
 	/** What the view is for, under the title */

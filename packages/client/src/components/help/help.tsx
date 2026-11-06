@@ -11,7 +11,7 @@ import {
 import { formatToDataTestId } from "@semoss/utility/text";
 import { useConfig } from "@/hooks";
 
-export interface HelpProps {
+interface HelpProps {
 	/** Classes for the sidebar button that opens the menu */
 	className?: string;
 	/** Called when the menu opens or closes */

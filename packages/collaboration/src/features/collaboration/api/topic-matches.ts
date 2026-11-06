@@ -64,7 +64,7 @@ export interface TopicMatchChange {
 	toTopicId?: string;
 }
 /** A finished preview: how many conversations were scored and the ones that fit, best first. */
-export type TopicMatchPreview = z.infer<typeof previewSchema>;
+type TopicMatchPreview = z.infer<typeof previewSchema>;
 /** What each choice did; a skipped one changed since the check and was left as it is. */
 export type TopicMatchApplyResult = z.infer<typeof applySchema>;
 

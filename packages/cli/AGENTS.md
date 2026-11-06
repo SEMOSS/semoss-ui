@@ -32,10 +32,8 @@ Run from `packages/cli`, or use `pnpm --filter @semoss/cli build` from the root.
 Run the built CLI via its bin entry (`./bin/run.js`); oclif discovers commands from
 `./dist/commands`.
 
-**Packaging caveat:** `package.json` currently points `exports` to `./lib/index.js`, while
-its `files`, `types`, and oclif command paths use `dist/`. There is no local `lib/index.js`.
-Do not assume the library import entry works because the CLI bin works; this mismatch needs
-a separately scoped package-config fix and publish validation.
+The library entry (`exports`), `types`, `files`, and oclif command paths all point at `dist/`,
+so build before importing the package or publishing it.
 
 ## Structure
 
@@ -44,7 +42,6 @@ A Node CLI (no React, no `pages/`):
 | Folder / file | Purpose |
 |---------------|---------|
 | `src/commands/` | One oclif `Command` per file (`init.ts`, `deploy.ts`) |
-| `src/constants.ts` | Shared constants |
 | `src/types.ts` | Shared TypeScript types |
 | `src/index.ts` | Package entry |
 | `bin/` | Executable entry (`run.js`) |

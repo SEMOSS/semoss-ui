@@ -83,7 +83,7 @@ function quotedCompletionText(
 	return parts.join(`${quote}, {}).get(${quote}`);
 }
 
-export interface AutomationPythonEditorProps {
+interface AutomationPythonEditorProps {
 	value: string;
 	onChange: (value: string) => void;
 	scopeEntries: AutomationScopeEntry[];

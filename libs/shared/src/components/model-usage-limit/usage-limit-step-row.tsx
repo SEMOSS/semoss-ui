@@ -68,7 +68,7 @@ const renderRuleMeters = (
 );
 
 /** Props for {@link UsageLimitStepRow}. */
-export interface UsageLimitStepRowProps {
+interface UsageLimitStepRowProps {
 	/** The step */
 	step: UsageLimitPathStep;
 	/** What a step after the limit applied says, such as "Not reached: the Data Team Limit applies" */

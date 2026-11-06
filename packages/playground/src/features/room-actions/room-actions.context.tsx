@@ -12,7 +12,7 @@ import { DownloadConversationDialog } from "./download-conversation-dialog";
 import { type RoomActions, useRoomActions } from "./use-room-actions";
 
 /** One room's actions, shared by its header and the composer's slash menu. */
-export interface RoomActionsContextValue {
+interface RoomActionsContextValue {
 	/** The room the actions act on. */
 	room: RoomStore;
 	/** Favorite, rename, and delete. */
@@ -42,7 +42,7 @@ const RoomActionsContext = createContext<RoomActionsContextValue | null>(null);
 export const useRoomActionsContext = (): RoomActionsContextValue | null =>
 	useContext(RoomActionsContext);
 
-export interface RoomActionsProviderProps {
+interface RoomActionsProviderProps {
 	/** The room the actions act on. */
 	room: RoomStore;
 	/** The room page, whose header and composer use the actions. */

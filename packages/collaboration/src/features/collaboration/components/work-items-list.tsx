@@ -39,7 +39,7 @@ interface Step {
 	assigneeName?: string;
 }
 
-export interface Item {
+interface Item {
 	id: string;
 	title: string;
 	proposed: boolean;

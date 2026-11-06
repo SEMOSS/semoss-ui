@@ -1,7 +1,7 @@
 import { z } from "@semoss/ui/next";
 
 /** The guardrail type the Jev policy guardrail is created with. */
-export const JEV_POLICY_GUARDRAIL_TYPE = "EMBEDDED_JEV_POLICY";
+const JEV_POLICY_GUARDRAIL_TYPE = "EMBEDDED_JEV_POLICY";
 
 /** The model subtype a Jev policy guardrail's judge must have. */
 export const JEV_JUDGE_SUBTYPE = "TYPESAFE";

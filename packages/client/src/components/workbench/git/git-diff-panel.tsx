@@ -25,7 +25,7 @@ import { GitDiffControl, GitDiffEditor } from "@/components/git";
 import { WORKBENCH_EVENTS } from "@/stores/workbench";
 import { type GitPanelScopeParams, gitFileScope } from "./git-panel.types";
 
-export interface GitDiffParams extends GitPanelScopeParams {
+interface GitDiffParams extends GitPanelScopeParams {
 	name: string;
 	path: string;
 	side: GitDiffSide | "COMMIT";

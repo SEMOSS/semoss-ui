@@ -24,7 +24,7 @@ import {
 } from "@/components/import/model/router-config-field";
 import { useSession } from "@/hooks";
 
-export interface EngineRouterSettingsProps {
+interface EngineRouterSettingsProps {
 	/** Id of the model router engine */
 	engineId: string;
 

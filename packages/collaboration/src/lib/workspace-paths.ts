@@ -23,9 +23,3 @@ export function newRoomPath(agentId?: string, modelId?: string) {
 	const query = search.toString();
 	return query ? `/?${query}` : "/";
 }
-
-/** Lists all sessions, optionally filtered to one agent. */
-export function sessionsPath(agentId?: string) {
-	if (!agentId) return "/room";
-	return `/room?${new URLSearchParams({ agentId })}`;
-}

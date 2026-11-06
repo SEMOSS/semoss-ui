@@ -1,6 +1,6 @@
 import { threadPath } from "@/lib/workspace-paths";
 
-export type ThreadMenuArea = "work" | "brain";
+type ThreadMenuArea = "work" | "brain";
 
 /** Build a thread link without losing the deployment path or query string. */
 export function threadUrl(

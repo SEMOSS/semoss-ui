@@ -1,7 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import {
 	dashboardStorageKey,
-	moveWidget,
 	presetWidgets,
 	readDashboardPreferences,
 	saveDashboardPreferences,
@@ -52,11 +51,16 @@ it("keeps presets, visibility, and reorder changes reversible until Save", () =>
 	expect(result.current.draft.presets).toEqual([]);
 	expect(result.current.preferences.widgets[0].kind).toBe("day");
 	act(() => result.current.begin());
+	const { widgets } = result.current.draft;
 	act(() =>
 		result.current.setWidgets(
-			moveWidget(result.current.draft.widgets, "email", "day").map(
-				(widget) => ({ ...widget, visible: widget.kind !== "agents" }),
-			),
+			[
+				...widgets.filter((widget) => widget.id === "email"),
+				...widgets.filter((widget) => widget.id !== "email"),
+			].map((widget) => ({
+				...widget,
+				visible: widget.kind !== "agents",
+			})),
 		),
 	);
 	act(() => result.current.savePreset("Mail first"));

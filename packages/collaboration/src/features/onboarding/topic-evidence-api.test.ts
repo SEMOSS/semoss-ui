@@ -3,7 +3,6 @@ import type { InsightActions } from "@/lib/pixel";
 import { makeEvidence, wire } from "./topic-evidence.test-fixtures";
 import {
 	changeTopicReview,
-	getTopicConversationContext,
 	getTopicEvidence,
 	topicReviewChangeSchema,
 } from "./topic-evidence-api";
@@ -112,34 +111,6 @@ describe("onboarding evidence transport", () => {
 				.revision,
 		).toBe(2);
 		expect(session.run.mock.calls[1][0]).toContain('operationId=["op-1"]');
-	});
-
-	it("reads only five clean-text messages for the selected conversation", async () => {
-		const context = {
-			threadId: "thread-1",
-			source: "email",
-			messages: [
-				{
-					id: "m-1",
-					at: "2023-10-12T09:00:00Z",
-					text: "Certificate renewal",
-				},
-			],
-			hiddenCount: 1,
-			unavailableCount: 0,
-			hasMore: true,
-		};
-		const session = actionsFor(context);
-		expect(
-			(await getTopicConversationContext(session.actions, "thread-1"))
-				.messages[0].text,
-		).toBe("Certificate renewal");
-		expect(session.run.mock.calls[0][0]).toBe(
-			'BrainGetThreadMessages(threadId=["thread-1"], limit=[5]);',
-		);
-		await expect(
-			getTopicConversationContext(session.actions, "another-thread"),
-		).rejects.toThrow("different conversation");
 	});
 
 	it.each([

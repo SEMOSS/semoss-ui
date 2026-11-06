@@ -22,7 +22,7 @@ const EXECUTION_LABELS: Record<string, string> = {
 	disabled: "off",
 };
 
-export interface MCPToolListProps {
+interface MCPToolListProps {
 	/** Tools after the search filter has been applied */
 	tools: EditorTool[];
 

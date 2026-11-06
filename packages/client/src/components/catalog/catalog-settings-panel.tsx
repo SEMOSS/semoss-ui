@@ -12,7 +12,7 @@ export interface CatalogSettingsPanelSection extends CatalogSettingsSection {
 	element: React.ReactNode;
 }
 
-export interface CatalogSettingsPanelProps {
+interface CatalogSettingsPanelProps {
 	/** Sections the viewer can open, in order. The first one opens by default. */
 	sections: CatalogSettingsPanelSection[];
 	/** Accessible name for the section nav */

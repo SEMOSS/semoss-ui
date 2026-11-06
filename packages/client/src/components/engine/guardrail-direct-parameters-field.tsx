@@ -81,7 +81,7 @@ const structuredValueHelp = (
 	};
 };
 
-export interface GuardrailDirectParametersFieldProps {
+interface GuardrailDirectParametersFieldProps {
 	/** Fixed values currently held for this check. */
 	value: GuardrailDirectParamFormValue[];
 

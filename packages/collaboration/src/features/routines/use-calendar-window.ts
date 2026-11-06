@@ -13,7 +13,7 @@ const pageSchema = z.object({
 	events: z.array(z.unknown()),
 });
 
-export interface CalendarWindow {
+interface CalendarWindow {
 	status: "LOADING" | "SUCCESS" | "ERROR";
 	/** Every event read, with hasMore when the pages ran out first. */
 	listing: { events: unknown[]; hasMore: boolean } | null;

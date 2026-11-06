@@ -29,7 +29,7 @@ import { ConnectorViewerStatus } from "./connector-viewer-status";
 const INSIGHT_MODE: FileMode = { type: "INSIGHT" };
 
 /** Props for {@link ConnectorFileExplorer}. */
-export interface ConnectorFileExplorerProps {
+interface ConnectorFileExplorerProps {
 	/**
 	 * Where the files come from, such as a drive's adapter. Keep its identity
 	 * stable: a new adapter starts the explorer over.

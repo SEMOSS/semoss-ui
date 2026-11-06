@@ -29,7 +29,7 @@ export const RULE_COLUMN_CLASSES =
 	"sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_2rem] sm:items-start";
 
 /** Props for {@link SqlPolicyRuleRow}. */
-export interface SqlPolicyRuleRowProps {
+interface SqlPolicyRuleRowProps {
 	/** The policy's list of rules in the form. */
 	name: PolicyField;
 	/** The rule's place in the list. */

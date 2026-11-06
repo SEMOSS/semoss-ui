@@ -2,7 +2,7 @@ import { Spinner } from "@semoss/ui/next";
 import type { GroupManager } from "@/api/teams";
 import { AccessIdentity } from "@/features/bulk-access-management/access-identity";
 
-export interface TeamPeopleManagersProps {
+interface TeamPeopleManagersProps {
 	/** The team's managers */
 	managers: GroupManager[];
 	/** Whether the managers are still being read */

@@ -4,7 +4,7 @@ import type { ToolViewCall } from "@semoss/shared";
 import { Alert, AlertDescription, AlertTitle, Spinner } from "@semoss/ui/next";
 
 /** Props for {@link ToolCallNotice}. */
-export interface ToolCallNoticeProps {
+interface ToolCallNoticeProps {
 	/** The call. */
 	call: ToolViewCall;
 	/** The app the call acts in, such as `Gmail`, for the messages. */
