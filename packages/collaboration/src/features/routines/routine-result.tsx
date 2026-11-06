@@ -164,13 +164,16 @@ export function RoutineResult({
 					{runRoomId && run?.status !== "running" && (
 						<OpenRunButton roomId={runRoomId} />
 					)}
-					{run?.status === "completed" && run.summary?.trim() && (
-						<RoutineChatButton
-							key={`${routine.id}:${run.startedAt}`}
-							routineId={routine.id}
-							startedAt={run.startedAt}
-						/>
-					)}
+					{/* the run's own room holds its output, so a chat would open that same room */}
+					{run?.status === "completed" &&
+						run.summary?.trim() &&
+						!runRoomId && (
+							<RoutineChatButton
+								key={`${routine.id}:${run.startedAt}`}
+								routineId={routine.id}
+								startedAt={run.startedAt}
+							/>
+						)}
 				</div>
 			</div>
 			{/* The frame grows to the bottom of a column beside taller settings and is never shorter than before.

@@ -87,33 +87,45 @@ describe("onboarding completion", () => {
 		).toBeVisible();
 	});
 
-	it.each([
-		"failed",
-		"partial",
-		"wrong-review",
-		"wrong-mode",
-		"missing-summary",
-	])("does not show readiness for a %s filing result", async (problem) => {
+	it.each(["failed", "wrong-review", "wrong-mode", "missing-summary"])(
+		"does not show readiness for a %s filing result",
+		async (problem) => {
+			const review = applyReceipt(makeReview());
+			const job = filingJob(
+				review,
+				problem === "failed" ? "failed" : "done",
+			);
+			if (problem === "wrong-review")
+				job.params.reviewId = "unrelated-review";
+			if (problem === "wrong-mode") job.params.mode = "sort";
+			if (problem === "missing-summary") job.counts = {};
+			review.filingJob = job;
+			const source = session(review);
+			render(view(source.actions));
+			expect(await screen.findByRole("alert")).toBeVisible();
+			expect(
+				screen.getByRole("button", { name: "Open Work" }),
+			).toBeDisabled();
+			expect(
+				screen.queryByRole("heading", { name: "Your Work is ready" }),
+			).not.toBeInTheDocument();
+		},
+	);
+
+	it("lets a partial filing result open Work while its failures stay retryable", async () => {
 		const review = applyReceipt(makeReview());
-		const job = filingJob(
-			review,
-			problem === "failed" ? "failed" : "done",
-			problem === "partial" ? 1 : 0,
+		review.filingJob = filingJob(review, "done", 1);
+		render(view(session(review).actions));
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"1 thread could not be filed. You can open Work now, or retry it.",
 		);
-		if (problem === "wrong-review")
-			job.params.reviewId = "unrelated-review";
-		if (problem === "wrong-mode") job.params.mode = "sort";
-		if (problem === "missing-summary") job.counts = {};
-		review.filingJob = job;
-		const source = session(review);
-		render(view(source.actions));
-		expect(await screen.findByRole("alert")).toBeVisible();
 		expect(
-			screen.getByRole("button", { name: "Open Work" }),
-		).toBeDisabled();
+			screen.getByRole("heading", { name: "Your Work is ready" }),
+		).toBeVisible();
+		expect(screen.getByRole("button", { name: "Open Work" })).toBeEnabled();
 		expect(
-			screen.queryByRole("heading", { name: "Your Work is ready" }),
-		).not.toBeInTheDocument();
+			screen.getByRole("button", { name: "Retry filing" }),
+		).toBeEnabled();
 	});
 
 	it("completes a saved zero-topic review without adopting an unrelated job", async () => {

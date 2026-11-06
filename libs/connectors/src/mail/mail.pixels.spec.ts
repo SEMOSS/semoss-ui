@@ -8,7 +8,7 @@ describe("mail pixels", () => {
 			pixels.listMail({
 				folder: "inbox",
 				limit: 25,
-				subject: "   ",
+				search: "   ",
 				unreadOnly: false,
 			}),
 		).toBe(
@@ -17,6 +17,16 @@ describe("mail pixels", () => {
 		expect(
 			pixels.listMail({ folder: "inbox", limit: 25, unreadOnly: true }),
 		).toContain("unreadOnly=[true]");
+	});
+
+	it("sends a typed search whole, for the backend to read its fields", () => {
+		expect(
+			MAIL_APPS.google.pixels.listMail({
+				folder: "inbox",
+				limit: 25,
+				search: 'from:ada "q3 plan"',
+			}),
+		).toContain('search=["<encode>from:ada "q3 plan"</encode>"]');
 	});
 
 	it("calls each mailbox's own reactor with the same keys", () => {
@@ -40,7 +50,40 @@ describe("mail pixels", () => {
 			'GoogleGmailDownloadAttachment(id=["m"], attachmentId=["1"], fileName=["<encode>q3.pdf</encode>"]);',
 		);
 		expect(MAIL_APPS.google.pixels.listFolders()).toBe(
-			"GoogleGmailListMailFolders();",
+			"GoogleGmailListMailFolders(limit=[500]);",
+		);
+	});
+
+	it("asks for the formatted body only when a view shows it", () => {
+		expect(
+			MAIL_APPS.microsoft.pixels.getMail("m/1", {
+				includeDisplayBody: true,
+			}),
+		).toBe(
+			'MicrosoftOutlookGetMail(id=["m/1"], includeAttachments=[true], includeDisplayBody=[true]);',
+		);
+		expect(
+			MAIL_APPS.google.pixels.getMail("m/1", {
+				includeDisplayBody: false,
+			}),
+		).toBe('GoogleGmailGetMail(id=["m/1"], includeAttachments=[true]);');
+	});
+
+	it("asks for embedded pictures only along with the formatted body", () => {
+		expect(
+			MAIL_APPS.google.pixels.getMail("m/1", {
+				includeDisplayBody: true,
+				includeInlineImages: true,
+			}),
+		).toBe(
+			'GoogleGmailGetMail(id=["m/1"], includeAttachments=[true], includeDisplayBody=[true], includeInlineImages=[true]);',
+		);
+		expect(
+			MAIL_APPS.microsoft.pixels.getMail("m/1", {
+				includeInlineImages: true,
+			}),
+		).toBe(
+			'MicrosoftOutlookGetMail(id=["m/1"], includeAttachments=[true]);',
 		);
 	});
 

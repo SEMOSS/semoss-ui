@@ -10,7 +10,9 @@ import {
 } from "../core/connector-parse";
 import type {
 	MailAttachment,
+	MailDisplayBody,
 	MailFolder,
+	MailInlineImage,
 	MailMessage,
 	MailPage,
 	MailReceipt,
@@ -29,10 +31,18 @@ const parseMailFolder = (entry: unknown): MailFolder | null => {
 	if (!id) {
 		return null;
 	}
+	const depth = readNumber(entry.depth);
 	return {
 		id: id,
 		name: readNonBlankString(entry.name) ?? id,
 		kind: readNonBlankString(entry.kind),
+		parentId: readNonBlankString(entry.parentId),
+		path: readNonBlankString(entry.path),
+		depth:
+			depth !== undefined && Number.isSafeInteger(depth) && depth > 0
+				? depth
+				: 0,
+		wellKnownName: readNonBlankString(entry.wellKnownName)?.toLowerCase(),
 		totalCount: readNumber(entry.totalCount),
 		unreadCount: readNumber(entry.unreadCount),
 	};
@@ -42,7 +52,7 @@ const parseMailFolder = (entry: unknown): MailFolder | null => {
  * The places a mailbox files mail, from `ListMailFolders`.
  *
  * @param raw - The reactor's output, `{ offset, count, hasMore, folders }`.
- * @return The folders.
+ * @return The folders, each right after the one it sits in.
  */
 export const parseMailFolders = (raw: unknown): MailFolder[] =>
 	parseEach(requireList(raw, "folders", "any folders"), parseMailFolder);
@@ -62,6 +72,72 @@ const parseMailAttachment = (entry: unknown): MailAttachment | null => {
 		size: readNumber(entry.size),
 		isInline: entry.isInline === true,
 		kind: readNonBlankString(entry.kind) ?? "file",
+	};
+};
+
+/** A media type a browser shows as a picture, as the backend writes it. */
+const IMAGE_TYPE = /^image\/[a-z0-9.+-]+$/;
+
+/**
+ * The letters of standard base64 with its padding. A picture runs to millions
+ * of them, so the check is one plain run, which no length can overflow, with
+ * the padded length checked apart.
+ */
+const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
+
+/**
+ * Whether text is standard padded base64, the way the backend encodes a
+ * picture.
+ *
+ * @param value - The text.
+ * @return True when it is.
+ */
+const isBase64 = (value: string): boolean =>
+	value.length % 4 === 0 && BASE64.test(value);
+
+const parseMailInlineImage = (entry: unknown): MailInlineImage | null => {
+	if (!isRecord(entry)) {
+		return null;
+	}
+	const contentId = readNonBlankString(entry.contentId);
+	const contentType = readNonBlankString(entry.contentType);
+	const data = entry.data;
+	if (
+		!contentId ||
+		!contentType ||
+		!IMAGE_TYPE.test(contentType) ||
+		typeof data !== "string" ||
+		data === "" ||
+		!isBase64(data)
+	) {
+		return null;
+	}
+	return { contentId: contentId, contentType: contentType, data: data };
+};
+
+const parseMailDisplayBody = (entry: unknown): MailDisplayBody | undefined => {
+	if (
+		!isRecord(entry) ||
+		(entry.contentType !== "html" && entry.contentType !== "text") ||
+		typeof entry.content !== "string" ||
+		entry.content.trim() === ""
+	) {
+		return undefined;
+	}
+	const omitted = readNumber(entry.inlineImagesOmitted);
+	return {
+		contentType: entry.contentType,
+		content: entry.content,
+		isTruncated: entry.isTruncated === true,
+		inlineImages: Array.isArray(entry.inlineImages)
+			? parseEach(entry.inlineImages, parseMailInlineImage)
+			: undefined,
+		inlineImagesOmitted:
+			omitted !== undefined &&
+			Number.isSafeInteger(omitted) &&
+			omitted > 0
+				? omitted
+				: 0,
 	};
 };
 
@@ -93,6 +169,7 @@ const parseMailMessage = (entry: unknown): MailMessage | null => {
 		isBodyTruncated: entry.bodyTruncated === true,
 		isUniqueBodyTruncated: entry.uniqueBodyTruncated === true,
 		attachments: parseEach(entry.attachments, parseMailAttachment),
+		displayBody: parseMailDisplayBody(entry.displayBody),
 		webLink: readNonBlankString(entry.webLink),
 	};
 };

@@ -1,12 +1,17 @@
+import { Navigate } from "react-router";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import { LandingChatComposer } from "@/features/daily-chat/landing-chat-composer";
 import { BriefDay } from "@/features/dashboard/brief-day";
 import { BriefHeader } from "@/features/dashboard/brief-header";
 import { BriefWork } from "@/features/dashboard/brief-work";
 import { TodaySuggestions } from "@/features/dashboard/today-suggestions";
+import { useNeedsOnboarding } from "@/features/onboarding/use-needs-onboarding";
 
 /** Today: an ask box, the top work items and the day's meetings. */
 export function DashboardPage() {
+	// a new user (nothing imported yet) is sent to onboarding first
+	if (useNeedsOnboarding()) return <Navigate to="/onboarding" replace />;
+
 	return (
 		<CollaborationPage>
 			{/* the ask box leads; today's list waits below it */}

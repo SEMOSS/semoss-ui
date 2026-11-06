@@ -67,10 +67,11 @@ export const teamsThreadToMarkdown = (
 	]);
 
 /**
- * A chat's messages, oldest first, as Markdown.
+ * A chat's messages as Markdown, oldest first so the file reads as the
+ * conversation went.
  *
  * @param chat - The chat.
- * @param messages - Its messages, oldest first.
+ * @param messages - Its messages, in any order.
  * @return The document.
  */
 export const teamsChatToMarkdown = (
@@ -84,7 +85,13 @@ export const teamsChatToMarkdown = (
 			["Messages", String(messages.length)],
 			["Link", { link: chat.webUrl }],
 		]),
-		...messages.map(teamsMessageToSection),
+		...[...messages]
+			.sort((a, b) =>
+				(a.createdDateTime ?? "").localeCompare(
+					b.createdDateTime ?? "",
+				),
+			)
+			.map(teamsMessageToSection),
 	]);
 
 /**

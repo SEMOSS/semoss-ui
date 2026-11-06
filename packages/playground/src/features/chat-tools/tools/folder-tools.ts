@@ -104,15 +104,6 @@ export const isFolderToolName = (name: string): name is FolderToolName =>
 	ALL_FOLDER_TOOLS.includes(name);
 
 /**
- * Whether a folder tool changes the folder rather than only reading it.
- *
- * @param name - A folder tool.
- * @return True for writes, edits, moves, deletions, and new folders.
- */
-export const isFolderChangeTool = (name: FolderToolName): boolean =>
-	!READ_TOOLS.has(name);
-
-/**
  * How a folder tool runs when nothing says otherwise: reading on its own, and
  * every change once the user approves it.
  *
@@ -124,7 +115,7 @@ export const getUsualFolderToolExecution = (
 ): FolderToolExecution => (READ_TOOLS.has(name) ? "auto" : "ask");
 
 /** How the tools name the chat's own files, the room's folder. */
-export const ROOM_FILES_NAME = "Chat Files";
+export const ROOM_FILES_NAME = "Room Files";
 
 /** What the definitions need to know. */
 export interface FolderToolContext {
@@ -136,7 +127,7 @@ export interface FolderToolContext {
 }
 
 /** The folder, the way the model should refer to it wherever a tool names it. */
-const FOLDER_DESCRIPTION = `${ROOM_FILES_NAME} (this chat's own files)`;
+const FOLDER_DESCRIPTION = `${ROOM_FILES_NAME} (this room's own files)`;
 
 /**
  * How the folder relates to the files the chat's other tools use, so the
@@ -503,7 +494,7 @@ const now = (): string => new Date().toISOString();
  * @param error - What was thrown.
  * @return The explanation.
  */
-export const describeFolderError = (error: unknown): string =>
+const describeFolderError = (error: unknown): string =>
 	getErrorMessage(error, "") || "The operation failed.";
 
 /**

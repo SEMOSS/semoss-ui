@@ -78,6 +78,7 @@ export class RootStore {
 				enableAgent: true,
 				enableSuggestions: true,
 				enableAgentHarness: false,
+				modeFollowsAgent: false,
 				enableRewrite: true,
 				enablePromptOptimizer: true,
 				enableDarkMode: true,
@@ -191,6 +192,11 @@ export class RootStore {
 			...this._store.theme,
 			name: theme?.name || this._store.theme.name,
 			banner: theme?.banner || this._store.theme.banner,
+			bannerBackgroundColor:
+				theme?.bannerBackgroundColor ??
+				this._store.theme.bannerBackgroundColor,
+			bannerTextColor:
+				theme?.bannerTextColor ?? this._store.theme.bannerTextColor,
 			description: theme?.description || this._store.theme.description,
 			fileDragDisclaimer:
 				theme?.fileDragDisclaimer ??

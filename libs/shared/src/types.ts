@@ -100,6 +100,12 @@ export interface ThemeMap {
 
 		banner: string;
 
+		/** Background color of the banner. Defaults to the primary theme color. */
+		bannerBackgroundColor?: string;
+
+		/** Text color of the banner. Defaults to the primary foreground theme color. */
+		bannerTextColor?: string;
+
 		/** Description of the app */
 		description: string;
 
@@ -331,10 +337,13 @@ export interface ThemeMap {
 		 */
 		featureFlags?: {
 			enableModelSelect?: boolean;
+			/** Whether to show the Agents link in the sidebar navigation. Agents stay available everywhere else, such as the agent picker in a new chat. */
 			enableAgent?: boolean;
 			enableSuggestions?: boolean;
 			/** Whether to enable the server-side agent harness mode (RunAgent) in the chat input. */
 			enableAgentHarness?: boolean;
+			/** Whether the agent picker decides a new chat's mode: a saved agent or Default Agent runs in agent mode, No Agent in chat mode. Users get no Chat and Agent choice. Defaults to false. */
+			modeFollowsAgent?: boolean;
 			enableRewrite?: boolean;
 			enableDarkMode?: boolean;
 			enablePromptOptimizer?: boolean;

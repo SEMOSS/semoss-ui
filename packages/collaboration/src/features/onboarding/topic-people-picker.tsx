@@ -1,9 +1,17 @@
-import { Plus, Star } from "lucide-react";
-import { useEffect, useId, useState } from "react";
-import { Badge, Button, Input, Label, P, Spinner } from "@semoss/ui/next";
+import { useEffect, useId, useRef, useState } from "react";
+import { Badge, Button, P } from "@semoss/ui/next";
+import {
+	PeoplePickerPanel,
+	type PickerPerson,
+	peoplePickerRowButtonClassName,
+} from "@/features/collaboration/components/people-picker-panel";
+import { givenFirst } from "@/lib/person-name";
 import type { InsightActions } from "@/lib/pixel";
 import { listPeople, type OnboardingPerson } from "./onboarding-api";
 import { previewTopicReach, type TopicReach } from "./topic-setup-api";
+
+// before a search: the people the owner works with most
+const QUICK_SHOWN = 8;
 
 interface TopicPeoplePickerProps {
 	actions: InsightActions;
@@ -15,7 +23,7 @@ interface TopicPeoplePickerProps {
 	onAdd: (person: { id: string; name: string }) => void;
 }
 
-/** Add people to a topic from quick picks or a search of the owner's contacts. */
+/** Add people to a topic from the people the owner works with most, or a search of their contacts. */
 export function TopicPeoplePicker({
 	actions,
 	contacts,
@@ -23,16 +31,19 @@ export function TopicPeoplePicker({
 	disabled,
 	onAdd,
 }: TopicPeoplePickerProps) {
-	const id = useId();
+	const fieldId = useId();
+	const searchRef = useRef<HTMLInputElement>(null);
 	const [query, setQuery] = useState("");
 	const [results, setResults] = useState<OnboardingPerson[]>([]);
 	const [isSearching, setIsSearching] = useState(false);
-	const quick = contacts
-		.filter((person) => !taken.has(person.id) && !person.automated)
-		.slice(0, 8);
+	const [status, setStatus] = useState("");
+	const text = query.trim();
+	const pool = (text.length >= 2 ? results : contacts).filter(
+		(person) => !taken.has(person.id) && !person.automated,
+	);
+	const shown = text.length >= 2 ? pool : pool.slice(0, QUICK_SHOWN);
 
 	useEffect(() => {
-		const text = query.trim();
 		if (text.length < 2) {
 			setResults([]);
 			return;
@@ -42,8 +53,7 @@ export function TopicPeoplePicker({
 		const timer = setTimeout(() => {
 			listPeople(actions, { query: text })
 				.then((people) => {
-					if (isCurrent)
-						setResults(people.filter((p) => !p.automated));
+					if (isCurrent) setResults(people);
 				})
 				.catch(() => {
 					if (isCurrent) setResults([]);
@@ -56,65 +66,49 @@ export function TopicPeoplePicker({
 			isCurrent = false;
 			clearTimeout(timer);
 		};
-	}, [actions, query]);
+	}, [actions, text]);
 
-	const chip = (person: OnboardingPerson) => (
-		<Button
-			key={person.id}
-			type="button"
-			variant="outline"
-			size="sm"
-			disabled={disabled || taken.has(person.id)}
-			onClick={() => onAdd({ id: person.id, name: person.name })}
-			aria-label={`Add ${person.name} to this topic`}
-			className="h-auto min-h-8 max-w-full whitespace-normal"
-		>
-			{person.vip ? (
-				<Star className="size-3 fill-current" aria-hidden="true" />
-			) : (
-				<Plus className="size-3" aria-hidden="true" />
-			)}
-			<span className="break-words">{person.name}</span>
-			{person.title && (
-				<span className="text-muted-foreground">
-					{"\u00b7 "}
-					{person.title}
-				</span>
-			)}
-		</Button>
-	);
+	const row = (person: OnboardingPerson): PickerPerson => ({
+		id: person.id,
+		name: person.name,
+		email: person.email,
+		detail: [person.vip ? "VIP" : "", person.title || person.email]
+			.filter(Boolean)
+			.join(" \u00b7 "),
+	});
 
 	return (
-		<div className="space-y-2">
-			{quick.length > 0 && (
-				<div className="space-y-1">
-					<P className="text-muted-foreground text-xs">
-						People you work with most
-					</P>
-					<div className="flex flex-wrap gap-2">
-						{quick.map(chip)}
-					</div>
-				</div>
+		<PeoplePickerPanel
+			fieldId={fieldId}
+			title="Add people"
+			query={query}
+			onQuery={setQuery}
+			searchRef={searchRef}
+			groupLabel="People you work with most"
+			people={shown.map(row)}
+			isSearching={isSearching}
+			emptyText="Search for anyone by name or email."
+			status={status}
+			actions={(person) => (
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					disabled={disabled}
+					aria-label={`Add ${givenFirst(person.name)} to this topic`}
+					className={peoplePickerRowButtonClassName}
+					onClick={() => {
+						onAdd({ id: person.id, name: person.name });
+						setStatus(
+							`Added ${givenFirst(person.name)} to this topic.`,
+						);
+						searchRef.current?.focus();
+					}}
+				>
+					Add
+				</Button>
 			)}
-			<Label htmlFor={`${id}-search`} className="text-sm">
-				Find someone else
-			</Label>
-			<Input
-				id={`${id}-search`}
-				value={query}
-				disabled={disabled}
-				placeholder="Type a name or email"
-				onChange={(event) => setQuery(event.target.value)}
-			/>
-			{isSearching && <Spinner className="size-4" />}
-			{results.length > 0 && (
-				<div className="flex flex-wrap gap-2">
-					{results
-						.filter((person) => !taken.has(person.id))
-						.map(chip)}
-				</div>
-			)}
-		</div>
+		/>
 	);
 }
 
