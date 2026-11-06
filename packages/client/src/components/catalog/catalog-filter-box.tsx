@@ -27,7 +27,7 @@ import {
 } from "@/utility/catalog";
 import { getTagColorPalette } from "@/utility/tags";
 
-export interface CatalogFilterboxProps {
+interface CatalogFilterboxProps {
 	/** Determined to get filter keys for Engines/App */
 	type: Engine["engine_type"] | Project["project_type"];
 	/**

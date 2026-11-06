@@ -41,7 +41,7 @@ const STATUS_OPTIONS: { value: AgentRunRoomStatusFilter; label: string }[] = [
 	{ value: "failed", label: "Failed" },
 ];
 
-export interface AgentRoomListProps {
+interface AgentRoomListProps {
 	/** What the list is called, for its toolbar, table and pagination */
 	label: string;
 	/** The room search, status and page, kept by the page */

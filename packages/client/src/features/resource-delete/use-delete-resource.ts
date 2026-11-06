@@ -5,7 +5,7 @@ import type { ALL_TYPES } from "@/types/types";
 import { getDeleteRequest } from "./delete-request";
 
 /** The resource {@link useDeleteResource} deletes. */
-export interface DeleteResourceTarget {
+interface DeleteResourceTarget {
 	/** The resource's type: an engine type, or PROJECT */
 	type: ALL_TYPES;
 	/** The resource's id */
@@ -15,7 +15,7 @@ export interface DeleteResourceTarget {
 }
 
 /** What {@link useDeleteResource} gives its caller. */
-export interface UseDeleteResourceResult {
+interface UseDeleteResourceResult {
 	/** What the product calls the resource, such as "engine" or "agent" */
 	entityLabel: string;
 	/** Whether a delete is running */

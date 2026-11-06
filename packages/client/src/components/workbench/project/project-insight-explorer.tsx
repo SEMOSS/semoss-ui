@@ -5,7 +5,7 @@ import type { WorkbenchPanelId } from "@semoss/workbench";
 /** Module scope: the insight scope carries no parameters of its own. */
 const INSIGHT_MODE: FileMode = { type: "INSIGHT" };
 
-export interface ProjectInsightExplorerProps {
+interface ProjectInsightExplorerProps {
 	/** The panel instance the chrome control belongs to. */
 	id: WorkbenchPanelId;
 }

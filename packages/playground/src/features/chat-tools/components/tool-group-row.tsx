@@ -10,7 +10,7 @@ import { ROW_CHEVRON, ROW_TRIGGER_CLASS_NAME } from "./chat-tool-row";
 import { ToolCountBadge } from "./tool-count-badge";
 
 /** Props for {@link ToolGroupRow}. */
-export interface ToolGroupRowProps {
+interface ToolGroupRowProps {
 	/** What the tools are, such as the app they use. */
 	label: string;
 	/** Shown before the label, such as the app's provider logo. */

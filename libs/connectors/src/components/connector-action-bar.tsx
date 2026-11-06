@@ -13,7 +13,7 @@ import {
 } from "@semoss/ui/next";
 
 /** Props for {@link ConnectorActionBar}. */
-export interface ConnectorActionBarProps {
+interface ConnectorActionBarProps {
 	/** Adds what is open to the conversation. Left out when not given. */
 	onAddToContext?: () => void;
 	/** Saves what is open into the insight's files. */

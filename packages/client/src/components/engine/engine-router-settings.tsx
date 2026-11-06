@@ -23,7 +23,7 @@ import {
 	validateRouterConfig,
 } from "@/components/import/model/router-config-field";
 
-export interface EngineRouterSettingsProps {
+interface EngineRouterSettingsProps {
 	/** Id of the model router engine */
 	engineId: string;
 

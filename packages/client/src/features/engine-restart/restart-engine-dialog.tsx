@@ -16,7 +16,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 
-export interface RestartEngineDialogProps {
+interface RestartEngineDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The engine to restart */

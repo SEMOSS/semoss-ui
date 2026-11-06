@@ -9,7 +9,7 @@ import { useConnectProvider } from "../use-connect-provider";
 import { useConnectorLogins } from "../use-connector-logins";
 
 /** Props for {@link ConnectorSignInNotice}. */
-export interface ConnectorSignInNoticeProps {
+interface ConnectorSignInNoticeProps {
 	/** The room's connector state. */
 	connectors: ConnectorsStore;
 }

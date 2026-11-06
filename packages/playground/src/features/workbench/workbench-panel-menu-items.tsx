@@ -9,7 +9,7 @@ import {
 } from "./use-workbench-panels";
 import { WorkbenchPanelIcon } from "./workbench-panel-icon";
 
-export interface WorkbenchPanelMenuItemsProps {
+interface WorkbenchPanelMenuItemsProps {
 	/** The room whose Workspace the panels open in. */
 	room: RoomStore;
 	/** A new chat's own actions, until its first message. */

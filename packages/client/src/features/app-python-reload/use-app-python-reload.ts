@@ -5,7 +5,7 @@ import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 
 /** What {@link useAppPythonReload} gives its caller. */
-export interface UseAppPythonReloadResult {
+interface UseAppPythonReloadResult {
 	/** Whether a reload is running */
 	isReloading: boolean;
 	/** Reloads the app's python files, reporting the outcome in toasts */

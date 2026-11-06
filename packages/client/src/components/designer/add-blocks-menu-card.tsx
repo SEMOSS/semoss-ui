@@ -20,7 +20,7 @@ import { BlockCardContent } from "./BlockMenuCardContent";
 const addBlocksCardWidth = "120px";
 const addBlocksCardHeight = "94px";
 
-export interface AddBlocksMenuItemProps {
+interface AddBlocksMenuItemProps {
 	/** Item that can be dragged onto the block */
 	item: DesignerMenuItem;
 

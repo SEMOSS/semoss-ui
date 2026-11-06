@@ -14,7 +14,7 @@ import {
 	BringInAccessMenu,
 } from "./bring-in-access-menu";
 
-export interface AddPeopleCardProps {
+interface AddPeopleCardProps {
 	/** What adding people does here, under the title */
 	description: string;
 	/** The ways to bring access in from elsewhere, in the Bring In Access menu */

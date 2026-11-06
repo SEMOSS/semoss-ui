@@ -14,7 +14,7 @@ import { EngineSettingsPage } from "@/pages/engine/engine-settings.page";
 import { EngineSmssPage } from "@/pages/engine/engine-smss-page";
 import { EngineUsagePage } from "@/pages/engine/engine-usage-page";
 
-export interface EngineSettingsPanelProps {
+interface EngineSettingsPanelProps {
 	/** Settings tabs to display; differs by engine type */
 	tabs: {
 		/** Label shown on the tab trigger */

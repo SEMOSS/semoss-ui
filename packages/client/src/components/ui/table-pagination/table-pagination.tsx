@@ -19,7 +19,7 @@ import {
 /** Page sizes offered when a table does not choose its own */
 const DEFAULT_ROWS_PER_PAGE_OPTIONS = [50, 100, 200];
 
-export interface TablePaginationProps {
+interface TablePaginationProps {
 	/** The first row on the page, counting from 1, or 0 when there are none */
 	startRow: number;
 	/** The last row on the page */

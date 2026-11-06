@@ -20,7 +20,7 @@ export const CHOICE_COLUMN_CLASSES =
 	"sm:grid sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto_2rem] sm:items-start";
 
 /** Props for {@link JevPolicyChoiceRow}. */
-export interface JevPolicyChoiceRowProps {
+interface JevPolicyChoiceRowProps {
 	/** The choice's place in the list. */
 	index: number;
 	/** Whether the choice is locked, as it is while the form saves. */

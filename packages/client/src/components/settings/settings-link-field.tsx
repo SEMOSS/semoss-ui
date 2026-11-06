@@ -13,7 +13,7 @@ import {
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 
-export interface SettingsLinkFieldProps {
+interface SettingsLinkFieldProps {
 	/** The link's name, such as "Share Link" */
 	label: string;
 	/** What the link opens, shown under it */

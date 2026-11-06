@@ -5,7 +5,7 @@ import type {
 } from "../types/browserEvents";
 import { normalizeBrowserUrl } from "./browser-url";
 
-export function flattenEnvelopeSteps(
+function flattenEnvelopeSteps(
 	envelope: Pick<StepsEnvelope, "steps">,
 ): Array<Record<string, unknown>> {
 	return Object.values(envelope.steps ?? {}).flatMap((tabSteps) => {

@@ -33,7 +33,7 @@ const instructionsSchema = z.object({ instructions: z.string() });
 type InstructionsValues = z.infer<typeof instructionsSchema>;
 
 /** Props for {@link RoomOptionsForm}. */
-export interface RoomOptionsFormProps {
+interface RoomOptionsFormProps {
 	/** The model the room answers with. */
 	model: RoomStore["model"];
 	/** Told when the user picks another model. */

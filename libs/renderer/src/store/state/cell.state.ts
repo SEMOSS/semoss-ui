@@ -9,7 +9,7 @@ import type { NotebookState } from "./notebook.state";
 import type { StateStore } from "./state.store";
 import type { CellComponent, CellConfig, CellDef } from "./state.types";
 
-export interface CellStateStoreInterface<D extends CellDef = CellDef> {
+interface CellStateStoreInterface<D extends CellDef = CellDef> {
 	/** Id of the cell */
 	id: string;
 

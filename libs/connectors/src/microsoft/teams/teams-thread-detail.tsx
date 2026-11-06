@@ -22,7 +22,7 @@ import type {
 import { TeamsMessageItem } from "./teams-message-item";
 
 /** Props for {@link TeamsThreadDetail}. */
-export interface TeamsThreadDetailProps {
+interface TeamsThreadDetailProps {
 	/** The thread's first message, with its replies. */
 	thread: TeamsMessage;
 	/** The team the channel is in. */

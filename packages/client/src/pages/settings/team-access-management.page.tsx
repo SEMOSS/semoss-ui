@@ -4,7 +4,7 @@ import { TeamAccessManagement } from "@/features/team-access-management/team-acc
 import { MANAGED_TEAMS_PATH } from "@/features/team-list/team-paths";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 
-export interface TeamAccessManagementPageProps {
+interface TeamAccessManagementPageProps {
 	/**
 	 * Whether this is the admin mode view, from Team Permissions, where an
 	 * admin can change any custom team; My Teams uses the user's own permissions

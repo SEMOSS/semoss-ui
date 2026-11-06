@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { AutomationContext } from "../contexts/automation.context";
 
 /** Accesses the state and actions owned by the enclosing automation canvas. */
-export function useAutomation() {
+function useAutomation() {
 	const context = useContext(AutomationContext);
 	if (!context) {
 		throw new Error(

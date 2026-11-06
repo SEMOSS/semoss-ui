@@ -99,8 +99,6 @@ export const GuardrailForm = ({
 		useState<boolean>(false);
 	const [initScriptCallback, setInitScriptCallback] = useState(null);
 	const [updateFieldName, setUpdateFieldName] = useState("");
-	const [isDynamicInputChangedByUser, setIsDynamicInputChangedByUser] =
-		useState(false);
 	const [isReturnStructureCopied, setIsReturnStructureCopied] =
 		useState(false);
 
@@ -192,7 +190,6 @@ export const GuardrailForm = ({
 	 */
 	useEffect(() => {
 		if (!initScriptCallback) return;
-		if (isDynamicInputChangedByUser) return;
 
 		const mappedValuesObject = dynamicFieldsToWatch.reduce(
 			(acc, fieldName) => {
@@ -440,44 +437,6 @@ export const GuardrailForm = ({
 		setIsValidDatabaseName(false);
 
 		return true;
-	};
-
-	/**
-	 * This runs on input changes to check if the user has changed a dynamically updated field manually
-	 * It sets a flag that will stop dynamic update from running if the user has manually changed it
-	 * Allows the user to manually change the field back to re-enable dynamic updates
-	 */
-
-	// biome-ignore lint/correctness/noUnusedVariables: TODO - fix this
-	const checkForDynamicFieldChange = () => {
-		// check to see if this form has a dynamically updated field
-		if (updateFieldName && initScriptCallback && dynamicFieldsToWatch) {
-			// setTimeout sets this to occur after field values are updated
-			setTimeout(() => {
-				// get values from all dynamic fields
-				const mappedValuesObject = dynamicFieldsToWatch.reduce(
-					(acc, fieldName) => {
-						acc[fieldName] = getValues(fieldName);
-						return acc;
-					},
-					{},
-				);
-
-				// check if current value of initScript field matches what updateCallback would return
-				// if they do not match the user changed the initScript manually
-				const initScriptValueFromCallback = initScriptCallback(
-					mappedValuesObject,
-				).replace(/\s+/g, " ");
-				const initScriptValueFromTextField = getValues(updateFieldName);
-
-				// if they do match the user has not changed the initScript or they manually changed it back
-				// this allows them to re-enable the dynamic updateScript behavior if they revert the field value manually
-				const isMatched =
-					initScriptValueFromCallback ===
-					initScriptValueFromTextField;
-				setIsDynamicInputChangedByUser(!isMatched);
-			}, 0);
-		}
 	};
 
 	// Helper functions for file upload (matching database-form.tsx)

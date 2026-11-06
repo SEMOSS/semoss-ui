@@ -12,7 +12,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 
-export interface AddVariableModalProps {
+interface AddVariableModalProps {
 	/**
 	 * Open modal
 	 */

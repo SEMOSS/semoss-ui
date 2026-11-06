@@ -9,7 +9,7 @@ import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 import { TeamPeopleCard } from "./team-people-card";
 import { TeamTotalCard } from "./team-total-card";
 
-export interface AdminTeamDetailsProps {
+interface AdminTeamDetailsProps {
 	/** The team's name, which is also its id */
 	id: string;
 	/** CUSTOM, or the login provider whose group the team mirrors */

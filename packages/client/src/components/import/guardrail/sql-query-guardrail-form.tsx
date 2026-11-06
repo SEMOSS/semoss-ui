@@ -173,7 +173,7 @@ export const toSqlQueryGuardrailDetails = (
 };
 
 /** Props for {@link SqlQueryGuardrailForm}. */
-export interface SqlQueryGuardrailFormProps {
+interface SqlQueryGuardrailFormProps {
 	/** The guardrail type's logo, shown beside the form's title. */
 	icon?: string;
 	/** Called with the new guardrail's id once it is created, or with none on cancel. */

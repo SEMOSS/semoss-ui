@@ -2,7 +2,7 @@ import { isRecord } from "@semoss/utility/object";
 import type { AssistantToolResult } from "@/api/assistant-tools";
 
 /** Call identity sent in SMSS_INIT_TOOL and required on the response. */
-export interface EmbeddedToolIdentity {
+interface EmbeddedToolIdentity {
 	id: string;
 	roomId: string;
 	message: string;

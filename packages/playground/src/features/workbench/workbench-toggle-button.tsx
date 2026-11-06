@@ -8,7 +8,7 @@ import { HeaderIconButton } from "@/features/room-header/header-icon-button";
 import type { RoomStore } from "@/stores/room/room.store";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
-export interface WorkbenchToggleButtonProps {
+interface WorkbenchToggleButtonProps {
 	/** The room whose Workspace it opens and closes. */
 	room: RoomStore;
 	/** A new chat's own actions, until its first message. */

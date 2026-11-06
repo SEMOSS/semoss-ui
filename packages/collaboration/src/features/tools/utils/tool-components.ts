@@ -15,8 +15,7 @@ export const TOOL_COMPONENTS = {
 	memory: "memory",
 } as const;
 
-export type ToolComponent =
-	(typeof TOOL_COMPONENTS)[keyof typeof TOOL_COMPONENTS];
+type ToolComponent = (typeof TOOL_COMPONENTS)[keyof typeof TOOL_COMPONENTS];
 
 const KNOWN = new Set<string>(Object.values(TOOL_COMPONENTS));
 

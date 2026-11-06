@@ -36,7 +36,7 @@ const hasPixelError = (operationType?: string[] | string): boolean => {
 	return false;
 };
 
-export interface RemoteMcpConnectionProps {
+interface RemoteMcpConnectionProps {
 	/** Id of the project/app whose MCP connection is being configured */
 	projectId: string;
 

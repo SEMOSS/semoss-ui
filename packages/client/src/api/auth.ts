@@ -75,6 +75,7 @@ const ensureCsrfToken = async () => {
 	}
 };
 
+/** @public Called by name through `useAPI`. */
 export const getLoginProperties = async () => {
 	const url = `${Env.MODULE}/api/auth/loginProperties`;
 	const response = await get(url).catch((error) => {
@@ -166,6 +167,7 @@ export const removeInsightUserPermissions = async (
 	return response;
 };
 
+/** @public Called by name through `useAPI`. */
 export const getAllUsers = async (
 	admin: boolean,
 	searchTerm?: string,
@@ -250,6 +252,7 @@ export const getAllUsers = async (
 	return finalResponse;
 };
 
+/** @public Called by name through `useAPI`. */
 export const getAllAPIUsers = async (
 	admin: boolean,
 	searchTerm?: string,
@@ -495,6 +498,7 @@ export const createUser = async (
 	return response;
 };
 
+/** @public Called by name through `useAPI`. */
 export const getUserAccessKeys = async () => {
 	const url = `${Env.MODULE}/api/auth/user/getUserAccessKeys`;
 	const response = await get<

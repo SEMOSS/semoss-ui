@@ -52,7 +52,7 @@ const CONSOLE_POLL_INTERVAL_MS = 1000;
  * What a predict pixel returns for an uploaded file: its columns and their
  * types, and its suggested tables and relations.
  */
-export interface ParsedResult {
+interface ParsedResult {
 	headers: string[];
 	dataTypes: Record<string, string>;
 	cleanHeaders: string[];

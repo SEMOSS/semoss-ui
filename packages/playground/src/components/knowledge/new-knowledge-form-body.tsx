@@ -23,7 +23,7 @@ import { FilePreviewGrid } from "@/components/common/file-preview-grid";
 import { useRoot } from "@/hooks";
 import type { MCPConfig } from "@/types";
 
-export interface NewKnowledgeFormBodyProps {
+interface NewKnowledgeFormBodyProps {
 	/**
 	 * Form id. An external submit button can target this form via
 	 * `<button type="submit" form={formId}>` so the same body works inside

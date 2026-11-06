@@ -22,7 +22,7 @@ import {
 import { getAppShareUrl } from "./app-share-url";
 import { ShareCopyButton } from "./share-copy-button";
 
-export interface ShareAppDialogProps {
+interface ShareAppDialogProps {
 	/** The app to share */
 	appId: string;
 	/** Whether the dialog is open */

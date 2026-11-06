@@ -24,7 +24,7 @@ import {
 	parseEngineGuardrailLocks,
 } from "@/api/guardrails";
 
-export interface GuardrailLockedUsersProps {
+interface GuardrailLockedUsersProps {
 	/** The engine whose locks are listed */
 	engineId: string;
 

@@ -26,13 +26,13 @@ interface TaskStep {
 	assigneeName: string;
 }
 
-export interface TaskThread {
+interface TaskThread {
 	id: string;
 	subject: string;
 	source: string;
 }
 
-export interface TaskView {
+interface TaskView {
 	id: string;
 	title: string;
 	steps: TaskStep[];

@@ -4,7 +4,7 @@ import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { ToolStore } from "@/stores/tool/tool.store";
 
 /** How a `component://` view decides its call. */
-export type ToolViewDecisions = Pick<
+type ToolViewDecisions = Pick<
 	ToolViewProps,
 	"onApprove" | "onDecline" | "onRespond"
 >;

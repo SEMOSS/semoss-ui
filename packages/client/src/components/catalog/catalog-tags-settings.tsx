@@ -40,7 +40,7 @@ const toForm = (metadata: Record<string, unknown>): TagsForm =>
 		]),
 	);
 
-export interface CatalogTagsSettingsProps {
+interface CatalogTagsSettingsProps {
 	/** The entry's current metadata (an engine or project record). */
 	metadata: Record<string, unknown>;
 	/** User's permission for the entry. */

@@ -16,7 +16,7 @@ import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
 import { useProject } from "@/hooks/use-project";
 
-export interface ProjectAccessControlProps {
+interface ProjectAccessControlProps {
 	/**
 	 * What shows under Member Permissions: the members, Bulk Access Management
 	 * or Effective Permissions. The access settings above stay as they are.

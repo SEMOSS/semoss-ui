@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
-import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import {
 	loadLiveState,
-	loadThreadMessages,
 	localDue,
 	mapMemory,
 	mapStyle,
@@ -120,21 +118,17 @@ it("requests optional display bodies while preserving exclusions, links and lega
 			},
 		],
 	});
-	const attach = await loadThreadMessages(
+	const { messages } = await readThreadMessagesPage(
 		{ run } as unknown as InsightActions,
 		"thread",
 	);
-	const thread = createInitialCollaborationState().threads[0];
-	const command = attach(thread);
 	expect(run.mock.calls[0]?.[0]).toContain("includeDisplayBody=[true]");
-	if (command.type !== "source.import")
-		throw new Error("Expected source import");
-	expect(command.workspace?.messages?.[0]).toMatchObject({
+	expect(messages[0]).toMatchObject({
 		displayBody,
 		excluded: true,
 		webLink: "https://outlook.office.com/mail/rich",
 	});
-	expect(command.workspace?.messages?.[1]).toMatchObject({
+	expect(messages[1]).toMatchObject({
 		text: "Old server",
 		displayBody: undefined,
 	});

@@ -28,7 +28,7 @@ interface FrameHeaderInfo {
 	}[];
 }
 
-export type ColumnTransformationFieldComponent = (props: {
+type ColumnTransformationFieldComponent = (props: {
 	cell: CellState;
 	selectedColumns: ColumnInfo[] | ColumnInfo;
 	columnTypes?: string[];

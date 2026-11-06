@@ -10,7 +10,6 @@ import {
 import { createEmptyWorkspace } from "../state/collaboration.reducer";
 import type {
 	Account,
-	CollaborationCommand,
 	CollaborationState,
 	Memory,
 	MemoryRef,
@@ -705,20 +704,6 @@ export async function readThreadMessagesPage(
 		hiddenCount: out.hiddenCount ?? 0,
 		unavailableCount: out.unavailableCount ?? 0,
 	};
-}
-
-/** Legacy refresh callers attach the first page to the current owning thread. */
-export async function loadThreadMessages(
-	actions: InsightActions,
-	threadId: string,
-): Promise<(thread: Thread) => CollaborationCommand> {
-	const { messages } = await readThreadMessagesPage(actions, threadId);
-	return (thread) => ({
-		type: "source.import",
-		thread,
-		people: [],
-		workspace: { messages },
-	});
 }
 
 const threadInsightsSchema = z.object({

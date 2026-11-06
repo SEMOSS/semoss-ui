@@ -18,7 +18,7 @@ import { TeamTypeBadge } from "@/features/team-type/team-type-badge";
 import { useNavigate } from "@/hooks/useNavigate";
 import { useTeamDescription } from "./use-team-description";
 
-export interface TeamHeaderProps {
+interface TeamHeaderProps {
 	/** The team's name, which is also its id */
 	id: string;
 	/** CUSTOM, or the login provider whose group the team mirrors */

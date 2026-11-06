@@ -17,7 +17,7 @@ import type {
 	TerminalView,
 } from "../../types";
 
-export interface SubmitToConsoleOptions {
+interface SubmitToConsoleOptions {
 	/** What appears as the "(Px) > ..." line in the transcript. */
 	displayInput: string;
 	/** Which persona to label the transcript entry with. */
@@ -25,10 +25,7 @@ export interface SubmitToConsoleOptions {
 }
 
 /** A console's handler for a pixel submitted through its transcript. */
-export type SubmitToConsoleFn = (
-	pixel: string,
-	opts: SubmitToConsoleOptions,
-) => void;
+type SubmitToConsoleFn = (pixel: string, opts: SubmitToConsoleOptions) => void;
 
 /** The save dialog: whether it is open, and the file it saves. */
 interface SaveModalState {

@@ -26,10 +26,7 @@ interface AccessReadyState {
 	refresh: () => Promise<Role>;
 }
 
-export type AccessState =
-	| AccessLoadingState
-	| AccessErrorState
-	| AccessReadyState;
+type AccessState = AccessLoadingState | AccessErrorState | AccessReadyState;
 
 /**
  * What an insight's permission always is. Hoisted so `refresh` keeps its

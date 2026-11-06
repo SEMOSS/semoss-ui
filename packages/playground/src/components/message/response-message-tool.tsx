@@ -35,7 +35,7 @@ import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
 
-export interface ResponseMessageToolProps {
+interface ResponseMessageToolProps {
 	/** Tool activity to display and open. */
 	tool: ToolStore;
 	/** Frame pending decisions when they are shown inline. */

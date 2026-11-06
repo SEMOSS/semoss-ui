@@ -4,7 +4,7 @@ import type { ConnectorProviderId } from "../connector.catalog";
 import { useRoomConnectorHost } from "../sources/use-room-connector-host";
 
 /** Props for {@link ConnectorViewerPanel}. */
-export interface ConnectorViewerPanelProps {
+interface ConnectorViewerPanelProps {
 	/**
 	 * Shows the shared viewer, such as `OneDriveViewer` or the `MailboxView`
 	 * for one account, with the props the room gives it.

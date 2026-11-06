@@ -33,7 +33,7 @@ type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 /** Radio value of the Default Agent choice; agent ids are never this. */
 const DEFAULT_AGENT_VALUE = "default-agent";
 
-export interface AgentSelectorProps {
+interface AgentSelectorProps {
 	/** The saved agent picked, or null when none is. */
 	value: WorkspaceRef | null;
 	/** Called with the saved agent picked, or null when none is. */

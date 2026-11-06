@@ -9,8 +9,6 @@ import {
 	AutomationWorkbench,
 } from "./automation-workbench-shell";
 
-export { AutomationWorkbench };
-
 /**
  * The automation project's workbench page: the workbench in its own insight
  * and dock, with the Share dialog its navbar opens.

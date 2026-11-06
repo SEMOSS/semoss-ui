@@ -11,7 +11,7 @@ import { LIVE_TEAMS_NOTICE, RoomTeamsReader } from "./room-teams-reader";
 export const ROOM_TEAMS_SOURCE_PANEL_TYPE = "collaboration-teams-source";
 
 /** Read the Teams chat a room was opened from, oldest message first. */
-export function RoomTeamsSourcePanel(_props: WorkbenchPanelProps) {
+function RoomTeamsSourcePanel(_props: WorkbenchPanelProps) {
 	const {
 		source,
 		sourceMessages,

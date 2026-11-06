@@ -11,7 +11,7 @@ import {
 /** How long the pointer rests on a header icon before its tooltip shows. */
 const HEADER_TOOLTIP_DELAY = 500;
 
-export type HeaderIconButtonProps = ComponentProps<typeof Button> & {
+type HeaderIconButtonProps = ComponentProps<typeof Button> & {
 	/** The button's accessible name, also shown as its tooltip. */
 	label: string;
 };

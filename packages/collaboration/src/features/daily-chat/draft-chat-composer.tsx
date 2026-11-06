@@ -14,7 +14,7 @@ import type {
 import { ThreadAgentSelect } from "@/features/work-thread/thread-agent-select";
 import { DraftChatOptions } from "./draft-chat-options";
 
-export interface DraftChatComposerProps {
+interface DraftChatComposerProps {
 	/** Stable draft identity prevents a submitted editor from leaking into a fresh draft. */
 	draftId: string;
 	session: RoomSession;

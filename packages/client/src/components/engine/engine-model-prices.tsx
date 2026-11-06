@@ -114,7 +114,7 @@ const parseRate = (text: string): number | null => {
 	return Number.isFinite(value) && value >= 0 ? value : Number.NaN;
 };
 
-export interface EngineModelPricesProps {
+interface EngineModelPricesProps {
 	/** Id of the model engine */
 	engineId: string;
 	/** The user's permission for the engine; only owners change prices */

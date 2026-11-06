@@ -14,7 +14,7 @@ import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import type { ALL_TYPES } from "@/types/types";
 import { useDeleteResource } from "./use-delete-resource";
 
-export interface DeleteResourceCardProps {
+interface DeleteResourceCardProps {
 	/** The resource's type: an engine type, or PROJECT */
 	type: ALL_TYPES;
 	/** The resource's id */
